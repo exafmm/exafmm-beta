@@ -25,10 +25,11 @@ class bodies
 {
   unsigned I;
   unsigned const N;
+  unsigned const NMAX;
   body *P;
 public:
-  bodies(unsigned n) : N(n) {
-    P = new body [N];
+  bodies(unsigned const n, unsigned const nmax) : N(n),NMAX(nmax) {
+    P = new body [NMAX];
   }
   ~bodies() {
     delete[] P;

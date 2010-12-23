@@ -4,7 +4,7 @@
 struct node {
   int I;
   node *NEXT;
-  double shit[50];
+  double data[50];
 };
 
 int main() {
@@ -21,7 +21,7 @@ int main() {
   tic = get_time();
   for( int i=0; i!=size; ++i ) {
     for( int j=0; j!=10; ++j )
-      N0[i].I = 0;
+      N0[i].I = i;
 //    std::cout << i << std::endl;
   }
   toc = get_time();
@@ -29,7 +29,7 @@ int main() {
   tic = get_time();
   for( N=N0; N!=NN; ++N ) {
     for( int j=0; j!=10; ++j )
-      N->I = 1;
+      N->I = 0;
 //    std::cout << N->I << std::endl;
   }
   toc = get_time();
@@ -37,7 +37,7 @@ int main() {
   tic = get_time();
   for ( N=NN; N!=NULL; N=N->NEXT ) {
     for( int j=0; j!=10; ++j )
-      N->I = 2;
+      N->I = 0;
 //    std::cout << N->I << std::endl;
   }
   toc = get_time();

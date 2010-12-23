@@ -1,11 +1,12 @@
 include ../Makefile
 
 link    : link.cxx
-	@$(CXX) $<
+	@$(CXX) -g -pg $< $(OFLAGS) $(LFLAGS)
 	./a.out
+	gprof -b a.out gmon.out
 
 vtk     : vtk.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	./a.out
 
 morton  : morton.cxx
@@ -15,3 +16,11 @@ morton  : morton.cxx
 topdown : topdown.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	valgrind ./a.out
+
+mpi     : mpi.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	mpirun -np 128 ./a.out
+
+mpisplit: mpisplit.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	mpirun -np 16 ./a.out

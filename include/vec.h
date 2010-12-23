@@ -80,16 +80,6 @@ public:
   T const &operator[](int i) const {                               // Indexing (rvalue)
     return a[i];
   }
-  bool operator==(T const &b) const {                              // Component-wise AND for equality
-    bool c = true;
-    for_i c = c && (a[i] == b);
-    return c;
-  }
-  bool operator!=(T const &b) const {                              // Component-wise AND for inequality
-    bool c = true;
-    for_i c = c && (a[i] != b);
-    return c;
-  }
   operator       T* ()       {return a;}                           // Type-casting (lvalue)
   operator const T* () const {return a;}                           // Type-casting (rvalue)
   friend std::ostream &operator<<(std::ostream &s, vec const &a) { // Component-wise output stream

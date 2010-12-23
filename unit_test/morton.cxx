@@ -56,7 +56,7 @@ void sort(u64 *index, bodies &B) {
   int const Nbucket = 1 << 3*level;
   unsigned inew,*bucket;
   bucket = new unsigned [Nbucket];
-  bodies buffer(Nbody);
+  bodies buffer(Nbody,Nbody);
   for( int i=0; i<Nbucket; ++i ) bucket[i] = 0;
   for( int i=0; i<int(Nbody); ++i ) bucket[index[i]]++;
   for( int i=1; i<Nbucket; ++i ) bucket[i] += bucket[i-1];
@@ -79,7 +79,7 @@ void sort_large(u64 *index, bodies &B) {
   bucket2 = new unsigned [Nbucket];
   permut1 = new unsigned [Nbody];
   permut2 = new unsigned [Nbody];
-  bodies buffer(Nbody);
+  bodies buffer(Nbody,Nbody);
   for( int i=0; i<Nbucket; ++i )
     bucket1[i] = 0;
   for( int i=0; i<int(Nbody); ++i )
@@ -124,7 +124,7 @@ int main()
 {
   double tic,toc;
   unsigned const Nbody=50;
-  bodies B(Nbody);
+  bodies B(Nbody,Nbody);
 
   tic = get_time();
   for( B=B.begin(); B!=B.end(); ++B ) {                         // Loop over all bodies
