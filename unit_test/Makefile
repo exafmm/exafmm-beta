@@ -26,5 +26,5 @@ alltoall: alltoall.cxx
 	mpirun -np 8 ./a.out
 
 alltoallv: alltoallv.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS) -DDEBUG
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	mpirun -np 8 ./a.out
