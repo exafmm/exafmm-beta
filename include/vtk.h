@@ -1,3 +1,5 @@
+#ifndef vtk_h
+#define vtk_h
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkVertexGlyphFilter.h>
@@ -157,3 +159,4 @@ public:
     interactor->Start();
   }
 };
+#endif

@@ -4,7 +4,7 @@
 int main()
 {
   unsigned const Nbody=5000;
-  bodies B(Nbody);
+  bodies B(Nbody,Nbody);
 
   for( B=B.begin(); B!=B.end(); ++B ) {                         // Loop over all bodies
     float r = 2;

@@ -73,7 +73,7 @@ int main(int argc, const char* argv[])
   double tic,toc;
   unsigned Nbody=50;
   if(argc>1) Nbody = atoi(argv[1]);
-  bodies B(Nbody);
+  bodies B(Nbody,Nbody);
 
   tic = get_time();
   for( B=B.begin(); B!=B.end(); ++B ) {                         // Loop over all bodies
