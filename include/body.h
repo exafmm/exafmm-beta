@@ -7,10 +7,11 @@
 #include "gettime.h"
 #include "vec.h"
 
-typedef unsigned long long u64;
+typedef int long long bigint;
 typedef float real;
 const int NCRIT = 6;
 typedef vec<3,real> vect;
+typedef vec<20,real> coef;
 const real EPS = 0.01;
 
 struct body
@@ -23,12 +24,12 @@ struct body
 
 class bodies
 {
-  unsigned I;
-  unsigned const N;
-  unsigned const NMAX;
+  int I;
+  int const N;
+  int const NMAX;
   body *P;
 public:
-  bodies(unsigned const n, unsigned const nmax) : N(n),NMAX(nmax) {
+  bodies(int const n, int const nmax) : N(n),NMAX(nmax) {
     P = new body [NMAX];
   }
   ~bodies() {
@@ -46,36 +47,36 @@ public:
   real &pot() const {
     return P[I].pot;
   }
-  vect &pos(unsigned i) const {
+  vect &pos(int i) const {
     return P[i].pos;
   }
-  unsigned begin() {
+  int begin() {
     I = 0;
     return I;
   }
-  unsigned end() const {
+  int end() const {
     return N;
   }
-  unsigned size() const {
+  int size() const {
     return N;
   }
-  unsigned index() const {
+  int index() const {
     return I;
   }
-  body &operator[](unsigned const i) const {
+  body &operator[](int const i) const {
     return P[i];
   }
-  unsigned const &operator=(unsigned i) {
+  int const &operator=(int i) {
     return I = i;
   }
   bodies const &operator++() {
     ++I;
     return *this;
   }
-  bool operator!=(unsigned i) const {
+  bool operator!=(int i) const {
     return I != i;
   }
-  operator unsigned () {return I;}
+  operator int () {return I;}
   friend std::ostream &operator<<(std::ostream &s, bodies const &P) {
     s<<P.I;
     return s;

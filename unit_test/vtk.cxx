@@ -3,11 +3,11 @@
 
 int main()
 {
-  unsigned const Nbody=5000;
+  int const Nbody=5000;
   bodies B(Nbody,Nbody);
 
   for( B=B.begin(); B!=B.end(); ++B ) {                         // Loop over all bodies
-    float r = 2;
+    real r = 2;
     for( int d=0; d!=3; ++d )                                   //  Loop over each dimension
       B.pos()[d] = rand()/(1.+RAND_MAX)*2-1;                    //   Initialize positions
     r = sqrt(B.pos()[0]*B.pos()[0]+B.pos()[1]*B.pos()[1]+B.pos()[2]*B.pos()[2]);

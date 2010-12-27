@@ -2,8 +2,8 @@
 
 struct node {
   int NLEAF;
-  unsigned NCHILD;
-  unsigned LEAF[NCRIT];
+  int NCHILD;
+  int LEAF[NCRIT];
   node *CHILD[8];
   vect CENTER;
 
@@ -17,7 +17,7 @@ struct node {
     CENTER = x;
   }
 
-  void add_leaf(unsigned const i) {
+  void add_leaf(int const i) {
     LEAF[NLEAF] = i;
     NLEAF++;
   }
@@ -61,7 +61,7 @@ void traverse(node *N, int &nodes, int &leafs) {
         traverse(N->CHILD[i],nodes,leafs);
   } else {
     for( int i=0; i!=N->NLEAF; ++i ) {
-      std::cout << nodes << " " << leafs << " " << N->LEAF[i] << std::endl;
+//      std::cout << nodes << " " << leafs << " " << N->LEAF[i] << std::endl;
       leafs++;
     }
     nodes++;
@@ -71,7 +71,7 @@ void traverse(node *N, int &nodes, int &leafs) {
 int main(int argc, const char* argv[])
 {
   double tic,toc;
-  unsigned Nbody=50;
+  int Nbody=10000000;
   if(argc>1) Nbody = atoi(argv[1]);
   bodies B(Nbody,Nbody);
 

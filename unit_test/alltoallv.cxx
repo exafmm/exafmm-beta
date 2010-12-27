@@ -1,7 +1,7 @@
 #include "mympi.h"
 
 int main(int argc, char **argv) {
-  int const N(64);
+  int const N(16);
   int nprocs,myrank;
   int *data,*scnt;
   MPI_Init(&argc,&argv);

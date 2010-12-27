@@ -1,16 +1,16 @@
 #ifndef mympi_h
 #define mympi_h
+#include <mpi.h>
 #include <iostream>
 #include <cmath>
-#include <mpi.h>
 
 class MyMPI {                                                   // My own MPI utilities
-  unsigned const WAIT;                                          // Waiting time between output of different ranks
+  int const WAIT;                                               // Waiting time between output of different ranks
 public:
   MyMPI() : WAIT(100) {}                                        // Constructor, initialize WAIT time
   ~MyMPI() {}                                                   // Destructor
 
-  bool isPowerOfTwo(unsigned const n) {                         // If nprocs is power of two
+  bool isPowerOfTwo(int const n) {                              // If nprocs is power of two
     return ((n != 0) && !(n & (n - 1)));                        // Decrement and compare bits
   }
 

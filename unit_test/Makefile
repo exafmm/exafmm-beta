@@ -9,13 +9,13 @@ vtk     : vtk.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	./a.out
 
-morton  : morton.cxx
+bottomup: bottomup.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	valgrind ./a.out
+	./a.out
 
 topdown : topdown.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	valgrind ./a.out
+	./a.out
 
 mpi     : mpi.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
@@ -27,4 +27,4 @@ alltoall: alltoall.cxx
 
 alltoallv: alltoallv.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	mpirun -np 8 ./a.out
+	mpirun -np 4 ./a.out
