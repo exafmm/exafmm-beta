@@ -20,11 +20,13 @@
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 #include "vec.h"
+#include "body.h"
+int const maxGroups = 1000000;
 
 class vtkSliderCallback : public vtkCommand
 {
 public:
-  vtkPoints *points[100];
+  vtkPoints *points[maxGroups];
   vtkPolyData *polydata;
   vtkVertexGlyphFilter *filter;
   vtkSliderCallback() {}
@@ -41,8 +43,8 @@ public:
 };
 
 class vtkPlot {
-  int I[100];
-  vtkPoints *points[100];
+  int I[maxGroups];
+  vtkPoints *points[maxGroups];
   vtkPoints *hexPoints;
 public:
   void setDomain(float const r0, vect const x0) {
@@ -64,7 +66,30 @@ public:
   }
   void setPoints(int const Igroup, vect const pos) {
     points[Igroup]->SetPoint(I[Igroup],pos[0],pos[1],pos[2]);
-    ++I[Igroup];
+    I[Igroup]++;
+  }
+  void setGroupOfPoints(bigint *index, bodies &B, int &Ncell) {
+    int icell,begin(0),size(0);
+    Ncell = 0;
+    icell = index[0];
+    for( B=B.begin(); B!=B.end(); ++B ) {
+      if( index[B] != icell ) {
+        setGroup(Ncell,size);
+        for( int i=begin; i!=begin+size; ++i )
+          setPoints(Ncell,B.pos(i));
+        begin = B;
+        size = 0;
+        icell = index[B];
+        Ncell++;
+        assert(Ncell < maxGroups);
+      }
+      size++;
+    }
+    setGroup(Ncell,size);
+    for( int i=begin; i!=begin+size; ++i )
+      setPoints(Ncell,B.pos(i));
+    Ncell++;
+    assert(Ncell < maxGroups);
   }
   void plot(int const Ngroup) {
     //Create a polygon object for points

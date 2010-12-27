@@ -52,7 +52,7 @@ public:
   }
 
   template<typename T>
-  void print(T *data, int const ista, int const iend) {
+  void print(T *data, int const begin, int const end) {
     int nprocs,myrank;
     MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
@@ -61,21 +61,21 @@ public:
       usleep(WAIT);
       if( myrank == irank ) {
         std::cout << myrank << " : ";
-        for( int i=ista; i!=iend; ++i ) std::cout << data[i] << " ";
+        for( int i=begin; i!=end; ++i ) std::cout << data[i] << " ";
         std::cout << std::endl;
       }
     }
   }
 
   template<typename T>
-  void print(T *data, int const ista, int const iend, int const irank) {
+  void print(T *data, int const begin, int const end, int const irank) {
     int myrank;
     MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
     MPI_Barrier(MPI_COMM_WORLD);
     usleep(WAIT);
     if( myrank == irank ) {
       std::cout << myrank << " : ";
-      for( int i=ista; i!=iend; ++i ) std::cout << data[i] << " ";
+      for( int i=begin; i!=end; ++i ) std::cout << data[i] << " ";
       std::cout << std::endl;
     }
   }

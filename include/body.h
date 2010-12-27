@@ -9,7 +9,7 @@
 
 typedef int long long bigint;
 typedef float real;
-const int NCRIT = 6;
+const int NCRIT = 1000;
 typedef vec<3,real> vect;
 typedef vec<20,real> coef;
 const real EPS = 0.01;

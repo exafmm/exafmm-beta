@@ -15,9 +15,8 @@ class cell {
 int main()
 {
   double tic,toc;
-  int const Nbody=100000;
+  int const Nbody=10000;
   bodies B(Nbody,Nbody);
-  bodies B2(Nbody,Nbody);
   Tree T(B);
 
   tic = get_time();
@@ -44,21 +43,14 @@ int main()
   std::cout << "Get Morton    : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.sort(index,B,B2);
+  T.sort(index,B);
   toc = get_time();
   std::cout << "Sort Morton   : " << toc-tic << std::endl;
-
-  tic = get_time();
-  T.grow(index,B2);
-  T.sort(index,B,B2);
-  toc = get_time();
-  std::cout << "Grow tree     : " << toc-tic << std::endl;
 
   int Ncell(0);
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());
   vtk.setGroupOfPoints(index,B,Ncell);
   vtk.plot(Ncell);
-  T.sortDealloc();
   delete[] index;
 }
