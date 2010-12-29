@@ -21,7 +21,7 @@ int main() {
   tic = get_time();
   for( int i=0; i!=size; ++i ) {
     for( int j=0; j!=10; ++j )
-      N0[i].I = 2*i;
+      N0[i].I = 2*i+j;
 //    std::cout << i << std::endl;
   }
   toc = get_time();
@@ -30,7 +30,7 @@ int main() {
   tic = get_time();
   for( N=N0; N!=NN; ++N ) {
     for( int j=0; j!=10; ++j )
-      N->I = 2*N->I;
+      N->I = 2*N->I+j;
 //    std::cout << N->I << std::endl;
   }
   toc = get_time();
@@ -39,7 +39,7 @@ int main() {
   tic = get_time();
   for ( N=NN; N!=NULL; N=N->NEXT ) {
     for( int j=0; j!=10; ++j )
-      N->I = 2*N->I;
+      N->I = 2*N->I+j;
 //    std::cout << N->I << std::endl;
   }
   toc = get_time();

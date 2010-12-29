@@ -71,7 +71,7 @@ void traverse(node *N, int &nodes, int &leafs) {
 int main(int argc, const char* argv[])
 {
   double tic,toc;
-  int Nbody=1000000;
+  int Nbody=10000000;
   if(argc>1) Nbody = atoi(argv[1]);
   bodies B(Nbody,Nbody);
 
@@ -81,7 +81,7 @@ int main(int argc, const char* argv[])
       B.pos()[d] = rand()/(1.+RAND_MAX)*2-1;                    //   Initialize positions
     real r = sqrt(B.pos()[0]*B.pos()[0]+B.pos()[1]*B.pos()[1]+B.pos()[2]*B.pos()[2]);
     for( int d=0; d!=3; ++d )                                   //  Loop over each dimension
-      B.pos()[d] /= r;                                          //   Normalize positions
+      B.pos()[d] /= r*1.1;                                      //   Normalize positions
     B.scal() = 1./B.size();                                     //  Initialize source value
   }                                                             // End loop over all bodies
   toc = get_time();

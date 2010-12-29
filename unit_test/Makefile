@@ -9,13 +9,13 @@ vtk     : vtk.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	./a.out
 
-morton: bottomup.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
-	./a.out
+morton: morton.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	valgrind ./a.out
 
 bottomup: bottomup.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
-	./a.out
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	valgrind ./a.out
 
 topdown : topdown.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)

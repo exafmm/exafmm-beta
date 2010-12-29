@@ -7,9 +7,9 @@
 #include "gettime.h"
 #include "vec.h"
 
-typedef int long long bigint;
+typedef long long bigint;
 typedef float real;
-const int NCRIT = 1000;
+const int NCRIT = 10;
 typedef vec<3,real> vect;
 typedef vec<20,real> coef;
 const real EPS = 0.01;
@@ -20,6 +20,16 @@ struct body
   real scal;
   vect acc;
   real pot;
+};
+
+struct Cell {
+  int NLEAF;
+  int NCHILD;
+  bigint I;
+  body *LEAF;
+  Cell *PARENT;
+  Cell *CHILD[8];
+  coef *M,*L;
 };
 
 class bodies
