@@ -1,24 +1,22 @@
-#include "body.h"
+#include "types.h"
 
 struct node {
   int NLEAF;
   int NCHILD;
-  int LEAF[NCRIT];
+  B_iter LEAF[NCRIT];
   node *CHILD[8];
   vect CENTER;
 
   void init(vect x) {
     NLEAF = 0;
     NCHILD = 0;
-    for( int i=0; i!=NCRIT; ++i )
-      LEAF[i] = 0;
     for( int i=0; i!=8; ++i )
       CHILD[i] = 0;
     CENTER = x;
   }
 
-  void add_leaf(int const i) {
-    LEAF[NLEAF] = i;
+  void add_leaf(B_iter b) {
+    LEAF[NLEAF] = b;
     NLEAF++;
   }
 
@@ -39,16 +37,16 @@ struct node {
     NCHILD |= (1 << i);                                         // Flip bit of octant
   }
 
-  void split_node(real r, bodies *B, node *&N) {
+  void split_node(real r, node *&N) {
     int octant;
     for( int i=0; i!=NCRIT; ++i ) {                             // Loop over all leafs in parent node
-      octant = find_octant(B->pos(LEAF[i]));                    //  Find the octant where the body belongs
+      octant = find_octant(LEAF[i]->pos);                       //  Find the octant where the body belongs
       if( !(NCHILD & (1 << octant)) )                           //  If child doesn't exist in this octant
         add_child(octant,r,N);                                  //   Add new child to list
       CHILD[octant]->add_leaf(LEAF[i]);                         //  Add leaf to child
       if( CHILD[octant]->NLEAF >= NCRIT ) {                     //  If there are still too many leafs
         r /= 2;                                                 //   New radius
-        CHILD[octant]->split_node(r,B,N);                       //   Split the node into smaller ones
+        CHILD[octant]->split_node(r,N);                         //   Split the node into smaller ones
       }                                                         //  End if statement for splitting
     }                                                           // End loop over leafs
   }
@@ -61,7 +59,7 @@ void traverse(node *N, int &nodes, int &leafs) {
         traverse(N->CHILD[i],nodes,leafs);
   } else {
     for( int i=0; i!=N->NLEAF; ++i ) {
-//      std::cout << nodes << " " << leafs << " " << N->LEAF[i] << std::endl;
+//      std::cout << nodes << " " << leafs << " " << N->LEAF[i]->pos << std::endl;
       leafs++;
     }
     nodes++;
@@ -73,16 +71,17 @@ int main(int argc, const char* argv[])
   double tic,toc;
   int Nbody=10000000;
   if(argc>1) Nbody = atoi(argv[1]);
-  bodies B(Nbody,Nbody);
+  Bodies bodies(Nbody);
+  B_iter B;
 
   tic = get_time();
-  for( B=B.begin(); B!=B.end(); ++B ) {                         // Loop over all bodies
+  for( B=bodies.begin(); B!=bodies.end(); ++B ) {               // Loop over all bodies
     for( int d=0; d!=3; ++d )                                   //  Loop over each dimension
-      B.pos()[d] = rand()/(1.+RAND_MAX)*2-1;                    //   Initialize positions
-    real r = sqrt(B.pos()[0]*B.pos()[0]+B.pos()[1]*B.pos()[1]+B.pos()[2]*B.pos()[2]);
+      B->pos[d] = rand()/(1.+RAND_MAX)*2-1;                     //   Initialize positions
+    real r = sqrt(B->pos[0]*B->pos[0]+B->pos[1]*B->pos[1]+B->pos[2]*B->pos[2]);
     for( int d=0; d!=3; ++d )                                   //  Loop over each dimension
-      B.pos()[d] /= r*1.1;                                      //   Normalize positions
-    B.scal() = 1./B.size();                                     //  Initialize source value
+      B->pos[d] /= r*1.1;                                       //   Normalize positions
+    B->scal = 1./bodies.size();                                 //  Initialize source value
   }                                                             // End loop over all bodies
   toc = get_time();
   std::cout << "Initialize    : " << toc-tic << std::endl;
@@ -90,16 +89,16 @@ int main(int argc, const char* argv[])
   tic = get_time();
   real r0(0);                                                   // Root radius
   vect xmin,xmax,x0(0);                                         // Min,Max,Center of domain
-  B.begin();                                                    // Reset bodies counter
-  xmin = xmax = B.pos();                                        // Initialize xmin,xmax
-  for( B=B.begin(); B!=B.end(); ++B ) {                         // Loop over all bodies
+  B = bodies.begin();                                           // Reset bodies counter
+  xmin = xmax = B->pos;                                         // Initialize xmin,xmax
+  for( B=bodies.begin(); B!=bodies.end(); ++B ) {               // Loop over all bodies
     for( int d=0; d!=3; ++d ) {                                 //  Loop over each dimension
-      if     (B.pos()[d] < xmin[d]) xmin[d] = B.pos()[d];       //   Determine xmin
-      else if(B.pos()[d] < xmax[d]) xmax[d] = B.pos()[d];       //   Determine xmax
+      if     (B->pos[d] < xmin[d]) xmin[d] = B->pos[d];         //   Determine xmin
+      else if(B->pos[d] < xmax[d]) xmax[d] = B->pos[d];         //   Determine xmax
     }                                                           //  End loop over each dimension
-    x0 += B.pos();                                              //  Sum positions
+    x0 += B->pos;                                               //  Sum positions
   }                                                             // End loop over all bodies
-  x0 /= B.size();                                               // Calculate average position
+  x0 /= bodies.size();                                          // Calculate average position
   for( int d=0; d!=3; ++d ) {                                   // Loop over each dimension
     x0[d] = int(x0[d]+0.5);                                     //  Shift center to nearest integer
     r0 = std::max(xmax[d]-x0[d],r0);                            //  Calculate max distance from center
@@ -117,13 +116,13 @@ int main(int argc, const char* argv[])
   N0 = new node [Nbody];                                        // Allocate all nodes
   N0->init(x0);                                                 // Initialize root node
   NN = N0;                                                      // Keep copy for node counter
-  for( B=B.begin(); B!=B.end(); ++B ) {                         // Loop over all bodies
+  for( B=bodies.begin(); B!=bodies.end(); ++B ) {               // Loop over all bodies
     level = 0;                                                  //  Always start from root level
     for( N=N0; ; ) {                                            //  Loop over nodes
       if( N->NLEAF >= NCRIT ) {                                 //   If the node is not at the bottom of tree
         level++;                                                //    Increment the level of tree
         N->NLEAF++;                                             //    Increment the cumulative leaf counter
-        octant = N->find_octant(B.pos());                       //    Find the octant where the body belongs
+        octant = N->find_octant(B->pos);                        //    Find the octant where the body belongs
         if( !(N->NCHILD & (1 << octant)) ) {                    //    If child doesn't exist in this octant
           r = r0 / (1 << level);                                //     New radius
           N->add_child(octant,r,NN);                            //     Add new child to list
@@ -134,7 +133,7 @@ int main(int argc, const char* argv[])
         if( N->NLEAF >= NCRIT ) {                               //    If there are too many leafs
           level++;                                              //     Increment the level of tree
           r = r0 / (1 << level);                                //     New radius
-          N->split_node(r,&B,NN);                               //     Split the node into smaller ones
+          N->split_node(r,NN);                                  //     Split the node into smaller ones
         }                                                       //    Endif for splitting
         break;                                                  //    Exit the loop for nodes
       }                                                         //   Endif for child nodes

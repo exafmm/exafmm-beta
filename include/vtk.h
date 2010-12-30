@@ -19,8 +19,7 @@
 #include <vtkWidgetEventTranslator.h>
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
-#include "vec.h"
-#include "body.h"
+#include "types.h"
 int const maxGroups = 1000000;
 
 class vtkSliderCallback : public vtkCommand
@@ -68,18 +67,20 @@ public:
     points[Igroup]->SetPoint(I[Igroup],pos[0],pos[1],pos[2]);
     I[Igroup]++;
   }
-  void setGroupOfPoints(bigint *index, bodies &B, int &Ncell) {
+  void setGroupOfPoints(bigint *index, Bodies &bodies, int &Ncell) {
     int icell,begin(0),size(0);
+    B_iter B;
     Ncell = 0;
     icell = index[0];
-    for( B=B.begin(); B!=B.end(); ++B ) {
-      if( index[B] != icell ) {
+    int b=0;
+    for( B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
+      if( index[b] != icell ) {
         setGroup(Ncell,size);
         for( int i=begin; i!=begin+size; ++i )
-          setPoints(Ncell,B.pos(i));
-        begin = B;
+          setPoints(Ncell,bodies.at(i).pos);
+        begin = b;
         size = 0;
-        icell = index[B];
+        icell = index[b];
         Ncell++;
         assert(Ncell < maxGroups);
       }
@@ -87,7 +88,7 @@ public:
     }
     setGroup(Ncell,size);
     for( int i=begin; i!=begin+size; ++i )
-      setPoints(Ncell,B.pos(i));
+      setPoints(Ncell,bodies.at(i).pos);
     Ncell++;
     assert(Ncell < maxGroups);
   }

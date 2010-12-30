@@ -1,17 +1,8 @@
 include ../Makefile
 
-link    : link.cxx
-	@$(CXX) -g -pg $< $(OFLAGS) $(LFLAGS)
-	./a.out
-	gprof -b a.out gmon.out
-
-vtk     : vtk.cxx
+morton: morton.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	./a.out
-
-morton: morton.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	valgrind ./a.out
 
 bottomup: bottomup.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
@@ -21,9 +12,14 @@ topdown : topdown.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
+vtk     : vtk.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
+	./a.out
+
 mpi     : mpi.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) -g -pg
 	mpirun -np 128 ./a.out
+	gprof -b a.out gmon.out
 
 alltoall: alltoall.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
@@ -32,12 +28,12 @@ alltoall: alltoall.cxx
 alltoallv: alltoallv.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	mpirun -np 4 ./a.out
+
 all     :
-	make link
-	make vtk
 	make morton
 	make bottomup
 	make topdown
+	make vtk
 	make mpi
 	make alltoall
 	make alltoallv

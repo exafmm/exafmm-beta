@@ -9,7 +9,17 @@ protected:
 
 public:
   Sort() : sortAlloc(0),smallAlloc(0),largeAlloc(0) {}          // Constructor
-  ~Sort() {}                                                    // Destructor
+  ~Sort() {                                                     // Destructor
+    if( sortAlloc ) delete[] ibuffer;
+    if( smallAlloc ) delete[] bucket;
+    if( largeAlloc ) {
+      delete[] bucket1;
+      delete[] bucket2;
+      delete[] permut1;
+      delete[] permut2;
+    }
+  }
+
   template<typename T>
   void sortSmall(bigint *index, T &value, T &vbuffer, bigint Imin,
                  int Nbucket, bool ascend, int begin, int end) {
@@ -29,8 +39,8 @@ public:
       for( int i=begin; i!=end; ++i ) index[i] = ibuffer[i];
       for( int i=begin; i!=end; ++i ) value[i] = vbuffer[i];
     } else {
-      for( int i=begin; i!=end; ++i ) index[end-i-1] = ibuffer[i];
-      for( int i=begin; i!=end; ++i ) value[end-i-1] = vbuffer[i];
+      for( int i=begin; i!=end; ++i ) index[end-i+begin-1] = ibuffer[i];
+      for( int i=begin; i!=end; ++i ) value[end-i+begin-1] = vbuffer[i];
     }
   }
 
@@ -83,8 +93,8 @@ public:
       }
     } else {
       for( int i=begin; i!=end; ++i ) {
-        index[end-i-1] = ibuffer[permut2[i]];
-        value[end-i-1] = vbuffer[permut2[i]];
+        index[end-i+begin-1] = ibuffer[permut2[i]];
+        value[end-i+begin-1] = vbuffer[permut2[i]];
       }
     }
   }
@@ -130,17 +140,6 @@ public:
         largeAlloc = N;
       }
       sortLarge(index,value,vbuffer,Imin,Nbucket,ascend,begin,end);
-    }
-  }
-
-  void sortDealloc() {
-    if( sortAlloc ) delete[] ibuffer;
-    if( smallAlloc ) delete[] bucket;
-    if( largeAlloc ) {
-      delete[] bucket1;
-      delete[] bucket2;
-      delete[] permut1;
-      delete[] permut2;
     }
   }
 };
