@@ -5,7 +5,7 @@
 class TreeStructure {
 protected:
   Bodies &bodies;                                               // Bodies in the tree
-  B_iter B;                                                     // Body iterator
+  B_iter B,Bi,Bj;                                               // Body iterators
   Cells  cells;                                                 // Cells in the tree
   C_iter C,C0,CN,CC0,CCN;                                       // Cell iterators
   vect X0;                                                      // Center of root cell

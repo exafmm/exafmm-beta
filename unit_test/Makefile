@@ -12,6 +12,14 @@ topdown : topdown.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
+direct : direct.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	./a.out
+
+taylor : taylor.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	./a.out
+
 vtk     : vtk.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	./a.out
