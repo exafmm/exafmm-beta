@@ -36,15 +36,6 @@ public:
     }                                                           // End loop over all bodies
   }
 
-  int getLevel(bigint index) {
-    int level(-1);
-    while( index >= 0 ) {
-      level++;
-      index -= 1 << 3*level;
-    }
-    return level;
-  }
-
   bigint getParent(bigint index) {
     int level = getLevel(index);
     int cOffset = ((1 << 3*level) - 1)/7;
