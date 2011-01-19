@@ -1,15 +1,18 @@
+#include "bottomup.h"
 #include "kernel.h"
 
 int main()
 {
   double tic,toc;
   int const Nbody=10000;
+  tic = get_time();
   Bodies bodies(Nbody);
-  B_iter B;
-  Kernels K(bodies);
+  Kernels K;
+  toc = get_time();
+  std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  for( B=bodies.begin(); B!=bodies.end(); ++B ) {               // Loop over all bodies
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over all bodies
     for( int d=0; d!=3; ++d ) {                                 //  Loop over each dimension
       B->pos[d] = rand()/(1.+RAND_MAX)*2-1;                     //   Initialize positions
       B->acc[d] = 0;
@@ -24,11 +27,11 @@ int main()
   std::cout << "Initialize    : " << toc-tic << std::endl;
 
   tic = get_time();
-  K.direct();
+  K.direct(bodies.begin(),bodies.end());
   toc = get_time();
   std::cout << "Direct sum    : " << toc-tic << std::endl;
 
-  for( B=bodies.begin(); B!=bodies.end(); ++B ) {
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
 //    std::cout << B-bodies.begin() << " " << B->acc << std::endl;
   }
 

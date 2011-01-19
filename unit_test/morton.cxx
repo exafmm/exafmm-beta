@@ -7,13 +7,15 @@ int main()
 {
   double tic,toc;
   int const Nbody=1000000;
+  tic = get_time();
   Bodies bodies(Nbody);
   Bodies bodies2(Nbody);
-  B_iter B;
   BottomUpTreeConstructor T(bodies);
+  toc = get_time();
+  std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  for( B=bodies.begin(); B!=bodies.end(); ++B ) {               // Loop over all bodies
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over all bodies
     for( int d=0; d!=3; ++d )                                   //  Loop over each dimension
       B->pos[d] = rand()/(1.+RAND_MAX)*2-1;                     //   Initialize positions
     real r = sqrt(B->pos[0]*B->pos[0]+B->pos[1]*B->pos[1]+B->pos[2]*B->pos[2]);
@@ -32,7 +34,7 @@ int main()
   tic = get_time();
   T.setMorton();
   toc = get_time();
-  std::cout << "Get Morton    : " << toc-tic << std::endl;
+  std::cout << "Set Morton    : " << toc-tic << std::endl;
 
   tic = get_time();
   T.sort(T.Ibody,bodies,bodies2);
@@ -41,7 +43,7 @@ int main()
 
   bigint oldIndex(T.Ibody[0]);
   int b=0;
-  for( B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
     assert( oldIndex <= T.Ibody[b] );
     oldIndex = T.Ibody[b];
   }

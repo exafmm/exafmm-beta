@@ -6,13 +6,16 @@
 int main()
 {
   double tic,toc;
-  int Nbody=50;
+  int Nbody=10000000;
+  tic = get_time();
   Bodies bodies(Nbody);
-  B_iter B;
+  Bodies bodies2(Nbody);
   TopDownTreeConstructor T(bodies);
+  toc = get_time();
+  std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  for( B=bodies.begin(); B!=bodies.end(); ++B ) {               // Loop over all bodies
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over all bodies
     for( int d=0; d!=3; ++d )                                   //  Loop over each dimension
       B->pos[d] = rand()/(1.+RAND_MAX)*2-1;                     //   Initialize positions
     real r = sqrt(B->pos[0]*B->pos[0]+B->pos[1]*B->pos[1]+B->pos[2]*B->pos[2]);
@@ -32,4 +35,28 @@ int main()
   T.grow();
   toc = get_time();
   std::cout << "Grow tree     : " << toc-tic << std::endl;
+
+  tic = get_time();
+  T.setMorton();
+  toc = get_time();
+  std::cout << "Set Morton    : " << toc-tic << std::endl;
+
+  tic = get_time();
+  T.sortMorton(bodies2);
+  toc = get_time();
+  std::cout << "Sort Morton   : " << toc-tic << std::endl;
+
+  tic = get_time();
+  T.link();
+  toc = get_time();
+  std::cout << "Link cells    : " << toc-tic << std::endl;
+
+#ifdef VTK
+  T.sort(T.Ibody,bodies,bodies2);
+  int Ncell(0);
+  vtkPlot vtk;
+  vtk.setDomain(T.getR0(),T.getX0());
+  vtk.setGroupOfPoints(T.Ibody,bodies,Ncell);
+  vtk.plot(Ncell);
+#endif
 }

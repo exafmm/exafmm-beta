@@ -14,7 +14,7 @@ typedef float        real;                                      // Real number t
 typedef vec<3,real>  vect;                                      // 3-D vector type
 typedef vec<20,real> coef;                                      // Multipole coefficient type
 
-const int  NCRIT = 10;                                          // Number of bodies per cell
+const int  NCRIT = 100;                                         // Number of bodies per cell
 const real   EPS = 0.01;                                        // Softening parameter
 
 struct body {                                                   // Structure for body

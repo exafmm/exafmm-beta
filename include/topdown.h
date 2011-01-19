@@ -4,39 +4,38 @@
 
 class TopDownTreeConstructor : public TreeStructure {
 private:
-
-  struct node {
+  struct node {                                                 // Nodes are primitive cells
     typedef std::vector<node>::iterator N_iter;                 // Iterator for node vectors
 
     int LEVEL;                                                  // Level of node
     int NLEAF;                                                  // Number of leafs in node
-    int ISCHILD;                                                // Flag of empty child nodes
+    int ICHILD;                                                 // Flag of empty child nodes
     bigint I;                                                   // Morton index
     B_iter LEAF[NCRIT];                                         // Iterator for leafs
     N_iter CHILD[8];                                            // Pointer to child nodes
     vect X;                                                     // Node center
     real R;                                                     // Node radius
 
-    void init(vect x, real r) {
+    void init(vect x, real r) {                                 // Initialize node information
       NLEAF = 0;                                                // Initialize leaf counter
-      ISCHILD = 0;                                              // Initialize empty child flag
+      ICHILD = 0;                                               // Initialize empty child flag
       X = x;                                                    // Assign node center
       R = r;                                                    // Assign node radius
     }
 
-    void addLeaf(B_iter b) {
+    void addLeaf(B_iter b) {                                    // Add leaf to node
       LEAF[NLEAF] = b;                                          // Assign body iterator to leaf
       NLEAF++;                                                  // Increment leaf counter
     }
 
-    int getOctant(vect const pos) {
+    int getOctant(vect const pos) {                             // Calculate octant from position
       int octant(0);                                            // Initialize octant
       for( int d=0; d!=3; ++d )                                 // Loop over dimensions
         octant += (pos[d] > X[d]) << d;                         //  interleave bits and accumulate octant
       return octant;                                            // Return octant
     }
 
-    void addChild(int const i, N_iter &N) {
+    void addChild(int const i, N_iter &N) {                     // Add child node and link it
       int pOffset = ((1 << 3*LEVEL) - 1)/7;                     // Parent Morton offset
       int cOffset = ((1 << 3*(LEVEL+1)) - 1)/7;                 // Current Morton offset
       vect x(X);                                                // Initialize new center position with old center
@@ -47,13 +46,13 @@ private:
       CHILD[i]->init(x,r);                                      // Initialize child node
       CHILD[i]->LEVEL=LEVEL+1;                                  // Level of child node
       CHILD[i]->I = ((I-pOffset) << 3) + i + cOffset;           // Morton index of child node
-      ISCHILD |= (1 << i);                                      // Flip bit of octant
+      ICHILD |= (1 << i);                                       // Flip bit of octant
     }
 
-    void splitNode(N_iter &N) {
+    void splitNode(N_iter &N) {                                 // Split node and reassign leafs to child nodes
       for( int i=0; i!=NCRIT; ++i ) {                           // Loop over all leafs in parent node
         int octant = getOctant(LEAF[i]->pos);                   //  Find the octant where the body belongs
-        if( !(ISCHILD & (1 << octant)) )                        //  If child doesn't exist in this octant
+        if( !(ICHILD & (1 << octant)) )                         //  If child doesn't exist in this octant
           addChild(octant,N);                                   //   Add new child to list
         CHILD[octant]->addLeaf(LEAF[i]);                        //  Add leaf to child
         if( CHILD[octant]->NLEAF >= NCRIT )                     //  If there are still too many leafs
@@ -69,26 +68,11 @@ private:
 
 public:
   TopDownTreeConstructor(Bodies &b) : TreeStructure(b){         // Constructor
-    nodes.resize(bodies.size());                                // Resize node vector
+    nodes.resize(bodies.size()/NCRIT*8);                        // Resize node vector
   }
   ~TopDownTreeConstructor() {}                                  // Destructor
 
-
-  void traverse(N_iter N, int &boxes, int &leafs, B_iter begin) {
-    if( N->NLEAF >= NCRIT ) {
-      for( int i=0; i!=8; ++i )
-        if( N->ISCHILD & (1 << i) )
-          traverse(N->CHILD[i],boxes,leafs,begin);
-    } else {
-      for( int i=0; i!=N->NLEAF; ++i ) {
-        std::cout << boxes << " " << N->I << " " << leafs << " " << N->LEAF[i]-begin << std::endl;
-        leafs++;
-      }
-      boxes++;
-    }
-  }
-
-  void grow() {
+  void grow() {                                                 // Grow tree from root
     int octant;                                                 // In which octant is the body located?
     N0 = nodes.begin();                                         // Set iterator to first node
     N0->init(X0,R0);                                            // Initialize root node
@@ -100,7 +84,7 @@ public:
       while( N->NLEAF >= NCRIT ) {                              //  While the nodes have children
         N->NLEAF++;                                             //   Increment the cumulative leaf counter
         octant = N->getOctant(B->pos);                          //   Find the octant where the body belongs
-        if( !(N->ISCHILD & (1 << octant)) ) {                   //   If child doesn't exist in this octant
+        if( !(N->ICHILD & (1 << octant)) ) {                    //   If child doesn't exist in this octant
           N->addChild(octant,NN);                               //    Add new child to list
         }                                                       //   Endif for child existence
         N = N->CHILD[octant];                                   //    Update node iterator to child
@@ -110,11 +94,27 @@ public:
         N->splitNode(NN);                                       //   Split the node into smaller ones
       }                                                         //  Endif for splitting
     }                                                           // End loop over all bodies
-    int boxes(0),leafs(0);
-    traverse(nodes.begin(),boxes,leafs,bodies.begin());
-    std::cout << boxes << " "<< leafs << std::endl;
   }
 
+  void traverse(N_iter N) {                                     // Traverse tree
+    if( N->NLEAF >= NCRIT ) {                                   // If node has children
+      for( int i=0; i!=8; ++i )                                 // Loop over children
+        if( N->ICHILD & (1 << i) )                              //  If child exists in this octant
+          traverse(N->CHILD[i]);                                //   Recursively search child node
+    } else {                                                    //  If child doesn't exist
+      for( int i=0; i!=N->NLEAF; ++i ) {                        //   Loop over leafs
+        Ibody[N->LEAF[i]-bodies.begin()] = N->I;                //    Store Morton index in Ibody
+      }                                                         //   End loop over leafs
+    }                                                           //  Endif for child existence
+  }
+
+  void setMorton() {                                            // Store Morton index of all bodies
+    traverse(nodes.begin());                                    // Traverse tree
+  }
+
+  void sortMorton(Bodies bodies2) {                             // Sort Morton index of all bodies
+    sort(Ibody,bodies,bodies2,false);                           // Call bucket sort
+  }
 };
 
 #endif

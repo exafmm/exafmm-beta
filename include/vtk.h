@@ -58,15 +58,18 @@ public:
     hexPoints->SetPoint(6,x0[0]+r0,x0[1]+r0,x0[2]+r0);
     hexPoints->SetPoint(7,x0[0]-r0,x0[1]+r0,x0[2]+r0);
   }
+
   void setGroup(int const Igroup, int const Npoints) {
     I[Igroup] = 0;
     points[Igroup] = vtkPoints::New();
     points[Igroup]->SetNumberOfPoints(Npoints);
   }
+
   void setPoints(int const Igroup, vect const pos) {
     points[Igroup]->SetPoint(I[Igroup],pos[0],pos[1],pos[2]);
     I[Igroup]++;
   }
+
   void setGroupOfPoints(bigint *index, Bodies &bodies, int &Ncell) {
     int icell,begin(0),size(0);
     B_iter B;
@@ -92,6 +95,7 @@ public:
     Ncell++;
     assert(Ncell < maxGroups);
   }
+
   void plot(int const Ngroup) {
     //Create a polygon object for points
     vtkPolyData *polydata = vtkPolyData::New();

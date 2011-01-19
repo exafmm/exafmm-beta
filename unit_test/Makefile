@@ -5,10 +5,14 @@ morton: morton.cxx
 	./a.out
 
 bottomup: bottomup.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	valgrind ./a.out
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
+	./a.out
 
 topdown : topdown.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
+	./a.out
+
+upward : upward.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
