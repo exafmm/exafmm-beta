@@ -1,5 +1,6 @@
 #include "dataset.h"
 #include "bottomup.h"
+#include "kernel.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -7,7 +8,7 @@
 int main()
 {
   double tic,toc;
-  int const Nbody=10000000;
+  int const Nbody=10000;
   tic = get_time();
   Bodies bodies(Nbody);
   Bodies bodies2(Nbody);
@@ -56,6 +57,38 @@ int main()
   toc = get_time();
   std::cout << "Link cells    : " << toc-tic << std::endl;
 
+  tic = get_time();
+  T.P2M();
+  toc = get_time();
+  std::cout << "P2M           : " << toc-tic << std::endl;
+
+  tic = get_time();
+  T.M2M();
+  toc = get_time();
+  std::cout << "M2M           : " << toc-tic << std::endl;
+
+  tic = get_time();
+  T.M2P();
+  toc = get_time();
+  std::cout << "M2P           : " << toc-tic << std::endl;
+
+  tic = get_time();
+  Kernel K;
+  bodies2 = bodies;
+  K.direct(bodies2.begin(),bodies2.end());
+  toc = get_time();
+  std::cout << "Direct        : " << toc-tic << std::endl;
+
+  tic = get_time();
+  B_iter B  = bodies.begin();
+  B_iter B2 = bodies2.begin();
+  real err(0), rel(0);
+  for( int i=0; i!=Nbody; ++i,++B,++B2 ) {
+    err += (B->pot - B2->pot) * (B->pot - B2->pot);
+    rel += B2->pot * B2->pot;
+  }
+  toc = get_time();
+  std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
 #ifdef VTK
   T.sort(T.Ibody,bodies,bodies2);
   int Ncell(0);

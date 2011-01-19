@@ -1,3 +1,4 @@
+#include "dataset.h"
 #include "bottomup.h"
 #ifdef VTK
 #include "vtk.h"
@@ -11,18 +12,12 @@ int main()
   Bodies bodies(Nbody);
   Bodies bodies2(Nbody);
   BottomUpTreeConstructor T(bodies);
+  Dataset D(bodies);
   toc = get_time();
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over all bodies
-    for( int d=0; d!=3; ++d )                                   //  Loop over each dimension
-      B->pos[d] = rand()/(1.+RAND_MAX)*2-1;                     //   Initialize positions
-    real r = sqrt(B->pos[0]*B->pos[0]+B->pos[1]*B->pos[1]+B->pos[2]*B->pos[2]);
-    for( int d=0; d!=3; ++d )                                   //  Loop over each dimension
-      B->pos[d] /= r;                                           //   Normalize positions
-    B->scal = 1./bodies.size();                                 //  Initialize source value
-  }                                                             // End loop over all bodies
+  D.random();
   toc = get_time();
   std::cout << "Initialize    : " << toc-tic << std::endl;
 

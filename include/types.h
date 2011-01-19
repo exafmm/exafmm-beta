@@ -12,10 +12,11 @@
 typedef long long    bigint;                                    // Big integer type
 typedef float        real;                                      // Real number type
 typedef vec<3,real>  vect;                                      // 3-D vector type
-typedef vec<20,real> coef;                                      // Multipole coefficient type
+typedef vec<10,real> coef;                                      // Multipole coefficient type
 
 const int  NCRIT = 100;                                         // Number of bodies per cell
-const real   EPS = 0.01;                                        // Softening parameter
+const real THETA = 0.5;                                         // Box opening criteria
+const real  EPS2 = 0.0001;                                      // Softening parameter
 
 struct body {                                                   // Structure for body
   vect pos;                                                     // Position
@@ -34,8 +35,10 @@ struct cell {                                                   // Structure for
   B_iter LEAF;                                                  // Pointer to first leaf
   C_iter PARENT;                                                // Pointer to parent cell
   C_iter CHILD[8];                                              // Pointer to child cells
-  coef   *M;                                                    // Pointer to multipole coefficients
-  coef   *L;                                                    // Pointer to local coefficients
+  vect   X;                                                     // Cell center
+  real   R;                                                     // Cell radius
+  coef   M;                                                     // Pointer to multipole coefficients
+  coef   L;                                                     // Pointer to local coefficients
 };
 #undef C_iter
 typedef std::vector<cell>           Cells;                      // Vector of cells

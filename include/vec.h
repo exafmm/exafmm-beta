@@ -86,6 +86,11 @@ public:
     for_i s<<a[i]<<' ';
     return s;
   }
+  friend T norm(vec const &b) {
+    T c=0;
+    for_i c+=b[i]*b[i];
+    return c;
+  }
 };
 #undef for_i
 #endif

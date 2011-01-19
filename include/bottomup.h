@@ -41,11 +41,11 @@ public:
       int level = getLevel(Ibody[0]);                           //  Current level
       bigint cOff = ((1 << 3*level) - 1)/7;                     //  Current Morton offset
       bigint pOff = ((1 << 3*(l-1)) - 1)/7;                     //  Parent Morton offset
-      int icell = ((Ibody[0]-cOff) >> 3*(level-l+1)) + pOff;    //  Current cell index
+      bigint icell = ((Ibody[0]-cOff) >> 3*(level-l+1)) + pOff; //  Current cell index
       int begin = 0;                                            //  Begin index for bodies in cell
       int size = 0;                                             //  Number of bodies in cell
       int b = 0;                                                //  Current body index
-      for( B=bodies.begin(); B!=bodies.end(); ++B,++b ) {       //  Loop over all bodies
+      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {//  Loop over all bodies
         level = getLevel(Ibody[b]);                             //   Level of twig
         cOff = ((1 << 3*level) - 1)/7;                          //   Offset of twig
         bigint p = ((Ibody[b]-cOff) >> 3*(level-l+1)) + pOff;   //   Index of parent cell
@@ -70,7 +70,8 @@ public:
   }
 
   void grow(Bodies &buffer, int level=0, int begin=0, int end=0) { // Grow tree by splitting cells
-    int icell(Ibody[begin]),off(begin),size(0);                 // Initialize cell index, offset, and size
+    bigint icell(Ibody[begin]);                                 // Initialize cell index
+    int off(begin), size(0);                                    // Initialize offset, and size
     if( level == 0 ) level = getMaxLevel();                     // Max level for bottom up tree build
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
     for( int b=begin; b!=end; ++b ) {                           // Loop over all bodies under consideration

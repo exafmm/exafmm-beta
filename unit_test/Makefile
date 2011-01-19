@@ -5,14 +5,14 @@ morton: morton.cxx
 	./a.out
 
 bottomup: bottomup.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
 topdown : topdown.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
-upward : upward.cxx
+treecode: treecode.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 

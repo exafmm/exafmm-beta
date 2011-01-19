@@ -2,21 +2,19 @@
 #define tree_h
 #include "types.h"
 #include "sort.h"
+#include "kernel.h"
 
 class TreeStructure : public Sort {
 protected:
   Bodies &bodies;                                               // Bodies in the tree
-  B_iter B;                                                     // Body iterator for target = source
-  B_iter Bi;                                                    // Body iterator for target
-  B_iter Bj;                                                    // Body iterator for source
   Cells  cells;                                                 // Cells in the tree
-  C_iter C;                                                     // Cell iterator
   C_iter C0;                                                    // Cell iterator begin index
   C_iter CN;                                                    // Cell iterator end index
   C_iter CC0;                                                   // Cell iterator begin index (level-wise)
   C_iter CCN;                                                   // Cell iterator end index (level-wise)
   vect X0;                                                      // Center of root cell
   real R0;                                                      // Radius of root cell
+  Kernel K;                                                     // Kernels
 public:
   bigint *Ibody;                                                // Morton index of body
   bigint *Icell;                                                // Morton index of cell
@@ -26,7 +24,7 @@ public:
     Ibody = new bigint [N];                                     // Allocate Morton index of body
     Icell = new bigint [N];                                     // Allocate Morton index of cell
     cells.resize(N);                                            // Resize cell vector
-    for( C=cells.begin(); C!=cells.end(); ++C ) {               // Loop over all cells
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over all cells
       C->NLEAF = 0;                                             //  Initialize number of leafs per cell
       C->NCHILD = 0;                                            //  Initialize flag for empty child cells
     }                                                           // End loop over all cells
@@ -42,7 +40,7 @@ public:
 
   void setDomain() {                                            // Set center and size of root cell
     vect xmin,xmax;                                             // Min,Max of domain
-    B = bodies.begin();                                         // Reset body iterator
+    B_iter B = bodies.begin();                                  // Reset body iterator
     xmin = xmax = B->pos;                                       // Initialize xmin,xmax
     for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over all bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
@@ -69,11 +67,27 @@ public:
     return level;                                               // Return the level
   }
 
+  void getCenter() {                                            // Get cell center and radius
+    int level = getLevel(CN->I);                                // Get level from Morton index
+    bigint index = CN->I - ((1 << 3*level) - 1)/7;              // Subtract Morton offset of current level
+    CN->R = R0 / (1 << level);                                  // Cell radius
+    int d = level = 0;                                          // Initialize dimension and level
+    vec<3,int> nx = 0;                                          // Initialize 3-D index
+    while( index != 0 ) {                                       // Deinterleave bits while index is nonzero
+      nx[d] += (index % 2) * (1 << level);                      //  Add deinterleaved bit to 3-D index
+      index >>= 1;                                              //  Right shift the bits
+      d = (d+1) % 3;                                            //  Increment dimension
+      if( d == 0 ) level++;                                     //  If dimension is 0 again, increment level
+    }                                                           // End while loop for deinterleaving bits
+    for( d=0; d!=3; ++d )                                       // Loop over dimensions
+      CN->X[d] = (X0[d]-R0) + (2 *nx[d] + 1) * CN->R;           //  Calculate cell center from 3-D index
+  }
+
   bigint getParent(bigint index) {                              // Get parent Morton index from current index
     int level = getLevel(index);                                // Get level from Morton index
-    int cOffset = ((1 << 3*level) - 1)/7;                       // Morton offset of current level
-    int pOffset = ((1 << 3*(level-1)) - 1)/7;                   // Morton offset of parent level
-    bigint i = ((index-cOffset) >> 3) + pOffset;                // Morton index of parent cell
+    bigint cOff = ((1 << 3*level) - 1)/7;                       // Morton offset of current level
+    bigint pOff = ((1 << 3*(level-1)) - 1)/7;                   // Morton offset of parent level
+    bigint i = ((index-cOff) >> 3) + pOff;                      // Morton index of parent cell
     return i;                                                   // Return Morton index of parent cell
   }
 
@@ -81,22 +95,26 @@ public:
     int begin = CC0-C0;                                         // Begin index for current level
     int end = CCN-C0;                                           // End index for current level
     int c = begin;                                              // Initialize counter for Icell
-    for( C=CC0; C!=CCN; ++C,++c ) Icell[c] = C->I;              // Fill Icell with Morton index
+    for( C_iter C=CC0; C!=CCN; ++C,++c ) Icell[c] = C->I;       // Fill Icell with Morton index
     sort(Icell,cells,buffer,false,begin,end);                   // Sort cells according to Icell
   }
 
   void linkParent(Cells &buffer) {                              // Form parent-child mutual link
     CCN = CN;                                                   // Initialize end iterator for this level
     sortCells(buffer);                                          // Sort cells at this level
-    CN->I = getParent(CC0->I);                                  // Assign parent cell index
-    CN->LEAF = CC0->LEAF;                                       // Assign pointer to first leaf
-    for( C=CC0; C!=CCN; ++C ) {                                 // Loop over all cells at this level
+    CN->I = getParent(CC0->I);                                  // Set Morton index
+    CN->LEAF = CC0->LEAF;                                       // Set pointer to first leaf
+    getCenter();                                                // Set cell center and radius
+    for( C_iter C=CC0; C!=CCN; ++C ) {                          // Loop over all cells at this level
       if( getParent(C->I) != CN->I ) {                          //  If it belongs to a new parent cell
         ++CN;                                                   //   Increment cell iterator
-        CN->I = getParent(C->I);                                //   Assign parent cell index
-        CN->LEAF = C->LEAF;                                     //   Assign pointer to first leaf
+        CN->I = getParent(C->I);                                //   Set Morton index
+        CN->LEAF = C->LEAF;                                     //   Set pointer to first leaf
+        getCenter();                                            //   Set cell center and radius
       }                                                         //  Endif for new parent cell
-      C->PARENT = CN;                                           //  Link to parent
+      for( int i=0; i!=C->NCHILD; ++i )                         //  Loop over child cells
+        C->CHILD[i]->PARENT = C;                                //   Link to child to current
+      C->PARENT = CN;                                           //  Link to current to parent
       CN->NLEAF += C->NLEAF;                                    //  Add nleaf of child to parent
       CN->CHILD[CN->NCHILD] = C;                                //  Link to child
       CN->NCHILD++;                                             //  Increment child counter
@@ -111,12 +129,14 @@ public:
     B_iter begin(bodies.begin());                               // Initialize body iterator
     Cells buffer(cells.size());                                 // Allocate sort buffer for cells
     int b = 0;                                                  // Initialize body counter
-    for( B=bodies.begin(); B!=bodies.end(); ++B,++b ) {         // Loop over all bodies
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {  // Loop over all bodies
+      B->pot -= B->scal / std::sqrt(EPS2);                      //  Initialize body values
       if( Ibody[b] != icell ) {                                 //  If it belongs to a new cell
         CN->NLEAF = size;                                       //   Set number of leafs
         CN->NCHILD = 0;                                         //   Set number of child cells
         CN->I = icell;                                          //   Set Morton index
         CN->LEAF = begin;                                       //   Set pointer to first leaf
+        getCenter();                                            //   Set cell center and radius
         ++CN;                                                   //   Increment cell iterator
         if( getLevel(Ibody[b]) != level ) {                     //   If cell belongs to a new level
           linkParent(buffer);                                   //    Form parent-child mutual link
@@ -132,14 +152,36 @@ public:
     CN->NCHILD = 0;                                             // Set number of child cells
     CN->I = icell;                                              // Set Morton index
     CN->LEAF = begin;                                           // Set pointer to first leaf
+    getCenter();                                                // Set cell center and radius
     ++CN;                                                       // Increment cell iterator
     for( int l=level; l>0; --l ) {                              // Once all the twigs are done, do the rest
       linkParent(buffer);                                       //  Form parent-child mutual link
     }                                                           // End upward sweep
+  }
 
-    for( C=C0; C!=CN; ++C ) {
-//      std::cout << C->I << " " << C->NLEAF << std::endl;
-    }
+  void P2M() {                                                  // Interface for P2M kernel
+    for( C_iter C=C0; C!=CN; ++C ) {                            // Loop over all cells
+      C->M = 0;                                                 //  Initialize multipole coefficients
+      if( C->NLEAF < NCRIT ) {                                  //  If cell is a twig
+        K.P2M(C);                                               //   Evaluate P2M kernel
+      }                                                         //  Endif for twigs
+    }                                                           // End loop over cells
+  }
+
+  void M2M() {                                                  // Interface for M2M kernel
+    for( C_iter C=C0; C!=CN-1; ++C ) {                          // Loop over all cells (except root cell)
+      C_iter P = C->PARENT;                                     //  Iterator for partent cell
+      K.M2M(C,P);                                               //  Evaluate M2M kernel
+    }                                                           // End loop over cells
+  }
+
+  void M2P() {                                                  // Interface for M2P kernel
+    for( C_iter CI=C0; CI!=CN; ++CI ) {                         // Loop over all target cells
+      if( CI->NLEAF < NCRIT ) {                                 //  If cell is a twig
+        C_iter CJ = CN-1;                                       //   Initialize source cells
+        K.M2P(CI,CJ);                                           //   Evaluate M2P kernel
+      }                                                         //  Endif for twigs
+    }                                                           // End loop over target cells
   }
 
 };

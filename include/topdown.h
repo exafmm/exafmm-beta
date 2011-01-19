@@ -36,8 +36,8 @@ private:
     }
 
     void addChild(int const i, N_iter &N) {                     // Add child node and link it
-      int pOffset = ((1 << 3*LEVEL) - 1)/7;                     // Parent Morton offset
-      int cOffset = ((1 << 3*(LEVEL+1)) - 1)/7;                 // Current Morton offset
+      bigint pOff = ((1 << 3*LEVEL) - 1)/7;                     // Parent Morton offset
+      bigint cOff = ((1 << 3*(LEVEL+1)) - 1)/7;                 // Current Morton offset
       vect x(X);                                                // Initialize new center position with old center
       real r(R/2);                                              // Initialize new size
       for( int d=0; d!=3; ++d )                                 // Loop over dimensions
@@ -45,7 +45,7 @@ private:
       CHILD[i] = ++N;                                           // Increment node pointer and assign to child
       CHILD[i]->init(x,r);                                      // Initialize child node
       CHILD[i]->LEVEL=LEVEL+1;                                  // Level of child node
-      CHILD[i]->I = ((I-pOffset) << 3) + i + cOffset;           // Morton index of child node
+      CHILD[i]->I = ((I-pOff) << 3) + i + cOff;                 // Morton index of child node
       ICHILD |= (1 << i);                                       // Flip bit of octant
     }
 
@@ -79,7 +79,7 @@ public:
     N0->I = 0;                                                  // Morton index of root node
     N0->LEVEL = 0;                                              // Level of root node
     NN = N0;                                                    // Keep copy for node counter
-    for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over all bodies
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
       N_iter N=N0;                                              //  Reset node iterator
       while( N->NLEAF >= NCRIT ) {                              //  While the nodes have children
         N->NLEAF++;                                             //   Increment the cumulative leaf counter
