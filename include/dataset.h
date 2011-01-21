@@ -23,7 +23,7 @@ public:
         B->pos[d] = rand()/(1.+RAND_MAX)*2-1;                   //   Initialize positions
       real r = sqrt(norm(B->pos));                              //  Distance from center
       for( int d=0; d!=3; ++d )                                 //  Loop over each dimension
-        B->pos[d] /= r;                                         //   Normalize positions
+        B->pos[d] /= r*1.1;                                     //   Normalize positions
       B->scal = 1./bodies.size();                               //  Initialize source value
     }                                                           // End loop over all bodies
   }

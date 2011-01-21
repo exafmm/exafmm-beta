@@ -17,9 +17,9 @@ int main()
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  D.random();
+  D.sphere();
   toc = get_time();
-  std::cout << "Initialize    : " << toc-tic << std::endl;
+  std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
   T.setDomain();

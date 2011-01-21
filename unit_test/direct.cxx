@@ -13,12 +13,12 @@ int main()
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  D.random();
+  D.sphere();
   toc = get_time();
-  std::cout << "Initialize    : " << toc-tic << std::endl;
+  std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
-  K.direct(bodies.begin(),bodies.end());
+  K.P2P(bodies.begin(),bodies.end());
   toc = get_time();
   std::cout << "Direct sum    : " << toc-tic << std::endl;
 

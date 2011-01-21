@@ -20,7 +20,7 @@ int main()
   tic = get_time();
   D.random();
   toc = get_time();
-  std::cout << "Initialize    : " << toc-tic << std::endl;
+  std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
   T.setDomain();
@@ -68,18 +68,17 @@ int main()
   std::cout << "M2M           : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.M2P();
+  T.evaluate();
   toc = get_time();
-  std::cout << "M2P           : " << toc-tic << std::endl;
+  std::cout << "M2P+P2P       : " << toc-tic << std::endl;
 
   tic = get_time();
   Kernel K;
   bodies2 = bodies;
-  K.direct(bodies2.begin(),bodies2.end());
+  K.P2P(bodies2.begin(),bodies2.end());
   toc = get_time();
-  std::cout << "Direct        : " << toc-tic << std::endl;
+  std::cout << "Direct sum    : " << toc-tic << std::endl;
 
-  tic = get_time();
   B_iter B  = bodies.begin();
   B_iter B2 = bodies2.begin();
   real err(0), rel(0);
@@ -87,7 +86,6 @@ int main()
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
   }
-  toc = get_time();
   std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
 #ifdef VTK
   T.sort(T.Ibody,bodies,bodies2);

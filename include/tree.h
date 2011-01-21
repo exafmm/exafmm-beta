@@ -171,15 +171,32 @@ public:
   void M2M() {                                                  // Interface for M2M kernel
     for( C_iter C=C0; C!=CN-1; ++C ) {                          // Loop over all cells (except root cell)
       C_iter P = C->PARENT;                                     //  Iterator for partent cell
-      K.M2M(C,P);                                               //  Evaluate M2M kernel
+      K.M2M(P,C);                                               //  Evaluate M2M kernel
     }                                                           // End loop over cells
   }
 
-  void M2P() {                                                  // Interface for M2P kernel
+  void traverse(C_iter CI, C_iter CJ) {                         // Tree traversal
+    if( CJ->NLEAF >= NCRIT ) {                                  // If cell has children
+      for( int i=0; i<CJ->NCHILD; i++ ) {                       //  Loop over children
+        C_iter CC = CJ->CHILD[i];                               //   Iterator for child cell
+        vect dist = CI->X - CC->X;                              //   Distance vector between cells
+        real R = std::sqrt(norm(dist));                         //   Distance between cells
+        if( CI->R+CC->R > THETA*R ) {                           //   If box is too large
+          traverse(CI,CC);                                      //    Recursively search child cells
+        } else {                                                //   If box is small enough
+          K.M2P(CI,CC);                                         //    Evaluate M2P kernel
+        }                                                       //   Endif for MAC
+      }                                                         //  End loop over children
+    } else {                                                    // If cell is twig
+      K.P2P(CI->LEAF,CI->LEAF+CI->NLEAF,CJ->LEAF,CJ->LEAF+CJ->NLEAF); // Evaluate P2P kernel
+    }                                                           // Endif for twigs
+  }
+
+  void evaluate() {                                             // Evaluate expansion
     for( C_iter CI=C0; CI!=CN; ++CI ) {                         // Loop over all target cells
       if( CI->NLEAF < NCRIT ) {                                 //  If cell is a twig
         C_iter CJ = CN-1;                                       //   Initialize source cells
-        K.M2P(CI,CJ);                                           //   Evaluate M2P kernel
+        traverse(CI,CJ);                                        //   Traverse tree
       }                                                         //  Endif for twigs
     }                                                           // End loop over target cells
   }

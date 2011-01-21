@@ -5,12 +5,20 @@
 int main()
 {
   int const Nbody=5000;
+  double tic,toc;
   Bodies bodies(Nbody);
   TreeStructure T(bodies);
   Dataset D(bodies);
 
-  D.random();
+  tic = get_time();
+  D.sphere();
+  toc = get_time();
+  std::cout << "Set bodies    : " << toc-tic << std::endl;
+
+  tic = get_time();
   T.setDomain();
+  toc = get_time();
+  std::cout << "Set domain    : " << toc-tic << std::endl;
 
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());

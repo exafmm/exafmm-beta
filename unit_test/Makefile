@@ -12,6 +12,10 @@ topdown : topdown.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
+kernel  : kernel.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	./a.out
+
 treecode: treecode.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
