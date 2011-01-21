@@ -95,7 +95,7 @@ public:
   void L2L(C_iter CI, C_iter CJ) {                              // Evaluate L2L kernel
     vect dist = CI->X - CJ->X;                                  // Distance between cell centers
     for( int i=0; i<10; ++i )
-      CI->L[i] = CJ->L[i];
+      CI->L[i] += CJ->L[i];
     CI->L[0] += CJ->L[1] * dist[0];
     CI->L[0] += CJ->L[2] * dist[1];
     CI->L[0] += CJ->L[3] * dist[2];

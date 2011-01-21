@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include <stack>
 #include <vector>
 #include "gettime.h"
 #include "vec.h"
@@ -43,5 +44,12 @@ struct cell {                                                   // Structure for
 #undef C_iter
 typedef std::vector<cell>           Cells;                      // Vector of cells
 typedef std::vector<cell>::iterator C_iter;                     // Iterator for cell vector
+
+struct pair {                                                   // Structure for pair of interacting cells
+  C_iter CI;                                                    // Target cell iterator
+  C_iter CJ;                                                    // Source cell iterator
+  pair(C_iter ci, C_iter cj) : CI(ci), CJ(cj) {}                // Constructor
+};
+typedef std::stack<pair>            Stack;                      // Stack of interacting cells
 
 #endif

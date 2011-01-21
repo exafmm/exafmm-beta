@@ -68,9 +68,9 @@ int main()
   std::cout << "M2M           : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.evaluate();
+  T.evaluate(1);
   toc = get_time();
-  std::cout << "M2P+P2P       : " << toc-tic << std::endl;
+  std::cout << "Evaluate      : " << toc-tic << std::endl;
 
   tic = get_time();
   Kernel K;
