@@ -125,7 +125,7 @@ public:
   }
 
   void link() {                                                 // Link cells to create tree
-    CCN = CC0 = CN = C0 = cells.begin()+1;                      // Initialize cell iterators
+    CCN = CC0 = CN = C0 = cells.begin();                        // Initialize cell iterators
     int icell(Ibody[0]),size(0),level(getLevel(icell));         // Initialize cell index, size, level
     B_iter begin(bodies.begin());                               // Initialize body iterator
     Cells buffer(cells.size());                                 // Allocate sort buffer for cells
@@ -172,8 +172,7 @@ public:
 
   void M2M() {                                                  // Interface for M2M kernel
     for( C_iter C=C0; C!=CN-1; ++C ) {                          // Loop over all cells bottomup (except root cell)
-      C_iter P = C->PARENT;                                     //  Iterator for partent cell
-      K.M2M(P,C);                                               //  Evaluate M2M kernel
+      K.M2M(C->PARENT,C);                                       //  Evaluate M2M kernel
     }                                                           // End loop over cells
   }
 
