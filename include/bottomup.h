@@ -10,24 +10,24 @@ public:
   int getMaxLevel() {                                           // Max level for bottom up tree build
     int const N = bodies.size();                                // Number of bodies
     int level;                                                  // Define max level
-    level = N >= NCRIT ? 1+log(N/NCRIT)/M_LN2/3 : 0;            // Decide max level from N/Ncrit
+    level = N >= NCRIT ? 1 + int(log(N / NCRIT)/M_LN2/3) : 0;   // Decide max level from N/Ncrit
     return level;                                               // Return max level
   }
 
   void setMorton(int level=0, int begin=0, int end=0 ) {        // Set Morton index of all bodies
     bigint i;                                                   // Levelwise Morton index
     if( level == 0 ) level = getMaxLevel();                     // Decide max level
-    bigint off = ((1 << 3*level) - 1)/7;                        // Offset for each level
+    bigint off = ((1 << 3*level) - 1) / 7;                      // Offset for each level
     real r = R0 / (1 << (level-1));                             // Radius at finest level
     vec<3,int> nx;                                              // Define 3-D index
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
     for( int b=begin; b!=end; ++b ) {                           // Loop over all bodies
       for( int d=0; d!=3; ++d )                                 //  Loop over dimension
-        nx[d] = int( ( bodies.at(b).pos[d]-(X0[d]-R0) )/r );    //   3-D index
+        nx[d] = int( ( bodies.at(b).pos[d] - (X0[d]-R0) ) / r );//   3-D index
       i = 0;                                                    //  Initialize Morton index
       for( int l=0; l!=level; ++l ) {                           //  Loop over all levels of tree
         for( int d=0; d!=3; ++d ) {                             //   Loop over dimension
-          i += nx[d]%2 << (3*l+d);                              //    Accumulate Morton index
+          i += nx[d] % 2 << (3 * l + d);                        //    Accumulate Morton index
           nx[d] >>= 1;                                          //    Bitshift 3-D index
         }                                                       //   End loop over dimension
       }                                                         //  End loop over levels
@@ -39,15 +39,15 @@ public:
     int maxLevel = getMaxLevel();                               // Max level for bottom up tree build
     for( int l=maxLevel; l>0; --l ) {                           // Loop upwards from bottom level
       int level = getLevel(Ibody[0]);                           //  Current level
-      bigint cOff = ((1 << 3*level) - 1)/7;                     //  Current Morton offset
-      bigint pOff = ((1 << 3*(l-1)) - 1)/7;                     //  Parent Morton offset
+      bigint cOff = ((1 << 3 * level) - 1) / 7;                 //  Current Morton offset
+      bigint pOff = ((1 << 3 * (l-1)) - 1) / 7;                 //  Parent Morton offset
       bigint icell = ((Ibody[0]-cOff) >> 3*(level-l+1)) + pOff; //  Current cell index
       int begin = 0;                                            //  Begin index for bodies in cell
       int size = 0;                                             //  Number of bodies in cell
       int b = 0;                                                //  Current body index
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {//  Loop over all bodies
         level = getLevel(Ibody[b]);                             //   Level of twig
-        cOff = ((1 << 3*level) - 1)/7;                          //   Offset of twig
+        cOff = ((1 << 3*level) - 1) / 7;                        //   Offset of twig
         bigint p = ((Ibody[b]-cOff) >> 3*(level-l+1)) + pOff;   //   Index of parent cell
         if( p != icell ) {                                      //   If it's a new parent cell
           if( size < NCRIT ) {                                  //    If parent cell has few enough bodies

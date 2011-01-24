@@ -1,12 +1,11 @@
 #include "dataset.h"
 #include "kernel.h"
 
-int main()
-{
+int main() {
   double tic,toc;
-  int const Nbody=10000;
+  int const numBodies(10000);
   tic = get_time();
-  Bodies bodies(Nbody);
+  Bodies bodies(numBodies);
   Dataset D(bodies);
   Kernel K;
   toc = get_time();

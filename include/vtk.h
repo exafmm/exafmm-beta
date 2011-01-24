@@ -20,7 +20,7 @@
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 #include "types.h"
-int const maxGroups = 1000000;
+int const maxGroups(1000000);
 
 class vtkSliderCallback : public vtkCommand
 {
@@ -49,14 +49,14 @@ public:
   void setDomain(real const r0, vect const x0) {
     hexPoints = vtkPoints::New();
     hexPoints->SetNumberOfPoints(8);
-    hexPoints->SetPoint(0,x0[0]-r0,x0[1]-r0,x0[2]-r0);
-    hexPoints->SetPoint(1,x0[0]+r0,x0[1]-r0,x0[2]-r0);
-    hexPoints->SetPoint(2,x0[0]+r0,x0[1]+r0,x0[2]-r0);
-    hexPoints->SetPoint(3,x0[0]-r0,x0[1]+r0,x0[2]-r0);
-    hexPoints->SetPoint(4,x0[0]-r0,x0[1]-r0,x0[2]+r0);
-    hexPoints->SetPoint(5,x0[0]+r0,x0[1]-r0,x0[2]+r0);
-    hexPoints->SetPoint(6,x0[0]+r0,x0[1]+r0,x0[2]+r0);
-    hexPoints->SetPoint(7,x0[0]-r0,x0[1]+r0,x0[2]+r0);
+    hexPoints->SetPoint(0, x0[0]-r0, x0[1]-r0, x0[2]-r0);
+    hexPoints->SetPoint(1, x0[0]+r0, x0[1]-r0, x0[2]-r0);
+    hexPoints->SetPoint(2, x0[0]+r0, x0[1]+r0, x0[2]-r0);
+    hexPoints->SetPoint(3, x0[0]-r0, x0[1]+r0, x0[2]-r0);
+    hexPoints->SetPoint(4, x0[0]-r0, x0[1]-r0, x0[2]+r0);
+    hexPoints->SetPoint(5, x0[0]+r0, x0[1]-r0, x0[2]+r0);
+    hexPoints->SetPoint(6, x0[0]+r0, x0[1]+r0, x0[2]+r0);
+    hexPoints->SetPoint(7, x0[0]-r0, x0[1]+r0, x0[2]+r0);
   }
 
   void setGroup(int const Igroup, int const Npoints) {

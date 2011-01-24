@@ -2,11 +2,10 @@
 #include "tree.h"
 #include "vtk.h"
 
-int main()
-{
-  int const Nbody=5000;
+int main() {
+  int const numBodies(5000);
   double tic,toc;
-  Bodies bodies(Nbody);
+  Bodies bodies(numBodies);
   TreeStructure T(bodies);
   Dataset D(bodies);
 

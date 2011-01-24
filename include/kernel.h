@@ -6,10 +6,10 @@ class Kernel {
 public:
   void P2P(B_iter B0, B_iter BN) {
     for( B_iter Bi=B0; Bi!=BN; ++Bi ) {
-      real pot(-Bi->scal/sqrtf(EPS2));
+      real pot(-Bi->scal / std::sqrt(EPS2));
       for( B_iter Bj=B0; Bj!=BN; ++Bj ) {
         vect dist = Bi->pos - Bj->pos;
-        real r = std::sqrt(norm(dist)+EPS2);
+        real r = std::sqrt(norm(dist) + EPS2);
         pot += Bj->scal / r;
       }
       Bi->pot = pot;
@@ -20,7 +20,7 @@ public:
     for( B_iter Bi=Bi0; Bi!=BiN; ++Bi ) {
       for( B_iter Bj=Bj0; Bj!=BjN; ++Bj ) {
         vect dist = Bi->pos - Bj->pos;
-        real r = std::sqrt(norm(dist)+EPS2);
+        real r = std::sqrt(norm(dist) + EPS2);
         Bi->pot += Bj->scal / r;
       }
     }
@@ -150,7 +150,6 @@ public:
       B->pot += CJ->M[9] * (3 * dist[2] * dist[0] / R5);
     }
   }
-
 
 };
 

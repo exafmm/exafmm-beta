@@ -1,26 +1,21 @@
 #include "mympi.h"
 
-int main(int argc, char **argv) {
-  int const N(16);
-  int nprocs,myrank;
+int main() {
+  int const numData(16);
   int *data,*scnt;
-  MPI_Init(&argc,&argv);
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
-  MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
   MyMPI mpi;
 
-  data = new int [N];
-  scnt = new int [nprocs];
-  for( int i=0; i!=N; ++i ) data[i] = i;
-  for( int irank=0; irank!=nprocs; ++irank ) scnt[irank] = irank+1;
+  data = new int [numData];
+  scnt = new int [mpi.size()];
+  for( int i=0; i!=numData; ++i ) data[i] = i;
+  for( int irank=0; irank!=mpi.size(); ++irank ) scnt[irank] = irank + 1;
   mpi.print("(before)\n",0);
-  mpi.print(data,0,N);
+  mpi.print(data,0,numData);
 
-  mpi.alltoallv(data,N,scnt);
+  mpi.alltoallv(data,numData,scnt);
 
   mpi.print("(after)\n",0);
-  mpi.print(data,0,(myrank+1)*nprocs);
+  mpi.print(data,0,(mpi.rank() + 1) * mpi.size());
   delete[] data;
   delete[] scnt;
-  MPI_Finalize();
 }

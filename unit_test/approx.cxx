@@ -5,13 +5,12 @@
 #include "vtk.h"
 #endif
 
-int main()
-{
+int main() {
   double tic,toc;
-  int const Nbody=10000;
+  int const numBodies(10000);
   tic = get_time();
-  Bodies bodies(Nbody);
-  Bodies bodies2(Nbody);
+  Bodies bodies(numBodies);
+  Bodies bodies2(numBodies);
   BottomUpTreeConstructor T(bodies);
   Dataset D(bodies);
   toc = get_time();
@@ -81,8 +80,8 @@ int main()
 
   B_iter B  = bodies.begin();
   B_iter B2 = bodies2.begin();
-  real err(0), rel(0);
-  for( int i=0; i!=Nbody; ++i,++B,++B2 ) {
+  real err(0),rel(0);
+  for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
   }

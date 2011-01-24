@@ -53,30 +53,30 @@ public:
     for( int i=0; i!=Nbucket; ++i )
       bucket1[i] = 0;
     for( int i=begin; i!=end; ++i )
-      bucket1[(index[i]-Imin)/Nbucket]++;
+      bucket1[(index[i] - Imin) / Nbucket]++;
     for( int i=1; i!=Nbucket; ++i )
       bucket1[i] += bucket1[i-1];
     for( int i=end-1; i>=begin; i-- ) {
-      bucket1[(index[i]-Imin)/Nbucket]--;
-      inew = bucket1[(index[i]-Imin)/Nbucket]+begin;
+      bucket1[(index[i] - Imin) / Nbucket]--;
+      inew = bucket1[(index[i] - Imin) / Nbucket]+begin;
       permut1[inew] = i;
     }
     for( int i=0; i!=Nbucket; ++i )
       bucket1[i] = 0;
     for( int i=begin; i!=end; ++i )
-      bucket1[(index[permut1[i]]-Imin)/Nbucket]++;
+      bucket1[(index[permut1[i]] - Imin) / Nbucket]++;
     int offset(0);
     for( int j=0; j!=Nbucket; ++j ) {
       if( bucket1[j] > 0 ) {
         for( int i=0; i!=Nbucket; ++i )
           bucket2[i] = 0;
         for( int i=0; i!=bucket1[j]; ++i )
-          bucket2[(index[permut1[i+offset]]-Imin)%Nbucket]++;
+          bucket2[(index[permut1[i+offset]] - Imin) % Nbucket]++;
         for( int i=1; i!=Nbucket; ++i )
           bucket2[i] += bucket2[i-1];
         for( int i=bucket1[j]-1; i>=0; --i ) {
-          bucket2[(index[permut1[i+offset]]-Imin)%Nbucket]--;
-          inew = bucket2[(index[permut1[i+offset]]-Imin)%Nbucket]+begin;
+          bucket2[(index[permut1[i+offset]] - Imin) % Nbucket]--;
+          inew = bucket2[(index[permut1[i+offset]] - Imin) % Nbucket] + begin;
           permut2[inew+offset] = i+offset;
         }
         offset += bucket1[j];
@@ -102,7 +102,7 @@ public:
   template<typename T>
   void sort(bigint *index, T &value, T &vbuffer, bool ascend=true, int begin=0, int end=0) {
     int const N = value.size();
-    int const threshold = 100000000;
+    int const threshold(100000000);
     int Nbucket(0);
     bigint Imin(index[begin]),Imax(index[begin]),Isize(0);
     if( end == 0 ) end = N;
@@ -120,7 +120,7 @@ public:
       Nbucket = Isize;
       if( Nbucket > smallAlloc ) {
         if( smallAlloc != 0 ) delete[] bucket;
-        smallAlloc = 1 << int(log(1.+Nbucket)/M_LN2/3+1)*3;
+        smallAlloc = 1 << int(log(1. + Nbucket) / M_LN2 / 3 + 1) * 3;
         bucket = new int [smallAlloc];
       }
       sortSmall(index,value,vbuffer,Imin,Nbucket,ascend,begin,end);

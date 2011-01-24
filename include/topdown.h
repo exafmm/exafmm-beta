@@ -36,15 +36,15 @@ private:
     }
 
     void addChild(int const i, N_iter &N) {                     // Add child node and link it
-      bigint pOff = ((1 << 3*LEVEL) - 1)/7;                     // Parent Morton offset
-      bigint cOff = ((1 << 3*(LEVEL+1)) - 1)/7;                 // Current Morton offset
+      bigint pOff = ((1 << 3* LEVEL   ) - 1) / 7;               // Parent Morton offset
+      bigint cOff = ((1 << 3*(LEVEL+1)) - 1) / 7;               // Current Morton offset
       vect x(X);                                                // Initialize new center position with old center
       real r(R/2);                                              // Initialize new size
       for( int d=0; d!=3; ++d )                                 // Loop over dimensions
         x[d] += r * (((i & 1 << d) >> d) * 2 - 1);              //  Calculate new center position
       CHILD[i] = ++N;                                           // Increment node pointer and assign to child
       CHILD[i]->init(x,r);                                      // Initialize child node
-      CHILD[i]->LEVEL=LEVEL+1;                                  // Level of child node
+      CHILD[i]->LEVEL = LEVEL + 1;                              // Level of child node
       CHILD[i]->I = ((I-pOff) << 3) + i + cOff;                 // Morton index of child node
       ICHILD |= (1 << i);                                       // Flip bit of octant
     }

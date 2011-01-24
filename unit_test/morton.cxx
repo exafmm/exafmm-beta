@@ -4,13 +4,12 @@
 #include "vtk.h"
 #endif
 
-int main()
-{
+int main() {
   double tic,toc;
-  int const Nbody=1000000;
+  int const numBodies(1000000);
   tic = get_time();
-  Bodies bodies(Nbody);
-  Bodies bodies2(Nbody);
+  Bodies bodies(numBodies);
+  Bodies bodies2(numBodies);
   BottomUpTreeConstructor T(bodies);
   Dataset D(bodies);
   toc = get_time();

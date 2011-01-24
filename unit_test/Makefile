@@ -45,11 +45,20 @@ alltoallv: alltoallv.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	mpirun -np 4 ./a.out
 
+median   : median.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	mpirun -np 8 ./a.out
+
 all      :
 	make morton
 	make bottomup
 	make topdown
+	make kernel
+	make approx
+	make direct
+	make taylor
 	make vtk
 	make mpi
 	make alltoall
 	make alltoallv
+	make median

@@ -1,11 +1,10 @@
 #include "kernel.h"
 
-int main()
-{
-  int const Nbody=10;
-  Bodies bodiesI(Nbody);
-  Bodies bodiesI2(Nbody);
-  Bodies bodiesJ(Nbody);
+int main() {
+  int const numBodies(10);
+  Bodies bodiesI(numBodies);
+  Bodies bodiesI2(numBodies);
+  Bodies bodiesJ(numBodies);
   Cells  cells(4);
   Kernel K;
 
@@ -23,7 +22,7 @@ int main()
     }
 
     C_iter C = cells.begin();
-    C->NLEAF = Nbody;
+    C->NLEAF = numBodies;
     C->LEAF = bodiesJ.begin();
     C->X = 0.5;
     C->M = 0;
@@ -34,7 +33,7 @@ int main()
     C->X = -1 - dist;
     C->L = 0;
     C++;
-    C->NLEAF = Nbody;
+    C->NLEAF = numBodies;
     C->LEAF = bodiesI.begin();
     C->X = -0.5 - dist;
     C->L = 0;
@@ -62,7 +61,7 @@ int main()
     B_iter B  = bodiesI.begin();
     B_iter B2 = bodiesI2.begin();
     real err(0), rel(0);
-    for( int i=0; i!=Nbody; ++i,++B,++B2 ) {
+    for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
       err += (B->pot - B2->pot) * (B->pot - B2->pot);
       rel += B2->pot * B2->pot;
     }

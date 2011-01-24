@@ -53,10 +53,10 @@ public:
     X0 /= bodies.size();                                        // Calculate average position
     for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
       X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
-      R0 = std::max(xmax[d]-X0[d],R0);                          //  Calculate max distance from center
-      R0 = std::max(X0[d]-xmin[d],R0);                          //  Calculate max distance from center
+      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
+      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
     }                                                           // End loop over each dimension
-    R0 = pow(2.,int(1.+log(R0)/M_LN2));                         // Add some leeway to root radius
+    R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
   }
 
   int getLevel(bigint index) {                                  // Get level from Morton index
@@ -70,7 +70,7 @@ public:
 
   void getCenter() {                                            // Get cell center and radius
     int level = getLevel(CN->I);                                // Get level from Morton index
-    bigint index = CN->I - ((1 << 3*level) - 1)/7;              // Subtract Morton offset of current level
+    bigint index = CN->I - ((1 << 3*level) - 1) / 7;            // Subtract Morton offset of current level
     CN->R = R0 / (1 << level);                                  // Cell radius
     int d = level = 0;                                          // Initialize dimension and level
     vec<3,int> nx = 0;                                          // Initialize 3-D index
@@ -86,8 +86,8 @@ public:
 
   bigint getParent(bigint index) {                              // Get parent Morton index from current index
     int level = getLevel(index);                                // Get level from Morton index
-    bigint cOff = ((1 << 3*level) - 1)/7;                       // Morton offset of current level
-    bigint pOff = ((1 << 3*(level-1)) - 1)/7;                   // Morton offset of parent level
+    bigint cOff = ((1 << 3 *  level   ) - 1) / 7;               // Morton offset of current level
+    bigint pOff = ((1 << 3 * (level-1)) - 1) / 7;               // Morton offset of parent level
     bigint i = ((index-cOff) >> 3) + pOff;                      // Morton index of parent cell
     return i;                                                   // Return Morton index of parent cell
   }
