@@ -1,43 +1,43 @@
 include ../Makefile
 
-morton  : morton.cxx
+morton: morton.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	./a.out
 
-bottomup : bottomup.cxx
+bottomup: bottomup.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
-topdown  : topdown.cxx
+topdown: topdown.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
-kernel   : kernel.cxx
+kernel: kernel.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
-approx   : approx.cxx
+approx: approx.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
-direct   : direct.cxx
+direct: direct.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
-taylor   : taylor.cxx
+taylor: taylor.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
-vtk      : vtk.cxx
+vtk: vtk.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	./a.out
 
-mpi      : mpi.cxx
+mpi: mpi.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) -g -pg
 	mpirun -np 128 ./a.out
 	gprof -b a.out gmon.out
 
-alltoall : alltoall.cxx
+alltoall: alltoall.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	mpirun -np 8 ./a.out
 
@@ -45,9 +45,13 @@ alltoallv: alltoallv.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	mpirun -np 4 ./a.out
 
-median   : median.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+nth_element: nth_element.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	mpirun -np 8 ./a.out
+
+multisection: multisection.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	mpirun -np 16 ./a.out
 
 all      :
 	make morton
@@ -61,4 +65,5 @@ all      :
 	make mpi
 	make alltoall
 	make alltoallv
-	make median
+	make nth_element
+	make multisection

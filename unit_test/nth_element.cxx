@@ -45,8 +45,6 @@ int main() {
 
   tic = get_time();
   bigint median = numBodies * mpi.size() / 2;
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B )
-    T.Ibody[B-bodies.begin()] = mpi.rank()*numBodies/2 + (B-bodies.begin());
   median = mpi.nth_element(T.Ibody,numBodies,median);
   toc = get_time();
   mpi.print("Nth element   : ",0);
@@ -57,10 +55,12 @@ int main() {
     T.Ibody[B-bodies.begin()] = T.Ibody[B-bodies.begin()] > median;
 
 #ifdef VTK
-  int Ncell(0);
-  vtkPlot vtk;
-  vtk.setDomain(T.getR0(),T.getX0());
-  vtk.setGroupOfPoints(T.Ibody,bodies,Ncell);
-  vtk.plot(Ncell);
+  if( mpi.rank() == 0 ) {
+    int Ncell(0);
+    vtkPlot vtk;
+    vtk.setDomain(T.getR0(),T.getX0());
+    vtk.setGroupOfPoints(T.Ibody,bodies,Ncell);
+    vtk.plot(Ncell);
+  }
 #endif
 }

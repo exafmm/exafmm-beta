@@ -12,7 +12,7 @@ protected:
   int       RANK;                                               // Index of current MPI process
 public:
   MyMPI() : WAIT(100) {                                         // Constructor, initialize WAIT time
-    int argc;                                                   // Dummy argument count
+    int argc(0);                                                // Dummy argument count
     char **argv;                                                // Dummy argument value
     MPI_Init(&argc,&argv);                                      // Initialize MPI communicator
     MPI_Comm_size(MPI_COMM_WORLD,&SIZE);                        // Get number of MPI processes
@@ -116,7 +116,7 @@ public:
         for( int irank=0; irank!=SIZE/2; ++irank ) {
           for( int i=0; i!=2; ++i ) {
             idata = (irank / npart) * 2 * npart + irank % npart + i * npart;
-            isend = i*SIZE/2+irank;
+            isend = i * SIZE / 2 + irank;
             for( int icount=0; icount!=count; ++icount )
               send[isend*count+icount] = data[idata*count+icount];
           }
@@ -125,7 +125,7 @@ public:
         for( int irank=0; irank!=SIZE/2; ++irank ) {
           for( int i=0; i!=2; ++i ) {
             idata = (irank / npart) * 2 * npart + irank % npart + i * npart;
-            irecv = i*SIZE/2+irank;
+            irecv = i * SIZE / 2 + irank;
             for( int icount=0; icount!=count; ++icount )
               data[idata*count+icount] = recv[irecv*count+icount];
           }
@@ -244,6 +244,7 @@ public:
     delete[] rcnt;
     delete[] rdsp;
   }
+
 };
 
 #endif
