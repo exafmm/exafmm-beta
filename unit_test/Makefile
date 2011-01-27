@@ -37,6 +37,10 @@ mpi: mpi.cxx
 	mpirun -np 128 ./a.out
 	gprof -b a.out gmon.out
 
+shift: shift.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
+	mpirun -np 4 ./a.out
+
 alltoall: alltoall.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	mpirun -np 8 ./a.out
@@ -51,7 +55,7 @@ nth_element: nth_element.cxx
 
 multisection: multisection.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	mpirun -np 16 ./a.out
+	mpirun -np 9 ./a.out
 
 all      :
 	make morton
@@ -63,6 +67,7 @@ all      :
 	make taylor
 	make vtk
 	make mpi
+	make shift
 	make alltoall
 	make alltoallv
 	make nth_element

@@ -73,7 +73,6 @@ public:
   void setGroupOfPoints(bigint *index, Bodies &bodies, int &Ncell) {
     int icell,begin(0),size(0);
     B_iter B;
-    Ncell = 0;
     icell = index[0];
     int b=0;
     for( B=bodies.begin(); B!=bodies.end(); ++B,++b ) {

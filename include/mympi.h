@@ -1,8 +1,10 @@
 #ifndef mympi_h
 #define mympi_h
 #include <mpi.h>
-#include <iostream>
 #include <cmath>
+#include <complex>
+#include <iostream>
+#include <typeinfo>
 
 class MyMPI {                                                   // My own MPI utilities
 private:
@@ -31,14 +33,38 @@ public:
   }
 
   template<typename T>
-  int setMPItype(T sample) {
+  int getType(T object) {
     int type;
-    switch ( sizeof(sample) ) {
-      case  1 : type = MPI_CHAR; break;
-      case  2 : type = MPI_SHORT; break;
-      case  4 : type = MPI_INT; break;
-      case  8 : type = MPI_DOUBLE; break;
-      case 16 : type = MPI_LONG_DOUBLE; break;
+    if       ( typeid(object) == typeid(char) ) {
+      type = MPI_CHAR;
+    } else if( typeid(object) == typeid(short) ) {
+      type = MPI_SHORT;
+    } else if( typeid(object) == typeid(int) ) {
+      type = MPI_INT;
+    } else if( typeid(object) == typeid(long) ) {
+      type = MPI_LONG;
+    } else if( typeid(object) == typeid(long long) ) {
+      type = MPI_LONG_LONG;
+    } else if( typeid(object) == typeid(unsigned char) ) {
+      type = MPI_UNSIGNED_CHAR;
+    } else if( typeid(object) == typeid(unsigned short) ) {
+      type = MPI_UNSIGNED_SHORT;
+    } else if( typeid(object) == typeid(unsigned int) ) {
+      type = MPI_UNSIGNED;
+    } else if( typeid(object) == typeid(unsigned long) ) {
+      type = MPI_UNSIGNED_LONG;
+    } else if( typeid(object) == typeid(unsigned long long) ) {
+      type = MPI_UNSIGNED_LONG_LONG;
+    } else if( typeid(object) == typeid(float) ) {
+      type = MPI_FLOAT;
+    } else if( typeid(object) == typeid(double) ) {
+      type = MPI_DOUBLE;
+    } else if( typeid(object) == typeid(long double) ) {
+      type = MPI_LONG_DOUBLE;
+    } else if( typeid(object) == typeid(std::complex<float>) ) {
+      type = MPI_COMPLEX;
+    } else if( typeid(object) == typeid(std::complex<double>) ) {
+      type = MPI_DOUBLE_COMPLEX;
     }
     return type;
   }

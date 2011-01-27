@@ -68,7 +68,7 @@ public:
     return level;                                               // Return the level
   }
 
-  void getCenter() {                                            // Get cell center and radius
+  void getCenter() {                                            // Get cell center and radius from Morton index
     int level = getLevel(CN->I);                                // Get level from Morton index
     bigint index = CN->I - ((1 << 3*level) - 1) / 7;            // Subtract Morton offset of current level
     CN->R = R0 / (1 << level);                                  // Cell radius
