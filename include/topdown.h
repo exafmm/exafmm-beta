@@ -10,7 +10,7 @@ private:
     int LEVEL;                                                  // Level of node
     int NLEAF;                                                  // Number of leafs in node
     int ICHILD;                                                 // Flag of empty child nodes
-    bigint I;                                                   // Morton index
+    bigint I;                                                   // Cell index
     B_iter LEAF[NCRIT];                                         // Iterator for leafs
     N_iter CHILD[8];                                            // Pointer to child nodes
     vect X;                                                     // Node center
@@ -36,8 +36,8 @@ private:
     }
 
     void addChild(int const i, N_iter &N) {                     // Add child node and link it
-      bigint pOff = ((1 << 3* LEVEL   ) - 1) / 7;               // Parent Morton offset
-      bigint cOff = ((1 << 3*(LEVEL+1)) - 1) / 7;               // Current Morton offset
+      bigint pOff = ((1 << 3* LEVEL   ) - 1) / 7;               // Parent cell index offset
+      bigint cOff = ((1 << 3*(LEVEL+1)) - 1) / 7;               // Current cell index offset
       vect x(X);                                                // Initialize new center position with old center
       real r(R/2);                                              // Initialize new size
       for( int d=0; d!=3; ++d )                                 // Loop over dimensions
@@ -45,7 +45,7 @@ private:
       CHILD[i] = ++N;                                           // Increment node pointer and assign to child
       CHILD[i]->init(x,r);                                      // Initialize child node
       CHILD[i]->LEVEL = LEVEL + 1;                              // Level of child node
-      CHILD[i]->I = ((I-pOff) << 3) + i + cOff;                 // Morton index of child node
+      CHILD[i]->I = ((I-pOff) << 3) + i + cOff;                 // Cell index of child node
       ICHILD |= (1 << i);                                       // Flip bit of octant
     }
 
@@ -76,7 +76,7 @@ public:
     int octant;                                                 // In which octant is the body located?
     N0 = nodes.begin();                                         // Set iterator to first node
     N0->init(X0,R0);                                            // Initialize root node
-    N0->I = 0;                                                  // Morton index of root node
+    N0->I = 0;                                                  // Cell index of root node
     N0->LEVEL = 0;                                              // Level of root node
     NN = N0;                                                    // Keep copy for node counter
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
@@ -103,16 +103,16 @@ public:
           traverse(N->CHILD[i]);                                //   Recursively search child node
     } else {                                                    //  If child doesn't exist
       for( int i=0; i!=N->NLEAF; ++i ) {                        //   Loop over leafs
-        Ibody[N->LEAF[i]-bodies.begin()] = N->I;                //    Store Morton index in Ibody
+        Ibody[N->LEAF[i]-bodies.begin()] = N->I;                //    Store cell index in Ibody
       }                                                         //   End loop over leafs
     }                                                           //  Endif for child existence
   }
 
-  void setMorton() {                                            // Store Morton index of all bodies
+  void setIndex() {                                             // Store cell index of all bodies
     traverse(nodes.begin());                                    // Traverse tree
   }
 
-  void sortMorton(Bodies bodies2) {                             // Sort Morton index of all bodies
+  void sortIndex(Bodies bodies2) {                              // Sort cell index of all bodies
     sort(Ibody,bodies,bodies2,false);                           // Call bucket sort
   }
 };

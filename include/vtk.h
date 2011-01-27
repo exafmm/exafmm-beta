@@ -70,12 +70,11 @@ public:
     I[Igroup]++;
   }
 
-  void setGroupOfPoints(bigint *index, Bodies &bodies, int &Ncell) {
-    int icell,begin(0),size(0);
-    B_iter B;
-    icell = index[0];
+  void setGroupOfPoints(Bigints &index, Bodies &bodies, int &Ncell) {
+    int begin(0),size(0);
+    int icell = index[0];
     int b=0;
-    for( B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
       if( index[b] != icell ) {
         setGroup(Ncell,size);
         for( int i=begin; i!=begin+size; ++i )

@@ -1,6 +1,6 @@
 include ../Makefile
 
-morton: morton.cxx
+index: index.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	./a.out
 
@@ -58,7 +58,7 @@ multisection: multisection.cxx
 	mpirun -np 9 ./a.out
 
 all      :
-	make morton
+	make index
 	make bottomup
 	make topdown
 	make kernel

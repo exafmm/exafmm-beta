@@ -33,28 +33,29 @@ int main() {
   mpi.print(toc-tic);
 
   tic = get_time();
-  T.setMorton();
-  mpi.binPosition(T.Ibody,0);
+  T.setIndex();
+  mpi.binBodies(T.Ibody,0);
   toc = get_time();
-  mpi.print("Set Index     : ",0);
+  mpi.print("Set index     : ",0);
   mpi.print(toc-tic);
 
   tic = get_time();
   T.sort(T.Ibody,bodies,bodies2);
   toc = get_time();
-  mpi.print("Sort Index    : ",0);
+  mpi.print("Sort index    : ",0);
   mpi.print(toc-tic);
 
   tic = get_time();
-  bigint nth = numBodies * mpi.size() / 3;
-  nth = mpi.nth_element(T.Ibody,numBodies,nth);
+  bigint nthGlobal = numBodies * mpi.size() / 3;
+  bigint iSplit = mpi.nth_element(&T.Ibody[0],numBodies,nthGlobal);
+  int nthLocal = mpi.splitBodies(T.Ibody,iSplit);
   toc = get_time();
   mpi.print("Nth element   : ",0);
   mpi.print(toc-tic);
-  mpi.print(nth);
-  mpi.print(T.Ibody,numBodies-10,numBodies);
+  mpi.print(iSplit);
+  mpi.print(&T.Ibody[0],numBodies-10,numBodies);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B )
-    T.Ibody[B-bodies.begin()] = T.Ibody[B-bodies.begin()] > nth;
+    T.Ibody[B-bodies.begin()] = B-bodies.begin() > nthLocal;
 
 #ifdef VTK
   if( mpi.rank() == 0 ) {

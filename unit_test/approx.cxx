@@ -27,14 +27,14 @@ int main() {
   std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.setMorton();
+  T.setIndex();
   toc = get_time();
-  std::cout << "Set Morton    : " << toc-tic << std::endl;
+  std::cout << "Set index     : " << toc-tic << std::endl;
 
   tic = get_time();
   T.sort(T.Ibody,bodies,bodies2);
   toc = get_time();
-  std::cout << "Sort Morton   : " << toc-tic << std::endl;
+  std::cout << "Sort index    : " << toc-tic << std::endl;
 
   tic = get_time();
   T.prune();

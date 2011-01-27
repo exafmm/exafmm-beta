@@ -2,36 +2,26 @@
 #define sort_h
 
 class Sort {
-protected:
+private:
   int sortAlloc,smallAlloc,largeAlloc;                          // Size of allocation for sort variables
-  int *bucket,*bucket1,*bucket2,*permut1,*permut2;              // Bucket and permutation for sorting
-  bigint *ibuffer;                                              // Index buffer for sorting
+  std::vector<int> bucket,bucket1,bucket2,permut1,permut2;      // Bucket and permutation for sorting
+  std::vector<bigint> ibuffer;                                  // Index buffer for sorting
 
 public:
   Sort() : sortAlloc(0),smallAlloc(0),largeAlloc(0) {}          // Constructor
-  ~Sort() {                                                     // Destructor
-    if( sortAlloc ) delete[] ibuffer;
-    if( smallAlloc ) delete[] bucket;
-    if( largeAlloc ) {
-      delete[] bucket1;
-      delete[] bucket2;
-      delete[] permut1;
-      delete[] permut2;
-    }
-  }
+  ~Sort() {}                                                    // Destructor
 
   template<typename T>
-  void sortSmall(bigint *index, T &value, T &vbuffer, bigint Imin,
-                 int Nbucket, bool ascend, int begin, int end) {
+  void sortSmall(Bigints &index, T &value, T &vbuffer, bigint Imin,
+                 int numBucket, bool ascend, int begin, int end) {
     int const N = value.size();
-    int inew;
     if( end == 0 ) end = N;
-    for( int i=0; i!=Nbucket; ++i ) bucket[i] = 0;
+    for( int i=0; i!=numBucket; ++i ) bucket[i] = 0;
     for( int i=begin; i!=end; ++i ) bucket[index[i]-Imin]++;
-    for( int i=1; i!=Nbucket; ++i ) bucket[i] += bucket[i-1];
-    for( int i=end-1; i>=begin; i-- ) {
+    for( int i=1; i!=numBucket; ++i ) bucket[i] += bucket[i-1];
+    for( int i=end-1; i>=begin; --i ) {
       bucket[index[i]-Imin]--;
-      inew = bucket[index[i]-Imin]+begin;
+      int inew = bucket[index[i]-Imin]+begin;
       ibuffer[inew] = index[i];
       vbuffer[inew] = value[i];
     }
@@ -45,38 +35,37 @@ public:
   }
 
   template<typename T>
-  void sortLarge(bigint *index, T &value, T &vbuffer, bigint Imin,
-                 int Nbucket, bool ascend, int begin, int end) {
+  void sortLarge(Bigints &index, T &value, T &vbuffer, bigint Imin,
+                 int numBucket, bool ascend, int begin, int end) {
     int const N = value.size();
-    int inew;
     if( end == 0 ) end = N;
-    for( int i=0; i!=Nbucket; ++i )
+    for( int i=0; i!=numBucket; ++i )
       bucket1[i] = 0;
     for( int i=begin; i!=end; ++i )
-      bucket1[(index[i] - Imin) / Nbucket]++;
-    for( int i=1; i!=Nbucket; ++i )
+      bucket1[(index[i] - Imin) / numBucket]++;
+    for( int i=1; i!=numBucket; ++i )
       bucket1[i] += bucket1[i-1];
-    for( int i=end-1; i>=begin; i-- ) {
-      bucket1[(index[i] - Imin) / Nbucket]--;
-      inew = bucket1[(index[i] - Imin) / Nbucket]+begin;
+    for( int i=end-1; i>=begin; --i ) {
+      bucket1[(index[i] - Imin) / numBucket]--;
+      int inew = bucket1[(index[i] - Imin) / numBucket]+begin;
       permut1[inew] = i;
     }
-    for( int i=0; i!=Nbucket; ++i )
+    for( int i=0; i!=numBucket; ++i )
       bucket1[i] = 0;
     for( int i=begin; i!=end; ++i )
-      bucket1[(index[permut1[i]] - Imin) / Nbucket]++;
+      bucket1[(index[permut1[i]] - Imin) / numBucket]++;
     int offset(0);
-    for( int j=0; j!=Nbucket; ++j ) {
+    for( int j=0; j!=numBucket; ++j ) {
       if( bucket1[j] > 0 ) {
-        for( int i=0; i!=Nbucket; ++i )
+        for( int i=0; i!=numBucket; ++i )
           bucket2[i] = 0;
         for( int i=0; i!=bucket1[j]; ++i )
-          bucket2[(index[permut1[i+offset]] - Imin) % Nbucket]++;
-        for( int i=1; i!=Nbucket; ++i )
+          bucket2[(index[permut1[i+offset]] - Imin) % numBucket]++;
+        for( int i=1; i!=numBucket; ++i )
           bucket2[i] += bucket2[i-1];
         for( int i=bucket1[j]-1; i>=0; --i ) {
-          bucket2[(index[permut1[i+offset]] - Imin) % Nbucket]--;
-          inew = bucket2[(index[permut1[i+offset]] - Imin) % Nbucket] + begin;
+          bucket2[(index[permut1[i+offset]] - Imin) % numBucket]--;
+          int inew = bucket2[(index[permut1[i+offset]] - Imin) % numBucket] + begin;
           permut2[inew+offset] = i+offset;
         }
         offset += bucket1[j];
@@ -100,46 +89,37 @@ public:
   }
 
   template<typename T>
-  void sort(bigint *index, T &value, T &vbuffer, bool ascend=true, int begin=0, int end=0) {
+  void sort(Bigints &index, T &value, T &vbuffer, bool ascend=true, int begin=0, int end=0) {
     int const N = value.size();
     int const threshold(100000000);
-    int Nbucket(0);
-    bigint Imin(index[begin]),Imax(index[begin]),Isize(0);
+    int numBucket(0);
     if( end == 0 ) end = N;
-    for( int i=begin; i!=end; ++i ) {
-      if     (index[i] < Imin) Imin = index[i];
-      else if(index[i] > Imax) Imax = index[i];
-    }
-    Isize = Imax-Imin+1;
+    BI_iter BI0 = index.begin()+begin;
+    BI_iter BIN = index.begin()+end;
+    bigint Imin  = *(std::min_element(BI0,BIN));
+    bigint Imax  = *(std::max_element(BI0,BIN));
+    bigint Isize = Imax - Imin + 1;
     if( N > sortAlloc ) {
-      if( sortAlloc != 0 ) delete[] ibuffer;
-      ibuffer = new bigint [N];
+      ibuffer.resize(N);
       sortAlloc = N;
     }
     if( Isize < threshold ) {
-      Nbucket = Isize;
-      if( Nbucket > smallAlloc ) {
-        if( smallAlloc != 0 ) delete[] bucket;
-        smallAlloc = 1 << int(log(1. + Nbucket) / M_LN2 / 3 + 1) * 3;
-        bucket = new int [smallAlloc];
+      numBucket = Isize;
+      if( numBucket > smallAlloc ) {
+        smallAlloc = 1 << int(log(1. + numBucket) / M_LN2 / 3 + 1) * 3;
+        bucket.resize(smallAlloc);
       }
-      sortSmall(index,value,vbuffer,Imin,Nbucket,ascend,begin,end);
+      sortSmall(index,value,vbuffer,Imin,numBucket,ascend,begin,end);
     } else {
-      Nbucket = threshold;
+      numBucket = threshold;
       if( N > largeAlloc ) {
-        if( largeAlloc != 0 ) {
-          delete[] bucket1;
-          delete[] bucket2;
-          delete[] permut1;
-          delete[] permut2;
-        }
-        bucket1 = new int [Nbucket];
-        bucket2 = new int [Nbucket];
-        permut1 = new int [N];
-        permut2 = new int [N];
+        bucket1.resize(numBucket);
+        bucket2.resize(numBucket);
+        permut1.resize(N);
+        permut2.resize(N);
         largeAlloc = N;
       }
-      sortLarge(index,value,vbuffer,Imin,Nbucket,ascend,begin,end);
+      sortLarge(index,value,vbuffer,Imin,numBucket,ascend,begin,end);
     }
   }
 };

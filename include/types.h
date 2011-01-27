@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <cmath>
+#include <complex>
 #include <cstdlib>
 #include <iostream>
 #include <stack>
@@ -10,10 +11,12 @@
 #include "gettime.h"
 #include "vec.h"
 
-typedef long long    bigint;                                    // Big integer type
+typedef long         bigint;                                    // Big integer type
 typedef float        real;                                      // Real number type
 typedef vec<3,real>  vect;                                      // 3-D vector type
 typedef vec<10,real> coef;                                      // Multipole coefficient type
+typedef std::vector<bigint>           Bigints;                  // Vector of big integer types
+typedef std::vector<bigint>::iterator BI_iter;                  // Vector of big integer types
 
 int  const NCRIT(100);                                          // Number of bodies per cell
 real const THETA(0.5);                                          // Box opening criteria
@@ -25,14 +28,14 @@ struct body {                                                   // Structure for
   vect acc;                                                     // Acceleration
   real pot;                                                     // Potential
 };
-typedef std::vector<body>           Bodies;                     // Vector of bodies
-typedef std::vector<body>::iterator B_iter;                     // Iterator for body vector
+typedef std::vector<body>             Bodies;                   // Vector of bodies
+typedef std::vector<body>::iterator   B_iter;                   // Iterator for body vector
 
 #define C_iter std::vector<cell>::iterator                      // Temporary macro for cell iterator
 struct cell {                                                   // Structure for cell
   int    NLEAF;                                                 // Number of leafs
   int    NCHILD;                                                // Number of child cells
-  bigint I;                                                     // Morton index
+  bigint I;                                                     // Cell index
   B_iter LEAF;                                                  // Pointer to first leaf
   C_iter PARENT;                                                // Pointer to parent cell
   C_iter CHILD[8];                                              // Pointer to child cells
@@ -42,14 +45,14 @@ struct cell {                                                   // Structure for
   coef   L;                                                     // Pointer to local coefficients
 };
 #undef C_iter
-typedef std::vector<cell>           Cells;                      // Vector of cells
-typedef std::vector<cell>::iterator C_iter;                     // Iterator for cell vector
+typedef std::vector<cell>             Cells;                    // Vector of cells
+typedef std::vector<cell>::iterator   C_iter;                   // Iterator for cell vector
 
 struct pair {                                                   // Structure for pair of interacting cells
   C_iter CI;                                                    // Target cell iterator
   C_iter CJ;                                                    // Source cell iterator
   pair(C_iter ci, C_iter cj) : CI(ci), CJ(cj) {}                // Constructor
 };
-typedef std::stack<pair>            Stack;                      // Stack of interacting cells
+typedef std::stack<pair>              Stack;                    // Stack of interacting cells
 
 #endif

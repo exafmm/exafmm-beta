@@ -1,6 +1,5 @@
 #ifndef tree_h
 #define tree_h
-#include "types.h"
 #include "sort.h"
 #include "kernel.h"
 
@@ -17,13 +16,13 @@ protected:
   Stack  S;                                                     // Stack of interaction pairs
   Kernel K;                                                     // Kernels
 public:
-  bigint *Ibody;                                                // Morton index of body
-  bigint *Icell;                                                // Morton index of cell
+  std::vector<bigint> Ibody;                                    // Cell index of body
+  std::vector<bigint> Icell;                                    // Cell index
 
   TreeStructure(Bodies &b) : bodies(b),X0(0),R0(0) {            // Constructor
     int const N = bodies.size();                                // Number of bodies
-    Ibody = new bigint [N];                                     // Allocate Morton index of body
-    Icell = new bigint [N];                                     // Allocate Morton index of cell
+    Ibody.resize(N);                                            // Allocate cell index of body
+    Icell.resize(N);                                            // Allocate cell index
     cells.resize(N);                                            // Resize cell vector
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over all cells
       C->NLEAF = 0;                                             //  Initialize number of leafs per cell
@@ -31,10 +30,7 @@ public:
     }                                                           // End loop over all cells
   }
 
-  ~TreeStructure() {                                            // Destructor
-    delete[] Ibody;                                             // Delete Morton index of body
-    delete[] Icell;                                             // Delete Morton index of body
-  }
+  ~TreeStructure() {}                                           // Destructor
 
   vect getX0() {return X0;}                                     // Get center of root cell
   real getR0() {return R0;}                                     // Get radius of root cell
@@ -59,57 +55,57 @@ public:
     R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
   }
 
-  int getLevel(bigint index) {                                  // Get level from Morton index
+  int getLevel(bigint index) {                                  // Get level from cell index
     int level(-1);                                              // Initialize level counter
-    while( index >= 0 ) {                                       // While Morton index is non-negative
+    while( index >= 0 ) {                                       // While cell index is non-negative
       level++;                                                  //  Increment level
       index -= 1 << 3*level;                                    //  Subtract number of cells in that level
-    }                                                           // End while loop for Morton index
+    }                                                           // End while loop for cell index
     return level;                                               // Return the level
   }
 
-  void getCenter() {                                            // Get cell center and radius from Morton index
-    int level = getLevel(CN->I);                                // Get level from Morton index
-    bigint index = CN->I - ((1 << 3*level) - 1) / 7;            // Subtract Morton offset of current level
+  void getCenter() {                                            // Get cell center and radius from cell index
+    int level = getLevel(CN->I);                                // Get level from cell index
+    bigint index = CN->I - ((1 << 3*level) - 1) / 7;            // Subtract cell index offset of current level
     CN->R = R0 / (1 << level);                                  // Cell radius
     int d = level = 0;                                          // Initialize dimension and level
-    vec<3,int> nx = 0;                                          // Initialize 3-D index
+    vec<3,int> nx = 0;                                          // Initialize 3-D cell index
     while( index != 0 ) {                                       // Deinterleave bits while index is nonzero
-      nx[d] += (index % 2) * (1 << level);                      //  Add deinterleaved bit to 3-D index
+      nx[d] += (index % 2) * (1 << level);                      //  Add deinterleaved bit to 3-D cell index
       index >>= 1;                                              //  Right shift the bits
       d = (d+1) % 3;                                            //  Increment dimension
       if( d == 0 ) level++;                                     //  If dimension is 0 again, increment level
     }                                                           // End while loop for deinterleaving bits
     for( d=0; d!=3; ++d )                                       // Loop over dimensions
-      CN->X[d] = (X0[d]-R0) + (2 *nx[d] + 1) * CN->R;           //  Calculate cell center from 3-D index
+      CN->X[d] = (X0[d]-R0) + (2 *nx[d] + 1) * CN->R;           //  Calculate cell center from 3-D cell index
   }
 
-  bigint getParent(bigint index) {                              // Get parent Morton index from current index
-    int level = getLevel(index);                                // Get level from Morton index
-    bigint cOff = ((1 << 3 *  level   ) - 1) / 7;               // Morton offset of current level
-    bigint pOff = ((1 << 3 * (level-1)) - 1) / 7;               // Morton offset of parent level
-    bigint i = ((index-cOff) >> 3) + pOff;                      // Morton index of parent cell
-    return i;                                                   // Return Morton index of parent cell
+  bigint getParent(bigint index) {                              // Get parent cell index from current cell index
+    int level = getLevel(index);                                // Get level from cell index
+    bigint cOff = ((1 << 3 *  level   ) - 1) / 7;               // Cell index offset of current level
+    bigint pOff = ((1 << 3 * (level-1)) - 1) / 7;               // Cell index offset of parent level
+    bigint i = ((index-cOff) >> 3) + pOff;                      // Cell index of parent cell
+    return i;                                                   // Return cell index of parent cell
   }
 
-  void sortCells(Cells &buffer) {                               // Sort cells according to Morton index
+  void sortCells(Cells &buffer) {                               // Sort cells according to cell index
     int begin = CC0-C0;                                         // Begin index for current level
     int end = CCN-C0;                                           // End index for current level
     int c = begin;                                              // Initialize counter for Icell
-    for( C_iter C=CC0; C!=CCN; ++C,++c ) Icell[c] = C->I;       // Fill Icell with Morton index
+    for( C_iter C=CC0; C!=CCN; ++C,++c ) Icell[c] = C->I;       // Fill Icell with cell index
     sort(Icell,cells,buffer,false,begin,end);                   // Sort cells according to Icell
   }
 
   void linkParent(Cells &buffer) {                              // Form parent-child mutual link
     CCN = CN;                                                   // Initialize end iterator for this level
     sortCells(buffer);                                          // Sort cells at this level
-    CN->I = getParent(CC0->I);                                  // Set Morton index
+    CN->I = getParent(CC0->I);                                  // Set cell index
     CN->LEAF = CC0->LEAF;                                       // Set pointer to first leaf
     getCenter();                                                // Set cell center and radius
     for( C_iter C=CC0; C!=CCN; ++C ) {                          // Loop over all cells at this level
       if( getParent(C->I) != CN->I ) {                          //  If it belongs to a new parent cell
         ++CN;                                                   //   Increment cell iterator
-        CN->I = getParent(C->I);                                //   Set Morton index
+        CN->I = getParent(C->I);                                //   Set cell index
         CN->LEAF = C->LEAF;                                     //   Set pointer to first leaf
         getCenter();                                            //   Set cell center and radius
       }                                                         //  Endif for new parent cell
@@ -135,7 +131,7 @@ public:
       if( Ibody[b] != icell ) {                                 //  If it belongs to a new cell
         CN->NLEAF = size;                                       //   Set number of leafs
         CN->NCHILD = 0;                                         //   Set number of child cells
-        CN->I = icell;                                          //   Set Morton index
+        CN->I = icell;                                          //   Set cell index
         CN->LEAF = begin;                                       //   Set pointer to first leaf
         getCenter();                                            //   Set cell center and radius
         ++CN;                                                   //   Increment cell iterator
@@ -151,7 +147,7 @@ public:
     }                                                           // End loop over bodies
     CN->NLEAF = size;                                           // Set number of leafs
     CN->NCHILD = 0;                                             // Set number of child cells
-    CN->I = icell;                                              // Set Morton index
+    CN->I = icell;                                              // Set cell index
     CN->LEAF = begin;                                           // Set pointer to first leaf
     getCenter();                                                // Set cell center and radius
     ++CN;                                                       // Increment cell iterator
