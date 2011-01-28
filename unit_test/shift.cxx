@@ -46,7 +46,7 @@ int main() {
   }
   tic = get_time();
   for( int i=1; i!=mpi.size(); ++i ) {
-    mpi.shiftBodies(bodies2);
+    mpi.shiftBodies(T.Ibody,bodies2);
     if( mpi.rank() == 0 )
       vtk.setGroupOfPoints(T.Ibody,bodies,Ncell);
   }

@@ -3,14 +3,10 @@
 
 class Sort {
 private:
-  int sortAlloc,smallAlloc,largeAlloc;                          // Size of allocation for sort variables
   std::vector<int> bucket,bucket1,bucket2,permut1,permut2;      // Bucket and permutation for sorting
+protected:
   std::vector<bigint> ibuffer;                                  // Index buffer for sorting
-
 public:
-  Sort() : sortAlloc(0),smallAlloc(0),largeAlloc(0) {}          // Constructor
-  ~Sort() {}                                                    // Destructor
-
   template<typename T>
   void sortSmall(Bigints &index, T &value, T &vbuffer, bigint Imin,
                  int numBucket, bool ascend, int begin, int end) {
@@ -99,25 +95,22 @@ public:
     bigint Imin  = *(std::min_element(BI0,BIN));
     bigint Imax  = *(std::max_element(BI0,BIN));
     bigint Isize = Imax - Imin + 1;
-    if( N > sortAlloc ) {
+    if( N > int(ibuffer.size()) ) {
       ibuffer.resize(N);
-      sortAlloc = N;
     }
     if( Isize < threshold ) {
       numBucket = Isize;
-      if( numBucket > smallAlloc ) {
-        smallAlloc = 1 << int(log(1. + numBucket) / M_LN2 / 3 + 1) * 3;
-        bucket.resize(smallAlloc);
+      if( numBucket > int(bucket.size()) ) {
+        bucket.resize(numBucket);
       }
       sortSmall(index,value,vbuffer,Imin,numBucket,ascend,begin,end);
     } else {
       numBucket = threshold;
-      if( N > largeAlloc ) {
+      if( N > int(permut1.size()) ) {
         bucket1.resize(numBucket);
         bucket2.resize(numBucket);
         permut1.resize(N);
         permut2.resize(N);
-        largeAlloc = N;
       }
       sortLarge(index,value,vbuffer,Imin,numBucket,ascend,begin,end);
     }

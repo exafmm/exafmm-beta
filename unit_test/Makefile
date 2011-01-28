@@ -54,8 +54,8 @@ nth_element: nth_element.cxx
 	mpirun -np 8 ./a.out
 
 multisection: multisection.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	mpirun -np 9 ./a.out
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
+	mpirun -np 7 ./a.out
 
 all      :
 	make index

@@ -7,7 +7,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(1000000);
+  int const numBodies(100000);
   tic = get_time();
   Bodies bodies(numBodies);
   Bodies bodies2(numBodies);
@@ -45,18 +45,29 @@ int main() {
   mpi.print(toc-tic);
 
   tic = get_time();
-  mpi.multisection(T.Ibody);
+  mpi.multisection(T.Ibody,bodies2);
   toc = get_time();
   mpi.print("Multisection  : ",0);
   mpi.print(toc-tic);
+  std::fill(T.Ibody.begin(),T.Ibody.end(),0);
 
 #ifdef VTK
+  int Ncell(0);
+  vtkPlot vtk;
   if( mpi.rank() == 0 ) {
-    int Ncell(0);
-    vtkPlot vtk;
     vtk.setDomain(T.getR0(),T.getX0());
     vtk.setGroupOfPoints(T.Ibody,bodies,Ncell);
-    vtk.plot(Ncell);
   }
+  tic = get_time();
+  for( int i=1; i!=mpi.size(); ++i ) {
+    mpi.shiftBodies(T.Ibody,bodies2);
+    if( mpi.rank() == 0 )
+      vtk.setGroupOfPoints(T.Ibody,bodies,Ncell);
+  }
+  toc = get_time();
+  mpi.print("Shift bodies  : ",0);
+  mpi.print(toc-tic);
+  if( mpi.rank() == 0 )
+    vtk.plot(Ncell);
 #endif
 }
