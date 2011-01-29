@@ -32,6 +32,8 @@ public:
 
   ~TreeStructure() {}                                           // Destructor
 
+  vect &setX0() {return X0;}                                    // Get center of root cell
+  real &setR0() {return R0;}                                    // Get radius of root cell
   vect getX0() {return X0;}                                     // Get center of root cell
   real getR0() {return R0;}                                     // Get radius of root cell
 

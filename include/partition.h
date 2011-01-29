@@ -13,7 +13,7 @@ public:
   Partition(Bodies &b) : bodies(b) {}                           // Constructor
   ~Partition() {}                                               // Destructor
 
-  void setDomain() {                                            // Set bounds of domain to be partitioned
+  void setDomain(real &R0, vect &X0) {                          // Set bounds of domain to be partitioned
     B_iter B = bodies.begin();                                  // Reset body iterator
     XMIN = XMAX = B->pos;                                       // Initialize xmin,xmax
     int const MPI_TYPE = getType(XMIN[0]);                      // Get MPI data type
@@ -30,6 +30,14 @@ public:
     MPI_Reduce(XMIN,buffer,3,MPI_TYPE,MPI_MIN,0,MPI_COMM_WORLD);// Reduce global minimum
     XMIN = buffer;                                              // Get data from buffer
     MPI_Bcast(XMIN,3,MPI_TYPE,0,MPI_COMM_WORLD);                // Broadcast global minimum
+    R0 = 0;                                                     // Initialize root radius
+    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
+      X0[d] = (XMAX[d] + XMIN[d]) / 2;                          //  Calculate center of domain
+      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
+      R0 = std::max(XMAX[d] - X0[d], R0);                       //  Calculate max distance from center
+      R0 = std::max(X0[d] - XMIN[d], R0);                       //  Calculate max distance from center
+    }                                                           // End loop over each dimension
+    R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
   }
 
   void binBodies(Bigints &Ibody, int d) {                       // Turn positions into indices of bins

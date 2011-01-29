@@ -26,8 +26,7 @@ int main() {
   mpi.print(toc-tic);
 
   tic = get_time();
-  T.setDomain();
-  mpi.setDomain();
+  mpi.setDomain(T.setR0(),T.setX0());
   toc = get_time();
   mpi.print("Set domain    : ",0);
   mpi.print(toc-tic);
