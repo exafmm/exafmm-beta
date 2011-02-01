@@ -6,7 +6,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(1000000);
+  int const numBodies(10000000);
   tic = get_time();
   Bodies bodies(numBodies);
   Bodies buffer(numBodies);
@@ -20,29 +20,10 @@ int main() {
   toc = get_time();
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 
-  tic = get_time();
-  T.setDomain();
-  toc = get_time();
-  std::cout << "Set domain    : " << toc-tic << std::endl;
-
-  tic = get_time();
-  T.BottomUp::setIndex();
-  toc = get_time();
-  std::cout << "Set index     : " << toc-tic << std::endl;
-
-  tic = get_time();
-  T.sort(T.Ibody,bodies,buffer);
-  toc = get_time();
-  std::cout << "Sort index    : " << toc-tic << std::endl;
-
-  bigint oldIndex(T.Ibody[0]);
-  int b=0;
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
-    assert( oldIndex <= T.Ibody[b] );
-    oldIndex = T.Ibody[b];
-  }
+  T.bottomup(buffer);
 
 #ifdef VTK
+  T.sort(T.Ibody,bodies,buffer);
   int Ncell(0);
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());

@@ -1,5 +1,5 @@
 #include "dataset.h"
-#include "bottomup.h"
+#include "construct.h"
 #include "kernel.h"
 #ifdef VTK
 #include "vtk.h"
@@ -10,8 +10,8 @@ int main() {
   int const numBodies(10000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Bodies bodies2(numBodies);
-  BottomUpTreeConstructor T(bodies);
+  Bodies buffer(numBodies);
+  TreeConstructor T(bodies);
   Dataset D(bodies);
   toc = get_time();
   std::cout << "Allocate      : " << toc-tic << std::endl;
@@ -21,40 +21,7 @@ int main() {
   toc = get_time();
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 
-  tic = get_time();
-  T.setDomain();
-  toc = get_time();
-  std::cout << "Set domain    : " << toc-tic << std::endl;
-
-  tic = get_time();
-  T.setIndex();
-  toc = get_time();
-  std::cout << "Set index     : " << toc-tic << std::endl;
-
-  tic = get_time();
-  T.sort(T.Ibody,bodies,bodies2);
-  toc = get_time();
-  std::cout << "Sort index    : " << toc-tic << std::endl;
-
-  tic = get_time();
-  T.prune();
-  toc = get_time();
-  std::cout << "Prune tree    : " << toc-tic << std::endl;
-
-  tic = get_time();
-  T.grow(bodies2);
-  toc = get_time();
-  std::cout << "Grow tree     : " << toc-tic << std::endl;
-
-  tic = get_time();
-  T.sort(T.Ibody,bodies,bodies2,false);
-  toc = get_time();
-  std::cout << "Sort descend  : " << toc-tic << std::endl;
-
-  tic = get_time();
-  T.link();
-  toc = get_time();
-  std::cout << "Link cells    : " << toc-tic << std::endl;
+  T.bottomup(buffer);
 
   tic = get_time();
   T.P2M();
@@ -73,13 +40,13 @@ int main() {
 
   tic = get_time();
   Kernel K;
-  bodies2 = bodies;
-  K.P2P(bodies2.begin(),bodies2.end());
+  buffer = bodies;
+  K.P2P(buffer.begin(),buffer.end());
   toc = get_time();
   std::cout << "Direct sum    : " << toc-tic << std::endl;
 
   B_iter B  = bodies.begin();
-  B_iter B2 = bodies2.begin();
+  B_iter B2 = buffer.begin();
   real err(0),rel(0);
   for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
@@ -87,7 +54,7 @@ int main() {
   }
   std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
 #ifdef VTK
-  T.sort(T.Ibody,bodies,bodies2);
+  T.sort(T.Ibody,bodies,buffer);
   int Ncell(0);
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());

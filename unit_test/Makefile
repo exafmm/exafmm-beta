@@ -4,11 +4,7 @@ index: index.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	./a.out
 
-bottomup: bottomup.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	./a.out
-
-topdown: topdown.cxx
+construct: construct.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
@@ -63,8 +59,7 @@ let: let.cxx
 
 all      :
 	make index
-	make bottomup
-	make topdown
+	make construct
 	make kernel
 	make approx
 	make direct

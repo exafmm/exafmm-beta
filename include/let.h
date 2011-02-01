@@ -2,17 +2,14 @@
 #define let_h
 #include "partition.h"
 #include "tree.h"
-#include "bottomup.h"
-#include "topdown.h"
+#include "construct.h"
 
 class LocalEssentialTree : public Partition,
-                           public BottomUpTreeConstructor,
-                           public TopDownTreeConstructor {
+                           public TreeConstructor {
 public:
   LocalEssentialTree(Bodies &b) : TreeStructure(b),
                                   Partition(b),
-                                  BottomUpTreeConstructor(b),
-                                  TopDownTreeConstructor(b) {}
+                                  TreeConstructor(b) {}
   ~LocalEssentialTree() {}
 
   void commBodies() {

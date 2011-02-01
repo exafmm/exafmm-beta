@@ -9,73 +9,36 @@ int main() {
   int const numBodies(100000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Bodies bodies2(numBodies);
+  Bodies buffer(numBodies);
   Dataset D(bodies);
   LocalEssentialTree mpi(bodies);
+  bool print(true);
+  if( mpi.rank() != 0 ) print = false;
   toc = get_time();
-  mpi.print("Allocate      : ",0);
-  mpi.print(toc-tic);
+  if(print) std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
   srand(mpi.rank()+1);
   D.random();
   toc = get_time();
-  mpi.print("Set bodies    : ",0);
-  mpi.print(toc-tic);
+  if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
   mpi.setGlobDomain(mpi.setR0(),mpi.setX0());
   toc = get_time();
-  mpi.print("Set domain    : ",0);
-  mpi.print(toc-tic);
+  if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  mpi.multisection(mpi.Ibody,bodies2);
+  mpi.multisection(mpi.Ibody,buffer);
   toc = get_time();
-  mpi.print("Multisection  : ",0);
-  mpi.print(toc-tic);
+  if(print) std::cout << "Multisection  : " << toc-tic << std::endl;
 
-  tic = get_time();
-  mpi.BottomUpTreeConstructor::setIndex();
-  toc = get_time();
-  mpi.print("Set index     : ",0);
-  mpi.print(toc-tic);
-
-  tic = get_time();
-  mpi.sort(mpi.Ibody,bodies,bodies2);
-  toc = get_time();
-  mpi.print("Sort index    : ",0);
-  mpi.print(toc-tic);
-
-  tic = get_time();
-  mpi.prune();
-  toc = get_time();
-  mpi.print("Prune tree    : ",0);
-  mpi.print(toc-tic);
-
-  tic = get_time();
-  mpi.BottomUpTreeConstructor::grow(bodies2);
-  toc = get_time();
-  mpi.print("Grow tree     : ",0);
-  mpi.print(toc-tic);
-
-  tic = get_time();
-  mpi.sort(mpi.Ibody,bodies,bodies2,false);
-  toc = get_time();
-  mpi.print("Sort descend  : ",0);
-  mpi.print(toc-tic);
-
-  tic = get_time();
-  mpi.link();
-  toc = get_time();
-  mpi.print("Link cells    : ",0);
-  mpi.print(toc-tic);
+  mpi.bottomup(buffer,print);
 
   tic = get_time();
   mpi.commBodies();
   toc = get_time();
-  mpi.print("Comm bodies   : ",0);
-  mpi.print(toc-tic);
+  if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
 
   std::fill(mpi.Ibody.begin(),mpi.Ibody.end(),0);
 #ifdef VTK
@@ -87,13 +50,12 @@ int main() {
   }
   tic = get_time();
   for( int i=1; i!=mpi.size(); ++i ) {
-    mpi.shiftBodies(mpi.Ibody,bodies2);
+    mpi.shiftBodies(mpi.Ibody,buffer);
     if( mpi.rank() == 0 )
       vtk.setGroupOfPoints(mpi.Ibody,bodies,Ncell);
   }
   toc = get_time();
-  mpi.print("Shift bodies  : ",0);
-  mpi.print(toc-tic);
+  if(print) std::cout << "Shift bodies  : " << toc-tic << std::endl;
   if( mpi.rank() == 0 )
     vtk.plot(Ncell);
 #endif
