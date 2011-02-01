@@ -2,7 +2,7 @@
 #define topdown_h
 #include "tree.h"
 
-class TopDownTreeConstructor : public TreeStructure {
+class TopDownTreeConstructor : virtual public TreeStructure {
 private:
   struct node {                                                 // Nodes are primitive cells
     typedef std::vector<node>::iterator N_iter;                 // Iterator for node vectors

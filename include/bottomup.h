@@ -2,7 +2,7 @@
 #define bottomup_h
 #include "tree.h"
 
-class BottomUpTreeConstructor : public TreeStructure {
+class BottomUpTreeConstructor : virtual public TreeStructure {
 public:
   BottomUpTreeConstructor(Bodies &b) : TreeStructure(b){}       // Constructor
   ~BottomUpTreeConstructor() {}                                 // Destructor

@@ -57,6 +57,10 @@ multisection: multisection.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	mpirun -np 7 ./a.out
 
+let: let.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
+	mpirun -np 7 ./a.out
+
 all      :
 	make index
 	make bottomup
@@ -72,3 +76,4 @@ all      :
 	make alltoallv
 	make nth_element
 	make multisection
+	make let

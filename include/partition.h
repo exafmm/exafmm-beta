@@ -4,16 +4,20 @@
 #include "types.h"
 #include "sort.h"
 
-class Partition : public MyMPI, public Sort {
+class Partition : public MyMPI, virtual public Sort {
 private:
   Bodies &bodies;                                               // Bodies to be partitioned
+  int numBodies;                                                // Initial local number of bodies
+protected:
   vect XMIN;                                                    // Minimum position vector of bodies
   vect XMAX;                                                    // Maximum position vector of bodies
 public:
-  Partition(Bodies &b) : bodies(b) {}                           // Constructor
+  Partition(Bodies &b) : bodies(b) {                            // Constructor
+    numBodies = bodies.size();                                  // Initialize local number of bodies
+  }
   ~Partition() {}                                               // Destructor
 
-  void setDomain(real &R0, vect &X0) {                          // Set bounds of domain to be partitioned
+  void setGlobDomain(real &R0, vect &X0) {                      // Set bounds of domain to be partitioned
     B_iter B = bodies.begin();                                  // Reset body iterator
     XMIN = XMAX = B->pos;                                       // Initialize xmin,xmax
     int const MPI_TYPE = getType(XMIN[0]);                      // Get MPI data type
@@ -40,9 +44,17 @@ public:
     R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
   }
 
+  void splitDomain(int iSplit, int *color, int d) {
+    real X = iSplit * (XMAX[d] - XMIN[d]) / numBodies + XMIN[d];
+    if( color[0] % 2 == 0 )
+      XMAX[d] = X;
+    else
+      XMIN[d] = X;
+  }
+
   void binBodies(Bigints &Ibody, int d) {                       // Turn positions into indices of bins
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
-      Ibody[B-bodies.begin()] = bigint((B->pos[d] - XMIN[d]) / (XMAX[d] - XMIN[d]) * bodies.size());// Bin bodies
+      Ibody[B-bodies.begin()] = bigint((B->pos[d] - XMIN[d]) / (XMAX[d] - XMIN[d]) * numBodies);// Bin bodies
     }                                                           // End loop over all bodies
   }
 
@@ -248,10 +260,10 @@ public:
     int offset[2] = {0, 0};
     int  color[3] = {0, 0, 0};
     int    key[3] = {0, 0, 0};
-    int *scnt  = new int [SIZE];
-    int *sdsp  = new int [SIZE];
-    int *rcnt  = new int [SIZE];
-    int *rdsp  = new int [SIZE];
+    int *scnt = new int [SIZE];
+    int *sdsp = new int [SIZE];
+    int *rcnt = new int [SIZE];
+    int *rdsp = new int [SIZE];
     MPI_Comm MPI_COMM[3];
 
     bigint numGlobal;
@@ -267,9 +279,11 @@ public:
     for( int l=0; l!=level; ++l ) {
       multisectionGetComm(nprocs,oldnprocs,offset,color,key,l,MPI_COMM);
 
+      splitDomain(iSplit,color,l % 3);
+
       multisectionAlltoall(Ibody,buffer,nthLocal,numLocal,newSize,color,MPI_COMM[2]);
 
-      if( oldnprocs % 2 == 1 && nprocs[0] <= nprocs[1]  ) {
+      if( oldnprocs % 2 == 1 && nprocs[0] <= nprocs[1] ) {
         multisectionScatter(Ibody,buffer,nthLocal,newSize,nprocs,key,MPI_COMM[1]);
       }
       if( oldnprocs % 2 == 1 && nprocs[0] >= nprocs[1] ) {

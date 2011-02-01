@@ -3,17 +3,17 @@
 #include "sort.h"
 #include "kernel.h"
 
-class TreeStructure : public Sort {
+class TreeStructure : virtual public Sort {
 protected:
   Bodies &bodies;                                               // Bodies in the tree
   Cells  cells;                                                 // Cells in the tree
+  Pairs  pairs;                                                 // Stack of interaction pairs
   C_iter C0;                                                    // Cell iterator begin index
   C_iter CN;                                                    // Cell iterator end index
   C_iter CC0;                                                   // Cell iterator begin index (level-wise)
   C_iter CCN;                                                   // Cell iterator end index (level-wise)
   vect   X0;                                                    // Center of root cell
   real   R0;                                                    // Radius of root cell
-  Stack  S;                                                     // Stack of interaction pairs
   Kernel K;                                                     // Kernels
 public:
   std::vector<bigint> Ibody;                                    // Cell index of body
@@ -179,7 +179,7 @@ public:
     real R = std::sqrt(norm(dist));                             // Distance between cells
     if( CI->NCHILD != 0 || CI->R + CJ->R > THETA*R ) {          // If target is not twig or box is too large
       pair P(CI,CJ);                                            //  Form pair of interacting cells
-      S.push(P);                                                //  Push interacting pair into stack
+      pairs.push(P);                                            //  Push interacting pair into stack
     } else {                                                    // If target is twig and box is small enough
       K.M2P(CI,CJ);                                             //  Evaluate M2P kernel
     }                                                           // Endif for interaction
@@ -202,7 +202,7 @@ public:
     real R = std::sqrt(norm(dist));                             // Distance between cells
     if( CI->R + CJ->R > THETA*R ) {                             // If box is too large
       pair P(CI,CJ);                                            //  Form pair of interacting cells
-      S.push(P);                                                //  Push interacting pair into stack
+      pairs.push(P);                                            //  Push interacting pair into stack
     } else {                                                    // If bos is small enough
       K.M2L(CI,CJ);                                             //  Evaluate M2L kernel
     }                                                           // Endif for interaction
@@ -222,10 +222,10 @@ public:
 
   void evaluate(int method) {                                   // Interface for treewalk
     pair P0(CN-1,CN-1);                                         // Form pair of root cells
-    S.push(P0);                                                 // Push pair to stack
-    while( !S.empty() ) {                                       // While interaction stack is not empty
-      pair P = S.top();                                         //  Get interaction pair from top of stack
-      S.pop();                                                  //  Pop interaction stack
+    pairs.push(P0);                                             // Push pair to stack
+    while( !pairs.empty() ) {                                   // While interaction stack is not empty
+      pair P = pairs.top();                                     //  Get interaction pair from top of stack
+      pairs.pop();                                              //  Pop interaction stack
       switch (method) {                                         //  Swtich between methods
         case 0 : treecode(P.CI,P.CJ); break;                    //   0 : treecode
         case 1 : FMM(P.CI,P.CJ);      break;                    //   1 : FMM
