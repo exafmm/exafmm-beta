@@ -17,8 +17,7 @@ public:
   std::vector<bigint> Icell;                                    // Cell index
 
   TreeStructure(Bodies &b) : bodies(b),X0(0),R0(0) {            // Constructor
-    int const N = bodies.size();                                // Number of bodies
-    Ibody.resize(N);                                            // Allocate cell index of body
+    Ibody.resize(bodies.size());                                // Resize cell index of body
   }
 
   ~TreeStructure() {}                                           // Destructor
@@ -88,10 +87,9 @@ public:
     sort(Icell,cells,buffer,false,begin,end);                   // Sort cells according to Icell
   }
 
-  void linkParent(Cells &buffer, int &begin, int &end) {        // Form parent-child mutual link
+  void linkParent(int &begin, int &end) {                       // Form parent-child mutual link
     Cell parent;                                                // Define parent cell structure
     int oldend = end;                                           // Save old end counter
-    sortCells(buffer,begin,end);                                // Sort cells at this level
     parent.I = getParent(cells[begin].I);                       // Set cell index
     parent.NLEAF = parent.NCHILD = 0;                           // Initialize NLEAF & NCHILD
     parent.LEAF = cells[begin].LEAF;                            // Set pointer to first leaf
@@ -135,7 +133,8 @@ public:
         cells.push_back(cell);                                  //   Push cell structure into vector
         end++;                                                  //   Increment cell counter
         while( getLevel(*BI) != level ) {                       //   While cell belongs to a higher level
-          linkParent(buffer,begin,end);                         //    Form parent-child mutual link
+          sortCells(buffer,begin,end);                          //    Sort cells at this level
+          linkParent(begin,end);                                //    Form parent-child mutual link
           level--;                                              //    Go up one level
         }                                                       //   Endif for new level
         firstLeaf = B;                                          //   Set new first leaf
@@ -151,8 +150,10 @@ public:
     getCenter(cell);                                            // Set cell center and radius
     cells.push_back(cell);                                      // Push cell structure into vector
     end++;                                                      // Increment cell counter
-    for( int l=level; l>0; --l )                                // Once all the twigs are done, do the rest
-      linkParent(buffer,begin,end);                             //  Form parent-child mutual link
+    for( int l=level; l>0; --l ) {                              // Once all the twigs are done, do the rest
+      sortCells(buffer,begin,end);                              //  Sort cells at this level
+      linkParent(begin,end);                                    //  Form parent-child mutual link
+    }
     C0 = cells.begin();
   }
 

@@ -40,17 +40,20 @@ int main() {
 #endif
 
   tic = get_time();
-  mpi.commBodies();
+  mpi.commBodies(buffer);
   toc = get_time();
   if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
 
   tic = get_time();
-  mpi.commCells();
+  mpi.commCells(buffer);
   toc = get_time();
   if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
 
-  std::fill(mpi.Ibody.begin(),mpi.Ibody.end(),0);
 #ifdef VTK
+  std::fill(mpi.Ibody.begin(),mpi.Ibody.end(),0);
+  bodies.insert(bodies.end(),buffer.begin(),buffer.end());
+  mpi.Ibody.insert(mpi.Ibody.end(),buffer.size(),1);
+
   int Ncell(0);
   vtkPlot vtk;
   if( mpi.rank() == 0 ) {

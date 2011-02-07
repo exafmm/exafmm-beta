@@ -20,7 +20,6 @@ typedef std::vector<bigint>::iterator BI_iter;                  // Vector of big
 
 int  const NCRIT(100);                                          // Number of bodies per cell
 real const THETA(0.5);                                          // Box opening criteria
-real const EPS(0.000001);                                       // Single precision epsilon
 real const EPS2(0.0001);                                        // Softening parameter
 int MPIRANK(0);                                                 // MPI rank (for debugging serial class in MPI run)
 int MPISIZE(0);                                                 // MPI size (for debugging serial class in MPI run)

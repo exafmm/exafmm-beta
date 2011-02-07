@@ -17,47 +17,46 @@ public:
                                   Partition(b) {}
   ~LocalEssentialTree() {}                                      // Destructor
 
-  void commBodies() {                                           // Communicate bodies in LET
-    int MPI_TYPE = getType(XMIN[LEVEL-1][0]);                   // Get MPI data type
+  void commBodies(Bodies &buffer) {                             // Communicate bodies in LET
+    int MPI_TYPE = getType(XMIN[LEVEL][0]);                     // Get MPI data type
     std::vector<vect> xmin(SIZE);                               // Buffer for gathering XMIN
     std::vector<vect> xmax(SIZE);                               // Buffer for gathering XMAX
-    MPI_Allgather(&XMIN[LEVEL-1][0],3,MPI_TYPE,                 // Gather XMIN
+    MPI_Allgather(&XMIN[LEVEL][0],3,MPI_TYPE,                   // Gather XMIN
                   &xmin[0][0],3,MPI_TYPE,MPI_COMM_WORLD);
-    MPI_Allgather(&XMAX[LEVEL-1][0],3,MPI_TYPE,                 // Gather XMAX
+    MPI_Allgather(&XMAX[LEVEL][0],3,MPI_TYPE,                   // Gather XMAX
                   &xmax[0][0],3,MPI_TYPE,MPI_COMM_WORLD);
     std::vector<int> srnks,scnts;                               // Ranks to send to, and their send counts
     std::vector<C_iter> scells;                                 // Vector of cell iterators for cells to send
     int oldsize = 0;                                            // Per rank offset of the number of cells to send
+    C0 = cells.begin();                                         // Set cell begin iterator
     for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over all ranks
       int ic = 0;                                               //  Initialize neighbor dimension counter
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimensions
-        if(xmin[irank][d] < XMAX[LEVEL-1][d] +                  // If the two domains are touching or overlapping
-           EPS * std::abs(XMAX[LEVEL-1][d]) &&                  // they are neighbors in this dimension,
-           XMIN[LEVEL-1][d] < xmax[irank][d] +                  // and if they are neighbors in all dimensions
-           EPS * std::abs(xmax[irank][d]))                      // this is by definition, a neighboring domain
-          ic++;                                                 //    Increment neighbor dimension counter
+        if(xmin[irank][d] < XMAX[LEVEL][d] + C0->R &&           // If the two domains are touching or overlapping
+           XMIN[LEVEL][d] < xmax[irank][d] + C0->R)             // in all dimensions, they are neighboring domains
+          ic++;                                                 //   Increment neighbor dimension counter
       }                                                         //  End loop over dimensions
       if( ic == 3 && irank != RANK ) {                          //  If ranks are neighbors in all dimensions
-        C_iter C(C0);                                           //   Initialize cell iterator
-        while( C->NCHILD == 0 ) {                               //   Loop through the twig cells
-          vect dist;                                            //    Distance vector
-          for( int d=0; d!=3; ++d )                             //    Loop over dimensions
-            dist[d] = (C->X[d] > xmax[irank][d])*               //     Calculate the distance between cell C and
-                      (C->X[d] - xmax[irank][d])+               //     the nearest point in domain [xmin,xmax]^3
-                      (C->X[d] < xmin[irank][d])*
-                      (C->X[d] - xmin[irank][d]);
-          real R = std::sqrt(norm(dist));                       //    Scalar distance
-          if( C0->R + C->R > THETA * R )                        //    If the cell seems close enough for P2P
-            scells.push_back(C);                                //     Add cell iterator to scells
-          ++C;                                                  //    Increment cell iterator
-        }                                                       //   End while loop over twig cells
+        for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {    //   Loop over all cells
+          if( C->NCHILD == 0 ) {                                //    If cell is a twig
+            vect dist;                                          //     Distance vector
+            for( int d=0; d!=3; ++d )                           //     Loop over dimensions
+              dist[d] = (C->X[d] > xmax[irank][d])*             //      Calculate the distance between cell C and
+                        (C->X[d] - xmax[irank][d])+             //      the nearest point in domain [xmin,xmax]^3
+                        (C->X[d] < xmin[irank][d])*
+                        (C->X[d] - xmin[irank][d]);
+            real R = std::sqrt(norm(dist));                     //     Scalar distance
+            if( C0->R + C->R > THETA * R )                      //     If the cell seems close enough for P2P
+              scells.push_back(C);                              //      Add cell iterator to scells
+          }                                                     //    Endif for twigs
+        }                                                       //   End loop over cells
         srnks.push_back(irank);                                 //   Add current rank to srnks
         scnts.push_back(scells.size()-oldsize);                 //   Add current cell count to scnts
         oldsize = scells.size();                                //   Set new offset for cell count
       }                                                         //  Endif for neighbor ranks
     }                                                           // End loop over all ranks
 
-    int ic = 0;                                                 // Initialize counter for scells
+    int ic = 0, ssize = 0;                                      // Initialize counter for scells
     std::vector<MPI_Request> reqs(2*srnks.size());              // Vector of MPI requests
     std::vector<int>         scnt(srnks.size());                // Vector of send counts
     std::vector<int>         rcnt(srnks.size());                // Vector of receive counts
@@ -72,27 +71,47 @@ public:
           sendBodies.push_back(body);                           //    Push it into the send buffer
         }                                                       //   End loop over bodies
       }                                                         //  End loop over cells
-      scnt[i] = sendBodies.size();                              //  Set send count of current rank
+      scnt[i] = sendBodies.size()-ssize;                        //  Set send count of current rank
+      ssize += scnt[i];
       MPI_Isend(&scnt[i],1,MPI_INT,irank,0,                     //  Send the send count
                 MPI_COMM_WORLD,&reqs[i]);
       MPI_Irecv(&rcnt[i],1,MPI_INT,irank,MPI_ANY_TAG,           //  Receive the recv count
                 MPI_COMM_WORLD,&reqs[i+srnks.size()]);
     }                                                           // End loop over ranks
     MPI_Waitall(2*srnks.size(),&reqs[0],MPI_STATUSES_IGNORE);   // Wait for all communication to finish
+
     int rsize = 0;                                              // Initialize total receive count
     for( int i=0; i!=int(srnks.size()); ++i )                   // Loop over all ranks to receive from
       rsize += rcnt[i];                                         //  Accumulate receive counts
-
-    int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
     recvBodies.resize(rsize);                                   // Receive buffer for bodies
+    int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
+    rsize = ssize = 0;
     for( int i=0; i!=int(srnks.size()); ++i ) {                 // Loop over all ranks to send to & receive from
       int irank = srnks[i];                                     // Rank to send to & receive from
-      MPI_Isend(&sendBodies[0],scnt[i]*bytes,MPI_BYTE,irank,0,  // Send bodies
+      MPI_Isend(&sendBodies[ssize],scnt[i]*bytes,MPI_BYTE,irank,0,// Send bodies
                 MPI_COMM_WORLD,&reqs[i]);
-      MPI_Irecv(&recvBodies[0],rcnt[i]*bytes,MPI_BYTE,irank,MPI_ANY_TAG,// Receive bodies
+      MPI_Irecv(&recvBodies[rsize],rcnt[i]*bytes,MPI_BYTE,irank,MPI_ANY_TAG,// Receive bodies
                 MPI_COMM_WORLD,&reqs[i+srnks.size()]);
+      ssize += scnt[i];
+      rsize += rcnt[i];
     }                                                           // End loop over ranks
     MPI_Waitall(2*srnks.size(),&reqs[0],MPI_STATUSES_IGNORE);   // Wait for all communication to finish
+
+    for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {
+      Body body;
+      body.pos  = JB->pos;
+      body.scal = JB->scal;
+      TreeStructure::bodies.push_back(body);
+    }
+    cells.clear();
+    Ibody.resize(TreeStructure::bodies.size());
+    buffer.resize(TreeStructure::bodies.size());
+    BottomUp::setIndex();
+#ifdef TOPDOWN
+    topdown(buffer,false);
+#else
+    bottomup(buffer,false);
+#endif
     sendBodies.clear();                                         // Clear send buffer for bodies
     recvBodies.clear();                                         // Clear receive buffer for bodies
   }
@@ -140,8 +159,9 @@ public:
                   (CC->X[d] - xmin[d]);
       real R = std::sqrt(norm(dist));                           //  Scalar distance
       if( C0->R + CC->R > THETA * R ) {                         //  If the cell seems too close for interaction
-        if( CC->NCHILD != 0 )                                   //   If the child cell is not a twig
+        if( CC->NCHILD != 0 ) {                                 //   If the child cell is not a twig
           getLET(CC,xmin,xmax);                                 //    Traverse the tree further
+        }
       } else {                                                  //  If the cell is far enough for interaction
         JCell cell;                                             //   Set compact cell type for sending
         cell.I = CC->I;                                         //   Set index of compact cell type
@@ -207,7 +227,7 @@ public:
     }
   }
 
-  void unique(int begin, int end) {
+  void unique(int begin, int &end) {
     int c_old = begin;
     for( int c=begin; c!=end; ++c ) {
       if( cells[c].I != cells[c_old].I ) {
@@ -244,36 +264,40 @@ public:
       cells.push_back(cell);
     }
 
+    int end = cells.size();
     Cells buffer;
     sortCells(buffer,0,cells.size());
-    unique(0,cells.size());
+    unique(0,end);
 
-    int begin=0, end=0;
+    int begin = end = 0;
     int level = getLevel(cells[0].I);
     Cells twigs = cells;
     cells.clear();
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {
       while( getLevel(C->I) != level ) {
+        sortCells(buffer,begin,end);                            // Sort cells at this level
         unique(begin,end);
-        linkParent(buffer,begin,end);
+        linkParent(begin,end);
         level--;
       }
       cells.push_back(*C);
       end++;
     }
-    for( int l=level; l>0; --l )                                // Once all the twigs are done, do the rest
+    for( int l=level; l>0; --l ) {                              // Once all the twigs are done, do the rest
+      sortCells(buffer,begin,end);                              //  Sort cells at this level
       unique(begin,end);
-      linkParent(buffer,begin,end);                             //  Form parent-child mutual link
+      linkParent(begin,end);                                    //  Form parent-child mutual link
+    }
+    C0 = cells.begin();
 
   }
 
-  void commCells() {
+  void commCells(Bodies &buffer) {
     vect xmin=0, xmax=0;
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
      color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators
        key[0] =    key[1] =    key[2] = 0;                      // Initialize key of communicators
-    LEVEL = 1;
 
     for( int l=0; l!=LEVEL; ++l ) {
       multisectionGetComm(l);
@@ -281,11 +305,21 @@ public:
       getOtherDomain(xmin,xmax,l+1);
       getLET(cells.end()-1,xmin,xmax);
 
+      MPI_Barrier(MPI_COMM_WORLD);
       commCellsAlltoall();
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] )
         commCellsScatter();
       graft();
     }
+
+    buffer.clear();
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
+      Body body;
+      body.pos  = C->X;
+      body.scal = 0;
+      buffer.push_back(body);
+    }
+
     sendCells.clear();
     recvCells.clear();
   }

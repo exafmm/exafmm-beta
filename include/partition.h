@@ -130,6 +130,15 @@ public:
     color[2] = key[1] + oldcolor * (1 << (LEVEL - l - 1));
     for( int i=0; i!=3; ++i )
       MPI_Comm_split(MPI_COMM_WORLD,color[i],key[i],&MPI_COMM[i]);
+#ifdef DEBUG
+    print("level : ",0);
+    print(l,0);
+    print("\n",0);
+    print("key   : \n",0);
+    print(key,0,3);
+    print("color : \n",0);
+    print(color,0,3);
+#endif
   }
 
   void multisectionAlltoall(Bigints &Ibody, Bodies &buffer,
@@ -297,13 +306,6 @@ public:
           std::cout << std::endl;
         }
       }
-      print("level : ",0);
-      print(l,0);
-      print("\n",0);
-      print("key   : \n",0);
-      print(key,0,3);
-      print("color : \n",0);
-      print(color,0,3);
 #endif
       numLocal = newSize;
       MPI_Reduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,0,MPI_COMM[0]);
