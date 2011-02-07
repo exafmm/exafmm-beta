@@ -5,7 +5,8 @@ int main() {
   Bodies bodiesI(numBodies);
   Bodies bodiesI2(numBodies);
   Bodies bodiesJ(numBodies);
-  Cells  cells(4);
+  Cells  cells;
+  cells.resize(4);
   Kernel K;
 
   for( int it=0; it!=10; ++it ) {

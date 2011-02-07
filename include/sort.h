@@ -50,7 +50,7 @@ public:
       bucket1[i] = 0;
     for( int i=begin; i!=end; ++i )
       bucket1[(index[permut1[i]] - Imin) / numBucket]++;
-    int offset(0);
+    int offset = 0;
     for( int j=0; j!=numBucket; ++j ) {
       if( bucket1[j] > 0 ) {
         for( int i=0; i!=numBucket; ++i )
@@ -87,8 +87,8 @@ public:
   template<typename T>
   void sort(Bigints &index, T &value, T &vbuffer, bool ascend=true, int begin=0, int end=0) {
     int const N = value.size();
-    int const threshold(100000000);
-    int numBucket(0);
+    int const threshold = 100000000;
+    int numBucket = 0;
     if( end == 0 ) end = N;
     BI_iter BI0 = index.begin()+begin;
     BI_iter BIN = index.begin()+end;

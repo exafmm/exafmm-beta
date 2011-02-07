@@ -38,8 +38,8 @@ private:
     void addChild(int const i, N_iter &N) {                     // Add child node and link it
       bigint pOff = ((1 << 3* LEVEL   ) - 1) / 7;               // Parent cell index offset
       bigint cOff = ((1 << 3*(LEVEL+1)) - 1) / 7;               // Current cell index offset
-      vect x(X);                                                // Initialize new center position with old center
-      real r(R/2);                                              // Initialize new size
+      vect x = X;                                               // Initialize new center position with old center
+      real r = R/2;                                             // Initialize new size
       for( int d=0; d!=3; ++d )                                 // Loop over dimensions
         x[d] += r * (((i & 1 << d) >> d) * 2 - 1);              //  Calculate new center position
       CHILD[i] = ++N;                                           // Increment node pointer and assign to child
@@ -180,9 +180,9 @@ public:
     }                                                           // End loop over levels
   }
 
-  void grow(Bodies &buffer, int level=0, int begin=0, int end=0) { // Grow tree by splitting cells
-    bigint icell(Ibody[begin]);                                 // Initialize cell index
-    int off(begin), size(0);                                    // Initialize offset, and size
+  void grow(Bodies &buffer, int level=0, int begin=0, int end=0) {// Grow tree by splitting cells
+    bigint icell = Ibody[begin];                                // Initialize cell index
+    int off=begin, size=0;                                      // Initialize offset, and size
     if( level == 0 ) level = getMaxLevel();                     // Max level for bottom up tree build
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
     for( int b=begin; b!=end; ++b ) {                           // Loop over all bodies under consideration
@@ -218,11 +218,6 @@ public:
   void topdown(Bodies &buffer,bool print=true) {
     double tic,toc;
     tic = get_time();
-    setDomain();
-    toc = get_time();
-    if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
-
-    tic = get_time();
     TopDown::grow();
     toc = get_time();
     if(print) std::cout << "Grow tree     : " << toc-tic << std::endl;
@@ -245,11 +240,6 @@ public:
 
   void bottomup(Bodies &buffer, bool print=true) {
     double tic,toc;
-    tic = get_time();
-    setDomain();
-    toc = get_time();
-    if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
-
     tic = get_time();
     BottomUp::setIndex();
     toc = get_time();

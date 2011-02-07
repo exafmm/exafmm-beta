@@ -20,7 +20,7 @@
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 #include "types.h"
-int const maxGroups(1000000);
+int const maxGroups = 1000000;
 
 class vtkSliderCallback : public vtkCommand
 {
@@ -71,9 +71,9 @@ public:
   }
 
   void setGroupOfPoints(Bigints &index, Bodies &bodies, int &Ncell) {
-    int begin(0),size(0);
+    int begin=0, size=0;
     int icell = index[0];
-    int b=0;
+    int b = 0;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
       if( index[b] != icell ) {
         setGroup(Ncell,size);

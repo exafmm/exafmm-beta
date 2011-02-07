@@ -22,41 +22,46 @@ int  const NCRIT(100);                                          // Number of bod
 real const THETA(0.5);                                          // Box opening criteria
 real const EPS(0.000001);                                       // Single precision epsilon
 real const EPS2(0.0001);                                        // Softening parameter
+int MPIRANK(0);                                                 // MPI rank (for debugging serial class in MPI run)
+int MPISIZE(0);                                                 // MPI size (for debugging serial class in MPI run)
 
-struct jbody {                                                  // Source properties of a body
+struct JBody {                                                  // Source properties of a body
   vect pos;                                                     // Position
   real scal;                                                    // Mass/charge
 };
-struct body : jbody {                                           // All properties of a body
+struct Body : JBody {                                           // All properties of a body
   vect acc;                                                     // Acceleration
   real pot;                                                     // Potential
 };
-typedef std::vector<body>             Bodies;                   // Vector of bodies
-typedef std::vector<body>::iterator   B_iter;                   // Iterator for body vector
+typedef std::vector<Body>             Bodies;                   // Vector of bodies
+typedef std::vector<Body>::iterator   B_iter;                   // Iterator for body vector
+typedef std::vector<JBody>            JBodies;                  // Vector of source bodies
+typedef std::vector<JBody>::iterator  JB_iter;                  // Iterator for source body vector
 
-struct jcell {                                                  // Source properties of a cell
+struct JCell {                                                  // Source properties of a cell
   bigint I;                                                     // Cell index
   coef   M;                                                     // Multipole coefficients
 };
-struct cell : jcell {                                           // All properties of a cell
-  typedef std::vector<cell>::iterator C_iter;                   // Iterator for cell vector
-  int    NLEAF;                                                 // Number of leafs
+struct Cell : JCell {                                           // All properties of a cell
   int    NCHILD;                                                // Number of child cells
-  B_iter LEAF;                                                  // Pointer to first leaf
-  C_iter PARENT;                                                // Pointer to parent cell
-  C_iter CHILD[8];                                              // Pointer to child cells
+  int    NLEAF;                                                 // Number of leafs
+  int    PARENT;                                                // Iterator offset of parent cell
+  int    CHILD[8];                                              // Iterator offset of child cells
+  B_iter LEAF;                                                  // Iterator of first leaf
   vect   X;                                                     // Cell center
   real   R;                                                     // Cell radius
   coef   L;                                                     // Local coefficients
 };
-typedef std::vector<cell>             Cells;                    // Vector of cells
-typedef std::vector<cell>::iterator   C_iter;                   // Iterator for cell vector
+typedef std::vector<Cell>             Cells;                    // Vector of cells
+typedef std::vector<Cell>::iterator   C_iter;                   // Iterator for cell vector
+typedef std::vector<JCell>            JCells;                   // Vector of source cells
+typedef std::vector<JCell>::iterator  JC_iter;                  // Iterator for source cell vector
 
-struct pair {                                                   // Structure for pair of interacting cells
+struct Pair {                                                   // Structure for pair of interacting cells
   C_iter CI;                                                    // Target cell iterator
   C_iter CJ;                                                    // Source cell iterator
-  pair(C_iter ci, C_iter cj) : CI(ci), CJ(cj) {}                // Constructor
+  Pair(C_iter ci, C_iter cj) : CI(ci), CJ(cj) {}                // Constructor
 };
-typedef std::stack<pair>              Pairs;                    // Stack of interacting cells
+typedef std::stack<Pair>              Pairs;                    // Stack of interacting cells
 
 #endif

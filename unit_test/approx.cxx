@@ -21,7 +21,16 @@ int main() {
   toc = get_time();
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 
+  tic = get_time();
+  T.setDomain();
+  toc = get_time();
+  std::cout << "Set domain    : " << toc-tic << std::endl;
+
+#ifdef TOPDOWN
+  T.topdown(buffer);
+#else
   T.bottomup(buffer);
+#endif
 
   tic = get_time();
   T.P2M();
@@ -49,6 +58,7 @@ int main() {
   B_iter B2 = buffer.begin();
   real err(0),rel(0);
   for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
+    B->pot -= B->scal / std::sqrt(EPS2);                        //  Initialize body values
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
   }

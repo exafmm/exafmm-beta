@@ -20,7 +20,16 @@ int main() {
   toc = get_time();
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 
+  tic = get_time();
+  T.setDomain();
+  toc = get_time();
+  std::cout << "Set domain    : " << toc-tic << std::endl;
+
+#ifdef TOPDOWN
+  T.topdown(buffer);
+#else
   T.bottomup(buffer);
+#endif
 
 #ifdef VTK
   T.sort(T.Ibody,bodies,buffer);

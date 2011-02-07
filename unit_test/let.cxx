@@ -33,12 +33,21 @@ int main() {
   toc = get_time();
   if(print) std::cout << "Multisection  : " << toc-tic << std::endl;
 
+#ifdef TOPDOWN
+  mpi.topdown(buffer,print);
+#else
   mpi.bottomup(buffer,print);
+#endif
 
   tic = get_time();
   mpi.commBodies();
   toc = get_time();
   if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
+
+  tic = get_time();
+  mpi.commCells();
+  toc = get_time();
+  if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
 
   std::fill(mpi.Ibody.begin(),mpi.Ibody.end(),0);
 #ifdef VTK

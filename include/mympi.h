@@ -19,6 +19,8 @@ public:
     MPI_Init(&argc,&argv);                                      // Initialize MPI communicator
     MPI_Comm_size(MPI_COMM_WORLD,&SIZE);                        // Get number of MPI processes
     MPI_Comm_rank(MPI_COMM_WORLD,&RANK);                        // Get index of current MPI process
+    MPIRANK = RANK;                                             // Set global variable MPIRANK
+    MPISIZE = SIZE;                                             // Set global variable MPISIZE
   }
 
   ~MyMPI() {                                                    // Destructor
@@ -69,12 +71,13 @@ public:
     return type;
   }
 
-  template<typename T>                                          // Auto-detect data type to print
+  template<typename T>                                          // Detect data type to print
   void print(T data) {                                          // Print a scalar value on all ranks
     for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over ranks
-      MPI_Barrier(MPI_COMM_WORLD);                              // Sync processes
-      usleep(WAIT);                                             // Wait "WAIT" milliseconds
-      if( RANK == irank ) std::cout << data << " ";             // Print "data"
+      MPI_Barrier(MPI_COMM_WORLD);                              //  Sync processes
+      usleep(WAIT);                                             //  Wait "WAIT" milliseconds
+      if( RANK == irank )                                       //  If it's my turn
+        std::cout << data << " ";                               //   Print "data"
     }                                                           // End loop over ranks
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
@@ -95,7 +98,8 @@ public:
       usleep(WAIT);
       if( RANK == irank ) {
         std::cout << RANK << " : ";
-        for( int i=begin; i!=end; ++i ) std::cout << data[i] << " ";
+        for( int i=begin; i!=end; ++i )
+          std::cout << data[i] << " ";
         std::cout << std::endl;
       }
     }
@@ -107,7 +111,8 @@ public:
     usleep(WAIT);
     if( RANK == irank ) {
       std::cout << RANK << " : ";
-      for( int i=begin; i!=end; ++i ) std::cout << data[i] << " ";
+      for( int i=begin; i!=end; ++i )
+        std::cout << data[i] << " ";
       std::cout << std::endl;
     }
   }
@@ -270,9 +275,9 @@ public:
 
   template<typename T>
   int getBucket(T *data, int numData, int lOffset, std::vector<T> &send, std::vector<T> &recv, MPI_Comm MPI_COMM) {
-    int maxBucket(send.size());                                 // Maximum number of buckets
+    int maxBucket = send.size();                                // Maximum number of buckets
     int numBucket;                                              // Number of buckets
-    int numSample(std::min(maxBucket/SIZES,numData));           // Number of local samples
+    int numSample = std::min(maxBucket/SIZES,numData);          // Number of local samples
     int const MPI_TYPE = getType(data[0]);                      // Get MPI data type
     int *rcnt = new int [SIZES];                                // MPI receive count
     int *rdsp = new int [SIZES];                                // MPI receive displacement
@@ -313,14 +318,14 @@ public:
     }
     MPI_Comm_size(MPI_COMM,&SIZES);                             //  Get number of MPI processes for that comm
     MPI_Comm_rank(MPI_COMM,&RANKS);                             //  Get index of current MPI process for that comm
-    int maxBucket(1000);                                        // Maximum number of buckets
+    int maxBucket = 1000;                                       // Maximum number of buckets
     int numBucket;                                              // Number of buckets
-    int lOffset(0);                                             // Local offset of region being considered
+    int lOffset = 0;                                            // Local offset of region being considered
     int const MPI_TYPE = getType(n);                            // Get MPI data type
     int *rcnt = new int [SIZES];                                // MPI receive count
     std::vector<T> send(maxBucket);                             // MPI send buffer for data
     std::vector<T> recv(maxBucket);                             // MPI receive buffer for data
-    T2 gOffset(0);                                              // Global offset of region being considered
+    T2 gOffset = 0;                                             // Global offset of region being considered
     T2 *isend = new T2 [maxBucket];                             // MPI send buffer for index
     T2 *irecv = new T2 [maxBucket];                             // MPI receive buffer for index
     T2 *iredu = new T2 [maxBucket];                             // Local scan of index buffer
@@ -328,7 +333,7 @@ public:
     MPI_Barrier(MPI_COMM_WORLD);
 
     while( numBucket > 1 ) {                                    // While there are multipole candidates
-      int ic(0),nth(0);                                         //  Initialize counters
+      int ic=0, nth=0;                                          //  Initialize counters
       for( int i=0; i!=maxBucket; ++i ) isend[i] = 0;           //  Initialize bucket counter
       for( int i=0; i!=numData; ++i ) {                         //  Loop over range of data
         while( data[lOffset + i] > recv[ic] && ic < numBucket-1 ) ++ic;// Set counter to current bucket
