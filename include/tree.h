@@ -22,8 +22,6 @@ public:
 
   ~TreeStructure() {}                                           // Destructor
 
-  vect &setX0() {return X0;}                                    // Get center of root cell
-  real &setR0() {return R0;}                                    // Get radius of root cell
   vect getX0() {return X0;}                                     // Get center of root cell
   real getR0() {return R0;}                                     // Get radius of root cell
 
@@ -91,7 +89,7 @@ public:
     Cell parent;                                                // Define parent cell structure
     int oldend = end;                                           // Save old end counter
     parent.I = getParent(cells[begin].I);                       // Set cell index
-    parent.NLEAF = parent.NCHILD = 0;                           // Initialize NLEAF & NCHILD
+    parent.M = parent.NLEAF = parent.NCHILD = 0;                // Initialize multipole, NLEAF & NCHILD
     parent.LEAF = cells[begin].LEAF;                            // Set pointer to first leaf
     getCenter(parent);                                          // Set cell center and radius
     for( int i=begin; i!=oldend; ++i ) {                        // Loop over all cells at this level
@@ -99,7 +97,7 @@ public:
         cells.push_back(parent);                                //   Push cell structure into vector
         end++;                                                  //   Increment cell counter
         parent.I = getParent(cells[i].I);                       //   Set cell index
-        parent.NLEAF = parent.NCHILD = 0;                       //   Initialize NLEAF & NCHILD
+        parent.M = parent.NLEAF = parent.NCHILD = 0;            //   Initialize multipole, NLEAF & NCHILD
         parent.LEAF = cells[i].LEAF;                            //   Set pointer to first leaf
         getCenter(parent);                                      //   Set cell center and radius
       }                                                         //  Endif for new parent cell

@@ -19,16 +19,16 @@ public:
     MPI_Init(&argc,&argv);                                      // Initialize MPI communicator
     MPI_Comm_size(MPI_COMM_WORLD,&SIZE);                        // Get number of MPI processes
     MPI_Comm_rank(MPI_COMM_WORLD,&RANK);                        // Get index of current MPI process
-    MPIRANK = RANK;                                             // Set global variable MPIRANK
     MPISIZE = SIZE;                                             // Set global variable MPISIZE
+    MPIRANK = RANK;                                             // Set global variable MPIRANK
   }
 
   ~MyMPI() {                                                    // Destructor
     MPI_Finalize();                                             // Finalize MPI communicator
   }
 
-  int size() { return SIZE; }                                   // Number of MPI processes
-  int rank() { return RANK; }                                   // Index of current MPI process
+  int commSize() { return SIZE; }                               // Number of MPI processes
+  int commRank() { return RANK; }                               // Index of current MPI process
 
   bool isPowerOfTwo(int const n) {                              // If n is power of two return true
     return ((n != 0) && !(n & (n - 1)));                        // Decrement and compare bits
@@ -115,162 +115,6 @@ public:
         std::cout << data[i] << " ";
       std::cout << std::endl;
     }
-  }
-
-  template<typename T>
-  void alltoall(T *data, int const numData, int const count) {
-    int MPI_TYPE = getType(data[0]);
-    T *send = new T [numData];
-    T *recv = new T [numData];
-
-    if( isPowerOfTwo(SIZE) ) {
-      MPI_Comm MPI_COMM;
-      int level = int(log(1. + SIZE) / M_LN2);
-      int chunk = count * SIZE / 2;
-      for( int l=0; l!=level; ++l ) {
-        int npart = 1 << l;
-        int color = (RANK / npart / 2) * npart + RANK % npart;
-        int key = RANK / npart % 2;
-        MPI_Comm_split(MPI_COMM_WORLD,color,key,&MPI_COMM);
-#ifdef DEBUG
-        print("level : ",0);
-        print(level-l,0);
-        print("\n",0);
-        print("color : ",0);
-        print(color);
-        print("key   : ",0);
-        print(key);
-#endif
-        for( int irank=0; irank!=SIZE/2; ++irank ) {
-          for( int i=0; i!=2; ++i ) {
-            int idata = (irank / npart) * 2 * npart + irank % npart + i * npart;
-            int isend = i * SIZE / 2 + irank;
-            for( int icount=0; icount!=count; ++icount )
-              send[isend*count+icount] = data[idata*count+icount];
-          }
-        }
-        MPI_Alltoall(send,chunk,MPI_TYPE,recv,chunk,MPI_TYPE,MPI_COMM);
-        for( int irank=0; irank!=SIZE/2; ++irank ) {
-          for( int i=0; i!=2; ++i ) {
-            int idata = (irank / npart) * 2 * npart + irank % npart + i * npart;
-            int irecv = i * SIZE / 2 + irank;
-            for( int icount=0; icount!=count; ++icount )
-              data[idata*count+icount] = recv[irecv*count+icount];
-          }
-        }
-      }
-    } else {
-      MPI_Alltoall(data,count,MPI_TYPE,&recv[0],count,MPI_TYPE,MPI_COMM_WORLD);
-      for( int i=0; i!=numData; ++i ) data[i] = recv[i];
-    }
-    delete[] send;
-    delete[] recv;
-  }
-
-  template<typename T>
-  void alltoallv(T *data, int const numData, int *scnt) {
-    int MPI_TYPE = getType(data[0]);
-    int *sdsp  = new int [SIZE];
-    int *rcnt  = new int [SIZE];
-    int *rdsp  = new int [SIZE];
-    int *scntd = new int [SIZE];
-    int *rcntd = new int [SIZE];
-    int *irev  = new int [SIZE];
-    T   *send  = new   T [numData];
-    T   *recv  = new   T [numData];
-
-    sdsp[0] = 0;
-    for( int irank=0; irank!=SIZE-1; ++irank ) {
-      sdsp[irank+1] = sdsp[irank] + scnt[irank];
-    }
-
-    if( isPowerOfTwo(SIZE) ) {
-      int level = int(log(1. + SIZE) / M_LN2);
-      for( int l=0; l!=level; ++l ) {
-        int npart = 1 << l;
-        int color = (RANK / npart / 2) * npart + RANK % npart;
-        int key = RANK / npart % 2;
-        MPI_Comm MPI_COMM;
-        MPI_Comm_split(MPI_COMM_WORLD,color,key,&MPI_COMM);
-#ifdef DEBUG
-        print("level : ",0);
-        print(level-l,0);
-        print("\n",0);
-        print("color : ",0);
-        print(color);
-        print("key   : ",0);
-        print(key);
-#endif
-        int ic = 0;
-        int scnt2[2],sdsp2[2],rcnt2[2],rdsp2[2];
-        for( int i=0; i!=2; ++i ) {
-          scnt2[i] = 0;
-          for( int irank=0; irank!=SIZE/2; ++irank ) {
-            int idata = (irank / npart) * 2 * npart + irank % npart + i * npart;
-            int isend = i * SIZE / 2 + irank;
-            irev[idata] = isend;
-            scntd[isend] = scnt[idata];
-            scnt2[i] += scnt[idata];
-            for( int id=sdsp[idata]; id!=sdsp[idata]+scnt[idata]; ++id,++ic )
-              send[ic] = data[id];
-          }
-        }
-        MPI_Alltoall(scntd,SIZE/2,MPI_INT,rcnt,SIZE/2,MPI_INT,MPI_COMM);
-        MPI_Alltoall(scnt2,1,MPI_INT,rcnt2,1,MPI_INT,MPI_COMM);
-        sdsp2[0] = 0; sdsp2[1] = scnt2[0];
-        rdsp2[0] = 0; rdsp2[1] = rcnt2[0];
-        MPI_Alltoallv(send,scnt2,sdsp2,MPI_TYPE,recv,rcnt2,rdsp2,MPI_TYPE,MPI_COMM);
-        rdsp[0] = 0;
-        for( int irank=0; irank!=SIZE-1; ++irank )
-          rdsp[irank+1] = rdsp[irank] + rcnt[irank];
-        ic = 0;
-        for( int i=0; i!=2; ++i ) {
-          for( int irank=0; irank!=SIZE/2; ++irank ) {
-            int idata = (irank / npart) * 2 * npart + irank % npart + i * npart;
-            int irecv = i * SIZE / 2 + irank;
-            rcntd[idata] = rcnt[irecv];
-            idata = irev[irecv];
-            for( int id=rdsp[idata]; id!=rdsp[idata]+rcnt[idata]; ++id,++ic )
-              data[ic] = recv[id];
-          }
-        }
-        rdsp[0] = 0;
-        for( int irank=0; irank!=SIZE-1; ++irank )
-          rdsp[irank+1] = rdsp[irank] + rcntd[irank];
-        for( int irank=0; irank!=SIZE; ++irank ) {
-          scnt[irank] = rcntd[irank];
-          sdsp[irank] = rdsp[irank];
-        }
-#ifdef DEBUG
-        print("rcnt\n",0);
-        print(rcnt,0,SIZE);
-        print("rcnt\n",0);
-        print(rcntd,0,SIZE);
-        print("send\n",0);
-        print(send,0,numData);
-        print("recv\n",0);
-        print(recv,0,numData);
-        print("data\n",0);
-        print(data,0,numData);
-#endif
-      }
-    } else {
-      MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM_WORLD);
-      rdsp[0] = 0;
-      for( int irank=0; irank!=SIZE-1; ++irank )
-        rdsp[irank+1] = rdsp[irank] + rcnt[irank];
-
-      MPI_Alltoallv(data,scnt,sdsp,MPI_TYPE,recv,rcnt,rdsp,MPI_TYPE,MPI_COMM_WORLD);
-      for( int i=0; i!=numData; ++i ) data[i] = recv[i];
-    }
-    delete[] sdsp;
-    delete[] rcnt;
-    delete[] rdsp;
-    delete[] scntd;
-    delete[] rcntd;
-    delete[] irev;
-    delete[] send;
-    delete[] recv;
   }
 
   template<typename T>

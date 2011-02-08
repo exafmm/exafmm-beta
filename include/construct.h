@@ -134,7 +134,7 @@ public:
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
     for( int b=begin; b!=end; ++b ) {                           // Loop over all bodies
       for( int d=0; d!=3; ++d )                                 //  Loop over dimension
-        nx[d] = int( ( bodies.at(b).pos[d] - (X0[d]-R0) ) / r );//   3-D cell index
+        nx[d] = int( ( bodies[b].pos[d] - (X0[d]-R0) ) / r );   //   3-D cell index
       i = 0;                                                    //  Initialize cell index
       for( int l=0; l!=level; ++l ) {                           //  Loop over all levels of tree
         for( int d=0; d!=3; ++d ) {                             //   Loop over dimension

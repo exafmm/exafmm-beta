@@ -16,7 +16,7 @@ kernel: kernel.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
-approx: approx.cxx
+serialrun: serialrun.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
@@ -41,17 +41,9 @@ shift: shift.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	mpirun -np 4 ./a.out
 
-alltoall: alltoall.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	mpirun -np 8 ./a.out
-
-alltoallv: alltoallv.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	mpirun -np 4 ./a.out
-
 nth_element: nth_element.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
-	mpirun -np 8 ./a.out
+	mpirun -np 7 ./a.out
 
 multisection: multisection.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
@@ -61,19 +53,22 @@ let: let.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	mpirun -np 7 ./a.out
 
+parallelrun: parallelrun.cxx
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
+	mpirun -np 8 ./a.out
+
 all      :
 	make index
 	make topdown
 	make bottomup
 	make kernel
-	make approx
+	make serialrun
 	make direct
 	make taylor
 	make vtk
 	make mpi
 	make shift
-	make alltoall
-	make alltoallv
 	make nth_element
 	make multisection
 	make let
+	make parallelrun

@@ -1,20 +1,15 @@
 #ifndef let_h
 #define let_h
 #include "partition.h"
-#include "tree.h"
-#include "construct.h"
 
-class LocalEssentialTree : public TreeConstructor,
-                           public Partition {
+class LocalEssentialTree : public Partition {
 private:
   JBodies sendBodies;                                           // Send buffer for bodies
   JBodies recvBodies;                                           // Receive buffer for bodies
   JCells  sendCells;                                            // Send buffer for cells
   JCells  recvCells;                                            // Receive buffer for cells
 public:
-  LocalEssentialTree(Bodies &b) : TreeStructure(b),             // Constructor
-                                  TreeConstructor(b),
-                                  Partition(b) {}
+  LocalEssentialTree(Bodies &b) : TreeStructure(b), Partition(b) {}// Constructor
   ~LocalEssentialTree() {}                                      // Destructor
 
   void commBodies(Bodies &buffer) {                             // Communicate bodies in LET
@@ -312,6 +307,7 @@ public:
       graft();
     }
 
+    print((cells.end()-1)->M[0]);
     buffer.clear();
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       Body body;

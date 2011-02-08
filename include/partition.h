@@ -1,12 +1,10 @@
 #ifndef partition_h
 #define partition_h
 #include "mympi.h"
-#include "types.h"
-#include "sort.h"
+#include "construct.h"
 
-class Partition : public MyMPI, virtual public Sort {
+class Partition : public MyMPI, public TreeConstructor {
 private:
-  Bodies &bodies;                                               // Bodies to be partitioned
   int numBodies;                                                // Initial local number of bodies
 protected:
   int LEVEL;                                                    // Level of the MPI process binary tree
@@ -19,7 +17,7 @@ protected:
   int    key[3];                                                // Key of Gather, Scatter, and Alltoall communicators
   MPI_Comm MPI_COMM[3];                                         // Communicators for Gather, Scatter, and Alltoall
 public:
-  Partition(Bodies &b) : bodies(b) {                            // Constructor
+  Partition(Bodies &b) : TreeStructure(b), TreeConstructor(b) { // Constructor
     numBodies = bodies.size();                                  // Initialize local number of bodies
     LEVEL = int(log(SIZE) / M_LN2 - 1e-5) + 1;                  // Level of the process binary tree
     XMIN.resize(LEVEL+1);                                       // Minimum position vector at each level
@@ -27,7 +25,7 @@ public:
   }
   ~Partition() {}                                               // Destructor
 
-  void setGlobDomain(real &R0, vect &X0) {                      // Set bounds of domain to be partitioned
+  void setGlobDomain() {                                        // Set bounds of domain to be partitioned
     B_iter B = bodies.begin();                                  // Reset body iterator
     XMIN[0] = XMAX[0] = B->pos;                                 // Initialize xmin,xmax
     int const MPI_TYPE = getType(XMIN[0][0]);                   // Get MPI data type
@@ -64,14 +62,14 @@ public:
       XMIN[l+1][d] = X;
   }
 
-  void binBodies(Bigints &Ibody, int d) {                       // Turn positions into indices of bins
+  void binBodies(int d) {                                       // Turn positions into indices of bins
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
       Ibody[B-bodies.begin()] = bigint((B->pos[d] - XMIN[0][d]) // Bin body positions into integers
         / (XMAX[0][d] - XMIN[0][d]) * numBodies);
     }                                                           // End loop over all bodies
   }
 
-  void shiftBodies(Bigints &Ibody, Bodies &buffer) {            // Send bodies to next rank (wrap around)
+  void shiftBodies(Bodies &buffer) {                            // Send bodies to next rank (wrap around)
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
     int const MPI_TYPE = getType(Ibody[0]);                     // Get MPI data type
@@ -104,7 +102,7 @@ public:
     bodies = buffer;                                            // Copy bodies from buffer
   }
 
-  int splitBodies(Bigints &Ibody, bigint iSplit) {
+  int splitBodies(bigint iSplit) {
     int nth = 0;
     while( Ibody[nth] < iSplit && nth < int(Ibody.size() - 1) ) nth++;
     return nth;
@@ -141,7 +139,7 @@ public:
 #endif
   }
 
-  void multisectionAlltoall(Bigints &Ibody, Bodies &buffer,
+  void multisectionAlltoall(Bodies &buffer,
                             int nthLocal, int numLocal, int &newSize) {
     int const MPI_TYPE = getType(Ibody[0]);
     int const bytes = sizeof(bodies[0]);
@@ -174,7 +172,7 @@ public:
     sort(Ibody,bodies,buffer);
   }
 
-  void multisectionScatter(Bigints &Ibody, Bodies &buffer,
+  void multisectionScatter(Bodies &buffer,
                            int nthLocal, int &newSize) {
     int const MPI_TYPE = getType(Ibody[0]);
     int const bytes = sizeof(bodies[0]);
@@ -222,7 +220,7 @@ public:
     delete[] sdsp;
   }
 
-  void multisectionGather(Bigints &Ibody, Bodies &buffer,
+  void multisectionGather(Bodies &buffer,
                           int nthLocal, int &newSize) {
     int const MPI_TYPE = getType(Ibody[0]);
     int const bytes = sizeof(bodies[0]);
@@ -267,7 +265,7 @@ public:
     if( key[0] == 0 ) sort(Ibody,bodies,buffer);
   }
 
-  void multisection(Bigints &Ibody, Bodies &buffer) {
+  void multisection(Bodies &buffer) {
     int const MPI_TYPE = getType(Ibody[0]);
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
@@ -279,22 +277,22 @@ public:
     MPI_Reduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
     MPI_Bcast(&numGlobal,1,MPI_TYPE,0,MPI_COMM_WORLD);
     bigint nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];
-    binBodies(Ibody,0);
+    binBodies(0);
     sort(Ibody,bodies,buffer);
     bigint iSplit = nth_element(&Ibody[0],numLocal,nthGlobal);
-    int nthLocal = splitBodies(Ibody,iSplit);
+    int nthLocal = splitBodies(iSplit);
 
     for( int l=0; l!=LEVEL; ++l ) {
       multisectionGetComm(l);
 
       splitDomain(iSplit,l,l%3);
 
-      multisectionAlltoall(Ibody,buffer,nthLocal,numLocal,newSize);
+      multisectionAlltoall(buffer,nthLocal,numLocal,newSize);
 
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] )
-        multisectionScatter(Ibody,buffer,nthLocal,newSize);
+        multisectionScatter(buffer,nthLocal,newSize);
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] >= nprocs[1] )
-        multisectionGather(Ibody,buffer,nthLocal,newSize);
+        multisectionGather(buffer,nthLocal,newSize);
 
 #ifdef DEBUG
       for(int j=0; j!=SIZE; ++j) {
@@ -311,13 +309,49 @@ public:
       MPI_Reduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,0,MPI_COMM[0]);
       MPI_Bcast(&numGlobal,1,MPI_TYPE,0,MPI_COMM[0]);
       nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];
-      binBodies(Ibody,(l+1) % 3);
+      binBodies((l+1) % 3);
       sort(Ibody,bodies,buffer);
       iSplit = nth_element(&Ibody[0],numLocal,nthGlobal,MPI_COMM[0]);
-      nthLocal = splitBodies(Ibody,iSplit);
+      nthLocal = splitBodies(iSplit);
     }
   }
 
+  void octsection(Bodies &buffer) {
+    int byte = sizeof(bodies[0]);
+    int level = int(log(SIZE + 1) / M_LN2 / 3);
+    BottomUp::setIndex(level);
+    sort(Ibody,bodies,buffer);
+    int *scnt = new int [SIZE];
+    int *sdsp = new int [SIZE];
+    int *rcnt = new int [SIZE];
+    int *rdsp = new int [SIZE];
+    for( int i=0; i!=SIZE; ++i )
+      scnt[i] = 0;
+    for( BI_iter BI=Ibody.begin(); BI!=Ibody.end(); ++BI ) {
+      int i = *BI - ((1 << 3*level) - 1) / 7;
+      scnt[i]++;
+    }
+    MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM_WORLD);
+    sdsp[0] = rdsp[0] = 0;
+    for( int irank=0; irank!=SIZE-1; ++irank ) {
+      sdsp[irank+1] = sdsp[irank] + scnt[irank];
+      rdsp[irank+1] = rdsp[irank] + rcnt[irank];
+    }
+    buffer.resize(rdsp[SIZE-1]+rcnt[SIZE-1]);
+    Ibody.resize(buffer.size());
+    for( int irank=0; irank!=SIZE; ++irank ) {
+      scnt[irank] *= byte;
+      sdsp[irank] *= byte;
+      rcnt[irank] *= byte;
+      rdsp[irank] *= byte;
+    }
+    MPI_Alltoallv(&bodies[0],scnt,sdsp,MPI_BYTE,&buffer[0],rcnt,rdsp,MPI_BYTE,MPI_COMM_WORLD);
+    bodies = buffer;
+    delete[] scnt;
+    delete[] sdsp;
+    delete[] rcnt;
+    delete[] rdsp;
+  }
 };
 
 #endif
