@@ -115,8 +115,8 @@ public:
   }
 
   void link() {                                                 // Link cells to create tree
-    int begin=0, end=0;                                         // Initialize range of cell vector
-    int index=Ibody[0], nleaf=0, level=getLevel(index);         // Initialize cell index, nleaf, level
+    int begin = 0, end = 0;                                     // Initialize range of cell vector
+    int index = Ibody[0], nleaf = 0, level = getLevel(index);   // Initialize cell index, nleaf, level
     B_iter firstLeaf = bodies.begin();                          // Initialize body iterator
     Cell cell;                                                  // Define cell structure
     Cells buffer;                                               // Allocate sort buffer for cells

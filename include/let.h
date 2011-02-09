@@ -61,6 +61,7 @@ public:
         C_iter C = scells[ic];                                  //   Set cell iterator
         for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {     //   Loop over all bodies in that cell
           JBody body;                                           //    Set compact body type for sending
+          body.I    = B->I;                                     //    Set cell index of compact body type
           body.pos  = B->pos;                                   //    Set position of compact body type
           body.scal = B->scal;                                  //    Set mass/charge of compact body type
           sendBodies.push_back(body);                           //    Push it into the send buffer
@@ -92,16 +93,7 @@ public:
     }                                                           // End loop over ranks
     MPI_Waitall(2*srnks.size(),&reqs[0],MPI_STATUSES_IGNORE);   // Wait for all communication to finish
 
-/*
-    for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {
-      Body body;
-      body.pos  = JB->pos;
-      body.scal = JB->scal;
-      TreeStructure::bodies.push_back(body);
-    }
-*/
     sendBodies.clear();                                         // Clear send buffer for bodies
-    recvBodies.clear();                                         // Clear receive buffer for bodies
   }
 
   void getOtherDomain(vect &xmin, vect &xmax, int l) {
@@ -204,13 +196,120 @@ public:
     delete[] sdsp;
   }
 
-  void getTwigs() {
+  void getTwigs(int offTwigs) {
     for( int c=0; c!=int(cells.size()); ++c ) {
       if( cells[c].NCHILD != 0 ) {
         cells.erase(cells.begin()+c);
         c--;
       }
     }
+    for( JC_iter JC=sendCells.begin(); JC!=sendCells.begin()+offTwigs; ++JC ) {
+      Cell cell;
+      cell.I = JC->I;
+      cell.M = JC->M;
+      cell.NLEAF = cell.NCHILD = 0;
+      cell.LEAF = TreeStructure::bodies.end();
+      getCenter(cell);
+      cells.push_back(cell);
+    }
+    sendCells.clear();
+  }
+
+  void addJCells() {
+    BI_iter CI = Icell.begin();
+    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC,++CI ) *CI = JC->I;
+    JCells jbuffer;
+    jbuffer.resize(recvCells.size());
+    sort(Icell,recvCells,jbuffer,false);
+
+    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC ) {
+      Cell cell;
+      cell.I = JC->I;
+      cell.M = JC->M;
+      cell.NLEAF = cell.NCHILD = 0;
+      cell.LEAF = TreeStructure::bodies.end();
+      getCenter(cell);
+      cells.push_back(cell);
+    }
+  }
+
+  void uniqueTwig() {
+    int c_old = 0, end = cells.size();
+    for( int c=0; c!=end; ++c ) {
+      if( cells[c].I != cells[c_old].I ) {
+        c_old = c;
+      } else if( c != c_old ) {
+        if( cells[c].NLEAF != 0 ) {
+          cells[c_old].NLEAF  = cells[c].NLEAF;
+          cells[c_old].LEAF   = cells[c].LEAF;
+          cells[c_old].M      = 0;
+        }
+        cells.erase(cells.begin()+c);
+        c--;
+        end--;
+      }
+    }
+  }
+
+  void addJBodies(Bodies &buffer) {
+    for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {
+      Body body;
+      body.I    = JB->I;
+      body.pos  = JB->pos;
+      body.scal = JB->scal;
+      TreeStructure::bodies.push_back(body);
+    }
+    Ibody.resize(bodies.size());
+    buffer.resize(bodies.size());
+
+    Cells jcells;
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
+      if( C->NLEAF == 0 ) {
+        jcells.push_back(*C);
+      }
+    }
+    cells.clear();
+
+    B_iter B = bodies.begin();
+    for( BI_iter BI=Ibody.begin(); BI!=Ibody.end(); ++BI,++B )
+      *BI = B->I;
+    sort(Ibody,bodies,buffer,false);
+    int nleaf = 0;
+    bigint index = Ibody[0];
+    B_iter firstLeaf = bodies.begin();
+    Cell cell;
+    BI_iter BI = Ibody.begin();
+    for( B=bodies.begin(); B!=bodies.end(); ++B,++BI ) {
+      if( *BI != index ) {
+        cell.NLEAF = nleaf;
+        cell.NCHILD = 0;
+        cell.I = index;
+        cell.LEAF = firstLeaf;                                  //   Set pointer to first leaf
+        getCenter(cell);                                        //   Set cell center and radius
+        cells.push_back(cell);
+        firstLeaf = B;
+        nleaf = 0;
+        index = *BI;
+      }
+      nleaf++;
+    }
+    cell.NLEAF = nleaf;                                         // Set number of leafs
+    cell.NCHILD = 0;                                            // Set number of child cells
+    cell.I = index;                                             // Set cell index
+    cell.LEAF = firstLeaf;                                      // Set pointer to first leaf
+    getCenter(cell);                                            // Set cell center and radius
+    cells.push_back(cell);                                      // Push cell structure into vector
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over all cells
+      C->M = 0;                                                 //  Initialize multipole coefficients
+      C->L = 0;                                                 //  Initialize local coefficients
+      K.P2M(C);                                                 //  Evaluate P2M kernel
+    }                                                           // End loop over cells
+
+    jcells.insert(jcells.end(),cells.begin(),cells.end());
+    cells = jcells;
+    jcells.clear();
+    sortCells(jcells,0,cells.size());
+    uniqueTwig();
   }
 
   void unique(int begin, int &end) {
@@ -240,32 +339,7 @@ public:
     }
   }
 
-  void graft(int &offTwigs) {
-    getTwigs();
-    for( JC_iter JC=sendCells.begin(); JC!=sendCells.begin()+offTwigs; ++JC ) {
-      Cell cell;
-      cell.I = JC->I;
-      cell.M = JC->M;
-      cells.push_back(cell);
-    }
-    sendCells.clear();
-
-    BI_iter CI = Icell.begin();
-    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC,++CI ) *CI = JC->I;
-    JCells jbuffer;
-    jbuffer.resize(recvCells.size());
-    sort(Icell,recvCells,jbuffer,false);
-
-    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC ) {
-      Cell cell;
-      cell.I = JC->I;
-      cell.M = JC->M;
-      cell.NLEAF = cell.NCHILD = 0;
-      cell.LEAF = TreeStructure::bodies.end();
-      getCenter(cell);
-      cells.push_back(cell);
-    }
-
+  void graft() {
     int end = cells.size();
     Cells buffer;
     sortCells(buffer,0,cells.size());
@@ -289,7 +363,6 @@ public:
       unique(begin,end);
       linkParent(begin,end);                                    //  Form parent-child mutual link
     }
-    offTwigs = sendCells.size();
     C0 = cells.begin();
 
   }
@@ -304,17 +377,23 @@ public:
 
     for( int l=0; l!=LEVEL; ++l ) {
       multisectionGetComm(l);
-
       getOtherDomain(xmin,xmax,l+1);
       getLET(cells.end()-1,xmin,xmax);
 
       commCellsAlltoall();
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] )
         commCellsScatter();
-      graft(offTwigs);
+
+      getTwigs(offTwigs);
+      addJCells();
+      if( l == LEVEL - 1 )
+        addJBodies(buffer);
+      graft();
+      offTwigs = sendCells.size();
     }
 
     print((cells.end()-1)->M[0]);
+    print(cells.size());
     buffer.clear();
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       Body body;

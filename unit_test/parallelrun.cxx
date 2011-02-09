@@ -29,7 +29,7 @@ int main() {
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.multisection(buffer);
+  P.octsection(buffer);
   toc = get_time();
   if(print) std::cout << "Multisection  : " << toc-tic << std::endl;
 

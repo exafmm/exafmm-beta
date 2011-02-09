@@ -24,9 +24,10 @@ real const EPS2(0.0001);                                        // Softening par
 int MPIRANK(0);                                                 // MPI rank (for debugging serial class in MPI run)
 int MPISIZE(0);                                                 // MPI size (for debugging serial class in MPI run)
 
-struct JBody {                                                  // Source properties of a body
-  vect pos;                                                     // Position
-  real scal;                                                    // Mass/charge
+struct JBody {                                                  // Source properties of a body (stuff to send)
+  bigint I;                                                     // Cell index
+  vect   pos;                                                   // Position
+  real   scal;                                                  // Mass/charge
 };
 struct Body : JBody {                                           // All properties of a body
   vect acc;                                                     // Acceleration
@@ -37,7 +38,7 @@ typedef std::vector<Body>::iterator   B_iter;                   // Iterator for 
 typedef std::vector<JBody>            JBodies;                  // Vector of source bodies
 typedef std::vector<JBody>::iterator  JB_iter;                  // Iterator for source body vector
 
-struct JCell {                                                  // Source properties of a cell
+struct JCell {                                                  // Source properties of a cell (stuff to send)
   bigint I;                                                     // Cell index
   coef   M;                                                     // Multipole coefficients
 };

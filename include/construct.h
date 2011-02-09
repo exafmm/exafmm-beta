@@ -104,6 +104,7 @@ public:
     } else {                                                    //  If child doesn't exist
       for( int i=0; i!=N->NLEAF; ++i ) {                        //   Loop over leafs
         Ibody[N->LEAF[i]-bodies.begin()] = N->I;                //    Store cell index in Ibody
+        N->LEAF[i]->I = N->I;                                   //    Store cell index in bodies
       }                                                         //   End loop over leafs
     }                                                           //  Endif for child existence
   }
@@ -142,7 +143,8 @@ public:
           nx[d] >>= 1;                                          //    Bitshift 3-D cell index
         }                                                       //   End loop over dimension
       }                                                         //  End loop over levels
-      Ibody[b] = i+off;                                         //  Store results with levelwise offset
+      Ibody[b] = i+off;                                         //  Store index in Ibody
+      bodies[b].I = i+off;                                      //  Store index in bodies
     }                                                           // End loop over all bodies
   }
 
