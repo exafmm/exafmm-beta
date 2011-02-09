@@ -54,7 +54,7 @@ let: let.cxx
 	mpirun -np 7 ./a.out
 
 parallelrun: parallelrun.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
+	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	mpirun -np 8 ./a.out
 
 all      :

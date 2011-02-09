@@ -347,6 +347,19 @@ public:
     }
     MPI_Alltoallv(&bodies[0],scnt,sdsp,MPI_BYTE,&buffer[0],rcnt,rdsp,MPI_BYTE,MPI_COMM_WORLD);
     bodies = buffer;
+    XMIN[0] = X0-R0;
+    XMAX[0] = X0+R0;
+    for( int l=0; l!=level; ++l ) {
+      for( int d=0; d!=3; ++d ) {
+        int i = 3 * l + d;
+        XMIN[i+1] = XMIN[i];
+        XMAX[i+1] = XMAX[i];
+        if( (RANK >> (3 * (level - l - 1) + 2 - d)) % 2 )
+          XMIN[i+1][2-d] = (XMAX[i][2-d]+XMIN[i][2-d]) / 2;
+        else
+          XMAX[i+1][2-d] = (XMAX[i][2-d]+XMIN[i][2-d]) / 2;
+      }
+    }
     delete[] scnt;
     delete[] sdsp;
     delete[] rcnt;

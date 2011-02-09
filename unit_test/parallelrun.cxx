@@ -6,7 +6,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(100000);
+  int const numBodies(10000);
   tic = get_time();
   Bodies bodies(numBodies);
   Bodies buffer(numBodies);
@@ -29,7 +29,7 @@ int main() {
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.octsection(buffer);
+  P.multisection(buffer);
   toc = get_time();
   if(print) std::cout << "Multisection  : " << toc-tic << std::endl;
 
@@ -40,11 +40,6 @@ int main() {
 #endif
 
   tic = get_time();
-  P.commBodies(buffer);
-  toc = get_time();
-  if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
-
-  tic = get_time();
   P.P2M();
   toc = get_time();
   if(print) std::cout << "P2M           : " << toc-tic << std::endl;
@@ -53,6 +48,11 @@ int main() {
   P.M2M();
   toc = get_time();
   if(print) std::cout << "M2M           : " << toc-tic << std::endl;
+
+  tic = get_time();
+  P.commBodies();
+  toc = get_time();
+  if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
 
   tic = get_time();
   P.commCells(buffer);

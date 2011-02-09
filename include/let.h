@@ -12,7 +12,7 @@ public:
   LocalEssentialTree(Bodies &b) : TreeStructure(b), Partition(b) {}// Constructor
   ~LocalEssentialTree() {}                                      // Destructor
 
-  void commBodies(Bodies &buffer) {                             // Communicate bodies in LET
+  void commBodies() {                                           // Communicate bodies in LET
     int MPI_TYPE = getType(XMIN[LEVEL][0]);                     // Get MPI data type
     std::vector<vect> xmin(SIZE);                               // Buffer for gathering XMIN
     std::vector<vect> xmax(SIZE);                               // Buffer for gathering XMAX
@@ -92,21 +92,14 @@ public:
     }                                                           // End loop over ranks
     MPI_Waitall(2*srnks.size(),&reqs[0],MPI_STATUSES_IGNORE);   // Wait for all communication to finish
 
+/*
     for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {
       Body body;
       body.pos  = JB->pos;
       body.scal = JB->scal;
       TreeStructure::bodies.push_back(body);
     }
-    cells.clear();
-    Ibody.resize(TreeStructure::bodies.size());
-    buffer.resize(TreeStructure::bodies.size());
-    BottomUp::setIndex();
-#ifdef TOPDOWN
-    topdown(buffer,false);
-#else
-    bottomup(buffer,false);
-#endif
+*/
     sendBodies.clear();                                         // Clear send buffer for bodies
     recvBodies.clear();                                         // Clear receive buffer for bodies
   }
@@ -153,11 +146,9 @@ public:
                   (CC->X[d] < xmin[d])*
                   (CC->X[d] - xmin[d]);
       real R = std::sqrt(norm(dist));                           //  Scalar distance
-      if( C0->R + CC->R > THETA * R ) {                         //  If the cell seems too close for interaction
-        if( CC->NCHILD != 0 ) {                                 //   If the child cell is not a twig
-          getLET(CC,xmin,xmax);                                 //    Traverse the tree further
-        }
-      } else {                                                  //  If the cell is far enough for interaction
+      if( C0->R + CC->R > THETA * R && CC->NCHILD != 0 ) {      //  If the cell seems too close and not twig
+        getLET(CC,xmin,xmax);                                   //   Traverse the tree further
+      } else {                                                  //  If the cell if far or a twig
         JCell cell;                                             //   Set compact cell type for sending
         cell.I = CC->I;                                         //   Set index of compact cell type
         cell.M = CC->M;                                         //   Set Multipoles of compact cell type
@@ -168,7 +159,7 @@ public:
 
   void commCellsAlltoall() {
     int const bytes = sizeof(sendCells[0]);
-    int rcnt[2],scnt[2]={0, 0};
+    int rcnt[2], scnt[2] = {0, 0};
     scnt[1-key[2]] = sendCells.size()*bytes;
     MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM[2]);
     int sdsp[2] = {0, scnt[0]};
@@ -228,11 +219,20 @@ public:
       if( cells[c].I != cells[c_old].I ) {
         c_old = c;
       } else if( c != c_old ) {
-        cells[c_old].M += cells[c].M;
-        if( cells[c].NLEAF != 0 ) {
-          cells[c_old].NLEAF += cells[c].NLEAF;
-          cells[c_old].LEAF = cells[c].LEAF;
+        if( cells[c].NCHILD != 0 ) {
+          JCell cell;
+          cell.I = cells[c_old].I;
+          cell.M = cells[c_old].M;
+          sendCells.push_back(cell);
+
+          cells[c_old].NCHILD = cells[c].NCHILD;
+          cells[c_old].NLEAF  = cells[c].NLEAF;
+          cells[c_old].PARENT = cells[c].PARENT;
+          for( int i=0; i!=cells[c].NCHILD; ++i )
+            cells[c_old].CHILD[i] = cells[c].CHILD[i];
+          cells[c_old].LEAF   = cells[c].LEAF;
         }
+        cells[c_old].M += cells[c].M;
         cells.erase(cells.begin()+c);
         c--;
         end--;
@@ -240,8 +240,15 @@ public:
     }
   }
 
-  void graft() {
+  void graft(int &offTwigs) {
     getTwigs();
+    for( JC_iter JC=sendCells.begin(); JC!=sendCells.begin()+offTwigs; ++JC ) {
+      Cell cell;
+      cell.I = JC->I;
+      cell.M = JC->M;
+      cells.push_back(cell);
+    }
+    sendCells.clear();
 
     BI_iter CI = Icell.begin();
     for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC,++CI ) *CI = JC->I;
@@ -262,7 +269,6 @@ public:
     int end = cells.size();
     Cells buffer;
     sortCells(buffer,0,cells.size());
-    unique(0,end);
 
     int begin = end = 0;
     int level = getLevel(cells[0].I);
@@ -283,12 +289,14 @@ public:
       unique(begin,end);
       linkParent(begin,end);                                    //  Form parent-child mutual link
     }
+    offTwigs = sendCells.size();
     C0 = cells.begin();
 
   }
 
   void commCells(Bodies &buffer) {
-    vect xmin=0, xmax=0;
+    int offTwigs = 0;
+    vect xmin = 0, xmax = 0;
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
      color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators
@@ -300,11 +308,10 @@ public:
       getOtherDomain(xmin,xmax,l+1);
       getLET(cells.end()-1,xmin,xmax);
 
-      MPI_Barrier(MPI_COMM_WORLD);
       commCellsAlltoall();
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] )
         commCellsScatter();
-      graft();
+      graft(offTwigs);
     }
 
     print((cells.end()-1)->M[0]);

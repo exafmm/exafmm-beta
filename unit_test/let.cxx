@@ -40,7 +40,7 @@ int main() {
 #endif
 
   tic = get_time();
-  P.commBodies(buffer);
+  P.commBodies();
   toc = get_time();
   if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
 
