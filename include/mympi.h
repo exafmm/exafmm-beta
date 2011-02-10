@@ -76,8 +76,7 @@ public:
     for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over ranks
       MPI_Barrier(MPI_COMM_WORLD);                              //  Sync processes
       usleep(WAIT);                                             //  Wait "WAIT" milliseconds
-      if( RANK == irank )                                       //  If it's my turn
-        std::cout << data << " ";                               //   Print "data"
+      if( RANK == irank ) std::cout << data << " ";             //  If it's my turn print "data"
     }                                                           // End loop over ranks
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
@@ -98,8 +97,9 @@ public:
       usleep(WAIT);
       if( RANK == irank ) {
         std::cout << RANK << " : ";
-        for( int i=begin; i!=end; ++i )
+        for( int i=begin; i!=end; ++i ) {
           std::cout << data[i] << " ";
+        }
         std::cout << std::endl;
       }
     }
@@ -111,8 +111,9 @@ public:
     usleep(WAIT);
     if( RANK == irank ) {
       std::cout << RANK << " : ";
-      for( int i=begin; i!=end; ++i )
+      for( int i=begin; i!=end; ++i ) {
         std::cout << data[i] << " ";
+      }
       std::cout << std::endl;
     }
   }
@@ -187,8 +188,9 @@ public:
                  MPI_SUM,0,MPI_COMM);
       if( RANKS == 0 ) {                                        //  Only rank 0 operates on reduced data
         iredu[0] = 0;                                           //   Initialize global scan index
-        for( int i=0; i!=numBucket-1; ++i )                     //   Loop over buckets
+        for( int i=0; i!=numBucket-1; ++i ) {                   //   Loop over buckets
           iredu[i+1] = iredu[i] + irecv[i];                     //    Increment global scan index
+        }                                                       //   End loop over buckets
         nth = 0;                                                //   Initialize index for bucket containing nth element
         while( n - gOffset > iredu[nth] && nth < numBucket ) ++nth;// Find index for bucket containing nth element
         --nth;                                                  //   Account for overshoot (do while?)
@@ -198,12 +200,14 @@ public:
       MPI_Bcast(&nth,1,MPI_INT,0,MPI_COMM);                     //  Broadcast index for bucket containing nth element
       MPI_Bcast(&gOffset,1,MPI_TYPE,0,MPI_COMM);                //  Broadcast global offset
       iredu[0] = 0;                                             //  Initialize local scan index
-      for( int i=0; i!=numBucket-1; ++i )                       //  Loop over buckets
+      for( int i=0; i!=numBucket-1; ++i ) {                     //  Loop over buckets
         iredu[i+1] = iredu[i] + isend[i];                       //   Increment local scan index
-      if( nth == numBucket-1 )                                  //  If nth is last bucket
+      }                                                         //  End loop over buckets
+      if( nth == numBucket-1 ) {                                //  If nth is last bucket
         numData = numData-iredu[nth];                           //   Region of interest is that bucket
-      else                                                      //  If nth is not the last bucket
+      } else {                                                  //  If nth is not the last bucket
         numData = iredu[nth+1]-iredu[nth];                      //   Region of interest is that bucket
+      }                                                         //  Endif for last bucket
       lOffset += iredu[nth];                                    //  Increment local offset to that bucket
       numBucket = getBucket(data,numData,lOffset,send,recv,MPI_COMM);// Get global bucket data
     }                                                           // End while loop

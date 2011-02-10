@@ -20,7 +20,7 @@ serialrun: serialrun.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
-direct: direct.cxx
+direct_gpu: direct_gpu.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
 	./a.out
 
@@ -45,7 +45,7 @@ nth_element: nth_element.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	mpirun -np 7 ./a.out
 
-multisection: multisection.cxx
+bisection: bisection.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS) $(VFLAGS)
 	mpirun -np 7 ./a.out
 
@@ -63,12 +63,12 @@ all      :
 	make bottomup
 	make kernel
 	make serialrun
-	make direct
+	make direct_gpu
 	make taylor
 	make vtk
 	make mpi
 	make shift
 	make nth_element
-	make multisection
+	make bisection
 	make let
 	make parallelrun

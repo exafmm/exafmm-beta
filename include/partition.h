@@ -56,10 +56,11 @@ public:
     real X = iSplit * (XMAX[l][d] - XMIN[l][d]) / numBodies + XMIN[l][d];
     XMAX[l+1] = XMAX[l];
     XMIN[l+1] = XMIN[l];
-    if( color[0] % 2 == 0 )
+    if( color[0] % 2 == 0 ) {
       XMAX[l+1][d] = X;
-    else
+    } else {
       XMIN[l+1][d] = X;
+    }
   }
 
   void binBodies(int d) {                                       // Turn positions into indices of bins
@@ -108,7 +109,7 @@ public:
     return nth;
   }
 
-  void multisectionGetComm(int l) {
+  void bisectionGetComm(int l) {
     int  oldcolor = color[0];
     oldnprocs = nprocs[0];
     for( int i=1; i>=0; --i ) {
@@ -126,8 +127,9 @@ public:
     }
     key[2] = color[1] % 2;
     color[2] = key[1] + oldcolor * (1 << (LEVEL - l - 1));
-    for( int i=0; i!=3; ++i )
+    for( int i=0; i!=3; ++i ) {
       MPI_Comm_split(MPI_COMM_WORLD,color[i],key[i],&MPI_COMM[i]);
+    }
 #ifdef DEBUG
     print("level : ",0);
     print(l,0);
@@ -139,7 +141,7 @@ public:
 #endif
   }
 
-  void multisectionAlltoall(Bodies &buffer,
+  void bisectionAlltoall(Bodies &buffer,
                             int nthLocal, int numLocal, int &newSize) {
     int const MPI_TYPE = getType(Ibody[0]);
     int const bytes = sizeof(bodies[0]);
@@ -172,7 +174,7 @@ public:
     sort(Ibody,bodies,buffer);
   }
 
-  void multisectionScatter(Bodies &buffer,
+  void bisectionScatter(Bodies &buffer,
                            int nthLocal, int &newSize) {
     int const MPI_TYPE = getType(Ibody[0]);
     int const bytes = sizeof(bodies[0]);
@@ -220,7 +222,7 @@ public:
     delete[] sdsp;
   }
 
-  void multisectionGather(Bodies &buffer,
+  void bisectionGather(Bodies &buffer,
                           int nthLocal, int &newSize) {
     int const MPI_TYPE = getType(Ibody[0]);
     int const bytes = sizeof(bodies[0]);
@@ -238,8 +240,9 @@ public:
     MPI_Gather(&scnt,1,MPI_INT,rcnt,1,MPI_INT,0,MPI_COMM[0]);
     if( key[0] == 0 ) {
       rdsp[0] = 0;
-      for(int i=0; i!=numGather; ++i )
+      for(int i=0; i!=numGather; ++i ) {
         rdsp[i+1] = rdsp[i] + rcnt[i];
+      }
       newSize += rdsp[numGather] + rcnt[numGather];
       ibuffer.resize(newSize);
        buffer.resize(newSize);
@@ -265,7 +268,7 @@ public:
     if( key[0] == 0 ) sort(Ibody,bodies,buffer);
   }
 
-  void multisection(Bodies &buffer) {
+  void bisection(Bodies &buffer) {
     int const MPI_TYPE = getType(Ibody[0]);
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
@@ -283,16 +286,16 @@ public:
     int nthLocal = splitBodies(iSplit);
 
     for( int l=0; l!=LEVEL; ++l ) {
-      multisectionGetComm(l);
+      bisectionGetComm(l);
 
       splitDomain(iSplit,l,l%3);
 
-      multisectionAlltoall(buffer,nthLocal,numLocal,newSize);
+      bisectionAlltoall(buffer,nthLocal,numLocal,newSize);
 
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] )
-        multisectionScatter(buffer,nthLocal,newSize);
+        bisectionScatter(buffer,nthLocal,newSize);
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] >= nprocs[1] )
-        multisectionGather(buffer,nthLocal,newSize);
+        bisectionGather(buffer,nthLocal,newSize);
 
 #ifdef DEBUG
       for(int j=0; j!=SIZE; ++j) {
@@ -325,8 +328,9 @@ public:
     int *sdsp = new int [SIZE];
     int *rcnt = new int [SIZE];
     int *rdsp = new int [SIZE];
-    for( int i=0; i!=SIZE; ++i )
+    for( int i=0; i!=SIZE; ++i ) {
       scnt[i] = 0;
+    }
     for( BI_iter BI=Ibody.begin(); BI!=Ibody.end(); ++BI ) {
       int i = *BI - ((1 << 3*level) - 1) / 7;
       scnt[i]++;
@@ -354,10 +358,11 @@ public:
         int i = 3 * l + d;
         XMIN[i+1] = XMIN[i];
         XMAX[i+1] = XMAX[i];
-        if( (RANK >> (3 * (level - l - 1) + 2 - d)) % 2 )
+        if( (RANK >> (3 * (level - l - 1) + 2 - d)) % 2 ) {
           XMIN[i+1][2-d] = (XMAX[i][2-d]+XMIN[i][2-d]) / 2;
-        else
+        } else {
           XMAX[i+1][2-d] = (XMAX[i][2-d]+XMIN[i][2-d]) / 2;
+        }
       }
     }
     delete[] scnt;

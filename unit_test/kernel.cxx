@@ -12,13 +12,15 @@ int main() {
   for( int it=0; it!=10; ++it ) {
     real dist = (1 << it) / 2;
     for( B_iter B=bodiesI.begin(); B!=bodiesI.end(); ++B ) {
-      for( int d=0; d!=3; ++d )
+      for( int d=0; d!=3; ++d ) {
         B->pos[d] = -rand() / (1. + RAND_MAX) - dist;
+      }
       B->pot = 0;
     }
     for( B_iter B=bodiesJ.begin(); B!=bodiesJ.end(); ++B ) {
-      for( int d=0; d!=3; ++d )
+      for( int d=0; d!=3; ++d ) {
         B->pos[d] = rand() / (1. + RAND_MAX);
+      }
       B->scal = 1.0 / bodiesJ.size();
     }
 
@@ -55,8 +57,9 @@ int main() {
   */
 
     bodiesI2 = bodiesI;
-    for( B_iter B=bodiesI2.begin(); B!=bodiesI2.end(); ++B )
+    for( B_iter B=bodiesI2.begin(); B!=bodiesI2.end(); ++B ) {
       B->pot = 0;
+    }
     K.P2P(bodiesI2.begin(),bodiesI2.end(),bodiesJ.begin(),bodiesJ.end());
 
     B_iter B  = bodiesI.begin();

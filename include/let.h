@@ -27,22 +27,25 @@ public:
     for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over all ranks
       int ic = 0;                                               //  Initialize neighbor dimension counter
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimensions
-        if(xmin[irank][d] < XMAX[LEVEL][d] + C0->R &&           // If the two domains are touching or overlapping
-           XMIN[LEVEL][d] < xmax[irank][d] + C0->R)             // in all dimensions, they are neighboring domains
-          ic++;                                                 //   Increment neighbor dimension counter
+        if(xmin[irank][d] < XMAX[LEVEL][d] + C0->R &&           //   If the two domains are touching or overlapping
+           XMIN[LEVEL][d] < xmax[irank][d] + C0->R) {           //   in all dimensions, they are neighboring domains
+          ic++;                                                 //    Increment neighbor dimension counter
+        }                                                       //   Endif for overlapping domains
       }                                                         //  End loop over dimensions
       if( ic == 3 && irank != RANK ) {                          //  If ranks are neighbors in all dimensions
         for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {    //   Loop over all cells
           if( C->NCHILD == 0 ) {                                //    If cell is a twig
             vect dist;                                          //     Distance vector
-            for( int d=0; d!=3; ++d )                           //     Loop over dimensions
+            for( int d=0; d!=3; ++d ) {                         //     Loop over dimension
               dist[d] = (C->X[d] > xmax[irank][d])*             //      Calculate the distance between cell C and
                         (C->X[d] - xmax[irank][d])+             //      the nearest point in domain [xmin,xmax]^3
                         (C->X[d] < xmin[irank][d])*
                         (C->X[d] - xmin[irank][d]);
+            }                                                   //     End loop over dimension
             real R = std::sqrt(norm(dist));                     //     Scalar distance
-            if( C0->R + C->R > THETA * R )                      //     If the cell seems close enough for P2P
+            if( C0->R + C->R > THETA * R ) {                    //     If the cell seems close enough for P2P
               scells.push_back(C);                              //      Add cell iterator to scells
+            }                                                   //     Endif for cell distance
           }                                                     //    Endif for twigs
         }                                                       //   End loop over cells
         srnks.push_back(irank);                                 //   Add current rank to srnks
@@ -51,7 +54,7 @@ public:
       }                                                         //  Endif for neighbor ranks
     }                                                           // End loop over all ranks
 
-    int ic = 0, ssize = 0;                                      // Initialize counter for scells
+    int ic = 0, ssize = 0;                                      // Initialize counter and offset for scells
     std::vector<MPI_Request> reqs(2*srnks.size());              // Vector of MPI requests
     std::vector<int>         scnt(srnks.size());                // Vector of send counts
     std::vector<int>         rcnt(srnks.size());                // Vector of receive counts
@@ -68,7 +71,7 @@ public:
         }                                                       //   End loop over bodies
       }                                                         //  End loop over cells
       scnt[i] = sendBodies.size()-ssize;                        //  Set send count of current rank
-      ssize += scnt[i];
+      ssize += scnt[i];                                         //  Increment offset for vector scells
       MPI_Isend(&scnt[i],1,MPI_INT,irank,0,                     //  Send the send count
                 MPI_COMM_WORLD,&reqs[i]);
       MPI_Irecv(&rcnt[i],1,MPI_INT,irank,MPI_ANY_TAG,           //  Receive the recv count
@@ -81,15 +84,15 @@ public:
       rsize += rcnt[i];                                         //  Accumulate receive counts
     recvBodies.resize(rsize);                                   // Receive buffer for bodies
     int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
-    rsize = ssize = 0;
+    rsize = ssize = 0;                                          // Initialize offset for sendBodies & recvBodies
     for( int i=0; i!=int(srnks.size()); ++i ) {                 // Loop over all ranks to send to & receive from
       int irank = srnks[i];                                     // Rank to send to & receive from
       MPI_Isend(&sendBodies[ssize],scnt[i]*bytes,MPI_BYTE,irank,0,// Send bodies
                 MPI_COMM_WORLD,&reqs[i]);
       MPI_Irecv(&recvBodies[rsize],rcnt[i]*bytes,MPI_BYTE,irank,MPI_ANY_TAG,// Receive bodies
                 MPI_COMM_WORLD,&reqs[i+srnks.size()]);
-      ssize += scnt[i];
-      rsize += rcnt[i];
+      ssize += scnt[i];                                         // Increment offset for sendBodies
+      rsize += rcnt[i];                                         // Increment offset for recvBodies
     }                                                           // End loop over ranks
     MPI_Waitall(2*srnks.size(),&reqs[0],MPI_STATUSES_IGNORE);   // Wait for all communication to finish
 
@@ -217,7 +220,9 @@ public:
 
   void addJCells() {
     BI_iter CI = Icell.begin();
-    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC,++CI ) *CI = JC->I;
+    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC,++CI ) {
+      *CI = JC->I;
+    }
     JCells jbuffer;
     jbuffer.resize(recvCells.size());
     sort(Icell,recvCells,jbuffer,false);
@@ -233,53 +238,13 @@ public:
     }
   }
 
-  void uniqueTwig() {
-    int c_old = 0, end = cells.size();
-    for( int c=0; c!=end; ++c ) {
-      if( cells[c].I != cells[c_old].I ) {
-        c_old = c;
-      } else if( c != c_old ) {
-        if( cells[c].NLEAF != 0 ) {
-          cells[c_old].NLEAF  = cells[c].NLEAF;
-          cells[c_old].LEAF   = cells[c].LEAF;
-          cells[c_old].M      = 0;
-        }
-        cells.erase(cells.begin()+c);
-        c--;
-        end--;
-      }
-    }
-  }
-
-  void addJBodies(Bodies &buffer) {
-    for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {
-      Body body;
-      body.I    = JB->I;
-      body.pos  = JB->pos;
-      body.scal = JB->scal;
-      TreeStructure::bodies.push_back(body);
-    }
-    Ibody.resize(bodies.size());
-    buffer.resize(bodies.size());
-
-    Cells jcells;
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      if( C->NLEAF == 0 ) {
-        jcells.push_back(*C);
-      }
-    }
-    cells.clear();
-
-    B_iter B = bodies.begin();
-    for( BI_iter BI=Ibody.begin(); BI!=Ibody.end(); ++BI,++B )
-      *BI = B->I;
-    sort(Ibody,bodies,buffer,false);
+  void linkTwig() {
     int nleaf = 0;
     bigint index = Ibody[0];
     B_iter firstLeaf = bodies.begin();
     Cell cell;
     BI_iter BI = Ibody.begin();
-    for( B=bodies.begin(); B!=bodies.end(); ++B,++BI ) {
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++BI ) {
       if( *BI != index ) {
         cell.NLEAF = nleaf;
         cell.NCHILD = 0;
@@ -304,6 +269,87 @@ public:
       C->L = 0;                                                 //  Initialize local coefficients
       K.P2M(C);                                                 //  Evaluate P2M kernel
     }                                                           // End loop over cells
+  }
+
+  void uniqueTwig() {
+    int c_old = 0, end = cells.size();
+    for( int c=0; c!=end; ++c ) {
+      if( cells[c].I != cells[c_old].I ) {
+        c_old = c;
+      } else if( c != c_old ) {
+        if( cells[c].NLEAF != 0 ) {
+          cells[c_old].NLEAF  = cells[c].NLEAF;
+          cells[c_old].LEAF   = cells[c].LEAF;
+          cells[c_old].M      = 0;
+        }
+        if( cells[c].NLEAF != 0 || cells[c_old].NLEAF != 0 ) {
+          cells.erase(cells.begin()+c);
+          c--;
+          end--;
+        }
+      }
+    }
+  }
+
+  void addJBodies(Bodies &buffer) {
+    real sumM = 0;                                              // TODO
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // TODO
+      sumM += B->scal;                                          // TODO
+    }                                                           // TODO
+    print("old bodies\n",0);                                    // TODO
+    print(sumM);                                                // TODO
+    sumM = 0;                                                   // TODO
+    for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {
+      Body body;
+      body.I    = JB->I;
+      body.pos  = JB->pos;
+      body.scal = JB->scal;
+      sumM += JB->scal;                                         // TODO
+      TreeStructure::bodies.push_back(body);
+    }
+    print("recvBodies\n",0);                                    // TODO
+    print(sumM);                                                // TODO
+    Ibody.resize(bodies.size());
+    buffer.resize(bodies.size());
+    sumM = 0;                                                   // TODO
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // TODO
+      sumM += B->scal;                                          // TODO
+    }                                                           // TODO
+    print("new bodies\n",0);                                    // TODO
+    print(sumM);                                                // TODO
+
+    sumM = 0;                                                   // TODO
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // TODO
+      if( C->NCHILD == 0 ) {                                    // TODO
+        sumM += C->M[0];                                        // TODO
+      }                                                         // TODO
+    }                                                           // TODO
+    print("twigs before merge\n",0);                            // TODO
+    print(sumM);                                                // TODO
+    sumM = 0;                                                   // TODO
+    Cells jcells;
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
+      if( C->NLEAF == 0 ) {
+        sumM += C->M[0];                                        // TODO
+        jcells.push_back(*C);
+      }
+    }
+    print("old jcells\n",0);                                    // TODO
+    print(sumM);                                                // TODO
+    cells.clear();
+
+    B_iter B = bodies.begin();
+    for( BI_iter BI=Ibody.begin(); BI!=Ibody.end(); ++BI,++B ) {
+      *BI = B->I;
+    }
+    sort(Ibody,bodies,buffer,false);
+    linkTwig();
+    sumM = 0;                                                   // TODO
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // TODO
+      sumM += C->M[0];                                          // TODO
+    }                                                           // TODO
+    print("new twigs\n",0);                                     // TODO
+    print(sumM);                                                // TODO
 
     jcells.insert(jcells.end(),cells.begin(),cells.end());
     cells = jcells;
@@ -327,8 +373,9 @@ public:
           cells[c_old].NCHILD = cells[c].NCHILD;
           cells[c_old].NLEAF  = cells[c].NLEAF;
           cells[c_old].PARENT = cells[c].PARENT;
-          for( int i=0; i!=cells[c].NCHILD; ++i )
+          for( int i=0; i!=cells[c].NCHILD; ++i ) {
             cells[c_old].CHILD[i] = cells[c].CHILD[i];
+          }
           cells[c_old].LEAF   = cells[c].LEAF;
         }
         cells[c_old].M += cells[c].M;
@@ -376,18 +423,18 @@ public:
        key[0] =    key[1] =    key[2] = 0;                      // Initialize key of communicators
 
     for( int l=0; l!=LEVEL; ++l ) {
-      multisectionGetComm(l);
+      bisectionGetComm(l);
       getOtherDomain(xmin,xmax,l+1);
       getLET(cells.end()-1,xmin,xmax);
 
       commCellsAlltoall();
-      if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] )
+      if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] ) {
         commCellsScatter();
+      }
 
       getTwigs(offTwigs);
       addJCells();
-      if( l == LEVEL - 1 )
-        addJBodies(buffer);
+      if( l == LEVEL - 1 ) addJBodies(buffer);
       graft();
       offTwigs = sendCells.size();
     }

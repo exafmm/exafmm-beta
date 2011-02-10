@@ -29,9 +29,9 @@ int main() {
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.multisection(buffer);
+  P.bisection(buffer);
   toc = get_time();
-  if(print) std::cout << "Multisection  : " << toc-tic << std::endl;
+  if(print) std::cout << "Partition     : " << toc-tic << std::endl;
 
 #ifdef TOPDOWN
   P.topdown(buffer,print);
@@ -63,12 +63,14 @@ int main() {
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
     P.shiftBodies(buffer);
-    if( P.commRank() == 0 )
+    if( P.commRank() == 0 ) {
       vtk.setGroupOfPoints(P.Ibody,bodies,Ncell);
+    }
   }
   toc = get_time();
   if(print) std::cout << "Shift bodies  : " << toc-tic << std::endl;
-  if( P.commRank() == 0 )
+  if( P.commRank() == 0 ) {
     vtk.plot(Ncell);
+  }
 #endif
 }

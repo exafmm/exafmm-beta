@@ -44,12 +44,14 @@ int main() {
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
     P.shiftBodies(buffer);
-    if( P.commRank() == 0 )
+    if( P.commRank() == 0 ) {
       vtk.setGroupOfPoints(P.Ibody,bodies,Ncell);
+    }
   }
   toc = get_time();
   if(print) std::cout << "Shift bodies  : " << toc-tic << std::endl;
-  if( P.commRank() == 0 )
+  if( P.commRank() == 0 ) {
     vtk.plot(Ncell);
+  }
 #endif
 }

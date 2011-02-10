@@ -10,8 +10,9 @@ int main(int argc, char **argv) {
   gethostname(hostname,sizeof(hostname));
   for( int irank=0; irank!=size; ++irank ) {
     MPI_Barrier(MPI_COMM_WORLD);
-    if( rank == irank )
+    if( rank == irank ) {
       std::cout << hostname << " " << rank << " / " << size << std::endl;
+    }
     usleep(100);
   }
   MPI_Finalize();

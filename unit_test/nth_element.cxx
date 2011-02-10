@@ -48,8 +48,9 @@ int main() {
   if(print) std::cout << "Nth element   : " << toc-tic << std::endl;
   P.print(iSplit);
   P.print(&P.Ibody[0],numBodies-10,numBodies);
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B )
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     P.Ibody[B-bodies.begin()] = B-bodies.begin() > nthLocal;
+  }
 
 #ifdef VTK
   if( P.commRank() == 0 ) {

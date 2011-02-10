@@ -77,8 +77,9 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
       if( index[b] != icell ) {
         setGroup(Ncell,size);
-        for( int i=begin; i!=begin+size; ++i )
+        for( int i=begin; i!=begin+size; ++i ) {
           setPoints(Ncell,bodies.at(i).pos);
+        }
         begin = b;
         size = 0;
         icell = index[b];
@@ -88,8 +89,9 @@ public:
       size++;
     }
     setGroup(Ncell,size);
-    for( int i=begin; i!=begin+size; ++i )
+    for( int i=begin; i!=begin+size; ++i ) {
       setPoints(Ncell,bodies.at(i).pos);
+    }
     Ncell++;
     assert(Ncell < maxGroups);
   }
@@ -172,8 +174,9 @@ public:
 
     //Create a slider callback
     vtkSliderCallback *callback = vtkSliderCallback::New();
-    for( int i=0; i!=Ngroup; ++i )
+    for( int i=0; i!=Ngroup; ++i ) {
       callback->points[i] = points[i];
+    }
     callback->polydata = polydata;
     callback->filter = filter;
     widget->AddObserver(vtkCommand::InteractionEvent,callback);

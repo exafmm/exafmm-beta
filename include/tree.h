@@ -66,8 +66,9 @@ public:
       d = (d+1) % 3;                                            //  Increment dimension
       if( d == 0 ) level++;                                     //  If dimension is 0 again, increment level
     }                                                           // End while loop for deinterleaving bits
-    for( d=0; d!=3; ++d )                                       // Loop over dimensions
+    for( d=0; d!=3; ++d ) {                                     // Loop over dimensions
       cell.X[d] = (X0[d]-R0) + (2 *nx[d] + 1) * cell.R;         //  Calculate cell center from 3-D cell index
+    }                                                           // End loop over dimensions
   }
 
   bigint getParent(bigint index) {                              // Get parent cell index from current cell index
@@ -101,8 +102,9 @@ public:
         parent.LEAF = cells[i].LEAF;                            //   Set pointer to first leaf
         getCenter(parent);                                      //   Set cell center and radius
       }                                                         //  Endif for new parent cell
-      for( int c=0; c!=cells[i].NCHILD; ++c )                   //  Loop over child cells
+      for( int c=0; c!=cells[i].NCHILD; ++c ) {                 //  Loop over child cells
         (cells.begin()+cells[i].CHILD[c])->PARENT = i;          //   Link child to current
+      }                                                         //  End loop over child cells
       cells[i].PARENT = end;                                    //  Link to current to parent
       parent.NLEAF += cells[i].NLEAF;                           //  Add nleaf of child to parent
       parent.M     += cells[i].M;                               //  Add multipoles of child to parent
@@ -186,11 +188,13 @@ public:
     if( CI->NCHILD == 0 && CJ->NCHILD == 0) {                   // If both cells are twigs
       K.P2P(CI->LEAF,CI->LEAF+CI->NLEAF,CJ->LEAF,CJ->LEAF+CJ->NLEAF);// Evaluate P2P kernel
     } else if ( CI->NCHILD != 0 ) {                             // If target is not twig
-      for( int i=0; i<CI->NCHILD; i++ )                         //  Loop over child cells of target
+      for( int i=0; i<CI->NCHILD; i++ ) {                       //  Loop over child cells of target
         M2P(C0+CI->CHILD[i],CJ);                                //   Try to evaluate M2P kernel
+      }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig
-      for( int i=0; i<CJ->NCHILD; i++ )                         //  Loop over child cells of source
+      for( int i=0; i<CJ->NCHILD; i++ ) {                       //  Loop over child cells of source
         M2P(CI,C0+CJ->CHILD[i]);                                //   Try to evaluate M2P kernel
+      }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
 
@@ -209,11 +213,13 @@ public:
     if( CI->NCHILD == 0 && CJ->NCHILD == 0 ) {                  // If both cells are twigs
       K.P2P(CI->LEAF,CI->LEAF+CI->NLEAF,CJ->LEAF,CJ->LEAF+CJ->NLEAF);// Evaluate P2P kernel
     } else if ( CJ->NCHILD == 0 || (CI->NCHILD != 0 && CI->R > CJ->R) ) {// If source is twig or target is larger
-      for( int i=0; i<CI->NCHILD; i++ )                         //  Loop over child cells of target
+      for( int i=0; i<CI->NCHILD; i++ ) {                       //  Loop over child cells of target
         M2L(C0+CI->CHILD[i],CJ);                                //   Try to evaluate M2L kernel
+      }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig or source is larger
-      for( int i=0; i<CJ->NCHILD; i++ )                         //  Loop over child cells of source
+      for( int i=0; i<CJ->NCHILD; i++ ) {                       //  Loop over child cells of source
         M2L(CI,C0+CJ->CHILD[i]);                                //   Try to evaluate M2L kernel
+      }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
 
@@ -231,9 +237,10 @@ public:
     }                                                           // End while loop for interaction stack
     for( C_iter C=root-1; C!=cells.begin()-1; --C ) {           // Loop over all cells topdown (except root cell)
       K.L2L(C,C0+C->PARENT);                                    //  Evaluate L2L kernel
-      if( C->NLEAF < NCRIT )                                    //  If cell is a twig
+      if( C->NLEAF < NCRIT ) {                                  //  If cell is a twig
         K.L2P(C);                                               //   Evaluate L2P kernel
-    }
+      }                                                         //  Endif for twig
+    }                                                           // End loop over all cells topdown
   }
 
 };
