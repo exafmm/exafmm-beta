@@ -14,7 +14,11 @@ protected:
   real   R0;                                                    // Radius of root cell
   Kernel K;                                                     // Kernels
 public:
-  TreeStructure(Bodies &b) : bodies(b),X0(0),R0(0) {}           // Constructor
+  Bodies buffer;                                                // Buffer for comm & sort
+
+  TreeStructure(Bodies &b) : bodies(b),X0(0),R0(0) {            // Constructor
+    buffer.resize(bodies.size());                               // Resize buffer for comm & sort
+  }
   ~TreeStructure() {}                                           // Destructor
 
   vect getX0() {return X0;}                                     // Get center of root cell
@@ -74,9 +78,11 @@ public:
     return i;                                                   // Return cell index of parent cell
   }
 
-  void sortCells(Cells &buffer, int begin, int end) {           // Sort cells according to cell index
-    buffer.resize(cells.size());                                // Resize vector for sort buffer
-    sort(cells,buffer,false,begin,end);                         // Sort cells in descending order
+  void sortCells(int begin=0, int end=0) {                      // Sort cells according to cell index
+    if( end == 0 ) end = cells.size();                          // Default size is all cells
+    Cells cbuffer;                                              // Define vector for sort buffer
+    cbuffer.resize(cells.size());                               // Resize vector for sort buffer
+    sort(cells,cbuffer,false,begin,end);                        // Sort cells in descending order
   }
 
   void linkParent(int &begin, int &end) {                       // Form parent-child mutual link
@@ -116,7 +122,6 @@ public:
     int level = getLevel(index);                                // Initialize level of tree
     B_iter firstLeaf = bodies.begin();                          // Initialize body iterator
     Cell cell;                                                  // Define cell structure
-    Cells buffer;                                               // Allocate sort buffer for cells
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
       if( B->I != index ) {                                     //  If it belongs to a new cell
         cell.NLEAF = nleaf;                                     //   Set number of leafs
@@ -127,7 +132,7 @@ public:
         cells.push_back(cell);                                  //   Push cell structure into vector
         end++;                                                  //   Increment cell counter
         while( getLevel(B->I) != level ) {                      //   While cell belongs to a higher level
-          sortCells(buffer,begin,end);                          //    Sort cells at this level
+          sortCells(begin,end);                                 //    Sort cells at this level
           linkParent(begin,end);                                //    Form parent-child mutual link
           level--;                                              //    Go up one level
         }                                                       //   Endif for new level
@@ -145,7 +150,7 @@ public:
     cells.push_back(cell);                                      // Push cell structure into vector
     end++;                                                      // Increment cell counter
     for( int l=level; l>0; --l ) {                              // Once all the twigs are done, do the rest
-      sortCells(buffer,begin,end);                              //  Sort cells at this level
+      sortCells(begin,end);                                     //  Sort cells at this level
       linkParent(begin,end);                                    //  Form parent-child mutual link
     }
     C0 = cells.begin();

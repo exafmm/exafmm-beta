@@ -10,7 +10,6 @@ int main() {
   int const numBodies(100000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Bodies buffer(numBodies);
   Dataset D(bodies);
   Partition P(bodies);
   bool print(true);
@@ -45,7 +44,7 @@ int main() {
   }
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
-    P.shiftBodies(buffer);
+    P.shiftBodies();
     if( P.commRank() == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }

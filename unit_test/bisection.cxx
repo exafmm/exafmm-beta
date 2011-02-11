@@ -10,7 +10,6 @@ int main() {
   int const numBodies(100000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Bodies buffer(numBodies);
   Dataset D(bodies);
   Partition P(bodies);
   bool print(true);
@@ -35,12 +34,12 @@ int main() {
   if(print) std::cout << "Set index     : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.sort(bodies,buffer);
+  P.sort(bodies,P.buffer);
   toc = get_time();
   if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.bisection(buffer);
+  P.bisection();
   toc = get_time();
   if(print) std::cout << "Partition     : " << toc-tic << std::endl;
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -56,7 +55,7 @@ int main() {
   }
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
-    P.shiftBodies(buffer);
+    P.shiftBodies();
     if( P.commRank() == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }

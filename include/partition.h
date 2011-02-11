@@ -35,13 +35,11 @@ public:
         else if(B->pos[d] > XMAX[0][d]) XMAX[0][d] = B->pos[d]; //   Determine xmax
       }                                                         //  End loop over each dimension
     }                                                           // End loop over all bodies
-    vect buffer;                                                // Define recv buffer
-    MPI_Reduce(XMAX[0],buffer,3,MPI_TYPE,MPI_MAX,0,MPI_COMM_WORLD);// Reduce global maximum
-    XMAX[0] = buffer;                                           // Get data from buffer
-    MPI_Bcast(XMAX[0],3,MPI_TYPE,0,MPI_COMM_WORLD);             // Broadcast global maximum
-    MPI_Reduce(XMIN[0],buffer,3,MPI_TYPE,MPI_MIN,0,MPI_COMM_WORLD);// Reduce global minimum
-    XMIN[0] = buffer;                                           // Get data from buffer
-    MPI_Bcast(XMIN[0],3,MPI_TYPE,0,MPI_COMM_WORLD);             // Broadcast global minimum
+    vect X;                                                     // Define recv buffer
+    MPI_Allreduce(XMAX[0],X,3,MPI_TYPE,MPI_MAX,MPI_COMM_WORLD); // Reduce global maximum
+    XMAX[0] = X;                                                // Get data from buffer
+    MPI_Allreduce(XMIN[0],X,3,MPI_TYPE,MPI_MIN,MPI_COMM_WORLD); // Reduce global minimum
+    XMIN[0] = X;                                                // Get data from buffer
     R0 = 0;                                                     // Initialize root radius
     for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
       X0[d] = (XMAX[0][d] + XMIN[0][d]) / 2;                    //  Calculate center of domain
@@ -70,7 +68,7 @@ public:
     }                                                           // End loop over all bodies
   }
 
-  void shiftBodies(Bodies &buffer) {                            // Send bodies to next rank (wrap around)
+  void shiftBodies() {                                          // Send bodies to next rank (wrap around)
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
     int const bytes = sizeof(bodies[0]);                        // Byte size of body structure
@@ -232,8 +230,7 @@ public:
 #endif
   }
 
-  void bisectionAlltoall(Bodies &buffer,
-                            int nthLocal, int numLocal, int &newSize) {
+  void bisectionAlltoall(int nthLocal, int numLocal, int &newSize) {
     int const bytes = sizeof(bodies[0]);
     int scnt[2] = {nthLocal, numLocal - nthLocal};
     int rcnt[2] = {0, 0};
@@ -250,7 +247,6 @@ public:
       rcnt[i] *= bytes;
       rdsp[i] *= bytes;
     }
-
     MPI_Alltoallv(&bodies[0].I,scnt,sdsp,MPI_BYTE,
                   &buffer[0].I,rcnt,rdsp,MPI_BYTE,
                   MPI_COMM[2]);
@@ -258,8 +254,7 @@ public:
     sort(bodies,buffer);
   }
 
-  void bisectionScatter(Bodies &buffer,
-                           int nthLocal, int &newSize) {
+  void bisectionScatter(int nthLocal, int &newSize) {
     int const bytes = sizeof(bodies[0]);
     int numScatter = nprocs[1] - 1;
     int oldSize = newSize;
@@ -275,12 +270,12 @@ public:
       scnt[numScatter] = 0;
       oldSize = 0;
       newSize -= sdsp[numScatter];
-       buffer.erase( buffer.begin(), buffer.begin()+sdsp[numScatter]);
+      buffer.erase( buffer.begin(), buffer.begin()+sdsp[numScatter]);
     }
     MPI_Scatter(scnt,1,MPI_INT,&rcnt,1,MPI_INT,numScatter,MPI_COMM[1]);
     if( key[1] != numScatter ) {
       newSize += rcnt;
-       buffer.resize(newSize);
+      buffer.resize(newSize);
     }
 
     for(int i=0; i!= nprocs[1]; ++i ) {
@@ -298,8 +293,7 @@ public:
     delete[] sdsp;
   }
 
-  void bisectionGather(Bodies &buffer,
-                          int nthLocal, int &newSize) {
+  void bisectionGather(int nthLocal, int &newSize) {
     int const bytes = sizeof(bodies[0]);
     int numGather = nprocs[0] - 1;
     int oldSize = newSize;
@@ -336,7 +330,7 @@ public:
     if( key[0] == 0 ) sort(bodies,buffer);
   }
 
-  void bisection(Bodies &buffer) {
+  void bisection() {
     int const MPI_TYPE = getType(bodies[0].I);
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
@@ -345,8 +339,7 @@ public:
     int newSize;
     bigint numGlobal;
     bigint numLocal = bodies.size();
-    MPI_Reduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-    MPI_Bcast(&numGlobal,1,MPI_TYPE,0,MPI_COMM_WORLD);
+    MPI_Allreduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,MPI_COMM_WORLD);
     bigint nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];
     binBodies(0);
     sort(bodies,buffer);
@@ -358,12 +351,12 @@ public:
 
       splitDomain(iSplit,l,l%3);
 
-      bisectionAlltoall(buffer,nthLocal,numLocal,newSize);
+      bisectionAlltoall(nthLocal,numLocal,newSize);
 
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] )
-        bisectionScatter(buffer,nthLocal,newSize);
+        bisectionScatter(nthLocal,newSize);
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] >= nprocs[1] )
-        bisectionGather(buffer,nthLocal,newSize);
+        bisectionGather(nthLocal,newSize);
 
 #ifdef DEBUG
       for(int j=0; j!=SIZE; ++j) {
@@ -377,8 +370,7 @@ public:
       }
 #endif
       numLocal = newSize;
-      MPI_Reduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,0,MPI_COMM[0]);
-      MPI_Bcast(&numGlobal,1,MPI_TYPE,0,MPI_COMM[0]);
+      MPI_Allreduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,MPI_COMM[0]);
       nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];
       binBodies((l+1) % 3);
       sort(bodies,buffer);
@@ -387,7 +379,7 @@ public:
     }
   }
 
-  void octsection(Bodies &buffer) {
+  void octsection() {
     int byte = sizeof(bodies[0]);
     int level = int(log(SIZE + 1) / M_LN2 / 3);
     BottomUp::setIndex(level);

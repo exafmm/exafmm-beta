@@ -9,7 +9,6 @@ int main() {
   int const numBodies(1000000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Bodies buffer(numBodies);
   TreeConstructor T(bodies);
   Dataset D(bodies);
   toc = get_time();
@@ -31,7 +30,7 @@ int main() {
   std::cout << "Set index     : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.sort(bodies,buffer);
+  T.sort(bodies,T.buffer);
   toc = get_time();
   std::cout << "Sort index    : " << toc-tic << std::endl;
 

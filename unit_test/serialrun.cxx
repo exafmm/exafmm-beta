@@ -10,7 +10,6 @@ int main() {
   int const numBodies(10000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Bodies buffer(numBodies);
   TreeConstructor T(bodies);
   Dataset D(bodies);
   toc = get_time();
@@ -27,9 +26,9 @@ int main() {
   std::cout << "Set domain    : " << toc-tic << std::endl;
 
 #ifdef TOPDOWN
-  T.topdown(buffer);
+  T.topdown();
 #else
-  T.bottomup(buffer);
+  T.bottomup();
 #endif
 
   tic = get_time();
@@ -49,13 +48,13 @@ int main() {
 
   tic = get_time();
   Kernel K;
-  buffer = bodies;
-  K.P2P(buffer.begin(),buffer.end());
+  T.buffer = bodies;
+  K.P2P(T.buffer.begin(),T.buffer.end());
   toc = get_time();
   std::cout << "Direct sum    : " << toc-tic << std::endl;
 
   B_iter B  = bodies.begin();
-  B_iter B2 = buffer.begin();
+  B_iter B2 = T.buffer.begin();
   real err(0),rel(0);
   for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
     B->pot -= B->scal / std::sqrt(EPS2);                        //  Initialize body values
@@ -64,7 +63,6 @@ int main() {
   }
   std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
 #ifdef VTK
-  T.sort(bodies,buffer);
   int Ncell(0);
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());

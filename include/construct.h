@@ -187,7 +187,7 @@ public:
     }                                                           // End loop over levels
   }
 
-  void grow(Bodies &buffer, int level=0, int begin=0, int end=0) {// Grow tree by splitting cells
+  void grow(int level=0, int begin=0, int end=0) {              // Grow tree by splitting cells
     bigint icell = bodies[begin].I;                             // Initialize cell index
     int off=begin, size=0;                                      // Initialize offset, and size
     if( level == 0 ) level = getMaxLevel();                     // Max level for bottom up tree build
@@ -198,7 +198,7 @@ public:
           level++;                                              //    Increment level
           setIndex(level,off,off+size);                         //    Set new cell index considering new level
           sort(bodies,buffer,true,off,off+size);                //    Sort new cell index
-          grow(buffer,level,off,off+size);                      //    Recursively grow tree
+          grow(level,off,off+size);                             //    Recursively grow tree
           level--;                                              //    Go back to previous level
         }                                                       //   Endif for splitting
         off = b;                                                //   Set new offset
@@ -211,7 +211,7 @@ public:
       level++;                                                  //  Increment level
       setIndex(level,off,off+size);                             //  Set new cell index considering new level
       sort(bodies,buffer,true,off,off+size);                    //  Sort new cell index
-      grow(buffer,level,off,off+size);                          //  Recursively grow tree
+      grow(level,off,off+size);                                 //  Recursively grow tree
       level--;                                                  //  Go back to previous level
     }                                                           // Endif for splitting
   }
@@ -222,7 +222,7 @@ public:
   TreeConstructor(Bodies &b) : TreeStructure(b), TopDown(b), BottomUp(b) {}// Constructor
   ~TreeConstructor() {}                                         // Destructor
 
-  void topdown(Bodies &buffer,bool print=true) {
+  void topdown(bool print=true) {
     double tic,toc;
     tic = get_time();
     TopDown::grow();
@@ -245,7 +245,7 @@ public:
     if(print) std::cout << "Link cells    : " << toc-tic << std::endl;
   }
 
-  void bottomup(Bodies &buffer, bool print=true) {
+  void bottomup(bool print=true) {
     double tic,toc;
     tic = get_time();
     BottomUp::setIndex();
@@ -263,7 +263,7 @@ public:
     if(print) std::cout << "Prune tree    : " << toc-tic << std::endl;
 
     tic = get_time();
-    BottomUp::grow(buffer);
+    BottomUp::grow();
     toc = get_time();
     if(print) std::cout << "Grow tree     : " << toc-tic << std::endl;
 

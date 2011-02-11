@@ -9,7 +9,6 @@ int main() {
   int const numBodies(10000000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Bodies buffer(numBodies);
   TreeConstructor T(bodies);
   Dataset D(bodies);
   toc = get_time();
@@ -26,13 +25,12 @@ int main() {
   std::cout << "Set domain    : " << toc-tic << std::endl;
 
 #ifdef TOPDOWN
-  T.topdown(buffer);
+  T.topdown();
 #else
-  T.bottomup(buffer);
+  T.bottomup();
 #endif
 
 #ifdef VTK
-  T.sort(bodies,buffer);
   int Ncell(0);
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());

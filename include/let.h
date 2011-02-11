@@ -288,7 +288,7 @@ public:
     }
   }
 
-  void addJBodies(Bodies &buffer) {
+  void addJBodies() {
     real sumM = 0;                                              // TODO
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // TODO
       sumM += B->scal;                                          // TODO
@@ -346,7 +346,7 @@ public:
     jcells.insert(jcells.end(),cells.begin(),cells.end());
     cells = jcells;
     jcells.clear();
-    sortCells(jcells,0,cells.size());
+    sortCells();
     uniqueTwig();
   }
 
@@ -380,8 +380,7 @@ public:
 
   void graft() {
     int end = cells.size();
-    Cells buffer;
-    sortCells(buffer,0,cells.size());
+    sortCells();
 
     int begin = end = 0;
     int level = getLevel(cells[0].I);
@@ -389,7 +388,7 @@ public:
     cells.clear();
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {
       while( getLevel(C->I) != level ) {
-        sortCells(buffer,begin,end);                            // Sort cells at this level
+        sortCells(begin,end);                                   // Sort cells at this level
         unique(begin,end);
         linkParent(begin,end);
         level--;
@@ -399,7 +398,7 @@ public:
     }
     twigs.clear();
     for( int l=level; l>0; --l ) {                              // Once all the twigs are done, do the rest
-      sortCells(buffer,begin,end);                              //  Sort cells at this level
+      sortCells(begin,end);                                     //  Sort cells at this level
       unique(begin,end);
       linkParent(begin,end);                                    //  Form parent-child mutual link
     }
@@ -407,7 +406,7 @@ public:
 
   }
 
-  void commCells(Bodies &buffer) {
+  void commCells() {
     int offTwigs = 0;
     vect xmin = 0, xmax = 0;
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups

@@ -10,7 +10,6 @@ int main() {
   int const numBodies(1000000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Bodies buffer(numBodies);
   Dataset D(bodies);
   Partition P(bodies);
   bool print(true);
@@ -36,7 +35,7 @@ int main() {
   if(print) std::cout << "Set index     : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.sort(bodies,buffer);
+  P.sort(bodies,P.buffer);
   toc = get_time();
   if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
 

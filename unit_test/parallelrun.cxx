@@ -9,7 +9,6 @@ int main() {
   int const numBodies(10000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Bodies buffer(numBodies);
   Dataset D(bodies);
   LocalEssentialTree P(bodies);
   bool print(true);
@@ -29,14 +28,14 @@ int main() {
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.octsection(buffer);
+  P.octsection();
   toc = get_time();
   if(print) std::cout << "Partition     : " << toc-tic << std::endl;
 
 #ifdef TOPDOWN
-  P.topdown(buffer,print);
+  P.topdown(print);
 #else
-  P.bottomup(buffer,print);
+  P.bottomup(print);
 #endif
 
   tic = get_time();
@@ -55,14 +54,14 @@ int main() {
   if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.commCells(buffer);
+  P.commCells();
   toc = get_time();
   if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
 
 #ifdef VTK
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;
-  for( B_iter B=buffer.begin(); B!=buffer.end(); ++B ) B->I = 1;
-  bodies.insert(bodies.end(),buffer.begin(),buffer.end());
+  for( B_iter B=P.buffer.begin(); B!=P.buffer.end(); ++B ) B->I = 1;
+  bodies.insert(bodies.end(),P.buffer.begin(),P.buffer.end());
 
   int Ncell(0);
   vtkPlot vtk;
@@ -72,7 +71,7 @@ int main() {
   }
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
-    P.shiftBodies(buffer);
+    P.shiftBodies();
     if( P.commRank() == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
