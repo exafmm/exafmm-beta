@@ -35,28 +35,30 @@ int main() {
   if(print) std::cout << "Set index     : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.sort(P.Ibody,bodies,buffer);
+  P.sort(bodies,buffer);
   toc = get_time();
   if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
 
   tic = get_time();
   P.bisection(buffer);
   toc = get_time();
-  if(print) std::cout << "Partition  : " << toc-tic << std::endl;
-  std::fill(P.Ibody.begin(),P.Ibody.end(),0);
+  if(print) std::cout << "Partition     : " << toc-tic << std::endl;
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+    B->I = 0;
+  }
 
 #ifdef VTK
   int Ncell(0);
   vtkPlot vtk;
   if( P.commRank() == 0 ) {
     vtk.setDomain(P.getR0(),P.getX0());
-    vtk.setGroupOfPoints(P.Ibody,bodies,Ncell);
+    vtk.setGroupOfPoints(bodies,Ncell);
   }
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
     P.shiftBodies(buffer);
     if( P.commRank() == 0 ) {
-      vtk.setGroupOfPoints(P.Ibody,bodies,Ncell);
+      vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
   toc = get_time();

@@ -36,20 +36,18 @@ int main() {
   if(print) std::cout << "Set index     : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.sort(P.Ibody,bodies,buffer);
+  P.sort(bodies,buffer);
   toc = get_time();
   if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
 
   tic = get_time();
   bigint nthGlobal = numBodies * P.commSize() / 3;
-  bigint iSplit = P.nth_element(&P.Ibody[0],numBodies,nthGlobal);
+  bigint iSplit = P.nth_element(bodies,nthGlobal);
   int nthLocal = P.splitBodies(iSplit);
   toc = get_time();
   if(print) std::cout << "Nth element   : " << toc-tic << std::endl;
-  P.print(iSplit);
-  P.print(&P.Ibody[0],numBodies-10,numBodies);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-    P.Ibody[B-bodies.begin()] = B-bodies.begin() > nthLocal;
+    B->I = B-bodies.begin() > nthLocal;
   }
 
 #ifdef VTK
@@ -57,7 +55,7 @@ int main() {
     int Ncell(0);
     vtkPlot vtk;
     vtk.setDomain(P.getR0(),P.getX0());
-    vtk.setGroupOfPoints(P.Ibody,bodies,Ncell);
+    vtk.setGroupOfPoints(bodies,Ncell);
     vtk.plot(Ncell);
   }
 #endif

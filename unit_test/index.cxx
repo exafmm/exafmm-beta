@@ -31,22 +31,22 @@ int main() {
   std::cout << "Set index     : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.sort(T.Ibody,bodies,buffer);
+  T.sort(bodies,buffer);
   toc = get_time();
   std::cout << "Sort index    : " << toc-tic << std::endl;
 
-  bigint oldIndex(T.Ibody[0]);
+  bigint oldIndex(bodies[0].I);
   int b=0;
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
-    assert( oldIndex <= T.Ibody[b] );
-    oldIndex = T.Ibody[b];
+    assert( oldIndex <= B->I );
+    oldIndex = B->I;
   }
 
 #ifdef VTK
   int Ncell(0);
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());
-  vtk.setGroupOfPoints(T.Ibody,bodies,Ncell);
+  vtk.setGroupOfPoints(bodies,Ncell);
   vtk.plot(Ncell);
 #endif
 }

@@ -70,19 +70,18 @@ public:
     I[Igroup]++;
   }
 
-  void setGroupOfPoints(Bigints &index, Bodies &bodies, int &Ncell) {
+  void setGroupOfPoints(Bodies &bodies, int &Ncell) {
     int begin=0, size=0;
-    int icell = index[0];
-    int b = 0;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
-      if( index[b] != icell ) {
+    int icell = bodies[0].I;
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      if( B->I != icell ) {
         setGroup(Ncell,size);
         for( int i=begin; i!=begin+size; ++i ) {
-          setPoints(Ncell,bodies.at(i).pos);
+          setPoints(Ncell,bodies[i].pos);
         }
-        begin = b;
+        begin = B-bodies.begin();
         size = 0;
-        icell = index[b];
+        icell = B->I;
         Ncell++;
         assert(Ncell < maxGroups);
       }
@@ -90,7 +89,7 @@ public:
     }
     setGroup(Ncell,size);
     for( int i=begin; i!=begin+size; ++i ) {
-      setPoints(Ncell,bodies.at(i).pos);
+      setPoints(Ncell,bodies[i].pos);
     }
     Ncell++;
     assert(Ncell < maxGroups);

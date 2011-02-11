@@ -7,19 +7,14 @@ class TreeStructure : virtual public Sort {
 protected:
   Bodies &bodies;                                               // Bodies in the tree
   Cells  cells;                                                 // Cells in the tree
+  Cells  twigs;                                                 // Cells without children
   Pairs  pairs;                                                 // Stack of interaction pairs
   C_iter C0;                                                    // cells.begin()
   vect   X0;                                                    // Center of root cell
   real   R0;                                                    // Radius of root cell
   Kernel K;                                                     // Kernels
 public:
-  std::vector<bigint> Ibody;                                    // Cell index of body
-  std::vector<bigint> Icell;                                    // Cell index
-
-  TreeStructure(Bodies &b) : bodies(b),X0(0),R0(0) {            // Constructor
-    Ibody.resize(bodies.size());                                // Resize cell index of body
-  }
-
+  TreeStructure(Bodies &b) : bodies(b),X0(0),R0(0) {}           // Constructor
   ~TreeStructure() {}                                           // Destructor
 
   vect getX0() {return X0;}                                     // Get center of root cell
@@ -80,10 +75,8 @@ public:
   }
 
   void sortCells(Cells &buffer, int begin, int end) {           // Sort cells according to cell index
-    Icell.resize(cells.size());                                 // Resize vector for cell index
     buffer.resize(cells.size());                                // Resize vector for sort buffer
-    for( int i=begin; i!=end; ++i ) Icell[i] = cells[i].I;      // Fill Icell with cell index
-    sort(Icell,cells,buffer,false,begin,end);                   // Sort cells according to Icell
+    sort(cells,buffer,false,begin,end);                         // Sort cells in descending order
   }
 
   void linkParent(int &begin, int &end) {                       // Form parent-child mutual link
@@ -118,13 +111,14 @@ public:
 
   void link() {                                                 // Link cells to create tree
     int begin = 0, end = 0;                                     // Initialize range of cell vector
-    int index = Ibody[0], nleaf = 0, level = getLevel(index);   // Initialize cell index, nleaf, level
+    int index = bodies[0].I;                                    // Initialize cell index
+    int nleaf = 0;                                              // Initialize number of leafs
+    int level = getLevel(index);                                // Initialize level of tree
     B_iter firstLeaf = bodies.begin();                          // Initialize body iterator
     Cell cell;                                                  // Define cell structure
     Cells buffer;                                               // Allocate sort buffer for cells
-    BI_iter BI = Ibody.begin();                                 // Initialize body index iterator
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++BI ) { // Loop over all bodies
-      if( *BI != index ) {                                      //  If it belongs to a new cell
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
+      if( B->I != index ) {                                     //  If it belongs to a new cell
         cell.NLEAF = nleaf;                                     //   Set number of leafs
         cell.NCHILD = 0;                                        //   Set number of child cells
         cell.I = index;                                         //   Set cell index
@@ -132,14 +126,14 @@ public:
         getCenter(cell);                                        //   Set cell center and radius
         cells.push_back(cell);                                  //   Push cell structure into vector
         end++;                                                  //   Increment cell counter
-        while( getLevel(*BI) != level ) {                       //   While cell belongs to a higher level
+        while( getLevel(B->I) != level ) {                      //   While cell belongs to a higher level
           sortCells(buffer,begin,end);                          //    Sort cells at this level
           linkParent(begin,end);                                //    Form parent-child mutual link
           level--;                                              //    Go up one level
         }                                                       //   Endif for new level
         firstLeaf = B;                                          //   Set new first leaf
         nleaf = 0;                                              //   Reset number of bodies
-        index = *BI;                                            //   Set new cell
+        index = B->I;                                           //   Set new cell
       }                                                         //  Endif for new cell
       nleaf++;                                                  //  Increment body counter
     }                                                           // End loop over bodies

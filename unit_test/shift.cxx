@@ -35,17 +35,19 @@ int main() {
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
 #ifdef VTK
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;
+
   int Ncell(0);
   vtkPlot vtk;
   if( P.commRank() == 0 ) {
     vtk.setDomain(P.getR0(),P.getX0());
-    vtk.setGroupOfPoints(P.Ibody,bodies,Ncell);
+    vtk.setGroupOfPoints(bodies,Ncell);
   }
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
     P.shiftBodies(buffer);
     if( P.commRank() == 0 ) {
-      vtk.setGroupOfPoints(P.Ibody,bodies,Ncell);
+      vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
   toc = get_time();

@@ -109,7 +109,6 @@ public:
       }                                                         // End loop over children
     } else {                                                    //  If child doesn't exist
       for( int i=0; i!=N->NLEAF; ++i ) {                        //   Loop over leafs
-        Ibody[N->LEAF[i]-bodies.begin()] = N->I;                //    Store cell index in Ibody
         N->LEAF[i]->I = N->I;                                   //    Store cell index in bodies
       }                                                         //   End loop over leafs
     }                                                           //  Endif for child existence
@@ -150,7 +149,6 @@ public:
           nx[d] >>= 1;                                          //    Bitshift 3-D cell index
         }                                                       //   End loop over dimension
       }                                                         //  End loop over levels
-      Ibody[b] = i+off;                                         //  Store index in Ibody
       bodies[b].I = i+off;                                      //  Store index in bodies
     }                                                           // End loop over all bodies
   }
@@ -158,21 +156,21 @@ public:
   void prune() {                                                // Prune tree by merging cells
     int maxLevel = getMaxLevel();                               // Max level for bottom up tree build
     for( int l=maxLevel; l>0; --l ) {                           // Loop upwards from bottom level
-      int level = getLevel(Ibody[0]);                           //  Current level
+      int level = getLevel(bodies[0].I);                        //  Current level
       bigint cOff = ((1 << 3 * level) - 1) / 7;                 //  Current ce;; index offset
       bigint pOff = ((1 << 3 * (l-1)) - 1) / 7;                 //  Parent cell index offset
-      bigint icell = ((Ibody[0]-cOff) >> 3*(level-l+1)) + pOff; //  Current cell index
+      bigint icell = ((bodies[0].I-cOff) >> 3*(level-l+1)) + pOff; //  Current cell index
       int begin = 0;                                            //  Begin cell index for bodies in cell
       int size = 0;                                             //  Number of bodies in cell
       int b = 0;                                                //  Current body index
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {//  Loop over all bodies
-        level = getLevel(Ibody[b]);                             //   Level of twig
+        level = getLevel(B->I);                                 //   Level of twig
         cOff = ((1 << 3*level) - 1) / 7;                        //   Offset of twig
-        bigint p = ((Ibody[b]-cOff) >> 3*(level-l+1)) + pOff;   //   Cell index of parent cell
+        bigint p = ((B->I-cOff) >> 3*(level-l+1)) + pOff;       //   Cell index of parent cell
         if( p != icell ) {                                      //   If it's a new parent cell
           if( size < NCRIT ) {                                  //    If parent cell has few enough bodies
             for( int i=begin; i!=begin+size; ++i ) {            //     Loop over all bodies in that cell
-              Ibody[i] = icell;                                 //      Renumber cell index to parent cell
+              bodies[i].I = icell;                              //      Renumber cell index to parent cell
             }                                                   //     End loop over all bodies in cell
           }                                                     //    Endif for merging
           begin = b;                                            //    Set new begin index
@@ -183,36 +181,36 @@ public:
       }                                                         //  End loop over all bodies
       if( size < NCRIT ) {                                      //  If last parent cell has few enough bodies
         for( int i=begin; i!=begin+size; ++i ) {                //   Loop over all bodies in that cell
-          Ibody[i] = icell;                                     //    Renumber cell index to parent cell
+          bodies[i].I = icell;                                  //    Renumber cell index to parent cell
         }                                                       //   End loop over all bodies in cell
       }                                                         //  Endif for merging
     }                                                           // End loop over levels
   }
 
   void grow(Bodies &buffer, int level=0, int begin=0, int end=0) {// Grow tree by splitting cells
-    bigint icell = Ibody[begin];                                // Initialize cell index
+    bigint icell = bodies[begin].I;                             // Initialize cell index
     int off=begin, size=0;                                      // Initialize offset, and size
     if( level == 0 ) level = getMaxLevel();                     // Max level for bottom up tree build
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
     for( int b=begin; b!=end; ++b ) {                           // Loop over all bodies under consideration
-      if( Ibody[b] != icell ) {                                 //  If it's a new cell
+      if( bodies[b].I != icell ) {                              //  If it's a new cell
         if( size >= NCRIT ) {                                   //   If the cell has too many bodies
           level++;                                              //    Increment level
           setIndex(level,off,off+size);                         //    Set new cell index considering new level
-          sort(Ibody,bodies,buffer,true,off,off+size);          //    Sort new cell index
+          sort(bodies,buffer,true,off,off+size);                //    Sort new cell index
           grow(buffer,level,off,off+size);                      //    Recursively grow tree
           level--;                                              //    Go back to previous level
         }                                                       //   Endif for splitting
         off = b;                                                //   Set new offset
         size = 0;                                               //   Reset number of bodies
-        icell = Ibody[b];                                       //   Set new cell
+        icell = bodies[b].I;                                    //   Set new cell
       }                                                         //  Endif for new cell
       size++;                                                   //  Increment body counter
     }                                                           // End loop over bodies
     if( size >= NCRIT ) {                                       // If last cell has too many bodies
       level++;                                                  //  Increment level
       setIndex(level,off,off+size);                             //  Set new cell index considering new level
-      sort(Ibody,bodies,buffer,true,off,off+size);              //  Sort new cell index
+      sort(bodies,buffer,true,off,off+size);                    //  Sort new cell index
       grow(buffer,level,off,off+size);                          //  Recursively grow tree
       level--;                                                  //  Go back to previous level
     }                                                           // Endif for splitting
@@ -237,7 +235,7 @@ public:
     if(print) std::cout << "Set index     : " << toc-tic << std::endl;
 
     tic = get_time();
-    sort(Ibody,bodies,buffer,false);
+    sort(bodies,buffer,false);
     toc = get_time();
     if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
 
@@ -255,7 +253,7 @@ public:
     if(print) std::cout << "Set index     : " << toc-tic << std::endl;
 
     tic = get_time();
-    sort(Ibody,bodies,buffer);
+    sort(bodies,buffer);
     toc = get_time();
     if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
 
@@ -270,7 +268,7 @@ public:
     if(print) std::cout << "Grow tree     : " << toc-tic << std::endl;
 
     tic = get_time();
-    sort(Ibody,bodies,buffer,false);
+    sort(bodies,buffer,false);
     toc = get_time();
     if(print) std::cout << "Sort descend  : " << toc-tic << std::endl;
 

@@ -200,12 +200,14 @@ public:
   }
 
   void getTwigs(int offTwigs) {
-    for( int c=0; c!=int(cells.size()); ++c ) {
-      if( cells[c].NCHILD != 0 ) {
-        cells.erase(cells.begin()+c);
-        c--;
+    while( !cells.empty() ) {
+      if( cells.back().NCHILD == 0 ) {
+        twigs.push_back(cells.back());
       }
+      cells.pop_back();
     }
+    cells = twigs;
+    twigs.clear();
     for( JC_iter JC=sendCells.begin(); JC!=sendCells.begin()+offTwigs; ++JC ) {
       Cell cell;
       cell.I = JC->I;
@@ -219,13 +221,9 @@ public:
   }
 
   void addJCells() {
-    BI_iter CI = Icell.begin();
-    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC,++CI ) {
-      *CI = JC->I;
-    }
     JCells jbuffer;
     jbuffer.resize(recvCells.size());
-    sort(Icell,recvCells,jbuffer,false);
+    sort(recvCells,jbuffer,false);
 
     for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC ) {
       Cell cell;
@@ -240,12 +238,11 @@ public:
 
   void linkTwig() {
     int nleaf = 0;
-    bigint index = Ibody[0];
+    bigint index = bodies[0].I;
     B_iter firstLeaf = bodies.begin();
     Cell cell;
-    BI_iter BI = Ibody.begin();
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++BI ) {
-      if( *BI != index ) {
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      if( B->I != index ) {
         cell.NLEAF = nleaf;
         cell.NCHILD = 0;
         cell.I = index;
@@ -254,7 +251,7 @@ public:
         cells.push_back(cell);
         firstLeaf = B;
         nleaf = 0;
-        index = *BI;
+        index = B->I;
       }
       nleaf++;
     }
@@ -309,7 +306,6 @@ public:
     }
     print("recvBodies\n",0);                                    // TODO
     print(sumM);                                                // TODO
-    Ibody.resize(bodies.size());
     buffer.resize(bodies.size());
     sumM = 0;                                                   // TODO
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // TODO
@@ -338,11 +334,7 @@ public:
     print(sumM);                                                // TODO
     cells.clear();
 
-    B_iter B = bodies.begin();
-    for( BI_iter BI=Ibody.begin(); BI!=Ibody.end(); ++BI,++B ) {
-      *BI = B->I;
-    }
-    sort(Ibody,bodies,buffer,false);
+    sort(bodies,buffer,false);
     linkTwig();
     sumM = 0;                                                   // TODO
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // TODO
@@ -393,7 +385,7 @@ public:
 
     int begin = end = 0;
     int level = getLevel(cells[0].I);
-    Cells twigs = cells;
+    twigs = cells;
     cells.clear();
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {
       while( getLevel(C->I) != level ) {
@@ -405,6 +397,7 @@ public:
       cells.push_back(*C);
       end++;
     }
+    twigs.clear();
     for( int l=level; l>0; --l ) {                              // Once all the twigs are done, do the rest
       sortCells(buffer,begin,end);                              //  Sort cells at this level
       unique(begin,end);
@@ -434,7 +427,7 @@ public:
 
       getTwigs(offTwigs);
       addJCells();
-      if( l == LEVEL - 1 ) addJBodies(buffer);
+//      if( l == LEVEL - 1 ) addJBodies(buffer);
       graft();
       offTwigs = sendCells.size();
     }

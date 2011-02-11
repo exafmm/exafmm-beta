@@ -50,21 +50,21 @@ int main() {
   if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
 
 #ifdef VTK
-  std::fill(P.Ibody.begin(),P.Ibody.end(),0);
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;
+  for( B_iter B=buffer.begin(); B!=buffer.end(); ++B ) B->I = 1;
   bodies.insert(bodies.end(),buffer.begin(),buffer.end());
-  P.Ibody.insert(P.Ibody.end(),buffer.size(),1);
 
   int Ncell(0);
   vtkPlot vtk;
   if( P.commRank() == 0 ) {
     vtk.setDomain(P.getR0(),P.getX0());
-    vtk.setGroupOfPoints(P.Ibody,bodies,Ncell);
+    vtk.setGroupOfPoints(bodies,Ncell);
   }
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
     P.shiftBodies(buffer);
     if( P.commRank() == 0 ) {
-      vtk.setGroupOfPoints(P.Ibody,bodies,Ncell);
+      vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
   toc = get_time();

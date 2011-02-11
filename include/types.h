@@ -12,7 +12,7 @@
 #include "vec.h"
 
 typedef long         bigint;                                    // Big integer type
-typedef double       real;                                      // Real number type
+typedef float        real;                                      // Real number type
 typedef vec<3,real>  vect;                                      // 3-D vector type
 typedef vec<10,real> coef;                                      // Multipole coefficient type
 typedef std::vector<bigint>           Bigints;                  // Vector of big integer types

@@ -32,11 +32,11 @@ int main() {
 #endif
 
 #ifdef VTK
-  T.sort(T.Ibody,bodies,buffer);
+  T.sort(bodies,buffer);
   int Ncell(0);
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());
-  vtk.setGroupOfPoints(T.Ibody,bodies,Ncell);
+  vtk.setGroupOfPoints(bodies,Ncell);
   vtk.plot(Ncell);
 #endif
 }

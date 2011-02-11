@@ -65,7 +65,7 @@ public:
 
   void binBodies(int d) {                                       // Turn positions into indices of bins
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
-      Ibody[B-bodies.begin()] = bigint((B->pos[d] - XMIN[0][d]) // Bin body positions into integers
+      B->I = bigint((B->pos[d] - XMIN[0][d])                    // Bin body positions into integers
         / (XMAX[0][d] - XMIN[0][d]) * numBodies);
     }                                                           // End loop over all bodies
   }
@@ -73,7 +73,6 @@ public:
   void shiftBodies(Bodies &buffer) {                            // Send bodies to next rank (wrap around)
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
-    int const MPI_TYPE = getType(Ibody[0]);                     // Get MPI data type
     int const bytes = sizeof(bodies[0]);                        // Byte size of body structure
     int const isend = (RANK + 1       ) % SIZE;                 // Send to next rank (wrap around)
     int const irecv = (RANK - 1 + SIZE) % SIZE;                 // Receive from previous rank (wrap around)
@@ -84,19 +83,10 @@ public:
     MPI_Wait(&sreq,MPI_STATUS_IGNORE);                          // Wait for send to complete
     MPI_Wait(&rreq,MPI_STATUS_IGNORE);                          // Wait for receive to complete
 
-    ibuffer.resize(newSize);                                    // Resize buffer to new number of index
-    MPI_Isend(&Ibody[0],  oldSize,MPI_TYPE,irecv,               // Send index to next rank
-              1,MPI_COMM_WORLD,&sreq);
-    MPI_Irecv(&ibuffer[0],newSize,MPI_TYPE,isend,               // Receive index from previous rank
-              1,MPI_COMM_WORLD,&rreq);
-    MPI_Wait(&sreq,MPI_STATUS_IGNORE);                          // Wait for send to complete
-    MPI_Wait(&rreq,MPI_STATUS_IGNORE);                          // Wait for receive to complete
-    Ibody = ibuffer;                                            // Copy index from buffer
-
     buffer.resize(newSize);                                     // Resize buffer to new number of bodies
-    MPI_Isend(&bodies[0].pos[0],oldSize*bytes,MPI_BYTE,irecv,   // Send bodies to next rank
+    MPI_Isend(&bodies[0].I,oldSize*bytes,MPI_BYTE,irecv,        // Send bodies to next rank
               2,MPI_COMM_WORLD,&sreq);
-    MPI_Irecv(&buffer[0].pos[0],newSize*bytes,MPI_BYTE,isend,   // Receive bodies from previous rank
+    MPI_Irecv(&buffer[0].I,newSize*bytes,MPI_BYTE,isend,        // Receive bodies from previous rank
               2,MPI_COMM_WORLD,&rreq);
     MPI_Wait(&sreq,MPI_STATUS_IGNORE);                          // Wait for send to complete
     MPI_Wait(&rreq,MPI_STATUS_IGNORE);                          // Wait for receive to complete
@@ -105,8 +95,109 @@ public:
 
   int splitBodies(bigint iSplit) {
     int nth = 0;
-    while( Ibody[nth] < iSplit && nth < int(Ibody.size() - 1) ) nth++;
+    while( bodies[nth].I < iSplit && nth < int(bodies.size() - 1) ) nth++;
     return nth;
+  }
+
+  template<typename T>
+  int getBucket(T &data, int numData, int lOffset, Bigints &send, Bigints &recv, MPI_Comm MPI_COMM0) {
+    int maxBucket = send.size();                                // Maximum number of buckets
+    int numBucket;                                              // Number of buckets
+    int numSample = std::min(maxBucket/SIZES,numData);          // Number of local samples
+    int const MPI_TYPE = getType(data[0].I);                      // Get MPI data type
+    int *rcnt = new int [SIZES];                                // MPI receive count
+    int *rdsp = new int [SIZES];                                // MPI receive displacement
+    for( int i=0; i!=numSample; ++i ) {                         // Loop over local samples
+      int stride = numData/numSample;                           //  Sampling stride
+      send[i] = data[lOffset + i * stride].I;                     //  Put sampled data in send buffer
+    }                                                           // End loop over samples
+    MPI_Gather(&numSample,1,MPI_INT,                            // Gather size of sample data to rank 0
+               rcnt,      1,MPI_INT,
+               0,MPI_COMM0);
+    if( RANKS == 0 ) {                                          // Only rank 0 operates on gathered info
+      numBucket = 0;                                            //  Initialize number of buckets
+      for( int irank=0; irank!=SIZES; ++irank ) {               //  Loop over all processes
+        rdsp[irank] = numBucket;                                //   Calculate receive displacement
+        numBucket += rcnt[irank];                               //   Accumulate receive count to get number of buckets
+      }                                                         //  End loop over all processes
+      recv.resize(numBucket);                                   //  Resize recv so that end() is valid
+    }                                                           // Endif for rank 0
+    MPI_Gatherv(&send[0],numSample,MPI_TYPE,                    // Gather sample data to rank 0
+                &recv[0],rcnt,rdsp,MPI_TYPE,
+                0,MPI_COMM0);
+    if( RANKS == 0 ) {                                          // Only rank 0 operates on gathered info
+      std::sort(recv.begin(),recv.end());                       //  Sort the bucket data
+      numBucket = std::unique(recv.begin(),recv.end()) - recv.begin();// Remove duplicate bucket data
+      recv.resize(numBucket);                                   //  Resize recv again
+    }                                                           // Endif for rank 0
+    MPI_Bcast(&numBucket,1,MPI_INT,0,MPI_COMM0);                // Broadcast number of buckets
+    MPI_Bcast(&recv[0],numBucket,MPI_TYPE,0,MPI_COMM0);         // Broadcast bucket data
+    delete[] rcnt;                                              // Delete receive count
+    delete[] rdsp;                                              // Delete receive displacement
+    return numBucket;                                           // Return number of buckets
+  }
+
+  template<typename T, typename T2>
+  T2 nth_element(T &data, T2 n, MPI_Comm MPI_COMM0=0) {         // Find nth element of global data
+    if( MPI_COMM0 == 0 ) {                                      // If MPI_COMM is not specified
+      MPI_Comm_split(MPI_COMM_WORLD,0,RANK,&MPI_COMM0);         //  Create an artificial MPI_COMM
+    }
+    MPI_Comm_size(MPI_COMM0,&SIZES);                            // Get number of MPI processes for split comm
+    MPI_Comm_rank(MPI_COMM0,&RANKS);                            // Get index of current MPI process for split comm
+    int numData = data.size();                                  // Total size of data to perform nth_element
+    int maxBucket = 1000;                                       // Maximum number of buckets
+    int numBucket;                                              // Number of buckets
+    int lOffset = 0;                                            // Local offset of region being considered
+    int const MPI_TYPE = getType(n);                            // Get MPI data type
+    int *rcnt = new int [SIZES];                                // MPI receive count
+    Bigints send(maxBucket);                                    // MPI send buffer for data
+    Bigints recv(maxBucket);                                    // MPI receive buffer for data
+    T2 gOffset = 0;                                             // Global offset of region being considered
+    T2 *isend = new T2 [maxBucket];                             // MPI send buffer for index
+    T2 *irecv = new T2 [maxBucket];                             // MPI receive buffer for index
+    T2 *iredu = new T2 [maxBucket];                             // Local scan of index buffer
+    numBucket = getBucket(data,numData,lOffset,send,recv,MPI_COMM0);// Get global bucket data
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    while( numBucket > 1 ) {                                    // While there are multipole candidates
+      int ic=0, nth=0;                                          //  Initialize counters
+      for( int i=0; i!=maxBucket; ++i ) isend[i] = 0;           //  Initialize bucket counter
+      for( int i=0; i!=numData; ++i ) {                         //  Loop over range of data
+        while( data[lOffset + i].I > recv[ic] && ic < numBucket-1 ) ++ic;// Set counter to current bucket
+        isend[ic]++;                                            //   Increment bucket counter
+      }                                                         //  End loop over data
+      MPI_Reduce(isend,irecv,numBucket,MPI_TYPE,                //  Reduce bucket counter
+                 MPI_SUM,0,MPI_COMM0);
+      if( RANKS == 0 ) {                                        //  Only rank 0 operates on reduced data
+        iredu[0] = 0;                                           //   Initialize global scan index
+        for( int i=0; i!=numBucket-1; ++i ) {                   //   Loop over buckets
+          iredu[i+1] = iredu[i] + irecv[i];                     //    Increment global scan index
+        }                                                       //   End loop over buckets
+        nth = 0;                                                //   Initialize index for bucket containing nth element
+        while( n - gOffset > iredu[nth] && nth < numBucket ) ++nth;// Find index for bucket containing nth element
+        --nth;                                                  //   Account for overshoot (do while?)
+        if( nth == -1 ) nth = 0;                                //   If nth is -1 don't split
+        gOffset += iredu[nth];                                  //   Increment global offset of region being considered
+      }                                                         //  Endif for rank 0
+      MPI_Bcast(&nth,1,MPI_INT,0,MPI_COMM0);                    //  Broadcast index for bucket containing nth element
+      MPI_Bcast(&gOffset,1,MPI_TYPE,0,MPI_COMM0);               //  Broadcast global offset
+      iredu[0] = 0;                                             //  Initialize local scan index
+      for( int i=0; i!=numBucket-1; ++i ) {                     //  Loop over buckets
+        iredu[i+1] = iredu[i] + isend[i];                       //   Increment local scan index
+      }                                                         //  End loop over buckets
+      if( nth == numBucket-1 ) {                                //  If nth is last bucket
+        numData = numData-iredu[nth];                           //   Region of interest is that bucket
+      } else {                                                  //  If nth is not the last bucket
+        numData = iredu[nth+1]-iredu[nth];                      //   Region of interest is that bucket
+      }                                                         //  Endif for last bucket
+      lOffset += iredu[nth];                                    //  Increment local offset to that bucket
+      numBucket = getBucket(data,numData,lOffset,send,recv,MPI_COMM0);// Get global bucket data
+    }                                                           // End while loop
+    delete[] rcnt;                                              // Delete receive count
+    delete[] isend;                                             // Delete send buffer for index
+    delete[] irecv;                                             // Delete receive buffer for index
+    delete[] iredu;                                             // Delete local scan of index buffer
+    return recv[0];                                             // Return nth element
   }
 
   void bisectionGetComm(int l) {
@@ -143,7 +234,6 @@ public:
 
   void bisectionAlltoall(Bodies &buffer,
                             int nthLocal, int numLocal, int &newSize) {
-    int const MPI_TYPE = getType(Ibody[0]);
     int const bytes = sizeof(bodies[0]);
     int scnt[2] = {nthLocal, numLocal - nthLocal};
     int rcnt[2] = {0, 0};
@@ -152,13 +242,7 @@ public:
     int rdsp[2] = {0, rcnt[0]};
     newSize = rcnt[0] + rcnt[1];
     if( color[0] != color[1] ) newSize = numLocal;
-    ibuffer.resize(newSize);
     buffer.resize(newSize);
-
-    MPI_Alltoallv(&Ibody[0],  scnt,sdsp,MPI_TYPE,
-                  &ibuffer[0],rcnt,rdsp,MPI_TYPE,
-                  MPI_COMM[2]);
-    if( color[0] == color[1] && nthLocal != 0 ) Ibody = ibuffer;
 
     for(int i=0; i!=2; ++i ) {
       scnt[i] *= bytes;
@@ -167,16 +251,15 @@ public:
       rdsp[i] *= bytes;
     }
 
-    MPI_Alltoallv(&bodies[0].pos[0],scnt,sdsp,MPI_BYTE,
-                  &buffer[0].pos[0],rcnt,rdsp,MPI_BYTE,
+    MPI_Alltoallv(&bodies[0].I,scnt,sdsp,MPI_BYTE,
+                  &buffer[0].I,rcnt,rdsp,MPI_BYTE,
                   MPI_COMM[2]);
     if( color[0] == color[1] && nthLocal != 0 ) bodies = buffer;
-    sort(Ibody,bodies,buffer);
+    sort(bodies,buffer);
   }
 
   void bisectionScatter(Bodies &buffer,
                            int nthLocal, int &newSize) {
-    int const MPI_TYPE = getType(Ibody[0]);
     int const bytes = sizeof(bodies[0]);
     int numScatter = nprocs[1] - 1;
     int oldSize = newSize;
@@ -192,20 +275,13 @@ public:
       scnt[numScatter] = 0;
       oldSize = 0;
       newSize -= sdsp[numScatter];
-      ibuffer.erase(ibuffer.begin(),ibuffer.begin()+sdsp[numScatter]);
        buffer.erase( buffer.begin(), buffer.begin()+sdsp[numScatter]);
     }
     MPI_Scatter(scnt,1,MPI_INT,&rcnt,1,MPI_INT,numScatter,MPI_COMM[1]);
     if( key[1] != numScatter ) {
       newSize += rcnt;
-      ibuffer.resize(newSize);
        buffer.resize(newSize);
     }
-
-    MPI_Scatterv(&Ibody[0],        scnt,sdsp,MPI_TYPE,
-                 &ibuffer[oldSize],rcnt,     MPI_TYPE,
-                 numScatter,MPI_COMM[1]);
-    Ibody = ibuffer;
 
     for(int i=0; i!= nprocs[1]; ++i ) {
       scnt[i] *= bytes;
@@ -213,18 +289,17 @@ public:
     }
     rcnt *= bytes;
 
-    MPI_Scatterv(&bodies[0].pos[0],      scnt,sdsp,MPI_BYTE,
-                 &buffer[oldSize].pos[0],rcnt,     MPI_BYTE,
+    MPI_Scatterv(&bodies[0].I,      scnt,sdsp,MPI_BYTE,
+                 &buffer[oldSize].I,rcnt,     MPI_BYTE,
                  numScatter,MPI_COMM[1]);
     bodies = buffer;
-    if( key[1] != numScatter ) sort(Ibody,bodies,buffer);
+    if( key[1] != numScatter ) sort(bodies,buffer);
     delete[] scnt;
     delete[] sdsp;
   }
 
   void bisectionGather(Bodies &buffer,
                           int nthLocal, int &newSize) {
-    int const MPI_TYPE = getType(Ibody[0]);
     int const bytes = sizeof(bodies[0]);
     int numGather = nprocs[0] - 1;
     int oldSize = newSize;
@@ -234,7 +309,6 @@ public:
     if( key[0] != 0 ) {
       scnt = nthLocal / numGather;
       newSize -= scnt;
-      ibuffer.erase(ibuffer.begin(),ibuffer.begin()+scnt);
        buffer.erase( buffer.begin(), buffer.begin()+scnt);
     }
     MPI_Gather(&scnt,1,MPI_INT,rcnt,1,MPI_INT,0,MPI_COMM[0]);
@@ -244,14 +318,8 @@ public:
         rdsp[i+1] = rdsp[i] + rcnt[i];
       }
       newSize += rdsp[numGather] + rcnt[numGather];
-      ibuffer.resize(newSize);
        buffer.resize(newSize);
     }
-
-    MPI_Gatherv(&Ibody[0],        scnt,     MPI_TYPE,
-                &ibuffer[oldSize],rcnt,rdsp,MPI_TYPE,
-                0,MPI_COMM[0]);
-    Ibody = ibuffer;
 
     scnt *= bytes;
     for(int i=0; i!= nprocs[0]; ++i ) {
@@ -259,17 +327,17 @@ public:
       rdsp[i] *= bytes;
     }
 
-    MPI_Gatherv(&bodies[0].pos[0],      scnt,     MPI_BYTE,
-                &buffer[oldSize].pos[0],rcnt,rdsp,MPI_BYTE,
+    MPI_Gatherv(&bodies[0].I,      scnt,     MPI_BYTE,
+                &buffer[oldSize].I,rcnt,rdsp,MPI_BYTE,
                 0,MPI_COMM[0]);
     bodies = buffer;
     delete[] rcnt;
     delete[] rdsp;
-    if( key[0] == 0 ) sort(Ibody,bodies,buffer);
+    if( key[0] == 0 ) sort(bodies,buffer);
   }
 
   void bisection(Bodies &buffer) {
-    int const MPI_TYPE = getType(Ibody[0]);
+    int const MPI_TYPE = getType(bodies[0].I);
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
      color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators
@@ -281,8 +349,8 @@ public:
     MPI_Bcast(&numGlobal,1,MPI_TYPE,0,MPI_COMM_WORLD);
     bigint nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];
     binBodies(0);
-    sort(Ibody,bodies,buffer);
-    bigint iSplit = nth_element(&Ibody[0],numLocal,nthGlobal);
+    sort(bodies,buffer);
+    bigint iSplit = nth_element(bodies,nthGlobal);
     int nthLocal = splitBodies(iSplit);
 
     for( int l=0; l!=LEVEL; ++l ) {
@@ -303,7 +371,7 @@ public:
         usleep(100);
         if( RANK == j ) {
           std::cout << "RANK : " << j << std::endl;
-          for(int i=0; i!=9; ++i) std::cout << Ibody[numLocal/10*i] << " ";
+          for(int i=0; i!=9; ++i) std::cout << bodies[numLocal/10*i].I << " ";
           std::cout << std::endl;
         }
       }
@@ -313,8 +381,8 @@ public:
       MPI_Bcast(&numGlobal,1,MPI_TYPE,0,MPI_COMM[0]);
       nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];
       binBodies((l+1) % 3);
-      sort(Ibody,bodies,buffer);
-      iSplit = nth_element(&Ibody[0],numLocal,nthGlobal,MPI_COMM[0]);
+      sort(bodies,buffer);
+      iSplit = nth_element(bodies,nthGlobal,MPI_COMM[0]);
       nthLocal = splitBodies(iSplit);
     }
   }
@@ -323,7 +391,7 @@ public:
     int byte = sizeof(bodies[0]);
     int level = int(log(SIZE + 1) / M_LN2 / 3);
     BottomUp::setIndex(level);
-    sort(Ibody,bodies,buffer);
+    sort(bodies,buffer);
     int *scnt = new int [SIZE];
     int *sdsp = new int [SIZE];
     int *rcnt = new int [SIZE];
@@ -331,8 +399,8 @@ public:
     for( int i=0; i!=SIZE; ++i ) {
       scnt[i] = 0;
     }
-    for( BI_iter BI=Ibody.begin(); BI!=Ibody.end(); ++BI ) {
-      int i = *BI - ((1 << 3*level) - 1) / 7;
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      int i = B->I - ((1 << 3*level) - 1) / 7;
       scnt[i]++;
     }
     MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM_WORLD);
@@ -342,7 +410,6 @@ public:
       rdsp[irank+1] = rdsp[irank] + rcnt[irank];
     }
     buffer.resize(rdsp[SIZE-1]+rcnt[SIZE-1]);
-    Ibody.resize(buffer.size());
     for( int irank=0; irank!=SIZE; ++irank ) {
       scnt[irank] *= byte;
       sdsp[irank] *= byte;
