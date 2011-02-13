@@ -159,7 +159,7 @@ public:
       int level = getLevel(bodies[0].I);                        //  Current level
       bigint cOff = ((1 << 3 * level) - 1) / 7;                 //  Current ce;; index offset
       bigint pOff = ((1 << 3 * (l-1)) - 1) / 7;                 //  Parent cell index offset
-      bigint icell = ((bodies[0].I-cOff) >> 3*(level-l+1)) + pOff; //  Current cell index
+      bigint index = ((bodies[0].I-cOff) >> 3*(level-l+1)) + pOff;//  Current cell index
       int begin = 0;                                            //  Begin cell index for bodies in cell
       int size = 0;                                             //  Number of bodies in cell
       int b = 0;                                                //  Current body index
@@ -167,33 +167,33 @@ public:
         level = getLevel(B->I);                                 //   Level of twig
         cOff = ((1 << 3*level) - 1) / 7;                        //   Offset of twig
         bigint p = ((B->I-cOff) >> 3*(level-l+1)) + pOff;       //   Cell index of parent cell
-        if( p != icell ) {                                      //   If it's a new parent cell
+        if( p != index ) {                                      //   If it's a new parent cell
           if( size < NCRIT ) {                                  //    If parent cell has few enough bodies
             for( int i=begin; i!=begin+size; ++i ) {            //     Loop over all bodies in that cell
-              bodies[i].I = icell;                              //      Renumber cell index to parent cell
+              bodies[i].I = index;                              //      Renumber cell index to parent cell
             }                                                   //     End loop over all bodies in cell
           }                                                     //    Endif for merging
           begin = b;                                            //    Set new begin index
           size = 0;                                             //    Reset number of bodies
-          icell = p;                                            //    Set new parent cell
+          index = p;                                            //    Set new parent cell
         }                                                       //   Endif for new cell
         size++;                                                 //   Increment body counter
       }                                                         //  End loop over all bodies
       if( size < NCRIT ) {                                      //  If last parent cell has few enough bodies
         for( int i=begin; i!=begin+size; ++i ) {                //   Loop over all bodies in that cell
-          bodies[i].I = icell;                                  //    Renumber cell index to parent cell
+          bodies[i].I = index;                                  //    Renumber cell index to parent cell
         }                                                       //   End loop over all bodies in cell
       }                                                         //  Endif for merging
     }                                                           // End loop over levels
   }
 
   void grow(int level=0, int begin=0, int end=0) {              // Grow tree by splitting cells
-    bigint icell = bodies[begin].I;                             // Initialize cell index
+    bigint index = bodies[begin].I;                             // Initialize cell index
     int off=begin, size=0;                                      // Initialize offset, and size
     if( level == 0 ) level = getMaxLevel();                     // Max level for bottom up tree build
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
     for( int b=begin; b!=end; ++b ) {                           // Loop over all bodies under consideration
-      if( bodies[b].I != icell ) {                              //  If it's a new cell
+      if( bodies[b].I != index ) {                              //  If it's a new cell
         if( size >= NCRIT ) {                                   //   If the cell has too many bodies
           level++;                                              //    Increment level
           setIndex(level,off,off+size);                         //    Set new cell index considering new level
@@ -203,7 +203,7 @@ public:
         }                                                       //   Endif for splitting
         off = b;                                                //   Set new offset
         size = 0;                                               //   Reset number of bodies
-        icell = bodies[b].I;                                    //   Set new cell
+        index = bodies[b].I;                                    //   Set new cell
       }                                                         //  Endif for new cell
       size++;                                                   //  Increment body counter
     }                                                           // End loop over bodies
@@ -235,14 +235,19 @@ public:
     if(print) std::cout << "Set index     : " << toc-tic << std::endl;
 
     tic = get_time();
-    sort(bodies,buffer,false);
+    sort(bodies,buffer);
     toc = get_time();
     if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
 
     tic = get_time();
-    link();
+    bodies2twigs();
     toc = get_time();
-    if(print) std::cout << "Link cells    : " << toc-tic << std::endl;
+    if(print) std::cout << "Bodies2twigs  : " << toc-tic << std::endl;
+
+    tic = get_time();
+    twigs2cells();
+    toc = get_time();
+    if(print) std::cout << "Twigs2cells   : " << toc-tic << std::endl;
   }
 
   void bottomup(bool print=true) {
@@ -268,14 +273,19 @@ public:
     if(print) std::cout << "Grow tree     : " << toc-tic << std::endl;
 
     tic = get_time();
-    sort(bodies,buffer,false);
+    sort(bodies,buffer);
     toc = get_time();
     if(print) std::cout << "Sort descend  : " << toc-tic << std::endl;
 
     tic = get_time();
-    link();
+    bodies2twigs();
     toc = get_time();
-    if(print) std::cout << "Link cells    : " << toc-tic << std::endl;
+    if(print) std::cout << "Bodies2twigs  : " << toc-tic << std::endl;
+
+    tic = get_time();
+    twigs2cells();
+    toc = get_time();
+    if(print) std::cout << "Twigs2cells   : " << toc-tic << std::endl;
   }
 
 };

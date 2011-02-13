@@ -6,11 +6,12 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(10000);
+  int const numBodies(1000);
   tic = get_time();
   Bodies bodies(numBodies);
   Dataset D(bodies);
   LocalEssentialTree P(bodies);
+  Kernel K;
   bool print(true);
   if( P.commRank() != 0 ) print = false;
   toc = get_time();
@@ -28,7 +29,7 @@ int main() {
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.octsection();
+  P.bisection();
   toc = get_time();
   if(print) std::cout << "Partition     : " << toc-tic << std::endl;
 
@@ -57,6 +58,34 @@ int main() {
   P.commCells();
   toc = get_time();
   if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
+
+  tic = get_time();
+  P.evaluate(1);
+  toc = get_time();
+  if(print) std::cout << "Evaluate      : " << toc-tic << std::endl;
+
+  tic = get_time();
+  srand(P.commRank()+1);
+  bodies.resize(numBodies);
+  D.random();
+  P.buffer = bodies;
+  for( int i=0; i!=P.commSize(); ++i ) {
+    P.shiftBodies();
+    K.P2P(P.buffer.begin(),P.buffer.end(),bodies.begin(),bodies.end());
+  }
+  toc = get_time();
+  if(print) std::cout << "Direct sum    : " << toc-tic << std::endl;
+
+  B_iter B  = bodies.begin();
+  B_iter B2 = P.buffer.begin();
+  real err(0),rel(0);
+  for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
+    B->pot  -= B->scal  / std::sqrt(EPS2);                      //  Initialize body values
+    B2->pot -= B2->scal / std::sqrt(EPS2);                      //  Initialize body values
+    err += (B->pot - B2->pot) * (B->pot - B2->pot);
+    rel += B2->pot * B2->pot;
+  }
+  if(print) std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
 
 #ifdef VTK
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;

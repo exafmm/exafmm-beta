@@ -15,6 +15,7 @@ public:
         B->pos[d] = rand() / (1. + RAND_MAX) * 2 - 1;           //   Initialize positions
       }                                                         //  End loop over dimension
       B->scal = 1. / bodies.size();                             //  Initialize source value
+      B->acc = B->pot = 0;                                      //  Initialize target value
     }                                                           // End loop over all bodies
   }
 
@@ -28,6 +29,7 @@ public:
         B->pos[d] /= r * 1.1;                                   //   Normalize positions
       }                                                         //  End loop over dimension
       B->scal = 1. / bodies.size();                             //  Initialize source value
+      B->acc = B->pot = 0;                                      //  Initialize target value
     }                                                           // End loop over all bodies
   }
 
