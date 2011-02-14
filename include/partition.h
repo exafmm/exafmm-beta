@@ -83,9 +83,9 @@ public:
 
     buffer.resize(newSize);                                     // Resize buffer to new number of bodies
     MPI_Isend(&bodies[0].I,oldSize*bytes,MPI_BYTE,irecv,        // Send bodies to next rank
-              2,MPI_COMM_WORLD,&sreq);
+              1,MPI_COMM_WORLD,&sreq);
     MPI_Irecv(&buffer[0].I,newSize*bytes,MPI_BYTE,isend,        // Receive bodies from previous rank
-              2,MPI_COMM_WORLD,&rreq);
+              1,MPI_COMM_WORLD,&rreq);
     MPI_Wait(&sreq,MPI_STATUS_IGNORE);                          // Wait for send to complete
     MPI_Wait(&rreq,MPI_STATUS_IGNORE);                          // Wait for receive to complete
     bodies = buffer;                                            // Copy bodies from buffer

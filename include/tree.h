@@ -277,6 +277,27 @@ public:
     }                                                           // End loop over all cells topdown
   }
 
+  void evaluate(Cells &cells, Cells &jcells, int method) {      // Interface for treewalk
+    C_iter root = cells.end()-1;                                // Iterator for root cell
+    C_iter jroot = jcells.end()-1;                              // Iterator for root cell
+    Pair pair(root,jroot);                                      // Form pair of root cells
+    pairs.push(pair);                                           // Push pair to stack
+    while( !pairs.empty() ) {                                   // While interaction stack is not empty
+      pair = pairs.top();                                       //  Get interaction pair from top of stack
+      pairs.pop();                                              //  Pop interaction stack
+      switch (method) {                                         //  Swtich between methods
+        case 0 : treecode(pair.CI,pair.CJ); break;              //   0 : treecode
+        case 1 : FMM(pair.CI,pair.CJ);      break;              //   1 : FMM
+      }                                                         //  End switch between methods
+    }                                                           // End while loop for interaction stack
+    for( C_iter C=root-1; C!=cells.begin()-1; --C ) {           // Loop over all cells topdown (except root cell)
+      K.L2L(C,CI0+C->PARENT);                                   //  Evaluate L2L kernel
+      if( C->NLEAF < NCRIT ) {                                  //  If cell is a twig
+        K.L2P(C);                                               //   Evaluate L2P kernel
+      }                                                         //  Endif for twig
+    }                                                           // End loop over all cells topdown
+  }
+
 };
 
 #endif

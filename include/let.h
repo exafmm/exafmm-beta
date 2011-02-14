@@ -290,9 +290,6 @@ public:
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
      color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators
        key[0] =    key[1] =    key[2] = 0;                      // Initialize key of communicators
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      C->NLEAF = 0;
-    }
 
     for( int l=0; l!=LEVEL; ++l ) {
       bisectionGetComm(l);

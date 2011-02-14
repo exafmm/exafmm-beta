@@ -58,35 +58,38 @@ int main() {
   if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.commCells(bodies,cells);
+  Bodies bodies2 = bodies;
+  Cells jcells = cells;
+  P.commCells(bodies2,jcells);
   P.setCI0(cells.begin());
-  P.setCJ0(cells.begin());
+  P.setCJ0(jcells.begin());
   toc = get_time();
   if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.evaluate(cells,1);
+  P.evaluate(cells,jcells,1);
   toc = get_time();
   if(print) std::cout << "Evaluate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  srand(P.commRank()+1);
-  bodies.resize(numBodies);
-  D.random(bodies);
-  P.buffer = bodies;
+  bodies2 = bodies;
+  for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
+    B->acc = B->pot = 0;
+  }
   for( int i=0; i!=P.commSize(); ++i ) {
     P.shiftBodies(bodies);
-    K.P2P(P.buffer.begin(),P.buffer.end(),bodies.begin(),bodies.end());
+    K.P2P(bodies2.begin(),bodies2.end(),bodies.begin(),bodies.end());
   }
   toc = get_time();
   if(print) std::cout << "Direct sum    : " << toc-tic << std::endl;
 
   B_iter B  = bodies.begin();
-  B_iter B2 = P.buffer.begin();
+  B_iter B2 = bodies2.begin();
   real err(0),rel(0);
-  for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
-    B->pot  -= B->scal  / std::sqrt(EPS2);                      //  Initialize body values
-    B2->pot -= B2->scal / std::sqrt(EPS2);                      //  Initialize body values
+  for( int i=0; i!=int(bodies.size()); ++i,++B,++B2 ) {
+//    B->pot  -= B->scal  / std::sqrt(EPS2);                      //  Initialize body values
+//    B2->pot -= B2->scal / std::sqrt(EPS2);                      //  Initialize body values
+//    if(MPIRANK==0) std::cout << i << " " << B->pot << " " << B2->pot << std::endl;
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
   }
