@@ -3,13 +3,8 @@
 #include "types.h"
 
 class Dataset {
-private:
-  Bodies &bodies;
 public:
-  Dataset(Bodies &b) : bodies(b) {}                             // Constructor
-  ~Dataset() {}                                                 // Destructor
-
-  void random() {
+  void random(Bodies &bodies) {
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->pos[d] = rand() / (1. + RAND_MAX) * 2 - 1;           //   Initialize positions
@@ -19,7 +14,7 @@ public:
     }                                                           // End loop over all bodies
   }
 
-  void sphere() {
+  void sphere(Bodies &bodies) {
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->pos[d] = rand() / (1. + RAND_MAX) * 2 - 1;           //   Initialize positions

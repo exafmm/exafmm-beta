@@ -10,8 +10,8 @@ int main() {
   int const numBodies(100000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Dataset D(bodies);
-  Partition P(bodies);
+  Dataset D;
+  Partition P;
   bool print(true);
   if( P.commRank() != 0 ) print = false;
   toc = get_time();
@@ -20,16 +20,16 @@ int main() {
   tic = get_time();
   srand(P.commRank()+1);
   if( P.commRank() % 2 == 0 ) {
-    D.random();
+    D.random(bodies);
   } else {
     bodies.resize(50000);
-    D.sphere();
+    D.sphere(bodies);
   }
   toc = get_time();
   if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.setGlobDomain();
+  P.setGlobDomain(bodies);
   toc = get_time();
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
@@ -44,7 +44,7 @@ int main() {
   }
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
-    P.shiftBodies();
+    P.shiftBodies(bodies);
     if( P.commRank() == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }

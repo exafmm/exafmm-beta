@@ -9,8 +9,9 @@ int main() {
   int const numBodies(100000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Dataset D(bodies);
-  LocalEssentialTree P(bodies);
+  Cells cells;
+  Dataset D;
+  LocalEssentialTree P;
   bool print(true);
   if( P.commRank() != 0 ) print = false;
   toc = get_time();
@@ -18,33 +19,33 @@ int main() {
 
   tic = get_time();
   srand(P.commRank()+1);
-  D.random();
+  D.random(bodies);
   toc = get_time();
   if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.setGlobDomain();
+  P.setGlobDomain(bodies);
   toc = get_time();
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.bisection();
+  P.bisection(bodies);
   toc = get_time();
   if(print) std::cout << "Partition     : " << toc-tic << std::endl;
 
 #ifdef TOPDOWN
-  P.topdown(print);
+  P.topdown(bodies,cells,print);
 #else
-  P.bottomup(print);
+  P.bottomup(bodies,cells,print);
 #endif
 
   tic = get_time();
-  P.commBodies();
+  P.commBodies(cells);
   toc = get_time();
   if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.commCells();
+  P.commCells(bodies,cells);
   toc = get_time();
   if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
 
@@ -61,7 +62,7 @@ int main() {
   }
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
-    P.shiftBodies();
+    P.shiftBodies(bodies);
     if( P.commRank() == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }

@@ -9,8 +9,9 @@ int main() {
   int const numBodies(1000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Dataset D(bodies);
-  LocalEssentialTree P(bodies);
+  Cells cells;
+  Dataset D;
+  LocalEssentialTree P;
   Kernel K;
   bool print(true);
   if( P.commRank() != 0 ) print = false;
@@ -19,58 +20,62 @@ int main() {
 
   tic = get_time();
   srand(P.commRank()+1);
-  D.random();
+  D.random(bodies);
   toc = get_time();
   if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.setGlobDomain();
+  P.setGlobDomain(bodies);
   toc = get_time();
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.bisection();
+  P.bisection(bodies);
   toc = get_time();
   if(print) std::cout << "Partition     : " << toc-tic << std::endl;
 
 #ifdef TOPDOWN
-  P.topdown(print);
+  P.topdown(bodies,cells,print);
 #else
-  P.bottomup(print);
+  P.bottomup(bodies,cells,print);
 #endif
 
   tic = get_time();
-  P.P2M();
+  P.setCI0(cells.begin());
+  P.setCJ0(cells.begin());
+  P.P2M(cells);
   toc = get_time();
   if(print) std::cout << "P2M           : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.M2M();
+  P.M2M(cells);
   toc = get_time();
   if(print) std::cout << "M2M           : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.commBodies();
+  P.commBodies(cells);
   toc = get_time();
   if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.commCells();
+  P.commCells(bodies,cells);
+  P.setCI0(cells.begin());
+  P.setCJ0(cells.begin());
   toc = get_time();
   if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.evaluate(1);
+  P.evaluate(cells,1);
   toc = get_time();
   if(print) std::cout << "Evaluate      : " << toc-tic << std::endl;
 
   tic = get_time();
   srand(P.commRank()+1);
   bodies.resize(numBodies);
-  D.random();
+  D.random(bodies);
   P.buffer = bodies;
   for( int i=0; i!=P.commSize(); ++i ) {
-    P.shiftBodies();
+    P.shiftBodies(bodies);
     K.P2P(P.buffer.begin(),P.buffer.end(),bodies.begin(),bodies.end());
   }
   toc = get_time();

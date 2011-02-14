@@ -10,39 +10,42 @@ int main() {
   int const numBodies(10000);
   tic = get_time();
   Bodies bodies(numBodies);
-  TreeConstructor T(bodies);
-  Dataset D(bodies);
+  Cells cells;
+  Dataset D;
+  TreeConstructor T;
   toc = get_time();
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  D.sphere();
+  D.sphere(bodies);
   toc = get_time();
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.setDomain();
+  T.setDomain(bodies);
   toc = get_time();
   std::cout << "Set domain    : " << toc-tic << std::endl;
 
 #ifdef TOPDOWN
-  T.topdown();
+  T.topdown(bodies,cells);
 #else
-  T.bottomup();
+  T.bottomup(bodies,cells);
 #endif
 
   tic = get_time();
-  T.P2M();
+  T.setCI0(cells.begin());
+  T.setCJ0(cells.begin());
+  T.P2M(cells);
   toc = get_time();
   std::cout << "P2M           : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.M2M();
+  T.M2M(cells);
   toc = get_time();
   std::cout << "M2M           : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.evaluate(1);
+  T.evaluate(cells,1);
   toc = get_time();
   std::cout << "Evaluate      : " << toc-tic << std::endl;
 

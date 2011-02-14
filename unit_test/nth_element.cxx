@@ -10,8 +10,8 @@ int main() {
   int const numBodies(1000000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Dataset D(bodies);
-  Partition P(bodies);
+  Dataset D;
+  Partition P;
   bool print(true);
   if( P.commRank() != 0 ) print = false;
   toc = get_time();
@@ -19,22 +19,23 @@ int main() {
 
   tic = get_time();
   srand(P.commRank()+1);
-  D.random();
+  D.random(bodies);
   toc = get_time();
   if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.setGlobDomain();
+  P.setGlobDomain(bodies);
   toc = get_time();
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.BottomUp::setIndex();
-  P.binBodies(0);
+  P.BottomUp::setIndex(bodies);
+  P.binBodies(bodies,0);
   toc = get_time();
   if(print) std::cout << "Set index     : " << toc-tic << std::endl;
 
   tic = get_time();
+  P.buffer.resize(bodies.size());
   P.sort(bodies,P.buffer);
   toc = get_time();
   if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
@@ -42,7 +43,7 @@ int main() {
   tic = get_time();
   bigint nthGlobal = numBodies * P.commSize() / 3;
   bigint iSplit = P.nth_element(bodies,nthGlobal);
-  int nthLocal = P.splitBodies(iSplit);
+  int nthLocal = P.splitBodies(bodies,iSplit);
   toc = get_time();
   if(print) std::cout << "Nth element   : " << toc-tic << std::endl;
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {

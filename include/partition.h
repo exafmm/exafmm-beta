@@ -17,15 +17,15 @@ protected:
   int    key[3];                                                // Key of Gather, Scatter, and Alltoall communicators
   MPI_Comm MPI_COMM[3];                                         // Communicators for Gather, Scatter, and Alltoall
 public:
-  Partition(Bodies &b) : TreeStructure(b), TreeConstructor(b) { // Constructor
-    numBodies = bodies.size();                                  // Initialize local number of bodies
+  Partition() : TreeConstructor() {                             // Constructor
     LEVEL = int(log(SIZE) / M_LN2 - 1e-5) + 1;                  // Level of the process binary tree
     XMIN.resize(LEVEL+1);                                       // Minimum position vector at each level
     XMAX.resize(LEVEL+1);                                       // Maximum position vector at each level
   }
   ~Partition() {}                                               // Destructor
 
-  void setGlobDomain() {                                        // Set bounds of domain to be partitioned
+  void setGlobDomain(Bodies &bodies) {                          // Set bounds of domain to be partitioned
+    numBodies = bodies.size();                                  // Set initial number of bodies
     B_iter B = bodies.begin();                                  // Reset body iterator
     XMIN[0] = XMAX[0] = B->pos;                                 // Initialize xmin,xmax
     int const MPI_TYPE = getType(XMIN[0][0]);                   // Get MPI data type
@@ -50,7 +50,7 @@ public:
     R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
   }
 
-  void splitDomain(int iSplit, int l, int d) {
+  void splitDomain(bigint iSplit, int l, int d) {
     real X = iSplit * (XMAX[l][d] - XMIN[l][d]) / numBodies + XMIN[l][d];
     XMAX[l+1] = XMAX[l];
     XMIN[l+1] = XMIN[l];
@@ -61,14 +61,14 @@ public:
     }
   }
 
-  void binBodies(int d) {                                       // Turn positions into indices of bins
+  void binBodies(Bodies &bodies, int d) {                       // Turn positions into indices of bins
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
       B->I = bigint((B->pos[d] - XMIN[0][d])                    // Bin body positions into integers
         / (XMAX[0][d] - XMIN[0][d]) * numBodies);
     }                                                           // End loop over all bodies
   }
 
-  void shiftBodies() {                                          // Send bodies to next rank (wrap around)
+  void shiftBodies(Bodies &bodies) {                            // Send bodies to next rank (wrap around)
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
     int const bytes = sizeof(bodies[0]);                        // Byte size of body structure
@@ -91,7 +91,7 @@ public:
     bodies = buffer;                                            // Copy bodies from buffer
   }
 
-  int splitBodies(bigint iSplit) {
+  int splitBodies(Bodies &bodies, bigint iSplit) {
     int nth = 0;
     while( bodies[nth].I < iSplit && nth < int(bodies.size() - 1) ) nth++;
     return nth;
@@ -102,12 +102,12 @@ public:
     int maxBucket = send.size();                                // Maximum number of buckets
     int numBucket;                                              // Number of buckets
     int numSample = std::min(maxBucket/SIZES,numData);          // Number of local samples
-    int const MPI_TYPE = getType(data[0].I);                      // Get MPI data type
+    int const MPI_TYPE = getType(data[0].I);                    // Get MPI data type
     int *rcnt = new int [SIZES];                                // MPI receive count
     int *rdsp = new int [SIZES];                                // MPI receive displacement
     for( int i=0; i!=numSample; ++i ) {                         // Loop over local samples
       int stride = numData/numSample;                           //  Sampling stride
-      send[i] = data[lOffset + i * stride].I;                     //  Put sampled data in send buffer
+      send[i] = data[lOffset + i * stride].I;                   //  Put sampled data in send buffer
     }                                                           // End loop over samples
     MPI_Gather(&numSample,1,MPI_INT,                            // Gather size of sample data to rank 0
                rcnt,      1,MPI_INT,
@@ -230,7 +230,7 @@ public:
 #endif
   }
 
-  void bisectionAlltoall(int nthLocal, int numLocal, int &newSize) {
+  void bisectionAlltoall(Bodies &bodies, int nthLocal, int numLocal, int &newSize) {
     int const bytes = sizeof(bodies[0]);
     int scnt[2] = {nthLocal, numLocal - nthLocal};
     int rcnt[2] = {0, 0};
@@ -251,10 +251,11 @@ public:
                   &buffer[0].I,rcnt,rdsp,MPI_BYTE,
                   MPI_COMM[2]);
     if( color[0] == color[1] && nthLocal != 0 ) bodies = buffer;
+    buffer.resize(bodies.size());
     sort(bodies,buffer);
   }
 
-  void bisectionScatter(int nthLocal, int &newSize) {
+  void bisectionScatter(Bodies &bodies, int nthLocal, int &newSize) {
     int const bytes = sizeof(bodies[0]);
     int numScatter = nprocs[1] - 1;
     int oldSize = newSize;
@@ -293,7 +294,7 @@ public:
     delete[] sdsp;
   }
 
-  void bisectionGather(int nthLocal, int &newSize) {
+  void bisectionGather(Bodies &bodies, int nthLocal, int &newSize) {
     int const bytes = sizeof(bodies[0]);
     int numGather = nprocs[0] - 1;
     int oldSize = newSize;
@@ -330,33 +331,34 @@ public:
     if( key[0] == 0 ) sort(bodies,buffer);
   }
 
-  void bisection() {
+  void bisection(Bodies &bodies) {
     int const MPI_TYPE = getType(bodies[0].I);
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
      color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators
        key[0] =    key[1] =    key[2] = 0;                      // Initialize key of communicators
     int newSize;
-    bigint numGlobal;
     bigint numLocal = bodies.size();
+    bigint numGlobal;
     MPI_Allreduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,MPI_COMM_WORLD);
     bigint nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];
-    binBodies(0);
+    binBodies(bodies,0);
+    buffer.resize(numLocal);
     sort(bodies,buffer);
     bigint iSplit = nth_element(bodies,nthGlobal);
-    int nthLocal = splitBodies(iSplit);
+    int nthLocal = splitBodies(bodies,iSplit);
 
     for( int l=0; l!=LEVEL; ++l ) {
       bisectionGetComm(l);
 
       splitDomain(iSplit,l,l%3);
 
-      bisectionAlltoall(nthLocal,numLocal,newSize);
+      bisectionAlltoall(bodies,nthLocal,numLocal,newSize);
 
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] )
-        bisectionScatter(nthLocal,newSize);
+        bisectionScatter(bodies,nthLocal,newSize);
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] >= nprocs[1] )
-        bisectionGather(nthLocal,newSize);
+        bisectionGather(bodies,nthLocal,newSize);
 
 #ifdef DEBUG
       for(int j=0; j!=SIZE; ++j) {
@@ -372,17 +374,19 @@ public:
       numLocal = newSize;
       MPI_Allreduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,MPI_COMM[0]);
       nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];
-      binBodies((l+1) % 3);
+      binBodies(bodies,(l+1) % 3);
+      buffer.resize(numLocal);
       sort(bodies,buffer);
       iSplit = nth_element(bodies,nthGlobal,MPI_COMM[0]);
-      nthLocal = splitBodies(iSplit);
+      nthLocal = splitBodies(bodies,iSplit);
     }
   }
 
-  void octsection() {
+  void octsection(Bodies &bodies) {
     int byte = sizeof(bodies[0]);
     int level = int(log(SIZE + 1) / M_LN2 / 3);
-    BottomUp::setIndex(level);
+    BottomUp::setIndex(bodies,level);
+    buffer.resize(bodies.size());
     sort(bodies,buffer);
     int *scnt = new int [SIZE];
     int *sdsp = new int [SIZE];

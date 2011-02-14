@@ -6,13 +6,13 @@ int main() {
   int const numBodies(10000);
   tic = get_time();
   Bodies bodies(numBodies);
-  Dataset D(bodies);
+  Dataset D;
   Kernel K;
   toc = get_time();
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  D.sphere();
+  D.sphere(bodies);
   toc = get_time();
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 

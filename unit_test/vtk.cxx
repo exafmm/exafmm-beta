@@ -6,16 +6,16 @@ int main() {
   int const numBodies(5000);
   double tic,toc;
   Bodies bodies(numBodies);
-  TreeStructure T(bodies);
-  Dataset D(bodies);
+  Dataset D;
+  TreeStructure T;
 
   tic = get_time();
-  D.sphere();
+  D.sphere(bodies);
   toc = get_time();
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.setDomain();
+  T.setDomain(bodies);
   toc = get_time();
   std::cout << "Set domain    : " << toc-tic << std::endl;
 
