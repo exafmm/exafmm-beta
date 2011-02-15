@@ -198,7 +198,7 @@ public:
     delete[] sdsp;
   }
 
-  void rbodies2twigs(Bodies &bodies, Cells & twigs) {
+  void rbodies2twigs(Bodies &bodies, Cells &twigs) {
     for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {
       Body body;
       body.I    = JB->I;
@@ -208,8 +208,9 @@ public:
     }
     buffer.resize(bodies.size());
     sort(bodies,buffer,false);
+    int begin = twigs.end()-twigs.begin();
     bodies2twigs(bodies,twigs);
-    for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over all cells
+    for( C_iter C=twigs.begin()+begin; C!=twigs.end(); ++C ) {  // Loop over all cells
       C->M = 0;                                                 //  Initialize multipole coefficients
       C->L = 0;                                                 //  Initialize local coefficients
       K.P2M(C);                                                 //  Evaluate P2M kernel
@@ -257,6 +258,7 @@ public:
     int nleaf = 0;
     bigint index = -1;
     while( !twigs.empty() ) {
+//      if(MPIRANK==0) std::cout << twigs.back().I << " " << twigs.back().NLEAF << std::endl;
       if( twigs.back().I != index ) {
         cells.push_back(twigs.back());
         index = twigs.back().I;
@@ -301,17 +303,16 @@ public:
         commCellsScatter();
       }
 
-      if( l == LEVEL - 1 ) rbodies2twigs(bodies,twigs);
-      cells2twigs(cells,twigs);
-      send2twigs(bodies,twigs,offTwigs);
       recv2twigs(bodies,twigs);
+      send2twigs(bodies,twigs,offTwigs);
+      cells2twigs(cells,twigs);
+      if( l == LEVEL - 1 ) rbodies2twigs(bodies,twigs);
       zipTwigs(twigs,cells,l==LEVEL-1);
       twigs2cells(twigs,cells,sticks);
       sticks2send(sticks,offTwigs);
     }
 
     print((cells.end()-1)->M[0]);
-    print(cells.size());
     buffer.clear();
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       Body body;

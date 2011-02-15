@@ -12,7 +12,7 @@
 #include "vec.h"
 
 typedef long         bigint;                                    // Big integer type
-typedef double       real;                                      // Real number type
+typedef float        real;                                      // Real number type
 typedef vec<3,real>  vect;                                      // 3-D vector type
 typedef vec<10,real> coef;                                      // Multipole coefficient type
 typedef std::vector<bigint>           Bigints;                  // Vector of big integer types
@@ -22,7 +22,7 @@ int  const NCRIT(100);                                          // Number of bod
 real const THETA(0.5);                                          // Box opening criteria
 real const EPS2(0.0001);                                        // Softening parameter
 int MPIRANK(0);                                                 // MPI rank (for debugging serial class in MPI run)
-int MPISIZE(0);                                                 // MPI size (for debugging serial class in MPI run)
+int MPISIZE(1);                                                 // MPI size (for debugging serial class in MPI run)
 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   bigint I;                                                     // Cell index

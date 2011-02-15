@@ -119,7 +119,7 @@ public:
   ~BottomUp() {}                                                // Destructor
 
   int getMaxLevel(Bodies &bodies) {                             // Max level for bottom up tree build
-    int const N = bodies.size();                                // Number of bodies
+    int const N = bodies.size() * MPISIZE;                      // Number of bodies
     int level;                                                  // Define max level
     level = N >= NCRIT ? 1 + int(log(N / NCRIT)/M_LN2/3) : 0;   // Decide max level from N/Ncrit
     return level;                                               // Return max level

@@ -87,8 +87,8 @@ int main() {
   B_iter B2 = bodies2.begin();
   real err(0),rel(0);
   for( int i=0; i!=int(bodies.size()); ++i,++B,++B2 ) {
-//    B->pot  -= B->scal  / std::sqrt(EPS2);                      //  Initialize body values
-//    B2->pot -= B2->scal / std::sqrt(EPS2);                      //  Initialize body values
+    B->pot  -= B->scal  / std::sqrt(EPS2);                      //  Initialize body values
+    B2->pot -= B2->scal / std::sqrt(EPS2);                      //  Initialize body values
 //    if(MPIRANK==0) std::cout << i << " " << B->pot << " " << B2->pot << std::endl;
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
@@ -96,8 +96,8 @@ int main() {
   if(print) std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
 
 #ifdef VTK
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;
-  for( B_iter B=P.buffer.begin(); B!=P.buffer.end(); ++B ) B->I = 1;
+  for( B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;
+  for( B=P.buffer.begin(); B!=P.buffer.end(); ++B ) B->I = 1;
   bodies.insert(bodies.end(),P.buffer.begin(),P.buffer.end());
 
   int Ncell(0);
@@ -108,7 +108,7 @@ int main() {
   }
   tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
-    P.shiftBodies();
+    P.shiftBodies(bodies);
     if( P.commRank() == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
