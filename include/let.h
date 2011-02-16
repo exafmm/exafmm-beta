@@ -43,7 +43,7 @@ public:
                         (C->X[d] - xmin[irank][d]);
             }                                                   //     End loop over dimension
             real R = std::sqrt(norm(dist));                     //     Scalar distance
-            if( C->R > THETA * R ) {                            //     If the cell seems close enough for P2P
+            if( C0->R + C->R > THETA * R ) {                    //     If the cell seems close enough for P2P
               scells.push_back(C);                              //      Add cell iterator to scells
             }                                                   //     Endif for cell distance
           }                                                     //    Endif for twigs
@@ -140,7 +140,7 @@ public:
                   (CC->X[d] < xmin[d])*
                   (CC->X[d] - xmin[d]);
       real R = std::sqrt(norm(dist));                           //  Scalar distance
-      if( CC->R > THETA * R && CC->NCHILD != 0 ) {              //  If the cell seems too close and not twig
+      if( C0->R + CC->R > THETA * R && CC->NCHILD != 0 ) {      //  If the cell seems too close and not twig
         getLET(C0,CC,xmin,xmax);                                //   Traverse the tree further
       } else {                                                  //  If the cell if far or a twig
         JCell cell;                                             //   Set compact cell type for sending
@@ -149,6 +149,12 @@ public:
         sendCells.push_back(cell);                              //   Add cell iterator to send buffer
       }                                                         //  Endif for interaction
     }                                                           // End loop over child cells
+    if( C->I == 0 && C->NCHILD == 0 ) {                         // If the root cell has no children
+      JCell cell;                                               //  Set compact cell type for sending
+      cell.I = C->I;                                            //  Set index of compact cell type
+      cell.M = C->M;                                            //  Set Multipoles of compact cell type
+      sendCells.push_back(cell);                                //  Add cell iterator to send buffer
+    }                                                           // Endif for root cells children
   }
 
   void commCellsAlltoall() {
@@ -198,6 +204,40 @@ public:
     delete[] sdsp;
   }
 
+  void recv2twigs(Bodies &bodies, Cells &twigs) {
+    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC ) {
+      Cell cell;
+      cell.I = JC->I;
+      cell.M = JC->M;
+      cell.NLEAF = cell.NCHILD = 0;
+      cell.LEAF = bodies.end();
+      getCenter(cell);
+      twigs.push_back(cell);
+    }
+  }
+
+  void send2twigs(Bodies &bodies, Cells &twigs, int offTwigs) {
+    for( JC_iter JC=sendCells.begin(); JC!=sendCells.begin()+offTwigs; ++JC ) {
+      Cell cell;
+      cell.I = JC->I;
+      cell.M = JC->M;
+      cell.NLEAF = cell.NCHILD = 0;
+      cell.LEAF = bodies.end();
+      getCenter(cell);
+      twigs.push_back(cell);
+    }
+    sendCells.clear();
+  }
+
+  void cells2twigs(Cells &cells, Cells &twigs) {
+    while( !cells.empty() ) {
+      if( cells.back().NCHILD == 0 ) {
+        twigs.push_back(cells.back());
+      }
+      cells.pop_back();
+    }
+  }
+
   void rbodies2twigs(Bodies &bodies, Cells &twigs) {
     for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {
       Body body;
@@ -217,40 +257,6 @@ public:
     }                                                           // End loop over cells
   }
 
-  void cells2twigs(Cells &cells, Cells &twigs) {
-    while( !cells.empty() ) {
-      if( cells.back().NCHILD == 0 ) {
-        twigs.push_back(cells.back());
-      }
-      cells.pop_back();
-    }
-  }
-
-  void send2twigs(Bodies &bodies, Cells &twigs, int offTwigs) {
-    for( JC_iter JC=sendCells.begin(); JC!=sendCells.begin()+offTwigs; ++JC ) {
-      Cell cell;
-      cell.I = JC->I;
-      cell.M = JC->M;
-      cell.NLEAF = cell.NCHILD = 0;
-      cell.LEAF = bodies.end();
-      getCenter(cell);
-      twigs.push_back(cell);
-    }
-    sendCells.clear();
-  }
-
-  void recv2twigs(Bodies &bodies, Cells &twigs) {
-    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC ) {
-      Cell cell;
-      cell.I = JC->I;
-      cell.M = JC->M;
-      cell.NLEAF = cell.NCHILD = 0;
-      cell.LEAF = bodies.end();
-      getCenter(cell);
-      twigs.push_back(cell);
-    }
-  }
-
   void zipTwigs(Cells &twigs, Cells &cells, bool last) {
     Cells tbuffer;
     tbuffer.resize(twigs.size());
@@ -258,7 +264,6 @@ public:
     int nleaf = 0;
     bigint index = -1;
     while( !twigs.empty() ) {
-//      if(MPIRANK==0) std::cout << twigs.back().I << " " << twigs.back().NLEAF << std::endl;
       if( twigs.back().I != index ) {
         cells.push_back(twigs.back());
         index = twigs.back().I;
@@ -302,7 +307,6 @@ public:
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] ) {
         commCellsScatter();
       }
-
       recv2twigs(bodies,twigs);
       send2twigs(bodies,twigs,offTwigs);
       cells2twigs(cells,twigs);
@@ -313,14 +317,6 @@ public:
     }
 
     print((cells.end()-1)->M[0]);
-    buffer.clear();
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      Body body;
-      body.pos  = C->X;
-      body.scal = 0;
-      buffer.push_back(body);
-    }
-
     sendCells.clear();
     recvCells.clear();
   }

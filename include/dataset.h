@@ -29,10 +29,10 @@ public:
   }
 
   void lattice(Bodies &bodies) {                                // Uniform distribution on [-1,1]^3 lattice (for debug)
-    int level = int(log(bodies.size()*MPISIZE)/M_LN2/3)+1;      // Level of tree
+    int level = int(log(bodies.size()*MPISIZE+1.)/M_LN2/3);     // Level of tree
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
       int d = 0, l = 0;                                         //  Initialize dimension and level
-      int index = (B - bodies.begin()) * MPISIZE + MPIRANK;     //  Set index of body iterator
+      int index = MPIRANK * bodies.size() + (B-bodies.begin()); //  Set index of body iterator
       vec<3,int> nx = 0;                                        //  Initialize 3-D cell index
       while( index != 0 ) {                                     //  Deinterleave bits while index is nonzero
         nx[d] += (index % 2) * (1 << l);                        //   Add deinterleaved bit to 3-D cell index

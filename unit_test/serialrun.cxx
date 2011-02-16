@@ -7,7 +7,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(10000);
+  int const numBodies(40);
   tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
@@ -17,7 +17,7 @@ int main() {
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  D.sphere(bodies);
+  D.lattice(bodies);
   toc = get_time();
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 

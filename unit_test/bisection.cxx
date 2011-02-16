@@ -54,15 +54,12 @@ int main() {
     vtk.setDomain(P.getR0(),P.getX0());
     vtk.setGroupOfPoints(bodies,Ncell);
   }
-  tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
     P.shiftBodies(bodies);
     if( P.commRank() == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
-  toc = get_time();
-  if(print) std::cout << "Shift bodies  : " << toc-tic << std::endl;
   if( P.commRank() == 0 ) {
     vtk.plot(Ncell);
   }

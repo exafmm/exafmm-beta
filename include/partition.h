@@ -5,7 +5,7 @@
 
 class Partition : public MyMPI, public TreeConstructor {
 private:
-  int numBodies;                                                // Initial local number of bodies
+  int numCells1D;                                               // Number of cells in one dimension (leaf level)
 protected:
   int LEVEL;                                                    // Level of the MPI process binary tree
   std::vector<vect> XMIN;                                       // Minimum position vector of bodies
@@ -25,7 +25,7 @@ public:
   ~Partition() {}                                               // Destructor
 
   void setGlobDomain(Bodies &bodies) {                          // Set bounds of domain to be partitioned
-    numBodies = bodies.size();                                  // Set initial number of bodies
+    numCells1D = 1 << getMaxLevel(bodies);                      // Set initial number of bodies
     B_iter B = bodies.begin();                                  // Reset body iterator
     XMIN[0] = XMAX[0] = B->pos;                                 // Initialize xmin,xmax
     int const MPI_TYPE = getType(XMIN[0][0]);                   // Get MPI data type
@@ -48,10 +48,12 @@ public:
       R0 = std::max(X0[d] - XMIN[0][d], R0);                    //  Calculate max distance from center
     }                                                           // End loop over each dimension
     R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
+    XMAX[0] = X0 + R0;                                          // Reposition global maximum
+    XMIN[0] = X0 - R0;                                          // Reposition global minimum
   }
 
   void splitDomain(bigint iSplit, int l, int d) {
-    real X = iSplit * (XMAX[l][d] - XMIN[l][d]) / numBodies + XMIN[l][d];
+    real X = (iSplit + 1) * (XMAX[l][d] - XMIN[l][d]) / numCells1D + XMIN[l][d];
     XMAX[l+1] = XMAX[l];
     XMIN[l+1] = XMIN[l];
     if( color[0] % 2 == 0 ) {
@@ -64,7 +66,7 @@ public:
   void binBodies(Bodies &bodies, int d) {                       // Turn positions into indices of bins
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
       B->I = bigint((B->pos[d] - XMIN[0][d])                    // Bin body positions into integers
-        / (XMAX[0][d] - XMIN[0][d]) * numBodies);
+        / (XMAX[0][d] - XMIN[0][d]) * numCells1D);
     }                                                           // End loop over all bodies
   }
 
@@ -93,7 +95,7 @@ public:
 
   int splitBodies(Bodies &bodies, bigint iSplit) {
     int nth = 0;
-    while( bodies[nth].I < iSplit && nth < int(bodies.size() - 1) ) nth++;
+    while( bodies[nth].I <= iSplit && nth < int(bodies.size()) ) nth++;
     return nth;
   }
 
@@ -250,7 +252,7 @@ public:
     MPI_Alltoallv(&bodies[0].I,scnt,sdsp,MPI_BYTE,
                   &buffer[0].I,rcnt,rdsp,MPI_BYTE,
                   MPI_COMM[2]);
-    if( color[0] == color[1] && nthLocal != 0 ) bodies = buffer;
+    if( color[0] == color[1] ) bodies = buffer;
     buffer.resize(bodies.size());
     sort(bodies,buffer);
   }
@@ -342,7 +344,7 @@ public:
     bigint numGlobal;
     MPI_Allreduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,MPI_COMM_WORLD);
     bigint nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];
-    binBodies(bodies,0);
+    binBodies(bodies,2);
     buffer.resize(numLocal);
     sort(bodies,buffer);
     bigint iSplit = nth_element(bodies,nthGlobal);
@@ -351,7 +353,7 @@ public:
     for( int l=0; l!=LEVEL; ++l ) {
       bisectionGetComm(l);
 
-      splitDomain(iSplit,l,l%3);
+      splitDomain(iSplit,l,2-l%3);
 
       bisectionAlltoall(bodies,nthLocal,numLocal,newSize);
 
@@ -374,7 +376,7 @@ public:
       numLocal = newSize;
       MPI_Allreduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,MPI_COMM[0]);
       nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];
-      binBodies(bodies,(l+1) % 3);
+      binBodies(bodies,2-(l+1)%3);
       buffer.resize(numLocal);
       sort(bodies,buffer);
       iSplit = nth_element(bodies,nthGlobal,MPI_COMM[0]);
@@ -414,8 +416,6 @@ public:
     }
     MPI_Alltoallv(&bodies[0],scnt,sdsp,MPI_BYTE,&buffer[0],rcnt,rdsp,MPI_BYTE,MPI_COMM_WORLD);
     bodies = buffer;
-    XMIN[0] = X0-R0;
-    XMAX[0] = X0+R0;
     for( int l=0; l!=level; ++l ) {
       for( int d=0; d!=3; ++d ) {
         int i = 3 * l + d;

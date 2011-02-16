@@ -189,6 +189,7 @@ public:
       unique(cells,sticks,begin,end);                           //  Get rid of duplicate cells
       linkParent(cells,begin,end);                              //  Form parent-child mutual link
     }                                                           // End loop over levels
+    unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
   }
 
   void P2M(Cells &cells) {                                      // Interface for P2M kernel

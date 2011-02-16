@@ -51,8 +51,13 @@ int main() {
 
 #ifdef VTK
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;
-  for( B_iter B=P.buffer.begin(); B!=P.buffer.end(); ++B ) B->I = 1;
-  bodies.insert(bodies.end(),P.buffer.begin(),P.buffer.end());
+  for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
+    Body body;
+    body.I = 1;
+    body.pos  = C->X;
+    body.scal = 0;
+    bodies.push_back(body);
+  }
 
   int Ncell(0);
   vtkPlot vtk;
@@ -60,15 +65,12 @@ int main() {
     vtk.setDomain(P.getR0(),P.getX0());
     vtk.setGroupOfPoints(bodies,Ncell);
   }
-  tic = get_time();
   for( int i=1; i!=P.commSize(); ++i ) {
     P.shiftBodies(bodies);
     if( P.commRank() == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
-  toc = get_time();
-  if(print) std::cout << "Shift bodies  : " << toc-tic << std::endl;
   if( P.commRank() == 0 ) {
     vtk.plot(Ncell);
   }
