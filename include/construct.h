@@ -125,7 +125,7 @@ public:
     return level;                                               // Return max level
   }
 
-  void setIndex(Bodies &bodies, int level=0, int begin=0, int end=0 ) {// Set cell index of all bodies
+  void setIndex(Bodies &bodies, int level=0, int begin=0, int end=0, bool update=false) {// Set cell index of all bodies
     bigint i;                                                   // Levelwise cell index
     if( level == 0 ) level = getMaxLevel(bodies);               // Decide max level
     bigint off = ((1 << 3*level) - 1) / 7;                      // Offset for each level
@@ -143,7 +143,11 @@ public:
           nx[d] >>= 1;                                          //    Bitshift 3-D cell index
         }                                                       //   End loop over dimension
       }                                                         //  End loop over levels
-      bodies[b].I = i+off;                                      //  Store index in bodies
+      if( !update ) {                                           //  If this not an update
+        bodies[b].I = i+off;                                    //   Store index in bodies
+      } else if( i+off > bodies[b].I ) {                        //  If the new cell index is larger
+        bodies[b].I = i+off;                                    //   Store index in bodies
+      }
     }                                                           // End loop over all bodies
   }
 

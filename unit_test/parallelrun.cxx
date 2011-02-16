@@ -20,7 +20,7 @@ int main() {
 
   tic = get_time();
   srand(P.commRank()+1);
-  D.random(bodies);
+  D.lattice(bodies);
   toc = get_time();
   if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
 

@@ -267,7 +267,9 @@ public:
     if( key[1] == numScatter ) {
       sdsp[0] = 0;
       for(int i=0; i!=numScatter; ++i ) {
-        scnt[i] = nthLocal / numScatter;
+        int begin = 0, end = nthLocal;
+        splitRange(begin,end,i,numScatter);
+        scnt[i] = end - begin;
         sdsp[i+1] = sdsp[i] + scnt[i];
       }
       scnt[numScatter] = 0;
@@ -296,7 +298,7 @@ public:
     delete[] sdsp;
   }
 
-  void bisectionGather(Bodies &bodies, int nthLocal, int &newSize) {
+  void bisectionGather(Bodies &bodies, int nthLocal, int numLocal, int &newSize) {
     int const bytes = sizeof(bodies[0]);
     int numGather = nprocs[0] - 1;
     int oldSize = newSize;
@@ -304,10 +306,13 @@ public:
     int *rcnt = new int [nprocs[0]];
     int *rdsp = new int [nprocs[0]];
     if( key[0] != 0 ) {
-      scnt = nthLocal / numGather;
+      int begin = 0, end = numLocal - nthLocal;
+      splitRange(begin,end,key[0]-1,nprocs[0]);
+      scnt = end - begin;
       newSize -= scnt;
-       buffer.erase( buffer.begin(), buffer.begin()+scnt);
+      buffer.erase(buffer.begin(),buffer.begin()+scnt);
     }
+    MPI_Barrier(MPI_COMM[0]);
     MPI_Gather(&scnt,1,MPI_INT,rcnt,1,MPI_INT,0,MPI_COMM[0]);
     if( key[0] == 0 ) {
       rdsp[0] = 0;
@@ -315,7 +320,7 @@ public:
         rdsp[i+1] = rdsp[i] + rcnt[i];
       }
       newSize += rdsp[numGather] + rcnt[numGather];
-       buffer.resize(newSize);
+      buffer.resize(newSize);
     }
 
     scnt *= bytes;
@@ -360,7 +365,7 @@ public:
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] )
         bisectionScatter(bodies,nthLocal,newSize);
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] >= nprocs[1] )
-        bisectionGather(bodies,nthLocal,newSize);
+        bisectionGather(bodies,nthLocal,numLocal,newSize);
 
 #ifdef DEBUG
       for(int j=0; j!=SIZE; ++j) {

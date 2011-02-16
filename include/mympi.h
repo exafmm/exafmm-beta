@@ -34,6 +34,15 @@ public:
     return ((n != 0) && !(n & (n - 1)));                        // Decrement and compare bits
   }
 
+  void splitRange(int &begin, int &end, int iSplit, int numSplit) {
+    int size = end - begin;
+    int increment = size / numSplit;
+    int remainder = size % numSplit;
+    begin += iSplit * increment + std::min(iSplit,remainder);
+    end = begin + increment;
+    if( remainder > iSplit ) end++;
+  }
+
   template<typename T>
   int getType(T object) {
     int type;

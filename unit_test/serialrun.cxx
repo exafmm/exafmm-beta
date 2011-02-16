@@ -7,7 +7,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(40);
+  int const numBodies(80);
   tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;

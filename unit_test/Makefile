@@ -55,7 +55,7 @@ let: let.cxx
 
 parallelrun: parallelrun.cxx
 	@$(CXX) $< $(OFLAGS) $(LFLAGS)
-	mpirun -np 8 ./a.out
+	mpirun -np 7 ./a.out
 
 all      :
 	make index

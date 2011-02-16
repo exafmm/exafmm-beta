@@ -260,7 +260,7 @@ public:
   void zipTwigs(Cells &twigs, Cells &cells, bool last) {
     Cells tbuffer;
     tbuffer.resize(twigs.size());
-    sort(twigs,tbuffer,true);
+    sort(twigs,tbuffer,true);                                   // TODO : true is unnecessary?
     int nleaf = 0;
     bigint index = -1;
     while( !twigs.empty() ) {
@@ -273,6 +273,28 @@ public:
       }
       twigs.pop_back();
     }
+    sortCells(cells,true);
+    twigs = cells;
+    cells.clear();
+  }
+
+  void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ) {
+    while( !twigs.empty() ) {
+      if( twigs.back().NLEAF == 0 ) {
+        cells.push_back(twigs.back());
+      }
+      twigs.pop_back();
+    }
+    BottomUp::setIndex(bodies,0,0,0,true);
+    buffer.resize(bodies.size());
+    sort(bodies,buffer);
+    bodies2twigs(bodies,twigs);
+    for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over all cells
+      C->M = 0;                                                 //  Initialize multipole coefficients
+      C->L = 0;                                                 //  Initialize local coefficients
+      K.P2M(C);                                                 //  Evaluate P2M kernel
+    }
+    cells.insert(cells.begin(),twigs.begin(),twigs.end());
     sortCells(cells,true);
     twigs = cells;
     cells.clear();
@@ -312,6 +334,7 @@ public:
       cells2twigs(cells,twigs);
       if( l == LEVEL - 1 ) rbodies2twigs(bodies,twigs);
       zipTwigs(twigs,cells,l==LEVEL-1);
+      if( l == LEVEL - 1 ) reindexBodies(bodies,twigs,cells);
       twigs2cells(twigs,cells,sticks);
       sticks2send(sticks,offTwigs);
     }
