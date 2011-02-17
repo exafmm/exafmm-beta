@@ -43,7 +43,7 @@ public:
                         (C->X[d] - xmin[irank][d]);
             }                                                   //     End loop over dimension
             real R = std::sqrt(norm(dist));                     //     Scalar distance
-            if( C0->R + C->R > THETA * R ) {                    //     If the cell seems close enough for P2P
+            if( 3 * C->R > THETA * R ) {                        //     If the cell seems close enough for P2P
               scells.push_back(C);                              //      Add cell iterator to scells
             }                                                   //     Endif for cell distance
           }                                                     //    Endif for twigs
@@ -140,7 +140,7 @@ public:
                   (CC->X[d] < xmin[d])*
                   (CC->X[d] - xmin[d]);
       real R = std::sqrt(norm(dist));                           //  Scalar distance
-      if( C0->R + CC->R > THETA * R && CC->NCHILD != 0 ) {      //  If the cell seems too close and not twig
+      if( 3 * CC->R > THETA * R && CC->NCHILD != 0 ) {          //  If the cell seems too close and not twig
         getLET(C0,CC,xmin,xmax);                                //   Traverse the tree further
       } else {                                                  //  If the cell if far or a twig
         JCell cell;                                             //   Set compact cell type for sending
@@ -288,6 +288,8 @@ public:
     BottomUp::setIndex(bodies,0,0,0,true);
     buffer.resize(bodies.size());
     sort(bodies,buffer);
+    BottomUp::grow(bodies);
+    sort(bodies,buffer);
     bodies2twigs(bodies,twigs);
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over all cells
       C->M = 0;                                                 //  Initialize multipole coefficients
@@ -339,7 +341,10 @@ public:
       sticks2send(sticks,offTwigs);
     }
 
+    print("M[0] @ root   : ",0);
     print((cells.end()-1)->M[0]);
+    print("bodies.size() : ",0);
+    print(bodies.size());
     sendCells.clear();
     recvCells.clear();
   }

@@ -18,7 +18,7 @@ typedef vec<10,real> coef;                                      // Multipole coe
 typedef std::vector<bigint>           Bigints;                  // Vector of big integer types
 typedef std::vector<bigint>::iterator BI_iter;                  // Vector of big integer types
 
-int  const NCRIT(8);                                          // Number of bodies per cell
+int  const NCRIT(4);                                          // Number of bodies per cell
 real const THETA(0.5);                                          // Box opening criteria
 real const EPS2(0.0001);                                        // Softening parameter
 int MPIRANK(0);                                                 // MPI rank (for debugging serial class in MPI run)

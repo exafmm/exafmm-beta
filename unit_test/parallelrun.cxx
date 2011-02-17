@@ -6,7 +6,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(4096);
+  int const numBodies(100);
   tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
@@ -19,8 +19,7 @@ int main() {
   if(print) std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  srand(P.commRank()+1);
-  D.lattice(bodies);
+  D.sphere(bodies,P.commRank()+1);
   toc = get_time();
   if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
 
@@ -70,6 +69,8 @@ int main() {
   P.evaluate(cells,jcells,1);
   toc = get_time();
   if(print) std::cout << "Evaluate      : " << toc-tic << std::endl;
+//  for( C_iter C=jcells.begin(); C!=jcells.end(); ++C )
+//    if(MPIRANK==1) std::cout << C->I << " " << C->NLEAF << std::endl;
 
   tic = get_time();
   bodies2 = bodies;
@@ -90,7 +91,7 @@ int main() {
   for( int i=0; i!=int(bodies.size()); ++i,++B,++B2 ) {
     B->pot  -= B->scal  / std::sqrt(EPS2);                      //  Initialize body values
     B2->pot -= B2->scal / std::sqrt(EPS2);                      //  Initialize body values
-//    if(MPIRANK==0) std::cout << i << " " << B->pot << " " << B2->pot << std::endl;
+//    if(MPIRANK==1) std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
   }

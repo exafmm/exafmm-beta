@@ -7,7 +7,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(80);
+  int const numBodies(16);
   tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
@@ -17,7 +17,7 @@ int main() {
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  D.lattice(bodies);
+  D.random(bodies,1,2);
   toc = get_time();
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 
@@ -48,6 +48,8 @@ int main() {
   T.evaluate(cells,1);
   toc = get_time();
   std::cout << "Evaluate      : " << toc-tic << std::endl;
+//  for( C_iter C=cells.begin(); C!=cells.end(); ++C )
+//    std::cout << C->I << " " << C->M[0] << std::endl;
 
   tic = get_time();
   Kernel K;
@@ -61,6 +63,7 @@ int main() {
   real err(0),rel(0);
   for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
     B->pot -= B->scal / std::sqrt(EPS2);                        //  Initialize body values
+//    std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
   }

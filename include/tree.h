@@ -52,6 +52,7 @@ private:
 
   void linkParent(Cells &cells, int &begin, int &end) {         // Form parent-child mutual link
     Cell parent;                                                // Define parent cell
+    Cells parents;                                              // Define parent cell vector;
     int oldend = end;                                           // Save old end counter
     parent.I = getParent(cells[begin].I);                       // Set cell index
     parent.M = parent.NLEAF = parent.NCHILD = 0;                // Initialize multipole, NLEAF & NCHILD
@@ -71,7 +72,10 @@ private:
       }                                                         //  End loop over child cells
       cells[i].PARENT = end;                                    //  Link to current to parent
       parent.NLEAF += cells[i].NLEAF;                           //  Add nleaf of child to parent
-      parent.M     += cells[i].M;                               //  Add multipoles of child to parent
+      parents.push_back(parent);                                //  Push parent cell into vector
+      K.M2M(parents.begin(),cells.begin()+i);                   //  Calculate M of parent with M2M
+      parent = parents.back();                                  //  Copy information from vector
+      parents.pop_back();                                       //  Pop parent cell from vector
       parent.CHILD[parent.NCHILD] = i;                          //  Link to child
       parent.NCHILD++;                                          //  Increment child counter
     }                                                           // End loop over all cells at this level
@@ -204,7 +208,7 @@ public:
 
   void M2M(Cells &cells) {                                      // Interface for M2M kernel
     for( C_iter C=cells.begin(); C!=cells.end()-1; ++C ) {      // Loop over all cells bottomup (except root cell)
-      K.M2M(CJ0+C->PARENT,C);                                   //  Evaluate M2M kernel
+      K.M2M(CJ0+C->PARENT,C);                               //  Evaluate M2M kernel
     }                                                           // End loop over cells
   }
 
@@ -246,7 +250,12 @@ public:
 
   void FMM(C_iter CI, C_iter CJ) {                              // Tree walk for FMM
     if( CI->NCHILD == 0 && CJ->NCHILD == 0 ) {                  // If both cells are twigs
-      K.P2P(CI->LEAF,CI->LEAF+CI->NLEAF,CJ->LEAF,CJ->LEAF+CJ->NLEAF);// Evaluate P2P kernel
+      if( CJ->NLEAF != 0 ) {                                    // If the twig has leafs
+        K.P2P(CI->LEAF,CI->LEAF+CI->NLEAF,CJ->LEAF,CJ->LEAF+CJ->NLEAF);// Evaluate P2P kernel
+      } else {                                                  // If the twig has no leafs
+        std::cout << "CJ->I=" << CJ->I << " has no leaf. Doing M2P instead." << std::endl;
+        K.M2P(CI,CJ);                                           //  Evaluate M2P kernel
+      }                                                         // Endif for twigs with leafs
     } else if ( CJ->NCHILD == 0 || (CI->NCHILD != 0 && CI->R > CJ->R) ) {// If source is twig or target is larger
       for( int i=0; i<CI->NCHILD; i++ ) {                       //  Loop over child cells of target
         M2L(CI0+CI->CHILD[i],CJ);                               //   Try to evaluate M2L kernel

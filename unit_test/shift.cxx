@@ -18,12 +18,11 @@ int main() {
   if(print) std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  srand(P.commRank()+1);
   if( P.commRank() % 2 == 0 ) {
-    D.random(bodies);
+    D.random(bodies,P.commRank()+1);
   } else {
     bodies.resize(50000);
-    D.sphere(bodies);
+    D.sphere(bodies,P.commRank()+1);
   }
   toc = get_time();
   if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;

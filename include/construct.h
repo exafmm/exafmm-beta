@@ -277,7 +277,7 @@ public:
     tic = get_time();
     sort(bodies,buffer);
     toc = get_time();
-    if(print) std::cout << "Sort descend  : " << toc-tic << std::endl;
+    if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
 
     tic = get_time();
     Cells twigs;

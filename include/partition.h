@@ -197,7 +197,7 @@ public:
     delete[] isend;                                             // Delete send buffer for index
     delete[] irecv;                                             // Delete receive buffer for index
     delete[] iredu;                                             // Delete local scan of index buffer
-    return recv[0];                                             // Return nth element
+    return recv[0]-1;                                           // Return nth element
   }
 
   void bisectionGetComm(int l) {
