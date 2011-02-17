@@ -6,7 +6,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(100);
+  int const numBodies(10000);
   tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
@@ -99,7 +99,7 @@ int main() {
   MPI_Reduce(&err,&err2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&rel,&rel2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   if(print) std::cout << "Error         : " << std::sqrt(err2/rel2) << std::endl;
-  P.print(std::sqrt(err/rel));
+//  P.print(std::sqrt(err/rel));
 
 #ifdef VTK
   for( B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;

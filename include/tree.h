@@ -111,7 +111,7 @@ protected:
     }                                                           // End loop over dimensions
   }
 
-  void sortCells(Cells &cells, bool ascend, int begin=0, int end=0) {// Sort cells according to cell index
+  void sortCells(Cells &cells, bool ascend=true, int begin=0, int end=0) {// Sort cells according to cell index
     if( end == 0 ) end = cells.size();                          // Default size is all cells
     Cells cbuffer;                                              // Define vector for sort buffer
     cbuffer.resize(cells.size());                               // Resize vector for sort buffer
@@ -253,7 +253,9 @@ public:
       if( CJ->NLEAF != 0 ) {                                    // If the twig has leafs
         K.P2P(CI->LEAF,CI->LEAF+CI->NLEAF,CJ->LEAF,CJ->LEAF+CJ->NLEAF);// Evaluate P2P kernel
       } else {                                                  // If the twig has no leafs
+#ifdef DEBUG
         std::cout << "CJ->I=" << CJ->I << " has no leaf. Doing M2P instead." << std::endl;
+#endif
         K.M2P(CI,CJ);                                           //  Evaluate M2P kernel
       }                                                         // Endif for twigs with leafs
     } else if ( CJ->NCHILD == 0 || (CI->NCHILD != 0 && CI->R > CJ->R) ) {// If source is twig or target is larger

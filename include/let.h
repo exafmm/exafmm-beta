@@ -204,15 +204,33 @@ public:
     delete[] sdsp;
   }
 
-  void recv2twigs(Bodies &bodies, Cells &twigs) {
-    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC ) {
-      Cell cell;
-      cell.I = JC->I;
-      cell.M = JC->M;
-      cell.NLEAF = cell.NCHILD = 0;
-      cell.LEAF = bodies.end();
-      getCenter(cell);
-      twigs.push_back(cell);
+  void rbodies2twigs(Bodies &bodies, Cells &twigs) {
+    for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {
+      Body body;
+      body.I    = JB->I;
+      body.pos  = JB->pos;
+      body.scal = JB->scal;
+      bodies.push_back(body);
+    }
+    buffer.resize(bodies.size());
+    sort(bodies,buffer,false);
+    bodies2twigs(bodies,twigs);
+    for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over all twigs
+      C->M = 0;                                                 //  Initialize multipole coefficients
+      C->L = 0;                                                 //  Initialize local coefficients
+      K.P2M(C);                                                 //  Evaluate P2M kernel
+    }                                                           // End loop over cells
+  }
+
+  void cells2twigs(Cells &cells, Cells &twigs, bool last) {
+    while( !cells.empty() ) {
+      if( cells.back().NCHILD == 0 ) {
+        if( cells.back().NLEAF == 0 || !last ) {
+          cells.back().NLEAF = 0;
+          twigs.push_back(cells.back());
+        }
+      }
+      cells.pop_back();
     }
   }
 
@@ -229,56 +247,46 @@ public:
     sendCells.clear();
   }
 
-  void cells2twigs(Cells &cells, Cells &twigs) {
-    while( !cells.empty() ) {
-      if( cells.back().NCHILD == 0 ) {
-        twigs.push_back(cells.back());
-      }
-      cells.pop_back();
+  void recv2twigs(Bodies &bodies, Cells &twigs) {
+    for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC ) {
+      Cell cell;
+      cell.I = JC->I;
+      cell.M = JC->M;
+      cell.NLEAF = cell.NCHILD = 0;
+      cell.LEAF = bodies.end();
+      getCenter(cell);
+      twigs.push_back(cell);
     }
   }
 
-  void rbodies2twigs(Bodies &bodies, Cells &twigs) {
-    for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {
-      Body body;
-      body.I    = JB->I;
-      body.pos  = JB->pos;
-      body.scal = JB->scal;
-      bodies.push_back(body);
-    }
-    buffer.resize(bodies.size());
-    sort(bodies,buffer,false);
-    int begin = twigs.end()-twigs.begin();
-    bodies2twigs(bodies,twigs);
-    for( C_iter C=twigs.begin()+begin; C!=twigs.end(); ++C ) {  // Loop over all cells
-      C->M = 0;                                                 //  Initialize multipole coefficients
-      C->L = 0;                                                 //  Initialize local coefficients
-      K.P2M(C);                                                 //  Evaluate P2M kernel
-    }                                                           // End loop over cells
-  }
-
-  void zipTwigs(Cells &twigs, Cells &cells, bool last) {
-    Cells tbuffer;
-    tbuffer.resize(twigs.size());
-    sort(twigs,tbuffer,true);                                   // TODO : true is unnecessary?
-    int nleaf = 0;
+  void zipTwigs(Cells &twigs, Cells &cells, Cells &sticks, bool last) {
+    sortCells(twigs);
     bigint index = -1;
     while( !twigs.empty() ) {
       if( twigs.back().I != index ) {
         cells.push_back(twigs.back());
         index = twigs.back().I;
-        nleaf = twigs.back().NLEAF;
-      } else if ( nleaf+twigs.back().NLEAF == 0 || !last ) {
+      } else if ( twigs.back().NLEAF == 0 || !last ) {          // twig-twig collision
         cells.back().M += twigs.back().M;
+      } else if ( cells.back().NLEAF == 0 ) {                   // twig-body collision
+        coef M;
+        M = cells.back().M;
+        cells.back() = twigs.back();
+        cells.back().M = M;
+        twigs.back().M = M - twigs.back().M;
+        if( std::abs(twigs.back().M[0]/M[0]) > 1e-6 ) {
+          sticks.push_back(twigs.back());
+        }
+      } else {                                                  // body-body collision
       }
       twigs.pop_back();
     }
-    sortCells(cells,true);
+    sortCells(cells);
     twigs = cells;
     cells.clear();
   }
 
-  void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ) {
+  void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ,Cells &sticks) {
     while( !twigs.empty() ) {
       if( twigs.back().NLEAF == 0 ) {
         cells.push_back(twigs.back());
@@ -295,9 +303,17 @@ public:
       C->M = 0;                                                 //  Initialize multipole coefficients
       C->L = 0;                                                 //  Initialize local coefficients
       K.P2M(C);                                                 //  Evaluate P2M kernel
+      if( sticks.size() > 0 ) {
+        if( C->I == sticks.back().I ) {
+          C->M += sticks.back().M;
+          sticks.pop_back();
+        }
+      }
     }
     cells.insert(cells.begin(),twigs.begin(),twigs.end());
-    sortCells(cells,true);
+    cells.insert(cells.begin(),sticks.begin(),sticks.end());
+    sticks.clear();
+    sortCells(cells);
     twigs = cells;
     cells.clear();
   }
@@ -331,20 +347,44 @@ public:
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] ) {
         commCellsScatter();
       }
-      recv2twigs(bodies,twigs);
-      send2twigs(bodies,twigs,offTwigs);
-      cells2twigs(cells,twigs);
       if( l == LEVEL - 1 ) rbodies2twigs(bodies,twigs);
-      zipTwigs(twigs,cells,l==LEVEL-1);
-      if( l == LEVEL - 1 ) reindexBodies(bodies,twigs,cells);
+      cells2twigs(cells,twigs,l==LEVEL-1);
+      send2twigs(bodies,twigs,offTwigs);
+      recv2twigs(bodies,twigs);
+#ifdef DEBUG
+      if( l == LEVEL - 1 ) {
+        real SUM = 0;
+        for(C_iter C=twigs.begin(); C!=twigs.end(); ++C) {
+          if( C->NLEAF == 0 ) SUM += C->M[0];
+        }
+        print("Before recv   : ",0);
+        print(SUM);
+      }
+#endif
+      zipTwigs(twigs,cells,sticks,l==LEVEL-1);
+#ifdef DEBUG
+      if( l == LEVEL - 1 ) {
+        real SUM = 0;
+        for(C_iter C=twigs.begin(); C!=twigs.end(); ++C) {
+          SUM += C->M[0];
+        }
+        print("After merge   : ",0);
+        print(SUM);
+        print("sticks.size() : ",0);
+        print(sticks.size());
+      }
+#endif
+      if( l == LEVEL - 1 ) reindexBodies(bodies,twigs,cells,sticks);
       twigs2cells(twigs,cells,sticks);
       sticks2send(sticks,offTwigs);
     }
 
+#ifdef DEBUG
     print("M[0] @ root   : ",0);
     print((cells.end()-1)->M[0]);
     print("bodies.size() : ",0);
     print(bodies.size());
+#endif
     sendCells.clear();
     recvCells.clear();
   }

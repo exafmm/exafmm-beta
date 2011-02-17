@@ -7,7 +7,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(16);
+  int const numBodies(10000);
   tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
@@ -17,7 +17,7 @@ int main() {
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  D.random(bodies,1,2);
+  D.sphere(bodies,1,1);
   toc = get_time();
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 
