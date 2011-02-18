@@ -1,8 +1,8 @@
-#ifndef kernel_h
-#define kernel_h
-#include "types.h"
-
-class Kernel {
+#ifndef kernel_h                                                // Commenting this file is unhelpful.
+#define kernel_h                                                // If you know the equations it is obvious,
+#include "types.h"                                              // if you don't, comments won't help you.
+                                                                // Please see manual for description of equations
+class Kernel {                                                  // and their derivations.
 public:
   void P2P(B_iter B0, B_iter BN) {
     for( B_iter Bi=B0; Bi!=BN; ++Bi ) {
@@ -26,11 +26,11 @@ public:
     }
   }
 
-  void P2M(C_iter C) {                                          // Evaluate P2M kernel
-    C->M = 0;                                                   // Initialize Multipole expansions
-    for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {         // Loop over all leafs in cell
-      vect dist = C->X - B->pos;                                //  Distance between bodist[1] and cell center
-      C->M[0] += B->scal;                                       //  Calculate Multipole expansions
+  void P2M(C_iter C) {
+    C->M = 0;
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {
+      vect dist = C->X - B->pos;
+      C->M[0] += B->scal;
       C->M[1] += B->scal * dist[0];
       C->M[2] += B->scal * dist[1];
       C->M[3] += B->scal * dist[2];
@@ -40,12 +40,12 @@ public:
       C->M[7] += B->scal * dist[0] * dist[1];
       C->M[8] += B->scal * dist[1] * dist[2];
       C->M[9] += B->scal * dist[2] * dist[0];
-    }                                                           // End loop over all leafs in cell
+    }
   }
 
-  void M2M(C_iter CI, C_iter CJ) {                              // Evaluate M2M kernel
-    vect dist = CI->X - CJ->X;                                  // Distance between cell centers
-    CI->M[0] += CJ->M[0];                                       // Shift multipole expansions
+  void M2M(C_iter CI, C_iter CJ) {
+    vect dist = CI->X - CJ->X;
+    CI->M[0] += CJ->M[0];
     CI->M[1] += CJ->M[1] +  dist[0] * CJ->M[0];
     CI->M[2] += CJ->M[2] +  dist[1] * CJ->M[0];
     CI->M[3] += CJ->M[3] +  dist[2] * CJ->M[0];
@@ -92,8 +92,8 @@ public:
     CI->L[9] += CJ->M[0] * (3 * dist[2] * dist[0] / R5);
   }
 
-  void L2L(C_iter CI, C_iter CJ) {                              // Evaluate L2L kernel
-    vect dist = CI->X - CJ->X;                                  // Distance between cell centers
+  void L2L(C_iter CI, C_iter CJ) {
+    vect dist = CI->X - CJ->X;
     for( int i=0; i<10; ++i )
       CI->L[i] += CJ->L[i];
     CI->L[0] += CJ->L[1] * dist[0];

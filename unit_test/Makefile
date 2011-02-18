@@ -17,7 +17,7 @@ kernel: kernel.cxx
 	./a.out
 
 serialrun: serialrun.cxx
-	@$(CXX) $< $(OFLAGS) $(LFLAGS)
+	@$(CXX) $< $(OFLAGS) $(LFLAGS) -DTOPDOWN
 	./a.out
 
 direct_gpu: direct_gpu.cxx

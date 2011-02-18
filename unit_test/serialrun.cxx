@@ -35,21 +35,14 @@ int main() {
   tic = get_time();
   T.setCI0(cells.begin());
   T.setCJ0(cells.begin());
-  T.P2M(cells);
+  T.upward(cells);
   toc = get_time();
-  std::cout << "P2M           : " << toc-tic << std::endl;
+  std::cout << "Upward        : " << toc-tic << std::endl;
 
   tic = get_time();
-  T.M2M(cells);
+  T.downward(cells,1);
   toc = get_time();
-  std::cout << "M2M           : " << toc-tic << std::endl;
-
-  tic = get_time();
-  T.evaluate(cells,1);
-  toc = get_time();
-  std::cout << "Evaluate      : " << toc-tic << std::endl;
-//  for( C_iter C=cells.begin(); C!=cells.end(); ++C )
-//    std::cout << C->I << " " << C->M[0] << std::endl;
+  std::cout << "Downward      : " << toc-tic << std::endl;
 
   tic = get_time();
   Kernel K;
@@ -62,8 +55,10 @@ int main() {
   B_iter B2 = T.buffer.begin();
   real err(0),rel(0);
   for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
-    B->pot -= B->scal / std::sqrt(EPS2);                        //  Initialize body values
-//    std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
+    B->pot -= B->scal / std::sqrt(EPS2);
+#ifdef DEBUG
+    std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
+#endif
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
   }

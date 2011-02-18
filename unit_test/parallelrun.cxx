@@ -42,14 +42,9 @@ int main() {
   tic = get_time();
   P.setCI0(cells.begin());
   P.setCJ0(cells.begin());
-  P.P2M(cells);
+  P.upward(cells);
   toc = get_time();
-  if(print) std::cout << "P2M           : " << toc-tic << std::endl;
-
-  tic = get_time();
-  P.M2M(cells);
-  toc = get_time();
-  if(print) std::cout << "M2M           : " << toc-tic << std::endl;
+  if(print) std::cout << "Upward        : " << toc-tic << std::endl;
 
   tic = get_time();
   P.commBodies(cells);
@@ -66,11 +61,9 @@ int main() {
   if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.evaluate(cells,jcells,1);
+  P.downward(cells,jcells,1);
   toc = get_time();
-  if(print) std::cout << "Evaluate      : " << toc-tic << std::endl;
-//  for( C_iter C=jcells.begin(); C!=jcells.end(); ++C )
-//    if(MPIRANK==1) std::cout << C->I << " " << C->NLEAF << std::endl;
+  if(print) std::cout << "Downward      : " << toc-tic << std::endl;
 
   tic = get_time();
   bodies2 = bodies;
@@ -89,9 +82,11 @@ int main() {
   B_iter B2 = bodies2.begin();
   real err(0),rel(0),err2,rel2;
   for( int i=0; i!=int(bodies.size()); ++i,++B,++B2 ) {
-    B->pot  -= B->scal  / std::sqrt(EPS2);                      //  Initialize body values
-    B2->pot -= B2->scal / std::sqrt(EPS2);                      //  Initialize body values
-//    if(MPIRANK==1) std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
+    B->pot  -= B->scal  / std::sqrt(EPS2);
+    B2->pot -= B2->scal / std::sqrt(EPS2);
+#ifdef DEBUG
+    if(MPIRANK==0) std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
+#endif
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
   }
@@ -99,7 +94,9 @@ int main() {
   MPI_Reduce(&err,&err2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&rel,&rel2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   if(print) std::cout << "Error         : " << std::sqrt(err2/rel2) << std::endl;
-//  P.print(std::sqrt(err/rel));
+#ifdef DEBUG
+  P.print(std::sqrt(err/rel));
+#endif
 
 #ifdef VTK
   for( B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;

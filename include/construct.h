@@ -2,7 +2,7 @@
 #define construct_h
 #include "tree.h"
 
-class TopDown : virtual public TreeStructure {
+class TopDown : virtual public TreeStructure {                  // Topdown tree constructor class
 private:
   struct Node {                                                 // Nodes are primitive cells
     int LEVEL;                                                  // Level of node
@@ -14,12 +14,10 @@ private:
     vect X;                                                     // Node center
     real R;                                                     // Node radius
   };
-
   typedef std::vector<Node>           Nodes;                    // Vector of nodes
   typedef std::vector<Node>::iterator N_iter;                   // Iterator for node vectors
   Nodes nodes;                                                  // Nodes in the tree
 
-private:
   int getOctant(vect const pos, int i) {                        // Calculate octant from position
     int octant = 0;                                             // Initialize octant
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
@@ -36,7 +34,7 @@ private:
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       x[d] += r * (((octant & 1 << d) >> d) * 2 - 1);           //  Calculate new center position
     }                                                           // End loop over dimensions
-    Node node;                                                  // Define node structure
+    Node node;                                                  // Node structure
     node.NLEAF = node.ICHILD = 0;                               // Initialize child node counters
     node.X = x;                                                 // Initialize child node center
     node.R = r;                                                 // Initialize child node radius
@@ -53,7 +51,7 @@ private:
   }
 
   void splitNode(int i) {                                       // Split node and reassign leafs to child nodes
-    for( int l=0; l!=NCRIT; ++l ) {                             // Loop over all leafs in parent node
+    for( int l=0; l!=NCRIT; ++l ) {                             // Loop over leafs in parent node
       int octant = getOctant(nodes[i].LEAF[l]->pos,i);          //  Find the octant where the body belongs
       if( !(nodes[i].ICHILD & (1 << octant)) ) {                //  If child doesn't exist in this octant
         addChild(octant,i);                                     //   Add new child to list
@@ -64,34 +62,6 @@ private:
         splitNode(c);                                           //   Split the node into smaller ones
       }                                                         //  Endif for too many leafs
     }                                                           // End loop over leafs
-  }
-
-public:
-  TopDown() : TreeStructure() {}                                // Constructor
-  ~TopDown() {}                                                 // Destructor
-
-  void grow(Bodies &bodies) {                                   // Grow tree from root
-    int octant;                                                 // In which octant is the body located?
-    Node node;
-    node.LEVEL = node.NLEAF = node.ICHILD = node.I = 0;         // Initialize root node counters
-    node.X = X0;                                                // Initialize root node center
-    node.R = R0;                                                // Initialize root node radius
-    nodes.push_back(node);                                      // Push child node into vector
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over all bodies
-      int i = 0;                                                //  Reset node counter
-      while( nodes[i].NLEAF >= NCRIT ) {                        //  While the nodes have children
-        nodes[i].NLEAF++;                                       //   Increment the cumulative leaf counter
-        octant = getOctant(B->pos,i);                           //   Find the octant where the body belongs
-        if( !(nodes[i].ICHILD & (1 << octant)) ) {              //   If child doesn't exist in this octant
-          addChild(octant,i);                                   //    Add new child to list
-        }                                                       //   Endif for child existence
-        i = nodes[i].CHILD[octant];                             //    Update node iterator to child
-      }                                                         //  End while loop
-      addLeaf(B,i);                                             //  Add body to node as leaf
-      if( nodes[i].NLEAF >= NCRIT ) {                           //  If there are too many leafs
-        splitNode(i);                                           //   Split the node into smaller ones
-      }                                                         //  Endif for splitting
-    }                                                           // End loop over all bodies
   }
 
   void traverse(N_iter N) {                                     // Traverse tree
@@ -108,36 +78,65 @@ public:
     }                                                           //  Endif for child existence
   }
 
+public:
+  TopDown() : TreeStructure() {}                                // Constructor
+  ~TopDown() {}                                                 // Destructor
+
+  void grow(Bodies &bodies) {                                   // Grow tree from root
+    int octant;                                                 // In which octant is the body located?
+    Node node;                                                  // Node structure
+    node.LEVEL = node.NLEAF = node.ICHILD = node.I = 0;         // Initialize root node counters
+    node.X = X0;                                                // Initialize root node center
+    node.R = R0;                                                // Initialize root node radius
+    nodes.push_back(node);                                      // Push child node into vector
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      int i = 0;                                                //  Reset node counter
+      while( nodes[i].NLEAF >= NCRIT ) {                        //  While the nodes have children
+        nodes[i].NLEAF++;                                       //   Increment the cumulative leaf counter
+        octant = getOctant(B->pos,i);                           //   Find the octant where the body belongs
+        if( !(nodes[i].ICHILD & (1 << octant)) ) {              //   If child doesn't exist in this octant
+          addChild(octant,i);                                   //    Add new child to list
+        }                                                       //   Endif for child existence
+        i = nodes[i].CHILD[octant];                             //    Update node iterator to child
+      }                                                         //  End while loop
+      addLeaf(B,i);                                             //  Add body to node as leaf
+      if( nodes[i].NLEAF >= NCRIT ) {                           //  If there are too many leafs
+        splitNode(i);                                           //   Split the node into smaller ones
+      }                                                         //  Endif for splitting
+    }                                                           // End loop over bodies
+  }
+
   void setIndex() {                                             // Store cell index of all bodies
     traverse(nodes.begin());                                    // Traverse tree
   }
 };
 
-class BottomUp : virtual public TreeStructure {
-public:
-  BottomUp() : TreeStructure() {}                               // Constructor
-  ~BottomUp() {}                                                // Destructor
-
+class BottomUp : virtual public TreeStructure {                 // Bottomup tree constructor
+protected:
   int getMaxLevel(Bodies &bodies) {                             // Max level for bottom up tree build
     int const N = bodies.size() * MPISIZE;                      // Number of bodies
-    int level;                                                  // Define max level
+    int level;                                                  // Max level
     level = N >= NCRIT ? 1 + int(log(N / NCRIT)/M_LN2/3) : 0;   // Decide max level from N/Ncrit
     return level;                                               // Return max level
   }
+
+public:
+  BottomUp() : TreeStructure() {}                               // Constructor
+  ~BottomUp() {}                                                // Destructor
 
   void setIndex(Bodies &bodies, int level=0, int begin=0, int end=0, bool update=false) {// Set cell index of all bodies
     bigint i;                                                   // Levelwise cell index
     if( level == 0 ) level = getMaxLevel(bodies);               // Decide max level
     bigint off = ((1 << 3*level) - 1) / 7;                      // Offset for each level
     real r = R0 / (1 << (level-1));                             // Radius at finest level
-    vec<3,int> nx;                                              // Define 3-D cell index
+    vec<3,int> nx;                                              // 3-D cell index
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
-    for( int b=begin; b!=end; ++b ) {                           // Loop over all bodies
+    for( int b=begin; b!=end; ++b ) {                           // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         nx[d] = int( ( bodies[b].pos[d] - (X0[d]-R0) ) / r );   //   3-D cell index
       }                                                         //  End loop over dimension
       i = 0;                                                    //  Initialize cell index
-      for( int l=0; l!=level; ++l ) {                           //  Loop over all levels of tree
+      for( int l=0; l!=level; ++l ) {                           //  Loop over levels of tree
         for( int d=0; d!=3; ++d ) {                             //   Loop over dimension
           i += nx[d] % 2 << (3 * l + d);                        //    Accumulate cell index
           nx[d] >>= 1;                                          //    Bitshift 3-D cell index
@@ -148,7 +147,7 @@ public:
       } else if( i+off > bodies[b].I ) {                        //  If the new cell index is larger
         bodies[b].I = i+off;                                    //   Store index in bodies
       }
-    }                                                           // End loop over all bodies
+    }                                                           // End loop over bodies
   }
 
   void prune(Bodies &bodies) {                                  // Prune tree by merging cells
@@ -161,26 +160,26 @@ public:
       int begin = 0;                                            //  Begin cell index for bodies in cell
       int size = 0;                                             //  Number of bodies in cell
       int b = 0;                                                //  Current body index
-      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {//  Loop over all bodies
+      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {//  Loop over bodies
         level = getLevel(B->I);                                 //   Level of twig
         cOff = ((1 << 3*level) - 1) / 7;                        //   Offset of twig
         bigint p = ((B->I-cOff) >> 3*(level-l+1)) + pOff;       //   Cell index of parent cell
         if( p != index ) {                                      //   If it's a new parent cell
           if( size < NCRIT ) {                                  //    If parent cell has few enough bodies
-            for( int i=begin; i!=begin+size; ++i ) {            //     Loop over all bodies in that cell
+            for( int i=begin; i!=begin+size; ++i ) {            //     Loop over bodies in that cell
               bodies[i].I = index;                              //      Renumber cell index to parent cell
-            }                                                   //     End loop over all bodies in cell
+            }                                                   //     End loop over bodies in cell
           }                                                     //    Endif for merging
           begin = b;                                            //    Set new begin index
           size = 0;                                             //    Reset number of bodies
           index = p;                                            //    Set new parent cell
         }                                                       //   Endif for new cell
         size++;                                                 //   Increment body counter
-      }                                                         //  End loop over all bodies
+      }                                                         //  End loop over bodies
       if( size < NCRIT ) {                                      //  If last parent cell has few enough bodies
-        for( int i=begin; i!=begin+size; ++i ) {                //   Loop over all bodies in that cell
+        for( int i=begin; i!=begin+size; ++i ) {                //   Loop over bodies in that cell
           bodies[i].I = index;                                  //    Renumber cell index to parent cell
-        }                                                       //   End loop over all bodies in cell
+        }                                                       //   End loop over bodies in cell
       }                                                         //  Endif for merging
     }                                                           // End loop over levels
   }
@@ -190,7 +189,7 @@ public:
     int off=begin, size=0;                                      // Initialize offset, and size
     if( level == 0 ) level = getMaxLevel(bodies);               // Max level for bottom up tree build
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
-    for( int b=begin; b!=end; ++b ) {                           // Loop over all bodies under consideration
+    for( int b=begin; b!=end; ++b ) {                           // Loop over bodies under consideration
       if( bodies[b].I != index ) {                              //  If it's a new cell
         if( size >= NCRIT ) {                                   //   If the cell has too many bodies
           level++;                                              //    Increment level
@@ -215,81 +214,81 @@ public:
   }
 };
 
-class TreeConstructor : public TopDown, public BottomUp {
+class TreeConstructor : public TopDown, public BottomUp {       // General tree constructor interface
 public:
   TreeConstructor() : TopDown(), BottomUp() {}                  // Constructor
   ~TreeConstructor() {}                                         // Destructor
 
-  void topdown(Bodies &bodies, Cells &cells, bool print=true) {
-    double tic,toc;
-    tic = get_time();
-    TopDown::grow(bodies);
-    toc = get_time();
-    if(print) std::cout << "Grow tree     : " << toc-tic << std::endl;
+  void topdown(Bodies &bodies, Cells &cells, bool print=true) { // Topdown tree constructor interface
+    double tic,toc;                                             // Timers
+    tic = get_time();                                           // Start timer
+    TopDown::grow(bodies);                                      // Grow tree structure topdown
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Grow tree     : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();
-    TopDown::setIndex();
-    toc = get_time();
-    if(print) std::cout << "Set index     : " << toc-tic << std::endl;
+    tic = get_time();                                           // Start timer
+    TopDown::setIndex();                                        // Set index of cells
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Set index     : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();
-    buffer.resize(bodies.size());
-    sort(bodies,buffer);
-    toc = get_time();
-    if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
+    tic = get_time();                                           // Start timer
+    buffer.resize(bodies.size());                               // Resize sort buffer
+    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    toc = get_time();                                           // End timer
+    if(print) std::cout << "Sort index    : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();
-    Cells twigs;
-    bodies2twigs(bodies,twigs);
-    toc = get_time();
-    if(print) std::cout << "Bodies2twigs  : " << toc-tic << std::endl;
+    tic = get_time();                                           // Start timer
+    Cells twigs;                                                // Twigs are cells at the bottom of tree
+    bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Bodies2twigs  : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();
-    Cells sticks;
-    twigs2cells(twigs,cells,sticks);
-    toc = get_time();
-    if(print) std::cout << "Twigs2cells   : " << toc-tic << std::endl;
+    tic = get_time();                                           // Start timer
+    Cells sticks;                                               // Sticks are twigs from other processes not twigs here
+    twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Twigs2cells   : " << toc-tic << std::endl;// Print elapsed time
   }
 
-  void bottomup(Bodies &bodies, Cells &cells, bool print=true) {
-    double tic,toc;
-    tic = get_time();
-    BottomUp::setIndex(bodies);
-    toc = get_time();
-    if(print) std::cout << "Set index     : " << toc-tic << std::endl;
+  void bottomup(Bodies &bodies, Cells &cells, bool print=true) {// Bottomup tree constructor interface
+    double tic,toc;                                             // Timers
+    tic = get_time();                                           // Start timer
+    BottomUp::setIndex(bodies);                                 // Set index of cells
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Set index     : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();
-    buffer.resize(bodies.size());
-    sort(bodies,buffer);
-    toc = get_time();
-    if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
+    tic = get_time();                                           // Start timer
+    buffer.resize(bodies.size());                               // Resize sort buffer
+    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Sort index    : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();
-    prune(bodies);
-    toc = get_time();
-    if(print) std::cout << "Prune tree    : " << toc-tic << std::endl;
+    tic = get_time();                                           // Start timer
+    prune(bodies);                                              // Prune tree structure bottomup
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Prune tree    : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();
-    BottomUp::grow(bodies);
-    toc = get_time();
-    if(print) std::cout << "Grow tree     : " << toc-tic << std::endl;
+    tic = get_time();                                           // Start timer
+    BottomUp::grow(bodies);                                     // Grow tree structure at bottom if necessary
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Grow tree     : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();
-    sort(bodies,buffer);
-    toc = get_time();
-    if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
+    tic = get_time();                                           // Start timer
+    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Sort index    : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();
-    Cells twigs;
-    bodies2twigs(bodies,twigs);
-    toc = get_time();
-    if(print) std::cout << "Bodies2twigs  : " << toc-tic << std::endl;
+    tic = get_time();                                           // Start timer
+    Cells twigs;                                                // Twigs are cells at the bottom of tree
+    bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Bodies2twigs  : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();
-    Cells sticks;
-    twigs2cells(twigs,cells,sticks);
-    toc = get_time();
-    if(print) std::cout << "Twigs2cells   : " << toc-tic << std::endl;
+    tic = get_time();                                           // Start timer
+    Cells sticks;                                               // Sticks are twigs from other processes not twigs here
+    twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
+    toc = get_time();                                           // Stop timer
+    if(print) std::cout << "Twigs2cells   : " << toc-tic << std::endl;// Print elapsed time
   }
 
 };
