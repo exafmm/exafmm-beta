@@ -6,6 +6,8 @@
 
 class Kernel {
 public:
+  void setDevice();
+
   void P2P(B_iter B0, B_iter BN);
 
   void P2P(B_iter Bi0, B_iter BiN, B_iter Bj0, B_iter BjN);

@@ -8,6 +8,7 @@ int main() {
   Bodies bodies(numBodies);
   Dataset D;
   Kernel K;
+  K.setDevice();
   toc = get_time();
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
@@ -19,10 +20,21 @@ int main() {
   tic = get_time();
   K.P2P(bodies.begin(),bodies.end());
   toc = get_time();
-  std::cout << "Direct sum    : " << toc-tic << std::endl;
+  std::cout << "Direct GPU    : " << toc-tic << std::endl;
 
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-//    std::cout << B-bodies.begin() << " " << B->acc << std::endl;
+  tic = get_time();
+  real err(0),rel(0);
+  for( B_iter Bi=bodies.begin(); Bi!=bodies.end(); ++Bi ) {
+    real pot = -Bi->scal / std::sqrt(EPS2);
+    for( B_iter Bj=bodies.begin(); Bj!=bodies.end(); ++Bj ) {
+      vect dist = Bi->pos - Bj->pos;
+      real r = std::sqrt(norm(dist) + EPS2);
+      pot += Bj->scal / r;
+    }
+    err += (Bi->pot - pot) * (Bi->pot - pot);
+    rel += pot * pot;
   }
-
+  toc = get_time();
+  std::cout << "Direct CPU    : " << toc-tic << std::endl;
+  std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
 }

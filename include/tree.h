@@ -225,7 +225,9 @@ protected:
   }
 
 public:
-  TreeStructure() : X0(0),R0(0) {}                              // Constructor
+  TreeStructure() : X0(0),R0(0) {                               // Constructor
+    K.setDevice();
+  }
   ~TreeStructure() {}                                           // Destructor
 
   vect getX0() {return X0;}                                     // Get center of root cell

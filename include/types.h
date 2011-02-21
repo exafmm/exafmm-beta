@@ -13,6 +13,9 @@
 #include "gettime.h"
 int MPIRANK(0);                                                 // MPI rank (for debugging serial class in MPI run)
 int MPISIZE(1);                                                 // MPI size (for debugging serial class in MPI run)
+#else
+extern int MPIRANK;
+extern int MPISIZE;
 #endif
 
 typedef long         bigint;                                    // Big integer type
