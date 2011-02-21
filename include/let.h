@@ -42,16 +42,21 @@ private:
     }                                                           // Endif for isolated process
   }
 
+  real getDistance(C_iter C, vect xmin, vect xmax) {            // Get disatnce to other domain
+    vect dist;                                                  // Distance vector
+    for( int d=0; d!=3; ++d )                                   // Loop over dimensions
+      dist[d] = (C->X[d] > xmax[d])*                            //  Calculate the distance between cell C and
+                (C->X[d] - xmax[d])+                            //  the nearest point in domain [xmin,xmax]^3
+                (C->X[d] < xmin[d])*                            //  Take the differnece from xmin or xmax
+                (C->X[d] - xmin[d]);                            //  or 0 if between xmin and xmax
+    real R = std::sqrt(norm(dist));                             // Scalar distance
+    return R;
+  }
+
   void getLET(C_iter C0, C_iter C, vect xmin, vect xmax) {      // Determine which cells to send
     for( int i=0; i!=C->NCHILD; i++ ) {                         // Loop over child cells
       C_iter CC = C0+C->CHILD[i];                               //  Iterator for child cell
-      vect dist;                                                //  Distance vector
-      for( int d=0; d!=3; ++d )                                 //  Loop over dimensions
-        dist[d] = (CC->X[d] > xmax[d])*                         //   Calculate the distance between cell C and
-                  (CC->X[d] - xmax[d])+                         //   the nearest point in domain [xmin,xmax]^3
-                  (CC->X[d] < xmin[d])*                         //   Take the differnece from xmin or xmax
-                  (CC->X[d] - xmin[d]);                         //   or 0 if between xmin and xmax
-      real R = std::sqrt(norm(dist));                           //  Scalar distance
+      real R = getDistance(CC,xmin,xmax);                       //  Get distance to other domain
       if( 3 * CC->R > THETA * R && CC->NCHILD != 0 ) {          //  If the cell seems too close and not twig
         getLET(C0,CC,xmin,xmax);                                //   Traverse the tree further
       } else {                                                  //  If the cell if far or a twig
@@ -245,7 +250,7 @@ public:
   LocalEssentialTree() : Partition() {}                         // Constructor
   ~LocalEssentialTree() {}                                      // Destructor
 
-  void commBodies(Cells &cells) {                               // Communicate bodies in LET
+  void commBodies(Cells &cells) {                               // Communicate bodies in the LET
     int MPI_TYPE = getType(XMIN[LEVEL][0]);                     // Get MPI data type
     std::vector<vect> xmin(SIZE);                               // Buffer for gathering XMIN
     std::vector<vect> xmax(SIZE);                               // Buffer for gathering XMAX
@@ -268,14 +273,7 @@ public:
       if( ic == 3 && irank != RANK ) {                          //  If ranks are neighbors in all dimensions
         for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {    //   Loop over cells
           if( C->NCHILD == 0 ) {                                //    If cell is a twig
-            vect dist;                                          //     Distance vector
-            for( int d=0; d!=3; ++d ) {                         //     Loop over dimension
-              dist[d] = (C->X[d] > xmax[irank][d])*             //      Calculate the distance between cell C and
-                        (C->X[d] - xmax[irank][d])+             //      the nearest point in domain [xmin,xmax]^3
-                        (C->X[d] < xmin[irank][d])*             //      Take the differnece from xmin or xmax
-                        (C->X[d] - xmin[irank][d]);             //      or 0 if between xmin and xmax
-            }                                                   //     End loop over dimension
-            real R = std::sqrt(norm(dist));                     //     Scalar distance
+            real R = getDistance(C,xmin[irank],xmax[irank]);    //     Get distance to other domain
             if( 3 * C->R > THETA * R ) {                        //     If the cell seems close enough for P2P
               scells.push_back(C);                              //      Add cell iterator to scells
             }                                                   //     Endif for cell distance

@@ -8,8 +8,12 @@
 #include <iostream>
 #include <stack>
 #include <vector>
-#include "gettime.h"
 #include "vec.h"
+#ifndef KERNEL
+#include "gettime.h"
+int MPIRANK(0);                                                 // MPI rank (for debugging serial class in MPI run)
+int MPISIZE(1);                                                 // MPI size (for debugging serial class in MPI run)
+#endif
 
 typedef long         bigint;                                    // Big integer type
 typedef float        real;                                      // Real number type
@@ -21,8 +25,6 @@ typedef std::vector<bigint>::iterator BI_iter;                  // Vector of big
 int  const NCRIT(100);                                          // Number of bodies per cell
 real const THETA(0.5);                                          // Box opening criteria
 real const EPS2(0.0001);                                        // Softening parameter
-int MPIRANK(0);                                                 // MPI rank (for debugging serial class in MPI run)
-int MPISIZE(1);                                                 // MPI size (for debugging serial class in MPI run)
 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   bigint I;                                                     // Cell index

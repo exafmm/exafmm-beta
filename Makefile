@@ -5,11 +5,12 @@ OFLAGS  = -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow
 	-ffast-math -funroll-loops -fforce-addr -rdynamic -D_FILE_OFFSET_BITS=64
 LFLAGS  = -ldl -lm
 VFLAGS  = -lvtkHybridTCL -lvtkWidgetsTCL -DVTK
+KERNEL  = ../kernel/cartesian_cpu.o
 
 .cxx.o  :
-	$(CXX) -c -o $@ $< $(OFLAGS)
+	$(CXX) -c -o $@ $? $(OFLAGS)
 cleanall:
-	rm -rf *.o *.out *.sum
+	rm -rf *.o *.out *.sum ../kernel/*.o
 save    :
 	make cleanall
 	tar zcvf ../../exafmm.tgz ../../exafmm
