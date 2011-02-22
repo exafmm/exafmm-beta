@@ -226,7 +226,7 @@ protected:
 
 public:
   TreeStructure() : X0(0),R0(0) {                               // Constructor
-    K.setDevice();
+    K.setup();
   }
   ~TreeStructure() {}                                           // Destructor
 

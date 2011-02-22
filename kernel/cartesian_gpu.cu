@@ -32,9 +32,9 @@ __global__ void P2P_GPU(float4 *sourceGlob, float *targetGlob) {
   targetGlob[blockIdx.x * THREADS + threadIdx.x] = target.w;
 }
 
-void Kernel::setDevice() {
-  cudaThreadSynchronize();
+void Kernel::setup() {
   cudaSetDevice(MPIRANK % GPUS);
+  cudaThreadSynchronize();
 }
 
 void Kernel::P2P(B_iter B0, B_iter BN) {

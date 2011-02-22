@@ -1,13 +1,14 @@
 #include "kernel.h"
 
 int main() {
-  int const numBodies(10);
+  int const numBodies(100);
   Bodies bodiesI(numBodies);
   Bodies bodiesI2(numBodies);
   Bodies bodiesJ(numBodies);
   Cells  cells;
   cells.resize(4);
   Kernel K;
+  K.setup();
 
   for( int it=0; it!=10; ++it ) {
     real dist = (1 << it) / 2;
@@ -52,9 +53,7 @@ int main() {
 
     K.L2P(C+3);
 
-  /*
-    K.M2P(C+3,C+1);
-  */
+//    K.M2P(C+3,C+1);
 
     bodiesI2 = bodiesI;
     for( B_iter B=bodiesI2.begin(); B!=bodiesI2.end(); ++B ) {

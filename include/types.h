@@ -11,23 +11,28 @@
 #include "vec.h"
 #ifndef KERNEL
 #include "gettime.h"
-int MPIRANK(0);                                                 // MPI rank (for debugging serial class in MPI run)
-int MPISIZE(1);                                                 // MPI size (for debugging serial class in MPI run)
+int MPIRANK = 0;                                                // MPI rank (for debugging serial class in MPI run)
+int MPISIZE = 1;                                                // MPI size (for debugging serial class in MPI run)
 #else
 extern int MPIRANK;
 extern int MPISIZE;
 #endif
+typedef long                 bigint;                            // Big integer type
+typedef float                real;                              // Real number type
+typedef std::complex<double> complex;                           // Complex number type
 
-typedef long         bigint;                                    // Big integer type
-typedef float        real;                                      // Real number type
-typedef vec<3,real>  vect;                                      // 3-D vector type
-typedef vec<10,real> coef;                                      // Multipole coefficient type
+int  const P     = 3;                                           // Order of expansions
+//int  const NCOEF = P*(P+1)*(P+2)/6;                             // Number of coefficients for Taylor expansion
+int  const NCOEF = P*(P+1)/2;                                   // Number of coefficients for spherical harmonics
+int  const NCRIT = 100;                                         // Number of bodies per cell
+real const THETA = 0.5;                                         // Box opening criteria
+real const EPS2  = 1e-4;                                        // Softening parameter
+
+typedef vec<3,real>                   vect;                     // 3-D vector type
+//typedef vec<NCOEF,real>               coef;                     // Multipole coefficient type for Taylor expansion
+typedef vec<NCOEF,complex>            coef;                     // Multipole coefficient type for spherical harmonics
 typedef std::vector<bigint>           Bigints;                  // Vector of big integer types
 typedef std::vector<bigint>::iterator BI_iter;                  // Vector of big integer types
-
-int  const NCRIT(100);                                          // Number of bodies per cell
-real const THETA(0.5);                                          // Box opening criteria
-real const EPS2(0.0001);                                        // Softening parameter
 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   bigint I;                                                     // Cell index

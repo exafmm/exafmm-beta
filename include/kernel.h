@@ -6,7 +6,7 @@
 
 class Kernel {
 public:
-  void setDevice();
+  void setup();
 
   void P2P(B_iter B0, B_iter BN);
 

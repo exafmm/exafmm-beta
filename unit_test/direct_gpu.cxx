@@ -8,7 +8,7 @@ int main() {
   Bodies bodies(numBodies);
   Dataset D;
   Kernel K;
-  K.setDevice();
+  K.setup();
   toc = get_time();
   std::cout << "Allocate      : " << toc-tic << std::endl;
 

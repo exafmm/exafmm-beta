@@ -1,6 +1,6 @@
 #include "kernel.h"
 
-void Kernel::setDevice() {}
+void Kernel::setup() {}
 
 void Kernel::P2P(B_iter B0, B_iter BN) {
   for( B_iter Bi=B0; Bi!=BN; ++Bi ) {
