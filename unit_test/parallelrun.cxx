@@ -40,8 +40,6 @@ int main() {
 #endif
 
   tic = get_time();
-  T.setCI0(cells.begin());
-  T.setCJ0(cells.begin());
   T.commBodies(cells);
   toc = get_time();
   if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
@@ -50,8 +48,6 @@ int main() {
   Bodies bodies2 = bodies;
   Cells jcells = cells;
   T.commCells(bodies2,jcells);
-  T.setCI0(cells.begin());
-  T.setCJ0(jcells.begin());
   toc = get_time();
   if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
 

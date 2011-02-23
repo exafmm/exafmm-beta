@@ -33,9 +33,7 @@ int main() {
 #endif
 
   tic = get_time();
-  T.setCI0(cells.begin());
-  T.setCJ0(cells.begin());
-  T.downward(cells,1);
+  T.downward(cells,cells,1);
   toc = get_time();
   std::cout << "Downward      : " << toc-tic << std::endl;
 

@@ -1,18 +1,13 @@
 #ifndef tree_h
 #define tree_h
 #include "sort.h"
-#include "kernel.h"
+#include "evaluator.h"
 
 class TreeStructure : public Sort {
-private:
-  C_iter CI0;                                                   // icells.begin()
-  C_iter CJ0;                                                   // jcells.begin()
-
 protected:
-  Pairs  pairs;                                                 // Stack of interaction pairs
-  vect   X0;                                                    // Center of root cell
-  real   R0;                                                    // Radius of root cell
-  Kernel K;                                                     // Kernels
+  vect      X0;                                                 // Center of root cell
+  real      R0;                                                 // Radius of root cell
+  Evaluator E;                                                  // Kernel evaluator
 
 public:
   Bodies buffer;                                                // Buffer for comm & sort
@@ -83,63 +78,6 @@ private:
     begin = oldend;                                             // Set new begin index to old end index
   }
 
-  void M2P(C_iter CI, C_iter CJ) {                              // Interface for M2P kernel
-    vect dist = CI->X - CJ->X;                                  // Distance vector between cells
-    real R = std::sqrt(norm(dist));                             // Distance between cells
-    if( CI->NCHILD != 0 || CI->R + CJ->R > THETA*R ) {          // If target is not twig or box is too large
-      Pair pair(CI,CJ);                                         //  Form pair of interacting cells
-      pairs.push(pair);                                         //  Push interacting pair into stack
-    } else {                                                    // If target is twig and box is small enough
-      K.M2P(CI,CJ);                                             //  Evaluate M2P kernel
-    }                                                           // Endif for interaction
-  }
-
-  void M2L(C_iter CI, C_iter CJ) {                              // Interface for M2L kernel
-    vect dist = CI->X - CJ->X;                                  // Distance vector between cells
-    real R = std::sqrt(norm(dist));                             // Distance between cells
-    if( CI->R + CJ->R > THETA*R ) {                             // If box is too large
-      Pair pair(CI,CJ);                                         //  Form pair of interacting cells
-      pairs.push(pair);                                         //  Push interacting pair into stack
-    } else {                                                    // If bos is small enough
-      K.M2L(CI,CJ);                                             //  Evaluate M2L kernel
-    }                                                           // Endif for interaction
-  }
-
-  void treecode(C_iter CI, C_iter CJ) {                         // Tree walk for treecode
-    if( CI->NCHILD == 0 && CJ->NCHILD == 0) {                   // If both cells are twigs
-      K.P2P(CI->LEAF,CI->LEAF+CI->NLEAF,CJ->LEAF,CJ->LEAF+CJ->NLEAF);// Evaluate P2P kernel
-    } else if ( CI->NCHILD != 0 ) {                             // If target is not twig
-      for( int i=0; i<CI->NCHILD; i++ ) {                       //  Loop over child cells of target
-        M2P(CI0+CI->CHILD[i],CJ);                               //   Try to evaluate M2P kernel
-      }                                                         //  End loop over child cells of target
-    } else {                                                    // If target is twig
-      for( int i=0; i<CJ->NCHILD; i++ ) {                       //  Loop over child cells of source
-        M2P(CI,CJ0+CJ->CHILD[i]);                               //   Try to evaluate M2P kernel
-      }                                                         //  End loop over child cells of source
-    }                                                           // Endif for type of interaction
-  }
-
-  void FMM(C_iter CI, C_iter CJ) {                              // Tree walk for FMM
-    if( CI->NCHILD == 0 && CJ->NCHILD == 0 ) {                  // If both cells are twigs
-      if( CJ->NLEAF != 0 ) {                                    // If the twig has leafs
-        K.P2P(CI->LEAF,CI->LEAF+CI->NLEAF,CJ->LEAF,CJ->LEAF+CJ->NLEAF);// Evaluate P2P kernel
-      } else {                                                  // If the twig has no leafs
-#ifdef DEBUG
-        std::cout << "CJ->I=" << CJ->I << " has no leaf. Doing M2P instead." << std::endl;
-#endif
-        K.M2P(CI,CJ);                                           //  Evaluate M2P kernel
-      }                                                         // Endif for twigs with leafs
-    } else if ( CJ->NCHILD == 0 || (CI->NCHILD != 0 && CI->R > CJ->R) ) {// If source is twig or target is larger
-      for( int i=0; i<CI->NCHILD; i++ ) {                       //  Loop over child cells of target
-        M2L(CI0+CI->CHILD[i],CJ);                               //   Try to evaluate M2L kernel
-      }                                                         //  End loop over child cells of target
-    } else {                                                    // If target is twig or source is larger
-      for( int i=0; i<CJ->NCHILD; i++ ) {                       //  Loop over child cells of source
-        M2L(CI,CJ0+CJ->CHILD[i]);                               //   Try to evaluate M2L kernel
-      }                                                         //  End loop over child cells of source
-    }                                                           // Endif for type of interaction
-  }
-
 protected:
   int getLevel(bigint index) {                                  // Get level from cell index
     int level = -1;                                             // Initialize level counter
@@ -199,10 +137,7 @@ protected:
     cell.LEAF = firstLeaf;                                      // Set pointer to first leaf
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
-    for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over twigs
-      C->M = C->L = 0;                                          //  Initialize multipole/local coefficients
-      K.P2M(C);                                                 //  Evaluate P2M kernel
-    }                                                           // End loop over cells
+    E.P2M(twigs);                                               // Evaluate P2M kernel
   }
 
   void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) { // Link twigs bottomup to create all cells in tree
@@ -225,23 +160,19 @@ protected:
       linkParent(cells,begin,end);                              //  Form parent-child mutual link
     }                                                           // End loop over levels
     unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
-    for( C_iter C=cells.begin(); C!=cells.end()-1; ++C ) {      // Loop over cells bottomup (except root cell)
-      K.M2M(cells.begin()+C->PARENT,C);                         //  Evaluate M2M kernel
-    }                                                           // End loop over cells
+    E.M2M(cells);                                               // Evaluate M2M kernel
   }
 
 public:
   TreeStructure() : X0(0),R0(0) {                               // Constructor
-    K.initialize();
+    E.initialize();
   }
   ~TreeStructure() {                                            // Destructor
-    K.finalize();
+    E.finalize();
   }
 
   vect getX0() {return X0;}                                     // Get center of root cell
   real getR0() {return R0;}                                     // Get radius of root cell
-  void setCI0(C_iter ci0) { CI0 = ci0; }                        // Set icells.begin()
-  void setCJ0(C_iter cj0) { CJ0 = cj0; }                        // Set jcells.begin()
 
   void setDomain(Bodies &bodies) {                              // Set center and size of root cell
     vect xmin,xmax;                                             // Min,Max of domain
@@ -263,45 +194,13 @@ public:
     R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
   }
 
-  void downward(Cells &cells, int method) {                     // Downward phase
-    C_iter root = cells.end()-1;                                // Iterator for root cell
-    Pair pair(root,root);                                       // Form pair of root cells
-    pairs.push(pair);                                           // Push pair to stack
-    while( !pairs.empty() ) {                                   // While interaction stack is not empty
-      pair = pairs.top();                                       //  Get interaction pair from top of stack
-      pairs.pop();                                              //  Pop interaction stack
-      switch (method) {                                         //  Swtich between methods
-        case 0 : treecode(pair.CI,pair.CJ); break;              //   0 : treecode
-        case 1 : FMM(pair.CI,pair.CJ);      break;              //   1 : FMM
-      }                                                         //  End switch between methods
-    }                                                           // End while loop for interaction stack
-    for( C_iter C=root-1; C!=cells.begin()-1; --C ) {           // Loop over cells topdown (except root cell)
-      K.L2L(C,CI0+C->PARENT);                                   //  Evaluate L2L kernel
-    }                                                           // End loop over cells topdown
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
-      if( C->NCHILD == 0 ) K.L2P(C);                            //  If cell is a twig evaluate L2P kernel
-    }                                                           // End loop over cells topdown
-  }
-
   void downward(Cells &cells, Cells &jcells, int method) {      // Downward phase for different source/target
-    C_iter root = cells.end()-1;                                // Iterator for root cell
-    C_iter jroot = jcells.end()-1;                              // Iterator for root cell
-    Pair pair(root,jroot);                                      // Form pair of root cells
-    pairs.push(pair);                                           // Push pair to stack
-    while( !pairs.empty() ) {                                   // While interaction stack is not empty
-      pair = pairs.top();                                       //  Get interaction pair from top of stack
-      pairs.pop();                                              //  Pop interaction stack
-      switch (method) {                                         //  Swtich between methods
-        case 0 : treecode(pair.CI,pair.CJ); break;              //   0 : treecode
-        case 1 : FMM(pair.CI,pair.CJ);      break;              //   1 : FMM
-      }                                                         //  End switch between methods
-    }                                                           // End while loop for interaction stack
-    for( C_iter C=root-1; C!=cells.begin()-1; --C ) {           // Loop over cells topdown (except root cell)
-      K.L2L(C,CI0+C->PARENT);                                   //  Evaluate L2L kernel
-    }                                                           // End loop over cells topdown
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
-      if( C->NCHILD == 0 ) K.L2P(C);                            //  If cell is a twig evaluate L2P kernel
-    }                                                           // End loop over cells topdown
+    E.traverse(cells,jcells,method);                            // Traverse tree to get interaction list
+    E.M2L(cells);                                               // Evaluate M2L kernel
+    E.M2P(cells);                                               // Evaluate M2P kernel
+    E.P2P(cells);                                               // Evaluate P2P kernel
+    E.L2L(cells);                                               // Evaluate L2L kernel
+    E.L2P(cells);                                               // Evaluate L2P kernel
   }
 
 };

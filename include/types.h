@@ -6,6 +6,7 @@
 #include <complex>
 #include <cstdlib>
 #include <iostream>
+#include <list>
 #include <stack>
 #include <vector>
 #include "vec.h"
@@ -53,14 +54,11 @@ struct JCell {                                                  // Source proper
   coef   M;                                                     // Multipole coefficients
 };
 struct Cell : JCell {                                           // All properties of a cell
-  typedef std::vector<Cell>           Cells;                    // Vector of cells
   int    NCHILD;                                                // Number of child cells
   int    NLEAF;                                                 // Number of leafs
   int    PARENT;                                                // Iterator offset of parent cell
   int    CHILD[8];                                              // Iterator offset of child cells
   B_iter LEAF;                                                  // Iterator of first leaf
-  Cells  M2L;                                                   // M2L interaction list
-  Cells  M2P;                                                   // M2P interaction list
   vect   X;                                                     // Cell center
   real   R;                                                     // Cell radius
   coef   L;                                                     // Local coefficients
@@ -75,6 +73,9 @@ struct Pair {                                                   // Structure for
   C_iter CJ;                                                    // Source cell iterator
   Pair(C_iter ci, C_iter cj) : CI(ci), CJ(cj) {}                // Constructor
 };
-typedef std::stack<Pair>              Pairs;                    // Stack of interacting cells
+typedef std::stack<Pair>              Pairs;                    // Stack of interacting cell pairs
+
+typedef std::list<C_iter>             List;                     // Interaction list
+typedef std::vector<List>             Lists;                    // Vector of interaction lists
 
 #endif
