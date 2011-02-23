@@ -35,11 +35,6 @@ int main() {
   tic = get_time();
   T.setCI0(cells.begin());
   T.setCJ0(cells.begin());
-  T.upward(cells);
-  toc = get_time();
-  std::cout << "Upward        : " << toc-tic << std::endl;
-
-  tic = get_time();
   T.downward(cells,1);
   toc = get_time();
   std::cout << "Downward      : " << toc-tic << std::endl;

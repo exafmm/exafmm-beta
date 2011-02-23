@@ -12,7 +12,7 @@ KERNEL  = ../kernel/spherical_cpu.o
 .cxx.o  :
 	$(CXX) -c $? $(OFLAGS) -o $@
 .cu.o   :
-	$(NVCC) -c $? -o $@ $(LFLAGS) -DPRINT
+	$(NVCC) -c $? -o $@ $(LFLAGS)
 cleanall:
 	rm -rf *.o *.out *.sum ../kernel/*.o
 save    :

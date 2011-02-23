@@ -1,6 +1,6 @@
 #include "kernel.h"
 
-void Kernel::setup() {}
+void Kernel::initialize() {}
 
 void Kernel::P2P(B_iter B0, B_iter BN) {
   for( B_iter Bi=B0; Bi!=BN; ++Bi ) {
@@ -147,4 +147,6 @@ void Kernel::M2P(C_iter CI, C_iter CJ) {
     B->pot += CJ->M[8] * (3 * dist[1] * dist[2] / R5);
     B->pot += CJ->M[9] * (3 * dist[2] * dist[0] / R5);
   }
+
+  void Kernel::finalize() {}
 }

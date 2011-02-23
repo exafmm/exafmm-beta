@@ -32,7 +32,7 @@ __global__ void P2P_GPU(float4 *sourceGlob, float *targetGlob) {
   targetGlob[blockIdx.x * THREADS + threadIdx.x] = target.w;
 }
 
-void Kernel::setup() {
+void Kernel::initialize() {
   cudaSetDevice(MPIRANK % GPUS);
   cudaThreadSynchronize();
 }
@@ -198,4 +198,6 @@ void Kernel::M2P(C_iter CI, C_iter CJ) {
     B->pot += CJ->M[8] * (3 * dist[1] * dist[2] / R5);
     B->pot += CJ->M[9] * (3 * dist[2] * dist[0] / R5);
   }
+
+void Kernel::finalize() {}
 }

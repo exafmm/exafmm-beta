@@ -132,11 +132,6 @@ private:
     buffer.resize(bodies.size());                               // Resize sort buffer
     sort(bodies,buffer,false);                                  // Sort bodies in descending order
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
-    for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over twigs
-      C->M = 0;                                                 //  Initialize multipole coefficients
-      C->L = 0;                                                 //  Initialize local coefficients
-      K.P2M(C);                                                 //  Evaluate P2M kernel
-    }                                                           // End loop over cells
   }
 
   void cells2twigs(Cells &cells, Cells &twigs, bool last) {     // Turn cells to twigs
@@ -217,9 +212,6 @@ private:
     sort(bodies,buffer);                                        // Sort bodies in ascending order
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over cells
-      C->M = 0;                                                 //  Initialize multipole coefficients
-      C->L = 0;                                                 //  Initialize local coefficients
-      K.P2M(C);                                                 //  Evaluate P2M kernel
       if( sticks.size() > 0 ) {                                 //  If stick vector is not empty
         if( C->I == sticks.back().I ) {                         //   If twig's index is equal to stick's index
           C->M += sticks.back().M;                              //    Accumulate multipole

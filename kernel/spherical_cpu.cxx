@@ -1,16 +1,18 @@
 #include "kernel.h"
-#define ODDEVEN(n) ((n & 1  ==  1) ? -1 : 1)
+#define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
 int  const P2 = P * P;
 int  const P4 = P2 * P2;
 real const EPS = 1e-6;
-double *factorial = new double [4*P2];
-double *anm = new double [4*P2];
-complex I(0.0,1.0);
-complex *Anm = new complex [P4];
-complex *Ynm = new complex [4*P2];
+double *prefactor, *Anm;
+complex *Ynm, *Cnm, I(0.0,1.0);
 
-void Kernel::setup() {
+void Kernel::initialize() {
+  prefactor = new double  [4*P2];
+  Anm       = new double  [4*P2];
+  Ynm       = new complex [4*P2];
+  Cnm       = new complex [P4];
+
   for( int n=0; n!=2*P; ++n ) {
     for( int m=-n; m<=n; ++m ) {
       int nm = n*n+n+m;
@@ -23,8 +25,8 @@ void Kernel::setup() {
       for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
       double fnpa = 1.0;
       for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
-      factorial[nm] = std::sqrt(fnma/fnpa);
-      anm[nm] = std::pow(-1,n)/std::sqrt(fnmm*fnpm);
+      prefactor[nm] = std::sqrt(fnma/fnpa);
+      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
     }
   }
 
@@ -32,8 +34,8 @@ void Kernel::setup() {
     for( int k=-j; k<=j; ++k, ++jk ){
       for( int n=0, nm=0; n!=P; ++n ) {
         for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
-          int jnkm = (j+n)*(j+n)+j+n+m-k;
-          Anm[jknm] = std::pow(I,abs(k-m)-abs(k)-abs(m))*(std::pow(-1.0,j)*anm[nm]*anm[jk]/anm[jnkm]);
+          const int jnkm = (j+n)*(j+n)+j+n+m-k;
+          Cnm[jknm] = std::pow(I,abs(k-m)-abs(k)-abs(m))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
         }
       }
     }
@@ -65,21 +67,21 @@ void evalMultipole(real rho, real alpha, real beta) {
     double p = pn;
     int npn = m * m + 2 * m;
     int nmn = m * m;
-    Ynm[npn] = rhom * p * factorial[npn] * eim;
+    Ynm[npn] = rhom * p * prefactor[npn] * eim;
     Ynm[nmn] = std::conj(Ynm[npn]);
     double p1 = p;
     p = x * (2 * m + 1) * p;
-    rhom *= -rho;
+    rhom *= rho;
     double rhon = rhom;
     for( int n=m+1; n!=P; ++n ){
       int npm = n * n + n + m;
       int nmm = n * n + n - m;
-      Ynm[npm] = rhon * p * factorial[npm] * eim;
+      Ynm[npm] = rhon * p * prefactor[npm] * eim;
       Ynm[nmm] = std::conj(Ynm[npm]);
       double p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-      rhon *= -rho;
+      rhon *= rho;
     }
     pn = -pn * fact * s;
     fact = fact + 2;
@@ -97,7 +99,7 @@ void evalLocal(real rho, real alpha, real beta) {
     double p = pn;
     int npn = m * m + 2 * m;
     int nmn = m * m;
-    Ynm[npn] = rhom * p * factorial[npn] * eim;
+    Ynm[npn] = rhom * p * prefactor[npn] * eim;
     Ynm[nmn] = std::conj(Ynm[npn]);
     double p1 = p;
     p = x * (2 * m + 1) * p;
@@ -106,7 +108,7 @@ void evalLocal(real rho, real alpha, real beta) {
     for( int n=m+1; n!=2*P; ++n ){
       int npm = n * n + n + m;
       int nmm = n * n + n - m;
-      Ynm[npm] = rhon * p * factorial[npm] * eim;
+      Ynm[npm] = rhon * p * prefactor[npm] * eim;
       Ynm[nmm] = std::conj(Ynm[npm]);
       double p2 = p1;
       p1 = p;
@@ -143,7 +145,7 @@ void Kernel::P2P(B_iter Bi0, B_iter BiN, B_iter Bj0, B_iter BjN) {
 void Kernel::P2M(C_iter C) {
   C->M = 0;
   for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {
-    vect dist = C->X - B->pos;
+    vect dist = B->pos - C->X;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalMultipole(rho,alpha,-beta);
@@ -158,7 +160,7 @@ void Kernel::P2M(C_iter C) {
 }
 
 void Kernel::M2M(C_iter CI, C_iter CJ) {
-  vect dist = CJ->X - CI->X;
+  vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
   evalMultipole(rho,alpha,-beta);
@@ -173,7 +175,7 @@ void Kernel::M2M(C_iter CI, C_iter CJ) {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += CJ->M[jnkms]*std::pow(I,m-abs(m))*Ynm[nm]*double(std::pow(-1,n)*anm[nm]*anm[jnkm]/anm[jk]);
+            M += CJ->M[jnkms]*std::pow(I,m-abs(m))*Ynm[nm]*double(ODDEVEN(n)*Anm[nm]*Anm[jnkm]/Anm[jk]);
           }
         }
         for( int m=k; m<=n; ++m ) {
@@ -181,7 +183,7 @@ void Kernel::M2M(C_iter CI, C_iter CJ) {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
-            M += std::conj(CJ->M[jnkms])*Ynm[nm]*double(std::pow(-1,k+n+m)*anm[nm]*anm[jnkm]/anm[jk]);
+            M += std::conj(CJ->M[jnkms])*Ynm[nm]*double(ODDEVEN(k+n+m)*Anm[nm]*Anm[jnkm]/Anm[jk]);
           }
         }
       }
@@ -206,14 +208,14 @@ void Kernel::M2L(C_iter CI, C_iter CJ) {
           const int nms  = n * (n + 1) / 2 - m;
           const int jknm = jk * P2 + nm;
           const int jnkm = (j + n) * (j + n) + j + n + m - k;
-          L += std::conj(CJ->M[nms])*Anm[jknm]*Ynm[jnkm];
+          L += std::conj(CJ->M[nms])*Cnm[jknm]*Ynm[jnkm];
         }
         for( int m=0; m<=n; ++m ) {
           const int nm   = n * n + n + m;
           const int nms  = n * (n + 1) / 2 + m;
           const int jknm = jk * P2 + nm;
           const int jnkm = (j + n) * (j + n) + j + n + m - k;
-          L += CJ->M[nms]*Anm[jknm]*Ynm[jnkm];
+          L += CJ->M[nms]*Cnm[jknm]*Ynm[jnkm];
         }
       }
       CI->L[jks] += L;
@@ -222,7 +224,7 @@ void Kernel::M2L(C_iter CI, C_iter CJ) {
 }
 
 void Kernel::L2L(C_iter CI, C_iter CJ) {
-  vect dist = CJ->X - CI->X;
+  vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
   evalMultipole(rho,alpha,beta);
@@ -236,14 +238,14 @@ void Kernel::L2L(C_iter CI, C_iter CJ) {
           const int jnkm = (n - j) * (n - j) + n - j + m - k;
           const int nm   = n * n + n - m;
           const int nms  = n * (n + 1) / 2 - m;
-          L += std::conj(CJ->L[nms])*Ynm[jnkm]*double(std::pow(-1.0,k)*anm[jnkm]*anm[jk]/anm[nm]);
+          L += std::conj(CJ->L[nms])*Ynm[jnkm]*double(ODDEVEN(k)*Anm[jnkm]*Anm[jk]/Anm[nm]);
         }
         for( int m=0; m<=n; ++m ) {
           if( n-j >= std::abs(m-k) ) {
             const int jnkm = (n - j) * (n - j) + n - j + m - k;
             const int nm   = n * n + n + m;
             const int nms  = n * (n + 1) / 2 + m;
-            L += CJ->L[nms]*std::pow(I,m-k-std::abs(m-k))*Ynm[jnkm]*double(anm[jnkm]*anm[jk]/anm[nm]);
+            L += CJ->L[nms]*std::pow(I,m-k-std::abs(m-k))*Ynm[jnkm]*double(Anm[jnkm]*Anm[jk]/Anm[nm]);
           }
         }
       }
@@ -254,7 +256,7 @@ void Kernel::L2L(C_iter CI, C_iter CJ) {
 
 void Kernel::L2P(C_iter C) {
   for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {
-    vect dist = C->X - B->pos;
+    vect dist = B->pos - C->X;
     real r, theta, phi;
     cart2sph(r,theta,phi,dist);
     evalMultipole(r,theta,phi);
@@ -288,4 +290,11 @@ void Kernel::M2P(C_iter CI, C_iter CJ) {
       }
     }
   }
+}
+
+void Kernel::finalize() {
+  delete[] prefactor;
+  delete[] Anm;
+  delete[] Ynm;
+  delete[] Cnm;
 }

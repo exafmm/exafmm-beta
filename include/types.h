@@ -53,11 +53,14 @@ struct JCell {                                                  // Source proper
   coef   M;                                                     // Multipole coefficients
 };
 struct Cell : JCell {                                           // All properties of a cell
+  typedef std::vector<Cell>           Cells;                    // Vector of cells
   int    NCHILD;                                                // Number of child cells
   int    NLEAF;                                                 // Number of leafs
   int    PARENT;                                                // Iterator offset of parent cell
   int    CHILD[8];                                              // Iterator offset of child cells
   B_iter LEAF;                                                  // Iterator of first leaf
+  Cells  M2L;                                                   // M2L interaction list
+  Cells  M2P;                                                   // M2P interaction list
   vect   X;                                                     // Cell center
   real   R;                                                     // Cell radius
   coef   L;                                                     // Local coefficients

@@ -6,7 +6,7 @@
 
 class Kernel {
 public:
-  void setup();
+  void initialize();
 
   void P2P(B_iter B0, B_iter BN);
 
@@ -23,6 +23,8 @@ public:
   void L2P(C_iter C);
 
   void M2P(C_iter CI, C_iter CJ);
+
+  void finalize();
 };
 
 #endif

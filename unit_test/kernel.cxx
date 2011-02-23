@@ -8,7 +8,7 @@ int main() {
   Cells  cells;
   cells.resize(4);
   Kernel K;
-  K.setup();
+  K.initialize();
 
   for( int it=0; it!=10; ++it ) {
     real dist = (1 << it) / 2;
@@ -70,4 +70,5 @@ int main() {
     }
     std::cout << dist << " " << std::sqrt(err/rel) << std::endl;
   }
+  K.finalize();
 }

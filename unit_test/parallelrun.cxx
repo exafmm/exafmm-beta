@@ -11,57 +11,52 @@ int main() {
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
-  LocalEssentialTree P;
+  LocalEssentialTree T;
   Kernel K;
   bool print(true);
-  if( P.commRank() != 0 ) print = false;
+  if( T.commRank() != 0 ) print = false;
   toc = get_time();
   if(print) std::cout << "Allocate      : " << toc-tic << std::endl;
 
   tic = get_time();
-  D.sphere(bodies,P.commRank()+1);
+  D.sphere(bodies,T.commRank()+1);
   toc = get_time();
   if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.setGlobDomain(bodies);
+  T.setGlobDomain(bodies);
   toc = get_time();
   if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.bisection(bodies);
+  T.bisection(bodies);
   toc = get_time();
   if(print) std::cout << "Partition     : " << toc-tic << std::endl;
 
 #ifdef TOPDOWN
-  P.topdown(bodies,cells,print);
+  T.topdown(bodies,cells,print);
 #else
-  P.bottomup(bodies,cells,print);
+  T.bottomup(bodies,cells,print);
 #endif
 
   tic = get_time();
-  P.setCI0(cells.begin());
-  P.setCJ0(cells.begin());
-  P.upward(cells);
-  toc = get_time();
-  if(print) std::cout << "Upward        : " << toc-tic << std::endl;
-
-  tic = get_time();
-  P.commBodies(cells);
+  T.setCI0(cells.begin());
+  T.setCJ0(cells.begin());
+  T.commBodies(cells);
   toc = get_time();
   if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
 
   tic = get_time();
   Bodies bodies2 = bodies;
   Cells jcells = cells;
-  P.commCells(bodies2,jcells);
-  P.setCI0(cells.begin());
-  P.setCJ0(jcells.begin());
+  T.commCells(bodies2,jcells);
+  T.setCI0(cells.begin());
+  T.setCJ0(jcells.begin());
   toc = get_time();
   if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
 
   tic = get_time();
-  P.downward(cells,jcells,1);
+  T.downward(cells,jcells,1);
   toc = get_time();
   if(print) std::cout << "Downward      : " << toc-tic << std::endl;
 
@@ -70,10 +65,10 @@ int main() {
   for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
     B->acc = B->pot = 0;
   }
-  for( int i=0; i!=P.commSize(); ++i ) {
-    P.shiftBodies(bodies);
+  for( int i=0; i!=T.commSize(); ++i ) {
+    T.shiftBodies(bodies);
     K.P2P(bodies2.begin(),bodies2.end(),bodies.begin(),bodies.end());
-    if(print) std::cout << "Direct loop   : " << i+1 << "/" << P.commSize() << std::endl;
+    if(print) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
   }
   toc = get_time();
   if(print) std::cout << "Direct sum    : " << toc-tic << std::endl;
@@ -90,12 +85,12 @@ int main() {
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
   }
-  int MPI_TYPE = P.getType(err);
+  int MPI_TYPE = T.getType(err);
   MPI_Reduce(&err,&err2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&rel,&rel2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   if(print) std::cout << "Error         : " << std::sqrt(err2/rel2) << std::endl;
 #ifdef DEBUG
-  P.print(std::sqrt(err/rel));
+  T.print(std::sqrt(err/rel));
 #endif
 
 #ifdef VTK
@@ -110,17 +105,17 @@ int main() {
 
   int Ncell(0);
   vtkPlot vtk;
-  if( P.commRank() == 0 ) {
-    vtk.setDomain(P.getR0(),P.getX0());
+  if( T.commRank() == 0 ) {
+    vtk.setDomain(T.getR0(),T.getX0());
     vtk.setGroupOfPoints(bodies,Ncell);
   }
-  for( int i=1; i!=P.commSize(); ++i ) {
-    P.shiftBodies(bodies);
-    if( P.commRank() == 0 ) {
+  for( int i=1; i!=T.commSize(); ++i ) {
+    T.shiftBodies(bodies);
+    if( T.commRank() == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
-  if( P.commRank() == 0 ) {
+  if( T.commRank() == 0 ) {
     vtk.plot(Ncell);
   }
 #endif

@@ -8,7 +8,7 @@ int main() {
   Bodies bodies(numBodies);
   Dataset D;
   Kernel K;
-  K.setup();
+  K.initialize();
   toc = get_time();
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
@@ -37,4 +37,5 @@ int main() {
   toc = get_time();
   std::cout << "Direct CPU    : " << toc-tic << std::endl;
   std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
+  K.finalize();
 }

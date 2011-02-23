@@ -41,11 +41,11 @@ shift: shift.cxx
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	mpirun -np 4 ./a.out
 
-nth_element: nth_element.cxx
+nth_element: nth_element.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	mpirun -np 7 ./a.out
 
-bisection: bisection.cxx
+bisection: bisection.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	mpirun -np 7 ./a.out
 
