@@ -120,30 +120,7 @@ void evalLocal(real rho, real alpha, real beta) {
   }
 }
 
-void Kernel::P2P(B_iter B0, B_iter BN) {
-  for( B_iter Bi=B0; Bi!=BN; ++Bi ) {
-    real pot = -Bi->scal / std::sqrt(EPS2);
-    for( B_iter Bj=B0; Bj!=BN; ++Bj ) {
-      vect dist = Bi->pos - Bj->pos;
-      real r = std::sqrt(norm(dist) + EPS2);
-      pot += Bj->scal / r;
-    }
-    Bi->pot = pot;
-  }
-}
-
-void Kernel::P2P(B_iter Bi0, B_iter BiN, B_iter Bj0, B_iter BjN) {
-  for( B_iter Bi=Bi0; Bi!=BiN; ++Bi ) {
-    for( B_iter Bj=Bj0; Bj!=BjN; ++Bj ) {
-      vect dist = Bi->pos - Bj->pos;
-      real r = std::sqrt(norm(dist) + EPS2);
-      Bi->pot += Bj->scal / r;
-    }
-  }
-}
-
 void Kernel::P2M(C_iter C) {
-  C->M = 0;
   for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {
     vect dist = B->pos - C->X;
     real rho, alpha, beta;
@@ -223,6 +200,35 @@ void Kernel::M2L(C_iter CI, C_iter CJ) {
   }
 }
 
+void Kernel::M2P(C_iter CI, C_iter CJ) {
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+    vect dist = B->pos - CJ->X;
+    real r, theta, phi;
+    cart2sph(r,theta,phi,dist);
+    evalLocal(r,theta,phi);
+    for( int n=0; n!=P; ++n ) {
+      int nm  = n * n + n;
+      int nms = n * (n + 1) / 2;
+      B->pot += (CJ->M[nms]*Ynm[nm]).real();
+      for( int m=1; m<=n; ++m ) {
+        nm  = n * n + n + m;
+        nms = n * (n + 1) / 2 + m;
+        B->pot += 2*(CJ->M[nms]*Ynm[nm]).real();
+      }
+    }
+  }
+}
+
+void Kernel::P2P(B_iter Bi0, B_iter BiN, B_iter Bj0, B_iter BjN) {
+  for( B_iter Bi=Bi0; Bi!=BiN; ++Bi ) {
+    for( B_iter Bj=Bj0; Bj!=BjN; ++Bj ) {
+      vect dist = Bi->pos - Bj->pos;
+      real r = std::sqrt(norm(dist) + EPS2);
+      Bi->pot += Bj->scal / r;
+    }
+  }
+}
+
 void Kernel::L2L(C_iter CI, C_iter CJ) {
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -268,25 +274,6 @@ void Kernel::L2P(C_iter C) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
         B->pot += 2*(C->L[nms]*Ynm[nm]).real();
-      }
-    }
-  }
-}
-
-void Kernel::M2P(C_iter CI, C_iter CJ) {
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
-    vect dist = B->pos - CJ->X;
-    real r, theta, phi;
-    cart2sph(r,theta,phi,dist);
-    evalLocal(r,theta,phi);
-    for( int n=0; n!=P; ++n ) {
-      int nm  = n * n + n;
-      int nms = n * (n + 1) / 2;
-      B->pot += (CJ->M[nms]*Ynm[nm]).real();
-      for( int m=1; m<=n; ++m ) {
-        nm  = n * n + n + m;
-        nms = n * (n + 1) / 2 + m;
-        B->pot += 2*(CJ->M[nms]*Ynm[nm]).real();
       }
     }
   }

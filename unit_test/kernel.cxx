@@ -1,14 +1,14 @@
-#include "kernel.h"
+#include "evaluator.h"
 
 int main() {
   int const numBodies(100);
   Bodies bodiesI(numBodies);
   Bodies bodiesI2(numBodies);
   Bodies bodiesJ(numBodies);
-  Cells  cells;
-  cells.resize(4);
-  Kernel K;
-  K.initialize();
+  Cells  icells;
+  Cells  jcells;
+  Evaluator E;
+  E.initialize();
 
   for( int it=0; it!=10; ++it ) {
     real dist = (1 << it) / 2;
@@ -25,41 +25,44 @@ int main() {
       B->scal = 1.0 / bodiesJ.size();
     }
 
-    C_iter C = cells.begin();
-    C->NLEAF = numBodies;
-    C->LEAF = bodiesJ.begin();
-    C->X = 0.5;
-    C->M = 0;
-    C++;
-    C->X = 1;
-    C->M = 0;
-    C++;
-    C->X = -1 - dist;
-    C->L = 0;
-    C++;
-    C->NLEAF = numBodies;
-    C->LEAF = bodiesI.begin();
-    C->X = -0.5 - dist;
-    C->L = 0;
-
-    C = cells.begin();
-    K.P2M(C);
-
-    K.M2M(C+1,C);
-
-    K.M2L(C+2,C+1);
-
-    K.L2L(C+3,C+2);
-
-    K.L2P(C+3);
-
-//    K.M2P(C+3,C+1);
+    Cell cell;
+    cell.NLEAF  = numBodies;
+    cell.LEAF   = bodiesJ.begin();
+    cell.X      = 0.5;
+    cell.M      = 0;
+    cell.PARENT = 1;
+    jcells.push_back(cell);
+    E.evalP2M(jcells);
+    cell.X      = 1;
+    cell.M      = 0;
+    jcells.push_back(cell);
+    E.evalM2M(jcells);
+    jcells.erase(jcells.begin());
+    cell.X      = -1 - dist;
+    cell.L      = 0;
+    icells.push_back(cell);
+    E.addM2L(jcells.begin());
+    E.evalM2L(icells);
+    cell.NLEAF  = numBodies;
+    cell.LEAF   = bodiesI.begin();
+    cell.X      = -0.5 - dist;
+    cell.L      = 0;
+    cell.NCHILD = 0;
+    cell.PARENT = 1;
+    icells.insert(icells.begin(),cell);
+    E.evalL2L(icells);
+    icells.pop_back();
+    E.evalL2P(icells);
+    E.addM2P(jcells.begin());
+//    E.evalM2P(icells);
+    icells.clear();
+    jcells.clear();
 
     bodiesI2 = bodiesI;
     for( B_iter B=bodiesI2.begin(); B!=bodiesI2.end(); ++B ) {
       B->pot = 0;
     }
-    K.P2P(bodiesI2.begin(),bodiesI2.end(),bodiesJ.begin(),bodiesJ.end());
+    E.evalP2P(bodiesI2,bodiesJ);
 
     B_iter B  = bodiesI.begin();
     B_iter B2 = bodiesI2.begin();
@@ -70,5 +73,5 @@ int main() {
     }
     std::cout << dist << " " << std::sqrt(err/rel) << std::endl;
   }
-  K.finalize();
+  E.finalize();
 }

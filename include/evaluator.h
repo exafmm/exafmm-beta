@@ -2,15 +2,14 @@
 #define evaluator_h
 #include "kernel.h"
 
-class Evaluator {
+class Evaluator : public Kernel {
 private:
   C_iter CI0;                                                   // icells.begin()
   C_iter CJ0;                                                   // jcells.begin()
   Lists  listM2L;                                               // M2L interaction list
   Lists  listM2P;                                               // M2P interaction list
   Lists  listP2P;                                               // P2P interaction list
-  Pairs  pairs;
-  Kernel K;
+  Pairs  pairs;                                                 // Stack of interacting cell pairs
 
   void tryM2L(C_iter CI, C_iter CJ) {                           // Interface for M2L kernel
     vect dist = CI->X - CJ->X;                                  // Distance vector between cells
@@ -77,9 +76,24 @@ private:
   }
 
 public:
-  void initialize() {
-    K.initialize();
+  void addM2L(C_iter CJ) {                                      // Add single list for kernel unit test
+    listM2L.resize(1);                                          // Resize vector of M2L interation lists
+    listM2L[0].push_back(CJ);                                   // Push single cell into list
   }
+
+  void addM2P(C_iter CJ) {                                      // Add single list for kernel unit test
+    listM2P.resize(1);                                          // Resize vector of M2P interation lists
+    listM2P[0].push_back(CJ);                                   // Push single cell into list
+  }
+
+  void evalP2P(Bodies &ibodies, Bodies &jbodies);               // Evaluate P2P kernel (all pairs)
+  void evalP2M(Cells &twigs);                                   // Evaluate P2M kernel
+  void evalM2M(Cells &cells);                                   // Evaluate M2M kernel
+  void evalM2L(Cells &cells);                                   // Evaluate M2L kernel
+  void evalM2P(Cells &cells);                                   // Evaluate M2P kernel
+  void evalP2P(Cells &cells);                                   // Evaluate P2P kernel (near field)
+  void evalL2L(Cells &cells);                                   // Evaluate L2L kernel
+  void evalL2P(Cells &cells);                                   // Evaluate L2P kernel
 
   void traverse(Cells &cells, Cells &jcells, int method) {      // Traverse tree to get interaction list
     C_iter root = cells.end()-1;                                // Iterator for root cell
@@ -101,64 +115,6 @@ public:
     }                                                           // End while loop for interaction stack
   }
 
-  void P2P(Cells &cells) {                                      // Evaluate P2P kernel
-    for( C_iter CI=cells.begin(); CI!=cells.end(); ++CI ) {     // Loop over cells
-      while( !listP2P[CI-CI0].empty() ) {                       //  While M2P interaction list is not empty
-        C_iter CJ = listP2P[CI-CI0].back();                     //   Set source cell iterator
-        K.P2P(CI->LEAF,CI->LEAF+CI->NLEAF,CJ->LEAF,CJ->LEAF+CJ->NLEAF);// Evaluate P2P kernel
-        listP2P[CI-CI0].pop_back();                             //   Pop last element from M2P interaction list
-      }                                                         //  End while for M2P interaction list
-    }                                                           // End loop over cells topdown
-  }
-
-  void P2M(Cells &twigs) {                                      // Evaluate P2M kernel
-    for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over twigs
-      C->M = C->L = 0;                                          //  Initialize multipole/local coefficients
-      K.P2M(C);                                                 //  Evaluate P2M kernel
-    }                                                           // End loop over cells
-  }
-
-  void M2M(Cells &cells) {                                      // Evaluate M2M kernel
-    for( C_iter C=cells.begin(); C!=cells.end()-1; ++C ) {      // Loop over cells bottomup (except root cell)
-      K.M2M(cells.begin()+C->PARENT,C);                         //  Evaluate M2M kernel
-    }                                                           // End loop over cells
-  }
-
-  void M2L(Cells &cells) {                                      // Evaluate M2L kernel
-    for( C_iter CI=cells.begin(); CI!=cells.end(); ++CI ) {     // Loop over cells
-      while( !listM2L[CI-CI0].empty() ) {                       //  While M2L interaction list is not empty
-        C_iter CJ = listM2L[CI-CI0].back();                     //   Set source cell iterator
-        K.M2L(CI,CJ);                                           //   Evaluate M2L kernel
-        listM2L[CI-CI0].pop_back();                             //   Pop last element from M2L interaction list
-      }                                                         //  End while for M2L interaction list
-    }                                                           // End loop over cells topdown
-  }
-
-  void L2L(Cells &cells) {                                      // Evaluate L2L kernel
-    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {    // Loop over cells topdown (except root cell)
-      K.L2L(C,CI0+C->PARENT);                                   //  Evaluate L2L kernel
-    }                                                           // End loop over cells topdown
-  }
-
-  void L2P(Cells &cells) {                                      // Evaluate L2P kernel
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
-      if( C->NCHILD == 0 ) K.L2P(C);                            //  If cell is a twig evaluate L2P kernel
-    }                                                           // End loop over cells topdown
-  }
-
-  void M2P(Cells &cells) {                                      // Evaluate M2P kernel
-    for( C_iter CI=cells.begin(); CI!=cells.end(); ++CI ) {     // Loop over cells
-      while( !listM2P[CI-CI0].empty() ) {                       //  While M2P interaction list is not empty
-        C_iter CJ = listM2P[CI-CI0].back();                     //   Set source cell iterator
-        K.M2P(CI,CJ);                                           //   Evaluate M2P kernel
-        listM2P[CI-CI0].pop_back();                             //   Pop last element from M2P interaction list
-      }                                                         //  End while for M2P interaction list
-    }                                                           // End loop over cells topdown
-  }
-
-  void finalize() {
-    K.finalize();
-  }
 };
 
 #endif

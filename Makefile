@@ -7,7 +7,7 @@ NVCC    = nvcc --ptxas-options=-v -O3 -use_fast_math\
 	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(SDK_INSTALL_PATH)/common/inc
 LFLAGS  = -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil -lstdc++ -ldl -lm
 VFLAGS  = -lvtkHybridTCL -lvtkWidgetsTCL -DVTK
-KERNEL  = ../kernel/spherical_cpu.o
+KERNEL  = ../kernel/cpuSphericalKernel.o ../kernel/cpuEvaluator.o
 
 .cxx.o  :
 	$(CXX) -c $? $(OFLAGS) -o $@

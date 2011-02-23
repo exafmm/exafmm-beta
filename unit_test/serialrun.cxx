@@ -38,9 +38,12 @@ int main() {
   std::cout << "Downward      : " << toc-tic << std::endl;
 
   tic = get_time();
-  Kernel K;
+  Evaluator E;
   T.buffer = bodies;
-  K.P2P(T.buffer.begin(),T.buffer.end());
+  for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
+    B->pot = -B->scal / std::sqrt(EPS2);
+  }
+  E.evalP2P(T.buffer,T.buffer);
   toc = get_time();
   std::cout << "Direct sum    : " << toc-tic << std::endl;
 
@@ -48,7 +51,7 @@ int main() {
   B_iter B2 = T.buffer.begin();
   real err(0),rel(0);
   for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
-    B->pot -= B->scal / std::sqrt(EPS2);
+    B->pot  -= B->scal / std::sqrt(EPS2);
 #ifdef DEBUG
     std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
 #endif

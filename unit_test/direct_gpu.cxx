@@ -1,5 +1,5 @@
 #include "dataset.h"
-#include "kernel.h"
+#include "evaluator.h"
 
 int main() {
   double tic,toc;
@@ -7,8 +7,8 @@ int main() {
   tic = get_time();
   Bodies bodies(numBodies);
   Dataset D;
-  Kernel K;
-  K.initialize();
+  Evaluator E;
+  E.initialize();
   toc = get_time();
   std::cout << "Allocate      : " << toc-tic << std::endl;
 
@@ -18,7 +18,7 @@ int main() {
   std::cout << "Set bodies    : " << toc-tic << std::endl;
 
   tic = get_time();
-  K.P2P(bodies.begin(),bodies.end());
+  E.evalP2P(bodies,bodies);
   toc = get_time();
   std::cout << "Direct GPU    : " << toc-tic << std::endl;
 
@@ -26,6 +26,7 @@ int main() {
   real err(0),rel(0);
   for( B_iter Bi=bodies.begin(); Bi!=bodies.end(); ++Bi ) {
     real pot = -Bi->scal / std::sqrt(EPS2);
+    Bi->pot -= Bi->scal / std::sqrt(EPS2);
     for( B_iter Bj=bodies.begin(); Bj!=bodies.end(); ++Bj ) {
       vect dist = Bi->pos - Bj->pos;
       real r = std::sqrt(norm(dist) + EPS2);
@@ -37,5 +38,5 @@ int main() {
   toc = get_time();
   std::cout << "Direct CPU    : " << toc-tic << std::endl;
   std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
-  K.finalize();
+  E.finalize();
 }

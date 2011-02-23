@@ -50,7 +50,8 @@ private:
     Cells parents;                                              // Parent cell vector;
     int oldend = end;                                           // Save old end counter
     parent.I = getParent(cells[begin].I);                       // Set cell index
-    parent.M = parent.NLEAF = parent.NCHILD = 0;                // Initialize multipole, NLEAF & NCHILD
+    parent.M = parent.L = 0;                                    // Initlalize multipole & local coefficients
+    parent.NLEAF = parent.NCHILD = 0;                           // Initialize NLEAF & NCHILD
     parent.LEAF = cells[begin].LEAF;                            // Set pointer to first leaf
     getCenter(parent);                                          // Set cell center and radius
     for( int i=begin; i!=oldend; ++i ) {                        // Loop over cells at this level
@@ -58,7 +59,8 @@ private:
         cells.push_back(parent);                                //   Push cells into vector
         end++;                                                  //   Increment cell counter
         parent.I = getParent(cells[i].I);                       //   Set cell index
-        parent.M = parent.NLEAF = parent.NCHILD = 0;            //   Initialize multipole, NLEAF & NCHILD
+        parent.M = parent.L = 0;                                //   Initialize multipole & local coefficients
+        parent.NLEAF = parent.NCHILD = 0;                       //   Initialize NLEAF & NCHILD
         parent.LEAF = cells[i].LEAF;                            //   Set pointer to first leaf
         getCenter(parent);                                      //   Set cell center and radius
       }                                                         //  Endif for new parent cell
@@ -137,7 +139,7 @@ protected:
     cell.LEAF = firstLeaf;                                      // Set pointer to first leaf
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
-    E.P2M(twigs);                                               // Evaluate P2M kernel
+    E.evalP2M(twigs);                                           // Evaluate P2M kernel
   }
 
   void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) { // Link twigs bottomup to create all cells in tree
@@ -160,7 +162,7 @@ protected:
       linkParent(cells,begin,end);                              //  Form parent-child mutual link
     }                                                           // End loop over levels
     unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
-    E.M2M(cells);                                               // Evaluate M2M kernel
+    E.evalM2M(cells);                                           // Evaluate M2M kernel
   }
 
 public:
@@ -196,11 +198,11 @@ public:
 
   void downward(Cells &cells, Cells &jcells, int method) {      // Downward phase for different source/target
     E.traverse(cells,jcells,method);                            // Traverse tree to get interaction list
-    E.M2L(cells);                                               // Evaluate M2L kernel
-    E.M2P(cells);                                               // Evaluate M2P kernel
-    E.P2P(cells);                                               // Evaluate P2P kernel
-    E.L2L(cells);                                               // Evaluate L2L kernel
-    E.L2P(cells);                                               // Evaluate L2P kernel
+    E.evalM2L(cells);                                           // Evaluate M2L kernel
+    E.evalM2P(cells);                                           // Evaluate M2P kernel
+    E.evalP2P(cells);                                           // Evaluate P2P kernel
+    E.evalL2L(cells);                                           // Evaluate L2L kernel
+    E.evalL2P(cells);                                           // Evaluate L2P kernel
   }
 
 };

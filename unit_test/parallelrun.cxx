@@ -12,7 +12,7 @@ int main() {
   Cells cells;
   Dataset D;
   LocalEssentialTree T;
-  Kernel K;
+  Evaluator E;
   bool print(true);
   if( T.commRank() != 0 ) print = false;
   toc = get_time();
@@ -59,11 +59,11 @@ int main() {
   tic = get_time();
   bodies2 = bodies;
   for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
-    B->acc = B->pot = 0;
+    B->pot = -B->scal / std::sqrt(EPS2);
   }
   for( int i=0; i!=T.commSize(); ++i ) {
     T.shiftBodies(bodies);
-    K.P2P(bodies2.begin(),bodies2.end(),bodies.begin(),bodies.end());
+    E.evalP2P(bodies2,bodies);
     if(print) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
   }
   toc = get_time();
@@ -74,7 +74,6 @@ int main() {
   real err(0),rel(0),err2,rel2;
   for( int i=0; i!=int(bodies.size()); ++i,++B,++B2 ) {
     B->pot  -= B->scal  / std::sqrt(EPS2);
-    B2->pot -= B2->scal / std::sqrt(EPS2);
 #ifdef DEBUG
     if(MPIRANK==0) std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
 #endif

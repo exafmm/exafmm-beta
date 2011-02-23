@@ -1,6 +1,6 @@
 include ../Makefile
 
-index: index.cxx
+index: index.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	./a.out
 
@@ -28,7 +28,7 @@ taylor: taylor.cxx
 	@$(CXX) $? $(LFLAGS)
 	./a.out
 
-vtk: vtk.cxx
+vtk: vtk.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	./a.out
 
@@ -37,7 +37,7 @@ mpi: mpi.cxx
 	mpirun -np 128 ./a.out
 	gprof -b a.out gmon.out
 
-shift: shift.cxx
+shift: shift.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	mpirun -np 4 ./a.out
 
