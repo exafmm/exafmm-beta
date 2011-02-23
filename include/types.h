@@ -22,18 +22,17 @@ typedef long                 bigint;                            // Big integer t
 typedef float                real;                              // Real number type
 typedef std::complex<double> complex;                           // Complex number type
 
-int  const P     = 3;                                           // Order of expansions
-//int  const NCOEF = P*(P+1)*(P+2)/6;                             // Number of coefficients for Taylor expansion
-int  const NCOEF = P*(P+1)/2;                                   // Number of coefficients for spherical harmonics
-int  const NCRIT = 100;                                         // Number of bodies per cell
-real const THETA = 0.5;                                         // Box opening criteria
-real const EPS2  = 1e-4;                                        // Softening parameter
+const int  P     = 3;                                           // Order of expansions
+//const int  NCOEF = P*(P+1)*(P+2)/6;                             // Number of coefficients for Taylor expansion
+const int  NCOEF = P*(P+1)/2;                                   // Number of coefficients for spherical harmonics
+const int  NCRIT = 100;                                         // Number of bodies per cell
+const real THETA = 0.5;                                         // Box opening criteria
+const real EPS2  = 1e-4;                                        // Softening parameter
 
 typedef vec<3,real>                   vect;                     // 3-D vector type
 //typedef vec<NCOEF,real>               coef;                     // Multipole coefficient type for Taylor expansion
 typedef vec<NCOEF,complex>            coef;                     // Multipole coefficient type for spherical harmonics
 typedef std::vector<bigint>           Bigints;                  // Vector of big integer types
-typedef std::vector<bigint>::iterator BI_iter;                  // Vector of big integer types
 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   bigint I;                                                     // Cell index

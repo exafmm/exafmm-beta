@@ -5,24 +5,29 @@
 #undef KERNEL
 
 class Kernel {
+protected:
+  B_iter BI0;
+  B_iter BIN;
+  B_iter BJ0;
+  B_iter BJN;
+  C_iter CI;
+  C_iter CJ;
 public:
   void initialize();
 
-  void P2P(B_iter B0, B_iter BN);
+  void P2M();
 
-  void P2P(B_iter Bi0, B_iter BiN, B_iter Bj0, B_iter BjN);
+  void M2M();
 
-  void P2M(C_iter C);
+  void M2L();
 
-  void M2M(C_iter CI, C_iter CJ);
+  void M2P();
 
-  void M2L(C_iter CI, C_iter CJ);
+  void P2P();
 
-  void L2L(C_iter CI, C_iter CJ);
+  void L2L();
 
-  void L2P(C_iter C);
-
-  void M2P(C_iter CI, C_iter CJ);
+  void L2P();
 
   void finalize();
 };

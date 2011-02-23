@@ -1,9 +1,9 @@
 #include "kernel.h"
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
-int  const P2 = P * P;
-int  const P4 = P2 * P2;
-real const EPS = 1e-6;
+const int  P2 = P * P;
+const int  P4 = P2 * P2;
+const real EPS = 1e-6;
 double *prefactor, *Anm;
 complex *Ynm, *Cnm, I(0.0,1.0);
 
@@ -120,9 +120,9 @@ void evalLocal(real rho, real alpha, real beta) {
   }
 }
 
-void Kernel::P2M(C_iter C) {
-  for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {
-    vect dist = B->pos - C->X;
+void Kernel::P2M() {
+  for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
+    vect dist = B->pos - CJ->X;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalMultipole(rho,alpha,-beta);
@@ -130,13 +130,13 @@ void Kernel::P2M(C_iter C) {
       for( int m=0; m<=n; ++m ) {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
-        C->M[nms] += double(B->scal)*Ynm[nm];
+        CJ->M[nms] += double(B->scal)*Ynm[nm];
       }
     }
   }
 }
 
-void Kernel::M2M(C_iter CI, C_iter CJ) {
+void Kernel::M2M() {
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -169,7 +169,7 @@ void Kernel::M2M(C_iter CI, C_iter CJ) {
   }
 }
 
-void Kernel::M2L(C_iter CI, C_iter CJ) {
+void Kernel::M2L() {
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -200,7 +200,7 @@ void Kernel::M2L(C_iter CI, C_iter CJ) {
   }
 }
 
-void Kernel::M2P(C_iter CI, C_iter CJ) {
+void Kernel::M2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->pos - CJ->X;
     real r, theta, phi;
@@ -219,17 +219,17 @@ void Kernel::M2P(C_iter CI, C_iter CJ) {
   }
 }
 
-void Kernel::P2P(B_iter Bi0, B_iter BiN, B_iter Bj0, B_iter BjN) {
-  for( B_iter Bi=Bi0; Bi!=BiN; ++Bi ) {
-    for( B_iter Bj=Bj0; Bj!=BjN; ++Bj ) {
-      vect dist = Bi->pos - Bj->pos;
+void Kernel::P2P() {
+  for( B_iter BI=BI0; BI!=BIN; ++BI ) {
+    for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {
+      vect dist = BI->pos - BJ->pos;
       real r = std::sqrt(norm(dist) + EPS2);
-      Bi->pot += Bj->scal / r;
+      BI->pot += BJ->scal / r;
     }
   }
 }
 
-void Kernel::L2L(C_iter CI, C_iter CJ) {
+void Kernel::L2L() {
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -260,20 +260,20 @@ void Kernel::L2L(C_iter CI, C_iter CJ) {
   }
 }
 
-void Kernel::L2P(C_iter C) {
-  for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {
-    vect dist = B->pos - C->X;
+void Kernel::L2P() {
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+    vect dist = B->pos - CI->X;
     real r, theta, phi;
     cart2sph(r,theta,phi,dist);
     evalMultipole(r,theta,phi);
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
-      B->pot += (C->L[nms]*Ynm[nm]).real();
+      B->pot += (CI->L[nms]*Ynm[nm]).real();
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
-        B->pot += 2*(C->L[nms]*Ynm[nm]).real();
+        B->pot += 2*(CI->L[nms]*Ynm[nm]).real();
       }
     }
   }

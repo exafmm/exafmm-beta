@@ -14,11 +14,9 @@ private:
     vect X;                                                     // Node center
     real R;                                                     // Node radius
   };
-  typedef std::vector<Node>           Nodes;                    // Vector of nodes
-  typedef std::vector<Node>::iterator N_iter;                   // Iterator for node vectors
-  Nodes nodes;                                                  // Nodes in the tree
+  std::vector<Node> nodes;                                      // Nodes in the tree
 
-  int getOctant(vect const pos, int i) {                        // Calculate octant from position
+  int getOctant(const vect pos, int i) {                        // Calculate octant from position
     int octant = 0;                                             // Initialize octant
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       octant += (pos[d] > nodes[i].X[d]) << d;                  //  interleave bits and accumulate octant
@@ -26,7 +24,7 @@ private:
     return octant;                                              // Return octant
   }
 
-  void addChild(int const octant, int i) {                      // Add child node and link it
+  void addChild(const int octant, int i) {                      // Add child node and link it
     bigint pOff = ((1 << 3* nodes[i].LEVEL   ) - 1) / 7;        // Parent cell index offset
     bigint cOff = ((1 << 3*(nodes[i].LEVEL+1)) - 1) / 7;        // Current cell index offset
     vect x = nodes[i].X;                                        // Initialize new center position with old center
@@ -64,7 +62,7 @@ private:
     }                                                           // End loop over leafs
   }
 
-  void traverse(N_iter N) {                                     // Traverse tree
+  void traverse(std::vector<Node>::iterator N) {                // Traverse tree
     if( N->NLEAF >= NCRIT ) {                                   // If node has children
       for( int i=0; i!=8; ++i ) {                               // Loop over children
         if( N->ICHILD & (1 << i) ) {                            //  If child exists in this octant
@@ -114,7 +112,7 @@ public:
 class BottomUp : virtual public TreeStructure {                 // Bottomup tree constructor
 protected:
   int getMaxLevel(Bodies &bodies) {                             // Max level for bottom up tree build
-    int const N = bodies.size() * MPISIZE;                      // Number of bodies
+    const int N = bodies.size() * MPISIZE;                      // Number of bodies
     int level;                                                  // Max level
     level = N >= NCRIT ? 1 + int(log(N / NCRIT)/M_LN2/3) : 0;   // Decide max level from N/Ncrit
     return level;                                               // Return max level

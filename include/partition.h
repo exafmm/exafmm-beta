@@ -35,7 +35,7 @@ private:
     int maxBucket = send.size();                                // Maximum number of buckets
     int numBucket;                                              // Number of buckets
     int numSample = std::min(maxBucket/SIZES,numData);          // Number of local samples
-    int const MPI_TYPE = getType(data[0].I);                    // Get MPI data type
+    const int MPI_TYPE = getType(data[0].I);                    // Get MPI data type
     int *rcnt = new int [SIZES];                                // MPI recv count
     int *rdsp = new int [SIZES];                                // MPI recv displacement
     for( int i=0; i!=numSample; ++i ) {                         // Loop over local samples
@@ -102,7 +102,7 @@ protected:
   }
 
   void bisectionAlltoall(Bodies &bodies, int nthLocal, int numLocal, int &newSize) {// One-to-one MPI_Alltoallv
-    int const bytes = sizeof(bodies[0]);                        // Byte size of body structure
+    const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
     int scnt[2] = {nthLocal, numLocal - nthLocal};              // Set send count to right and left size
     int rcnt[2] = {0, 0};                                       // Initialize recv count
     MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM[2]);    // Communicate the send count to get recv count
@@ -127,7 +127,7 @@ protected:
   }
 
   void bisectionScatter(Bodies &bodies, int nthLocal, int &newSize) {// Scattering from leftover proc
-    int const bytes = sizeof(bodies[0]);                        // Byte size of body structure
+    const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
     int numScatter = nprocs[1] - 1;                             // Number of processes to scatter to
     int oldSize = newSize;                                      // Size of recv buffer before communication
     int *scnt = new int [nprocs[1]];                            // Send count
@@ -166,7 +166,7 @@ protected:
   }
 
   void bisectionGather(Bodies &bodies, int nthLocal, int numLocal, int &newSize) {// Gathering to leftover proc
-    int const bytes = sizeof(bodies[0]);                        // Byte size of body structure
+    const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
     int numGather = nprocs[0] - 1;                              // Number of processes to gather to
     int oldSize = newSize;                                      // Size of recv buffer before communication
     int scnt;                                                   // Send count
@@ -215,7 +215,7 @@ public:
     numCells1D = 1 << getMaxLevel(bodies);                      // Set initial number of bodies
     B_iter B = bodies.begin();                                  // Reset body iterator
     XMIN[0] = XMAX[0] = B->pos;                                 // Initialize xmin,xmax
-    int const MPI_TYPE = getType(XMIN[0][0]);                   // Get MPI data type
+    const int MPI_TYPE = getType(XMIN[0][0]);                   // Get MPI data type
     for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
         if     (B->pos[d] < XMIN[0][d]) XMIN[0][d] = B->pos[d]; //   Determine xmin
@@ -255,9 +255,9 @@ public:
   void shiftBodies(Bodies &bodies) {                            // Send bodies to next rank (wrap around)
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
-    int const bytes = sizeof(bodies[0]);                        // Byte size of body structure
-    int const isend = (RANK + 1       ) % SIZE;                 // Send to next rank (wrap around)
-    int const irecv = (RANK - 1 + SIZE) % SIZE;                 // Receive from previous rank (wrap around)
+    const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
+    const int isend = (RANK + 1       ) % SIZE;                 // Send to next rank (wrap around)
+    const int irecv = (RANK - 1 + SIZE) % SIZE;                 // Receive from previous rank (wrap around)
     MPI_Request sreq,rreq;                                      // Send, recv request handles
 
     MPI_Isend(&oldSize,1,MPI_INT,irecv,0,MPI_COMM_WORLD,&sreq); // Send current number of bodies
@@ -286,7 +286,7 @@ public:
     int maxBucket = 1000;                                       // Maximum number of buckets
     int numBucket;                                              // Number of buckets
     int lOffset = 0;                                            // Local offset of region being considered
-    int const MPI_TYPE = getType(n);                            // Get MPI data type
+    const int MPI_TYPE = getType(n);                            // Get MPI data type
     int *rcnt = new int [SIZES];                                // MPI recv count
     Bigints send(maxBucket);                                    // MPI send buffer for data
     Bigints recv(maxBucket);                                    // MPI recv buffer for data
@@ -338,7 +338,7 @@ public:
   }
 
   void bisection(Bodies &bodies) {                              // Partitioning by recursive bisection
-    int const MPI_TYPE = getType(bodies[0].I);                  // Get MPI data type
+    const int MPI_TYPE = getType(bodies[0].I);                  // Get MPI data type
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
      color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators

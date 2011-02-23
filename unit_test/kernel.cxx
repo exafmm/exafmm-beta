@@ -1,7 +1,7 @@
 #include "evaluator.h"
 
 int main() {
-  int const numBodies(100);
+  const int numBodies(100);
   Bodies bodiesI(numBodies);
   Bodies bodiesI2(numBodies);
   Bodies bodiesJ(numBodies);

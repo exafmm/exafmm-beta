@@ -3,7 +3,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(10000);
+  const int numBodies(10000);
   tic = get_time();
   Bodies bodies(numBodies);
   Dataset D;
@@ -24,15 +24,15 @@ int main() {
 
   tic = get_time();
   real err(0),rel(0);
-  for( B_iter Bi=bodies.begin(); Bi!=bodies.end(); ++Bi ) {
-    real pot = -Bi->scal / std::sqrt(EPS2);
-    Bi->pot -= Bi->scal / std::sqrt(EPS2);
-    for( B_iter Bj=bodies.begin(); Bj!=bodies.end(); ++Bj ) {
-      vect dist = Bi->pos - Bj->pos;
+  for( B_iter BI=bodies.begin(); BI!=bodies.end(); ++BI ) {
+    real pot = -BI->scal / std::sqrt(EPS2);
+    BI->pot -= BI->scal / std::sqrt(EPS2);
+    for( B_iter BJ=bodies.begin(); BJ!=bodies.end(); ++BJ ) {
+      vect dist = BI->pos - BJ->pos;
       real r = std::sqrt(norm(dist) + EPS2);
-      pot += Bj->scal / r;
+      pot += BJ->scal / r;
     }
-    err += (Bi->pot - pot) * (Bi->pot - pot);
+    err += (BI->pot - pot) * (BI->pot - pot);
     rel += pot * pot;
   }
   toc = get_time();

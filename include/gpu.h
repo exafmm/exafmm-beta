@@ -2,8 +2,8 @@
 #define gpu_h
 #include <sys/time.h>
 
-int const GPUS(4);                                              // Number of GPUs per node
-int const THREADS(256);                                         // Number of threads per thread-block
+const int GPUS(4);                                              // Number of GPUs per node
+const int THREADS(256);                                         // Number of threads per thread-block
 
 int hostConstant[4];                                            // Constants on host
 __device__ __constant__ int deviceConstant[4];                  // Constants on device

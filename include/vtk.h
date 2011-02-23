@@ -20,7 +20,7 @@
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 #include "types.h"
-int const maxGroups = 1000000;
+const int maxGroups = 1000000;
 
 class vtkSliderCallback : public vtkCommand
 {
@@ -46,7 +46,7 @@ class vtkPlot {
   vtkPoints *points[maxGroups];
   vtkPoints *hexPoints;
 public:
-  void setDomain(real const r0, vect const x0) {
+  void setDomain(const real r0, const vect x0) {
     hexPoints = vtkPoints::New();
     hexPoints->SetNumberOfPoints(8);
     hexPoints->SetPoint(0, x0[0]-r0, x0[1]-r0, x0[2]-r0);
@@ -59,13 +59,13 @@ public:
     hexPoints->SetPoint(7, x0[0]-r0, x0[1]+r0, x0[2]+r0);
   }
 
-  void setGroup(int const Igroup, int const Npoints) {
+  void setGroup(const int Igroup, const int Npoints) {
     I[Igroup] = 0;
     points[Igroup] = vtkPoints::New();
     points[Igroup]->SetNumberOfPoints(Npoints);
   }
 
-  void setPoints(int const Igroup, vect const pos) {
+  void setPoints(const int Igroup, const vect pos) {
     points[Igroup]->SetPoint(I[Igroup],pos[0],pos[1],pos[2]);
     I[Igroup]++;
   }
@@ -95,7 +95,7 @@ public:
     assert(Ncell < maxGroups);
   }
 
-  void plot(int const Ngroup) {
+  void plot(const int Ngroup) {
     //Create a polygon object for points
     vtkPolyData *polydata = vtkPolyData::New();
     polydata->SetPoints(points[0]);

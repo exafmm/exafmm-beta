@@ -7,7 +7,7 @@
 
 int main() {
   double tic,toc;
-  int const numBodies(1000000);
+  const int numBodies(1000000);
   tic = get_time();
   Bodies bodies(numBodies);
   Dataset D;

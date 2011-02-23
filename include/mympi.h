@@ -6,7 +6,7 @@
 
 class MyMPI {                                                   // My own MPI utilities
 protected:
-  int const WAIT;                                               // Waiting time between output of different ranks
+  const int WAIT;                                               // Waiting time between output of different ranks
   int       SIZE;                                               // Number of MPI processes
   int       RANK;                                               // Index of current MPI process
   int       SIZES;                                              // Number of MPI processes for split communicator
@@ -29,7 +29,7 @@ public:
   int commSize() { return SIZE; }                               // Number of MPI processes
   int commRank() { return RANK; }                               // Index of current MPI process
 
-  bool isPowerOfTwo(int const n) {                              // If n is power of two return true
+  bool isPowerOfTwo(const int n) {                              // If n is power of two return true
     return ((n != 0) && !(n & (n - 1)));                        // Decrement and compare bits
   }
 
@@ -92,14 +92,14 @@ public:
   }
 
   template<typename T>
-  void print(T data, int const irank) {                         // Print a scalar value on irank
+  void print(T data, const int irank) {                         // Print a scalar value on irank
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
     if( RANK == irank ) std::cout << data;                      // If it's my rank print "data"
   }
 
   template<typename T>
-  void print(T *data, int const begin, int const end) {         // Print a vector value on all ranks
+  void print(T *data, const int begin, const int end) {         // Print a vector value on all ranks
     for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over ranks
       MPI_Barrier(MPI_COMM_WORLD);                              //  Sync processes
       usleep(WAIT);                                             //  Wait "WAIT" milliseconds
@@ -114,7 +114,7 @@ public:
   }
 
   template<typename T>
-  void print(T *data, int const begin, int const end, int const irank) {// Print a vector value on irank
+  void print(T *data, const int begin, const int end, const int irank) {// Print a vector value on irank
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
     if( RANK == irank ) {                                       // If it's my rank

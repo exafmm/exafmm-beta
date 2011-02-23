@@ -75,7 +75,7 @@ private:
   }
 
   void commCellsAlltoall() {                                    // Communicate cells by one-to-one MPI_Alltoallv
-    int const bytes = sizeof(sendCells[0]);                     // Byte size of JCell structure
+    const int bytes = sizeof(sendCells[0]);                     // Byte size of JCell structure
     int rcnt[2], scnt[2] = {0, 0};                              // Recv count, send count
     scnt[1-key[2]] = sendCells.size()*bytes;                    // Set send count to size of send buffer * bytes
     MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM[2]);    // Communicate the send count to get recv count
@@ -90,7 +90,7 @@ private:
   }
 
   void commCellsScatter() {                                     // Communicate cells by scattering from leftover proc
-    int const bytes = sizeof(sendCells[0]);                     // Byte size of JCell structure
+    const int bytes = sizeof(sendCells[0]);                     // Byte size of JCell structure
     int numScatter = nprocs[1] - 1;                             // Number of processes to scatter to
     int oldSize = recvCells.size();                             // Size of recv buffer before communication
     int *scnt = new int [nprocs[1]];                            // Send count

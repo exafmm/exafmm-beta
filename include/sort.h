@@ -77,9 +77,9 @@ private:
 public:
   template<typename T>
   void sort(T &value, T &vbuffer, bool ascend=true, int begin=0, int end=0) {// Interface for bucket sort
-    int const N = value.size();                                 // Set size of sort vector
+    const int N = value.size();                                 // Set size of sort vector
     if( N == 0 ) return;                                        // Don't do anything if vector is empty
-    int const threshold = 100000000;                            // If index is too large use sortLarge()
+    const int threshold = 100000000;                            // If index is too large use sortLarge()
     int numBucket = 0;                                          // Initialize bucket size
     if( end == 0 ) end = N;                                     // Default range is the whole vector
     typename T::iterator V0 = value.begin()+begin;              // Get begin iterator

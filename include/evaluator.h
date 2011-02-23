@@ -11,79 +11,79 @@ private:
   Lists  listP2P;                                               // P2P interaction list
   Pairs  pairs;                                                 // Stack of interacting cell pairs
 
-  void tryM2L(C_iter CI, C_iter CJ) {                           // Interface for M2L kernel
-    vect dist = CI->X - CJ->X;                                  // Distance vector between cells
+  void tryM2L(C_iter Ci, C_iter Cj) {                           // Interface for M2L kernel
+    vect dist = Ci->X - Cj->X;                                  // Distance vector between cells
     real R = std::sqrt(norm(dist));                             // Distance between cells
-    if( CI->R + CJ->R > THETA*R ) {                             // If cell is too large
-      Pair pair(CI,CJ);                                         //  Form pair of interacting cells
+    if( Ci->R + Cj->R > THETA*R ) {                             // If cell is too large
+      Pair pair(Ci,Cj);                                         //  Form pair of interacting cells
       pairs.push(pair);                                         //  Push interacting pair into stack
     } else {                                                    // If cell is small enough
-      listM2L[CI-CI0].push_back(CJ);                            // Push source cell into M2L interaction list
+      listM2L[Ci-CI0].push_back(Cj);                            // Push source cell into M2L interaction list
     }                                                           // Endif for interaction
   }
 
-  void tryM2P(C_iter CI, C_iter CJ) {                           // Interface for M2P kernel
-    vect dist = CI->X - CJ->X;                                  // Distance vector between cells
+  void tryM2P(C_iter Ci, C_iter Cj) {                           // Interface for M2P kernel
+    vect dist = Ci->X - Cj->X;                                  // Distance vector between cells
     real R = std::sqrt(norm(dist));                             // Distance between cells
-    if( CI->NCHILD != 0 || CI->R + CJ->R > THETA*R ) {          // If target is not twig or cell is too large
-      Pair pair(CI,CJ);                                         //  Form pair of interacting cells
+    if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {          // If target is not twig or cell is too large
+      Pair pair(Ci,Cj);                                         //  Form pair of interacting cells
       pairs.push(pair);                                         //  Push interacting pair into stack
     } else {                                                    // If target is twig and cell is small enough
-      listM2P[CI-CI0].push_back(CJ);                            // Push source cell into M2P interaction list
+      listM2P[Ci-CI0].push_back(Cj);                            // Push source cell into M2P interaction list
     }                                                           // Endif for interaction
   }
 
-  void treecode(C_iter CI, C_iter CJ) {                         // Tree walk for treecode
-    if( CI->NCHILD == 0 && CJ->NCHILD == 0) {                   // If both cells are twigs
-      if( CJ->NLEAF != 0 ) {                                    // If the twig has leafs
-        listP2P[CI-CI0].push_back(CJ);                          // Push source cell into P2P interaction list
+  void treecode(C_iter Ci, C_iter Cj) {                         // Tree walk for treecode
+    if( Ci->NCHILD == 0 && Cj->NCHILD == 0) {                   // If both cells are twigs
+      if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
+        listP2P[Ci-CI0].push_back(Cj);                          // Push source cell into P2P interaction list
       } else {                                                  // If the twig has no leafs
 #ifdef DEBUG
-        std::cout << "CJ->I=" << CJ->I << " has no leaf. Doing M2P instead." << std::endl;
+        std::cout << "Cj->I=" << Cj->I << " has no leaf. Doing M2P instead." << std::endl;
 #endif
-        listM2P[CI-CI0].push_back(CJ);                          // Push source cell into M2P interaction list
+        listM2P[Ci-CI0].push_back(Cj);                          // Push source cell into M2P interaction list
       }                                                         // Endif for twigs with leafs
-    } else if ( CI->NCHILD != 0 ) {                             // If target is not twig
-      for( int i=0; i<CI->NCHILD; i++ ) {                       //  Loop over child cells of target
-        tryM2P(CI0+CI->CHILD[i],CJ);                            //   Try to evaluate M2P kernel
+    } else if ( Ci->NCHILD != 0 ) {                             // If target is not twig
+      for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
+        tryM2P(CI0+Ci->CHILD[i],Cj);                            //   Try to evaluate M2P kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig
-      for( int i=0; i<CJ->NCHILD; i++ ) {                       //  Loop over child cells of source
-        tryM2P(CI,CJ0+CJ->CHILD[i]);                            //   Try to evaluate M2P kernel
+      for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
+        tryM2P(Ci,CJ0+Cj->CHILD[i]);                            //   Try to evaluate M2P kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
 
-  void FMM(C_iter CI, C_iter CJ) {                              // Tree walk for FMM
-    if( CI->NCHILD == 0 && CJ->NCHILD == 0 ) {                  // If both cells are twigs
-      if( CJ->NLEAF != 0 ) {                                    // If the twig has leafs
-        listP2P[CI-CI0].push_back(CJ);                          // Push source cell into P2P interaction list
+  void FMM(C_iter Ci, C_iter Cj) {                              // Tree walk for FMM
+    if( Ci->NCHILD == 0 && Cj->NCHILD == 0 ) {                  // If both cells are twigs
+      if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
+        listP2P[Ci-CI0].push_back(Cj);                          // Push source cell into P2P interaction list
       } else {                                                  // If the twig has no leafs
 #ifdef DEBUG
-        std::cout << "CJ->I=" << CJ->I << " has no leaf. Doing M2P instead." << std::endl;
+        std::cout << "Cj->I=" << Cj->I << " has no leaf. Doing M2P instead." << std::endl;
 #endif
-        listM2P[CI-CI0].push_back(CJ);                          // Push source cell into M2P interaction list
+        listM2P[Ci-CI0].push_back(Cj);                          // Push source cell into M2P interaction list
       }                                                         // Endif for twigs with leafs
-    } else if ( CJ->NCHILD == 0 || (CI->NCHILD != 0 && CI->R > CJ->R) ) {// If source is twig or target is larger
-      for( int i=0; i<CI->NCHILD; i++ ) {                       //  Loop over child cells of target
-        tryM2L(CI0+CI->CHILD[i],CJ);                            //   Try to evaluate M2L kernel
+    } else if ( Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R) ) {// If source is twig or target is larger
+      for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
+        tryM2L(CI0+Ci->CHILD[i],Cj);                            //   Try to evaluate M2L kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig or source is larger
-      for( int i=0; i<CJ->NCHILD; i++ ) {                       //  Loop over child cells of source
-        tryM2L(CI,CJ0+CJ->CHILD[i]);                            //   Try to evaluate M2L kernel
+      for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
+        tryM2L(Ci,CJ0+Cj->CHILD[i]);                            //   Try to evaluate M2L kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
 
 public:
-  void addM2L(C_iter CJ) {                                      // Add single list for kernel unit test
+  void addM2L(C_iter Cj) {                                      // Add single list for kernel unit test
     listM2L.resize(1);                                          // Resize vector of M2L interation lists
-    listM2L[0].push_back(CJ);                                   // Push single cell into list
+    listM2L[0].push_back(Cj);                                   // Push single cell into list
   }
 
-  void addM2P(C_iter CJ) {                                      // Add single list for kernel unit test
+  void addM2P(C_iter Cj) {                                      // Add single list for kernel unit test
     listM2P.resize(1);                                          // Resize vector of M2P interation lists
-    listM2P[0].push_back(CJ);                                   // Push single cell into list
+    listM2P[0].push_back(Cj);                                   // Push single cell into list
   }
 
   void evalP2P(Bodies &ibodies, Bodies &jbodies);               // Evaluate P2P kernel (all pairs)
