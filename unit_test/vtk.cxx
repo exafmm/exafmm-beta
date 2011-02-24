@@ -3,7 +3,7 @@
 #include "vtk.h"
 
 int main() {
-  const int numBodies(10000);
+  const int numBodies = 10000;
   double tic,toc;
   Bodies bodies(numBodies);
   Dataset D;

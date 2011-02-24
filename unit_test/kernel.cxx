@@ -1,7 +1,8 @@
+#include "types.h"
 #include "evaluator.h"
 
 int main() {
-  const int numBodies(100);
+  const int numBodies = 100;
   Bodies bodiesI(numBodies);
   Bodies bodiesI2(numBodies);
   Bodies bodiesJ(numBodies);
@@ -66,7 +67,7 @@ int main() {
 
     B_iter B  = bodiesI.begin();
     B_iter B2 = bodiesI2.begin();
-    real err(0), rel(0);
+    real err = 0, rel = 0;
     for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
       err += (B->pot - B2->pot) * (B->pot - B2->pot);
       rel += B2->pot * B2->pot;

@@ -2,7 +2,7 @@
 #include <assert.h>
 
 int main() {
-  int p = 20,nc = 0;
+  int p = 20, nc = 0;
   for( int n=0; n!=p; ++n ) {
     for( int nx=n; nx>=0; --nx ) {
       for( int ny=n-nx; ny>=0; --ny ) {

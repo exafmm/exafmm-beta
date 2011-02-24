@@ -7,12 +7,12 @@
 
 int main() {
   double tic,toc;
-  const int numBodies(1000000);
+  const int numBodies = 1000000;
   tic = get_time();
   Bodies bodies(numBodies);
   Dataset D;
   Partition T;
-  bool print(true);
+  bool print = true;
   if( T.commRank() != 0 ) print = false;
   toc = get_time();
   if(print) std::cout << "Allocate      : " << toc-tic << std::endl;
@@ -51,7 +51,7 @@ int main() {
 
 #ifdef VTK
   if( T.commRank() == 0 ) {
-    int Ncell(0);
+    int Ncell = 0;
     vtkPlot vtk;
     vtk.setDomain(T.getR0(),T.getX0());
     vtk.setGroupOfPoints(bodies,Ncell);

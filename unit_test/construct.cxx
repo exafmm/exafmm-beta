@@ -6,7 +6,7 @@
 
 int main() {
   double tic,toc;
-  const int numBodies(10000000);
+  const int numBodies = 10000000;
   tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
@@ -32,7 +32,7 @@ int main() {
 #endif
 
 #ifdef VTK
-  int Ncell(0);
+  int Ncell = 0;
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());
   vtk.setGroupOfPoints(bodies,Ncell);

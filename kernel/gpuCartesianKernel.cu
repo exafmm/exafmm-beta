@@ -2,7 +2,8 @@
 #include "gpu.h"
 
 void Kernel::initialize() {
-  cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
+//  cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
+  cudaSetDevice(1);
   cudaThreadSynchronize();                                      // Sync GPU threads
 }
 
@@ -90,39 +91,111 @@ void Kernel::M2P() {
   }
 }
 
-__global__ void P2P_GPU(float4 *sourceGlob, float *targetGlob) {
-  int N = deviceConstant[0];
+__global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float4 *targetGlob, float4 *sourceGlob) {
+  int keys = keysGlob[blockIdx.x];
+  int numList = rangeGlob[keys];
   float3 d;
   __shared__ float4 sourceShrd[THREADS];
-  float4 target = sourceGlob[blockIdx.x * THREADS + threadIdx.x];
-  target.w *= -rsqrtf(EPS2);
-  for( int iblok=0; iblok<(N-1)/THREADS; iblok++) {
-    __syncthreads();
-    sourceShrd[threadIdx.x] = sourceGlob[iblok * THREADS + threadIdx.x];
-    __syncthreads();
+  float4 target = targetGlob[blockIdx.x * THREADS + threadIdx.x];
+  for( int ilist=0; ilist!=numList; ++ilist ) {
+    int begin = rangeGlob[keys+2*ilist+1];
+    int size  = rangeGlob[keys+2*ilist+2];
+    for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
+      __syncthreads();
+      sourceShrd[threadIdx.x] = sourceGlob[begin + iblok * THREADS + threadIdx.x];
+      __syncthreads();
 #pragma unroll 32
-    for( int i=0; i<THREADS; i++ ) {
+      for( int i=0; i<THREADS; i++ ) {
+        d.x = target.x - sourceShrd[i].x;
+        d.y = target.y - sourceShrd[i].y;
+        d.z = target.z - sourceShrd[i].z;
+        target.w += sourceShrd[i].w * rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
+      }
+    }
+    int iblok = (size-1)/THREADS;
+    __syncthreads();
+    sourceShrd[threadIdx.x] = sourceGlob[begin + iblok * THREADS + threadIdx.x];
+    __syncthreads();
+    for( int i=0; i<size-iblok*THREADS; i++ ) {
       d.x = target.x - sourceShrd[i].x;
       d.y = target.y - sourceShrd[i].y;
       d.z = target.z - sourceShrd[i].z;
       target.w += sourceShrd[i].w * rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
     }
   }
-  int iblok = (N-1)/THREADS;
-  __syncthreads();
-  sourceShrd[threadIdx.x] = sourceGlob[iblok * THREADS + threadIdx.x];
-  __syncthreads();
-  for( int i=0; i<N - (iblok * THREADS); i++ ) {
-    d.x = target.x - sourceShrd[i].x;
-    d.y = target.y - sourceShrd[i].y;
-    d.z = target.z - sourceShrd[i].z;
-    target.w += sourceShrd[i].w * rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
-  }
-  targetGlob[blockIdx.x * THREADS + threadIdx.x] = target.w;
+  targetGlob[blockIdx.x * THREADS + threadIdx.x] = target;
 }
 
-void Kernel::P2P(float4 *sourceDevc, float *targetDevc) {
-  P2P_GPU<<< Nround/THREADS, THREADS >>>(sourceDevc,targetDevc);
+void Kernel::P2P() {
+#if 0                                                           // Emulated GPU kernel
+  for( int blockIdx=0; blockIdx!=numBlocks; ++blockIdx ) {
+    int keys = keysHost[blockIdx];
+    int numList = rangeHost[keys];
+    float3 d;
+    float4 sourceShrd[THREADS];
+    float4 target;
+    for( int threadIdx=0; threadIdx!=THREADS; ++threadIdx ) {
+      target.x = targetHost[4*(blockIdx * THREADS + threadIdx)+0];
+      target.y = targetHost[4*(blockIdx * THREADS + threadIdx)+1];
+      target.z = targetHost[4*(blockIdx * THREADS + threadIdx)+2];
+      target.w = targetHost[4*(blockIdx * THREADS + threadIdx)+3];
+      for( int ilist=0; ilist!=numList; ++ilist ) {
+        int begin = rangeHost[keys+2*ilist+1];
+        int size  = rangeHost[keys+2*ilist+2];
+        for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
+          for( int i=0; i<THREADS; i++ ) {
+            sourceShrd[i].x = sourceHost[4*(begin + iblok * THREADS + i)+0];
+            sourceShrd[i].y = sourceHost[4*(begin + iblok * THREADS + i)+1];
+            sourceShrd[i].z = sourceHost[4*(begin + iblok * THREADS + i)+2];
+            sourceShrd[i].w = sourceHost[4*(begin + iblok * THREADS + i)+3];
+          }
+          for( int i=0; i<THREADS; i++ ) {
+            d.x = target.x - sourceShrd[i].x;
+            d.y = target.y - sourceShrd[i].y;
+            d.z = target.z - sourceShrd[i].z;
+            target.w += sourceShrd[i].w * rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
+          }
+        }
+        int iblok = (size-1)/THREADS;
+        for( int i=0; i<THREADS; i++ ) {
+          sourceShrd[i].x = sourceHost[4*(begin + iblok * THREADS + i)+0];
+          sourceShrd[i].y = sourceHost[4*(begin + iblok * THREADS + i)+1];
+          sourceShrd[i].z = sourceHost[4*(begin + iblok * THREADS + i)+2];
+          sourceShrd[i].w = sourceHost[4*(begin + iblok * THREADS + i)+3];
+        }
+        for( int i=0; i<size-iblok*THREADS; i++ ) {
+          d.x = target.x - sourceShrd[i].x;
+          d.y = target.y - sourceShrd[i].y;
+          d.z = target.z - sourceShrd[i].z;
+          target.w += sourceShrd[i].w * rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
+        }
+      }
+      targetHost[4*(blockIdx * THREADS + threadIdx)+0] = target.x;
+      targetHost[4*(blockIdx * THREADS + threadIdx)+1] = target.y;
+      targetHost[4*(blockIdx * THREADS + threadIdx)+2] = target.z;
+      targetHost[4*(blockIdx * THREADS + threadIdx)+3] = target.w;
+    }
+  }
+#else
+  int numBlocks = keysHost.size();
+  int numRanges = rangeHost.size();
+  int numTarget = targetHost.size() / 4;
+  int numSource = sourceHost.size() / 4;
+  cudaMalloc( (void**) &keysDevc,   numBlocks*sizeof(int) );
+  cudaMalloc( (void**) &rangeDevc,  numRanges*sizeof(int) );
+  cudaMalloc( (void**) &targetDevc, numTarget*sizeof(float4) );
+  cudaMalloc( (void**) &sourceDevc, numSource*sizeof(float4) );
+  cudaMemcpy(keysDevc,  &keysHost[0],  numBlocks*sizeof(int),   cudaMemcpyHostToDevice);
+  cudaMemcpy(rangeDevc, &rangeHost[0], numRanges*sizeof(int),   cudaMemcpyHostToDevice);
+  cudaMemcpy(targetDevc,&targetHost[0],numTarget*sizeof(float4),cudaMemcpyHostToDevice);
+  cudaMemcpy(sourceDevc,&sourceHost[0],numSource*sizeof(float4),cudaMemcpyHostToDevice);
+  P2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  cudaMemcpy(&targetHost[0],targetDevc,numTarget*sizeof(float4),cudaMemcpyDeviceToHost);
+  cudaFree(keysDevc);
+  cudaFree(rangeDevc);
+  cudaFree(targetDevc);
+  cudaFree(sourceDevc);
+#endif
 }
 
 void Kernel::L2L() {

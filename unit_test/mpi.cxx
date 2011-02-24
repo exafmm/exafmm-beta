@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
     if( rank == irank ) {
       std::cout << hostname << " " << rank << " / " << size << std::endl;
     }
-    usleep(100);
+    usleep = 100;
   }
   MPI_Finalize();
 }

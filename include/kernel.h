@@ -6,12 +6,18 @@
 
 class Kernel {
 protected:
-  B_iter BI0;
-  B_iter BIN;
-  B_iter BJ0;
-  B_iter BJN;
-  C_iter CI;
-  C_iter CJ;
+  B_iter BI0;                                                   // Target bodies begin iterator
+  B_iter BIN;                                                   // Target bodies end iterator
+  B_iter BJ0;                                                   // Source bodies begin iterator
+  B_iter BJN;                                                   // Source bodies end iterator
+  C_iter CI;                                                    // Target cell iterator
+  C_iter CJ;                                                    // Source cell iterator
+
+  std::vector<int> keysHost;                                    // Keys on host
+  std::vector<int> rangeHost;                                   // Ranges on host
+  std::vector<real> sourceHost;                                 // Sources on host
+  std::vector<real> targetHost;                                 // Targets on host
+
 public:
   void initialize();
 

@@ -3,7 +3,7 @@
 
 int main() {
   double tic,toc;
-  const int numBodies(10000);
+  const int numBodies = 10000;
   tic = get_time();
   Bodies bodies(numBodies);
   Dataset D;
@@ -23,7 +23,7 @@ int main() {
   std::cout << "Direct GPU    : " << toc-tic << std::endl;
 
   tic = get_time();
-  real err(0),rel(0);
+  real err = 0, rel = 0;
   for( B_iter BI=bodies.begin(); BI!=bodies.end(); ++BI ) {
     real pot = -BI->scal / std::sqrt(EPS2);
     BI->pot -= BI->scal / std::sqrt(EPS2);
@@ -32,6 +32,7 @@ int main() {
       real r = std::sqrt(norm(dist) + EPS2);
       pot += BJ->scal / r;
     }
+//    std::cout << BI-bodies.begin() << " " << BI->pot << " " << pot << std::endl;
     err += (BI->pot - pot) * (BI->pot - pot);
     rel += pot * pot;
   }

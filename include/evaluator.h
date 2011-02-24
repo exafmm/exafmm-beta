@@ -109,8 +109,8 @@ public:
       pair = pairs.top();                                       //  Get interaction pair from top of stack
       pairs.pop();                                              //  Pop interaction stack
       switch (method) {                                         //  Swtich between methods
-        case 0 : treecode(pair.CI,pair.CJ); break;              //   0 : treecode
-        case 1 : FMM(pair.CI,pair.CJ);      break;              //   1 : FMM
+        case 0 : treecode(pair.first,pair.second); break;       //   0 : treecode
+        case 1 : FMM(pair.first,pair.second);      break;       //   1 : FMM
       }                                                         //  End switch between methods
     }                                                           // End while loop for interaction stack
   }

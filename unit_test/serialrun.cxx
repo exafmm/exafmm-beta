@@ -7,7 +7,7 @@
 
 int main() {
   double tic,toc;
-  const int numBodies(10000);
+  const int numBodies = 10000;
   tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
@@ -49,7 +49,7 @@ int main() {
 
   B_iter B  = bodies.begin();
   B_iter B2 = T.buffer.begin();
-  real err(0),rel(0);
+  real err = 0, rel = 0;
   for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
     B->pot  -= B->scal / std::sqrt(EPS2);
 #ifdef DEBUG
@@ -60,7 +60,7 @@ int main() {
   }
   std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
 #ifdef VTK
-  int Ncell(0);
+  int Ncell = 0;
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());
   vtk.setGroupOfPoints(bodies,Ncell);

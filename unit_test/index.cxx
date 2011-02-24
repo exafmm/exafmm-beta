@@ -6,7 +6,7 @@
 
 int main() {
   double tic,toc;
-  const int numBodies(1000000);
+  const int numBodies = 1000000;
   tic = get_time();
   Bodies bodies(numBodies);
   Dataset D;
@@ -36,14 +36,14 @@ int main() {
   std::cout << "Sort index    : " << toc-tic << std::endl;
 
   bigint oldIndex(bodies[0].I);
-  int b=0;
+  int b = 0;
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
     assert( oldIndex <= B->I );
     oldIndex = B->I;
   }
 
 #ifdef VTK
-  int Ncell(0);
+  int Ncell = 0;
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());
   vtk.setGroupOfPoints(bodies,Ncell);

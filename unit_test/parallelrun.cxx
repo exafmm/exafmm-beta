@@ -6,14 +6,14 @@
 
 int main() {
   double tic,toc;
-  const int numBodies(10000);
+  const int numBodies = 10000;
   tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
   LocalEssentialTree T;
   Evaluator E;
-  bool print(true);
+  bool print = true;
   if( T.commRank() != 0 ) print = false;
   toc = get_time();
   if(print) std::cout << "Allocate      : " << toc-tic << std::endl;
@@ -59,7 +59,7 @@ int main() {
   tic = get_time();
   bodies2 = bodies;
   for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
-    B->pot = -B->scal / std::sqrt(EPS2);
+    B->pot = -B->scal  / std::sqrt(EPS2);
   }
   for( int i=0; i!=T.commSize(); ++i ) {
     T.shiftBodies(bodies);
@@ -71,9 +71,9 @@ int main() {
 
   B_iter B  = bodies.begin();
   B_iter B2 = bodies2.begin();
-  real err(0),rel(0),err2,rel2;
+  real err = 0, rel = 0, err2, rel2;
   for( int i=0; i!=int(bodies.size()); ++i,++B,++B2 ) {
-    B->pot  -= B->scal  / std::sqrt(EPS2);
+    B->pot -= B->scal  / std::sqrt(EPS2);
 #ifdef DEBUG
     if(MPIRANK==0) std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
 #endif
@@ -98,7 +98,7 @@ int main() {
     bodies.push_back(body);
   }
 
-  int Ncell(0);
+  int Ncell = 0;
   vtkPlot vtk;
   if( T.commRank() == 0 ) {
     vtk.setDomain(T.getR0(),T.getX0());
