@@ -16,7 +16,7 @@ void Kernel::initialize() {
   for( int n=0; n!=2*P; ++n ) {
     for( int m=-n; m<=n; ++m ) {
       int nm = n*n+n+m;
-      int nabsm = std::abs(m);
+      int nabsm = abs(m);
       double fnmm = 1.0;
       for( int i=1; i<=n-m; ++i ) fnmm *= i;
       double fnpm = 1.0;
@@ -35,7 +35,7 @@ void Kernel::initialize() {
       for( int n=0, nm=0; n!=P; ++n ) {
         for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
           const int jnkm = (j+n)*(j+n)+j+n+m-k;
-          Cnm[jknm] = std::pow(I,abs(k-m)-abs(k)-abs(m))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
+          Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
         }
       }
     }
@@ -152,7 +152,7 @@ void Kernel::M2M() {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += CJ->M[jnkms]*std::pow(I,m-abs(m))*Ynm[nm]*double(ODDEVEN(n)*Anm[nm]*Anm[jnkm]/Anm[jk]);
+            M += CJ->M[jnkms]*std::pow(I,double(m-abs(m)))*Ynm[nm]*double(ODDEVEN(n)*Anm[nm]*Anm[jnkm]/Anm[jk]);
           }
         }
         for( int m=k; m<=n; ++m ) {
@@ -247,11 +247,11 @@ void Kernel::L2L() {
           L += std::conj(CJ->L[nms])*Ynm[jnkm]*double(ODDEVEN(k)*Anm[jnkm]*Anm[jk]/Anm[nm]);
         }
         for( int m=0; m<=n; ++m ) {
-          if( n-j >= std::abs(m-k) ) {
+          if( n-j >= abs(m-k) ) {
             const int jnkm = (n - j) * (n - j) + n - j + m - k;
             const int nm   = n * n + n + m;
             const int nms  = n * (n + 1) / 2 + m;
-            L += CJ->L[nms]*std::pow(I,m-k-std::abs(m-k))*Ynm[jnkm]*double(Anm[jnkm]*Anm[jk]/Anm[nm]);
+            L += CJ->L[nms]*std::pow(I,double(m-k-abs(m-k)))*Ynm[jnkm]*double(Anm[jnkm]*Anm[jk]/Anm[nm]);
           }
         }
       }

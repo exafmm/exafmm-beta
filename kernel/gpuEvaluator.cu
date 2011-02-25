@@ -13,15 +13,6 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {
   B_iter BIN = ibodies.end();                                   // Set target bodies end iterator
   B_iter BJ0 = jbodies.begin();                                 // Set source bodies begin iterator
   B_iter BJN = jbodies.end();                                   // Set source bodies end iterator
-#if 0
-  for( B_iter BI=BI0; BI!=BIN; ++BI ) {
-    for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {
-      vect dist = BI->pos - BJ->pos;
-      real r = std::sqrt(norm(dist) + EPS2);
-      BI->pot += BJ->scal / r;
-    }
-  }
-#else
   for( B_iter B=BJ0; B!=BJN; ++B ) {                            // Loop over source bodies
     sourceHost.push_back(B->pos[0]);                            // Copy x position to GPU buffer
     sourceHost.push_back(B->pos[1]);                            // Copy y position to GPU buffer
@@ -57,12 +48,11 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {
   rangeHost.clear();                                            // Clear range vector
   targetHost.clear();                                           // Clear target vector
   sourceHost.clear();                                           // Clear source vector
-#endif
 }
 
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
   for( CJ=cells.begin(); CJ!=cells.end(); ++CJ ) {              // Loop over cells
-    CJ->M = CJ->L = 0;                                          //  Initialize multipole & local coefficients
+    CJ->M = CJ->L = 0;                                          //  Initialize multipole & local coefs
     P2M();                                                      //  Evaluate P2M kernel
   }                                                             // End loop over cells
 }
@@ -77,13 +67,66 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
 
 void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
   CI0 = cells.begin();                                          // Set begin iterator
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells
-    while( !listM2L[CI-CI0].empty() ) {                         //  While M2L interaction list is not empty
-      CJ = listM2L[CI-CI0].back();                              //   Set source cell iterator
-      M2L();                                                    //   Evaluate M2L kernel
-      listM2L[CI-CI0].pop_back();                               //   Pop last element from M2L interaction list
-    }                                                           //  End while for M2L interaction list
-  }                                                             // End loop over cells topdown
+  Map sourceSize;                                               // Define map for size of source cells in listM2L
+  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
+    for( L_iter L=listM2L[CI-CI0].begin(); L!=listM2L[CI-CI0].end(); ++L ) {//  Loop over interaction list
+      CJ = *L;                                                  //   Set source cell
+      sourceSize[CJ] = 2 * NCOEF;                               //   Key : iterator, Value : number of coefs
+    }                                                           //  End loop over interaction list
+  }                                                             // End loop over target cells
+  Map sourceBegin;                                              // Define map for offset of source cells in listM2L
+  for( M_iter M=sourceSize.begin(); M!=sourceSize.end(); ++M ) {// Loop over source map
+    CJ = M->first;                                              //  Set source cell
+    sourceBegin[CJ] = sourceHost.size();                        //  Key : iterator, Value : offset of sources
+    sourceHost.push_back(CJ->X[0]);                             //  Copy x position to GPU buffer
+    sourceHost.push_back(CJ->X[1]);                             //  Copy y position to GPU buffer
+    sourceHost.push_back(CJ->X[2]);                             //  Copy z position to GPU buffer
+    for( int i=0; i!=NCOEF; ++i ) {                             //  Loop over coefs in source cell
+      sourceHost.push_back((CJ->M[i]).real());                  //   Copy real multipole to GPU buffer
+      sourceHost.push_back((CJ->M[i]).imag());                  //   Copy imaginary multipole to GPU buffer
+    }                                                           //  End loop over coefs
+  }                                                             // End loop over source map
+  Map targetBegin;                                              // Define map for offset of target cells
+  int key = 0;                                                  // Initialize key to range of coefs in source cells
+  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
+    if( !listM2L[CI-CI0].empty() ) {                            //  If the interation list is not empty
+      keysHost.push_back(key);                                  //   Save key to range of coefs in source cells
+      key += 2*listM2L[CI-CI0].size()+1;                        //   Increment key counter
+      rangeHost.push_back(listM2L[CI-CI0].size());              //   Save size of interaction list
+      for( L_iter L=listM2L[CI-CI0].begin(); L!=listM2L[CI-CI0].end(); ++L ) {//  Loop over interaction list
+        CJ = *L;                                                //   Set source cell
+        rangeHost.push_back(sourceBegin[CJ]);                   //    Set begin index of coefs in source cell
+        rangeHost.push_back(sourceSize[CJ]);                    //    Set number of coefs in source cell
+      }                                                         //   End loop over interaction list
+      targetBegin[CI] = targetHost.size();                      //   Key : iterator, Value : offset of target coefs
+      targetHost.push_back(CI->X[0]);                           //   Copy x position to GPU buffer
+      targetHost.push_back(CI->X[1]);                           //   Copy y position to GPU buffer
+      targetHost.push_back(CI->X[2]);                           //   Copy z position to GPU buffer
+      for( int i=0; i!=2*NCOEF; ++i ) {                         //   Loop over coefs in target cell
+        targetHost.push_back(0);                                //    Pad GPU buffer
+      }                                                         //   End loop over coefs
+      int numPad = 2 * THREADS - 2 * NCOEF - 3;                 //   Number of elements to pad in target GPU buffer
+      assert(numPad >= 0);                                      //   THREADS must be large enough
+      for( int i=0; i!=numPad; ++i ) {                          //   Loop over elements to pad
+        targetHost.push_back(0);                                //    Pad GPU buffer
+      }                                                         //   End loop over elements to pad
+    }                                                           //  End if for empty interation list
+  }                                                             // End loop over target cells
+  M2L();                                                        // Evaluate M2L kernel
+  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
+    if( !listM2L[CI-CI0].empty() ) {                            //  If the interation list is not empty
+      int begin = targetBegin[CI];                              //   Offset of target coefs
+      for( int i=0; i!=NCOEF; ++i ) {                           //   Loop over target coefs
+        CI->L[i].real() += targetHost[begin+2*i+0];             //    Copy real target values from GPU buffer
+        CI->L[i].imag() += targetHost[begin+2*i+1];             //    Copy imaginary target values from GPU buffer
+      }                                                         //   End loop over target coefs
+      listM2L[CI-CI0].clear();                                  //   Clear M2L interaction list
+    }                                                           //  End if for empty interation list
+  }                                                             // End loop over target cells
+  keysHost.clear();                                             // Clear keys vector
+  rangeHost.clear();                                            // Clear range vector
+  targetHost.clear();                                           // Clear target vector
+  sourceHost.clear();                                           // Clear source vector
 }
 
 void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
@@ -98,26 +141,6 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
 }
 
 void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
-#if 0
-  CI0 = cells.begin();
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {
-    BI0 = CI->LEAF;
-    BIN = CI->LEAF + CI->NLEAF;
-    while( !listP2P[CI-CI0].empty() ) {
-      CJ = listP2P[CI-CI0].back();
-      BJ0 = CJ->LEAF;
-      BJN = CJ->LEAF + CJ->NLEAF;
-      for( B_iter BI=BI0; BI!=BIN; ++BI ) {
-        for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {
-          vect dist = BI->pos - BJ->pos;
-          real r = std::sqrt(norm(dist) + EPS2);
-          BI->pot += BJ->scal / r;
-        }
-      }
-      listP2P[CI-CI0].pop_back();
-    }
-  }
-#else
   CI0 = cells.begin();                                          // Set begin iterator
   Map sourceSize;                                               // Define map for size of source cells in listP2P
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
@@ -186,7 +209,6 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
   rangeHost.clear();                                            // Clear range vector
   targetHost.clear();                                           // Clear target vector
   sourceHost.clear();                                           // Clear source vector
-#endif
 }
 
 void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
