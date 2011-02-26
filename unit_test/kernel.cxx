@@ -53,9 +53,9 @@ int main() {
     icells.insert(icells.begin(),cell);
     E.evalL2L(icells);
     icells.pop_back();
-    E.evalL2P(icells);
+//    E.evalL2P(icells);
     E.addM2P(jcells.begin());
-//    E.evalM2P(icells);
+    E.evalM2P(icells);
     icells.clear();
     jcells.clear();
 

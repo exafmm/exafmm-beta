@@ -62,7 +62,7 @@ void evalMultipole(real rho, real alpha, real beta) {
   double fact = 1;
   double pn = 1;
   double rhom = 1;
-  for( int m=0; m!=P; ++m ){
+  for( int m=0; m!=P; ++m ) {
     complex eim = std::exp(I * double(m * beta));
     double p = pn;
     int npn = m * m + 2 * m;
@@ -73,7 +73,7 @@ void evalMultipole(real rho, real alpha, real beta) {
     p = x * (2 * m + 1) * p;
     rhom *= rho;
     double rhon = rhom;
-    for( int n=m+1; n!=P; ++n ){
+    for( int n=m+1; n!=P; ++n ) {
       int npm = n * n + n + m;
       int nmm = n * n + n - m;
       Ynm[npm] = rhon * p * prefactor[npm] * eim;
@@ -94,7 +94,7 @@ void evalLocal(real rho, real alpha, real beta) {
   double fact = 1;
   double pn = 1;
   double rhom = 1.0 / rho;
-  for( int m=0; m!=2*P; ++m ){ 
+  for( int m=0; m!=2*P; ++m ) {
     complex eim = std::exp(I * double(m * beta));
     double p = pn;
     int npn = m * m + 2 * m;
@@ -105,7 +105,7 @@ void evalLocal(real rho, real alpha, real beta) {
     p = x * (2 * m + 1) * p;
     rhom /= rho;
     double rhon = rhom;
-    for( int n=m+1; n!=2*P; ++n ){
+    for( int n=m+1; n!=2*P; ++n ) {
       int npm = n * n + n + m;
       int nmm = n * n + n - m;
       Ynm[npm] = rhon * p * prefactor[npm] * eim;

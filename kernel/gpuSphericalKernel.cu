@@ -22,6 +22,104 @@ __device__ void cart2sph(float& r, float& theta, float& phi, float dx, float dy,
   }
 }
 
+__device__ void P2M_core(float* target, float rho, float alpha, float beta, float source) {
+  __shared__ float factShrd[2*P];
+  __shared__ float YnmShrd[NCOEF];
+  float fact = 1;
+  for( int i=0; i<2*P; ++i ) {
+    factShrd[i] = fact;
+    fact *= i + 1;
+  }
+  int nn = floor(sqrt(2*threadIdx.x+0.25)-0.5);
+  int mm = 0;
+  for( int i=0; i<=nn; ++i ) mm += i;
+  mm = threadIdx.x - mm;
+  if( threadIdx.x >= NCOEF ) nn = mm = 0;
+  float x = cosf(alpha);
+  float s = sqrtf(1 - x * x);
+  fact = 1;
+  float pn = 1;
+  float rhom = 1;
+  for( int m=0; m<=mm; ++m ) {
+    float p = pn;
+    int i = m * (m + 1) / 2 + m;
+    YnmShrd[i] = rhom * p * rsqrtf(factShrd[2*m]);
+    float p1 = p;
+    p = x * (2 * m + 1) * p;
+    rhom *= rho;
+    float rhon = rhom;
+    for( int n=m+1; n<=nn; ++n ) {
+      i = n * (n + 1) / 2 + m;
+      YnmShrd[i] = rhon * p * rsqrtf(factShrd[n+m] / factShrd[n-m]);
+      float p2 = p1;
+      p1 = p;
+      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
+      rhon *= rho;
+    }
+    pn = -pn * fact * s;
+    fact = fact + 2;
+  }
+  int i = nn * (nn + 1) / 2 + mm;
+  float ere = cosf(-mm * beta);
+  float eim = sinf(-mm * beta);
+  target[0] += source * YnmShrd[i] * ere;
+  target[1] += source * YnmShrd[i] * eim;
+}
+
+__global__ void P2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+  int keys = keysGlob[blockIdx.x];
+  int numList = rangeGlob[keys];
+  float target[2] = {0, 0};
+  __shared__ float targetShrd[3];
+  __shared__ float sourceShrd[4*THREADS];
+  int itarget = blockIdx.x * THREADS;
+  targetShrd[0] = targetGlob[2*itarget+0];
+  targetShrd[1] = targetGlob[2*itarget+1];
+  targetShrd[2] = targetGlob[2*itarget+2];
+  for( int ilist=0; ilist<numList; ++ilist ) {
+    int begin = rangeGlob[keys+2*ilist+1];
+    int size  = rangeGlob[keys+2*ilist+2];
+    for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
+      int isource = begin + iblok * THREADS + threadIdx.x;
+      __syncthreads();
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
+      __syncthreads();
+      for( int i=0; i<THREADS; ++i ) {
+        float3 d;
+        d.x = sourceShrd[4*i+0] - targetShrd[0];
+        d.y = sourceShrd[4*i+1] - targetShrd[1];
+        d.z = sourceShrd[4*i+2] - targetShrd[2];
+        float rho, alpha, beta;
+        cart2sph(rho,alpha,beta,d.x,d.y,d.z);
+        P2M_core(target,rho,alpha,beta,sourceShrd[4*i+3]);
+      }
+    }
+    int iblok = (size-1)/THREADS;
+    int isource = begin + iblok * THREADS + threadIdx.x;
+    __syncthreads();
+    sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
+    sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
+    sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
+    sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
+    __syncthreads();
+    for( int i=0; i<size-iblok*THREADS; ++i ) {
+      float3 d;
+      d.x = sourceShrd[4*i+0] - targetShrd[0];
+      d.y = sourceShrd[4*i+1] - targetShrd[1];
+      d.z = sourceShrd[4*i+2] - targetShrd[2];
+      float rho, alpha, beta;
+      cart2sph(rho,alpha,beta,d.x,d.y,d.z);
+      P2M_core(target,rho,alpha,beta,sourceShrd[4*i+3]);
+    }
+  }
+  itarget = blockIdx.x * THREADS + threadIdx.x;
+  targetGlob[2*itarget+0] = target[0];
+  targetGlob[2*itarget+1] = target[1];
+}
+
 __device__ void M2L_Ynm(float* YnmShrd, float rho, float alpha, float* factShrd) {
   float x = cosf(alpha);
   float s = sqrt(1 - x * x);
@@ -54,6 +152,7 @@ __device__ void M2L_core(float* target, float  beta, float* factShrd, float* Ynm
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
   k = threadIdx.x - k;
+  if( threadIdx.x >= NCOEF ) j = k = 0;
   float ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
   for( int n=0; n<P; ++n ) {
     for( int m=-n; m<0; ++m ) {
@@ -103,7 +202,6 @@ __global__ void M2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   int itarget = blockIdx.x * THREADS;
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+2*ilist+1];
-    int size  = rangeGlob[keys+2*ilist+2];
     float3 d;
     d.x = targetGlob[2*itarget+0] - sourceGlob[begin+0];
     d.y = targetGlob[2*itarget+1] - sourceGlob[begin+1];
@@ -122,6 +220,80 @@ __global__ void M2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[2*itarget+0] = target[0];
   targetGlob[2*itarget+1] = target[1];
+}
+
+__device__ void M2P_core(float &pot, float r, float theta, float phi, float* factShrd, float* sourceShrd) {
+  float x = cosf(theta);
+  float s = sqrtf(1 - x * x);
+  float fact = 1;
+  float pn = 1;
+  float rhom = 1.0 / r;
+  for( int m=0; m<P; ++m ) {
+    float p = pn;
+    int i = m * (m + 1) / 2 + m;
+    float ere = cosf(m * phi);
+    if( m == 0 ) ere = 0.5;
+    float eim = sinf(m * phi);
+    float anm = rhom * rsqrt(factShrd[2*m]);
+    float Ynm = anm * p;
+    float p1 = p;
+    p = x * (2 * m + 1) * p;
+    float realj = ere * sourceShrd[2*i+0] - eim * sourceShrd[2*i+1];
+    pot += 2 * Ynm * realj;
+    rhom /= r;
+    float rhon = rhom;
+    for( int n=m+1; n<P; ++n ) {
+      i = n * (n + 1) / 2 + m;
+      anm = rhon * rsqrt(factShrd[n+m] / factShrd[n-m]);
+      Ynm = anm * p;
+      float p2 = p1;
+      p1 = p;
+      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
+      realj = ere * sourceShrd[2*i+0] - eim * sourceShrd[2*i+1];
+      pot += 2 * Ynm * realj;
+      rhon /= r;
+    }
+    pn = -pn * fact * s;
+    fact = fact+2;
+  }
+}
+
+__global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+  int keys = keysGlob[blockIdx.x];
+  int numList = rangeGlob[keys];
+  float target[4];
+  __shared__ float sourceShrd[2*THREADS];
+  __shared__ float factShrd[2*P];
+  float fact = 1;
+  for( int i=0; i<2*P; ++i ) {
+    factShrd[i] = fact;
+    fact *= i + 1;
+  }
+  int itarget = blockIdx.x * THREADS + threadIdx.x;
+  target[0] = targetGlob[4*itarget+0];
+  target[1] = targetGlob[4*itarget+1];
+  target[2] = targetGlob[4*itarget+2];
+  target[3] = targetGlob[4*itarget+3];
+  for( int ilist=0; ilist<numList; ++ilist ) {
+    int begin = rangeGlob[keys+2*ilist+1];
+    float3 d;
+    d.x = target[0] - sourceGlob[begin+0];
+    d.y = target[1] - sourceGlob[begin+1];
+    d.z = target[2] - sourceGlob[begin+2];
+    __syncthreads();
+    if( threadIdx.x < NCOEF ) {
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
+    }
+    __syncthreads();
+    float r, theta, phi;
+    cart2sph(r,theta,phi,d.x,d.y,d.z);
+    M2P_core(target[3],r,theta,phi,factShrd,sourceShrd);
+  }
+  targetGlob[4*itarget+0] = target[0];
+  targetGlob[4*itarget+1] = target[1];
+  targetGlob[4*itarget+2] = target[2];
+  targetGlob[4*itarget+3] = target[3];
 }
 
 __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
@@ -155,8 +327,8 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       }
     }
     int iblok = (size-1)/THREADS;
-    __syncthreads();
     int isource = begin + iblok * THREADS + threadIdx.x;
+    __syncthreads();
     sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
     sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
     sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
@@ -291,20 +463,69 @@ void evalLocal(real rho, real alpha, real beta) {
   }
 }
 
-void Kernel::P2M() {
-  for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
-    vect dist = B->pos - CJ->X;
-    real rho, alpha, beta;
-    cart2sph(rho,alpha,beta,dist);
-    evalMultipole(rho,alpha,-beta);
-    for( int n=0; n!=P; ++n ) {
-      for( int m=0; m<=n; ++m ) {
-        const int nm  = n * n + n + m;
-        const int nms = n * (n + 1) / 2 + m;
-        CJ->M[nms] += double(B->scal)*Ynm[nm];
-      }
-    }
+void P2M_core(int threadIdx, float* target, float rho, float alpha, float beta, float source) {
+  float factShrd[2*P];
+  float YnmShrd[NCOEF];
+  float fact = 1;
+  for( int i=0; i<2*P; ++i ) {
+    factShrd[i] = fact;
+    fact *= i + 1;
   }
+  int nn = floor(sqrt(2*threadIdx+0.25)-0.5);
+  int mm = 0;
+  for( int i=0; i<=nn; ++i ) mm += i;
+  mm = threadIdx - mm;
+  if( threadIdx >= NCOEF ) nn = mm = 0;
+  float x = cosf(alpha);
+  float s = sqrtf(1 - x * x);
+  fact = 1;
+  float pn = 1;
+  float rhom = 1;
+  for( int m=0; m<=mm; ++m ) {
+    float p = pn;
+    int i = m * (m + 1) / 2 + m;
+    YnmShrd[i] = rhom * p * rsqrtf(factShrd[2*m]);
+    float p1 = p;
+    p = x * (2 * m + 1) * p;
+    rhom *= rho;
+    float rhon = rhom;
+    for( int n=m+1; n<=nn; ++n ) {
+      i = n * (n + 1) / 2 + m;
+      YnmShrd[i] = rhon * p * rsqrtf(factShrd[n+m] / factShrd[n-m]);
+      float p2 = p1;
+      p1 = p;
+      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
+      rhon *= rho;
+    }
+    pn = -pn * fact * s;
+    fact = fact + 2;
+  }
+  int i = nn * (nn + 1) / 2 + mm;
+  float ere = cosf(-mm * beta);
+  float eim = sinf(-mm * beta);
+  target[0] += source * YnmShrd[i] * ere;
+  target[1] += source * YnmShrd[i] * eim;
+}
+
+void Kernel::P2M() {
+  int numBlocks = keysHost.size();
+  int numRanges = rangeHost.size();
+  int numTarget = targetHost.size();
+  int numSource = sourceHost.size();
+  cudaMalloc( (void**) &keysDevc,   numBlocks*sizeof(int) );
+  cudaMalloc( (void**) &rangeDevc,  numRanges*sizeof(int) );
+  cudaMalloc( (void**) &targetDevc, numTarget*sizeof(float) );
+  cudaMalloc( (void**) &sourceDevc, numSource*sizeof(float) );
+  cudaMemcpy(keysDevc,  &keysHost[0],  numBlocks*sizeof(int),  cudaMemcpyHostToDevice);
+  cudaMemcpy(rangeDevc, &rangeHost[0], numRanges*sizeof(int),  cudaMemcpyHostToDevice);
+  cudaMemcpy(targetDevc,&targetHost[0],numTarget*sizeof(float),cudaMemcpyHostToDevice);
+  cudaMemcpy(sourceDevc,&sourceHost[0],numSource*sizeof(float),cudaMemcpyHostToDevice);
+  P2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  cudaMemcpy(&targetHost[0],targetDevc,numTarget*sizeof(float),cudaMemcpyDeviceToHost);
+  cudaFree(keysDevc);
+  cudaFree(rangeDevc);
+  cudaFree(targetDevc);
+  cudaFree(sourceDevc);
 }
 
 void Kernel::M2M() {
@@ -341,105 +562,6 @@ void Kernel::M2M() {
 }
 
 void Kernel::M2L() {
-#if 0                                                           // Emulated GPU kernel
-  int numBlocks = keysHost.size();
-  for( int blockIdx=0; blockIdx!=numBlocks; ++blockIdx ) {
-    int keys = keysHost[blockIdx];
-    int numList = rangeHost[keys];
-    float sourceShrd[2*THREADS];
-    float factShrd[2*P];
-    float YnmShrd[4*P*P];
-    float fact = 1;
-    for( int i=0; i<2*P; ++i ) {
-      factShrd[i] = fact;
-      fact *= i + 1;
-    }
-    for( int threadIdx=0; threadIdx!=THREADS; ++threadIdx ) {
-      float target[2] = {0.0, 0.0};
-      int itarget = blockIdx * THREADS;
-      for( int ilist=0; ilist!=numList; ++ilist ) {
-        int begin = rangeHost[keys+2*ilist+1];
-        int size  = rangeHost[keys+2*ilist+2];
-        vect dist;
-        if(threadIdx==0) {
-          dist[0] = targetHost[2*itarget+0] - sourceHost[begin+0];
-          dist[1] = targetHost[2*itarget+1] - sourceHost[begin+1];
-          dist[2] = targetHost[2*itarget+2] - sourceHost[begin+2];
-        }
-        for( int i=0; i<NCOEF; ++i ) {
-          sourceShrd[2*i+0] = sourceHost[begin+2*i+3];
-          sourceShrd[2*i+1] = sourceHost[begin+2*i+4];
-        }
-        float rho, alpha, beta;
-        cart2sph(rho, alpha, beta, dist);
-        float x = cosf(alpha);
-        float s = sqrt(1 - x * x);
-        float fact = 1;
-        float pn = 1;
-        float rhom = 1.0 / rho;
-        for( int m=0; m<2*P; ++m ){
-          float p = pn;
-          int i = m * (m + 1) / 2 + m;
-          YnmShrd[i] = rhom * p;
-          float p1 = p;
-          p = x * (2 * m + 1) * p;
-          rhom /= rho;
-          float rhon = rhom;
-          for( int n=m+1; n<2*P; ++n ){
-            i = n * (n + 1) / 2 + m;
-            YnmShrd[i] = rhon * p * factShrd[n-m];
-            float p2 = p1;
-            p1 = p;
-            p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-            rhon /= rho;
-          }
-          pn = -pn * fact * s;
-          fact = fact + 2;
-        }
-        int j = floor(sqrt(2*threadIdx+0.25)-0.5);
-        int k = 0;
-        for( int i=0; i<=j; ++i ) k += i;
-        k = threadIdx - k;
-        if( threadIdx >= NCOEF ) j = k = 0;
-        float ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
-        for( int n=0; n<P; ++n ) {
-          for( int m=-n; m<0; ++m ) {
-            int jnkm = (j + n) * (j + n + 1) / 2 - m + k;
-            float ere = cosf((m - k) * beta);
-            float eim = sinf((m - k) * beta);
-            float anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
-            float cnm = anm * ajk * YnmShrd[jnkm];
-            float CnmReal = cnm * ere;
-            float CnmImag = cnm * eim;
-            int i = n * (n + 1) / 2 - m;
-            target[0] += sourceShrd[2*i+0] * CnmReal;
-            target[0] += sourceShrd[2*i+1] * CnmImag;
-            target[1] += sourceShrd[2*i+0] * CnmImag;
-            target[1] -= sourceShrd[2*i+1] * CnmReal;
-          }
-          for( int m=0; m<=n; ++m ) {
-            int jnkm = (j + n) * (j + n + 1) / 2 + abs(m - k);
-            float ere = cosf((m - k) * beta);
-            float eim = sinf((m - k) * beta);
-            float anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
-            float cnm = ODDEVEN((abs(k - m) - k - m) / 2);
-            cnm *= anm * ajk * YnmShrd[jnkm];
-            float CnmReal = cnm * ere;
-            float CnmImag = cnm * eim;
-            int i = n * (n + 1) / 2 + m;
-            target[0] += sourceShrd[2*i+0] * CnmReal;
-            target[0] -= sourceShrd[2*i+1] * CnmImag;
-            target[1] += sourceShrd[2*i+0] * CnmImag;
-            target[1] += sourceShrd[2*i+1] * CnmReal;
-          }
-        }
-      }
-      itarget = blockIdx * THREADS + threadIdx;
-      targetHost[2*itarget+0] = target[0];
-      targetHost[2*itarget+1] = target[1];
-    }
-  }
-#else
   int numBlocks = keysHost.size();
   int numRanges = rangeHost.size();
   int numTarget = targetHost.size();
@@ -458,83 +580,30 @@ void Kernel::M2L() {
   cudaFree(rangeDevc);
   cudaFree(targetDevc);
   cudaFree(sourceDevc);
-#endif
 }
 
 void Kernel::M2P() {
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
-    vect dist = B->pos - CJ->X;
-    real r, theta, phi;
-    cart2sph(r,theta,phi,dist);
-    evalLocal(r,theta,phi);
-    for( int n=0; n!=P; ++n ) {
-      int nm  = n * n + n;
-      int nms = n * (n + 1) / 2;
-      B->pot += (CJ->M[nms]*Ynm[nm]).real();
-      for( int m=1; m<=n; ++m ) {
-        nm  = n * n + n + m;
-        nms = n * (n + 1) / 2 + m;
-        B->pot += 2*(CJ->M[nms]*Ynm[nm]).real();
-      }
-    }
-  }
+  int numBlocks = keysHost.size();
+  int numRanges = rangeHost.size();
+  int numTarget = targetHost.size();
+  int numSource = sourceHost.size();
+  cudaMalloc( (void**) &keysDevc,   numBlocks*sizeof(int) );
+  cudaMalloc( (void**) &rangeDevc,  numRanges*sizeof(int) );
+  cudaMalloc( (void**) &targetDevc, numTarget*sizeof(float) );
+  cudaMalloc( (void**) &sourceDevc, numSource*sizeof(float) );
+  cudaMemcpy(keysDevc,  &keysHost[0],  numBlocks*sizeof(int),  cudaMemcpyHostToDevice);
+  cudaMemcpy(rangeDevc, &rangeHost[0], numRanges*sizeof(int),  cudaMemcpyHostToDevice);
+  cudaMemcpy(targetDevc,&targetHost[0],numTarget*sizeof(float),cudaMemcpyHostToDevice);
+  cudaMemcpy(sourceDevc,&sourceHost[0],numSource*sizeof(float),cudaMemcpyHostToDevice);
+  M2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  cudaMemcpy(&targetHost[0],targetDevc,numTarget*sizeof(float),cudaMemcpyDeviceToHost);
+  cudaFree(keysDevc);
+  cudaFree(rangeDevc);
+  cudaFree(targetDevc);
+  cudaFree(sourceDevc);
 }
 
 void Kernel::P2P() {
-#if 0                                                           // Emulated GPU kernel
-  int numBlocks = keysHost.size();
-  for( int blockIdx=0; blockIdx!=numBlocks; ++blockIdx ) {
-    int keys = keysHost[blockIdx];
-    int numList = rangeHost[keys];
-    vect dist;
-    float sourceShrd[4*THREADS];
-    float target[4];
-    for( int threadIdx=0; threadIdx!=THREADS; ++threadIdx ) {
-      int itarget = blockIdx * THREADS + threadIdx;
-      target[0] = targetHost[4*itarget+0];
-      target[1] = targetHost[4*itarget+1];
-      target[2] = targetHost[4*itarget+2];
-      target[3] = targetHost[4*itarget+3];
-      for( int ilist=0; ilist!=numList; ++ilist ) {
-        int begin = rangeHost[keys+2*ilist+1];
-        int size  = rangeHost[keys+2*ilist+2];
-        for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
-          for( int i=0; i<THREADS; i++ ) {
-            int isource = begin + iblok * THREADS + i;
-            sourceShrd[4*i+0] = sourceHost[4*isource+0];
-            sourceShrd[4*i+1] = sourceHost[4*isource+1];
-            sourceShrd[4*i+2] = sourceHost[4*isource+2];
-            sourceShrd[4*i+3] = sourceHost[4*isource+3];
-          }
-          for( int i=0; i<THREADS; i++ ) {
-            dist[0] = target[0] - sourceShrd[4*i+0];
-            dist[1] = target[1] - sourceShrd[4*i+1];
-            dist[2] = target[2] - sourceShrd[4*i+2];
-            target[3] += sourceShrd[4*i+3] * rsqrtf(norm(dist) + EPS2);
-          }
-        }
-        int iblok = (size-1)/THREADS;
-        for( int i=0; i<THREADS; i++ ) {
-          int isource = begin + iblok * THREADS + i;
-          sourceShrd[4*i+0] = sourceHost[4*isource+0];
-          sourceShrd[4*i+1] = sourceHost[4*isource+1];
-          sourceShrd[4*i+2] = sourceHost[4*isource+2];
-          sourceShrd[4*i+3] = sourceHost[4*isource+3];
-        }
-        for( int i=0; i<size-iblok*THREADS; i++ ) {
-          dist[0] = target[0] - sourceShrd[4*i+0];
-          dist[1] = target[1] - sourceShrd[4*i+1];
-          dist[2] = target[2] - sourceShrd[4*i+2];
-          target[3] += sourceShrd[4*i+3] * rsqrtf(norm(dist) + EPS2);
-        }
-      }
-      targetHost[4*itarget+0] = target[0];
-      targetHost[4*itarget+1] = target[1];
-      targetHost[4*itarget+2] = target[2];
-      targetHost[4*itarget+3] = target[3];
-    }
-  }
-#else
   int numBlocks = keysHost.size();
   int numRanges = rangeHost.size();
   int numTarget = targetHost.size();
@@ -553,7 +622,6 @@ void Kernel::P2P() {
   cudaFree(rangeDevc);
   cudaFree(targetDevc);
   cudaFree(sourceDevc);
-#endif
 }
 
 void Kernel::L2L() {
