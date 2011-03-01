@@ -31,16 +31,19 @@ int main() {
     cell.LEAF   = bodiesJ.begin();
     cell.X      = 0.5;
     cell.M      = 0;
+    cell.NCHILD = 0;
     cell.PARENT = 1;
     jcells.push_back(cell);
     E.evalP2M(jcells);
     cell.X      = 1;
     cell.M      = 0;
+    cell.NCHILD = 1;
     jcells.push_back(cell);
     E.evalM2M(jcells);
     jcells.erase(jcells.begin());
     cell.X      = -1 - dist;
     cell.L      = 0;
+    cell.NCHILD = 1;
     icells.push_back(cell);
     E.addM2L(jcells.begin());
     E.evalM2L(icells);
@@ -53,9 +56,9 @@ int main() {
     icells.insert(icells.begin(),cell);
     E.evalL2L(icells);
     icells.pop_back();
-//    E.evalL2P(icells);
+    E.evalL2P(icells);
     E.addM2P(jcells.begin());
-    E.evalM2P(icells);
+//    E.evalM2P(icells);
     icells.clear();
     jcells.clear();
 
