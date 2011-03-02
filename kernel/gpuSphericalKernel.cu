@@ -2,11 +2,7 @@
 #include "gpu.h"
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
-const int  P2 = P * P;
-const int  P4 = P2 * P2;
 const real EPS = 1e-6;
-double *prefactor, *Anm;
-complex *Ynm, *Cnm, I(0.0,1.0);
 
 __device__ void cart2sph(float& r, float& theta, float& phi, float dx, float dy, float dz) {
   r = sqrtf(dx * dx + dy * dy + dz * dz)+EPS;
@@ -644,160 +640,6 @@ __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
 void Kernel::initialize() {
   cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
   cudaThreadSynchronize();                                      // Sync GPU threads
-  prefactor = new double  [4*P2];
-  Anm       = new double  [4*P2];
-  Ynm       = new complex [4*P2];
-  Cnm       = new complex [P4];
-
-  for( int n=0; n!=2*P; ++n ) {
-    for( int m=-n; m<=n; ++m ) {
-      int nm = n*n+n+m;
-      int nabsm = abs(m);
-      double fnmm = 1.0;
-      for( int i=1; i<=n-m; ++i ) fnmm *= i;
-      double fnpm = 1.0;
-      for( int i=1; i<=n+m; ++i ) fnpm *= i;
-      double fnma = 1.0;
-      for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
-      double fnpa = 1.0;
-      for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
-      prefactor[nm] = std::sqrt(fnma/fnpa);
-      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
-    }
-  }
-
-  for( int j=0, jk=0, jknm=0; j!=P; ++j ) {
-    for( int k=-j; k<=j; ++k, ++jk ){
-      for( int n=0, nm=0; n!=P; ++n ) {
-        for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
-          const int jnkm = (j+n)*(j+n)+j+n+m-k;
-          Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
-        }
-      }
-    }
-  }
-}
-
-void cart2sph(real& r, real& theta, real& phi, vect dist) {
-  r = std::sqrt(norm(dist))+EPS;
-  theta = std::acos(dist[2] / r);
-  if( std::abs(dist[0]) + std::abs(dist[1]) < EPS ) {
-    phi = 0;
-  } else if( std::abs(dist[0]) < EPS ) {
-    phi = dist[1] / std::abs(dist[1]) * M_PI * 0.5;
-  } else if( dist[0] > 0 ) {
-    phi = std::atan(dist[1] / dist[0]);
-  } else {
-    phi = std::atan(dist[1] / dist[0]) + M_PI;
-  }
-}
-
-void evalMultipole(real rho, real alpha, real beta) {
-  double x = std::cos(alpha);
-  double s = std::sqrt(1 - x * x);
-  double fact = 1;
-  double pn = 1;
-  double rhom = 1;
-  for( int m=0; m!=P; ++m ){
-    complex eim = std::exp(I * double(m * beta));
-    double p = pn;
-    int npn = m * m + 2 * m;
-    int nmn = m * m;
-    Ynm[npn] = rhom * p * prefactor[npn] * eim;
-    Ynm[nmn] = std::conj(Ynm[npn]);
-    double p1 = p;
-    p = x * (2 * m + 1) * p;
-    rhom *= rho;
-    double rhon = rhom;
-    for( int n=m+1; n!=P; ++n ){
-      int npm = n * n + n + m;
-      int nmm = n * n + n - m;
-      Ynm[npm] = rhon * p * prefactor[npm] * eim;
-      Ynm[nmm] = std::conj(Ynm[npm]);
-      double p2 = p1;
-      p1 = p;
-      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-      rhon *= rho;
-    }
-    pn = -pn * fact * s;
-    fact = fact + 2;
-  }
-}
-
-void evalLocal(real rho, real alpha, real beta) {
-  double x = std::cos(alpha);
-  double s = std::sqrt(1 - x * x);
-  double fact = 1;
-  double pn = 1;
-  double rhom = 1.0 / rho;
-  for( int m=0; m!=2*P; ++m ){
-    complex eim = std::exp(I * double(m * beta));
-    double p = pn;
-    int npn = m * m + 2 * m;
-    int nmn = m * m;
-    Ynm[npn] = rhom * p * prefactor[npn] * eim;
-    Ynm[nmn] = std::conj(Ynm[npn]);
-    double p1 = p;
-    p = x * (2 * m + 1) * p;
-    rhom /= rho;
-    double rhon = rhom;
-    for( int n=m+1; n!=2*P; ++n ){
-      int npm = n * n + n + m;
-      int nmm = n * n + n - m;
-      Ynm[npm] = rhon * p * prefactor[npm] * eim;
-      Ynm[nmm] = std::conj(Ynm[npm]);
-      double p2 = p1;
-      p1 = p;
-      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-      rhon /= rho;
-    }
-    pn = -pn * fact * s;
-    fact = fact + 2;
-  }
-}
-
-void P2M_core(int threadIdx, float* target, float rho, float alpha, float beta, float source) {
-  float factShrd[2*P];
-  float YnmShrd[NCOEF];
-  float fact = 1;
-  for( int i=0; i<2*P; ++i ) {
-    factShrd[i] = fact;
-    fact *= i + 1;
-  }
-  int nn = floor(sqrt(2*threadIdx+0.25)-0.5);
-  int mm = 0;
-  for( int i=0; i<=nn; ++i ) mm += i;
-  mm = threadIdx - mm;
-  if( threadIdx >= NCOEF ) nn = mm = 0;
-  float x = cosf(alpha);
-  float s = sqrtf(1 - x * x);
-  fact = 1;
-  float pn = 1;
-  float rhom = 1;
-  for( int m=0; m<=mm; ++m ) {
-    float p = pn;
-    int i = m * (m + 1) / 2 + m;
-    YnmShrd[i] = rhom * p * rsqrtf(factShrd[2*m]);
-    float p1 = p;
-    p = x * (2 * m + 1) * p;
-    rhom *= rho;
-    float rhon = rhom;
-    for( int n=m+1; n<=nn; ++n ) {
-      i = n * (n + 1) / 2 + m;
-      YnmShrd[i] = rhon * p * rsqrtf(factShrd[n+m] / factShrd[n-m]);
-      float p2 = p1;
-      p1 = p;
-      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-      rhon *= rho;
-    }
-    pn = -pn * fact * s;
-    fact = fact + 2;
-  }
-  int i = nn * (nn + 1) / 2 + mm;
-  float ere = cosf(-mm * beta);
-  float eim = sinf(-mm * beta);
-  target[0] += source * YnmShrd[i] * ere;
-  target[1] += source * YnmShrd[i] * eim;
 }
 
 void Kernel::P2M() {
@@ -948,8 +790,4 @@ void Kernel::L2P() {
 }
 
 void Kernel::finalize() {
-  delete[] prefactor;
-  delete[] Anm;
-  delete[] Ynm;
-  delete[] Cnm;
 }

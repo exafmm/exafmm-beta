@@ -18,6 +18,15 @@ protected:
   std::vector<real> sourceHost;                                 // Sources on host
   std::vector<real> targetHost;                                 // Targets on host
 
+  int getLevel(bigint index) {                                  // Get level from cell index
+    int level = -1;                                             // Initialize level counter
+    while( index >= 0 ) {                                       // While cell index is non-negative
+      level++;                                                  //  Increment level
+      index -= 1 << 3*level;                                    //  Subtract number of cells in that level
+    }                                                           // End while loop for cell index
+    return level;                                               // Return the level
+  }
+
 public:
   void initialize();
 

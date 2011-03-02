@@ -105,60 +105,66 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
   Lists listM2M(cells.size());                                  // Define M2M interation list vector
   Map sourceBegin;                                              // Define map for offset of source cells in listM2M
   Map sourceSize;                                               // Define map for size of source cells in listM2M
-  for( CJ=cells.begin(); CJ!=cells.end()-1; ++CJ ) {            // Loop over cells bottomup (except root cell)
-    CI = CJ0 + CJ->PARENT;                                      //  Set target cell iterator
-    listM2M[CI-CI0].push_back(CJ);                              //  Push source cell into M2M interaction list
-    sourceBegin[CJ] = sourceHost.size();                        //  Key : iterator, Value : offset of sources
-    sourceSize[CJ] = 2 * NCOEF;                                 //  Key : iterator, Value : number of coefs
-    sourceHost.push_back(CJ->X[0]);                             //  Copy x position to GPU buffer
-    sourceHost.push_back(CJ->X[1]);                             //  Copy y position to GPU buffer
-    sourceHost.push_back(CJ->X[2]);                             //  Copy z position to GPU buffer
-    for( int i=0; i!=NCOEF; ++i ) {                             //  Loop over coefs in source cell
-      sourceHost.push_back((CJ->M[i]).real());                  //   Copy real multipole to GPU buffer
-      sourceHost.push_back((CJ->M[i]).imag());                  //   Copy imaginary multipole to GPU buffer
-    }                                                           //  End loop over coefs
-  }                                                             // End loop over cells
-  Map targetBegin;                                              // Define map for offset of target cells
-  int key = 0;                                                  // Initialize key to range of coefs in source cells
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells bottomup (except root cell)
-    if( !listM2M[CI-CI0].empty() ) {                            //  If the interation list is not empty
-      keysHost.push_back(key);                                  //   Save key to range of coefs in source cells
-      key += 2*listM2M[CI-CI0].size()+1;                        //   Increment key counter
-      rangeHost.push_back(listM2M[CI-CI0].size());              //   Save size of interaction list
-      for( L_iter L=listM2M[CI-CI0].begin(); L!=listM2M[CI-CI0].end(); ++L ) {//  Loop over interaction list
-        CJ = *L;                                                //   Set source cell
-        rangeHost.push_back(sourceBegin[CJ]);                   //    Set begin index of coefs in source cell
-        rangeHost.push_back(sourceSize[CJ]);                    //    Set number of coefs in source cell
-      }                                                         //   End loop over interaction list
-      targetBegin[CI] = targetHost.size();                      //   Key : iterator, Value : offset of target coefs
-      targetHost.push_back(CI->X[0]);                           //   Copy x position to GPU buffer
-      targetHost.push_back(CI->X[1]);                           //   Copy y position to GPU buffer
-      targetHost.push_back(CI->X[2]);                           //   Copy z position to GPU buffer
-      for( int i=0; i!=2*NCOEF; ++i ) {                         //   Loop over coefs in target cell
-        targetHost.push_back(0);                                //    Pad GPU buffer
-      }                                                         //   End loop over coefs
-      int numPad = 2 * THREADS - 2 * NCOEF - 3;                 //   Number of elements to pad in target GPU buffer
-      assert(numPad >= 0);                                      //   THREADS must be large enough
-      for( int i=0; i!=numPad; ++i ) {                          //   Loop over elements to pad
-        targetHost.push_back(0);                                //    Pad GPU buffer
-      }                                                         //   End loop over elements to pad
-    }                                                           //  End if for empty interation list
-  }                                                             // End loop over cells
-  M2M();                                                        // Evaluate M2M kernel
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
-    if( !listM2M[CI-CI0].empty() ) {                            //  If the interation list is not empty
-      int begin = targetBegin[CI];                              //   Offset of target coefs
-      for( int i=0; i!=NCOEF; ++i ) {                           //   Loop over target coefs
-        CI->M[i].real() += targetHost[begin+2*i+0];             //    Copy real target values from GPU buffer
-        CI->M[i].imag() += targetHost[begin+2*i+1];             //    Copy imaginary target values from GPU buffer
-      }                                                         //   End loop over target coefs
-      listM2M[CI-CI0].clear();                                  //   Clear M2M interaction list
-    }                                                           //  End if for empty interation list
-  }                                                             // End loop over target cells
-  keysHost.clear();                                             // Clear keys vector
-  rangeHost.clear();                                            // Clear range vector
-  targetHost.clear();                                           // Clear target vector
-  sourceHost.clear();                                           // Clear source vector
+  int level = getLevel(CJ0->I);                                 // Level of twig
+  while( level != 0 ) {                                         // While level of source is not root level
+    for( CJ=cells.begin(); CJ!=cells.end(); ++CJ ) {            //  Loop over cells bottomup (except root cell)
+      if( getLevel(CJ->I) == level ) {                          //   If source cell is at current level
+        CI = CJ0 + CJ->PARENT;                                  //    Set target cell iterator
+        listM2M[CI-CI0].push_back(CJ);                          //    Push source cell into M2M interaction list
+        sourceBegin[CJ] = sourceHost.size();                    //    Key : iterator, Value : offset of sources
+        sourceSize[CJ] = 2 * NCOEF;                             //    Key : iterator, Value : number of coefs
+        sourceHost.push_back(CJ->X[0]);                         //    Copy x position to GPU buffer
+        sourceHost.push_back(CJ->X[1]);                         //    Copy y position to GPU buffer
+        sourceHost.push_back(CJ->X[2]);                         //    Copy z position to GPU buffer
+        for( int i=0; i!=NCOEF; ++i ) {                         //    Loop over coefs in source cell
+          sourceHost.push_back((CJ->M[i]).real());              //     Copy real multipole to GPU buffer
+          sourceHost.push_back((CJ->M[i]).imag());              //     Copy imaginary multipole to GPU buffer
+        }                                                       //    End loop over coefs
+      }                                                         //   Endif for current level
+    }                                                           //  End loop over cells
+    Map targetBegin;                                            //  Define map for offset of target cells
+    int key = 0;                                                //  Initialize key to range of coefs in source cells
+    for( CI=cells.begin(); CI!=cells.end(); ++CI ) {            //  Loop over cells bottomup (except root cell)
+      if( !listM2M[CI-CI0].empty() ) {                          //   If the interation list is not empty
+        keysHost.push_back(key);                                //    Save key to range of coefs in source cells
+        key += 2*listM2M[CI-CI0].size()+1;                      //    Increment key counter
+        rangeHost.push_back(listM2M[CI-CI0].size());            //    Save size of interaction list
+        for( L_iter L=listM2M[CI-CI0].begin(); L!=listM2M[CI-CI0].end(); ++L ) {//  Loop over interaction list
+          CJ = *L;                                              //    Set source cell
+          rangeHost.push_back(sourceBegin[CJ]);                 //     Set begin index of coefs in source cell
+          rangeHost.push_back(sourceSize[CJ]);                  //     Set number of coefs in source cell
+        }                                                       //    End loop over interaction list
+        targetBegin[CI] = targetHost.size();                    //    Key : iterator, Value : offset of target coefs
+        targetHost.push_back(CI->X[0]);                         //    Copy x position to GPU buffer
+        targetHost.push_back(CI->X[1]);                         //    Copy y position to GPU buffer
+        targetHost.push_back(CI->X[2]);                         //    Copy z position to GPU buffer
+        for( int i=0; i!=2*NCOEF; ++i ) {                       //    Loop over coefs in target cell
+          targetHost.push_back(0);                              //     Pad GPU buffer
+        }                                                       //    End loop over coefs
+        int numPad = 2 * THREADS - 2 * NCOEF - 3;               //    Number of elements to pad in target GPU buffer
+        assert(numPad >= 0);                                    //    THREADS must be large enough
+        for( int i=0; i!=numPad; ++i ) {                        //    Loop over elements to pad
+          targetHost.push_back(0);                              //     Pad GPU buffer
+        }                                                       //    End loop over elements to pad
+      }                                                         //   End if for empty interation list
+    }                                                           //  End loop over cells
+    M2M();                                                      //  Evaluate M2M kernel
+    for( CI=cells.begin(); CI!=cells.end(); ++CI ) {            //  Loop over target cells
+      if( !listM2M[CI-CI0].empty() ) {                          //   If the interation list is not empty
+        int begin = targetBegin[CI];                            //    Offset of target coefs
+        for( int i=0; i!=NCOEF; ++i ) {                         //    Loop over target coefs
+          CI->M[i].real() += targetHost[begin+2*i+0];           //     Copy real target values from GPU buffer
+          CI->M[i].imag() += targetHost[begin+2*i+1];           //     Copy imaginary target values from GPU buffer
+        }                                                       //    End loop over target coefs
+        listM2M[CI-CI0].clear();                                //    Clear M2M interaction list
+      }                                                         //   End if for empty interation list
+    }                                                           //  End loop over target cells
+    keysHost.clear();                                           //  Clear keys vector
+    rangeHost.clear();                                          //  Clear range vector
+    targetHost.clear();                                         //  Clear target vector
+    sourceHost.clear();                                         //  Clear source vector
+    level--;                                                    //  Decrement level
+  }                                                             // End while loop over levels
 }
 
 void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
@@ -373,62 +379,69 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
   Lists listL2L(cells.size());                                  // Define L2L interation list vector
   Map sourceBegin;                                              // Define map for offset of source cells in listL2L
   Map sourceSize;                                               // Define map for size of source cells in listL2L
-  for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {          // Loop over cells topdown (except root cell)
-    CJ = CI0 + CI->PARENT;                                      //  Set source cell iterator
-    listL2L[CI-CI0].push_back(CJ);                              //  Push source cell into L2L interaction list
-    if( sourceBegin[CJ] == 0 ) {                                //  If the source cell has not been stored yet
-      sourceBegin[CJ] = sourceHost.size();                      //   Key : iterator, Value : offset of sources
-      sourceSize[CJ] = 2 * NCOEF;                               //   Key : iterator, Value : number of coefs
-      sourceHost.push_back(CJ->X[0]);                           //   Copy x position to GPU buffer
-      sourceHost.push_back(CJ->X[1]);                           //   Copy y position to GPU buffer
-      sourceHost.push_back(CJ->X[2]);                           //   Copy z position to GPU buffer
-      for( int i=0; i!=NCOEF; ++i ) {                           //   Loop over coefs in source cell
-        sourceHost.push_back((CJ->L[i]).real());                //    Copy real local to GPU buffer
-        sourceHost.push_back((CJ->L[i]).imag());                //    Copy imaginary local to GPU buffer
-      }                                                         //   End loop over coefs
-    }                                                           //  Endif for stored source cell
-  }                                                             // End loop over cells topdown
-  Map targetBegin;                                              // Define map for offset of target cells
-  int key = 0;                                                  // Initialize key to range of coefs in source cells
-  for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {          // Loop over cells topdown (except root cell)
-    if( !listL2L[CI-CI0].empty() ) {                            //  If the interation list is not empty
-      keysHost.push_back(key);                                  //   Save key to range of coefs in source cells
-      key += 2*listL2L[CI-CI0].size()+1;                        //   Increment key counter
-      rangeHost.push_back(listL2L[CI-CI0].size());              //   Save size of interaction list
-      for( L_iter L=listL2L[CI-CI0].begin(); L!=listL2L[CI-CI0].end(); ++L ) {//  Loop over interaction list
-        CJ = *L;                                                //   Set source cell
-        rangeHost.push_back(sourceBegin[CJ]);                   //    Set begin index of coefs in source cell
-        rangeHost.push_back(sourceSize[CJ]);                    //    Set number of coefs in source cell
-      }                                                         //   End loop over interaction list
-      targetBegin[CI] = targetHost.size();                      //   Key : iterator, Value : offset of target coefs
-      targetHost.push_back(CI->X[0]);                           //   Copy x position to GPU buffer
-      targetHost.push_back(CI->X[1]);                           //   Copy y position to GPU buffer
-      targetHost.push_back(CI->X[2]);                           //   Copy z position to GPU buffer
-      for( int i=0; i!=2*NCOEF; ++i ) {                         //   Loop over coefs in target cell
-        targetHost.push_back(0);                                //    Pad GPU buffer
-      }                                                         //   End loop over coefs
-      int numPad = 2 * THREADS - 2 * NCOEF - 3;                 //   Number of elements to pad in target GPU buffer
-      assert(numPad >= 0);                                      //   THREADS must be large enough
-      for( int i=0; i!=numPad; ++i ) {                          //   Loop over elements to pad
-        targetHost.push_back(0);                                //    Pad GPU buffer
-      }                                                         //   End loop over elements to pad
-    }                                                           //  End if for empty interation list
-  }                                                             // End loop over cells topdown
-  L2L();                                                        // Evaluate L2L kernel
-  for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {          // Loop over cells topdown (except root cell)
-    if( !listL2L[CI-CI0].empty() ) {                            //  If the interation list is not empty
-      int begin = targetBegin[CI];                              //   Offset of target coefs
-      for( int i=0; i!=NCOEF; ++i ) {                           //   Loop over target coefs
-        CI->L[i].real() += targetHost[begin+2*i+0];             //    Copy real target values from GPU buffer
-        CI->L[i].imag() += targetHost[begin+2*i+1];             //    Copy imaginary target values from GPU buffer
-      }                                                         //   End loop over target coefs
-      listL2L[CI-CI0].clear();                                  //   Clear L2L interaction list
-    }                                                           //  End if for empty interation list
-  }                                                             // End loop over cells topdown
-  keysHost.clear();                                             // Clear keys vector
-  rangeHost.clear();                                            // Clear range vector
-  targetHost.clear();                                           // Clear target vector
-  sourceHost.clear();                                           // Clear source vector
+  int maxLevel = getLevel(CI0->I);                              // Level of twig
+  int level = 1;                                                // Start level from 1
+  while( level != maxLevel+1 ) {                                // While level of source is not root level
+    for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {        //  Loop over cells topdown (except root cell)
+      if( getLevel(CI->I) == level ) {                          //   If target cell is at current level
+        CJ = CI0 + CI->PARENT;                                  //    Set source cell iterator
+        listL2L[CI-CI0].push_back(CJ);                          //    Push source cell into L2L interaction list
+        if( sourceBegin[CJ] == 0 ) {                            //    If the source cell has not been stored yet
+          sourceBegin[CJ] = sourceHost.size();                  //     Key : iterator, Value : offset of sources
+          sourceSize[CJ] = 2 * NCOEF;                           //     Key : iterator, Value : number of coefs
+          sourceHost.push_back(CJ->X[0]);                       //     Copy x position to GPU buffer
+          sourceHost.push_back(CJ->X[1]);                       //     Copy y position to GPU buffer
+          sourceHost.push_back(CJ->X[2]);                       //     Copy z position to GPU buffer
+          for( int i=0; i!=NCOEF; ++i ) {                       //     Loop over coefs in source cell
+            sourceHost.push_back((CJ->L[i]).real());            //      Copy real local to GPU buffer
+            sourceHost.push_back((CJ->L[i]).imag());            //      Copy imaginary local to GPU buffer
+          }                                                     //     End loop over coefs
+        }                                                       //    Endif for current level
+      }                                                         //   Endif for stored source cell
+    }                                                           //  End loop over cells topdown
+    Map targetBegin;                                            //  Define map for offset of target cells
+    int key = 0;                                                //  Initialize key to range of coefs in source cells
+    for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {        //  Loop over cells topdown (except root cell)
+      if( !listL2L[CI-CI0].empty() ) {                          //   If the interation list is not empty
+        keysHost.push_back(key);                                //    Save key to range of coefs in source cells
+        key += 2*listL2L[CI-CI0].size()+1;                      //    Increment key counter
+        rangeHost.push_back(listL2L[CI-CI0].size());            //    Save size of interaction list
+        for( L_iter L=listL2L[CI-CI0].begin(); L!=listL2L[CI-CI0].end(); ++L ) {//  Loop over interaction list
+          CJ = *L;                                              //    Set source cell
+          rangeHost.push_back(sourceBegin[CJ]);                 //     Set begin index of coefs in source cell
+          rangeHost.push_back(sourceSize[CJ]);                  //     Set number of coefs in source cell
+        }                                                       //    End loop over interaction list
+        targetBegin[CI] = targetHost.size();                    //    Key : iterator, Value : offset of target coefs
+        targetHost.push_back(CI->X[0]);                         //    Copy x position to GPU buffer
+        targetHost.push_back(CI->X[1]);                         //    Copy y position to GPU buffer
+        targetHost.push_back(CI->X[2]);                         //    Copy z position to GPU buffer
+        for( int i=0; i!=2*NCOEF; ++i ) {                       //    Loop over coefs in target cell
+          targetHost.push_back(0);                              //     Pad GPU buffer
+        }                                                       //    End loop over coefs
+        int numPad = 2 * THREADS - 2 * NCOEF - 3;               //    Number of elements to pad in target GPU buffer
+        assert(numPad >= 0);                                    //    THREADS must be large enough
+        for( int i=0; i!=numPad; ++i ) {                        //    Loop over elements to pad
+          targetHost.push_back(0);                              //     Pad GPU buffer
+        }                                                       //    End loop over elements to pad
+      }                                                         //   End if for empty interation list
+    }                                                           //  End loop over cells topdown
+    L2L();                                                      //  Evaluate L2L kernel
+    for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {        //  Loop over cells topdown (except root cell)
+      if( !listL2L[CI-CI0].empty() ) {                          //   If the interation list is not empty
+        int begin = targetBegin[CI];                            //    Offset of target coefs
+        for( int i=0; i!=NCOEF; ++i ) {                         //    Loop over target coefs
+          CI->L[i].real() += targetHost[begin+2*i+0];           //     Copy real target values from GPU buffer
+          CI->L[i].imag() += targetHost[begin+2*i+1];           //     Copy imaginary target values from GPU buffer
+        }                                                       //    End loop over target coefs
+        listL2L[CI-CI0].clear();                                //    Clear L2L interaction list
+      }                                                         //   End if for empty interation list
+    }                                                           //  End loop over cells topdown
+    keysHost.clear();                                           //  Clear keys vector
+    rangeHost.clear();                                          //  Clear range vector
+    targetHost.clear();                                         //  Clear target vector
+    sourceHost.clear();                                         //  Clear source vector
+    level++;                                                    //  Increment level
+  }                                                             // End while loop over levels
 }
 
 void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
