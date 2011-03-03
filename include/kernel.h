@@ -33,6 +33,10 @@ protected:
 public:
   void initialize();
 
+  void allocGPU();
+
+  void deallocGPU();
+
   void P2M();
 
   void M2M();

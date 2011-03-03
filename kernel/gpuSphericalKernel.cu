@@ -18,7 +18,65 @@ __device__ void cart2sph(float& r, float& theta, float& phi, float dx, float dy,
   }
 }
 
-__device__ void P2M_core(float* target, float rho, float alpha, float beta, float source) {
+__device__ void evalMultipole(float *YnmShrd, float rho, float alpha, float *factShrd) {
+  float x = cosf(alpha);
+  float s = sqrtf(1 - x * x);
+  float fact = 1;
+  float pn = 1;
+  float rhom = 1;
+  for( int m=0; m<P; ++m ){
+    float p = pn;
+    int npn = m * m + 2 * m;
+    int nmn = m * m;
+    YnmShrd[npn] = rhom * p / factShrd[2*m];
+    YnmShrd[nmn] = YnmShrd[npn];
+    float p1 = p;
+    p = x * (2 * m + 1) * p;
+    rhom *= -rho;
+    float rhon = rhom;
+    for( int n=m+1; n<P; ++n ){
+      int npm = n * n + n + m;
+      int nmm = n * n + n - m;
+      YnmShrd[npm] = rhon * p / factShrd[n+m];
+      YnmShrd[nmm] = YnmShrd[npm];
+      float p2 = p1;
+      p1 = p;
+      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
+      rhon *= -rho;
+    }
+    pn = -pn * fact * s;
+    fact = fact + 2;
+  }
+}
+
+__device__ void evalLocal(float *YnmShrd, float rho, float alpha, float *factShrd) {
+  float x = cosf(alpha);
+  float s = sqrt(1 - x * x);
+  float fact = 1;
+  float pn = 1;
+  float rhom = 1.0 / rho;
+  for( int m=0; m<2*P; ++m ){
+    float p = pn;
+    int i = m * (m + 1) /2 + m;
+    YnmShrd[i] = rhom * p;
+    float p1 = p;
+    p = x * (2 * m + 1) * p;
+    rhom /= rho;
+    float rhon = rhom;
+    for( int n=m+1; n<2*P; ++n ){
+      i = n * (n + 1) / 2 + m;
+      YnmShrd[i] = rhon * p * factShrd[n-m];
+      float p2 = p1;
+      p1 = p;
+      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
+      rhon /= rho;
+    }
+    pn = -pn * fact * s;
+    fact = fact + 2;
+  }
+}
+
+__device__ void P2M_core(float *target, float rho, float alpha, float beta, float source) {
   __shared__ float factShrd[2*P];
   __shared__ float YnmShrd[NCOEF];
   float fact = 1;
@@ -88,7 +146,7 @@ __global__ void P2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
         d.x = sourceShrd[4*i+0] - targetShrd[0];
         d.y = sourceShrd[4*i+1] - targetShrd[1];
         d.z = sourceShrd[4*i+2] - targetShrd[2];
-        float rho, alpha, beta;
+        float rho,alpha,beta;
         cart2sph(rho,alpha,beta,d.x,d.y,d.z);
         P2M_core(target,rho,alpha,beta,sourceShrd[4*i+3]);
       }
@@ -106,7 +164,7 @@ __global__ void P2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       d.x = sourceShrd[4*i+0] - targetShrd[0];
       d.y = sourceShrd[4*i+1] - targetShrd[1];
       d.z = sourceShrd[4*i+2] - targetShrd[2];
-      float rho, alpha, beta;
+      float rho,alpha,beta;
       cart2sph(rho,alpha,beta,d.x,d.y,d.z);
       P2M_core(target,rho,alpha,beta,sourceShrd[4*i+3]);
     }
@@ -116,38 +174,7 @@ __global__ void P2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[2*itarget+1] = target[1];
 }
 
-__device__ void M2M_Ynm(float* YnmShrd, float rho, float alpha, float* factShrd) {
-  float x = cosf(alpha);
-  float s = sqrt(1 - x * x);
-  float fact = 1;
-  float pn = 1;
-  float rhom = 1.0;
-  for( int m=0; m<P; ++m ){
-    float p = pn;
-    int npn = m * m + 2 * m;
-    int nmn = m * m;
-    YnmShrd[npn] = rhom * p / factShrd[2*m];
-    YnmShrd[nmn] = YnmShrd[npn];
-    float p1 = p;
-    p = x * (2 * m + 1) * p;
-    rhom *= -rho;
-    float rhon = rhom;
-    for( int n=m+1; n<P; ++n ){
-      int npm = n * n + n + m;
-      int nmm = n * n + n - m;
-      YnmShrd[npm] = rhon * p / factShrd[n+m];
-      YnmShrd[nmm] = YnmShrd[npm];
-      float p2 = p1;
-      p1 = p;
-      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-      rhon *= -rho;
-    }
-    pn = -pn * fact * s;
-    fact = fact + 2;
-  }
-}
-
-__device__ void M2M_core(float* target, float beta, float* factShrd, float* YnmShrd, float* sourceShrd) {
+__device__ void M2M_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
   int j = floor(sqrt(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
@@ -217,9 +244,9 @@ __global__ void M2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
-    float rho, alpha, beta;
+    float rho,alpha,beta;
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
-    M2M_Ynm(YnmShrd,rho,alpha,factShrd);
+    evalMultipole(YnmShrd,rho,alpha,factShrd);
     M2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
@@ -227,34 +254,7 @@ __global__ void M2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[2*itarget+1] = target[1];
 }
 
-__device__ void M2L_Ynm(float* YnmShrd, float rho, float alpha, float* factShrd) {
-  float x = cosf(alpha);
-  float s = sqrt(1 - x * x);
-  float fact = 1;
-  float pn = 1;
-  float rhom = 1.0 / rho;
-  for( int m=0; m<2*P; ++m ){
-    float p = pn;
-    int i = m * (m + 1) /2 + m;
-    YnmShrd[i] = rhom * p;
-    float p1 = p;
-    p = x * (2 * m + 1) * p;
-    rhom /= rho;
-    float rhon = rhom;
-    for( int n=m+1; n<2*P; ++n ){
-      i = n * (n + 1) / 2 + m;
-      YnmShrd[i] = rhon * p * factShrd[n-m];
-      float p2 = p1;
-      p1 = p;
-      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-      rhon /= rho;
-    }
-    pn = -pn * fact * s;
-    fact = fact + 2;
-  }
-}
-
-__device__ void M2L_core(float* target, float  beta, float* factShrd, float* YnmShrd, float* sourceShrd) {
+__device__ void M2L_core(float *target, float  beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
   int j = floor(sqrt(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
@@ -319,17 +319,17 @@ __global__ void M2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
-    float rho, alpha, beta;
-    cart2sph(rho, alpha, beta, d.x, d.y, d.z);
-    M2L_Ynm(YnmShrd, rho, alpha, factShrd);
-    M2L_core(target, beta, factShrd, YnmShrd, sourceShrd);
+    float rho,alpha,beta;
+    cart2sph(rho,alpha,beta,d.x,d.y,d.z);
+    evalLocal(YnmShrd,rho,alpha,factShrd);
+    M2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[2*itarget+0] = target[0];
   targetGlob[2*itarget+1] = target[1];
 }
 
-__device__ void M2P_core(float &pot, float r, float theta, float phi, float* factShrd, float* sourceShrd) {
+__device__ void M2P_core(float &pot, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
   float x = cosf(theta);
   float s = sqrtf(1 - x * x);
   float fact = 1;
@@ -393,7 +393,7 @@ __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
-    float r, theta, phi;
+    float r,theta,phi;
     cart2sph(r,theta,phi,d.x,d.y,d.z);
     M2P_core(target[3],r,theta,phi,factShrd,sourceShrd);
   }
@@ -455,38 +455,7 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[4*itarget+3] = target[3];
 }
 
-__device__ void L2L_Ynm(float* YnmShrd, float rho, float alpha, float* factShrd) {
-  float x = cosf(alpha);
-  float s = sqrt(1 - x * x);
-  float fact = 1;
-  float pn = 1;
-  float rhom = 1.0;
-  for( int m=0; m<P; ++m ){
-    float p = pn;
-    int npn = m * m + 2 * m;
-    int nmn = m * m;
-    YnmShrd[npn] = rhom * p / factShrd[2*m];
-    YnmShrd[nmn] = YnmShrd[npn];
-    float p1 = p;
-    p = x * (2 * m + 1) * p;
-    rhom *= -rho;
-    float rhon = rhom;
-    for( int n=m+1; n<P; ++n ){
-      int npm = n * n + n + m;
-      int nmm = n * n + n - m;
-      YnmShrd[npm] = rhon * p / factShrd[n+m];
-      YnmShrd[nmm] = YnmShrd[npm];
-      float p2 = p1;
-      p1 = p;
-      p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-      rhon *= -rho;
-    }
-    pn = -pn * fact * s;
-    fact = fact + 2;
-  }
-}
-
-__device__ void L2L_core(float* target, float beta, float* factShrd, float* YnmShrd, float* sourceShrd) {
+__device__ void L2L_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
   int j = floor(sqrt(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
@@ -553,9 +522,9 @@ __global__ void L2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
-    float rho, alpha, beta;
+    float rho,alpha,beta;
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
-    L2L_Ynm(YnmShrd,rho,alpha,factShrd);
+    evalMultipole(YnmShrd,rho,alpha,factShrd);
     L2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
@@ -563,7 +532,7 @@ __global__ void L2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[2*itarget+1] = target[1];
 }
 
-__device__ void L2P_core(float &pot, float r, float theta, float phi, float* factShrd, float* sourceShrd) {
+__device__ void L2P_core(float &pot, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
   float x = cosf(theta);
   float s = sqrtf(1 - x * x);
   float fact = 1;
@@ -595,7 +564,7 @@ __device__ void L2P_core(float &pot, float r, float theta, float phi, float* fac
       rhon *= r;
     }
     pn = -pn * fact * s;
-    fact = fact+2;
+    fact = fact + 2;
   }
 }
 
@@ -627,7 +596,7 @@ __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
-    float r, theta, phi;
+    float r,theta,phi;
     cart2sph(r,theta,phi,d.x,d.y,d.z);
     L2P_core(target[3],r,theta,phi,factShrd,sourceShrd);
   }
@@ -642,151 +611,72 @@ void Kernel::initialize() {
   cudaThreadSynchronize();                                      // Sync GPU threads
 }
 
-void Kernel::P2M() {
-  int numBlocks = keysHost.size();
-  int numRanges = rangeHost.size();
-  int numTarget = targetHost.size();
-  int numSource = sourceHost.size();
-  cudaMalloc( (void**) &keysDevc,   numBlocks*sizeof(int) );
-  cudaMalloc( (void**) &rangeDevc,  numRanges*sizeof(int) );
-  cudaMalloc( (void**) &targetDevc, numTarget*sizeof(float) );
-  cudaMalloc( (void**) &sourceDevc, numSource*sizeof(float) );
-  cudaMemcpy(keysDevc,  &keysHost[0],  numBlocks*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(rangeDevc, &rangeHost[0], numRanges*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(targetDevc,&targetHost[0],numTarget*sizeof(float),cudaMemcpyHostToDevice);
-  cudaMemcpy(sourceDevc,&sourceHost[0],numSource*sizeof(float),cudaMemcpyHostToDevice);
-  P2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
-  cudaMemcpy(&targetHost[0],targetDevc,numTarget*sizeof(float),cudaMemcpyDeviceToHost);
+void Kernel::allocGPU() {
+  cudaMalloc( (void**) &keysDevc,   keysHost.size()*sizeof(int) );
+  cudaMalloc( (void**) &rangeDevc,  rangeHost.size()*sizeof(int) );
+  cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(float) );
+  cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(float) );
+  cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),    cudaMemcpyHostToDevice);
+  cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),   cudaMemcpyHostToDevice);
+  cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(float),cudaMemcpyHostToDevice);
+  cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(float),cudaMemcpyHostToDevice);
+}
+
+void Kernel::deallocGPU() {
+  cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(float),cudaMemcpyDeviceToHost);
   cudaFree(keysDevc);
   cudaFree(rangeDevc);
   cudaFree(targetDevc);
   cudaFree(sourceDevc);
+}
+
+void Kernel::P2M() {
+  allocGPU();
+  int numBlocks = keysHost.size();
+  P2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  deallocGPU();
 }
 
 void Kernel::M2M() {
+  allocGPU();
   int numBlocks = keysHost.size();
-  int numRanges = rangeHost.size();
-  int numTarget = targetHost.size();
-  int numSource = sourceHost.size();
-  cudaMalloc( (void**) &keysDevc,   numBlocks*sizeof(int) );
-  cudaMalloc( (void**) &rangeDevc,  numRanges*sizeof(int) );
-  cudaMalloc( (void**) &targetDevc, numTarget*sizeof(float) );
-  cudaMalloc( (void**) &sourceDevc, numSource*sizeof(float) );
-  cudaMemcpy(keysDevc,  &keysHost[0],  numBlocks*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(rangeDevc, &rangeHost[0], numRanges*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(targetDevc,&targetHost[0],numTarget*sizeof(float),cudaMemcpyHostToDevice);
-  cudaMemcpy(sourceDevc,&sourceHost[0],numSource*sizeof(float),cudaMemcpyHostToDevice);
   M2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
-  cudaMemcpy(&targetHost[0],targetDevc,numTarget*sizeof(float),cudaMemcpyDeviceToHost);
-  cudaFree(keysDevc);
-  cudaFree(rangeDevc);
-  cudaFree(targetDevc);
-  cudaFree(sourceDevc);
+  deallocGPU();
 }
 
 void Kernel::M2L() {
+  allocGPU();
   int numBlocks = keysHost.size();
-  int numRanges = rangeHost.size();
-  int numTarget = targetHost.size();
-  int numSource = sourceHost.size();
-  cudaMalloc( (void**) &keysDevc,   numBlocks*sizeof(int) );
-  cudaMalloc( (void**) &rangeDevc,  numRanges*sizeof(int) );
-  cudaMalloc( (void**) &targetDevc, numTarget*sizeof(float) );
-  cudaMalloc( (void**) &sourceDevc, numSource*sizeof(float) );
-  cudaMemcpy(keysDevc,  &keysHost[0],  numBlocks*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(rangeDevc, &rangeHost[0], numRanges*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(targetDevc,&targetHost[0],numTarget*sizeof(float),cudaMemcpyHostToDevice);
-  cudaMemcpy(sourceDevc,&sourceHost[0],numSource*sizeof(float),cudaMemcpyHostToDevice);
   M2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
-  cudaMemcpy(&targetHost[0],targetDevc,numTarget*sizeof(float),cudaMemcpyDeviceToHost);
-  cudaFree(keysDevc);
-  cudaFree(rangeDevc);
-  cudaFree(targetDevc);
-  cudaFree(sourceDevc);
+  deallocGPU();
 }
 
 void Kernel::M2P() {
+  allocGPU();
   int numBlocks = keysHost.size();
-  int numRanges = rangeHost.size();
-  int numTarget = targetHost.size();
-  int numSource = sourceHost.size();
-  cudaMalloc( (void**) &keysDevc,   numBlocks*sizeof(int) );
-  cudaMalloc( (void**) &rangeDevc,  numRanges*sizeof(int) );
-  cudaMalloc( (void**) &targetDevc, numTarget*sizeof(float) );
-  cudaMalloc( (void**) &sourceDevc, numSource*sizeof(float) );
-  cudaMemcpy(keysDevc,  &keysHost[0],  numBlocks*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(rangeDevc, &rangeHost[0], numRanges*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(targetDevc,&targetHost[0],numTarget*sizeof(float),cudaMemcpyHostToDevice);
-  cudaMemcpy(sourceDevc,&sourceHost[0],numSource*sizeof(float),cudaMemcpyHostToDevice);
   M2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
-  cudaMemcpy(&targetHost[0],targetDevc,numTarget*sizeof(float),cudaMemcpyDeviceToHost);
-  cudaFree(keysDevc);
-  cudaFree(rangeDevc);
-  cudaFree(targetDevc);
-  cudaFree(sourceDevc);
+  deallocGPU();
 }
 
 void Kernel::P2P() {
+  allocGPU();
   int numBlocks = keysHost.size();
-  int numRanges = rangeHost.size();
-  int numTarget = targetHost.size();
-  int numSource = sourceHost.size();
-  cudaMalloc( (void**) &keysDevc,   numBlocks*sizeof(int) );
-  cudaMalloc( (void**) &rangeDevc,  numRanges*sizeof(int) );
-  cudaMalloc( (void**) &targetDevc, numTarget*sizeof(float) );
-  cudaMalloc( (void**) &sourceDevc, numSource*sizeof(float) );
-  cudaMemcpy(keysDevc,  &keysHost[0],  numBlocks*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(rangeDevc, &rangeHost[0], numRanges*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(targetDevc,&targetHost[0],numTarget*sizeof(float),cudaMemcpyHostToDevice);
-  cudaMemcpy(sourceDevc,&sourceHost[0],numSource*sizeof(float),cudaMemcpyHostToDevice);
   P2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
-  cudaMemcpy(&targetHost[0],targetDevc,numTarget*sizeof(float),cudaMemcpyDeviceToHost);
-  cudaFree(keysDevc);
-  cudaFree(rangeDevc);
-  cudaFree(targetDevc);
-  cudaFree(sourceDevc);
+  deallocGPU();
 }
 
 void Kernel::L2L() {
+  allocGPU();
   int numBlocks = keysHost.size();
-  int numRanges = rangeHost.size();
-  int numTarget = targetHost.size();
-  int numSource = sourceHost.size();
-  cudaMalloc( (void**) &keysDevc,   numBlocks*sizeof(int) );
-  cudaMalloc( (void**) &rangeDevc,  numRanges*sizeof(int) );
-  cudaMalloc( (void**) &targetDevc, numTarget*sizeof(float) );
-  cudaMalloc( (void**) &sourceDevc, numSource*sizeof(float) );
-  cudaMemcpy(keysDevc,  &keysHost[0],  numBlocks*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(rangeDevc, &rangeHost[0], numRanges*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(targetDevc,&targetHost[0],numTarget*sizeof(float),cudaMemcpyHostToDevice);
-  cudaMemcpy(sourceDevc,&sourceHost[0],numSource*sizeof(float),cudaMemcpyHostToDevice);
   L2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
-  cudaMemcpy(&targetHost[0],targetDevc,numTarget*sizeof(float),cudaMemcpyDeviceToHost);
-  cudaFree(keysDevc);
-  cudaFree(rangeDevc);
-  cudaFree(targetDevc);
-  cudaFree(sourceDevc);
+  deallocGPU();
 }
 
 void Kernel::L2P() {
+  allocGPU();
   int numBlocks = keysHost.size();
-  int numRanges = rangeHost.size();
-  int numTarget = targetHost.size();
-  int numSource = sourceHost.size();
-  cudaMalloc( (void**) &keysDevc,   numBlocks*sizeof(int) );
-  cudaMalloc( (void**) &rangeDevc,  numRanges*sizeof(int) );
-  cudaMalloc( (void**) &targetDevc, numTarget*sizeof(float) );
-  cudaMalloc( (void**) &sourceDevc, numSource*sizeof(float) );
-  cudaMemcpy(keysDevc,  &keysHost[0],  numBlocks*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(rangeDevc, &rangeHost[0], numRanges*sizeof(int),  cudaMemcpyHostToDevice);
-  cudaMemcpy(targetDevc,&targetHost[0],numTarget*sizeof(float),cudaMemcpyHostToDevice);
-  cudaMemcpy(sourceDevc,&sourceHost[0],numSource*sizeof(float),cudaMemcpyHostToDevice);
   L2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
-  cudaMemcpy(&targetHost[0],targetDevc,numTarget*sizeof(float),cudaMemcpyDeviceToHost);
-  cudaFree(keysDevc);
-  cudaFree(rangeDevc);
-  cudaFree(targetDevc);
-  cudaFree(sourceDevc);
+  deallocGPU();
 }
 
 void Kernel::finalize() {
