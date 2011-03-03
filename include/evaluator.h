@@ -86,6 +86,14 @@ public:
     listM2P[0].push_back(Cj);                                   // Push single cell into list
   }
 
+  void setSourceBody();                                         // Set source buffer for bodies
+  void setSourceCell(bool isM);                                 // Set source buffer for cells
+  void setTargetBody(Cells &cells, Lists lists);                // Set target buffer for bodies
+  void setTargetCell(Cells &cells, Lists lists);                // Set target buffer for cells
+  void getTargetBody(Cells &cells, Lists &lists);               // Get body values from target buffer
+  void getTargetCell(Cells &cells, Lists &lists, bool isM);     // Get cell values from target buffer
+  void clearBuffers();                                          // Clear GPU buffers
+
   void evalP2P(Bodies &ibodies, Bodies &jbodies);               // Evaluate P2P kernel (all pairs)
   void evalP2M(Cells &twigs);                                   // Evaluate P2M kernel
   void evalM2M(Cells &cells);                                   // Evaluate M2M kernel

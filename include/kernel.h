@@ -17,6 +17,9 @@ protected:
   std::vector<int> rangeHost;                                   // Ranges on host
   std::vector<real> sourceHost;                                 // Sources on host
   std::vector<real> targetHost;                                 // Targets on host
+  Map sourceBegin;                                              // Define map for offset of source cells
+  Map sourceSize;                                               // Define map for size of source cells
+  Map targetBegin;                                              // Define map for offset of target cells
 
   int getLevel(bigint index) {                                  // Get level from cell index
     int level = -1;                                             // Initialize level counter
