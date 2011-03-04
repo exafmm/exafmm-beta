@@ -20,6 +20,10 @@ serialrun: serialrun.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS) -DTOPDOWN
 	./a.out
 
+cuprintf: cuprintf.cu
+	@$(NVCC) $? $(LFLAGS)
+	./a.out
+
 direct_gpu: direct_gpu.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS)
 	./a.out
@@ -36,6 +40,10 @@ mpi: mpi.cxx
 	@$(CXX) $? $(LFLAGS) -g -pg
 	mpirun -np 128 ./a.out
 	gprof -b a.out gmon.out
+
+check_gpus: check_gpus.cxx $(KERNEL)
+	@$(CXX) $? $(LFLAGS)
+	mpirun -np 128 -machinefile ~/mpd/mpd4.hosts ./a.out
 
 shift: shift.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
@@ -55,6 +63,7 @@ let: let.cxx $(KERNEL)
 
 parallelrun: parallelrun.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS)
+#	mpirun -np 7 -machinefile ~/mpd/mpd4.hosts ./a.out
 	mpirun -np 7 ./a.out
 
 all      :
