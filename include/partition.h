@@ -35,7 +35,7 @@ private:
     int maxBucket = send.size();                                // Maximum number of buckets
     int numBucket;                                              // Number of buckets
     int numSample = std::min(maxBucket/SIZES,numData);          // Number of local samples
-    const int MPI_TYPE = getType(data[0].I);                    // Get MPI data type
+    MPI_Datatype MPI_TYPE = getType(data[0].I);                 // Get MPI data type
     int *rcnt = new int [SIZES];                                // MPI recv count
     int *rdsp = new int [SIZES];                                // MPI recv displacement
     for( int i=0; i!=numSample; ++i ) {                         // Loop over local samples
@@ -215,7 +215,7 @@ public:
     numCells1D = 1 << getMaxLevel(bodies);                      // Set initial number of bodies
     B_iter B = bodies.begin();                                  // Reset body iterator
     XMIN[0] = XMAX[0] = B->pos;                                 // Initialize xmin,xmax
-    const int MPI_TYPE = getType(XMIN[0][0]);                   // Get MPI data type
+    MPI_Datatype MPI_TYPE = getType(XMIN[0][0]);                // Get MPI data type
     for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
         if     (B->pos[d] < XMIN[0][d]) XMIN[0][d] = B->pos[d]; //   Determine xmin
@@ -286,7 +286,7 @@ public:
     int maxBucket = 1000;                                       // Maximum number of buckets
     int numBucket;                                              // Number of buckets
     int lOffset = 0;                                            // Local offset of region being considered
-    const int MPI_TYPE = getType(n);                            // Get MPI data type
+    MPI_Datatype MPI_TYPE = getType(n);                         // Get MPI data type
     int *rcnt = new int [SIZES];                                // MPI recv count
     Bigints send(maxBucket);                                    // MPI send buffer for data
     Bigints recv(maxBucket);                                    // MPI recv buffer for data
@@ -338,7 +338,7 @@ public:
   }
 
   void bisection(Bodies &bodies) {                              // Partitioning by recursive bisection
-    const int MPI_TYPE = getType(bodies[0].I);                  // Get MPI data type
+    MPI_Datatype MPI_TYPE = getType(bodies[0].I);               // Get MPI data type
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
      color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators

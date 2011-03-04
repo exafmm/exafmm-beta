@@ -80,7 +80,7 @@ int main() {
     err += (B->pot - B2->pot) * (B->pot - B2->pot);
     rel += B2->pot * B2->pot;
   }
-  int MPI_TYPE = T.getType(err);
+  MPI_Datatype MPI_TYPE = T.getType(err);
   MPI_Reduce(&err,&err2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&rel,&rel2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   if(print) std::cout << "Error         : " << std::sqrt(err2/rel2) << std::endl;

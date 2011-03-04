@@ -43,8 +43,8 @@ public:
   }
 
   template<typename T>
-  int getType(T object) {                                       // Get MPI data type
-    int type;                                                   // MPI data type
+  MPI_Datatype getType(T object) {                              // Get MPI data type
+    MPI_Datatype type;                                          // MPI data type
     if       ( typeid(object) == typeid(char) ) {               // If data type is char
       type = MPI_CHAR;                                          //  use MPI_CHAR
     } else if( typeid(object) == typeid(short) ) {              // If data type is short

@@ -11,7 +11,7 @@ private:
 
 private:
   void getOtherDomain(vect &xmin, vect &xmax, int l) {          // Get boundries of domains on other processes
-    int MPI_TYPE = getType(XMIN[l][0]);                         // Get MPI data type
+    MPI_Datatype MPI_TYPE = getType(XMIN[l][0]);                // Get MPI data type
     vect send[2],recv[2];                                       // Send and recv buffer
     MPI_Request req;                                            // MPI requests
     send[0] = send[1] = XMIN[l];                                // Set XMIN into send buffer
@@ -243,7 +243,7 @@ public:
   ~LocalEssentialTree() {}                                      // Destructor
 
   void commBodies(Cells &cells) {                               // Communicate bodies in the LET
-    int MPI_TYPE = getType(XMIN[LEVEL][0]);                     // Get MPI data type
+    MPI_Datatype MPI_TYPE = getType(XMIN[LEVEL][0]);            // Get MPI data type
     std::vector<vect> xmin(SIZE);                               // Buffer for gathering XMIN
     std::vector<vect> xmax(SIZE);                               // Buffer for gathering XMAX
     MPI_Allgather(&XMIN[LEVEL][0],3,MPI_TYPE,                   // Gather XMIN
