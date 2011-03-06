@@ -1,8 +1,16 @@
+#include <sys/time.h>
 #include "kernel.h"
 #include "gpu.h"
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
 const real EPS = 1e-6;
+
+double get_gpu_time() {
+  cudaThreadSynchronize();
+  struct timeval tv;                                            // Time value
+  gettimeofday(&tv, NULL);                                      // Get time of day in seconds and microseconds
+  return double(tv.tv_sec+tv.tv_usec*1e-6);                     // Combine seconds and microseconds and return
+}
 
 __device__ void cart2sph(float& r, float& theta, float& phi, float dx, float dy, float dz) {
   r = sqrtf(dx * dx + dy * dy + dz * dz)+EPS;
@@ -631,10 +639,24 @@ void Kernel::deallocGPU() {
 }
 
 void Kernel::P2M() {
+  double tic,toc;
+  bool p = true;
+  if( MPIRANK != 0 ) p = false;
+  if(p) std::cout << "-----------" << std::endl;
+  tic = get_gpu_time();
   allocGPU();
+  toc = get_gpu_time();
+  if(p) std::cout << "Alloc GPU     : " << toc-tic << std::endl;
+  tic = get_gpu_time();
   int numBlocks = keysHost.size();
   P2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  toc = get_gpu_time();
+  if(p) std::cout << "GPU kernel    : " << toc-tic << std::endl;
+  tic = get_gpu_time();
   deallocGPU();
+  toc = get_gpu_time();
+  if(p) std::cout << "Dealloc GPU   : " << toc-tic << std::endl;
+  if(p) std::cout << "-----------" << std::endl;
 }
 
 void Kernel::M2M() {

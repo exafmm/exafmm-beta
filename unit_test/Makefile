@@ -64,7 +64,7 @@ let: let.cxx $(KERNEL)
 parallelrun: parallelrun.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS)
 #	mpirun -np 7 -machinefile ~/mpd/mpd4.hosts ./a.out
-	mpirun -np 7 ./a.out
+	mpirun -np 4 ./a.out
 
 all      :
 	make index

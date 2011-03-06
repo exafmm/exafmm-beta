@@ -115,6 +115,11 @@ protected:
   }
 
   void bodies2twigs(Bodies &bodies, Cells &twigs){              // Group bodies into twig cells
+    double tic,toc;
+    bool p = true;
+    if( MPIRANK != 0 ) p = false;
+    if(p) std::cout << "-------" << std::endl;
+    tic = get_time();
     int nleaf = 0;                                              // Initialize number of leafs
     bigint index = bodies[0].I;                                 // Initialize cell index
     B_iter firstLeaf = bodies.begin();                          // Initialize body iterator for first leaf
@@ -139,7 +144,13 @@ protected:
     cell.LEAF = firstLeaf;                                      // Set pointer to first leaf
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
+    toc = get_time();
+    if(p) std::cout << "Push twigs    : " << toc-tic << std::endl;
+    tic = get_time();
     E.evalP2M(twigs);                                           // Evaluate P2M kernel
+    toc = get_time();
+    if(p) std::cout << "P2M           : " << toc-tic << std::endl;
+    if(p) std::cout << "-------" << std::endl;
   }
 
   void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) { // Link twigs bottomup to create all cells in tree

@@ -1,7 +1,7 @@
 #include <sys/time.h>
 #include "evaluator.h"
 
-double get_gpu_time(void) {
+double get_cpu_time() {
   cudaThreadSynchronize();
   struct timeval tv;                                            // Time value
   gettimeofday(&tv, NULL);                                      // Get time of day in seconds and microseconds
@@ -192,6 +192,11 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {
 }
 
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
+  double tic,toc;
+  bool p = true;
+  if( MPIRANK != 0 ) p = false;
+  if(p) std::cout << "---------" << std::endl;
+  tic = get_cpu_time();
   CI0 = cells.begin();                                          // Set begin iterator for target
   CJ0 = cells.begin();                                          // Set begin iterator for source
   Lists listP2M(cells.size());                                  // Define P2M interation list vector
@@ -200,11 +205,29 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
     listP2M[CJ-CJ0].push_back(CJ);                              //  Push source cell into P2M interaction list
     sourceSize[CJ] = CJ->NLEAF;                                 //  Key : iterator, Value : number of leafs
   }                                                             // End loop over source map
+  toc = get_cpu_time();
+  if(p) std::cout << "Get list      : " << toc-tic << std::endl;
+  tic = get_cpu_time();
   setSourceBody();                                              // Set source buffer for bodies
+  toc = get_cpu_time();
+  if(p) std::cout << "Set source    : " << toc-tic << std::endl;
+  tic = get_cpu_time();
   setTargetCell(cells,listP2M);                                 // Set target buffer for cells
+  toc = get_cpu_time();
+  if(p) std::cout << "Set target    : " << toc-tic << std::endl;
+  tic = get_cpu_time();
   P2M();                                                        // Evaluate P2M kernel
+  toc = get_cpu_time();
+  if(p) std::cout << "Call P2M      : " << toc-tic << std::endl;
+  tic = get_cpu_time();
   getTargetCell(cells,listP2M);                                 // Get body values from target buffer
+  toc = get_cpu_time();
+  if(p) std::cout << "Get target    : " << toc-tic << std::endl;
+  tic = get_cpu_time();
   clearBuffers();                                               // Clear GPU buffers
+  toc = get_cpu_time();
+  if(p) std::cout << "Clear buffer  : " << toc-tic << std::endl;
+  if(p) std::cout << "---------" << std::endl;
 }
 
 void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M

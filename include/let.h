@@ -199,18 +199,38 @@ private:
   }
 
   void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ,Cells &sticks) {// Re-index bodies
+    double tic,toc;
+    bool p = true;
+    if( RANK != 0 ) p = false;
+    if(p) std::cout << "-----" << std::endl;
+    tic = get_time();
     while( !twigs.empty() ) {                                   // While twig vector is not empty
       if( twigs.back().NLEAF == 0 ) {                           //  If twig has no leafs
         cells.push_back(twigs.back());                          //   Push twig into cell vector
       }                                                         //  Endif for no leafs
       twigs.pop_back();                                         //  Pop last element from twig vector
     }                                                           // End while for twig vector
+    toc = get_time();
+    if(p) std::cout << "Twigs2cells   : " << toc-tic << std::endl;
+    tic = get_time();
     BottomUp::setIndex(bodies,0,0,0,true);                      // Set index of bodies
     buffer.resize(bodies.size());                               // Resize sort buffer
     sort(bodies,buffer);                                        // Sort bodies in ascending order
+    toc = get_time();
+    if(p) std::cout << "Sort bodies   : " << toc-tic << std::endl;
+    tic = get_time();
     BottomUp::grow(bodies);                                     // Grow tree structure
+    toc = get_time();
+    if(p) std::cout << "Grow tree     : " << toc-tic << std::endl;
+    tic = get_time();
     sort(bodies,buffer);                                        // Sort bodies in ascending order
+    toc = get_time();
+    if(p) std::cout << "Sort bodies   : " << toc-tic << std::endl;
+    tic = get_time();
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
+    toc = get_time();
+    if(p) std::cout << "Bodies2twigs  : " << toc-tic << std::endl;
+    tic = get_time();
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over cells
       if( sticks.size() > 0 ) {                                 //  If stick vector is not empty
         if( C->I == sticks.back().I ) {                         //   If twig's index is equal to stick's index
@@ -222,9 +242,15 @@ private:
     cells.insert(cells.begin(),twigs.begin(),twigs.end());      // Add twigs to the end of cell vector
     cells.insert(cells.begin(),sticks.begin(),sticks.end());    // Add remaining sticks to the end of cell vector
     sticks.clear();                                             // Clear sticks
+    toc = get_time();
+    if(p) std::cout << "Add sticks    : " << toc-tic << std::endl;
+    tic = get_time();
     sortCells(cells);                                           // Sort cells in ascending order
     twigs = cells;                                              // Copy cells to twigs
     cells.clear();                                              // Clear cells
+    toc = get_time();
+    if(p) std::cout << "Sort cells    : " << toc-tic << std::endl;
+    if(p) std::cout << "-----" << std::endl;
   }
 
   void sticks2send(Cells &sticks, int &offTwigs) {              // Turn sticks to send buffer
@@ -322,26 +348,49 @@ public:
   }
 
   void commCells(Bodies &bodies, Cells &cells) {                // Communicate cell in the LET
+    double tic,toc;
     int offTwigs = 0;                                           // Initialize offset of twigs
     vect xmin = 0, xmax = 0;                                    // Initialize domain boundaries
     Cells twigs,sticks;                                         // Twigs and sticks are special types of cells
+    bool p = true;
+    if( RANK != 0 ) p = false;
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
      color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators
        key[0] =    key[1] =    key[2] = 0;                      // Initialize key of communicators
 
+    if(p) std::cout << "---" << std::endl;
     for( int l=0; l!=LEVEL; ++l ) {                             // Loop over levels of N-D hypercube communication
+      tic = get_time();
       bisectionGetComm(l);                                      //  Split the MPI communicator for that level
       getOtherDomain(xmin,xmax,l+1);                            //  Get boundries of domains on other processes
       getLET(cells.begin(),cells.end()-1,xmin,xmax);            //  Determine which cells to send
+      toc = get_time();
+      if(p) std::cout << "Get LET       : " << toc-tic << std::endl;
+      tic = get_time();
       commCellsAlltoall();                                      //  Communicate cells by one-to-one MPI_Alltoallv
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] ) {// If scatter is necessary
         commCellsScatter();                                     //   Communicate cells by scattering from leftover proc
       }                                                         //  Endif for odd number of procs
+      toc = get_time();
+      if(p) std::cout << "Alltoall      : " << toc-tic << std::endl;
+      tic = get_time();
       if( l == LEVEL - 1 ) rbodies2twigs(bodies,twigs);         //  Put recv bodies into twig vector
+      toc = get_time();
+      if(p) std::cout << "Bodies2twigs  : " << toc-tic << std::endl;
+      tic = get_time();
       cells2twigs(cells,twigs,l==LEVEL-1);                      //  Put cells into twig vector
+      toc = get_time();
+      if(p) std::cout << "Cells2twigs   : " << toc-tic << std::endl;
+      tic = get_time();
       send2twigs(bodies,twigs,offTwigs);                        //  Put send buffer (sticks) into twig vector
+      toc = get_time();
+      if(p) std::cout << "Send2twigs    : " << toc-tic << std::endl;
+      tic = get_time();
       recv2twigs(bodies,twigs);                                 //  Put recv buffer into twig vector
+      toc = get_time();
+      if(p) std::cout << "Recv2twigs    : " << toc-tic << std::endl;
+      tic = get_time();
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
         real SUM = 0;                                           //   Initialize accumulator
@@ -353,6 +402,9 @@ public:
       }                                                         //  Endif for last level
 #endif
       zipTwigs(twigs,cells,sticks,l==LEVEL-1);                  //  Zip two groups of twigs that overlap
+      toc = get_time();
+      if(p) std::cout << "Zip twigs     : " << toc-tic << std::endl;
+      tic = get_time();
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
         real SUM = 0;                                           //   Initialize accumulator
@@ -366,9 +418,16 @@ public:
       }                                                         //  Endif for last level
 #endif
       if( l == LEVEL - 1 ) reindexBodies(bodies,twigs,cells,sticks);// Re-index bodies
+      toc = get_time();
+      if(p) std::cout << "Reindex       : " << toc-tic << std::endl;
+      tic = get_time();
       twigs2cells(twigs,cells,sticks);                          //  Turn twigs to cells
+      toc = get_time();
+      if(p) std::cout << "Twigs2cells   : " << toc-tic << std::endl;
+      tic = get_time();
       sticks2send(sticks,offTwigs);                             //  Turn sticks to send buffer
     }                                                           // End loop over levels of N-D hypercube communication
+    if(p) std::cout << "---" << std::endl;
 
 #ifdef DEBUG
     print("M[0] @ root   : ",0);                                // Print identifier
