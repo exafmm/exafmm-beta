@@ -20,6 +20,10 @@ serialrun: serialrun.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS) -DTOPDOWN
 	./a.out
 
+Nscaling: Nscaling.cxx $(KERNEL)
+	@$(CXX) $? $(LFLAGS)
+	./a.out
+
 cuprintf: cuprintf.cu
 	@$(NVCC) $? $(LFLAGS)
 	./a.out

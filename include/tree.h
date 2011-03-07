@@ -191,6 +191,7 @@ public:
     vect xmin,xmax;                                             // Min,Max of domain
     B_iter B = bodies.begin();                                  // Reset body iterator
     xmin = xmax = B->pos;                                       // Initialize xmin,xmax
+    X0 = R0 = 0;                                                // Initialize center and size of root cell
     for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
         if     (B->pos[d] < xmin[d]) xmin[d] = B->pos[d];       //   Determine xmin
