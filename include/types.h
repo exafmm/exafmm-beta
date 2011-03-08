@@ -14,13 +14,14 @@
 #include <utility>
 #include <vector>
 #include "vec.h"
-#ifndef KERNEL
+#ifdef EVALUATOR
 int MPIRANK = 0;                                                // MPI rank (for debugging serial class in MPI run)
 int MPISIZE = 1;                                                // MPI size (for debugging serial class in MPI run)
 #else
 extern int MPIRANK;
 extern int MPISIZE;
 #endif
+
 typedef long                 bigint;                            // Big integer type
 typedef float                real;                              // Real number type
 typedef std::complex<double> complex;                           // Complex number type

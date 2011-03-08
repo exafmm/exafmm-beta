@@ -6,16 +6,16 @@
 #endif
 
 int main() {
-  int numBodies = 100000;
+  int numBodies = 1000;
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
+  Evaluator E;
   TreeConstructor T;
 
-  for( int it=0; it!=25; ++it ) {
+  for( int it=0; it!=17; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
-    T.startTimer("Tree build   ");
     bodies.resize(numBodies);
     D.sphere(bodies,1,1);
     T.setDomain(bodies);
@@ -24,14 +24,12 @@ int main() {
 #else
     T.bottomup(bodies,cells,false);
 #endif
-    T.stopTimer("Tree build   ");
 
     T.startTimer("Downward     ");
     T.downward(cells,cells,1);
     T.stopTimer("Downward     ");
 
     T.startTimer("Direct sum   ");
-    Evaluator E;
     T.buffer = bodies;
     for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
       B->pot = -B->scal / std::sqrt(EPS2);
@@ -39,12 +37,15 @@ int main() {
     E.evalP2P(T.buffer,T.buffer);
     T.stopTimer("Direct sum   ");
     T.printAllTime();
+    T.eraseTimer("Direct sum   ");
+    T.writeTime();
+    T.resetTimer();
 
     B_iter B  = bodies.begin();
     B_iter B2 = T.buffer.begin();
     real err = 0, rel = 0;
     for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
-      B->pot  -= B->scal / std::sqrt(EPS2);
+      B->pot -= B->scal / std::sqrt(EPS2);
 #ifdef DEBUG
       std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
 #endif

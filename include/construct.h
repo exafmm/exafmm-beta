@@ -215,10 +215,10 @@ public:
 class TreeConstructor : public TopDown, public BottomUp {       // General tree constructor interface
 public:
   TreeConstructor() : TopDown(), BottomUp() {                   // Constructor
-    E.initialize();
+    initialize();
   }
   ~TreeConstructor() {                                          // Destructor
-    E.finalize();
+    finalize();
   }
 
   void topdown(Bodies &bodies, Cells &cells, bool print=true) { // Topdown tree constructor interface

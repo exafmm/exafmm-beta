@@ -2,7 +2,7 @@
 #define dataset_h
 #include "types.h"
 
-class Dataset {
+class Dataset {                                                 // Contains all the different datasets
 public:
   void random(Bodies &bodies, int seed=1, int numSplit=1) {     // Random distribution in [-1,1]^3 cube
     srand(seed);                                                // Set seed for random number generator

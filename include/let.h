@@ -2,7 +2,7 @@
 #define let_h
 #include "partition.h"
 
-class LocalEssentialTree : public Partition {
+class LocalEssentialTree : public Partition {                   // Handles all the communication in this code
 private:
   JBodies sendBodies;                                           // Send buffer for bodies
   JBodies recvBodies;                                           // Receive buffer for bodies
@@ -199,9 +199,6 @@ private:
   }
 
   void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ,Cells &sticks) {// Re-index bodies
-    bool p = true;
-    if( RANK != 0 ) p = false;
-    print("-----\n",0);
     startTimer("Twigs2cells  ");                                // Start timer
     while( !twigs.empty() ) {                                   // While twig vector is not empty
       if( twigs.back().NLEAF == 0 ) {                           //  If twig has no leafs
@@ -209,21 +206,21 @@ private:
       }                                                         //  Endif for no leafs
       twigs.pop_back();                                         //  Pop last element from twig vector
     }                                                           // End while for twig vector
-    stopTimer("Twigs2cells  ",p);                               // Stop timer
+    stopTimer("Twigs2cells  ");                                 // Stop timer
     startTimer("Sort bodies  ");                                // Start timer
     BottomUp::setIndex(bodies,0,0,0,true);                      // Set index of bodies
     buffer.resize(bodies.size());                               // Resize sort buffer
     sort(bodies,buffer);                                        // Sort bodies in ascending order
-    stopTimer("Sort bodies  ",p);                               // Stop timer
+    stopTimer("Sort bodies  ");                                 // Stop timer
     startTimer("Grow tree    ");                                // Start timer
     BottomUp::grow(bodies);                                     // Grow tree structure
-    stopTimer("Grow tree    ",p);                               // Stop timer
+    stopTimer("Grow tree    ");                                 // Stop timer
     startTimer("Sort bodies  ");                                // Start timer
     sort(bodies,buffer);                                        // Sort bodies in ascending order
-    stopTimer("Sort bodies  ",p);                               // Stop timer
+    stopTimer("Sort bodies  ");                                 // Stop timer
     startTimer("Bodies2twigs ");                                // Start timer
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
-    stopTimer("Bodies2twigs ",p);                               // Stop timer
+    stopTimer("Bodies2twigs ");                                 // Stop timer
     startTimer("Add sticks   ");                                // Start timer
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over cells
       if( sticks.size() > 0 ) {                                 //  If stick vector is not empty
@@ -236,13 +233,12 @@ private:
     cells.insert(cells.begin(),twigs.begin(),twigs.end());      // Add twigs to the end of cell vector
     cells.insert(cells.begin(),sticks.begin(),sticks.end());    // Add remaining sticks to the end of cell vector
     sticks.clear();                                             // Clear sticks
-    stopTimer("Add sticks   ",p);                               // Stop timer
+    stopTimer("Add sticks   ");                                 // Stop timer
     startTimer("Sort cells   ");                                // Start timer
     sortCells(cells);                                           // Sort cells in ascending order
     twigs = cells;                                              // Copy cells to twigs
     cells.clear();                                              // Clear cells
-    stopTimer("Sort cells   ",p);                               // Stop timer
-    print("-----\n",0);
+    stopTimer("Sort cells   ");                                 // Stop timer
   }
 
   void sticks2send(Cells &sticks, int &offTwigs) {              // Turn sticks to send buffer
@@ -343,38 +339,35 @@ public:
     int offTwigs = 0;                                           // Initialize offset of twigs
     vect xmin = 0, xmax = 0;                                    // Initialize domain boundaries
     Cells twigs,sticks;                                         // Twigs and sticks are special types of cells
-    bool p = true;
-    if( RANK != 0 ) p = false;
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
      color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators
        key[0] =    key[1] =    key[2] = 0;                      // Initialize key of communicators
 
-    print("---\n",0);
     for( int l=0; l!=LEVEL; ++l ) {                             // Loop over levels of N-D hypercube communication
       startTimer("Get LET      ");                              //  Start timer
       bisectionGetComm(l);                                      //  Split the MPI communicator for that level
       getOtherDomain(xmin,xmax,l+1);                            //  Get boundries of domains on other processes
       getLET(cells.begin(),cells.end()-1,xmin,xmax);            //  Determine which cells to send
-      stopTimer("Get LET      ",p);                             //  Stop timer & print
+      stopTimer("Get LET      ");                               //  Stop timer & print
       startTimer("Alltoall     ");                              //  Start timer
       commCellsAlltoall();                                      //  Communicate cells by one-to-one MPI_Alltoallv
       if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] ) {// If scatter is necessary
         commCellsScatter();                                     //   Communicate cells by scattering from leftover proc
       }                                                         //  Endif for odd number of procs
-      stopTimer("Alltoall     ",p);                             //  Stop timer & print
+      stopTimer("Alltoall     ");                               //  Stop timer & print
       startTimer("Bodies2twigs ");                              //  Start timer
       if( l == LEVEL - 1 ) rbodies2twigs(bodies,twigs);         //  Put recv bodies into twig vector
-      stopTimer("Bodies2twigs ",p);                             //  Stop timer & print
+      stopTimer("Bodies2twigs ");                               //  Stop timer & print
       startTimer("Cells2twigs  ");                              //  Start timer
       cells2twigs(cells,twigs,l==LEVEL-1);                      //  Put cells into twig vector
-      stopTimer("Cells2twigs  ",p);                             //  Stop timer & print
+      stopTimer("Cells2twigs  ");                               //  Stop timer & print
       startTimer("Send2twigs   ");                              //  Start timer
       send2twigs(bodies,twigs,offTwigs);                        //  Put send buffer (sticks) into twig vector
-      stopTimer("Send2twigs   ",p);                             //  Stop timer & print
+      stopTimer("Send2twigs   ");                               //  Stop timer & print
       startTimer("Recv2twigs   ");                              //  Start timer
       recv2twigs(bodies,twigs);                                 //  Put recv buffer into twig vector
-      stopTimer("Recv2twigs   ",p);                             //  Stop timer & print
+      stopTimer("Recv2twigs   ");                               //  Stop timer & print
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
         real SUM = 0;                                           //   Initialize accumulator
@@ -387,7 +380,7 @@ public:
 #endif
       startTimer("Zip twigs    ");                              //  Start timer
       zipTwigs(twigs,cells,sticks,l==LEVEL-1);                  //  Zip two groups of twigs that overlap
-      stopTimer("Zip twigs    ",p);                             //  Stop timer & print
+      stopTimer("Zip twigs    ");                               //  Stop timer & print
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
         real SUM = 0;                                           //   Initialize accumulator
@@ -402,13 +395,13 @@ public:
 #endif
       startTimer("Reindex      ");                              //  Start timer
       if( l == LEVEL - 1 ) reindexBodies(bodies,twigs,cells,sticks);// Re-index bodies
-      stopTimer("Reindex      ",p);                             //  Stop timer & print
+      stopTimer("Reindex      ");                               //  Stop timer & print
       startTimer("Twigs2cells  ");                              //  Start timer
       twigs2cells(twigs,cells,sticks);                          //  Turn twigs to cells
-      stopTimer("Twigs2cells  ",p);                             //  Stop timer & print
+      stopTimer("Twigs2cells  ");                               //  Stop timer & print
       startTimer("Sticks2send  ");                              //  Start timer
       sticks2send(sticks,offTwigs);                             //  Turn sticks to send buffer
-      stopTimer("Sticks2send  ",p);                             //  Stop timer & print
+      stopTimer("Sticks2send  ");                               //  Stop timer & print
     }                                                           // End loop over levels of N-D hypercube communication
 
 #ifdef DEBUG
@@ -419,7 +412,6 @@ public:
 #endif
     sendCells.clear();                                          // Clear send buffer
     recvCells.clear();                                          // Clear recv buffer
-    print("---\n",0);
   }
 
 };

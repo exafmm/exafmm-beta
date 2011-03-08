@@ -11,8 +11,8 @@ int main() {
   MyMPI M;
   E.initialize();
   gethostname(hostname,sizeof(hostname));
-  bool print = true;
-  if( M.commRank() != 0 ) print = false;
+  bool print = false;
+  if( M.commRank() == 0 ) print = true;
 
   E.startTimer("Set bodies   ");
   D.sphere(bodies);

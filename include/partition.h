@@ -3,7 +3,7 @@
 #include "mympi.h"
 #include "construct.h"
 
-class Partition : public MyMPI, public TreeConstructor {
+class Partition : public MyMPI, public TreeConstructor {        // Handles all the partitioning of domains
 private:
   int numCells1D;                                               // Number of cells in one dimension (leaf level)
 

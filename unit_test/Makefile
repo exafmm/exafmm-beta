@@ -59,8 +59,8 @@ nth_element: nth_element.cxx $(KERNEL)
 	mpirun -np 7 ./a.out
 
 bisection: bisection.cxx $(KERNEL)
-	@$(CXX) $? $(LFLAGS)
-	mpirun -np 2 ./a.out
+	@$(CXX) $? $(LFLAGS) $(VFLAGS)
+	mpirun -np 7 ./a.out
 
 let: let.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
@@ -69,7 +69,7 @@ let: let.cxx $(KERNEL)
 parallelrun: parallelrun.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS)
 #	mpirun -np 7 -machinefile ~/mpd/mpd4.hosts ./a.out
-	mpirun -np 4 ./a.out
+	mpirun -np 7 ./a.out
 
 all      :
 	make index

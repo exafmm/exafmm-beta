@@ -1,8 +1,10 @@
 #ifndef evaluator_h
 #define evaluator_h
+#define EVALUATOR
 #include "kernel.h"
+#undef EVALUATOR
 
-class Evaluator : public Kernel {
+class Evaluator : public Kernel {                               // Evaluator is the interface between tree and kernel
 private:
   C_iter CI0;                                                   // icells.begin()
   C_iter CJ0;                                                   // jcells.begin()

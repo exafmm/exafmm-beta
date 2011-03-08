@@ -1,6 +1,5 @@
 #include "dataset.h"
 #include "construct.h"
-#include "kernel.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -36,7 +35,7 @@ int main() {
   for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
     B->pot = -B->scal / std::sqrt(EPS2);
   }
-  E.evalP2P(T.buffer,T.buffer);
+  T.evalP2P(T.buffer,T.buffer);
   T.stopTimer("Direct sum   ",true);
 
   B_iter B  = bodies.begin();

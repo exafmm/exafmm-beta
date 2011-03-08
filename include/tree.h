@@ -3,11 +3,10 @@
 #include "sort.h"
 #include "evaluator.h"
 
-class TreeStructure : public Sort {
+class TreeStructure : public Evaluator, public Sort {           // Base class for tree structure
 protected:
   vect      X0;                                                 // Center of root cell
   real      R0;                                                 // Radius of root cell
-  Evaluator E;                                                  // Kernel evaluator
 
 public:
   Bodies buffer;                                                // Buffer for comm & sort
@@ -141,7 +140,7 @@ protected:
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
     stopTimer("Bodies2twigs ");                                 // Start timer
-    E.evalP2M(twigs);                                           // Evaluate P2M kernel
+    evalP2M(twigs);                                             // Evaluate P2M kernel
   }
 
   void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) { // Link twigs bottomup to create all cells in tree
@@ -164,7 +163,7 @@ protected:
       linkParent(cells,begin,end);                              //  Form parent-child mutual link
     }                                                           // End loop over levels
     unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
-    E.evalM2M(cells);                                           // Evaluate M2M kernel
+    evalM2M(cells);                                             // Evaluate M2M kernel
   }
 
 public:
@@ -196,12 +195,12 @@ public:
   }
 
   void downward(Cells &cells, Cells &jcells, int method) {      // Downward phase for different source/target
-    E.traverse(cells,jcells,method);                            // Traverse tree to get interaction list
-    E.evalM2L(cells);                                           // Evaluate M2L kernel
-    E.evalM2P(cells);                                           // Evaluate M2P kernel
-    E.evalP2P(cells);                                           // Evaluate P2P kernel
-    E.evalL2L(cells);                                           // Evaluate L2L kernel
-    E.evalL2P(cells);                                           // Evaluate L2P kernel
+    traverse(cells,jcells,method);                              // Traverse tree to get interaction list
+    evalM2L(cells);                                             // Evaluate M2L kernel
+    evalM2P(cells);                                             // Evaluate M2P kernel
+    evalP2P(cells);                                             // Evaluate P2P kernel
+    evalL2L(cells);                                             // Evaluate L2L kernel
+    evalL2P(cells);                                             // Evaluate L2P kernel
   }
 
 };

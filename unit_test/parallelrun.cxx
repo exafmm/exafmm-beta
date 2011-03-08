@@ -5,14 +5,14 @@
 #endif
 
 int main() {
-  const int numBodies = 100000;
+  const int numBodies = 10000;
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
   LocalEssentialTree T;
   Evaluator E;
-  bool print = true;
-  if( T.commRank() != 0 ) print = false;
+  bool print = false;
+  if( T.commRank() == 0 ) print = true;
 
   T.startTimer("Set bodies   ");
   D.sphere(bodies,T.commRank()+1);

@@ -10,8 +10,8 @@ int main() {
   Cells cells;
   Dataset D;
   LocalEssentialTree T;
-  bool print = true;
-  if( T.commRank() != 0 ) print = false;
+  bool print = false;
+  if( T.commRank() == 0 ) print = true;
 
   T.startTimer("Set bodies   ");
   D.random(bodies,T.commRank()+1);

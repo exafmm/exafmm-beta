@@ -7,7 +7,7 @@ class Logger {
 private:
   std::ofstream file;
   Event         tic;
-  Event         time;
+  Event         timer;
   Event         memory;
 
   double get_time() {                                           // Timer function
@@ -30,12 +30,16 @@ public:
 
   void stopTimer(std::string event, bool print=false) {
     double toc = get_time();
-    time[event] += toc - tic[event];
-    if(print) std::cout << event << " : " << time[event] << std::endl;
+    timer[event] += toc - tic[event];
+    if(print) std::cout << event << " : " << timer[event] << std::endl;
+  }
+
+  void eraseTimer(std::string event) {
+    timer.erase(event);
   }
 
   void resetTimer() {
-    for( E_iter E=time.begin(); E!=time.end(); ++E ) {
+    for( E_iter E=timer.begin(); E!=timer.end(); ++E ) {
       E->second = 0;
     }
   }
@@ -49,7 +53,7 @@ public:
   }
 
   void printTime(std::string event) {
-    std::cout << event << " : " << time[event] << std::endl;
+    std::cout << event << " : " << timer[event] << std::endl;
   }
 
   void printMemory(std::string event) {
@@ -57,13 +61,13 @@ public:
   }
 
   void printAllTime() {
-    for( E_iter E=time.begin(); E!=time.end(); ++E ) {
+    for( E_iter E=timer.begin(); E!=timer.end(); ++E ) {
       std::cout << E->first << " : " << E->second << std::endl;
     }
   }
 
   void writeTime() {
-    for( E_iter E=time.begin(); E!=time.end(); ++E ) {
+    for( E_iter E=timer.begin(); E!=timer.end(); ++E ) {
       file <<  E->first << " " << E->second << std::endl;
     }
   }

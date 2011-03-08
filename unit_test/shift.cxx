@@ -10,8 +10,8 @@ int main() {
   Bodies bodies(numBodies);
   Dataset D;
   Partition T;
-  bool print = true;
-  if( T.commRank() != 0 ) print = false;
+  bool print = false;
+  if( T.commRank() == 0 ) print = true;
 
   T.startTimer("Set bodies   ");
   if( T.commRank() % 2 == 0 ) {
