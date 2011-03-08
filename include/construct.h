@@ -214,79 +214,65 @@ public:
 
 class TreeConstructor : public TopDown, public BottomUp {       // General tree constructor interface
 public:
-  TreeConstructor() : TopDown(), BottomUp() {}                  // Constructor
-  ~TreeConstructor() {}                                         // Destructor
+  TreeConstructor() : TopDown(), BottomUp() {                   // Constructor
+    E.initialize();
+  }
+  ~TreeConstructor() {                                          // Destructor
+    E.finalize();
+  }
 
   void topdown(Bodies &bodies, Cells &cells, bool print=true) { // Topdown tree constructor interface
-    double tic,toc;                                             // Timers
-    tic = get_time();                                           // Start timer
+    startTimer("Grow tree    ");                                // Start timer
     TopDown::grow(bodies);                                      // Grow tree structure topdown
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Grow tree     : " << toc-tic << std::endl;// Print elapsed time
+    stopTimer("Grow tree    ",print);                           // Stop timer & print
 
-    tic = get_time();                                           // Start timer
+    startTimer("Set index    ");                                // Start timer
     TopDown::setIndex();                                        // Set index of cells
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Set index     : " << toc-tic << std::endl;// Print elapsed time
+    stopTimer("Set index    ",print);                           // Stop timer & print
 
-    tic = get_time();                                           // Start timer
+    startTimer("Sort index   ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
     sort(bodies,buffer);                                        // Sort bodies in ascending order
-    toc = get_time();                                           // End timer
-    if(print) std::cout << "Sort index    : " << toc-tic << std::endl;// Print elapsed time
+    stopTimer("Sort index   ",print);                           // Stop timer & print
 
-    tic = get_time();                                           // Start timer
     Cells twigs;                                                // Twigs are cells at the bottom of tree
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Bodies2twigs  : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();                                           // Start timer
+    startTimer("Twigs2cells  ");                                // Start timer
     Cells sticks;                                               // Sticks are twigs from other processes not twigs here
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Twigs2cells   : " << toc-tic << std::endl;// Print elapsed time
+    stopTimer("Twigs2cells  ",print);                           // Stop timer & print
   }
 
   void bottomup(Bodies &bodies, Cells &cells, bool print=true) {// Bottomup tree constructor interface
-    double tic,toc;                                             // Timers
-    tic = get_time();                                           // Start timer
+    startTimer("Set index    ");                                // Start timer
     BottomUp::setIndex(bodies);                                 // Set index of cells
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Set index     : " << toc-tic << std::endl;// Print elapsed time
+    stopTimer("Set index    ",print);                           // Stop timer & print
 
-    tic = get_time();                                           // Start timer
+    startTimer("Sort index   ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
     sort(bodies,buffer);                                        // Sort bodies in ascending order
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Sort index    : " << toc-tic << std::endl;// Print elapsed time
+    stopTimer("Sort index   ",print);                           // Stop timer & print
 
-    tic = get_time();                                           // Start timer
+    startTimer("Prune tree   ");                                // Start timer
     prune(bodies);                                              // Prune tree structure bottomup
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Prune tree    : " << toc-tic << std::endl;// Print elapsed time
+    stopTimer("Prune tree   ",print);                           // Stop timer & print
 
-    tic = get_time();                                           // Start timer
+    startTimer("Grow tree    ");                                // Start timer
     BottomUp::grow(bodies);                                     // Grow tree structure at bottom if necessary
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Grow tree     : " << toc-tic << std::endl;// Print elapsed time
+    stopTimer("Grow tree    ",print);                           // Stop timer & print
 
-    tic = get_time();                                           // Start timer
+    startTimer("Sort index   ");                                // Start timer
     sort(bodies,buffer);                                        // Sort bodies in ascending order
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Sort index    : " << toc-tic << std::endl;// Print elapsed time
+    stopTimer("Sort index   ",print);                           // Stop timer & print
 
-    tic = get_time();                                           // Start timer
     Cells twigs;                                                // Twigs are cells at the bottom of tree
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Bodies2twigs  : " << toc-tic << std::endl;// Print elapsed time
 
-    tic = get_time();                                           // Start timer
+    startTimer("Twigs2cells  ");                                // Start timer
     Cells sticks;                                               // Sticks are twigs from other processes not twigs here
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
-    toc = get_time();                                           // Stop timer
-    if(print) std::cout << "Twigs2cells   : " << toc-tic << std::endl;// Print elapsed time
+    stopTimer("Twigs2cells  ",print);                           // Stop timer & print
   }
 
 };

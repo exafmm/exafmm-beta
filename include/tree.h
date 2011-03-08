@@ -115,11 +115,7 @@ protected:
   }
 
   void bodies2twigs(Bodies &bodies, Cells &twigs){              // Group bodies into twig cells
-    double tic,toc;
-    bool p = true;
-    if( MPIRANK != 0 ) p = false;
-    if(p) std::cout << "-------" << std::endl;
-    tic = get_time();
+    startTimer("Bodies2twigs ");                                // Start timer
     int nleaf = 0;                                              // Initialize number of leafs
     bigint index = bodies[0].I;                                 // Initialize cell index
     B_iter firstLeaf = bodies.begin();                          // Initialize body iterator for first leaf
@@ -144,13 +140,8 @@ protected:
     cell.LEAF = firstLeaf;                                      // Set pointer to first leaf
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
-    toc = get_time();
-    if(p) std::cout << "Push twigs    : " << toc-tic << std::endl;
-    tic = get_time();
+    stopTimer("Bodies2twigs ");                                 // Start timer
     E.evalP2M(twigs);                                           // Evaluate P2M kernel
-    toc = get_time();
-    if(p) std::cout << "P2M           : " << toc-tic << std::endl;
-    if(p) std::cout << "-------" << std::endl;
   }
 
   void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) { // Link twigs bottomup to create all cells in tree
@@ -177,12 +168,8 @@ protected:
   }
 
 public:
-  TreeStructure() : X0(0),R0(0) {                               // Constructor
-    E.initialize();
-  }
-  ~TreeStructure() {                                            // Destructor
-    E.finalize();
-  }
+  TreeStructure() : X0(0),R0(0) {}                              // Constructor
+  ~TreeStructure() {}                                           // Destructor
 
   vect getX0() {return X0;}                                     // Get center of root cell
   real getR0() {return R0;}                                     // Get radius of root cell

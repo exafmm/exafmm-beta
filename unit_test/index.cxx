@@ -5,35 +5,27 @@
 #endif
 
 int main() {
-  double tic,toc;
   const int numBodies = 1000000;
-  tic = get_time();
   Bodies bodies(numBodies);
   Dataset D;
   TreeConstructor T;
-  toc = get_time();
-  std::cout << "Allocate      : " << toc-tic << std::endl;
 
-  tic = get_time();
+  T.startTimer("Set bodies   ");
   D.sphere(bodies);
-  toc = get_time();
-  std::cout << "Set bodies    : " << toc-tic << std::endl;
+  T.stopTimer("Set bodies   ",true);
 
-  tic = get_time();
+  T.startTimer("Set domain   ");
   T.setDomain(bodies);
-  toc = get_time();
-  std::cout << "Set domain    : " << toc-tic << std::endl;
+  T.stopTimer("Set domain   ",true);
 
-  tic = get_time();
+  T.startTimer("Set index    ");
   T.BottomUp::setIndex(bodies);
-  toc = get_time();
-  std::cout << "Set index     : " << toc-tic << std::endl;
+  T.stopTimer("Set index    ",true);
 
-  tic = get_time();
+  T.startTimer("Sort index   ");
   T.buffer.resize(bodies.size());
   T.sort(bodies,T.buffer);
-  toc = get_time();
-  std::cout << "Sort index    : " << toc-tic << std::endl;
+  T.stopTimer("Sort index   ",true);
 
   bigint oldIndex(bodies[0].I);
   int b = 0;

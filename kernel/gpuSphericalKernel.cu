@@ -615,8 +615,10 @@ __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
 }
 
 void Kernel::initialize() {
+  startTimer("Init GPU     ");                                  // Start timer
   cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
   cudaThreadSynchronize();                                      // Sync GPU threads
+  stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
 }
 
 void Kernel::allocGPU() {
@@ -701,5 +703,4 @@ void Kernel::L2P() {
   deallocGPU();
 }
 
-void Kernel::finalize() {
-}
+void Kernel::finalize() {}

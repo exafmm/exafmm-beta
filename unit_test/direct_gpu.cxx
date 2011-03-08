@@ -2,27 +2,21 @@
 #include "evaluator.h"
 
 int main() {
-  double tic,toc;
-  const int numBodies = 100;
-  tic = get_time();
+  const int numBodies = 10000;
   Bodies bodies(numBodies);
   Dataset D;
   Evaluator E;
   E.initialize();
-  toc = get_time();
-  std::cout << "Allocate      : " << toc-tic << std::endl;
 
-  tic = get_time();
+  E.startTimer("Set bodies   ");
   D.sphere(bodies);
-  toc = get_time();
-  std::cout << "Set bodies    : " << toc-tic << std::endl;
+  E.stopTimer("Set bodies   ",true);
 
-  tic = get_time();
+  E.startTimer("Direct GPU   ");
   E.evalP2P(bodies,bodies);
-  toc = get_time();
-  std::cout << "Direct GPU    : " << toc-tic << std::endl;
+  E.stopTimer("Direct GPU   ",true);
 
-  tic = get_time();
+  E.startTimer("Direct CPU   ");
   real err = 0, rel = 0;
   for( B_iter BI=bodies.begin(); BI!=bodies.end(); ++BI ) {
     real pot = -BI->scal / std::sqrt(EPS2);
@@ -36,8 +30,7 @@ int main() {
     err += (BI->pot - pot) * (BI->pot - pot);
     rel += pot * pot;
   }
-  toc = get_time();
-  std::cout << "Direct CPU    : " << toc-tic << std::endl;
+  E.stopTimer("Direct CPU   ",true);
   std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
   E.finalize();
 }

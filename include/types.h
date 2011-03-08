@@ -5,15 +5,16 @@
 #include <cmath>
 #include <complex>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <list>
 #include <map>
 #include <stack>
+#include <string>
 #include <utility>
 #include <vector>
 #include "vec.h"
 #ifndef KERNEL
-#include "gettime.h"
 int MPIRANK = 0;                                                // MPI rank (for debugging serial class in MPI run)
 int MPISIZE = 1;                                                // MPI size (for debugging serial class in MPI run)
 #else
@@ -33,10 +34,12 @@ const real EPS2    = 1e-4;                                      // Softening par
 const int  GPUS    = 4;                                         // Number of GPUs per node
 const int  THREADS = 256;                                       // Number of threads per thread-block
 
-typedef vec<3,real>                    vect;                    // 3-D vector type
-//typedef vec<NCOEF,real>                coef;                    // Multipole coefficient type for Taylor expansion
-typedef vec<NCOEF,complex>             coef;                    // Multipole coefficient type for spherical harmonics
-typedef std::vector<bigint>            Bigints;                 // Vector of big integer types
+typedef vec<3,real>                            vect;            // 3-D vector type
+//typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Taylor expansion
+typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical harmonics
+typedef std::vector<bigint>                    Bigints;         // Vector of big integer types
+typedef std::map<std::string,double>           Event;           // Map of event name to logged value
+typedef std::map<std::string,double>::iterator E_iter;          // Iterator for event name map
 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   bigint I;                                                     // Cell index

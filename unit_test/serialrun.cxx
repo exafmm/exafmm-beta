@@ -6,25 +6,19 @@
 #endif
 
 int main() {
-  double tic,toc;
   const int numBodies = 100000;
-  tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
   TreeConstructor T;
-  toc = get_time();
-  std::cout << "Allocate      : " << toc-tic << std::endl;
 
-  tic = get_time();
+  T.startTimer("Set bodies   ");
   D.sphere(bodies,1,1);
-  toc = get_time();
-  std::cout << "Set bodies    : " << toc-tic << std::endl;
+  T.stopTimer("Set bodies   ",true);
 
-  tic = get_time();
+  T.startTimer("Set domain   ");
   T.setDomain(bodies);
-  toc = get_time();
-  std::cout << "Set domain    : " << toc-tic << std::endl;
+  T.stopTimer("Set domain   ",true);
 
 #ifdef TOPDOWN
   T.topdown(bodies,cells);
@@ -32,20 +26,18 @@ int main() {
   T.bottomup(bodies,cells);
 #endif
 
-  tic = get_time();
+  T.startTimer("Downward     ");
   T.downward(cells,cells,1);
-  toc = get_time();
-  std::cout << "Downward      : " << toc-tic << std::endl;
+  T.stopTimer("Downward     ",true);
 
-  tic = get_time();
+  T.startTimer("Direct sum   ");
   Evaluator E;
   T.buffer = bodies;
   for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
     B->pot = -B->scal / std::sqrt(EPS2);
   }
   E.evalP2P(T.buffer,T.buffer);
-  toc = get_time();
-  std::cout << "Direct sum    : " << toc-tic << std::endl;
+  T.stopTimer("Direct sum   ",true);
 
   B_iter B  = bodies.begin();
   B_iter B2 = T.buffer.begin();

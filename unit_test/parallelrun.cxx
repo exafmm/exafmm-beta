@@ -5,9 +5,7 @@
 #endif
 
 int main() {
-  double tic,toc;
   const int numBodies = 100000;
-  tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
@@ -15,23 +13,18 @@ int main() {
   Evaluator E;
   bool print = true;
   if( T.commRank() != 0 ) print = false;
-  toc = get_time();
-  if(print) std::cout << "Allocate      : " << toc-tic << std::endl;
 
-  tic = get_time();
+  T.startTimer("Set bodies   ");
   D.sphere(bodies,T.commRank()+1);
-  toc = get_time();
-  if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
+  T.stopTimer("Set bodies   ",print);
 
-  tic = get_time();
+  T.startTimer("Set domain   ");
   T.setGlobDomain(bodies);
-  toc = get_time();
-  if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
+  T.stopTimer("Set domain   ",print);
 
-  tic = get_time();
+  T.startTimer("Partition    ");
   T.bisection(bodies);
-  toc = get_time();
-  if(print) std::cout << "Partition     : " << toc-tic << std::endl;
+  T.stopTimer("Partition    ",print);
 
 #ifdef TOPDOWN
   T.topdown(bodies,cells,print);
@@ -39,24 +32,21 @@ int main() {
   T.bottomup(bodies,cells,print);
 #endif
 
-  tic = get_time();
+  T.startTimer("Comm bodies  ");
   T.commBodies(cells);
-  toc = get_time();
-  if(print) std::cout << "Comm bodies   : " << toc-tic << std::endl;
+  T.stopTimer("Comm bodies  ",print);
 
-  tic = get_time();
+  T.startTimer("Comm cells   ");
   Bodies bodies2 = bodies;
   Cells jcells = cells;
   T.commCells(bodies2,jcells);
-  toc = get_time();
-  if(print) std::cout << "Comm cells    : " << toc-tic << std::endl;
+  T.stopTimer("Comm cells   ",print);
 
-  tic = get_time();
+  T.startTimer("Downward     ");
   T.downward(cells,jcells,1);
-  toc = get_time();
-  if(print) std::cout << "Downward      : " << toc-tic << std::endl;
+  T.stopTimer("Downward     ",print);
 
-  tic = get_time();
+  T.startTimer("Direct sum   ");
   bodies2 = bodies;
   for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
     B->pot = -B->scal  / std::sqrt(EPS2);
@@ -66,8 +56,7 @@ int main() {
     E.evalP2P(bodies2,bodies);
     if(print) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
   }
-  toc = get_time();
-  if(print) std::cout << "Direct sum    : " << toc-tic << std::endl;
+  T.stopTimer("Direct sum   ",print);
 
   B_iter B  = bodies.begin();
   B_iter B2 = bodies2.begin();

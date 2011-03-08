@@ -5,25 +5,19 @@
 #endif
 
 int main() {
-  double tic,toc;
   const int numBodies = 10000000;
-  tic = get_time();
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
   TreeConstructor T;
-  toc = get_time();
-  std::cout << "Allocate      : " << toc-tic << std::endl;
 
-  tic = get_time();
+  T.startTimer("Set bodies   ");
   D.sphere(bodies);
-  toc = get_time();
-  std::cout << "Set bodies    : " << toc-tic << std::endl;
+  T.stopTimer("Set bodies   ",true);
 
-  tic = get_time();
+  T.startTimer("Set domain   ");
   T.setDomain(bodies);
-  toc = get_time();
-  std::cout << "Set domain    : " << toc-tic << std::endl;
+  T.stopTimer("Set domain   ",true);
 
 #ifdef TOPDOWN
   T.topdown(bodies,cells);

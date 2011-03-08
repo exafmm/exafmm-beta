@@ -6,42 +6,33 @@
 #endif
 
 int main() {
-  double tic,toc;
   const int numBodies = 100000;
-  tic = get_time();
   Bodies bodies(numBodies);
   Dataset D;
   Partition T;
   bool print = true;
   if( T.commRank() != 0 ) print = false;
-  toc = get_time();
-  if(print) std::cout << "Allocate      : " << toc-tic << std::endl;
 
-  tic = get_time();
+  T.startTimer("Set bodies   ");
   D.random(bodies,T.commRank()+1);
-  toc = get_time();
-  if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
+  T.stopTimer("Set bodies   ",print);
 
-  tic = get_time();
+  T.startTimer("Set domain   ");
   T.setGlobDomain(bodies);
-  toc = get_time();
-  if(print) std::cout << "Set domain    : " << toc-tic << std::endl;
+  T.stopTimer("Set domain   ",print);
 
-  tic = get_time();
+  T.startTimer("Set index    ");
   T.BottomUp::setIndex(bodies);
-  toc = get_time();
-  if(print) std::cout << "Set index     : " << toc-tic << std::endl;
+  T.stopTimer("Set index    ",print);
 
-  tic = get_time();
+  T.startTimer("Sort index   ");
   T.buffer.resize(bodies.size());
   T.sort(bodies,T.buffer);
-  toc = get_time();
-  if(print) std::cout << "Sort index    : " << toc-tic << std::endl;
+  T.stopTimer("Sort index   ",print);
 
-  tic = get_time();
+  T.startTimer("Partition    ");
   T.bisection(bodies);
-  toc = get_time();
-  if(print) std::cout << "Partition     : " << toc-tic << std::endl;
+  T.stopTimer("Partition    ",print);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     B->I = 0;
   }

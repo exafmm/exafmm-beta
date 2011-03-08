@@ -4,9 +4,7 @@
 
 int main() {
   char hostname[256];
-  double tic,toc;
   const int numBodies = 10000;
-  tic = get_time();
   Bodies bodies(numBodies);
   Dataset D;
   Evaluator E;
@@ -15,20 +13,16 @@ int main() {
   gethostname(hostname,sizeof(hostname));
   bool print = true;
   if( M.commRank() != 0 ) print = false;
-  toc = get_time();
-  if(print) std::cout << "Allocate      : " << toc-tic << std::endl;
 
-  tic = get_time();
+  E.startTimer("Set bodies   ");
   D.sphere(bodies);
-  toc = get_time();
-  if(print) std::cout << "Set bodies    : " << toc-tic << std::endl;
+  E.stopTimer("Set bodies   ",print);
 
-  tic = get_time();
+  E.startTimer("Direct GPU   ");
   E.evalP2P(bodies,bodies);
-  toc = get_time();
-  if(print) std::cout << "Direct GPU    : " << toc-tic << std::endl;
+  E.stopTimer("Direct GPU   ",print);
 
-  tic = get_time();
+  E.startTimer("Direct CPU   ");
   real err = 0, rel = 0;
   for( B_iter BI=bodies.begin(); BI!=bodies.end(); ++BI ) {
     real pot = -BI->scal / std::sqrt(EPS2);
@@ -42,8 +36,7 @@ int main() {
     err += (BI->pot - pot) * (BI->pot - pot);
     rel += pot * pot;
   }
-  toc = get_time();
-  if(print) std::cout << "Direct CPU    : " << toc-tic << std::endl;
+  E.stopTimer("Direct CPU   ",print);
 
   for( int irank=0; irank!=M.commSize(); ++irank ) {
     MPI_Barrier(MPI_COMM_WORLD);

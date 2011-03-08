@@ -2,9 +2,10 @@
 #define kernel_h
 #define KERNEL
 #include "types.h"
+#include "logger.h"
 #undef KERNEL
 
-class Kernel {
+class Kernel : virtual public Logger {
 protected:
   B_iter BI0;                                                   // Target bodies begin iterator
   B_iter BIN;                                                   // Target bodies end iterator

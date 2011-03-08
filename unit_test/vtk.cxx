@@ -4,20 +4,17 @@
 
 int main() {
   const int numBodies = 10000;
-  double tic,toc;
   Bodies bodies(numBodies);
   Dataset D;
   TreeStructure T;
 
-  tic = get_time();
+  T.startTimer("Set bodies   ");
   D.sphere(bodies);
-  toc = get_time();
-  std::cout << "Set bodies    : " << toc-tic << std::endl;
+  T.stopTimer("Set bodies   ",true);
 
-  tic = get_time();
+  T.startTimer("Set domain   ");
   T.setDomain(bodies);
-  toc = get_time();
-  std::cout << "Set domain    : " << toc-tic << std::endl;
+  T.stopTimer("Set domain   ",true);
 
   vtkPlot vtk;
   vtk.setDomain(T.getR0(),T.getX0());

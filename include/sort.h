@@ -1,7 +1,8 @@
 #ifndef sort_h
 #define sort_h
+#include "logger.h"
 
-class Sort {
+class Sort : virtual public Logger {
 private:
   std::vector<int> bucket,bucket1,bucket2,permut1,permut2;      // Bucket and permutation for sorting
 
