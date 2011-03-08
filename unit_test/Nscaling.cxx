@@ -20,14 +20,12 @@ int main() {
     D.sphere(bodies,1,1);
     T.setDomain(bodies);
 #ifdef TOPDOWN
-    T.topdown(bodies,cells,false);
+    T.topdown(bodies,cells);
 #else
-    T.bottomup(bodies,cells,false);
+    T.bottomup(bodies,cells);
 #endif
 
-    T.startTimer("Downward     ");
     T.downward(cells,cells,1);
-    T.stopTimer("Downward     ");
 
     T.startTimer("Direct sum   ");
     T.buffer = bodies;

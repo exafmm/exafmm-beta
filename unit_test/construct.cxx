@@ -10,14 +10,15 @@ int main() {
   Cells cells;
   Dataset D;
   TreeConstructor T;
+  T.printNow = true;
 
   T.startTimer("Set bodies   ");
   D.sphere(bodies);
-  T.stopTimer("Set bodies   ",true);
+  T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
   T.setDomain(bodies);
-  T.stopTimer("Set domain   ",true);
+  T.stopTimer("Set domain   ",T.printNow);
 
 #ifdef TOPDOWN
   T.topdown(bodies,cells);

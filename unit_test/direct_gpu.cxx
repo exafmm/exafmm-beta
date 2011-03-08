@@ -7,14 +7,15 @@ int main() {
   Dataset D;
   Evaluator E;
   E.initialize();
+  E.printNow = true;
 
   E.startTimer("Set bodies   ");
   D.sphere(bodies);
-  E.stopTimer("Set bodies   ",true);
+  E.stopTimer("Set bodies   ",E.printNow);
 
   E.startTimer("Direct GPU   ");
   E.evalP2P(bodies,bodies);
-  E.stopTimer("Direct GPU   ",true);
+  E.stopTimer("Direct GPU   ",E.printNow);
 
   E.startTimer("Direct CPU   ");
   real err = 0, rel = 0;
@@ -30,7 +31,7 @@ int main() {
     err += (BI->pot - pot) * (BI->pot - pot);
     rel += pot * pot;
   }
-  E.stopTimer("Direct CPU   ",true);
+  E.stopTimer("Direct CPU   ",E.printNow);
   std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
   E.finalize();
 }

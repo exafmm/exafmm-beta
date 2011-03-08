@@ -10,30 +10,25 @@ int main() {
   Cells cells;
   Dataset D;
   LocalEssentialTree T;
-  bool print = false;
-  if( T.commRank() == 0 ) print = true;
+  if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
   D.random(bodies,T.commRank()+1);
-  T.stopTimer("Set bodies   ",print);
+  T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
   T.setGlobDomain(bodies);
-  T.stopTimer("Set domain   ",print);
+  T.stopTimer("Set domain   ",T.printNow);
 
-  T.startTimer("Partition    ");
   T.bisection(bodies);
-  T.stopTimer("Partition    ",print);
 
 #ifdef TOPDOWN
-  T.topdown(bodies,cells,print);
+  T.topdown(bodies,cells);
 #else
-  T.bottomup(bodies,cells,print);
+  T.bottomup(bodies,cells);
 #endif
 
-  T.startTimer("Comm bodies  ");
   T.commBodies(cells);
-  T.stopTimer("Comm bodies  ",print);
 
   T.commCells(bodies,cells);
 

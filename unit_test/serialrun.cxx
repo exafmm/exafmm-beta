@@ -10,14 +10,15 @@ int main() {
   Cells cells;
   Dataset D;
   TreeConstructor T;
+  T.printNow = true;
 
   T.startTimer("Set bodies   ");
   D.sphere(bodies,1,1);
-  T.stopTimer("Set bodies   ",true);
+  T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
   T.setDomain(bodies);
-  T.stopTimer("Set domain   ",true);
+  T.stopTimer("Set domain   ",T.printNow);
 
 #ifdef TOPDOWN
   T.topdown(bodies,cells);
@@ -27,7 +28,7 @@ int main() {
 
   T.startTimer("Downward     ");
   T.downward(cells,cells,1);
-  T.stopTimer("Downward     ",true);
+  T.stopTimer("Downward     ",T.printNow);
 
   T.startTimer("Direct sum   ");
   Evaluator E;
@@ -36,7 +37,7 @@ int main() {
     B->pot = -B->scal / std::sqrt(EPS2);
   }
   T.evalP2P(T.buffer,T.buffer);
-  T.stopTimer("Direct sum   ",true);
+  T.stopTimer("Direct sum   ",T.printNow);
 
   B_iter B  = bodies.begin();
   B_iter B2 = T.buffer.begin();

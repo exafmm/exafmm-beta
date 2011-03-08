@@ -215,6 +215,7 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
   Lists listM2M(cells.size());                                  // Define M2M interation list vector
   int level = getLevel(CJ0->I);                                 // Level of twig
   while( level != 0 ) {                                         // While level of source is not root level
+    startTimer("Get list     ");                                //  Start timer
     for( CJ=cells.begin(); CJ!=cells.end(); ++CJ ) {            //  Loop over cells bottomup (except root cell)
       if( getLevel(CJ->I) == level ) {                          //   If source cell is at current level
         CI = CJ0 + CJ->PARENT;                                  //    Set target cell iterator
@@ -222,16 +223,26 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
         sourceSize[CJ] = 2 * NCOEF;                             //    Key : iterator, Value : number of coefs
       }                                                         //   Endif for current level
     }                                                           //  End loop over cells
+    stopTimer("Get list     ");                                 //  Stop timer
+    startTimer("Set source   ");                                //  Start timer
     setSourceCell();                                            //  Set source buffer for cells
+    stopTimer("Set source   ");                                 //  Stop timer
+    startTimer("Set target   ");                                //  Start timer
     setTargetCell(cells,listM2M);                               //  Set target buffer for cells
+    stopTimer("Set target   ");                                 //  Stop timer
     M2M();                                                      //  Evaluate M2M kernel
-    getTargetCell(cells,listM2M);                               // Get body values from target buffer
-    clearBuffers();                                             // Clear GPU buffers
+    startTimer("Get target   ");                                //  Start timer
+    getTargetCell(cells,listM2M);                               //  Get body values from target buffer
+    stopTimer("Get target   ");                                 //  Stop timer
+    startTimer("Clear buffer ");                                //  Start timer
+    clearBuffers();                                             //  Clear GPU buffers
+    stopTimer("Clear buffer ");                                 //  Stop timer
     level--;                                                    //  Decrement level
   }                                                             // End while loop over levels
 }
 
 void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
+  startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
     for( L_iter L=listM2L[CI-CI0].begin(); L!=listM2L[CI-CI0].end(); ++L ) {//  Loop over interaction list
@@ -239,14 +250,24 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
       sourceSize[CJ] = 2 * NCOEF;                               //   Key : iterator, Value : number of coefs
     }                                                           //  End loop over interaction list
   }                                                             // End loop over target cells
+  stopTimer("Get list     ");                                   // Stop timer
+  startTimer("Set source   ");                                  // Start timer
   setSourceCell();                                              // Set source buffer for cells
+  stopTimer("Set source   ");                                   // Stop timer
+  startTimer("Set target   ");                                  // Start timer
   setTargetCell(cells,listM2L);                                 // Set target buffer for cells
+  stopTimer("Set target   ");                                   // Stop timer
   M2L();                                                        // Evaluate M2L kernel
+  startTimer("Get target   ");                                  // Start timer
   getTargetCell(cells,listM2L,false);                           // Get body values from target buffer
+  stopTimer("Get target   ");                                   // Stop timer
+  startTimer("Clear buffer ");                                  // Start timer
   clearBuffers();                                               // Clear GPU buffers
+  stopTimer("Clear buffer ");                                   // Stop timer
 }
 
 void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
+  startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator for target
   CJ0 = cells.begin();                                          // Set begin iterator for source
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
@@ -255,14 +276,24 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
       sourceSize[CJ] = 2 * NCOEF;                               //   Key : iterator, Value : number of coefs
     }                                                           //  End loop over interaction list
   }                                                             // End loop over target cells
+  stopTimer("Get list     ");                                   // Stop timer
+  startTimer("Set source   ");                                  // Start timer
   setSourceCell();                                              // Set source buffer for cells
+  stopTimer("Set source   ");                                   // Stop timer
+  startTimer("Set target   ");                                  // Start timer
   setTargetBody(cells,listM2P);                                 // Set target buffer for bodies
+  stopTimer("Set target   ");                                   // Stop timer
   M2P();                                                        // Evaluate M2P kernel
+  startTimer("Get target   ");                                  // Start timer
   getTargetBody(cells,listM2P);                                 // Get body values from target buffer
+  stopTimer("Get target   ");                                   // Stop timer
+  startTimer("Clear buffer ");                                  // Start timer
   clearBuffers();                                               // Clear GPU buffers
+  stopTimer("Clear buffer ");                                   // Stop timer
 }
 
 void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
+  startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
     for( L_iter L=listP2P[CI-CI0].begin(); L!=listP2P[CI-CI0].end(); ++L ) {//  Loop over interaction list
@@ -270,11 +301,20 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
       sourceSize[CJ] = CJ->NLEAF;                               //   Key : iterator, Value : number of leafs
     }                                                           //  End loop over interaction list
   }                                                             // End loop over target cells
+  stopTimer("Get list     ");                                   // Stop timer
+  startTimer("Set source   ");                                  // Start timer
   setSourceBody();                                              // Set source buffer for bodies
+  stopTimer("Set source   ");                                   // Stop timer
+  startTimer("Set target   ");                                  // Start timer
   setTargetBody(cells,listP2P);                                 // Set target buffer for bodies
+  stopTimer("Set target   ");                                   // Stop timer
   P2P();                                                        // Evaluate P2P kernel
+  startTimer("Get target   ");                                  // Start timer
   getTargetBody(cells,listP2P);                                 // Get body values from target buffer
+  stopTimer("Get target   ");                                   // Stop timer
+  startTimer("Clear buffer ");                                  // Start timer
   clearBuffers();                                               // Clear GPU buffers
+  stopTimer("Clear buffer ");                                   // Stop timer
 }
 
 void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
@@ -283,6 +323,7 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
   int maxLevel = getLevel(CI0->I);                              // Level of twig
   int level = 1;                                                // Start level from 1
   while( level != maxLevel+1 ) {                                // While level of source is not root level
+    startTimer("Get list     ");                                //  Start timer
     for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {        //  Loop over cells topdown (except root cell)
       if( getLevel(CI->I) == level ) {                          //   If target cell is at current level
         CJ = CI0 + CI->PARENT;                                  //    Set source cell iterator
@@ -292,16 +333,26 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
         }                                                       //    Endif for current level
       }                                                         //   Endif for stored source cell
     }                                                           //  End loop over cells topdown
+    stopTimer("Get list     ");                                 //  Stop timer
+    startTimer("Set source   ");                                //  Start timer
     setSourceCell(false);                                       //  Set source buffer for cells
+    stopTimer("Set source   ");                                 //  Stop timer
+    startTimer("Set target   ");                                //  Start timer
     setTargetCell(cells,listL2L);                               //  Set target buffer for cells
+    stopTimer("Set target   ");                                 //  Stop timer
     L2L();                                                      //  Evaluate L2L kernel
-    getTargetCell(cells,listL2L,false);                           // Get body values from target buffer
-    clearBuffers();                                               // Clear GPU buffers
+    startTimer("Get target   ");                                //  Start timer
+    getTargetCell(cells,listL2L,false);                         //  Get body values from target buffer
+    stopTimer("Get target   ");                                 //  Stop timer
+    startTimer("Clear buffer ");                                //  Start timer
+    clearBuffers();                                             //  Clear GPU buffers
+    stopTimer("Clear buffer ");                                 //  Stop timer
     level++;                                                    //  Increment level
   }                                                             // End while loop over levels
 }
 
 void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
+  startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator
   Lists listL2P(cells.size());                                  // Define L2P interation list vector
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells
@@ -310,9 +361,18 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
       sourceSize[CI] = 2 * NCOEF;                               //   Key : iterator, Value : number of coefs
     }                                                           //  Endif for twig cells
   }                                                             // End loop over cells topdown
+  stopTimer("Get list     ");                                   // Stop timer
+  startTimer("Set source   ");                                  // Start timer
   setSourceCell(false);                                         // Set source buffer for cells
+  stopTimer("Set source   ");                                   // Stop timer
+  startTimer("Set target   ");                                  // Start timer
   setTargetBody(cells,listL2P);                                 // Set target buffer for bodies
+  stopTimer("Set target   ");                                   // Stop timer
   L2P();                                                        // Evaluate L2P kernel
+  startTimer("Get target   ");                                  // Start timer
   getTargetBody(cells,listL2P);                                 // Get body values from target buffer
+  stopTimer("Get target   ");                                   // Stop timer
+  startTimer("Clear buffer ");                                  // Start timer
   clearBuffers();                                               // Clear GPU buffers
+  stopTimer("Clear buffer ");                                   // Stop timer
 }

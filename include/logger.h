@@ -17,8 +17,11 @@ private:
   }
 
 public:
+  bool printNow;
+
   Logger() {
     file.open("time");
+    printNow = false;
   }
   ~Logger() {
     file.close();

@@ -11,40 +11,31 @@ int main() {
   Dataset D;
   LocalEssentialTree T;
   Evaluator E;
-  bool print = false;
-  if( T.commRank() == 0 ) print = true;
+  if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
   D.sphere(bodies,T.commRank()+1);
-  T.stopTimer("Set bodies   ",print);
+  T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
   T.setGlobDomain(bodies);
-  T.stopTimer("Set domain   ",print);
+  T.stopTimer("Set domain   ",T.printNow);
 
-  T.startTimer("Partition    ");
   T.bisection(bodies);
-  T.stopTimer("Partition    ",print);
 
 #ifdef TOPDOWN
-  T.topdown(bodies,cells,print);
+  T.topdown(bodies,cells);
 #else
-  T.bottomup(bodies,cells,print);
+  T.bottomup(bodies,cells);
 #endif
 
-  T.startTimer("Comm bodies  ");
   T.commBodies(cells);
-  T.stopTimer("Comm bodies  ",print);
 
-  T.startTimer("Comm cells   ");
   Bodies bodies2 = bodies;
   Cells jcells = cells;
   T.commCells(bodies2,jcells);
-  T.stopTimer("Comm cells   ",print);
 
-  T.startTimer("Downward     ");
   T.downward(cells,jcells,1);
-  T.stopTimer("Downward     ",print);
 
   T.startTimer("Direct sum   ");
   bodies2 = bodies;
@@ -54,9 +45,9 @@ int main() {
   for( int i=0; i!=T.commSize(); ++i ) {
     T.shiftBodies(bodies);
     E.evalP2P(bodies2,bodies);
-    if(print) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
+    if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
   }
-  T.stopTimer("Direct sum   ",print);
+  T.stopTimer("Direct sum   ",T.printNow);
 
   B_iter B  = bodies.begin();
   B_iter B2 = bodies2.begin();
@@ -72,7 +63,7 @@ int main() {
   MPI_Datatype MPI_TYPE = T.getType(err);
   MPI_Reduce(&err,&err2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&rel,&rel2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  if(print) std::cout << "Error         : " << std::sqrt(err2/rel2) << std::endl;
+  if(T.printNow) std::cout << "Error         : " << std::sqrt(err2/rel2) << std::endl;
 #ifdef DEBUG
   T.print(std::sqrt(err/rel));
 #endif

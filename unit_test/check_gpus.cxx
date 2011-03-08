@@ -11,16 +11,15 @@ int main() {
   MyMPI M;
   E.initialize();
   gethostname(hostname,sizeof(hostname));
-  bool print = false;
-  if( M.commRank() == 0 ) print = true;
+  if( M.commRank() == 0 ) E.printNow = true;
 
   E.startTimer("Set bodies   ");
   D.sphere(bodies);
-  E.stopTimer("Set bodies   ",print);
+  E.stopTimer("Set bodies   ",E.printNow);
 
   E.startTimer("Direct GPU   ");
   E.evalP2P(bodies,bodies);
-  E.stopTimer("Direct GPU   ",print);
+  E.stopTimer("Direct GPU   ",E.printNow);
 
   E.startTimer("Direct CPU   ");
   real err = 0, rel = 0;
@@ -36,7 +35,7 @@ int main() {
     err += (BI->pot - pot) * (BI->pot - pot);
     rel += pot * pot;
   }
-  E.stopTimer("Direct CPU   ",print);
+  E.stopTimer("Direct CPU   ",E.printNow);
 
   for( int irank=0; irank!=M.commSize(); ++irank ) {
     MPI_Barrier(MPI_COMM_WORLD);

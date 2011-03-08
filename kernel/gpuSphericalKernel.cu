@@ -639,11 +639,11 @@ void Kernel::P2M() {
   allocGPU();
   cudaThreadSynchronize();
   stopTimer("Alloc GPU    ");
-  startTimer("GPU kernel   ");
+  startTimer("P2M kernel   ");
   int numBlocks = keysHost.size();
   P2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
   cudaThreadSynchronize();
-  stopTimer("GPU kernel   ");
+  stopTimer("P2M kernel   ");
   startTimer("Dealloc GPU  ");
   deallocGPU();
   cudaThreadSynchronize();

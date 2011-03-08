@@ -10,29 +10,26 @@ int main() {
   Bodies bodies(numBodies);
   Dataset D;
   Partition T;
-  bool print = false;
-  if( T.commRank() == 0 ) print = true;
+  if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
   D.random(bodies,T.commRank()+1);
-  T.stopTimer("Set bodies   ",print);
+  T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
   T.setGlobDomain(bodies);
-  T.stopTimer("Set domain   ",print);
+  T.stopTimer("Set domain   ");
 
   T.startTimer("Set index    ");
   T.BottomUp::setIndex(bodies);
-  T.stopTimer("Set index    ",print);
+  T.stopTimer("Set index    ");
 
-  T.startTimer("Sort index   ");
+  T.startTimer("Sort bodies  ");
   T.buffer.resize(bodies.size());
   T.sort(bodies,T.buffer);
-  T.stopTimer("Sort index   ",print);
+  T.stopTimer("Sort bodies  ",T.printNow);
 
-  T.startTimer("Partition    ");
   T.bisection(bodies);
-  T.stopTimer("Partition    ",print);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     B->I = 0;
   }

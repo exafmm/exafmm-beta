@@ -32,10 +32,6 @@ direct_gpu: direct_gpu.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS)
 	./a.out
 
-taylor: taylor.cxx
-	@$(CXX) $? $(LFLAGS)
-	./a.out
-
 vtk: vtk.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	./a.out
@@ -78,7 +74,6 @@ all      :
 	make kernel
 	make serialrun
 	make direct_gpu
-	make taylor
 	make vtk
 	make mpi
 	make shift

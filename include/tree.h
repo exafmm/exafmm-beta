@@ -139,11 +139,12 @@ protected:
     cell.LEAF = firstLeaf;                                      // Set pointer to first leaf
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
-    stopTimer("Bodies2twigs ");                                 // Start timer
+    stopTimer("Bodies2twigs ",printNow);                        // Stop timer & print
     evalP2M(twigs);                                             // Evaluate P2M kernel
   }
 
   void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) { // Link twigs bottomup to create all cells in tree
+    startTimer("Twigs2cells  ");                                // Start timer
     int begin = 0, end = 0;                                     // Initialize range of cell vector
     int level = getLevel(twigs.back().I);                       // Initialize level of tree
     while( !twigs.empty() ) {                                   // Keep poppig twigs until the vector is empty
@@ -163,6 +164,7 @@ protected:
       linkParent(cells,begin,end);                              //  Form parent-child mutual link
     }                                                           // End loop over levels
     unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
+    stopTimer("Twigs2cells  ",printNow);                        // Stop timer & print
     evalM2M(cells);                                             // Evaluate M2M kernel
   }
 
@@ -195,12 +197,14 @@ public:
   }
 
   void downward(Cells &cells, Cells &jcells, int method) {      // Downward phase for different source/target
+    startTimer("Traverse     ");                                // Start timer
     traverse(cells,jcells,method);                              // Traverse tree to get interaction list
     evalM2L(cells);                                             // Evaluate M2L kernel
     evalM2P(cells);                                             // Evaluate M2P kernel
     evalP2P(cells);                                             // Evaluate P2P kernel
     evalL2L(cells);                                             // Evaluate L2L kernel
     evalL2P(cells);                                             // Evaluate L2P kernel
+    stopTimer("Traverse     ",printNow);                        // Stop timer & print
   }
 
 };

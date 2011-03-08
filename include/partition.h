@@ -338,6 +338,7 @@ public:
   }
 
   void bisection(Bodies &bodies) {                              // Partitioning by recursive bisection
+    startTimer("Partition    ");                                // Start timer
     MPI_Datatype MPI_TYPE = getType(bodies[0].I);               // Get MPI data type
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
@@ -381,9 +382,11 @@ public:
       iSplit = nth_element(bodies,nthGlobal,MPI_COMM[0]);       //  Get cell index of nth global element
       nthLocal = splitBodies(bodies,iSplit);                    //  Split bodies based on iSplit
     }                                                           // End loop over levels of N-D hypercube communication
+    stopTimer("Partition    ",printNow);                        // Stop timer & print
   }
 
   void octsection(Bodies &bodies) {                             // Partition by recursive octsection
+    startTimer("Partition    ");                                // Start timer
     int byte = sizeof(bodies[0]);                               // Byte size of body structure
     int level = int(log(SIZE + 1) / M_LN2 / 3);                 // Max level/3 of N-D hypercube communication
     BottomUp::setIndex(bodies,level);                           // Set index of bodies for that level
@@ -431,6 +434,7 @@ public:
     delete[] sdsp;                                              // Delete send displacement
     delete[] rcnt;                                              // Delete recv count
     delete[] rdsp;                                              // Delete recv displacement
+    stopTimer("Partition    ",printNow);                        // Stop timer & print
   }
 };
 

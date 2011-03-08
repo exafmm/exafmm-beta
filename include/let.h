@@ -257,6 +257,7 @@ public:
   ~LocalEssentialTree() {}                                      // Destructor
 
   void commBodies(Cells &cells) {                               // Communicate bodies in the LET
+    startTimer("commBodies   ");                                // Start timer
     MPI_Datatype MPI_TYPE = getType(XMIN[LEVEL][0]);            // Get MPI data type
     std::vector<vect> xmin(SIZE);                               // Buffer for gathering XMIN
     std::vector<vect> xmax(SIZE);                               // Buffer for gathering XMAX
@@ -333,6 +334,7 @@ public:
     }                                                           // End loop over ranks
     MPI_Waitall(2*srnks.size(),&reqs[0],MPI_STATUSES_IGNORE);   // Wait for all communication to finish
     sendBodies.clear();                                         // Clear send buffer for bodies
+    stopTimer("commBodies   ",printNow);                        // Stop timer & print
   }
 
   void commCells(Bodies &bodies, Cells &cells) {                // Communicate cell in the LET

@@ -10,8 +10,7 @@ int main() {
   Bodies bodies(numBodies);
   Dataset D;
   Partition T;
-  bool print = false;
-  if( T.commRank() == 0 ) print = true;
+  if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
   if( T.commRank() % 2 == 0 ) {
@@ -20,11 +19,11 @@ int main() {
     bodies.resize(50000);
     D.sphere(bodies,T.commRank()+1);
   }
-  T.stopTimer("Set bodies   ",print);
+  T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
   T.setGlobDomain(bodies);
-  T.stopTimer("Set domain   ",print);
+  T.stopTimer("Set domain   ",T.printNow);
 
 #ifdef VTK
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;
@@ -42,7 +41,7 @@ int main() {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
-  T.stopTimer("Shift bodies ",print);
+  T.stopTimer("Shift bodies ",T.printNow);
   if( T.commRank() == 0 ) {
     vtk.plot(Ncell);
   }

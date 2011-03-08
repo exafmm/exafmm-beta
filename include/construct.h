@@ -144,7 +144,7 @@ public:
         bodies[b].I = i+off;                                    //   Store index in bodies
       } else if( i+off > bodies[b].I ) {                        //  If the new cell index is larger
         bodies[b].I = i+off;                                    //   Store index in bodies
-      }
+      }                                                         //  Endif for update
     }                                                           // End loop over bodies
   }
 
@@ -221,58 +221,54 @@ public:
     finalize();
   }
 
-  void topdown(Bodies &bodies, Cells &cells, bool print=true) { // Topdown tree constructor interface
+  void topdown(Bodies &bodies, Cells &cells) {                  // Topdown tree constructor interface
     startTimer("Grow tree    ");                                // Start timer
     TopDown::grow(bodies);                                      // Grow tree structure topdown
-    stopTimer("Grow tree    ",print);                           // Stop timer & print
+    stopTimer("Grow tree    ",printNow);                        // Stop timer & print
 
     startTimer("Set index    ");                                // Start timer
     TopDown::setIndex();                                        // Set index of cells
-    stopTimer("Set index    ",print);                           // Stop timer & print
+    stopTimer("Set index    ",printNow);                        // Stop timer & print
 
-    startTimer("Sort index   ");                                // Start timer
+    startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
     sort(bodies,buffer);                                        // Sort bodies in ascending order
-    stopTimer("Sort index   ",print);                           // Stop timer & print
+    stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
     Cells twigs;                                                // Twigs are cells at the bottom of tree
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
 
-    startTimer("Twigs2cells  ");                                // Start timer
     Cells sticks;                                               // Sticks are twigs from other processes not twigs here
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
-    stopTimer("Twigs2cells  ",print);                           // Stop timer & print
   }
 
-  void bottomup(Bodies &bodies, Cells &cells, bool print=true) {// Bottomup tree constructor interface
+  void bottomup(Bodies &bodies, Cells &cells) {                 // Bottomup tree constructor interface
     startTimer("Set index    ");                                // Start timer
     BottomUp::setIndex(bodies);                                 // Set index of cells
-    stopTimer("Set index    ",print);                           // Stop timer & print
+    stopTimer("Set index    ",printNow);                        // Stop timer & print
 
-    startTimer("Sort index   ");                                // Start timer
+    startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
     sort(bodies,buffer);                                        // Sort bodies in ascending order
-    stopTimer("Sort index   ",print);                           // Stop timer & print
+    stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
     startTimer("Prune tree   ");                                // Start timer
     prune(bodies);                                              // Prune tree structure bottomup
-    stopTimer("Prune tree   ",print);                           // Stop timer & print
+    stopTimer("Prune tree   ",printNow);                        // Stop timer & print
 
     startTimer("Grow tree    ");                                // Start timer
     BottomUp::grow(bodies);                                     // Grow tree structure at bottom if necessary
-    stopTimer("Grow tree    ",print);                           // Stop timer & print
+    stopTimer("Grow tree    ",printNow);                        // Stop timer & print
 
-    startTimer("Sort index   ");                                // Start timer
+    startTimer("Sort bodies  ");                                // Start timer
     sort(bodies,buffer);                                        // Sort bodies in ascending order
-    stopTimer("Sort index   ",print);                           // Stop timer & print
+    stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
     Cells twigs;                                                // Twigs are cells at the bottom of tree
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
 
-    startTimer("Twigs2cells  ");                                // Start timer
     Cells sticks;                                               // Sticks are twigs from other processes not twigs here
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
-    stopTimer("Twigs2cells  ",print);                           // Stop timer & print
   }
 
 };
