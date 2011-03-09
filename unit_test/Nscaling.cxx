@@ -12,12 +12,15 @@ int main() {
   Dataset D;
   Evaluator E;
   TreeConstructor T;
+  std::ifstream file;
+  file.open("pot",std::ifstream::binary);
 
-  for( int it=0; it!=17; ++it ) {
+  for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
-    D.sphere(bodies,1,1);
+    D.random(bodies,1,1);
+    T.startTimer("FMM          ");
     T.setDomain(bodies);
 #ifdef TOPDOWN
     T.topdown(bodies,cells);
@@ -26,13 +29,23 @@ int main() {
 #endif
 
     T.downward(cells,cells,1);
+    T.stopTimer("FMM          ");
 
     T.startTimer("Direct sum   ");
     T.buffer = bodies;
+#if 0
     for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
       B->pot = -B->scal / std::sqrt(EPS2);
     }
     E.evalP2P(T.buffer,T.buffer);
+    for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
+      file << B->pot << std::endl;
+    }
+#else
+    for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
+      file >> B->pot;
+    }
+#endif
     T.stopTimer("Direct sum   ");
     T.printAllTime();
     T.eraseTimer("Direct sum   ");
@@ -53,6 +66,7 @@ int main() {
     std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
     cells.clear();
   }
+  file.close();
 #ifdef VTK
   int Ncell = 0;
   vtkPlot vtk;

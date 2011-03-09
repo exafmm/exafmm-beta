@@ -199,12 +199,12 @@ public:
   void downward(Cells &cells, Cells &jcells, int method) {      // Downward phase for different source/target
     startTimer("Traverse     ");                                // Start timer
     traverse(cells,jcells,method);                              // Traverse tree to get interaction list
+    stopTimer("Traverse     ",printNow);                        // Stop timer & print
     evalM2L(cells);                                             // Evaluate M2L kernel
     evalM2P(cells);                                             // Evaluate M2P kernel
     evalP2P(cells);                                             // Evaluate P2P kernel
     evalL2L(cells);                                             // Evaluate L2L kernel
     evalL2P(cells);                                             // Evaluate L2P kernel
-    stopTimer("Traverse     ",printNow);                        // Stop timer & print
   }
 
 };

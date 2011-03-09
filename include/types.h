@@ -26,14 +26,14 @@ typedef long                 bigint;                            // Big integer t
 typedef float                real;                              // Real number type
 typedef std::complex<double> complex;                           // Complex number type
 
-const int  P     = 3;                                           // Order of expansions
+const int  P       = 3;                                         // Order of expansions
 //const int  NCOEF = P*(P+1)*(P+2)/6;                             // Number of coefficients for Taylor expansion
 const int  NCOEF   = P*(P+1)/2;                                 // Number of coefficients for spherical harmonics
-const int  NCRIT   = 100;                                       // Number of bodies per cell
-const real THETA   = 0.5;                                       // Box opening criteria
+const int  NCRIT   = 1000;                                        // Number of bodies per cell
+const real THETA   = 1/sqrtf(4);                                // Box opening criteria
 const real EPS2    = 1e-4;                                      // Softening parameter
 const int  GPUS    = 4;                                         // Number of GPUs per node
-const int  THREADS = 256;                                       // Number of threads per thread-block
+const int  THREADS = 64;                                        // Number of threads per thread-block
 
 typedef vec<3,real>                            vect;            // 3-D vector type
 //typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Taylor expansion

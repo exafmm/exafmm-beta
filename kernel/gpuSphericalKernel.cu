@@ -615,80 +615,113 @@ void Kernel::initialize() {
 }
 
 void Kernel::allocGPU() {
+  cudaThreadSynchronize();
+  startTimer("cudaMalloc   ");
   cudaMalloc( (void**) &keysDevc,   keysHost.size()*sizeof(int) );
   cudaMalloc( (void**) &rangeDevc,  rangeHost.size()*sizeof(int) );
   cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(float) );
   cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(float) );
+  cudaThreadSynchronize();
+  stopTimer("cudaMalloc   ");
+  startTimer("cudaMemcpy   ");
   cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),    cudaMemcpyHostToDevice);
   cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),   cudaMemcpyHostToDevice);
   cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(float),cudaMemcpyHostToDevice);
   cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(float),cudaMemcpyHostToDevice);
+  cudaThreadSynchronize();
+  stopTimer("cudaMemcpy   ");
 }
 
 void Kernel::deallocGPU() {
+  cudaThreadSynchronize();
+  startTimer("cudaMemcpy   ");
   cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(float),cudaMemcpyDeviceToHost);
+  cudaThreadSynchronize();
+  stopTimer("cudaMemcpy   ");
+  eraseTimer("cudaMemcpy   ");
+  startTimer("cudaFree     ");
   cudaFree(keysDevc);
   cudaFree(rangeDevc);
   cudaFree(targetDevc);
   cudaFree(sourceDevc);
+  cudaThreadSynchronize();
+  stopTimer("cudaFree     ");
 }
 
 void Kernel::P2M() {
-  cudaThreadSynchronize();
-  startTimer("Alloc GPU    ");
   allocGPU();
   cudaThreadSynchronize();
-  stopTimer("Alloc GPU    ");
   startTimer("P2M kernel   ");
   int numBlocks = keysHost.size();
   P2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
   cudaThreadSynchronize();
   stopTimer("P2M kernel   ");
-  startTimer("Dealloc GPU  ");
   deallocGPU();
-  cudaThreadSynchronize();
-  stopTimer("Dealloc GPU  ");
 }
 
 void Kernel::M2M() {
   allocGPU();
+  cudaThreadSynchronize();
+  startTimer("M2M kernel   ");
   int numBlocks = keysHost.size();
   M2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  cudaThreadSynchronize();
+  stopTimer("M2M kernel   ");
   deallocGPU();
 }
 
 void Kernel::M2L() {
   allocGPU();
+  cudaThreadSynchronize();
+  startTimer("M2L kernel   ");
   int numBlocks = keysHost.size();
   M2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  cudaThreadSynchronize();
+  stopTimer("M2L kernel   ");
   deallocGPU();
 }
 
 void Kernel::M2P() {
   allocGPU();
+  cudaThreadSynchronize();
+  startTimer("M2P kernel   ");
   int numBlocks = keysHost.size();
   M2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  cudaThreadSynchronize();
+  stopTimer("M2P kernel   ");
   deallocGPU();
 }
 
 void Kernel::P2P() {
   allocGPU();
+  cudaThreadSynchronize();
+  startTimer("P2P kernel   ");
   int numBlocks = keysHost.size();
   P2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  cudaThreadSynchronize();
+  stopTimer("P2P kernel   ");
   deallocGPU();
 }
 
 void Kernel::L2L() {
   allocGPU();
+  cudaThreadSynchronize();
+  startTimer("L2L kernel   ");
   int numBlocks = keysHost.size();
   L2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  cudaThreadSynchronize();
+  stopTimer("L2L kernel   ");
   deallocGPU();
 }
 
 void Kernel::L2P() {
   allocGPU();
+  cudaThreadSynchronize();
+  startTimer("L2P kernel   ");
   int numBlocks = keysHost.size();
   L2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  cudaThreadSynchronize();
+  stopTimer("L2P kernel   ");
   deallocGPU();
 }
 
