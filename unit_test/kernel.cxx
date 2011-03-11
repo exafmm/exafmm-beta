@@ -17,7 +17,7 @@ int main() {
       for( int d=0; d!=3; ++d ) {
         B->pos[d] = -rand() / (1. + RAND_MAX) - dist;
       }
-      B->pot = 0;
+      B->acc = B->pot = 0;
     }
     for( B_iter B=bodiesJ.begin(); B!=bodiesJ.end(); ++B ) {
       for( int d=0; d!=3; ++d ) {
@@ -65,18 +65,22 @@ int main() {
 
     bodiesI2 = bodiesI;
     for( B_iter B=bodiesI2.begin(); B!=bodiesI2.end(); ++B ) {
-      B->pot = 0;
+      B->acc = B->pot = 0;
     }
     E.evalP2P(bodiesI2,bodiesJ);
 
     B_iter B  = bodiesI.begin();
     B_iter B2 = bodiesI2.begin();
-    real err = 0, rel = 0;
+    real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
     for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
-      err += (B->pot - B2->pot) * (B->pot - B2->pot);
-      rel += B2->pot * B2->pot;
+      potDiff += (B->pot - B2->pot) * (B->pot - B2->pot);
+      potNorm += B2->pot * B2->pot;
+      accDiff += norm(B->acc - B2->acc);
+      accNorm += norm(B2->acc);
     }
-    std::cout << dist << " " << std::sqrt(err/rel) << std::endl;
+    std::cout << "Distance      : " << dist << std::endl;
+    std::cout << "Error (pot)   : " << std::sqrt(potDiff/potNorm) << std::endl;
+    std::cout << "Error (acc)   : " << std::sqrt(accDiff/accNorm) << std::endl;
   }
   E.finalize();
 }

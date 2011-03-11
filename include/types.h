@@ -29,7 +29,7 @@ typedef std::complex<double> complex;                           // Complex numbe
 const int  P       = 3;                                         // Order of expansions
 //const int  NCOEF = P*(P+1)*(P+2)/6;                             // Number of coefficients for Taylor expansion
 const int  NCOEF   = P*(P+1)/2;                                 // Number of coefficients for spherical harmonics
-const int  NCRIT   = 1000;                                        // Number of bodies per cell
+const int  NCRIT   = 100;                                       // Number of bodies per cell
 const real THETA   = 1/sqrtf(4);                                // Box opening criteria
 const real EPS2    = 1e-4;                                      // Softening parameter
 const int  GPUS    = 4;                                         // Number of GPUs per node

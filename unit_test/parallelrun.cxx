@@ -41,6 +41,7 @@ int main() {
   bodies2 = bodies;
   for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
     B->pot = -B->scal  / std::sqrt(EPS2);
+    B->acc = 0;
   }
   for( int i=0; i!=T.commSize(); ++i ) {
     T.shiftBodies(bodies);
@@ -51,21 +52,27 @@ int main() {
 
   B_iter B  = bodies.begin();
   B_iter B2 = bodies2.begin();
-  real err = 0, rel = 0, err2, rel2;
+  real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
+  real potDiffRedc, potNormRedc, accDiffRedc, accNormRedc;
   for( int i=0; i!=int(bodies.size()); ++i,++B,++B2 ) {
     B->pot -= B->scal  / std::sqrt(EPS2);
 #ifdef DEBUG
     if(MPIRANK==0) std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
 #endif
-    err += (B->pot - B2->pot) * (B->pot - B2->pot);
-    rel += B2->pot * B2->pot;
+    potDiff += (B->pot - B2->pot) * (B->pot - B2->pot);
+    potNorm += B2->pot * B2->pot;
+    accDiff += norm(B->acc - B2->acc);
+    accNorm += norm(B2->acc);
   }
-  MPI_Datatype MPI_TYPE = T.getType(err);
-  MPI_Reduce(&err,&err2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  MPI_Reduce(&rel,&rel2,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  if(T.printNow) std::cout << "Error         : " << std::sqrt(err2/rel2) << std::endl;
+  MPI_Datatype MPI_TYPE = T.getType(potDiff);
+  MPI_Reduce(&potDiff,&potDiffRedc,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&potNorm,&potNormRedc,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&accDiff,&accDiffRedc,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&accNorm,&accNormRedc,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  if(T.printNow) std::cout << "Error (pot)   : " << std::sqrt(potDiffRedc/potNormRedc) << std::endl;
+  if(T.printNow) std::cout << "Error (acc)   : " << std::sqrt(accDiffRedc/accNormRedc) << std::endl;
 #ifdef DEBUG
-  T.print(std::sqrt(err/rel));
+  T.print(std::sqrt(potDiff/potNorm));
 #endif
 
 #ifdef VTK

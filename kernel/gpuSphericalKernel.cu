@@ -45,7 +45,7 @@ __device__ void evalMultipole(float *YnmShrd, float rho, float alpha, float *fac
       rhon *= -rho;
     }
     pn = -pn * fact * s;
-    fact = fact + 2;
+    fact += 2;
   }
 }
 
@@ -72,7 +72,7 @@ __device__ void evalLocal(float *YnmShrd, float rho, float alpha, float *factShr
       rhon /= rho;
     }
     pn = -pn * fact * s;
-    fact = fact + 2;
+    fact += 2;
   }
 }
 
@@ -111,7 +111,7 @@ __device__ void P2M_core(float *target, float rho, float alpha, float beta, floa
       rhon *= rho;
     }
     pn = -pn * fact * s;
-    fact = fact + 2;
+    fact += 2;
   }
   int i = nn * (nn + 1) / 2 + mm;
   float ere = cosf(-mm * beta);
@@ -329,9 +329,12 @@ __global__ void M2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[2*itarget+1] = target[1];
 }
 
-__device__ void M2P_core(float &pot, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
+__device__ void M2P_core(float *target, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
   float x = cosf(theta);
+  float y = sinf(theta);
+  if( fabs(y) < EPS ) y = 1 / EPS;
   float s = sqrtf(1 - x * x);
+  float acc[3] = {0, 0, 0};
   float fact = 1;
   float pn = 1;
   float rhom = 1.0 / r;
@@ -345,8 +348,13 @@ __device__ void M2P_core(float &pot, float r, float theta, float phi, float *fac
     float Ynm = anm * p;
     float p1 = p;
     p = x * (2 * m + 1) * p;
+    float YnmTheta = anm * (p - (m + 1) * x * p1) / y;
     float realj = ere * sourceShrd[2*i+0] - eim * sourceShrd[2*i+1];
-    pot += 2 * Ynm * realj;
+    float imagj = eim * sourceShrd[2*i+0] + ere * sourceShrd[2*i+1];
+    target[0] += 2 * Ynm * realj;
+    acc[0] -= 2 * (m + 1) / r * Ynm * realj;
+    acc[1] += 2 * YnmTheta * realj;
+    acc[2] -= 2 * m * Ynm * imagj;
     rhom /= r;
     float rhon = rhom;
     for( int n=m+1; n<P; ++n ) {
@@ -356,19 +364,28 @@ __device__ void M2P_core(float &pot, float r, float theta, float phi, float *fac
       float p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
+      YnmTheta = anm * ((n - m + 1) * p - (n + 1) * x * p1) / y;
       realj = ere * sourceShrd[2*i+0] - eim * sourceShrd[2*i+1];
-      pot += 2 * Ynm * realj;
+      imagj = eim * sourceShrd[2*i+0] + ere * sourceShrd[2*i+1];
+      target[0] += 2 * Ynm * realj;
+      acc[0] -= 2 * (n + 1) / r * Ynm * realj;
+      acc[1] += 2 * YnmTheta * realj;
+      acc[2] -= 2 * m * Ynm * imagj;
       rhon /= r;
     }
     pn = -pn * fact * s;
-    fact = fact+2;
+    fact += 2;
   }
+  target[1] += sinf(theta)*cosf(phi)*acc[0]+cosf(theta)*cosf(phi)/r*acc[1]-sinf(phi)/r/y*acc[2];
+  target[2] += sinf(theta)*sinf(phi)*acc[0]+cosf(theta)*sinf(phi)/r*acc[1]+cosf(phi)/r/y*acc[2];
+  target[3] += cosf(theta)*acc[0]-sinf(theta)/r*acc[1];
 }
 
 __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  float target[4];
+  float targetPos[3];
+  float target[4] = {0, 0, 0, 0};
   __shared__ float sourceShrd[2*THREADS];
   __shared__ float factShrd[2*P];
   float fact = 1;
@@ -377,16 +394,15 @@ __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
     fact *= i + 1;
   }
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  target[0] = targetGlob[4*itarget+0];
-  target[1] = targetGlob[4*itarget+1];
-  target[2] = targetGlob[4*itarget+2];
-  target[3] = targetGlob[4*itarget+3];
+  targetPos[0] = targetGlob[4*itarget+0];
+  targetPos[1] = targetGlob[4*itarget+1];
+  targetPos[2] = targetGlob[4*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+2*ilist+1];
     float3 d;
-    d.x = target[0] - sourceGlob[begin+0];
-    d.y = target[1] - sourceGlob[begin+1];
-    d.z = target[2] - sourceGlob[begin+2];
+    d.x = targetPos[0] - sourceGlob[begin+0];
+    d.y = targetPos[1] - sourceGlob[begin+1];
+    d.z = targetPos[2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NCOEF ) {
       sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
@@ -395,7 +411,7 @@ __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
     __syncthreads();
     float r,theta,phi;
     cart2sph(r,theta,phi,d.x,d.y,d.z);
-    M2P_core(target[3],r,theta,phi,factShrd,sourceShrd);
+    M2P_core(target,r,theta,phi,factShrd,sourceShrd);
   }
   targetGlob[4*itarget+0] = target[0];
   targetGlob[4*itarget+1] = target[1];
@@ -406,13 +422,13 @@ __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
 __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  float target[4];
+  float targetPos[3];
+  float target[4] = {0, 0, 0, 0};
   __shared__ float sourceShrd[4*THREADS];
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  target[0] = targetGlob[4*itarget+0];
-  target[1] = targetGlob[4*itarget+1];
-  target[2] = targetGlob[4*itarget+2];
-  target[3] = targetGlob[4*itarget+3];
+  targetPos[0] = targetGlob[4*itarget+0];
+  targetPos[1] = targetGlob[4*itarget+1];
+  targetPos[2] = targetGlob[4*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+2*ilist+1];
     int size  = rangeGlob[keys+2*ilist+2];
@@ -427,10 +443,15 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
 #pragma unroll 64
       for( int i=0; i<THREADS; ++i ) {
         float3 d;
-        d.x = target[0] - sourceShrd[4*i+0];
-        d.y = target[1] - sourceShrd[4*i+1];
-        d.z = target[2] - sourceShrd[4*i+2];
-        target[3] += sourceShrd[4*i+3] * rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
+        d.x = targetPos[0] - sourceShrd[4*i+0];
+        d.y = targetPos[1] - sourceShrd[4*i+1];
+        d.z = targetPos[2] - sourceShrd[4*i+2];
+        float invR = rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
+        float invR3 = sourceShrd[4*i+3] * invR * invR * invR;
+        target[0] += sourceShrd[4*i+3] * invR;
+        target[1] -= d.x * invR3;
+        target[2] -= d.y * invR3;
+        target[3] -= d.z * invR3;
       }
     }
     int iblok = (size-1)/THREADS;
@@ -443,10 +464,15 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
     __syncthreads();
     for( int i=0; i<size-iblok*THREADS; ++i ) {
       float3 d;
-      d.x = target[0] - sourceShrd[4*i+0];
-      d.y = target[1] - sourceShrd[4*i+1];
-      d.z = target[2] - sourceShrd[4*i+2];
-      target[3] += sourceShrd[4*i+3] * rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
+      d.x = targetPos[0] - sourceShrd[4*i+0];
+      d.y = targetPos[1] - sourceShrd[4*i+1];
+      d.z = targetPos[2] - sourceShrd[4*i+2];
+      float invR = rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
+      float invR3 = sourceShrd[4*i+3] * invR * invR * invR;
+      target[0] += sourceShrd[4*i+3] * invR;
+      target[1] -= d.x * invR3;
+      target[2] -= d.y * invR3;
+      target[3] -= d.z * invR3;
     }
   }
   targetGlob[4*itarget+0] = target[0];
@@ -532,9 +558,12 @@ __global__ void L2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[2*itarget+1] = target[1];
 }
 
-__device__ void L2P_core(float &pot, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
+__device__ void L2P_core(float *target, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
   float x = cosf(theta);
+  float y = sinf(theta);
+  if( fabs(y) < EPS ) y = 1 / EPS;
   float s = sqrtf(1 - x * x);
+  float acc[3] = {0, 0, 0};
   float fact = 1;
   float pn = 1;
   float rhom = 1;
@@ -548,8 +577,13 @@ __device__ void L2P_core(float &pot, float r, float theta, float phi, float *fac
     float Ynm = anm * p;
     float p1 = p;
     p = x * (2 * m + 1) * p;
+    float YnmTheta = anm * (p - (m + 1) * x * p1) / y;
     float realj = ere * sourceShrd[2*i+0] - eim * sourceShrd[2*i+1];
-    pot += 2 * Ynm * realj;
+    float imagj = eim * sourceShrd[2*i+0] + ere * sourceShrd[2*i+1];
+    target[0] += 2 * Ynm * realj;
+    acc[0] += 2 * m / r * Ynm * realj;
+    acc[1] += 2 * YnmTheta * realj;
+    acc[2] -= 2 * m * Ynm * imagj;
     rhom *= r;
     float rhon = rhom;
     for( int n=m+1; n<P; ++n ) {
@@ -559,19 +593,28 @@ __device__ void L2P_core(float &pot, float r, float theta, float phi, float *fac
       float p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
+      YnmTheta = anm * ((n - m + 1) * p - (n + 1) * x * p1) / y;
       realj = ere * sourceShrd[2*i+0] - eim * sourceShrd[2*i+1];
-      pot += 2 * Ynm * realj;
+      imagj = eim * sourceShrd[2*i+0] + ere * sourceShrd[2*i+1];
+      target[0] += 2 * Ynm * realj;
+      acc[0] += 2 * n / r * Ynm * realj;
+      acc[1] += 2 * YnmTheta * realj;
+      acc[2] -= 2 * m * Ynm * imagj;
       rhon *= r;
     }
     pn = -pn * fact * s;
-    fact = fact + 2;
+    fact += 2;
   }
+  target[1] += sinf(theta)*cosf(phi)*acc[0]+cosf(theta)*cosf(phi)/r*acc[1]-sinf(phi)/r/y*acc[2];
+  target[2] += sinf(theta)*sinf(phi)*acc[0]+cosf(theta)*sinf(phi)/r*acc[1]+cosf(phi)/r/y*acc[2];
+  target[3] += cosf(theta)*acc[0]-sinf(theta)/r*acc[1];
 }
 
 __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  float target[4];
+  float targetPos[3];
+  float target[4] = {0, 0, 0, 0};
   __shared__ float sourceShrd[2*THREADS];
   __shared__ float factShrd[2*P];
   float fact = 1;
@@ -580,16 +623,15 @@ __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
     fact *= i + 1;
   }
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  target[0] = targetGlob[4*itarget+0];
-  target[1] = targetGlob[4*itarget+1];
-  target[2] = targetGlob[4*itarget+2];
-  target[3] = targetGlob[4*itarget+3];
+  targetPos[0] = targetGlob[4*itarget+0];
+  targetPos[1] = targetGlob[4*itarget+1];
+  targetPos[2] = targetGlob[4*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+2*ilist+1];
     float3 d;
-    d.x = target[0] - sourceGlob[begin+0];
-    d.y = target[1] - sourceGlob[begin+1];
-    d.z = target[2] - sourceGlob[begin+2];
+    d.x = targetPos[0] - sourceGlob[begin+0];
+    d.y = targetPos[1] - sourceGlob[begin+1];
+    d.z = targetPos[2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NCOEF ) {
       sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
@@ -598,7 +640,7 @@ __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
     __syncthreads();
     float r,theta,phi;
     cart2sph(r,theta,phi,d.x,d.y,d.z);
-    L2P_core(target[3],r,theta,phi,factShrd,sourceShrd);
+    L2P_core(target,r,theta,phi,factShrd,sourceShrd);
   }
   targetGlob[4*itarget+0] = target[0];
   targetGlob[4*itarget+1] = target[1];

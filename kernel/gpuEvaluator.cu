@@ -115,7 +115,10 @@ void Evaluator::getTargetBody(Cells &cells, Lists &lists) {     // Get body valu
       BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
       int begin = targetBegin[CI];                              //   Offset of target leafs
       for( B_iter B=BI0; B!=BIN; ++B ) {                        //   Loop over target bodies
-        B->pot += targetHost[4*(begin+B-BI0)+3];                //    Copy target values from GPU buffer
+        B->pot    += targetHost[4*(begin+B-BI0)+0];             //    Copy potential from GPU buffer
+        B->acc[0] += targetHost[4*(begin+B-BI0)+1];             //    Copy acceleration from GPU buffer
+        B->acc[1] += targetHost[4*(begin+B-BI0)+2];             //    Copy acceleration from GPU buffer
+        B->acc[2] += targetHost[4*(begin+B-BI0)+3];             //    Copy acceleration from GPU buffer
       }                                                         //   End loop over target bodies
       lists[CI-CI0].clear();                                    //   Clear interaction list
     }                                                           //  End if for empty interation list
@@ -191,7 +194,10 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {
   }                                                             // End loop over elements to pad
   P2P();                                                        // Evaluate P2P kernel
   for( B_iter B=BI0; B!=BIN; ++B ) {                            // Loop over target bodies
-    B->pot += targetHost[4*(B-BI0)+3];                          //  Copy target values from GPU buffer
+    B->pot += targetHost[4*(B-BI0)+0];                          //  Copy potential from GPU buffer
+    B->acc[0] += targetHost[4*(B-BI0)+1];                       //  Copy acceleration from GPU buffer
+    B->acc[1] += targetHost[4*(B-BI0)+2];                       //  Copy acceleration from GPU buffer
+    B->acc[2] += targetHost[4*(B-BI0)+3];                       //  Copy acceleration from GPU buffer
   }                                                             // End loop over target bodies
   keysHost.clear();                                             // Clear keys vector
   rangeHost.clear();                                            // Clear range vector

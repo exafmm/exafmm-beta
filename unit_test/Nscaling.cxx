@@ -12,8 +12,8 @@ int main() {
   Dataset D;
   Evaluator E;
   TreeConstructor T;
-  std::ifstream file;
-  file.open("pot",std::ifstream::binary);
+  std::fstream file;
+  file.open("pot",std::fstream::binary);
 
   for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
@@ -29,21 +29,29 @@ int main() {
 #endif
 
     T.downward(cells,cells,1);
-    T.stopTimer("FMM          ");
+    T.stopTimer("FMM          ",true);
+    T.eraseTimer("FMM          ");
 
     T.startTimer("Direct sum   ");
     T.buffer = bodies;
-#if 0
+#if 1
     for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
       B->pot = -B->scal / std::sqrt(EPS2);
+      B->acc = 0;
     }
     E.evalP2P(T.buffer,T.buffer);
     for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
       file << B->pot << std::endl;
+      file << B->acc[0] << std::endl;
+      file << B->acc[1] << std::endl;
+      file << B->acc[2] << std::endl;
     }
 #else
     for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
       file >> B->pot;
+      file >> B->acc[0];
+      file >> B->acc[1];
+      file >> B->acc[2];
     }
 #endif
     T.stopTimer("Direct sum   ");
@@ -54,16 +62,19 @@ int main() {
 
     B_iter B  = bodies.begin();
     B_iter B2 = T.buffer.begin();
-    real err = 0, rel = 0;
+    real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
     for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
       B->pot -= B->scal / std::sqrt(EPS2);
 #ifdef DEBUG
       std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
 #endif
-      err += (B->pot - B2->pot) * (B->pot - B2->pot);
-      rel += B2->pot * B2->pot;
+      potDiff += (B->pot - B2->pot) * (B->pot - B2->pot);
+      potNorm += B2->pot * B2->pot;
+      accDiff += norm(B->acc - B2->acc);
+      accNorm += norm(B2->acc);
     }
-    std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
+    std::cout << "Error (pot)   : " << std::sqrt(potDiff/potNorm) << std::endl;
+    std::cout << "Error (acc)   : " << std::sqrt(accDiff/accNorm) << std::endl;
     cells.clear();
   }
   file.close();

@@ -5,7 +5,7 @@
 #endif
 
 int main() {
-  const int numBodies = 100000;
+  const int numBodies = 10000;
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
@@ -35,22 +35,26 @@ int main() {
   T.buffer = bodies;
   for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
     B->pot = -B->scal / std::sqrt(EPS2);
+    B->acc = 0;
   }
   T.evalP2P(T.buffer,T.buffer);
   T.stopTimer("Direct sum   ",T.printNow);
 
   B_iter B  = bodies.begin();
   B_iter B2 = T.buffer.begin();
-  real err = 0, rel = 0;
+  real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
   for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
     B->pot  -= B->scal / std::sqrt(EPS2);
 #ifdef DEBUG
     std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
 #endif
-    err += (B->pot - B2->pot) * (B->pot - B2->pot);
-    rel += B2->pot * B2->pot;
+    potDiff += (B->pot - B2->pot) * (B->pot - B2->pot);
+    potNorm += B2->pot * B2->pot;
+    accDiff += norm(B->acc - B2->acc);
+    accNorm += norm(B2->acc);
   }
-  std::cout << "Error         : " << std::sqrt(err/rel) << std::endl;
+  std::cout << "Error (pot)   : " << std::sqrt(potDiff/potNorm) << std::endl;
+  std::cout << "Error (acc)   : " << std::sqrt(accDiff/accNorm) << std::endl;
 #ifdef VTK
   int Ncell = 0;
   vtkPlot vtk;

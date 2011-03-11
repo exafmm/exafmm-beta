@@ -5,12 +5,13 @@ const int  P2 = P * P;
 const int  P4 = P2 * P2;
 const real EPS = 1e-6;
 double *prefactor, *Anm;
-complex *Ynm, *Cnm, I(0.0,1.0);
+complex *Ynm, *YnmTheta, *Cnm, I(0.0,1.0);
 
 void Kernel::initialize() {
   prefactor = new double  [4*P2];
   Anm       = new double  [4*P2];
   Ynm       = new complex [4*P2];
+  YnmTheta  = new complex [4*P2];
   Cnm       = new complex [P4];
 
   for( int n=0; n!=2*P; ++n ) {
@@ -58,6 +59,7 @@ void cart2sph(real& r, real& theta, real& phi, vect dist) {
 
 void evalMultipole(real rho, real alpha, real beta) {
   double x = std::cos(alpha);
+  double y = std::sin(alpha);
   double s = std::sqrt(1 - x * x);
   double fact = 1;
   double pn = 1;
@@ -71,6 +73,7 @@ void evalMultipole(real rho, real alpha, real beta) {
     Ynm[nmn] = std::conj(Ynm[npn]);
     double p1 = p;
     p = x * (2 * m + 1) * p;
+    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;
     rhom *= rho;
     double rhon = rhom;
     for( int n=m+1; n!=P; ++n ) {
@@ -81,15 +84,17 @@ void evalMultipole(real rho, real alpha, real beta) {
       double p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
+      YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;
       rhon *= rho;
     }
     pn = -pn * fact * s;
-    fact = fact + 2;
+    fact += 2;
   }
 }
 
 void evalLocal(real rho, real alpha, real beta) {
   double x = std::cos(alpha);
+  double y = std::sin(alpha);
   double s = std::sqrt(1 - x * x);
   double fact = 1;
   double pn = 1;
@@ -103,6 +108,7 @@ void evalLocal(real rho, real alpha, real beta) {
     Ynm[nmn] = std::conj(Ynm[npn]);
     double p1 = p;
     p = x * (2 * m + 1) * p;
+    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;
     rhom /= rho;
     double rhon = rhom;
     for( int n=m+1; n!=2*P; ++n ) {
@@ -113,10 +119,11 @@ void evalLocal(real rho, real alpha, real beta) {
       double p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
+      YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;
       rhon /= rho;
     }
     pn = -pn * fact * s;
-    fact = fact + 2;
+    fact += 2;
   }
 }
 
@@ -203,6 +210,7 @@ void Kernel::M2L() {
 void Kernel::M2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->pos - CJ->X;
+    vect acc = 0;
     real r, theta, phi;
     cart2sph(r,theta,phi,dist);
     evalLocal(r,theta,phi);
@@ -210,12 +218,20 @@ void Kernel::M2P() {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
       B->pot += (CJ->M[nms]*Ynm[nm]).real();
+      acc[0] -= (CJ->M[nms]*Ynm[nm]).real()/r*(n+1);
+      acc[1] += (CJ->M[nms]*YnmTheta[nm]).real();
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
         B->pot += 2*(CJ->M[nms]*Ynm[nm]).real();
+        acc[0] -= 2*(CJ->M[nms]*Ynm[nm]).real()/r*(n+1);
+        acc[1] += 2*(CJ->M[nms]*YnmTheta[nm]).real();
+        acc[2] += 2*(CJ->M[nms]*Ynm[nm]*I).real()*m;
       }
     }
+    B->acc[0] += sin(theta)*cos(phi)*acc[0]+cos(theta)*cos(phi)/r*acc[1]-sin(phi)/r/sin(theta)*acc[2];
+    B->acc[1] += sin(theta)*sin(phi)*acc[0]+cos(theta)*sin(phi)/r*acc[1]+cos(phi)/r/sin(theta)*acc[2];
+    B->acc[2] += cos(theta)*acc[0]-sin(theta)/r*acc[1];
   }
 }
 
@@ -223,8 +239,10 @@ void Kernel::P2P() {
   for( B_iter BI=BI0; BI!=BIN; ++BI ) {
     for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {
       vect dist = BI->pos - BJ->pos;
-      real r = std::sqrt(norm(dist) + EPS2);
-      BI->pot += BJ->scal / r;
+      real invR = 1 / std::sqrt(norm(dist) + EPS2);
+      real invR3 = BJ->scal * invR * invR * invR;
+      BI->pot += BJ->scal * invR;
+      BI->acc -= dist * invR3;
     }
   }
 }
@@ -263,6 +281,7 @@ void Kernel::L2L() {
 void Kernel::L2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->pos - CI->X;
+    vect acc = 0;
     real r, theta, phi;
     cart2sph(r,theta,phi,dist);
     evalMultipole(r,theta,phi);
@@ -270,12 +289,20 @@ void Kernel::L2P() {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
       B->pot += (CI->L[nms]*Ynm[nm]).real();
+      acc[0] += (CI->L[nms]*Ynm[nm]).real()/r*n;
+      acc[1] += (CI->L[nms]*YnmTheta[nm]).real();
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
         B->pot += 2*(CI->L[nms]*Ynm[nm]).real();
+        acc[0] += 2*(CI->L[nms]*Ynm[nm]).real()/r*n;
+        acc[1] += 2*(CI->L[nms]*YnmTheta[nm]).real();
+        acc[2] += 2*(CI->L[nms]*Ynm[nm]*I).real()*m;
       }
     }
+    B->acc[0] += sin(theta)*cos(phi)*acc[0]+cos(theta)*cos(phi)/r*acc[1]-sin(phi)/r/sin(theta)*acc[2];
+    B->acc[1] += sin(theta)*sin(phi)*acc[0]+cos(theta)*sin(phi)/r*acc[1]+cos(phi)/r/sin(theta)*acc[2];
+    B->acc[2] += cos(theta)*acc[0]-sin(theta)/r*acc[1];
   }
 }
 
@@ -283,5 +310,6 @@ void Kernel::finalize() {
   delete[] prefactor;
   delete[] Anm;
   delete[] Ynm;
+  delete[] YnmTheta;
   delete[] Cnm;
 }
