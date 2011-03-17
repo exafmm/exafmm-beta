@@ -57,6 +57,7 @@ public:
       B->acc = B->pot = 0;                                      //  Initialize target values
     }                                                           // End loop over bodies
   }
+
 };
 
 #endif

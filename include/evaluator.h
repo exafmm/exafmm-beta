@@ -117,6 +117,33 @@ public:
     R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
   }
 
+  int getPeriodicRange() {                                      // Get range of periodic images
+    int prange = 0;                                             //  Range of periodic images
+    for( int i=0; i!=IMAGES; ++i ) {                            //  Loop over periodic image sublevels
+      prange += std::pow(3,i);                                  //   Accumulate range of periodic images
+    }                                                           //  End loop over perioidc image sublevels
+    return prange;                                              // Return range of periodic images
+  }
+
+  Bodies periodicBodies(Bodies &bodies) {                       // Create periodic images of bodies
+    Bodies jbodies;                                             // Vector for periodic images of bodies
+    int prange = getPeriodicRange();                            // Get range of periodic images
+    for( int ix=-prange; ix<=prange; ++ix ) {                   // Loop over x periodic direction
+      for( int iy=-prange; iy<=prange; ++iy ) {                 //  Loop over y periodic direction
+        for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
+          for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {//    Loop over bodies
+            Body body = *B;                                     //     Copy current body
+            body.pos[0] += ix * 2 * R0;                         //     Shift x position
+            body.pos[1] += iy * 2 * R0;                         //     Shift y position
+            body.pos[2] += iz * 2 * R0;                         //     Shift z position
+            jbodies.push_back(body);                            //     Push shifted body into jbodies
+          }                                                     //    End loop over bodies
+        }                                                       //   End loop over z periodic direction
+      }                                                         //  End loop over y periodic direction
+    }                                                           // End loop over x periodic direction
+    return jbodies;                                             // Return vector for periodic images of bodies
+  }
+
   vect getX0() {return X0;}                                     // Get center of root cell
   real getR0() {return R0;}                                     // Get radius of root cell
 
@@ -142,7 +169,7 @@ public:
   void getTargetCell(Cells &cells, Lists &lists, bool isM);     // Get cell values from target buffer
   void clearBuffers();                                          // Clear GPU buffers
 
-  void evalP2P(Bodies &ibodies, Bodies &jbodies, bool isPeriodic=false);// Evaluate P2P kernel (all pairs)
+  void evalP2P(Bodies &ibodies, Bodies &jbodies);               // Evaluate P2P kernel (all pairs)
   void evalP2M(Cells &twigs);                                   // Evaluate P2M kernel
   void evalM2M(Cells &cells);                                   // Evaluate M2M kernel
   void evalM2L(Cells &cells);                                   // Evaluate M2L kernel
@@ -151,7 +178,7 @@ public:
   void evalL2L(Cells &cells);                                   // Evaluate L2L kernel
   void evalL2P(Cells &cells);                                   // Evaluate L2P kernel
 
-  void traverse(Cells &cells, Cells &jcells, int method, bool isPeriodic) {// Traverse tree to get interaction list
+  void traverse(Cells &cells, Cells &jcells, int method) {      // Traverse tree to get interaction list
     C_iter root = cells.end()-1;                                // Iterator for root cell
     C_iter jroot = jcells.end()-1;                              // Iterator for root cell
     CI0 = cells.begin();                                        // Set begin iterator for icells
@@ -162,7 +189,7 @@ public:
     flagM2L.resize(cells.size());                               // Resize M2L periodic image flag
     flagM2P.resize(cells.size());                               // Resize M2P periodic image flag
     flagP2P.resize(cells.size());                               // Resize P2P periodic image flag
-    if( !isPeriodic ) {                                         // If free boundary condition
+    if( IMAGES == 0 ) {                                         // If free boundary condition
       Iperiodic = Icenter;                                      //  Set periodic image flag to center
       Xperiodic = 0;                                            //  Set periodic coordinate offset
       Pair pair(root,jroot);                                    //  Form pair of root cells

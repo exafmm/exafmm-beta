@@ -6,8 +6,8 @@
 
 int main() {
   const int numBodies = 1000;
-  const bool isPeriodic = true;
   Bodies bodies(numBodies);
+  Bodies jbodies;
   Cells cells;
   Dataset D;
   TreeConstructor T;
@@ -28,8 +28,16 @@ int main() {
 #endif
 
   T.startTimer("Downward     ");
-  T.downward(cells,cells,1,isPeriodic);
+  T.downward(cells,cells,1);
   T.stopTimer("Downward     ",T.printNow);
+
+  if( IMAGES != 0 ) {
+    T.startTimer("Set periodic ");
+    jbodies = T.periodicBodies(bodies);
+    T.stopTimer("Set periodic ",T.printNow);
+  } else {
+    jbodies = bodies;
+  }
 
   T.startTimer("Direct sum   ");
   Evaluator E;
@@ -38,7 +46,7 @@ int main() {
     B->pot = -B->scal / std::sqrt(EPS2);
     B->acc = 0;
   }
-  T.evalP2P(T.buffer,T.buffer,isPeriodic);
+  T.evalP2P(T.buffer,jbodies);
   T.stopTimer("Direct sum   ",T.printNow);
 
   B_iter B  = bodies.begin();

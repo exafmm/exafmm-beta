@@ -1,26 +1,12 @@
 #include "evaluator.h"
 
-void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool isPeriodic) {// Evaluate P2P
+void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {     // Evaluate P2P
   BI0 = ibodies.begin();                                        // Set target bodies begin iterator
   BIN = ibodies.end();                                          // Set target bodies end iterator
   BJ0 = jbodies.begin();                                        // Set source bodies begin iterator
   BJN = jbodies.end();                                          // Set source bodies end iterator
-  if( !isPeriodic ) {                                           // If free boundary condition
-    Xperiodic = 0;                                              //  Set periodic coordinate offset
-    P2P();                                                      //  Evaluate P2P kernel
-  } else {                                                      // If periodic boundary condition
-    int I = 0;                                                  //  Initialize index of periodic image
-    for( int ix=-1; ix<=1; ++ix ) {                             //  Loop over x periodic direction
-      for( int iy=-1; iy<=1; ++iy ) {                           //   Loop over y periodic direction
-        for( int iz=-1; iz<=1; ++iz, ++I ) {                    //    Loop over z periodic direction
-          Xperiodic[0] = ix * 2 * R0;                           //     Coordinate offset for x periodic direction
-          Xperiodic[1] = iy * 2 * R0;                           //     Coordinate offset for y periodic direction
-          Xperiodic[2] = iz * 2 * R0;                           //     Coordinate offset for z periodic direction
-          P2P();                                                //     Evaluate P2P kernel
-        }                                                       //    End loop over x periodic direction
-      }                                                         //   End loop over y periodic direction
-    }                                                           //  End loop over z periodic direction
-  }                                                             // Endif for periodic boundary condition
+  Xperiodic = 0;                                                //  Set periodic coordinate offset
+  P2P();                                                        //  Evaluate P2P kernel
 }
 
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
@@ -106,7 +92,6 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
     BIN = CI->LEAF + CI->NLEAF;                                 //  Set target bodies end iterator
     while( !listP2P[CI-CI0].empty() ) {                         //  While M2P interaction list is not empty
       CJ = listP2P[CI-CI0].back();                              //   Set source cell iterator
-      if( CI-CI0 == 0 ) std::cout << CJ-CI0 << std::endl;
       BJ0 = CJ->LEAF;                                           //   Set source bodies begin iterator
       BJN = CJ->LEAF + CJ->NLEAF;                               //   Set source bodies end iterator
       Iperiodic = flagP2P[CI-CI0][CJ];                          //   Set periodic image flag

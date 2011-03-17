@@ -165,9 +165,9 @@ protected:
   }
 
 public:
-  void downward(Cells &cells, Cells &jcells, int method, bool isPeriodic=false) {// Downward phase
+  void downward(Cells &cells, Cells &jcells, int method) {      // Downward phase
     startTimer("Traverse     ");                                // Start timer
-    traverse(cells,jcells,method,isPeriodic);                   // Traverse tree to get interaction list
+    traverse(cells,jcells,method);                              // Traverse tree to get interaction list
     stopTimer("Traverse     ",printNow);                        // Stop timer & print
     evalM2L(cells);                                             // Evaluate M2L kernel
     evalM2P(cells);                                             // Evaluate M2P kernel

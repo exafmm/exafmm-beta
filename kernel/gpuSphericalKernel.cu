@@ -51,7 +51,7 @@ __device__ void evalMultipole(float *YnmShrd, float rho, float alpha, float *fac
 
 __device__ void evalLocal(float *YnmShrd, float rho, float alpha, float *factShrd) {
   float x = cosf(alpha);
-  float s = sqrt(1 - x * x);
+  float s = sqrtf(1 - x * x);
   float fact = 1;
   float pn = 1;
   float rhom = 1.0 / rho;
@@ -84,7 +84,7 @@ __device__ void P2M_core(float *target, float rho, float alpha, float beta, floa
     factShrd[i] = fact;
     fact *= i + 1;
   }
-  int nn = floor(sqrt(2*threadIdx.x+0.25)-0.5);
+  int nn = floor(sqrtf(2*threadIdx.x+0.25)-0.5);
   int mm = 0;
   for( int i=0; i<=nn; ++i ) mm += i;
   mm = threadIdx.x - mm;
@@ -175,7 +175,7 @@ __global__ void P2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
 }
 
 __device__ void M2M_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
-  int j = floor(sqrt(2*threadIdx.x+0.25)-0.5);
+  int j = floor(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
   k = threadIdx.x - k;
@@ -255,7 +255,7 @@ __global__ void M2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
 }
 
 __device__ void M2L_core(float *target, float  beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
-  int j = floor(sqrt(2*threadIdx.x+0.25)-0.5);
+  int j = floor(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
   k = threadIdx.x - k;
@@ -358,7 +358,7 @@ __device__ void M2P_core(float *target, float r, float theta, float phi, float *
     float ere = cosf(m * phi);
     if( m == 0 ) ere = 0.5;
     float eim = sinf(m * phi);
-    float anm = rhom * rsqrt(factShrd[2*m]);
+    float anm = rhom * rsqrtf(factShrd[2*m]);
     float Ynm = anm * p;
     float p1 = p;
     p = x * (2 * m + 1) * p;
@@ -373,7 +373,7 @@ __device__ void M2P_core(float *target, float r, float theta, float phi, float *
     float rhon = rhom;
     for( int n=m+1; n<P; ++n ) {
       i = n * (n + 1) / 2 + m;
-      anm = rhon * rsqrt(factShrd[n+m] / factShrd[n-m]);
+      anm = rhon * rsqrtf(factShrd[n+m] / factShrd[n-m]);
       Ynm = anm * p;
       float p2 = p1;
       p1 = p;
@@ -537,7 +537,7 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
 }
 
 __device__ void L2L_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
-  int j = floor(sqrt(2*threadIdx.x+0.25)-0.5);
+  int j = floor(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
   k = threadIdx.x - k;
@@ -628,7 +628,7 @@ __device__ void L2P_core(float *target, float r, float theta, float phi, float *
     float ere = cosf(m * phi);
     if( m == 0 ) ere = 0.5;
     float eim = sinf(m * phi);
-    float anm = rhom * rsqrt(factShrd[2*m]);
+    float anm = rhom * rsqrtf(factShrd[2*m]);
     float Ynm = anm * p;
     float p1 = p;
     p = x * (2 * m + 1) * p;
@@ -643,7 +643,7 @@ __device__ void L2P_core(float *target, float r, float theta, float phi, float *
     float rhon = rhom;
     for( int n=m+1; n<P; ++n ) {
       i = n * (n + 1) / 2 + m;
-      anm = rhon * rsqrt(factShrd[n+m] / factShrd[n-m]);
+      anm = rhon * rsqrtf(factShrd[n+m] / factShrd[n-m]);
       Ynm = anm * p;
       float p2 = p1;
       p1 = p;

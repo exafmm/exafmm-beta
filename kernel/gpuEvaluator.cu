@@ -163,7 +163,7 @@ void Evaluator::clearBuffers() {                                // Clear GPU buf
   stopTimer("Clear buffer ");                                   // Stop timer
 }
 
-void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool isPeriodic) {
+void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {     // Evaluate P2P
   BI0 = ibodies.begin();                                        // Set target bodies begin iterator
   BIN = ibodies.end();                                          // Set target bodies end iterator
   BJ0 = jbodies.begin();                                        // Set source bodies begin iterator
@@ -183,11 +183,7 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool isPeriodic) {
   rangeHost.push_back(1);                                       // Save size of interaction list
   rangeHost.push_back(0);                                       // Set begin index of leafs
   rangeHost.push_back(BJN-BJ0);                                 // Set number of leafs
-  if( isPeriodic ) {
-    rangeHost.push_back((1 << 27) - 1);                         // Set periodic image flag
-  } else {
-    rangeHost.push_back(Icenter);                               // Set periodic image flag
-  }
+  rangeHost.push_back(Icenter);                                 // Set periodic image flag
   for( B_iter B=BI0; B!=BIN; ++B ) {                            // Loop over target bodies
     targetHost.push_back(B->pos[0]);                            //  Copy x position to GPU buffer
     targetHost.push_back(B->pos[1]);                            //  Copy y position to GPU buffer
