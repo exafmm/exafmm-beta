@@ -10,6 +10,8 @@ protected:
   B_iter BJN;                                                   // Source bodies end iterator
   C_iter CI;                                                    // Target cell iterator
   C_iter CJ;                                                    // Source cell iterator
+  vect   X0;                                                    // Center of root cell
+  real   R0;                                                    // Radius of root cell
   vect   Xperiodic;                                             // Coordinate offset of periodic image
 
   std::vector<int>   keysHost;                                  // Offsets for rangeHost
@@ -31,6 +33,33 @@ protected:
   }
 
 public:
+  Kernel() : X0(0), R0(0) {}                                    // Constructor
+  ~Kernel() {}                                                  // Destructor
+
+  vect getX0() {return X0;}                                     // Get center of root cell
+  real getR0() {return R0;}                                     // Get radius of root cell
+
+  void setDomain(Bodies &bodies) {                              // Set center and size of root cell
+    vect xmin,xmax;                                             // Min,Max of domain
+    B_iter B = bodies.begin();                                  // Reset body iterator
+    xmin = xmax = B->pos;                                       // Initialize xmin,xmax
+    X0 = R0 = 0;                                                // Initialize center and size of root cell
+    for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
+      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
+        if     (B->pos[d] < xmin[d]) xmin[d] = B->pos[d];       //   Determine xmin
+        else if(B->pos[d] > xmax[d]) xmax[d] = B->pos[d];       //   Determine xmax
+      }                                                         //  End loop over each dimension
+      X0 += B->pos;                                             //  Sum positions
+    }                                                           // End loop over bodies
+    X0 /= bodies.size();                                        // Calculate average position
+    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
+      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
+      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
+      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
+    }                                                           // End loop over each dimension
+    R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
+  }
+
   void initialize();
 
   void allocGPU();

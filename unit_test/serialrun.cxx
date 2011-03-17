@@ -7,6 +7,7 @@
 int main() {
   const int numBodies = 10000;
   Bodies bodies(numBodies);
+  Bodies jbodies;
   Cells cells;
   Dataset D;
   TreeConstructor T;
@@ -30,6 +31,14 @@ int main() {
   T.downward(cells,cells,1);
   T.stopTimer("Downward     ",T.printNow);
 
+  if( IMAGES != 0 ) {
+    T.startTimer("Set periodic ");
+    jbodies = T.periodicBodies(bodies);
+    T.stopTimer("Set periodic ",T.printNow);
+  } else {
+    jbodies = bodies;
+  }
+
   T.startTimer("Direct sum   ");
   Evaluator E;
   T.buffer = bodies;
@@ -37,7 +46,7 @@ int main() {
     B->pot = -B->scal / std::sqrt(EPS2);
     B->acc = 0;
   }
-  T.evalP2P(T.buffer,T.buffer);
+  T.evalP2P(T.buffer,jbodies);
   T.stopTimer("Direct sum   ",T.printNow);
 
   B_iter B  = bodies.begin();

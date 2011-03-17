@@ -1,10 +1,8 @@
 #ifndef evaluator_h
 #define evaluator_h
-#define EVALUATOR
-#include "kernel.h"
-#undef EVALUATOR
+#include "periodic.h"
 
-class Evaluator : public Kernel {                               // Evaluator is the interface between tree and kernel
+class Evaluator : public Periodic {                             // Evaluator is the interface between tree and kernel
 private:
   C_iter    CI0;                                                // icells.begin()
   C_iter    CJ0;                                                // jcells.begin()
@@ -12,16 +10,6 @@ private:
   Lists     listM2L;                                            // M2L interaction list
   Lists     listM2P;                                            // M2P interaction list
   Lists     listP2P;                                            // P2P interaction list
-
-  int       Iperiodic;                                          // Periodic image flag
-  const int Icenter;                                            // Periodic image flag at center
-  Maps      flagM2L;                                            // Flag indicating existance of periodic image for M2L
-  Maps      flagM2P;                                            // Flag indicating existance of periodic image for M2P
-  Maps      flagP2P;                                            // Flag indicating existance of periodic image for P2P
-
-protected:
-  vect      X0;                                                 // Center of root cell
-  real      R0;                                                 // Radius of root cell
 
 private:
   void tryM2L(C_iter Ci, C_iter Cj) {                           // Interface for M2L kernel
@@ -93,60 +81,6 @@ private:
   }
 
 public:
-  Evaluator() : Icenter(1 << 13), X0(0), R0(0) {}               // Constructor
-  ~Evaluator() {}                                               // Destructor
-
-  void setDomain(Bodies &bodies) {                              // Set center and size of root cell
-    vect xmin,xmax;                                             // Min,Max of domain
-    B_iter B = bodies.begin();                                  // Reset body iterator
-    xmin = xmax = B->pos;                                       // Initialize xmin,xmax
-    X0 = R0 = 0;                                                // Initialize center and size of root cell
-    for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
-      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
-        if     (B->pos[d] < xmin[d]) xmin[d] = B->pos[d];       //   Determine xmin
-        else if(B->pos[d] > xmax[d]) xmax[d] = B->pos[d];       //   Determine xmax
-      }                                                         //  End loop over each dimension
-      X0 += B->pos;                                             //  Sum positions
-    }                                                           // End loop over bodies
-    X0 /= bodies.size();                                        // Calculate average position
-    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
-      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
-      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
-      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
-    }                                                           // End loop over each dimension
-    R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
-  }
-
-  int getPeriodicRange() {                                      // Get range of periodic images
-    int prange = 0;                                             //  Range of periodic images
-    for( int i=0; i!=IMAGES; ++i ) {                            //  Loop over periodic image sublevels
-      prange += std::pow(3,i);                                  //   Accumulate range of periodic images
-    }                                                           //  End loop over perioidc image sublevels
-    return prange;                                              // Return range of periodic images
-  }
-
-  Bodies periodicBodies(Bodies &bodies) {                       // Create periodic images of bodies
-    Bodies jbodies;                                             // Vector for periodic images of bodies
-    int prange = getPeriodicRange();                            // Get range of periodic images
-    for( int ix=-prange; ix<=prange; ++ix ) {                   // Loop over x periodic direction
-      for( int iy=-prange; iy<=prange; ++iy ) {                 //  Loop over y periodic direction
-        for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
-          for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {//    Loop over bodies
-            Body body = *B;                                     //     Copy current body
-            body.pos[0] += ix * 2 * R0;                         //     Shift x position
-            body.pos[1] += iy * 2 * R0;                         //     Shift y position
-            body.pos[2] += iz * 2 * R0;                         //     Shift z position
-            jbodies.push_back(body);                            //     Push shifted body into jbodies
-          }                                                     //    End loop over bodies
-        }                                                       //   End loop over z periodic direction
-      }                                                         //  End loop over y periodic direction
-    }                                                           // End loop over x periodic direction
-    return jbodies;                                             // Return vector for periodic images of bodies
-  }
-
-  vect getX0() {return X0;}                                     // Get center of root cell
-  real getR0() {return R0;}                                     // Get radius of root cell
-
   void addM2L(C_iter Cj) {                                      // Add single list for kernel unit test
     listM2L.resize(1);                                          // Resize vector of M2L interation lists
     flagM2L.resize(1);                                          // Resize vector of M2L periodic image flags

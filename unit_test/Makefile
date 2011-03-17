@@ -24,19 +24,11 @@ Nscaling: Nscaling.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS)
 	./a.out
 
-periodic_near: periodic_near.cxx $(KERNEL)
-	@$(CXX) $? $(LFLAGS) -DTOPDOWN
-	./a.out
-
 cuprintf: cuprintf.cu
 	@$(NVCC) $? $(LFLAGS)
 	./a.out
 
 direct_gpu: direct_gpu.cxx $(KERNEL)
-	@$(CXX) $? $(LFLAGS)
-	./a.out
-
-periodic_gpu: periodic_gpu.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS)
 	./a.out
 
