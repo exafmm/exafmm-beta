@@ -131,8 +131,8 @@ __global__ void P2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetShrd[1] = targetGlob[2*itarget+1];
   targetShrd[2] = targetGlob[2*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
-    int begin = rangeGlob[keys+2*ilist+1];
-    int size  = rangeGlob[keys+2*ilist+2];
+    int begin = rangeGlob[keys+3*ilist+1];
+    int size  = rangeGlob[keys+3*ilist+2];
     for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
       int isource = begin + iblok * THREADS + threadIdx.x;
       __syncthreads();
@@ -233,7 +233,7 @@ __global__ void M2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   }
   int itarget = blockIdx.x * THREADS;
   for( int ilist=0; ilist<numList; ++ilist ) {
-    int begin = rangeGlob[keys+2*ilist+1];
+    int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
     d.x = targetGlob[2*itarget+0] - sourceGlob[begin+0];
     d.y = targetGlob[2*itarget+1] - sourceGlob[begin+1];
@@ -297,6 +297,7 @@ __device__ void M2L_core(float *target, float  beta, float *factShrd, float *Ynm
 __global__ void M2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
+  float D0 = -constDevc[0];
   float target[2] = {0, 0};
   __shared__ float sourceShrd[2*THREADS];
   __shared__ float factShrd[2*P];
@@ -308,21 +309,34 @@ __global__ void M2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   }
   int itarget = blockIdx.x * THREADS;
   for( int ilist=0; ilist<numList; ++ilist ) {
-    int begin = rangeGlob[keys+2*ilist+1];
-    float3 d;
-    d.x = targetGlob[2*itarget+0] - sourceGlob[begin+0];
-    d.y = targetGlob[2*itarget+1] - sourceGlob[begin+1];
-    d.z = targetGlob[2*itarget+2] - sourceGlob[begin+2];
+    int begin     = rangeGlob[keys+3*ilist+1];
+    int Iperiodic = rangeGlob[keys+3*ilist+3];
     __syncthreads();
     if( threadIdx.x < NCOEF ) {
       sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
       sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
-    float rho,alpha,beta;
-    cart2sph(rho,alpha,beta,d.x,d.y,d.z);
-    evalLocal(YnmShrd,rho,alpha,factShrd);
-    M2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
+    int I=0;
+    for( int ix=-1; ix<=1; ++ix ) {
+      for( int iy=-1; iy<=1; ++iy ) {
+        for( int iz=-1; iz<=1; ++iz, ++I ) {
+          if( Iperiodic & (1 << I) ) {
+            float3 d;
+            d.x = ix * D0;
+            d.y = iy * D0;
+            d.z = iz * D0;
+            d.x += targetGlob[2*itarget+0] - sourceGlob[begin+0];
+            d.y += targetGlob[2*itarget+1] - sourceGlob[begin+1];
+            d.z += targetGlob[2*itarget+2] - sourceGlob[begin+2];
+            float rho,alpha,beta;
+            cart2sph(rho,alpha,beta,d.x,d.y,d.z);
+            evalLocal(YnmShrd,rho,alpha,factShrd);
+            M2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
+          }
+        }
+      }
+    }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[2*itarget+0] = target[0];
@@ -384,6 +398,7 @@ __device__ void M2P_core(float *target, float r, float theta, float phi, float *
 __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
+  float D0 = -constDevc[0];
   float targetPos[3];
   float target[4] = {0, 0, 0, 0};
   __shared__ float sourceShrd[2*THREADS];
@@ -398,20 +413,33 @@ __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetPos[1] = targetGlob[4*itarget+1];
   targetPos[2] = targetGlob[4*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
-    int begin = rangeGlob[keys+2*ilist+1];
-    float3 d;
-    d.x = targetPos[0] - sourceGlob[begin+0];
-    d.y = targetPos[1] - sourceGlob[begin+1];
-    d.z = targetPos[2] - sourceGlob[begin+2];
+    int begin     = rangeGlob[keys+3*ilist+1];
+    int Iperiodic = rangeGlob[keys+3*ilist+3];
     __syncthreads();
     if( threadIdx.x < NCOEF ) {
       sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
       sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
-    float r,theta,phi;
-    cart2sph(r,theta,phi,d.x,d.y,d.z);
-    M2P_core(target,r,theta,phi,factShrd,sourceShrd);
+    int I=0;
+    for( int ix=-1; ix<=1; ++ix ) {
+      for( int iy=-1; iy<=1; ++iy ) {
+        for( int iz=-1; iz<=1; ++iz, ++I ) {
+          if( Iperiodic & (1 << I) ) {
+            float3 d;
+            d.x = ix * D0;
+            d.y = iy * D0;
+            d.z = iz * D0;
+            d.x += targetPos[0] - sourceGlob[begin+0];
+            d.y += targetPos[1] - sourceGlob[begin+1];
+            d.z += targetPos[2] - sourceGlob[begin+2];
+            float r,theta,phi;
+            cart2sph(r,theta,phi,d.x,d.y,d.z);
+            M2P_core(target,r,theta,phi,factShrd,sourceShrd);
+          }
+        }
+      }
+    }
   }
   targetGlob[4*itarget+0] = target[0];
   targetGlob[4*itarget+1] = target[1];
@@ -419,9 +447,25 @@ __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[4*itarget+3] = target[3];
 }
 
+__device__ inline void P2P_core(float *target, float *targetPos, float *sourceShrd, float3 d, int i) {
+  d.x += targetPos[0];
+  d.x -= sourceShrd[4*i+0];
+  d.y += targetPos[1];
+  d.y -= sourceShrd[4*i+1];
+  d.z += targetPos[2];
+  d.z -= sourceShrd[4*i+2];
+  float invR = rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
+  float invR3 = sourceShrd[4*i+3] * invR * invR * invR;
+  target[0] += sourceShrd[4*i+3] * invR;
+  target[1] -= d.x * invR3;
+  target[2] -= d.y * invR3;
+  target[3] -= d.z * invR3;
+}
+
 __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
+  float D0 = -constDevc[0];
   float targetPos[3];
   float target[4] = {0, 0, 0, 0};
   __shared__ float sourceShrd[4*THREADS];
@@ -430,8 +474,9 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetPos[1] = targetGlob[4*itarget+1];
   targetPos[2] = targetGlob[4*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
-    int begin = rangeGlob[keys+2*ilist+1];
-    int size  = rangeGlob[keys+2*ilist+2];
+    int begin     = rangeGlob[keys+3*ilist+1];
+    int size      = rangeGlob[keys+3*ilist+2];
+    int Iperiodic = rangeGlob[keys+3*ilist+3];
     for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
       int isource = begin + iblok * THREADS + threadIdx.x;
       __syncthreads();
@@ -440,18 +485,22 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
       sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
       __syncthreads();
+      int I=0;
+      for( int ix=-1; ix<=1; ++ix ) {
+        for( int iy=-1; iy<=1; ++iy ) {
+          for( int iz=-1; iz<=1; ++iz, ++I ) {
+            if( Iperiodic & (1 << I) ) {
+              float3 d;
+              d.x = ix * D0;
+              d.y = iy * D0;
+              d.z = iz * D0;
 #pragma unroll 64
-      for( int i=0; i<THREADS; ++i ) {
-        float3 d;
-        d.x = targetPos[0] - sourceShrd[4*i+0];
-        d.y = targetPos[1] - sourceShrd[4*i+1];
-        d.z = targetPos[2] - sourceShrd[4*i+2];
-        float invR = rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
-        float invR3 = sourceShrd[4*i+3] * invR * invR * invR;
-        target[0] += sourceShrd[4*i+3] * invR;
-        target[1] -= d.x * invR3;
-        target[2] -= d.y * invR3;
-        target[3] -= d.z * invR3;
+              for( int i=0; i<THREADS; ++i ) {
+                P2P_core(target,targetPos,sourceShrd,d,i);
+              }
+            }
+          }
+        }
       }
     }
     int iblok = (size-1)/THREADS;
@@ -462,18 +511,26 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
     sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
     sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
     __syncthreads();
-    for( int i=0; i<size-iblok*THREADS; ++i ) {
-      float3 d;
-      d.x = targetPos[0] - sourceShrd[4*i+0];
-      d.y = targetPos[1] - sourceShrd[4*i+1];
-      d.z = targetPos[2] - sourceShrd[4*i+2];
-      float invR = rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
-      float invR3 = sourceShrd[4*i+3] * invR * invR * invR;
-      target[0] += sourceShrd[4*i+3] * invR;
-      target[1] -= d.x * invR3;
-      target[2] -= d.y * invR3;
-      target[3] -= d.z * invR3;
+    int I=0;
+    int icounter=0;
+    for( int ix=-1; ix<=1; ++ix ) {
+      for( int iy=-1; iy<=1; ++iy ) {
+        for( int iz=-1; iz<=1; ++iz, ++I ) {
+          if( Iperiodic & (1 << I) ) {
+            icounter++;
+            float3 d;
+            d.x = ix * D0;
+            d.y = iy * D0;
+            d.z = iz * D0;
+            for( int i=0; i<size-iblok*THREADS; ++i ) {
+              P2P_core(target,targetPos,sourceShrd,d,i);
+            }
+          }
+        }
+      }
     }
+    cuPrintfRestrict(0,0);
+    cuPrintf("icounter : %d\n",icounter);
   }
   targetGlob[4*itarget+0] = target[0];
   targetGlob[4*itarget+1] = target[1];
@@ -537,7 +594,7 @@ __global__ void L2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   }
   int itarget = blockIdx.x * THREADS;
   for( int ilist=0; ilist<numList; ++ilist ) {
-    int begin = rangeGlob[keys+2*ilist+1];
+    int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
     d.x = targetGlob[2*itarget+0] - sourceGlob[begin+0];
     d.y = targetGlob[2*itarget+1] - sourceGlob[begin+1];
@@ -627,7 +684,7 @@ __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetPos[1] = targetGlob[4*itarget+1];
   targetPos[2] = targetGlob[4*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
-    int begin = rangeGlob[keys+2*ilist+1];
+    int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
     d.x = targetPos[0] - sourceGlob[begin+0];
     d.y = targetPos[1] - sourceGlob[begin+1];
@@ -651,9 +708,10 @@ __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
 void Kernel::initialize() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
+  cudaPrintfInit();
   cudaThreadSynchronize();                                      // Sync GPU threads
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
-  eraseTimer("Init GPU     ");
+  eraseTimer("Init GPU     ");                                  // Erase timer
 }
 
 void Kernel::allocGPU() {
@@ -670,6 +728,7 @@ void Kernel::allocGPU() {
   cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),   cudaMemcpyHostToDevice);
   cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(float),cudaMemcpyHostToDevice);
   cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(float),cudaMemcpyHostToDevice);
+  cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(float));
   cudaThreadSynchronize();
   stopTimer("cudaMemcpy   ");
 }
@@ -680,7 +739,6 @@ void Kernel::deallocGPU() {
   cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(float),cudaMemcpyDeviceToHost);
   cudaThreadSynchronize();
   stopTimer("cudaMemcpy   ");
-  eraseTimer("cudaMemcpy   ");
   startTimer("cudaFree     ");
   cudaFree(keysDevc);
   cudaFree(rangeDevc);
@@ -767,4 +825,7 @@ void Kernel::L2P() {
   deallocGPU();
 }
 
-void Kernel::finalize() {}
+void Kernel::finalize() {
+  cudaPrintfDisplay(stdout, true);
+  cudaPrintfEnd();
+}

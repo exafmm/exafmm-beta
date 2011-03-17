@@ -32,8 +32,8 @@ direct_gpu: direct_gpu.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS)
 	./a.out
 
-vtk: vtk.cxx $(KERNEL)
-	@$(CXX) $? $(LFLAGS) $(VFLAGS)
+periodic_gpu: periodic_gpu.cxx $(KERNEL)
+	@$(CXX) $? $(LFLAGS)
 	./a.out
 
 mpi: mpi.cxx
@@ -67,6 +67,10 @@ parallelrun: parallelrun.cxx $(KERNEL)
 #	mpirun -np 7 -machinefile ~/mpd/mpd4.hosts ./a.out
 	mpirun -np 7 ./a.out
 
+vtk: vtk.cxx $(KERNEL)
+	@$(CXX) $? $(LFLAGS) $(VFLAGS)
+	./a.out
+
 all      :
 	make index
 	make topdown
@@ -74,7 +78,6 @@ all      :
 	make kernel
 	make serialrun
 	make direct_gpu
-	make vtk
 	make mpi
 	make shift
 	make nth_element

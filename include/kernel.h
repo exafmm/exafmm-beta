@@ -11,13 +11,14 @@ protected:
   C_iter CI;                                                    // Target cell iterator
   C_iter CJ;                                                    // Source cell iterator
 
-  std::vector<int> keysHost;                                    // Keys on host
-  std::vector<int> rangeHost;                                   // Ranges on host
-  std::vector<real> sourceHost;                                 // Sources on host
-  std::vector<real> targetHost;                                 // Targets on host
-  Map sourceBegin;                                              // Define map for offset of source cells
-  Map sourceSize;                                               // Define map for size of source cells
-  Map targetBegin;                                              // Define map for offset of target cells
+  std::vector<int>   keysHost;                                  // Offsets for rangeHost
+  std::vector<int>   rangeHost;                                 // Offsets for sourceHost
+  std::vector<float> constHost;                                 // Constants on host
+  std::vector<float> sourceHost;                                // Sources on host
+  std::vector<float> targetHost;                                // Targets on host
+  Map                sourceBegin;                               // Define map for offset of source cells
+  Map                sourceSize;                                // Define map for size of source cells
+  Map                targetBegin;                               // Define map for offset of target cells
 
   int getLevel(bigint index) {                                  // Get level from cell index
     int level = -1;                                             // Initialize level counter

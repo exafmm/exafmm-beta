@@ -4,10 +4,6 @@
 #include "evaluator.h"
 
 class TreeStructure : public Evaluator, public Sort {           // Base class for tree structure
-protected:
-  vect      X0;                                                 // Center of root cell
-  real      R0;                                                 // Radius of root cell
-
 public:
   Bodies buffer;                                                // Buffer for comm & sort
 
@@ -169,12 +165,6 @@ protected:
   }
 
 public:
-  TreeStructure() : X0(0),R0(0) {}                              // Constructor
-  ~TreeStructure() {}                                           // Destructor
-
-  vect getX0() {return X0;}                                     // Get center of root cell
-  real getR0() {return R0;}                                     // Get radius of root cell
-
   void setDomain(Bodies &bodies) {                              // Set center and size of root cell
     vect xmin,xmax;                                             // Min,Max of domain
     B_iter B = bodies.begin();                                  // Reset body iterator

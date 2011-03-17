@@ -12,8 +12,8 @@ int main() {
   Dataset D;
   Evaluator E;
   TreeConstructor T;
-  std::fstream file;
-  file.open("pot",std::fstream::binary);
+  std::ofstream file;
+  file.open("data",std::ofstream::binary);
 
   for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
@@ -66,7 +66,7 @@ int main() {
     for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
       B->pot -= B->scal / std::sqrt(EPS2);
 #ifdef DEBUG
-      std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
+      std::cout << B->I << " " << B->acc[0] << " " << B2->acc[0] << std::endl;
 #endif
       potDiff += (B->pot - B2->pot) * (B->pot - B2->pot);
       potNorm += B2->pot * B2->pot;

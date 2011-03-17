@@ -33,7 +33,6 @@ int main() {
       real invR3 = BJ->scal * invR * invR * invR;
       pot += BJ->scal * invR;
       acc -= dist * invR3;
-      
     }
 //    std::cout << BI-bodies.begin() << " " << BI->pot << " " << pot << std::endl;
     potDiff += (BI->pot - pot) * (BI->pot - pot);
