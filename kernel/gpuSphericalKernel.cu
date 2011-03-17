@@ -317,7 +317,7 @@ __global__ void M2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
-    int I=0;
+    int I = 0;
     for( int ix=-1; ix<=1; ++ix ) {
       for( int iy=-1; iy<=1; ++iy ) {
         for( int iz=-1; iz<=1; ++iz, ++I ) {
@@ -421,7 +421,7 @@ __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
-    int I=0;
+    int I = 0;
     for( int ix=-1; ix<=1; ++ix ) {
       for( int iy=-1; iy<=1; ++iy ) {
         for( int iz=-1; iz<=1; ++iz, ++I ) {
@@ -485,7 +485,7 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
       sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
       __syncthreads();
-      int I=0;
+      int I = 0;
       for( int ix=-1; ix<=1; ++ix ) {
         for( int iy=-1; iy<=1; ++iy ) {
           for( int iz=-1; iz<=1; ++iz, ++I ) {
@@ -511,7 +511,7 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
     sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
     sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
     __syncthreads();
-    int I=0;
+    int I = 0;
     int icounter=0;
     for( int ix=-1; ix<=1; ++ix ) {
       for( int iy=-1; iy<=1; ++iy ) {
@@ -529,8 +529,6 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
         }
       }
     }
-    cuPrintfRestrict(0,0);
-    cuPrintf("icounter : %d\n",icounter);
   }
   targetGlob[4*itarget+0] = target[0];
   targetGlob[4*itarget+1] = target[1];

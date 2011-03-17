@@ -10,6 +10,7 @@ protected:
   B_iter BJN;                                                   // Source bodies end iterator
   C_iter CI;                                                    // Target cell iterator
   C_iter CJ;                                                    // Source cell iterator
+  vect   Xperiodic;                                             // Coordinate offset of periodic image
 
   std::vector<int>   keysHost;                                  // Offsets for rangeHost
   std::vector<int>   rangeHost;                                 // Offsets for sourceHost

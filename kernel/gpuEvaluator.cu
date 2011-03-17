@@ -186,7 +186,7 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool isPeriodic) {
   if( isPeriodic ) {
     rangeHost.push_back((1 << 27) - 1);                         // Set periodic image flag
   } else {
-    rangeHost.push_back(1 << Icenter);                          // Set periodic image flag
+    rangeHost.push_back(Icenter);                               // Set periodic image flag
   }
   for( B_iter B=BI0; B!=BIN; ++B ) {                            // Loop over target bodies
     targetHost.push_back(B->pos[0]);                            //  Copy x position to GPU buffer
@@ -225,7 +225,7 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
   for( CJ=cells.begin(); CJ!=cells.end(); ++CJ ) {              // Loop over target cells
     CJ->M = CJ->L = 0;                                          //  Initialize multipole & local coefficients
     listP2M[CJ-CJ0].push_back(CJ);                              //  Push source cell into P2M interaction list
-    flagP2M[CJ-CJ0][CJ] |= 1 << Icenter;                        //  Flip bit of periodic image flag
+    flagP2M[CJ-CJ0][CJ] |= Icenter;                             //  Flip bit of periodic image flag
     sourceSize[CJ] = CJ->NLEAF;                                 //  Key : iterator, Value : number of leafs
   }                                                             // End loop over source map
   stopTimer("Get list     ");                                   // Stop timer
@@ -249,7 +249,7 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
       if( getLevel(CJ->I) == level ) {                          //   If source cell is at current level
         CI = CJ0 + CJ->PARENT;                                  //    Set target cell iterator
         listM2M[CI-CI0].push_back(CJ);                          //    Push source cell into M2M interaction list
-        flagM2M[CI-CI0][CJ] |= 1 << Icenter;                    //    Flip bit of periodic image flag
+        flagM2M[CI-CI0][CJ] |= Icenter;                         //    Flip bit of periodic image flag
         sourceSize[CJ] = 2 * NCOEF;                             //    Key : iterator, Value : number of coefs
       }                                                         //   Endif for current level
     }                                                           //  End loop over cells
@@ -279,6 +279,8 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
   M2L();                                                        // Evaluate M2L kernel
   getTargetCell(cells,listM2L,false);                           // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
+  listM2L.clear();                                              // Clear interaction lists
+  flagM2L.clear();                                              // Clear periodic image flags
 }
 
 void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
@@ -298,6 +300,8 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
   M2P();                                                        // Evaluate M2P kernel
   getTargetBody(cells,listM2P);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
+  listM2P.clear();                                              // Clear interaction lists
+  flagM2P.clear();                                              // Clear periodic image flags
 }
 
 void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
@@ -316,6 +320,8 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
   P2P();                                                        // Evaluate P2P kernel
   getTargetBody(cells,listP2P);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
+  listP2P.clear();                                              // Clear interaction lists
+  flagP2P.clear();                                              // Clear periodic image flags
 }
 
 void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
@@ -331,7 +337,7 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
       if( getLevel(CI->I) == level ) {                          //   If target cell is at current level
         CJ = CI0 + CI->PARENT;                                  //    Set source cell iterator
         listL2L[CI-CI0].push_back(CJ);                          //    Push source cell into L2L interaction list
-        flagL2L[CI-CI0][CJ] |= 1 << Icenter;                    //    Flip bit of periodic image flag
+        flagL2L[CI-CI0][CJ] |= Icenter;                         //    Flip bit of periodic image flag
         if( sourceSize[CJ] == 0 ) {                             //    If the source cell has not been stored yet
           sourceSize[CJ] = 2 * NCOEF;                           //     Key : iterator, Value : number of coefs
         }                                                       //    Endif for current level
@@ -356,7 +362,7 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells
     if( CI->NCHILD == 0 ) {                                     //  If cell is a twig evaluate L2P kernel
       listL2P[CI-CI0].push_back(CI);                            //   Push source cell into L2P interaction list
-      flagL2P[CI-CI0][CI] |= 1 << Icenter;                      //   Flip bit of periodic image flag
+      flagL2P[CI-CI0][CI] |= Icenter;                           //   Flip bit of periodic image flag
       sourceSize[CI] = 2 * NCOEF;                               //   Key : iterator, Value : number of coefs
     }                                                           //  Endif for twig cells
   }                                                             // End loop over cells topdown

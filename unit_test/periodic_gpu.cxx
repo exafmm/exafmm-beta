@@ -3,6 +3,7 @@
 
 int main() {
   const int numBodies = 1000;
+  const bool isPeriodic = true;
   Bodies bodies(numBodies);
   Dataset D;
   Evaluator E;
@@ -11,12 +12,14 @@ int main() {
 
   E.startTimer("Set bodies   ");
   D.sphere(bodies);
-  E.setX0(0);
-  E.setR0(1);
   E.stopTimer("Set bodies   ",E.printNow);
 
+  E.startTimer("Set domain   ");
+  E.setDomain(bodies);
+  E.stopTimer("Set domain   ",E.printNow);
+
   E.startTimer("Direct GPU   ");
-  E.evalP2P(bodies,bodies,true);
+  E.evalP2P(bodies,bodies,isPeriodic);
   E.stopTimer("Direct GPU   ",E.printNow);
 
   E.startTimer("Direct CPU   ");
@@ -25,7 +28,7 @@ int main() {
     real pot = -BI->scal / std::sqrt(EPS2);
     vect acc = 0;
     BI->pot -= BI->scal / std::sqrt(EPS2);
-    int I=0;
+    int I = 0;
     for( int ix=-1; ix<=1; ++ix ) {
       for( int iy=-1; iy<=1; ++iy ) {
         for( int iz=-1; iz<=1; ++iz, ++I ) {

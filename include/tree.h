@@ -165,30 +165,9 @@ protected:
   }
 
 public:
-  void setDomain(Bodies &bodies) {                              // Set center and size of root cell
-    vect xmin,xmax;                                             // Min,Max of domain
-    B_iter B = bodies.begin();                                  // Reset body iterator
-    xmin = xmax = B->pos;                                       // Initialize xmin,xmax
-    X0 = R0 = 0;                                                // Initialize center and size of root cell
-    for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
-      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
-        if     (B->pos[d] < xmin[d]) xmin[d] = B->pos[d];       //   Determine xmin
-        else if(B->pos[d] > xmax[d]) xmax[d] = B->pos[d];       //   Determine xmax
-      }                                                         //  End loop over each dimension
-      X0 += B->pos;                                             //  Sum positions
-    }                                                           // End loop over bodies
-    X0 /= bodies.size();                                        // Calculate average position
-    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
-      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
-      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
-      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
-    }                                                           // End loop over each dimension
-    R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
-  }
-
-  void downward(Cells &cells, Cells &jcells, int method) {      // Downward phase for different source/target
+  void downward(Cells &cells, Cells &jcells, int method, bool isPeriodic=false) {// Downward phase
     startTimer("Traverse     ");                                // Start timer
-    traverse(cells,jcells,method);                              // Traverse tree to get interaction list
+    traverse(cells,jcells,method,isPeriodic);                   // Traverse tree to get interaction list
     stopTimer("Traverse     ",printNow);                        // Stop timer & print
     evalM2L(cells);                                             // Evaluate M2L kernel
     evalM2P(cells);                                             // Evaluate M2P kernel

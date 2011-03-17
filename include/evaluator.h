@@ -13,8 +13,8 @@ private:
   Lists     listM2P;                                            // M2P interaction list
   Lists     listP2P;                                            // P2P interaction list
 
-  int       Iperiodic;                                          // Index of periodic image
-  const int Icenter;                                            // Index of periodic center
+  int       Iperiodic;                                          // Periodic image flag
+  const int Icenter;                                            // Periodic image flag at center
   Maps      flagM2L;                                            // Flag indicating existance of periodic image for M2L
   Maps      flagM2P;                                            // Flag indicating existance of periodic image for M2P
   Maps      flagP2P;                                            // Flag indicating existance of periodic image for P2P
@@ -25,26 +25,26 @@ protected:
 
 private:
   void tryM2L(C_iter Ci, C_iter Cj) {                           // Interface for M2L kernel
-    vect dist = Ci->X - Cj->X;                                  // Distance vector between cells
+    vect dist = Ci->X - Cj->X - Xperiodic;                      // Distance vector between cells
     real R = std::sqrt(norm(dist));                             // Distance between cells
     if( Ci->R + Cj->R > THETA*R ) {                             // If cell is too large
       Pair pair(Ci,Cj);                                         //  Form pair of interacting cells
       pairs.push(pair);                                         //  Push interacting pair into stack
     } else {                                                    // If cell is small enough
       listM2L[Ci-CI0].push_back(Cj);                            // Push source cell into M2L interaction list
-      flagM2L[Ci-CI0][Cj] |= 1 << Iperiodic;                    // Flip bit of periodic image flag
+      flagM2L[Ci-CI0][Cj] |= Iperiodic;                         // Flip bit of periodic image flag
     }                                                           // Endif for interaction
   }
 
   void tryM2P(C_iter Ci, C_iter Cj) {                           // Interface for M2P kernel
-    vect dist = Ci->X - Cj->X;                                  // Distance vector between cells
+    vect dist = Ci->X - Cj->X - Xperiodic;                      // Distance vector between cells
     real R = std::sqrt(norm(dist));                             // Distance between cells
     if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {          // If target is not twig or cell is too large
       Pair pair(Ci,Cj);                                         //  Form pair of interacting cells
       pairs.push(pair);                                         //  Push interacting pair into stack
     } else {                                                    // If target is twig and cell is small enough
       listM2P[Ci-CI0].push_back(Cj);                            // Push source cell into M2P interaction list
-      flagM2P[Ci-CI0][Cj] |= 1 << Iperiodic;                    // Flip bit of periodic image flag
+      flagM2P[Ci-CI0][Cj] |= Iperiodic;                         // Flip bit of periodic image flag
     }                                                           // Endif for interaction
   }
 
@@ -52,7 +52,7 @@ private:
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0) {                   // If both cells are twigs
       if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
         listP2P[Ci-CI0].push_back(Cj);                          // Push source cell into P2P interaction list
-        flagP2P[Ci-CI0][Cj] |= 1 << Iperiodic;                  // Flip bit of periodic image flag
+        flagP2P[Ci-CI0][Cj] |= Iperiodic;                       // Flip bit of periodic image flag
       } else {                                                  // If the twig has no leafs
 #ifdef DEBUG
         std::cout << "Cj->I=" << Cj->I << " has no leaf. Doing M2P instead of P2P." << std::endl;
@@ -74,7 +74,7 @@ private:
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0 ) {                  // If both cells are twigs
       if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
         listP2P[Ci-CI0].push_back(Cj);                          // Push source cell into P2P interaction list
-        flagP2P[Ci-CI0][Cj] |= 1 << Iperiodic;                  // Flip bit of periodic image flag
+        flagP2P[Ci-CI0][Cj] |= Iperiodic;                       // Flip bit of periodic image flag
       } else {                                                  // If the twig has no leafs
 #ifdef DEBUG
         std::cout << "Cj->I=" << Cj->I << " has no leaf. Doing M2P instead of P2P." << std::endl;
@@ -93,24 +93,45 @@ private:
   }
 
 public:
-  Evaluator() : Icenter(13), X0(0), R0(0) {}                    // Constructor
+  Evaluator() : Icenter(1 << 13), X0(0), R0(0) {}               // Constructor
   ~Evaluator() {}                                               // Destructor
 
-  void setX0(vect x0) {X0 = x0;}                                // Set center of root cell
-  void setR0(real r0) {R0 = r0;}                                // Set radius of root cell
+  void setDomain(Bodies &bodies) {                              // Set center and size of root cell
+    vect xmin,xmax;                                             // Min,Max of domain
+    B_iter B = bodies.begin();                                  // Reset body iterator
+    xmin = xmax = B->pos;                                       // Initialize xmin,xmax
+    X0 = R0 = 0;                                                // Initialize center and size of root cell
+    for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
+      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
+        if     (B->pos[d] < xmin[d]) xmin[d] = B->pos[d];       //   Determine xmin
+        else if(B->pos[d] > xmax[d]) xmax[d] = B->pos[d];       //   Determine xmax
+      }                                                         //  End loop over each dimension
+      X0 += B->pos;                                             //  Sum positions
+    }                                                           // End loop over bodies
+    X0 /= bodies.size();                                        // Calculate average position
+    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
+      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
+      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
+      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
+    }                                                           // End loop over each dimension
+    R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
+  }
+
   vect getX0() {return X0;}                                     // Get center of root cell
   real getR0() {return R0;}                                     // Get radius of root cell
 
   void addM2L(C_iter Cj) {                                      // Add single list for kernel unit test
     listM2L.resize(1);                                          // Resize vector of M2L interation lists
+    flagM2L.resize(1);                                          // Resize vector of M2L periodic image flags
     listM2L[0].push_back(Cj);                                   // Push single cell into list
-    flagM2L[0][Cj] |= 1 << Icenter;                             // Flip bit of periodic image flag
+    flagM2L[0][Cj] |= Icenter;                                  // Flip bit of periodic image flag
   }
 
   void addM2P(C_iter Cj) {                                      // Add single list for kernel unit test
     listM2P.resize(1);                                          // Resize vector of M2P interation lists
+    flagM2P.resize(1);                                          // Resize vector of M2L periodic image flags
     listM2P[0].push_back(Cj);                                   // Push single cell into list
-    flagM2P[0][Cj] |= 1 << Icenter;                             // Flip bit of periodic image flag
+    flagM2P[0][Cj] |= Icenter;                                  // Flip bit of periodic image flag
   }
 
   void setSourceBody();                                         // Set source buffer for bodies
@@ -130,7 +151,7 @@ public:
   void evalL2L(Cells &cells);                                   // Evaluate L2L kernel
   void evalL2P(Cells &cells);                                   // Evaluate L2P kernel
 
-  void traverse(Cells &cells, Cells &jcells, int method) {      // Traverse tree to get interaction list
+  void traverse(Cells &cells, Cells &jcells, int method, bool isPeriodic) {// Traverse tree to get interaction list
     C_iter root = cells.end()-1;                                // Iterator for root cell
     C_iter jroot = jcells.end()-1;                              // Iterator for root cell
     CI0 = cells.begin();                                        // Set begin iterator for icells
@@ -141,17 +162,50 @@ public:
     flagM2L.resize(cells.size());                               // Resize M2L periodic image flag
     flagM2P.resize(cells.size());                               // Resize M2P periodic image flag
     flagP2P.resize(cells.size());                               // Resize P2P periodic image flag
-    Iperiodic = Icenter;                                        // Set periodic image index to center
-    Pair pair(root,jroot);                                      // Form pair of root cells
-    pairs.push(pair);                                           // Push pair to stack
-    while( !pairs.empty() ) {                                   // While interaction stack is not empty
-      pair = pairs.top();                                       //  Get interaction pair from top of stack
-      pairs.pop();                                              //  Pop interaction stack
-      switch (method) {                                         //  Swtich between methods
-        case 0 : treecode(pair.first,pair.second); break;       //   0 : treecode
-        case 1 : FMM(pair.first,pair.second);      break;       //   1 : FMM
-      }                                                         //  End switch between methods
-    }                                                           // End while loop for interaction stack
+    if( !isPeriodic ) {                                         // If free boundary condition
+      Iperiodic = Icenter;                                      //  Set periodic image flag to center
+      Xperiodic = 0;                                            //  Set periodic coordinate offset
+      Pair pair(root,jroot);                                    //  Form pair of root cells
+      pairs.push(pair);                                         //  Push pair to stack
+      while( !pairs.empty() ) {                                 //  While interaction stack is not empty
+        pair = pairs.top();                                     //   Get interaction pair from top of stack
+        pairs.pop();                                            //   Pop interaction stack
+        switch (method) {                                       //   Swtich between methods
+          case 0 : treecode(pair.first,pair.second); break;     //    0 : treecode
+          case 1 : FMM(pair.first,pair.second);      break;     //    1 : FMM
+        }                                                       //   End switch between methods
+      }                                                         //  End while loop for interaction stack
+    } else {                                                    // If periodic boundary condition
+      int I = 0;                                                //  Initialize index of periodic image
+      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz, ++I ) {                  //    Loop over z periodic direction
+            Iperiodic = 1 << I;                                 //     Set periodic image flag
+            Xperiodic[0] = ix * 2 * R0;                         //     Coordinate offset for x periodic direction
+            Xperiodic[1] = iy * 2 * R0;                         //     Coordinate offset for y periodic direction
+            Xperiodic[2] = iz * 2 * R0;                         //     Coordinate offset for z periodic direction
+            Pair pair(root,jroot);                              //     Form pair of root cells
+            pairs.push(pair);                                   //     Push pair to stack
+            while( !pairs.empty() ) {                           //     While interaction stack is not empty
+              pair = pairs.top();                               //      Get interaction pair from top of stack
+              pairs.pop();                                      //      Pop interaction stack
+              switch (method) {                                 //      Swtich between methods
+                case 0 : treecode(pair.first,pair.second); break;//      0 : treecode
+                case 1 : FMM(pair.first,pair.second);      break;//      1 : FMM
+              }                                                 //      End switch between methods
+            }                                                   //     End while loop for interaction stack
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+      for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {   //  Loop over target cells
+        listM2L[Ci-CI0].sort();                                 //  Sort interaction list
+        listM2L[Ci-CI0].unique();                               //  Eliminate duplicate periodic entries
+        listM2P[Ci-CI0].sort();                                 //  Sort interaction list
+        listM2P[Ci-CI0].unique();                               //  Eliminate duplicate periodic entries
+        listP2P[Ci-CI0].sort();                                 //  Sort interaction list
+        listP2P[Ci-CI0].unique();                               //  Eliminate duplicate periodic entries
+      }                                                         //  End loop over target cells
+    }                                                           // Endif for periodic boundary condition
   }
 
 };

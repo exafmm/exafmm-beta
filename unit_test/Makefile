@@ -24,6 +24,10 @@ Nscaling: Nscaling.cxx $(KERNEL)
 	@$(CXX) $? $(LFLAGS)
 	./a.out
 
+periodic_near: periodic_near.cxx $(KERNEL)
+	@$(CXX) $? $(LFLAGS) -DTOPDOWN
+	./a.out
+
 cuprintf: cuprintf.cu
 	@$(NVCC) $? $(LFLAGS)
 	./a.out

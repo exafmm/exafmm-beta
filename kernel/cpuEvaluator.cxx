@@ -1,11 +1,26 @@
 #include "evaluator.h"
 
-void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {     // Evaluate P2P
+void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool isPeriodic) {// Evaluate P2P
   BI0 = ibodies.begin();                                        // Set target bodies begin iterator
   BIN = ibodies.end();                                          // Set target bodies end iterator
   BJ0 = jbodies.begin();                                        // Set source bodies begin iterator
   BJN = jbodies.end();                                          // Set source bodies end iterator
-  P2P();                                                        // Evaluate P2P kernel
+  if( !isPeriodic ) {                                           // If free boundary condition
+    Xperiodic = 0;                                              //  Set periodic coordinate offset
+    P2P();                                                      //  Evaluate P2P kernel
+  } else {                                                      // If periodic boundary condition
+    int I = 0;                                                  //  Initialize index of periodic image
+    for( int ix=-1; ix<=1; ++ix ) {                             //  Loop over x periodic direction
+      for( int iy=-1; iy<=1; ++iy ) {                           //   Loop over y periodic direction
+        for( int iz=-1; iz<=1; ++iz, ++I ) {                    //    Loop over z periodic direction
+          Xperiodic[0] = ix * 2 * R0;                           //     Coordinate offset for x periodic direction
+          Xperiodic[1] = iy * 2 * R0;                           //     Coordinate offset for y periodic direction
+          Xperiodic[2] = iz * 2 * R0;                           //     Coordinate offset for z periodic direction
+          P2P();                                                //     Evaluate P2P kernel
+        }                                                       //    End loop over x periodic direction
+      }                                                         //   End loop over y periodic direction
+    }                                                           //  End loop over z periodic direction
+  }                                                             // Endif for periodic boundary condition
 }
 
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
@@ -33,10 +48,25 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells
     while( !listM2L[CI-CI0].empty() ) {                         //  While M2L interaction list is not empty
       CJ = listM2L[CI-CI0].back();                              //   Set source cell iterator
-      M2L();                                                    //   Evaluate M2L kernel
+      Iperiodic = flagM2L[CI-CI0][CJ];                          //   Set periodic image flag
+      int I = 0;                                                //   Initialize index of periodic image
+      for( int ix=-1; ix<=1; ++ix ) {                           //   Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //    Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz, ++I ) {                  //     Loop over z periodic direction
+            if( Iperiodic & (1 << I) ) {                        //      If periodic flag is on
+              Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
+              Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
+              Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
+              M2L();                                            //       Evaluate M2L kernel
+            }                                                   //      Endif for periodic flag
+          }                                                     //     End loop over x periodic direction
+        }                                                       //    End loop over y periodic direction
+      }                                                         //   End loop over z periodic direction
       listM2L[CI-CI0].pop_back();                               //   Pop last element from M2L interaction list
     }                                                           //  End while for M2L interaction list
   }                                                             // End loop over cells topdown
+  listM2L.clear();                                              // Clear interaction lists
+  flagM2L.clear();                                              // Clear periodic image flags
   stopTimer("evalM2L      ");                                   // Stop timer
 }
 
@@ -46,10 +76,25 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells
     while( !listM2P[CI-CI0].empty() ) {                         //  While M2P interaction list is not empty
       CJ = listM2P[CI-CI0].back();                              //   Set source cell iterator
-      M2P();                                                    //   Evaluate M2P kernel
+      Iperiodic = flagM2P[CI-CI0][CJ];                          //   Set periodic image flag
+      int I = 0;                                                //   Initialize index of periodic image
+      for( int ix=-1; ix<=1; ++ix ) {                           //   Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //    Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz, ++I ) {                  //     Loop over z periodic direction
+            if( Iperiodic & (1 << I) ) {                        //      If periodic flag is on
+              Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
+              Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
+              Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
+              M2P();                                            //       Evaluate M2P kernel
+            }                                                   //      Endif for periodic flag
+          }                                                     //     End loop over x periodic direction
+        }                                                       //    End loop over y periodic direction
+      }                                                         //   End loop over z periodic direction
       listM2P[CI-CI0].pop_back();                               //   Pop last element from M2P interaction list
     }                                                           //  End while for M2P interaction list
   }                                                             // End loop over cells topdown
+  listM2P.clear();                                              // Clear interaction lists
+  flagM2P.clear();                                              // Clear periodic image flags
   stopTimer("evalM2P      ");                                   // Stop timer
 }
 
@@ -61,12 +106,28 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
     BIN = CI->LEAF + CI->NLEAF;                                 //  Set target bodies end iterator
     while( !listP2P[CI-CI0].empty() ) {                         //  While M2P interaction list is not empty
       CJ = listP2P[CI-CI0].back();                              //   Set source cell iterator
+      if( CI-CI0 == 0 ) std::cout << CJ-CI0 << std::endl;
       BJ0 = CJ->LEAF;                                           //   Set source bodies begin iterator
       BJN = CJ->LEAF + CJ->NLEAF;                               //   Set source bodies end iterator
-      P2P();                                                    //   Evaluate P2P kernel
+      Iperiodic = flagP2P[CI-CI0][CJ];                          //   Set periodic image flag
+      int I = 0;                                                //   Initialize index of periodic image
+      for( int ix=-1; ix<=1; ++ix ) {                           //   Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //    Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz, ++I ) {                  //     Loop over z periodic direction
+            if( Iperiodic & (1 << I) ) {                        //      If periodic flag is on
+              Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
+              Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
+              Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
+              P2P();                                            //       Evaluate P2P kernel
+            }                                                   //      Endif for periodic flag
+          }                                                     //     End loop over x periodic direction
+        }                                                       //    End loop over y periodic direction
+      }                                                         //   End loop over z periodic direction
       listP2P[CI-CI0].pop_back();                               //   Pop last element from M2P interaction list
     }                                                           //  End while for M2P interaction list
   }                                                             // End loop over cells topdown
+  listP2P.clear();                                              // Clear interaction lists
+  flagP2P.clear();                                              // Clear periodic image flags
   stopTimer("evalP2P      ");                                   // Stop timer
 }
 

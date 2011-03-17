@@ -13,6 +13,10 @@ int main() {
   D.sphere(bodies);
   E.stopTimer("Set bodies   ",E.printNow);
 
+  E.startTimer("Set domain   ");
+  E.setDomain(bodies);
+  E.stopTimer("Set domain   ",E.printNow);
+
   E.startTimer("Direct GPU   ");
   E.evalP2P(bodies,bodies);
   E.stopTimer("Direct GPU   ",E.printNow);
