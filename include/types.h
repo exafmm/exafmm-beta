@@ -40,7 +40,6 @@ typedef vec<3,real>                            vect;            // 3-D vector ty
 //typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Taylor expansion
 typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical harmonics
 typedef std::vector<bigint>                    Bigints;         // Vector of big integer types
-typedef std::map<bigint,int>                   Count;           // Count of duplicate cell index
 typedef std::map<std::string,double>           Event;           // Map of event name to logged value
 typedef std::map<std::string,double>::iterator E_iter;          // Iterator for event name map
 

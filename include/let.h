@@ -8,7 +8,6 @@ private:
   JBodies recvBodies;                                           // Receive buffer for bodies
   JCells  sendCells;                                            // Send buffer for cells
   JCells  recvCells;                                            // Receive buffer for cells
-  Count   count;                                                // Count of duplicate cell index
 
 private:
   void getOtherDomain(vect &xmin, vect &xmax, int l) {          // Get boundries of domains on other processes
@@ -57,27 +56,38 @@ private:
   void getLET(C_iter C0, C_iter C, vect xmin, vect xmax) {      // Determine which cells to send
     for( int i=0; i!=C->NCHILD; i++ ) {                         // Loop over child cells
       C_iter CC = C0+C->CHILD[i];                               //  Iterator for child cell
-      real R = getDistance(CC,xmin,xmax);                       //  Get distance to other domain
-      if( 3 * CC->R > THETA * R && CC->NCHILD != 0 ) {          //  If the cell seems too close and not twig
+      bool divide = false;                                      //  Initialize logical for dividing
+      if( IMAGES == 0 ) {                                       //  If free boundary condition
+        Xperiodic = 0;                                          //   Set periodic coordinate offset
+        real R = getDistance(CC,xmin,xmax);                     //   Get distance to other domain
+        divide |= 3 * CC->R > THETA * R;                        //   If the cell seems too close and not twig
+      } else {                                                  //  If periodic boundary condition
+        for( int ix=-1; ix<=1; ++ix ) {                         //   Loop over x periodic direction
+          for( int iy=-1; iy<=1; ++iy ) {                       //    Loop over y periodic direction
+            for( int iz=-1; iz<=1; ++iz ) {                     //     Loop over z periodic direction
+              Xperiodic[0] = ix * 2 * R0;                       //      Coordinate offset for x periodic direction
+              Xperiodic[1] = iy * 2 * R0;                       //      Coordinate offset for y periodic direction
+              Xperiodic[2] = iz * 2 * R0;                       //      Coordinate offset for z periodic direction
+              real R = getDistance(CC,xmin,xmax);               //      Get distance to other domain
+              divide |= 3 * CC->R > THETA * R;                  //      If the cell seems too close and not twig
+            }                                                   //     End loop over z periodic direction
+          }                                                     //    End loop over y periodic direction
+        }                                                       //   End loop over x periodic direction
+      }                                                         //  Endif for periodic boundary condition
+      if( divide && CC->NCHILD != 0 ) {                         //  If the cell seems too close and not twig
         getLET(C0,CC,xmin,xmax);                                //   Traverse the tree further
       } else {                                                  //  If the cell is far or a twig
         JCell cell;                                             //   Set compact cell type for sending
         cell.I = CC->I;                                         //   Set index of compact cell type
         cell.M = CC->M;                                         //   Set Multipoles of compact cell type
-        if( count[CC->I] == 0 ) {                               //   If cell has not been stored yet
-          sendCells.push_back(cell);                            //    Push cell into send buffer vector
-        }                                                       //   Endif for duplicate cell
-        count[CC->I]++;                                         //   Increment counter for duplicate cell entries
+        sendCells.push_back(cell);                              //    Push cell into send buffer vector
       }                                                         //  Endif for interaction
     }                                                           // End loop over child cells
     if( C->I == 0 && C->NCHILD == 0 ) {                         // If the root cell has no children
       JCell cell;                                               //  Set compact cell type for sending
       cell.I = C->I;                                            //  Set index of compact cell type
       cell.M = C->M;                                            //  Set Multipoles of compact cell type
-      if( count[C->I] == 0 ) {                                  //  If cell has not been stored yet
-        sendCells.push_back(cell);                              //   Push cell into send buffer vector
-      }                                                         //  Endif for duplicate cell
-      count[C->I]++;                                            //  Increment counter for duplicate cell entries
+      sendCells.push_back(cell);                                //  Push cell into send buffer vector
     }                                                           // Endif for root cells children
   }
 
@@ -285,37 +295,31 @@ public:
         }                                                       //   Endif for overlapping domains
       }                                                         //  End loop over dimensions
       if( ic == 3 && irank != RANK ) {                          //  If ranks are neighbors in all dimensions
-        if( IMAGES == 0 ) {                                     //   If free boundary condition
-          Xperiodic = 0;                                        //    Set periodic coordinate offset
-          for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {  //    Loop over cells
-            if( C->NCHILD == 0 ) {                              //     If cell is a twig
-              real R = getDistance(C,xmin[irank],xmax[irank]);  //      Get distance to other domain
-              if( 3 * C->R > THETA * R ) {                      //      If the cell seems close enough for P2P
-                scells.push_back(C);                            //       Add cell iterator to scells
-              }                                                 //      Endif for cell distance
-            }                                                   //     Endif for twigs
-          }                                                     //    End loop over cells
-        } else {                                                //   If periodic boundary condition
-          for( int ix=-1; ix<=1; ++ix ) {                       //    Loop over x periodic direction
-            for( int iy=-1; iy<=1; ++iy ) {                     //     Loop over y periodic direction
-              for( int iz=-1; iz<=1; ++iz ) {                   //      Loop over z periodic direction
-                Xperiodic[0] = ix * 2 * R0;                     //       Coordinate offset for x periodic direction
-                Xperiodic[1] = iy * 2 * R0;                     //       Coordinate offset for y periodic direction
-                Xperiodic[2] = iz * 2 * R0;                     //       Coordinate offset for z periodic direction
-                for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {//   Loop over cells
-                  if( C->NCHILD == 0 ) {                        //        If cell is a twig
+        for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {    //   Loop over cells
+          if( C->NCHILD == 0 ) {                                //   If cell is a twig
+            bool send = false;                                  //    Initialize logical for sending
+            if( IMAGES == 0 ) {                                 //    If free boundary condition
+              Xperiodic = 0;                                    //     Set periodic coordinate offset
+              real R = getDistance(C,xmin[irank],xmax[irank]);  //     Get distance to other domain
+              send |= 3 * C->R > THETA * R;                     //      If the cell seems close enough for P2P
+            } else {                                            //     If periodic boundary condition
+              for( int ix=-1; ix<=1; ++ix ) {                   //      Loop over x periodic direction
+                for( int iy=-1; iy<=1; ++iy ) {                 //       Loop over y periodic direction
+                  for( int iz=-1; iz<=1; ++iz ) {               //        Loop over z periodic direction
+                    Xperiodic[0] = ix * 2 * R0;                 //         Coordinate offset for x periodic direction
+                    Xperiodic[1] = iy * 2 * R0;                 //         Coordinate offset for y periodic direction
+                    Xperiodic[2] = iz * 2 * R0;                 //         Coordinate offset for z periodic direction
                     real R = getDistance(C,xmin[irank],xmax[irank]);//     Get distance to other domain
-                    if( 3 * C->R > THETA * R && count[C->I] == 0 ) {//     If the cell seems close enough for P2P
-                      scells.push_back(C);                      //          Add cell iterator to scells
-                      count[C->I]++;                            //          Increment counter for duplicate cell entries
-                    }                                           //         Endif for cell distance
-                  }                                             //        Endif for twigs
-                }                                               //       End loop over cells
-              }                                                 //      End loop over z periodic direction
-            }                                                   //     End loop over y periodic direction
-          }                                                     //    End loop over x periodic direction
-        }                                                       //   Endif for periodic boundary condition
-        count.clear();                                          //   Clear counter for duplicate cell entries
+                    send |= 3 * C->R > THETA * R;               //         If the cell seems close enough for P2P
+                  }                                             //        End loop over z periodic direction
+                }                                               //       End loop over y periodic direction
+              }                                                 //      End loop over x periodic direction
+            }                                                   //     Endif for periodic boundary condition
+            if( send ) {                                        //     If the cell seems close enough for P2P
+              scells.push_back(C);                              //      Add cell iterator to scells
+            }                                                   //     Endif for cell distance
+          }                                                     //    Endif for twigs
+        }                                                       //   End loop over cells
         srnks.push_back(irank);                                 //   Add current rank to srnks
         scnts.push_back(scells.size()-oldsize);                 //   Add current cell count to scnts
         oldsize = scells.size();                                //   Set new offset for cell count
@@ -380,22 +384,7 @@ public:
       startTimer("Get LET      ");                              //  Start timer
       bisectionGetComm(l);                                      //  Split the MPI communicator for that level
       getOtherDomain(xmin,xmax,l+1);                            //  Get boundries of domains on other processes
-      if( IMAGES == 0 ) {                                       //  If free boundary condition
-        Xperiodic = 0;                                          //   Set periodic coordinate offset
-        getLET(cells.begin(),cells.end()-1,xmin,xmax);          //   Determine which cells to send
-      } else {                                                  //  If periodic boundary condition
-        for( int ix=-1; ix<=1; ++ix ) {                         //   Loop over x periodic direction
-          for( int iy=-1; iy<=1; ++iy ) {                       //    Loop over y periodic direction
-            for( int iz=-1; iz<=1; ++iz ) {                     //     Loop over z periodic direction
-              Xperiodic[0] = ix * 2 * R0;                       //      Coordinate offset for x periodic direction
-              Xperiodic[1] = iy * 2 * R0;                       //      Coordinate offset for y periodic direction
-              Xperiodic[2] = iz * 2 * R0;                       //      Coordinate offset for z periodic direction
-              getLET(cells.begin(),cells.end()-1,xmin,xmax);    //      Determine which cells to send
-            }                                                   //     End loop over z periodic direction
-          }                                                     //    End loop over y periodic direction
-        }                                                       //   End loop over x periodic direction
-      }                                                         //  Endif for periodic boundary condition
-      count.clear();                                            //  Clear counter for duplicate cell entries
+      getLET(cells.begin(),cells.end()-1,xmin,xmax);            //  Determine which cells to send
       stopTimer("Get LET      ");                               //  Stop timer & print
       startTimer("Alltoall     ");                              //  Start timer
       commCellsAlltoall();                                      //  Communicate cells by one-to-one MPI_Alltoallv
@@ -417,7 +406,7 @@ public:
       stopTimer("Recv2twigs   ");                               //  Stop timer & print
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
-        real SUM = 0;                                           //   Initialize accumulator
+        complex SUM = 0;                                        //   Initialize accumulator
         for(C_iter C=twigs.begin(); C!=twigs.end(); ++C) {      //   Loop over twigs
           if( C->NLEAF == 0 ) SUM += C->M[0];                   //    Add multipoles of empty twigs
         }                                                       //   End loop over twigs
@@ -430,7 +419,7 @@ public:
       stopTimer("Zip twigs    ");                               //  Stop timer & print
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
-        real SUM = 0;                                           //   Initialize accumulator
+        complex SUM = 0;                                        //   Initialize accumulator
         for(C_iter C=twigs.begin(); C!=twigs.end(); ++C) {      //   Loop over twigs
           SUM += C->M[0];                                       //    Add multipoles
         }                                                       //   End loop over twigs
