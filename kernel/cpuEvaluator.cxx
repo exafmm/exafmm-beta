@@ -23,7 +23,7 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
   CJ0 = cells.begin();                                          // Set begin iterator
   for( CJ=cells.begin(); CJ!=cells.end()-1; ++CJ ) {            // Loop over cells bottomup (except root cell)
     CI = CJ0 + CJ->PARENT;                                      //  Set target cell iterator
-    M2M();                                                      //  Evaluate M2M kernel
+    M2M_CPU();                                                  //  Evaluate M2M kernel
   }                                                             // End loop over cells
   stopTimer("evalM2M      ");                                   // Stop timer
 }

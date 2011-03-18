@@ -1,6 +1,7 @@
 #ifndef kernel_h
 #define kernel_h
 #include "logger.h"
+#define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
 class Kernel : public Logger {                                  // Unified CPU/GPU kernel class
 protected:
@@ -62,6 +63,8 @@ public:
 
   void initialize();
 
+  void precalculate();
+
   void allocGPU();
 
   void deallocGPU();
@@ -69,6 +72,8 @@ public:
   void P2M();
 
   void M2M();
+
+  void M2M_CPU();
 
   void M2L();
 
@@ -79,6 +84,8 @@ public:
   void L2L();
 
   void L2P();
+
+  void postcalculate();
 
   void finalize();
 };

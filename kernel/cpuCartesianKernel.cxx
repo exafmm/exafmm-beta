@@ -18,7 +18,7 @@ void Kernel::P2M() {
   }
 }
 
-void Kernel::M2M() {
+void Kernel::M2M_CPU() {
   vect dist = CI->X - CJ->X;
   CI->M[0] += CJ->M[0];
   CI->M[1] += CJ->M[1] +  dist[0] * CJ->M[0];

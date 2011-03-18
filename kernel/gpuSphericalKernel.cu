@@ -1,8 +1,6 @@
 #include "kernel.h"
+#include "spherical.h"
 #include "gpu.h"
-#define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
-
-const real EPS = 1e-6;
 
 __device__ void cart2sph(float& r, float& theta, float& phi, float dx, float dy, float dz) {
   r = sqrtf(dx * dx + dy * dy + dz * dz)+EPS;
@@ -704,6 +702,7 @@ __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
 }
 
 void Kernel::initialize() {
+  precalculate();
   startTimer("Init GPU     ");                                  // Start timer
   cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
   cudaPrintfInit();
@@ -824,6 +823,7 @@ void Kernel::L2P() {
 }
 
 void Kernel::finalize() {
+  postcalculate();
   cudaPrintfDisplay(stdout, true);
   cudaPrintfEnd();
 }

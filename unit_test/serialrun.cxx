@@ -8,7 +8,7 @@ int main() {
   const int numBodies = 10000;
   Bodies bodies(numBodies);
   Bodies jbodies;
-  Cells cells;
+  Cells cells,jcells;
   Dataset D;
   TreeConstructor T;
   T.printNow = true;
@@ -28,7 +28,8 @@ int main() {
 #endif
 
   T.startTimer("Downward     ");
-  T.downward(cells,cells,1);
+  jcells = cells;
+  T.downward(cells,jcells,1);
   T.stopTimer("Downward     ",T.printNow);
 
   if( IMAGES != 0 ) {

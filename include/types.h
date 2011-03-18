@@ -32,7 +32,7 @@ const int  NCOEF   = P*(P+1)/2;                                 // Number of coe
 const int  NCRIT   = 1000;                                      // Number of bodies per cell
 const real THETA   = 1/sqrtf(4);                                // Box opening criteria
 const real EPS2    = 1e-4;                                      // Softening parameter
-const int  IMAGES  = 1;                                         // Number of periodic image sublevels
+const int  IMAGES  = 2;                                         // Number of periodic image sublevels
 const int  GPUS    = 4;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 

@@ -76,6 +76,7 @@ int main() {
     std::cout << "Error (pot)   : " << std::sqrt(potDiff/potNorm) << std::endl;
     std::cout << "Error (acc)   : " << std::sqrt(accDiff/accNorm) << std::endl;
     cells.clear();
+    pcells.clear();
   }
   file.close();
 #ifdef VTK
