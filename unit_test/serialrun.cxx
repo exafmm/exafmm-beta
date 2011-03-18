@@ -27,10 +27,8 @@ int main() {
   T.bottomup(bodies,cells);
 #endif
 
-  T.startTimer("Downward     ");
   jcells = cells;
   T.downward(cells,jcells,1);
-  T.stopTimer("Downward     ",T.printNow);
 
   if( IMAGES != 0 ) {
     T.startTimer("Set periodic ");

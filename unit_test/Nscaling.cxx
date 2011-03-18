@@ -6,6 +6,7 @@
 #endif
 
 int main() {
+  assert( IMAGES == 0 );
   int numBodies = 1000;
   Bodies bodies(numBodies);
   Cells cells;
@@ -76,7 +77,6 @@ int main() {
     std::cout << "Error (pot)   : " << std::sqrt(potDiff/potNorm) << std::endl;
     std::cout << "Error (acc)   : " << std::sqrt(accDiff/accNorm) << std::endl;
     cells.clear();
-    pcells.clear();
   }
   file.close();
 #ifdef VTK

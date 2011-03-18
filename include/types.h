@@ -32,7 +32,7 @@ const int  NCOEF   = P*(P+1)/2;                                 // Number of coe
 const int  NCRIT   = 1000;                                      // Number of bodies per cell
 const real THETA   = 1/sqrtf(4);                                // Box opening criteria
 const real EPS2    = 1e-4;                                      // Softening parameter
-const int  IMAGES  = 2;                                         // Number of periodic image sublevels
+const int  IMAGES  = 1;                                         // Number of periodic image sublevels
 const int  GPUS    = 4;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 
@@ -40,6 +40,7 @@ typedef vec<3,real>                            vect;            // 3-D vector ty
 //typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Taylor expansion
 typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical harmonics
 typedef std::vector<bigint>                    Bigints;         // Vector of big integer types
+typedef std::map<bigint,int>                   Count;           // Count of duplicate cell index
 typedef std::map<std::string,double>           Event;           // Map of event name to logged value
 typedef std::map<std::string,double>::iterator E_iter;          // Iterator for event name map
 

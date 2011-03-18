@@ -7,6 +7,7 @@
 int main() {
   const int numBodies = 10000;
   Bodies bodies(numBodies);
+  Bodies jbodies;
   Cells cells;
   Dataset D;
   LocalEssentialTree T;
@@ -37,6 +38,14 @@ int main() {
 
   T.downward(cells,jcells,1);
 
+  if( IMAGES != 0 ) {
+    T.startTimer("Set periodic ");
+    jbodies = T.periodicBodies(bodies);
+    T.stopTimer("Set periodic ",T.printNow);
+  } else {
+    jbodies = bodies;
+  }
+
   T.startTimer("Direct sum   ");
   bodies2 = bodies;
   for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
@@ -44,8 +53,8 @@ int main() {
     B->acc = 0;
   }
   for( int i=0; i!=T.commSize(); ++i ) {
-    T.shiftBodies(bodies);
-    E.evalP2P(bodies2,bodies);
+    T.shiftBodies(jbodies);
+    E.evalP2P(bodies2,jbodies);
     if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
   }
   T.stopTimer("Direct sum   ",T.printNow);
