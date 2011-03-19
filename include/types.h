@@ -27,8 +27,11 @@ typedef float                real;                              // Real number t
 typedef std::complex<double> complex;                           // Complex number type
 
 const int  P       = 3;                                         // Order of expansions
-//const int  NCOEF = P*(P+1)*(P+2)/6;                             // Number of coefficients for Taylor expansion
+#ifdef Cartesian
+const int  NCOEF   = P*(P+1)*(P+2)/6;                           // Number of coefficients for Taylor expansion
+#else
 const int  NCOEF   = P*(P+1)/2;                                 // Number of coefficients for spherical harmonics
+#endif
 const int  NCRIT   = 1000;                                      // Number of bodies per cell
 const real THETA   = 1/sqrtf(4);                                // Box opening criteria
 const real EPS2    = 1e-4;                                      // Softening parameter
@@ -37,8 +40,11 @@ const int  GPUS    = 4;                                         // Number of GPU
 const int  THREADS = 64;                                        // Number of threads per thread-block
 
 typedef vec<3,real>                            vect;            // 3-D vector type
-//typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Taylor expansion
+#ifdef Cartesian
+typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Taylor expansion
+#else
 typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical harmonics
+#endif
 typedef std::vector<bigint>                    Bigints;         // Vector of big integer types
 typedef std::map<std::string,double>           Event;           // Map of event name to logged value
 typedef std::map<std::string,double>::iterator E_iter;          // Iterator for event name map
