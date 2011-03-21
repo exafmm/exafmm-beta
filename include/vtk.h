@@ -65,8 +65,8 @@ public:
     points[Igroup]->SetNumberOfPoints(Npoints);
   }
 
-  void setPoints(const int Igroup, const vect pos) {
-    points[Igroup]->SetPoint(I[Igroup],pos[0],pos[1],pos[2]);
+  void setPoints(const int Igroup, const vect X) {
+    points[Igroup]->SetPoint(I[Igroup],X[0],X[1],X[2]);
     I[Igroup]++;
   }
 
@@ -77,7 +77,7 @@ public:
       if( B->I != index ) {
         setGroup(Ncell,size);
         for( int i=begin; i!=begin+size; ++i ) {
-          setPoints(Ncell,bodies[i].pos);
+          setPoints(Ncell,bodies[i].X);
         }
         begin = B-bodies.begin();
         size = 0;
@@ -89,7 +89,7 @@ public:
     }
     setGroup(Ncell,size);
     for( int i=begin; i!=begin+size; ++i ) {
-      setPoints(Ncell,bodies[i].pos);
+      setPoints(Ncell,bodies[i].X);
     }
     Ncell++;
     assert(Ncell < maxGroups);

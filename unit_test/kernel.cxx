@@ -15,13 +15,13 @@ int main() {
     real dist = (1 << it) / 2;
     for( B_iter B=bodiesI.begin(); B!=bodiesI.end(); ++B ) {
       for( int d=0; d!=3; ++d ) {
-        B->pos[d] = -rand() / (1. + RAND_MAX) - dist;
+        B->X[d] = -rand() / (1. + RAND_MAX) - dist;
       }
       B->acc = B->pot = 0;
     }
     for( B_iter B=bodiesJ.begin(); B!=bodiesJ.end(); ++B ) {
       for( int d=0; d!=3; ++d ) {
-        B->pos[d] = rand() / (1. + RAND_MAX);
+        B->X[d] = rand() / (1. + RAND_MAX);
       }
       B->scal = 1.0 / bodiesJ.size();
     }

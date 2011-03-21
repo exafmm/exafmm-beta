@@ -142,7 +142,7 @@ private:
     for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {// Loop over recv bodies
       Body body;                                                //  Body structure
       body.I    = JB->I;                                        //  Set index of body
-      body.pos  = JB->pos;                                      //  Set position of body
+      body.X    = JB->X;                                        //  Set position of body
       body.scal = JB->scal;                                     //  Set mass/charge of body
       bodies.push_back(body);                                   //  Push body into bodies vector
     }                                                           // End loop over recv bodies
@@ -337,7 +337,7 @@ public:
         for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {     //   Loop over bodies in that cell
           JBody body;                                           //    Set compact body type for sending
           body.I    = B->I;                                     //    Set cell index of compact body type
-          body.pos  = B->pos;                                   //    Set position of compact body type
+          body.X    = B->X;                                     //    Set position of compact body type
           body.scal = B->scal;                                  //    Set mass/charge of compact body type
           sendBodies.push_back(body);                           //    Push it into the send buffer
         }                                                       //   End loop over bodies

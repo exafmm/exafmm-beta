@@ -6,9 +6,9 @@ void Evaluator::setSourceBody() {                               // Set source bu
     CJ = M->first;                                              //  Set source cell
     sourceBegin[CJ] = sourceHost.size() / 4;                    //  Key : iterator, Value : offset of source leafs
     for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {      //  Loop over leafs in source cell
-      sourceHost.push_back(B->pos[0]);                          //   Copy x position to GPU buffer
-      sourceHost.push_back(B->pos[1]);                          //   Copy y position to GPU buffer
-      sourceHost.push_back(B->pos[2]);                          //   Copy z position to GPU buffer
+      sourceHost.push_back(B->X[0]);                            //   Copy x position to GPU buffer
+      sourceHost.push_back(B->X[1]);                            //   Copy y position to GPU buffer
+      sourceHost.push_back(B->X[2]);                            //   Copy z position to GPU buffer
       sourceHost.push_back(B->scal);                            //   Copy mass/charge to GPU buffer
     }                                                           //  End loop over leafs
   }                                                             // End loop over source map
@@ -59,9 +59,9 @@ void Evaluator::setTargetBody(Cells &cells, Lists lists, Maps flags) {// Set tar
       }                                                         //   End loop over interaction list
       targetBegin[CI] = targetHost.size() / 4;                  //   Key : iterator, Value : offset of target leafs
       for( B_iter B=BI0; B!=BIN; ++B ) {                        //   Loop over leafs in target cell
-        targetHost.push_back(B->pos[0]);                        //    Copy x position to GPU buffer
-        targetHost.push_back(B->pos[1]);                        //    Copy y position to GPU buffer
-        targetHost.push_back(B->pos[2]);                        //    Copy z position to GPU buffer
+        targetHost.push_back(B->X[0]);                          //    Copy x position to GPU buffer
+        targetHost.push_back(B->X[1]);                          //    Copy y position to GPU buffer
+        targetHost.push_back(B->X[2]);                          //    Copy z position to GPU buffer
         targetHost.push_back(0);                                //    Initialize target value of GPU buffer
       }                                                         //   End loop over leafs
       int numPad = blocks * THREADS - (BIN - BI0);              //   Number of elements to pad in target GPU buffer
@@ -170,9 +170,9 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {     // Evaluate P2P
   BJN = jbodies.end();                                          // Set source bodies end iterator
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
   for( B_iter B=BJ0; B!=BJN; ++B ) {                            // Loop over source bodies
-    sourceHost.push_back(B->pos[0]);                            // Copy x position to GPU buffer
-    sourceHost.push_back(B->pos[1]);                            // Copy y position to GPU buffer
-    sourceHost.push_back(B->pos[2]);                            // Copy z position to GPU buffer
+    sourceHost.push_back(B->X[0]);                              // Copy x position to GPU buffer
+    sourceHost.push_back(B->X[1]);                              // Copy y position to GPU buffer
+    sourceHost.push_back(B->X[2]);                              // Copy z position to GPU buffer
     sourceHost.push_back(B->scal);                              // Copy mass/charge to GPU buffer
   }                                                             // End loop over source bodies
   int key = 0;                                                  // Initialize key to range of leafs in source cells
@@ -185,9 +185,9 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {     // Evaluate P2P
   rangeHost.push_back(BJN-BJ0);                                 // Set number of leafs
   rangeHost.push_back(Icenter);                                 // Set periodic image flag
   for( B_iter B=BI0; B!=BIN; ++B ) {                            // Loop over target bodies
-    targetHost.push_back(B->pos[0]);                            //  Copy x position to GPU buffer
-    targetHost.push_back(B->pos[1]);                            //  Copy y position to GPU buffer
-    targetHost.push_back(B->pos[2]);                            //  Copy z position to GPU buffer
+    targetHost.push_back(B->X[0]);                              //  Copy x position to GPU buffer
+    targetHost.push_back(B->X[1]);                              //  Copy y position to GPU buffer
+    targetHost.push_back(B->X[2]);                              //  Copy z position to GPU buffer
     targetHost.push_back(0);                                    //  Initialize target value of GPU buffer
   }                                                             // End loop over target bodies
   int numPad = blocks * THREADS - (BIN - BI0);                  // Number of elements to pad in target GPU buffer

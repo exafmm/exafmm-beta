@@ -43,14 +43,14 @@ public:
   void setDomain(Bodies &bodies) {                              // Set center and size of root cell
     vect xmin,xmax;                                             // Min,Max of domain
     B_iter B = bodies.begin();                                  // Reset body iterator
-    xmin = xmax = B->pos;                                       // Initialize xmin,xmax
+    xmin = xmax = B->X;                                         // Initialize xmin,xmax
     X0 = R0 = 0;                                                // Initialize center and size of root cell
     for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
-        if     (B->pos[d] < xmin[d]) xmin[d] = B->pos[d];       //   Determine xmin
-        else if(B->pos[d] > xmax[d]) xmax[d] = B->pos[d];       //   Determine xmax
+        if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];           //   Determine xmin
+        else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];           //   Determine xmax
       }                                                         //  End loop over each dimension
-      X0 += B->pos;                                             //  Sum positions
+      X0 += B->X;                                               //  Sum positions
     }                                                           // End loop over bodies
     X0 /= bodies.size();                                        // Calculate average position
     for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension

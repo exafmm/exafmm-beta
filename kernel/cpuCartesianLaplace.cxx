@@ -4,7 +4,7 @@ void Kernel::initialize() {}
 
 void Kernel::P2M() {
   for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
-    vect dist = CJ->X - B->pos;
+    vect dist = CJ->X - B->X;
     CJ->M[0] += B->scal;
     CJ->M[1] += B->scal * dist[0];
     CJ->M[2] += B->scal * dist[1];
@@ -69,7 +69,7 @@ void Kernel::M2L() {
 
 void Kernel::M2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
-    vect dist = B->pos - CJ->X - Xperiodic;
+    vect dist = B->X - CJ->X - Xperiodic;
     real R = std::sqrt(norm(dist));
     real R3 = R * R * R;
     real R5 = R3 * R * R;
@@ -99,7 +99,7 @@ void Kernel::M2P() {
 void Kernel::P2P() {
   for( B_iter BI=BI0; BI!=BIN; ++BI ) {
     for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {
-      vect dist = BI->pos - BJ->pos - Xperiodic;
+      vect dist = BI->X - BJ->X - Xperiodic;
       real invR = 1 / std::sqrt(norm(dist) + EPS2);
       real invR3 = BJ->scal * invR * invR * invR;
       BI->pot += BJ->scal * invR;
@@ -134,7 +134,7 @@ void Kernel::L2L() {
 
 void Kernel::L2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
-    vect dist = B->pos - CI->X;
+    vect dist = B->X - CI->X;
     B->pot += CI->L[0];
     B->pot += CI->L[1] * dist[0];
     B->pot += CI->L[2] * dist[1];

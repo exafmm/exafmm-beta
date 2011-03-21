@@ -16,10 +16,10 @@ private:
   };
   std::vector<Node> nodes;                                      // Nodes in the tree
 
-  int getOctant(const vect pos, int i) {                        // Calculate octant from position
+  int getOctant(const vect X, int i) {                          // Calculate octant from position
     int octant = 0;                                             // Initialize octant
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
-      octant += (pos[d] > nodes[i].X[d]) << d;                  //  interleave bits and accumulate octant
+      octant += (X[d] > nodes[i].X[d]) << d;                    //  interleave bits and accumulate octant
     }                                                           // End loop over dimensions
     return octant;                                              // Return octant
   }
@@ -50,7 +50,7 @@ private:
 
   void splitNode(int i) {                                       // Split node and reassign leafs to child nodes
     for( int l=0; l!=NCRIT; ++l ) {                             // Loop over leafs in parent node
-      int octant = getOctant(nodes[i].LEAF[l]->pos,i);          //  Find the octant where the body belongs
+      int octant = getOctant(nodes[i].LEAF[l]->X,i);            //  Find the octant where the body belongs
       if( !(nodes[i].ICHILD & (1 << octant)) ) {                //  If child doesn't exist in this octant
         addChild(octant,i);                                     //   Add new child to list
       }                                                         //  Endif for octant
@@ -91,7 +91,7 @@ public:
       int i = 0;                                                //  Reset node counter
       while( nodes[i].NLEAF >= NCRIT ) {                        //  While the nodes have children
         nodes[i].NLEAF++;                                       //   Increment the cumulative leaf counter
-        octant = getOctant(B->pos,i);                           //   Find the octant where the body belongs
+        octant = getOctant(B->X,i);                             //   Find the octant where the body belongs
         if( !(nodes[i].ICHILD & (1 << octant)) ) {              //   If child doesn't exist in this octant
           addChild(octant,i);                                   //    Add new child to list
         }                                                       //   Endif for child existence
@@ -131,7 +131,7 @@ public:
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
     for( int b=begin; b!=end; ++b ) {                           // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        nx[d] = int( ( bodies[b].pos[d] - (X0[d]-R0) ) / r );   //   3-D cell index
+        nx[d] = int( ( bodies[b].X[d] - (X0[d]-R0) ) / r );     //   3-D cell index
       }                                                         //  End loop over dimension
       i = 0;                                                    //  Initialize cell index
       for( int l=0; l!=level; ++l ) {                           //  Loop over levels of tree

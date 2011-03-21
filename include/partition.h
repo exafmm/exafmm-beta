@@ -214,12 +214,12 @@ public:
   void setGlobDomain(Bodies &bodies) {                          // Set bounds of domain to be partitioned
     numCells1D = 1 << getMaxLevel(bodies);                      // Set initial number of bodies
     B_iter B = bodies.begin();                                  // Reset body iterator
-    XMIN[0] = XMAX[0] = B->pos;                                 // Initialize xmin,xmax
+    XMIN[0] = XMAX[0] = B->X;                                   // Initialize xmin,xmax
     MPI_Datatype MPI_TYPE = getType(XMIN[0][0]);                // Get MPI data type
     for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
-        if     (B->pos[d] < XMIN[0][d]) XMIN[0][d] = B->pos[d]; //   Determine xmin
-        else if(B->pos[d] > XMAX[0][d]) XMAX[0][d] = B->pos[d]; //   Determine xmax
+        if     (B->X[d] < XMIN[0][d]) XMIN[0][d] = B->X[d];     //   Determine xmin
+        else if(B->X[d] > XMAX[0][d]) XMAX[0][d] = B->X[d];     //   Determine xmax
       }                                                         //  End loop over each dimension
     }                                                           // End loop over bodies
     vect X;                                                     // Recv buffer
@@ -241,7 +241,7 @@ public:
 
   void binBodies(Bodies &bodies, int d) {                       // Turn positions into indices of bins
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      B->I = bigint((B->pos[d] - XMIN[0][d])                    // Bin body positions into integers
+      B->I = bigint((B->X[d] - XMIN[0][d])                      // Bin body positions into integers
         / (XMAX[0][d] - XMIN[0][d]) * numCells1D);
     }                                                           // End loop over bodies
   }

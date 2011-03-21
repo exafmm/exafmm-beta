@@ -12,7 +12,7 @@ public:
         srand(seed);                                            //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->pos[d] = rand() / (1. + RAND_MAX) * 2 - 1;           //   Initialize positions
+        B->X[d] = rand() / (1. + RAND_MAX) * 2 - 1;             //   Initialize positions
       }                                                         //  End loop over dimension
       B->scal = 1. / bodies.size() / MPISIZE;                   //  Initialize mass/charge
       B->acc = B->pot = 0;                                      //  Initialize target values
@@ -27,11 +27,11 @@ public:
         srand(seed);                                            //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->pos[d] = rand() / (1. + RAND_MAX) * 2 - 1;           //   Initialize positions
+        B->X[d] = rand() / (1. + RAND_MAX) * 2 - 1;             //   Initialize positions
       }                                                         //  End loop over dimension
-      real r = std::sqrt(norm(B->pos));                         //  Distance from center
+      real r = std::sqrt(norm(B->X));                           //  Distance from center
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->pos[d] /= r * 1.1;                                   //   Normalize positions
+        B->X[d] /= r * 1.1;                                     //   Normalize positions
       }                                                         //  End loop over dimension
       B->scal = 1. / bodies.size() / MPISIZE;                   //  Initialize mass/charge
       B->acc = B->pot = 0;                                      //  Initialize target values
@@ -51,7 +51,7 @@ public:
         if( d == 0 ) l++;                                       //   If dimension is 0 again, increment level
       }                                                         //  End while loop for deinterleaving bits
       for( d=0; d!=3; ++d ) {                                   //  Loop over dimensions
-        B->pos[d] = -1 + (2 * nx[d] + 1.) / (1 << level);       //   Calculate cell center from 3-D cell index
+        B->X[d] = -1 + (2 * nx[d] + 1.) / (1 << level);         //   Calculate cell center from 3-D cell index
       }                                                         //  End loop over dimensions
       B->scal = 1. / bodies.size() / MPISIZE;                   //  Initialize mass/charge
       B->acc = B->pot = 0;                                      //  Initialize target values

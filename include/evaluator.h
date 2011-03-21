@@ -122,9 +122,9 @@ public:
         for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
           for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {//    Loop over bodies
             Body body = *B;                                     //     Copy current body
-            body.pos[0] += ix * 2 * R0;                         //     Shift x position
-            body.pos[1] += iy * 2 * R0;                         //     Shift y position
-            body.pos[2] += iz * 2 * R0;                         //     Shift z position
+            body.X[0] += ix * 2 * R0;                           //     Shift x position
+            body.X[1] += iy * 2 * R0;                           //     Shift y position
+            body.X[2] += iz * 2 * R0;                           //     Shift z position
             jbodies.push_back(body);                            //     Push shifted body into jbodies
           }                                                     //    End loop over bodies
         }                                                       //   End loop over z periodic direction

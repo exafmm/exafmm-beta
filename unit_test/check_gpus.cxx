@@ -32,7 +32,7 @@ int main() {
     vect acc = 0;
     BI->pot -= BI->scal / std::sqrt(EPS2);
     for( B_iter BJ=bodies.begin(); BJ!=bodies.end(); ++BJ ) {
-      vect dist = BI->pos - BJ->pos;
+      vect dist = BI->X - BJ->X;
       real invR = 1 / std::sqrt(norm(dist) + EPS2);
       real invR3 = BJ->scal * invR * invR * invR;
       pot += BJ->scal * invR;

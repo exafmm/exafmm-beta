@@ -89,7 +89,7 @@ int main() {
   for( C_iter C=jcells.begin(); C!=jcells.end(); ++C ) {
     Body body;
     body.I = 1;
-    body.pos  = C->X;
+    body.X  = C->X;
     body.scal = 0;
     bodies.push_back(body);
   }

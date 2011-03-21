@@ -21,11 +21,11 @@ int main() {
   vtk.setDomain(T.getR0(),T.getX0());
   vtk.setGroup(0,bodies.size()/2);
   for( B_iter B=bodies.begin(); B!=bodies.begin()+bodies.size()/2; ++B ) {
-    vtk.setPoints(0,B->pos);
+    vtk.setPoints(0,B->X);
   }
   vtk.setGroup(1,bodies.size()/2);
   for( B_iter B=bodies.begin()+bodies.size()/2; B!=bodies.end(); ++B ) {
-    vtk.setPoints(1,B->pos);
+    vtk.setPoints(1,B->X);
   }
   vtk.plot(2);
 }
