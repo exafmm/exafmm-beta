@@ -9,7 +9,7 @@ void Evaluator::setSourceBody() {                               // Set source bu
       sourceHost.push_back(B->X[0]);                            //   Copy x position to GPU buffer
       sourceHost.push_back(B->X[1]);                            //   Copy y position to GPU buffer
       sourceHost.push_back(B->X[2]);                            //   Copy z position to GPU buffer
-      sourceHost.push_back(B->scal);                            //   Copy mass/charge to GPU buffer
+      sourceHost.push_back(B->Q);                               //   Copy mass/charge to GPU buffer
     }                                                           //  End loop over leafs
   }                                                             // End loop over source map
   stopTimer("Set sourceB  ");                                   // Stop timer
@@ -173,7 +173,7 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {     // Evaluate P2P
     sourceHost.push_back(B->X[0]);                              // Copy x position to GPU buffer
     sourceHost.push_back(B->X[1]);                              // Copy y position to GPU buffer
     sourceHost.push_back(B->X[2]);                              // Copy z position to GPU buffer
-    sourceHost.push_back(B->scal);                              // Copy mass/charge to GPU buffer
+    sourceHost.push_back(B->Q);                                 // Copy mass/charge to GPU buffer
   }                                                             // End loop over source bodies
   int key = 0;                                                  // Initialize key to range of leafs in source cells
   int blocks = (BIN - BI0 - 1) / THREADS + 1;                   // Number of thread blocks needed for this target cell

@@ -28,14 +28,14 @@ int main() {
   E.startTimer("Direct CPU   ");
   real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
   for( B_iter BI=bodies.begin(); BI!=bodies.end(); ++BI ) {
-    real pot = -BI->scal / std::sqrt(EPS2);
+    real pot = -BI->Q / std::sqrt(EPS2);
     vect acc = 0;
-    BI->pot -= BI->scal / std::sqrt(EPS2);
+    BI->pot -= BI->Q / std::sqrt(EPS2);
     for( B_iter BJ=bodies.begin(); BJ!=bodies.end(); ++BJ ) {
       vect dist = BI->X - BJ->X;
       real invR = 1 / std::sqrt(norm(dist) + EPS2);
-      real invR3 = BJ->scal * invR * invR * invR;
-      pot += BJ->scal * invR;
+      real invR3 = BJ->Q * invR * invR * invR;
+      pot += BJ->Q * invR;
       acc -= dist * invR3;
     }
 //    std::cout << BI-bodies.begin() << " " << BI->pot << " " << pot << std::endl;

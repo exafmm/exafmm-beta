@@ -49,7 +49,7 @@ int main() {
   T.startTimer("Direct sum   ");
   bodies2 = bodies;
   for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
-    B->pot = -B->scal  / std::sqrt(EPS2);
+    B->pot = -B->Q  / std::sqrt(EPS2);
     B->acc = 0;
   }
   for( int i=0; i!=T.commSize(); ++i ) {
@@ -64,7 +64,7 @@ int main() {
   real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
   real potDiffRedc, potNormRedc, accDiffRedc, accNormRedc;
   for( int i=0; i!=int(bodies.size()); ++i,++B,++B2 ) {
-    B->pot -= B->scal  / std::sqrt(EPS2);
+    B->pot -= B->Q  / std::sqrt(EPS2);
 #ifdef DEBUG
     if(MPIRANK==0) std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
 #endif
@@ -90,7 +90,7 @@ int main() {
     Body body;
     body.I = 1;
     body.X  = C->X;
-    body.scal = 0;
+    body.Q = 0;
     bodies.push_back(body);
   }
 

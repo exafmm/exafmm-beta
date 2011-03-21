@@ -23,7 +23,7 @@ int main() {
       for( int d=0; d!=3; ++d ) {
         B->X[d] = rand() / (1. + RAND_MAX);
       }
-      B->scal = 1.0 / bodiesJ.size();
+      B->Q = 1.0 / bodiesJ.size();
     }
 
     Cell cell;

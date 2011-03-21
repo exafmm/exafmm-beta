@@ -42,7 +42,7 @@ int main() {
   Evaluator E;
   T.buffer = bodies;
   for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
-    B->pot = -B->scal / std::sqrt(EPS2);
+    B->pot = -B->Q / std::sqrt(EPS2);
     B->acc = 0;
   }
   T.evalP2P(T.buffer,jbodies);
@@ -52,7 +52,7 @@ int main() {
   B_iter B2 = T.buffer.begin();
   real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
   for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
-    B->pot  -= B->scal / std::sqrt(EPS2);
+    B->pot  -= B->Q / std::sqrt(EPS2);
 #ifdef DEBUG
     std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
 #endif

@@ -14,7 +14,7 @@ public:
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->X[d] = rand() / (1. + RAND_MAX) * 2 - 1;             //   Initialize positions
       }                                                         //  End loop over dimension
-      B->scal = 1. / bodies.size() / MPISIZE;                   //  Initialize mass/charge
+      B->Q = 1. / bodies.size() / MPISIZE;                      //  Initialize mass/charge
       B->acc = B->pot = 0;                                      //  Initialize target values
     }                                                           // End loop over bodies
   }
@@ -33,7 +33,7 @@ public:
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->X[d] /= r * 1.1;                                     //   Normalize positions
       }                                                         //  End loop over dimension
-      B->scal = 1. / bodies.size() / MPISIZE;                   //  Initialize mass/charge
+      B->Q = 1. / bodies.size() / MPISIZE;                      //  Initialize mass/charge
       B->acc = B->pot = 0;                                      //  Initialize target values
     }                                                           // End loop over bodies
   }
@@ -53,7 +53,7 @@ public:
       for( d=0; d!=3; ++d ) {                                   //  Loop over dimensions
         B->X[d] = -1 + (2 * nx[d] + 1.) / (1 << level);         //   Calculate cell center from 3-D cell index
       }                                                         //  End loop over dimensions
-      B->scal = 1. / bodies.size() / MPISIZE;                   //  Initialize mass/charge
+      B->Q = 1. / bodies.size() / MPISIZE;                      //  Initialize mass/charge
       B->acc = B->pot = 0;                                      //  Initialize target values
     }                                                           // End loop over bodies
   }

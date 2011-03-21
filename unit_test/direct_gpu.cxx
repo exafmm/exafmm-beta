@@ -34,9 +34,9 @@ int main() {
   int prange = E.getPeriodicRange();
   real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
   for( B_iter BI=bodies.begin(); BI!=bodies.end(); ++BI ) {
-    real pot = -BI->scal / std::sqrt(EPS2);
+    real pot = -BI->Q / std::sqrt(EPS2);
     vect acc = 0;
-    BI->pot -= BI->scal / std::sqrt(EPS2);
+    BI->pot -= BI->Q / std::sqrt(EPS2);
     for( int ix=-prange; ix<=prange; ++ix ) {
       for( int iy=-prange; iy<=prange; ++iy ) {
         for( int iz=-prange; iz<=prange; ++iz ) {
@@ -46,8 +46,8 @@ int main() {
             dist[1] -= iy * 2 * E.getR0();
             dist[2] -= iz * 2 * E.getR0();
             real invR = 1 / std::sqrt(norm(dist) + EPS2);
-            real invR3 = BJ->scal * invR * invR * invR;
-            pot += BJ->scal * invR;
+            real invR3 = BJ->Q * invR * invR * invR;
+            pot += BJ->Q * invR;
             acc -= dist * invR3;
           }
         }

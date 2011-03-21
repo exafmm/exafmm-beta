@@ -38,7 +38,7 @@ int main() {
     Body body;
     body.I = 1;
     body.X  = C->X;
-    body.scal = 0;
+    body.Q = 0;
     bodies.push_back(body);
   }
 

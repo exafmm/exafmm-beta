@@ -15,7 +15,7 @@ void Kernel::P2M() {
       for( int m=0; m<=n; ++m ) {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
-        CJ->M[nms] += double(B->scal)*Ynm[nm];
+        CJ->M[nms] += double(B->Q)*Ynm[nm];
       }
     }
   }
@@ -85,8 +85,8 @@ void Kernel::P2P() {
     for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {
       vect dist = BI->X - BJ->X - Xperiodic;
       real invR = 1 / std::sqrt(norm(dist) + EPS2);
-      real invR3 = BJ->scal * invR * invR * invR;
-      BI->pot += BJ->scal * invR;
+      real invR3 = BJ->Q * invR * invR * invR;
+      BI->pot += BJ->Q * invR;
       BI->acc -= dist * invR3;
     }
   }

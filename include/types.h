@@ -52,7 +52,7 @@ typedef std::map<std::string,double>::iterator E_iter;          // Iterator for 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   bigint I;                                                     // Cell index
   vect   X;                                                     // Position
-  real   scal;                                                  // Mass/charge
+  real   Q;                                                     // Mass/charge
 };
 struct Body : JBody {                                           // All properties of a body
   vect acc;                                                     // Acceleration
