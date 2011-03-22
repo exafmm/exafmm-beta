@@ -91,6 +91,8 @@ public:
     for_i c+=b[i]*b[i];
     return c;
   }
+
 };
+
 #undef for_i
 #endif

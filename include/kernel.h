@@ -81,6 +81,8 @@ public:
 
   void P2P();
 
+  void P2P_CPU();
+
   void L2L();
 
   void L2P();
@@ -88,6 +90,7 @@ public:
   void postcalculate();
 
   void finalize();
+
 };
 
 #endif

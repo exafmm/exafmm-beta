@@ -1,5 +1,6 @@
 #include "kernel.h"
 #include "spherical.h"
+#include "laplace.h"
 #include "gpu.h"
 
 __device__ void cart2sph(float& r, float& theta, float& phi, float dx, float dy, float dz) {

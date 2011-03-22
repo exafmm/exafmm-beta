@@ -48,10 +48,7 @@ int main() {
 
   T.startTimer("Direct sum   ");
   bodies2 = bodies;
-  for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
-    B->pot = -B->Q  / std::sqrt(EPS2);
-    B->acc = 0;
-  }
+  D.initTarget(bodies2);
   for( int i=0; i!=T.commSize(); ++i ) {
     T.shiftBodies(jbodies);
     E.evalP2P(bodies2,jbodies);
@@ -59,27 +56,14 @@ int main() {
   }
   T.stopTimer("Direct sum   ",T.printNow);
 
-  B_iter B  = bodies.begin();
-  B_iter B2 = bodies2.begin();
-  real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
-  real potDiffRedc, potNormRedc, accDiffRedc, accNormRedc;
-  for( int i=0; i!=int(bodies.size()); ++i,++B,++B2 ) {
-    B->pot -= B->Q  / std::sqrt(EPS2);
-#ifdef DEBUG
-    if(MPIRANK==0) std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
-#endif
-    potDiff += (B->pot - B2->pot) * (B->pot - B2->pot);
-    potNorm += B2->pot * B2->pot;
-    accDiff += norm(B->acc - B2->acc);
-    accNorm += norm(B2->acc);
-  }
-  MPI_Datatype MPI_TYPE = T.getType(potDiff);
-  MPI_Reduce(&potDiff,&potDiffRedc,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  MPI_Reduce(&potNorm,&potNormRedc,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  MPI_Reduce(&accDiff,&accDiffRedc,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  MPI_Reduce(&accNorm,&accNormRedc,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  if(T.printNow) std::cout << "Error (pot)   : " << std::sqrt(potDiffRedc/potNormRedc) << std::endl;
-  if(T.printNow) std::cout << "Error (acc)   : " << std::sqrt(accDiffRedc/accNormRedc) << std::endl;
+  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
+  D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  MPI_Datatype MPI_TYPE = T.getType(diff1);
+  MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&norm1,&norm3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  if(T.printNow) D.printError(diff1,norm1,diff2,norm2);
 #ifdef DEBUG
   T.print(std::sqrt(potDiff/potNorm));
 #endif
@@ -89,7 +73,7 @@ int main() {
   for( C_iter C=jcells.begin(); C!=jcells.end(); ++C ) {
     Body body;
     body.I = 1;
-    body.X  = C->X;
+    body.X = C->X;
     body.Q = 0;
     bodies.push_back(body);
   }

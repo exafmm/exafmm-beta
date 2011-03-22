@@ -1,12 +1,12 @@
 #include "evaluator.h"
 
-void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {     // Evaluate P2P
+void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
   BI0 = ibodies.begin();                                        // Set target bodies begin iterator
   BIN = ibodies.end();                                          // Set target bodies end iterator
   BJ0 = jbodies.begin();                                        // Set source bodies begin iterator
   BJN = jbodies.end();                                          // Set source bodies end iterator
-  Xperiodic = 0;                                                //  Set periodic coordinate offset
-  P2P();                                                        //  Evaluate P2P kernel
+  Xperiodic = 0 * onCPU;                                        // Set periodic coordinate offset (onCPU is dummy)
+  P2P_CPU();                                                    // Evaluate P2P kernel
 }
 
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
@@ -103,7 +103,7 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
               Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
               Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
               Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
-              P2P();                                            //       Evaluate P2P kernel
+              P2P_CPU();                                        //       Evaluate P2P kernel
             }                                                   //      Endif for periodic flag
           }                                                     //     End loop over x periodic direction
         }                                                       //    End loop over y periodic direction

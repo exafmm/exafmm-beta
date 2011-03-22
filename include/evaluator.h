@@ -141,7 +141,7 @@ public:
   void getTargetCell(Cells &cells, Lists &lists, bool isM);     // Get cell values from target buffer
   void clearBuffers();                                          // Clear GPU buffers
 
-  void evalP2P(Bodies &ibodies, Bodies &jbodies);               // Evaluate P2P kernel (all pairs)
+  void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);// Evaluate P2P kernel (all pairs)
   void evalP2M(Cells &twigs);                                   // Evaluate P2M kernel
   void evalM2M(Cells &cells);                                   // Evaluate M2M kernel
   void evalM2L(Cells &cells);                                   // Evaluate M2L kernel

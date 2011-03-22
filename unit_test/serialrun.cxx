@@ -41,28 +41,13 @@ int main() {
   T.startTimer("Direct sum   ");
   Evaluator E;
   T.buffer = bodies;
-  for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
-    B->pot = -B->Q / std::sqrt(EPS2);
-    B->acc = 0;
-  }
+  D.initTarget(T.buffer);
   T.evalP2P(T.buffer,jbodies);
   T.stopTimer("Direct sum   ",T.printNow);
 
-  B_iter B  = bodies.begin();
-  B_iter B2 = T.buffer.begin();
-  real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
-  for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
-    B->pot  -= B->Q / std::sqrt(EPS2);
-#ifdef DEBUG
-    std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;
-#endif
-    potDiff += (B->pot - B2->pot) * (B->pot - B2->pot);
-    potNorm += B2->pot * B2->pot;
-    accDiff += norm(B->acc - B2->acc);
-    accNorm += norm(B2->acc);
-  }
-  std::cout << "Error (pot)   : " << std::sqrt(potDiff/potNorm) << std::endl;
-  std::cout << "Error (acc)   : " << std::sqrt(accDiff/accNorm) << std::endl;
+  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+  D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);
+  D.printError(diff1,norm1,diff2,norm2);
 #ifdef VTK
   int Ncell = 0;
   vtkPlot vtk;

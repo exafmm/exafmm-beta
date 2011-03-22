@@ -13,8 +13,6 @@ int main() {
   Dataset D;
   Evaluator E;
   TreeConstructor T;
-  std::ofstream file;
-  file.open("data",std::ofstream::binary);
 
   for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
@@ -36,24 +34,11 @@ int main() {
     T.startTimer("Direct sum   ");
     T.buffer = bodies;
 #if 1
-    for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
-      B->pot = -B->Q / std::sqrt(EPS2);
-      B->acc = 0;
-    }
+    D.initTarget(T.buffer);
     E.evalP2P(T.buffer,T.buffer);
-    for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
-      file << B->pot << std::endl;
-      file << B->acc[0] << std::endl;
-      file << B->acc[1] << std::endl;
-      file << B->acc[2] << std::endl;
-    }
+    D.writeTarget(T.buffer);
 #else
-    for( B_iter B=T.buffer.begin(); B!=T.buffer.end(); ++B ) {
-      file >> B->pot;
-      file >> B->acc[0];
-      file >> B->acc[1];
-      file >> B->acc[2];
-    }
+    D.readTarget(T.buffer);
 #endif
     T.stopTimer("Direct sum   ");
     T.printAllTime();
@@ -61,24 +46,11 @@ int main() {
     T.writeTime();
     T.resetTimer();
 
-    B_iter B  = bodies.begin();
-    B_iter B2 = T.buffer.begin();
-    real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
-    for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
-      B->pot -= B->Q / std::sqrt(EPS2);
-#ifdef DEBUG
-      std::cout << B->I << " " << B->acc[0] << " " << B2->acc[0] << std::endl;
-#endif
-      potDiff += (B->pot - B2->pot) * (B->pot - B2->pot);
-      potNorm += B2->pot * B2->pot;
-      accDiff += norm(B->acc - B2->acc);
-      accNorm += norm(B2->acc);
-    }
-    std::cout << "Error (pot)   : " << std::sqrt(potDiff/potNorm) << std::endl;
-    std::cout << "Error (acc)   : " << std::sqrt(accDiff/accNorm) << std::endl;
+    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+    D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);
+    D.printError(diff1,norm1,diff2,norm2);
     cells.clear();
   }
-  file.close();
 #ifdef VTK
   int Ncell = 0;
   vtkPlot vtk;

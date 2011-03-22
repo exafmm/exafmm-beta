@@ -1,5 +1,6 @@
 #include "kernel.h"
 #include "spherical.h"
+#include "laplace.h"
 
 void Kernel::initialize() {
   precalculate();
@@ -77,18 +78,6 @@ void Kernel::M2P() {
     B->acc[0] += sin(theta)*cos(phi)*acc[0]+cos(theta)*cos(phi)/r*acc[1]-sin(phi)/r/sin(theta)*acc[2];
     B->acc[1] += sin(theta)*sin(phi)*acc[0]+cos(theta)*sin(phi)/r*acc[1]+cos(phi)/r/sin(theta)*acc[2];
     B->acc[2] += cos(theta)*acc[0]-sin(theta)/r*acc[1];
-  }
-}
-
-void Kernel::P2P() {
-  for( B_iter BI=BI0; BI!=BIN; ++BI ) {
-    for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {
-      vect dist = BI->X - BJ->X - Xperiodic;
-      real invR = 1 / std::sqrt(norm(dist) + EPS2);
-      real invR3 = BJ->Q * invR * invR * invR;
-      BI->pot += BJ->Q * invR;
-      BI->acc -= dist * invR3;
-    }
   }
 }
 

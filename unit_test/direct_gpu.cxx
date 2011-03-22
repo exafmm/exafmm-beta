@@ -31,36 +31,14 @@ int main() {
   E.stopTimer("Direct GPU   ",E.printNow);
 
   E.startTimer("Direct CPU   ");
-  int prange = E.getPeriodicRange();
-  real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
-  for( B_iter BI=bodies.begin(); BI!=bodies.end(); ++BI ) {
-    real pot = -BI->Q / std::sqrt(EPS2);
-    vect acc = 0;
-    BI->pot -= BI->Q / std::sqrt(EPS2);
-    for( int ix=-prange; ix<=prange; ++ix ) {
-      for( int iy=-prange; iy<=prange; ++iy ) {
-        for( int iz=-prange; iz<=prange; ++iz ) {
-          for( B_iter BJ=bodies.begin(); BJ!=bodies.end(); ++BJ ) {
-            vect dist = BI->X - BJ->X;
-            dist[0] -= ix * 2 * E.getR0();
-            dist[1] -= iy * 2 * E.getR0();
-            dist[2] -= iz * 2 * E.getR0();
-            real invR = 1 / std::sqrt(norm(dist) + EPS2);
-            real invR3 = BJ->Q * invR * invR * invR;
-            pot += BJ->Q * invR;
-            acc -= dist * invR3;
-          }
-        }
-      }
-    }
-//    std::cout << BI-bodies.begin() << " " << BI->pot << " " << pot << std::endl;
-    potDiff += (BI->pot - pot) * (BI->pot - pot);
-    potNorm += pot * pot;
-    accDiff += norm(BI->acc - acc);
-    accNorm += norm(acc);
-  }
+  bool onCPU = true;
+  Bodies bodies2 = bodies;
+  D.initTarget(bodies2);
+  E.evalP2P(bodies2,jbodies,onCPU);
   E.stopTimer("Direct CPU   ",E.printNow);
-  std::cout << "Error (pot)   : " << std::sqrt(potDiff/potNorm) << std::endl;
-  std::cout << "Error (acc)   : " << std::sqrt(accDiff/accNorm) << std::endl;
+
+  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+  D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  D.printError(diff1,norm1,diff2,norm2);
   E.finalize();
 }

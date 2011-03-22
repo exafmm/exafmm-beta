@@ -436,6 +436,7 @@ public:
     delete[] rdsp;                                              // Delete recv displacement
     stopTimer("Partition    ",printNow);                        // Stop timer & print
   }
+
 };
 
 #endif

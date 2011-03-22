@@ -163,52 +163,57 @@ void Evaluator::clearBuffers() {                                // Clear GPU buf
   stopTimer("Clear buffer ");                                   // Stop timer
 }
 
-void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies) {     // Evaluate P2P
+void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
   BI0 = ibodies.begin();                                        // Set target bodies begin iterator
   BIN = ibodies.end();                                          // Set target bodies end iterator
   BJ0 = jbodies.begin();                                        // Set source bodies begin iterator
   BJN = jbodies.end();                                          // Set source bodies end iterator
-  constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
-  for( B_iter B=BJ0; B!=BJN; ++B ) {                            // Loop over source bodies
-    sourceHost.push_back(B->X[0]);                              // Copy x position to GPU buffer
-    sourceHost.push_back(B->X[1]);                              // Copy y position to GPU buffer
-    sourceHost.push_back(B->X[2]);                              // Copy z position to GPU buffer
-    sourceHost.push_back(B->Q);                                 // Copy mass/charge to GPU buffer
-  }                                                             // End loop over source bodies
-  int key = 0;                                                  // Initialize key to range of leafs in source cells
-  int blocks = (BIN - BI0 - 1) / THREADS + 1;                   // Number of thread blocks needed for this target cell
-  for( int i=0; i!=blocks; ++i ) {                              // Loop over thread blocks
-    keysHost.push_back(key);                                    //  Save key to range of leafs in source cells
-  }                                                             // End loop over thread blocks
-  rangeHost.push_back(1);                                       // Save size of interaction list
-  rangeHost.push_back(0);                                       // Set begin index of leafs
-  rangeHost.push_back(BJN-BJ0);                                 // Set number of leafs
-  rangeHost.push_back(Icenter);                                 // Set periodic image flag
-  for( B_iter B=BI0; B!=BIN; ++B ) {                            // Loop over target bodies
-    targetHost.push_back(B->X[0]);                              //  Copy x position to GPU buffer
-    targetHost.push_back(B->X[1]);                              //  Copy y position to GPU buffer
-    targetHost.push_back(B->X[2]);                              //  Copy z position to GPU buffer
-    targetHost.push_back(0);                                    //  Initialize target value of GPU buffer
-  }                                                             // End loop over target bodies
-  int numPad = blocks * THREADS - (BIN - BI0);                  // Number of elements to pad in target GPU buffer
-  for( int i=0; i!=numPad; ++i ) {                              // Loop over elements to pad
-    targetHost.push_back(0);                                    //  Pad x position in GPU buffer
-    targetHost.push_back(0);                                    //  Pad y position in GPU buffer
-    targetHost.push_back(0);                                    //  Pad z position in GPU buffer
-    targetHost.push_back(0);                                    //  Pad target value in GPU buffer
-  }                                                             // End loop over elements to pad
-  P2P();                                                        // Evaluate P2P kernel
-  for( B_iter B=BI0; B!=BIN; ++B ) {                            // Loop over target bodies
-    B->pot += targetHost[4*(B-BI0)+0];                          //  Copy potential from GPU buffer
-    B->acc[0] += targetHost[4*(B-BI0)+1];                       //  Copy acceleration from GPU buffer
-    B->acc[1] += targetHost[4*(B-BI0)+2];                       //  Copy acceleration from GPU buffer
-    B->acc[2] += targetHost[4*(B-BI0)+3];                       //  Copy acceleration from GPU buffer
-  }                                                             // End loop over target bodies
-  keysHost.clear();                                             // Clear keys vector
-  rangeHost.clear();                                            // Clear range vector
-  constHost.clear();                                            // Clear const vector
-  targetHost.clear();                                           // Clear target vector
-  sourceHost.clear();                                           // Clear source vector
+  if( onCPU ) {                                                 // If calculation is to be done on CPU
+    Xperiodic = 0;                                              //  Set periodic coordinate offset
+    P2P_CPU();                                                  //  Evaluate P2P kernel
+  } else {                                                      // If calculation is to be done on GPU
+    constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
+    for( B_iter B=BJ0; B!=BJN; ++B ) {                          //  Loop over source bodies
+      sourceHost.push_back(B->X[0]);                            //  Copy x position to GPU buffer
+      sourceHost.push_back(B->X[1]);                            //  Copy y position to GPU buffer
+      sourceHost.push_back(B->X[2]);                            //  Copy z position to GPU buffer
+      sourceHost.push_back(B->Q);                               //  Copy mass/charge to GPU buffer
+    }                                                           //  End loop over source bodies
+    int key = 0;                                                //  Initialize key to range of leafs in source cells
+    int blocks = (BIN - BI0 - 1) / THREADS + 1;                 //  Number of thread blocks needed for this target cell
+    for( int i=0; i!=blocks; ++i ) {                            //  Loop over thread blocks
+      keysHost.push_back(key);                                  //   Save key to range of leafs in source cells
+    }                                                           //  End loop over thread blocks
+    rangeHost.push_back(1);                                     //  Save size of interaction list
+    rangeHost.push_back(0);                                     //  Set begin index of leafs
+    rangeHost.push_back(BJN-BJ0);                               //  Set number of leafs
+    rangeHost.push_back(Icenter);                               //  Set periodic image flag
+    for( B_iter B=BI0; B!=BIN; ++B ) {                          //  Loop over target bodies
+      targetHost.push_back(B->X[0]);                            //   Copy x position to GPU buffer
+      targetHost.push_back(B->X[1]);                            //   Copy y position to GPU buffer
+      targetHost.push_back(B->X[2]);                            //   Copy z position to GPU buffer
+      targetHost.push_back(0);                                  //   Initialize target value of GPU buffer
+    }                                                           //  End loop over target bodies
+    int numPad = blocks * THREADS - (BIN - BI0);                //  Number of elements to pad in target GPU buffer
+    for( int i=0; i!=numPad; ++i ) {                            //  Loop over elements to pad
+      targetHost.push_back(0);                                  //   Pad x position in GPU buffer
+      targetHost.push_back(0);                                  //   Pad y position in GPU buffer
+      targetHost.push_back(0);                                  //   Pad z position in GPU buffer
+      targetHost.push_back(0);                                  //   Pad target value in GPU buffer
+    }                                                           //  End loop over elements to pad
+    P2P();                                                      //  Evaluate P2P kernel
+    for( B_iter B=BI0; B!=BIN; ++B ) {                          //  Loop over target bodies
+      B->pot += targetHost[4*(B-BI0)+0];                        //   Copy potential from GPU buffer
+      B->acc[0] += targetHost[4*(B-BI0)+1];                     //   Copy acceleration from GPU buffer
+      B->acc[1] += targetHost[4*(B-BI0)+2];                     //   Copy acceleration from GPU buffer
+      B->acc[2] += targetHost[4*(B-BI0)+3];                     //   Copy acceleration from GPU buffer
+    }                                                           //  End loop over target bodies
+    keysHost.clear();                                           //  Clear keys vector
+    rangeHost.clear();                                          //  Clear range vector
+    constHost.clear();                                          //  Clear const vector
+    targetHost.clear();                                         //  Clear target vector
+    sourceHost.clear();                                         //  Clear source vector
+  }                                                             // Endif for CPU/GPU switch
 }
 
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M

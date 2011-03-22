@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "laplace.h"
 
 void Kernel::initialize() {}
 
@@ -93,18 +94,6 @@ void Kernel::M2P() {
     B->acc[2] += CJ->M[1] * (3 * dist[2] * dist[0] / R5);
     B->acc[2] += CJ->M[2] * (3 * dist[2] * dist[1] / R5);
     B->acc[2] += CJ->M[3] * (3 * dist[2] * dist[2] / R5 - 1 / R3);
-  }
-}
-
-void Kernel::P2P() {
-  for( B_iter BI=BI0; BI!=BIN; ++BI ) {
-    for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {
-      vect dist = BI->X - BJ->X - Xperiodic;
-      real invR = 1 / std::sqrt(norm(dist) + EPS2);
-      real invR3 = BJ->Q * invR * invR * invR;
-      BI->pot += BJ->Q * invR;
-      BI->acc -= dist * invR3;
-    }
   }
 }
 

@@ -1,34 +1,36 @@
-#include "types.h"
+#include "dataset.h"
 #include "evaluator.h"
 
 int main() {
   const int numBodies = 100;
-  Bodies bodiesI(numBodies);
-  Bodies bodiesI2(numBodies);
-  Bodies bodiesJ(numBodies);
+  Bodies ibodies(numBodies);
+  Bodies ibodies2(numBodies);
+  Bodies jbodies(numBodies);
   Cells  icells;
   Cells  jcells;
+  Dataset D;
   Evaluator E;
   E.initialize();
 
   for( int it=0; it!=10; ++it ) {
     real dist = (1 << it) / 2;
-    for( B_iter B=bodiesI.begin(); B!=bodiesI.end(); ++B ) {
+    for( B_iter B=ibodies.begin(); B!=ibodies.end(); ++B ) {
       for( int d=0; d!=3; ++d ) {
         B->X[d] = -rand() / (1. + RAND_MAX) - dist;
       }
-      B->acc = B->pot = 0;
     }
-    for( B_iter B=bodiesJ.begin(); B!=bodiesJ.end(); ++B ) {
+    for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
       for( int d=0; d!=3; ++d ) {
         B->X[d] = rand() / (1. + RAND_MAX);
       }
-      B->Q = 1.0 / bodiesJ.size();
     }
+    D.initSource(jbodies);
+    bool IeqJ = false;
+    D.initTarget(ibodies,IeqJ);
 
     Cell cell;
     cell.NLEAF  = numBodies;
-    cell.LEAF   = bodiesJ.begin();
+    cell.LEAF   = jbodies.begin();
     cell.X      = 0.5;
     cell.M      = 0;
     cell.I      = 8;
@@ -48,7 +50,7 @@ int main() {
     E.addM2L(jcells.begin());
     E.evalM2L(icells);
     cell.NLEAF  = numBodies;
-    cell.LEAF   = bodiesI.begin();
+    cell.LEAF   = ibodies.begin();
     cell.X      = -0.5 - dist;
     cell.L      = 0;
     cell.I      = 1;
@@ -63,24 +65,14 @@ int main() {
     icells.clear();
     jcells.clear();
 
-    bodiesI2 = bodiesI;
-    for( B_iter B=bodiesI2.begin(); B!=bodiesI2.end(); ++B ) {
-      B->acc = B->pot = 0;
-    }
-    E.evalP2P(bodiesI2,bodiesJ);
+    ibodies2 = ibodies;
+    D.initTarget(ibodies2,IeqJ);
+    E.evalP2P(ibodies2,jbodies);
 
-    B_iter B  = bodiesI.begin();
-    B_iter B2 = bodiesI2.begin();
-    real potDiff = 0, potNorm = 0, accDiff = 0, accNorm = 0;
-    for( int i=0; i!=numBodies; ++i,++B,++B2 ) {
-      potDiff += (B->pot - B2->pot) * (B->pot - B2->pot);
-      potNorm += B2->pot * B2->pot;
-      accDiff += norm(B->acc - B2->acc);
-      accNorm += norm(B2->acc);
-    }
+    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+    D.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
     std::cout << "Distance      : " << dist << std::endl;
-    std::cout << "Error (pot)   : " << std::sqrt(potDiff/potNorm) << std::endl;
-    std::cout << "Error (acc)   : " << std::sqrt(accDiff/accNorm) << std::endl;
+    D.printError(diff1,norm1,diff2,norm2);
   }
   E.finalize();
 }
