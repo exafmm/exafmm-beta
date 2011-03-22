@@ -57,6 +57,17 @@ void cart2sph(real& r, real& theta, real& phi, vect dist) {
   }
 }
 
+void sph2cart(real r, real theta, real phi, vect spherical, vect &cartesian) {
+  cartesian[0] += sin(theta) * cos(phi) * spherical[0]
+                + cos(theta) * cos(phi) / r * spherical[1]
+                - sin(phi) / r / sin(theta) * spherical[2];
+  cartesian[1] += sin(theta) * sin(phi) * spherical[0]
+                + cos(theta) * sin(phi) / r * spherical[1]
+                + cos(phi) / r / sin(theta) * spherical[2];
+  cartesian[2] += cos(theta) * spherical[0]
+                - sin(theta) / r * spherical[1];
+}
+
 void evalMultipole(real rho, real alpha, real beta) {
   double x = std::cos(alpha);
   double y = std::sin(alpha);
@@ -124,39 +135,6 @@ void evalLocal(real rho, real alpha, real beta) {
     }
     pn = -pn * fact * s;
     fact += 2;
-  }
-}
-
-void Kernel::M2M_CPU() {
-  vect dist = CI->X - CJ->X;
-  real rho, alpha, beta;
-  cart2sph(rho,alpha,beta,dist);
-  evalMultipole(rho,alpha,-beta);
-  for( int j=0; j!=P; ++j ) {
-    for( int k=0; k<=j; ++k ) {
-      const int jk = j * j + j + k;
-      const int jks = j * (j + 1) / 2 + k;
-      complex M = 0;
-      for( int n=0; n<=j; ++n ) {
-        for( int m=-n; m<=std::min(k-1,n); ++m ) {
-          if( j-n >= k-m ) {
-            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-            const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
-            const int nm    = n * n + n + m;
-            M += CJ->M[jnkms]*std::pow(I,double(m-abs(m)))*Ynm[nm]*double(ODDEVEN(n)*Anm[nm]*Anm[jnkm]/Anm[jk]);
-          }
-        }
-        for( int m=k; m<=n; ++m ) {
-          if( j-n >= m-k ) {
-            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-            const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-            const int nm    = n * n + n + m;
-            M += std::conj(CJ->M[jnkms])*Ynm[nm]*double(ODDEVEN(k+n+m)*Anm[nm]*Anm[jnkm]/Anm[jk]);
-          }
-        }
-      }
-      CI->M[jks] += M;
-    }
   }
 }
 

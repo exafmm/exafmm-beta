@@ -13,26 +13,26 @@ void Dataset::initTarget(Bodies &bodies, bool IeqJ) {           // Initialize ta
   }                                                             // End loop over bodies
 }
 
-void Dataset::readTarget(Bodies &bodies) {
-  std::ifstream file("data",std::ios::in | std::ios::ate | std::ios::binary);
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-    file >> B->pot;
-    file >> B->acc[0];
-    file >> B->acc[1];
-    file >> B->acc[2];
-  }
-  file.close();
+void Dataset::readTarget(Bodies &bodies) {                      // Read target data from file
+  std::ifstream file("data",std::ios::in | std::ios::ate | std::ios::binary);// Open file
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
+    file >> B->pot;                                             //  Read data for potential
+    file >> B->acc[0];                                          //  Read data for x acceleration
+    file >> B->acc[1];                                          //  Read data for y acceleration
+    file >> B->acc[2];                                          //  Read data for z acceleration
+  }                                                             // End loop over bodies
+  file.close();                                                 // Close file
 }
 
-void Dataset::writeTarget(Bodies &bodies) {
-  std::ofstream file("data",std::ios::out | std::ios::app | std::ios::binary);
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-    file << B->pot << std::endl;
-    file << B->acc[0] << std::endl;
-    file << B->acc[1] << std::endl;
-    file << B->acc[2] << std::endl;
-  }
-  file.close();
+void Dataset::writeTarget(Bodies &bodies) {                     // Write target data to file
+  std::ofstream file("data",std::ios::out | std::ios::app | std::ios::binary);// Open file
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
+    file << B->pot << std::endl;                                //  Write data for potential
+    file << B->acc[0] << std::endl;                             //  Write data for x acceleration
+    file << B->acc[1] << std::endl;                             //  Write data for y acceleration
+    file << B->acc[2] << std::endl;                             //  Write data for z acceleration
+  }                                                             // End loop over bodies
+  file.close();                                                 // Close file
 }
 
 void Dataset::evalError(Bodies &bodies, Bodies &bodies2,        // Evaluate error

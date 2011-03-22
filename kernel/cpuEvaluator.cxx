@@ -1,4 +1,6 @@
+#define EVALUATOR
 #include "evaluator.h"
+#undef EVALUATOR
 
 void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
   BI0 = ibodies.begin();                                        // Set target bodies begin iterator

@@ -18,8 +18,8 @@
 int MPIRANK = 0;                                                // MPI rank (for debugging serial class in MPI run)
 int MPISIZE = 1;                                                // MPI size (for debugging serial class in MPI run)
 #else
-extern int MPIRANK;
-extern int MPISIZE;
+extern int MPIRANK;                                             // Avoid multiple definition
+extern int MPISIZE;                                             // Aviod multiple definition
 #endif
 
 typedef long                 bigint;                            // Big integer type
@@ -28,9 +28,14 @@ typedef std::complex<double> complex;                           // Complex numbe
 
 const int  P       = 3;                                         // Order of expansions
 #ifdef Cartesian
-const int  NCOEF   = P*(P+1)*(P+2)/6;                           // Number of coefficients for Taylor expansion
+const int  NTERM   = P*(P+1)*(P+2)/6;                           // Number of terms for cartesian expansion
 #else
-const int  NCOEF   = P*(P+1)/2;                                 // Number of coefficients for spherical harmonics
+const int  NTERM   = P*(P+1)/2;                                 // Number of terms for spherical harmonics
+#endif
+#ifdef Laplace
+const int  NCOEF   = NTERM;                                     // Number of coefficients for Laplace kernel
+#else
+const int  NCOEF   = 3 * NTERM;                                 // Number of coefficients for BiotSavart kernel
 #endif
 const int  NCRIT   = 1000;                                      // Number of bodies per cell
 const real THETA   = 1/sqrtf(4);                                // Box opening criteria
@@ -41,9 +46,17 @@ const int  THREADS = 64;                                        // Number of thr
 
 typedef vec<3,real>                            vect;            // 3-D vector type
 #ifdef Cartesian
-typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Taylor expansion
+#ifdef Laplace
+typedef vec<NTERM,real>                        coef;            // Multipole coefficient type for Cartesian Laplace
 #else
-typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical harmonics
+typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Cartesian BiotSavart
+#endif
+#else
+#ifdef Laplace
+typedef vec<NTERM,complex>                     coef;            // Multipole coefficient type for spherical Laplace
+#else
+typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical BiotSavart
+#endif
 #endif
 typedef std::vector<bigint>                    Bigints;         // Vector of big integer types
 typedef std::map<std::string,double>           Event;           // Map of event name to logged value
@@ -52,11 +65,24 @@ typedef std::map<std::string,double>::iterator E_iter;          // Iterator for 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   bigint I;                                                     // Cell index
   vect   X;                                                     // Position
+#ifdef Laplace
   real   Q;                                                     // Mass/charge
+#else
+#ifdef BiotSavart
+  vect   Q;                                                     // Vortex Strength
+  real   S;                                                     // Core radius
+#endif
+#endif
 };
 struct Body : JBody {                                           // All properties of a body
+#ifdef Laplace
   vect acc;                                                     // Acceleration
   real pot;                                                     // Potential
+#else
+#ifdef BiotSavart
+  vect vel;                                                     // Velocity
+#endif
+#endif
 };
 typedef std::vector<Body>              Bodies;                  // Vector of bodies
 typedef std::vector<Body>::iterator    B_iter;                  // Iterator for body vector

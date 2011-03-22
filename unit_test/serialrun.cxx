@@ -28,7 +28,9 @@ int main() {
 #endif
 
   jcells = cells;
+  T.startTimer("Downward     ");
   T.downward(cells,jcells,1);
+  T.stopTimer("Downward     ",T.printNow);
 
   if( IMAGES != 0 ) {
     T.startTimer("Set periodic ");
