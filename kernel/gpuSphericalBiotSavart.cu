@@ -763,8 +763,8 @@ __device__ void L2P_core(float *target, float r, float theta, float phi, float *
   float y = sinf(theta);
   if( fabs(y) < EPS ) y = 1 / EPS;
   float s = sqrtf(1 - x * x);
-  float spherical[3] = {0, 0, 0};
-  float cartesian[3] = {0, 0, 0};
+  float spherical[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  float cartesian[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
   float fact = 1;
   float pn = 1;
   float rhom = 1;
@@ -779,11 +779,21 @@ __device__ void L2P_core(float *target, float r, float theta, float phi, float *
     float p1 = p;
     p = x * (2 * m + 1) * p;
     float YnmTheta = anm * (p - (m + 1) * x * p1) / y;
-    float realj = ere * sourceShrd[2*i+0] - eim * sourceShrd[2*i+1];
-    float imagj = eim * sourceShrd[2*i+0] + ere * sourceShrd[2*i+1];
+    float realj = ere * sourceShrd[6*i+0] - eim * sourceShrd[6*i+1];
+    float imagj = eim * sourceShrd[6*i+0] + ere * sourceShrd[6*i+1];
     spherical[0] += 2 * m / r * Ynm * realj;
     spherical[1] += 2 * YnmTheta * realj;
     spherical[2] -= 2 * m * Ynm * imagj;
+    realj = ere * sourceShrd[6*i+2] - eim * sourceShrd[6*i+3];
+    imagj = eim * sourceShrd[6*i+2] + ere * sourceShrd[6*i+3];
+    spherical[3] += 2 * m / r * Ynm * realj;
+    spherical[4] += 2 * YnmTheta * realj;
+    spherical[5] -= 2 * m * Ynm * imagj;
+    realj = ere * sourceShrd[6*i+4] - eim * sourceShrd[6*i+5];
+    imagj = eim * sourceShrd[6*i+4] + ere * sourceShrd[6*i+5];
+    spherical[6] += 2 * m / r * Ynm * realj;
+    spherical[7] += 2 * YnmTheta * realj;
+    spherical[8] -= 2 * m * Ynm * imagj;
     rhom *= r;
     float rhon = rhom;
     for( int n=m+1; n<P; ++n ) {
@@ -794,20 +804,32 @@ __device__ void L2P_core(float *target, float r, float theta, float phi, float *
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
       YnmTheta = anm * ((n - m + 1) * p - (n + 1) * x * p1) / y;
-      realj = ere * sourceShrd[2*i+0] - eim * sourceShrd[2*i+1];
-      imagj = eim * sourceShrd[2*i+0] + ere * sourceShrd[2*i+1];
+      realj = ere * sourceShrd[6*i+0] - eim * sourceShrd[6*i+1];
+      imagj = eim * sourceShrd[6*i+0] + ere * sourceShrd[6*i+1];
       spherical[0] += 2 * n / r * Ynm * realj;
       spherical[1] += 2 * YnmTheta * realj;
       spherical[2] -= 2 * m * Ynm * imagj;
+      realj = ere * sourceShrd[6*i+2] - eim * sourceShrd[6*i+3];
+      imagj = eim * sourceShrd[6*i+2] + ere * sourceShrd[6*i+3];
+      spherical[3] += 2 * n / r * Ynm * realj;
+      spherical[4] += 2 * YnmTheta * realj;
+      spherical[5] -= 2 * m * Ynm * imagj;
+      realj = ere * sourceShrd[6*i+4] - eim * sourceShrd[6*i+5];
+      imagj = eim * sourceShrd[6*i+4] + ere * sourceShrd[6*i+5];
+      spherical[6] += 2 * n / r * Ynm * realj;
+      spherical[7] += 2 * YnmTheta * realj;
+      spherical[8] -= 2 * m * Ynm * imagj;
       rhon *= r;
     }
     pn = -pn * fact * s;
     fact += 2;
   }
-  sph2cart(r,theta,phi,spherical,cartesian);
-  target[0] += cartesian[0];
-  target[1] += cartesian[1];
-  target[2] += cartesian[2];
+  sph2cart(r,theta,phi,&spherical[0],&cartesian[0]);
+  sph2cart(r,theta,phi,&spherical[3],&cartesian[3]);
+  sph2cart(r,theta,phi,&spherical[6],&cartesian[6]);
+  target[0] += 0.25 / M_PI * (cartesian[5] - cartesian[7]);
+  target[1] += 0.25 / M_PI * (cartesian[6] - cartesian[2]);
+  target[2] += 0.25 / M_PI * (cartesian[1] - cartesian[3]);
 }
 
 __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
