@@ -1,3 +1,5 @@
+#ifndef laplace_h
+#define laplace_h
 #include "dataset.h"
 
 void Dataset::initSource(Bodies &bodies) {                      // Initialize source values
@@ -65,3 +67,5 @@ void Kernel::P2P_CPU() {
     }
   }
 }
+
+#endif

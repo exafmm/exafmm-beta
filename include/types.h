@@ -27,6 +27,13 @@ typedef float                real;                              // Real number t
 typedef std::complex<double> complex;                           // Complex number type
 
 const int  P       = 3;                                         // Order of expansions
+const int  NCRIT   = 1000;                                      // Number of bodies per cell
+const real THETA   = 1/sqrtf(4);                                // Box opening criteria
+const real EPS2    = 1e-4;                                      // Softening parameter
+const int  IMAGES  = 0;                                         // Number of periodic image sublevels
+const int  GPUS    = 4;                                         // Number of GPUs per node
+const int  THREADS = 64;                                        // Number of threads per thread-block
+
 #ifdef Cartesian
 const int  NTERM   = P*(P+1)*(P+2)/6;                           // Number of terms for cartesian expansion
 #else
@@ -37,12 +44,6 @@ const int  NCOEF   = NTERM;                                     // Number of coe
 #else
 const int  NCOEF   = 3 * NTERM;                                 // Number of coefficients for BiotSavart kernel
 #endif
-const int  NCRIT   = 1000;                                      // Number of bodies per cell
-const real THETA   = 1/sqrtf(4);                                // Box opening criteria
-const real EPS2    = 1e-4;                                      // Softening parameter
-const int  IMAGES  = 0;                                         // Number of periodic image sublevels
-const int  GPUS    = 4;                                         // Number of GPUs per node
-const int  THREADS = 64;                                        // Number of threads per thread-block
 
 typedef vec<3,real>                            vect;            // 3-D vector type
 #ifdef Cartesian
@@ -69,8 +70,13 @@ struct JBody {                                                  // Source proper
   real   Q;                                                     // Mass/charge
 #else
 #ifdef BiotSavart
-  vect   Q;                                                     // Vortex Strength
+  vect   Q;                                                     // Vortex strength
   real   S;                                                     // Core radius
+#else
+#ifdef Stretching
+  vect   Q;                                                     // Vortex strength
+  real   S;                                                     // Core radius
+#endif
 #endif
 #endif
 };
@@ -81,6 +87,10 @@ struct Body : JBody {                                           // All propertie
 #else
 #ifdef BiotSavart
   vect vel;                                                     // Velocity
+#else
+#ifdef Stretching
+  vect dQdt;                                                    // Change rate of vortex strength
+#endif
 #endif
 #endif
 };

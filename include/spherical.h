@@ -57,14 +57,15 @@ void cart2sph(real& r, real& theta, real& phi, vect dist) {
   }
 }
 
-void sph2cart(real r, real theta, real phi, vect spherical, vect &cartesian) {
-  cartesian[0] += sin(theta) * cos(phi) * spherical[0]
+template<typename T>
+void sph2cart(real r, real theta, real phi, T spherical, T &cartesian) {
+  cartesian[0] = sin(theta) * cos(phi) * spherical[0]
                 + cos(theta) * cos(phi) / r * spherical[1]
                 - sin(phi) / r / sin(theta) * spherical[2];
-  cartesian[1] += sin(theta) * sin(phi) * spherical[0]
+  cartesian[1] = sin(theta) * sin(phi) * spherical[0]
                 + cos(theta) * sin(phi) / r * spherical[1]
                 + cos(phi) / r / sin(theta) * spherical[2];
-  cartesian[2] += cos(theta) * spherical[0]
+  cartesian[2] = cos(theta) * spherical[0]
                 - sin(theta) / r * spherical[1];
 }
 

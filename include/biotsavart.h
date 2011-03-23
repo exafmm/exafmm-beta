@@ -1,3 +1,5 @@
+#ifndef biotsavart_h
+#define biotsavart_h
 #include "dataset.h"
 
 void Dataset::initSource(Bodies &bodies) {                      // Initialize source values
@@ -68,3 +70,5 @@ void Kernel::P2P_CPU() {
     }
   }
 }
+
+#endif

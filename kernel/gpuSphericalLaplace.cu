@@ -280,7 +280,8 @@ void Kernel::M2M_CPU() {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += CJ->M[jnkms]*std::pow(I,double(m-abs(m)))*Ynm[nm]*double(ODDEVEN(n)*Anm[nm]*Anm[jnkm]/Anm[jk]);
+            M += CJ->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+               * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
         for( int m=k; m<=n; ++m ) {
@@ -288,7 +289,8 @@ void Kernel::M2M_CPU() {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
-            M += std::conj(CJ->M[jnkms])*Ynm[nm]*double(ODDEVEN(k+n+m)*Anm[nm]*Anm[jnkm]/Anm[jk]);
+            M += std::conj(CJ->M[jnkms]) * Ynm[nm]
+               * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
       }

@@ -1,6 +1,6 @@
 #include "kernel.h"
 #include "spherical.h"
-#include "biotsavart.h"
+#include "stretching.h"
 
 void Kernel::initialize() {
   precalculate();
@@ -9,6 +9,8 @@ void Kernel::initialize() {
 void Kernel::P2M() {
   for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
     vect dist = B->X - CJ->X;
+    vec<3,complex> spherical;
+    vec<3,complex> cartesian;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalMultipole(rho,alpha,-beta);
@@ -16,9 +18,13 @@ void Kernel::P2M() {
       for( int m=0; m<=n; ++m ) {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
-        for( int d=0; d!=3; ++d ) {
-          CJ->M[3*nms+d] += double(B->Q[d]) * Ynm[nm];
-        }
+        spherical[0] = Ynm[nm] * double(n / rho);
+        spherical[1] = YnmTheta[nm];
+        spherical[2] = -Ynm[nm] * I * double(m);
+        sph2cart(rho,alpha,beta,spherical,cartesian);
+        CJ->M[3*nms+0] += cartesian[2] * double(B->Q[1]) - cartesian[1] * double(B->Q[2]);
+        CJ->M[3*nms+1] += cartesian[0] * double(B->Q[2]) - cartesian[2] * double(B->Q[0]);
+        CJ->M[3*nms+2] += cartesian[1] * double(B->Q[0]) - cartesian[0] * double(B->Q[1]);
       }
     }
   }
@@ -130,9 +136,9 @@ void Kernel::M2P() {
     for( int d=0; d!=3; ++d ) {
       sph2cart(r,theta,phi,spherical[d],cartesian[d]);
     }
-    B->vel[0] += 0.25 / M_PI * (cartesian[1][2] - cartesian[2][1]);
-    B->vel[1] += 0.25 / M_PI * (cartesian[2][0] - cartesian[0][2]);
-    B->vel[2] += 0.25 / M_PI * (cartesian[0][1] - cartesian[1][0]);
+    B->dQdt[0] -= 0.25 / M_PI * (B->Q[0] * cartesian[0][0] + B->Q[1] * cartesian[0][1] + B->Q[2] * cartesian[0][2]);
+    B->dQdt[1] -= 0.25 / M_PI * (B->Q[0] * cartesian[1][0] + B->Q[1] * cartesian[1][1] + B->Q[2] * cartesian[1][2]);
+    B->dQdt[2] -= 0.25 / M_PI * (B->Q[0] * cartesian[2][0] + B->Q[1] * cartesian[2][1] + B->Q[2] * cartesian[2][2]);
   }
 }
 
@@ -203,9 +209,9 @@ void Kernel::L2P() {
     for( int d=0; d!=3; ++d ) {
       sph2cart(r,theta,phi,spherical[d],cartesian[d]);
     }
-    B->vel[0] += 0.25 / M_PI * (cartesian[1][2] - cartesian[2][1]);
-    B->vel[1] += 0.25 / M_PI * (cartesian[2][0] - cartesian[0][2]);
-    B->vel[2] += 0.25 / M_PI * (cartesian[0][1] - cartesian[1][0]);
+    B->dQdt[0] -= 0.25 / M_PI * (B->Q[0] * cartesian[0][0] + B->Q[1] * cartesian[0][1] + B->Q[2] * cartesian[0][2]);
+    B->dQdt[1] -= 0.25 / M_PI * (B->Q[0] * cartesian[1][0] + B->Q[1] * cartesian[1][1] + B->Q[2] * cartesian[1][2]);
+    B->dQdt[2] -= 0.25 / M_PI * (B->Q[0] * cartesian[2][0] + B->Q[1] * cartesian[2][1] + B->Q[2] * cartesian[2][2]);
   }
 }
 
