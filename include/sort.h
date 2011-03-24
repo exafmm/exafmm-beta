@@ -1,5 +1,6 @@
 #ifndef sort_h
 #define sort_h
+#include "types.h"
 
 class Sort {                                                    // Custom bucket sort for body and cell structures
 private:

@@ -67,6 +67,10 @@ vtk: vtk.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	./a.out
 
+wrapper: wrapper.o $(OBJECT)
+	ar ruv ../lib/lib$(DEVICE)$(KERNEL).a $?
+	ranlib ../lib/lib$(DEVICE)$(KERNEL).a
+
 all      :
 	make index
 	make topdown

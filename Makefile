@@ -1,14 +1,14 @@
 .SUFFIXES: .cxx .cu .o
 
-#DEVICE  = cpu
-DEVICE  = gpu
+DEVICE  = cpu
+#DEVICE  = gpu
 
 #EXPAND  = Cartesian
 EXPAND  = Spherical
 
-#KERNEL  = Laplace
+KERNEL  = Laplace
 #KERNEL  = BiotSavart
-KERNEL  = Stretching
+#KERNEL  = Stretching
 
 CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O2 -fPIC -fopenmp\
 	-ffast-math -funroll-loops -fforce-addr -rdynamic -D_FILE_OFFSET_BITS=64\
@@ -28,7 +28,11 @@ endif
 .cu.o   :
 	$(NVCC) -c $? -o $@ $(LFLAGS)
 cleanall:
-	rm -rf *.o *.out *.sum ../kernel/*.o
+	rm -f ../unit_test/*.o ../unit_test/*.out ../unit_test/*.sum ../unit_test/time 
+	rm -f ../example/*.o ../example/*.out ../example/time ../kernel/*.o ../wrapper/*.o
+cleanlib:
+	rm -f ../lib/*.a
 save    :
 	make cleanall
+	make cleanlib
 	tar zcvf ../../exafmm.tgz ../../exafmm
