@@ -5,8 +5,8 @@ __global__ void testKernel(int val) {
 }
 
 int main() {
-cudaPrintfInit();
-testKernel<<< 2, 3 >>>(10);
-cudaPrintfDisplay(stdout, true);
-cudaPrintfEnd();
+  cudaPrintfInit();
+  testKernel<<< 2, 3 >>>(10);
+  cudaPrintfDisplay(stdout, true);
+  cudaPrintfEnd();
 }
