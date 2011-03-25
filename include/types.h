@@ -34,30 +34,37 @@ const int  IMAGES  = 0;                                         // Number of per
 const int  GPUS    = 4;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 
-#ifdef Cartesian
+#if Cartesian
 const int  NTERM   = P*(P+1)*(P+2)/6;                           // Number of terms for cartesian expansion
-#else
+#elif Spherical
 const int  NTERM   = P*(P+1)/2;                                 // Number of terms for spherical harmonics
 #endif
-#ifdef Laplace
+
+#if Laplace
 const int  NCOEF   = NTERM;                                     // Number of coefficients for Laplace kernel
-#else
+#elif BiotSavart
 const int  NCOEF   = 3 * NTERM;                                 // Number of coefficients for BiotSavart kernel
+#elif Stretching
+const int  NCOEF   = 3 * NTERM;                                 // Number of coefficients for Stretching kernel
 #endif
 
 typedef vec<3,real>                            vect;            // 3-D vector type
-#ifdef Cartesian
-#ifdef Laplace
+#if Cartesian
+ #if Laplace
 typedef vec<NTERM,real>                        coef;            // Multipole coefficient type for Cartesian Laplace
-#else
+ #elif BiotSavart
 typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Cartesian BiotSavart
-#endif
-#else
-#ifdef Laplace
+ #elif Stretching
+typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Cartesian Stretching
+ #endif
+#elif Spherical
+ #if Laplace
 typedef vec<NTERM,complex>                     coef;            // Multipole coefficient type for spherical Laplace
-#else
+ #elif BiotSavart
 typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical BiotSavart
-#endif
+ #elif Stretching
+typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical Stretching
+ #endif
 #endif
 typedef std::vector<bigint>                    Bigints;         // Vector of big integer types
 typedef std::map<std::string,double>           Event;           // Map of event name to logged value
@@ -66,32 +73,24 @@ typedef std::map<std::string,double>::iterator E_iter;          // Iterator for 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   bigint I;                                                     // Cell index
   vect   X;                                                     // Position
-#ifdef Laplace
+#if Laplace
   real   Q;                                                     // Mass/charge
-#else
-#ifdef BiotSavart
+#elif BiotSavart
   vect   Q;                                                     // Vortex strength
   real   S;                                                     // Core radius
-#else
-#ifdef Stretching
+#elif Stretching
   vect   Q;                                                     // Vortex strength
   real   S;                                                     // Core radius
-#endif
-#endif
 #endif
 };
 struct Body : JBody {                                           // All properties of a body
-#ifdef Laplace
+#if Laplace
   vect acc;                                                     // Acceleration
   real pot;                                                     // Potential
-#else
-#ifdef BiotSavart
+#elif BiotSavart
   vect vel;                                                     // Velocity
-#else
-#ifdef Stretching
+#elif Stretching
   vect dQdt;                                                    // Change rate of vortex strength
-#endif
-#endif
 #endif
 };
 typedef std::vector<Body>              Bodies;                  // Vector of bodies
