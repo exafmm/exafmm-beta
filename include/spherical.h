@@ -4,45 +4,10 @@
 const int  P2 = P * P;
 const int  P4 = P2 * P2;
 const real EPS = 1e-6;
-double *prefactor, *Anm;
-complex *Ynm, *YnmTheta, *Cnm, I(0.0,1.0);
+static double *prefactor, *Anm;
+static complex *Ynm, *YnmTheta, *Cnm, I(0.0,1.0);
 
-void Kernel::precalculate() {
-  prefactor = new double  [4*P2];
-  Anm       = new double  [4*P2];
-  Ynm       = new complex [4*P2];
-  YnmTheta  = new complex [4*P2];
-  Cnm       = new complex [P4];
-
-  for( int n=0; n!=2*P; ++n ) {
-    for( int m=-n; m<=n; ++m ) {
-      int nm = n*n+n+m;
-      int nabsm = abs(m);
-      double fnmm = 1.0;
-      for( int i=1; i<=n-m; ++i ) fnmm *= i;
-      double fnpm = 1.0;
-      for( int i=1; i<=n+m; ++i ) fnpm *= i;
-      double fnma = 1.0;
-      for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
-      double fnpa = 1.0;
-      for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
-      prefactor[nm] = std::sqrt(fnma/fnpa);
-      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
-    }
-  }
-
-  for( int j=0, jk=0, jknm=0; j!=P; ++j ) {
-    for( int k=-j; k<=j; ++k, ++jk ){
-      for( int n=0, nm=0; n!=P; ++n ) {
-        for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
-          const int jnkm = (j+n)*(j+n)+j+n+m-k;
-          Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
-        }
-      }
-    }
-  }
-}
-
+namespace {
 void cart2sph(real& r, real& theta, real& phi, vect dist) {
   r = std::sqrt(norm(dist))+EPS;
   theta = std::acos(dist[2] / r);
@@ -138,13 +103,6 @@ void evalLocal(real rho, real alpha, real beta) {
     fact += 2;
   }
 }
-
-void Kernel::postcalculate() {
-  delete[] prefactor;
-  delete[] Anm;
-  delete[] Ynm;
-  delete[] YnmTheta;
-  delete[] Cnm;
 }
 
 #endif

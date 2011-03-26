@@ -61,36 +61,41 @@ public:
     R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
   }
 
-  void initialize();
+  void LaplacePre();
+  void LaplaceP2M();
+  void LaplaceM2M();
+  void LaplaceM2M_CPU();
+  void LaplaceM2L();
+  void LaplaceM2P();
+  void LaplaceP2P();
+  void LaplaceP2P_CPU();
+  void LaplaceL2L();
+  void LaplaceL2P();
+  void LaplacePost();
 
-  void precalculate();
+  void BiotSavartPre();
+  void BiotSavartP2M();
+  void BiotSavartM2M();
+  void BiotSavartM2M_CPU();
+  void BiotSavartM2L();
+  void BiotSavartM2P();
+  void BiotSavartP2P();
+  void BiotSavartP2P_CPU();
+  void BiotSavartL2L();
+  void BiotSavartL2P();
+  void BiotSavartPost();
 
-  void allocGPU();
-
-  void deallocGPU();
-
-  void P2M();
-
-  void M2M();
-
-  void M2M_CPU();
-
-  void M2L();
-
-  void M2P();
-
-  void P2P();
-
-  void P2P_CPU();
-
-  void L2L();
-
-  void L2P();
-
-  void postcalculate();
-
-  void finalize();
-
+  void StretchingPre();
+  void StretchingP2M();
+  void StretchingM2M();
+  void StretchingM2M_CPU();
+  void StretchingM2L();
+  void StretchingM2P();
+  void StretchingP2P();
+  void StretchingP2P_CPU();
+  void StretchingL2L();
+  void StretchingL2P();
+  void StretchingPost();
 };
 
 #endif

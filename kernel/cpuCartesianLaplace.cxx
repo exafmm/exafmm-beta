@@ -1,9 +1,10 @@
 #include "kernel.h"
+#include "cartesian.h"
 #include "laplace.h"
 
-void Kernel::initialize() {}
+void Kernel::LaplacePre() {}
 
-void Kernel::P2M() {
+void Kernel::LaplaceP2M() {
   for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
     vect dist = CJ->X - B->X;
     CJ->M[0] += B->Q;
@@ -19,7 +20,7 @@ void Kernel::P2M() {
   }
 }
 
-void Kernel::M2M_CPU() {
+void Kernel::LaplaceM2M_CPU() {
   vect dist = CI->X - CJ->X;
   CI->M[0] += CJ->M[0];
   CI->M[1] += CJ->M[1] +  dist[0] * CJ->M[0];
@@ -33,7 +34,7 @@ void Kernel::M2M_CPU() {
   CI->M[9] += CJ->M[9] + (dist[2] * CJ->M[1] + dist[0] * CJ->M[3] + dist[2] * dist[0] * CJ->M[0]) / 2;
 }
 
-void Kernel::M2L() {
+void Kernel::LaplaceM2L() {
   vect dist = CI->X - CJ->X - Xperiodic;
   real R = std::sqrt(norm(dist));
   real R3 = R * R * R;
@@ -68,7 +69,7 @@ void Kernel::M2L() {
   CI->L[9] += CJ->M[0] * (3 * dist[2] * dist[0] / R5);
 }
 
-void Kernel::M2P() {
+void Kernel::LaplaceM2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     real R = std::sqrt(norm(dist));
@@ -97,7 +98,7 @@ void Kernel::M2P() {
   }
 }
 
-void Kernel::L2L() {
+void Kernel::LaplaceL2L() {
   vect dist = CI->X - CJ->X;
   for( int i=0; i<10; ++i )
     CI->L[i] += CJ->L[i];
@@ -121,7 +122,7 @@ void Kernel::L2L() {
   CI->L[3] += CJ->L[6] * dist[2];
 }
 
-void Kernel::L2P() {
+void Kernel::LaplaceL2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
     B->pot += CI->L[0];
@@ -149,4 +150,4 @@ void Kernel::L2P() {
   }
 }
 
-void Kernel::finalize() {}
+void Kernel::LaplacePost() {}

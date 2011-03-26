@@ -2,6 +2,7 @@
 #define sort_h
 #include "types.h"
 
+namespace {
 class Sort {                                                    // Custom bucket sort for body and cell structures
 private:
   std::vector<int> bucket,bucket1,bucket2,permut1,permut2;      // Bucket and permutation for sorting
@@ -108,7 +109,7 @@ public:
       sortLarge(value,vbuffer,Imin,numBucket,ascend,begin,end); //  Cell bucket sort for large indices
     }                                                           // Endif for range of indices
   }
-
 };
+}
 
 #endif

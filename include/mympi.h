@@ -4,6 +4,7 @@
 #include <typeinfo>
 #include "types.h"
 
+namespace {
 class MyMPI {                                                   // My own MPI utilities
 protected:
   const int WAIT;                                               // Waiting time between output of different ranks
@@ -125,7 +126,7 @@ public:
       std::cout << std::endl;                                   //  New line
     }                                                           // Endif for my rank
   }
-
 };
+}
 
 #endif

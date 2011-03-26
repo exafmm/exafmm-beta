@@ -3,7 +3,52 @@
 #include "laplace.h"
 #include "pregpu.h"
 
-__device__ void P2M_core(float *target, float rho, float alpha, float beta, float source) {
+void Kernel::LaplacePre() {
+  startTimer("Init GPU     ");                                  // Start timer
+  cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
+#ifdef CUPRINTF
+  cudaPrintfInit();                                             // Initialize cuPrintf
+#endif
+  cudaThreadSynchronize();                                      // Sync GPU threads
+  stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
+  eraseTimer("Init GPU     ");                                  // Erase timer
+
+  prefactor = new double  [4*P2];
+  Anm       = new double  [4*P2];
+  Ynm       = new complex [4*P2];
+  YnmTheta  = new complex [4*P2];
+  Cnm       = new complex [P4];
+
+  for( int n=0; n!=2*P; ++n ) {
+    for( int m=-n; m<=n; ++m ) {
+      int nm = n*n+n+m;
+      int nabsm = abs(m);
+      double fnmm = 1.0;
+      for( int i=1; i<=n-m; ++i ) fnmm *= i;
+      double fnpm = 1.0;
+      for( int i=1; i<=n+m; ++i ) fnpm *= i;
+      double fnma = 1.0;
+      for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
+      double fnpa = 1.0;
+      for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
+      prefactor[nm] = std::sqrt(fnma/fnpa);
+      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
+    }
+  }
+
+  for( int j=0, jk=0, jknm=0; j!=P; ++j ) {
+    for( int k=-j; k<=j; ++k, ++jk ){
+      for( int n=0, nm=0; n!=P; ++n ) {
+        for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
+          const int jnkm = (j+n)*(j+n)+j+n+m-k;
+          Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
+        }
+      }
+    }
+  }
+}
+
+__device__ void LaplaceP2M_core(float *target, float rho, float alpha, float beta, float source) {
   __shared__ float factShrd[2*P];
   __shared__ float YnmShrd[NTERM];
   float fact = 1;
@@ -47,7 +92,7 @@ __device__ void P2M_core(float *target, float rho, float alpha, float beta, floa
   target[1] += source * YnmShrd[i] * eim;
 }
 
-__global__ void P2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void LaplaceP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
   float target[2] = {0, 0};
@@ -75,7 +120,7 @@ __global__ void P2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
         d.z = sourceShrd[4*i+2] - targetShrd[2];
         float rho,alpha,beta;
         cart2sph(rho,alpha,beta,d.x,d.y,d.z);
-        P2M_core(target,rho,alpha,beta,sourceShrd[4*i+3]);
+        LaplaceP2M_core(target,rho,alpha,beta,sourceShrd[4*i+3]);
       }
     }
     int iblok = (size-1)/THREADS;
@@ -93,7 +138,7 @@ __global__ void P2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
       d.z = sourceShrd[4*i+2] - targetShrd[2];
       float rho,alpha,beta;
       cart2sph(rho,alpha,beta,d.x,d.y,d.z);
-      P2M_core(target,rho,alpha,beta,sourceShrd[4*i+3]);
+      LaplaceP2M_core(target,rho,alpha,beta,sourceShrd[4*i+3]);
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
@@ -101,7 +146,7 @@ __global__ void P2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[2*itarget+1] = target[1];
 }
 
-__device__ void M2M_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
+__device__ void LaplaceM2M_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
   int j = floor(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
@@ -146,7 +191,7 @@ __device__ void M2M_core(float *target, float beta, float *factShrd, float *YnmS
   }
 }
 
-__global__ void M2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void LaplaceM2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
   float target[2] = {0, 0};
@@ -174,14 +219,14 @@ __global__ void M2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
     float rho,alpha,beta;
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
     evalMultipole(YnmShrd,rho,alpha,factShrd);
-    M2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
+    LaplaceM2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[2*itarget+0] = target[0];
   targetGlob[2*itarget+1] = target[1];
 }
 
-void Kernel::M2M_CPU() {
+void Kernel::LaplaceM2M_CPU() {
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -216,7 +261,7 @@ void Kernel::M2M_CPU() {
   }
 }
 
-__device__ void M2L_core(float *target, float  beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
+__device__ void LaplaceM2L_core(float *target, float  beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
   int j = floor(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
@@ -256,7 +301,7 @@ __device__ void M2L_core(float *target, float  beta, float *factShrd, float *Ynm
   }
 }
 
-__global__ void M2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
   float D0 = -constDevc[0];
@@ -294,7 +339,7 @@ __global__ void M2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
             float rho,alpha,beta;
             cart2sph(rho,alpha,beta,d.x,d.y,d.z);
             evalLocal(YnmShrd,rho,alpha,factShrd);
-            M2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
+            LaplaceM2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
           }
         }
       }
@@ -305,7 +350,7 @@ __global__ void M2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[2*itarget+1] = target[1];
 }
 
-__device__ void M2P_core(float *target, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
+__device__ void LaplaceM2P_core(float *target, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
   float x = cosf(theta);
   float y = sinf(theta);
   if( fabs(y) < EPS ) y = 1 / EPS;
@@ -359,7 +404,7 @@ __device__ void M2P_core(float *target, float r, float theta, float phi, float *
   target[3] += cartesian[2];
 }
 
-__global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void LaplaceM2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
   float D0 = -constDevc[0];
@@ -399,7 +444,7 @@ __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
             d.z += targetX[2] - sourceGlob[begin+2];
             float r,theta,phi;
             cart2sph(r,theta,phi,d.x,d.y,d.z);
-            M2P_core(target,r,theta,phi,factShrd,sourceShrd);
+            LaplaceM2P_core(target,r,theta,phi,factShrd,sourceShrd);
           }
         }
       }
@@ -411,7 +456,7 @@ __global__ void M2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[4*itarget+3] = target[3];
 }
 
-__device__ inline void P2P_core(float *target, float *targetX, float *sourceShrd, float3 d, int i) {
+__device__ inline void LaplaceP2P_core(float *target, float *targetX, float *sourceShrd, float3 d, int i) {
   d.x += targetX[0];
   d.x -= sourceShrd[4*i+0];
   d.y += targetX[1];
@@ -426,7 +471,7 @@ __device__ inline void P2P_core(float *target, float *targetX, float *sourceShrd
   target[3] -= d.z * invR3;
 }
 
-__global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void LaplaceP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
   float D0 = -constDevc[0];
@@ -460,7 +505,7 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
               d.z = iz * D0;
 #pragma unroll 64
               for( int i=0; i<THREADS; ++i ) {
-                P2P_core(target,targetX,sourceShrd,d,i);
+                LaplaceP2P_core(target,targetX,sourceShrd,d,i);
               }
             }
           }
@@ -487,7 +532,7 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
             d.y = iy * D0;
             d.z = iz * D0;
             for( int i=0; i<size-iblok*THREADS; ++i ) {
-              P2P_core(target,targetX,sourceShrd,d,i);
+              LaplaceP2P_core(target,targetX,sourceShrd,d,i);
             }
           }
         }
@@ -500,7 +545,7 @@ __global__ void P2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
   targetGlob[4*itarget+3] = target[3];
 }
 
-__device__ void L2L_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
+__device__ void LaplaceL2L_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
   int j = floor(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
@@ -542,7 +587,7 @@ __device__ void L2L_core(float *target, float beta, float *factShrd, float *YnmS
   }
 }
 
-__global__ void L2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void LaplaceL2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
   float target[2] = {0, 0};
@@ -570,14 +615,14 @@ __global__ void L2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
     float rho,alpha,beta;
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
     evalMultipole(YnmShrd,rho,alpha,factShrd);
-    L2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
+    LaplaceL2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[2*itarget+0] = target[0];
   targetGlob[2*itarget+1] = target[1];
 }
 
-__device__ void L2P_core(float *target, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
+__device__ void LaplaceL2P_core(float *target, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
   float x = cosf(theta);
   float y = sinf(theta);
   if( fabs(y) < EPS ) y = 1 / EPS;
@@ -631,7 +676,7 @@ __device__ void L2P_core(float *target, float r, float theta, float phi, float *
   target[3] += cartesian[2];
 }
 
-__global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void LaplaceL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
   float targetX[3];
@@ -661,12 +706,24 @@ __global__ void L2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float 
     __syncthreads();
     float r,theta,phi;
     cart2sph(r,theta,phi,d.x,d.y,d.z);
-    L2P_core(target,r,theta,phi,factShrd,sourceShrd);
+    LaplaceL2P_core(target,r,theta,phi,factShrd,sourceShrd);
   }
   targetGlob[4*itarget+0] = target[0];
   targetGlob[4*itarget+1] = target[1];
   targetGlob[4*itarget+2] = target[2];
   targetGlob[4*itarget+3] = target[3];
+}
+
+void Kernel::LaplacePost() {
+  delete[] prefactor;
+  delete[] Anm;
+  delete[] Ynm;
+  delete[] YnmTheta;
+  delete[] Cnm;
+#ifdef CUPRINTF
+  cudaPrintfDisplay(stdout, true);                              // Print cuPrintf buffer to display
+  cudaPrintfEnd();                                              // Finalize cuPrintf
+#endif
 }
 
 #include "postgpu.h"

@@ -2,11 +2,43 @@
 #include "spherical.h"
 #include "laplace.h"
 
-void Kernel::initialize() {
-  precalculate();
+void Kernel::LaplacePre() {
+  prefactor = new double  [4*P2];
+  Anm       = new double  [4*P2];
+  Ynm       = new complex [4*P2];
+  YnmTheta  = new complex [4*P2];
+  Cnm       = new complex [P4];
+
+  for( int n=0; n!=2*P; ++n ) {
+    for( int m=-n; m<=n; ++m ) {
+      int nm = n*n+n+m;
+      int nabsm = abs(m);
+      double fnmm = 1.0;
+      for( int i=1; i<=n-m; ++i ) fnmm *= i;
+      double fnpm = 1.0;
+      for( int i=1; i<=n+m; ++i ) fnpm *= i;
+      double fnma = 1.0;
+      for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
+      double fnpa = 1.0;
+      for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
+      prefactor[nm] = std::sqrt(fnma/fnpa);
+      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
+    }
+  }
+
+  for( int j=0, jk=0, jknm=0; j!=P; ++j ) {
+    for( int k=-j; k<=j; ++k, ++jk ){
+      for( int n=0, nm=0; n!=P; ++n ) {
+        for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
+          const int jnkm = (j+n)*(j+n)+j+n+m-k;
+          Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
+        }
+      }
+    }
+  }
 }
 
-void Kernel::P2M() {
+void Kernel::LaplaceP2M() {
   for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
     vect dist = B->X - CJ->X;
     real rho, alpha, beta;
@@ -22,7 +54,7 @@ void Kernel::P2M() {
   }
 }
 
-void Kernel::M2M_CPU() {
+void Kernel::LaplaceM2M_CPU() {
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -57,7 +89,7 @@ void Kernel::M2M_CPU() {
   }
 }
 
-void Kernel::M2L() {
+void Kernel::LaplaceM2L() {
   vect dist = CI->X - CJ->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -88,7 +120,7 @@ void Kernel::M2L() {
   }
 }
 
-void Kernel::M2P() {
+void Kernel::LaplaceM2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     vect spherical = 0;
@@ -118,7 +150,7 @@ void Kernel::M2P() {
   }
 }
 
-void Kernel::L2L() {
+void Kernel::LaplaceL2L() {
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -151,7 +183,7 @@ void Kernel::L2L() {
   }
 }
 
-void Kernel::L2P() {
+void Kernel::LaplaceL2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
     vect spherical = 0;
@@ -181,6 +213,10 @@ void Kernel::L2P() {
   }
 }
 
-void Kernel::finalize() {
-  postcalculate();
+void Kernel::LaplacePost() {
+  delete[] prefactor;
+  delete[] Anm;
+  delete[] Ynm;
+  delete[] YnmTheta;
+  delete[] Cnm;
 }

@@ -3,6 +3,7 @@
 #include "sort.h"
 #include "evaluator.h"
 
+namespace {
 class TreeStructure : public Evaluator, public Sort {           // Base class for tree structure
 public:
   Bodies buffer;                                                // Buffer for comm & sort
@@ -181,7 +182,7 @@ public:
     evalL2L(cells);                                             // Evaluate L2L kernel
     evalL2P(cells);                                             // Evaluate L2P kernel
   }
-
 };
+}
 
 #endif

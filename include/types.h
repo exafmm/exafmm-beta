@@ -14,13 +14,8 @@
 #include <utility>
 #include <vector>
 #include "vec.h"
-#ifdef EVALUATOR
-int MPIRANK = 0;                                                // MPI rank (for debugging serial class in MPI run)
-int MPISIZE = 1;                                                // MPI size (for debugging serial class in MPI run)
-#else
-extern int MPIRANK;                                             // Avoid multiple definition
-extern int MPISIZE;                                             // Aviod multiple definition
-#endif
+static int MPIRANK = 0;                                         // MPI rank (for debugging serial class in MPI run)
+static int MPISIZE = 1;                                         // MPI size (for debugging serial class in MPI run)
 
 typedef long                 bigint;                            // Big integer type
 typedef float                real;                              // Real number type

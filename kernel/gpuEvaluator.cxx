@@ -1,6 +1,35 @@
-#define EVALUATOR
-#include "evaluator.h"
-#undef EVALUATOR
+void Evaluator::setSourceBody() {                               // Set source buffer for bodies
+  startTimer("Set sourceB  ");                                  // Start timer
+  for( M_iter M=sourceSize.begin(); M!=sourceSize.end(); ++M ) {// Loop over source map
+    CJ = M->first;                                              //  Set source cell
+#if Laplace
+    sourceBegin[CJ] = sourceHost.size() / 4;                    //  Key : iterator, Value : offset of source leafs
+#elif BiotSavart
+    sourceBegin[CJ] = sourceHost.size() / 7;                    //  Key : iterator, Value : offset of source leafs
+#elif Stretching
+    sourceBegin[CJ] = sourceHost.size() / 7;                    //  Key : iterator, Value : offset of source leafs
+#endif
+    for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {      //  Loop over leafs in source cell
+      sourceHost.push_back(B->X[0]);                            //   Copy x position to GPU buffer
+      sourceHost.push_back(B->X[1]);                            //   Copy y position to GPU buffer
+      sourceHost.push_back(B->X[2]);                            //   Copy z position to GPU buffer
+#if Laplace
+      sourceHost.push_back(B->Q);                               //   Copy mass/charge to GPU buffer
+#elif BiotSavart
+      sourceHost.push_back(B->Q[0]);                            //   Copy x vortex strength to GPU buffer
+      sourceHost.push_back(B->Q[1]);                            //   Copy y vortex strength to GPU buffer
+      sourceHost.push_back(B->Q[2]);                            //   Copy z vortex strength to GPU buffer
+      sourceHost.push_back(B->S);                               //   Copy core radius to GPU buffer
+#elif Stretching
+      sourceHost.push_back(B->Q[0]);                            //   Copy x vortex strength to GPU buffer
+      sourceHost.push_back(B->Q[1]);                            //   Copy y vortex strength to GPU buffer
+      sourceHost.push_back(B->Q[2]);                            //   Copy z vortex strength to GPU buffer
+      sourceHost.push_back(B->S);                               //   Copy core radius to GPU buffer
+#endif
+    }                                                           //  End loop over leafs
+  }                                                             // End loop over source map
+  stopTimer("Set sourceB  ");                                   // Stop timer
+}
 
 void Evaluator::setSourceCell(bool isM=true) {                  // Set source buffer for cells
   startTimer("Set sourceC  ");                                  // Start timer
@@ -23,6 +52,64 @@ void Evaluator::setSourceCell(bool isM=true) {                  // Set source bu
     }                                                           //  Endif for source type
   }                                                             // End loop over source map
   stopTimer("Set sourceC  ");                                   // Stop timer
+}
+
+void Evaluator::setTargetBody(Cells &cells, Lists lists, Maps flags) {// Set target buffer for bodies
+  startTimer("Set targetB  ");                                  // Start timer
+  int key = 0;                                                  // Initialize key to range of coefs in source cells
+  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
+    if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
+      BI0 = CI->LEAF;                                           //   Set target bodies begin iterator
+      BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
+      int blocks = (BIN - BI0 - 1) / THREADS + 1;               //   Number of thread blocks needed for this target cell
+      for( int i=0; i!=blocks; ++i ) {                          //   Loop over thread blocks
+        keysHost.push_back(key);                                //    Save key to range of leafs in source cells
+      }                                                         //   End loop over thread blocks
+      key += 3*lists[CI-CI0].size()+1;                          //   Increment key counter
+      rangeHost.push_back(lists[CI-CI0].size());                //   Save size of interaction list
+      for( L_iter L=lists[CI-CI0].begin(); L!=lists[CI-CI0].end(); ++L ) {//  Loop over interaction list
+        CJ = *L;                                                //   Set source cell
+        rangeHost.push_back(sourceBegin[CJ]);                   //    Set begin index of coefs in source cell
+        rangeHost.push_back(sourceSize[CJ]);                    //    Set number of coefs in source cell
+        rangeHost.push_back(flags[CI-CI0][CJ]);                 //    Set periodic image flag of source cell
+      }                                                         //   End loop over interaction list
+#if Laplace
+      targetBegin[CI] = targetHost.size() / 4;                  //   Key : iterator, Value : offset of target leafs
+#elif BiotSavart
+      targetBegin[CI] = targetHost.size() / 3;                  //   Key : iterator, Value : offset of target leafs
+#elif Stretching
+      targetBegin[CI] = targetHost.size() / 6;                  //   Key : iterator, Value : offset of target leafs
+#endif
+      for( B_iter B=BI0; B!=BIN; ++B ) {                        //   Loop over leafs in target cell
+        targetHost.push_back(B->X[0]);                          //    Copy x position to GPU buffer
+        targetHost.push_back(B->X[1]);                          //    Copy y position to GPU buffer
+        targetHost.push_back(B->X[2]);                          //    Copy z position to GPU buffer
+#if Laplace
+        targetHost.push_back(0);                                //    Initialize target value of GPU buffer
+#elif BiotSavart
+#elif Stretching
+        targetHost.push_back(B->Q[0]);                          //    Copy x vortex strength to GPU buffer
+        targetHost.push_back(B->Q[1]);                          //    Copy y vortex strength to GPU buffer
+        targetHost.push_back(B->Q[2]);                          //    Copy z vortex strength to GPU buffer
+#endif
+      }                                                         //   End loop over leafs
+      int numPad = blocks * THREADS - (BIN - BI0);              //   Number of elements to pad in target GPU buffer
+      for( int i=0; i!=numPad; ++i ) {                          //   Loop over elements to pad
+        targetHost.push_back(0);                                //    Pad x position in GPU buffer
+        targetHost.push_back(0);                                //    Pad y position in GPU buffer
+        targetHost.push_back(0);                                //    Pad z position in GPU buffer
+#if Laplace
+        targetHost.push_back(0);                                //    Pad target value in GPU buffer
+#elif BiotSavart
+#elif Stretching
+        targetHost.push_back(0);                                //    Pad x vortex strength to GPU buffer
+        targetHost.push_back(0);                                //    Pad y vortex strength to GPU buffer
+        targetHost.push_back(0);                                //    Pad z vortex strength to GPU buffer
+#endif
+      }                                                         //   End loop over elements to pad
+    }                                                           //  End if for empty interation list
+  }                                                             // End loop over target cells
+  stopTimer("Set targetB  ");                                   // Stop timer
 }
 
 void Evaluator::setTargetCell(Cells &cells, Lists lists, Maps flags) {// Set target buffer for cells
@@ -56,6 +143,35 @@ void Evaluator::setTargetCell(Cells &cells, Lists lists, Maps flags) {// Set tar
     }                                                           //  End if for empty interation list
   }                                                             // End loop over target cells
   stopTimer("Set targetC  ");                                   // Stop timer
+}
+
+void Evaluator::getTargetBody(Cells &cells, Lists &lists) {     // Get body values from target buffer
+  startTimer("Get targetB  ");                                  // Start timer
+  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
+    if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
+      BI0 = CI->LEAF;                                           //   Set target bodies begin iterator
+      BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
+      int begin = targetBegin[CI];                              //   Offset of target leafs
+      for( B_iter B=BI0; B!=BIN; ++B ) {                        //   Loop over target bodies
+#if Laplace
+        B->pot    += targetHost[4*(begin+B-BI0)+0];             //    Copy potential from GPU buffer
+        B->acc[0] += targetHost[4*(begin+B-BI0)+1];             //    Copy acceleration from GPU buffer
+        B->acc[1] += targetHost[4*(begin+B-BI0)+2];             //    Copy acceleration from GPU buffer
+        B->acc[2] += targetHost[4*(begin+B-BI0)+3];             //    Copy acceleration from GPU buffer
+#elif BiotSavart
+        B->vel[0] += targetHost[3*(begin+B-BI0)+0];             //    Copy x velocity from GPU buffer
+        B->vel[1] += targetHost[3*(begin+B-BI0)+1];             //    Copy y velocity from GPU buffer
+        B->vel[2] += targetHost[3*(begin+B-BI0)+2];             //    Copy z velocity from GPU buffer
+#elif Stretching
+        B->dQdt[0] += targetHost[6*(begin+B-BI0)+0];            //    Copy change rate of x vortex strength from GPU buf
+        B->dQdt[1] += targetHost[6*(begin+B-BI0)+1];            //    Copy change rate of y vortex strength from GPU buf
+        B->dQdt[2] += targetHost[6*(begin+B-BI0)+2];            //    Copy change rate of z vortex strength from GPU buf
+#endif
+      }                                                         //   End loop over target bodies
+      lists[CI-CI0].clear();                                    //   Clear interaction list
+    }                                                           //  End if for empty interation list
+  }                                                             // End loop over target cells
+  stopTimer("Get targetB  ");                                   // Stop timer
 }
 
 void Evaluator::getTargetCell(Cells &cells, Lists &lists, bool isM=true) {// Get body values from target buffer
@@ -93,6 +209,107 @@ void Evaluator::clearBuffers() {                                // Clear GPU buf
   stopTimer("Clear buffer ");                                   // Stop timer
 }
 
+void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
+  BI0 = ibodies.begin();                                        // Set target bodies begin iterator
+  BIN = ibodies.end();                                          // Set target bodies end iterator
+  BJ0 = jbodies.begin();                                        // Set source bodies begin iterator
+  BJN = jbodies.end();                                          // Set source bodies end iterator
+  if( onCPU ) {                                                 // If calculation is to be done on CPU
+    Xperiodic = 0;                                              //  Set periodic coordinate offset
+#if Laplace
+    LaplaceP2P_CPU();                                           //  Evaluate P2P kernel
+#elif BiotSavart
+    BiotSavartP2P_CPU();                                        //  Evaluate P2P kernel
+#elif Stretching
+    StretchingP2P_CPU();                                        //  Evaluate P2P kernel
+#endif
+  } else {                                                      // If calculation is to be done on GPU
+    constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
+    for( B_iter B=BJ0; B!=BJN; ++B ) {                          //  Loop over source bodies
+      sourceHost.push_back(B->X[0]);                            //  Copy x position to GPU buffer
+      sourceHost.push_back(B->X[1]);                            //  Copy y position to GPU buffer
+      sourceHost.push_back(B->X[2]);                            //  Copy z position to GPU buffer
+#if Laplace
+      sourceHost.push_back(B->Q);                               //  Copy mass/charge to GPU buffer
+#elif BiotSavart
+      sourceHost.push_back(B->Q[0]);                            //  Copy x vortex strength to GPU buffer
+      sourceHost.push_back(B->Q[1]);                            //  Copy y vortex strength to GPU buffer
+      sourceHost.push_back(B->Q[2]);                            //  Copy z vortex strength to GPU buffer
+      sourceHost.push_back(B->S);                               //  Copy core radius to GPU buffer
+#elif Stretching
+      sourceHost.push_back(B->Q[0]);                            //  Copy x vortex strength to GPU buffer
+      sourceHost.push_back(B->Q[1]);                            //  Copy y vortex strength to GPU buffer
+      sourceHost.push_back(B->Q[2]);                            //  Copy z vortex strength to GPU buffer
+      sourceHost.push_back(B->S);                               //  Copy core radius to GPU buffer
+#endif
+    }                                                           //  End loop over source bodies
+    int key = 0;                                                //  Initialize key to range of leafs in source cells
+    int blocks = (BIN - BI0 - 1) / THREADS + 1;                 //  Number of thread blocks needed for this target cell
+    for( int i=0; i!=blocks; ++i ) {                            //  Loop over thread blocks
+      keysHost.push_back(key);                                  //   Save key to range of leafs in source cells
+    }                                                           //  End loop over thread blocks
+    rangeHost.push_back(1);                                     //  Save size of interaction list
+    rangeHost.push_back(0);                                     //  Set begin index of leafs
+    rangeHost.push_back(BJN-BJ0);                               //  Set number of leafs
+    rangeHost.push_back(Icenter);                               //  Set periodic image flag
+    for( B_iter B=BI0; B!=BIN; ++B ) {                          //  Loop over target bodies
+      targetHost.push_back(B->X[0]);                            //   Copy x position to GPU buffer
+      targetHost.push_back(B->X[1]);                            //   Copy y position to GPU buffer
+      targetHost.push_back(B->X[2]);                            //   Copy z position to GPU buffer
+#if Laplace
+      targetHost.push_back(0);                                  //   Initialize target value of GPU buffer
+#elif BiotSavart
+#elif Stretching
+      targetHost.push_back(B->Q[0]);                            //   Copy x vortex strength to GPU buffer
+      targetHost.push_back(B->Q[1]);                            //   Copy y vortex strength to GPU buffer
+      targetHost.push_back(B->Q[2]);                            //   Copy z vortex strength to GPU buffer
+#endif
+    }                                                           //  End loop over target bodies
+    int numPad = blocks * THREADS - (BIN - BI0);                //  Number of elements to pad in target GPU buffer
+    for( int i=0; i!=numPad; ++i ) {                            //  Loop over elements to pad
+      targetHost.push_back(0);                                  //   Pad x position in GPU buffer
+      targetHost.push_back(0);                                  //   Pad y position in GPU buffer
+      targetHost.push_back(0);                                  //   Pad z position in GPU buffer
+#if Laplace
+      targetHost.push_back(0);                                  //   Pad target value in GPU buffer
+#elif BiotSavart
+#elif Stretching
+      targetHost.push_back(0);                                  //   Pad x vortex strength to GPU buffer
+      targetHost.push_back(0);                                  //   Pad y vortex strength to GPU buffer
+      targetHost.push_back(0);                                  //   Pad z vortex strength to GPU buffer
+#endif
+    }                                                           //  End loop over elements to pad
+#if Laplace
+    LaplaceP2P();                                               //  Evaluate P2P kernel
+#elif BiotSavart
+    BiotSavartP2P();                                            //  Evaluate P2P kernel
+#elif Stretching
+    StretchingP2P();                                            //  Evaluate P2P kernel
+#endif
+    for( B_iter B=BI0; B!=BIN; ++B ) {                          //  Loop over target bodies
+#if Laplace
+      B->pot += targetHost[4*(B-BI0)+0];                        //   Copy potential from GPU buffer
+      B->acc[0] += targetHost[4*(B-BI0)+1];                     //   Copy acceleration from GPU buffer
+      B->acc[1] += targetHost[4*(B-BI0)+2];                     //   Copy acceleration from GPU buffer
+      B->acc[2] += targetHost[4*(B-BI0)+3];                     //   Copy acceleration from GPU buffer
+#elif BiotSavart
+      B->vel[0] += targetHost[3*(B-BI0)+0];                     //   Copy x velocity from GPU buffer
+      B->vel[1] += targetHost[3*(B-BI0)+1];                     //   Copy y velocity from GPU buffer
+      B->vel[2] += targetHost[3*(B-BI0)+2];                     //   Copy z velocity from GPU buffer
+#elif Stretching
+      B->dQdt[0] += targetHost[6*(B-BI0)+0];                    //   Copy change rate of x vortex strength from GPU buff
+      B->dQdt[1] += targetHost[6*(B-BI0)+1];                    //   Copy change rate of y vortex strength from GPU buff
+      B->dQdt[2] += targetHost[6*(B-BI0)+2];                    //   Copy change rate of z vortex strength from GPU buff
+#endif
+    }                                                           //  End loop over target bodies
+    keysHost.clear();                                           //  Clear keys vector
+    rangeHost.clear();                                          //  Clear range vector
+    constHost.clear();                                          //  Clear const vector
+    targetHost.clear();                                         //  Clear target vector
+    sourceHost.clear();                                         //  Clear source vector
+  }                                                             // Endif for CPU/GPU switch
+}
+
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
   startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator for target
@@ -109,7 +326,13 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
   stopTimer("Get list     ");                                   // Stop timer
   setSourceBody();                                              // Set source buffer for bodies
   setTargetCell(cells,listP2M,flagP2M);                         // Set target buffer for cells
-  P2M();                                                        // Evaluate P2M kernel
+#if Laplace
+  LaplaceP2M();                                                 // Evaluate P2M kernel
+#elif BiotSavart
+  BiotSavartP2M();                                              // Evaluate P2M kernel
+#elif Stretching
+  StretchingP2M();                                              // Evaluate P2M kernel
+#endif
   getTargetCell(cells,listP2M);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
 }
@@ -134,7 +357,13 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell();                                            //  Set source buffer for cells
     setTargetCell(cells,listM2M,flagM2M);                       //  Set target buffer for cells
-    M2M();                                                      //  Evaluate M2M kernel
+#if Laplace
+    LaplaceM2M();                                               //  Evaluate M2M kernel
+#elif BiotSavart
+    BiotSavartM2M();                                            //  Evaluate M2M kernel
+#elif Stretching
+    StretchingM2M();                                            //  Evaluate M2M kernel
+#endif
     getTargetCell(cells,listM2M);                               //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     level--;                                                    //  Decrement level
@@ -154,7 +383,13 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
   stopTimer("Get list     ");                                   // Stop timer
   setSourceCell();                                              // Set source buffer for cells
   setTargetCell(cells,listM2L,flagM2L);                         // Set target buffer for cells
-  M2L();                                                        // Evaluate M2L kernel
+#if Laplace
+  LaplaceM2L();                                                 // Evaluate M2L kernel
+#elif BiotSavart
+  BiotSavartM2L();                                              // Evaluate M2L kernel
+#elif Stretching
+  StretchingM2L();                                              // Evaluate M2L kernel
+#endif
   getTargetCell(cells,listM2L,false);                           // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
   listM2L.clear();                                              // Clear interaction lists
@@ -175,7 +410,13 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
   stopTimer("Get list     ");                                   // Stop timer
   setSourceCell();                                              // Set source buffer for cells
   setTargetBody(cells,listM2P,flagM2P);                         // Set target buffer for bodies
-  M2P();                                                        // Evaluate M2P kernel
+#if Laplace
+  LaplaceM2P();                                                 // Evaluate M2P kernel
+#elif BiotSavart
+  BiotSavartM2P();                                              // Evaluate M2P kernel
+#elif Stretching
+  StretchingM2P();                                              // Evaluate M2P kernel
+#endif
   getTargetBody(cells,listM2P);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
   listM2P.clear();                                              // Clear interaction lists
@@ -195,7 +436,13 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
   stopTimer("Get list     ");                                   // Stop timer
   setSourceBody();                                              // Set source buffer for bodies
   setTargetBody(cells,listP2P,flagP2P);                         // Set target buffer for bodies
-  P2P();                                                        // Evaluate P2P kernel
+#if Laplace
+  LaplaceP2P();                                                 // Evaluate P2P kernel
+#elif BiotSavart
+  BiotSavartP2P();                                              // Evaluate P2P kernel
+#elif Stretching
+  StretchingP2P();                                              // Evaluate P2P kernel
+#endif
   getTargetBody(cells,listP2P);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
   listP2P.clear();                                              // Clear interaction lists
@@ -224,7 +471,13 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell(false);                                       //  Set source buffer for cells
     setTargetCell(cells,listL2L,flagL2L);                       //  Set target buffer for cells
-    L2L();                                                      //  Evaluate L2L kernel
+#if Laplace
+    LaplaceL2L();                                               //  Evaluate L2L kernel
+#elif BiotSavart
+    BiotSavartL2L();                                            //  Evaluate L2L kernel
+#elif Stretching
+    StretchingL2L();                                            //  Evaluate L2L kernel
+#endif
     getTargetCell(cells,listL2L,false);                         //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     level++;                                                    //  Increment level
@@ -247,7 +500,13 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
   stopTimer("Get list     ");                                   // Stop timer
   setSourceCell(false);                                         // Set source buffer for cells
   setTargetBody(cells,listL2P,flagL2P);                         // Set target buffer for bodies
-  L2P();                                                        // Evaluate L2P kernel
+#if Laplace
+  LaplaceL2P();                                                 // Evaluate L2P kernel
+#elif BiotSavart
+  BiotSavartL2P();                                              // Evaluate L2P kernel
+#elif Stretching
+  StretchingL2P();                                              // Evaluate L2P kernel
+#endif
   getTargetBody(cells,listL2P);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
 }

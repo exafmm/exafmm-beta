@@ -22,6 +22,7 @@
 #include "types.h"
 const int maxGroups = 1000000;
 
+namespace {
 class vtkSliderCallback : public vtkCommand
 {
 public:
@@ -188,7 +189,7 @@ public:
     interactor->Initialize();
     interactor->Start();
   }
-
 };
+}
 
 #endif

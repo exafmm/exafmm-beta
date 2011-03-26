@@ -74,7 +74,6 @@ public:
       file <<  E->first << " " << E->second << std::endl;
     }
   }
-
 };
 
 #endif

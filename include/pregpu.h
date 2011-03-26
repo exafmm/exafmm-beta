@@ -1,13 +1,16 @@
 #ifndef pregpu_h
 #define pregpu_h
+#ifdef CUPRINTF
 #include "cuprintf.h"
+#endif
 
-int   *keysDevc;                                                // Keys on device
-int   *rangeDevc;                                               // Ranges on device
-float *sourceDevc;                                              // Sources on device
-float *targetDevc;                                              // Targets on device
+static int   *keysDevc;                                         // Keys on device
+static int   *rangeDevc;                                        // Ranges on device
+static float *sourceDevc;                                       // Sources on device
+static float *targetDevc;                                       // Targets on device
 __device__ __constant__ float constDevc[1];                     // Constants on device
 
+namespace {
 __device__ void cart2sph(float& r, float& theta, float& phi, float dx, float dy, float dz) {
   r = sqrtf(dx * dx + dy * dy + dz * dz)+EPS;
   theta = acosf(dz / r);
@@ -90,55 +93,6 @@ __device__ void evalLocal(float *YnmShrd, float rho, float alpha, float *factShr
     fact += 2;
   }
 }
-
-void Kernel::initialize() {
-  precalculate();
-  startTimer("Init GPU     ");                                  // Start timer
-  cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
-  cudaPrintfInit();
-  cudaThreadSynchronize();                                      // Sync GPU threads
-  stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
-  eraseTimer("Init GPU     ");                                  // Erase timer
-}
-
-void Kernel::allocGPU() {
-  cudaThreadSynchronize();
-  startTimer("cudaMalloc   ");
-  cudaMalloc( (void**) &keysDevc,   keysHost.size()*sizeof(int) );
-  cudaMalloc( (void**) &rangeDevc,  rangeHost.size()*sizeof(int) );
-  cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(float) );
-  cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(float) );
-  cudaThreadSynchronize();
-  stopTimer("cudaMalloc   ");
-  startTimer("cudaMemcpy   ");
-  cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),    cudaMemcpyHostToDevice);
-  cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),   cudaMemcpyHostToDevice);
-  cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(float),cudaMemcpyHostToDevice);
-  cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(float),cudaMemcpyHostToDevice);
-  cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(float));
-  cudaThreadSynchronize();
-  stopTimer("cudaMemcpy   ");
-}
-
-void Kernel::deallocGPU() {
-  cudaThreadSynchronize();
-  startTimer("cudaMemcpy   ");
-  cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(float),cudaMemcpyDeviceToHost);
-  cudaThreadSynchronize();
-  stopTimer("cudaMemcpy   ");
-  startTimer("cudaFree     ");
-  cudaFree(keysDevc);
-  cudaFree(rangeDevc);
-  cudaFree(targetDevc);
-  cudaFree(sourceDevc);
-  cudaThreadSynchronize();
-  stopTimer("cudaFree     ");
-}
-
-void Kernel::finalize() {
-  postcalculate();
-  cudaPrintfDisplay(stdout, true);
-  cudaPrintfEnd();
 }
 
 #endif

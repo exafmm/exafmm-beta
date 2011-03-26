@@ -2,10 +2,47 @@
 #define dataset_h
 #include "types.h"
 
+namespace {
 class Dataset {                                                 // Contains all the different datasets
 public:
-  void initSource(Bodies &bodies);                              // Initialize source values
-  void initTarget(Bodies &ibodies, bool IeqJ=true);             // Initialize target values
+  void initSource(Bodies &bodies) {                             // Initialize source values
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+#if Laplace
+      B->Q = 1. / bodies.size() / MPISIZE;                      //  Initialize mass/charge
+#elif BiotSavart
+      B->Q[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize x vortex strength
+      B->Q[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize y vortex strength
+      B->Q[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize z vortex strength
+      B->S    = 2 * powf(bodies.size(),-1.0/3);                 // Initialize core radius
+#elif Stretching
+      B->Q[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize x vortex strength
+      B->Q[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize y vortex strength
+      B->Q[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize z vortex strength
+      B->S    = 2 * powf(bodies.size(),-1.0/3);                 // Initialize core radius
+#endif
+    }                                                           // End loop over bodies
+
+  }
+
+  void initTarget(Bodies &bodies, bool IeqJ=true) {             // Initialize target values
+    srand(1);                                                   // Set seed for random number generator
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+#if Laplace
+      B->pot = -B->Q / std::sqrt(EPS2) * IeqJ;                  //  Initialize potential
+      B->acc = 0;                                               //  Initialize acceleration
+#elif BiotSavart
+      B->vel = 0 * IeqJ;                                        //  Initialize velocity
+#elif Stretching
+      if( !IeqJ ) {                                             //  If source and target are different
+        B->Q[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize x vortex strength
+        B->Q[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize y vortex strength
+        B->Q[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+      }                                                         //  Endif for different source and target
+      B->dQdt = 0;                                              //  Initialize change rate of vortex strength
+#endif
+    }                                                           // End loop over bodies
+
+  }
 
   void random(Bodies &bodies, int seed=1, int numSplit=1) {     // Random distribution in [-1,1]^3 cube
     srand(seed);                                                // Set seed for random number generator
@@ -61,12 +98,98 @@ public:
     initTarget(bodies);                                         // Initialize target values
   }
 
-  void readTarget(Bodies &bodies);                              // Read target values from file
-  void writeTarget(Bodies &bodies);                             // Write target values to file
-  void evalError(Bodies &bodies, Bodies &bodies2,               // Evaluate error
-                 real &diff1, real &norm1, real &diff2, real &norm2);
-  void printError(real diff1, real norm1, real diff2, real norm2);// Print relative L2 norm error
+  void readTarget(Bodies &bodies) {                             // Read target values from file
+    std::ifstream file("data",std::ios::in | std::ios::ate | std::ios::binary);// Open file
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+#if Laplace
+      file >> B->pot;                                           //  Read data for potential
+      file >> B->acc[0];                                        //  Read data for x acceleration
+      file >> B->acc[1];                                        //  Read data for y acceleration
+      file >> B->acc[2];                                        //  Read data for z acceleration
+#elif BiotSavart
+      file >> B->vel[0];                                        //  Read data for x velocity
+      file >> B->vel[1];                                        //  Read data for y velocity
+      file >> B->vel[2];                                        //  Read data for z velocity
+#elif Stretching
+      file >> B->dQdt[0];                                       //  Read data for change rate of x vortex strength
+      file >> B->dQdt[1];                                       //  Read data for change rate of y vortex strength
+      file >> B->dQdt[2];                                       //  Read data for change rate of z vortex strength
+#endif
+    }                                                           // End loop over bodies
+    file.close();                                               // Close file
+  }
 
+  void writeTarget(Bodies &bodies) {                            // Write target values to file
+    std::ofstream file("data",std::ios::out | std::ios::app | std::ios::binary);// Open file
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+#if Laplace
+      file << B->pot << std::endl;                              //  Write data for potential
+      file << B->acc[0] << std::endl;                           //  Write data for x acceleration
+      file << B->acc[1] << std::endl;                           //  Write data for y acceleration
+      file << B->acc[2] << std::endl;                           //  Write data for z acceleration
+#elif BiotSavart
+      file << B->vel[0] << std::endl;                           //  Write data for x velocity
+      file << B->vel[1] << std::endl;                           //  Write data for y velocity
+      file << B->vel[2] << std::endl;                           //  Write data for z velocity
+#elif Stretching
+      file << B->dQdt[0] << std::endl;                          //  Write data for change rate of x vortex strength
+      file << B->dQdt[1] << std::endl;                          //  Write data for change rate of y vortex strength
+      file << B->dQdt[2] << std::endl;                          //  Write data for change rate of z vortex strength
+#endif
+    }                                                           // End loop over bodies
+    file.close();                                               // Close file
+
+  }
+
+  void evalError(Bodies &bodies, Bodies &bodies2,               // Evaluate error
+                 real &diff1, real &norm1, real &diff2, real &norm2) {
+#if Laplace
+    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
+#ifdef DEBUG
+      std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;// Compare every element
+#endif
+      diff1 += (B->pot - B2->pot) * (B->pot - B2->pot);         // Difference of potential
+      norm1 += B2->pot * B2->pot;                               // Value of potential
+      diff2 += norm(B->acc - B2->acc);                          // Difference of acceleration
+      norm2 += norm(B2->acc);                                   // Value of acceleration
+    }                                                           // End loop over bodies & bodies2
+#elif BiotSavart
+    diff2 = norm2 = 0;                                          // Set unused values to 0
+    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
+#ifdef DEBUG
+      std::cout << B->I << " " << B->vel[0] << " " << B2->vel[0] << std::endl;// Compare every element
+#endif
+      diff1 += norm(B->vel - B2->vel);                          // Difference of velocity
+      norm1 += norm(B2->vel);                                   // Value of velocity
+    }                                                           // End loop over bodies & bodies2
+#elif Stretching
+    diff2 = norm2 = 0;                                          // Set unused values to 0
+    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
+#ifdef DEBUG
+      std::cout << B->I << " " << B->dQdt[0] << " " << B2->dQdt[0] << std::endl;// Compare every element
+#endif
+      diff1 += norm(B->dQdt - B2->dQdt);                        // Difference of change rate of vortex strength
+      norm1 += norm(B2->dQdt);                                  // Value of change rate of vortex strength
+    }                                                           // End loop over bodies & bodies2
+#endif
+  }
+
+  void printError(real diff1, real norm1, real diff2, real norm2) {// Print relative L2 norm error
+#if Laplace
+  std::cout << "Error (pot)   : " << std::sqrt(diff1/norm1) << std::endl;
+  std::cout << "Error (acc)   : " << std::sqrt(diff2/norm2) << std::endl;
+#elif BiotSavart
+  vect dummy = diff2; dummy = norm2;                            // Use the values so compiler does not complain
+  std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
+#elif Stretching
+  vect dummy = diff2; dummy = norm2;                            // Use the values so compiler does not complain
+  std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
+#endif
+  }
 };
+}
 
 #endif

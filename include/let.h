@@ -2,6 +2,7 @@
 #define let_h
 #include "partition.h"
 
+namespace {
 class LocalEssentialTree : public Partition {                   // Handles all the communication in this code
 private:
   JBodies sendBodies;                                           // Send buffer for bodies
@@ -449,7 +450,7 @@ public:
     sendCells.clear();                                          // Clear send buffer
     recvCells.clear();                                          // Clear recv buffer
   }
-
 };
+}
 
 #endif

@@ -3,6 +3,7 @@
 #include "mympi.h"
 #include "construct.h"
 
+namespace {
 class Partition : public MyMPI, public TreeConstructor {        // Handles all the partitioning of domains
 private:
   int numCells1D;                                               // Number of cells in one dimension (leaf level)
@@ -436,7 +437,7 @@ public:
     delete[] rdsp;                                              // Delete recv displacement
     stopTimer("Partition    ",printNow);                        // Stop timer & print
   }
-
 };
+}
 
 #endif

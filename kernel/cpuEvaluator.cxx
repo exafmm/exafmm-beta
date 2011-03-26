@@ -1,21 +1,29 @@
-#define EVALUATOR
-#include "evaluator.h"
-#undef EVALUATOR
-
 void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
   BI0 = ibodies.begin();                                        // Set target bodies begin iterator
   BIN = ibodies.end();                                          // Set target bodies end iterator
   BJ0 = jbodies.begin();                                        // Set source bodies begin iterator
   BJN = jbodies.end();                                          // Set source bodies end iterator
   Xperiodic = 0 * onCPU;                                        // Set periodic coordinate offset (onCPU is dummy)
-  P2P_CPU();                                                    // Evaluate P2P kernel
+#if Laplace
+  LaplaceP2P_CPU();                                             // Evaluate P2P kernel
+#elif BiotSavart
+  BiotSavartP2P_CPU();                                          // Evaluate P2P kernel
+#elif Stretching
+  StretchingP2P_CPU();                                          // Evaluate P2P kernel
+#endif
 }
 
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
   startTimer("evalP2M      ");                                  // Start timer
   for( CJ=cells.begin(); CJ!=cells.end(); ++CJ ) {              // Loop over cells
     CJ->M = CJ->L = 0;                                          //  Initialize multipole & local coefficients
-    P2M();                                                      //  Evaluate P2M kernel
+#if Laplace
+    LaplaceP2M();                                               //  Evaluate P2M kernel
+#elif BiotSavart
+    BiotSavartP2M();                                            //  Evaluate P2M kernel
+#elif Stretching
+    StretchingP2M();                                            //  Evaluate P2M kernel
+#endif
   }                                                             // End loop over cells
   stopTimer("evalP2M      ");                                   // Stop timer
 }
@@ -25,7 +33,13 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
   CJ0 = cells.begin();                                          // Set begin iterator
   for( CJ=cells.begin(); CJ!=cells.end()-1; ++CJ ) {            // Loop over cells bottomup (except root cell)
     CI = CJ0 + CJ->PARENT;                                      //  Set target cell iterator
-    M2M_CPU();                                                  //  Evaluate M2M kernel
+#if Laplace
+    LaplaceM2M_CPU();                                           //  Evaluate M2M kernel
+#elif BiotSavart
+    BiotSavartM2M_CPU();                                        //  Evaluate M2M kernel
+#elif Stretching
+    StretchingM2M_CPU();                                        //  Evaluate M2M kernel
+#endif
   }                                                             // End loop over cells
   stopTimer("evalM2M      ");                                   // Stop timer
 }
@@ -45,7 +59,13 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
               Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
               Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
               Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
-              M2L();                                            //       Evaluate M2L kernel
+#if Laplace
+              LaplaceM2L();                                     //       Evaluate M2L kernel
+#elif BiotSavart
+              BiotSavartM2L();                                  //       Evaluate M2L kernel
+#elif Stretching
+              StretchingM2L();                                  //       Evaluate M2L kernel
+#endif
             }                                                   //      Endif for periodic flag
           }                                                     //     End loop over x periodic direction
         }                                                       //    End loop over y periodic direction
@@ -73,7 +93,13 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
               Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
               Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
               Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
-              M2P();                                            //       Evaluate M2P kernel
+#if Laplace
+              LaplaceM2P();                                     //       Evaluate M2P kernel
+#elif BiotSavart
+              BiotSavartM2P();                                  //       Evaluate M2P kernel
+#elif Stretching
+              StretchingM2P();                                  //       Evaluate M2P kernel
+#endif
             }                                                   //      Endif for periodic flag
           }                                                     //     End loop over x periodic direction
         }                                                       //    End loop over y periodic direction
@@ -105,7 +131,13 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
               Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
               Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
               Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
-              P2P_CPU();                                        //       Evaluate P2P kernel
+#if Laplace
+              LaplaceP2P_CPU();                                 //       Evaluate P2P kernel
+#elif BiotSavart
+              BiotSavartP2P_CPU();                              //       Evaluate P2P kernel
+#elif Stretching
+              StretchingP2P_CPU();                              //       Evaluate P2P kernel
+#endif
             }                                                   //      Endif for periodic flag
           }                                                     //     End loop over x periodic direction
         }                                                       //    End loop over y periodic direction
@@ -123,7 +155,13 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
   CI0 = cells.begin();                                          // Set begin iterator
   for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {          // Loop over cells topdown (except root cell)
     CJ = CI0 + CI->PARENT;                                      //  Set source cell iterator
-    L2L();                                                      //  Evaluate L2L kernel
+#if Laplace
+    LaplaceL2L();                                               //  Evaluate L2L kernel
+#elif BiotSavart
+    BiotSavartL2L();                                            //  Evaluate L2L kernel
+#elif Stretching
+    StretchingL2L();                                            //  Evaluate L2L kernel
+#endif
   }                                                             // End loop over cells topdown
   stopTimer("evalL2L      ");                                   // Stop timer
 }
@@ -131,7 +169,15 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
 void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
   startTimer("evalL2P      ");                                  // Start timer
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells
-    if( CI->NCHILD == 0 ) L2P();                                //  If cell is a twig evaluate L2P kernel
+    if( CI->NCHILD == 0 ) {                                     //  If cell is a twig
+#if Laplace
+      LaplaceL2P();                                             //   Evaluate L2P kernel
+#elif BiotSavart
+      BiotSavartL2P();                                          //   Evaluate L2P kernel
+#elif Stretching
+      StretchingL2P();                                          //   Evaluate L2P kernel
+#endif
+    }                                                           //  Endif for twig
   }                                                             // End loop over cells topdown
   stopTimer("evalL2P      ");                                   // Stop timer
 }

@@ -2,6 +2,7 @@
 #define evaluator_h
 #include "kernel.h"
 
+namespace {
 class Evaluator : public Kernel {                               // Evaluator is the interface between tree and kernel
 protected:
   C_iter    CI0;                                                // icells.begin()
@@ -131,23 +132,6 @@ public:
     return jbodies;                                             // Return vector for periodic images of bodies
   }
 
-  void setSourceBody();                                         // Set source buffer for bodies
-  void setSourceCell(bool isM);                                 // Set source buffer for cells
-  void setTargetBody(Cells &cells, Lists lists, Maps flags);    // Set target buffer for bodies
-  void setTargetCell(Cells &cells, Lists lists, Maps flags);    // Set target buffer for cells
-  void getTargetBody(Cells &cells, Lists &lists);               // Get body values from target buffer
-  void getTargetCell(Cells &cells, Lists &lists, bool isM);     // Get cell values from target buffer
-  void clearBuffers();                                          // Clear GPU buffers
-
-  void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);// Evaluate P2P kernel (all pairs)
-  void evalP2M(Cells &twigs);                                   // Evaluate P2M kernel
-  void evalM2M(Cells &cells);                                   // Evaluate M2M kernel
-  void evalM2L(Cells &cells);                                   // Evaluate M2L kernel
-  void evalM2P(Cells &cells);                                   // Evaluate M2P kernel
-  void evalP2P(Cells &cells);                                   // Evaluate P2P kernel (near field)
-  void evalL2L(Cells &cells);                                   // Evaluate L2L kernel
-  void evalL2P(Cells &cells);                                   // Evaluate L2P kernel
-
   void traverse(Cells &cells, Cells &jcells, int method) {      // Traverse tree to get interaction list
     C_iter root = cells.end() - 1;                              // Iterator for root target cell
     C_iter jroot = jcells.end() - 1;                            // Iterator for root source cell
@@ -232,7 +216,13 @@ public:
       CI = pccells.end() - 1;                                   //  Set current cell as target for M2M
       while( !pjcells.empty() ) {                               //  While there are periodic jcells remaining
         CJ = pjcells.end() - 1;                                 //   Set current jcell as source for M2M
-        M2M_CPU();                                              //   Evaluate M2M on CPU (work is too small for GPU)
+#if Laplace
+        LaplaceM2M_CPU();                                       //   Evaluate M2M on CPU (work is too small for GPU)
+#elif BiotSavart
+        BiotSavartM2M_CPU();                                    //   Evaluate M2M on CPU (work is too small for GPU)
+#elif Stretching
+        StretchingM2M_CPU();                                    //   Evaluate M2M on CPU (work is too small for GPU)
+#endif
         pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
       }                                                         //  End while for remaining periodic jcells
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
@@ -274,6 +264,48 @@ public:
     }                                                           // End loop over sublevels of tree
   }
 
+  void initialize() {                                           // Initialize evaluator
+#if Laplace
+    LaplacePre();                                               // Precalculation of coefficients
+#elif BiotSavart
+    BiotSavartPre();                                            // Precalculation of coefficients
+#elif Stretching
+    StretchingPre();                                            // Precalculation of coefficients
+#endif
+  }
+
+  void finalize() {                                             // Finalize evaluator
+#if Laplace
+    LaplacePost();                                              // Delete temporary coefficients
+#elif BiotSavart
+    BiotSavartPost();                                           // Delete temporary coefficients
+#elif Stretching
+    StretchingPost();                                           // Delete temporary coefficients
+#endif
+  }
+
+  void setSourceBody();                                         // Set source buffer for bodies
+  void setSourceCell(bool isM);                                 // Set source buffer for cells
+  void setTargetBody(Cells &cells, Lists lists, Maps flags);    // Set target buffer for bodies
+  void setTargetCell(Cells &cells, Lists lists, Maps flags);    // Set target buffer for cells
+  void getTargetBody(Cells &cells, Lists &lists);               // Get body values from target buffer
+  void getTargetCell(Cells &cells, Lists &lists, bool isM);     // Get cell values from target buffer
+  void clearBuffers();                                          // Clear GPU buffers
+
+  void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);// Evaluate P2P kernel (all pairs)
+  void evalP2M(Cells &twigs);                                   // Evaluate P2M kernel
+  void evalM2M(Cells &cells);                                   // Evaluate M2M kernel
+  void evalM2L(Cells &cells);                                   // Evaluate M2L kernel
+  void evalM2P(Cells &cells);                                   // Evaluate M2P kernel
+  void evalP2P(Cells &cells);                                   // Evaluate P2P kernel (near field)
+  void evalL2L(Cells &cells);                                   // Evaluate L2L kernel
+  void evalL2P(Cells &cells);                                   // Evaluate L2P kernel
 };
+#if cpu
+#include "../kernel/cpuEvaluator.cxx"
+#elif gpu
+#include "../kernel/gpuEvaluator.cxx"
+#endif
+}
 
 #endif

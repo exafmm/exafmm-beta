@@ -2,6 +2,7 @@
 #define construct_h
 #include "tree.h"
 
+namespace {
 class TopDown : virtual public TreeStructure {                  // Topdown tree constructor class
 private:
   struct Node {                                                 // Nodes are primitive cells
@@ -270,7 +271,7 @@ public:
     Cells sticks;                                               // Sticks are twigs from other processes not twigs here
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
   }
-
 };
+}
 
 #endif
