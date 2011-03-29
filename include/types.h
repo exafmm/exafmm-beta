@@ -66,7 +66,9 @@ typedef std::map<std::string,double>           Event;           // Map of event 
 typedef std::map<std::string,double>::iterator E_iter;          // Iterator for event name map
 
 struct JBody {                                                  // Source properties of a body (stuff to send)
-  bigint I;                                                     // Cell index
+  int    IBODY;                                                 // Initial body numbering for sorting back
+  int    IPROC;                                                 // Initial process numbering for partitioning back
+  bigint ICELL;                                                 // Cell index
   vect   X;                                                     // Position
 #if Laplace
   real   Q;                                                     // Mass/charge
@@ -94,7 +96,7 @@ typedef std::vector<JBody>             JBodies;                 // Vector of sou
 typedef std::vector<JBody>::iterator   JB_iter;                 // Iterator for source body vector
 
 struct JCell {                                                  // Source properties of a cell (stuff to send)
-  bigint I;                                                     // Cell index
+  bigint ICELL;                                                 // Cell index
   coef   M;                                                     // Multipole coefficients
 };
 struct Cell : JCell {                                           // All properties of a cell

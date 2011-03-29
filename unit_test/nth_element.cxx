@@ -27,7 +27,7 @@ int main() {
 
   T.startTimer("Sort index   ");
   T.buffer.resize(bodies.size());
-  T.sort(bodies,T.buffer);
+  T.sortBodies(bodies,T.buffer);
   T.stopTimer("Sort index   ",T.printNow);
 
   T.startTimer("Nth element  ");
@@ -36,7 +36,7 @@ int main() {
   int nthLocal = T.splitBodies(bodies,iSplit);
   T.stopTimer("Nth element  ",T.printNow);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-    B->I = B-bodies.begin() > nthLocal;
+    B->ICELL = B-bodies.begin() > nthLocal;
   }
 
 #ifdef VTK

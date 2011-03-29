@@ -20,6 +20,10 @@ serialrun: serialrun.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) -DTOPDOWN
 	./a.out
 
+unsort: unsort.cxx $(OBJECT)
+	@$(CXX) $? $(LFLAGS) -DTOPDOWN
+	./a.out
+
 Nscaling: Nscaling.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 	./a.out

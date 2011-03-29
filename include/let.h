@@ -79,15 +79,15 @@ private:
         getLET(C0,CC,xmin,xmax);                                //   Traverse the tree further
       } else {                                                  //  If the cell is far or a twig
         JCell cell;                                             //   Set compact cell type for sending
-        cell.I = CC->I;                                         //   Set index of compact cell type
-        cell.M = CC->M;                                         //   Set Multipoles of compact cell type
+        cell.ICELL = CC->ICELL;                                 //   Set index of compact cell type
+        cell.M     = CC->M;                                     //   Set Multipoles of compact cell type
         sendCells.push_back(cell);                              //    Push cell into send buffer vector
       }                                                         //  Endif for interaction
     }                                                           // End loop over child cells
-    if( C->I == 0 && C->NCHILD == 0 ) {                         // If the root cell has no children
+    if( C->ICELL == 0 && C->NCHILD == 0 ) {                     // If the root cell has no children
       JCell cell;                                               //  Set compact cell type for sending
-      cell.I = C->I;                                            //  Set index of compact cell type
-      cell.M = C->M;                                            //  Set Multipoles of compact cell type
+      cell.ICELL = C->ICELL;                                    //  Set index of compact cell type
+      cell.M     = C->M;                                        //  Set Multipoles of compact cell type
       sendCells.push_back(cell);                                //  Push cell into send buffer vector
     }                                                           // Endif for root cells children
   }
@@ -142,13 +142,19 @@ private:
   void rbodies2twigs(Bodies &bodies, Cells &twigs) {            // Turn recv bodies to twigs
     for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {// Loop over recv bodies
       Body body;                                                //  Body structure
-      body.I = JB->I;                                           //  Set index of body
-      body.X = JB->X;                                           //  Set position of body
-      body.Q = JB->Q;                                           //  Set mass/charge of body
+      body.ICELL = JB->ICELL;                                   //  Set index of body
+      body.X     = JB->X;                                       //  Set position of body
+      body.Q     = JB->Q;                                       //  Set mass/charge of body
+#if Laplace
+#elif BiotSavart
+      body.S = JB->S;                                           //  Set core radius of body
+#elif Stretching
+      body.S = JB->S;                                           //  Set core radius of body
+#endif
       bodies.push_back(body);                                   //  Push body into bodies vector
     }                                                           // End loop over recv bodies
     buffer.resize(bodies.size());                               // Resize sort buffer
-    sort(bodies,buffer,false);                                  // Sort bodies in descending order
+    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
   }
 
@@ -167,10 +173,10 @@ private:
   void send2twigs(Bodies &bodies, Cells &twigs, int offTwigs) { // Turn send buffer to twigs
     for( JC_iter JC=sendCells.begin(); JC!=sendCells.begin()+offTwigs; ++JC ) {// Loop over send buffer
       Cell cell;                                                //  Cell structure
-      cell.I = JC->I;                                           //  Set index of cell
-      cell.M = JC->M;                                           //  Set multipole of cell
+      cell.ICELL = JC->ICELL;                                   //  Set index of cell
+      cell.M     = JC->M;                                       //  Set multipole of cell
       cell.NLEAF = cell.NCHILD = 0;                             //  Set number of leafs and children
-      cell.LEAF = bodies.end();                                 //  Set pointer to first leaf
+      cell.LEAF  = bodies.end();                                //  Set pointer to first leaf
       getCenter(cell);                                          //  Set center and radius
       twigs.push_back(cell);                                    //  Push cell into twig vector
     }                                                           // End loop over send buffer
@@ -180,10 +186,10 @@ private:
   void recv2twigs(Bodies &bodies, Cells &twigs) {               // Turn recv buffer to twigs
     for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC ) {// Loop over recv buffer
       Cell cell;                                                //  Cell structure
-      cell.I = JC->I;                                           //  Set index of cell
-      cell.M = JC->M;                                           //  Set multipole of cell
+      cell.ICELL = JC->ICELL;                                   //  Set index of cell
+      cell.M     = JC->M;                                       //  Set multipole of cell
       cell.NLEAF = cell.NCHILD = 0;                             //  Set number of leafs and children
-      cell.LEAF = bodies.end();                                 //  Set pointer to first leaf
+      cell.LEAF  = bodies.end();                                //  Set pointer to first leaf
       getCenter(cell);                                          //  Set center and radius
       twigs.push_back(cell);                                    //  Push cell into twig vector
     }                                                           // End loop over recv buffer
@@ -193,9 +199,9 @@ private:
     sortCells(twigs);                                           // Sort twigs in ascending order
     bigint index = -1;                                          // Initialize index counter
     while( !twigs.empty() ) {                                   // While twig vector is not empty
-      if( twigs.back().I != index ) {                           //  If twig's index is different from previous
+      if( twigs.back().ICELL != index ) {                       //  If twig's index is different from previous
         cells.push_back(twigs.back());                          //   Push twig into cell vector
-        index = twigs.back().I;                                 //   Update index counter
+        index = twigs.back().ICELL;                             //   Update index counter
       } else if ( twigs.back().NLEAF == 0 || !last ) {          //  Elseif twig-twig collision
         cells.back().M += twigs.back().M;                       //   Accumulate the multipole
       } else if ( cells.back().NLEAF == 0 ) {                   //  Elseif twig-body collision
@@ -228,13 +234,13 @@ private:
     startTimer("Sort bodies  ");                                // Start timer
     BottomUp::setIndex(bodies,0,0,0,true);                      // Set index of bodies
     buffer.resize(bodies.size());                               // Resize sort buffer
-    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     stopTimer("Sort bodies  ");                                 // Stop timer
     startTimer("Grow tree    ");                                // Start timer
     BottomUp::grow(bodies);                                     // Grow tree structure
     stopTimer("Grow tree    ");                                 // Stop timer
     startTimer("Sort bodies  ");                                // Start timer
-    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     stopTimer("Sort bodies  ");                                 // Stop timer
     startTimer("Bodies2twigs ");                                // Start timer
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
@@ -242,7 +248,7 @@ private:
     startTimer("Add sticks   ");                                // Start timer
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over cells
       if( sticks.size() > 0 ) {                                 //  If stick vector is not empty
-        if( C->I == sticks.back().I ) {                         //   If twig's index is equal to stick's index
+        if( C->ICELL == sticks.back().ICELL ) {                 //   If twig's index is equal to stick's index
           C->M += sticks.back().M;                              //    Accumulate multipole
           sticks.pop_back();                                    //    Pop last element from stick vector
         }                                                       //   Endif for twig's index
@@ -262,8 +268,8 @@ private:
   void sticks2send(Cells &sticks, int &offTwigs) {              // Turn sticks to send buffer
     while( !sticks.empty() ) {                                  // While stick vector is not empty
       JCell cell;                                               //  Cell structure
-      cell.I = sticks.back().I;                                 //  Set index of cell
-      cell.M = sticks.back().M;                                 //  Set multipole of cell
+      cell.ICELL = sticks.back().ICELL;                         //  Set index of cell
+      cell.M     = sticks.back().M;                             //  Set multipole of cell
       sendCells.push_back(cell);                                //  Push cell into send buffer
       sticks.pop_back();                                        //  Pop last element of stick vector
     }                                                           // End while for stick vector
@@ -337,9 +343,15 @@ public:
         C_iter C = scells[ic];                                  //   Set cell iterator
         for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {     //   Loop over bodies in that cell
           JBody body;                                           //    Set compact body type for sending
-          body.I = B->I;                                        //    Set cell index of compact body type
-          body.X = B->X;                                        //    Set position of compact body type
-          body.Q = B->Q;                                        //    Set mass/charge of compact body type
+          body.ICELL = B->ICELL;                                //    Set cell index of compact body type
+          body.X     = B->X;                                    //    Set position of compact body type
+          body.Q     = B->Q;                                    //    Set mass/charge of compact body type
+#if Laplace
+#elif BiotSavart
+          body.S     = B->S;                                    //    Set core radius of compact body type
+#elif Stretching
+          body.S     = B->S;                                    //    Set core radius of compact body type
+#endif
           sendBodies.push_back(body);                           //    Push it into the send buffer
         }                                                       //   End loop over bodies
       }                                                         //  End loop over cells

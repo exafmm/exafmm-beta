@@ -33,12 +33,12 @@ int main() {
   T.commCells(bodies,cells);
 
 #ifdef VTK
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->ICELL = 0;
   for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
     Body body;
-    body.I = 1;
-    body.X  = C->X;
-    body.Q = 0;
+    body.ICELL = 1;
+    body.X     = C->X;
+    body.Q     = 0;
     bodies.push_back(body);
   }
 

@@ -26,7 +26,7 @@ int main() {
   T.stopTimer("Set domain   ",T.printNow);
 
 #ifdef VTK
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->ICELL = 0;
 
   int Ncell = 0;
   vtkPlot vtk;

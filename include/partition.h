@@ -36,12 +36,12 @@ private:
     int maxBucket = send.size();                                // Maximum number of buckets
     int numBucket;                                              // Number of buckets
     int numSample = std::min(maxBucket/SIZES,numData);          // Number of local samples
-    MPI_Datatype MPI_TYPE = getType(data[0].I);                 // Get MPI data type
+    MPI_Datatype MPI_TYPE = getType(data[0].ICELL);             // Get MPI data type
     int *rcnt = new int [SIZES];                                // MPI recv count
     int *rdsp = new int [SIZES];                                // MPI recv displacement
     for( int i=0; i!=numSample; ++i ) {                         // Loop over local samples
       int stride = numData/numSample;                           //  Sampling stride
-      send[i] = data[lOffset + i * stride].I;                   //  Put sampled data in send buffer
+      send[i] = data[lOffset + i * stride].ICELL;               //  Put sampled data in send buffer
     }                                                           // End loop over samples
     MPI_Gather(&numSample,1,MPI_INT,                            // Gather size of sample data to rank 0
                rcnt,      1,MPI_INT,
@@ -119,12 +119,12 @@ protected:
       rcnt[i] *= bytes;                                         // Multiply recv count by byte size of data
       rdsp[i] *= bytes;                                         // Multiply recv displacement by byte size of data
     }                                                           // End loop over 0 and 1
-    MPI_Alltoallv(&bodies[0].I,scnt,sdsp,MPI_BYTE,              // Communicate bodies
-                  &buffer[0].I,rcnt,rdsp,MPI_BYTE,              // Using same buffer as sort buffer
+    MPI_Alltoallv(&bodies[0].ICELL,scnt,sdsp,MPI_BYTE,          // Communicate bodies
+                  &buffer[0].ICELL,rcnt,rdsp,MPI_BYTE,          // Using same buffer as sort buffer
                   MPI_COMM[2]);                                 // MPI_COMM[2] is for the one-to-one pair
     if( color[0] == color[1] ) bodies = buffer;                 // Don't update if leftover process
     buffer.resize(bodies.size());                               // Resize sort buffer
-    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
   }
 
   void bisectionScatter(Bodies &bodies, int nthLocal, int &newSize) {// Scattering from leftover proc
@@ -157,11 +157,11 @@ protected:
       sdsp[i] *= bytes;                                         //  Multiply send displacement by byte size of data
     }                                                           // End loop over group of processes
     rcnt *= bytes;                                              // Multiply recv count by byte size of data
-    MPI_Scatterv(&bodies[0].I,      scnt,sdsp,MPI_BYTE,         // Communicate bodies via MPI_Scatterv
-                 &buffer[oldSize].I,rcnt,     MPI_BYTE,         // Offset recv buffer by oldSize
+    MPI_Scatterv(&bodies[0].ICELL,      scnt,sdsp,MPI_BYTE,     // Communicate bodies via MPI_Scatterv
+                 &buffer[oldSize].ICELL,rcnt,     MPI_BYTE,     // Offset recv buffer by oldSize
                  numScatter,MPI_COMM[1]);                       // MPI_COMM[1] is used for scatter
     bodies = buffer;                                            // Copy recv buffer to bodies
-    if( key[1] != numScatter ) sort(bodies,buffer);             // Sort bodies in ascending order
+    if( key[1] != numScatter ) sortBodies(bodies,buffer);       // Sort bodies in ascending order
     delete[] scnt;                                              // Delete send count
     delete[] sdsp;                                              // Delete send displacement
   }
@@ -195,13 +195,13 @@ protected:
       rcnt[i] *= bytes;                                         //  Multiply recv count by byte size of data
       rdsp[i] *= bytes;                                         //  Multiply recv displacement by byte size of data
     }                                                           // End loop over group of processes
-    MPI_Gatherv(&bodies[0].I,      scnt,     MPI_BYTE,          // Communicate bodies via MPI_Gatherv
-                &buffer[oldSize].I,rcnt,rdsp,MPI_BYTE,          // Offset recv buffer by oldSize
+    MPI_Gatherv(&bodies[0].ICELL,      scnt,     MPI_BYTE,      // Communicate bodies via MPI_Gatherv
+                &buffer[oldSize].ICELL,rcnt,rdsp,MPI_BYTE,      // Offset recv buffer by oldSize
                 0,MPI_COMM[0]);                                 // MPI_COMM[0] is used for gather
     bodies = buffer;                                            // Copy recv buffer to bodies
     delete[] rcnt;                                              // Delete recv count
     delete[] rdsp;                                              // Delete send count
-    if( key[0] == 0 ) sort(bodies,buffer);                      // Sort bodies in ascending order
+    if( key[0] == 0 ) sortBodies(bodies,buffer);                // Sort bodies in ascending order
   }
 
 public:
@@ -243,14 +243,14 @@ public:
 
   void binBodies(Bodies &bodies, int d) {                       // Turn positions into indices of bins
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      B->I = bigint((B->X[d] - XMIN[0][d])                      // Bin body positions into integers
+      B->ICELL = bigint((B->X[d] - XMIN[0][d])                  // Bin body positions into integers
         / (XMAX[0][d] - XMIN[0][d]) * numCells1D);
     }                                                           // End loop over bodies
   }
 
   int splitBodies(Bodies &bodies, bigint iSplit) {              // Split bodies according to iSplit
     int nth = 0;                                                // Initialize splitting index
-    while( bodies[nth].I <= iSplit && nth < int(bodies.size()) ) nth++;// Determine end index of left side
+    while( bodies[nth].ICELL <= iSplit && nth < int(bodies.size()) ) nth++;// Determine end index of left side
     return nth;                                                 // Return end index of left side
   }
 
@@ -268,9 +268,9 @@ public:
     MPI_Wait(&rreq,MPI_STATUS_IGNORE);                          // Wait for recv to complete
 
     buffer.resize(newSize);                                     // Resize buffer to new number of bodies
-    MPI_Isend(&bodies[0].I,oldSize*bytes,MPI_BYTE,irecv,        // Send bodies to next rank
+    MPI_Isend(&bodies[0].ICELL,oldSize*bytes,MPI_BYTE,irecv,    // Send bodies to next rank
               1,MPI_COMM_WORLD,&sreq);
-    MPI_Irecv(&buffer[0].I,newSize*bytes,MPI_BYTE,isend,        // Receive bodies from previous rank
+    MPI_Irecv(&buffer[0].ICELL,newSize*bytes,MPI_BYTE,isend,    // Receive bodies from previous rank
               1,MPI_COMM_WORLD,&rreq);
     MPI_Wait(&sreq,MPI_STATUS_IGNORE);                          // Wait for send to complete
     MPI_Wait(&rreq,MPI_STATUS_IGNORE);                          // Wait for recv to complete
@@ -302,7 +302,7 @@ public:
       int ic=0, nth=0;                                          //  Initialize counters
       for( int i=0; i!=maxBucket; ++i ) isend[i] = 0;           //  Initialize bucket counter
       for( int i=0; i!=numData; ++i ) {                         //  Loop over range of data
-        while( data[lOffset + i].I > recv[ic] && ic < numBucket-1 ) ++ic;// Set counter to current bucket
+        while( data[lOffset + i].ICELL > recv[ic] && ic < numBucket-1 ) ++ic;// Set counter to current bucket
         isend[ic]++;                                            //   Increment bucket counter
       }                                                         //  End loop over data
       MPI_Reduce(isend,irecv,numBucket,MPI_TYPE,                //  Reduce bucket counter
@@ -341,7 +341,7 @@ public:
 
   void bisection(Bodies &bodies) {                              // Partitioning by recursive bisection
     startTimer("Partition    ");                                // Start timer
-    MPI_Datatype MPI_TYPE = getType(bodies[0].I);               // Get MPI data type
+    MPI_Datatype MPI_TYPE = getType(bodies[0].ICELL);           // Get MPI data type
     nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
     offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
      color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators
@@ -353,7 +353,7 @@ public:
     bigint nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];// Split at nth global element
     binBodies(bodies,2);                                        // Bin bodies into leaf level cells
     buffer.resize(numLocal);                                    // Resize sort buffer
-    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     bigint iSplit = nth_element(bodies,nthGlobal);              // Get cell index of nth global element
     int nthLocal = splitBodies(bodies,iSplit);                  // Split bodies based on iSplit
     for( int l=0; l!=LEVEL; ++l ) {                             // Loop over levels of N-D hypercube communication
@@ -380,7 +380,7 @@ public:
       nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];    //  Split at nth global element
       binBodies(bodies,2-(l+1)%3);                              //  Bin bodies into leaf level cells
       buffer.resize(numLocal);                                  //  Resize sort buffer
-      sort(bodies,buffer);                                      //  Sort bodies in ascending order
+      sortBodies(bodies,buffer);                                //  Sort bodies in ascending order
       iSplit = nth_element(bodies,nthGlobal,MPI_COMM[0]);       //  Get cell index of nth global element
       nthLocal = splitBodies(bodies,iSplit);                    //  Split bodies based on iSplit
     }                                                           // End loop over levels of N-D hypercube communication
@@ -393,7 +393,7 @@ public:
     int level = int(log(SIZE + 1) / M_LN2 / 3);                 // Max level/3 of N-D hypercube communication
     BottomUp::setIndex(bodies,level);                           // Set index of bodies for that level
     buffer.resize(bodies.size());                               // Resize sort buffer
-    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     int *scnt = new int [SIZE];                                 // Send count
     int *sdsp = new int [SIZE];                                 // Send displacement
     int *rcnt = new int [SIZE];                                 // Recv count
@@ -402,7 +402,7 @@ public:
       scnt[i] = 0;                                              //  Initialize send counts
     }                                                           // End loop over ranks
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      int i = B->I - ((1 << 3*level) - 1) / 7;                  //  Get levelwise index
+      int i = B->ICELL - ((1 << 3*level) - 1) / 7;              //  Get levelwise index
       scnt[i]++;                                                //  Fill send count bucket
     }                                                           // End loop over bodies
     MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM_WORLD); // Communicate send count to get recv count

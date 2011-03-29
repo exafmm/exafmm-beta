@@ -7,28 +7,31 @@ class Dataset {                                                 // Contains all 
 public:
   void initSource(Bodies &bodies) {                             // Initialize source values
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
+      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
 #if Laplace
       B->Q = 1. / bodies.size() / MPISIZE;                      //  Initialize mass/charge
 #elif BiotSavart
       B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
       B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
       B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
-      B->S    = 2 * powf(bodies.size(),-1.0/3);                 // Initialize core radius
+      B->S    = 2 * powf(bodies.size(),-1./3);                  // Initialize core radius
 #elif Stretching
       B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
       B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
       B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
-      B->S    = 2 * powf(bodies.size(),-1.0/3);                 // Initialize core radius
+      B->S    = 2 * powf(bodies.size(),-1./3);                  // Initialize core radius
 #endif
     }                                                           // End loop over bodies
-
   }
 
   void initTarget(Bodies &bodies, bool IeqJ=true) {             // Initialize target values
     srand(1);                                                   // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
+      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
 #if Laplace
-      B->pot = -B->Q / std::sqrt(EPS2) * IeqJ;                  //  Initialize potential
+      B->pot = -B->Q / std::sqrt(EPS2) * IeqJ;                  //  Initialize potential (0 if I != J)
       B->acc = 0;                                               //  Initialize acceleration
 #elif BiotSavart
       B->vel = 0 * IeqJ;                                        //  Initialize velocity
@@ -41,7 +44,6 @@ public:
       B->dQdt = 0;                                              //  Initialize change rate of vortex strength
 #endif
     }                                                           // End loop over bodies
-
   }
 
   void random(Bodies &bodies, int seed=1, int numSplit=1) {     // Random distribution in [-1,1]^3 cube

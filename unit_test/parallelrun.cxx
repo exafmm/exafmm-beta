@@ -11,7 +11,6 @@ int main() {
   Cells cells;
   Dataset D;
   LocalEssentialTree T;
-  Evaluator E;
   if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
@@ -51,7 +50,7 @@ int main() {
   D.initTarget(bodies2);
   for( int i=0; i!=T.commSize(); ++i ) {
     T.shiftBodies(jbodies);
-    E.evalP2P(bodies2,jbodies);
+    T.evalP2P(bodies2,jbodies);
     if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
   }
   T.stopTimer("Direct sum   ",T.printNow);

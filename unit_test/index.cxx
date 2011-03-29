@@ -25,14 +25,14 @@ int main() {
 
   T.startTimer("Sort index   ");
   T.buffer.resize(bodies.size());
-  T.sort(bodies,T.buffer);
+  T.sortBodies(bodies,T.buffer);
   T.stopTimer("Sort index   ",T.printNow);
 
-  bigint oldIndex(bodies[0].I);
+  bigint oldIndex(bodies[0].ICELL);
   int b = 0;
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
-    assert( oldIndex <= B->I );
-    oldIndex = B->I;
+    assert( oldIndex <= B->ICELL );
+    oldIndex = B->ICELL;
   }
 
 #ifdef VTK

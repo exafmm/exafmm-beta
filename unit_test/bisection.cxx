@@ -26,12 +26,12 @@ int main() {
 
   T.startTimer("Sort bodies  ");
   T.buffer.resize(bodies.size());
-  T.sort(bodies,T.buffer);
+  T.sortBodies(bodies,T.buffer);
   T.stopTimer("Sort bodies  ",T.printNow);
 
   T.bisection(bodies);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-    B->I = 0;
+    B->ICELL = 0;
   }
 
 #ifdef VTK

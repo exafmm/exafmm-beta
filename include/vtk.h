@@ -73,16 +73,16 @@ public:
 
   void setGroupOfPoints(Bodies &bodies, int &Ncell) {
     int begin=0, size=0;
-    bigint index = bodies[0].I;
+    bigint index = bodies[0].ICELL;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      if( B->I != index ) {
+      if( B->ICELL != index ) {
         setGroup(Ncell,size);
         for( int i=begin; i!=begin+size; ++i ) {
           setPoints(Ncell,bodies[i].X);
         }
         begin = B-bodies.begin();
         size = 0;
-        index = B->I;
+        index = B->ICELL;
         Ncell++;
         assert(Ncell < maxGroups);
       }

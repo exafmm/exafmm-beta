@@ -20,7 +20,7 @@ private:
   void unique(Cells &cells, Cells &sticks, int begin, int &end) {// Merge sticks with cells (levelwise)
     int c_old = begin;                                          // Initialize old cell counter
     for( int c=begin; c!=end; ++c ) {                           // Loop over cells in level
-      if( cells[c].I != cells[c_old].I ) {                      //  If current cell index is different from previous
+      if( cells[c].ICELL != cells[c_old].ICELL ) {              //  If current cell index is different from previous
         c_old = c;                                              //   Update old cell counter
       } else if( c != c_old ) {                                 //  If cell index is repeated
         if( cells[c].NCHILD != 0 ) {                            //   Stick-cell collision
@@ -30,7 +30,7 @@ private:
           for( int i=0; i!=cells[c].NCHILD; ++i ) {             //    Loop over children
             cells[c_old].CHILD[i] = cells[c].CHILD[i];          //     Copy child link
           }                                                     //    End loop over children
-          cells[c_old].LEAF   = cells[c].LEAF;                  //    Copy iterator of first leaf
+          cells[c_old].LEAF = cells[c].LEAF;                    //    Copy iterator of first leaf
           sticks.push_back(cells[c_old]);                       //    Push stick into vector
         }                                                       //   Endif for collision type
         cells[c_old].M += cells[c].M;                           //   Accumulate multipole
@@ -45,16 +45,16 @@ private:
     Cell parent;                                                // Parent cell
     Cells parents;                                              // Parent cell vector;
     int oldend = end;                                           // Save old end counter
-    parent.I = getParent(cells[begin].I);                       // Set cell index
+    parent.ICELL = getParent(cells[begin].ICELL);               // Set cell index
     parent.M = parent.L = 0;                                    // Initlalize multipole & local coefficients
     parent.NLEAF = parent.NCHILD = 0;                           // Initialize NLEAF & NCHILD
     parent.LEAF = cells[begin].LEAF;                            // Set pointer to first leaf
     getCenter(parent);                                          // Set cell center and radius
     for( int i=begin; i!=oldend; ++i ) {                        // Loop over cells at this level
-      if( getParent(cells[i].I) != parent.I ) {                 //  If it belongs to a new parent cell
+      if( getParent(cells[i].ICELL) != parent.ICELL ) {         //  If it belongs to a new parent cell
         cells.push_back(parent);                                //   Push cells into vector
         end++;                                                  //   Increment cell counter
-        parent.I = getParent(cells[i].I);                       //   Set cell index
+        parent.ICELL = getParent(cells[i].ICELL);               //   Set cell index
         parent.M = parent.L = 0;                                //   Initialize multipole & local coefficients
         parent.NLEAF = parent.NCHILD = 0;                       //   Initialize NLEAF & NCHILD
         parent.LEAF = cells[i].LEAF;                            //   Set pointer to first leaf
@@ -87,8 +87,8 @@ protected:
   }
 
   void getCenter(Cell &cell) {                                  // Get cell center and radius from cell index
-    int level = getLevel(cell.I);                               // Get level from cell index
-    bigint index = cell.I - ((1 << 3*level) - 1) / 7;           // Subtract cell index offset of current level
+    int level = getLevel(cell.ICELL);                           // Get level from cell index
+    bigint index = cell.ICELL - ((1 << 3*level) - 1) / 7;       // Subtract cell index offset of current level
     cell.R = R0 / (1 << level);                                 // Cell radius
     int d = level = 0;                                          // Initialize dimension and level
     vec<3,int> nx = 0;                                          // Initialize 3-D cell index
@@ -103,37 +103,30 @@ protected:
     }                                                           // End loop over dimensions
   }
 
-  void sortCells(Cells &cells, bool ascend=true, int begin=0, int end=0) {// Sort cells according to cell index
-    if( end == 0 ) end = cells.size();                          // Default size is all cells
-    Cells cbuffer;                                              // Vector for sort buffer
-    cbuffer.resize(cells.size());                               // Resize vector for sort buffer
-    sort(cells,cbuffer,ascend,begin,end);                       // Sort cells in descending order
-  }
-
   void bodies2twigs(Bodies &bodies, Cells &twigs){              // Group bodies into twig cells
     startTimer("Bodies2twigs ");                                // Start timer
     int nleaf = 0;                                              // Initialize number of leafs
-    bigint index = bodies[0].I;                                 // Initialize cell index
+    bigint index = bodies[0].ICELL;                             // Initialize cell index
     B_iter firstLeaf = bodies.begin();                          // Initialize body iterator for first leaf
     Cell cell;                                                  // Cell structure
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      if( B->I != index ) {                                     //  If it belongs to a new cell
-        cell.NLEAF = nleaf;                                     //   Set number of leafs
+      if( B->ICELL != index ) {                                 //  If it belongs to a new cell
+        cell.NLEAF  = nleaf;                                    //   Set number of leafs
         cell.NCHILD = 0;                                        //   Set number of child cells
-        cell.I = index;                                         //   Set cell index
-        cell.LEAF = firstLeaf;                                  //   Set pointer to first leaf
+        cell.ICELL  = index;                                    //   Set cell index
+        cell.LEAF   = firstLeaf;                                //   Set pointer to first leaf
         getCenter(cell);                                        //   Set cell center and radius
         twigs.push_back(cell);                                  //   Push cells into vector
         firstLeaf = B;                                          //   Set new first leaf
         nleaf = 0;                                              //   Reset number of bodies
-        index = B->I;                                           //   Set new cell
+        index = B->ICELL;                                       //   Set new cell
       }                                                         //  Endif for new cell
       nleaf++;                                                  //  Increment body counter
     }                                                           // End loop over bodies
-    cell.NLEAF = nleaf;                                         // Set number of leafs
+    cell.NLEAF  = nleaf;                                        // Set number of leafs
     cell.NCHILD = 0;                                            // Set number of child cells
-    cell.I = index;                                             // Set cell index
-    cell.LEAF = firstLeaf;                                      // Set pointer to first leaf
+    cell.ICELL  = index;                                        // Set cell index
+    cell.LEAF   = firstLeaf;                                    // Set pointer to first leaf
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
     stopTimer("Bodies2twigs ",printNow);                        // Stop timer & print
@@ -143,9 +136,9 @@ protected:
   void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) { // Link twigs bottomup to create all cells in tree
     startTimer("Twigs2cells  ");                                // Start timer
     int begin = 0, end = 0;                                     // Initialize range of cell vector
-    int level = getLevel(twigs.back().I);                       // Initialize level of tree
+    int level = getLevel(twigs.back().ICELL);                   // Initialize level of tree
     while( !twigs.empty() ) {                                   // Keep poppig twigs until the vector is empty
-      while( getLevel(twigs.back().I) != level ) {              //  While cell belongs to a higher level
+      while( getLevel(twigs.back().ICELL) != level ) {          //  While cell belongs to a higher level
         sortCells(cells,false,begin,end);                       //   Sort cells at this level
         unique(cells,sticks,begin,end);                         //   Get rid of duplicate cells
         linkParent(cells,begin,end);                            //   Form parent-child mutual link

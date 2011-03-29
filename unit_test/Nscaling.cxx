@@ -11,7 +11,6 @@ int main() {
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
-  Evaluator E;
   TreeConstructor T;
 
   for( int it=0; it!=25; ++it ) {
@@ -35,7 +34,7 @@ int main() {
     T.buffer = bodies;
 #if 1
     D.initTarget(T.buffer);
-    E.evalP2P(T.buffer,T.buffer);
+    T.evalP2P(T.buffer,T.buffer);
     D.writeTarget(T.buffer);
 #else
     D.readTarget(T.buffer);

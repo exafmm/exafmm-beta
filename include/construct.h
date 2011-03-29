@@ -72,7 +72,7 @@ private:
       }                                                         // End loop over children
     } else {                                                    //  If child doesn't exist
       for( int i=0; i!=N->NLEAF; ++i ) {                        //   Loop over leafs
-        N->LEAF[i]->I = N->I;                                   //    Store cell index in bodies
+        N->LEAF[i]->ICELL = N->I;                               //    Store cell index in bodies
       }                                                         //   End loop over leafs
     }                                                           //  Endif for child existence
   }
@@ -142,9 +142,9 @@ public:
         }                                                       //   End loop over dimension
       }                                                         //  End loop over levels
       if( !update ) {                                           //  If this not an update
-        bodies[b].I = i+off;                                    //   Store index in bodies
-      } else if( i+off > bodies[b].I ) {                        //  If the new cell index is larger
-        bodies[b].I = i+off;                                    //   Store index in bodies
+        bodies[b].ICELL = i+off;                                //   Store index in bodies
+      } else if( i+off > bodies[b].ICELL ) {                    //  If the new cell index is larger
+        bodies[b].ICELL = i+off;                                //   Store index in bodies
       }                                                         //  Endif for update
     }                                                           // End loop over bodies
   }
@@ -152,21 +152,21 @@ public:
   void prune(Bodies &bodies) {                                  // Prune tree by merging cells
     int maxLevel = getMaxLevel(bodies);                         // Max level for bottom up tree build
     for( int l=maxLevel; l>0; --l ) {                           // Loop upwards from bottom level
-      int level = getLevel(bodies[0].I);                        //  Current level
+      int level = getLevel(bodies[0].ICELL);                    //  Current level
       bigint cOff = ((1 << 3 * level) - 1) / 7;                 //  Current ce;; index offset
       bigint pOff = ((1 << 3 * (l-1)) - 1) / 7;                 //  Parent cell index offset
-      bigint index = ((bodies[0].I-cOff) >> 3*(level-l+1)) + pOff;//  Current cell index
+      bigint index = ((bodies[0].ICELL-cOff) >> 3*(level-l+1)) + pOff;// Current cell index
       int begin = 0;                                            //  Begin cell index for bodies in cell
       int size = 0;                                             //  Number of bodies in cell
       int b = 0;                                                //  Current body index
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {//  Loop over bodies
-        level = getLevel(B->I);                                 //   Level of twig
+        level = getLevel(B->ICELL);                             //   Level of twig
         cOff = ((1 << 3*level) - 1) / 7;                        //   Offset of twig
-        bigint p = ((B->I-cOff) >> 3*(level-l+1)) + pOff;       //   Cell index of parent cell
+        bigint p = ((B->ICELL-cOff) >> 3*(level-l+1)) + pOff;   //   Cell index of parent cell
         if( p != index ) {                                      //   If it's a new parent cell
           if( size < NCRIT ) {                                  //    If parent cell has few enough bodies
             for( int i=begin; i!=begin+size; ++i ) {            //     Loop over bodies in that cell
-              bodies[i].I = index;                              //      Renumber cell index to parent cell
+              bodies[i].ICELL = index;                          //      Renumber cell index to parent cell
             }                                                   //     End loop over bodies in cell
           }                                                     //    Endif for merging
           begin = b;                                            //    Set new begin index
@@ -177,36 +177,36 @@ public:
       }                                                         //  End loop over bodies
       if( size < NCRIT ) {                                      //  If last parent cell has few enough bodies
         for( int i=begin; i!=begin+size; ++i ) {                //   Loop over bodies in that cell
-          bodies[i].I = index;                                  //    Renumber cell index to parent cell
+          bodies[i].ICELL = index;                              //    Renumber cell index to parent cell
         }                                                       //   End loop over bodies in cell
       }                                                         //  Endif for merging
     }                                                           // End loop over levels
   }
 
   void grow(Bodies &bodies, int level=0, int begin=0, int end=0) {// Grow tree by splitting cells
-    bigint index = bodies[begin].I;                             // Initialize cell index
+    bigint index = bodies[begin].ICELL;                         // Initialize cell index
     int off=begin, size=0;                                      // Initialize offset, and size
     if( level == 0 ) level = getMaxLevel(bodies);               // Max level for bottom up tree build
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
     for( int b=begin; b!=end; ++b ) {                           // Loop over bodies under consideration
-      if( bodies[b].I != index ) {                              //  If it's a new cell
+      if( bodies[b].ICELL != index ) {                          //  If it's a new cell
         if( size >= NCRIT ) {                                   //   If the cell has too many bodies
           level++;                                              //    Increment level
           setIndex(bodies,level,off,off+size);                  //    Set new cell index considering new level
-          sort(bodies,buffer,true,off,off+size);                //    Sort new cell index
+          sortBodies(bodies,buffer,true,off,off+size);          //    Sort new cell index
           grow(bodies,level,off,off+size);                      //    Recursively grow tree
           level--;                                              //    Go back to previous level
         }                                                       //   Endif for splitting
         off = b;                                                //   Set new offset
         size = 0;                                               //   Reset number of bodies
-        index = bodies[b].I;                                    //   Set new cell
+        index = bodies[b].ICELL;                                //   Set new cell
       }                                                         //  Endif for new cell
       size++;                                                   //  Increment body counter
     }                                                           // End loop over bodies
     if( size >= NCRIT ) {                                       // If last cell has too many bodies
       level++;                                                  //  Increment level
       setIndex(bodies,level,off,off+size);                      //  Set new cell index considering new level
-      sort(bodies,buffer,true,off,off+size);                    //  Sort new cell index
+      sortBodies(bodies,buffer,true,off,off+size);              //  Sort new cell index
       grow(bodies,level,off,off+size);                          //  Recursively grow tree
       level--;                                                  //  Go back to previous level
     }                                                           // Endif for splitting
@@ -233,7 +233,7 @@ public:
 
     startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
-    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
     Cells twigs;                                                // Twigs are cells at the bottom of tree
@@ -250,7 +250,7 @@ public:
 
     startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
-    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
     startTimer("Prune tree   ");                                // Start timer
@@ -262,7 +262,7 @@ public:
     stopTimer("Grow tree    ",printNow);                        // Stop timer & print
 
     startTimer("Sort bodies  ");                                // Start timer
-    sort(bodies,buffer);                                        // Sort bodies in ascending order
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
     Cells twigs;                                                // Twigs are cells at the bottom of tree

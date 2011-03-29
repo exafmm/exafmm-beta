@@ -6,8 +6,8 @@
 
 int main() {
   const int numBodies = 10000;
-//  const int numBodies = 177827;
   Bodies bodies(numBodies);
+  Bodies bodies2;
   Bodies jbodies;
   Cells cells,jcells;
   Dataset D;
@@ -16,6 +16,7 @@ int main() {
 
   T.startTimer("Set bodies   ");
   D.random(bodies,1,1);
+  bodies2 = bodies;
   T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
@@ -33,22 +34,26 @@ int main() {
   T.downward(cells,jcells,1);
   T.stopTimer("Downward     ",T.printNow);
 
+  T.startTimer("Unsort bodies");
+  T.buffer.resize(bodies.size());
+  T.unsortBodies(bodies,T.buffer);
+  T.stopTimer("Unsort bodies",T.printNow);
+
   if( IMAGES != 0 ) {
     T.startTimer("Set periodic ");
-    jbodies = T.periodicBodies(bodies);
+    jbodies = T.periodicBodies(bodies2);
     T.stopTimer("Set periodic ",T.printNow);
   } else {
-    jbodies = bodies;
+    jbodies = bodies2;
   }
 
   T.startTimer("Direct sum   ");
-  T.buffer = bodies;
-  D.initTarget(T.buffer);
-  T.evalP2P(T.buffer,jbodies);
+  D.initTarget(bodies2);
+  T.evalP2P(bodies2,jbodies);
   T.stopTimer("Direct sum   ",T.printNow);
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);
+  D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   D.printError(diff1,norm1,diff2,norm2);
 #ifdef VTK
   int Ncell = 0;
