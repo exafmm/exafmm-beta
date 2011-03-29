@@ -59,6 +59,7 @@ public:
       R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
     }                                                           // End loop over each dimension
     R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
+    if( IMAGES != 0 ) R0 = M_PI;                                // Periodic boundary conditions have radius M_PI
   }
 
   void LaplacePre();

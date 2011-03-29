@@ -10,14 +10,14 @@ public:
 #if Laplace
       B->Q = 1. / bodies.size() / MPISIZE;                      //  Initialize mass/charge
 #elif BiotSavart
-      B->Q[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize x vortex strength
-      B->Q[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize y vortex strength
-      B->Q[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize z vortex strength
+      B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
+      B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
+      B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
       B->S    = 2 * powf(bodies.size(),-1.0/3);                 // Initialize core radius
 #elif Stretching
-      B->Q[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize x vortex strength
-      B->Q[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize y vortex strength
-      B->Q[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;//  Initialize z vortex strength
+      B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
+      B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
+      B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
       B->S    = 2 * powf(bodies.size(),-1.0/3);                 // Initialize core radius
 #endif
     }                                                           // End loop over bodies
@@ -34,9 +34,9 @@ public:
       B->vel = 0 * IeqJ;                                        //  Initialize velocity
 #elif Stretching
       if( !IeqJ ) {                                             //  If source and target are different
-        B->Q[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize x vortex strength
-        B->Q[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize y vortex strength
-        B->Q[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+        B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
+        B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
+        B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
       }                                                         //  Endif for different source and target
       B->dQdt = 0;                                              //  Initialize change rate of vortex strength
 #endif
@@ -52,7 +52,7 @@ public:
         srand(seed);                                            //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->X[d] = rand() / (1. + RAND_MAX) * 2 - 1;             //   Initialize positions
+        B->X[d] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;   //   Initialize positions
       }                                                         //  End loop over dimension
     }                                                           // End loop over bodies
     initSource(bodies);                                         // Initialize source values
@@ -99,7 +99,7 @@ public:
   }
 
   void readTarget(Bodies &bodies) {                             // Read target values from file
-    std::ifstream file("data",std::ios::in | std::ios::ate | std::ios::binary);// Open file
+    std::ifstream file("data",std::ios::in | std::ios::binary); // Open file
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
 #if Laplace
       file >> B->pot;                                           //  Read data for potential

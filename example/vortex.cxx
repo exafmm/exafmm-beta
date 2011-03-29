@@ -21,9 +21,9 @@ int main() {
   float *w  = new float [N];
 
   for( int i=0; i!=N; ++i ) {
-    x[i] = rand() / (1. + RAND_MAX) * 2 - 1;
-    y[i] = rand() / (1. + RAND_MAX) * 2 - 1;
-    z[i] = rand() / (1. + RAND_MAX) * 2 - 1;
+    x[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
+    y[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
+    z[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
     qx[i] = (rand() / (1. + RAND_MAX) * 2 - 1) / N;
     qy[i] = (rand() / (1. + RAND_MAX) * 2 - 1) / N;
     qz[i] = (rand() / (1. + RAND_MAX) * 2 - 1) / N;

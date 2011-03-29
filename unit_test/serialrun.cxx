@@ -5,7 +5,8 @@
 #endif
 
 int main() {
-  const int numBodies = 10000;
+//  const int numBodies = 10000;
+  const int numBodies = 177827;
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells,jcells;
@@ -14,7 +15,7 @@ int main() {
   T.printNow = true;
 
   T.startTimer("Set bodies   ");
-  D.sphere(bodies,1,1);
+  D.random(bodies,1,1);
   T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");

@@ -1,5 +1,6 @@
 #ifndef postgpu_h
 #define postgpu_h
+#include <cutil.h>
 
 #define CALL_GPU(KERNEL,EVENT)\
 void Kernel::KERNEL() {\
@@ -22,7 +23,10 @@ void Kernel::KERNEL() {\
   cudaThreadSynchronize();\
   startTimer(#EVENT);\
   int numBlocks = keysHost.size();\
-  KERNEL##_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  if( numBlocks != 0 ) {\
+    KERNEL##_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  }\
+  CUT_CHECK_ERROR("Kernel execution failed");\
   cudaThreadSynchronize();\
   stopTimer(#EVENT);\
   cudaThreadSynchronize();\
