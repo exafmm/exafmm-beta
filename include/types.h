@@ -21,11 +21,11 @@ typedef long                 bigint;                            // Big integer t
 typedef float                real;                              // Real number type
 typedef std::complex<double> complex;                           // Complex number type
 
-const int  P       = 3;                                         // Order of expansions
+const int  P       = 10;                                        // Order of expansions
 const int  NCRIT   = 100;                                       // Number of bodies per cell
 const real THETA   = 1/sqrtf(4);                                // Box opening criteria
 const real EPS2    = 1e-4;                                      // Softening parameter
-const int  IMAGES  = 0;                                         // Number of periodic image sublevels
+const int  IMAGES  = 1;                                         // Number of periodic image sublevels
 const int  GPUS    = 4;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 
@@ -89,6 +89,9 @@ struct Body : JBody {                                           // All propertie
 #elif Stretching
   vect dQdt;                                                    // Change rate of vortex strength
 #endif
+  bool operator<(const Body &rhs) const {                       // Overload operator for comparing body index
+    return this->IBODY < rhs.IBODY;                             // Comparison function for body index
+  }
 };
 typedef std::vector<Body>              Bodies;                  // Vector of bodies
 typedef std::vector<Body>::iterator    B_iter;                  // Iterator for body vector

@@ -160,15 +160,19 @@ protected:
 
 public:
   void downward(Cells &cells, Cells &jcells, int method) {      // Downward phase
-    startTimer("Upward P     ");                                // Start timer
-    upwardPeriodic(jcells);                                     // Upward phase for periodic images
-    stopTimer("Upward P     ",printNow);                        // Stop timer & print
+    if( IMAGES != 0 ) {                                         // If periodic boundary condition
+      startTimer("Upward P     ");                              //  Start timer
+      upwardPeriodic(jcells);                                   //  Upward phase for periodic images
+      stopTimer("Upward P     ",printNow);                      //  Stop timer & print
+    }                                                           // Endif for periodic boundary condition
     startTimer("Traverse     ");                                // Start timer
     traverse(cells,jcells,method);                              // Traverse tree to get interaction list
     stopTimer("Traverse     ",printNow);                        // Stop timer & print
-    startTimer("Traverse P   ");                                // Start timer
-    traversePeriodic(cells,jcells,method);                      // Traverse tree for periodic images
-    stopTimer("Traverse P   ",printNow);                        // Stop timer & print
+    if( IMAGES != 0 ) {                                         // If periodic boundary condition
+      startTimer("Traverse P   ");                              // Start timer
+      traversePeriodic(cells,jcells,method);                    // Traverse tree for periodic images
+      stopTimer("Traverse P   ",printNow);                      // Stop timer & print
+    }                                                           // Endif for periodic boundary condition
     evalM2L(cells);                                             // Evaluate M2L kernel
     evalM2P(cells);                                             // Evaluate M2P kernel
     evalP2P(cells);                                             // Evaluate P2P kernel

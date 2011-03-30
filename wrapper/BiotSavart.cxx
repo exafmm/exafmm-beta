@@ -17,11 +17,13 @@ void biotsavart(int numBodies, float *x, float *y, float *z, float *qx, float *q
     B->vel[0] = u[B-bodies.begin()];
     B->vel[1] = v[B-bodies.begin()];
     B->vel[2] = w[B-bodies.begin()];
+    B->IBODY  = B-bodies.begin();
   }
 
   T.setDomain(bodies);
   T.bottomup(bodies,cells);
   T.downward(cells,cells,1);
+  std::sort(bodies.begin(),bodies.end());
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     x[B-bodies.begin()]  = B->X[0];

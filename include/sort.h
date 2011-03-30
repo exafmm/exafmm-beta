@@ -41,18 +41,6 @@ private:
     }                                                           // Endif for sorting order
   }
 
-  void sortIBODY(Bodies &bodies, Bodies &buffer, int numBucket) {// Bucket sort for small indices
-    for( int i=0; i!=numBucket; ++i ) bucket[i] = 0;            // Initialize bucket
-    for( int i=0; i!=numBucket; ++i ) bucket[bodies[i].IBODY]++;// Fill bucket
-    for( int i=1; i!=numBucket; ++i ) bucket[i] += bucket[i-1]; // Scan bucket
-    for( int i=numBucket-1; i>=0; --i ) {                       // Loop over data backwards
-      bucket[bodies[i].IBODY]--;                                //  Empty bucket
-      int inew = bucket[bodies[i].IBODY];                       //  Permutation index
-      buffer[inew] = bodies[i];                                 //  Fill buffer
-    }                                                           // End loop over data
-    for( int i=0; i!=numBucket; ++i ) bodies[i] = buffer[i];    // Copy back bodiess in order
-  }
-
 public:
   void sortBodies(Bodies &bodies, Bodies &buffer, bool ascend=true, int begin=0, int end=0) {// Sort bodies accoring to cell index
     if( bodies.size() == 0 ) return;                            // Don't do anything if vector is empty
@@ -73,16 +61,6 @@ public:
     cbuffer.resize(cells.size());                               // Resize vector for sort buffer
     sortICELL(cells,cbuffer,Imin,numBucket,ascend,begin,end);   // Call bucket sort for small indices
   }
-
-  void unsortBodies(Bodies &bodies, Bodies &buffer) {           // Unsort bodies back to original order
-    if( bodies.size() == 0 ) return;                            // Don't do anything if vector is empty
-    int numBucket = bodies.size();                              // Initialize bucket size
-    if( numBucket > int(bucket.size()) ) {                      // If bucket size needs to be enlarged
-      bucket.resize(numBucket);                                 //  Resize bucket vector
-    }                                                           // Endif for resize
-    sortIBODY(bodies,buffer,numBucket);                         // Call bucket sort for small indices
-  }
-
 };
 }
 

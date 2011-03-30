@@ -7,7 +7,7 @@ extern void biotsavart(int, float*, float*, float*, float*, float*, float*, floa
 extern void stretching(int, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
 
 int main() {
-  const int N = 10;
+  const int N = 10000;
   const float eps2 = 1e-4;
   float *x  = new float [N];
   float *y  = new float [N];

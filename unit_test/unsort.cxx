@@ -35,8 +35,7 @@ int main() {
   T.stopTimer("Downward     ",T.printNow);
 
   T.startTimer("Unsort bodies");
-  T.buffer.resize(bodies.size());
-  T.unsortBodies(bodies,T.buffer);
+  std::sort(bodies.begin(),bodies.end());
   T.stopTimer("Unsort bodies",T.printNow);
 
   if( IMAGES != 0 ) {

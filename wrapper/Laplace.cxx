@@ -15,11 +15,13 @@ void laplace(int numBodies, float *x, float *y, float *z, float *charge,
     B->acc[0] = fx[B-bodies.begin()];
     B->acc[1] = fy[B-bodies.begin()];
     B->acc[2] = fz[B-bodies.begin()];
+    B->IBODY  = B-bodies.begin();
   }
 
   T.setDomain(bodies);
   T.bottomup(bodies,cells);
   T.downward(cells,cells,1);
+  std::sort(bodies.begin(),bodies.end());
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     x[B-bodies.begin()]      = B->X[0];
