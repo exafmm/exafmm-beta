@@ -126,10 +126,12 @@ __global__ void LaplaceP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     int iblok = (size-1)/THREADS;
     int isource = begin + iblok * THREADS + threadIdx.x;
     __syncthreads();
-    sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
-    sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
-    sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
-    sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
+    if( threadIdx.x < size - iblok * THREADS ) {
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
+    }
     __syncthreads();
     for( int i=0; i<size-iblok*THREADS; ++i ) {
       float3 d;
@@ -515,10 +517,12 @@ __global__ void LaplaceP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     int iblok = (size-1)/THREADS;
     int isource = begin + iblok * THREADS + threadIdx.x;
     __syncthreads();
-    sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
-    sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
-    sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
-    sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
+    if( threadIdx.x < size - iblok * THREADS ) {
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
+    }
     __syncthreads();
     int I = 0;
     int icounter=0;

@@ -343,11 +343,11 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
   Lists listM2M(cells.size());                                  // Define M2M interation list vector
   Maps  flagM2M(cells.size());                                  // Define M2M periodic image flag
-  int level = getLevel(CJ0->I);                                 // Level of twig
+  int level = getLevel(CJ0->ICELL);                             // Level of twig
   while( level != 0 ) {                                         // While level of source is not root level
     startTimer("Get list     ");                                //  Start timer
     for( CJ=cells.begin(); CJ!=cells.end(); ++CJ ) {            //  Loop over cells bottomup (except root cell)
-      if( getLevel(CJ->I) == level ) {                          //   If source cell is at current level
+      if( getLevel(CJ->ICELL) == level ) {                      //   If source cell is at current level
         CI = CJ0 + CJ->PARENT;                                  //    Set target cell iterator
         listM2M[CI-CI0].push_back(CJ);                          //    Push source cell into M2M interaction list
         flagM2M[CI-CI0][CJ] |= Icenter;                         //    Flip bit of periodic image flag
@@ -454,12 +454,12 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
   Lists listL2L(cells.size());                                  // Define L2L interation list vector
   Maps  flagL2L(cells.size());                                  // Define L2L periodic image flag
-  int maxLevel = getLevel(CI0->I);                              // Level of twig
+  int maxLevel = getLevel(CI0->ICELL);                          // Level of twig
   int level = 1;                                                // Start level from 1
   while( level != maxLevel+1 ) {                                // While level of source is not root level
     startTimer("Get list     ");                                //  Start timer
     for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {        //  Loop over cells topdown (except root cell)
-      if( getLevel(CI->I) == level ) {                          //   If target cell is at current level
+      if( getLevel(CI->ICELL) == level ) {                      //   If target cell is at current level
         CJ = CI0 + CI->PARENT;                                  //    Set source cell iterator
         listL2L[CI-CI0].push_back(CJ);                          //    Push source cell into L2L interaction list
         flagL2L[CI-CI0][CJ] |= Icenter;                         //    Flip bit of periodic image flag

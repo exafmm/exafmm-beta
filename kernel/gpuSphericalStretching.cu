@@ -149,12 +149,14 @@ __global__ void StretchingP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGl
     int iblok = (size-1)/THREADS;
     int isource = begin + iblok * THREADS + threadIdx.x;
     __syncthreads();
-    sourceShrd[6*threadIdx.x+0] = sourceGlob[7*isource+0];
-    sourceShrd[6*threadIdx.x+1] = sourceGlob[7*isource+1];
-    sourceShrd[6*threadIdx.x+2] = sourceGlob[7*isource+2];
-    sourceShrd[6*threadIdx.x+3] = sourceGlob[7*isource+3];
-    sourceShrd[6*threadIdx.x+4] = sourceGlob[7*isource+4];
-    sourceShrd[6*threadIdx.x+5] = sourceGlob[7*isource+5];
+    if( threadIdx.x < size - iblok * THREADS ) {
+      sourceShrd[6*threadIdx.x+0] = sourceGlob[7*isource+0];
+      sourceShrd[6*threadIdx.x+1] = sourceGlob[7*isource+1];
+      sourceShrd[6*threadIdx.x+2] = sourceGlob[7*isource+2];
+      sourceShrd[6*threadIdx.x+3] = sourceGlob[7*isource+3];
+      sourceShrd[6*threadIdx.x+4] = sourceGlob[7*isource+4];
+      sourceShrd[6*threadIdx.x+5] = sourceGlob[7*isource+5];
+    }
     __syncthreads();
     for( int i=0; i<size-iblok*THREADS; ++i ) {
       float3 d;
@@ -639,13 +641,15 @@ __global__ void StretchingP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
     int iblok = (size-1)/THREADS;
     int isource = begin + iblok * THREADS + threadIdx.x;
     __syncthreads();
-    sourceShrd[7*threadIdx.x+0] = sourceGlob[7*isource+0];
-    sourceShrd[7*threadIdx.x+1] = sourceGlob[7*isource+1];
-    sourceShrd[7*threadIdx.x+2] = sourceGlob[7*isource+2];
-    sourceShrd[7*threadIdx.x+3] = sourceGlob[7*isource+3];
-    sourceShrd[7*threadIdx.x+4] = sourceGlob[7*isource+4];
-    sourceShrd[7*threadIdx.x+5] = sourceGlob[7*isource+5];
-    sourceShrd[7*threadIdx.x+6] = sourceGlob[7*isource+6];
+    if( threadIdx.x < size - iblok * THREADS ) {
+      sourceShrd[7*threadIdx.x+0] = sourceGlob[7*isource+0];
+      sourceShrd[7*threadIdx.x+1] = sourceGlob[7*isource+1];
+      sourceShrd[7*threadIdx.x+2] = sourceGlob[7*isource+2];
+      sourceShrd[7*threadIdx.x+3] = sourceGlob[7*isource+3];
+      sourceShrd[7*threadIdx.x+4] = sourceGlob[7*isource+4];
+      sourceShrd[7*threadIdx.x+5] = sourceGlob[7*isource+5];
+      sourceShrd[7*threadIdx.x+6] = sourceGlob[7*isource+6];
+    }
     __syncthreads();
     int I = 0;
     int icounter=0;

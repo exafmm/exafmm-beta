@@ -22,8 +22,6 @@ public:
   Logger() {
     file.open("time");
     printNow = false;
-    int dummy = MPISIZE;
-    dummy = MPIRANK;
   }
   ~Logger() {
     file.close();
