@@ -17,9 +17,9 @@ int main() {
   float *fz = new float [N];
 
   for( int i=0; i!=N; ++i ) {
-    x[i] = rand() / (1. + RAND_MAX) * 2 - 1;
-    y[i] = rand() / (1. + RAND_MAX) * 2 - 1;
-    z[i] = rand() / (1. + RAND_MAX) * 2 - 1;
+    x[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
+    y[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
+    z[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
     m[i] = 1. / N;
     p[i] = -m[i] / sqrtf(eps2);
     fx[i] = fy[i] = fz[i] = 0;

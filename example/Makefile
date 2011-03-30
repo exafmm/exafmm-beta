@@ -1,9 +1,9 @@
 include ../Makefile
 
 nbody: nbody.cxx
-	@$(CXX) $? ../lib/libcpuLaplace.a $(LFLAGS)
+	@$(CXX) $? ../lib/libgpuLaplace.a $(LFLAGS)
 	./a.out
 
 vortex: vortex.cxx
-	@$(CXX) $? ../lib/libcpuBiotSavart.a ../lib/libcpuStretching.a $(LFLAGS)
+	@$(CXX) $? ../lib/libgpuBiotSavart.a ../lib/libgpuStretching.a $(LFLAGS)
 	./a.out

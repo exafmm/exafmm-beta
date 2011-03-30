@@ -50,7 +50,7 @@ private:
         flagP2P[Ci-CI0][Cj] |= Iperiodic;                       // Flip bit of periodic image flag
       } else {                                                  // If the twig has no leafs
 #ifdef DEBUG
-        std::cout << "Cj->I=" << Cj->I << " has no leaf. Doing M2P instead of P2P." << std::endl;
+        std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
 #endif
         listM2P[Ci-CI0].push_back(Cj);                          // Push source cell into M2P interaction list
       }                                                         // Endif for twigs with leafs
@@ -72,7 +72,7 @@ private:
         flagP2P[Ci-CI0][Cj] |= Iperiodic;                       // Flip bit of periodic image flag
       } else {                                                  // If the twig has no leafs
 #ifdef DEBUG
-        std::cout << "Cj->I=" << Cj->I << " has no leaf. Doing M2P instead of P2P." << std::endl;
+        std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
 #endif
         listM2P[Ci-CI0].push_back(Cj);                          // Push source cell into M2P interaction list
       }                                                         // Endif for twigs with leafs
@@ -229,10 +229,11 @@ public:
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
             if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
-              cell.X[0] = CI->X[0] + ix * 2 * CI->R;            //      Set new x coordinate for periodic image
-              cell.X[1] = CI->X[1] + iy * 2 * CI->R;            //      Set new y cooridnate for periodic image
-              cell.X[2] = CI->X[2] + iz * 2 * CI->R;            //      Set new z coordinate for periodic image
-              cell.M = CI->M;                                   //      Copy multipoles to new periodic image
+              cell.X[0]  = CI->X[0] + ix * 2 * CI->R;           //      Set new x coordinate for periodic image
+              cell.X[1]  = CI->X[1] + iy * 2 * CI->R;           //      Set new y cooridnate for periodic image
+              cell.X[2]  = CI->X[2] + iz * 2 * CI->R;           //      Set new z coordinate for periodic image
+              cell.M     = CI->M;                               //      Copy multipoles to new periodic image
+              cell.NLEAF = cell.NCHILD = 0;                     //      Initialize NLEAF & NCHILD
               jcells.push_back(cell);                           //      Push cell into periodic jcell vector
             }                                                   //     Endif for periodic center cell
           }                                                     //    End loop over z periodic direction

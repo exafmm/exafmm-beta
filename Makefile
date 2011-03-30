@@ -6,8 +6,8 @@ DEVICE  = gpu
 #EXPAND  = Cartesian
 EXPAND  = Spherical
 
-#KERNEL  = Laplace
-KERNEL  = BiotSavart
+KERNEL  = Laplace
+#KERNEL  = BiotSavart
 #KERNEL  = Stretching
 
 CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O2 -fPIC -fopenmp\
@@ -16,7 +16,7 @@ CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -
 NVCC    = nvcc --ptxas-options=-v -O3 -use_fast_math -arch=sm_11\
 	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(SDK_INSTALL_PATH)/common/inc
 LFLAGS  = -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm\
-	-D$(DEVICE) -D$(EXPAND) -D$(KERNEL) -DCUPRINTF
+	-D$(DEVICE) -D$(EXPAND) -D$(KERNEL)
 VFLAGS  = -lvtkHybridTCL -lvtkWidgetsTCL -DVTK
 OBJECT  = ../kernel/$(DEVICE)$(EXPAND)$(KERNEL).o
 

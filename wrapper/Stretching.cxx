@@ -3,8 +3,9 @@
 void stretching(int numBodies, float *x, float *y, float *z, float *qx, float *qy, float *qz, float *s,
                 float *dqx, float *dqy, float *dqz) {
   Bodies bodies(numBodies);
-  Cells cells;
+  Cells cells,jcells;
   TreeConstructor T;
+  T.printNow = true;
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     B->X[0]    = x[B-bodies.begin()];
@@ -22,7 +23,8 @@ void stretching(int numBodies, float *x, float *y, float *z, float *qx, float *q
 
   T.setDomain(bodies);
   T.bottomup(bodies,cells);
-  T.downward(cells,cells,1);
+  jcells = cells;
+  T.downward(cells,jcells,1);
   std::sort(bodies.begin(),bodies.end());
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
