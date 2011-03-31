@@ -5,14 +5,17 @@
 
 extern void biotsavart(int, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
 extern void stretching(int, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
-extern void gaussian(int, float*, float*, float*, float*, float*, float*);
+extern void gaussian(int, float*, float*, float*, float*, float*, float*, float*, float*, float*);
 
 int main() {
   const int N = 1000;
   const float eps2 = 1e-4;
-  float *x  = new float [N];
-  float *y  = new float [N];
-  float *z  = new float [N];
+  float *xi = new float [N];
+  float *yi = new float [N];
+  float *zi = new float [N];
+  float *xj = new float [N];
+  float *yj = new float [N];
+  float *zj = new float [N];
   float *qx = new float [N];
   float *qy = new float [N];
   float *qz = new float [N];
@@ -22,9 +25,12 @@ int main() {
   float *w  = new float [N];
 
   for( int i=0; i!=N; ++i ) {
-    x[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
-    y[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
-    z[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
+    xi[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
+    yi[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
+    zi[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
+    xj[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
+    yj[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
+    zj[i] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;
     qx[i] = (rand() / (1. + RAND_MAX) * 2 - 1) / N;
     qy[i] = (rand() / (1. + RAND_MAX) * 2 - 1) / N;
     qz[i] = (rand() / (1. + RAND_MAX) * 2 - 1) / N;
@@ -32,15 +38,15 @@ int main() {
     u[i] = v[i] = w[i] = 0;
   }
 
-  biotsavart(N,x,y,z,qx,qy,qz,s,u,v,w);
+  biotsavart(N,xi,yi,zi,qx,qy,qz,s,u,v,w);
 
   float Ud = 0, Un = 0;
   for( int i=0; i!=N; ++i ) {
     float U = 0, V = 0, W = 0;
     for( int j=0; j!=N; ++j ) {
-      float dx = x[i] - x[j];
-      float dy = y[i] - y[j];
-      float dz = z[i] - z[j];
+      float dx = xi[i] - xi[j];
+      float dy = yi[i] - yi[j];
+      float dz = zi[i] - zi[j];
       float S2 = 2 * s[j] * s[j];
       float R2 = dx * dx + dy * dy + dz * dz + eps2;
       float RS = R2 / S2;
@@ -56,15 +62,15 @@ int main() {
   }
   std::cout << "Error (BS)    : " << sqrtf(Ud/Un) << std::endl;
 
-  stretching(N,x,y,z,qx,qy,qz,s,u,v,w);
+  stretching(N,xi,yi,zi,qx,qy,qz,s,u,v,w);
 
   float Qd = 0, Qn = 0;
   for( int i=0; i!=N; ++i ) {
     float U = 0, V = 0, W = 0;
     for( int j=0; j!=N; ++j ) {
-      float dx = x[i] - x[j];
-      float dy = y[i] - y[j];
-      float dz = z[i] - z[j];
+      float dx = xi[i] - xi[j];
+      float dy = yi[i] - yi[j];
+      float dz = zi[i] - zi[j];
       float S2 = 2 * s[j] * s[j];
       float R2 = dx * dx + dy * dy + dz * dz + eps2;
       float RS = R2 / S2;
@@ -86,15 +92,15 @@ int main() {
   }
   std::cout << "Error (ST)    : " << sqrtf(Qd/Qn) << std::endl;
 
-  gaussian(N,x,y,z,qx,s,v);
+  gaussian(N,xj,yj,zj,qx,s,xi,yi,zi,v);
 
   float Vd = 0, Vn = 0;
   for( int i=0; i!=N; ++i ) {
     float V = 0;
     for( int j=0; j!=N; ++j ) {
-      float dx = x[i] - x[j];
-      float dy = y[i] - y[j];
-      float dz = z[i] - z[j];
+      float dx = xi[i] - xj[j];
+      float dy = yi[i] - yj[j];
+      float dz = zi[i] - zj[j];
       float S2 = 2 * s[j] * s[j];
       float R2 = dx * dx + dy * dy + dz * dz + eps2;
       V += qx[j] / (M_PI * S2) / std::sqrt(M_PI * S2) * exp(-R2 / S2);
@@ -104,9 +110,12 @@ int main() {
   }
   std::cout << "Error (GA)    : " << sqrtf(Vd/Vn) << std::endl;
 
-  delete[] x;
-  delete[] y;
-  delete[] z;
+  delete[] xi;
+  delete[] yi;
+  delete[] zi;
+  delete[] xj;
+  delete[] yj;
+  delete[] zj;
   delete[] qx;
   delete[] qy;
   delete[] qz;
