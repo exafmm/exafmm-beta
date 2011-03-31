@@ -5,5 +5,5 @@ nbody: nbody.cxx
 	./a.out
 
 vortex: vortex.cxx
-	@$(CXX) $? ../lib/libcpuBiotSavart.a ../lib/libcpuStretching.a ../lib/libcpuGaussian.a $(LFLAGS)
+	@$(CXX) $? ../lib/libgpuBiotSavart.a ../lib/libgpuStretching.a ../lib/libgpuGaussian.a $(LFLAGS)
 	./a.out

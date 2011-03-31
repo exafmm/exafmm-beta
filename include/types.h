@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 #include "vec.h"
+namespace {
 static int MPIRANK = 0;                                         // MPI rank (for debugging serial class in MPI run)
 static int MPISIZE = 1;                                         // MPI size (for debugging serial class in MPI run)
 
@@ -120,5 +121,6 @@ typedef std::vector<List>              Lists;                   // Vector of int
 typedef std::map<C_iter,int>           Map;                     // Map of interaction lists
 typedef std::map<C_iter,int>::iterator M_iter;                  // Iterator for interation list map
 typedef std::vector<Map>               Maps;                    // Vector of map of interaction lists
+}
 
 #endif
