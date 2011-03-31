@@ -62,6 +62,7 @@ public:
     if( IMAGES != 0 ) R0 = M_PI;                                // Periodic boundary conditions have radius M_PI
   }
 
+  void LaplaceInit();
   void LaplacePre();
   void LaplaceP2M();
   void LaplaceM2M();
@@ -73,7 +74,9 @@ public:
   void LaplaceL2L();
   void LaplaceL2P();
   void LaplacePost();
+  void LaplaceFinal();
 
+  void BiotSavartInit();
   void BiotSavartPre();
   void BiotSavartP2M();
   void BiotSavartM2M();
@@ -85,7 +88,9 @@ public:
   void BiotSavartL2L();
   void BiotSavartL2P();
   void BiotSavartPost();
+  void BiotSavartFinal();
 
+  void StretchingInit();
   void StretchingPre();
   void StretchingP2M();
   void StretchingM2M();
@@ -97,7 +102,9 @@ public:
   void StretchingL2L();
   void StretchingL2P();
   void StretchingPost();
+  void StretchingFinal();
 
+  void GaussianInit();
   void GaussianPre();
   void GaussianP2M();
   void GaussianM2M();
@@ -109,6 +116,7 @@ public:
   void GaussianL2L();
   void GaussianL2P();
   void GaussianPost();
+  void GaussianFinal();
 };
 
 #endif

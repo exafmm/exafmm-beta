@@ -2,6 +2,8 @@
 #include "spherical.h"
 #include "biotsavart.h"
 
+void Kernel::BiotSavartInit() {}
+
 void Kernel::BiotSavartPre() {
   prefactor = new double  [4*P2];
   Anm       = new double  [4*P2];
@@ -248,3 +250,5 @@ void Kernel::BiotSavartPost() {
   delete[] YnmTheta;
   delete[] Cnm;
 }
+
+void Kernel::BiotSavartFinal() {}

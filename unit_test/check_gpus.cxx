@@ -10,6 +10,7 @@ int main() {
   Evaluator E;
   MyMPI M;
   E.initialize();
+  E.preCalculation();
   gethostname(hostname,sizeof(hostname));
   if( M.commRank() == 0 ) E.printNow = true;
 
@@ -44,5 +45,6 @@ int main() {
     }
     usleep(100);
   }
+  E.postCalculation();
   E.finalize();
 }

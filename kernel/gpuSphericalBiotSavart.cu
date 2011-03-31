@@ -3,7 +3,7 @@
 #include "biotsavart.h"
 #include "pregpu.h"
 
-void Kernel::BiotSavartPre() {
+void Kernel::BiotSavartInit() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
@@ -13,7 +13,9 @@ void Kernel::BiotSavartPre() {
   cudaThreadSynchronize();                                      // Sync GPU threads
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
+}
 
+void Kernel::BiotSavartPre() {
   prefactor = new double  [4*P2];
   Anm       = new double  [4*P2];
   Ynm       = new complex [4*P2];
@@ -868,10 +870,13 @@ void Kernel::BiotSavartPost() {
   delete[] Ynm;
   delete[] YnmTheta;
   delete[] Cnm;
+}
+
+void Kernel::BiotSavartFinal() {
 #ifdef CUPRINTF
   cudaPrintfDisplay(stdout, true);                              // Print cuPrintf buffer to display
   cudaPrintfEnd();                                              // Finalize cuPrintf
 #endif
 }
 
-#include "postgpu.h"
+#include "gpu.h"

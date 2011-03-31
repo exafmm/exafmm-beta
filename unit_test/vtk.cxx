@@ -7,6 +7,7 @@ int main() {
   Bodies bodies(numBodies);
   Dataset D;
   TreeStructure T;
+  T.initialize();
   T.printNow = true;
 
   T.startTimer("Set bodies   ");
@@ -28,4 +29,5 @@ int main() {
     vtk.setPoints(1,B->X);
   }
   vtk.plot(2);
+  T.finalize();
 }

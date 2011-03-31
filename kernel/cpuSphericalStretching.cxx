@@ -2,6 +2,8 @@
 #include "spherical.h"
 #include "stretching.h"
 
+void Kernel::StretchingiInit() {}
+
 void Kernel::StretchingPre() {
   prefactor = new double  [4*P2];
   Anm       = new double  [4*P2];
@@ -254,3 +256,5 @@ void Kernel::StretchingPost() {
   delete[] YnmTheta;
   delete[] Cnm;
 }
+
+void Kernel::StretchingiFinal() {}

@@ -2,6 +2,7 @@
 #include "cartesian.h"
 #include "laplace.h"
 
+void Kernel::LaplaceInit() {}
 void Kernel::LaplacePre() {}
 
 void Kernel::LaplaceP2M() {
@@ -151,3 +152,4 @@ void Kernel::LaplaceL2P() {
 }
 
 void Kernel::LaplacePost() {}
+void Kernel::LaplaceFinal() {}

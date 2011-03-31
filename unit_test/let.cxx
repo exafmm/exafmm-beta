@@ -10,6 +10,7 @@ int main() {
   Cells cells;
   Dataset D;
   LocalEssentialTree T;
+  T.initialize();
   if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
@@ -58,4 +59,5 @@ int main() {
     vtk.plot(Ncell);
   }
 #endif
+  T.finalize();
 }

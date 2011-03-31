@@ -9,6 +9,7 @@ int main() {
   Bodies bodies(numBodies);
   Dataset D;
   TreeConstructor T;
+  T.initialize();
   T.printNow = true;
 
   T.startTimer("Set bodies   ");
@@ -42,4 +43,5 @@ int main() {
   vtk.setGroupOfPoints(bodies,Ncell);
   vtk.plot(Ncell);
 #endif
+  T.finalize();
 }

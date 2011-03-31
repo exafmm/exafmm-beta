@@ -10,6 +10,7 @@ int main() {
   Bodies bodies(numBodies);
   Dataset D;
   Partition T;
+  T.initialize();
   if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
@@ -48,4 +49,5 @@ int main() {
     vtk.plot(Ncell);
   }
 #endif
+  T.finalize();
 }

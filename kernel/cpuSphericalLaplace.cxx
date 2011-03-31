@@ -2,6 +2,8 @@
 #include "spherical.h"
 #include "laplace.h"
 
+void Kernel::LaplaceInit() {}
+
 void Kernel::LaplacePre() {
   prefactor = new double  [4*P2];
   Anm       = new double  [4*P2];
@@ -220,3 +222,5 @@ void Kernel::LaplacePost() {
   delete[] YnmTheta;
   delete[] Cnm;
 }
+
+void Kernel::LaplaceFinal() {}

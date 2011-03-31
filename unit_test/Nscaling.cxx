@@ -12,6 +12,7 @@ int main() {
   Cells cells;
   Dataset D;
   TreeConstructor T;
+  T.initialize();
 
   for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
@@ -57,4 +58,5 @@ int main() {
   vtk.setGroupOfPoints(bodies,Ncell);
   vtk.plot(Ncell);
 #endif
+  T.finialize();
 }

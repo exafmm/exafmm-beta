@@ -267,27 +267,51 @@ public:
     }                                                           // End loop over sublevels of tree
   }
 
-  void initialize() {                                           // Initialize evaluator
+  void initialize() {                                           // Initialize GPU
 #if Laplace
-    LaplacePre();                                               // Precalculation of coefficients
+    LaplaceInit();                                              // Laplace version
 #elif BiotSavart
-    BiotSavartPre();                                            // Precalculation of coefficients
+    BiotSavartInit();                                           // BiotSavart version
 #elif Stretching
-    StretchingPre();                                            // Precalculation of coefficients
+    StretchingInit();                                           // Stretching version
 #elif Gaussian
-    GaussianPre();                                              // Precalculation of coefficients
+    GaussianInit();                                             // Gaussian version
 #endif
   }
 
-  void finalize() {                                             // Finalize evaluator
+  void preCalculation() {                                       // Precalculation of coefficients
 #if Laplace
-    LaplacePost();                                              // Delete temporary coefficients
+    LaplacePre();                                               // Laplace version
 #elif BiotSavart
-    BiotSavartPost();                                           // Delete temporary coefficients
+    BiotSavartPre();                                            // BiotSavart version
 #elif Stretching
-    StretchingPost();                                           // Delete temporary coefficients
+    StretchingPre();                                            // Stretching version
 #elif Gaussian
-    GaussianPost();                                             // Delete temporary coefficients
+    GaussianPre();                                              // Gaussian version
+#endif
+  }
+
+  void postCalculation() {                                      // Delete temporary coefficients
+#if Laplace
+    LaplacePost();                                              // Laplace version
+#elif BiotSavart
+    BiotSavartPost();                                           // BiotSavart version
+#elif Stretching
+    StretchingPost();                                           // Stretching version
+#elif Gaussian
+    GaussianPost();                                             // Gaussian version
+#endif
+  }
+
+  void finalize() {                                             // Finalize GPU
+#if Laplace
+    LaplaceFinal();                                             // Laplace version
+#elif BiotSavart
+    BiotSavartFinal();                                          // BiotSavart version
+#elif Stretching
+    StretchingFinal();                                          // Stretching version
+#elif Gaussian
+    GaussianFinal();                                            // Gaussian version
 #endif
   }
 

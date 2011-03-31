@@ -1,6 +1,6 @@
 #ifndef pregpu_h
 #define pregpu_h
-#ifdef CUPRINTF
+#ifdef CUINIT
 #include "cuprintf.h"
 #endif
 

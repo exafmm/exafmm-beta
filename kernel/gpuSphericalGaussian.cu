@@ -3,7 +3,7 @@
 #include "gaussian.h"
 #include "pregpu.h"
 
-void Kernel::GaussianPre() {
+void Kernel::GaussianInit() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
@@ -14,6 +14,8 @@ void Kernel::GaussianPre() {
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
 }
+
+void Kernel::GaussianPre() {}
 
 __global__ void GaussianP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {}
 
@@ -119,11 +121,13 @@ __global__ void GaussianL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob
   targetGlob[3*itarget+0] = 0;
 }
 
-void Kernel::GaussianPost() {
+void Kernel::GaussianPost() {}
+
+void Kernel::GaussianFinal() {
 #ifdef CUPRINTF
   cudaPrintfDisplay(stdout, true);                              // Print cuPrintf buffer to display
   cudaPrintfEnd();                                              // Finalize cuPrintf
 #endif
 }
 
-#include "postgpu.h"
+#include "gpu.h"

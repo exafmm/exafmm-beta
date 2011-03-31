@@ -216,10 +216,10 @@ public:
 class TreeConstructor : public TopDown, public BottomUp {       // General tree constructor interface
 public:
   TreeConstructor() : TopDown(), BottomUp() {                   // Constructor
-    initialize();
+    preCalculation();
   }
   ~TreeConstructor() {                                          // Destructor
-    finalize();
+    postCalculation();
   }
 
   void topdown(Bodies &bodies, Cells &cells) {                  // Topdown tree constructor interface

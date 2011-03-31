@@ -3,7 +3,7 @@
 #include "stretching.h"
 #include "pregpu.h"
 
-void Kernel::StretchingPre() {
+void Kernel::StretchingInit() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
@@ -13,7 +13,9 @@ void Kernel::StretchingPre() {
   cudaThreadSynchronize();                                      // Sync GPU threads
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
+}
 
+void Kernel::StretchingPre() {
   prefactor = new double  [4*P2];
   Anm       = new double  [4*P2];
   Ynm       = new complex [4*P2];
@@ -902,10 +904,13 @@ void Kernel::StretchingPost() {
   delete[] Ynm;
   delete[] YnmTheta;
   delete[] Cnm;
+}
+
+void Kernel::StretchingFinal() {
 #ifdef CUPRINTF
   cudaPrintfDisplay(stdout, true);                              // Print cuPrintf buffer to display
   cudaPrintfEnd();                                              // Finalize cuPrintf
 #endif
 }
 
-#include "postgpu.h"
+#include "gpu.h"

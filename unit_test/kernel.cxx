@@ -11,6 +11,7 @@ int main() {
   Dataset D;
   Evaluator E;
   E.initialize();
+  E.preCalculation();
 
   for( int it=0; it!=10; ++it ) {
     real dist = (1 << it) / 2;
@@ -74,5 +75,6 @@ int main() {
     std::cout << "Distance      : " << dist << std::endl;
     D.printError(diff1,norm1,diff2,norm2);
   }
+  E.postCalculation();
   E.finalize();
 }

@@ -3,17 +3,19 @@
 #include "laplace.h"
 #include "pregpu.h"
 
-void Kernel::LaplacePre() {
+void Kernel::LaplaceInit() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
 #ifdef CUPRINTF
   cudaPrintfInit();                                             // Initialize cuPrintf
-#endif
   cudaThreadSynchronize();                                      // Sync GPU threads
+#endif
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
+}
 
+void Kernel::LaplacePre() {
   prefactor = new double  [4*P2];
   Anm       = new double  [4*P2];
   Ynm       = new complex [4*P2];
@@ -725,10 +727,13 @@ void Kernel::LaplacePost() {
   delete[] Ynm;
   delete[] YnmTheta;
   delete[] Cnm;
+}
+
+void Kernel::LaplaceFinal() {
 #ifdef CUPRINTF
   cudaPrintfDisplay(stdout, true);                              // Print cuPrintf buffer to display
   cudaPrintfEnd();                                              // Finalize cuPrintf
 #endif
 }
 
-#include "postgpu.h"
+#include "gpu.h"
