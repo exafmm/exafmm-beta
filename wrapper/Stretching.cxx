@@ -39,5 +39,4 @@ void stretching(int numBodies, float *x, float *y, float *z, float *qx, float *q
     dqy[B-bodies.begin()] = B->dQdt[1];
     dqz[B-bodies.begin()] = B->dQdt[2];
   }
-
 }

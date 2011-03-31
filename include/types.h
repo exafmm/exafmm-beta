@@ -22,10 +22,10 @@ typedef float                real;                              // Real number t
 typedef std::complex<double> complex;                           // Complex number type
 
 const int  P       = 10;                                        // Order of expansions
-const int  NCRIT   = 100;                                       // Number of bodies per cell
+const int  NCRIT   = 1000;                                      // Number of bodies per cell
 const real THETA   = 1/sqrtf(4);                                // Box opening criteria
 const real EPS2    = 1e-4;                                      // Softening parameter
-const int  IMAGES  = 2;                                         // Number of periodic image sublevels
+const int  IMAGES  = 0;                                         // Number of periodic image sublevels
 const int  GPUS    = 4;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 
@@ -41,25 +41,15 @@ const int  NCOEF   = NTERM;                                     // Number of coe
 const int  NCOEF   = 3 * NTERM;                                 // Number of coefficients for BiotSavart kernel
 #elif Stretching
 const int  NCOEF   = 3 * NTERM;                                 // Number of coefficients for Stretching kernel
+#elif Gaussian
+const int  NCOEF   = NTERM;                                     // Number of coefficients for Gaussian kernel
 #endif
 
 typedef vec<3,real>                            vect;            // 3-D vector type
 #if Cartesian
- #if Laplace
-typedef vec<NTERM,real>                        coef;            // Multipole coefficient type for Cartesian Laplace
- #elif BiotSavart
-typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Cartesian BiotSavart
- #elif Stretching
-typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Cartesian Stretching
- #endif
+typedef vec<NCOEF,real>                        coef;            // Multipole coefficient type for Cartesian
 #elif Spherical
- #if Laplace
-typedef vec<NTERM,complex>                     coef;            // Multipole coefficient type for spherical Laplace
- #elif BiotSavart
-typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical BiotSavart
- #elif Stretching
-typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical Stretching
- #endif
+typedef vec<NCOEF,complex>                     coef;            // Multipole coefficient type for spherical
 #endif
 typedef std::vector<bigint>                    Bigints;         // Vector of big integer types
 typedef std::map<std::string,double>           Event;           // Map of event name to logged value
@@ -78,6 +68,9 @@ struct JBody {                                                  // Source proper
 #elif Stretching
   vect   Q;                                                     // Vortex strength
   real   S;                                                     // Core radius
+#elif Gaussian
+  real   Q;                                                     // Mass/charge
+  real   S;                                                     // Core radius
 #endif
 };
 struct Body : JBody {                                           // All properties of a body
@@ -88,6 +81,8 @@ struct Body : JBody {                                           // All propertie
   vect vel;                                                     // Velocity
 #elif Stretching
   vect dQdt;                                                    // Change rate of vortex strength
+#elif Gaussian
+  real val;                                                     // Value
 #endif
   bool operator<(const Body &rhs) const {                       // Overload operator for comparing body index
     return this->IBODY < rhs.IBODY;                             // Comparison function for body index

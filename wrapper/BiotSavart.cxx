@@ -22,7 +22,7 @@ void biotsavart(int numBodies, float *x, float *y, float *z, float *qx, float *q
   }
 
   T.setDomain(bodies);
-  T.bottomup(bodies,cells);
+  T.topdown(bodies,cells);
   jcells = cells;
   T.downward(cells,jcells,1);
   std::sort(bodies.begin(),bodies.end());
@@ -40,5 +40,4 @@ void biotsavart(int numBodies, float *x, float *y, float *z, float *qx, float *q
     v[B-bodies.begin()]  = B->vel[1];
     w[B-bodies.begin()]  = B->vel[2];
   }
-
 }

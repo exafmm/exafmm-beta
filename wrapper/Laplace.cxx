@@ -35,5 +35,4 @@ void laplace(int numBodies, float *x, float *y, float *z, float *charge,
     fy[B-bodies.begin()]     = B->acc[1];
     fz[B-bodies.begin()]     = B->acc[2];
   }
-
 }

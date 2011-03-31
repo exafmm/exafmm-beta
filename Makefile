@@ -1,14 +1,15 @@
 .SUFFIXES: .cxx .cu .o
 
-#DEVICE  = cpu
-DEVICE  = gpu
+DEVICE  = cpu
+#DEVICE  = gpu
 
 #EXPAND  = Cartesian
 EXPAND  = Spherical
 
-KERNEL  = Laplace
+#KERNEL  = Laplace
 #KERNEL  = BiotSavart
 #KERNEL  = Stretching
+KERNEL  = Gaussian
 
 CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O2 -fPIC -fopenmp\
 	-ffast-math -funroll-loops -fforce-addr -rdynamic -D_FILE_OFFSET_BITS=64\

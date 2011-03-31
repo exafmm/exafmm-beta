@@ -15,12 +15,15 @@ public:
       B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
       B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
       B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
-      B->S    = 2 * powf(bodies.size(),-1./3);                  // Initialize core radius
+      B->S    = 2 * powf(bodies.size(),-1./3);                  //  Initialize core radius
 #elif Stretching
       B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
       B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
       B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
-      B->S    = 2 * powf(bodies.size(),-1./3);                  // Initialize core radius
+      B->S    = 2 * powf(bodies.size(),-1./3);                  //  Initialize core radius
+#elif Gaussian
+      B->Q = 1. / bodies.size() / MPISIZE;                      //  Initialize mass/charge
+      B->S = 2 * powf(bodies.size(),-1./3);                     //  Initialize core radius
 #endif
     }                                                           // End loop over bodies
   }
@@ -42,6 +45,8 @@ public:
         B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
       }                                                         //  Endif for different source and target
       B->dQdt = 0;                                              //  Initialize change rate of vortex strength
+#elif Gaussian
+      B->val = 0 * IeqJ;                                        //  Initialize value
 #endif
     }                                                           // End loop over bodies
   }
@@ -116,6 +121,8 @@ public:
       file >> B->dQdt[0];                                       //  Read data for change rate of x vortex strength
       file >> B->dQdt[1];                                       //  Read data for change rate of y vortex strength
       file >> B->dQdt[2];                                       //  Read data for change rate of z vortex strength
+#elif Gaussian
+      file >> B->val;                                           //  Read data for value
 #endif
     }                                                           // End loop over bodies
     file.close();                                               // Close file
@@ -137,6 +144,8 @@ public:
       file << B->dQdt[0] << std::endl;                          //  Write data for change rate of x vortex strength
       file << B->dQdt[1] << std::endl;                          //  Write data for change rate of y vortex strength
       file << B->dQdt[2] << std::endl;                          //  Write data for change rate of z vortex strength
+#elif Gaussian
+      file << B->val << std::endl;                              //  Write data for value
 #endif
     }                                                           // End loop over bodies
     file.close();                                               // Close file
@@ -149,7 +158,7 @@ public:
     B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
-      std::cout << B->I << " " << B->pot << " " << B2->pot << std::endl;// Compare every element
+      std::cout << B->ICELL << " " << B->pot << " " << B2->pot << std::endl;// Compare every element
 #endif
       diff1 += (B->pot - B2->pot) * (B->pot - B2->pot);         // Difference of potential
       norm1 += B2->pot * B2->pot;                               // Value of potential
@@ -161,7 +170,7 @@ public:
     B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
-      std::cout << B->I << " " << B->vel[0] << " " << B2->vel[0] << std::endl;// Compare every element
+      std::cout << B->ICELL << " " << B->vel[0] << " " << B2->vel[0] << std::endl;// Compare every element
 #endif
       diff1 += norm(B->vel - B2->vel);                          // Difference of velocity
       norm1 += norm(B2->vel);                                   // Value of velocity
@@ -171,10 +180,20 @@ public:
     B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
-      std::cout << B->I << " " << B->dQdt[0] << " " << B2->dQdt[0] << std::endl;// Compare every element
+      std::cout << B->ICELL << " " << B->dQdt[0] << " " << B2->dQdt[0] << std::endl;// Compare every element
 #endif
       diff1 += norm(B->dQdt - B2->dQdt);                        // Difference of change rate of vortex strength
       norm1 += norm(B2->dQdt);                                  // Value of change rate of vortex strength
+    }                                                           // End loop over bodies & bodies2
+#elif Gaussian
+    diff2 = norm2 = 0;                                          // Set unused values to 0
+    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
+#ifdef DEBUG
+      std::cout << B->ICELL << " " << B->val << " " << B2->val << std::endl;// Compare every element
+#endif
+      diff1 += (B->val - B2->val) * (B->val - B2->val);         // Difference of potential
+      norm1 += B2->val * B2->val;                               // Value of potential
     }                                                           // End loop over bodies & bodies2
 #endif
   }
@@ -187,6 +206,9 @@ public:
   vect dummy = diff2; dummy = norm2;                            // Use the values so compiler does not complain
   std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
 #elif Stretching
+  vect dummy = diff2; dummy = norm2;                            // Use the values so compiler does not complain
+  std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
+#elif Gaussian
   vect dummy = diff2; dummy = norm2;                            // Use the values so compiler does not complain
   std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
 #endif

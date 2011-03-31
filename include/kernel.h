@@ -97,6 +97,18 @@ public:
   void StretchingL2L();
   void StretchingL2P();
   void StretchingPost();
+
+  void GaussianPre();
+  void GaussianP2M();
+  void GaussianM2M();
+  void GaussianM2M_CPU();
+  void GaussianM2L();
+  void GaussianM2P();
+  void GaussianP2P();
+  void GaussianP2P_CPU();
+  void GaussianL2L();
+  void GaussianL2P();
+  void GaussianPost();
 };
 
 #endif

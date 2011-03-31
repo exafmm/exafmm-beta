@@ -222,6 +222,8 @@ public:
         BiotSavartM2M_CPU();                                    //   Evaluate M2M on CPU (work is too small for GPU)
 #elif Stretching
         StretchingM2M_CPU();                                    //   Evaluate M2M on CPU (work is too small for GPU)
+#elif Gaussian
+        GaussianM2M_CPU();                                      //   Evaluate M2M on CPU (work is too small for GPU)
 #endif
         pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
       }                                                         //  End while for remaining periodic jcells
@@ -272,6 +274,8 @@ public:
     BiotSavartPre();                                            // Precalculation of coefficients
 #elif Stretching
     StretchingPre();                                            // Precalculation of coefficients
+#elif Gaussian
+    GaussianPre();                                              // Precalculation of coefficients
 #endif
   }
 
@@ -282,6 +286,8 @@ public:
     BiotSavartPost();                                           // Delete temporary coefficients
 #elif Stretching
     StretchingPost();                                           // Delete temporary coefficients
+#elif Gaussian
+    GaussianPost();                                             // Delete temporary coefficients
 #endif
   }
 

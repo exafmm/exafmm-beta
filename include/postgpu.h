@@ -67,6 +67,14 @@ CALL_GPU(StretchingM2P,M2P GPUkernel);
 CALL_GPU(StretchingP2P,P2P GPUkernel);
 CALL_GPU(StretchingL2L,L2L GPUkernel);
 CALL_GPU(StretchingL2P,L2P GPUkernel);
+#elif Gaussian
+CALL_GPU(GaussianP2M,P2M GPUkernel);
+CALL_GPU(GaussianM2M,M2M GPUkernel);
+CALL_GPU(GaussianM2L,M2L GPUkernel);
+CALL_GPU(GaussianM2P,M2P GPUkernel);
+CALL_GPU(GaussianP2P,P2P GPUkernel);
+CALL_GPU(GaussianL2L,L2L GPUkernel);
+CALL_GPU(GaussianL2P,L2P GPUkernel);
 #endif
 
 #endif

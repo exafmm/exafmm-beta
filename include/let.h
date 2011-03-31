@@ -150,6 +150,8 @@ private:
       body.S = JB->S;                                           //  Set core radius of body
 #elif Stretching
       body.S = JB->S;                                           //  Set core radius of body
+#elif Gaussian
+      body.S = JB->S;                                           //  Set core radius of body
 #endif
       bodies.push_back(body);                                   //  Push body into bodies vector
     }                                                           // End loop over recv bodies
@@ -350,6 +352,8 @@ public:
 #elif BiotSavart
           body.S     = B->S;                                    //    Set core radius of compact body type
 #elif Stretching
+          body.S     = B->S;                                    //    Set core radius of compact body type
+#elif Gaussian
           body.S     = B->S;                                    //    Set core radius of compact body type
 #endif
           sendBodies.push_back(body);                           //    Push it into the send buffer

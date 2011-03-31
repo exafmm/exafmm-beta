@@ -5,6 +5,7 @@
 
 void Kernel::StretchingPre() {
   startTimer("Init GPU     ");                                  // Start timer
+  cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
 #ifdef CUPRINTF
   cudaPrintfInit();                                             // Initialize cuPrintf

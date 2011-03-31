@@ -10,6 +10,8 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
   BiotSavartP2P_CPU();                                          // Evaluate P2P kernel
 #elif Stretching
   StretchingP2P_CPU();                                          // Evaluate P2P kernel
+#elif Gaussian
+  GaussianP2P_CPU();                                            // Evaluate P2P kernel
 #endif
 }
 
@@ -23,6 +25,8 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
     BiotSavartP2M();                                            //  Evaluate P2M kernel
 #elif Stretching
     StretchingP2M();                                            //  Evaluate P2M kernel
+#elif Gaussian
+    GaussianP2M();                                              //  Evaluate P2M kernel
 #endif
   }                                                             // End loop over cells
   stopTimer("evalP2M      ");                                   // Stop timer
@@ -39,6 +43,8 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
     BiotSavartM2M_CPU();                                        //  Evaluate M2M kernel
 #elif Stretching
     StretchingM2M_CPU();                                        //  Evaluate M2M kernel
+#elif Gaussian
+    GaussianM2M_CPU();                                          //  Evaluate M2M kernel
 #endif
   }                                                             // End loop over cells
   stopTimer("evalM2M      ");                                   // Stop timer
@@ -65,6 +71,8 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
               BiotSavartM2L();                                  //       Evaluate M2L kernel
 #elif Stretching
               StretchingM2L();                                  //       Evaluate M2L kernel
+#elif Gaussian
+              GaussianM2L();                                    //       Evaluate M2L kernel
 #endif
             }                                                   //      Endif for periodic flag
           }                                                     //     End loop over x periodic direction
@@ -99,6 +107,8 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
               BiotSavartM2P();                                  //       Evaluate M2P kernel
 #elif Stretching
               StretchingM2P();                                  //       Evaluate M2P kernel
+#elif Gaussian
+              GaussianM2P();                                    //       Evaluate M2P kernel
 #endif
             }                                                   //      Endif for periodic flag
           }                                                     //     End loop over x periodic direction
@@ -137,6 +147,8 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
               BiotSavartP2P_CPU();                              //       Evaluate P2P kernel
 #elif Stretching
               StretchingP2P_CPU();                              //       Evaluate P2P kernel
+#elif Gaussian
+              GaussianP2P_CPU();                                //       Evaluate P2P kernel
 #endif
             }                                                   //      Endif for periodic flag
           }                                                     //     End loop over x periodic direction
@@ -161,6 +173,8 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
     BiotSavartL2L();                                            //  Evaluate L2L kernel
 #elif Stretching
     StretchingL2L();                                            //  Evaluate L2L kernel
+#elif Gaussian
+    GaussianL2L();                                              //  Evaluate L2L kernel
 #endif
   }                                                             // End loop over cells topdown
   stopTimer("evalL2L      ");                                   // Stop timer
@@ -176,6 +190,8 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
       BiotSavartL2P();                                          //   Evaluate L2P kernel
 #elif Stretching
       StretchingL2P();                                          //   Evaluate L2P kernel
+#elif Gaussian
+      GaussianL2P();                                            //   Evaluate L2P kernel
 #endif
     }                                                           //  Endif for twig
   }                                                             // End loop over cells topdown

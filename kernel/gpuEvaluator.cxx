@@ -8,6 +8,8 @@ void Evaluator::setSourceBody() {                               // Set source bu
     sourceBegin[CJ] = sourceHost.size() / 7;                    //  Key : iterator, Value : offset of source leafs
 #elif Stretching
     sourceBegin[CJ] = sourceHost.size() / 7;                    //  Key : iterator, Value : offset of source leafs
+#elif Gaussian
+    sourceBegin[CJ] = sourceHost.size() / 5;                    //  Key : iterator, Value : offset of source leafs
 #endif
     for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {      //  Loop over leafs in source cell
       sourceHost.push_back(B->X[0]);                            //   Copy x position to GPU buffer
@@ -24,6 +26,9 @@ void Evaluator::setSourceBody() {                               // Set source bu
       sourceHost.push_back(B->Q[0]);                            //   Copy x vortex strength to GPU buffer
       sourceHost.push_back(B->Q[1]);                            //   Copy y vortex strength to GPU buffer
       sourceHost.push_back(B->Q[2]);                            //   Copy z vortex strength to GPU buffer
+      sourceHost.push_back(B->S);                               //   Copy core radius to GPU buffer
+#elif Gaussian
+      sourceHost.push_back(B->Q);                               //   Copy mass/charge to GPU buffer
       sourceHost.push_back(B->S);                               //   Copy core radius to GPU buffer
 #endif
     }                                                           //  End loop over leafs
@@ -79,6 +84,8 @@ void Evaluator::setTargetBody(Cells &cells, Lists lists, Maps flags) {// Set tar
       targetBegin[CI] = targetHost.size() / 3;                  //   Key : iterator, Value : offset of target leafs
 #elif Stretching
       targetBegin[CI] = targetHost.size() / 6;                  //   Key : iterator, Value : offset of target leafs
+#elif Gaussian
+      targetBegin[CI] = targetHost.size() / 3;                  //   Key : iterator, Value : offset of target leafs
 #endif
       for( B_iter B=BI0; B!=BIN; ++B ) {                        //   Loop over leafs in target cell
         targetHost.push_back(B->X[0]);                          //    Copy x position to GPU buffer
@@ -91,6 +98,7 @@ void Evaluator::setTargetBody(Cells &cells, Lists lists, Maps flags) {// Set tar
         targetHost.push_back(B->Q[0]);                          //    Copy x vortex strength to GPU buffer
         targetHost.push_back(B->Q[1]);                          //    Copy y vortex strength to GPU buffer
         targetHost.push_back(B->Q[2]);                          //    Copy z vortex strength to GPU buffer
+#elif Gaussian
 #endif
       }                                                         //   End loop over leafs
       int numPad = blocks * THREADS - (BIN - BI0);              //   Number of elements to pad in target GPU buffer
@@ -105,6 +113,7 @@ void Evaluator::setTargetBody(Cells &cells, Lists lists, Maps flags) {// Set tar
         targetHost.push_back(0);                                //    Pad x vortex strength to GPU buffer
         targetHost.push_back(0);                                //    Pad y vortex strength to GPU buffer
         targetHost.push_back(0);                                //    Pad z vortex strength to GPU buffer
+#elif Gaussian
 #endif
       }                                                         //   End loop over elements to pad
     }                                                           //  End if for empty interation list
@@ -166,6 +175,8 @@ void Evaluator::getTargetBody(Cells &cells, Lists &lists) {     // Get body valu
         B->dQdt[0] += targetHost[6*(begin+B-BI0)+0];            //    Copy change rate of x vortex strength from GPU buf
         B->dQdt[1] += targetHost[6*(begin+B-BI0)+1];            //    Copy change rate of y vortex strength from GPU buf
         B->dQdt[2] += targetHost[6*(begin+B-BI0)+2];            //    Copy change rate of z vortex strength from GPU buf
+#elif Gaussian
+        B->val += targetHost[3*(begin+B-BI0)+0];                //    Copy value from GPU buffer
 #endif
       }                                                         //   End loop over target bodies
       lists[CI-CI0].clear();                                    //   Clear interaction list
@@ -222,6 +233,8 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
     BiotSavartP2P_CPU();                                        //  Evaluate P2P kernel
 #elif Stretching
     StretchingP2P_CPU();                                        //  Evaluate P2P kernel
+#elif Gaussian
+    GaussianP2P_CPU();                                          //  Evaluate P2P kernel
 #endif
   } else {                                                      // If calculation is to be done on GPU
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
@@ -240,6 +253,9 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
       sourceHost.push_back(B->Q[0]);                            //  Copy x vortex strength to GPU buffer
       sourceHost.push_back(B->Q[1]);                            //  Copy y vortex strength to GPU buffer
       sourceHost.push_back(B->Q[2]);                            //  Copy z vortex strength to GPU buffer
+      sourceHost.push_back(B->S);                               //  Copy core radius to GPU buffer
+#elif Gaussian
+      sourceHost.push_back(B->Q);                               //  Copy mass/charge to GPU buffer
       sourceHost.push_back(B->S);                               //  Copy core radius to GPU buffer
 #endif
     }                                                           //  End loop over source bodies
@@ -263,6 +279,7 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
       targetHost.push_back(B->Q[0]);                            //   Copy x vortex strength to GPU buffer
       targetHost.push_back(B->Q[1]);                            //   Copy y vortex strength to GPU buffer
       targetHost.push_back(B->Q[2]);                            //   Copy z vortex strength to GPU buffer
+#elif Gaussian
 #endif
     }                                                           //  End loop over target bodies
     int numPad = blocks * THREADS - (BIN - BI0);                //  Number of elements to pad in target GPU buffer
@@ -277,6 +294,7 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
       targetHost.push_back(0);                                  //   Pad x vortex strength to GPU buffer
       targetHost.push_back(0);                                  //   Pad y vortex strength to GPU buffer
       targetHost.push_back(0);                                  //   Pad z vortex strength to GPU buffer
+#elif Gaussian
 #endif
     }                                                           //  End loop over elements to pad
 #if Laplace
@@ -285,6 +303,8 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
     BiotSavartP2P();                                            //  Evaluate P2P kernel
 #elif Stretching
     StretchingP2P();                                            //  Evaluate P2P kernel
+#elif Gaussian
+    GaussianP2P();                                              //  Evaluate P2P kernel
 #endif
     for( B_iter B=BI0; B!=BIN; ++B ) {                          //  Loop over target bodies
 #if Laplace
@@ -300,6 +320,8 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
       B->dQdt[0] += targetHost[6*(B-BI0)+0];                    //   Copy change rate of x vortex strength from GPU buff
       B->dQdt[1] += targetHost[6*(B-BI0)+1];                    //   Copy change rate of y vortex strength from GPU buff
       B->dQdt[2] += targetHost[6*(B-BI0)+2];                    //   Copy change rate of z vortex strength from GPU buff
+#elif Gaussian
+      B->val += targetHost[3*(B-BI0)+0];                        //   Copy value from GPU buffer
 #endif
     }                                                           //  End loop over target bodies
     keysHost.clear();                                           //  Clear keys vector
@@ -332,6 +354,8 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
   BiotSavartP2M();                                              // Evaluate P2M kernel
 #elif Stretching
   StretchingP2M();                                              // Evaluate P2M kernel
+#elif Gaussian
+  GaussianP2M();                                                // Evaluate P2M kernel
 #endif
   getTargetCell(cells,listP2M);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
@@ -363,6 +387,8 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
     BiotSavartM2M();                                            //  Evaluate M2M kernel
 #elif Stretching
     StretchingM2M();                                            //  Evaluate M2M kernel
+#elif Gaussian
+    GaussianM2M();                                              //  Evaluate M2M kernel
 #endif
     getTargetCell(cells,listM2M);                               //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
@@ -389,6 +415,8 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
   BiotSavartM2L();                                              // Evaluate M2L kernel
 #elif Stretching
   StretchingM2L();                                              // Evaluate M2L kernel
+#elif Gaussian
+  GaussianM2L();                                                // Evaluate M2L kernel
 #endif
   getTargetCell(cells,listM2L,false);                           // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
@@ -416,6 +444,8 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
   BiotSavartM2P();                                              // Evaluate M2P kernel
 #elif Stretching
   StretchingM2P();                                              // Evaluate M2P kernel
+#elif Gaussian
+  GaussianM2P();                                                // Evaluate M2P kernel
 #endif
   getTargetBody(cells,listM2P);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
@@ -442,6 +472,8 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
   BiotSavartP2P();                                              // Evaluate P2P kernel
 #elif Stretching
   StretchingP2P();                                              // Evaluate P2P kernel
+#elif Gaussian
+  GaussianP2P();                                                // Evaluate P2P kernel
 #endif
   getTargetBody(cells,listP2P);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
@@ -477,6 +509,8 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
     BiotSavartL2L();                                            //  Evaluate L2L kernel
 #elif Stretching
     StretchingL2L();                                            //  Evaluate L2L kernel
+#elif Gaussian
+    GaussianL2L();                                              //  Evaluate L2L kernel
 #endif
     getTargetCell(cells,listL2L,false);                         //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
@@ -506,6 +540,8 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
   BiotSavartL2P();                                              // Evaluate L2P kernel
 #elif Stretching
   StretchingL2P();                                              // Evaluate L2P kernel
+#elif Gaussian
+  GaussianL2P();                                                // Evaluate L2P kernel
 #endif
   getTargetBody(cells,listL2P);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers

@@ -5,9 +5,10 @@
 
 extern void biotsavart(int, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
 extern void stretching(int, float*, float*, float*, float*, float*, float*, float*, float*, float*, float*);
+extern void gaussian(int, float*, float*, float*, float*, float*, float*);
 
 int main() {
-  const int N = 10000;
+  const int N = 100;
   const float eps2 = 1e-4;
   float *x  = new float [N];
   float *y  = new float [N];
@@ -30,6 +31,24 @@ int main() {
     s[i] = 2 * powf(N,-1./3);
     u[i] = v[i] = w[i] = 0;
   }
+
+  gaussian(N,x,y,z,qx,s,v);
+
+  float Vd = 0, Vn = 0;
+  for( int i=0; i!=N; ++i ) {
+    float V = 0;
+    for( int j=0; j!=N; ++j ) {
+      float dx = x[i] - x[j];
+      float dy = y[i] - y[j];
+      float dz = z[i] - z[j];
+      float S2 = 2 * s[j] * s[j];
+      float R2 = dx * dx + dy * dy + dz * dz + eps2;
+      V += qx[j] / (M_PI * S2) / std::sqrt(M_PI * S2) * exp(-R2 / S2);
+    }
+    Vd += (v[i] - V) * (v[i] - V);
+    Vn += V * V;
+  }
+  std::cout << "Error (GA)    : " << sqrtf(Vd/Vn) << std::endl;
 
   biotsavart(N,x,y,z,qx,qy,qz,s,u,v,w);
 
@@ -55,7 +74,7 @@ int main() {
   }
   std::cout << "Error (BS)    : " << sqrtf(Ud/Un) << std::endl;
 
-  stretching(N,x,y,z,qx,qy,qz,s,u,v,w);
+//  stretching(N,x,y,z,qx,qy,qz,s,u,v,w);
 
   float Qd = 0, Qn = 0;
   for( int i=0; i!=N; ++i ) {
@@ -81,8 +100,29 @@ int main() {
     }
     Qd += (u[i] - U) * (u[i] - U) + (v[i] - V) * (v[i] - V) + (w[i] - W) * (w[i] - W);
     Qn += U * U + V * V + W * W;
+    u[i] = v[i] = w[i] = 0;
   }
   std::cout << "Error (ST)    : " << sqrtf(Qd/Qn) << std::endl;
+
+/*
+  gaussian(N,x,y,z,qx,s,v);
+
+  float Vd = 0, Vn = 0;
+  for( int i=0; i!=N; ++i ) {
+    float V = 0;
+    for( int j=0; j!=N; ++j ) {
+      float dx = x[i] - x[j];
+      float dy = y[i] - y[j];
+      float dz = z[i] - z[j];
+      float S2 = 2 * s[j] * s[j];
+      float R2 = dx * dx + dy * dy + dz * dz + eps2;
+      V += qx[j] / (M_PI * S2) / std::sqrt(M_PI * S2) * exp(-R2 / S2);
+    }
+    Vd += (v[i] - V) * (v[i] - V);
+    Vn += V * V;
+  }
+  std::cout << "Error (GA)    : " << sqrtf(Vd/Vn) << std::endl;
+*/
 
   delete[] x;
   delete[] y;
