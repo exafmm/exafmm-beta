@@ -58,5 +58,5 @@ int main() {
   vtk.setGroupOfPoints(bodies,Ncell);
   vtk.plot(Ncell);
 #endif
-  T.finialize();
+  T.finalize();
 }
