@@ -578,8 +578,9 @@ __device__ inline void StretchingP2P_core(float *target, float *targetX, float *
   d.y -= sourceShrd[7*i+1];
   d.z += targetX[2];
   d.z -= sourceShrd[7*i+2];
-  float S2 = 2 * sourceShrd[7*i+6] * sourceShrd[7*i+6];
   float R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
+#if 0
+  float S2 = 2 * sourceShrd[7*i+6] * sourceShrd[7*i+6];
   float RS = R2 / S2;
   float cutoff = 0.25 / M_PI / R2 / sqrtf(R2) * (erff( sqrtf(RS) )
                - sqrtf(4 / M_PI * RS) * expf(-RS));
@@ -592,6 +593,30 @@ __device__ inline void StretchingP2P_core(float *target, float *targetX, float *
   target[0] += (sourceShrd[7*i+4] * d.z - sourceShrd[7*i+5] * d.y) * cutoff;
   target[1] += (sourceShrd[7*i+5] * d.x - sourceShrd[7*i+3] * d.z) * cutoff;
   target[2] += (sourceShrd[7*i+3] * d.y - sourceShrd[7*i+4] * d.x) * cutoff;
+#else
+  const float SQRT4PI = M_2_SQRTPI;
+  const float FOURPI = 0.25 * M_1_PI;
+  float SQRT_R2_1 = rsqrtf(R2);
+  float RS = R2 * sourceShrd[7*i+6];
+  float SQRT_RS = sqrtf(RS);
+  float z = SQRT_RS,t,ERF_SQRT_RS;
+  (t)=1.0f/(1.0f+0.5f*(z));
+  ERF_SQRT_RS=1.0f - (t)*expf(-(z)*(z)-1.26551223f+(t)*(1.00002368f+(t)*(0.37409196f+(t)*(0.09678418f+
+      (t)*(-0.18628806f+(t)*(0.27886807f+(t)*(-1.13520398f+(t)*(1.48851587f+
+      (t)*(-0.82215223f+(t)*0.17087277f)))))))));
+  float EXP_RS = expf(-RS);
+  float cutoff = FOURPI * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * (ERF_SQRT_RS
+               - SQRT4PI * SQRT_RS * EXP_RS);
+  target[0] += (targetQ[1] * sourceShrd[7*i+5] - targetQ[2] * sourceShrd[7*i+4]) * cutoff;
+  target[1] += (targetQ[2] * sourceShrd[7*i+3] - targetQ[0] * sourceShrd[7*i+5]) * cutoff;
+  target[2] += (targetQ[0] * sourceShrd[7*i+4] - targetQ[1] * sourceShrd[7*i+3]) * cutoff;
+  float cutoff2 = FOURPI * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * (3.0f * ERF_SQRT_RS
+         - (2.0f * RS + 3.0f) * SQRT4PI * SQRT_RS * EXP_RS)
+         * (targetQ[0] * d.x + targetQ[1] * d.y + targetQ[2] * d.z);
+  target[0] += (sourceShrd[7*i+4] * d.z - sourceShrd[7*i+5] * d.y) * cutoff2;
+  target[1] += (sourceShrd[7*i+5] * d.x - sourceShrd[7*i+3] * d.z) * cutoff2;
+  target[2] += (sourceShrd[7*i+3] * d.y - sourceShrd[7*i+4] * d.x) * cutoff2;
+#endif
 }
 
 __global__ void StretchingP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
@@ -621,7 +646,8 @@ __global__ void StretchingP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
       sourceShrd[7*threadIdx.x+3] = sourceGlob[7*isource+3];
       sourceShrd[7*threadIdx.x+4] = sourceGlob[7*isource+4];
       sourceShrd[7*threadIdx.x+5] = sourceGlob[7*isource+5];
-      sourceShrd[7*threadIdx.x+6] = sourceGlob[7*isource+6];
+//      sourceShrd[7*threadIdx.x+6] = sourceGlob[7*isource+6];
+      sourceShrd[7*threadIdx.x+6] = 0.5f / (sourceGlob[7*isource+6] * sourceGlob[7*isource+6]);
       __syncthreads();
       int I = 0;
       for( int ix=-1; ix<=1; ++ix ) {
@@ -651,7 +677,8 @@ __global__ void StretchingP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
       sourceShrd[7*threadIdx.x+3] = sourceGlob[7*isource+3];
       sourceShrd[7*threadIdx.x+4] = sourceGlob[7*isource+4];
       sourceShrd[7*threadIdx.x+5] = sourceGlob[7*isource+5];
-      sourceShrd[7*threadIdx.x+6] = sourceGlob[7*isource+6];
+//      sourceShrd[7*threadIdx.x+6] = sourceGlob[7*isource+6];
+      sourceShrd[7*threadIdx.x+6] = 0.5f / (sourceGlob[7*isource+6] * sourceGlob[7*isource+6]);
     }
     __syncthreads();
     int I = 0;
