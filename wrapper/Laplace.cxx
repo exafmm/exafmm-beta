@@ -5,8 +5,9 @@ void laplace(int numBodies, float *x, float *y, float *z, float *charge,
   Bodies bodies(numBodies);
   Cells cells,jcells;
   TreeConstructor T;
-  T.printNow = true;
+  T.printNow = false;
 
+  T.startTimer("Laplace      ");
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     B->X[0]   = x[B-bodies.begin()];
     B->X[1]   = y[B-bodies.begin()];
@@ -35,4 +36,5 @@ void laplace(int numBodies, float *x, float *y, float *z, float *charge,
     fy[B-bodies.begin()]     = B->acc[1];
     fz[B-bodies.begin()]     = B->acc[2];
   }
+  T.stopTimer("Laplace      ",true);
 }

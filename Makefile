@@ -7,8 +7,8 @@ DEVICE  = gpu
 EXPAND  = Spherical
 
 #KERNEL  = Laplace
-#KERNEL  = BiotSavart
-KERNEL  = Stretching
+KERNEL  = BiotSavart
+#KERNEL  = Stretching
 #KERNEL  = Gaussian
 
 CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O2 -fPIC -fopenmp\

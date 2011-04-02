@@ -6,8 +6,9 @@ void gaussian(int numBodies, float *xj, float *yj, float *zj, float *charge, flo
   Bodies jbodies = bodies;
   Cells cells,jcells;
   TreeConstructor T;
-  T.printNow = true;
+  T.printNow = false;
 
+  T.startTimer("Gaussian     ");
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     B->X[0]  = xi[B-bodies.begin()];
     B->X[1]  = yi[B-bodies.begin()];
@@ -35,4 +36,5 @@ void gaussian(int numBodies, float *xj, float *yj, float *zj, float *charge, flo
     zi[B-bodies.begin()]  = B->X[2];
     val[B-bodies.begin()] = B->val;
   }
+  T.stopTimer("Gaussian     ",true);
 }

@@ -26,7 +26,7 @@ const int  P       = 10;                                        // Order of expa
 const int  NCRIT   = 1000;                                      // Number of bodies per cell
 const real THETA   = 1/sqrtf(4);                                // Box opening criteria
 const real EPS2    = 1e-4;                                      // Softening parameter
-const int  IMAGES  = 0;                                         // Number of periodic image sublevels
+const int  IMAGES  = 3;                                         // Number of periodic image sublevels
 const int  GPUS    = 4;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 

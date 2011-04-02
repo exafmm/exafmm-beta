@@ -7,6 +7,7 @@ void biotsavart(int numBodies, float *x, float *y, float *z, float *qx, float *q
   TreeConstructor T;
   T.printNow = false;
 
+  T.startTimer("BiotSavart   ");
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     B->X[0]   = x[B-bodies.begin()];
     B->X[1]   = y[B-bodies.begin()];
@@ -26,7 +27,6 @@ void biotsavart(int numBodies, float *x, float *y, float *z, float *qx, float *q
   jcells = cells;
   T.downward(cells,jcells,1);
   std::sort(bodies.begin(),bodies.end());
-  T.printAllTime();
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     x[B-bodies.begin()]  = B->X[0];
@@ -40,4 +40,5 @@ void biotsavart(int numBodies, float *x, float *y, float *z, float *qx, float *q
     v[B-bodies.begin()]  = B->vel[1];
     w[B-bodies.begin()]  = B->vel[2];
   }
+  T.stopTimer("BiotSavart   ",true);
 }

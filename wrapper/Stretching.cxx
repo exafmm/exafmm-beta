@@ -5,8 +5,9 @@ void stretching(int numBodies, float *x, float *y, float *z, float *qx, float *q
   Bodies bodies(numBodies);
   Cells cells,jcells;
   TreeConstructor T;
-  T.printNow = true;
+  T.printNow = false;
 
+  T.startTimer("Stretching   ");
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     B->X[0]    = x[B-bodies.begin()];
     B->X[1]    = y[B-bodies.begin()];
@@ -39,4 +40,5 @@ void stretching(int numBodies, float *x, float *y, float *z, float *qx, float *q
     dqy[B-bodies.begin()] = B->dQdt[1];
     dqz[B-bodies.begin()] = B->dQdt[2];
   }
+  T.stopTimer("Stretching   ",true);
 }
