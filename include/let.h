@@ -12,35 +12,37 @@ private:
 
 private:
   void getOtherDomain(vect &xmin, vect &xmax, int l) {          // Get boundries of domains on other processes
+    startTimer("Get domain   ");                                //  Start timer
     MPI_Datatype MPI_TYPE = getType(XMIN[l][0]);                // Get MPI data type
     vect send[2],recv[2];                                       // Send and recv buffer
     MPI_Request req;                                            // MPI requests
     send[0] = send[1] = XMIN[l];                                // Set XMIN into send buffer
     recv[0] = recv[1] = 0;                                      // Initialize recv buffer
-    MPI_Alltoall(send,3,MPI_TYPE,recv,3,MPI_TYPE,MPI_COMM[2]);  // Communicate XMIN
-    xmin = recv[1-key[2]];                                      // Copy xmin from recv buffer
+    MPI_Alltoall(send,3,MPI_TYPE,recv,3,MPI_TYPE,MPI_COMM[l][2]);// Communicate XMIN
+    xmin = recv[1-key[l][2]];                                   // Copy xmin from recv buffer
     send[0] = send[1] = XMAX[l];                                // Set XMAX into send buffer
     recv[0] = recv[1] = 0;                                      // Initialize recv buffer
-    MPI_Alltoall(send,3,MPI_TYPE,recv,3,MPI_TYPE,MPI_COMM[2]);  // Communicate XMAX
-    xmax = recv[1-key[2]];                                      // Copy xmax from recv buffer
-    if( oldnprocs % 2 == 1 && nprocs[0] >= nprocs[1] ) {        // If right half of odd group
-      int isend = (key[0] + 1            ) % nprocs[0];         //  Send to next rank (wrapped)
-      int irecv = (key[0] - 1 + nprocs[0]) % nprocs[0];         //  Recv from previous rank (wrapped)
+    MPI_Alltoall(send,3,MPI_TYPE,recv,3,MPI_TYPE,MPI_COMM[l][2]);// Communicate XMAX
+    xmax = recv[1-key[l][2]];                                   // Copy xmax from recv buffer
+    if( nprocs[l-1][0] % 2 == 1 && nprocs[l][0] >= nprocs[l][1] ) {// If right half of odd group
+      int isend = (key[l][0] + 1            ) % nprocs[l][0];   //  Send to next rank (wrapped)
+      int irecv = (key[l][0] - 1 + nprocs[l][0]) % nprocs[l][0];//  Recv from previous rank (wrapped)
       send[0] = xmin;                                           //  Set xmin in send buffer
-      MPI_Isend(send,3,MPI_TYPE,isend,0,MPI_COMM[0],&req);      //  Send to next rank
-      MPI_Irecv(recv,3,MPI_TYPE,irecv,0,MPI_COMM[0],&req);      //  Recv from previous rank
+      MPI_Isend(send,3,MPI_TYPE,isend,0,MPI_COMM[l][0],&req);   //  Send to next rank
+      MPI_Irecv(recv,3,MPI_TYPE,irecv,0,MPI_COMM[l][0],&req);   //  Recv from previous rank
       MPI_Wait(&req,MPI_STATUS_IGNORE);                         //  Wait for recv to finish
-      if( color[0] != color[1] ) xmin = recv[0];                //  Update only if leftover process of odd group
+      if( color[l][0] != color[l][1] ) xmin = recv[0];          //  Update only if leftover process of odd group
       send[0] = xmax;                                           //  Set xmax in send buffer
-      MPI_Isend(send,3,MPI_TYPE,isend,0,MPI_COMM[0],&req);      //  Send to next rank
-      MPI_Irecv(recv,3,MPI_TYPE,irecv,0,MPI_COMM[0],&req);      //  Recv from previous rank
+      MPI_Isend(send,3,MPI_TYPE,isend,0,MPI_COMM[l][0],&req);   //  Send to next rank
+      MPI_Irecv(recv,3,MPI_TYPE,irecv,0,MPI_COMM[l][0],&req);   //  Recv from previous rank
       MPI_Wait(&req,MPI_STATUS_IGNORE);                         //  Wait for recv to finish
-      if( color[0] != color[1] ) xmax = recv[0];                //  Update only if leftover process of odd group
+      if( color[l][0] != color[l][1] ) xmax = recv[0];          //  Update only if leftover process of odd group
     }                                                           // Endif for right half of odd group
-    if( oldnprocs == 1 ) {                                      // If previous group had one process
+    if( nprocs[l-1][0] == 1 ) {                                 // If previous group had one process
       xmin = XMIN[l];                                           //  Use own XMIN value for xmin
       xmax = XMAX[l];                                           //  Use own XMAX value for xmax
     }                                                           // Endif for isolated process
+    stopTimer("Get domain   ");                                 //  Stop timer & print
   }
 
   real getDistance(C_iter C, vect xmin, vect xmax) {            // Get disatnce to other domain
@@ -92,29 +94,29 @@ private:
     }                                                           // Endif for root cells children
   }
 
-  void commCellsAlltoall() {                                    // Communicate cells by one-to-one MPI_Alltoallv
+  void commCellsAlltoall(int l) {                               // Communicate cells by one-to-one MPI_Alltoallv
     const int bytes = sizeof(sendCells[0]);                     // Byte size of JCell structure
     int rcnt[2], scnt[2] = {0, 0};                              // Recv count, send count
-    scnt[1-key[2]] = sendCells.size()*bytes;                    // Set send count to size of send buffer * bytes
-    MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM[2]);    // Communicate the send count to get recv count
+    scnt[1-key[l+1][2]] = sendCells.size()*bytes;               // Set send count to size of send buffer * bytes
+    MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM[l+1][2]);// Communicate the send count to get recv count
     int sdsp[2] = {0, scnt[0]};                                 // Send displacement
     int rdsp[2] = {0, rcnt[0]};                                 // Recv displacement
-    if( color[0] != color[1] ) {                                // If leftover process of odd group
-      rcnt[1-key[2]] = 0;                                       //  It won't have a pair for this communication
+    if( color[l+1][0] != color[l+1][1] ) {                      // If leftover process of odd group
+      rcnt[1-key[l+1][2]] = 0;                                  //  It won't have a pair for this communication
     }                                                           // Endif for leftover process of odd group
-    recvCells.resize(rcnt[1-key[2]]/bytes);                     // Resize recv buffer
+    recvCells.resize(rcnt[1-key[l+1][2]]/bytes);                // Resize recv buffer
     MPI_Alltoallv(&sendCells[0],scnt,sdsp,MPI_BYTE,             // Communicate cells
-                  &recvCells[0],rcnt,rdsp,MPI_BYTE,MPI_COMM[2]);// MPI_COMM[2] is for the one-to-one pair
+                  &recvCells[0],rcnt,rdsp,MPI_BYTE,MPI_COMM[l+1][2]);// MPI_COMM[2] is for the one-to-one pair
   }
 
-  void commCellsScatter() {                                     // Communicate cells by scattering from leftover proc
+  void commCellsScatter(int l) {                                // Communicate cells by scattering from leftover proc
     const int bytes = sizeof(sendCells[0]);                     // Byte size of JCell structure
-    int numScatter = nprocs[1] - 1;                             // Number of processes to scatter to
+    int numScatter = nprocs[l+1][1] - 1;                        // Number of processes to scatter to
     int oldSize = recvCells.size();                             // Size of recv buffer before communication
-    int *scnt = new int [nprocs[1]];                            // Send count
-    int *sdsp = new int [nprocs[1]];                            // Send displacement
+    int *scnt = new int [nprocs[l+1][1]];                       // Send count
+    int *sdsp = new int [nprocs[l+1][1]];                       // Send displacement
     int rcnt;                                                   // Recv count
-    if( key[1] == numScatter ) {                                // If this is the leftover proc to scatter from
+    if( key[l+1][1] == numScatter ) {                           // If this is the leftover proc to scatter from
       sdsp[0] = 0;                                              //  Initialize send displacement
       for(int i=0; i!=numScatter; ++i ) {                       //  Loop over processes to send to
         int begin = 0, end = sendCells.size();                  //   Set begin and end of range to send
@@ -124,17 +126,17 @@ private:
       }                                                         //  End loop over processes to send to
       scnt[numScatter] = 0;                                     //  Send count to self should be 0
     }                                                           // Endif for leftover proc
-    MPI_Scatter(scnt,1,MPI_INT,&rcnt,1,MPI_INT,numScatter,MPI_COMM[1]);// Scatter the send count to get recv count
+    MPI_Scatter(scnt,1,MPI_INT,&rcnt,1,MPI_INT,numScatter,MPI_COMM[l+1][1]);// Scatter the send count to get recv count
 
     recvCells.resize(oldSize+rcnt);                             // Resize recv buffer based on recv count
-    for(int i=0; i!= nprocs[1]; ++i ) {                         // Loop over group of processes
+    for(int i=0; i!= nprocs[l+1][1]; ++i ) {                    // Loop over group of processes
       scnt[i] *= bytes;                                         //  Multiply send count by byte size of data
       sdsp[i] *= bytes;                                         //  Multiply send displacement by byte size of data
     }                                                           // End loop over group of processes
     rcnt *= bytes;                                              // Multiply recv count by byte size of data
     MPI_Scatterv(&sendCells[0],      scnt,sdsp,MPI_BYTE,        // Communicate cells via MPI_Scatterv
                  &recvCells[oldSize],rcnt,     MPI_BYTE,        // Offset recv buffer by oldSize
-                 numScatter,MPI_COMM[1]);
+                 numScatter,MPI_COMM[l+1][1]);
     delete[] scnt;                                              // Delete send count
     delete[] sdsp;                                              // Delete send displacement
   }
@@ -198,7 +200,10 @@ private:
   }
 
   void zipTwigs(Cells &twigs, Cells &cells, Cells &sticks, bool last) {// Zip two groups of twigs that overlap
+    startTimer("Sort cells   ");                                // Start timer
     sortCells(twigs);                                           // Sort twigs in ascending order
+    stopTimer("Sort cells   ");                                 // Stop timer & print
+    startTimer("Zip twigs    ");                                // Start timer
     bigint index = -1;                                          // Initialize index counter
     while( !twigs.empty() ) {                                   // While twig vector is not empty
       if( twigs.back().ICELL != index ) {                       //  If twig's index is different from previous
@@ -219,9 +224,12 @@ private:
       }                                                         //  Endif for collision type
       twigs.pop_back();                                         //  Pop last element from twig vector
     }                                                           // End while for twig vector
+    stopTimer("Zip twigs    ");                                 // Stop timer & print
+    startTimer("Sort cells   ");                                // Start timer
     sortCells(cells);                                           // Sort cells in ascending order
     twigs = cells;                                              // Copy cells to twigs
     cells.clear();                                              // Clear cells
+    stopTimer("Sort cells   ");                                 // Stop timer & print
   }
 
   void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ,Cells &sticks) {// Re-index bodies
@@ -283,7 +291,7 @@ public:
   ~LocalEssentialTree() {}                                      // Destructor
 
   void commBodies(Cells &cells) {                               // Communicate bodies in the LET
-    startTimer("commBodies   ");                                // Start timer
+    startTimer("Gather bounds");                                // Start timer
     MPI_Datatype MPI_TYPE = getType(XMIN[LEVEL][0]);            // Get MPI data type
     std::vector<vect> xmin(SIZE);                               // Buffer for gathering XMIN
     std::vector<vect> xmax(SIZE);                               // Buffer for gathering XMAX
@@ -291,6 +299,8 @@ public:
                   &xmin[0][0],3,MPI_TYPE,MPI_COMM_WORLD);
     MPI_Allgather(&XMAX[LEVEL][0],3,MPI_TYPE,                   // Gather XMAX
                   &xmax[0][0],3,MPI_TYPE,MPI_COMM_WORLD);
+    stopTimer("Gather bounds");                                 // Stop timer & print
+    startTimer("Get send rank");                                // Start timer
     std::vector<int> srnks,scnts;                               // Ranks to send to, and their send counts
     std::vector<C_iter> scells;                                 // Vector of cell iterators for cells to send
     int oldsize = 0;                                            // Per rank offset of the number of cells to send
@@ -334,11 +344,15 @@ public:
         oldsize = scells.size();                                //   Set new offset for cell count
       }                                                         //  Endif for neighbor ranks
     }                                                           // End loop over ranks
+    stopTimer("Get send rank");                                 // Stop timer & print
 
+    startTimer("Send count   ");                                // Start timer
     int ic = 0, ssize = 0;                                      // Initialize counter and offset for scells
     std::vector<MPI_Request> reqs(2*srnks.size());              // Vector of MPI requests
-    std::vector<int>         scnt(srnks.size());                // Vector of send counts
-    std::vector<int>         rcnt(srnks.size());                // Vector of recv counts
+    std::vector<int>         scnt(SIZE);                        // Vector of send counts
+    std::vector<int>         sdsp(SIZE);                        // Vector of send displacements
+    std::vector<int>         rcnt(SIZE);                        // Vector of recv counts
+    std::vector<int>         rdsp(SIZE);                        // Vector of recv displacements
     for( int i=0; i!=int(srnks.size()); ++i ) {                 // Loop over ranks to send to & recv from
       int irank = srnks[i];                                     //  Rank to send to & recv from
       for( int c=0; c!=scnts[i]; ++c,++ic ) {                   //  Loop over cells to send to that rank
@@ -359,54 +373,47 @@ public:
           sendBodies.push_back(body);                           //    Push it into the send buffer
         }                                                       //   End loop over bodies
       }                                                         //  End loop over cells
-      scnt[i] = sendBodies.size()-ssize;                        //  Set send count of current rank
-      ssize += scnt[i];                                         //  Increment offset for vector scells
-      MPI_Isend(&scnt[i],1,MPI_INT,irank,0,                     //  Send the send count
-                MPI_COMM_WORLD,&reqs[i]);
-      MPI_Irecv(&rcnt[i],1,MPI_INT,irank,MPI_ANY_TAG,           //  Receive the recv count
-                MPI_COMM_WORLD,&reqs[i+srnks.size()]);
+      scnt[irank] = sendBodies.size()-ssize;                    //  Set send count of current rank
+      sdsp[irank] = ssize;
+      ssize += scnt[irank];                                     //  Increment offset for vector scells
     }                                                           // End loop over ranks
-    MPI_Waitall(2*srnks.size(),&reqs[0],MPI_STATUSES_IGNORE);   // Wait for all communication to finish
+    MPI_Alltoall(&scnt[0],1,MPI_INT,&rcnt[0],1,MPI_INT,MPI_COMM_WORLD);
+    stopTimer("Send count   ");                                 // Stop timer & print
 
+    startTimer("Send bodies  ");                                // Start timer
     int rsize = 0;                                              // Initialize total recv count
-    for( int i=0; i!=int(srnks.size()); ++i )                   // Loop over ranks to recv from
+    for( int i=0; i!=SIZE; ++i ) {                              // Loop over ranks to recv from
+      rdsp[i] = rsize;                                          //  Set recv displacements
       rsize += rcnt[i];                                         //  Accumulate recv counts
+    }                                                           // End loop over ranks to recv from
     recvBodies.resize(rsize);                                   // Receive buffer for bodies
     int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
-    rsize = ssize = 0;                                          // Initialize offset for sendBodies & recvBodies
-    for( int i=0; i!=int(srnks.size()); ++i ) {                 // Loop over ranks to send to & recv from
-      int irank = srnks[i];                                     // Rank to send to & recv from
-      MPI_Isend(&sendBodies[ssize],scnt[i]*bytes,MPI_BYTE,irank,0,// Send bodies
-                MPI_COMM_WORLD,&reqs[i]);
-      MPI_Irecv(&recvBodies[rsize],rcnt[i]*bytes,MPI_BYTE,irank,MPI_ANY_TAG,// Receive bodies
-                MPI_COMM_WORLD,&reqs[i+srnks.size()]);
-      ssize += scnt[i];                                         // Increment offset for sendBodies
-      rsize += rcnt[i];                                         // Increment offset for recvBodies
-    }                                                           // End loop over ranks
-    MPI_Waitall(2*srnks.size(),&reqs[0],MPI_STATUSES_IGNORE);   // Wait for all communication to finish
+    for( int i=0; i!=SIZE; ++i ) {                              // Loop over ranks to recv from
+      scnt[i] *= bytes;                                         //  Send as bytes
+      sdsp[i] *= bytes;                                         //  Send as bytes
+      rcnt[i] *= bytes;                                         //  Recv as bytes
+      rdsp[i] *= bytes;                                         //  Recv as bytes
+    }                                                           // End loop over ranks to recv from
+    MPI_Alltoallv(&sendBodies[0],&scnt[0],&sdsp[0],MPI_BYTE,
+                  &recvBodies[0],&rcnt[0],&rdsp[0],MPI_BYTE,MPI_COMM_WORLD);
     sendBodies.clear();                                         // Clear send buffer for bodies
-    stopTimer("commBodies   ",printNow);                        // Stop timer & print
+    stopTimer("Send bodies  ");                                 // Stop timer & print
   }
 
   void commCells(Bodies &bodies, Cells &cells) {                // Communicate cell in the LET
     int offTwigs = 0;                                           // Initialize offset of twigs
     vect xmin = 0, xmax = 0;                                    // Initialize domain boundaries
     Cells twigs,sticks;                                         // Twigs and sticks are special types of cells
-    nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
-    offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
-     color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators
-       key[0] =    key[1] =    key[2] = 0;                      // Initialize key of communicators
 
     for( int l=0; l!=LEVEL; ++l ) {                             // Loop over levels of N-D hypercube communication
-      startTimer("Get LET      ");                              //  Start timer
-      bisectionGetComm(l);                                      //  Split the MPI communicator for that level
       getOtherDomain(xmin,xmax,l+1);                            //  Get boundries of domains on other processes
+      startTimer("Get LET      ");                              //  Start timer
       getLET(cells.begin(),cells.end()-1,xmin,xmax);            //  Determine which cells to send
       stopTimer("Get LET      ");                               //  Stop timer & print
       startTimer("Alltoall     ");                              //  Start timer
-      commCellsAlltoall();                                      //  Communicate cells by one-to-one MPI_Alltoallv
-      if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] ) {// If scatter is necessary
-        commCellsScatter();                                     //   Communicate cells by scattering from leftover proc
+      commCellsAlltoall(l);                                     //  Communicate cells by one-to-one MPI_Alltoallv
+      if( nprocs[l][0] % 2 == 1 && nprocs[l][0] != 1 && nprocs[l+1][0] <= nprocs[l+1][1] ) {// If scatter is necessary
+        commCellsScatter(l);                                    //   Communicate cells by scattering from leftover proc
       }                                                         //  Endif for odd number of procs
       stopTimer("Alltoall     ");                               //  Stop timer & print
       startTimer("Bodies2twigs ");                              //  Start timer
@@ -431,9 +438,7 @@ public:
         print(SUM);                                             //   Print sum of multipoles
       }                                                         //  Endif for last level
 #endif
-      startTimer("Zip twigs    ");                              //  Start timer
       zipTwigs(twigs,cells,sticks,l==LEVEL-1);                  //  Zip two groups of twigs that overlap
-      stopTimer("Zip twigs    ");                               //  Stop timer & print
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
         complex SUM = 0;                                        //   Initialize accumulator
@@ -446,12 +451,8 @@ public:
         print(sticks.size());                                   //   Print size of stick vector
       }                                                         //  Endif for last level
 #endif
-      startTimer("Reindex      ");                              //  Start timer
       if( l == LEVEL - 1 ) reindexBodies(bodies,twigs,cells,sticks);// Re-index bodies
-      stopTimer("Reindex      ");                               //  Stop timer & print
-      startTimer("Twigs2cells  ");                              //  Start timer
       twigs2cells(twigs,cells,sticks);                          //  Turn twigs to cells
-      stopTimer("Twigs2cells  ");                               //  Stop timer & print
       startTimer("Sticks2send  ");                              //  Start timer
       sticks2send(sticks,offTwigs);                             //  Turn sticks to send buffer
       stopTimer("Sticks2send  ");                               //  Stop timer & print

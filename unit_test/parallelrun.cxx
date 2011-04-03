@@ -15,14 +15,14 @@ int main() {
   if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
-  D.sphere(bodies,T.commRank()+1);
+  D.random(bodies,T.commRank()+1);
   T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
   T.setGlobDomain(bodies);
   T.stopTimer("Set domain   ",T.printNow);
 
-  T.bisection(bodies);
+  T.octsection(bodies);
 
 #ifdef TOPDOWN
   T.topdown(bodies,cells);
@@ -55,6 +55,7 @@ int main() {
     if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
   }
   T.stopTimer("Direct sum   ",T.printNow);
+  T.eraseTimer("Direct sum   ");
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
@@ -63,7 +64,8 @@ int main() {
   MPI_Reduce(&norm1,&norm3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  if(T.printNow) D.printError(diff1,norm1,diff2,norm2);
+  if(T.printNow) D.printError(diff3,norm3,diff4,norm4);
+  if(T.printNow) T.writeTime();
 #ifdef DEBUG
   T.print(std::sqrt(potDiff/potNorm));
 #endif

@@ -1,6 +1,8 @@
 #ifndef kernel_h
 #define kernel_h
+#define KERNEL
 #include "logger.h"
+#undef KERNEL
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
 class Kernel : public Logger {                                  // Unified CPU/GPU kernel class

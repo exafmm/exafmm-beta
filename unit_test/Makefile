@@ -44,7 +44,7 @@ mpi: mpi.cxx
 check_gpus: check_gpus.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 #	mpirun -np 128 -machinefile ~/mpd/mpd4.hosts ./a.out
-	mpirun -np 4 ./a.out
+#	mpirun -np 4 ./a.out
 
 shift: shift.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
@@ -65,7 +65,7 @@ let: let.cxx $(OBJECT)
 parallelrun: parallelrun.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 #	mpirun -np 7 -machinefile ~/mpd/mpd4.hosts ./a.out
-	mpirun -np 7 ./a.out
+#	mpirun -np 7 ./a.out
 
 vtk: vtk.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)

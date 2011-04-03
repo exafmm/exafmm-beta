@@ -12,19 +12,18 @@ protected:
   int LEVEL;                                                    // Level of the MPI process binary tree
   std::vector<vect> XMIN;                                       // Minimum position vector of bodies
   std::vector<vect> XMAX;                                       // Maximum position vector of bodies
-  int oldnprocs;                                                // Old number of processes in the group
-  int nprocs[2];                                                // Number of processes in the two split groups
-  int offset[2];                                                // Offset of body in the two split groups
-  int  color[3];                                                // Color of Gather, Scatter, and Alltoall communicators
-  int    key[3];                                                // Key of Gather, Scatter, and Alltoall communicators
-  MPI_Comm MPI_COMM[3];                                         // Communicators for Gather, Scatter, and Alltoall
+  int nprocs[64][2];                                            // Number of processes in the two split groups
+  int offset[64][2];                                            // Offset of body in the two split groups
+  int  color[64][3];                                            // Color of Gather, Scatter, and Alltoall communicators
+  int    key[64][3];                                            // Key of Gather, Scatter, and Alltoall communicators
+  MPI_Comm MPI_COMM[64][3];                                     // Communicators for Gather, Scatter, and Alltoall
 
 private:
   void splitDomain(bigint iSplit, int l, int d) {               // Split domain accoring to iSplit
     real X = (iSplit + 1) * (XMAX[l][d] - XMIN[l][d]) / numCells1D + XMIN[l][d];// Coordinate corresponding to iSplit
     XMAX[l+1] = XMAX[l];                                        // Set XMAX for next subdivision
     XMIN[l+1] = XMIN[l];                                        // Set XMIN for next subdivision
-    if( color[0] % 2 == 0 ) {                                   // If on left side
+    if( color[l+1][0] % 2 == 0 ) {                              // If on left side
       XMAX[l+1][d] = X;                                         //  Set max to X
     } else {                                                    // If on right side
       XMIN[l+1][d] = X;                                         //  Set min to X
@@ -71,25 +70,23 @@ private:
 
 protected:
   void bisectionGetComm(int l) {                                // Split the MPI communicator into N-D hypercube
-    int  oldcolor = color[0];                                   // Save color of previous level
-    oldnprocs = nprocs[0];                                      // Save group size of previous level
     for( int i=1; i>=0; --i ) {                                 // Loop over 1 and 0
-      int pSplit = (oldnprocs + i) / 2;                         //  Splitting criteria
-      if( RANK - offset[0] < pSplit ) {                         //  If on left side
-        nprocs[i] = pSplit;                                     //   Group size is the splitting criteria
-        offset[i] = offset[0];                                  //   Offset is the same as previous
-         color[i] =  color[0] * 2;                              //   Color is twice the previous
+      int pSplit = (nprocs[l][0] + i) / 2;                      //  Splitting criteria
+      if( RANK - offset[l][0] < pSplit ) {                      //  If on left side
+        nprocs[l+1][i] = pSplit;                                //   Group size is the splitting criteria
+        offset[l+1][i] = offset[l][0];                          //   Offset is the same as previous
+         color[l+1][i] =  color[l][0] * 2;                      //   Color is twice the previous
       } else {                                                  //  If on right side
-        nprocs[i] = oldnprocs - pSplit;                         //   Group size is what remains from the left side
-        offset[i] = offset[0] + pSplit;                         //   Offset is incremented by splitting criteria
-         color[i] =  color[0] * 2 + 1;                          //   Color is twice the previous plus one
+        nprocs[l+1][i] = nprocs[l][0] - pSplit;                 //   Group size is what remains from the left side
+        offset[l+1][i] = offset[l][0] + pSplit;                 //   Offset is incremented by splitting criteria
+         color[l+1][i] =  color[l][0] * 2 + 1;                  //   Color is twice the previous plus one
       }                                                         //  Endif for sides
-      key[i] = RANK - offset[i];                                //  Key is determined from offset
+      key[l+1][i] = RANK - offset[l+1][i];                      //  Key is determined from offset
     }                                                           // End loop over 1 and 0
-    key[2] = color[1] % 2;                                      // The third type of key is determined from color[1]
-    color[2] = key[1] + oldcolor * (1 << (LEVEL - l - 1));      // The corresponding color is determined from key[1]
+    key[l+1][2] = color[l+1][1] % 2;                            // The third type of key is determined from color[1]
+    color[l+1][2] = key[l+1][1] + color[l][0] * (1 << (LEVEL - l - 1));// The corresponding color is determined from key[1]
     for( int i=0; i!=3; ++i ) {                                 // Loop over the three types of colors and keys
-      MPI_Comm_split(MPI_COMM_WORLD,color[i],key[i],&MPI_COMM[i]);// Split the MPI communicator
+      MPI_Comm_split(MPI_COMM_WORLD,color[l+1][i],key[l+1][i],&MPI_COMM[l+1][i]);// Split the MPI communicator
     }                                                           // End loop over three types
 #ifdef DEBUG
     print("level : ",0);                                        // Print identifier
@@ -102,15 +99,15 @@ protected:
 #endif
   }
 
-  void bisectionAlltoall(Bodies &bodies, int nthLocal, int numLocal, int &newSize) {// One-to-one MPI_Alltoallv
+  void bisectionAlltoall(Bodies &bodies, int nthLocal, int numLocal, int &newSize, int l) {// One-to-one MPI_Alltoallv
     const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
     int scnt[2] = {nthLocal, numLocal - nthLocal};              // Set send count to right and left size
     int rcnt[2] = {0, 0};                                       // Initialize recv count
-    MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM[2]);    // Communicate the send count to get recv count
+    MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM[l+1][2]);// Communicate the send count to get recv count
     int sdsp[2] = {0, scnt[0]};                                 // Send displacement
     int rdsp[2] = {0, rcnt[0]};                                 // Recv displacement
     newSize = rcnt[0] + rcnt[1];                                // Get new size from recv count
-    if( color[0] != color[1] ) newSize = numLocal;              // Unless it's a leftover process of an odd group
+    if( color[l+1][0] != color[l+1][1] ) newSize = numLocal;    // Unless it's a leftover process of an odd group
     buffer.resize(newSize);                                     // Resize recv buffer
 
     for(int i=0; i!=2; ++i ) {                                  // Loop over 0 and 1
@@ -121,20 +118,20 @@ protected:
     }                                                           // End loop over 0 and 1
     MPI_Alltoallv(&bodies[0].ICELL,scnt,sdsp,MPI_BYTE,          // Communicate bodies
                   &buffer[0].ICELL,rcnt,rdsp,MPI_BYTE,          // Using same buffer as sort buffer
-                  MPI_COMM[2]);                                 // MPI_COMM[2] is for the one-to-one pair
-    if( color[0] == color[1] ) bodies = buffer;                 // Don't update if leftover process
+                  MPI_COMM[l+1][2]);                            // MPI_COMM[2] is for the one-to-one pair
+    if( color[l+1][0] == color[l+1][1] ) bodies = buffer;       // Don't update if leftover process
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
   }
 
-  void bisectionScatter(Bodies &bodies, int nthLocal, int &newSize) {// Scattering from leftover proc
+  void bisectionScatter(Bodies &bodies, int nthLocal, int &newSize, int l) {// Scattering from leftover proc
     const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
-    int numScatter = nprocs[1] - 1;                             // Number of processes to scatter to
+    int numScatter = nprocs[l+1][1] - 1;                        // Number of processes to scatter to
     int oldSize = newSize;                                      // Size of recv buffer before communication
-    int *scnt = new int [nprocs[1]];                            // Send count
-    int *sdsp = new int [nprocs[1]];                            // Send displacement
+    int *scnt = new int [nprocs[l+1][1]];                       // Send count
+    int *sdsp = new int [nprocs[l+1][1]];                       // Send displacement
     int rcnt;                                                   // Recv count
-    if( key[1] == numScatter ) {                                // If this is the leftover proc to scatter from
+    if( key[l+1][1] == numScatter ) {                           // If this is the leftover proc to scatter from
       sdsp[0] = 0;                                              //  Initialize send displacement
       for(int i=0; i!=numScatter; ++i ) {                       //  Loop over processes to send to
         int begin = 0, end = nthLocal;                          //  Set begin and end of range to send
@@ -147,42 +144,42 @@ protected:
       newSize -= sdsp[numScatter];                              // Set newSize to account for sent data
       buffer.erase(buffer.begin(),buffer.begin()+sdsp[numScatter]);// Erase from recv buffer the part that was sent
     }                                                           // Endif for leftover proc
-    MPI_Scatter(scnt,1,MPI_INT,&rcnt,1,MPI_INT,numScatter,MPI_COMM[1]);// Scatter the send count to get recv count
-    if( key[1] != numScatter ) {                                // If it's one the receiving procs
+    MPI_Scatter(scnt,1,MPI_INT,&rcnt,1,MPI_INT,numScatter,MPI_COMM[l+1][1]);// Scatter the send count to get recv count
+    if( key[l+1][1] != numScatter ) {                           // If it's one the receiving procs
       newSize += rcnt;                                          //  Increment newSize by the recv count
       buffer.resize(newSize);                                   //  Resize the recv buffer
     }                                                           // Endif for receiving procs
-    for(int i=0; i!= nprocs[1]; ++i ) {                         // Loop over group of processes
+    for(int i=0; i!= nprocs[l+1][1]; ++i ) {                    // Loop over group of processes
       scnt[i] *= bytes;                                         //  Multiply send count by byte size of data
       sdsp[i] *= bytes;                                         //  Multiply send displacement by byte size of data
     }                                                           // End loop over group of processes
     rcnt *= bytes;                                              // Multiply recv count by byte size of data
     MPI_Scatterv(&bodies[0].ICELL,      scnt,sdsp,MPI_BYTE,     // Communicate bodies via MPI_Scatterv
                  &buffer[oldSize].ICELL,rcnt,     MPI_BYTE,     // Offset recv buffer by oldSize
-                 numScatter,MPI_COMM[1]);                       // MPI_COMM[1] is used for scatter
+                 numScatter,MPI_COMM[l+1][1]);                  // MPI_COMM[1] is used for scatter
     bodies = buffer;                                            // Copy recv buffer to bodies
-    if( key[1] != numScatter ) sortBodies(bodies,buffer);       // Sort bodies in ascending order
+    if( key[l+1][1] != numScatter ) sortBodies(bodies,buffer);  // Sort bodies in ascending order
     delete[] scnt;                                              // Delete send count
     delete[] sdsp;                                              // Delete send displacement
   }
 
-  void bisectionGather(Bodies &bodies, int nthLocal, int numLocal, int &newSize) {// Gathering to leftover proc
+  void bisectionGather(Bodies &bodies, int nthLocal, int numLocal, int &newSize, int l) {// Gathering to leftover proc
     const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
-    int numGather = nprocs[0] - 1;                              // Number of processes to gather to
+    int numGather = nprocs[l+1][0] - 1;                         // Number of processes to gather to
     int oldSize = newSize;                                      // Size of recv buffer before communication
     int scnt;                                                   // Send count
-    int *rcnt = new int [nprocs[0]];                            // Recv count
-    int *rdsp = new int [nprocs[0]];                            // Recv displacement
-    if( key[0] != 0 ) {                                         // If this is not the leftover proc
+    int *rcnt = new int [nprocs[l+1][0]];                       // Recv count
+    int *rdsp = new int [nprocs[l+1][0]];                       // Recv displacement
+    if( key[l+1][0] != 0 ) {                                    // If this is not the leftover proc
       int begin = 0, end = numLocal - nthLocal;                 //  Set begin and end of range to send
-      splitRange(begin,end,key[0]-1,nprocs[0]);                 //  Split range into nprocs[0]
+      splitRange(begin,end,key[l+1][0]-1,nprocs[l+1][0]);       //  Split range into nprocs[0]
       scnt = end - begin;                                       //  Set send count based on range
       newSize -= scnt;                                          //  Set newSize to account for sent data
       buffer.erase(buffer.begin(),buffer.begin()+scnt);         //  Erase from recv buffer the part that was sent
     }                                                           // Endif for leftover proc
-    MPI_Barrier(MPI_COMM[0]);                                   // Sync processes
-    MPI_Gather(&scnt,1,MPI_INT,rcnt,1,MPI_INT,0,MPI_COMM[0]);   // Gather the send count to get recv count
-    if( key[0] == 0 ) {                                         // If this is the leftover proc
+    MPI_Barrier(MPI_COMM[l+1][0]);                              // Sync processes
+    MPI_Gather(&scnt,1,MPI_INT,rcnt,1,MPI_INT,0,MPI_COMM[l+1][0]);// Gather the send count to get recv count
+    if( key[l+1][0] == 0 ) {                                    // If this is the leftover proc
       rdsp[0] = 0;                                              //  Initialize the recv displacement
       for(int i=0; i!=numGather; ++i ) {                        //  Loop over processes to gather from
         rdsp[i+1] = rdsp[i] + rcnt[i];                          //   Set recv displacement based on recv count
@@ -191,17 +188,17 @@ protected:
       buffer.resize(newSize);                                   //  Resize recv buffer
     }                                                           // Endif for leftover proc
     scnt *= bytes;                                              // Multiply send count by byte size of data
-    for(int i=0; i!= nprocs[0]; ++i ) {                         // Loop over group of processes
+    for(int i=0; i!= nprocs[l+1][0]; ++i ) {                    // Loop over group of processes
       rcnt[i] *= bytes;                                         //  Multiply recv count by byte size of data
       rdsp[i] *= bytes;                                         //  Multiply recv displacement by byte size of data
     }                                                           // End loop over group of processes
     MPI_Gatherv(&bodies[0].ICELL,      scnt,     MPI_BYTE,      // Communicate bodies via MPI_Gatherv
                 &buffer[oldSize].ICELL,rcnt,rdsp,MPI_BYTE,      // Offset recv buffer by oldSize
-                0,MPI_COMM[0]);                                 // MPI_COMM[0] is used for gather
+                0,MPI_COMM[l+1][0]);                            // MPI_COMM[0] is used for gather
     bodies = buffer;                                            // Copy recv buffer to bodies
     delete[] rcnt;                                              // Delete recv count
     delete[] rdsp;                                              // Delete send count
-    if( key[0] == 0 ) sortBodies(bodies,buffer);                // Sort bodies in ascending order
+    if( key[l+1][0] == 0 ) sortBodies(bodies,buffer);           // Sort bodies in ascending order
   }
 
 public:
@@ -209,6 +206,15 @@ public:
     LEVEL = int(log(SIZE) / M_LN2 - 1e-5) + 1;                  // Level of the process binary tree
     XMIN.resize(LEVEL+1);                                       // Minimum position vector at each level
     XMAX.resize(LEVEL+1);                                       // Maximum position vector at each level
+    startTimer("Split comm   ");                                // Start timer
+    nprocs[0][0] = nprocs[0][1] = SIZE;                         // Initialize number of processes in groups
+    offset[0][0] = offset[0][1] = 0;                            // Initialize offset of body in groups
+     color[0][0] =  color[0][1] =  color[0][2] = 0;             // Initialize color of communicators
+       key[0][0] =    key[0][1] =    key[0][2] = 0;             // Initialize key of communicators
+    for( int l=0; l!=LEVEL; ++l ) {                             // Loop over levels of N-D hypercube communication
+      bisectionGetComm(l);                                      //  Split the MPI communicator for that level
+    }                                                           // End loop over levels of N-D hypercube communication
+    stopTimer("Split comm   ");                                 // Stop timer & print
   }
   ~Partition() {}                                               // Destructor
 
@@ -342,28 +348,23 @@ public:
   void bisection(Bodies &bodies) {                              // Partitioning by recursive bisection
     startTimer("Partition    ");                                // Start timer
     MPI_Datatype MPI_TYPE = getType(bodies[0].ICELL);           // Get MPI data type
-    nprocs[0] = nprocs[1] = SIZE;                               // Initialize number of processes in groups
-    offset[0] = offset[1] = 0;                                  // Initialize offset of body in groups
-     color[0] =  color[1] =  color[2] = 0;                      // Initialize color of communicators
-       key[0] =    key[1] =    key[2] = 0;                      // Initialize key of communicators
     int newSize;                                                // New size of recv buffer
     bigint numLocal = bodies.size();                            // Local data size
     bigint numGlobal;                                           // Global data size
     MPI_Allreduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,MPI_COMM_WORLD);// Reduce Global data size
-    bigint nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];// Split at nth global element
+    bigint nthGlobal = (numGlobal * (nprocs[0][0] / 2)) / nprocs[0][0];// Split at nth global element
     binBodies(bodies,2);                                        // Bin bodies into leaf level cells
     buffer.resize(numLocal);                                    // Resize sort buffer
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     bigint iSplit = nth_element(bodies,nthGlobal);              // Get cell index of nth global element
     int nthLocal = splitBodies(bodies,iSplit);                  // Split bodies based on iSplit
     for( int l=0; l!=LEVEL; ++l ) {                             // Loop over levels of N-D hypercube communication
-      bisectionGetComm(l);                                      //  Split the MPI communicator for that level
       splitDomain(iSplit,l,2-l%3);                              //  Split the domain according to iSplit
-      bisectionAlltoall(bodies,nthLocal,numLocal,newSize);      //  Communicate bodies by one-to-one MPI_Alltoallv
-      if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] <= nprocs[1] )// If scatter is necessary
-        bisectionScatter(bodies,nthLocal,newSize);              //  Communicate bodies by scattering from leftover proc
-      if( oldnprocs % 2 == 1 && oldnprocs != 1 && nprocs[0] >= nprocs[1] )// If gather is necessary
-        bisectionGather(bodies,nthLocal,numLocal,newSize);      //  Communicate bodies by gathering to leftover proc
+      bisectionAlltoall(bodies,nthLocal,numLocal,newSize,l);    //  Communicate bodies by one-to-one MPI_Alltoallv
+      if( nprocs[l][0] % 2 == 1 && nprocs[l][0] != 1 && nprocs[l+1][0] <= nprocs[l+1][1] )// If scatter is necessary
+        bisectionScatter(bodies,nthLocal,newSize,l);            //  Communicate bodies by scattering from leftover proc
+      if( nprocs[l][0] % 2 == 1 && nprocs[l][0] != 1 && nprocs[l+1][0] >= nprocs[l+1][1] )// If gather is necessary
+        bisectionGather(bodies,nthLocal,numLocal,newSize,l);    //  Communicate bodies by gathering to leftover proc
 #ifdef DEBUG
       for(int j=0; j!=SIZE; ++j) {                              //  Loop over ranks
         MPI_Barrier(MPI_COMM_WORLD);                            //   Sync processes
@@ -376,15 +377,15 @@ public:
       }                                                         //  End loop over ranks
 #endif
       numLocal = newSize;                                       //  Update local data size
-      MPI_Allreduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,MPI_COMM[0]);// Reduce global data size
-      nthGlobal = (numGlobal * (nprocs[0] / 2)) / nprocs[0];    //  Split at nth global element
+      MPI_Allreduce(&numLocal,&numGlobal,1,MPI_TYPE,MPI_SUM,MPI_COMM[l+1][0]);// Reduce global data size
+      nthGlobal = (numGlobal * (nprocs[l+1][0] / 2)) / nprocs[l+1][0];//  Split at nth global element
       binBodies(bodies,2-(l+1)%3);                              //  Bin bodies into leaf level cells
       buffer.resize(numLocal);                                  //  Resize sort buffer
       sortBodies(bodies,buffer);                                //  Sort bodies in ascending order
-      iSplit = nth_element(bodies,nthGlobal,MPI_COMM[0]);       //  Get cell index of nth global element
+      iSplit = nth_element(bodies,nthGlobal,MPI_COMM[l+1][0]);  //  Get cell index of nth global element
       nthLocal = splitBodies(bodies,iSplit);                    //  Split bodies based on iSplit
     }                                                           // End loop over levels of N-D hypercube communication
-    stopTimer("Partition    ",printNow);                        // Stop timer & print
+    stopTimer("Partition    ");                                 // Stop timer & print
   }
 
   void octsection(Bodies &bodies) {                             // Partition by recursive octsection
@@ -436,7 +437,7 @@ public:
     delete[] sdsp;                                              // Delete send displacement
     delete[] rcnt;                                              // Delete recv count
     delete[] rdsp;                                              // Delete recv displacement
-    stopTimer("Partition    ",printNow);                        // Stop timer & print
+    stopTimer("Partition    ");                                 // Stop timer & print
   }
 };
 }

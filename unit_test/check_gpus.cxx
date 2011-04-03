@@ -4,7 +4,7 @@
 
 int main() {
   char hostname[256];
-  const int numBodies = 10000;
+  const int numBodies = 1000000;
   Bodies bodies(numBodies);
   Dataset D;
   Evaluator E;
@@ -14,6 +14,7 @@ int main() {
   gethostname(hostname,sizeof(hostname));
   if( M.commRank() == 0 ) E.printNow = true;
 
+  for( int it=0; it!=10000; ++it ) {
   E.startTimer("Set bodies   ");
   D.sphere(bodies);
   E.stopTimer("Set bodies   ",E.printNow);
@@ -25,7 +26,9 @@ int main() {
   E.startTimer("Direct GPU   ");
   E.evalP2P(bodies,bodies);
   E.stopTimer("Direct GPU   ",E.printNow);
+  }
 
+/*
   E.startTimer("Direct CPU   ");
   bool onCPU = true;
   Bodies bodies2 = bodies;
@@ -45,6 +48,7 @@ int main() {
     }
     usleep(100);
   }
+*/
   E.postCalculation();
   E.finalize();
 }
