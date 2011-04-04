@@ -71,9 +71,9 @@ private:
         listP2P[Ci-CI0].push_back(Cj);                          // Push source cell into P2P interaction list
         flagP2P[Ci-CI0][Cj] |= Iperiodic;                       // Flip bit of periodic image flag
       } else {                                                  // If the twig has no leafs
-#ifdef DEBUG
+//#ifdef DEBUG
         std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
-#endif
+//#endif
         listM2P[Ci-CI0].push_back(Cj);                          // Push source cell into M2P interaction list
       }                                                         // Endif for twigs with leafs
     } else if ( Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R) ) {// If source is twig or target is larger

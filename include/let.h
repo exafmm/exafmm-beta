@@ -63,7 +63,7 @@ private:
       if( IMAGES == 0 ) {                                       //  If free boundary condition
         Xperiodic = 0;                                          //   Set periodic coordinate offset
         real R = getDistance(CC,xmin,xmax);                     //   Get distance to other domain
-        divide |= 3 * CC->R > THETA * R;                        //   If the cell seems too close and not twig
+        divide |= CLET * CC->R > THETA * R;                     //   If the cell seems too close and not twig
       } else {                                                  //  If periodic boundary condition
         for( int ix=-1; ix<=1; ++ix ) {                         //   Loop over x periodic direction
           for( int iy=-1; iy<=1; ++iy ) {                       //    Loop over y periodic direction
@@ -72,7 +72,7 @@ private:
               Xperiodic[1] = iy * 2 * R0;                       //      Coordinate offset for y periodic direction
               Xperiodic[2] = iz * 2 * R0;                       //      Coordinate offset for z periodic direction
               real R = getDistance(CC,xmin,xmax);               //      Get distance to other domain
-              divide |= 3 * CC->R > THETA * R;                  //      If the cell seems too close and not twig
+              divide |= CLET * CC->R > THETA * R;               //      If the cell seems too close and not twig
             }                                                   //     End loop over z periodic direction
           }                                                     //    End loop over y periodic direction
         }                                                       //   End loop over x periodic direction
@@ -308,11 +308,12 @@ public:
     for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over ranks
       int ic = 0;                                               //  Initialize neighbor dimension counter
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimensions
-        if(xmin[irank][d] < XMAX[LEVEL][d] + C0->R &&           //   If the two domains are touching or overlapping
-           XMIN[LEVEL][d] < xmax[irank][d] + C0->R) {           //   in all dimensions, they are neighboring domains
+        if(xmin[irank][d] < 2 * XMAX[LEVEL][d] - XMIN[LEVEL][d] &&//   If the two domains are touching or overlapping
+           xmax[irank][d] > 2 * XMIN[LEVEL][d] - XMAX[LEVEL][d]) {//   in all dimensions, they are neighboring domains
           ic++;                                                 //    Increment neighbor dimension counter
         }                                                       //   Endif for overlapping domains
       }                                                         //  End loop over dimensions
+      ic = 3;
       if( ic == 3 && irank != RANK ) {                          //  If ranks are neighbors in all dimensions
         for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {    //   Loop over cells
           if( C->NCHILD == 0 ) {                                //   If cell is a twig
@@ -320,7 +321,7 @@ public:
             if( IMAGES == 0 ) {                                 //    If free boundary condition
               Xperiodic = 0;                                    //     Set periodic coordinate offset
               real R = getDistance(C,xmin[irank],xmax[irank]);  //     Get distance to other domain
-              send |= 3 * C->R > THETA * R;                     //      If the cell seems close enough for P2P
+              send |= CLET * C->R > THETA * R;                  //      If the cell seems close enough for P2P
             } else {                                            //     If periodic boundary condition
               for( int ix=-1; ix<=1; ++ix ) {                   //      Loop over x periodic direction
                 for( int iy=-1; iy<=1; ++iy ) {                 //       Loop over y periodic direction
@@ -329,7 +330,7 @@ public:
                     Xperiodic[1] = iy * 2 * R0;                 //         Coordinate offset for y periodic direction
                     Xperiodic[2] = iz * 2 * R0;                 //         Coordinate offset for z periodic direction
                     real R = getDistance(C,xmin[irank],xmax[irank]);//     Get distance to other domain
-                    send |= 3 * C->R > THETA * R;               //         If the cell seems close enough for P2P
+                    send |= CLET * C->R > THETA * R;            //         If the cell seems close enough for P2P
                   }                                             //        End loop over z periodic direction
                 }                                               //       End loop over y periodic direction
               }                                                 //      End loop over x periodic direction
@@ -458,12 +459,12 @@ public:
       stopTimer("Sticks2send  ");                               //  Stop timer & print
     }                                                           // End loop over levels of N-D hypercube communication
 
-#ifdef DEBUG
+//#ifdef DEBUG
     print("M[0] @ root   : ",0);                                // Print identifier
     print((cells.end()-1)->M[0]);                               // Print monopole of root (should be 1 for test)
     print("bodies.size() : ",0);                                // Print identifier
     print(bodies.size());                                       // Print size of body vector
-#endif
+//#endif
     sendCells.clear();                                          // Clear send buffer
     recvCells.clear();                                          // Clear recv buffer
   }

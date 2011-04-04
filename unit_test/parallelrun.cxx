@@ -5,7 +5,7 @@
 #endif
 
 int main() {
-  const int numBodies = 10000;
+  const int numBodies = 100000;
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells;

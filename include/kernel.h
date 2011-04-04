@@ -60,7 +60,7 @@ public:
       R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
       R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
     }                                                           // End loop over each dimension
-    R0 = pow(2.,int(1. + log(R0) / M_LN2));                     // Add some leeway to root radius
+    R0 += 1e-5;                                                 // Add some leeway to root radius
     if( IMAGES != 0 ) R0 = M_PI;                                // Periodic boundary conditions have radius M_PI
   }
 
