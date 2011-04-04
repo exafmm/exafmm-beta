@@ -391,7 +391,7 @@ public:
   void octsection(Bodies &bodies) {                             // Partition by recursive octsection
     startTimer("Partition    ");                                // Start timer
     int byte = sizeof(bodies[0]);                               // Byte size of body structure
-    int level = int(log(SIZE + 1) / M_LN2 / 3);                 // Max level/3 of N-D hypercube communication
+    int level = int(log(SIZE-1) / M_LN2 / 3) + 1;               // Max level/3 of N-D hypercube communication
     BottomUp::setIndex(bodies,level);                           // Set index of bodies for that level
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
@@ -403,8 +403,9 @@ public:
       scnt[i] = 0;                                              //  Initialize send counts
     }                                                           // End loop over ranks
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      int i = B->ICELL - ((1 << 3*level) - 1) / 7;              //  Get levelwise index
-      scnt[i]++;                                                //  Fill send count bucket
+      int index = B->ICELL - ((1 << 3*level) - 1) / 7;          //  Get levelwise index
+      int irank = index / (pow(8,level) / SIZE);                //  Get rank which the cell belongs to
+      scnt[irank]++;                                            //  Fill send count bucket
     }                                                           // End loop over bodies
     MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM_WORLD); // Communicate send count to get recv count
     sdsp[0] = rdsp[0] = 0;                                      // Initialize send/recv displacements
@@ -421,17 +422,16 @@ public:
     }                                                           // End loop over ranks
     MPI_Alltoallv(&bodies[0],scnt,sdsp,MPI_BYTE,&buffer[0],rcnt,rdsp,MPI_BYTE,MPI_COMM_WORLD);// Communicat bodies
     bodies = buffer;                                            // Copy recv buffer to bodies
-    for( int l=0; l!=level; ++l ) {                             // Loop over level/3 of N-D hypercube
-      for( int d=0; d!=3; ++d ) {                               //  Loop over 3 dimensions
-        int i = 3 * l + d;                                      //   i = actual level of N-D hypercube
-        XMIN[i+1] = XMIN[i];                                    //   Set XMAX for next subdivision
-        XMAX[i+1] = XMAX[i];                                    //   Set XMIN for next subdivision
-        if( (RANK >> (3 * (level - l - 1) + 2 - d)) % 2 ) {     //   If on left side
-          XMIN[i+1][2-d] = (XMAX[i][2-d]+XMIN[i][2-d]) / 2;     //    Set XMIN to midpoint
-        } else {                                                //   If on right side
-          XMAX[i+1][2-d] = (XMAX[i][2-d]+XMIN[i][2-d]) / 2;     //    Set XMAX to midpoint
-        }                                                       //   Endif for side
-      }                                                         //  End loop over dimensions
+    level = int(log(SIZE)/M_LN2);                               // Max level of N-D hypercube communication
+    for( int l=0; l!=level; ++l ) {                             // Loop over level of N-D hypercube
+      int d = 2 - l % 3;                                        //  Dimension of subdivision
+      XMIN[l+1] = XMIN[l];                                      //  Set XMAX for next subdivision
+      XMAX[l+1] = XMAX[l];                                      //  Set XMIN for next subdivision
+      if( (RANK >> (level - l - 1)) % 2 ) {                     //  If on left side
+        XMIN[l+1][d] = (XMAX[l][d]+XMIN[l][d]) / 2;             //   Set XMIN to midpoint
+      } else {                                                  //  If on right side
+        XMAX[l+1][d] = (XMAX[l][d]+XMIN[l][d]) / 2;             //   Set XMAX to midpoint
+      }                                                         //  Endif for side
     }                                                           // End loop over levels
     delete[] scnt;                                              // Delete send count
     delete[] sdsp;                                              // Delete send displacement

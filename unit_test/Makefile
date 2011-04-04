@@ -63,7 +63,7 @@ let: let.cxx $(OBJECT)
 
 parallelrun: parallelrun.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 4 ./a.out
+	mpirun -np 8 ./a.out
 
 vtk: vtk.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)

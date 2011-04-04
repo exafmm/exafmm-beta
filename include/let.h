@@ -429,7 +429,7 @@ public:
       startTimer("Recv2twigs   ");                              //  Start timer
       recv2twigs(bodies,twigs);                                 //  Put recv buffer into twig vector
       stopTimer("Recv2twigs   ");                               //  Stop timer & print
-#ifdef DEBUG
+//#ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
         complex SUM = 0;                                        //   Initialize accumulator
         for(C_iter C=twigs.begin(); C!=twigs.end(); ++C) {      //   Loop over twigs
@@ -438,7 +438,7 @@ public:
         print("Before recv   : ",0);                            //   Print identifier
         print(SUM);                                             //   Print sum of multipoles
       }                                                         //  Endif for last level
-#endif
+//#endif
       zipTwigs(twigs,cells,sticks,l==LEVEL-1);                  //  Zip two groups of twigs that overlap
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
