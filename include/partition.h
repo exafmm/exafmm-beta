@@ -391,7 +391,7 @@ public:
   void octsection(Bodies &bodies) {                             // Partition by recursive octsection
     startTimer("Partition    ");                                // Start timer
     int byte = sizeof(bodies[0]);                               // Byte size of body structure
-    int level = int(log(SIZE-1) / M_LN2 / 3) + 1;               // Max level/3 of N-D hypercube communication
+    int level = int(log(SIZE-1) / M_LN2 / 3) + 1;               // Level of local root cell
     BottomUp::setIndex(bodies,level);                           // Set index of bodies for that level
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order

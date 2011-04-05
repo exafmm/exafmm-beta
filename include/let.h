@@ -57,6 +57,7 @@ private:
   }
 
   void getLET(C_iter C0, C_iter C, vect xmin, vect xmax) {      // Determine which cells to send
+    int level = int(log(SIZE-1) / M_LN2 / 3) + 1;               // Level of local root cell
     for( int i=0; i!=C->NCHILD; i++ ) {                         // Loop over child cells
       C_iter CC = C0+C->CHILD[i];                               //  Iterator for child cell
       bool divide = false;                                      //  Initialize logical for dividing
@@ -77,9 +78,11 @@ private:
           }                                                     //    End loop over y periodic direction
         }                                                       //   End loop over x periodic direction
       }                                                         //  Endif for periodic boundary condition
+      divide |= R0 / (1 << level) + 1e-5 < CC->R;               //  If the cell is larger than the local root cell
       if( divide && CC->NCHILD != 0 ) {                         //  If the cell seems too close and not twig
         getLET(C0,CC,xmin,xmax);                                //   Traverse the tree further
       } else {                                                  //  If the cell is far or a twig
+        assert( R0 / (1 << level) + 1e-5 > CC->R );             //   Can't send cells that are larger than local root
         JCell cell;                                             //   Set compact cell type for sending
         cell.ICELL = CC->ICELL;                                 //   Set index of compact cell type
         cell.M     = CC->M;                                     //   Set Multipoles of compact cell type
@@ -401,6 +404,39 @@ public:
     stopTimer("Send bodies  ");                                 // Stop timer & print
   }
 
+  void checkNumCells(int l) {                                   // Only works with octsection
+    int maxLevel = int(log(SIZE-1) / M_LN2 / 3) + 1;
+    int octant0 = -1;
+    int numCells = 0;
+    for( JC_iter JC=sendCells.begin(); JC!=sendCells.end(); ++JC ) {
+      int level = getLevel(JC->ICELL);
+      int index = JC->ICELL - ((1 << 3*level) - 1) / 7;
+      int octant = index / (1 << 3 * (level - maxLevel));
+      if( octant != octant0 ) {
+        octant0 = octant;
+        numCells++;
+      }
+    }
+    int numCellsExpect = (1 << (3 * maxLevel - 1)) / (1 << l);  // Isn't true for far domains
+    if( numCellsExpect != numCells && RANK == 0) std::cout << numCells << " " << numCellsExpect << std::endl;
+  }
+
+  void checkSumMass(Cells &cells) {
+    double localMass = 0;
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
+      if( C->NCHILD == 0 ) {
+        localMass += C->M[0].real();
+      }
+    }
+    double globalMass;
+    MPI_Allreduce(&localMass,&globalMass,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
+    print("localMass : ",0);
+    print(localMass);
+    print("globalMass : ",0);
+    print(globalMass,0);
+    print("\n",0);
+  }
+
   void commCells(Bodies &bodies, Cells &cells) {                // Communicate cell in the LET
     int offTwigs = 0;                                           // Initialize offset of twigs
     vect xmin = 0, xmax = 0;                                    // Initialize domain boundaries
@@ -410,6 +446,8 @@ public:
       getOtherDomain(xmin,xmax,l+1);                            //  Get boundries of domains on other processes
       startTimer("Get LET      ");                              //  Start timer
       getLET(cells.begin(),cells.end()-1,xmin,xmax);            //  Determine which cells to send
+      checkNumCells(LEVEL-l-1);
+      checkSumMass(cells);
       stopTimer("Get LET      ");                               //  Stop timer & print
       startTimer("Alltoall     ");                              //  Start timer
       commCellsAlltoall(l);                                     //  Communicate cells by one-to-one MPI_Alltoallv
