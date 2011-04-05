@@ -8,16 +8,16 @@ void Kernel::KERNEL() {\
   startTimer("cudaMalloc   ");\
   cudaMalloc( (void**) &keysDevc,   keysHost.size()*sizeof(int) );\
   cudaMalloc( (void**) &rangeDevc,  rangeHost.size()*sizeof(int) );\
-  cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(double) );\
-  cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(double) );\
+  cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(float) );\
+  cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(float) );\
   cudaThreadSynchronize();\
   stopTimer("cudaMalloc   ");\
   startTimer("cudaMemcpy   ");\
   cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),    cudaMemcpyHostToDevice);\
   cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),   cudaMemcpyHostToDevice);\
-  cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(double),cudaMemcpyHostToDevice);\
-  cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(double),cudaMemcpyHostToDevice);\
-  cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(double));\
+  cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(float),cudaMemcpyHostToDevice);\
+  cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(float),cudaMemcpyHostToDevice);\
+  cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(float));\
   cudaThreadSynchronize();\
   stopTimer("cudaMemcpy   ");\
   cudaThreadSynchronize();\
@@ -31,7 +31,7 @@ void Kernel::KERNEL() {\
   stopTimer(#EVENT);\
   cudaThreadSynchronize();\
   startTimer("cudaMemcpy   ");\
-  cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(double),cudaMemcpyDeviceToHost);\
+  cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(float),cudaMemcpyDeviceToHost);\
   cudaThreadSynchronize();\
   stopTimer("cudaMemcpy   ");\
   startTimer("cudaFree     ");\

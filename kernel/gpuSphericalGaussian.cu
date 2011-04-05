@@ -17,35 +17,35 @@ void Kernel::GaussianInit() {
 
 void Kernel::GaussianPre() {}
 
-__global__ void GaussianP2M_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {}
+__global__ void GaussianP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {}
 
-__global__ void GaussianM2M_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {}
+__global__ void GaussianM2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {}
 
 void Kernel::GaussianM2M_CPU() {}
 
-__global__ void GaussianM2L_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {}
+__global__ void GaussianM2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {}
 
-__global__ void GaussianM2P_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {}
+__global__ void GaussianM2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {}
 
-__device__ inline void GaussianP2P_core(double &target, double *targetX, double *sourceShrd, double3 d, int i) {
+__device__ inline void GaussianP2P_core(float &target, float *targetX, float *sourceShrd, float3 d, int i) {
   d.x += targetX[0];
   d.x -= sourceShrd[5*i+0];
   d.y += targetX[1];
   d.y -= sourceShrd[5*i+1];
   d.z += targetX[2];
   d.z -= sourceShrd[5*i+2];
-  double S2 = 2 * sourceShrd[5*i+4] * sourceShrd[5*i+4];
-  double R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
+  float S2 = 2 * sourceShrd[5*i+4] * sourceShrd[5*i+4];
+  float R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
   target += sourceShrd[5*i+3] / (M_PI * S2) * rsqrtf(M_PI * S2) * expf(-R2 / S2);
 }
 
-__global__ void GaussianP2P_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {
+__global__ void GaussianP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  double D0 = -constDevc[0];
-  double targetX[3];
-  double target = 0;
-  __shared__ double sourceShrd[5*THREADS];
+  float D0 = -constDevc[0];
+  float targetX[3];
+  float target = 0;
+  __shared__ float sourceShrd[5*THREADS];
   int itarget = blockIdx.x * THREADS + threadIdx.x;
   targetX[0] = targetGlob[3*itarget+0];
   targetX[1] = targetGlob[3*itarget+1];
@@ -68,7 +68,7 @@ __global__ void GaussianP2P_GPU(int *keysGlob, int *rangeGlob, double *targetGlo
         for( int iy=-1; iy<=1; ++iy ) {
           for( int iz=-1; iz<=1; ++iz, ++I ) {
             if( Iperiodic & (1 << I) ) {
-              double3 d;
+              float3 d;
               d.x = ix * D0;
               d.y = iy * D0;
               d.z = iz * D0;
@@ -99,7 +99,7 @@ __global__ void GaussianP2P_GPU(int *keysGlob, int *rangeGlob, double *targetGlo
         for( int iz=-1; iz<=1; ++iz, ++I ) {
           if( Iperiodic & (1 << I) ) {
             icounter++;
-            double3 d;
+            float3 d;
             d.x = ix * D0;
             d.y = iy * D0;
             d.z = iz * D0;
@@ -114,9 +114,9 @@ __global__ void GaussianP2P_GPU(int *keysGlob, int *rangeGlob, double *targetGlo
   targetGlob[3*itarget+0] = target;
 }
 
-__global__ void GaussianL2L_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {}
+__global__ void GaussianL2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {}
 
-__global__ void GaussianL2P_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {
+__global__ void GaussianL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[3*itarget+0] = 0;
 }

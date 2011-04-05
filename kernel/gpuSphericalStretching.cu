@@ -51,11 +51,11 @@ void Kernel::StretchingPre() {
   }
 }
 
-__device__ void StretchingP2M_core(double *target, double rho, double alpha, double beta, double *sourceShrd, int ithread) {
-  __shared__ double factShrd[2*P];
-  __shared__ double YnmShrd[NTERM];
-  __shared__ double YnmAlphaShrd[NTERM];
-  double fact = 1;
+__device__ void StretchingP2M_core(float *target, float rho, float alpha, float beta, float *sourceShrd, int ithread) {
+  __shared__ float factShrd[2*P];
+  __shared__ float YnmShrd[NTERM];
+  __shared__ float YnmAlphaShrd[NTERM];
+  float fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -65,28 +65,28 @@ __device__ void StretchingP2M_core(double *target, double rho, double alpha, dou
   for( int i=0; i<=nn; ++i ) mm += i;
   mm = threadIdx.x - mm;
   if( threadIdx.x >= NTERM ) nn = mm = 0;
-  double x = cosf(alpha);
-  double y = sinf(alpha);
+  float x = cosf(alpha);
+  float y = sinf(alpha);
   if( fabs(y) < EPS ) y = 1 / EPS;
-  double s = sqrtf(1 - x * x);
+  float s = sqrtf(1 - x * x);
   fact = 1;
-  double pn = 1;
-  double rhom = 1;
+  float pn = 1;
+  float rhom = 1;
   for( int m=0; m<=mm; ++m ) {
-    double p = pn;
+    float p = pn;
     int i = m * (m + 1) / 2 + m;
-    double anm = rhom * rsqrtf(factShrd[2*m]);
+    float anm = rhom * rsqrtf(factShrd[2*m]);
     YnmShrd[i] = anm * p;
-    double p1 = p;
+    float p1 = p;
     p = x * (2 * m + 1) * p;
     YnmAlphaShrd[i] = anm * (p - (m + 1) * x * p1) / y;
     rhom *= rho;
-    double rhon = rhom;
+    float rhon = rhom;
     for( int n=m+1; n<=nn; ++n ) {
       i = n * (n + 1) / 2 + m;
       anm = rhon * rsqrtf(factShrd[n+m] / factShrd[n-m]);
       YnmShrd[i] = anm * p;
-      double p2 = p1;
+      float p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
       YnmAlphaShrd[i] = anm * ((n - m + 1) * p - (n + 1) * x * p1) / y;
@@ -96,10 +96,10 @@ __device__ void StretchingP2M_core(double *target, double rho, double alpha, dou
     fact += 2;
   }
   int i = nn * (nn + 1) / 2 + mm;
-  double ere = cosf(-mm * beta);
-  double eim = sinf(-mm * beta);
-  double spherical[6];
-  double cartesian[6];
+  float ere = cosf(-mm * beta);
+  float eim = sinf(-mm * beta);
+  float spherical[6];
+  float cartesian[6];
   spherical[0] = YnmShrd[i] * nn / rho * ere;
   spherical[1] = YnmAlphaShrd[i] * ere;
   spherical[2] = YnmShrd[i] * mm * eim;
@@ -116,12 +116,12 @@ __device__ void StretchingP2M_core(double *target, double rho, double alpha, dou
   target[5] += sourceShrd[6*ithread+3] * cartesian[4] - sourceShrd[6*ithread+4] * cartesian[3];
 }
 
-__global__ void StretchingP2M_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {
+__global__ void StretchingP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  double target[6] = {0, 0, 0, 0, 0, 0};
-  __shared__ double targetShrd[3];
-  __shared__ double sourceShrd[6*THREADS];
+  float target[6] = {0, 0, 0, 0, 0, 0};
+  __shared__ float targetShrd[3];
+  __shared__ float sourceShrd[6*THREADS];
   int itarget = blockIdx.x * THREADS;
   targetShrd[0] = targetGlob[6*itarget+0];
   targetShrd[1] = targetGlob[6*itarget+1];
@@ -140,11 +140,11 @@ __global__ void StretchingP2M_GPU(int *keysGlob, int *rangeGlob, double *targetG
       sourceShrd[6*threadIdx.x+5] = sourceGlob[7*isource+5];
       __syncthreads();
       for( int i=0; i<THREADS; ++i ) {
-        double3 d;
+        float3 d;
         d.x = sourceShrd[6*i+0] - targetShrd[0];
         d.y = sourceShrd[6*i+1] - targetShrd[1];
         d.z = sourceShrd[6*i+2] - targetShrd[2];
-        double rho,alpha,beta;
+        float rho,alpha,beta;
         cart2sph(rho,alpha,beta,d.x,d.y,d.z);
         StretchingP2M_core(target,rho,alpha,beta,sourceShrd,i);
       }
@@ -162,11 +162,11 @@ __global__ void StretchingP2M_GPU(int *keysGlob, int *rangeGlob, double *targetG
     }
     __syncthreads();
     for( int i=0; i<size-iblok*THREADS; ++i ) {
-      double3 d;
+      float3 d;
       d.x = sourceShrd[6*i+0] - targetShrd[0];
       d.y = sourceShrd[6*i+1] - targetShrd[1];
       d.z = sourceShrd[6*i+2] - targetShrd[2];
-      double rho,alpha,beta;
+      float rho,alpha,beta;
       cart2sph(rho,alpha,beta,d.x,d.y,d.z);
       StretchingP2M_core(target,rho,alpha,beta,sourceShrd,i);
     }
@@ -180,25 +180,25 @@ __global__ void StretchingP2M_GPU(int *keysGlob, int *rangeGlob, double *targetG
   targetGlob[6*itarget+5] = target[5];
 }
 
-__device__ void StretchingM2M_core(double *target, double beta, double *factShrd, double *YnmShrd, double *sourceShrd) {
+__device__ void StretchingM2M_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
   int j = floor(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
   k = threadIdx.x - k;
   if( threadIdx.x >= NTERM ) j = k = 0;
-  double ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
+  float ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
   for( int n=0; n<=j; ++n ) {
     for( int m=-n; m<=min(k-1,n); ++m ) {
       if( j-n >= k-m ) {
         int nm = n * n + n + m;
         int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
-        double ere = cosf(-m * beta);
-        double eim = sinf(-m * beta);
-        double ajnkm = rsqrtf(factShrd[j-n-k+m] * factShrd[j-n+k-m]);
-        double cnm = ODDEVEN((m-abs(m))/2+j);
+        float ere = cosf(-m * beta);
+        float eim = sinf(-m * beta);
+        float ajnkm = rsqrtf(factShrd[j-n-k+m] * factShrd[j-n+k-m]);
+        float cnm = ODDEVEN((m-abs(m))/2+j);
         cnm *= ajnkm / ajk * YnmShrd[nm];
-        double CnmReal = cnm * ere;
-        double CnmImag = cnm * eim;
+        float CnmReal = cnm * ere;
+        float CnmImag = cnm * eim;
         target[0] += sourceShrd[6*jnkms+0] * CnmReal;
         target[0] -= sourceShrd[6*jnkms+1] * CnmImag;
         target[1] += sourceShrd[6*jnkms+0] * CnmImag;
@@ -217,13 +217,13 @@ __device__ void StretchingM2M_core(double *target, double beta, double *factShrd
       if( j-n >= m-k ) {
         int nm = n * n + n + m;
         int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-        double ere = cosf(-m * beta);
-        double eim = sinf(-m * beta);
-        double ajnkm = rsqrtf(factShrd[j-n-k+m] * factShrd[j-n+k-m]);
-        double cnm = ODDEVEN(k+j+m);
+        float ere = cosf(-m * beta);
+        float eim = sinf(-m * beta);
+        float ajnkm = rsqrtf(factShrd[j-n-k+m] * factShrd[j-n+k-m]);
+        float cnm = ODDEVEN(k+j+m);
         cnm *= ajnkm / ajk * YnmShrd[nm];
-        double CnmReal = cnm * ere;
-        double CnmImag = cnm * eim;
+        float CnmReal = cnm * ere;
+        float CnmImag = cnm * eim;
         target[0] += sourceShrd[6*jnkms+0] * CnmReal;
         target[0] += sourceShrd[6*jnkms+1] * CnmImag;
         target[1] += sourceShrd[6*jnkms+0] * CnmImag;
@@ -241,14 +241,14 @@ __device__ void StretchingM2M_core(double *target, double beta, double *factShrd
   }
 }
 
-__global__ void StretchingM2M_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {
+__global__ void StretchingM2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  double target[6] = {0, 0, 0, 0, 0, 0};
-  __shared__ double sourceShrd[6*THREADS];
-  __shared__ double factShrd[2*P];
-  __shared__ double YnmShrd[P*P];
-  double fact = 1;
+  float target[6] = {0, 0, 0, 0, 0, 0};
+  __shared__ float sourceShrd[6*THREADS];
+  __shared__ float factShrd[2*P];
+  __shared__ float YnmShrd[P*P];
+  float fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -256,7 +256,7 @@ __global__ void StretchingM2M_GPU(int *keysGlob, int *rangeGlob, double *targetG
   int itarget = blockIdx.x * THREADS;
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
-    double3 d;
+    float3 d;
     d.x = targetGlob[6*itarget+0] - sourceGlob[begin+0];
     d.y = targetGlob[6*itarget+1] - sourceGlob[begin+1];
     d.z = targetGlob[6*itarget+2] - sourceGlob[begin+2];
@@ -270,7 +270,7 @@ __global__ void StretchingM2M_GPU(int *keysGlob, int *rangeGlob, double *targetG
       sourceShrd[6*threadIdx.x+5] = sourceGlob[begin+6*threadIdx.x+8];
     }
     __syncthreads();
-    double rho,alpha,beta;
+    float rho,alpha,beta;
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
     evalMultipole(YnmShrd,rho,alpha,factShrd);
     StretchingM2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
@@ -325,22 +325,22 @@ void Kernel::StretchingM2M_CPU() {
   }
 }
 
-__device__ void StretchingM2L_core(double *target, double  beta, double *factShrd, double *YnmShrd, double *sourceShrd) {
+__device__ void StretchingM2L_core(float *target, float  beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
   int j = floor(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
   k = threadIdx.x - k;
   if( threadIdx.x >= NTERM ) j = k = 0;
-  double ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
+  float ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
   for( int n=0; n<P; ++n ) {
     for( int m=-n; m<0; ++m ) {
       int jnkm = (j + n) * (j + n + 1) / 2 - m + k;
-      double ere = cosf((m - k) * beta);
-      double eim = sinf((m - k) * beta);
-      double anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
-      double cnm = anm * ajk * YnmShrd[jnkm];
-      double CnmReal = cnm * ere;
-      double CnmImag = cnm * eim;
+      float ere = cosf((m - k) * beta);
+      float eim = sinf((m - k) * beta);
+      float anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
+      float cnm = anm * ajk * YnmShrd[jnkm];
+      float CnmReal = cnm * ere;
+      float CnmImag = cnm * eim;
       int i = n * (n + 1) / 2 - m;
       target[0] += sourceShrd[6*i+0] * CnmReal;
       target[0] += sourceShrd[6*i+1] * CnmImag;
@@ -357,13 +357,13 @@ __device__ void StretchingM2L_core(double *target, double  beta, double *factShr
     }
     for( int m=0; m<=n; ++m ) {
       int jnkm = (j + n) * (j + n + 1) / 2 + abs(m - k);
-      double ere = cosf((m - k) * beta);
-      double eim = sinf((m - k) * beta);
-      double anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
-      double cnm = ODDEVEN((abs(k - m) - k - m) / 2);
+      float ere = cosf((m - k) * beta);
+      float eim = sinf((m - k) * beta);
+      float anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
+      float cnm = ODDEVEN((abs(k - m) - k - m) / 2);
       cnm *= anm * ajk * YnmShrd[jnkm];
-      double CnmReal = cnm * ere;
-      double CnmImag = cnm * eim;
+      float CnmReal = cnm * ere;
+      float CnmImag = cnm * eim;
       int i = n * (n + 1) / 2 + m;
       target[0] += sourceShrd[6*i+0] * CnmReal;
       target[0] -= sourceShrd[6*i+1] * CnmImag;
@@ -381,15 +381,15 @@ __device__ void StretchingM2L_core(double *target, double  beta, double *factShr
   }
 }
 
-__global__ void StretchingM2L_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {
+__global__ void StretchingM2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  double D0 = -constDevc[0];
-  double target[6] = {0, 0, 0, 0, 0, 0};
-  __shared__ double sourceShrd[6*THREADS];
-  __shared__ double factShrd[2*P];
-  __shared__ double YnmShrd[4*NTERM];
-  double fact = 1;
+  float D0 = -constDevc[0];
+  float target[6] = {0, 0, 0, 0, 0, 0};
+  __shared__ float sourceShrd[6*THREADS];
+  __shared__ float factShrd[2*P];
+  __shared__ float YnmShrd[4*NTERM];
+  float fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -413,14 +413,14 @@ __global__ void StretchingM2L_GPU(int *keysGlob, int *rangeGlob, double *targetG
       for( int iy=-1; iy<=1; ++iy ) {
         for( int iz=-1; iz<=1; ++iz, ++I ) {
           if( Iperiodic & (1 << I) ) {
-            double3 d;
+            float3 d;
             d.x = ix * D0;
             d.y = iy * D0;
             d.z = iz * D0;
             d.x += targetGlob[6*itarget+0] - sourceGlob[begin+0];
             d.y += targetGlob[6*itarget+1] - sourceGlob[begin+1];
             d.z += targetGlob[6*itarget+2] - sourceGlob[begin+2];
-            double rho,alpha,beta;
+            float rho,alpha,beta;
             cart2sph(rho,alpha,beta,d.x,d.y,d.z);
             evalLocal(YnmShrd,rho,alpha,factShrd);
             StretchingM2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
@@ -438,30 +438,30 @@ __global__ void StretchingM2L_GPU(int *keysGlob, int *rangeGlob, double *targetG
   targetGlob[6*itarget+5] = target[5];
 }
 
-__device__ void StretchingM2P_core(double *target, double *targetQ, double r, double theta, double phi,
-                                   double *factShrd, double *sourceShrd) {
-  double x = cosf(theta);
-  double y = sinf(theta);
+__device__ void StretchingM2P_core(float *target, float *targetQ, float r, float theta, float phi,
+                                   float *factShrd, float *sourceShrd) {
+  float x = cosf(theta);
+  float y = sinf(theta);
   if( fabs(y) < EPS ) y = 1 / EPS;
-  double s = sqrtf(1 - x * x);
-  double spherical[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  double cartesian[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  double fact = 1;
-  double pn = 1;
-  double rhom = 1.0 / r;
+  float s = sqrtf(1 - x * x);
+  float spherical[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  float cartesian[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  float fact = 1;
+  float pn = 1;
+  float rhom = 1.0 / r;
   for( int m=0; m<P; ++m ) {
-    double p = pn;
+    float p = pn;
     int i = m * (m + 1) / 2 + m;
-    double ere = cosf(m * phi);
+    float ere = cosf(m * phi);
     if( m == 0 ) ere = 0.5;
-    double eim = sinf(m * phi);
-    double anm = rhom * rsqrtf(factShrd[2*m]);
-    double Ynm = anm * p;
-    double p1 = p;
+    float eim = sinf(m * phi);
+    float anm = rhom * rsqrtf(factShrd[2*m]);
+    float Ynm = anm * p;
+    float p1 = p;
     p = x * (2 * m + 1) * p;
-    double YnmTheta = anm * (p - (m + 1) * x * p1) / y;
-    double realj = ere * sourceShrd[6*i+0] - eim * sourceShrd[6*i+1];
-    double imagj = eim * sourceShrd[6*i+0] + ere * sourceShrd[6*i+1];
+    float YnmTheta = anm * (p - (m + 1) * x * p1) / y;
+    float realj = ere * sourceShrd[6*i+0] - eim * sourceShrd[6*i+1];
+    float imagj = eim * sourceShrd[6*i+0] + ere * sourceShrd[6*i+1];
     spherical[0] -= 2 * (m + 1) / r * Ynm * realj;
     spherical[1] += 2 * YnmTheta * realj;
     spherical[2] -= 2 * m * Ynm * imagj;
@@ -476,12 +476,12 @@ __device__ void StretchingM2P_core(double *target, double *targetQ, double r, do
     spherical[7] += 2 * YnmTheta * realj;
     spherical[8] -= 2 * m * Ynm * imagj;
     rhom /= r;
-    double rhon = rhom;
+    float rhon = rhom;
     for( int n=m+1; n<P; ++n ) {
       i = n * (n + 1) / 2 + m;
       anm = rhon * rsqrtf(factShrd[n+m] / factShrd[n-m]);
       Ynm = anm * p;
-      double p2 = p1;
+      float p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
       YnmTheta = anm * ((n - m + 1) * p - (n + 1) * x * p1) / y;
@@ -513,15 +513,15 @@ __device__ void StretchingM2P_core(double *target, double *targetQ, double r, do
   target[2] -= 0.25 / M_PI * (targetQ[0] * cartesian[6] + targetQ[1] * cartesian[7] + targetQ[2] * cartesian[8]);
 }
 
-__global__ void StretchingM2P_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {
+__global__ void StretchingM2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  double D0 = -constDevc[0];
-  double targetX[3], targetQ[3];
-  double target[3] = {0, 0, 0};
-  __shared__ double sourceShrd[2*THREADS];
-  __shared__ double factShrd[2*P];
-  double fact = 1;
+  float D0 = -constDevc[0];
+  float targetX[3], targetQ[3];
+  float target[3] = {0, 0, 0};
+  __shared__ float sourceShrd[2*THREADS];
+  __shared__ float factShrd[2*P];
+  float fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -551,14 +551,14 @@ __global__ void StretchingM2P_GPU(int *keysGlob, int *rangeGlob, double *targetG
       for( int iy=-1; iy<=1; ++iy ) {
         for( int iz=-1; iz<=1; ++iz, ++I ) {
           if( Iperiodic & (1 << I) ) {
-            double3 d;
+            float3 d;
             d.x = ix * D0;
             d.y = iy * D0;
             d.z = iz * D0;
             d.x += targetX[0] - sourceGlob[begin+0];
             d.y += targetX[1] - sourceGlob[begin+1];
             d.z += targetX[2] - sourceGlob[begin+2];
-            double r,theta,phi;
+            float r,theta,phi;
             cart2sph(r,theta,phi,d.x,d.y,d.z);
             StretchingM2P_core(target,targetQ,r,theta,phi,factShrd,sourceShrd);
           }
@@ -571,18 +571,18 @@ __global__ void StretchingM2P_GPU(int *keysGlob, int *rangeGlob, double *targetG
   targetGlob[6*itarget+2] = target[2];
 }
 
-__device__ inline void StretchingP2P_core(double *target, double *targetX, double *targetQ, double *sourceShrd, double3 d, int i) {
+__device__ inline void StretchingP2P_core(float *target, float *targetX, float *targetQ, float *sourceShrd, float3 d, int i) {
   d.x += targetX[0];
   d.x -= sourceShrd[7*i+0];
   d.y += targetX[1];
   d.y -= sourceShrd[7*i+1];
   d.z += targetX[2];
   d.z -= sourceShrd[7*i+2];
-  double R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
+  float R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
 #if 0
-  double S2 = 2 * sourceShrd[7*i+6] * sourceShrd[7*i+6];
-  double RS = R2 / S2;
-  double cutoff = 0.25 / M_PI / R2 / sqrtf(R2) * (erff( sqrtf(RS) )
+  float S2 = 2 * sourceShrd[7*i+6] * sourceShrd[7*i+6];
+  float RS = R2 / S2;
+  float cutoff = 0.25 / M_PI / R2 / sqrtf(R2) * (erff( sqrtf(RS) )
                - sqrtf(4 / M_PI * RS) * expf(-RS));
   target[0] += (targetQ[1] * sourceShrd[7*i+5] - targetQ[2] * sourceShrd[7*i+4]) * cutoff;
   target[1] += (targetQ[2] * sourceShrd[7*i+3] - targetQ[0] * sourceShrd[7*i+5]) * cutoff;
@@ -594,23 +594,23 @@ __device__ inline void StretchingP2P_core(double *target, double *targetX, doubl
   target[1] += (sourceShrd[7*i+5] * d.x - sourceShrd[7*i+3] * d.z) * cutoff;
   target[2] += (sourceShrd[7*i+3] * d.y - sourceShrd[7*i+4] * d.x) * cutoff;
 #else
-  const double SQRT4PI = M_2_SQRTPI;
-  const double FOURPI = 0.25 * M_1_PI;
-  double SQRT_R2_1 = rsqrtf(R2);
-  double RS = R2 * sourceShrd[7*i+6];
-  double SQRT_RS = sqrtf(RS);
-  double z = SQRT_RS,t,ERF_SQRT_RS;
+  const float SQRT4PI = M_2_SQRTPI;
+  const float FOURPI = 0.25 * M_1_PI;
+  float SQRT_R2_1 = rsqrtf(R2);
+  float RS = R2 * sourceShrd[7*i+6];
+  float SQRT_RS = sqrtf(RS);
+  float z = SQRT_RS,t,ERF_SQRT_RS;
   (t)=1.0f/(1.0f+0.5f*(z));
   ERF_SQRT_RS=1.0f - (t)*expf(-(z)*(z)-1.26551223f+(t)*(1.00002368f+(t)*(0.37409196f+(t)*(0.09678418f+
       (t)*(-0.18628806f+(t)*(0.27886807f+(t)*(-1.13520398f+(t)*(1.48851587f+
       (t)*(-0.82215223f+(t)*0.17087277f)))))))));
-  double EXP_RS = expf(-RS);
-  double cutoff = FOURPI * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * (ERF_SQRT_RS
+  float EXP_RS = expf(-RS);
+  float cutoff = FOURPI * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * (ERF_SQRT_RS
                - SQRT4PI * SQRT_RS * EXP_RS);
   target[0] += (targetQ[1] * sourceShrd[7*i+5] - targetQ[2] * sourceShrd[7*i+4]) * cutoff;
   target[1] += (targetQ[2] * sourceShrd[7*i+3] - targetQ[0] * sourceShrd[7*i+5]) * cutoff;
   target[2] += (targetQ[0] * sourceShrd[7*i+4] - targetQ[1] * sourceShrd[7*i+3]) * cutoff;
-  double cutoff2 = FOURPI * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * (3.0f * ERF_SQRT_RS
+  float cutoff2 = FOURPI * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * (3.0f * ERF_SQRT_RS
          - (2.0f * RS + 3.0f) * SQRT4PI * SQRT_RS * EXP_RS)
          * (targetQ[0] * d.x + targetQ[1] * d.y + targetQ[2] * d.z);
   target[0] += (sourceShrd[7*i+4] * d.z - sourceShrd[7*i+5] * d.y) * cutoff2;
@@ -619,13 +619,13 @@ __device__ inline void StretchingP2P_core(double *target, double *targetX, doubl
 #endif
 }
 
-__global__ void StretchingP2P_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {
+__global__ void StretchingP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  double D0 = -constDevc[0];
-  double targetX[3], targetQ[3];
-  double target[3] = {0, 0, 0};
-  __shared__ double sourceShrd[7*THREADS];
+  float D0 = -constDevc[0];
+  float targetX[3], targetQ[3];
+  float target[3] = {0, 0, 0};
+  __shared__ float sourceShrd[7*THREADS];
   int itarget = blockIdx.x * THREADS + threadIdx.x;
   targetX[0] = targetGlob[6*itarget+0];
   targetX[1] = targetGlob[6*itarget+1];
@@ -654,7 +654,7 @@ __global__ void StretchingP2P_GPU(int *keysGlob, int *rangeGlob, double *targetG
         for( int iy=-1; iy<=1; ++iy ) {
           for( int iz=-1; iz<=1; ++iz, ++I ) {
             if( Iperiodic & (1 << I) ) {
-              double3 d;
+              float3 d;
               d.x = ix * D0;
               d.y = iy * D0;
               d.z = iz * D0;
@@ -688,7 +688,7 @@ __global__ void StretchingP2P_GPU(int *keysGlob, int *rangeGlob, double *targetG
         for( int iz=-1; iz<=1; ++iz, ++I ) {
           if( Iperiodic & (1 << I) ) {
             icounter++;
-            double3 d;
+            float3 d;
             d.x = ix * D0;
             d.y = iy * D0;
             d.z = iz * D0;
@@ -705,23 +705,23 @@ __global__ void StretchingP2P_GPU(int *keysGlob, int *rangeGlob, double *targetG
   targetGlob[6*itarget+2] = target[2];
 }
 
-__device__ void StretchingL2L_core(double *target, double beta, double *factShrd, double *YnmShrd, double *sourceShrd) {
+__device__ void StretchingL2L_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
   int j = floor(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
   k = threadIdx.x - k;
   if( threadIdx.x >= NTERM ) j = k = 0;
-  double ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
+  float ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
   for( int n=0; n<P; ++n ) {
     for( int m=j+k-n; m<0; ++m ) {
       int nms = n * (n + 1) / 2 - m;
       int jnkm = (n - j) * (n - j) + n - j + m - k;
-      double ere = cosf((m - k) * beta);
-      double eim = sinf((m - k) * beta);
-      double anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
-      double cnm = ODDEVEN(k-n) * ajk / anm * YnmShrd[jnkm];
-      double CnmReal = cnm * ere;
-      double CnmImag = cnm * eim;
+      float ere = cosf((m - k) * beta);
+      float eim = sinf((m - k) * beta);
+      float anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
+      float cnm = ODDEVEN(k-n) * ajk / anm * YnmShrd[jnkm];
+      float CnmReal = cnm * ere;
+      float CnmImag = cnm * eim;
       target[0] += sourceShrd[6*nms+0] * CnmReal;
       target[0] += sourceShrd[6*nms+1] * CnmImag;
       target[1] += sourceShrd[6*nms+0] * CnmImag;
@@ -739,13 +739,13 @@ __device__ void StretchingL2L_core(double *target, double beta, double *factShrd
       if( n-j >= abs(m-k) ) {
         int nms = n * (n + 1) / 2 + m;
         int jnkm = (n - j) * (n - j) + n - j + m - k;
-        double ere = cosf((m - k) * beta);
-        double eim = sinf((m - k) * beta);
-        double anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
-        double cnm = ODDEVEN((m-k-abs(m-k)) / 2 - n);
+        float ere = cosf((m - k) * beta);
+        float eim = sinf((m - k) * beta);
+        float anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
+        float cnm = ODDEVEN((m-k-abs(m-k)) / 2 - n);
         cnm *= ajk / anm * YnmShrd[jnkm];
-        double CnmReal = cnm * ere;
-        double CnmImag = cnm * eim;
+        float CnmReal = cnm * ere;
+        float CnmImag = cnm * eim;
         target[0] += sourceShrd[6*nms+0] * CnmReal;
         target[0] -= sourceShrd[6*nms+1] * CnmImag;
         target[1] += sourceShrd[6*nms+0] * CnmImag;
@@ -763,14 +763,14 @@ __device__ void StretchingL2L_core(double *target, double beta, double *factShrd
   }
 }
 
-__global__ void StretchingL2L_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {
+__global__ void StretchingL2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  double target[6] = {0, 0, 0, 0, 0, 0};
-  __shared__ double sourceShrd[6*THREADS];
-  __shared__ double factShrd[2*P];
-  __shared__ double YnmShrd[P*P];
-  double fact = 1;
+  float target[6] = {0, 0, 0, 0, 0, 0};
+  __shared__ float sourceShrd[6*THREADS];
+  __shared__ float factShrd[2*P];
+  __shared__ float YnmShrd[P*P];
+  float fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -778,7 +778,7 @@ __global__ void StretchingL2L_GPU(int *keysGlob, int *rangeGlob, double *targetG
   int itarget = blockIdx.x * THREADS;
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
-    double3 d;
+    float3 d;
     d.x = targetGlob[6*itarget+0] - sourceGlob[begin+0];
     d.y = targetGlob[6*itarget+1] - sourceGlob[begin+1];
     d.z = targetGlob[6*itarget+2] - sourceGlob[begin+2];
@@ -792,7 +792,7 @@ __global__ void StretchingL2L_GPU(int *keysGlob, int *rangeGlob, double *targetG
       sourceShrd[6*threadIdx.x+5] = sourceGlob[begin+6*threadIdx.x+8];
     }
     __syncthreads();
-    double rho,alpha,beta;
+    float rho,alpha,beta;
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
     evalMultipole(YnmShrd,rho,alpha,factShrd);
     StretchingL2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
@@ -806,30 +806,30 @@ __global__ void StretchingL2L_GPU(int *keysGlob, int *rangeGlob, double *targetG
   targetGlob[6*itarget+5] = target[5];
 }
 
-__device__ void StretchingL2P_core(double *target, double *targetQ, double r, double theta, double phi,
-                                   double *factShrd, double *sourceShrd) {
-  double x = cosf(theta);
-  double y = sinf(theta);
+__device__ void StretchingL2P_core(float *target, float *targetQ, float r, float theta, float phi,
+                                   float *factShrd, float *sourceShrd) {
+  float x = cosf(theta);
+  float y = sinf(theta);
   if( fabs(y) < EPS ) y = 1 / EPS;
-  double s = sqrtf(1 - x * x);
-  double spherical[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  double cartesian[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  double fact = 1;
-  double pn = 1;
-  double rhom = 1;
+  float s = sqrtf(1 - x * x);
+  float spherical[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  float cartesian[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  float fact = 1;
+  float pn = 1;
+  float rhom = 1;
   for( int m=0; m<P; ++m ) {
-    double p = pn;
+    float p = pn;
     int i = m * (m + 1) / 2 + m;
-    double ere = cosf(m * phi);
+    float ere = cosf(m * phi);
     if( m == 0 ) ere = 0.5;
-    double eim = sinf(m * phi);
-    double anm = rhom * rsqrtf(factShrd[2*m]);
-    double Ynm = anm * p;
-    double p1 = p;
+    float eim = sinf(m * phi);
+    float anm = rhom * rsqrtf(factShrd[2*m]);
+    float Ynm = anm * p;
+    float p1 = p;
     p = x * (2 * m + 1) * p;
-    double YnmTheta = anm * (p - (m + 1) * x * p1) / y;
-    double realj = ere * sourceShrd[6*i+0] - eim * sourceShrd[6*i+1];
-    double imagj = eim * sourceShrd[6*i+0] + ere * sourceShrd[6*i+1];
+    float YnmTheta = anm * (p - (m + 1) * x * p1) / y;
+    float realj = ere * sourceShrd[6*i+0] - eim * sourceShrd[6*i+1];
+    float imagj = eim * sourceShrd[6*i+0] + ere * sourceShrd[6*i+1];
     spherical[0] += 2 * m / r * Ynm * realj;
     spherical[1] += 2 * YnmTheta * realj;
     spherical[2] -= 2 * m * Ynm * imagj;
@@ -844,12 +844,12 @@ __device__ void StretchingL2P_core(double *target, double *targetQ, double r, do
     spherical[7] += 2 * YnmTheta * realj;
     spherical[8] -= 2 * m * Ynm * imagj;
     rhom *= r;
-    double rhon = rhom;
+    float rhon = rhom;
     for( int n=m+1; n<P; ++n ) {
       i = n * (n + 1) / 2 + m;
       anm = rhon * rsqrtf(factShrd[n+m] / factShrd[n-m]);
       Ynm = anm * p;
-      double p2 = p1;
+      float p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
       YnmTheta = anm * ((n - m + 1) * p - (n + 1) * x * p1) / y;
@@ -881,14 +881,14 @@ __device__ void StretchingL2P_core(double *target, double *targetQ, double r, do
   target[2] -= 0.25 / M_PI * (targetQ[0] * cartesian[6] + targetQ[1] * cartesian[7] + targetQ[2] * cartesian[8]);
 }
 
-__global__ void StretchingL2P_GPU(int *keysGlob, int *rangeGlob, double *targetGlob, double *sourceGlob) {
+__global__ void StretchingL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  double targetX[3], targetQ[3];
-  double target[3] = {0, 0, 0};
-  __shared__ double sourceShrd[6*THREADS];
-  __shared__ double factShrd[2*P];
-  double fact = 1;
+  float targetX[3], targetQ[3];
+  float target[3] = {0, 0, 0};
+  __shared__ float sourceShrd[6*THREADS];
+  __shared__ float factShrd[2*P];
+  float fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -902,7 +902,7 @@ __global__ void StretchingL2P_GPU(int *keysGlob, int *rangeGlob, double *targetG
   targetQ[2] = targetGlob[6*itarget+5];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
-    double3 d;
+    float3 d;
     d.x = targetX[0] - sourceGlob[begin+0];
     d.y = targetX[1] - sourceGlob[begin+1];
     d.z = targetX[2] - sourceGlob[begin+2];
@@ -916,7 +916,7 @@ __global__ void StretchingL2P_GPU(int *keysGlob, int *rangeGlob, double *targetG
       sourceShrd[6*threadIdx.x+5] = sourceGlob[begin+6*threadIdx.x+8];
     }
     __syncthreads();
-    double r,theta,phi;
+    float r,theta,phi;
     cart2sph(r,theta,phi,d.x,d.y,d.z);
     StretchingL2P_core(target,targetQ,r,theta,phi,factShrd,sourceShrd);
   }
