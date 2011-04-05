@@ -1,5 +1,4 @@
 #include "kernel.h"
-#include "spherical.h"
 #include "laplace.h"
 #include "pregpu.h"
 
@@ -13,42 +12,6 @@ void Kernel::LaplaceInit() {
 #endif
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
-}
-
-void Kernel::LaplacePre() {
-  prefactor = new double  [4*P2];
-  Anm       = new double  [4*P2];
-  Ynm       = new complex [4*P2];
-  YnmTheta  = new complex [4*P2];
-  Cnm       = new complex [P4];
-
-  for( int n=0; n!=2*P; ++n ) {
-    for( int m=-n; m<=n; ++m ) {
-      int nm = n*n+n+m;
-      int nabsm = abs(m);
-      double fnmm = 1.0;
-      for( int i=1; i<=n-m; ++i ) fnmm *= i;
-      double fnpm = 1.0;
-      for( int i=1; i<=n+m; ++i ) fnpm *= i;
-      double fnma = 1.0;
-      for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
-      double fnpa = 1.0;
-      for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
-      prefactor[nm] = std::sqrt(fnma/fnpa);
-      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
-    }
-  }
-
-  for( int j=0, jk=0, jknm=0; j!=P; ++j ) {
-    for( int k=-j; k<=j; ++k, ++jk ){
-      for( int n=0, nm=0; n!=P; ++n ) {
-        for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
-          const int jnkm = (j+n)*(j+n)+j+n+m-k;
-          Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
-        }
-      }
-    }
-  }
 }
 
 __device__ void LaplaceP2M_core(float *target, float rho, float alpha, float beta, float source) {
@@ -102,19 +65,19 @@ __global__ void LaplaceP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
   __shared__ float targetShrd[3];
   __shared__ float sourceShrd[4*THREADS];
   int itarget = blockIdx.x * THREADS;
-  targetShrd[0] = targetGlob[2*itarget+0];
-  targetShrd[1] = targetGlob[2*itarget+1];
-  targetShrd[2] = targetGlob[2*itarget+2];
+  targetShrd[0] = targetGlob[6*itarget+0];
+  targetShrd[1] = targetGlob[6*itarget+1];
+  targetShrd[2] = targetGlob[6*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     int size  = rangeGlob[keys+3*ilist+2];
     for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
       int isource = begin + iblok * THREADS + threadIdx.x;
       __syncthreads();
-      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
-      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
-      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
-      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[7*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[7*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[7*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[7*isource+3];
       __syncthreads();
       for( int i=0; i<THREADS; ++i ) {
         float3 d;
@@ -130,10 +93,10 @@ __global__ void LaplaceP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     int isource = begin + iblok * THREADS + threadIdx.x;
     __syncthreads();
     if( threadIdx.x < size - iblok * THREADS ) {
-      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
-      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
-      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
-      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[7*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[7*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[7*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[7*isource+3];
     }
     __syncthreads();
     for( int i=0; i<size-iblok*THREADS; ++i ) {
@@ -147,8 +110,8 @@ __global__ void LaplaceP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[2*itarget+0] = target[0];
-  targetGlob[2*itarget+1] = target[1];
+  targetGlob[6*itarget+0] = target[0];
+  targetGlob[6*itarget+1] = target[1];
 }
 
 __device__ void LaplaceM2M_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
@@ -212,13 +175,13 @@ __global__ void LaplaceM2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
-    d.x = targetGlob[2*itarget+0] - sourceGlob[begin+0];
-    d.y = targetGlob[2*itarget+1] - sourceGlob[begin+1];
-    d.z = targetGlob[2*itarget+2] - sourceGlob[begin+2];
+    d.x = targetGlob[6*itarget+0] - sourceGlob[begin+0];
+    d.y = targetGlob[6*itarget+1] - sourceGlob[begin+1];
+    d.z = targetGlob[6*itarget+2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
     }
     __syncthreads();
     float rho,alpha,beta;
@@ -227,8 +190,8 @@ __global__ void LaplaceM2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     LaplaceM2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[2*itarget+0] = target[0];
-  targetGlob[2*itarget+1] = target[1];
+  targetGlob[6*itarget+0] = target[0];
+  targetGlob[6*itarget+1] = target[1];
 }
 
 void Kernel::LaplaceM2M_CPU() {
@@ -325,8 +288,8 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     int Iperiodic = rangeGlob[keys+3*ilist+3];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
     }
     __syncthreads();
     int I = 0;
@@ -338,9 +301,9 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
             d.x = ix * D0;
             d.y = iy * D0;
             d.z = iz * D0;
-            d.x += targetGlob[2*itarget+0] - sourceGlob[begin+0];
-            d.y += targetGlob[2*itarget+1] - sourceGlob[begin+1];
-            d.z += targetGlob[2*itarget+2] - sourceGlob[begin+2];
+            d.x += targetGlob[6*itarget+0] - sourceGlob[begin+0];
+            d.y += targetGlob[6*itarget+1] - sourceGlob[begin+1];
+            d.z += targetGlob[6*itarget+2] - sourceGlob[begin+2];
             float rho,alpha,beta;
             cart2sph(rho,alpha,beta,d.x,d.y,d.z);
             evalLocal(YnmShrd,rho,alpha,factShrd);
@@ -351,8 +314,8 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[2*itarget+0] = target[0];
-  targetGlob[2*itarget+1] = target[1];
+  targetGlob[6*itarget+0] = target[0];
+  targetGlob[6*itarget+1] = target[1];
 }
 
 __device__ void LaplaceM2P_core(float *target, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
@@ -423,16 +386,16 @@ __global__ void LaplaceM2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     fact *= i + 1;
   }
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetX[0] = targetGlob[4*itarget+0];
-  targetX[1] = targetGlob[4*itarget+1];
-  targetX[2] = targetGlob[4*itarget+2];
+  targetX[0] = targetGlob[6*itarget+0];
+  targetX[1] = targetGlob[6*itarget+1];
+  targetX[2] = targetGlob[6*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin     = rangeGlob[keys+3*ilist+1];
     int Iperiodic = rangeGlob[keys+3*ilist+3];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
     }
     __syncthreads();
     int I = 0;
@@ -455,10 +418,10 @@ __global__ void LaplaceM2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
       }
     }
   }
-  targetGlob[4*itarget+0] = target[0];
-  targetGlob[4*itarget+1] = target[1];
-  targetGlob[4*itarget+2] = target[2];
-  targetGlob[4*itarget+3] = target[3];
+  targetGlob[6*itarget+0] = target[0];
+  targetGlob[6*itarget+1] = target[1];
+  targetGlob[6*itarget+2] = target[2];
+  targetGlob[6*itarget+3] = target[3];
 }
 
 __device__ inline void LaplaceP2P_core(float *target, float *targetX, float *sourceShrd, float3 d, int i) {
@@ -484,9 +447,9 @@ __global__ void LaplaceP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
   float target[4] = {0, 0, 0, 0};
   __shared__ float sourceShrd[4*THREADS];
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetX[0] = targetGlob[4*itarget+0];
-  targetX[1] = targetGlob[4*itarget+1];
-  targetX[2] = targetGlob[4*itarget+2];
+  targetX[0] = targetGlob[6*itarget+0];
+  targetX[1] = targetGlob[6*itarget+1];
+  targetX[2] = targetGlob[6*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin     = rangeGlob[keys+3*ilist+1];
     int size      = rangeGlob[keys+3*ilist+2];
@@ -494,10 +457,10 @@ __global__ void LaplaceP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
       int isource = begin + iblok * THREADS + threadIdx.x;
       __syncthreads();
-      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
-      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
-      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
-      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[7*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[7*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[7*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[7*isource+3];
       __syncthreads();
       int I = 0;
       for( int ix=-1; ix<=1; ++ix ) {
@@ -521,10 +484,10 @@ __global__ void LaplaceP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     int isource = begin + iblok * THREADS + threadIdx.x;
     __syncthreads();
     if( threadIdx.x < size - iblok * THREADS ) {
-      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
-      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
-      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
-      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[7*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[7*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[7*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[7*isource+3];
     }
     __syncthreads();
     int I = 0;
@@ -546,10 +509,10 @@ __global__ void LaplaceP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
       }
     }
   }
-  targetGlob[4*itarget+0] = target[0];
-  targetGlob[4*itarget+1] = target[1];
-  targetGlob[4*itarget+2] = target[2];
-  targetGlob[4*itarget+3] = target[3];
+  targetGlob[6*itarget+0] = target[0];
+  targetGlob[6*itarget+1] = target[1];
+  targetGlob[6*itarget+2] = target[2];
+  targetGlob[6*itarget+3] = target[3];
 }
 
 __device__ void LaplaceL2L_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
@@ -610,13 +573,13 @@ __global__ void LaplaceL2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
-    d.x = targetGlob[2*itarget+0] - sourceGlob[begin+0];
-    d.y = targetGlob[2*itarget+1] - sourceGlob[begin+1];
-    d.z = targetGlob[2*itarget+2] - sourceGlob[begin+2];
+    d.x = targetGlob[6*itarget+0] - sourceGlob[begin+0];
+    d.y = targetGlob[6*itarget+1] - sourceGlob[begin+1];
+    d.z = targetGlob[6*itarget+2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
     }
     __syncthreads();
     float rho,alpha,beta;
@@ -625,8 +588,8 @@ __global__ void LaplaceL2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     LaplaceL2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[2*itarget+0] = target[0];
-  targetGlob[2*itarget+1] = target[1];
+  targetGlob[6*itarget+0] = target[0];
+  targetGlob[6*itarget+1] = target[1];
 }
 
 __device__ void LaplaceL2P_core(float *target, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
@@ -696,9 +659,9 @@ __global__ void LaplaceL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     fact *= i + 1;
   }
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetX[0] = targetGlob[4*itarget+0];
-  targetX[1] = targetGlob[4*itarget+1];
-  targetX[2] = targetGlob[4*itarget+2];
+  targetX[0] = targetGlob[6*itarget+0];
+  targetX[1] = targetGlob[6*itarget+1];
+  targetX[2] = targetGlob[6*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
@@ -707,26 +670,18 @@ __global__ void LaplaceL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob,
     d.z = targetX[2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
     }
     __syncthreads();
     float r,theta,phi;
     cart2sph(r,theta,phi,d.x,d.y,d.z);
     LaplaceL2P_core(target,r,theta,phi,factShrd,sourceShrd);
   }
-  targetGlob[4*itarget+0] = target[0];
-  targetGlob[4*itarget+1] = target[1];
-  targetGlob[4*itarget+2] = target[2];
-  targetGlob[4*itarget+3] = target[3];
-}
-
-void Kernel::LaplacePost() {
-  delete[] prefactor;
-  delete[] Anm;
-  delete[] Ynm;
-  delete[] YnmTheta;
-  delete[] Cnm;
+  targetGlob[6*itarget+0] = target[0];
+  targetGlob[6*itarget+1] = target[1];
+  targetGlob[6*itarget+2] = target[2];
+  targetGlob[6*itarget+3] = target[3];
 }
 
 void Kernel::LaplaceFinal() {
@@ -737,3 +692,11 @@ void Kernel::LaplaceFinal() {
 }
 
 #include "gpu.h"
+
+CALL_GPU(LaplaceP2M,P2M GPUkernel);
+CALL_GPU(LaplaceM2M,M2M GPUkernel);
+CALL_GPU(LaplaceM2L,M2L GPUkernel);
+CALL_GPU(LaplaceM2P,M2P GPUkernel);
+CALL_GPU(LaplaceP2P,P2P GPUkernel);
+CALL_GPU(LaplaceL2L,L2L GPUkernel);
+CALL_GPU(LaplaceL2P,L2P GPUkernel);

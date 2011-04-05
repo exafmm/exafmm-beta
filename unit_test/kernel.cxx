@@ -3,6 +3,7 @@
 
 int main() {
   const int numBodies = 100;
+  std::string kernelName = "Laplace";
   Bodies ibodies(numBodies);
   Bodies ibodies2(numBodies);
   Bodies jbodies(numBodies);
@@ -10,7 +11,9 @@ int main() {
   Cells  jcells;
   Dataset D;
   Evaluator E;
+  E.setKernel(kernelName);
   E.initialize();
+  D.kernelName = kernelName;
   E.preCalculation();
 
   for( int it=0; it!=10; ++it ) {

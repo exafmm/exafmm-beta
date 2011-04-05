@@ -7,10 +7,13 @@
 
 int main() {
   const int numBodies = 100000;
+  std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Dataset D;
   Partition T;
+  T.setKernel(kernelName);
   T.initialize();
+  D.kernelName = kernelName;
   if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");

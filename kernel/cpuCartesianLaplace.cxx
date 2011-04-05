@@ -1,5 +1,4 @@
 #include "kernel.h"
-#include "cartesian.h"
 #include "laplace.h"
 
 void Kernel::LaplaceInit() {}
@@ -8,16 +7,16 @@ void Kernel::LaplacePre() {}
 void Kernel::LaplaceP2M() {
   for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
     vect dist = CJ->X - B->X;
-    CJ->M[0] += B->Q;
-    CJ->M[1] += B->Q * dist[0];
-    CJ->M[2] += B->Q * dist[1];
-    CJ->M[3] += B->Q * dist[2];
-    CJ->M[4] += B->Q * dist[0] * dist[0] / 2;
-    CJ->M[5] += B->Q * dist[1] * dist[1] / 2;
-    CJ->M[6] += B->Q * dist[2] * dist[2] / 2;
-    CJ->M[7] += B->Q * dist[0] * dist[1];
-    CJ->M[8] += B->Q * dist[1] * dist[2];
-    CJ->M[9] += B->Q * dist[2] * dist[0];
+    CJ->M[0] += B->SRC[0];
+    CJ->M[1] += B->SRC[0] * dist[0];
+    CJ->M[2] += B->SRC[0] * dist[1];
+    CJ->M[3] += B->SRC[0] * dist[2];
+    CJ->M[4] += B->SRC[0] * dist[0] * dist[0] / 2;
+    CJ->M[5] += B->SRC[0] * dist[1] * dist[1] / 2;
+    CJ->M[6] += B->SRC[0] * dist[2] * dist[2] / 2;
+    CJ->M[7] += B->SRC[0] * dist[0] * dist[1];
+    CJ->M[8] += B->SRC[0] * dist[1] * dist[2];
+    CJ->M[9] += B->SRC[0] * dist[2] * dist[0];
   }
 }
 
@@ -76,26 +75,28 @@ void Kernel::LaplaceM2P() {
     real R = std::sqrt(norm(dist));
     real R3 = R * R * R;
     real R5 = R3 * R * R;
-    B->pot += CJ->M[0] / R;
-    B->pot += CJ->M[1] * (-dist[0] / R3);
-    B->pot += CJ->M[2] * (-dist[1] / R3);
-    B->pot += CJ->M[3] * (-dist[2] / R3);
-    B->pot += CJ->M[4] * (3 * dist[0] * dist[0] / R5 - 1 / R3);
-    B->pot += CJ->M[5] * (3 * dist[1] * dist[1] / R5 - 1 / R3);
-    B->pot += CJ->M[6] * (3 * dist[2] * dist[2] / R5 - 1 / R3);
-    B->pot += CJ->M[7] * (3 * dist[0] * dist[1] / R5);
-    B->pot += CJ->M[8] * (3 * dist[1] * dist[2] / R5);
-    B->pot += CJ->M[9] * (3 * dist[2] * dist[0] / R5);
-    B->acc -= dist * CJ->M[0] / R3;
-    B->acc[0] += CJ->M[1] * (3 * dist[0] * dist[0] / R5 - 1 / R3);
-    B->acc[0] += CJ->M[2] * (3 * dist[0] * dist[1] / R5);
-    B->acc[0] += CJ->M[3] * (3 * dist[0] * dist[2] / R5);
-    B->acc[1] += CJ->M[1] * (3 * dist[1] * dist[0] / R5);
-    B->acc[1] += CJ->M[2] * (3 * dist[1] * dist[1] / R5 - 1 / R3);
-    B->acc[1] += CJ->M[3] * (3 * dist[1] * dist[2] / R5);
-    B->acc[2] += CJ->M[1] * (3 * dist[2] * dist[0] / R5);
-    B->acc[2] += CJ->M[2] * (3 * dist[2] * dist[1] / R5);
-    B->acc[2] += CJ->M[3] * (3 * dist[2] * dist[2] / R5 - 1 / R3);
+    B->TRG[0] += CJ->M[0] / R;
+    B->TRG[0] += CJ->M[1] * (-dist[0] / R3);
+    B->TRG[0] += CJ->M[2] * (-dist[1] / R3);
+    B->TRG[0] += CJ->M[3] * (-dist[2] / R3);
+    B->TRG[0] += CJ->M[4] * (3 * dist[0] * dist[0] / R5 - 1 / R3);
+    B->TRG[0] += CJ->M[5] * (3 * dist[1] * dist[1] / R5 - 1 / R3);
+    B->TRG[0] += CJ->M[6] * (3 * dist[2] * dist[2] / R5 - 1 / R3);
+    B->TRG[0] += CJ->M[7] * (3 * dist[0] * dist[1] / R5);
+    B->TRG[0] += CJ->M[8] * (3 * dist[1] * dist[2] / R5);
+    B->TRG[0] += CJ->M[9] * (3 * dist[2] * dist[0] / R5);
+    B->TRG[1] += CJ->M[0] * (-dist[0] / R3);
+    B->TRG[1] += CJ->M[1] * (3 * dist[0] * dist[0] / R5 - 1 / R3);
+    B->TRG[1] += CJ->M[2] * (3 * dist[0] * dist[1] / R5);
+    B->TRG[1] += CJ->M[3] * (3 * dist[0] * dist[2] / R5);
+    B->TRG[2] += CJ->M[0] * (-dist[1] / R3);
+    B->TRG[2] += CJ->M[1] * (3 * dist[1] * dist[0] / R5);
+    B->TRG[2] += CJ->M[2] * (3 * dist[1] * dist[1] / R5 - 1 / R3);
+    B->TRG[2] += CJ->M[3] * (3 * dist[1] * dist[2] / R5);
+    B->TRG[3] += CJ->M[0] * (-dist[2] / R3);
+    B->TRG[3] += CJ->M[1] * (3 * dist[2] * dist[0] / R5);
+    B->TRG[3] += CJ->M[2] * (3 * dist[2] * dist[1] / R5);
+    B->TRG[3] += CJ->M[3] * (3 * dist[2] * dist[2] / R5 - 1 / R3);
   }
 }
 
@@ -126,28 +127,28 @@ void Kernel::LaplaceL2L() {
 void Kernel::LaplaceL2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
-    B->pot += CI->L[0];
-    B->pot += CI->L[1] * dist[0];
-    B->pot += CI->L[2] * dist[1];
-    B->pot += CI->L[3] * dist[2];
-    B->pot += CI->L[4] * dist[0] * dist[0] / 2;
-    B->pot += CI->L[5] * dist[1] * dist[1] / 2;
-    B->pot += CI->L[6] * dist[2] * dist[2] / 2;
-    B->pot += CI->L[7] * dist[0] * dist[1];
-    B->pot += CI->L[8] * dist[1] * dist[2];
-    B->pot += CI->L[9] * dist[2] * dist[0];
-    B->acc[0] += CI->L[1];
-    B->acc[0] += CI->L[4] * dist[0];
-    B->acc[0] += CI->L[7] * dist[1];
-    B->acc[0] += CI->L[9] * dist[2];
-    B->acc[1] += CI->L[2];
-    B->acc[1] += CI->L[7] * dist[0];
-    B->acc[1] += CI->L[5] * dist[1];
-    B->acc[1] += CI->L[8] * dist[2];
-    B->acc[2] += CI->L[3];
-    B->acc[2] += CI->L[9] * dist[0];
-    B->acc[2] += CI->L[8] * dist[1];
-    B->acc[2] += CI->L[6] * dist[2];
+    B->TRG[0] += CI->L[0];
+    B->TRG[0] += CI->L[1] * dist[0];
+    B->TRG[0] += CI->L[2] * dist[1];
+    B->TRG[0] += CI->L[3] * dist[2];
+    B->TRG[0] += CI->L[4] * dist[0] * dist[0] / 2;
+    B->TRG[0] += CI->L[5] * dist[1] * dist[1] / 2;
+    B->TRG[0] += CI->L[6] * dist[2] * dist[2] / 2;
+    B->TRG[0] += CI->L[7] * dist[0] * dist[1];
+    B->TRG[0] += CI->L[8] * dist[1] * dist[2];
+    B->TRG[0] += CI->L[9] * dist[2] * dist[0];
+    B->TRG[1] += CI->L[1];
+    B->TRG[1] += CI->L[4] * dist[0];
+    B->TRG[1] += CI->L[7] * dist[1];
+    B->TRG[1] += CI->L[9] * dist[2];
+    B->TRG[2] += CI->L[2];
+    B->TRG[2] += CI->L[7] * dist[0];
+    B->TRG[2] += CI->L[5] * dist[1];
+    B->TRG[2] += CI->L[8] * dist[2];
+    B->TRG[3] += CI->L[3];
+    B->TRG[3] += CI->L[9] * dist[0];
+    B->TRG[3] += CI->L[8] * dist[1];
+    B->TRG[3] += CI->L[6] * dist[2];
   }
 }
 

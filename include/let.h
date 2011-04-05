@@ -2,7 +2,6 @@
 #define let_h
 #include "partition.h"
 
-namespace {
 class LocalEssentialTree : public Partition {                   // Handles all the communication in this code
 private:
   JBodies sendBodies;                                           // Send buffer for bodies
@@ -149,15 +148,7 @@ private:
       Body body;                                                //  Body structure
       body.ICELL = JB->ICELL;                                   //  Set index of body
       body.X     = JB->X;                                       //  Set position of body
-      body.Q     = JB->Q;                                       //  Set mass/charge of body
-#if Laplace
-#elif BiotSavart
-      body.S = JB->S;                                           //  Set core radius of body
-#elif Stretching
-      body.S = JB->S;                                           //  Set core radius of body
-#elif Gaussian
-      body.S = JB->S;                                           //  Set core radius of body
-#endif
+      body.SRC   = JB->SRC;                                     //  Set source values of body
       bodies.push_back(body);                                   //  Push body into bodies vector
     }                                                           // End loop over recv bodies
     buffer.resize(bodies.size());                               // Resize sort buffer
@@ -365,15 +356,7 @@ public:
           JBody body;                                           //    Set compact body type for sending
           body.ICELL = B->ICELL;                                //    Set cell index of compact body type
           body.X     = B->X;                                    //    Set position of compact body type
-          body.Q     = B->Q;                                    //    Set mass/charge of compact body type
-#if Laplace
-#elif BiotSavart
-          body.S     = B->S;                                    //    Set core radius of compact body type
-#elif Stretching
-          body.S     = B->S;                                    //    Set core radius of compact body type
-#elif Gaussian
-          body.S     = B->S;                                    //    Set core radius of compact body type
-#endif
+          body.SRC   = B->SRC;                                  //    Set source values of compact body type
           sendBodies.push_back(body);                           //    Push it into the send buffer
         }                                                       //   End loop over bodies
       }                                                         //  End loop over cells
@@ -509,6 +492,5 @@ public:
     recvCells.clear();                                          // Clear recv buffer
   }
 };
-}
 
 #endif

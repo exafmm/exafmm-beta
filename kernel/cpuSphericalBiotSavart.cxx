@@ -1,44 +1,7 @@
 #include "kernel.h"
-#include "spherical.h"
 #include "biotsavart.h"
 
 void Kernel::BiotSavartInit() {}
-
-void Kernel::BiotSavartPre() {
-  prefactor = new double  [4*P2];
-  Anm       = new double  [4*P2];
-  Ynm       = new complex [4*P2];
-  YnmTheta  = new complex [4*P2];
-  Cnm       = new complex [P4];
-
-  for( int n=0; n!=2*P; ++n ) {
-    for( int m=-n; m<=n; ++m ) {
-      int nm = n*n+n+m;
-      int nabsm = abs(m);
-      double fnmm = 1.0;
-      for( int i=1; i<=n-m; ++i ) fnmm *= i;
-      double fnpm = 1.0;
-      for( int i=1; i<=n+m; ++i ) fnpm *= i;
-      double fnma = 1.0;
-      for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
-      double fnpa = 1.0;
-      for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
-      prefactor[nm] = std::sqrt(fnma/fnpa);
-      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
-    }
-  }
-
-  for( int j=0, jk=0, jknm=0; j!=P; ++j ) {
-    for( int k=-j; k<=j; ++k, ++jk ){
-      for( int n=0, nm=0; n!=P; ++n ) {
-        for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
-          const int jnkm = (j+n)*(j+n)+j+n+m-k;
-          Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
-        }
-      }
-    }
-  }
-}
 
 void Kernel::BiotSavartP2M() {
   for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
@@ -51,7 +14,7 @@ void Kernel::BiotSavartP2M() {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
         for( int d=0; d!=3; ++d ) {
-          CJ->M[3*nms+d] += double(B->Q[d]) * Ynm[nm];
+          CJ->M[3*nms+d] += double(B->SRC[d]) * Ynm[nm];
         }
       }
     }
@@ -164,9 +127,9 @@ void Kernel::BiotSavartM2P() {
     for( int d=0; d!=3; ++d ) {
       sph2cart(r,theta,phi,spherical[d],cartesian[d]);
     }
-    B->vel[0] += 0.25 / M_PI * (cartesian[1][2] - cartesian[2][1]);
-    B->vel[1] += 0.25 / M_PI * (cartesian[2][0] - cartesian[0][2]);
-    B->vel[2] += 0.25 / M_PI * (cartesian[0][1] - cartesian[1][0]);
+    B->TRG[0] += 0.25 / M_PI * (cartesian[1][2] - cartesian[2][1]);
+    B->TRG[1] += 0.25 / M_PI * (cartesian[2][0] - cartesian[0][2]);
+    B->TRG[2] += 0.25 / M_PI * (cartesian[0][1] - cartesian[1][0]);
   }
 }
 
@@ -237,18 +200,10 @@ void Kernel::BiotSavartL2P() {
     for( int d=0; d!=3; ++d ) {
       sph2cart(r,theta,phi,spherical[d],cartesian[d]);
     }
-    B->vel[0] += 0.25 / M_PI * (cartesian[1][2] - cartesian[2][1]);
-    B->vel[1] += 0.25 / M_PI * (cartesian[2][0] - cartesian[0][2]);
-    B->vel[2] += 0.25 / M_PI * (cartesian[0][1] - cartesian[1][0]);
+    B->TRG[0] += 0.25 / M_PI * (cartesian[1][2] - cartesian[2][1]);
+    B->TRG[1] += 0.25 / M_PI * (cartesian[2][0] - cartesian[0][2]);
+    B->TRG[2] += 0.25 / M_PI * (cartesian[0][1] - cartesian[1][0]);
   }
-}
-
-void Kernel::BiotSavartPost() {
-  delete[] prefactor;
-  delete[] Anm;
-  delete[] Ynm;
-  delete[] YnmTheta;
-  delete[] Cnm;
 }
 
 void Kernel::BiotSavartFinal() {}

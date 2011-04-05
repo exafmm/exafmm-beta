@@ -3,11 +3,14 @@
 
 int main() {
   const int numBodies = 1000;
+  std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Bodies jbodies;
   Dataset D;
   Evaluator E;
+  E.setKernel(kernelName);
   E.initialize();
+  D.kernelName = kernelName;
   E.preCalculation();
   E.printNow = true;
 

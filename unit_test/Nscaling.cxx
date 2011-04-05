@@ -8,11 +8,14 @@
 int main() {
   assert( IMAGES == 0 );
   int numBodies = 1000;
+  std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
   TreeConstructor T;
+  T.setKernel(kernelName);
   T.initialize();
+  D.kernelName = kernelName;
 
   for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));

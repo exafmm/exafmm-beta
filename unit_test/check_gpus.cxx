@@ -5,11 +5,14 @@
 int main() {
   char hostname[256];
   const int numBodies = 1000;
+  std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Dataset D;
   Evaluator E;
   MyMPI M;
+  E.setKernel(kernelName);
   E.initialize();
+  D.kernelName = kernelName;
   E.preCalculation();
   gethostname(hostname,sizeof(hostname));
   if( M.commRank() == 0 ) E.printNow = true;

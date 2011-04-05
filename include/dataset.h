@@ -2,29 +2,34 @@
 #define dataset_h
 #include "types.h"
 
-namespace {
 class Dataset {                                                 // Contains all the different datasets
 public:
+  std::string kernelName;
+
   void initSource(Bodies &bodies) {                             // Initialize source values
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-#if Laplace
-      B->Q = 1. / bodies.size() / MPISIZE;                      //  Initialize mass/charge
-#elif BiotSavart
-      B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
-      B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
-      B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
-      B->S    = powf(bodies.size() * MPISIZE,-1./3);            //  Initialize core radius
-#elif Stretching
-      B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
-      B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
-      B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
-      B->S    = powf(bodies.size() * MPISIZE,-1./3);            //  Initialize core radius
-#elif Gaussian
-      B->Q = 1. / bodies.size() / MPISIZE;                      //  Initialize mass/charge
-      B->S = powf(bodies.size() * MPISIZE,-1./3);               //  Initialize core radius
-#endif
+      B->SRC = 0;                                               //  Clear previous source values
+      if( kernelName == "Laplace" ) {                           //  If Laplace kernel
+        B->SRC[0] = 1. / bodies.size() / MPISIZE;               //   Initialize mass/charge
+      } else if ( kernelName == "BiotSavart" ) {                //  If Biot Savart kernel
+        B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
+        B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
+        B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+        B->SRC[3] = powf(bodies.size() * MPISIZE,-1./3);        //   Initialize core radius
+      } else if ( kernelName == "Stretching" ) {                //  If Stretching kernel
+        B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
+        B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
+        B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+        B->SRC[3] = powf(bodies.size() * MPISIZE,-1./3);        //   Initialize core radius
+      } else if ( kernelName == "Gaussian" ) {                  //  If Gaussian kernel
+        B->SRC[0] = 1. / bodies.size() / MPISIZE;               //   Initialize mass/charge
+        B->SRC[3] = powf(bodies.size() * MPISIZE,-1./3);        //   Initialize core radius
+      } else {                                                  //  If kernel is none of the above
+        if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+        abort();                                                //   Abort execution
+      }                                                         //  Endif for kernel type
     }                                                           // End loop over bodies
   }
 
@@ -33,21 +38,21 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-#if Laplace
-      B->pot = -B->Q / std::sqrt(EPS2) * IeqJ;                  //  Initialize potential (0 if I != J)
-      B->acc = 0;                                               //  Initialize acceleration
-#elif BiotSavart
-      B->vel = 0 * IeqJ;                                        //  Initialize velocity
-#elif Stretching
-      if( !IeqJ ) {                                             //  If source and target are different
-        B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
-        B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
-        B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
-      }                                                         //  Endif for different source and target
-      B->dQdt = 0;                                              //  Initialize change rate of vortex strength
-#elif Gaussian
-      B->val = 0 * IeqJ;                                        //  Initialize value
-#endif
+      B->TRG = 0 * IeqJ;                                        //  Clear previous target values (IeqJ is dummy)
+      if( kernelName == "Laplace" ) {                           //  If Laplace kernel
+        B->TRG[0] = -B->SRC[0] / std::sqrt(EPS2) * IeqJ;        //   Initialize potential (0 if I != J)
+      } else if ( kernelName == "BiotSavart" ) {                //  If Biot Savart kernel
+      } else if ( kernelName == "Stretching" ) {                //  If Stretching kernel
+        if( !IeqJ ) {                                           //   If source and target are different
+          B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
+          B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
+          B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+        }                                                       //   Endif for different source and target
+      } else if ( kernelName == "Gaussian" ) {                  //  If Gaussian kernel
+      } else {                                                  //  If kernel is none of the above
+        if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+        abort();                                                //   Abort execution
+      }                                                         //  Endif for kernel type
     }                                                           // End loop over bodies
   }
 
@@ -108,22 +113,25 @@ public:
   void readTarget(Bodies &bodies) {                             // Read target values from file
     std::ifstream file("data",std::ios::in | std::ios::binary); // Open file
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-#if Laplace
-      file >> B->pot;                                           //  Read data for potential
-      file >> B->acc[0];                                        //  Read data for x acceleration
-      file >> B->acc[1];                                        //  Read data for y acceleration
-      file >> B->acc[2];                                        //  Read data for z acceleration
-#elif BiotSavart
-      file >> B->vel[0];                                        //  Read data for x velocity
-      file >> B->vel[1];                                        //  Read data for y velocity
-      file >> B->vel[2];                                        //  Read data for z velocity
-#elif Stretching
-      file >> B->dQdt[0];                                       //  Read data for change rate of x vortex strength
-      file >> B->dQdt[1];                                       //  Read data for change rate of y vortex strength
-      file >> B->dQdt[2];                                       //  Read data for change rate of z vortex strength
-#elif Gaussian
-      file >> B->val;                                           //  Read data for value
-#endif
+      if( kernelName == "Laplace" ) {                           //  If Laplace kernel
+        file >> B->TRG[0];                                      //   Read data for potential
+        file >> B->TRG[1];                                      //   Read data for x acceleration
+        file >> B->TRG[2];                                      //   Read data for y acceleration
+        file >> B->TRG[3];                                      //   Read data for z acceleration
+      } else if ( kernelName == "BiotSavart" ) {                //  If Biot Savart kernel
+        file >> B->TRG[0];                                      //   Read data for x velocity
+        file >> B->TRG[1];                                      //   Read data for y velocity
+        file >> B->TRG[2];                                      //   Read data for z velocity
+      } else if ( kernelName == "Stretching" ) {                //  If Stretching kernel
+        file >> B->TRG[0];                                      //   Read data for change rate of x vortex strength
+        file >> B->TRG[1];                                      //   Read data for change rate of y vortex strength
+        file >> B->TRG[2];                                      //   Read data for change rate of z vortex strength
+      } else if ( kernelName == "Gaussian" ) {                  //  If Gaussian kernel
+        file >> B->TRG[0];                                      //   Read data for value
+      } else {                                                  //  If kernel is none of the above
+        if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+        abort();                                                //   Abort execution
+      }                                                         //  Endif for kernel type
     }                                                           // End loop over bodies
     file.close();                                               // Close file
   }
@@ -131,22 +139,25 @@ public:
   void writeTarget(Bodies &bodies) {                            // Write target values to file
     std::ofstream file("data",std::ios::out | std::ios::app | std::ios::binary);// Open file
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-#if Laplace
-      file << B->pot << std::endl;                              //  Write data for potential
-      file << B->acc[0] << std::endl;                           //  Write data for x acceleration
-      file << B->acc[1] << std::endl;                           //  Write data for y acceleration
-      file << B->acc[2] << std::endl;                           //  Write data for z acceleration
-#elif BiotSavart
-      file << B->vel[0] << std::endl;                           //  Write data for x velocity
-      file << B->vel[1] << std::endl;                           //  Write data for y velocity
-      file << B->vel[2] << std::endl;                           //  Write data for z velocity
-#elif Stretching
-      file << B->dQdt[0] << std::endl;                          //  Write data for change rate of x vortex strength
-      file << B->dQdt[1] << std::endl;                          //  Write data for change rate of y vortex strength
-      file << B->dQdt[2] << std::endl;                          //  Write data for change rate of z vortex strength
-#elif Gaussian
-      file << B->val << std::endl;                              //  Write data for value
-#endif
+      if( kernelName == "Laplace" ) {                           //  If Laplace kernel
+        file << B->TRG[0] << std::endl;                         //   Write data for potential
+        file << B->TRG[1] << std::endl;                         //   Write data for x acceleration
+        file << B->TRG[2] << std::endl;                         //   Write data for y acceleration
+        file << B->TRG[3] << std::endl;                         //   Write data for z acceleration
+      } else if ( kernelName == "BiotSavart" ) {                //  If Biot Savart kernel
+        file << B->TRG[0] << std::endl;                         //   Write data for x velocity
+        file << B->TRG[1] << std::endl;                         //   Write data for y velocity
+        file << B->TRG[2] << std::endl;                         //   Write data for z velocity
+      } else if ( kernelName == "Stretching" ) {                //  If Stretching kernel
+        file << B->TRG[0] << std::endl;                         //   Write data for change rate of x vortex strength
+        file << B->TRG[1] << std::endl;                         //   Write data for change rate of y vortex strength
+        file << B->TRG[2] << std::endl;                         //   Write data for change rate of z vortex strength
+      } else if ( kernelName == "Gaussian" ) {                  //  If Gaussian kernel
+        file << B->TRG[0] << std::endl;                         //   Write data for value
+      } else {                                                  //  If kernel is none of the above
+        if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+        abort();                                                //   Abort execution
+      }                                                         //  Endif for kernel type
     }                                                           // End loop over bodies
     file.close();                                               // Close file
 
@@ -154,66 +165,83 @@ public:
 
   void evalError(Bodies &bodies, Bodies &bodies2,               // Evaluate error
                  real &diff1, real &norm1, real &diff2, real &norm2) {
-#if Laplace
-    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
+    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+      B_iter B2 = bodies2.begin();                              //  Set iterator for bodies2
+      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
-      std::cout << B->ICELL << " " << B->pot << " " << B2->pot << std::endl;// Compare every element
+        std::cout << B->ICELL << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;// Compare every element
 #endif
-      diff1 += (B->pot - B2->pot) * (B->pot - B2->pot);         // Difference of potential
-      norm1 += B2->pot * B2->pot;                               // Value of potential
-      diff2 += norm(B->acc - B2->acc);                          // Difference of acceleration
-      norm2 += norm(B2->acc);                                   // Value of acceleration
-    }                                                           // End loop over bodies & bodies2
-#elif BiotSavart
-    diff2 = norm2 = 0;                                          // Set unused values to 0
-    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
+        diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
+        norm1 += B2->TRG[0] * B2->TRG[0];                       //  Value of potential
+        diff2 += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);// Difference of x acceleration
+        diff2 += (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2]);// Difference of y acceleration
+        diff2 += (B->TRG[3] - B2->TRG[3]) * (B->TRG[3] - B2->TRG[3]);// Difference of z acceleration
+        norm2 += B2->TRG[1] * B2->TRG[1];                       //  Value of x acceleration
+        norm2 += B2->TRG[2] * B2->TRG[2];                       //  Value of y acceleration
+        norm2 += B2->TRG[3] * B2->TRG[3];                       //  Value of z acceleration
+      }                                                         //  End loop over bodies & bodies2
+    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+      diff2 = norm2 = 0;                                        //  Set unused values to 0
+      B_iter B2 = bodies2.begin();                              //  Set iterator for bodies2
+      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
-      std::cout << B->ICELL << " " << B->vel[0] << " " << B2->vel[0] << std::endl;// Compare every element
+        std::cout << B->ICELL << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;// Compare every element
 #endif
-      diff1 += norm(B->vel - B2->vel);                          // Difference of velocity
-      norm1 += norm(B2->vel);                                   // Value of velocity
-    }                                                           // End loop over bodies & bodies2
-#elif Stretching
-    diff2 = norm2 = 0;                                          // Set unused values to 0
-    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
+        diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of x velocity
+        diff1 += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);// Difference of y velocity
+        diff1 += (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2]);// Difference of z velocity
+        norm1 += B2->TRG[0] * B2->TRG[0];                       //  Value of x velocity
+        norm1 += B2->TRG[1] * B2->TRG[1];                       //  Value of y velocity
+        norm1 += B2->TRG[2] * B2->TRG[2];                       //  Value of z velocity
+      }                                                         //  End loop over bodies & bodies2
+    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+      diff2 = norm2 = 0;                                        //  Set unused values to 0
+      B_iter B2 = bodies2.begin();                              //  Set iterator for bodies2
+      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
-      std::cout << B->ICELL << " " << B->dQdt[0] << " " << B2->dQdt[0] << std::endl;// Compare every element
+        std::cout << B->ICELL << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;// Compare every element
 #endif
-      diff1 += norm(B->dQdt - B2->dQdt);                        // Difference of change rate of vortex strength
-      norm1 += norm(B2->dQdt);                                  // Value of change rate of vortex strength
-    }                                                           // End loop over bodies & bodies2
-#elif Gaussian
-    diff2 = norm2 = 0;                                          // Set unused values to 0
-    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
+        diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of x change rate of vortex strength
+        diff1 += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);// Difference of y change rate of vortex strength
+        diff1 += (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2]);// Difference of z change rate of vortex strength
+        norm1 += B2->TRG[0] * B2->TRG[0];                       //  Value of x change rate of vortex strength
+        norm1 += B2->TRG[1] * B2->TRG[1];                       //  Value of y change rate of vortex strength
+        norm1 += B2->TRG[2] * B2->TRG[2];                       //  Value of z change rate of vortex strength
+      }                                                         // End loop over bodies & bodies2
+    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+      diff2 = norm2 = 0;                                        //  Set unused values to 0
+      B_iter B2 = bodies2.begin();                              //  Set iterator for bodies2
+      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
-      std::cout << B->ICELL << " " << B->val << " " << B2->val << std::endl;// Compare every element
+        std::cout << B->ICELL << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;// Compare every element
 #endif
-      diff1 += (B->val - B2->val) * (B->val - B2->val);         // Difference of potential
-      norm1 += B2->val * B2->val;                               // Value of potential
-    }                                                           // End loop over bodies & bodies2
-#endif
+        diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
+        norm1 += B2->TRG[0] * B2->TRG[0];                       //  Value of potential
+      }                                                         //  End loop over bodies & bodies2
+    } else {                                                    // If kernel is none of the above
+      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+      abort();                                                  //  Abort execution
+    }                                                           // Endif for kernel type
   }
 
   void printError(real diff1, real norm1, real diff2, real norm2) {// Print relative L2 norm error
-#if Laplace
-  std::cout << "Error (pot)   : " << std::sqrt(diff1/norm1) << std::endl;
-  std::cout << "Error (acc)   : " << std::sqrt(diff2/norm2) << std::endl;
-#elif BiotSavart
-  vect dummy = diff2; dummy = norm2;                            // Use the values so compiler does not complain
-  std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
-#elif Stretching
-  vect dummy = diff2; dummy = norm2;                            // Use the values so compiler does not complain
-  std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
-#elif Gaussian
-  vect dummy = diff2; dummy = norm2;                            // Use the values so compiler does not complain
-  std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
-#endif
+    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+      std::cout << "Error (pot)   : " << std::sqrt(diff1/norm1) << std::endl;
+      std::cout << "Error (acc)   : " << std::sqrt(diff2/norm2) << std::endl;
+    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+      vect dummy = diff2; dummy = norm2;                        //  Use the values so compiler does not complain
+      std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
+    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+      vect dummy = diff2; dummy = norm2;                        //  Use the values so compiler does not complain
+      std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
+    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+      vect dummy = diff2; dummy = norm2;                        //  Use the values so compiler does not complain
+      std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
+    } else {                                                    // If kernel is none of the above
+      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+      abort();                                                  //  Abort execution
+    }                                                           // Endif for kernel type
   }
 };
-}
 
 #endif

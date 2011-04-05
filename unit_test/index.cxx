@@ -6,10 +6,13 @@
 
 int main() {
   const int numBodies = 1000000;
+  std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Dataset D;
   TreeConstructor T;
+  T.setKernel(kernelName);
   T.initialize();
+  D.kernelName = kernelName;
   T.printNow = true;
 
   T.startTimer("Set bodies   ");

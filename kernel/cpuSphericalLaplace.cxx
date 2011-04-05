@@ -1,44 +1,7 @@
 #include "kernel.h"
-#include "spherical.h"
 #include "laplace.h"
 
 void Kernel::LaplaceInit() {}
-
-void Kernel::LaplacePre() {
-  prefactor = new double  [4*P2];
-  Anm       = new double  [4*P2];
-  Ynm       = new complex [4*P2];
-  YnmTheta  = new complex [4*P2];
-  Cnm       = new complex [P4];
-
-  for( int n=0; n!=2*P; ++n ) {
-    for( int m=-n; m<=n; ++m ) {
-      int nm = n*n+n+m;
-      int nabsm = abs(m);
-      double fnmm = 1.0;
-      for( int i=1; i<=n-m; ++i ) fnmm *= i;
-      double fnpm = 1.0;
-      for( int i=1; i<=n+m; ++i ) fnpm *= i;
-      double fnma = 1.0;
-      for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
-      double fnpa = 1.0;
-      for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
-      prefactor[nm] = std::sqrt(fnma/fnpa);
-      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
-    }
-  }
-
-  for( int j=0, jk=0, jknm=0; j!=P; ++j ) {
-    for( int k=-j; k<=j; ++k, ++jk ){
-      for( int n=0, nm=0; n!=P; ++n ) {
-        for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
-          const int jnkm = (j+n)*(j+n)+j+n+m-k;
-          Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
-        }
-      }
-    }
-  }
-}
 
 void Kernel::LaplaceP2M() {
   for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
@@ -50,7 +13,7 @@ void Kernel::LaplaceP2M() {
       for( int m=0; m<=n; ++m ) {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
-        CJ->M[nms] += double(B->Q) * Ynm[nm];
+        CJ->M[nms] += double(B->SRC[0]) * Ynm[nm];
       }
     }
   }
@@ -133,22 +96,22 @@ void Kernel::LaplaceM2P() {
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
-      B->pot += (CJ->M[nms] * Ynm[nm]).real();
+      B->TRG[0] += (CJ->M[nms] * Ynm[nm]).real();
       spherical[0] -= (CJ->M[nms] * Ynm[nm]).real() / r * (n+1);
       spherical[1] += (CJ->M[nms] * YnmTheta[nm]).real();
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
-        B->pot += 2 * (CJ->M[nms] * Ynm[nm]).real();
+        B->TRG[0] += 2 * (CJ->M[nms] * Ynm[nm]).real();
         spherical[0] -= 2 * (CJ->M[nms] *Ynm[nm]).real() / r * (n+1);
         spherical[1] += 2 * (CJ->M[nms] *YnmTheta[nm]).real();
         spherical[2] += 2 * (CJ->M[nms] *Ynm[nm] * I).real() * m;
       }
     }
     sph2cart(r,theta,phi,spherical,cartesian);
-    B->acc[0] += cartesian[0];
-    B->acc[1] += cartesian[1];
-    B->acc[2] += cartesian[2];
+    B->TRG[1] += cartesian[0];
+    B->TRG[2] += cartesian[1];
+    B->TRG[3] += cartesian[2];
   }
 }
 
@@ -196,31 +159,23 @@ void Kernel::LaplaceL2P() {
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
-      B->pot += (CI->L[nms] * Ynm[nm]).real();
+      B->TRG[0] += (CI->L[nms] * Ynm[nm]).real();
       spherical[0] += (CI->L[nms] * Ynm[nm]).real() / r * n;
       spherical[1] += (CI->L[nms] * YnmTheta[nm]).real();
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
-        B->pot += 2 * (CI->L[nms] * Ynm[nm]).real();
+        B->TRG[0] += 2 * (CI->L[nms] * Ynm[nm]).real();
         spherical[0] += 2 * (CI->L[nms] * Ynm[nm]).real() / r * n;
         spherical[1] += 2 * (CI->L[nms] * YnmTheta[nm]).real();
         spherical[2] += 2 * (CI->L[nms] * Ynm[nm] * I).real() * m;
       }
     }
     sph2cart(r,theta,phi,spherical,cartesian);
-    B->acc[0] += cartesian[0];
-    B->acc[1] += cartesian[1];
-    B->acc[2] += cartesian[2];
+    B->TRG[1] += cartesian[0];
+    B->TRG[2] += cartesian[1];
+    B->TRG[3] += cartesian[2];
   }
-}
-
-void Kernel::LaplacePost() {
-  delete[] prefactor;
-  delete[] Anm;
-  delete[] Ynm;
-  delete[] YnmTheta;
-  delete[] Cnm;
 }
 
 void Kernel::LaplaceFinal() {}

@@ -2,7 +2,6 @@
 #define sort_h
 #include "types.h"
 
-namespace {
 class Sort {                                                    // Custom bucket sort for body and cell structures
 private:
   std::vector<int> bucket;                                      // Bucket for sorting
@@ -62,6 +61,5 @@ public:
     sortICELL(cells,cbuffer,Imin,numBucket,ascend,begin,end);   // Call bucket sort for small indices
   }
 };
-}
 
 #endif

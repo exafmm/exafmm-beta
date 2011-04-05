@@ -6,21 +6,17 @@ DEVICE  = gpu
 #EXPAND  = Cartesian
 EXPAND  = Spherical
 
-#KERNEL  = Laplace
-KERNEL  = BiotSavart
-#KERNEL  = Stretching
-#KERNEL  = Gaussian
-
 #CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O2 -fPIC -fopenmp\
 	-ffast-math -funroll-loops -fforce-addr -rdynamic -D_FILE_OFFSET_BITS=64\
 	-I../include -I/usr/include/vtk-5.2 -L/usr/lib/vtk-5.2
 CXX     = mpicxx -O2 -fPIC -I../include -I/usr/include/vtk-5.2 -L/usr/lib/vtk-5.2
-NVCC    = nvcc --ptxas-options=-v -O3 -use_fast_math -arch=sm_20\
+NVCC    = nvcc --ptxas-options=-v -O3 -use_fast_math -arch=sm_11\
 	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(SDK_INSTALL_PATH)/common/inc
 LFLAGS  = -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm\
-	-D$(DEVICE) -D$(EXPAND) -D$(KERNEL)
+	-D$(DEVICE) -D$(EXPAND)
 VFLAGS  = -lvtkHybridTCL -lvtkWidgetsTCL -DVTK
-OBJECT  = ../kernel/$(DEVICE)$(EXPAND)$(KERNEL).o
+OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)BiotSavart.o\
+	../kernel/$(DEVICE)$(EXPAND)Stretching.o ../kernel/$(DEVICE)$(EXPAND)Gaussian.o
 
 .cxx.o  :
 	$(CXX) -c $? -o $@ $(LFLAGS)

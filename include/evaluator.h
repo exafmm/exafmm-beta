@@ -2,21 +2,21 @@
 #define evaluator_h
 #include "kernel.h"
 
-namespace {
 class Evaluator : public Kernel {                               // Evaluator is the interface between tree and kernel
 protected:
-  C_iter    CI0;                                                // icells.begin()
-  C_iter    CJ0;                                                // jcells.begin()
-  Pairs     pairs;                                              // Stack of interacting cell pairs
-  Lists     listM2L;                                            // M2L interaction list
-  Lists     listM2P;                                            // M2P interaction list
-  Lists     listP2P;                                            // P2P interaction list
+  C_iter      CI0;                                              // icells.begin()
+  C_iter      CJ0;                                              // jcells.begin()
+  Pairs       pairs;                                            // Stack of interacting cell pairs
+  Lists       listM2L;                                          // M2L interaction list
+  Lists       listM2P;                                          // M2P interaction list
+  Lists       listP2P;                                          // P2P interaction list
 
-  int       Iperiodic;                                          // Periodic image flag (using each bit for 27 images)
-  const int Icenter;                                            // Periodic image flag at center
-  Maps      flagM2L;                                            // Flag indicating existance of periodic image for M2L
-  Maps      flagM2P;                                            // Flag indicating existance of periodic image for M2P
-  Maps      flagP2P;                                            // Flag indicating existance of periodic image for P2P
+  int         Iperiodic;                                        // Periodic image flag (using each bit for 27 images)
+  const int   Icenter;                                          // Periodic image flag at center
+  Maps        flagM2L;                                          // Flag indicating existance of periodic image for M2L
+  Maps        flagM2P;                                          // Flag indicating existance of periodic image for M2P
+  Maps        flagP2P;                                          // Flag indicating existance of periodic image for P2P
+  std::string kernelName;                                       // Name of kernel
 
 private:
   void tryM2L(C_iter Ci, C_iter Cj) {                           // Interface for M2L kernel
@@ -90,6 +90,10 @@ private:
 public:
   Evaluator() : Icenter(1 << 13) {}                             // Constructor
   ~Evaluator() {}                                               // Destructor
+
+  void setKernel(std::string name) {                            // Set kernel name
+    kernelName = name;                                          // Set class variable kernelName
+  }
 
   void addM2L(C_iter Cj) {                                      // Add single list for kernel unit test
     listM2L.resize(1);                                          // Resize vector of M2L interation lists
@@ -216,15 +220,18 @@ public:
       CI = pccells.end() - 1;                                   //  Set current cell as target for M2M
       while( !pjcells.empty() ) {                               //  While there are periodic jcells remaining
         CJ = pjcells.end() - 1;                                 //   Set current jcell as source for M2M
-#if Laplace
-        LaplaceM2M_CPU();                                       //   Evaluate M2M on CPU (work is too small for GPU)
-#elif BiotSavart
-        BiotSavartM2M_CPU();                                    //   Evaluate M2M on CPU (work is too small for GPU)
-#elif Stretching
-        StretchingM2M_CPU();                                    //   Evaluate M2M on CPU (work is too small for GPU)
-#elif Gaussian
-        GaussianM2M_CPU();                                      //   Evaluate M2M on CPU (work is too small for GPU)
-#endif
+        if( kernelName == "Laplace" ) {                         //   If Laplace kernel
+          LaplaceM2M_CPU();                                     //    Evaluate M2M on CPU (work is too small for GPU)
+        } else if ( kernelName == "BiotSavart" ) {              //   If Biot Savart kernel
+          BiotSavartM2M_CPU();                                  //    Evaluate M2M on CPU (work is too small for GPU)
+        } else if ( kernelName == "Stretching" ) {              //   If Stretching kernel
+          StretchingM2M_CPU();                                  //    Evaluate M2M on CPU (work is too small for GPU)
+        } else if ( kernelName == "Gaussian" ) {                //   If Gaussian kernel
+          GaussianM2M_CPU();                                    //    Evaluate M2M on CPU (work is too small for GPU)
+        } else {                                                //   If kernel is none of the above
+          if(MPIRANK == 0) std::cout << "Invalid kernel type in upwardPeriodic" << std::endl;// Invalid kernel type
+          abort();                                              //    Abort execution
+        }                                                       //   Endif for kernel type
         pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
       }                                                         //  End while for remaining periodic jcells
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
@@ -268,51 +275,33 @@ public:
   }
 
   void initialize() {                                           // Initialize GPU
-#if Laplace
-    LaplaceInit();                                              // Laplace version
-#elif BiotSavart
-    BiotSavartInit();                                           // BiotSavart version
-#elif Stretching
-    StretchingInit();                                           // Stretching version
-#elif Gaussian
-    GaussianInit();                                             // Gaussian version
-#endif
-  }
-
-  void preCalculation() {                                       // Precalculation of coefficients
-#if Laplace
-    LaplacePre();                                               // Laplace version
-#elif BiotSavart
-    BiotSavartPre();                                            // BiotSavart version
-#elif Stretching
-    StretchingPre();                                            // Stretching version
-#elif Gaussian
-    GaussianPre();                                              // Gaussian version
-#endif
-  }
-
-  void postCalculation() {                                      // Delete temporary coefficients
-#if Laplace
-    LaplacePost();                                              // Laplace version
-#elif BiotSavart
-    BiotSavartPost();                                           // BiotSavart version
-#elif Stretching
-    StretchingPost();                                           // Stretching version
-#elif Gaussian
-    GaussianPost();                                             // Gaussian version
-#endif
+    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+      LaplaceInit();                                            //  Initialize GPU
+    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+      BiotSavartInit();                                         //  Initialize GPU
+    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+      StretchingInit();                                         //  Initialize GPU
+    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+      GaussianInit();                                           //  Initialize GPU
+    } else {                                                    // If kernel is none of the above
+      if(MPIRANK == 0) std::cout << "Invalid kernel type in initialize" << std::endl;// Invalid kernel type
+      abort();                                                  //  Abort execution
+    }                                                           // Endif for kernel type
   }
 
   void finalize() {                                             // Finalize GPU
-#if Laplace
-    LaplaceFinal();                                             // Laplace version
-#elif BiotSavart
-    BiotSavartFinal();                                          // BiotSavart version
-#elif Stretching
-    StretchingFinal();                                          // Stretching version
-#elif Gaussian
-    GaussianFinal();                                            // Gaussian version
-#endif
+    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+      LaplaceFinal();                                           //  Finalize GPU
+    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+      BiotSavartFinal();                                        //  Finalize GPU
+    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+      StretchingFinal();                                        //  Finalize GPU
+    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+      GaussianFinal();                                          //  Finalize GPU
+    } else {                                                    // If kernel is none of the above
+      if(MPIRANK == 0) std::cout << "Invalid kernel type in finalize" << std::endl;// Invalid kernel type
+      abort();                                                  //  Abort execution
+    }                                                           // Endif for kernel type
   }
 
   void setSourceBody();                                         // Set source buffer for bodies
@@ -337,6 +326,5 @@ public:
 #elif gpu
 #include "../kernel/gpuEvaluator.cxx"
 #endif
-}
 
 #endif

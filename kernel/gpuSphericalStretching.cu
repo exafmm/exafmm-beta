@@ -1,5 +1,4 @@
 #include "kernel.h"
-#include "spherical.h"
 #include "stretching.h"
 #include "pregpu.h"
 
@@ -13,42 +12,6 @@ void Kernel::StretchingInit() {
   cudaThreadSynchronize();                                      // Sync GPU threads
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
-}
-
-void Kernel::StretchingPre() {
-  prefactor = new double  [4*P2];
-  Anm       = new double  [4*P2];
-  Ynm       = new complex [4*P2];
-  YnmTheta  = new complex [4*P2];
-  Cnm       = new complex [P4];
-
-  for( int n=0; n!=2*P; ++n ) {
-    for( int m=-n; m<=n; ++m ) {
-      int nm = n*n+n+m;
-      int nabsm = abs(m);
-      double fnmm = 1.0;
-      for( int i=1; i<=n-m; ++i ) fnmm *= i;
-      double fnpm = 1.0;
-      for( int i=1; i<=n+m; ++i ) fnpm *= i;
-      double fnma = 1.0;
-      for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
-      double fnpa = 1.0;
-      for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
-      prefactor[nm] = std::sqrt(fnma/fnpa);
-      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
-    }
-  }
-
-  for( int j=0, jk=0, jknm=0; j!=P; ++j ) {
-    for( int k=-j; k<=j; ++k, ++jk ){
-      for( int n=0, nm=0; n!=P; ++n ) {
-        for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
-          const int jnkm = (j+n)*(j+n)+j+n+m-k;
-          Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
-        }
-      }
-    }
-  }
 }
 
 __device__ void StretchingP2M_core(float *target, float rho, float alpha, float beta, float *sourceShrd, int ithread) {
@@ -925,14 +888,6 @@ __global__ void StretchingL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
   targetGlob[6*itarget+2] = target[2];
 }
 
-void Kernel::StretchingPost() {
-  delete[] prefactor;
-  delete[] Anm;
-  delete[] Ynm;
-  delete[] YnmTheta;
-  delete[] Cnm;
-}
-
 void Kernel::StretchingFinal() {
 #ifdef CUPRINTF
   cudaPrintfDisplay(stdout, true);                              // Print cuPrintf buffer to display
@@ -941,3 +896,11 @@ void Kernel::StretchingFinal() {
 }
 
 #include "gpu.h"
+
+CALL_GPU(StretchingP2M,P2M GPUkernel);
+CALL_GPU(StretchingM2M,M2M GPUkernel);
+CALL_GPU(StretchingM2L,M2L GPUkernel);
+CALL_GPU(StretchingM2P,M2P GPUkernel);
+CALL_GPU(StretchingP2P,P2P GPUkernel);
+CALL_GPU(StretchingL2L,L2L GPUkernel);
+CALL_GPU(StretchingL2P,L2P GPUkernel);

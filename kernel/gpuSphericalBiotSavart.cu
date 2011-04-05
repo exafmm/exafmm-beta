@@ -1,5 +1,4 @@
 #include "kernel.h"
-#include "spherical.h"
 #include "biotsavart.h"
 #include "pregpu.h"
 
@@ -13,42 +12,6 @@ void Kernel::BiotSavartInit() {
   cudaThreadSynchronize();                                      // Sync GPU threads
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
-}
-
-void Kernel::BiotSavartPre() {
-  prefactor = new double  [4*P2];
-  Anm       = new double  [4*P2];
-  Ynm       = new complex [4*P2];
-  YnmTheta  = new complex [4*P2];
-  Cnm       = new complex [P4];
-
-  for( int n=0; n!=2*P; ++n ) {
-    for( int m=-n; m<=n; ++m ) {
-      int nm = n*n+n+m;
-      int nabsm = abs(m);
-      double fnmm = 1.0;
-      for( int i=1; i<=n-m; ++i ) fnmm *= i;
-      double fnpm = 1.0;
-      for( int i=1; i<=n+m; ++i ) fnpm *= i;
-      double fnma = 1.0;
-      for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
-      double fnpa = 1.0;
-      for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
-      prefactor[nm] = std::sqrt(fnma/fnpa);
-      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
-    }
-  }
-
-  for( int j=0, jk=0, jknm=0; j!=P; ++j ) {
-    for( int k=-j; k<=j; ++k, ++jk ){
-      for( int n=0, nm=0; n!=P; ++n ) {
-        for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
-          const int jnkm = (j+n)*(j+n)+j+n+m-k;
-          Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
-        }
-      }
-    }
-  }
 }
 
 __device__ void BiotSavartP2M_core(float *target, float rho, float alpha, float beta,
@@ -510,9 +473,9 @@ __global__ void BiotSavartM2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
     fact *= i + 1;
   }
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetX[0] = targetGlob[3*itarget+0];
-  targetX[1] = targetGlob[3*itarget+1];
-  targetX[2] = targetGlob[3*itarget+2];
+  targetX[0] = targetGlob[6*itarget+0];
+  targetX[1] = targetGlob[6*itarget+1];
+  targetX[2] = targetGlob[6*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin     = rangeGlob[keys+3*ilist+1];
     int Iperiodic = rangeGlob[keys+3*ilist+3];
@@ -546,9 +509,9 @@ __global__ void BiotSavartM2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
       }
     }
   }
-  targetGlob[3*itarget+0] = target[0];
-  targetGlob[3*itarget+1] = target[1];
-  targetGlob[3*itarget+2] = target[2];
+  targetGlob[6*itarget+0] = target[0];
+  targetGlob[6*itarget+1] = target[1];
+  targetGlob[6*itarget+2] = target[2];
 }
 
 __device__ inline void BiotSavartP2P_core(float *target, float *targetX, float *sourceShrd, float3 d, int i) {
@@ -595,9 +558,9 @@ __global__ void BiotSavartP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
   float target[3] = {0, 0, 0};
   __shared__ float sourceShrd[7*THREADS];
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetX[0] = targetGlob[3*itarget+0];
-  targetX[1] = targetGlob[3*itarget+1];
-  targetX[2] = targetGlob[3*itarget+2];
+  targetX[0] = targetGlob[6*itarget+0];
+  targetX[1] = targetGlob[6*itarget+1];
+  targetX[2] = targetGlob[6*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin     = rangeGlob[keys+3*ilist+1];
     int size      = rangeGlob[keys+3*ilist+2];
@@ -665,9 +628,9 @@ __global__ void BiotSavartP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
       }
     }
   }
-  targetGlob[3*itarget+0] = target[0];
-  targetGlob[3*itarget+1] = target[1];
-  targetGlob[3*itarget+2] = target[2];
+  targetGlob[6*itarget+0] = target[0];
+  targetGlob[6*itarget+1] = target[1];
+  targetGlob[6*itarget+2] = target[2];
 }
 
 __device__ void BiotSavartL2L_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
@@ -858,9 +821,9 @@ __global__ void BiotSavartL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
     fact *= i + 1;
   }
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetX[0] = targetGlob[3*itarget+0];
-  targetX[1] = targetGlob[3*itarget+1];
-  targetX[2] = targetGlob[3*itarget+2];
+  targetX[0] = targetGlob[6*itarget+0];
+  targetX[1] = targetGlob[6*itarget+1];
+  targetX[2] = targetGlob[6*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
@@ -881,17 +844,9 @@ __global__ void BiotSavartL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
     cart2sph(r,theta,phi,d.x,d.y,d.z);
     BiotSavartL2P_core(target,r,theta,phi,factShrd,sourceShrd);
   }
-  targetGlob[3*itarget+0] = target[0];
-  targetGlob[3*itarget+1] = target[1];
-  targetGlob[3*itarget+2] = target[2];
-}
-
-void Kernel::BiotSavartPost() {
-  delete[] prefactor;
-  delete[] Anm;
-  delete[] Ynm;
-  delete[] YnmTheta;
-  delete[] Cnm;
+  targetGlob[6*itarget+0] = target[0];
+  targetGlob[6*itarget+1] = target[1];
+  targetGlob[6*itarget+2] = target[2];
 }
 
 void Kernel::BiotSavartFinal() {
@@ -902,3 +857,11 @@ void Kernel::BiotSavartFinal() {
 }
 
 #include "gpu.h"
+
+CALL_GPU(BiotSavartP2M,P2M GPUkernel);
+CALL_GPU(BiotSavartM2M,M2M GPUkernel);
+CALL_GPU(BiotSavartM2L,M2L GPUkernel);
+CALL_GPU(BiotSavartM2P,M2P GPUkernel);
+CALL_GPU(BiotSavartP2P,P2P GPUkernel);
+CALL_GPU(BiotSavartL2L,L2L GPUkernel);
+CALL_GPU(BiotSavartL2P,L2P GPUkernel);

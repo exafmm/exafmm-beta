@@ -6,13 +6,16 @@
 
 int main() {
   const int numBodies = 1000;
+  std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells;
   Dataset D;
   LocalEssentialTree T;
+  T.setKernel(kernelName);
   T.initialize();
-  if( T.commRank() == 0 ) T.printNow = false;
+  D.kernelName = kernelName;
+  if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
   D.random(bodies,T.commRank()+1);
@@ -40,7 +43,6 @@ int main() {
   T.downward(cells,jcells,1);
   T.stopTimer("Downward     ",T.printNow);
   T.eraseTimer("Downward     ");
-  if( T.commRank() == 0 ) T.printAllTime();
   if( T.commRank() == 0 ) T.writeTime();
   if( IMAGES != 0 ) {
     T.startTimer("Set periodic ");
@@ -81,7 +83,7 @@ int main() {
     Body body;
     body.I = 1;
     body.X = C->X;
-    body.Q = 0;
+    body.SRC = 0;
     bodies.push_back(body);
   }
 

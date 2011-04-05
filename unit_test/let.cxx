@@ -6,11 +6,14 @@
 
 int main() {
   const int numBodies = 100000;
+  std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Cells cells;
   Dataset D;
   LocalEssentialTree T;
+  T.setKernel(kernelName);
   T.initialize();
+  D.kernelName = kernelName;
   if( T.commRank() == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
@@ -39,7 +42,7 @@ int main() {
     Body body;
     body.ICELL = 1;
     body.X     = C->X;
-    body.Q     = 0;
+    body.SRC   = 0;
     bodies.push_back(body);
   }
 

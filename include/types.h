@@ -14,15 +14,14 @@
 #include <utility>
 #include <vector>
 #include "vec.h"
-#ifdef KERNEL
-int MPIRANK = 0;                                         // MPI rank (for debugging serial class in MPI run)
-int MPISIZE = 1;                                         // MPI size (for debugging serial class in MPI run)
+#ifndef KERNEL
+int MPIRANK = 0;                                                // MPI rank (for debugging serial class in MPI run)
+int MPISIZE = 1;                                                // MPI size (for debugging serial class in MPI run)
 #else
 extern int MPIRANK;
 extern int MPISIZE;
 #endif
 
-namespace {
 typedef long                 bigint;                            // Big integer type
 typedef float                real;                              // Real number type
 typedef std::complex<double> complex;                           // Complex number type
@@ -41,16 +40,7 @@ const int  NTERM   = P*(P+1)*(P+2)/6;                           // Number of ter
 #elif Spherical
 const int  NTERM   = P*(P+1)/2;                                 // Number of terms for spherical harmonics
 #endif
-
-#if Laplace
-const int  NCOEF   = NTERM;                                     // Number of coefficients for Laplace kernel
-#elif BiotSavart
-const int  NCOEF   = 3 * NTERM;                                 // Number of coefficients for BiotSavart kernel
-#elif Stretching
-const int  NCOEF   = 3 * NTERM;                                 // Number of coefficients for Stretching kernel
-#elif Gaussian
-const int  NCOEF   = NTERM;                                     // Number of coefficients for Gaussian kernel
-#endif
+const int  NCOEF   = 3 * NTERM;                                 // 3-D vector of coefficients
 
 typedef vec<3,real>                            vect;            // 3-D vector type
 #if Cartesian
@@ -63,34 +53,14 @@ typedef std::map<std::string,double>           Event;           // Map of event 
 typedef std::map<std::string,double>::iterator E_iter;          // Iterator for event name map
 
 struct JBody {                                                  // Source properties of a body (stuff to send)
-  int    IBODY;                                                 // Initial body numbering for sorting back
-  int    IPROC;                                                 // Initial process numbering for partitioning back
-  bigint ICELL;                                                 // Cell index
-  vect   X;                                                     // Position
-#if Laplace
-  real   Q;                                                     // Mass/charge
-#elif BiotSavart
-  vect   Q;                                                     // Vortex strength
-  real   S;                                                     // Core radius
-#elif Stretching
-  vect   Q;                                                     // Vortex strength
-  real   S;                                                     // Core radius
-#elif Gaussian
-  real   Q;                                                     // Mass/charge
-  real   S;                                                     // Core radius
-#endif
+  int         IBODY;                                            // Initial body numbering for sorting back
+  int         IPROC;                                            // Initial process numbering for partitioning back
+  bigint      ICELL;                                            // Cell index
+  vect        X;                                                // Position
+  vec<4,real> SRC;                                              // Source values
 };
 struct Body : JBody {                                           // All properties of a body
-#if Laplace
-  vect acc;                                                     // Acceleration
-  real pot;                                                     // Potential
-#elif BiotSavart
-  vect vel;                                                     // Velocity
-#elif Stretching
-  vect dQdt;                                                    // Change rate of vortex strength
-#elif Gaussian
-  real val;                                                     // Value
-#endif
+  vec<4,real> TRG;                                              // Target values
   bool operator<(const Body &rhs) const {                       // Overload operator for comparing body index
     return this->IBODY < rhs.IBODY;                             // Comparison function for body index
   }
@@ -127,6 +97,5 @@ typedef std::vector<List>              Lists;                   // Vector of int
 typedef std::map<C_iter,int>           Map;                     // Map of interaction lists
 typedef std::map<C_iter,int>::iterator M_iter;                  // Iterator for interation list map
 typedef std::vector<Map>               Maps;                    // Vector of map of interaction lists
-}
 
 #endif

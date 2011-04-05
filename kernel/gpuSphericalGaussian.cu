@@ -1,5 +1,4 @@
 #include "kernel.h"
-#include "spherical.h"
 #include "gaussian.h"
 #include "pregpu.h"
 
@@ -14,8 +13,6 @@ void Kernel::GaussianInit() {
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
 }
-
-void Kernel::GaussianPre() {}
 
 __global__ void GaussianP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {}
 
@@ -47,9 +44,9 @@ __global__ void GaussianP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob
   float target = 0;
   __shared__ float sourceShrd[5*THREADS];
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetX[0] = targetGlob[3*itarget+0];
-  targetX[1] = targetGlob[3*itarget+1];
-  targetX[2] = targetGlob[3*itarget+2];
+  targetX[0] = targetGlob[6*itarget+0];
+  targetX[1] = targetGlob[6*itarget+1];
+  targetX[2] = targetGlob[6*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin     = rangeGlob[keys+3*ilist+1];
     int size      = rangeGlob[keys+3*ilist+2];
@@ -57,11 +54,11 @@ __global__ void GaussianP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob
     for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
       int isource = begin + iblok * THREADS + threadIdx.x;
       __syncthreads();
-      sourceShrd[5*threadIdx.x+0] = sourceGlob[5*isource+0];
-      sourceShrd[5*threadIdx.x+1] = sourceGlob[5*isource+1];
-      sourceShrd[5*threadIdx.x+2] = sourceGlob[5*isource+2];
-      sourceShrd[5*threadIdx.x+3] = sourceGlob[5*isource+3];
-      sourceShrd[5*threadIdx.x+4] = sourceGlob[5*isource+4];
+      sourceShrd[5*threadIdx.x+0] = sourceGlob[7*isource+0];
+      sourceShrd[5*threadIdx.x+1] = sourceGlob[7*isource+1];
+      sourceShrd[5*threadIdx.x+2] = sourceGlob[7*isource+2];
+      sourceShrd[5*threadIdx.x+3] = sourceGlob[7*isource+3];
+      sourceShrd[5*threadIdx.x+4] = sourceGlob[7*isource+6];
       __syncthreads();
       int I = 0;
       for( int ix=-1; ix<=1; ++ix ) {
@@ -85,11 +82,11 @@ __global__ void GaussianP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob
     int isource = begin + iblok * THREADS + threadIdx.x;
     __syncthreads();
     if( threadIdx.x < size - iblok * THREADS ) {
-      sourceShrd[5*threadIdx.x+0] = sourceGlob[5*isource+0];
-      sourceShrd[5*threadIdx.x+1] = sourceGlob[5*isource+1];
-      sourceShrd[5*threadIdx.x+2] = sourceGlob[5*isource+2];
-      sourceShrd[5*threadIdx.x+3] = sourceGlob[5*isource+3];
-      sourceShrd[5*threadIdx.x+4] = sourceGlob[5*isource+4];
+      sourceShrd[5*threadIdx.x+0] = sourceGlob[7*isource+0];
+      sourceShrd[5*threadIdx.x+1] = sourceGlob[7*isource+1];
+      sourceShrd[5*threadIdx.x+2] = sourceGlob[7*isource+2];
+      sourceShrd[5*threadIdx.x+3] = sourceGlob[7*isource+3];
+      sourceShrd[5*threadIdx.x+4] = sourceGlob[7*isource+6];
     }
     __syncthreads();
     int I = 0;
@@ -111,17 +108,15 @@ __global__ void GaussianP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob
       }
     }
   }
-  targetGlob[3*itarget+0] = target;
+  targetGlob[6*itarget+0] = target;
 }
 
 __global__ void GaussianL2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {}
 
 __global__ void GaussianL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[3*itarget+0] = 0;
+  targetGlob[6*itarget+0] = 0;
 }
-
-void Kernel::GaussianPost() {}
 
 void Kernel::GaussianFinal() {
 #ifdef CUPRINTF
@@ -131,3 +126,11 @@ void Kernel::GaussianFinal() {
 }
 
 #include "gpu.h"
+
+CALL_GPU(GaussianP2M,P2M GPUkernel);
+CALL_GPU(GaussianM2M,M2M GPUkernel);
+CALL_GPU(GaussianM2L,M2L GPUkernel);
+CALL_GPU(GaussianM2P,M2P GPUkernel);
+CALL_GPU(GaussianP2P,P2P GPUkernel);
+CALL_GPU(GaussianL2L,L2L GPUkernel);
+CALL_GPU(GaussianL2P,L2P GPUkernel);
