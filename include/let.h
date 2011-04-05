@@ -446,8 +446,10 @@ public:
       getOtherDomain(xmin,xmax,l+1);                            //  Get boundries of domains on other processes
       startTimer("Get LET      ");                              //  Start timer
       getLET(cells.begin(),cells.end()-1,xmin,xmax);            //  Determine which cells to send
+#ifdef DEBUG
       checkNumCells(LEVEL-l-1);
       checkSumMass(cells);
+#endif
       stopTimer("Get LET      ");                               //  Stop timer & print
       startTimer("Alltoall     ");                              //  Start timer
       commCellsAlltoall(l);                                     //  Communicate cells by one-to-one MPI_Alltoallv
@@ -467,7 +469,7 @@ public:
       startTimer("Recv2twigs   ");                              //  Start timer
       recv2twigs(bodies,twigs);                                 //  Put recv buffer into twig vector
       stopTimer("Recv2twigs   ");                               //  Stop timer & print
-//#ifdef DEBUG
+#ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
         complex SUM = 0;                                        //   Initialize accumulator
         for(C_iter C=twigs.begin(); C!=twigs.end(); ++C) {      //   Loop over twigs
@@ -476,7 +478,7 @@ public:
         print("Before recv   : ",0);                            //   Print identifier
         print(SUM);                                             //   Print sum of multipoles
       }                                                         //  Endif for last level
-//#endif
+#endif
       zipTwigs(twigs,cells,sticks,l==LEVEL-1);                  //  Zip two groups of twigs that overlap
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
@@ -497,12 +499,12 @@ public:
       stopTimer("Sticks2send  ");                               //  Stop timer & print
     }                                                           // End loop over levels of N-D hypercube communication
 
-//#ifdef DEBUG
+#ifdef DEBUG
     print("M[0] @ root   : ",0);                                // Print identifier
     print((cells.end()-1)->M[0]);                               // Print monopole of root (should be 1 for test)
     print("bodies.size() : ",0);                                // Print identifier
     print(bodies.size());                                       // Print size of body vector
-//#endif
+#endif
     sendCells.clear();                                          // Clear send buffer
     recvCells.clear();                                          // Clear recv buffer
   }

@@ -12,7 +12,7 @@ int main() {
   Dataset D;
   LocalEssentialTree T;
   T.initialize();
-  if( T.commRank() == 0 ) T.printNow = true;
+  if( T.commRank() == 0 ) T.printNow = false;
 
   T.startTimer("Set bodies   ");
   D.random(bodies,T.commRank()+1);
@@ -40,7 +40,8 @@ int main() {
   T.downward(cells,jcells,1);
   T.stopTimer("Downward     ",T.printNow);
   T.eraseTimer("Downward     ");
-
+  if( T.commRank() == 0 ) T.printAllTime();
+  if( T.commRank() == 0 ) T.writeTime();
   if( IMAGES != 0 ) {
     T.startTimer("Set periodic ");
     jbodies = T.periodicBodies(bodies);
