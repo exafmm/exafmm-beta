@@ -36,12 +36,16 @@ int main() {
   Cells jcells = cells;
   T.commCells(bodies2,jcells);
 
+  T.startTimer("Downward     ");
   T.downward(cells,jcells,1);
+  T.stopTimer("Downward     ",T.printNow);
+  T.eraseTimer("Downward     ");
 
   if( IMAGES != 0 ) {
     T.startTimer("Set periodic ");
     jbodies = T.periodicBodies(bodies);
     T.stopTimer("Set periodic ",T.printNow);
+    T.eraseTimer("Set periodic ");
   } else {
     jbodies = bodies;
   }

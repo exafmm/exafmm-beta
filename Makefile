@@ -1,13 +1,13 @@
 .SUFFIXES: .cxx .cu .o
 
-DEVICE  = cpu
-#DEVICE  = gpu
+#DEVICE  = cpu
+DEVICE  = gpu
 
 #EXPAND  = Cartesian
 EXPAND  = Spherical
 
-KERNEL  = Laplace
-#KERNEL  = BiotSavart
+#KERNEL  = Laplace
+KERNEL  = BiotSavart
 #KERNEL  = Stretching
 #KERNEL  = Gaussian
 

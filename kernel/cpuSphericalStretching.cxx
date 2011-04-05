@@ -2,7 +2,7 @@
 #include "spherical.h"
 #include "stretching.h"
 
-void Kernel::StretchingiInit() {}
+void Kernel::StretchingInit() {}
 
 void Kernel::StretchingPre() {
   prefactor = new double  [4*P2];
@@ -257,4 +257,4 @@ void Kernel::StretchingPost() {
   delete[] Cnm;
 }
 
-void Kernel::StretchingiFinal() {}
+void Kernel::StretchingFinal() {}

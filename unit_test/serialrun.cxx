@@ -6,7 +6,6 @@
 
 int main() {
   const int numBodies = 10000;
-//  const int numBodies = 177827;
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells,jcells;
@@ -33,11 +32,13 @@ int main() {
   T.startTimer("Downward     ");
   T.downward(cells,jcells,1);
   T.stopTimer("Downward     ",T.printNow);
+  T.eraseTimer("Downward     ");
 
   if( IMAGES != 0 ) {
     T.startTimer("Set periodic ");
     jbodies = T.periodicBodies(bodies);
     T.stopTimer("Set periodic ",T.printNow);
+    T.eraseTimer("Set periodic ");
   } else {
     jbodies = bodies;
   }
@@ -47,6 +48,7 @@ int main() {
   D.initTarget(T.buffer);
   T.evalP2P(T.buffer,jbodies);
   T.stopTimer("Direct sum   ",T.printNow);
+  T.eraseTimer("Direct sum   ");
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);

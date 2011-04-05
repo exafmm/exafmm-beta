@@ -27,8 +27,8 @@ typedef long                 bigint;                            // Big integer t
 typedef float                real;                              // Real number type
 typedef std::complex<double> complex;                           // Complex number type
 
-const int  P       = 10;                                        // Order of expansions
-const int  NCRIT   = 10;                                        // Number of bodies per cell
+const int  P       = 7;                                        // Order of expansions
+const int  NCRIT   = 100;                                       // Number of bodies per cell
 const real THETA   = 1/sqrtf(3);                                // Box opening criteria
 const real CLET    = 3;                                         // LET opening critetia
 const real EPS2    = 1e-4;                                      // Softening parameter

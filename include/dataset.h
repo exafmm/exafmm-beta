@@ -15,15 +15,15 @@ public:
       B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
       B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
       B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
-      B->S    = 2 * powf(bodies.size(),-1./3);                  //  Initialize core radius
+      B->S    = powf(bodies.size(),-1./3);                      //  Initialize core radius
 #elif Stretching
       B->Q[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
       B->Q[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
       B->Q[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
-      B->S    = 2 * powf(bodies.size(),-1./3);                  //  Initialize core radius
+      B->S    = powf(bodies.size(),-1./3);                      //  Initialize core radius
 #elif Gaussian
       B->Q = 1. / bodies.size() / MPISIZE;                      //  Initialize mass/charge
-      B->S = 2 * powf(bodies.size(),-1./3);                     //  Initialize core radius
+      B->S = powf(bodies.size(),-1./3);                         //  Initialize core radius
 #endif
     }                                                           // End loop over bodies
   }
