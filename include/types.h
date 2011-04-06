@@ -27,8 +27,8 @@ typedef float                real;                              // Real number t
 typedef std::complex<double> complex;                           // Complex number type
 
 const int  P       = 7;                                         // Order of expansions
-const int  NCRIT   = 100;                                       // Number of bodies per cell
-const real THETA   = 1/sqrtf(4);                                // Box opening criteria
+const int  NCRIT   = 1000;                                      // Number of bodies per cell
+const real THETA   = 1/sqrtf(3);                                // Box opening criteria
 const real CLET    = 3;                                         // LET opening critetia
 const real EPS2    = 1e-4;                                      // Softening parameter
 const int  IMAGES  = 3;                                         // Number of periodic image sublevels

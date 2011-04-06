@@ -1,20 +1,13 @@
 #ifndef vortex_h
 #define vortex_h
-#include <fftw3.h>
-#include "construct.h"
+#include "fft.h"
+#include "let.h"
 
-class Vortex : public TreeConstructor {                         // Contains all the different datasets
+class Vortex : public LocalEssentialTree, public FastFourierTransform {
 private:
-  const int numBodies;
-  int nx;
   float dx;
   float *r, *x;
-  fftw_complex *uf;
-  fftw_complex *vf;
-  fftw_complex *wf;
-  fftw_plan uplan;
-  fftw_plan vplan;
-  fftw_plan wplan;
+  float *dxdt, *dydt, *dzdt;
 
   void rbf(Bodies &bodies, int d) {
     const int itmax = 5;
@@ -26,6 +19,7 @@ private:
       B->SRC[0] = x[i] = B->TRG[d+1] * dx * dx * dx;
       B->TRG[0] = 0;
     }
+    setKernel("Gaussian");
     setDomain(bodies);
     bottomup(bodies,cells);
     jcells = cells;
@@ -77,28 +71,21 @@ private:
   }
 
 public:
-  Vortex(int N) : numBodies(N) {
-    nx = powf(numBodies,1./3);
-    dx = 2 * M_PI / nx;
-    r = new float [numBodies];
-    x = new float [numBodies];
-    uf = (fftw_complex*) fftw_malloc(numBodies * sizeof(fftw_complex));
-    vf = (fftw_complex*) fftw_malloc(numBodies * sizeof(fftw_complex));
-    wf = (fftw_complex*) fftw_malloc(numBodies * sizeof(fftw_complex));
-    uplan = fftw_plan_dft_3d(nx, nx, nx, uf, uf, FFTW_FORWARD, FFTW_ESTIMATE);
-    vplan = fftw_plan_dft_3d(nx, nx, nx, vf, vf, FFTW_FORWARD, FFTW_ESTIMATE);
-    wplan = fftw_plan_dft_3d(nx, nx, nx, wf, wf, FFTW_FORWARD, FFTW_ESTIMATE);
+  Vortex(int numGrid1D) : FastFourierTransform(numGrid1D) {
+    dx   = 2 * M_PI / numGrid1D;
+    r    = new float [numBodies];
+    x    = new float [numBodies];
+    dxdt = new float [numBodies];
+    dydt = new float [numBodies];
+    dzdt = new float [numBodies];
   }
 
   ~Vortex() {
-    fftw_destroy_plan(uplan);
-    fftw_destroy_plan(vplan);
-    fftw_destroy_plan(wplan);
-    fftw_free(uf);
-    fftw_free(vf);
-    fftw_free(wf);
     delete[] r;
     delete[] x;
+    delete[] dxdt;
+    delete[] dydt;
+    delete[] dzdt;
   }
 
   void readData(Bodies &bodies) {                               // Initialize source values
@@ -134,7 +121,7 @@ public:
       Body B6 = bodies[plus1[ix] * nx * nx + plus1[iy] * nx + iz       ];
       Body B7 = bodies[plus1[ix] * nx * nx + plus1[iy] * nx + plus1[iz]];
       B->IBODY = i;                                             //  Tag body with initial index
-      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
+      B->IPROC = RANK;                                          //  Tag body with initial MPI rank
       B->X[0] = (ix + .5) * dx - M_PI;                          //  Initialize x position
       B->X[1] = (iy + .5) * dx - M_PI;                          //  Initialize y position
       B->X[2] = (iz + .5) * dx - M_PI;                          //  Initialize z position
@@ -226,43 +213,18 @@ public:
     std::sort(bodies.begin(),bodies.end());
     std::sort(jbodies.begin(),jbodies.end());
 
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      int i = B-bodies.begin();
-      uf[i][0] = B->TRG[0] / numBodies;
-      vf[i][0] = B->TRG[1] / numBodies;
-      wf[i][0] = B->TRG[2] / numBodies;
-      uf[i][1] = 0;
-      vf[i][1] = 0;
-      wf[i][1] = 0;
-    }
     if( fft ) {
-      fftw_execute(uplan);
-      fftw_execute(vplan);
-      fftw_execute(wplan);
-      float *Ek = new float [nx];
-      int   *Nk = new int   [nx];
-      for( int k=0; k<nx; ++k ) {
-        Ek[k] = Nk[k] = 0;
-      }
-      for( int ix=0; ix<nx/2; ++ix ) {
-        for( int iy=0; iy<nx/2; ++iy ) {
-          for( int iz=0; iz<nx/2; ++iz ) {
-            int i = ix * nx * nx + iy * nx + iz;
-            int k = floor(sqrtf(ix * ix + iy * iy + iz * iz));
-            Ek[k] += (uf[i][0] * uf[i][0] + uf[i][1] * uf[i][1]
-                   +  vf[i][0] * vf[i][0] + vf[i][1] * vf[i][1]
-                   +  wf[i][0] * wf[i][0] + wf[i][1] * wf[i][1]) * 4 * M_PI * k * k;
-            Nk[k]++;
-          }
-        }
-      }
-      std::ofstream fid("statistics.dat",std::ios::in | std::ios::app);
-      for( int k=0; k<nx; ++k ) {
-        if( Nk[k] == 0 ) Nk[k] = 1;
-        Ek[k] /= Nk[k];
-        fid << Ek[k] << std::endl;
-      }
-      fid.close();
+      initSpectrum();
+      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) realRecv[B-bodies.begin()] = B->TRG[0];
+      forwardFFT();
+      addSpectrum();
+      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) realRecv[B-bodies.begin()] = B->TRG[1];
+      forwardFFT();
+      addSpectrum();
+      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) realRecv[B-bodies.begin()] = B->TRG[2];
+      forwardFFT();
+      addSpectrum();
+      writeSpectrum();
     }
 
     bodies = jbodies;
@@ -276,18 +238,18 @@ public:
     std::sort(bodies.begin(),bodies.end());
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
-      uf[i][0] = B->TRG[0];
-      vf[i][0] = B->TRG[1];
-      wf[i][0] = B->TRG[2];
+      dxdt[i] = B->TRG[0];
+      dydt[i] = B->TRG[1];
+      dzdt[i] = B->TRG[2];
     }
   }
 
   void convect(Bodies &bodies, float nu, float dt) {
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
-      B->X[0]   += uf[i][0] * dt;
-      B->X[1]   += vf[i][0] * dt;
-      B->X[2]   += wf[i][0] * dt;
+      B->X[0]   += dxdt[i] * dt;
+      B->X[1]   += dydt[i] * dt;
+      B->X[2]   += dzdt[i] * dt;
       B->SRC[0] += B->TRG[0] * dt;
       B->SRC[1] += B->TRG[1] * dt;
       B->SRC[2] += B->TRG[2] * dt;

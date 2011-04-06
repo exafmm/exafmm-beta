@@ -5,20 +5,18 @@
 
 int main() {
   const int numGrid1D = 128;
-  const int numSteps  = 10;
-  const int numSkip   = 1;
-  const float dt      = 5e-3;
-  const float nu      = 1e-2;
-  const int numBodies = numGrid1D * numGrid1D * numGrid1D;
-  std::string kernelName = "Gaussian";
-  Bodies bodies(numBodies);
-  Bodies jbodies;
+  const int numSteps  = 1;
+  const int numSkip   = 0;
+  const float dt      = 5e-4;
+  const float nu      = 2e-2;
+  Bodies bodies,jbodies;
   Cells cells,jcells;
-  Vortex T(numBodies);
-  T.setKernel(kernelName);
+  Vortex T(numGrid1D);
+  T.setKernel("Gaussian");
   T.initialize();
 
   T.startTimer("Read data    ");
+  bodies.resize(T.numBodies);
   T.readData(bodies);
   T.stopTimer("Read data    ",true);
   T.eraseTimer("Read data    ");
