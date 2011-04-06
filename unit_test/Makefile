@@ -65,6 +65,10 @@ parallelrun: parallelrun.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 	mpirun -np 2 ./a.out
 
+unpartition: unpartition.cxx $(OBJECT)
+	@$(CXX) $? $(LFLAGS)
+	mpirun -np 2 ./a.out
+
 vtk: vtk.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	./a.out
@@ -85,3 +89,4 @@ all      :
 	make bisection
 	make let
 	make parallelrun
+	make unpartition

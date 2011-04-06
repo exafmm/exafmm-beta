@@ -102,7 +102,7 @@ public:
   }
 
   void readData(Bodies &bodies) {                               // Initialize source values
-    std::ifstream fid("../../isotropic/vortex/initialu",std::ios::in);
+    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> B->SRC[0];
     }
@@ -184,7 +184,7 @@ public:
 
     float u, v, w;
     double diff = 0, norm = 0;
-    std::ifstream fid("../../isotropic/vortex/initialu",std::ios::in);
+    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> u;
       diff += (B->TRG[0] - u) * (B->TRG[0] - u);

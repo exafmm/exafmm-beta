@@ -5,7 +5,7 @@
 #endif
 
 int main() {
-  const int numBodies = 1000;
+  const int numBodies = 10000;
   std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Bodies jbodies;
@@ -35,9 +35,9 @@ int main() {
 
   T.commBodies(cells);
 
-  Bodies bodies2 = bodies;
+  jbodies = bodies;
   Cells jcells = cells;
-  T.commCells(bodies2,jcells);
+  T.commCells(jbodies,jcells);
 
   T.startTimer("Downward     ");
   T.downward(cells,jcells,1);
@@ -54,7 +54,7 @@ int main() {
   }
 
   T.startTimer("Direct sum   ");
-  bodies2 = bodies;
+  Bodies bodies2 = bodies;
   D.initTarget(bodies2);
   for( int i=0; i!=T.commSize(); ++i ) {
     T.shiftBodies(jbodies);

@@ -5,8 +5,8 @@
 
 int main() {
   const int numGrid1D = 128;
-  const int numSteps  = 1;
-  const int numSkip   = 0;
+  const int numSteps  = 10;
+  const int numSkip   = 1;
   const float dt      = 5e-3;
   const float nu      = 1e-2;
   const int numBodies = numGrid1D * numGrid1D * numGrid1D;

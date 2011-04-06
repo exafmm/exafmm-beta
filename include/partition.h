@@ -115,8 +115,8 @@ protected:
       rcnt[i] *= bytes;                                         // Multiply recv count by byte size of data
       rdsp[i] *= bytes;                                         // Multiply recv displacement by byte size of data
     }                                                           // End loop over 0 and 1
-    MPI_Alltoallv(&bodies[0].ICELL,scnt,sdsp,MPI_BYTE,          // Communicate bodies
-                  &buffer[0].ICELL,rcnt,rdsp,MPI_BYTE,          // Using same buffer as sort buffer
+    MPI_Alltoallv(&bodies[0],scnt,sdsp,MPI_BYTE,                // Communicate bodies
+                  &buffer[0],rcnt,rdsp,MPI_BYTE,                // Using same buffer as sort buffer
                   MPI_COMM[l+1][2]);                            // MPI_COMM[2] is for the one-to-one pair
     if( color[l+1][0] == color[l+1][1] ) bodies = buffer;       // Don't update if leftover process
     buffer.resize(bodies.size());                               // Resize sort buffer
@@ -153,8 +153,8 @@ protected:
       sdsp[i] *= bytes;                                         //  Multiply send displacement by byte size of data
     }                                                           // End loop over group of processes
     rcnt *= bytes;                                              // Multiply recv count by byte size of data
-    MPI_Scatterv(&bodies[0].ICELL,      scnt,sdsp,MPI_BYTE,     // Communicate bodies via MPI_Scatterv
-                 &buffer[oldSize].ICELL,rcnt,     MPI_BYTE,     // Offset recv buffer by oldSize
+    MPI_Scatterv(&bodies[0],      scnt,sdsp,MPI_BYTE,           // Communicate bodies via MPI_Scatterv
+                 &buffer[oldSize],rcnt,     MPI_BYTE,           // Offset recv buffer by oldSize
                  numScatter,MPI_COMM[l+1][1]);                  // MPI_COMM[1] is used for scatter
     bodies = buffer;                                            // Copy recv buffer to bodies
     if( key[l+1][1] != numScatter ) sortBodies(bodies,buffer);  // Sort bodies in ascending order
@@ -191,8 +191,8 @@ protected:
       rcnt[i] *= bytes;                                         //  Multiply recv count by byte size of data
       rdsp[i] *= bytes;                                         //  Multiply recv displacement by byte size of data
     }                                                           // End loop over group of processes
-    MPI_Gatherv(&bodies[0].ICELL,      scnt,     MPI_BYTE,      // Communicate bodies via MPI_Gatherv
-                &buffer[oldSize].ICELL,rcnt,rdsp,MPI_BYTE,      // Offset recv buffer by oldSize
+    MPI_Gatherv(&bodies[0],      scnt,     MPI_BYTE,            // Communicate bodies via MPI_Gatherv
+                &buffer[oldSize],rcnt,rdsp,MPI_BYTE,            // Offset recv buffer by oldSize
                 0,MPI_COMM[l+1][0]);                            // MPI_COMM[0] is used for gather
     bodies = buffer;                                            // Copy recv buffer to bodies
     delete[] rcnt;                                              // Delete recv count
@@ -273,9 +273,9 @@ public:
     MPI_Wait(&rreq,MPI_STATUS_IGNORE);                          // Wait for recv to complete
 
     buffer.resize(newSize);                                     // Resize buffer to new number of bodies
-    MPI_Isend(&bodies[0].ICELL,oldSize*bytes,MPI_BYTE,irecv,    // Send bodies to next rank
+    MPI_Isend(&bodies[0],oldSize*bytes,MPI_BYTE,irecv,          // Send bodies to next rank
               1,MPI_COMM_WORLD,&sreq);
-    MPI_Irecv(&buffer[0].ICELL,newSize*bytes,MPI_BYTE,isend,    // Receive bodies from previous rank
+    MPI_Irecv(&buffer[0],newSize*bytes,MPI_BYTE,isend,          // Receive bodies from previous rank
               1,MPI_COMM_WORLD,&rreq);
     MPI_Wait(&sreq,MPI_STATUS_IGNORE);                          // Wait for send to complete
     MPI_Wait(&rreq,MPI_STATUS_IGNORE);                          // Wait for recv to complete
@@ -437,6 +437,50 @@ public:
     delete[] rcnt;                                              // Delete recv count
     delete[] rdsp;                                              // Delete recv displacement
     stopTimer("Partition    ");                                 // Stop timer & print
+  }
+
+  void unpartition(Bodies &bodies) {                            // Send bodies back to where they came from
+    startTimer("Unpartition  ");                                // Start timer
+    int byte = sizeof(bodies[0]);                               // Byte size of body structure
+    int *scnt = new int [SIZE];                                 // Send count
+    int *sdsp = new int [SIZE];                                 // Send displacement
+    int *rcnt = new int [SIZE];                                 // Recv count
+    int *rdsp = new int [SIZE];                                 // Recv displacement
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      B->ICELL = B->IPROC;                                      //  Copy process rank to cell index for sorting
+    }                                                           // End loop over bodies
+    buffer.resize(bodies.size());                               // Resize sort buffer
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
+    for( int i=0; i!=SIZE; ++i ) {                              // Loop over ranks
+      scnt[i] = 0;                                              //  Initialize send counts
+    }                                                           // End loop over ranks
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      int irank = B->IPROC;                                     //  Get rank which the body belongs to
+      scnt[irank]++;                                            //  Fill send count bucket
+    }                                                           // End loop over bodies
+    MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM_WORLD); // Communicate send count to get recv count
+    sdsp[0] = rdsp[0] = 0;                                      // Initialize send/recv displacements
+    for( int irank=0; irank!=SIZE-1; ++irank ) {                // Loop over ranks
+      sdsp[irank+1] = sdsp[irank] + scnt[irank];                //  Set send displacement based on send count
+      rdsp[irank+1] = rdsp[irank] + rcnt[irank];                //  Set recv displacement based on recv count
+    }                                                           // End loop over ranks
+    buffer.resize(rdsp[SIZE-1]+rcnt[SIZE-1]);                   // Resize recv buffer
+    for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over ranks
+      scnt[irank] *= byte;                                      //  Multiply send count by byte size of data
+      sdsp[irank] *= byte;                                      //  Multiply send displacement by byte size of data
+      rcnt[irank] *= byte;                                      //  Multiply recv count by byte size of data
+      rdsp[irank] *= byte;                                      //  Multiply recv displacement by byte size of data
+    }                                                           // End loop over ranks
+    MPI_Alltoallv(&bodies[0],scnt,sdsp,MPI_BYTE,&buffer[0],rcnt,rdsp,MPI_BYTE,MPI_COMM_WORLD);// Communicat bodies
+    bodies = buffer;                                            // Copy recv buffer to bodies
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      assert(B->IPROC == RANK);                                 //  Make sure bodies are in the right rank
+    }                                                           // End loop over bodies
+    delete[] scnt;                                              // Delete send count
+    delete[] sdsp;                                              // Delete send displacement
+    delete[] rcnt;                                              // Delete recv count
+    delete[] rdsp;                                              // Delete recv displacement
+    stopTimer("Unpartition  ");                                 // Stop timer & print
   }
 };
 

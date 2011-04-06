@@ -23,7 +23,20 @@ int main() {
   bodies2 = bodies;
   T.stopTimer("Set bodies   ",T.printNow);
 
+  if( IMAGES != 0 ) {
+    T.startTimer("Set periodic ");
+    jbodies = T.periodicBodies(bodies2);
+    T.stopTimer("Set periodic ",T.printNow);
+  } else {
+    jbodies = bodies2;
+  }
+
+  T.startTimer("Direct sum   ");
+  T.evalP2P(bodies2,jbodies);
+  T.stopTimer("Direct sum   ",T.printNow);
+
   T.startTimer("Set domain   ");
+  D.initTarget(bodies);
   T.setDomain(bodies);
   T.stopTimer("Set domain   ",T.printNow);
 
@@ -41,19 +54,6 @@ int main() {
   T.startTimer("Unsort bodies");
   std::sort(bodies.begin(),bodies.end());
   T.stopTimer("Unsort bodies",T.printNow);
-
-  if( IMAGES != 0 ) {
-    T.startTimer("Set periodic ");
-    jbodies = T.periodicBodies(bodies2);
-    T.stopTimer("Set periodic ",T.printNow);
-  } else {
-    jbodies = bodies2;
-  }
-
-  T.startTimer("Direct sum   ");
-  D.initTarget(bodies2);
-  T.evalP2P(bodies2,jbodies);
-  T.stopTimer("Direct sum   ",T.printNow);
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
