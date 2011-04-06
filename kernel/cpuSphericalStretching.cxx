@@ -4,6 +4,7 @@
 void Kernel::StretchingInit() {}
 
 void Kernel::StretchingP2M() {
+  const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
     vect dist = B->X - CJ->X;
     vec<3,complex> spherical;
@@ -28,6 +29,7 @@ void Kernel::StretchingP2M() {
 }
 
 void Kernel::StretchingM2M_CPU() {
+  const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -106,6 +108,7 @@ void Kernel::StretchingM2L() {
 }
 
 void Kernel::StretchingM2P() {
+  const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     vect spherical[3] = {0, 0, 0};
@@ -140,6 +143,7 @@ void Kernel::StretchingM2P() {
 }
 
 void Kernel::StretchingL2L() {
+  const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -179,6 +183,7 @@ void Kernel::StretchingL2L() {
 }
 
 void Kernel::StretchingL2P() {
+  const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
     vect spherical[3] = {0, 0, 0};

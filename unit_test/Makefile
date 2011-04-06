@@ -69,18 +69,17 @@ vtk: vtk.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	./a.out
 
-wrapper: wrapper.o $(OBJECT)
-	ar ruv ../lib/lib$(DEVICE)$(KERNEL).a $?
-	ranlib ../lib/lib$(DEVICE)$(KERNEL).a
-
 all      :
 	make index
 	make topdown
 	make bottomup
 	make kernel
 	make serialrun
+	make unsort
+	make Nscaling
 	make direct_gpu
 	make mpi
+	make check_gpus
 	make shift
 	make nth_element
 	make bisection

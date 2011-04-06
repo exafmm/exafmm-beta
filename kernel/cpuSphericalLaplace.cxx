@@ -20,6 +20,7 @@ void Kernel::LaplaceP2M() {
 }
 
 void Kernel::LaplaceM2M_CPU() {
+  const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -86,6 +87,7 @@ void Kernel::LaplaceM2L() {
 }
 
 void Kernel::LaplaceM2P() {
+  const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     vect spherical = 0;
@@ -116,6 +118,7 @@ void Kernel::LaplaceM2P() {
 }
 
 void Kernel::LaplaceL2L() {
+  const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -149,6 +152,7 @@ void Kernel::LaplaceL2L() {
 }
 
 void Kernel::LaplaceL2P() {
+  const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
     vect spherical = 0;

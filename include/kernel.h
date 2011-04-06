@@ -8,7 +8,6 @@
 const int  P2 = P * P;                                          // P^2
 const int  P4 = P2 * P2;                                        // P^4
 const real EPS = 1e-6;                                          // Single precision epsilon
-const complex I(0.,1.);                                         // Imaginary unit
 
 class Kernel : public Logger {                                  // Unified CPU/GPU kernel class
 private:
@@ -39,6 +38,7 @@ private:
   }
 
   void evalMultipole(real rho, real alpha, real beta) {
+    const complex I(0.,1.);                                     // Imaginary unit
     double x = std::cos(alpha);
     double y = std::sin(alpha);
     double s = std::sqrt(1 - x * x);
@@ -74,6 +74,7 @@ private:
   }
 
   void evalLocal(real rho, real alpha, real beta) {
+    const complex I(0.,1.);                                     // Imaginary unit
     double x = std::cos(alpha);
     double y = std::sin(alpha);
     double s = std::sqrt(1 - x * x);
@@ -170,6 +171,7 @@ public:
   }
 
   void preCalculation() {
+    const complex I(0.,1.);                                     // Imaginary unit
     prefactor = new double  [4*P2];
     Anm       = new double  [4*P2];
     Ynm       = new complex [4*P2];

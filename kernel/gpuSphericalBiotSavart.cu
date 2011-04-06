@@ -232,6 +232,7 @@ __global__ void BiotSavartM2M_GPU(int *keysGlob, int *rangeGlob, float *targetGl
 }
 
 void Kernel::BiotSavartM2M_CPU() {
+  const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
