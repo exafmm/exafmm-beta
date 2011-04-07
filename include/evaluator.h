@@ -6,6 +6,8 @@ class Evaluator : public Kernel {                               // Evaluator is 
 protected:
   C_iter      CI0;                                              // icells.begin()
   C_iter      CJ0;                                              // jcells.begin()
+  C_iter      CIB;                                              // icells begin for call
+  C_iter      CIE;                                              // icells end for call
   Pairs       pairs;                                            // Stack of interacting cell pairs
   Lists       listM2L;                                          // M2L interaction list
   Lists       listM2P;                                          // M2P interaction list
@@ -306,10 +308,10 @@ public:
 
   void setSourceBody();                                         // Set source buffer for bodies
   void setSourceCell(bool isM);                                 // Set source buffer for cells
-  void setTargetBody(Cells &cells, Lists lists, Maps flags);    // Set target buffer for bodies
-  void setTargetCell(Cells &cells, Lists lists, Maps flags);    // Set target buffer for cells
-  void getTargetBody(Cells &cells, Lists &lists);               // Get body values from target buffer
-  void getTargetCell(Cells &cells, Lists &lists, bool isM);     // Get cell values from target buffer
+  void setTargetBody(Lists lists, Maps flags);                  // Set target buffer for bodies
+  void setTargetCell(Lists lists, Maps flags);                  // Set target buffer for cells
+  void getTargetBody(Lists &lists);                             // Get body values from target buffer
+  void getTargetCell(Lists &lists, bool isM);                   // Get cell values from target buffer
   void clearBuffers();                                          // Clear GPU buffers
 
   void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);// Evaluate P2P kernel (all pairs)

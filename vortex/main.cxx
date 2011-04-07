@@ -39,7 +39,6 @@ int main() {
     }
     T.setKernel("Stretching");
     cells.clear();
-    T.setGlobDomain(bodies);
     T.octsection(bodies);
     T.bottomup(bodies,cells);
     T.commBodies(cells);
@@ -68,7 +67,6 @@ int main() {
     }
     T.setKernel("BiotSavart");
     cells.clear();
-    T.setGlobDomain(bodies);
     T.octsection(bodies);
     T.bottomup(bodies,cells);
     T.commBodies(cells);

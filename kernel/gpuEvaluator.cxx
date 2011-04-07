@@ -39,10 +39,10 @@ void Evaluator::setSourceCell(bool isM=true) {                  // Set source bu
   stopTimer("Set sourceC  ");                                   // Stop timer
 }
 
-void Evaluator::setTargetBody(Cells &cells, Lists lists, Maps flags) {// Set target buffer for bodies
+void Evaluator::setTargetBody(Lists lists, Maps flags) {        // Set target buffer for bodies
   startTimer("Set targetB  ");                                  // Start timer
   int key = 0;                                                  // Initialize key to range of coefs in source cells
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
+  for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
       BI0 = CI->LEAF;                                           //   Set target bodies begin iterator
       BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
@@ -81,10 +81,10 @@ void Evaluator::setTargetBody(Cells &cells, Lists lists, Maps flags) {// Set tar
   stopTimer("Set targetB  ");                                   // Stop timer
 }
 
-void Evaluator::setTargetCell(Cells &cells, Lists lists, Maps flags) {// Set target buffer for cells
+void Evaluator::setTargetCell(Lists lists, Maps flags) {        // Set target buffer for cells
   startTimer("Set targetC  ");                                  // Start timer
   int key = 0;                                                  // Initialize key to range of coefs in target cells
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
+  for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
       keysHost.push_back(key);                                  //   Save key to range of coefs in target cells
       key += 3*lists[CI-CI0].size()+1;                          //   Increment key counter
@@ -114,9 +114,9 @@ void Evaluator::setTargetCell(Cells &cells, Lists lists, Maps flags) {// Set tar
   stopTimer("Set targetC  ");                                   // Stop timer
 }
 
-void Evaluator::getTargetBody(Cells &cells, Lists &lists) {     // Get body values from target buffer
+void Evaluator::getTargetBody(Lists &lists) {                   // Get body values from target buffer
   startTimer("Get targetB  ");                                  // Start timer
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
+  for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
       BI0 = CI->LEAF;                                           //   Set target bodies begin iterator
       BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
@@ -139,9 +139,9 @@ void Evaluator::getTargetBody(Cells &cells, Lists &lists) {     // Get body valu
   stopTimer("Get targetB  ");                                   // Stop timer
 }
 
-void Evaluator::getTargetCell(Cells &cells, Lists &lists, bool isM=true) {// Get body values from target buffer
+void Evaluator::getTargetCell(Lists &lists, bool isM=true) {    // Get body values from target buffer
   startTimer("Get targetC  ");                                  // Start timer
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
+  for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
       int begin = targetBegin[CI];                              //   Offset of target coefs
       if( isM ) {                                               //   If target is M
@@ -175,128 +175,144 @@ void Evaluator::clearBuffers() {                                // Clear GPU buf
 }
 
 void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
-  BI0 = ibodies.begin();                                        // Set target bodies begin iterator
-  BIN = ibodies.end();                                          // Set target bodies end iterator
-  BJ0 = jbodies.begin();                                        // Set source bodies begin iterator
-  BJN = jbodies.end();                                          // Set source bodies end iterator
-  if( onCPU ) {                                                 // If calculation is to be done on CPU
-    Xperiodic = 0;                                              //  Set periodic coordinate offset
-    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
-      LaplaceP2P_CPU();                                         //   Evaluate P2P kernel
-    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
-      BiotSavartP2P_CPU();                                      //   Evaluate P2P kernel
-    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
-      StretchingP2P_CPU();                                      //   Evaluate P2P kernel
-    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
-      GaussianP2P_CPU();                                        //   Evaluate P2P kernel
-    } else {                                                    //  If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           //  Endif for kernel type
-  } else {                                                      // If calculation is to be done on GPU
-    constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
-    for( B_iter B=BJ0; B!=BJN; ++B ) {                          //  Loop over source bodies
-      sourceHost.push_back(B->X[0]);                            //  Copy x position to GPU buffer
-      sourceHost.push_back(B->X[1]);                            //  Copy y position to GPU buffer
-      sourceHost.push_back(B->X[2]);                            //  Copy z position to GPU buffer
-      sourceHost.push_back(B->SRC[0]);                          //  Copy 1st source value to GPU buffer
-      sourceHost.push_back(B->SRC[1]);                          //  Copy 2nd source value to GPU buffer
-      sourceHost.push_back(B->SRC[2]);                          //  Copy 3rd source value to GPU buffer
-      sourceHost.push_back(B->SRC[3]);                          //  Copy 4th source value to GPU buffer
-    }                                                           //  End loop over source bodies
-    int key = 0;                                                //  Initialize key to range of leafs in source cells
-    int blocks = (BIN - BI0 - 1) / THREADS + 1;                 //  Number of thread blocks needed for this target cell
-    for( int i=0; i!=blocks; ++i ) {                            //  Loop over thread blocks
-      keysHost.push_back(key);                                  //   Save key to range of leafs in source cells
-    }                                                           //  End loop over thread blocks
-    rangeHost.push_back(1);                                     //  Save size of interaction list
-    rangeHost.push_back(0);                                     //  Set begin index of leafs
-    rangeHost.push_back(BJN-BJ0);                               //  Set number of leafs
-    rangeHost.push_back(Icenter);                               //  Set periodic image flag
-    for( B_iter B=BI0; B!=BIN; ++B ) {                          //  Loop over target bodies
-      targetHost.push_back(B->X[0]);                            //   Copy x position to GPU buffer
-      targetHost.push_back(B->X[1]);                            //   Copy y position to GPU buffer
-      targetHost.push_back(B->X[2]);                            //   Copy z position to GPU buffer
-      targetHost.push_back(B->SRC[0]);                          //   Copy 1st target value to GPU buffer
-      targetHost.push_back(B->SRC[1]);                          //   Copy 2nd target value to GPU buffer
-      targetHost.push_back(B->SRC[2]);                          //   Copy 3rd target value to GPU buffer
-    }                                                           //  End loop over target bodies
-    int numPad = blocks * THREADS - (BIN - BI0);                //  Number of elements to pad in target GPU buffer
-    for( int i=0; i!=numPad; ++i ) {                            //  Loop over elements to pad
-      targetHost.push_back(0);                                  //   Pad x position in GPU buffer
-      targetHost.push_back(0);                                  //   Pad y position in GPU buffer
-      targetHost.push_back(0);                                  //   Pad z position in GPU buffer
-      targetHost.push_back(0);                                  //   Pad 1st target value to GPU buffer
-      targetHost.push_back(0);                                  //   Pad 2nd target value to GPU buffer
-      targetHost.push_back(0);                                  //   Pad 3rd target value to GPU buffer
-    }                                                           //  End loop over elements to pad
-    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
-      LaplaceP2P();                                             //   Evaluate P2P kernel
-    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
-      BiotSavartP2P();                                          //   Evaluate P2P kernel
-    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
-      StretchingP2P();                                          //   Evaluate P2P kernel
-    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
-      GaussianP2P();                                            //   Evaluate P2P kernel
-    } else {                                                    //  If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           //  Endif for kernel type
-    if( kernelName == "Gaussian" ) {                            //  If Gaussian kernel
-      for( B_iter B=BI0; B!=BIN; ++B ) {                        //   Loop over target bodies
-        B->TRG[0] += targetHost[6*(B-BI0)+0];                   //    Copy 1st target value from GPU buffer
-      }                                                         //   End loop over target bodies
-    } else {                                                    //  If not Gaussian kernel
-      for( B_iter B=BI0; B!=BIN; ++B ) {                        //   Loop over target bodies
-        B->TRG[0] += targetHost[6*(B-BI0)+0];                   //    Copy 1st target value from GPU buffer
-        B->TRG[1] += targetHost[6*(B-BI0)+1];                   //    Copy 2nd target value from GPU buffer
-        B->TRG[2] += targetHost[6*(B-BI0)+2];                   //    Copy 3rd target value from GPU buffer
-        B->TRG[3] += targetHost[6*(B-BI0)+3];                   //    Copy 4th target value from GPU buffer
-      }                                                         //   End loop over target bodies
-    }                                                           //  Endif for Gaussian kernel
-    keysHost.clear();                                           //  Clear keys vector
-    rangeHost.clear();                                          //  Clear range vector
-    constHost.clear();                                          //  Clear const vector
-    targetHost.clear();                                         //  Clear target vector
-    sourceHost.clear();                                         //  Clear source vector
-  }                                                             // Endif for CPU/GPU switch
+  int ioffset = 0;                                              // Initialzie offset for icall loops
+  for( int icall=0; icall!=int(ibodies.size()-1)/MAXBODY+1; ++icall ) {// Loop over icall
+    BI0 = ibodies.begin()+ioffset;                            // Set target bodies begin iterator
+    BIN = ibodies.begin()+std::min(ioffset+MAXBODY,int(ibodies.size()));// Set target bodies end iterator
+    int joffset = 0;                                            // Initialize offset for jcall loops
+    for( int jcall=0; jcall!=int(jbodies.size()-1)/MAXBODY+1; ++jcall ) {// Loop over jcall
+      BJ0 = jbodies.begin()+joffset;                            // Set source bodies begin iterator
+      BJN = jbodies.begin()+std::min(joffset+MAXBODY,int(jbodies.size()));// Set source bodies end iterator
+      if( onCPU ) {                                             // If calculation is to be done on CPU
+        Xperiodic = 0;                                          //  Set periodic coordinate offset
+        if( kernelName == "Laplace" ) {                         //  If Laplace kernel
+          LaplaceP2P_CPU();                                     //   Evaluate P2P kernel
+        } else if ( kernelName == "BiotSavart" ) {              //  If Biot Savart kernel
+          BiotSavartP2P_CPU();                                  //   Evaluate P2P kernel
+        } else if ( kernelName == "Stretching" ) {              //  If Stretching kernel
+          StretchingP2P_CPU();                                  //   Evaluate P2P kernel
+        } else if ( kernelName == "Gaussian" ) {                //  If Gaussian kernel
+          GaussianP2P_CPU();                                    //   Evaluate P2P kernel
+        } else {                                                //  If kernel is none of the above
+          if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+          abort();                                              //  Abort execution
+        }                                                       //  Endif for kernel type
+      } else {                                                  // If calculation is to be done on GPU
+        constHost.push_back(2*R0);                              //  Copy domain size to GPU buffer
+        for( B_iter B=BJ0; B!=BJN; ++B ) {                      //  Loop over source bodies
+          sourceHost.push_back(B->X[0]);                        //  Copy x position to GPU buffer
+          sourceHost.push_back(B->X[1]);                        //  Copy y position to GPU buffer
+          sourceHost.push_back(B->X[2]);                        //  Copy z position to GPU buffer
+          sourceHost.push_back(B->SRC[0]);                      //  Copy 1st source value to GPU buffer
+          sourceHost.push_back(B->SRC[1]);                      //  Copy 2nd source value to GPU buffer
+          sourceHost.push_back(B->SRC[2]);                      //  Copy 3rd source value to GPU buffer
+          sourceHost.push_back(B->SRC[3]);                      //  Copy 4th source value to GPU buffer
+        }                                                       //  End loop over source bodies
+        int key = 0;                                            //  Initialize key to range of leafs in source cells
+        int blocks = (BIN - BI0 - 1) / THREADS + 1;             //  Number of thread blocks needed for this target cell
+        for( int i=0; i!=blocks; ++i ) {                        //  Loop over thread blocks
+          keysHost.push_back(key);                              //   Save key to range of leafs in source cells
+        }                                                       //  End loop over thread blocks
+        rangeHost.push_back(1);                                 //  Save size of interaction list
+        rangeHost.push_back(0);                                 //  Set begin index of leafs
+        rangeHost.push_back(BJN-BJ0);                           //  Set number of leafs
+        rangeHost.push_back(Icenter);                           //  Set periodic image flag
+        for( B_iter B=BI0; B!=BIN; ++B ) {                      //  Loop over target bodies
+          targetHost.push_back(B->X[0]);                        //   Copy x position to GPU buffer
+          targetHost.push_back(B->X[1]);                        //   Copy y position to GPU buffer
+          targetHost.push_back(B->X[2]);                        //   Copy z position to GPU buffer
+          targetHost.push_back(B->SRC[0]);                      //   Copy 1st target value to GPU buffer
+          targetHost.push_back(B->SRC[1]);                      //   Copy 2nd target value to GPU buffer
+          targetHost.push_back(B->SRC[2]);                      //   Copy 3rd target value to GPU buffer
+        }                                                       //  End loop over target bodies
+        int numPad = blocks * THREADS - (BIN - BI0);            //  Number of elements to pad in target GPU buffer
+        for( int i=0; i!=numPad; ++i ) {                        //  Loop over elements to pad
+          targetHost.push_back(0);                              //   Pad x position in GPU buffer
+          targetHost.push_back(0);                              //   Pad y position in GPU buffer
+          targetHost.push_back(0);                              //   Pad z position in GPU buffer
+          targetHost.push_back(0);                              //   Pad 1st target value to GPU buffer
+          targetHost.push_back(0);                              //   Pad 2nd target value to GPU buffer
+          targetHost.push_back(0);                              //   Pad 3rd target value to GPU buffer
+        }                                                       //  End loop over elements to pad
+        if( kernelName == "Laplace" ) {                         //  If Laplace kernel
+          LaplaceP2P();                                         //   Evaluate P2P kernel
+        } else if ( kernelName == "BiotSavart" ) {              //  If Biot Savart kernel
+          BiotSavartP2P();                                      //   Evaluate P2P kernel
+        } else if ( kernelName == "Stretching" ) {              //  If Stretching kernel
+          StretchingP2P();                                      //   Evaluate P2P kernel
+        } else if ( kernelName == "Gaussian" ) {                //  If Gaussian kernel
+          GaussianP2P();                                        //   Evaluate P2P kernel
+        } else {                                                //  If kernel is none of the above
+          if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+          abort();                                              //  Abort execution
+        }                                                       //  Endif for kernel type
+        if( kernelName == "Gaussian" ) {                        //  If Gaussian kernel
+          for( B_iter B=BI0; B!=BIN; ++B ) {                    //   Loop over target bodies
+            B->TRG[0] += targetHost[6*(B-BI0)+0];               //    Copy 1st target value from GPU buffer
+          }                                                     //   End loop over target bodies
+        } else {                                                //  If not Gaussian kernel
+          for( B_iter B=BI0; B!=BIN; ++B ) {                    //   Loop over target bodies
+            B->TRG[0] += targetHost[6*(B-BI0)+0];               //    Copy 1st target value from GPU buffer
+            B->TRG[1] += targetHost[6*(B-BI0)+1];               //    Copy 2nd target value from GPU buffer
+            B->TRG[2] += targetHost[6*(B-BI0)+2];               //    Copy 3rd target value from GPU buffer
+            B->TRG[3] += targetHost[6*(B-BI0)+3];               //    Copy 4th target value from GPU buffer
+          }                                                     //   End loop over target bodies
+        }                                                       //  Endif for Gaussian kernel
+        keysHost.clear();                                       //  Clear keys vector
+        rangeHost.clear();                                      //  Clear range vector
+        constHost.clear();                                      //  Clear const vector
+        targetHost.clear();                                     //  Clear target vector
+        sourceHost.clear();                                     //  Clear source vector
+      }                                                         // Endif for CPU/GPU switch
+      joffset += MAXBODY;                                       // Increment jcall offset
+    }                                                           // End loop over jcall
+    ioffset += MAXBODY;                                         // Increment icall offset
+  }                                                             // End loop over icall
 }
 
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
-  startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator for target
   CJ0 = cells.begin();                                          // Set begin iterator for source
-  constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
-  Lists listP2M(cells.size());                                  // Define P2M interation list vector
-  Maps  flagP2M(cells.size());                                  // Define P2M periodic image flag
-  for( CJ=cells.begin(); CJ!=cells.end(); ++CJ ) {              // Loop over target cells
-    CJ->M = CJ->L = 0;                                          //  Initialize multipole & local coefficients
-    listP2M[CJ-CJ0].push_back(CJ);                              //  Push source cell into P2M interaction list
-    flagP2M[CJ-CJ0][CJ] |= Icenter;                             //  Flip bit of periodic image flag
-    sourceSize[CJ] = CJ->NLEAF;                                 //  Key : iterator, Value : number of leafs
-  }                                                             // End loop over source map
-  stopTimer("Get list     ");                                   // Stop timer
-  setSourceBody();                                              // Set source buffer for bodies
-  setTargetCell(cells,listP2M,flagP2M);                         // Set target buffer for cells
-  if( kernelName == "Laplace" ) {                               // If Laplace kernel
-    LaplaceP2M();                                               //  Evaluate P2M kernel
-  } else if ( kernelName == "BiotSavart" ) {                    // If Biot Savart kernel
-    BiotSavartP2M();                                            //  Evaluate P2M kernel
-  } else if ( kernelName == "Stretching" ) {                    // If Stretching kernel
-    StretchingP2M();                                            //  Evaluate P2M kernel
-  } else if ( kernelName == "Gaussian" ) {                      // If Gaussian kernel
-    GaussianP2M();                                              //  Evaluate P2M kernel
-  } else {                                                      // If kernel is none of the above
-    if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-    abort();                                                    //  Abort execution
-  }                                                             // Endif for kernel type
-  getTargetCell(cells,listP2M);                                 // Get body values from target buffer
-  clearBuffers();                                               // Clear GPU buffers
+  int ioffset = 0;                                              // Initialzie offset for icall loops
+  for( int icall=0; icall!=int(cells.size()-1)/MAXCELL+1; ++icall ) {// Loop over icall
+    CIB = cells.begin()+ioffset;                                // Set begin iterator for target per cell
+    CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per cell
+    startTimer("Get list     ");                                // Start timer
+    constHost.push_back(2*R0);                                  // Copy domain size to GPU buffer
+    Lists listP2M(cells.size());                                // Define P2M interation list vector
+    Maps  flagP2M(cells.size());                                // Define P2M periodic image flag
+    for( CJ=CIB; CJ!=CIE; ++CJ ) {                              // Loop over target cells
+      CJ->M = CJ->L = 0;                                        //  Initialize multipole & local coefficients
+      listP2M[CJ-CJ0].push_back(CJ);                            //  Push source cell into P2M interaction list
+      flagP2M[CJ-CJ0][CJ] |= Icenter;                           //  Flip bit of periodic image flag
+      sourceSize[CJ] = CJ->NLEAF;                               //  Key : iterator, Value : number of leafs
+    }                                                           // End loop over source map
+    stopTimer("Get list     ");                                 // Stop timer
+    setSourceBody();                                            // Set source buffer for bodies
+    setTargetCell(listP2M,flagP2M);                             // Set target buffer for cells
+    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+      LaplaceP2M();                                             //  Evaluate P2M kernel
+    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+      BiotSavartP2M();                                          //  Evaluate P2M kernel
+    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+      StretchingP2M();                                          //  Evaluate P2M kernel
+    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+      GaussianP2M();                                            //  Evaluate P2M kernel
+    } else {                                                    // If kernel is none of the above
+      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+      abort();                                                  //  Abort execution
+    }                                                           // Endif for kernel type
+    getTargetCell(listP2M);                                     // Get body values from target buffer
+    clearBuffers();                                             // Clear GPU buffers
+    ioffset += MAXCELL;                                         // Increment ioffset
+  }
 }
 
 void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
   CI0 = cells.begin();                                          // Set begin iterator for target
   CJ0 = cells.begin();                                          // Set begin iterator for source
+  CIB = cells.begin();                                          // Set begin iterator for target per call
+  CIE = cells.end();                                            // Set end iterator for target per call
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
   Lists listM2M(cells.size());                                  // Define M2M interation list vector
   Maps  flagM2M(cells.size());                                  // Define M2M periodic image flag
@@ -313,7 +329,7 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
     }                                                           //  End loop over cells
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell();                                            //  Set source buffer for cells
-    setTargetCell(cells,listM2M,flagM2M);                       //  Set target buffer for cells
+    setTargetCell(listM2M,flagM2M);                             //  Set target buffer for cells
     if( kernelName == "Laplace" ) {                             //  If Laplace kernel
       LaplaceM2M();                                             //   Evaluate M2M kernel
     } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
@@ -326,7 +342,7 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution
     }                                                           //  Endif for kernel type
-    getTargetCell(cells,listM2M);                               //  Get body values from target buffer
+    getTargetCell(listM2M);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     level--;                                                    //  Decrement level
   }                                                             // End while loop over levels
@@ -335,6 +351,8 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
 void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
   startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator
+  CIB = cells.begin();                                          // Set begin iterator for target per call
+  CIE = cells.end();                                            // Set end iterator for target per call
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
     for( L_iter L=listM2L[CI-CI0].begin(); L!=listM2L[CI-CI0].end(); ++L ) {//  Loop over interaction list
@@ -344,7 +362,7 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
   }                                                             // End loop over target cells
   stopTimer("Get list     ");                                   // Stop timer
   setSourceCell();                                              // Set source buffer for cells
-  setTargetCell(cells,listM2L,flagM2L);                         // Set target buffer for cells
+  setTargetCell(listM2L,flagM2L);                               // Set target buffer for cells
   if( kernelName == "Laplace" ) {                               // If Laplace kernel
     LaplaceM2L();                                               //  Evaluate M2L kernel
   } else if ( kernelName == "BiotSavart" ) {                    // If Biot Savart kernel
@@ -357,7 +375,7 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
     if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
     abort();                                                    //  Abort execution
   }                                                             // Endif for kernel type
-  getTargetCell(cells,listM2L,false);                           // Get body values from target buffer
+  getTargetCell(listM2L,false);                                 // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
   listM2L.clear();                                              // Clear interaction lists
   flagM2L.clear();                                              // Clear periodic image flags
@@ -367,6 +385,8 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
   startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator for target
   CJ0 = cells.begin();                                          // Set begin iterator for source
+  CIB = cells.begin();                                          // Set begin iterator for target per call
+  CIE = cells.end();                                            // Set end iterator for target per call
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
     for( L_iter L=listM2P[CI-CI0].begin(); L!=listM2P[CI-CI0].end(); ++L ) {//  Loop over interaction list
@@ -376,7 +396,7 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
   }                                                             // End loop over target cells
   stopTimer("Get list     ");                                   // Stop timer
   setSourceCell();                                              // Set source buffer for cells
-  setTargetBody(cells,listM2P,flagM2P);                         // Set target buffer for bodies
+  setTargetBody(listM2P,flagM2P);                               // Set target buffer for bodies
   if( kernelName == "Laplace" ) {                               // If Laplace kernel
     LaplaceM2P();                                               //  Evaluate M2P kernel
   } else if ( kernelName == "BiotSavart" ) {                    // If Biot Savart kernel
@@ -389,7 +409,7 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
     if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
     abort();                                                    //  Abort execution
   }                                                             // Endif for kernel type
-  getTargetBody(cells,listM2P);                                 // Get body values from target buffer
+  getTargetBody(listM2P);                                       // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
   listM2P.clear();                                              // Clear interaction lists
   flagM2P.clear();                                              // Clear periodic image flags
@@ -398,6 +418,8 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
 void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
   startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator
+  CIB = cells.begin();                                          // Set begin iterator for target per call
+  CIE = cells.end();                                            // Set end iterator for target per call
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
     for( L_iter L=listP2P[CI-CI0].begin(); L!=listP2P[CI-CI0].end(); ++L ) {//  Loop over interaction list
@@ -407,7 +429,7 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
   }                                                             // End loop over target cells
   stopTimer("Get list     ");                                   // Stop timer
   setSourceBody();                                              // Set source buffer for bodies
-  setTargetBody(cells,listP2P,flagP2P);                         // Set target buffer for bodies
+  setTargetBody(listP2P,flagP2P);                               // Set target buffer for bodies
   if( kernelName == "Laplace" ) {                               // If Laplace kernel
     LaplaceP2P();                                               // Evaluate P2P kernel
   } else if ( kernelName == "BiotSavart" ) {                    // If Biot Savart kernel
@@ -420,7 +442,7 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
     if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
     abort();                                                    //  Abort execution
   }                                                             // Endif for kernel type
-  getTargetBody(cells,listP2P);                                 // Get body values from target buffer
+  getTargetBody(listP2P);                                       // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
   listP2P.clear();                                              // Clear interaction lists
   flagP2P.clear();                                              // Clear periodic image flags
@@ -428,6 +450,8 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
 
 void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
   CI0 = cells.begin();                                          // Set begin iterator
+  CIB = cells.begin();                                          // Set begin iterator for target per call
+  CIE = cells.end();                                            // Set end iterator for target per call
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
   Lists listL2L(cells.size());                                  // Define L2L interation list vector
   Maps  flagL2L(cells.size());                                  // Define L2L periodic image flag
@@ -447,7 +471,7 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
     }                                                           //  End loop over cells topdown
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell(false);                                       //  Set source buffer for cells
-    setTargetCell(cells,listL2L,flagL2L);                       //  Set target buffer for cells
+    setTargetCell(listL2L,flagL2L);                             //  Set target buffer for cells
     if( kernelName == "Laplace" ) {                             //  If Laplace kernel
       LaplaceL2L();                                             //   Evaluate L2L kernel
     } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
@@ -460,7 +484,7 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //   Abort execution
     }                                                           //  Endif for kernel type
-    getTargetCell(cells,listL2L,false);                         //  Get body values from target buffer
+    getTargetCell(listL2L,false);                               //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     level++;                                                    //  Increment level
   }                                                             // End while loop over levels
@@ -469,6 +493,8 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
 void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
   startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator
+  CIB = cells.begin();                                          // Set begin iterator for target per call
+  CIE = cells.end();                                            // Set end iterator for target per call
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
   Lists listL2P(cells.size());                                  // Define L2P interation list vector
   Maps  flagL2P(cells.size());                                  // Define L2P periodic image flag
@@ -481,7 +507,7 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
   }                                                             // End loop over cells topdown
   stopTimer("Get list     ");                                   // Stop timer
   setSourceCell(false);                                         // Set source buffer for cells
-  setTargetBody(cells,listL2P,flagL2P);                         // Set target buffer for bodies
+  setTargetBody(listL2P,flagL2P);                               // Set target buffer for bodies
   if( kernelName == "Laplace" ) {                               // If Laplace kernel
     LaplaceL2P();                                               //  Evaluate L2P kernel
   } else if ( kernelName == "BiotSavart" ) {                    // If Biot Savart kernel
@@ -494,6 +520,6 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
     if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
     abort();                                                    //  Abort execution
   }                                                             // Endif for kernel type
-  getTargetBody(cells,listL2P);                                 // Get body values from target buffer
+  getTargetBody(listL2P);                                       // Get body values from target buffer
   clearBuffers();                                               // Clear GPU buffers
 }

@@ -19,7 +19,6 @@ private:
       B->TRG[0] = 0;
     }
     setKernel("Gaussian");
-    setGlobDomain(bodies);
     octsection(bodies);
     bottomup(bodies,cells);
     commBodies(cells);
@@ -161,6 +160,7 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[3] -= realSend[B-bodies.begin()];
     }
+    setGlobDomain(bodies);
     rbf(bodies,2);
     rbf(bodies,1);
     rbf(bodies,0);
@@ -172,7 +172,6 @@ public:
       B->TRG = 0;
     }
     setKernel("BiotSavart");
-    setGlobDomain(bodies);
     octsection(bodies);
     bottomup(bodies,cells);
     commBodies(cells);
@@ -258,7 +257,6 @@ public:
     }
 
     setKernel("Gaussian");
-    setGlobDomain(bodies);
     octsection(bodies);
     octsection(jbodies);
     bottomup(bodies,cells);
