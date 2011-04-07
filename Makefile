@@ -26,9 +26,6 @@ cleanall:
 	rm -f ../unit_test/*.o ../unit_test/*.out ../unit_test/*.sum ../unit_test/time
 	rm -f ../example/*.o ../example/*.out ../example/time ../kernel/*.o ../wrapper/*.o
 	rm -f ../vortex/*.o ../vortex/*.out ../vortex/time
-cleanlib:
-	rm -f ../lib/*.a ../lib/*.so
 save    :
 	make cleanall
-	make cleanlib
 	tar zcvf ../../exafmm.tgz ../../exafmm

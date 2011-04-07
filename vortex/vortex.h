@@ -38,11 +38,7 @@ private:
       B->TRG[0] = 0;
       resSend += r[i] * r[i];
     }
-#if 1
     MPI_Allreduce(&resSend,&resRecv,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
-#else
-    resRecv = resSend;
-#endif
     float res0 = resRecv;
     int it = 0;
     while( sqrt(res0) > tol && sqrt(resRecv / res0) > tol && it < itmax ) {
@@ -65,11 +61,7 @@ private:
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
         pApSend += B->SRC[0] * B->TRG[0];
       }
-#if 1
       MPI_Allreduce(&pApSend,&pApRecv,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
-#else
-      pApRecv = pApSend;
-#endif
       float alpha = resRecv / pApRecv;
       float resOld = resRecv;
       resSend = 0;
@@ -79,11 +71,7 @@ private:
         r[i] -= alpha * B->TRG[0];
         resSend += r[i] * r[i];
       }
-#if 1
       MPI_Allreduce(&resSend,&resRecv,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
-#else
-      resRecv = resSend;
-#endif
       float beta = resRecv / resOld;
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
         int i = B-bodies.begin();
@@ -119,46 +107,7 @@ public:
   void readData(Bodies &bodies) {                               // Initialize source values
     char fname[256];
     sprintf(fname,"../../isotropic/spectral/initialu%4.4d",RANK);
-#if 0
     std::ifstream fid(fname,std::ios::in);
-#else
-    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
-#endif
-    float dummy;
-    for( int rank=0; rank!=SIZE; ++rank ) {
-      if( rank == RANK ) {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-          fid >> B->SRC[0];
-        }
-      } else {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-          fid >> dummy;
-        }
-      }
-    }
-    for( int rank=0; rank!=SIZE; ++rank ) {
-      if( rank == RANK ) {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-          fid >> B->SRC[1];
-        }
-      } else {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-          fid >> dummy;
-        }
-      }
-    }
-    for( int rank=0; rank!=SIZE; ++rank ) {
-      if( rank == RANK ) {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-          fid >> B->SRC[2];
-        }
-      } else {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-          fid >> dummy;
-        }
-      }
-    }
-/*
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> B->SRC[0];
     }
@@ -168,20 +117,13 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> B->SRC[2];
     }
-*/
     fid.close();
 
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
-#if 1
       int ix = (i+numBodies*RANK) / nx / nx;
       int iy = (i+numBodies*RANK) / nx % nx;
       int iz = (i+numBodies*RANK) % nx;
-#else
-      int ix = i / nx / nx;
-      int iy = i / nx % nx;
-      int iz = i % nx;
-#endif
       B->IBODY = i;                                             //  Tag body with initial index
       B->IPROC = RANK;                                          //  Tag body with initial MPI rank
       B->X[0] = (ix + .5) * dx - M_PI;                          //  Initialize x position
@@ -245,11 +187,7 @@ public:
     double diff = 0, norm = 0;
     char fname[256];
     sprintf(fname,"../../isotropic/spectral/initialu%4.4d",RANK);
-#if 1
     std::ifstream fid(fname,std::ios::in);
-#else
-    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
-#endif
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> u;
       diff += (B->TRG[0] - u) * (B->TRG[0] - u);
@@ -310,15 +248,9 @@ public:
     Bodies bodies2 = bodies, jbodies = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
-#if 1
       int ix = (i+numBodies*RANK) / nx / nx;
       int iy = (i+numBodies*RANK) / nx % nx;
       int iz = (i+numBodies*RANK) % nx;
-#else
-      int ix = i / nx / nx;
-      int iy = i / nx % nx;
-      int iz = i % nx;
-#endif
       B->X[0] = (ix + .5) * dx - M_PI;
       B->X[1] = (iy + .5) * dx - M_PI;
       B->X[2] = (iz + .5) * dx - M_PI;

@@ -31,11 +31,7 @@ public:
 
 public:
   FastFourierTransform(int N) : nx(N) {
-#if 1
     nxLocal    = nx / SIZE;
-#else
-    nxLocal    = nx;
-#endif
     numBodies  = nx * nx * nxLocal;
     numSend    = nx * nxLocal * nxLocal;
     Kk         = new int   [nx];
@@ -95,15 +91,8 @@ public:
         }
       }
     }
-#if 1
     MPI_Alltoall(realSend,numSend,MPI_FLOAT,realRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
     MPI_Alltoall(imagSend,numSend,MPI_FLOAT,imagRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
-#else
-    for( int i=0; i!=numBodies; ++i ) {
-      realRecv[i] = realSend[i];
-      imagRecv[i] = imagSend[i];
-    }
-#endif
     for( int ix=0; ix<nxLocal; ++ix ) {
       for( int iy=0; iy<nx; ++iy ) {
         for( int iz=0; iz<nx; ++iz ) {
@@ -139,15 +128,8 @@ public:
         }
       }
     }
-#if 1
     MPI_Alltoall(realSend,numSend,MPI_FLOAT,realRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
     MPI_Alltoall(imagSend,numSend,MPI_FLOAT,imagRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
-#else
-    for( int i=0; i!=numBodies; ++i ) {
-      realRecv[i] = realSend[i];
-      imagRecv[i] = imagSend[i];
-    }
-#endif
     for( int ix=0; ix<nxLocal; ++ix ) {
       for( int iy=0; iy<nx; ++iy ) {
         for( int iz=0; iz<nx; ++iz ) {
@@ -232,15 +214,8 @@ public:
   }
 
   void writeSpectrum() {
-#if 1
     MPI_Reduce(NkSend,NkRecv,nx,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
     MPI_Reduce(EkSend,EkRecv,nx,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
-#else
-    for( int i=0; i!=nx; ++i ) {
-      NkRecv[i] = NkSend[i];
-      EkRecv[i] = EkSend[i];
-    }
-#endif
     if( RANK == 0 ) {
       std::ofstream fid("statistics.dat",std::ios::in | std::ios::app);
       for( int k=0; k<nx; ++k ) {
