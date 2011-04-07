@@ -94,3 +94,4 @@ all      :
 	make let
 	make parallelrun
 	make unpartition
+	make ijparallelrun

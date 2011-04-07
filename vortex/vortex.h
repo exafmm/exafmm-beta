@@ -11,7 +11,7 @@ private:
   void rbf(Bodies &bodies, int d) {
     const int itmax = 5;
     const float tol = 1e-4;
-    Cells cells, jcells;
+    Cells cells;
 
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
@@ -24,6 +24,7 @@ private:
     bottomup(bodies,cells);
     commBodies(cells);
     Bodies jbodies = bodies;
+    Cells jcells = cells;
     commCells(jbodies,jcells);
     downward(cells,jcells,1);
     unpartition(bodies);
@@ -55,6 +56,7 @@ private:
       bottomup(bodies,cells);
       commBodies(cells);
       jbodies = bodies;
+      jcells = cells;
       commCells(jbodies,jcells);
       downward(cells,jcells,1);
       unpartition(bodies);
@@ -117,7 +119,46 @@ public:
   void readData(Bodies &bodies) {                               // Initialize source values
     char fname[256];
     sprintf(fname,"../../isotropic/spectral/initialu%4.4d",RANK);
+#if 0
     std::ifstream fid(fname,std::ios::in);
+#else
+    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
+#endif
+    float dummy;
+    for( int rank=0; rank!=SIZE; ++rank ) {
+      if( rank == RANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid >> B->SRC[0];
+        }
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid >> dummy;
+        }
+      }
+    }
+    for( int rank=0; rank!=SIZE; ++rank ) {
+      if( rank == RANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid >> B->SRC[1];
+        }
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid >> dummy;
+        }
+      }
+    }
+    for( int rank=0; rank!=SIZE; ++rank ) {
+      if( rank == RANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid >> B->SRC[2];
+        }
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid >> dummy;
+        }
+      }
+    }
+/*
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> B->SRC[0];
     }
@@ -127,13 +168,20 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> B->SRC[2];
     }
+*/
     fid.close();
 
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
+#if 1
+      int ix = (i+numBodies*RANK) / nx / nx;
+      int iy = (i+numBodies*RANK) / nx % nx;
+      int iz = (i+numBodies*RANK) % nx;
+#else
       int ix = i / nx / nx;
       int iy = i / nx % nx;
       int iz = i % nx;
+#endif
       B->IBODY = i;                                             //  Tag body with initial index
       B->IPROC = RANK;                                          //  Tag body with initial MPI rank
       B->X[0] = (ix + .5) * dx - M_PI;                          //  Initialize x position
@@ -177,7 +225,7 @@ public:
   }
 
   void initialError(Bodies &bodies) {
-    Cells cells, jcells;
+    Cells cells;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG = 0;
     }
@@ -187,6 +235,7 @@ public:
     bottomup(bodies,cells);
     commBodies(cells);
     Bodies jbodies = bodies;
+    Cells jcells = cells;
     commCells(jbodies,jcells);
     downward(cells,jcells,1);
     unpartition(bodies);
@@ -196,7 +245,11 @@ public:
     double diff = 0, norm = 0;
     char fname[256];
     sprintf(fname,"../../isotropic/spectral/initialu%4.4d",RANK);
+#if 1
     std::ifstream fid(fname,std::ios::in);
+#else
+    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
+#endif
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> u;
       diff += (B->TRG[0] - u) * (B->TRG[0] - u);
@@ -257,9 +310,15 @@ public:
     Bodies bodies2 = bodies, jbodies = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
+#if 1
+      int ix = (i+numBodies*RANK) / nx / nx;
+      int iy = (i+numBodies*RANK) / nx % nx;
+      int iz = (i+numBodies*RANK) % nx;
+#else
       int ix = i / nx / nx;
       int iy = i / nx % nx;
       int iz = i % nx;
+#endif
       B->X[0] = (ix + .5) * dx - M_PI;
       B->X[1] = (iy + .5) * dx - M_PI;
       B->X[2] = (iz + .5) * dx - M_PI;
@@ -281,7 +340,7 @@ public:
       B->TRG[1] = B->TRG[0];
       B->TRG[0] = 0;
     }
-    for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
+    for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
       B->SRC[0] = B->SRC[1];
     }
 
@@ -301,7 +360,7 @@ public:
       B->TRG[2] = B->TRG[0];
       B->TRG[0] = 0;
     }
-    for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
+    for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
       B->SRC[0] = B->SRC[2];
     }
 

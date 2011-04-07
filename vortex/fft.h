@@ -172,7 +172,7 @@ public:
   void xDerivative() {
     forwardFFT();
     for( int i=0; i!=numBodies; ++i ) {
-      int ix = i % nx;
+      int ix = (i + numBodies * RANK) % nx;
       realRecv[i] = -Kk[ix] * imagSend[i];
       imagRecv[i] =  Kk[ix] * realSend[i];
     }
@@ -182,7 +182,7 @@ public:
   void yDerivative() {
     forwardFFT();
     for( int i=0; i!=numBodies; ++i ) {
-      int iy = i / nx % nx;
+      int iy = (i + numBodies * RANK) / nx % nx;
       realRecv[i] = -Kk[iy] * imagSend[i];
       imagRecv[i] =  Kk[iy] * realSend[i];
     }
@@ -192,7 +192,7 @@ public:
   void zDerivative() {
     forwardFFT();
     for( int i=0; i!=numBodies; ++i ) {
-      int iz = i / nx / nx;
+      int iz = (i + numBodies * RANK) / nx / nx;
       realRecv[i] = -Kk[iz] * imagSend[i];
       imagRecv[i] =  Kk[iz] * realSend[i];
     }
@@ -203,23 +203,29 @@ public:
     for( int k=0; k<nx; ++k ) {
       EkSend[k] = NkSend[k] = 0;
     }
-    for( int ix=0; ix<nx/2; ++ix ) {
+    for( int ix=0; ix<nxLocal; ++ix ) {
       for( int iy=0; iy<nx/2; ++iy ) {
         for( int iz=0; iz<nx/2; ++iz ) {
-          int k = floor(sqrtf(ix * ix + iy * iy + iz * iz));
-          NkSend[k]++;
+          int iix = ix + nxLocal * RANK;
+          if( iix < nx/2 ) {
+            int k = floor(sqrtf(ix * ix + iy * iy + iz * iz));
+            NkSend[k]++;
+          }
         }
       }
     }
   }
 
   void addSpectrum() {
-    for( int ix=0; ix<nx/2; ++ix ) {
+    for( int ix=0; ix<nxLocal; ++ix ) {
       for( int iy=0; iy<nx/2; ++iy ) {
         for( int iz=0; iz<nx/2; ++iz ) {
-          int i = ix * nx * nx + iy * nx + iz;
-          int k = floor(sqrtf(ix * ix + iy * iy + iz * iz));
-          EkSend[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]) * 4 * M_PI * k * k;
+          int iix = ix + nxLocal * RANK;
+          if( iix < nx/2 ) {
+            int i = ix * nx * nx + iy * nx + iz;
+            int k = floor(sqrtf(iix * iix + iy * iy + iz * iz));
+            EkSend[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]) * 4 * M_PI * k * k;
+          }
         }
       }
     }

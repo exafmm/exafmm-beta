@@ -14,14 +14,14 @@ public:
       if( kernelName == "Laplace" ) {                           //  If Laplace kernel
         B->SRC[0] = 1. / bodies.size() / MPISIZE;               //   Initialize mass/charge
       } else if ( kernelName == "BiotSavart" ) {                //  If Biot Savart kernel
-        B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
-        B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
-        B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+        B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize x vortex strength
+        B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize y vortex strength
+        B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize z vortex strength
         B->SRC[3] = powf(bodies.size() * MPISIZE,-1./3);        //   Initialize core radius
       } else if ( kernelName == "Stretching" ) {                //  If Stretching kernel
-        B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
-        B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
-        B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+        B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize x vortex strength
+        B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize y vortex strength
+        B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize z vortex strength
         B->SRC[3] = powf(bodies.size() * MPISIZE,-1./3);        //   Initialize core radius
       } else if ( kernelName == "Gaussian" ) {                  //  If Gaussian kernel
         B->SRC[0] = 1. / bodies.size() / MPISIZE;               //   Initialize mass/charge
@@ -44,9 +44,9 @@ public:
       } else if ( kernelName == "BiotSavart" ) {                //  If Biot Savart kernel
       } else if ( kernelName == "Stretching" ) {                //  If Stretching kernel
         if( !IeqJ ) {                                           //   If source and target are different
-          B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize x vortex strength
-          B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize y vortex strength
-          B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+          B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize x vortex strength
+          B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize y vortex strength
+          B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize z vortex strength
         }                                                       //   Endif for different source and target
       } else if ( kernelName == "Gaussian" ) {                  //  If Gaussian kernel
       } else {                                                  //  If kernel is none of the above

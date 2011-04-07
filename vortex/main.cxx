@@ -44,6 +44,7 @@ int main() {
     T.bottomup(bodies,cells);
     T.commBodies(cells);
     jbodies = bodies;
+    jcells = cells;
     T.commCells(jbodies,jcells);
     T.downward(cells,jcells,1);
     T.unpartition(bodies);
@@ -68,9 +69,11 @@ int main() {
     T.setKernel("BiotSavart");
     cells.clear();
     T.setGlobDomain(bodies);
+    T.octsection(bodies);
     T.bottomup(bodies,cells);
     T.commBodies(cells);
     jbodies = bodies;
+    jcells = cells;
     T.commCells(jbodies,jcells);
     T.downward(cells,jcells,1);
     T.unpartition(bodies);
