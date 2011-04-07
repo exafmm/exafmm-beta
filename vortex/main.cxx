@@ -52,7 +52,7 @@ int main() {
     T.eraseTimer("Convect      ");
 
     T.startTimer("Reinitialize ");
-    if(step%(numSkip+1)==0) T.reinitialize(bodies);
+    if(step%(numSkip+1)==numSkip) T.reinitialize(bodies);
     T.stopTimer("Reinitialize ",true);
     T.eraseTimer("Reinitialize ");
 

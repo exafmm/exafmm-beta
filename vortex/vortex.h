@@ -101,73 +101,64 @@ public:
     }
     fid.close();
 
-    int *plus1 = new int [nx];
-    for( int i=0; i!=nx-1; ++i ) {
-      plus1[i] = i+1;
-    }
-    plus1[nx-1] = 0;
-
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      int i = B-bodies.begin();
-      int ix = i / nx / nx;
-      int iy = i / nx % nx;
-      int iz = i % nx;
-      Body B0 = bodies[ix        * nx * nx + iy        * nx + iz       ];
-      Body B1 = bodies[ix        * nx * nx + iy        * nx + plus1[iz]];
-      Body B2 = bodies[ix        * nx * nx + plus1[iy] * nx + iz       ];
-      Body B3 = bodies[ix        * nx * nx + plus1[iy] * nx + plus1[iz]];
-      Body B4 = bodies[plus1[ix] * nx * nx + iy        * nx + iz       ];
-      Body B5 = bodies[plus1[ix] * nx * nx + iy        * nx + plus1[iz]];
-      Body B6 = bodies[plus1[ix] * nx * nx + plus1[iy] * nx + iz       ];
-      Body B7 = bodies[plus1[ix] * nx * nx + plus1[iy] * nx + plus1[iz]];
-      B->IBODY = i;                                             //  Tag body with initial index
-      B->IPROC = RANK;                                          //  Tag body with initial MPI rank
-      B->X[0] = (ix + .5) * dx - M_PI;                          //  Initialize x position
-      B->X[1] = (iy + .5) * dx - M_PI;                          //  Initialize y position
-      B->X[2] = (iz + .5) * dx - M_PI;                          //  Initialize z position
-      float uy = B2.SRC[0] + B3.SRC[0] + B6.SRC[0] + B7.SRC[0]
-               - B0.SRC[0] - B1.SRC[0] - B4.SRC[0] - B5.SRC[0];
-      float uz = B1.SRC[0] + B3.SRC[0] + B5.SRC[0] + B7.SRC[0]
-               - B0.SRC[0] - B2.SRC[0] - B4.SRC[0] - B6.SRC[0];
-      float vx = B4.SRC[1] + B5.SRC[1] + B6.SRC[1] + B7.SRC[1]
-               - B0.SRC[1] - B1.SRC[1] - B2.SRC[1] - B3.SRC[1];
-      float vz = B1.SRC[1] + B3.SRC[1] + B5.SRC[1] + B7.SRC[1]
-               - B0.SRC[1] - B2.SRC[1] - B4.SRC[1] - B6.SRC[1];
-      float wx = B4.SRC[2] + B5.SRC[2] + B6.SRC[2] + B7.SRC[2]
-               - B0.SRC[2] - B1.SRC[2] - B2.SRC[2] - B3.SRC[2];
-      float wy = B2.SRC[2] + B3.SRC[2] + B6.SRC[2] + B7.SRC[2]
-               - B0.SRC[2] - B1.SRC[2] - B4.SRC[2] - B5.SRC[2];
-      B->TRG[1] = (vz - wy) / 4 / dx;                           //  Initialize x vorticity
-      B->TRG[2] = (wx - uz) / 4 / dx;                           //  Initialize y vorticity
-      B->TRG[3] = (uy - vx) / 4 / dx;                           //  Initialize z vorticity
-      B->SRC[3] = dx;                                           //  Initialize core radius
-    }                                                           // End loop over bodies
-    rbf(bodies,2);
-    rbf(bodies,1);
-    rbf(bodies,0);
-    delete[] plus1;
-  }
-
-  void initialError(Bodies &bodies) {
-    Bodies jbodies = bodies;
-    Cells cells, jcells;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
       int ix = i / nx / nx;
       int iy = i / nx % nx;
       int iz = i % nx;
-      B->X[0] = ix * dx - M_PI;
-      B->X[1] = iy * dx - M_PI;
-      B->X[2] = iz * dx - M_PI;
+      B->IBODY = i;                                             //  Tag body with initial index
+      B->IPROC = RANK;                                          //  Tag body with initial MPI rank
+      B->X[0] = (ix + .5) * dx - M_PI;                          //  Initialize x position
+      B->X[1] = (iy + .5) * dx - M_PI;                          //  Initialize y position
+      B->X[2] = (iz + .5) * dx - M_PI;                          //  Initialize z position
+      B->SRC[3] = dx;                                           //  Initialize core radius
+      realRecv[i] = B->SRC[1];
+    }
+    zDerivative();
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      B->TRG[1] = realSend[B-bodies.begin()];
+      realRecv[B-bodies.begin()] = B->SRC[2];
+    }
+    yDerivative();
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      B->TRG[1] -= realSend[B-bodies.begin()];
+      realRecv[B-bodies.begin()] = B->SRC[2];
+    }
+    xDerivative();
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      B->TRG[2] = realSend[B-bodies.begin()];
+      realRecv[B-bodies.begin()] = B->SRC[0];
+    }
+    zDerivative();
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      B->TRG[2] -= realSend[B-bodies.begin()];
+      realRecv[B-bodies.begin()] = B->SRC[0];
+    }
+    yDerivative();
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      B->TRG[3] = realSend[B-bodies.begin()];
+      realRecv[B-bodies.begin()] = B->SRC[1];
+    }
+    xDerivative();
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      B->TRG[3] -= realSend[B-bodies.begin()];
+    }
+    rbf(bodies,2);
+    rbf(bodies,1);
+    rbf(bodies,0);
+  }
+
+  void initialError(Bodies &bodies) {
+    Cells cells, jcells;
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG = 0;
     }
     setKernel("BiotSavart");
     setDomain(bodies);
     bottomup(bodies,cells);
-    bottomup(jbodies,jcells);
+    jcells = cells;
     downward(cells,jcells,1);
     std::sort(bodies.begin(),bodies.end());
-    std::sort(jbodies.begin(),jbodies.end());
 
     float u, v, w;
     double diff = 0, norm = 0;
@@ -189,30 +180,9 @@ public:
     }
     fid.close();
     std::cout << "Error : " << std::sqrt(diff/norm) << std::endl;
-    bodies = jbodies;
   }
 
   void statistics(Bodies &bodies, bool fft=true) {
-    Bodies jbodies = bodies;
-    Cells cells, jcells;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      int i = B-bodies.begin();
-      int ix = i / nx / nx;
-      int iy = i / nx % nx;
-      int iz = i % nx;
-      B->X[0] = ix * dx - M_PI;
-      B->X[1] = iy * dx - M_PI;
-      B->X[2] = iz * dx - M_PI;
-      B->TRG = 0;
-    }
-    setKernel("BiotSavart");
-    setDomain(bodies);
-    bottomup(bodies,cells);
-    bottomup(jbodies,jcells);
-    downward(cells,jcells,1);
-    std::sort(bodies.begin(),bodies.end());
-    std::sort(jbodies.begin(),jbodies.end());
-
     if( fft ) {
       initSpectrum();
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) realRecv[B-bodies.begin()] = B->TRG[0];
@@ -226,16 +196,6 @@ public:
       addSpectrum();
       writeSpectrum();
     }
-
-    bodies = jbodies;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      B->TRG = 0;
-    }
-    cells.clear();
-    bottomup(bodies,cells);
-    jcells = cells;
-    downward(cells,jcells,1);
-    std::sort(bodies.begin(),bodies.end());
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
       dxdt[i] = B->TRG[0];

@@ -9,8 +9,9 @@ class FastFourierTransform {
 private:
   int nxLocal;
   int numSend;
-  float *Ek;
+  int   *Kk;
   int   *Nk;
+  float *Ek;
   fftw_complex *vec1d;
   fftw_complex *vec2d;
   fftw_plan forward1d;
@@ -33,6 +34,7 @@ public:
     nxLocal    = nx;
     numBodies  = nx * nx * nxLocal;
     numSend    = nx * nxLocal * nxLocal;
+    Kk         = new int   [nx];
     Nk         = new int   [nx];
     Ek         = new float [nx];
     realSend   = new float [numBodies];
@@ -45,6 +47,10 @@ public:
     forward2d  = fftw_plan_dft_2d(nx, nx, vec2d, vec2d, FFTW_FORWARD,  FFTW_ESTIMATE);
     backward1d = fftw_plan_dft_1d(nx,     vec1d, vec1d, FFTW_BACKWARD, FFTW_ESTIMATE);
     backward2d = fftw_plan_dft_2d(nx, nx, vec2d, vec2d, FFTW_BACKWARD, FFTW_ESTIMATE);
+    for( int k=0; k!=nx/2; ++k ) {
+      Kk[k] = k;
+      Kk[k+nx/2] = k - nx/2;
+    }
   }
 
   ~FastFourierTransform() {
@@ -54,6 +60,7 @@ public:
     fftw_destroy_plan(backward2d);
     fftw_free(vec1d);
     fftw_free(vec2d);
+    delete[] Kk;
     delete[] Nk;
     delete[] Ek;
     delete[] realSend;
@@ -99,6 +106,75 @@ public:
         }
       }
     }
+  }
+
+  void backwardFFT() {
+    for( int ix=0; ix<nxLocal; ++ix ) {
+      for( int iy=0; iy<nx; ++iy ) {
+        for( int iz=0; iz<nx; ++iz ) {
+          int i = ix * nx * nx + iy * nx + iz;
+          vec1d[iz][0] = realRecv[i];
+          vec1d[iz][1] = imagRecv[i];
+        }
+        fftw_execute(backward1d);
+        for( int iz=0; iz<nx; ++iz ) {
+          int i = iz * nx * nxLocal + iy * nxLocal + ix;
+          realSend[i] = vec1d[iz][0];
+          imagSend[i] = vec1d[iz][1];
+        }
+      }
+    }
+    MPI_Alltoall(realSend,numSend,MPI_FLOAT,realRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
+    MPI_Alltoall(imagSend,numSend,MPI_FLOAT,imagRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
+    for( int ix=0; ix<nxLocal; ++ix ) {
+      for( int iy=0; iy<nx; ++iy ) {
+        for( int iz=0; iz<nx; ++iz ) {
+          int iiz = iz % nxLocal;
+          int iix = ix + (iz / nxLocal) * nxLocal;
+          int i = iix * nx * nxLocal + iy * nxLocal + iiz;
+          vec2d[iz+iy*nx][0] = realRecv[i];
+          vec2d[iz+iy*nx][1] = imagRecv[i];
+        }
+      }
+      fftw_execute(backward2d);
+      for( int iy=0; iy<nx; ++iy ) {
+        for( int iz=0; iz<nx; ++iz ) {
+          int i = ix * nx * nx + iy * nx + iz;
+          realSend[i] = vec2d[iz+iy*nx][0];
+          imagSend[i] = vec2d[iz+iy*nx][1];
+        }
+      }
+    }
+  }
+
+  void xDerivative() {
+    forwardFFT();
+    for( int i=0; i!=numBodies; ++i ) {
+      int ix = i % nx;
+      realRecv[i] = -Kk[ix] * imagSend[i];
+      imagRecv[i] =  Kk[ix] * realSend[i];
+    }
+    backwardFFT();
+  }
+
+  void yDerivative() {
+    forwardFFT();
+    for( int i=0; i!=numBodies; ++i ) {
+      int iy = i / nx % nx;
+      realRecv[i] = -Kk[iy] * imagSend[i];
+      imagRecv[i] =  Kk[iy] * realSend[i];
+    }
+    backwardFFT();
+  }
+
+  void zDerivative() {
+    forwardFFT();
+    for( int i=0; i!=numBodies; ++i ) {
+      int iz = i / nx / nx;
+      realRecv[i] = -Kk[iz] * imagSend[i];
+      imagRecv[i] =  Kk[iz] * realSend[i];
+    }
+    backwardFFT();
   }
 
   void initSpectrum() {
