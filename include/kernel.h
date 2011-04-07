@@ -152,7 +152,7 @@ public:
     vect xmin,xmax;                                             // Min,Max of domain
     B_iter B = bodies.begin();                                  // Reset body iterator
     xmin = xmax = B->X;                                         // Initialize xmin,xmax
-    X0 = R0 = 0;                                                // Initialize center and size of root cell
+    X0 = 0;                                                     // Initialize center and size of root cell
     for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
         if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];           //   Determine xmin
@@ -167,7 +167,10 @@ public:
       R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
     }                                                           // End loop over each dimension
     R0 += 1e-5;                                                 // Add some leeway to root radius
-    if( IMAGES != 0 ) R0 = M_PI;                                // Periodic boundary conditions have radius M_PI
+    if( IMAGES != 0 ) {                                         // If periodic boundary condition
+      X0 = 0;                                                   //  Center is [0, 0, 0]
+      R0 = M_PI;                                                //  Radius is M_PI
+    }                                                           // Endif for periodic boundary condition
   }
 
   void preCalculation() {

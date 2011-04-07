@@ -1,17 +1,17 @@
 #ifndef fft_h
 #define fft_h
-#include <mpi.h>
 #include <fftw3.h>
-#include <cmath>
-#include <fstream>
+#include "let.h"
 
-class FastFourierTransform {
+class FastFourierTransform : public LocalEssentialTree {
 private:
   int nxLocal;
   int numSend;
   int   *Kk;
-  int   *Nk;
-  float *Ek;
+  int   *NkSend;
+  int   *NkRecv;
+  float *EkSend;
+  float *EkRecv;
   fftw_complex *vec1d;
   fftw_complex *vec2d;
   fftw_plan forward1d;
@@ -21,8 +21,8 @@ private:
 
 protected:
   float *realSend;
-  float *imagSend;
   float *realRecv;
+  float *imagSend;
   float *imagRecv;
 
 public:
@@ -31,15 +31,21 @@ public:
 
 public:
   FastFourierTransform(int N) : nx(N) {
+#if 1
+    nxLocal    = nx / SIZE;
+#else
     nxLocal    = nx;
+#endif
     numBodies  = nx * nx * nxLocal;
     numSend    = nx * nxLocal * nxLocal;
     Kk         = new int   [nx];
-    Nk         = new int   [nx];
-    Ek         = new float [nx];
+    NkSend     = new int   [nx];
+    NkRecv     = new int   [nx];
+    EkSend     = new float [nx];
+    EkRecv     = new float [nx];
     realSend   = new float [numBodies];
-    imagSend   = new float [numBodies];
     realRecv   = new float [numBodies];
+    imagSend   = new float [numBodies];
     imagRecv   = new float [numBodies];
     vec1d      = (fftw_complex*) fftw_malloc(nx *      sizeof(fftw_complex));
     vec2d      = (fftw_complex*) fftw_malloc(nx * nx * sizeof(fftw_complex));
@@ -61,11 +67,13 @@ public:
     fftw_free(vec1d);
     fftw_free(vec2d);
     delete[] Kk;
-    delete[] Nk;
-    delete[] Ek;
+    delete[] NkSend;
+    delete[] NkRecv;
+    delete[] EkSend;
+    delete[] EkRecv;
     delete[] realSend;
-    delete[] imagSend;
     delete[] realRecv;
+    delete[] imagSend;
     delete[] imagRecv;
   }
 
@@ -87,8 +95,15 @@ public:
         }
       }
     }
+#if 1
     MPI_Alltoall(realSend,numSend,MPI_FLOAT,realRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
     MPI_Alltoall(imagSend,numSend,MPI_FLOAT,imagRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
+#else
+    for( int i=0; i!=numBodies; ++i ) {
+      realRecv[i] = realSend[i];
+      imagRecv[i] = imagSend[i];
+    }
+#endif
     for( int ix=0; ix<nxLocal; ++ix ) {
       for( int iy=0; iy<nx; ++iy ) {
         for( int iz=0; iz<nx; ++iz ) {
@@ -124,8 +139,15 @@ public:
         }
       }
     }
+#if 1
     MPI_Alltoall(realSend,numSend,MPI_FLOAT,realRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
     MPI_Alltoall(imagSend,numSend,MPI_FLOAT,imagRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
+#else
+    for( int i=0; i!=numBodies; ++i ) {
+      realRecv[i] = realSend[i];
+      imagRecv[i] = imagSend[i];
+    }
+#endif
     for( int ix=0; ix<nxLocal; ++ix ) {
       for( int iy=0; iy<nx; ++iy ) {
         for( int iz=0; iz<nx; ++iz ) {
@@ -179,13 +201,13 @@ public:
 
   void initSpectrum() {
     for( int k=0; k<nx; ++k ) {
-      Ek[k] = Nk[k] = 0;
+      EkSend[k] = NkSend[k] = 0;
     }
     for( int ix=0; ix<nx/2; ++ix ) {
       for( int iy=0; iy<nx/2; ++iy ) {
         for( int iz=0; iz<nx/2; ++iz ) {
           int k = floor(sqrtf(ix * ix + iy * iy + iz * iz));
-          Nk[k]++;
+          NkSend[k]++;
         }
       }
     }
@@ -197,20 +219,31 @@ public:
         for( int iz=0; iz<nx/2; ++iz ) {
           int i = ix * nx * nx + iy * nx + iz;
           int k = floor(sqrtf(ix * ix + iy * iy + iz * iz));
-          Ek[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]) * 4 * M_PI * k * k;
+          EkSend[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]) * 4 * M_PI * k * k;
         }
       }
     }
   }
 
   void writeSpectrum() {
-    std::ofstream fid("statistics.dat",std::ios::in | std::ios::app);
-    for( int k=0; k<nx; ++k ) {
-      if( Nk[k] == 0 ) Nk[k] = 1;
-      Ek[k] /= Nk[k];
-      fid << Ek[k] << std::endl;
+#if 1
+    MPI_Reduce(NkSend,NkRecv,nx,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
+    MPI_Reduce(EkSend,EkRecv,nx,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
+#else
+    for( int i=0; i!=nx; ++i ) {
+      NkRecv[i] = NkSend[i];
+      EkRecv[i] = EkSend[i];
     }
-    fid.close();
+#endif
+    if( RANK == 0 ) {
+      std::ofstream fid("statistics.dat",std::ios::in | std::ios::app);
+      for( int k=0; k<nx; ++k ) {
+        if( NkRecv[k] == 0 ) NkRecv[k] = 1;
+        EkRecv[k] /= NkRecv[k];
+        fid << EkRecv[k] << std::endl;
+      }
+      fid.close();
+    }
   }
 
 };

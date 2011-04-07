@@ -14,22 +14,23 @@ int main() {
   Vortex T(numGrid1D);
   T.setKernel("Gaussian");
   T.initialize();
+  bool printNow = (MPIRANK == 0);
 
   T.startTimer("Read data    ");
   bodies.resize(T.numBodies);
   T.readData(bodies);
-  T.stopTimer("Read data    ",true);
+  T.stopTimer("Read data    ",printNow);
   T.eraseTimer("Read data    ");
 
   T.startTimer("Validate data");
   T.initialError(bodies);
-  T.stopTimer("Validate data",true);
+  T.stopTimer("Validate data",printNow);
   T.eraseTimer("Validate data");
 
   for( int step=0; step!=numSteps; ++step ) {
     T.startTimer("Statistics   ");
     T.statistics(bodies,step%(numSkip+1)==0);
-    T.stopTimer("Statistics   ",true);
+    T.stopTimer("Statistics   ",printNow);
     T.eraseTimer("Statistics   ");
 
     T.startTimer("Stretching   ");
@@ -38,22 +39,26 @@ int main() {
     }
     T.setKernel("Stretching");
     cells.clear();
-    T.setDomain(bodies);
+    T.setGlobDomain(bodies);
+    T.octsection(bodies);
     T.bottomup(bodies,cells);
-    jcells = cells;
+    T.commBodies(cells);
+    jbodies = bodies;
+    T.commCells(jbodies,jcells);
     T.downward(cells,jcells,1);
+    T.unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
-    T.stopTimer("Stretching   ",true);
+    T.stopTimer("Stretching   ",printNow);
     T.eraseTimer("Stretching   ");
 
     T.startTimer("Convect      ");
     T.convect(bodies,nu,dt);
-    T.stopTimer("Convect      ",true);
+    T.stopTimer("Convect      ",printNow);
     T.eraseTimer("Convect      ");
 
     T.startTimer("Reinitialize ");
     if(step%(numSkip+1)==numSkip) T.reinitialize(bodies);
-    T.stopTimer("Reinitialize ",true);
+    T.stopTimer("Reinitialize ",printNow);
     T.eraseTimer("Reinitialize ");
 
     T.startTimer("BiotSavart   ");
@@ -62,17 +67,20 @@ int main() {
     }
     T.setKernel("BiotSavart");
     cells.clear();
-    T.setDomain(bodies);
+    T.setGlobDomain(bodies);
     T.bottomup(bodies,cells);
-    jcells = cells;
+    T.commBodies(cells);
+    jbodies = bodies;
+    T.commCells(jbodies,jcells);
     T.downward(cells,jcells,1);
+    T.unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
-    T.stopTimer("BiotSavart   ",true);
+    T.stopTimer("BiotSavart   ",printNow);
     T.eraseTimer("BiotSavart   ");
   }
   T.startTimer("Statistics   ");
   T.statistics(bodies);
-  T.stopTimer("Statistics   ",true);
+  T.stopTimer("Statistics   ",printNow);
   T.eraseTimer("Statistics   ");
 
 #ifdef VTK

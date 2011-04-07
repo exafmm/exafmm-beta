@@ -8,8 +8,9 @@ int main() {
   const int numBodies = 10000;
   std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
-  Bodies jbodies;
-  Cells cells;
+  Bodies jbodies(numBodies);
+  Bodies jbodies2;
+  Cells cells,jcells;
   Dataset D;
   LocalEssentialTree T;
   T.setKernel(kernelName);
@@ -19,6 +20,7 @@ int main() {
 
   T.startTimer("Set bodies   ");
   D.random(bodies,T.commRank()+1);
+  D.random(jbodies,T.commRank()+T.commSize()+1);
   Bodies bodies2 = bodies;
   T.stopTimer("Set bodies   ",T.printNow);
 
@@ -28,17 +30,17 @@ int main() {
 
   if( IMAGES != 0 ) {
     T.startTimer("Set periodic ");
-    jbodies = T.periodicBodies(bodies2);
+    jbodies2 = T.periodicBodies(jbodies);
     T.stopTimer("Set periodic ",T.printNow);
     T.eraseTimer("Set periodic ");
   } else {
-    jbodies = bodies2;
+    jbodies2 = jbodies;
   }
 
   T.startTimer("Direct sum   ");
   for( int i=0; i!=T.commSize(); ++i ) {
-    T.shiftBodies(jbodies);
-    T.evalP2P(bodies2,jbodies);
+    T.shiftBodies(jbodies2);
+    T.evalP2P(bodies2,jbodies2);
     if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
   }
   T.stopTimer("Direct sum   ",T.printNow);
@@ -47,18 +49,18 @@ int main() {
   D.initTarget(bodies);
 
   T.octsection(bodies);
+  T.octsection(jbodies);
 
-  cells.clear();
 #ifdef TOPDOWN
   T.topdown(bodies,cells);
+  T.topdown(jbodies,jcells);
 #else
   T.bottomup(bodies,cells);
+  T.bottomup(jbodies,jcells);
 #endif
 
-  T.commBodies(cells);
+  T.commBodies(jcells);
 
-  jbodies = bodies;
-  Cells jcells = cells;
   T.commCells(jbodies,jcells);
 
   T.startTimer("Downward     ");

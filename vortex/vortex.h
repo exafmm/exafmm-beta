@@ -1,9 +1,8 @@
 #ifndef vortex_h
 #define vortex_h
 #include "fft.h"
-#include "let.h"
 
-class Vortex : public LocalEssentialTree, public FastFourierTransform {
+class Vortex : public FastFourierTransform {
 private:
   float dx;
   float *r, *x;
@@ -20,43 +19,70 @@ private:
       B->TRG[0] = 0;
     }
     setKernel("Gaussian");
-    setDomain(bodies);
+    setGlobDomain(bodies);
+    octsection(bodies);
     bottomup(bodies,cells);
-    jcells = cells;
+    commBodies(cells);
+    Bodies jbodies = bodies;
+    commCells(jbodies,jcells);
     downward(cells,jcells,1);
+    unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
 
-    float res = 0;
+    float resRecv, resSend = 0;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
       r[i] = B->TRG[d+1] - B->TRG[0];
       B->SRC[0] = r[i];
       B->TRG[0] = 0;
-      res += r[i] * r[i];
+      resSend += r[i] * r[i];
     }
-    float res0 = res;
+#if 1
+    MPI_Allreduce(&resSend,&resRecv,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
+#else
+    resRecv = resSend;
+#endif
+    float res0 = resRecv;
     int it = 0;
-    while( sqrt(res0) > tol && sqrt(res / res0) > tol && it < itmax ) {
-      std::cout << "iteration : " << it << ", residual : " << sqrt(res / res0) << std::endl;
+    while( sqrt(res0) > tol && sqrt(resRecv / res0) > tol && it < itmax ) {
+      print("iteration : ",0);
+      print(it,0);
+      print(", residual  : ",0);
+      print(sqrt(resRecv / res0));
       cells.clear();
+      jcells.clear();
+      octsection(bodies);
       bottomup(bodies,cells);
-      jcells = cells;
+      commBodies(cells);
+      jbodies = bodies;
+      commCells(jbodies,jcells);
       downward(cells,jcells,1);
+      unpartition(bodies);
       std::sort(bodies.begin(),bodies.end());
-      float pAp = 0;
+      float pApRecv, pApSend = 0;
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-        pAp += B->SRC[0] * B->TRG[0];
+        pApSend += B->SRC[0] * B->TRG[0];
       }
-      float alpha = res / pAp;
-      float resOld = res;
-      res = 0;
+#if 1
+      MPI_Allreduce(&pApSend,&pApRecv,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
+#else
+      pApRecv = pApSend;
+#endif
+      float alpha = resRecv / pApRecv;
+      float resOld = resRecv;
+      resSend = 0;
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
         int i = B-bodies.begin();
         x[i] += alpha * B->SRC[0];
         r[i] -= alpha * B->TRG[0];
-        res += r[i] * r[i];
+        resSend += r[i] * r[i];
       }
-      float beta = res / resOld;
+#if 1
+      MPI_Allreduce(&resSend,&resRecv,1,MPI_FLOAT,MPI_SUM,MPI_COMM_WORLD);
+#else
+      resRecv = resSend;
+#endif
+      float beta = resRecv / resOld;
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
         int i = B-bodies.begin();
         B->SRC[0] = r[i] + beta * B->SRC[0];
@@ -89,7 +115,9 @@ public:
   }
 
   void readData(Bodies &bodies) {                               // Initialize source values
-    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
+    char fname[256];
+    sprintf(fname,"../../isotropic/spectral/initialu%4.4d",RANK);
+    std::ifstream fid(fname,std::ios::in);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> B->SRC[0];
     }
@@ -154,15 +182,21 @@ public:
       B->TRG = 0;
     }
     setKernel("BiotSavart");
-    setDomain(bodies);
+    setGlobDomain(bodies);
+    octsection(bodies);
     bottomup(bodies,cells);
-    jcells = cells;
+    commBodies(cells);
+    Bodies jbodies = bodies;
+    commCells(jbodies,jcells);
     downward(cells,jcells,1);
+    unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
 
     float u, v, w;
     double diff = 0, norm = 0;
-    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
+    char fname[256];
+    sprintf(fname,"../../isotropic/spectral/initialu%4.4d",RANK);
+    std::ifstream fid(fname,std::ios::in);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> u;
       diff += (B->TRG[0] - u) * (B->TRG[0] - u);
@@ -179,7 +213,8 @@ public:
       norm += w * w;
     }
     fid.close();
-    std::cout << "Error : " << std::sqrt(diff/norm) << std::endl;
+    print("Error     : ",0);
+    print(sqrt(diff/norm));
   }
 
   void statistics(Bodies &bodies, bool fft=true) {
@@ -219,7 +254,7 @@ public:
 
   void reinitialize(Bodies &bodies) {
     Cells cells, jcells;
-    Bodies jbodies = bodies;
+    Bodies bodies2 = bodies, jbodies = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
       int ix = i / nx / nx;
@@ -232,10 +267,15 @@ public:
     }
 
     setKernel("Gaussian");
-    setDomain(bodies);
+    setGlobDomain(bodies);
+    octsection(bodies);
+    octsection(jbodies);
     bottomup(bodies,cells);
     bottomup(jbodies,jcells);
+    commBodies(jcells);
+    commCells(jbodies,jcells);
     downward(cells,jcells,1);
+    unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[1] = B->TRG[0];
@@ -247,9 +287,15 @@ public:
 
     cells.clear();
     jcells.clear();
+    jbodies = bodies2;
+    octsection(bodies);
+    octsection(jbodies);
     bottomup(bodies,cells);
     bottomup(jbodies,jcells);
+    commBodies(jcells);
+    commCells(jbodies,jcells);
     downward(cells,jcells,1);
+    unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[2] = B->TRG[0];
@@ -261,9 +307,15 @@ public:
 
     cells.clear();
     jcells.clear();
+    jbodies = bodies2;
+    octsection(bodies);
+    octsection(jbodies);
     bottomup(bodies,cells);
     bottomup(jbodies,jcells);
+    commBodies(jcells);
+    commCells(jbodies,jcells);
     downward(cells,jcells,1);
+    unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[3] = B->TRG[0];

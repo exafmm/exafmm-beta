@@ -233,7 +233,6 @@ public:
     XMAX[0] = X;                                                // Get data from buffer
     MPI_Allreduce(XMIN[0],X,3,MPI_TYPE,MPI_MIN,MPI_COMM_WORLD); // Reduce global minimum
     XMIN[0] = X;                                                // Get data from buffer
-    R0 = 0;                                                     // Initialize root radius
     for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
       X0[d] = (XMAX[0][d] + XMIN[0][d]) / 2;                    //  Calculate center of domain
       X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
@@ -241,7 +240,10 @@ public:
       R0 = std::max(X0[d] - XMIN[0][d], R0);                    //  Calculate max distance from center
     }                                                           // End loop over each dimension
     R0 += 1e-5;                                                 // Add some leeway to root radius
-    if( IMAGES != 0 ) R0 = M_PI;                                // Periodic boundary conditions have radius M_PI
+    if( IMAGES != 0 ) {                                         // If periodic boundary condition
+      X0 = 0;                                                   //  Center is [0, 0, 0]
+      R0 = M_PI;                                                //  Radius is M_PI
+    }                                                           // Endif for periodic boundary condition
     XMAX[0] = X0 + R0;                                          // Reposition global maximum
     XMIN[0] = X0 - R0;                                          // Reposition global minimum
   }
