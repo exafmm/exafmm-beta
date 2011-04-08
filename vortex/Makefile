@@ -3,9 +3,4 @@ include ../Makefile
 main: main.cxx $(OBJECT)
 	rm -f statistics.dat
 	@$(CXX) $? $(LFLAGS) -lfftw3
-	mpirun -np 2 ./a.out
-
-unpartition: unpartition.cxx $(OBJECT)
-	@$(CXX) $? $(LFLAGS)
-	mpirun -np 2 ./a.out
-
+	mpirun -np 4 ./a.out

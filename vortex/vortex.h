@@ -104,6 +104,7 @@ public:
   }
 
   void readData(Bodies &bodies) {                               // Initialize source values
+#if 1
     char fname[256];
     sprintf(fname,"../../isotropic/spectral/initialu%4.4d",RANK);
     std::ifstream fid(fname,std::ios::in);
@@ -116,6 +117,31 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> B->SRC[2];
     }
+#else
+    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
+    float dummy;
+    for( int rank=0; rank!=SIZE; ++rank ) {
+      if( rank == RANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> B->SRC[0];
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
+      }
+    }
+    for( int rank=0; rank!=SIZE; ++rank ) {
+      if( rank == RANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> B->SRC[1];
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
+      }
+    }
+    for( int rank=0; rank!=SIZE; ++rank ) {
+      if( rank == RANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> B->SRC[2];
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
+      }
+    }
+#endif
     fid.close();
 
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -184,6 +210,7 @@ public:
 
     float u, v, w;
     double diff = 0, norm = 0;
+#if 1
     char fname[256];
     sprintf(fname,"../../isotropic/spectral/initialu%4.4d",RANK);
     std::ifstream fid(fname,std::ios::in);
@@ -202,6 +229,43 @@ public:
       diff += (B->TRG[2] - w) * (B->TRG[2] - w);
       norm += w * w;
     }
+#else
+    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
+    float dummy;
+    for( int rank=0; rank!=SIZE; ++rank ) {
+      if( rank == RANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid >> u;
+          diff += (B->TRG[0] - u) * (B->TRG[0] - u);
+          norm += u * u;
+        }
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
+      }
+    }
+    for( int rank=0; rank!=SIZE; ++rank ) {
+      if( rank == RANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid >> v;
+          diff += (B->TRG[1] - v) * (B->TRG[1] - v);
+          norm += v * v;
+        }
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
+      }
+    }
+    for( int rank=0; rank!=SIZE; ++rank ) {
+      if( rank == RANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid >> w;
+          diff += (B->TRG[2] - w) * (B->TRG[2] - w);
+          norm += w * w;
+        }
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
+      }
+    }
+#endif
     fid.close();
     print("Error     : ",0);
     print(sqrt(diff/norm));
