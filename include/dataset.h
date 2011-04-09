@@ -3,8 +3,14 @@
 #include "types.h"
 
 class Dataset {                                                 // Contains all the different datasets
+private:
+  long filePosition;                                            // Position of file stream
+
 public:
-  std::string kernelName;
+  std::string kernelName;                                       // Name of kernel
+
+  Dataset() : filePosition(0) {}                                // Constructor
+  ~Dataset() {}                                                 // Destructor
 
   void initSource(Bodies &bodies) {                             // Initialize source values
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
@@ -112,6 +118,7 @@ public:
 
   void readTarget(Bodies &bodies) {                             // Read target values from file
     std::ifstream file("data",std::ios::in | std::ios::binary); // Open file
+    file.seekg(filePosition);                                   // Set position in file
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( kernelName == "Laplace" ) {                           //  If Laplace kernel
         file >> B->TRG[0];                                      //   Read data for potential
@@ -133,6 +140,7 @@ public:
         abort();                                                //   Abort execution
       }                                                         //  Endif for kernel type
     }                                                           // End loop over bodies
+    filePosition = file.tellg();                                // Get position in file
     file.close();                                               // Close file
   }
 

@@ -128,7 +128,7 @@ protected:
     cell.LEAF   = firstLeaf;                                    // Set pointer to first leaf
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
-    stopTimer("Bodies2twigs ");                                 // Stop timer & print
+    stopTimer("Bodies2twigs ",printNow);                        // Stop timer & print
     evalP2M(twigs);                                             // Evaluate P2M kernel
   }
 
@@ -153,7 +153,7 @@ protected:
       linkParent(cells,begin,end);                              //  Form parent-child mutual link
     }                                                           // End loop over levels
     unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
-    stopTimer("Twigs2cells  ");                                 // Stop timer & print
+    stopTimer("Twigs2cells  ",printNow);                        // Stop timer & print
     evalM2M(cells);                                             // Evaluate M2M kernel
   }
 

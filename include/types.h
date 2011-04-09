@@ -33,7 +33,7 @@ const int  MAXCELL = 1000;                                      // Maximum numbe
 const real THETA   = 1/sqrtf(3);                                // Box opening criteria
 const real CLET    = 3;                                         // LET opening critetia
 const real EPS2    = 1e-4;                                      // Softening parameter
-const int  IMAGES  = 3;                                         // Number of periodic image sublevels
+const int  IMAGES  = 0;                                         // Number of periodic image sublevels
 const int  GPUS    = 3;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 

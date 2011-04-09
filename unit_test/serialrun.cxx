@@ -56,6 +56,7 @@ int main() {
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);
   D.printError(diff1,norm1,diff2,norm2);
+  T.writeTime();
 #ifdef VTK
   int Ncell = 0;
   vtkPlot vtk;

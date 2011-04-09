@@ -213,7 +213,7 @@ public:
     for( int l=0; l!=LEVEL; ++l ) {                             // Loop over levels of N-D hypercube communication
       bisectionGetComm(l);                                      //  Split the MPI communicator for that level
     }                                                           // End loop over levels of N-D hypercube communication
-    stopTimer("Split comm   ");                                 // Stop timer & print
+    stopTimer("Split comm   ",printNow);                        // Stop timer & print
   }
   ~Partition() {}                                               // Destructor
 
@@ -386,13 +386,14 @@ public:
       iSplit = nth_element(bodies,nthGlobal,MPI_COMM[l+1][0]);  //  Get cell index of nth global element
       nthLocal = splitBodies(bodies,iSplit);                    //  Split bodies based on iSplit
     }                                                           // End loop over levels of N-D hypercube communication
-    stopTimer("Partition    ");                                 // Stop timer & print
+    stopTimer("Partition    ",printNow);                        // Stop timer & print
   }
 
   void octsection(Bodies &bodies) {                             // Partition by recursive octsection
     startTimer("Partition    ");                                // Start timer
     int byte = sizeof(bodies[0]);                               // Byte size of body structure
     int level = int(log(SIZE-1) / M_LN2 / 3) + 1;               // Level of local root cell
+    if( SIZE == 1 ) level = 0;                                  // For serial execution local root cell is root cell
     BottomUp::setIndex(bodies,level);                           // Set index of bodies for that level
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
@@ -438,7 +439,7 @@ public:
     delete[] sdsp;                                              // Delete send displacement
     delete[] rcnt;                                              // Delete recv count
     delete[] rdsp;                                              // Delete recv displacement
-    stopTimer("Partition    ");                                 // Stop timer & print
+    stopTimer("Partition    ",printNow);                        // Stop timer & print
   }
 
   void unpartition(Bodies &bodies) {                            // Send bodies back to where they came from
@@ -482,7 +483,7 @@ public:
     delete[] sdsp;                                              // Delete send displacement
     delete[] rcnt;                                              // Delete recv count
     delete[] rdsp;                                              // Delete recv displacement
-    stopTimer("Unpartition  ");                                 // Stop timer & print
+    stopTimer("Unpartition  ",printNow);                        // Stop timer & print
   }
 };
 

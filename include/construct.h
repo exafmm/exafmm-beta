@@ -115,6 +115,12 @@ protected:
     const int N = bodies.size() * MPISIZE;                      // Number of bodies
     int level;                                                  // Max level
     level = N >= NCRIT ? 1 + int(log(N / NCRIT)/M_LN2/3) : 0;   // Decide max level from N/Ncrit
+    int MPIlevel = int(log(MPISIZE-1) / M_LN2 / 3) + 1;         // Level of local root cell
+    if( MPISIZE == 1 ) MPIlevel = 0;                            // For serial execution local root cell is root cell
+    if( MPIlevel > level ) {                                    // If process hierarchy is deeper than tree
+      if( MPIRANK == 0 ) std::cout << "Process hierarchy is deeper than tree." << std::endl;
+      level = MPIRANK;
+    }
     return level;                                               // Return max level
   }
 
@@ -122,9 +128,9 @@ public:
   BottomUp() : TreeStructure() {}                               // Constructor
   ~BottomUp() {}                                                // Destructor
 
-  void setIndex(Bodies &bodies, int level=0, int begin=0, int end=0, bool update=false) {// Set cell index of all bodies
+  void setIndex(Bodies &bodies, int level=-1, int begin=0, int end=0, bool update=false) {// Set cell index of all bodies
     bigint i;                                                   // Levelwise cell index
-    if( level == 0 ) level = getMaxLevel(bodies);               // Decide max level
+    if( level == -1 ) level = getMaxLevel(bodies);              // Decide max level
     bigint off = ((1 << 3*level) - 1) / 7;                      // Offset for each level
     real r = R0 / (1 << (level-1));                             // Radius at finest level
     vec<3,int> nx;                                              // 3-D cell index
@@ -252,6 +258,7 @@ public:
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
+/*
     startTimer("Prune tree   ");                                // Start timer
     prune(bodies);                                              // Prune tree structure bottomup
     stopTimer("Prune tree   ",printNow);                        // Stop timer & print
@@ -263,6 +270,7 @@ public:
     startTimer("Sort bodies  ");                                // Start timer
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
+*/
 
     Cells twigs;                                                // Twigs are cells at the bottom of tree
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs

@@ -24,7 +24,7 @@ unsort: unsort.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) -DTOPDOWN
 	./a.out
 
-Nscaling: Nscaling.cxx $(OBJECT)
+Nserial: Nserial.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 	./a.out
 
@@ -70,6 +70,10 @@ unpartition: unpartition.cxx $(OBJECT)
 	mpirun -np 2 ./a.out
 
 ijparallelrun: ijparallelrun.cxx $(OBJECT)
+	@$(CXX) $? $(LFLAGS)
+	mpirun -np 2 ./a.out
+
+Nparallel: Nparallel.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 	mpirun -np 2 ./a.out
 
