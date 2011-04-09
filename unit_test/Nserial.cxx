@@ -30,9 +30,7 @@ int main() {
 #else
     T.bottomup(bodies,cells);
 #endif
-
     T.downward(cells,cells,1);
-
     T.stopTimer("FMM          ",true);
     T.eraseTimer("FMM          ");
 
@@ -50,8 +48,7 @@ int main() {
 #else
     D.readTarget(T.buffer);
 #endif
-    T.stopTimer("Direct sum   ");
-    T.printAllTime();
+    T.stopTimer("Direct sum   ",true);
     T.eraseTimer("Direct sum   ");
     T.writeTime();
     T.resetTimer();

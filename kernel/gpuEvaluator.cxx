@@ -175,12 +175,14 @@ void Evaluator::clearBuffers() {                                // Clear GPU buf
 }
 
 void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
+  int numIcall = int(ibodies.size()-1)/MAXBODY+1;               // Number of icall loops
+  int numJcall = int(jbodies.size()-1)/MAXBODY+1;               // Number of jcall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
-  for( int icall=0; icall!=int(ibodies.size()-1)/MAXBODY+1; ++icall ) {// Loop over icall
-    BI0 = ibodies.begin()+ioffset;                            // Set target bodies begin iterator
+  for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
+    BI0 = ibodies.begin()+ioffset;                              // Set target bodies begin iterator
     BIN = ibodies.begin()+std::min(ioffset+MAXBODY,int(ibodies.size()));// Set target bodies end iterator
     int joffset = 0;                                            // Initialize offset for jcall loops
-    for( int jcall=0; jcall!=int(jbodies.size()-1)/MAXBODY+1; ++jcall ) {// Loop over jcall
+    for( int jcall=0; jcall!=numJcall; ++jcall ) {              // Loop over jcall
       BJ0 = jbodies.begin()+joffset;                            // Set source bodies begin iterator
       BJN = jbodies.begin()+std::min(joffset+MAXBODY,int(jbodies.size()));// Set source bodies end iterator
       if( onCPU ) {                                             // If calculation is to be done on CPU
@@ -273,8 +275,9 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
   CI0 = cells.begin();                                          // Set begin iterator for target
   CJ0 = cells.begin();                                          // Set begin iterator for source
+  int numIcall = int(cells.size()-1)/MAXCELL+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
-  for( int icall=0; icall!=int(cells.size()-1)/MAXCELL+1; ++icall ) {// Loop over icall
+  for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
     CIB = cells.begin()+ioffset;                                // Set begin iterator for target per cell
     CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per cell
     startTimer("Get list     ");                                // Start timer

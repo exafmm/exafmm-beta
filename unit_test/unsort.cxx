@@ -34,6 +34,7 @@ int main() {
   T.startTimer("Direct sum   ");
   T.evalP2P(bodies2,jbodies);
   T.stopTimer("Direct sum   ",T.printNow);
+  T.eraseTimer("Direct sum   ");
 
   T.startTimer("Set domain   ");
   D.initTarget(bodies);
@@ -54,6 +55,7 @@ int main() {
   T.startTimer("Unsort bodies");
   std::sort(bodies.begin(),bodies.end());
   T.stopTimer("Unsort bodies",T.printNow);
+  T.writeTime();
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);

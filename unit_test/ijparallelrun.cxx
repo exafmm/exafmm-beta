@@ -77,8 +77,7 @@ int main() {
   std::sort(bodies.begin(),bodies.end());
   T.stopTimer("Unsort bodies",T.printNow);
   T.eraseTimer("Unsort bodies");
-
-  if( T.commRank() == 0 ) T.writeTime();
+  if(T.printNow) T.writeTime();
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
@@ -88,7 +87,6 @@ int main() {
   MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   if(T.printNow) D.printError(diff3,norm3,diff4,norm4);
-  if(T.printNow) T.writeTime();
 #ifdef DEBUG
   T.print(std::sqrt(potDiff/potNorm));
 #endif

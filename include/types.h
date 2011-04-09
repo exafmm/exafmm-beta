@@ -28,7 +28,7 @@ typedef std::complex<double> complex;                           // Complex numbe
 
 const int  P       = 7;                                         // Order of expansions
 const int  NCRIT   = 1000;                                      // Number of bodies per cell
-const int  MAXBODY = 1000000;                                   // Maximum number of bodies per GPU kernel
+const int  MAXBODY = 200000;                                    // Maximum number of bodies per GPU kernel
 const int  MAXCELL = 1000;                                      // Maximum number of cells per GPU kernel
 const real THETA   = 1/sqrtf(3);                                // Box opening criteria
 const real CLET    = 3;                                         // LET opening critetia

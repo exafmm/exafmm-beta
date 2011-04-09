@@ -117,7 +117,9 @@ public:
   }
 
   void readTarget(Bodies &bodies) {                             // Read target values from file
-    std::ifstream file("data",std::ios::in | std::ios::binary); // Open file
+    char fname[256];                                            // File name for saving direct calculation values
+    sprintf(fname,"direct%4.4d",MPIRANK);                       // Set file name
+    std::ifstream file(fname,std::ios::in | std::ios::binary);  // Open file
     file.seekg(filePosition);                                   // Set position in file
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( kernelName == "Laplace" ) {                           //  If Laplace kernel
@@ -145,7 +147,9 @@ public:
   }
 
   void writeTarget(Bodies &bodies) {                            // Write target values to file
-    std::ofstream file("data",std::ios::out | std::ios::app | std::ios::binary);// Open file
+    char fname[256];                                            // File name for saving direct calculation values
+    sprintf(fname,"direct%4.4d",MPIRANK);                       // Set file name
+    std::ofstream file(fname,std::ios::out | std::ios::app | std::ios::binary);// Open file
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( kernelName == "Laplace" ) {                           //  If Laplace kernel
         file << B->TRG[0] << std::endl;                         //   Write data for potential

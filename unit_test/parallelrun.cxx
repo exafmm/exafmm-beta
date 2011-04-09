@@ -43,7 +43,7 @@ int main() {
   T.downward(cells,jcells,1);
   T.stopTimer("Downward     ",T.printNow);
   T.eraseTimer("Downward     ");
-  if( T.commRank() == 0 ) T.writeTime();
+
   if( IMAGES != 0 ) {
     T.startTimer("Set periodic ");
     jbodies = T.periodicBodies(bodies);
@@ -52,7 +52,6 @@ int main() {
   } else {
     jbodies = bodies;
   }
-
   T.startTimer("Direct sum   ");
   Bodies bodies2 = bodies;
   D.initTarget(bodies2);
