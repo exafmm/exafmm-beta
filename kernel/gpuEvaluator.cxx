@@ -322,7 +322,7 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
   int level = getLevel(CJ0->ICELL);                             // Level of twig
   while( level != 0 ) {                                         // While level of source is not root level
     startTimer("Get list     ");                                //  Start timer
-    for( CJ=cells.begin(); CJ!=cells.end(); ++CJ ) {            //  Loop over cells bottomup (except root cell)
+    for( CJ=CIB; CJ!=CIE; ++CJ ) {                              //  Loop over cells bottomup (except root cell)
       if( getLevel(CJ->ICELL) == level ) {                      //   If source cell is at current level
         CI = CJ0 + CJ->PARENT;                                  //    Set target cell iterator
         listM2M[CI-CI0].push_back(CJ);                          //    Push source cell into M2M interaction list
@@ -357,7 +357,7 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
   CIB = cells.begin();                                          // Set begin iterator for target per call
   CIE = cells.end();                                            // Set end iterator for target per call
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over target cells
+  for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     for( L_iter L=listM2L[CI-CI0].begin(); L!=listM2L[CI-CI0].end(); ++L ) {//  Loop over interaction list
       CJ = *L;                                                  //   Set source cell
       sourceSize[CJ] = 2 * NCOEF;                               //   Key : iterator, Value : number of coefs
@@ -394,7 +394,7 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
-    for( CI=cells.begin(); CI!=cells.end(); ++CI ) {            //  Loop over target cells
+    for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over target cells
       for( L_iter L=listM2P[CI-CI0].begin(); L!=listM2P[CI-CI0].end(); ++L ) {//  Loop over interaction list
         CJ = *L;                                                //    Set source cell
         sourceSize[CJ] = 2 * NCOEF;                             //    Key : iterator, Value : number of coefs
@@ -417,6 +417,7 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
     }                                                           //  Endif for kernel type
     getTargetBody(listM2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
+    ioffset += MAXCELL;                                         //  Increment ioffset
   }                                                             // End loop over icall
   listM2P.clear();                                              // Clear interaction lists
   flagM2P.clear();                                              // Clear periodic image flags
@@ -431,7 +432,7 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
-    for( CI=cells.begin(); CI!=cells.end(); ++CI ) {            //  Loop over target cells
+    for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over target cells
       for( L_iter L=listP2P[CI-CI0].begin(); L!=listP2P[CI-CI0].end(); ++L ) {//  Loop over interaction list
         CJ = *L;                                                //    Set source cell
         sourceSize[CJ] = CJ->NLEAF;                             //    Key : iterator, Value : number of leafs
@@ -454,6 +455,7 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
     }                                                           //  Endif for kernel type
     getTargetBody(listP2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
+    ioffset += MAXCELL;                                         //  Increment ioffset
   }                                                             // End loop over icall
   listP2P.clear();                                              // Clear interaction lists
   flagP2P.clear();                                              // Clear periodic image flags
@@ -470,7 +472,7 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
   int level = 1;                                                // Start level from 1
   while( level != maxLevel+1 ) {                                // While level of source is not root level
     startTimer("Get list     ");                                //  Start timer
-    for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {        //  Loop over cells topdown (except root cell)
+    for( CI=CIE-2; CI!=CIB-1; --CI ) {                          //  Loop over cells topdown (except root cell)
       if( getLevel(CI->ICELL) == level ) {                      //   If target cell is at current level
         CJ = CI0 + CI->PARENT;                                  //    Set source cell iterator
         listL2L[CI-CI0].push_back(CJ);                          //    Push source cell into L2L interaction list
@@ -512,7 +514,7 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
     Lists listL2P(cells.size());                                //  Define L2P interation list vector
     Maps  flagL2P(cells.size());                                //  Define L2P periodic image flag
-    for( CI=cells.begin(); CI!=cells.end(); ++CI ) {            //  Loop over cells
+    for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over cells
       if( CI->NCHILD == 0 ) {                                   //   If cell is a twig evaluate L2P kernel
         listL2P[CI-CI0].push_back(CI);                          //    Push source cell into L2P interaction list
         flagL2P[CI-CI0][CI] |= Icenter;                         //    Flip bit of periodic image flag
@@ -536,5 +538,6 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
     }                                                           //  Endif for kernel type
     getTargetBody(listL2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
+    ioffset += MAXCELL;                                         //  Increment ioffset
   }                                                             // End loop over icall
 }
