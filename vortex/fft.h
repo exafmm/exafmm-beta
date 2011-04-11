@@ -35,8 +35,6 @@ public:
     numBodies  = nx * nx * nxLocal;
     numSend    = nx * nxLocal * nxLocal;
     Kk         = new int   [nx];
-    NkSend     = new int   [nx];
-    NkRecv     = new int   [nx];
     EkSend     = new float [nx];
     EkRecv     = new float [nx];
     realSend   = new float [numBodies];
@@ -63,8 +61,6 @@ public:
     fftw_free(vec1d);
     fftw_free(vec2d);
     delete[] Kk;
-    delete[] NkSend;
-    delete[] NkRecv;
     delete[] EkSend;
     delete[] EkRecv;
     delete[] realSend;
@@ -183,18 +179,7 @@ public:
 
   void initSpectrum() {
     for( int k=0; k<nx; ++k ) {
-      EkSend[k] = NkSend[k] = 0;
-    }
-    for( int ix=0; ix<nxLocal; ++ix ) {
-      for( int iy=0; iy<nx/2; ++iy ) {
-        for( int iz=0; iz<nx/2; ++iz ) {
-          int iix = ix + nxLocal * RANK;
-          if( iix < nx/2 ) {
-            int k = floor(sqrtf(ix * ix + iy * iy + iz * iz));
-            NkSend[k]++;
-          }
-        }
-      }
+      EkSend[k] = 0;
     }
   }
 
@@ -203,24 +188,19 @@ public:
       for( int iy=0; iy<nx/2; ++iy ) {
         for( int iz=0; iz<nx/2; ++iz ) {
           int iix = ix + nxLocal * RANK;
-          if( iix < nx/2 ) {
-            int i = ix * nx * nx + iy * nx + iz;
-            int k = floor(sqrtf(iix * iix + iy * iy + iz * iz));
-            EkSend[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]) * 4 * M_PI * k * k;
-          }
+          int i = ix * nx * nx + iy * nx + iz;
+          int k = floor(sqrtf(Kk[iix] * Kk[iix] + Kk[iy] * Kk[iy] + Kk[iz] * Kk[iz]));
+          EkSend[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]);
         }
       }
     }
   }
 
   void writeSpectrum() {
-    MPI_Reduce(NkSend,NkRecv,nx,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
     MPI_Reduce(EkSend,EkRecv,nx,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
     if( RANK == 0 ) {
       std::ofstream fid("statistics.dat",std::ios::in | std::ios::app);
       for( int k=0; k<nx; ++k ) {
-        if( NkRecv[k] == 0 ) NkRecv[k] = 1;
-        EkRecv[k] /= NkRecv[k];
         fid << EkRecv[k] << std::endl;
       }
       fid.close();

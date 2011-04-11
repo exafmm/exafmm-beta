@@ -76,6 +76,7 @@ int main() {
   T.stopTimer("Unsort bodies",T.printNow);
   T.eraseTimer("Unsort bodies");
   if(T.printNow) T.writeTime();
+  if(T.printNow) T.writeTime();
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);

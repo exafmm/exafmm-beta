@@ -144,6 +144,7 @@ private:
   }
 
   void rbodies2twigs(Bodies &bodies, Cells &twigs) {            // Turn recv bodies to twigs
+    startTimer("Recv bodies  ");                                //  Start timer
     for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {// Loop over recv bodies
       Body body;                                                //  Body structure
       body.ICELL = JB->ICELL;                                   //  Set index of body
@@ -153,6 +154,7 @@ private:
     }                                                           // End loop over recv bodies
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
+    stopTimer("Recv bodies  ",printNow);                        //  Stop timer & print
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
   }
 
@@ -194,7 +196,10 @@ private:
   }
 
   void zipTwigs(Cells &twigs, Cells &cells, Cells &sticks, bool last) {// Zip two groups of twigs that overlap
+    startTimer("Sort cells   ");                                // Start timer
     sortCells(twigs);                                           // Sort twigs in ascending order
+    stopTimer("Sort cells   ",printNow);                        // Stop timer & print
+    startTimer("Ziptwigs     ");                                // Start timer
     bigint index = -1;                                          // Initialize index counter
     while( !twigs.empty() ) {                                   // While twig vector is not empty
       if( twigs.back().ICELL != index ) {                       //  If twig's index is different from previous
@@ -215,12 +220,16 @@ private:
       }                                                         //  Endif for collision type
       twigs.pop_back();                                         //  Pop last element from twig vector
     }                                                           // End while for twig vector
+    stopTimer("Ziptwigs     ",printNow);                        // Stop timer & print
+    startTimer("Sort cells   ");                                // Start timer
     sortCells(cells);                                           // Sort cells in ascending order
     twigs = cells;                                              // Copy cells to twigs
     cells.clear();                                              // Clear cells
+    stopTimer("Sort cells   ",printNow);                        // Stop timer & print
   }
 
   void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ,Cells &sticks) {// Re-index bodies
+    startTimer("Reindex      ");                                // Start timer
     while( !twigs.empty() ) {                                   // While twig vector is not empty
       if( twigs.back().NLEAF == 0 ) {                           //  If twig has no leafs
         cells.push_back(twigs.back());                          //   Push twig into cell vector
@@ -228,11 +237,15 @@ private:
       twigs.pop_back();                                         //  Pop last element from twig vector
     }                                                           // End while for twig vector
     BottomUp::setIndex(bodies,-1,0,0,true);                     // Set index of bodies
+    stopTimer("Reindex      ",printNow);                        // Stop timer & print
+    startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
 //    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
 //    BottomUp::grow(bodies);                                     // Grow tree structure
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
+    stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
+    startTimer("Reindex      ");                                // Start timer
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over cells
       if( sticks.size() > 0 ) {                                 //  If stick vector is not empty
         if( C->ICELL == sticks.back().ICELL ) {                 //   If twig's index is equal to stick's index
@@ -244,9 +257,12 @@ private:
     cells.insert(cells.begin(),twigs.begin(),twigs.end());      // Add twigs to the end of cell vector
     cells.insert(cells.begin(),sticks.begin(),sticks.end());    // Add remaining sticks to the end of cell vector
     sticks.clear();                                             // Clear sticks
+    stopTimer("Reindex      ",printNow);                        // Stop timer & print
+    startTimer("Sort cells   ");                                // Start timer
     sortCells(cells);                                           // Sort cells in ascending order
     twigs = cells;                                              // Copy cells to twigs
     cells.clear();                                              // Clear cells
+    stopTimer("Sort cells   ",printNow);                        // Stop timer & print
   }
 
   void sticks2send(Cells &sticks, int &offTwigs) {              // Turn sticks to send buffer
@@ -420,9 +436,7 @@ public:
         commCellsScatter(l);                                    //   Communicate cells by scattering from leftover proc
       }                                                         //  Endif for odd number of procs
       stopTimer("Alltoall     ",printNow);                      //  Stop timer & print
-      startTimer("Bodies2twigs ");                              //  Start timer
       if( l == LEVEL - 1 ) rbodies2twigs(bodies,twigs);         //  Put recv bodies into twig vector
-      stopTimer("Bodies2twigs ",printNow);                      //  Stop timer & print
       startTimer("Cells2twigs  ");                              //  Start timer
       cells2twigs(cells,twigs,l==LEVEL-1);                      //  Put cells into twig vector
       stopTimer("Cells2twigs  ",printNow);                      //  Stop timer & print
@@ -442,9 +456,7 @@ public:
         print(SUM);                                             //   Print sum of multipoles
       }                                                         //  Endif for last level
 #endif
-      startTimer("Ziptwigs     ");                              //  Start timer
       zipTwigs(twigs,cells,sticks,l==LEVEL-1);                  //  Zip two groups of twigs that overlap
-      stopTimer("Ziptwigs     ",printNow);                      //  Stop timer & print
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
         complex SUM = 0;                                        //   Initialize accumulator
@@ -457,9 +469,7 @@ public:
         print(sticks.size());                                   //   Print size of stick vector
       }                                                         //  Endif for last level
 #endif
-      startTimer("Reindex      ");                              // Start timer
       if( l == LEVEL - 1 ) reindexBodies(bodies,twigs,cells,sticks);// Re-index bodies
-      stopTimer("Reindex      ",printNow);                      //  Stop timer & print
       twigs2cells(twigs,cells,sticks);                          //  Turn twigs to cells
       startTimer("Sticks2send  ");                              //  Start timer
       sticks2send(sticks,offTwigs);                             //  Turn sticks to send buffer

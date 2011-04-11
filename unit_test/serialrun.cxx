@@ -52,6 +52,7 @@ int main() {
   T.stopTimer("Direct sum   ",T.printNow);
   T.eraseTimer("Direct sum   ");
   T.writeTime();
+  T.writeTime();
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);

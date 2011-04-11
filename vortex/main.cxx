@@ -4,9 +4,10 @@
 #endif
 
 int main() {
+  assert(IMAGES >= 3);
   const int numGrid1D = 128;
-  const int numSteps  = 10;
-  const int numSkip   = 5;
+  const int numSteps  = 0;
+  const int numSkip   = 0;
   const float dt      = 5e-4;
   const float nu      = 2e-2;
   Bodies bodies,jbodies;
@@ -78,11 +79,15 @@ int main() {
     std::sort(bodies.begin(),bodies.end());
     T.stopTimer("BiotSavart   ",printNow);
     T.eraseTimer("BiotSavart   ");
+    if(T.printNow) T.writeTime();
+//    T.resetTimer();
   }
   T.startTimer("Statistics   ");
   T.statistics(bodies);
   T.stopTimer("Statistics   ",printNow);
   T.eraseTimer("Statistics   ");
+  if(printNow) T.writeTime();
+  if(printNow) T.writeTime();
 
 #ifdef VTK
   int Ncell = 0;

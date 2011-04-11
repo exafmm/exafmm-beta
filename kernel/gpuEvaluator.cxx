@@ -352,11 +352,11 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
 }
 
 void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
-  startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator
   CIB = cells.begin();                                          // Set begin iterator for target per call
   CIE = cells.end();                                            // Set end iterator for target per call
   constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
+  startTimer("Get list     ");                                  // Start timer
   for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     for( L_iter L=listM2L[CI-CI0].begin(); L!=listM2L[CI-CI0].end(); ++L ) {//  Loop over interaction list
       CJ = *L;                                                  //   Set source cell
@@ -385,7 +385,6 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
 }
 
 void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
-  startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator for target
   CJ0 = cells.begin();                                          // Set begin iterator for source
   int numIcall = int(cells.size()-1)/MAXCELL+1;                 // Number of icall loops
@@ -394,6 +393,7 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
+    startTimer("Get list     ");                                //  Start timer
     for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over target cells
       for( L_iter L=listM2P[CI-CI0].begin(); L!=listM2P[CI-CI0].end(); ++L ) {//  Loop over interaction list
         CJ = *L;                                                //    Set source cell
@@ -424,7 +424,6 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
 }
 
 void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
-  startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator
   int numIcall = int(cells.size()-1)/MAXCELL+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
@@ -432,6 +431,7 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
+    startTimer("Get list     ");                                //  Start timer
     for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over target cells
       for( L_iter L=listP2P[CI-CI0].begin(); L!=listP2P[CI-CI0].end(); ++L ) {//  Loop over interaction list
         CJ = *L;                                                //    Set source cell
@@ -504,7 +504,6 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
 }
 
 void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
-  startTimer("Get list     ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator
   int numIcall = int(cells.size()-1)/MAXCELL+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
@@ -512,6 +511,7 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
+    startTimer("Get list     ");                                //  Start timer
     Lists listL2P(cells.size());                                //  Define L2P interation list vector
     Maps  flagL2P(cells.size());                                //  Define L2P periodic image flag
     for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over cells

@@ -30,12 +30,11 @@ const int  P       = 7;                                         // Order of expa
 const int  NCRIT   = 1000;                                      // Number of bodies per cell
 const int  MAXBODY = 200000;                                    // Maximum number of bodies per GPU kernel
 const int  MAXCELL = 1000;                                      // Maximum number of cells per GPU kernel
-const int  MAXCELL2= 100000;                                    // Maximum number of cells per GPU kernel
 const real THETA   = 1/sqrtf(3);                                // Box opening criteria
 const real CLET    = 3;                                         // LET opening critetia
 const real EPS2    = 1e-4;                                      // Softening parameter
 const int  IMAGES  = 0;                                         // Number of periodic image sublevels
-const int  GPUS    = 3;                                         // Number of GPUs per node
+const int  GPUS    = 4;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 
 #if Cartesian
