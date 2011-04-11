@@ -275,11 +275,12 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
   CI0 = cells.begin();                                          // Set begin iterator for target
   CJ0 = cells.begin();                                          // Set begin iterator for source
-  int numIcall = int(cells.size()-1)/MAXCELL+1;                 // Number of icall loops
+  const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
+  int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
-    CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per call
+    CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     startTimer("Get list     ");                                //  Start timer
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
     Lists listP2M(cells.size());                                //  Define P2M interation list vector
@@ -307,7 +308,7 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
     }                                                           //  Endif for kernel type
     getTargetCell(listP2M);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
-    ioffset += MAXCELL;                                         //  Increment ioffset
+    ioffset += numCell;                                         //  Increment ioffset
   }                                                             // End loop over icall
 }
 
@@ -353,33 +354,39 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
 
 void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
   CI0 = cells.begin();                                          // Set begin iterator
-  CIB = cells.begin();                                          // Set begin iterator for target per call
-  CIE = cells.end();                                            // Set end iterator for target per call
-  constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
-  startTimer("Get list     ");                                  // Start timer
-  for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
-    for( L_iter L=listM2L[CI-CI0].begin(); L!=listM2L[CI-CI0].end(); ++L ) {//  Loop over interaction list
-      CJ = *L;                                                  //   Set source cell
-      sourceSize[CJ] = 2 * NCOEF;                               //   Key : iterator, Value : number of coefs
-    }                                                           //  End loop over interaction list
-  }                                                             // End loop over target cells
-  stopTimer("Get list     ");                                   // Stop timer
-  setSourceCell();                                              // Set source buffer for cells
-  setTargetCell(listM2L,flagM2L);                               // Set target buffer for cells
-  if( kernelName == "Laplace" ) {                               // If Laplace kernel
-    LaplaceM2L();                                               //  Evaluate M2L kernel
-  } else if ( kernelName == "BiotSavart" ) {                    // If Biot Savart kernel
-    BiotSavartM2L();                                            //  Evaluate M2L kernel
-  } else if ( kernelName == "Stretching" ) {                    // If Stretching kernel
-    StretchingM2L();                                            //  Evaluate M2L kernel
-  } else if ( kernelName == "Gaussian" ) {                      // If Gaussian kernel
-    GaussianM2L();                                              //  Evaluate M2L kernel
-  } else {                                                      // If kernel is none of the above
-    if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-    abort();                                                    //  Abort execution
-  }                                                             // Endif for kernel type
-  getTargetCell(listM2L,false);                                 // Get body values from target buffer
-  clearBuffers();                                               // Clear GPU buffers
+  const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
+  int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
+  int ioffset = 0;                                              // Initialzie offset for icall loops
+  for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
+    CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
+    CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
+    constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
+    startTimer("Get list     ");                                //  Start timer
+    for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over target cells
+      for( L_iter L=listM2L[CI-CI0].begin(); L!=listM2L[CI-CI0].end(); ++L ) {//  Loop over interaction list
+        CJ = *L;                                                //    Set source cell
+        sourceSize[CJ] = 2 * NCOEF;                             //    Key : iterator, Value : number of coefs
+      }                                                         //   End loop over interaction list
+    }                                                           //  End loop over target cells
+    stopTimer("Get list     ");                                 //  Stop timer
+    setSourceCell();                                            //  Set source buffer for cells
+    setTargetCell(listM2L,flagM2L);                             //  Set target buffer for cells
+    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
+      LaplaceM2L();                                             //   Evaluate M2L kernel
+    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
+      BiotSavartM2L();                                          //   Evaluate M2L kernel
+    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
+      StretchingM2L();                                          //   Evaluate M2L kernel
+    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
+      GaussianM2L();                                            //   Evaluate M2L kernel
+    } else {                                                    //  If kernel is none of the above
+      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+      abort();                                                  //   Abort execution
+    }                                                           //  Endif for kernel type
+    getTargetCell(listM2L,false);                               //  Get body values from target buffer
+    clearBuffers();                                             //  Clear GPU buffers
+    ioffset += numCell;                                         //  Increment ioffset
+  }                                                             // End loop over icall
   listM2L.clear();                                              // Clear interaction lists
   flagM2L.clear();                                              // Clear periodic image flags
 }
@@ -387,11 +394,12 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
 void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
   CI0 = cells.begin();                                          // Set begin iterator for target
   CJ0 = cells.begin();                                          // Set begin iterator for source
-  int numIcall = int(cells.size()-1)/MAXCELL+1;                 // Number of icall loops
+  const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
+  int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
-    CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per call
+    CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
     startTimer("Get list     ");                                //  Start timer
     for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over target cells
@@ -417,7 +425,7 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
     }                                                           //  Endif for kernel type
     getTargetBody(listM2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
-    ioffset += MAXCELL;                                         //  Increment ioffset
+    ioffset += numCell;                                         //  Increment ioffset
   }                                                             // End loop over icall
   listM2P.clear();                                              // Clear interaction lists
   flagM2P.clear();                                              // Clear periodic image flags
@@ -425,11 +433,12 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
 
 void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
   CI0 = cells.begin();                                          // Set begin iterator
-  int numIcall = int(cells.size()-1)/MAXCELL+1;                 // Number of icall loops
+  const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
+  int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
-    CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per call
+    CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
     startTimer("Get list     ");                                //  Start timer
     for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over target cells
@@ -455,7 +464,7 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
     }                                                           //  Endif for kernel type
     getTargetBody(listP2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
-    ioffset += MAXCELL;                                         //  Increment ioffset
+    ioffset += numCell;                                         //  Increment ioffset
   }                                                             // End loop over icall
   listP2P.clear();                                              // Clear interaction lists
   flagP2P.clear();                                              // Clear periodic image flags
@@ -505,11 +514,12 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
 
 void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
   CI0 = cells.begin();                                          // Set begin iterator
-  int numIcall = int(cells.size()-1)/MAXCELL+1;                 // Number of icall loops
+  const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
+  int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
-    CIE = cells.begin()+std::min(ioffset+MAXCELL,int(cells.size()));// Set end iterator for target per call
+    CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
     startTimer("Get list     ");                                //  Start timer
     Lists listL2P(cells.size());                                //  Define L2P interation list vector
@@ -538,6 +548,6 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
     }                                                           //  Endif for kernel type
     getTargetBody(listL2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
-    ioffset += MAXCELL;                                         //  Increment ioffset
+    ioffset += numCell;                                         //  Increment ioffset
   }                                                             // End loop over icall
 }
