@@ -479,7 +479,6 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
-  std::cout << numIcall << std::endl;
   int maxLevel = getLevel(CI0->ICELL);                          // Level of twig
   int level = 1;                                                // Start level from 1
   while( level != maxLevel+1 ) {                                // While level of source is not root level

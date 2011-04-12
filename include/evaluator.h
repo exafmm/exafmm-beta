@@ -116,7 +116,7 @@ public:
   int getPeriodicRange() {                                      // Get range of periodic images
     int prange = 0;                                             //  Range of periodic images
     for( int i=0; i!=IMAGES; ++i ) {                            //  Loop over periodic image sublevels
-      prange += pow(3,i);                                       //   Accumulate range of periodic images
+      prange += int(pow(3,i));                                  //   Accumulate range of periodic images
     }                                                           //  End loop over perioidc image sublevels
     return prange;                                              // Return range of periodic images
   }

@@ -8,8 +8,8 @@ void Kernel::LaplaceInit() {
   cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
 #ifdef CUPRINTF
   cudaPrintfInit();                                             // Initialize cuPrintf
-  cudaThreadSynchronize();                                      // Sync GPU threads
 #endif
+  cudaThreadSynchronize();                                      // Sync GPU threads
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
 }

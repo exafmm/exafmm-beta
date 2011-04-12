@@ -406,7 +406,7 @@ public:
     }                                                           // End loop over ranks
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       int index = B->ICELL - ((1 << 3*level) - 1) / 7;          //  Get levelwise index
-      int irank = index / (pow(8,level) / SIZE);                //  Get rank which the cell belongs to
+      int irank = index / (int(pow(8,level)) / SIZE);           //  Get rank which the cell belongs to
       scnt[irank]++;                                            //  Fill send count bucket
     }                                                           // End loop over bodies
     MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM_WORLD); // Communicate send count to get recv count

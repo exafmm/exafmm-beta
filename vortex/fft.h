@@ -199,7 +199,7 @@ public:
   void writeSpectrum() {
     MPI_Reduce(EkSend,EkRecv,nx,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
     if( RANK == 0 ) {
-      std::ofstream fid("statistics.dat",std::ios::in | std::ios::app);
+      std::ofstream fid("statistics.dat",std::ios::out | std::ios::app);
       for( int k=0; k<nx; ++k ) {
         fid << EkRecv[k] << std::endl;
       }
