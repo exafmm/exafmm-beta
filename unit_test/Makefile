@@ -67,7 +67,7 @@ parallelrun: parallelrun.cxx $(OBJECT)
 
 unpartition: unpartition.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 2 ./a.out
+	mpirun -np 4 ./a.out
 
 ijparallelrun: ijparallelrun.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)

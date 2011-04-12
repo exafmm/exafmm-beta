@@ -274,22 +274,21 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
 
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
   CI0 = cells.begin();                                          // Set begin iterator for target
-  CJ0 = cells.begin();                                          // Set begin iterator for source
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
-    startTimer("Get list     ");                                //  Start timer
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
+    startTimer("Get list     ");                                //  Start timer
     Lists listP2M(cells.size());                                //  Define P2M interation list vector
     Maps  flagP2M(cells.size());                                //  Define P2M periodic image flag
-    for( CJ=CIB; CJ!=CIE; ++CJ ) {                              //  Loop over target cells
-      CJ->M = CJ->L = 0;                                        //   Initialize multipole & local coefficients
-      listP2M[CJ-CJ0].push_back(CJ);                            //   Push source cell into P2M interaction list
-      flagP2M[CJ-CJ0][CJ] |= Icenter;                           //   Flip bit of periodic image flag
-      sourceSize[CJ] = CJ->NLEAF;                               //   Key : iterator, Value : number of leafs
+    for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over target cells
+      CI->M = CI->L = 0;                                        //   Initialize multipole & local coefficients
+      listP2M[CI-CI0].push_back(CI);                            //   Push source cell into P2M interaction list
+      flagP2M[CI-CI0][CI] |= Icenter;                           //   Flip bit of periodic image flag
+      sourceSize[CI] = CI->NLEAF;                               //   Key : iterator, Value : number of leafs
     }                                                           //  End loop over source map
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies
@@ -314,40 +313,47 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
 
 void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
   CI0 = cells.begin();                                          // Set begin iterator for target
-  CJ0 = cells.begin();                                          // Set begin iterator for source
-  CIB = cells.begin();                                          // Set begin iterator for target per call
-  CIE = cells.end();                                            // Set end iterator for target per call
-  constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
-  Lists listM2M(cells.size());                                  // Define M2M interation list vector
-  Maps  flagM2M(cells.size());                                  // Define M2M periodic image flag
-  int level = getLevel(CJ0->ICELL);                             // Level of twig
-  while( level != 0 ) {                                         // While level of source is not root level
-    startTimer("Get list     ");                                //  Start timer
-    for( CJ=CIB; CJ!=CIE; ++CJ ) {                              //  Loop over cells bottomup (except root cell)
-      if( getLevel(CJ->ICELL) == level ) {                      //   If source cell is at current level
-        CI = CJ0 + CJ->PARENT;                                  //    Set target cell iterator
-        listM2M[CI-CI0].push_back(CJ);                          //    Push source cell into M2M interaction list
-        flagM2M[CI-CI0][CJ] |= Icenter;                         //    Flip bit of periodic image flag
-        sourceSize[CJ] = 2 * NCOEF;                             //    Key : iterator, Value : number of coefs
-      }                                                         //   Endif for current level
-    }                                                           //  End loop over cells
-    stopTimer("Get list     ");                                 //  Stop timer
-    setSourceCell();                                            //  Set source buffer for cells
-    setTargetCell(listM2M,flagM2M);                             //  Set target buffer for cells
-    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
-      LaplaceM2M();                                             //   Evaluate M2M kernel
-    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
-      BiotSavartM2M();                                          //   Evaluate M2M kernel
-    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
-      StretchingM2M();                                          //   Evaluate M2M kernel
-    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
-      GaussianM2M();                                            //   Evaluate M2M kernel
-    } else {                                                    //  If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           //  Endif for kernel type
-    getTargetCell(listM2M);                                     //  Get body values from target buffer
-    clearBuffers();                                             //  Clear GPU buffers
+  const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
+  int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
+  int level = getLevel(CI0->ICELL);                             // Level of twig
+  while( level != -1 ) {                                        // While level of target is not past root level
+    int ioffset = 0;                                            //  Initialzie offset for icall loops
+    for( int icall=0; icall!=numIcall; ++icall ) {              //  Loop over icall
+      CIB = cells.begin()+ioffset;                              //   Set begin iterator for target per call
+      CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
+      constHost.push_back(2*R0);                                //   Copy domain size to GPU buffer
+      startTimer("Get list     ");                              //   Start timer
+      Lists listM2M(cells.size());                              //   Define M2M interation list vector
+      Maps  flagM2M(cells.size());                              //   Define M2M periodic image flag
+      for( CI=CIB; CI!=CIE; ++CI ) {                            //   Loop over cells bottomup (except root cell)
+        if( getLevel(CI->ICELL) == level ) {                    //    If target cell is at current level
+          for( int i=0; i<CI->NCHILD; ++i ) {                   //     Loop over child cells
+            CJ = CI0 + CI->CHILD[i];                            //      Set iterator for source cell
+            listM2M[CI-CI0].push_back(CJ);                      //      Push source cell into M2M interaction list
+            flagM2M[CI-CI0][CJ] |= Icenter;                     //      Flip bit of periodic image flag
+            sourceSize[CJ] = 2 * NCOEF;                         //      Key : iterator, Value : number of coefs
+          }                                                     //     End loop over child cells
+        }                                                       //    Endif for current level
+      }                                                         //   End loop over cells
+      stopTimer("Get list     ");                               //   Stop timer
+      setSourceCell();                                          //   Set source buffer for cells
+      setTargetCell(listM2M,flagM2M);                           //   Set target buffer for cells
+      if( kernelName == "Laplace" ) {                           //   If Laplace kernel
+        LaplaceM2M();                                           //    Evaluate M2M kernel
+      } else if ( kernelName == "BiotSavart" ) {                //   If Biot Savart kernel
+        BiotSavartM2M();                                        //    Evaluate M2M kernel
+      } else if ( kernelName == "Stretching" ) {                //   If Stretching kernel
+        StretchingM2M();                                        //    Evaluate M2M kernel
+      } else if ( kernelName == "Gaussian" ) {                  //   If Gaussian kernel
+        GaussianM2M();                                          //    Evaluate M2M kernel
+      } else {                                                  //   If kernel is none of the above
+        if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+        abort();                                                //   Abort execution
+      }                                                         //   Endif for kernel type
+      getTargetCell(listM2M);                                   //   Get body values from target buffer
+      clearBuffers();                                           //   Clear GPU buffers
+      ioffset += numCell;                                       //   Increment ioffset
+    }                                                           //  End loop over icall
     level--;                                                    //  Decrement level
   }                                                             // End while loop over levels
 }
@@ -393,7 +399,6 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
 
 void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
   CI0 = cells.begin();                                          // Set begin iterator for target
-  CJ0 = cells.begin();                                          // Set begin iterator for source
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
@@ -472,42 +477,49 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
 
 void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
   CI0 = cells.begin();                                          // Set begin iterator
-  CIB = cells.begin();                                          // Set begin iterator for target per call
-  CIE = cells.end();                                            // Set end iterator for target per call
-  constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
-  Lists listL2L(cells.size());                                  // Define L2L interation list vector
-  Maps  flagL2L(cells.size());                                  // Define L2L periodic image flag
+  const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
+  int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
+  std::cout << numIcall << std::endl;
   int maxLevel = getLevel(CI0->ICELL);                          // Level of twig
   int level = 1;                                                // Start level from 1
   while( level != maxLevel+1 ) {                                // While level of source is not root level
-    startTimer("Get list     ");                                //  Start timer
-    for( CI=CIE-2; CI!=CIB-1; --CI ) {                          //  Loop over cells topdown (except root cell)
-      if( getLevel(CI->ICELL) == level ) {                      //   If target cell is at current level
-        CJ = CI0 + CI->PARENT;                                  //    Set source cell iterator
-        listL2L[CI-CI0].push_back(CJ);                          //    Push source cell into L2L interaction list
-        flagL2L[CI-CI0][CJ] |= Icenter;                         //    Flip bit of periodic image flag
-        if( sourceSize[CJ] == 0 ) {                             //    If the source cell has not been stored yet
-          sourceSize[CJ] = 2 * NCOEF;                           //     Key : iterator, Value : number of coefs
-        }                                                       //    Endif for current level
-      }                                                         //   Endif for stored source cell
-    }                                                           //  End loop over cells topdown
-    stopTimer("Get list     ");                                 //  Stop timer
-    setSourceCell(false);                                       //  Set source buffer for cells
-    setTargetCell(listL2L,flagL2L);                             //  Set target buffer for cells
-    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
-      LaplaceL2L();                                             //   Evaluate L2L kernel
-    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
-      BiotSavartL2L();                                          //   Evaluate L2L kernel
-    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
-      StretchingL2L();                                          //   Evaluate L2L kernel
-    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
-      GaussianL2L();                                            //   Evaluate L2L kernel
-    } else {                                                    //  If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //   Abort execution
-    }                                                           //  Endif for kernel type
-    getTargetCell(listL2L,false);                               //  Get body values from target buffer
-    clearBuffers();                                             //  Clear GPU buffers
+    int ioffset = 0;                                            //  Initialzie offset for icall loops
+    for( int icall=0; icall!=numIcall; ++icall ) {              //  Loop over icall
+      CIB = cells.begin()+ioffset;                              //   Set begin iterator for target per call
+      CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
+      constHost.push_back(2*R0);                                //   Copy domain size to GPU buffer
+      startTimer("Get list     ");                              //   Start timer
+      Lists listL2L(cells.size());                              //   Define L2L interation list vector
+      Maps  flagL2L(cells.size());                              //   Define L2L periodic image flag
+      for( CI=CIE-2; CI!=CIB-1; --CI ) {                        //   Loop over cells topdown (except root cell)
+        if( getLevel(CI->ICELL) == level ) {                    //    If target cell is at current level
+          CJ = CI0 + CI->PARENT;                                //     Set source cell iterator
+          listL2L[CI-CI0].push_back(CJ);                        //     Push source cell into L2L interaction list
+          flagL2L[CI-CI0][CJ] |= Icenter;                       //     Flip bit of periodic image flag
+          if( sourceSize[CJ] == 0 ) {                           //     If the source cell has not been stored yet
+            sourceSize[CJ] = 2 * NCOEF;                         //      Key : iterator, Value : number of coefs
+          }                                                     //     Endif for current level
+        }                                                       //    Endif for stored source cell
+      }                                                         //   End loop over cells topdown
+      stopTimer("Get list     ");                               //   Stop timer
+      setSourceCell(false);                                     //   Set source buffer for cells
+      setTargetCell(listL2L,flagL2L);                           //   Set target buffer for cells
+      if( kernelName == "Laplace" ) {                           //   If Laplace kernel
+        LaplaceL2L();                                           //    Evaluate L2L kernel
+      } else if ( kernelName == "BiotSavart" ) {                //   If Biot Savart kernel
+        BiotSavartL2L();                                        //    Evaluate L2L kernel
+      } else if ( kernelName == "Stretching" ) {                //   If Stretching kernel
+        StretchingL2L();                                        //    Evaluate L2L kernel
+      } else if ( kernelName == "Gaussian" ) {                  //   If Gaussian kernel
+        GaussianL2L();                                          //    Evaluate L2L kernel
+      } else {                                                  //   If kernel is none of the above
+        if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+        abort();                                                //    Abort execution
+      }                                                         //   Endif for kernel type
+      getTargetCell(listL2L,false);                             //   Get body values from target buffer
+      clearBuffers();                                           //   Clear GPU buffers
+      ioffset += numCell;                                       //   Increment ioffset
+    }                                                           //  End loop over icall
     level++;                                                    //  Increment level
   }                                                             // End while loop over levels
 }

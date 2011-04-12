@@ -5,8 +5,7 @@
 #endif
 
 int main() {
-//  const int numBodies = 10000;
-  const int numBodies = 562341;
+  const int numBodies = 10000;
   std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Bodies jbodies;

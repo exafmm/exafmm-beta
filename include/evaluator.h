@@ -5,9 +5,11 @@
 class Evaluator : public Kernel {                               // Evaluator is the interface between tree and kernel
 protected:
   C_iter      CI0;                                              // icells.begin()
+  C_iter      CIB;                                              // icells begin per call
+  C_iter      CIE;                                              // icells end per call
   C_iter      CJ0;                                              // jcells.begin()
-  C_iter      CIB;                                              // icells begin for call
-  C_iter      CIE;                                              // icells end for call
+  C_iter      CJB;                                              // jcells begin per call
+  C_iter      CJE;                                              // jcells end per call
   Pairs       pairs;                                            // Stack of interacting cell pairs
   Lists       listM2L;                                          // M2L interaction list
   Lists       listM2P;                                          // M2P interaction list
