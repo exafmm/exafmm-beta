@@ -7,27 +7,20 @@
 class MyMPI {                                                   // My own MPI utilities
 protected:
   const int WAIT;                                               // Waiting time between output of different ranks
-  int       SIZE;                                               // Number of MPI processes
-  int       RANK;                                               // Index of current MPI process
-  int       SIZES;                                              // Number of MPI processes for split communicator
-  int       RANKS;                                              // Index of current MPI process for split communicator
+  int       MPISIZES;                                           // Number of MPI processes for split communicator
+  int       MPIRANKS;                                           // Index of current MPI process for split communicator
 public:
   MyMPI() : WAIT(100) {                                         // Constructor, initialize WAIT time
     int argc(0);                                                // Dummy argument count
     char **argv;                                                // Dummy argument value
     MPI_Init(&argc,&argv);                                      // Initialize MPI communicator
-    MPI_Comm_size(MPI_COMM_WORLD,&SIZE);                        // Get number of MPI processes
-    MPI_Comm_rank(MPI_COMM_WORLD,&RANK);                        // Get index of current MPI process
-    MPISIZE = SIZE;                                             // Set global variable MPISIZE
-    MPIRANK = RANK;                                             // Set global variable MPIRANK
+    MPI_Comm_size(MPI_COMM_WORLD,&MPISIZE);                     // Get number of MPI processes
+    MPI_Comm_rank(MPI_COMM_WORLD,&MPIRANK);                     // Get index of current MPI process
   }
 
   ~MyMPI() {                                                    // Destructor
     MPI_Finalize();                                             // Finalize MPI communicator
   }
-
-  int commSize() { return SIZE; }                               // Number of MPI processes
-  int commRank() { return RANK; }                               // Index of current MPI process
 
   bool isPowerOfTwo(const int n) {                              // If n is power of two return true
     return ((n != 0) && !(n & (n - 1)));                        // Decrement and compare bits
@@ -81,30 +74,30 @@ public:
 
   template<typename T>
   void print(T data) {                                          // Print a scalar value on all ranks
-    for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over ranks
+    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
       MPI_Barrier(MPI_COMM_WORLD);                              //  Sync processes
       usleep(WAIT);                                             //  Wait "WAIT" milliseconds
-      if( RANK == irank ) std::cout << data << " ";             //  If it's my turn print "data"
+      if( MPIRANK == irank ) std::cout << data << " ";          //  If it's my turn print "data"
     }                                                           // End loop over ranks
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
-    if( RANK == 0 ) std::cout << std::endl;                     // New line
+    if( MPIRANK == 0 ) std::cout << std::endl;                  // New line
   }
 
   template<typename T>
   void print(T data, const int irank) {                         // Print a scalar value on irank
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
-    if( RANK == irank ) std::cout << data;                      // If it's my rank print "data"
+    if( MPIRANK == irank ) std::cout << data;                   // If it's my rank print "data"
   }
 
   template<typename T>
   void print(T *data, const int begin, const int end) {         // Print a vector value on all ranks
-    for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over ranks
+    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
       MPI_Barrier(MPI_COMM_WORLD);                              //  Sync processes
       usleep(WAIT);                                             //  Wait "WAIT" milliseconds
-      if( RANK == irank ) {                                     //  If it's my turn to print
-        std::cout << RANK << " : ";                             //   Print rank
+      if( MPIRANK == irank ) {                                  //  If it's my turn to print
+        std::cout << MPIRANK << " : ";                          //   Print rank
         for( int i=begin; i!=end; ++i ) {                       //   Loop over data
           std::cout << data[i] << " ";                          //    Print data[i]
         }                                                       //   End loop over data
@@ -117,8 +110,8 @@ public:
   void print(T *data, const int begin, const int end, const int irank) {// Print a vector value on irank
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
-    if( RANK == irank ) {                                       // If it's my rank
-      std::cout << RANK << " : ";                               //  Print rank
+    if( MPIRANK == irank ) {                                    // If it's my rank
+      std::cout << MPIRANK << " : ";                            //  Print rank
       for( int i=begin; i!=end; ++i ) {                         //  Loop over data
         std::cout << data[i] << " ";                            //   Print data[i]
       }                                                         //  End loop over data

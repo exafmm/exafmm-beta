@@ -31,7 +31,7 @@ public:
 
 public:
   FastFourierTransform(int N) : nx(N) {
-    nxLocal    = nx / SIZE;
+    nxLocal    = nx / MPISIZE;
     numBodies  = nx * nx * nxLocal;
     numSend    = nx * nxLocal * nxLocal;
     Kk         = new int   [nx];
@@ -150,7 +150,7 @@ public:
   void xDerivative() {
     forwardFFT();
     for( int i=0; i!=numBodies; ++i ) {
-      int ix = (i + numBodies * RANK) % nx;
+      int ix = (i + numBodies * MPIRANK) % nx;
       realRecv[i] = -Kk[ix] * imagSend[i];
       imagRecv[i] =  Kk[ix] * realSend[i];
     }
@@ -160,7 +160,7 @@ public:
   void yDerivative() {
     forwardFFT();
     for( int i=0; i!=numBodies; ++i ) {
-      int iy = (i + numBodies * RANK) / nx % nx;
+      int iy = (i + numBodies * MPIRANK) / nx % nx;
       realRecv[i] = -Kk[iy] * imagSend[i];
       imagRecv[i] =  Kk[iy] * realSend[i];
     }
@@ -170,7 +170,7 @@ public:
   void zDerivative() {
     forwardFFT();
     for( int i=0; i!=numBodies; ++i ) {
-      int iz = (i + numBodies * RANK) / nx / nx;
+      int iz = (i + numBodies * MPIRANK) / nx / nx;
       realRecv[i] = -Kk[iz] * imagSend[i];
       imagRecv[i] =  Kk[iz] * realSend[i];
     }
@@ -187,7 +187,7 @@ public:
     for( int ix=0; ix<nxLocal; ++ix ) {
       for( int iy=0; iy<nx/2; ++iy ) {
         for( int iz=0; iz<nx/2; ++iz ) {
-          int iix = ix + nxLocal * RANK;
+          int iix = ix + nxLocal * MPIRANK;
           int i = ix * nx * nx + iy * nx + iz;
           int k = floor(sqrtf(Kk[iix] * Kk[iix] + Kk[iy] * Kk[iy] + Kk[iz] * Kk[iz]));
           EkSend[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]);
@@ -198,7 +198,7 @@ public:
 
   void writeSpectrum() {
     MPI_Reduce(EkSend,EkRecv,nx,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
-    if( RANK == 0 ) {
+    if( MPIRANK == 0 ) {
       std::ofstream fid("statistics.dat",std::ios::out | std::ios::app);
       for( int k=0; k<nx; ++k ) {
         fid << EkRecv[k] << std::endl;

@@ -15,7 +15,7 @@ int main() {
   D.kernelName = kernelName;
   E.preCalculation();
   gethostname(hostname,sizeof(hostname));
-  if( M.commRank() == 0 ) E.printNow = true;
+  if( MPIRANK == 0 ) E.printNow = true;
 
   E.startTimer("Set bodies   ");
   D.sphere(bodies);
@@ -39,11 +39,11 @@ int main() {
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
 
-  for( int irank=0; irank!=M.commSize(); ++irank ) {
+  for( int irank=0; irank!=MPISIZE; ++irank ) {
     MPI_Barrier(MPI_COMM_WORLD);
-    if( M.commRank() == irank ) {
-      std::cout << hostname << " @ rank : " << M.commRank() << " / " << M.commSize();
-      std::cout << " @ device : " << M.commRank()%GPUS << " / " << GPUS << std::endl;
+    if( MPIRANK == irank ) {
+      std::cout << hostname << " @ rank : " << MPIRANK << " / " << MPISIZE;
+      std::cout << " @ device : " << MPIRANK % GPUS << " / " << GPUS << std::endl;
       std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
     }
     usleep(100);

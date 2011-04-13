@@ -15,13 +15,13 @@ int main() {
   T.setKernel(kernelName);
   T.initialize();
   D.kernelName = kernelName;
-  if( T.commRank() == 0 ) T.printNow = true;
+  if( MPIRANK == 0 ) T.printNow = true;
 
   for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
     if(T.printNow) std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
-    D.random(bodies,T.commRank()+1);
+    D.random(bodies,MPIRANK+1);
     T.startTimer("FMM          ");
     T.setGlobDomain(bodies);
     T.octsection(bodies);
@@ -49,10 +49,10 @@ int main() {
     } else {
       jbodies = bodies2;
     }
-    for( int i=0; i!=T.commSize(); ++i ) {
+    for( int i=0; i!=MPISIZE; ++i ) {
       T.shiftBodies(jbodies);
       T.evalP2P(bodies2,jbodies);
-      if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
+      if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;
     }
     D.writeTarget(bodies2);
 #else
@@ -88,17 +88,17 @@ int main() {
 
   int Ncell = 0;
   vtkPlot vtk;
-  if( T.commRank() == 0 ) {
+  if( MPIRANK == 0 ) {
     vtk.setDomain(T.getR0(),T.getX0());
     vtk.setGroupOfPoints(bodies,Ncell);
   }
-  for( int i=1; i!=T.commSize(); ++i ) {
+  for( int i=1; i!=MPISIZE; ++i ) {
     T.shiftBodies(bodies);
-    if( T.commRank() == 0 ) {
+    if( MPIRANK == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
-  if( T.commRank() == 0 ) {
+  if( MPIRANK == 0 ) {
     vtk.plot(Ncell);
   }
 #endif

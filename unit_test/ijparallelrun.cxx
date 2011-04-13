@@ -16,11 +16,11 @@ int main() {
   T.setKernel(kernelName);
   T.initialize();
   D.kernelName = kernelName;
-  if( T.commRank() == 0 ) T.printNow = true;
+  if( MPIRANK == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
-  D.random(bodies,T.commRank()+1);
-  D.random(jbodies,T.commRank()+T.commSize()+1);
+  D.random(bodies,MPIRANK+1);
+  D.random(jbodies,MPIRANK+MPISIZE+1);
   Bodies bodies2 = bodies;
   T.stopTimer("Set bodies   ",T.printNow);
 
@@ -38,10 +38,10 @@ int main() {
   }
 
   T.startTimer("Direct sum   ");
-  for( int i=0; i!=T.commSize(); ++i ) {
+  for( int i=0; i!=MPISIZE; ++i ) {
     T.shiftBodies(jbodies2);
     T.evalP2P(bodies2,jbodies2);
-    if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
+    if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;
   }
   T.stopTimer("Direct sum   ",T.printNow);
   T.eraseTimer("Direct sum   ");
@@ -104,17 +104,17 @@ int main() {
 
   int Ncell = 0;
   vtkPlot vtk;
-  if( T.commRank() == 0 ) {
+  if( MPIRANK == 0 ) {
     vtk.setDomain(T.getR0(),T.getX0());
     vtk.setGroupOfPoints(bodies,Ncell);
   }
-  for( int i=1; i!=T.commSize(); ++i ) {
+  for( int i=1; i!=MPISIZE; ++i ) {
     T.shiftBodies(bodies);
-    if( T.commRank() == 0 ) {
+    if( MPIRANK == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
-  if( T.commRank() == 0 ) {
+  if( MPIRANK == 0 ) {
     vtk.plot(Ncell);
   }
 #endif

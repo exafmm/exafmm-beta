@@ -14,10 +14,10 @@ int main() {
   T.setKernel(kernelName);
   T.initialize();
   D.kernelName = kernelName;
-  if( T.commRank() == 0 ) T.printNow = true;
+  if( MPIRANK == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
-  D.random(bodies,T.commRank()+1);
+  D.random(bodies,MPIRANK+1);
   T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
@@ -35,7 +35,7 @@ int main() {
   T.stopTimer("Sort index   ",T.printNow);
 
   T.startTimer("Nth element  ");
-  bigint nthGlobal = numBodies * T.commSize() / 3;
+  bigint nthGlobal = numBodies * MPISIZE / 3;
   bigint iSplit = T.nth_element(bodies,nthGlobal);
   int nthLocal = T.splitBodies(bodies,iSplit);
   T.stopTimer("Nth element  ",T.printNow);
@@ -44,7 +44,7 @@ int main() {
   }
 
 #ifdef VTK
-  if( T.commRank() == 0 ) {
+  if( MPIRANK == 0 ) {
     int Ncell = 0;
     vtkPlot vtk;
     vtk.setDomain(T.getR0(),T.getX0());

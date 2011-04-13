@@ -15,11 +15,11 @@
 #include <vector>
 #include "vec.h"
 #ifndef KERNEL
-int MPIRANK = 0;                                                // MPI rank (for debugging serial class in MPI run)
-int MPISIZE = 1;                                                // MPI size (for debugging serial class in MPI run)
+int MPIRANK = 0;                                                // MPI comm rank
+int MPISIZE = 1;                                                // MPI comm size
 #else
-extern int MPIRANK;
-extern int MPISIZE;
+extern int MPIRANK;                                             // MPI comm rank
+extern int MPISIZE;                                             // MPI comm size
 #endif
 
 typedef long                 bigint;                            // Big integer type

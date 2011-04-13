@@ -56,7 +56,7 @@ private:
   }
 
   void getLET(C_iter C0, C_iter C, vect xmin, vect xmax) {      // Determine which cells to send
-    int level = int(log(SIZE-1) / M_LN2 / 3) + 1;               // Level of local root cell
+    int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
     for( int i=0; i!=C->NCHILD; i++ ) {                         // Loop over child cells
       C_iter CC = C0+C->CHILD[i];                               //  Iterator for child cell
       bool divide = false;                                      //  Initialize logical for dividing
@@ -283,8 +283,8 @@ public:
   void commBodies(Cells &cells) {                               // Communicate bodies in the LET
     startTimer("Gather bounds");                                // Start timer
     MPI_Datatype MPI_TYPE = getType(XMIN[LEVEL][0]);            // Get MPI data type
-    std::vector<vect> xmin(SIZE);                               // Buffer for gathering XMIN
-    std::vector<vect> xmax(SIZE);                               // Buffer for gathering XMAX
+    std::vector<vect> xmin(MPISIZE);                            // Buffer for gathering XMIN
+    std::vector<vect> xmax(MPISIZE);                            // Buffer for gathering XMAX
     MPI_Allgather(&XMIN[LEVEL][0],3,MPI_TYPE,                   // Gather XMIN
                   &xmin[0][0],3,MPI_TYPE,MPI_COMM_WORLD);
     MPI_Allgather(&XMAX[LEVEL][0],3,MPI_TYPE,                   // Gather XMAX
@@ -295,7 +295,7 @@ public:
     std::vector<C_iter> scells;                                 // Vector of cell iterators for cells to send
     int oldsize = 0;                                            // Per rank offset of the number of cells to send
     C_iter C0 = cells.begin();                                  // Set cell begin iterator
-    for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over ranks
+    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
       int ic = 0;                                               //  Initialize neighbor dimension counter
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimensions
         if(xmin[irank][d] < 2 * XMAX[LEVEL][d] - XMIN[LEVEL][d] &&//   If the two domains are touching or overlapping
@@ -304,7 +304,7 @@ public:
         }                                                       //   Endif for overlapping domains
       }                                                         //  End loop over dimensions
       ic = 3;
-      if( ic == 3 && irank != RANK ) {                          //  If ranks are neighbors in all dimensions
+      if( ic == 3 && irank != MPIRANK ) {                       //  If ranks are neighbors in all dimensions
         for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {    //   Loop over cells
           if( C->NCHILD == 0 ) {                                //   If cell is a twig
             bool send = false;                                  //    Initialize logical for sending
@@ -340,10 +340,10 @@ public:
     startTimer("Send count   ");                                // Start timer
     int ic = 0, ssize = 0;                                      // Initialize counter and offset for scells
     std::vector<MPI_Request> reqs(2*srnks.size());              // Vector of MPI requests
-    std::vector<int>         scnt(SIZE);                        // Vector of send counts
-    std::vector<int>         sdsp(SIZE);                        // Vector of send displacements
-    std::vector<int>         rcnt(SIZE);                        // Vector of recv counts
-    std::vector<int>         rdsp(SIZE);                        // Vector of recv displacements
+    std::vector<int>         scnt(MPISIZE);                     // Vector of send counts
+    std::vector<int>         sdsp(MPISIZE);                     // Vector of send displacements
+    std::vector<int>         rcnt(MPISIZE);                     // Vector of recv counts
+    std::vector<int>         rdsp(MPISIZE);                     // Vector of recv displacements
     for( int i=0; i!=int(srnks.size()); ++i ) {                 // Loop over ranks to send to & recv from
       int irank = srnks[i];                                     //  Rank to send to & recv from
       for( int c=0; c!=scnts[i]; ++c,++ic ) {                   //  Loop over cells to send to that rank
@@ -357,7 +357,7 @@ public:
         }                                                       //   End loop over bodies
       }                                                         //  End loop over cells
       scnt[irank] = sendBodies.size()-ssize;                    //  Set send count of current rank
-      sdsp[irank] = ssize;
+      sdsp[irank] = ssize;                                      //  Set send displacement of current rank
       ssize += scnt[irank];                                     //  Increment offset for vector scells
     }                                                           // End loop over ranks
     MPI_Alltoall(&scnt[0],1,MPI_INT,&rcnt[0],1,MPI_INT,MPI_COMM_WORLD);
@@ -365,13 +365,13 @@ public:
 
     startTimer("Send bodies  ");                                // Start timer
     int rsize = 0;                                              // Initialize total recv count
-    for( int i=0; i!=SIZE; ++i ) {                              // Loop over ranks to recv from
+    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks to recv from
       rdsp[i] = rsize;                                          //  Set recv displacements
       rsize += rcnt[i];                                         //  Accumulate recv counts
     }                                                           // End loop over ranks to recv from
     recvBodies.resize(rsize);                                   // Receive buffer for bodies
     int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
-    for( int i=0; i!=SIZE; ++i ) {                              // Loop over ranks to recv from
+    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks to recv from
       scnt[i] *= bytes;                                         //  Send as bytes
       sdsp[i] *= bytes;                                         //  Send as bytes
       rcnt[i] *= bytes;                                         //  Recv as bytes
@@ -384,7 +384,7 @@ public:
   }
 
   void checkNumCells(int l) {                                   // Only works with octsection
-    int maxLevel = int(log(SIZE-1) / M_LN2 / 3) + 1;
+    int maxLevel = int(log(MPISIZE-1) / M_LN2 / 3) + 1;
     int octant0 = -1;
     int numCells = 0;
     for( JC_iter JC=sendCells.begin(); JC!=sendCells.end(); ++JC ) {
@@ -397,7 +397,7 @@ public:
       }
     }
     int numCellsExpect = (1 << (3 * maxLevel - 1)) / (1 << l);  // Isn't true for far domains
-    if( numCellsExpect != numCells && RANK == 0) std::cout << numCells << " " << numCellsExpect << std::endl;
+    if( numCellsExpect != numCells && MPIRANK == 0) std::cout << numCells << " " << numCellsExpect << std::endl;
   }
 
   void checkSumMass(Cells &cells) {

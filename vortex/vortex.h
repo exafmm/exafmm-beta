@@ -106,7 +106,7 @@ public:
   void readData(Bodies &bodies) {                               // Initialize source values
 #if 1
     char fname[256];
-    sprintf(fname,"../../isotropic/spectral/initialu%4.4d",RANK);
+    sprintf(fname,"../../isotropic/spectral/initialu%4.4d",MPIRANK);
     std::ifstream fid(fname,std::ios::in);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> B->SRC[0];
@@ -120,22 +120,22 @@ public:
 #else
     std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
     float dummy;
-    for( int rank=0; rank!=SIZE; ++rank ) {
-      if( rank == RANK ) {
+    for( int rank=0; rank!=MPISIZE; ++rank ) {
+      if( rank == MPIRANK ) {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> B->SRC[0];
       } else {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
       }
     }
-    for( int rank=0; rank!=SIZE; ++rank ) {
-      if( rank == RANK ) {
+    for( int rank=0; rank!=MPISIZE; ++rank ) {
+      if( rank == MPIRANK ) {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> B->SRC[1];
       } else {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
       }
     }
-    for( int rank=0; rank!=SIZE; ++rank ) {
-      if( rank == RANK ) {
+    for( int rank=0; rank!=MPISIZE; ++rank ) {
+      if( rank == MPIRANK ) {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> B->SRC[2];
       } else {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
@@ -146,11 +146,11 @@ public:
 
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
-      int ix = (i+numBodies*RANK) / nx / nx;
-      int iy = (i+numBodies*RANK) / nx % nx;
-      int iz = (i+numBodies*RANK) % nx;
+      int ix = (i + numBodies * MPIRANK) / nx / nx;
+      int iy = (i + numBodies * MPIRANK) / nx % nx;
+      int iz = (i + numBodies * MPIRANK) % nx;
       B->IBODY = i;                                             //  Tag body with initial index
-      B->IPROC = RANK;                                          //  Tag body with initial MPI rank
+      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
       B->X[0] = (ix + .5) * dx - M_PI;                          //  Initialize x position
       B->X[1] = (iy + .5) * dx - M_PI;                          //  Initialize y position
       B->X[2] = (iz + .5) * dx - M_PI;                          //  Initialize z position
@@ -212,7 +212,7 @@ public:
     double diff = 0, norm = 0;
 #if 1
     char fname[256];
-    sprintf(fname,"../../isotropic/spectral/initialu%4.4d",RANK);
+    sprintf(fname,"../../isotropic/spectral/initialu%4.4d",MPIRANK);
     std::ifstream fid(fname,std::ios::in);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       fid >> u;
@@ -232,8 +232,8 @@ public:
 #else
     std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
     float dummy;
-    for( int rank=0; rank!=SIZE; ++rank ) {
-      if( rank == RANK ) {
+    for( int rank=0; rank!=MPISIZE; ++rank ) {
+      if( rank == MPIRANK ) {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
           fid >> u;
           diff += (B->TRG[0] - u) * (B->TRG[0] - u);
@@ -243,8 +243,8 @@ public:
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
       }
     }
-    for( int rank=0; rank!=SIZE; ++rank ) {
-      if( rank == RANK ) {
+    for( int rank=0; rank!=MPISIZE; ++rank ) {
+      if( rank == MPIRANK ) {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
           fid >> v;
           diff += (B->TRG[1] - v) * (B->TRG[1] - v);
@@ -254,8 +254,8 @@ public:
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
       }
     }
-    for( int rank=0; rank!=SIZE; ++rank ) {
-      if( rank == RANK ) {
+    for( int rank=0; rank!=MPISIZE; ++rank ) {
+      if( rank == MPIRANK ) {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
           fid >> w;
           diff += (B->TRG[2] - w) * (B->TRG[2] - w);
@@ -311,9 +311,9 @@ public:
     Bodies bodies2 = bodies, jbodies = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
-      int ix = (i+numBodies*RANK) / nx / nx;
-      int iy = (i+numBodies*RANK) / nx % nx;
-      int iz = (i+numBodies*RANK) % nx;
+      int ix = (i + numBodies * MPIRANK) / nx / nx;
+      int iy = (i + numBodies * MPIRANK) / nx % nx;
+      int iz = (i + numBodies * MPIRANK) % nx;
       B->X[0] = (ix + .5) * dx - M_PI;
       B->X[1] = (iy + .5) * dx - M_PI;
       B->X[2] = (iz + .5) * dx - M_PI;

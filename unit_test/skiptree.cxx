@@ -15,10 +15,10 @@ int main() {
   T.setKernel(kernelName);
   T.initialize();
   D.kernelName = kernelName;
-  if( T.commRank() == 0 ) T.printNow = true;
+  if( MPIRANK == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");
-  D.random(bodies,T.commRank()+1);
+  D.random(bodies,MPIRANK+1);
   T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
@@ -55,10 +55,10 @@ int main() {
   T.startTimer("Direct sum   ");
   Bodies bodies2 = bodies;
   D.initTarget(bodies2);
-  for( int i=0; i!=T.commSize(); ++i ) {
+  for( int i=0; i!=MPISIZE; ++i ) {
     T.shiftBodies(jbodies);
     T.evalP2P(bodies2,jbodies);
-    if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << T.commSize() << std::endl;
+    if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;
   }
   T.stopTimer("Direct sum   ",T.printNow);
   T.eraseTimer("Direct sum   ");
@@ -89,17 +89,17 @@ int main() {
 
   int Ncell = 0;
   vtkPlot vtk;
-  if( T.commRank() == 0 ) {
+  if( MPIRANK == 0 ) {
     vtk.setDomain(T.getR0(),T.getX0());
     vtk.setGroupOfPoints(bodies,Ncell);
   }
-  for( int i=1; i!=T.commSize(); ++i ) {
+  for( int i=1; i!=MPISIZE; ++i ) {
     T.shiftBodies(bodies);
-    if( T.commRank() == 0 ) {
+    if( MPIRANK == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
-  if( T.commRank() == 0 ) {
+  if( MPIRANK == 0 ) {
     vtk.plot(Ncell);
   }
 #endif

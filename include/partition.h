@@ -33,10 +33,10 @@ private:
   int getBucket(T &data, int numData, int lOffset, Bigints &send, Bigints &recv, MPI_Comm MPI_COMM0) {
     int maxBucket = send.size();                                // Maximum number of buckets
     int numBucket;                                              // Number of buckets
-    int numSample = std::min(maxBucket/SIZES,numData);          // Number of local samples
+    int numSample = std::min(maxBucket/MPISIZES,numData);       // Number of local samples
     MPI_Datatype MPI_TYPE = getType(data[0].ICELL);             // Get MPI data type
-    int *rcnt = new int [SIZES];                                // MPI recv count
-    int *rdsp = new int [SIZES];                                // MPI recv displacement
+    int *rcnt = new int [MPISIZES];                             // MPI recv count
+    int *rdsp = new int [MPISIZES];                             // MPI recv displacement
     for( int i=0; i!=numSample; ++i ) {                         // Loop over local samples
       int stride = numData/numSample;                           //  Sampling stride
       send[i] = data[lOffset + i * stride].ICELL;               //  Put sampled data in send buffer
@@ -44,9 +44,9 @@ private:
     MPI_Gather(&numSample,1,MPI_INT,                            // Gather size of sample data to rank 0
                rcnt,      1,MPI_INT,
                0,MPI_COMM0);
-    if( RANKS == 0 ) {                                          // Only rank 0 operates on gathered info
+    if( MPIRANKS == 0 ) {                                       // Only rank 0 operates on gathered info
       numBucket = 0;                                            //  Initialize number of buckets
-      for( int irank=0; irank!=SIZES; ++irank ) {               //  Loop over processes
+      for( int irank=0; irank!=MPISIZES; ++irank ) {            //  Loop over processes
         rdsp[irank] = numBucket;                                //   Calculate recv displacement
         numBucket += rcnt[irank];                               //   Accumulate recv count to get number of buckets
       }                                                         //  End loop over processes
@@ -55,7 +55,7 @@ private:
     MPI_Gatherv(&send[0],numSample,MPI_TYPE,                    // Gather sample data to rank 0
                 &recv[0],rcnt,rdsp,MPI_TYPE,
                 0,MPI_COMM0);
-    if( RANKS == 0 ) {                                          // Only rank 0 operates on gathered info
+    if( MPIRANKS == 0 ) {                                       // Only rank 0 operates on gathered info
       std::sort(recv.begin(),recv.end());                       //  Sort the bucket data
       numBucket = std::unique(recv.begin(),recv.end()) - recv.begin();// Remove duplicate bucket data
       recv.resize(numBucket);                                   //  Resize recv again
@@ -71,7 +71,7 @@ protected:
   void bisectionGetComm(int l) {                                // Split the MPI communicator into N-D hypercube
     for( int i=1; i>=0; --i ) {                                 // Loop over 1 and 0
       int pSplit = (nprocs[l][0] + i) / 2;                      //  Splitting criteria
-      if( RANK - offset[l][0] < pSplit ) {                      //  If on left side
+      if( MPIRANK - offset[l][0] < pSplit ) {                   //  If on left side
         nprocs[l+1][i] = pSplit;                                //   Group size is the splitting criteria
         offset[l+1][i] = offset[l][0];                          //   Offset is the same as previous
          color[l+1][i] =  color[l][0] * 2;                      //   Color is twice the previous
@@ -80,7 +80,7 @@ protected:
         offset[l+1][i] = offset[l][0] + pSplit;                 //   Offset is incremented by splitting criteria
          color[l+1][i] =  color[l][0] * 2 + 1;                  //   Color is twice the previous plus one
       }                                                         //  Endif for sides
-      key[l+1][i] = RANK - offset[l+1][i];                      //  Key is determined from offset
+      key[l+1][i] = MPIRANK - offset[l+1][i];                   //  Key is determined from offset
     }                                                           // End loop over 1 and 0
     key[l+1][2] = color[l+1][1] % 2;                            // The third type of key is determined from color[1]
     color[l+1][2] = key[l+1][1] + color[l][0] * (1 << (LEVEL - l - 1));// The corresponding color is determined from key[1]
@@ -202,11 +202,11 @@ protected:
 
 public:
   Partition() : TreeConstructor() {                             // Constructor
-    LEVEL = int(log(SIZE) / M_LN2 - 1e-5) + 1;                  // Level of the process binary tree
+    LEVEL = int(log(MPISIZE) / M_LN2 - 1e-5) + 1;               // Level of the process binary tree
     XMIN.resize(LEVEL+1);                                       // Minimum position vector at each level
     XMAX.resize(LEVEL+1);                                       // Maximum position vector at each level
     startTimer("Split comm   ");                                // Start timer
-    nprocs[0][0] = nprocs[0][1] = SIZE;                         // Initialize number of processes in groups
+    nprocs[0][0] = nprocs[0][1] = MPISIZE;                      // Initialize number of processes in groups
     offset[0][0] = offset[0][1] = 0;                            // Initialize offset of body in groups
      color[0][0] =  color[0][1] =  color[0][2] = 0;             // Initialize color of communicators
        key[0][0] =    key[0][1] =    key[0][2] = 0;             // Initialize key of communicators
@@ -265,8 +265,8 @@ public:
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
     const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
-    const int isend = (RANK + 1       ) % SIZE;                 // Send to next rank (wrap around)
-    const int irecv = (RANK - 1 + SIZE) % SIZE;                 // Receive from previous rank (wrap around)
+    const int isend = (MPIRANK + 1          ) % MPISIZE;        // Send to next rank (wrap around)
+    const int irecv = (MPIRANK - 1 + MPISIZE) % MPISIZE;        // Receive from previous rank (wrap around)
     MPI_Request sreq,rreq;                                      // Send, recv request handles
 
     MPI_Isend(&oldSize,1,MPI_INT,irecv,0,MPI_COMM_WORLD,&sreq); // Send current number of bodies
@@ -287,16 +287,16 @@ public:
   template<typename T, typename T2>
   T2 nth_element(T &data, T2 n, MPI_Comm MPI_COMM0=0) {         // Find nth element of global data
     if( MPI_COMM0 == 0 ) {                                      // If MPI_COMM is not specified
-      MPI_Comm_split(MPI_COMM_WORLD,0,RANK,&MPI_COMM0);         //  Create an artificial MPI_COMM
+      MPI_Comm_split(MPI_COMM_WORLD,0,MPIRANK,&MPI_COMM0);      //  Create an artificial MPI_COMM
     }
-    MPI_Comm_size(MPI_COMM0,&SIZES);                            // Get number of MPI processes for split comm
-    MPI_Comm_rank(MPI_COMM0,&RANKS);                            // Get index of current MPI process for split comm
+    MPI_Comm_size(MPI_COMM0,&MPISIZES);                         // Get number of MPI processes for split comm
+    MPI_Comm_rank(MPI_COMM0,&MPIRANKS);                         // Get index of current MPI process for split comm
     int numData = data.size();                                  // Total size of data to perform nth_element
     int maxBucket = 1000;                                       // Maximum number of buckets
     int numBucket;                                              // Number of buckets
     int lOffset = 0;                                            // Local offset of region being considered
     MPI_Datatype MPI_TYPE = getType(n);                         // Get MPI data type
-    int *rcnt = new int [SIZES];                                // MPI recv count
+    int *rcnt = new int [MPISIZES];                             // MPI recv count
     Bigints send(maxBucket);                                    // MPI send buffer for data
     Bigints recv(maxBucket);                                    // MPI recv buffer for data
     T2 gOffset = 0;                                             // Global offset of region being considered
@@ -314,7 +314,7 @@ public:
       }                                                         //  End loop over data
       MPI_Reduce(isend,irecv,numBucket,MPI_TYPE,                //  Reduce bucket counter
                  MPI_SUM,0,MPI_COMM0);
-      if( RANKS == 0 ) {                                        //  Only rank 0 operates on reduced data
+      if( MPIRANKS == 0 ) {                                     //  Only rank 0 operates on reduced data
         iredu[0] = 0;                                           //   Initialize global scan index
         for( int i=0; i!=numBucket-1; ++i ) {                   //   Loop over buckets
           iredu[i+1] = iredu[i] + irecv[i];                     //    Increment global scan index
@@ -367,11 +367,11 @@ public:
       if( nprocs[l][0] % 2 == 1 && nprocs[l][0] != 1 && nprocs[l+1][0] >= nprocs[l+1][1] )// If gather is necessary
         bisectionGather(bodies,nthLocal,numLocal,newSize,l);    //  Communicate bodies by gathering to leftover proc
 #ifdef DEBUG
-      for(int j=0; j!=SIZE; ++j) {                              //  Loop over ranks
+      for(int j=0; j!=MPISIZE; ++j) {                           //  Loop over ranks
         MPI_Barrier(MPI_COMM_WORLD);                            //   Sync processes
         usleep(WAIT);                                           //   Wait for "WAIT" milliseconds
-        if( RANK == j ) {                                       //   If it's my turn to print
-          std::cout << "RANK : " << j << std::endl;             //    Print rank
+        if( MPIRANK == j ) {                                    //   If it's my turn to print
+          std::cout << "MPIRANK : " << j << std::endl;          //    Print rank
           for(int i=0; i!=9; ++i) std::cout << bodies[numLocal/10*i].I << " ";// Print sampled body indices
           std::cout << std::endl;                               //    New line
         }                                                       //   Endif for my turn
@@ -392,31 +392,31 @@ public:
   void octsection(Bodies &bodies) {                             // Partition by recursive octsection
     startTimer("Partition    ");                                // Start timer
     int byte = sizeof(bodies[0]);                               // Byte size of body structure
-    int level = int(log(SIZE-1) / M_LN2 / 3) + 1;               // Level of local root cell
-    if( SIZE == 1 ) level = 0;                                  // For serial execution local root cell is root cell
+    int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
+    if( MPISIZE == 1 ) level = 0;                               // For serial execution local root cell is root cell
     BottomUp::setIndex(bodies,level);                           // Set index of bodies for that level
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
-    int *scnt = new int [SIZE];                                 // Send count
-    int *sdsp = new int [SIZE];                                 // Send displacement
-    int *rcnt = new int [SIZE];                                 // Recv count
-    int *rdsp = new int [SIZE];                                 // Recv displacement
-    for( int i=0; i!=SIZE; ++i ) {                              // Loop over ranks
+    int *scnt = new int [MPISIZE];                              // Send count
+    int *sdsp = new int [MPISIZE];                              // Send displacement
+    int *rcnt = new int [MPISIZE];                              // Recv count
+    int *rdsp = new int [MPISIZE];                              // Recv displacement
+    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
       scnt[i] = 0;                                              //  Initialize send counts
     }                                                           // End loop over ranks
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       int index = B->ICELL - ((1 << 3*level) - 1) / 7;          //  Get levelwise index
-      int irank = index / (int(pow(8,level)) / SIZE);           //  Get rank which the cell belongs to
+      int irank = index / (int(pow(8,level)) / MPISIZE);        //  Get rank which the cell belongs to
       scnt[irank]++;                                            //  Fill send count bucket
     }                                                           // End loop over bodies
     MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM_WORLD); // Communicate send count to get recv count
     sdsp[0] = rdsp[0] = 0;                                      // Initialize send/recv displacements
-    for( int irank=0; irank!=SIZE-1; ++irank ) {                // Loop over ranks
+    for( int irank=0; irank!=MPISIZE-1; ++irank ) {             // Loop over ranks
       sdsp[irank+1] = sdsp[irank] + scnt[irank];                //  Set send displacement based on send count
       rdsp[irank+1] = rdsp[irank] + rcnt[irank];                //  Set recv displacement based on recv count
     }                                                           // End loop over ranks
-    buffer.resize(rdsp[SIZE-1]+rcnt[SIZE-1]);                   // Resize recv buffer
-    for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over ranks
+    buffer.resize(rdsp[MPISIZE-1]+rcnt[MPISIZE-1]);             // Resize recv buffer
+    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
       scnt[irank] *= byte;                                      //  Multiply send count by byte size of data
       sdsp[irank] *= byte;                                      //  Multiply send displacement by byte size of data
       rcnt[irank] *= byte;                                      //  Multiply recv count by byte size of data
@@ -424,12 +424,12 @@ public:
     }                                                           // End loop over ranks
     MPI_Alltoallv(&bodies[0],scnt,sdsp,MPI_BYTE,&buffer[0],rcnt,rdsp,MPI_BYTE,MPI_COMM_WORLD);// Communicat bodies
     bodies = buffer;                                            // Copy recv buffer to bodies
-    level = int(log(SIZE)/M_LN2);                               // Max level of N-D hypercube communication
+    level = int(log(MPISIZE)/M_LN2);                            // Max level of N-D hypercube communication
     for( int l=0; l!=level; ++l ) {                             // Loop over level of N-D hypercube
       int d = 2 - l % 3;                                        //  Dimension of subdivision
       XMIN[l+1] = XMIN[l];                                      //  Set XMAX for next subdivision
       XMAX[l+1] = XMAX[l];                                      //  Set XMIN for next subdivision
-      if( (RANK >> (level - l - 1)) % 2 ) {                     //  If on left side
+      if( (MPIRANK >> (level - l - 1)) % 2 ) {                  //  If on left side
         XMIN[l+1][d] = (XMAX[l][d]+XMIN[l][d]) / 2;             //   Set XMIN to midpoint
       } else {                                                  //  If on right side
         XMAX[l+1][d] = (XMAX[l][d]+XMIN[l][d]) / 2;             //   Set XMAX to midpoint
@@ -445,16 +445,16 @@ public:
   void unpartition(Bodies &bodies) {                            // Send bodies back to where they came from
     startTimer("Unpartition  ");                                // Start timer
     int byte = sizeof(bodies[0]);                               // Byte size of body structure
-    int *scnt = new int [SIZE];                                 // Send count
-    int *sdsp = new int [SIZE];                                 // Send displacement
-    int *rcnt = new int [SIZE];                                 // Recv count
-    int *rdsp = new int [SIZE];                                 // Recv displacement
+    int *scnt = new int [MPISIZE];                              // Send count
+    int *sdsp = new int [MPISIZE];                              // Send displacement
+    int *rcnt = new int [MPISIZE];                              // Recv count
+    int *rdsp = new int [MPISIZE];                              // Recv displacement
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->ICELL = B->IPROC;                                      //  Copy process rank to cell index for sorting
     }                                                           // End loop over bodies
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
-    for( int i=0; i!=SIZE; ++i ) {                              // Loop over ranks
+    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
       scnt[i] = 0;                                              //  Initialize send counts
     }                                                           // End loop over ranks
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
@@ -463,12 +463,12 @@ public:
     }                                                           // End loop over bodies
     MPI_Alltoall(scnt,1,MPI_INT,rcnt,1,MPI_INT,MPI_COMM_WORLD); // Communicate send count to get recv count
     sdsp[0] = rdsp[0] = 0;                                      // Initialize send/recv displacements
-    for( int irank=0; irank!=SIZE-1; ++irank ) {                // Loop over ranks
+    for( int irank=0; irank!=MPISIZE-1; ++irank ) {             // Loop over ranks
       sdsp[irank+1] = sdsp[irank] + scnt[irank];                //  Set send displacement based on send count
       rdsp[irank+1] = rdsp[irank] + rcnt[irank];                //  Set recv displacement based on recv count
     }                                                           // End loop over ranks
-    buffer.resize(rdsp[SIZE-1]+rcnt[SIZE-1]);                   // Resize recv buffer
-    for( int irank=0; irank!=SIZE; ++irank ) {                  // Loop over ranks
+    buffer.resize(rdsp[MPISIZE-1]+rcnt[MPISIZE-1]);             // Resize recv buffer
+    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
       scnt[irank] *= byte;                                      //  Multiply send count by byte size of data
       sdsp[irank] *= byte;                                      //  Multiply send displacement by byte size of data
       rcnt[irank] *= byte;                                      //  Multiply recv count by byte size of data
@@ -477,7 +477,7 @@ public:
     MPI_Alltoallv(&bodies[0],scnt,sdsp,MPI_BYTE,&buffer[0],rcnt,rdsp,MPI_BYTE,MPI_COMM_WORLD);// Communicat bodies
     bodies = buffer;                                            // Copy recv buffer to bodies
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      assert(B->IPROC == RANK);                                 //  Make sure bodies are in the right rank
+      assert(B->IPROC == MPIRANK);                              //  Make sure bodies are in the right rank
     }                                                           // End loop over bodies
     delete[] scnt;                                              // Delete send count
     delete[] sdsp;                                              // Delete send displacement
