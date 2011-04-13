@@ -77,6 +77,10 @@ Nparallel: Nparallel.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 	mpirun -np 2 ./a.out
 
+skiptree: skiptree.cxx $(OBJECT)
+	@$(CXX) $? $(LFLAGS)
+	mpirun -np 4 ./a.out
+
 vtk: vtk.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	./a.out
@@ -88,7 +92,7 @@ all      :
 	make kernel
 	make serialrun
 	make unsort
-	make Nscaling
+	make Nserial
 	make direct_gpu
 	make mpi
 	make check_gpus
@@ -99,3 +103,5 @@ all      :
 	make parallelrun
 	make unpartition
 	make ijparallelrun
+	make Nparallel
+	make skiptree

@@ -42,7 +42,7 @@ int main() {
 
     T.startTimer("Direct sum   ");
     Bodies bodies2 = bodies;
-#if 0
+#if 1
     D.initTarget(bodies2);
     if( IMAGES != 0 ) {
       jbodies = T.periodicBodies(bodies2);
