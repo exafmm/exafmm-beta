@@ -286,9 +286,11 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
     Maps  flagP2M(cells.size());                                //  Define P2M periodic image flag
     for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over target cells
       CI->M = CI->L = 0;                                        //   Initialize multipole & local coefficients
-      listP2M[CI-CI0].push_back(CI);                            //   Push source cell into P2M interaction list
-      flagP2M[CI-CI0][CI] |= Icenter;                           //   Flip bit of periodic image flag
-      sourceSize[CI] = CI->NLEAF;                               //   Key : iterator, Value : number of leafs
+      if( CI->NCHILD == 0 ) {                                   //   If cell is a twig
+        listP2M[CI-CI0].push_back(CI);                          //    Push source cell into P2M interaction list
+        flagP2M[CI-CI0][CI] |= Icenter;                         //    Flip bit of periodic image flag
+        sourceSize[CI] = CI->NLEAF;                             //    Key : iterator, Value : number of leafs
+      }                                                         //   End loop over cells topdown
     }                                                           //  End loop over source map
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies

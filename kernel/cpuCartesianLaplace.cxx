@@ -5,18 +5,18 @@ void Kernel::LaplaceInit() {}
 void Kernel::LaplacePre() {}
 
 void Kernel::LaplaceP2M() {
-  for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
-    vect dist = CJ->X - B->X;
-    CJ->M[0] += B->SRC[0];
-    CJ->M[1] += B->SRC[0] * dist[0];
-    CJ->M[2] += B->SRC[0] * dist[1];
-    CJ->M[3] += B->SRC[0] * dist[2];
-    CJ->M[4] += B->SRC[0] * dist[0] * dist[0] / 2;
-    CJ->M[5] += B->SRC[0] * dist[1] * dist[1] / 2;
-    CJ->M[6] += B->SRC[0] * dist[2] * dist[2] / 2;
-    CJ->M[7] += B->SRC[0] * dist[0] * dist[1];
-    CJ->M[8] += B->SRC[0] * dist[1] * dist[2];
-    CJ->M[9] += B->SRC[0] * dist[2] * dist[0];
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+    vect dist = CI->X - B->X;
+    CI->M[0] += B->SRC[0];
+    CI->M[1] += B->SRC[0] * dist[0];
+    CI->M[2] += B->SRC[0] * dist[1];
+    CI->M[3] += B->SRC[0] * dist[2];
+    CI->M[4] += B->SRC[0] * dist[0] * dist[0] / 2;
+    CI->M[5] += B->SRC[0] * dist[1] * dist[1] / 2;
+    CI->M[6] += B->SRC[0] * dist[2] * dist[2] / 2;
+    CI->M[7] += B->SRC[0] * dist[0] * dist[1];
+    CI->M[8] += B->SRC[0] * dist[1] * dist[2];
+    CI->M[9] += B->SRC[0] * dist[2] * dist[0];
   }
 }
 

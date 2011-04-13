@@ -5,7 +5,7 @@
 #endif
 
 int main() {
-  const int numBodies = 1000;
+  const int numBodies = 100000;
   std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Bodies jbodies;
@@ -61,9 +61,19 @@ int main() {
     if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;
   }
   T.stopTimer("Direct sum   ",T.printNow);
-  T.eraseTimer("Direct sum   ");
+  T.resetTimer();
+
+  D.initTarget(bodies);
+  T.evalP2M(cells);
+  T.evalM2M(cells);
+  T.commBodies(cells);
+  jbodies = bodies;
+  jcells = cells;
+  T.commCells(jbodies,jcells);
+  T.downward(cells,jcells,1);
   if(T.printNow) T.writeTime();
   if(T.printNow) T.writeTime();
+
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);

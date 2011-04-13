@@ -4,8 +4,8 @@
 void Kernel::BiotSavartInit() {}
 
 void Kernel::BiotSavartP2M() {
-  for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
-    vect dist = B->X - CJ->X;
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+    vect dist = B->X - CI->X;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalMultipole(rho,alpha,-beta);
@@ -14,7 +14,7 @@ void Kernel::BiotSavartP2M() {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
         for( int d=0; d!=3; ++d ) {
-          CJ->M[3*nms+d] += double(B->SRC[d]) * Ynm[nm];
+          CI->M[3*nms+d] += double(B->SRC[d]) * Ynm[nm];
         }
       }
     }

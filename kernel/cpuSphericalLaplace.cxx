@@ -4,8 +4,8 @@
 void Kernel::LaplaceInit() {}
 
 void Kernel::LaplaceP2M() {
-  for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
-    vect dist = B->X - CJ->X;
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+    vect dist = B->X - CI->X;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalMultipole(rho,alpha,-beta);
@@ -13,7 +13,7 @@ void Kernel::LaplaceP2M() {
       for( int m=0; m<=n; ++m ) {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
-        CJ->M[nms] += double(B->SRC[0]) * Ynm[nm];
+        CI->M[nms] += double(B->SRC[0]) * Ynm[nm];
       }
     }
   }

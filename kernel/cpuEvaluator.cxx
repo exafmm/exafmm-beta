@@ -20,20 +20,22 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
 
 void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
   startTimer("evalP2M      ");                                  // Start timer
-  for( CJ=cells.begin(); CJ!=cells.end(); ++CJ ) {              // Loop over cells
-    CJ->M = CJ->L = 0;                                          //  Initialize multipole & local coefficients
-    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
-      LaplaceP2M();                                             //   Evaluate P2M kernel
-    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
-      BiotSavartP2M();                                          //   Evaluate P2M kernel
-    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
-      StretchingP2M();                                          //   Evaluate P2M kernel
-    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
-      GaussianP2M();                                            //   Evaluate P2M kernel
-    } else {                                                    //  If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //   Abort execution
-    }                                                           //  Endif for kernel type
+  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells
+    CI->M = CI->L = 0;                                          //  Initialize multipole & local coefficients
+    if( CI->NCHILD == 0 ) {                                     //  If cell is a twig
+      if( kernelName == "Laplace" ) {                           //   If Laplace kernel
+        LaplaceP2M();                                           //    Evaluate P2M kernel
+      } else if ( kernelName == "BiotSavart" ) {                //   If Biot Savart kernel
+        BiotSavartP2M();                                        //    Evaluate P2M kernel
+      } else if ( kernelName == "Stretching" ) {                //   If Stretching kernel
+        StretchingP2M();                                        //    Evaluate P2M kernel
+      } else if ( kernelName == "Gaussian" ) {                  //   If Gaussian kernel
+        GaussianP2M();                                          //    Evaluate P2M kernel
+      } else {                                                  //   If kernel is none of the above
+        if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
+        abort();                                                //    Abort execution
+      }                                                         //   Endif for kernel type
+    }                                                           //  Endif for twig
   }                                                             // End loop over cells
   stopTimer("evalP2M      ");                                   // Stop timer
 }

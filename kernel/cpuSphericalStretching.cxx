@@ -5,8 +5,8 @@ void Kernel::StretchingInit() {}
 
 void Kernel::StretchingP2M() {
   const complex I(0.,1.);                                       // Imaginary unit
-  for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {
-    vect dist = B->X - CJ->X;
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+    vect dist = B->X - CI->X;
     vec<3,complex> spherical;
     vec<3,complex> cartesian;
     real rho, alpha, beta;
@@ -20,9 +20,9 @@ void Kernel::StretchingP2M() {
         spherical[1] = YnmTheta[nm];
         spherical[2] = -Ynm[nm] * I * double(m);
         sph2cart(rho,alpha,beta,spherical,cartesian);
-        CJ->M[3*nms+0] += cartesian[2] * double(B->SRC[1]) - cartesian[1] * double(B->SRC[2]);
-        CJ->M[3*nms+1] += cartesian[0] * double(B->SRC[2]) - cartesian[2] * double(B->SRC[0]);
-        CJ->M[3*nms+2] += cartesian[1] * double(B->SRC[0]) - cartesian[0] * double(B->SRC[1]);
+        CI->M[3*nms+0] += cartesian[2] * double(B->SRC[1]) - cartesian[1] * double(B->SRC[2]);
+        CI->M[3*nms+1] += cartesian[0] * double(B->SRC[2]) - cartesian[2] * double(B->SRC[0]);
+        CI->M[3*nms+2] += cartesian[1] * double(B->SRC[0]) - cartesian[0] * double(B->SRC[1]);
       }
     }
   }

@@ -42,9 +42,7 @@ public:
   }
 
   void resetTimer() {
-    for( E_iter E=timer.begin(); E!=timer.end(); ++E ) {
-      E->second = 0;
-    }
+    timer.clear();
   }
 
   void allocMemory(std::string event, double bytes) {
