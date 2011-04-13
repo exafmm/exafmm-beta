@@ -8,14 +8,20 @@ class MyMPI {                                                   // My own MPI ut
 protected:
   const int WAIT;                                               // Waiting time between output of different ranks
   int       MPISIZES;                                           // Number of MPI processes for split communicator
-  int       MPIRANKS;                                           // Index of current MPI process for split communicator
+  int       MPIRANKS;                                           // Rank of current MPI process for split communicator
 public:
   MyMPI() : WAIT(100) {                                         // Constructor, initialize WAIT time
     int argc(0);                                                // Dummy argument count
     char **argv;                                                // Dummy argument value
     MPI_Init(&argc,&argv);                                      // Initialize MPI communicator
     MPI_Comm_size(MPI_COMM_WORLD,&MPISIZE);                     // Get number of MPI processes
-    MPI_Comm_rank(MPI_COMM_WORLD,&MPIRANK);                     // Get index of current MPI process
+    MPI_Comm_rank(MPI_COMM_WORLD,&MPIRANK);                     // Get rank of current MPI process
+//#define TSUBAME
+#ifdef TSUBAME
+    DEVICE = MPIRANK / (MPISIZE / GPUS + 1);                    // Get GPU device ID from MPI rank
+#else
+    DEVICE = MPIRANK % GPUS;                                    // Get GPU device ID from MPI rank
+#endif
   }
 
   ~MyMPI() {                                                    // Destructor

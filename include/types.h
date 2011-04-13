@@ -17,9 +17,11 @@
 #ifndef KERNEL
 int MPIRANK = 0;                                                // MPI comm rank
 int MPISIZE = 1;                                                // MPI comm size
+int DEVICE  = 0;                                                // GPU device ID
 #else
 extern int MPIRANK;                                             // MPI comm rank
 extern int MPISIZE;                                             // MPI comm size
+extern int DEVICE;                                              // GPU device ID
 #endif
 
 typedef long                 bigint;                            // Big integer type

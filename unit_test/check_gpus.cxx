@@ -43,7 +43,7 @@ int main() {
     MPI_Barrier(MPI_COMM_WORLD);
     if( MPIRANK == irank ) {
       std::cout << hostname << " @ rank : " << MPIRANK << " / " << MPISIZE;
-      std::cout << " @ device : " << MPIRANK % GPUS << " / " << GPUS << std::endl;
+      std::cout << " @ device : " << DEVICE << " / " << GPUS << std::endl;
       std::cout << "Error         : " << std::sqrt(diff1/norm1) << std::endl;
     }
     usleep(100);

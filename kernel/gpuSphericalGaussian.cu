@@ -5,7 +5,7 @@
 void Kernel::GaussianInit() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
-  cudaSetDevice(MPIRANK % GPUS);                                // Set GPU device
+  cudaSetDevice(DEVICE);                                        // Set GPU device
 #ifdef CUPRINTF
   cudaPrintfInit();                                             // Initialize cuPrintf
 #endif
