@@ -5,7 +5,7 @@
 #endif
 
 int main() {
-  const int numBodies = 100000;
+  const int numBodies = 1000000;
   std::string kernelName = "Laplace";
   Bodies bodies(numBodies);
   Bodies jbodies;
@@ -54,6 +54,7 @@ int main() {
   }
   T.startTimer("Direct sum   ");
   Bodies bodies2 = bodies;
+  bodies2.resize(100);
   D.initTarget(bodies2);
   for( int i=0; i!=MPISIZE; ++i ) {
     T.shiftBodies(jbodies);
@@ -75,6 +76,7 @@ int main() {
   if(T.printNow) T.writeTime();
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
+  bodies.resize(100);
   D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   MPI_Datatype MPI_TYPE = T.getType(diff1);
   MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
