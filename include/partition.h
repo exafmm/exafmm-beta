@@ -89,12 +89,12 @@ protected:
     }                                                           // End loop over three types
 #ifdef DEBUG
     print("level : ",0);                                        // Print identifier
-    print(l,0);                                                 // Print current level
+    print(l+1,0);                                               // Print current level
     print("\n",0);                                              // New line
     print("key   : \n",0);                                      // Print identifier
-    print(key,0,3);                                             // Print key
+    print(key[l+1],0,3);                                        // Print key
     print("color : \n",0);                                      // Print identifier
-    print(color,0,3);                                           // Print color
+    print(color[l+1],0,3);                                      // Print color
 #endif
   }
 

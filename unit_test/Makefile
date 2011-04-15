@@ -63,7 +63,7 @@ let: let.cxx $(OBJECT)
 
 parallelrun: parallelrun.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 2 ./a.out
+	mpirun -np 4 ./a.out
 
 unpartition: unpartition.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
