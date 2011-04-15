@@ -35,6 +35,9 @@ private:
   }
 
   void getSendRank(Cells &cells) {                              // Get neighbor ranks to send to
+    sendRanks.clear();                                          // Clear send ranks
+    sendCounts.clear();                                         // Clear send counts
+    sendBodyCells.clear();                                      // Clear send body cells
     int oldsize = 0;                                            // Per rank offset of the number of cells to send
     C_iter C0 = cells.begin();                                  // Set cell begin iterator
     for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
@@ -81,6 +84,8 @@ private:
 
   void getSendCount() {                                         // Get size of data to send
     int ic = 0, ssize = 0;                                      // Initialize counter and offset for scells
+    sendCnt.assign(MPISIZE,0);                                  // Initialize send count
+    sendDsp.assign(MPISIZE,0);                                  // Initialize send displacement
     for( int i=0; i!=int(sendRanks.size()); ++i ) {             // Loop over ranks to send to & recv from
       int irank = sendRanks[i];                                 //  Rank to send to & recv from
       for( int c=0; c!=sendCounts[i]; ++c,++ic ) {              //  Loop over cells to send to that rank
@@ -112,8 +117,8 @@ private:
     int *rcntd = new int [MPISIZE];
     int *rdspd = new int [MPISIZE];
     int *irev  = new int [MPISIZE];
-    JBodies sendBuffer(sendBodies.size());
-    JBodies recvBuffer(recvBodies.size());
+    JBodies sendBuffer = sendBodies;
+    JBodies recvBuffer = recvBodies;
     for( int l=0; l!=LEVEL; ++l ) {                             // Loop over levels of N-D hypercube communication
       int npart = 1 << (LEVEL - l - 1);
       int scnt2[2], sdsp2[2], rcnt2[2], rdsp2[2];
@@ -482,9 +487,9 @@ public:
     startTimer("Get send rank");                                // Start timer
     getSendRank(cells);                                         // Get neighbor ranks to send to
     stopTimer("Get send rank",printNow);                        // Stop timer & print
-    startTimer("Send count   ");                                // Start timer
+    startTimer("Get sendCnt  ");                                // Start timer
     getSendCount();                                             // Get size of data to send
-    stopTimer("Send count   ",printNow);                        // Stop timer & print
+    stopTimer("Get sendCnt  ",printNow);                        // Stop timer & print
 
     startTimer("Alltoall B   ");                                // Start timer
 #if 0
@@ -505,24 +510,23 @@ public:
   }
 
   void updateBodies() {                                         // Update bodies using the previous send count
-    startTimer("Update bodies");                                // Start timer
-    int ic = 0;                                                 // Initialize counter and offset for scells
-    for( int i=0; i!=int(sendRanks.size()); ++i ) {             // Loop over ranks to send to & recv from
-      for( int c=0; c!=sendCounts[i]; ++c,++ic ) {              //  Loop over cells to send to that rank
-        C_iter C = sendBodyCells[ic];                           //   Set cell iterator
-        for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {     //   Loop over bodies in that cell
-          JBody body;                                           //    Set compact body type for sending
-          body.ICELL = B->ICELL;                                //    Set cell index of compact body type
-          body.X     = B->X;                                    //    Set position of compact body type
-          body.SRC   = B->SRC;                                  //    Set source values of compact body type
-          sendBodies.push_back(body);                           //    Push it into the send buffer
-        }                                                       //   End loop over bodies
-      }                                                         //  End loop over cells
-    }                                                           // End loop over ranks
-    stopTimer("Update bodies",printNow);                        // Stop timer & print
+    startTimer("Get sendCnt  ");                                // Start timer
+    getSendCount();                                             // Get size of data to send
+    stopTimer("Get sendCnt  ",printNow);                        // Stop timer & print
     startTimer("Alltoall B   ");                                // Start timer
+#if 0
+    int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
+    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks to recv from
+      sendCnt[i] *= bytes;                                      //  Send as bytes
+      sendDsp[i] *= bytes;                                      //  Send as bytes
+      recvCnt[i] *= bytes;                                      //  Recv as bytes
+      recvDsp[i] *= bytes;                                      //  Recv as bytes
+    }                                                           // End loop over ranks to recv from
     MPI_Alltoallv(&sendBodies[0],&sendCnt[0],&sendDsp[0],MPI_BYTE,
                   &recvBodies[0],&recvCnt[0],&recvDsp[0],MPI_BYTE,MPI_COMM_WORLD);
+#else
+    commBodiesAlltoall();
+#endif
     sendBodies.clear();                                         // Clear send buffer for bodies
     stopTimer("Alltoall B   ",printNow);                        // Stop timer & print
   }
