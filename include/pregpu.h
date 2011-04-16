@@ -4,11 +4,15 @@
 #include "cuprintf.h"
 #endif
 
-static int   *keysDevc;                                         // Keys on device
-static int   *rangeDevc;                                        // Ranges on device
-static float *sourceDevc;                                      // Sources on device
-static float *targetDevc;                                      // Targets on device
-__device__ __constant__ float constDevc[1];                    // Constants on device
+static size_t keysDevcSize = 0;                                 // Size of offsets for rangeHost
+static size_t rangeDevcSize = 0;                                // Size of offsets for sourceHost
+static size_t sourceDevcSize = 0;                               // Size of sources
+static size_t targetDevcSize = 0;                               // Size of targets
+static int    *keysDevc;                                        // Keys on device
+static int    *rangeDevc;                                       // Ranges on device
+static float  *sourceDevc;                                      // Sources on device
+static float  *targetDevc;                                      // Targets on device
+__device__ __constant__ float constDevc[1];                     // Constants on device
 
 namespace {
 __device__ void cart2sph(float& r, float& theta, float& phi, float dx, float dy, float dz) {

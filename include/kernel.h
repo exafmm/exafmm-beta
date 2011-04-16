@@ -10,6 +10,29 @@ const int  P4 = P2 * P2;                                        // P^4
 const real EPS = 1e-6;                                          // Single precision epsilon
 
 class Kernel : public Logger {                                  // Unified CPU/GPU kernel class
+protected:
+  B_iter BI0;                                                   // Target bodies begin iterator
+  B_iter BIN;                                                   // Target bodies end iterator
+  B_iter BJ0;                                                   // Source bodies begin iterator
+  B_iter BJN;                                                   // Source bodies end iterator
+  C_iter CI;                                                    // Target cell iterator
+  C_iter CJ;                                                    // Source cell iterator
+  vect   X0;                                                    // Center of root cell
+  real   R0;                                                    // Radius of root cell
+  vect   Xperiodic;                                             // Coordinate offset of periodic image
+
+  std::vector<int>   keysHost;                                  // Offsets for rangeHost
+  std::vector<int>   rangeHost;                                 // Offsets for sourceHost
+  std::vector<float> constHost;                                 // Constants on host
+  std::vector<float> sourceHost;                                // Sources on host
+  std::vector<float> targetHost;                                // Targets on host
+  Map                sourceBegin;                               // Define map for offset of source cells
+  Map                sourceSize;                                // Define map for size of source cells
+  Map                targetBegin;                               // Define map for offset of target cells
+
+  double *prefactor, *Anm;                                      // Auxiliary variables for spherical harmonics
+  complex *Ynm, *YnmTheta, *Cnm;                                // Auxiliary variables for spherical harmonics
+
 private:
   void cart2sph(real& r, real& theta, real& phi, vect dist) {
     r = std::sqrt(norm(dist))+EPS;
@@ -110,28 +133,6 @@ private:
   }
 
 protected:
-  B_iter BI0;                                                   // Target bodies begin iterator
-  B_iter BIN;                                                   // Target bodies end iterator
-  B_iter BJ0;                                                   // Source bodies begin iterator
-  B_iter BJN;                                                   // Source bodies end iterator
-  C_iter CI;                                                    // Target cell iterator
-  C_iter CJ;                                                    // Source cell iterator
-  vect   X0;                                                    // Center of root cell
-  real   R0;                                                    // Radius of root cell
-  vect   Xperiodic;                                             // Coordinate offset of periodic image
-
-  std::vector<int>   keysHost;                                  // Offsets for rangeHost
-  std::vector<int>   rangeHost;                                 // Offsets for sourceHost
-  std::vector<float> constHost;                                 // Constants on host
-  std::vector<float> sourceHost;                                // Sources on host
-  std::vector<float> targetHost;                                // Targets on host
-  Map                sourceBegin;                               // Define map for offset of source cells
-  Map                sourceSize;                                // Define map for size of source cells
-  Map                targetBegin;                               // Define map for offset of target cells
-
-  double *prefactor, *Anm;                                      // Auxiliary variables for spherical harmonics
-  complex *Ynm, *YnmTheta, *Cnm;                                // Auxiliary variables for spherical harmonics
-
   int getLevel(bigint index) {                                  // Get level from cell index
     int level = -1;                                             // Initialize level counter
     while( index >= 0 ) {                                       // While cell index is non-negative
