@@ -7,7 +7,6 @@ class Logger {
 private:
   std::ofstream file;
   Event         tic;
-  Event         timer;
   Event         memory;
 
   double get_time() {                                           // Timer function
@@ -17,7 +16,8 @@ private:
   }
 
 public:
-  bool printNow;
+  bool  printNow;
+  Event timer;
 
   Logger() {
     file.open("time");
@@ -70,6 +70,12 @@ public:
   void writeTime() {
     for( E_iter E=timer.begin(); E!=timer.end(); ++E ) {
       file <<  E->first << " " << E->second << std::endl;
+    }
+  }
+
+  void copyTime(Event &timer2) {
+    for( E_iter E2=timer2.begin(); E2!=timer2.end(); ++E2 ) {
+      timer[E2->first] = E2->second;
     }
   }
 };

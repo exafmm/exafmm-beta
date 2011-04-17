@@ -88,6 +88,7 @@ int main() {
   T.eraseLocalTree(jcells);
   }
   T.downward(cells,jcells,1);
+//  T.copyTime(T2.timer);
   if(T.printNow) T.writeTime();
   if(T.printNow) T.writeTime();
 
