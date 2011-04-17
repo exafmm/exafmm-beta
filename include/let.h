@@ -114,6 +114,7 @@ private:
   }
 
   void commBodiesAlltoall() {                                   // Communicate cells by one-to-one MPI_Alltoallv
+    assert(isPowerOfTwo(MPISIZE));                              // Make sure the number of processes is a power of two
     int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
     int *scntd = new int [MPISIZE];                             // Permuted send count
     int *rcntd = new int [MPISIZE];                             // Permuted recv count
@@ -216,11 +217,12 @@ private:
 
   real getDistance(C_iter C, vect xmin, vect xmax) {            // Get disatnce to other domain
     vect dist;                                                  // Distance vector
-    for( int d=0; d!=3; ++d )                                   // Loop over dimensions
+    for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       dist[d] = (C->X[d] + Xperiodic[d] > xmax[d])*             //  Calculate the distance between cell C and
                 (C->X[d] + Xperiodic[d] - xmax[d])+             //  the nearest point in domain [xmin,xmax]^3
                 (C->X[d] + Xperiodic[d] < xmin[d])*             //  Take the differnece from xmin or xmax
                 (C->X[d] + Xperiodic[d] - xmin[d]);             //  or 0 if between xmin and xmax
+    }                                                           // End loop over dimensions
     real R = std::sqrt(norm(dist));                             // Scalar distance
     return R;
   }
@@ -406,7 +408,7 @@ private:
       }                                                         //  Endif for no leafs
       twigs.pop_back();                                         //  Pop last element from twig vector
     }                                                           // End while for twig vector
-    BottomUp::setIndex(bodies,-1,0,0,true);                     // Set index of bodies
+//    BottomUp::setIndex(bodies,-1,0,0,true);                     // Set index of bodies
     stopTimer("Reindex      ",printNow);                        // Stop timer & print
     startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
@@ -448,6 +450,7 @@ private:
 
   void checkNumCells(int l) {                                   // Only works with octsection
     int maxLevel = int(log(MPISIZE-1) / M_LN2 / 3) + 1;
+    if( MPISIZE == 0 ) maxLevel = 0;
     int octant0 = -1;
     int numCells = 0;
     for( JC_iter JC=sendCells.begin(); JC!=sendCells.end(); ++JC ) {
@@ -602,6 +605,29 @@ public:
 #endif
     sendCells.clear();                                          // Clear send buffer
     recvCells.clear();                                          // Clear recv buffer
+  }
+
+  void eraseLocalTree(Cells &cells) {                           // Remove cells that belong to current process
+    int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of process root cell
+    if( MPISIZE == 0 ) level = 0;                               // Account for serial case
+    int off = ((1 << 3 * level) - 1) / 7;                       // Levelwise offset of ICELL
+    int size = (1 << 3 * level) / MPISIZE;                      // Number of cells to remove
+    int begin = MPIRANK * size + off;                           // Begin index of cells to remove
+    int end = (MPIRANK + 1) * size + off;                       // End index of cells to remove
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
+      if( begin <= C->ICELL && C->ICELL < end ) {               //  If cell is within the removal range
+        C_iter CP = cells.begin()+C->PARENT;                    //   Iterator of parent cell
+        int ic = 0;                                             //   Initialize child cell counter
+        for( int c=0; c!=CP->NCHILD; ++c ) {                    //   Loop over child cells of parent
+          C_iter CC = cells.begin()+CP->CHILD[c];               //    Iterator of child cell of parent
+          if( CC->ICELL != C->ICELL ) {                         //    If child cell of parent is not current cell
+            CP->CHILD[ic] = CP->CHILD[c];                       //     Copy pointer to child cell
+            ic++;                                               //     Increment child cell counter
+          }                                                     //    Endif for current child cell
+        }                                                       //   End loop over child cells of parent
+        CP->NCHILD--;                                           //   Decrement number of child cells of parent
+      }                                                         //  Endif for removal range
+    }                                                           // End loop over cells
   }
 };
 

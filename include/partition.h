@@ -424,12 +424,11 @@ public:
     }                                                           // End loop over ranks
     MPI_Alltoallv(&bodies[0],scnt,sdsp,MPI_BYTE,&buffer[0],rcnt,rdsp,MPI_BYTE,MPI_COMM_WORLD);// Communicat bodies
     bodies = buffer;                                            // Copy recv buffer to bodies
-    level = int(log(MPISIZE)/M_LN2);                            // Max level of N-D hypercube communication
-    for( int l=0; l!=level; ++l ) {                             // Loop over level of N-D hypercube
+    for( int l=0; l!=LEVEL; ++l ) {                             // Loop over level of N-D hypercube
       int d = 2 - l % 3;                                        //  Dimension of subdivision
       XMIN[l+1] = XMIN[l];                                      //  Set XMAX for next subdivision
       XMAX[l+1] = XMAX[l];                                      //  Set XMIN for next subdivision
-      if( (MPIRANK >> (level - l - 1)) % 2 ) {                  //  If on left side
+      if( (MPIRANK >> (LEVEL - l - 1)) % 2 ) {                  //  If on left side
         XMIN[l+1][d] = (XMAX[l][d]+XMIN[l][d]) / 2;             //   Set XMIN to midpoint
       } else {                                                  //  If on right side
         XMAX[l+1][d] = (XMAX[l][d]+XMIN[l][d]) / 2;             //   Set XMAX to midpoint

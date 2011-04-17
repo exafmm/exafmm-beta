@@ -9,6 +9,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <omp.h>
 #include <stack>
 #include <string>
 #include <utility>

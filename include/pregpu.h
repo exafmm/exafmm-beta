@@ -2,6 +2,7 @@
 #define pregpu_h
 #ifdef CUPRINTF
 #include "cuprintf.h"
+#include <omp.h>
 #endif
 
 static size_t keysDevcSize = 0;                                 // Size of offsets for rangeHost
@@ -12,6 +13,8 @@ static int    *keysDevc;                                        // Keys on devic
 static int    *rangeDevc;                                       // Ranges on device
 static float  *sourceDevc;                                      // Sources on device
 static float  *targetDevc;                                      // Targets on device
+#pragma omp threadprivate(keysDevcSize,rangeDevcSize,sourceDevcSize,targetDevcSize)
+#pragma omp threadprivate(keysDevc,rangeDevc,sourceDevc,targetDevc)
 __device__ __constant__ float constDevc[1];                     // Constants on device
 
 namespace {

@@ -77,7 +77,11 @@ Nparallel: Nparallel.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 	mpirun -np 2 ./a.out
 
-skiptree: skiptree.cxx $(OBJECT)
+skip_tree: skip_tree.cxx $(OBJECT)
+	@$(CXX) $? $(LFLAGS)
+	mpirun -np 4 ./a.out
+
+overlap_comm: overlap_comm.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 	mpirun -np 4 ./a.out
 
@@ -104,4 +108,5 @@ all      :
 	make unpartition
 	make ijparallelrun
 	make Nparallel
-	make skiptree
+	make skip_tree
+	make overlap_comm

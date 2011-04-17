@@ -9,8 +9,8 @@ EXPAND  = Spherical
 CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O2 -fPIC -fopenmp\
 	-ffast-math -funroll-loops -fforce-addr -rdynamic -D_FILE_OFFSET_BITS=64\
 	-I../include -I/usr/local/fftw/include -I/usr/include/vtk-5.2 -L/usr/lib/vtk-5.2
-#CXX     = mpicxx -O2 -fPIC -I../include -I/usr/local/fftw/include -I/usr/include/vtk-5.2 -L/usr/lib/vtk-5.2
-NVCC    = nvcc --ptxas-options=-v -O3 -use_fast_math -arch=sm_11\
+#CXX     = mpicxx -O2 -fPIC -fopenmp -I../include -I/usr/local/fftw/include -I/usr/include/vtk-5.2 -L/usr/lib/vtk-5.2
+NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_11\
 	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(SDK_INSTALL_PATH)/common/inc
 LFLAGS  = -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm\
 	-D$(DEVICE) -D$(EXPAND)
