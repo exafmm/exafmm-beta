@@ -50,9 +50,6 @@ void Kernel::KERNEL() {\
   CUDA_SAFE_CALL(cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(float),cudaMemcpyDeviceToHost));\
   cudaThreadSynchronize();\
   stopTimer("cudaMemcpy   ");\
-  startTimer("cudaFree     ");\
-  cudaThreadSynchronize();\
-  stopTimer("cudaFree     ");\
 }
 
 #endif

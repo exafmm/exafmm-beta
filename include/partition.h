@@ -203,6 +203,7 @@ protected:
 public:
   Partition() : TreeConstructor() {                             // Constructor
     LEVEL = int(log(MPISIZE) / M_LN2 - 1e-5) + 1;               // Level of the process binary tree
+    if(MPISIZE == 1) LEVEL = 0;                                 // Level is 0 for a serial execution
     XMIN.resize(LEVEL+1);                                       // Minimum position vector at each level
     XMAX.resize(LEVEL+1);                                       // Maximum position vector at each level
     startTimer("Split comm   ");                                // Start timer

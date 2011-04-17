@@ -229,6 +229,7 @@ private:
 
   void getLET(C_iter C0, C_iter C, vect xmin, vect xmax) {      // Determine which cells to send
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
+    if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     for( int i=0; i!=C->NCHILD; i++ ) {                         // Loop over child cells
       C_iter CC = C0+C->CHILD[i];                               //  Iterator for child cell
       bool divide = false;                                      //  Initialize logical for dividing
@@ -450,7 +451,7 @@ private:
 
   void checkNumCells(int l) {                                   // Only works with octsection
     int maxLevel = int(log(MPISIZE-1) / M_LN2 / 3) + 1;
-    if( MPISIZE == 0 ) maxLevel = 0;
+    if( MPISIZE == 1 ) maxLevel = 0;
     int octant0 = -1;
     int numCells = 0;
     for( JC_iter JC=sendCells.begin(); JC!=sendCells.end(); ++JC ) {
@@ -609,7 +610,7 @@ public:
 
   void eraseLocalTree(Cells &cells) {                           // Remove cells that belong to current process
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of process root cell
-    if( MPISIZE == 0 ) level = 0;                               // Account for serial case
+    if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     int off = ((1 << 3 * level) - 1) / 7;                       // Levelwise offset of ICELL
     int size = (1 << 3 * level) / MPISIZE;                      // Number of cells to remove
     int begin = MPIRANK * size + off;                           // Begin index of cells to remove
