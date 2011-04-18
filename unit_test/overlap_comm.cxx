@@ -75,7 +75,7 @@ int main() {
   {
     #pragma omp section
     {
-      T.downward(cells,jcells,1);
+      T.downward(cells,jcells,1,false);
     }
     #pragma omp section
     {

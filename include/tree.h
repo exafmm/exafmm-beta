@@ -158,7 +158,7 @@ protected:
   }
 
 public:
-  void downward(Cells &cells, Cells &jcells, int method) {      // Downward phase
+  void downward(Cells &cells, Cells &jcells, int method, bool periodic=true) {// Downward phase
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) C->L = 0;// Initialize local coefficients
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
       startTimer("Upward P     ");                              //  Start timer
@@ -168,7 +168,7 @@ public:
     startTimer("Traverse     ");                                // Start timer
     traverse(cells,jcells,method);                              // Traverse tree to get interaction list
     stopTimer("Traverse     ",printNow);                        // Stop timer & print
-    if( IMAGES != 0 ) {                                         // If periodic boundary condition
+    if( IMAGES != 0 && periodic ) {                             // If periodic boundary condition
       startTimer("Traverse P   ");                              // Start timer
       traversePeriodic(cells,jcells,method);                    // Traverse tree for periodic images
       stopTimer("Traverse P   ",printNow);                      // Stop timer & print
