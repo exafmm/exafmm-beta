@@ -13,7 +13,7 @@ void Kernel::LaplaceP2M() {
       for( int m=0; m<=n; ++m ) {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
-        CI->M[nms] += double(B->SRC[0]) * Ynm[nm];
+        CI->M[3*nms] += double(B->SRC[0]) * Ynm[nm];
       }
     }
   }
@@ -36,7 +36,7 @@ void Kernel::LaplaceM2M_CPU() {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += CJ->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+            M += CJ->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
                * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
@@ -45,12 +45,12 @@ void Kernel::LaplaceM2M_CPU() {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
-            M += std::conj(CJ->M[jnkms]) * Ynm[nm]
+            M += std::conj(CJ->M[3*jnkms]) * Ynm[nm]
                * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
       }
-      CI->M[jks] += M;
+      CI->M[3*jks] += M;
     }
   }
 }
@@ -71,17 +71,17 @@ void Kernel::LaplaceM2L() {
           const int nms  = n * (n + 1) / 2 - m;
           const int jknm = jk * P2 + nm;
           const int jnkm = (j + n) * (j + n) + j + n + m - k;
-          L += std::conj(CJ->M[nms]) * Cnm[jknm] * Ynm[jnkm];
+          L += std::conj(CJ->M[3*nms]) * Cnm[jknm] * Ynm[jnkm];
         }
         for( int m=0; m<=n; ++m ) {
           const int nm   = n * n + n + m;
           const int nms  = n * (n + 1) / 2 + m;
           const int jknm = jk * P2 + nm;
           const int jnkm = (j + n) * (j + n) + j + n + m - k;
-          L += CJ->M[nms] * Cnm[jknm] * Ynm[jnkm];
+          L += CJ->M[3*nms] * Cnm[jknm] * Ynm[jnkm];
         }
       }
-      CI->L[jks] += L;
+      CI->L[3*jks] += L;
     }
   }
 }
@@ -98,16 +98,16 @@ void Kernel::LaplaceM2P() {
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
-      B->TRG[0] += (CJ->M[nms] * Ynm[nm]).real();
-      spherical[0] -= (CJ->M[nms] * Ynm[nm]).real() / r * (n+1);
-      spherical[1] += (CJ->M[nms] * YnmTheta[nm]).real();
+      B->TRG[0] += (CJ->M[3*nms] * Ynm[nm]).real();
+      spherical[0] -= (CJ->M[3*nms] * Ynm[nm]).real() / r * (n+1);
+      spherical[1] += (CJ->M[3*nms] * YnmTheta[nm]).real();
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
-        B->TRG[0] += 2 * (CJ->M[nms] * Ynm[nm]).real();
-        spherical[0] -= 2 * (CJ->M[nms] *Ynm[nm]).real() / r * (n+1);
-        spherical[1] += 2 * (CJ->M[nms] *YnmTheta[nm]).real();
-        spherical[2] += 2 * (CJ->M[nms] *Ynm[nm] * I).real() * m;
+        B->TRG[0] += 2 * (CJ->M[3*nms] * Ynm[nm]).real();
+        spherical[0] -= 2 * (CJ->M[3*nms] *Ynm[nm]).real() / r * (n+1);
+        spherical[1] += 2 * (CJ->M[3*nms] *YnmTheta[nm]).real();
+        spherical[2] += 2 * (CJ->M[3*nms] *Ynm[nm] * I).real() * m;
       }
     }
     sph2cart(r,theta,phi,spherical,cartesian);
@@ -133,7 +133,7 @@ void Kernel::LaplaceL2L() {
           const int jnkm = (n - j) * (n - j) + n - j + m - k;
           const int nm   = n * n + n - m;
           const int nms  = n * (n + 1) / 2 - m;
-          L += std::conj(CJ->L[nms]) * Ynm[jnkm]
+          L += std::conj(CJ->L[3*nms]) * Ynm[jnkm]
              * double(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
         }
         for( int m=0; m<=n; ++m ) {
@@ -141,12 +141,12 @@ void Kernel::LaplaceL2L() {
             const int jnkm = (n - j) * (n - j) + n - j + m - k;
             const int nm   = n * n + n + m;
             const int nms  = n * (n + 1) / 2 + m;
-            L += CJ->L[nms] * std::pow(I,double(m-k-abs(m-k)))
+            L += CJ->L[3*nms] * std::pow(I,double(m-k-abs(m-k)))
                * Ynm[jnkm] * double(Anm[jnkm] * Anm[jk] / Anm[nm]);
           }
         }
       }
-      CI->L[jks] += L;
+      CI->L[3*jks] += L;
     }
   }
 }
@@ -163,16 +163,16 @@ void Kernel::LaplaceL2P() {
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
-      B->TRG[0] += (CI->L[nms] * Ynm[nm]).real();
-      spherical[0] += (CI->L[nms] * Ynm[nm]).real() / r * n;
-      spherical[1] += (CI->L[nms] * YnmTheta[nm]).real();
+      B->TRG[0] += (CI->L[3*nms] * Ynm[nm]).real();
+      spherical[0] += (CI->L[3*nms] * Ynm[nm]).real() / r * n;
+      spherical[1] += (CI->L[3*nms] * YnmTheta[nm]).real();
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
-        B->TRG[0] += 2 * (CI->L[nms] * Ynm[nm]).real();
-        spherical[0] += 2 * (CI->L[nms] * Ynm[nm]).real() / r * n;
-        spherical[1] += 2 * (CI->L[nms] * YnmTheta[nm]).real();
-        spherical[2] += 2 * (CI->L[nms] * Ynm[nm] * I).real() * m;
+        B->TRG[0] += 2 * (CI->L[3*nms] * Ynm[nm]).real();
+        spherical[0] += 2 * (CI->L[3*nms] * Ynm[nm]).real() / r * n;
+        spherical[1] += 2 * (CI->L[3*nms] * YnmTheta[nm]).real();
+        spherical[2] += 2 * (CI->L[3*nms] * Ynm[nm] * I).real() * m;
       }
     }
     sph2cart(r,theta,phi,spherical,cartesian);

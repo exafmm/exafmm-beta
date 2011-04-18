@@ -75,7 +75,7 @@ int main() {
   {
     #pragma omp section
     {
-      T2.downward(cells,jcells,1);
+      T.downward(cells,jcells,1);
     }
     #pragma omp section
     {
@@ -88,7 +88,7 @@ int main() {
   T.eraseLocalTree(jcells);
   }
   T.downward(cells,jcells,1);
-//  T.copyTime(T2.timer);
+  T.copyTime(T2.timer);
   if(T.printNow) T.writeTime();
   if(T.printNow) T.writeTime();
 

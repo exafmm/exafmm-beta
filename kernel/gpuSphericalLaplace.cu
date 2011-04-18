@@ -211,7 +211,7 @@ void Kernel::LaplaceM2M_CPU() {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += CJ->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+            M += CJ->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
                * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
@@ -220,12 +220,12 @@ void Kernel::LaplaceM2M_CPU() {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
-            M += std::conj(CJ->M[jnkms]) * Ynm[nm]
+            M += std::conj(CJ->M[3*jnkms]) * Ynm[nm]
                * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
       }
-      CI->M[jks] += M;
+      CI->M[3*jks] += M;
     }
   }
 }
