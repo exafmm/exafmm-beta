@@ -499,16 +499,22 @@ public:
     stopTimer("Get sendCnt  ",printNow);                        // Stop timer & print
 
     startTimer("Alltoall B   ");                                // Start timer
-#if 0
+#if 1
     int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
-    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks to recv from
-      sendCnt[i] *= bytes;                                      //  Send as bytes
-      sendDsp[i] *= bytes;                                      //  Send as bytes
-      recvCnt[i] *= bytes;                                      //  Recv as bytes
-      recvDsp[i] *= bytes;                                      //  Recv as bytes
-    }                                                           // End loop over ranks to recv from
+    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
+      sendCnt[i] *= bytes;                                      //  Multiply by bytes
+      sendDsp[i] *= bytes;                                      //  Multiply by bytes
+      recvCnt[i] *= bytes;                                      //  Multiply by bytes
+      recvDsp[i] *= bytes;                                      //  Multiply by bytes
+    }                                                           // End loop over ranks
     MPI_Alltoallv(&sendBodies[0],&sendCnt[0],&sendDsp[0],MPI_BYTE,
                   &recvBodies[0],&recvCnt[0],&recvDsp[0],MPI_BYTE,MPI_COMM_WORLD);
+    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
+      sendCnt[i] /= bytes;                                      //  Divide by bytes
+      sendDsp[i] /= bytes;                                      //  Divide by bytes
+      recvCnt[i] /= bytes;                                      //  Divide by bytes
+      recvDsp[i] /= bytes;                                      //  Divide by bytes
+    }                                                           // End loop over ranks
 #else
     commBodiesAlltoall();
 #endif
@@ -521,16 +527,22 @@ public:
     getSendCount(false);                                        // Get size of data to send
     stopTimer("Get sendCnt  ",printNow);                        // Stop timer & print
     startTimer("Alltoall B   ");                                // Start timer
-#if 0
+#if 1
     int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
-    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks to recv from
-      sendCnt[i] *= bytes;                                      //  Send as bytes
-      sendDsp[i] *= bytes;                                      //  Send as bytes
-      recvCnt[i] *= bytes;                                      //  Recv as bytes
-      recvDsp[i] *= bytes;                                      //  Recv as bytes
-    }                                                           // End loop over ranks to recv from
+    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
+      sendCnt[i] *= bytes;                                      //  Multiply by bytes
+      sendDsp[i] *= bytes;                                      //  Multiply by bytes
+      recvCnt[i] *= bytes;                                      //  Multiply by bytes
+      recvDsp[i] *= bytes;                                      //  Multiply by bytes
+    }                                                           // End loop over ranks
     MPI_Alltoallv(&sendBodies[0],&sendCnt[0],&sendDsp[0],MPI_BYTE,
                   &recvBodies[0],&recvCnt[0],&recvDsp[0],MPI_BYTE,MPI_COMM_WORLD);
+    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
+      sendCnt[i] /= bytes;                                      //  Divide by bytes
+      sendDsp[i] /= bytes;                                      //  Divide by bytes
+      recvCnt[i] /= bytes;                                      //  Divide by bytes
+      recvDsp[i] /= bytes;                                      //  Divide by bytes
+    }                                                           // End loop over ranks
 #else
     commBodiesAlltoall();
 #endif

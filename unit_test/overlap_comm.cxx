@@ -67,19 +67,19 @@ int main() {
   T.resetTimer();
 
   D.initTarget(bodies);
+  T.evalP2M(cells);
+  T.evalM2M(cells);
+  jcells = cells;
   if( MPISIZE != 1 ) {
 #pragma omp parallel sections num_threads(2)
   {
     #pragma omp section
     {
-      T.updateBodies();
+      T2.downward(cells,jcells,1);
     }
     #pragma omp section
     {
-      T2.evalP2M(cells);
-      T2.evalM2M(cells);
-      jcells = cells;
-      T2.downward(cells,jcells,1);
+      T.updateBodies();
     }
   }
   jbodies = bodies;
