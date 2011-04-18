@@ -334,8 +334,10 @@ private:
       bodies.push_back(body);                                   //  Push body into bodies vector
     }                                                           // End loop over recv bodies
     buffer.resize(bodies.size());                               // Resize sort buffer
-    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
     stopTimer("Recv bodies  ",printNow);                        //  Stop timer & print
+    startTimer("Sort bodies  ");                                // Start timer
+    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
+    stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
   }
 
@@ -563,9 +565,6 @@ public:
     Cells twigs,sticks;                                         // Twigs and sticks are special types of cells
 
 #if 1
-    startTimer("Gather bounds");                                // Start timer
-    gatherBounds();                                             // Gather bounds of other domain
-    stopTimer("Gather bounds",printNow);                        // Stop timer & print
     startTimer("Get LET      ");                                // Start timer
     int ssize = 0;                                              // Initialize offset for send cells
     sendCellCnt.assign(MPISIZE,0);                              // Initialize cell send count
