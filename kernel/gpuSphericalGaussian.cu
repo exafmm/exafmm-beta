@@ -6,9 +6,6 @@ void Kernel::GaussianInit() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(DEVICE);                                        // Set GPU device
-#ifdef CUPRINTF
-  cudaPrintfInit();                                             // Initialize cuPrintf
-#endif
   cudaThreadSynchronize();                                      // Sync GPU threads
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
@@ -118,12 +115,7 @@ __global__ void GaussianL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob
   targetGlob[6*itarget+0] = 0;
 }
 
-void Kernel::GaussianFinal() {
-#ifdef CUPRINTF
-  cudaPrintfDisplay(stdout, true);                              // Print cuPrintf buffer to display
-  cudaPrintfEnd();                                              // Finalize cuPrintf
-#endif
-}
+void Kernel::GaussianFinal() {}
 
 #include "gpu.h"
 

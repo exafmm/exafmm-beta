@@ -29,7 +29,7 @@ typedef long                 bigint;                            // Big integer t
 typedef float                real;                              // Real number type
 typedef std::complex<double> complex;                           // Complex number type
 
-const int  P       = 15;                                        // Order of expansions
+const int  P       = 14;                                        // Order of expansions
 const int  NCRIT   = 1000;                                      // Number of bodies per cell
 const int  MAXBODY = 200000;                                    // Maximum number of bodies per GPU kernel
 const int  MAXCELL = 10000000;                                  // Maximum number of bodies/coefs in cell per GPU kernel

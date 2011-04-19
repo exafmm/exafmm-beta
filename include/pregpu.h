@@ -1,9 +1,6 @@
 #ifndef pregpu_h
 #define pregpu_h
-#ifdef CUPRINTF
-#include "cuprintf.h"
 #include <omp.h>
-#endif
 
 static size_t keysDevcSize = 0;                                 // Size of offsets for rangeHost
 static size_t rangeDevcSize = 0;                                // Size of offsets for sourceHost
@@ -84,33 +81,30 @@ __device__ void evalLocal(float *YnmShrd, float rho, float alpha, float *factShr
     float rhom = rho_1;
     int nn = floor(sqrtf(2*l+0.25)-0.5);
     int mm = 0;
-    float Ynmlocal;
+    float Ynm;
     for( int i=0; i<=nn; ++i ) mm += i;
     mm = l - mm;
-    float p, p1, p2, rhon;
-    int m, n;
-    for( m=0; m<mm; ++m ){
+    int n;
+    for( int m=0; m<mm; ++m ){
       rhom *= rho_1;
       pn = -pn * fact * s;
       fact += 2;
     }
-    m=mm;
-    p = pn;
-    if(mm==nn) Ynmlocal = rhom * p;
-    p1 = p;
+    int m = mm;
+    float p = pn;
+    if( mm == nn ) Ynm = rhom * p;
+    float p1 = p;
     p = x * (2 * m + 1) * p;
     rhom *= rho_1;
-    rhon = rhom;
+    float rhon = rhom;
     for( n=m+1; n<nn; ++n ){
-      p2 = p1;
+      float p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
       rhon *= rho_1;
     }
-    if(n<=nn){
-      Ynmlocal = rhon * p * factShrd[n-m];
-    }
-    YnmShrd[l]=Ynmlocal;
+    if( n <= nn ) Ynm = rhon * p * factShrd[n-m];
+    YnmShrd[l] = Ynm;
   }
   __syncthreads();
 }
