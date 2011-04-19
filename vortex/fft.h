@@ -185,8 +185,8 @@ public:
 
   void addSpectrum() {
     for( int ix=0; ix<nxLocal; ++ix ) {
-      for( int iy=0; iy<nx/2; ++iy ) {
-        for( int iz=0; iz<nx/2; ++iz ) {
+      for( int iy=0; iy<nx; ++iy ) {
+        for( int iz=0; iz<nx; ++iz ) {
           int iix = ix + nxLocal * MPIRANK;
           int i = ix * nx * nx + iy * nx + iz;
           int k = floor(sqrtf(Kk[iix] * Kk[iix] + Kk[iy] * Kk[iy] + Kk[iz] * Kk[iz]));

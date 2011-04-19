@@ -77,28 +77,42 @@ __device__ void evalMultipole(float *YnmShrd, float rho, float alpha, float *fac
 __device__ void evalLocal(float *YnmShrd, float rho, float alpha, float *factShrd) {
   float x = cosf(alpha);
   float s = sqrtf(1 - x * x);
-  float fact = 1;
-  float pn = 1;
-  float rhom = 1.0 / rho;
-  for( int m=0; m<2*P; ++m ){
-    float p = pn;
-    int i = m * (m + 1) /2 + m;
-    YnmShrd[i] = rhom * p;
-    float p1 = p;
+  float rho_1 = 1 / rho;
+  for( int l=threadIdx.x; l<(2*P+1)*P; l+=THREADS ){
+    float fact = 1;
+    float pn = 1;
+    float rhom = rho_1;
+    int nn = floor(sqrtf(2*l+0.25)-0.5);
+    int mm = 0;
+    float Ynmlocal;
+    for( int i=0; i<=nn; ++i ) mm += i;
+    mm = l - mm;
+    float p, p1, p2, rhon;
+    int m, n;
+    for( m=0; m<mm; ++m ){
+      rhom *= rho_1;
+      pn = -pn * fact * s;
+      fact += 2;
+    }
+    m=mm;
+    p = pn;
+    if(mm==nn) Ynmlocal = rhom * p;
+    p1 = p;
     p = x * (2 * m + 1) * p;
-    rhom /= rho;
-    float rhon = rhom;
-    for( int n=m+1; n<2*P; ++n ){
-      i = n * (n + 1) / 2 + m;
-      YnmShrd[i] = rhon * p * factShrd[n-m];
-      float p2 = p1;
+    rhom *= rho_1;
+    rhon = rhom;
+    for( n=m+1; n<nn; ++n ){
+      p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-      rhon /= rho;
+      rhon *= rho_1;
     }
-    pn = -pn * fact * s;
-    fact += 2;
+    if(n<=nn){
+      Ynmlocal = rhon * p * factShrd[n-m];
+    }
+    YnmShrd[l]=Ynmlocal;
   }
+  __syncthreads();
 }
 }
 

@@ -5,11 +5,11 @@
 
 int main() {
   assert(IMAGES >= 3);
-  const int numGrid1D = 512;
+  const int numGrid1D = 128;
   const int numSteps  = 0;
   const int numSkip   = 0;
-  const float dt      = 1e-4;
-  const float nu      = 5e-3;
+  const float dt      = 5e-4;
+  const float nu      = 2e-2;
   Bodies bodies,jbodies;
   Cells cells,jcells;
   Vortex T(numGrid1D);
