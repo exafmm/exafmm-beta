@@ -112,14 +112,14 @@ public:
 class BottomUp : virtual public TreeStructure {                 // Bottomup tree constructor
 protected:
   int getMaxLevel(Bodies &bodies) {                             // Max level for bottom up tree build
-    const int N = bodies.size() * MPISIZE;                      // Number of bodies
+    const long N = bodies.size() * MPISIZE;                     // Number of bodies
     int level;                                                  // Max level
     level = N >= NCRIT ? 1 + int(log(N / NCRIT)/M_LN2/3) : 0;   // Decide max level from N/Ncrit
     int MPIlevel = int(log(MPISIZE-1) / M_LN2 / 3) + 1;         // Level of local root cell
     if( MPISIZE == 1 ) MPIlevel = 0;                            // For serial execution local root cell is root cell
     if( MPIlevel > level ) {                                    // If process hierarchy is deeper than tree
-      if( MPIRANK == 0 ) std::cout << "Process hierarchy is deeper than tree." << std::endl;
-      level = MPIRANK;
+      std::cout << "Process hierarchy is deeper than tree @ rank" << MPIRANK << std::endl;
+      level = MPIlevel;
     }
     return level;                                               // Return max level
   }

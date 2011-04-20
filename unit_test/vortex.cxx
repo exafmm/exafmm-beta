@@ -71,12 +71,6 @@ int main() {
   T.setKernel("Stretching");
   D.initTarget(bodies);
   T.downward(cells,jcells,1);
-  T.setKernel("Gaussian");
-  D.initTarget(bodies);
-  T.downward(cells,jcells,1);
-  for( int step=0; step!=15; ++step ) {
-    T.downward(cells,jcells,1);
-  }
   if(T.printNow) T.writeTime();
   if(T.printNow) T.writeTime();
 #ifdef DEBUG
