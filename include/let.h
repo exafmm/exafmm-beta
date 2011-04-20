@@ -560,6 +560,12 @@ public:
     stopTimer("Alltoall B   ",printNow);                        // Stop timer & print
   }
 
+  void bodies2cells(Bodies &bodies, Cells &cells) {             // Convert recvBodies to cells
+    Cells twigs,sticks;                                         // Twigs and sticks are special types of cells
+    rbodies2twigs(bodies,twigs);                                // Put recv bodies into twig vector
+    twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
+  }
+
   void commCells(Bodies &bodies, Cells &cells) {                // Communicate cell in the LET
     vect xmin = 0, xmax = 0;                                    // Initialize domain boundaries
     Cells twigs,sticks;                                         // Twigs and sticks are special types of cells

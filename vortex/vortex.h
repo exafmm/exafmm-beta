@@ -8,26 +8,21 @@ private:
   float *r, *x;
   float *dxdt, *dydt, *dzdt;
 
-  void rbf(Bodies &bodies, int d) {
+  void rbf(Bodies &bodies, Cells &cells, int d) {
     const int itmax = 5;
     const float tol = 1e-4;
-    Cells cells;
 
+    setKernel("Gaussian");
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
       B->SRC[0] = x[i] = B->TRG[d+1] * dx * dx * dx;
       B->TRG[0] = 0;
     }
-    setKernel("Gaussian");
-    octsection(bodies);
-    bottomup(bodies,cells);
     commBodies(cells);
     Bodies jbodies = bodies;
-    Cells jcells = cells;
-    commCells(jbodies,jcells);
+    Cells jcells;
+    bodies2cells(jbodies,jcells);
     downward(cells,jcells,1);
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
 
     float resRecv, resSend = 0;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -45,17 +40,13 @@ private:
       print(it,0);
       print(", residual  : ",0);
       print(sqrt(resRecv / res0));
-      cells.clear();
-      jcells.clear();
-      octsection(bodies);
-      bottomup(bodies,cells);
-      commBodies(cells);
+      evalP2M(cells);
+      evalM2M(cells);
+      updateBodies();
       jbodies = bodies;
-      jcells = cells;
-      commCells(jbodies,jcells);
+      jcells.clear();
+      bodies2cells(jbodies,jcells);
       downward(cells,jcells,1);
-      unpartition(bodies);
-      std::sort(bodies.begin(),bodies.end());
       float pApRecv, pApSend = 0;
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
         pApSend += B->SRC[0] * B->TRG[0];
@@ -186,10 +177,15 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[3] -= realSend[B-bodies.begin()];
     }
+    Cells cells;
     setGlobDomain(bodies);
-    rbf(bodies,2);
-    rbf(bodies,1);
-    rbf(bodies,0);
+    octsection(bodies);
+    bottomup(bodies,cells);
+    rbf(bodies,cells,2);
+    rbf(bodies,cells,1);
+    rbf(bodies,cells,0);
+    unpartition(bodies);
+    std::sort(bodies.begin(),bodies.end());
   }
 
   void initialError(Bodies &bodies) {
@@ -375,9 +371,14 @@ public:
       B->SRC[3] = dx;
     }
 
-    rbf(bodies,2);
-    rbf(bodies,1);
-    rbf(bodies,0);
+    cells.clear();
+    octsection(bodies);
+    bottomup(bodies,cells);
+    rbf(bodies,cells,2);
+    rbf(bodies,cells,1);
+    rbf(bodies,cells,0);
+    unpartition(bodies);
+    std::sort(bodies.begin(),bodies.end());
   }
 };
 
