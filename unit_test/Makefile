@@ -85,6 +85,10 @@ overlap_comm: overlap_comm.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 	mpirun -np 4 ./a.out
 
+vortex: vortex.cxx $(OBJECT)
+	@$(CXX) $? $(LFLAGS)
+	mpirun -np 4 ./a.out
+
 vtk: vtk.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	./a.out

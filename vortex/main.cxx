@@ -19,12 +19,12 @@ int main() {
 
   T.startTimer("Read data    ");
   bodies.resize(T.numBodies);
-  T.readData(bodies);
+  T.readData(bodies,cells);
   T.stopTimer("Read data    ",printNow);
   T.eraseTimer("Read data    ");
 
   T.startTimer("Validate data");
-  T.initialError(bodies);
+  T.initialError(bodies,cells);
   T.stopTimer("Validate data",printNow);
   T.eraseTimer("Validate data");
 

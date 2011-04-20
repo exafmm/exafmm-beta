@@ -94,7 +94,7 @@ public:
     delete[] dzdt;
   }
 
-  void readData(Bodies &bodies) {                               // Initialize source values
+  void readData(Bodies &bodies, Cells &cells) {                 // Initialize source values
 #if 1
     char fname[256];
     sprintf(fname,"../../isotropic/spectral/initialu%4.4d",MPIRANK);
@@ -177,23 +177,22 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[3] -= realSend[B-bodies.begin()];
     }
-    Cells cells;
     setGlobDomain(bodies);
     octsection(bodies);
     bottomup(bodies,cells);
     rbf(bodies,cells,2);
     rbf(bodies,cells,1);
     rbf(bodies,cells,0);
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
   }
 
-  void initialError(Bodies &bodies) {
-    Cells cells;
+  void initialError(Bodies &bodies, Cells &cells) {
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG = 0;
     }
     setKernel("BiotSavart");
+    unpartition(bodies);
+    std::sort(bodies.begin(),bodies.end());
+    cells.clear();
     octsection(bodies);
     bottomup(bodies,cells);
     commBodies(cells);
