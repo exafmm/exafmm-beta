@@ -295,6 +295,7 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetCell(listP2M,flagP2M);                             //  Set target buffer for cells
+    startTimer("P2M kernel   ");                                //  Start timer
     if( kernelName == "Laplace" ) {                             //  If Laplace kernel
       LaplaceP2M();                                             //   Evaluate P2M kernel
     } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
@@ -307,6 +308,7 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //   Abort execution
     }                                                           //  Endif for kernel type
+    stopTimer("P2M kernel   ");                                 //  Stop timer
     getTargetCell(listP2M);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -340,6 +342,7 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
       stopTimer("Get list     ");                               //   Stop timer
       setSourceCell();                                          //   Set source buffer for cells
       setTargetCell(listM2M,flagM2M);                           //   Set target buffer for cells
+      startTimer("M2M kernel   ");                              //   Start timer
       if( kernelName == "Laplace" ) {                           //   If Laplace kernel
         LaplaceM2M();                                           //    Evaluate M2M kernel
       } else if ( kernelName == "BiotSavart" ) {                //   If Biot Savart kernel
@@ -352,6 +355,7 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
         if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
         abort();                                                //   Abort execution
       }                                                         //   Endif for kernel type
+      stopTimer("M2M kernel   ");                               //   Stop timer
       getTargetCell(listM2M);                                   //   Get body values from target buffer
       clearBuffers();                                           //   Clear GPU buffers
       ioffset += numCell;                                       //   Increment ioffset
@@ -379,6 +383,7 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell();                                            //  Set source buffer for cells
     setTargetCell(listM2L,flagM2L);                             //  Set target buffer for cells
+    startTimer("M2L kernel   ");                                //  Start timer
     if( kernelName == "Laplace" ) {                             //  If Laplace kernel
       LaplaceM2L();                                             //   Evaluate M2L kernel
     } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
@@ -391,6 +396,7 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //   Abort execution
     }                                                           //  Endif for kernel type
+    stopTimer("M2L kernel   ");                                 //  Stop timer
     getTargetCell(listM2L,false);                               //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -418,6 +424,7 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell();                                            //  Set source buffer for cells
     setTargetBody(listM2P,flagM2P);                             //  Set target buffer for bodies
+    startTimer("M2P kernel   ");                                //  Start timer
     if( kernelName == "Laplace" ) {                             //  If Laplace kernel
       LaplaceM2P();                                             //   Evaluate M2P kernel
     } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
@@ -430,6 +437,7 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //   Abort execution
     }                                                           //  Endif for kernel type
+    stopTimer("M2P kernel   ");                                 //  Stop timer
     getTargetBody(listM2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -457,6 +465,7 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetBody(listP2P,flagP2P);                             //  Set target buffer for bodies
+    startTimer("P2P kernel   ");                                //  Start timer
     if( kernelName == "Laplace" ) {                             //  If Laplace kernel
       LaplaceP2P();                                             //   Evaluate P2P kernel
     } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
@@ -469,6 +478,7 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //   Abort execution
     }                                                           //  Endif for kernel type
+    stopTimer("P2P kernel   ");                                 //  Stop timer
     getTargetBody(listP2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -505,6 +515,7 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
       stopTimer("Get list     ");                               //   Stop timer
       setSourceCell(false);                                     //   Set source buffer for cells
       setTargetCell(listL2L,flagL2L);                           //   Set target buffer for cells
+      startTimer("L2L kernel   ");                              //   Start timer
       if( kernelName == "Laplace" ) {                           //   If Laplace kernel
         LaplaceL2L();                                           //    Evaluate L2L kernel
       } else if ( kernelName == "BiotSavart" ) {                //   If Biot Savart kernel
@@ -517,6 +528,7 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
         if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
         abort();                                                //    Abort execution
       }                                                         //   Endif for kernel type
+      stopTimer("L2L kernel   ");                               //   Stop timer
       getTargetCell(listL2L,false);                             //   Get body values from target buffer
       clearBuffers();                                           //   Clear GPU buffers
       ioffset += numCell;                                       //   Increment ioffset
@@ -547,6 +559,7 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell(false);                                       //  Set source buffer for cells
     setTargetBody(listL2P,flagL2P);                             //  Set target buffer for bodies
+    startTimer("L2P kernel   ");                                //  Start timer
     if( kernelName == "Laplace" ) {                             //  If Laplace kernel
       LaplaceL2P();                                             //   Evaluate L2P kernel
     } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
@@ -559,6 +572,7 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //   Abort execution
     }                                                           //  Endif for kernel type
+    stopTimer("L2P kernel   ");                                 //  Stop timer
     getTargetBody(listL2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset

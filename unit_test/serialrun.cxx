@@ -20,10 +20,12 @@ int main() {
   T.startTimer("Set bodies   ");
   D.random(bodies,1,1);
   T.stopTimer("Set bodies   ",T.printNow);
+  T.eraseTimer("Set bodies   ");
 
   T.startTimer("Set domain   ");
   T.setDomain(bodies);
   T.stopTimer("Set domain   ",T.printNow);
+  T.eraseTimer("Set domain   ");
 
 #ifdef TOPDOWN
   T.topdown(bodies,cells);
