@@ -26,7 +26,8 @@ extern int DEVICE;                                              // GPU device ID
 #endif
 
 typedef long                 bigint;                            // Big integer type
-typedef float                real;                              // Real number type
+typedef float                real;                              // Real number type on CPU
+typedef float                gpureal;                           // Real number type on GPU
 typedef std::complex<double> complex;                           // Complex number type
 
 const int  P       = 14;                                        // Order of expansions

@@ -18,22 +18,22 @@ void Kernel::KERNEL() {\
   }\
   if( sourceHost.size() > sourceDevcSize ) {\
     if( sourceDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(sourceDevc));\
-    CUDA_SAFE_CALL(cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(float) ));\
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(gpureal) ));\
     sourceDevcSize = sourceHost.size();\
   }\
   if( targetHost.size() > targetDevcSize ) {\
     if( targetDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(targetDevc));\
-    CUDA_SAFE_CALL(cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(float) ));\
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(gpureal) ));\
     targetDevcSize = targetHost.size();\
   }\
   cudaThreadSynchronize();\
   stopTimer("cudaMalloc   ");\
   startTimer("cudaMemcpy   ");\
-  CUDA_SAFE_CALL(cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),    cudaMemcpyHostToDevice));\
-  CUDA_SAFE_CALL(cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),   cudaMemcpyHostToDevice));\
-  CUDA_SAFE_CALL(cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(float),cudaMemcpyHostToDevice));\
-  CUDA_SAFE_CALL(cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(float),cudaMemcpyHostToDevice));\
-  CUDA_SAFE_CALL(cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(float)));\
+  CUDA_SAFE_CALL(cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),      cudaMemcpyHostToDevice));\
+  CUDA_SAFE_CALL(cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),     cudaMemcpyHostToDevice));\
+  CUDA_SAFE_CALL(cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));\
+  CUDA_SAFE_CALL(cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));\
+  CUDA_SAFE_CALL(cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(gpureal)));\
   cudaThreadSynchronize();\
   stopTimer("cudaMemcpy   ");\
   cudaThreadSynchronize();\
@@ -47,7 +47,7 @@ void Kernel::KERNEL() {\
   stopTimer(#EVENT);\
   cudaThreadSynchronize();\
   startTimer("cudaMemcpy   ");\
-  CUDA_SAFE_CALL(cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(float),cudaMemcpyDeviceToHost));\
+  CUDA_SAFE_CALL(cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(gpureal),cudaMemcpyDeviceToHost));\
   cudaThreadSynchronize();\
   stopTimer("cudaMemcpy   ");\
 }

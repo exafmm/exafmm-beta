@@ -11,11 +11,11 @@ void Kernel::BiotSavartInit() {
   eraseTimer("Init GPU     ");                                  // Erase timer
 }
 
-__device__ void BiotSavartP2M_core(float *target, float rho, float alpha, float beta,
-                                   float *sourceShrd, int ithread) {
-  __shared__ float factShrd[2*P];
-  float Ynm;
-  float fact = 1;
+__device__ void BiotSavartP2M_core(gpureal *target, gpureal rho, gpureal alpha, gpureal beta,
+                                   gpureal *sourceShrd, int ithread) {
+  __shared__ gpureal factShrd[2*P];
+  gpureal Ynm;
+  gpureal fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -26,34 +26,34 @@ __device__ void BiotSavartP2M_core(float *target, float rho, float alpha, float 
   for( int i=0; i<=nn; ++i ) mm += i;
   mm = threadIdx.x - mm;
   if( threadIdx.x >= NTERM ) nn = mm = 0;
-  float x = cosf(alpha);
-  float s = sqrtf(1 - x * x);
+  gpureal x = cosf(alpha);
+  gpureal s = sqrtf(1 - x * x);
   fact = 1;
-  float pn = 1;
-  float rhom = 1;
+  gpureal pn = 1;
+  gpureal rhom = 1;
   for( int m=0; m<mm; ++m ) {
     rhom *= rho;
     pn = -pn * fact * s;
     fact += 2;
   }
   int m=mm;
-  float p = pn;
+  gpureal p = pn;
   if(mm==nn) Ynm = rhom * p * rsqrtf(factShrd[2*m]);
-  float p1 = p;
+  gpureal p1 = p;
   p = x * (2 * m + 1) * p;
   rhom *= rho;
-  float rhon = rhom;
+  gpureal rhon = rhom;
   for( int n=m+1; n<=nn; ++n ) {
     if(n==nn){
       Ynm = rhon * p * rsqrtf(factShrd[n+m] / factShrd[n-m]);
     }
-    float p2 = p1;
+    gpureal p2 = p1;
     p1 = p;
     p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
     rhon *= rho;
   }
-  float ere = cosf(-mm * beta);
-  float eim = sinf(-mm * beta);
+  gpureal ere = cosf(-mm * beta);
+  gpureal eim = sinf(-mm * beta);
   target[0] += sourceShrd[6*ithread+3] * Ynm * ere;
   target[1] += sourceShrd[6*ithread+3] * Ynm * eim;
   target[2] += sourceShrd[6*ithread+4] * Ynm * ere;
@@ -62,12 +62,12 @@ __device__ void BiotSavartP2M_core(float *target, float rho, float alpha, float 
   target[5] += sourceShrd[6*ithread+5] * Ynm * eim;
 }
 
-__global__ void BiotSavartP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void BiotSavartP2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  float target[6] = {0, 0, 0, 0, 0, 0};
-  __shared__ float targetShrd[3];
-  __shared__ float sourceShrd[6*THREADS];
+  gpureal target[6] = {0, 0, 0, 0, 0, 0};
+  __shared__ gpureal targetShrd[3];
+  __shared__ gpureal sourceShrd[6*THREADS];
   int itarget = blockIdx.x * THREADS;
   targetShrd[0] = targetGlob[6*itarget+0];
   targetShrd[1] = targetGlob[6*itarget+1];
@@ -90,7 +90,7 @@ __global__ void BiotSavartP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGl
         d.x = sourceShrd[6*i+0] - targetShrd[0];
         d.y = sourceShrd[6*i+1] - targetShrd[1];
         d.z = sourceShrd[6*i+2] - targetShrd[2];
-        float rho,alpha,beta;
+        gpureal rho,alpha,beta;
         cart2sph(rho,alpha,beta,d.x,d.y,d.z);
         BiotSavartP2M_core(target,rho,alpha,beta,sourceShrd,i);
       }
@@ -112,7 +112,7 @@ __global__ void BiotSavartP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGl
       d.x = sourceShrd[6*i+0] - targetShrd[0];
       d.y = sourceShrd[6*i+1] - targetShrd[1];
       d.z = sourceShrd[6*i+2] - targetShrd[2];
-      float rho,alpha,beta;
+      gpureal rho,alpha,beta;
       cart2sph(rho,alpha,beta,d.x,d.y,d.z);
       BiotSavartP2M_core(target,rho,alpha,beta,sourceShrd,i);
     }
@@ -126,25 +126,25 @@ __global__ void BiotSavartP2M_GPU(int *keysGlob, int *rangeGlob, float *targetGl
   targetGlob[6*itarget+5] = target[5];
 }
 
-__device__ void BiotSavartM2M_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
+__device__ void BiotSavartM2M_core(gpureal *target, gpureal beta, gpureal *factShrd, gpureal *YnmShrd, gpureal *sourceShrd) {
   int j = floorf(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
   k = threadIdx.x - k;
   if( threadIdx.x >= NTERM ) j = k = 0;
-  float ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
+  gpureal ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
   for( int n=0; n<=j; ++n ) {
     for( int m=-n; m<=min(k-1,n); ++m ) {
       if( j-n >= k-m ) {
         int nm = n * n + n + m;
         int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
-        float ere = cosf(-m * beta);
-        float eim = sinf(-m * beta);
-        float ajnkm = rsqrtf(factShrd[j-n-k+m] * factShrd[j-n+k-m]);
-        float cnm = ODDEVEN((m-abs(m))/2+j);
+        gpureal ere = cosf(-m * beta);
+        gpureal eim = sinf(-m * beta);
+        gpureal ajnkm = rsqrtf(factShrd[j-n-k+m] * factShrd[j-n+k-m]);
+        gpureal cnm = ODDEVEN((m-abs(m))/2+j);
         cnm *= ajnkm / ajk * YnmShrd[nm];
-        float CnmReal = cnm * ere;
-        float CnmImag = cnm * eim;
+        gpureal CnmReal = cnm * ere;
+        gpureal CnmImag = cnm * eim;
         target[0] += sourceShrd[6*jnkms+0] * CnmReal;
         target[0] -= sourceShrd[6*jnkms+1] * CnmImag;
         target[1] += sourceShrd[6*jnkms+0] * CnmImag;
@@ -163,13 +163,13 @@ __device__ void BiotSavartM2M_core(float *target, float beta, float *factShrd, f
       if( j-n >= m-k ) {
         int nm = n * n + n + m;
         int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-        float ere = cosf(-m * beta);
-        float eim = sinf(-m * beta);
-        float ajnkm = rsqrtf(factShrd[j-n-k+m] * factShrd[j-n+k-m]);
-        float cnm = ODDEVEN(k+j+m);
+        gpureal ere = cosf(-m * beta);
+        gpureal eim = sinf(-m * beta);
+        gpureal ajnkm = rsqrtf(factShrd[j-n-k+m] * factShrd[j-n+k-m]);
+        gpureal cnm = ODDEVEN(k+j+m);
         cnm *= ajnkm / ajk * YnmShrd[nm];
-        float CnmReal = cnm * ere;
-        float CnmImag = cnm * eim;
+        gpureal CnmReal = cnm * ere;
+        gpureal CnmImag = cnm * eim;
         target[0] += sourceShrd[6*jnkms+0] * CnmReal;
         target[0] += sourceShrd[6*jnkms+1] * CnmImag;
         target[1] += sourceShrd[6*jnkms+0] * CnmImag;
@@ -187,14 +187,14 @@ __device__ void BiotSavartM2M_core(float *target, float beta, float *factShrd, f
   }
 }
 
-__global__ void BiotSavartM2M_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void BiotSavartM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  float target[6] = {0, 0, 0, 0, 0, 0};
-  __shared__ float sourceShrd[6*THREADS];
-  __shared__ float factShrd[2*P];
-  __shared__ float YnmShrd[P*P];
-  float fact = 1;
+  gpureal target[6] = {0, 0, 0, 0, 0, 0};
+  __shared__ gpureal sourceShrd[6*THREADS];
+  __shared__ gpureal factShrd[2*P];
+  __shared__ gpureal YnmShrd[P*P];
+  gpureal fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -217,7 +217,7 @@ __global__ void BiotSavartM2M_GPU(int *keysGlob, int *rangeGlob, float *targetGl
       sourceShrd[6*threadIdx.x+5] = sourceGlob[begin+6*threadIdx.x+8];
     }
     __syncthreads();
-    float rho,alpha,beta;
+    gpureal rho,alpha,beta;
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
     evalMultipole(YnmShrd,rho,alpha,factShrd);
     BiotSavartM2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
@@ -273,22 +273,22 @@ void Kernel::BiotSavartM2M_CPU() {
   }
 }
 
-__device__ void BiotSavartM2L_core(float *target, float  beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
+__device__ void BiotSavartM2L_core(gpureal *target, gpureal  beta, gpureal *factShrd, gpureal *YnmShrd, gpureal *sourceShrd) {
   int j = floorf(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
   k = threadIdx.x - k;
   if( threadIdx.x >= NTERM ) j = k = 0;
-  float ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
+  gpureal ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
   for( int n=0; n<P; ++n ) {
     for( int m=-n; m<0; ++m ) {
       int jnkm = (j + n) * (j + n + 1) / 2 - m + k;
-      float ere = cosf((m - k) * beta);
-      float eim = sinf((m - k) * beta);
-      float anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
-      float cnm = anm * ajk * YnmShrd[jnkm];
-      float CnmReal = cnm * ere;
-      float CnmImag = cnm * eim;
+      gpureal ere = cosf((m - k) * beta);
+      gpureal eim = sinf((m - k) * beta);
+      gpureal anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
+      gpureal cnm = anm * ajk * YnmShrd[jnkm];
+      gpureal CnmReal = cnm * ere;
+      gpureal CnmImag = cnm * eim;
       int i = n * (n + 1) / 2 - m;
       target[0] += sourceShrd[6*i+0] * CnmReal;
       target[0] += sourceShrd[6*i+1] * CnmImag;
@@ -305,13 +305,13 @@ __device__ void BiotSavartM2L_core(float *target, float  beta, float *factShrd, 
     }
     for( int m=0; m<=n; ++m ) {
       int jnkm = (j + n) * (j + n + 1) / 2 + abs(m - k);
-      float ere = cosf((m - k) * beta);
-      float eim = sinf((m - k) * beta);
-      float anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
-      float cnm = ODDEVEN((abs(k - m) - k - m) / 2);
+      gpureal ere = cosf((m - k) * beta);
+      gpureal eim = sinf((m - k) * beta);
+      gpureal anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
+      gpureal cnm = ODDEVEN((abs(k - m) - k - m) / 2);
       cnm *= anm * ajk * YnmShrd[jnkm];
-      float CnmReal = cnm * ere;
-      float CnmImag = cnm * eim;
+      gpureal CnmReal = cnm * ere;
+      gpureal CnmImag = cnm * eim;
       int i = n * (n + 1) / 2 + m;
       target[0] += sourceShrd[6*i+0] * CnmReal;
       target[0] -= sourceShrd[6*i+1] * CnmImag;
@@ -329,15 +329,15 @@ __device__ void BiotSavartM2L_core(float *target, float  beta, float *factShrd, 
   }
 }
 
-__global__ void BiotSavartM2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void BiotSavartM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  float D0 = -constDevc[0];
-  float target[6] = {0, 0, 0, 0, 0, 0};
-  __shared__ float sourceShrd[6*THREADS];
-  __shared__ float factShrd[2*P];
-  __shared__ float YnmShrd[4*NTERM];
-  float fact = 1;
+  gpureal D0 = -constDevc[0];
+  gpureal target[6] = {0, 0, 0, 0, 0, 0};
+  __shared__ gpureal sourceShrd[6*THREADS];
+  __shared__ gpureal factShrd[2*P];
+  __shared__ gpureal YnmShrd[4*NTERM];
+  gpureal fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -369,7 +369,7 @@ __global__ void BiotSavartM2L_GPU(int *keysGlob, int *rangeGlob, float *targetGl
             d.x += targetGlob[6*itarget+0] - sourceGlob[begin+0];
             d.y += targetGlob[6*itarget+1] - sourceGlob[begin+1];
             d.z += targetGlob[6*itarget+2] - sourceGlob[begin+2];
-            float rho,alpha,beta;
+            gpureal rho,alpha,beta;
             cart2sph(rho,alpha,beta,d.x,d.y,d.z);
             evalLocal(YnmShrd,rho,alpha,factShrd);
             BiotSavartM2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
@@ -387,29 +387,29 @@ __global__ void BiotSavartM2L_GPU(int *keysGlob, int *rangeGlob, float *targetGl
   targetGlob[6*itarget+5] = target[5];
 }
 
-__device__ void BiotSavartM2P_core(float *target, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
-  float x = cosf(theta);
-  float y = sinf(theta);
+__device__ void BiotSavartM2P_core(gpureal *target, gpureal r, gpureal theta, gpureal phi, gpureal *factShrd, gpureal *sourceShrd) {
+  gpureal x = cosf(theta);
+  gpureal y = sinf(theta);
   if( fabsf(y) < EPS ) y = 1 / EPS;
-  float s = sqrtf(1 - x * x);
-  float spherical[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  float cartesian[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  float fact = 1;
-  float pn = 1;
-  float rhom = 1 / r;
+  gpureal s = sqrtf(1 - x * x);
+  gpureal spherical[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  gpureal cartesian[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  gpureal fact = 1;
+  gpureal pn = 1;
+  gpureal rhom = 1 / r;
   for( int m=0; m<P; ++m ) {
-    float p = pn;
+    gpureal p = pn;
     int i = m * (m + 1) / 2 + m;
-    float ere = cosf(m * phi);
+    gpureal ere = cosf(m * phi);
     if( m == 0 ) ere = 0.5;
-    float eim = sinf(m * phi);
-    float anm = rhom * rsqrtf(factShrd[2*m]);
-    float Ynm = anm * p;
-    float p1 = p;
+    gpureal eim = sinf(m * phi);
+    gpureal anm = rhom * rsqrtf(factShrd[2*m]);
+    gpureal Ynm = anm * p;
+    gpureal p1 = p;
     p = x * (2 * m + 1) * p;
-    float YnmTheta = anm * (p - (m + 1) * x * p1) / y;
-    float realj = ere * sourceShrd[6*i+0] - eim * sourceShrd[6*i+1];
-    float imagj = eim * sourceShrd[6*i+0] + ere * sourceShrd[6*i+1];
+    gpureal YnmTheta = anm * (p - (m + 1) * x * p1) / y;
+    gpureal realj = ere * sourceShrd[6*i+0] - eim * sourceShrd[6*i+1];
+    gpureal imagj = eim * sourceShrd[6*i+0] + ere * sourceShrd[6*i+1];
     spherical[0] -= 2 * (m + 1) / r * Ynm * realj;
     spherical[1] += 2 * YnmTheta * realj;
     spherical[2] -= 2 * m * Ynm * imagj;
@@ -424,12 +424,12 @@ __device__ void BiotSavartM2P_core(float *target, float r, float theta, float ph
     spherical[7] += 2 * YnmTheta * realj;
     spherical[8] -= 2 * m * Ynm * imagj;
     rhom /= r;
-    float rhon = rhom;
+    gpureal rhon = rhom;
     for( int n=m+1; n<P; ++n ) {
       i = n * (n + 1) / 2 + m;
       anm = rhon * rsqrtf(factShrd[n+m] / factShrd[n-m]);
       Ynm = anm * p;
-      float p2 = p1;
+      gpureal p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
       YnmTheta = anm * ((n - m + 1) * p - (n + 1) * x * p1) / y;
@@ -461,15 +461,15 @@ __device__ void BiotSavartM2P_core(float *target, float r, float theta, float ph
   target[2] += 0.25 / M_PI * (cartesian[1] - cartesian[3]);
 }
 
-__global__ void BiotSavartM2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void BiotSavartM2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  float D0 = -constDevc[0];
-  float targetX[3];
-  float target[3] = {0, 0, 0};
-  __shared__ float sourceShrd[2*THREADS];
-  __shared__ float factShrd[2*P];
-  float fact = 1;
+  gpureal D0 = -constDevc[0];
+  gpureal targetX[3];
+  gpureal target[3] = {0, 0, 0};
+  __shared__ gpureal sourceShrd[2*THREADS];
+  __shared__ gpureal factShrd[2*P];
+  gpureal fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -504,7 +504,7 @@ __global__ void BiotSavartM2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
             d.x += targetX[0] - sourceGlob[begin+0];
             d.y += targetX[1] - sourceGlob[begin+1];
             d.z += targetX[2] - sourceGlob[begin+2];
-            float r,theta,phi;
+            gpureal r,theta,phi;
             cart2sph(r,theta,phi,d.x,d.y,d.z);
             BiotSavartM2P_core(target,r,theta,phi,factShrd,sourceShrd);
           }
@@ -517,7 +517,7 @@ __global__ void BiotSavartM2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
   targetGlob[6*itarget+2] = target[2];
 }
 
-__device__ inline void BiotSavartP2P_core(float *target, float *targetX, float *sourceShrd, float3 d, int i) {
+__device__ inline void BiotSavartP2P_core(gpureal *target, gpureal *targetX, gpureal *sourceShrd, float3 d, int i) {
   d.x += targetX[0];
   d.x -= sourceShrd[7*i+0];
   d.y += targetX[1];
@@ -525,27 +525,27 @@ __device__ inline void BiotSavartP2P_core(float *target, float *targetX, float *
   d.z += targetX[2];
   d.z -= sourceShrd[7*i+2];
 #if 0
-  float S2 = 2 * sourceShrd[7*i+6] * sourceShrd[7*i+6];
-  float R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
-  float RS = R2 / S2;
-  float cutoff = 0.25 / M_PI / R2 / sqrtf(R2) * (erff( sqrtf(RS) )
+  gpureal S2 = 2 * sourceShrd[7*i+6] * sourceShrd[7*i+6];
+  gpureal R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
+  gpureal RS = R2 / S2;
+  gpureal cutoff = 0.25 / M_PI / R2 / sqrtf(R2) * (erff( sqrtf(RS) )
                - sqrtf(4 / M_PI * RS) * expf(-RS));
   target[0] += (d.y * sourceShrd[7*i+5] - d.z * sourceShrd[7*i+4]) * cutoff;
   target[1] += (d.z * sourceShrd[7*i+3] - d.x * sourceShrd[7*i+5]) * cutoff;
   target[2] += (d.x * sourceShrd[7*i+4] - d.y * sourceShrd[7*i+3]) * cutoff;
 #else
-  const float SQRT4PI = M_2_SQRTPI;
-  const float FOURPI = 0.25 * M_1_PI;
-  float R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
-  float SQRT_R2_1 = rsqrtf(R2);
-  float RS = R2 * sourceShrd[7*i+6];
-  float SQRT_RS = sqrtf(RS);
-  float z = SQRT_RS,t,r;
+  const gpureal SQRT4PI = M_2_SQRTPI;
+  const gpureal FOURPI = 0.25 * M_1_PI;
+  gpureal R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
+  gpureal SQRT_R2_1 = rsqrtf(R2);
+  gpureal RS = R2 * sourceShrd[7*i+6];
+  gpureal SQRT_RS = sqrtf(RS);
+  gpureal z = SQRT_RS,t,r;
   (t)=1.0f/(1.0f+0.5f*(z));
   (r)=(t)*expf(-(z)*(z)-1.26551223f+(t)*(1.00002368f+(t)*(0.37409196f+(t)*(0.09678418f+
       (t)*(-0.18628806f+(t)*(0.27886807f+(t)*(-1.13520398f+(t)*(1.48851587f+
       (t)*(-0.82215223f+(t)*0.17087277f)))))))));
-  float cutoff = FOURPI * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * ( 1.0f - r
+  gpureal cutoff = FOURPI * SQRT_R2_1 * SQRT_R2_1 * SQRT_R2_1 * ( 1.0f - r
                - SQRT4PI * SQRT_RS * expf(-RS));
   target[0] += (d.y * sourceShrd[7*i+5] - d.z * sourceShrd[7*i+4]) * cutoff;
   target[1] += (d.z * sourceShrd[7*i+3] - d.x * sourceShrd[7*i+5]) * cutoff;
@@ -553,13 +553,13 @@ __device__ inline void BiotSavartP2P_core(float *target, float *targetX, float *
 #endif
 }
 
-__global__ void BiotSavartP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void BiotSavartP2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  float D0 = -constDevc[0];
-  float targetX[3];
-  float target[3] = {0, 0, 0};
-  __shared__ float sourceShrd[7*THREADS];
+  gpureal D0 = -constDevc[0];
+  gpureal targetX[3];
+  gpureal target[3] = {0, 0, 0};
+  __shared__ gpureal sourceShrd[7*THREADS];
   int itarget = blockIdx.x * THREADS + threadIdx.x;
   targetX[0] = targetGlob[6*itarget+0];
   targetX[1] = targetGlob[6*itarget+1];
@@ -636,23 +636,23 @@ __global__ void BiotSavartP2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
   targetGlob[6*itarget+2] = target[2];
 }
 
-__device__ void BiotSavartL2L_core(float *target, float beta, float *factShrd, float *YnmShrd, float *sourceShrd) {
+__device__ void BiotSavartL2L_core(gpureal *target, gpureal beta, gpureal *factShrd, gpureal *YnmShrd, gpureal *sourceShrd) {
   int j = floorf(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
   for( int i=0; i<=j; ++i ) k += i;
   k = threadIdx.x - k;
   if( threadIdx.x >= NTERM ) j = k = 0;
-  float ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
+  gpureal ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
   for( int n=0; n<P; ++n ) {
     for( int m=j+k-n; m<0; ++m ) {
       int nms = n * (n + 1) / 2 - m;
       int jnkm = (n - j) * (n - j) + n - j + m - k;
-      float ere = cosf((m - k) * beta);
-      float eim = sinf((m - k) * beta);
-      float anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
-      float cnm = ODDEVEN(k-n) * ajk / anm * YnmShrd[jnkm];
-      float CnmReal = cnm * ere;
-      float CnmImag = cnm * eim;
+      gpureal ere = cosf((m - k) * beta);
+      gpureal eim = sinf((m - k) * beta);
+      gpureal anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
+      gpureal cnm = ODDEVEN(k-n) * ajk / anm * YnmShrd[jnkm];
+      gpureal CnmReal = cnm * ere;
+      gpureal CnmImag = cnm * eim;
       target[0] += sourceShrd[6*nms+0] * CnmReal;
       target[0] += sourceShrd[6*nms+1] * CnmImag;
       target[1] += sourceShrd[6*nms+0] * CnmImag;
@@ -670,13 +670,13 @@ __device__ void BiotSavartL2L_core(float *target, float beta, float *factShrd, f
       if( n-j >= abs(m-k) ) {
         int nms = n * (n + 1) / 2 + m;
         int jnkm = (n - j) * (n - j) + n - j + m - k;
-        float ere = cosf((m - k) * beta);
-        float eim = sinf((m - k) * beta);
-        float anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
-        float cnm = ODDEVEN((m-k-abs(m-k)) / 2 - n);
+        gpureal ere = cosf((m - k) * beta);
+        gpureal eim = sinf((m - k) * beta);
+        gpureal anm = rsqrtf(factShrd[n-m] * factShrd[n+m]);
+        gpureal cnm = ODDEVEN((m-k-abs(m-k)) / 2 - n);
         cnm *= ajk / anm * YnmShrd[jnkm];
-        float CnmReal = cnm * ere;
-        float CnmImag = cnm * eim;
+        gpureal CnmReal = cnm * ere;
+        gpureal CnmImag = cnm * eim;
         target[0] += sourceShrd[6*nms+0] * CnmReal;
         target[0] -= sourceShrd[6*nms+1] * CnmImag;
         target[1] += sourceShrd[6*nms+0] * CnmImag;
@@ -694,14 +694,14 @@ __device__ void BiotSavartL2L_core(float *target, float beta, float *factShrd, f
   }
 }
 
-__global__ void BiotSavartL2L_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void BiotSavartL2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  float target[6] = {0, 0, 0, 0, 0, 0};
-  __shared__ float sourceShrd[6*THREADS];
-  __shared__ float factShrd[2*P];
-  __shared__ float YnmShrd[P*P];
-  float fact = 1;
+  gpureal target[6] = {0, 0, 0, 0, 0, 0};
+  __shared__ gpureal sourceShrd[6*THREADS];
+  __shared__ gpureal factShrd[2*P];
+  __shared__ gpureal YnmShrd[P*P];
+  gpureal fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -724,7 +724,7 @@ __global__ void BiotSavartL2L_GPU(int *keysGlob, int *rangeGlob, float *targetGl
       sourceShrd[6*threadIdx.x+5] = sourceGlob[begin+6*threadIdx.x+8];
     }
     __syncthreads();
-    float rho,alpha,beta;
+    gpureal rho,alpha,beta;
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
     evalMultipole(YnmShrd,rho,alpha,factShrd);
     BiotSavartL2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
@@ -738,29 +738,29 @@ __global__ void BiotSavartL2L_GPU(int *keysGlob, int *rangeGlob, float *targetGl
   targetGlob[6*itarget+5] = target[5];
 }
 
-__device__ void BiotSavartL2P_core(float *target, float r, float theta, float phi, float *factShrd, float *sourceShrd) {
-  float x = cosf(theta);
-  float y = sinf(theta);
+__device__ void BiotSavartL2P_core(gpureal *target, gpureal r, gpureal theta, gpureal phi, gpureal *factShrd, gpureal *sourceShrd) {
+  gpureal x = cosf(theta);
+  gpureal y = sinf(theta);
   if( fabsf(y) < EPS ) y = 1 / EPS;
-  float s = sqrtf(1 - x * x);
-  float spherical[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  float cartesian[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-  float fact = 1;
-  float pn = 1;
-  float rhom = 1;
+  gpureal s = sqrtf(1 - x * x);
+  gpureal spherical[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  gpureal cartesian[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+  gpureal fact = 1;
+  gpureal pn = 1;
+  gpureal rhom = 1;
   for( int m=0; m<P; ++m ) {
-    float p = pn;
+    gpureal p = pn;
     int i = m * (m + 1) / 2 + m;
-    float ere = cosf(m * phi);
+    gpureal ere = cosf(m * phi);
     if( m == 0 ) ere = 0.5;
-    float eim = sinf(m * phi);
-    float anm = rhom * rsqrtf(factShrd[2*m]);
-    float Ynm = anm * p;
-    float p1 = p;
+    gpureal eim = sinf(m * phi);
+    gpureal anm = rhom * rsqrtf(factShrd[2*m]);
+    gpureal Ynm = anm * p;
+    gpureal p1 = p;
     p = x * (2 * m + 1) * p;
-    float YnmTheta = anm * (p - (m + 1) * x * p1) / y;
-    float realj = ere * sourceShrd[6*i+0] - eim * sourceShrd[6*i+1];
-    float imagj = eim * sourceShrd[6*i+0] + ere * sourceShrd[6*i+1];
+    gpureal YnmTheta = anm * (p - (m + 1) * x * p1) / y;
+    gpureal realj = ere * sourceShrd[6*i+0] - eim * sourceShrd[6*i+1];
+    gpureal imagj = eim * sourceShrd[6*i+0] + ere * sourceShrd[6*i+1];
     spherical[0] += 2 * m / r * Ynm * realj;
     spherical[1] += 2 * YnmTheta * realj;
     spherical[2] -= 2 * m * Ynm * imagj;
@@ -775,12 +775,12 @@ __device__ void BiotSavartL2P_core(float *target, float r, float theta, float ph
     spherical[7] += 2 * YnmTheta * realj;
     spherical[8] -= 2 * m * Ynm * imagj;
     rhom *= r;
-    float rhon = rhom;
+    gpureal rhon = rhom;
     for( int n=m+1; n<P; ++n ) {
       i = n * (n + 1) / 2 + m;
       anm = rhon * rsqrtf(factShrd[n+m] / factShrd[n-m]);
       Ynm = anm * p;
-      float p2 = p1;
+      gpureal p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
       YnmTheta = anm * ((n - m + 1) * p - (n + 1) * x * p1) / y;
@@ -812,14 +812,14 @@ __device__ void BiotSavartL2P_core(float *target, float r, float theta, float ph
   target[2] += 0.25 / M_PI * (cartesian[1] - cartesian[3]);
 }
 
-__global__ void BiotSavartL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGlob, float *sourceGlob) {
+__global__ void BiotSavartL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {
   int keys = keysGlob[blockIdx.x];
   int numList = rangeGlob[keys];
-  float targetX[3];
-  float target[3] = {0, 0, 0};
-  __shared__ float sourceShrd[6*THREADS];
-  __shared__ float factShrd[2*P];
-  float fact = 1;
+  gpureal targetX[3];
+  gpureal target[3] = {0, 0, 0};
+  __shared__ gpureal sourceShrd[6*THREADS];
+  __shared__ gpureal factShrd[2*P];
+  gpureal fact = 1;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -845,7 +845,7 @@ __global__ void BiotSavartL2P_GPU(int *keysGlob, int *rangeGlob, float *targetGl
       sourceShrd[6*threadIdx.x+5] = sourceGlob[begin+6*threadIdx.x+8];
     }
     __syncthreads();
-    float r,theta,phi;
+    gpureal r,theta,phi;
     cart2sph(r,theta,phi,d.x,d.y,d.z);
     BiotSavartL2P_core(target,r,theta,phi,factShrd,sourceShrd);
   }

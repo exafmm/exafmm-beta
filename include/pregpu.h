@@ -2,20 +2,20 @@
 #define pregpu_h
 #include <omp.h>
 
-static size_t keysDevcSize = 0;                                 // Size of offsets for rangeHost
-static size_t rangeDevcSize = 0;                                // Size of offsets for sourceHost
-static size_t sourceDevcSize = 0;                               // Size of sources
-static size_t targetDevcSize = 0;                               // Size of targets
-static int    *keysDevc;                                        // Keys on device
-static int    *rangeDevc;                                       // Ranges on device
-static float  *sourceDevc;                                      // Sources on device
-static float  *targetDevc;                                      // Targets on device
+static size_t  keysDevcSize = 0;                               // Size of offsets for rangeHost
+static size_t  rangeDevcSize = 0;                              // Size of offsets for sourceHost
+static size_t  sourceDevcSize = 0;                             // Size of sources
+static size_t  targetDevcSize = 0;                             // Size of targets
+static int     *keysDevc;                                      // Keys on device
+static int     *rangeDevc;                                     // Ranges on device
+static gpureal *sourceDevc;                                    // Sources on device
+static gpureal *targetDevc;                                    // Targets on device
 #pragma omp threadprivate(keysDevcSize,rangeDevcSize,sourceDevcSize,targetDevcSize)
 #pragma omp threadprivate(keysDevc,rangeDevc,sourceDevc,targetDevc)
-__device__ __constant__ float constDevc[1];                     // Constants on device
+__device__ __constant__ gpureal constDevc[1];                     // Constants on device
 
 namespace {
-__device__ void cart2sph(float& r, float& theta, float& phi, float dx, float dy, float dz) {
+__device__ void cart2sph(gpureal& r, gpureal& theta, gpureal& phi, gpureal dx, gpureal dy, gpureal dz) {
   r = sqrtf(dx * dx + dy * dy + dz * dz)+EPS;
   theta = acosf(dz / r);
   if( fabs(dx) + fabs(dy) < EPS ) {
@@ -29,7 +29,7 @@ __device__ void cart2sph(float& r, float& theta, float& phi, float dx, float dy,
   }
 }
 
-__device__ void sph2cart(float r, float theta, float phi, float *spherical, float *cartesian) {
+__device__ void sph2cart(gpureal r, gpureal theta, gpureal phi, gpureal *spherical, gpureal *cartesian) {
   cartesian[0] = sinf(theta) * cosf(phi) * spherical[0]
                + cosf(theta) * cosf(phi) / r * spherical[1]
                - sinf(phi) / r / sinf(theta) * spherical[2];
@@ -40,28 +40,28 @@ __device__ void sph2cart(float r, float theta, float phi, float *spherical, floa
                - sinf(theta) / r * spherical[1];
 }
 
-__device__ void evalMultipole(float *YnmShrd, float rho, float alpha, float *factShrd) {
-  float x = cosf(alpha);
-  float s = sqrtf(1 - x * x);
-  float fact = 1;
-  float pn = 1;
-  float rhom = 1;
+__device__ void evalMultipole(gpureal *YnmShrd, gpureal rho, gpureal alpha, gpureal *factShrd) {
+  gpureal x = cosf(alpha);
+  gpureal s = sqrtf(1 - x * x);
+  gpureal fact = 1;
+  gpureal pn = 1;
+  gpureal rhom = 1;
   for( int m=0; m<P; ++m ){
-    float p = pn;
+    gpureal p = pn;
     int npn = m * m + 2 * m;
     int nmn = m * m;
     YnmShrd[npn] = rhom * p / factShrd[2*m];
     YnmShrd[nmn] = YnmShrd[npn];
-    float p1 = p;
+    gpureal p1 = p;
     p = x * (2 * m + 1) * p;
     rhom *= -rho;
-    float rhon = rhom;
+    gpureal rhon = rhom;
     for( int n=m+1; n<P; ++n ){
       int npm = n * n + n + m;
       int nmm = n * n + n - m;
       YnmShrd[npm] = rhon * p / factShrd[n+m];
       YnmShrd[nmm] = YnmShrd[npm];
-      float p2 = p1;
+      gpureal p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
       rhon *= -rho;
@@ -71,17 +71,17 @@ __device__ void evalMultipole(float *YnmShrd, float rho, float alpha, float *fac
   }
 }
 
-__device__ void evalLocal(float *YnmShrd, float rho, float alpha, float *factShrd) {
-  float x = cosf(alpha);
-  float s = sqrtf(1 - x * x);
-  float rho_1 = 1 / rho;
+__device__ void evalLocal(gpureal *YnmShrd, gpureal rho, gpureal alpha, gpureal *factShrd) {
+  gpureal x = cosf(alpha);
+  gpureal s = sqrtf(1 - x * x);
+  gpureal rho_1 = 1 / rho;
   for( int l=threadIdx.x; l<(2*P+1)*P; l+=THREADS ){
-    float fact = 1;
-    float pn = 1;
-    float rhom = rho_1;
+    gpureal fact = 1;
+    gpureal pn = 1;
+    gpureal rhom = rho_1;
     int nn = floor(sqrtf(2*l+0.25)-0.5);
     int mm = 0;
-    float Ynm;
+    gpureal Ynm;
     for( int i=0; i<=nn; ++i ) mm += i;
     mm = l - mm;
     int n;
@@ -91,14 +91,14 @@ __device__ void evalLocal(float *YnmShrd, float rho, float alpha, float *factShr
       fact += 2;
     }
     int m = mm;
-    float p = pn;
+    gpureal p = pn;
     if( mm == nn ) Ynm = rhom * p;
-    float p1 = p;
+    gpureal p1 = p;
     p = x * (2 * m + 1) * p;
     rhom *= rho_1;
-    float rhon = rhom;
+    gpureal rhon = rhom;
     for( n=m+1; n<nn; ++n ){
-      float p2 = p1;
+      gpureal p2 = p1;
       p1 = p;
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
       rhon *= rho_1;

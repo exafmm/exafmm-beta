@@ -21,14 +21,14 @@ protected:
   real   R0;                                                    // Radius of root cell
   vect   Xperiodic;                                             // Coordinate offset of periodic image
 
-  std::vector<int>   keysHost;                                  // Offsets for rangeHost
-  std::vector<int>   rangeHost;                                 // Offsets for sourceHost
-  std::vector<float> constHost;                                 // Constants on host
-  std::vector<float> sourceHost;                                // Sources on host
-  std::vector<float> targetHost;                                // Targets on host
-  Map                sourceBegin;                               // Define map for offset of source cells
-  Map                sourceSize;                                // Define map for size of source cells
-  Map                targetBegin;                               // Define map for offset of target cells
+  std::vector<int>     keysHost;                                // Offsets for rangeHost
+  std::vector<int>     rangeHost;                               // Offsets for sourceHost
+  std::vector<gpureal> constHost;                               // Constants on host
+  std::vector<gpureal> sourceHost;                              // Sources on host
+  std::vector<gpureal> targetHost;                              // Targets on host
+  Map                  sourceBegin;                             // Define map for offset of source cells
+  Map                  sourceSize;                              // Define map for size of source cells
+  Map                  targetBegin;                             // Define map for offset of target cells
 
   double *prefactor, *Anm;                                      // Auxiliary variables for spherical harmonics
   complex *Ynm, *YnmTheta, *Cnm;                                // Auxiliary variables for spherical harmonics
