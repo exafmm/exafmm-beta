@@ -8,8 +8,6 @@ private:
   int nxLocal;
   int numSend;
   int   *Kk;
-  int   *NkSend;
-  int   *NkRecv;
   float *EkSend;
   float *EkRecv;
   fftw_complex *vec1d;

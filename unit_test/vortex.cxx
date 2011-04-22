@@ -68,8 +68,30 @@ int main() {
     T.eraseLocalTree(jcells);
   }
   T.downward(cells,jcells,1);
+
   T.setKernel("Stretching");
   D.initTarget(bodies);
+  cells.clear();
+  T.evalP2M(cells);
+  T.evalM2M(cells);
+  jcells = cells;
+  if( MPISIZE != 1 ) {
+    #pragma omp parallel sections num_threads(2)
+    {
+      #pragma omp section
+      {
+         T.downward(cells,jcells,1,false);
+      }
+      #pragma omp section
+      {
+        T.updateBodies();
+      }
+    }
+    jbodies = bodies;
+    jcells = cells;
+    T.commCells(jbodies,jcells);
+    T.eraseLocalTree(jcells);
+  }
   T.downward(cells,jcells,1);
   if(T.printNow) T.writeTime();
   if(T.printNow) T.writeTime();

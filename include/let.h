@@ -64,7 +64,7 @@ private:
             if( IMAGES == 0 ) {                                 //     If free boundary condition
               Xperiodic = 0;                                    //      Set periodic coordinate offset
               real R = getDistance(C,xminAll[irank],xmaxAll[irank]);//  Get distance to other domain
-              send |= CLET * C->R > THETA * R;                  //      If the cell seems close enough for P2P
+              send |= CLET * C->R > THETA * R - EPS2;           //      If the cell seems close enough for P2P
             } else {                                            //     If periodic boundary condition
               for( int ix=-1; ix<=1; ++ix ) {                   //      Loop over x periodic direction
                 for( int iy=-1; iy<=1; ++iy ) {                 //       Loop over y periodic direction
@@ -73,7 +73,7 @@ private:
                     Xperiodic[1] = iy * 2 * R0;                 //         Coordinate offset for y periodic direction
                     Xperiodic[2] = iz * 2 * R0;                 //         Coordinate offset for z periodic direction
                     real R = getDistance(C,xminAll[irank],xmaxAll[irank]);// Get distance to other domain
-                    send |= CLET * C->R > THETA * R;            //         If the cell seems close enough for P2P
+                    send |= CLET * C->R > THETA * R - EPS2;     //         If the cell seems close enough for P2P
                   }                                             //        End loop over z periodic direction
                 }                                               //       End loop over y periodic direction
               }                                                 //      End loop over x periodic direction
@@ -244,7 +244,7 @@ private:
       if( IMAGES == 0 ) {                                       //  If free boundary condition
         Xperiodic = 0;                                          //   Set periodic coordinate offset
         real R = getDistance(CC,xmin,xmax);                     //   Get distance to other domain
-        divide |= CLET * CC->R > THETA * R;                     //   If the cell seems too close and not twig
+        divide |= CLET * CC->R > THETA * R - EPS2;              //   If the cell seems too close and not twig
       } else {                                                  //  If periodic boundary condition
         for( int ix=-1; ix<=1; ++ix ) {                         //   Loop over x periodic direction
           for( int iy=-1; iy<=1; ++iy ) {                       //    Loop over y periodic direction
@@ -253,7 +253,7 @@ private:
               Xperiodic[1] = iy * 2 * R0;                       //      Coordinate offset for y periodic direction
               Xperiodic[2] = iz * 2 * R0;                       //      Coordinate offset for z periodic direction
               real R = getDistance(CC,xmin,xmax);               //      Get distance to other domain
-              divide |= CLET * CC->R > THETA * R;               //      If the cell seems too close and not twig
+              divide |= CLET * CC->R > THETA * R - EPS2;        //      If the cell seems too close and not twig
             }                                                   //     End loop over z periodic direction
           }                                                     //    End loop over y periodic direction
         }                                                       //   End loop over x periodic direction
