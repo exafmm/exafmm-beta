@@ -1,9 +1,9 @@
 #include "kernel.h"
-#include "laplace.h"
+#include "biotsavart.h"
 
-void Kernel::LaplaceInit() {}
+void Kernel::BiotSavartInit() {}
 
-void Kernel::LaplaceP2M() {
+void Kernel::BiotSavartP2M() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = CI->X - B->X;
     CI->M[0] += B->SRC[0];
@@ -19,7 +19,7 @@ void Kernel::LaplaceP2M() {
   }
 }
 
-void Kernel::LaplaceM2M_CPU() {
+void Kernel::BiotSavartM2M_CPU() {
   vect dist = CI->X - CJ->X;
   CI->M[0] += CJ->M[0];
   CI->M[1] += CJ->M[1] +  dist[0] * CJ->M[0];
@@ -33,7 +33,7 @@ void Kernel::LaplaceM2M_CPU() {
   CI->M[9] += CJ->M[9] + (dist[2] * CJ->M[1] + dist[0] * CJ->M[3] + dist[2] * dist[0] * CJ->M[0]) / 2;
 }
 
-void Kernel::LaplaceM2L() {
+void Kernel::BiotSavartM2L() {
   vect dist = CI->X - CJ->X - Xperiodic;
   real R = std::sqrt(norm(dist));
   real R3 = R * R * R;
@@ -68,7 +68,7 @@ void Kernel::LaplaceM2L() {
   CI->L[9] += CJ->M[0] * (3 * dist[2] * dist[0] / R5);
 }
 
-void Kernel::LaplaceM2P() {
+void Kernel::BiotSavartM2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     real R = std::sqrt(norm(dist));
@@ -99,7 +99,7 @@ void Kernel::LaplaceM2P() {
   }
 }
 
-void Kernel::LaplaceL2L() {
+void Kernel::BiotSavartL2L() {
   vect dist = CI->X - CJ->X;
   for( int i=0; i<10; ++i )
     CI->L[i] += CJ->L[i];
@@ -123,7 +123,7 @@ void Kernel::LaplaceL2L() {
   CI->L[3] += CJ->L[6] * dist[2];
 }
 
-void Kernel::LaplaceL2P() {
+void Kernel::BiotSavartL2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
     B->TRG[0] += CI->L[0];
@@ -151,4 +151,4 @@ void Kernel::LaplaceL2P() {
   }
 }
 
-void Kernel::LaplaceFinal() {}
+void Kernel::BiotSavartFinal() {}

@@ -1,10 +1,10 @@
 .SUFFIXES: .cxx .cu .o
 
-#DEVICE  = cpu
-DEVICE  = gpu
+DEVICE  = cpu
+#DEVICE  = gpu
 
-#EXPAND  = Cartesian
-EXPAND  = Spherical
+EXPAND  = Cartesian
+#EXPAND  = Spherical
 
 CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O2 -fPIC -fopenmp\
 	-ffast-math -funroll-loops -fforce-addr -rdynamic -D_FILE_OFFSET_BITS=64\

@@ -36,7 +36,7 @@ int main() {
 
     T.startTimer("Direct sum   ");
     T.buffer = bodies;
-#if 1
+#if 0
     D.initTarget(T.buffer);
     if( IMAGES != 0 ) {
       jbodies = T.periodicBodies(T.buffer);

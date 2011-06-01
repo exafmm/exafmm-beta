@@ -30,8 +30,8 @@ typedef float                real;                              // Real number t
 typedef float                gpureal;                           // Real number type on GPU
 typedef std::complex<double> complex;                           // Complex number type
 
-const int  P       = 7;                                         // Order of expansions
-const int  NCRIT   = 1000;                                      // Number of bodies per cell
+const int  P       = 3;                                         // Order of expansions
+const int  NCRIT   = 30;                                        // Number of bodies per cell
 const int  MAXBODY = 200000;                                    // Maximum number of bodies per GPU kernel
 const int  MAXCELL = 10000000;                                  // Maximum number of bodies/coefs in cell per GPU kernel
 const real THETA   = 1/sqrtf(3);                                // Box opening criteria
