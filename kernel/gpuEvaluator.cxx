@@ -174,6 +174,35 @@ void Evaluator::clearBuffers() {                                // Clear GPU buf
   stopTimer("Clear buffer ");                                   // Stop timer
 }
 
+void Evaluator::tryP2P(C_iter Ci, C_iter Cj) {                // Interface for P2P kernel
+  listP2P[Ci-CI0].push_back(Cj);                              // Push source cell into P2P interaction list
+  flagP2P[Ci-CI0][Cj] |= Iperiodic;                           // Flip bit of periodic image flag
+}
+
+void Evaluator::tryM2L(C_iter Ci, C_iter Cj) {                // Interface for M2L kernel
+  vect dist = Ci->X - Cj->X - Xperiodic;                      // Distance vector between cells
+  real R = std::sqrt(norm(dist));                             // Distance between cells
+  if( Ci->R + Cj->R > THETA*R ) {                             // If cell is too large
+    Pair pair(Ci,Cj);                                         //  Form pair of interacting cells
+    pairs.push(pair);                                         //  Push interacting pair into stack
+  } else {                                                    // If cell is small enough
+    listM2L[Ci-CI0].push_back(Cj);                            // Push source cell into M2L interaction list
+    flagM2L[Ci-CI0][Cj] |= Iperiodic;                         // Flip bit of periodic image flag
+  }                                                           // Endif for interaction
+}
+
+void Evaluator::tryM2P(C_iter Ci, C_iter Cj) {                // Interface for M2P kernel
+  vect dist = Ci->X - Cj->X - Xperiodic;                      // Distance vector between cells
+  real R = std::sqrt(norm(dist));                             // Distance between cells
+  if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {          // If target is not twig or cell is too large
+    Pair pair(Ci,Cj);                                         //  Form pair of interacting cells
+    pairs.push(pair);                                         //  Push interacting pair into stack
+  } else {                                                    // If target is twig and cell is small enough
+    listM2P[Ci-CI0].push_back(Cj);                            // Push source cell into M2P interaction list
+    flagM2P[Ci-CI0][Cj] |= Iperiodic;                         // Flip bit of periodic image flag
+  }                                                           // Endif for interaction
+} 
+
 void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
   int numIcall = int(ibodies.size()-1)/MAXBODY+1;               // Number of icall loops
   int numJcall = int(jbodies.size()-1)/MAXBODY+1;               // Number of jcall loops
@@ -187,18 +216,7 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
       BJN = jbodies.begin()+std::min(joffset+MAXBODY,int(jbodies.size()));// Set source bodies end iterator
       if( onCPU ) {                                             //  If calculation is to be done on CPU
         Xperiodic = 0;                                          //   Set periodic coordinate offset
-        if( kernelName == "Laplace" ) {                         //   If Laplace kernel
-          LaplaceP2P_CPU();                                     //    Evaluate P2P kernel
-        } else if ( kernelName == "BiotSavart" ) {              //   If Biot Savart kernel
-          BiotSavartP2P_CPU();                                  //    Evaluate P2P kernel
-        } else if ( kernelName == "Stretching" ) {              //   If Stretching kernel
-          StretchingP2P_CPU();                                  //    Evaluate P2P kernel
-        } else if ( kernelName == "Gaussian" ) {                //   If Gaussian kernel
-          GaussianP2P_CPU();                                    //    Evaluate P2P kernel
-        } else {                                                //   If kernel is none of the above
-          if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-          abort();                                              //   Abort execution
-        }                                                       //   Endif for kernel type
+        selectP2P_CPU();                                        //   Select P2P_CPU kernel
       } else {                                                  //  If calculation is to be done on GPU
         constHost.push_back(2*R0);                              //   Copy domain size to GPU buffer
         for( B_iter B=BJ0; B!=BJN; ++B ) {                      //   Loop over source bodies
@@ -236,18 +254,7 @@ void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evalua
           targetHost.push_back(0);                              //    Pad 2nd target value to GPU buffer
           targetHost.push_back(0);                              //    Pad 3rd target value to GPU buffer
         }                                                       //   End loop over elements to pad
-        if( kernelName == "Laplace" ) {                         //   If Laplace kernel
-          LaplaceP2P();                                         //    Evaluate P2P kernel
-        } else if ( kernelName == "BiotSavart" ) {              //   If Biot Savart kernel
-          BiotSavartP2P();                                      //    Evaluate P2P kernel
-        } else if ( kernelName == "Stretching" ) {              //   If Stretching kernel
-          StretchingP2P();                                      //    Evaluate P2P kernel
-        } else if ( kernelName == "Gaussian" ) {                //   If Gaussian kernel
-          GaussianP2P();                                        //    Evaluate P2P kernel
-        } else {                                                //   If kernel is none of the above
-          if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-          abort();                                              //   Abort execution
-        }                                                       //   Endif for kernel type
+        selectP2P();                                            //   Select P2P kernel
         if( kernelName == "Gaussian" ) {                        //   If Gaussian kernel
           for( B_iter B=BI0; B!=BIN; ++B ) {                    //    Loop over target bodies
             B->TRG[0] += targetHost[6*(B-BI0)+0];               //     Copy 1st target value from GPU buffer
@@ -296,18 +303,7 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetCell(listP2M,flagP2M);                             //  Set target buffer for cells
     startTimer("P2M kernel   ");                                //  Start timer
-    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
-      LaplaceP2M();                                             //   Evaluate P2M kernel
-    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
-      BiotSavartP2M();                                          //   Evaluate P2M kernel
-    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
-      StretchingP2M();                                          //   Evaluate P2M kernel
-    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
-      GaussianP2M();                                            //   Evaluate P2M kernel
-    } else {                                                    //  If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //   Abort execution
-    }                                                           //  Endif for kernel type
+    selectP2M();                                                //  Select P2M kernel
     stopTimer("P2M kernel   ");                                 //  Stop timer
     getTargetCell(listP2M);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
@@ -343,18 +339,7 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
       setSourceCell();                                          //   Set source buffer for cells
       setTargetCell(listM2M,flagM2M);                           //   Set target buffer for cells
       startTimer("M2M kernel   ");                              //   Start timer
-      if( kernelName == "Laplace" ) {                           //   If Laplace kernel
-        LaplaceM2M();                                           //    Evaluate M2M kernel
-      } else if ( kernelName == "BiotSavart" ) {                //   If Biot Savart kernel
-        BiotSavartM2M();                                        //    Evaluate M2M kernel
-      } else if ( kernelName == "Stretching" ) {                //   If Stretching kernel
-        StretchingM2M();                                        //    Evaluate M2M kernel
-      } else if ( kernelName == "Gaussian" ) {                  //   If Gaussian kernel
-        GaussianM2M();                                          //    Evaluate M2M kernel
-      } else {                                                  //   If kernel is none of the above
-        if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-        abort();                                                //   Abort execution
-      }                                                         //   Endif for kernel type
+      selectM2M();                                              //   Select M2M kernel
       stopTimer("M2M kernel   ");                               //   Stop timer
       getTargetCell(listM2M);                                   //   Get body values from target buffer
       clearBuffers();                                           //   Clear GPU buffers
@@ -384,18 +369,7 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
     setSourceCell();                                            //  Set source buffer for cells
     setTargetCell(listM2L,flagM2L);                             //  Set target buffer for cells
     startTimer("M2L kernel   ");                                //  Start timer
-    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
-      LaplaceM2L();                                             //   Evaluate M2L kernel
-    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
-      BiotSavartM2L();                                          //   Evaluate M2L kernel
-    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
-      StretchingM2L();                                          //   Evaluate M2L kernel
-    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
-      GaussianM2L();                                            //   Evaluate M2L kernel
-    } else {                                                    //  If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //   Abort execution
-    }                                                           //  Endif for kernel type
+    selectM2L();                                                //  Select M2L kernel
     stopTimer("M2L kernel   ");                                 //  Stop timer
     getTargetCell(listM2L,false);                               //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
@@ -425,18 +399,7 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
     setSourceCell();                                            //  Set source buffer for cells
     setTargetBody(listM2P,flagM2P);                             //  Set target buffer for bodies
     startTimer("M2P kernel   ");                                //  Start timer
-    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
-      LaplaceM2P();                                             //   Evaluate M2P kernel
-    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
-      BiotSavartM2P();                                          //   Evaluate M2P kernel
-    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
-      StretchingM2P();                                          //   Evaluate M2P kernel
-    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
-      GaussianM2P();                                            //   Evaluate M2P kernel
-    } else {                                                    //  If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //   Abort execution
-    }                                                           //  Endif for kernel type
+    selectM2P();                                                //  Select M2P kernel
     stopTimer("M2P kernel   ");                                 //  Stop timer
     getTargetBody(listM2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
@@ -466,18 +429,7 @@ void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetBody(listP2P,flagP2P);                             //  Set target buffer for bodies
     startTimer("P2P kernel   ");                                //  Start timer
-    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
-      LaplaceP2P();                                             //   Evaluate P2P kernel
-    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
-      BiotSavartP2P();                                          //   Evaluate P2P kernel
-    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
-      StretchingP2P();                                          //   Evaluate P2P kernel
-    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
-      GaussianP2P();                                            //   Evaluate P2P kernel
-    } else {                                                    //  If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //   Abort execution
-    }                                                           //  Endif for kernel type
+    selectP2P();                                                //  Select P2P kernel
     stopTimer("P2P kernel   ");                                 //  Stop timer
     getTargetBody(listP2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
@@ -516,18 +468,7 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
       setSourceCell(false);                                     //   Set source buffer for cells
       setTargetCell(listL2L,flagL2L);                           //   Set target buffer for cells
       startTimer("L2L kernel   ");                              //   Start timer
-      if( kernelName == "Laplace" ) {                           //   If Laplace kernel
-        LaplaceL2L();                                           //    Evaluate L2L kernel
-      } else if ( kernelName == "BiotSavart" ) {                //   If Biot Savart kernel
-        BiotSavartL2L();                                        //    Evaluate L2L kernel
-      } else if ( kernelName == "Stretching" ) {                //   If Stretching kernel
-        StretchingL2L();                                        //    Evaluate L2L kernel
-      } else if ( kernelName == "Gaussian" ) {                  //   If Gaussian kernel
-        GaussianL2L();                                          //    Evaluate L2L kernel
-      } else {                                                  //   If kernel is none of the above
-        if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-        abort();                                                //    Abort execution
-      }                                                         //   Endif for kernel type
+      selectL2L();                                              //   Select L2L kernel
       stopTimer("L2L kernel   ");                               //   Stop timer
       getTargetCell(listL2L,false);                             //   Get body values from target buffer
       clearBuffers();                                           //   Clear GPU buffers
@@ -560,18 +501,7 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
     setSourceCell(false);                                       //  Set source buffer for cells
     setTargetBody(listL2P,flagL2P);                             //  Set target buffer for bodies
     startTimer("L2P kernel   ");                                //  Start timer
-    if( kernelName == "Laplace" ) {                             //  If Laplace kernel
-      LaplaceL2P();                                             //   Evaluate L2P kernel
-    } else if ( kernelName == "BiotSavart" ) {                  //  If Biot Savart kernel
-      BiotSavartL2P();                                          //   Evaluate L2P kernel
-    } else if ( kernelName == "Stretching" ) {                  //  If Stretching kernel
-      StretchingL2P();                                          //   Evaluate L2P kernel
-    } else if ( kernelName == "Gaussian" ) {                    //  If Gaussian kernel
-      GaussianL2P();                                            //   Evaluate L2P kernel
-    } else {                                                    //  If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //   Abort execution
-    }                                                           //  Endif for kernel type
+    selectL2P();                                                //  Select L2P kernel
     stopTimer("L2P kernel   ");                                 //  Stop timer
     getTargetBody(listL2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers

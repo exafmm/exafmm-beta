@@ -30,6 +30,7 @@ int main() {
 #else
     T.bottomup(bodies,cells);
 #endif
+    T.NP2P = T.NM2L = 0;
     T.downward(cells,cells,1);
     T.stopTimer("FMM          ",true);
     T.eraseTimer("FMM          ");
@@ -56,6 +57,7 @@ int main() {
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);
     D.printError(diff1,norm1,diff2,norm2);
+    std::cout << "NP2P: " << T.NP2P << " NM2L: " << T.NM2L << std::endl;
   }
 #ifdef VTK
   int Ncell = 0;

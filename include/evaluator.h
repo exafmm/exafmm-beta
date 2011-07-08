@@ -20,38 +20,12 @@ protected:
   Maps        flagM2L;                                          // Flag indicating existance of periodic image for M2L
   Maps        flagM2P;                                          // Flag indicating existance of periodic image for M2P
   Maps        flagP2P;                                          // Flag indicating existance of periodic image for P2P
-  std::string kernelName;                                       // Name of kernel
 
 private:
-  void tryM2L(C_iter Ci, C_iter Cj) {                           // Interface for M2L kernel
-    vect dist = Ci->X - Cj->X - Xperiodic;                      // Distance vector between cells
-    real R = std::sqrt(norm(dist));                             // Distance between cells
-    if( Ci->R + Cj->R > THETA*R ) {                             // If cell is too large
-      Pair pair(Ci,Cj);                                         //  Form pair of interacting cells
-      pairs.push(pair);                                         //  Push interacting pair into stack
-    } else {                                                    // If cell is small enough
-      listM2L[Ci-CI0].push_back(Cj);                            // Push source cell into M2L interaction list
-      flagM2L[Ci-CI0][Cj] |= Iperiodic;                         // Flip bit of periodic image flag
-    }                                                           // Endif for interaction
-  }
-
-  void tryM2P(C_iter Ci, C_iter Cj) {                           // Interface for M2P kernel
-    vect dist = Ci->X - Cj->X - Xperiodic;                      // Distance vector between cells
-    real R = std::sqrt(norm(dist));                             // Distance between cells
-    if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {          // If target is not twig or cell is too large
-      Pair pair(Ci,Cj);                                         //  Form pair of interacting cells
-      pairs.push(pair);                                         //  Push interacting pair into stack
-    } else {                                                    // If target is twig and cell is small enough
-      listM2P[Ci-CI0].push_back(Cj);                            // Push source cell into M2P interaction list
-      flagM2P[Ci-CI0][Cj] |= Iperiodic;                         // Flip bit of periodic image flag
-    }                                                           // Endif for interaction
-  }
-
   void treecode(C_iter Ci, C_iter Cj) {                         // Tree walk for treecode
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0) {                   // If both cells are twigs
       if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
-        listP2P[Ci-CI0].push_back(Cj);                          // Push source cell into P2P interaction list
-        flagP2P[Ci-CI0][Cj] |= Iperiodic;                       // Flip bit of periodic image flag
+        tryP2P(Ci,Cj);                                          //  Try to evaluate P2P kernel
       } else {                                                  // If the twig has no leafs
 #ifdef DEBUG
         std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
@@ -72,8 +46,7 @@ private:
   void FMM(C_iter Ci, C_iter Cj) {                              // Tree walk for FMM
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0 ) {                  // If both cells are twigs
       if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
-        listP2P[Ci-CI0].push_back(Cj);                          // Push source cell into P2P interaction list
-        flagP2P[Ci-CI0][Cj] |= Iperiodic;                       // Flip bit of periodic image flag
+        tryP2P(Ci,Cj);                                          //  Try to evaluate P2P kernel
       } else {                                                  // If the twig has no leafs
 //#ifdef DEBUG
         std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
@@ -224,18 +197,7 @@ public:
       CI = pccells.end() - 1;                                   //  Set current cell as target for M2M
       while( !pjcells.empty() ) {                               //  While there are periodic jcells remaining
         CJ = pjcells.end() - 1;                                 //   Set current jcell as source for M2M
-        if( kernelName == "Laplace" ) {                         //   If Laplace kernel
-          LaplaceM2M_CPU();                                     //    Evaluate M2M on CPU (work is too small for GPU)
-        } else if ( kernelName == "BiotSavart" ) {              //   If Biot Savart kernel
-          BiotSavartM2M_CPU();                                  //    Evaluate M2M on CPU (work is too small for GPU)
-        } else if ( kernelName == "Stretching" ) {              //   If Stretching kernel
-          StretchingM2M_CPU();                                  //    Evaluate M2M on CPU (work is too small for GPU)
-        } else if ( kernelName == "Gaussian" ) {                //   If Gaussian kernel
-          GaussianM2M_CPU();                                    //    Evaluate M2M on CPU (work is too small for GPU)
-        } else {                                                //   If kernel is none of the above
-          if(MPIRANK == 0) std::cout << "Invalid kernel type in upwardPeriodic" << std::endl;// Invalid kernel type
-          abort();                                              //    Abort execution
-        }                                                       //   Endif for kernel type
+        selectM2M_CPU();                                        //   Select M2M_CPU kernel
         pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
       }                                                         //  End while for remaining periodic jcells
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
@@ -316,6 +278,9 @@ public:
   void getTargetCell(Lists &lists, bool isM);                   // Get cell values from target buffer
   void clearBuffers();                                          // Clear GPU buffers
 
+  void tryP2P(C_iter Ci, C_iter Cj);                            // Interface for P2P kernel
+  void tryM2L(C_iter Ci, C_iter Cj);                            // Interface for M2L kernel
+  void tryM2P(C_iter Ci, C_iter Cj);                            // Interface for M2P kernel
   void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);// Evaluate P2P kernel (all pairs)
   void evalP2M(Cells &twigs);                                   // Evaluate P2M kernel
   void evalM2M(Cells &cells);                                   // Evaluate M2M kernel
