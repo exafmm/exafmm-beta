@@ -152,7 +152,7 @@ public:
   vect getX0() {return X0;}                                     // Get center of root cell
   real getR0() {return R0;}                                     // Get radius of root cell
 
-  void setDomain(Bodies &bodies) {                              // Set center and size of root cell
+  void setDomain(Bodies &bodies, vect x0=0, real r0=M_PI) {     // Set center and size of root cell
     vect xmin,xmax;                                             // Min,Max of domain
     B_iter B = bodies.begin();                                  // Reset body iterator
     xmin = xmax = B->X;                                         // Initialize xmin,xmax
@@ -172,8 +172,8 @@ public:
     }                                                           // End loop over each dimension
     R0 += 1e-5;                                                 // Add some leeway to root radius
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
-      X0 = 0;                                                   //  Center is [0, 0, 0]
-      R0 = M_PI;                                                //  Radius is M_PI
+      X0 = x0;                                                  //  Center is [0, 0, 0]
+      R0 = r0;                                                  //  Radius is r0
     }                                                           // Endif for periodic boundary condition
   }
 
