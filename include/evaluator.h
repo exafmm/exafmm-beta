@@ -217,29 +217,6 @@ public:
     }                                                           // End loop over sublevels of tree
   }
 
-  void traversePeriodic(Cells &cells, Cells &jcells, int method) {// Traverse tree for periodic cells
-    C_iter Cj = jcells.end()-1;                                 // Initialize iterator for periodic source cell
-    for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
-      for( int I=0; I!=26; ++I, --Cj ) {                        //  Loop over periodic images (exclude center)
-        switch (method) {                                       //   Switch between method
-        case 0 :                                                //   0 : treecode
-          for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {//   Loop over cells
-            if( Ci->NCHILD == 0 ) {                             //     If cell is twig
-              listM2P[Ci-CI0].push_back(Cj);                    //      Push source cell into M2P interaction list
-              flagM2P[Ci-CI0][Cj] = Icenter;                    //      Flip bit of periodic image flag
-            }                                                   //     Endif for twig
-          }                                                     //    End loop over cells
-          break;                                                //    Terminate this case
-        case 1 :                                                //   1 : FMM
-          C_iter Ci = cells.end() - 1;                          //    Set root cell as target
-          listM2L[Ci-CI0].push_back(Cj);                        //    Push source cell into M2L interaction list
-          flagM2L[Ci-CI0][Cj] = Icenter;                        //    Flip bit of periodic image flag
-          break;                                                //    Terminate this case
-        }                                                       //   End switch between methods
-      }                                                         //  End loop over x periodic direction
-    }                                                           // End loop over sublevels of tree
-  }
-
   void initialize() {                                           // Initialize GPU
     if( kernelName == "Laplace" ) {                             // If Laplace kernel
       LaplaceInit();                                            //  Initialize GPU
@@ -281,6 +258,7 @@ public:
   void tryP2P(C_iter Ci, C_iter Cj);                            // Interface for P2P kernel
   void tryM2L(C_iter Ci, C_iter Cj);                            // Interface for M2L kernel
   void tryM2P(C_iter Ci, C_iter Cj);                            // Interface for M2P kernel
+  void traversePeriodic(Cells &cells, Cells &jcells, int method);// Traverse tree for periodic cells
   void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);// Evaluate P2P kernel (all pairs)
   void evalP2M(Cells &twigs);                                   // Evaluate P2M kernel
   void evalM2M(Cells &cells);                                   // Evaluate M2M kernel

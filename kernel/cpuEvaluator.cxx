@@ -34,6 +34,31 @@ void Evaluator::tryM2P(C_iter Ci, C_iter Cj) {                // Interface for M
   }                                                           // Endif for interaction
 }
 
+void Evaluator::traversePeriodic(Cells &cells, Cells &jcells, int method) {// Traverse tree for periodic cells
+  Xperiodic = 0;                                              // Set periodic coordinate offset
+  C_iter Cj = jcells.end()-1;                                 // Initialize iterator for periodic source cell
+  for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
+    for( int I=0; I!=26; ++I, --Cj ) {                        //  Loop over periodic images (exclude center)
+      switch (method) {                                       //   Switch between method
+      case 0 :                                                //   0 : treecode
+        for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {//   Loop over cells
+          if( Ci->NCHILD == 0 ) {                             //     If cell is twig
+            CI = Ci;                                          //      Set global target iterator
+            CJ = Cj;                                          //      Set global source iterator
+            selectM2P();                                      //      Select M2P kernel
+          }                                                   //     Endif for twig
+        }                                                     //    End loop over cells
+        break;                                                //    Terminate this case
+      case 1 :                                                //   1 : FMM
+        CI = cells.end() - 1;                                 //    Set root cell as target iterator
+        CJ = Cj;                                              //    Set global source iterator
+        selectM2L();                                          //    Select M2P kernel
+        break;                                                //    Terminate this case
+      }                                                       //   End switch between methods
+    }                                                         //  End loop over x periodic direction
+  }                                                           // End loop over sublevels of tree
+}
+
 void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
   BI0 = ibodies.begin();                                        // Set target bodies begin iterator
   BIN = ibodies.end();                                          // Set target bodies end iterator

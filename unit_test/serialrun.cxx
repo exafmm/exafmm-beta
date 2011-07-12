@@ -5,9 +5,9 @@
 #endif
 
 int main() {
-  const int numBodies = 10000;
+  const int numBodies = 100;
   std::string kernelName = "Laplace";
-  IMAGES = 0;
+  IMAGES = 2;
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Bodies jbodies;

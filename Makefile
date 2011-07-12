@@ -25,6 +25,7 @@ OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)Biot
 cleanall:
 	rm -f ../unit_test/*.o ../unit_test/*.out ../unit_test/*.sum ../unit_test/time ../unit_test/direct0*
 	rm -f ../example/*.o ../example/*.out ../example/time ../kernel/*.o ../wrapper/*.o
+	rm -f ../wrapper/*.o ../wrapper/*.out ../wrapper/time ../lib/*.a
 	rm -f ../vortex/*.o ../vortex/*.out ../vortex/time
 save    :
 	make cleanall
