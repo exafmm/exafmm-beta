@@ -284,9 +284,9 @@ public:
   void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);// Evaluate P2P kernel (all pairs)
   void evalP2M(Cells &twigs);                                   // Evaluate P2M kernel
   void evalM2M(Cells &cells);                                   // Evaluate M2M kernel
-  void evalM2L(Cells &cells);                                   // Evaluate M2L kernel
-  void evalM2P(Cells &cells);                                   // Evaluate M2P kernel
-  void evalP2P(Cells &cells);                                   // Evaluate P2P kernel (near field)
+  void evalM2L(Cells &cells, bool kernel=false);                // Evaluate M2L kernel
+  void evalM2P(Cells &cells, bool kernel=false);                // Evaluate M2P kernel
+  void evalP2P(Cells &cells, bool kernel=false);                // Evaluate P2P kernel (near field)
   void evalL2L(Cells &cells);                                   // Evaluate L2L kernel
   void evalL2P(Cells &cells);                                   // Evaluate L2P kernel
 };

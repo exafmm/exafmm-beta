@@ -2,17 +2,17 @@
 #define pregpu_h
 #include <omp.h>
 
-static size_t  keysDevcSize = 0;                               // Size of offsets for rangeHost
-static size_t  rangeDevcSize = 0;                              // Size of offsets for sourceHost
-static size_t  sourceDevcSize = 0;                             // Size of sources
-static size_t  targetDevcSize = 0;                             // Size of targets
-static int     *keysDevc;                                      // Keys on device
-static int     *rangeDevc;                                     // Ranges on device
-static gpureal *sourceDevc;                                    // Sources on device
-static gpureal *targetDevc;                                    // Targets on device
+static size_t  keysDevcSize = 0;                                // Size of offsets for rangeHost
+static size_t  rangeDevcSize = 0;                               // Size of offsets for sourceHost
+static size_t  sourceDevcSize = 0;                              // Size of sources
+static size_t  targetDevcSize = 0;                              // Size of targets
+static int     *keysDevc;                                       // Keys on device
+static int     *rangeDevc;                                      // Ranges on device
+static gpureal *sourceDevc;                                     // Sources on device
+static gpureal *targetDevc;                                     // Targets on device
 #pragma omp threadprivate(keysDevcSize,rangeDevcSize,sourceDevcSize,targetDevcSize)
 #pragma omp threadprivate(keysDevc,rangeDevc,sourceDevc,targetDevc)
-__device__ __constant__ gpureal constDevc[1];                     // Constants on device
+__device__ __constant__ gpureal constDevc[1];                   // Constants on device
 
 namespace {
 __device__ void cart2sph(gpureal& r, gpureal& theta, gpureal& phi, gpureal dx, gpureal dy, gpureal dz) {

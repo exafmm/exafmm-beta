@@ -349,11 +349,11 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
   }                                                             // End while loop over levels
 }
 
-void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
+void Evaluator::evalM2L(Cells &cells, bool kernel) {            // Evaluate M2L
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
-  int ioffset = 0;                                              // Initialzie offset for icall loops
+  int ioffset = 0 * kernel;                                     // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
@@ -379,11 +379,11 @@ void Evaluator::evalM2L(Cells &cells) {                         // Evaluate M2L
   flagM2L.clear();                                              // Clear periodic image flags
 }
 
-void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
+void Evaluator::evalM2P(Cells &cells, bool kernel) {            // Evaluate M2P
   CI0 = cells.begin();                                          // Set begin iterator for target
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
-  int ioffset = 0;                                              // Initialzie offset for icall loops
+  int ioffset = 0 * kernel;                                     // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
@@ -409,11 +409,11 @@ void Evaluator::evalM2P(Cells &cells) {                         // Evaluate M2P
   flagM2P.clear();                                              // Clear periodic image flags
 }
 
-void Evaluator::evalP2P(Cells &cells) {                         // Evaluate P2P
+void Evaluator::evalP2P(Cells &cells, bool kernel) {            // Evaluate P2P
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
-  int ioffset = 0;                                              // Initialzie offset for icall loops
+  int ioffset = 0 * kernel;                                     // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
     CIB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CIE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call

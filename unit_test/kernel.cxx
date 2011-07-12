@@ -55,7 +55,7 @@ int main() {
     cell.ICELL    = 0;
     icells.push_back(cell);
     E.addM2L(jcells.begin());
-    E.evalM2L(icells);
+    E.evalM2L(icells,true);
     cell.NLEAF    = numBodies;
     cell.LEAF     = ibodies.begin();
     cell.X        = -0.5 - dist;
@@ -68,7 +68,7 @@ int main() {
     icells.pop_back();
     E.evalL2P(icells);
     E.addM2P(jcells.begin());
-//    E.evalM2P(icells);
+//    E.evalM2P(icells,true);
     icells.clear();
     jcells.clear();
 
