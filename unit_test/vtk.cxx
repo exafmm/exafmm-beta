@@ -5,6 +5,8 @@
 int main() {
   const int numBodies = 10000;
   std::string kernelName = "Laplace";
+  IMAGES = 0;
+  THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Dataset D;
   TreeStructure T;

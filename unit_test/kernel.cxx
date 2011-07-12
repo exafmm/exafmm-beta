@@ -4,6 +4,8 @@
 int main() {
   const int numBodies = 100;
   std::string kernelName = "Laplace";
+  IMAGES = 0;
+  THETA = 1/sqrtf(3);
   Bodies ibodies(numBodies);
   Bodies ibodies2(numBodies);
   Bodies jbodies(numBodies);

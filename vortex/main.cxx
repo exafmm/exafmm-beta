@@ -4,7 +4,8 @@
 #endif
 
 int main() {
-  assert(IMAGES >= 3);
+  IMAGES = 3;
+  THETA = 1/sqrtf(3);
   const int numGrid1D = 128;
   const int numSteps  = 0;
   const int numSkip   = 0;

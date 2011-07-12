@@ -8,6 +8,8 @@
 int main() {
   int numBodies = 1000;
   std::string kernelName = "Laplace";
+  IMAGES = 0;
+  THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells;
@@ -17,7 +19,7 @@ int main() {
   T.initialize();
   D.kernelName = kernelName;
 
-  for( int it=0; it!=25; ++it ) {
+  for( int it=0; it!=9; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
@@ -37,7 +39,7 @@ int main() {
 
     T.startTimer("Direct sum   ");
     T.buffer = bodies;
-#if 0
+#if 1
     D.initTarget(T.buffer);
     if( IMAGES != 0 ) {
       jbodies = T.periodicBodies(T.buffer);

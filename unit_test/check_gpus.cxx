@@ -6,6 +6,8 @@ int main() {
   char hostname[256];
   const int numBodies = 1000;
   std::string kernelName = "Laplace";
+  IMAGES = 0;
+  THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Dataset D;
   Evaluator E;

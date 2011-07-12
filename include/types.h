@@ -15,29 +15,32 @@
 #include <utility>
 #include <vector>
 #include "vec.h"
-#ifndef KERNEL
-int MPIRANK = 0;                                                // MPI comm rank
-int MPISIZE = 1;                                                // MPI comm size
-int DEVICE  = 0;                                                // GPU device ID
-#else
-extern int MPIRANK;                                             // MPI comm rank
-extern int MPISIZE;                                             // MPI comm size
-extern int DEVICE;                                              // GPU device ID
-#endif
 
 typedef long                 bigint;                            // Big integer type
 typedef float                real;                              // Real number type on CPU
 typedef float                gpureal;                           // Real number type on GPU
 typedef std::complex<double> complex;                           // Complex number type
 
-const int  P       = 3;                                         // Order of expansions
-const int  NCRIT   = 20;                                        // Number of bodies per cell
+#ifndef KERNEL
+int MPIRANK = 0;                                                // MPI comm rank
+int MPISIZE = 1;                                                // MPI comm size
+int DEVICE  = 0;                                                // GPU device ID
+int IMAGES;                                                     // Number of periodic image sublevels
+real THETA;                                                     // Box opening criteria
+#else
+extern int MPIRANK;                                             // MPI comm rank
+extern int MPISIZE;                                             // MPI comm size
+extern int DEVICE;                                              // GPU device ID
+extern int IMAGES;                                              // Number of periodic image sublevels
+extern real THETA;                                              // Box opening criteria
+#endif
+
+const int  P       = 7;                                         // Order of expansions
+const int  NCRIT   = 100;                                       // Number of bodies per cell
 const int  MAXBODY = 200000;                                    // Maximum number of bodies per GPU kernel
 const int  MAXCELL = 10000000;                                  // Maximum number of bodies/coefs in cell per GPU kernel
-const real THETA   = 1/sqrtf(3);                                // Box opening criteria
 const real CLET    = 1;                                         // LET opening critetia
 const real EPS2    = 1e-4;                                      // Softening parameter
-const int  IMAGES  = 0;                                         // Number of periodic image sublevels
 const int  GPUS    = 4;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 

@@ -7,6 +7,8 @@
 int main() {
   int numBodies = 1000;
   std::string kernelName = "Laplace";
+  IMAGES = 0;
+  THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells;
@@ -17,7 +19,7 @@ int main() {
   D.kernelName = kernelName;
   if( MPIRANK == 0 ) T.printNow = true;
 
-  for( int it=0; it!=25; ++it ) {
+  for( int it=0; it!=9; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
     if(T.printNow) std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
