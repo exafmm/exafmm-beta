@@ -22,6 +22,10 @@ protected:
   vect        Xperiodic;                                        // Coordinate offset of periodic image
   std::string kernelName;                                       // Name of kernel
 
+  int                  ATOMS;                                   // Number of atom types in Van der Waals
+  std::vector<real>    RSCALE;                                  // Scaling parameter for Van der Waals
+  std::vector<real>    GSCALE;                                  // Scaling parameter for Van der Waals
+
   std::vector<int>     keysHost;                                // Offsets for rangeHost
   std::vector<int>     rangeHost;                               // Offsets for sourceHost
   std::vector<gpureal> constHost;                               // Constants on host
@@ -177,6 +181,16 @@ public:
     }                                                           // Endif for periodic boundary condition
   }
 
+  void setVanDerWaals(int atoms, double *rscale, double *gscale) {// Set scaling paramters in Van der Waals
+    ATOMS = atoms;                                              // Set number of atom types
+    RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
+    GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector
+    for( int i=0; i!=ATOMS*ATOMS; ++i ) {                       // Loop over scale vector
+      RSCALE[i] = rscale[i];                                    //  Set rscale vector
+      GSCALE[i] = gscale[i];                                    //  Set gscale vector
+    }                                                           // End loop over scale vector
+  }
+
   void preCalculation() {
     const complex I(0.,1.);                                     // Imaginary unit
     prefactor = new double  [4*P2];
@@ -270,6 +284,18 @@ public:
   void GaussianL2P();
   void GaussianFinal();
 
+  void CoulombVdWInit();
+  void CoulombVdWP2M();
+  void CoulombVdWM2M();
+  void CoulombVdWM2M_CPU();
+  void CoulombVdWM2L();
+  void CoulombVdWM2P();
+  void CoulombVdWP2P();
+  void CoulombVdWP2P_CPU();
+  void CoulombVdWL2L();
+  void CoulombVdWL2P();
+  void CoulombVdWFinal();
+
   void selectP2P() {                                            // Select P2P kernel
     if( kernelName == "Laplace" ) {                             // If Laplace kernel
       LaplaceP2P();                                             //  Evaluate P2P kernel
@@ -279,6 +305,8 @@ public:
       StretchingP2P();                                          //  Evaluate P2P kernel
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianP2P();                                            //  Evaluate P2P kernel
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWP2P();                                          //  Evaluate P2P kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution
@@ -294,6 +322,8 @@ public:
       StretchingP2P_CPU();                                      //  Evaluate P2P_CPU kernel
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianP2P_CPU();                                        //  Evaluate P2P_CPU kernel
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWP2P_CPU();                                      //  Evaluate P2P_CPU kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution
@@ -309,6 +339,8 @@ public:
       StretchingP2M();                                          //  Evaluate P2M kernel
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianP2M();                                            //  Evaluate P2M kernel
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWP2M();                                          //  Evaluate P2M kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution
@@ -324,6 +356,8 @@ public:
       StretchingM2M();                                          //  Evaluate M2M kernel
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianM2M();                                            //  Evaluate M2M kernel
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWM2M();                                          //  Evaluate M2M kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution
@@ -339,6 +373,8 @@ public:
       StretchingM2M_CPU();                                      //  Evaluate M2M_CPU kernel
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianM2M_CPU();                                        //  Evaluate M2M_CPU kernel
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWM2M_CPU();                                      //  Evaluate M2M_CPU kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution
@@ -354,6 +390,8 @@ public:
       StretchingM2L();                                          //  Evaluate M2L kernel
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianM2L();                                            //  Evaluate M2L kernel
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWM2L();                                          //  Evaluate M2L kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution
@@ -369,6 +407,8 @@ public:
       StretchingM2P();                                          //  Evaluate M2P kernel
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianM2P();                                            //  Evaluate M2P kernel
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWM2P();                                          //  Evaluate M2P kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution
@@ -384,6 +424,8 @@ public:
       StretchingL2L();                                          //  Evaluate L2L kernel
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianL2L();                                            //  Evaluate L2L kernel
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWL2L();                                          //  Evaluate L2L kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution
@@ -399,6 +441,8 @@ public:
       StretchingL2P();                                          //  Evaluate L2P kernel
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianL2P();                                            //  Evaluate L2P kernel
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWL2P();                                          //  Evaluate L2P kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution

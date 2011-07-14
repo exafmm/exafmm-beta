@@ -1,9 +1,10 @@
 include ../Makefile
 
-static: Laplace.o $(OBJECT)
-	ar ruv ../lib/lib$(DEVICE)Laplace.a $?
-	ranlib ../lib/lib$(DEVICE)Laplace.a
+static: host.o $(OBJECT)
+	ar ruv libFMM.a $?
+	ranlib libFMM.a
 
 nbody: nbody.cxx
-	@$(CXX) $? ../lib/libcpuLaplace.a
+	make static
+	@$(CXX) $? libFMM.a
 	./a.out

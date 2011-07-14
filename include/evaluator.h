@@ -226,6 +226,8 @@ public:
       StretchingInit();                                         //  Initialize GPU
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianInit();                                           //  Initialize GPU
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWInit();                                         //  Initialize GPU
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type in initialize" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution
@@ -241,6 +243,8 @@ public:
       StretchingFinal();                                        //  Finalize GPU
     } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
       GaussianFinal();                                          //  Finalize GPU
+    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+      CoulombVdWFinal();                                        //  Finalize GPU
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type in finalize" << std::endl;// Invalid kernel type
       abort();                                                  //  Abort execution

@@ -16,7 +16,8 @@ LFLAGS  = -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart
 	-D$(DEVICE) -D$(EXPAND)
 #VFLAGS  = -lvtkHybridTCL -lvtkWidgetsTCL -DVTK
 OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)BiotSavart.o\
-	../kernel/$(DEVICE)$(EXPAND)Stretching.o ../kernel/$(DEVICE)$(EXPAND)Gaussian.o
+	../kernel/$(DEVICE)$(EXPAND)Stretching.o ../kernel/$(DEVICE)$(EXPAND)Gaussian.o\
+	../kernel/$(DEVICE)$(EXPAND)CoulombVdW.o
 
 .cxx.o  :
 	$(CXX) -c $? -o $@ $(LFLAGS)
@@ -25,7 +26,7 @@ OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)Biot
 cleanall:
 	rm -f ../unit_test/*.o ../unit_test/*.out ../unit_test/*.sum ../unit_test/time ../unit_test/direct0*
 	rm -f ../example/*.o ../example/*.out ../example/time ../kernel/*.o ../wrapper/*.o
-	rm -f ../wrapper/*.o ../wrapper/*.out ../wrapper/time ../lib/*.a
+	rm -f ../wrapper/*.o ../wrapper/*.out ../wrapper/*.a ../wrapper/time
 	rm -f ../vortex/*.o ../vortex/*.out ../vortex/time
 save    :
 	make cleanall
