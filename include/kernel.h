@@ -35,7 +35,7 @@ protected:
   Map                  sourceSize;                              // Define map for size of source cells
   Map                  targetBegin;                             // Define map for offset of target cells
 
-  double *prefactor, *Anm;                                      // Auxiliary variables for spherical harmonics
+  double *factorial, *prefactor, *Anm;                          // Auxiliary variables for spherical harmonics
   complex *Ynm, *YnmTheta, *Cnm;                                // Auxiliary variables for spherical harmonics
 public:
   int NP2P, NM2L;
@@ -193,11 +193,17 @@ public:
 
   void preCalculation() {
     const complex I(0.,1.);                                     // Imaginary unit
+    factorial = new double  [P];
     prefactor = new double  [4*P2];
     Anm       = new double  [4*P2];
     Ynm       = new complex [4*P2];
     YnmTheta  = new complex [4*P2];
     Cnm       = new complex [P4];
+
+    factorial[0] = 1;
+    for( int n=1; n!=P; ++n ) {
+      factorial[n] = factorial[n-1] * n;
+    }
 
     for( int n=0; n!=2*P; ++n ) {
       for( int m=-n; m<=n; ++m ) {
@@ -229,6 +235,7 @@ public:
   }
 
   void postCalculation() {
+    delete[] factorial;
     delete[] prefactor;
     delete[] Anm;
     delete[] Ynm;

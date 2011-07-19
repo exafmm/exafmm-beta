@@ -19,7 +19,7 @@ int main() {
   T.initialize();
   D.kernelName = kernelName;
 
-  for( int it=0; it!=9; ++it ) {
+  for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
@@ -39,7 +39,7 @@ int main() {
 
     T.startTimer("Direct sum   ");
     T.buffer = bodies;
-#if 1
+#if 0
     D.initTarget(T.buffer);
     if( IMAGES != 0 ) {
       jbodies = T.periodicBodies(T.buffer);
