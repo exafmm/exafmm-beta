@@ -11,7 +11,7 @@ protected:
 public:
   Cell     *C0;
   Bodies   &BODIES;
-  Bodies   &LEAFS;
+  Bodies    LEAFS;
 
 private:
   inline real getBmax(vect const&X, Cell *C) {
@@ -29,7 +29,7 @@ private:
       m += c->M[0];
       X += c->X * c->M[0];
     }
-    for( B_iter B=C->FCLEAF; B!=C->FCLEAF+C->NCLEAF; ++B ) {
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
       m += B->SRC[0];
       X += B->X * B->SRC[0];
     }
@@ -100,9 +100,9 @@ public:
     NLEAFS     (nleafs),
     NCELLS     (ncells),
     RAD        (rad),
-    BODIES     (bodies),
-    LEAFS      (bodies)
+    BODIES     (bodies)
   {
+    LEAFS.resize(NLEAFS);
     C0 = new Cell [NCELLS];
   }
   ~Kernel() {
@@ -111,7 +111,7 @@ public:
 
   void P2M(Cell *C, real &dmax, real &bmax) {
     bmax = getCenter(C);
-    for( B_iter B=C->FCLEAF; B!=C->FCLEAF+C->NCLEAF; ++B ) {
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
       vect dX = B->X - C->X;
       if(norm(dX)>dmax) dmax=norm(dX);
       real tmp = B->SRC[0] * dX[0];
@@ -150,10 +150,10 @@ public:
   }
 
   void P2P(Cell *Ci, Cell *Cj, bool mutual=true) const {
-    for( B_iter BI=Ci->FCLEAF; BI!=Ci->FCLEAF+Ci->NDLEAF; ++BI ) {
+    for( B_iter BI=Ci->LEAF; BI!=Ci->LEAF+Ci->NDLEAF; ++BI ) {
       real P0(zero);
       vect F0(zero);
-      for( B_iter BJ=Cj->FCLEAF; BJ!=Cj->FCLEAF+Cj->NDLEAF; ++BJ ) {
+      for( B_iter BJ=Cj->LEAF; BJ!=Cj->LEAF+Cj->NDLEAF; ++BJ ) {
         vect dR = BI->X - BJ->X;
         real D1 = norm(dR) + EQ;
         real D0 = BI->SRC[0] * BJ->SRC[0];
@@ -177,7 +177,7 @@ public:
 
   void P2P(Cell *C) const {
     unsigned NJ = C->NDLEAF;
-    for( B_iter BI=C->FCLEAF; BI!=C->FCLEAF+C->NDLEAF; ++BI, --NJ ) {
+    for( B_iter BI=C->LEAF; BI!=C->LEAF+C->NDLEAF; ++BI, --NJ ) {
       real P0(zero);
       vect F0(zero);
       for( B_iter BJ=BI+1; BJ!=BI+NJ; ++BJ ) {
@@ -244,7 +244,7 @@ public:
   }
 
   void L2P(Cell *C) const {
-    for( B_iter B=C->FCLEAF; B!=C->FCLEAF+C->NCLEAF; ++B ) {
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
       Lset o;
       vect dX = B->X - C->X;
       B->TRG /= B->SRC[0];

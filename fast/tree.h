@@ -42,16 +42,16 @@ struct Node : public Dot {
 
 class TreeBuilder {
 public:
-  int    LEVEL;
-  int    NLEAF;
-  int    NCELL;
-  real   RAD;
-  Node   *START;
-  Node   *N0, *NN;
-  Dot    *D0, *DN;
-  B_iter L0, LN;
-  Cell   *C0, *CN;
-  vect   XAVE, XMIN, XMAX;
+  int  LEVEL;
+  int  NLEAF;
+  int  NCELL;
+  real RAD;
+  Node *START;
+  Node *N0, *NN;
+  Dot  *D0, *DN;
+  B_iter B0, BN;
+  Cell *C0, *CN;
+  vect XAVE, XMIN, XMAX;
 
 private:
   inline real root_radius(const vect& x) const {
@@ -147,15 +147,15 @@ private:
     C->LEVEL  = N->LEVEL;
     C->X      = N->X;
     C->NDLEAF = N->NLEAF;
-    C->FCLEAF = LN;
+    C->LEAF   = BN;
     if(N->is_twig()) {
       C->FCCELL = C0;
       C->NCCELL = 0;
       C->NCLEAF = N->NLEAF;
       for(Node *Di=N->DOTS; Di; Di=static_cast<Node*>(Di->NEXT)) {
-        LN->IBODY = Di->I;
-        LN->X = Di->X;
-        LN++;
+        BN->IBODY = Di->I;
+        BN->X = Di->X;
+        BN++;
       }
     } else {
       C->NCLEAF = 0;
@@ -163,9 +163,9 @@ private:
       for( int i=0; i!=8; ++i ) if(N->CHILD[i]) {
         if(N->marked_as_box(i)) ++nsub;
         else {
-          LN->IBODY = N->CHILD[i]->I;
-          LN->X = N->CHILD[i]->X;
-          LN++;
+          BN->IBODY = N->CHILD[i]->I;
+          BN->X = N->CHILD[i]->X;
+          BN++;
           C->NCLEAF++;
         }
       }
@@ -222,9 +222,9 @@ public:
     double tic,toc;
     tic = get_time();
     C0 = c0;
-    L0 = leafs.begin();
+    B0 = leafs.begin();
     CN = C0+1;
-    LN = L0;
+    BN = B0;
     link_cells_N(N0,C0);
     toc = get_time();
     std::cout << "link   : " << toc-tic << std::endl;

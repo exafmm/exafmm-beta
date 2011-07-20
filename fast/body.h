@@ -55,7 +55,7 @@ struct Cell {
   unsigned NCLEAF;
   unsigned NCCELL;
   unsigned NDLEAF;
-  B_iter   FCLEAF;
+  B_iter    LEAF;
   Cell    *FCCELL;
   Cell    *PARENT;
   vect X;
