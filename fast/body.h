@@ -50,19 +50,12 @@ typedef std::vector<Body>::iterator    B_iter;                  // Iterator for 
 typedef std::vector<JBody>             JBodies;                 // Vector of source bodies
 typedef std::vector<JBody>::iterator   JB_iter;                 // Iterator for source body vector
 
-struct Leaf {
-  unsigned I;
-  vect X;
-  real Q;
-  vec<4,real> TRG;
-};
-
 struct Cell {
   unsigned LEVEL;
   unsigned NCLEAF;
   unsigned NCCELL;
   unsigned NDLEAF;
-  Leaf    *FCLEAF;
+  B_iter   FCLEAF;
   Cell    *FCCELL;
   Cell    *PARENT;
   vect X;

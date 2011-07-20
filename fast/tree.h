@@ -42,16 +42,16 @@ struct Node : public Dot {
 
 class TreeBuilder {
 public:
-  int  LEVEL;
-  int  NLEAF;
-  int  NCELL;
-  real RAD;
-  Node *START;
-  Node *N0, *NN;
-  Dot  *D0, *DN;
-  Leaf *L0, *LN;
-  Cell *C0, *CN;
-  vect XAVE, XMIN, XMAX;
+  int    LEVEL;
+  int    NLEAF;
+  int    NCELL;
+  real   RAD;
+  Node   *START;
+  Node   *N0, *NN;
+  Dot    *D0, *DN;
+  B_iter L0, LN;
+  Cell   *C0, *CN;
+  vect   XAVE, XMIN, XMAX;
 
 private:
   inline real root_radius(const vect& x) const {
@@ -153,7 +153,7 @@ private:
       C->NCCELL = 0;
       C->NCLEAF = N->NLEAF;
       for(Node *Di=N->DOTS; Di; Di=static_cast<Node*>(Di->NEXT)) {
-        LN->I = Di->I;
+        LN->IBODY = Di->I;
         LN->X = Di->X;
         LN++;
       }
@@ -163,7 +163,7 @@ private:
       for( int i=0; i!=8; ++i ) if(N->CHILD[i]) {
         if(N->marked_as_box(i)) ++nsub;
         else {
-          LN->I = N->CHILD[i]->I;
+          LN->IBODY = N->CHILD[i]->I;
           LN->X = N->CHILD[i]->X;
           LN++;
           C->NCLEAF++;
@@ -188,7 +188,7 @@ private:
   }
 
 public:
-  TreeBuilder(Bodies& bodies) : RAD(0), N0(0), L0(NULL), C0(NULL) {
+  TreeBuilder(Bodies& bodies) : RAD(0), N0(0), C0(NULL) {
     set_domain(bodies);
     vect X0(zero);
     for(int d=0; d!=3; ++d) X0[d]=int(XAVE[d]+0.5);
@@ -218,11 +218,11 @@ public:
     std::cout << "build  : " << toc-tic << std::endl;
   }
 
-  void link(Cell *c0, Leaf *l0) {
+  void link(Cell *c0, Bodies &leafs) {
     double tic,toc;
     tic = get_time();
     C0 = c0;
-    L0 = l0;
+    L0 = leafs.begin();
     CN = C0+1;
     LN = L0;
     link_cells_N(N0,C0);

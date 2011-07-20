@@ -76,9 +76,9 @@ private:
   }
 
   void UpdateLeafs() {
-    for( Leaf* Li=L0; Li!=L0+NLEAFS; ++Li ) {
-      Li->Q = BODIES[Li->I].SRC[0];
-      Li->TRG = 0;
+    for( B_iter B=LEAFS.begin(); B!=LEAFS.end(); ++B ) {      // Loop over bodies
+      B->SRC[0] = BODIES[B->IBODY].SRC[0];
+      B->TRG = 0;
     }
   }
 
@@ -91,11 +91,11 @@ private:
   }
 
   void UpdateBodies() {
-    for( Leaf* Li=L0; Li!=L0+NLEAFS; ++Li ) {
-      BODIES[Li->I].TRG[0] = Li->TRG[0];
-      BODIES[Li->I].TRG[1] = Li->TRG[1];
-      BODIES[Li->I].TRG[2] = Li->TRG[2];
-      BODIES[Li->I].TRG[3] = Li->TRG[3];
+    for( B_iter B=LEAFS.begin(); B!=LEAFS.end(); ++B ) {      // Loop over bodies
+      BODIES[B->IBODY].TRG[0] = B->TRG[0];
+      BODIES[B->IBODY].TRG[1] = B->TRG[1];
+      BODIES[B->IBODY].TRG[2] = B->TRG[2];
+      BODIES[B->IBODY].TRG[3] = B->TRG[3];
     }
   }
 
@@ -165,7 +165,9 @@ public:
   void exact() {
     UpdateLeafs();
     P2P(C0);
-    for( Leaf* Li=L0; Li!=L0+NLEAFS; ++Li ) Li->TRG /= Li->Q;
+    for( B_iter B=LEAFS.begin(); B!=LEAFS.end(); ++B ) {      // Loop over bodies
+      B->TRG /= B->SRC[0];
+    }
     UpdateBodies();
   }
 

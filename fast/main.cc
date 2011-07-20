@@ -22,7 +22,7 @@ int main() {
   TreeBuilder TB(bodies);
   TB.build();
   Evaluator *FMM = new Evaluator(bodies,TB.RAD,TB.LEVEL,TB.NLEAF,TB.NCELL);
-  TB.link(FMM->C0,FMM->L0);
+  TB.link(FMM->C0,FMM->LEAFS);
   toc = get_time();
   tree = toc-tic;
   tic = get_time();

@@ -9,9 +9,9 @@ protected:
   real RAD;
 
 public:
-  Leaf     *L0;
   Cell     *C0;
   Bodies   &BODIES;
+  Bodies   &LEAFS;
 
 private:
   inline real getBmax(vect const&X, Cell *C) {
@@ -29,9 +29,9 @@ private:
       m += c->M[0];
       X += c->X * c->M[0];
     }
-    for( Leaf *l=C->FCLEAF; l!=C->FCLEAF+C->NCLEAF; ++l ) {
-      m += l->Q;
-      X += l->X * l->Q;
+    for( B_iter B=C->FCLEAF; B!=C->FCLEAF+C->NCLEAF; ++B ) {
+      m += B->SRC[0];
+      X += B->X * B->SRC[0];
     }
     X /= m;
     real bmax = getBmax(X,C);
@@ -100,30 +100,29 @@ public:
     NLEAFS     (nleafs),
     NCELLS     (ncells),
     RAD        (rad),
-    BODIES     (bodies)
+    BODIES     (bodies),
+    LEAFS      (bodies)
   {
-    L0 = new Leaf [NLEAFS];
     C0 = new Cell [NCELLS];
   }
   ~Kernel() {
-    delete[] L0;
     delete[] C0;
   }
 
   void P2M(Cell *C, real &dmax, real &bmax) {
     bmax = getCenter(C);
-    for( Leaf *l=C->FCLEAF; l!=C->FCLEAF+C->NCLEAF; ++l ) {
-      vect dX = l->X - C->X;
+    for( B_iter B=C->FCLEAF; B!=C->FCLEAF+C->NCLEAF; ++B ) {
+      vect dX = B->X - C->X;
       if(norm(dX)>dmax) dmax=norm(dX);
-      real tmp = l->Q * dX[0];
-      C->M[0] += l->Q;
+      real tmp = B->SRC[0] * dX[0];
+      C->M[0] += B->SRC[0];
       C->M[1] += dX[0] * tmp;
       C->M[2] += dX[1] * tmp;
       C->M[3] += dX[2] * tmp;
-      tmp = l->Q * dX[1];
+      tmp = B->SRC[0] * dX[1];
       C->M[4] += dX[1] * tmp;
       C->M[5] += dX[2] * tmp;
-      C->M[6] += l->Q * dX[2] * dX[2];
+      C->M[6] += B->SRC[0] * dX[2] * dX[2];
     }
     if(C->NCLEAF != 0) dmax = std::sqrt(dmax);
     C->RCRIT = std::min(dmax,bmax);
@@ -151,55 +150,55 @@ public:
   }
 
   void P2P(Cell *Ci, Cell *Cj, bool mutual=true) const {
-    for( Leaf *Li=Ci->FCLEAF; Li!=Ci->FCLEAF+Ci->NDLEAF; ++Li ) {
+    for( B_iter BI=Ci->FCLEAF; BI!=Ci->FCLEAF+Ci->NDLEAF; ++BI ) {
       real P0(zero);
       vect F0(zero);
-      for( Leaf *Lj=Cj->FCLEAF; Lj!=Cj->FCLEAF+Cj->NDLEAF; ++Lj ) {
-        vect dR = Li->X - Lj->X;
+      for( B_iter BJ=Cj->FCLEAF; BJ!=Cj->FCLEAF+Cj->NDLEAF; ++BJ ) {
+        vect dR = BI->X - BJ->X;
         real D1 = norm(dR) + EQ;
-        real D0 = Li->Q * Lj->Q;
+        real D0 = BI->SRC[0] * BJ->SRC[0];
         real XX = 1.0/D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
         dR *= D1;
         P0 -= D0;
         F0 -= dR;
-        Lj->TRG[0] -= D0 * mutual;
-        Lj->TRG[1] += dR[0] * mutual;
-        Lj->TRG[2] += dR[1] * mutual;
-        Lj->TRG[3] += dR[2] * mutual;
+        BJ->TRG[0] -= D0 * mutual;
+        BJ->TRG[1] += dR[0] * mutual;
+        BJ->TRG[2] += dR[1] * mutual;
+        BJ->TRG[3] += dR[2] * mutual;
       }
-      Li->TRG[0] += P0;
-      Li->TRG[1] += F0[0];
-      Li->TRG[2] += F0[1];
-      Li->TRG[3] += F0[2];
+      BI->TRG[0] += P0;
+      BI->TRG[1] += F0[0];
+      BI->TRG[2] += F0[1];
+      BI->TRG[3] += F0[2];
     }
   }
 
   void P2P(Cell *C) const {
     unsigned NJ = C->NDLEAF;
-    for( Leaf *Li=C->FCLEAF; Li!=C->FCLEAF+C->NDLEAF; ++Li, --NJ ) {
+    for( B_iter BI=C->FCLEAF; BI!=C->FCLEAF+C->NDLEAF; ++BI, --NJ ) {
       real P0(zero);
       vect F0(zero);
-      for(Leaf *Lj=Li+1; Lj!=Li+NJ; ++Lj) {
-        vect dR = Li->X - Lj->X;
+      for( B_iter BJ=BI+1; BJ!=BI+NJ; ++BJ ) {
+        vect dR = BI->X - BJ->X;
         real D1 = norm(dR) + EQ;
-        real D0 = Li->Q * Lj->Q;
+        real D0 = BI->SRC[0] * BJ->SRC[0];
         real XX = 1.0/D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
         dR *= D1;
         P0 -= D0;
         F0 -= dR;
-        Lj->TRG[0] -= D0;
-        Lj->TRG[1] += dR[0];
-        Lj->TRG[2] += dR[1];
-        Lj->TRG[3] += dR[2];
+        BJ->TRG[0] -= D0;
+        BJ->TRG[1] += dR[0];
+        BJ->TRG[2] += dR[1];
+        BJ->TRG[3] += dR[2];
       }
-      Li->TRG[0] += P0;
-      Li->TRG[1] += F0[0];
-      Li->TRG[2] += F0[1];
-      Li->TRG[3] += F0[2];
+      BI->TRG[0] += P0;
+      BI->TRG[1] += F0[0];
+      BI->TRG[2] += F0[1];
+      BI->TRG[3] += F0[2];
     }
   }
 
@@ -245,14 +244,14 @@ public:
   }
 
   void L2P(Cell *C) const {
-    for( Leaf *l=C->FCLEAF; l!=C->FCLEAF+C->NCLEAF; ++l ) {
+    for( B_iter B=C->FCLEAF; B!=C->FCLEAF+C->NCLEAF; ++B ) {
       Lset o;
-      vect dX = l->X - C->X;
-      l->TRG /= l->Q;
-      l->TRG[0] -= C->L[0];
-      l->TRG[1] += C->L[1];
-      l->TRG[2] += C->L[2];
-      l->TRG[3] += C->L[3];
+      vect dX = B->X - C->X;
+      B->TRG /= B->SRC[0];
+      B->TRG[0] -= C->L[0];
+      B->TRG[1] += C->L[1];
+      B->TRG[2] += C->L[2];
+      B->TRG[3] += C->L[3];
       o[0] = C->L[1] *dX[0] + C->L[3] *dX[2] + C->L[2] *dX[1];
       o[1] = C->L[4] *dX[0] + C->L[6] *dX[2] + C->L[5] *dX[1];
       o[2] = C->L[5] *dX[0] + C->L[8] *dX[2] + C->L[7] *dX[1];
@@ -263,18 +262,18 @@ public:
       o[7] = C->L[13]*dX[0] + C->L[17]*dX[2] + C->L[16]*dX[1];
       o[8] = C->L[14]*dX[0] + C->L[18]*dX[2] + C->L[17]*dX[1];
       o[9] = C->L[15]*dX[0] + C->L[19]*dX[2] + C->L[18]*dX[1];
-      l->TRG[0] -= o[0];
-      l->TRG[1] += o[1];
-      l->TRG[2] += o[2];
-      l->TRG[3] += o[3];
+      B->TRG[0] -= o[0];
+      B->TRG[1] += o[1];
+      B->TRG[2] += o[2];
+      B->TRG[3] += o[3];
       o[0] = (o[1]*dX[0] + o[3]*dX[2] + o[2]*dX[1]) / 2;
       o[1] = (o[4]*dX[0] + o[6]*dX[2] + o[5]*dX[1]) / 2;
       o[2] = (o[5]*dX[0] + o[8]*dX[2] + o[7]*dX[1]) / 2;
       o[3] = (o[6]*dX[0] + o[9]*dX[2] + o[8]*dX[1]) / 2;
-      l->TRG[0] -= o[0] + (dX[0]*o[1]+dX[1]*o[2]+dX[2]*o[3]) / 3;
-      l->TRG[1] += o[1];
-      l->TRG[2] += o[2];
-      l->TRG[3] += o[3];
+      B->TRG[0] -= o[0] + (dX[0]*o[1]+dX[1]*o[2]+dX[2]*o[3]) / 3;
+      B->TRG[1] += o[1];
+      B->TRG[2] += o[2];
+      B->TRG[3] += o[3];
     }
   }
 };
