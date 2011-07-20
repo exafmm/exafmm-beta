@@ -2,22 +2,28 @@
 #define body_h
 #include <assert.h>
 #include <cmath>
+#include <complex>
 #include <cstdlib>
 #include <iostream>
 #include <sys/time.h>
+#include <vector>
 #include <vec.h>
 
-typedef float real;
+typedef long                 bigint;                            // Big integer type
+typedef float                real;                              // Real number type on CPU
+typedef float                gpureal;                           // Real number type on GPU
+typedef std::complex<double> complex;                           // Complex number type
+
 const int P = 3;
 const int NCOEF = (P+1)*(P+2)*(P+3)/6;
 const int NCRIT = 8;
 const float THETA = 0.6;
 const float EPS = 0.01;
 const float EQ = EPS * EPS;
-typedef vec<3 ,real> vect;                      ///< a vector of 3 reals
-typedef vec<7 ,real> Mset;                      ///< set of multipoles
-typedef vec<20,real> Lset;                      ///< set of coefficients
-const real zero = 0.;                          ///< real: zero
+typedef vec<3 ,real> vect;
+typedef vec<7 ,real> Mset;
+typedef vec<20,real> Lset;
+const real zero = 0.;
 
 double get_time(void) {
   struct timeval tv;
@@ -26,82 +32,23 @@ double get_time(void) {
   return ((double)(tv.tv_sec+tv.tv_usec*1.0e-6));
 }
 
-struct body
-{
-  vect pos;
-  real scal;
-  vect acc;
-  real pot;
+struct JBody {                                                  // Source properties of a body (stuff to send)
+  int         IBODY;                                            // Initial body numbering for sorting back
+  int         IPROC;                                            // Initial process numbering for partitioning back
+  bigint      ICELL;                                            // Cell index
+  vect        X;                                                // Position
+  vec<4,real> SRC;                                              // Source values
 };
-
-class bodies
-{
-  unsigned I;
-  unsigned const N;
-  body *P;
-public:
-  bodies(unsigned n) : N(n) {
-    P = new body [N];
-  }
-  ~bodies() {
-    delete[] P;
-  }
-  vect &pos() const {
-    return P[I].pos;
-  }
-  real &scal() const {
-    return P[I].scal;
-  }
-  vect &acc() const {
-    return P[I].acc;
-  }
-  real &pot() const {
-    return P[I].pot;
-  }
-  vect &pos(unsigned i) const {
-    return P[i].pos;
-  }
-  real &scal(unsigned i) const {
-    return P[i].scal;
-  }
-  vect &acc(unsigned i) const {
-    return P[i].acc;
-  }
-  real &pot(unsigned i) const {
-    return P[i].pot;
-  }
-  unsigned begin() {
-    I = 0;
-    return I;
-  }
-  unsigned end() const {
-    return N;
-  }
-  unsigned size() const {
-    return N;
-  }
-  unsigned index() const {
-    return I;
-  }
-  body const &operator[](unsigned const i) const {
-    return P[i];
-  }
-  unsigned const &operator=(unsigned i) {
-    return I = i;
-  }
-  bodies const &operator++() {
-    ++I;
-    return *this;
-  }
-  bool operator!=(unsigned i) const {
-    return I != i;
-  }
-  operator unsigned () {return I;}
-  friend std::ostream &operator<<(std::ostream &s, bodies const &B) {
-    s<<B.I;
-    return s;
+struct Body : JBody {                                           // All properties of a body
+  vec<4,real> TRG;                                              // Target values
+  bool operator<(const Body &rhs) const {                       // Overload operator for comparing body index
+    return this->IBODY < rhs.IBODY;                             // Comparison function for body index
   }
 };
+typedef std::vector<Body>              Bodies;                  // Vector of bodies
+typedef std::vector<Body>::iterator    B_iter;                  // Iterator for body vector
+typedef std::vector<JBody>             JBodies;                 // Vector of source bodies
+typedef std::vector<JBody>::iterator   JB_iter;                 // Iterator for source body vector
 
 struct Leaf {
   unsigned I;

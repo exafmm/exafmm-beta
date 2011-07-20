@@ -77,7 +77,7 @@ private:
 
   void UpdateLeafs() {
     for( Leaf* Li=L0; Li!=L0+NLEAFS; ++Li ) {
-      Li->Q = BODIES.scal(Li->I);
+      Li->Q = BODIES[Li->I].SRC[0];
       Li->TRG = 0;
     }
   }
@@ -92,10 +92,10 @@ private:
 
   void UpdateBodies() {
     for( Leaf* Li=L0; Li!=L0+NLEAFS; ++Li ) {
-      BODIES.pot(Li->I) = Li->TRG[0];
-      BODIES.acc(Li->I)[0] = Li->TRG[1];
-      BODIES.acc(Li->I)[1] = Li->TRG[2];
-      BODIES.acc(Li->I)[2] = Li->TRG[3];
+      BODIES[Li->I].TRG[0] = Li->TRG[0];
+      BODIES[Li->I].TRG[1] = Li->TRG[1];
+      BODIES[Li->I].TRG[2] = Li->TRG[2];
+      BODIES[Li->I].TRG[3] = Li->TRG[3];
     }
   }
 
@@ -158,8 +158,8 @@ protected:
   }
 
 public:
-  Evaluator(bodies &b, real rad, unsigned L, unsigned nleafs, unsigned ncells)
-    : Kernel( b,rad,nleafs,ncells ), pairStack( 16*L-12 ), LEVEL ( L ) {}
+  Evaluator(Bodies &bodies, real rad, unsigned L, unsigned nleafs, unsigned ncells)
+    : Kernel( bodies,rad,nleafs,ncells ), pairStack( 16*L-12 ), LEVEL ( L ) {}
   ~Evaluator() {}
 
   void exact() {

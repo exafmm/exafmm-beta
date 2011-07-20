@@ -11,7 +11,7 @@ protected:
 public:
   Leaf     *L0;
   Cell     *C0;
-  bodies   &BODIES;
+  Bodies   &BODIES;
 
 private:
   inline real getBmax(vect const&X, Cell *C) {
@@ -96,11 +96,11 @@ private:
   }
 
 public:
-  Kernel(bodies &b, real rad, unsigned nleafs, unsigned ncells) :
+  Kernel(Bodies &bodies, real rad, unsigned nleafs, unsigned ncells) :
     NLEAFS     (nleafs),
     NCELLS     (ncells),
     RAD        (rad),
-    BODIES     ( b )
+    BODIES     (bodies)
   {
     L0 = new Leaf [NLEAFS];
     C0 = new Cell [NCELLS];

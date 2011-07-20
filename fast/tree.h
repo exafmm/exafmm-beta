@@ -64,15 +64,14 @@ private:
     return R;
   }
 
-  void set_domain(bodies &B) {
-    D0     = new Dot [B.size()];
+  void set_domain(Bodies &bodies) {
+    D0     = new Dot [bodies.size()];
     Dot*Di = D0;
     XAVE = zero;
-    B=0;
-    XMAX = XMIN = B.pos();
-    for(B=0; B!=B.end(); ++B) {
-      Di->I = B.index();
-      Di->X = B.pos();
+    XMAX = XMIN = bodies.begin()->X;
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      Di->I = B-bodies.begin();
+      Di->X = B->X;
       Di->X.min_max(XMIN,XMAX);
       XAVE += Di->X;
       Di++;
@@ -189,12 +188,12 @@ private:
   }
 
 public:
-  TreeBuilder(bodies& pp) : RAD(0), N0(0), L0(NULL), C0(NULL) {
-    set_domain(pp);
+  TreeBuilder(Bodies& bodies) : RAD(0), N0(0), L0(NULL), C0(NULL) {
+    set_domain(bodies);
     vect X0(zero);
     for(int d=0; d!=3; ++d) X0[d]=int(XAVE[d]+0.5);
     NCELL     = 1;
-    NLEAF     = pp.size();
+    NLEAF     = bodies.size();
     START     = new Node [NLEAF];
     NN        = START;
     N0        = (NN++)->init();
