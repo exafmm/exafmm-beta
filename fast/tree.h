@@ -9,35 +9,11 @@ struct Dot {
 };
 
 struct Node : public Dot {
-  int LEVEL;
-  int ICHILD;
-  int NLEAF;
+  bool IS_TWIG;
+  int  LEVEL;
+  int  NLEAF;
   Node *CHILD[8];
   Node *DOTS;
-
-  void mark_as_box   (int const&i)       { ICHILD |= (1<<i); }
-  bool marked_as_box (int const&i) const { return ICHILD & (1<<i); }
-  bool marked_as_dot (int const&i) const { return !marked_as_box(i); }
-
-  int octant(const Node*D) const {
-    int oct = 0;
-    for( int d=0; d!=3; ++d ) {
-      oct += (D->X[d] > X[d]) << d;
-    }
-    return oct;
-  }
-
-  bool is_twig() const {
-    return ICHILD == 0;
-  }
-
-  Node *init() {
-    ICHILD   = 0;
-    NLEAF    = 0;
-    DOTS     = 0;
-    for( int i=0; i!=8; ++i ) CHILD[i] = NULL;
-    return this;
-  }
 };
 
 class TreeBuilder {
@@ -54,6 +30,14 @@ public:
   vect XAVE, XMIN, XMAX;
 
 private:
+  Node *init(Node *N) {
+    N->IS_TWIG   = true;
+    N->NLEAF    = 0;
+    N->DOTS     = 0;
+    for( int i=0; i!=8; ++i ) N->CHILD[i] = NULL;
+    return N;
+  }
+
   inline real root_radius(const vect& x) const {
     real R,D=zero;
     for(int d=0; d!=3; ++d) {
@@ -64,8 +48,16 @@ private:
     return R;
   }
 
+  int octant(const Node *N, const Node *D) const {
+    int oct = 0;
+    for( int d=0; d!=3; ++d ) {
+      oct += (D->X[d] > N->X[d]) << d;
+    }
+    return oct;
+  }
+
   void set_domain(Bodies &bodies) {
-    D0     = new Dot [bodies.size()];
+    D0 = new Dot [bodies.size()];
     Dot*Di = D0;
     XAVE = zero;
     XMAX = XMIN = bodies.begin()->X;
@@ -83,7 +75,7 @@ private:
   inline Node* make_subbox(const Node*B, int i) {
     ++NCELL;
     assert(NCELL < NLEAF);
-    Node* N = (NN++)->init();
+    Node* N = init(NN++);
     N->LEVEL    = B->LEVEL+1;
     real r = RAD / (1 << N->LEVEL);
     N->X = B->X;
@@ -102,7 +94,7 @@ private:
       for(b=0; b!=8; ++b) NUM[b] = 0;
       for(Di=N->DOTS; Di; Di=Dn) {
         Dn = static_cast<Node*>(Di->NEXT);
-        b = N->octant(Di);
+        b = octant(N,Di);
         Di->NEXT = N->CHILD[b];
         N->CHILD[b] = Di;
         NUM[b]++;
@@ -114,7 +106,7 @@ private:
         sub->DOTS = N->CHILD[b];
         sub->NLEAF = NUM[b];
         N->CHILD[b] = sub;
-        N->mark_as_box(b);
+        N->IS_TWIG = false;
       }
       N = sub;
     } while(ne==1);
@@ -122,7 +114,7 @@ private:
 
   void adddot_N(Node *const&Di) {
     for(Node*N=N0;;) {
-      if(N->is_twig()) {
+      if(N->IS_TWIG) {
         Di->NEXT = N->DOTS;
         N->DOTS = Di;
         N->NLEAF++;
@@ -130,10 +122,10 @@ private:
         if(LEVEL < N->LEVEL) LEVEL = N->LEVEL;
         return;
       } else {
-        int b = N->octant(Di);
+        int b = octant(N,Di);
         N->NLEAF++;
         if( N->CHILD[b] == NULL ) {
-          N->mark_as_box(b);
+          N->IS_TWIG = false;
           Node *sub = make_subbox(N,b);
           N->CHILD[b] = sub;
           N = sub;
@@ -144,13 +136,13 @@ private:
   }
 
   void link_cells_N(const Node* N, Cell *C) {
-    C->LEVEL  = N->LEVEL;
+    C->R      = RAD / ( 1 << N->LEVEL );
     C->X      = N->X;
     C->NDLEAF = N->NLEAF;
     C->LEAF   = BN;
-    if(N->is_twig()) {
-      C->FCCELL = C0;
-      C->NCCELL = 0;
+    if(N->IS_TWIG) {
+      C->CHILD = 0;
+      C->NCHILD = 0;
       C->NCLEAF = N->NLEAF;
       for(Node *Di=N->DOTS; Di; Di=static_cast<Node*>(Di->NEXT)) {
         BN->IBODY = Di->I;
@@ -161,28 +153,22 @@ private:
       C->NCLEAF = 0;
       int nsub=0;
       for( int i=0; i!=8; ++i ) if(N->CHILD[i]) {
-        if(N->marked_as_box(i)) ++nsub;
-        else {
-          BN->IBODY = N->CHILD[i]->I;
-          BN->X = N->CHILD[i]->X;
-          BN++;
-          C->NCLEAF++;
-        }
+        ++nsub;
       }
       if(nsub) {
         Cell *Ci = CN;
-        C->FCCELL = Ci;
-        C->NCCELL = nsub;
+        C->CHILD = Ci - C0;
+        C->NCHILD = nsub;
         CN += nsub;
         for( int i=0; i!=8; ++i ) {
-          if(N->CHILD[i] && N->marked_as_box(i)) {
-            Ci->PARENT = C;
+          if(N->CHILD[i]) {
+            Ci->PARENT = C - C0;
             link_cells_N(N->CHILD[i], Ci++);
           }
         }
       } else {
-        C->FCCELL = C0;
-        C->NCCELL = 0;
+        C->CHILD = 0;
+        C->NCHILD = 0;
       }
     }
   }
@@ -196,7 +182,7 @@ public:
     NLEAF     = bodies.size();
     START     = new Node [NLEAF];
     NN        = START;
-    N0        = (NN++)->init();
+    N0        = init(NN++);
     RAD       = root_radius(X0);
     N0->LEVEL = 0;
     N0->X     = X0;
@@ -207,28 +193,20 @@ public:
   }
 
   void build() {
-    double tic,toc;
-    tic = get_time();
     LEVEL = 0;
     for(Dot *Di=D0; Di!=DN; ++Di) {
       adddot_N(static_cast<Node*>(Di));
     }
     LEVEL++;
-    toc = get_time();
-    std::cout << "build  : " << toc-tic << std::endl;
   }
 
   void link(Cell *c0, Bodies &leafs) {
-    double tic,toc;
-    tic = get_time();
     C0 = c0;
     B0 = leafs.begin();
     CN = C0+1;
     BN = B0;
     link_cells_N(N0,C0);
-    toc = get_time();
-    std::cout << "link   : " << toc-tic << std::endl;
   }
 };
 
-#endif // tree_h
+#endif

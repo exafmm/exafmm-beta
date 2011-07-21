@@ -15,7 +15,8 @@ public:
 
 private:
   inline real getBmax(vect const&X, Cell *C) {
-    real rad = RAD / ( 1 << C->LEVEL );
+//    real rad = RAD / ( 1 << C->LEVEL );
+    real rad = C->R;
     real dx = rad+std::abs(X[0]-C->X[0]);
     real dy = rad+std::abs(X[1]-C->X[1]);
     real dz = rad+std::abs(X[2]-C->X[2]);
@@ -25,7 +26,7 @@ private:
   inline real getCenter(Cell *C) {
     real m(zero);
     vect X(zero);
-    for( Cell *c=C->FCCELL; c!=C->FCCELL+C->NCCELL; ++c ) {
+    for( Cell *c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
       m += c->M[0];
       X += c->X * c->M[0];
     }
@@ -129,7 +130,7 @@ public:
   }
 
   void M2M(Cell *C, real &dmax, real &bmax) {
-    for( Cell *c=C->FCCELL; c!=C->FCCELL+C->NCCELL; ++c ) {
+    for( Cell *c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
       vect dX = c->X - C->X;
       real Xq = norm(dX);
       real x  = dmax - c->RCRIT;
@@ -219,8 +220,8 @@ public:
   }
 
   void L2L(Cell *C) const {
-    vect dX = C->X - C->PARENT->X;
-    Lset L = C->PARENT->L;
+    vect dX = C->X - (C0+C->PARENT)->X;
+    Lset L = (C0+C->PARENT)->L;
     Lset o;
     o[0] = L[1]*dX[0] + L[3]*dX[2] + L[2]*dX[1];
     o[1] = L[4]*dX[0] + L[6]*dX[2] + L[5]*dX[1];

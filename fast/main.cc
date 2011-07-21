@@ -5,7 +5,11 @@ int main() {
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {
 #else
+#if BUILD
+  for ( int it=32; it<33; it++ ) {
+#else
   for ( int it=8; it<9; it++ ) {
+#endif
 #endif
   int numBodies = int(pow(10,(it+24)/8.0));
   double   tic,toc,tree,approx;
@@ -21,10 +25,17 @@ int main() {
   tic = get_time();
   TreeBuilder TB(bodies);
   TB.build();
+  toc = get_time();
+  std::cout << "build  : " << toc-tic << std::endl;
+  tree = toc-tic;
+  tic = get_time();
   Evaluator *FMM = new Evaluator(bodies,TB.RAD,TB.LEVEL,TB.NLEAF,TB.NCELL);
   TB.link(FMM->C0,FMM->LEAFS);
   toc = get_time();
-  tree = toc-tic;
+  std::cout << "link   : " << toc-tic << std::endl;
+  tree += toc-tic;
+#if BUILD
+#else
   tic = get_time();
   FMM->approximate();
   toc = get_time();
@@ -59,6 +70,7 @@ int main() {
   std::ofstream file("time",std::ios::out | std::ios::app);
   file << tree+approx << std::endl;
   file.close();
+#endif
   delete FMM;
   }
 }

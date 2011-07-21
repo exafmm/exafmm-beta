@@ -15,7 +15,7 @@ protected:
 
 private:
   void perform(Cell *C) const {
-    if(C->NCCELL == 0 || C->NDLEAF < 64) {
+    if(C->NCHILD == 0 || C->NDLEAF < 64) {
       P2P(C);
     } else {
       selfStack.push(C);
@@ -27,7 +27,7 @@ private:
     real Rq = norm(dX);
     if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
       M2L(Ci,Cj,mutual);
-    } else if(Ci->NCCELL == 0 && Cj->NCCELL == 0) {
+    } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
       P2P(Ci,Cj,mutual);
     } else {
       pairStack.push(Ci,Cj);
@@ -36,7 +36,7 @@ private:
 
   bool split_first(Cell *Ci, Cell *Cj) const
   {
-    return Cj->NCCELL == 0 || (Ci->NCCELL != 0 && Ci->RCRIT > Cj->RCRIT);
+    return Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT > Cj->RCRIT);
   }
 
   void set_rcrit() {
@@ -85,7 +85,7 @@ private:
   void downward(Cell *C) const {
     L2L(C);
     L2P(C);
-    for( Cell *c=C->FCCELL; c!=C->FCCELL+C->NCCELL; ++c ) {
+    for( Cell *c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
       downward(c);
     }
   }
@@ -114,9 +114,9 @@ protected:
     while(!selfStack.empty()) {
       Cell *C = selfStack.top();
       selfStack.pop();
-      for( Cell *Ci=C->FCCELL; Ci!=C->FCCELL+C->NCCELL; ++Ci ) {
+      for( Cell *Ci=C0+C->CHILD; Ci!=C0+C->CHILD+C->NCHILD; ++Ci ) {
         perform(Ci);
-        for( Cell *Cj=Ci+1; Cj!=C->FCCELL+C->NCCELL; ++Cj ) {
+        for( Cell *Cj=Ci+1; Cj!=C0+C->CHILD+C->NCHILD; ++Cj ) {
           perform(Ci,Cj);
         }
       }
@@ -124,12 +124,12 @@ protected:
         pair Cij = pairStack.pop();
         if(split_first(Cij.first,Cij.second)) {
           C = Cij.first;
-          for( Cell *Ci=C->FCCELL; Ci!=C->FCCELL+C->NCCELL; ++Ci ) {
+          for( Cell *Ci=C0+C->CHILD; Ci!=C0+C->CHILD+C->NCHILD; ++Ci ) {
             perform(Ci,Cij.second);
           }
         } else {
           C = Cij.second;
-          for( Cell *Cj=C->FCCELL; Cj!=C->FCCELL+C->NCCELL; ++Cj ) {
+          for( Cell *Cj=C0+C->CHILD; Cj!=C0+C->CHILD+C->NCHILD; ++Cj ) {
             perform(Cij.first,Cj);
           }
         }
@@ -138,19 +138,19 @@ protected:
   }
 
   void traverse(bool mutual) const {
-    for( Cell *Cj=C0->FCCELL; Cj!=C0->FCCELL+C0->NCCELL; ++Cj ) {
+    for( Cell *Cj=C0+C0->CHILD; Cj!=C0+C0->CHILD+C0->NCHILD; ++Cj ) {
       pairStack.push(C0,Cj);
     }
     while(!pairStack.empty()) {
       pair Cij = pairStack.pop();
       if(split_first(Cij.first,Cij.second)) {
         Cell *C = Cij.first;
-        for( Cell *Ci=C->FCCELL; Ci!=C->FCCELL+C->NCCELL; ++Ci ) {
+        for( Cell *Ci=C0+C->CHILD; Ci!=C0+C->CHILD+C->NCHILD; ++Ci ) {
           perform(Ci,Cij.second,mutual);
         }
       } else {
         Cell *C = Cij.second;
-        for( Cell *Cj=C->FCCELL; Cj!=C->FCCELL+C->NCCELL; ++Cj ) {
+        for( Cell *Cj=C0+C->CHILD; Cj!=C0+C->CHILD+C->NCHILD; ++Cj ) {
           perform(Cij.first,Cj,mutual);
         }
       }
@@ -183,7 +183,7 @@ public:
     toc = get_time();
     std::cout << "intrct : " << toc-tic << std::endl;
     tic = get_time();
-    for( Cell *C=C0->FCCELL; C!=C0->FCCELL+C0->NCCELL; ++C ) {
+    for( Cell *C=C0+C0->CHILD; C!=C0+C0->CHILD+C0->NCHILD; ++C ) {
       downward(C);
     }
     toc = get_time();

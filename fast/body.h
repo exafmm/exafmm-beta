@@ -51,14 +51,14 @@ typedef std::vector<JBody>             JBodies;                 // Vector of sou
 typedef std::vector<JBody>::iterator   JB_iter;                 // Iterator for source body vector
 
 struct Cell {
-  unsigned LEVEL;
+  unsigned NCHILD;
   unsigned NCLEAF;
-  unsigned NCCELL;
   unsigned NDLEAF;
-  B_iter    LEAF;
-  Cell    *FCCELL;
-  Cell    *PARENT;
+  unsigned PARENT;
+  unsigned CHILD;
+  B_iter   LEAF;
   vect X;
+  real R;
   real RCRIT;
   Mset M;
   Lset L;

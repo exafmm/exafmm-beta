@@ -19,7 +19,7 @@ int main() {
   T.printNow = true;
 
   T.startTimer("Set bodies   ");
-  D.sphere(bodies);
+  D.random(bodies);
   T.stopTimer("Set bodies   ",T.printNow);
 
   T.startTimer("Set domain   ");
