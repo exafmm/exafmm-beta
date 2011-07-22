@@ -23,8 +23,8 @@ int main() {
   }                                                             // End loop over bodies
 
   tic = get_time();
-  TreeBuilder TB(bodies);
-  TB.build();
+  TreeBuilder TB;
+  TB.build(bodies);
   toc = get_time();
   std::cout << "build  : " << toc-tic << std::endl;
   tree = toc-tic;
@@ -35,6 +35,7 @@ int main() {
   std::cout << "link   : " << toc-tic << std::endl;
   tree += toc-tic;
 #if BUILD
+  approx = 0;
 #else
   tic = get_time();
   FMM->approximate();

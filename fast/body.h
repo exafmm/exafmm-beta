@@ -5,6 +5,7 @@
 #include <complex>
 #include <cstdlib>
 #include <iostream>
+#include <stack>
 #include <sys/time.h>
 #include <vector>
 #include <vec.h>
@@ -34,10 +35,10 @@ double get_time(void) {
 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   int         IBODY;                                            // Initial body numbering for sorting back
-  int         IPROC;                                            // Initial process numbering for partitioning back
-  bigint      ICELL;                                            // Cell index
+//  int         IPROC;                                            // Initial process numbering for partitioning back
+//  bigint      ICELL;                                            // Cell index
   vect        X;                                                // Position
-  vec<4,real> SRC;                                              // Source values
+  vec<1,real> SRC;                                              // Source values
 };
 struct Body : JBody {                                           // All properties of a body
   vec<4,real> TRG;                                              // Target values
@@ -63,34 +64,4 @@ struct Cell {
   Mset M;
   Lset L;
 };
-
-template<typename A, typename B>
-struct Pair {
-  A first;                                       // first object
-  B second;                                      // second object
-  Pair() : first(0), second(0) {}                // constructor
-  void set(A a, B b) {                           // set pair
-    first=a;  second=b;
-  }
-};
-
-template<typename A, typename B>
-class Stack {
-private:
-  typedef Pair<A,B> pair;                        // type of stack objects
-  pair    *P0, *P;                               // first & current element
-public:
-  explicit
-  Stack (unsigned const&M)                       // constructor
-    : P0 ( new pair [M] ),                       //   allocate memory
-      P  ( P0 - 1 ) {}                           //   set pter to activ
-  ~Stack () { delete[] P0; }                     // destructor: deallocate
-  bool empty() const { return P<P0; }            // if stack empty?
-  pair pop() { return *(P--); }                  // give last:   pop
-  void push(A a, B b) {                          // add element: push
-    ++P;
-    P->set(a,b);
-  }
-};
-
 #endif

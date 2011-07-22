@@ -1,14 +1,13 @@
 #ifndef evaluator_h
 #define evaluator_h
 #include <kernel.h>
-#include <stack>
 #include <iomanip>
 
 class Evaluator : public Kernel {
 private:
-  typedef Pair<Cell*,Cell*> pair;
+  typedef std::pair<Cell*,Cell*> Pair;
   mutable std::stack<Cell*> selfStack;
-  mutable Stack<Cell*,Cell*> pairStack;
+  mutable std::stack<Pair> pairStack;
 
 protected:
   unsigned LEVEL;
@@ -30,7 +29,8 @@ private:
     } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
       P2P(Ci,Cj,mutual);
     } else {
-      pairStack.push(Ci,Cj);
+      Pair pair(Ci,Cj);
+      pairStack.push(pair);
     }
   }
 
@@ -121,7 +121,8 @@ protected:
         }
       }
       while(!pairStack.empty()) {
-        pair Cij = pairStack.pop();
+        Pair Cij = pairStack.top();
+        pairStack.pop();
         if(split_first(Cij.first,Cij.second)) {
           C = Cij.first;
           for( Cell *Ci=C0+C->CHILD; Ci!=C0+C->CHILD+C->NCHILD; ++Ci ) {
@@ -139,10 +140,12 @@ protected:
 
   void traverse(bool mutual) const {
     for( Cell *Cj=C0+C0->CHILD; Cj!=C0+C0->CHILD+C0->NCHILD; ++Cj ) {
-      pairStack.push(C0,Cj);
+      Pair pair(C0,Cj);
+      pairStack.push(pair);
     }
     while(!pairStack.empty()) {
-      pair Cij = pairStack.pop();
+      Pair Cij = pairStack.top();
+      pairStack.pop();
       if(split_first(Cij.first,Cij.second)) {
         Cell *C = Cij.first;
         for( Cell *Ci=C0+C->CHILD; Ci!=C0+C->CHILD+C->NCHILD; ++Ci ) {
@@ -159,7 +162,7 @@ protected:
 
 public:
   Evaluator(Bodies &bodies, real rad, unsigned L, unsigned nleafs, unsigned ncells)
-    : Kernel( bodies,rad,nleafs,ncells ), pairStack( 16*L-12 ), LEVEL ( L ) {}
+    : Kernel( bodies,rad,nleafs,ncells ), LEVEL ( L ) {}
   ~Evaluator() {}
 
   void exact() {
