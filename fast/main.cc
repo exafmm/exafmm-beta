@@ -12,7 +12,7 @@ int main() {
 #endif
 #endif
   int numBodies = int(pow(10,(it+24)/8.0));
-  double   tic,toc,tree,approx;
+  double tic,toc,tree,approx;
   Bodies bodies(numBodies);
   Bodies bodies2;
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
@@ -23,7 +23,8 @@ int main() {
   }                                                             // End loop over bodies
 
   tic = get_time();
-  TreeBuilder T(bodies);
+  TreeBuilder T;
+  T.setDomain(bodies);
   T.build();
   toc = get_time();
   std::cout << "build  : " << toc-tic << std::endl;
@@ -37,7 +38,7 @@ int main() {
   approx = 0;
 #else
   tic = get_time();
-  T.approximate();
+  T.approximate(bodies);
   toc = get_time();
   approx = toc-tic;
 
@@ -45,7 +46,7 @@ int main() {
 #ifdef DIRECT
   bodies2 = bodies;
   tic = get_time();
-  T.exact();
+  T.exact(bodies2);
   toc = get_time();
   std::cout << "direct time   : " << toc-tic << std::endl;
 #endif

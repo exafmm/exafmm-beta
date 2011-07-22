@@ -4,13 +4,9 @@
 
 class Kernel {
 protected:
-  unsigned NLEAF;
-  unsigned NCELL;
-  real RAD;
-
-public:
+  vect   X0;
+  real   R0;
   Cell   *C0;
-  Bodies &BODIES;
   Bodies LEAFS;
 
 private:
@@ -23,8 +19,8 @@ private:
   }
 
   inline real getCenter(Cell *C) {
-    real m(zero);
-    vect X(zero);
+    real m = 0;
+    vect X = 0;
     for( Cell *c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
       m += c->M[0];
       X += c->X * c->M[0];
@@ -96,7 +92,7 @@ private:
   }
 
 public:
-  Kernel(Bodies &bodies) : BODIES(bodies) {}
+  Kernel() : X0(0), R0(0) {}
   ~Kernel() {
     delete[] C0;
   }
@@ -125,7 +121,7 @@ public:
       vect dX = c->X - C->X;
       real Xq = norm(dX);
       real x  = dmax - c->RCRIT;
-      if(zero>x || Xq>x*x)
+      if( 0 > x || Xq > x*x )
         dmax = std::sqrt(Xq) + c->RCRIT;
       for( int i=1; i!=6; ++i ) C->M[i] += c->M[i];
       real tmp = c->M[0] * dX[0];
@@ -143,11 +139,11 @@ public:
 
   void P2P(Cell *Ci, Cell *Cj, bool mutual=true) const {
     for( B_iter BI=Ci->LEAF; BI!=Ci->LEAF+Ci->NDLEAF; ++BI ) {
-      real P0(zero);
-      vect F0(zero);
+      real P0 = 0;
+      vect F0 = 0;
       for( B_iter BJ=Cj->LEAF; BJ!=Cj->LEAF+Cj->NDLEAF; ++BJ ) {
         vect dR = BI->X - BJ->X;
-        real D1 = norm(dR) + EQ;
+        real D1 = norm(dR) + EPS2;
         real D0 = BI->SRC[0] * BJ->SRC[0];
         real XX = 1.0/D1;
         D0 *= std::sqrt(XX);
@@ -170,11 +166,11 @@ public:
   void P2P(Cell *C) const {
     unsigned NJ = C->NDLEAF;
     for( B_iter BI=C->LEAF; BI!=C->LEAF+C->NDLEAF; ++BI, --NJ ) {
-      real P0(zero);
-      vect F0(zero);
+      real P0 = 0;
+      vect F0 = 0;
       for( B_iter BJ=BI+1; BJ!=BI+NJ; ++BJ ) {
         vect dR = BI->X - BJ->X;
-        real D1 = norm(dR) + EQ;
+        real D1 = norm(dR) + EPS2;
         real D0 = BI->SRC[0] * BJ->SRC[0];
         real XX = 1.0/D1;
         D0 *= std::sqrt(XX);
@@ -198,7 +194,7 @@ public:
     real D[5];
     vect dX = Ci->X - Cj->X;
     real R2 = norm(dX);
-    real XX = 1.0 / (R2 + EQ);
+    real XX = 1.0 / (R2 + EPS2);
     D[0] = Ci->M[0] * Cj->M[0];
     set_D(XX,D);
     Lset F;

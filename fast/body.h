@@ -17,11 +17,12 @@ typedef float                gpureal;                           // Real number t
 typedef std::complex<double> complex;                           // Complex number type
 
 const int P = 3;
-const int NCOEF = (P+1)*(P+2)*(P+3)/6;
 const int NCRIT = 8;
-const float THETA = 0.6;
-const float EPS = 0.01;
-const float EQ = EPS * EPS;
+const real THETA = 0.6;
+const real EPS2 = 1e-4;
+
+
+const int NCOEF = (P+1)*(P+2)*(P+3)/6;
 typedef vec<3 ,real> vect;
 typedef vec<7 ,real> Mset;
 typedef vec<20,real> Lset;

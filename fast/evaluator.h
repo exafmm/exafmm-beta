@@ -11,6 +11,8 @@ private:
 
 protected:
   int LEVEL;
+  unsigned NLEAF;
+  unsigned NCELL;
 
 private:
   void perform(Cell *C) const {
@@ -75,13 +77,6 @@ private:
     set_rcrit();
   }
 
-  void UpdateLeafs() {
-    for( B_iter B=LEAFS.begin(); B!=LEAFS.end(); ++B ) {      // Loop over bodies
-      B->SRC[0] = BODIES[B->IBODY].SRC[0];
-      B->TRG = 0;
-    }
-  }
-
   void downward(Cell *C) const {
     L2L(C);
     L2P(C);
@@ -90,18 +85,25 @@ private:
     }
   }
 
-  void UpdateBodies() {
+  void bodies2leafs(Bodies &bodies) {
     for( B_iter B=LEAFS.begin(); B!=LEAFS.end(); ++B ) {      // Loop over bodies
-      BODIES[B->IBODY].TRG[0] = B->TRG[0];
-      BODIES[B->IBODY].TRG[1] = B->TRG[1];
-      BODIES[B->IBODY].TRG[2] = B->TRG[2];
-      BODIES[B->IBODY].TRG[3] = B->TRG[3];
+      B->SRC[0] = bodies[B->IBODY].SRC[0];
+      B->TRG = 0;
+    }
+  }
+
+  void leafs2bodies(Bodies &bodies) {
+    for( B_iter B=LEAFS.begin(); B!=LEAFS.end(); ++B ) {      // Loop over bodies
+      bodies[B->IBODY].TRG[0] = B->TRG[0];
+      bodies[B->IBODY].TRG[1] = B->TRG[1];
+      bodies[B->IBODY].TRG[2] = B->TRG[2];
+      bodies[B->IBODY].TRG[3] = B->TRG[3];
     }
   }
 
   void write() const {
     std::cout<<" root center:           "<<C0->X            <<'\n';
-    std::cout<<" root radius:           "<<RAD              <<'\n';
+    std::cout<<" root radius:           "<<R0               <<'\n';
     std::cout<<" bodies loaded:         "<<C0->NDLEAF       <<'\n';
     std::cout<<" total scal:            "<<C0->M[0]         <<'\n';
     std::cout<<" cells used:            "<<NCELL           <<'\n';
@@ -161,22 +163,22 @@ protected:
   }
 
 public:
-  Evaluator(Bodies &bodies) : Kernel(bodies) {}
+  Evaluator() {}
   ~Evaluator() {}
 
-  void exact() {
-    UpdateLeafs();
+  void exact(Bodies &bodies) {
+    bodies2leafs(bodies);
     P2P(C0);
     for( B_iter B=LEAFS.begin(); B!=LEAFS.end(); ++B ) {      // Loop over bodies
       B->TRG /= B->SRC[0];
     }
-    UpdateBodies();
+    leafs2bodies(bodies);
   }
 
-  void approximate() {
+  void approximate(Bodies &bodies) {
     double tic,toc;
     tic = get_time();
-    UpdateLeafs();
+    bodies2leafs(bodies);
     upward();
     toc = get_time();
     std::cout << "upward : " << toc-tic << std::endl;
@@ -193,7 +195,7 @@ public:
 #ifndef MANY
     write();
 #endif
-    UpdateBodies();
+    leafs2bodies(bodies);
   }
 };
 

@@ -9,7 +9,6 @@ private:
   B_iter B0, BN;
   Leaf *L0, *LN;
   Cell *CN;
-  vect XAVE, XMIN, XMAX;
 
 private:
   void init(Node &N) {
@@ -17,16 +16,6 @@ private:
     N.NLEAF = 0;
     N.LEAF = NULL;
     for( int b=0; b!=8; ++b ) N.CHILD[b] = -1;
-  }
-
-  inline real root_radius(const vect& x) const {
-    real R,D=zero;
-    for(int d=0; d!=3; ++d) {
-      R=std::max(std::abs(XMAX[d]-x[d]),std::abs(XMIN[d]-x[d]));
-      if(R>D) D=R;
-    }
-    R=pow(2.0,int(1.0+log(D)/M_LN2));
-    return R;
   }
 
   int getOctant(const Leaf *L, N_iter N) const {
@@ -37,28 +26,12 @@ private:
     return octant;
   }
 
-  void set_domain(Bodies &bodies) {
-    L0 = new Leaf [bodies.size()];
-    Leaf *Li = L0;
-    XAVE = zero;
-    XMAX = XMIN = bodies.begin()->X;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      Li->I = B-bodies.begin();
-      Li->X = B->X;
-      Li->X.min_max(XMIN,XMAX);
-      XAVE += Li->X;
-      Li++;
-    }
-    LN = Li;
-    XAVE /= real(LN-L0);
-  }
-
   inline void addChild(int octant, N_iter node) {
     assert(nodes.size() < NLEAF);
     Node child;
     init(child);
     child.LEVEL = node->LEVEL+1;
-    real r = RAD / (1 << child.LEVEL);
+    real r = R0 / (1 << child.LEVEL);
     child.X = node->X;
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       child.X[d] += r * (((octant & 1 << d) >> d) * 2 - 1);     //  Calculate new center position
@@ -90,7 +63,7 @@ private:
   }
 
   void nodes2cells(int i, Cell *C) {
-    C->R      = RAD / ( 1 << nodes[i].LEVEL );
+    C->R      = R0 / ( 1 << nodes[i].LEVEL );
     C->X      = nodes[i].X;
     C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
@@ -130,18 +103,39 @@ private:
   }
 
 public:
-  TreeBuilder(Bodies &bodies) : Evaluator(bodies) {}
+  TreeBuilder() {}
   ~TreeBuilder() {
     delete[] L0;
   }
 
+  void setDomain(Bodies &bodies) {
+    vect xmin, xmax;
+    NLEAF = bodies.size();
+    L0 = new Leaf [NLEAF];
+    Leaf *L = L0;
+    X0 = 0;
+    xmax = xmin = bodies.begin()->X;
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++L ) { // Loop over bodies
+      L->I = B-bodies.begin();                                  //  Set leaf index
+      L->X = B->X;                                              //  Set leaf coordinate
+      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
+        if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];           //   Determine xmin
+        else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];           //   Determine xmax
+      }                                                         //  End loop over each dimension
+      X0 += B->X;                                               //  Sum positions
+    }                                                           // End loop over bodies
+    LN = L;                                                     // End pointer for leafs
+    X0 /= bodies.size();                                        // Calculate average position
+    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
+      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
+      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
+      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
+    }                                                           // End loop over each dimension
+    R0 += 1e-5;                                                 // Add some leeway to root radius
+  }
+
   void build() {
-    set_domain(BODIES);
-    vect X0(zero);
-    for(int d=0; d!=3; ++d) X0[d]=int(XAVE[d]+0.5);
     NCELL = 1;
-    NLEAF = BODIES.size();
-    RAD   = root_radius(X0);
     nodes.reserve(NLEAF);
     Node node;
     init(node);

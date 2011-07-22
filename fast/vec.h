@@ -80,16 +80,6 @@ public:
     for_i s<<a[i]<<' ';
     return s;
   }
-  vec &negate() {
-    for_i a[i] = -a[i];
-    return *this;
-  }
-  void min_max(vec &Min, vec &Max) const {
-    for_i {
-      if     (a[i] < Min[i]) Min[i] = a[i];
-      else if(a[i] > Max[i]) Max[i] = a[i];
-    }
-  }
   friend T norm(vec const &b) {
     T c=0;
     for_i c+=b[i]*b[i];
