@@ -23,14 +23,13 @@ int main() {
   }                                                             // End loop over bodies
 
   tic = get_time();
-  TreeBuilder TB;
-  TB.build(bodies);
+  TreeBuilder T(bodies);
+  T.build();
   toc = get_time();
   std::cout << "build  : " << toc-tic << std::endl;
   tree = toc-tic;
   tic = get_time();
-  Evaluator *FMM = new Evaluator(bodies,TB.RAD,TB.LEVEL,TB.NLEAF,TB.NCELL);
-  TB.link(FMM->C0,FMM->LEAFS);
+  T.link();
   toc = get_time();
   std::cout << "link   : " << toc-tic << std::endl;
   tree += toc-tic;
@@ -38,7 +37,7 @@ int main() {
   approx = 0;
 #else
   tic = get_time();
-  FMM->approximate();
+  T.approximate();
   toc = get_time();
   approx = toc-tic;
 
@@ -46,7 +45,7 @@ int main() {
 #ifdef DIRECT
   bodies2 = bodies;
   tic = get_time();
-  FMM->exact();
+  T.exact();
   toc = get_time();
   std::cout << "direct time   : " << toc-tic << std::endl;
 #endif
@@ -72,6 +71,5 @@ int main() {
   file << tree+approx << std::endl;
   file.close();
 #endif
-  delete FMM;
   }
 }

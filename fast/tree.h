@@ -2,42 +2,21 @@
 #define tree_h
 #include <evaluator.h>
 
-class TreeBuilder {
+class TreeBuilder : public Evaluator {
 private:
-  struct Dot {
-    int I;
-    vect X;
-    Dot *NEXT;
-  };
-
-  struct Node {
-    int  LEVEL;
-    int  ICHILD;
-    int  NLEAF;
-    int  CHILD[8];
-    vect X;
-    Dot  *DOTS;
-  };
-
-  Node *N0;
-  int   NN;
-  Dot  *D0, *DN;
+  Nodes nodes;
+  Cells cells;
   B_iter B0, BN;
-  Cell *C0, *CN;
+  Leaf *L0, *LN;
+  Cell *CN;
   vect XAVE, XMIN, XMAX;
 
-public:
-  int  LEVEL;
-  int  NLEAF;
-  int  NCELL;
-  real RAD;
-
 private:
-  void init(int i) {
-    N0[i].ICHILD = 0;
-    N0[i].NLEAF = 0;
-    N0[i].DOTS = NULL;
-    for( int b=0; b!=8; ++b ) N0[i].CHILD[b] = -1;
+  void init(Node &N) {
+    N.ICHILD = 0;
+    N.NLEAF = 0;
+    N.LEAF = NULL;
+    for( int b=0; b!=8; ++b ) N.CHILD[b] = -1;
   }
 
   inline real root_radius(const vect& x) const {
@@ -50,92 +29,97 @@ private:
     return R;
   }
 
-  int getOctant(const Dot *D, const int i) const {
+  int getOctant(const Leaf *L, N_iter N) const {
     int octant = 0;
     for( int d=0; d!=3; ++d ) {
-      octant += (D->X[d] > N0[i].X[d]) << d;
+      octant += (L->X[d] > N->X[d]) << d;
     }
     return octant;
   }
 
   void set_domain(Bodies &bodies) {
-    D0 = new Dot [bodies.size()];
-    Dot *Di = D0;
+    L0 = new Leaf [bodies.size()];
+    Leaf *Li = L0;
     XAVE = zero;
     XMAX = XMIN = bodies.begin()->X;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      Di->I = B-bodies.begin();
-      Di->X = B->X;
-      Di->X.min_max(XMIN,XMAX);
-      XAVE += Di->X;
-      Di++;
+      Li->I = B-bodies.begin();
+      Li->X = B->X;
+      Li->X.min_max(XMIN,XMAX);
+      XAVE += Li->X;
+      Li++;
     }
-    DN = Di;
-    XAVE /= real(DN-D0);
+    LN = Li;
+    XAVE /= real(LN-L0);
   }
 
-  inline int addChild(int octant, int i) {
-    ++NCELL;
-    assert(NCELL < NLEAF);
-    int c = NN;
-    init(NN++);
-    N0[c].LEVEL = N0[i].LEVEL+1;
-    real r = RAD / (1 << N0[c].LEVEL);
-    N0[c].X = N0[i].X;
+  inline void addChild(int octant, N_iter node) {
+    assert(nodes.size() < NLEAF);
+    Node child;
+    init(child);
+    child.LEVEL = node->LEVEL+1;
+    real r = RAD / (1 << child.LEVEL);
+    child.X = node->X;
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
-      N0[c].X[d] += r * (((octant & 1 << d) >> d) * 2 - 1);        //  Calculate new center position
+      child.X[d] += r * (((octant & 1 << d) >> d) * 2 - 1);     //  Calculate new center position
     }                                                           // End loop over dimensions
-    return c;
+    node->ICHILD |= 1 << octant;
+    node->CHILD[octant] = nodes.size();
+    nodes.push_back(child);
+    NCELL++;
   }
 
-  void splitNode(int &i) {
-    while( N0[i].NLEAF > NCRIT ) {
+  void splitNode(N_iter node) {
+    while( node->NLEAF > NCRIT ) {
       int c;
-      Dot *Dn;
-      for( Dot *Di=N0[i].DOTS; Di; Di=Dn ) {
-        Dn = Di->NEXT;
-        int octant = getOctant(Di,i);
-        c = N0[i].CHILD[octant];
-        if( c == -1 ) c = addChild(octant,i);
-        Di->NEXT = N0[c].DOTS;
-        N0[c].DOTS = Di;
-        N0[c].NLEAF++;
-        N0[i].CHILD[octant] = c;
-        N0[i].ICHILD |= 1 << octant;
+      Leaf *Ln;
+      for( Leaf *Li=node->LEAF; Li; Li=Ln ) {
+        Ln = Li->NEXT;
+        int octant = getOctant(Li,node);
+        if( !(node->ICHILD & (1 << octant)) ) {
+          addChild(octant,node);
+        }
+        c = node->CHILD[octant];
+        Node *child = &nodes[c];
+        Li->NEXT = child->LEAF;
+        child->LEAF = Li;
+        child->NLEAF++;
       }
-      i = c;
+      node = nodes.begin()+c;
     }
   }
 
-  void link_cells_N(const int i, Cell *C) {
-    C->R      = RAD / ( 1 << N0[i].LEVEL );
-    C->X      = N0[i].X;
-    C->NDLEAF = N0[i].NLEAF;
+  void nodes2cells(int i, Cell *C) {
+    C->R      = RAD / ( 1 << nodes[i].LEVEL );
+    C->X      = nodes[i].X;
+    C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
-    if( N0[i].ICHILD == 0 ) {
+    if( nodes[i].ICHILD == 0 ) {
       C->CHILD = 0;
       C->NCHILD = 0;
-      C->NCLEAF = N0[i].NLEAF;
-      for(Dot *Di=N0[i].DOTS; Di; Di=Di->NEXT) {
-        BN->IBODY = Di->I;
-        BN->X = Di->X;
+      C->NCLEAF = nodes[i].NLEAF;
+      for( Leaf *Li=nodes[i].LEAF; Li; Li=Li->NEXT ) {
+        BN->IBODY = Li->I;
+        BN->X = Li->X;
         BN++;
       }
     } else {
       C->NCLEAF = 0;
       int nsub=0;
-      for( int d=0; d!=8; ++d ) if(N0[i].CHILD[d] != -1) {
-        ++nsub;
+      for( int octant=0; octant!=8; ++octant ) {
+        if( nodes[i].CHILD[octant] != -1 ) {
+          ++nsub;
+        }
       }
       if(nsub) {
         Cell *Ci = CN;
         C->CHILD = Ci - C0;
         C->NCHILD = nsub;
         CN += nsub;
-        for( int d=0; d!=8; ++d ) {
-          if(N0[i].CHILD[d] != -1) {
+        for( int octant=0; octant!=8; ++octant ) {
+          if( nodes[i].CHILD[octant] != -1 ) {
             Ci->PARENT = C - C0;
-            link_cells_N(N0[i].CHILD[d], Ci++);
+            nodes2cells(nodes[i].CHILD[octant], Ci++);
           }
         }
       } else {
@@ -146,51 +130,53 @@ private:
   }
 
 public:
-  TreeBuilder() : N0(0), C0(NULL) {}
+  TreeBuilder(Bodies &bodies) : Evaluator(bodies) {}
   ~TreeBuilder() {
-    delete[] N0;
-    delete[] D0;
+    delete[] L0;
   }
 
-  void build(Bodies& bodies) {
-    set_domain(bodies);
+  void build() {
+    set_domain(BODIES);
     vect X0(zero);
     for(int d=0; d!=3; ++d) X0[d]=int(XAVE[d]+0.5);
-    NCELL     = 1;
-    NLEAF     = bodies.size();
-    N0        = new Node [NLEAF];
-    NN        = 0;
-    init(NN++);
-    RAD       = root_radius(X0);
-    N0->LEVEL = 0;
-    N0->X     = X0;
+    NCELL = 1;
+    NLEAF = BODIES.size();
+    RAD   = root_radius(X0);
+    nodes.reserve(NLEAF);
+    Node node;
+    init(node);
+    node.LEVEL = 0;
+    node.X     = X0;
+    nodes.push_back(node);
     LEVEL = 0;
-    for(Dot *Di=D0; Di!=DN; ++Di) {
+    for( Leaf *Li=L0; Li!=LN; ++Li ) {
       int i = 0;
-      while( N0[i].ICHILD != 0 ) {
-        int octant = getOctant(Di,i);
-        N0[i].NLEAF++;
-        if( N0[i].CHILD[octant] == -1 ) {
-          N0[i].ICHILD |= 1 << octant;
-          N0[i].CHILD[octant] = addChild(octant,i);
+      N_iter N = nodes.begin()+i;
+      while( N->ICHILD != 0 ) {
+        int octant = getOctant(Li,N);
+        N->NLEAF++;
+        if( N->CHILD[octant] == -1 ) {
+          addChild(octant,N);
         }
-        i = N0[i].CHILD[octant];
+        i = N->CHILD[octant];
+        N = nodes.begin()+i;
       }
-      Di->NEXT = N0[i].DOTS;
-      N0[i].DOTS = Di;
-      N0[i].NLEAF++;
-      if( N0[i].NLEAF > NCRIT ) splitNode(i);
-      if( LEVEL < N0[i].LEVEL ) LEVEL = N0[i].LEVEL;
+      Li->NEXT = N->LEAF;
+      N->LEAF = Li;
+      N->NLEAF++;
+      if( N->NLEAF > NCRIT ) splitNode(N);
+      if( LEVEL < N->LEVEL ) LEVEL = N->LEVEL;
     }
     LEVEL++;
   }
 
-  void link(Cell *c0, Bodies &leafs) {
-    C0 = c0;
-    B0 = leafs.begin();
+  void link() {
+    LEAFS.resize(NLEAF);
+    C0 = new Cell [NCELL];
+    B0 = LEAFS.begin();
     CN = C0+1;
     BN = B0;
-    link_cells_N(0,C0);
+    nodes2cells(0,C0);
   }
 };
 

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <complex>
 #include <cstdlib>
+#include <list>
 #include <iostream>
 #include <stack>
 #include <sys/time.h>
@@ -46,10 +47,25 @@ struct Body : JBody {                                           // All propertie
     return this->IBODY < rhs.IBODY;                             // Comparison function for body index
   }
 };
-typedef std::vector<Body>              Bodies;                  // Vector of bodies
-typedef std::vector<Body>::iterator    B_iter;                  // Iterator for body vector
-typedef std::vector<JBody>             JBodies;                 // Vector of source bodies
-typedef std::vector<JBody>::iterator   JB_iter;                 // Iterator for source body vector
+typedef std::vector<Body>           Bodies;                     // Vector of bodies
+typedef std::vector<Body>::iterator B_iter;                     // Iterator for body vector
+
+struct Leaf {
+  int I;
+  vect X;
+  Leaf *NEXT;
+};
+
+struct Node {
+  int  LEVEL;
+  int  ICHILD;
+  int  NLEAF;
+  int  CHILD[8];
+  vect X;
+  Leaf *LEAF;
+};
+typedef std::vector<Node>           Nodes;
+typedef std::vector<Node>::iterator N_iter;
 
 struct Cell {
   unsigned NCHILD;
@@ -64,4 +80,6 @@ struct Cell {
   Mset M;
   Lset L;
 };
+typedef std::vector<Cell>           Cells;
+typedef std::vector<Cell>::iterator C_iter;
 #endif

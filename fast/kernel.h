@@ -4,18 +4,17 @@
 
 class Kernel {
 protected:
-  unsigned NLEAFS;
-  unsigned NCELLS;
+  unsigned NLEAF;
+  unsigned NCELL;
   real RAD;
 
 public:
-  Cell     *C0;
-  Bodies   &BODIES;
-  Bodies    LEAFS;
+  Cell   *C0;
+  Bodies &BODIES;
+  Bodies LEAFS;
 
 private:
   inline real getBmax(vect const&X, Cell *C) {
-//    real rad = RAD / ( 1 << C->LEVEL );
     real rad = C->R;
     real dx = rad+std::abs(X[0]-C->X[0]);
     real dy = rad+std::abs(X[1]-C->X[1]);
@@ -97,15 +96,7 @@ private:
   }
 
 public:
-  Kernel(Bodies &bodies, real rad, unsigned nleafs, unsigned ncells) :
-    NLEAFS     (nleafs),
-    NCELLS     (ncells),
-    RAD        (rad),
-    BODIES     (bodies)
-  {
-    LEAFS.resize(NLEAFS);
-    C0 = new Cell [NCELLS];
-  }
+  Kernel(Bodies &bodies) : BODIES(bodies) {}
   ~Kernel() {
     delete[] C0;
   }

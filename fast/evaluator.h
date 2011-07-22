@@ -10,7 +10,7 @@ private:
   mutable std::stack<Pair> pairStack;
 
 protected:
-  unsigned LEVEL;
+  int LEVEL;
 
 private:
   void perform(Cell *C) const {
@@ -41,7 +41,7 @@ private:
 
   void set_rcrit() {
     real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(C0->M[0],1.0/3);
-    for( Cell* C=C0; C!=C0+NCELLS; ++C ) {
+    for( Cell* C=C0; C!=C0+NCELL; ++C ) {
       real a = c * pow(C->M[0],1.0/3);
       real x = 1.0 / THETA;
       for(int i=0; i<5; i++) {
@@ -54,17 +54,17 @@ private:
   }
 
   void upward() {
-    for( Cell* C=C0; C!=C0+NCELLS; ++C ) {
+    for( Cell* C=C0; C!=C0+NCELL; ++C ) {
       C->M = 0;
       C->L = 0;
     }
-    for( Cell *C=C0+NCELLS-1; C!=C0-1; --C ) {
+    for( Cell *C=C0+NCELL-1; C!=C0-1; --C ) {
       real bmax = 0;
       real dmax = 0;
       P2M(C,dmax,bmax);
       M2M(C,dmax,bmax);
     }
-    for( Cell* C=C0; C!=C0+NCELLS; ++C ) {
+    for( Cell* C=C0; C!=C0+NCELL; ++C ) {
       C->M[1] *= 0.5/C->M[0];
       C->M[2] *= 0.5/C->M[0];
       C->M[3] *= 0.5/C->M[0];
@@ -104,7 +104,7 @@ private:
     std::cout<<" root radius:           "<<RAD              <<'\n';
     std::cout<<" bodies loaded:         "<<C0->NDLEAF       <<'\n';
     std::cout<<" total scal:            "<<C0->M[0]         <<'\n';
-    std::cout<<" cells used:            "<<NCELLS           <<'\n';
+    std::cout<<" cells used:            "<<NCELL           <<'\n';
     std::cout<<" maximum level:         "<<LEVEL            <<'\n';
   }
 
@@ -161,8 +161,7 @@ protected:
   }
 
 public:
-  Evaluator(Bodies &bodies, real rad, unsigned L, unsigned nleafs, unsigned ncells)
-    : Kernel( bodies,rad,nleafs,ncells ), LEVEL ( L ) {}
+  Evaluator(Bodies &bodies) : Kernel(bodies) {}
   ~Evaluator() {}
 
   void exact() {
