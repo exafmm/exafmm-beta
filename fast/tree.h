@@ -2,13 +2,12 @@
 #define tree_h
 #include <evaluator.h>
 
-class TreeBuilder : public Evaluator {
+class TreeConstructor : public Evaluator {
 private:
   Nodes nodes;
   Cells cells;
-  B_iter B0, BN;
-  Leaf *L0, *LN;
-  Cell *CN;
+  Leafs leafs;
+  Bodies BODIES;
 
 private:
   void init(Node &N) {
@@ -62,7 +61,7 @@ private:
     }
   }
 
-  void nodes2cells(int i, Cell *C) {
+  void nodes2cells(int i, C_iter C) {
     C->R      = R0 / ( 1 << nodes[i].LEVEL );
     C->X      = nodes[i].X;
     C->NDLEAF = nodes[i].NLEAF;
@@ -85,7 +84,7 @@ private:
         }
       }
       if(nsub) {
-        Cell *Ci = CN;
+        C_iter Ci = CN;
         C->CHILD = Ci - C0;
         C->NCHILD = nsub;
         CN += nsub;
@@ -103,28 +102,26 @@ private:
   }
 
 public:
-  TreeBuilder() {}
-  ~TreeBuilder() {
-    delete[] L0;
-  }
+  TreeConstructor() {}
+  ~TreeConstructor() {}
 
   void setDomain(Bodies &bodies) {
     vect xmin, xmax;
     NLEAF = bodies.size();
-    L0 = new Leaf [NLEAF];
-    Leaf *L = L0;
+    leafs.reserve(NLEAF);
     X0 = 0;
     xmax = xmin = bodies.begin()->X;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++L ) { // Loop over bodies
-      L->I = B-bodies.begin();                                  //  Set leaf index
-      L->X = B->X;                                              //  Set leaf coordinate
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      Leaf leaf;                                                //  Leafs are bodies attached to the tree
+      leaf.I = B-bodies.begin();                                //  Set leaf index
+      leaf.X = B->X;                                            //  Set leaf coordinate
+      leafs.push_back(leaf);                                    //  Push leaf into vector
       for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
         if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];           //   Determine xmin
         else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];           //   Determine xmax
       }                                                         //  End loop over each dimension
       X0 += B->X;                                               //  Sum positions
     }                                                           // End loop over bodies
-    LN = L;                                                     // End pointer for leafs
     X0 /= bodies.size();                                        // Calculate average position
     for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
       X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
@@ -132,6 +129,22 @@ public:
       R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
     }                                                           // End loop over each dimension
     R0 += 1e-5;                                                 // Add some leeway to root radius
+  }
+
+  void bodies2leafs(Bodies &bodies) {
+    for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
+      B->SRC[0] = bodies[B->IBODY].SRC[0];
+      B->TRG = 0;
+    }
+  }
+
+  void leafs2bodies(Bodies &bodies) {
+    for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
+      bodies[B->IBODY].TRG[0] = B->TRG[0];
+      bodies[B->IBODY].TRG[1] = B->TRG[1];
+      bodies[B->IBODY].TRG[2] = B->TRG[2];
+      bodies[B->IBODY].TRG[3] = B->TRG[3];
+    }
   }
 
   void build() {
@@ -143,11 +156,11 @@ public:
     node.X     = X0;
     nodes.push_back(node);
     LEVEL = 0;
-    for( Leaf *Li=L0; Li!=LN; ++Li ) {
+    for( L_iter Li=leafs.begin(); Li!=leafs.end(); ++Li ) {
       int i = 0;
       N_iter N = nodes.begin()+i;
       while( N->ICHILD != 0 ) {
-        int octant = getOctant(Li,N);
+        int octant = getOctant(&*Li,N);
         N->NLEAF++;
         if( N->CHILD[octant] == -1 ) {
           addChild(octant,N);
@@ -156,7 +169,7 @@ public:
         N = nodes.begin()+i;
       }
       Li->NEXT = N->LEAF;
-      N->LEAF = Li;
+      N->LEAF = &*Li;
       N->NLEAF++;
       if( N->NLEAF > NCRIT ) splitNode(N);
       if( LEVEL < N->LEVEL ) LEVEL = N->LEVEL;
@@ -165,12 +178,45 @@ public:
   }
 
   void link() {
-    LEAFS.resize(NLEAF);
-    C0 = new Cell [NCELL];
-    B0 = LEAFS.begin();
+    BODIES.resize(NLEAF);
+    cells.resize(NCELL);
+    C0 = cells.begin();
+    B0 = BODIES.begin();
     CN = C0+1;
     BN = B0;
     nodes2cells(0,C0);
+  }
+
+  void exact(Bodies &bodies) {
+    bodies2leafs(bodies);
+    P2P(C0);
+    for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
+      B->TRG /= B->SRC[0];
+    }
+    leafs2bodies(bodies);
+  }
+
+  void approximate(Bodies &bodies) {
+    double tic,toc;
+    tic = get_time();
+    bodies2leafs(bodies);
+    upward();
+    toc = get_time();
+    std::cout << "upward : " << toc-tic << std::endl;
+    tic = get_time();
+    traverse();
+    toc = get_time();
+    std::cout << "intrct : " << toc-tic << std::endl;
+    tic = get_time();
+    for( C_iter C=C0+C0->CHILD; C!=C0+C0->CHILD+C0->NCHILD; ++C ) {
+      downward(C);
+    }
+    toc = get_time();
+    std::cout << "downwd : " << toc-tic << std::endl;
+#ifndef MANY
+    write();
+#endif
+    leafs2bodies(bodies);
   }
 };
 

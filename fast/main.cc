@@ -23,7 +23,7 @@ int main() {
   }                                                             // End loop over bodies
 
   tic = get_time();
-  TreeBuilder T;
+  TreeConstructor T;
   T.setDomain(bodies);
   T.build();
   toc = get_time();

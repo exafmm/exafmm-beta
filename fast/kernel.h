@@ -1,16 +1,20 @@
 #ifndef kernel_h
 #define kernel_h
-#include <body.h>
+#include <types.h>
 
 class Kernel {
+private:
+  real BMAX;
+  real DMAX;
+
 protected:
   vect   X0;
   real   R0;
-  Cell   *C0;
-  Bodies LEAFS;
+  B_iter B0, BN;
+  C_iter C0, CN;
 
 private:
-  inline real getBmax(vect const&X, Cell *C) {
+  inline real getBmax(vect const&X, C_iter C) {
     real rad = C->R;
     real dx = rad+std::abs(X[0]-C->X[0]);
     real dy = rad+std::abs(X[1]-C->X[1]);
@@ -18,10 +22,10 @@ private:
     return std::sqrt( dx*dx + dy*dy + dz*dz );
   }
 
-  inline real getCenter(Cell *C) {
+  inline void getCenter(C_iter C) {
     real m = 0;
     vect X = 0;
-    for( Cell *c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
+    for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
       m += c->M[0];
       X += c->X * c->M[0];
     }
@@ -30,9 +34,8 @@ private:
       X += B->X * B->SRC[0];
     }
     X /= m;
-    real bmax = getBmax(X,C);
+    BMAX = getBmax(X,C);
     C->X = X;
-    return bmax;
   }
 
   inline void set_D(real&X, real D[5]) const {
@@ -92,16 +95,15 @@ private:
   }
 
 public:
-  Kernel() : X0(0), R0(0) {}
-  ~Kernel() {
-    delete[] C0;
-  }
+  Kernel() : BMAX(0), DMAX(0), X0(0), R0(0) {}
+  ~Kernel() {}
 
-  void P2M(Cell *C, real &dmax, real &bmax) {
-    bmax = getCenter(C);
+  void P2M(C_iter C) {
+    BMAX = DMAX = 0;
+    getCenter(C);
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
       vect dX = B->X - C->X;
-      if(norm(dX)>dmax) dmax=norm(dX);
+      if( norm(dX) > DMAX ) DMAX = norm(dX);
       real tmp = B->SRC[0] * dX[0];
       C->M[0] += B->SRC[0];
       C->M[1] += dX[0] * tmp;
@@ -112,20 +114,19 @@ public:
       C->M[5] += dX[2] * tmp;
       C->M[6] += B->SRC[0] * dX[2] * dX[2];
     }
-    if(C->NCLEAF != 0) dmax = std::sqrt(dmax);
-    C->RCRIT = std::min(dmax,bmax);
+    if(C->NCLEAF != 0) DMAX = std::sqrt(DMAX);
+    C->RCRIT = std::min(BMAX,DMAX);
   }
 
-  void M2M(Cell *C, real &dmax, real &bmax) {
-    for( Cell *c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
+  void M2M(C_iter C) {
+    for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
       vect dX = c->X - C->X;
-      real Xq = norm(dX);
-      real x  = dmax - c->RCRIT;
-      if( 0 > x || Xq > x*x )
-        dmax = std::sqrt(Xq) + c->RCRIT;
-      for( int i=1; i!=6; ++i ) C->M[i] += c->M[i];
+      real R2 = norm(dX);
+      real x  = DMAX - c->RCRIT;
+      if( 0 > x || R2 > x*x )
+        DMAX = std::sqrt(R2) + c->RCRIT;
+      for( int i=0; i!=6; ++i ) C->M[i] += c->M[i];
       real tmp = c->M[0] * dX[0];
-      C->M[0] += c->M[0];
       C->M[1] += dX[0] * tmp;
       C->M[2] += dX[1] * tmp;
       C->M[3] += dX[2] * tmp;
@@ -134,10 +135,10 @@ public:
       C->M[5] += dX[2] * tmp;
       C->M[6] += c->M[0] * dX[2] * dX[2];
     }
-    C->RCRIT = std::min(dmax,bmax);
+    C->RCRIT = std::min(BMAX,DMAX);
   }
 
-  void P2P(Cell *Ci, Cell *Cj, bool mutual=true) const {
+  void P2P(C_iter Ci, C_iter Cj, bool mutual=true) const {
     for( B_iter BI=Ci->LEAF; BI!=Ci->LEAF+Ci->NDLEAF; ++BI ) {
       real P0 = 0;
       vect F0 = 0;
@@ -163,7 +164,7 @@ public:
     }
   }
 
-  void P2P(Cell *C) const {
+  void P2P(C_iter C) const {
     unsigned NJ = C->NDLEAF;
     for( B_iter BI=C->LEAF; BI!=C->LEAF+C->NDLEAF; ++BI, --NJ ) {
       real P0 = 0;
@@ -190,7 +191,7 @@ public:
     }
   }
 
-  void M2L(Cell *Ci, Cell *Cj, bool mutual=true) const {
+  void M2L(C_iter Ci, C_iter Cj, bool mutual=true) const {
     real D[5];
     vect dX = Ci->X - Cj->X;
     real R2 = norm(dX);
@@ -206,7 +207,7 @@ public:
     }
   }
 
-  void L2L(Cell *C) const {
+  void L2L(C_iter C) const {
     vect dX = C->X - (C0+C->PARENT)->X;
     Lset L = (C0+C->PARENT)->L;
     Lset o;
@@ -231,7 +232,7 @@ public:
     C->L = L;
   }
 
-  void L2P(Cell *C) const {
+  void L2P(C_iter C) const {
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
       Lset o;
       vect dX = B->X - C->X;

@@ -21,7 +21,6 @@ const int NCRIT = 8;
 const real THETA = 0.6;
 const real EPS2 = 1e-4;
 
-
 const int NCOEF = (P+1)*(P+2)*(P+3)/6;
 typedef vec<3 ,real> vect;
 typedef vec<7 ,real> Mset;
@@ -56,6 +55,8 @@ struct Leaf {
   vect X;
   Leaf *NEXT;
 };
+typedef std::vector<Leaf>           Leafs;                      // Vector of leafs
+typedef std::vector<Leaf>::iterator L_iter;                     // Iterator for leaf vector
 
 struct Node {
   int  LEVEL;
