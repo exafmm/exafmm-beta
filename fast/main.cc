@@ -42,7 +42,6 @@ int main() {
   toc = get_time();
   approx = toc-tic;
 
-  std::cout << std::setprecision(3);
 #ifdef DIRECT
   bodies2 = bodies;
   tic = get_time();

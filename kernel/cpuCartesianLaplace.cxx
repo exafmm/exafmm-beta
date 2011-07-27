@@ -23,15 +23,15 @@ void Kernel::LaplaceP2M() {
 void Kernel::LaplaceM2M_CPU() {
   vect dist = CI->X - CJ->X;
   CI->M[0] += CJ->M[0];
-  CI->M[1] += CJ->M[1] +  dist[0] * CJ->M[0];
-  CI->M[2] += CJ->M[2] +  dist[1] * CJ->M[0];
-  CI->M[3] += CJ->M[3] +  dist[2] * CJ->M[0];
-  CI->M[4] += CJ->M[4] +  dist[0] * CJ->M[1] + dist[0] * dist[0]  * CJ->M[0] / 2;
-  CI->M[5] += CJ->M[5] +  dist[1] * CJ->M[2] + dist[1] * dist[1]  * CJ->M[0] / 2;
-  CI->M[6] += CJ->M[6] +  dist[2] * CJ->M[3] + dist[2] * dist[2]  * CJ->M[0] / 2;
-  CI->M[7] += CJ->M[7] + (dist[0] * CJ->M[2] + dist[1] * CJ->M[1] + dist[0] * dist[1] * CJ->M[0]) / 2;
-  CI->M[8] += CJ->M[8] + (dist[1] * CJ->M[3] + dist[2] * CJ->M[2] + dist[1] * dist[2] * CJ->M[0]) / 2;
-  CI->M[9] += CJ->M[9] + (dist[2] * CJ->M[1] + dist[0] * CJ->M[3] + dist[2] * dist[0] * CJ->M[0]) / 2;
+  CI->M[1] += CJ->M[1] + dist[0] * CJ->M[0];
+  CI->M[2] += CJ->M[2] + dist[1] * CJ->M[0];
+  CI->M[3] += CJ->M[3] + dist[2] * CJ->M[0];
+  CI->M[4] += CJ->M[4] + dist[0] * CJ->M[1] + dist[0] * dist[0]  * CJ->M[0] / 2;
+  CI->M[5] += CJ->M[5] + dist[1] * CJ->M[2] + dist[1] * dist[1]  * CJ->M[0] / 2;
+  CI->M[6] += CJ->M[6] + dist[2] * CJ->M[3] + dist[2] * dist[2]  * CJ->M[0] / 2;
+  CI->M[7] += CJ->M[7] + dist[0] * CJ->M[2] + dist[1] * CJ->M[1] + dist[0] * dist[1] * CJ->M[0];
+  CI->M[8] += CJ->M[8] + dist[1] * CJ->M[3] + dist[2] * CJ->M[2] + dist[1] * dist[2] * CJ->M[0];
+  CI->M[9] += CJ->M[9] + dist[2] * CJ->M[1] + dist[0] * CJ->M[3] + dist[2] * dist[0] * CJ->M[0];
 }
 
 void Kernel::LaplaceM2L() {
@@ -61,9 +61,9 @@ void Kernel::LaplaceM2L() {
   CI->L[3] += CJ->M[1] * (3 * dist[2] * dist[0] * invR5);
   CI->L[3] += CJ->M[2] * (3 * dist[2] * dist[1] * invR5);
   CI->L[3] += CJ->M[3] * (3 * dist[2] * dist[2] * invR5 - invR3);
-  CI->L[4] += CJ->M[0] * (3 * dist[0] * dist[0] * invR5 - invR3);
-  CI->L[5] += CJ->M[0] * (3 * dist[1] * dist[1] * invR5 - invR3);
-  CI->L[6] += CJ->M[0] * (3 * dist[2] * dist[2] * invR5 - invR3);
+  CI->L[4] += CJ->M[0] * (3 * dist[0] * dist[0] * invR5 - invR3) / 2;
+  CI->L[5] += CJ->M[0] * (3 * dist[1] * dist[1] * invR5 - invR3) / 2;
+  CI->L[6] += CJ->M[0] * (3 * dist[2] * dist[2] * invR5 - invR3) / 2;
   CI->L[7] += CJ->M[0] * (3 * dist[0] * dist[1] * invR5);
   CI->L[8] += CJ->M[0] * (3 * dist[1] * dist[2] * invR5);
   CI->L[9] += CJ->M[0] * (3 * dist[2] * dist[0] * invR5);
@@ -242,7 +242,7 @@ void Kernel::LaplaceM2L() {
             }
           }
         }
-        CI->L[nc] += L / factorial[nx] / factorial[ny] / factorial[nz];
+        CI->L[nc] += L;
       }
     }
   }
@@ -314,8 +314,6 @@ void Kernel::LaplaceL2L() {
               int ky = k - kx - kz;
               if( nx <= kx && ny <= ky && nz <= kz ) {
                 L += CJ->L[kc] * pow(dist[0],kx-nx) * pow(dist[1],ky-ny) * pow(dist[2],kz-nz)
-                  * factorial[kx] * factorial[ky] * factorial[kz]
-                  / factorial[nx] / factorial[ny] / factorial[nz]
                   / factorial[kx-nx] / factorial[ky-ny] / factorial[kz-nz];
               }
             }
@@ -334,10 +332,14 @@ void Kernel::LaplaceL2P() {
       for( int nx=n; nx>=0; --nx ) {
         for( int nz=0; nz<=n-nx; ++nz, ++nc ) {
           int ny = n - nx - nz;
-          B->TRG[0] += CI->L[nc] * pow(dist[0],nx) * pow(dist[1],ny) * pow(dist[2],nz);
-          if( nx > 0 ) B->TRG[1] += CI->L[nc] * nx * pow(dist[0],nx-1) * pow(dist[1],ny) * pow(dist[2],nz);
-          if( ny > 0 ) B->TRG[2] += CI->L[nc] * ny * pow(dist[0],nx) * pow(dist[1],ny-1) * pow(dist[2],nz);
-          if( nz > 0 ) B->TRG[3] += CI->L[nc] * nz * pow(dist[0],nx) * pow(dist[1],ny) * pow(dist[2],nz-1);
+          B->TRG[0] += CI->L[nc] * pow(dist[0],nx) * pow(dist[1],ny) * pow(dist[2],nz)
+            / factorial[nx] / factorial[ny] / factorial[nz];
+          if( nx > 0 ) B->TRG[1] += CI->L[nc] * pow(dist[0],nx-1) * pow(dist[1],ny) * pow(dist[2],nz)
+            / factorial[nx-1] / factorial[ny] / factorial[nz];
+          if( ny > 0 ) B->TRG[2] += CI->L[nc] * ny * pow(dist[0],nx) * pow(dist[1],ny-1) * pow(dist[2],nz)
+            / factorial[nx] / factorial[ny-1] / factorial[nz];
+          if( nz > 0 ) B->TRG[3] += CI->L[nc] * nz * pow(dist[0],nx) * pow(dist[1],ny) * pow(dist[2],nz-1)
+            / factorial[nx] / factorial[ny] / factorial[nz-1];
         }
       }
     }

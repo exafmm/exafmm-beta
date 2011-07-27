@@ -1,7 +1,6 @@
 #ifndef evaluator_h
 #define evaluator_h
 #include <kernel.h>
-#include <iomanip>
 
 class Evaluator : public Kernel {
 private:
@@ -46,7 +45,7 @@ private:
     for( C_iter C=C0; C!=C0+NCELL; ++C ) {
       real a = c * pow(C->M[0],1.0/3);
       real x = 1.0 / THETA;
-      for(int i=0; i<5; i++) {
+      for( int i=0; i<5; ++i ) {
         real f = x * x - 2 * x + 1 - a * pow(x,-P);
         real df = (P + 2) * x - 2 * (P + 1) + P / x;
         x -= f / df;
@@ -61,17 +60,15 @@ protected:
       C->M = 0;
       C->L = 0;
     }
-    for( C_iter C=C0+NCELL-1; C!=C0-1; --C ) {
-      P2M(C);
-      M2M(C);
-    }
+    P2M(NCELL);
+    M2M(NCELL);
     for( C_iter C=C0; C!=C0+NCELL; ++C ) {
-      C->M[1] *= 0.5/C->M[0];
-      C->M[2] *= 0.5/C->M[0];
-      C->M[3] *= 0.5/C->M[0];
-      C->M[4] *= 0.5/C->M[0];
-      C->M[5] *= 0.5/C->M[0];
-      C->M[6] *= 0.5/C->M[0];
+      C->M[1] *= 0.5 / C->M[0];
+      C->M[2] *= 1.0 / C->M[0];
+      C->M[3] *= 1.0 / C->M[0];
+      C->M[4] *= 0.5 / C->M[0];
+      C->M[5] *= 1.0 / C->M[0];
+      C->M[6] *= 0.5 / C->M[0];
     }
     set_rcrit();
   }
