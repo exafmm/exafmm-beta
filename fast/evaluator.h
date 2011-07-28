@@ -1,6 +1,12 @@
 #ifndef evaluator_h
 #define evaluator_h
+#if CART
+#include <kernel2.h>
+#elif SPHE
+#include <kernel3.h>
+#else
 #include <kernel.h>
+#endif
 
 class Evaluator : public Kernel {
 private:
@@ -40,6 +46,7 @@ private:
     return Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT > Cj->RCRIT);
   }
 
+/*
   void set_rcrit() {
     real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(C0->M[0],1.0/3);
     for( C_iter C=C0; C!=C0+NCELL; ++C ) {
@@ -53,6 +60,7 @@ private:
       C->RCRIT *= x;
     }
   }
+*/
 
 protected:
   void upward() {
@@ -60,8 +68,14 @@ protected:
       C->M = 0;
       C->L = 0;
     }
-    P2M(NCELL);
-    M2M(NCELL);
+    for( C_iter C=C0+NCELL-1; C!=C0-1; --C ) {
+      setCenter(C);
+      P2M(C);
+      M2M(C);
+    }
+#if CART
+#elif SPHE
+#else
     for( C_iter C=C0; C!=C0+NCELL; ++C ) {
       C->M[1] *= 0.5 / C->M[0];
       C->M[2] *= 1.0 / C->M[0];
@@ -70,7 +84,8 @@ protected:
       C->M[5] *= 1.0 / C->M[0];
       C->M[6] *= 0.5 / C->M[0];
     }
-    set_rcrit();
+#endif
+//    set_rcrit();
   }
 
   void downward(C_iter C) const {

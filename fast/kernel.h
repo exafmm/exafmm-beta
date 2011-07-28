@@ -3,6 +3,9 @@
 #include <types.h>
 
 class Kernel {
+private:
+  real DMAX;
+
 protected:
   vect   X0;
   real   R0;
@@ -27,9 +30,9 @@ private:
     real invR7 = 5 * invR2 * invR5;
     D[ 0] = invR;
     real t = -invR3;
-    D[ 1] = dX[0] * t;
-    D[ 2] = dX[1] * t;
-    D[ 3] = dX[2] * t;
+    D[ 1] = t * dX[0];
+    D[ 2] = t * dX[1];
+    D[ 3] = t * dX[2];
     t     = invR5 * dX[0];
     D[ 4] = t * dX[0] - invR3;
     D[ 5] = t * dX[1];
@@ -72,68 +75,57 @@ public:
   Kernel() : X0(0), R0(0) {}
   ~Kernel() {}
 
-  void P2M(int NCELL) {
-    for( C_iter C=C0+NCELL-1; C!=C0-1; --C ) {
-      if( C->NCLEAF != 0 ) {
-        real dmax = 0;
-        real m = 0;
-        vect X = 0;
-        for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-          m += B->SRC[0];
-          X += B->X * B->SRC[0];
-        }
-        X /= m;
-        C->R = getBmax(X,C);
-        C->X = X;
-        for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-          vect dX = B->X - C->X;
-          real R = std::sqrt(norm(dX));
-          if( R > dmax ) dmax = R;
-          real tmp = B->SRC[0] * dX[0];
-          C->M[0] += B->SRC[0];
-          C->M[1] += dX[0] * tmp;
-          C->M[2] += dX[1] * tmp;
-          C->M[3] += dX[2] * tmp;
-          tmp = B->SRC[0] * dX[1];
-          C->M[4] += dX[1] * tmp;
-          C->M[5] += dX[2] * tmp;
-          C->M[6] += B->SRC[0] * dX[2] * dX[2];
-        }
-        C->RCRIT = std::min(C->R,dmax);
-      }
+  void setCenter(C_iter C) {
+    DMAX = 0;
+    real m = 0;
+    vect X = 0;
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
+      m += B->SRC[0];
+      X += B->X * B->SRC[0];
     }
+    for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
+      m += c->M[0];
+      X += c->X * c->M[0];
+    }
+    X /= m;
+    C->R = getBmax(X,C);
+    C->X = X;
   }
 
-  void M2M(int NCELL) {
-    for( C_iter C=C0+NCELL-1; C!=C0-1; --C ) {
-      if( C->NCHILD != 0 ) {
-        real dmax = 0;
-        real m = 0;
-        vect X = 0;
-        for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
-          m += c->M[0];
-          X += c->X * c->M[0];
-        }
-        X /= m;
-        C->R = getBmax(X,C);
-        C->X = X;
-        for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
-          vect dX = c->X - C->X;
-          real R = std::sqrt(norm(dX)) + c->RCRIT;
-          if( R > dmax ) dmax = R;
-          for( int i=0; i!=6; ++i ) C->M[i] += c->M[i];
-          real tmp = c->M[0] * dX[0];
-          C->M[1] += dX[0] * tmp;
-          C->M[2] += dX[1] * tmp;
-          C->M[3] += dX[2] * tmp;
-          tmp = c->M[0] * dX[1];
-          C->M[4] += dX[1] * tmp;
-          C->M[5] += dX[2] * tmp;
-          C->M[6] += c->M[0] * dX[2] * dX[2];
-        }
-        C->RCRIT = std::min(C->R,dmax);
-      }
+  void P2M(C_iter C) {
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
+      vect dX = B->X - C->X;
+      real R = std::sqrt(norm(dX));
+      if( R > DMAX ) DMAX = R;
+      real tmp = B->SRC[0] * dX[0];
+      C->M[0] += B->SRC[0];
+      C->M[1] += dX[0] * tmp;
+      C->M[2] += dX[1] * tmp;
+      C->M[3] += dX[2] * tmp;
+      tmp = B->SRC[0] * dX[1];
+      C->M[4] += dX[1] * tmp;
+      C->M[5] += dX[2] * tmp;
+      C->M[6] += B->SRC[0] * dX[2] * dX[2];
     }
+    C->RCRIT = std::min(C->R,DMAX);
+  }
+
+  void M2M(C_iter C) {
+    for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
+      vect dX = c->X - C->X;
+      real R = std::sqrt(norm(dX)) + c->RCRIT;
+      if( R > DMAX ) DMAX = R;
+      for( int i=0; i!=6; ++i ) C->M[i] += c->M[i];
+      real tmp = c->M[0] * dX[0];
+      C->M[1] += dX[0] * tmp;
+      C->M[2] += dX[1] * tmp;
+      C->M[3] += dX[2] * tmp;
+      tmp = c->M[0] * dX[1];
+      C->M[4] += dX[1] * tmp;
+      C->M[5] += dX[2] * tmp;
+      C->M[6] += c->M[0] * dX[2] * dX[2];
+    }
+    C->RCRIT = std::min(C->R,DMAX);
   }
 
   void P2P(C_iter Ci, C_iter Cj, bool mutual=true) const {

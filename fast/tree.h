@@ -204,7 +204,7 @@ public:
     toc = get_time();
     std::cout << "upward : " << toc-tic << std::endl;
     tic = get_time();
-    traverse();
+    traverse(false);
     toc = get_time();
     std::cout << "intrct : " << toc-tic << std::endl;
     tic = get_time();

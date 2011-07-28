@@ -21,10 +21,20 @@ const int NCRIT = 8;
 const real THETA = 0.6;
 const real EPS2 = 1e-4;
 
-const int NCOEF = (P+1)*(P+2)*(P+3)/6;
+const int MCOEF = P*(P+1)*(P+2)/6-3;
+const int LCOEF = (P+1)*(P+2)*(P+3)/6;
+const int NCOEF = P*(P+1)*(P+2)/6;
 typedef vec<3 ,real> vect;
-typedef vec<7 ,real> Mset;
-typedef vec<20,real> Lset;
+#if CART
+typedef vec<NCOEF,real> Mset;
+typedef vec<NCOEF,real> Lset;
+#elif SPHE
+typedef vec<NCOEF,complex> Mset;
+typedef vec<NCOEF,complex> Lset;
+#else
+typedef vec<MCOEF,real> Mset;
+typedef vec<LCOEF,real> Lset;
+#endif
 const real zero = 0.;
 
 double get_time(void) {
