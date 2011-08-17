@@ -189,7 +189,7 @@ public:
 
   void exact(Bodies &bodies) {
     bodies2leafs(bodies);
-    P2P(C0);
+    P2P(C0,C0,false);
     for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
       B->TRG /= B->SRC[0];
     }

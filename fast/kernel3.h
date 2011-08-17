@@ -338,6 +338,7 @@ public:
         CI->L[jks] += L;
       }
     }
+    rho = mutual;
   }
 
   void L2L(C_iter CI) const {

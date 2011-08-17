@@ -92,42 +92,6 @@ public:
     C->X = X;
   }
 
-  void P2M(C_iter C) {
-    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-      vect dX = B->X - C->X;
-      real R = std::sqrt(norm(dX));
-      if( R > DMAX ) DMAX = R;
-      real tmp = B->SRC[0] * dX[0];
-      C->M[0] += B->SRC[0];
-      C->M[1] += dX[0] * tmp;
-      C->M[2] += dX[1] * tmp;
-      C->M[3] += dX[2] * tmp;
-      tmp = B->SRC[0] * dX[1];
-      C->M[4] += dX[1] * tmp;
-      C->M[5] += dX[2] * tmp;
-      C->M[6] += B->SRC[0] * dX[2] * dX[2];
-    }
-    C->RCRIT = std::min(C->R,DMAX);
-  }
-
-  void M2M(C_iter C) {
-    for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
-      vect dX = c->X - C->X;
-      real R = std::sqrt(norm(dX)) + c->RCRIT;
-      if( R > DMAX ) DMAX = R;
-      for( int i=0; i!=6; ++i ) C->M[i] += c->M[i];
-      real tmp = c->M[0] * dX[0];
-      C->M[1] += dX[0] * tmp;
-      C->M[2] += dX[1] * tmp;
-      C->M[3] += dX[2] * tmp;
-      tmp = c->M[0] * dX[1];
-      C->M[4] += dX[1] * tmp;
-      C->M[5] += dX[2] * tmp;
-      C->M[6] += c->M[0] * dX[2] * dX[2];
-    }
-    C->RCRIT = std::min(C->R,DMAX);
-  }
-
   void P2P(C_iter Ci, C_iter Cj, bool mutual=true) const {
     for( B_iter BI=Ci->LEAF; BI!=Ci->LEAF+Ci->NDLEAF; ++BI ) {
       real P0 = 0;
@@ -179,6 +143,42 @@ public:
       BI->TRG[2] += F0[1];
       BI->TRG[3] += F0[2];
     }
+  }
+
+  void P2M(C_iter C) {
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
+      vect dX = B->X - C->X;
+      real R = std::sqrt(norm(dX));
+      if( R > DMAX ) DMAX = R;
+      real tmp = B->SRC[0] * dX[0];
+      C->M[0] += B->SRC[0];
+      C->M[1] += dX[0] * tmp;
+      C->M[2] += dX[1] * tmp;
+      C->M[3] += dX[2] * tmp;
+      tmp = B->SRC[0] * dX[1];
+      C->M[4] += dX[1] * tmp;
+      C->M[5] += dX[2] * tmp;
+      C->M[6] += B->SRC[0] * dX[2] * dX[2];
+    }
+    C->RCRIT = std::min(C->R,DMAX);
+  }
+
+  void M2M(C_iter C) {
+    for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
+      vect dX = c->X - C->X;
+      real R = std::sqrt(norm(dX)) + c->RCRIT;
+      if( R > DMAX ) DMAX = R;
+      for( int i=0; i!=6; ++i ) C->M[i] += c->M[i];
+      real tmp = c->M[0] * dX[0];
+      C->M[1] += dX[0] * tmp;
+      C->M[2] += dX[1] * tmp;
+      C->M[3] += dX[2] * tmp;
+      tmp = c->M[0] * dX[1];
+      C->M[4] += dX[1] * tmp;
+      C->M[5] += dX[2] * tmp;
+      C->M[6] += c->M[0] * dX[2] * dX[2];
+    }
+    C->RCRIT = std::min(C->R,DMAX);
   }
 
   void M2L(C_iter Ci, C_iter Cj, bool mutual=true) const {
