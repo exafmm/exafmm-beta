@@ -31,10 +31,11 @@ public:
     tic[event] = get_time();
   }
 
-  void stopTimer(std::string event, bool print=false) {
+  double stopTimer(std::string event, bool print=false) {
     double toc = get_time();
     timer[event] += toc - tic[event];
     if(print) std::cout << event << " : " << timer[event] << std::endl;
+    return toc - tic[event];
   }
 
   void eraseTimer(std::string event) {

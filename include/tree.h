@@ -159,6 +159,7 @@ protected:
 
 public:
   void downward(Cells &cells, Cells &jcells, int method, bool periodic=true) {// Downward phase
+//    timeKernels();                                              // Time all kernels for auto-tuning
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) C->L = 0;// Initialize local coefficients
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
       startTimer("Upward P     ");                              //  Start timer

@@ -218,7 +218,7 @@ public:
   }
   ~Partition() {}                                               // Destructor
 
-  void setGlobDomain(Bodies &bodies) {                          // Set bounds of domain to be partitioned
+  void setGlobDomain(Bodies &bodies, vect x0=0, real r0=M_PI) { // Set bounds of domain to be partitioned
     numCells1D = 1 << getMaxLevel(bodies);                      // Set initial number of bodies
     B_iter B = bodies.begin();                                  // Reset body iterator
     XMIN[0] = XMAX[0] = B->X;                                   // Initialize xmin,xmax
@@ -242,8 +242,8 @@ public:
     }                                                           // End loop over each dimension
     R0 += 1e-5;                                                 // Add some leeway to root radius
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
-      X0 = 0;                                                   //  Center is [0, 0, 0]
-      R0 = M_PI;                                                //  Radius is M_PI
+      X0 = x0;                                                  //  Center is [0, 0, 0]
+      R0 = r0;                                                  //  Radius is M_PI
     }                                                           // Endif for periodic boundary condition
     XMAX[0] = X0 + R0;                                          // Reposition global maximum
     XMIN[0] = X0 - R0;                                          // Reposition global minimum

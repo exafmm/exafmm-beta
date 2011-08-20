@@ -1,7 +1,24 @@
-#include "construct.h"
+#include "let.h"
 
 #define MD_LJ_R2MIN 0.0001f
 #define MD_LJ_R2MAX 100.0f
+
+void MPI_Shift(double *var, int n) {
+  double *buf = new double [n];
+  const int isend = (MPIRANK + 1          ) % MPISIZE;
+  const int irecv = (MPIRANK - 1 + MPISIZE) % MPISIZE;
+  MPI_Request sreq, rreq;
+
+  MPI_Isend(var,n,MPI_DOUBLE,irecv,1,MPI_COMM_WORLD,&sreq);
+  MPI_Irecv(buf,n,MPI_DOUBLE,isend,1,MPI_COMM_WORLD,&rreq);
+  MPI_Wait(&sreq,MPI_STATUS_IGNORE);
+  MPI_Wait(&rreq,MPI_STATUS_IGNORE);
+  int i;
+  for( i=0; i!=n; ++i ) {
+    var[i] = buf[i];
+  }
+  delete[] buf;
+}
 
 extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* fi,
   int nj, double* xj, double* qj, double rscale, int tblno, double size, int periodicflag) {
@@ -10,7 +27,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
   vect shift = size/2;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
-  TreeConstructor T;
+  LocalEssentialTree T;
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
@@ -29,6 +46,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
       break;
     }
     B->IBODY = i;
+    B->IPROC = MPIRANK;
   }
 
   for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
@@ -39,12 +57,18 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
     B->SRC[0] = qj[i];
   }
 
-
   T.setKernel("Laplace");
-  T.setDomain(bodies,shift,size/2);
+  T.initialize();
+  T.setGlobDomain(bodies,shift,size/2);
+  T.octsection(bodies);
+  T.octsection(jbodies);
   T.bottomup(bodies,cells);
   T.bottomup(jbodies,jcells);
+  T.commBodies(jcells);
+  T.commCells(jbodies,jcells);
+
   T.downward(cells,jcells,1);
+  T.unpartition(bodies);
   std::sort(bodies.begin(),bodies.end());
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -64,6 +88,24 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
       break;
     }
   }
+
+/*
+  for( int irank=0; irank!=MPISIZE; ++irank ) {
+    MPI_Shift(xj,3*nj);
+    MPI_Shift(qj,nj);
+    for( int i=0; i<ni; i++ ) {
+      for( int j=0; j<nj; j++ ) {
+        double dx = xi[3*i+0] - xj[3*j+0];
+        double dy = xi[3*i+1] - xj[3*j+1];
+        double dz = xi[3*i+2] - xj[3*j+2];
+        double r2 = dx * dx + dy * dy + dz * dz;
+        if( r2 != 0 ) {
+          fi[3*i+0] += qj[j] / std::sqrt(r2);
+        }
+      }
+    }
+  }
+*/
 }
 
 extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,

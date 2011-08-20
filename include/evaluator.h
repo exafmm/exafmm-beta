@@ -14,6 +14,9 @@ protected:
   Lists       listM2L;                                          // M2L interaction list
   Lists       listM2P;                                          // M2P interaction list
   Lists       listP2P;                                          // P2P interaction list
+  real        timeM2L;                                          // M2L execution time
+  real        timeM2P;                                          // M2P execution time
+  real        timeP2P;                                          // P2P execution time
 
   int         Iperiodic;                                        // Periodic image flag (using each bit for 27 images)
   const int   Icenter;                                          // Periodic image flag at center
@@ -62,6 +65,39 @@ private:
         tryM2L(Ci,CJ0+Cj->CHILD[i]);                            //   Try to evaluate M2L kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
+  }
+
+protected:
+  void timeKernels() {                                          // Time all kernels for auto-tuning
+    Bodies ibodies(1000), jbodies(1000);                        // Artificial bodies
+    for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {// Loop over artificial bodies
+      Bi->X = 0;                                                //  Set coordinates of target body
+      Bj->X = 1;                                                //  Set coordinates of source body
+    }                                                           // End loop over artificial bodies
+    Cells cells;                                                // Artificial cells
+    cells.resize(2);                                            // Two artificial cells
+    C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // Artificial target & source cell
+    Ci->X = 0;                                                  // Set coordinates of target cell
+    Ci->NLEAF = 10;                                             // Number of leafs in target cell
+    Ci->LEAF = ibodies.begin();                                 // Leaf iterator in target cell
+    Cj->X = 1;                                                  // Set coordinates of source cell
+    Cj->NLEAF = 1000;                                           // Number of leafs in source cell
+    Cj->LEAF = jbodies.begin();                                 // Leaf iterator in source cell
+    BI0 = Ci->LEAF;                                             // Set target bodies begin iterator
+    BIN = Ci->LEAF + Ci->NLEAF;                                 // Set target bodies end iterator
+    BJ0 = Cj->LEAF;                                             // Set source bodies begin iterator
+    BJN = Cj->LEAF + Cj->NLEAF;                                 // Set source bodies end iterator
+    startTimer("P2P kernel   ");                                // Start timer
+    for( int i=0; i!=1; ++i ) selectP2P_CPU();                  // Select P2P_CPU kernel
+    timeP2P = stopTimer("P2P kernel   ",true);                  // Stop timer
+    CI = Ci;                                                    // Set global target cell iterator
+    CJ = Cj;                                                    // Set global source cell iterator
+    startTimer("M2L kernel   ");                                // Start timer
+    for( int i=0; i!=1000; ++i ) selectM2L();                   // Select M2L kernel
+    timeM2L = stopTimer("M2L kernel   ",true);                  // Stop timer
+    startTimer("M2P kernel   ");                                // Start timer
+    for( int i=0; i!=100; ++i ) selectM2P();                    // Select M2P kernel
+    timeM2P = stopTimer("M2P kernel   ",true);                  // Stop timer
   }
 
 public:
