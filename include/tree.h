@@ -159,7 +159,7 @@ protected:
 
 public:
   void downward(Cells &cells, Cells &jcells, int method, bool periodic=true) {// Downward phase
-//    timeKernels();                                              // Time all kernels for auto-tuning
+    timeKernels();                                              // Time all kernels for auto-tuning
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) C->L = 0;// Initialize local coefficients
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
       startTimer("Upward P     ");                              //  Start timer
@@ -179,6 +179,7 @@ public:
     evalP2P(cells);                                             // Evaluate P2P kernel
     evalL2L(cells);                                             // Evaluate L2L kernel
     evalL2P(cells);                                             // Evaluate L2P kernel
+    std::cout << "NP2P: " << NP2P << " NM2P: " << NM2P << " NM2L: " << NM2L << std::endl;
   }
 };
 

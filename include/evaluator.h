@@ -67,38 +67,45 @@ private:
     }                                                           // Endif for type of interaction
   }
 
-protected:
-  void timeKernels() {                                          // Time all kernels for auto-tuning
-    Bodies ibodies(1000), jbodies(1000);                        // Artificial bodies
-    for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {// Loop over artificial bodies
-      Bi->X = 0;                                                //  Set coordinates of target body
-      Bj->X = 1;                                                //  Set coordinates of source body
-    }                                                           // End loop over artificial bodies
-    Cells cells;                                                // Artificial cells
-    cells.resize(2);                                            // Two artificial cells
-    C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // Artificial target & source cell
-    Ci->X = 0;                                                  // Set coordinates of target cell
-    Ci->NLEAF = 10;                                             // Number of leafs in target cell
-    Ci->LEAF = ibodies.begin();                                 // Leaf iterator in target cell
-    Cj->X = 1;                                                  // Set coordinates of source cell
-    Cj->NLEAF = 1000;                                           // Number of leafs in source cell
-    Cj->LEAF = jbodies.begin();                                 // Leaf iterator in source cell
-    BI0 = Ci->LEAF;                                             // Set target bodies begin iterator
-    BIN = Ci->LEAF + Ci->NLEAF;                                 // Set target bodies end iterator
-    BJ0 = Cj->LEAF;                                             // Set source bodies begin iterator
-    BJN = Cj->LEAF + Cj->NLEAF;                                 // Set source bodies end iterator
-    startTimer("P2P kernel   ");                                // Start timer
-    for( int i=0; i!=1; ++i ) selectP2P_CPU();                  // Select P2P_CPU kernel
-    timeP2P = stopTimer("P2P kernel   ",true);                  // Stop timer
-    CI = Ci;                                                    // Set global target cell iterator
-    CJ = Cj;                                                    // Set global source cell iterator
-    startTimer("M2L kernel   ");                                // Start timer
-    for( int i=0; i!=1000; ++i ) selectM2L();                   // Select M2L kernel
-    timeM2L = stopTimer("M2L kernel   ",true);                  // Stop timer
-    startTimer("M2P kernel   ");                                // Start timer
-    for( int i=0; i!=100; ++i ) selectM2P();                    // Select M2P kernel
-    timeM2P = stopTimer("M2P kernel   ",true);                  // Stop timer
+  void hybrid(C_iter Ci, C_iter Cj) {                           // Tree walk for treecode-FMM hybrid
+    if( Ci->NCHILD == 0 && Cj->NCHILD == 0 ) {                  // If both cells are twigs
+      if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
+        tryP2P(Ci,Cj);                                          //  Try to evaluate P2P kernel
+      } else {                                                  // If the twig has no leafs
+//#ifdef DEBUG
+        std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
+//#endif
+        listM2P[Ci-CI0].push_back(Cj);                          // Push source cell into M2P interaction list
+      }                                                         // Endif for twigs with leafs
+    } else if ( Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R) ) {// If source is twig or target is larger
+      for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
+        int Ni = (CI0+Ci->CHILD[i])->NLEAF;                     //   Number of target leafs
+        int Nj = Cj->NLEAF;                                     //   Number of source leafs
+        if( timeP2P*Nj < timeM2P && timeP2P*Ni*Nj < timeM2L ) { //   If P2P is fastest
+          tryP2P(CI0+Ci->CHILD[i],Cj);                          //    Try to evaluate P2P kernel
+        } else if ( timeM2P < timeP2P*Nj && timeM2P*Ni < timeM2L ) {// If M2P is fastest
+          tryM2P(CI0+Ci->CHILD[i],Cj);                          //    Try to evaluate M2P kernel
+        } else {                                                //   If M2L is fastest
+          tryM2L(CI0+Ci->CHILD[i],Cj);                          //    Try to evaluate M2L kernel
+        }                                                       //   End if for fastest kernel
+      }                                                         //  End loop over child cells of target
+    } else {                                                    // If target is twig or source is larger
+      for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
+        int Ni = Ci->NLEAF;                                     //   Number of target leafs
+        int Nj = (CJ0+Cj->CHILD[i])->NLEAF;                     //   Number of source leafs
+        if( timeP2P*Nj < timeM2P && timeP2P*Ni*Nj < timeM2L ) { //   If P2P is fastest
+          tryP2P(Ci,CJ0+Cj->CHILD[i]);                          //    Try to evaluate P2P kernel
+        } else if ( timeM2P < timeP2P*Nj && timeM2P*Ni < timeM2L ) {// If M2P is fastest
+          tryM2P(Ci,CJ0+Cj->CHILD[i]);                          //    Try to evaluate M2P kernel
+        } else {                                                //   If M2L is fastest
+          tryM2L(Ci,CJ0+Cj->CHILD[i]);                          //    Try to evaluate M2L kernel
+        }                                                       //   End if for fastest kernel
+      }                                                         //  End loop over child cells of source
+    }                                                           // Endif for type of interaction
   }
+
+protected:
+  void timeKernels();                                           // Time all kernels for auto-tuning
 
 public:
   Evaluator() : Icenter(1 << 13) {}                             // Constructor
@@ -174,6 +181,7 @@ public:
         switch (method) {                                       //   Swtich between methods
         case 0 : treecode(pair.first,pair.second); break;       //    0 : treecode
         case 1 : FMM(pair.first,pair.second);      break;       //    1 : FMM
+        case 2 : hybrid(pair.first,pair.second);   break;       //    2 : hybrid
         }                                                       //   End switch between methods
       }                                                         //  End while loop for interaction stack
     } else {                                                    // If periodic boundary condition
@@ -193,6 +201,7 @@ public:
               switch (method) {                                 //      Swtich between methods
               case 0 : treecode(pair.first,pair.second); break; //      0 : treecode
               case 1 : FMM(pair.first,pair.second);      break; //      1 : FMM
+              case 2 : hybrid(pair.first,pair.second);   break; //      2 : hybrid
               }                                                 //      End switch between methods
             }                                                   //     End while loop for interaction stack
           }                                                     //    End loop over z periodic direction

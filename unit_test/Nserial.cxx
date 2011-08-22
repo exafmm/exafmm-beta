@@ -23,7 +23,7 @@ int main() {
     numBodies = int(pow(10,(it+24)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
-    D.random(bodies,1,1);
+    D.sphere(bodies,1,1);
     T.startTimer("FMM          ");
     T.setDomain(bodies);
     cells.clear();
@@ -32,8 +32,7 @@ int main() {
 #else
     T.bottomup(bodies,cells);
 #endif
-    T.NP2P = T.NM2L = 0;
-    T.downward(cells,cells,1);
+    T.downward(cells,cells,2);
     T.stopTimer("FMM          ",true);
     T.eraseTimer("FMM          ");
 
@@ -59,7 +58,6 @@ int main() {
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);
     D.printError(diff1,norm1,diff2,norm2);
-    std::cout << "NP2P: " << T.NP2P << " NM2L: " << T.NM2L << std::endl;
   }
 #ifdef VTK
   int Ncell = 0;

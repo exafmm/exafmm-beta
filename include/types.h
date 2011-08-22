@@ -35,8 +35,8 @@ extern int IMAGES;                                              // Number of per
 extern real THETA;                                              // Box opening criteria
 #endif
 
-const int  P       = 3;                                         // Order of expansions
-const int  NCRIT   = 20;                                        // Number of bodies per cell
+const int  P       = 5;                                         // Order of expansions
+const int  NCRIT   = 8;                                         // Number of bodies per cell
 const int  MAXBODY = 200000;                                    // Maximum number of bodies per GPU kernel
 const int  MAXCELL = 10000000;                                  // Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET    = 1;                                         // LET opening critetia

@@ -121,18 +121,18 @@ void Evaluator::getTargetBody(Lists &lists) {                   // Get body valu
       BI0 = CI->LEAF;                                           //   Set target bodies begin iterator
       BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
       int begin = targetBegin[CI];                              //   Offset of target leafs
-      if( kernelName == "Gaussian" ) {                          //  If Gaussian kernel
-        for( B_iter B=BI0; B!=BIN; ++B ) {                      //   Loop over target bodies
-          B->TRG[0] += targetHost[6*(begin+B-BI0)+0];           //    Copy 1st target value from GPU buffer
-        }                                                       //   End loop over target bodies
-      } else {                                                  //  If not Gaussian kernel
-        for( B_iter B=BI0; B!=BIN; ++B ) {                      //   Loop over target bodies
-          B->TRG[0] += targetHost[6*(begin+B-BI0)+0];           //    Copy 1st target value from GPU buffer
-          B->TRG[1] += targetHost[6*(begin+B-BI0)+1];           //    Copy 2nd target value from GPU buffer
-          B->TRG[2] += targetHost[6*(begin+B-BI0)+2];           //    Copy 3rd target value from GPU buffer
-          B->TRG[3] += targetHost[6*(begin+B-BI0)+3];           //    Copy 4th target value from GPU buffer
-        }                                                       //   End loop over target bodies
-      }                                                         //  Endif for Gaussian kernel
+      if( kernelName == "Gaussian" ) {                          //   If Gaussian kernel
+        for( B_iter B=BI0; B!=BIN; ++B ) {                      //    Loop over target bodies
+          B->TRG[0] += targetHost[6*(begin+B-BI0)+0];           //     Copy 1st target value from GPU buffer
+        }                                                       //    End loop over target bodies
+      } else {                                                  //   If not Gaussian kernel
+        for( B_iter B=BI0; B!=BIN; ++B ) {                      //    Loop over target bodies
+          B->TRG[0] += targetHost[6*(begin+B-BI0)+0];           //     Copy 1st target value from GPU buffer
+          B->TRG[1] += targetHost[6*(begin+B-BI0)+1];           //     Copy 2nd target value from GPU buffer
+          B->TRG[2] += targetHost[6*(begin+B-BI0)+2];           //     Copy 3rd target value from GPU buffer
+          B->TRG[3] += targetHost[6*(begin+B-BI0)+3];           //     Copy 4th target value from GPU buffer
+        }                                                       //    End loop over target bodies
+      }                                                         //   Endif for Gaussian kernel
       lists[CI-CI0].clear();                                    //   Clear interaction list
     }                                                           //  End if for empty interation list
   }                                                             // End loop over target cells
@@ -174,56 +174,105 @@ void Evaluator::clearBuffers() {                                // Clear GPU buf
   stopTimer("Clear buffer ");                                   // Stop timer
 }
 
-void Evaluator::tryP2P(C_iter Ci, C_iter Cj) {                // Interface for P2P kernel
-  listP2P[Ci-CI0].push_back(Cj);                              // Push source cell into P2P interaction list
-  flagP2P[Ci-CI0][Cj] |= Iperiodic;                           // Flip bit of periodic image flag
+void Evaluator::tryP2P(C_iter Ci, C_iter Cj) {                  // Interface for P2P kernel
+  listP2P[Ci-CI0].push_back(Cj);                                // Push source cell into P2P interaction list
+  flagP2P[Ci-CI0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
+  NP2P += Ci->NLEAF * Cj->NLEAF;                                // Count P2P kernel execution
 }
 
-void Evaluator::tryM2L(C_iter Ci, C_iter Cj) {                // Interface for M2L kernel
-  vect dist = Ci->X - Cj->X - Xperiodic;                      // Distance vector between cells
-  real R = std::sqrt(norm(dist));                             // Distance between cells
-  if( Ci->R + Cj->R > THETA*R ) {                             // If cell is too large
-    Pair pair(Ci,Cj);                                         //  Form pair of interacting cells
-    pairs.push(pair);                                         //  Push interacting pair into stack
-  } else {                                                    // If cell is small enough
-    listM2L[Ci-CI0].push_back(Cj);                            // Push source cell into M2L interaction list
-    flagM2L[Ci-CI0][Cj] |= Iperiodic;                         // Flip bit of periodic image flag
-  }                                                           // Endif for interaction
+void Evaluator::tryM2L(C_iter Ci, C_iter Cj) {                  // Interface for M2L kernel
+  vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
+  real R = std::sqrt(norm(dist));                               // Distance between cells
+  if( Ci->R + Cj->R > THETA*R ) {                               // If cell is too large
+    Pair pair(Ci,Cj);                                           //  Form pair of interacting cells
+    pairs.push(pair);                                           //  Push interacting pair into stack
+  } else {                                                      // If cell is small enough
+    listM2L[Ci-CI0].push_back(Cj);                              //  Push source cell into M2L interaction list
+    flagM2L[Ci-CI0][Cj] |= Iperiodic;                           //  Flip bit of periodic image flag
+    NM2L++;                                                     //  Count M2L kernel execution
+  }                                                             // Endif for interaction
 }
 
-void Evaluator::tryM2P(C_iter Ci, C_iter Cj) {                // Interface for M2P kernel
-  vect dist = Ci->X - Cj->X - Xperiodic;                      // Distance vector between cells
-  real R = std::sqrt(norm(dist));                             // Distance between cells
-  if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {          // If target is not twig or cell is too large
-    Pair pair(Ci,Cj);                                         //  Form pair of interacting cells
-    pairs.push(pair);                                         //  Push interacting pair into stack
-  } else {                                                    // If target is twig and cell is small enough
-    listM2P[Ci-CI0].push_back(Cj);                            // Push source cell into M2P interaction list
-    flagM2P[Ci-CI0][Cj] |= Iperiodic;                         // Flip bit of periodic image flag
-  }                                                           // Endif for interaction
+void Evaluator::tryM2P(C_iter Ci, C_iter Cj) {                  // Interface for M2P kernel
+  vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
+  real R = std::sqrt(norm(dist));                               // Distance between cells
+  if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {            // If target is not twig or cell is too large
+    Pair pair(Ci,Cj);                                           //  Form pair of interacting cells
+    pairs.push(pair);                                           //  Push interacting pair into stack
+  } else {                                                      // If target is twig and cell is small enough
+    listM2P[Ci-CI0].push_back(Cj);                              //  Push source cell into M2P interaction list
+    flagM2P[Ci-CI0][Cj] |= Iperiodic;                           //  Flip bit of periodic image flag
+    NM2P += Ci->NLEAF;                                          //  Count M2P kernel execution
+  }                                                             // Endif for interaction
 } 
 
+void Evaluator::timeKernels() {                                 // Time all kernels for auto-tuning
+  Bodies ibodies(NCRIT), jbodies(NCRIT);                        // Artificial bodies
+  for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {// Loop over artificial bodies
+    Bi->X = 0;                                                  //  Set coordinates of target body
+    Bj->X = 1;                                                  //  Set coordinates of source body
+  }                                                             // End loop over artificial bodies
+  constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
+  Cells icells, jcells;                                         // Artificial cells
+  icells.resize(100);                                           // 100 artificial target cells
+  jcells.resize(100);                                           // 100 artificial source cells
+  CI0 = icells.begin();                                         // Set global begin iterator for source
+  for( C_iter Ci=icells.begin(); Ci!=icells.end(); ++Ci ) {     // Loop over target cells
+    Ci->X = 0;                                                  //  Set coordinates of target cell
+    Ci->NLEAF = NCRIT;                                          //  Number of leafs in target cell
+    Ci->LEAF = ibodies.begin();                                 //  Leaf iterator in target cell
+  }                                                             // End loop over target cells
+  for( C_iter Cj=jcells.begin(); Cj!=jcells.end(); ++Cj ) {     // Loop over source cells
+    Cj->X = 1;                                                  //  Set coordinates of source cell
+    Cj->NLEAF = NCRIT;                                          //  Number of leafs in source cell
+    Cj->LEAF = jbodies.begin();                                 //  Leaf iterator in source cell
+  }                                                             // End loop over source cells
+  listM2L.resize(icells.size());                                 // Resize M2L interaction list
+  listM2P.resize(icells.size());                                 // Resize M2P interaction list
+  listP2P.resize(icells.size());                                 // Resize P2P interaction list
+  flagM2L.resize(icells.size());                                 // Resize M2L periodic image flag
+  flagM2P.resize(icells.size());                                 // Resize M2P periodic image flag
+  flagP2P.resize(icells.size());                                 // Resize P2P periodic image flag
+  for( C_iter Ci=icells.begin(); Ci!=icells.end(); ++Ci ) {     // Loop over target cells
+    for( C_iter Cj=jcells.begin(); Cj!=jcells.end(); ++Cj ) {   //  Loop over source cells
+      listP2P[Ci-CI0].push_back(Cj);                            //   Push source cell into P2P interaction list
+      listM2P[Ci-CI0].push_back(Cj);                            //   Push source cell into P2P interaction list
+      listM2L[Ci-CI0].push_back(Cj);                            //   Push source cell into P2P interaction list
+    }                                                           //  End loop over source cells
+  }                                                             // End loop over target cells
+  startTimer("P2P kernel   ");                                  // Start timer
+  evalP2P(icells);                                              // Evaluate P2P kernel
+  timeP2P = stopTimer("P2P kernel   ") / NCRIT / NCRIT;         // Stop timer
+  startTimer("M2L kernel   ");                                  // Start timer
+  evalM2L(icells);                                              // Evaluate M2L kernel
+  timeM2L = stopTimer("M2L kernel   ");                         // Stop timer
+  startTimer("M2P kernel   ");                                  // Start timer
+  evalM2P(icells);                                              // Evaluate M2P kernel
+  timeM2P = stopTimer("M2P kernel   ") / NCRIT;                 // Stop timer
+}
+
 void Evaluator::traversePeriodic(Cells &cells, Cells &jcells, int method) {// Traverse tree for periodic cells
-  C_iter Cj = jcells.end()-1;                                 // Initialize iterator for periodic source cell
-  for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
-    for( int I=0; I!=26; ++I, --Cj ) {                        //  Loop over periodic images (exclude center)
-      switch (method) {                                       //   Switch between method
-      case 0 :                                                //   0 : treecode
-        for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {//   Loop over cells
-          if( Ci->NCHILD == 0 ) {                             //     If cell is twig
-            listM2P[Ci-CI0].push_back(Cj);                    //      Push source cell into M2P interaction list
-            flagM2P[Ci-CI0][Cj] = Icenter;                    //      Flip bit of periodic image flag
-          }                                                   //     Endif for twig
-        }                                                     //    End loop over cells
-        break;                                                //    Terminate this case
-      case 1 :                                                //   1 : FMM
-        C_iter Ci = cells.end() - 1;                          //    Set root cell as target
-        listM2L[Ci-CI0].push_back(Cj);                        //    Push source cell into M2L interaction list
-        flagM2L[Ci-CI0][Cj] = Icenter;                        //    Flip bit of periodic image flag
-        break;                                                //    Terminate this case
-      }                                                       //   End switch between methods
-    }                                                         //  End loop over x periodic direction
-  }                                                           // End loop over sublevels of tree
+  C_iter Cj = jcells.end()-1;                                   // Initialize iterator for periodic source cell
+  for( int level=0; level<IMAGES-1; ++level ) {                 // Loop over sublevels of tree
+    for( int I=0; I!=26; ++I, --Cj ) {                          //  Loop over periodic images (exclude center)
+      switch (method) {                                         //   Switch between method
+      case 0 :                                                  //   0 : treecode
+        for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) { //   Loop over cells
+          if( Ci->NCHILD == 0 ) {                               //     If cell is twig
+            listM2P[Ci-CI0].push_back(Cj);                      //      Push source cell into M2P interaction list
+            flagM2P[Ci-CI0][Cj] = Icenter;                      //      Flip bit of periodic image flag
+          }                                                     //     Endif for twig
+        }                                                       //    End loop over cells
+        break;                                                  //    Terminate this case
+      case 1 :                                                  //   1 : FMM
+      case 2 :                                                  //   2 : hybrid
+        C_iter Ci = cells.end() - 1;                            //    Set root cell as target
+        listM2L[Ci-CI0].push_back(Cj);                          //    Push source cell into M2L interaction list
+        flagM2L[Ci-CI0][Cj] = Icenter;                          //    Flip bit of periodic image flag
+        break;                                                  //    Terminate this case
+      }                                                         //   End switch between methods
+    }                                                           //  End loop over x periodic direction
+  }                                                             // End loop over sublevels of tree
 }
 
 void Evaluator::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P

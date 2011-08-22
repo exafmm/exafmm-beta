@@ -38,7 +38,7 @@ protected:
   double *factorial, *prefactor, *Anm;                          // Auxiliary variables for spherical harmonics
   complex *Ynm, *YnmTheta, *Cnm;                                // Auxiliary variables for spherical harmonics
 public:
-  int NP2P, NM2L;
+  float NP2P, NM2P, NM2L;                                       // Counters for kernel calls
 
 private:
   void cart2sph(real& r, real& theta, real& phi, vect dist) {
@@ -150,7 +150,7 @@ protected:
   }
 
 public:
-  Kernel() : X0(0), R0(0) {}                                    // Constructor
+  Kernel() : X0(0), R0(0), NP2P(0), NM2P(0), NM2L(0) {}         // Constructor
   ~Kernel() {}                                                  // Destructor
 
   vect getX0() {return X0;}                                     // Get center of root cell
