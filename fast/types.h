@@ -16,7 +16,7 @@ typedef float                real;                              // Real number t
 typedef float                gpureal;                           // Real number type on GPU
 typedef std::complex<double> complex;                           // Complex number type
 
-const int P = 3;
+const int P = 4;
 const int NCRIT = 8;
 const real THETA = 0.6;
 const real EPS2 = 1e-4;

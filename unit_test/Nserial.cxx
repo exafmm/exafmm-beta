@@ -20,7 +20,7 @@ int main() {
   D.kernelName = kernelName;
 
   for( int it=0; it!=25; ++it ) {
-    numBodies = int(pow(10,(it+24)/8.0));
+    numBodies = int(pow(10,(it+32)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
     D.sphere(bodies,1,1);
@@ -38,12 +38,14 @@ int main() {
 
     T.startTimer("Direct sum   ");
     T.buffer = bodies;
-#if 0
+#if 1
     D.initTarget(T.buffer);
     if( IMAGES != 0 ) {
       jbodies = T.periodicBodies(T.buffer);
     } else {
       jbodies = T.buffer;
+      T.buffer.resize(100);
+      bodies.resize(100);
     }
     T.evalP2P(T.buffer,jbodies);
     D.writeTarget(T.buffer);

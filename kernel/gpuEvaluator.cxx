@@ -227,12 +227,12 @@ void Evaluator::timeKernels() {                                 // Time all kern
     Cj->NLEAF = NCRIT;                                          //  Number of leafs in source cell
     Cj->LEAF = jbodies.begin();                                 //  Leaf iterator in source cell
   }                                                             // End loop over source cells
-  listM2L.resize(icells.size());                                 // Resize M2L interaction list
-  listM2P.resize(icells.size());                                 // Resize M2P interaction list
-  listP2P.resize(icells.size());                                 // Resize P2P interaction list
-  flagM2L.resize(icells.size());                                 // Resize M2L periodic image flag
-  flagM2P.resize(icells.size());                                 // Resize M2P periodic image flag
-  flagP2P.resize(icells.size());                                 // Resize P2P periodic image flag
+  listM2L.resize(icells.size());                                // Resize M2L interaction list
+  listM2P.resize(icells.size());                                // Resize M2P interaction list
+  listP2P.resize(icells.size());                                // Resize P2P interaction list
+  flagM2L.resize(icells.size());                                // Resize M2L periodic image flag
+  flagM2P.resize(icells.size());                                // Resize M2P periodic image flag
+  flagP2P.resize(icells.size());                                // Resize P2P periodic image flag
   for( C_iter Ci=icells.begin(); Ci!=icells.end(); ++Ci ) {     // Loop over target cells
     for( C_iter Cj=jcells.begin(); Cj!=jcells.end(); ++Cj ) {   //  Loop over source cells
       listP2P[Ci-CI0].push_back(Cj);                            //   Push source cell into P2P interaction list
