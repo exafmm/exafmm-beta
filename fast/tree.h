@@ -189,7 +189,11 @@ public:
 
   void exact(Bodies &bodies) {
     bodies2leafs(bodies);
+#if IeqJ
+    P2P(C0);
+#else
     P2P(C0,C0,false);
+#endif
     for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
       B->TRG /= B->SRC[0];
     }
@@ -204,7 +208,11 @@ public:
     toc = get_time();
     std::cout << "upward : " << toc-tic << std::endl;
     tic = get_time();
+#if IeqJ
+    traverse();
+#else
     traverse(false);
+#endif
     toc = get_time();
     std::cout << "intrct : " << toc-tic << std::endl;
     tic = get_time();

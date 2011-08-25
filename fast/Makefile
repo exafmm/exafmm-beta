@@ -2,6 +2,11 @@ include ../Makefile
 
 a	: main.cc
 	make cleanall
+	$(CXX) $? $(LFLAGS) -DDIRECT -DIeqJ
+	./a.out
+
+a1	: main.cc
+	make cleanall
 	$(CXX) $? $(LFLAGS) -DDIRECT
 	./a.out
 
@@ -17,6 +22,11 @@ a3	: main.cc
 
 b	: main.cc
 	make cleanall
+	$(CXX) $? $(LFLAGS) -DMANY -DIeqJ
+	./a.out
+
+b1	: main.cc
+	make cleanall
 	$(CXX) $? $(LFLAGS) -DMANY
 	./a.out
 
@@ -31,6 +41,11 @@ b3	: main.cc
 	./a.out
 
 c	: main.cc
+	make cleanall
+	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DIeqJ
+	./a.out
+
+c1	: main.cc
 	make cleanall
 	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT
 	./a.out

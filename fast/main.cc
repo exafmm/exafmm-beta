@@ -15,9 +15,10 @@ int main() {
   double tic,toc,tree,approx;
   Bodies bodies(numBodies);
   Bodies bodies2;
+  srand(1);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
     for( int d=0; d!=3; ++d ) {                                 //  Loop over dimension
-      B->X[d] = rand() / (1.+RAND_MAX);                         //   Initialize positions
+      B->X[d] = rand() / (1. + RAND_MAX);                       //   Initialize positions
     }                                                           //  End loop over dimension
     B->SRC[0] = 1. / bodies.size();                             //  Initialize mass/charge
   }                                                             // End loop over bodies

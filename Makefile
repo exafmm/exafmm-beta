@@ -1,7 +1,7 @@
 .SUFFIXES: .cxx .cu .o
 
-#DEVICE  = cpu
-DEVICE  = gpu
+DEVICE  = cpu
+#DEVICE  = gpu
 
 #EXPAND  = Cartesian
 EXPAND  = Spherical
