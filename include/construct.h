@@ -198,7 +198,7 @@ public:
         if( size >= NCRIT ) {                                   //   If the cell has too many bodies
           level++;                                              //    Increment level
           setIndex(bodies,level,off,off+size);                  //    Set new cell index considering new level
-          sortBodies(bodies,buffer,true,off,off+size);          //    Sort new cell index
+          sortBodies(bodies,buffer,false,off,off+size);         //    Sort new cell index
           grow(bodies,level,off,off+size);                      //    Recursively grow tree
           level--;                                              //    Go back to previous level
         }                                                       //   Endif for splitting
@@ -211,7 +211,7 @@ public:
     if( size >= NCRIT ) {                                       // If last cell has too many bodies
       level++;                                                  //  Increment level
       setIndex(bodies,level,off,off+size);                      //  Set new cell index considering new level
-      sortBodies(bodies,buffer,true,off,off+size);              //  Sort new cell index
+      sortBodies(bodies,buffer,false,off,off+size);             //  Sort new cell index
       grow(bodies,level,off,off+size);                          //  Recursively grow tree
       level--;                                                  //  Go back to previous level
     }                                                           // Endif for splitting
@@ -238,7 +238,7 @@ public:
 
     startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
-    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
+    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
     stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
     Cells twigs;                                                // Twigs are cells at the bottom of tree
@@ -255,7 +255,7 @@ public:
 
     startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
-    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
+    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
     stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
 /*
@@ -268,7 +268,7 @@ public:
     stopTimer("Grow tree    ",printNow);                        // Stop timer & print
 
     startTimer("Sort bodies  ");                                // Start timer
-    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
+    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
     stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 */
 

@@ -423,9 +423,9 @@ private:
     stopTimer("Reindex      ",printNow);                        // Stop timer & print
     startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
-//    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
+//    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
 //    BottomUp::grow(bodies);                                     // Grow tree structure
-    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
+    sortBodies(bodies,buffer,false);                              // Sort bodies in descending order
     stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
     startTimer("Reindex      ");                                // Start timer

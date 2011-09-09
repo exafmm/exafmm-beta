@@ -96,6 +96,19 @@ public:
 
   void readData(Bodies &bodies, Cells &cells) {                 // Initialize source values
 #if 1
+    std::ifstream fid("../../hioki/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      int byte;
+      int i = B-bodies.begin();
+      int ix = (i + numBodies * MPIRANK) / nx / nx;
+      int iy = (i + numBodies * MPIRANK) / nx % nx;
+      int iz = (i + numBodies * MPIRANK) % nx;
+      i = iz * nx * nx + iy * nx + ix;
+      fid.read((char*)&byte,sizeof(int));
+      fid.read((char*)&bodies[i].SRC[0],byte);
+      fid.read((char*)&byte,sizeof(int));
+    }
+#elif 0
     char fname[256];
     sprintf(fname,"../../isotropic/spectral/initialu%4.4d",MPIRANK);
     std::ifstream fid(fname,std::ios::in);
@@ -134,7 +147,12 @@ public:
     }
 #endif
     fid.close();
-
+#if 1
+    int *l1 = new int [nx];
+    for( int i=0; i!=nx-1; ++i ) l1[i] = i+1;
+    l1[nx-1] = 0;
+#endif
+    
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
       int ix = (i + numBodies * MPIRANK) / nx / nx;
@@ -147,7 +165,39 @@ public:
       B->X[2] = (iz + .5) * dx - M_PI;                          //  Initialize z position
       B->SRC[3] = dx;                                           //  Initialize core radius
       realRecv[i] = B->SRC[1];
+#if 1
+      int i1 =    ix  * nx * nx +    iy  * nx +    iz;
+      int i2 =    ix  * nx * nx +    iy  * nx + l1[iz];
+      int i3 =    ix  * nx * nx + l1[iy] * nx +    iz;
+      int i4 =    ix  * nx * nx + l1[iy] * nx + l1[iz];
+      int i5 = l1[ix] * nx * nx +    iy  * nx +    iz;
+      int i6 = l1[ix] * nx * nx +    iy  * nx + l1[iz];
+      int i7 = l1[ix] * nx * nx + l1[iy] * nx +    iz;
+      int i8 = l1[ix] * nx * nx + l1[iy] * nx + l1[iz];
+//      float ux = (bodies[i5].SRC[0] + bodies[i6].SRC[0] + bodies[i7].SRC[0] + bodies[i8].SRC[0]
+//                - bodies[i1].SRC[0] - bodies[i2].SRC[0] - bodies[i3].SRC[0] - bodies[i4].SRC[0]) / 4 / dx;
+      float uy = (bodies[i3].SRC[0] + bodies[i4].SRC[0] + bodies[i7].SRC[0] + bodies[i8].SRC[0]
+                - bodies[i1].SRC[0] - bodies[i2].SRC[0] - bodies[i5].SRC[0] - bodies[i6].SRC[0]) / 4 / dx;
+      float uz = (bodies[i2].SRC[0] + bodies[i4].SRC[0] + bodies[i6].SRC[0] + bodies[i8].SRC[0]
+                - bodies[i1].SRC[0] - bodies[i3].SRC[0] - bodies[i5].SRC[0] - bodies[i7].SRC[0]) / 4 / dx;
+      float vx = (bodies[i5].SRC[1] + bodies[i6].SRC[1] + bodies[i7].SRC[1] + bodies[i8].SRC[1]
+                - bodies[i1].SRC[1] - bodies[i2].SRC[1] - bodies[i3].SRC[1] - bodies[i4].SRC[1]) / 4 / dx;
+//      float vy = (bodies[i3].SRC[1] + bodies[i4].SRC[1] + bodies[i7].SRC[1] + bodies[i8].SRC[1]
+//                - bodies[i1].SRC[1] - bodies[i2].SRC[1] - bodies[i5].SRC[1] - bodies[i6].SRC[1]) / 4 / dx;
+      float vz = (bodies[i2].SRC[1] + bodies[i4].SRC[1] + bodies[i6].SRC[1] + bodies[i8].SRC[1]
+                - bodies[i1].SRC[1] - bodies[i3].SRC[1] - bodies[i5].SRC[1] - bodies[i7].SRC[1]) / 4 / dx;
+      float wx = (bodies[i5].SRC[2] + bodies[i6].SRC[2] + bodies[i7].SRC[2] + bodies[i8].SRC[2]
+                - bodies[i1].SRC[2] - bodies[i2].SRC[2] - bodies[i3].SRC[2] - bodies[i4].SRC[2]) / 4 / dx;
+      float wy = (bodies[i3].SRC[2] + bodies[i4].SRC[2] + bodies[i7].SRC[2] + bodies[i8].SRC[2]
+                - bodies[i1].SRC[2] - bodies[i2].SRC[2] - bodies[i5].SRC[2] - bodies[i6].SRC[2]) / 4 / dx;
+//      float wz = (bodies[i2].SRC[2] + bodies[i4].SRC[2] + bodies[i6].SRC[2] + bodies[i8].SRC[2]
+//                - bodies[i1].SRC[2] - bodies[i3].SRC[2] - bodies[i5].SRC[2] - bodies[i7].SRC[2]) / 4 / dx;
+      B->TRG[1] = vz - wy;
+      B->TRG[2] = wx - uz;
+      B->TRG[3] = uy - vx;
+#endif
     }
+#if 0
     zDerivative();
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[1] = realSend[B-bodies.begin()];
@@ -177,6 +227,7 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[3] -= realSend[B-bodies.begin()];
     }
+#endif
     setGlobDomain(bodies);
     octsection(bodies);
     bottomup(bodies,cells);
@@ -192,12 +243,26 @@ public:
     setKernel("BiotSavart");
     unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
-    cells.clear();
-    octsection(bodies);
-    bottomup(bodies,cells);
-    commBodies(cells);
     Bodies jbodies = bodies;
-    Cells jcells = cells;
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      int i = B-bodies.begin();
+      int ix = (i + numBodies * MPIRANK) / nx / nx;
+      int iy = (i + numBodies * MPIRANK) / nx % nx;
+      int iz = (i + numBodies * MPIRANK) % nx;
+      B->IBODY = i;                                             //  Tag body with initial index
+      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
+      B->X[0] = ix * dx - M_PI + 1e-5;
+      B->X[1] = iy * dx - M_PI + 1e-5;
+      B->X[2] = iz * dx - M_PI + 1e-5;
+      B->TRG = 0;
+    }
+    cells.clear();
+    Cells jcells;
+    octsection(bodies);
+    octsection(jbodies);
+    bottomup(bodies,cells);
+    bottomup(jbodies,jcells);
+    commBodies(jcells);
     commCells(jbodies,jcells);
     downward(cells,jcells,1);
     unpartition(bodies);
@@ -206,6 +271,26 @@ public:
     float u, v, w;
     double diff = 0, norm = 0;
 #if 1
+    std::ifstream fid("../../hioki/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      int byte;
+      int i = B-bodies.begin();
+      int ix = (i + numBodies * MPIRANK) / nx / nx;
+      int iy = (i + numBodies * MPIRANK) / nx % nx;
+      int iz = (i + numBodies * MPIRANK) % nx;
+      i = iz * nx * nx + iy * nx + ix;
+      fid.read((char*)&byte,sizeof(int));
+      fid.read((char*)&u,sizeof(float));
+      fid.read((char*)&v,sizeof(float));
+      fid.read((char*)&w,sizeof(float));
+      fid.read((char*)&byte,sizeof(int));
+      diff += (bodies[i].TRG[0] - u) * (bodies[i].TRG[0] - u)
+            + (bodies[i].TRG[1] - v) * (bodies[i].TRG[1] - v)
+            + (bodies[i].TRG[2] - w) * (bodies[i].TRG[2] - w);
+      norm += u * u + v * v + w * w;
+    }
+    fid.close();
+#elif 0
     char fname[256];
     sprintf(fname,"../../isotropic/spectral/initialu%4.4d",MPIRANK);
     std::ifstream fid(fname,std::ios::in);
