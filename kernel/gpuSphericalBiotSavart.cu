@@ -467,7 +467,7 @@ __global__ void BiotSavartM2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   gpureal D0 = -constDevc[0];
   gpureal targetX[3];
   gpureal target[3] = {0, 0, 0};
-  __shared__ gpureal sourceShrd[2*THREADS];
+  __shared__ gpureal sourceShrd[6*THREADS];
   __shared__ gpureal factShrd[2*P];
   gpureal fact = 1;
   for( int i=0; i<2*P; ++i ) {

@@ -212,7 +212,6 @@ void Evaluator::timeKernels() {                                 // Time all kern
     Bi->X = 0;                                                  //  Set coordinates of target body
     Bj->X = 1;                                                  //  Set coordinates of source body
   }                                                             // End loop over artificial bodies
-  constHost.push_back(2*R0);                                    // Copy domain size to GPU buffer
   Cells icells, jcells;                                         // Artificial cells
   icells.resize(100);                                           // 100 artificial target cells
   jcells.resize(100);                                           // 100 artificial source cells

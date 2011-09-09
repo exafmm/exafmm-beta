@@ -179,7 +179,6 @@ public:
     evalP2P(cells);                                             // Evaluate P2P kernel
     evalL2L(cells);                                             // Evaluate L2L kernel
     evalL2P(cells);                                             // Evaluate L2P kernel
-
     std::cout << "NP2P: " << NP2P << " NM2P: " << NM2P << " NM2L: " << NM2L << std::endl;
   }
 };
