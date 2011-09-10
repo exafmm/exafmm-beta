@@ -38,7 +38,7 @@ protected:
   double *factorial, *prefactor, *Anm;                          // Auxiliary variables for spherical harmonics
   complex *Ynm, *YnmTheta, *Cnm;                                // Auxiliary variables for spherical harmonics
 public:
-  float NP2P, NM2P, NM2L;                                       // Counters for kernel calls
+  real NP2P, NM2P, NM2L;                                        // Counters for kernel calls
 
 private:
   void cart2sph(real& r, real& theta, real& phi, vect dist) {

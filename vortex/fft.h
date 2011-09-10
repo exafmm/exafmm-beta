@@ -8,6 +8,8 @@ private:
   int nxLocal;
   int numSend;
   int   *Kk;
+  int   *NkSend;
+  int   *NkRecv;
   float *EkSend;
   float *EkRecv;
   fftw_complex *vec1d;
@@ -33,6 +35,8 @@ public:
     numBodies  = nx * nx * nxLocal;
     numSend    = nx * nxLocal * nxLocal;
     Kk         = new int   [nx];
+    NkSend     = new int   [nx];
+    NkRecv     = new int   [nx];
     EkSend     = new float [nx];
     EkRecv     = new float [nx];
     realSend   = new float [numBodies];
@@ -59,6 +63,8 @@ public:
     fftw_free(vec1d);
     fftw_free(vec2d);
     delete[] Kk;
+    delete[] NkSend;
+    delete[] NkRecv;
     delete[] EkSend;
     delete[] EkRecv;
     delete[] realSend;
@@ -178,9 +184,11 @@ public:
   void initSpectrum() {
     for( int k=0; k<nx; ++k ) {
       EkSend[k] = 0;
+      NkSend[k] = 0;
     }
   }
 
+#if 0
   void addSpectrum() {
     for( int ix=0; ix<nxLocal; ++ix ) {
       for( int iy=0; iy<nx; ++iy ) {
@@ -193,13 +201,32 @@ public:
       }
     }
   }
+#else
+  void addSpectrum() {
+    for( int k=0; k<nx; ++k ) NkSend[k] = 0;
+    for( int ix=1; ix<=nxLocal/2; ++ix ) {
+      for( int iy=1; iy<=nx/2; ++iy ) {
+        for( int iz=1; iz<=nx/2; ++iz ) {
+          int iix = ix + nxLocal * MPIRANK;
+          int i = ix * nx * nx + iy * nx + iz;
+          float kf = sqrtf(iix * iix + iy * iy + iz * iz);
+          int k = floor(kf);
+          EkSend[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]) * 4 * M_PI * kf * kf;
+          NkSend[k]++;
+        }
+      }
+    }
+  }
+#endif
 
   void writeSpectrum() {
+    MPI_Reduce(NkSend,NkRecv,nx,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
     MPI_Reduce(EkSend,EkRecv,nx,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
     if( MPIRANK == 0 ) {
       std::ofstream fid("statistics.dat",std::ios::out | std::ios::app);
       for( int k=0; k<nx; ++k ) {
-        fid << EkRecv[k] << std::endl;
+        if( NkRecv[k] == 0 ) NkRecv[k] = 1;
+        fid << EkRecv[k]/NkRecv[k] << std::endl;
       }
       fid.close();
     }
