@@ -8,7 +8,7 @@ int main() {
   THETA = 1/sqrtf(4);
   const int numGrid1D = 128;
   const int numSteps  = 10;
-  const int numSkip   = 1;
+  const int numSkip   = 0;
   const float dt      = 5e-3;
   const float nu      = 1e-2;
   Bodies bodies, bodies2;
@@ -38,6 +38,7 @@ int main() {
       bodies2 = bodies;
       T.gridVelocity(bodies,cells);
       T.statistics(bodies,nu,dt);
+      bodies = bodies2;
     }
     T.stopTimer("Statistics   ",printNow);
     T.eraseTimer("Statistics   ");
@@ -58,7 +59,7 @@ int main() {
     T.eraseTimer("Convect      ");
 
     T.startTimer("Reinitialize ");
-    if( step%(numSkip+1) == numSkip ) T.reinitialize(bodies,bodies2);
+//    if( step%(numSkip+1) == numSkip ) T.reinitialize(bodies,bodies2);
     T.stopTimer("Reinitialize ",printNow);
     T.eraseTimer("Reinitialize ");
     T.writeTime();

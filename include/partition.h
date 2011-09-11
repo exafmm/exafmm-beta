@@ -242,6 +242,12 @@ public:
     }                                                           // End loop over each dimension
     R0 += 1e-5;                                                 // Add some leeway to root radius
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
+      if( X0[0]-R0 < x0[0]-r0 || x0[0]+r0 < X0[0]+R0            //  Check for outliers in x direction
+       || X0[1]-R0 < x0[1]-r0 || x0[1]+r0 < X0[1]+R0            //  Check for outliers in y direction
+       || X0[2]-R0 < x0[2]-r0 || x0[2]+r0 < X0[2]+R0 ) {        //  Check for outliers in z direction
+        std::cout << "Error: Particles located outside periodic domain @ rank "
+                  << MPIRANK << std::endl;                      //   Print error message
+      }                                                         //  End if for outlier checking
       X0 = x0;                                                  //  Center is [0, 0, 0]
       R0 = r0;                                                  //  Radius is M_PI
     }                                                           // Endif for periodic boundary condition
