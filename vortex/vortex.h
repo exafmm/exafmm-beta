@@ -526,7 +526,6 @@ public:
       B->X[0] += dxdt[i] * dt;
       B->X[1] += dydt[i] * dt;
       B->X[2] += dzdt[i] * dt;
-/*
       for( int d=0; d!=3; ++d ) {
         if( B->X[d] < -M_PI ) {
           B->X[d] += 2 * M_PI;
@@ -534,7 +533,6 @@ public:
           B->X[d] -= 2 * M_PI;
         }
       }
-*/
       B->SRC[0] += B->TRG[0] * dt;
       B->SRC[1] += B->TRG[1] * dt;
       B->SRC[2] += B->TRG[2] * dt;
