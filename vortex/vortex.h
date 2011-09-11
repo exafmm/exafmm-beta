@@ -234,11 +234,11 @@ public:
     rbf(bodies,cells,2);
     rbf(bodies,cells,1);
     rbf(bodies,cells,0);
+    unpartition(bodies);
+    std::sort(bodies.begin(),bodies.end());
   }
 
   void gridVelocity(Bodies &bodies, Cells &cells) {
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
     Bodies jbodies = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
@@ -267,12 +267,6 @@ public:
     downward(cells,jcells,1);
     unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
-    for( B_iter B=bodies.begin(), Bj=jbodies.begin(); B!=bodies.end(); ++B, ++Bj ) {
-      B->X = Bj->X;
-      B->SRC = Bj->SRC;
-      B->IBODY = Bj->IBODY;
-      B->IPROC = Bj->IPROC;
-    }
   }
 
   void initialError(Bodies &bodies) {
@@ -375,7 +369,6 @@ public:
     float umax = 0;
     double uu = 0, vv = 0, ww = 0, uw = 0, ds = 0;
     double ux2 = 0, ux3 = 0, ux4 = 0;
-    Bodies jbodies = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       umax = std::max(umax,std::abs(B->TRG[0]));
       umax = std::max(umax,std::abs(B->TRG[1]));
@@ -540,9 +533,10 @@ public:
     }
   }
 
-  void reinitialize(Bodies &bodies) {
+  void reinitialize(Bodies &bodies, Bodies &bodies2) {
     Cells cells, jcells;
-    Bodies bodies2 = bodies, jbodies = bodies;
+    Bodies jbodies = bodies;
+    bodies2 = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
       int ix = (i + numBodies * MPIRANK) / nx / nx;
