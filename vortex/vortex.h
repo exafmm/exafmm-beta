@@ -10,7 +10,7 @@ private:
 
   void rbf(Bodies &bodies, Cells &cells, int d) {
     const int itmax = 5;
-    const float tol = 1e-4;
+    const float tol = 1e-3;
 
     setKernel("Gaussian");
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -147,12 +147,6 @@ public:
     }
 #endif
     fid.close();
-#if 1
-    int *l1 = new int [nx];
-    for( int i=0; i!=nx-1; ++i ) l1[i] = i+1;
-    l1[nx-1] = 0;
-#endif
-    
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
       int ix = (i + numBodies * MPIRANK) / nx / nx;
@@ -165,39 +159,8 @@ public:
       B->X[2] = (iz + .5) * dx - M_PI;                          //  Initialize z position
       B->SRC[3] = dx;                                           //  Initialize core radius
       realRecv[i] = B->SRC[1];
-#if 1
-      int i1 =    ix  * nx * nx +    iy  * nx +    iz;
-      int i2 =    ix  * nx * nx +    iy  * nx + l1[iz];
-      int i3 =    ix  * nx * nx + l1[iy] * nx +    iz;
-      int i4 =    ix  * nx * nx + l1[iy] * nx + l1[iz];
-      int i5 = l1[ix] * nx * nx +    iy  * nx +    iz;
-      int i6 = l1[ix] * nx * nx +    iy  * nx + l1[iz];
-      int i7 = l1[ix] * nx * nx + l1[iy] * nx +    iz;
-      int i8 = l1[ix] * nx * nx + l1[iy] * nx + l1[iz];
-//      float ux = (bodies[i5].SRC[0] + bodies[i6].SRC[0] + bodies[i7].SRC[0] + bodies[i8].SRC[0]
-//                - bodies[i1].SRC[0] - bodies[i2].SRC[0] - bodies[i3].SRC[0] - bodies[i4].SRC[0]) / 4 / dx;
-      float uy = (bodies[i3].SRC[0] + bodies[i4].SRC[0] + bodies[i7].SRC[0] + bodies[i8].SRC[0]
-                - bodies[i1].SRC[0] - bodies[i2].SRC[0] - bodies[i5].SRC[0] - bodies[i6].SRC[0]) / 4 / dx;
-      float uz = (bodies[i2].SRC[0] + bodies[i4].SRC[0] + bodies[i6].SRC[0] + bodies[i8].SRC[0]
-                - bodies[i1].SRC[0] - bodies[i3].SRC[0] - bodies[i5].SRC[0] - bodies[i7].SRC[0]) / 4 / dx;
-      float vx = (bodies[i5].SRC[1] + bodies[i6].SRC[1] + bodies[i7].SRC[1] + bodies[i8].SRC[1]
-                - bodies[i1].SRC[1] - bodies[i2].SRC[1] - bodies[i3].SRC[1] - bodies[i4].SRC[1]) / 4 / dx;
-//      float vy = (bodies[i3].SRC[1] + bodies[i4].SRC[1] + bodies[i7].SRC[1] + bodies[i8].SRC[1]
-//                - bodies[i1].SRC[1] - bodies[i2].SRC[1] - bodies[i5].SRC[1] - bodies[i6].SRC[1]) / 4 / dx;
-      float vz = (bodies[i2].SRC[1] + bodies[i4].SRC[1] + bodies[i6].SRC[1] + bodies[i8].SRC[1]
-                - bodies[i1].SRC[1] - bodies[i3].SRC[1] - bodies[i5].SRC[1] - bodies[i7].SRC[1]) / 4 / dx;
-      float wx = (bodies[i5].SRC[2] + bodies[i6].SRC[2] + bodies[i7].SRC[2] + bodies[i8].SRC[2]
-                - bodies[i1].SRC[2] - bodies[i2].SRC[2] - bodies[i3].SRC[2] - bodies[i4].SRC[2]) / 4 / dx;
-      float wy = (bodies[i3].SRC[2] + bodies[i4].SRC[2] + bodies[i7].SRC[2] + bodies[i8].SRC[2]
-                - bodies[i1].SRC[2] - bodies[i2].SRC[2] - bodies[i5].SRC[2] - bodies[i6].SRC[2]) / 4 / dx;
-//      float wz = (bodies[i2].SRC[2] + bodies[i4].SRC[2] + bodies[i6].SRC[2] + bodies[i8].SRC[2]
-//                - bodies[i1].SRC[2] - bodies[i3].SRC[2] - bodies[i5].SRC[2] - bodies[i7].SRC[2]) / 4 / dx;
-      B->TRG[1] = vz - wy;
-      B->TRG[2] = wx - uz;
-      B->TRG[3] = uy - vx;
-#endif
     }
-#if 0
+
     zDerivative();
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[1] = realSend[B-bodies.begin()];
@@ -227,7 +190,7 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[3] -= realSend[B-bodies.begin()];
     }
-#endif
+
     setGlobDomain(bodies);
     octsection(bodies);
     bottomup(bodies,cells);

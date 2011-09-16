@@ -28,12 +28,12 @@ void Evaluator::setSourceCell(bool isM=true) {                  // Set source bu
       for( int i=0; i!=NCOEF; ++i ) {                           //   Loop over coefs in source cell
         sourceHost.push_back((CJ->M[i]).real());                //    Copy real multipole to GPU buffer
         sourceHost.push_back((CJ->M[i]).imag());                //    Copy imaginary multipole to GPU buffer
-      }                                                         //    End loop over coefs
+      }                                                         //   End loop over coefs
     } else {                                                    //  If source is L
       for( int i=0; i!=NCOEF; ++i ) {                           //   Loop over coefs in source cell
         sourceHost.push_back((CJ->L[i]).real());                //    Copy real multipole to GPU buffer
         sourceHost.push_back((CJ->L[i]).imag());                //    Copy imaginary multipole to GPU buffer
-      }                                                         //    End loop over coefs
+      }                                                         //   End loop over coefs
     }                                                           //  Endif for source type
   }                                                             // End loop over source map
   stopTimer("Set sourceC  ");                                   // Stop timer
