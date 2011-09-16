@@ -100,10 +100,6 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int byte;
       int i = B-bodies.begin();
-      int ix = (i + numBodies * MPIRANK) / nx / nx;
-      int iy = (i + numBodies * MPIRANK) / nx % nx;
-      int iz = (i + numBodies * MPIRANK) % nx;
-      i = iz * nx * nx + iy * nx + ix;
       fid.read((char*)&byte,sizeof(int));
       fid.read((char*)&bodies[i].SRC[0],byte);
       fid.read((char*)&byte,sizeof(int));
@@ -149,9 +145,9 @@ public:
     fid.close();
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
-      int ix = (i + numBodies * MPIRANK) / nx / nx;
+      int ix = (i + numBodies * MPIRANK) % nx;
       int iy = (i + numBodies * MPIRANK) / nx % nx;
-      int iz = (i + numBodies * MPIRANK) % nx;
+      int iz = (i + numBodies * MPIRANK) / nx / nx;
       B->IBODY = i;                                             //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
       B->X[0] = (ix + .5) * dx - M_PI;                          //  Initialize x position
@@ -205,9 +201,9 @@ public:
     Bodies jbodies = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
-      int ix = (i + numBodies * MPIRANK) / nx / nx;
+      int ix = (i + numBodies * MPIRANK) % nx;
       int iy = (i + numBodies * MPIRANK) / nx % nx;
-      int iz = (i + numBodies * MPIRANK) % nx;
+      int iz = (i + numBodies * MPIRANK) / nx / nx;
       B->IBODY = i;                                             //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
       B->X[0] = ix * dx - M_PI + 1e-5;
@@ -235,15 +231,10 @@ public:
   void initialError(Bodies &bodies) {
     float u, v, w;
     double diff = 0, norm = 0;
-#if 1
     std::ifstream fid("../../hioki/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int byte;
       int i = B-bodies.begin();
-      int ix = (i + numBodies * MPIRANK) / nx / nx;
-      int iy = (i + numBodies * MPIRANK) / nx % nx;
-      int iz = (i + numBodies * MPIRANK) % nx;
-      i = iz * nx * nx + iy * nx + ix;
       fid.read((char*)&byte,sizeof(int));
       fid.read((char*)&u,sizeof(float));
       fid.read((char*)&v,sizeof(float));
@@ -254,63 +245,6 @@ public:
             + (bodies[i].TRG[2] - w) * (bodies[i].TRG[2] - w);
       norm += u * u + v * v + w * w;
     }
-    fid.close();
-#elif 0
-    char fname[256];
-    sprintf(fname,"../../isotropic/spectral/initialu%4.4d",MPIRANK);
-    std::ifstream fid(fname,std::ios::in);
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      fid >> u;
-      diff += (B->TRG[0] - u) * (B->TRG[0] - u);
-      norm += u * u;
-    }
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      fid >> v;
-      diff += (B->TRG[1] - v) * (B->TRG[1] - v);
-      norm += v * v;
-    }
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      fid >> w;
-      diff += (B->TRG[2] - w) * (B->TRG[2] - w);
-      norm += w * w;
-    }
-#else
-    std::ifstream fid("../../isotropic/spectral/initialu",std::ios::in);
-    float dummy;
-    for( int rank=0; rank!=MPISIZE; ++rank ) {
-      if( rank == MPIRANK ) {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-          fid >> u;
-          diff += (B->TRG[0] - u) * (B->TRG[0] - u);
-          norm += u * u;
-        }
-      } else {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
-      }
-    }
-    for( int rank=0; rank!=MPISIZE; ++rank ) {
-      if( rank == MPIRANK ) {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-          fid >> v;
-          diff += (B->TRG[1] - v) * (B->TRG[1] - v);
-          norm += v * v;
-        }
-      } else {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
-      }
-    }
-    for( int rank=0; rank!=MPISIZE; ++rank ) {
-      if( rank == MPIRANK ) {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-          fid >> w;
-          diff += (B->TRG[2] - w) * (B->TRG[2] - w);
-          norm += w * w;
-        }
-      } else {
-        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) fid >> dummy;
-      }
-    }
-#endif
     fid.close();
     print("Error         : ",0);
     print(sqrt(diff/norm));
@@ -509,9 +443,9 @@ public:
     bodies2 = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
-      int ix = (i + numBodies * MPIRANK) / nx / nx;
+      int ix = (i + numBodies * MPIRANK) % nx;
       int iy = (i + numBodies * MPIRANK) / nx % nx;
-      int iz = (i + numBodies * MPIRANK) % nx;
+      int iz = (i + numBodies * MPIRANK) / nx / nx;
       B->X[0] = (ix + .5) * dx - M_PI;
       B->X[1] = (iy + .5) * dx - M_PI;
       B->X[2] = (iz + .5) * dx - M_PI;

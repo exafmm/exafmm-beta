@@ -74,78 +74,78 @@ public:
   }
 
   void forwardFFT() {
-    for( int ix=0; ix<nxLocal; ++ix ) {
+    for( int iz=0; iz<nxLocal; ++iz ) {
       for( int iy=0; iy<nx; ++iy ) {
-        for( int iz=0; iz<nx; ++iz ) {
-          int i = ix * nx * nx + iy * nx + iz;
-          vec2d[iz+iy*nx][0] = realRecv[i] / nx / nx;
-          vec2d[iz+iy*nx][1] = 0;
+        for( int ix=0; ix<nx; ++ix ) {
+          int i = iz * nx * nx + iy * nx + ix;
+          vec2d[ix+iy*nx][0] = realRecv[i] / nx / nx;
+          vec2d[ix+iy*nx][1] = 0;
         }
       }
       fftw_execute(forward2d);
       for( int iy=0; iy<nx; ++iy ) {
-        for( int iz=0; iz<nx; ++iz ) {
-          int i = iz * nx * nxLocal + iy * nxLocal + ix;
-          realSend[i] = vec2d[iz+iy*nx][0];
-          imagSend[i] = vec2d[iz+iy*nx][1];
+        for( int ix=0; ix<nx; ++ix ) {
+          int i = ix * nx * nxLocal + iy * nxLocal + iz;
+          realSend[i] = vec2d[ix+iy*nx][0];
+          imagSend[i] = vec2d[ix+iy*nx][1];
         }
       }
     }
     MPI_Alltoall(realSend,numSend,MPI_FLOAT,realRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
     MPI_Alltoall(imagSend,numSend,MPI_FLOAT,imagRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
-    for( int ix=0; ix<nxLocal; ++ix ) {
+    for( int iz=0; iz<nxLocal; ++iz ) {
       for( int iy=0; iy<nx; ++iy ) {
-        for( int iz=0; iz<nx; ++iz ) {
-          int iiz = iz % nxLocal;
-          int iix = ix + (iz / nxLocal) * nxLocal;
-          int i = iix * nx * nxLocal + iy * nxLocal + iiz;
-          vec1d[iz][0] = realRecv[i] / nx;
-          vec1d[iz][1] = imagRecv[i] / nx;
+        for( int ix=0; ix<nx; ++ix ) {
+          int iix = ix % nxLocal;
+          int iiz = iz + (ix / nxLocal) * nxLocal;
+          int i = iiz * nx * nxLocal + iy * nxLocal + iix;
+          vec1d[ix][0] = realRecv[i] / nx;
+          vec1d[ix][1] = imagRecv[i] / nx;
         }
         fftw_execute(forward1d);
-        for( int iz=0; iz<nx; ++iz ) {
-          int i = ix * nx * nx + iy * nx + iz;
-          realSend[i] = vec1d[iz][0];
-          imagSend[i] = vec1d[iz][1];
+        for( int ix=0; ix<nx; ++ix ) {
+          int i = iz * nx * nx + iy * nx + ix;
+          realSend[i] = vec1d[ix][0];
+          imagSend[i] = vec1d[ix][1];
         }
       }
     }
   }
 
   void backwardFFT() {
-    for( int ix=0; ix<nxLocal; ++ix ) {
+    for( int iz=0; iz<nxLocal; ++iz ) {
       for( int iy=0; iy<nx; ++iy ) {
-        for( int iz=0; iz<nx; ++iz ) {
-          int i = ix * nx * nx + iy * nx + iz;
-          vec1d[iz][0] = realRecv[i];
-          vec1d[iz][1] = imagRecv[i];
+        for( int ix=0; ix<nx; ++ix ) {
+          int i = iz * nx * nx + iy * nx + ix;
+          vec1d[ix][0] = realRecv[i];
+          vec1d[ix][1] = imagRecv[i];
         }
         fftw_execute(backward1d);
-        for( int iz=0; iz<nx; ++iz ) {
-          int i = iz * nx * nxLocal + iy * nxLocal + ix;
-          realSend[i] = vec1d[iz][0];
-          imagSend[i] = vec1d[iz][1];
+        for( int ix=0; ix<nx; ++ix ) {
+          int i = ix * nx * nxLocal + iy * nxLocal + iz;
+          realSend[i] = vec1d[ix][0];
+          imagSend[i] = vec1d[ix][1];
         }
       }
     }
     MPI_Alltoall(realSend,numSend,MPI_FLOAT,realRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
     MPI_Alltoall(imagSend,numSend,MPI_FLOAT,imagRecv,numSend,MPI_FLOAT,MPI_COMM_WORLD);
-    for( int ix=0; ix<nxLocal; ++ix ) {
+    for( int iz=0; iz<nxLocal; ++iz ) {
       for( int iy=0; iy<nx; ++iy ) {
-        for( int iz=0; iz<nx; ++iz ) {
-          int iiz = iz % nxLocal;
-          int iix = ix + (iz / nxLocal) * nxLocal;
-          int i = iix * nx * nxLocal + iy * nxLocal + iiz;
-          vec2d[iz+iy*nx][0] = realRecv[i];
-          vec2d[iz+iy*nx][1] = imagRecv[i];
+        for( int ix=0; ix<nx; ++ix ) {
+          int iix = ix % nxLocal;
+          int iiz = iz + (ix / nxLocal) * nxLocal;
+          int i = iiz * nx * nxLocal + iy * nxLocal + iix;
+          vec2d[ix+iy*nx][0] = realRecv[i];
+          vec2d[ix+iy*nx][1] = imagRecv[i];
         }
       }
       fftw_execute(backward2d);
       for( int iy=0; iy<nx; ++iy ) {
-        for( int iz=0; iz<nx; ++iz ) {
-          int i = ix * nx * nx + iy * nx + iz;
-          realSend[i] = vec2d[iz+iy*nx][0];
-          imagSend[i] = vec2d[iz+iy*nx][1];
+        for( int ix=0; ix<nx; ++ix ) {
+          int i = iz * nx * nx + iy * nx + ix;
+          realSend[i] = vec2d[ix+iy*nx][0];
+          imagSend[i] = vec2d[ix+iy*nx][1];
         }
       }
     }
@@ -154,7 +154,7 @@ public:
   void xDerivative() {
     forwardFFT();
     for( int i=0; i!=numBodies; ++i ) {
-      int ix = (i + numBodies * MPIRANK) % nx;
+      int ix = (i + numBodies * MPIRANK) / nx / nx;
       realRecv[i] = -Kk[ix] * imagSend[i];
       imagRecv[i] =  Kk[ix] * realSend[i];
     }
@@ -174,7 +174,7 @@ public:
   void zDerivative() {
     forwardFFT();
     for( int i=0; i!=numBodies; ++i ) {
-      int iz = (i + numBodies * MPIRANK) / nx / nx;
+      int iz = (i + numBodies * MPIRANK) % nx;
       realRecv[i] = -Kk[iz] * imagSend[i];
       imagRecv[i] =  Kk[iz] * realSend[i];
     }
@@ -190,12 +190,12 @@ public:
 
 #if 0
   void addSpectrum() {
-    for( int ix=0; ix<nxLocal; ++ix ) {
+    for( int iz=0; iz<nxLocal; ++iz ) {
       for( int iy=0; iy<nx; ++iy ) {
-        for( int iz=0; iz<nx; ++iz ) {
-          int iix = ix + nxLocal * MPIRANK;
-          int i = ix * nx * nx + iy * nx + iz;
-          int k = floor(sqrtf(Kk[iix] * Kk[iix] + Kk[iy] * Kk[iy] + Kk[iz] * Kk[iz]));
+        for( int ix=0; ix<nx; ++ix ) {
+          int iiz = iz + nxLocal * MPIRANK;
+          int i = iz * nx * nx + iy * nx + ix;
+          int k = floor(sqrtf(Kk[iiz] * Kk[iiz] + Kk[iy] * Kk[iy] + Kk[ix] * Kk[ix]));
           EkSend[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]);
         }
       }
