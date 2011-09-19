@@ -28,10 +28,12 @@ protected:
 public:
   const int nx;
   int numBodies;
+  int numGlobal;
 
 public:
   FastFourierTransform(int N) : nx(N) {
     nxLocal    = nx / MPISIZE;
+    numGlobal  = nx * nx * nx;
     numBodies  = nx * nx * nxLocal;
     numSend    = nx * nxLocal * nxLocal;
     Kk         = new int   [nx];

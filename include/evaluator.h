@@ -30,9 +30,9 @@ private:
       if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
         tryP2P(Ci,Cj);                                          //  Try to evaluate P2P kernel
       } else {                                                  // If the twig has no leafs
-#ifdef DEBUG
+//#ifdef DEBUG
         std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
-#endif
+//#endif
         listM2P[Ci-CI0].push_back(Cj);                          // Push source cell into M2P interaction list
       }                                                         // Endif for twigs with leafs
     } else if ( Ci->NCHILD != 0 ) {                             // If target is not twig

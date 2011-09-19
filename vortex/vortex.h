@@ -97,12 +97,22 @@ public:
   void readData(Bodies &bodies, Cells &cells) {                 // Initialize source values
 #if 1
     std::ifstream fid("../../hioki/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      int byte;
-      int i = B-bodies.begin();
-      fid.read((char*)&byte,sizeof(int));
-      fid.read((char*)&bodies[i].SRC[0],byte);
-      fid.read((char*)&byte,sizeof(int));
+    int byte;
+    float dummy[3];
+    for( int rank=0; rank!=MPISIZE; ++rank ) {
+      if( rank == MPIRANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid.read((char*)&byte,sizeof(int));
+          fid.read((char*)&bodies[B-bodies.begin()].SRC[0],byte);
+          fid.read((char*)&byte,sizeof(int));
+        }
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid.read((char*)&byte,sizeof(int));
+          fid.read((char*)dummy,byte);
+          fid.read((char*)&byte,sizeof(int));
+        }
+      }
     }
 #elif 0
     char fname[256];
@@ -229,21 +239,32 @@ public:
   }
 
   void initialError(Bodies &bodies) {
+    int byte;
+    float dummy[3];
     float u, v, w;
-    double diff = 0, norm = 0;
+    float diff = 0, norm = 0;
     std::ifstream fid("../../hioki/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      int byte;
-      int i = B-bodies.begin();
-      fid.read((char*)&byte,sizeof(int));
-      fid.read((char*)&u,sizeof(float));
-      fid.read((char*)&v,sizeof(float));
-      fid.read((char*)&w,sizeof(float));
-      fid.read((char*)&byte,sizeof(int));
-      diff += (bodies[i].TRG[0] - u) * (bodies[i].TRG[0] - u)
-            + (bodies[i].TRG[1] - v) * (bodies[i].TRG[1] - v)
-            + (bodies[i].TRG[2] - w) * (bodies[i].TRG[2] - w);
-      norm += u * u + v * v + w * w;
+    for( int rank=0; rank!=MPISIZE; ++rank ) {
+      if( rank == MPIRANK ) {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          int i = B-bodies.begin();
+          fid.read((char*)&byte,sizeof(int));
+          fid.read((char*)&u,sizeof(float));
+          fid.read((char*)&v,sizeof(float));
+          fid.read((char*)&w,sizeof(float));
+          fid.read((char*)&byte,sizeof(int));
+          diff += (bodies[i].TRG[0] - u) * (bodies[i].TRG[0] - u)
+                + (bodies[i].TRG[1] - v) * (bodies[i].TRG[1] - v)
+                + (bodies[i].TRG[2] - w) * (bodies[i].TRG[2] - w);
+          norm += u * u + v * v + w * w;
+        }
+      } else {
+        for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+          fid.read((char*)&byte,sizeof(int));
+          fid.read((char*)dummy,byte);
+          fid.read((char*)&byte,sizeof(int));
+        }
+      }
     }
     fid.close();
     print("Error         : ",0);
@@ -264,8 +285,9 @@ public:
     writeSpectrum();
 
     float umax = 0;
-    double uu = 0, vv = 0, ww = 0, uw = 0, ds = 0;
-    double ux2 = 0, ux3 = 0, ux4 = 0;
+    float uu = 0, vv = 0, ww = 0, uw = 0, ds = 0;
+    float ux2 = 0, ux3 = 0, ux4 = 0;
+    float statSend[9], statRecv[9];
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       umax = std::max(umax,std::abs(B->TRG[0]));
       umax = std::max(umax,std::abs(B->TRG[1]));
@@ -332,22 +354,41 @@ public:
       float wz = realSend[B-bodies.begin()];
       ds += wz * wz;
     }
-    float ek = uu + vv + ww;
-    uu /= ek;
-    vv /= ek;
-    ww /= ek;
-    uw /= ek;
-    ek /= 2 * bodies.size();
-    ds *= nu / bodies.size() / 4;
-    ux2 /= bodies.size();
-    ux3 /= bodies.size();
-    ux4 /= bodies.size();
-    float sk = ux3 / std::pow(ux2,1.5);
-    float fl = ux4 / ux2 / ux2;
-    float ret = ek * ek / nu / ds;
-    float rel = sqrt(20 * ret / 3);
-    float cfl = umax * dt / dx;
+    statSend[0] = umax;
+    statSend[1] = uu;
+    statSend[2] = vv;
+    statSend[3] = ww;
+    statSend[4] = uw;
+    statSend[5] = ds;
+    statSend[6] = ux2;
+    statSend[7] = ux3;
+    statSend[8] = ux4;
+    MPI_Reduce(&statSend,&statRecv,9,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
     if( MPIRANK == 0 ) {
+      umax = statRecv[0];
+      uu   = statRecv[1];
+      vv   = statRecv[2];
+      ww   = statRecv[3];
+      uw   = statRecv[4];
+      ds   = statRecv[5];
+      ux2  = statRecv[6];
+      ux3  = statRecv[7];
+      ux4  = statRecv[8];
+      float ek = uu + vv + ww;
+      uu /= ek;
+      vv /= ek;
+      ww /= ek;
+      uw /= ek;
+      ek /= 2 * numGlobal;
+      ds *= nu / numGlobal / 4;
+      ux2 /= numGlobal;
+      ux3 /= numGlobal;
+      ux4 /= numGlobal;
+      float sk = ux3 / std::pow(ux2,1.5);
+      float fl = ux4 / ux2 / ux2;
+      float ret = ek * ek / nu / ds;
+      float rel = sqrt(20 * ret / 3);
+      float cfl = umax * dt / dx;
       std::ofstream fid("statistics.dat",std::ios::out | std::ios::app);
       fid << ek << std::endl;
       fid << ds << std::endl;
