@@ -206,15 +206,17 @@ public:
 #else
   void addSpectrum() {
     for( int k=0; k<nx; ++k ) NkSend[k] = 0;
-    for( int ix=1; ix<=nxLocal/2; ++ix ) {
+    for( int ix=1; ix<nxLocal; ++ix ) {
       for( int iy=1; iy<=nx/2; ++iy ) {
         for( int iz=1; iz<=nx/2; ++iz ) {
           int iix = ix + nxLocal * MPIRANK;
-          int i = ix * nx * nx + iy * nx + iz;
-          float kf = sqrtf(iix * iix + iy * iy + iz * iz);
-          int k = floor(kf);
-          EkSend[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]) * 4 * M_PI * kf * kf;
-          NkSend[k]++;
+          if( iix <= nx/2 ) {
+            int i = ix * nx * nx + iy * nx + iz;
+            float kf = sqrtf(iix * iix + iy * iy + iz * iz);
+            int k = floor(kf);
+            EkSend[k] += (realSend[i] * realSend[i] + imagSend[i] * imagSend[i]) * 4 * M_PI * kf * kf;
+            NkSend[k]++;
+          }
         }
       }
     }
