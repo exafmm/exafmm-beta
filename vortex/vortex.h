@@ -8,7 +8,7 @@ private:
   float *r, *x;
   float *dxdt, *dydt, *dzdt;
 
-  void rbf(Bodies &bodies, Cells &cells, int d) {
+  void rbf(Bodies &bodies, Cells &cells, Cells &jcells, int d) {
     const int itmax = 5;
     const float tol = 1e-3;
 
@@ -20,7 +20,7 @@ private:
     }
     commBodies(cells);
     Bodies jbodies = bodies;
-    Cells jcells;
+    jcells.clear();
     bodies2cells(jbodies,jcells);
     downward(cells,jcells,1);
 
@@ -39,7 +39,8 @@ private:
       print("iteration     : ",0);
       print(it,0);
       print(", residual  : ",0);
-      print(sqrt(resRecv / res0));
+      print(sqrt(resRecv / res0),0);
+      print("\n",0);
       evalP2M(cells);
       evalM2M(cells);
       updateBodies();
@@ -94,9 +95,9 @@ public:
     delete[] dzdt;
   }
 
-  void readData(Bodies &bodies, Cells &cells) {                 // Initialize source values
+  void readData(Bodies &bodies, Cells &cells, Cells &jcells) {  // Initialize source values
 #if 1
-    std::ifstream fid("../../hioki/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
+    std::ifstream fid("../../fortran/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
     int byte;
     float dummy[3];
     for( int rank=0; rank!=MPISIZE; ++rank ) {
@@ -200,14 +201,14 @@ public:
     setGlobDomain(bodies);
     octsection(bodies);
     bottomup(bodies,cells);
-    rbf(bodies,cells,2);
-    rbf(bodies,cells,1);
-    rbf(bodies,cells,0);
+    rbf(bodies,cells,jcells,2);
+    rbf(bodies,cells,jcells,1);
+    rbf(bodies,cells,jcells,0);
     unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
   }
 
-  void gridVelocity(Bodies &bodies, Cells &cells) {
+  void gridVelocity(Bodies &bodies, Cells &cells, Cells &jcells) {
     Bodies jbodies = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
@@ -226,7 +227,7 @@ public:
     }
     setKernel("BiotSavart");
     cells.clear();
-    Cells jcells;
+    jcells.clear();
     octsection(bodies);
     octsection(jbodies);
     bottomup(bodies,cells);
@@ -242,8 +243,8 @@ public:
     int byte;
     float dummy[3];
     float u, v, w;
-    float diff = 0, norm = 0;
-    std::ifstream fid("../../hioki/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
+    float diffSend = 0, normSend = 0, diffRecv, normRecv;
+    std::ifstream fid("../../fortran/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
     for( int rank=0; rank!=MPISIZE; ++rank ) {
       if( rank == MPIRANK ) {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -253,10 +254,10 @@ public:
           fid.read((char*)&v,sizeof(float));
           fid.read((char*)&w,sizeof(float));
           fid.read((char*)&byte,sizeof(int));
-          diff += (bodies[i].TRG[0] - u) * (bodies[i].TRG[0] - u)
+          diffSend += (bodies[i].TRG[0] - u) * (bodies[i].TRG[0] - u)
                 + (bodies[i].TRG[1] - v) * (bodies[i].TRG[1] - v)
                 + (bodies[i].TRG[2] - w) * (bodies[i].TRG[2] - w);
-          norm += u * u + v * v + w * w;
+          normSend += u * u + v * v + w * w;
         }
       } else {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -267,8 +268,11 @@ public:
       }
     }
     fid.close();
+    MPI_Reduce(&diffSend,&diffRecv,1,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
+    MPI_Reduce(&normSend,&normRecv,1,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
     print("Error         : ",0);
-    print(sqrt(diff/norm));
+    print(sqrt(diffRecv/normRecv),0);
+    print("\n",0);
   }
 
   void statistics(Bodies &bodies, float nu, float dt) {
@@ -365,7 +369,7 @@ public:
     statSend[8] = ux4;
     MPI_Reduce(&statSend,&statRecv,9,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
     if( MPIRANK == 0 ) {
-      umax = statRecv[0];
+      umax = statRecv[0] / MPISIZE;
       uu   = statRecv[1];
       vv   = statRecv[2];
       ww   = statRecv[3];
@@ -418,7 +422,7 @@ public:
     }
   }
 
-  void BiotSavart(Bodies &bodies, Cells &cells) {
+  void BiotSavart(Bodies &bodies, Cells &cells, Cells &jcells) {
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG = 0;
     }
@@ -428,7 +432,7 @@ public:
     bottomup(bodies,cells);
     commBodies(cells);
     Bodies jbodies = bodies;
-    Cells jcells = cells;
+    jcells = cells;
     commCells(jbodies,jcells);
     downward(cells,jcells,1);
     unpartition(bodies);
@@ -441,7 +445,7 @@ public:
     }
   }
 
-  void Stretching(Bodies &bodies, Cells &cells) {
+  void Stretching(Bodies &bodies, Cells &cells, Cells &jcells) {
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG = 0;
     }
@@ -451,7 +455,7 @@ public:
     bottomup(bodies,cells);
     commBodies(cells);
     Bodies jbodies = bodies;
-    Cells jcells = cells;
+    jcells = cells;
     commCells(jbodies,jcells);
     downward(cells,jcells,1);
     unpartition(bodies);
@@ -478,8 +482,7 @@ public:
     }
   }
 
-  void reinitialize(Bodies &bodies, Bodies &bodies2) {
-    Cells cells, jcells;
+  void reinitialize(Bodies &bodies, Bodies &bodies2, Cells &cells, Cells &jcells) {
     Bodies jbodies = bodies;
     bodies2 = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -494,6 +497,8 @@ public:
     }
 
     setKernel("Gaussian");
+    cells.clear();
+    jcells.clear();
     octsection(bodies);
     octsection(jbodies);
     bottomup(bodies,cells);
@@ -551,9 +556,9 @@ public:
     cells.clear();
     octsection(bodies);
     bottomup(bodies,cells);
-    rbf(bodies,cells,2);
-    rbf(bodies,cells,1);
-    rbf(bodies,cells,0);
+    rbf(bodies,cells,jcells,2);
+    rbf(bodies,cells,jcells,1);
+    rbf(bodies,cells,jcells,0);
     unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
   }

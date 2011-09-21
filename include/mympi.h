@@ -16,12 +16,7 @@ public:
     MPI_Init(&argc,&argv);                                      // Initialize MPI communicator
     MPI_Comm_size(MPI_COMM_WORLD,&MPISIZE);                     // Get number of MPI processes
     MPI_Comm_rank(MPI_COMM_WORLD,&MPIRANK);                     // Get rank of current MPI process
-//#define TSUBAME
-#ifdef TSUBAME
-    DEVICE = MPIRANK / (MPISIZE / GPUS + 1);                    // Get GPU device ID from MPI rank
-#else
     DEVICE = MPIRANK % GPUS;                                    // Get GPU device ID from MPI rank
-#endif
   }
 
   ~MyMPI() {                                                    // Destructor

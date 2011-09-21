@@ -41,7 +41,7 @@ const int  MAXBODY = 200000;                                    // Maximum numbe
 const int  MAXCELL = 10000000;                                  // Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET    = 2;                                         // LET opening critetia
 const real EPS2    = 1e-6;                                      // Softening parameter
-const int  GPUS    = 4;                                         // Number of GPUs per node
+const int  GPUS    = 3;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 
 #if Cartesian

@@ -20,36 +20,36 @@ int main() {
 
   T.startTimer("Read data    ");
   bodies.resize(T.numBodies);
-  T.readData(bodies,cells);
+  T.readData(bodies,cells,jcells);
   T.stopTimer("Read data    ",printNow);
   T.eraseTimer("Read data    ");
 
   T.startTimer("Validate data");
   bodies2 = bodies;
-  T.gridVelocity(bodies,cells);
+  T.gridVelocity(bodies,cells,jcells);
   T.initialError(bodies);
   bodies = bodies2;
   T.stopTimer("Validate data",printNow);
   T.eraseTimer("Validate data");
 
   for( int step=0; step!=numSteps; ++step ) {
-    T.startTimer("Statistics   ");
     if( step%(numSkip+1) == 0 ) {
+      T.startTimer("Statistics   ");
       bodies2 = bodies;
-      T.gridVelocity(bodies,cells);
+      T.gridVelocity(bodies,cells,jcells);
       T.statistics(bodies,nu,dt);
       bodies = bodies2;
+      T.stopTimer("Statistics   ",printNow);
+      T.eraseTimer("Statistics   ");
     }
-    T.stopTimer("Statistics   ",printNow);
-    T.eraseTimer("Statistics   ");
 
     T.startTimer("BiotSavart   ");
-    T.BiotSavart(bodies,cells);
+    T.BiotSavart(bodies,cells,jcells);
     T.stopTimer("BiotSavart   ",printNow);
     T.eraseTimer("BiotSavart   ");
 
     T.startTimer("Stretching   ");
-    T.Stretching(bodies,cells);
+    T.Stretching(bodies,cells,jcells);
     T.stopTimer("Stretching   ",printNow);
     T.eraseTimer("Stretching   ");
 
@@ -58,10 +58,12 @@ int main() {
     T.stopTimer("Convect      ",printNow);
     T.eraseTimer("Convect      ");
 
-    T.startTimer("Reinitialize ");
-    if( step%(numSkip+1) == numSkip ) T.reinitialize(bodies,bodies2);
-    T.stopTimer("Reinitialize ",printNow);
-    T.eraseTimer("Reinitialize ");
+    if( step%(numSkip+1) == numSkip ) {
+      T.startTimer("Reinitialize ");
+      T.reinitialize(bodies,bodies2,cells,jcells);
+      T.stopTimer("Reinitialize ",printNow);
+      T.eraseTimer("Reinitialize ");
+    }
     T.writeTime();
     T.resetTimer();
   }

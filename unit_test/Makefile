@@ -38,8 +38,8 @@ direct_gpu: direct_gpu.cxx $(OBJECT)
 
 mpi: mpi.cxx
 	@$(CXX) $? $(LFLAGS) -g -pg
-	mpirun -np 128 ./a.out
-	gprof -b a.out gmon.out
+#	mpirun -np 128 ./a.out
+#	gprof -b a.out gmon.out
 
 check_gpus: check_gpus.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
