@@ -12,7 +12,7 @@ int main() {
   const float dt      = 5e-3;
   const float nu      = 1e-2;
   Bodies bodies, bodies2;
-  Cells cells,jcells;
+  Cells cells;
   Vortex T(numGrid1D);
   T.setKernel("Gaussian");
   T.initialize();
@@ -20,36 +20,33 @@ int main() {
 
   T.startTimer("Read data    ");
   bodies.resize(T.numBodies);
-  T.readData(bodies,cells,jcells);
+  bodies2.resize(T.numBodies);
+  T.readData(bodies,bodies2,cells);
   T.stopTimer("Read data    ",printNow);
   T.eraseTimer("Read data    ");
 
   T.startTimer("Validate data");
-  bodies2 = bodies;
-  T.gridVelocity(bodies,cells,jcells);
-  T.initialError(bodies);
-  bodies = bodies2;
+  T.gridVelocity(bodies,bodies2,cells);
+  T.initialError(bodies2);
   T.stopTimer("Validate data",printNow);
   T.eraseTimer("Validate data");
 
   for( int step=0; step!=numSteps; ++step ) {
     if( step%(numSkip+1) == 0 ) {
       T.startTimer("Statistics   ");
-      bodies2 = bodies;
-      T.gridVelocity(bodies,cells,jcells);
-      T.statistics(bodies,nu,dt);
-      bodies = bodies2;
+      T.gridVelocity(bodies,bodies2,cells);
+      T.statistics(bodies2,nu,dt);
       T.stopTimer("Statistics   ",printNow);
       T.eraseTimer("Statistics   ");
     }
 
     T.startTimer("BiotSavart   ");
-    T.BiotSavart(bodies,cells,jcells);
+    T.BiotSavart(bodies,cells);
     T.stopTimer("BiotSavart   ",printNow);
     T.eraseTimer("BiotSavart   ");
 
     T.startTimer("Stretching   ");
-    T.Stretching(bodies,cells,jcells);
+    T.Stretching(bodies,cells);
     T.stopTimer("Stretching   ",printNow);
     T.eraseTimer("Stretching   ");
 
@@ -60,7 +57,7 @@ int main() {
 
     if( step%(numSkip+1) == numSkip ) {
       T.startTimer("Reinitialize ");
-      T.reinitialize(bodies,bodies2,cells,jcells);
+      T.reinitialize(bodies,cells);
       T.stopTimer("Reinitialize ",printNow);
       T.eraseTimer("Reinitialize ");
     }
@@ -70,7 +67,7 @@ int main() {
 
 #ifdef VTK
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->ICELL = 0;
-  for( C_iter C=jcells.begin(); C!=jcells.end(); ++C ) {
+  for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
     Body body;
     body.ICELL = 1;
     body.X = C->X;

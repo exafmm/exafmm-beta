@@ -8,7 +8,7 @@ private:
   float *r, *x;
   float *dxdt, *dydt, *dzdt;
 
-  void rbf(Bodies &bodies, Cells &cells, Cells &jcells, int d) {
+  void rbf(Bodies &bodies, Cells &cells, int d) {
     const int itmax = 5;
     const float tol = 1e-3;
 
@@ -20,7 +20,7 @@ private:
     }
     commBodies(cells);
     Bodies jbodies = bodies;
-    jcells.clear();
+    Cells jcells;
     bodies2cells(jbodies,jcells);
     downward(cells,jcells,1);
 
@@ -41,8 +41,6 @@ private:
       print(", residual  : ",0);
       print(sqrt(resRecv / res0),0);
       print("\n",0);
-      evalP2M(cells);
-      evalM2M(cells);
       updateBodies();
       jbodies = bodies;
       jcells.clear();
@@ -95,7 +93,7 @@ public:
     delete[] dzdt;
   }
 
-  void readData(Bodies &bodies, Cells &cells, Cells &jcells) {  // Initialize source values
+  void readData(Bodies &bodies, Bodies &bodies2, Cells &cells) {// Initialize source values
 #if 1
     std::ifstream fid("../../fortran/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
     int byte;
@@ -156,16 +154,30 @@ public:
     fid.close();
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
-      int ix = (i + numBodies * MPIRANK) % nx;
-      int iy = (i + numBodies * MPIRANK) / nx % nx;
-      int iz = (i + numBodies * MPIRANK) / nx / nx;
-      B->IBODY = i;                                             //  Tag body with initial index
+      int iGlob = i + numBodies * MPIRANK;
+      int ix = iGlob % nx;
+      int iy = iGlob / nx % nx;
+      int iz = iGlob / nx / nx;
+      B->IBODY = iGlob;                                         //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
       B->X[0] = (ix + .5) * dx - M_PI;                          //  Initialize x position
       B->X[1] = (iy + .5) * dx - M_PI;                          //  Initialize y position
       B->X[2] = (iz + .5) * dx - M_PI;                          //  Initialize z position
       B->SRC[3] = dx;                                           //  Initialize core radius
       realRecv[i] = B->SRC[1];
+    }
+
+    for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
+      int i = B-bodies2.begin();
+      int iGlob = i + numBodies * MPIRANK;
+      int ix = iGlob % nx;
+      int iy = iGlob / nx % nx;
+      int iz = iGlob / nx / nx;
+      B->IBODY = iGlob;                                         //  Tag body with initial index
+      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
+      B->X[0] = ix * dx - M_PI + 1e-5;
+      B->X[1] = iy * dx - M_PI + 1e-5;
+      B->X[2] = iz * dx - M_PI + 1e-5;
     }
 
     zDerivative();
@@ -200,50 +212,33 @@ public:
 
     setGlobDomain(bodies);
     octsection(bodies);
+    octsection(bodies2);
     bottomup(bodies,cells);
-    rbf(bodies,cells,jcells,2);
-    rbf(bodies,cells,jcells,1);
-    rbf(bodies,cells,jcells,0);
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
+    rbf(bodies,cells,2);
+    rbf(bodies,cells,1);
+    rbf(bodies,cells,0);
   }
 
-  void gridVelocity(Bodies &bodies, Cells &cells, Cells &jcells) {
+  void gridVelocity(Bodies &bodies, Bodies &bodies2, Cells &cells) {
     Bodies jbodies = bodies;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      int i = B-bodies.begin();
-      int ix = (i + numBodies * MPIRANK) % nx;
-      int iy = (i + numBodies * MPIRANK) / nx % nx;
-      int iz = (i + numBodies * MPIRANK) / nx / nx;
-      B->IBODY = i;                                             //  Tag body with initial index
-      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->X[0] = ix * dx - M_PI + 1e-5;
-      B->X[1] = iy * dx - M_PI + 1e-5;
-      B->X[2] = iz * dx - M_PI + 1e-5;
-    }
-
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      B->TRG = 0;
-    }
+    for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) B->TRG = 0;
     setKernel("BiotSavart");
     cells.clear();
-    jcells.clear();
-    octsection(bodies);
-    octsection(jbodies);
-    bottomup(bodies,cells);
+    Cells jcells;
+    bottomup(bodies2,cells);
     bottomup(jbodies,jcells);
     commBodies(jcells);
     commCells(jbodies,jcells);
     downward(cells,jcells,1);
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
   }
 
-  void initialError(Bodies &bodies) {
+  void initialError(Bodies bodies) {
     int byte;
     float dummy[3];
     float u, v, w;
     float diffSend = 0, normSend = 0, diffRecv, normRecv;
+    unpartition(bodies);
+    std::sort(bodies.begin(),bodies.end());
     std::ifstream fid("../../fortran/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
     for( int rank=0; rank!=MPISIZE; ++rank ) {
       if( rank == MPIRANK ) {
@@ -255,8 +250,8 @@ public:
           fid.read((char*)&w,sizeof(float));
           fid.read((char*)&byte,sizeof(int));
           diffSend += (bodies[i].TRG[0] - u) * (bodies[i].TRG[0] - u)
-                + (bodies[i].TRG[1] - v) * (bodies[i].TRG[1] - v)
-                + (bodies[i].TRG[2] - w) * (bodies[i].TRG[2] - w);
+                   + (bodies[i].TRG[1] - v) * (bodies[i].TRG[1] - v)
+                   + (bodies[i].TRG[2] - w) * (bodies[i].TRG[2] - w);
           normSend += u * u + v * v + w * w;
         }
       } else {
@@ -275,7 +270,9 @@ public:
     print("\n",0);
   }
 
-  void statistics(Bodies &bodies, float nu, float dt) {
+  void statistics(Bodies bodies, float nu, float dt) {
+    unpartition(bodies);
+    std::sort(bodies.begin(),bodies.end());
     initSpectrum();
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) realRecv[B-bodies.begin()] = B->TRG[0];
     forwardFFT();
@@ -422,21 +419,17 @@ public:
     }
   }
 
-  void BiotSavart(Bodies &bodies, Cells &cells, Cells &jcells) {
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      B->TRG = 0;
-    }
+  void BiotSavart(Bodies &bodies, Cells &cells) {
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->TRG = 0;
     setKernel("BiotSavart");
     cells.clear();
     octsection(bodies);
     bottomup(bodies,cells);
     commBodies(cells);
     Bodies jbodies = bodies;
-    jcells = cells;
+    Cells jcells = cells;
     commCells(jbodies,jcells);
     downward(cells,jcells,1);
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
       dxdt[i] = B->TRG[0];
@@ -445,21 +438,16 @@ public:
     }
   }
 
-  void Stretching(Bodies &bodies, Cells &cells, Cells &jcells) {
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      B->TRG = 0;
-    }
+  void Stretching(Bodies &bodies, Cells &cells) {
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->TRG = 0;
     setKernel("Stretching");
-    cells.clear();
-    octsection(bodies);
-    bottomup(bodies,cells);
-    commBodies(cells);
+    evalP2M(cells);
+    evalM2M(cells);
+    updateBodies();
     Bodies jbodies = bodies;
-    jcells = cells;
+    Cells jcells = cells;
     commCells(jbodies,jcells);
     downward(cells,jcells,1);
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
   }
 
   void update(Bodies &bodies, float nu, float dt) {
@@ -482,14 +470,12 @@ public:
     }
   }
 
-  void reinitialize(Bodies &bodies, Bodies &bodies2, Cells &cells, Cells &jcells) {
+  void reinitialize(Bodies &bodies, Cells &cells) {
     Bodies jbodies = bodies;
-    bodies2 = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      int i = B-bodies.begin();
-      int ix = (i + numBodies * MPIRANK) % nx;
-      int iy = (i + numBodies * MPIRANK) / nx % nx;
-      int iz = (i + numBodies * MPIRANK) / nx / nx;
+      int ix = B->IBODY % nx;
+      int iy = B->IBODY / nx % nx;
+      int iz = B->IBODY / nx / nx;
       B->X[0] = (ix + .5) * dx - M_PI;
       B->X[1] = (iy + .5) * dx - M_PI;
       B->X[2] = (iz + .5) * dx - M_PI;
@@ -498,69 +484,42 @@ public:
 
     setKernel("Gaussian");
     cells.clear();
-    jcells.clear();
+    Cells jcells;
     octsection(bodies);
-    octsection(jbodies);
     bottomup(bodies,cells);
     bottomup(jbodies,jcells);
     commBodies(jcells);
     commCells(jbodies,jcells);
+    int numCells = jcells.size();
     downward(cells,jcells,1);
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[1] = B->TRG[0];
       B->TRG[0] = 0;
     }
-    for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
+
+    jcells.resize(numCells);
+    for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
       B->SRC[0] = B->SRC[1];
     }
-
-    cells.clear();
-    jcells.clear();
-    jbodies = bodies2;
-    octsection(bodies);
-    octsection(jbodies);
-    bottomup(bodies,cells);
-    bottomup(jbodies,jcells);
-    commBodies(jcells);
-    commCells(jbodies,jcells);
     downward(cells,jcells,1);
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[2] = B->TRG[0];
       B->TRG[0] = 0;
     }
-    for( B_iter B=bodies2.begin(); B!=bodies2.end(); ++B ) {
+
+    jcells.resize(numCells);
+    for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
       B->SRC[0] = B->SRC[2];
     }
-
-    cells.clear();
-    jcells.clear();
-    jbodies = bodies2;
-    octsection(bodies);
-    octsection(jbodies);
-    bottomup(bodies,cells);
-    bottomup(jbodies,jcells);
-    commBodies(jcells);
-    commCells(jbodies,jcells);
     downward(cells,jcells,1);
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG[3] = B->TRG[0];
       B->SRC[3] = dx;
     }
 
-    cells.clear();
-    octsection(bodies);
-    bottomup(bodies,cells);
-    rbf(bodies,cells,jcells,2);
-    rbf(bodies,cells,jcells,1);
-    rbf(bodies,cells,jcells,0);
-    unpartition(bodies);
-    std::sort(bodies.begin(),bodies.end());
+    rbf(bodies,cells,2);
+    rbf(bodies,cells,1);
+    rbf(bodies,cells,0);
   }
 };
 
