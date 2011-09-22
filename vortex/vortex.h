@@ -80,9 +80,9 @@ public:
     dx   = 2 * M_PI / numGrid1D;
     r    = new float [numBodies];
     x    = new float [numBodies];
-    dxdt = new float [numBodies];
-    dydt = new float [numBodies];
-    dzdt = new float [numBodies];
+    dxdt = new float [2*numBodies];
+    dydt = new float [2*numBodies];
+    dzdt = new float [2*numBodies];
   }
 
   ~Vortex() {
@@ -94,8 +94,18 @@ public:
   }
 
   void readData(Bodies &bodies, Bodies &bodies2, Cells &cells) {// Initialize source values
-#if 1
-    std::ifstream fid("../../fortran/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
+#if 0
+    char fname[256];
+    sprintf(fname,"/work0/t2g-ppc-all/11ITA070/initial%4.4d",MPIRANK);
+    std::ifstream fid(fname,std::ios::in|std::ios::binary);
+    int byte;
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      fid.read((char*)&byte,sizeof(int));
+      fid.read((char*)&bodies[B-bodies.begin()].SRC[0],byte);
+      fid.read((char*)&byte,sizeof(int));
+    }
+#else
+    std::ifstream fid("/work0/t2g-ppc-all/11ITA070/initial256",std::ios::in|std::ios::binary);
     int byte;
     float dummy[3];
     for( int rank=0; rank!=MPISIZE; ++rank ) {
@@ -113,7 +123,9 @@ public:
         }
       }
     }
-#elif 0
+#endif
+/*
+#if 0
     char fname[256];
     sprintf(fname,"../../isotropic/spectral/initialu%4.4d",MPIRANK);
     std::ifstream fid(fname,std::ios::in);
@@ -151,6 +163,7 @@ public:
       }
     }
 #endif
+*/
     fid.close();
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();
@@ -239,7 +252,24 @@ public:
     float diffSend = 0, normSend = 0, diffRecv, normRecv;
     unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
-    std::ifstream fid("../../fortran/3d/isotropic/initialuc",std::ios::in|std::ios::binary);
+#if 0
+    char fname[256];
+    sprintf(fname,"/work0/t2g-ppc-all/11ITA070/initial%4.4d",MPIRANK);
+    std::ifstream fid(fname,std::ios::in|std::ios::binary);
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      int i = B-bodies.begin();
+      fid.read((char*)&byte,sizeof(int));
+      fid.read((char*)&u,sizeof(float));
+      fid.read((char*)&v,sizeof(float));
+      fid.read((char*)&w,sizeof(float));
+      fid.read((char*)&byte,sizeof(int));
+      diffSend += (bodies[i].TRG[0] - u) * (bodies[i].TRG[0] - u)
+                + (bodies[i].TRG[1] - v) * (bodies[i].TRG[1] - v)
+                + (bodies[i].TRG[2] - w) * (bodies[i].TRG[2] - w);
+      normSend += u * u + v * v + w * w;
+    }
+#else
+    std::ifstream fid("/work0/t2g-ppc-all/11ITA070/initial256",std::ios::in|std::ios::binary);
     for( int rank=0; rank!=MPISIZE; ++rank ) {
       if( rank == MPIRANK ) {
         for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -250,8 +280,8 @@ public:
           fid.read((char*)&w,sizeof(float));
           fid.read((char*)&byte,sizeof(int));
           diffSend += (bodies[i].TRG[0] - u) * (bodies[i].TRG[0] - u)
-                   + (bodies[i].TRG[1] - v) * (bodies[i].TRG[1] - v)
-                   + (bodies[i].TRG[2] - w) * (bodies[i].TRG[2] - w);
+                    + (bodies[i].TRG[1] - v) * (bodies[i].TRG[1] - v)
+                    + (bodies[i].TRG[2] - w) * (bodies[i].TRG[2] - w);
           normSend += u * u + v * v + w * w;
         }
       } else {
@@ -262,6 +292,7 @@ public:
         }
       }
     }
+#endif
     fid.close();
     MPI_Reduce(&diffSend,&diffRecv,1,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);
     MPI_Reduce(&normSend,&normRecv,1,MPI_FLOAT,MPI_SUM,0,MPI_COMM_WORLD);

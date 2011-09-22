@@ -6,9 +6,10 @@
 int main() {
   IMAGES = 3;
   THETA = 1/sqrtf(4);
-  const int numGrid1D = 128;
+  const int numGrid1D = 256;
   const int numSteps  = 100;
   const int numSkip   = 9;
+  const int numSkip2  = 9;
   const float dt      = 5e-3;
   const float nu      = 1e-2;
   Bodies bodies, bodies2;
@@ -55,7 +56,7 @@ int main() {
     T.stopTimer("Convect      ",printNow);
     T.eraseTimer("Convect      ");
 
-    if( step%(numSkip+1) == numSkip ) {
+    if( step%(numSkip2+1) == numSkip2 ) {
       T.startTimer("Reinitialize ");
       T.reinitialize(bodies,cells);
       T.stopTimer("Reinitialize ",printNow);
