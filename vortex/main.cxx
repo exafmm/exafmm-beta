@@ -6,8 +6,8 @@
 int main() {
   IMAGES = 3;
   THETA = 1/sqrtf(4);
-  const int numGrid1D = 512;
-  const int numSteps  = 1;
+  const int numGrid1D = 128;
+  const int numSteps  = 2;
   const int numSkip   = 0;
   const int numSkip2  = 0;
   const float dt      = 5e-3;
@@ -33,7 +33,7 @@ int main() {
   T.eraseTimer("Validate data");
 
   for( int step=0; step!=numSteps; ++step ) {
-    T.print("Step         : ",0);
+    T.print("Step          : ",0);
     T.print(step,0);
     T.print("\n",0);
     if( step%(numSkip+1) == 0 ) {
@@ -65,7 +65,7 @@ int main() {
       T.stopTimer("Reinitialize ",printNow);
       T.eraseTimer("Reinitialize ");
     }
-    T.writeTime();
+    if(printNow) T.writeTime();
     T.resetTimer();
   }
 

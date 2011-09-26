@@ -41,10 +41,24 @@ private:
       print(", residual  : ",0);
       print(sqrt(resRecv / res0),0);
       print("\n",0);
-      updateBodies();
-      jbodies = bodies;
-      jcells.clear();
-      bodies2cells(jbodies,jcells);
+      jcells = cells;
+      if( MPISIZE != 1 ) {
+        #pragma omp parallel sections num_threads(2)
+        {
+          #pragma omp section
+          {
+            downward(cells,jcells,1,false);
+          }
+          #pragma omp section
+          {
+            updateBodies();
+          }
+        }
+        jbodies = bodies;
+        jcells.clear();
+        bodies2cells(jbodies,jcells);
+        eraseLocalTree(jcells);
+      }
       downward(cells,jcells,1);
       float pApRecv, pApSend = 0;
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -95,7 +109,7 @@ public:
 
   void readData(Bodies &bodies, Bodies &bodies2, Cells &cells) {// Initialize source values
     char fname[256];
-#if 0
+#if 1
     sprintf(fname,"/work0/t2g-ppc-all/11ITA070/initial%4.4d",nx);
     std::ifstream fid(fname,std::ios::in|std::ios::binary);
     int byte;
@@ -214,7 +228,7 @@ public:
     float diffSend = 0, normSend = 0, diffRecv, normRecv;
     unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
-#if 0
+#if 1
     sprintf(fname,"/work0/t2g-ppc-all/11ITA070/initial%4.4d",nx);
     std::ifstream fid(fname,std::ios::in|std::ios::binary);
     for( int rank=0; rank!=MPISIZE; ++rank ) {
@@ -436,10 +450,25 @@ public:
     setKernel("Stretching");
     evalP2M(cells);
     evalM2M(cells);
-    updateBodies();
-    Bodies jbodies = bodies;
+    Bodies jbodies;
     Cells jcells = cells;
-    commCells(jbodies,jcells);
+    if( MPISIZE != 1 ) {
+      #pragma omp parallel sections num_threads(2)
+      {
+        #pragma omp section
+        {
+          downward(cells,jcells,1,false);
+        }
+        #pragma omp section
+        {
+          updateBodies();
+        }
+      }
+      jbodies = bodies;
+      jcells = cells;
+      commCells(jbodies,jcells);
+      eraseLocalTree(jcells);
+    }
     downward(cells,jcells,1);
   }
 

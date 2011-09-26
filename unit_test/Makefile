@@ -1,97 +1,99 @@
 include ../Makefile
+SERIALRUN = ./a.out
+PARALLELRUN = mpirun -np 8 -machinefile ~/hosts ./a.out
 
 index: index.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
-	./a.out
+	$(SERIALRUN)
 
 topdown: construct.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) -DTOPDOWN
-	./a.out
+	$(SERIALRUN)
 
 bottomup: construct.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	./a.out
+	$(SERIALRUN)
 
 kernel: kernel.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	./a.out
+	$(SERIALRUN)
 
 serialrun: serialrun.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) -DTOPDOWN
-	./a.out
+	$(SERIALRUN)
 
 unsort: unsort.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) -DTOPDOWN
-	./a.out
+	$(SERIALRUN)
 
 Nserial: Nserial.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	./a.out
+	$(SERIALRUN)
 
 cuprintf: cuprintf.cu
 	@$(NVCC) $? $(LFLAGS)
-	./a.out
+	$(SERIALRUN)
 
 direct_gpu: direct_gpu.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	./a.out
+	$(SERIALRUN)
 
 mpi: mpi.cxx
 	@$(CXX) $? $(LFLAGS) -g -pg
-#	mpirun -np 128 ./a.out
-#	gprof -b a.out gmon.out
+	$(PARALLELRUN)
+	gprof -b a.out gmon.out
 
 check_gpus: check_gpus.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-#	mpirun -np 4 ./a.out
+	$(PARALLELRUN)
 
 shift: shift.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
-	mpirun -np 4 ./a.out
+	$(PARALLELRUN)
 
 nth_element: nth_element.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
-	mpirun -np 7 ./a.out
+	$(PARALLELRUN)
 
 bisection: bisection.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
-	mpirun -np 7 ./a.out
+	$(PARALLELRUN)
 
 let: let.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
-	mpirun -np 7 ./a.out
+	$(PARALLELRUN)
 
 parallelrun: parallelrun.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 2 ./a.out
+	$(PARALLELRUN)
 
 unpartition: unpartition.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 4 ./a.out
+	$(PARALLELRUN)
 
 ijparallelrun: ijparallelrun.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 2 ./a.out
+	$(PARALLELRUN)
 
 Nparallel: Nparallel.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 2 ./a.out
+	$(PARALLELRUN)
 
 skip_tree: skip_tree.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 4 ./a.out
+	$(PARALLELRUN)
 
 overlap_comm: overlap_comm.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 4 ./a.out
+	$(PARALLELRUN)
 
 vortex: vortex.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 4 ./a.out
+	$(PARALLELRUN)
 
 vtk: vtk.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
-	./a.out
+	$(SERIALRUN)
 
 all      :
 	make index

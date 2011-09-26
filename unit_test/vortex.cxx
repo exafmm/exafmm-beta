@@ -57,7 +57,7 @@ int main() {
     {
       #pragma omp section
       {
-         T.downward(cells,jcells,1,false);
+        T.downward(cells,jcells,1,false);
       }
       #pragma omp section
       {
@@ -73,7 +73,6 @@ int main() {
 
   T.setKernel("Stretching");
   D.initTarget(bodies);
-  cells.clear();
   T.evalP2M(cells);
   T.evalM2M(cells);
   jcells = cells;
@@ -82,7 +81,7 @@ int main() {
     {
       #pragma omp section
       {
-         T.downward(cells,jcells,1,false);
+        T.downward(cells,jcells,1,false);
       }
       #pragma omp section
       {

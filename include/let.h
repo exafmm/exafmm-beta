@@ -497,17 +497,19 @@ public:
   LocalEssentialTree() : Partition() {}                         // Constructor
   ~LocalEssentialTree() {}                                      // Destructor
 
-  void commBodies(Cells &cells) {                               // Communicate bodies in the LET
+  void setCommBodies(Cells &cells) {                            // Set bodies to communicate
     startTimer("Gather bounds");                                // Start timer
     gatherBounds();                                             // Gather bounds of other domain
     stopTimer("Gather bounds",printNow);                        // Stop timer & print
     startTimer("Get send rank");                                // Start timer
     getSendRank(cells);                                         // Get neighbor ranks to send to
     stopTimer("Get send rank",printNow);                        // Stop timer & print
-    startTimer("Get send cnt ");                                // Start timer
-    getSendCount();                                             // Get size of data to send
-    stopTimer("Get send cnt ",printNow);                        // Stop timer & print
+  }
 
+  void updateBodies(bool comm=true) {                           // Update bodies using the previous send count
+    startTimer("Get send cnt ");                                // Start timer
+    getSendCount(comm);                                         // Get size of data to send
+    stopTimer("Get send cnt ",printNow);                        // Stop timer & print
     startTimer("Alltoall B   ");                                // Start timer
 #if 1
     int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
@@ -532,32 +534,9 @@ public:
     stopTimer("Alltoall B   ",printNow);                        // Stop timer & print
   }
 
-  void updateBodies() {                                         // Update bodies using the previous send count
-    startTimer("Get send cnt ");                                // Start timer
-    getSendCount(false);                                        // Get size of data to send
-    stopTimer("Get send cnt ",printNow);                        // Stop timer & print
-    startTimer("Alltoall B   ");                                // Start timer
-#if 1
-    int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
-    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
-      sendBodyCnt[i] *= bytes;                                  //  Multiply by bytes
-      sendBodyDsp[i] *= bytes;                                  //  Multiply by bytes
-      recvBodyCnt[i] *= bytes;                                  //  Multiply by bytes
-      recvBodyDsp[i] *= bytes;                                  //  Multiply by bytes
-    }                                                           // End loop over ranks
-    MPI_Alltoallv(&sendBodies[0],&sendBodyCnt[0],&sendBodyDsp[0],MPI_BYTE,
-                  &recvBodies[0],&recvBodyCnt[0],&recvBodyDsp[0],MPI_BYTE,MPI_COMM_WORLD);
-    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
-      sendBodyCnt[i] /= bytes;                                  //  Divide by bytes
-      sendBodyDsp[i] /= bytes;                                  //  Divide by bytes
-      recvBodyCnt[i] /= bytes;                                  //  Divide by bytes
-      recvBodyDsp[i] /= bytes;                                  //  Divide by bytes
-    }                                                           // End loop over ranks
-#else
-    commBodiesAlltoall();
-#endif
-    sendBodies.clear();                                         // Clear send buffer for bodies
-    stopTimer("Alltoall B   ",printNow);                        // Stop timer & print
+  void commBodies(Cells &cells) {                               // Communicate bodies in the LET
+    setCommBodies(cells);                                       // Set bodies to communicate
+    updateBodies();                                             // Update bodies with alltoall
   }
 
   void bodies2cells(Bodies &bodies, Cells &cells) {             // Convert recvBodies to cells

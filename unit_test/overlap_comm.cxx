@@ -73,21 +73,21 @@ int main() {
   T.evalM2M(cells);
   jcells = cells;
   if( MPISIZE != 1 ) {
-#pragma omp parallel sections num_threads(2)
-  {
-    #pragma omp section
+    #pragma omp parallel sections num_threads(2)
     {
-      T.downward(cells,jcells,1,false);
+      #pragma omp section
+      {
+        T.downward(cells,jcells,1,false);
+      }
+      #pragma omp section
+      {
+        T.updateBodies();
+      }
     }
-    #pragma omp section
-    {
-      T.updateBodies();
-    }
-  }
-  jbodies = bodies;
-  jcells = cells;
-  T.commCells(jbodies,jcells);
-  T.eraseLocalTree(jcells);
+    jbodies = bodies;
+    jcells = cells;
+    T.commCells(jbodies,jcells);
+    T.eraseLocalTree(jcells);
   }
   T.downward(cells,jcells,1);
   T.copyTime(T2.timer);

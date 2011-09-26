@@ -373,9 +373,7 @@ void Evaluator::evalP2M(Cells &cells) {                         // Evaluate P2M
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetCell(listP2M,flagP2M);                             //  Set target buffer for cells
-    startTimer("P2M kernel   ");                                //  Start timer
     selectP2M();                                                //  Select P2M kernel
-    stopTimer("P2M kernel   ");                                 //  Stop timer
     getTargetCell(listP2M);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -409,9 +407,7 @@ void Evaluator::evalM2M(Cells &cells) {                         // Evaluate M2M
       stopTimer("Get list     ");                               //   Stop timer
       setSourceCell();                                          //   Set source buffer for cells
       setTargetCell(listM2M,flagM2M);                           //   Set target buffer for cells
-      startTimer("M2M kernel   ");                              //   Start timer
       selectM2M();                                              //   Select M2M kernel
-      stopTimer("M2M kernel   ");                               //   Stop timer
       getTargetCell(listM2M);                                   //   Get body values from target buffer
       clearBuffers();                                           //   Clear GPU buffers
       ioffset += numCell;                                       //   Increment ioffset
@@ -439,9 +435,7 @@ void Evaluator::evalM2L(Cells &cells, bool kernel) {            // Evaluate M2L
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell();                                            //  Set source buffer for cells
     setTargetCell(listM2L,flagM2L);                             //  Set target buffer for cells
-    startTimer("M2L kernel   ");                                //  Start timer
     selectM2L();                                                //  Select M2L kernel
-    stopTimer("M2L kernel   ");                                 //  Stop timer
     getTargetCell(listM2L,false);                               //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -469,9 +463,7 @@ void Evaluator::evalM2P(Cells &cells, bool kernel) {            // Evaluate M2P
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell();                                            //  Set source buffer for cells
     setTargetBody(listM2P,flagM2P);                             //  Set target buffer for bodies
-    startTimer("M2P kernel   ");                                //  Start timer
     selectM2P();                                                //  Select M2P kernel
-    stopTimer("M2P kernel   ");                                 //  Stop timer
     getTargetBody(listM2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -499,9 +491,7 @@ void Evaluator::evalP2P(Cells &cells, bool kernel) {            // Evaluate P2P
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetBody(listP2P,flagP2P);                             //  Set target buffer for bodies
-    startTimer("P2P kernel   ");                                //  Start timer
     selectP2P();                                                //  Select P2P kernel
-    stopTimer("P2P kernel   ");                                 //  Stop timer
     getTargetBody(listP2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -538,9 +528,7 @@ void Evaluator::evalL2L(Cells &cells) {                         // Evaluate L2L
       stopTimer("Get list     ");                               //   Stop timer
       setSourceCell(false);                                     //   Set source buffer for cells
       setTargetCell(listL2L,flagL2L);                           //   Set target buffer for cells
-      startTimer("L2L kernel   ");                              //   Start timer
       selectL2L();                                              //   Select L2L kernel
-      stopTimer("L2L kernel   ");                               //   Stop timer
       getTargetCell(listL2L,false);                             //   Get body values from target buffer
       clearBuffers();                                           //   Clear GPU buffers
       ioffset += numCell;                                       //   Increment ioffset
@@ -571,9 +559,7 @@ void Evaluator::evalL2P(Cells &cells) {                         // Evaluate L2P
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell(false);                                       //  Set source buffer for cells
     setTargetBody(listL2P,flagL2P);                             //  Set target buffer for bodies
-    startTimer("L2P kernel   ");                                //  Start timer
     selectL2P();                                                //  Select L2P kernel
-    stopTimer("L2P kernel   ");                                 //  Stop timer
     getTargetBody(listL2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
