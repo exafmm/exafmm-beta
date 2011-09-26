@@ -43,7 +43,7 @@ mpi: mpi.cxx
 
 check_gpus: check_gpus.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	mpirun -np 4 ./a.out
+#	mpirun -np 4 ./a.out
 
 shift: shift.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
