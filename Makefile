@@ -24,11 +24,11 @@ OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)Biot
 .cu.o   :
 	$(NVCC) -c $? -o $@ $(LFLAGS)
 cleanall:
-	rm -f ../unit_test/*.o ../unit_test/*.out ../unit_test/*.sum ../unit_test/time ../unit_test/direct0*
+	rm -f ../unit_test/*.o ../unit_test/*.out ../unit_test/*.dat ../unit_test/*.sum ../unit_test/direct0*
 	rm -f ../example/*.o ../example/*.out ../example/time ../kernel/*.o ../wrapper/*.o
-	rm -f ../wrapper/*.o ../wrapper/*.out ../wrapper/*.a ../wrapper/time
-	rm -f ../vortex/*.o ../vortex/*.out ../vortex/time
-	rm -f ../fast/*.o ../fast/*.out ../fast/time
+	rm -f ../wrapper/*.o ../wrapper/*.out ../wrapper/*.a ../wrapper/*.dat
+	rm -f ../vortex/*.o ../vortex/*.out ../vortex/*.dat
+	rm -f ../fast/*.o ../fast/*.out ../fast/*.dat
 save    :
 	make cleanall
 	tar zcvf ../../exafmm.tgz ../../exafmm

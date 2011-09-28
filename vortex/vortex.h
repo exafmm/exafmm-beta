@@ -18,10 +18,27 @@ private:
       B->SRC[0] = x[i] = B->TRG[d+1] * dx * dx * dx;
       B->TRG[0] = 0;
     }
-    commBodies(cells);
-    Bodies jbodies = bodies;
-    Cells jcells;
-    bodies2cells(jbodies,jcells);
+
+    setCommBodies(cells);
+    Bodies jbodies;
+    Cells jcells = cells;
+    if( MPISIZE != 1 ) {
+      #pragma omp parallel sections num_threads(2)
+      {
+        #pragma omp section
+        {
+          downward(cells,jcells,1,false);
+        }
+        #pragma omp section
+        {
+          updateBodies();
+        }
+      }
+      jbodies = bodies;
+      jcells.clear();
+      bodies2cells(jbodies,jcells);
+      eraseLocalTree(jcells);
+    }
     downward(cells,jcells,1);
 
     float resRecv, resSend = 0;
@@ -432,10 +449,26 @@ public:
     cells.clear();
     octsection(bodies);
     bottomup(bodies,cells);
-    commBodies(cells);
-    Bodies jbodies = bodies;
+    setCommBodies(cells);
+    Bodies jbodies;
     Cells jcells = cells;
-    commCells(jbodies,jcells);
+    if( MPISIZE != 1 ) {
+      #pragma omp parallel sections num_threads(2)
+      {
+        #pragma omp section
+        {
+          downward(cells,jcells,1,false);
+        }
+        #pragma omp section
+        {
+          updateBodies();
+        }
+      }
+      jbodies = bodies;
+      jcells = cells;
+      commCells(jbodies,jcells);
+      eraseLocalTree(jcells);
+    }
     downward(cells,jcells,1);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int i = B-bodies.begin();

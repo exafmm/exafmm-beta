@@ -20,7 +20,7 @@ public:
   Event timer;
 
   Logger() {
-    file.open("time");
+    file.open("time.dat");
     printNow = false;
   }
   ~Logger() {

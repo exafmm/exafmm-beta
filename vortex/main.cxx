@@ -7,9 +7,9 @@ int main() {
   IMAGES = 3;
   THETA = 1/sqrtf(4);
   const int numGrid1D = 128;
-  const int numSteps  = 2;
-  const int numSkip   = 0;
-  const int numSkip2  = 0;
+  const int numSteps  = 4;
+  const int numSkip   = 3;
+  const int numSkip2  = 3;
   const float dt      = 5e-3;
   const float nu      = 1e-2;
   Bodies bodies, bodies2;
