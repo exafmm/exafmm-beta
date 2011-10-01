@@ -81,6 +81,7 @@ public:
   ~TopDown() {}                                                 // Destructor
 
   void grow(Bodies &bodies) {                                   // Grow tree from root
+    startTimer("Grow tree    ");                                // Start timer
     int octant;                                                 // In which octant is the body located?
     Node node;                                                  // Node structure
     node.LEVEL = node.NLEAF = node.ICHILD = node.I = 0;         // Initialize root node counters
@@ -102,10 +103,13 @@ public:
         splitNode(i);                                           //   Split the node into smaller ones
       }                                                         //  Endif for splitting
     }                                                           // End loop over bodies
+    stopTimer("Grow tree    ",printNow);                        // Stop timer
   }
 
   void setIndex() {                                             // Store cell index of all bodies
+    startTimer("Set index    ");                                // Start timer
     traverse(nodes.begin());                                    // Traverse tree
+    stopTimer("Set index    ",printNow);                        // Stop timer 
   }
 };
 
@@ -129,6 +133,7 @@ public:
   ~BottomUp() {}                                                // Destructor
 
   void setIndex(Bodies &bodies, int level=-1, int begin=0, int end=0, bool update=false) {// Set cell index of all bodies
+    startTimer("Set index    ");                                // Start timer
     bigint i;                                                   // Levelwise cell index
     if( level == -1 ) level = getMaxLevel(bodies);              // Decide max level
     bigint off = ((1 << 3*level) - 1) / 7;                      // Offset for each level
@@ -152,9 +157,11 @@ public:
         bodies[b].ICELL = i+off;                                //   Store index in bodies
       }                                                         //  Endif for update
     }                                                           // End loop over bodies
+    stopTimer("Set index    ",printNow);                        // Stop timer
   }
 
   void prune(Bodies &bodies) {                                  // Prune tree by merging cells
+    startTimer("Prune tree   ");                                // Start timer
     int maxLevel = getMaxLevel(bodies);                         // Max level for bottom up tree build
     for( int l=maxLevel; l>0; --l ) {                           // Loop upwards from bottom level
       int level = getLevel(bodies[0].ICELL);                    //  Current level
@@ -186,6 +193,7 @@ public:
         }                                                       //   End loop over bodies in cell
       }                                                         //  Endif for merging
     }                                                           // End loop over levels
+    stopTimer("Prune tree   ",printNow);                        // Stop timer
   }
 
   void grow(Bodies &bodies, int level=0, int begin=0, int end=0) {// Grow tree by splitting cells
@@ -228,18 +236,12 @@ public:
   }
 
   void topdown(Bodies &bodies, Cells &cells) {                  // Topdown tree constructor interface
-    startTimer("Grow tree    ");                                // Start timer
     TopDown::grow(bodies);                                      // Grow tree structure topdown
-    stopTimer("Grow tree    ",printNow);                        // Stop timer & print
 
-    startTimer("Set index    ");                                // Start timer
     TopDown::setIndex();                                        // Set index of cells
-    stopTimer("Set index    ",printNow);                        // Stop timer & print
 
-    startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
-    stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
     Cells twigs;                                                // Twigs are cells at the bottom of tree
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
@@ -249,27 +251,17 @@ public:
   }
 
   void bottomup(Bodies &bodies, Cells &cells) {                 // Bottomup tree constructor interface
-    startTimer("Set index    ");                                // Start timer
     BottomUp::setIndex(bodies);                                 // Set index of cells
-    stopTimer("Set index    ",printNow);                        // Stop timer & print
 
-    startTimer("Sort bodies  ");                                // Start timer
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
-    stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 
 /*
-    startTimer("Prune tree   ");                                // Start timer
     prune(bodies);                                              // Prune tree structure bottomup
-    stopTimer("Prune tree   ",printNow);                        // Stop timer & print
 
-    startTimer("Grow tree    ");                                // Start timer
     BottomUp::grow(bodies);                                     // Grow tree structure at bottom if necessary
-    stopTimer("Grow tree    ",printNow);                        // Stop timer & print
 
-    startTimer("Sort bodies  ");                                // Start timer
     sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
-    stopTimer("Sort bodies  ",printNow);                        // Stop timer & print
 */
 
     Cells twigs;                                                // Twigs are cells at the bottom of tree

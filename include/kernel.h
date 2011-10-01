@@ -1,7 +1,7 @@
 #ifndef kernel_h
 #define kernel_h
 #define KERNEL
-#include "logger.h"
+#include "sort.h"
 #undef KERNEL
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
@@ -9,7 +9,7 @@ const int  P2 = P * P;                                          // P^2
 const int  P4 = P2 * P2;                                        // P^4
 const real EPS = 1e-6;                                          // Single precision epsilon
 
-class Kernel : public Logger {                                  // Unified CPU/GPU kernel class
+class Kernel : public Sort {                                    // Unified CPU/GPU kernel class
 protected:
   B_iter      BI0;                                              // Target bodies begin iterator
   B_iter      BIN;                                              // Target bodies end iterator

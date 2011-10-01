@@ -31,10 +31,8 @@ int main() {
   T.binBodies(bodies,0);
   T.stopTimer("Set index    ",T.printNow);
 
-  T.startTimer("Sort index   ");
   T.buffer.resize(bodies.size());
   T.sortBodies(bodies,T.buffer);
-  T.stopTimer("Sort index   ",T.printNow);
 
   T.startTimer("Nth element  ");
   bigint nthGlobal = numBodies * MPISIZE / 3;

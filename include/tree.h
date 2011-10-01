@@ -1,9 +1,8 @@
 #ifndef tree_h
 #define tree_h
-#include "sort.h"
 #include "evaluator.h"
 
-class TreeStructure : public Evaluator, public Sort {           // Base class for tree structure
+class TreeStructure : public Evaluator {                        // Base class for tree structure
 public:
   Bodies buffer;                                                // Buffer for comm & sort
 
@@ -133,27 +132,36 @@ protected:
   }
 
   void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) { // Link twigs bottomup to create all cells in tree
-    startTimer("Twigs2cells  ");                                // Start timer
     int begin = 0, end = 0;                                     // Initialize range of cell vector
     int level = getLevel(twigs.back().ICELL);                   // Initialize level of tree
+    startTimer("Sort resize  ");                                // Start timer
+    Cells buffer(2*twigs.size());                               // Sort buffer for cells
+    stopTimer("Sort resize  ");                                 // Stop timer
     while( !twigs.empty() ) {                                   // Keep poppig twigs until the vector is empty
       while( getLevel(twigs.back().ICELL) != level ) {          //  While cell belongs to a higher level
-        sortCells(cells,false,begin,end);                       //   Sort cells at this level
+        sortCells(cells,buffer,false,begin,end);                //   Sort cells at this level
+        startTimer("Twigs2cells  ");                            //   Start timer
         unique(cells,sticks,begin,end);                         //   Get rid of duplicate cells
         linkParent(cells,begin,end);                            //   Form parent-child mutual link
         level--;                                                //   Go up one level
+        stopTimer("Twigs2cells  ");                             //   Stop timer
       }                                                         //  End while for higher level
-      cells.push_back(twigs.back());                            // Push cells into vector
-      twigs.pop_back();                                         // Pop twigs from vector
-      end++;                                                    // Increment cell counter
+      startTimer("Twigs2cells  ");                              //  Start timer
+      cells.push_back(twigs.back());                            //  Push cells into vector
+      twigs.pop_back();                                         //  Pop twigs from vector
+      end++;                                                    //  Increment cell counter
+      stopTimer("Twigs2cells  ");                               //  Stop timer
     }                                                           // End while for popping twigs
     for( int l=level; l>0; --l ) {                              // Once all the twigs are done, do the rest
-      sortCells(cells,false,begin,end);                         //  Sort cells at this level
+      sortCells(cells,buffer,false,begin,end);                  //  Sort cells at this level
+      startTimer("Twigs2cells  ");                              //  Start timer
       unique(cells,sticks,begin,end);                           //  Get rid of duplicate cells
       linkParent(cells,begin,end);                              //  Form parent-child mutual link
+      stopTimer("Twigs2cells  ");                               //  Stop timer
     }                                                           // End loop over levels
+    startTimer("Twigs2cells  ");                                // Start timer
     unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
-    stopTimer("Twigs2cells  ",printNow);                        // Stop timer & print
+    stopTimer("Twigs2cells  ");                                 // Stop timer & print
     evalM2M(cells);                                             // Evaluate M2M kernel
   }
 

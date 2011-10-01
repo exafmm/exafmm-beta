@@ -29,10 +29,8 @@ int main() {
   T.BottomUp::setIndex(bodies);
   T.stopTimer("Set index    ",T.printNow);
 
-  T.startTimer("Sort index   ");
   T.buffer.resize(bodies.size());
   T.sortBodies(bodies,T.buffer);
-  T.stopTimer("Sort index   ",T.printNow);
 
   bigint oldIndex(bodies[0].ICELL);
   int b = 0;

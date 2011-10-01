@@ -1,6 +1,6 @@
 include ../Makefile
 SERIALRUN = ./a.out
-PARALLELRUN = mpirun -np 16 -machinefile ~/hosts ./a.out
+PARALLELRUN = mpirun -np 2 -machinefile ~/hosts ./a.out
 
 index: index.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)

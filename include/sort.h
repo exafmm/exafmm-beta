@@ -1,8 +1,8 @@
 #ifndef sort_h
 #define sort_h
-#include "types.h"
+#include "logger.h"
 
-class Sort {                                                    // Custom bucket sort for body and cell structures
+class Sort : public Logger {                                    // Custom bucket sort for body and cell structures
 private:
   std::vector<int> bucket;                                      // Bucket for sorting
 
@@ -25,40 +25,51 @@ private:
   template<typename T>
   void sortICELL(T &values, T &buffer, bigint Imin,             // Bucket sort for small indices
                  int numBucket, bool ascend, int begin, int end) {
+    startTimer("Fill bucket  ");                                // Start timer
     for( int i=0; i!=numBucket; ++i ) bucket[i] = 0;            // Initialize bucket
     for( int i=begin; i!=end; ++i ) bucket[values[i].ICELL-Imin]++;// Fill bucket
     for( int i=1; i!=numBucket; ++i ) bucket[i] += bucket[i-1]; // Scan bucket
+    stopTimer("Fill bucket  ");                                 // Stop timer
+    startTimer("Empty bucket ");                                // Start timer
     for( int i=end-1; i>=begin; --i ) {                         // Loop over data backwards
       bucket[values[i].ICELL-Imin]--;                           //  Empty bucket
       int inew = bucket[values[i].ICELL-Imin]+begin;            //  Permutation index
       buffer[inew] = values[i];                                 //  Fill buffer
     }                                                           // End loop over data
+    stopTimer("Empty bucket ");                                 // Stop timer
+    startTimer("Copy value   ");                                // Start timer
     if( ascend ) {                                              // If sorting in ascending order
-      for( int i=begin; i!=end; ++i ) values[i] = buffer[i];    //  Copy back bodiess in order
+#pragma omp parallel for num_threads(4)
+      for( int i=begin; i<end; ++i ) values[i] = buffer[i];     //  Copy back bodiess in order
     } else {                                                    // If sorting in descending order
-      for( int i=begin; i!=end; ++i ) values[end-i+begin-1] = buffer[i];// Copy back bodiess in reverse order
+#pragma omp parallel for num_threads(4)
+      for( int i=begin; i<end; ++i ) values[end-i+begin-1] = buffer[i];// Copy back bodiess in reverse order
     }                                                           // Endif for sorting order
+    stopTimer("Copy value   ");                                 // Stop timer
   }
 
 public:
   void sortBodies(Bodies &bodies, Bodies &buffer, bool ascend=true, int begin=0, int end=0) {// Sort bodies accoring to cell index
+    startTimer("Sort bodies  ");                                // Start timer
     if( bodies.size() == 0 ) return;                            // Don't do anything if vector is empty
     if( end == 0 ) end = bodies.size();                         // Default range is the whole vector
     int numBucket = 0;                                          // Initialize bucket size
     bigint Imin = 0;                                            // Initialize minimum index
     getBucketSize(bodies,begin,end,Imin,numBucket);             // Get bucket size for sorting
+    stopTimer("Sort bodies  ");                                 // Stop timer
     sortICELL(bodies,buffer,Imin,numBucket,ascend,begin,end);   // Call bucket sort for small indices
   }
 
-  void sortCells(Cells &cells, bool ascend=true, int begin=0, int end=0) {// Sort cells according to cell index
+  void sortCells(Cells &cells, Cells &buffer, bool ascend=true, int begin=0, int end=0) {// Sort cells according to cell index
+    startTimer("Sort cells   ");                                // Start timer
     if( cells.size() == 0 ) return;                             // Don't do anything if vector is empty
     if( end == 0 ) end = cells.size();                          // Default rage is the whole vector
     int numBucket = 0;                                          // Initialize bucket size
     bigint Imin = 0;                                            // Initialize minimum index
     getBucketSize(cells,begin,end,Imin,numBucket);              // Get bucket size for sorting
-    Cells cbuffer;                                              // Vector for sort buffer
-    cbuffer.resize(cells.size());                               // Resize vector for sort buffer
-    sortICELL(cells,cbuffer,Imin,numBucket,ascend,begin,end);   // Call bucket sort for small indices
+    stopTimer("Sort cells   ");                                 // Stop timer
+    assert( buffer.size() >= cells.size() );                    // Check sort buffer size
+    sortICELL(cells,buffer,Imin,numBucket,ascend,begin,end);    // Call bucket sort for small indices
   }
 };
 

@@ -30,10 +30,8 @@ int main() {
   T.BottomUp::setIndex(bodies);
   T.stopTimer("Set index    ");
 
-  T.startTimer("Sort bodies  ");
   T.buffer.resize(bodies.size());
   T.sortBodies(bodies,T.buffer);
-  T.stopTimer("Sort bodies  ",T.printNow);
 
   T.bisection(bodies);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
