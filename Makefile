@@ -29,6 +29,10 @@ cleanall:
 	rm -f ../wrapper/*.o ../wrapper/*.out ../wrapper/*.a ../wrapper/*.dat
 	rm -f ../vortex/*.o ../vortex/*.out ../vortex/*.dat
 	rm -f ../fast/*.o ../fast/*.out ../fast/*.dat
+commit  :
+	hg commit
+	hg push
+	hg pull -u
 save    :
 	make cleanall
 	tar zcvf ../../exafmm.tgz ../../exafmm

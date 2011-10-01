@@ -87,10 +87,6 @@ overlap_comm: overlap_comm.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
 	$(PARALLELRUN)
 
-vortex: vortex.cxx $(OBJECT)
-	@$(CXX) $? $(LFLAGS)
-	$(PARALLELRUN)
-
 vtk: vtk.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(SERIALRUN)

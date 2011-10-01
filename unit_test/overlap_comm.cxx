@@ -39,15 +39,6 @@ int main() {
 
   T.commBodies(cells);
 
-  jbodies = bodies;
-  Cells jcells = cells;
-  T.commCells(jbodies,jcells);
-
-  T.startTimer("Downward     ");
-  T.downward(cells,jcells,1);
-  T.stopTimer("Downward     ",T.printNow);
-  T.eraseTimer("Downward     ");
-
   if( IMAGES != 0 ) {
     T.startTimer("Set periodic ");
     jbodies = T.periodicBodies(bodies);
@@ -71,7 +62,7 @@ int main() {
   D.initTarget(bodies);
   T.evalP2M(cells);
   T.evalM2M(cells);
-  jcells = cells;
+  Cells jcells = cells;
   if( MPISIZE != 1 ) {
     #pragma omp parallel sections num_threads(2)
     {
