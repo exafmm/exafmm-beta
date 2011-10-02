@@ -6,6 +6,7 @@
 
 int main() {
   const int numBodies = 10000;
+  const int numTarget = 100;
   std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
@@ -34,6 +35,7 @@ int main() {
   }
 
   T.startTimer("Direct sum   ");
+  bodies2.resize(numTarget);
   T.evalP2P(bodies2,jbodies);
   T.stopTimer("Direct sum   ",T.printNow);
   T.eraseTimer("Direct sum   ");
@@ -61,14 +63,8 @@ int main() {
   T.writeTime();
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+  bodies.resize(numTarget);
   D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   D.printError(diff1,norm1,diff2,norm2);
-#ifdef VTK
-  int Ncell = 0;
-  vtkPlot vtk;
-  vtk.setDomain(T.getR0(),T.getX0());
-  vtk.setGroupOfPoints(bodies,Ncell);
-  vtk.plot(Ncell);
-#endif
   T.finalize();
 }

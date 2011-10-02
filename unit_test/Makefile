@@ -1,6 +1,7 @@
 include ../Makefile
 SERIALRUN = ./a.out
-PARALLELRUN = mpirun -np 2 -machinefile ~/hosts ./a.out
+#PARALLELRUN = mpirun -np 2 -machinefile ~/hosts ./a.out
+PARALLELRUN = mpirun -np 4 ./a.out
 
 index: index.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
@@ -28,10 +29,6 @@ unsort: unsort.cxx $(OBJECT)
 
 Nserial: Nserial.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS)
-	$(SERIALRUN)
-
-cuprintf: cuprintf.cu
-	@$(NVCC) $? $(LFLAGS)
 	$(SERIALRUN)
 
 direct_gpu: direct_gpu.cxx $(OBJECT)
@@ -64,15 +61,15 @@ let: let.cxx $(OBJECT)
 	$(PARALLELRUN)
 
 parallelrun: parallelrun.cxx $(OBJECT)
-	@$(CXX) $? $(LFLAGS)
+	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(PARALLELRUN)
 
 unpartition: unpartition.cxx $(OBJECT)
-	@$(CXX) $? $(LFLAGS)
+	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(PARALLELRUN)
 
 ijparallelrun: ijparallelrun.cxx $(OBJECT)
-	@$(CXX) $? $(LFLAGS)
+	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(PARALLELRUN)
 
 Nparallel: Nparallel.cxx $(OBJECT)
@@ -80,15 +77,19 @@ Nparallel: Nparallel.cxx $(OBJECT)
 	$(PARALLELRUN)
 
 skip_tree: skip_tree.cxx $(OBJECT)
-	@$(CXX) $? $(LFLAGS)
+	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(PARALLELRUN)
 
 overlap_comm: overlap_comm.cxx $(OBJECT)
-	@$(CXX) $? $(LFLAGS)
+	@$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(PARALLELRUN)
 
 vtk: vtk.cxx $(OBJECT)
 	@$(CXX) $? $(LFLAGS) $(VFLAGS)
+	$(SERIALRUN)
+
+cuprintf: cuprintf.cu
+	@$(NVCC) $? $(LFLAGS)
 	$(SERIALRUN)
 
 all      :

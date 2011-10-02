@@ -135,11 +135,11 @@ protected:
     int begin = 0, end = 0;                                     // Initialize range of cell vector
     int level = getLevel(twigs.back().ICELL);                   // Initialize level of tree
     startTimer("Sort resize  ");                                // Start timer
-    Cells buffer(2*twigs.size());                               // Sort buffer for cells
+    Cells cbuffer(2*twigs.size());                              // Sort buffer for cells
     stopTimer("Sort resize  ");                                 // Stop timer
     while( !twigs.empty() ) {                                   // Keep poppig twigs until the vector is empty
       while( getLevel(twigs.back().ICELL) != level ) {          //  While cell belongs to a higher level
-        sortCells(cells,buffer,false,begin,end);                //   Sort cells at this level
+        sortCells(cells,cbuffer,false,begin,end);               //   Sort cells at this level
         startTimer("Twigs2cells  ");                            //   Start timer
         unique(cells,sticks,begin,end);                         //   Get rid of duplicate cells
         linkParent(cells,begin,end);                            //   Form parent-child mutual link
@@ -153,7 +153,7 @@ protected:
       stopTimer("Twigs2cells  ");                               //  Stop timer
     }                                                           // End while for popping twigs
     for( int l=level; l>0; --l ) {                              // Once all the twigs are done, do the rest
-      sortCells(cells,buffer,false,begin,end);                  //  Sort cells at this level
+      sortCells(cells,cbuffer,false,begin,end);                 //  Sort cells at this level
       startTimer("Twigs2cells  ");                              //  Start timer
       unique(cells,sticks,begin,end);                           //  Get rid of duplicate cells
       linkParent(cells,begin,end);                              //  Form parent-child mutual link

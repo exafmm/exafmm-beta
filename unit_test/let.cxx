@@ -26,7 +26,7 @@ int main() {
   T.setGlobDomain(bodies);
   T.stopTimer("Set domain   ",T.printNow);
 
-  T.bisection(bodies);
+  T.octsection(bodies);
 
 #ifdef TOPDOWN
   T.topdown(bodies,cells);

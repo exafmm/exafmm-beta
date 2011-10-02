@@ -69,10 +69,6 @@ int main() {
     E.evalL2L(icells);
     icells.pop_back();
     E.evalL2P(icells);
-    E.addM2P(jcells.begin());
-//    E.evalM2P(icells,true);
-    icells.clear();
-    jcells.clear();
 
     ibodies2 = ibodies;
     D.initTarget(ibodies2,IeqJ);
@@ -81,6 +77,15 @@ int main() {
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     D.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
     std::cout << "Distance      : " << dist << std::endl;
+    D.printError(diff1,norm1,diff2,norm2);
+
+    D.initTarget(ibodies);
+    E.addM2P(jcells.begin());
+    E.evalM2P(icells,true);
+    icells.clear();
+    jcells.clear();
+    diff1 = norm1 = diff2 = norm2 = 0;
+    D.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
     D.printError(diff1,norm1,diff2,norm2);
   }
   E.postCalculation();

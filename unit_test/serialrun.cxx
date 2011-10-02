@@ -6,6 +6,7 @@
 
 int main() {
   const int numBodies = 10000;
+  const int numTarget = 100;
   std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
@@ -50,6 +51,7 @@ int main() {
   }
 
   T.startTimer("Direct sum   ");
+  bodies.resize(numTarget);
   T.buffer = bodies;
   D.initTarget(T.buffer);
   T.evalP2P(T.buffer,jbodies);

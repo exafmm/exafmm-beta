@@ -6,12 +6,12 @@
 #endif
 
 int main() {
-  int numBodies = 1000;
+  int numBodies = 10000;
+  int numTarget = 100;
   std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
-  Bodies bodies(numBodies);
-  Bodies jbodies;
+  Bodies bodies, jbodies;
   Cells cells;
   Dataset D;
   TreeConstructor T;
@@ -44,9 +44,8 @@ int main() {
       jbodies = T.periodicBodies(T.buffer);
     } else {
       jbodies = T.buffer;
-      T.buffer.resize(100);
-      bodies.resize(100);
     }
+    T.buffer.resize(numTarget);
     T.evalP2P(T.buffer,jbodies);
     D.writeTarget(T.buffer);
 #else
@@ -58,15 +57,9 @@ int main() {
     T.resetTimer();
 
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+    bodies.resize(numTarget);
     D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);
     D.printError(diff1,norm1,diff2,norm2);
   }
-#ifdef VTK
-  int Ncell = 0;
-  vtkPlot vtk;
-  vtk.setDomain(T.getR0(),T.getX0());
-  vtk.setGroupOfPoints(bodies,Ncell);
-  vtk.plot(Ncell);
-#endif
   T.finalize();
 }

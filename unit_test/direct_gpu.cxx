@@ -2,7 +2,8 @@
 #include "evaluator.h"
 
 int main() {
-  const int numBodies = 1000;
+  const int numBodies = 10000;
+  const int numTarget = 100;
   std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
@@ -38,6 +39,7 @@ int main() {
 
   E.startTimer("Direct CPU   ");
   bool onCPU = true;
+  bodies.resize(numTarget);
   Bodies bodies2 = bodies;
   D.initTarget(bodies2);
   E.evalP2P(bodies2,jbodies,onCPU);

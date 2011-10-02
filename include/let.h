@@ -378,9 +378,9 @@ private:
 
   void zipTwigs(Cells &twigs, Cells &cells, Cells &sticks, bool last) {// Zip two groups of twigs that overlap
     startTimer("Sort resize  ");                                // Start timer
-    Cells buffer = twigs;                                       // Sort buffer for cells
+    Cells cbuffer = twigs;                                      // Sort buffer for cells
     stopTimer("Sort resize  ",printNow);                        // Stop timer 
-    sortCells(twigs,buffer);                                    // Sort twigs in ascending order
+    sortCells(twigs,cbuffer);                                   // Sort twigs in ascending order
     startTimer("Ziptwigs     ");                                // Start timer
     bigint index = -1;                                          // Initialize index counter
     while( !twigs.empty() ) {                                   // While twig vector is not empty
@@ -403,7 +403,7 @@ private:
       twigs.pop_back();                                         //  Pop last element from twig vector
     }                                                           // End while for twig vector
     stopTimer("Ziptwigs     ",printNow);                        // Stop timer 
-    sortCells(cells,buffer);                                    // Sort cells in ascending order
+    sortCells(cells,cbuffer);                                   // Sort cells in ascending order
     startTimer("Ziptwigs     ");                                // Start timer
     twigs = cells;                                              // Copy cells to twigs
     cells.clear();                                              // Clear cells

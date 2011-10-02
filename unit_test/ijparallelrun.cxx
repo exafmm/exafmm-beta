@@ -6,10 +6,11 @@
 
 int main() {
   const int numBodies = 10000;
+  const int numTarget = 100;
   std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
-  Bodies bodies(numBodies);
+  Bodies bodies(numTarget);
   Bodies jbodies(numBodies);
   Bodies jbodies2;
   Cells cells,jcells;
@@ -95,25 +96,25 @@ int main() {
 #endif
 
 #ifdef VTK
-  for( B=bodies.begin(); B!=bodies.end(); ++B ) B->I = 0;
+  for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) B->ICELL = 0;
   for( C_iter C=jcells.begin(); C!=jcells.end(); ++C ) {
     Body body;
-    body.I = 1;
-    body.X = C->X;
-    body.SRC = 0;
-    bodies.push_back(body);
+    body.ICELL = 1;
+    body.X     = C->X;
+    body.SRC   = 0;
+    jbodies.push_back(body);
   }
 
   int Ncell = 0;
   vtkPlot vtk;
   if( MPIRANK == 0 ) {
     vtk.setDomain(T.getR0(),T.getX0());
-    vtk.setGroupOfPoints(bodies,Ncell);
+    vtk.setGroupOfPoints(jbodies,Ncell);
   }
   for( int i=1; i!=MPISIZE; ++i ) {
-    T.shiftBodies(bodies);
+    T.shiftBodies(jbodies);
     if( MPIRANK == 0 ) {
-      vtk.setGroupOfPoints(bodies,Ncell);
+      vtk.setGroupOfPoints(jbodies,Ncell);
     }
   }
   if( MPIRANK == 0 ) {

@@ -33,8 +33,7 @@ int main() {
   T.sortBodies(bodies,T.buffer);
 
   bigint oldIndex(bodies[0].ICELL);
-  int b = 0;
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     assert( oldIndex <= B->ICELL );
     oldIndex = B->ICELL;
   }

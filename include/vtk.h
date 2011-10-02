@@ -1,5 +1,6 @@
 #ifndef vtk_h
 #define vtk_h
+#define VTK_EXCLUDE_STRSTREAM_HEADERS
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkVertexGlyphFilter.h>
@@ -149,7 +150,7 @@ public:
     //Create a render window
     vtkRenderWindow *window = vtkRenderWindow::New();
     window->AddRenderer(renderer);
-    window->SetSize(1000,1000);
+    window->SetSize(700,700);
 
     //Create an interactor and associate it to the render window
     vtkRenderWindowInteractor *interactor = vtkRenderWindowInteractor::New();
@@ -162,7 +163,7 @@ public:
     representation->GetPoint1Coordinate()->SetCoordinateSystemToDisplay();
     representation->GetPoint1Coordinate()->SetValue(50,50);
     representation->GetPoint2Coordinate()->SetCoordinateSystemToDisplay();
-    representation->GetPoint2Coordinate()->SetValue(950,50);
+    representation->GetPoint2Coordinate()->SetValue(650,50);
 
     //Create a slider widget
     vtkSliderWidget *widget = vtkSliderWidget::New();
