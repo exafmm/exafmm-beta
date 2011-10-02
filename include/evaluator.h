@@ -2,7 +2,7 @@
 #define evaluator_h
 #include "kernel.h"
 
-class Evaluator : public Kernel {                               // Evaluator is the interface between tree and kernel
+class Evaluator : public Kernel {                               // Interface between tree and kernel
 protected:
   C_iter      CI0;                                              // icells.begin()
   C_iter      CIB;                                              // icells begin per call
@@ -18,11 +18,11 @@ protected:
   real        timeM2P;                                          // M2P execution time
   real        timeP2P;                                          // P2P execution time
 
-  int         Iperiodic;                                        // Periodic image flag (using each bit for 27 images)
+  int         Iperiodic;                                        // Periodic image flag (using each bit for images)
   const int   Icenter;                                          // Periodic image flag at center
-  Maps        flagM2L;                                          // Flag indicating existance of periodic image for M2L
-  Maps        flagM2P;                                          // Flag indicating existance of periodic image for M2P
-  Maps        flagP2P;                                          // Flag indicating existance of periodic image for P2P
+  Maps        flagM2L;                                          // Existance of periodic image for M2L
+  Maps        flagM2P;                                          // Existance of periodic image for M2P
+  Maps        flagP2P;                                          // Existance of periodic image for P2P
 
 private:
   void treecode(C_iter Ci, C_iter Cj) {                         // Tree walk for treecode

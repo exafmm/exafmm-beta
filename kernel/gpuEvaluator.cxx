@@ -177,7 +177,7 @@ void Evaluator::clearBuffers() {                                // Clear GPU buf
 void Evaluator::tryP2P(C_iter Ci, C_iter Cj) {                  // Interface for P2P kernel
   listP2P[Ci-CI0].push_back(Cj);                                // Push source cell into P2P interaction list
   flagP2P[Ci-CI0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
-  NP2P += Ci->NLEAF * Cj->NLEAF;                                // Count P2P kernel execution
+  NP2P++;                                                       // Count P2P kernel execution
 }
 
 void Evaluator::tryM2L(C_iter Ci, C_iter Cj) {                  // Interface for M2L kernel
@@ -202,7 +202,7 @@ void Evaluator::tryM2P(C_iter Ci, C_iter Cj) {                  // Interface for
   } else {                                                      // If target is twig and cell is small enough
     listM2P[Ci-CI0].push_back(Cj);                              //  Push source cell into M2P interaction list
     flagM2P[Ci-CI0][Cj] |= Iperiodic;                           //  Flip bit of periodic image flag
-    NM2P += Ci->NLEAF;                                          //  Count M2P kernel execution
+    NM2P++;                                                     //  Count M2P kernel execution
   }                                                             // Endif for interaction
 } 
 

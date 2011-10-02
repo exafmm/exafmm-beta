@@ -4,7 +4,7 @@ void Evaluator::tryP2P(C_iter Ci, C_iter Cj) {                  // Interface for
   BJ0 = Cj->LEAF;                                               // Set source bodies begin iterator
   BJN = Cj->LEAF + Cj->NLEAF;                                   // Set source bodies end iterator
   selectP2P_CPU();                                              // Select P2P_CPU kernel
-  NP2P += Ci->NLEAF * Cj->NLEAF;                                // Count P2P kernel execution
+  NP2P++;                                                       // Count P2P kernel execution
 }
 
 void Evaluator::tryM2L(C_iter Ci, C_iter Cj) {                  // Interface for M2L kernel
@@ -31,7 +31,7 @@ void Evaluator::tryM2P(C_iter Ci, C_iter Cj) {                  // Interface for
     CI = Ci;                                                    //  Set global target iterator
     CJ = Cj;                                                    //  Set global source iterator
     selectM2P();                                                //  Select M2P kernel
-    NM2P += Ci->NLEAF;                                          //  Count M2P kernel execution
+    NM2P++;                                                     //  Count M2P kernel execution
   }                                                             // Endif for interaction
 }
 
