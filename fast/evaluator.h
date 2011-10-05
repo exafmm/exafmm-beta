@@ -1,11 +1,11 @@
 #ifndef evaluator_h
 #define evaluator_h
 #if CART
-#include <kernel2.h>
+#include "kernel2.h"
 #elif SPHE
-#include <kernel3.h>
+#include "kernel3.h"
 #else
-#include <kernel.h>
+#include "kernel.h"
 #endif
 
 class Evaluator : public Kernel {

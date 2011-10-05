@@ -1,6 +1,6 @@
 #ifndef tree_h
 #define tree_h
-#include <evaluator.h>
+#include "evaluator.h"
 
 class TreeConstructor : public Evaluator {
 private:

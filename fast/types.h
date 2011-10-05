@@ -9,7 +9,7 @@
 #include <stack>
 #include <sys/time.h>
 #include <vector>
-#include <vec.h>
+#include "vec.h"
 
 typedef long                 bigint;                            // Big integer type
 typedef float                real;                              // Real number type on CPU

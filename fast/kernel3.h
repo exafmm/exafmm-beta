@@ -1,6 +1,6 @@
 #ifndef kernel_h
 #define kernel_h
-#include <types.h>
+#include "types.h"
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
 const int  P2 = P * P;

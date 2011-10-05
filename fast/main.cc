@@ -1,5 +1,5 @@
-#include <tree.h>
 #include <fstream>
+#include "tree.h"
 
 int main() {
 #ifdef MANY
@@ -68,7 +68,7 @@ int main() {
 #else
   std::cout << tree+approx << std::endl;
 #endif
-  std::ofstream file("time",std::ios::out | std::ios::app);
+  std::ofstream file("time.dat",std::ios::out | std::ios::app);
   file << tree+approx << std::endl;
   file.close();
 #endif
