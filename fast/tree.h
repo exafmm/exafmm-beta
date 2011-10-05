@@ -148,6 +148,7 @@ public:
   }
 
   void build() {
+    startTimer("Grow tree    ");
     NCELL = 1;
     nodes.reserve(NLEAF);
     Node node;
@@ -175,9 +176,11 @@ public:
       if( LEVEL < N->LEVEL ) LEVEL = N->LEVEL;
     }
     LEVEL++;
+    stopTimer("Grow tree    ",printNow);
   }
 
   void link() {
+    startTimer("Link tree    ");
     BODIES.resize(NLEAF);
     cells.resize(NCELL);
     C0 = cells.begin();
@@ -185,11 +188,12 @@ public:
     CN = C0+1;
     BN = B0;
     nodes2cells(0,C0);
+    stopTimer("Link tree    ",printNow);
   }
 
   void exact(Bodies &bodies) {
     bodies2leafs(bodies);
-#if IeqJ
+#if IEQJ
     P2P(C0);
 #else
     P2P(C0,C0,false);
@@ -201,30 +205,28 @@ public:
   }
 
   void approximate(Bodies &bodies) {
-    double tic,toc;
-    tic = get_time();
+    startTimer("Upward       ");
     bodies2leafs(bodies);
     upward();
-    toc = get_time();
-    std::cout << "upward : " << toc-tic << std::endl;
-    tic = get_time();
-#if IeqJ
+    stopTimer("Upward       ",printNow);
+    startTimer("Traverse     ");
+#if IEQJ
     traverse();
 #else
     traverse(false);
 #endif
-    toc = get_time();
-    std::cout << "intrct : " << toc-tic << std::endl;
-    tic = get_time();
+    stopTimer("Traverse     ",printNow);
+    startTimer("Downward     ");
     for( C_iter C=C0+C0->CHILD; C!=C0+C0->CHILD+C0->NCHILD; ++C ) {
       downward(C);
     }
-    toc = get_time();
-    std::cout << "downwd : " << toc-tic << std::endl;
+    stopTimer("Downward     ",printNow);
 #ifndef MANY
     write();
 #endif
+    startTimer("Leafs2bodies ");
     leafs2bodies(bodies);
+    stopTimer("Leafs2bodies ",printNow);
   }
 };
 

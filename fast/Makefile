@@ -2,7 +2,7 @@ include ../Makefile
 
 a	: main.cc
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DDIRECT -DIeqJ
+	$(CXX) $? $(LFLAGS) -DDIRECT -DIEQJ
 	./a.out
 
 a1	: main.cc
@@ -22,7 +22,7 @@ a3	: main.cc
 
 b	: main.cc
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DIeqJ
+	$(CXX) $? $(LFLAGS) -DMANY -DIEQJ
 	./a.out
 
 b1	: main.cc
@@ -42,7 +42,7 @@ b3	: main.cc
 
 c	: main.cc
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DIeqJ
+	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DIEQJ
 	./a.out
 
 c1	: main.cc

@@ -1,6 +1,5 @@
 #include "dataset.h"
 #include "construct.h"
-#include "kernel.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -8,16 +7,15 @@
 int main() {
   int numBodies = 10000;
   int numTarget = 100;
-  std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies bodies, jbodies;
   Cells cells;
   Dataset D;
+  D.kernelName = "Laplace";
   TreeConstructor T;
-  T.setKernel(kernelName);
+  T.setKernel(D.kernelName);
   T.initialize();
-  D.kernelName = kernelName;
 
   for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+32)/8.0));

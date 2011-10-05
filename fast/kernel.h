@@ -1,8 +1,8 @@
 #ifndef kernel_h
 #define kernel_h
-#include "types.h"
+#include "sort.h"
 
-class Kernel {
+class Kernel : public Sort {
 private:
   real DMAX;
 

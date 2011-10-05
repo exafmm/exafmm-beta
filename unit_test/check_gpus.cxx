@@ -5,16 +5,15 @@
 int main() {
   char hostname[256];
   const int numBodies = 1000;
-  std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Dataset D;
+  D.kernelName = "Laplace";
   Evaluator E;
   MyMPI M;
-  E.setKernel(kernelName);
+  E.setKernel(D.kernelName);
   E.initialize();
-  D.kernelName = kernelName;
   E.preCalculation();
   gethostname(hostname,sizeof(hostname));
   if( MPIRANK == 0 ) E.printNow = true;

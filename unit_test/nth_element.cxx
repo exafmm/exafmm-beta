@@ -7,15 +7,14 @@
 
 int main() {
   const int numBodies = 1000000;
-  std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Dataset D;
+  D.kernelName = "Laplace";
   Partition T;
-  T.setKernel(kernelName);
+  T.setKernel(D.kernelName);
   T.initialize();
-  D.kernelName = kernelName;
   if( MPIRANK == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");

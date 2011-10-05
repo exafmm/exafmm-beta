@@ -4,15 +4,14 @@
 
 int main() {
   const int numBodies = 10000;
-  std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Dataset D;
+  D.kernelName = "Laplace";
   TreeStructure T;
-  T.setKernel(kernelName);
+  T.setKernel(D.kernelName);
   T.initialize();
-  D.kernelName = kernelName;
   T.printNow = true;
 
   T.startTimer("Set bodies   ");

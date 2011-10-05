@@ -1,13 +1,13 @@
 #ifndef kernel_h
 #define kernel_h
-#include "types.h"
+#include "sort.h"
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
 const int  P2 = P * P;
 const int  P4 = P2 * P2;
 const real EPS = 1e-6; 
 
-class Kernel {
+class Kernel : public Sort {
 private:
   real DMAX;
   double *factorial, *prefactor, *Anm;

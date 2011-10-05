@@ -1,13 +1,18 @@
-#ifndef body_h
-#define body_h
+#ifndef types_h
+#define types_h
+#include <algorithm>
 #include <assert.h>
 #include <cmath>
 #include <complex>
 #include <cstdlib>
-#include <list>
+#include <fstream>
 #include <iostream>
+#include <list>
+#include <map>
+#include <omp.h>
 #include <stack>
-#include <sys/time.h>
+#include <string>
+#include <utility>
 #include <vector>
 #include "vec.h"
 
@@ -16,10 +21,28 @@ typedef float                real;                              // Real number t
 typedef float                gpureal;                           // Real number type on GPU
 typedef std::complex<double> complex;                           // Complex number type
 
-const int P = 3;
-const int NCRIT = 8;
-const real THETA = 0.6;
-const real EPS2 = 1e-4;
+#ifndef KERNEL
+int MPIRANK = 0;                                                // MPI comm rank
+int MPISIZE = 1;                                                // MPI comm size
+int DEVICE  = 0;                                                // GPU device ID
+int IMAGES;                                                     // Number of periodic image sublevels
+real THETA;                                                     // Box opening criteria
+#else
+extern int MPIRANK;                                             // MPI comm rank
+extern int MPISIZE;                                             // MPI comm size
+extern int DEVICE;                                              // GPU device ID
+extern int IMAGES;                                              // Number of periodic image sublevels
+extern real THETA;                                              // Box opening criteria
+#endif
+
+const int  P       = 3;                                         // Order of expansions
+const int  NCRIT   = 8;                                         // Number of bodies per cell
+const int  MAXBODY = 200000;                                    // Maximum number of bodies per GPU kernel
+const int  MAXCELL = 10000000;                                  // Maximum number of bodies/coefs in cell per GPU kernel
+const real CLET    = 2;                                         // LET opening critetia
+const real EPS2    = 1e-6;                                      // Softening parameter
+const int  GPUS    = 3;                                         // Number of GPUs per node
+const int  THREADS = 64;                                        // Number of threads per thread-block
 
 const int MCOEF = P*(P+1)*(P+2)/6-3;
 const int LCOEF = (P+1)*(P+2)*(P+3)/6;
@@ -35,14 +58,10 @@ typedef vec<NCOEF,complex> Lset;
 typedef vec<MCOEF,real> Mset;
 typedef vec<LCOEF,real> Lset;
 #endif
-const real zero = 0.;
 
-double get_time(void) {
-  struct timeval tv;
-  struct timezone tz;
-  gettimeofday(&tv, &tz);
-  return ((double)(tv.tv_sec+tv.tv_usec*1.0e-6));
-}
+typedef std::vector<bigint>                    Bigints;         // Vector of big integer types
+typedef std::map<std::string,double>           Event;           // Map of event name to logged value
+typedef std::map<std::string,double>::iterator E_iter;          // Iterator for event name map
 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   int         IBODY;                                            // Initial body numbering for sorting back

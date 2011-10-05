@@ -3,7 +3,6 @@
 
 int main() {
   const int numBodies = 100;
-  std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies ibodies(numBodies);
@@ -12,10 +11,10 @@ int main() {
   Cells  icells;
   Cells  jcells;
   Dataset D;
+  D.kernelName = "Laplace";
   Evaluator E;
-  E.setKernel(kernelName);
+  E.setKernel(D.kernelName);
   E.initialize();
-  D.kernelName = kernelName;
   E.preCalculation();
 
   for( int it=0; it!=10; ++it ) {

@@ -7,17 +7,16 @@
 int main() {
   const int numBodies = 10000;
   const int numTarget = 100;
-  std::string kernelName = "Laplace";
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells;
   Dataset D;
+  D.kernelName = "Laplace";
   LocalEssentialTree T;
-  T.setKernel(kernelName);
+  T.setKernel(D.kernelName);
   T.initialize();
-  D.kernelName = kernelName;
   if( MPIRANK == 0 ) T.printNow = true;
 
   T.startTimer("Set bodies   ");

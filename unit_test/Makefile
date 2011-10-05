@@ -1,7 +1,7 @@
 include ../Makefile
 SERIALRUN = ./a.out
 #PARALLELRUN = mpirun -np 2 -machinefile ~/hosts ./a.out
-PARALLELRUN = mpirun -np 1 ./a.out
+PARALLELRUN = mpirun -np 2 ./a.out
 
 index: index.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
