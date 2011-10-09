@@ -65,7 +65,7 @@ typedef std::map<std::string,double>::iterator E_iter;          // Iterator for 
 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   int         IBODY;                                            // Initial body numbering for sorting back
-//  int         IPROC;                                            // Initial process numbering for partitioning back
+  int         IPROC;                                            // Initial process numbering for partitioning back
 //  bigint      ICELL;                                            // Cell index
   vect        X;                                                // Position
   vec<1,real> SRC;                                              // Source values

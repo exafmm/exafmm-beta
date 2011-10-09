@@ -15,7 +15,7 @@ public:
   void initSource(Bodies &bodies) {                             // Initialize source values
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
-//      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
+      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
       B->SRC = 0;                                               //  Clear previous source values
       if( kernelName == "Laplace" ) {                           //  If Laplace kernel
         B->SRC[0] = 1. / bodies.size() / MPISIZE;               //   Initialize mass/charge
@@ -43,7 +43,7 @@ public:
     srand(1);                                                   // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
-//      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
+      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
       B->TRG = 0 * IeqJ;                                        //  Clear previous target values (IeqJ is dummy)
       if( kernelName == "Laplace" ) {                           //  If Laplace kernel
         B->TRG[0] = -B->SRC[0] / std::sqrt(EPS2) * IeqJ;        //   Initialize potential (0 if I != J)

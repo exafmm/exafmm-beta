@@ -10,54 +10,46 @@ private:
   Bodies BODIES;
 
 private:
-  void init(Node &N) {
-    N.ICHILD = 0;
-    N.NLEAF = 0;
-    N.LEAF = NULL;
-    for( int b=0; b!=8; ++b ) N.CHILD[b] = -1;
+  void init(Node &node) {
+    node.ICHILD = 0;
+    node.NLEAF = 0;
+    node.LEAF = NULL;
+    for( int b=0; b!=8; ++b ) node.CHILD[b] = -1;
   }
 
-  int getOctant(const Leaf *L, N_iter N) const {
-    int octant = 0;
-    for( int d=0; d!=3; ++d ) {
-      octant += (L->X[d] > N->X[d]) << d;
-    }
-    return octant;
-  }
-
-  inline void addChild(int octant, N_iter node) {
+  inline void addChild(int octant, N_iter N) {
     assert(nodes.size() < NLEAF);
     Node child;
     init(child);
-    child.LEVEL = node->LEVEL+1;
+    child.LEVEL = N->LEVEL+1;
     real r = R0 / (1 << child.LEVEL);
-    child.X = node->X;
+    child.X = N->X;
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       child.X[d] += r * (((octant & 1 << d) >> d) * 2 - 1);     //  Calculate new center position
     }                                                           // End loop over dimensions
-    node->ICHILD |= 1 << octant;
-    node->CHILD[octant] = nodes.size();
+    N->ICHILD |= 1 << octant;
+    N->CHILD[octant] = nodes.size();
     nodes.push_back(child);
     NCELL++;
   }
 
-  void splitNode(N_iter node) {
-    while( node->NLEAF > NCRIT ) {
+  void splitNode(N_iter N) {
+    while( N->NLEAF > NCRIT ) {
       int c;
       Leaf *Ln;
-      for( Leaf *Li=node->LEAF; Li; Li=Ln ) {
-        Ln = Li->NEXT;
-        int octant = getOctant(Li,node);
-        if( !(node->ICHILD & (1 << octant)) ) {
-          addChild(octant,node);
+      for( Leaf *L=N->LEAF; L; L=Ln ) {
+        Ln = L->NEXT;
+        int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
+        if( !(N->ICHILD & (1 << octant)) ) {
+          addChild(octant,N);
         }
-        c = node->CHILD[octant];
+        c = N->CHILD[octant];
         Node *child = &nodes[c];
-        Li->NEXT = child->LEAF;
-        child->LEAF = Li;
+        L->NEXT = child->LEAF;
+        child->LEAF = L;
         child->NLEAF++;
       }
-      node = nodes.begin()+c;
+      N = nodes.begin()+c;
     }
   }
 
@@ -70,9 +62,9 @@ private:
       C->CHILD = 0;
       C->NCHILD = 0;
       C->NCLEAF = nodes[i].NLEAF;
-      for( Leaf *Li=nodes[i].LEAF; Li; Li=Li->NEXT ) {
-        BN->IBODY = Li->I;
-        BN->X = Li->X;
+      for( Leaf *L=nodes[i].LEAF; L; L=L->NEXT ) {
+        BN->IBODY = L->I;
+        BN->X = L->X;
         BN++;
       }
     } else {
@@ -157,11 +149,11 @@ public:
     node.X     = X0;
     nodes.push_back(node);
     LEVEL = 0;
-    for( L_iter Li=leafs.begin(); Li!=leafs.end(); ++Li ) {
+    for( L_iter L=leafs.begin(); L!=leafs.end(); ++L ) {
       int i = 0;
       N_iter N = nodes.begin()+i;
       while( N->ICHILD != 0 ) {
-        int octant = getOctant(&*Li,N);
+        int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
         N->NLEAF++;
         if( N->CHILD[octant] == -1 ) {
           addChild(octant,N);
@@ -169,8 +161,8 @@ public:
         i = N->CHILD[octant];
         N = nodes.begin()+i;
       }
-      Li->NEXT = N->LEAF;
-      N->LEAF = &*Li;
+      L->NEXT = N->LEAF;
+      N->LEAF = &*L;
       N->NLEAF++;
       if( N->NLEAF > NCRIT ) splitNode(N);
       if( LEVEL < N->LEVEL ) LEVEL = N->LEVEL;
@@ -188,6 +180,8 @@ public:
     CN = C0+1;
     BN = B0;
     nodes2cells(0,C0);
+    nodes.clear();
+    leafs.clear();
     stopTimer("Link tree    ",printNow);
   }
 
@@ -220,13 +214,11 @@ public:
     for( C_iter C=C0+C0->CHILD; C!=C0+C0->CHILD+C0->NCHILD; ++C ) {
       downward(C);
     }
-    stopTimer("Downward     ",printNow);
 #ifndef MANY
     write();
 #endif
-    startTimer("Leafs2bodies ");
     leafs2bodies(bodies);
-    stopTimer("Leafs2bodies ",printNow);
+    stopTimer("Downward     ",printNow);
   }
 };
 

@@ -101,7 +101,7 @@ protected:
     }                                                           // End loop over dimensions
   }
 
-  void bodies2twigs(Bodies &bodies, Cells &twigs){              // Group bodies into twig cells
+  void bodies2twigs(Bodies &bodies, Cells &twigs) {             // Group bodies into twig cells
     startTimer("Bodies2twigs ");                                // Start timer
     int nleaf = 0;                                              // Initialize number of leafs
     bigint index = bodies[0].ICELL;                             // Initialize cell index
