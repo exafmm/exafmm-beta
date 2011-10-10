@@ -16,8 +16,7 @@ private:
 protected:
   vect   X0;
   real   R0;
-  B_iter B0, BN;
-  C_iter C0, CN;
+  C_iter C0;
 
 private:
   real getBmax(vect const&X, C_iter C) {

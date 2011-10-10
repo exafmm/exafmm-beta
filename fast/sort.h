@@ -6,7 +6,6 @@ class Sort : public Logger {                                    // Custom bucket
 private:
   std::vector<int> bucket;                                      // Bucket for sorting
 
-/*
   template<typename T>
   void getBucketSize(T &values, int begin, int end, bigint &Imin, int &numBucket) {// Get bucket size for sorting
     typename T::iterator V0 = values.begin()+begin;             // Get begin iterator
@@ -72,7 +71,6 @@ public:
     assert( buffer.size() >= cells.size() );                    // Check sort buffer size
     sortICELL(cells,buffer,Imin,numBucket,ascend,begin,end);    // Call bucket sort for small indices
   }
-*/
 };
 
 #endif

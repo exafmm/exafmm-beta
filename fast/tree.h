@@ -2,12 +2,11 @@
 #define tree_h
 #include "evaluator.h"
 
-class TreeConstructor : public Evaluator {
+class TopDown : public Evaluator {
 private:
   Nodes nodes;
-  Cells cells;
   Leafs leafs;
-  Bodies BODIES;
+  B_iter BN;
 
 private:
   void init(Node &node) {
@@ -93,10 +92,7 @@ private:
     }
   }
 
-public:
-  TreeConstructor() {}
-  ~TreeConstructor() {}
-
+protected:
   void setDomain(Bodies &bodies) {
     vect xmin, xmax;
     NLEAF = bodies.size();
@@ -121,22 +117,6 @@ public:
       R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
     }                                                           // End loop over each dimension
     R0 += 1e-5;                                                 // Add some leeway to root radius
-  }
-
-  void bodies2leafs(Bodies &bodies) {
-    for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
-      B->SRC[0] = bodies[B->IBODY].SRC[0];
-      B->TRG = 0;
-    }
-  }
-
-  void leafs2bodies(Bodies &bodies) {
-    for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
-      bodies[B->IBODY].TRG[0] = B->TRG[0];
-      bodies[B->IBODY].TRG[1] = B->TRG[1];
-      bodies[B->IBODY].TRG[2] = B->TRG[2];
-      bodies[B->IBODY].TRG[3] = B->TRG[3];
-    }
   }
 
   void build() {
@@ -176,21 +156,254 @@ public:
     BODIES.resize(NLEAF);
     cells.resize(NCELL);
     C0 = cells.begin();
-    B0 = BODIES.begin();
+    BN = BODIES.begin();
     CN = C0+1;
-    BN = B0;
     nodes2cells(0,C0);
+    CN = C0;
     nodes.clear();
     leafs.clear();
     stopTimer("Link tree    ",printNow);
   }
 
+  void upward() {
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      C->M = 0;
+      C->L = 0;
+    }
+    for( C_iter C=C0+NCELL-1; C!=C0-1; --C ) {
+      setCenter(C);
+      P2M(C);
+      M2M(C);
+    }
+#if CART
+#elif SPHE
+#else
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      C->M[1] *= 0.5 / C->M[0];
+      C->M[2] *= 1.0 / C->M[0];
+      C->M[3] *= 1.0 / C->M[0];
+      C->M[4] *= 0.5 / C->M[0];
+      C->M[5] *= 1.0 / C->M[0];
+      C->M[6] *= 0.5 / C->M[0];
+    }
+#endif
+    set_rcrit();
+  }
+
+public:
+  TopDown() {}
+  ~TopDown() {}
+};
+
+class BottomUp : public TopDown {
+private:
+  int getMaxLevel(Bodies &bodies) {
+    const long N = bodies.size();
+    int level;
+    level = N >= NCRIT ? 1 + int(log(N / NCRIT)/M_LN2/3) : 0;
+    return level;
+  }
+
+  inline void getIndex() {
+    float d = 2 * R0 / (1 << LEVEL);
+    for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {
+      int ix = (B->X[0] + R0 - X0[0]) / d;
+      int iy = (B->X[1] + R0 - X0[1]) / d;
+      int iz = (B->X[2] + R0 - X0[2]) / d;
+      int id = 0;
+      for( int l=0; l!=LEVEL; ++l ) {
+        id += ix % 2 << (3 * l);
+        id += iy % 2 << (3 * l + 1);
+        id += iz % 2 << (3 * l + 2);
+        ix >>= 1;
+        iy >>= 1;
+        iz >>= 1;
+      }
+      B->ICELL = id;
+    }
+  }
+
+  void bodies2twigs() {
+    int I = -1;
+    C_iter C;
+    cells.reserve(1 << (3 * LEVEL));
+    float d = 2 * R0 / (1 << LEVEL);
+    for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {
+      int IC = B->ICELL;
+      int ix = (B->X[0] + R0 - X0[0]) / d;
+      int iy = (B->X[1] + R0 - X0[1]) / d;
+      int iz = (B->X[2] + R0 - X0[2]) / d;
+      if( IC != I ) {
+        Cell cell;
+        cell.NCHILD = 0;
+        cell.NCLEAF = 0;
+        cell.NDLEAF = 0;
+        cell.CHILD  = 0;
+        cell.LEAF   = B;
+        cell.X[0]   = d * (ix + .5) + X0[0] - R0;
+        cell.X[1]   = d * (iy + .5) + X0[1] - R0;
+        cell.X[2]   = d * (iz + .5) + X0[2] - R0;
+        cell.R      = d * .5;
+        cells.push_back(cell);
+        C = cells.end()-1;
+        I = IC;
+      }
+      C->NCLEAF++;
+      C->NDLEAF++;
+    }
+  }
+
+  void twigs2cells() {
+    int begin = 0, end = cells.size();
+    float d = 2 * R0 / (1 << LEVEL);
+    for( int l=0; l!=LEVEL; ++l ) {
+      int div = (8 << (3 * l));
+      int I = -1;
+      int p = end - 1;
+      d *= 2;
+      for( int c=begin; c!=end; ++c ) {
+        B_iter B = cells[c].LEAF;
+        int IC = B->ICELL / div;
+        int ix = (B->X[0] + R0 - X0[0]) / d;
+        int iy = (B->X[1] + R0 - X0[1]) / d;
+        int iz = (B->X[2] + R0 - X0[2]) / d;
+        if( IC != I ) {
+          Cell cell;
+          cell.NCHILD = 0;
+          cell.NCLEAF = 0;
+          cell.NDLEAF = 0;
+          cell.CHILD  = c;
+          cell.LEAF   = cells[c].LEAF;
+          cell.X[0]   = d * (ix + .5) + X0[0] - R0;
+          cell.X[1]   = d * (iy + .5) + X0[1] - R0;
+          cell.X[2]   = d * (iz + .5) + X0[2] - R0;
+          cell.R      = d * .5;
+          cells.push_back(cell);
+          p++;
+          I = IC;
+        }
+        cells[p].NCHILD++;
+        cells[p].NDLEAF += cells[c].NDLEAF;
+        cells[c].PARENT = p;
+      }
+      begin = end;
+      end = cells.size();
+    }
+  }
+
+protected:
+  void setDomain(Bodies &bodies) {
+    BODIES = bodies;
+    LEVEL = getMaxLevel(bodies);
+    vect xmin, xmax;
+    X0 = 0;
+    xmax = xmin = bodies.begin()->X;
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
+        if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];           //   Determine xmin
+        else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];           //   Determine xmax
+      }                                                         //  End loop over each dimension
+      X0 += B->X;                                               //  Sum positions
+    }                                                           // End loop over bodies
+    X0 /= bodies.size();                                        // Calculate average position
+    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
+      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
+      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
+      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
+    }                                                           // End loop over each dimension
+    R0 += 1e-5;                                                 // Add some leeway to root radius
+  }
+
+  void build() {
+    startTimer("Grow tree    ");
+    getIndex();
+    Bodies buffer = BODIES;
+    sortBodies(BODIES,buffer);
+    bodies2twigs();
+    stopTimer("Grow tree    ",printNow);
+  }
+
+  void link() {
+    startTimer("Link tree    ");
+    twigs2cells();
+    NCELL = cells.size();
+    C0 = cells.begin();
+    CN = cells.end()-1;
+    stopTimer("Link tree    ",printNow);
+  }
+
+  void upward() {
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      C->M = 0;
+      C->L = 0;
+    }
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      setCenter(C);
+      P2M(C);
+      M2M(C);
+    }
+#if CART
+#elif SPHE
+#else
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      C->M[1] *= 0.5 / C->M[0];
+      C->M[2] *= 1.0 / C->M[0];
+      C->M[3] *= 1.0 / C->M[0];
+      C->M[4] *= 0.5 / C->M[0];
+      C->M[5] *= 1.0 / C->M[0];
+      C->M[6] *= 0.5 / C->M[0];
+    }
+#endif
+    set_rcrit();
+  }
+
+public:
+  BottomUp() {}
+  ~BottomUp() {}
+};
+
+class TreeConstructor : public BottomUp {
+private:
+  void bodies2leafs(Bodies &bodies) {
+    for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
+      B->SRC = bodies[B->IBODY].SRC;
+      B->TRG = 0;
+    }
+  }
+
+  void leafs2bodies(Bodies &bodies) {
+    for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
+      bodies[B->IBODY].TRG = B->TRG;
+    }
+  }
+
+public:
+  void topdown(Bodies &bodies) {
+    TopDown::setDomain(bodies);
+    TopDown::build();
+    TopDown::link();
+    startTimer("Upward       ");
+    bodies2leafs(bodies);
+    TopDown::upward();
+    stopTimer("Upward       ",printNow);
+  }
+
+  void bottomup(Bodies &bodies) {
+    BottomUp::setDomain(bodies);
+    BottomUp::build();
+    BottomUp::link();
+    startTimer("Upward       ");
+    bodies2leafs(bodies);
+    BottomUp::upward();
+    stopTimer("Upward       ",printNow);
+  }
+
   void exact(Bodies &bodies) {
     bodies2leafs(bodies);
 #if IEQJ
-    P2P(C0);
+    P2P(CN);
 #else
-    P2P(C0,C0,false);
+    P2P(CN,CN,false);
 #endif
     for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
       B->TRG /= B->SRC[0];
@@ -199,10 +412,6 @@ public:
   }
 
   void approximate(Bodies &bodies) {
-    startTimer("Upward       ");
-    bodies2leafs(bodies);
-    upward();
-    stopTimer("Upward       ",printNow);
     startTimer("Traverse     ");
 #if IEQJ
     traverse();
@@ -211,13 +420,14 @@ public:
 #endif
     stopTimer("Traverse     ",printNow);
     startTimer("Downward     ");
-    for( C_iter C=C0+C0->CHILD; C!=C0+C0->CHILD+C0->NCHILD; ++C ) {
+    for( C_iter C=C0+CN->CHILD; C!=C0+CN->CHILD+CN->NCHILD; ++C ) {
       downward(C);
     }
 #ifndef MANY
     write();
 #endif
     leafs2bodies(bodies);
+    cells.clear();
     stopTimer("Downward     ",printNow);
   }
 };

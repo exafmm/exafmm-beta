@@ -181,7 +181,7 @@ public:
       B_iter B2 = bodies2.begin();                              //  Set iterator for bodies2
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
-        std::cout << B->ICELL << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;// Compare every element
+        std::cout << B->IBODY << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;// Compare every element
 #endif
         diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
         norm1 += B2->TRG[0] * B2->TRG[0];                       //  Value of potential

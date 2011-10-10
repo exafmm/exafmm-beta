@@ -10,7 +10,7 @@ int main() {
   D.kernelName = "Laplace";
   TreeConstructor T;
 #ifdef MANY
-  for ( int it=0; it<33; it++ ) {
+  for ( int it=0; it<25; it++ ) {
 #else
 #if BUILD
   T.printNow = true;
@@ -24,9 +24,8 @@ int main() {
   bodies.resize(numBodies);
   D.random(bodies);
   T.startTimer("FMM          ");
-  T.setDomain(bodies);
-  T.build();
-  T.link();
+  T.topdown(bodies);
+//  T.bottomup(bodies);
 #if BUILD
 #else
   T.approximate(bodies);
