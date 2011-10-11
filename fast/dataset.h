@@ -42,11 +42,11 @@ public:
   void initTarget(Bodies &bodies, bool IeqJ=true) {             // Initialize target values
     srand(1);                                                   // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
+//      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
       B->TRG = 0 * IeqJ;                                        //  Clear previous target values (IeqJ is dummy)
       if( kernelName == "Laplace" ) {                           //  If Laplace kernel
-        B->TRG[0] = -B->SRC[0] / std::sqrt(EPS2) * IeqJ;        //   Initialize potential (0 if I != J)
+        B->TRG = 0;                                             //   Initialize potential (0 if I != J)
       } else if ( kernelName == "BiotSavart" ) {                //  If Biot Savart kernel
       } else if ( kernelName == "Stretching" ) {                //  If Stretching kernel
         if( !IeqJ ) {                                           //   If source and target are different

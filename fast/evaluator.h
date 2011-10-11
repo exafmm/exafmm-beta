@@ -15,9 +15,8 @@ private:
   mutable std::stack<Pair> pairStack;
 
 protected:
-  Bodies   BODIES;
   unsigned NCELL;
-  Cells cells;
+  Bodies BODIES;// Deleteing this slows down the code.
   C_iter CN;
 
 private:
