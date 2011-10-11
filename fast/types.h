@@ -88,8 +88,8 @@ typedef std::vector<Leaf>           Leafs;                      // Vector of lea
 typedef std::vector<Leaf>::iterator L_iter;                     // Iterator for leaf vector
 
 struct Node {
+  bool NOCHILD;
   int  LEVEL;
-  int  ICHILD;
   int  NLEAF;
   int  CHILD[8];
   vect X;

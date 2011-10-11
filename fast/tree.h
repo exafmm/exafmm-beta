@@ -4,29 +4,32 @@
 
 class TopDown : public Evaluator {
 private:
-  Nodes nodes;
-  Leafs leafs;
-  B_iter BN;
+  Nodes    nodes;
+  Leafs    leafs;
+  B_iter   BN;
+  unsigned NLEAF;
+
+protected:
+  int MAXLEVEL;
 
 private:
   void init(Node &node) {
-    node.ICHILD = 0;
+    node.NOCHILD = true;
     node.NLEAF = 0;
     node.LEAF = NULL;
     for( int b=0; b!=8; ++b ) node.CHILD[b] = -1;
   }
 
   inline void addChild(int octant, N_iter N) {
-    assert(nodes.size() < NLEAF);
     Node child;
     init(child);
     child.LEVEL = N->LEVEL+1;
-    real r = R0 / (1 << child.LEVEL);
     child.X = N->X;
+    real r = R0 / (1 << child.LEVEL);
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       child.X[d] += r * (((octant & 1 << d) >> d) * 2 - 1);     //  Calculate new center position
     }                                                           // End loop over dimensions
-    N->ICHILD |= 1 << octant;
+    N->NOCHILD = false;
     N->CHILD[octant] = nodes.size();
     nodes.push_back(child);
     NCELL++;
@@ -39,13 +42,13 @@ private:
       for( Leaf *L=N->LEAF; L; L=Ln ) {
         Ln = L->NEXT;
         int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
-        if( !(N->ICHILD & (1 << octant)) ) {
+        if( N->CHILD[octant] == -1 ) {
           addChild(octant,N);
         }
         c = N->CHILD[octant];
         Node *child = &nodes[c];
         L->NEXT = child->LEAF;
-        child->LEAF = L;
+        child->LEAF = &*L;
         child->NLEAF++;
       }
       N = nodes.begin()+c;
@@ -53,17 +56,16 @@ private:
   }
 
   void nodes2cells(int i, C_iter C) {
-    C->R      = R0 / ( 1 << nodes[i].LEVEL );
+    C->R      = R0 / (1 << nodes[i].LEVEL);
     C->X      = nodes[i].X;
     C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
-    if( nodes[i].ICHILD == 0 ) {
+    if( nodes[i].NOCHILD ) {
       C->CHILD = 0;
       C->NCHILD = 0;
       C->NCLEAF = nodes[i].NLEAF;
       for( Leaf *L=nodes[i].LEAF; L; L=L->NEXT ) {
         BN->IBODY = L->I;
-        BN->X = L->X;
         BN++;
       }
     } else {
@@ -74,20 +76,15 @@ private:
           ++nsub;
         }
       }
-      if(nsub) {
-        C_iter Ci = CN;
-        C->CHILD = Ci - C0;
-        C->NCHILD = nsub;
-        CN += nsub;
-        for( int octant=0; octant!=8; ++octant ) {
-          if( nodes[i].CHILD[octant] != -1 ) {
-            Ci->PARENT = C - C0;
-            nodes2cells(nodes[i].CHILD[octant], Ci++);
-          }
+      C_iter Ci = CN;
+      C->CHILD = Ci - C0;
+      C->NCHILD = nsub;
+      CN += nsub;
+      for( int octant=0; octant!=8; ++octant ) {
+        if( nodes[i].CHILD[octant] != -1 ) {
+          Ci->PARENT = C - C0;
+          nodes2cells(nodes[i].CHILD[octant], Ci++);
         }
-      } else {
-        C->CHILD = 0;
-        C->NCHILD = 0;
       }
     }
   }
@@ -128,26 +125,23 @@ protected:
     node.LEVEL = 0;
     node.X     = X0;
     nodes.push_back(node);
-    LEVEL = 0;
+    MAXLEVEL = 0;
     for( L_iter L=leafs.begin(); L!=leafs.end(); ++L ) {
       int i = 0;
       N_iter N = nodes.begin()+i;
-      while( N->ICHILD != 0 ) {
+      while( !N->NOCHILD ) {
         int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
         N->NLEAF++;
-        if( N->CHILD[octant] == -1 ) {
-          addChild(octant,N);
-        }
-        i = N->CHILD[octant];
-        N = nodes.begin()+i;
+        if( N->CHILD[octant] == -1 ) addChild(octant,N);
+        N = nodes.begin()+N->CHILD[octant];
       }
       L->NEXT = N->LEAF;
       N->LEAF = &*L;
       N->NLEAF++;
       if( N->NLEAF > NCRIT ) splitNode(N);
-      if( LEVEL < N->LEVEL ) LEVEL = N->LEVEL;
+      if( MAXLEVEL < N->LEVEL ) MAXLEVEL = N->LEVEL;
     }
-    LEVEL++;
+    MAXLEVEL++;
     stopTimer("Grow tree    ",printNow);
   }
 
@@ -205,13 +199,13 @@ private:
   }
 
   inline void getIndex() {
-    float d = 2 * R0 / (1 << LEVEL);
+    float d = 2 * R0 / (1 << MAXLEVEL);
     for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {
       int ix = (B->X[0] + R0 - X0[0]) / d;
       int iy = (B->X[1] + R0 - X0[1]) / d;
       int iz = (B->X[2] + R0 - X0[2]) / d;
       int id = 0;
-      for( int l=0; l!=LEVEL; ++l ) {
+      for( int l=0; l!=MAXLEVEL; ++l ) {
         id += ix % 2 << (3 * l);
         id += iy % 2 << (3 * l + 1);
         id += iz % 2 << (3 * l + 2);
@@ -226,8 +220,8 @@ private:
   void bodies2twigs() {
     int I = -1;
     C_iter C;
-    cells.reserve(1 << (3 * LEVEL));
-    float d = 2 * R0 / (1 << LEVEL);
+    cells.reserve(1 << (3 * MAXLEVEL));
+    float d = 2 * R0 / (1 << MAXLEVEL);
     for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {
       int IC = B->ICELL;
       int ix = (B->X[0] + R0 - X0[0]) / d;
@@ -255,8 +249,8 @@ private:
 
   void twigs2cells() {
     int begin = 0, end = cells.size();
-    float d = 2 * R0 / (1 << LEVEL);
-    for( int l=0; l!=LEVEL; ++l ) {
+    float d = 2 * R0 / (1 << MAXLEVEL);
+    for( int l=0; l!=MAXLEVEL; ++l ) {
       int div = (8 << (3 * l));
       int I = -1;
       int p = end - 1;
@@ -294,7 +288,7 @@ private:
 protected:
   void setDomain(Bodies &bodies) {
     BODIES = bodies;
-    LEVEL = getMaxLevel(bodies);
+    MAXLEVEL = getMaxLevel(bodies);
     vect xmin, xmax;
     X0 = 0;
     xmax = xmin = bodies.begin()->X;
@@ -366,6 +360,7 @@ class TreeConstructor : public BottomUp {
 private:
   void bodies2leafs(Bodies &bodies) {
     for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
+      B->X   = bodies[B->IBODY].X;
       B->SRC = bodies[B->IBODY].SRC;
       B->TRG = 0;
     }
@@ -375,6 +370,15 @@ private:
     for( B_iter B=BODIES.begin(); B!=BODIES.end(); ++B ) {      // Loop over bodies
       bodies[B->IBODY].TRG = B->TRG;
     }
+  }
+
+  void write() const {
+    std::cout<<" root center:           "<<CN->X            <<'\n';
+    std::cout<<" root radius:           "<<R0               <<'\n';
+    std::cout<<" bodies loaded:         "<<CN->NDLEAF       <<'\n';
+    std::cout<<" total scal:            "<<CN->M[0]         <<'\n';
+    std::cout<<" cells used:            "<<NCELL            <<'\n';
+    std::cout<<" maximum level:         "<<MAXLEVEL         <<'\n';
   }
 
 public:

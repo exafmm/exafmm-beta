@@ -24,8 +24,8 @@ int main() {
   bodies.resize(numBodies);
   D.random(bodies);
   T.startTimer("FMM          ");
-  T.topdown(bodies);
-//  T.bottomup(bodies);
+//  T.topdown(bodies);
+  T.bottomup(bodies);
 #if BUILD
 #else
   T.approximate(bodies);
@@ -36,6 +36,7 @@ int main() {
 
 #ifdef DIRECT
   bodies2 = bodies;
+  D.initTarget(bodies2);
   T.startTimer("Direct sum   ");
   T.exact(bodies2);
   T.stopTimer("Direct sum   ",true);

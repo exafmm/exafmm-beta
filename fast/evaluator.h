@@ -15,10 +15,8 @@ private:
   mutable std::stack<Pair> pairStack;
 
 protected:
-  int LEVEL;
-  unsigned NLEAF;
+  Bodies   BODIES;
   unsigned NCELL;
-  Bodies BODIES;
   Cells cells;
   C_iter CN;
 
@@ -78,15 +76,6 @@ protected:
     for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
       downward(c);
     }
-  }
-
-  void write() const {
-    std::cout<<" root center:           "<<CN->X            <<'\n';
-    std::cout<<" root radius:           "<<R0               <<'\n';
-    std::cout<<" bodies loaded:         "<<CN->NDLEAF       <<'\n';
-    std::cout<<" total scal:            "<<CN->M[0]         <<'\n';
-    std::cout<<" cells used:            "<<NCELL            <<'\n';
-    std::cout<<" maximum level:         "<<LEVEL            <<'\n';
   }
 
   void traverse() const {
