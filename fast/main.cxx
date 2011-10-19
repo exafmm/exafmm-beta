@@ -24,8 +24,8 @@ int main() {
   bodies.resize(numBodies);
   D.random(bodies);
   T.startTimer("FMM          ");
-//  T.topdown(bodies);
-  T.bottomup(bodies);
+  T.topdown(bodies);
+//  T.bottomup(bodies);
 #if BUILD
 #else
   T.approximate();

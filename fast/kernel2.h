@@ -2,6 +2,312 @@
 #define kernel_h
 #include "sort.h"
 
+template<int nx, int ny, int nz>
+struct TaylorIndex {
+  static const int  I = TaylorIndex<nx,ny+1,nz-1>::I + 1;
+  static const real F = TaylorIndex<nx,ny,nz-1>::F * nz;
+};
+
+template<int nx, int ny>
+struct TaylorIndex<nx,ny,0> {
+  static const int  I = TaylorIndex<nx+1,0,ny-1>::I + 1;
+  static const real F = TaylorIndex<nx,ny-1,0>::F * ny;
+};
+
+template<int nx>
+struct TaylorIndex<nx,0,0> {
+  static const int  I = TaylorIndex<0,0,nx-1>::I + 1;
+  static const real F = TaylorIndex<nx-1,0,0>::F * nx;
+};
+
+template<>
+struct TaylorIndex<0,0,0> {
+  static const int  I = 0;
+  static const real F = 1;
+};
+
+
+template<int nx, int ny, int nz>
+struct MultipoleCoef {
+  static inline void loop(Mset &M, const vect &dist) {
+    MultipoleCoef<nx,ny+1,nz-1>::loop(M,dist);
+    M[TaylorIndex<nx,ny,nz>::I] = M[TaylorIndex<nx,ny,nz-1>::I] * dist[2] / nz;
+  }
+};
+
+template<int nx, int ny>
+struct MultipoleCoef<nx,ny,0> {
+  static inline void loop(Mset &M, const vect &dist) {
+    MultipoleCoef<nx+1,0,ny-1>::loop(M,dist);
+    M[TaylorIndex<nx,ny,0>::I] = M[TaylorIndex<nx,ny-1,0>::I] * dist[1] / ny;
+  }
+};
+
+template<int nx>
+struct MultipoleCoef<nx,0,0> {
+  static inline void loop(Mset &M, const vect &dist) {
+    MultipoleCoef<0,0,nx-1>::loop(M,dist);
+    M[TaylorIndex<nx,0,0>::I] = M[TaylorIndex<nx-1,0,0>::I] * dist[0] / nx;
+  }
+};
+
+template<>
+struct MultipoleCoef<0,0,0> {
+  static inline void loop(Mset&, const vect&) {}
+};
+
+
+template<int nx, int ny, int nz, int kx=nx, int ky=ny, int kz=nz>
+struct MultipoleSum {
+  static inline real kernel(const Mset &C, const Mset &M) {
+    return MultipoleSum<nx,ny,nz,kx,ky,kz-1>::kernel(C,M) + C[TaylorIndex<kx,ky,kz>::I]*M[TaylorIndex<nx-kx,ny-ky,nz-kz>::I];
+  }
+};
+
+template<int nx, int ny, int nz, int kx, int ky>
+struct MultipoleSum<nx,ny,nz,kx,ky,0> {
+  static inline real kernel(const Mset &C, const Mset &M) {
+    return MultipoleSum<nx,ny,nz,kx,ky-1,nz>::kernel(C,M) + C[TaylorIndex<kx,ky,0>::I]*M[TaylorIndex<nx-kx,ny-ky,nz>::I];
+  }
+};
+
+template<int nx, int ny, int nz, int kx>
+struct MultipoleSum<nx,ny,nz,kx,0,0> {
+  static inline real kernel(const Mset &C, const Mset &M) {
+    return MultipoleSum<nx,ny,nz,kx-1,ny,nz>::kernel(C,M) + C[TaylorIndex<kx,0,0>::I]*M[TaylorIndex<nx-kx,ny,nz>::I];
+  }
+};
+
+template<int nx, int ny, int nz>
+struct MultipoleSum<nx,ny,nz,0,0,0> {
+  static inline real kernel(const Mset&, const Mset&) { return 0; }
+};
+
+
+template<int nx, int ny, int nz>
+struct MultipoleShift {
+  static inline void loop(C_iter CI, const Mset &C, const Mset &M) {
+    MultipoleShift<nx,ny+1,nz-1>::loop(CI,C,M);
+    CI->M[TaylorIndex<nx,ny,nz>::I] += MultipoleSum<nx,ny,nz>::kernel(C,M);
+  }
+};
+
+template<int nx, int ny>
+struct MultipoleShift<nx,ny,0> {
+  static inline void loop(C_iter CI, const Mset &C, const Mset &M) {
+    MultipoleShift<nx+1,0,ny-1>::loop(CI,C,M);
+    CI->M[TaylorIndex<nx,ny,0>::I] += MultipoleSum<nx,ny,0>::kernel(C,M);
+  }
+};
+
+template<int nx>
+struct MultipoleShift<nx,0,0> {
+  static inline void loop(C_iter CI, const Mset &C, const Mset &M) {
+    MultipoleShift<0,0,nx-1>::loop(CI,C,M);
+    CI->M[TaylorIndex<nx,0,0>::I] += MultipoleSum<nx,0,0>::kernel(C,M);
+  }
+};
+
+template<>
+struct MultipoleShift<0,0,0> {
+  static inline void loop(C_iter, const Mset&, const Mset&) {}
+};
+
+
+template<int n, int kx, int ky , int kz, int d>
+struct LocalCoefTerm {
+  static const int coef = 1 - 2 * n;
+  static inline real kernel(const Mset &C, const vect &dist) {
+    return coef * dist[d] * C[TaylorIndex<kx,ky,kz>::I];
+  }
+};
+
+template<int n, int kx, int ky , int kz>
+struct LocalCoefTerm<n,kx,ky,kz,-1> {
+  static const int coef = 1 - n;
+  static inline real kernel(const Mset &C, const vect&) {
+    return coef * C[TaylorIndex<kx,ky,kz>::I];
+  }
+};
+  
+
+template<int nx, int ny, int nz, int kx=nx, int ky=ny, int kz=nz, int flag=5>
+struct LocalCoefSum { 
+  static const int nextflag = 5 - (kz < nz || kz == 1);
+  static const int dim = kz == (nz-1) ? -1 : 2;
+  static const int n = nx + ny + nz;
+  static inline real loop(const Mset &C, const vect &dist) {
+    return LocalCoefSum<nx,ny,nz,nx,ny,kz-1,nextflag>::loop(C,dist) + LocalCoefTerm<n,nx,ny,kz-1,dim>::kernel(C,dist);
+  }
+};
+  
+template<int nx, int ny, int nz, int kx, int ky, int kz>
+struct LocalCoefSum<nx,ny,nz,kx,ky,kz,4> {
+  static const int nextflag = 3 - (ny == 0);
+  static inline real loop(const Mset &C, const vect &dist) {
+    return LocalCoefSum<nx,ny,nz,nx,ny,nz,nextflag>::loop(C,dist);
+  }
+};
+
+template<int nx, int ny, int nz, int kx, int ky, int kz>
+struct LocalCoefSum<nx,ny,nz,kx,ky,kz,3> {
+  static const int nextflag = 3 - (ky < ny || ky == 1);
+  static const int dim = ky == (ny-1) ? -1 : 1;
+  static const int n = nx + ny + nz;
+  static inline real loop(const Mset &C, const vect &dist) {
+    return LocalCoefSum<nx,ny,nz,nx,ky-1,nz,nextflag>::loop(C,dist) + LocalCoefTerm<n,nx,ky-1,nz,dim>::kernel(C,dist);
+  }
+};
+
+template<int nx, int ny, int nz, int kx, int ky, int kz>
+struct LocalCoefSum<nx,ny,nz,kx,ky,kz,2> {
+  static const int nextflag = 1 - (nx == 0);
+  static inline real loop(const Mset &C, const vect &dist) {
+    return LocalCoefSum<nx,ny,nz,nx,ny,nz,nextflag>::loop(C,dist);
+  }
+};
+
+template<int nx, int ny, int nz, int kx, int ky, int kz>
+struct LocalCoefSum<nx,ny,nz,kx,ky,kz,1> {
+  static const int nextflag = 1 - (kx < nx || kx == 1);
+  static const int dim = kx == (nx-1) ? -1 : 0;
+  static const int n = nx + ny + nz;
+  static inline real loop(const Mset &C, const vect &dist) {
+    return LocalCoefSum<nx,ny,nz,kx-1,ny,nz,nextflag>::loop(C,dist) + LocalCoefTerm<n,kx-1,ny,nz,dim>::kernel(C,dist);
+  }
+};
+
+template<int nx, int ny, int nz, int kx, int ky, int kz>
+struct LocalCoefSum<nx,ny,nz,kx,ky,kz,0> {
+  static inline real loop(const Mset&, const vect&) { 
+    return 0;
+  }
+};
+
+template<int nx, int ny, int nz, int kx, int ky>
+struct LocalCoefSum<nx,ny,nz,kx,ky,0,5> {
+  static inline real loop(const Mset &C, const vect &dist) {
+    return LocalCoefSum<nx,ny,nz,nx,ny,0,4>::loop(C,dist);
+  }
+};
+
+template<int nx, int ny, int nz>
+struct LocalCoef {
+  static inline void loop(Mset &C, const vect &dist, const real &invR2) {
+    static const int n = nx + ny + nz;
+    LocalCoef<nx,ny+1,nz-1>::loop(C,dist,invR2);
+    C[TaylorIndex<nx,ny,nz>::I] = LocalCoefSum<nx,ny,nz>::loop(C,dist) / n * invR2;
+  }
+  static inline void scale(Mset &C) {
+    LocalCoef<nx,ny+1,nz-1>::scale(C);
+    C[TaylorIndex<nx,ny,nz>::I] *= TaylorIndex<nx,ny,nz>::F;
+  }
+};
+
+template<int nx, int ny>
+struct LocalCoef<nx,ny,0> {
+  static inline void loop(Mset &C, const vect &dist, const real &invR2) {
+    static const int n = nx + ny;
+    LocalCoef<nx+1,0,ny-1>::loop(C,dist,invR2);
+    C[TaylorIndex<nx,ny,0>::I] = LocalCoefSum<nx,ny,0>::loop(C,dist) / n * invR2;
+  }
+  static inline void scale(Mset &C) {
+    LocalCoef<nx+1,0,ny-1>::scale(C);
+    C[TaylorIndex<nx,ny,0>::I] *= TaylorIndex<nx,ny,0>::F;
+  }
+};
+
+template<int nx>
+struct LocalCoef<nx,0,0> {
+  static inline void loop(Mset &C, const vect &dist, const real &invR2) {
+    static const int n = nx;
+    LocalCoef<0,0,nx-1>::loop(C,dist,invR2);
+    C[TaylorIndex<nx,0,0>::I] = LocalCoefSum<nx,0,0>::loop(C,dist) / n * invR2;
+  }
+  static inline void scale(Mset &C) {
+    LocalCoef<0,0,nx-1>::scale(C);
+    C[TaylorIndex<nx,0,0>::I] *= TaylorIndex<nx,0,0>::F;
+  }
+};
+
+template<>
+struct LocalCoef<0,0,0> {
+  static inline void loop(Mset&, const vect&, const real&) {}
+  static inline void scale(Mset&) {}
+};
+
+
+template<int nx, int ny, int nz, int kx=0, int ky=0, int kz=P-1-nx-ny-nz>
+struct LocalSum {
+  static inline real kernel(const Mset &L, const Mset &M) {
+    return LocalSum<nx,ny,nz,kx,ky+1,kz-1>::kernel(L,M)
+         + M[TaylorIndex<kx,ky,kz>::I] * L[TaylorIndex<nx+kx,ny+ky,nz+kz>::I];
+  }
+};
+
+template<int nx, int ny, int nz, int kx, int ky>
+struct LocalSum<nx,ny,nz,kx,ky,0> {
+  static inline real kernel(const Mset &L, const Mset &M) {
+    return LocalSum<nx,ny,nz,kx+1,0,ky-1>::kernel(L,M)
+         + M[TaylorIndex<kx,ky,0>::I] * L[TaylorIndex<nx+kx,ny+ky,nz>::I];
+  }
+};
+
+template<int nx, int ny, int nz, int kx>
+struct LocalSum<nx,ny,nz,kx,0,0> {
+  static inline real kernel(const Mset &L, const Mset &M) {
+    return LocalSum<nx,ny,nz,0,0,kx-1>::kernel(L,M)
+         + M[TaylorIndex<kx,0,0>::I] * L[TaylorIndex<nx+kx,ny,nz>::I];
+  }
+};
+
+template<int nx, int ny, int nz>
+struct LocalSum<nx,ny,nz,0,0,0> {
+  static inline real kernel(const Mset&, const Mset&) { return 0; }
+};
+
+template<int nx, int ny, int nz>
+struct LocalShift {
+  static inline void loopB(B_iter B, const Mset &L, const Mset &M) {
+    LocalShift<nx,ny+1,nz-1>::loopB(B,L,M);
+    B->TRG[TaylorIndex<nx,ny,nz>::I] += LocalSum<nx,ny,nz>::kernel(L,M);
+  }
+  static inline void loopC(C_iter C, const Mset &L, const Mset &M) {
+    LocalShift<nx,ny+1,nz-1>::loopC(C,L,M);
+    C->L[TaylorIndex<nx,ny,nz>::I] += LocalSum<nx,ny,nz>::kernel(L,M);
+  }
+};
+
+template<int nx, int ny>
+struct LocalShift<nx,ny,0> {
+  static inline void loopB(B_iter B, const Mset &L, const Mset &M) {
+    LocalShift<nx+1,0,ny-1>::loopB(B,L,M);
+    B->TRG[TaylorIndex<nx,ny,0>::I] += LocalSum<nx,ny,0>::kernel(L,M);
+  }
+  static inline void loopC(C_iter C, const Mset &L, const Mset &M) {
+    LocalShift<nx+1,0,ny-1>::loopC(C,L,M);
+    C->L[TaylorIndex<nx,ny,0>::I] += LocalSum<nx,ny,0>::kernel(L,M);
+  }
+};
+
+template<int nx>
+struct LocalShift<nx,0,0> {
+  static inline void loopB(B_iter B, const Mset &L, const Mset &M) {
+    LocalShift<0,0,nx-1>::loopB(B,L,M);
+    B->TRG[TaylorIndex<nx,0,0>::I] += LocalSum<nx,0,0>::kernel(L,M);
+  }
+  static inline void loopC(C_iter C, const Mset &L, const Mset &M) {
+    LocalShift<0,0,nx-1>::loopC(C,L,M);
+    C->L[TaylorIndex<nx,0,0>::I] += LocalSum<nx,0,0>::kernel(L,M);
+  }
+};
+
+template<>
+struct LocalShift<0,0,0> {
+  static inline void loopB(B_iter, const Mset&, const Mset&) {}
+  static inline void loopC(C_iter, const Mset&, const Mset&) {}
+};
+
 class Kernel : public Sort {
 private:
   real DMAX;
@@ -102,236 +408,7 @@ public:
       if( R > DMAX ) DMAX = R;
       Mset M;
       M[0] = B->SRC[0];
-
-      M[1] = M[0] * dist[0];
-      M[2] = M[0] * dist[1];
-      M[3] = M[0] * dist[2];
-
-      M[4] = M[1] * dist[0] / 2;
-      M[5] = M[2] * dist[0];
-      M[6] = M[3] * dist[0];
-      M[7] = M[2] * dist[1] / 2;
-      M[8] = M[3] * dist[1];
-      M[9] = M[3] * dist[2] / 2;
-
-/*
-      M[10] = M[4] * dist[0] / 3;
-      M[11] = M[5] * dist[0] / 2;
-      M[12] = M[6] * dist[0] / 2;
-      M[13] = M[7] * dist[0];
-      M[14] = M[8] * dist[0];
-      M[15] = M[9] * dist[0];
-      M[16] = M[7] * dist[1] / 3;
-      M[17] = M[8] * dist[1] / 2;
-      M[18] = M[9] * dist[1];
-      M[19] = M[9] * dist[2] / 3;
-
-      M[20] = M[10] * dist[0] / 4;
-      M[21] = M[11] * dist[0] / 3;
-      M[22] = M[12] * dist[0] / 3;
-      M[23] = M[13] * dist[0] / 2;
-      M[24] = M[14] * dist[0] / 2;
-      M[25] = M[15] * dist[0] / 2;
-      M[26] = M[16] * dist[0];
-      M[27] = M[17] * dist[0];
-      M[28] = M[18] * dist[0];
-      M[29] = M[19] * dist[0];
-      M[30] = M[16] * dist[1] / 4;
-      M[31] = M[17] * dist[1] / 3;
-      M[32] = M[18] * dist[1] / 2;
-      M[33] = M[19] * dist[1];
-      M[34] = M[19] * dist[2] / 4;
-
-      M[35] = M[20] * dist[0] / 5;
-      M[36] = M[21] * dist[0] / 4;
-      M[37] = M[22] * dist[0] / 4;
-      M[38] = M[23] * dist[0] / 3;
-      M[39] = M[24] * dist[0] / 3;
-      M[40] = M[25] * dist[0] / 3;
-      M[41] = M[26] * dist[0] / 2;
-      M[42] = M[27] * dist[0] / 2;
-      M[43] = M[28] * dist[0] / 2;
-      M[44] = M[29] * dist[0] / 2;
-      M[45] = M[30] * dist[0];
-      M[46] = M[31] * dist[0];
-      M[47] = M[32] * dist[0];
-      M[48] = M[33] * dist[0];
-      M[49] = M[34] * dist[0];
-      M[50] = M[30] * dist[1] / 5;
-      M[51] = M[31] * dist[1] / 4;
-      M[52] = M[32] * dist[1] / 3;
-      M[53] = M[33] * dist[1] / 2;
-      M[54] = M[34] * dist[1];
-      M[55] = M[34] * dist[2] / 5;
-
-      M[56] = M[35] * dist[0] / 6;
-      M[57] = M[36] * dist[0] / 5;
-      M[58] = M[37] * dist[0] / 5;
-      M[59] = M[38] * dist[0] / 4;
-      M[60] = M[39] * dist[0] / 4;
-      M[61] = M[40] * dist[0] / 4;
-      M[62] = M[41] * dist[0] / 3;
-      M[63] = M[42] * dist[0] / 3;
-      M[64] = M[43] * dist[0] / 3;
-      M[65] = M[44] * dist[0] / 3;
-      M[66] = M[45] * dist[0] / 2;
-      M[67] = M[46] * dist[0] / 2;
-      M[68] = M[47] * dist[0] / 2;
-      M[69] = M[48] * dist[0] / 2;
-      M[70] = M[49] * dist[0] / 2;
-      M[71] = M[50] * dist[0];
-      M[72] = M[51] * dist[0];
-      M[73] = M[52] * dist[0];
-      M[74] = M[53] * dist[0];
-      M[75] = M[54] * dist[0];
-      M[76] = M[55] * dist[0];
-      M[77] = M[50] * dist[1] / 6;
-      M[78] = M[51] * dist[1] / 5;
-      M[79] = M[52] * dist[1] / 4;
-      M[80] = M[53] * dist[1] / 3;
-      M[81] = M[54] * dist[1] / 2;
-      M[82] = M[55] * dist[1];
-      M[83] = M[55] * dist[2] / 6;
-
-      M[84] = M[56] * dist[0] / 7;
-      M[85] = M[57] * dist[0] / 6;
-      M[86] = M[58] * dist[0] / 6;
-      M[87] = M[59] * dist[0] / 5;
-      M[88] = M[60] * dist[0] / 5;
-      M[89] = M[61] * dist[0] / 5;
-      M[90] = M[62] * dist[0] / 4;
-      M[91] = M[63] * dist[0] / 4;
-      M[92] = M[64] * dist[0] / 4;
-      M[93] = M[65] * dist[0] / 4;
-      M[94] = M[66] * dist[0] / 3;
-      M[95] = M[67] * dist[0] / 3;
-      M[96] = M[68] * dist[0] / 3;
-      M[97] = M[69] * dist[0] / 3;
-      M[98] = M[70] * dist[0] / 3;
-      M[99] = M[71] * dist[0] / 2;
-      M[100] = M[72] * dist[0] / 2;
-      M[101] = M[73] * dist[0] / 2;
-      M[102] = M[74] * dist[0] / 2;
-      M[103] = M[75] * dist[0] / 2;
-      M[104] = M[76] * dist[0] / 2;
-      M[105] = M[77] * dist[0];
-      M[106] = M[78] * dist[0];
-      M[107] = M[79] * dist[0];
-      M[108] = M[80] * dist[0];
-      M[109] = M[81] * dist[0];
-      M[110] = M[82] * dist[0];
-      M[111] = M[83] * dist[0];
-      M[112] = M[77] * dist[1] / 7;
-      M[113] = M[78] * dist[1] / 6;
-      M[114] = M[79] * dist[1] / 5;
-      M[115] = M[80] * dist[1] / 4;
-      M[116] = M[81] * dist[1] / 3;
-      M[117] = M[82] * dist[1] / 2;
-      M[118] = M[83] * dist[1];
-      M[119] = M[83] * dist[2] / 7;
-
-      M[120] = M[84] * dist[0] / 8;
-      M[121] = M[85] * dist[0] / 7;
-      M[122] = M[86] * dist[0] / 7;
-      M[123] = M[87] * dist[0] / 6;
-      M[124] = M[88] * dist[0] / 6;
-      M[125] = M[89] * dist[0] / 6;
-      M[126] = M[90] * dist[0] / 5;
-      M[127] = M[91] * dist[0] / 5;
-      M[128] = M[92] * dist[0] / 5;
-      M[129] = M[93] * dist[0] / 5;
-      M[130] = M[94] * dist[0] / 4;
-      M[131] = M[95] * dist[0] / 4;
-      M[132] = M[96] * dist[0] / 4;
-      M[133] = M[97] * dist[0] / 4;
-      M[134] = M[98] * dist[0] / 4;
-      M[135] = M[99] * dist[0] / 3;
-      M[136] = M[100] * dist[0] / 3;
-      M[137] = M[101] * dist[0] / 3;
-      M[138] = M[102] * dist[0] / 3;
-      M[139] = M[103] * dist[0] / 3;
-      M[140] = M[104] * dist[0] / 3;
-      M[141] = M[105] * dist[0] / 2;
-      M[142] = M[106] * dist[0] / 2;
-      M[143] = M[107] * dist[0] / 2;
-      M[144] = M[108] * dist[0] / 2;
-      M[145] = M[109] * dist[0] / 2;
-      M[146] = M[110] * dist[0] / 2;
-      M[147] = M[111] * dist[0] / 2;
-      M[148] = M[112] * dist[0];
-      M[149] = M[113] * dist[0];
-      M[150] = M[114] * dist[0];
-      M[151] = M[115] * dist[0];
-      M[152] = M[116] * dist[0];
-      M[153] = M[117] * dist[0];
-      M[154] = M[118] * dist[0];
-      M[155] = M[119] * dist[0];
-      M[156] = M[112] * dist[1] / 8;
-      M[157] = M[113] * dist[1] / 7;
-      M[158] = M[114] * dist[1] / 6;
-      M[159] = M[115] * dist[1] / 5;
-      M[160] = M[116] * dist[1] / 4;
-      M[161] = M[117] * dist[1] / 3;
-      M[162] = M[118] * dist[1] / 2;
-      M[163] = M[119] * dist[1];
-      M[164] = M[119] * dist[2] / 8;
-
-      M[165] = M[120] * dist[0] / 9;
-      M[166] = M[121] * dist[0] / 8;
-      M[167] = M[122] * dist[0] / 8;
-      M[168] = M[123] * dist[0] / 7;
-      M[169] = M[124] * dist[0] / 7;
-      M[170] = M[125] * dist[0] / 7;
-      M[171] = M[126] * dist[0] / 6;
-      M[172] = M[127] * dist[0] / 6;
-      M[173] = M[128] * dist[0] / 6;
-      M[174] = M[129] * dist[0] / 6;
-      M[175] = M[130] * dist[0] / 5;
-      M[176] = M[131] * dist[0] / 5;
-      M[177] = M[132] * dist[0] / 5;
-      M[178] = M[133] * dist[0] / 5;
-      M[179] = M[134] * dist[0] / 5;
-      M[180] = M[135] * dist[0] / 4;
-      M[181] = M[136] * dist[0] / 4;
-      M[182] = M[137] * dist[0] / 4;
-      M[183] = M[138] * dist[0] / 4;
-      M[184] = M[139] * dist[0] / 4;
-      M[185] = M[140] * dist[0] / 4;
-      M[186] = M[141] * dist[0] / 3;
-      M[187] = M[142] * dist[0] / 3;
-      M[188] = M[143] * dist[0] / 3;
-      M[189] = M[144] * dist[0] / 3;
-      M[190] = M[145] * dist[0] / 3;
-      M[191] = M[146] * dist[0] / 3;
-      M[192] = M[147] * dist[0] / 3;
-      M[193] = M[148] * dist[0] / 2;
-      M[194] = M[149] * dist[0] / 2;
-      M[195] = M[150] * dist[0] / 2;
-      M[196] = M[151] * dist[0] / 2;
-      M[197] = M[152] * dist[0] / 2;
-      M[198] = M[153] * dist[0] / 2;
-      M[199] = M[154] * dist[0] / 2;
-      M[200] = M[155] * dist[0] / 2;
-      M[201] = M[156] * dist[0];
-      M[202] = M[157] * dist[0];
-      M[203] = M[158] * dist[0];
-      M[204] = M[159] * dist[0];
-      M[205] = M[160] * dist[0];
-      M[206] = M[161] * dist[0];
-      M[207] = M[162] * dist[0];
-      M[208] = M[163] * dist[0];
-      M[209] = M[164] * dist[0];
-      M[210] = M[156] * dist[1] / 9;
-      M[211] = M[157] * dist[1] / 8;
-      M[212] = M[158] * dist[1] / 7;
-      M[213] = M[159] * dist[1] / 6;
-      M[214] = M[160] * dist[1] / 5;
-      M[215] = M[161] * dist[1] / 4;
-      M[216] = M[162] * dist[1] / 3;
-      M[217] = M[163] * dist[1] / 2;
-      M[218] = M[164] * dist[1];
-      M[219] = M[164] * dist[2] / 9;
-*/
+      MultipoleCoef<0,0,P-1>::loop(M,dist);
       C->M += M;
     }
     C->RCRIT = std::min(C->R,DMAX);
@@ -345,300 +422,12 @@ public:
       Mset C, M;
       C[0] = 1;
 
-      C[1] = C[0] * dist[0];
-      C[2] = C[0] * dist[1];
-      C[3] = C[0] * dist[2];
-
-      C[4] = C[1] * dist[0] / 2;
-      C[5] = C[2] * dist[0];
-      C[6] = C[3] * dist[0];
-      C[7] = C[2] * dist[1] / 2;
-      C[8] = C[3] * dist[1];
-      C[9] = C[3] * dist[2] / 2;
-
-/*
-      C[10] = C[4] * dist[0] / 3;
-      C[11] = C[5] * dist[0] / 2;
-      C[12] = C[6] * dist[0] / 2;
-      C[13] = C[7] * dist[0];
-      C[14] = C[8] * dist[0];
-      C[15] = C[9] * dist[0];
-      C[16] = C[7] * dist[1] / 3;
-      C[17] = C[8] * dist[1] / 2;
-      C[18] = C[9] * dist[1];
-      C[19] = C[9] * dist[2] / 3;
-
-      C[20] = C[10] * dist[0] / 4;
-      C[21] = C[11] * dist[0] / 3;
-      C[22] = C[12] * dist[0] / 3;
-      C[23] = C[13] * dist[0] / 2;
-      C[24] = C[14] * dist[0] / 2;
-      C[25] = C[15] * dist[0] / 2;
-      C[26] = C[16] * dist[0];
-      C[27] = C[17] * dist[0];
-      C[28] = C[18] * dist[0];
-      C[29] = C[19] * dist[0];
-      C[30] = C[16] * dist[1] / 4;
-      C[31] = C[17] * dist[1] / 3;
-      C[32] = C[18] * dist[1] / 2;
-      C[33] = C[19] * dist[1];
-      C[34] = C[19] * dist[2] / 4;
-
-      C[35] = C[20] * dist[0] / 5;
-      C[36] = C[21] * dist[0] / 4;
-      C[37] = C[22] * dist[0] / 4;
-      C[38] = C[23] * dist[0] / 3;
-      C[39] = C[24] * dist[0] / 3;
-      C[40] = C[25] * dist[0] / 3;
-      C[41] = C[26] * dist[0] / 2;
-      C[42] = C[27] * dist[0] / 2;
-      C[43] = C[28] * dist[0] / 2;
-      C[44] = C[29] * dist[0] / 2;
-      C[45] = C[30] * dist[0];
-      C[46] = C[31] * dist[0];
-      C[47] = C[32] * dist[0];
-      C[48] = C[33] * dist[0];
-      C[49] = C[34] * dist[0];
-      C[50] = C[30] * dist[1] / 5;
-      C[51] = C[31] * dist[1] / 4;
-      C[52] = C[32] * dist[1] / 3;
-      C[53] = C[33] * dist[1] / 2;
-      C[54] = C[34] * dist[1];
-      C[55] = C[34] * dist[2] / 5;
-
-      C[56] = C[35] * dist[0] / 6;
-      C[57] = C[36] * dist[0] / 5;
-      C[58] = C[37] * dist[0] / 5;
-      C[59] = C[38] * dist[0] / 4;
-      C[60] = C[39] * dist[0] / 4;
-      C[61] = C[40] * dist[0] / 4;
-      C[62] = C[41] * dist[0] / 3;
-      C[63] = C[42] * dist[0] / 3;
-      C[64] = C[43] * dist[0] / 3;
-      C[65] = C[44] * dist[0] / 3;
-      C[66] = C[45] * dist[0] / 2;
-      C[67] = C[46] * dist[0] / 2;
-      C[68] = C[47] * dist[0] / 2;
-      C[69] = C[48] * dist[0] / 2;
-      C[70] = C[49] * dist[0] / 2;
-      C[71] = C[50] * dist[0];
-      C[72] = C[51] * dist[0];
-      C[73] = C[52] * dist[0];
-      C[74] = C[53] * dist[0];
-      C[75] = C[54] * dist[0];
-      C[76] = C[55] * dist[0];
-      C[77] = C[50] * dist[1] / 6;
-      C[78] = C[51] * dist[1] / 5;
-      C[79] = C[52] * dist[1] / 4;
-      C[80] = C[53] * dist[1] / 3;
-      C[81] = C[54] * dist[1] / 2;
-      C[82] = C[55] * dist[1];
-      C[83] = C[55] * dist[2] / 6;
-
-      C[84] = C[56] * dist[0] / 7;
-      C[85] = C[57] * dist[0] / 6;
-      C[86] = C[58] * dist[0] / 6;
-      C[87] = C[59] * dist[0] / 5;
-      C[88] = C[60] * dist[0] / 5;
-      C[89] = C[61] * dist[0] / 5;
-      C[90] = C[62] * dist[0] / 4;
-      C[91] = C[63] * dist[0] / 4;
-      C[92] = C[64] * dist[0] / 4;
-      C[93] = C[65] * dist[0] / 4;
-      C[94] = C[66] * dist[0] / 3;
-      C[95] = C[67] * dist[0] / 3;
-      C[96] = C[68] * dist[0] / 3;
-      C[97] = C[69] * dist[0] / 3;
-      C[98] = C[70] * dist[0] / 3;
-      C[99] = C[71] * dist[0] / 2;
-      C[100] = C[72] * dist[0] / 2;
-      C[101] = C[73] * dist[0] / 2;
-      C[102] = C[74] * dist[0] / 2;
-      C[103] = C[75] * dist[0] / 2;
-      C[104] = C[76] * dist[0] / 2;
-      C[105] = C[77] * dist[0];
-      C[106] = C[78] * dist[0];
-      C[107] = C[79] * dist[0];
-      C[108] = C[80] * dist[0];
-      C[109] = C[81] * dist[0];
-      C[110] = C[82] * dist[0];
-      C[111] = C[83] * dist[0];
-      C[112] = C[77] * dist[1] / 7;
-      C[113] = C[78] * dist[1] / 6;
-      C[114] = C[79] * dist[1] / 5;
-      C[115] = C[80] * dist[1] / 4;
-      C[116] = C[81] * dist[1] / 3;
-      C[117] = C[82] * dist[1] / 2;
-      C[118] = C[83] * dist[1];
-      C[119] = C[83] * dist[2] / 7;
-
-      C[120] = C[84] * dist[0] / 8;
-      C[121] = C[85] * dist[0] / 7;
-      C[122] = C[86] * dist[0] / 7;
-      C[123] = C[87] * dist[0] / 6;
-      C[124] = C[88] * dist[0] / 6;
-      C[125] = C[89] * dist[0] / 6;
-      C[126] = C[90] * dist[0] / 5;
-      C[127] = C[91] * dist[0] / 5;
-      C[128] = C[92] * dist[0] / 5;
-      C[129] = C[93] * dist[0] / 5;
-      C[130] = C[94] * dist[0] / 4;
-      C[131] = C[95] * dist[0] / 4;
-      C[132] = C[96] * dist[0] / 4;
-      C[133] = C[97] * dist[0] / 4;
-      C[134] = C[98] * dist[0] / 4;
-      C[135] = C[99] * dist[0] / 3;
-      C[136] = C[100] * dist[0] / 3;
-      C[137] = C[101] * dist[0] / 3;
-      C[138] = C[102] * dist[0] / 3;
-      C[139] = C[103] * dist[0] / 3;
-      C[140] = C[104] * dist[0] / 3;
-      C[141] = C[105] * dist[0] / 2;
-      C[142] = C[106] * dist[0] / 2;
-      C[143] = C[107] * dist[0] / 2;
-      C[144] = C[108] * dist[0] / 2;
-      C[145] = C[109] * dist[0] / 2;
-      C[146] = C[110] * dist[0] / 2;
-      C[147] = C[111] * dist[0] / 2;
-      C[148] = C[112] * dist[0];
-      C[149] = C[113] * dist[0];
-      C[150] = C[114] * dist[0];
-      C[151] = C[115] * dist[0];
-      C[152] = C[116] * dist[0];
-      C[153] = C[117] * dist[0];
-      C[154] = C[118] * dist[0];
-      C[155] = C[119] * dist[0];
-      C[156] = C[112] * dist[1] / 8;
-      C[157] = C[113] * dist[1] / 7;
-      C[158] = C[114] * dist[1] / 6;
-      C[159] = C[115] * dist[1] / 5;
-      C[160] = C[116] * dist[1] / 4;
-      C[161] = C[117] * dist[1] / 3;
-      C[162] = C[118] * dist[1] / 2;
-      C[163] = C[119] * dist[1];
-      C[164] = C[119] * dist[2] / 8;
-
-      C[165] = C[120] * dist[0] / 9;
-      C[166] = C[121] * dist[0] / 8;
-      C[167] = C[122] * dist[0] / 8;
-      C[168] = C[123] * dist[0] / 7;
-      C[169] = C[124] * dist[0] / 7;
-      C[170] = C[125] * dist[0] / 7;
-      C[171] = C[126] * dist[0] / 6;
-      C[172] = C[127] * dist[0] / 6;
-      C[173] = C[128] * dist[0] / 6;
-      C[174] = C[129] * dist[0] / 6;
-      C[175] = C[130] * dist[0] / 5;
-      C[176] = C[131] * dist[0] / 5;
-      C[177] = C[132] * dist[0] / 5;
-      C[178] = C[133] * dist[0] / 5;
-      C[179] = C[134] * dist[0] / 5;
-      C[180] = C[135] * dist[0] / 4;
-      C[181] = C[136] * dist[0] / 4;
-      C[182] = C[137] * dist[0] / 4;
-      C[183] = C[138] * dist[0] / 4;
-      C[184] = C[139] * dist[0] / 4;
-      C[185] = C[140] * dist[0] / 4;
-      C[186] = C[141] * dist[0] / 3;
-      C[187] = C[142] * dist[0] / 3;
-      C[188] = C[143] * dist[0] / 3;
-      C[189] = C[144] * dist[0] / 3;
-      C[190] = C[145] * dist[0] / 3;
-      C[191] = C[146] * dist[0] / 3;
-      C[192] = C[147] * dist[0] / 3;
-      C[193] = C[148] * dist[0] / 2;
-      C[194] = C[149] * dist[0] / 2;
-      C[195] = C[150] * dist[0] / 2;
-      C[196] = C[151] * dist[0] / 2;
-      C[197] = C[152] * dist[0] / 2;
-      C[198] = C[153] * dist[0] / 2;
-      C[199] = C[154] * dist[0] / 2;
-      C[200] = C[155] * dist[0] / 2;
-      C[201] = C[156] * dist[0];
-      C[202] = C[157] * dist[0];
-      C[203] = C[158] * dist[0];
-      C[204] = C[159] * dist[0];
-      C[205] = C[160] * dist[0];
-      C[206] = C[161] * dist[0];
-      C[207] = C[162] * dist[0];
-      C[208] = C[163] * dist[0];
-      C[209] = C[164] * dist[0];
-      C[210] = C[156] * dist[1] / 9;
-      C[211] = C[157] * dist[1] / 8;
-      C[212] = C[158] * dist[1] / 7;
-      C[213] = C[159] * dist[1] / 6;
-      C[214] = C[160] * dist[1] / 5;
-      C[215] = C[161] * dist[1] / 4;
-      C[216] = C[162] * dist[1] / 3;
-      C[217] = C[163] * dist[1] / 2;
-      C[218] = C[164] * dist[1];
-      C[219] = C[164] * dist[2] / 9;
-*/
+      MultipoleCoef<0,0,P-1>::loop(C,dist);
 
       M = CJ->M;
       CI->M += M;
 
-      CI->M[1] += C[1]*M[0];
-      CI->M[2] += C[2]*M[0];
-      CI->M[3] += C[3]*M[0];
-
-      CI->M[4] += C[1]*M[1]+C[4]*M[0];
-      CI->M[5] += C[1]*M[2]+C[2]*M[1]+C[5]*M[0];
-      CI->M[6] += C[1]*M[3]+C[3]*M[1]+C[6]*M[0];
-      CI->M[7] += C[2]*M[2]+C[7]*M[0];
-      CI->M[8] += C[2]*M[3]+C[3]*M[2]+C[8]*M[0];
-      CI->M[9] += C[3]*M[3]+C[9]*M[0];
-
-/*
-      CI->M[10] += C[1]*M[4]+C[4]*M[1]+C[10]*M[0];
-      CI->M[11] += C[1]*M[5]+C[2]*M[4]+C[4]*M[2]+C[5]*M[1]+C[11]*M[0];
-      CI->M[12] += C[1]*M[6]+C[3]*M[4]+C[4]*M[3]+C[6]*M[1]+C[12]*M[0];
-      CI->M[13] += C[1]*M[7]+C[2]*M[5]+C[5]*M[2]+C[7]*M[1]+C[13]*M[0];
-      CI->M[14] += C[1]*M[8]+C[2]*M[6]+C[3]*M[5]+C[5]*M[3]+C[6]*M[2]+C[8]*M[1]+C[14]*M[0];
-      CI->M[15] += C[1]*M[9]+C[3]*M[6]+C[6]*M[3]+C[9]*M[1]+C[15]*M[0];
-      CI->M[16] += C[2]*M[7]+C[7]*M[2]+C[16]*M[0];
-      CI->M[17] += C[2]*M[8]+C[3]*M[7]+C[7]*M[3]+C[8]*M[2]+C[17]*M[0];
-      CI->M[18] += C[2]*M[9]+C[3]*M[8]+C[8]*M[3]+C[9]*M[2]+C[18]*M[0];
-      CI->M[19] += C[3]*M[9]+C[9]*M[3]+C[19]*M[0];
-
-      CI->M[20] += C[1]*M[10]+C[4]*M[4]+C[10]*M[1]+C[20]*M[0];
-      CI->M[21] += C[1]*M[11]+C[2]*M[10]+C[4]*M[5]+C[5]*M[4]+C[10]*M[2]+C[11]*M[1]+C[21]*M[0];
-      CI->M[22] += C[1]*M[12]+C[3]*M[10]+C[4]*M[6]+C[6]*M[4]+C[10]*M[3]+C[12]*M[1]+C[22]*M[0];
-      CI->M[23] += C[1]*M[13]+C[2]*M[11]+C[4]*M[7]+C[5]*M[5]+C[7]*M[4]+C[11]*M[2]+C[13]*M[1]+C[23]*M[0];
-      CI->M[24] += C[1]*M[14]+C[2]*M[12]+C[3]*M[11]+C[4]*M[8]+C[5]*M[6]+C[6]*M[5]+C[8]*M[4]+C[11]*M[3]+C[12]*M[2]+C[14]*M[1]+C[24]*M[0];
-      CI->M[25] += C[1]*M[15]+C[3]*M[12]+C[4]*M[9]+C[6]*M[6]+C[9]*M[4]+C[12]*M[3]+C[15]*M[1]+C[25]*M[0];
-      CI->M[26] += C[1]*M[16]+C[2]*M[13]+C[5]*M[7]+C[7]*M[5]+C[13]*M[2]+C[16]*M[1]+C[26]*M[0];
-      CI->M[27] += C[1]*M[17]+C[2]*M[14]+C[3]*M[13]+C[5]*M[8]+C[6]*M[7]+C[7]*M[6]+C[8]*M[5]+C[13]*M[3]+C[14]*M[2]+C[17]*M[1]+C[27]*M[0];
-      CI->M[28] += C[1]*M[18]+C[2]*M[15]+C[3]*M[14]+C[5]*M[9]+C[6]*M[8]+C[8]*M[6]+C[9]*M[5]+C[14]*M[3]+C[15]*M[2]+C[18]*M[1]+C[28]*M[0];
-      CI->M[29] += C[1]*M[19]+C[3]*M[15]+C[6]*M[9]+C[9]*M[6]+C[15]*M[3]+C[19]*M[1]+C[29]*M[0];
-      CI->M[30] += C[2]*M[16]+C[7]*M[7]+C[16]*M[2]+C[30]*M[0];
-      CI->M[31] += C[2]*M[17]+C[3]*M[16]+C[7]*M[8]+C[8]*M[7]+C[16]*M[3]+C[17]*M[2]+C[31]*M[0];
-      CI->M[32] += C[2]*M[18]+C[3]*M[17]+C[7]*M[9]+C[8]*M[8]+C[9]*M[7]+C[17]*M[3]+C[18]*M[2]+C[32]*M[0];
-      CI->M[33] += C[2]*M[19]+C[3]*M[18]+C[8]*M[9]+C[9]*M[8]+C[18]*M[3]+C[19]*M[2]+C[33]*M[0];
-      CI->M[34] += C[3]*M[19]+C[9]*M[9]+C[19]*M[3]+C[34]*M[0];
-
-      CI->M[35] += C[1]*M[20]+C[4]*M[10]+C[10]*M[4]+C[20]*M[1]+C[35]*M[0];
-      CI->M[36] += C[1]*M[21]+C[2]*M[20]+C[4]*M[11]+C[5]*M[10]+C[10]*M[5]+C[11]*M[4]+C[20]*M[2]+C[21]*M[1]+C[36]*M[0];
-      CI->M[37] += C[1]*M[22]+C[3]*M[20]+C[4]*M[12]+C[6]*M[10]+C[10]*M[6]+C[12]*M[4]+C[20]*M[3]+C[22]*M[1]+C[37]*M[0];
-      CI->M[38] += C[1]*M[23]+C[2]*M[21]+C[4]*M[13]+C[5]*M[11]+C[7]*M[10]+C[10]*M[7]+C[11]*M[5]+C[13]*M[4]+C[21]*M[2]+C[23]*M[1]+C[38]*M[0];
-      CI->M[39] += C[1]*M[24]+C[2]*M[22]+C[3]*M[21]+C[4]*M[14]+C[6]*M[12]+C[8]*M[11]+C[10]*M[10]+C[11]*M[8]+C[12]*M[6]+C[14]*M[4]+C[21]*M[3]+C[22]*M[2]+C[24]*M[1]+C[39]*M[0];
-      CI->M[40] += C[1]*M[25]+C[3]*M[22]+C[4]*M[15]+C[6]*M[12]+C[9]*M[10]+C[10]*M[9]+C[12]*M[6]+C[15]*M[4]+C[22]*M[3]+C[25]*M[1]+C[40]*M[0];
-      CI->M[41] += C[1]*M[26]+C[2]*M[23]+C[4]*M[16]+C[5]*M[13]+C[7]*M[11]+C[11]*M[7]+C[13]*M[5]+C[16]*M[4]+C[23]*M[2]+C[26]*M[1]+C[41]*M[0];
-      CI->M[42] += C[1]*M[27]+C[2]*M[24]+C[3]*M[23]+C[4]*M[17]+C[5]*M[14]+C[6]*M[13]+C[7]*M[12]+C[8]*M[11]+C[11]*M[8]+C[12]*M[7]+C[13]*M[6]+C[14]*M[5]+C[17]*M[4]+C[23]*M[3]+C[24]*M[2]+C[27]*M[1]+C[42]*M[0];
-      CI->M[43] += C[1]*M[28]+C[2]*M[25]+C[3]*M[24]+C[4]*M[18]+C[5]*M[15]+C[6]*M[14]+C[8]*M[12]+C[9]*M[11]+C[11]*M[9]+C[12]*M[8]+C[14]*M[6]+C[15]*M[5]+C[18]*M[4]+C[24]*M[3]+C[25]*M[2]+C[28]*M[1]+C[43]*M[0];
-      CI->M[44] += C[1]*M[29]+C[3]*M[25]+C[4]*M[19]+C[6]*M[15]+C[9]*M[12]+C[12]*M[9]+C[15]*M[6]+C[19]*M[4]+C[25]*M[3]+C[29]*M[1]+C[44]*M[0];
-      CI->M[45] += C[1]*M[30]+C[2]*M[26]+C[5]*M[16]+C[7]*M[13]+C[13]*M[7]+C[16]*M[5]+C[26]*M[2]+C[30]*M[1]+C[45]*M[0];
-      CI->M[46] += C[1]*M[31]+C[2]*M[27]+C[3]*M[26]+C[5]*M[17]+C[7]*M[16]+C[8]*M[14]+C[13]*M[13]+C[14]*M[8]+C[16]*M[7]+C[17]*M[5]+C[26]*M[3]+C[27]*M[2]+C[31]*M[1]+C[46]*M[0];
-      CI->M[47] += C[1]*M[32]+C[2]*M[28]+C[3]*M[27]+C[5]*M[18]+C[6]*M[17]+C[7]*M[15]+C[8]*M[14]+C[9]*M[13]+C[13]*M[9]+C[14]*M[8]+C[15]*M[7]+C[17]*M[6]+C[18]*M[5]+C[27]*M[3]+C[28]*M[2]+C[32]*M[1]+C[47]*M[0];
-      CI->M[48] += C[1]*M[33]+C[2]*M[29]+C[3]*M[28]+C[5]*M[19]+C[8]*M[18]+C[9]*M[15]+C[14]*M[14]+C[15]*M[9]+C[18]*M[8]+C[19]*M[5]+C[28]*M[3]+C[29]*M[2]+C[33]*M[1]+C[48]*M[0];
-      CI->M[49] += C[1]*M[34]+C[3]*M[29]+C[6]*M[19]+C[9]*M[15]+C[15]*M[9]+C[19]*M[6]+C[29]*M[3]+C[34]*M[1]+C[49]*M[0];
-      CI->M[50] += C[2]*M[30]+C[7]*M[16]+C[16]*M[7]+C[30]*M[2]+C[50]*M[0];
-      CI->M[51] += C[2]*M[31]+C[3]*M[30]+C[7]*M[17]+C[8]*M[16]+C[16]*M[8]+C[17]*M[7]+C[30]*M[3]+C[31]*M[2]+C[51]*M[0];
-      CI->M[52] += C[2]*M[32]+C[3]*M[31]+C[7]*M[18]+C[8]*M[17]+C[9]*M[16]+C[16]*M[9]+C[17]*M[8]+C[18]*M[7]+C[31]*M[3]+C[32]*M[2]+C[52]*M[0];
-      CI->M[53] += C[2]*M[33]+C[3]*M[32]+C[7]*M[19]+C[8]*M[18]+C[9]*M[17]+C[17]*M[9]+C[18]*M[8]+C[19]*M[7]+C[32]*M[3]+C[33]*M[2]+C[53]*M[0];
-      CI->M[54] += C[2]*M[34]+C[3]*M[33]+C[8]*M[19]+C[9]*M[18]+C[18]*M[9]+C[19]*M[8]+C[33]*M[3]+C[34]*M[2]+C[54]*M[0];
-      CI->M[55] += C[3]*M[34]+C[9]*M[19]+C[19]*M[9]+C[34]*M[3]+C[55]*M[0];
-*/
+      MultipoleShift<0,0,P-1>::loop(CI,C,M);
 
     }
     CI->RCRIT = std::min(CI->R,DMAX);
@@ -648,20 +437,23 @@ public:
     vect dist = CI->X - CJ->X;
     real invR2 = 1 / norm(dist);
     real invR  = std::sqrt(invR2);
-    invR2 = -invR2;
-    real invR3 = invR * invR2;
-    real invR5 = 3 * invR3 * invR2;
-    real invR7 = 5 * invR5 * invR2;
-//    real invR9 = 7 * invR7 * invR2;
-    real x = dist[0], y = dist[1], z = dist[2];
     Mset C, M;
 
     C[0] = invR;
 
+#if 0
+    LocalCoef<0,0,P-1>::loop(C,dist,invR2);
+    LocalCoef<0,0,P-1>::scale(C);
+#else
+    invR2 = -invR2;
+    real x = dist[0], y = dist[1], z = dist[2];
+
+    real invR3 = invR * invR2;
     C[1] = x * invR3;
     C[2] = y * invR3;
     C[3] = z * invR3;
 
+    real invR5 = 3 * invR3 * invR2;
     C[4] = x * x * invR5 + invR3;
     C[5] = x * y * invR5;
     C[6] = x * z * invR5;
@@ -669,7 +461,7 @@ public:
     C[8] = y * z * invR5;
     C[9] = z * z * invR5 + invR3;
 
-/*
+    real invR7 = 5 * invR5 * invR2;
     C[10] = x * x * x * invR7 + 3 * x * invR5;
     C[11] = x * x * y * invR7 +     y * invR5;
     C[12] = x * x * z * invR7 +     z * invR5;
@@ -681,102 +473,53 @@ public:
     C[18] = y * z * z * invR7 +     y * invR5;
     C[19] = z * z * z * invR7 + 3 * z * invR5;
 
+/*
+    real invR9 = 7 * invR7 * invR2;
     C[20] = x * x * x * x * invR9 + 6 * x * x * invR7 + 3 * invR5;
     C[21] = x * x * x * y * invR9 + 3 * x * y * invR7;
     C[22] = x * x * x * z * invR9 + 3 * x * z * invR7;
     C[23] = x * x * y * y * invR9 + (x * x + y * y) * invR7 + invR5;
-    C[24] = x * x * y * z * invR9 + y * z * invR7;
+    C[24] = x * x * y * z * invR9 +     y * z * invR7;
     C[25] = x * x * z * z * invR9 + (x * x + z * z) * invR7 + invR5;
     C[26] = x * y * y * y * invR9 + 3 * x * y * invR7;
-    C[27] = x * y * y * z * invR9 + x * z * invR7;
-    C[28] = x * y * z * z * invR9 + x * y * invR7;
+    C[27] = x * y * y * z * invR9 +     x * z * invR7;
+    C[28] = x * y * z * z * invR9 +     x * y * invR7;
     C[29] = x * z * z * z * invR9 + 3 * x * z * invR7;
     C[30] = y * y * y * y * invR9 + 6 * y * y * invR7 + 3 * invR5;
     C[31] = y * y * y * z * invR9 + 3 * y * z * invR7;
     C[32] = y * y * z * z * invR9 + (y * y + z * z) * invR7 + invR5;
     C[33] = y * z * z * z * invR9 + 3 * y * z * invR7;
     C[34] = z * z * z * z * invR9 + 6 * z * z * invR7 + 3 * invR5;
+
+    real invR11 = 9 * invR9 * invR2;
+    C[35] = x * x * x * x * x * invR11 + 10 * x * x * x * invR9 + 15 * x * invR7;
+    C[36] = x * x * x * x * y * invR11 +  6 * x * x * y * invR9 +  3 * y * invR7;
+    C[37] = x * x * x * x * z * invR11 +  6 * x * x * z * invR9 +  3 * z * invR7;
+    C[38] = x * x * x * y * y * invR11 + (x * x * x + 3 * x * y * y) * invR9 + 3 * x * invR7;
+    C[39] = x * x * x * y * z * invR11 +  3 * x * y * z * invR9;
+    C[40] = x * x * x * z * z * invR11 + (x * x * x + 3 * x * z * z) * invR9 + 3 * x * invR7;
+    C[41] = x * x * y * y * y * invR11 + (3 * x * x * y + y * y * y) * invR9 + 3 * y * invR7;
+    C[42] = x * x * y * y * z * invR11 + (x * x * z + y * y * z) * invR9 + z * invR7;
+    C[43] = x * x * y * z * z * invR11 + (x * x * y + y * z * z) * invR9 + y * invR7;
+    C[44] = x * x * z * z * z * invR11 + (3 * x * x * z + z * z * z) * invR9 + 3 * z * invR7;
+    C[45] = x * y * y * y * y * invR11 +  6 * x * y * y * invR9 +  3 * x * invR7;
+    C[46] = x * y * y * y * z * invR11 +  3 * x * y * z * invR9;
+    C[47] = x * y * y * z * z * invR11 + (x * y * y + x * z * z) * invR9 + x * invR7;
+    C[48] = x * y * z * z * z * invR11 +  3 * x * y * z * invR9;
+    C[49] = x * z * z * z * z * invR11 +  6 * x * z * z * invR9 +  3 * x * invR7;
+    C[50] = y * y * y * y * y * invR11 + 10 * y * y * y * invR9 + 15 * y * invR7;
+    C[51] = y * y * y * y * z * invR11 +  6 * y * y * z * invR9 +  3 * z * invR7;
+    C[52] = y * y * y * z * z * invR11 + (y * y * y + 3 * y * z * z) * invR9 + 3 * y * invR7;
+    C[53] = y * y * z * z * z * invR11 + (3 * y * y * z + z * z * z) * invR9 + 3 * z * invR7;
+    C[54] = y * z * z * z * z * invR11 +  6 * y * z * z * invR9 +  3 * y * invR7;
+    C[55] = z * z * z * z * z * invR11 + 10 * z * z * z * invR9 + 15 * z * invR7;
 */
+#endif
 
     M = CJ->M;
     CI->L += C*M[0];
-
-    CI->L[0] += M[1]*C[1]+M[2]*C[2]+M[3]*C[3];
-
-    for( int i=4; i<10; ++i ) CI->L[0] += M[i]*C[i];
-    CI->L[1] += M[1]*C[4]+M[2]*C[5]+M[3]*C[6];
-    CI->L[2] += M[1]*C[5]+M[2]*C[7]+M[3]*C[8];
-    CI->L[3] += M[1]*C[6]+M[2]*C[8]+M[3]*C[9];
-
-/*
-    for( int i=10; i<20; ++i ) CI->L[0] += M[i]*C[i];
-    CI->L[1] += M[4]*C[10]+M[5]*C[11]+M[6]*C[12]+M[7]*C[13]+M[8]*C[14]+M[9]*C[15];
-    CI->L[2] += M[4]*C[11]+M[5]*C[13]+M[6]*C[14]+M[7]*C[16]+M[8]*C[17]+M[9]*C[18];
-    CI->L[3] += M[4]*C[12]+M[5]*C[14]+M[6]*C[15]+M[7]*C[17]+M[8]*C[18]+M[9]*C[19];
-    CI->L[4] += M[1]*C[10]+M[2]*C[11]+M[3]*C[12];
-    CI->L[5] += M[1]*C[11]+M[2]*C[13]+M[3]*C[14];
-    CI->L[6] += M[1]*C[12]+M[2]*C[14]+M[3]*C[15];
-    CI->L[7] += M[1]*C[13]+M[2]*C[16]+M[3]*C[17];
-    CI->L[8] += M[1]*C[14]+M[2]*C[17]+M[3]*C[18];
-    CI->L[9] += M[1]*C[15]+M[2]*C[18]+M[3]*C[19];
-
-    for( int i=20; i<35; ++i ) CI->L[0] += M[i]*C[i];
-    CI->L[1] += M[10]*C[20]+M[11]*C[21]+M[12]*C[22]+M[13]*C[23]+M[14]*C[24]+M[15]*C[25]+M[16]*C[26]+M[17]*C[27]+M[18]*C[28]+M[19]*C[29];
-    CI->L[2] += M[10]*C[21]+M[11]*C[23]+M[12]*C[24]+M[13]*C[26]+M[14]*C[27]+M[15]*C[28]+M[16]*C[30]+M[17]*C[31]+M[18]*C[32]+M[19]*C[33];
-    CI->L[3] += M[10]*C[22]+M[11]*C[24]+M[12]*C[25]+M[13]*C[27]+M[14]*C[28]+M[15]*C[29]+M[16]*C[31]+M[17]*C[32]+M[18]*C[33]+M[19]*C[34];
-    CI->L[4] += M[4]*C[20]+M[5]*C[21]+M[6]*C[22]+M[7]*C[23]+M[8]*C[24]+M[9]*C[25];
-    CI->L[5] += M[4]*C[21]+M[5]*C[23]+M[6]*C[24]+M[7]*C[26]+M[8]*C[27]+M[9]*C[28];
-    CI->L[6] += M[4]*C[22]+M[5]*C[24]+M[6]*C[25]+M[7]*C[27]+M[8]*C[28]+M[9]*C[29];
-    CI->L[7] += M[4]*C[23]+M[5]*C[26]+M[6]*C[27]+M[7]*C[30]+M[8]*C[31]+M[9]*C[32];
-    CI->L[8] += M[4]*C[24]+M[5]*C[27]+M[6]*C[28]+M[7]*C[31]+M[8]*C[32]+M[9]*C[33];
-    CI->L[9] += M[4]*C[25]+M[5]*C[28]+M[6]*C[29]+M[7]*C[32]+M[8]*C[33]+M[9]*C[34];
-    CI->L[10] += M[1]*C[20]+M[2]*C[21]+M[3]*C[22];
-    CI->L[11] += M[1]*C[21]+M[2]*C[23]+M[3]*C[24];
-    CI->L[12] += M[1]*C[22]+M[2]*C[24]+M[3]*C[25];
-    CI->L[13] += M[1]*C[23]+M[2]*C[26]+M[3]*C[27];
-    CI->L[14] += M[1]*C[24]+M[2]*C[27]+M[3]*C[28];
-    CI->L[15] += M[1]*C[25]+M[2]*C[28]+M[3]*C[29];
-    CI->L[16] += M[1]*C[26]+M[2]*C[30]+M[3]*C[31];
-    CI->L[17] += M[1]*C[27]+M[2]*C[31]+M[3]*C[32];
-    CI->L[18] += M[1]*C[28]+M[2]*C[32]+M[3]*C[33];
-    CI->L[19] += M[1]*C[29]+M[2]*C[33]+M[3]*C[34];
-
-    for( int i=35; i<56; ++i ) CI->L[0] += M[i]*C[i];
-    CI->L[1] += M[20]*C[35]+M[21]*C[36]+M[22]*C[37]+M[23]*C[38]+M[24]*C[39]+M[25]*C[40]+M[26]*C[41]+M[27]*C[42]+M[28]*C[43]+M[29]*C[44]+M[30]*C[45]+M[31]*C[46]+M[32]*C[47]+M[33]*C[48]+M[34]*C[49];
-    CI->L[2] += M[20]*C[36]+M[21]*C[38]+M[22]*C[39]+M[23]*C[41]+M[24]*C[42]+M[25]*C[43]+M[26]*C[45]+M[27]*C[46]+M[28]*C[47]+M[29]*C[48]+M[30]*C[50]+M[31]*C[51]+M[32]*C[52]+M[33]*C[53]+M[34]*C[54];
-    CI->L[3] += M[20]*C[37]+M[21]*C[39]+M[22]*C[40]+M[23]*C[42]+M[24]*C[43]+M[25]*C[44]+M[26]*C[46]+M[27]*C[47]+M[28]*C[48]+M[29]*C[49]+M[30]*C[51]+M[31]*C[52]+M[32]*C[53]+M[33]*C[54]+M[34]*C[55];
-    CI->L[4] += M[10]*C[35]+M[11]*C[36]+M[12]*C[37]+M[13]*C[38]+M[14]*C[39]+M[15]*C[40]+M[16]*C[41]+M[17]*C[42]+M[18]*C[43]+M[19]*C[44];
-    CI->L[5] += M[10]*C[36]+M[11]*C[38]+M[12]*C[39]+M[13]*C[41]+M[14]*C[42]+M[15]*C[43]+M[16]*C[45]+M[17]*C[46]+M[18]*C[47]+M[19]*C[48];
-    CI->L[6] += M[10]*C[37]+M[11]*C[39]+M[12]*C[40]+M[13]*C[42]+M[14]*C[43]+M[15]*C[44]+M[16]*C[46]+M[17]*C[47]+M[18]*C[48]+M[19]*C[49];
-    CI->L[7] += M[10]*C[38]+M[11]*C[41]+M[12]*C[42]+M[13]*C[45]+M[14]*C[46]+M[15]*C[47]+M[16]*C[50]+M[17]*C[51]+M[18]*C[52]+M[19]*C[53];
-    CI->L[8] += M[10]*C[39]+M[11]*C[42]+M[12]*C[43]+M[13]*C[46]+M[14]*C[47]+M[15]*C[48]+M[16]*C[51]+M[17]*C[52]+M[18]*C[53]+M[19]*C[54];
-    CI->L[9] += M[10]*C[40]+M[11]*C[43]+M[12]*C[44]+M[13]*C[47]+M[14]*C[48]+M[15]*C[49]+M[16]*C[52]+M[17]*C[53]+M[18]*C[54]+M[19]*C[55];
-    CI->L[10] += M[4]*C[35]+M[5]*C[36]+M[6]*C[37]+M[7]*C[38]+M[8]*C[39]+M[9]*C[40];
-    CI->L[11] += M[4]*C[36]+M[5]*C[38]+M[6]*C[39]+M[7]*C[41]+M[8]*C[42]+M[9]*C[43];
-    CI->L[12] += M[4]*C[37]+M[5]*C[39]+M[6]*C[40]+M[7]*C[42]+M[8]*C[43]+M[9]*C[44];
-    CI->L[13] += M[4]*C[38]+M[5]*C[41]+M[6]*C[42]+M[7]*C[45]+M[8]*C[46]+M[9]*C[47];
-    CI->L[14] += M[4]*C[39]+M[5]*C[42]+M[6]*C[43]+M[7]*C[46]+M[8]*C[47]+M[9]*C[48];
-    CI->L[15] += M[4]*C[40]+M[5]*C[43]+M[6]*C[44]+M[7]*C[47]+M[8]*C[48]+M[9]*C[49];
-    CI->L[16] += M[4]*C[41]+M[5]*C[45]+M[6]*C[46]+M[7]*C[50]+M[8]*C[51]+M[9]*C[52];
-    CI->L[17] += M[4]*C[42]+M[5]*C[46]+M[6]*C[47]+M[7]*C[51]+M[8]*C[52]+M[9]*C[53];
-    CI->L[18] += M[4]*C[43]+M[5]*C[47]+M[6]*C[48]+M[7]*C[52]+M[8]*C[53]+M[9]*C[54];
-    CI->L[19] += M[4]*C[44]+M[5]*C[48]+M[6]*C[49]+M[7]*C[53]+M[8]*C[54]+M[9]*C[55];
-    CI->L[20] += M[1]*C[35]+M[2]*C[36]+M[3]*C[37];
-    CI->L[21] += M[1]*C[36]+M[2]*C[38]+M[3]*C[39];
-    CI->L[22] += M[1]*C[37]+M[2]*C[39]+M[3]*C[40];
-    CI->L[23] += M[1]*C[38]+M[2]*C[41]+M[3]*C[42];
-    CI->L[24] += M[1]*C[39]+M[2]*C[42]+M[3]*C[43];
-    CI->L[25] += M[1]*C[40]+M[2]*C[43]+M[3]*C[44];
-    CI->L[26] += M[1]*C[41]+M[2]*C[45]+M[3]*C[46];
-    CI->L[27] += M[1]*C[42]+M[2]*C[46]+M[3]*C[47];
-    CI->L[28] += M[1]*C[43]+M[2]*C[47]+M[3]*C[48];
-    CI->L[29] += M[1]*C[44]+M[2]*C[48]+M[3]*C[49];
-    CI->L[30] += M[1]*C[45]+M[2]*C[50]+M[3]*C[51];
-    CI->L[31] += M[1]*C[46]+M[2]*C[51]+M[3]*C[52];
-    CI->L[32] += M[1]*C[47]+M[2]*C[52]+M[3]*C[53];
-    CI->L[33] += M[1]*C[48]+M[2]*C[53]+M[3]*C[54];
-    CI->L[34] += M[1]*C[49]+M[2]*C[54]+M[3]*C[55];
-*/
+    for( int i=1; i<10; ++i ) CI->L[0] += M[i]*C[i];
+    LocalShift<0,0,P-2>::loopC(CI,C,M);
 
     invR = mutual;
   }
@@ -787,314 +530,13 @@ public:
     Lset C, L;
     C[0] = 1;
 
-    C[1] = C[0] * dist[0];
-    C[2] = C[0] * dist[1];
-    C[3] = C[0] * dist[2];
+    MultipoleCoef<0,0,P-1>::loop(C,dist);
 
-    C[4] = C[1] * dist[0] / 2;
-    C[5] = C[2] * dist[0];
-    C[6] = C[3] * dist[0];
-    C[7] = C[2] * dist[1] / 2;
-    C[8] = C[3] * dist[1];
-    C[9] = C[3] * dist[2] / 2;
-
-/*
-    C[10] = C[4] * dist[0] / 3;
-    C[11] = C[5] * dist[0] / 2;
-    C[12] = C[6] * dist[0] / 2;
-    C[13] = C[7] * dist[0];
-    C[14] = C[8] * dist[0];
-    C[15] = C[9] * dist[0];
-    C[16] = C[7] * dist[1] / 3;
-    C[17] = C[8] * dist[1] / 2;
-    C[18] = C[9] * dist[1];
-    C[19] = C[9] * dist[2] / 3;
-
-    C[20] = C[10] * dist[0] / 4;
-    C[21] = C[11] * dist[0] / 3;
-    C[22] = C[12] * dist[0] / 3;
-    C[23] = C[13] * dist[0] / 2;
-    C[24] = C[14] * dist[0] / 2;
-    C[25] = C[15] * dist[0] / 2;
-    C[26] = C[16] * dist[0];
-    C[27] = C[17] * dist[0];
-    C[28] = C[18] * dist[0];
-    C[29] = C[19] * dist[0];
-    C[30] = C[16] * dist[1] / 4;
-    C[31] = C[17] * dist[1] / 3;
-    C[32] = C[18] * dist[1] / 2;
-    C[33] = C[19] * dist[1];
-    C[34] = C[19] * dist[2] / 4;
-
-    C[35] = C[20] * dist[0] / 5;
-    C[36] = C[21] * dist[0] / 4;
-    C[37] = C[22] * dist[0] / 4;
-    C[38] = C[23] * dist[0] / 3;
-    C[39] = C[24] * dist[0] / 3;
-    C[40] = C[25] * dist[0] / 3;
-    C[41] = C[26] * dist[0] / 2;
-    C[42] = C[27] * dist[0] / 2;
-    C[43] = C[28] * dist[0] / 2;
-    C[44] = C[29] * dist[0] / 2;
-    C[45] = C[30] * dist[0];
-    C[46] = C[31] * dist[0];
-    C[47] = C[32] * dist[0];
-    C[48] = C[33] * dist[0];
-    C[49] = C[34] * dist[0];
-    C[50] = C[30] * dist[1] / 5;
-    C[51] = C[31] * dist[1] / 4;
-    C[52] = C[32] * dist[1] / 3;
-    C[53] = C[33] * dist[1] / 2;
-    C[54] = C[34] * dist[1];
-    C[55] = C[34] * dist[2] / 5;
-
-    C[56] = C[35] * dist[0] / 6;
-    C[57] = C[36] * dist[0] / 5;
-    C[58] = C[37] * dist[0] / 5;
-    C[59] = C[38] * dist[0] / 4;
-    C[60] = C[39] * dist[0] / 4;
-    C[61] = C[40] * dist[0] / 4;
-    C[62] = C[41] * dist[0] / 3;
-    C[63] = C[42] * dist[0] / 3;
-    C[64] = C[43] * dist[0] / 3;
-    C[65] = C[44] * dist[0] / 3;
-    C[66] = C[45] * dist[0] / 2;
-    C[67] = C[46] * dist[0] / 2;
-    C[68] = C[47] * dist[0] / 2;
-    C[69] = C[48] * dist[0] / 2;
-    C[70] = C[49] * dist[0] / 2;
-    C[71] = C[50] * dist[0];
-    C[72] = C[51] * dist[0];
-    C[73] = C[52] * dist[0];
-    C[74] = C[53] * dist[0];
-    C[75] = C[54] * dist[0];
-    C[76] = C[55] * dist[0];
-    C[77] = C[50] * dist[1] / 6;
-    C[78] = C[51] * dist[1] / 5;
-    C[79] = C[52] * dist[1] / 4;
-    C[80] = C[53] * dist[1] / 3;
-    C[81] = C[54] * dist[1] / 2;
-    C[82] = C[55] * dist[1];
-    C[83] = C[55] * dist[2] / 6;
-
-    C[84] = C[56] * dist[0] / 7;
-    C[85] = C[57] * dist[0] / 6;
-    C[86] = C[58] * dist[0] / 6;
-    C[87] = C[59] * dist[0] / 5;
-    C[88] = C[60] * dist[0] / 5;
-    C[89] = C[61] * dist[0] / 5;
-    C[90] = C[62] * dist[0] / 4;
-    C[91] = C[63] * dist[0] / 4;
-    C[92] = C[64] * dist[0] / 4;
-    C[93] = C[65] * dist[0] / 4;
-    C[94] = C[66] * dist[0] / 3;
-    C[95] = C[67] * dist[0] / 3;
-    C[96] = C[68] * dist[0] / 3;
-    C[97] = C[69] * dist[0] / 3;
-    C[98] = C[70] * dist[0] / 3;
-    C[99] = C[71] * dist[0] / 2;
-    C[100] = C[72] * dist[0] / 2;
-    C[101] = C[73] * dist[0] / 2;
-    C[102] = C[74] * dist[0] / 2;
-    C[103] = C[75] * dist[0] / 2;
-    C[104] = C[76] * dist[0] / 2;
-    C[105] = C[77] * dist[0];
-    C[106] = C[78] * dist[0];
-    C[107] = C[79] * dist[0];
-    C[108] = C[80] * dist[0];
-    C[109] = C[81] * dist[0];
-    C[110] = C[82] * dist[0];
-    C[111] = C[83] * dist[0];
-    C[112] = C[77] * dist[1] / 7;
-    C[113] = C[78] * dist[1] / 6;
-    C[114] = C[79] * dist[1] / 5;
-    C[115] = C[80] * dist[1] / 4;
-    C[116] = C[81] * dist[1] / 3;
-    C[117] = C[82] * dist[1] / 2;
-    C[118] = C[83] * dist[1];
-    C[119] = C[83] * dist[2] / 7;
-
-    C[120] = C[84] * dist[0] / 8;
-    C[121] = C[85] * dist[0] / 7;
-    C[122] = C[86] * dist[0] / 7;
-    C[123] = C[87] * dist[0] / 6;
-    C[124] = C[88] * dist[0] / 6;
-    C[125] = C[89] * dist[0] / 6;
-    C[126] = C[90] * dist[0] / 5;
-    C[127] = C[91] * dist[0] / 5;
-    C[128] = C[92] * dist[0] / 5;
-    C[129] = C[93] * dist[0] / 5;
-    C[130] = C[94] * dist[0] / 4;
-    C[131] = C[95] * dist[0] / 4;
-    C[132] = C[96] * dist[0] / 4;
-    C[133] = C[97] * dist[0] / 4;
-    C[134] = C[98] * dist[0] / 4;
-    C[135] = C[99] * dist[0] / 3;
-    C[136] = C[100] * dist[0] / 3;
-    C[137] = C[101] * dist[0] / 3;
-    C[138] = C[102] * dist[0] / 3;
-    C[139] = C[103] * dist[0] / 3;
-    C[140] = C[104] * dist[0] / 3;
-    C[141] = C[105] * dist[0] / 2;
-    C[142] = C[106] * dist[0] / 2;
-    C[143] = C[107] * dist[0] / 2;
-    C[144] = C[108] * dist[0] / 2;
-    C[145] = C[109] * dist[0] / 2;
-    C[146] = C[110] * dist[0] / 2;
-    C[147] = C[111] * dist[0] / 2;
-    C[148] = C[112] * dist[0];
-    C[149] = C[113] * dist[0];
-    C[150] = C[114] * dist[0];
-    C[151] = C[115] * dist[0];
-    C[152] = C[116] * dist[0];
-    C[153] = C[117] * dist[0];
-    C[154] = C[118] * dist[0];
-    C[155] = C[119] * dist[0];
-    C[156] = C[112] * dist[1] / 8;
-    C[157] = C[113] * dist[1] / 7;
-    C[158] = C[114] * dist[1] / 6;
-    C[159] = C[115] * dist[1] / 5;
-    C[160] = C[116] * dist[1] / 4;
-    C[161] = C[117] * dist[1] / 3;
-    C[162] = C[118] * dist[1] / 2;
-    C[163] = C[119] * dist[1];
-    C[164] = C[119] * dist[2] / 8;
-
-    C[165] = C[120] * dist[0] / 9;
-    C[166] = C[121] * dist[0] / 8;
-    C[167] = C[122] * dist[0] / 8;
-    C[168] = C[123] * dist[0] / 7;
-    C[169] = C[124] * dist[0] / 7;
-    C[170] = C[125] * dist[0] / 7;
-    C[171] = C[126] * dist[0] / 6;
-    C[172] = C[127] * dist[0] / 6;
-    C[173] = C[128] * dist[0] / 6;
-    C[174] = C[129] * dist[0] / 6;
-    C[175] = C[130] * dist[0] / 5;
-    C[176] = C[131] * dist[0] / 5;
-    C[177] = C[132] * dist[0] / 5;
-    C[178] = C[133] * dist[0] / 5;
-    C[179] = C[134] * dist[0] / 5;
-    C[180] = C[135] * dist[0] / 4;
-    C[181] = C[136] * dist[0] / 4;
-    C[182] = C[137] * dist[0] / 4;
-    C[183] = C[138] * dist[0] / 4;
-    C[184] = C[139] * dist[0] / 4;
-    C[185] = C[140] * dist[0] / 4;
-    C[186] = C[141] * dist[0] / 3;
-    C[187] = C[142] * dist[0] / 3;
-    C[188] = C[143] * dist[0] / 3;
-    C[189] = C[144] * dist[0] / 3;
-    C[190] = C[145] * dist[0] / 3;
-    C[191] = C[146] * dist[0] / 3;
-    C[192] = C[147] * dist[0] / 3;
-    C[193] = C[148] * dist[0] / 2;
-    C[194] = C[149] * dist[0] / 2;
-    C[195] = C[150] * dist[0] / 2;
-    C[196] = C[151] * dist[0] / 2;
-    C[197] = C[152] * dist[0] / 2;
-    C[198] = C[153] * dist[0] / 2;
-    C[199] = C[154] * dist[0] / 2;
-    C[200] = C[155] * dist[0] / 2;
-    C[201] = C[156] * dist[0];
-    C[202] = C[157] * dist[0];
-    C[203] = C[158] * dist[0];
-    C[204] = C[159] * dist[0];
-    C[205] = C[160] * dist[0];
-    C[206] = C[161] * dist[0];
-    C[207] = C[162] * dist[0];
-    C[208] = C[163] * dist[0];
-    C[209] = C[164] * dist[0];
-    C[210] = C[156] * dist[1] / 9;
-    C[211] = C[157] * dist[1] / 8;
-    C[212] = C[158] * dist[1] / 7;
-    C[213] = C[159] * dist[1] / 6;
-    C[214] = C[160] * dist[1] / 5;
-    C[215] = C[161] * dist[1] / 4;
-    C[216] = C[162] * dist[1] / 3;
-    C[217] = C[163] * dist[1] / 2;
-    C[218] = C[164] * dist[1];
-    C[219] = C[164] * dist[2] / 9;
-*/
     L = CJ->L;
     CI->L += L;
+    for( int i=1; i<NCOEF; ++i ) CI->L[0] += C[i]*L[i];
 
-    CI->L[0] += C[1]*L[1]+C[2]*L[2]+C[3]*L[3];
-
-    for( int i=4; i<10; ++i ) CI->L[0] += C[i]*L[i];
-    CI->L[1] += C[1]*L[4]+C[2]*L[5]+C[3]*L[6];
-    CI->L[2] += C[1]*L[5]+C[2]*L[7]+C[3]*L[8];
-    CI->L[3] += C[1]*L[6]+C[2]*L[8]+C[3]*L[9];
-
-/*
-    for( int i=10; i<20; ++i ) CI->L[0] += C[i]*L[i];
-    CI->L[1] += C[4]*L[10]+C[5]*L[11]+C[6]*L[12]+C[7]*L[13]+C[8]*L[14]+C[9]*L[15];
-    CI->L[2] += C[4]*L[11]+C[5]*L[13]+C[6]*L[14]+C[7]*L[16]+C[8]*L[17]+C[9]*L[18];
-    CI->L[3] += C[4]*L[12]+C[5]*L[14]+C[6]*L[15]+C[7]*L[17]+C[8]*L[18]+C[9]*L[19];
-    CI->L[4] += C[1]*L[10]+C[2]*L[11]+C[3]*L[12];
-    CI->L[5] += C[1]*L[11]+C[2]*L[13]+C[3]*L[14];
-    CI->L[6] += C[1]*L[12]+C[2]*L[14]+C[3]*L[15];
-    CI->L[7] += C[1]*L[13]+C[2]*L[16]+C[3]*L[17];
-    CI->L[8] += C[1]*L[14]+C[2]*L[17]+C[3]*L[18];
-    CI->L[9] += C[1]*L[15]+C[2]*L[18]+C[3]*L[19];
-
-    for( int i=20; i<35; ++i ) CI->L[0] += C[i]*L[i];
-    CI->L[1] += C[10]*L[20]+C[11]*L[21]+C[12]*L[22]+C[13]*L[23]+C[14]*L[24]+C[15]*L[25]+C[16]*L[26]+C[17]*L[27]+C[18]*L[28]+C[19]*L[29];
-    CI->L[2] += C[10]*L[21]+C[11]*L[23]+C[12]*L[24]+C[13]*L[26]+C[14]*L[27]+C[15]*L[28]+C[16]*L[30]+C[17]*L[31]+C[18]*L[32]+C[19]*L[33];
-    CI->L[3] += C[10]*L[22]+C[11]*L[24]+C[12]*L[25]+C[13]*L[27]+C[14]*L[28]+C[15]*L[29]+C[16]*L[31]+C[17]*L[32]+C[18]*L[33]+C[19]*L[34];
-    CI->L[4] += C[4]*L[20]+C[5]*L[21]+C[6]*L[22]+C[7]*L[23]+C[8]*L[24]+C[9]*L[25];
-    CI->L[5] += C[4]*L[21]+C[5]*L[23]+C[6]*L[24]+C[7]*L[26]+C[8]*L[27]+C[9]*L[28];
-    CI->L[6] += C[4]*L[22]+C[5]*L[24]+C[6]*L[25]+C[7]*L[27]+C[8]*L[28]+C[9]*L[29];
-    CI->L[7] += C[4]*L[23]+C[5]*L[26]+C[6]*L[27]+C[7]*L[30]+C[8]*L[31]+C[9]*L[32];
-    CI->L[8] += C[4]*L[24]+C[5]*L[27]+C[6]*L[28]+C[7]*L[31]+C[8]*L[32]+C[9]*L[33];
-    CI->L[9] += C[4]*L[25]+C[5]*L[28]+C[6]*L[29]+C[7]*L[32]+C[8]*L[33]+C[9]*L[34];
-    CI->L[10] += C[1]*L[20]+C[2]*L[21]+C[3]*L[22];
-    CI->L[11] += C[1]*L[21]+C[2]*L[23]+C[3]*L[24];
-    CI->L[12] += C[1]*L[22]+C[2]*L[24]+C[3]*L[25];
-    CI->L[13] += C[1]*L[23]+C[2]*L[26]+C[3]*L[27];
-    CI->L[14] += C[1]*L[24]+C[2]*L[27]+C[3]*L[28];
-    CI->L[15] += C[1]*L[25]+C[2]*L[28]+C[3]*L[29];
-    CI->L[16] += C[1]*L[26]+C[2]*L[30]+C[3]*L[31];
-    CI->L[17] += C[1]*L[27]+C[2]*L[31]+C[3]*L[32];
-    CI->L[18] += C[1]*L[28]+C[2]*L[32]+C[3]*L[33];
-    CI->L[19] += C[1]*L[29]+C[2]*L[33]+C[3]*L[34];
-
-    for( int i=35; i<56; ++i ) CI->L[0] += C[i]*L[i];
-    CI->L[1] += C[20]*L[35]+C[21]*L[36]+C[22]*L[37]+C[23]*L[38]+C[24]*L[39]+C[25]*L[40]+C[26]*L[41]+C[27]*L[42]+C[28]*L[43]+C[29]*L[44]+C[30]*L[45]+C[31]*L[46]+C[32]*L[47]+C[33]*L[48]+C[34]*L[49];
-    CI->L[2] += C[20]*L[36]+C[21]*L[38]+C[22]*L[39]+C[23]*L[41]+C[24]*L[42]+C[25]*L[43]+C[26]*L[45]+C[27]*L[46]+C[28]*L[47]+C[29]*L[48]+C[30]*L[50]+C[31]*L[51]+C[32]*L[52]+C[33]*L[53]+C[34]*L[54];
-    CI->L[3] += C[20]*L[37]+C[21]*L[39]+C[22]*L[40]+C[23]*L[42]+C[24]*L[43]+C[25]*L[44]+C[26]*L[46]+C[27]*L[47]+C[28]*L[48]+C[29]*L[49]+C[30]*L[51]+C[31]*L[52]+C[32]*L[53]+C[33]*L[54]+C[34]*L[55];
-    CI->L[4] += C[10]*L[35]+C[11]*L[36]+C[12]*L[37]+C[13]*L[38]+C[14]*L[39]+C[15]*L[40]+C[16]*L[41]+C[17]*L[42]+C[18]*L[43]+C[19]*L[44];
-    CI->L[5] += C[10]*L[36]+C[11]*L[38]+C[12]*L[39]+C[13]*L[41]+C[14]*L[42]+C[15]*L[43]+C[16]*L[45]+C[17]*L[46]+C[18]*L[47]+C[19]*L[48];
-    CI->L[6] += C[10]*L[37]+C[11]*L[39]+C[12]*L[40]+C[13]*L[42]+C[14]*L[43]+C[15]*L[44]+C[16]*L[46]+C[17]*L[47]+C[18]*L[48]+C[19]*L[49];
-    CI->L[7] += C[10]*L[38]+C[11]*L[41]+C[12]*L[42]+C[13]*L[45]+C[14]*L[46]+C[15]*L[47]+C[16]*L[50]+C[17]*L[51]+C[18]*L[52]+C[19]*L[53];
-    CI->L[8] += C[10]*L[39]+C[11]*L[42]+C[12]*L[43]+C[13]*L[46]+C[14]*L[47]+C[15]*L[48]+C[16]*L[51]+C[17]*L[52]+C[18]*L[53]+C[19]*L[54];
-    CI->L[9] += C[10]*L[40]+C[11]*L[43]+C[12]*L[44]+C[13]*L[47]+C[14]*L[48]+C[15]*L[49]+C[16]*L[52]+C[17]*L[53]+C[18]*L[54]+C[19]*L[55];
-    CI->L[10] += C[4]*L[35]+C[5]*L[36]+C[6]*L[37]+C[7]*L[38]+C[8]*L[39]+C[9]*L[40];
-    CI->L[11] += C[4]*L[36]+C[5]*L[38]+C[6]*L[39]+C[7]*L[41]+C[8]*L[42]+C[9]*L[43];
-    CI->L[12] += C[4]*L[37]+C[5]*L[39]+C[6]*L[40]+C[7]*L[42]+C[8]*L[43]+C[9]*L[44];
-    CI->L[13] += C[4]*L[38]+C[5]*L[41]+C[6]*L[42]+C[7]*L[45]+C[8]*L[46]+C[9]*L[47];
-    CI->L[14] += C[4]*L[39]+C[5]*L[42]+C[6]*L[43]+C[7]*L[46]+C[8]*L[47]+C[9]*L[48];
-    CI->L[15] += C[4]*L[40]+C[5]*L[43]+C[6]*L[44]+C[7]*L[47]+C[8]*L[48]+C[9]*L[49];
-    CI->L[16] += C[4]*L[41]+C[5]*L[45]+C[6]*L[46]+C[7]*L[50]+C[8]*L[51]+C[9]*L[52];
-    CI->L[17] += C[4]*L[42]+C[5]*L[46]+C[6]*L[47]+C[7]*L[51]+C[8]*L[52]+C[9]*L[53];
-    CI->L[18] += C[4]*L[43]+C[5]*L[47]+C[6]*L[48]+C[7]*L[52]+C[8]*L[53]+C[9]*L[54];
-    CI->L[19] += C[4]*L[44]+C[5]*L[48]+C[6]*L[49]+C[7]*L[53]+C[8]*L[54]+C[9]*L[55];
-    CI->L[20] += C[1]*L[35]+C[2]*L[36]+C[3]*L[37];
-    CI->L[21] += C[1]*L[36]+C[2]*L[38]+C[3]*L[39];
-    CI->L[22] += C[1]*L[37]+C[2]*L[39]+C[3]*L[40];
-    CI->L[23] += C[1]*L[38]+C[2]*L[41]+C[3]*L[42];
-    CI->L[24] += C[1]*L[39]+C[2]*L[42]+C[3]*L[43];
-    CI->L[25] += C[1]*L[40]+C[2]*L[43]+C[3]*L[44];
-    CI->L[26] += C[1]*L[41]+C[2]*L[45]+C[3]*L[46];
-    CI->L[27] += C[1]*L[42]+C[2]*L[46]+C[3]*L[47];
-    CI->L[28] += C[1]*L[43]+C[2]*L[47]+C[3]*L[48];
-    CI->L[29] += C[1]*L[44]+C[2]*L[48]+C[3]*L[49];
-    CI->L[30] += C[1]*L[45]+C[2]*L[50]+C[3]*L[51];
-    CI->L[31] += C[1]*L[46]+C[2]*L[51]+C[3]*L[52];
-    CI->L[32] += C[1]*L[47]+C[2]*L[52]+C[3]*L[53];
-    CI->L[33] += C[1]*L[48]+C[2]*L[53]+C[3]*L[54];
-    CI->L[34] += C[1]*L[49]+C[2]*L[54]+C[3]*L[55];
-*/
+    LocalShift<0,0,P-2>::loopC(CI,L,C);
 
   }
 
@@ -1103,266 +545,18 @@ public:
       vect dist = B->X - CI->X;
       Lset C, L;
       C[0] = 1;
-  
-      C[1] = C[0] * dist[0];
-      C[2] = C[0] * dist[1];
-      C[3] = C[0] * dist[2];
-  
-      C[4] = C[1] * dist[0] / 2;
-      C[5] = C[2] * dist[0];
-      C[6] = C[3] * dist[0];
-      C[7] = C[2] * dist[1] / 2;
-      C[8] = C[3] * dist[1];
-      C[9] = C[3] * dist[2] / 2;
-  
-/*
-      C[10] = C[4] * dist[0] / 3;
-      C[11] = C[5] * dist[0] / 2;
-      C[12] = C[6] * dist[0] / 2;
-      C[13] = C[7] * dist[0];
-      C[14] = C[8] * dist[0];
-      C[15] = C[9] * dist[0];
-      C[16] = C[7] * dist[1] / 3;
-      C[17] = C[8] * dist[1] / 2;
-      C[18] = C[9] * dist[1];
-      C[19] = C[9] * dist[2] / 3;
-  
-      C[20] = C[10] * dist[0] / 4;
-      C[21] = C[11] * dist[0] / 3;
-      C[22] = C[12] * dist[0] / 3;
-      C[23] = C[13] * dist[0] / 2;
-      C[24] = C[14] * dist[0] / 2;
-      C[25] = C[15] * dist[0] / 2;
-      C[26] = C[16] * dist[0];
-      C[27] = C[17] * dist[0];
-      C[28] = C[18] * dist[0];
-      C[29] = C[19] * dist[0];
-      C[30] = C[16] * dist[1] / 4;
-      C[31] = C[17] * dist[1] / 3;
-      C[32] = C[18] * dist[1] / 2;
-      C[33] = C[19] * dist[1];
-      C[34] = C[19] * dist[2] / 4;
-  
-      C[35] = C[20] * dist[0] / 5;
-      C[36] = C[21] * dist[0] / 4;
-      C[37] = C[22] * dist[0] / 4;
-      C[38] = C[23] * dist[0] / 3;
-      C[39] = C[24] * dist[0] / 3;
-      C[40] = C[25] * dist[0] / 3;
-      C[41] = C[26] * dist[0] / 2;
-      C[42] = C[27] * dist[0] / 2;
-      C[43] = C[28] * dist[0] / 2;
-      C[44] = C[29] * dist[0] / 2;
-      C[45] = C[30] * dist[0];
-      C[46] = C[31] * dist[0];
-      C[47] = C[32] * dist[0];
-      C[48] = C[33] * dist[0];
-      C[49] = C[34] * dist[0];
-      C[50] = C[30] * dist[1] / 5;
-      C[51] = C[31] * dist[1] / 4;
-      C[52] = C[32] * dist[1] / 3;
-      C[53] = C[33] * dist[1] / 2;
-      C[54] = C[34] * dist[1];
-      C[55] = C[34] * dist[2] / 5;
-  
-      C[56] = C[35] * dist[0] / 6;
-      C[57] = C[36] * dist[0] / 5;
-      C[58] = C[37] * dist[0] / 5;
-      C[59] = C[38] * dist[0] / 4;
-      C[60] = C[39] * dist[0] / 4;
-      C[61] = C[40] * dist[0] / 4;
-      C[62] = C[41] * dist[0] / 3;
-      C[63] = C[42] * dist[0] / 3;
-      C[64] = C[43] * dist[0] / 3;
-      C[65] = C[44] * dist[0] / 3;
-      C[66] = C[45] * dist[0] / 2;
-      C[67] = C[46] * dist[0] / 2;
-      C[68] = C[47] * dist[0] / 2;
-      C[69] = C[48] * dist[0] / 2;
-      C[70] = C[49] * dist[0] / 2;
-      C[71] = C[50] * dist[0];
-      C[72] = C[51] * dist[0];
-      C[73] = C[52] * dist[0];
-      C[74] = C[53] * dist[0];
-      C[75] = C[54] * dist[0];
-      C[76] = C[55] * dist[0];
-      C[77] = C[50] * dist[1] / 6;
-      C[78] = C[51] * dist[1] / 5;
-      C[79] = C[52] * dist[1] / 4;
-      C[80] = C[53] * dist[1] / 3;
-      C[81] = C[54] * dist[1] / 2;
-      C[82] = C[55] * dist[1];
-      C[83] = C[55] * dist[2] / 6;
-  
-      C[84] = C[56] * dist[0] / 7;
-      C[85] = C[57] * dist[0] / 6;
-      C[86] = C[58] * dist[0] / 6;
-      C[87] = C[59] * dist[0] / 5;
-      C[88] = C[60] * dist[0] / 5;
-      C[89] = C[61] * dist[0] / 5;
-      C[90] = C[62] * dist[0] / 4;
-      C[91] = C[63] * dist[0] / 4;
-      C[92] = C[64] * dist[0] / 4;
-      C[93] = C[65] * dist[0] / 4;
-      C[94] = C[66] * dist[0] / 3;
-      C[95] = C[67] * dist[0] / 3;
-      C[96] = C[68] * dist[0] / 3;
-      C[97] = C[69] * dist[0] / 3;
-      C[98] = C[70] * dist[0] / 3;
-      C[99] = C[71] * dist[0] / 2;
-      C[100] = C[72] * dist[0] / 2;
-      C[101] = C[73] * dist[0] / 2;
-      C[102] = C[74] * dist[0] / 2;
-      C[103] = C[75] * dist[0] / 2;
-      C[104] = C[76] * dist[0] / 2;
-      C[105] = C[77] * dist[0];
-      C[106] = C[78] * dist[0];
-      C[107] = C[79] * dist[0];
-      C[108] = C[80] * dist[0];
-      C[109] = C[81] * dist[0];
-      C[110] = C[82] * dist[0];
-      C[111] = C[83] * dist[0];
-      C[112] = C[77] * dist[1] / 7;
-      C[113] = C[78] * dist[1] / 6;
-      C[114] = C[79] * dist[1] / 5;
-      C[115] = C[80] * dist[1] / 4;
-      C[116] = C[81] * dist[1] / 3;
-      C[117] = C[82] * dist[1] / 2;
-      C[118] = C[83] * dist[1];
-      C[119] = C[83] * dist[2] / 7;
-  
-      C[120] = C[84] * dist[0] / 8;
-      C[121] = C[85] * dist[0] / 7;
-      C[122] = C[86] * dist[0] / 7;
-      C[123] = C[87] * dist[0] / 6;
-      C[124] = C[88] * dist[0] / 6;
-      C[125] = C[89] * dist[0] / 6;
-      C[126] = C[90] * dist[0] / 5;
-      C[127] = C[91] * dist[0] / 5;
-      C[128] = C[92] * dist[0] / 5;
-      C[129] = C[93] * dist[0] / 5;
-      C[130] = C[94] * dist[0] / 4;
-      C[131] = C[95] * dist[0] / 4;
-      C[132] = C[96] * dist[0] / 4;
-      C[133] = C[97] * dist[0] / 4;
-      C[134] = C[98] * dist[0] / 4;
-      C[135] = C[99] * dist[0] / 3;
-      C[136] = C[100] * dist[0] / 3;
-      C[137] = C[101] * dist[0] / 3;
-      C[138] = C[102] * dist[0] / 3;
-      C[139] = C[103] * dist[0] / 3;
-      C[140] = C[104] * dist[0] / 3;
-      C[141] = C[105] * dist[0] / 2;
-      C[142] = C[106] * dist[0] / 2;
-      C[143] = C[107] * dist[0] / 2;
-      C[144] = C[108] * dist[0] / 2;
-      C[145] = C[109] * dist[0] / 2;
-      C[146] = C[110] * dist[0] / 2;
-      C[147] = C[111] * dist[0] / 2;
-      C[148] = C[112] * dist[0];
-      C[149] = C[113] * dist[0];
-      C[150] = C[114] * dist[0];
-      C[151] = C[115] * dist[0];
-      C[152] = C[116] * dist[0];
-      C[153] = C[117] * dist[0];
-      C[154] = C[118] * dist[0];
-      C[155] = C[119] * dist[0];
-      C[156] = C[112] * dist[1] / 8;
-      C[157] = C[113] * dist[1] / 7;
-      C[158] = C[114] * dist[1] / 6;
-      C[159] = C[115] * dist[1] / 5;
-      C[160] = C[116] * dist[1] / 4;
-      C[161] = C[117] * dist[1] / 3;
-      C[162] = C[118] * dist[1] / 2;
-      C[163] = C[119] * dist[1];
-      C[164] = C[119] * dist[2] / 8;
-  
-      C[165] = C[120] * dist[0] / 9;
-      C[166] = C[121] * dist[0] / 8;
-      C[167] = C[122] * dist[0] / 8;
-      C[168] = C[123] * dist[0] / 7;
-      C[169] = C[124] * dist[0] / 7;
-      C[170] = C[125] * dist[0] / 7;
-      C[171] = C[126] * dist[0] / 6;
-      C[172] = C[127] * dist[0] / 6;
-      C[173] = C[128] * dist[0] / 6;
-      C[174] = C[129] * dist[0] / 6;
-      C[175] = C[130] * dist[0] / 5;
-      C[176] = C[131] * dist[0] / 5;
-      C[177] = C[132] * dist[0] / 5;
-      C[178] = C[133] * dist[0] / 5;
-      C[179] = C[134] * dist[0] / 5;
-      C[180] = C[135] * dist[0] / 4;
-      C[181] = C[136] * dist[0] / 4;
-      C[182] = C[137] * dist[0] / 4;
-      C[183] = C[138] * dist[0] / 4;
-      C[184] = C[139] * dist[0] / 4;
-      C[185] = C[140] * dist[0] / 4;
-      C[186] = C[141] * dist[0] / 3;
-      C[187] = C[142] * dist[0] / 3;
-      C[188] = C[143] * dist[0] / 3;
-      C[189] = C[144] * dist[0] / 3;
-      C[190] = C[145] * dist[0] / 3;
-      C[191] = C[146] * dist[0] / 3;
-      C[192] = C[147] * dist[0] / 3;
-      C[193] = C[148] * dist[0] / 2;
-      C[194] = C[149] * dist[0] / 2;
-      C[195] = C[150] * dist[0] / 2;
-      C[196] = C[151] * dist[0] / 2;
-      C[197] = C[152] * dist[0] / 2;
-      C[198] = C[153] * dist[0] / 2;
-      C[199] = C[154] * dist[0] / 2;
-      C[200] = C[155] * dist[0] / 2;
-      C[201] = C[156] * dist[0];
-      C[202] = C[157] * dist[0];
-      C[203] = C[158] * dist[0];
-      C[204] = C[159] * dist[0];
-      C[205] = C[160] * dist[0];
-      C[206] = C[161] * dist[0];
-      C[207] = C[162] * dist[0];
-      C[208] = C[163] * dist[0];
-      C[209] = C[164] * dist[0];
-      C[210] = C[156] * dist[1] / 9;
-      C[211] = C[157] * dist[1] / 8;
-      C[212] = C[158] * dist[1] / 7;
-      C[213] = C[159] * dist[1] / 6;
-      C[214] = C[160] * dist[1] / 5;
-      C[215] = C[161] * dist[1] / 4;
-      C[216] = C[162] * dist[1] / 3;
-      C[217] = C[163] * dist[1] / 2;
-      C[218] = C[164] * dist[1];
-      C[219] = C[164] * dist[2] / 9;
-*/
-      L = CI->L;
+      MultipoleCoef<0,0,P-1>::loop(C,dist);
 
+      L = CI->L;
       B->TRG /= B->SRC[0];
 
-      B->TRG[0] -= L[0]+C[1]*L[1]+C[2]*L[2]+C[3]*L[3];
+      B->TRG[0] -= L[0];
       B->TRG[1] += L[1];
       B->TRG[2] += L[2];
       B->TRG[3] += L[3];
+      for( int i=1; i<NCOEF; ++i ) B->TRG[0] -= C[i]*L[i];
 
-      B->TRG[0] -= C[4]*L[4]+C[5]*L[5]+C[6]*L[6]+C[7]*L[7]+C[8]*L[8]+C[9]*L[9];
-      B->TRG[1] += C[1]*L[4]+C[2]*L[5]+C[3]*L[6];
-      B->TRG[2] += C[1]*L[5]+C[2]*L[7]+C[3]*L[8];
-      B->TRG[3] += C[1]*L[6]+C[2]*L[8]+C[3]*L[9];
-
-/*
-      for( int i=10; i<20; ++i ) B->TRG[0] -= C[i]*L[i];
-      B->TRG[1] += C[4]*L[10]+C[5]*L[11]+C[6]*L[12]+C[7]*L[13]+C[8]*L[14]+C[9]*L[15];
-      B->TRG[2] += C[4]*L[11]+C[5]*L[13]+C[6]*L[14]+C[7]*L[16]+C[8]*L[17]+C[9]*L[18];
-      B->TRG[3] += C[4]*L[12]+C[5]*L[14]+C[6]*L[15]+C[7]*L[17]+C[8]*L[18]+C[9]*L[19];
-
-      for( int i=20; i<35; ++i ) B->TRG[0] -= C[i]*L[i];
-      B->TRG[1] += C[10]*L[20]+C[11]*L[21]+C[12]*L[22]+C[13]*L[23]+C[14]*L[24]+C[15]*L[25]+C[16]*L[26]+C[17]*L[27]+C[18]*L[28]+C[19]*L[29];
-      B->TRG[2] += C[10]*L[21]+C[11]*L[23]+C[12]*L[24]+C[13]*L[26]+C[14]*L[27]+C[15]*L[28]+C[16]*L[30]+C[17]*L[31]+C[18]*L[32]+C[19]*L[33];
-      B->TRG[3] += C[10]*L[22]+C[11]*L[24]+C[12]*L[25]+C[13]*L[27]+C[14]*L[28]+C[15]*L[29]+C[16]*L[31]+C[17]*L[32]+C[18]*L[33]+C[19]*L[34];
-  
-      for( int i=35; i<56; ++i ) B->TRG[0] -= C[i]*L[i];
-      B->TRG[1] += C[20]*L[35]+C[21]*L[36]+C[22]*L[37]+C[23]*L[38]+C[24]*L[39]+C[25]*L[40]+C[26]*L[41]+C[27]*L[42]+C[28]*L[43]+C[29]*L[44]+C[30]*L[45]+C[31]*L[46]+C[32]*L[47]+C[33]*L[48]+C[34]*L[49];
-      B->TRG[2] += C[20]*L[36]+C[21]*L[38]+C[22]*L[39]+C[23]*L[41]+C[24]*L[42]+C[25]*L[43]+C[26]*L[45]+C[27]*L[46]+C[28]*L[47]+C[29]*L[48]+C[30]*L[50]+C[31]*L[51]+C[32]*L[52]+C[33]*L[53]+C[34]*L[54];
-      B->TRG[3] += C[20]*L[37]+C[21]*L[39]+C[22]*L[40]+C[23]*L[42]+C[24]*L[43]+C[25]*L[44]+C[26]*L[46]+C[27]*L[47]+C[28]*L[48]+C[29]*L[49]+C[30]*L[51]+C[31]*L[52]+C[32]*L[53]+C[33]*L[54]+C[34]*L[55];
-*/
+      LocalShift<0,0,1>::loopB(B,L,C);
     }
   }
 };
