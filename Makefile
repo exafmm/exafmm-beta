@@ -43,4 +43,5 @@ save    :
 docs:
 	@rm -rf docs
 	doxygen Doxyfile
-	rsync -Cazv docs/html/ rioyokota@barbagroup.bu.edu:/Library/WebServer/Documents/exafmm_docs/html/
+	rsync -Cazv docs/html/ $(EXAFMM_DOCS_USER)@barbagroup.bu.edu:/Library/WebServer/Documents/exafmm_docs/html/
+	ssh $(EXAFMM_DOCS_USER)@barbagroup.bu.edu 'chmod -R 775 /Library/WebServer/Documents/exafmm_docs'
