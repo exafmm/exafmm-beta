@@ -1,4 +1,5 @@
 .SUFFIXES: .cxx .cu .o
+.PHONY: docs
 
 CUDA_INSTALL_PATH = /usr/local/cuda
 SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
@@ -39,3 +40,7 @@ commit  :
 save    :
 	make cleanall
 	tar zcvf ../../exafmm.tgz ../../exafmm
+docs:
+	@rm -rf docs
+	doxygen Doxyfile
+	rsync -Cazv docs/html/ rioyokota@barbagroup.bu.edu:/Library/WebServer/Documents/exafmm_docs/html/
