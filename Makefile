@@ -43,5 +43,7 @@ save    :
 docs:
 	@rm -rf docs
 	doxygen Doxyfile
-	rsync -Cazv docs/html/ $(EXAFMM_DOCS_USER)@barbagroup.bu.edu:/Library/WebServer/Documents/exafmm_docs/html/
-	ssh $(EXAFMM_DOCS_USER)@barbagroup.bu.edu 'chmod -R 775 /Library/WebServer/Documents/exafmm_docs'
+	cd docs/html ;tar czf ../../docs.tar *
+	scp docs.tar $(EXAFMM_DOCS_USER)@barbagroup.bu.edu:~/
+	ssh $(EXAFMM_DOCS_USER)@barbagroup.bu.edu 'tar -xmzf docs.tar -C /Library/WebServer/Documents/exafmm_docs/html/; rm docs.tar; chmod -R 775 /Library/WebServer/Documents/exafmm_docs/'
+	rm -f docs.tar
