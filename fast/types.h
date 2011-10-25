@@ -35,7 +35,7 @@ extern int IMAGES;                                              // Number of per
 extern real THETA;                                              // Box opening criteria
 #endif
 
-const int  P       = 3;                                         // Order of expansions
+const int  P       = 4;                                         // Order of expansions
 const int  NCRIT   = 8;                                         // Number of bodies per cell
 const int  MAXBODY = 200000;                                    // Maximum number of bodies per GPU kernel
 const int  MAXCELL = 10000000;                                  // Maximum number of bodies/coefs in cell per GPU kernel
@@ -52,7 +52,7 @@ typedef vec<3 ,real> vect;
 typedef vec<NCOEF,real> Mset;
 typedef vec<NCOEF,real> Lset;
 #elif SPHE
-typedef vec<NCOEF,complex> Mset;
+typedef vec<MCOEF,complex> Mset;
 typedef vec<NCOEF,complex> Lset;
 #else
 typedef vec<MCOEF,real> Mset;

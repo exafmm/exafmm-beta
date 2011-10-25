@@ -20,43 +20,6 @@ private:
     return std::sqrt( dx*dx + dy*dy + dz*dz );
   }
 
-  inline void set_dPhi(Lset &D, vect const&dX, real const&m) const {
-    real R2 = norm(dX);
-    real invR2 = 1.0 / (R2 + EPS2);
-    real invR  = m * std::sqrt(invR2);
-    real invR3 =     invR2 * invR;
-    real invR5 = 3 * invR2 * invR3;
-    real invR7 = 5 * invR2 * invR5;
-    D[ 0] = invR;
-    real t = -invR3;
-    D[ 1] = t * dX[0];
-    D[ 2] = t * dX[1];
-    D[ 3] = t * dX[2];
-    t     = invR5 * dX[0];
-    D[ 4] = t * dX[0] - invR3;
-    D[ 5] = t * dX[1];
-    D[ 6] = t * dX[2];
-    t     = invR5 * dX[1];
-    D[ 7] = t * dX[1] - invR3;
-    D[ 8] = t * dX[2];
-    t     = invR5 * dX[2];
-    D[ 9] = t * dX[2] - invR3;
-    real s = 3 * invR5;
-    t     = -invR7 * dX[0] * dX[0];
-    D[10] = (s     + t) * dX[0];
-    D[11] = (invR5 + t) * dX[1];
-    D[12] = (invR5 + t) * dX[2];
-    t     = -invR7 * dX[1] * dX[1];
-    D[13] = (invR5 + t) * dX[0];
-    D[16] = (s     + t) * dX[1];
-    D[17] = (invR5 + t) * dX[2];
-    t     = -invR7 * dX[2] * dX[2];
-    D[15] = (invR5 + t) * dX[0];
-    D[18] = (invR5 + t) * dX[1];
-    D[19] = (s     + t) * dX[2];
-    D[14] = -invR7 * dX[0] * dX[1] * dX[2];
-  }
-
   inline void add_C_C2C(Lset &L, Lset const&D, Mset const&m) const {
     L += D;
     L[0] += D[4] *m[1] + D[5] *m[2] + D[6] *m[3] + D[7] *m[4] + D[8] *m[5] + D[9] *m[6];
@@ -91,11 +54,11 @@ public:
     C->X = X;
   }
 
-  void P2P(C_iter Ci, C_iter Cj, bool mutual=true) const {
-    for( B_iter BI=Ci->LEAF; BI!=Ci->LEAF+Ci->NDLEAF; ++BI ) {
+  void P2P(C_iter CI, C_iter CJ, bool mutual=true) const {
+    for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {
       real P0 = 0;
       vect F0 = 0;
-      for( B_iter BJ=Cj->LEAF; BJ!=Cj->LEAF+Cj->NDLEAF; ++BJ ) {
+      for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {
         vect dR = BI->X - BJ->X;
         real D1 = norm(dR) + EPS2;
         real D0 = BI->SRC[0] * BJ->SRC[0];
@@ -146,71 +109,104 @@ public:
 
   void P2M(C_iter C) {
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-      vect dX = B->X - C->X;
-      real R = std::sqrt(norm(dX));
+      vect dist = B->X - C->X;
+      real R = std::sqrt(norm(dist));
       if( R > DMAX ) DMAX = R;
-      real tmp = B->SRC[0] * dX[0];
+      real tmp = B->SRC[0] * dist[0];
       C->M[0] += B->SRC[0];
-      C->M[1] += dX[0] * tmp;
-      C->M[2] += dX[1] * tmp;
-      C->M[3] += dX[2] * tmp;
-      tmp = B->SRC[0] * dX[1];
-      C->M[4] += dX[1] * tmp;
-      C->M[5] += dX[2] * tmp;
-      C->M[6] += B->SRC[0] * dX[2] * dX[2];
+      C->M[1] += dist[0] * tmp;
+      C->M[2] += dist[1] * tmp;
+      C->M[3] += dist[2] * tmp;
+      tmp = B->SRC[0] * dist[1];
+      C->M[4] += dist[1] * tmp;
+      C->M[5] += dist[2] * tmp;
+      C->M[6] += B->SRC[0] * dist[2] * dist[2];
     }
     C->RCRIT = std::min(C->R,DMAX);
   }
 
   void M2M(C_iter C) {
     for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
-      vect dX = c->X - C->X;
-      real R = std::sqrt(norm(dX)) + c->RCRIT;
+      vect dist = c->X - C->X;
+      real R = std::sqrt(norm(dist)) + c->RCRIT;
       if( R > DMAX ) DMAX = R;
       for( int i=0; i!=6; ++i ) C->M[i] += c->M[i];
-      real tmp = c->M[0] * dX[0];
-      C->M[1] += dX[0] * tmp;
-      C->M[2] += dX[1] * tmp;
-      C->M[3] += dX[2] * tmp;
-      tmp = c->M[0] * dX[1];
-      C->M[4] += dX[1] * tmp;
-      C->M[5] += dX[2] * tmp;
-      C->M[6] += c->M[0] * dX[2] * dX[2];
+      real tmp = c->M[0] * dist[0];
+      C->M[1] += dist[0] * tmp;
+      C->M[2] += dist[1] * tmp;
+      C->M[3] += dist[2] * tmp;
+      tmp = c->M[0] * dist[1];
+      C->M[4] += dist[1] * tmp;
+      C->M[5] += dist[2] * tmp;
+      C->M[6] += c->M[0] * dist[2] * dist[2];
     }
     C->RCRIT = std::min(C->R,DMAX);
   }
 
-  void M2L(C_iter Ci, C_iter Cj, bool mutual=true) const {
-    vect dX = Ci->X - Cj->X;
-    Lset D;
-    set_dPhi(D,dX,Ci->M[0]*Cj->M[0]);
-    add_C_C2C(Ci->L,D,Cj->M);
+  void M2L(C_iter CI, C_iter CJ, bool mutual=true) const {
+    vect dist = CI->X - CJ->X;
+    real R2 = norm(dist);
+    real invR2 = 1.0 / (R2 + EPS2);
+    real invR  = CI->M[0] * CJ->M[0] * std::sqrt(invR2);
+    real invR3 =     invR2 * invR;
+    real invR5 = 3 * invR2 * invR3;
+    real invR7 = 5 * invR2 * invR5;
+    Lset C;
+    C[ 0] = invR;
+    real t = -invR3;
+    C[ 1] = t * dist[0];
+    C[ 2] = t * dist[1];
+    C[ 3] = t * dist[2];
+    t     = invR5 * dist[0];
+    C[ 4] = t * dist[0] - invR3;
+    C[ 5] = t * dist[1];
+    C[ 6] = t * dist[2];
+    t     = invR5 * dist[1];
+    C[ 7] = t * dist[1] - invR3;
+    C[ 8] = t * dist[2];
+    t     = invR5 * dist[2];
+    C[ 9] = t * dist[2] - invR3;
+    real s = 3 * invR5;
+    t     = -invR7 * dist[0] * dist[0];
+    C[10] = (s     + t) * dist[0];
+    C[11] = (invR5 + t) * dist[1];
+    C[12] = (invR5 + t) * dist[2];
+    t     = -invR7 * dist[1] * dist[1];
+    C[13] = (invR5 + t) * dist[0];
+    C[16] = (s     + t) * dist[1];
+    C[17] = (invR5 + t) * dist[2];
+    t     = -invR7 * dist[2] * dist[2];
+    C[15] = (invR5 + t) * dist[0];
+    C[18] = (invR5 + t) * dist[1];
+    C[19] = (s     + t) * dist[2];
+    C[14] = -invR7 * dist[0] * dist[1] * dist[2];
+    add_C_C2C(CI->L,C,CJ->M);
     if( mutual ) {
-      flip_sign_odd(D);
-      add_C_C2C(Cj->L,D,Ci->M);
+      flip_sign_odd(C);
+      add_C_C2C(CJ->L,C,CI->M);
     }
   }
 
   void L2L(C_iter C) const {
-    vect dX = C->X - (C0+C->PARENT)->X;
+    vect dist = C->X - (C0+C->PARENT)->X;
     Lset L = (C0+C->PARENT)->L;
     Lset o;
-    o[0] = L[1] *dX[0] + L[2] *dX[1] + L[3] *dX[2];
-    o[1] = L[4] *dX[0] + L[5] *dX[1] + L[6] *dX[2];
-    o[2] = L[5] *dX[0] + L[7] *dX[1] + L[8] *dX[2];
-    o[3] = L[6] *dX[0] + L[8] *dX[1] + L[9] *dX[2];
-    o[4] = L[10]*dX[0] + L[11]*dX[1] + L[12]*dX[2];
-    o[5] = L[11]*dX[0] + L[13]*dX[1] + L[14]*dX[2];
-    o[6] = L[12]*dX[0] + L[14]*dX[1] + L[15]*dX[2];
-    o[7] = L[13]*dX[0] + L[16]*dX[1] + L[17]*dX[2];
-    o[8] = L[14]*dX[0] + L[17]*dX[1] + L[18]*dX[2];
-    o[9] = L[15]*dX[0] + L[18]*dX[1] + L[19]*dX[2];
+    o[0] = L[1] *dist[0] + L[2] *dist[1] + L[3] *dist[2];
+    o[1] = L[4] *dist[0] + L[5] *dist[1] + L[6] *dist[2];
+    o[2] = L[5] *dist[0] + L[7] *dist[1] + L[8] *dist[2];
+    o[3] = L[6] *dist[0] + L[8] *dist[1] + L[9] *dist[2];
+    o[4] = L[10]*dist[0] + L[11]*dist[1] + L[12]*dist[2];
+    o[5] = L[11]*dist[0] + L[13]*dist[1] + L[14]*dist[2];
+    o[6] = L[12]*dist[0] + L[14]*dist[1] + L[15]*dist[2];
+    o[7] = L[13]*dist[0] + L[16]*dist[1] + L[17]*dist[2];
+    o[8] = L[14]*dist[0] + L[17]*dist[1] + L[18]*dist[2];
+    o[9] = L[15]*dist[0] + L[18]*dist[1] + L[19]*dist[2];
     for( int i=0; i<10; i++ ) L[i] += o[i];
-    o[0] = (o[1]*dX[0] + o[2]*dX[1] + o[3]*dX[2]) / 2;
-    o[1] = (o[4]*dX[0] + o[5]*dX[1] + o[6]*dX[2]) / 2;
-    o[2] = (o[5]*dX[0] + o[7]*dX[1] + o[8]*dX[2]) / 2;
-    o[3] = (o[6]*dX[0] + o[8]*dX[1] + o[9]*dX[2]) / 2;
-    L[0]+=o[0] + (dX[0]*o[1]+dX[1]*o[2]+dX[2]*o[3]) / 3;
+    o[0] = (o[1]*dist[0] + o[2]*dist[1] + o[3]*dist[2]) / 2;
+    o[1] = (o[4]*dist[0] + o[5]*dist[1] + o[6]*dist[2]) / 2;
+    o[2] = (o[5]*dist[0] + o[7]*dist[1] + o[8]*dist[2]) / 2;
+    o[3] = (o[6]*dist[0] + o[8]*dist[1] + o[9]*dist[2]) / 2;
+    L[0]+=o[0] + (dist[0]*o[1]+dist[1]*o[2]+dist[2]*o[3]) / 3;
     L[1]+=o[1];  L[2]+=o[2];  L[3]+=o[3];
     L += C->L / C->M[0];
     C->L = L;
@@ -219,31 +215,31 @@ public:
   void L2P(C_iter C) const {
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
       Lset o;
-      vect dX = B->X - C->X;
+      vect dist = B->X - C->X;
       B->TRG /= B->SRC[0];
       B->TRG[0] -= C->L[0];
       B->TRG[1] += C->L[1];
       B->TRG[2] += C->L[2];
       B->TRG[3] += C->L[3];
-      o[0] = C->L[1] *dX[0] + C->L[2] *dX[1] + C->L[3] *dX[2];
-      o[1] = C->L[4] *dX[0] + C->L[5] *dX[1] + C->L[6] *dX[2];
-      o[2] = C->L[5] *dX[0] + C->L[7] *dX[1] + C->L[8] *dX[2];
-      o[3] = C->L[6] *dX[0] + C->L[8] *dX[1] + C->L[9] *dX[2];
-      o[4] = C->L[10]*dX[0] + C->L[11]*dX[1] + C->L[12]*dX[2];
-      o[5] = C->L[11]*dX[0] + C->L[13]*dX[1] + C->L[14]*dX[2];
-      o[6] = C->L[12]*dX[0] + C->L[14]*dX[1] + C->L[15]*dX[2];
-      o[7] = C->L[13]*dX[0] + C->L[16]*dX[1] + C->L[17]*dX[2];
-      o[8] = C->L[14]*dX[0] + C->L[17]*dX[1] + C->L[18]*dX[2];
-      o[9] = C->L[15]*dX[0] + C->L[18]*dX[1] + C->L[19]*dX[2];
+      o[0] = C->L[1] *dist[0] + C->L[2] *dist[1] + C->L[3] *dist[2];
+      o[1] = C->L[4] *dist[0] + C->L[5] *dist[1] + C->L[6] *dist[2];
+      o[2] = C->L[5] *dist[0] + C->L[7] *dist[1] + C->L[8] *dist[2];
+      o[3] = C->L[6] *dist[0] + C->L[8] *dist[1] + C->L[9] *dist[2];
+      o[4] = C->L[10]*dist[0] + C->L[11]*dist[1] + C->L[12]*dist[2];
+      o[5] = C->L[11]*dist[0] + C->L[13]*dist[1] + C->L[14]*dist[2];
+      o[6] = C->L[12]*dist[0] + C->L[14]*dist[1] + C->L[15]*dist[2];
+      o[7] = C->L[13]*dist[0] + C->L[16]*dist[1] + C->L[17]*dist[2];
+      o[8] = C->L[14]*dist[0] + C->L[17]*dist[1] + C->L[18]*dist[2];
+      o[9] = C->L[15]*dist[0] + C->L[18]*dist[1] + C->L[19]*dist[2];
       B->TRG[0] -= o[0];
       B->TRG[1] += o[1];
       B->TRG[2] += o[2];
       B->TRG[3] += o[3];
-      o[0] = (o[1]*dX[0] + o[3]*dX[2] + o[2]*dX[1]) / 2;
-      o[1] = (o[4]*dX[0] + o[6]*dX[2] + o[5]*dX[1]) / 2;
-      o[2] = (o[5]*dX[0] + o[8]*dX[2] + o[7]*dX[1]) / 2;
-      o[3] = (o[6]*dX[0] + o[9]*dX[2] + o[8]*dX[1]) / 2;
-      B->TRG[0] -= o[0] + (dX[0]*o[1]+dX[1]*o[2]+dX[2]*o[3]) / 3;
+      o[0] = (o[1]*dist[0] + o[3]*dist[2] + o[2]*dist[1]) / 2;
+      o[1] = (o[4]*dist[0] + o[6]*dist[2] + o[5]*dist[1]) / 2;
+      o[2] = (o[5]*dist[0] + o[8]*dist[2] + o[7]*dist[1]) / 2;
+      o[3] = (o[6]*dist[0] + o[9]*dist[2] + o[8]*dist[1]) / 2;
+      B->TRG[0] -= o[0] + (dist[0]*o[1]+dist[1]*o[2]+dist[2]*o[3]) / 3;
       B->TRG[1] += o[1];
       B->TRG[2] += o[2];
       B->TRG[3] += o[3];
