@@ -146,15 +146,13 @@ protected:
       M2M(C);
     }
 #if CART
-#elif SPHE
-#else
     for( C_iter C=C0; C!=C0+NCELL; ++C ) {
-      C->M[1] *= 0.5 / C->M[0];
-      C->M[2] *= 1.0 / C->M[0];
-      C->M[3] *= 1.0 / C->M[0];
-      C->M[4] *= 0.5 / C->M[0];
-      C->M[5] *= 1.0 / C->M[0];
-      C->M[6] *= 0.5 / C->M[0];
+      C->M[1] /= C->M[0];
+      C->M[2] /= C->M[0];
+      C->M[3] /= C->M[0];
+      C->M[4] /= C->M[0];
+      C->M[5] /= C->M[0];
+      C->M[6] /= C->M[0];
     }
 #endif
     set_rcrit();

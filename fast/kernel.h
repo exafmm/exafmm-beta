@@ -144,10 +144,6 @@ template<int nx, int ny, int nz>
 struct Terms {
   static inline void power(Lset &C, const vect &dist) {
     Terms<nx,ny+1,nz-1>::power(C,dist);
-    C[Index<nx,ny,nz>::I] = C[Index<nx,ny,nz-1>::I] * dist[2];
-  }
-  static inline void powerfac(Lset &C, const vect &dist) {
-    Terms<nx,ny+1,nz-1>::powerfac(C,dist);
     C[Index<nx,ny,nz>::I] = C[Index<nx,ny,nz-1>::I] * dist[2] / nz;
   }
   static inline void derivative(Lset &C, const vect &dist, const real &invR2) {
@@ -165,10 +161,6 @@ template<int nx, int ny>
 struct Terms<nx,ny,0> {
   static inline void power(Lset &C, const vect &dist) {
     Terms<nx+1,0,ny-1>::power(C,dist);
-    C[Index<nx,ny,0>::I] = C[Index<nx,ny-1,0>::I] * dist[1];
-  }
-  static inline void powerfac(Lset &C, const vect &dist) {
-    Terms<nx+1,0,ny-1>::powerfac(C,dist);
     C[Index<nx,ny,0>::I] = C[Index<nx,ny-1,0>::I] * dist[1] / ny;
   }
   static inline void derivative(Lset &C, const vect &dist, const real &invR2) {
@@ -186,10 +178,6 @@ template<int nx>
 struct Terms<nx,0,0> {
   static inline void power(Lset &C, const vect &dist) {
     Terms<0,0,nx-1>::power(C,dist);
-    C[Index<nx,0,0>::I] = C[Index<nx-1,0,0>::I] * dist[0];
-  }
-  static inline void powerfac(Lset &C, const vect &dist) {
-    Terms<0,0,nx-1>::powerfac(C,dist);
     C[Index<nx,0,0>::I] = C[Index<nx-1,0,0>::I] * dist[0] / nx;
   }
   static inline void derivative(Lset &C, const vect &dist, const real &invR2) {
@@ -206,7 +194,6 @@ struct Terms<nx,0,0> {
 template<>
 struct Terms<0,0,0> {
   static inline void power(Lset&, const vect&) {}
-  static inline void powerfac(Lset&, const vect&) {}
   static inline void derivative(Lset&, const vect&, const real&) {}
   static inline void scale(Lset&) {}
 };
@@ -686,7 +673,7 @@ public:
     vect dist = CI->X - CJ->X;
     Lset C;
     C[0] = 1;
-    Terms<0,0,P>::powerfac(C,dist);
+    Terms<0,0,P>::power(C,dist);
 
     CI->L /= CI->M[0];
     CI->L += CJ->L;
@@ -700,7 +687,7 @@ public:
       vect dist = B->X - CI->X;
       Lset C, L;
       C[0] = 1;
-      Terms<0,0,P>::powerfac(C,dist);
+      Terms<0,0,P>::power(C,dist);
 
       L = CI->L;
       B->TRG /= B->SRC[0];

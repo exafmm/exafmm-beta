@@ -35,7 +35,7 @@ extern int IMAGES;                                              // Number of per
 extern real THETA;                                              // Box opening criteria
 #endif
 
-const int  P       = 3;                                         // Order of expansions
+const int  P       = 4;                                         // Order of expansions
 const int  NCRIT   = 8;                                         // Number of bodies per cell
 const int  MAXBODY = 200000;                                    // Maximum number of bodies per GPU kernel
 const int  MAXCELL = 10000000;                                  // Maximum number of bodies/coefs in cell per GPU kernel
@@ -46,17 +46,14 @@ const int  THREADS = 64;                                        // Number of thr
 
 const int MCOEF = P*(P+1)*(P+2)/6-3;
 const int LCOEF = (P+1)*(P+2)*(P+3)/6;
-const int NCOEF = P*(P+1)*(P+2)/6;
+const int NCOEF = P*(P+1)/2;
 typedef vec<3 ,real> vect;
 #if CART
-typedef vec<NCOEF,real> Mset;
-typedef vec<NCOEF,real> Lset;
-#elif SPHE
-typedef vec<MCOEF,complex> Mset;
-typedef vec<NCOEF,complex> Lset;
-#else
 typedef vec<MCOEF,real> Mset;
 typedef vec<LCOEF,real> Lset;
+#elif SPHE
+typedef vec<NCOEF,complex> Mset;
+typedef vec<NCOEF,complex> Lset;
 #endif
 
 typedef std::vector<bigint>                    Bigints;         // Vector of big integer types
