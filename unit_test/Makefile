@@ -8,11 +8,11 @@ index: index.cxx $(OBJECT)
 	$(SERIALRUN)
 
 topdown: construct.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS) -DTOPDOWN
+	$(CXX) $? $(LFLAGS) $(VFLAGS) -DTOPDOWN
 	$(SERIALRUN)
 
 bottomup: construct.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS)
+	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(SERIALRUN)
 
 kernel: kernel.cxx $(OBJECT)
