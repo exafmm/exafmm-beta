@@ -3,33 +3,85 @@
 #include "sort.h"
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
-const int  P2 = P * P;
-const int  P4 = P2 * P2;
 const real EPS = 1e-6; 
 
 template<int n, int m>
 struct Index {
-  static const int nm  = Index<n,m-1>::nm  + 1;
+  static const int npm = Index<n,m-1>::npm + 1;
+  static const int nmm = Index<n,m-1>::nmm - 1;
   static const int nms = Index<n,m-1>::nms + 1;
 };
 
 template<int n>
 struct Index<n,0> {
-  static const int nm  = Index<n-1,n-1>::nm  + n + 1;
+  static const int npm = Index<n-1,n-1>::npm + n + 1;
+  static const int nmm = Index<n-1,n-1>::npm + n + 1;
   static const int nms = Index<n-1,n-1>::nms + 1;
 };
 
 template<>
 struct Index<0,0> {
-  static const int nm  = 0;
+  static const int npm = 0;
+  static const int nmm = 0;
   static const int nms = 0;
+};
+
+template<int p, int n=p-1, int m=p-1>
+struct Expansion {
+  static inline void harmonic(double &x, double &y, real &rho,
+                               double &rhom, double &rhon, real &beta, complex &eim,
+                               double &Pn, double &P0, double &P1, double &P2,
+                               double *prefactor, complex *Ynm, complex *YnmTheta) {
+    Expansion<p,n-1,m>::harmonic(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
+    Ynm[Index<n,m>::npm] = rhon * P0 * prefactor[Index<n,m>::npm] * eim;
+    Ynm[Index<n,m>::nmm] = std::conj(Ynm[Index<n,m>::npm]);
+    P2 = P1;
+    P1 = P0;
+    P0 = (x * (2 * n + 1) * P1 - (n + m) * P2) / (n - m + 1);
+    YnmTheta[Index<n,m>::npm] = rhon * ((n - m + 1) * P0 - (n + 1) * x * P1) / y * prefactor[Index<n,m>::npm] * eim;
+    rhon *= rho;
+  }
+};
+
+template<int p, int m>
+struct Expansion<p,m,m> {
+  static inline void harmonic(double &x, double &y, real &rho,
+                               double &rhom, double &rhon, real &beta, complex &eim,
+                               double &Pn, double &P0, double &P1, double &P2,
+                               double *prefactor, complex *Ynm, complex *YnmTheta) {
+    Expansion<p,p-1,m-1>::harmonic(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
+    const complex I(0.,1.);
+    eim = std::exp(I * double(m * beta));
+    Pn = -Pn * (2 * m - 1) * y;
+    P0 = Pn;
+    Ynm[Index<m,m>::npm] = rhom * P0 * prefactor[Index<m,m>::npm] * eim;
+    Ynm[Index<m,m>::nmm] = std::conj(Ynm[Index<m,m>::npm]);
+    P1 = P0;
+    P0 = x * (2*m+1) * P0;
+    YnmTheta[Index<m,m>::npm] = rhom * (P0 - (m + 1) * x * P1) / y * prefactor[Index<m,m>::npm] * eim;
+    rhom *= rho;
+    rhon = rhom;
+  }
+};
+
+template<int p>
+struct Expansion<p,0,0> {
+  static inline void harmonic(double &, double &, real &rho,
+                               double &rhom, double &rhon, real&, complex&,
+                               double&, double &, double &, double&,
+                               double*, complex *Ynm, complex *YnmTheta) {
+    Ynm[0] = rhom;
+    YnmTheta[0] = 0;
+    rhom *= rho;
+    rhon = rhom;
+  }
 };
 
 template<int n, int m>
 struct Terms {
   static inline void P2M(Mset &M, const double &C, complex *Ynm) {
     Terms<n,m-1>::P2M(M,C,Ynm);
-    M[Index<n,m>::nms] += C * Ynm[Index<n,m>::nm];
+    M[Index<n,m>::nms] += C * Ynm[Index<n,m>::npm];
   }
 };
 
@@ -37,17 +89,105 @@ template<int n>
 struct Terms<n,0> {
   static inline void P2M(Mset &M, const double &C, complex *Ynm) {
     Terms<n-1,n-1>::P2M(M,C,Ynm);
-    M[Index<n,0>::nms] += C * Ynm[Index<n,0>::nm];
+    M[Index<n,0>::nms] += C * Ynm[Index<n,0>::npm];
   }
 };
 
 template<>
 struct Terms<0,0> {
   static inline void P2M(Mset &M, const double &C, complex *Ynm) {
-    M[Index<0,0>::nms] += C * Ynm[Index<0,0>::nm];
+    M[Index<0,0>::nms] += C * Ynm[Index<0,0>::npm];
   }
 };
 
+template<int p, int j=p-1, int k=p-1, int n=p-1, int m=p-1>
+struct M2Ltemplate {
+  static inline void loop(Mset &M, Lset &L, complex *Cnm, complex *Ynm) {
+    M2Ltemplate<p,j,k,n,m-1>::loop(M,L,Cnm,Ynm);
+    int nm   = n * n + n + m;
+    int nms  = n * (n + 1) / 2 + m;
+    int jk = j * j + j + k;
+    int jks = j * (j + 1) / 2 + k;
+    int jknm = jk * P * P + nm;
+    int jnkm = (j + n) * (j + n) + j + n + m - k;
+    L[jks] += M[nms] * Cnm[jknm] * Ynm[jnkm];
+    nm   = n * n + n - m;
+    jknm = jk * P * P + nm;
+    jnkm = (j + n) * (j + n) + j + n - m - k;
+    L[jks] += std::conj(M[nms]) * Cnm[jknm] * Ynm[jnkm];
+  }
+};
+
+template<int p, int j, int k, int n>
+struct M2Ltemplate<p,j,k,n,1> {
+  static inline void loop(Mset &M, Lset &L, complex *Cnm, complex *Ynm) {
+    M2Ltemplate<p,j,k,n-1,n-1>::loop(M,L,Cnm,Ynm);
+    int nm   = n * n + n;
+    int nms  = n * (n + 1) / 2;
+    int jk = j * j + j + k;
+    int jks = j * (j + 1) / 2 + k;
+    int jknm = jk * P * P + nm;
+    int jnkm = (j + n) * (j + n) + j + n - k;
+    L[jks] += M[nms] * Cnm[jknm] * Ynm[jnkm];
+    nm   = n * n + n + 1;
+    nms  = n * (n + 1) / 2 + 1;
+    jknm = jk * P * P + nm;
+    jnkm = (j + n) * (j + n) + j + n + 1 - k;
+    L[jks] += M[nms] * Cnm[jknm] * Ynm[jnkm];
+    nm   = n * n + n - 1;
+    jknm = jk * P * P + nm;
+    jnkm = (j + n) * (j + n) + j + n - 1 - k;
+    L[jks] += std::conj(M[nms]) * Cnm[jknm] * Ynm[jnkm];
+  }
+};
+
+template<int p, int j, int k>
+struct M2Ltemplate<p,j,k,2,1> {
+  static inline void loop(Mset &M, Lset &L, complex *Cnm, complex *Ynm) {
+    M2Ltemplate<p,j,k-1,p-1,p-1>::loop(M,L,Cnm,Ynm);
+    int jk = j * j + j + k;
+    int jks = j * (j + 1) / 2 + k;
+    L[jks] += M[0] * Cnm[jk*P*P] * Ynm[j*j+j-k];
+    int jknm = jk * P * P + 6;
+    int jnkm = (j + 2) * (j + 2) + j + 2 - k;
+    L[jks] += M[3] * Cnm[jknm] * Ynm[jnkm];
+    jknm = jk * P * P + 7;
+    jnkm = (j + 2) * (j + 2) + j + 3 - k;
+    L[jks] += M[4] * Cnm[jknm] * Ynm[jnkm];
+    jknm = jk * P * P + 5;
+    jnkm = (j + 2) * (j + 2) + j + 1 - k;
+    L[jks] += std::conj(M[4]) * Cnm[jknm] * Ynm[jnkm];
+  }
+};
+
+template<int p, int j>
+struct M2Ltemplate<p,j,0,2,1> {
+  static inline void loop(Mset &M, Lset &L, complex *Cnm, complex *Ynm) {
+    M2Ltemplate<p,j-1,j-1,p-1,p-1>::loop(M,L,Cnm,Ynm);
+    int jk = j * j + j;
+    int jks = j * (j + 1) / 2;
+    L[jks] += M[0] * Cnm[jk*P*P] * Ynm[j*j+j];
+    int jknm = jk * P * P + 6;
+    int jnkm = (j + 2) * (j + 2) + j + 2;
+    L[jks] += M[3] * Cnm[jknm] * Ynm[jnkm];
+    jknm = jk * P * P + 7;
+    jnkm = (j + 2) * (j + 2) + j + 3;
+    L[jks] += M[4] * Cnm[jknm] * Ynm[jnkm];
+    jknm = jk * P * P + 5;
+    jnkm = (j + 2) * (j + 2) + j + 1;
+    L[jks] += std::conj(M[4]) * Cnm[jknm] * Ynm[jnkm];
+  }
+};
+
+template<int p>
+struct M2Ltemplate<p,0,0,2,1> {
+  static inline void loop(Mset &M, Lset &L, complex *Cnm, complex *Ynm) {
+    L[0] += M[0] * Cnm[0] * Ynm[0];
+    L[0] += M[3] * Cnm[6] * Ynm[6];
+    L[0] += M[4] * Cnm[7] * Ynm[7];
+    L[0] += std::conj(M[4]) * Cnm[5] * Ynm[5];
+  }
+};
 
 class Kernel : public Sort {
 private:
@@ -96,9 +236,14 @@ private:
   }
 
   void evalMultipole(real rho, real alpha, real beta) const {
-    const complex I(0.,1.);                                     // Imaginary unit
     double x = std::cos(alpha);
     double y = std::sin(alpha);
+#if 1
+    double rhom=1,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
+    complex eim = 1;
+    Expansion<P>::harmonic(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
+#else
+    const complex I(0.,1.);
     double fact = 1;
     double pn = 1;
     double rhom = 1;
@@ -110,7 +255,7 @@ private:
       Ynm[npn] = rhom * p * prefactor[npn] * eim;
       Ynm[nmn] = std::conj(Ynm[npn]);
       double p1 = p;
-      p = x * (2 * m + 1) * p;
+      p = x * fact * p;
       YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;
       rhom *= rho;
       double rhon = rhom;
@@ -128,13 +273,19 @@ private:
       pn = -pn * fact * y;
       fact += 2;
     }
+#endif
   }
 
   void evalLocal(real rho, real alpha, real beta) const {
-    const complex I(0.,1.);                                     // Imaginary unit
     double x = std::cos(alpha);
     double y = std::sin(alpha);
-    double s = std::sqrt(1 - x * x);
+#if 1
+    real invR = 1 / rho;
+    double rhom=invR,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
+    complex eim = 1;
+    Expansion<2*P>::harmonic(x,y,invR,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
+#else
+    const complex I(0.,1.);
     double fact = 1;
     double pn = 1;
     double rhom = 1.0 / rho;
@@ -146,7 +297,7 @@ private:
       Ynm[npn] = rhom * p * prefactor[npn] * eim;
       Ynm[nmn] = std::conj(Ynm[npn]);
       double p1 = p;
-      p = x * (2 * m + 1) * p;
+      p = x * fact * p;
       YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;
       rhom /= rho;
       double rhon = rhom;
@@ -161,20 +312,21 @@ private:
         YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;
         rhon /= rho;
       }
-      pn = -pn * fact * s;
+      pn = -pn * fact * y;
       fact += 2;
     }
+#endif
   }
 
 public:
   Kernel() : X0(0), R0(0) {
     const complex I(0.,1.);                                     // Imaginary unit
     factorial = new double  [P];
-    prefactor = new double  [4*P2];
-    Anm       = new double  [4*P2];
-    Ynm       = new complex [4*P2];
-    YnmTheta  = new complex [4*P2];
-    Cnm       = new complex [P4];
+    prefactor = new double  [4*P*P];
+    Anm       = new double  [4*P*P];
+    Ynm       = new complex [4*P*P];
+    YnmTheta  = new complex [4*P*P];
+    Cnm       = new complex [P*P*P*P];
 
     factorial[0] = 1;
     for( int n=1; n!=P; ++n ) {
@@ -202,7 +354,7 @@ public:
       for( int k=-j; k<=j; ++k, ++jk ){
         for( int n=0, nm=0; n!=P; ++n ) {
           for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
-            const int jnkm = (j+n)*(j+n)+j+n+m-k;
+            int jnkm = (j+n)*(j+n)+j+n+m-k;
             Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
           }
         }
@@ -307,33 +459,29 @@ public:
       vect dist = CI->X - CJ->X;
       real R = std::sqrt(norm(dist)) + CJ->RCRIT;
       if( R > DMAX ) DMAX = R;
-      const complex I(0.,1.);                                       // Imaginary unit
+      const complex I(0.,1.);
       real rho, alpha, beta;
       cart2sph(rho,alpha,beta,dist);
       evalMultipole(rho,alpha,-beta);
       for( int j=0; j!=P; ++j ) {
         for( int k=0; k<=j; ++k ) {
-          const int jk = j * j + j + k;
-          const int jks = j * (j + 1) / 2 + k;
+          int jk = j * j + j + k;
+          int jks = j * (j + 1) / 2 + k;
           complex M = 0;
           for( int n=0; n<=j; ++n ) {
-            for( int m=-n; m<=std::min(k-1,n); ++m ) {
-              if( j-n >= k-m ) {
-                const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-                const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
-                const int nm    = n * n + n + m;
-                M += CJ->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
-                   * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-              }
+            for( int m=std::max(-n,-j+k+n); m<=std::min(k-1,n); ++m ) {
+              int jnkm  = (j - n) * (j - n) + j - n + k - m;
+              int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
+              int nm    = n * n + n + m;
+              M += CJ->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+                 * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
-            for( int m=k; m<=n; ++m ) {
-              if( j-n >= m-k ) {
-                const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-                const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-                const int nm    = n * n + n + m;
-                M += std::conj(CJ->M[jnkms]) * Ynm[nm]
-                   * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-              }
+            for( int m=k; m<=std::min(n,j+k-n); ++m ) {
+              int jnkm  = (j - n) * (j - n) + j - n + k - m;
+              int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
+              int nm    = n * n + n + m;
+              M += std::conj(CJ->M[jnkms]) * Ynm[nm]
+                 * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
           }
           CI->M[jks] += M;
@@ -348,89 +496,97 @@ public:
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalLocal(rho,alpha,beta);
+#if 1
+    M2Ltemplate<P>::loop(CJ->M,CI->L,Cnm,Ynm);
+#else
     for( int j=0; j!=P; ++j ) {
       for( int k=0; k<=j; ++k ) {
-        const int jk = j * j + j + k;
-        const int jks = j * (j + 1) / 2 + k;
-        complex L = std::conj(CJ->M[0]) * Cnm[jk*P2] * Ynm[j*j+j-k];
+        int jk = j * j + j + k;
+        int jks = j * (j + 1) / 2 + k;
+        complex L = CJ->M[0] * Cnm[jk*P*P] * Ynm[j*j+j-k];
         for( int n=2; n!=P; ++n ) {
-          for( int m=-n; m<0; ++m ) {
-            const int nm   = n * n + n + m;
-            const int nms  = n * (n + 1) / 2 - m;
-            const int jknm = jk * P2 + nm;
-            const int jnkm = (j + n) * (j + n) + j + n + m - k;
-            L += std::conj(CJ->M[nms]) * Cnm[jknm] * Ynm[jnkm];
-          }
-          for( int m=0; m<=n; ++m ) {
-            const int nm   = n * n + n + m;
-            const int nms  = n * (n + 1) / 2 + m;
-            const int jknm = jk * P2 + nm;
-            const int jnkm = (j + n) * (j + n) + j + n + m - k;
+          int nm   = n * n + n;
+          int nms  = n * (n + 1) / 2;
+          int jknm = jk * P * P + nm;
+          int jnkm = (j + n) * (j + n) + j + n - k;
+          L += CJ->M[nms] * Cnm[jknm] * Ynm[jnkm];
+          for( int m=1; m<=n; ++m ) {
+            nm   = n * n + n + m;
+            nms  = n * (n + 1) / 2 + m;
+            jknm = jk * P * P + nm;
+            jnkm = (j + n) * (j + n) + j + n + m - k;
             L += CJ->M[nms] * Cnm[jknm] * Ynm[jnkm];
+            nm   = n * n + n - m;
+            jknm = jk * P * P + nm;
+            jnkm = (j + n) * (j + n) + j + n - m - k;
+            L += std::conj(CJ->M[nms]) * Cnm[jknm] * Ynm[jnkm];
           }
         }
         CI->L[jks] += L;
       }
     }
+#endif
     if( mutual ) {
       dist = CJ->X - CI->X;
       cart2sph(rho,alpha,beta,dist);
       evalLocal(rho,alpha,beta);
+#if 1
+      M2Ltemplate<P>::loop(CI->M,CJ->L,Cnm,Ynm);
+#else
       for( int j=0; j!=P; ++j ) {
         for( int k=0; k<=j; ++k ) {
-          const int jk = j * j + j + k;
-          const int jks = j * (j + 1) / 2 + k;
-          complex L = std::conj(CI->M[0]) * Cnm[jk*P2] * Ynm[j*j+j-k];
+          int jk = j * j + j + k;
+          int jks = j * (j + 1) / 2 + k;
+          complex L = std::conj(CI->M[0]) * Cnm[jk*P*P] * Ynm[j*j+j-k];
           for( int n=2; n!=P; ++n ) {
             for( int m=-n; m<0; ++m ) {
-              const int nm   = n * n + n + m;
-              const int nms  = n * (n + 1) / 2 - m;
-              const int jknm = jk * P2 + nm;
-              const int jnkm = (j + n) * (j + n) + j + n + m - k;
+              int nm   = n * n + n + m;
+              int nms  = n * (n + 1) / 2 - m;
+              int jknm = jk * P * P + nm;
+              int jnkm = (j + n) * (j + n) + j + n + m - k;
               L += std::conj(CI->M[nms]) * Cnm[jknm] * Ynm[jnkm];
             }
             for( int m=0; m<=n; ++m ) {
-              const int nm   = n * n + n + m;
-              const int nms  = n * (n + 1) / 2 + m;
-              const int jknm = jk * P2 + nm;
-              const int jnkm = (j + n) * (j + n) + j + n + m - k;
+              int nm   = n * n + n + m;
+              int nms  = n * (n + 1) / 2 + m;
+              int jknm = jk * P * P + nm;
+              int jnkm = (j + n) * (j + n) + j + n + m - k;
               L += CI->M[nms] * Cnm[jknm] * Ynm[jnkm];
             }
           }
           CJ->L[jks] += L;
         }
       }
+#endif
     }
   }
 
   void L2L(C_iter CI) const {
     C_iter CJ = C0 + CI->PARENT;
     vect dist = CI->X - CJ->X;
-    const complex I(0.,1.);                                       // Imaginary unit
+    const complex I(0.,1.);
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalMultipole(rho,alpha,beta);
     for( int j=0; j!=P; ++j ) {
       for( int k=0; k<=j; ++k ) {
-        const int jk = j * j + j + k;
-        const int jks = j * (j + 1) / 2 + k;
+        int jk = j * j + j + k;
+        int jks = j * (j + 1) / 2 + k;
         complex L = 0;
         for( int n=j; n!=P; ++n ) {
           for( int m=j+k-n; m<0; ++m ) {
-            const int jnkm = (n - j) * (n - j) + n - j + m - k;
-            const int nm   = n * n + n - m;
-            const int nms  = n * (n + 1) / 2 - m;
+            int jnkm = (n - j) * (n - j) + n - j + m - k;
+            int nm   = n * n + n - m;
+            int nms  = n * (n + 1) / 2 - m;
             L += std::conj(CJ->L[nms]) * Ynm[jnkm]
                * double(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
           }
-          for( int m=0; m<=n; ++m ) {
-            if( n-j >= abs(m-k) ) {
-              const int jnkm = (n - j) * (n - j) + n - j + m - k;
-              const int nm   = n * n + n + m;
-              const int nms  = n * (n + 1) / 2 + m;
-              L += CJ->L[nms] * std::pow(I,double(m-k-abs(m-k)))
-                 * Ynm[jnkm] * double(Anm[jnkm] * Anm[jk] / Anm[nm]);
-            }
+          for( int m=std::max(0,j+k-n); m<=std::min(n,-j+k+n); ++m ) {
+            int jnkm = (n - j) * (n - j) + n - j + m - k;
+            int nm   = n * n + n + m;
+            int nms  = n * (n + 1) / 2 + m;
+            L += CJ->L[nms] * std::pow(I,double(m-k-abs(m-k)))
+               * Ynm[jnkm] * double(Anm[jnkm] * Anm[jk] / Anm[nm]);
           }
         }
         CI->L[jks] += L;
@@ -439,7 +595,7 @@ public:
   }
 
   void L2P(C_iter CI) const {
-    const complex I(0.,1.);                                       // Imaginary unit
+    const complex I(0.,1.);
     for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NCLEAF; ++B ) {
       vect dist = B->X - CI->X;
       B->TRG /= B->SRC[0];

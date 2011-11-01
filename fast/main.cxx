@@ -10,7 +10,7 @@ int main() {
   D.kernelName = "Laplace";
   TreeConstructor T;
 #ifdef MANY
-  for ( int it=0; it<25; it++ ) {
+  for ( int it=0; it<17; it++ ) {
 #else
 #if BUILD
   T.printNow = true;

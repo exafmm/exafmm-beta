@@ -135,29 +135,6 @@ protected:
     stopTimer("Link tree    ",printNow);
   }
 
-  void upward() {
-    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
-      C->M = 0;
-      C->L = 0;
-    }
-    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
-      setCenter(C);
-      P2M(C);
-      M2M(C);
-    }
-#if CART
-    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
-      C->M[1] /= C->M[0];
-      C->M[2] /= C->M[0];
-      C->M[3] /= C->M[0];
-      C->M[4] /= C->M[0];
-      C->M[5] /= C->M[0];
-      C->M[6] /= C->M[0];
-    }
-#endif
-    set_rcrit();
-  }
-
 public:
   BottomUp() {}
   ~BottomUp() {}

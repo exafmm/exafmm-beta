@@ -696,7 +696,7 @@ public:
       B->TRG[2] += L[2];
       B->TRG[3] += L[3];
       for( int i=1; i<LCOEF; ++i ) B->TRG[0] -= C[i]*L[i];
-      Downward<0,0,1>::L2P(B,L,C);
+      Downward<0,0,1>::L2P(B,C,L);
 #else
       Lset C;
       vect dist = B->X - CI->X;

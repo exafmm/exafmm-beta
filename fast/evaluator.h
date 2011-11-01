@@ -67,6 +67,24 @@ protected:
     }
   }
 
+  void upward() {
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      C->M = 0;
+      C->L = 0;
+    }
+    for( C_iter C=C0+NCELL-1; C!=C0-1; --C ) {
+      setCenter(C);
+      P2M(C);
+      M2M(C);
+    }
+#if CART
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      for( int i=1; i<MCOEF; ++i ) C->M[i] /= C->M[0];
+    }
+#endif
+    set_rcrit();
+  }
+
   void downward(C_iter C) const {
     L2L(C);
     L2P(C);
