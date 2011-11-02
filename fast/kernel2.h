@@ -28,11 +28,23 @@ struct Index<0,0> {
 
 template<int p, int n=p-1, int m=p-1>
 struct Expansion {
-  static inline void harmonic(double &x, double &y, real &rho,
-                               double &rhom, double &rhon, real &beta, complex &eim,
-                               double &Pn, double &P0, double &P1, double &P2,
-                               double *prefactor, complex *Ynm, complex *YnmTheta) {
-    Expansion<p,n-1,m>::harmonic(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
+  static inline void getYnm(double &x, double &y, real &rho,
+                            double &rhom, double &rhon, real &beta, complex &eim,
+                            double &Pn, double &P0, double &P1, double &P2,
+                            double *prefactor, complex *Ynm) {
+    Expansion<p,n-1,m>::getYnm(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
+    Ynm[Index<n,m>::npm] = rhon * P0 * prefactor[Index<n,m>::npm] * eim;
+    Ynm[Index<n,m>::nmm] = std::conj(Ynm[Index<n,m>::npm]);
+    P2 = P1;
+    P1 = P0;
+    P0 = (x * (2 * n + 1) * P1 - (n + m) * P2) / (n - m + 1);
+    rhon *= rho;
+  }
+  static inline void getYnmTheta(double &x, double &y, real &rho,
+                                 double &rhom, double &rhon, real &beta, complex &eim,
+                                 double &Pn, double &P0, double &P1, double &P2,
+                                 double *prefactor, complex *Ynm, complex *YnmTheta) {
+    Expansion<p,n-1,m>::getYnmTheta(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
     Ynm[Index<n,m>::npm] = rhon * P0 * prefactor[Index<n,m>::npm] * eim;
     Ynm[Index<n,m>::nmm] = std::conj(Ynm[Index<n,m>::npm]);
     P2 = P1;
@@ -45,11 +57,27 @@ struct Expansion {
 
 template<int p, int m>
 struct Expansion<p,m,m> {
-  static inline void harmonic(double &x, double &y, real &rho,
-                               double &rhom, double &rhon, real &beta, complex &eim,
-                               double &Pn, double &P0, double &P1, double &P2,
-                               double *prefactor, complex *Ynm, complex *YnmTheta) {
-    Expansion<p,p-1,m-1>::harmonic(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
+  static inline void getYnm(double &x, double &y, real &rho,
+                            double &rhom, double &rhon, real &beta, complex &eim,
+                            double &Pn, double &P0, double &P1, double &P2,
+                            double *prefactor, complex *Ynm) {
+    Expansion<p,p-1,m-1>::getYnm(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
+    const complex I(0.,1.);
+    eim = std::exp(I * double(m * beta));
+    Pn = -Pn * (2 * m - 1) * y;
+    P0 = Pn;
+    Ynm[Index<m,m>::npm] = rhom * P0 * prefactor[Index<m,m>::npm] * eim;
+    Ynm[Index<m,m>::nmm] = std::conj(Ynm[Index<m,m>::npm]);
+    P1 = P0;
+    P0 = x * (2*m+1) * P0;
+    rhom *= rho;
+    rhon = rhom;
+  }
+  static inline void getYnmTheta(double &x, double &y, real &rho,
+                                 double &rhom, double &rhon, real &beta, complex &eim,
+                                 double &Pn, double &P0, double &P1, double &P2,
+                                 double *prefactor, complex *Ynm, complex *YnmTheta) {
+    Expansion<p,p-1,m-1>::getYnmTheta(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
     const complex I(0.,1.);
     eim = std::exp(I * double(m * beta));
     Pn = -Pn * (2 * m - 1) * y;
@@ -66,10 +94,18 @@ struct Expansion<p,m,m> {
 
 template<int p>
 struct Expansion<p,0,0> {
-  static inline void harmonic(double &, double &, real &rho,
-                               double &rhom, double &rhon, real&, complex&,
-                               double&, double &, double &, double&,
-                               double*, complex *Ynm, complex *YnmTheta) {
+  static inline void getYnm(double &, double &, real &rho,
+                            double &rhom, double &rhon, real&, complex&,
+                            double&, double &, double &, double&,
+                            double*, complex *Ynm) {
+    Ynm[0] = rhom;
+    rhom *= rho;
+    rhon = rhom;
+  }
+  static inline void getYnmTheta(double &, double &, real &rho,
+                                 double &rhom, double &rhon, real&, complex&,
+                                 double&, double &, double &, double&,
+                                 double*, complex *Ynm, complex *YnmTheta) {
     Ynm[0] = rhom;
     YnmTheta[0] = 0;
     rhom *= rho;
@@ -238,84 +274,26 @@ private:
   void evalMultipole(real rho, real alpha, real beta) const {
     double x = std::cos(alpha);
     double y = std::sin(alpha);
-#if 1
     double rhom=1,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
     complex eim = 1;
-    Expansion<P>::harmonic(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
-#else
-    const complex I(0.,1.);
-    double fact = 1;
-    double pn = 1;
-    double rhom = 1;
-    for( int m=0; m!=P; ++m ) {
-      complex eim = std::exp(I * double(m * beta));
-      double p = pn;
-      int npn = m * m + 2 * m;
-      int nmn = m * m;
-      Ynm[npn] = rhom * p * prefactor[npn] * eim;
-      Ynm[nmn] = std::conj(Ynm[npn]);
-      double p1 = p;
-      p = x * fact * p;
-      YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;
-      rhom *= rho;
-      double rhon = rhom;
-      for( int n=m+1; n!=P; ++n ) {
-        int npm = n * n + n + m;
-        int nmm = n * n + n - m;
-        Ynm[npm] = rhon * p * prefactor[npm] * eim;
-        Ynm[nmm] = std::conj(Ynm[npm]);
-        double p2 = p1;
-        p1 = p;
-        p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-        YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;
-        rhon *= rho;
-      }
-      pn = -pn * fact * y;
-      fact += 2;
-    }
-#endif
+    Expansion<P>::getYnm(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
+  }
+
+  void evalMultipoleTheta(real rho, real alpha, real beta) const {
+    double x = std::cos(alpha);
+    double y = std::sin(alpha);
+    double rhom=1,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
+    complex eim = 1;
+    Expansion<P>::getYnmTheta(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
   }
 
   void evalLocal(real rho, real alpha, real beta) const {
     double x = std::cos(alpha);
     double y = std::sin(alpha);
-#if 1
     real invR = 1 / rho;
     double rhom=invR,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
     complex eim = 1;
-    Expansion<2*P>::harmonic(x,y,invR,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
-#else
-    const complex I(0.,1.);
-    double fact = 1;
-    double pn = 1;
-    double rhom = 1.0 / rho;
-    for( int m=0; m!=2*P; ++m ) {
-      complex eim = std::exp(I * double(m * beta));
-      double p = pn;
-      int npn = m * m + 2 * m;
-      int nmn = m * m;
-      Ynm[npn] = rhom * p * prefactor[npn] * eim;
-      Ynm[nmn] = std::conj(Ynm[npn]);
-      double p1 = p;
-      p = x * fact * p;
-      YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;
-      rhom /= rho;
-      double rhon = rhom;
-      for( int n=m+1; n!=2*P; ++n ) {
-        int npm = n * n + n + m;
-        int nmm = n * n + n - m;
-        Ynm[npm] = rhon * p * prefactor[npm] * eim;
-        Ynm[nmm] = std::conj(Ynm[npm]);
-        double p2 = p1;
-        p1 = p;
-        p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);
-        YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;
-        rhon /= rho;
-      }
-      pn = -pn * fact * y;
-      fact += 2;
-    }
-#endif
+    Expansion<2*P>::getYnm(x,y,invR,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
   }
 
 public:
@@ -496,68 +474,12 @@ public:
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalLocal(rho,alpha,beta);
-#if 1
     M2Ltemplate<P>::loop(CJ->M,CI->L,Cnm,Ynm);
-#else
-    for( int j=0; j!=P; ++j ) {
-      for( int k=0; k<=j; ++k ) {
-        int jk = j * j + j + k;
-        int jks = j * (j + 1) / 2 + k;
-        complex L = CJ->M[0] * Cnm[jk*P*P] * Ynm[j*j+j-k];
-        for( int n=2; n!=P; ++n ) {
-          int nm   = n * n + n;
-          int nms  = n * (n + 1) / 2;
-          int jknm = jk * P * P + nm;
-          int jnkm = (j + n) * (j + n) + j + n - k;
-          L += CJ->M[nms] * Cnm[jknm] * Ynm[jnkm];
-          for( int m=1; m<=n; ++m ) {
-            nm   = n * n + n + m;
-            nms  = n * (n + 1) / 2 + m;
-            jknm = jk * P * P + nm;
-            jnkm = (j + n) * (j + n) + j + n + m - k;
-            L += CJ->M[nms] * Cnm[jknm] * Ynm[jnkm];
-            nm   = n * n + n - m;
-            jknm = jk * P * P + nm;
-            jnkm = (j + n) * (j + n) + j + n - m - k;
-            L += std::conj(CJ->M[nms]) * Cnm[jknm] * Ynm[jnkm];
-          }
-        }
-        CI->L[jks] += L;
-      }
-    }
-#endif
     if( mutual ) {
       dist = CJ->X - CI->X;
       cart2sph(rho,alpha,beta,dist);
       evalLocal(rho,alpha,beta);
-#if 1
       M2Ltemplate<P>::loop(CI->M,CJ->L,Cnm,Ynm);
-#else
-      for( int j=0; j!=P; ++j ) {
-        for( int k=0; k<=j; ++k ) {
-          int jk = j * j + j + k;
-          int jks = j * (j + 1) / 2 + k;
-          complex L = std::conj(CI->M[0]) * Cnm[jk*P*P] * Ynm[j*j+j-k];
-          for( int n=2; n!=P; ++n ) {
-            for( int m=-n; m<0; ++m ) {
-              int nm   = n * n + n + m;
-              int nms  = n * (n + 1) / 2 - m;
-              int jknm = jk * P * P + nm;
-              int jnkm = (j + n) * (j + n) + j + n + m - k;
-              L += std::conj(CI->M[nms]) * Cnm[jknm] * Ynm[jnkm];
-            }
-            for( int m=0; m<=n; ++m ) {
-              int nm   = n * n + n + m;
-              int nms  = n * (n + 1) / 2 + m;
-              int jknm = jk * P * P + nm;
-              int jnkm = (j + n) * (j + n) + j + n + m - k;
-              L += CI->M[nms] * Cnm[jknm] * Ynm[jnkm];
-            }
-          }
-          CJ->L[jks] += L;
-        }
-      }
-#endif
     }
   }
 
@@ -603,7 +525,7 @@ public:
       vect cartesian = 0;
       real r, theta, phi;
       cart2sph(r,theta,phi,dist);
-      evalMultipole(r,theta,phi);
+      evalMultipoleTheta(r,theta,phi);
       for( int n=0; n!=P; ++n ) {
         int nm  = n * n + n;
         int nms = n * (n + 1) / 2;
