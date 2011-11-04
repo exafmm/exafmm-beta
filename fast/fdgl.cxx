@@ -10,20 +10,24 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <sys/time.h>
-#include "vec.h"
+#include "tree.h"
  
-struct Body {
-  vec<3,float> X;
-  vec<3,float> V;
-  vec<3,float> F;
-  vec<2,int>   I;
+struct Vertex {
+  vtkIdType Id;
+  int       Ista;
+  int       Iend;
+  vect      X;
+  vect      F;
 };
+
 typedef std::vector<Body>::iterator B_iter;
+typedef std::vector<Vertex>::iterator V_iter;
 std::vector<Body> bodies;
-std::vector<vtkIdType> vertices;
+std::vector<Vertex> vertices;
 std::vector<int> edges;
 vtkMutableUndirectedGraph *graph = vtkMutableUndirectedGraph::New();
 vtkGraphLayoutView *view = vtkGraphLayoutView::New();
+TreeConstructor T;
 
 double get_time() {
   struct timeval tv;
@@ -36,22 +40,17 @@ void readNodes(std::string fileid) {
   std::ifstream fid(file.c_str(),std::ios::in);
   while( !fid.eof() ) {
     fid >> line >> line >> line >> line >> line >> line;
-    vertices.push_back(graph->AddVertex());
+    Vertex vertex;
+    vertex.Id = graph->AddVertex();
+    vertex.Ista = vertex.Iend = 0;
+    vertex.X[0] = 2 * drand48() - 1;
+    vertex.X[1] = 2 * drand48() - 1;
+    vertex.X[2] = 2 * drand48() - 1;
+    vertex.F = 0;
+    vertices.push_back(vertex);
   }
   fid.close();
-}
-
-void initBodies() {
-  for( std::vector<vtkIdType>::iterator V=vertices.begin(); V!=vertices.end(); ++V ) {
-    Body body;
-    body.X[0] = 2 * drand48() - 1;
-    body.X[1] = 2 * drand48() - 1;
-    body.X[2] = 2 * drand48() - 1;
-    body.V = 0;
-    body.F = 0;
-    body.I = 0;
-    bodies.push_back(body);
-  }
+  bodies.resize(vertices.size());
 }
 
 void readEdges(std::string fileid) {
@@ -61,132 +60,135 @@ void readEdges(std::string fileid) {
   while( !fid.eof() ) {
     fid >> line >> line0 >> line1 >> line >> line;
     edges.push_back(atoi(line1.c_str()));
-    bodies[atoi(line0.c_str())].I[1] = edges.size();
+    vertices[atoi(line0.c_str())].Iend = edges.size();
   }
   fid.close();
 }
 
 void edgeRange() {
-  bodies.begin()->I[0] = 0;
-  for( B_iter B=bodies.begin()+1; B!=bodies.end(); ++B ) {
-    if( (B-1)->I[1] == 0 ) {
-      if( B-bodies.begin() == 1 ) {
-        (B-1)->I[1] = 0;
+  vertices.begin()->Ista = 0;
+  for( V_iter V=vertices.begin()+1; V!=vertices.end(); ++V ) {
+    if( (V-1)->Iend == 0 ) {
+      if( V-vertices.begin() == 1 ) {
+        (V-1)->Iend = 0;
       } else {
-        (B-1)->I[1] = (B-2)->I[1];
+        (V-1)->Iend = (V-2)->Iend;
       }
     }
-    B->I[0] = (B-1)->I[1];
+    V->Ista = (V-1)->Iend;
   }
 }
 
 void setEdges() {
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-    for( int i=B->I[0]; i<B->I[1]; ++i ) {
-      graph->AddEdge(vertices[B-bodies.begin()], vertices[edges[i]]);
+  for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
+    for( int i=V->Ista; i<V->Iend; ++i ) {
+      graph->AddEdge(V->Id, vertices[edges[i]].Id);
     }
-  }
-}
-
-void repulsion() {
-  for( B_iter BI=bodies.begin(); BI!=bodies.end(); ++BI ) {
-    vec<3,float> F = 0;
-    for( B_iter BJ=bodies.begin(); BJ!=bodies.end(); ++BJ ) {
-      vec<3,float> dist = BI->X - BJ->X;
-      float R2 = norm(dist) + 1e-4;
-      float R3 = std::sqrt(R2) * R2;
-      F += dist / R3;
-    }
-    BI->F = F * 0.001;
   }
 }
 
 void spring() {
-  for( B_iter BI=bodies.begin(); BI!=bodies.end(); ++BI ) {
+  for( V_iter VI=vertices.begin(); VI!=vertices.end(); ++VI ) {
     vec<3,float> F = 0;
-    for( int i=BI->I[0]; i<BI->I[1]; ++i ) {
-      B_iter BJ = bodies.begin()+edges[i];
-      vec<3,float> dist = BI->X - BJ->X;
+    for( int i=VI->Ista; i<VI->Iend; ++i ) {
+      V_iter VJ = vertices.begin()+edges[i];
+      vec<3,float> dist = VI->X - VJ->X;
       F -= dist;
     }
-    BI->F += F * 0.005;
+    VI->F = F * 0.005;
+  }
+}
+
+void repulsion() {
+  B_iter B = bodies.begin();
+  for( V_iter V=vertices.begin(); V!=vertices.end(); ++V, ++B ) {
+    B->X = V->X;
+    B->SRC = -0.001;
+    B->TRG = 0;
+    B->IBODY = 0;
+    B->IPROC = 0;
+    B->ICELL = V-vertices.begin();
+  }
+  T.topdown(bodies);
+  T.approximate();
+  for( B=bodies.begin(); B!=bodies.end(); ++B ) {
+    vertices[B->ICELL].F[0] += B->TRG[1];
+    vertices[B->ICELL].F[1] += B->TRG[2];
+    vertices[B->ICELL].F[2] += B->TRG[3];
   }
 }
 
 void central() {
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-    vec<3,float> dist = B->X;
+  for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
+    vec<3,float> dist = V->X;
     float R2 = norm(dist) + 1e-4;
     float R3 = std::sqrt(R2) * R2;
-    B->F -= dist / R3 * 0.001;
+    V->F -= dist / R3 * 0.001;
   }
 }
 
-void moveBodies() {
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-    B->X += B->F;
+void moveVertices() {
+  for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
+    V->X += V->F;
   } 
 }
 
 void setVertices() {
   vtkPoints *points = vtkPoints::New();
-  for( B_iter B=bodies.begin(); B!=bodies.end()-8; ++B ) {
-    points->InsertNextPoint(B->X[0], B->X[1], B->X[2]);
+  for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
+    points->InsertNextPoint(V->X[0], V->X[1], V->X[2]);
   }
-  points->InsertNextPoint(-1,-1,-1);
-  points->InsertNextPoint( 1,-1,-1);
-  points->InsertNextPoint( 1, 1,-1);
-  points->InsertNextPoint(-1, 1,-1);
-  points->InsertNextPoint(-1,-1, 1);
-  points->InsertNextPoint( 1,-1, 1);
-  points->InsertNextPoint( 1, 1, 1);
-  points->InsertNextPoint(-1, 1, 1);
   graph->SetPoints(points);
 }
 
-void drawGraph(int step, int nstep) {
+void drawGraph() {
   view->AddRepresentationFromInput(graph);
   view->SetLayoutStrategy("Pass Through");
   view->GetInteractor()->GetRenderWindow()->SetSize(700,700);
   view->ResetCamera();
   view->Render();
-  if( step == nstep ) {
-    vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
-    view->GetInteractor()->SetInteractorStyle(style);
-    view->GetInteractor()->Initialize();
-    view->GetInteractor()->Start();
-  }
+}
+
+void finalizeGraph() {
+  vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+  view->GetInteractor()->SetInteractorStyle(style);
+  view->GetInteractor()->Initialize();
+  view->GetInteractor()->Start();
 }
 
 int main() {
-  int nstep = 1;
   double t0, t[5] = {0,0,0,0,0};
+  IMAGES = 0;
+  THETA = 0.6;
   t0 = get_time();
   readNodes("test3");
-  initBodies();
   readEdges("test3");
   edgeRange();
   setEdges();
   t[0] += get_time() - t0;
-  for( int step=0; step<=nstep; ++step ) {
-    t0 = get_time();
-    repulsion();
-    t[1] += get_time() - t0;
+  for( int step=0; step<1000; ++step ) {
     t0 = get_time();
     spring();
+    t[1] += get_time() - t0;
+    t0 = get_time();
+    repulsion();
     t[2] += get_time() - t0;
     t0 = get_time();
     central();
     t[3] += get_time() - t0;
     t0 = get_time();
-    moveBodies();
+    moveVertices();
     t[4] += get_time() - t0;
     setVertices();
-    if( step%1 == 0 ) drawGraph(step,nstep);
+    setVertices();
+    drawGraph();
+    usleep(1000);
   }
+  std::cout << "N          : " << vertices.size() << std::endl;
   std::cout << "initialize : " << t[0] << std::endl;
-  std::cout << "repulsion  : " << t[1] << std::endl;
-  std::cout << "spring     : " << t[2] << std::endl;
-  std::cout << "move       : " << t[3] << std::endl;
-  std::cout << "central    : " << t[4] << std::endl;
+  std::cout << "spring     : " << t[1] << std::endl;
+  std::cout << "repulsion  : " << t[2] << std::endl;
+  std::cout << "central    : " << t[3] << std::endl;
+  std::cout << "move       : " << t[4] << std::endl;
+  finalizeGraph();
 }

@@ -37,5 +37,5 @@ d	: main.cxx
 
 f	: fdgl.cxx
 	make cleanall
-	$(CXX) $? -lvtkCharts
+	$(CXX) $? -lvtkCharts -DMANY -DCART -DIEQJ
 	./a.out
