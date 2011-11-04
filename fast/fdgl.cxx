@@ -38,8 +38,8 @@ double get_time() {
 void readNodes(std::string fileid) {
   std::string line, file="../fdgl/"+fileid+"_oNodes.csv";
   std::ifstream fid(file.c_str(),std::ios::in);
+  fid >> line >> line >> line >> line >> line >> line;
   while( !fid.eof() ) {
-    fid >> line >> line >> line >> line >> line >> line;
     Vertex vertex;
     vertex.Id = graph->AddVertex();
     vertex.Ista = vertex.Iend = 0;
@@ -48,6 +48,7 @@ void readNodes(std::string fileid) {
     vertex.X[2] = 2 * drand48() - 1;
     vertex.F = 0;
     vertices.push_back(vertex);
+    fid >> line >> line >> line >> line >> line >> line;
   }
   fid.close();
   bodies.resize(vertices.size());
@@ -57,10 +58,11 @@ void readEdges(std::string fileid) {
   std::string line0, line1, line;
   std::string file="../fdgl/"+fileid+"_oEdges.csv";
   std::ifstream fid(file.c_str(),std::ios::in);
+  fid >> line >> line0 >> line1 >> line >> line;
   while( !fid.eof() ) {
-    fid >> line >> line0 >> line1 >> line >> line;
     edges.push_back(atoi(line1.c_str()));
     vertices[atoi(line0.c_str())].Iend = edges.size();
+    fid >> line >> line0 >> line1 >> line >> line;
   }
   fid.close();
 }
@@ -87,18 +89,6 @@ void setEdges() {
   }
 }
 
-void spring() {
-  for( V_iter VI=vertices.begin(); VI!=vertices.end(); ++VI ) {
-    vec<3,float> F = 0;
-    for( int i=VI->Ista; i<VI->Iend; ++i ) {
-      V_iter VJ = vertices.begin()+edges[i];
-      vec<3,float> dist = VI->X - VJ->X;
-      F -= dist;
-    }
-    VI->F = F * 0.005;
-  }
-}
-
 void repulsion() {
   B_iter B = bodies.begin();
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V, ++B ) {
@@ -112,24 +102,37 @@ void repulsion() {
   T.topdown(bodies);
   T.approximate();
   for( B=bodies.begin(); B!=bodies.end(); ++B ) {
-    vertices[B->ICELL].F[0] += B->TRG[1];
-    vertices[B->ICELL].F[1] += B->TRG[2];
-    vertices[B->ICELL].F[2] += B->TRG[3];
+    vertices[B->ICELL].F[0] = B->TRG[1];
+    vertices[B->ICELL].F[1] = B->TRG[2];
+    vertices[B->ICELL].F[2] = B->TRG[3];
+  }
+}
+
+void spring() {
+  float l = 2 / pow(vertices.size(),1./3);
+  for( V_iter VI=vertices.begin(); VI!=vertices.end(); ++VI ) {
+    for( int i=VI->Ista; i<VI->Iend; ++i ) {
+      V_iter VJ = vertices.begin()+edges[i];
+      vec<3,float> dist = VI->X - VJ->X;
+      float R = sqrtf(norm(dist) + EPS2);
+      VI->F -= dist / R * (R - l);
+      VJ->F += dist / R * (R - l);
+    }
   }
 }
 
 void central() {
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
     vec<3,float> dist = V->X;
-    float R2 = norm(dist) + 1e-4;
+    float R2 = norm(dist) + EPS2;
     float R3 = std::sqrt(R2) * R2;
-    V->F -= dist / R3 * 0.001;
+    V->F -= dist / R3 * 0;
   }
 }
 
-void moveVertices() {
+void moveVertices(int step) {
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
-    V->X += V->F;
+    if( sqrtf(norm(V->F))*step < 100 && norm(V->X) < 100 ) V->X += V->F * step * 0.001;
   } 
 }
 
@@ -167,27 +170,27 @@ int main() {
   setEdges();
   t[0] += get_time() - t0;
   for( int step=0; step<1000; ++step ) {
-    t0 = get_time();
-    spring();
-    t[1] += get_time() - t0;
+    std::cout << step << std::endl;
     t0 = get_time();
     repulsion();
+    t[1] += get_time() - t0;
+    t0 = get_time();
+    spring();
     t[2] += get_time() - t0;
     t0 = get_time();
     central();
     t[3] += get_time() - t0;
     t0 = get_time();
-    moveVertices();
+    moveVertices(step);
     t[4] += get_time() - t0;
-    setVertices();
     setVertices();
     drawGraph();
     usleep(1000);
   }
   std::cout << "N          : " << vertices.size() << std::endl;
   std::cout << "initialize : " << t[0] << std::endl;
-  std::cout << "spring     : " << t[1] << std::endl;
-  std::cout << "repulsion  : " << t[2] << std::endl;
+  std::cout << "repulsion  : " << t[1] << std::endl;
+  std::cout << "spring     : " << t[2] << std::endl;
   std::cout << "central    : " << t[3] << std::endl;
   std::cout << "move       : " << t[4] << std::endl;
   finalizeGraph();
