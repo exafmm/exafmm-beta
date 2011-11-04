@@ -35,3 +35,7 @@ d	: main.cxx
 	$(CXX) $? $(LFLAGS) -DBUILD
 	./a.out
 
+f	: fdgl.cxx
+	make cleanall
+	$(CXX) $? -lvtkCharts
+	./a.out
