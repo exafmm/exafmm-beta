@@ -3,66 +3,72 @@
 #include "bottomup.h"
 
 class TreeConstructor : public BottomUp {
-private:
-  bool TOPDOWN;
-
-  void printTreeData() const {
-    std::cout << "------------------------" << std::endl;
-    std::cout << "Root center   : " << ROOT->X              << std::endl;
-    std::cout << "Root radius   : " << R0                   << std::endl;
-    std::cout << "Bodies        : " << ROOT->NDLEAF         << std::endl;
-    std::cout << "Cells         : " << NCELL                << std::endl;
-    std::cout << "Tree depth    : " << MAXLEVEL             << std::endl;
-    std::cout << "Total charge  : " << std::abs(ROOT->M[0]) << std::endl;
-    std::cout << "------------------------" << std::endl;
-  }
-
 public:
-  void topdown(Bodies &bodies) {
+  void topdown(Bodies &bodies, Cells &cells) {
     TOPDOWN = true;
     TopDown::setDomain(bodies);
-    TopDown::build();
-    TopDown::link(bodies);
-    TopDown::upward();
+    TopDown::buildTree();
+    TopDown::linkTree(bodies,cells);
+    TopDown::upwardPass(cells);
   }
 
-  void bottomup(Bodies &bodies) {
+  void bottomup(Bodies &bodies, Cells &cells) {
     TOPDOWN = false;
     BottomUp::setDomain(bodies);
-    BottomUp::build(bodies);
-    BottomUp::link();
-    BottomUp::upward();
+    BottomUp::buildTree(bodies,cells);
+    BottomUp::linkTree(cells);
+    BottomUp::upwardPass(cells);
   }
+};
 
-  void exact(Bodies &bodies, bool IeqJ=true) const {
-    if( IeqJ ) {
-      P2P(ROOT);
-    } else {
-//      P2P(ROOT,ROOT,false);
-    }
+class FastMultipoleMethod : public TreeConstructor {
+public:
+  void direct(Bodies &bodies, Cells &cells) {
+    setRootCell(cells);
+    P2P(ROOT);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->TRG /= B->SRC[0];
     }
   }
 
-  void approximate(bool IeqJ=true) {
-    startTimer("Traverse     ");
-    if( IeqJ ) {
-      traverse();
-    } else {
-//      traverse(false);
+  void direct2(Bodies &bodies, Cells &cells) {
+    setRootCell(cells);
+    P2P(ROOT,ROOT,false);
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      B->TRG /= B->SRC[0];
     }
-    stopTimer("Traverse     ",printNow);
-    startTimer("Downward     ");
-    if( TOPDOWN ) {
-      TopDown::downward();
-    } else {
-      BottomUp::downward();
-    }
-    stopTimer("Downward     ",printNow);
-    if(printNow) printTreeData();
-    cells.clear();
   }
+
+  void approximate(Cells &cells) {
+    setRootCell(cells);
+    startTimer("Traverse     ");
+    traverse();
+    stopTimer("Traverse     ",printNow);
+    startTimer("Downward pass");
+    if( TOPDOWN ) {
+      TopDown::downwardPass(cells);
+    } else {
+      BottomUp::downwardPass(cells);
+    }
+    stopTimer("Downward pass",printNow);
+    if(printNow) printTreeData(cells);
+  }
+
+  void approximate2(Cells &cells) {
+    setRootCell(cells);
+    startTimer("Traverse     ");
+    traverse(false);
+    stopTimer("Traverse     ",printNow);
+    startTimer("Downward pass");
+    if( TOPDOWN ) {
+      TopDown::downwardPass(cells);
+    } else {
+      BottomUp::downwardPass(cells);
+    }
+    stopTimer("Downward pass",printNow);
+    if(printNow) printTreeData(cells);
+  }
+
 };
 
 #endif

@@ -45,9 +45,10 @@ private:
     cell.R      = diameter * .5;
   }
 
-  void buildBottom(Bodies &bodies) {
+  void buildBottom(Bodies &bodies, Cells &cells) {
     int I = -1;
     C_iter C;
+    cells.clear();
     cells.reserve(1 << (3 * MAXLEVEL));
     float d = 2 * R0 / (1 << MAXLEVEL);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -64,7 +65,7 @@ private:
     }
   }
 
-  void twigs2cells() {
+  void twigs2cells(Cells &cells) {
     int begin = 0, end = cells.size();
     float d = 2 * R0 / (1 << MAXLEVEL);
     for( int l=0; l!=MAXLEVEL; ++l ) {
@@ -115,7 +116,7 @@ protected:
     stopTimer("Set domain   ",printNow);
   }
 
-  void build(Bodies &bodies) {
+  void buildTree(Bodies &bodies, Cells &cells) {
     startTimer("Morton index ");
     getIndex(bodies);
     Bodies buffer = bodies;
@@ -124,50 +125,46 @@ protected:
     sortBodies(bodies,buffer);
     stopTimer("Sort bodies  ",printNow);
     startTimer("Build bottom ");
-    buildBottom(bodies);
+    buildBottom(bodies,cells);
     stopTimer("Build bottom ",printNow);
   }
 
-  void link() {
+  void linkTree(Cells &cells) {
     startTimer("Link tree    ");
-    twigs2cells();
-    NCELL = cells.size();
+    twigs2cells(cells);
     C0 = cells.begin();
     ROOT = cells.end()-1;
     stopTimer("Link tree    ",printNow);
   }
 
-  void upward() {
-    startTimer("Upward       ");
-    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+  void upwardPass(Cells &cells) {
+    startTimer("Upward pass  ");
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       C->M = 0;
       C->L = 0;
     }
-    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       real Rmax = 0;
       setCenter(C);
       P2M(C,Rmax);
       M2M(C,Rmax);
     }
 #if CART
-    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       for( int i=1; i<MCOEF; ++i ) C->M[i] /= C->M[0];
     }
 #endif
-    setRcrit();
-    stopTimer("Upward       ",printNow);
+    setRcrit(cells);
+    stopTimer("Upward pass  ",printNow);
   }
 
-  void downward() const {
-    for( C_iter C=C0+NCELL-2; C!=C0-1; --C ) {
+  void downwardPass(Cells &cells) const {
+    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {
       L2L(C);
       L2P(C);
     }
   }
 
-public:
-  BottomUp() {}
-  ~BottomUp() {}
 };
 
 #endif

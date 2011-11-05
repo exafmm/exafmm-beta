@@ -9,9 +9,10 @@ private:
   B_iter   BN;
   C_iter   CN;
   unsigned NLEAF;
+  unsigned NCELL;
 
 protected:
-  Cells    cells;
+  int      MAXLEVEL;
 
 private:
   void init(Node &node) {
@@ -129,7 +130,7 @@ protected:
     stopTimer("Set domain   ",printNow);
   }
 
-  void build() {
+  void buildTree() {
     startTimer("Grow tree    ");
     NCELL = 1;
     nodes.reserve(NLEAF);
@@ -158,7 +159,7 @@ protected:
     stopTimer("Grow tree    ",printNow);
   }
 
-  void link(Bodies &bodies) {
+  void linkTree(Bodies &bodies, Cells &cells) {
     startTimer("Link tree    ");
     cells.resize(NCELL);
     C0 = cells.begin();
@@ -172,37 +173,45 @@ protected:
     stopTimer("Link tree    ",printNow);
   }
 
-  void upward() {
-    startTimer("Upward       ");
-    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+  void upwardPass(Cells &cells) {
+    startTimer("Upward pass  ");
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       C->M = 0;
       C->L = 0;
     }
-    for( C_iter C=C0+NCELL-1; C!=C0-1; --C ) {
+    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {
       real Rmax = 0;
       setCenter(C);
       P2M(C,Rmax);
       M2M(C,Rmax);
     }
 #if CART
-    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       for( int i=1; i<MCOEF; ++i ) C->M[i] /= C->M[0];
     }
 #endif
-    setRcrit();
-    stopTimer("Upward       ",printNow);
+    setRcrit(cells);
+    stopTimer("Upward pass  ",printNow);
   }
 
-  void downward() const {
-    for( C_iter C=C0+1; C!=C0+NCELL; ++C ) {
+  void downwardPass(Cells &cells) const {
+    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {
       L2L(C);
       L2P(C);
     }
   }
 
-public:
-  TopDown() {}
-  ~TopDown() {}
+  void printTreeData(Cells &cells) const {
+    std::cout << "------------------------" << std::endl;
+    std::cout << "Root center   : " << ROOT->X              << std::endl;
+    std::cout << "Root radius   : " << R0                   << std::endl;
+    std::cout << "Bodies        : " << ROOT->NDLEAF         << std::endl;
+    std::cout << "Cells         : " << cells.size()         << std::endl;
+    std::cout << "Tree depth    : " << MAXLEVEL             << std::endl;
+    std::cout << "Total charge  : " << std::abs(ROOT->M[0]) << std::endl;
+    std::cout << "------------------------" << std::endl;
+  }
+
 };
 
 #endif

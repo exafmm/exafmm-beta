@@ -13,10 +13,8 @@ private:
   mutable std::stack<Pair> pairStack;
 
 protected:
-  int      MAXLEVEL;
-  unsigned NCELL;
-  Bodies   BODIES;// Deleteing this slows down the code.
-  C_iter   ROOT;
+  bool    TOPDOWN;
+  C_iter  ROOT;
 
 private:
   real getBmax(vect const&X, C_iter C) const {
@@ -48,11 +46,20 @@ private:
     }
   }
 
-  bool split_first(C_iter Ci, C_iter Cj) const {
+  bool splitFirst(C_iter Ci, C_iter Cj) const {
     return Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT > Cj->RCRIT);
   }
 
 protected:
+  void setRootCell(Cells &cells) {
+    C0 = cells.begin();
+    if( TOPDOWN ) {
+      ROOT = C0;
+    } else {
+      ROOT = cells.end() - 1;
+    }
+  }
+
   void setCenter(C_iter C) const {
     real m = 0;
     vect X = 0;
@@ -69,9 +76,9 @@ protected:
     C->X = X;
   }
 
-  void setRcrit() {
+  void setRcrit(Cells &cells) {
     real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(ROOT->M[0]),1.0/3);
-    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       real a = c * pow(std::abs(C->M[0]),1.0/3);
       real x = 1.0 / THETA;
       for( int i=0; i<5; ++i ) {
@@ -97,7 +104,7 @@ protected:
       while(!pairStack.empty()) {
         Pair Cij = pairStack.top();
         pairStack.pop();
-        if(split_first(Cij.first,Cij.second)) {
+        if(splitFirst(Cij.first,Cij.second)) {
           C = Cij.first;
           for( C_iter Ci=C0+C->CHILD; Ci!=C0+C->CHILD+C->NCHILD; ++Ci ) {
             interact(Ci,Cij.second);
@@ -120,7 +127,7 @@ protected:
     while(!pairStack.empty()) {
       Pair Cij = pairStack.top();
       pairStack.pop();
-      if(split_first(Cij.first,Cij.second)) {
+      if(splitFirst(Cij.first,Cij.second)) {
         C_iter C = Cij.first;
         for( C_iter Ci=C0+C->CHILD; Ci!=C0+C->CHILD+C->NCHILD; ++Ci ) {
           interact(Ci,Cij.second,mutual);
@@ -134,9 +141,6 @@ protected:
     }
   }
 
-public:
-  Evaluator() {}
-  ~Evaluator() {}
 };
 
 #endif

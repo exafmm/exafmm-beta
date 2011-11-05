@@ -6,13 +6,14 @@ int main() {
   IMAGES = 0;
   THETA = 0.6;
   Bodies bodies, bodies2;
-  Dataset D;
-  D.kernelName = "Laplace";
-  TreeConstructor T;
+  Cells cells;
+  Dataset DATA;
+  DATA.kernelName = "Laplace";
+  FastMultipoleMethod FMM;
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {
 #else
-  T.printNow = true;
+  FMM.printNow = true;
 #if BUILD
   for ( int it=32; it<33; it++ ) {
 #else
@@ -22,29 +23,29 @@ int main() {
   numBodies = int(pow(10,(it+24)/8.0));
   std::cout << "N             : " << numBodies << std::endl;
   bodies.resize(numBodies);
-  D.random(bodies);
-  T.startTimer("FMM          ");
-  T.topdown(bodies);
-//  T.bottomup(bodies);
+  DATA.random(bodies);
+  FMM.startTimer("FMM          ");
+  FMM.topdown(bodies,cells);
+//  FMM.bottomup(bodies,cells);
 #if BUILD
 #else
-  T.approximate();
-  T.stopTimer("FMM          ",true);
-  T.eraseTimer("FMM          ");
-  T.writeTime();
-  T.resetTimer();
+  FMM.approximate(cells);
+  FMM.stopTimer("FMM          ",true);
+  FMM.eraseTimer("FMM          ");
+  FMM.writeTime();
+  FMM.resetTimer();
 
 #ifdef DIRECT
   bodies2 = bodies;
-  D.initTarget(bodies);
-  T.startTimer("Direct sum   ");
-  T.exact(bodies);
-  T.stopTimer("Direct sum   ",true);
-  T.eraseTimer("Direct sum   ");
+  DATA.initTarget(bodies);
+  FMM.startTimer("Direct sum   ");
+  FMM.direct(bodies,cells);
+  FMM.stopTimer("Direct sum   ",true);
+  FMM.eraseTimer("Direct sum   ");
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-  D.printError(diff1,norm1,diff2,norm2);
+  DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  DATA.printError(diff1,norm1,diff2,norm2);
 #endif
 #endif
   }
