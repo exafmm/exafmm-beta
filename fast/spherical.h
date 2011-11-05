@@ -227,7 +227,6 @@ struct M2Ltemplate<p,0,0,2,1> {
 
 class Kernel : public Sort {
 private:
-  real DMAX;
   double *factorial, *prefactor, *Anm;
   complex *Ynm, *YnmTheta, *Cnm;
 
@@ -237,14 +236,6 @@ protected:
   C_iter C0;
 
 private:
-  real getBmax(vect const&X, C_iter C) {
-    real rad = C->R;
-    real dx = rad+std::abs(X[0]-C->X[0]);
-    real dy = rad+std::abs(X[1]-C->X[1]);
-    real dz = rad+std::abs(X[2]-C->X[2]);
-    return std::sqrt( dx*dx + dy*dy + dz*dz );
-  }
-
   void cart2sph(real& r, real& theta, real& phi, vect dist) const {
     r = std::sqrt(norm(dist))+EPS;
     theta = std::acos(dist[2] / r);
@@ -349,23 +340,6 @@ public:
     delete[] Cnm;
   }
 
-  void setCenter(C_iter C) {
-    DMAX = 0;
-    real m = 0;
-    vect X = 0;
-    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-      m += B->SRC[0];
-      X += B->X * B->SRC[0];
-    }
-    for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
-      m += c->M[0].real();
-      X += c->X * c->M[0].real();
-    }
-    X /= m;
-    C->R = getBmax(X,C);
-    C->X = X;
-  }
-
   void P2P(C_iter CI, C_iter CJ, bool mutual=true) const {
     for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {
       real P0 = 0;
@@ -419,24 +393,24 @@ public:
     }
   }
 
-  void P2M(C_iter C) {
+  void P2M(C_iter C, real &Rmax) const {
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
       vect dist = C->X - B->X;
       real R = std::sqrt(norm(dist));
-      if( R > DMAX ) DMAX = R;
+      if( R > Rmax ) Rmax = R;
       real rho, alpha, beta;
       cart2sph(rho,alpha,beta,dist);
       evalMultipole(rho,alpha,-beta);
       Terms<P-1,P-1>::P2M(C->M,B->SRC[0],Ynm);
     }
-    C->RCRIT = std::min(C->R,DMAX);
+    C->RCRIT = std::min(C->R,Rmax);
   }
 
-  void M2M(C_iter CI) {
+  void M2M(C_iter CI, real &Rmax) const {
     for( C_iter CJ=C0+CI->CHILD; CJ!=C0+CI->CHILD+CI->NCHILD; ++CJ ) {
       vect dist = CI->X - CJ->X;
       real R = std::sqrt(norm(dist)) + CJ->RCRIT;
-      if( R > DMAX ) DMAX = R;
+      if( R > Rmax ) Rmax = R;
       const complex I(0.,1.);
       real rho, alpha, beta;
       cart2sph(rho,alpha,beta,dist);
@@ -466,7 +440,7 @@ public:
         }
       }
     }
-    CI->RCRIT = std::min(CI->R,DMAX);
+    CI->RCRIT = std::min(CI->R,Rmax);
   }
 
   void M2L(C_iter CI, C_iter CJ, bool mutual=true) const {

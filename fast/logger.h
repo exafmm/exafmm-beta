@@ -9,7 +9,7 @@ private:
   Event         tic;
   Event         memory;
 
-  double get_time() {                                           // Timer function
+  double get_time() const {                                     // Timer function
     struct timeval tv;                                          // Time value
     gettimeofday(&tv, NULL);                                    // Get time of day in seconds and microseconds
     return double(tv.tv_sec+tv.tv_usec*1e-6);                   // Combine seconds and microseconds and return
@@ -27,11 +27,11 @@ public:
     file.close();
   }
 
-  void startTimer(std::string event) {
+  void startTimer(const std::string &event) {
     tic[event] = get_time();
   }
 
-  double stopTimer(std::string event, bool print=false) {
+  double stopTimer(const std::string &event, bool print=false) {
     double toc = get_time();
     timer[event] += toc - tic[event];
     if(print) std::cout << event << " : " << timer[event] << std::endl;

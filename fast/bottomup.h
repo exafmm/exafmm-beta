@@ -93,6 +93,7 @@ private:
 
 protected:
   void setDomain(Bodies &bodies) {
+    startTimer("Set domain   ");
     MAXLEVEL = getMaxLevel(bodies);
     vect xmin, xmax;
     X0 = 0;
@@ -111,6 +112,7 @@ protected:
       R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
     }                                                           // End loop over each dimension
     R0 *= 1.000001;                                             // Add some leeway to root radius
+    stopTimer("Set domain   ",printNow);
   }
 
   void build(Bodies &bodies) {
@@ -131,8 +133,36 @@ protected:
     twigs2cells();
     NCELL = cells.size();
     C0 = cells.begin();
-    CN = cells.end()-1;
+    ROOT = cells.end()-1;
     stopTimer("Link tree    ",printNow);
+  }
+
+  void upward() {
+    startTimer("Upward       ");
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      C->M = 0;
+      C->L = 0;
+    }
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      real Rmax = 0;
+      setCenter(C);
+      P2M(C,Rmax);
+      M2M(C,Rmax);
+    }
+#if CART
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      for( int i=1; i<MCOEF; ++i ) C->M[i] /= C->M[0];
+    }
+#endif
+    setRcrit();
+    stopTimer("Upward       ",printNow);
+  }
+
+  void downward() const {
+    for( C_iter C=C0+NCELL-2; C!=C0-1; --C ) {
+      L2L(C);
+      L2P(C);
+    }
   }
 
 public:

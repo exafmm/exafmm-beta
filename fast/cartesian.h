@@ -420,23 +420,12 @@ struct Downward<0,0,0> {
 };
 
 class Kernel : public Sort {
-private:
-  real DMAX;
-
 protected:
   vect   X0;
   real   R0;
   C_iter C0;
 
 private:
-  real getBmax(vect const&X, C_iter C) {
-    real rad = C->R;
-    real dx = rad+std::abs(X[0]-C->X[0]);
-    real dy = rad+std::abs(X[1]-C->X[1]);
-    real dz = rad+std::abs(X[2]-C->X[2]);
-    return std::sqrt( dx*dx + dy*dy + dz*dz );
-  }
-
   inline void sumM2L(Lset &L, Lset const&C, Mset const&M) const {
     L += C;
     L[0] += C[4] *M[1] + C[5] *M[2] + C[6] *M[3] + C[7] *M[4] + C[8] *M[5] + C[9] *M[6];
@@ -453,23 +442,6 @@ private:
 public:
   Kernel() : X0(0), R0(0) {}
   ~Kernel() {}
-
-  void setCenter(C_iter C) {
-    DMAX = 0;
-    real m = 0;
-    vect X = 0;
-    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-      m += B->SRC[0];
-      X += B->X * B->SRC[0];
-    }
-    for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
-      m += c->M[0];
-      X += c->X * c->M[0];
-    }
-    X /= m;
-    C->R = getBmax(X,C);
-    C->X = X;
-  }
 
   void P2P(C_iter CI, C_iter CJ, bool mutual=true) const {
     for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {
@@ -524,25 +496,25 @@ public:
     }
   }
 
-  void P2M(C_iter C) {
+  void P2M(C_iter C, real &Rmax) const {
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
       vect dist = B->X - C->X;
       real R = std::sqrt(norm(dist));
-      if( R > DMAX ) DMAX = R;
+      if( R > Rmax ) Rmax = R;
       Lset M;
       M[0] = B->SRC[0];
       Terms<0,0,P-1>::power(M,dist);
       C->M[0] += M[0];
       for( int i=1; i<MCOEF; ++i ) C->M[i] += M[i+3];
     }
-    C->RCRIT = std::min(C->R,DMAX);
+    C->RCRIT = std::min(C->R,Rmax);
   }
 
-  void M2M(C_iter CI) {
+  void M2M(C_iter CI, real &Rmax) const {
     for( C_iter CJ=C0+CI->CHILD; CJ!=C0+CI->CHILD+CI->NCHILD; ++CJ ) {
       vect dist = CJ->X - CI->X;
       real R = std::sqrt(norm(dist)) + CJ->RCRIT;
-      if( R > DMAX ) DMAX = R;
+      if( R > Rmax ) Rmax = R;
       Mset M;
       Lset C;
       C[0] = 1;
@@ -552,7 +524,7 @@ public:
       for( int i=1; i<MCOEF; ++i ) CI->M[i] += C[i+3] * M[0];
       Upward<0,0,P-1>::M2M(CI->M,C,M);
     }
-    CI->RCRIT = std::min(CI->R,DMAX);
+    CI->RCRIT = std::min(CI->R,Rmax);
   }
 
   void M2L(C_iter CI, C_iter CJ, bool mutual=true) const {

@@ -12,8 +12,8 @@ int main() {
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {
 #else
-#if BUILD
   T.printNow = true;
+#if BUILD
   for ( int it=32; it<33; it++ ) {
 #else
   for ( int it=8; it<9; it++ ) {

@@ -7,10 +7,10 @@ private:
   Nodes    nodes;
   Leafs    leafs;
   B_iter   BN;
+  C_iter   CN;
   unsigned NLEAF;
 
 protected:
-  int      MAXLEVEL;
   Cells    cells;
 
 private:
@@ -90,8 +90,7 @@ private:
     }
   }
 
-protected:
-  void sortBodies2(Bodies &bodies) {
+  void permuteBodies(Bodies &bodies) {
     Bodies buffer = bodies;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->ICELL = buffer[B->IBODY].ICELL;
@@ -101,7 +100,9 @@ protected:
     }
   }
 
+protected:
   void setDomain(Bodies &bodies) {
+    startTimer("Set domain   ");
     vect xmin, xmax;
     NLEAF = bodies.size();
     leafs.reserve(NLEAF);
@@ -125,6 +126,7 @@ protected:
       R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
     }                                                           // End loop over each dimension
     R0 *= 1.000001;                                             // Add some leeway to root radius
+    stopTimer("Set domain   ",printNow);
   }
 
   void build() {
@@ -161,13 +163,41 @@ protected:
     cells.resize(NCELL);
     C0 = cells.begin();
     BN = bodies.begin();
-    CN = C0+1;
+    CN = C0 + 1;
     nodes2cells(0,C0);
-    CN = C0;
+    ROOT = C0;
     nodes.clear();
     leafs.clear();
-    sortBodies2(bodies);
+    permuteBodies(bodies);
     stopTimer("Link tree    ",printNow);
+  }
+
+  void upward() {
+    startTimer("Upward       ");
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      C->M = 0;
+      C->L = 0;
+    }
+    for( C_iter C=C0+NCELL-1; C!=C0-1; --C ) {
+      real Rmax = 0;
+      setCenter(C);
+      P2M(C,Rmax);
+      M2M(C,Rmax);
+    }
+#if CART
+    for( C_iter C=C0; C!=C0+NCELL; ++C ) {
+      for( int i=1; i<MCOEF; ++i ) C->M[i] /= C->M[0];
+    }
+#endif
+    setRcrit();
+    stopTimer("Upward       ",printNow);
+  }
+
+  void downward() const {
+    for( C_iter C=C0+1; C!=C0+NCELL; ++C ) {
+      L2L(C);
+      L2P(C);
+    }
   }
 
 public:

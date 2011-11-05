@@ -2,40 +2,40 @@ include ../Makefile
 
 a	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DDIRECT -DCART -DIEQJ
+	$(CXX) $? $(LFLAGS) -DDIRECT -DCART
 	./a.out
 
 a2	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DDIRECT -DSPHE -DIEQJ
+	$(CXX) $? $(LFLAGS) -DDIRECT -DSPHE
 	./a.out
 
 b	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DCART -DIEQJ
+	$(CXX) $? $(LFLAGS) -DMANY -DCART
 	./a.out
 
 b2	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DSPHE -DIEQJ
+	$(CXX) $? $(LFLAGS) -DMANY -DSPHE
 	./a.out
 
 c	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DCART -DIEQJ
+	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DCART
 	./a.out
 
 c2	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DSPHE -DIEQJ
+	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DSPHE
 	./a.out
 
 d	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DBUILD
+	$(CXX) $? $(LFLAGS) -DBUILD -DCART
 	./a.out
 
 f	: fdgl.cxx
 	make cleanall
-	$(CXX) $? -lvtkCharts -DMANY -DCART -DIEQJ
+	$(CXX) $? -lvtkCharts -DMANY -DCART
 	./a.out
