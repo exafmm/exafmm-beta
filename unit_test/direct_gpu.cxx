@@ -8,45 +8,45 @@ int main() {
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Bodies jbodies;
-  Dataset D;
-  D.kernelName = "Laplace";
-  Evaluator E;
-  E.setKernel(D.kernelName);
-  E.initialize();
-  E.preCalculation();
-  E.printNow = true;
+  Dataset dataset;
+  dataset.kernelName = "Laplace";
+  Evaluator FMM;
+  FMM.setKernel(dataset.kernelName);
+  FMM.initialize();
+  FMM.preCalculation();
+  FMM.printNow = true;
 
-  E.startTimer("Set bodies   ");
-  D.sphere(bodies);
-  E.stopTimer("Set bodies   ",E.printNow);
+  FMM.startTimer("Set bodies   ");
+  dataset.sphere(bodies);
+  FMM.stopTimer("Set bodies   ",FMM.printNow);
 
-  E.startTimer("Set domain   ");
-  E.setDomain(bodies);
-  E.stopTimer("Set domain   ",E.printNow);
+  FMM.startTimer("Set domain   ");
+  FMM.setDomain(bodies);
+  FMM.stopTimer("Set domain   ",FMM.printNow);
 
   if( IMAGES != 0 ) {
-    E.startTimer("Set periodic ");
-    jbodies = E.periodicBodies(bodies);
-    E.stopTimer("Set periodic ",E.printNow);
+    FMM.startTimer("Set periodic ");
+    jbodies = FMM.periodicBodies(bodies);
+    FMM.stopTimer("Set periodic ",FMM.printNow);
   } else {
     jbodies = bodies;
   }
 
-  E.startTimer("Direct GPU   ");
-  E.evalP2P(bodies,jbodies);
-  E.stopTimer("Direct GPU   ",E.printNow);
+  FMM.startTimer("Direct GPU   ");
+  FMM.evalP2P(bodies,jbodies);
+  FMM.stopTimer("Direct GPU   ",FMM.printNow);
 
-  E.startTimer("Direct CPU   ");
+  FMM.startTimer("Direct CPU   ");
   bool onCPU = true;
   bodies.resize(numTarget);
   Bodies bodies2 = bodies;
-  D.initTarget(bodies2);
-  E.evalP2P(bodies2,jbodies,onCPU);
-  E.stopTimer("Direct CPU   ",E.printNow);
+  dataset.initTarget(bodies2);
+  FMM.evalP2P(bodies2,jbodies,onCPU);
+  FMM.stopTimer("Direct CPU   ",FMM.printNow);
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-  D.printError(diff1,norm1,diff2,norm2);
-  E.postCalculation();
-  E.finalize();
+  dataset.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  dataset.printError(diff1,norm1,diff2,norm2);
+  FMM.postCalculation();
+  FMM.finalize();
 }

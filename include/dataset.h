@@ -172,7 +172,6 @@ public:
       }                                                         //  Endif for kernel type
     }                                                           // End loop over bodies
     file.close();                                               // Close file
-
   }
 
   void evalError(Bodies &bodies, Bodies &bodies2,               // Evaluate error

@@ -1,5 +1,5 @@
 #include "dataset.h"
-#include "construct.h"
+#include "serialfmm.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -11,53 +11,53 @@ int main() {
   THETA = 1/sqrtf(3);
   Bodies bodies, jbodies;
   Cells cells;
-  Dataset D;
-  D.kernelName = "Laplace";
-  TreeConstructor T;
-  T.setKernel(D.kernelName);
-  T.initialize();
+  Dataset dataset;
+  dataset.kernelName = "Laplace";
+  SerialFMM FMM;
+  FMM.setKernel(dataset.kernelName);
+  FMM.initialize();
 
   for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+32)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
-    D.sphere(bodies,1,1);
-    T.startTimer("FMM          ");
-    T.setDomain(bodies);
+    dataset.sphere(bodies,1,1);
+    FMM.startTimer("FMM          ");
+    FMM.setDomain(bodies);
     cells.clear();
 #ifdef TOPDOWN
-    T.topdown(bodies,cells);
+    FMM.topdown(bodies,cells);
 #else
-    T.bottomup(bodies,cells);
+    FMM.bottomup(bodies,cells);
 #endif
-    T.downward(cells,cells,2);
-    T.stopTimer("FMM          ",true);
-    T.eraseTimer("FMM          ");
+    FMM.downward(cells,cells,2);
+    FMM.stopTimer("FMM          ",true);
+    FMM.eraseTimer("FMM          ");
 
-    T.startTimer("Direct sum   ");
-    T.buffer = bodies;
+    FMM.startTimer("Direct sum   ");
+    FMM.buffer = bodies;
 #if 1
-    D.initTarget(T.buffer);
+    dataset.initTarget(FMM.buffer);
     if( IMAGES != 0 ) {
-      jbodies = T.periodicBodies(T.buffer);
+      jbodies = FMM.periodicBodies(FMM.buffer);
     } else {
-      jbodies = T.buffer;
+      jbodies = FMM.buffer;
     }
-    T.buffer.resize(numTarget);
-    T.evalP2P(T.buffer,jbodies);
-    D.writeTarget(T.buffer);
+    FMM.buffer.resize(numTarget);
+    FMM.evalP2P(FMM.buffer,jbodies);
+    dataset.writeTarget(FMM.buffer);
 #else
-    D.readTarget(T.buffer);
+    dataset.readTarget(FMM.buffer);
 #endif
-    T.stopTimer("Direct sum   ",true);
-    T.eraseTimer("Direct sum   ");
-    T.writeTime();
-    T.resetTimer();
+    FMM.stopTimer("Direct sum   ",true);
+    FMM.eraseTimer("Direct sum   ");
+    FMM.writeTime();
+    FMM.resetTimer();
 
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     bodies.resize(numTarget);
-    D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);
-    D.printError(diff1,norm1,diff2,norm2);
+    dataset.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2);
+    dataset.printError(diff1,norm1,diff2,norm2);
   }
-  T.finalize();
+  FMM.finalize();
 }

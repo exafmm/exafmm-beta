@@ -1,4 +1,4 @@
-void Evaluator::tryP2P(C_iter Ci, C_iter Cj) {                  // Interface for P2P kernel
+void Evaluator::testMACP2P(C_iter Ci, C_iter Cj) {              // Test multipole acceptance criteria for P2P kernel
   BI0 = Ci->LEAF;                                               // Set target bodies begin iterator
   BIN = Ci->LEAF + Ci->NLEAF;                                   // Set target bodies end iterator
   BJ0 = Cj->LEAF;                                               // Set source bodies begin iterator
@@ -7,7 +7,7 @@ void Evaluator::tryP2P(C_iter Ci, C_iter Cj) {                  // Interface for
   NP2P++;                                                       // Count P2P kernel execution
 }
 
-void Evaluator::tryM2L(C_iter Ci, C_iter Cj) {                  // Interface for M2L kernel
+void Evaluator::testMACM2L(C_iter Ci, C_iter Cj) {              // Test multipole acceptance criteria for M2L kernel
   vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
   real R = std::sqrt(norm(dist));                               // Distance between cells
   if( Ci->R + Cj->R > THETA*R ) {                               // If cell is too large
@@ -21,7 +21,7 @@ void Evaluator::tryM2L(C_iter Ci, C_iter Cj) {                  // Interface for
   }                                                             // Endif for interaction
 }
 
-void Evaluator::tryM2P(C_iter Ci, C_iter Cj) {                  // Interface for M2P kernel
+void Evaluator::testMACM2P(C_iter Ci, C_iter Cj) {              // Test multipole acceptance criteria for M2P kernel
   vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
   real R = std::sqrt(norm(dist));                               // Distance between cells
   if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {            // If target is not twig or cell is too large

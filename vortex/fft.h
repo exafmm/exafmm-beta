@@ -1,9 +1,9 @@
 #ifndef fft_h
 #define fft_h
 #include <fftw3.h>
-#include "let.h"
+#include "parallelfmm.h"
 
-class FastFourierTransform : public LocalEssentialTree {
+class FastFourierTransform : public ParallelFMM {
 private:
   int nxLocal;
   int numSend;

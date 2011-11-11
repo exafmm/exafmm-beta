@@ -2,12 +2,14 @@
 #define tree_h
 #include "evaluator.h"
 
-class TreeStructure : public Evaluator {                        // Base class for tree structure
+//! Base class for tree structure
+class TreeStructure : public Evaluator {
 public:
-  Bodies buffer;                                                // Buffer for comm & sort
+  Bodies buffer;                                                //!< Buffer for MPI communication & sorting
 
 private:
-  bigint getParent(bigint index) {                              // Get parent cell index from current cell index
+//! Get parent cell index from current cell index
+  bigint getParent(bigint index) {
     int level = getLevel(index);                                // Get level from cell index
     bigint cOff = ((1 << 3 *  level   ) - 1) / 7;               // Cell index offset of current level
     bigint pOff = ((1 << 3 * (level-1)) - 1) / 7;               // Cell index offset of parent level
@@ -15,7 +17,8 @@ private:
     return i;                                                   // Return cell index of parent cell
   }
 
-  void unique(Cells &cells, Cells &sticks, int begin, int &end) {// Merge sticks with cells (levelwise)
+//! Merge sticks with cells (levelwise)
+  void unique(Cells &cells, Cells &sticks, int begin, int &end) {
     int c_old = begin;                                          // Initialize old cell counter
     for( int c=begin; c!=end; ++c ) {                           // Loop over cells in level
       if( cells[c].ICELL != cells[c_old].ICELL ) {              //  If current cell index is different from previous
@@ -39,7 +42,8 @@ private:
     }                                                           // End loop over cells in level
   }
 
-  void linkParent(Cells &cells, int &begin, int &end) {         // Form parent-child mutual link
+//! Form parent-child mutual link
+  void linkParent(Cells &cells, int &begin, int &end) {
     Cell parent;                                                // Parent cell
     Cells parents;                                              // Parent cell vector;
     int oldend = end;                                           // Save old end counter
@@ -75,7 +79,8 @@ private:
   }
 
 protected:
-  int getLevel(bigint index) {                                  // Get level from cell index
+//! Get level from cell index
+  int getLevel(bigint index) {
     int level = -1;                                             // Initialize level counter
     while( index >= 0 ) {                                       // While cell index is non-negative
       level++;                                                  //  Increment level
@@ -84,7 +89,8 @@ protected:
     return level;                                               // Return the level
   }
 
-  void getCenter(Cell &cell) {                                  // Get cell center and radius from cell index
+//! Get cell center and radius from cell index
+  void getCenter(Cell &cell) {
     int level = getLevel(cell.ICELL);                           // Get level from cell index
     bigint index = cell.ICELL - ((1 << 3*level) - 1) / 7;       // Subtract cell index offset of current level
     cell.R = R0 / (1 << level);                                 // Cell radius
@@ -101,7 +107,8 @@ protected:
     }                                                           // End loop over dimensions
   }
 
-  void bodies2twigs(Bodies &bodies, Cells &twigs) {             // Group bodies into twig cells
+//! Group bodies into twig cells
+  void bodies2twigs(Bodies &bodies, Cells &twigs) {
     startTimer("Bodies2twigs ");                                // Start timer
     int nleaf = 0;                                              // Initialize number of leafs
     bigint index = bodies[0].ICELL;                             // Initialize cell index
@@ -131,7 +138,8 @@ protected:
     evalP2M(twigs);                                             // Evaluate P2M kernel
   }
 
-  void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) { // Link twigs bottomup to create all cells in tree
+//! Link twigs bottomup to create all cells in tree
+  void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) {
     int begin = 0, end = 0;                                     // Initialize range of cell vector
     int level = getLevel(twigs.back().ICELL);                   // Initialize level of tree
     startTimer("Sort resize  ");                                // Start timer
@@ -166,7 +174,8 @@ protected:
   }
 
 public:
-  void downward(Cells &cells, Cells &jcells, int method, bool periodic=true) {// Downward phase
+//! Downward phase
+  void downward(Cells &cells, Cells &jcells, int method, bool periodic=true) {
     if( method == 2 ) timeKernels();                            // Time all kernels for auto-tuning
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) C->L = 0;// Initialize local coefficients
     if( IMAGES != 0 ) {                                         // If periodic boundary condition

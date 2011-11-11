@@ -8,37 +8,37 @@ int main() {
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
-  Dataset D;
-  D.kernelName = "Laplace";
-  Evaluator E;
+  Dataset dataset;
+  dataset.kernelName = "Laplace";
+  Evaluator FMM;
   MyMPI M;
-  E.setKernel(D.kernelName);
-  E.initialize();
-  E.preCalculation();
+  FMM.setKernel(dataset.kernelName);
+  FMM.initialize();
+  FMM.preCalculation();
   gethostname(hostname,sizeof(hostname));
-  if( MPIRANK == 0 ) E.printNow = true;
+  if( MPIRANK == 0 ) FMM.printNow = true;
 
-  E.startTimer("Set bodies   ");
-  D.sphere(bodies);
-  E.stopTimer("Set bodies   ",E.printNow);
+  FMM.startTimer("Set bodies   ");
+  dataset.sphere(bodies);
+  FMM.stopTimer("Set bodies   ",FMM.printNow);
 
-  E.startTimer("Set domain   ");
-  E.setDomain(bodies);
-  E.stopTimer("Set domain   ",E.printNow);
+  FMM.startTimer("Set domain   ");
+  FMM.setDomain(bodies);
+  FMM.stopTimer("Set domain   ",FMM.printNow);
 
-  E.startTimer("Direct GPU   ");
-  E.evalP2P(bodies,bodies);
-  E.stopTimer("Direct GPU   ",E.printNow);
+  FMM.startTimer("Direct GPU   ");
+  FMM.evalP2P(bodies,bodies);
+  FMM.stopTimer("Direct GPU   ",FMM.printNow);
 
-  E.startTimer("Direct CPU   ");
+  FMM.startTimer("Direct CPU   ");
   bool onCPU = true;
   Bodies bodies2 = bodies;
-  D.initTarget(bodies2);
-  E.evalP2P(bodies2,bodies2,onCPU);
-  E.stopTimer("Direct CPU   ",E.printNow);
+  dataset.initTarget(bodies2);
+  FMM.evalP2P(bodies2,bodies2,onCPU);
+  FMM.stopTimer("Direct CPU   ",FMM.printNow);
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  dataset.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
 
   for( int irank=0; irank!=MPISIZE; ++irank ) {
     MPI_Barrier(MPI_COMM_WORLD);
@@ -49,6 +49,6 @@ int main() {
     }
     usleep(100);
   }
-  E.postCalculation();
-  E.finalize();
+  FMM.postCalculation();
+  FMM.finalize();
 }

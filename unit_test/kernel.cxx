@@ -10,12 +10,12 @@ int main() {
   Bodies jbodies(numBodies);
   Cells  icells;
   Cells  jcells;
-  Dataset D;
-  D.kernelName = "Laplace";
-  Evaluator E;
-  E.setKernel(D.kernelName);
-  E.initialize();
-  E.preCalculation();
+  Dataset dataset;
+  dataset.kernelName = "Laplace";
+  Evaluator FMM;
+  FMM.setKernel(dataset.kernelName);
+  FMM.initialize();
+  FMM.preCalculation();
 
   for( int it=0; it!=10; ++it ) {
     real dist = (1 << it) / 2;
@@ -29,9 +29,9 @@ int main() {
         B->X[d] = rand() / (1. + RAND_MAX);
       }
     }
-    D.initSource(jbodies);
+    dataset.initSource(jbodies);
     bool IeqJ = false;
-    D.initTarget(ibodies,IeqJ);
+    dataset.initTarget(ibodies,IeqJ);
 
     Cell cell;
     cell.NLEAF    = numBodies;
@@ -42,21 +42,21 @@ int main() {
     cell.NCHILD   = 0;
     cell.PARENT   = 1;
     jcells.push_back(cell);
-    E.evalP2M(jcells);
+    FMM.evalP2M(jcells);
     cell.X        = 1;
     cell.M        = 0;
     cell.ICELL    = 0;
     cell.NCHILD   = 1;
     cell.CHILD[0] = 0;
     jcells.push_back(cell);
-    E.evalM2M(jcells);
+    FMM.evalM2M(jcells);
     jcells.erase(jcells.begin());
     cell.X        = -1 - dist;
     cell.L        = 0;
     cell.ICELL    = 0;
     icells.push_back(cell);
-    E.addM2L(jcells.begin());
-    E.evalM2L(icells,true);
+    FMM.addM2L(jcells.begin());
+    FMM.evalM2L(icells,true);
     cell.NLEAF    = numBodies;
     cell.LEAF     = ibodies.begin();
     cell.X        = -0.5 - dist;
@@ -65,28 +65,28 @@ int main() {
     cell.NCHILD   = 0;
     cell.PARENT   = 1;
     icells.insert(icells.begin(),cell);
-    E.evalL2L(icells);
+    FMM.evalL2L(icells);
     icells.pop_back();
-    E.evalL2P(icells);
+    FMM.evalL2P(icells);
 
     ibodies2 = ibodies;
-    D.initTarget(ibodies2,IeqJ);
-    E.evalP2P(ibodies2,jbodies);
+    dataset.initTarget(ibodies2,IeqJ);
+    FMM.evalP2P(ibodies2,jbodies);
 
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-    D.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
+    dataset.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
     std::cout << "Distance      : " << dist << std::endl;
-    D.printError(diff1,norm1,diff2,norm2);
+    dataset.printError(diff1,norm1,diff2,norm2);
 
-    D.initTarget(ibodies);
-    E.addM2P(jcells.begin());
-    E.evalM2P(icells,true);
+    dataset.initTarget(ibodies);
+    FMM.addM2P(jcells.begin());
+    FMM.evalM2P(icells,true);
     icells.clear();
     jcells.clear();
     diff1 = norm1 = diff2 = norm2 = 0;
-    D.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
-    D.printError(diff1,norm1,diff2,norm2);
+    dataset.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
+    dataset.printError(diff1,norm1,diff2,norm2);
   }
-  E.postCalculation();
-  E.finalize();
+  FMM.postCalculation();
+  FMM.finalize();
 }

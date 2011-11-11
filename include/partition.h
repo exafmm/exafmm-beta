@@ -1,24 +1,26 @@
 #ifndef partition_h
 #define partition_h
 #include "mympi.h"
-#include "construct.h"
+#include "serialfmm.h"
 
-class Partition : public MyMPI, public TreeConstructor {        // Handles all the partitioning of domains
+//! Handles all the partitioning of domains
+class Partition : public MyMPI, public SerialFMM {
 private:
-  int numCells1D;                                               // Number of cells in one dimension (leaf level)
+  int numCells1D;                                               //!< Number of cells in one dimension (leaf level)
 
 protected:
-  int LEVEL;                                                    // Level of the MPI process binary tree
-  std::vector<vect> XMIN;                                       // Minimum position vector of bodies
-  std::vector<vect> XMAX;                                       // Maximum position vector of bodies
-  int nprocs[64][2];                                            // Number of processes in the two split groups
-  int offset[64][2];                                            // Offset of body in the two split groups
-  int  color[64][3];                                            // Color of Gather, Scatter, and Alltoall communicators
-  int    key[64][3];                                            // Key of Gather, Scatter, and Alltoall communicators
-  MPI_Comm MPI_COMM[64][3];                                     // Communicators for Gather, Scatter, and Alltoall
+  int LEVEL;                                                    //!< Level of the MPI process binary tree
+  std::vector<vect> XMIN;                                       //!< Minimum position vector of bodies
+  std::vector<vect> XMAX;                                       //!< Maximum position vector of bodies
+  int nprocs[64][2];                                            //!< Number of processes in the two split groups
+  int offset[64][2];                                            //!< Offset of body in the two split groups
+  int  color[64][3];                                            //!< Color of Gather, Scatter, and Alltoall communicators
+  int    key[64][3];                                            //!< Key of Gather, Scatter, and Alltoall communicators
+  MPI_Comm MPI_COMM[64][3];                                     //!< Communicators for Gather, Scatter, and Alltoall
 
 private:
-  void splitDomain(bigint iSplit, int l, int d) {               // Split domain accoring to iSplit
+//! Split domain according to iSplit
+  void splitDomain(bigint iSplit, int l, int d) {
     real X = (iSplit + 1) * (XMAX[l][d] - XMIN[l][d]) / numCells1D + XMIN[l][d];// Coordinate corresponding to iSplit
     XMAX[l+1] = XMAX[l];                                        // Set XMAX for next subdivision
     XMIN[l+1] = XMIN[l];                                        // Set XMIN for next subdivision
@@ -29,6 +31,7 @@ private:
     }                                                           // Endif for sides
   }
 
+//! Get global bucket data for parallel nth_element
   template<typename T>
   int getBucket(T &data, int numData, int lOffset, Bigints &send, Bigints &recv, MPI_Comm MPI_COMM0) {
     int maxBucket = send.size();                                // Maximum number of buckets
@@ -68,7 +71,8 @@ private:
   }
 
 protected:
-  void bisectionGetComm(int l) {                                // Split the MPI communicator into N-D hypercube
+//! Split the MPI communicator into N-D hypercube
+  void bisectionGetComm(int l) {
     for( int i=1; i>=0; --i ) {                                 // Loop over 1 and 0
       int pSplit = (nprocs[l][0] + i) / 2;                      //  Splitting criteria
       if( MPIRANK - offset[l][0] < pSplit ) {                   //  If on left side
@@ -98,7 +102,8 @@ protected:
 #endif
   }
 
-  void bisectionAlltoall(Bodies &bodies, int nthLocal, int numLocal, int &newSize, int l) {// One-to-one MPI_Alltoallv
+//! One-to-one MPI_Alltoallv
+  void bisectionAlltoall(Bodies &bodies, int nthLocal, int numLocal, int &newSize, int l) {
     startTimer("Bi Alltoall  ");                                // Start timer
     const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
     int scnt[2] = {nthLocal, numLocal - nthLocal};              // Set send count to right and left size
@@ -125,7 +130,8 @@ protected:
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
   }
 
-  void bisectionScatter(Bodies &bodies, int nthLocal, int &newSize, int l) {// Scattering from leftover proc
+//! Scattering from leftover processes
+  void bisectionScatter(Bodies &bodies, int nthLocal, int &newSize, int l) {
     startTimer("Bi Scatter   ");                                // Start timer
     const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
     int numScatter = nprocs[l+1][1] - 1;                        // Number of processes to scatter to
@@ -166,7 +172,8 @@ protected:
     stopTimer("Bi Scatter   ",printNow);                        // Stop timer 
   }
 
-  void bisectionGather(Bodies &bodies, int nthLocal, int numLocal, int &newSize, int l) {// Gathering to leftover proc
+//! Gathering to leftover processes
+  void bisectionGather(Bodies &bodies, int nthLocal, int numLocal, int &newSize, int l) {
     startTimer("Bi Gather    ");                                // Start timer
     const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
     int numGather = nprocs[l+1][0] - 1;                         // Number of processes to gather to
@@ -207,7 +214,8 @@ protected:
   }
 
 public:
-  Partition() : TreeConstructor() {                             // Constructor
+//! Constructor
+  Partition() : SerialFMM() {
     LEVEL = int(log(MPISIZE) / M_LN2 - 1e-5) + 1;               // Level of the process binary tree
     if(MPISIZE == 1) LEVEL = 0;                                 // Level is 0 for a serial execution
     XMIN.resize(LEVEL+1);                                       // Minimum position vector at each level
@@ -222,9 +230,11 @@ public:
     }                                                           // End loop over levels of N-D hypercube communication
     stopTimer("Split comm   ",printNow);                        // Stop timer 
   }
-  ~Partition() {}                                               // Destructor
+//! Destructor
+  ~Partition() {}
 
-  void setGlobDomain(Bodies &bodies, vect x0=0, real r0=M_PI) { // Set bounds of domain to be partitioned
+//! Set bounds of domain to be partitioned
+  void setGlobDomain(Bodies &bodies, vect x0=0, real r0=M_PI) {
     numCells1D = 1 << getMaxLevel(bodies);                      // Set initial number of bodies
     B_iter B = bodies.begin();                                  // Reset body iterator
     XMIN[0] = XMAX[0] = B->X;                                   // Initialize xmin,xmax
@@ -262,20 +272,23 @@ public:
     XMIN[0] = X0 - R0;                                          // Reposition global minimum
   }
 
-  void binBodies(Bodies &bodies, int d) {                       // Turn positions into indices of bins
+//! Turn positions into indices of bins
+  void binBodies(Bodies &bodies, int d) {
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->ICELL = bigint((B->X[d] - XMIN[0][d])                  // Bin body positions into integers
         / (XMAX[0][d] - XMIN[0][d]) * numCells1D);
     }                                                           // End loop over bodies
   }
 
-  int splitBodies(Bodies &bodies, bigint iSplit) {              // Split bodies according to iSplit
+//! Split bodies according to iSplit
+  int splitBodies(Bodies &bodies, bigint iSplit) {
     int nth = 0;                                                // Initialize splitting index
     while( bodies[nth].ICELL <= iSplit && nth < int(bodies.size()) ) nth++;// Determine end index of left side
     return nth;                                                 // Return end index of left side
   }
 
-  void shiftBodies(Bodies &bodies) {                            // Send bodies to next rank (wrap around)
+//! Send bodies to next rank (round robin)
+  void shiftBodies(Bodies &bodies) {
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
     const int bytes = sizeof(bodies[0]);                        // Byte size of body structure
@@ -298,8 +311,9 @@ public:
     bodies = buffer;                                            // Copy bodies from buffer
   }
 
+//! Parallel global nth_element on distributed memory
   template<typename T, typename T2>
-  T2 nth_element(T &data, T2 n, MPI_Comm MPI_COMM0=0) {         // Find nth element of global data
+  T2 nth_element(T &data, T2 n, MPI_Comm MPI_COMM0=0) {
     if( MPI_COMM0 == 0 ) {                                      // If MPI_COMM is not specified
       MPI_Comm_split(MPI_COMM_WORLD,0,MPIRANK,&MPI_COMM0);      //  Create an artificial MPI_COMM
     }
@@ -360,7 +374,8 @@ public:
     return recv[0]-1;                                           // Return nth element
   }
 
-  void bisection(Bodies &bodies) {                              // Partitioning by recursive bisection
+//! Partitioning by recursive bisection
+  void bisection(Bodies &bodies) {
     startTimer("Bin bodies   ");                                // Start timer
     MPI_Datatype MPI_TYPE = getType(bodies[0].ICELL);           // Get MPI data type
     int newSize;                                                // New size of recv buffer
@@ -409,7 +424,8 @@ public:
     }                                                           // End loop over levels of N-D hypercube communication
   }
 
-  void octsection(Bodies &bodies) {                             // Partition by recursive octsection
+//! Partition by recursive octsection
+  void octsection(Bodies &bodies) {
     startTimer("Partition    ");                                // Start timer
     int byte = sizeof(bodies[0]);                               // Byte size of body structure
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
@@ -463,7 +479,8 @@ public:
     stopTimer("Partition    ",printNow);                        // Stop timer 
   }
 
-  void unpartition(Bodies &bodies) {                            // Send bodies back to where they came from
+//! Send bodies back to where they came from
+  void unpartition(Bodies &bodies) {
     startTimer("Unpartition  ");                                // Start timer
     int byte = sizeof(bodies[0]);                               // Byte size of body structure
     int *scnt = new int [MPISIZE];                              // Send count

@@ -23,11 +23,12 @@ struct Vertex {
 typedef std::vector<Body>::iterator B_iter;
 typedef std::vector<Vertex>::iterator V_iter;
 std::vector<Body> bodies;
+std::vector<Cell> cells;
 std::vector<Vertex> vertices;
 std::vector<int> edges;
 vtkMutableUndirectedGraph *graph = vtkMutableUndirectedGraph::New();
 vtkGraphLayoutView *view = vtkGraphLayoutView::New();
-TreeConstructor T;
+SerialFMM FMM;
 
 double get_time() {
   struct timeval tv;
@@ -99,8 +100,8 @@ void repulsion() {
     B->IPROC = 0;
     B->ICELL = V-vertices.begin();
   }
-  T.topdown(bodies);
-  T.approximate();
+  FMM.topdown(bodies,cells);
+  FMM.approximate(cells);
   for( B=bodies.begin(); B!=bodies.end(); ++B ) {
     vertices[B->ICELL].F[0] = B->TRG[1];
     vertices[B->ICELL].F[1] = B->TRG[2];

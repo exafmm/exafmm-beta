@@ -1,4 +1,4 @@
-#include "let.h"
+#include "parallelfmm.h"
 #include "dataset.h"
 #ifdef VTK
 #include "vtk.h"
@@ -10,32 +10,32 @@ int main() {
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Cells cells;
-  Dataset D;
-  D.kernelName = "Laplace";
-  LocalEssentialTree T;
-  T.setKernel(D.kernelName);
-  T.initialize();
-  if( MPIRANK == 0 ) T.printNow = true;
+  Dataset dataset;
+  dataset.kernelName = "Laplace";
+  ParallelFMM FMM;
+  FMM.setKernel(dataset.kernelName);
+  FMM.initialize();
+  if( MPIRANK == 0 ) FMM.printNow = true;
 
-  T.startTimer("Set bodies   ");
-  D.random(bodies,MPIRANK+1);
-  T.stopTimer("Set bodies   ",T.printNow);
+  FMM.startTimer("Set bodies   ");
+  dataset.random(bodies,MPIRANK+1);
+  FMM.stopTimer("Set bodies   ",FMM.printNow);
 
-  T.startTimer("Set domain   ");
-  T.setGlobDomain(bodies);
-  T.stopTimer("Set domain   ",T.printNow);
+  FMM.startTimer("Set domain   ");
+  FMM.setGlobDomain(bodies);
+  FMM.stopTimer("Set domain   ",FMM.printNow);
 
-  T.octsection(bodies);
+  FMM.octsection(bodies);
 
 #ifdef TOPDOWN
-  T.topdown(bodies,cells);
+  FMM.topdown(bodies,cells);
 #else
-  T.bottomup(bodies,cells);
+  FMM.bottomup(bodies,cells);
 #endif
 
-  T.commBodies(cells);
+  FMM.commBodies(cells);
 
-  T.commCells(bodies,cells);
+  FMM.commCells(bodies,cells);
 
 #ifdef VTK
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->ICELL = 0;
@@ -50,11 +50,11 @@ int main() {
   int Ncell = 0;
   vtkPlot vtk;
   if( MPIRANK == 0 ) {
-    vtk.setDomain(T.getR0(),T.getX0());
+    vtk.setDomain(FMM.getR0(),FMM.getX0());
     vtk.setGroupOfPoints(bodies,Ncell);
   }
   for( int i=1; i!=MPISIZE; ++i ) {
-    T.shiftBodies(bodies);
+    FMM.shiftBodies(bodies);
     if( MPIRANK == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
@@ -63,5 +63,5 @@ int main() {
     vtk.plot(Ncell);
   }
 #endif
-  T.finalize();
+  FMM.finalize();
 }

@@ -1,4 +1,4 @@
-#include "let.h"
+#include "parallelfmm.h"
 #include "dataset.h"
 #ifdef VTK
 #include "vtk.h"
@@ -12,91 +12,91 @@ int main() {
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells;
-  Dataset D;
-  D.kernelName = "Laplace";
-  LocalEssentialTree T;
-  TreeStructure T2;
-  T.setKernel(D.kernelName);
-  T2.setKernel(D.kernelName);
-  T.initialize();
-  if( MPIRANK == 0 ) T.printNow = true;
+  Dataset dataset;
+  dataset.kernelName = "Laplace";
+  ParallelFMM FMM;
+  TreeStructure FMM2;
+  FMM.setKernel(dataset.kernelName);
+  FMM2.setKernel(dataset.kernelName);
+  FMM.initialize();
+  if( MPIRANK == 0 ) FMM.printNow = true;
 
-  T.startTimer("Set bodies   ");
-  D.random(bodies,MPIRANK+1);
-  T.stopTimer("Set bodies   ",T.printNow);
+  FMM.startTimer("Set bodies   ");
+  dataset.random(bodies,MPIRANK+1);
+  FMM.stopTimer("Set bodies   ",FMM.printNow);
 
-  T.startTimer("Set domain   ");
-  T.setGlobDomain(bodies);
-  T.stopTimer("Set domain   ",T.printNow);
+  FMM.startTimer("Set domain   ");
+  FMM.setGlobDomain(bodies);
+  FMM.stopTimer("Set domain   ",FMM.printNow);
 
-  T.octsection(bodies);
+  FMM.octsection(bodies);
 
 #ifdef TOPDOWN
-  T.topdown(bodies,cells);
+  FMM.topdown(bodies,cells);
 #else
-  T.bottomup(bodies,cells);
+  FMM.bottomup(bodies,cells);
 #endif
 
-  T.commBodies(cells);
+  FMM.commBodies(cells);
 
 #ifndef VTK
   if( IMAGES != 0 ) {
-    T.startTimer("Set periodic ");
-    jbodies = T.periodicBodies(bodies);
-    T.stopTimer("Set periodic ",T.printNow);
-    T.eraseTimer("Set periodic ");
+    FMM.startTimer("Set periodic ");
+    jbodies = FMM.periodicBodies(bodies);
+    FMM.stopTimer("Set periodic ",FMM.printNow);
+    FMM.eraseTimer("Set periodic ");
   } else {
     jbodies = bodies;
   }
-  T.startTimer("Direct sum   ");
+  FMM.startTimer("Direct sum   ");
   Bodies bodies2 = bodies;
   bodies2.resize(numTarget);
-  D.initTarget(bodies2);
+  dataset.initTarget(bodies2);
   for( int i=0; i!=MPISIZE; ++i ) {
-    T.shiftBodies(jbodies);
-    T.evalP2P(bodies2,jbodies);
-    if(T.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;
+    FMM.shiftBodies(jbodies);
+    FMM.evalP2P(bodies2,jbodies);
+    if(FMM.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;
   }
-  T.stopTimer("Direct sum   ",T.printNow);
+  FMM.stopTimer("Direct sum   ",FMM.printNow);
 #endif
 
-  T.resetTimer();
-  D.initTarget(bodies);
-  T.evalP2M(cells);
-  T.evalM2M(cells);
+  FMM.resetTimer();
+  dataset.initTarget(bodies);
+  FMM.evalP2M(cells);
+  FMM.evalM2M(cells);
   Cells jcells = cells;
   if( MPISIZE != 1 ) {
     #pragma omp parallel sections num_threads(2)
     {
       #pragma omp section
       {
-        T.downward(cells,jcells,1,false);
+        FMM.downward(cells,jcells,1,false);
       }
       #pragma omp section
       {
-        T.updateBodies();
+        FMM.updateBodies();
       }
     }
     jbodies = bodies;
     jcells = cells;
-    T.commCells(jbodies,jcells);
-    T.eraseLocalTree(jcells);
+    FMM.commCells(jbodies,jcells);
+    FMM.eraseLocalTree(jcells);
   }
-  T.downward(cells,jcells,1);
-  T.copyTime(T2.timer);
-  if(T.printNow) T.writeTime();
-  if(T.printNow) T.writeTime();
+  FMM.downward(cells,jcells,1);
+  FMM.copyTime(FMM2.timer);
+  if(FMM.printNow) FMM.writeTime();
+  if(FMM.printNow) FMM.writeTime();
 
 #ifndef VTK
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   bodies.resize(numTarget);
-  D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-  MPI_Datatype MPI_TYPE = T.getType(diff1);
+  dataset.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  MPI_Datatype MPI_TYPE = FMM.getType(diff1);
   MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&norm1,&norm3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  if(T.printNow) D.printError(diff3,norm3,diff4,norm4);
+  if(FMM.printNow) dataset.printError(diff3,norm3,diff4,norm4);
 
 #else
   for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) B->ICELL = 0;
@@ -111,11 +111,11 @@ int main() {
   int Ncell = 0;
   vtkPlot vtk;
   if( MPIRANK == 0 ) {
-    vtk.setDomain(T.getR0(),T.getX0());
+    vtk.setDomain(FMM.getR0(),FMM.getX0());
     vtk.setGroupOfPoints(jbodies,Ncell);
   }
   for( int i=1; i!=MPISIZE; ++i ) {
-    T.shiftBodies(jbodies);
+    FMM.shiftBodies(jbodies);
     if( MPIRANK == 0 ) {
       vtk.setGroupOfPoints(jbodies,Ncell);
     }
@@ -124,5 +124,5 @@ int main() {
     vtk.plot(Ncell);
   }
 #endif
-  T.finalize();
+  FMM.finalize();
 }

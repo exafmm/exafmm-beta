@@ -2,33 +2,35 @@
 #define evaluator_h
 #include "kernel.h"
 
-class Evaluator : public Kernel {                               // Interface between tree and kernel
+//! Interface between tree and kernel
+class Evaluator : public Kernel {
 protected:
-  C_iter      CI0;                                              // icells.begin()
-  C_iter      CIB;                                              // icells begin per call
-  C_iter      CIE;                                              // icells end per call
-  C_iter      CJ0;                                              // jcells.begin()
-  C_iter      CJB;                                              // jcells begin per call
-  C_iter      CJE;                                              // jcells end per call
-  Pairs       pairs;                                            // Stack of interacting cell pairs
-  Lists       listM2L;                                          // M2L interaction list
-  Lists       listM2P;                                          // M2P interaction list
-  Lists       listP2P;                                          // P2P interaction list
-  real        timeM2L;                                          // M2L execution time
-  real        timeM2P;                                          // M2P execution time
-  real        timeP2P;                                          // P2P execution time
+  C_iter      CI0;                                              //!< icells.begin()
+  C_iter      CIB;                                              //!< icells begin per call
+  C_iter      CIE;                                              //!< icells end per call
+  C_iter      CJ0;                                              //!< jcells.begin()
+  C_iter      CJB;                                              //!< jcells begin per call
+  C_iter      CJE;                                              //!< jcells end per call
+  Pairs       pairs;                                            //!< Stack of interacting cell pairs
+  Lists       listM2L;                                          //!< M2L interaction list
+  Lists       listM2P;                                          //!< M2P interaction list
+  Lists       listP2P;                                          //!< P2P interaction list
+  real        timeM2L;                                          //!< M2L execution time
+  real        timeM2P;                                          //!< M2P execution time
+  real        timeP2P;                                          //!< P2P execution time
 
-  int         Iperiodic;                                        // Periodic image flag (using each bit for images)
-  const int   Icenter;                                          // Periodic image flag at center
-  Maps        flagM2L;                                          // Existance of periodic image for M2L
-  Maps        flagM2P;                                          // Existance of periodic image for M2P
-  Maps        flagP2P;                                          // Existance of periodic image for P2P
+  int         Iperiodic;                                        //!< Periodic image flag (using each bit for images)
+  const int   Icenter;                                          //!< Periodic image flag at center
+  Maps        flagM2L;                                          //!< Existance of periodic image for M2L
+  Maps        flagM2P;                                          //!< Existance of periodic image for M2P
+  Maps        flagP2P;                                          //!< Existance of periodic image for P2P
 
 private:
-  void treecode(C_iter Ci, C_iter Cj) {                         // Tree walk for treecode
+//! Tree walk for treecode
+  void treecode(C_iter Ci, C_iter Cj) {
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0) {                   // If both cells are twigs
       if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
-        tryP2P(Ci,Cj);                                          //  Try to evaluate P2P kernel
+        testMACP2P(Ci,Cj);                                      //  Test multipole acceptance criteria for P2P kernel
       } else {                                                  // If the twig has no leafs
 //#ifdef DEBUG
         std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
@@ -37,19 +39,20 @@ private:
       }                                                         // Endif for twigs with leafs
     } else if ( Ci->NCHILD != 0 ) {                             // If target is not twig
       for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        tryM2P(CI0+Ci->CHILD[i],Cj);                            //   Try to evaluate M2P kernel
+        testMACM2P(CI0+Ci->CHILD[i],Cj);                        //   Test multipole acceptance criteria for M2P kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig
       for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
-        tryM2P(Ci,CJ0+Cj->CHILD[i]);                            //   Try to evaluate M2P kernel
+        testMACM2P(Ci,CJ0+Cj->CHILD[i]);                        //   Test multipole acceptance criteria for M2P kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
 
-  void FMM(C_iter Ci, C_iter Cj) {                              // Tree walk for FMM
+//! Tree walk for FMM
+  void FMM(C_iter Ci, C_iter Cj) {
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0 ) {                  // If both cells are twigs
       if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
-        tryP2P(Ci,Cj);                                          //  Try to evaluate P2P kernel
+        testMACP2P(Ci,Cj);                                      //  Test multipole acceptance criteria for P2P kernel
       } else {                                                  // If the twig has no leafs
 //#ifdef DEBUG
         std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
@@ -58,19 +61,20 @@ private:
       }                                                         // Endif for twigs with leafs
     } else if ( Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R) ) {// If source is twig or target is larger
       for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        tryM2L(CI0+Ci->CHILD[i],Cj);                            //   Try to evaluate M2L kernel
+        testMACM2L(CI0+Ci->CHILD[i],Cj);                        //   Test multipole acceptance criteria for M2L kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig or source is larger
       for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
-        tryM2L(Ci,CJ0+Cj->CHILD[i]);                            //   Try to evaluate M2L kernel
+        testMACM2L(Ci,CJ0+Cj->CHILD[i]);                        //   Test multipole acceptance criteria for M2L kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
 
-  void hybrid(C_iter Ci, C_iter Cj) {                           // Tree walk for treecode-FMM hybrid
+//! Tree walk for treecode-FMM hybrid
+  void hybrid(C_iter Ci, C_iter Cj) {
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0 ) {                  // If both cells are twigs
       if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
-        tryP2P(Ci,Cj);                                          //  Try to evaluate P2P kernel
+        testMACP2P(Ci,Cj);                                      //  Test multipole acceptance criteria for P2P kernel
       } else {                                                  // If the twig has no leafs
 //#ifdef DEBUG
         std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
@@ -82,11 +86,11 @@ private:
         int Ni = (CI0+Ci->CHILD[i])->NLEAF;                     //   Number of target leafs
         int Nj = Cj->NLEAF;                                     //   Number of source leafs
         if( timeP2P*Nj < timeM2P && timeP2P*Ni*Nj < timeM2L ) { //   If P2P is fastest
-          tryP2P(CI0+Ci->CHILD[i],Cj);                          //    Try to evaluate P2P kernel
+          testMACP2P(CI0+Ci->CHILD[i],Cj);                      //    Test multipole acceptance criteria for P2P kernel
         } else if ( timeM2P < timeP2P*Nj && timeM2P*Ni < timeM2L ) {// If M2P is fastest
-          tryM2P(CI0+Ci->CHILD[i],Cj);                          //    Try to evaluate M2P kernel
+          testMACM2P(CI0+Ci->CHILD[i],Cj);                      //    Test multipole acceptance criteria for M2P kernel
         } else {                                                //   If M2L is fastest
-          tryM2L(CI0+Ci->CHILD[i],Cj);                          //    Try to evaluate M2L kernel
+          testMACM2L(CI0+Ci->CHILD[i],Cj);                      //    Test multipole acceptance criteria for M2L kernel
         }                                                       //   End if for fastest kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig or source is larger
@@ -94,42 +98,48 @@ private:
         int Ni = Ci->NLEAF;                                     //   Number of target leafs
         int Nj = (CJ0+Cj->CHILD[i])->NLEAF;                     //   Number of source leafs
         if( timeP2P*Nj < timeM2P && timeP2P*Ni*Nj < timeM2L ) { //   If P2P is fastest
-          tryP2P(Ci,CJ0+Cj->CHILD[i]);                          //    Try to evaluate P2P kernel
+          testMACP2P(Ci,CJ0+Cj->CHILD[i]);                      //    Test multipole acceptance criteria for P2P kernel
         } else if ( timeM2P < timeP2P*Nj && timeM2P*Ni < timeM2L ) {// If M2P is fastest
-          tryM2P(Ci,CJ0+Cj->CHILD[i]);                          //    Try to evaluate M2P kernel
+          testMACM2P(Ci,CJ0+Cj->CHILD[i]);                      //    Test multipole acceptance criteria for M2P kernel
         } else {                                                //   If M2L is fastest
-          tryM2L(Ci,CJ0+Cj->CHILD[i]);                          //    Try to evaluate M2L kernel
+          testMACM2L(Ci,CJ0+Cj->CHILD[i]);                      //    Test multipole acceptance criteria for M2L kernel
         }                                                       //   End if for fastest kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
 
 protected:
-  void timeKernels();                                           // Time all kernels for auto-tuning
+  void timeKernels();                                           //!< Time all kernels for auto-tuning
 
 public:
-  Evaluator() : Icenter(1 << 13) {}                             // Constructor
-  ~Evaluator() {}                                               // Destructor
+//! Constructor
+  Evaluator() : Icenter(1 << 13) {}
+//! Destructor
+  ~Evaluator() {}
 
-  void setKernel(std::string name) {                            // Set kernel name
+//! Set kernel name
+  void setKernel(std::string name) {
     kernelName = name;                                          // Set class variable kernelName
   }
 
-  void addM2L(C_iter Cj) {                                      // Add single list for kernel unit test
+//! Add single list for kernel unit test
+  void addM2L(C_iter Cj) {
     listM2L.resize(1);                                          // Resize vector of M2L interation lists
     flagM2L.resize(1);                                          // Resize vector of M2L periodic image flags
     listM2L[0].push_back(Cj);                                   // Push single cell into list
     flagM2L[0][Cj] |= Icenter;                                  // Flip bit of periodic image flag
   }
 
-  void addM2P(C_iter Cj) {                                      // Add single list for kernel unit test
+//! Add single list for kernel unit test
+  void addM2P(C_iter Cj) {
     listM2P.resize(1);                                          // Resize vector of M2P interation lists
     flagM2P.resize(1);                                          // Resize vector of M2L periodic image flags
     listM2P[0].push_back(Cj);                                   // Push single cell into list
     flagM2P[0][Cj] |= Icenter;                                  // Flip bit of periodic image flag
   }
 
-  int getPeriodicRange() {                                      // Get range of periodic images
+//! Get range of periodic images
+  int getPeriodicRange() {
     int prange = 0;                                             //  Range of periodic images
     for( int i=0; i!=IMAGES; ++i ) {                            //  Loop over periodic image sublevels
       prange += int(pow(3,i));                                  //   Accumulate range of periodic images
@@ -137,7 +147,8 @@ public:
     return prange;                                              // Return range of periodic images
   }
 
-  Bodies periodicBodies(Bodies &bodies) {                       // Create periodic images of bodies
+//! Create periodic images of bodies
+  Bodies periodicBodies(Bodies &bodies) {
     Bodies jbodies;                                             // Vector for periodic images of bodies
     int prange = getPeriodicRange();                            // Get range of periodic images
     for( int ix=-prange; ix<=prange; ++ix ) {                   // Loop over x periodic direction
@@ -156,7 +167,8 @@ public:
     return jbodies;                                             // Return vector for periodic images of bodies
   }
 
-  void traverse(Cells &cells, Cells &jcells, int method) {      // Traverse tree to get interaction list
+//! Traverse tree to get interaction list
+  void traverse(Cells &cells, Cells &jcells, int method) {
     C_iter root = cells.end() - 1;                              // Iterator for root target cell
     C_iter jroot = jcells.end() - 1;                            // Iterator for root source cell
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
@@ -218,7 +230,8 @@ public:
     }                                                           // Endif for periodic boundary condition
   }
 
-  void upwardPeriodic(Cells &jcells) {                          // Upward phase for periodic cells
+//! Upward phase for periodic cells
+  void upwardPeriodic(Cells &jcells) {
     Cells pccells, pjcells;                                     // Periodic jcells for M2L/M2P & M2M
     pccells.push_back(jcells.back());                           // Root cell is first periodic cell
     for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
@@ -262,7 +275,8 @@ public:
     }                                                           // End loop over sublevels of tree
   }
 
-  void initialize() {                                           // Initialize GPU
+//! Initialize GPU
+  void initialize() {
     if( kernelName == "Laplace" ) {                             // If Laplace kernel
       LaplaceInit();                                            //  Initialize GPU
     } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
@@ -279,7 +293,8 @@ public:
     }                                                           // Endif for kernel type
   }
 
-  void finalize() {                                             // Finalize GPU
+//! Finalize GPU
+  void finalize() {
     if( kernelName == "Laplace" ) {                             // If Laplace kernel
       LaplaceFinal();                                           //  Finalize GPU
     } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
@@ -296,26 +311,26 @@ public:
     }                                                           // Endif for kernel type
   }
 
-  void setSourceBody();                                         // Set source buffer for bodies
-  void setSourceCell(bool isM);                                 // Set source buffer for cells
-  void setTargetBody(Lists lists, Maps flags);                  // Set target buffer for bodies
-  void setTargetCell(Lists lists, Maps flags);                  // Set target buffer for cells
-  void getTargetBody(Lists &lists);                             // Get body values from target buffer
-  void getTargetCell(Lists &lists, bool isM);                   // Get cell values from target buffer
-  void clearBuffers();                                          // Clear GPU buffers
+  void setSourceBody();                                         //!< Set source buffer for bodies
+  void setSourceCell(bool isM);                                 //!< Set source buffer for cells
+  void setTargetBody(Lists lists, Maps flags);                  //!< Set target buffer for bodies
+  void setTargetCell(Lists lists, Maps flags);                  //!< Set target buffer for cells
+  void getTargetBody(Lists &lists);                             //!< Get body values from target buffer
+  void getTargetCell(Lists &lists, bool isM);                   //!< Get cell values from target buffer
+  void clearBuffers();                                          //!< Clear GPU buffers
 
-  void tryP2P(C_iter Ci, C_iter Cj);                            // Interface for P2P kernel
-  void tryM2L(C_iter Ci, C_iter Cj);                            // Interface for M2L kernel
-  void tryM2P(C_iter Ci, C_iter Cj);                            // Interface for M2P kernel
-  void traversePeriodic(Cells &cells, Cells &jcells, int method);// Traverse tree for periodic cells
-  void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);// Evaluate P2P kernel (all pairs)
-  void evalP2M(Cells &twigs);                                   // Evaluate P2M kernel
-  void evalM2M(Cells &cells);                                   // Evaluate M2M kernel
-  void evalM2L(Cells &cells, bool kernel=false);                // Evaluate M2L kernel
-  void evalM2P(Cells &cells, bool kernel=false);                // Evaluate M2P kernel
-  void evalP2P(Cells &cells, bool kernel=false);                // Evaluate P2P kernel (near field)
-  void evalL2L(Cells &cells);                                   // Evaluate L2L kernel
-  void evalL2P(Cells &cells);                                   // Evaluate L2P kernel
+  void testMACP2P(C_iter Ci, C_iter Cj);                        //!< Test multipole acceptance criteria for P2P kernel
+  void testMACM2L(C_iter Ci, C_iter Cj);                        //!< Test multipole acceptance criteria for M2L kernel
+  void testMACM2P(C_iter Ci, C_iter Cj);                        //!< Test multipole acceptance criteria for M2P kernel
+  void traversePeriodic(Cells &cells, Cells &jcells, int method);//!< Traverse tree for periodic cells
+  void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);//!< Evaluate P2P kernel (all pairs)
+  void evalP2M(Cells &twigs);                                   //!< Evaluate P2M kernel
+  void evalM2M(Cells &cells);                                   //!< Evaluate M2M kernel
+  void evalM2L(Cells &cells, bool kernel=false);                //!< Evaluate M2L kernel
+  void evalM2P(Cells &cells, bool kernel=false);                //!< Evaluate M2P kernel
+  void evalP2P(Cells &cells, bool kernel=false);                //!< Evaluate P2P kernel (near field)
+  void evalL2L(Cells &cells);                                   //!< Evaluate L2L kernel
+  void evalL2P(Cells &cells);                                   //!< Evaluate L2P kernel
 };
 #if cpu
 #include "../kernel/cpuEvaluator.cxx"

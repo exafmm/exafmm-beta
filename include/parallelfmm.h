@@ -1,30 +1,32 @@
-#ifndef let_h
-#define let_h
+#ifndef parallelfmm_h
+#define parallelfmm_h
 #include "partition.h"
 
-class LocalEssentialTree : public Partition {                   // Handles all the communication in this code
+//! Handles all the communication of local essential trees
+class ParallelFMM : public Partition {
 private:
-  std::vector<int>    sendBodyCnt;                              // Vector of body send counts
-  std::vector<int>    sendBodyDsp;                              // Vector of body send displacements
-  std::vector<int>    recvBodyCnt;                              // Vector of body recv counts
-  std::vector<int>    recvBodyDsp;                              // Vector of body recv displacements
-  std::vector<int>    sendBodyRanks;                            // Vector of ranks to send bodies to
-  std::vector<int>    sendBodyCellCnt;                          // Vector of send counts for cells of bodies
-  std::vector<C_iter> sendBodyCells;                            // Vector of cell iterators for cells of bodies to send
-  std::vector<int>    sendCellCnt;                              // Vector of cell send counts
-  std::vector<int>    sendCellDsp;                              // Vector of cell send displacements
-  std::vector<int>    recvCellCnt;                              // Vector of cell recv counts
-  std::vector<int>    recvCellDsp;                              // Vector of cell recv displacements
-  std::vector<vect>   xminAll;                                  // Buffer for gathering XMIN
-  std::vector<vect>   xmaxAll;                                  // Buffer for gathering XMAX
+  std::vector<int>    sendBodyCnt;                              //!< Vector of body send counts
+  std::vector<int>    sendBodyDsp;                              //!< Vector of body send displacements
+  std::vector<int>    recvBodyCnt;                              //!< Vector of body recv counts
+  std::vector<int>    recvBodyDsp;                              //!< Vector of body recv displacements
+  std::vector<int>    sendBodyRanks;                            //!< Vector of ranks to send bodies to
+  std::vector<int>    sendBodyCellCnt;                          //!< Vector of send counts for cells of bodies
+  std::vector<C_iter> sendBodyCells;                            //!< Vector of cell iterators for cells of bodies to send
+  std::vector<int>    sendCellCnt;                              //!< Vector of cell send counts
+  std::vector<int>    sendCellDsp;                              //!< Vector of cell send displacements
+  std::vector<int>    recvCellCnt;                              //!< Vector of cell recv counts
+  std::vector<int>    recvCellDsp;                              //!< Vector of cell recv displacements
+  std::vector<vect>   xminAll;                                  //!< Buffer for gathering XMIN
+  std::vector<vect>   xmaxAll;                                  //!< Buffer for gathering XMAX
 
-  JBodies sendBodies;                                           // Send buffer for bodies
-  JBodies recvBodies;                                           // Recv buffer for bodies
-  JCells  sendCells;                                            // Send buffer for cells
-  JCells  recvCells;                                            // Recv buffer for cells
+  JBodies sendBodies;                                           //!< Send buffer for bodies
+  JBodies recvBodies;                                           //!< Recv buffer for bodies
+  JCells  sendCells;                                            //!< Send buffer for cells
+  JCells  recvCells;                                            //!< Recv buffer for cells
 
 private:
-  void gatherBounds() {                                         // Gather bounds of other domain
+//! Gather bounds of other domain
+  void gatherBounds() {
     xminAll.resize(MPISIZE);                                    // Resize buffer for gathering xmin
     xmaxAll.resize(MPISIZE);                                    // Resize buffer for gathering xmax
     sendBodyCnt.resize(MPISIZE);                                // Resize vector of body send counts
@@ -42,7 +44,8 @@ private:
                   &xmaxAll[0][0],3,MPI_TYPE,MPI_COMM_WORLD);
   }
 
-  void getSendRank(Cells &cells) {                              // Get neighbor ranks to send to
+//! Get neighbor ranks to send to
+  void getSendRank(Cells &cells) {
     sendBodyRanks.clear();                                      // Clear send ranks
     sendBodyCellCnt.clear();                                    // Clear send counts
     sendBodyCells.clear();                                      // Clear send body cells
@@ -90,7 +93,8 @@ private:
     }                                                           // End loop over ranks
   }
 
-  void getSendCount(bool comm=true) {                           // Get size of data to send
+//! Get size of data to send
+  void getSendCount(bool comm=true) {
     int ic = 0, ssize = 0;                                      // Initialize counter and offset for scells
     sendBodyCnt.assign(MPISIZE,0);                              // Initialize send count
     sendBodyDsp.assign(MPISIZE,0);                              // Initialize send displacement
@@ -121,7 +125,8 @@ private:
     }
   }
 
-  void commBodiesAlltoall() {                                   // Communicate cells by one-to-one MPI_Alltoallv
+//! Communicate cells by one-to-one MPI_Alltoallv
+  void commBodiesAlltoall() {
     assert(isPowerOfTwo(MPISIZE));                              // Make sure the number of processes is a power of two
     int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
     int *scntd = new int [MPISIZE];                             // Permuted send count
@@ -189,7 +194,8 @@ private:
     delete[] irev;                                              // Delete map from original to compressed index
   }
 
-  void getOtherDomain(vect &xmin, vect &xmax, int l) {          // Get boundries of domains on other processes
+//! Get boundries of domains on other processes
+  void getOtherDomain(vect &xmin, vect &xmax, int l) {
     startTimer("Get domain   ");                                // Start timer
     MPI_Datatype MPI_TYPE = getType(XMIN[l][0]);                // Get MPI data type
     vect send[2],recv[2];                                       // Send and recv buffer
@@ -223,7 +229,8 @@ private:
     stopTimer("Get domain   ",printNow);                        // Stop timer 
   }
 
-  real getDistance(C_iter C, vect xmin, vect xmax) {            // Get disatnce to other domain
+//! Get disatnce to other domain
+  real getDistance(C_iter C, vect xmin, vect xmax) {
     vect dist;                                                  // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       dist[d] = (C->X[d] + Xperiodic[d] > xmax[d])*             //  Calculate the distance between cell C and
@@ -235,7 +242,8 @@ private:
     return R;
   }
 
-  void getLET(C_iter C0, C_iter C, vect xmin, vect xmax) {      // Determine which cells to send
+//! Determine which cells to send
+  void getLET(C_iter C0, C_iter C, vect xmin, vect xmax) {
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
     if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     for( int i=0; i!=C->NCHILD; i++ ) {                         // Loop over child cells
@@ -277,7 +285,8 @@ private:
     }                                                           // Endif for root cells children
   }
 
-  void commCellsAlltoall(int l) {                               // Communicate cells by one-to-one MPI_Alltoallv
+//! Communicate cells by one-to-one MPI_Alltoallv
+  void commCellsAlltoall(int l) {
     const int bytes = sizeof(sendCells[0]);                     // Byte size of JCell structure
     int rcnt[2], scnt[2] = {0, 0};                              // Recv count, send count
     scnt[1-key[l+1][2]] = sendCells.size()*bytes;               // Set send count to size of send buffer * bytes
@@ -292,7 +301,8 @@ private:
                   &recvCells[0],rcnt,rdsp,MPI_BYTE,MPI_COMM[l+1][2]);// MPI_COMM[2] is for the one-to-one pair
   }
 
-  void commCellsScatter(int l) {                                // Communicate cells by scattering from leftover proc
+//! Communicate cells by scattering from leftover processes
+  void commCellsScatter(int l) {
     const int bytes = sizeof(sendCells[0]);                     // Byte size of JCell structure
     int numScatter = nprocs[l+1][1] - 1;                        // Number of processes to scatter to
     int oldSize = recvCells.size();                             // Size of recv buffer before communication
@@ -324,7 +334,8 @@ private:
     delete[] sdsp;                                              // Delete send displacement
   }
 
-  void rbodies2twigs(Bodies &bodies, Cells &twigs) {            // Turn recv bodies to twigs
+//! Turn recv bodies to twigs
+  void rbodies2twigs(Bodies &bodies, Cells &twigs) {
     startTimer("Recv bodies  ");                                //  Start timer
     for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {// Loop over recv bodies
       Body body;                                                //  Body structure
@@ -339,7 +350,8 @@ private:
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
   }
 
-  void cells2twigs(Cells &cells, Cells &twigs, bool last) {     // Turn cells to twigs
+//! Turn cells to twigs
+  void cells2twigs(Cells &cells, Cells &twigs, bool last) {
     while( !cells.empty() ) {                                   // While cell vector is not empty
       if( cells.back().NCHILD == 0 ) {                          //  If cell has no child
         if( cells.back().NLEAF == 0 || !last ) {                //   If cell has no leaf or is not last iteration
@@ -351,7 +363,8 @@ private:
     }                                                           // End while for cell vector
   }
 
-  void send2twigs(Bodies &bodies, Cells &twigs, int offTwigs) { // Turn send buffer to twigs
+//! Turn send buffer to twigs
+  void send2twigs(Bodies &bodies, Cells &twigs, int offTwigs) {
     for( JC_iter JC=sendCells.begin(); JC!=sendCells.begin()+offTwigs; ++JC ) {// Loop over send buffer
       Cell cell;                                                //  Cell structure
       cell.ICELL = JC->ICELL;                                   //  Set index of cell
@@ -364,7 +377,8 @@ private:
     sendCells.clear();                                          // Clear send buffer
   }
 
-  void recv2twigs(Bodies &bodies, Cells &twigs) {               // Turn recv buffer to twigs
+//! Turn recv buffer to twigs
+  void recv2twigs(Bodies &bodies, Cells &twigs) {
     for( JC_iter JC=recvCells.begin(); JC!=recvCells.end(); ++JC ) {// Loop over recv buffer
       Cell cell;                                                //  Cell structure
       cell.ICELL = JC->ICELL;                                   //  Set index of cell
@@ -376,7 +390,8 @@ private:
     }                                                           // End loop over recv buffer
   }
 
-  void zipTwigs(Cells &twigs, Cells &cells, Cells &sticks, bool last) {// Zip two groups of twigs that overlap
+//! Zip two groups of twigs that overlap
+  void zipTwigs(Cells &twigs, Cells &cells, Cells &sticks, bool last) {
     startTimer("Sort resize  ");                                // Start timer
     Cells cbuffer = twigs;                                      // Sort buffer for cells
     stopTimer("Sort resize  ",printNow);                        // Stop timer 
@@ -410,7 +425,8 @@ private:
     stopTimer("Ziptwigs     ",printNow);                        // Stop timer 
   }
 
-  void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ,Cells &sticks) {// Re-index bodies
+//! Re-index bodies
+  void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ,Cells &sticks) {
     startTimer("Reindex      ");                                // Start timer
     while( !twigs.empty() ) {                                   // While twig vector is not empty
       if( twigs.back().NLEAF == 0 ) {                           //  If twig has no leafs
@@ -446,7 +462,8 @@ private:
     stopTimer("Reindex      ",printNow);                        // Stop timer 
   }
 
-  void sticks2send(Cells &sticks, int &offTwigs) {              // Turn sticks to send buffer
+//! Turn sticks to send buffer
+  void sticks2send(Cells &sticks, int &offTwigs) {
     while( !sticks.empty() ) {                                  // While stick vector is not empty
       JCell cell;                                               //  Cell structure
       cell.ICELL = sticks.back().ICELL;                         //  Set index of cell
@@ -457,6 +474,7 @@ private:
     offTwigs = sendCells.size();                                // Keep track of current send buffer size
   }
 
+//! Validate number of send cells
   void checkNumCells(int l) {                                   // Only works with octsection
     int maxLevel = int(log(MPISIZE-1) / M_LN2 / 3) + 1;
     if( MPISIZE == 1 ) maxLevel = 0;
@@ -475,6 +493,7 @@ private:
     if( numCellsExpect != numCells && MPIRANK == 0) std::cout << numCells << " " << numCellsExpect << std::endl;
   }
 
+//! Check total charge
   void checkSumMass(Cells &cells) {
     double localMass = 0;
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
@@ -492,10 +511,13 @@ private:
   }
 
 public:
-  LocalEssentialTree() : Partition() {}                         // Constructor
-  ~LocalEssentialTree() {}                                      // Destructor
+//! Constructor
+  ParallelFMM() : Partition() {}
+//! Destructor
+  ~ParallelFMM() {}
 
-  void setCommBodies(Cells &cells) {                            // Set bodies to communicate
+//! Set bodies to communicate
+  void setCommBodies(Cells &cells) {
     startTimer("Gather bounds");                                // Start timer
     gatherBounds();                                             // Gather bounds of other domain
     stopTimer("Gather bounds",printNow);                        // Stop timer 
@@ -504,7 +526,8 @@ public:
     stopTimer("Get send rank",printNow);                        // Stop timer 
   }
 
-  void updateBodies(bool comm=true) {                           // Update bodies using the previous send count
+//! Update bodies using the previous send count
+  void updateBodies(bool comm=true) {
     startTimer("Get send cnt ");                                // Start timer
     getSendCount(comm);                                         // Get size of data to send
     stopTimer("Get send cnt ",printNow);                        // Stop timer 
@@ -532,18 +555,21 @@ public:
     stopTimer("Alltoall B   ",printNow);                        // Stop timer 
   }
 
-  void commBodies(Cells &cells) {                               // Communicate bodies in the LET
+//! Communicate bodies in the local essential tree
+  void commBodies(Cells &cells) {
     setCommBodies(cells);                                       // Set bodies to communicate
     updateBodies();                                             // Update bodies with alltoall
   }
 
-  void bodies2cells(Bodies &bodies, Cells &cells) {             // Convert recvBodies to cells
+//! Convert recvBodies to cells
+  void bodies2cells(Bodies &bodies, Cells &cells) {
     Cells twigs,sticks;                                         // Twigs and sticks are special types of cells
     rbodies2twigs(bodies,twigs);                                // Put recv bodies into twig vector
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
   }
 
-  void commCells(Bodies &bodies, Cells &cells) {                // Communicate cell in the LET
+//! Communicate cells in the local essential tree
+  void commCells(Bodies &bodies, Cells &cells) {
     vect xmin = 0, xmax = 0;                                    // Initialize domain boundaries
     Cells twigs,sticks;                                         // Twigs and sticks are special types of cells
 
@@ -663,7 +689,8 @@ public:
     recvCells.clear();                                          // Clear recv buffer
   }
 
-  void eraseLocalTree(Cells &cells) {                           // Remove cells that belong to current process
+//! Remove cells that belong to current process
+  void eraseLocalTree(Cells &cells) {
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of process root cell
     if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     int off = ((1 << 3 * level) - 1) / 7;                       // Levelwise offset of ICELL

@@ -3,7 +3,7 @@
 
 CUDA_INSTALL_PATH = /usr/local/cuda
 SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
-VTK_INCLUDE_PATH = /usr/include/vtk-5.6
+VTK_INCLUDE_PATH = /usr/local/include/vtk-5.8
 
 DEVICE  = cpu
 #DEVICE  = gpu
@@ -31,7 +31,7 @@ OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)Biot
 .cu.o   :
 	$(NVCC) -c $? -o $@ $(LFLAGS)
 cleanall:
-	rm -f `find .. -name "*.o" -o -name "*.out" -o -name "*.dat" -o -name "*.a" -o -name "*.sum"`
+	rm -rf `find .. -name "*.o" -o -name "*.out*" -o -name "*.dat" -o -name "*.a" -o -name "*.sum"`
 	rm -f ../unit_test/direct0*
 commit  :
 	hg commit

@@ -2,12 +2,14 @@
 #define sort_h
 #include "logger.h"
 
-class Sort : public Logger {                                    // Custom bucket sort for body and cell structures
+//! Custom bucket sort for body and cell structures
+class Sort : public Logger {
 private:
-  std::vector<int> bucket;                                      // Bucket for sorting
+  std::vector<int> bucket;                                      //!< Bucket for sorting
 
+//! Get bucket size for sorting
   template<typename T>
-  void getBucketSize(T &values, int begin, int end, bigint &Imin, int &numBucket) {// Get bucket size for sorting
+  void getBucketSize(T &values, int begin, int end, bigint &Imin, int &numBucket) {
     typename T::iterator V0 = values.begin()+begin;             // Get begin iterator
     typename T::iterator VN = values.begin()+end;               // Get end iterator
     Imin = V0->ICELL;                                           // Initialize minimum index
@@ -22,8 +24,9 @@ private:
     }                                                           // Endif for resize
   }
 
+//! Bucket sort for small indices
   template<typename T>
-  void sortICELL(T &values, T &buffer, bigint Imin,             // Bucket sort for small indices
+  void sortICELL(T &values, T &buffer, bigint Imin,
                  int numBucket, bool ascend, int begin, int end) {
     startTimer("Fill bucket  ");                                // Start timer
     for( int i=0; i!=numBucket; ++i ) bucket[i] = 0;            // Initialize bucket
@@ -49,7 +52,8 @@ private:
   }
 
 public:
-  void sortBodies(Bodies &bodies, Bodies &buffer, bool ascend=true, int begin=0, int end=0) {// Sort bodies accoring to cell index
+//! Sort bodies accoring to cell index
+  void sortBodies(Bodies &bodies, Bodies &buffer, bool ascend=true, int begin=0, int end=0) {
     startTimer("Sort bodies  ");                                // Start timer
     if( bodies.size() == 0 ) return;                            // Don't do anything if vector is empty
     if( end == 0 ) end = bodies.size();                         // Default range is the whole vector
@@ -60,7 +64,8 @@ public:
     sortICELL(bodies,buffer,Imin,numBucket,ascend,begin,end);   // Call bucket sort for small indices
   }
 
-  void sortCells(Cells &cells, Cells &buffer, bool ascend=true, int begin=0, int end=0) {// Sort cells according to cell index
+//! Sort cells according to cell index
+  void sortCells(Cells &cells, Cells &buffer, bool ascend=true, int begin=0, int end=0) {
     startTimer("Sort cells   ");                                // Start timer
     if( cells.size() == 0 ) return;                             // Don't do anything if vector is empty
     if( end == 0 ) end = cells.size();                          // Default rage is the whole vector

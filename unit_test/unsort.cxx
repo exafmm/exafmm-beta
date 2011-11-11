@@ -1,5 +1,5 @@
 #include "dataset.h"
-#include "construct.h"
+#include "serialfmm.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -13,57 +13,57 @@ int main() {
   Bodies bodies2;
   Bodies jbodies;
   Cells cells,jcells;
-  Dataset D;
-  D.kernelName = "Laplace";
-  TreeConstructor T;
-  T.setKernel(D.kernelName);
-  T.initialize();
-  T.printNow = true;
+  Dataset dataset;
+  dataset.kernelName = "Laplace";
+  SerialFMM FMM;
+  FMM.setKernel(dataset.kernelName);
+  FMM.initialize();
+  FMM.printNow = true;
 
-  T.startTimer("Set bodies   ");
-  D.random(bodies,1,1);
+  FMM.startTimer("Set bodies   ");
+  dataset.random(bodies,1,1);
   bodies2 = bodies;
-  T.stopTimer("Set bodies   ",T.printNow);
+  FMM.stopTimer("Set bodies   ",FMM.printNow);
 
   if( IMAGES != 0 ) {
-    T.startTimer("Set periodic ");
-    jbodies = T.periodicBodies(bodies2);
-    T.stopTimer("Set periodic ",T.printNow);
+    FMM.startTimer("Set periodic ");
+    jbodies = FMM.periodicBodies(bodies2);
+    FMM.stopTimer("Set periodic ",FMM.printNow);
   } else {
     jbodies = bodies2;
   }
 
-  T.startTimer("Direct sum   ");
+  FMM.startTimer("Direct sum   ");
   bodies2.resize(numTarget);
-  T.evalP2P(bodies2,jbodies);
-  T.stopTimer("Direct sum   ",T.printNow);
-  T.eraseTimer("Direct sum   ");
+  FMM.evalP2P(bodies2,jbodies);
+  FMM.stopTimer("Direct sum   ",FMM.printNow);
+  FMM.eraseTimer("Direct sum   ");
 
-  T.startTimer("Set domain   ");
-  D.initTarget(bodies);
-  T.setDomain(bodies);
-  T.stopTimer("Set domain   ",T.printNow);
+  FMM.startTimer("Set domain   ");
+  dataset.initTarget(bodies);
+  FMM.setDomain(bodies);
+  FMM.stopTimer("Set domain   ",FMM.printNow);
 
 #ifdef TOPDOWN
-  T.topdown(bodies,cells);
+  FMM.topdown(bodies,cells);
 #else
-  T.bottomup(bodies,cells);
+  FMM.bottomup(bodies,cells);
 #endif
 
   jcells = cells;
-  T.startTimer("Downward     ");
-  T.downward(cells,jcells,1);
-  T.stopTimer("Downward     ",T.printNow);
+  FMM.startTimer("Downward     ");
+  FMM.downward(cells,jcells,1);
+  FMM.stopTimer("Downward     ",FMM.printNow);
 
-  T.startTimer("Unsort bodies");
+  FMM.startTimer("Unsort bodies");
   std::sort(bodies.begin(),bodies.end());
-  T.stopTimer("Unsort bodies",T.printNow);
-  T.writeTime();
-  T.writeTime();
+  FMM.stopTimer("Unsort bodies",FMM.printNow);
+  FMM.writeTime();
+  FMM.writeTime();
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   bodies.resize(numTarget);
-  D.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-  D.printError(diff1,norm1,diff2,norm2);
-  T.finalize();
+  dataset.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  dataset.printError(diff1,norm1,diff2,norm2);
+  FMM.finalize();
 }

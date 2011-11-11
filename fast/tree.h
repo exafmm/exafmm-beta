@@ -21,7 +21,7 @@ public:
   }
 };
 
-class FastMultipoleMethod : public TreeConstructor {
+class SerialFMM : public TreeConstructor {
 public:
   void direct(Bodies &bodies, Cells &cells) {
     setRootCell(cells);

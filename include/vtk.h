@@ -23,8 +23,7 @@
 #include "types.h"
 const int maxGroups = 1000000;
 
-class vtkSliderCallback : public vtkCommand
-{
+class vtkSliderCallback : public vtkCommand {
 public:
   vtkPoints *points[maxGroups];
   vtkPolyData *polydata;

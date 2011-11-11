@@ -1,4 +1,4 @@
-#include "let.h"
+#include "parallelfmm.h"
 
 #define MD_LJ_R2MIN 0.0001f
 #define MD_LJ_R2MAX 100.0f
@@ -27,7 +27,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
   vect shift = size/2;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
-  LocalEssentialTree T;
+  ParallelFMM FMM;
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
@@ -57,18 +57,18 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
     B->SRC[0] = qj[i];
   }
 
-  T.setKernel("Laplace");
-  T.initialize();
-  T.setGlobDomain(bodies,shift,size/2);
-  T.octsection(bodies);
-  T.octsection(jbodies);
-  T.bottomup(bodies,cells);
-  T.bottomup(jbodies,jcells);
-  T.commBodies(jcells);
-  T.commCells(jbodies,jcells);
+  FMM.setKernel("Laplace");
+  FMM.initialize();
+  FMM.setGlobDomain(bodies,shift,size/2);
+  FMM.octsection(bodies);
+  FMM.octsection(jbodies);
+  FMM.bottomup(bodies,cells);
+  FMM.bottomup(jbodies,jcells);
+  FMM.commBodies(jcells);
+  FMM.commCells(jbodies,jcells);
 
-  T.downward(cells,jcells,1);
-  T.unpartition(bodies);
+  FMM.downward(cells,jcells,1);
+  FMM.unpartition(bodies);
   std::sort(bodies.begin(),bodies.end());
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -116,7 +116,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
   vect shift = size/2;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
-  TreeConstructor T;
+  SerialFMM FMM;
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
@@ -146,12 +146,12 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
   }
 
 
-  T.setKernel("CoulombVdW");
-  T.setDomain(bodies,shift,size/2);
-  T.setVanDerWaals(nat,rscale,gscale);
-  T.bottomup(bodies,cells);
-  T.bottomup(jbodies,jcells);
-  T.downward(cells,jcells,1);
+  FMM.setKernel("CoulombVdW");
+  FMM.setDomain(bodies,shift,size/2);
+  FMM.setVanDerWaals(nat,rscale,gscale);
+  FMM.bottomup(bodies,cells);
+  FMM.bottomup(jbodies,jcells);
+  FMM.downward(cells,jcells,1);
   std::sort(bodies.begin(),bodies.end());
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {

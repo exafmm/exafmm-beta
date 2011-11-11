@@ -86,7 +86,7 @@ public:
     for_i s<<a[i]<<' ';
     return s;
   }
-  friend T norm(const vec &b) {
+  friend T norm(const vec &b) {                                    // L2 norm squared
     T c=0;
     for_i c+=b[i]*b[i];
     return c;

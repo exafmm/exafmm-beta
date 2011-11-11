@@ -1,5 +1,5 @@
 #include "dataset.h"
-#include "construct.h"
+#include "serialfmm.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -12,62 +12,62 @@ int main() {
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells,jcells;
-  Dataset D;
-  D.kernelName = "Laplace";
-  TreeConstructor T;
-  T.setKernel(D.kernelName);
-  T.initialize();
-  T.printNow = true;
+  Dataset dataset;
+  dataset.kernelName = "Laplace";
+  SerialFMM FMM;
+  FMM.setKernel(dataset.kernelName);
+  FMM.initialize();
+  FMM.printNow = true;
 
-  T.startTimer("Set bodies   ");
-  D.random(bodies,1,1);
-  T.stopTimer("Set bodies   ",T.printNow);
-  T.eraseTimer("Set bodies   ");
+  FMM.startTimer("Set bodies   ");
+  dataset.random(bodies,1,1);
+  FMM.stopTimer("Set bodies   ",FMM.printNow);
+  FMM.eraseTimer("Set bodies   ");
 
-  T.startTimer("Set domain   ");
-  T.setDomain(bodies);
-  T.stopTimer("Set domain   ",T.printNow);
-  T.eraseTimer("Set domain   ");
+  FMM.startTimer("Set domain   ");
+  FMM.setDomain(bodies);
+  FMM.stopTimer("Set domain   ",FMM.printNow);
+  FMM.eraseTimer("Set domain   ");
 
 #ifdef TOPDOWN
-  T.topdown(bodies,cells);
+  FMM.topdown(bodies,cells);
 #else
-  T.bottomup(bodies,cells);
+  FMM.bottomup(bodies,cells);
 #endif
   jcells = cells;
-  T.startTimer("Downward     ");
-  T.downward(cells,jcells,1);
-  T.stopTimer("Downward     ",T.printNow);
-  T.eraseTimer("Downward     ");
+  FMM.startTimer("Downward     ");
+  FMM.downward(cells,jcells,1);
+  FMM.stopTimer("Downward     ",FMM.printNow);
+  FMM.eraseTimer("Downward     ");
 
   if( IMAGES != 0 ) {
-    T.startTimer("Set periodic ");
-    jbodies = T.periodicBodies(bodies);
-    T.stopTimer("Set periodic ",T.printNow);
-    T.eraseTimer("Set periodic ");
+    FMM.startTimer("Set periodic ");
+    jbodies = FMM.periodicBodies(bodies);
+    FMM.stopTimer("Set periodic ",FMM.printNow);
+    FMM.eraseTimer("Set periodic ");
   } else {
     jbodies = bodies;
   }
 
-  T.startTimer("Direct sum   ");
+  FMM.startTimer("Direct sum   ");
   bodies.resize(numTarget);
-  T.buffer = bodies;
-  D.initTarget(T.buffer);
-  T.evalP2P(T.buffer,jbodies);
-  T.stopTimer("Direct sum   ",T.printNow);
-  T.eraseTimer("Direct sum   ");
-  T.writeTime();
-  T.writeTime();
+  FMM.buffer = bodies;
+  dataset.initTarget(FMM.buffer);
+  FMM.evalP2P(FMM.buffer,jbodies);
+  FMM.stopTimer("Direct sum   ",FMM.printNow);
+  FMM.eraseTimer("Direct sum   ");
+  FMM.writeTime();
+  FMM.writeTime();
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  D.evalError(bodies,T.buffer,diff1,norm1,diff2,norm2);
-  D.printError(diff1,norm1,diff2,norm2);
+  dataset.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2);
+  dataset.printError(diff1,norm1,diff2,norm2);
 #ifdef VTK
   int Ncell = 0;
   vtkPlot vtk;
-  vtk.setDomain(T.getR0(),T.getX0());
+  vtk.setDomain(FMM.getR0(),FMM.getX0());
   vtk.setGroupOfPoints(bodies,Ncell);
   vtk.plot(Ncell);
 #endif
-  T.finalize();
+  FMM.finalize();
 }

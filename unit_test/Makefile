@@ -99,7 +99,6 @@ all      :
 	make kernel
 	make serialrun
 	make unsort
-	make Nserial
 	make direct_gpu
 	make mpi
 	make check_gpus
@@ -110,6 +109,5 @@ all      :
 	make parallelrun
 	make unpartition
 	make ijparallelrun
-	make Nparallel
 	make skip_tree
 	make overlap_comm

@@ -1,6 +1,5 @@
 #include "partition.h"
 #include "dataset.h"
-#include "construct.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -10,25 +9,25 @@ int main() {
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
-  Dataset D;
-  D.kernelName = "Laplace";
-  Partition T;
-  T.setKernel(D.kernelName);
-  T.initialize();
-  if( MPIRANK == 0 ) T.printNow = true;
+  Dataset dataset;
+  dataset.kernelName = "Laplace";
+  Partition FMM;
+  FMM.setKernel(dataset.kernelName);
+  FMM.initialize();
+  if( MPIRANK == 0 ) FMM.printNow = true;
 
-  T.startTimer("Set bodies   ");
+  FMM.startTimer("Set bodies   ");
   if( MPIRANK % 2 == 0 ) {
-    D.random(bodies,MPIRANK+1);
+    dataset.random(bodies,MPIRANK+1);
   } else {
     bodies.resize(50000);
-    D.sphere(bodies,MPIRANK+1);
+    dataset.sphere(bodies,MPIRANK+1);
   }
-  T.stopTimer("Set bodies   ",T.printNow);
+  FMM.stopTimer("Set bodies   ",FMM.printNow);
 
-  T.startTimer("Set domain   ");
-  T.setGlobDomain(bodies);
-  T.stopTimer("Set domain   ",T.printNow);
+  FMM.startTimer("Set domain   ");
+  FMM.setGlobDomain(bodies);
+  FMM.stopTimer("Set domain   ",FMM.printNow);
 
 #ifdef VTK
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->ICELL = 0;
@@ -36,20 +35,20 @@ int main() {
   int Ncell = 0;
   vtkPlot vtk;
   if( MPIRANK == 0 ) {
-    vtk.setDomain(T.getR0(),T.getX0());
+    vtk.setDomain(FMM.getR0(),FMM.getX0());
     vtk.setGroupOfPoints(bodies,Ncell);
   }
-  T.startTimer("Shift bodies ");
+  FMM.startTimer("Shift bodies ");
   for( int i=1; i!=MPISIZE; ++i ) {
-    T.shiftBodies(bodies);
+    FMM.shiftBodies(bodies);
     if( MPIRANK == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
   }
-  T.stopTimer("Shift bodies ",T.printNow);
+  FMM.stopTimer("Shift bodies ",FMM.printNow);
   if( MPIRANK == 0 ) {
     vtk.plot(Ncell);
   }
 #endif
-  T.finalize();
+  FMM.finalize();
 }

@@ -1,5 +1,5 @@
 #include "dataset.h"
-#include "construct.h"
+#include "serialfmm.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -10,33 +10,33 @@ int main() {
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Cells cells;
-  Dataset D;
-  D.kernelName = "Laplace";
-  TreeConstructor T;
-  T.setKernel(D.kernelName);
-  T.initialize();
-  T.printNow = true;
+  Dataset dataset;
+  dataset.kernelName = "Laplace";
+  SerialFMM FMM;
+  FMM.setKernel(dataset.kernelName);
+  FMM.initialize();
+  FMM.printNow = true;
 
-  T.startTimer("Set bodies   ");
-  D.random(bodies);
-  T.stopTimer("Set bodies   ",T.printNow);
+  FMM.startTimer("Set bodies   ");
+  dataset.random(bodies);
+  FMM.stopTimer("Set bodies   ",FMM.printNow);
 
-  T.startTimer("Set domain   ");
-  T.setDomain(bodies);
-  T.stopTimer("Set domain   ",T.printNow);
+  FMM.startTimer("Set domain   ");
+  FMM.setDomain(bodies);
+  FMM.stopTimer("Set domain   ",FMM.printNow);
 
 #ifdef TOPDOWN
-  T.topdown(bodies,cells);
+  FMM.topdown(bodies,cells);
 #else
-  T.bottomup(bodies,cells);
+  FMM.bottomup(bodies,cells);
 #endif
 
 #ifdef VTK
   int Ncell = 0;
   vtkPlot vtk;
-  vtk.setDomain(T.getR0(),T.getX0());
+  vtk.setDomain(FMM.getR0(),FMM.getX0());
   vtk.setGroupOfPoints(bodies,Ncell);
   vtk.plot(Ncell);
 #endif
-  T.finalize();
+  FMM.finalize();
 }

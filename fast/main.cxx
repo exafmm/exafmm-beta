@@ -9,7 +9,7 @@ int main() {
   Cells cells;
   Dataset DATA;
   DATA.kernelName = "Laplace";
-  FastMultipoleMethod FMM;
+  SerialFMM FMM;
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {
 #else

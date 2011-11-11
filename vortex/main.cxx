@@ -14,59 +14,59 @@ int main() {
   const float nu      = 1e-2;
   Bodies bodies, bodies2;
   Cells cells;
-  Vortex T(numGrid1D);
-  T.setKernel("Gaussian");
-  T.initialize();
+  Vortex FMM(numGrid1D);
+  FMM.setKernel("Gaussian");
+  FMM.initialize();
   bool printNow = (MPIRANK == 0);
 
-  T.startTimer("Read data    ");
-  bodies.resize(T.numBodies);
-  bodies2.resize(T.numBodies);
-  T.readData(bodies,bodies2,cells);
-  T.stopTimer("Read data    ",printNow);
-  T.eraseTimer("Read data    ");
+  FMM.startTimer("Read data    ");
+  bodies.resize(FMM.numBodies);
+  bodies2.resize(FMM.numBodies);
+  FMM.readData(bodies,bodies2,cells);
+  FMM.stopTimer("Read data    ",printNow);
+  FMM.eraseTimer("Read data    ");
 
-  T.startTimer("Validate data");
-  T.gridVelocity(bodies,bodies2,cells);
-  T.initialError(bodies2);
-  T.stopTimer("Validate data",printNow);
-  T.eraseTimer("Validate data");
+  FMM.startTimer("Validate data");
+  FMM.gridVelocity(bodies,bodies2,cells);
+  FMM.initialError(bodies2);
+  FMM.stopTimer("Validate data",printNow);
+  FMM.eraseTimer("Validate data");
 
   for( int step=0; step!=numSteps; ++step ) {
-    T.print("Step          : ",0);
-    T.print(step,0);
-    T.print("\n",0);
+    FMM.print("Step          : ",0);
+    FMM.print(step,0);
+    FMM.print("\n",0);
     if( step%(numSkip+1) == 0 ) {
-      T.startTimer("Statistics   ");
-      T.gridVelocity(bodies,bodies2,cells);
-      T.statistics(bodies2,nu,dt);
-      T.stopTimer("Statistics   ",printNow);
-      T.eraseTimer("Statistics   ");
+      FMM.startTimer("Statistics   ");
+      FMM.gridVelocity(bodies,bodies2,cells);
+      FMM.statistics(bodies2,nu,dt);
+      FMM.stopTimer("Statistics   ",printNow);
+      FMM.eraseTimer("Statistics   ");
     }
 
-    T.startTimer("BiotSavart   ");
-    T.BiotSavart(bodies,cells);
-    T.stopTimer("BiotSavart   ",printNow);
-    T.eraseTimer("BiotSavart   ");
+    FMM.startTimer("BiotSavart   ");
+    FMM.BiotSavart(bodies,cells);
+    FMM.stopTimer("BiotSavart   ",printNow);
+    FMM.eraseTimer("BiotSavart   ");
 
-    T.startTimer("Stretching   ");
-    T.Stretching(bodies,cells);
-    T.stopTimer("Stretching   ",printNow);
-    T.eraseTimer("Stretching   ");
+    FMM.startTimer("Stretching   ");
+    FMM.Stretching(bodies,cells);
+    FMM.stopTimer("Stretching   ",printNow);
+    FMM.eraseTimer("Stretching   ");
 
-    T.startTimer("Convect      ");
-    T.update(bodies,nu,dt);
-    T.stopTimer("Convect      ",printNow);
-    T.eraseTimer("Convect      ");
+    FMM.startTimer("Convect      ");
+    FMM.update(bodies,nu,dt);
+    FMM.stopTimer("Convect      ",printNow);
+    FMM.eraseTimer("Convect      ");
 
     if( step%(numSkip2+1) == numSkip2 ) {
-      T.startTimer("Reinitialize ");
-      T.reinitialize(bodies,cells);
-      T.stopTimer("Reinitialize ",printNow);
-      T.eraseTimer("Reinitialize ");
+      FMM.startTimer("Reinitialize ");
+      FMM.reinitialize(bodies,cells);
+      FMM.stopTimer("Reinitialize ",printNow);
+      FMM.eraseTimer("Reinitialize ");
     }
-    if(printNow) T.writeTime();
-    T.resetTimer();
+    if(printNow) FMM.writeTime();
+    FMM.resetTimer();
   }
 
 #ifdef VTK
@@ -82,11 +82,11 @@ int main() {
   int Ncell = 0;
   vtkPlot vtk;
   if( MPIRANK == 0 ) {
-    vtk.setDomain(T.getR0(),T.getX0());
+    vtk.setDomain(FMM.getR0(),FMM.getX0());
     vtk.setGroupOfPoints(bodies,Ncell);
   }
   for( int i=1; i!=MPISIZE; ++i ) {
-    T.shiftBodies(bodies);
+    FMM.shiftBodies(bodies);
     if( MPIRANK == 0 ) {
       vtk.setGroupOfPoints(bodies,Ncell);
     }
@@ -95,5 +95,5 @@ int main() {
     vtk.plot(Ncell);
   }
 #endif
-  T.finalize();
+  FMM.finalize();
 }
