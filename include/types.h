@@ -41,7 +41,7 @@ const int  MAXBODY = 200000;                                    //!< Maximum num
 const int  MAXCELL = 10000000;                                  //!< Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET    = 2;                                         //!< LET opening critetia
 const real EPS2    = 1e-6;                                      //!< Softening parameter
-const int  GPUS    = 3;                                         //!< Number of GPUs per node
+const int  GPUS    = 4;                                         //!< Number of GPUs per node
 const int  THREADS = 64;                                        //!< Number of threads per thread-block
 
 #if Cartesian
@@ -61,7 +61,9 @@ typedef std::vector<bigint>                    Bigints;         //!< Vector of b
 typedef std::map<std::string,double>           Event;           //!< Map of event name to logged value
 typedef std::map<std::string,double>::iterator E_iter;          //!< Iterator for event name map
 
-//! Source properties of a body (stuff to send)
+enum KernelName {Laplace,BiotSavart,Stretching,Gaussian,CoulombVdW};//!< Kernel name enumeration
+
+//! Structure for source bodies (stuff to send)
 struct JBody {
   int         IBODY;                                            //!< Initial body numbering for sorting back
   int         IPROC;                                            //!< Initial process numbering for partitioning back
@@ -69,7 +71,7 @@ struct JBody {
   vect        X;                                                //!< Position
   vec<4,real> SRC;                                              //!< Source values
 };
-//! All properties of a body
+//! Structure for bodies
 struct Body : JBody {
   vec<4,real> TRG;                                              //!< Target values
   bool operator<(const Body &rhs) const {                       //!< Overload operator for comparing body index
@@ -81,12 +83,12 @@ typedef std::vector<Body>::iterator    B_iter;                  //!< Iterator fo
 typedef std::vector<JBody>             JBodies;                 //!< Vector of source bodies
 typedef std::vector<JBody>::iterator   JB_iter;                 //!< Iterator for source body vector
 
-//! Source properties of a cell (stuff to send)
+//! Structure for source cells (stuff to send)
 struct JCell {
   bigint ICELL;                                                 //!< Cell index
   coef   M;                                                     //!< Multipole coefficients
 };
-//! All properties of a cell
+//! Structure for cells
 struct Cell : JCell {
   int    NCHILD;                                                //!< Number of child cells
   int    NLEAF;                                                 //!< Number of leafs

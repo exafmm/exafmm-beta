@@ -119,7 +119,17 @@ public:
 
 //! Set kernel name
   void setKernel(std::string name) {
-    kernelName = name;                                          // Set class variable kernelName
+    if( name == "Laplace" ) {                                   //  If Laplace
+      kernelName = Laplace;                                     //   Set kernel name to Laplace
+    } else if( name == "BiotSavart" ) {                         //  If BiotSavart
+      kernelName = BiotSavart;                                  //   Set kernel name to BiotSavart
+    } else if( name == "Stretching" ) {                         //  If Stretching
+      kernelName = Stretching;                                  //   Set kernel name to Stretching
+    } else if( name == "Gaussian" ) {                           //  If Gaussian
+      kernelName = Gaussian;                                    //   Set kernel name to Gaussian
+    } else if( name == "CoulombVdW" ) {                         //  If CoulombVdW
+      kernelName = CoulombVdW;                                  //   Set kernel name to CoulombVdW
+    }
   }
 
 //! Add single list for kernel unit test
@@ -277,15 +287,15 @@ public:
 
 //! Initialize GPU
   void initialize() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceInit();                                            //  Initialize GPU
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartInit();                                         //  Initialize GPU
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingInit();                                         //  Initialize GPU
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianInit();                                           //  Initialize GPU
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWInit();                                         //  Initialize GPU
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type in initialize" << std::endl;// Invalid kernel type
@@ -295,15 +305,15 @@ public:
 
 //! Finalize GPU
   void finalize() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceFinal();                                           //  Finalize GPU
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartFinal();                                        //  Finalize GPU
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingFinal();                                        //  Finalize GPU
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianFinal();                                          //  Finalize GPU
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWFinal();                                        //  Finalize GPU
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type in finalize" << std::endl;// Invalid kernel type

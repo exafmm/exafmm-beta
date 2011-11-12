@@ -3,10 +3,10 @@
 
 CUDA_INSTALL_PATH = /usr/local/cuda
 SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
-VTK_INCLUDE_PATH = /usr/local/include/vtk-5.8
+VTK_INCLUDE_PATH = /usr/include/vtk-5.4
 
-DEVICE  = cpu
-#DEVICE  = gpu
+#DEVICE  = cpu
+DEVICE  = gpu
 
 #EXPAND  = Cartesian
 EXPAND  = Spherical
@@ -41,9 +41,8 @@ save    :
 	make cleanall
 	tar zcvf ../../exafmm.tgz ../../exafmm
 docs:
-	@rm -rf docs
 	doxygen Doxyfile
 	cd docs/html ;tar czf ../../docs.tar *
 	scp docs.tar $(EXAFMM_DOCS_USER)@barbagroup.bu.edu:~/
 	ssh $(EXAFMM_DOCS_USER)@barbagroup.bu.edu 'tar -xmzf docs.tar -C /Library/WebServer/Documents/exafmm_docs/html/; rm docs.tar; chmod -R 775 /Library/WebServer/Documents/exafmm_docs/'
-	rm -f docs.tar
+	rm -rf docs*

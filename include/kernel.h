@@ -21,7 +21,7 @@ protected:
   vect        X0;                                               //!< Center of root cell
   real        R0;                                               //!< Radius of root cell
   vect        Xperiodic;                                        //!< Coordinate offset of periodic image
-  std::string kernelName;                                       //!< Name of kernel
+  KernelName  kernelName;                                       //!< Name of kernel
 
   int                  ATOMS;                                   //!< Number of atom types in Van der Waals
   std::vector<real>    RSCALE;                                  //!< Scaling parameter for Van der Waals
@@ -328,15 +328,15 @@ public:
 
 //! Select P2P kernel
   void selectP2P() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceP2P();                                             //  Evaluate P2P kernel
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartP2P();                                          //  Evaluate P2P kernel
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingP2P();                                          //  Evaluate P2P kernel
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianP2P();                                            //  Evaluate P2P kernel
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWP2P();                                          //  Evaluate P2P kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
@@ -346,15 +346,15 @@ public:
 
 //! Select P2P_CPU kernel
   void selectP2P_CPU() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceP2P_CPU();                                         //  Evaluate P2P_CPU kernel
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartP2P_CPU();                                      //  Evaluate P2P_CPU kernel
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingP2P_CPU();                                      //  Evaluate P2P_CPU kernel
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianP2P_CPU();                                        //  Evaluate P2P_CPU kernel
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWP2P_CPU();                                      //  Evaluate P2P_CPU kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
@@ -364,15 +364,15 @@ public:
 
 //! Select P2M kernel
   void selectP2M() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceP2M();                                             //  Evaluate P2M kernel
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartP2M();                                          //  Evaluate P2M kernel
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingP2M();                                          //  Evaluate P2M kernel
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianP2M();                                            //  Evaluate P2M kernel
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWP2M();                                          //  Evaluate P2M kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
@@ -382,15 +382,15 @@ public:
 
 //! Select M2M kernel
   void selectM2M() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceM2M();                                             //  Evaluate M2M kernel
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartM2M();                                          //  Evaluate M2M kernel
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingM2M();                                          //  Evaluate M2M kernel
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianM2M();                                            //  Evaluate M2M kernel
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWM2M();                                          //  Evaluate M2M kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
@@ -400,15 +400,15 @@ public:
 
 //! Select M2M_CPU kernel
   void selectM2M_CPU() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceM2M_CPU();                                         //  Evaluate M2M_CPU kernel
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartM2M_CPU();                                      //  Evaluate M2M_CPU kernel
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingM2M_CPU();                                      //  Evaluate M2M_CPU kernel
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianM2M_CPU();                                        //  Evaluate M2M_CPU kernel
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWM2M_CPU();                                      //  Evaluate M2M_CPU kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
@@ -418,15 +418,15 @@ public:
 
 //! Select M2L kernel
   void selectM2L() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceM2L();                                             //  Evaluate M2L kernel
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartM2L();                                          //  Evaluate M2L kernel
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingM2L();                                          //  Evaluate M2L kernel
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianM2L();                                            //  Evaluate M2L kernel
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWM2L();                                          //  Evaluate M2L kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
@@ -436,15 +436,15 @@ public:
 
 //! Select M2P kernel
   void selectM2P() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceM2P();                                             //  Evaluate M2P kernel
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartM2P();                                          //  Evaluate M2P kernel
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingM2P();                                          //  Evaluate M2P kernel
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianM2P();                                            //  Evaluate M2P kernel
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWM2P();                                          //  Evaluate M2P kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
@@ -454,15 +454,15 @@ public:
 
 //! Select L2L kernel
   void selectL2L() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceL2L();                                             //  Evaluate L2L kernel
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartL2L();                                          //  Evaluate L2L kernel
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingL2L();                                          //  Evaluate L2L kernel
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianL2L();                                            //  Evaluate L2L kernel
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWL2L();                                          //  Evaluate L2L kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
@@ -472,15 +472,15 @@ public:
 
 //! Select L2P kernel
   void selectL2P() {
-    if( kernelName == "Laplace" ) {                             // If Laplace kernel
+    if( kernelName == Laplace ) {                               // If Laplace kernel
       LaplaceL2P();                                             //  Evaluate L2P kernel
-    } else if ( kernelName == "BiotSavart" ) {                  // If Biot Savart kernel
+    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
       BiotSavartL2P();                                          //  Evaluate L2P kernel
-    } else if ( kernelName == "Stretching" ) {                  // If Stretching kernel
+    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
       StretchingL2P();                                          //  Evaluate L2P kernel
-    } else if ( kernelName == "Gaussian" ) {                    // If Gaussian kernel
+    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
       GaussianL2P();                                            //  Evaluate L2P kernel
-    } else if ( kernelName == "CoulombVdW" ) {                  // If CoulombVdW kernel
+    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
       CoulombVdWL2P();                                          //  Evaluate L2P kernel
     } else {                                                    // If kernel is none of the above
       if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type

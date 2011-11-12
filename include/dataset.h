@@ -2,17 +2,21 @@
 #define dataset_h
 #include "types.h"
 
-class Dataset {                                                 // Contains all the different datasets
+//! Contains all the different datasets
+class Dataset {
 private:
-  long filePosition;                                            // Position of file stream
+  long filePosition;                                            //!< Position of file stream
 
 public:
-  std::string kernelName;                                       // Name of kernel
+  std::string kernelName;                                       //!< Name of kernel
 
-  Dataset() : filePosition(0) {}                                // Constructor
-  ~Dataset() {}                                                 // Destructor
+//! Constructor
+  Dataset() : filePosition(0) {}
+//! Destructor
+  ~Dataset() {}
 
-  void initSource(Bodies &bodies) {                             // Initialize source values
+//! Initialize source values
+  void initSource(Bodies &bodies) {
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
@@ -39,7 +43,8 @@ public:
     }                                                           // End loop over bodies
   }
 
-  void initTarget(Bodies &bodies, bool IeqJ=true) {             // Initialize target values
+//! Initialize target values
+  void initTarget(Bodies &bodies, bool IeqJ=true) {
     srand(1);                                                   // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
@@ -62,7 +67,8 @@ public:
     }                                                           // End loop over bodies
   }
 
-  void random(Bodies &bodies, int seed=1, int numSplit=1) {     // Random distribution in [-1,1]^3 cube
+//! Random distribution in [-1,1]^3 cube
+  void random(Bodies &bodies, int seed=1, int numSplit=1) {
     srand(seed);                                                // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset
@@ -77,7 +83,8 @@ public:
     initTarget(bodies);                                         // Initialize target values
   }
 
-  void sphere(Bodies &bodies, int seed=1, int numSplit=1) {     // Random distribution on r = 1 sphere
+//! Random distribution on r = 1 sphere
+  void sphere(Bodies &bodies, int seed=1, int numSplit=1) {
     srand(seed);                                                // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset
@@ -96,7 +103,8 @@ public:
     initTarget(bodies);                                         // Initialize target values
   }
 
-  void lattice(Bodies &bodies) {                                // Uniform distribution on [-1,1]^3 lattice (for debug)
+//! Uniform distribution on [-1,1]^3 lattice (for debugging)
+  void lattice(Bodies &bodies) {
     int level = int(log(bodies.size()*MPISIZE+1.)/M_LN2/3);     // Level of tree
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       int d = 0, l = 0;                                         //  Initialize dimension and level
@@ -116,7 +124,8 @@ public:
     initTarget(bodies);                                         // Initialize target values
   }
 
-  void readTarget(Bodies &bodies) {                             // Read target values from file
+//! Read target values from file
+  void readTarget(Bodies &bodies) {
     char fname[256];                                            // File name for saving direct calculation values
     sprintf(fname,"direct%4.4d",MPIRANK);                       // Set file name
     std::ifstream file(fname,std::ios::in | std::ios::binary);  // Open file
@@ -146,7 +155,8 @@ public:
     file.close();                                               // Close file
   }
 
-  void writeTarget(Bodies &bodies) {                            // Write target values to file
+//! Write target values to file
+  void writeTarget(Bodies &bodies) {
     char fname[256];                                            // File name for saving direct calculation values
     sprintf(fname,"direct%4.4d",MPIRANK);                       // Set file name
     std::ofstream file(fname,std::ios::out | std::ios::app | std::ios::binary);// Open file
@@ -174,7 +184,8 @@ public:
     file.close();                                               // Close file
   }
 
-  void evalError(Bodies &bodies, Bodies &bodies2,               // Evaluate error
+//! Evaluate relative L2 norm error
+  void evalError(Bodies &bodies, Bodies &bodies2,
                  real &diff1, real &norm1, real &diff2, real &norm2) {
     if( kernelName == "Laplace" ) {                             // If Laplace kernel
       B_iter B2 = bodies2.begin();                              //  Set iterator for bodies2
@@ -235,7 +246,8 @@ public:
     }                                                           // Endif for kernel type
   }
 
-  void printError(real diff1, real norm1, real diff2, real norm2) {// Print relative L2 norm error
+//! Print relative L2 norm error
+  void printError(real diff1, real norm1, real diff2, real norm2) {
     if( kernelName == "Laplace" ) {                             // If Laplace kernel
       std::cout << "Error (pot)   : " << std::sqrt(diff1/norm1) << std::endl;
       std::cout << "Error (acc)   : " << std::sqrt(diff2/norm2) << std::endl;

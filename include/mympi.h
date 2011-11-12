@@ -4,12 +4,14 @@
 #include <typeinfo>
 #include "types.h"
 
-class MyMPI {                                                   // My own MPI utilities
+//! Custom MPI utilities
+class MyMPI {
 protected:
-  const int WAIT;                                               // Waiting time between output of different ranks
-  int       MPISIZES;                                           // Number of MPI processes for split communicator
-  int       MPIRANKS;                                           // Rank of current MPI process for split communicator
+  const int WAIT;                                               //!< Waiting time between output of different ranks
+  int       MPISIZES;                                           //!< Number of MPI processes for split communicator
+  int       MPIRANKS;                                           //!< Rank of current MPI process for split communicator
 public:
+//! Constructor, initialize WAIT time
   MyMPI() : WAIT(100) {                                         // Constructor, initialize WAIT time
     int argc(0);                                                // Dummy argument count
     char **argv;                                                // Dummy argument value
@@ -19,15 +21,18 @@ public:
     DEVICE = MPIRANK % GPUS;                                    // Get GPU device ID from MPI rank
   }
 
-  ~MyMPI() {                                                    // Destructor
+//! Destructor
+  ~MyMPI() {
     MPI_Finalize();                                             // Finalize MPI communicator
   }
 
-  bool isPowerOfTwo(const int n) {                              // If n is power of two return true
+//! If n is power of two return true
+  bool isPowerOfTwo(const int n) {
     return ((n != 0) && !(n & (n - 1)));                        // Decrement and compare bits
   }
 
-  void splitRange(int &begin, int &end, int iSplit, int numSplit) {// Split range and return partial range
+//! Split range and return partial range
+  void splitRange(int &begin, int &end, int iSplit, int numSplit) {
     int size = end - begin;                                     // Size of range
     int increment = size / numSplit;                            // Increment of splitting
     int remainder = size % numSplit;                            // Remainder of splitting
@@ -36,9 +41,10 @@ public:
     if( remainder > iSplit ) end++;                             // Adjust the end counter for remainder
   }
 
+//! Get MPI data type
   template<typename T>
-  MPI_Datatype getType(T object) {                              // Get MPI data type
-    MPI_Datatype type;                                          // MPI data type
+  MPI_Datatype getType(T object) {
+    MPI_Datatype type = MPI_BYTE;                               // MPI data type
     if       ( typeid(object) == typeid(char) ) {               // If data type is char
       type = MPI_CHAR;                                          //  use MPI_CHAR
     } else if( typeid(object) == typeid(short) ) {              // If data type is short
@@ -73,8 +79,9 @@ public:
     return type;                                                // Return MPI data type
   }
 
+//! Print a scalar value on all ranks
   template<typename T>
-  void print(T data) {                                          // Print a scalar value on all ranks
+  void print(T data) {
     for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
       MPI_Barrier(MPI_COMM_WORLD);                              //  Sync processes
       usleep(WAIT);                                             //  Wait "WAIT" milliseconds
@@ -85,15 +92,17 @@ public:
     if( MPIRANK == 0 ) std::cout << std::endl;                  // New line
   }
 
+//! Print a scalar value on irank
   template<typename T>
-  void print(T data, const int irank) {                         // Print a scalar value on irank
+  void print(T data, const int irank) {
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
     if( MPIRANK == irank ) std::cout << data;                   // If it's my rank print "data"
   }
 
+//! Print a vector value on all ranks
   template<typename T>
-  void print(T *data, const int begin, const int end) {         // Print a vector value on all ranks
+  void print(T *data, const int begin, const int end) {
     for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
       MPI_Barrier(MPI_COMM_WORLD);                              //  Sync processes
       usleep(WAIT);                                             //  Wait "WAIT" milliseconds
@@ -107,8 +116,9 @@ public:
     }                                                           // End loop over ranks
   }
 
+//! // Print a vector value on irank
   template<typename T>
-  void print(T *data, const int begin, const int end, const int irank) {// Print a vector value on irank
+  void print(T *data, const int begin, const int end, const int irank) {
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
     if( MPIRANK == irank ) {                                    // If it's my rank

@@ -1,6 +1,7 @@
 #ifndef vec_h
 #define vec_h
 #define for_i for( int i=0; i!=N; ++i )
+//! Custom vector type for small vectors
 template<int N, typename T>
 class vec {
 private:

@@ -127,7 +127,8 @@ public:
   void readData(Bodies &bodies, Bodies &bodies2, Cells &cells) {// Initialize source values
     char fname[256];
 #if 1
-    sprintf(fname,"/work0/t2g-ppc-all/11ITA070/initial%4.4d",nx);
+    sprintf(fname,"initial%4.4d",nx);
+//    sprintf(fname,"/work0/t2g-ppc-all/11ITA070/initial%4.4d",nx);
     std::ifstream fid(fname,std::ios::in|std::ios::binary);
     int byte;
     float dummy[3];
@@ -246,7 +247,8 @@ public:
     unpartition(bodies);
     std::sort(bodies.begin(),bodies.end());
 #if 1
-    sprintf(fname,"/work0/t2g-ppc-all/11ITA070/initial%4.4d",nx);
+    sprintf(fname,"initial%4.4d",nx);
+//    sprintf(fname,"/work0/t2g-ppc-all/11ITA070/initial%4.4d",nx);
     std::ifstream fid(fname,std::ios::in|std::ios::binary);
     for( int rank=0; rank!=MPISIZE; ++rank ) {
       if( rank == MPIRANK ) {

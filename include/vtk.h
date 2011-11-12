@@ -23,6 +23,7 @@
 #include "types.h"
 const int maxGroups = 1000000;
 
+//! Interactive VTK class
 class vtkSliderCallback : public vtkCommand {
 public:
   vtkPoints *points[maxGroups];
@@ -41,6 +42,7 @@ public:
   }
 };
 
+//! Base VTK class
 class vtkPlot {
   int I[maxGroups];
   vtkPoints *points[maxGroups];
