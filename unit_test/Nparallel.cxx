@@ -1,5 +1,4 @@
 #include "parallelfmm.h"
-#include "dataset.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -11,10 +10,7 @@ int main() {
   THETA = 1/sqrtf(3);                                           // Multipole acceptace criteria
   Bodies bodies, jbodies;                                       // Define vector of bodies
   Cells cells;                                                  // Define vector of cells
-  Dataset dataset;                                              // Instanciate Dataset class
-  dataset.kernelName = "Laplace";                               // Set kernel type in dataset
-  ParallelFMM FMM;                                              // Instantiate ParallelFMM class
-  FMM.setKernel(dataset.kernelName);                            // Set kernel type in FMM
+  ParallelFMM<Laplace> FMM;                                     // Instantiate ParallelFMM class
   FMM.initialize();                                             // Initialize FMM
   bool printNow = MPIRANK == 0;                                 // Print only if MPIRANK == 0
 
@@ -22,7 +18,7 @@ int main() {
     numBodies = int(pow(10,(it+32)/8.0));                       //  Exponentially increase N
     if(printNow) std::cout << "N             : " << numBodies << std::endl;// Print N
     bodies.resize(numBodies);                                   //  Resize bodies vector
-    dataset.random(bodies,MPIRANK+1);                           //  Initialize bodies with random coordinates
+    FMM.random(bodies,MPIRANK+1);                               //  Initialize bodies with random coordinates
     FMM.startTimer("FMM          ");                            //  Start timer
     FMM.setGlobDomain(bodies);                                  //  Set global domain size of FMM
     FMM.octsection(bodies);                                     //  Partition domain and redistribute bodies
@@ -44,7 +40,7 @@ int main() {
     FMM.startTimer("Direct sum   ");                            //  Start timer
     Bodies bodies2 = bodies;                                    //  Define new bodies vector for direct sum
 #if 1
-    dataset.initTarget(bodies2);                                //  Reset target values to 0
+    FMM.initTarget(bodies2);                                    //  Reset target values to 0
     if( IMAGES != 0 ) {                                         //  For periodic boundary condition
       jbodies = FMM.periodicBodies(bodies2);                    //   Copy source bodies for all periodic images
     } else {                                                    //  For free field boundary condition
@@ -56,9 +52,9 @@ int main() {
       FMM.evalP2P(bodies2,jbodies);                             //   Direct summation between bodies2 and jbodies
       if(FMM.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;// Print loop counter
     }                                                           //  End loop over all MPI processes
-    dataset.writeTarget(bodies2);                               //  Write direct summation results to file
+    FMM.writeTarget(bodies2);                                   //  Write direct summation results to file
 #else
-    dataset.readTarget(bodies2);                                //  Read direct summation results from file
+    FMM.readTarget(bodies2);                                    //  Read direct summation results from file
 #endif
     FMM.stopTimer("Direct sum   ",printNow);                    //  Stop timer
     FMM.eraseTimer("Direct sum   ");                            //  Erase entry from timer to avoid timer overlap
@@ -67,13 +63,13 @@ int main() {
 
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
     bodies.resize(numTarget);                                   //  Shrink bodies to match bodies2
-    dataset.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);  //  Evaluate error on the reduced set of bodies
+    FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);      //  Evaluate error on the reduced set of bodies
     MPI_Datatype MPI_TYPE = FMM.getType(diff1);                 //  Get MPI datatype
     MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce difference in potential
     MPI_Reduce(&norm1,&norm3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce norm of potential
     MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce difference in force
     MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Recude norm of force
-    if(printNow) dataset.printError(diff3,norm3,diff4,norm4);   //  Print the L2 norm error of potential & force
+    if(printNow) FMM.printError(diff3,norm3,diff4,norm4);       //  Print the L2 norm error of potential & force
   }                                                             // End loop over N
   FMM.finalize();                                               // Finalize FMM
 }

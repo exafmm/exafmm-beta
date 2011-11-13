@@ -1,4 +1,3 @@
-#include "dataset.h"
 #include "serialfmm.h"
 #ifdef VTK
 #include "vtk.h"
@@ -10,15 +9,12 @@ int main() {
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Cells cells;
-  Dataset dataset;
-  dataset.kernelName = "Laplace";
-  SerialFMM FMM;
-  FMM.setKernel(dataset.kernelName);
+  SerialFMM<Laplace> FMM;
   FMM.initialize();
   FMM.printNow = true;
 
   FMM.startTimer("Set bodies   ");
-  dataset.random(bodies);
+  FMM.random(bodies);
   FMM.stopTimer("Set bodies   ",FMM.printNow);
 
   FMM.startTimer("Set domain   ");

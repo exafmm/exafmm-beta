@@ -1,8 +1,11 @@
+#define KERNEL
 #include "kernel.h"
+#undef KERNEL
 #include "coulombvdw.h"
 #include "pregpu.h"
 
-void Kernel::CoulombVdWInit() {
+template<>
+void Kernel<CoulombVdW>::initialize() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(DEVICE);                                        // Set GPU device
@@ -194,7 +197,8 @@ __global__ void CoulombVdWM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   targetGlob[6*itarget+1] = target[1];
 }
 
-void Kernel::CoulombVdWM2M_CPU() {
+template<>
+void Kernel<CoulombVdW>::M2M_CPU() {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -689,14 +693,15 @@ __global__ void CoulombVdWL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   targetGlob[6*itarget+3] = target[3];
 }
 
-void Kernel::CoulombVdWFinal() {}
+template<>
+void Kernel<CoulombVdW>::finalize() {}
 
 #include "gpu.h"
 
-CALL_GPU(CoulombVdWP2M,P2M GPUkernel);
-CALL_GPU(CoulombVdWM2M,M2M GPUkernel);
-CALL_GPU(CoulombVdWM2L,M2L GPUkernel);
-CALL_GPU(CoulombVdWM2P,M2P GPUkernel);
-CALL_GPU(CoulombVdWP2P,P2P GPUkernel);
-CALL_GPU(CoulombVdWL2L,L2L GPUkernel);
-CALL_GPU(CoulombVdWL2P,L2P GPUkernel);
+CALL_GPU(CoulombVdW,P2M,P2M GPUkernel);
+CALL_GPU(CoulombVdW,M2M,M2M GPUkernel);
+CALL_GPU(CoulombVdW,M2L,M2L GPUkernel);
+CALL_GPU(CoulombVdW,M2P,M2P GPUkernel);
+CALL_GPU(CoulombVdW,P2P,P2P GPUkernel);
+CALL_GPU(CoulombVdW,L2L,L2L GPUkernel);
+CALL_GPU(CoulombVdW,L2P,L2P GPUkernel);

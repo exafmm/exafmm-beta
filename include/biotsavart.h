@@ -1,7 +1,8 @@
 #ifndef biotsavart_h
 #define biotsavart_h
 
-void Kernel::BiotSavartP2P_CPU() {                              // Biot-Savart P2P kernel on CPU
+template<>
+void Kernel<BiotSavart>::P2P_CPU() {                            // Biot-Savart P2P kernel on CPU
   for( B_iter BI=BI0; BI!=BIN; ++BI ) {                         // Loop over target bodies
     for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {                       //  Loop over source bodies
       vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target

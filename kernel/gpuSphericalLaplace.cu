@@ -1,9 +1,12 @@
 #include "cuprintf.h"
+#define KERNEL
 #include "kernel.h"
+#undef KERNEL
 #include "laplace.h"
 #include "pregpu.h"
 
-void Kernel::LaplaceInit() {
+template<>
+void Kernel<Laplace>::initialize() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(DEVICE);                                        // Set GPU device
@@ -11,6 +14,49 @@ void Kernel::LaplaceInit() {
   cudaThreadSynchronize();                                      // Sync GPU threads
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
+}
+
+template<>
+void Kernel<Laplace>::M2M_CPU() {
+  const complex I(0.,1.);                                       // Imaginary unit
+  vect dist = CI->X - CJ->X;
+  real rho, alpha, beta;
+  cart2sph(rho,alpha,beta,dist);
+  evalMultipole(rho,alpha,-beta);
+  for( int j=0; j!=P; ++j ) {
+    for( int k=0; k<=j; ++k ) {
+      const int jk = j * j + j + k;
+      const int jks = j * (j + 1) / 2 + k;
+      complex M = 0;
+      for( int n=0; n<=j; ++n ) {
+        for( int m=-n; m<=std::min(k-1,n); ++m ) {
+          if( j-n >= k-m ) {
+            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
+            const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
+            const int nm    = n * n + n + m;
+            M += CJ->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+               * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+          }
+        }
+        for( int m=k; m<=n; ++m ) {
+          if( j-n >= m-k ) {
+            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
+            const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
+            const int nm    = n * n + n + m;
+            M += std::conj(CJ->M[3*jnkms]) * Ynm[nm]
+               * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+          }
+        }
+      }
+      CI->M[3*jks] += M;
+    }
+  }
+}
+
+template<>
+void Kernel<Laplace>::finalize() {
+  if( MPIRANK == 0 ) cudaPrintfDisplay(stdout, true);           // Print cuPrintf buffer to display
+  cudaPrintfEnd();                                              // Finalize cuPrintf
 }
 
 __device__ void LaplaceP2M_core(gpureal *target, gpureal rho, gpureal alpha, gpureal beta, gpureal source) {
@@ -194,42 +240,6 @@ __global__ void LaplaceM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[6*itarget+0] = target[0];
   targetGlob[6*itarget+1] = target[1];
-}
-
-void Kernel::LaplaceM2M_CPU() {
-  const complex I(0.,1.);                                       // Imaginary unit
-  vect dist = CI->X - CJ->X;
-  real rho, alpha, beta;
-  cart2sph(rho,alpha,beta,dist);
-  evalMultipole(rho,alpha,-beta);
-  for( int j=0; j!=P; ++j ) {
-    for( int k=0; k<=j; ++k ) {
-      const int jk = j * j + j + k;
-      const int jks = j * (j + 1) / 2 + k;
-      complex M = 0;
-      for( int n=0; n<=j; ++n ) {
-        for( int m=-n; m<=std::min(k-1,n); ++m ) {
-          if( j-n >= k-m ) {
-            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-            const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
-            const int nm    = n * n + n + m;
-            M += CJ->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
-               * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-          }
-        }
-        for( int m=k; m<=n; ++m ) {
-          if( j-n >= m-k ) {
-            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-            const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-            const int nm    = n * n + n + m;
-            M += std::conj(CJ->M[3*jnkms]) * Ynm[nm]
-               * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-          }
-        }
-      }
-      CI->M[3*jks] += M;
-    }
-  }
 }
 
 __device__ void LaplaceM2L_core(gpureal *target, gpureal  beta, gpureal *factShrd, gpureal *YnmShrd, gpureal *sourceShrd) {
@@ -691,17 +701,12 @@ __global__ void LaplaceL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
   targetGlob[6*itarget+3] = target[3];
 }
 
-void Kernel::LaplaceFinal() {
-  if( MPIRANK == 0 ) cudaPrintfDisplay(stdout, true);           // Print cuPrintf buffer to display
-  cudaPrintfEnd();                                              // Finalize cuPrintf
-}
-
 #include "gpu.h"
 
-CALL_GPU(LaplaceP2M,P2M GPUkernel);
-CALL_GPU(LaplaceM2M,M2M GPUkernel);
-CALL_GPU(LaplaceM2L,M2L GPUkernel);
-CALL_GPU(LaplaceM2P,M2P GPUkernel);
-CALL_GPU(LaplaceP2P,P2P GPUkernel);
-CALL_GPU(LaplaceL2L,L2L GPUkernel);
-CALL_GPU(LaplaceL2P,L2P GPUkernel);
+CALL_GPU(Laplace,P2M,P2M GPUkernel);
+CALL_GPU(Laplace,M2M,M2M GPUkernel);
+CALL_GPU(Laplace,M2L,M2L GPUkernel);
+CALL_GPU(Laplace,M2P,M2P GPUkernel);
+CALL_GPU(Laplace,P2P,P2P GPUkernel);
+CALL_GPU(Laplace,L2L,L2L GPUkernel);
+CALL_GPU(Laplace,L2P,L2P GPUkernel);

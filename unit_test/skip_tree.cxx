@@ -1,5 +1,4 @@
 #include "parallelfmm.h"
-#include "dataset.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -12,15 +11,12 @@ int main() {
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells;
-  Dataset dataset;
-  dataset.kernelName = "Laplace";
-  ParallelFMM FMM;
-  FMM.setKernel(dataset.kernelName);
+  ParallelFMM<Laplace> FMM;
   FMM.initialize();
   if( MPIRANK == 0 ) FMM.printNow = true;
 
   FMM.startTimer("Set bodies   ");
-  dataset.random(bodies,MPIRANK+1);
+  FMM.random(bodies,MPIRANK+1);
   FMM.stopTimer("Set bodies   ",FMM.printNow);
 
   FMM.startTimer("Set domain   ");
@@ -58,7 +54,7 @@ int main() {
   FMM.startTimer("Direct sum   ");
   Bodies bodies2 = bodies;
   bodies2.resize(numTarget);
-  dataset.initTarget(bodies2);
+  FMM.initTarget(bodies2);
   for( int i=0; i!=MPISIZE; ++i ) {
     FMM.shiftBodies(jbodies);
     FMM.evalP2P(bodies2,jbodies);
@@ -68,7 +64,7 @@ int main() {
 #endif
 
   FMM.resetTimer();
-  dataset.initTarget(bodies);
+  FMM.initTarget(bodies);
   FMM.evalP2M(cells);
   FMM.evalM2M(cells);
   FMM.updateBodies();
@@ -82,13 +78,13 @@ int main() {
 #ifndef VTK
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   bodies.resize(numTarget);
-  dataset.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   MPI_Datatype MPI_TYPE = FMM.getType(diff1);
   MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&norm1,&norm3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  if(FMM.printNow) dataset.printError(diff3,norm3,diff4,norm4);
+  if(FMM.printNow) FMM.printError(diff3,norm3,diff4,norm4);
 
 #else
   for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) B->ICELL = 0;

@@ -1,4 +1,6 @@
+#define KERNEL
 #include "kernel.h"
+#undef KERNEL
 #include "biotsavart.h"
 
 void Kernel::BiotSavartInit() {}

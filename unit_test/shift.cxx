@@ -1,5 +1,4 @@
 #include "partition.h"
-#include "dataset.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -9,19 +8,16 @@ int main() {
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
-  Dataset dataset;
-  dataset.kernelName = "Laplace";
-  Partition FMM;
-  FMM.setKernel(dataset.kernelName);
+  Partition<Laplace> FMM;
   FMM.initialize();
   if( MPIRANK == 0 ) FMM.printNow = true;
 
   FMM.startTimer("Set bodies   ");
   if( MPIRANK % 2 == 0 ) {
-    dataset.random(bodies,MPIRANK+1);
+    FMM.random(bodies,MPIRANK+1);
   } else {
     bodies.resize(50000);
-    dataset.sphere(bodies,MPIRANK+1);
+    FMM.sphere(bodies,MPIRANK+1);
   }
   FMM.stopTimer("Set bodies   ",FMM.printNow);
 

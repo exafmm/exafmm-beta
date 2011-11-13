@@ -1,8 +1,6 @@
 #ifndef kernel_h
 #define kernel_h
-#define KERNEL
 #include "sort.h"
-#undef KERNEL
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
 const int  P2 = P * P;                                          //!< P^2
@@ -10,7 +8,7 @@ const int  P4 = P2 * P2;                                        //!< P^4
 const real EPS = 1e-6;                                          //!< Single precision epsilon
 
 //! Unified CPU/GPU kernel class
-class Kernel : public Sort {
+class KernelBase : public Sort {
 protected:
   B_iter      BI0;                                              //!< Target bodies begin iterator
   B_iter      BIN;                                              //!< Target bodies end iterator
@@ -21,7 +19,6 @@ protected:
   vect        X0;                                               //!< Center of root cell
   real        R0;                                               //!< Radius of root cell
   vect        Xperiodic;                                        //!< Coordinate offset of periodic image
-  KernelName  kernelName;                                       //!< Name of kernel
 
   int                  ATOMS;                                   //!< Number of atom types in Van der Waals
   std::vector<real>    RSCALE;                                  //!< Scaling parameter for Van der Waals
@@ -47,107 +44,6 @@ public:
   real NM2P;                                                    //!< Number of M2P kernel call
   real NM2L;                                                    //!< Number of M2L kernel call
 
-private:
-//! Get r,theta,phi from x,y,z
-  void cart2sph(real& r, real& theta, real& phi, vect dist) {
-    r = std::sqrt(norm(dist))+EPS;                              // r = sqrt(x^2 + y^2 + z^2) + eps
-    theta = std::acos(dist[2] / r);                             // theta = acos(z / r)
-    if( std::abs(dist[0]) + std::abs(dist[1]) < EPS ) {         // If |x| < eps & |y| < eps
-      phi = 0;                                                  //  phi can be anything so we set it to 0
-    } else if( std::abs(dist[0]) < EPS ) {                      // If |x| < eps
-      phi = dist[1] / std::abs(dist[1]) * M_PI * 0.5;           //  phi = sign(y) * pi / 2
-    } else if( dist[0] > 0 ) {                                  // If x > 0
-      phi = std::atan(dist[1] / dist[0]);                       //  phi = atan(y / x)
-    } else {                                                    // If x < 0
-      phi = std::atan(dist[1] / dist[0]) + M_PI;                //  phi = atan(y / x) + pi
-    }                                                           // End if for x,y cases
-  }
-
-//! Spherical to cartesian coordinates
-  template<typename T>
-  void sph2cart(real r, real theta, real phi, T spherical, T &cartesian) {
-    cartesian[0] = sin(theta) * cos(phi) * spherical[0]         // x component (not x itself)
-                 + cos(theta) * cos(phi) / r * spherical[1]
-                 - sin(phi) / r / sin(theta) * spherical[2];
-    cartesian[1] = sin(theta) * sin(phi) * spherical[0]         // y component (not y itself)
-                 + cos(theta) * sin(phi) / r * spherical[1]
-                 + cos(phi) / r / sin(theta) * spherical[2];
-    cartesian[2] = cos(theta) * spherical[0]                    // z component (not z itself)
-                 - sin(theta) / r * spherical[1];
-  }
-
-//! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
-  void evalMultipole(real rho, real alpha, real beta) {
-    const complex I(0.,1.);                                     // Imaginary unit
-    double x = std::cos(alpha);                                 // x = cos(alpha)
-    double y = std::sin(alpha);                                 // y = sin(alpha)
-    double fact = 1;                                            // Initialize 2 * m + 1
-    double pn = 1;                                              // Initialize Legendre polynomial Pn
-    double rhom = 1;                                            // Initialize rho^m
-    for( int m=0; m!=P; ++m ) {                                 // Loop over m in Ynm
-      complex eim = std::exp(I * double(m * beta));             //  exp(i * m * beta)
-      double p = pn;                                            //  Associated Legendre polynomial Pnm
-      int npn = m * m + 2 * m;                                  //  Index of Ynm for m > 0
-      int nmn = m * m;                                          //  Index of Ynm for m < 0
-      Ynm[npn] = rhom * p * prefactor[npn] * eim;               //  rho^m * Ynm for m > 0
-      Ynm[nmn] = std::conj(Ynm[npn]);                           //  Use conjugate relation for m < 0
-      double p1 = p;                                            //  Pnm-1
-      p = x * (2 * m + 1) * p1;                                 //  Pnm using recurrence relation
-      YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
-      rhom *= rho;                                              //  rho^m
-      double rhon = rhom;                                       //  rho^n
-      for( int n=m+1; n!=P; ++n ) {                             //  Loop over n in Ynm
-        int npm = n * n + n + m;                                //   Index of Ynm for m > 0
-        int nmm = n * n + n - m;                                //   Index of Ynm for m < 0
-        Ynm[npm] = rhon * p * prefactor[npm] * eim;             //   rho^n * Ynm
-        Ynm[nmm] = std::conj(Ynm[npm]);                         //   Use conjugate relation for m < 0
-        double p2 = p1;                                         //   Pnm-2
-        p1 = p;                                                 //   Pnm-1
-        p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);//   Pnm using recurrence relation
-        YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;// theta derivative
-        rhon *= rho;                                            //   Update rho^n
-      }                                                         //  End loop over n in Ynm
-      pn = -pn * fact * y;                                      //  Pn
-      fact += 2;                                                //  2 * m + 1
-    }                                                           // End loop over m in Ynm
-  }
-
-//! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
-  void evalLocal(real rho, real alpha, real beta) {
-    const complex I(0.,1.);                                     // Imaginary unit
-    double x = std::cos(alpha);                                 // x = cos(alpha)
-    double y = std::sin(alpha);                                 // y = sin(alpha)
-    double fact = 1;                                            // Initialize 2 * m + 1
-    double pn = 1;                                              // Initialize Legendre polynomial Pn
-    double rhom = 1.0 / rho;                                    // Initialize rho^(-m-1)
-    for( int m=0; m!=2*P; ++m ) {                               // Loop over m in Ynm
-      complex eim = std::exp(I * double(m * beta));             //  exp(i * m * beta)
-      double p = pn;                                            //  Associated Legendre polynomial Pnm
-      int npn = m * m + 2 * m;                                  //  Index of Ynm for m > 0
-      int nmn = m * m;                                          //  Index of Ynm for m < 0
-      Ynm[npn] = rhom * p * prefactor[npn] * eim;               //  rho^(-m-1) * Ynm for m > 0
-      Ynm[nmn] = std::conj(Ynm[npn]);                           //  Use conjugate relation for m < 0
-      double p1 = p;                                            //  Pnm-1
-      p = x * (2 * m + 1) * p1;                                 //  Pnm using recurrence relation
-      YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
-      rhom /= rho;                                              //  rho^(-m-1)
-      double rhon = rhom;                                       //  rho^(-n-1)
-      for( int n=m+1; n!=2*P; ++n ) {                           //  Loop over n in Ynm
-        int npm = n * n + n + m;                                //   Index of Ynm for m > 0
-        int nmm = n * n + n - m;                                //   Index of Ynm for m < 0
-        Ynm[npm] = rhon * p * prefactor[npm] * eim;             //   rho^n * Ynm for m > 0
-        Ynm[nmm] = std::conj(Ynm[npm]);                         //   Use conjugate relation for m < 0
-        double p2 = p1;                                         //   Pnm-2
-        p1 = p;                                                 //   Pnm-1
-        p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);//   Pnm using recurrence relation
-        YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;// theta derivative
-        rhon /= rho;                                            //   rho^(-n-1)
-      }                                                         //  End loop over n in Ynm
-      pn = -pn * fact * y;                                      //  Pn
-      fact += 2;                                                //  2 * m + 1
-    }                                                           // End loop over m in Ynm
-  }
-
 protected:
 //! Get level from cell index
   int getLevel(bigint index) {
@@ -161,9 +57,9 @@ protected:
 
 public:
 //! Constructor
-  Kernel() : X0(0), R0(0), NP2P(0), NM2P(0), NM2L(0) {}
+  KernelBase() : X0(0), R0(0), NP2P(0), NM2P(0), NM2L(0) {}
 //! Destructor
-  ~Kernel() {}
+  ~KernelBase() {}
 
 //! Get center of root cell
   vect getX0() {return X0;}
@@ -266,227 +162,121 @@ public:
     delete[] Cnm;                                               // Free M2L translation matrix Cjknm
   }
 
-  void LaplaceInit();                                           //!< Initialize Laplace kernels
-  void LaplaceP2M();                                            //!< Evaluate Laplace P2M kernel
-  void LaplaceM2M();                                            //!< Evaluate Laplace M2M kernel
-  void LaplaceM2M_CPU();                                        //!< Evaluate Laplace M2M kernel on CPU
-  void LaplaceM2L();                                            //!< Evaluate Laplace M2L kernel
-  void LaplaceM2P();                                            //!< Evaluate Laplace M2P kernel
-  void LaplaceP2P();                                            //!< Evaluate Laplace P2P kernel
-  void LaplaceP2P_CPU();                                        //!< Evaluate Laplace P2P kernel on CPU
-  void LaplaceL2L();                                            //!< Evaluate Laplace L2L kernel
-  void LaplaceL2P();                                            //!< Evaluate Laplace L2P kernel
-  void LaplaceFinal();                                          //!< Finalize Lapalce kernels
-
-  void BiotSavartInit();                                        //!< Initialize Biot-Savart kernels
-  void BiotSavartP2M();                                         //!< Evaluate Biot-Savart P2M kernel
-  void BiotSavartM2M();                                         //!< Evalaute Biot-Savart M2M kernel
-  void BiotSavartM2M_CPU();                                     //!< Evaluate Biot-Savart M2M kernel on CPU
-  void BiotSavartM2L();                                         //!< Evaluate Biot-Savart M2L kernel
-  void BiotSavartM2P();                                         //!< Evaluate Biot-Savart M2P kernel
-  void BiotSavartP2P();                                         //!< Evaluate Biot-Savart P2P kernel
-  void BiotSavartP2P_CPU();                                     //!< Evaluate Biot-Savart P2P kernel on CPU
-  void BiotSavartL2L();                                         //!< Evaluate Biot-Savart L2L kernel
-  void BiotSavartL2P();                                         //!< Evaluate Biot-Savart L2P kernel
-  void BiotSavartFinal();                                       //!< Finalize Biot-Savart kernels
-
-  void StretchingInit();                                        //!< Initialize Stretching kernels
-  void StretchingP2M();                                         //!< Evaluate Stretching P2M kernel
-  void StretchingM2M();                                         //!< Evaluate Stretching M2M kernel
-  void StretchingM2M_CPU();                                     //!< Evaluate Stretching M2M kernel on CPU
-  void StretchingM2L();                                         //!< Evaluate Stretching M2L kernel
-  void StretchingM2P();                                         //!< Evaluate Stretching M2P kernel
-  void StretchingP2P();                                         //!< Evaluate Stretching P2P kernel
-  void StretchingP2P_CPU();                                     //!< Evaluate Stretching P2P kernel on CPU
-  void StretchingL2L();                                         //!< Evaluate Stretching L2L kernel
-  void StretchingL2P();                                         //!< Evaluate Stretching L2P kernel
-  void StretchingFinal();                                       //!< Finalize Stretching kernels
-
-  void GaussianInit();                                          //!< Initialize Gaussian kernels
-  void GaussianP2M();                                           //!< Dummy
-  void GaussianM2M();                                           //!< Dummy
-  void GaussianM2M_CPU();                                       //!< Dummy
-  void GaussianM2L();                                           //!< Dummy
-  void GaussianM2P();                                           //!< Dummy
-  void GaussianP2P();                                           //!< Evaluate Gaussian P2P kernel
-  void GaussianP2P_CPU();                                       //!< Evaluate Gaussian P2P kernel on CPU
-  void GaussianL2L();                                           //!< Dummy
-  void GaussianL2P();                                           //!< Dummy
-  void GaussianFinal();                                         //!< Finalize Gaussian kernels
-
-  void CoulombVdWInit();                                        //!< Initialize CoulombVdW kernels
-  void CoulombVdWP2M();                                         //!< Evaluate CoulombVdW P2M kernel
-  void CoulombVdWM2M();                                         //!< Evaluate CoulombVdW M2M kernel
-  void CoulombVdWM2M_CPU();                                     //!< Evaluate CoulombVdW M2M kernel on CPU
-  void CoulombVdWM2L();                                         //!< Evaluate CoulombVdW M2L kernel
-  void CoulombVdWM2P();                                         //!< Evaluate CoulombVdW M2P kernel
-  void CoulombVdWP2P();                                         //!< Evaluate CoulombVdW P2P kernel
-  void CoulombVdWP2P_CPU();                                     //!< Evaluate CoulombVdW P2P kernel on CPU
-  void CoulombVdWL2L();                                         //!< Evaluate CoulombVdW L2L kernel
-  void CoulombVdWL2P();                                         //!< Evaluate CoulombVdW L2P kernel
-  void CoulombVdWFinal();                                       //!< Finalize CoulombVdW kernels
-
-//! Select P2P kernel
-  void selectP2P() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceP2P();                                             //  Evaluate P2P kernel
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartP2P();                                          //  Evaluate P2P kernel
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingP2P();                                          //  Evaluate P2P kernel
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianP2P();                                            //  Evaluate P2P kernel
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWP2P();                                          //  Evaluate P2P kernel
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
+//! Get r,theta,phi from x,y,z
+  void cart2sph(real& r, real& theta, real& phi, vect dist) {
+    r = std::sqrt(norm(dist))+EPS;                              // r = sqrt(x^2 + y^2 + z^2) + eps
+    theta = std::acos(dist[2] / r);                             // theta = acos(z / r)
+    if( std::abs(dist[0]) + std::abs(dist[1]) < EPS ) {         // If |x| < eps & |y| < eps
+      phi = 0;                                                  //  phi can be anything so we set it to 0
+    } else if( std::abs(dist[0]) < EPS ) {                      // If |x| < eps
+      phi = dist[1] / std::abs(dist[1]) * M_PI * 0.5;           //  phi = sign(y) * pi / 2
+    } else if( dist[0] > 0 ) {                                  // If x > 0
+      phi = std::atan(dist[1] / dist[0]);                       //  phi = atan(y / x)
+    } else {                                                    // If x < 0
+      phi = std::atan(dist[1] / dist[0]) + M_PI;                //  phi = atan(y / x) + pi
+    }                                                           // End if for x,y cases
   }
 
-//! Select P2P_CPU kernel
-  void selectP2P_CPU() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceP2P_CPU();                                         //  Evaluate P2P_CPU kernel
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartP2P_CPU();                                      //  Evaluate P2P_CPU kernel
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingP2P_CPU();                                      //  Evaluate P2P_CPU kernel
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianP2P_CPU();                                        //  Evaluate P2P_CPU kernel
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWP2P_CPU();                                      //  Evaluate P2P_CPU kernel
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
+//! Spherical to cartesian coordinates
+  template<typename T>
+  void sph2cart(real r, real theta, real phi, T spherical, T &cartesian) {
+    cartesian[0] = sin(theta) * cos(phi) * spherical[0]         // x component (not x itself)
+                 + cos(theta) * cos(phi) / r * spherical[1]
+                 - sin(phi) / r / sin(theta) * spherical[2];
+    cartesian[1] = sin(theta) * sin(phi) * spherical[0]         // y component (not y itself)
+                 + cos(theta) * sin(phi) / r * spherical[1]
+                 + cos(phi) / r / sin(theta) * spherical[2];
+    cartesian[2] = cos(theta) * spherical[0]                    // z component (not z itself)
+                 - sin(theta) / r * spherical[1];
   }
 
-//! Select P2M kernel
-  void selectP2M() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceP2M();                                             //  Evaluate P2M kernel
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartP2M();                                          //  Evaluate P2M kernel
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingP2M();                                          //  Evaluate P2M kernel
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianP2M();                                            //  Evaluate P2M kernel
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWP2M();                                          //  Evaluate P2M kernel
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
+//! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
+  void evalMultipole(real rho, real alpha, real beta) {
+    const complex I(0.,1.);                                     // Imaginary unit
+    double x = std::cos(alpha);                                 // x = cos(alpha)
+    double y = std::sin(alpha);                                 // y = sin(alpha)
+    double fact = 1;                                            // Initialize 2 * m + 1
+    double pn = 1;                                              // Initialize Legendre polynomial Pn
+    double rhom = 1;                                            // Initialize rho^m
+    for( int m=0; m!=P; ++m ) {                                 // Loop over m in Ynm
+      complex eim = std::exp(I * double(m * beta));             //  exp(i * m * beta)
+      double p = pn;                                            //  Associated Legendre polynomial Pnm
+      int npn = m * m + 2 * m;                                  //  Index of Ynm for m > 0
+      int nmn = m * m;                                          //  Index of Ynm for m < 0
+      Ynm[npn] = rhom * p * prefactor[npn] * eim;               //  rho^m * Ynm for m > 0
+      Ynm[nmn] = std::conj(Ynm[npn]);                           //  Use conjugate relation for m < 0
+      double p1 = p;                                            //  Pnm-1
+      p = x * (2 * m + 1) * p1;                                 //  Pnm using recurrence relation
+      YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
+      rhom *= rho;                                              //  rho^m
+      double rhon = rhom;                                       //  rho^n
+      for( int n=m+1; n!=P; ++n ) {                             //  Loop over n in Ynm
+        int npm = n * n + n + m;                                //   Index of Ynm for m > 0
+        int nmm = n * n + n - m;                                //   Index of Ynm for m < 0
+        Ynm[npm] = rhon * p * prefactor[npm] * eim;             //   rho^n * Ynm
+        Ynm[nmm] = std::conj(Ynm[npm]);                         //   Use conjugate relation for m < 0
+        double p2 = p1;                                         //   Pnm-2
+        p1 = p;                                                 //   Pnm-1
+        p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);//   Pnm using recurrence relation
+        YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;// theta derivative
+        rhon *= rho;                                            //   Update rho^n
+      }                                                         //  End loop over n in Ynm
+      pn = -pn * fact * y;                                      //  Pn
+      fact += 2;                                                //  2 * m + 1
+    }                                                           // End loop over m in Ynm
   }
 
-//! Select M2M kernel
-  void selectM2M() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceM2M();                                             //  Evaluate M2M kernel
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartM2M();                                          //  Evaluate M2M kernel
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingM2M();                                          //  Evaluate M2M kernel
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianM2M();                                            //  Evaluate M2M kernel
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWM2M();                                          //  Evaluate M2M kernel
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
+//! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
+  void evalLocal(real rho, real alpha, real beta) {
+    const complex I(0.,1.);                                     // Imaginary unit
+    double x = std::cos(alpha);                                 // x = cos(alpha)
+    double y = std::sin(alpha);                                 // y = sin(alpha)
+    double fact = 1;                                            // Initialize 2 * m + 1
+    double pn = 1;                                              // Initialize Legendre polynomial Pn
+    double rhom = 1.0 / rho;                                    // Initialize rho^(-m-1)
+    for( int m=0; m!=2*P; ++m ) {                               // Loop over m in Ynm
+      complex eim = std::exp(I * double(m * beta));             //  exp(i * m * beta)
+      double p = pn;                                            //  Associated Legendre polynomial Pnm
+      int npn = m * m + 2 * m;                                  //  Index of Ynm for m > 0
+      int nmn = m * m;                                          //  Index of Ynm for m < 0
+      Ynm[npn] = rhom * p * prefactor[npn] * eim;               //  rho^(-m-1) * Ynm for m > 0
+      Ynm[nmn] = std::conj(Ynm[npn]);                           //  Use conjugate relation for m < 0
+      double p1 = p;                                            //  Pnm-1
+      p = x * (2 * m + 1) * p1;                                 //  Pnm using recurrence relation
+      YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
+      rhom /= rho;                                              //  rho^(-m-1)
+      double rhon = rhom;                                       //  rho^(-n-1)
+      for( int n=m+1; n!=2*P; ++n ) {                           //  Loop over n in Ynm
+        int npm = n * n + n + m;                                //   Index of Ynm for m > 0
+        int nmm = n * n + n - m;                                //   Index of Ynm for m < 0
+        Ynm[npm] = rhon * p * prefactor[npm] * eim;             //   rho^n * Ynm for m > 0
+        Ynm[nmm] = std::conj(Ynm[npm]);                         //   Use conjugate relation for m < 0
+        double p2 = p1;                                         //   Pnm-2
+        p1 = p;                                                 //   Pnm-1
+        p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);//   Pnm using recurrence relation
+        YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;// theta derivative
+        rhon /= rho;                                            //   rho^(-n-1)
+      }                                                         //  End loop over n in Ynm
+      pn = -pn * fact * y;                                      //  Pn
+      fact += 2;                                                //  2 * m + 1
+    }                                                           // End loop over m in Ynm
   }
+};
 
-//! Select M2M_CPU kernel
-  void selectM2M_CPU() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceM2M_CPU();                                         //  Evaluate M2M_CPU kernel
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartM2M_CPU();                                      //  Evaluate M2M_CPU kernel
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingM2M_CPU();                                      //  Evaluate M2M_CPU kernel
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianM2M_CPU();                                        //  Evaluate M2M_CPU kernel
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWM2M_CPU();                                      //  Evaluate M2M_CPU kernel
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
-  }
-
-//! Select M2L kernel
-  void selectM2L() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceM2L();                                             //  Evaluate M2L kernel
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartM2L();                                          //  Evaluate M2L kernel
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingM2L();                                          //  Evaluate M2L kernel
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianM2L();                                            //  Evaluate M2L kernel
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWM2L();                                          //  Evaluate M2L kernel
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
-  }
-
-//! Select M2P kernel
-  void selectM2P() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceM2P();                                             //  Evaluate M2P kernel
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartM2P();                                          //  Evaluate M2P kernel
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingM2P();                                          //  Evaluate M2P kernel
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianM2P();                                            //  Evaluate M2P kernel
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWM2P();                                          //  Evaluate M2P kernel
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
-  }
-
-//! Select L2L kernel
-  void selectL2L() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceL2L();                                             //  Evaluate L2L kernel
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartL2L();                                          //  Evaluate L2L kernel
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingL2L();                                          //  Evaluate L2L kernel
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianL2L();                                            //  Evaluate L2L kernel
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWL2L();                                          //  Evaluate L2L kernel
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
-  }
-
-//! Select L2P kernel
-  void selectL2P() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceL2P();                                             //  Evaluate L2P kernel
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartL2P();                                          //  Evaluate L2P kernel
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingL2P();                                          //  Evaluate L2P kernel
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianL2P();                                            //  Evaluate L2P kernel
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWL2P();                                          //  Evaluate L2P kernel
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
-  }
+template<Equation kernelName>
+class Kernel : public KernelBase {
+public:
+  void initialize();                                            //!< Initialize kernels
+  void P2M();                                                   //!< Evaluate P2M kernel
+  void M2M();                                                   //!< Evaluate M2M kernel
+  void M2M_CPU();                                               //!< Evaluate M2M kernel on CPU
+  void M2L();                                                   //!< Evaluate M2L kernel
+  void M2P();                                                   //!< Evaluate M2P kernel
+  void P2P();                                                   //!< Evaluate P2P kernel
+  void P2P_CPU();                                               //!< Evaluate P2P kernel on CPU
+  void L2L();                                                   //!< Evaluate L2L kernel
+  void L2P();                                                   //!< Evaluate L2P kernel
+  void finalize();                                              //!< Finalize kernels
 };
 
 #endif

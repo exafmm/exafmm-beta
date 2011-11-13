@@ -8,9 +8,8 @@ int main() {
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Dataset dataset;
-  dataset.kernelName = "Laplace";
-  TreeStructure FMM;
-  FMM.setKernel(dataset.kernelName);
+  dataset.equation = Laplace;
+  TreeStructure<dataset.equation> FMM;
   FMM.initialize();
   FMM.printNow = true;
 

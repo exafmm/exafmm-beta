@@ -1,4 +1,3 @@
-#include "dataset.h"
 #include "evaluator.h"
 
 int main() {
@@ -10,10 +9,7 @@ int main() {
   Bodies jbodies(numBodies);
   Cells  icells;
   Cells  jcells;
-  Dataset dataset;
-  dataset.kernelName = "Laplace";
-  Evaluator FMM;
-  FMM.setKernel(dataset.kernelName);
+  Evaluator<Laplace> FMM;
   FMM.initialize();
   FMM.preCalculation();
 
@@ -29,9 +25,9 @@ int main() {
         B->X[d] = rand() / (1. + RAND_MAX);
       }
     }
-    dataset.initSource(jbodies);
+    FMM.initSource(jbodies);
     bool IeqJ = false;
-    dataset.initTarget(ibodies,IeqJ);
+    FMM.initTarget(ibodies,IeqJ);
 
     Cell cell;
     cell.NLEAF    = numBodies;
@@ -70,22 +66,22 @@ int main() {
     FMM.evalL2P(icells);
 
     ibodies2 = ibodies;
-    dataset.initTarget(ibodies2,IeqJ);
+    FMM.initTarget(ibodies2,IeqJ);
     FMM.evalP2P(ibodies2,jbodies);
 
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-    dataset.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
+    FMM.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
     std::cout << "Distance      : " << dist << std::endl;
-    dataset.printError(diff1,norm1,diff2,norm2);
+    FMM.printError(diff1,norm1,diff2,norm2);
 
-    dataset.initTarget(ibodies);
+    FMM.initTarget(ibodies);
     FMM.addM2P(jcells.begin());
     FMM.evalM2P(icells,true);
     icells.clear();
     jcells.clear();
     diff1 = norm1 = diff2 = norm2 = 0;
-    dataset.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
-    dataset.printError(diff1,norm1,diff2,norm2);
+    FMM.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);
+    FMM.printError(diff1,norm1,diff2,norm2);
   }
   FMM.postCalculation();
   FMM.finalize();

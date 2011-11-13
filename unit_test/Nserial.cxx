@@ -1,4 +1,3 @@
-#include "dataset.h"
 #include "serialfmm.h"
 #ifdef VTK
 #include "vtk.h"
@@ -11,17 +10,14 @@ int main() {
   THETA = 1/sqrtf(3);
   Bodies bodies, jbodies;
   Cells cells;
-  Dataset dataset;
-  dataset.kernelName = "Laplace";
-  SerialFMM FMM;
-  FMM.setKernel(dataset.kernelName);
+  SerialFMM<Laplace> FMM;
   FMM.initialize();
 
   for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+32)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
-    dataset.sphere(bodies,1,1);
+    FMM.sphere(bodies,1,1);
     FMM.startTimer("FMM          ");
     FMM.setDomain(bodies);
     cells.clear();
@@ -37,7 +33,7 @@ int main() {
     FMM.startTimer("Direct sum   ");
     FMM.buffer = bodies;
 #if 1
-    dataset.initTarget(FMM.buffer);
+    FMM.initTarget(FMM.buffer);
     if( IMAGES != 0 ) {
       jbodies = FMM.periodicBodies(FMM.buffer);
     } else {
@@ -45,9 +41,9 @@ int main() {
     }
     FMM.buffer.resize(numTarget);
     FMM.evalP2P(FMM.buffer,jbodies);
-    dataset.writeTarget(FMM.buffer);
+    FMM.writeTarget(FMM.buffer);
 #else
-    dataset.readTarget(FMM.buffer);
+    FMM.readTarget(FMM.buffer);
 #endif
     FMM.stopTimer("Direct sum   ",true);
     FMM.eraseTimer("Direct sum   ");
@@ -56,8 +52,8 @@ int main() {
 
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     bodies.resize(numTarget);
-    dataset.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2);
-    dataset.printError(diff1,norm1,diff2,norm2);
+    FMM.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2);
+    FMM.printError(diff1,norm1,diff2,norm2);
   }
   FMM.finalize();
 }

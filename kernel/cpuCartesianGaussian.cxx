@@ -1,4 +1,6 @@
+#define KERNEL
 #include "kernel.h"
+#undef KERNEL
 #include "gaussian.h"
 
 void Kernel::GaussianInit() {}

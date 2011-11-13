@@ -1,4 +1,6 @@
+#define KERNEL
 #include "kernel.h"
+#undef KERNEL
 #include "laplace.h"
 
 void Kernel::LaplaceInit() {}

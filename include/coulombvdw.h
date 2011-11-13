@@ -1,7 +1,8 @@
 #ifndef coulombvdw_h
 #define coulombvdw_h
 
-void Kernel::CoulombVdWP2P_CPU() {                              // Coulomb + Van der Waals P2P kernel on CPU
+template<>
+void Kernel<CoulombVdW>::P2P_CPU() {                            // Coulomb + Van der Waals P2P kernel on CPU
   for( B_iter BI=BI0; BI!=BIN; ++BI ) {                         // Loop over target bodies
     int atypei = BI->SRC[1];                                    //  Atom type of target
     for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {                       //  Loop over source bodies

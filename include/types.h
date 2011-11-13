@@ -61,9 +61,25 @@ typedef std::vector<bigint>                    Bigints;         //!< Vector of b
 typedef std::map<std::string,double>           Event;           //!< Map of event name to logged value
 typedef std::map<std::string,double>::iterator E_iter;          //!< Iterator for event name map
 
-enum KernelName {Laplace,BiotSavart,Stretching,Gaussian,CoulombVdW};//!< Kernel name enumeration
+enum Equation {                                                 //!< Equation type enumeration
+  Laplace,                                                      //!< Laplace potential + force
+  BiotSavart,                                                   //!< Biot-Savart velocity
+  Stretching,                                                   //!< Stretching term of vorticity equation
+  Gaussian,                                                     //!< Gaussian function
+  CoulombVdW                                                    //!< Coulomb + Van der Walls force
+};
 
-//! Structure for source bodies (stuff to send)
+enum Stage {                                                    //!< Stages of FMM
+  P2M,                                                          //!< particle to multipole
+  M2M,                                                          //!< multipole to multipole
+  M2L,                                                          //!< multipole to local
+  L2L,                                                          //!< local to local
+  L2P,                                                          //!< local to particle
+  M2P,                                                          //!< multipole to particle
+  P2P                                                           //!< particle to particle
+};
+
+//! Structure of source bodies (stuff to send)
 struct JBody {
   int         IBODY;                                            //!< Initial body numbering for sorting back
   int         IPROC;                                            //!< Initial process numbering for partitioning back
@@ -71,7 +87,7 @@ struct JBody {
   vect        X;                                                //!< Position
   vec<4,real> SRC;                                              //!< Source values
 };
-//! Structure for bodies
+//! Structure of bodies
 struct Body : JBody {
   vec<4,real> TRG;                                              //!< Target values
   bool operator<(const Body &rhs) const {                       //!< Overload operator for comparing body index
@@ -83,12 +99,12 @@ typedef std::vector<Body>::iterator    B_iter;                  //!< Iterator fo
 typedef std::vector<JBody>             JBodies;                 //!< Vector of source bodies
 typedef std::vector<JBody>::iterator   JB_iter;                 //!< Iterator for source body vector
 
-//! Structure for source cells (stuff to send)
+//! Structure of source cells (stuff to send)
 struct JCell {
   bigint ICELL;                                                 //!< Cell index
   coef   M;                                                     //!< Multipole coefficients
 };
-//! Structure for cells
+//! Structure of cells
 struct Cell : JCell {
   int    NCHILD;                                                //!< Number of child cells
   int    NLEAF;                                                 //!< Number of leafs

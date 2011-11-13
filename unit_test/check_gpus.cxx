@@ -1,5 +1,4 @@
 #include "mympi.h"
-#include "dataset.h"
 #include "evaluator.h"
 
 int main() {
@@ -8,18 +7,15 @@ int main() {
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
-  Dataset dataset;
-  dataset.kernelName = "Laplace";
-  Evaluator FMM;
+  Evaluator<Laplace> FMM;
   MyMPI M;
-  FMM.setKernel(dataset.kernelName);
   FMM.initialize();
   FMM.preCalculation();
   gethostname(hostname,sizeof(hostname));
   if( MPIRANK == 0 ) FMM.printNow = true;
 
   FMM.startTimer("Set bodies   ");
-  dataset.sphere(bodies);
+  FMM.sphere(bodies);
   FMM.stopTimer("Set bodies   ",FMM.printNow);
 
   FMM.startTimer("Set domain   ");
@@ -33,12 +29,12 @@ int main() {
   FMM.startTimer("Direct CPU   ");
   bool onCPU = true;
   Bodies bodies2 = bodies;
-  dataset.initTarget(bodies2);
+  FMM.initTarget(bodies2);
   FMM.evalP2P(bodies2,bodies2,onCPU);
   FMM.stopTimer("Direct CPU   ",FMM.printNow);
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  dataset.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
 
   for( int irank=0; irank!=MPISIZE; ++irank ) {
     MPI_Barrier(MPI_COMM_WORLD);

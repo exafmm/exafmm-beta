@@ -1,8 +1,11 @@
+#define KERNEL
 #include "kernel.h"
+#undef KERNEL
 #include "biotsavart.h"
 #include "pregpu.h"
 
-void Kernel::BiotSavartInit() {
+template<>
+void Kernel<BiotSavart>::initialize() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(DEVICE);                                        // Set GPU device
@@ -231,7 +234,8 @@ __global__ void BiotSavartM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   targetGlob[6*itarget+5] = target[5];
 }
 
-void Kernel::BiotSavartM2M_CPU() {
+template<>
+void Kernel<BiotSavart>::M2M_CPU() {
   const complex I(0.,1.);                                   // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -854,14 +858,15 @@ __global__ void BiotSavartL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   targetGlob[6*itarget+2] = target[2];
 }
 
-void Kernel::BiotSavartFinal() {}
+template<>
+void Kernel<BiotSavart>::finalize() {}
 
 #include "gpu.h"
 
-CALL_GPU(BiotSavartP2M,P2M GPUkernel);
-CALL_GPU(BiotSavartM2M,M2M GPUkernel);
-CALL_GPU(BiotSavartM2L,M2L GPUkernel);
-CALL_GPU(BiotSavartM2P,M2P GPUkernel);
-CALL_GPU(BiotSavartP2P,P2P GPUkernel);
-CALL_GPU(BiotSavartL2L,L2L GPUkernel);
-CALL_GPU(BiotSavartL2P,L2P GPUkernel);
+CALL_GPU(BiotSavart,P2M,P2M GPUkernel);
+CALL_GPU(BiotSavart,M2M,M2M GPUkernel);
+CALL_GPU(BiotSavart,M2L,M2L GPUkernel);
+CALL_GPU(BiotSavart,M2P,M2P GPUkernel);
+CALL_GPU(BiotSavart,P2P,P2P GPUkernel);
+CALL_GPU(BiotSavart,L2L,L2L GPUkernel);
+CALL_GPU(BiotSavart,L2P,L2P GPUkernel);

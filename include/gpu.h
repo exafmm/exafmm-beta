@@ -2,8 +2,9 @@
 #define postgpu_h
 #include <cutil.h>
 
-#define CALL_GPU(KERNEL,EVENT)\
-void Kernel::KERNEL() {\
+#define CALL_GPU(EQUATION,STAGE,EVENT)\
+template<>\
+void Kernel<EQUATION>::STAGE() {\
   cudaThreadSynchronize();\
   startTimer("cudaMalloc   ");\
   if( keysHost.size() > keysDevcSize ) {\
@@ -40,7 +41,7 @@ void Kernel::KERNEL() {\
   startTimer(#EVENT);\
   int numBlocks = keysHost.size();\
   if( numBlocks != 0 ) {\
-    KERNEL##_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+    EQUATION##STAGE##_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
   }\
   CUT_CHECK_ERROR("Kernel execution failed");\
   cudaThreadSynchronize();\

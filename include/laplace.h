@@ -1,7 +1,8 @@
 #ifndef laplace_h
 #define laplace_h
 
-void Kernel::LaplaceP2P_CPU() {                                 // Laplace P2P kernel on CPU
+template<>
+void Kernel<Laplace>::P2P_CPU() {                               // Laplace P2P kernel on CPU
   for( B_iter BI=BI0; BI!=BIN; ++BI ) {                         // Loop over target bodies
     for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {                       //  Loop over source bodies
       vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target

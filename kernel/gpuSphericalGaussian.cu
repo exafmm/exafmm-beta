@@ -1,8 +1,11 @@
+#define KERNEL
 #include "kernel.h"
+#undef KERNEL
 #include "gaussian.h"
 #include "pregpu.h"
 
-void Kernel::GaussianInit() {
+template<>
+void Kernel<Gaussian>::initialize() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(DEVICE);                                        // Set GPU device
@@ -15,7 +18,8 @@ __global__ void GaussianP2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGl
 
 __global__ void GaussianM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {}
 
-void Kernel::GaussianM2M_CPU() {}
+template<>
+void Kernel<Gaussian>::M2M_CPU() {}
 
 __global__ void GaussianM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {}
 
@@ -115,14 +119,15 @@ __global__ void GaussianL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGl
   targetGlob[6*itarget+0] = 0;
 }
 
-void Kernel::GaussianFinal() {}
+template<>
+void Kernel<Gaussian>::finalize() {}
 
 #include "gpu.h"
 
-CALL_GPU(GaussianP2M,P2M GPUkernel);
-CALL_GPU(GaussianM2M,M2M GPUkernel);
-CALL_GPU(GaussianM2L,M2L GPUkernel);
-CALL_GPU(GaussianM2P,M2P GPUkernel);
-CALL_GPU(GaussianP2P,P2P GPUkernel);
-CALL_GPU(GaussianL2L,L2L GPUkernel);
-CALL_GPU(GaussianL2P,L2P GPUkernel);
+CALL_GPU(Gaussian,P2M,P2M GPUkernel);
+CALL_GPU(Gaussian,M2M,M2M GPUkernel);
+CALL_GPU(Gaussian,M2L,M2L GPUkernel);
+CALL_GPU(Gaussian,M2P,M2P GPUkernel);
+CALL_GPU(Gaussian,P2P,P2P GPUkernel);
+CALL_GPU(Gaussian,L2L,L2L GPUkernel);
+CALL_GPU(Gaussian,L2P,L2P GPUkernel);

@@ -3,7 +3,8 @@
 #include "kernel.h"
 
 //! Interface between tree and kernel
-class Evaluator : public Kernel {
+template<Equation kernelName>
+class Evaluator : public Kernel<kernelName> {
 protected:
   C_iter      CI0;                                              //!< icells.begin()
   C_iter      CIB;                                              //!< icells begin per call
@@ -117,21 +118,6 @@ public:
 //! Destructor
   ~Evaluator() {}
 
-//! Set kernel name
-  void setKernel(std::string name) {
-    if( name == "Laplace" ) {                                   //  If Laplace
-      kernelName = Laplace;                                     //   Set kernel name to Laplace
-    } else if( name == "BiotSavart" ) {                         //  If BiotSavart
-      kernelName = BiotSavart;                                  //   Set kernel name to BiotSavart
-    } else if( name == "Stretching" ) {                         //  If Stretching
-      kernelName = Stretching;                                  //   Set kernel name to Stretching
-    } else if( name == "Gaussian" ) {                           //  If Gaussian
-      kernelName = Gaussian;                                    //   Set kernel name to Gaussian
-    } else if( name == "CoulombVdW" ) {                         //  If CoulombVdW
-      kernelName = CoulombVdW;                                  //   Set kernel name to CoulombVdW
-    }
-  }
-
 //! Add single list for kernel unit test
   void addM2L(C_iter Cj) {
     listM2L.resize(1);                                          // Resize vector of M2L interation lists
@@ -166,9 +152,9 @@ public:
         for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
           for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {//    Loop over bodies
             Body body = *B;                                     //     Copy current body
-            body.X[0] += ix * 2 * R0;                           //     Shift x position
-            body.X[1] += iy * 2 * R0;                           //     Shift y position
-            body.X[2] += iz * 2 * R0;                           //     Shift z position
+            body.X[0] += ix * 2 * this->R0;                     //     Shift x position
+            body.X[1] += iy * 2 * this->R0;                     //     Shift y position
+            body.X[2] += iz * 2 * this->R0;                     //     Shift z position
             jbodies.push_back(body);                            //     Push shifted body into jbodies
           }                                                     //    End loop over bodies
         }                                                       //   End loop over z periodic direction
@@ -194,7 +180,7 @@ public:
     flagP2P.resize(cells.size());                               // Resize P2P periodic image flag
     if( IMAGES == 0 ) {                                         // If free boundary condition
       Iperiodic = Icenter;                                      //  Set periodic image flag to center
-      Xperiodic = 0;                                            //  Set periodic coordinate offset
+      this->Xperiodic = 0;                                      //  Set periodic coordinate offset
       Pair pair(root,jroot);                                    //  Form pair of root cells
       pairs.push(pair);                                         //  Push pair to stack
       while( !pairs.empty() ) {                                 //  While interaction stack is not empty
@@ -212,9 +198,9 @@ public:
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz, ++I ) {                  //    Loop over z periodic direction
             Iperiodic = 1 << I;                                 //     Set periodic image flag
-            Xperiodic[0] = ix * 2 * R0;                         //     Coordinate offset for x periodic direction
-            Xperiodic[1] = iy * 2 * R0;                         //     Coordinate offset for y periodic direction
-            Xperiodic[2] = iz * 2 * R0;                         //     Coordinate offset for z periodic direction
+            this->Xperiodic[0] = ix * 2 * this->R0;             //     Coordinate offset for x periodic direction
+            this->Xperiodic[1] = iy * 2 * this->R0;             //     Coordinate offset for y periodic direction
+            this->Xperiodic[2] = iz * 2 * this->R0;             //     Coordinate offset for z periodic direction
             Pair pair(root,jroot);                              //     Form pair of root cells
             pairs.push(pair);                                   //     Push pair to stack
             while( !pairs.empty() ) {                           //     While interaction stack is not empty
@@ -262,20 +248,20 @@ public:
       cell.X = C->X;                                            //  This is the center cell
       cell.R = 3 * C->R;                                        //  The cell size increase three times
       pccells.push_back(cell);                                  //  Push cell into periodic cell vector
-      CI = pccells.end() - 1;                                   //  Set current cell as target for M2M
+      this->CI = pccells.end() - 1;                             //  Set current cell as target for M2M
       while( !pjcells.empty() ) {                               //  While there are periodic jcells remaining
-        CJ = pjcells.end() - 1;                                 //   Set current jcell as source for M2M
-        selectM2M_CPU();                                        //   Select M2M_CPU kernel
+        this->CJ = pjcells.end() - 1;                           //   Set current jcell as source for M2M
+        this->M2M_CPU();                                        //   Perform M2M_CPU kernel
         pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
       }                                                         //  End while for remaining periodic jcells
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
             if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
-              cell.X[0]  = CI->X[0] + ix * 2 * CI->R;           //      Set new x coordinate for periodic image
-              cell.X[1]  = CI->X[1] + iy * 2 * CI->R;           //      Set new y cooridnate for periodic image
-              cell.X[2]  = CI->X[2] + iz * 2 * CI->R;           //      Set new z coordinate for periodic image
-              cell.M     = CI->M;                               //      Copy multipoles to new periodic image
+              cell.X[0]  = this->CI->X[0] + ix * 2 * this->CI->R;//      Set new x coordinate for periodic image
+              cell.X[1]  = this->CI->X[1] + iy * 2 * this->CI->R;//      Set new y cooridnate for periodic image
+              cell.X[2]  = this->CI->X[2] + iz * 2 * this->CI->R;//      Set new z coordinate for periodic image
+              cell.M     = this->CI->M;                         //      Copy multipoles to new periodic image
               cell.NLEAF = cell.NCHILD = 0;                     //      Initialize NLEAF & NCHILD
               jcells.push_back(cell);                           //      Push cell into periodic jcell vector
             }                                                   //     Endif for periodic center cell
@@ -283,42 +269,6 @@ public:
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
     }                                                           // End loop over sublevels of tree
-  }
-
-//! Initialize GPU
-  void initialize() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceInit();                                            //  Initialize GPU
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartInit();                                         //  Initialize GPU
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingInit();                                         //  Initialize GPU
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianInit();                                           //  Initialize GPU
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWInit();                                         //  Initialize GPU
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type in initialize" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
-  }
-
-//! Finalize GPU
-  void finalize() {
-    if( kernelName == Laplace ) {                               // If Laplace kernel
-      LaplaceFinal();                                           //  Finalize GPU
-    } else if ( kernelName == BiotSavart ) {                    // If Biot Savart kernel
-      BiotSavartFinal();                                        //  Finalize GPU
-    } else if ( kernelName == Stretching ) {                    // If Stretching kernel
-      StretchingFinal();                                        //  Finalize GPU
-    } else if ( kernelName == Gaussian ) {                      // If Gaussian kernel
-      GaussianFinal();                                          //  Finalize GPU
-    } else if ( kernelName == CoulombVdW ) {                    // If CoulombVdW kernel
-      CoulombVdWFinal();                                        //  Finalize GPU
-    } else {                                                    // If kernel is none of the above
-      if(MPIRANK == 0) std::cout << "Invalid kernel type in finalize" << std::endl;// Invalid kernel type
-      abort();                                                  //  Abort execution
-    }                                                           // Endif for kernel type
   }
 
   void setSourceBody();                                         //!< Set source buffer for bodies

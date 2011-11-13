@@ -1,4 +1,3 @@
-#include "dataset.h"
 #include "serialfmm.h"
 #ifdef VTK
 #include "vtk.h"
@@ -13,15 +12,12 @@ int main() {
   Bodies bodies2;
   Bodies jbodies;
   Cells cells,jcells;
-  Dataset dataset;
-  dataset.kernelName = "Laplace";
-  SerialFMM FMM;
-  FMM.setKernel(dataset.kernelName);
+  SerialFMM<Laplace> FMM;
   FMM.initialize();
   FMM.printNow = true;
 
   FMM.startTimer("Set bodies   ");
-  dataset.random(bodies,1,1);
+  FMM.random(bodies,1,1);
   bodies2 = bodies;
   FMM.stopTimer("Set bodies   ",FMM.printNow);
 
@@ -40,7 +36,7 @@ int main() {
   FMM.eraseTimer("Direct sum   ");
 
   FMM.startTimer("Set domain   ");
-  dataset.initTarget(bodies);
+  FMM.initTarget(bodies);
   FMM.setDomain(bodies);
   FMM.stopTimer("Set domain   ",FMM.printNow);
 
@@ -63,7 +59,7 @@ int main() {
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   bodies.resize(numTarget);
-  dataset.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-  dataset.printError(diff1,norm1,diff2,norm2);
+  FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  FMM.printError(diff1,norm1,diff2,norm2);
   FMM.finalize();
 }

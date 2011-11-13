@@ -15,7 +15,6 @@ int main() {
   Bodies bodies, bodies2;
   Cells cells;
   Vortex FMM(numGrid1D);
-  FMM.setKernel("Gaussian");
   FMM.initialize();
   bool printNow = (MPIRANK == 0);
 

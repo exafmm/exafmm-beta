@@ -4,7 +4,8 @@
 #include "serialfmm.h"
 
 //! Handles all the partitioning of domains
-class Partition : public MyMPI, public SerialFMM {
+template<Equation kernelName>
+class Partition : public MyMPI, public SerialFMM<kernelName> {
 private:
   int numCells1D;                                               //!< Number of cells in one dimension (leaf level)
 

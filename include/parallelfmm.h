@@ -3,7 +3,8 @@
 #include "partition.h"
 
 //! Handles all the communication of local essential trees
-class ParallelFMM : public Partition {
+template<Equation kernelName>
+class ParallelFMM : public Partition<kernelName> {
 private:
   std::vector<int>    sendBodyCnt;                              //!< Vector of body send counts
   std::vector<int>    sendBodyDsp;                              //!< Vector of body send displacements

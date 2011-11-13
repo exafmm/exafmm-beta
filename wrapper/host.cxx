@@ -57,7 +57,6 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
     B->SRC[0] = qj[i];
   }
 
-  FMM.setKernel("Laplace");
   FMM.initialize();
   FMM.setGlobDomain(bodies,shift,size/2);
   FMM.octsection(bodies);

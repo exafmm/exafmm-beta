@@ -1,7 +1,8 @@
 #ifndef stretching_h
 #define stretching_h
 
-void Kernel::StretchingP2P_CPU() {                              // Stretching P2P kernel on CPU
+template<>
+void Kernel<Stretching>::P2P_CPU() {                            // Stretching P2P kernel on CPU
   for( B_iter BI=BI0; BI!=BIN; ++BI ) {                         // Loop over target bodies
     for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {                       //  Loop over source bodies
       vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target

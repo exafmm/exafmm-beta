@@ -1,8 +1,11 @@
+#define KERNEL
 #include "kernel.h"
+#undef KERNEL
 #include "stretching.h"
 #include "pregpu.h"
 
-void Kernel::StretchingInit() {
+template<>
+void Kernel<Stretching>::initialize() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(DEVICE);                                        // Set GPU device
@@ -254,7 +257,8 @@ __global__ void StretchingM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   targetGlob[6*itarget+5] = target[5];
 }
 
-void Kernel::StretchingM2M_CPU() {
+template<>
+void Kernel<Stretching>::M2M_CPU() {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -900,14 +904,15 @@ __global__ void StretchingL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   targetGlob[6*itarget+2] = target[2];
 }
 
-void Kernel::StretchingFinal() {}
+template<>
+void Kernel<Stretching>::finalize() {}
 
 #include "gpu.h"
 
-CALL_GPU(StretchingP2M,P2M GPUkernel);
-CALL_GPU(StretchingM2M,M2M GPUkernel);
-CALL_GPU(StretchingM2L,M2L GPUkernel);
-CALL_GPU(StretchingM2P,M2P GPUkernel);
-CALL_GPU(StretchingP2P,P2P GPUkernel);
-CALL_GPU(StretchingL2L,L2L GPUkernel);
-CALL_GPU(StretchingL2P,L2P GPUkernel);
+CALL_GPU(Stretching,P2M,P2M GPUkernel);
+CALL_GPU(Stretching,M2M,M2M GPUkernel);
+CALL_GPU(Stretching,M2L,M2L GPUkernel);
+CALL_GPU(Stretching,M2P,M2P GPUkernel);
+CALL_GPU(Stretching,P2P,P2P GPUkernel);
+CALL_GPU(Stretching,L2L,L2L GPUkernel);
+CALL_GPU(Stretching,L2P,L2P GPUkernel);

@@ -1,5 +1,4 @@
 #include "parallelfmm.h"
-#include "dataset.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
@@ -10,15 +9,12 @@ int main() {
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
   Cells cells;
-  Dataset dataset;
-  dataset.kernelName = "Laplace";
-  ParallelFMM FMM;
-  FMM.setKernel(dataset.kernelName);
+  ParallelFMM<Laplace> FMM;
   FMM.initialize();
   if( MPIRANK == 0 ) FMM.printNow = true;
 
   FMM.startTimer("Set bodies   ");
-  dataset.random(bodies,MPIRANK+1);
+  FMM.random(bodies,MPIRANK+1);
   FMM.stopTimer("Set bodies   ",FMM.printNow);
 
   FMM.startTimer("Set domain   ");

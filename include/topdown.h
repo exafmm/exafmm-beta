@@ -3,7 +3,8 @@
 #include "tree.h"
 
 //! Topdown tree constructor class
-class TopDown : virtual public TreeStructure {
+template<Equation kernelName>
+class TopDown : virtual public TreeStructure<kernelName> {
 private:
 //! Nodes are primitive cells
   struct Node {
@@ -69,7 +70,7 @@ private:
   }
 
 //! Traverse tree
-  void traverse(std::vector<Node>::iterator N) {
+  void traverse(typename std::vector<Node>::iterator N) {
     if( N->NLEAF >= NCRIT ) {                                   // If node has children
       for( int i=0; i!=8; ++i ) {                               // Loop over children
         if( N->ICHILD & (1 << i) ) {                            //  If child exists in this octant
@@ -85,18 +86,18 @@ private:
 
 public:
 //! Constructor
-  TopDown() : TreeStructure() {}
+  TopDown() : TreeStructure<kernelName>() {}
 //! Destructor
   ~TopDown() {}
 
 //! Grow tree from root
   void grow(Bodies &bodies) {
-    startTimer("Grow tree    ");                                // Start timer
+    this->startTimer("Grow tree    ");                          // Start timer
     int octant;                                                 // In which octant is the body located?
     Node node;                                                  // Node structure
     node.LEVEL = node.NLEAF = node.ICHILD = node.I = 0;         // Initialize root node counters
-    node.X = X0;                                                // Initialize root node center
-    node.R = R0;                                                // Initialize root node radius
+    node.X = this->X0;                                          // Initialize root node center
+    node.R = this->R0;                                          // Initialize root node radius
     nodes.push_back(node);                                      // Push child node into vector
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       int i = 0;                                                //  Reset node counter
@@ -113,14 +114,14 @@ public:
         splitNode(i);                                           //   Split the node into smaller ones
       }                                                         //  Endif for splitting
     }                                                           // End loop over bodies
-    stopTimer("Grow tree    ",printNow);                        // Stop timer
+    this->stopTimer("Grow tree    ",this->printNow);            // Stop timer
   }
 
 //! Store cell index of all bodies
   void setIndex() {
-    startTimer("Set index    ");                                // Start timer
+    this->startTimer("Set index    ");                          // Start timer
     traverse(nodes.begin());                                    // Traverse tree
-    stopTimer("Set index    ",printNow);                        // Stop timer 
+    this->stopTimer("Set index    ",this->printNow);            // Stop timer 
   }
 };
 
