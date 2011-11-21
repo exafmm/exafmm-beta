@@ -48,11 +48,29 @@ protected:
   Maps        flagP2P;                                          //!< Existance of periodic image for P2P
 
 public:
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::BI0;                                  //!< Target bodies begin iterator
+  using Kernel<equation>::BIN;                                  //!< Target bodies end iterator
+  using Kernel<equation>::BJ0;                                  //!< Source bodies begin iterator
+  using Kernel<equation>::BJN;                                  //!< Source bodies end iterator
   using Kernel<equation>::CI;                                   //!< Target cell iterator
   using Kernel<equation>::CJ;                                   //!< Source cell iterator
   using Kernel<equation>::R0;                                   //!< Radius of root cell
   using Kernel<equation>::Xperiodic;                            //!< Coordinate offset of periodic image
+  using Kernel<equation>::NP2P;                                 //!< Number of P2P kernel calls
+  using Kernel<equation>::NM2L;                                 //!< Number of M2L kernel calls
+  using Kernel<equation>::NM2P;                                 //!< Number of M2P kernel calls
+  using Kernel<equation>::P2P_CPU;                              //!< Evaluate P2P kernel on CPU
   using Kernel<equation>::M2M_CPU;                              //!< Evaluate M2M kernel on CPU
+  using Kernel<equation>::P2M;                                  //!< Evaluate P2M kernel
+  using Kernel<equation>::M2M;                                  //!< Evaluate M2M kernel
+  using Kernel<equation>::M2L;                                  //!< Evaluate M2L kernel
+  using Kernel<equation>::M2P;                                  //!< Evaluate M2P kernel
+  using Kernel<equation>::P2P;                                  //!< Evaluate P2P kernel
+  using Kernel<equation>::L2L;                                  //!< Evaluate L2L kernel
+  using Kernel<equation>::L2P;                                  //!< Evaluate L2P kernel
 
 private:
 //! Tree walk for treecode
