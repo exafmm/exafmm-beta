@@ -26,13 +26,14 @@ THE SOFTWARE.
 //! Topdown tree constructor class
 template<Equation kernelName>
 class TopDown : public TreeStructure<kernelName> {
-private:
+public:
   using Logger::printNow;                                       //!< Switch to print timings
   using Logger::startTimer;                                     //!< Start timer for given event
   using Logger::stopTimer;                                      //!< Stop timer for given event
   using Kernel<kernelName>::X0;                                 //!< Center of root cell
   using Kernel<kernelName>::R0;                                 //!< Radius of root cell
 
+private:
 //! Nodes are primitive cells
   struct Node {
     int LEVEL;                                                  //!< Level of node

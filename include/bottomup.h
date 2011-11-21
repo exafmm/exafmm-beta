@@ -26,7 +26,7 @@ THE SOFTWARE.
 //! Bottomup tree constructor
 template<Equation kernelName>
 class BottomUp : public TopDown<kernelName> {
-private:
+public:
   using Logger::printNow;                                       //!< Switch to print timings
   using Logger::startTimer;                                     //!< Start timer for given event
   using Logger::stopTimer;                                      //!< Stop timer for given event

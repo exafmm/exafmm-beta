@@ -28,16 +28,6 @@ THE SOFTWARE.
 template<Equation kernelName>
 class Partition : public MyMPI, public SerialFMM<kernelName> {
 private:
-  using Logger::printNow;                                       //!< Switch to print timings
-  using Logger::startTimer;                                     //!< Start timer for given event
-  using Logger::stopTimer;                                      //!< Stop timer for given event
-  using Sort::sortBodies;                                       //!< Sort bodies according to cell index
-  using Kernel<kernelName>::X0;                                 //!< Center of root cell
-  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
-  using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting
-  using TreeStructure<kernelName>::getLevel;                    //!< Get level from cell index
-  using BottomUp<kernelName>::getMaxLevel;                      //!< Max level for bottom up tree build
-
   int numCells1D;                                               //!< Number of cells in one dimension (leaf level)
 
 protected:
@@ -49,6 +39,17 @@ protected:
   int  color[64][3];                                            //!< Color of Gather, Scatter, and Alltoall communicators
   int    key[64][3];                                            //!< Key of Gather, Scatter, and Alltoall communicators
   MPI_Comm MPI_COMM[64][3];                                     //!< Communicators for Gather, Scatter, and Alltoall
+
+public:
+  using Logger::printNow;                                       //!< Switch to print timings
+  using Logger::startTimer;                                     //!< Start timer for given event
+  using Logger::stopTimer;                                      //!< Stop timer for given event
+  using Sort::sortBodies;                                       //!< Sort bodies according to cell index
+  using Kernel<kernelName>::X0;                                 //!< Center of root cell
+  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
+  using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting
+  using TreeStructure<kernelName>::getLevel;                    //!< Get level from cell index
+  using BottomUp<kernelName>::getMaxLevel;                      //!< Max level for bottom up tree build
 
 private:
 //! Split domain according to iSplit

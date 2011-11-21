@@ -27,6 +27,26 @@ THE SOFTWARE.
 template<Equation kernelName>
 class ParallelFMM : public Partition<kernelName> {
 private:
+  std::vector<int>    sendBodyCnt;                              //!< Vector of body send counts
+  std::vector<int>    sendBodyDsp;                              //!< Vector of body send displacements
+  std::vector<int>    recvBodyCnt;                              //!< Vector of body recv counts
+  std::vector<int>    recvBodyDsp;                              //!< Vector of body recv displacements
+  std::vector<int>    sendBodyRanks;                            //!< Vector of ranks to send bodies to
+  std::vector<int>    sendBodyCellCnt;                          //!< Vector of send counts for cells of bodies
+  std::vector<C_iter> sendBodyCells;                            //!< Vector of cell iterators for cells of bodies to send
+  std::vector<int>    sendCellCnt;                              //!< Vector of cell send counts
+  std::vector<int>    sendCellDsp;                              //!< Vector of cell send displacements
+  std::vector<int>    recvCellCnt;                              //!< Vector of cell recv counts
+  std::vector<int>    recvCellDsp;                              //!< Vector of cell recv displacements
+  std::vector<vect>   xminAll;                                  //!< Buffer for gathering XMIN
+  std::vector<vect>   xmaxAll;                                  //!< Buffer for gathering XMAX
+
+  JBodies sendBodies;                                           //!< Send buffer for bodies
+  JBodies recvBodies;                                           //!< Recv buffer for bodies
+  JCells  sendCells;                                            //!< Send buffer for cells
+  JCells  recvCells;                                            //!< Recv buffer for cells
+
+public:
   using Logger::printNow;                                       //!< Switch to print timings
   using Logger::startTimer;                                     //!< Start timer for given event
   using Logger::stopTimer;                                      //!< Stop timer for given event
@@ -49,26 +69,6 @@ private:
   using Partition<kernelName>::color;                           //!< Color of Gather, Scatter, and Alltoall communicators
   using Partition<kernelName>::key;                             //!< Key of Gather, Scatter, and Alltoall communicators
   using Partition<kernelName>::MPI_COMM;                        //!< Communicators for Gather, Scatter, and Alltoall
-
-
-  std::vector<int>    sendBodyCnt;                              //!< Vector of body send counts
-  std::vector<int>    sendBodyDsp;                              //!< Vector of body send displacements
-  std::vector<int>    recvBodyCnt;                              //!< Vector of body recv counts
-  std::vector<int>    recvBodyDsp;                              //!< Vector of body recv displacements
-  std::vector<int>    sendBodyRanks;                            //!< Vector of ranks to send bodies to
-  std::vector<int>    sendBodyCellCnt;                          //!< Vector of send counts for cells of bodies
-  std::vector<C_iter> sendBodyCells;                            //!< Vector of cell iterators for cells of bodies to send
-  std::vector<int>    sendCellCnt;                              //!< Vector of cell send counts
-  std::vector<int>    sendCellDsp;                              //!< Vector of cell send displacements
-  std::vector<int>    recvCellCnt;                              //!< Vector of cell recv counts
-  std::vector<int>    recvCellDsp;                              //!< Vector of cell recv displacements
-  std::vector<vect>   xminAll;                                  //!< Buffer for gathering XMIN
-  std::vector<vect>   xmaxAll;                                  //!< Buffer for gathering XMAX
-
-  JBodies sendBodies;                                           //!< Send buffer for bodies
-  JBodies recvBodies;                                           //!< Recv buffer for bodies
-  JCells  sendCells;                                            //!< Send buffer for cells
-  JCells  recvCells;                                            //!< Recv buffer for cells
 
 private:
 //! Gather bounds of other domain

@@ -26,13 +26,6 @@ THE SOFTWARE.
 //! Interface between tree and kernel
 template<Equation kernelName>
 class Evaluator : public Kernel<kernelName> {
-private:
-  using Kernel<kernelName>::CI;                                 //!< Target cell iterator
-  using Kernel<kernelName>::CJ;                                 //!< Source cell iterator
-  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
-  using Kernel<kernelName>::Xperiodic;                          //!< Coordinate offset of periodic image
-  using Kernel<kernelName>::M2M_CPU;                            //!< Evaluate M2M kernel on CPU
-
 protected:
   C_iter      CI0;                                              //!< icells.begin()
   C_iter      CIB;                                              //!< icells begin per call
@@ -53,6 +46,13 @@ protected:
   Maps        flagM2L;                                          //!< Existance of periodic image for M2L
   Maps        flagM2P;                                          //!< Existance of periodic image for M2P
   Maps        flagP2P;                                          //!< Existance of periodic image for P2P
+
+public:
+  using Kernel<kernelName>::CI;                                 //!< Target cell iterator
+  using Kernel<kernelName>::CJ;                                 //!< Source cell iterator
+  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
+  using Kernel<kernelName>::Xperiodic;                          //!< Coordinate offset of periodic image
+  using Kernel<kernelName>::M2M_CPU;                            //!< Evaluate M2M kernel on CPU
 
 private:
 //! Tree walk for treecode

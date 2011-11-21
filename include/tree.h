@@ -26,7 +26,9 @@ THE SOFTWARE.
 //! Base class for tree structure
 template<Equation kernelName>
 class TreeStructure : public Evaluator<kernelName> {
-private:
+public:
+  Bodies buffer;                                                //!< Buffer for MPI communication & sorting
+
   using Logger::printNow;                                       //!< Switch to print timings
   using Logger::startTimer;                                     //!< Start timer for given event
   using Logger::stopTimer;                                      //!< Stop timer for given event
@@ -47,9 +49,6 @@ private:
   using Evaluator<kernelName>::evalP2P;                         //!< Evaluate P2P kernel
   using Evaluator<kernelName>::evalL2L;                         //!< Evaluate L2L kernel
   using Evaluator<kernelName>::evalL2P;                         //!< Evaluate L2P kernel
-
-public:
-  Bodies buffer;                                                //!< Buffer for MPI communication & sorting
 
 private:
 //! Get parent cell index from current cell index

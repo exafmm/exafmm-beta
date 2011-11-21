@@ -27,7 +27,7 @@ THE SOFTWARE.
 //! Serial FMM interface
 template<Equation kernelName>
 class SerialFMM : public BottomUp<kernelName>, public Dataset<kernelName> {
-private:
+public:
   using Sort::sortBodies;                                       //!< Sort bodies according to cell index
   using Kernel<kernelName>::preCalculation;                     //!< Precalculate M2L translation matrix
   using Kernel<kernelName>::postCalculation;                    //!< Free temporary allocations
