@@ -11,10 +11,10 @@ DEVICE  = cpu
 #EXPAND  = Cartesian
 EXPAND  = Spherical
 
-CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O3 -fPIC -fopenmp\
+#CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O3 -fPIC -fopenmp\
 	-ffast-math -funroll-loops -fforce-addr -rdynamic -D_FILE_OFFSET_BITS=64\
 	-I../include -I$(VTK_INCLUDE_PATH)
-#CXX     = mpicxx -O2 -fPIC -openmp -I../include -I$(VTK_INCLUDE_PATH)
+CXX     = mpicxx -O2 -fPIC -openmp -I../include -I$(VTK_INCLUDE_PATH)
 NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_13\
 	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(SDK_INSTALL_PATH)/common/inc
 LFLAGS  = -D$(DEVICE) -D$(EXPAND)

@@ -34,9 +34,10 @@ protected:
 public:
 //! Constructor, initialize WAIT time
   MyMPI() : WAIT(100) {                                         // Constructor, initialize WAIT time
-    int argc(0);                                                // Dummy argument count
+    int argc(0), flag(0);                                       // Dummy argument count
     char **argv;                                                // Dummy argument value
-    MPI_Init(&argc,&argv);                                      // Initialize MPI communicator
+    MPI_Initialized(&flag);                                     // Check if MPI_Init has been called
+    if(!flag) MPI_Init(&argc,&argv);                            // Initialize MPI communicator
     MPI_Comm_size(MPI_COMM_WORLD,&MPISIZE);                     // Get number of MPI processes
     MPI_Comm_rank(MPI_COMM_WORLD,&MPIRANK);                     // Get rank of current MPI process
     DEVICE = MPIRANK % GPUS;                                    // Get GPU device ID from MPI rank
