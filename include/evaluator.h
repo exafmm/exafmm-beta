@@ -24,8 +24,8 @@ THE SOFTWARE.
 #include "kernel.h"
 
 //! Interface between tree and kernel
-template<Equation kernelName>
-class Evaluator : public Kernel<kernelName> {
+template<Equation equation>
+class Evaluator : public Kernel<equation> {
 protected:
   C_iter      CI0;                                              //!< icells.begin()
   C_iter      CIB;                                              //!< icells begin per call
@@ -48,11 +48,11 @@ protected:
   Maps        flagP2P;                                          //!< Existance of periodic image for P2P
 
 public:
-  using Kernel<kernelName>::CI;                                 //!< Target cell iterator
-  using Kernel<kernelName>::CJ;                                 //!< Source cell iterator
-  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
-  using Kernel<kernelName>::Xperiodic;                          //!< Coordinate offset of periodic image
-  using Kernel<kernelName>::M2M_CPU;                            //!< Evaluate M2M kernel on CPU
+  using Kernel<equation>::CI;                                   //!< Target cell iterator
+  using Kernel<equation>::CJ;                                   //!< Source cell iterator
+  using Kernel<equation>::R0;                                   //!< Radius of root cell
+  using Kernel<equation>::Xperiodic;                            //!< Coordinate offset of periodic image
+  using Kernel<equation>::M2M_CPU;                              //!< Evaluate M2M kernel on CPU
 
 private:
 //! Tree walk for treecode

@@ -24,14 +24,14 @@ THE SOFTWARE.
 #include "tree.h"
 
 //! Topdown tree constructor class
-template<Equation kernelName>
-class TopDown : public TreeStructure<kernelName> {
+template<Equation equation>
+class TopDown : public TreeStructure<equation> {
 public:
-  using Kernel<kernelName>::printNow;                           //!< Switch to print timings
-  using Kernel<kernelName>::startTimer;                         //!< Start timer for given event
-  using Kernel<kernelName>::stopTimer;                          //!< Stop timer for given event
-  using Kernel<kernelName>::X0;                                 //!< Center of root cell
-  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::X0;                                   //!< Center of root cell
+  using Kernel<equation>::R0;                                   //!< Radius of root cell
 
 private:
 //! Nodes are primitive cells
@@ -114,7 +114,7 @@ private:
 
 public:
 //! Constructor
-  TopDown() : TreeStructure<kernelName>() {}
+  TopDown() : TreeStructure<equation>() {}
 //! Destructor
   ~TopDown() {}
 

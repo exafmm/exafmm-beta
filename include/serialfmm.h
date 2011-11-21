@@ -25,21 +25,21 @@ THE SOFTWARE.
 #include "dataset.h"
 
 //! Serial FMM interface
-template<Equation kernelName>
-class SerialFMM : public BottomUp<kernelName>, public Dataset<kernelName> {
+template<Equation equation>
+class SerialFMM : public BottomUp<equation>, public Dataset<equation> {
 public:
-  using Kernel<kernelName>::sortBodies;                         //!< Sort bodies according to cell index
-  using Kernel<kernelName>::preCalculation;                     //!< Precalculate M2L translation matrix
-  using Kernel<kernelName>::postCalculation;                    //!< Free temporary allocations
-  using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting
-  using TreeStructure<kernelName>::bodies2twigs;                //!< Group bodies into twig cells
-  using TreeStructure<kernelName>::twigs2cells;                 //!< Link twigs bottomup to create all cells in tree
-  using Dataset<kernelName>::initSource;                        //!< Initialize source values
-  using Dataset<kernelName>::initTarget;                        //!< Initialize target values
+  using Kernel<equation>::sortBodies;                           //!< Sort bodies according to cell index
+  using Kernel<equation>::preCalculation;                       //!< Precalculate M2L translation matrix
+  using Kernel<equation>::postCalculation;                      //!< Free temporary allocations
+  using TreeStructure<equation>::buffer;                        //!< Buffer for MPI communication & sorting
+  using TreeStructure<equation>::bodies2twigs;                  //!< Group bodies into twig cells
+  using TreeStructure<equation>::twigs2cells;                   //!< Link twigs bottomup to create all cells in tree
+  using Dataset<equation>::initSource;                          //!< Initialize source values
+  using Dataset<equation>::initTarget;                          //!< Initialize target values
 
 public:
 //! Constructor
-  SerialFMM() : BottomUp<kernelName>(), Dataset<kernelName>() {
+  SerialFMM() : BottomUp<equation>(), Dataset<equation>() {
     preCalculation();
   }
 //! Destructor
@@ -106,9 +106,9 @@ public:
 
 //! Topdown tree constructor interface. Input: bodies, Output: cells
   void topdown(Bodies &bodies, Cells &cells) {
-    TopDown<kernelName>::grow(bodies);                          // Grow tree structure topdown
+    TopDown<equation>::grow(bodies);                            // Grow tree structure topdown
 
-    TopDown<kernelName>::setIndex();                            // Set index of cells
+    TopDown<equation>::setIndex();                              // Set index of cells
 
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
@@ -122,7 +122,7 @@ public:
 
 //! Bottomup tree constructor interface. Input: bodies, Output: cells
   void bottomup(Bodies &bodies, Cells &cells) {
-    BottomUp<kernelName>::setIndex(bodies);                     // Set index of cells
+    BottomUp<equation>::setIndex(bodies);                       // Set index of cells
 
     buffer.resize(bodies.size());                               // Resize sort buffer
     sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
@@ -130,7 +130,7 @@ public:
 /*
     prune(bodies);                                              // Prune tree structure bottomup
 
-    BottomUp<kernelName>::grow(bodies);                         // Grow tree structure at bottom if necessary
+    BottomUp<equation>::grow(bodies);                           // Grow tree structure at bottom if necessary
 
     sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
 */

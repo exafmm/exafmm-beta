@@ -24,8 +24,8 @@ THE SOFTWARE.
 #include "partition.h"
 
 //! Handles all the communication of local essential trees
-template<Equation kernelName>
-class ParallelFMM : public Partition<kernelName> {
+template<Equation equation>
+class ParallelFMM : public Partition<equation> {
 private:
   std::vector<int>    sendBodyCnt;                              //!< Vector of body send counts
   std::vector<int>    sendBodyDsp;                              //!< Vector of body send displacements
@@ -47,28 +47,28 @@ private:
   JCells  recvCells;                                            //!< Recv buffer for cells
 
 public:
-  using Kernel<kernelName>::printNow;                           //!< Switch to print timings
-  using Kernel<kernelName>::startTimer;                         //!< Start timer for given event
-  using Kernel<kernelName>::stopTimer;                          //!< Stop timer for given event
-  using Kernel<kernelName>::sortBodies;                         //!< Sort bodies according to cell index
-  using Kernel<kernelName>::sortCells;                          //!< Sort cells according to cell index
-  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
-  using Kernel<kernelName>::Xperiodic;                          //!< Coordinate offset of periodic image
-  using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting
-  using TreeStructure<kernelName>::getLevel;                    //!< Get level from cell index
-  using TreeStructure<kernelName>::getCenter;                   //!< Get cell center and radius from cell index
-  using TreeStructure<kernelName>::bodies2twigs;                //!< Group bodies into twig cells
-  using TreeStructure<kernelName>::twigs2cells;                 //!< Link twigs bottomup to create all cells in tree
-  using Partition<kernelName>::isPowerOfTwo;                    //!< If n is power of two return true
-  using Partition<kernelName>::splitRange;                      //!< Split range and return partial range
-  using Partition<kernelName>::print;                           //!< Print in MPI
-  using Partition<kernelName>::LEVEL;                           //!< Level of the MPI process binary tree
-  using Partition<kernelName>::XMIN;                            //!< Minimum position vector of bodies
-  using Partition<kernelName>::XMAX;                            //!< Maximum position vector of bodies
-  using Partition<kernelName>::nprocs;                          //!< Number of processes in the two split groups
-  using Partition<kernelName>::color;                           //!< Color of Gather, Scatter, and Alltoall communicators
-  using Partition<kernelName>::key;                             //!< Key of Gather, Scatter, and Alltoall communicators
-  using Partition<kernelName>::MPI_COMM;                        //!< Communicators for Gather, Scatter, and Alltoall
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::sortBodies;                           //!< Sort bodies according to cell index
+  using Kernel<equation>::sortCells;                            //!< Sort cells according to cell index
+  using Kernel<equation>::R0;                                   //!< Radius of root cell
+  using Kernel<equation>::Xperiodic;                            //!< Coordinate offset of periodic image
+  using TreeStructure<equation>::buffer;                        //!< Buffer for MPI communication & sorting
+  using TreeStructure<equation>::getLevel;                      //!< Get level from cell index
+  using TreeStructure<equation>::getCenter;                     //!< Get cell center and radius from cell index
+  using TreeStructure<equation>::bodies2twigs;                  //!< Group bodies into twig cells
+  using TreeStructure<equation>::twigs2cells;                   //!< Link twigs bottomup to create all cells in tree
+  using Partition<equation>::isPowerOfTwo;                      //!< If n is power of two return true
+  using Partition<equation>::splitRange;                        //!< Split range and return partial range
+  using Partition<equation>::print;                             //!< Print in MPI
+  using Partition<equation>::LEVEL;                             //!< Level of the MPI process binary tree
+  using Partition<equation>::XMIN;                              //!< Minimum position vector of bodies
+  using Partition<equation>::XMAX;                              //!< Maximum position vector of bodies
+  using Partition<equation>::nprocs;                            //!< Number of processes in the two split groups
+  using Partition<equation>::color;                             //!< Color of Gather, Scatter, and Alltoall communicators
+  using Partition<equation>::key;                               //!< Key of Gather, Scatter, and Alltoall communicators
+  using Partition<equation>::MPI_COMM;                          //!< Communicators for Gather, Scatter, and Alltoall
 
 private:
 //! Gather bounds of other domain
@@ -485,7 +485,7 @@ private:
     stopTimer("Reindex      ",printNow);                        // Stop timer 
 //    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
 //    BottomUp::grow(bodies);                                     // Grow tree structure
-    sortBodies(bodies,buffer,false);                              // Sort bodies in descending order
+    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
     startTimer("Reindex      ");                                // Start timer
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over cells
@@ -558,7 +558,7 @@ private:
 
 public:
 //! Constructor
-  ParallelFMM() : Partition<kernelName>() {}
+  ParallelFMM() : Partition<equation>() {}
 //! Destructor
   ~ParallelFMM() {}
 

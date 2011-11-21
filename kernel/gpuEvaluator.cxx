@@ -147,7 +147,7 @@ void Evaluator<Laplace>::getTargetBody(Lists &lists) {          // Get body valu
       BI0 = CI->LEAF;                                           //   Set target bodies begin iterator
       BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
       int begin = targetBegin[CI];                              //   Offset of target leafs
-//      if( kernelName == Gaussian ) {                            //   If Gaussian kernel
+//      if( equation == Gaussian ) {                              //   If Gaussian kernel
 //        for( B_iter B=BI0; B!=BIN; ++B ) {                      //    Loop over target bodies
 //          B->TRG[0] += targetHost[6*(begin+B-BI0)+0];           //     Copy 1st target value from GPU buffer
 //        }                                                       //    End loop over target bodies
@@ -315,7 +315,7 @@ void Evaluator<Laplace>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {
           targetHost.push_back(0);                              //    Pad 3rd target value to GPU buffer
         }                                                       //   End loop over elements to pad
         P2P();                                                  //   Perform P2P kernel
-//        if( kernelName == Gaussian ) {                          //   If Gaussian kernel
+//        if( equation == Gaussian ) {                            //   If Gaussian kernel
 //          for( B_iter B=BI0; B!=BIN; ++B ) {                    //    Loop over target bodies
 //            B->TRG[0] += targetHost[6*(B-BI0)+0];               //     Copy 1st target value from GPU buffer
 //          }                                                     //    End loop over target bodies

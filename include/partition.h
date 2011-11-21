@@ -25,8 +25,8 @@ THE SOFTWARE.
 #include "serialfmm.h"
 
 //! Handles all the partitioning of domains
-template<Equation kernelName>
-class Partition : public MyMPI, public SerialFMM<kernelName> {
+template<Equation equation>
+class Partition : public MyMPI, public SerialFMM<equation> {
 private:
   int numCells1D;                                               //!< Number of cells in one dimension (leaf level)
 
@@ -41,15 +41,15 @@ protected:
   MPI_Comm MPI_COMM[64][3];                                     //!< Communicators for Gather, Scatter, and Alltoall
 
 public:
-  using Kernel<kernelName>::printNow;                           //!< Switch to print timings
-  using Kernel<kernelName>::startTimer;                         //!< Start timer for given event
-  using Kernel<kernelName>::stopTimer;                          //!< Stop timer for given event
-  using Kernel<kernelName>::sortBodies;                         //!< Sort bodies according to cell index
-  using Kernel<kernelName>::X0;                                 //!< Center of root cell
-  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
-  using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting
-  using TreeStructure<kernelName>::getLevel;                    //!< Get level from cell index
-  using BottomUp<kernelName>::getMaxLevel;                      //!< Max level for bottom up tree build
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::sortBodies;                           //!< Sort bodies according to cell index
+  using Kernel<equation>::X0;                                   //!< Center of root cell
+  using Kernel<equation>::R0;                                   //!< Radius of root cell
+  using TreeStructure<equation>::buffer;                        //!< Buffer for MPI communication & sorting
+  using TreeStructure<equation>::getLevel;                      //!< Get level from cell index
+  using BottomUp<equation>::getMaxLevel;                        //!< Max level for bottom up tree build
 
 private:
 //! Split domain according to iSplit
@@ -248,7 +248,7 @@ protected:
 
 public:
 //! Constructor
-  Partition() : SerialFMM<kernelName>() {
+  Partition() : SerialFMM<equation>() {
     LEVEL = int(log(MPISIZE) / M_LN2 - 1e-5) + 1;               // Level of the process binary tree
     if(MPISIZE == 1) LEVEL = 0;                                 // Level is 0 for a serial execution
     XMIN.resize(LEVEL+1);                                       // Minimum position vector at each level
@@ -463,7 +463,7 @@ public:
     int byte = sizeof(bodies[0]);                               // Byte size of body structure
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
     if( MPISIZE == 1 ) level = 0;                               // For serial execution local root cell is root cell
-    BottomUp<kernelName>::setIndex(bodies,level);               // Set index of bodies for that level
+    BottomUp<equation>::setIndex(bodies,level);                 // Set index of bodies for that level
     buffer.resize(bodies.size());                               // Resize sort buffer
     stopTimer("Partition    ");                                 // Stop timer 
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order

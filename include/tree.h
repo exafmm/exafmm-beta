@@ -24,31 +24,31 @@ THE SOFTWARE.
 #include "evaluator.h"
 
 //! Base class for tree structure
-template<Equation kernelName>
-class TreeStructure : public Evaluator<kernelName> {
+template<Equation equation>
+class TreeStructure : public Evaluator<equation> {
 public:
   Bodies buffer;                                                //!< Buffer for MPI communication & sorting
 
-  using Kernel<kernelName>::printNow;                           //!< Switch to print timings
-  using Kernel<kernelName>::startTimer;                         //!< Start timer for given event
-  using Kernel<kernelName>::stopTimer;                          //!< Stop timer for given event
-  using Kernel<kernelName>::sortCells;                          //!< Sort cells according to cell index
-  using Kernel<kernelName>::X0;                                 //!< Center of root cell
-  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
-  using Kernel<kernelName>::NP2P;                               //!< Number of P2P kernel calls
-  using Kernel<kernelName>::NM2P;                               //!< Number of M2P kernel calls
-  using Kernel<kernelName>::NM2L;                               //!< Number of M2L kernel calls
-  using Evaluator<kernelName>::timeKernels;                     //!< Time all kernels for auto-tuning
-  using Evaluator<kernelName>::upwardPeriodic;                  //!< Upward phase for periodic cells
-  using Evaluator<kernelName>::traverse;                        //!< Traverse tree to get interaction list
-  using Evaluator<kernelName>::traversePeriodic;                //!< Traverse tree for periodic images
-  using Evaluator<kernelName>::evalP2M;                         //!< Evaluate P2M kernel
-  using Evaluator<kernelName>::evalM2M;                         //!< Evaluate M2M kernel
-  using Evaluator<kernelName>::evalM2L;                         //!< Evaluate M2L kernel
-  using Evaluator<kernelName>::evalM2P;                         //!< Evaluate M2P kernel
-  using Evaluator<kernelName>::evalP2P;                         //!< Evaluate P2P kernel
-  using Evaluator<kernelName>::evalL2L;                         //!< Evaluate L2L kernel
-  using Evaluator<kernelName>::evalL2P;                         //!< Evaluate L2P kernel
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::sortCells;                            //!< Sort cells according to cell index
+  using Kernel<equation>::X0;                                   //!< Center of root cell
+  using Kernel<equation>::R0;                                   //!< Radius of root cell
+  using Kernel<equation>::NP2P;                                 //!< Number of P2P kernel calls
+  using Kernel<equation>::NM2P;                                 //!< Number of M2P kernel calls
+  using Kernel<equation>::NM2L;                                 //!< Number of M2L kernel calls
+  using Evaluator<equation>::timeKernels;                       //!< Time all kernels for auto-tuning
+  using Evaluator<equation>::upwardPeriodic;                    //!< Upward phase for periodic cells
+  using Evaluator<equation>::traverse;                          //!< Traverse tree to get interaction list
+  using Evaluator<equation>::traversePeriodic;                  //!< Traverse tree for periodic images
+  using Evaluator<equation>::evalP2M;                           //!< Evaluate P2M kernel
+  using Evaluator<equation>::evalM2M;                           //!< Evaluate M2M kernel
+  using Evaluator<equation>::evalM2L;                           //!< Evaluate M2L kernel
+  using Evaluator<equation>::evalM2P;                           //!< Evaluate M2P kernel
+  using Evaluator<equation>::evalP2P;                           //!< Evaluate P2P kernel
+  using Evaluator<equation>::evalL2L;                           //!< Evaluate L2L kernel
+  using Evaluator<equation>::evalL2P;                           //!< Evaluate L2P kernel
 
 private:
 //! Get parent cell index from current cell index

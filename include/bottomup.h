@@ -24,17 +24,17 @@ THE SOFTWARE.
 #include "topdown.h"
 
 //! Bottomup tree constructor
-template<Equation kernelName>
-class BottomUp : public TopDown<kernelName> {
+template<Equation equation>
+class BottomUp : public TopDown<equation> {
 public:
-  using Kernel<kernelName>::printNow;                           //!< Switch to print timings
-  using Kernel<kernelName>::startTimer;                         //!< Start timer for given event
-  using Kernel<kernelName>::stopTimer;                          //!< Stop timer for given event
-  using Kernel<kernelName>::sortBodies;                         //!< Sort bodies according to cell index
-  using Kernel<kernelName>::X0;                                 //!< Center of root cell
-  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
-  using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting
-  using TreeStructure<kernelName>::getLevel;                    //!< Get level from cell index
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::sortBodies;                           //!< Sort bodies according to cell index
+  using Kernel<equation>::X0;                                   //!< Center of root cell
+  using Kernel<equation>::R0;                                   //!< Radius of root cell
+  using TreeStructure<equation>::buffer;                        //!< Buffer for MPI communication & sorting
+  using TreeStructure<equation>::getLevel;                      //!< Get level from cell index
 
 protected:
 //! Max level for bottom up tree build
@@ -53,7 +53,7 @@ protected:
 
 public:
 //! Constructor
-  BottomUp() : TopDown<kernelName>() {}
+  BottomUp() : TopDown<equation>() {}
 //! Destructor
   ~BottomUp() {}
 

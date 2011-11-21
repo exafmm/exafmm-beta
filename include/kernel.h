@@ -273,7 +273,7 @@ public:
   }
 };
 
-template<Equation kernelName>
+template<Equation equation>
 class Kernel : public KernelBase {
 public:
   void initialize();                                            //!< Initialize kernels
