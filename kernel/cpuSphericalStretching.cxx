@@ -24,9 +24,11 @@ THE SOFTWARE.
 #undef KERNEL
 #include "stretching.h"
 
-void Kernel::StretchingInit() {}
+template<>
+void Kernel<Stretching>::initialize() {}
 
-void Kernel::StretchingP2M() {
+template<>
+void Kernel<Stretching>::P2M() {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
@@ -51,7 +53,8 @@ void Kernel::StretchingP2M() {
   }
 }
 
-void Kernel::StretchingM2M_CPU() {
+template<>
+void Kernel<Stretching>::M2M_CPU() {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -93,7 +96,8 @@ void Kernel::StretchingM2M_CPU() {
   }
 }
 
-void Kernel::StretchingM2L() {
+template<>
+void Kernel<Stretching>::M2L() {
   vect dist = CI->X - CJ->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -130,7 +134,8 @@ void Kernel::StretchingM2L() {
   }
 }
 
-void Kernel::StretchingM2P() {
+template<>
+void Kernel<Stretching>::M2P() {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
@@ -165,7 +170,8 @@ void Kernel::StretchingM2P() {
   }
 }
 
-void Kernel::StretchingL2L() {
+template<>
+void Kernel<Stretching>::L2L() {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -205,7 +211,8 @@ void Kernel::StretchingL2L() {
   }
 }
 
-void Kernel::StretchingL2P() {
+template<>
+void Kernel<Stretching>::L2P() {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
@@ -240,4 +247,5 @@ void Kernel::StretchingL2P() {
   }
 }
 
-void Kernel::StretchingFinal() {}
+template<>
+void Kernel<Stretching>::finalize() {}

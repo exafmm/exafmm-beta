@@ -24,18 +24,26 @@ THE SOFTWARE.
 #undef KERNEL
 #include "gaussian.h"
 
-void Kernel::GaussianInit() {}
+template<>
+void Kernel<Gaussian>::initialize() {}
 
-void Kernel::GaussianP2M() {}
+template<>
+void Kernel<Gaussian>::P2M() {}
 
-void Kernel::GaussianM2M_CPU() {}
+template<>
+void Kernel<Gaussian>::M2M_CPU() {}
 
-void Kernel::GaussianM2L() {}
+template<>
+void Kernel<Gaussian>::M2L() {}
 
-void Kernel::GaussianM2P() {}
+template<>
+void Kernel<Gaussian>::M2P() {}
 
-void Kernel::GaussianL2L() {}
+template<>
+void Kernel<Gaussian>::L2L() {}
 
-void Kernel::GaussianL2P() {}
+template<>
+void Kernel<Gaussian>::L2P() {}
 
-void Kernel::GaussianFinal() {}
+template<>
+void Kernel<Gaussian>::finalize() {}

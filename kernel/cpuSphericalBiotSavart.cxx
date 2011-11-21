@@ -24,9 +24,11 @@ THE SOFTWARE.
 #undef KERNEL
 #include "biotsavart.h"
 
-void Kernel::BiotSavartInit() {}
+template<>
+void Kernel<BiotSavart>::initialize() {}
 
-void Kernel::BiotSavartP2M() {
+template<>
+void Kernel<BiotSavart>::P2M() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
     real rho, alpha, beta;
@@ -44,7 +46,8 @@ void Kernel::BiotSavartP2M() {
   }
 }
 
-void Kernel::BiotSavartM2M_CPU() {
+template<>
+void Kernel<BiotSavart>::M2M_CPU() {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -86,7 +89,8 @@ void Kernel::BiotSavartM2M_CPU() {
   }
 }
 
-void Kernel::BiotSavartM2L() {
+template<>
+void Kernel<BiotSavart>::M2L() {
   vect dist = CI->X - CJ->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -123,7 +127,8 @@ void Kernel::BiotSavartM2L() {
   }
 }
 
-void Kernel::BiotSavartM2P() {
+template<>
+void Kernel<BiotSavart>::M2P() {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
@@ -158,7 +163,8 @@ void Kernel::BiotSavartM2P() {
   }
 }
 
-void Kernel::BiotSavartL2L() {
+template<>
+void Kernel<BiotSavart>::L2L() {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -198,7 +204,8 @@ void Kernel::BiotSavartL2L() {
   }
 }
 
-void Kernel::BiotSavartL2P() {
+template<>
+void Kernel<BiotSavart>::L2P() {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
@@ -233,4 +240,5 @@ void Kernel::BiotSavartL2P() {
   }
 }
 
-void Kernel::BiotSavartFinal() {}
+template<>
+void Kernel<BiotSavart>::finalize() {}
