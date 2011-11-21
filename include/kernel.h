@@ -61,20 +61,9 @@ protected:
   complex *YnmTheta;                                            //!< \f$ \theta \f$ derivative of \f$ r^n Y_n^m \f$
   complex *Cnm;                                                 //!< M2L translation matrix \f$ C_{jn}^{km} \f$
 public:
-  real NP2P;                                                    //!< Number of P2P kernel call
-  real NM2P;                                                    //!< Number of M2P kernel call
-  real NM2L;                                                    //!< Number of M2L kernel call
-
-protected:
-//! Get level from cell index
-  int getLevel(bigint index) {
-    int level = -1;                                             // Initialize level counter
-    while( index >= 0 ) {                                       // While cell index is non-negative
-      level++;                                                  //  Increment level
-      index -= 1 << 3*level;                                    //  Subtract number of cells in that level
-    }                                                           // End while loop for cell index
-    return level;                                               // Return the level
-  }
+  real NP2P;                                                    //!< Number of P2P kernel calls
+  real NM2P;                                                    //!< Number of M2P kernel calls
+  real NM2L;                                                    //!< Number of M2L kernel calls
 
 public:
 //! Constructor

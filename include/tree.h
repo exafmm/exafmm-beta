@@ -26,6 +26,28 @@ THE SOFTWARE.
 //! Base class for tree structure
 template<Equation kernelName>
 class TreeStructure : public Evaluator<kernelName> {
+private:
+  using Logger::printNow;                                       //!< Switch to print timings
+  using Logger::startTimer;                                     //!< Start timer for given event
+  using Logger::stopTimer;                                      //!< Stop timer for given event
+  using Sort::sortCells;                                        //!< Sort cells according to cell index
+  using Kernel<kernelName>::X0;                                 //!< Center of root cell
+  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
+  using Kernel<kernelName>::NP2P;                               //!< Number of P2P kernel calls
+  using Kernel<kernelName>::NM2P;                               //!< Number of M2P kernel calls
+  using Kernel<kernelName>::NM2L;                               //!< Number of M2L kernel calls
+  using Evaluator<kernelName>::timeKernels;                     //!< Time all kernels for auto-tuning
+  using Evaluator<kernelName>::upwardPeriodic;                  //!< Upward phase for periodic cells
+  using Evaluator<kernelName>::traverse;                        //!< Traverse tree to get interaction list
+  using Evaluator<kernelName>::traversePeriodic;                //!< Traverse tree for periodic images
+  using Evaluator<kernelName>::evalP2M;                         //!< Evaluate P2M kernel
+  using Evaluator<kernelName>::evalM2M;                         //!< Evaluate M2M kernel
+  using Evaluator<kernelName>::evalM2L;                         //!< Evaluate M2L kernel
+  using Evaluator<kernelName>::evalM2P;                         //!< Evaluate M2P kernel
+  using Evaluator<kernelName>::evalP2P;                         //!< Evaluate P2P kernel
+  using Evaluator<kernelName>::evalL2L;                         //!< Evaluate L2L kernel
+  using Evaluator<kernelName>::evalL2P;                         //!< Evaluate L2P kernel
+
 public:
   Bodies buffer;                                                //!< Buffer for MPI communication & sorting
 
@@ -115,7 +137,7 @@ protected:
   void getCenter(Cell &cell) {
     int level = getLevel(cell.ICELL);                           // Get level from cell index
     bigint index = cell.ICELL - ((1 << 3*level) - 1) / 7;       // Subtract cell index offset of current level
-    cell.R = this->R0 / (1 << level);                           // Cell radius
+    cell.R = R0 / (1 << level);                                 // Cell radius
     int d = level = 0;                                          // Initialize dimension and level
     vec<3,int> nx = 0;                                          // Initialize 3-D cell index
     while( index != 0 ) {                                       // Deinterleave bits while index is nonzero
@@ -125,13 +147,13 @@ protected:
       if( d == 0 ) level++;                                     //  If dimension is 0 again, increment level
     }                                                           // End while loop for deinterleaving bits
     for( d=0; d!=3; ++d ) {                                     // Loop over dimensions
-      cell.X[d] = (this->X0[d]-this->R0) + (2 *nx[d] + 1) * cell.R;//  Calculate cell center from 3-D cell index
+      cell.X[d] = (X0[d]-R0) + (2 *nx[d] + 1) * cell.R;         //  Calculate cell center from 3-D cell index
     }                                                           // End loop over dimensions
   }
 
 //! Group bodies into twig cells
   void bodies2twigs(Bodies &bodies, Cells &twigs) {
-    this->startTimer("Bodies2twigs ");                          // Start timer
+    startTimer("Bodies2twigs ");                                // Start timer
     int nleaf = 0;                                              // Initialize number of leafs
     bigint index = bodies[0].ICELL;                             // Initialize cell index
     B_iter firstLeaf = bodies.begin();                          // Initialize body iterator for first leaf
@@ -156,71 +178,71 @@ protected:
     cell.LEAF   = firstLeaf;                                    // Set pointer to first leaf
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
-    this->stopTimer("Bodies2twigs ",this->printNow);            // Stop timer & print
-    this->evalP2M(twigs);                                       // Evaluate P2M kernel
+    stopTimer("Bodies2twigs ",printNow);                        // Stop timer & print
+    evalP2M(twigs);                                             // Evaluate P2M kernel
   }
 
 //! Link twigs bottomup to create all cells in tree
   void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) {
     int begin = 0, end = 0;                                     // Initialize range of cell vector
     int level = getLevel(twigs.back().ICELL);                   // Initialize level of tree
-    this->startTimer("Sort resize  ");                          // Start timer
+    startTimer("Sort resize  ");                                // Start timer
     Cells cbuffer(2*twigs.size());                              // Sort buffer for cells
-    this->stopTimer("Sort resize  ");                           // Stop timer
+    stopTimer("Sort resize  ");                                 // Stop timer
     while( !twigs.empty() ) {                                   // Keep poppig twigs until the vector is empty
       while( getLevel(twigs.back().ICELL) != level ) {          //  While cell belongs to a higher level
-        this->sortCells(cells,cbuffer,false,begin,end);         //   Sort cells at this level
-        this->startTimer("Twigs2cells  ");                      //   Start timer
+        sortCells(cells,cbuffer,false,begin,end);               //   Sort cells at this level
+        startTimer("Twigs2cells  ");                            //   Start timer
         unique(cells,sticks,begin,end);                         //   Get rid of duplicate cells
         linkParent(cells,begin,end);                            //   Form parent-child mutual link
         level--;                                                //   Go up one level
-        this->stopTimer("Twigs2cells  ");                       //   Stop timer
+        stopTimer("Twigs2cells  ");                             //   Stop timer
       }                                                         //  End while for higher level
-      this->startTimer("Twigs2cells  ");                        //  Start timer
+      startTimer("Twigs2cells  ");                              //  Start timer
       cells.push_back(twigs.back());                            //  Push cells into vector
       twigs.pop_back();                                         //  Pop twigs from vector
       end++;                                                    //  Increment cell counter
-      this->stopTimer("Twigs2cells  ");                         //  Stop timer
+      stopTimer("Twigs2cells  ");                               //  Stop timer
     }                                                           // End while for popping twigs
     for( int l=level; l>0; --l ) {                              // Once all the twigs are done, do the rest
-      this->sortCells(cells,cbuffer,false,begin,end);           //  Sort cells at this level
-      this->startTimer("Twigs2cells  ");                        //  Start timer
+      sortCells(cells,cbuffer,false,begin,end);                 //  Sort cells at this level
+      startTimer("Twigs2cells  ");                              //  Start timer
       unique(cells,sticks,begin,end);                           //  Get rid of duplicate cells
       linkParent(cells,begin,end);                              //  Form parent-child mutual link
-      this->stopTimer("Twigs2cells  ");                         //  Stop timer
+      stopTimer("Twigs2cells  ");                               //  Stop timer
     }                                                           // End loop over levels
-    this->startTimer("Twigs2cells  ");                          // Start timer
+    startTimer("Twigs2cells  ");                                // Start timer
     unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
-    this->stopTimer("Twigs2cells  ");                           // Stop timer & print
-    this->evalM2M(cells);                                       // Evaluate M2M kernel
+    stopTimer("Twigs2cells  ");                                 // Stop timer & print
+    evalM2M(cells);                                             // Evaluate M2M kernel
   }
 
 public:
 //! Downward phase
   void downward(Cells &cells, Cells &jcells, int method, bool periodic=true) {
-    if( method == 2 ) this->timeKernels();                      // Time all kernels for auto-tuning
+    if( method == 2 ) timeKernels();                            // Time all kernels for auto-tuning
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) C->L = 0;// Initialize local coefficients
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
-      this->startTimer("Upward P     ");                        //  Start timer
-      this->upwardPeriodic(jcells);                             //  Upward phase for periodic images
-      this->stopTimer("Upward P     ",this->printNow);          //  Stop timer & print
+      startTimer("Upward P     ");                              //  Start timer
+      upwardPeriodic(jcells);                                   //  Upward phase for periodic images
+      stopTimer("Upward P     ",printNow);                      //  Stop timer & print
     }                                                           // Endif for periodic boundary condition
-    this->startTimer("Traverse     ");                          // Start timer
-    this->traverse(cells,jcells,method);                        // Traverse tree to get interaction list
-    this->stopTimer("Traverse     ",this->printNow);            // Stop timer & print
+    startTimer("Traverse     ");                                // Start timer
+    traverse(cells,jcells,method);                              // Traverse tree to get interaction list
+    stopTimer("Traverse     ",printNow);                        // Stop timer & print
     if( IMAGES != 0 && periodic ) {                             // If periodic boundary condition
-      this->startTimer("Traverse P   ");                        // Start timer
-      this->traversePeriodic(cells,jcells,method);              // Traverse tree for periodic images
-      this->stopTimer("Traverse P   ",this->printNow);          // Stop timer & print
+      startTimer("Traverse P   ");                              // Start timer
+      traversePeriodic(cells,jcells,method);                    // Traverse tree for periodic images
+      stopTimer("Traverse P   ",printNow);                      // Stop timer & print
     }                                                           // Endif for periodic boundary condition
-    this->evalM2L(cells);                                       // Evaluate M2L kernel
-    this->evalM2P(cells);                                       // Evaluate M2P kernel
-    this->evalP2P(cells);                                       // Evaluate P2P kernel
-    this->evalL2L(cells);                                       // Evaluate L2L kernel
-    this->evalL2P(cells);                                       // Evaluate L2P kernel
-    if(this->printNow) std::cout << "NP2P: " << this->NP2P
-                                << " NM2P: " << this->NM2P
-                                << " NM2L: " << this->NM2L << std::endl;
+    evalM2L(cells);                                             // Evaluate M2L kernel
+    evalM2P(cells);                                             // Evaluate M2P kernel
+    evalP2P(cells);                                             // Evaluate P2P kernel
+    evalL2L(cells);                                             // Evaluate L2L kernel
+    evalL2P(cells);                                             // Evaluate L2P kernel
+    if(printNow) std::cout << "P2P: "  << NP2P
+                           << " M2P: " << NM2P
+                           << " M2L: " << NM2L << std::endl;
   }
 };
 

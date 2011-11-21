@@ -21,21 +21,30 @@ THE SOFTWARE.
 */
 #ifndef serialfmm_h
 #define serialfmm_h
-#include "topdown.h"
 #include "bottomup.h"
 #include "dataset.h"
 
 //! Serial FMM interface
 template<Equation kernelName>
-class SerialFMM : public TopDown<kernelName>, public BottomUp<kernelName>, public Dataset<kernelName> {
+class SerialFMM : public BottomUp<kernelName>, public Dataset<kernelName> {
+private:
+  using Sort::sortBodies;                                       //!< Sort bodies according to cell index
+  using Kernel<kernelName>::preCalculation;                     //!< Precalculate M2L translation matrix
+  using Kernel<kernelName>::postCalculation;                    //!< Free temporary allocations
+  using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting
+  using TreeStructure<kernelName>::bodies2twigs;                //!< Group bodies into twig cells
+  using TreeStructure<kernelName>::twigs2cells;                 //!< Link twigs bottomup to create all cells in tree
+  using Dataset<kernelName>::initSource;                        //!< Initialize source values
+  using Dataset<kernelName>::initTarget;                        //!< Initialize target values
+
 public:
 //! Constructor
-  SerialFMM() : TopDown<kernelName>(), BottomUp<kernelName>(), Dataset<kernelName>() {
-    this->preCalculation();
+  SerialFMM() : BottomUp<kernelName>(), Dataset<kernelName>() {
+    preCalculation();
   }
 //! Destructor
   ~SerialFMM() {
-    this->postCalculation();
+    postCalculation();
   }
 
 //! Random distribution in [-1,1]^3 cube
@@ -50,8 +59,8 @@ public:
         B->X[d] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;   //   Initialize positions
       }                                                         //  End loop over dimension
     }                                                           // End loop over bodies
-    this->initSource(bodies);                                   // Initialize source values
-    this->initTarget(bodies);                                   // Initialize target values
+    initSource(bodies);                                         // Initialize source values
+    initTarget(bodies);                                         // Initialize target values
   }
 
 //! Random distribution on r = 1 sphere
@@ -70,8 +79,8 @@ public:
         B->X[d] /= r * 1.1;                                     //   Normalize positions
       }                                                         //  End loop over dimension
     }                                                           // End loop over bodies
-    this->initSource(bodies);                                   // Initialize source values
-    this->initTarget(bodies);                                   // Initialize target values
+    initSource(bodies);                                         // Initialize source values
+    initTarget(bodies);                                         // Initialize target values
   }
 
 //! Uniform distribution on [-1,1]^3 lattice (for debugging)
@@ -91,8 +100,8 @@ public:
         B->X[d] = -1 + (2 * nx[d] + 1.) / (1 << level);         //   Calculate cell center from 3-D cell index
       }                                                         //  End loop over dimensions
     }                                                           // End loop over bodies
-    this->initSource(bodies);                                   // Initialize source values
-    this->initTarget(bodies);                                   // Initialize target values
+    initSource(bodies);                                         // Initialize source values
+    initTarget(bodies);                                         // Initialize target values
   }
 
 //! Topdown tree constructor interface. Input: bodies, Output: cells
@@ -101,36 +110,36 @@ public:
 
     TopDown<kernelName>::setIndex();                            // Set index of cells
 
-    this->buffer.resize(bodies.size());                         // Resize sort buffer
-    this->sortBodies(bodies,this->buffer,false);                // Sort bodies in descending order
+    buffer.resize(bodies.size());                               // Resize sort buffer
+    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
 
     Cells twigs;                                                // Twigs are cells at the bottom of tree
-    this->bodies2twigs(bodies,twigs);                           // Turn bodies to twigs
+    bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
 
     Cells sticks;                                               // Sticks are twigs from other processes that are not twigs in the current process
-    this->twigs2cells(twigs,cells,sticks);                      // Turn twigs to cells
+    twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
   }
 
 //! Bottomup tree constructor interface. Input: bodies, Output: cells
   void bottomup(Bodies &bodies, Cells &cells) {
     BottomUp<kernelName>::setIndex(bodies);                     // Set index of cells
 
-    this->buffer.resize(bodies.size());                         // Resize sort buffer
-    this->sortBodies(bodies,this->buffer,false);                // Sort bodies in descending order
+    buffer.resize(bodies.size());                               // Resize sort buffer
+    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
 
 /*
     prune(bodies);                                              // Prune tree structure bottomup
 
     BottomUp<kernelName>::grow(bodies);                         // Grow tree structure at bottom if necessary
 
-    this->sortBodies(bodies,buffer,false);                      // Sort bodies in descending order
+    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
 */
 
     Cells twigs;                                                // Twigs are cells at the bottom of tree
-    this->bodies2twigs(bodies,twigs);                           // Turn bodies to twigs
+    bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
 
     Cells sticks;                                               // Sticks are twigs from other processes not twigs here
-    this->twigs2cells(twigs,cells,sticks);                      // Turn twigs to cells
+    twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
   }
 };
 

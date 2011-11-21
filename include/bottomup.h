@@ -21,12 +21,24 @@ THE SOFTWARE.
 */
 #ifndef bottomup_h
 #define bottomup_h
+#include "topdown.h"
 
 //! Bottomup tree constructor
 template<Equation kernelName>
-class BottomUp : virtual public TreeStructure<kernelName> {
+class BottomUp : public TopDown<kernelName> {
+private:
+  using Logger::printNow;                                       //!< Switch to print timings
+  using Logger::startTimer;                                     //!< Start timer for given event
+  using Logger::stopTimer;                                      //!< Stop timer for given event
+  using Sort::sortBodies;                                       //!< Sort bodies according to cell index
+  using Kernel<kernelName>::X0;                                 //!< Center of root cell
+  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
+  using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting
+  using TreeStructure<kernelName>::getLevel;                    //!< Get level from cell index
+
 protected:
-  int getMaxLevel(Bodies &bodies) {                             // Max level for bottom up tree build
+//! Max level for bottom up tree build
+  int getMaxLevel(Bodies &bodies) {
     const long N = bodies.size() * MPISIZE;                     // Number of bodies
     int level;                                                  // Max level
     level = N >= NCRIT ? 1 + int(log(N / NCRIT)/M_LN2/3) : 0;   // Decide max level from N/Ncrit
@@ -41,22 +53,22 @@ protected:
 
 public:
 //! Constructor
-  BottomUp() : TreeStructure<kernelName>() {}
+  BottomUp() : TopDown<kernelName>() {}
 //! Destructor
   ~BottomUp() {}
 
 //! Set cell index of all bodies
   void setIndex(Bodies &bodies, int level=-1, int begin=0, int end=0, bool update=false) {
-    this->startTimer("Set index    ");                          // Start timer
+    startTimer("Set index    ");                                // Start timer
     bigint i;                                                   // Levelwise cell index
     if( level == -1 ) level = getMaxLevel(bodies);              // Decide max level
     bigint off = ((1 << 3*level) - 1) / 7;                      // Offset for each level
-    real r = this->R0 / (1 << (level-1));                       // Radius at finest level
+    real r = R0 / (1 << (level-1));                             // Radius at finest level
     vec<3,int> nx;                                              // 3-D cell index
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
     for( int b=begin; b!=end; ++b ) {                           // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        nx[d] = int( ( bodies[b].X[d] - (this->X0[d]-this->R0) ) / r );//   3-D cell index
+        nx[d] = int( ( bodies[b].X[d] - (X0[d]-R0) ) / r );     //   3-D cell index
       }                                                         //  End loop over dimension
       i = 0;                                                    //  Initialize cell index
       for( int l=0; l!=level; ++l ) {                           //  Loop over levels of tree
@@ -71,15 +83,15 @@ public:
         bodies[b].ICELL = i+off;                                //   Store index in bodies
       }                                                         //  Endif for update
     }                                                           // End loop over bodies
-    this->stopTimer("Set index    ",this->printNow);            // Stop timer
+    stopTimer("Set index    ",printNow);                        // Stop timer
   }
 
 //! Prune tree by merging cells
   void prune(Bodies &bodies) {
-    this->startTimer("Prune tree   ");                          // Start timer
+    startTimer("Prune tree   ");                                // Start timer
     int maxLevel = getMaxLevel(bodies);                         // Max level for bottom up tree build
     for( int l=maxLevel; l>0; --l ) {                           // Loop upwards from bottom level
-      int level = this->getLevel(bodies[0].ICELL);              //  Current level
+      int level = getLevel(bodies[0].ICELL);                    //  Current level
       bigint cOff = ((1 << 3 * level) - 1) / 7;                 //  Current ce;; index offset
       bigint pOff = ((1 << 3 * (l-1)) - 1) / 7;                 //  Parent cell index offset
       bigint index = ((bodies[0].ICELL-cOff) >> 3*(level-l+1)) + pOff;// Current cell index
@@ -87,7 +99,7 @@ public:
       int size = 0;                                             //  Number of bodies in cell
       int b = 0;                                                //  Current body index
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B,++b ) {//  Loop over bodies
-        level = this->getLevel(B->ICELL);                       //   Level of twig
+        level = getLevel(B->ICELL);                             //   Level of twig
         cOff = ((1 << 3*level) - 1) / 7;                        //   Offset of twig
         bigint p = ((B->ICELL-cOff) >> 3*(level-l+1)) + pOff;   //   Cell index of parent cell
         if( p != index ) {                                      //   If it's a new parent cell
@@ -108,7 +120,7 @@ public:
         }                                                       //   End loop over bodies in cell
       }                                                         //  Endif for merging
     }                                                           // End loop over levels
-    this->stopTimer("Prune tree   ",this->printNow);            // Stop timer
+    stopTimer("Prune tree   ",printNow);                        // Stop timer
   }
 
 //! Grow tree by splitting cells
@@ -122,7 +134,7 @@ public:
         if( size >= NCRIT ) {                                   //   If the cell has too many bodies
           level++;                                              //    Increment level
           setIndex(bodies,level,off,off+size);                  //    Set new cell index considering new level
-          this->sortBodies(bodies,this->buffer,false,off,off+size);//    Sort new cell index
+          sortBodies(bodies,buffer,false,off,off+size);         //    Sort new cell index
           grow(bodies,level,off,off+size);                      //    Recursively grow tree
           level--;                                              //    Go back to previous level
         }                                                       //   Endif for splitting
@@ -135,7 +147,7 @@ public:
     if( size >= NCRIT ) {                                       // If last cell has too many bodies
       level++;                                                  //  Increment level
       setIndex(bodies,level,off,off+size);                      //  Set new cell index considering new level
-      this->sortBodies(bodies,this->buffer,false,off,off+size); //  Sort new cell index
+      sortBodies(bodies,buffer,false,off,off+size);             //  Sort new cell index
       grow(bodies,level,off,off+size);                          //  Recursively grow tree
       level--;                                                  //  Go back to previous level
     }                                                           // Endif for splitting

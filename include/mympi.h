@@ -137,7 +137,7 @@ public:
     }                                                           // End loop over ranks
   }
 
-//! // Print a vector value on irank
+//! Print a vector value on irank
   template<typename T>
   void print(T *data, const int begin, const int end, const int irank) {
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes

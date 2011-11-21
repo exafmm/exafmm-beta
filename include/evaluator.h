@@ -26,6 +26,13 @@ THE SOFTWARE.
 //! Interface between tree and kernel
 template<Equation kernelName>
 class Evaluator : public Kernel<kernelName> {
+private:
+  using Kernel<kernelName>::CI;                                 //!< Target cell iterator
+  using Kernel<kernelName>::CJ;                                 //!< Source cell iterator
+  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
+  using Kernel<kernelName>::Xperiodic;                          //!< Coordinate offset of periodic image
+  using Kernel<kernelName>::M2M_CPU;                            //!< Evaluate M2M kernel on CPU
+
 protected:
   C_iter      CI0;                                              //!< icells.begin()
   C_iter      CIB;                                              //!< icells begin per call
@@ -173,9 +180,9 @@ public:
         for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
           for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {//    Loop over bodies
             Body body = *B;                                     //     Copy current body
-            body.X[0] += ix * 2 * this->R0;                     //     Shift x position
-            body.X[1] += iy * 2 * this->R0;                     //     Shift y position
-            body.X[2] += iz * 2 * this->R0;                     //     Shift z position
+            body.X[0] += ix * 2 * R0;                           //     Shift x position
+            body.X[1] += iy * 2 * R0;                           //     Shift y position
+            body.X[2] += iz * 2 * R0;                           //     Shift z position
             jbodies.push_back(body);                            //     Push shifted body into jbodies
           }                                                     //    End loop over bodies
         }                                                       //   End loop over z periodic direction
@@ -201,7 +208,7 @@ public:
     flagP2P.resize(cells.size());                               // Resize P2P periodic image flag
     if( IMAGES == 0 ) {                                         // If free boundary condition
       Iperiodic = Icenter;                                      //  Set periodic image flag to center
-      this->Xperiodic = 0;                                      //  Set periodic coordinate offset
+      Xperiodic = 0;                                            //  Set periodic coordinate offset
       Pair pair(root,jroot);                                    //  Form pair of root cells
       pairs.push(pair);                                         //  Push pair to stack
       while( !pairs.empty() ) {                                 //  While interaction stack is not empty
@@ -219,9 +226,9 @@ public:
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz, ++I ) {                  //    Loop over z periodic direction
             Iperiodic = 1 << I;                                 //     Set periodic image flag
-            this->Xperiodic[0] = ix * 2 * this->R0;             //     Coordinate offset for x periodic direction
-            this->Xperiodic[1] = iy * 2 * this->R0;             //     Coordinate offset for y periodic direction
-            this->Xperiodic[2] = iz * 2 * this->R0;             //     Coordinate offset for z periodic direction
+            Xperiodic[0] = ix * 2 * R0;                         //     Coordinate offset for x periodic direction
+            Xperiodic[1] = iy * 2 * R0;                         //     Coordinate offset for y periodic direction
+            Xperiodic[2] = iz * 2 * R0;                         //     Coordinate offset for z periodic direction
             Pair pair(root,jroot);                              //     Form pair of root cells
             pairs.push(pair);                                   //     Push pair to stack
             while( !pairs.empty() ) {                           //     While interaction stack is not empty
@@ -269,20 +276,20 @@ public:
       cell.X = C->X;                                            //  This is the center cell
       cell.R = 3 * C->R;                                        //  The cell size increase three times
       pccells.push_back(cell);                                  //  Push cell into periodic cell vector
-      this->CI = pccells.end() - 1;                             //  Set current cell as target for M2M
+      CI = pccells.end() - 1;                                   //  Set current cell as target for M2M
       while( !pjcells.empty() ) {                               //  While there are periodic jcells remaining
-        this->CJ = pjcells.end() - 1;                           //   Set current jcell as source for M2M
-        this->M2M_CPU();                                        //   Perform M2M_CPU kernel
+        CJ = pjcells.end() - 1;                                 //   Set current jcell as source for M2M
+        M2M_CPU();                                              //   Perform M2M_CPU kernel
         pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
       }                                                         //  End while for remaining periodic jcells
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
             if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
-              cell.X[0]  = this->CI->X[0] + ix * 2 * this->CI->R;//      Set new x coordinate for periodic image
-              cell.X[1]  = this->CI->X[1] + iy * 2 * this->CI->R;//      Set new y cooridnate for periodic image
-              cell.X[2]  = this->CI->X[2] + iz * 2 * this->CI->R;//      Set new z coordinate for periodic image
-              cell.M     = this->CI->M;                         //      Copy multipoles to new periodic image
+              cell.X[0]  = CI->X[0] + ix * 2 * CI->R;           //      Set new x coordinate for periodic image
+              cell.X[1]  = CI->X[1] + iy * 2 * CI->R;           //      Set new y cooridnate for periodic image
+              cell.X[2]  = CI->X[2] + iz * 2 * CI->R;           //      Set new z coordinate for periodic image
+              cell.M     = CI->M;                               //      Copy multipoles to new periodic image
               cell.NLEAF = cell.NCHILD = 0;                     //      Initialize NLEAF & NCHILD
               jcells.push_back(cell);                           //      Push cell into periodic jcell vector
             }                                                   //     Endif for periodic center cell

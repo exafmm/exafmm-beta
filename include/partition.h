@@ -28,6 +28,16 @@ THE SOFTWARE.
 template<Equation kernelName>
 class Partition : public MyMPI, public SerialFMM<kernelName> {
 private:
+  using Logger::printNow;                                       //!< Switch to print timings
+  using Logger::startTimer;                                     //!< Start timer for given event
+  using Logger::stopTimer;                                      //!< Stop timer for given event
+  using Sort::sortBodies;                                       //!< Sort bodies according to cell index
+  using Kernel<kernelName>::X0;                                 //!< Center of root cell
+  using Kernel<kernelName>::R0;                                 //!< Radius of root cell
+  using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting
+  using TreeStructure<kernelName>::getLevel;                    //!< Get level from cell index
+  using BottomUp<kernelName>::getMaxLevel;                      //!< Max level for bottom up tree build
+
   int numCells1D;                                               //!< Number of cells in one dimension (leaf level)
 
 protected:
@@ -237,7 +247,7 @@ protected:
 
 public:
 //! Constructor
-  Partition() : SerialFMM() {
+  Partition() : SerialFMM<kernelName>() {
     LEVEL = int(log(MPISIZE) / M_LN2 - 1e-5) + 1;               // Level of the process binary tree
     if(MPISIZE == 1) LEVEL = 0;                                 // Level is 0 for a serial execution
     XMIN.resize(LEVEL+1);                                       // Minimum position vector at each level
@@ -452,7 +462,7 @@ public:
     int byte = sizeof(bodies[0]);                               // Byte size of body structure
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
     if( MPISIZE == 1 ) level = 0;                               // For serial execution local root cell is root cell
-    BottomUp::setIndex(bodies,level);                           // Set index of bodies for that level
+    BottomUp<kernelName>::setIndex(bodies,level);               // Set index of bodies for that level
     buffer.resize(bodies.size());                               // Resize sort buffer
     stopTimer("Partition    ");                                 // Stop timer 
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
