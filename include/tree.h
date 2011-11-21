@@ -29,10 +29,10 @@ class TreeStructure : public Evaluator<kernelName> {
 public:
   Bodies buffer;                                                //!< Buffer for MPI communication & sorting
 
-  using Logger::printNow;                                       //!< Switch to print timings
-  using Logger::startTimer;                                     //!< Start timer for given event
-  using Logger::stopTimer;                                      //!< Stop timer for given event
-  using Sort::sortCells;                                        //!< Sort cells according to cell index
+  using Kernel<kernelName>::printNow;                           //!< Switch to print timings
+  using Kernel<kernelName>::startTimer;                         //!< Start timer for given event
+  using Kernel<kernelName>::stopTimer;                          //!< Stop timer for given event
+  using Kernel<kernelName>::sortCells;                          //!< Sort cells according to cell index
   using Kernel<kernelName>::X0;                                 //!< Center of root cell
   using Kernel<kernelName>::R0;                                 //!< Radius of root cell
   using Kernel<kernelName>::NP2P;                               //!< Number of P2P kernel calls

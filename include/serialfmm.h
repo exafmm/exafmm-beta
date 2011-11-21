@@ -28,7 +28,7 @@ THE SOFTWARE.
 template<Equation kernelName>
 class SerialFMM : public BottomUp<kernelName>, public Dataset<kernelName> {
 public:
-  using Sort::sortBodies;                                       //!< Sort bodies according to cell index
+  using Kernel<kernelName>::sortBodies;                         //!< Sort bodies according to cell index
   using Kernel<kernelName>::preCalculation;                     //!< Precalculate M2L translation matrix
   using Kernel<kernelName>::postCalculation;                    //!< Free temporary allocations
   using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting

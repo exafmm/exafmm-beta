@@ -27,9 +27,9 @@ THE SOFTWARE.
 template<Equation kernelName>
 class TopDown : public TreeStructure<kernelName> {
 public:
-  using Logger::printNow;                                       //!< Switch to print timings
-  using Logger::startTimer;                                     //!< Start timer for given event
-  using Logger::stopTimer;                                      //!< Stop timer for given event
+  using Kernel<kernelName>::printNow;                           //!< Switch to print timings
+  using Kernel<kernelName>::startTimer;                         //!< Start timer for given event
+  using Kernel<kernelName>::stopTimer;                          //!< Stop timer for given event
   using Kernel<kernelName>::X0;                                 //!< Center of root cell
   using Kernel<kernelName>::R0;                                 //!< Radius of root cell
 

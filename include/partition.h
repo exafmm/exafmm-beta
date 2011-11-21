@@ -41,10 +41,10 @@ protected:
   MPI_Comm MPI_COMM[64][3];                                     //!< Communicators for Gather, Scatter, and Alltoall
 
 public:
-  using Logger::printNow;                                       //!< Switch to print timings
-  using Logger::startTimer;                                     //!< Start timer for given event
-  using Logger::stopTimer;                                      //!< Stop timer for given event
-  using Sort::sortBodies;                                       //!< Sort bodies according to cell index
+  using Kernel<kernelName>::printNow;                           //!< Switch to print timings
+  using Kernel<kernelName>::startTimer;                         //!< Start timer for given event
+  using Kernel<kernelName>::stopTimer;                          //!< Stop timer for given event
+  using Kernel<kernelName>::sortBodies;                         //!< Sort bodies according to cell index
   using Kernel<kernelName>::X0;                                 //!< Center of root cell
   using Kernel<kernelName>::R0;                                 //!< Radius of root cell
   using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting

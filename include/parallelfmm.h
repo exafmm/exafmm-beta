@@ -47,11 +47,11 @@ private:
   JCells  recvCells;                                            //!< Recv buffer for cells
 
 public:
-  using Logger::printNow;                                       //!< Switch to print timings
-  using Logger::startTimer;                                     //!< Start timer for given event
-  using Logger::stopTimer;                                      //!< Stop timer for given event
-  using Sort::sortBodies;                                       //!< Sort bodies according to cell index
-  using Sort::sortCells;                                        //!< Sort cells according to cell index
+  using Kernel<kernelName>::printNow;                           //!< Switch to print timings
+  using Kernel<kernelName>::startTimer;                         //!< Start timer for given event
+  using Kernel<kernelName>::stopTimer;                          //!< Stop timer for given event
+  using Kernel<kernelName>::sortBodies;                         //!< Sort bodies according to cell index
+  using Kernel<kernelName>::sortCells;                          //!< Sort cells according to cell index
   using Kernel<kernelName>::R0;                                 //!< Radius of root cell
   using Kernel<kernelName>::Xperiodic;                          //!< Coordinate offset of periodic image
   using TreeStructure<kernelName>::buffer;                      //!< Buffer for MPI communication & sorting
@@ -59,9 +59,9 @@ public:
   using TreeStructure<kernelName>::getCenter;                   //!< Get cell center and radius from cell index
   using TreeStructure<kernelName>::bodies2twigs;                //!< Group bodies into twig cells
   using TreeStructure<kernelName>::twigs2cells;                 //!< Link twigs bottomup to create all cells in tree
-  using MyMPI::isPowerOfTwo;                                    //!< If n is power of two return true
-  using MyMPI::splitRange;                                      //!< Split range and return partial range
-  using MyMPI::print;                                           //!< Print in MPI
+  using Partition<kernelName>::isPowerOfTwo;                    //!< If n is power of two return true
+  using Partition<kernelName>::splitRange;                      //!< Split range and return partial range
+  using Partition<kernelName>::print;                           //!< Print in MPI
   using Partition<kernelName>::LEVEL;                           //!< Level of the MPI process binary tree
   using Partition<kernelName>::XMIN;                            //!< Minimum position vector of bodies
   using Partition<kernelName>::XMAX;                            //!< Maximum position vector of bodies
