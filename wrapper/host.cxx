@@ -48,7 +48,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
   vect shift = size/2;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
-  ParallelFMM<CoulombVdW> FMM;
+  ParallelFMM<Laplace> FMM;
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
@@ -136,7 +136,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
   vect shift = size/2;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
-  SerialFMM<CoulombVdW> FMM;
+  SerialFMM<Laplace> FMM;
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
