@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-template<>
-void Evaluator<Laplace>::setSourceBody() {                      // Set source buffer for bodies
+template<Equation equation>
+void Evaluator<equation>::setSourceBody() {                      // Set source buffer for bodies
   startTimer("Set sourceB  ");                                  // Start timer
   for( M_iter M=sourceSize.begin(); M!=sourceSize.end(); ++M ) {// Loop over source map
     CJ = M->first;                                              //  Set source cell
@@ -38,8 +38,8 @@ void Evaluator<Laplace>::setSourceBody() {                      // Set source bu
   stopTimer("Set sourceB  ");                                   // Stop timer
 }
 
-template<>
-void Evaluator<Laplace>::setSourceCell(bool isM) {              // Set source buffer for cells
+template<Equation equation>
+void Evaluator<equation>::setSourceCell(bool isM) {              // Set source buffer for cells
   startTimer("Set sourceC  ");                                  // Start timer
   for( M_iter M=sourceSize.begin(); M!=sourceSize.end(); ++M ) {// Loop over source map
     CJ = M->first;                                              //  Set source cell
@@ -62,8 +62,8 @@ void Evaluator<Laplace>::setSourceCell(bool isM) {              // Set source bu
   stopTimer("Set sourceC  ");                                   // Stop timer
 }
 
-template<>
-void Evaluator<Laplace>::setTargetBody(Lists lists, Maps flags) {// Set target buffer for bodies
+template<Equation equation>
+void Evaluator<equation>::setTargetBody(Lists lists, Maps flags) {// Set target buffer for bodies
   startTimer("Set targetB  ");                                  // Start timer
   int key = 0;                                                  // Initialize key to range of coefs in source cells
   for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
@@ -105,8 +105,8 @@ void Evaluator<Laplace>::setTargetBody(Lists lists, Maps flags) {// Set target b
   stopTimer("Set targetB  ");                                   // Stop timer
 }
 
-template<>
-void Evaluator<Laplace>::setTargetCell(Lists lists, Maps flags) {// Set target buffer for cells
+template<Equation equation>
+void Evaluator<equation>::setTargetCell(Lists lists, Maps flags) {// Set target buffer for cells
   startTimer("Set targetC  ");                                  // Start timer
   int key = 0;                                                  // Initialize key to range of coefs in target cells
   for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
@@ -139,15 +139,15 @@ void Evaluator<Laplace>::setTargetCell(Lists lists, Maps flags) {// Set target b
   stopTimer("Set targetC  ");                                   // Stop timer
 }
 
-template<>
-void Evaluator<Laplace>::getTargetBody(Lists &lists) {          // Get body values from target buffer
+template<Equation equation>
+void Evaluator<equation>::getTargetBody(Lists &lists) {          // Get body values from target buffer
   startTimer("Get targetB  ");                                  // Start timer
   for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
       BI0 = CI->LEAF;                                           //   Set target bodies begin iterator
       BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
       int begin = targetBegin[CI];                              //   Offset of target leafs
-//      if( equation == Gaussian ) {                              //   If Gaussian kernel
+//      if( kernelName == Gaussian ) {                            //   If Gaussian kernel
 //        for( B_iter B=BI0; B!=BIN; ++B ) {                      //    Loop over target bodies
 //          B->TRG[0] += targetHost[6*(begin+B-BI0)+0];           //     Copy 1st target value from GPU buffer
 //        }                                                       //    End loop over target bodies
@@ -165,8 +165,8 @@ void Evaluator<Laplace>::getTargetBody(Lists &lists) {          // Get body valu
   stopTimer("Get targetB  ");                                   // Stop timer
 }
 
-template<>
-void Evaluator<Laplace>::getTargetCell(Lists &lists, bool isM) {// Get body values from target buffer
+template<Equation equation>
+void Evaluator<equation>::getTargetCell(Lists &lists, bool isM) {// Get body values from target buffer
   startTimer("Get targetC  ");                                  // Start timer
   for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
@@ -188,8 +188,8 @@ void Evaluator<Laplace>::getTargetCell(Lists &lists, bool isM) {// Get body valu
   stopTimer("Get targetC  ");                                   // Stop timer
 }
 
-template<>
-void Evaluator<Laplace>::clearBuffers() {                       // Clear GPU buffers
+template<Equation equation>
+void Evaluator<equation>::clearBuffers() {                       // Clear GPU buffers
   startTimer("Clear buffer ");                                  // Start timer
   keysHost.clear();                                             // Clear keys vector
   rangeHost.clear();                                            // Clear range vector
@@ -202,15 +202,15 @@ void Evaluator<Laplace>::clearBuffers() {                       // Clear GPU buf
   stopTimer("Clear buffer ");                                   // Stop timer
 }
 
-template<>
-void Evaluator<Laplace>::testMACP2P(C_iter Ci, C_iter Cj) {     // Test multipole acceptance criteria for P2P kernel
+template<Equation equation>
+void Evaluator<equation>::testMACP2P(C_iter Ci, C_iter Cj) {     // Test multipole acceptance criteria for P2P kernel
   listP2P[Ci-CI0].push_back(Cj);                                // Push source cell into P2P interaction list
   flagP2P[Ci-CI0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
   NP2P++;                                                       // Count P2P kernel execution
 }
 
-template<>
-void Evaluator<Laplace>::testMACM2L(C_iter Ci, C_iter Cj) {     // Test multipole acceptance criteria for M2L kernel
+template<Equation equation>
+void Evaluator<equation>::testMACM2L(C_iter Ci, C_iter Cj) {     // Test multipole acceptance criteria for M2L kernel
   vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
   real R = std::sqrt(norm(dist));                               // Distance between cells
   if( Ci->R + Cj->R > THETA*R ) {                               // If cell is too large
@@ -223,8 +223,8 @@ void Evaluator<Laplace>::testMACM2L(C_iter Ci, C_iter Cj) {     // Test multipol
   }                                                             // Endif for interaction
 }
 
-template<>
-void Evaluator<Laplace>::testMACM2P(C_iter Ci, C_iter Cj) {     // Test multipole acceptance criteria for M2P kernel
+template<Equation equation>
+void Evaluator<equation>::testMACM2P(C_iter Ci, C_iter Cj) {     // Test multipole acceptance criteria for M2P kernel
   vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
   real R = std::sqrt(norm(dist));                               // Distance between cells
   if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {            // If target is not twig or cell is too large
@@ -237,8 +237,8 @@ void Evaluator<Laplace>::testMACM2P(C_iter Ci, C_iter Cj) {     // Test multipol
   }                                                             // Endif for interaction
 } 
 
-template<>
-void Evaluator<Laplace>::traversePeriodic(Cells &cells, Cells &jcells, int method) {// Traverse tree for periodic cells
+template<Equation equation>
+void Evaluator<equation>::traversePeriodic(Cells &cells, Cells &jcells, int method) {// Traverse tree for periodic cells
   C_iter Cj = jcells.end()-1;                                   // Initialize iterator for periodic source cell
   for( int level=0; level<IMAGES-1; ++level ) {                 // Loop over sublevels of tree
     for( int I=0; I!=26; ++I, --Cj ) {                          //  Loop over periodic images (exclude center)
@@ -262,8 +262,8 @@ void Evaluator<Laplace>::traversePeriodic(Cells &cells, Cells &jcells, int metho
   }                                                             // End loop over sublevels of tree
 }
 
-template<>
-void Evaluator<Laplace>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
+template<Equation equation>
+void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
   int numIcall = int(ibodies.size()-1)/MAXBODY+1;               // Number of icall loops
   int numJcall = int(jbodies.size()-1)/MAXBODY+1;               // Number of jcall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
@@ -315,7 +315,7 @@ void Evaluator<Laplace>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {
           targetHost.push_back(0);                              //    Pad 3rd target value to GPU buffer
         }                                                       //   End loop over elements to pad
         P2P();                                                  //   Perform P2P kernel
-//        if( equation == Gaussian ) {                            //   If Gaussian kernel
+//        if( kernelName == Gaussian ) {                          //   If Gaussian kernel
 //          for( B_iter B=BI0; B!=BIN; ++B ) {                    //    Loop over target bodies
 //            B->TRG[0] += targetHost[6*(B-BI0)+0];               //     Copy 1st target value from GPU buffer
 //          }                                                     //    End loop over target bodies
@@ -339,8 +339,8 @@ void Evaluator<Laplace>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {
   }                                                             // End loop over icall
 }
 
-template<>
-void Evaluator<Laplace>::evalP2M(Cells &cells) {                // Evaluate P2M
+template<Equation equation>
+void Evaluator<equation>::evalP2M(Cells &cells) {                // Evaluate P2M
   CI0 = cells.begin();                                          // Set begin iterator for target
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -370,8 +370,8 @@ void Evaluator<Laplace>::evalP2M(Cells &cells) {                // Evaluate P2M
   }                                                             // End loop over icall
 }
 
-template<>
-void Evaluator<Laplace>::evalM2M(Cells &cells) {                // Evaluate M2M
+template<Equation equation>
+void Evaluator<equation>::evalM2M(Cells &cells) {                // Evaluate M2M
   CI0 = cells.begin();                                          // Set begin iterator for target
   const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -407,8 +407,8 @@ void Evaluator<Laplace>::evalM2M(Cells &cells) {                // Evaluate M2M
   }                                                             // End while loop over levels
 }
 
-template<>
-void Evaluator<Laplace>::evalM2L(Cells &cells, bool kernel) {   // Evaluate M2L
+template<Equation equation>
+void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {   // Evaluate M2L
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -436,8 +436,8 @@ void Evaluator<Laplace>::evalM2L(Cells &cells, bool kernel) {   // Evaluate M2L
   flagM2L.clear();                                              // Clear periodic image flags
 }
 
-template<>
-void Evaluator<Laplace>::evalM2P(Cells &cells, bool kernel) {   // Evaluate M2P
+template<Equation equation>
+void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {   // Evaluate M2P
   CI0 = cells.begin();                                          // Set begin iterator for target
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -465,8 +465,8 @@ void Evaluator<Laplace>::evalM2P(Cells &cells, bool kernel) {   // Evaluate M2P
   flagM2P.clear();                                              // Clear periodic image flags
 }
 
-template<>
-void Evaluator<Laplace>::evalP2P(Cells &cells, bool kernel) {   // Evaluate P2P
+template<Equation equation>
+void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {   // Evaluate P2P
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -494,8 +494,8 @@ void Evaluator<Laplace>::evalP2P(Cells &cells, bool kernel) {   // Evaluate P2P
   flagP2P.clear();                                              // Clear periodic image flags
 }
 
-template<>
-void Evaluator<Laplace>::evalL2L(Cells &cells) {                // Evaluate L2L
+template<Equation equation>
+void Evaluator<equation>::evalL2L(Cells &cells) {                // Evaluate L2L
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -532,8 +532,8 @@ void Evaluator<Laplace>::evalL2L(Cells &cells) {                // Evaluate L2L
   }                                                             // End while loop over levels
 }
 
-template<>
-void Evaluator<Laplace>::evalL2P(Cells &cells) {                // Evaluate L2P
+template<Equation equation>
+void Evaluator<equation>::evalL2P(Cells &cells) {                // Evaluate L2P
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -562,8 +562,8 @@ void Evaluator<Laplace>::evalL2P(Cells &cells) {                // Evaluate L2P
   }                                                             // End loop over icall
 }
 
-template<>
-void Evaluator<Laplace>::timeKernels() {                        // Time all kernels for auto-tuning
+template<Equation equation>
+void Evaluator<equation>::timeKernels() {                        // Time all kernels for auto-tuning
   Bodies ibodies(NCRIT), jbodies(NCRIT);                        // Artificial bodies
   for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {// Loop over artificial bodies
     Bi->X = 0;                                                  //  Set coordinates of target body

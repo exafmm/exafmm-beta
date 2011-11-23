@@ -36,9 +36,9 @@ protected:
   std::vector<vect> XMAX;                                       //!< Maximum position vector of bodies
   int nprocs[64][2];                                            //!< Number of processes in the two split groups
   int offset[64][2];                                            //!< Offset of body in the two split groups
-  int  color[64][3];                                            //!< Color of Gather, Scatter, and Alltoall communicators
-  int    key[64][3];                                            //!< Key of Gather, Scatter, and Alltoall communicators
-  MPI_Comm MPI_COMM[64][3];                                     //!< Communicators for Gather, Scatter, and Alltoall
+  int  color[64][3];                                            //!< Color of hypercube communicators
+  int    key[64][3];                                            //!< Key of hypercube communicators
+  MPI_Comm MPI_COMM[64][3];                                     //!< Hypercube communicators
 
 public:
   using Kernel<equation>::printNow;                             //!< Switch to print timings

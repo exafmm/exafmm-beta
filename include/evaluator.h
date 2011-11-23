@@ -22,10 +22,11 @@ THE SOFTWARE.
 #ifndef evaluator_h
 #define evaluator_h
 #include "kernel.h"
+#include "dataset.h"
 
 //! Interface between tree and kernel
 template<Equation equation>
-class Evaluator : public Kernel<equation> {
+class Evaluator : public Kernel<equation>, public Dataset<equation> {
 protected:
   C_iter      CI0;                                              //!< icells.begin()
   C_iter      CIB;                                              //!< icells begin per call
@@ -59,18 +60,28 @@ public:
   using Kernel<equation>::CJ;                                   //!< Source cell iterator
   using Kernel<equation>::R0;                                   //!< Radius of root cell
   using Kernel<equation>::Xperiodic;                            //!< Coordinate offset of periodic image
+  using Kernel<equation>::keysHost;                             //!< Offsets for rangeHost
+  using Kernel<equation>::rangeHost;                            //!< Offsets for sourceHost
+  using Kernel<equation>::constHost;                            //!< Constants on host
+  using Kernel<equation>::sourceHost;                           //!< Sources on host
+  using Kernel<equation>::targetHost;                           //!< Targets on host
+  using Kernel<equation>::sourceBegin;                          //!< Define map for offset of source cells
+  using Kernel<equation>::sourceSize;                           //!< Define map for size of source cells
+  using Kernel<equation>::targetBegin;                          //!< Define map for offset of target cells
   using Kernel<equation>::NP2P;                                 //!< Number of P2P kernel calls
-  using Kernel<equation>::NM2L;                                 //!< Number of M2L kernel calls
   using Kernel<equation>::NM2P;                                 //!< Number of M2P kernel calls
-  using Kernel<equation>::P2P_CPU;                              //!< Evaluate P2P kernel on CPU
-  using Kernel<equation>::M2M_CPU;                              //!< Evaluate M2M kernel on CPU
+  using Kernel<equation>::NM2L;                                 //!< Number of M2L kernel calls
   using Kernel<equation>::P2M;                                  //!< Evaluate P2M kernel
   using Kernel<equation>::M2M;                                  //!< Evaluate M2M kernel
+  using Kernel<equation>::M2M_CPU;                              //!< Evaluate M2M kernel on CPU
   using Kernel<equation>::M2L;                                  //!< Evaluate M2L kernel
   using Kernel<equation>::M2P;                                  //!< Evaluate M2P kernel
   using Kernel<equation>::P2P;                                  //!< Evaluate P2P kernel
+  using Kernel<equation>::P2P_CPU;                              //!< Evaluate P2P kernel on CPU
   using Kernel<equation>::L2L;                                  //!< Evaluate L2L kernel
   using Kernel<equation>::L2P;                                  //!< Evaluate L2P kernel
+  using Dataset<equation>::initSource;                          //!< Initialize source values
+  using Dataset<equation>::initTarget;                          //!< Initialize target values
 
 private:
 //! Tree walk for treecode
@@ -156,6 +167,16 @@ private:
   }
 
 protected:
+//! Get level from cell index
+  int getLevel(bigint index) {
+    int level = -1;                                             // Initialize level counter
+    while( index >= 0 ) {                                       // While cell index is non-negative
+      level++;                                                  //  Increment level
+      index -= 1 << 3*level;                                    //  Subtract number of cells in that level
+    }                                                           // End while loop for cell index
+    return level;                                               // Return the level
+  }
+
   void timeKernels();                                           //!< Time all kernels for auto-tuning
 
 public:
@@ -163,6 +184,63 @@ public:
   Evaluator() : Icenter(1 << 13) {}
 //! Destructor
   ~Evaluator() {}
+
+//! Random distribution in [-1,1]^3 cube
+  void random(Bodies &bodies, int seed=1, int numSplit=1) {
+    srand(seed);                                                // Set seed for random number generator
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset
+        seed++;                                                 //   Mimic seed at next rank
+        srand(seed);                                            //   Set seed for random number generator
+      }                                                         //  Endif for mimicing parallel dataset
+      for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
+        B->X[d] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;   //   Initialize positions
+      }                                                         //  End loop over dimension
+    }                                                           // End loop over bodies
+    initSource(bodies);                                         // Initialize source values
+    initTarget(bodies);                                         // Initialize target values
+  }
+
+//! Random distribution on r = 1 sphere
+  void sphere(Bodies &bodies, int seed=1, int numSplit=1) {
+    srand(seed);                                                // Set seed for random number generator
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset
+        seed++;                                                 //   Mimic seed at next rank
+        srand(seed);                                            //   Set seed for random number generator
+      }                                                         //  Endif for mimicing parallel dataset
+      for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
+        B->X[d] = rand() / (1. + RAND_MAX) * 2 - 1;             //   Initialize positions
+      }                                                         //  End loop over dimension
+      real r = std::sqrt(norm(B->X));                           //  Distance from center
+      for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
+        B->X[d] /= r * 1.1;                                     //   Normalize positions
+      }                                                         //  End loop over dimension
+    }                                                           // End loop over bodies
+    initSource(bodies);                                         // Initialize source values
+    initTarget(bodies);                                         // Initialize target values
+  }
+
+//! Uniform distribution on [-1,1]^3 lattice (for debugging)
+  void lattice(Bodies &bodies) {
+    int level = int(log(bodies.size()*MPISIZE+1.)/M_LN2/3);     // Level of tree
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      int d = 0, l = 0;                                         //  Initialize dimension and level
+      int index = MPIRANK * bodies.size() + (B-bodies.begin()); //  Set index of body iterator
+      vec<3,int> nx = 0;                                        //  Initialize 3-D cell index
+      while( index != 0 ) {                                     //  Deinterleave bits while index is nonzero
+        nx[d] += (index % 2) * (1 << l);                        //   Add deinterleaved bit to 3-D cell index
+        index >>= 1;                                            //   Right shift the bits
+        d = (d+1) % 3;                                          //   Increment dimension
+        if( d == 0 ) l++;                                       //   If dimension is 0 again, increment level
+      }                                                         //  End while loop for deinterleaving bits
+      for( d=0; d!=3; ++d ) {                                   //  Loop over dimensions
+        B->X[d] = -1 + (2 * nx[d] + 1.) / (1 << level);         //   Calculate cell center from 3-D cell index
+      }                                                         //  End loop over dimensions
+    }                                                           // End loop over bodies
+    initSource(bodies);                                         // Initialize source values
+    initTarget(bodies);                                         // Initialize target values
+  }
 
 //! Add single list for kernel unit test
   void addM2L(C_iter Cj) {

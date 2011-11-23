@@ -1,8 +1,8 @@
 .SUFFIXES: .cxx .cu .o
 .PHONY: docs
 
-CUDA_INSTALL_PATH = /usr/local/cuda
-SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
+#CUDA_INSTALL_PATH = /usr/local/cuda
+#SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
 VTK_INCLUDE_PATH = /usr/include/vtk-5.4
 
 DEVICE  = cpu

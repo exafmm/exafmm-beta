@@ -136,12 +136,12 @@ public:
   }
 
 //! Initialize target values 
-  void initTarget(Bodies &bodies, bool) {
+  void initTarget(Bodies &bodies, bool IeqJ=true) {
     srand48(0);                                                 // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->TRG = 0;                                               //  Clear previous target values (IeqJ is dummy)
+      B->TRG = 0 * IeqJ;                                        //  Clear previous target values (IeqJ is dummy)
     }                                                           // End loop over bodies
   }
 
@@ -312,12 +312,12 @@ public:
   }
 
 //! Initialize target values
-  void initTarget(Bodies &bodies, bool) {
+  void initTarget(Bodies &bodies, bool IeqJ=true) {
     srand48(0);                                                 // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->TRG = 0;                                               //  Clear previous target values (IeqJ is dummy)
+      B->TRG = 0 * IeqJ;                                        //  Clear previous target values (IeqJ is dummy)
     }                                                           // End loop over bodies
   }
 

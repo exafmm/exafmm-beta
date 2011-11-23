@@ -22,11 +22,10 @@ THE SOFTWARE.
 #ifndef serialfmm_h
 #define serialfmm_h
 #include "bottomup.h"
-#include "dataset.h"
 
 //! Serial FMM interface
 template<Equation equation>
-class SerialFMM : public BottomUp<equation>, public Dataset<equation> {
+class SerialFMM : public BottomUp<equation> {
 public:
   using Kernel<equation>::sortBodies;                           //!< Sort bodies according to cell index
   using Kernel<equation>::preCalculation;                       //!< Precalculate M2L translation matrix
@@ -34,74 +33,15 @@ public:
   using TreeStructure<equation>::buffer;                        //!< Buffer for MPI communication & sorting
   using TreeStructure<equation>::bodies2twigs;                  //!< Group bodies into twig cells
   using TreeStructure<equation>::twigs2cells;                   //!< Link twigs bottomup to create all cells in tree
-  using Dataset<equation>::initSource;                          //!< Initialize source values
-  using Dataset<equation>::initTarget;                          //!< Initialize target values
 
 public:
 //! Constructor
-  SerialFMM() : BottomUp<equation>(), Dataset<equation>() {
+  SerialFMM() : BottomUp<equation>() {
     preCalculation();
   }
 //! Destructor
   ~SerialFMM() {
     postCalculation();
-  }
-
-//! Random distribution in [-1,1]^3 cube
-  void random(Bodies &bodies, int seed=1, int numSplit=1) {
-    srand(seed);                                                // Set seed for random number generator
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset
-        seed++;                                                 //   Mimic seed at next rank
-        srand(seed);                                            //   Set seed for random number generator
-      }                                                         //  Endif for mimicing parallel dataset
-      for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->X[d] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;   //   Initialize positions
-      }                                                         //  End loop over dimension
-    }                                                           // End loop over bodies
-    initSource(bodies);                                         // Initialize source values
-    initTarget(bodies);                                         // Initialize target values
-  }
-
-//! Random distribution on r = 1 sphere
-  void sphere(Bodies &bodies, int seed=1, int numSplit=1) {
-    srand(seed);                                                // Set seed for random number generator
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset
-        seed++;                                                 //   Mimic seed at next rank
-        srand(seed);                                            //   Set seed for random number generator
-      }                                                         //  Endif for mimicing parallel dataset
-      for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->X[d] = rand() / (1. + RAND_MAX) * 2 - 1;             //   Initialize positions
-      }                                                         //  End loop over dimension
-      real r = std::sqrt(norm(B->X));                           //  Distance from center
-      for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->X[d] /= r * 1.1;                                     //   Normalize positions
-      }                                                         //  End loop over dimension
-    }                                                           // End loop over bodies
-    initSource(bodies);                                         // Initialize source values
-    initTarget(bodies);                                         // Initialize target values
-  }
-
-//! Uniform distribution on [-1,1]^3 lattice (for debugging)
-  void lattice(Bodies &bodies) {
-    int level = int(log(bodies.size()*MPISIZE+1.)/M_LN2/3);     // Level of tree
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      int d = 0, l = 0;                                         //  Initialize dimension and level
-      int index = MPIRANK * bodies.size() + (B-bodies.begin()); //  Set index of body iterator
-      vec<3,int> nx = 0;                                        //  Initialize 3-D cell index
-      while( index != 0 ) {                                     //  Deinterleave bits while index is nonzero
-        nx[d] += (index % 2) * (1 << l);                        //   Add deinterleaved bit to 3-D cell index
-        index >>= 1;                                            //   Right shift the bits
-        d = (d+1) % 3;                                          //   Increment dimension
-        if( d == 0 ) l++;                                       //   If dimension is 0 again, increment level
-      }                                                         //  End while loop for deinterleaving bits
-      for( d=0; d!=3; ++d ) {                                   //  Loop over dimensions
-        B->X[d] = -1 + (2 * nx[d] + 1.) / (1 << level);         //   Calculate cell center from 3-D cell index
-      }                                                         //  End loop over dimensions
-    }                                                           // End loop over bodies
-    initSource(bodies);                                         // Initialize source values
-    initTarget(bodies);                                         // Initialize target values
   }
 
 //! Topdown tree constructor interface. Input: bodies, Output: cells

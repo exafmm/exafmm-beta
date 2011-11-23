@@ -66,9 +66,9 @@ public:
   using Partition<equation>::XMIN;                              //!< Minimum position vector of bodies
   using Partition<equation>::XMAX;                              //!< Maximum position vector of bodies
   using Partition<equation>::nprocs;                            //!< Number of processes in the two split groups
-  using Partition<equation>::color;                             //!< Color of Gather, Scatter, and Alltoall communicators
-  using Partition<equation>::key;                               //!< Key of Gather, Scatter, and Alltoall communicators
-  using Partition<equation>::MPI_COMM;                          //!< Communicators for Gather, Scatter, and Alltoall
+  using Partition<equation>::color;                             //!< Color for hypercube communicators
+  using Partition<equation>::key;                               //!< Key for hypercube communicators
+  using Partition<equation>::MPI_COMM;                          //!< Hypercube communicators
 
 private:
 //! Gather bounds of other domain
@@ -485,7 +485,7 @@ private:
     stopTimer("Reindex      ",printNow);                        // Stop timer 
 //    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
 //    BottomUp::grow(bodies);                                     // Grow tree structure
-    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
+    sortBodies(bodies,buffer,false);                              // Sort bodies in descending order
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
     startTimer("Reindex      ");                                // Start timer
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over cells
