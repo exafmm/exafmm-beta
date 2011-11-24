@@ -54,7 +54,7 @@ __device__ inline void GaussianP2P_core(gpureal &target, gpureal *targetX, gpure
   d.z += targetX[2];
   d.z -= sourceShrd[5*i+2];
   gpureal S2 = 2 * sourceShrd[5*i+4] * sourceShrd[5*i+4];
-  gpureal R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
+  gpureal R2 = d.x * d.x + d.y * d.y + d.z * d.z;
   target += sourceShrd[5*i+3] / (M_PI * S2) * rsqrtf(M_PI * S2) * expf(-R2 / S2);
 }
 

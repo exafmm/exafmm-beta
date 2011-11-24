@@ -467,7 +467,9 @@ __device__ inline void LaplaceP2P_core(gpureal *target, gpureal *targetX, gpurea
   d.y -= sourceShrd[4*i+1];
   d.z += targetX[2];
   d.z -= sourceShrd[4*i+2];
-  gpureal invR = rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
+  gpureal R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
+  gpureal invR = rsqrtf(R2);
+  if( R2 == 0 ) invR = 0;
   gpureal invR3 = sourceShrd[4*i+3] * invR * invR * invR;
   target[0] += sourceShrd[4*i+3] * invR;
   target[1] -= d.x * invR3;

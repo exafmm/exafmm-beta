@@ -52,7 +52,7 @@ public:
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
       B->TRG = 0;                                               //  Clear previous target values (IeqJ is dummy)
-      B->TRG[0] = -B->SRC[0] / std::sqrt(EPS2) * IeqJ;          //  Initialize potential (0 if I != J)
+      if( EPS2 != 0 ) B->TRG[0] = -B->SRC[0] / std::sqrt(EPS2) * IeqJ;//  Initialize potential (0 if I != J)
     }                                                           // End loop over bodies
   }
 
@@ -394,7 +394,7 @@ public:
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
       B->TRG = 0;                                               //  Clear previous target values (IeqJ is dummy)
-      B->TRG[0] = -B->SRC[0] / std::sqrt(EPS2) * IeqJ;          //  Initialize potential (0 if I != J)
+      if( EPS2 != 0 ) B->TRG[0] = -B->SRC[0] / std::sqrt(EPS2) * IeqJ;//  Initialize potential (0 if I != J)
     }                                                           // End loop over bodies
   }
 

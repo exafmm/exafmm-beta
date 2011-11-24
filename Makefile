@@ -11,17 +11,23 @@ DEVICE  = cpu
 #EXPAND  = Cartesian
 EXPAND  = Spherical
 
-CXX     = mpicxx -mpreferred-stack-boundary=4 -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O3 -fPIC -fopenmp\
+ifeq ($(shell mpicxx --version | grep Intel | wc -l),0)
+CXX     = mpicxx -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O3 -fPIC -fopenmp\
 	-ffast-math -funroll-loops -fforce-addr -rdynamic -D_FILE_OFFSET_BITS=64\
-	-I../include -I$(VTK_INCLUDE_PATH)
-#CXX     = mpicxx -O2 -fPIC -openmp -I../include -I$(VTK_INCLUDE_PATH)
+	-I../include
+else
+CXX     = mpicxx -O2 -fPIC -openmp -I../include
+endif
 NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_13\
 	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(SDK_INSTALL_PATH)/common/inc
 LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 ifeq ($(DEVICE),gpu)
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
-#VFLAGS  = -lvtkCommon -lvtkCharts -DVTK
+ifneq ($(shell which vtk 2>/dev/null | wc -l),0)
+CXX     += -I$(VTK_INCLUDE_PATH)
+VFLAGS  = -lvtkCommon -lvtkCharts -DVTK
+endif
 OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)BiotSavart.o\
 	../kernel/$(DEVICE)$(EXPAND)Stretching.o ../kernel/$(DEVICE)$(EXPAND)Gaussian.o\
 	../kernel/$(DEVICE)$(EXPAND)CoulombVdW.o

@@ -29,8 +29,11 @@ void Kernel<BiotSavart>::P2P_CPU() {                            // Biot-Savart P
       vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target
       real S2 = 2 * BJ->SRC[3] * BJ->SRC[3];                    //    2 * sigma^2
       real R2  = norm(dist) + EPS2;                             //    R^2 + epsilon^2
+      real invR = 1 / std::sqrt(R2);                            //    1 / R
+      if( R2 == 0 ) invR = 0;                                   //    Exclude self interaction
+      real invR3 = invR * invR * invR;                          //    1 / R^3
       real RS = R2 / S2;                                        //    R^2 / (2 * simga^2)
-      real cutoff = 0.25 / M_PI / R2 / std::sqrt(R2) * (erf( std::sqrt(RS) )// cutoff function
+      real cutoff = 0.25 / M_PI * invR3 * (erf( std::sqrt(RS) ) //    cutoff function
                   - std::sqrt(4 / M_PI * RS) * exp(-RS));
       BI->TRG[0] += (dist[1] * BJ->SRC[2] - dist[2] * BJ->SRC[1]) * cutoff;// x component of curl G * cutoff
       BI->TRG[1] += (dist[2] * BJ->SRC[0] - dist[0] * BJ->SRC[2]) * cutoff;// y component of curl G * cutoff
