@@ -37,5 +37,5 @@ d	: main.cxx
 
 f	: fdgl.cxx
 	make cleanall
-	$(CXX) $? -lvtkCharts -DMANY -DCART
+	$(CXX) $? -lvtkCommon -lvtkCharts -lvtkFiltering -lvtkViews -lvtkRendering -DMANY -DCART
 	./a.out

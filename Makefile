@@ -3,7 +3,7 @@
 
 #CUDA_INSTALL_PATH = /usr/local/cuda
 #SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
-VTK_INCLUDE_PATH = /usr/include/vtk-5.4
+VTK_INCLUDE_PATH = /usr/include/vtk-5.6
 
 DEVICE  = cpu
 #DEVICE  = gpu
@@ -24,10 +24,10 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 ifeq ($(DEVICE),gpu)
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
-ifneq ($(shell which vtk 2>/dev/null | wc -l),0)
+#ifneq ($(shell which vtk 2>/dev/null | wc -l),0)
 CXX     += -I$(VTK_INCLUDE_PATH)
 VFLAGS  = -lvtkCommon -lvtkCharts -DVTK
-endif
+#endif
 OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)BiotSavart.o\
 	../kernel/$(DEVICE)$(EXPAND)Stretching.o ../kernel/$(DEVICE)$(EXPAND)Gaussian.o\
 	../kernel/$(DEVICE)$(EXPAND)CoulombVdW.o
