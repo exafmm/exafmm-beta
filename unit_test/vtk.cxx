@@ -19,7 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-#include "dataset.h"
 #include "tree.h"
 #include "vtk.h"
 
@@ -28,14 +27,12 @@ int main() {
   IMAGES = 0;
   THETA = 1/sqrtf(3);
   Bodies bodies(numBodies);
-  Dataset dataset;
-  dataset.equation = Laplace;
-  TreeStructure<dataset.equation> FMM;
+  TreeStructure<Laplace> FMM;
   FMM.initialize();
   FMM.printNow = true;
 
   FMM.startTimer("Set bodies   ");
-  dataset.sphere(bodies);
+  FMM.sphere(bodies);
   FMM.stopTimer("Set bodies   ",FMM.printNow);
 
   FMM.startTimer("Set domain   ");

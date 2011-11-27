@@ -45,7 +45,7 @@ protected:
     int MPIlevel = int(log(MPISIZE-1) / M_LN2 / 3) + 1;         // Level of local root cell
     if( MPISIZE == 1 ) MPIlevel = 0;                            // For serial execution local root cell is root cell
     if( MPIlevel > level ) {                                    // If process hierarchy is deeper than tree
-      std::cout << "Process hierarchy is deeper than tree @ rank" << MPIRANK << std::endl;
+//      std::cout << "Process hierarchy is deeper than tree @ rank" << MPIRANK << std::endl;
       level = MPIlevel;
     }
     return level;                                               // Return max level

@@ -88,6 +88,10 @@ vtk: vtk.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(SERIALRUN)
 
+fdgl: fdgl.cxx $(OBJECT)
+	$(CXX) $? $(LFLAGS) $(VFLAGS)
+	$(PARALLELRUN)
+
 cuprintf: cuprintf.cu
 	$(NVCC) $? $(LFLAGS)
 	$(SERIALRUN)

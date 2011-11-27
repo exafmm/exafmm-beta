@@ -60,7 +60,7 @@ private:
 
   void splitNode(N_iter N) {
     while( N->NLEAF > NCRIT ) {
-      int c;
+      int c = 0;
       Leaf *Ln;
       for( Leaf *L=N->LEAF; L; L=Ln ) {
         Ln = L->NEXT;

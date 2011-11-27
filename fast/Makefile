@@ -34,8 +34,3 @@ d	: main.cxx
 	make cleanall
 	$(CXX) $? $(LFLAGS) -DBUILD -DCART
 	./a.out
-
-f	: fdgl.cxx
-	make cleanall
-	$(CXX) $? -lvtkCommon -lvtkCharts -lvtkFiltering -lvtkViews -lvtkRendering -DMANY -DCART
-	./a.out

@@ -96,7 +96,6 @@ private:
     sendBodyCellCnt.clear();                                    // Clear send counts
     sendBodyCells.clear();                                      // Clear send body cells
     int oldsize = 0;                                            // Per rank offset of the number of cells to send
-    C_iter C0 = cells.begin();                                  // Set cell begin iterator
     for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
       int ic = 0;                                               //  Initialize neighbor dimension counter
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimensions
@@ -385,7 +384,10 @@ private:
     startTimer("Recv bodies  ");                                //  Start timer
     for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {// Loop over recv bodies
       Body body;                                                //  Body structure
-      body.ICELL = JB->ICELL;                                   //  Set index of body
+      body.IBODY = 0;                                           //  Initialize body index
+      body.IPROC = 0;                                           //  Initialize proc index
+      body.TRG   = 0;                                           //  Initialize target values
+      body.ICELL = JB->ICELL;                                   //  Set index of cell
       body.X     = JB->X;                                       //  Set position of body
       body.SRC   = JB->SRC;                                     //  Set source values of body
       bodies.push_back(body);                                   //  Push body into bodies vector
