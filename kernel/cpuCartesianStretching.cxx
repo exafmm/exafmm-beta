@@ -24,9 +24,11 @@ THE SOFTWARE.
 #undef KERNEL
 #include "stretching.h"
 
-void Kernel::StretchingInit() {}
+template<>
+void Kernel<Stretching>::initialize() {}
 
-void Kernel::StretchingP2M() {
+template<>
+void Kernel<Stretching>::P2M() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = CI->X - B->X;
     CI->M[0] += B->SRC[0];
@@ -42,7 +44,8 @@ void Kernel::StretchingP2M() {
   }
 }
 
-void Kernel::StretchingM2M_CPU() {
+template<>
+void Kernel<Stretching>::M2M_CPU() {
   vect dist = CI->X - CJ->X;
   CI->M[0] += CJ->M[0];
   CI->M[1] += CJ->M[1] +  dist[0] * CJ->M[0];
@@ -56,7 +59,8 @@ void Kernel::StretchingM2M_CPU() {
   CI->M[9] += CJ->M[9] + (dist[2] * CJ->M[1] + dist[0] * CJ->M[3] + dist[2] * dist[0] * CJ->M[0]) / 2;
 }
 
-void Kernel::StretchingM2L() {
+template<>
+void Kernel<Stretching>::M2L() {
   vect dist = CI->X - CJ->X - Xperiodic;
   real R = std::sqrt(norm(dist));
   real R3 = R * R * R;
@@ -91,7 +95,8 @@ void Kernel::StretchingM2L() {
   CI->L[9] += CJ->M[0] * (3 * dist[2] * dist[0] / R5);
 }
 
-void Kernel::StretchingM2P() {
+template<>
+void Kernel<Stretching>::M2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     real R = std::sqrt(norm(dist));
@@ -122,7 +127,8 @@ void Kernel::StretchingM2P() {
   }
 }
 
-void Kernel::StretchingL2L() {
+template<>
+void Kernel<Stretching>::L2L() {
   vect dist = CI->X - CJ->X;
   for( int i=0; i<10; ++i )
     CI->L[i] += CJ->L[i];
@@ -146,7 +152,8 @@ void Kernel::StretchingL2L() {
   CI->L[3] += CJ->L[6] * dist[2];
 }
 
-void Kernel::StretchingL2P() {
+template<>
+void Kernel<Stretching>::L2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
     B->TRG[0] += CI->L[0];
@@ -174,4 +181,5 @@ void Kernel::StretchingL2P() {
   }
 }
 
-void Kernel::StretchingFinal() {}
+template<>
+void Kernel<Stretching>::finalize() {}

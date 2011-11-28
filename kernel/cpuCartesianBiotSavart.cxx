@@ -24,9 +24,11 @@ THE SOFTWARE.
 #undef KERNEL
 #include "biotsavart.h"
 
-void Kernel::BiotSavartInit() {}
+template<>
+void Kernel<BiotSavart>::initialize() {}
 
-void Kernel::BiotSavartP2M() {
+template<>
+void Kernel<BiotSavart>::P2M() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = CI->X - B->X;
     CI->M[0] += B->SRC[0];
@@ -42,7 +44,8 @@ void Kernel::BiotSavartP2M() {
   }
 }
 
-void Kernel::BiotSavartM2M_CPU() {
+template<>
+void Kernel<BiotSavart>::M2M_CPU() {
   vect dist = CI->X - CJ->X;
   CI->M[0] += CJ->M[0];
   CI->M[1] += CJ->M[1] +  dist[0] * CJ->M[0];
@@ -56,7 +59,8 @@ void Kernel::BiotSavartM2M_CPU() {
   CI->M[9] += CJ->M[9] + (dist[2] * CJ->M[1] + dist[0] * CJ->M[3] + dist[2] * dist[0] * CJ->M[0]) / 2;
 }
 
-void Kernel::BiotSavartM2L() {
+template<>
+void Kernel<BiotSavart>::M2L() {
   vect dist = CI->X - CJ->X - Xperiodic;
   real R = std::sqrt(norm(dist));
   real R3 = R * R * R;
@@ -91,7 +95,8 @@ void Kernel::BiotSavartM2L() {
   CI->L[9] += CJ->M[0] * (3 * dist[2] * dist[0] / R5);
 }
 
-void Kernel::BiotSavartM2P() {
+template<>
+void Kernel<BiotSavart>::M2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     real R = std::sqrt(norm(dist));
@@ -122,7 +127,8 @@ void Kernel::BiotSavartM2P() {
   }
 }
 
-void Kernel::BiotSavartL2L() {
+template<>
+void Kernel<BiotSavart>::L2L() {
   vect dist = CI->X - CJ->X;
   for( int i=0; i<10; ++i )
     CI->L[i] += CJ->L[i];
@@ -146,7 +152,8 @@ void Kernel::BiotSavartL2L() {
   CI->L[3] += CJ->L[6] * dist[2];
 }
 
-void Kernel::BiotSavartL2P() {
+template<>
+void Kernel<BiotSavart>::L2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
     B->TRG[0] += CI->L[0];
@@ -174,4 +181,5 @@ void Kernel::BiotSavartL2P() {
   }
 }
 
-void Kernel::BiotSavartFinal() {}
+template<>
+void Kernel<BiotSavart>::finalize() {}

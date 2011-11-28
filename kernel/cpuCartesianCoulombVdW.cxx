@@ -24,9 +24,11 @@ THE SOFTWARE.
 #undef KERNEL
 #include "coulombvdw.h"
 
-void Kernel::CoulombVdWInit() {}
+template<>
+void Kernel<CoulombVdW>::initialize() {}
 
-void Kernel::CoulombVdWP2M() {
+template<>
+void Kernel<CoulombVdW>::P2M() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = CI->X - B->X;
     CI->M[0] += B->SRC[0];
@@ -42,7 +44,8 @@ void Kernel::CoulombVdWP2M() {
   }
 }
 
-void Kernel::CoulombVdWM2M_CPU() {
+template<>
+void Kernel<CoulombVdW>::M2M_CPU() {
   vect dist = CI->X - CJ->X;
   CI->M[0] += CJ->M[0];
   CI->M[1] += CJ->M[1] +  dist[0] * CJ->M[0];
@@ -56,7 +59,8 @@ void Kernel::CoulombVdWM2M_CPU() {
   CI->M[9] += CJ->M[9] + (dist[2] * CJ->M[1] + dist[0] * CJ->M[3] + dist[2] * dist[0] * CJ->M[0]) / 2;
 }
 
-void Kernel::CoulombVdWM2L() {
+template<>
+void Kernel<CoulombVdW>::M2L() {
   vect dist = CI->X - CJ->X - Xperiodic;
   real invR = 1 / std::sqrt(norm(dist));
   real invR3 = invR * invR * invR;
@@ -91,7 +95,8 @@ void Kernel::CoulombVdWM2L() {
   CI->L[9] += CJ->M[0] * (3 * dist[2] * dist[0] * invR5);
 }
 
-void Kernel::CoulombVdWM2P() {
+template<>
+void Kernel<CoulombVdW>::M2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     real R = std::sqrt(norm(dist));
@@ -122,7 +127,8 @@ void Kernel::CoulombVdWM2P() {
   }
 }
 
-void Kernel::CoulombVdWL2L() {
+template<>
+void Kernel<CoulombVdW>::L2L() {
   vect dist = CI->X - CJ->X;
   for( int i=0; i<10; ++i )
     CI->L[i] += CJ->L[i];
@@ -146,7 +152,8 @@ void Kernel::CoulombVdWL2L() {
   CI->L[3] += CJ->L[6] * dist[2];
 }
 
-void Kernel::CoulombVdWL2P() {
+template<>
+void Kernel<CoulombVdW>::L2P() {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
     vect dist = B->X - CI->X;
     B->TRG[0] += CI->L[0];
@@ -174,4 +181,5 @@ void Kernel::CoulombVdWL2P() {
   }
 }
 
-void Kernel::CoulombVdWFinal() {}
+template<>
+void Kernel<CoulombVdW>::finalize() {}
