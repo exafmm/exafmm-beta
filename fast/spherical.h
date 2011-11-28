@@ -478,6 +478,66 @@ public:
     }
   }
 
+  void M2P(C_iter CI, C_iter CJ, bool mutual=true) const {
+    const complex I(0.,1.);
+    for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
+      vect dist = B->X - CJ->X;
+      vect spherical = 0;
+      vect cartesian = 0;
+      real r, theta, phi;
+      cart2sph(r,theta,phi,dist);
+      evalLocal(r,theta,phi);
+      for( int n=0; n!=P; ++n ) {
+        int nm  = n * n + n;
+        int nms = n * (n + 1) / 2;
+        B->TRG[0] -= B->SRC[0] * (CJ->M[nms] * Ynm[nm]).real();
+        spherical[0] -= B->SRC[0] * (CJ->M[nms] * Ynm[nm]).real() / r * (n+1);
+        spherical[1] += B->SRC[0] * (CJ->M[nms] * YnmTheta[nm]).real();
+        for( int m=1; m<=n; ++m ) {
+          nm  = n * n + n + m;
+          nms = n * (n + 1) / 2 + m;
+          B->TRG[0] -= 2 * B->SRC[0] * (CJ->M[nms] * Ynm[nm]).real();
+          spherical[0] -= 2 * B->SRC[0] * (CJ->M[nms] *Ynm[nm]).real() / r * (n+1);
+          spherical[1] += 2 * B->SRC[0] * (CJ->M[nms] *YnmTheta[nm]).real();
+          spherical[2] += 2 * B->SRC[0] * (CJ->M[nms] *Ynm[nm] * I).real() * m;
+        }
+      }
+      sph2cart(r,theta,phi,spherical,cartesian);
+      B->TRG[1] += cartesian[0];
+      B->TRG[2] += cartesian[1];
+      B->TRG[3] += cartesian[2];
+    }
+    if( mutual ) {
+      for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NDLEAF; ++B ) {
+        vect dist = B->X - CI->X;
+        vect spherical = 0;
+        vect cartesian = 0;
+        real r, theta, phi;
+        cart2sph(r,theta,phi,dist);
+        evalLocal(r,theta,phi);
+        for( int n=0; n!=P; ++n ) {
+          int nm  = n * n + n;
+          int nms = n * (n + 1) / 2;
+          B->TRG[0] -= B->SRC[0] * (CI->M[nms] * Ynm[nm]).real();
+          spherical[0] -= B->SRC[0] * (CI->M[nms] * Ynm[nm]).real() / r * (n+1);
+          spherical[1] += B->SRC[0] * (CI->M[nms] * YnmTheta[nm]).real();
+          for( int m=1; m<=n; ++m ) {
+            nm  = n * n + n + m;
+            nms = n * (n + 1) / 2 + m;
+            B->TRG[0] -= 2 * B->SRC[0] * (CI->M[nms] * Ynm[nm]).real();
+            spherical[0] -= 2 * B->SRC[0] * (CI->M[nms] *Ynm[nm]).real() / r * (n+1);
+            spherical[1] += 2 * B->SRC[0] * (CI->M[nms] *YnmTheta[nm]).real();
+            spherical[2] += 2 * B->SRC[0] * (CI->M[nms] *Ynm[nm] * I).real() * m;
+          }
+        }
+        sph2cart(r,theta,phi,spherical,cartesian);
+        B->TRG[1] += cartesian[0];
+        B->TRG[2] += cartesian[1];
+        B->TRG[3] += cartesian[2];
+      }
+    }
+  }
+
   void L2L(C_iter CI) const {
     C_iter CJ = C0 + CI->PARENT;
     vect dist = CI->X - CJ->X;

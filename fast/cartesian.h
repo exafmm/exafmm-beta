@@ -391,6 +391,10 @@ struct Downward {
     Downward<nx,ny+1,nz-1>::M2L(L,C,M);
     L[Index<nx,ny,nz>::I] += M2LSum<nx,ny,nz>::kernel(C,M);
   }
+  static inline void M2P(B_iter B, const Lset &C, const Mset &M) {
+    Downward<nx,ny+1,nz-1>::M2P(B,C,M);
+    B->TRG[Index<nx,ny,nz>::I] += M2LSum<nx,ny,nz>::kernel(C,M);
+  }
   static inline void L2L(Lset &LI, const Lset &C, const Lset &LJ) {
     Downward<nx,ny+1,nz-1>::L2L(LI,C,LJ);
     LI[Index<nx,ny,nz>::I] += LocalSum<nx,ny,nz>::kernel(C,LJ);
@@ -406,6 +410,10 @@ struct Downward<nx,ny,0> {
   static inline void M2L(Lset &L, const Lset &C, const Mset &M) {
     Downward<nx+1,0,ny-1>::M2L(L,C,M);
     L[Index<nx,ny,0>::I] += M2LSum<nx,ny,0>::kernel(C,M);
+  }
+  static inline void M2P(B_iter B, const Lset &C, const Mset &M) {
+    Downward<nx+1,0,ny-1>::M2P(B,C,M);
+    B->TRG[Index<nx,ny,0>::I] += M2LSum<nx,ny,0>::kernel(C,M);
   }
   static inline void L2L(Lset &LI, const Lset &C, const Lset &LJ) {
     Downward<nx+1,0,ny-1>::L2L(LI,C,LJ);
@@ -423,6 +431,10 @@ struct Downward<nx,0,0> {
     Downward<0,0,nx-1>::M2L(L,C,M);
     L[Index<nx,0,0>::I] += M2LSum<nx,0,0>::kernel(C,M);
   }
+  static inline void M2P(B_iter B, const Lset &C, const Mset &M) {
+    Downward<0,0,nx-1>::M2P(B,C,M);
+    B->TRG[Index<nx,0,0>::I] += M2LSum<nx,0,0>::kernel(C,M);
+  }
   static inline void L2L(Lset &LI, const Lset &C, const Lset &LJ) {
     Downward<0,0,nx-1>::L2L(LI,C,LJ);
     LI[Index<nx,0,0>::I] += LocalSum<nx,0,0>::kernel(C,LJ);
@@ -436,6 +448,7 @@ struct Downward<nx,0,0> {
 template<>
 struct Downward<0,0,0> {
   static inline void M2L(Lset&, const Lset&, const Mset&) {}
+  static inline void M2P(B_iter, const Lset&, const Mset&) {}
   static inline void L2L(Lset&, const Lset&, const Lset&) {}
   static inline void L2P(B_iter, const Lset&, const Lset&) {}
 };
@@ -447,17 +460,127 @@ protected:
   C_iter C0;
 
 private:
-  inline void sumM2L(Lset &L, Lset const&C, Mset const&M) const {
+  inline void getCoef(Lset &C, const vect &dist, real &invR2, const real &invR) const {
+    C[0] = invR;
+#if 0
+    Terms<0,0,P>::derivative(C,dist,invR2);
+    Terms<0,0,P>::scale(C);
+#else
+    invR2 = -invR2;
+    real x = dist[0], y = dist[1], z = dist[2];
+
+    real invR3 = invR * invR2;
+    C[1] = x * invR3;
+    C[2] = y * invR3;
+    C[3] = z * invR3;
+
+    real invR5 = 3 * invR3 * invR2;
+    real t = x * invR5;
+    C[4] = x * t + invR3;
+    C[5] = y * t;
+    C[6] = z * t;
+    t = y * invR5;
+    C[7] = y * t + invR3;
+    C[8] = z * t;
+    C[9] = z * z * invR5 + invR3;
+
+    real invR7 = 5 * invR5 * invR2;
+    t = x * x * invR7;
+    C[10] = x * (t + 3 * invR5);
+    C[11] = y * (t +     invR5);
+    C[12] = z * (t +     invR5);
+    t = y * y * invR7;
+    C[13] = x * (t +     invR5);
+    C[16] = y * (t + 3 * invR5);
+    C[17] = z * (t +     invR5);
+    t = z * z * invR7;
+    C[15] = x * (t +     invR5);
+    C[18] = y * (t +     invR5);
+    C[19] = z * (t + 3 * invR5);
+    C[14] = x * y * z * invR7;
+
+/*
+    real invR9 = 7 * invR7 * invR2;
+    t = x * x * invR9;
+    C[20] = x * x * (t + 6 * invR7) + 3 * invR5;
+    C[21] = x * y * (t + 3 * invR7);
+    C[22] = x * z * (t + 3 * invR7);
+    C[23] = y * y * (t +     invR7) + x * x * invR7 + invR5;
+    C[24] = y * z * (t +     invR7);
+    C[25] = z * z * (t +     invR7) + x * x * invR7 + invR5;
+    t = y * y * invR9;
+    C[26] = x * y * (t + 3 * invR7);
+    C[27] = x * z * (t +     invR7);
+    C[30] = y * y * (t + 6 * invR7) + 3 * invR5;
+    C[31] = y * z * (t + 3 * invR7);
+    C[32] = z * z * (t +     invR7) + y * y * invR7 + invR5;
+    t = z * z * invR9;
+    C[28] = x * y * (t +     invR7);
+    C[29] = x * z * (t + 3 * invR7);
+    C[33] = y * z * (t + 3 * invR7);
+    C[34] = z * z * (t + 6 * invR7) + 3 * invR5;
+
+    real invR11 = 9 * invR9 * invR2;
+    t = x * x * invR11;
+    C[35] = x * x * x * (t + 10 * invR9) + 15 * x * invR7;
+    C[36] = x * x * y * (t +  6 * invR9) +  3 * y * invR7;
+    C[37] = x * x * z * (t +  6 * invR9) +  3 * z * invR7;
+    C[38] = x * y * y * (t +  3 * invR9) + x * x * x * invR9 + 3 * x * invR7;
+    C[39] = x * y * z * (t +  3 * invR9);
+    C[40] = x * z * z * (t +  3 * invR9) + x * x * x * invR9 + 3 * x * invR7;
+    C[41] = y * y * y * (t +      invR9) + 3 * x * x * y * invR9 + 3 * y * invR7;
+    C[42] = y * y * z * (t +      invR9) + x * x * z * invR9 + z * invR7;
+    C[43] = y * z * z * (t +      invR9) + x * x * y * invR9 + y * invR7;
+    C[44] = z * z * z * (t +      invR9) + 3 * x * x * z * invR9 + 3 * z * invR7;
+    t = y * y * invR11;
+    C[45] = x * y * y * (t +  6 * invR9) +  3 * x * invR7;
+    C[46] = x * y * z * (t +  3 * invR9);
+    C[47] = x * z * z * (t +      invR9) + x * y * y * invR9 + x * invR7;
+    C[50] = y * y * y * (t + 10 * invR9) + 15 * y * invR7;
+    C[51] = y * y * z * (t +  6 * invR9) + 3 * z * invR7;
+    C[52] = y * z * z * (t +  3 * invR9) + y * y * y * invR9 + 3 * y * invR7;
+    C[53] = z * z * z * (t +      invR9) + 3 * y * y * z * invR9 + 3 * z * invR7;
+    t = z * z * invR11;
+    C[48] = x * y * z * (t +  3 * invR9);
+    C[49] = x * z * z * (t +  6 * invR9) +  3 * x * invR7;
+    C[54] = y * z * z * (t +  6 * invR9) +  3 * y * invR7;
+    C[55] = z * z * z * (t + 10 * invR9) + 15 * z * invR7;
+*/
+#endif
+  }
+
+  inline void flipCoef(Lset &C) const {
+    for( int i=1; i!=4; ++i ) C[i] = -C[i];
+    for( int i=10; i!=20; ++i ) C[i] = -C[i];
+  }
+
+  inline void sumM2L(Lset &L, const Lset &C, const Mset &M) const {
     L += C;
+#if 0
+    for( int i=1; i<MCOEF; ++i ) L[0] += M[i] * C[i+3];
+    Downward<0,0,P-1>::M2L(L,C,M);
+#else
     L[0] += C[4] *M[1] + C[5] *M[2] + C[6] *M[3] + C[7] *M[4] + C[8] *M[5] + C[9] *M[6];
     L[1] += C[10]*M[1] + C[11]*M[2] + C[12]*M[3] + C[13]*M[4] + C[14]*M[5] + C[15]*M[6];
     L[2] += C[11]*M[1] + C[13]*M[2] + C[14]*M[3] + C[16]*M[4] + C[17]*M[5] + C[18]*M[6];
     L[3] += C[12]*M[1] + C[14]*M[2] + C[15]*M[3] + C[17]*M[4] + C[18]*M[5] + C[19]*M[6];
+#endif
   }
 
-  inline void flipCoef (Lset &C) const {
-    for( int i=1; i!=4; ++i ) C[i] = -C[i];
-    for( int i=10; i!=20; ++i ) C[i] = -C[i];
+  inline void sumM2P(B_iter B, const Lset &C, const Mset &M) const {
+    B->TRG[0] -= C[0];
+    B->TRG[1] += C[1];
+    B->TRG[2] += C[2];
+    B->TRG[3] += C[3];
+#if 0
+    for( int i=1; i<MCOEF; ++i ) B->TRG[0] -= M[i] * C[i+3];
+    Downward<0,0,1>::M2P(B,C,M);
+#else
+    B->TRG[0] -= C[4] *M[1] + C[5] *M[2] + C[6] *M[3] + C[7] *M[4] + C[8] *M[5] + C[9] *M[6];
+    B->TRG[1] += C[10]*M[1] + C[11]*M[2] + C[12]*M[3] + C[13]*M[4] + C[14]*M[5] + C[15]*M[6];
+    B->TRG[2] += C[11]*M[1] + C[13]*M[2] + C[14]*M[3] + C[16]*M[4] + C[17]*M[5] + C[18]*M[6];
+    B->TRG[3] += C[12]*M[1] + C[14]*M[2] + C[15]*M[3] + C[17]*M[4] + C[18]*M[5] + C[19]*M[6];
+#endif
   }
 
 public:
@@ -553,111 +676,32 @@ public:
     real invR2 = 1 / norm(dist);
     real invR  = CI->M[0] * CJ->M[0] * std::sqrt(invR2);
     Lset C;
-    C[0] = invR;
-
-#if 0
-    Terms<0,0,P>::derivative(C,dist,invR2);
-    Terms<0,0,P>::scale(C);
-#else
-    invR2 = -invR2;
-    real x = dist[0], y = dist[1], z = dist[2];
-
-    real invR3 = invR * invR2;
-    C[1] = x * invR3;
-    C[2] = y * invR3;
-    C[3] = z * invR3;
-
-    real invR5 = 3 * invR3 * invR2;
-    real t = x * invR5;
-    C[4] = x * t + invR3;
-    C[5] = y * t;
-    C[6] = z * t;
-    t = y * invR5;
-    C[7] = y * t + invR3;
-    C[8] = z * t;
-    C[9] = z * z * invR5 + invR3;
-
-    real invR7 = 5 * invR5 * invR2;
-    t = x * x * invR7;
-    C[10] = x * (t + 3 * invR5);
-    C[11] = y * (t +     invR5);
-    C[12] = z * (t +     invR5);
-    t = y * y * invR7;
-    C[13] = x * (t +     invR5);
-    C[16] = y * (t + 3 * invR5);
-    C[17] = z * (t +     invR5);
-    t = z * z * invR7;
-    C[15] = x * (t +     invR5);
-    C[18] = y * (t +     invR5);
-    C[19] = z * (t + 3 * invR5);
-    C[14] = x * y * z * invR7;
-
-/*
-    real invR9 = 7 * invR7 * invR2;
-    t = x * x * invR9;
-    C[20] = x * x * (t + 6 * invR7) + 3 * invR5;
-    C[21] = x * y * (t + 3 * invR7);
-    C[22] = x * z * (t + 3 * invR7);
-    C[23] = y * y * (t +     invR7) + x * x * invR7 + invR5;
-    C[24] = y * z * (t +     invR7);
-    C[25] = z * z * (t +     invR7) + x * x * invR7 + invR5;
-    t = y * y * invR9;
-    C[26] = x * y * (t + 3 * invR7);
-    C[27] = x * z * (t +     invR7);
-    C[30] = y * y * (t + 6 * invR7) + 3 * invR5;
-    C[31] = y * z * (t + 3 * invR7);
-    C[32] = z * z * (t +     invR7) + y * y * invR7 + invR5;
-    t = z * z * invR9;
-    C[28] = x * y * (t +     invR7);
-    C[29] = x * z * (t + 3 * invR7);
-    C[33] = y * z * (t + 3 * invR7);
-    C[34] = z * z * (t + 6 * invR7) + 3 * invR5;
-
-    real invR11 = 9 * invR9 * invR2;
-    t = x * x * invR11;
-    C[35] = x * x * x * (t + 10 * invR9) + 15 * x * invR7;
-    C[36] = x * x * y * (t +  6 * invR9) +  3 * y * invR7;
-    C[37] = x * x * z * (t +  6 * invR9) +  3 * z * invR7;
-    C[38] = x * y * y * (t +  3 * invR9) + x * x * x * invR9 + 3 * x * invR7;
-    C[39] = x * y * z * (t +  3 * invR9);
-    C[40] = x * z * z * (t +  3 * invR9) + x * x * x * invR9 + 3 * x * invR7;
-    C[41] = y * y * y * (t +      invR9) + 3 * x * x * y * invR9 + 3 * y * invR7;
-    C[42] = y * y * z * (t +      invR9) + x * x * z * invR9 + z * invR7;
-    C[43] = y * z * z * (t +      invR9) + x * x * y * invR9 + y * invR7;
-    C[44] = z * z * z * (t +      invR9) + 3 * x * x * z * invR9 + 3 * z * invR7;
-    t = y * y * invR11;
-    C[45] = x * y * y * (t +  6 * invR9) +  3 * x * invR7;
-    C[46] = x * y * z * (t +  3 * invR9);
-    C[47] = x * z * z * (t +      invR9) + x * y * y * invR9 + x * invR7;
-    C[50] = y * y * y * (t + 10 * invR9) + 15 * y * invR7;
-    C[51] = y * y * z * (t +  6 * invR9) + 3 * z * invR7;
-    C[52] = y * z * z * (t +  3 * invR9) + y * y * y * invR9 + 3 * y * invR7;
-    C[53] = z * z * z * (t +      invR9) + 3 * y * y * z * invR9 + 3 * z * invR7;
-    t = z * z * invR11;
-    C[48] = x * y * z * (t +  3 * invR9);
-    C[49] = x * z * z * (t +  6 * invR9) +  3 * x * invR7;
-    C[54] = y * z * z * (t +  6 * invR9) +  3 * y * invR7;
-    C[55] = z * z * z * (t + 10 * invR9) + 15 * z * invR7;
-*/
-#endif
-#if 0
-    Mset M = CJ->M;
-    CI->L += C;
-    for( int i=1; i<MCOEF; ++i ) CI->L[0] += M[i] * C[i+3];
-    Downward<0,0,P-1>::M2L(CI->L,C,M);
-#else
+    getCoef(C,dist,invR2,invR);
     sumM2L(CI->L,C,CJ->M);
-#endif
     if( mutual ) {
       flipCoef(C);
-#if 0
-      M = CI->M;
-      CJ->L += C;
-      for( int i=1; i<MCOEF; ++i ) CJ->L[0] += M[i] * C[i+3];
-      Downward<0,0,P-1>::M2L(CJ->L,C,M);
-#else
       sumM2L(CJ->L,C,CI->M);
-#endif
+    }
+  }
+
+  void M2P(C_iter CI, C_iter CJ, bool mutual=true) const {
+    for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
+      vect dist = B->X - CJ->X;
+      real invR2 = 1 / norm(dist);
+      real invR  = B->SRC[0] * CJ->M[0] * std::sqrt(invR2);
+      Lset C;
+      getCoef(C,dist,invR2,invR);
+      sumM2P(B,C,CJ->M);
+    }
+    if( mutual ) {
+      for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NDLEAF; ++B ) {
+        vect dist = B->X - CI->X;
+        real invR2 = 1 / norm(dist);
+        real invR  = B->SRC[0] * CI->M[0] * std::sqrt(invR2);
+        Lset C;
+        getCoef(C,dist,invR2,invR);
+        sumM2P(B,C,CI->M);
+      }
     }
   }
 
