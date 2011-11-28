@@ -26,9 +26,9 @@ THE SOFTWARE.
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkGraphWriter.h> 
+#include <vtkGraphWriter.h>
 #include "parallelfmm.h"
- 
+
 struct JVertex {
   int       Ista;
   int       Iend;
@@ -52,7 +52,7 @@ typedef std::vector<JVertex>::iterator JV_iter;
 vtkMutableUndirectedGraph *graph = vtkMutableUndirectedGraph::New();
 vtkGraphLayoutView *view = vtkGraphLayoutView::New();
 vtkGraphWriter *writer = vtkGraphWriter::New();
-int numVertices, numEdges, localVertices, localEdges, maxEdges=0;
+int numVertices, numEdges, localVertices, maxEdges=0;
 int *offset = new int [MPISIZE];
 
 double get_time() {
@@ -70,28 +70,22 @@ void splitRange(int &begin, int &end, int iSplit, int numSplit) {
   if( remainder > iSplit ) end++;
 }
 
-void splitVertices() {
+void initVertices() {
   int begin = 0;
   int end = numVertices;
   splitRange(begin,end,MPIRANK,MPISIZE);
   localVertices = end - begin;
-  for( V_iter V=verticesG.begin()+begin; V!=verticesG.begin()+end; ++V ) {
-    vertices.push_back(*V);
-  }
-}
-
-void initVertices() {
-  for (int i = 0; i < numVertices; i++) {
+  for( int i=0; i<numVertices; ++i ) {
     Vertex vertex;
     vertex.Id = graph->AddVertex();
     vertex.Ista = vertex.Iend = 0;
     vertex.X[0] = 2 * drand48() - 1;
     vertex.X[1] = 2 * drand48() - 1;
     vertex.X[2] = 2 * drand48() - 1;
-    vertex.F = 0; 
-    verticesG.push_back(vertex);   
+    vertex.F = 0;
+    if( begin <= i && i < end ) vertices.push_back(vertex);
   }
-  splitVertices();
+  verticesG.resize(numVertices);
 }
 
 void readEdges(std::ifstream &fid) {
@@ -100,11 +94,11 @@ void readEdges(std::ifstream &fid) {
   int end = numVertices;
   splitRange(begin,end,MPIRANK,MPISIZE);
   fid >> line0 >> line1;
-  while( atoi(line0.c_str()) < begin ) { 
+  while( atoi(line0.c_str()) < begin ) {
     fid >> line0 >> line1;
   }
   int prevSrc=0, crntSrc=-1;
-  while( !fid.eof() ) { 
+  while( !fid.eof() ) {
     crntSrc = atoi(line0.c_str()) - begin;
     if (crntSrc != prevSrc) {
       vertices[prevSrc].Iend = edges.size();
@@ -201,7 +195,7 @@ void setEdges() {
     for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
       for( int i=V->Ista; i<V->Iend; ++i ) {
         // Data comes in duplicates - only add src <= dest
-        if (V->Id < verticesG[edges[i]].Id) 
+        if (V->Id < verticesG[edges[i]].Id)
           graph->AddEdge(V->Id, verticesG[edges[i]].Id);
       }
     }
@@ -302,7 +296,7 @@ void central() {
 void moveVertices(int step) {
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
     if( sqrtf(norm(V->F))*step < 100 && norm(V->X) < 100 ) V->X += V->F * step * 0.001;
-  } 
+  }
 }
 
 void drawGraph() {
@@ -322,7 +316,7 @@ void finalizeGraph() {
 
 void writeGraph(std::string fileid, int step) {
   std::stringstream ss;
-  ss << OUTPUT_PATH << fileid << '_' << step << ".vtk"; 
+  ss << OUTPUT_PATH << fileid << '_' << step << ".vtk";
   writer->SetFileName(ss.str().c_str());
   writer->SetInput(graph);
   writer->Write();
@@ -336,19 +330,19 @@ int main() {
   FMM.initialize();
   std::string fileid="test3_v331_e361";
   bool useEW=false, useVW=false;
-  
+
   t0 = get_time();
   readGraph(fileid);
   setEdges();
   t[0] += get_time() - t0;
-  
+
   for( int step=0; step<100; ++step ) {
     if( MPIRANK == 0 ) std::cout << step << std::endl;
-    
+
     t0 = get_time();
     repulsion(FMM);
     t[1] += get_time() - t0;
-    
+
     t0 = get_time();
     commVertices();
     if (useEW) {
@@ -357,25 +351,25 @@ int main() {
       spring();
     }
     t[2] += get_time() - t0;
-    
+
     t0 = get_time();
     if(useVW) {
       central();
     }
     t[3] += get_time() - t0;
-    
+
     t0 = get_time();
     moveVertices(step);
     t[4] += get_time() - t0;
-    
+
     t0 = get_time();
     setVertices();
     t[5] += get_time() - t0;
-    
+
     t0 = get_time();
     if( MPIRANK == 0 ) drawGraph();
-    t[6] += get_time() - t0;    
-    
+    t[6] += get_time() - t0;
+
     t0 = get_time();
 //    if( MPIRANK == 0 ) writeGraph(fileid,step);
     t[7] += get_time() - t0;
@@ -395,7 +389,7 @@ int main() {
     std::cout << "draw       : " << t[6] << std::endl;
     std::cout << "writeGraph : " << t[7] << std::endl;
   }
-  
+
   FMM.finalize();
   if( MPIRANK == 0 ) finalizeGraph();
 }
