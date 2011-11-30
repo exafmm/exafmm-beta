@@ -563,24 +563,24 @@ void Evaluator<equation>::evalL2P(Cells &cells) {                // Evaluate L2P
 }
 
 template<Equation equation>
-void Evaluator<equation>::timeKernels() {                        // Time all kernels for auto-tuning
-  Bodies ibodies(NCRIT), jbodies(NCRIT);                        // Artificial bodies
+void Evaluator<equation>::timeKernels() {                       // Time all kernels for auto-tuning
+  Bodies ibodies(100), jbodies(100);                            // Artificial bodies
   for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {// Loop over artificial bodies
     Bi->X = 0;                                                  //  Set coordinates of target body
     Bj->X = 1;                                                  //  Set coordinates of source body
   }                                                             // End loop over artificial bodies
   Cells icells, jcells;                                         // Artificial cells
-  icells.resize(100);                                           // 100 artificial target cells
+  icells.resize(10);                                            // 100 artificial target cells
   jcells.resize(100);                                           // 100 artificial source cells
   CI0 = icells.begin();                                         // Set global begin iterator for source
   for( C_iter Ci=icells.begin(); Ci!=icells.end(); ++Ci ) {     // Loop over target cells
     Ci->X = 0;                                                  //  Set coordinates of target cell
-    Ci->NLEAF = NCRIT;                                          //  Number of leafs in target cell
+    Ci->NLEAF = 100;                                            //  Number of leafs in target cell
     Ci->LEAF = ibodies.begin();                                 //  Leaf iterator in target cell
   }                                                             // End loop over target cells
   for( C_iter Cj=jcells.begin(); Cj!=jcells.end(); ++Cj ) {     // Loop over source cells
     Cj->X = 1;                                                  //  Set coordinates of source cell
-    Cj->NLEAF = NCRIT;                                          //  Number of leafs in source cell
+    Cj->NLEAF = 100;                                            //  Number of leafs in source cell
     Cj->LEAF = jbodies.begin();                                 //  Leaf iterator in source cell
   }                                                             // End loop over source cells
   listM2L.resize(icells.size());                                // Resize M2L interaction list
@@ -598,11 +598,11 @@ void Evaluator<equation>::timeKernels() {                        // Time all ker
   }                                                             // End loop over target cells
   startTimer("P2P kernel   ");                                  // Start timer
   evalP2P(icells);                                              // Evaluate P2P kernel
-  timeP2P = stopTimer("P2P kernel   ") / NCRIT / NCRIT;         // Stop timer
+  timeP2P = stopTimer("P2P kernel   ") / 100 / 100;             // Stop timer
   startTimer("M2L kernel   ");                                  // Start timer
   evalM2L(icells);                                              // Evaluate M2L kernel
   timeM2L = stopTimer("M2L kernel   ");                         // Stop timer
   startTimer("M2P kernel   ");                                  // Start timer
   evalM2P(icells);                                              // Evaluate M2P kernel
-  timeM2P = stopTimer("M2P kernel   ") / NCRIT;                 // Stop timer
+  timeM2P = stopTimer("M2P kernel   ") / 100;                   // Stop timer
 }

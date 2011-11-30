@@ -38,12 +38,12 @@ int main() {
     real dist = (1 << it) / 2;
     for( B_iter B=ibodies.begin(); B!=ibodies.end(); ++B ) {
       for( int d=0; d!=3; ++d ) {
-        B->X[d] = -rand() / (1. + RAND_MAX) - dist;
+        B->X[d] = -drand48() - dist;
       }
     }
     for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
       for( int d=0; d!=3; ++d ) {
-        B->X[d] = rand() / (1. + RAND_MAX);
+        B->X[d] = drand48();
       }
     }
     FMM.initSource(jbodies);

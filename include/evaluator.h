@@ -194,7 +194,7 @@ public:
         srand(seed);                                            //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->X[d] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;   //   Initialize positions
+        B->X[d] = drand48() * 2 * M_PI - M_PI;                  //   Initialize positions
       }                                                         //  End loop over dimension
     }                                                           // End loop over bodies
     initSource(bodies);                                         // Initialize source values
@@ -210,7 +210,7 @@ public:
         srand(seed);                                            //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->X[d] = rand() / (1. + RAND_MAX) * 2 - 1;             //   Initialize positions
+        B->X[d] = drand48() * 2 - 1;                            //   Initialize positions
       }                                                         //  End loop over dimension
       real r = std::sqrt(norm(B->X));                           //  Distance from center
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension

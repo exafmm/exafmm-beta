@@ -311,7 +311,7 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
   __shared__ gpureal sourceShrd[2*THREADS];
   __shared__ gpureal factShrd[2*P];
   __shared__ gpureal YnmShrd[4*NTERM];
-  gpureal fact = 1;
+  gpureal fact = 1e-6;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -342,6 +342,7 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
             gpureal rho,alpha,beta;
             cart2sph(rho,alpha,beta,d.x,d.y,d.z);
             evalLocal(YnmShrd,rho,alpha,factShrd);
+//            if(blockIdx.x==0&&threadIdx.x==0) cuPrintf("%d %f %f\n",ilist,rho,YnmShrd[166]);
             LaplaceM2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
           }
         }
@@ -349,8 +350,8 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
+  targetGlob[6*itarget+0] = target[0] * 1e-6;
+  targetGlob[6*itarget+1] = target[1] * 1e-6;
 }
 
 __device__ void LaplaceM2P_core(gpureal *target, gpureal r, gpureal theta, gpureal phi, gpureal *factShrd, gpureal *sourceShrd) {

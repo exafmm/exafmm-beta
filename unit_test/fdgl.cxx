@@ -54,6 +54,7 @@ vtkGraphLayoutView *view = vtkGraphLayoutView::New();
 vtkGraphWriter *writer = vtkGraphWriter::New();
 int numVertices, numEdges, localVertices, maxEdges=0;
 int *offset = new int [MPISIZE];
+static real radius = 2;
 
 double get_time() {
   struct timeval tv;
@@ -220,14 +221,23 @@ void repulsion(ParallelFMM<Laplace> &FMM) {
   Bodies jbodies;
   Cells cells, jcells;
   B_iter B = bodies.begin();
+  vect Xmin = B->X;
+  vect Xmax = B->X;
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V, ++B ) {
     B->X = V->X;
-    B->SRC = -0.001;
+    B->SRC = -0.001 * radius;
     B->TRG = 0;
     B->IBODY = V-vertices.begin();
     B->IPROC = MPIRANK;
     B->ICELL = 0;
+    if( Xmin[0] < B->X[0] ) Xmin[0] = B->X[0];
+    if( Xmin[1] < B->X[1] ) Xmin[1] = B->X[1];
+    if( Xmin[2] < B->X[2] ) Xmin[2] = B->X[2];
+    if( Xmax[0] > B->X[0] ) Xmax[0] = B->X[0];
+    if( Xmax[1] > B->X[1] ) Xmax[1] = B->X[1];
+    if( Xmax[2] > B->X[2] ) Xmax[2] = B->X[2];
   }
+  radius = std::sqrt(norm(Xmax-Xmin));
   FMM.setGlobDomain(bodies);
   FMM.octsection(bodies);
   FMM.bottomup(bodies,cells);
@@ -284,18 +294,12 @@ void springWeighted() {
   }
 }
 
-void central() {
+void moveVertices() {
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
-    vect dist = V->X;
-    float R2 = norm(dist) + EPS2;
-    float R3 = std::sqrt(R2) * R2;
-    V->F -= dist / R3 * ( (V->Iend - V->Ista) / maxEdges) * 0;
-  }
-}
-
-void moveVertices(int step) {
-  for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
-    if( sqrtf(norm(V->F))*step < 100 && norm(V->X) < 100 ) V->X += V->F * step * 0.001;
+    vect dX;
+    if( norm(V->F) < 1e-6 ) dX = 0;
+    else dX = V->F / std::sqrt(norm(V->F)) * 0.001 * radius;
+    if( norm(V->X) < 10000 ) V->X += dX;
   }
 }
 
@@ -323,20 +327,21 @@ void writeGraph(std::string fileid, int step) {
 }
 
 int main() {
-  double t0, t[8] = {0,0,0,0,0,0,0,0};
+  double t0, t[7] = {0,0,0,0,0,0,0};
   IMAGES = 0;
   THETA = 0.6;
   ParallelFMM<Laplace> FMM;
   FMM.initialize();
-  std::string fileid="test3_v331_e361";
-  bool useEW=false, useVW=false;
+  std::string fileid="jagmesh1_v936_e2664";
+//  std::string fileid="test1_v19905_e30238";
+  bool useEW=false;
 
   t0 = get_time();
   readGraph(fileid);
   setEdges();
   t[0] += get_time() - t0;
 
-  for( int step=0; step<100; ++step ) {
+  for( int step=0; step<1000; ++step ) {
     if( MPIRANK == 0 ) std::cout << step << std::endl;
 
     t0 = get_time();
@@ -353,26 +358,20 @@ int main() {
     t[2] += get_time() - t0;
 
     t0 = get_time();
-    if(useVW) {
-      central();
-    }
+    moveVertices();
     t[3] += get_time() - t0;
 
     t0 = get_time();
-    moveVertices(step);
+    setVertices();
     t[4] += get_time() - t0;
 
     t0 = get_time();
-    setVertices();
+    if( MPIRANK == 0 ) drawGraph();
     t[5] += get_time() - t0;
 
     t0 = get_time();
-    if( MPIRANK == 0 ) drawGraph();
-    t[6] += get_time() - t0;
-
-    t0 = get_time();
 //    if( MPIRANK == 0 ) writeGraph(fileid,step);
-    t[7] += get_time() - t0;
+    t[6] += get_time() - t0;
 
     usleep(1000);
   }
@@ -383,11 +382,10 @@ int main() {
     std::cout << "initialize : " << t[0] << std::endl;
     std::cout << "repulsion  : " << t[1] << std::endl;
     std::cout << "spring     : " << t[2] << std::endl;
-    if (useVW) std::cout << "central    : " << t[3] << std::endl;
-    std::cout << "move       : " << t[4] << std::endl;
-    std::cout << "setVer     : " << t[5] << std::endl;
-    std::cout << "draw       : " << t[6] << std::endl;
-    std::cout << "writeGraph : " << t[7] << std::endl;
+    std::cout << "move       : " << t[3] << std::endl;
+    std::cout << "setVer     : " << t[4] << std::endl;
+    std::cout << "draw       : " << t[5] << std::endl;
+    std::cout << "writeGraph : " << t[6] << std::endl;
   }
 
   FMM.finalize();

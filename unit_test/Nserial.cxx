@@ -38,7 +38,7 @@ int main() {
     numBodies = int(pow(10,(it+32)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
-    FMM.sphere(bodies,1,1);
+    FMM.random(bodies,1,1);
     FMM.startTimer("FMM          ");
     FMM.setDomain(bodies);
     cells.clear();
@@ -53,7 +53,7 @@ int main() {
 
     FMM.startTimer("Direct sum   ");
     FMM.buffer = bodies;
-#if 1
+#if 0
     FMM.initTarget(FMM.buffer);
     if( IMAGES != 0 ) {
       jbodies = FMM.periodicBodies(FMM.buffer);

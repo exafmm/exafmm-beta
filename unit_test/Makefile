@@ -20,7 +20,7 @@ kernel: kernel.cxx $(OBJECT)
 	$(SERIALRUN)
 
 serialrun: serialrun.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS) -DTOPDOWN
+	$(CXX) $? $(LFLAGS)
 	$(SERIALRUN)
 
 unsort: unsort.cxx $(OBJECT)
@@ -90,7 +90,7 @@ vtk: vtk.cxx $(OBJECT)
 
 fdgl: fdgl.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
-	$(PARALLELRUN)
+	$(SERIALRUN)
 
 cuprintf: cuprintf.cu
 	$(NVCC) $? $(LFLAGS)

@@ -41,14 +41,14 @@ public:
       if( kernelName == "Laplace" ) {                           //  If Laplace kernel
         B->SRC[0] = 1. / bodies.size() / MPISIZE;               //   Initialize mass/charge
       } else if ( kernelName == "BiotSavart" ) {                //  If Biot Savart kernel
-        B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize x vortex strength
-        B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize y vortex strength
-        B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+        B->SRC[0] = (drand48() * 2 - 1) / bodies.size() / MPISIZE;// Initialize x vortex strength
+        B->SRC[1] = (drand48() * 2 - 1) / bodies.size() / MPISIZE;// Initialize y vortex strength
+        B->SRC[2] = (drand48() * 2 - 1) / bodies.size() / MPISIZE;// Initialize z vortex strength
         B->SRC[3] = powf(bodies.size() * MPISIZE,-1./3);        //   Initialize core radius
       } else if ( kernelName == "Stretching" ) {                //  If Stretching kernel
-        B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize x vortex strength
-        B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize y vortex strength
-        B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+        B->SRC[0] = (drand48() * 2 - 1) / bodies.size() / MPISIZE;// Initialize x vortex strength
+        B->SRC[1] = (drand48() * 2 - 1) / bodies.size() / MPISIZE;// Initialize y vortex strength
+        B->SRC[2] = (drand48() * 2 - 1) / bodies.size() / MPISIZE;// Initialize z vortex strength
         B->SRC[3] = powf(bodies.size() * MPISIZE,-1./3);        //   Initialize core radius
       } else if ( kernelName == "Gaussian" ) {                  //  If Gaussian kernel
         B->SRC[0] = 1. / bodies.size() / MPISIZE;               //   Initialize mass/charge
@@ -71,9 +71,9 @@ public:
       } else if ( kernelName == "BiotSavart" ) {                //  If Biot Savart kernel
       } else if ( kernelName == "Stretching" ) {                //  If Stretching kernel
         if( !IeqJ ) {                                           //   If source and target are different
-          B->SRC[0] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize x vortex strength
-          B->SRC[1] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize y vortex strength
-          B->SRC[2] = (rand() / (1. + RAND_MAX) * 2 - 1)/ bodies.size() / MPISIZE;// Initialize z vortex strength
+          B->SRC[0] = (drand48() * 2 - 1) / bodies.size() / MPISIZE;// Initialize x vortex strength
+          B->SRC[1] = (drand48() * 2 - 1) / bodies.size() / MPISIZE;// Initialize y vortex strength
+          B->SRC[2] = (drand48() * 2 - 1) / bodies.size() / MPISIZE;// Initialize z vortex strength
         }                                                       //   Endif for different source and target
       } else if ( kernelName == "Gaussian" ) {                  //  If Gaussian kernel
       } else {                                                  //  If kernel is none of the above
@@ -91,7 +91,7 @@ public:
         srand(seed);                                            //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->X[d] = rand() / (1. + RAND_MAX) * 2 * M_PI - M_PI;   //   Initialize positions
+        B->X[d] = drand48() * 2 * M_PI - M_PI;                  //   Initialize positions
       }                                                         //  End loop over dimension
     }                                                           // End loop over bodies
     initSource(bodies);                                         // Initialize source values
@@ -106,7 +106,7 @@ public:
         srand(seed);                                            //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
-        B->X[d] = rand() / (1. + RAND_MAX) * 2 - 1;             //   Initialize positions
+        B->X[d] = drand48() * 2 - 1;                            //   Initialize positions
       }                                                         //  End loop over dimension
       real r = std::sqrt(norm(B->X));                           //  Distance from center
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension

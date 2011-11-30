@@ -23,6 +23,7 @@ THE SOFTWARE.
 #define pregpu_h
 #include <omp.h>
 
+const float    scale = 1e-6;                                    // Rescale factorial to prevent overflow
 static size_t  keysDevcSize = 0;                                // Size of offsets for rangeHost
 static size_t  rangeDevcSize = 0;                               // Size of offsets for sourceHost
 static size_t  sourceDevcSize = 0;                              // Size of sources
@@ -117,7 +118,7 @@ __device__ void evalLocal(gpureal *YnmShrd, gpureal rho,        // Evaluate sing
     }                                                           //  End loop up to m
     int m = mm;                                                 //  Define temporary m
     gpureal p = pn;                                             //  Associated Legendre polynomial Pnm
-    if( mm == nn ) Ynm = rhom * p;                              //  Ynm for n == m
+    if( mm == nn ) Ynm = rhom * p * 1e-6;                       //  Ynm for n == m
     gpureal p1 = p;                                             //  Pnm-1
     p = x * (2 * m + 1) * p;                                    //  Pnm
     rhom *= rho_1;                                              //  rho^(-m-1)
