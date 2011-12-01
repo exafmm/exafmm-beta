@@ -27,7 +27,7 @@ THE SOFTWARE.
 int main() {
   const int numBodies = 10000000;
   IMAGES = 0;
-  THETA = 1/sqrtf(3);
+  THETA = 1 / sqrtf(4);
   Bodies bodies(numBodies);
   Cells cells;
   SerialFMM<Laplace> FMM;

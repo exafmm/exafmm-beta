@@ -28,7 +28,7 @@ int main() {
   const int numBodies = 10000;
   const int numTarget = 100;
   IMAGES = 0;
-  THETA = 1/sqrtf(3);
+  THETA = 1 / sqrtf(4);
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells,jcells;
@@ -37,7 +37,7 @@ int main() {
   FMM.printNow = true;
 
   FMM.startTimer("Set bodies   ");
-  FMM.random(bodies,1,1);
+  FMM.sphere(bodies,1,1);
   FMM.stopTimer("Set bodies   ",FMM.printNow);
   FMM.eraseTimer("Set bodies   ");
 

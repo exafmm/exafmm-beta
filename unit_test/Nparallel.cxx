@@ -28,7 +28,7 @@ int main() {
   int numBodies = 10000;                                        // Number of bodies
   int numTarget = 100;                                          // Number of target points to be used for error eval.
   IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic FMM)
-  THETA = 1/sqrtf(3);                                           // Multipole acceptace criteria
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptace criteria
   Bodies bodies, jbodies;                                       // Define vector of bodies
   Cells cells;                                                  // Define vector of cells
   ParallelFMM<Laplace> FMM;                                     // Instantiate ParallelFMM class

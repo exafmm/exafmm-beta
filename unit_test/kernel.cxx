@@ -24,7 +24,7 @@ THE SOFTWARE.
 int main() {
   const int numBodies = 100;
   IMAGES = 0;
-  THETA = 1/sqrtf(3);
+  THETA = 1 / sqrtf(4);
   Bodies ibodies(numBodies);
   Bodies ibodies2(numBodies);
   Bodies jbodies(numBodies);

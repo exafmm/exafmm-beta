@@ -26,7 +26,7 @@ int main() {
   char hostname[256];
   const int numBodies = 1000;
   IMAGES = 0;
-  THETA = 1/sqrtf(3);
+  THETA = 1 / sqrtf(4);
   Bodies bodies(numBodies);
   Evaluator<Laplace> FMM;
   MyMPI M;

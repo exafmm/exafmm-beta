@@ -28,7 +28,7 @@ int main() {
   int numBodies = 10000;
   int numTarget = 100;
   IMAGES = 0;
-  THETA = 1/sqrtf(3);
+  THETA = 1 / sqrtf(4);
   Bodies bodies, jbodies;
   Cells cells;
   SerialFMM<Laplace> FMM;
@@ -38,7 +38,7 @@ int main() {
     numBodies = int(pow(10,(it+32)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
-    FMM.random(bodies,1,1);
+    FMM.sphere(bodies,1,1);
     FMM.startTimer("FMM          ");
     FMM.setDomain(bodies);
     cells.clear();
@@ -47,7 +47,7 @@ int main() {
 #else
     FMM.bottomup(bodies,cells);
 #endif
-    FMM.downward(cells,cells,2);
+    FMM.downward(cells,cells,1);
     FMM.stopTimer("FMM          ",true);
     FMM.eraseTimer("FMM          ");
 
