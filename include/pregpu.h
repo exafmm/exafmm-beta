@@ -36,7 +36,7 @@ static gpureal *targetDevc;                                     // Targets on de
 #pragma omp threadprivate(keysDevc,rangeDevc,sourceDevc,targetDevc)
 __device__ __constant__ gpureal constDevc[1];                   // Constants on device
 
-namespace {                                                     // Limit scope of the following functions to nvcc
+namespace {                                                     // Prevent overlap of definitions among equations
 __device__ void cart2sph(gpureal& r, gpureal& theta, gpureal& phi,// Get r,theta,phi from x,y,z on GPU
                          gpureal dx, gpureal dy, gpureal dz) {
   r = sqrtf(dx * dx + dy * dy + dz * dz)+EPS;                   // r = sqrt(x^2 + y^2 + z^2) + eps

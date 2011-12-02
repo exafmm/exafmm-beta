@@ -29,7 +29,7 @@ int main() {
   Bodies bodies, bodies2;
   Cells cells;
   Dataset DATA;
-  DATA.kernelName = "Laplace";
+  DATA.equation = "Laplace";
   SerialFMM FMM;
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {

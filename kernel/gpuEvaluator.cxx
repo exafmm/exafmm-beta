@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 template<Equation equation>
-void Evaluator<equation>::setSourceBody() {                      // Set source buffer for bodies
+void Evaluator<equation>::setSourceBody() {                     // Set source buffer for bodies
   startTimer("Set sourceB  ");                                  // Start timer
   for( M_iter M=sourceSize.begin(); M!=sourceSize.end(); ++M ) {// Loop over source map
     CJ = M->first;                                              //  Set source cell
@@ -39,7 +39,7 @@ void Evaluator<equation>::setSourceBody() {                      // Set source b
 }
 
 template<Equation equation>
-void Evaluator<equation>::setSourceCell(bool isM) {              // Set source buffer for cells
+void Evaluator<equation>::setSourceCell(bool isM) {             // Set source buffer for cells
   startTimer("Set sourceC  ");                                  // Start timer
   for( M_iter M=sourceSize.begin(); M!=sourceSize.end(); ++M ) {// Loop over source map
     CJ = M->first;                                              //  Set source cell
@@ -140,7 +140,7 @@ void Evaluator<equation>::setTargetCell(Lists lists, Maps flags) {// Set target 
 }
 
 template<Equation equation>
-void Evaluator<equation>::getTargetBody(Lists &lists) {          // Get body values from target buffer
+void Evaluator<equation>::getTargetBody(Lists &lists) {         // Get body values from target buffer
   startTimer("Get targetB  ");                                  // Start timer
   for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
@@ -189,7 +189,7 @@ void Evaluator<equation>::getTargetCell(Lists &lists, bool isM) {// Get body val
 }
 
 template<Equation equation>
-void Evaluator<equation>::clearBuffers() {                       // Clear GPU buffers
+void Evaluator<equation>::clearBuffers() {                      // Clear GPU buffers
   startTimer("Clear buffer ");                                  // Start timer
   keysHost.clear();                                             // Clear keys vector
   rangeHost.clear();                                            // Clear range vector
@@ -203,14 +203,14 @@ void Evaluator<equation>::clearBuffers() {                       // Clear GPU bu
 }
 
 template<Equation equation>
-void Evaluator<equation>::testMACP2P(C_iter Ci, C_iter Cj) {     // Test multipole acceptance criteria for P2P kernel
+void Evaluator<equation>::testMACP2P(C_iter Ci, C_iter Cj) {    // Test multipole acceptance criteria for P2P kernel
   listP2P[Ci-CI0].push_back(Cj);                                // Push source cell into P2P interaction list
   flagP2P[Ci-CI0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
   NP2P++;                                                       // Count P2P kernel execution
 }
 
 template<Equation equation>
-void Evaluator<equation>::testMACM2L(C_iter Ci, C_iter Cj) {     // Test multipole acceptance criteria for M2L kernel
+void Evaluator<equation>::testMACM2L(C_iter Ci, C_iter Cj) {    // Test multipole acceptance criteria for M2L kernel
   vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
   real R = std::sqrt(norm(dist));                               // Distance between cells
   if( Ci->R + Cj->R > THETA*R ) {                               // If cell is too large
@@ -224,7 +224,7 @@ void Evaluator<equation>::testMACM2L(C_iter Ci, C_iter Cj) {     // Test multipo
 }
 
 template<Equation equation>
-void Evaluator<equation>::testMACM2P(C_iter Ci, C_iter Cj) {     // Test multipole acceptance criteria for M2P kernel
+void Evaluator<equation>::testMACM2P(C_iter Ci, C_iter Cj) {    // Test multipole acceptance criteria for M2P kernel
   vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
   real R = std::sqrt(norm(dist));                               // Distance between cells
   if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {            // If target is not twig or cell is too large
@@ -340,7 +340,7 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalP2M(Cells &cells) {                // Evaluate P2M
+void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
   CI0 = cells.begin();                                          // Set begin iterator for target
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -371,7 +371,7 @@ void Evaluator<equation>::evalP2M(Cells &cells) {                // Evaluate P2M
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalM2M(Cells &cells) {                // Evaluate M2M
+void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
   CI0 = cells.begin();                                          // Set begin iterator for target
   const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -408,7 +408,7 @@ void Evaluator<equation>::evalM2M(Cells &cells) {                // Evaluate M2M
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {   // Evaluate M2L
+void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {  // Evaluate M2L
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -437,7 +437,7 @@ void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {   // Evaluate M2L
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {   // Evaluate M2P
+void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {  // Evaluate M2P
   CI0 = cells.begin();                                          // Set begin iterator for target
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -466,7 +466,7 @@ void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {   // Evaluate M2P
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {   // Evaluate P2P
+void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate P2P
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -495,7 +495,7 @@ void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {   // Evaluate P2P
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalL2L(Cells &cells) {                // Evaluate L2L
+void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate L2L
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCOEF/2;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -533,7 +533,7 @@ void Evaluator<equation>::evalL2L(Cells &cells) {                // Evaluate L2L
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalL2P(Cells &cells) {                // Evaluate L2P
+void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate L2P
   CI0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
