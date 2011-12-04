@@ -23,7 +23,7 @@ THE SOFTWARE.
 #include "kernel.h"
 #undef KERNEL
 #include "coulombvdw.h"
-#include "pregpu.h"
+#include "gpu.h"
 
 template<>
 void Kernel<CoulombVdW>::initialize() {
@@ -33,6 +33,96 @@ void Kernel<CoulombVdW>::initialize() {
   cudaThreadSynchronize();                                      // Sync GPU threads
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
+}
+
+template<>
+void Kernel<CoulombVdW>::M2M_CPU() {
+  const complex I(0.,1.);                                       // Imaginary unit
+  vect dist = CI->X - CJ->X;
+  real rho, alpha, beta;
+  cart2sph(rho,alpha,beta,dist);
+  evalMultipole(rho,alpha,-beta);
+  for( int j=0; j!=P; ++j ) {
+    for( int k=0; k<=j; ++k ) {
+      const int jk = j * j + j + k;
+      const int jks = j * (j + 1) / 2 + k;
+      complex M = 0;
+      for( int n=0; n<=j; ++n ) {
+        for( int m=-n; m<=std::min(k-1,n); ++m ) {
+          if( j-n >= k-m ) {
+            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
+            const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
+            const int nm    = n * n + n + m;
+            M += CJ->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+               * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+          }
+        }
+        for( int m=k; m<=n; ++m ) {
+          if( j-n >= m-k ) {
+            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
+            const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
+            const int nm    = n * n + n + m;
+            M += std::conj(CJ->M[3*jnkms]) * Ynm[nm]
+               * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+          }
+        }
+      }
+      CI->M[3*jks] += M;
+    }
+  }
+}
+
+template<>
+void Kernel<CoulombVdW>::finalize() {}
+
+template<>
+void Kernel<CoulombVdW>::allocate() {
+  cudaThreadSynchronize();
+  startTimer("cudaMalloc   ");
+  if( keysHost.size() > keysDevcSize ) {
+    if( keysDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(keysDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &keysDevc, keysHost.size()*sizeof(int) ));
+    keysDevcSize = keysHost.size();
+  }
+  if( rangeHost.size() > rangeDevcSize ) {
+    if( rangeDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(rangeDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &rangeDevc, rangeHost.size()*sizeof(int) ));
+    rangeDevcSize = rangeHost.size();
+  }
+  if( sourceHost.size() > sourceDevcSize ) {
+    if( sourceDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(sourceDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(gpureal) ));
+    sourceDevcSize = sourceHost.size();
+  }
+  if( targetHost.size() > targetDevcSize ) {
+    if( targetDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(targetDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(gpureal) ));
+    targetDevcSize = targetHost.size();
+  }
+  cudaThreadSynchronize();
+  stopTimer("cudaMalloc   ");
+}
+
+template<>
+void Kernel<CoulombVdW>::hostToDevice() {
+  cudaThreadSynchronize();
+  startTimer("cudaMemcpy   ");
+  CUDA_SAFE_CALL(cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(gpureal)));
+  cudaThreadSynchronize();
+  stopTimer("cudaMemcpy   ");
+}
+
+template<>
+void Kernel<CoulombVdW>::deviceToHost() {
+  cudaThreadSynchronize();
+  startTimer("cudaMemcpy   ");
+  CUDA_SAFE_CALL(cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(gpureal),cudaMemcpyDeviceToHost));
+  cudaThreadSynchronize();
+  stopTimer("cudaMemcpy   ");
 }
 
 __device__ void CoulombVdWP2M_core(gpureal *target, gpureal rho, gpureal alpha, gpureal beta, gpureal source) {
@@ -137,6 +227,19 @@ __global__ void CoulombVdWP2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   targetGlob[6*itarget+1] = target[1];
 }
 
+template<>
+void Kernel<CoulombVdW>::P2M() {
+  cudaThreadSynchronize();
+  startTimer("P2M GPUkernel");
+  int numBlocks = keysHost.size();\
+  if( numBlocks != 0 ) {\
+    CoulombVdWP2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  }\
+  CUT_CHECK_ERROR("Kernel execution failed");\
+  cudaThreadSynchronize();\
+  stopTimer("P2M GPUkernel");\
+}
+
 __device__ void CoulombVdWM2M_core(gpureal *target, gpureal beta, gpureal *factShrd, gpureal *YnmShrd, gpureal *sourceShrd) {
   int j = floorf(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
@@ -219,40 +322,16 @@ __global__ void CoulombVdWM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
 }
 
 template<>
-void Kernel<CoulombVdW>::M2M_CPU() {
-  const complex I(0.,1.);                                       // Imaginary unit
-  vect dist = CI->X - CJ->X;
-  real rho, alpha, beta;
-  cart2sph(rho,alpha,beta,dist);
-  evalMultipole(rho,alpha,-beta);
-  for( int j=0; j!=P; ++j ) {
-    for( int k=0; k<=j; ++k ) {
-      const int jk = j * j + j + k;
-      const int jks = j * (j + 1) / 2 + k;
-      complex M = 0;
-      for( int n=0; n<=j; ++n ) {
-        for( int m=-n; m<=std::min(k-1,n); ++m ) {
-          if( j-n >= k-m ) {
-            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-            const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
-            const int nm    = n * n + n + m;
-            M += CJ->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
-               * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-          }
-        }
-        for( int m=k; m<=n; ++m ) {
-          if( j-n >= m-k ) {
-            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-            const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-            const int nm    = n * n + n + m;
-            M += std::conj(CJ->M[3*jnkms]) * Ynm[nm]
-               * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-          }
-        }
-      }
-      CI->M[3*jks] += M;
-    }
-  }
+void Kernel<CoulombVdW>::M2M() {
+  cudaThreadSynchronize();
+  startTimer("M2M GPUkernel");
+  int numBlocks = keysHost.size();\
+  if( numBlocks != 0 ) {\
+    CoulombVdWM2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  }\
+  CUT_CHECK_ERROR("Kernel execution failed");\
+  cudaThreadSynchronize();\
+  stopTimer("M2M GPUkernel");\
 }
 
 __device__ void CoulombVdWM2L_core(gpureal *target, gpureal  beta, gpureal *factShrd, gpureal *YnmShrd, gpureal *sourceShrd) {
@@ -343,6 +422,19 @@ __global__ void CoulombVdWM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[6*itarget+0] = target[0];
   targetGlob[6*itarget+1] = target[1];
+}
+
+template<>
+void Kernel<CoulombVdW>::M2L() {
+  cudaThreadSynchronize();
+  startTimer("M2L GPUkernel");
+  int numBlocks = keysHost.size();\
+  if( numBlocks != 0 ) {\
+    CoulombVdWM2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  }\
+  CUT_CHECK_ERROR("Kernel execution failed");\
+  cudaThreadSynchronize();\
+  stopTimer("M2L GPUkernel");\
 }
 
 __device__ void CoulombVdWM2P_core(gpureal *target, gpureal r, gpureal theta, gpureal phi, gpureal *factShrd, gpureal *sourceShrd) {
@@ -452,6 +544,19 @@ __global__ void CoulombVdWM2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   targetGlob[6*itarget+3] = target[3];
 }
 
+template<>
+void Kernel<CoulombVdW>::M2P() {
+  cudaThreadSynchronize();
+  startTimer("M2P GPUkernel");
+  int numBlocks = keysHost.size();\
+  if( numBlocks != 0 ) {\
+    CoulombVdWM2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  }\
+  CUT_CHECK_ERROR("Kernel execution failed");\
+  cudaThreadSynchronize();\
+  stopTimer("M2P GPUkernel");\
+}
+
 __device__ inline void CoulombVdWP2P_core(gpureal *target, gpureal *targetX, gpureal *sourceShrd, float3 d, int i) {
   d.x += targetX[0];
   d.x -= sourceShrd[4*i+0];
@@ -543,6 +648,19 @@ __global__ void CoulombVdWP2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   targetGlob[6*itarget+3] = target[3];
 }
 
+template<>
+void Kernel<CoulombVdW>::P2P() {
+  cudaThreadSynchronize();
+  startTimer("P2P GPUkernel");
+  int numBlocks = keysHost.size();\
+  if( numBlocks != 0 ) {\
+    CoulombVdWP2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  }\
+  CUT_CHECK_ERROR("Kernel execution failed");\
+  cudaThreadSynchronize();\
+  stopTimer("P2P GPUkernel");\
+}
+
 __device__ void CoulombVdWL2L_core(gpureal *target, gpureal beta, gpureal *factShrd, gpureal *YnmShrd, gpureal *sourceShrd) {
   int j = floorf(sqrtf(2*threadIdx.x+0.25)-0.5);
   int k = 0;
@@ -619,6 +737,19 @@ __global__ void CoulombVdWL2L_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[6*itarget+0] = target[0];
   targetGlob[6*itarget+1] = target[1];
+}
+
+template<>
+void Kernel<CoulombVdW>::L2L() {
+  cudaThreadSynchronize();
+  startTimer("L2L GPUkernel");
+  int numBlocks = keysHost.size();\
+  if( numBlocks != 0 ) {\
+    CoulombVdWL2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  }\
+  CUT_CHECK_ERROR("Kernel execution failed");\
+  cudaThreadSynchronize();\
+  stopTimer("L2L GPUkernel");\
 }
 
 __device__ void CoulombVdWL2P_core(gpureal *target, gpureal r, gpureal theta, gpureal phi, gpureal *factShrd, gpureal *sourceShrd) {
@@ -715,14 +846,14 @@ __global__ void CoulombVdWL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
 }
 
 template<>
-void Kernel<CoulombVdW>::finalize() {}
-
-#include "gpu.h"
-
-CALL_GPU(CoulombVdW,P2M,P2M GPUkernel);
-CALL_GPU(CoulombVdW,M2M,M2M GPUkernel);
-CALL_GPU(CoulombVdW,M2L,M2L GPUkernel);
-CALL_GPU(CoulombVdW,M2P,M2P GPUkernel);
-CALL_GPU(CoulombVdW,P2P,P2P GPUkernel);
-CALL_GPU(CoulombVdW,L2L,L2L GPUkernel);
-CALL_GPU(CoulombVdW,L2P,L2P GPUkernel);
+void Kernel<CoulombVdW>::L2P() {
+  cudaThreadSynchronize();
+  startTimer("L2P GPUkernel");
+  int numBlocks = keysHost.size();\
+  if( numBlocks != 0 ) {\
+    CoulombVdWL2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  }\
+  CUT_CHECK_ERROR("Kernel execution failed");\
+  cudaThreadSynchronize();\
+  stopTimer("L2P GPUkernel");\
+}

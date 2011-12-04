@@ -47,12 +47,20 @@ protected:
 
   std::vector<int>     keysHost;                                //!< Offsets for rangeHost
   std::vector<int>     rangeHost;                               //!< Offsets for sourceHost
-  std::vector<gpureal> constHost;                               //!< Constants on host
   std::vector<gpureal> sourceHost;                              //!< Sources on host
   std::vector<gpureal> targetHost;                              //!< Targets on host
+  std::vector<gpureal> constHost;                               //!< Constants on host
   Map                  sourceBegin;                             //!< Define map for offset of source cells
   Map                  sourceSize;                              //!< Define map for size of source cells
   Map                  targetBegin;                             //!< Define map for offset of target cells
+  size_t               keysDevcSize;                            //!< Size of offsets for rangeDevc
+  size_t               rangeDevcSize;                           //!< Size of offsets for sourceDevc
+  size_t               sourceDevcSize;                          //!< Size of sources on device
+  size_t               targetDevcSize;                          //!< Size of targets on device
+  int                 *keysDevc;                                //!< Offsets for rangeDevc
+  int                 *rangeDevc;                               //!< Offsets for sourceDevc
+  gpureal             *sourceDevc;                              //!< Sources on device
+  gpureal             *targetDevc;                              //!< Targets on device
 
   double *factorial;                                            //!< Factorial
   double *prefactor;                                            //!< \f$ \sqrt{ \frac{(n - |m|)!}{(n + |m|)!} } \f$
@@ -65,113 +73,7 @@ public:
   real NM2P;                                                    //!< Number of M2P kernel calls
   real NM2L;                                                    //!< Number of M2L kernel calls
 
-public:
-//! Constructor
-  KernelBase() : X0(0), R0(0), NP2P(0), NM2P(0), NM2L(0) {}
-//! Destructor
-  ~KernelBase() {}
-
-//! Get center of root cell
-  vect getX0() {return X0;}
-//! Get radius of root cell
-  real getR0() {return R0;}
-
-//! Set center and size of root cell
-  void setDomain(Bodies &bodies, vect x0=0, real r0=M_PI) {
-    vect xmin,xmax;                                             // Min,Max of domain
-    B_iter B = bodies.begin();                                  // Reset body iterator
-    xmin = xmax = B->X;                                         // Initialize xmin,xmax
-    X0 = 0;                                                     // Initialize center and size of root cell
-    for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
-      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
-        if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];           //   Determine xmin
-        else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];           //   Determine xmax
-      }                                                         //  End loop over each dimension
-      X0 += B->X;                                               //  Sum positions
-    }                                                           // End loop over bodies
-    X0 /= bodies.size();                                        // Calculate average position
-    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
-      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
-      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
-      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
-    }                                                           // End loop over each dimension
-    R0 += 1e-5;                                                 // Add some leeway to root radius
-    if( IMAGES != 0 ) {                                         // If periodic boundary condition
-      if( X0[0]-R0 < x0[0]-r0 || x0[0]+r0 < X0[0]+R0            //  Check for outliers in x direction
-       || X0[1]-R0 < x0[1]-r0 || x0[1]+r0 < X0[1]+R0            //  Check for outliers in y direction
-       || X0[2]-R0 < x0[2]-r0 || x0[2]+r0 < X0[2]+R0 ) {        //  Check for outliers in z direction
-        std::cout << "Error: Particles located outside periodic domain" << std::endl;// Print error message
-      }                                                         //  End if for outlier checking
-      X0 = x0;                                                  //  Center is [0, 0, 0]
-      R0 = r0;                                                  //  Radius is r0
-    }                                                           // Endif for periodic boundary condition
-  }
-
-//! Set scaling paramters in Van der Waals
-  void setVanDerWaals(int atoms, double *rscale, double *gscale) {
-    ATOMS = atoms;                                              // Set number of atom types
-    RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
-    GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector
-    for( int i=0; i!=ATOMS*ATOMS; ++i ) {                       // Loop over scale vector
-      RSCALE[i] = rscale[i];                                    //  Set rscale vector
-      GSCALE[i] = gscale[i];                                    //  Set gscale vector
-    }                                                           // End loop over scale vector
-  }
-
-//! Precalculate M2L translation matrix
-  void preCalculation() {
-    const complex I(0.,1.);                                     // Imaginary unit
-    factorial = new double  [P];                                // Factorial
-    prefactor = new double  [4*P2];                             // sqrt( (n - |m|)! / (n + |m|)! )
-    Anm       = new double  [4*P2];                             // (-1)^n / sqrt( (n + m)! / (n - m)! )
-    Ynm       = new complex [4*P2];                             // r^n * Ynm
-    YnmTheta  = new complex [4*P2];                             // theta derivative of r^n * Ynm
-    Cnm       = new complex [P4];                               // M2L translation matrix Cjknm
-
-    factorial[0] = 1;                                           // Initialize factorial
-    for( int n=1; n!=P; ++n ) {                                 // Loop to P
-      factorial[n] = factorial[n-1] * n;                        //  n!
-    }                                                           // End loop to P
-
-    for( int n=0; n!=2*P; ++n ) {                               // Loop over n in Anm
-      for( int m=-n; m<=n; ++m ) {                              //  Loop over m in Anm
-        int nm = n*n+n+m;                                       //   Index of Anm
-        int nabsm = abs(m);                                     //   |m|
-        double fnmm = 1.0;                                      //   Initialize (n - m)!
-        for( int i=1; i<=n-m; ++i ) fnmm *= i;                  //   (n - m)!
-        double fnpm = 1.0;                                      //   Initialize (n + m)!
-        for( int i=1; i<=n+m; ++i ) fnpm *= i;                  //   (n + m)!
-        double fnma = 1.0;                                      //   Initialize (n - |m|)!
-        for( int i=1; i<=n-nabsm; ++i ) fnma *= i;              //   (n - |m|)!
-        double fnpa = 1.0;                                      //   Initialize (n + |m|)!
-        for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;              //   (n + |m|)!
-        prefactor[nm] = std::sqrt(fnma/fnpa);                   //   sqrt( (n - |m|)! / (n + |m|)! )
-        Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);              //   (-1)^n / sqrt( (n + m)! / (n - m)! )
-      }                                                         //  End loop over m in Anm
-    }                                                           // End loop over n in Anm
-
-    for( int j=0, jk=0, jknm=0; j!=P; ++j ) {                   // Loop over j in Cjknm
-      for( int k=-j; k<=j; ++k, ++jk ){                         //  Loop over k in Cjknm
-        for( int n=0, nm=0; n!=P; ++n ) {                       //   Loop over n in Cjknm
-          for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {            //    Loop over m in Cjknm
-            const int jnkm = (j+n)*(j+n)+j+n+m-k;               //     Index C_{j+n}^{m-k}
-            Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);// Cjknm
-          }                                                     //    End loop over m in Cjknm
-        }                                                       //   End loop over n in Cjknm
-      }                                                         //  End loop over in k in Cjknm
-    }                                                           // End loop over in j in Cjknm
-  }
-
-//! Free temporary allocations
-  void postCalculation() {
-    delete[] factorial;                                         // Free factorial
-    delete[] prefactor;                                         // Free sqrt( (n - |m|)! / (n + |m|)! )
-    delete[] Anm;                                               // Free (-1)^n / sqrt( (n + m)! / (n - m)! )
-    delete[] Ynm;                                               // Free r^n * Ynm
-    delete[] YnmTheta;                                          // Free theta derivative of r^n * Ynm
-    delete[] Cnm;                                               // Free M2L translation matrix Cjknm
-  }
-
+protected:
 //! Get r,theta,phi from x,y,z
   void cart2sph(real& r, real& theta, real& phi, vect dist) {
     r = std::sqrt(norm(dist))+EPS;                              // r = sqrt(x^2 + y^2 + z^2) + eps
@@ -271,6 +173,116 @@ public:
       fact += 2;                                                //  2 * m + 1
     }                                                           // End loop over m in Ynm
   }
+
+//! Precalculate M2L translation matrix
+  void preCalculation() {
+    const complex I(0.,1.);                                     // Imaginary unit
+    factorial = new double  [P];                                // Factorial
+    prefactor = new double  [4*P2];                             // sqrt( (n - |m|)! / (n + |m|)! )
+    Anm       = new double  [4*P2];                             // (-1)^n / sqrt( (n + m)! / (n - m)! )
+    Ynm       = new complex [4*P2];                             // r^n * Ynm
+    YnmTheta  = new complex [4*P2];                             // theta derivative of r^n * Ynm
+    Cnm       = new complex [P4];                               // M2L translation matrix Cjknm
+
+    factorial[0] = 1;                                           // Initialize factorial
+    for( int n=1; n!=P; ++n ) {                                 // Loop to P
+      factorial[n] = factorial[n-1] * n;                        //  n!
+    }                                                           // End loop to P
+
+    for( int n=0; n!=2*P; ++n ) {                               // Loop over n in Anm
+      for( int m=-n; m<=n; ++m ) {                              //  Loop over m in Anm
+        int nm = n*n+n+m;                                       //   Index of Anm
+        int nabsm = abs(m);                                     //   |m|
+        double fnmm = 1.0;                                      //   Initialize (n - m)!
+        for( int i=1; i<=n-m; ++i ) fnmm *= i;                  //   (n - m)!
+        double fnpm = 1.0;                                      //   Initialize (n + m)!
+        for( int i=1; i<=n+m; ++i ) fnpm *= i;                  //   (n + m)!
+        double fnma = 1.0;                                      //   Initialize (n - |m|)!
+        for( int i=1; i<=n-nabsm; ++i ) fnma *= i;              //   (n - |m|)!
+        double fnpa = 1.0;                                      //   Initialize (n + |m|)!
+        for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;              //   (n + |m|)!
+        prefactor[nm] = std::sqrt(fnma/fnpa);                   //   sqrt( (n - |m|)! / (n + |m|)! )
+        Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);              //   (-1)^n / sqrt( (n + m)! / (n - m)! )
+      }                                                         //  End loop over m in Anm
+    }                                                           // End loop over n in Anm
+
+    for( int j=0, jk=0, jknm=0; j!=P; ++j ) {                   // Loop over j in Cjknm
+      for( int k=-j; k<=j; ++k, ++jk ){                         //  Loop over k in Cjknm
+        for( int n=0, nm=0; n!=P; ++n ) {                       //   Loop over n in Cjknm
+          for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {            //    Loop over m in Cjknm
+            const int jnkm = (j+n)*(j+n)+j+n+m-k;               //     Index C_{j+n}^{m-k}
+            Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);// Cjknm
+          }                                                     //    End loop over m in Cjknm
+        }                                                       //   End loop over n in Cjknm
+      }                                                         //  End loop over in k in Cjknm
+    }                                                           // End loop over in j in Cjknm
+  }
+
+//! Free temporary allocations
+  void postCalculation() {
+    delete[] factorial;                                         // Free factorial
+    delete[] prefactor;                                         // Free sqrt( (n - |m|)! / (n + |m|)! )
+    delete[] Anm;                                               // Free (-1)^n / sqrt( (n + m)! / (n - m)! )
+    delete[] Ynm;                                               // Free r^n * Ynm
+    delete[] YnmTheta;                                          // Free theta derivative of r^n * Ynm
+    delete[] Cnm;                                               // Free M2L translation matrix Cjknm
+  }
+
+public:
+//! Constructor
+  KernelBase() : X0(0), R0(0), keysDevcSize(0), rangeDevcSize(0),
+                 sourceDevcSize(0), targetDevcSize(0),
+                 NP2P(0), NM2P(0), NM2L(0) {}
+//! Destructor
+  ~KernelBase() {}
+
+//! Get center of root cell
+  vect getX0() {return X0;}
+//! Get radius of root cell
+  real getR0() {return R0;}
+
+//! Set center and size of root cell
+  void setDomain(Bodies &bodies, vect x0=0, real r0=M_PI) {
+    vect xmin,xmax;                                             // Min,Max of domain
+    B_iter B = bodies.begin();                                  // Reset body iterator
+    xmin = xmax = B->X;                                         // Initialize xmin,xmax
+    X0 = 0;                                                     // Initialize center and size of root cell
+    for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
+      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
+        if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];           //   Determine xmin
+        else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];           //   Determine xmax
+      }                                                         //  End loop over each dimension
+      X0 += B->X;                                               //  Sum positions
+    }                                                           // End loop over bodies
+    X0 /= bodies.size();                                        // Calculate average position
+    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
+      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
+      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
+      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
+    }                                                           // End loop over each dimension
+    R0 += 1e-5;                                                 // Add some leeway to root radius
+    if( IMAGES != 0 ) {                                         // If periodic boundary condition
+      if( X0[0]-R0 < x0[0]-r0 || x0[0]+r0 < X0[0]+R0            //  Check for outliers in x direction
+       || X0[1]-R0 < x0[1]-r0 || x0[1]+r0 < X0[1]+R0            //  Check for outliers in y direction
+       || X0[2]-R0 < x0[2]-r0 || x0[2]+r0 < X0[2]+R0 ) {        //  Check for outliers in z direction
+        std::cout << "Error: Particles located outside periodic domain" << std::endl;// Print error message
+      }                                                         //  End if for outlier checking
+      X0 = x0;                                                  //  Center is [0, 0, 0]
+      R0 = r0;                                                  //  Radius is r0
+    }                                                           // Endif for periodic boundary condition
+  }
+
+//! Set scaling paramters in Van der Waals
+  void setVanDerWaals(int atoms, double *rscale, double *gscale) {
+    ATOMS = atoms;                                              // Set number of atom types
+    RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
+    GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector
+    for( int i=0; i!=ATOMS*ATOMS; ++i ) {                       // Loop over scale vector
+      RSCALE[i] = rscale[i];                                    //  Set rscale vector
+      GSCALE[i] = gscale[i];                                    //  Set gscale vector
+    }                                                           // End loop over scale vector
+  }
+
 };
 
 template<Equation equation>
@@ -287,6 +299,10 @@ public:
   void L2L();                                                   //!< Evaluate L2L kernel
   void L2P();                                                   //!< Evaluate L2P kernel
   void finalize();                                              //!< Finalize kernels
+
+  void allocate();                                              //!< Allocate GPU variables
+  void hostToDevice();                                          //!< Copy from host to device
+  void deviceToHost();
 };
 
 #endif

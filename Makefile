@@ -5,8 +5,8 @@
 #SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
 VTK_INCLUDE_PATH = /usr/include/vtk-5.6
 
-DEVICE  = cpu
-#DEVICE  = gpu
+#DEVICE  = cpu
+DEVICE  = gpu
 
 #EXPAND  = Cartesian
 EXPAND  = Spherical

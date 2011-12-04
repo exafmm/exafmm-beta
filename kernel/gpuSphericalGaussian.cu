@@ -23,7 +23,7 @@ THE SOFTWARE.
 #include "kernel.h"
 #undef KERNEL
 #include "gaussian.h"
-#include "pregpu.h"
+#include "gpu.h"
 
 template<>
 void Kernel<Gaussian>::initialize() {
@@ -35,16 +35,73 @@ void Kernel<Gaussian>::initialize() {
   eraseTimer("Init GPU     ");                                  // Erase timer
 }
 
-__global__ void GaussianP2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {}
-
-__global__ void GaussianM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {}
-
 template<>
 void Kernel<Gaussian>::M2M_CPU() {}
 
-__global__ void GaussianM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {}
+template<>
+void Kernel<Gaussian>::finalize() {}
 
-__global__ void GaussianM2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {}
+template<>
+void Kernel<Gaussian>::allocate() {
+  cudaThreadSynchronize();
+  startTimer("cudaMalloc   ");
+  if( keysHost.size() > keysDevcSize ) {
+    if( keysDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(keysDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &keysDevc, keysHost.size()*sizeof(int) ));
+    keysDevcSize = keysHost.size();
+  }
+  if( rangeHost.size() > rangeDevcSize ) {
+    if( rangeDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(rangeDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &rangeDevc, rangeHost.size()*sizeof(int) ));
+    rangeDevcSize = rangeHost.size();
+  }
+  if( sourceHost.size() > sourceDevcSize ) {
+    if( sourceDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(sourceDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(gpureal) ));
+    sourceDevcSize = sourceHost.size();
+  }
+  if( targetHost.size() > targetDevcSize ) {
+    if( targetDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(targetDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(gpureal) ));
+    targetDevcSize = targetHost.size();
+  }
+  cudaThreadSynchronize();
+  stopTimer("cudaMalloc   ");
+}
+
+template<>
+void Kernel<Gaussian>::hostToDevice() {
+  cudaThreadSynchronize();
+  startTimer("cudaMemcpy   ");
+  CUDA_SAFE_CALL(cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(gpureal)));
+  cudaThreadSynchronize();
+  stopTimer("cudaMemcpy   ");
+}
+
+template<>
+void Kernel<Gaussian>::deviceToHost() {
+  cudaThreadSynchronize();
+  startTimer("cudaMemcpy   ");
+  CUDA_SAFE_CALL(cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(gpureal),cudaMemcpyDeviceToHost));
+  cudaThreadSynchronize();
+  stopTimer("cudaMemcpy   ");
+}
+
+template<>
+void Kernel<Gaussian>::P2M() {}
+
+template<>
+void Kernel<Gaussian>::M2M() {}
+
+template<>
+void Kernel<Gaussian>::M2L() {}
+
+template<>
+void Kernel<Gaussian>::M2P() {}
 
 __device__ inline void GaussianP2P_core(gpureal &target, gpureal *targetX, gpureal *sourceShrd, float3 d, int i) {
   d.x += targetX[0];
@@ -133,7 +190,21 @@ __global__ void GaussianP2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGl
   targetGlob[6*itarget+0] = target;
 }
 
-__global__ void GaussianL2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {}
+template<>
+void Kernel<Gaussian>::P2P() {
+  cudaThreadSynchronize();
+  startTimer("P2P GPUkernel");
+  int numBlocks = keysHost.size();\
+  if( numBlocks != 0 ) {\
+    GaussianP2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  }\
+  CUT_CHECK_ERROR("Kernel execution failed");\
+  cudaThreadSynchronize();\
+  stopTimer("P2P GPUkernel");\
+}
+
+template<>
+void Kernel<Gaussian>::L2L() {}
 
 __global__ void GaussianL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {
   int itarget = blockIdx.x * THREADS + threadIdx.x;
@@ -141,14 +212,14 @@ __global__ void GaussianL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGl
 }
 
 template<>
-void Kernel<Gaussian>::finalize() {}
-
-#include "gpu.h"
-
-CALL_GPU(Gaussian,P2M,P2M GPUkernel);
-CALL_GPU(Gaussian,M2M,M2M GPUkernel);
-CALL_GPU(Gaussian,M2L,M2L GPUkernel);
-CALL_GPU(Gaussian,M2P,M2P GPUkernel);
-CALL_GPU(Gaussian,P2P,P2P GPUkernel);
-CALL_GPU(Gaussian,L2L,L2L GPUkernel);
-CALL_GPU(Gaussian,L2P,L2P GPUkernel);
+void Kernel<Gaussian>::L2P() {
+  cudaThreadSynchronize();
+  startTimer("L2P GPUkernel");
+  int numBlocks = keysHost.size();\
+  if( numBlocks != 0 ) {\
+    GaussianL2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
+  }\
+  CUT_CHECK_ERROR("Kernel execution failed");\
+  cudaThreadSynchronize();\
+  stopTimer("L2P GPUkernel");\
+}

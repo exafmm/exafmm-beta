@@ -71,6 +71,9 @@ public:
   using Kernel<equation>::NP2P;                                 //!< Number of P2P kernel calls
   using Kernel<equation>::NM2P;                                 //!< Number of M2P kernel calls
   using Kernel<equation>::NM2L;                                 //!< Number of M2L kernel calls
+  using Kernel<equation>::allocate;                             //!< Allocate GPU kernels
+  using Kernel<equation>::hostToDevice;                         //!< Copy from host to device
+  using Kernel<equation>::deviceToHost;                         //!< Copy from device to host
   using Kernel<equation>::P2M;                                  //!< Evaluate P2M kernel
   using Kernel<equation>::M2M;                                  //!< Evaluate M2M kernel
   using Kernel<equation>::M2M_CPU;                              //!< Evaluate M2M kernel on CPU

@@ -314,7 +314,10 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
           targetHost.push_back(0);                              //    Pad 2nd target value to GPU buffer
           targetHost.push_back(0);                              //    Pad 3rd target value to GPU buffer
         }                                                       //   End loop over elements to pad
+        allocate();                                             //   Allocate GPU memory
+        hostToDevice();                                         //   Copy from host to device
         P2P();                                                  //   Perform P2P kernel
+        deviceToHost();                                         //   Copy from device to host
 //        if( kernelName == Gaussian ) {                          //   If Gaussian kernel
 //          for( B_iter B=BI0; B!=BIN; ++B ) {                    //    Loop over target bodies
 //            B->TRG[0] += targetHost[6*(B-BI0)+0];               //     Copy 1st target value from GPU buffer
@@ -363,7 +366,10 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetCell(listP2M,flagP2M);                             //  Set target buffer for cells
+    allocate();                                                 //  Allocate GPU memory
+    hostToDevice();                                             //  Copy from host to device
     P2M();                                                      //  Perform P2M kernel
+    deviceToHost();                                             //  Copy from device to host
     getTargetCell(listP2M,true);                                //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -398,7 +404,10 @@ void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
       stopTimer("Get list     ");                               //   Stop timer
       setSourceCell(true);                                      //   Set source buffer for cells
       setTargetCell(listM2M,flagM2M);                           //   Set target buffer for cells
+      allocate();                                               //   Allocate GPU memory
+      hostToDevice();                                           //   Copy from host to device
       M2M();                                                    //   Perform M2M kernel
+      deviceToHost();                                           //   Copy from device to host
       getTargetCell(listM2M,true);                              //   Get body values from target buffer
       clearBuffers();                                           //   Clear GPU buffers
       ioffset += numCell;                                       //   Increment ioffset
@@ -427,7 +436,10 @@ void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {  // Evaluate M2L
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell(true);                                        //  Set source buffer for cells
     setTargetCell(listM2L,flagM2L);                             //  Set target buffer for cells
+    allocate();                                                 //  Allocate GPU memory
+    hostToDevice();                                             //  Copy from host to device
     M2L();                                                      //  Perform M2L kernel
+    deviceToHost();                                             //  Copy from device to host
     getTargetCell(listM2L,false);                               //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -456,7 +468,10 @@ void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {  // Evaluate M2P
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell(true);                                        //  Set source buffer for cells
     setTargetBody(listM2P,flagM2P);                             //  Set target buffer for bodies
+    allocate();                                                 //  Allocate GPU memory
+    hostToDevice();                                             //  Copy from host to device
     M2P();                                                      //  Perform M2P kernel
+    deviceToHost();                                             //  Copy from device to host
     getTargetBody(listM2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -485,7 +500,10 @@ void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate P2P
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetBody(listP2P,flagP2P);                             //  Set target buffer for bodies
+    allocate();                                                 //  Allocate GPU memory
+    hostToDevice();                                             //  Copy from host to device
     P2P();                                                      //  Perform P2P kernel
+    deviceToHost();                                             //  Copy from device to host
     getTargetBody(listP2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
@@ -523,7 +541,10 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate L2L
       stopTimer("Get list     ");                               //   Stop timer
       setSourceCell(false);                                     //   Set source buffer for cells
       setTargetCell(listL2L,flagL2L);                           //   Set target buffer for cells
+      allocate();                                               //   Allocate GPU memory
+      hostToDevice();                                           //   Copy from host to device
       L2L();                                                    //   Perform L2L kernel
+      deviceToHost();                                           //   Copy from device to host
       getTargetCell(listL2L,false);                             //   Get body values from target buffer
       clearBuffers();                                           //   Clear GPU buffers
       ioffset += numCell;                                       //   Increment ioffset
@@ -555,7 +576,10 @@ void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate L2P
     stopTimer("Get list     ");                                 //  Stop timer
     setSourceCell(false);                                       //  Set source buffer for cells
     setTargetBody(listL2P,flagL2P);                             //  Set target buffer for bodies
+    allocate();                                                 //  Allocate GPU memory
+    hostToDevice();                                             //  Copy from host to device
     L2P();                                                      //  Perform L2P kernel
+    deviceToHost();                                             //  Copy from device to host
     getTargetBody(listL2P);                                     //  Get body values from target buffer
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
