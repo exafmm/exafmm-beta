@@ -147,18 +147,12 @@ void Evaluator<equation>::getTargetBody(Lists &lists) {         // Get body valu
       BI0 = CI->LEAF;                                           //   Set target bodies begin iterator
       BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
       int begin = targetBegin[CI];                              //   Offset of target leafs
-//      if( kernelName == Gaussian ) {                            //   If Gaussian kernel
-//        for( B_iter B=BI0; B!=BIN; ++B ) {                      //    Loop over target bodies
-//          B->TRG[0] += targetHost[6*(begin+B-BI0)+0];           //     Copy 1st target value from GPU buffer
-//        }                                                       //    End loop over target bodies
-//      } else {                                                  //   If not Gaussian kernel
         for( B_iter B=BI0; B!=BIN; ++B ) {                      //    Loop over target bodies
           B->TRG[0] += targetHost[6*(begin+B-BI0)+0];           //     Copy 1st target value from GPU buffer
           B->TRG[1] += targetHost[6*(begin+B-BI0)+1];           //     Copy 2nd target value from GPU buffer
           B->TRG[2] += targetHost[6*(begin+B-BI0)+2];           //     Copy 3rd target value from GPU buffer
           B->TRG[3] += targetHost[6*(begin+B-BI0)+3];           //     Copy 4th target value from GPU buffer
         }                                                       //    End loop over target bodies
-//      }                                                         //   Endif for Gaussian kernel
       lists[CI-CI0].clear();                                    //   Clear interaction list
     }                                                           //  End if for empty interation list
   }                                                             // End loop over target cells
@@ -318,18 +312,12 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
         hostToDevice();                                         //   Copy from host to device
         P2P();                                                  //   Perform P2P kernel
         deviceToHost();                                         //   Copy from device to host
-//        if( kernelName == Gaussian ) {                          //   If Gaussian kernel
-//          for( B_iter B=BI0; B!=BIN; ++B ) {                    //    Loop over target bodies
-//            B->TRG[0] += targetHost[6*(B-BI0)+0];               //     Copy 1st target value from GPU buffer
-//          }                                                     //    End loop over target bodies
-//        } else {                                                //   If not Gaussian kernel
-          for( B_iter B=BI0; B!=BIN; ++B ) {                    //    Loop over target bodies
-            B->TRG[0] += targetHost[6*(B-BI0)+0];               //     Copy 1st target value from GPU buffer
-            B->TRG[1] += targetHost[6*(B-BI0)+1];               //     Copy 2nd target value from GPU buffer
-            B->TRG[2] += targetHost[6*(B-BI0)+2];               //     Copy 3rd target value from GPU buffer
-            B->TRG[3] += targetHost[6*(B-BI0)+3];               //     Copy 4th target value from GPU buffer
-          }                                                     //    End loop over target bodies
-//        }                                                       //   Endif for Gaussian kernel
+        for( B_iter B=BI0; B!=BIN; ++B ) {                      //   Loop over target bodies
+          B->TRG[0] += targetHost[6*(B-BI0)+0];                 //    Copy 1st target value from GPU buffer
+          B->TRG[1] += targetHost[6*(B-BI0)+1];                 //    Copy 2nd target value from GPU buffer
+          B->TRG[2] += targetHost[6*(B-BI0)+2];                 //    Copy 3rd target value from GPU buffer
+          B->TRG[3] += targetHost[6*(B-BI0)+3];                 //    Copy 4th target value from GPU buffer
+        }                                                       //   End loop over target bodies
         keysHost.clear();                                       //   Clear keys vector
         rangeHost.clear();                                      //   Clear range vector
         constHost.clear();                                      //   Clear const vector

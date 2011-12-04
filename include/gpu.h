@@ -22,16 +22,10 @@ THE SOFTWARE.
 #ifndef pregpu_h
 #define pregpu_h
 #include <cutil.h>
-#include <omp.h>
 
 __device__ __constant__ gpureal constDevc[1];                   // Constants on device
 
 namespace {                                                     // Prevent overlap of definitions among equations
-template<typename T>
-void deviceToHost(T *host, T *devc, size_t hostSize) {
-  CUDA_SAFE_CALL(cudaMemcpy(host,devc,hostSize*sizeof(T),cudaMemcpyDeviceToHost));
-}
-
 __device__ void cart2sph(gpureal& r, gpureal& theta, gpureal& phi,// Get r,theta,phi from x,y,z on GPU
                          gpureal dx, gpureal dy, gpureal dz) {
   r = sqrtf(dx * dx + dy * dy + dz * dz)+EPS;                   // r = sqrt(x^2 + y^2 + z^2) + eps
