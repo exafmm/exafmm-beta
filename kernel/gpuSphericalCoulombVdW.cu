@@ -382,7 +382,7 @@ __global__ void CoulombVdWM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   __shared__ gpureal sourceShrd[2*THREADS];
   __shared__ gpureal factShrd[2*P];
   __shared__ gpureal YnmShrd[4*NTERM];
-  gpureal fact = 1;
+  gpureal fact = 1e-6;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -420,8 +420,8 @@ __global__ void CoulombVdWM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
+  targetGlob[6*itarget+0] = target[0] * 1e-6;
+  targetGlob[6*itarget+1] = target[1] * 1e-6;
 }
 
 template<>
