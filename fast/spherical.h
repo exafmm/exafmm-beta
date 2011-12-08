@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 #ifndef kernel_h
 #define kernel_h
-#include "sort.h"
+#include "../include/sort.h"
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
 const real EPS = 1e-6; 

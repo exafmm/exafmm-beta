@@ -29,7 +29,7 @@ void Kernel<CoulombVdW>::initialize() {}
 
 template<>
 void Kernel<CoulombVdW>::P2M() {
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
@@ -116,7 +116,7 @@ void Kernel<CoulombVdW>::M2L() {
 template<>
 void Kernel<CoulombVdW>::M2P() {
   const complex I(0.,1.);                                       // Imaginary unit
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     vect spherical = 0;
     vect cartesian = 0;
@@ -183,7 +183,7 @@ void Kernel<CoulombVdW>::L2L() {
 template<>
 void Kernel<CoulombVdW>::L2P() {
   const complex I(0.,1.);                                       // Imaginary unit
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;
     vect spherical = 0;
     vect cartesian = 0;

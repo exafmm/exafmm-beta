@@ -30,7 +30,7 @@ void Kernel<Stretching>::initialize() {}
 template<>
 void Kernel<Stretching>::P2M() {
   const complex I(0.,1.);                                       // Imaginary unit
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;
     vec<3,complex> spherical;
     vec<3,complex> cartesian;
@@ -137,7 +137,7 @@ void Kernel<Stretching>::M2L() {
 template<>
 void Kernel<Stretching>::M2P() {
   const complex I(0.,1.);                                       // Imaginary unit
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     vect spherical[3] = {0, 0, 0};
     vect cartesian[3] = {0, 0, 0};
@@ -214,7 +214,7 @@ void Kernel<Stretching>::L2L() {
 template<>
 void Kernel<Stretching>::L2P() {
   const complex I(0.,1.);                                       // Imaginary unit
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NLEAF; ++B ) {
+  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;
     vect spherical[3] = {0, 0, 0};
     vect cartesian[3] = {0, 0, 0};

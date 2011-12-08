@@ -90,7 +90,7 @@ private:
 //! Tree walk for treecode
   void treecode(C_iter Ci, C_iter Cj) {
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0) {                   // If both cells are twigs
-      if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
+      if( Cj->NDLEAF != 0 ) {                                   // If the twig has leafs
         testMACP2P(Ci,Cj);                                      //  Test multipole acceptance criteria for P2P kernel
       } else {                                                  // If the twig has no leafs
 //#ifdef DEBUG
@@ -100,11 +100,11 @@ private:
       }                                                         // Endif for twigs with leafs
     } else if ( Ci->NCHILD != 0 ) {                             // If target is not twig
       for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        testMACM2P(CI0+Ci->CHILD[i],Cj);                        //   Test multipole acceptance criteria for M2P kernel
+        testMACM2P(CI0+Ci->CHILD+i,Cj);                         //   Test multipole acceptance criteria for M2P kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig
       for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
-        testMACM2P(Ci,CJ0+Cj->CHILD[i]);                        //   Test multipole acceptance criteria for M2P kernel
+        testMACM2P(Ci,CJ0+Cj->CHILD+i);                         //   Test multipole acceptance criteria for M2P kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
@@ -112,7 +112,7 @@ private:
 //! Tree walk for FMM
   void FMM(C_iter Ci, C_iter Cj) {
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0 ) {                  // If both cells are twigs
-      if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
+      if( Cj->NDLEAF != 0 ) {                                   // If the twig has leafs
         testMACP2P(Ci,Cj);                                      //  Test multipole acceptance criteria for P2P kernel
       } else {                                                  // If the twig has no leafs
 //#ifdef DEBUG
@@ -122,11 +122,11 @@ private:
       }                                                         // Endif for twigs with leafs
     } else if ( Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R) ) {// If source is twig or target is larger
       for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        testMACM2L(CI0+Ci->CHILD[i],Cj);                        //   Test multipole acceptance criteria for M2L kernel
+        testMACM2L(CI0+Ci->CHILD+i,Cj);                         //   Test multipole acceptance criteria for M2L kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig or source is larger
       for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
-        testMACM2L(Ci,CJ0+Cj->CHILD[i]);                        //   Test multipole acceptance criteria for M2L kernel
+        testMACM2L(Ci,CJ0+Cj->CHILD+i);                         //   Test multipole acceptance criteria for M2L kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
@@ -134,7 +134,7 @@ private:
 //! Tree walk for treecode-FMM hybrid
   void hybrid(C_iter Ci, C_iter Cj) {
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0 ) {                  // If both cells are twigs
-      if( Cj->NLEAF != 0 ) {                                    // If the twig has leafs
+      if( Cj->NDLEAF != 0 ) {                                   // If the twig has leafs
         testMACP2P(Ci,Cj);                                      //  Test multipole acceptance criteria for P2P kernel
       } else {                                                  // If the twig has no leafs
 //#ifdef DEBUG
@@ -144,26 +144,26 @@ private:
       }                                                         // Endif for twigs with leafs
     } else if ( Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R) ) {// If source is twig or target is larger
       for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        int Ni = (CI0+Ci->CHILD[i])->NLEAF;                     //   Number of target leafs
-        int Nj = Cj->NLEAF;                                     //   Number of source leafs
+        int Ni = (CI0+Ci->CHILD+i)->NDLEAF;                     //   Number of target leafs
+        int Nj = Cj->NDLEAF;                                    //   Number of source leafs
         if( timeP2P*Nj < timeM2P && timeP2P*Ni*Nj < timeM2L ) { //   If P2P is fastest
-          testMACP2P(CI0+Ci->CHILD[i],Cj);                      //    Test multipole acceptance criteria for P2P kernel
+          testMACP2P(CI0+Ci->CHILD+i,Cj);                       //    Test multipole acceptance criteria for P2P kernel
         } else if ( timeM2P < timeP2P*Nj && timeM2P*Ni < timeM2L ) {// If M2P is fastest
-          testMACM2P(CI0+Ci->CHILD[i],Cj);                      //    Test multipole acceptance criteria for M2P kernel
+          testMACM2P(CI0+Ci->CHILD+i,Cj);                       //    Test multipole acceptance criteria for M2P kernel
         } else {                                                //   If M2L is fastest
-          testMACM2L(CI0+Ci->CHILD[i],Cj);                      //    Test multipole acceptance criteria for M2L kernel
+          testMACM2L(CI0+Ci->CHILD+i,Cj);                       //    Test multipole acceptance criteria for M2L kernel
         }                                                       //   End if for fastest kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig or source is larger
       for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
-        int Ni = Ci->NLEAF;                                     //   Number of target leafs
-        int Nj = (CJ0+Cj->CHILD[i])->NLEAF;                     //   Number of source leafs
+        int Ni = Ci->NDLEAF;                                    //   Number of target leafs
+        int Nj = (CJ0+Cj->CHILD+i)->NDLEAF;                     //   Number of source leafs
         if( timeP2P*Nj < timeM2P && timeP2P*Ni*Nj < timeM2L ) { //   If P2P is fastest
-          testMACP2P(Ci,CJ0+Cj->CHILD[i]);                      //    Test multipole acceptance criteria for P2P kernel
+          testMACP2P(Ci,CJ0+Cj->CHILD+i);                       //    Test multipole acceptance criteria for P2P kernel
         } else if ( timeM2P < timeP2P*Nj && timeM2P*Ni < timeM2L ) {// If M2P is fastest
-          testMACM2P(Ci,CJ0+Cj->CHILD[i]);                      //    Test multipole acceptance criteria for M2P kernel
+          testMACM2P(Ci,CJ0+Cj->CHILD+i);                       //    Test multipole acceptance criteria for M2P kernel
         } else {                                                //   If M2L is fastest
-          testMACM2L(Ci,CJ0+Cj->CHILD[i]);                      //    Test multipole acceptance criteria for M2L kernel
+          testMACM2L(Ci,CJ0+Cj->CHILD+i);                       //    Test multipole acceptance criteria for M2L kernel
         }                                                       //   End if for fastest kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
@@ -390,7 +390,7 @@ public:
               cell.X[1]  = CI->X[1] + iy * 2 * CI->R;           //      Set new y cooridnate for periodic image
               cell.X[2]  = CI->X[2] + iz * 2 * CI->R;           //      Set new z coordinate for periodic image
               cell.M     = CI->M;                               //      Copy multipoles to new periodic image
-              cell.NLEAF = cell.NCHILD = 0;                     //      Initialize NLEAF & NCHILD
+              cell.NDLEAF = cell.NCHILD = 0;                    //      Initialize NDLEAF & NCHILD
               jcells.push_back(cell);                           //      Push cell into periodic jcell vector
             }                                                   //     Endif for periodic center cell
           }                                                     //    End loop over z periodic direction

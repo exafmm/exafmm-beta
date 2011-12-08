@@ -25,7 +25,7 @@ void Evaluator<equation>::setSourceBody() {                     // Set source bu
   for( MC_iter M=sourceSize.begin(); M!=sourceSize.end(); ++M ) {// Loop over source map
     CJ = M->first;                                              //  Set source cell
     sourceBegin[CJ] = sourceHost.size() / 7;                    //  Key : iterator, Value : offset of source leafs
-    for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NLEAF; ++B ) {      //  Loop over leafs in source cell
+    for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NDLEAF; ++B ) {     //  Loop over leafs in source cell
       sourceHost.push_back(B->X[0]);                            //   Copy x position to GPU buffer
       sourceHost.push_back(B->X[1]);                            //   Copy y position to GPU buffer
       sourceHost.push_back(B->X[2]);                            //   Copy z position to GPU buffer
@@ -69,7 +69,7 @@ void Evaluator<equation>::setTargetBody(Lists lists, Maps flags) {// Set target 
   for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
       BI0 = CI->LEAF;                                           //   Set target bodies begin iterator
-      BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
+      BIN = CI->LEAF + CI->NDLEAF;                              //   Set target bodies end iterator
       int blocks = (BIN - BI0 - 1) / THREADS + 1;               //   Number of thread blocks needed for this target cell
       for( int i=0; i!=blocks; ++i ) {                          //   Loop over thread blocks
         keysHost.push_back(key);                                //    Save key to range of leafs in source cells
@@ -145,7 +145,7 @@ void Evaluator<equation>::getTargetBody(Lists &lists) {         // Get body valu
   for( CI=CIB; CI!=CIE; ++CI ) {                                // Loop over target cells
     if( !lists[CI-CI0].empty() ) {                              //  If the interation list is not empty
       BI0 = CI->LEAF;                                           //   Set target bodies begin iterator
-      BIN = CI->LEAF + CI->NLEAF;                               //   Set target bodies end iterator
+      BIN = CI->LEAF + CI->NDLEAF;                              //   Set target bodies end iterator
       int begin = targetBegin[CI];                              //   Offset of target leafs
         for( B_iter B=BI0; B!=BIN; ++B ) {                      //    Loop over target bodies
           B->TRG[0] += targetHost[6*(begin+B-BI0)+0];           //     Copy 1st target value from GPU buffer
@@ -348,7 +348,7 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
       if( CI->NCHILD == 0 ) {                                   //   If cell is a twig
         listP2M[CI-CI0].push_back(CI);                          //    Push source cell into P2M interaction list
         flagP2M[CI-CI0][CI] |= Icenter;                         //    Flip bit of periodic image flag
-        sourceSize[CI] = CI->NLEAF;                             //    Key : iterator, Value : number of leafs
+        sourceSize[CI] = CI->NDLEAF;                            //    Key : iterator, Value : number of leafs
       }                                                         //   End loop over cells topdown
     }                                                           //  End loop over source map
     stopTimer("Get list     ");                                 //  Stop timer
@@ -382,7 +382,7 @@ void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
       for( CI=CIB; CI!=CIE; ++CI ) {                            //   Loop over cells bottomup (except root cell)
         if( getLevel(CI->ICELL) == level ) {                    //    If target cell is at current level
           for( int i=0; i<CI->NCHILD; ++i ) {                   //     Loop over child cells
-            CJ = CI0 + CI->CHILD[i];                            //      Set iterator for source cell
+            CJ = CI0 + CI->CHILD+i;                             //      Set iterator for source cell
             listM2M[CI-CI0].push_back(CJ);                      //      Push source cell into M2M interaction list
             flagM2M[CI-CI0][CJ] |= Icenter;                     //      Flip bit of periodic image flag
             sourceSize[CJ] = 6 * NTERM;                         //      Key : iterator, Value : number of coefs
@@ -482,7 +482,7 @@ void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate P2P
     for( CI=CIB; CI!=CIE; ++CI ) {                              //  Loop over target cells
       for( LC_iter L=listP2P[CI-CI0].begin(); L!=listP2P[CI-CI0].end(); ++L ) {//  Loop over interaction list
         CJ = *L;                                                //    Set source cell
-        sourceSize[CJ] = CJ->NLEAF;                             //    Key : iterator, Value : number of leafs
+        sourceSize[CJ] = CJ->NDLEAF;                            //    Key : iterator, Value : number of leafs
       }                                                         //   End loop over interaction list
     }                                                           //  End loop over target cells
     stopTimer("Get list     ");                                 //  Stop timer
@@ -587,12 +587,12 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
   CI0 = icells.begin();                                         // Set global begin iterator for source
   for( C_iter Ci=icells.begin(); Ci!=icells.end(); ++Ci ) {     // Loop over target cells
     Ci->X = 0;                                                  //  Set coordinates of target cell
-    Ci->NLEAF = 100;                                            //  Number of leafs in target cell
+    Ci->NDLEAF = 100;                                           //  Number of leafs in target cell
     Ci->LEAF = ibodies.begin();                                 //  Leaf iterator in target cell
   }                                                             // End loop over target cells
   for( C_iter Cj=jcells.begin(); Cj!=jcells.end(); ++Cj ) {     // Loop over source cells
     Cj->X = 1;                                                  //  Set coordinates of source cell
-    Cj->NLEAF = 100;                                            //  Number of leafs in source cell
+    Cj->NDLEAF = 100;                                           //  Number of leafs in source cell
     Cj->LEAF = jbodies.begin();                                 //  Leaf iterator in source cell
   }                                                             // End loop over source cells
   listM2L.resize(icells.size());                                // Resize M2L interaction list

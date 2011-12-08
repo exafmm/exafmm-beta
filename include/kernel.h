@@ -174,60 +174,6 @@ protected:
     }                                                           // End loop over m in Ynm
   }
 
-//! Precalculate M2L translation matrix
-  void preCalculation() {
-    const complex I(0.,1.);                                     // Imaginary unit
-    factorial = new double  [P];                                // Factorial
-    prefactor = new double  [4*P2];                             // sqrt( (n - |m|)! / (n + |m|)! )
-    Anm       = new double  [4*P2];                             // (-1)^n / sqrt( (n + m)! / (n - m)! )
-    Ynm       = new complex [4*P2];                             // r^n * Ynm
-    YnmTheta  = new complex [4*P2];                             // theta derivative of r^n * Ynm
-    Cnm       = new complex [P4];                               // M2L translation matrix Cjknm
-
-    factorial[0] = 1;                                           // Initialize factorial
-    for( int n=1; n!=P; ++n ) {                                 // Loop to P
-      factorial[n] = factorial[n-1] * n;                        //  n!
-    }                                                           // End loop to P
-
-    for( int n=0; n!=2*P; ++n ) {                               // Loop over n in Anm
-      for( int m=-n; m<=n; ++m ) {                              //  Loop over m in Anm
-        int nm = n*n+n+m;                                       //   Index of Anm
-        int nabsm = abs(m);                                     //   |m|
-        double fnmm = 1.0;                                      //   Initialize (n - m)!
-        for( int i=1; i<=n-m; ++i ) fnmm *= i;                  //   (n - m)!
-        double fnpm = 1.0;                                      //   Initialize (n + m)!
-        for( int i=1; i<=n+m; ++i ) fnpm *= i;                  //   (n + m)!
-        double fnma = 1.0;                                      //   Initialize (n - |m|)!
-        for( int i=1; i<=n-nabsm; ++i ) fnma *= i;              //   (n - |m|)!
-        double fnpa = 1.0;                                      //   Initialize (n + |m|)!
-        for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;              //   (n + |m|)!
-        prefactor[nm] = std::sqrt(fnma/fnpa);                   //   sqrt( (n - |m|)! / (n + |m|)! )
-        Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);              //   (-1)^n / sqrt( (n + m)! / (n - m)! )
-      }                                                         //  End loop over m in Anm
-    }                                                           // End loop over n in Anm
-
-    for( int j=0, jk=0, jknm=0; j!=P; ++j ) {                   // Loop over j in Cjknm
-      for( int k=-j; k<=j; ++k, ++jk ){                         //  Loop over k in Cjknm
-        for( int n=0, nm=0; n!=P; ++n ) {                       //   Loop over n in Cjknm
-          for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {            //    Loop over m in Cjknm
-            const int jnkm = (j+n)*(j+n)+j+n+m-k;               //     Index C_{j+n}^{m-k}
-            Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);// Cjknm
-          }                                                     //    End loop over m in Cjknm
-        }                                                       //   End loop over n in Cjknm
-      }                                                         //  End loop over in k in Cjknm
-    }                                                           // End loop over in j in Cjknm
-  }
-
-//! Free temporary allocations
-  void postCalculation() {
-    delete[] factorial;                                         // Free factorial
-    delete[] prefactor;                                         // Free sqrt( (n - |m|)! / (n + |m|)! )
-    delete[] Anm;                                               // Free (-1)^n / sqrt( (n + m)! / (n - m)! )
-    delete[] Ynm;                                               // Free r^n * Ynm
-    delete[] YnmTheta;                                          // Free theta derivative of r^n * Ynm
-    delete[] Cnm;                                               // Free M2L translation matrix Cjknm
-  }
-
 public:
 //! Constructor
   KernelBase() : X0(0), R0(0), keysDevcSize(0), rangeDevcSize(0),
@@ -281,6 +227,60 @@ public:
       RSCALE[i] = rscale[i];                                    //  Set rscale vector
       GSCALE[i] = gscale[i];                                    //  Set gscale vector
     }                                                           // End loop over scale vector
+  }
+
+//! Precalculate M2L translation matrix
+  void preCalculation() {
+    const complex I(0.,1.);                                     // Imaginary unit
+    factorial = new double  [P];                                // Factorial
+    prefactor = new double  [4*P2];                             // sqrt( (n - |m|)! / (n + |m|)! )
+    Anm       = new double  [4*P2];                             // (-1)^n / sqrt( (n + m)! / (n - m)! )
+    Ynm       = new complex [4*P2];                             // r^n * Ynm
+    YnmTheta  = new complex [4*P2];                             // theta derivative of r^n * Ynm
+    Cnm       = new complex [P4];                               // M2L translation matrix Cjknm
+
+    factorial[0] = 1;                                           // Initialize factorial
+    for( int n=1; n!=P; ++n ) {                                 // Loop to P
+      factorial[n] = factorial[n-1] * n;                        //  n!
+    }                                                           // End loop to P
+
+    for( int n=0; n!=2*P; ++n ) {                               // Loop over n in Anm
+      for( int m=-n; m<=n; ++m ) {                              //  Loop over m in Anm
+        int nm = n*n+n+m;                                       //   Index of Anm
+        int nabsm = abs(m);                                     //   |m|
+        double fnmm = 1.0;                                      //   Initialize (n - m)!
+        for( int i=1; i<=n-m; ++i ) fnmm *= i;                  //   (n - m)!
+        double fnpm = 1.0;                                      //   Initialize (n + m)!
+        for( int i=1; i<=n+m; ++i ) fnpm *= i;                  //   (n + m)!
+        double fnma = 1.0;                                      //   Initialize (n - |m|)!
+        for( int i=1; i<=n-nabsm; ++i ) fnma *= i;              //   (n - |m|)!
+        double fnpa = 1.0;                                      //   Initialize (n + |m|)!
+        for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;              //   (n + |m|)!
+        prefactor[nm] = std::sqrt(fnma/fnpa);                   //   sqrt( (n - |m|)! / (n + |m|)! )
+        Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);              //   (-1)^n / sqrt( (n + m)! / (n - m)! )
+      }                                                         //  End loop over m in Anm
+    }                                                           // End loop over n in Anm
+
+    for( int j=0, jk=0, jknm=0; j!=P; ++j ) {                   // Loop over j in Cjknm
+      for( int k=-j; k<=j; ++k, ++jk ){                         //  Loop over k in Cjknm
+        for( int n=0, nm=0; n!=P; ++n ) {                       //   Loop over n in Cjknm
+          for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {            //    Loop over m in Cjknm
+            const int jnkm = (j+n)*(j+n)+j+n+m-k;               //     Index C_{j+n}^{m-k}
+            Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);// Cjknm
+          }                                                     //    End loop over m in Cjknm
+        }                                                       //   End loop over n in Cjknm
+      }                                                         //  End loop over in k in Cjknm
+    }                                                           // End loop over in j in Cjknm
+  }
+
+//! Free temporary allocations
+  void postCalculation() {
+    delete[] factorial;                                         // Free factorial
+    delete[] prefactor;                                         // Free sqrt( (n - |m|)! / (n + |m|)! )
+    delete[] Anm;                                               // Free (-1)^n / sqrt( (n + m)! / (n - m)! )
+    delete[] Ynm;                                               // Free r^n * Ynm
+    delete[] YnmTheta;                                          // Free theta derivative of r^n * Ynm
+    delete[] Cnm;                                               // Free M2L translation matrix Cjknm
   }
 
 };

@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 #ifndef kernel_h
 #define kernel_h
-#include "sort.h"
+#include "../include/sort.h"
 
 template<int nx, int ny, int nz>
 struct Index {

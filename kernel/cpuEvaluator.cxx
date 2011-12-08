@@ -22,9 +22,9 @@ THE SOFTWARE.
 template<Equation equation>
 void Evaluator<equation>::testMACP2P(C_iter Ci, C_iter Cj) {    // Test multipole acceptance criteria for P2P kernel
   BI0 = Ci->LEAF;                                               // Set target bodies begin iterator
-  BIN = Ci->LEAF + Ci->NLEAF;                                   // Set target bodies end iterator
+  BIN = Ci->LEAF + Ci->NDLEAF;                                  // Set target bodies end iterator
   BJ0 = Cj->LEAF;                                               // Set source bodies begin iterator
-  BJN = Cj->LEAF + Cj->NLEAF;                                   // Set source bodies end iterator
+  BJN = Cj->LEAF + Cj->NDLEAF;                                  // Set source bodies end iterator
   P2P_CPU();                                                    // Perform P2P_CPU kernel
   NP2P++;                                                       // Count P2P kernel execution
 }
@@ -70,15 +70,15 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
   cells.resize(2);                                              // Two artificial cells
   C_iter Ci = cells.begin(), Cj = cells.begin()+1;              // Artificial target & source cell
   Ci->X = 0;                                                    // Set coordinates of target cell
-  Ci->NLEAF = 10;                                               // Number of leafs in target cell
+  Ci->NDLEAF = 10;                                              // Number of leafs in target cell
   Ci->LEAF = ibodies.begin();                                   // Leaf iterator in target cell
   Cj->X = 1;                                                    // Set coordinates of source cell
-  Cj->NLEAF = 1000;                                             // Number of leafs in source cell
+  Cj->NDLEAF = 1000;                                            // Number of leafs in source cell
   Cj->LEAF = jbodies.begin();                                   // Leaf iterator in source cell
   BI0 = Ci->LEAF;                                               // Set target bodies begin iterator
-  BIN = Ci->LEAF + Ci->NLEAF;                                   // Set target bodies end iterator
+  BIN = Ci->LEAF + Ci->NDLEAF;                                  // Set target bodies end iterator
   BJ0 = Cj->LEAF;                                               // Set source bodies begin iterator
-  BJN = Cj->LEAF + Cj->NLEAF;                                   // Set source bodies end iterator
+  BJN = Cj->LEAF + Cj->NDLEAF;                                  // Set source bodies end iterator
   startTimer("P2P kernel   ");                                  // Start timer
   for( int i=0; i!=1; ++i ) P2P_CPU();                          // Perform P2P_CPU kernel
   timeP2P = stopTimer("P2P kernel   ") / 10000;                 // Stop timer
@@ -222,11 +222,11 @@ void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate P2P
     CI0 = cells.begin();                                        // Set begin iterator
     for( CI=cells.begin(); CI!=cells.end(); ++CI ) {            // Loop over cells
       BI0 = CI->LEAF;                                           //  Set target bodies begin iterator
-      BIN = CI->LEAF + CI->NLEAF;                               //  Set target bodies end iterator
+      BIN = CI->LEAF + CI->NDLEAF;                              //  Set target bodies end iterator
       while( !listP2P[CI-CI0].empty() ) {                       //  While M2P interaction list is not empty
         CJ = listP2P[CI-CI0].back();                            //   Set source cell iterator
         BJ0 = CJ->LEAF;                                         //   Set source bodies begin iterator
-        BJN = CJ->LEAF + CJ->NLEAF;                             //   Set source bodies end iterator
+        BJN = CJ->LEAF + CJ->NDLEAF;                            //   Set source bodies end iterator
         Iperiodic = flagP2P[CI-CI0][CJ];                        //   Set periodic image flag
         int I = 0;                                              //   Initialize index of periodic image
         for( int ix=-1; ix<=1; ++ix ) {                         //   Loop over x periodic direction

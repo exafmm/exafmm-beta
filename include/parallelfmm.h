@@ -147,7 +147,7 @@ private:
       int irank = sendBodyRanks[i];                             //  Rank to send to & recv from
       for( int c=0; c!=sendBodyCellCnt[i]; ++c,++ic ) {         //  Loop over cells to send to that rank
         C_iter C = sendBodyCells[ic];                           //   Set cell iterator
-        for( B_iter B=C->LEAF; B!=C->LEAF+C->NLEAF; ++B ) {     //   Loop over bodies in that cell
+        for( B_iter B=C->LEAF; B!=C->LEAF+C->NDLEAF; ++B ) {    //   Loop over bodies in that cell
           JBody body;                                           //    Set compact body type for sending
           body.ICELL = B->ICELL;                                //    Set cell index of compact body type
           body.X     = B->X;                                    //    Set position of compact body type
@@ -292,7 +292,7 @@ private:
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
     if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     for( int i=0; i!=C->NCHILD; i++ ) {                         // Loop over child cells
-      C_iter CC = C0+C->CHILD[0]+i;                             //  Iterator for child cell
+      C_iter CC = C0+C->CHILD+i;                                //  Iterator for child cell
       bool divide = false;                                      //  Initialize logical for dividing
       if( IMAGES == 0 ) {                                       //  If free boundary condition
         Xperiodic = 0;                                          //   Set periodic coordinate offset
@@ -402,8 +402,8 @@ private:
   void cells2twigs(Cells &cells, Cells &twigs, bool last) {
     while( !cells.empty() ) {                                   // While cell vector is not empty
       if( cells.back().NCHILD == 0 ) {                          //  If cell has no child
-        if( cells.back().NLEAF == 0 || !last ) {                //   If cell has no leaf or is not last iteration
-          cells.back().NLEAF = 0;                               //    Set number of leafs to 0
+        if( cells.back().NDLEAF == 0 || !last ) {               //   If cell has no leaf or is not last iteration
+          cells.back().NDLEAF = 0;                              //    Set number of leafs to 0
           twigs.push_back(cells.back());                        //    Push cell into twig vector
         }                                                       //   Endif for no leaf
       }                                                         //  Endif for no child
@@ -417,7 +417,7 @@ private:
       Cell cell;                                                //  Cell structure
       cell.ICELL = JC->ICELL;                                   //  Set index of cell
       cell.M     = JC->M;                                       //  Set multipole of cell
-      cell.NLEAF = cell.NCHILD = 0;                             //  Set number of leafs and children
+      cell.NDLEAF = cell.NCHILD = 0;                            //  Set number of leafs and children
       cell.LEAF  = bodies.end();                                //  Set pointer to first leaf
       getCenter(cell);                                          //  Set center and radius
       twigs.push_back(cell);                                    //  Push cell into twig vector
@@ -431,7 +431,7 @@ private:
       Cell cell;                                                //  Cell structure
       cell.ICELL = JC->ICELL;                                   //  Set index of cell
       cell.M     = JC->M;                                       //  Set multipole of cell
-      cell.NLEAF = cell.NCHILD = 0;                             //  Set number of leafs and children
+      cell.NDLEAF = cell.NCHILD = 0;                            //  Set number of leafs and children
       cell.LEAF  = bodies.end();                                //  Set pointer to first leaf
       getCenter(cell);                                          //  Set center and radius
       twigs.push_back(cell);                                    //  Push cell into twig vector
@@ -450,9 +450,9 @@ private:
       if( twigs.back().ICELL != index ) {                       //  If twig's index is different from previous
         cells.push_back(twigs.back());                          //   Push twig into cell vector
         index = twigs.back().ICELL;                             //   Update index counter
-      } else if ( twigs.back().NLEAF == 0 || !last ) {          //  Elseif twig-twig collision
+      } else if ( twigs.back().NDLEAF == 0 || !last ) {         //  Elseif twig-twig collision
         cells.back().M += twigs.back().M;                       //   Accumulate the multipole
-      } else if ( cells.back().NLEAF == 0 ) {                   //  Elseif twig-body collision
+      } else if ( cells.back().NDLEAF == 0 ) {                  //  Elseif twig-body collision
         Mset M;                                                 //   Multipole for temporary storage
         M = cells.back().M;                                     //   Save multipoles from cells
         cells.back() = twigs.back();                            //   Copy twigs to cells
@@ -477,7 +477,7 @@ private:
   void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ,Cells &sticks) {
     startTimer("Reindex      ");                                // Start timer
     while( !twigs.empty() ) {                                   // While twig vector is not empty
-      if( twigs.back().NLEAF == 0 ) {                           //  If twig has no leafs
+      if( twigs.back().NDLEAF == 0 ) {                          //  If twig has no leafs
         cells.push_back(twigs.back());                          //   Push twig into cell vector
       }                                                         //  Endif for no leafs
       twigs.pop_back();                                         //  Pop last element from twig vector
@@ -700,7 +700,7 @@ public:
       if( l == LEVEL - 1 ) {                                    //  If at last level
         complex SUM = 0;                                        //   Initialize accumulator
         for(C_iter C=twigs.begin(); C!=twigs.end(); ++C) {      //   Loop over twigs
-          if( C->NLEAF == 0 ) SUM += C->M[0];                   //    Add multipoles of empty twigs
+          if( C->NDLEAF == 0 ) SUM += C->M[0];                  //    Add multipoles of empty twigs
         }                                                       //   End loop over twigs
         print("Before recv   : ",0);                            //   Print identifier
         print(SUM);                                             //   Print sum of multipoles
@@ -746,18 +746,16 @@ public:
     unsigned begin = MPIRANK * size + off;                      // Begin index of cells to remove
     unsigned end = (MPIRANK + 1) * size + off;                  // End index of cells to remove
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
-      if( begin <= C->ICELL && C->ICELL < end ) {               //  If cell is within the removal range
-        C_iter CP = cells.begin()+C->PARENT;                    //   Iterator of parent cell
-        int ic = 0;                                             //   Initialize child cell counter
-        for( int c=0; c!=CP->NCHILD; ++c ) {                    //   Loop over child cells of parent
-          C_iter CC = cells.begin()+CP->CHILD[c];               //    Iterator of child cell of parent
-          if( CC->ICELL != C->ICELL ) {                         //    If child cell of parent is not current cell
-            CP->CHILD[ic] = CP->CHILD[c];                       //     Copy pointer to child cell
-            ic++;                                               //     Increment child cell counter
-          }                                                     //    Endif for current child cell
-        }                                                       //   End loop over child cells of parent
-        CP->NCHILD--;                                           //   Decrement number of child cells of parent
-      }                                                         //  Endif for removal range
+      int nchild = 0;                                           //  Initialize child cell counter
+      for( int c=0; c!=C->NCHILD; ++c ) {                       //  Loop over child cells
+        C_iter CC = cells.begin()+C->CHILD+c;                   //   Iterator of child cell
+        if( CC->ICELL < begin || end <= CC->ICELL ) {           //   If child cell is not within the removal range
+          C_iter CH = cells.begin()+C->CHILD+nchild;            //    New iterator of child cell
+          *CH = *CC;                                            //    Copy data of child cell
+          nchild++;                                             //    Increment child cell counter
+        }                                                       //   Endif for removal range
+      }                                                         //  End loop over child cells
+      C->NCHILD = nchild;                                       //  Update number of child cells
     }                                                           // End loop over cells
   }
 };

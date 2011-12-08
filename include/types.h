@@ -56,13 +56,13 @@ extern int IMAGES;                                              //!< Number of p
 extern real THETA;                                              //!< Box opening criteria
 #endif
 
-const int  P       = 8;                                         //!< Order of expansions
-const int  NCRIT   = 300;                                       //!< Number of bodies per cell
+const int  P       = 3;                                         //!< Order of expansions
+const int  NCRIT   = 8;                                         //!< Number of bodies per cell
 const int  MAXBODY = 200000;                                    //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL = 10000000;                                  //!< Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET    = 2;                                         //!< LET opening critetia
 const real EPS2    = 1e-6;                                      //!< Softening parameter
-const int  GPUS    = 4;                                         //!< Number of GPUs per node
+const int  GPUS    = 3;                                         //!< Number of GPUs per node
 const int  THREADS = 64;                                        //!< Number of threads per thread-block
 
 const int MTERM = P*(P+1)*(P+2)/6-3;
@@ -151,9 +151,10 @@ struct JCell {
 struct Cell {
   unsigned ICELL;
   int      NCHILD;                                              //!< Number of child cells
-  int      NLEAF;                                               //!< Number of leafs
+  int      NCLEAF;                                              //!< Number of child leafs
+  int      NDLEAF;                                              //!< Number of descendant leafs
   int      PARENT;                                              //!< Iterator offset of parent cell
-  int      CHILD[8];                                            //!< Iterator offset of child cells
+  int      CHILD;                                               //!< Iterator offset of child cells
   B_iter   LEAF;                                                //!< Iterator of first leaf
   vect     X;                                                   //!< Cell center
   real     R;                                                   //!< Cell radius

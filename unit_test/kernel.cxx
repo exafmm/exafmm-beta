@@ -51,7 +51,7 @@ int main() {
     FMM.initTarget(ibodies,IeqJ);
 
     Cell cell;
-    cell.NLEAF    = numBodies;
+    cell.NDLEAF    = numBodies;
     cell.LEAF     = jbodies.begin();
     cell.X        = 0.5;
     cell.M        = 0;
@@ -64,7 +64,7 @@ int main() {
     cell.M        = 0;
     cell.ICELL    = 0;
     cell.NCHILD   = 1;
-    cell.CHILD[0] = 0;
+    cell.CHILD    = 0;
     jcells.push_back(cell);
     FMM.evalM2M(jcells);
     jcells.erase(jcells.begin());
@@ -74,7 +74,7 @@ int main() {
     icells.push_back(cell);
     FMM.addM2L(jcells.begin());
     FMM.evalM2L(icells,true);
-    cell.NLEAF    = numBodies;
+    cell.NDLEAF    = numBodies;
     cell.LEAF     = ibodies.begin();
     cell.X        = -0.5 - dist;
     cell.L        = 0;
