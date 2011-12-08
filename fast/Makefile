@@ -2,35 +2,35 @@ include ../Makefile
 
 a	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DDIRECT -DCART
+	$(CXX) $? $(LFLAGS) -DDIRECT -DCartesian
 	./a.out
 
 a2	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DDIRECT -DSPHE
+	$(CXX) $? $(LFLAGS) -DDIRECT -DSpherical
 	./a.out
 
 b	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DCART
+	$(CXX) $? $(LFLAGS) -DMANY -DCartesian
 	./a.out
 
 b2	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DSPHE
+	$(CXX) $? $(LFLAGS) -DMANY -DSpherical
 	./a.out
 
 c	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DCART
+	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DCartesian
 	./a.out
 
 c2	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DSPHE
+	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT -DSpherical
 	./a.out
 
 d	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DBUILD -DCART
+	$(CXX) $? $(LFLAGS) -DBUILD -DCartesian
 	./a.out

@@ -21,9 +21,9 @@ THE SOFTWARE.
 */
 #ifndef evaluator_h
 #define evaluator_h
-#if CART
+#if Cartesian
 #include "cartesian.h"
-#elif SPHE
+#elif Spherical
 #include "spherical.h"
 #endif
 

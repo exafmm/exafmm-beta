@@ -133,7 +133,8 @@ template<Equation equation>
 void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
   startTimer("evalP2M      ");                                  // Start timer
   for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells
-    CI->M = CI->L = 0;                                          //  Initialize multipole & local coefficients
+    CI->M = 0;                                                  //  Initialize multipole coefficients
+    CI->L = 0;                                                  //  Initialize local coefficients
     if( CI->NCHILD == 0 ) {                                     //  If cell is a twig
       P2M();                                                    //   Perform P2M kernel
     }                                                           //  Endif for twig

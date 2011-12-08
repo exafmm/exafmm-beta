@@ -170,9 +170,9 @@ protected:
       P2M(C,Rmax);
       M2M(C,Rmax);
     }
-#if CART
+#if Cartesian
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      for( int i=1; i<MCOEF; ++i ) C->M[i] /= C->M[0];
+      for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
     }
 #endif
     setRcrit(cells);

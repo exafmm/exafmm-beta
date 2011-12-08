@@ -557,7 +557,7 @@ private:
   inline void sumM2L(Lset &L, const Lset &C, const Mset &M) const {
     L += C;
 #if 0
-    for( int i=1; i<MCOEF; ++i ) L[0] += M[i] * C[i+3];
+    for( int i=1; i<MTERM; ++i ) L[0] += M[i] * C[i+3];
     Downward<0,0,P-1>::M2L(L,C,M);
 #else
     L[0] += C[4] *M[1] + C[5] *M[2] + C[6] *M[3] + C[7] *M[4] + C[8] *M[5] + C[9] *M[6];
@@ -573,7 +573,7 @@ private:
     B->TRG[2] += C[2];
     B->TRG[3] += C[3];
 #if 0
-    for( int i=1; i<MCOEF; ++i ) B->TRG[0] -= M[i] * C[i+3];
+    for( int i=1; i<MTERM; ++i ) B->TRG[0] -= M[i] * C[i+3];
     Downward<0,0,1>::M2P(B,C,M);
 #else
     B->TRG[0] -= C[4] *M[1] + C[5] *M[2] + C[6] *M[3] + C[7] *M[4] + C[8] *M[5] + C[9] *M[6];
@@ -649,7 +649,7 @@ public:
       M[0] = B->SRC[0];
       Terms<0,0,P-1>::power(M,dist);
       C->M[0] += M[0];
-      for( int i=1; i<MCOEF; ++i ) C->M[i] += M[i+3];
+      for( int i=1; i<MTERM; ++i ) C->M[i] += M[i+3];
     }
     C->RCRIT = std::min(C->R,Rmax);
   }
@@ -665,7 +665,7 @@ public:
       Terms<0,0,P-1>::power(C,dist);
       M = CJ->M;
       CI->M[0] += C[0] * M[0];
-      for( int i=1; i<MCOEF; ++i ) CI->M[i] += C[i+3] * M[0];
+      for( int i=1; i<MTERM; ++i ) CI->M[i] += C[i+3] * M[0];
       Upward<0,0,P-1>::M2M(CI->M,C,M);
     }
     CI->RCRIT = std::min(CI->R,Rmax);
@@ -714,7 +714,7 @@ public:
 
     CI->L /= CI->M[0];
     CI->L += CJ->L;
-    for( int i=1; i<LCOEF; ++i ) CI->L[0] += C[i] * CJ->L[i];
+    for( int i=1; i<LTERM; ++i ) CI->L[0] += C[i] * CJ->L[i];
     Downward<0,0,P-1>::L2L(CI->L,C,CJ->L);
   }
 
@@ -732,7 +732,7 @@ public:
       B->TRG[1] += L[1];
       B->TRG[2] += L[2];
       B->TRG[3] += L[3];
-      for( int i=1; i<LCOEF; ++i ) B->TRG[0] -= C[i]*L[i];
+      for( int i=1; i<LTERM; ++i ) B->TRG[0] -= C[i]*L[i];
       Downward<0,0,1>::L2P(B,C,L);
 #else
       Lset C;

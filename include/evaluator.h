@@ -172,10 +172,11 @@ private:
 protected:
 //! Get level from cell index
   int getLevel(bigint index) {
+    int i = index;                                              // Copy to dummy index
     int level = -1;                                             // Initialize level counter
-    while( index >= 0 ) {                                       // While cell index is non-negative
+    while( i >= 0 ) {                                           // While cell index is non-negative
       level++;                                                  //  Increment level
-      index -= 1 << 3*level;                                    //  Subtract number of cells in that level
+      i -= 1 << 3*level;                                        //  Subtract number of cells in that level
     }                                                           // End while loop for cell index
     return level;                                               // Return the level
   }

@@ -38,6 +38,7 @@ public:
   using Kernel<equation>::NP2P;                                 //!< Number of P2P kernel calls
   using Kernel<equation>::NM2P;                                 //!< Number of M2P kernel calls
   using Kernel<equation>::NM2L;                                 //!< Number of M2L kernel calls
+  using Evaluator<equation>::getLevel;                          //!< Get level from cell index
   using Evaluator<equation>::timeKernels;                       //!< Time all kernels for auto-tuning
   using Evaluator<equation>::upwardPeriodic;                    //!< Upward phase for periodic cells
   using Evaluator<equation>::traverse;                          //!< Traverse tree to get interaction list
@@ -91,7 +92,8 @@ private:
     Cells parents;                                              // Parent cell vector;
     int oldend = end;                                           // Save old end counter
     parent.ICELL = getParent(cells[begin].ICELL);               // Set cell index
-    parent.M = parent.L = 0;                                    // Initlalize multipole & local coefficients
+    parent.M = 0;                                               // Initialize multipole coefficients
+    parent.L = 0;                                               // Initlalize local coefficients
     parent.NLEAF = parent.NCHILD = 0;                           // Initialize NLEAF & NCHILD
     parent.LEAF = cells[begin].LEAF;                            // Set pointer to first leaf
     getCenter(parent);                                          // Set cell center and radius
@@ -100,7 +102,8 @@ private:
         cells.push_back(parent);                                //   Push cells into vector
         end++;                                                  //   Increment cell counter
         parent.ICELL = getParent(cells[i].ICELL);               //   Set cell index
-        parent.M = parent.L = 0;                                //   Initialize multipole & local coefficients
+        parent.M = 0;                                           //   Initialize multipole coefficients
+        parent.L = 0;                                           //   Initialize local coefficients
         parent.NLEAF = parent.NCHILD = 0;                       //   Initialize NLEAF & NCHILD
         parent.LEAF = cells[i].LEAF;                            //   Set pointer to first leaf
         getCenter(parent);                                      //   Set cell center and radius
@@ -122,16 +125,6 @@ private:
   }
 
 protected:
-//! Get level from cell index
-  int getLevel(bigint index) {
-    int level = -1;                                             // Initialize level counter
-    while( index >= 0 ) {                                       // While cell index is non-negative
-      level++;                                                  //  Increment level
-      index -= 1 << 3*level;                                    //  Subtract number of cells in that level
-    }                                                           // End while loop for cell index
-    return level;                                               // Return the level
-  }
-
 //! Get cell center and radius from cell index
   void getCenter(Cell &cell) {
     int level = getLevel(cell.ICELL);                           // Get level from cell index

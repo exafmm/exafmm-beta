@@ -292,7 +292,7 @@ private:
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
     if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     for( int i=0; i!=C->NCHILD; i++ ) {                         // Loop over child cells
-      C_iter CC = C0+C->CHILD[i];                               //  Iterator for child cell
+      C_iter CC = C0+C->CHILD[0]+i;                             //  Iterator for child cell
       bool divide = false;                                      //  Initialize logical for dividing
       if( IMAGES == 0 ) {                                       //  If free boundary condition
         Xperiodic = 0;                                          //   Set periodic coordinate offset
@@ -453,7 +453,7 @@ private:
       } else if ( twigs.back().NLEAF == 0 || !last ) {          //  Elseif twig-twig collision
         cells.back().M += twigs.back().M;                       //   Accumulate the multipole
       } else if ( cells.back().NLEAF == 0 ) {                   //  Elseif twig-body collision
-        coef M;                                                 //   Multipole for temporary storage
+        Mset M;                                                 //   Multipole for temporary storage
         M = cells.back().M;                                     //   Save multipoles from cells
         cells.back() = twigs.back();                            //   Copy twigs to cells
         cells.back().M = M;                                     //   Copy back multipoles to cells
@@ -743,8 +743,8 @@ public:
     if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     int off = ((1 << 3 * level) - 1) / 7;                       // Levelwise offset of ICELL
     int size = (1 << 3 * level) / MPISIZE;                      // Number of cells to remove
-    int begin = MPIRANK * size + off;                           // Begin index of cells to remove
-    int end = (MPIRANK + 1) * size + off;                       // End index of cells to remove
+    unsigned begin = MPIRANK * size + off;                      // Begin index of cells to remove
+    unsigned end = (MPIRANK + 1) * size + off;                  // End index of cells to remove
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
       if( begin <= C->ICELL && C->ICELL < end ) {               //  If cell is within the removal range
         C_iter CP = cells.begin()+C->PARENT;                    //   Iterator of parent cell

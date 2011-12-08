@@ -65,16 +65,17 @@ const real EPS2    = 1e-6;                                      // Softening par
 const int  GPUS    = 3;                                         // Number of GPUs per node
 const int  THREADS = 64;                                        // Number of threads per thread-block
 
-const int MCOEF = P*(P+1)*(P+2)/6-3;
-const int LCOEF = (P+1)*(P+2)*(P+3)/6;
-const int NCOEF = P*(P+1)/2;
+const int MTERM = P*(P+1)*(P+2)/6-3;
+const int LTERM = (P+1)*(P+2)*(P+3)/6;
+const int NTERM = P*(P+1)/2;
+
 typedef vec<3 ,real> vect;
-#if CART
-typedef vec<MCOEF,real> Mset;
-typedef vec<LCOEF,real> Lset;
-#elif SPHE
-typedef vec<NCOEF,complex> Mset;
-typedef vec<NCOEF,complex> Lset;
+#if Cartesian
+typedef vec<MTERM,real> Mset;
+typedef vec<LTERM,real> Lset;
+#elif Spherical
+typedef vec<3*NTERM,complex> Mset;
+typedef vec<3*NTERM,complex> Lset;
 #endif
 
 typedef std::vector<bigint>                    Bigints;         // Vector of big integer types
@@ -84,7 +85,7 @@ typedef std::map<std::string,double>::iterator E_iter;          // Iterator for 
 struct JBody {                                                  // Source properties of a body (stuff to send)
   int         IBODY;                                            // Initial body numbering for sorting back
   int         IPROC;                                            // Initial process numbering for partitioning back
-  bigint      ICELL;                                            // Cell index
+  unsigned    ICELL;                                            // Cell index
   vect        X;                                                // Position
   vec<1,real> SRC;                                              // Source values
 };
@@ -107,9 +108,9 @@ typedef std::vector<Leaf>::iterator L_iter;                     // Iterator for 
 
 struct Node {
   bool NOCHILD;
-  int  LEVEL;
-  int  NLEAF;
-  int  CHILD[8];
+  int LEVEL;
+  int NLEAF;
+  int CHILD[8];
   vect X;
   Leaf *LEAF;
 };
@@ -118,12 +119,12 @@ typedef std::vector<Node>::iterator N_iter;
 
 struct Cell {
   unsigned ICELL;
-  unsigned NCHILD;
-  unsigned NCLEAF;
-  unsigned NDLEAF;
-  unsigned PARENT;
-  unsigned CHILD;
-  B_iter   LEAF;
+  int NCHILD;
+  int NCLEAF;
+  int NDLEAF;
+  int PARENT;
+  int CHILD;
+  B_iter LEAF;
   vect X;
   real R;
   real RCRIT;

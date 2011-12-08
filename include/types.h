@@ -37,7 +37,7 @@ THE SOFTWARE.
 #include <vector>
 #include "vec.h"
 
-typedef long                 bigint;                            //!< Big integer type
+typedef unsigned             bigint;                            //!< Big integer type
 typedef float                real;                              //!< Real number type on CPU
 typedef float                gpureal;                           //!< Real number type on GPU
 typedef std::complex<double> complex;                           //!< Complex number type
@@ -65,18 +65,17 @@ const real EPS2    = 1e-6;                                      //!< Softening p
 const int  GPUS    = 4;                                         //!< Number of GPUs per node
 const int  THREADS = 64;                                        //!< Number of threads per thread-block
 
-#if Cartesian
-const int  NTERM   = P*(P+1)*(P+2)/6;                           //!< Number of terms for cartesian expansion
-#elif Spherical
-const int  NTERM   = P*(P+1)/2;                                 //!< Number of terms for spherical harmonics
-#endif
-const int  NCOEF   = 3 * NTERM;                                 //!< 3-D vector of coefficients
+const int MTERM = P*(P+1)*(P+2)/6-3;
+const int LTERM = (P+1)*(P+2)*(P+3)/6;
+const int NTERM = P*(P+1)/2;
 
 typedef vec<3,real>                            vect;            //!< 3-D vector type
 #if Cartesian
-typedef vec<NCOEF,real>                        coef;            //!< Multipole coefficient type for Cartesian
+typedef vec<MTERM,real>                        Mset;            //!< Multipole coefficient type for Cartesian
+typedef vec<LTERM,real>                        Lset;            //!< Local coefficient type for Cartesian
 #elif Spherical
-typedef vec<NCOEF,complex>                     coef;            //!< Multipole coefficient type for spherical
+typedef vec<3*NTERM,complex>                   Mset;            //!< Multipole coefficient type for spherical
+typedef vec<3*NTERM,complex>                   Lset;            //!< Local coefficient type for spherical
 #endif
 typedef std::vector<bigint>                    Bigints;         //!< Vector of big integer types
 typedef std::map<std::string,double>           Event;           //!< Map of event name to logged value
@@ -104,9 +103,13 @@ enum Stage {                                                    //!< Stages of F
 struct JBody {
   int         IBODY;                                            //!< Initial body numbering for sorting back
   int         IPROC;                                            //!< Initial process numbering for partitioning back
-  bigint      ICELL;                                            //!< Cell index
+  unsigned    ICELL;                                            //!< Cell index
   vect        X;                                                //!< Position
-  vec<4,real> SRC;                                              //!< Source values
+#if Cartesian
+  vec<1,real> SRC;                                              //!< Source values
+#elif Spherical
+  vec<4,real> SRC;
+#endif
 };
 //! Structure of bodies
 struct Body : JBody {
@@ -120,21 +123,43 @@ typedef std::vector<Body>::iterator    B_iter;                  //!< Iterator fo
 typedef std::vector<JBody>             JBodies;                 //!< Vector of source bodies
 typedef std::vector<JBody>::iterator   JB_iter;                 //!< Iterator for source body vector
 
+struct Leaf {
+  int I;
+  vect X;
+  Leaf *NEXT;
+};
+typedef std::vector<Leaf>           Leafs;                      // Vector of leafs
+typedef std::vector<Leaf>::iterator L_iter;                     // Iterator for leaf vector
+
+struct Node {
+  bool NOCHILD;
+  int  LEVEL;
+  int  NLEAF;
+  int  CHILD[8];
+  vect X;
+  Leaf *LEAF;
+};
+typedef std::vector<Node>           Nodes;
+typedef std::vector<Node>::iterator N_iter;
+
 //! Structure of source cells (stuff to send)
 struct JCell {
-  bigint ICELL;                                                 //!< Cell index
-  coef   M;                                                     //!< Multipole coefficients
+  unsigned ICELL;                                               //!< Cell index
+  Mset   M;                                                     //!< Multipole coefficients
 };
 //! Structure of cells
-struct Cell : JCell {
-  int    NCHILD;                                                //!< Number of child cells
-  int    NLEAF;                                                 //!< Number of leafs
-  int    PARENT;                                                //!< Iterator offset of parent cell
-  int    CHILD[8];                                              //!< Iterator offset of child cells
-  B_iter LEAF;                                                  //!< Iterator of first leaf
-  vect   X;                                                     //!< Cell center
-  real   R;                                                     //!< Cell radius
-  coef   L;                                                     //!< Local coefficients
+struct Cell {
+  unsigned ICELL;
+  int      NCHILD;                                              //!< Number of child cells
+  int      NLEAF;                                               //!< Number of leafs
+  int      PARENT;                                              //!< Iterator offset of parent cell
+  int      CHILD[8];                                            //!< Iterator offset of child cells
+  B_iter   LEAF;                                                //!< Iterator of first leaf
+  vect     X;                                                   //!< Cell center
+  real     R;                                                   //!< Cell radius
+  real     RCRIT;                                               //!< Critical cell radius
+  Mset     M;                                                   //!< Multipole coefficients
+  Lset     L;                                                   //!< Local coefficients
 };
 typedef std::vector<Cell>              Cells;                   //!< Vector of cells
 typedef std::vector<Cell>::iterator    C_iter;                  //!< Iterator for cell vector
@@ -144,10 +169,10 @@ typedef std::vector<JCell>::iterator   JC_iter;                 //!< Iterator fo
 typedef std::pair<C_iter,C_iter>       Pair;                    //!< Pair of interacting cells
 typedef std::stack<Pair>               Pairs;                   //!< Stack of interacting cell pairs
 typedef std::list<C_iter>              List;                    //!< Interaction list
-typedef std::list<C_iter>::iterator    L_iter;                  //!< Iterator for interaction list vector
+typedef std::list<C_iter>::iterator    LC_iter;                 //!< Iterator for interaction list vector
 typedef std::vector<List>              Lists;                   //!< Vector of interaction lists
 typedef std::map<C_iter,int>           Map;                     //!< Map of interaction lists
-typedef std::map<C_iter,int>::iterator M_iter;                  //!< Iterator for interation list map
+typedef std::map<C_iter,int>::iterator MC_iter;                 //!< Iterator for interation list map
 typedef std::vector<Map>               Maps;                    //!< Vector of map of interaction lists
 
 #endif
