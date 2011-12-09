@@ -272,7 +272,7 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
       C_iter Ci = cells.begin(), Cj = cells.begin()+1;          //  Iterator of target and source cells
       if( onCPU ) {                                             //  If calculation is to be done on CPU
         vect Xperiodic = 0;                                     //   Set periodic coordinate offset
-        P2P_CPU(Ci,Cj,Xperiodic);                               //   Perform P2P_CPU kernel
+        P2P(Ci,Cj,Xperiodic);                                   //   Perform P2P kernel on CPU
       } else {                                                  //  If calculation is to be done on GPU
         constHost.push_back(2*R0);                              //   Copy domain size to GPU buffer
         for( B_iter B=Bj0; B!=BjN; ++B ) {                      //   Loop over source bodies

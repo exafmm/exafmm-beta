@@ -283,10 +283,10 @@ class Kernel : public KernelBase {
 public:
   void initialize();                                            //!< Initialize kernels
   void P2M(C_iter Ci);                                          //!< Evaluate P2M kernel on CPU
-  void M2M_CPU(C_iter Ci, C_iter Cj);                           //!< Evaluate M2M kernel on CPU
+  void M2M(C_iter Ci, C_iter Cj);                               //!< Evaluate M2M kernel on CPU
   void M2L(C_iter Ci, C_iter Cj, vect Xperiodic);               //!< Evaluate M2L kernel on CPU
   void M2P(C_iter Ci, C_iter Cj, vect Xperiodic);               //!< Evaluate M2P kernel on CPU
-  void P2P_CPU(C_iter Ci, C_iter Cj, vect Xperiodic);           //!< Evaluate P2P kernel on CPU
+  void P2P(C_iter Ci, C_iter Cj, vect Xperiodic);               //!< Evaluate P2P kernel on CPU
   void L2L(C_iter Ci, C_iter Cj);                               //!< Evaluate L2L kernel on CPU
   void L2P(C_iter Ci);                                          //!< Evaluate L2P kernel on CPU
   void P2M();                                                   //!< Evaluate P2M kernel on GPU

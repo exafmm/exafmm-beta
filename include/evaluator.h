@@ -69,11 +69,9 @@ public:
   using Kernel<equation>::deviceToHost;                         //!< Copy from device to host
   using Kernel<equation>::P2M;                                  //!< Evaluate P2M kernel
   using Kernel<equation>::M2M;                                  //!< Evaluate M2M kernel
-  using Kernel<equation>::M2M_CPU;                              //!< Evaluate M2M kernel on CPU
   using Kernel<equation>::M2L;                                  //!< Evaluate M2L kernel
   using Kernel<equation>::M2P;                                  //!< Evaluate M2P kernel
   using Kernel<equation>::P2P;                                  //!< Evaluate P2P kernel
-  using Kernel<equation>::P2P_CPU;                              //!< Evaluate P2P kernel on CPU
   using Kernel<equation>::L2L;                                  //!< Evaluate L2L kernel
   using Kernel<equation>::L2P;                                  //!< Evaluate L2P kernel
   using Dataset<equation>::initSource;                          //!< Initialize source values
@@ -372,7 +370,7 @@ public:
       C_iter Ci = pccells.end() - 1;                            //  Set current cell as target for M2M
       while( !pjcells.empty() ) {                               //  While there are periodic jcells remaining
         C_iter Cj = pjcells.end() - 1;                          //   Set current jcell as source for M2M
-        M2M_CPU(Ci,Cj);                                         //   Perform M2M_CPU kernel
+        M2M(Ci,Cj);                                             //   Perform M2M kernel on CPU
         pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
       }                                                         //  End while for remaining periodic jcells
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction

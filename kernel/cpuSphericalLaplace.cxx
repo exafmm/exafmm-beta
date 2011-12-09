@@ -45,7 +45,7 @@ void Kernel<Laplace>::P2M(C_iter Ci) {
 }
 
 template<>
-void Kernel<Laplace>::M2M_CPU(C_iter Ci, C_iter Cj) {
+void Kernel<Laplace>::M2M(C_iter Ci, C_iter Cj) {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;

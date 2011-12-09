@@ -23,7 +23,7 @@ THE SOFTWARE.
 #define laplace_h
 
 template<>
-void Kernel<Laplace>::P2P_CPU(C_iter Ci, C_iter Cj, vect Xperiodic) {// Laplace P2P kernel on CPU
+void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj, vect Xperiodic) {// Laplace P2P kernel on CPU
   for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
     for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
       vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target

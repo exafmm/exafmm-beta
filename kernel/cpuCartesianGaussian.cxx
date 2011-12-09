@@ -491,7 +491,7 @@ void Kernel<Gaussian>::P2M(C_iter Ci) {
 }
 
 template<>
-void Kernel<Gaussian>::M2M_CPU(C_iter Ci, C_iter Cj) {
+void Kernel<Gaussian>::M2M(C_iter Ci, C_iter Cj) {
   vect dist = Cj->X - Ci->X;
   Mset M;
   Lset C;

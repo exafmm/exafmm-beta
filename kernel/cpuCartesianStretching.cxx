@@ -491,7 +491,7 @@ void Kernel<Stretching>::P2M(C_iter Ci) {
 }
 
 template<>
-void Kernel<Stretching>::M2M_CPU(C_iter Ci, C_iter Cj) {
+void Kernel<Stretching>::M2M(C_iter Ci, C_iter Cj) {
   vect dist = Cj->X - Ci->X;
   Mset M;
   Lset C;
