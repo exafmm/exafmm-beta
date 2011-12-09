@@ -33,7 +33,6 @@ class KernelBase : public Sort {
 protected:
   vect        X0;                                               //!< Center of root cell
   real        R0;                                               //!< Radius of root cell
-  vect        Xperiodic;                                        //!< Coordinate offset of periodic image
 
   int                  ATOMS;                                   //!< Number of atom types in Van der Waals
   std::vector<real>    RSCALE;                                  //!< Scaling parameter for Van der Waals
@@ -69,7 +68,7 @@ public:
 
 protected:
 //! Get r,theta,phi from x,y,z
-  void cart2sph(real& r, real& theta, real& phi, vect dist) {
+  void cart2sph(real& r, real& theta, real& phi, vect dist) const {
     r = std::sqrt(norm(dist))+EPS;                              // r = sqrt(x^2 + y^2 + z^2) + eps
     theta = std::acos(dist[2] / r);                             // theta = acos(z / r)
     if( std::abs(dist[0]) + std::abs(dist[1]) < EPS ) {         // If |x| < eps & |y| < eps
@@ -85,7 +84,7 @@ protected:
 
 //! Spherical to cartesian coordinates
   template<typename T>
-  void sph2cart(real r, real theta, real phi, T spherical, T &cartesian) {
+  void sph2cart(real r, real theta, real phi, T spherical, T &cartesian) const {
     cartesian[0] = sin(theta) * cos(phi) * spherical[0]         // x component (not x itself)
                  + cos(theta) * cos(phi) / r * spherical[1]
                  - sin(phi) / r / sin(theta) * spherical[2];
@@ -283,22 +282,20 @@ template<Equation equation>
 class Kernel : public KernelBase {
 public:
   void initialize();                                            //!< Initialize kernels
-  void P2M(C_iter CI);                                          //!< Evaluate P2M kernel
-  void P2M();
-  void M2M(C_iter CI, C_iter CJ);                               //!< Evaluate M2M kernel
-  void M2M();
+  void P2M(C_iter CI);                                          //!< Evaluate P2M kernel on CPU
   void M2M_CPU(C_iter CI, C_iter CJ);                           //!< Evaluate M2M kernel on CPU
-  void M2L(C_iter CI, C_iter CJ);                               //!< Evaluate M2L kernel
-  void M2L();
-  void M2P(C_iter CI, C_iter CJ);                               //!< Evaluate M2P kernel
-  void M2P();
-  void P2P(C_iter CI, C_iter CJ);                               //!< Evaluate P2P kernel
-  void P2P();
-  void P2P_CPU(C_iter CI, C_iter CJ);                           //!< Evaluate P2P kernel on CPU
-  void L2L(C_iter CI, C_iter CJ);                               //!< Evaluate L2L kernel
-  void L2L();
-  void L2P(C_iter CI);                                          //!< Evaluate L2P kernel
-  void L2P();
+  void M2L(C_iter CI, C_iter CJ, vect Xperiodic);               //!< Evaluate M2L kernel on CPU
+  void M2P(C_iter CI, C_iter CJ, vect Xperiodic);               //!< Evaluate M2P kernel on CPU
+  void P2P_CPU(C_iter CI, C_iter CJ, vect Xperiodic);           //!< Evaluate P2P kernel on CPU
+  void L2L(C_iter CI, C_iter CJ);                               //!< Evaluate L2L kernel on CPU
+  void L2P(C_iter CI);                                          //!< Evaluate L2P kernel on CPU
+  void P2M();                                                   //!< Evaluate P2M kernel on GPU
+  void M2M();                                                   //!< Evaluate M2M kernel on GPU
+  void M2L();                                                   //!< Evaluate M2L kernel on GPU
+  void M2P();                                                   //!< Evaluate M2P kernel on GPU
+  void P2P();                                                   //!< Evalaute P2P kernel on GPU
+  void L2L();                                                   //!< Evaluate L2L kernel on GPU
+  void L2P();                                                   //!< Evaluate L2P kernel on GPU
   void finalize();                                              //!< Finalize kernels
 
   void allocate();                                              //!< Allocate GPU variables

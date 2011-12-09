@@ -34,10 +34,10 @@ template<>
 void Kernel<Gaussian>::M2M_CPU(C_iter, C_iter) {}
 
 template<>
-void Kernel<Gaussian>::M2L(C_iter, C_iter) {}
+void Kernel<Gaussian>::M2L(C_iter, C_iter, vect) {}
 
 template<>
-void Kernel<Gaussian>::M2P(C_iter, C_iter) {}
+void Kernel<Gaussian>::M2P(C_iter, C_iter, vect) {}
 
 template<>
 void Kernel<Gaussian>::L2L(C_iter, C_iter) {}

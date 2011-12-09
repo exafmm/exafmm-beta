@@ -193,14 +193,14 @@ void Evaluator<equation>::clearBuffers() {                      // Clear GPU buf
 }
 
 template<Equation equation>
-void Evaluator<equation>::testMACP2P(C_iter CI, C_iter CJ) {    // Test multipole acceptance criteria for P2P kernel
+void Evaluator<equation>::testMACP2P(C_iter CI, C_iter CJ, vect) {// Test MAC for P2P kernel
   listP2P[CI-CI0].push_back(CJ);                                // Push source cell into P2P interaction list
   flagP2P[CI-CI0][CJ] |= Iperiodic;                             // Flip bit of periodic image flag
   NP2P++;                                                       // Count P2P kernel execution
 }
 
 template<Equation equation>
-void Evaluator<equation>::testMACM2L(C_iter CI, C_iter CJ) {    // Test multipole acceptance criteria for M2L kernel
+void Evaluator<equation>::testMACM2L(C_iter CI, C_iter CJ, vect Xperiodic) {// Test MAC for M2L kernel
   vect dist = CI->X - CJ->X - Xperiodic;                        // Distance vector between cells
   real R = std::sqrt(norm(dist));                               // Distance between cells
   if( CI->R + CJ->R > THETA*R ) {                               // If cell is too large
@@ -214,7 +214,7 @@ void Evaluator<equation>::testMACM2L(C_iter CI, C_iter CJ) {    // Test multipol
 }
 
 template<Equation equation>
-void Evaluator<equation>::testMACM2P(C_iter CI, C_iter CJ) {    // Test multipole acceptance criteria for M2P kernel
+void Evaluator<equation>::testMACM2P(C_iter CI, C_iter CJ, vect Xperiodic) {// Test MAC for M2P kernel
   vect dist = CI->X - CJ->X - Xperiodic;                        // Distance vector between cells
   real R = std::sqrt(norm(dist));                               // Distance between cells
   if( CI->NCHILD != 0 || CI->R + CJ->R > THETA*R ) {            // If target is not twig or cell is too large
@@ -271,8 +271,8 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
       cells[1].NDLEAF = BJN-BJ0;                                //  Number of source leafs
       C_iter CI = cells.begin(), CJ = cells.begin()+1;          //  Iterator of target and source cells
       if( onCPU ) {                                             //  If calculation is to be done on CPU
-        Xperiodic = 0;                                          //   Set periodic coordinate offset
-        P2P_CPU(CI,CJ);                                         //   Perform P2P_CPU kernel
+        vect Xperiodic = 0;                                     //   Set periodic coordinate offset
+        P2P_CPU(CI,CJ,Xperiodic);                               //   Perform P2P_CPU kernel
       } else {                                                  //  If calculation is to be done on GPU
         constHost.push_back(2*R0);                              //   Copy domain size to GPU buffer
         for( B_iter B=BJ0; B!=BJN; ++B ) {                      //   Loop over source bodies

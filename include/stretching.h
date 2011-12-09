@@ -23,7 +23,7 @@ THE SOFTWARE.
 #define stretching_h
 
 template<>
-void Kernel<Stretching>::P2P_CPU(C_iter CI, C_iter CJ) {        // Stretching P2P kernel on CPU
+void Kernel<Stretching>::P2P_CPU(C_iter CI, C_iter CJ, vect Xperiodic) {// Stretching P2P kernel on CPU
   for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {    // Loop over target bodies
     for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {  //  Loop over source bodies
       vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target

@@ -82,7 +82,7 @@ void Kernel<CoulombVdW>::M2M_CPU(C_iter CI, C_iter CJ) {
 }
 
 template<>
-void Kernel<CoulombVdW>::M2L(C_iter CI, C_iter CJ) {
+void Kernel<CoulombVdW>::M2L(C_iter CI, C_iter CJ, vect Xperiodic) {
   vect dist = CI->X - CJ->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -114,7 +114,7 @@ void Kernel<CoulombVdW>::M2L(C_iter CI, C_iter CJ) {
 }
 
 template<>
-void Kernel<CoulombVdW>::M2P(C_iter CI, C_iter CJ) {
+void Kernel<CoulombVdW>::M2P(C_iter CI, C_iter CJ, vect Xperiodic) {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;

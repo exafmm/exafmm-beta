@@ -23,7 +23,7 @@ THE SOFTWARE.
 #define coulombvdw_h
 
 template<>
-void Kernel<CoulombVdW>::P2P_CPU(C_iter CI, C_iter CJ) {        // Coulomb + Van der Waals P2P kernel on CPU
+void Kernel<CoulombVdW>::P2P_CPU(C_iter CI, C_iter CJ, vect Xperiodic) {// Coulomb + Van der Waals P2P kernel on CPU
   for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {    // Loop over target bodies
     int atypei = BI->SRC[1];                                    //  Atom type of target
     for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {  //  Loop over source bodies
