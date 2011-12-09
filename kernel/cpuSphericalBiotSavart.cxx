@@ -28,7 +28,7 @@ template<>
 void Kernel<BiotSavart>::initialize() {}
 
 template<>
-void Kernel<BiotSavart>::P2M(C_iter Ci) {
+void Kernel<BiotSavart>::P2M(C_iter Ci) const {
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;
     real rho, alpha, beta;
@@ -47,7 +47,7 @@ void Kernel<BiotSavart>::P2M(C_iter Ci) {
 }
 
 template<>
-void Kernel<BiotSavart>::M2M(C_iter Ci, C_iter Cj) {
+void Kernel<BiotSavart>::M2M(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
@@ -90,7 +90,7 @@ void Kernel<BiotSavart>::M2M(C_iter Ci, C_iter Cj) {
 }
 
 template<>
-void Kernel<BiotSavart>::M2L(C_iter Ci, C_iter Cj, vect Xperiodic) {
+void Kernel<BiotSavart>::M2L(C_iter Ci, C_iter Cj) const {
   vect dist = Ci->X - Cj->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -128,7 +128,7 @@ void Kernel<BiotSavart>::M2L(C_iter Ci, C_iter Cj, vect Xperiodic) {
 }
 
 template<>
-void Kernel<BiotSavart>::M2P(C_iter Ci, C_iter Cj, vect Xperiodic) {
+void Kernel<BiotSavart>::M2P(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Cj->X - Xperiodic;
@@ -164,7 +164,7 @@ void Kernel<BiotSavart>::M2P(C_iter Ci, C_iter Cj, vect Xperiodic) {
 }
 
 template<>
-void Kernel<BiotSavart>::L2L(C_iter Ci, C_iter Cj) {
+void Kernel<BiotSavart>::L2L(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
@@ -205,7 +205,7 @@ void Kernel<BiotSavart>::L2L(C_iter Ci, C_iter Cj) {
 }
 
 template<>
-void Kernel<BiotSavart>::L2P(C_iter Ci) {
+void Kernel<BiotSavart>::L2P(C_iter Ci) const {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;

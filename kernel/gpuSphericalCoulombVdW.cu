@@ -36,7 +36,7 @@ void Kernel<CoulombVdW>::initialize() {
 }
 
 template<>
-void Kernel<CoulombVdW>::M2M(C_iter Ci, C_iter Cj) {
+void Kernel<CoulombVdW>::M2M(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;

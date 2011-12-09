@@ -28,22 +28,22 @@ template<>
 void Kernel<Gaussian>::initialize() {}
 
 template<>
-void Kernel<Gaussian>::P2M(C_iter) {}
+void Kernel<Gaussian>::P2M(C_iter) const {}
 
 template<>
-void Kernel<Gaussian>::M2M(C_iter, C_iter) {}
+void Kernel<Gaussian>::M2M(C_iter, C_iter) const {}
 
 template<>
-void Kernel<Gaussian>::M2L(C_iter, C_iter, vect) {}
+void Kernel<Gaussian>::M2L(C_iter, C_iter) const {}
 
 template<>
-void Kernel<Gaussian>::M2P(C_iter, C_iter, vect) {}
+void Kernel<Gaussian>::M2P(C_iter, C_iter) const {}
 
 template<>
-void Kernel<Gaussian>::L2L(C_iter, C_iter) {}
+void Kernel<Gaussian>::L2L(C_iter, C_iter) const {}
 
 template<>
-void Kernel<Gaussian>::L2P(C_iter) {}
+void Kernel<Gaussian>::L2P(C_iter) const {}
 
 template<>
 void Kernel<Gaussian>::finalize() {}

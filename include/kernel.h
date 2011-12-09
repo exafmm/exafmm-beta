@@ -31,8 +31,9 @@ const real EPS = 1e-6;                                          //!< Single prec
 //! Unified CPU/GPU kernel class
 class KernelBase : public Sort {
 protected:
-  vect        X0;                                               //!< Center of root cell
-  real        R0;                                               //!< Radius of root cell
+  vect                 X0;                                      //!< Center of root cell
+  real                 R0;                                      //!< Radius of root cell
+  vect                 Xperiodic;                               //!< Coordinate offset of periodic image
 
   int                  ATOMS;                                   //!< Number of atom types in Van der Waals
   std::vector<real>    RSCALE;                                  //!< Scaling parameter for Van der Waals
@@ -96,7 +97,7 @@ protected:
   }
 
 //! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
-  void evalMultipole(real rho, real alpha, real beta) {
+  void evalMultipole(real rho, real alpha, real beta) const {
     const complex I(0.,1.);                                     // Imaginary unit
     double x = std::cos(alpha);                                 // x = cos(alpha)
     double y = std::sin(alpha);                                 // y = sin(alpha)
@@ -132,7 +133,7 @@ protected:
   }
 
 //! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
-  void evalLocal(real rho, real alpha, real beta) {
+  void evalLocal(real rho, real alpha, real beta) const {
     const complex I(0.,1.);                                     // Imaginary unit
     double x = std::cos(alpha);                                 // x = cos(alpha)
     double y = std::sin(alpha);                                 // y = sin(alpha)
@@ -282,13 +283,13 @@ template<Equation equation>
 class Kernel : public KernelBase {
 public:
   void initialize();                                            //!< Initialize kernels
-  void P2M(C_iter Ci);                                          //!< Evaluate P2M kernel on CPU
-  void M2M(C_iter Ci, C_iter Cj);                               //!< Evaluate M2M kernel on CPU
-  void M2L(C_iter Ci, C_iter Cj, vect Xperiodic);               //!< Evaluate M2L kernel on CPU
-  void M2P(C_iter Ci, C_iter Cj, vect Xperiodic);               //!< Evaluate M2P kernel on CPU
-  void P2P(C_iter Ci, C_iter Cj, vect Xperiodic);               //!< Evaluate P2P kernel on CPU
-  void L2L(C_iter Ci, C_iter Cj);                               //!< Evaluate L2L kernel on CPU
-  void L2P(C_iter Ci);                                          //!< Evaluate L2P kernel on CPU
+  void P2M(C_iter Ci) const;                                    //!< Evaluate P2M kernel on CPU
+  void M2M(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2M kernel on CPU
+  void M2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2L kernel on CPU
+  void M2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2P kernel on CPU
+  void P2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate P2P kernel on CPU
+  void L2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate L2L kernel on CPU
+  void L2P(C_iter Ci) const;                                    //!< Evaluate L2P kernel on CPU
   void P2M();                                                   //!< Evaluate P2M kernel on GPU
   void M2M();                                                   //!< Evaluate M2M kernel on GPU
   void M2L();                                                   //!< Evaluate M2L kernel on GPU

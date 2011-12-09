@@ -36,7 +36,7 @@ void Kernel<Gaussian>::initialize() {
 }
 
 template<>
-void Kernel<Gaussian>::M2M(C_iter, C_iter) {}
+void Kernel<Gaussian>::M2M(C_iter, C_iter) const {}
 
 template<>
 void Kernel<Gaussian>::finalize() {}

@@ -28,7 +28,7 @@ template<>
 void Kernel<Stretching>::initialize() {}
 
 template<>
-void Kernel<Stretching>::P2M(C_iter Ci) {
+void Kernel<Stretching>::P2M(C_iter Ci) const {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;
@@ -54,7 +54,7 @@ void Kernel<Stretching>::P2M(C_iter Ci) {
 }
 
 template<>
-void Kernel<Stretching>::M2M(C_iter Ci, C_iter Cj) {
+void Kernel<Stretching>::M2M(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
@@ -97,7 +97,7 @@ void Kernel<Stretching>::M2M(C_iter Ci, C_iter Cj) {
 }
 
 template<>
-void Kernel<Stretching>::M2L(C_iter Ci, C_iter Cj, vect Xperiodic) {
+void Kernel<Stretching>::M2L(C_iter Ci, C_iter Cj) const {
   vect dist = Ci->X - Cj->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -135,7 +135,7 @@ void Kernel<Stretching>::M2L(C_iter Ci, C_iter Cj, vect Xperiodic) {
 }
 
 template<>
-void Kernel<Stretching>::M2P(C_iter Ci, C_iter Cj, vect Xperiodic) {
+void Kernel<Stretching>::M2P(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Cj->X - Xperiodic;
@@ -171,7 +171,7 @@ void Kernel<Stretching>::M2P(C_iter Ci, C_iter Cj, vect Xperiodic) {
 }
 
 template<>
-void Kernel<Stretching>::L2L(C_iter Ci, C_iter Cj) {
+void Kernel<Stretching>::L2L(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
@@ -212,7 +212,7 @@ void Kernel<Stretching>::L2L(C_iter Ci, C_iter Cj) {
 }
 
 template<>
-void Kernel<Stretching>::L2P(C_iter Ci) {
+void Kernel<Stretching>::L2P(C_iter Ci) const {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;
