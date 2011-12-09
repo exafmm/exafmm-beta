@@ -479,7 +479,7 @@ template<>
 void Kernel<CoulombVdW>::initialize() {}
 
 template<>
-void Kernel<CoulombVdW>::P2M() {
+void Kernel<CoulombVdW>::P2M(C_iter CI) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;
     Lset M;
@@ -491,7 +491,7 @@ void Kernel<CoulombVdW>::P2M() {
 }
 
 template<>
-void Kernel<CoulombVdW>::M2M_CPU() {
+void Kernel<CoulombVdW>::M2M_CPU(C_iter CI, C_iter CJ) {
   vect dist = CJ->X - CI->X;
   Mset M;
   Lset C;
@@ -504,7 +504,7 @@ void Kernel<CoulombVdW>::M2M_CPU() {
 }
 
 template<>
-void Kernel<CoulombVdW>::M2L() {
+void Kernel<CoulombVdW>::M2L(C_iter CI, C_iter CJ) {
   vect dist = CI->X - CJ->X - Xperiodic;
   real invR2 = 1 / norm(dist);
   real invR  = CI->M[0] * CJ->M[0] * std::sqrt(invR2);
@@ -514,7 +514,7 @@ void Kernel<CoulombVdW>::M2L() {
 }
 
 template<>
-void Kernel<CoulombVdW>::M2P() {
+void Kernel<CoulombVdW>::M2P(C_iter CI, C_iter CJ) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     real invR2 = 1 / norm(dist);
@@ -526,7 +526,7 @@ void Kernel<CoulombVdW>::M2P() {
 }
 
 template<>
-void Kernel<CoulombVdW>::L2L() {
+void Kernel<CoulombVdW>::L2L(C_iter CI, C_iter CJ) {
   vect dist = CI->X - CJ->X;
   Lset C;
   C[0] = 1;
@@ -539,7 +539,7 @@ void Kernel<CoulombVdW>::L2L() {
 }
 
 template<>
-void Kernel<CoulombVdW>::L2P() {
+void Kernel<CoulombVdW>::L2P(C_iter CI) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
       vect dist = B->X - CI->X;
       Lset C, L;

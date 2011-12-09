@@ -52,12 +52,6 @@ public:
   using Kernel<equation>::printNow;                             //!< Switch to print timings
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
   using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
-  using Kernel<equation>::BI0;                                  //!< Target bodies begin iterator
-  using Kernel<equation>::BIN;                                  //!< Target bodies end iterator
-  using Kernel<equation>::BJ0;                                  //!< Source bodies begin iterator
-  using Kernel<equation>::BJN;                                  //!< Source bodies end iterator
-  using Kernel<equation>::CI;                                   //!< Target cell iterator
-  using Kernel<equation>::CJ;                                   //!< Source cell iterator
   using Kernel<equation>::R0;                                   //!< Radius of root cell
   using Kernel<equation>::Xperiodic;                            //!< Coordinate offset of periodic image
   using Kernel<equation>::keysHost;                             //!< Offsets for rangeHost
@@ -376,10 +370,10 @@ public:
       cell.X = C->X;                                            //  This is the center cell
       cell.R = 3 * C->R;                                        //  The cell size increase three times
       pccells.push_back(cell);                                  //  Push cell into periodic cell vector
-      CI = pccells.end() - 1;                                   //  Set current cell as target for M2M
+      C_iter CI = pccells.end() - 1;                            //  Set current cell as target for M2M
       while( !pjcells.empty() ) {                               //  While there are periodic jcells remaining
-        CJ = pjcells.end() - 1;                                 //   Set current jcell as source for M2M
-        M2M_CPU();                                              //   Perform M2M_CPU kernel
+        C_iter CJ = pjcells.end() - 1;                          //   Set current jcell as source for M2M
+        M2M_CPU(CI,CJ);                                         //   Perform M2M_CPU kernel
         pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
       }                                                         //  End while for remaining periodic jcells
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction

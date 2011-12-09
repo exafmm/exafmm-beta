@@ -23,9 +23,9 @@ THE SOFTWARE.
 #define biotsavart_h
 
 template<>
-void Kernel<BiotSavart>::P2P_CPU() {                            // Biot-Savart P2P kernel on CPU
-  for( B_iter BI=BI0; BI!=BIN; ++BI ) {                         // Loop over target bodies
-    for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {                       //  Loop over source bodies
+void Kernel<BiotSavart>::P2P_CPU(C_iter CI, C_iter CJ) {        // Biot-Savart P2P kernel on CPU
+  for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {    // Loop over target bodies
+    for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {  //  Loop over source bodies
       vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target
       real S2 = 2 * BJ->SRC[3] * BJ->SRC[3];                    //    2 * sigma^2
       real R2  = norm(dist) + EPS2;                             //    R^2 + epsilon^2

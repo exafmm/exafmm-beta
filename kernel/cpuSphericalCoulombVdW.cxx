@@ -28,7 +28,7 @@ template<>
 void Kernel<CoulombVdW>::initialize() {}
 
 template<>
-void Kernel<CoulombVdW>::P2M() {
+void Kernel<CoulombVdW>::P2M(C_iter CI) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;
     real rho, alpha, beta;
@@ -45,7 +45,7 @@ void Kernel<CoulombVdW>::P2M() {
 }
 
 template<>
-void Kernel<CoulombVdW>::M2M_CPU() {
+void Kernel<CoulombVdW>::M2M_CPU(C_iter CI, C_iter CJ) {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -82,7 +82,7 @@ void Kernel<CoulombVdW>::M2M_CPU() {
 }
 
 template<>
-void Kernel<CoulombVdW>::M2L() {
+void Kernel<CoulombVdW>::M2L(C_iter CI, C_iter CJ) {
   vect dist = CI->X - CJ->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -114,7 +114,7 @@ void Kernel<CoulombVdW>::M2L() {
 }
 
 template<>
-void Kernel<CoulombVdW>::M2P() {
+void Kernel<CoulombVdW>::M2P(C_iter CI, C_iter CJ) {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
@@ -146,7 +146,7 @@ void Kernel<CoulombVdW>::M2P() {
 }
 
 template<>
-void Kernel<CoulombVdW>::L2L() {
+void Kernel<CoulombVdW>::L2L(C_iter CI, C_iter CJ) {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -181,7 +181,7 @@ void Kernel<CoulombVdW>::L2L() {
 }
 
 template<>
-void Kernel<CoulombVdW>::L2P() {
+void Kernel<CoulombVdW>::L2P(C_iter CI) {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;

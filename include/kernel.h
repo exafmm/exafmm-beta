@@ -31,12 +31,6 @@ const real EPS = 1e-6;                                          //!< Single prec
 //! Unified CPU/GPU kernel class
 class KernelBase : public Sort {
 protected:
-  B_iter      BI0;                                              //!< Target bodies begin iterator
-  B_iter      BIN;                                              //!< Target bodies end iterator
-  B_iter      BJ0;                                              //!< Source bodies begin iterator
-  B_iter      BJN;                                              //!< Source bodies end iterator
-  C_iter      CI;                                               //!< Target cell iterator
-  C_iter      CJ;                                               //!< Source cell iterator
   vect        X0;                                               //!< Center of root cell
   real        R0;                                               //!< Radius of root cell
   vect        Xperiodic;                                        //!< Coordinate offset of periodic image
@@ -289,15 +283,22 @@ template<Equation equation>
 class Kernel : public KernelBase {
 public:
   void initialize();                                            //!< Initialize kernels
-  void P2M();                                                   //!< Evaluate P2M kernel
-  void M2M();                                                   //!< Evaluate M2M kernel
-  void M2M_CPU();                                               //!< Evaluate M2M kernel on CPU
-  void M2L();                                                   //!< Evaluate M2L kernel
-  void M2P();                                                   //!< Evaluate M2P kernel
-  void P2P();                                                   //!< Evaluate P2P kernel
-  void P2P_CPU();                                               //!< Evaluate P2P kernel on CPU
-  void L2L();                                                   //!< Evaluate L2L kernel
-  void L2P();                                                   //!< Evaluate L2P kernel
+  void P2M(C_iter CI);                                          //!< Evaluate P2M kernel
+  void P2M();
+  void M2M(C_iter CI, C_iter CJ);                               //!< Evaluate M2M kernel
+  void M2M();
+  void M2M_CPU(C_iter CI, C_iter CJ);                           //!< Evaluate M2M kernel on CPU
+  void M2L(C_iter CI, C_iter CJ);                               //!< Evaluate M2L kernel
+  void M2L();
+  void M2P(C_iter CI, C_iter CJ);                               //!< Evaluate M2P kernel
+  void M2P();
+  void P2P(C_iter CI, C_iter CJ);                               //!< Evaluate P2P kernel
+  void P2P();
+  void P2P_CPU(C_iter CI, C_iter CJ);                           //!< Evaluate P2P kernel on CPU
+  void L2L(C_iter CI, C_iter CJ);                               //!< Evaluate L2L kernel
+  void L2L();
+  void L2P(C_iter CI);                                          //!< Evaluate L2P kernel
+  void L2P();
   void finalize();                                              //!< Finalize kernels
 
   void allocate();                                              //!< Allocate GPU variables

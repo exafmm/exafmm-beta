@@ -479,7 +479,7 @@ template<>
 void Kernel<Laplace>::initialize() {}
 
 template<>
-void Kernel<Laplace>::P2M() {
+void Kernel<Laplace>::P2M(C_iter CI) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;
     Lset M;
@@ -491,7 +491,7 @@ void Kernel<Laplace>::P2M() {
 }
 
 template<>
-void Kernel<Laplace>::M2M_CPU() {
+void Kernel<Laplace>::M2M_CPU(C_iter CI, C_iter CJ) {
   vect dist = CJ->X - CI->X;
   Mset M;
   Lset C;
@@ -504,7 +504,7 @@ void Kernel<Laplace>::M2M_CPU() {
 }
 
 template<>
-void Kernel<Laplace>::M2L() {
+void Kernel<Laplace>::M2L(C_iter CI, C_iter CJ) {
   vect dist = CI->X - CJ->X - Xperiodic;
   real invR2 = 1 / norm(dist);
   real invR  = CI->M[0] * CJ->M[0] * std::sqrt(invR2);
@@ -514,7 +514,7 @@ void Kernel<Laplace>::M2L() {
 }
 
 template<>
-void Kernel<Laplace>::M2P() {
+void Kernel<Laplace>::M2P(C_iter CI, C_iter CJ) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     real invR2 = 1 / norm(dist);
@@ -526,7 +526,7 @@ void Kernel<Laplace>::M2P() {
 }
 
 template<>
-void Kernel<Laplace>::L2L() {
+void Kernel<Laplace>::L2L(C_iter CI, C_iter CJ) {
   vect dist = CI->X - CJ->X;
   Lset C;
   C[0] = 1;
@@ -539,7 +539,7 @@ void Kernel<Laplace>::L2L() {
 }
 
 template<>
-void Kernel<Laplace>::L2P() {
+void Kernel<Laplace>::L2P(C_iter CI) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
       vect dist = B->X - CI->X;
       Lset C, L;

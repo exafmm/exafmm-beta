@@ -23,10 +23,10 @@ THE SOFTWARE.
 #define coulombvdw_h
 
 template<>
-void Kernel<CoulombVdW>::P2P_CPU() {                            // Coulomb + Van der Waals P2P kernel on CPU
-  for( B_iter BI=BI0; BI!=BIN; ++BI ) {                         // Loop over target bodies
+void Kernel<CoulombVdW>::P2P_CPU(C_iter CI, C_iter CJ) {        // Coulomb + Van der Waals P2P kernel on CPU
+  for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {    // Loop over target bodies
     int atypei = BI->SRC[1];                                    //  Atom type of target
-    for( B_iter BJ=BJ0; BJ!=BJN; ++BJ ) {                       //  Loop over source bodies
+    for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {  //  Loop over source bodies
       int atypej = BJ->SRC[1];                                  //   Atom type of source
       vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target
       real R2 = norm(dist);                                     //   R squared

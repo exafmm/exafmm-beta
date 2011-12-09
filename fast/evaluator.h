@@ -37,6 +37,10 @@ protected:
   bool    TOPDOWN;
   C_iter  ROOT;
 
+public:
+  real NP2P;
+  real NM2L;
+
 private:
   real getBmax(vect const&X, C_iter C) const {
     real rad = C->R;
@@ -46,21 +50,24 @@ private:
     return std::sqrt( dx*dx + dy*dy + dz*dz );
   }
 
-  void interact(C_iter C) const {
+  void interact(C_iter C) {
     if(C->NCHILD == 0 || C->NDLEAF < 64) {
       P2P(C);
+      NP2P++;
     } else {
       selfStack.push(C);
     }
   }
 
-  void interact(C_iter Ci, C_iter Cj, bool mutual=true) const {
+  void interact(C_iter Ci, C_iter Cj, bool mutual=true) {
     vect dX = Ci->X - Cj->X;
     real Rq = norm(dX);
     if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
       M2L(Ci,Cj,mutual);
+      NM2L++;
     } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
       P2P(Ci,Cj,mutual);
+      NP2P++;
     } else {
       Pair pair(Ci,Cj);
       pairStack.push(pair);
@@ -111,7 +118,7 @@ protected:
     }
   }
 
-  void traverse() const {
+  void traverse() {
     interact(ROOT);
     while(!selfStack.empty()) {
       C_iter C = selfStack.top();
@@ -140,7 +147,7 @@ protected:
     }
   }
 
-  void traverse(bool mutual) const {
+  void traverse(bool mutual) {
     for( C_iter Cj=C0+ROOT->CHILD; Cj!=C0+ROOT->CHILD+ROOT->NCHILD; ++Cj ) {
       Pair pair(ROOT,Cj);
       pairStack.push(pair);
@@ -161,6 +168,10 @@ protected:
       }
     }
   }
+
+public:
+  Evaluator() : NP2P(0), NM2L(0) {}
+  ~Evaluator() {}
 
 };
 

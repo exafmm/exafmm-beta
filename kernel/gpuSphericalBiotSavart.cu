@@ -36,7 +36,7 @@ void Kernel<BiotSavart>::initialize() {
 }
 
 template<>
-void Kernel<BiotSavart>::M2M_CPU() {
+void Kernel<BiotSavart>::M2M_CPU(C_iter CI, C_iter CJ) {
   const complex I(0.,1.);                                   // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;

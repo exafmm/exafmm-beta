@@ -28,7 +28,7 @@ template<>
 void Kernel<Stretching>::initialize() {}
 
 template<>
-void Kernel<Stretching>::P2M() {
+void Kernel<Stretching>::P2M(C_iter CI) {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;
@@ -54,7 +54,7 @@ void Kernel<Stretching>::P2M() {
 }
 
 template<>
-void Kernel<Stretching>::M2M_CPU() {
+void Kernel<Stretching>::M2M_CPU(C_iter CI, C_iter CJ) {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -97,7 +97,7 @@ void Kernel<Stretching>::M2M_CPU() {
 }
 
 template<>
-void Kernel<Stretching>::M2L() {
+void Kernel<Stretching>::M2L(C_iter CI, C_iter CJ) {
   vect dist = CI->X - CJ->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -135,7 +135,7 @@ void Kernel<Stretching>::M2L() {
 }
 
 template<>
-void Kernel<Stretching>::M2P() {
+void Kernel<Stretching>::M2P(C_iter CI, C_iter CJ) {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
@@ -171,7 +171,7 @@ void Kernel<Stretching>::M2P() {
 }
 
 template<>
-void Kernel<Stretching>::L2L() {
+void Kernel<Stretching>::L2L(C_iter CI, C_iter CJ) {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -212,7 +212,7 @@ void Kernel<Stretching>::L2L() {
 }
 
 template<>
-void Kernel<Stretching>::L2P() {
+void Kernel<Stretching>::L2P(C_iter CI) {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;

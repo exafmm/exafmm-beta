@@ -369,7 +369,7 @@ public:
         vect dR = BI->X - BJ->X;
         real D1 = norm(dR) + EPS2;
         real D0 = BI->SRC[0] * BJ->SRC[0];
-        real XX = 1.0/D1;
+        real XX = 1.0 / D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
         dR *= D1;
@@ -396,7 +396,7 @@ public:
         vect dR = BI->X - BJ->X;
         real D1 = norm(dR) + EPS2;
         real D0 = BI->SRC[0] * BJ->SRC[0];
-        real XX = 1.0/D1;
+        real XX = 1.0 / D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
         dR *= D1;

@@ -479,7 +479,7 @@ template<>
 void Kernel<BiotSavart>::initialize() {}
 
 template<>
-void Kernel<BiotSavart>::P2M() {
+void Kernel<BiotSavart>::P2M(C_iter CI) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;
     Lset M;
@@ -491,7 +491,7 @@ void Kernel<BiotSavart>::P2M() {
 }
 
 template<>
-void Kernel<BiotSavart>::M2M_CPU() {
+void Kernel<BiotSavart>::M2M_CPU(C_iter CI, C_iter CJ) {
   vect dist = CJ->X - CI->X;
   Mset M;
   Lset C;
@@ -504,7 +504,7 @@ void Kernel<BiotSavart>::M2M_CPU() {
 }
 
 template<>
-void Kernel<BiotSavart>::M2L() {
+void Kernel<BiotSavart>::M2L(C_iter CI, C_iter CJ) {
   vect dist = CI->X - CJ->X - Xperiodic;
   real invR2 = 1 / norm(dist);
   real invR  = CI->M[0] * CJ->M[0] * std::sqrt(invR2);
@@ -514,7 +514,7 @@ void Kernel<BiotSavart>::M2L() {
 }
 
 template<>
-void Kernel<BiotSavart>::M2P() {
+void Kernel<BiotSavart>::M2P(C_iter CI, C_iter CJ) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
     real invR2 = 1 / norm(dist);
@@ -526,7 +526,7 @@ void Kernel<BiotSavart>::M2P() {
 }
 
 template<>
-void Kernel<BiotSavart>::L2L() {
+void Kernel<BiotSavart>::L2L(C_iter CI, C_iter CJ) {
   vect dist = CI->X - CJ->X;
   Lset C;
   C[0] = 1;
@@ -539,7 +539,7 @@ void Kernel<BiotSavart>::L2L() {
 }
 
 template<>
-void Kernel<BiotSavart>::L2P() {
+void Kernel<BiotSavart>::L2P(C_iter CI) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
       vect dist = B->X - CI->X;
       Lset C, L;

@@ -20,41 +20,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 template<Equation equation>
-void Evaluator<equation>::testMACP2P(C_iter Ci, C_iter Cj) {    // Test multipole acceptance criteria for P2P kernel
-  BI0 = Ci->LEAF;                                               // Set target bodies begin iterator
-  BIN = Ci->LEAF + Ci->NDLEAF;                                  // Set target bodies end iterator
-  BJ0 = Cj->LEAF;                                               // Set source bodies begin iterator
-  BJN = Cj->LEAF + Cj->NDLEAF;                                  // Set source bodies end iterator
-  P2P_CPU();                                                    // Perform P2P_CPU kernel
+void Evaluator<equation>::testMACP2P(C_iter CI, C_iter CJ) {    // Test multipole acceptance criteria for P2P kernel
+  P2P_CPU(CI,CJ);                                               // Perform P2P_CPU kernel
   NP2P++;                                                       // Count P2P kernel execution
 }
 
 template<Equation equation>
-void Evaluator<equation>::testMACM2L(C_iter Ci, C_iter Cj) {    // Test multipole acceptance criteria for M2L kernel
-  vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
+void Evaluator<equation>::testMACM2L(C_iter CI, C_iter CJ) {    // Test multipole acceptance criteria for M2L kernel
+  vect dist = CI->X - CJ->X - Xperiodic;                        // Distance vector between cells
   real R = std::sqrt(norm(dist));                               // Distance between cells
-  if( Ci->R + Cj->R > THETA*R ) {                               // If cell is too large
-    Pair pair(Ci,Cj);                                           //  Form pair of interacting cells
+  if( CI->R + CJ->R > THETA*R ) {                               // If cell is too large
+    Pair pair(CI,CJ);                                           //  Form pair of interacting cells
     pairs.push(pair);                                           //  Push interacting pair into stack
   } else {                                                      // If cell is small enough
-    CI = Ci;                                                    //  Set global target iterator
-    CJ = Cj;                                                    //  Set global source iterator
-    M2L();                                                      //  Perform M2L kernel
+    M2L(CI,CJ);                                                 //  Perform M2L kernel
     NM2L++;                                                     //  Count M2L kernel execution
   }                                                             // Endif for interaction
 }
 
 template<Equation equation>
-void Evaluator<equation>::testMACM2P(C_iter Ci, C_iter Cj) {    // Test multipole acceptance criteria for M2P kernel
-  vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
+void Evaluator<equation>::testMACM2P(C_iter CI, C_iter CJ) {    // Test multipole acceptance criteria for M2P kernel
+  vect dist = CI->X - CJ->X - Xperiodic;                        // Distance vector between cells
   real R = std::sqrt(norm(dist));                               // Distance between cells
-  if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {            // If target is not twig or cell is too large
-    Pair pair(Ci,Cj);                                           //  Form pair of interacting cells
+  if( CI->NCHILD != 0 || CI->R + CJ->R > THETA*R ) {            // If target is not twig or cell is too large
+    Pair pair(CI,CJ);                                           //  Form pair of interacting cells
     pairs.push(pair);                                           //  Push interacting pair into stack
   } else {                                                      // If target is twig and cell is small enough
-    CI = Ci;                                                    //  Set global target iterator
-    CJ = Cj;                                                    //  Set global source iterator
-    M2P();                                                      //  Perform M2P kernel
+    M2P(CI,CJ);                                                 //  Perform M2P kernel
     NM2P++;                                                     //  Count M2P kernel execution
   }                                                             // Endif for interaction
 }
@@ -68,51 +60,42 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
   }                                                             // End loop over artificial bodies
   Cells cells;                                                  // Artificial cells
   cells.resize(2);                                              // Two artificial cells
-  C_iter Ci = cells.begin(), Cj = cells.begin()+1;              // Artificial target & source cell
-  Ci->X = 0;                                                    // Set coordinates of target cell
-  Ci->NDLEAF = 10;                                              // Number of leafs in target cell
-  Ci->LEAF = ibodies.begin();                                   // Leaf iterator in target cell
-  Cj->X = 1;                                                    // Set coordinates of source cell
-  Cj->NDLEAF = 1000;                                            // Number of leafs in source cell
-  Cj->LEAF = jbodies.begin();                                   // Leaf iterator in source cell
-  BI0 = Ci->LEAF;                                               // Set target bodies begin iterator
-  BIN = Ci->LEAF + Ci->NDLEAF;                                  // Set target bodies end iterator
-  BJ0 = Cj->LEAF;                                               // Set source bodies begin iterator
-  BJN = Cj->LEAF + Cj->NDLEAF;                                  // Set source bodies end iterator
+  C_iter CI = cells.begin(), CJ = cells.begin()+1;              // Artificial target & source cell
+  CI->X = 0;                                                    // Set coordinates of target cell
+  CI->NDLEAF = 10;                                              // Number of leafs in target cell
+  CI->LEAF = ibodies.begin();                                   // Leaf iterator in target cell
+  CJ->X = 1;                                                    // Set coordinates of source cell
+  CJ->NDLEAF = 1000;                                            // Number of leafs in source cell
+  CJ->LEAF = jbodies.begin();                                   // Leaf iterator in source cell
   startTimer("P2P kernel   ");                                  // Start timer
-  for( int i=0; i!=1; ++i ) P2P_CPU();                          // Perform P2P_CPU kernel
+  for( int i=0; i!=1; ++i ) P2P_CPU(CI,CJ);                     // Perform P2P_CPU kernel
   timeP2P = stopTimer("P2P kernel   ") / 10000;                 // Stop timer
-  CI = Ci;                                                      // Set global target cell iterator
-  CJ = Cj;                                                      // Set global source cell iterator
   startTimer("M2L kernel   ");                                  // Start timer
-  for( int i=0; i!=1000; ++i ) M2L();                           // Perform M2L kernel
+  for( int i=0; i!=1000; ++i ) M2L(CI,CJ);                      // Perform M2L kernel
   timeM2L = stopTimer("M2L kernel   ") / 1000;                  // Stop timer
   startTimer("M2P kernel   ");                                  // Start timer
-  for( int i=0; i!=100; ++i ) M2P();                            // Perform M2P kernel
+  for( int i=0; i!=100; ++i ) M2P(CI,CJ);                       // Perform M2P kernel
   timeM2P = stopTimer("M2P kernel   ") / 1000;                  // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::traversePeriodic(Cells &cells, Cells &jcells, int method) {// Traverse tree for periodic cells
   Xperiodic = 0;                                                // Set periodic coordinate offset
-  C_iter Cj = jcells.end()-1;                                   // Initialize iterator for periodic source cell
+  C_iter CJ = jcells.end()-1;                                   // Initialize iterator for periodic source cell
   for( int level=0; level<IMAGES-1; ++level ) {                 // Loop over sublevels of tree
-    for( int I=0; I!=26; ++I, --Cj ) {                          //  Loop over periodic images (exclude center)
+    for( int I=0; I!=26; ++I, --CJ ) {                          //  Loop over periodic images (exclude center)
       switch (method) {                                         //   Switch between method
       case 0 :                                                  //   0 : treecode
-        for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) { //   Loop over cells
-          if( Ci->NCHILD == 0 ) {                               //     If cell is twig
-            CI = Ci;                                            //      Set global target iterator
-            CJ = Cj;                                            //      Set global source iterator
-            M2P();                                              //      Perform M2P kernel
+        for( C_iter CI=cells.begin(); CI!=cells.end(); ++CI ) { //   Loop over cells
+          if( CI->NCHILD == 0 ) {                               //     If cell is twig
+            M2P(CI,CJ);                                         //      Perform M2P kernel
           }                                                     //     Endif for twig
         }                                                       //    End loop over cells
         break;                                                  //    Terminate this case
       case 1 :                                                  //   1 : FMM
       case 2 :                                                  //   2 : hybrid
-        CI = cells.end() - 1;                                   //    Set root cell as target iterator
-        CJ = Cj;                                                //    Set global source iterator
-        M2L();                                                  //    Perform M2P kernel
+        C_iter CI = cells.end() - 1;                            //    Set root cell as target iterator
+        M2L(CI,CJ);                                             //    Perform M2P kernel
         break;                                                  //    Terminate this case
       }                                                         //   End switch between methods
     }                                                           //  End loop over x periodic direction
@@ -121,22 +104,25 @@ void Evaluator<equation>::traversePeriodic(Cells &cells, Cells &jcells, int meth
 
 template<Equation equation>
 void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
-  BI0 = ibodies.begin();                                        // Set target bodies begin iterator
-  BIN = ibodies.end();                                          // Set target bodies end iterator
-  BJ0 = jbodies.begin();                                        // Set source bodies begin iterator
-  BJN = jbodies.end();                                          // Set source bodies end iterator
   Xperiodic = 0 * onCPU;                                        // Set periodic coordinate offset (onCPU is dummy)
-  P2P_CPU();                                                    // Perform P2P_CPU kernel
+  Cells cells;                                                  // Cells to put target and source bodies
+  cells.resize(2);                                              // Resize cells to put target and source bodies
+  cells[0].LEAF = ibodies.begin();                              // Iterator of first target leaf
+  cells[0].NDLEAF = ibodies.size();                             // Number of target leafs
+  cells[1].LEAF = jbodies.begin();                              // Iterator of first source leaf
+  cells[1].NDLEAF = jbodies.size();                             // Number of source leafs
+  C_iter CI = cells.begin(), CJ = cells.begin()+1;              // Iterator of target and source cells
+  P2P_CPU(CI,CJ);                                               // Perform P2P_CPU kernel
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
   startTimer("evalP2M      ");                                  // Start timer
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells
+  for( C_iter CI=cells.begin(); CI!=cells.end(); ++CI ) {       // Loop over cells
     CI->M = 0;                                                  //  Initialize multipole coefficients
     CI->L = 0;                                                  //  Initialize local coefficients
     if( CI->NCHILD == 0 ) {                                     //  If cell is a twig
-      P2M();                                                    //   Perform P2M kernel
+      P2M(CI);                                                  //   Perform P2M kernel
     }                                                           //  Endif for twig
   }                                                             // End loop over cells
   stopTimer("evalP2M      ");                                   // Stop timer
@@ -146,9 +132,9 @@ template<Equation equation>
 void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
   startTimer("evalM2M      ");                                  // Start timer
   CJ0 = cells.begin();                                          // Set begin iterator
-  for( CJ=cells.begin(); CJ!=cells.end()-1; ++CJ ) {            // Loop over cells bottomup (except root cell)
-    CI = CJ0 + CJ->PARENT;                                      //  Set target cell iterator
-    M2M_CPU();                                                  //  Perform M2M_CPU kernel
+  for( C_iter CJ=cells.begin(); CJ!=cells.end()-1; ++CJ ) {     // Loop over cells bottomup (except root cell)
+    C_iter CI = CJ0 + CJ->PARENT;                               //  Set target cell iterator
+    M2M_CPU(CI,CJ);                                             //  Perform M2M_CPU kernel
   }                                                             // End loop over cells
   stopTimer("evalM2M      ");                                   // Stop timer
 }
@@ -158,9 +144,9 @@ void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {  // Evaluate M2L
   if( kernel ) {                                                // If this is a kernel unit test
     startTimer("evalM2L      ");                                // Start timer
     CI0 = cells.begin();                                        // Set begin iterator
-    for( CI=cells.begin(); CI!=cells.end(); ++CI ) {            // Loop over cells
+    for( C_iter CI=cells.begin(); CI!=cells.end(); ++CI ) {     // Loop over cells
       while( !listM2L[CI-CI0].empty() ) {                       //  While M2L interaction list is not empty
-        CJ = listM2L[CI-CI0].back();                            //   Set source cell iterator
+        C_iter CJ = listM2L[CI-CI0].back();                     //   Set source cell iterator
         Iperiodic = flagM2L[CI-CI0][CJ];                        //   Set periodic image flag
         int I = 0;                                              //   Initialize index of periodic image
         for( int ix=-1; ix<=1; ++ix ) {                         //   Loop over x periodic direction
@@ -170,7 +156,7 @@ void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {  // Evaluate M2L
                 Xperiodic[0] = ix * 2 * R0;                     //       Coordinate offset for x periodic direction
                 Xperiodic[1] = iy * 2 * R0;                     //       Coordinate offset for y periodic direction
                 Xperiodic[2] = iz * 2 * R0;                     //       Coordinate offset for z periodic direction
-                M2L();                                          //       Perform M2L kernel
+                M2L(CI,CJ);                                     //       Perform M2L kernel
               }                                                 //      Endif for periodic flag
             }                                                   //     End loop over x periodic direction
           }                                                     //    End loop over y periodic direction
@@ -189,9 +175,9 @@ void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {  // Evaluate M2P
   if( kernel ) {                                                // If this is a kernel unit test
     startTimer("evalM2P      ");                                // Start timer
     CI0 = cells.begin();                                        // Set begin iterator
-    for( CI=cells.begin(); CI!=cells.end(); ++CI ) {            // Loop over cells
+    for( C_iter CI=cells.begin(); CI!=cells.end(); ++CI ) {     // Loop over cells
       while( !listM2P[CI-CI0].empty() ) {                       //  While M2P interaction list is not empty
-        CJ = listM2P[CI-CI0].back();                            //   Set source cell iterator
+        C_iter CJ = listM2P[CI-CI0].back();                     //   Set source cell iterator
         Iperiodic = flagM2P[CI-CI0][CJ];                        //   Set periodic image flag
         int I = 0;                                              //   Initialize index of periodic image
         for( int ix=-1; ix<=1; ++ix ) {                         //   Loop over x periodic direction
@@ -201,7 +187,7 @@ void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {  // Evaluate M2P
                 Xperiodic[0] = ix * 2 * R0;                     //       Coordinate offset for x periodic direction
                 Xperiodic[1] = iy * 2 * R0;                     //       Coordinate offset for y periodic direction
                 Xperiodic[2] = iz * 2 * R0;                     //       Coordinate offset for z periodic direction
-                M2P();                                          //       Perform M2P kernel
+                M2P(CI,CJ);                                     //       Perform M2P kernel
               }                                                 //      Endif for periodic flag
             }                                                   //     End loop over x periodic direction
           }                                                     //    End loop over y periodic direction
@@ -220,13 +206,9 @@ void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate P2P
   if( kernel ) {                                                // If this is a kernel unit test
     startTimer("evalP2P      ");                                // Start timer
     CI0 = cells.begin();                                        // Set begin iterator
-    for( CI=cells.begin(); CI!=cells.end(); ++CI ) {            // Loop over cells
-      BI0 = CI->LEAF;                                           //  Set target bodies begin iterator
-      BIN = CI->LEAF + CI->NDLEAF;                              //  Set target bodies end iterator
+    for( C_iter CI=cells.begin(); CI!=cells.end(); ++CI ) {     // Loop over cells
       while( !listP2P[CI-CI0].empty() ) {                       //  While M2P interaction list is not empty
-        CJ = listP2P[CI-CI0].back();                            //   Set source cell iterator
-        BJ0 = CJ->LEAF;                                         //   Set source bodies begin iterator
-        BJN = CJ->LEAF + CJ->NDLEAF;                            //   Set source bodies end iterator
+        C_iter CJ = listP2P[CI-CI0].back();                     //   Set source cell iterator
         Iperiodic = flagP2P[CI-CI0][CJ];                        //   Set periodic image flag
         int I = 0;                                              //   Initialize index of periodic image
         for( int ix=-1; ix<=1; ++ix ) {                         //   Loop over x periodic direction
@@ -236,7 +218,7 @@ void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate P2P
                 Xperiodic[0] = ix * 2 * R0;                     //       Coordinate offset for x periodic direction
                 Xperiodic[1] = iy * 2 * R0;                     //       Coordinate offset for y periodic direction
                 Xperiodic[2] = iz * 2 * R0;                     //       Coordinate offset for z periodic direction
-                P2P_CPU();                                      //       Perform P2P_CPU kernel
+                P2P_CPU(CI,CJ);                                 //       Perform P2P_CPU kernel
               }                                                 //      Endif for periodic flag
             }                                                   //     End loop over x periodic direction
           }                                                     //    End loop over y periodic direction
@@ -254,9 +236,9 @@ template<Equation equation>
 void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate L2L
   startTimer("evalL2L      ");                                  // Start timer
   CI0 = cells.begin();                                          // Set begin iterator
-  for( CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {          // Loop over cells topdown (except root cell)
-    CJ = CI0 + CI->PARENT;                                      //  Set source cell iterator
-    L2L();                                                      //  Perform L2L kernel
+  for( C_iter CI=cells.end()-2; CI!=cells.begin()-1; --CI ) {   // Loop over cells topdown (except root cell)
+    C_iter CJ = CI0 + CI->PARENT;                               //  Set source cell iterator
+    L2L(CI,CJ);                                                 //  Perform L2L kernel
   }                                                             // End loop over cells topdown
   stopTimer("evalL2L      ");                                   // Stop timer
 }
@@ -264,9 +246,9 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate L2L
 template<Equation equation>
 void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate L2P
   startTimer("evalL2P      ");                                  // Start timer
-  for( CI=cells.begin(); CI!=cells.end(); ++CI ) {              // Loop over cells
+  for( C_iter CI=cells.begin(); CI!=cells.end(); ++CI ) {       // Loop over cells
     if( CI->NCHILD == 0 ) {                                     //  If cell is a twig
-      L2P();                                                    //   Perform L2P kernel
+      L2P(CI);                                                  //   Perform L2P kernel
     }                                                           //  Endif for twig
   }                                                             // End loop over cells topdown
   stopTimer("evalL2P      ");                                   // Stop timer

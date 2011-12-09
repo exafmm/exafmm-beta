@@ -34,7 +34,7 @@ int main() {
   SerialFMM<Laplace> FMM;
   FMM.initialize();
 
-  for( int it=0; it!=17; ++it ) {
+  for( int it=0; it!=25; ++it ) {
     numBodies = int(pow(10,(it+24)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);

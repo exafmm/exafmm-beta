@@ -28,7 +28,7 @@ template<>
 void Kernel<Laplace>::initialize() {}
 
 template<>
-void Kernel<Laplace>::P2M() {
+void Kernel<Laplace>::P2M(C_iter CI) {
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;
     real rho, alpha, beta;
@@ -45,7 +45,7 @@ void Kernel<Laplace>::P2M() {
 }
 
 template<>
-void Kernel<Laplace>::M2M_CPU() {
+void Kernel<Laplace>::M2M_CPU(C_iter CI, C_iter CJ) {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -82,7 +82,7 @@ void Kernel<Laplace>::M2M_CPU() {
 }
 
 template<>
-void Kernel<Laplace>::M2L() {
+void Kernel<Laplace>::M2L(C_iter CI, C_iter CJ) {
   vect dist = CI->X - CJ->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -114,7 +114,7 @@ void Kernel<Laplace>::M2L() {
 }
 
 template<>
-void Kernel<Laplace>::M2P() {
+void Kernel<Laplace>::M2P(C_iter CI, C_iter CJ) {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CJ->X - Xperiodic;
@@ -146,7 +146,7 @@ void Kernel<Laplace>::M2P() {
 }
 
 template<>
-void Kernel<Laplace>::L2L() {
+void Kernel<Laplace>::L2L(C_iter CI, C_iter CJ) {
   const complex I(0.,1.);                                       // Imaginary unit
   vect dist = CI->X - CJ->X;
   real rho, alpha, beta;
@@ -181,7 +181,7 @@ void Kernel<Laplace>::L2L() {
 }
 
 template<>
-void Kernel<Laplace>::L2P() {
+void Kernel<Laplace>::L2P(C_iter CI) {
   const complex I(0.,1.);                                       // Imaginary unit
   for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
     vect dist = B->X - CI->X;

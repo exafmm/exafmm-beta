@@ -178,7 +178,8 @@ protected:
     int begin = 0, end = 0;                                     // Initialize range of cell vector
     int level = getLevel(twigs.back().ICELL);                   // Initialize level of tree
     startTimer("Sort resize  ");                                // Start timer
-    Cells cbuffer(2*twigs.size());                              // Sort buffer for cells
+    Cells cbuffer;                                              // Sort buffer for cells
+    cbuffer.resize(2*twigs.size());                             // Resize sort buffer for cells
     stopTimer("Sort resize  ");                                 // Stop timer
     while( !twigs.empty() ) {                                   // Keep poppig twigs until the vector is empty
       while( getLevel(twigs.back().ICELL) != level ) {          //  While cell belongs to a higher level
