@@ -28,9 +28,9 @@ template<>
 void Kernel<BiotSavart>::initialize() {}
 
 template<>
-void Kernel<BiotSavart>::P2M(C_iter CI) {
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
-    vect dist = B->X - CI->X;
+void Kernel<BiotSavart>::P2M(C_iter Ci) {
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+    vect dist = B->X - Ci->X;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalMultipole(rho,alpha,-beta);
@@ -39,7 +39,7 @@ void Kernel<BiotSavart>::P2M(C_iter CI) {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
         for( int d=0; d!=3; ++d ) {
-          CI->M[3*nms+d] += double(B->SRC[d]) * Ynm[nm];
+          Ci->M[3*nms+d] += double(B->SRC[d]) * Ynm[nm];
         }
       }
     }
@@ -47,9 +47,9 @@ void Kernel<BiotSavart>::P2M(C_iter CI) {
 }
 
 template<>
-void Kernel<BiotSavart>::M2M_CPU(C_iter CI, C_iter CJ) {
+void Kernel<BiotSavart>::M2M_CPU(C_iter Ci, C_iter Cj) {
   const complex I(0.,1.);                                       // Imaginary unit
-  vect dist = CI->X - CJ->X;
+  vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
   evalMultipole(rho,alpha,-beta);
@@ -65,7 +65,7 @@ void Kernel<BiotSavart>::M2M_CPU(C_iter CI, C_iter CJ) {
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
             for( int d=0; d!=3; ++d ) {
-              M[d] += CJ->M[3*jnkms+d] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+              M[d] += Cj->M[3*jnkms+d] * std::pow(I,double(m-abs(m))) * Ynm[nm]
                     * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
           }
@@ -76,22 +76,22 @@ void Kernel<BiotSavart>::M2M_CPU(C_iter CI, C_iter CJ) {
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
             for( int d=0; d!=3; ++d ) {
-              M[d] += std::conj(CJ->M[3*jnkms+d]) * Ynm[nm]
+              M[d] += std::conj(Cj->M[3*jnkms+d]) * Ynm[nm]
                     * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
           }
         }
       }
       for( int d=0; d!=3; ++d ) {
-        CI->M[3*jks+d] += M[d];
+        Ci->M[3*jks+d] += M[d];
       }
     }
   }
 }
 
 template<>
-void Kernel<BiotSavart>::M2L(C_iter CI, C_iter CJ, vect Xperiodic) {
-  vect dist = CI->X - CJ->X - Xperiodic;
+void Kernel<BiotSavart>::M2L(C_iter Ci, C_iter Cj, vect Xperiodic) {
+  vect dist = Ci->X - Cj->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
   evalLocal(rho,alpha,beta);
@@ -107,7 +107,7 @@ void Kernel<BiotSavart>::M2L(C_iter CI, C_iter CJ, vect Xperiodic) {
           const int jknm = jk * P2 + nm;
           const int jnkm = (j + n) * (j + n) + j + n + m - k;
           for( int d=0; d!=3; ++d ) {
-            L[d] += std::conj(CJ->M[3*nms+d]) * Cnm[jknm] * Ynm[jnkm];
+            L[d] += std::conj(Cj->M[3*nms+d]) * Cnm[jknm] * Ynm[jnkm];
           }
         }
         for( int m=0; m<=n; ++m ) {
@@ -116,22 +116,22 @@ void Kernel<BiotSavart>::M2L(C_iter CI, C_iter CJ, vect Xperiodic) {
           const int jknm = jk * P2 + nm;
           const int jnkm = (j + n) * (j + n) + j + n + m - k;
           for( int d=0; d!=3; ++d ) {
-            L[d] += CJ->M[3*nms+d] * Cnm[jknm] * Ynm[jnkm];
+            L[d] += Cj->M[3*nms+d] * Cnm[jknm] * Ynm[jnkm];
           }
         }
       }
       for( int d=0; d!=3; ++d ) {
-        CI->L[3*jks+d] += L[d];
+        Ci->L[3*jks+d] += L[d];
       }
     }
   }
 }
 
 template<>
-void Kernel<BiotSavart>::M2P(C_iter CI, C_iter CJ, vect Xperiodic) {
+void Kernel<BiotSavart>::M2P(C_iter Ci, C_iter Cj, vect Xperiodic) {
   const complex I(0.,1.);                                       // Imaginary unit
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
-    vect dist = B->X - CJ->X - Xperiodic;
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+    vect dist = B->X - Cj->X - Xperiodic;
     vect spherical[3] = {0, 0, 0};
     vect cartesian[3] = {0, 0, 0};
     real r, theta, phi;
@@ -141,16 +141,16 @@ void Kernel<BiotSavart>::M2P(C_iter CI, C_iter CJ, vect Xperiodic) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
       for( int d=0; d!=3; ++d ) {
-        spherical[d][0] -= (CJ->M[3*nms+d] * Ynm[nm]).real() / r * (n+1);
-        spherical[d][1] += (CJ->M[3*nms+d] * YnmTheta[nm]).real();
+        spherical[d][0] -= (Cj->M[3*nms+d] * Ynm[nm]).real() / r * (n+1);
+        spherical[d][1] += (Cj->M[3*nms+d] * YnmTheta[nm]).real();
       }
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
         for( int d=0; d!=3; ++d ) {
-          spherical[d][0] -= 2 * (CJ->M[3*nms+d] * Ynm[nm]).real() / r * (n+1);
-          spherical[d][1] += 2 * (CJ->M[3*nms+d] * YnmTheta[nm]).real();
-          spherical[d][2] += 2 * (CJ->M[3*nms+d] * Ynm[nm] * I).real() * m;
+          spherical[d][0] -= 2 * (Cj->M[3*nms+d] * Ynm[nm]).real() / r * (n+1);
+          spherical[d][1] += 2 * (Cj->M[3*nms+d] * YnmTheta[nm]).real();
+          spherical[d][2] += 2 * (Cj->M[3*nms+d] * Ynm[nm] * I).real() * m;
         }
       }
     }
@@ -164,9 +164,9 @@ void Kernel<BiotSavart>::M2P(C_iter CI, C_iter CJ, vect Xperiodic) {
 }
 
 template<>
-void Kernel<BiotSavart>::L2L(C_iter CI, C_iter CJ) {
+void Kernel<BiotSavart>::L2L(C_iter Ci, C_iter Cj) {
   const complex I(0.,1.);                                       // Imaginary unit
-  vect dist = CI->X - CJ->X;
+  vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
   evalMultipole(rho,alpha,beta);
@@ -181,7 +181,7 @@ void Kernel<BiotSavart>::L2L(C_iter CI, C_iter CJ) {
           const int nm   = n * n + n - m;
           const int nms  = n * (n + 1) / 2 - m;
           for( int d=0; d!=3; ++d ) {
-            L[d] += std::conj(CJ->L[3*nms+d]) * Ynm[jnkm]
+            L[d] += std::conj(Cj->L[3*nms+d]) * Ynm[jnkm]
                   * double(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
           }
         }
@@ -191,24 +191,24 @@ void Kernel<BiotSavart>::L2L(C_iter CI, C_iter CJ) {
             const int nm   = n * n + n + m;
             const int nms  = n * (n + 1) / 2 + m;
             for( int d=0; d!=3; ++d ) {
-              L[d] += CJ->L[3*nms+d] * std::pow(I,double(m-k-abs(m-k))) * Ynm[jnkm]
+              L[d] += Cj->L[3*nms+d] * std::pow(I,double(m-k-abs(m-k))) * Ynm[jnkm]
                     * double(Anm[jnkm] * Anm[jk] / Anm[nm]);
             }
           }
         }
       }
       for( int d=0; d!=3; ++d ) {
-        CI->L[3*jks+d] += L[d];
+        Ci->L[3*jks+d] += L[d];
       }
     }
   }
 }
 
 template<>
-void Kernel<BiotSavart>::L2P(C_iter CI) {
+void Kernel<BiotSavart>::L2P(C_iter Ci) {
   const complex I(0.,1.);                                       // Imaginary unit
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
-    vect dist = B->X - CI->X;
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+    vect dist = B->X - Ci->X;
     vect spherical[3] = {0, 0, 0};
     vect cartesian[3] = {0, 0, 0};
     real r, theta, phi;
@@ -218,16 +218,16 @@ void Kernel<BiotSavart>::L2P(C_iter CI) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
       for( int d=0; d!=3; ++d ) {
-        spherical[d][0] += (CI->L[3*nms+d] * Ynm[nm]).real() / r * n;
-        spherical[d][1] += (CI->L[3*nms+d] * YnmTheta[nm]).real();
+        spherical[d][0] += (Ci->L[3*nms+d] * Ynm[nm]).real() / r * n;
+        spherical[d][1] += (Ci->L[3*nms+d] * YnmTheta[nm]).real();
       }
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
         for( int d=0; d!=3; ++d ) {
-          spherical[d][0] += 2 * (CI->L[3*nms+d] * Ynm[nm]).real() / r * n;
-          spherical[d][1] += 2 * (CI->L[3*nms+d] * YnmTheta[nm]).real();
-          spherical[d][2] += 2 * (CI->L[3*nms+d] * Ynm[nm] * I).real() * m;
+          spherical[d][0] += 2 * (Ci->L[3*nms+d] * Ynm[nm]).real() / r * n;
+          spherical[d][1] += 2 * (Ci->L[3*nms+d] * YnmTheta[nm]).real();
+          spherical[d][2] += 2 * (Ci->L[3*nms+d] * Ynm[nm] * I).real() * m;
         }
       }
     }

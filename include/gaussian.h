@@ -23,13 +23,13 @@ THE SOFTWARE.
 #define gaussian_h
 
 template<>
-void Kernel<Gaussian>::P2P_CPU(C_iter CI, C_iter CJ, vect Xperiodic) {// Gaussian P2P kernel on CPU
-  for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {    // Loop over target bodies
-    for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {  //  Loop over source bodies
-      vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target
-      real S2 = 2 * BJ->SRC[3] * BJ->SRC[3];                    //   2 * sigma^2
+void Kernel<Gaussian>::P2P_CPU(C_iter Ci, C_iter Cj, vect Xperiodic) {// Gaussian P2P kernel on CPU
+  for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
+    for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
+      vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+      real S2 = 2 * Bj->SRC[3] * Bj->SRC[3];                    //   2 * sigma^2
       real R2  = norm(dist);                                    //   R^2
-      BI->TRG[0] += BJ->SRC[0] / (M_PI * S2) / std::sqrt(M_PI * S2) * exp(-R2 / S2);// Gaussian function
+      Bi->TRG[0] += Bj->SRC[0] / (M_PI * S2) / std::sqrt(M_PI * S2) * exp(-R2 / S2);// Gaussian function
     }                                                           //  End loop over source bodies
   }                                                             // End loop over target bodies
 }

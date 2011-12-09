@@ -23,11 +23,11 @@ THE SOFTWARE.
 #define stretching_h
 
 template<>
-void Kernel<Stretching>::P2P_CPU(C_iter CI, C_iter CJ, vect Xperiodic) {// Stretching P2P kernel on CPU
-  for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {    // Loop over target bodies
-    for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {  //  Loop over source bodies
-      vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target
-      real S2 = 2 * BJ->SRC[3] * BJ->SRC[3];                    //   2 * simga^2
+void Kernel<Stretching>::P2P_CPU(C_iter Ci, C_iter Cj, vect Xperiodic) {// Stretching P2P kernel on CPU
+  for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
+    for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
+      vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+      real S2 = 2 * Bj->SRC[3] * Bj->SRC[3];                    //   2 * simga^2
       real R2  = norm(dist) + EPS2;                             //   R^2 + epsilon^2
       real invR = 1 / std::sqrt(R2);                            //   1 / R
       if( R2 == 0 ) invR = 0;                                   //   Exclude self interaction
@@ -36,15 +36,15 @@ void Kernel<Stretching>::P2P_CPU(C_iter CI, C_iter CJ, vect Xperiodic) {// Stret
       real RS = R2 / S2;                                        //   R^2 / (2 * sigma^2)
       real cutoff = 0.25 / M_PI * invR3 * (erf( std::sqrt(RS) ) //   cutoff function for first term
                   - std::sqrt(4 / M_PI * RS) * exp(-RS));
-      BI->TRG[0] += (BI->SRC[1] * BJ->SRC[2] - BI->SRC[2] * BJ->SRC[1]) * cutoff;// x component of first term
-      BI->TRG[1] += (BI->SRC[2] * BJ->SRC[0] - BI->SRC[0] * BJ->SRC[2]) * cutoff;// y component of first term
-      BI->TRG[2] += (BI->SRC[0] * BJ->SRC[1] - BI->SRC[1] * BJ->SRC[0]) * cutoff;// z component of first term
+      Bi->TRG[0] += (Bi->SRC[1] * Bj->SRC[2] - Bi->SRC[2] * Bj->SRC[1]) * cutoff;// x component of first term
+      Bi->TRG[1] += (Bi->SRC[2] * Bj->SRC[0] - Bi->SRC[0] * Bj->SRC[2]) * cutoff;// y component of first term
+      Bi->TRG[2] += (Bi->SRC[0] * Bj->SRC[1] - Bi->SRC[1] * Bj->SRC[0]) * cutoff;// z component of first term
       cutoff = 0.25 / M_PI * invR5 * (3 * erf( std::sqrt(RS) )  //   cutoff function for second term
              - (2 * RS + 3) * std::sqrt(4 / M_PI * RS) * exp(-RS))
-             * (BI->SRC[0] * dist[0] + BI->SRC[1] * dist[1] + BI->SRC[2] * dist[2]);
-      BI->TRG[0] += (BJ->SRC[1] * dist[2] - BJ->SRC[2] * dist[1]) * cutoff;// x component of second term
-      BI->TRG[1] += (BJ->SRC[2] * dist[0] - BJ->SRC[0] * dist[2]) * cutoff;// y component of second term
-      BI->TRG[2] += (BJ->SRC[0] * dist[1] - BJ->SRC[1] * dist[0]) * cutoff;// z component of second term
+             * (Bi->SRC[0] * dist[0] + Bi->SRC[1] * dist[1] + Bi->SRC[2] * dist[2]);
+      Bi->TRG[0] += (Bj->SRC[1] * dist[2] - Bj->SRC[2] * dist[1]) * cutoff;// x component of second term
+      Bi->TRG[1] += (Bj->SRC[2] * dist[0] - Bj->SRC[0] * dist[2]) * cutoff;// y component of second term
+      Bi->TRG[2] += (Bj->SRC[0] * dist[1] - Bj->SRC[1] * dist[0]) * cutoff;// z component of second term
     }                                                           //  End loop over source bodies
   }                                                             // End loop over target bodies
 }

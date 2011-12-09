@@ -36,9 +36,9 @@ void Kernel<BiotSavart>::initialize() {
 }
 
 template<>
-void Kernel<BiotSavart>::M2M_CPU(C_iter CI, C_iter CJ) {
+void Kernel<BiotSavart>::M2M_CPU(C_iter Ci, C_iter Cj) {
   const complex I(0.,1.);                                   // Imaginary unit
-  vect dist = CI->X - CJ->X;
+  vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
   evalMultipole(rho,alpha,-beta);
@@ -54,7 +54,7 @@ void Kernel<BiotSavart>::M2M_CPU(C_iter CI, C_iter CJ) {
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
             for( int d=0; d!=3; ++d ) {
-              M[d] += CJ->M[3*jnkms+d] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+              M[d] += Cj->M[3*jnkms+d] * std::pow(I,double(m-abs(m))) * Ynm[nm]
                     * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
           }
@@ -65,14 +65,14 @@ void Kernel<BiotSavart>::M2M_CPU(C_iter CI, C_iter CJ) {
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
             for( int d=0; d!=3; ++d ) {
-              M[d] += std::conj(CJ->M[3*jnkms+d]) * Ynm[nm]
+              M[d] += std::conj(Cj->M[3*jnkms+d]) * Ynm[nm]
                     * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
           }
         }
       }
       for( int d=0; d!=3; ++d ) {
-        CI->M[3*jks+d] += M[d];
+        Ci->M[3*jks+d] += M[d];
       }
     }
   }

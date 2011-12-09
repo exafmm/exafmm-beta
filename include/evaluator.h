@@ -28,12 +28,12 @@ THE SOFTWARE.
 template<Equation equation>
 class Evaluator : public Kernel<equation>, public Dataset<equation> {
 protected:
-  C_iter      CI0;                                              //!< icells.begin()
-  C_iter      CIB;                                              //!< icells begin per call
-  C_iter      CIE;                                              //!< icells end per call
-  C_iter      CJ0;                                              //!< jcells.begin()
-  C_iter      CJB;                                              //!< jcells begin per call
-  C_iter      CJE;                                              //!< jcells end per call
+  C_iter      Ci0;                                              //!< icells.begin()
+  C_iter      CiB;                                              //!< icells begin per call
+  C_iter      CiE;                                              //!< icells end per call
+  C_iter      Cj0;                                              //!< jcells.begin()
+  C_iter      CjB;                                              //!< jcells begin per call
+  C_iter      CjE;                                              //!< jcells end per call
   Pairs       pairs;                                            //!< Stack of interacting cell pairs
   Lists       listM2L;                                          //!< M2L interaction list
   Lists       listM2P;                                          //!< M2P interaction list
@@ -89,15 +89,15 @@ private:
 //#ifdef DEBUG
         std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
 //#endif
-        listM2P[Ci-CI0].push_back(Cj);                          // Push source cell into M2P interaction list
+        listM2P[Ci-Ci0].push_back(Cj);                          // Push source cell into M2P interaction list
       }                                                         // Endif for twigs with leafs
     } else if ( Ci->NCHILD != 0 ) {                             // If target is not twig
       for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        testMACM2P(CI0+Ci->CHILD+i,Cj,Xperiodic);               //   Test multipole acceptance criteria for M2P kernel
+        testMACM2P(Ci0+Ci->CHILD+i,Cj,Xperiodic);               //   Test multipole acceptance criteria for M2P kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig
       for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
-        testMACM2P(Ci,CJ0+Cj->CHILD+i,Xperiodic);               //   Test multipole acceptance criteria for M2P kernel
+        testMACM2P(Ci,Cj0+Cj->CHILD+i,Xperiodic);               //   Test multipole acceptance criteria for M2P kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
@@ -111,15 +111,15 @@ private:
 //#ifdef DEBUG
         std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
 //#endif
-        listM2P[Ci-CI0].push_back(Cj);                          // Push source cell into M2P interaction list
+        listM2P[Ci-Ci0].push_back(Cj);                          // Push source cell into M2P interaction list
       }                                                         // Endif for twigs with leafs
     } else if ( Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R) ) {// If source is twig or target is larger
       for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        testMACM2L(CI0+Ci->CHILD+i,Cj,Xperiodic);               //   Test multipole acceptance criteria for M2L kernel
+        testMACM2L(Ci0+Ci->CHILD+i,Cj,Xperiodic);               //   Test multipole acceptance criteria for M2L kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig or source is larger
       for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
-        testMACM2L(Ci,CJ0+Cj->CHILD+i,Xperiodic);               //   Test multipole acceptance criteria for M2L kernel
+        testMACM2L(Ci,Cj0+Cj->CHILD+i,Xperiodic);               //   Test multipole acceptance criteria for M2L kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
   }
@@ -133,30 +133,30 @@ private:
 //#ifdef DEBUG
         std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
 //#endif
-        listM2P[Ci-CI0].push_back(Cj);                          // Push source cell into M2P interaction list
+        listM2P[Ci-Ci0].push_back(Cj);                          // Push source cell into M2P interaction list
       }                                                         // Endif for twigs with leafs
     } else if ( Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R) ) {// If source is twig or target is larger
       for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        int Ni = (CI0+Ci->CHILD+i)->NDLEAF;                     //   Number of target leafs
+        int Ni = (Ci0+Ci->CHILD+i)->NDLEAF;                     //   Number of target leafs
         int Nj = Cj->NDLEAF;                                    //   Number of source leafs
         if( timeP2P*Nj < timeM2P && timeP2P*Ni*Nj < timeM2L ) { //   If P2P is fastest
-          testMACP2P(CI0+Ci->CHILD+i,Cj,Xperiodic);             //    Test MAC for P2P kernel
+          testMACP2P(Ci0+Ci->CHILD+i,Cj,Xperiodic);             //    Test MAC for P2P kernel
         } else if ( timeM2P < timeP2P*Nj && timeM2P*Ni < timeM2L ) {// If M2P is fastest
-          testMACM2P(CI0+Ci->CHILD+i,Cj,Xperiodic);             //    Test MAC for M2P kernel
+          testMACM2P(Ci0+Ci->CHILD+i,Cj,Xperiodic);             //    Test MAC for M2P kernel
         } else {                                                //   If M2L is fastest
-          testMACM2L(CI0+Ci->CHILD+i,Cj,Xperiodic);             //    Test MAC for M2L kernel
+          testMACM2L(Ci0+Ci->CHILD+i,Cj,Xperiodic);             //    Test MAC for M2L kernel
         }                                                       //   End if for fastest kernel
       }                                                         //  End loop over child cells of target
     } else {                                                    // If target is twig or source is larger
       for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
         int Ni = Ci->NDLEAF;                                    //   Number of target leafs
-        int Nj = (CJ0+Cj->CHILD+i)->NDLEAF;                     //   Number of source leafs
+        int Nj = (Cj0+Cj->CHILD+i)->NDLEAF;                     //   Number of source leafs
         if( timeP2P*Nj < timeM2P && timeP2P*Ni*Nj < timeM2L ) { //   If P2P is fastest
-          testMACP2P(Ci,CJ0+Cj->CHILD+i,Xperiodic);             //    Test MAC for P2P kernel
+          testMACP2P(Ci,Cj0+Cj->CHILD+i,Xperiodic);             //    Test MAC for P2P kernel
         } else if ( timeM2P < timeP2P*Nj && timeM2P*Ni < timeM2L ) {// If M2P is fastest
-          testMACM2P(Ci,CJ0+Cj->CHILD+i,Xperiodic);             //    Test MAC for M2P kernel
+          testMACM2P(Ci,Cj0+Cj->CHILD+i,Xperiodic);             //    Test MAC for M2P kernel
         } else {                                                //   If M2L is fastest
-          testMACM2L(Ci,CJ0+Cj->CHILD+i,Xperiodic);             //    Test MAC for M2L kernel
+          testMACM2L(Ci,Cj0+Cj->CHILD+i,Xperiodic);             //    Test MAC for M2L kernel
         }                                                       //   End if for fastest kernel
       }                                                         //  End loop over child cells of source
     }                                                           // Endif for type of interaction
@@ -291,8 +291,8 @@ public:
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
       jroot = jcells.end() - 1 - 26 * (IMAGES - 1);             //  The root is not at the end
     }                                                           // Endif for periodic boundary condition
-    CI0 = cells.begin();                                        // Set begin iterator for target cells
-    CJ0 = jcells.begin();                                       // Set begin iterator for source cells
+    Ci0 = cells.begin();                                        // Set begin iterator for target cells
+    Cj0 = jcells.begin();                                       // Set begin iterator for source cells
     listM2L.resize(cells.size());                               // Resize M2L interaction list
     listM2P.resize(cells.size());                               // Resize M2P interaction list
     listP2P.resize(cells.size());                               // Resize P2P interaction list
@@ -337,12 +337,12 @@ public:
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
       for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {   //  Loop over target cells
-        listM2L[Ci-CI0].sort();                                 //  Sort interaction list
-        listM2L[Ci-CI0].unique();                               //  Eliminate duplicate periodic entries
-        listM2P[Ci-CI0].sort();                                 //  Sort interaction list
-        listM2P[Ci-CI0].unique();                               //  Eliminate duplicate periodic entries
-        listP2P[Ci-CI0].sort();                                 //  Sort interaction list
-        listP2P[Ci-CI0].unique();                               //  Eliminate duplicate periodic entries
+        listM2L[Ci-Ci0].sort();                                 //  Sort interaction list
+        listM2L[Ci-Ci0].unique();                               //  Eliminate duplicate periodic entries
+        listM2P[Ci-Ci0].sort();                                 //  Sort interaction list
+        listM2P[Ci-Ci0].unique();                               //  Eliminate duplicate periodic entries
+        listP2P[Ci-Ci0].sort();                                 //  Sort interaction list
+        listP2P[Ci-Ci0].unique();                               //  Eliminate duplicate periodic entries
       }                                                         //  End loop over target cells
     }                                                           // Endif for periodic boundary condition
   }
@@ -369,20 +369,20 @@ public:
       cell.X = C->X;                                            //  This is the center cell
       cell.R = 3 * C->R;                                        //  The cell size increase three times
       pccells.push_back(cell);                                  //  Push cell into periodic cell vector
-      C_iter CI = pccells.end() - 1;                            //  Set current cell as target for M2M
+      C_iter Ci = pccells.end() - 1;                            //  Set current cell as target for M2M
       while( !pjcells.empty() ) {                               //  While there are periodic jcells remaining
-        C_iter CJ = pjcells.end() - 1;                          //   Set current jcell as source for M2M
-        M2M_CPU(CI,CJ);                                         //   Perform M2M_CPU kernel
+        C_iter Cj = pjcells.end() - 1;                          //   Set current jcell as source for M2M
+        M2M_CPU(Ci,Cj);                                         //   Perform M2M_CPU kernel
         pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
       }                                                         //  End while for remaining periodic jcells
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
             if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
-              cell.X[0]  = CI->X[0] + ix * 2 * CI->R;           //      Set new x coordinate for periodic image
-              cell.X[1]  = CI->X[1] + iy * 2 * CI->R;           //      Set new y cooridnate for periodic image
-              cell.X[2]  = CI->X[2] + iz * 2 * CI->R;           //      Set new z coordinate for periodic image
-              cell.M     = CI->M;                               //      Copy multipoles to new periodic image
+              cell.X[0]  = Ci->X[0] + ix * 2 * Ci->R;           //      Set new x coordinate for periodic image
+              cell.X[1]  = Ci->X[1] + iy * 2 * Ci->R;           //      Set new y cooridnate for periodic image
+              cell.X[2]  = Ci->X[2] + iz * 2 * Ci->R;           //      Set new z coordinate for periodic image
+              cell.M     = Ci->M;                               //      Copy multipoles to new periodic image
               cell.NDLEAF = cell.NCHILD = 0;                    //      Initialize NDLEAF & NCHILD
               jcells.push_back(cell);                           //      Push cell into periodic jcell vector
             }                                                   //     Endif for periodic center cell

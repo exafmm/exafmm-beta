@@ -587,56 +587,56 @@ public:
   Kernel() : X0(0), R0(0) {}
   ~Kernel() {}
 
-  void P2P(C_iter CI, C_iter CJ, bool mutual=true) const {
-    for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {
+  void P2P(C_iter Ci, C_iter Cj, bool mutual=true) const {
+    for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {
       real P0 = 0;
       vect F0 = 0;
-      for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {
-        vect dR = BI->X - BJ->X;
+      for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {
+        vect dR = Bi->X - Bj->X;
         real D1 = norm(dR) + EPS2;
-        real D0 = BI->SRC[0] * BJ->SRC[0];
+        real D0 = Bi->SRC[0] * Bj->SRC[0];
         real XX = 1.0 / D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
         dR *= D1;
         P0 -= D0;
         F0 -= dR;
-        BJ->TRG[0] -= D0 * mutual;
-        BJ->TRG[1] += dR[0] * mutual;
-        BJ->TRG[2] += dR[1] * mutual;
-        BJ->TRG[3] += dR[2] * mutual;
+        Bj->TRG[0] -= D0 * mutual;
+        Bj->TRG[1] += dR[0] * mutual;
+        Bj->TRG[2] += dR[1] * mutual;
+        Bj->TRG[3] += dR[2] * mutual;
       }
-      BI->TRG[0] += P0;
-      BI->TRG[1] += F0[0];
-      BI->TRG[2] += F0[1];
-      BI->TRG[3] += F0[2];
+      Bi->TRG[0] += P0;
+      Bi->TRG[1] += F0[0];
+      Bi->TRG[2] += F0[1];
+      Bi->TRG[3] += F0[2];
     }
   }
 
   void P2P(C_iter C) const {
     unsigned NJ = C->NDLEAF;
-    for( B_iter BI=C->LEAF; BI!=C->LEAF+C->NDLEAF; ++BI, --NJ ) {
+    for( B_iter Bi=C->LEAF; Bi!=C->LEAF+C->NDLEAF; ++Bi, --NJ ) {
       real P0 = 0;
       vect F0 = 0;
-      for( B_iter BJ=BI+1; BJ!=BI+NJ; ++BJ ) {
-        vect dR = BI->X - BJ->X;
+      for( B_iter Bj=Bi+1; Bj!=Bi+NJ; ++Bj ) {
+        vect dR = Bi->X - Bj->X;
         real D1 = norm(dR) + EPS2;
-        real D0 = BI->SRC[0] * BJ->SRC[0];
+        real D0 = Bi->SRC[0] * Bj->SRC[0];
         real XX = 1.0 / D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
         dR *= D1;
         P0 -= D0;
         F0 -= dR;
-        BJ->TRG[0] -= D0;
-        BJ->TRG[1] += dR[0];
-        BJ->TRG[2] += dR[1];
-        BJ->TRG[3] += dR[2];
+        Bj->TRG[0] -= D0;
+        Bj->TRG[1] += dR[0];
+        Bj->TRG[2] += dR[1];
+        Bj->TRG[3] += dR[2];
       }
-      BI->TRG[0] += P0;
-      BI->TRG[1] += F0[0];
-      BI->TRG[2] += F0[1];
-      BI->TRG[3] += F0[2];
+      Bi->TRG[0] += P0;
+      Bi->TRG[1] += F0[0];
+      Bi->TRG[2] += F0[1];
+      Bi->TRG[3] += F0[2];
     }
   }
 
@@ -654,79 +654,79 @@ public:
     C->RCRIT = std::min(C->R,Rmax);
   }
 
-  void M2M(C_iter CI, real &Rmax) const {
-    for( C_iter CJ=C0+CI->CHILD; CJ!=C0+CI->CHILD+CI->NCHILD; ++CJ ) {
-      vect dist = CJ->X - CI->X;
-      real R = std::sqrt(norm(dist)) + CJ->RCRIT;
+  void M2M(C_iter Ci, real &Rmax) const {
+    for( C_iter Cj=C0+Ci->CHILD; Cj!=C0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
+      vect dist = Cj->X - Ci->X;
+      real R = std::sqrt(norm(dist)) + Cj->RCRIT;
       if( R > Rmax ) Rmax = R;
       Mset M;
       Lset C;
       C[0] = 1;
       Terms<0,0,P-1>::power(C,dist);
-      M = CJ->M;
-      CI->M[0] += C[0] * M[0];
-      for( int i=1; i<MTERM; ++i ) CI->M[i] += C[i+3] * M[0];
-      Upward<0,0,P-1>::M2M(CI->M,C,M);
+      M = Cj->M;
+      Ci->M[0] += C[0] * M[0];
+      for( int i=1; i<MTERM; ++i ) Ci->M[i] += C[i+3] * M[0];
+      Upward<0,0,P-1>::M2M(Ci->M,C,M);
     }
-    CI->RCRIT = std::min(CI->R,Rmax);
+    Ci->RCRIT = std::min(Ci->R,Rmax);
   }
 
-  void M2L(C_iter CI, C_iter CJ, bool mutual=true) const {
-    vect dist = CI->X - CJ->X;
+  void M2L(C_iter Ci, C_iter Cj, bool mutual=true) const {
+    vect dist = Ci->X - Cj->X;
     real invR2 = 1 / norm(dist);
-    real invR  = CI->M[0] * CJ->M[0] * std::sqrt(invR2);
+    real invR  = Ci->M[0] * Cj->M[0] * std::sqrt(invR2);
     Lset C;
     getCoef(C,dist,invR2,invR);
-    sumM2L(CI->L,C,CJ->M);
+    sumM2L(Ci->L,C,Cj->M);
     if( mutual ) {
       flipCoef(C);
-      sumM2L(CJ->L,C,CI->M);
+      sumM2L(Cj->L,C,Ci->M);
     }
   }
 
-  void M2P(C_iter CI, C_iter CJ, bool mutual=true) const {
-    for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
-      vect dist = B->X - CJ->X;
+  void M2P(C_iter Ci, C_iter Cj, bool mutual=true) const {
+    for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+      vect dist = B->X - Cj->X;
       real invR2 = 1 / norm(dist);
-      real invR  = B->SRC[0] * CJ->M[0] * std::sqrt(invR2);
+      real invR  = B->SRC[0] * Cj->M[0] * std::sqrt(invR2);
       Lset C;
       getCoef(C,dist,invR2,invR);
-      sumM2P(B,C,CJ->M);
+      sumM2P(B,C,Cj->M);
     }
     if( mutual ) {
-      for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NDLEAF; ++B ) {
-        vect dist = B->X - CI->X;
+      for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NDLEAF; ++B ) {
+        vect dist = B->X - Ci->X;
         real invR2 = 1 / norm(dist);
-        real invR  = B->SRC[0] * CI->M[0] * std::sqrt(invR2);
+        real invR  = B->SRC[0] * Ci->M[0] * std::sqrt(invR2);
         Lset C;
         getCoef(C,dist,invR2,invR);
-        sumM2P(B,C,CI->M);
+        sumM2P(B,C,Ci->M);
       }
     }
   }
 
-  void L2L(C_iter CI) const {
-    C_iter CJ = C0 + CI->PARENT;
-    vect dist = CI->X - CJ->X;
+  void L2L(C_iter Ci) const {
+    C_iter Cj = C0 + Ci->PARENT;
+    vect dist = Ci->X - Cj->X;
     Lset C;
     C[0] = 1;
     Terms<0,0,P>::power(C,dist);
 
-    CI->L /= CI->M[0];
-    CI->L += CJ->L;
-    for( int i=1; i<LTERM; ++i ) CI->L[0] += C[i] * CJ->L[i];
-    Downward<0,0,P-1>::L2L(CI->L,C,CJ->L);
+    Ci->L /= Ci->M[0];
+    Ci->L += Cj->L;
+    for( int i=1; i<LTERM; ++i ) Ci->L[0] += C[i] * Cj->L[i];
+    Downward<0,0,P-1>::L2L(Ci->L,C,Cj->L);
   }
 
-  void L2P(C_iter CI) const {
-    for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NCLEAF; ++B ) {
+  void L2P(C_iter Ci) const {
+    for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
 #if 0
-      vect dist = B->X - CI->X;
+      vect dist = B->X - Ci->X;
       Lset C, L;
       C[0] = 1;
       Terms<0,0,P>::power(C,dist);
 
-      L = CI->L;
+      L = Ci->L;
       B->TRG /= B->SRC[0];
       B->TRG[0] -= L[0];
       B->TRG[1] += L[1];
@@ -736,22 +736,22 @@ public:
       Downward<0,0,1>::L2P(B,C,L);
 #else
       Lset C;
-      vect dist = B->X - CI->X;
+      vect dist = B->X - Ci->X;
       B->TRG /= B->SRC[0];
-      B->TRG[0] -= CI->L[0];
-      B->TRG[1] += CI->L[1];
-      B->TRG[2] += CI->L[2];
-      B->TRG[3] += CI->L[3];
-      C[0] = CI->L[1] *dist[0] + CI->L[2] *dist[1] + CI->L[3] *dist[2];
-      C[1] = CI->L[4] *dist[0] + CI->L[5] *dist[1] + CI->L[6] *dist[2];
-      C[2] = CI->L[5] *dist[0] + CI->L[7] *dist[1] + CI->L[8] *dist[2];
-      C[3] = CI->L[6] *dist[0] + CI->L[8] *dist[1] + CI->L[9] *dist[2];
-      C[4] = CI->L[10]*dist[0] + CI->L[11]*dist[1] + CI->L[12]*dist[2];
-      C[5] = CI->L[11]*dist[0] + CI->L[13]*dist[1] + CI->L[14]*dist[2];
-      C[6] = CI->L[12]*dist[0] + CI->L[14]*dist[1] + CI->L[15]*dist[2];
-      C[7] = CI->L[13]*dist[0] + CI->L[16]*dist[1] + CI->L[17]*dist[2];
-      C[8] = CI->L[14]*dist[0] + CI->L[17]*dist[1] + CI->L[18]*dist[2];
-      C[9] = CI->L[15]*dist[0] + CI->L[18]*dist[1] + CI->L[19]*dist[2];
+      B->TRG[0] -= Ci->L[0];
+      B->TRG[1] += Ci->L[1];
+      B->TRG[2] += Ci->L[2];
+      B->TRG[3] += Ci->L[3];
+      C[0] = Ci->L[1] *dist[0] + Ci->L[2] *dist[1] + Ci->L[3] *dist[2];
+      C[1] = Ci->L[4] *dist[0] + Ci->L[5] *dist[1] + Ci->L[6] *dist[2];
+      C[2] = Ci->L[5] *dist[0] + Ci->L[7] *dist[1] + Ci->L[8] *dist[2];
+      C[3] = Ci->L[6] *dist[0] + Ci->L[8] *dist[1] + Ci->L[9] *dist[2];
+      C[4] = Ci->L[10]*dist[0] + Ci->L[11]*dist[1] + Ci->L[12]*dist[2];
+      C[5] = Ci->L[11]*dist[0] + Ci->L[13]*dist[1] + Ci->L[14]*dist[2];
+      C[6] = Ci->L[12]*dist[0] + Ci->L[14]*dist[1] + Ci->L[15]*dist[2];
+      C[7] = Ci->L[13]*dist[0] + Ci->L[16]*dist[1] + Ci->L[17]*dist[2];
+      C[8] = Ci->L[14]*dist[0] + Ci->L[17]*dist[1] + Ci->L[18]*dist[2];
+      C[9] = Ci->L[15]*dist[0] + Ci->L[18]*dist[1] + Ci->L[19]*dist[2];
       B->TRG[0] -= C[0];
       B->TRG[1] += C[1];
       B->TRG[2] += C[2];

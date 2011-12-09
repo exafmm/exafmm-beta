@@ -23,11 +23,11 @@ THE SOFTWARE.
 #define biotsavart_h
 
 template<>
-void Kernel<BiotSavart>::P2P_CPU(C_iter CI, C_iter CJ, vect Xperiodic) {// Biot-Savart P2P kernel on CPU
-  for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {    // Loop over target bodies
-    for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {  //  Loop over source bodies
-      vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target
-      real S2 = 2 * BJ->SRC[3] * BJ->SRC[3];                    //    2 * sigma^2
+void Kernel<BiotSavart>::P2P_CPU(C_iter Ci, C_iter Cj, vect Xperiodic) {// Biot-Savart P2P kernel on CPU
+  for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
+    for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
+      vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+      real S2 = 2 * Bj->SRC[3] * Bj->SRC[3];                    //    2 * sigma^2
       real R2  = norm(dist) + EPS2;                             //    R^2 + epsilon^2
       real invR = 1 / std::sqrt(R2);                            //    1 / R
       if( R2 == 0 ) invR = 0;                                   //    Exclude self interaction
@@ -35,9 +35,9 @@ void Kernel<BiotSavart>::P2P_CPU(C_iter CI, C_iter CJ, vect Xperiodic) {// Biot-
       real RS = R2 / S2;                                        //    R^2 / (2 * simga^2)
       real cutoff = 0.25 / M_PI * invR3 * (erf( std::sqrt(RS) ) //    cutoff function
                   - std::sqrt(4 / M_PI * RS) * exp(-RS));
-      BI->TRG[0] += (dist[1] * BJ->SRC[2] - dist[2] * BJ->SRC[1]) * cutoff;// x component of curl G * cutoff
-      BI->TRG[1] += (dist[2] * BJ->SRC[0] - dist[0] * BJ->SRC[2]) * cutoff;// y component of curl G * cutoff
-      BI->TRG[2] += (dist[0] * BJ->SRC[1] - dist[1] * BJ->SRC[0]) * cutoff;// z component of curl G * cutoff
+      Bi->TRG[0] += (dist[1] * Bj->SRC[2] - dist[2] * Bj->SRC[1]) * cutoff;// x component of curl G * cutoff
+      Bi->TRG[1] += (dist[2] * Bj->SRC[0] - dist[0] * Bj->SRC[2]) * cutoff;// y component of curl G * cutoff
+      Bi->TRG[2] += (dist[0] * Bj->SRC[1] - dist[1] * Bj->SRC[0]) * cutoff;// z component of curl G * cutoff
     }                                                           //  End loop over source bodies
   }                                                             // End loop over target bodies
 }

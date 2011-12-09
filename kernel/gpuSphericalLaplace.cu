@@ -38,9 +38,9 @@ void Kernel<Laplace>::initialize() {
 }
 
 template<>
-void Kernel<Laplace>::M2M_CPU(C_iter CI, C_iter CJ) {
+void Kernel<Laplace>::M2M_CPU(C_iter Ci, C_iter Cj) {
   const complex I(0.,1.);                                       // Imaginary unit
-  vect dist = CI->X - CJ->X;
+  vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
   evalMultipole(rho,alpha,-beta);
@@ -55,7 +55,7 @@ void Kernel<Laplace>::M2M_CPU(C_iter CI, C_iter CJ) {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += CJ->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+            M += Cj->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
                * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
@@ -64,12 +64,12 @@ void Kernel<Laplace>::M2M_CPU(C_iter CI, C_iter CJ) {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
-            M += std::conj(CJ->M[3*jnkms]) * Ynm[nm]
+            M += std::conj(Cj->M[3*jnkms]) * Ynm[nm]
                * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
       }
-      CI->M[3*jks] += M;
+      Ci->M[3*jks] += M;
     }
   }
 }

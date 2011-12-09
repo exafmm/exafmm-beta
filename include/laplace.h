@@ -23,18 +23,18 @@ THE SOFTWARE.
 #define laplace_h
 
 template<>
-void Kernel<Laplace>::P2P_CPU(C_iter CI, C_iter CJ, vect Xperiodic) {// Laplace P2P kernel on CPU
-  for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {    // Loop over target bodies
-    for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {  //  Loop over source bodies
-      vect dist = BI->X - BJ->X - Xperiodic;                    //   Distance vector from source to target
+void Kernel<Laplace>::P2P_CPU(C_iter Ci, C_iter Cj, vect Xperiodic) {// Laplace P2P kernel on CPU
+  for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
+    for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
+      vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
       real R2 = norm(dist) + EPS2;                              //   R^2
       real invR = 1 / std::sqrt(R2);                            //   1 / R
       if( R2 == 0 ) invR = 0;                                   //   Exclude self interaction
-      real invR3 = BJ->SRC[0] * invR * invR * invR;             //   charge / R^3
-      BI->TRG[0] += BJ->SRC[0] * invR;                          //   potential
-      BI->TRG[1] -= dist[0] * invR3;                            //   x component of force
-      BI->TRG[2] -= dist[1] * invR3;                            //   y component of force
-      BI->TRG[3] -= dist[2] * invR3;                            //   z component of force
+      real invR3 = Bj->SRC[0] * invR * invR * invR;             //   charge / R^3
+      Bi->TRG[0] += Bj->SRC[0] * invR;                          //   potential
+      Bi->TRG[1] -= dist[0] * invR3;                            //   x component of force
+      Bi->TRG[2] -= dist[1] * invR3;                            //   y component of force
+      Bi->TRG[3] -= dist[2] * invR3;                            //   z component of force
     }                                                           //  End loop over source bodies
   }                                                             // End loop over target bodies
 }

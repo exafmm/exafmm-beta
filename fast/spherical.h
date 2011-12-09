@@ -361,56 +361,56 @@ public:
     delete[] Cnm;
   }
 
-  void P2P(C_iter CI, C_iter CJ, bool mutual=true) const {
-    for( B_iter BI=CI->LEAF; BI!=CI->LEAF+CI->NDLEAF; ++BI ) {
+  void P2P(C_iter Ci, C_iter Cj, bool mutual=true) const {
+    for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {
       real P0 = 0;
       vect F0 = 0;
-      for( B_iter BJ=CJ->LEAF; BJ!=CJ->LEAF+CJ->NDLEAF; ++BJ ) {
-        vect dR = BI->X - BJ->X;
+      for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {
+        vect dR = Bi->X - Bj->X;
         real D1 = norm(dR) + EPS2;
-        real D0 = BI->SRC[0] * BJ->SRC[0];
+        real D0 = Bi->SRC[0] * Bj->SRC[0];
         real XX = 1.0 / D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
         dR *= D1;
         P0 -= D0;
         F0 -= dR;
-        BJ->TRG[0] -= D0 * mutual;
-        BJ->TRG[1] += dR[0] * mutual;
-        BJ->TRG[2] += dR[1] * mutual;
-        BJ->TRG[3] += dR[2] * mutual;
+        Bj->TRG[0] -= D0 * mutual;
+        Bj->TRG[1] += dR[0] * mutual;
+        Bj->TRG[2] += dR[1] * mutual;
+        Bj->TRG[3] += dR[2] * mutual;
       }
-      BI->TRG[0] += P0;
-      BI->TRG[1] += F0[0];
-      BI->TRG[2] += F0[1];
-      BI->TRG[3] += F0[2];
+      Bi->TRG[0] += P0;
+      Bi->TRG[1] += F0[0];
+      Bi->TRG[2] += F0[1];
+      Bi->TRG[3] += F0[2];
     }
   }
 
   void P2P(C_iter C) const {
     unsigned NJ = C->NDLEAF;
-    for( B_iter BI=C->LEAF; BI!=C->LEAF+C->NDLEAF; ++BI, --NJ ) {
+    for( B_iter Bi=C->LEAF; Bi!=C->LEAF+C->NDLEAF; ++Bi, --NJ ) {
       real P0 = 0;
       vect F0 = 0;
-      for( B_iter BJ=BI+1; BJ!=BI+NJ; ++BJ ) {
-        vect dR = BI->X - BJ->X;
+      for( B_iter Bj=Bi+1; Bj!=Bi+NJ; ++Bj ) {
+        vect dR = Bi->X - Bj->X;
         real D1 = norm(dR) + EPS2;
-        real D0 = BI->SRC[0] * BJ->SRC[0];
+        real D0 = Bi->SRC[0] * Bj->SRC[0];
         real XX = 1.0 / D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
         dR *= D1;
         P0 -= D0;
         F0 -= dR;
-        BJ->TRG[0] -= D0;
-        BJ->TRG[1] += dR[0];
-        BJ->TRG[2] += dR[1];
-        BJ->TRG[3] += dR[2];
+        Bj->TRG[0] -= D0;
+        Bj->TRG[1] += dR[0];
+        Bj->TRG[2] += dR[1];
+        Bj->TRG[3] += dR[2];
       }
-      BI->TRG[0] += P0;
-      BI->TRG[1] += F0[0];
-      BI->TRG[2] += F0[1];
-      BI->TRG[3] += F0[2];
+      Bi->TRG[0] += P0;
+      Bi->TRG[1] += F0[0];
+      Bi->TRG[2] += F0[1];
+      Bi->TRG[3] += F0[2];
     }
   }
 
@@ -427,10 +427,10 @@ public:
     C->RCRIT = std::min(C->R,Rmax);
   }
 
-  void M2M(C_iter CI, real &Rmax) const {
-    for( C_iter CJ=C0+CI->CHILD; CJ!=C0+CI->CHILD+CI->NCHILD; ++CJ ) {
-      vect dist = CI->X - CJ->X;
-      real R = std::sqrt(norm(dist)) + CJ->RCRIT;
+  void M2M(C_iter Ci, real &Rmax) const {
+    for( C_iter Cj=C0+Ci->CHILD; Cj!=C0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
+      vect dist = Ci->X - Cj->X;
+      real R = std::sqrt(norm(dist)) + Cj->RCRIT;
       if( R > Rmax ) Rmax = R;
       const complex I(0.,1.);
       real rho, alpha, beta;
@@ -446,42 +446,42 @@ public:
               int jnkm  = (j - n) * (j - n) + j - n + k - m;
               int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
               int nm    = n * n + n + m;
-              M += CJ->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+              M += Cj->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
                  * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
             for( int m=k; m<=std::min(n,j+k-n); ++m ) {
               int jnkm  = (j - n) * (j - n) + j - n + k - m;
               int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
               int nm    = n * n + n + m;
-              M += std::conj(CJ->M[jnkms]) * Ynm[nm]
+              M += std::conj(Cj->M[jnkms]) * Ynm[nm]
                  * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
           }
-          CI->M[jks] += M;
+          Ci->M[jks] += M;
         }
       }
     }
-    CI->RCRIT = std::min(CI->R,Rmax);
+    Ci->RCRIT = std::min(Ci->R,Rmax);
   }
 
-  void M2L(C_iter CI, C_iter CJ, bool mutual=true) const {
-    vect dist = CI->X - CJ->X;
+  void M2L(C_iter Ci, C_iter Cj, bool mutual=true) const {
+    vect dist = Ci->X - Cj->X;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalLocal(rho,alpha,beta);
-    M2Ltemplate<P>::loop(CJ->M,CI->L,Cnm,Ynm);
+    M2Ltemplate<P>::loop(Cj->M,Ci->L,Cnm,Ynm);
     if( mutual ) {
-      dist = CJ->X - CI->X;
+      dist = Cj->X - Ci->X;
       cart2sph(rho,alpha,beta,dist);
       evalLocal(rho,alpha,beta);
-      M2Ltemplate<P>::loop(CI->M,CJ->L,Cnm,Ynm);
+      M2Ltemplate<P>::loop(Ci->M,Cj->L,Cnm,Ynm);
     }
   }
 
-  void M2P(C_iter CI, C_iter CJ, bool mutual=true) const {
+  void M2P(C_iter Ci, C_iter Cj, bool mutual=true) const {
     const complex I(0.,1.);
-    for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
-      vect dist = B->X - CJ->X;
+    for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+      vect dist = B->X - Cj->X;
       vect spherical = 0;
       vect cartesian = 0;
       real r, theta, phi;
@@ -490,16 +490,16 @@ public:
       for( int n=0; n!=P; ++n ) {
         int nm  = n * n + n;
         int nms = n * (n + 1) / 2;
-        B->TRG[0] -= B->SRC[0] * (CJ->M[nms] * Ynm[nm]).real();
-        spherical[0] -= B->SRC[0] * (CJ->M[nms] * Ynm[nm]).real() / r * (n+1);
-        spherical[1] += B->SRC[0] * (CJ->M[nms] * YnmTheta[nm]).real();
+        B->TRG[0] -= B->SRC[0] * (Cj->M[nms] * Ynm[nm]).real();
+        spherical[0] -= B->SRC[0] * (Cj->M[nms] * Ynm[nm]).real() / r * (n+1);
+        spherical[1] += B->SRC[0] * (Cj->M[nms] * YnmTheta[nm]).real();
         for( int m=1; m<=n; ++m ) {
           nm  = n * n + n + m;
           nms = n * (n + 1) / 2 + m;
-          B->TRG[0] -= 2 * B->SRC[0] * (CJ->M[nms] * Ynm[nm]).real();
-          spherical[0] -= 2 * B->SRC[0] * (CJ->M[nms] *Ynm[nm]).real() / r * (n+1);
-          spherical[1] += 2 * B->SRC[0] * (CJ->M[nms] *YnmTheta[nm]).real();
-          spherical[2] += 2 * B->SRC[0] * (CJ->M[nms] *Ynm[nm] * I).real() * m;
+          B->TRG[0] -= 2 * B->SRC[0] * (Cj->M[nms] * Ynm[nm]).real();
+          spherical[0] -= 2 * B->SRC[0] * (Cj->M[nms] *Ynm[nm]).real() / r * (n+1);
+          spherical[1] += 2 * B->SRC[0] * (Cj->M[nms] *YnmTheta[nm]).real();
+          spherical[2] += 2 * B->SRC[0] * (Cj->M[nms] *Ynm[nm] * I).real() * m;
         }
       }
       sph2cart(r,theta,phi,spherical,cartesian);
@@ -508,8 +508,8 @@ public:
       B->TRG[3] += cartesian[2];
     }
     if( mutual ) {
-      for( B_iter B=CJ->LEAF; B!=CJ->LEAF+CJ->NDLEAF; ++B ) {
-        vect dist = B->X - CI->X;
+      for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NDLEAF; ++B ) {
+        vect dist = B->X - Ci->X;
         vect spherical = 0;
         vect cartesian = 0;
         real r, theta, phi;
@@ -518,16 +518,16 @@ public:
         for( int n=0; n!=P; ++n ) {
           int nm  = n * n + n;
           int nms = n * (n + 1) / 2;
-          B->TRG[0] -= B->SRC[0] * (CI->M[nms] * Ynm[nm]).real();
-          spherical[0] -= B->SRC[0] * (CI->M[nms] * Ynm[nm]).real() / r * (n+1);
-          spherical[1] += B->SRC[0] * (CI->M[nms] * YnmTheta[nm]).real();
+          B->TRG[0] -= B->SRC[0] * (Ci->M[nms] * Ynm[nm]).real();
+          spherical[0] -= B->SRC[0] * (Ci->M[nms] * Ynm[nm]).real() / r * (n+1);
+          spherical[1] += B->SRC[0] * (Ci->M[nms] * YnmTheta[nm]).real();
           for( int m=1; m<=n; ++m ) {
             nm  = n * n + n + m;
             nms = n * (n + 1) / 2 + m;
-            B->TRG[0] -= 2 * B->SRC[0] * (CI->M[nms] * Ynm[nm]).real();
-            spherical[0] -= 2 * B->SRC[0] * (CI->M[nms] *Ynm[nm]).real() / r * (n+1);
-            spherical[1] += 2 * B->SRC[0] * (CI->M[nms] *YnmTheta[nm]).real();
-            spherical[2] += 2 * B->SRC[0] * (CI->M[nms] *Ynm[nm] * I).real() * m;
+            B->TRG[0] -= 2 * B->SRC[0] * (Ci->M[nms] * Ynm[nm]).real();
+            spherical[0] -= 2 * B->SRC[0] * (Ci->M[nms] *Ynm[nm]).real() / r * (n+1);
+            spherical[1] += 2 * B->SRC[0] * (Ci->M[nms] *YnmTheta[nm]).real();
+            spherical[2] += 2 * B->SRC[0] * (Ci->M[nms] *Ynm[nm] * I).real() * m;
           }
         }
         sph2cart(r,theta,phi,spherical,cartesian);
@@ -538,9 +538,9 @@ public:
     }
   }
 
-  void L2L(C_iter CI) const {
-    C_iter CJ = C0 + CI->PARENT;
-    vect dist = CI->X - CJ->X;
+  void L2L(C_iter Ci) const {
+    C_iter Cj = C0 + Ci->PARENT;
+    vect dist = Ci->X - Cj->X;
     const complex I(0.,1.);
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
@@ -555,26 +555,26 @@ public:
             int jnkm = (n - j) * (n - j) + n - j + m - k;
             int nm   = n * n + n - m;
             int nms  = n * (n + 1) / 2 - m;
-            L += std::conj(CJ->L[nms]) * Ynm[jnkm]
+            L += std::conj(Cj->L[nms]) * Ynm[jnkm]
                * double(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
           }
           for( int m=std::max(0,j+k-n); m<=std::min(n,-j+k+n); ++m ) {
             int jnkm = (n - j) * (n - j) + n - j + m - k;
             int nm   = n * n + n + m;
             int nms  = n * (n + 1) / 2 + m;
-            L += CJ->L[nms] * std::pow(I,double(m-k-abs(m-k)))
+            L += Cj->L[nms] * std::pow(I,double(m-k-abs(m-k)))
                * Ynm[jnkm] * double(Anm[jnkm] * Anm[jk] / Anm[nm]);
           }
         }
-        CI->L[jks] += L;
+        Ci->L[jks] += L;
       }
     }
   }
 
-  void L2P(C_iter CI) const {
+  void L2P(C_iter Ci) const {
     const complex I(0.,1.);
-    for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NCLEAF; ++B ) {
-      vect dist = B->X - CI->X;
+    for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
+      vect dist = B->X - Ci->X;
       B->TRG /= B->SRC[0];
       vect spherical = 0;
       vect cartesian = 0;
@@ -584,16 +584,16 @@ public:
       for( int n=0; n!=P; ++n ) {
         int nm  = n * n + n;
         int nms = n * (n + 1) / 2;
-        B->TRG[0] -= (CI->L[nms] * Ynm[nm]).real();
-        spherical[0] += (CI->L[nms] * Ynm[nm]).real() / r * n;
-        spherical[1] += (CI->L[nms] * YnmTheta[nm]).real();
+        B->TRG[0] -= (Ci->L[nms] * Ynm[nm]).real();
+        spherical[0] += (Ci->L[nms] * Ynm[nm]).real() / r * n;
+        spherical[1] += (Ci->L[nms] * YnmTheta[nm]).real();
         for( int m=1; m<=n; ++m ) {
           nm  = n * n + n + m;
           nms = n * (n + 1) / 2 + m;
-          B->TRG[0] -= 2 * (CI->L[nms] * Ynm[nm]).real();
-          spherical[0] += 2 * (CI->L[nms] * Ynm[nm]).real() / r * n;
-          spherical[1] += 2 * (CI->L[nms] * YnmTheta[nm]).real();
-          spherical[2] += 2 * (CI->L[nms] * Ynm[nm] * I).real() * m;
+          B->TRG[0] -= 2 * (Ci->L[nms] * Ynm[nm]).real();
+          spherical[0] += 2 * (Ci->L[nms] * Ynm[nm]).real() / r * n;
+          spherical[1] += 2 * (Ci->L[nms] * YnmTheta[nm]).real();
+          spherical[2] += 2 * (Ci->L[nms] * Ynm[nm] * I).real() * m;
         }
       }
       sph2cart(r,theta,phi,spherical,cartesian);

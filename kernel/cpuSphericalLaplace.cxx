@@ -28,9 +28,9 @@ template<>
 void Kernel<Laplace>::initialize() {}
 
 template<>
-void Kernel<Laplace>::P2M(C_iter CI) {
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
-    vect dist = B->X - CI->X;
+void Kernel<Laplace>::P2M(C_iter Ci) {
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+    vect dist = B->X - Ci->X;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalMultipole(rho,alpha,-beta);
@@ -38,16 +38,16 @@ void Kernel<Laplace>::P2M(C_iter CI) {
       for( int m=0; m<=n; ++m ) {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
-        CI->M[3*nms] += double(B->SRC[0]) * Ynm[nm];
+        Ci->M[3*nms] += double(B->SRC[0]) * Ynm[nm];
       }
     }
   }
 }
 
 template<>
-void Kernel<Laplace>::M2M_CPU(C_iter CI, C_iter CJ) {
+void Kernel<Laplace>::M2M_CPU(C_iter Ci, C_iter Cj) {
   const complex I(0.,1.);                                       // Imaginary unit
-  vect dist = CI->X - CJ->X;
+  vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
   evalMultipole(rho,alpha,-beta);
@@ -62,7 +62,7 @@ void Kernel<Laplace>::M2M_CPU(C_iter CI, C_iter CJ) {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += CJ->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+            M += Cj->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
                * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
@@ -71,19 +71,19 @@ void Kernel<Laplace>::M2M_CPU(C_iter CI, C_iter CJ) {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
-            M += std::conj(CJ->M[3*jnkms]) * Ynm[nm]
+            M += std::conj(Cj->M[3*jnkms]) * Ynm[nm]
                * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
       }
-      CI->M[3*jks] += M;
+      Ci->M[3*jks] += M;
     }
   }
 }
 
 template<>
-void Kernel<Laplace>::M2L(C_iter CI, C_iter CJ, vect Xperiodic) {
-  vect dist = CI->X - CJ->X - Xperiodic;
+void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj, vect Xperiodic) {
+  vect dist = Ci->X - Cj->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
   evalLocal(rho,alpha,beta);
@@ -98,26 +98,26 @@ void Kernel<Laplace>::M2L(C_iter CI, C_iter CJ, vect Xperiodic) {
           const int nms  = n * (n + 1) / 2 - m;
           const int jknm = jk * P2 + nm;
           const int jnkm = (j + n) * (j + n) + j + n + m - k;
-          L += std::conj(CJ->M[3*nms]) * Cnm[jknm] * Ynm[jnkm];
+          L += std::conj(Cj->M[3*nms]) * Cnm[jknm] * Ynm[jnkm];
         }
         for( int m=0; m<=n; ++m ) {
           const int nm   = n * n + n + m;
           const int nms  = n * (n + 1) / 2 + m;
           const int jknm = jk * P2 + nm;
           const int jnkm = (j + n) * (j + n) + j + n + m - k;
-          L += CJ->M[3*nms] * Cnm[jknm] * Ynm[jnkm];
+          L += Cj->M[3*nms] * Cnm[jknm] * Ynm[jnkm];
         }
       }
-      CI->L[3*jks] += L;
+      Ci->L[3*jks] += L;
     }
   }
 }
 
 template<>
-void Kernel<Laplace>::M2P(C_iter CI, C_iter CJ, vect Xperiodic) {
+void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj, vect Xperiodic) {
   const complex I(0.,1.);                                       // Imaginary unit
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
-    vect dist = B->X - CJ->X - Xperiodic;
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+    vect dist = B->X - Cj->X - Xperiodic;
     vect spherical = 0;
     vect cartesian = 0;
     real r, theta, phi;
@@ -126,16 +126,16 @@ void Kernel<Laplace>::M2P(C_iter CI, C_iter CJ, vect Xperiodic) {
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
-      B->TRG[0] += (CJ->M[3*nms] * Ynm[nm]).real();
-      spherical[0] -= (CJ->M[3*nms] * Ynm[nm]).real() / r * (n+1);
-      spherical[1] += (CJ->M[3*nms] * YnmTheta[nm]).real();
+      B->TRG[0] += (Cj->M[3*nms] * Ynm[nm]).real();
+      spherical[0] -= (Cj->M[3*nms] * Ynm[nm]).real() / r * (n+1);
+      spherical[1] += (Cj->M[3*nms] * YnmTheta[nm]).real();
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
-        B->TRG[0] += 2 * (CJ->M[3*nms] * Ynm[nm]).real();
-        spherical[0] -= 2 * (CJ->M[3*nms] *Ynm[nm]).real() / r * (n+1);
-        spherical[1] += 2 * (CJ->M[3*nms] *YnmTheta[nm]).real();
-        spherical[2] += 2 * (CJ->M[3*nms] *Ynm[nm] * I).real() * m;
+        B->TRG[0] += 2 * (Cj->M[3*nms] * Ynm[nm]).real();
+        spherical[0] -= 2 * (Cj->M[3*nms] *Ynm[nm]).real() / r * (n+1);
+        spherical[1] += 2 * (Cj->M[3*nms] *YnmTheta[nm]).real();
+        spherical[2] += 2 * (Cj->M[3*nms] *Ynm[nm] * I).real() * m;
       }
     }
     sph2cart(r,theta,phi,spherical,cartesian);
@@ -146,9 +146,9 @@ void Kernel<Laplace>::M2P(C_iter CI, C_iter CJ, vect Xperiodic) {
 }
 
 template<>
-void Kernel<Laplace>::L2L(C_iter CI, C_iter CJ) {
+void Kernel<Laplace>::L2L(C_iter Ci, C_iter Cj) {
   const complex I(0.,1.);                                       // Imaginary unit
-  vect dist = CI->X - CJ->X;
+  vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
   evalMultipole(rho,alpha,beta);
@@ -162,7 +162,7 @@ void Kernel<Laplace>::L2L(C_iter CI, C_iter CJ) {
           const int jnkm = (n - j) * (n - j) + n - j + m - k;
           const int nm   = n * n + n - m;
           const int nms  = n * (n + 1) / 2 - m;
-          L += std::conj(CJ->L[3*nms]) * Ynm[jnkm]
+          L += std::conj(Cj->L[3*nms]) * Ynm[jnkm]
              * double(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
         }
         for( int m=0; m<=n; ++m ) {
@@ -170,21 +170,21 @@ void Kernel<Laplace>::L2L(C_iter CI, C_iter CJ) {
             const int jnkm = (n - j) * (n - j) + n - j + m - k;
             const int nm   = n * n + n + m;
             const int nms  = n * (n + 1) / 2 + m;
-            L += CJ->L[3*nms] * std::pow(I,double(m-k-abs(m-k)))
+            L += Cj->L[3*nms] * std::pow(I,double(m-k-abs(m-k)))
                * Ynm[jnkm] * double(Anm[jnkm] * Anm[jk] / Anm[nm]);
           }
         }
       }
-      CI->L[3*jks] += L;
+      Ci->L[3*jks] += L;
     }
   }
 }
 
 template<>
-void Kernel<Laplace>::L2P(C_iter CI) {
+void Kernel<Laplace>::L2P(C_iter Ci) {
   const complex I(0.,1.);                                       // Imaginary unit
-  for( B_iter B=CI->LEAF; B!=CI->LEAF+CI->NDLEAF; ++B ) {
-    vect dist = B->X - CI->X;
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+    vect dist = B->X - Ci->X;
     vect spherical = 0;
     vect cartesian = 0;
     real r, theta, phi;
@@ -193,16 +193,16 @@ void Kernel<Laplace>::L2P(C_iter CI) {
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
-      B->TRG[0] += (CI->L[3*nms] * Ynm[nm]).real();
-      spherical[0] += (CI->L[3*nms] * Ynm[nm]).real() / r * n;
-      spherical[1] += (CI->L[3*nms] * YnmTheta[nm]).real();
+      B->TRG[0] += (Ci->L[3*nms] * Ynm[nm]).real();
+      spherical[0] += (Ci->L[3*nms] * Ynm[nm]).real() / r * n;
+      spherical[1] += (Ci->L[3*nms] * YnmTheta[nm]).real();
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
-        B->TRG[0] += 2 * (CI->L[3*nms] * Ynm[nm]).real();
-        spherical[0] += 2 * (CI->L[3*nms] * Ynm[nm]).real() / r * n;
-        spherical[1] += 2 * (CI->L[3*nms] * YnmTheta[nm]).real();
-        spherical[2] += 2 * (CI->L[3*nms] * Ynm[nm] * I).real() * m;
+        B->TRG[0] += 2 * (Ci->L[3*nms] * Ynm[nm]).real();
+        spherical[0] += 2 * (Ci->L[3*nms] * Ynm[nm]).real() / r * n;
+        spherical[1] += 2 * (Ci->L[3*nms] * YnmTheta[nm]).real();
+        spherical[2] += 2 * (Ci->L[3*nms] * Ynm[nm] * I).real() * m;
       }
     }
     sph2cart(r,theta,phi,spherical,cartesian);
