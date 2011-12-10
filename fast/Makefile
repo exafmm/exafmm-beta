@@ -1,4 +1,6 @@
 include ../Makefile
+#LFLAGS	+= -DIneJ
+#LFLAGS	+= -DBOTTOMUP
 
 a	: main.cxx
 	make cleanall

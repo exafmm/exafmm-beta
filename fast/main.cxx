@@ -49,11 +49,18 @@ int main() {
   bodies.resize(numBodies);
   DATA.random(bodies);
   FMM.startTimer("FMM          ");
+#if BOTTOMUP
+  FMM.bottomup(bodies,cells);
+#else
   FMM.topdown(bodies,cells);
-//  FMM.bottomup(bodies,cells);
+#endif
 #if BUILD
 #else
+#if IneJ
+  FMM.approximate(cells,cells);
+#else
   FMM.approximate(cells);
+#endif
   FMM.stopTimer("FMM          ",true);
   FMM.eraseTimer("FMM          ");
   FMM.writeTime();
@@ -63,7 +70,11 @@ int main() {
   bodies2 = bodies;
   DATA.initTarget(bodies);
   FMM.startTimer("Direct sum   ");
-  FMM.direct(bodies,cells);
+#if IneJ
+  FMM.direct(bodies,bodies);
+#else
+  FMM.direct(bodies);
+#endif
   FMM.stopTimer("Direct sum   ",true);
   FMM.eraseTimer("Direct sum   ");
 

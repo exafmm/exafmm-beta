@@ -153,13 +153,12 @@ protected:
   void linkTree(Cells &cells) {
     startTimer("Link tree    ");
     twigs2cells(cells);
-    C0 = cells.begin();
-    ROOT = cells.end()-1;
     stopTimer("Link tree    ",printNow);
   }
 
   void upwardPass(Cells &cells) {
     startTimer("Upward pass  ");
+    setRootCell(cells);
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       C->M = 0;
       C->L = 0;

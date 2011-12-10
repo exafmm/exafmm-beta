@@ -457,7 +457,8 @@ class Kernel : public Sort {
 protected:
   vect   X0;
   real   R0;
-  C_iter C0;
+  C_iter Ci0;
+  C_iter Cj0;
 
 private:
   inline void getCoef(Lset &C, const vect &dist, real &invR2, const real &invR) const {
@@ -655,7 +656,7 @@ public:
   }
 
   void M2M(C_iter Ci, real &Rmax) const {
-    for( C_iter Cj=C0+Ci->CHILD; Cj!=C0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
+    for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
       vect dist = Cj->X - Ci->X;
       real R = std::sqrt(norm(dist)) + Cj->RCRIT;
       if( R > Rmax ) Rmax = R;
@@ -706,7 +707,7 @@ public:
   }
 
   void L2L(C_iter Ci) const {
-    C_iter Cj = C0 + Ci->PARENT;
+    C_iter Cj = Ci0 + Ci->PARENT;
     vect dist = Ci->X - Cj->X;
     Lset C;
     C[0] = 1;

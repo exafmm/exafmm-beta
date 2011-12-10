@@ -100,12 +100,12 @@ private:
         }
       }
       C_iter Ci = CN;
-      C->CHILD = Ci - C0;
+      C->CHILD = Ci - Ci0;
       C->NCHILD = nsub;
       CN += nsub;
       for( int octant=0; octant!=8; ++octant ) {
         if( nodes[i].CHILD[octant] != -1 ) {
-          Ci->PARENT = C - C0;
+          Ci->PARENT = C - Ci0;
           nodes2cells(nodes[i].CHILD[octant], Ci++);
         }
       }
@@ -183,11 +183,10 @@ protected:
   void linkTree(Bodies &bodies, Cells &cells) {
     startTimer("Link tree    ");
     cells.resize(NCELL);
-    C0 = cells.begin();
+    Ci0 = cells.begin();
     BN = bodies.begin();
-    CN = C0 + 1;
-    nodes2cells(0,C0);
-    ROOT = C0;
+    CN = Ci0 + 1;
+    nodes2cells(0,Ci0);
     nodes.clear();
     leafs.clear();
     permuteBodies(bodies);
@@ -196,6 +195,7 @@ protected:
 
   void upwardPass(Cells &cells) {
     startTimer("Upward pass  ");
+    setRootCell(cells);
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       C->M = 0;
       C->L = 0;
@@ -222,7 +222,8 @@ protected:
     }
   }
 
-  void printTreeData(Cells &cells) const {
+  void printTreeData(Cells &cells) {
+    setRootCell(cells);
     std::cout << "------------------------" << std::endl;
     std::cout << "Root center   : " << ROOT->X              << std::endl;
     std::cout << "Root radius   : " << R0                   << std::endl;

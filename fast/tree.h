@@ -44,18 +44,28 @@ public:
 
 class SerialFMM : public TreeConstructor {
 public:
-  void direct(Bodies &bodies, Cells &cells) {
-    setRootCell(cells);
-    P2P(ROOT);
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+  void direct(Bodies &bodies) {
+    Cells cells;
+    cells.resize(1);
+    C_iter C = cells.begin();
+    C->LEAF = bodies.begin();
+    C->NDLEAF = bodies.size();
+    P2P(C);
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->TRG /= B->SRC[0];
     }
   }
 
-  void direct2(Bodies &bodies, Cells &cells) {
-    setRootCell(cells);
-    P2P(ROOT,ROOT,false);
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+  void direct(Bodies &ibodies, Bodies &jbodies) {
+    Cells cells;
+    cells.resize(2);
+    C_iter Ci = cells.begin(), Cj = cells.begin()+1;
+    Ci->LEAF = ibodies.begin();
+    Ci->NDLEAF = ibodies.size();
+    Cj->LEAF = jbodies.begin();
+    Cj->NDLEAF = jbodies.size();
+    P2P(Ci,Cj,false);
+    for( B_iter B=ibodies.begin(); B!=ibodies.end(); ++B ) {
       B->TRG /= B->SRC[0];
     }
   }
@@ -75,19 +85,19 @@ public:
     if(printNow) printTreeData(cells);
   }
 
-  void approximate2(Cells &cells) {
-    setRootCell(cells);
+  void approximate(Cells &icells, Cells &jcells) {
+    setRootCell(icells,jcells);
     startTimer("Traverse     ");
     traverse(false);
     stopTimer("Traverse     ",printNow);
     startTimer("Downward pass");
     if( TOPDOWN ) {
-      TopDown::downwardPass(cells);
+      TopDown::downwardPass(icells);
     } else {
-      BottomUp::downwardPass(cells);
+      BottomUp::downwardPass(icells);
     }
     stopTimer("Downward pass",printNow);
-    if(printNow) printTreeData(cells);
+    if(printNow) printTreeData(icells);
   }
 
 };

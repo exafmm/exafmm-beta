@@ -38,7 +38,7 @@ private:
 
 protected:
   bool    TOPDOWN;
-  C_iter  ROOT;
+  C_iter  ROOT, ROOT2;
 
 public:
   real NP2P;
@@ -100,11 +100,24 @@ private:
 
 protected:
   void setRootCell(Cells &cells) {
-    C0 = cells.begin();
+    Ci0 = cells.begin();
+    Cj0 = cells.begin();
     if( TOPDOWN ) {
-      ROOT = C0;
+      ROOT = Ci0;
     } else {
       ROOT = cells.end() - 1;
+    }
+  }
+
+  void setRootCell(Cells &icells, Cells &jcells) {
+    Ci0 = icells.begin();
+    Cj0 = jcells.begin();
+    if( TOPDOWN ) {
+      ROOT  = Ci0;
+      ROOT2 = Cj0;
+    } else {
+      ROOT  = icells.end() - 1;
+      ROOT2 = jcells.end() - 1;
     }
   }
 
@@ -115,7 +128,7 @@ protected:
       m += B->SRC[0];
       X += B->X * B->SRC[0];
     }
-    for( C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; ++c ) {
+    for( C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; ++c ) {
       m += std::abs(c->M[0]);
       X += c->X * std::abs(c->M[0]);
     }
@@ -143,9 +156,9 @@ protected:
     while(!selfStack.empty()) {
       C_iter C = selfStack.top();
       selfStack.pop();
-      for( C_iter Ci=C0+C->CHILD; Ci!=C0+C->CHILD+C->NCHILD; ++Ci ) {
+      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
         interact(Ci);
-        for( C_iter Cj=Ci+1; Cj!=C0+C->CHILD+C->NCHILD; ++Cj ) {
+        for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
           interact(Ci,Cj);
         }
       }
@@ -154,12 +167,12 @@ protected:
         pairStack.pop();
         if(splitFirst(Cij.first,Cij.second)) {
           C = Cij.first;
-          for( C_iter Ci=C0+C->CHILD; Ci!=C0+C->CHILD+C->NCHILD; ++Ci ) {
+          for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
             interact(Ci,Cij.second);
           }
         } else {
           C = Cij.second;
-          for( C_iter Cj=C0+C->CHILD; Cj!=C0+C->CHILD+C->NCHILD; ++Cj ) {
+          for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
             interact(Cij.first,Cj);
           }
         }
@@ -168,7 +181,7 @@ protected:
   }
 
   void traverse(bool mutual) {
-    for( C_iter Cj=C0+ROOT->CHILD; Cj!=C0+ROOT->CHILD+ROOT->NCHILD; ++Cj ) {
+    for( C_iter Cj=Cj0+ROOT->CHILD; Cj!=Cj0+ROOT->CHILD+ROOT->NCHILD; ++Cj ) {
       Pair pair(ROOT,Cj);
       pairStack.push(pair);
     }
@@ -177,12 +190,12 @@ protected:
       pairStack.pop();
       if(splitFirst(Cij.first,Cij.second)) {
         C_iter C = Cij.first;
-        for( C_iter Ci=C0+C->CHILD; Ci!=C0+C->CHILD+C->NCHILD; ++Ci ) {
+        for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
           interact(Ci,Cij.second,mutual);
         }
       } else {
         C_iter C = Cij.second;
-        for( C_iter Cj=C0+C->CHILD; Cj!=C0+C->CHILD+C->NCHILD; ++Cj ) {
+        for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
           interact(Cij.first,Cj,mutual);
         }
       }
