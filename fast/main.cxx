@@ -31,6 +31,9 @@ int main() {
   Dataset DATA;
   DATA.equation = "Laplace";
   SerialFMM FMM;
+#if HYBRID
+  FMM.timeKernels();
+#endif
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {
 #else

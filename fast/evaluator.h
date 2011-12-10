@@ -32,6 +32,9 @@ private:
   typedef std::pair<C_iter,C_iter> Pair;
   mutable std::stack<C_iter> selfStack;
   mutable std::stack<Pair> pairStack;
+  real timeP2P;
+  real timeM2P;
+  real timeM2L;
 
 protected:
   bool    TOPDOWN;
@@ -39,6 +42,7 @@ protected:
 
 public:
   real NP2P;
+  real NM2P;
   real NM2L;
 
 private:
@@ -63,8 +67,24 @@ private:
     vect dX = Ci->X - Cj->X;
     real Rq = norm(dX);
     if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+#if HYBRID
+      if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {
+        P2P(Ci,Cj,mutual);
+        NP2P++;
+      } else if ( timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L ) {
+        M2P(Ci,Cj,mutual);
+        NM2P++;
+      } else {
+        M2L(Ci,Cj,mutual);
+        NM2L++;
+      }
+#elif TREECODE
+      M2P(Ci,Cj,mutual);
+      NM2P++;
+#else
       M2L(Ci,Cj,mutual);
       NM2L++;
+#endif
     } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
       P2P(Ci,Cj,mutual);
       NP2P++;
@@ -172,6 +192,35 @@ protected:
 public:
   Evaluator() : NP2P(0), NM2L(0) {}
   ~Evaluator() {}
+
+  void timeKernels(bool mutual=true) {
+    Bodies ibodies(1000), jbodies(1000);
+    for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {
+      Bi->X = 0;
+      Bj->X = 1;
+    }
+    Cells cells;
+    cells.resize(2);
+    C_iter Ci = cells.begin(), Cj = cells.begin()+1;
+    Ci->X = 0;
+    Ci->NDLEAF = 10;
+    Ci->LEAF = ibodies.begin();
+    Ci->M = 0;
+    Ci->L = 0;
+    Cj->X = 1;
+    Cj->NDLEAF = 1000;
+    Cj->LEAF = jbodies.begin();
+    Cj->M = 0;
+    startTimer("P2P kernel   ");
+    P2P(Ci,Cj,mutual);
+    timeP2P = stopTimer("P2P kernel   ") / 10000;
+    startTimer("M2L kernel   ");
+    for( int i=0; i!=1000; ++i ) M2L(Ci,Cj);
+    timeM2L = stopTimer("M2L kernel   ") / 1000;
+    startTimer("M2P kernel   ");
+    for( int i=0; i!=100; ++i ) M2P(Ci,Cj,mutual);
+    timeM2P = stopTimer("M2P kernel   ") / 1000;
+  }
 
 };
 

@@ -231,6 +231,7 @@ protected:
     std::cout << "Tree depth    : " << MAXLEVEL             << std::endl;
     std::cout << "Total charge  : " << std::abs(ROOT->M[0]) << std::endl;
     std::cout << "P2P calls     : " << NP2P                 << std::endl;
+    std::cout << "M2P calls     : " << NM2P                 << std::endl;
     std::cout << "M2L calls     : " << NM2L                 << std::endl;
     std::cout << "------------------------" << std::endl;
   }

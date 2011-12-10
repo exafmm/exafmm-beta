@@ -89,16 +89,6 @@ enum Equation {                                                 //!< Equation ty
   CoulombVdW                                                    //!< Coulomb + Van der Walls force
 };
 
-enum Stage {                                                    //!< Stages of FMM
-  P2M,                                                          //!< particle to multipole
-  M2M,                                                          //!< multipole to multipole
-  M2L,                                                          //!< multipole to local
-  L2L,                                                          //!< local to local
-  L2P,                                                          //!< local to particle
-  M2P,                                                          //!< multipole to particle
-  P2P                                                           //!< particle to particle
-};
-
 //! Structure of source bodies (stuff to send)
 struct JBody {
   int         IBODY;                                            //!< Initial body numbering for sorting back

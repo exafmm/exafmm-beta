@@ -518,7 +518,7 @@ void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Cj->X - Xperiodic;
     real invR2 = 1 / norm(dist);
-    real invR  = B->SRC[0] * Cj->M[0] * std::sqrt(invR2);
+    real invR  = Cj->M[0] * std::sqrt(invR2);
     Lset C;
     getCoef(C,dist,invR2,invR);
     sumM2P(B,C,Cj->M);

@@ -38,7 +38,7 @@ int main() {
     numBodies = int(pow(10,(it+24)/8.0));
     std::cout << "N             : " << numBodies << std::endl;
     bodies.resize(numBodies);
-    FMM.sphere(bodies,1,1);
+    FMM.random(bodies,1,1);
     FMM.startTimer("FMM          ");
     FMM.setDomain(bodies);
     cells.clear();

@@ -20,7 +20,7 @@ kernel: kernel.cxx $(OBJECT)
 	$(SERIALRUN)
 
 serialrun: serialrun.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS)
+	$(CXX) $? $(LFLAGS) -pg
 	$(SERIALRUN)
 
 unsort: unsort.cxx $(OBJECT)
@@ -36,7 +36,7 @@ direct_gpu: direct_gpu.cxx $(OBJECT)
 	$(SERIALRUN)
 
 mpi: mpi.cxx
-	$(CXX) $? $(LFLAGS) -g -pg
+	$(CXX) $? $(LFLAGS) -pg
 	$(PARALLELRUN)
 	gprof -b a.out gmon.out
 

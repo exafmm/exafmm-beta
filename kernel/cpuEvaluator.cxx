@@ -118,11 +118,11 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
 template<Equation equation>
 void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
   startTimer("evalP2M      ");                                  // Start timer
-  for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over cells
-    Ci->M = 0;                                                  //  Initialize multipole coefficients
-    Ci->L = 0;                                                  //  Initialize local coefficients
-    if( Ci->NCHILD == 0 ) {                                     //  If cell is a twig
-      P2M(Ci);                                                  //   Perform P2M kernel
+  for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {       // Loop over cells
+    C->M = 0;                                                  //  Initialize multipole coefficients
+    C->L = 0;                                                  //  Initialize local coefficients
+    if( C->NCHILD == 0 ) {                                     //  If cell is a twig
+      P2M(C);                                                  //   Perform P2M kernel
     }                                                           //  Endif for twig
   }                                                             // End loop over cells
   stopTimer("evalP2M      ");                                   // Stop timer
@@ -246,9 +246,9 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate L2L
 template<Equation equation>
 void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate L2P
   startTimer("evalL2P      ");                                  // Start timer
-  for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over cells
-    if( Ci->NCHILD == 0 ) {                                     //  If cell is a twig
-      L2P(Ci);                                                  //   Perform L2P kernel
+  for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {          // Loop over cells
+    if( C->NCHILD == 0 ) {                                      //  If cell is a twig
+      L2P(C);                                                   //   Perform L2P kernel
     }                                                           //  Endif for twig
   }                                                             // End loop over cells topdown
   stopTimer("evalL2P      ");                                   // Stop timer

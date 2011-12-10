@@ -25,7 +25,7 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  const int numBodies = 10000;
+  const int numBodies = 100000;
   const int numTarget = 100;
   IMAGES = 0;
   THETA = 1 / sqrtf(4);
@@ -37,7 +37,7 @@ int main() {
   FMM.printNow = true;
 
   FMM.startTimer("Set bodies   ");
-  FMM.sphere(bodies,1,1);
+  FMM.random(bodies,1,1);
   FMM.stopTimer("Set bodies   ",FMM.printNow);
   FMM.eraseTimer("Set bodies   ");
 
