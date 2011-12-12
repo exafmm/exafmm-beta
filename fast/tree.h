@@ -75,6 +75,11 @@ public:
     startTimer("Traverse     ");
     traverse();
     stopTimer("Traverse     ",printNow);
+#if QUEUEING
+    startTimer("Evaluate     ");
+    evaluate(cells);
+    stopTimer("Evaluate     ",printNow);
+#endif
     startTimer("Downward pass");
     if( TOPDOWN ) {
       TopDown::downwardPass(cells);

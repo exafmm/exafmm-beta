@@ -34,6 +34,7 @@ void Evaluator<equation>::testMACM2L(C_iter Ci, C_iter Cj) {    // Test MAC for 
     pairs.push(pair);                                           //  Push interacting pair into stack
   } else {                                                      // If cell is small enough
     M2L(Ci,Cj);                                                 //  Perform M2L kernel
+//    M2L(quark,Ci,Cj);
     NM2L++;                                                     //  Count M2L kernel execution
   }                                                             // Endif for interaction
 }

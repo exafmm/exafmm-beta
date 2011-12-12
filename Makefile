@@ -4,6 +4,7 @@
 #CUDA_INSTALL_PATH = /usr/local/cuda
 #SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
 VTK_INCLUDE_PATH = /usr/include/vtk-5.6
+QUARK_INCLUDE_PATH=/home/yokota/quark
 
 DEVICE  = cpu
 #DEVICE  = gpu
@@ -24,6 +25,8 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 ifeq ($(DEVICE),gpu)
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
+CXX	+= -I$(QUARK_INCLUDE_PATH)
+LFLAGS	+= -L$(QUARK_INCLUDE_PATH) -lquark
 #CXX     += -I$(VTK_INCLUDE_PATH)
 #VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)BiotSavart.o\

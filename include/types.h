@@ -26,6 +26,7 @@ THE SOFTWARE.
 #include <cmath>
 #include <complex>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -36,24 +37,32 @@ THE SOFTWARE.
 #include <utility>
 #include <vector>
 #include "vec.h"
+#include "quark.h"
 
 typedef unsigned             bigint;                            //!< Big integer type
 typedef float                real;                              //!< Real number type on CPU
 typedef float                gpureal;                           //!< Real number type on GPU
 typedef std::complex<double> complex;                           //!< Complex number type
+typedef vec<3,real>          vect;                              //!< 3-D vector type
 
 #ifndef KERNEL
 int MPIRANK = 0;                                                //!< MPI comm rank
 int MPISIZE = 1;                                                //!< MPI comm size
 int DEVICE  = 0;                                                //!< GPU device ID
-int IMAGES;                                                     //!< Number of periodic image sublevels
-real THETA;                                                     //!< Box opening criteria
+int IMAGES  = 0;                                                //!< Number of periodic image sublevels
+real THETA  = .5;                                               //!< Box opening criteria
+vect Xperiodic = 0;                                             //!< Coordinate offset of periodic image
+Quark *quark;                                                   //!< Quark object
+Quark_Task_Flags tflags = Quark_Task_Flags_Initializer;         //!< Quark task flag
 #else
 extern int MPIRANK;                                             //!< MPI comm rank
 extern int MPISIZE;                                             //!< MPI comm size
 extern int DEVICE;                                              //!< GPU device ID
 extern int IMAGES;                                              //!< Number of periodic image sublevels
 extern real THETA;                                              //!< Box opening criteria
+extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
+extern Quark *quark;                                            //!< Quark object
+extern Quark_Task_Flags tflags;                                 //!< Quark task flag
 #endif
 
 const int  P       = 3;                                         //!< Order of expansions
@@ -65,11 +74,10 @@ const real EPS2    = 1e-6;                                      //!< Softening p
 const int  GPUS    = 3;                                         //!< Number of GPUs per node
 const int  THREADS = 64;                                        //!< Number of threads per thread-block
 
-const int MTERM = P*(P+1)*(P+2)/6-3;
-const int LTERM = (P+1)*(P+2)*(P+3)/6;
-const int NTERM = P*(P+1)/2;
+const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms
+const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
+const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
 
-typedef vec<3,real>                            vect;            //!< 3-D vector type
 #if Cartesian
 typedef vec<MTERM,real>                        Mset;            //!< Multipole coefficient type for Cartesian
 typedef vec<LTERM,real>                        Lset;            //!< Local coefficient type for Cartesian
@@ -151,6 +159,11 @@ struct Cell {
   real     RCRIT;                                               //!< Critical cell radius
   Mset     M;                                                   //!< Multipole coefficients
   Lset     L;                                                   //!< Local coefficients
+#if QUEUEING
+  typedef std::vector<Cell>::iterator  C_iter;
+  std::list<C_iter> listP2P;
+  std::list<C_iter> listM2L;
+#endif
 };
 typedef std::vector<Cell>              Cells;                   //!< Vector of cells
 typedef std::vector<Cell>::iterator    C_iter;                  //!< Iterator for cell vector

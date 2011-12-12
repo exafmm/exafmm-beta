@@ -221,6 +221,7 @@ public:
     }                                                           // Endif for periodic boundary condition
     startTimer("Traverse     ");                                // Start timer
     traverse(cells,jcells,method);                              // Traverse tree to get interaction list
+    QUARK_Barrier(quark);                                       // Barrier for QUARK traversal completion
     stopTimer("Traverse     ",printNow);                        // Stop timer & print
     if( IMAGES != 0 && periodic ) {                             // If periodic boundary condition
       startTimer("Traverse P   ");                              // Start timer

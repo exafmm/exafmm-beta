@@ -33,7 +33,8 @@ class KernelBase : public Sort {
 protected:
   vect                 X0;                                      //!< Center of root cell
   real                 R0;                                      //!< Radius of root cell
-  vect                 Xperiodic;                               //!< Coordinate offset of periodic image
+  C_iter               Ci0;                                     //!< icells.begin()
+  C_iter               Cj0;                                     //!< jcells.begin()
 
   int                  ATOMS;                                   //!< Number of atom types in Van der Waals
   std::vector<real>    RSCALE;                                  //!< Scaling parameter for Van der Waals
@@ -286,6 +287,7 @@ public:
   void P2M(C_iter Ci) const;                                    //!< Evaluate P2M kernel on CPU
   void M2M(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2M kernel on CPU
   void M2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2L kernel on CPU
+  void M2L(Quark*, C_iter Ci, C_iter Cj) const;                 //!< Evaluate M2L kernel on CPU
   void M2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2P kernel on CPU
   void P2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate P2P kernel on CPU
   void L2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate L2L kernel on CPU

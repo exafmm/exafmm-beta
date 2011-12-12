@@ -38,9 +38,11 @@ public:
 //! Constructor
   SerialFMM() : BottomUp<equation>() {
     preCalculation();
+    quark = QUARK_New(1);
   }
 //! Destructor
   ~SerialFMM() {
+    QUARK_Delete(quark);
     postCalculation();
   }
 

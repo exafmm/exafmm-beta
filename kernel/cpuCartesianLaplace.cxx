@@ -513,6 +513,28 @@ void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
   sumM2L(Ci->L,C,Cj->M);
 }
 
+void M2Lquark(Quark*) {
+  C_iter Ci, Cj;
+  quark_unpack_args_2(quark,Ci,Cj);
+  vect dist = Ci->X - Cj->X - Xperiodic;
+  real invR2 = 1 / norm(dist);
+  real invR  = Ci->M[0] * Cj->M[0] * std::sqrt(invR2);
+  Lset C;
+  getCoef(C,dist,invR2,invR);
+  sumM2L(Ci->L,C,Cj->M);
+}
+
+template<>
+void Kernel<Laplace>::M2L(Quark*, C_iter Ci, C_iter Cj) const {
+  char string[256];
+  sprintf(string,"%d %d",int(Ci-Ci0),int(Cj-Cj0));
+  QUARK_Task_Flag_Set(&tflags ,TASK_LABEL,intptr_t(string) );
+  QUARK_Insert_Task(quark,M2Lquark,&tflags,
+                    sizeof(Cell)*1000000,&*Ci,INOUT,
+                    sizeof(Cell)*1000000,&*Cj,INOUT,
+                    0);
+}
+
 template<>
 void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {

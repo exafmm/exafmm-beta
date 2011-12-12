@@ -82,11 +82,19 @@ private:
       M2P(Ci,Cj,mutual);
       NM2P++;
 #else
+#if QUEUEING
+      Ci->listM2L.push_back(Cj);
+#else
       M2L(Ci,Cj,mutual);
+#endif
       NM2L++;
 #endif
     } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
+#if QUEUEING
+      Ci->listP2P.push_back(Cj);
+#else
       P2P(Ci,Cj,mutual);
+#endif
       NP2P++;
     } else {
       Pair pair(Ci,Cj);
@@ -201,6 +209,23 @@ protected:
       }
     }
   }
+
+#if QUEUEING
+  void evaluate(Cells &cells) const {
+    for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {
+      while( !Ci->listP2P.empty() ) {
+        C_iter Cj = Ci->listP2P.back();
+        P2P(Ci,Cj);
+        Ci->listP2P.pop_back();
+      }
+      while( !Ci->listM2L.empty() ) {
+        C_iter Cj = Ci->listM2L.back();
+        M2L(Ci,Cj);
+        Ci->listM2L.pop_back();
+      }
+    }
+  }
+#endif
 
 public:
   Evaluator() : NP2P(0), NM2L(0) {}

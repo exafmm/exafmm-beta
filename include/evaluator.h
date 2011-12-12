@@ -28,10 +28,8 @@ THE SOFTWARE.
 template<Equation equation>
 class Evaluator : public Kernel<equation>, public Dataset<equation> {
 protected:
-  C_iter      Ci0;                                              //!< icells.begin()
   C_iter      CiB;                                              //!< icells begin per call
   C_iter      CiE;                                              //!< icells end per call
-  C_iter      Cj0;                                              //!< jcells.begin()
   C_iter      CjB;                                              //!< jcells begin per call
   C_iter      CjE;                                              //!< jcells end per call
   Pairs       pairs;                                            //!< Stack of interacting cell pairs
@@ -53,7 +51,8 @@ public:
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
   using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
   using Kernel<equation>::R0;                                   //!< Radius of root cell
-  using Kernel<equation>::Xperiodic;                            //!< Coordinate offset of periodic image
+  using Kernel<equation>::Ci0;                                  //!< icells.begin()
+  using Kernel<equation>::Cj0;                                  //!< jcells.begin()
   using Kernel<equation>::keysHost;                             //!< Offsets for rangeHost
   using Kernel<equation>::rangeHost;                            //!< Offsets for sourceHost
   using Kernel<equation>::constHost;                            //!< Constants on host
