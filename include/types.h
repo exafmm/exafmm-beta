@@ -32,12 +32,13 @@ THE SOFTWARE.
 #include <list>
 #include <map>
 #include <omp.h>
+#include "quark.h"
+#include <queue>
 #include <stack>
 #include <string>
 #include <utility>
 #include <vector>
 #include "vec.h"
-#include "quark.h"
 
 typedef unsigned             bigint;                            //!< Big integer type
 typedef float                real;                              //!< Real number type on CPU
@@ -166,9 +167,11 @@ typedef std::vector<Cell>::iterator    C_iter;                  //!< Iterator fo
 typedef std::vector<JCell>             JCells;                  //!< Vector of source cells
 typedef std::vector<JCell>::iterator   JC_iter;                 //!< Iterator for source cell vector
 
-typedef std::stack<C_iter>             Cstack;                  //!< Stack of cell iterators
+typedef std::queue<C_iter>             CellQueue;               //!< Queue of cell iterators
+typedef std::stack<C_iter>             CellStack;               //!< Stack of cell iterators
 typedef std::pair<C_iter,C_iter>       Pair;                    //!< Pair of interacting cells
-typedef std::stack<Pair>               Pairs;                   //!< Stack of interacting cell pairs
+typedef std::queue<Pair>               PairQueue;               //!< Queue of interacting cell pairs
+typedef std::stack<Pair>               PairStack;               //!< Stack of interacting cell pairs
 typedef std::list<C_iter>              List;                    //!< Interaction list
 typedef std::list<C_iter>::iterator    LC_iter;                 //!< Iterator for interaction list
 typedef std::vector<List>              Lists;                   //!< Vector of interaction lists

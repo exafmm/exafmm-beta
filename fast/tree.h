@@ -70,16 +70,11 @@ public:
     }
   }
 
-  void approximate(Cells &cells) {
+  void evaluate(Cells &cells) {
     setRootCell(cells);
     startTimer("Traverse     ");
     traverse();
     stopTimer("Traverse     ",printNow);
-#if QUEUEING
-    startTimer("Evaluate     ");
-    evaluate(cells);
-    stopTimer("Evaluate     ",printNow);
-#endif
     startTimer("Downward pass");
     if( TOPDOWN ) {
       TopDown::downwardPass(cells);
@@ -90,7 +85,7 @@ public:
     if(printNow) printTreeData(cells);
   }
 
-  void approximate(Cells &icells, Cells &jcells) {
+  void evaluate(Cells &icells, Cells &jcells) {
     setRootCell(icells,jcells);
     startTimer("Traverse     ");
     traverse(false);

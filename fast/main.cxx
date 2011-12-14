@@ -57,9 +57,9 @@ int main() {
 #if BUILD
 #else
 #if IneJ
-  FMM.approximate(cells,cells);
+  FMM.evaluate(cells,cells);
 #else
-  FMM.approximate(cells);
+  FMM.evaluate(cells);
 #endif
   FMM.stopTimer("FMM          ",true);
   FMM.eraseTimer("FMM          ");

@@ -1,6 +1,8 @@
 include ../Makefile
 LFLAGS	+= -DIneJ
 #LFLAGS	+= -DBOTTOMUP
+#LFLAGS	+= -DHYBRID
+#LFLAGS	+= -DTREECODE
 
 a	: main.cxx
 	make cleanall
