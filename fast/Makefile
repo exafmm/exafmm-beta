@@ -1,15 +1,15 @@
 include ../Makefile
-#LFLAGS	+= -DIneJ
+LFLAGS	+= -DIneJ
 #LFLAGS	+= -DBOTTOMUP
 
 a	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DDIRECT -DIneJ
+	$(CXX) $? $(LFLAGS) -DDIRECT
 	./a.out
 
 b	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY -DIneJ
+	$(CXX) $? $(LFLAGS) -DMANY
 	./a.out
 
 c	: main.cxx

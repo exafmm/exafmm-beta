@@ -4,7 +4,6 @@
 #CUDA_INSTALL_PATH = /usr/local/cuda
 #SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
 VTK_INCLUDE_PATH = /usr/include/vtk-5.6
-QUARK_INCLUDE_PATH=/home/yokota/quark
 
 DEVICE  = cpu
 #DEVICE  = gpu
@@ -21,14 +20,12 @@ CXX     = mpicxx -O2 -fPIC -openmp -I../include
 endif
 NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_13\
 	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(SDK_INSTALL_PATH)/common/inc
-LFLAGS  = -D$(DEVICE) -D$(EXPAND)
+LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib -lquark
 ifeq ($(DEVICE),gpu)
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
 #CXX     += -I$(VTK_INCLUDE_PATH)
 #VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
-CXX	+= -I$(QUARK_INCLUDE_PATH)
-LFLAGS	+= -L$(QUARK_INCLUDE_PATH) -lquark
 OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)BiotSavart.o\
 	../kernel/$(DEVICE)$(EXPAND)Stretching.o ../kernel/$(DEVICE)$(EXPAND)Gaussian.o\
 	../kernel/$(DEVICE)$(EXPAND)CoulombVdW.o
@@ -38,7 +35,7 @@ OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)Biot
 .cu.o   :
 	$(NVCC) -c $? -o $@ $(LFLAGS)
 cleanall:
-	rm -rf `find .. -name "*.o" -o -name "*.out*" -o -name "*.dat" -o -name "*.a" -o -name "*.sum" -o -name "*.dot" -o -name "*.pdf"`
+	rm -rf `find .. -name "*.o" -o -name "*.out*" -o -name "*.dat" -o -name "*.sum" -o -name "*.dot" -o -name "*.pdf"`
 	rm -f ../unit_test/direct0*
 commit  :
 	hg commit
