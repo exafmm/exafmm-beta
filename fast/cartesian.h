@@ -615,7 +615,7 @@ public:
   }
 
   void P2P(C_iter C) const {
-    unsigned NJ = C->NDLEAF;
+    int NJ = C->NDLEAF;
     for( B_iter Bi=C->LEAF; Bi!=C->LEAF+C->NDLEAF; ++Bi, --NJ ) {
       real P0 = 0;
       vect F0 = 0;

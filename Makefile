@@ -25,10 +25,10 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 ifeq ($(DEVICE),gpu)
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
-CXX	+= -I$(QUARK_INCLUDE_PATH)
-LFLAGS	+= -L$(QUARK_INCLUDE_PATH) -lquark
 #CXX     += -I$(VTK_INCLUDE_PATH)
 #VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+CXX	+= -I$(QUARK_INCLUDE_PATH)
+LFLAGS	+= -L$(QUARK_INCLUDE_PATH) -lquark
 OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)BiotSavart.o\
 	../kernel/$(DEVICE)$(EXPAND)Stretching.o ../kernel/$(DEVICE)$(EXPAND)Gaussian.o\
 	../kernel/$(DEVICE)$(EXPAND)CoulombVdW.o
@@ -38,7 +38,7 @@ OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)Biot
 .cu.o   :
 	$(NVCC) -c $? -o $@ $(LFLAGS)
 cleanall:
-	rm -rf `find .. -name "*.o" -o -name "*.out*" -o -name "*.dat" -o -name "*.a" -o -name "*.sum"`
+	rm -rf `find .. -name "*.o" -o -name "*.out*" -o -name "*.dat" -o -name "*.a" -o -name "*.sum" -o -name "*.dot" -o -name "*.pdf"`
 	rm -f ../unit_test/direct0*
 commit  :
 	hg commit

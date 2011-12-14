@@ -52,8 +52,6 @@ int DEVICE  = 0;                                                //!< GPU device 
 int IMAGES  = 0;                                                //!< Number of periodic image sublevels
 real THETA  = .5;                                               //!< Box opening criteria
 vect Xperiodic = 0;                                             //!< Coordinate offset of periodic image
-Quark *quark;                                                   //!< Quark object
-Quark_Task_Flags tflags = Quark_Task_Flags_Initializer;         //!< Quark task flag
 #else
 extern int MPIRANK;                                             //!< MPI comm rank
 extern int MPISIZE;                                             //!< MPI comm size
@@ -61,8 +59,6 @@ extern int DEVICE;                                              //!< GPU device 
 extern int IMAGES;                                              //!< Number of periodic image sublevels
 extern real THETA;                                              //!< Box opening criteria
 extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
-extern Quark *quark;                                            //!< Quark object
-extern Quark_Task_Flags tflags;                                 //!< Quark task flag
 #endif
 
 const int  P       = 3;                                         //!< Order of expansions
@@ -170,10 +166,11 @@ typedef std::vector<Cell>::iterator    C_iter;                  //!< Iterator fo
 typedef std::vector<JCell>             JCells;                  //!< Vector of source cells
 typedef std::vector<JCell>::iterator   JC_iter;                 //!< Iterator for source cell vector
 
+typedef std::stack<C_iter>             Cstack;                  //!< Stack of cell iterators
 typedef std::pair<C_iter,C_iter>       Pair;                    //!< Pair of interacting cells
 typedef std::stack<Pair>               Pairs;                   //!< Stack of interacting cell pairs
 typedef std::list<C_iter>              List;                    //!< Interaction list
-typedef std::list<C_iter>::iterator    LC_iter;                 //!< Iterator for interaction list vector
+typedef std::list<C_iter>::iterator    LC_iter;                 //!< Iterator for interaction list
 typedef std::vector<List>              Lists;                   //!< Vector of interaction lists
 typedef std::map<C_iter,int>           Map;                     //!< Map of interaction lists
 typedef std::map<C_iter,int>::iterator MC_iter;                 //!< Iterator for interation list map

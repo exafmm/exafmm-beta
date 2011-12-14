@@ -4,12 +4,12 @@ include ../Makefile
 
 a	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DDIRECT
+	$(CXX) $? $(LFLAGS) -DDIRECT -DIneJ
 	./a.out
 
 b	: main.cxx
 	make cleanall
-	$(CXX) $? $(LFLAGS) -DMANY
+	$(CXX) $? $(LFLAGS) -DMANY -DIneJ
 	./a.out
 
 c	: main.cxx

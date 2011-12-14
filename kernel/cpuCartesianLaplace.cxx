@@ -531,7 +531,7 @@ void Kernel<Laplace>::M2L(Quark*, C_iter Ci, C_iter Cj) const {
   QUARK_Task_Flag_Set(&tflags ,TASK_LABEL,intptr_t(string) );
   QUARK_Insert_Task(quark,M2Lquark,&tflags,
                     sizeof(Cell)*1000000,&*Ci,INOUT,
-                    sizeof(Cell)*1000000,&*Cj,INOUT,
+                    sizeof(Cell)*1000000,&*Cj,INPUT,
                     0);
 }
 

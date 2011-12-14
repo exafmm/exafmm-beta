@@ -26,12 +26,11 @@ THE SOFTWARE.
 #elif Spherical
 #include "spherical.h"
 #endif
+#define splitFirst(Ci,Cj) Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT > Cj->RCRIT)
 
 class Evaluator : public Kernel {
 private:
   typedef std::pair<C_iter,C_iter> Pair;
-  mutable std::stack<C_iter> selfStack;
-  mutable std::stack<Pair> pairStack;
   real timeP2P;
   real timeM2P;
   real timeM2L;
@@ -54,16 +53,17 @@ private:
     return std::sqrt( dx*dx + dy*dy + dz*dz );
   }
 
-  void interact(C_iter C) {
+  void interact(C_iter C, Cstack &stack) {
     if(C->NCHILD == 0 || C->NDLEAF < 64) {
       P2P(C);
       NP2P++;
     } else {
-      selfStack.push(C);
+      stack.push(C);
     }
   }
 
-  void interact(C_iter Ci, C_iter Cj, bool mutual=true) {
+public:
+  void interact(C_iter Ci, C_iter Cj, Pairs &stack, bool mutual=true) {
     vect dX = Ci->X - Cj->X;
     real Rq = norm(dX);
     if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
@@ -98,13 +98,11 @@ private:
       NP2P++;
     } else {
       Pair pair(Ci,Cj);
-      pairStack.push(pair);
+      stack.push(pair);
     }
   }
 
-  bool splitFirst(C_iter Ci, C_iter Cj) const {
-    return Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT > Cj->RCRIT);
-  }
+  inline void interact(Quark*, C_iter Ci, C_iter Cj, bool mutual);
 
 protected:
   void setRootCell(Cells &cells) {
@@ -160,28 +158,30 @@ protected:
   }
 
   void traverse() {
-    interact(ROOT);
-    while(!selfStack.empty()) {
+    Cstack selfStack;
+    Pairs pairStack;
+    selfStack.push(ROOT);
+    while( !selfStack.empty() ) {
       C_iter C = selfStack.top();
       selfStack.pop();
       for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-        interact(Ci);
+        interact(Ci,selfStack);
         for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          interact(Ci,Cj);
+          interact(Ci,Cj,pairStack);
         }
       }
-      while(!pairStack.empty()) {
+      while( !pairStack.empty() ) {
         Pair Cij = pairStack.top();
         pairStack.pop();
         if(splitFirst(Cij.first,Cij.second)) {
           C = Cij.first;
           for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-            interact(Ci,Cij.second);
+            interact(Ci,Cij.second,pairStack);
           }
         } else {
           C = Cij.second;
           for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-            interact(Cij.first,Cj);
+            interact(Cij.first,Cj,pairStack);
           }
         }
       }
@@ -189,23 +189,33 @@ protected:
   }
 
   void traverse(bool mutual) {
+    Pairs pairStack;
     for( C_iter Cj=Cj0+ROOT->CHILD; Cj!=Cj0+ROOT->CHILD+ROOT->NCHILD; ++Cj ) {
       Pair pair(ROOT,Cj);
       pairStack.push(pair);
     }
-    while(!pairStack.empty()) {
+    while( !pairStack.empty() ) {
       Pair Cij = pairStack.top();
       pairStack.pop();
       if(splitFirst(Cij.first,Cij.second)) {
         C_iter C = Cij.first;
         for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-          interact(Ci,Cij.second,mutual);
+          interact(Ci,Cij.second,pairStack,mutual);
         }
       } else {
         C_iter C = Cij.second;
         for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          interact(Cij.first,Cj,mutual);
+          interact(Cij.first,Cj,pairStack,mutual);
         }
+      }
+      if( pairStack.size() > 40 ) {
+        Quark *quark = QUARK_New(4);
+        while( !pairStack.empty() ) {
+          Cij = pairStack.top();
+          pairStack.pop();
+          interact(quark,Cij.first,Cij.second,mutual);
+        }
+        QUARK_Delete(quark);
       }
     }
   }
@@ -262,4 +272,44 @@ public:
 
 };
 
+inline void interactQuark(Quark *quark) {
+  Evaluator *E;
+  C_iter CI, CJ, Ci0, Cj0;
+  bool mutual;
+  quark_unpack_args_6(quark,E,CI,CJ,Ci0,Cj0,mutual);
+  Pairs privateStack;
+  Pair pair(CI,CJ);
+  privateStack.push(pair);
+  while( !privateStack.empty() ) {
+    Pair Cij = privateStack.top();
+    privateStack.pop();
+    if(splitFirst(Cij.first,Cij.second)) {
+      C_iter C = Cij.first;
+      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
+        E->interact(Ci,Cij.second,privateStack,mutual);
+      }
+    } else {
+      C_iter C = Cij.second;
+      for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
+        E->interact(Cij.first,Cj,privateStack,mutual);
+      }
+    }
+  }
+}
+
+void Evaluator::interact(Quark *quark, C_iter Ci, C_iter Cj, bool mutual) {
+  Quark_Task_Flags tflags = Quark_Task_Flags_Initializer;
+  char string[256];
+  sprintf(string,"%d %d",int(Ci-Ci0),int(Cj-Cj0));
+  QUARK_Task_Flag_Set(&tflags,TASK_LABEL,intptr_t(string) );
+  QUARK_Insert_Task(quark,interactQuark,&tflags,
+                    sizeof(Evaluator),this,NODEP,
+                    sizeof(Cell),&*Ci,INOUT,
+                    sizeof(Cell),&*Cj,NODEP,
+                    sizeof(Cell),&*Ci0,NODEP,
+                    sizeof(Cell),&*Cj0,NODEP,
+                    sizeof(bool),&mutual,VALUE,
+                    0);
+}
+#undef splitFirst
 #endif
