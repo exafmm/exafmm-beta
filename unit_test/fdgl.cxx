@@ -76,6 +76,7 @@ void initVertices() {
   int end = numVertices;
   splitRange(begin,end,MPIRANK,MPISIZE);
   localVertices = end - begin;
+  srand48(0);
   for( int i=0; i<numVertices; ++i ) {
     Vertex vertex;
     vertex.Id = graph->AddVertex();
@@ -99,7 +100,7 @@ void readEdges(std::ifstream &fid) {
     fid >> line0 >> line1;
   }
   int prevSrc=0, crntSrc=-1;
-  while( !fid.eof() ) {
+  while( !fid.eof() && atoi(line0.c_str()) < end ) {
     crntSrc = atoi(line0.c_str()) - begin;
     if (crntSrc != prevSrc) {
       vertices[prevSrc].Iend = edges.size();
@@ -196,8 +197,9 @@ void setEdges() {
     for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
       for( int i=V->Ista; i<V->Iend; ++i ) {
         // Data comes in duplicates - only add src <= dest
-        if (V->Id < verticesG[edges[i]].Id)
+        if (V->Id < verticesG[edges[i]].Id) {
           graph->AddEdge(V->Id, verticesG[edges[i]].Id);
+        }
       }
     }
     shiftVertices();
@@ -225,7 +227,7 @@ void repulsion(ParallelFMM<Laplace> &FMM) {
   vect Xmax = B->X;
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V, ++B ) {
     B->X = V->X;
-    B->SRC = -0.001 * radius;
+    B->SRC = -100;
     B->TRG = 0;
     B->IBODY = V-vertices.begin();
     B->IPROC = MPIRANK;
@@ -273,23 +275,8 @@ void spring() {
       JV_iter VJ = jvertices.begin()+i;
       vect dist = VI->X - VJ->X;
       float R = sqrtf(norm(dist) + EPS2);
-      VI->F -= dist / R * (R - l);
-    }
-  }
-}
-
-void springWeighted() {
-  float l = 2 / pow(numVertices,1./3);
-  for( V_iter VI=vertices.begin(); VI!=vertices.end(); ++VI ) {
-    for( int i=VI->Ista; i<VI->Iend; ++i ) {
-      JV_iter VJ = jvertices.begin()+i;
-      vect dist = VI->X - VJ->X;
-      int vSrcDeg = VI->Iend - VI->Ista;
-      int vTrgDeg = VJ->Iend - VJ->Ista;
-      float weight = (vSrcDeg==vTrgDeg)?(1.0/vTrgDeg):
-                  abs(vSrcDeg-vTrgDeg)/std::max(vSrcDeg,vTrgDeg);
-      float R = sqrtf(norm(dist) + EPS2);
-      VI->F -= dist / R * (R - l) * weight;
+      float weight = (VI->Iend-VI->Ista) * (VJ->Iend-VJ->Ista);
+      VI->F -= dist / R * (R - l / weight);
     }
   }
 }
@@ -298,8 +285,8 @@ void moveVertices() {
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
     vect dX;
     if( norm(V->F) < 1e-6 ) dX = 0;
-    else dX = V->F / std::sqrt(norm(V->F)) * 0.001 * radius;
-    if( norm(V->X) < 10000 ) V->X += dX;
+    else dX = V->F / std::sqrt(norm(V->F));
+    V->X += dX;
   }
 }
 
@@ -333,8 +320,17 @@ int main() {
   ParallelFMM<Laplace> FMM;
   FMM.initialize();
   std::string fileid="jagmesh1_v936_e2664";
-//  std::string fileid="test1_v19905_e30238";
-  bool useEW=false;
+//  std::string fileid="add32_v4960_e9462";
+//  std::string fileid="4elt_v15606_e45878";
+//  std::string fileid="finan512_v74752_e261120";
+//  std::string fileid="uni-socialgraph-anonymized_v59216214_e92522012";
+//  std::string fileid="mhrw-socialgraph-anonymized_v72261577_e159189465";
+//  std::string fileid="uplrg_v1000_e2000";
+//  std::string fileid="uplrg_v10000_e20000";
+//  std::string fileid="uplrg_v100000_e200000";
+//  std::string fileid="uplrg_v1000000_e2000000";
+//  std::string fileid="uplrg_v10000000_e20000000";
+//  std::string fileid="uplrg_v100000000_e200000000";
 
   t0 = get_time();
   readGraph(fileid);
@@ -350,11 +346,7 @@ int main() {
 
     t0 = get_time();
     commVertices();
-    if (useEW) {
-      springWeighted();
-    } else {
-      spring();
-    }
+    spring();
     t[2] += get_time() - t0;
 
     t0 = get_time();
@@ -366,7 +358,7 @@ int main() {
     t[4] += get_time() - t0;
 
     t0 = get_time();
-    if( MPIRANK == 0 ) drawGraph();
+    if( MPIRANK == 0 && step % 10 == 0 ) drawGraph();
     t[5] += get_time() - t0;
 
     t0 = get_time();

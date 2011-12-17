@@ -90,7 +90,7 @@ vtk: vtk.cxx $(OBJECT)
 
 fdgl: fdgl.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
-	$(SERIALRUN)
+	$(PARALLELRUN)
 
 cuprintf: cuprintf.cu
 	$(NVCC) $? $(LFLAGS)
