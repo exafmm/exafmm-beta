@@ -53,7 +53,6 @@ public:
   using Kernel<equation>::sortBodies;                           //!< Sort bodies according to cell index
   using Kernel<equation>::sortCells;                            //!< Sort cells according to cell index
   using Kernel<equation>::R0;                                   //!< Radius of root cell
-  using Kernel<equation>::Xperiodic;                            //!< Coordinate offset of periodic image
   using TreeStructure<equation>::buffer;                        //!< Buffer for MPI communication & sorting
   using TreeStructure<equation>::getLevel;                      //!< Get level from cell index
   using TreeStructure<equation>::getCenter;                     //!< Get cell center and radius from cell index

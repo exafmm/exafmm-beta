@@ -32,7 +32,7 @@ protected:
   C_iter      CiE;                                              //!< icells end per call
   C_iter      CjB;                                              //!< jcells begin per call
   C_iter      CjE;                                              //!< jcells end per call
-  Pairs       pairs;                                            //!< Stack of interacting cell pairs
+  PairStack   pairStack;                                        //!< Stack of interacting cell pairs
   Lists       listM2L;                                          //!< M2L interaction list
   Lists       listM2P;                                          //!< M2P interaction list
   Lists       listP2P;                                          //!< P2P interaction list
@@ -301,10 +301,10 @@ public:
       Iperiodic = Icenter;                                      //  Set periodic image flag to center
       Xperiodic = 0;                                            //  Set periodic coordinate offset
       Pair pair(root,jroot);                                    //  Form pair of root cells
-      pairs.push(pair);                                         //  Push pair to stack
-      while( !pairs.empty() ) {                                 //  While interaction stack is not empty
-        pair = pairs.top();                                     //   Get interaction pair from top of stack
-        pairs.pop();                                            //   Pop interaction stack
+      pairStack.push(pair);                                     //  Push pair to stack
+      while( !pairStack.empty() ) {                             //  While interaction stack is not empty
+        pair = pairStack.top();                                 //   Get interaction pair from top of stack
+        pairStack.pop();                                        //   Pop interaction stack
         switch (method) {                                       //   Swtich between methods
         case 0 : treecode(pair.first,pair.second); break;       //    0 : treecode
         case 1 : FMM(pair.first,pair.second);      break;       //    1 : FMM
@@ -321,10 +321,10 @@ public:
             Xperiodic[1] = iy * 2 * R0;                         //     Coordinate offset for y periodic direction
             Xperiodic[2] = iz * 2 * R0;                         //     Coordinate offset for z periodic direction
             Pair pair(root,jroot);                              //     Form pair of root cells
-            pairs.push(pair);                                   //     Push pair to stack
-            while( !pairs.empty() ) {                           //     While interaction stack is not empty
-              pair = pairs.top();                               //      Get interaction pair from top of stack
-              pairs.pop();                                      //      Pop interaction stack
+            pairStack.push(pair);                               //     Push pair to stack
+            while( !pairStack.empty() ) {                       //     While interaction stack is not empty
+              pair = pairStack.top();                           //      Get interaction pair from top of stack
+              pairStack.pop();                                  //      Pop interaction stack
               switch (method) {                                 //      Swtich between methods
               case 0 : treecode(pair.first,pair.second); break; //       0 : treecode
               case 1 : FMM(pair.first,pair.second);      break; //       1 : FMM

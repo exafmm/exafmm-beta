@@ -31,10 +31,9 @@ void Evaluator<equation>::testMACM2L(C_iter Ci, C_iter Cj) {    // Test MAC for 
   real R = std::sqrt(norm(dist));                               // Distance between cells
   if( Ci->R + Cj->R > THETA*R ) {                               // If cell is too large
     Pair pair(Ci,Cj);                                           //  Form pair of interacting cells
-    pairs.push(pair);                                           //  Push interacting pair into stack
+    pairStack.push(pair);                                       //  Push interacting pair into stack
   } else {                                                      // If cell is small enough
     M2L(Ci,Cj);                                                 //  Perform M2L kernel
-//    M2L(quark,Ci,Cj);
     NM2L++;                                                     //  Count M2L kernel execution
   }                                                             // Endif for interaction
 }
@@ -45,7 +44,7 @@ void Evaluator<equation>::testMACM2P(C_iter Ci, C_iter Cj) {    // Test MAC for 
   real R = std::sqrt(norm(dist));                               // Distance between cells
   if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {            // If target is not twig or cell is too large
     Pair pair(Ci,Cj);                                           //  Form pair of interacting cells
-    pairs.push(pair);                                           //  Push interacting pair into stack
+    pairStack.push(pair);                                       //  Push interacting pair into stack
   } else {                                                      // If target is twig and cell is small enough
     M2P(Ci,Cj);                                                 //  Perform M2P kernel
     NM2P++;                                                     //  Count M2P kernel execution
