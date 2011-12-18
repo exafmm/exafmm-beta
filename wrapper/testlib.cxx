@@ -61,7 +61,7 @@ int main() {
   }
   for( int i=0; i!=nat; ++i ) {
     gscale[i*nat+i] = drand48();
-    double dummy = drand48();
+    drand48();
     rscale[i*nat+i] = drand48();
   }
   for( int i=0; i!=nat; ++i ) {
@@ -82,7 +82,7 @@ int main() {
       double dx = xi[3*i+0] - xj[3*j+0];
       double dy = xi[3*i+1] - xj[3*j+1];
       double dz = xi[3*i+2] - xj[3*j+2];
-      double R2 = dx * dx + dy * dy + dz * dz;
+      double R2 = dx * dx + dy * dy + dz * dz + 1e-6;
       double invR = 1 / sqrtf(R2);
       if( R2 == 0 ) invR = 0;
       double invR3 = qj[j] * invR * invR * invR;

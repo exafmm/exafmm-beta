@@ -83,7 +83,7 @@ void Evaluator<equation>::traversePeriodic(Cells &cells, Cells &jcells, int meth
   Xperiodic = 0;                                                // Set periodic coordinate offset
   C_iter Cj = jcells.end()-1;                                   // Initialize iterator for periodic source cell
   for( int level=0; level<IMAGES-1; ++level ) {                 // Loop over sublevels of tree
-    for( int I=0; I!=26; ++I, --Cj ) {                          //  Loop over periodic images (exclude center)
+    for( int I=0; I!=26*27; ++I, --Cj ) {                       //  Loop over periodic images (exclude center)
       switch (method) {                                         //   Switch between method
       case 0 :                                                  //   0 : treecode
         for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) { //   Loop over cells

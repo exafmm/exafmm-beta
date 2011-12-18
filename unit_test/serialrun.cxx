@@ -31,7 +31,7 @@ int main() {
   THETA = 1 / sqrtf(4);
   Bodies bodies(numBodies);
   Bodies jbodies;
-  Cells cells,jcells;
+  Cells cells, jcells;
   SerialFMM<Laplace> FMM;
   FMM.initialize();
   FMM.printNow = true;

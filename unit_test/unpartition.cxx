@@ -31,7 +31,7 @@ int main() {
   THETA = 1 / sqrtf(4);
   Bodies bodies(numBodies);
   Bodies jbodies;
-  Cells cells;
+  Cells cells, jcells;
   ParallelFMM<Laplace> FMM;
   FMM.initialize();
   if( MPIRANK == 0 ) FMM.printNow = true;
@@ -79,7 +79,7 @@ int main() {
   FMM.commBodies(cells);
 
   jbodies = bodies;
-  Cells jcells = cells;
+  jcells = cells;
   FMM.commCells(jbodies,jcells);
 
   FMM.startTimer("Downward     ");

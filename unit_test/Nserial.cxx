@@ -30,7 +30,7 @@ int main() {
   IMAGES = 0;
   THETA = 1 / sqrtf(4);
   Bodies bodies, jbodies;
-  Cells cells;
+  Cells cells, jcells;
   SerialFMM<Laplace> FMM;
   FMM.initialize();
 
@@ -47,7 +47,8 @@ int main() {
 #else
     FMM.bottomup(bodies,cells);
 #endif
-    FMM.downward(cells,cells,1);
+    jcells = cells;
+    FMM.downward(cells,jcells,1);
     FMM.stopTimer("FMM          ",true);
     FMM.eraseTimer("FMM          ");
 

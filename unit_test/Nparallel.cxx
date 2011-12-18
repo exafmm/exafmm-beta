@@ -30,7 +30,7 @@ int main() {
   IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic FMM)
   THETA = 1 / sqrtf(4);                                         // Multipole acceptace criteria
   Bodies bodies, jbodies;                                       // Define vector of bodies
-  Cells cells;                                                  // Define vector of cells
+  Cells cells, jcells;                                          // Define vector of cells
   ParallelFMM<Laplace> FMM;                                     // Instantiate ParallelFMM class
   FMM.initialize();                                             // Initialize FMM
   bool printNow = MPIRANK == 0;                                 // Print only if MPIRANK == 0
@@ -51,7 +51,7 @@ int main() {
 #endif
     FMM.commBodies(cells);                                      //  Send bodies (not receiving yet)
     jbodies = bodies;                                           //  Vector of source bodies
-    Cells jcells = cells;                                       //  Vector of source cells
+    jcells = cells;                                             //  Vector of source cells
     FMM.commCells(jbodies,jcells);                              //  Communicate cells (receive bodies here)
 
     FMM.downward(cells,jcells,1);                               //  Downward sweep

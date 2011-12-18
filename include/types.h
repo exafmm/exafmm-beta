@@ -62,7 +62,7 @@ extern real THETA;                                              //!< Box opening
 extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
 #endif
 
-const int  P       = 3;                                         //!< Order of expansions
+const int  P       = 10;                                        //!< Order of expansions
 const int  NCRIT   = 100;                                       //!< Number of bodies per cell
 const int  MAXBODY = 200000;                                    //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL = 10000000;                                  //!< Maximum number of bodies/coefs in cell per GPU kernel
@@ -156,11 +156,6 @@ struct Cell {
   real     RCRIT;                                               //!< Critical cell radius
   Mset     M;                                                   //!< Multipole coefficients
   Lset     L;                                                   //!< Local coefficients
-#if QUEUEING
-  typedef std::vector<Cell>::iterator  C_iter;
-  std::list<C_iter> listP2P;
-  std::list<C_iter> listM2L;
-#endif
 };
 typedef std::vector<Cell>              Cells;                   //!< Vector of cells
 typedef std::vector<Cell>::iterator    C_iter;                  //!< Iterator for cell vector

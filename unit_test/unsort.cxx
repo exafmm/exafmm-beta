@@ -32,7 +32,7 @@ int main() {
   Bodies bodies(numBodies);
   Bodies bodies2;
   Bodies jbodies;
-  Cells cells,jcells;
+  Cells cells, jcells;
   SerialFMM<Laplace> FMM;
   FMM.initialize();
   FMM.printNow = true;

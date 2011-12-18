@@ -32,7 +32,7 @@ int main() {
   Bodies bodies(numTarget);
   Bodies jbodies(numBodies);
   Bodies jbodies2;
-  Cells cells,jcells;
+  Cells cells, jcells;
   ParallelFMM<Laplace> FMM;
   FMM.initialize();
   if( MPIRANK == 0 ) FMM.printNow = true;

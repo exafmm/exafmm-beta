@@ -42,9 +42,9 @@ void MPI_Shift(double *var, int n) {
 }
 
 extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* fi,
-  int nj, double* xj, double* qj, double rscale, int tblno, double size, int periodicflag) {
+  int nj, double* xj, double* qj, double, int tblno, double size, int periodicflag) {
   IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
-  THETA = 1/sqrtf(3);
+  THETA = .5;
   vect shift = size/2;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
@@ -132,7 +132,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
   int nj, double* xj, int* atypej, int nat, double* gscale, double* rscale,
   int tblno, double size, int periodicflag) {
   IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
-  THETA = 1/sqrtf(3);
+  THETA = .5;
   vect shift = size/2;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;

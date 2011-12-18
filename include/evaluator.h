@@ -287,7 +287,7 @@ public:
     C_iter root = cells.end() - 1;                              // Iterator for root target cell
     C_iter jroot = jcells.end() - 1;                            // Iterator for root source cell
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
-      jroot = jcells.end() - 1 - 26 * (IMAGES - 1);             //  The root is not at the end
+      jroot = jcells.end() - 1 - 26 * 27 * (IMAGES - 1);        //  The root is not at the end
     }                                                           // Endif for periodic boundary condition
     Ci0 = cells.begin();                                        // Set begin iterator for target cells
     Cj0 = jcells.begin();                                       // Set begin iterator for source cells
@@ -350,11 +350,31 @@ public:
     Cells pccells, pjcells;                                     // Periodic jcells for M2L/M2P & M2M
     pccells.push_back(jcells.back());                           // Root cell is first periodic cell
     for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
+      Cell cell;                                                //  New periodic cell at next sublevel
       C_iter C = pccells.end() - 1;                             //  Set previous periodic cell as source
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
-            Cell cell;                                          //     New periodic jcell for M2M
+            if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
+              for( int cx=-1; cx<=1; ++cx ) {                   //      Loop over x periodic direction (child)
+                for( int cy=-1; cy<=1; ++cy ) {                 //       Loop over y periodic direction (child)
+                  for( int cz=-1; cz<=1; ++cz ) {               //        Loop over z periodic direction (child)
+                    cell.X[0]  = C->X[0] + (ix * 6 + cx * 2) * C->R;//     Set new x coordinate for periodic image
+                    cell.X[1]  = C->X[1] + (iy * 6 + cy * 2) * C->R;//     Set new y cooridnate for periodic image
+                    cell.X[2]  = C->X[2] + (iz * 6 + cz * 2) * C->R;//     Set new z coordinate for periodic image
+                    cell.M     = C->M;                          //         Copy multipoles to new periodic image
+                    cell.NDLEAF = cell.NCHILD = 0;              //         Initialize NDLEAF & NCHILD
+                    jcells.push_back(cell);                     //         Push cell into periodic jcell vector
+                  }                                             //        End loop over z periodic direction (child)
+                }                                               //       End loop over y periodic direction (child)
+              }                                                 //      End loop over x periodic direction (child)
+            }                                                   //     Endif for periodic center cell
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
             cell.X[0] = C->X[0] + ix * 2 * C->R;                //     Set new x coordinate for periodic image
             cell.X[1] = C->X[1] + iy * 2 * C->R;                //     Set new y cooridnate for periodic image
             cell.X[2] = C->X[2] + iz * 2 * C->R;                //     Set new z coordinate for periodic image
@@ -363,9 +383,8 @@ public:
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
-      Cell cell;                                                //  New periodic cell at next sublevel
       cell.X = C->X;                                            //  This is the center cell
-      cell.R = 3 * C->R;                                        //  The cell size increase three times
+      cell.R = 3 * C->R;                                        //  The cell size increases three times
       pccells.push_back(cell);                                  //  Push cell into periodic cell vector
       C_iter Ci = pccells.end() - 1;                            //  Set current cell as target for M2M
       while( !pjcells.empty() ) {                               //  While there are periodic jcells remaining
@@ -373,20 +392,6 @@ public:
         M2M(Ci,Cj);                                             //   Perform M2M kernel on CPU
         pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
       }                                                         //  End while for remaining periodic jcells
-      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
-        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
-          for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
-            if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
-              cell.X[0]  = Ci->X[0] + ix * 2 * Ci->R;           //      Set new x coordinate for periodic image
-              cell.X[1]  = Ci->X[1] + iy * 2 * Ci->R;           //      Set new y cooridnate for periodic image
-              cell.X[2]  = Ci->X[2] + iz * 2 * Ci->R;           //      Set new z coordinate for periodic image
-              cell.M     = Ci->M;                               //      Copy multipoles to new periodic image
-              cell.NDLEAF = cell.NCHILD = 0;                    //      Initialize NDLEAF & NCHILD
-              jcells.push_back(cell);                           //      Push cell into periodic jcell vector
-            }                                                   //     Endif for periodic center cell
-          }                                                     //    End loop over z periodic direction
-        }                                                       //   End loop over y periodic direction
-      }                                                         //  End loop over x periodic direction
     }                                                           // End loop over sublevels of tree
   }
 

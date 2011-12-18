@@ -31,7 +31,7 @@ int main() {
   THETA = 1 / sqrtf(4);
   Bodies bodies(numBodies);
   Bodies jbodies;
-  Cells cells;
+  Cells cells, jcells;
   ParallelFMM<Laplace> FMM;
   TreeStructure<Laplace> FMM2;
   FMM.initialize();
@@ -80,7 +80,7 @@ int main() {
   FMM.initTarget(bodies);
   FMM.evalP2M(cells);
   FMM.evalM2M(cells);
-  Cells jcells = cells;
+  jcells = cells;
   if( MPISIZE != 1 ) {
     #pragma omp parallel sections num_threads(2)
     {
