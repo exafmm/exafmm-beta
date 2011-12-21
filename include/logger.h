@@ -27,7 +27,7 @@ THE SOFTWARE.
 //! Timer and Trace logger
 class Logger {
 private:
-  std::ofstream   file;                                         //!< File ID to store log
+  std::ofstream   timerFile;                                    //!< File ID to store log
   Timer           beginTimer;                                   //!< Timer base value
   Timer           timer;                                        //!< Stores timings for all events
   Traces          traces;                                       //!< Stores traces for all events
@@ -45,13 +45,13 @@ public:
 
 //! Constructor
   Logger() {
-    file.open("time.dat");                                      // Open timer log file
+    timerFile.open("time.dat");                                 // Open timer log file
     printNow = false;                                           // Don't print by default
     pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
   }
 //! Destructor
   ~Logger() {
-    file.close();                                               // Close timer log file
+    timerFile.close();                                          // Close timer log file
   }
 
 //! Start timer for given event
@@ -92,7 +92,7 @@ public:
 //! Write timings of all events
   inline void writeTime() {
     for( TI_iter E=timer.begin(); E!=timer.end(); ++E ) {       // Loop over all events
-      file << E->first << " " << E->second << std::endl;        //  Print event and timer
+      timerFile << E->first << " " << E->second << std::endl;   //  Print event and timer
     }                                                           // End loop over all events
   }
 
@@ -117,14 +117,13 @@ public:
 
 //! Write traces of all events
   inline void writeTrace() {
-    FILE *fid = fopen("trace.svg", "w");
+    std::ofstream traceFile("trace.svg");
     double scale = 30000.0;
-    fprintf(fid,
-      "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-      "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
-      "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
-      "  width=\"200mm\" height=\"40mm\" viewBox=\"0 0 20000 4000\">\n"
-      "  <g>\n" );
+    traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+        << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
+        << "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
+        << "  width=\"200mm\" height=\"40mm\" viewBox=\"0 0 20000 4000\">\n"
+        << "  <g>\n";
     int num_thread = 0;
     ThreadMap threadMap;
     double base = traces.front().begin;
@@ -140,18 +139,14 @@ public:
       }
       begin -= base;
       end   -= base;
-      fprintf(fid,
-        "    "
-        "<rect x=\"%.2lf\" y=\"%.0lf\" width=\"%.2lf\" height=\"%.0lf\" "
-        "fill=\"#%06x\" stroke=\"#000000\" stroke-width=\"1\"/>\n",
-        begin * scale,
-        (threadMap[thread] - 1) * 100.0,
-        (end - begin) * scale,
-        90.0,
-        color);
+      traceFile << "    <rect x=\"" << begin * scale
+          << "\" y=\"" << (threadMap[thread] - 1) * 100.0
+          << "\" width=\"" << (end - begin) * scale
+          << "\" height=\"90.0\" fill=\"#"<< std::setfill('0') << std::setw(6) << std::hex << color
+          << "\" stroke=\"#000000\" stroke-width=\"1\"/>\n";
     }
-    fprintf(fid,"  </g>\n" "</svg>\n");
-    fclose(fid);
+    traceFile << "  </g>\n" "</svg>\n";
+    traceFile.close();
   }
 };
 

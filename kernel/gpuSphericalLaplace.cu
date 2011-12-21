@@ -85,23 +85,23 @@ void Kernel<Laplace>::allocate() {
   cudaThreadSynchronize();
   startTimer("cudaMalloc   ");
   if( keysHost.size() > keysDevcSize ) {
-    if( keysDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(keysDevc));
-    CUDA_SAFE_CALL(cudaMalloc( (void**) &keysDevc, keysHost.size()*sizeof(int) ));
+    if( keysDevcSize != 0 ) cudaFree(keysDevc);
+    cudaMalloc( (void**) &keysDevc, keysHost.size()*sizeof(int) );
     keysDevcSize = keysHost.size();
   }
   if( rangeHost.size() > rangeDevcSize ) {
-    if( rangeDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(rangeDevc));
-    CUDA_SAFE_CALL(cudaMalloc( (void**) &rangeDevc, rangeHost.size()*sizeof(int) ));
+    if( rangeDevcSize != 0 ) cudaFree(rangeDevc);
+    cudaMalloc( (void**) &rangeDevc, rangeHost.size()*sizeof(int) );
     rangeDevcSize = rangeHost.size();
   }
   if( sourceHost.size() > sourceDevcSize ) {
-    if( sourceDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(sourceDevc));
-    CUDA_SAFE_CALL(cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(gpureal) ));
+    if( sourceDevcSize != 0 ) cudaFree(sourceDevc);
+    cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(gpureal) );
     sourceDevcSize = sourceHost.size();
   }
   if( targetHost.size() > targetDevcSize ) {
-    if( targetDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(targetDevc));
-    CUDA_SAFE_CALL(cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(gpureal) ));
+    if( targetDevcSize != 0 ) cudaFree(targetDevc);
+    cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(gpureal) );
     targetDevcSize = targetHost.size();
   }
   cudaThreadSynchronize();

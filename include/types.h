@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <list>
 #include <map>
