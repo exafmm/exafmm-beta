@@ -33,7 +33,6 @@ int main() {
   Bodies jbodies;
   Cells cells, jcells;
   ParallelFMM<Laplace> FMM;
-  TreeStructure<Laplace> FMM2;
   FMM.initialize();
   if( MPIRANK == 0 ) FMM.printNow = true;
 
@@ -99,7 +98,6 @@ int main() {
     FMM.eraseLocalTree(jcells);
   }
   FMM.downward(cells,jcells,1);
-  FMM.copyTime(FMM2.timer);
   if(FMM.printNow) FMM.writeTime();
   if(FMM.printNow) FMM.writeTime();
 

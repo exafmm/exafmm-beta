@@ -91,6 +91,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
   FMM.unpartition(bodies);
   std::sort(bodies.begin(),bodies.end());
 
+#if 0
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
     xi[3*i+0] = B->X[0];
@@ -108,8 +109,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
       break;
     }
   }
-
-/*
+#else
   for( int irank=0; irank!=MPISIZE; ++irank ) {
     MPI_Shift(xj,3*nj);
     MPI_Shift(qj,nj);
@@ -125,7 +125,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
       }
     }
   }
-*/
+#endif
 }
 
 extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
@@ -173,6 +173,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
   FMM.downward(cells,jcells,1);
   std::sort(bodies.begin(),bodies.end());
 
+#if 0
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
     xi[3*i+0] = B->X[0];
@@ -190,8 +191,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
       break;
     }
   }
-
-/*
+#else
   for( int i=0; i<ni; i++ ) {
     for( int j=0; j<nj; j++ ) {
       double dx = xi[3*i+0] - xj[3*j+0];
@@ -211,5 +211,5 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
       }
     }
   }
-*/
+#endif
 }

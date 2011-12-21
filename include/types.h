@@ -62,14 +62,15 @@ extern real THETA;                                              //!< Box opening
 extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
 #endif
 
-const int  P       = 10;                                        //!< Order of expansions
-const int  NCRIT   = 100;                                       //!< Number of bodies per cell
-const int  MAXBODY = 200000;                                    //!< Maximum number of bodies per GPU kernel
-const int  MAXCELL = 10000000;                                  //!< Maximum number of bodies/coefs in cell per GPU kernel
-const real CLET    = 2;                                         //!< LET opening critetia
-const real EPS2    = 1e-6;                                      //!< Softening parameter
-const int  GPUS    = 3;                                         //!< Number of GPUs per node
-const int  THREADS = 64;                                        //!< Number of threads per thread-block
+const int  P        = 3;                                        //!< Order of expansions
+const int  NCRIT    = 8;                                        //!< Number of bodies per cell
+const int  MAXBODY  = 200000;                                   //!< Maximum number of bodies per GPU kernel
+const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
+const real CLET     = 2;                                        //!< LET opening critetia
+const real EPS2     = 1e-6;                                     //!< Softening parameter
+const int  GPUS     = 3;                                        //!< Number of GPUs per node
+const int  THREADS  = 64;                                       //!< Number of threads per thread-block
+const int  PTHREADS = 4;                                        //!< Number of pthreads in quark
 
 const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
@@ -83,8 +84,19 @@ typedef vec<3*NTERM,complex>                   Mset;            //!< Multipole c
 typedef vec<3*NTERM,complex>                   Lset;            //!< Local coefficient type for spherical
 #endif
 typedef std::vector<bigint>                    Bigints;         //!< Vector of big integer types
-typedef std::map<std::string,double>           Event;           //!< Map of event name to logged value
-typedef std::map<std::string,double>::iterator E_iter;          //!< Iterator for event name map
+
+//! Structure for pthread based trace
+struct Trace {
+  pthread_t thread;
+  double    begin;
+  double    end;
+  int       color;
+};
+typedef std::map<pthread_t,double>             ThreadTrace;     //!< Map of pthread id to traced value
+typedef std::map<pthread_t,int>                ThreadMap;       //!< Map of pthread id to thread id
+typedef std::queue<Trace>                      Traces;          //!< Queue of traces
+typedef std::map<std::string,double>           Timer;           //!< Map of timer event name to timed value
+typedef std::map<std::string,double>::iterator TI_iter;         //!< Iterator for timer event name map
 
 enum Equation {                                                 //!< Equation type enumeration
   Laplace,                                                      //!< Laplace potential + force

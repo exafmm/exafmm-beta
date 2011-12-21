@@ -27,6 +27,7 @@ THE SOFTWARE.
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkGraphWriter.h>
+#include <vtkViewTheme.h>
 #include "parallelfmm.h"
 
 struct JVertex {
@@ -291,6 +292,13 @@ void moveVertices() {
 }
 
 void drawGraph() {
+  vtkViewTheme* theme = vtkViewTheme::New();
+  theme->SetBackgroundColor(1.,1.,1.);
+  theme->SetBackgroundColor2(1.,1.,1.);
+  theme->SetPointColor(.2,.2,.2);
+  theme->SetCellColor(.2,.2,.2);
+  view->ApplyViewTheme(theme);
+  theme->Delete();
   view->AddRepresentationFromInput(graph);
   view->SetLayoutStrategy("Pass Through");
   view->GetInteractor()->GetRenderWindow()->SetSize(700,700);

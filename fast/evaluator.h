@@ -30,7 +30,6 @@ THE SOFTWARE.
 
 class Evaluator : public Kernel {
 private:
-  typedef std::pair<C_iter,C_iter> Pair;
   real timeP2P;
   real timeM2P;
   real timeM2L;
@@ -228,6 +227,7 @@ protected:
       }
     }
     QUARK_Delete(quark);
+    writeTrace();
   }
 
 public:
@@ -270,6 +270,8 @@ inline void interactQuark(Quark *quark) {
   C_iter CI, CJ, Ci0, Cj0;
   bool mutual;
   quark_unpack_args_6(quark,E,CI,CJ,Ci0,Cj0,mutual);
+  ThreadTrace beginTrace;
+  E->startTracer(beginTrace);
   PairQueue privateQueue;
   Pair pair(CI,CJ);
   privateQueue.push(pair);
@@ -288,6 +290,7 @@ inline void interactQuark(Quark *quark) {
       }
     }
   }
+  E->stopTracer(beginTrace,0x0000ff);
 }
 
 void Evaluator::interact(C_iter Ci, C_iter Cj, Quark *quark, bool mutual) {
