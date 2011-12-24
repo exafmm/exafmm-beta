@@ -81,8 +81,8 @@ const int NTERM = P*(P+1)/2;                                    //!< Number of S
 typedef vec<MTERM,real>                        Mset;            //!< Multipole coefficient type for Cartesian
 typedef vec<LTERM,real>                        Lset;            //!< Local coefficient type for Cartesian
 #elif Spherical
-typedef vec<3*NTERM,complex>                   Mset;            //!< Multipole coefficient type for spherical
-typedef vec<3*NTERM,complex>                   Lset;            //!< Local coefficient type for spherical
+typedef vec<NTERM,complex>                     Mset;            //!< Multipole coefficient type for spherical
+typedef vec<NTERM,complex>                     Lset;            //!< Local coefficient type for spherical
 #endif
 typedef std::vector<bigint>                    Bigints;         //!< Vector of big integer types
 

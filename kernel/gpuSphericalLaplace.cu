@@ -55,7 +55,7 @@ void Kernel<Laplace>::M2M(C_iter Ci, C_iter Cj) const {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += Cj->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+            M += Cj->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
                * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
@@ -64,12 +64,12 @@ void Kernel<Laplace>::M2M(C_iter Ci, C_iter Cj) const {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
-            M += std::conj(Cj->M[3*jnkms]) * Ynm[nm]
+            M += std::conj(Cj->M[jnkms]) * Ynm[nm]
                * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
       }
-      Ci->M[3*jks] += M;
+      Ci->M[jks] += M;
     }
   }
 }
@@ -85,23 +85,23 @@ void Kernel<Laplace>::allocate() {
   cudaThreadSynchronize();
   startTimer("cudaMalloc   ");
   if( keysHost.size() > keysDevcSize ) {
-    if( keysDevcSize != 0 ) cudaFree(keysDevc);
-    cudaMalloc( (void**) &keysDevc, keysHost.size()*sizeof(int) );
+    if( keysDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(keysDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &keysDevc, keysHost.size()*sizeof(int) ));
     keysDevcSize = keysHost.size();
   }
   if( rangeHost.size() > rangeDevcSize ) {
-    if( rangeDevcSize != 0 ) cudaFree(rangeDevc);
-    cudaMalloc( (void**) &rangeDevc, rangeHost.size()*sizeof(int) );
+    if( rangeDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(rangeDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &rangeDevc, rangeHost.size()*sizeof(int) ));
     rangeDevcSize = rangeHost.size();
   }
   if( sourceHost.size() > sourceDevcSize ) {
-    if( sourceDevcSize != 0 ) cudaFree(sourceDevc);
-    cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(gpureal) );
+    if( sourceDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(sourceDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(gpureal) ));
     sourceDevcSize = sourceHost.size();
   }
   if( targetHost.size() > targetDevcSize ) {
-    if( targetDevcSize != 0 ) cudaFree(targetDevc);
-    cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(gpureal) );
+    if( targetDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(targetDevc));
+    CUDA_SAFE_CALL(cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(gpureal) ));
     targetDevcSize = targetHost.size();
   }
   cudaThreadSynchronize();
@@ -112,11 +112,11 @@ template<>
 void Kernel<Laplace>::hostToDevice() {
   cudaThreadSynchronize();
   startTimer("cudaMemcpy   ");
-  cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),cudaMemcpyHostToDevice);
-  cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),cudaMemcpyHostToDevice);
-  cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice);
-  cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice);
-  cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(gpureal));
+  CUDA_SAFE_CALL(cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
+  CUDA_SAFE_CALL(cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(gpureal)));
   cudaThreadSynchronize();
   stopTimer("cudaMemcpy   ");
 }
@@ -125,7 +125,7 @@ template<>
 void Kernel<Laplace>::deviceToHost() {
   cudaThreadSynchronize();
   startTimer("cudaMemcpy   ");
-  cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(gpureal),cudaMemcpyDeviceToHost);
+  CUDA_SAFE_CALL(cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(gpureal),cudaMemcpyDeviceToHost));
   cudaThreadSynchronize();
   stopTimer("cudaMemcpy   ");
 }
@@ -183,9 +183,9 @@ __global__ void LaplaceP2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
   __shared__ gpureal targetShrd[3];
   __shared__ gpureal sourceShrd[4*THREADS];
   int itarget = blockIdx.x * THREADS;
-  targetShrd[0] = targetGlob[6*itarget+0];
-  targetShrd[1] = targetGlob[6*itarget+1];
-  targetShrd[2] = targetGlob[6*itarget+2];
+  targetShrd[0] = targetGlob[2*itarget+0];
+  targetShrd[1] = targetGlob[2*itarget+1];
+  targetShrd[2] = targetGlob[2*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     int size  = rangeGlob[keys+3*ilist+2];
@@ -228,8 +228,8 @@ __global__ void LaplaceP2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
+  targetGlob[2*itarget+0] = target[0];
+  targetGlob[2*itarget+1] = target[1];
 }
 
 template<>
@@ -307,13 +307,13 @@ __global__ void LaplaceM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
-    d.x = targetGlob[6*itarget+0] - sourceGlob[begin+0];
-    d.y = targetGlob[6*itarget+1] - sourceGlob[begin+1];
-    d.z = targetGlob[6*itarget+2] - sourceGlob[begin+2];
+    d.x = targetGlob[2*itarget+0] - sourceGlob[begin+0];
+    d.y = targetGlob[2*itarget+1] - sourceGlob[begin+1];
+    d.z = targetGlob[2*itarget+2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
     gpureal rho,alpha,beta;
@@ -322,8 +322,8 @@ __global__ void LaplaceM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     LaplaceM2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
+  targetGlob[2*itarget+0] = target[0];
+  targetGlob[2*itarget+1] = target[1];
 }
 
 template<>
@@ -399,8 +399,8 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     int Iperiodic = rangeGlob[keys+3*ilist+3];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
     int I = 0;
@@ -412,13 +412,12 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
             d.x = ix * D0;
             d.y = iy * D0;
             d.z = iz * D0;
-            d.x += targetGlob[6*itarget+0] - sourceGlob[begin+0];
-            d.y += targetGlob[6*itarget+1] - sourceGlob[begin+1];
-            d.z += targetGlob[6*itarget+2] - sourceGlob[begin+2];
+            d.x += targetGlob[2*itarget+0] - sourceGlob[begin+0];
+            d.y += targetGlob[2*itarget+1] - sourceGlob[begin+1];
+            d.z += targetGlob[2*itarget+2] - sourceGlob[begin+2];
             gpureal rho,alpha,beta;
             cart2sph(rho,alpha,beta,d.x,d.y,d.z);
             evalLocal(YnmShrd,rho,alpha,factShrd);
-//            if(blockIdx.x==0&&threadIdx.x==0) cuPrintf("%d %f %f\n",ilist,rho,YnmShrd[166]);
             LaplaceM2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
           }
         }
@@ -426,8 +425,8 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[6*itarget+0] = target[0] * 1e-6;
-  targetGlob[6*itarget+1] = target[1] * 1e-6;
+  targetGlob[2*itarget+0] = target[0] * 1e-6;
+  targetGlob[2*itarget+1] = target[1] * 1e-6;
 }
 
 template<>
@@ -520,8 +519,8 @@ __global__ void LaplaceM2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     int Iperiodic = rangeGlob[keys+3*ilist+3];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
     int I = 0;
@@ -728,13 +727,13 @@ __global__ void LaplaceL2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
-    d.x = targetGlob[6*itarget+0] - sourceGlob[begin+0];
-    d.y = targetGlob[6*itarget+1] - sourceGlob[begin+1];
-    d.z = targetGlob[6*itarget+2] - sourceGlob[begin+2];
+    d.x = targetGlob[2*itarget+0] - sourceGlob[begin+0];
+    d.y = targetGlob[2*itarget+1] - sourceGlob[begin+1];
+    d.z = targetGlob[2*itarget+2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
     gpureal rho,alpha,beta;
@@ -743,8 +742,8 @@ __global__ void LaplaceL2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     LaplaceL2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
+  targetGlob[2*itarget+0] = target[0];
+  targetGlob[2*itarget+1] = target[1];
 }
 
 template<>
@@ -839,8 +838,8 @@ __global__ void LaplaceL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     d.z = targetX[2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
     gpureal r,theta,phi;

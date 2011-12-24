@@ -48,12 +48,12 @@ void Evaluator<equation>::setSourceCell(bool isM) {             // Set source bu
     sourceHost.push_back(Cj->X[1]);                             //  Copy y position to GPU buffer
     sourceHost.push_back(Cj->X[2]);                             //  Copy z position to GPU buffer
     if( isM ) {                                                 //  If source is M
-      for( int i=0; i!=3*NTERM; ++i ) {                         //   Loop over coefs in source cell
+      for( int i=0; i!=NTERM; ++i ) {                           //   Loop over coefs in source cell
         sourceHost.push_back((Cj->M[i]).real());                //    Copy real multipole to GPU buffer
         sourceHost.push_back((Cj->M[i]).imag());                //    Copy imaginary multipole to GPU buffer
       }                                                         //   End loop over coefs
     } else {                                                    //  If source is L
-      for( int i=0; i!=3*NTERM; ++i ) {                         //   Loop over coefs in source cell
+      for( int i=0; i!=NTERM; ++i ) {                           //   Loop over coefs in source cell
         sourceHost.push_back((Cj->L[i]).real());                //    Copy real multipole to GPU buffer
         sourceHost.push_back((Cj->L[i]).imag());                //    Copy imaginary multipole to GPU buffer
       }                                                         //   End loop over coefs
@@ -124,10 +124,10 @@ void Evaluator<equation>::setTargetCell(Lists lists, Maps flags) {// Set target 
       targetHost.push_back(Ci->X[0]);                           //   Copy x position to GPU buffer
       targetHost.push_back(Ci->X[1]);                           //   Copy y position to GPU buffer
       targetHost.push_back(Ci->X[2]);                           //   Copy z position to GPU buffer
-      for( int i=0; i!=6*NTERM; ++i ) {                         //   Loop over coefs in target cell
+      for( int i=0; i!=2*NTERM; ++i ) {                         //   Loop over coefs in target cell
         targetHost.push_back(0);                                //    Pad GPU buffer
       }                                                         //   End loop over coefs
-      int numPad = 6 * THREADS - 6 * NTERM - 3;                 //   Number of elements to pad in target GPU buffer
+      int numPad = 2 * THREADS - 2 * NTERM - 3;                 //   Number of elements to pad in target GPU buffer
       assert(numPad >= 0);                                      //   THREADS must be large enough
       for( int i=0; i!=numPad; ++i ) {                          //   Loop over elements to pad
         targetHost.push_back(0);                                //    Pad GPU buffer
@@ -162,12 +162,12 @@ void Evaluator<equation>::getTargetCell(Lists &lists, bool isM) {// Get body val
     if( !lists[Ci-Ci0].empty() ) {                              //  If the interation list is not empty
       int begin = targetBegin[Ci];                              //   Offset of target coefs
       if( isM ) {                                               //   If target is M
-        for( int i=0; i!=3*NTERM; ++i ) {                       //    Loop over coefs in target cell
+        for( int i=0; i!=NTERM; ++i ) {                         //    Loop over coefs in target cell
           Ci->M[i].real() += targetHost[begin+2*i+0];           //     Copy real target values from GPU buffer
           Ci->M[i].imag() += targetHost[begin+2*i+1];           //     Copy imaginary target values from GPU buffer
         }                                                       //    End loop over coefs
       } else {                                                  //   If target is L
-        for( int i=0; i!=3*NTERM; ++i ) {                       //    Loop over coefs in target cell
+        for( int i=0; i!=NTERM; ++i ) {                         //    Loop over coefs in target cell
           Ci->L[i].real() += targetHost[begin+2*i+0];           //     Copy real target values from GPU buffer
           Ci->L[i].imag() += targetHost[begin+2*i+1];           //     Copy imaginary target values from GPU buffer
         }                                                       //    End loop over coefs
@@ -370,7 +370,7 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
 template<Equation equation>
 void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
   Ci0 = cells.begin();                                          // Set begin iterator for target
-  const int numCell = MAXCELL / NTERM / 6;                      // Number of cells per icall
+  const int numCell = MAXCELL / NTERM / 2;                      // Number of cells per icall
   int numIcall = int(cells.size()-1) / numCell + 1;             // Number of icall loops
   int level = getLevel(Ci0->ICELL);                             // Level of twig
   while( level != -1 ) {                                        // While level of target is not past root level
@@ -389,7 +389,7 @@ void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
             C_iter Cj = Ci0 + Ci->CHILD+i;                      //      Set iterator for source cell
             listM2M[Ci-Ci0].push_back(Cj);                      //      Push source cell into M2M interaction list
             flagM2M[Ci-Ci0][Cj] |= Icenter;                     //      Flip bit of periodic image flag
-            sourceSize[Cj] = 6 * NTERM;                         //      Key : iterator, Value : number of coefs
+            sourceSize[Cj] = 2 * NTERM;                         //      Key : iterator, Value : number of coefs
           }                                                     //     End loop over child cells
         }                                                       //    Endif for current level
       }                                                         //   End loop over cells
@@ -411,7 +411,7 @@ void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
 template<Equation equation>
 void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {  // Evaluate M2L
   Ci0 = cells.begin();                                          // Set begin iterator
-  const int numCell = MAXCELL / NTERM / 6;                      // Number of cells per icall
+  const int numCell = MAXCELL / NTERM / 2;                      // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0 * kernel;                                     // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
@@ -422,7 +422,7 @@ void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {  // Evaluate M2L
     for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over target cells
       for( LC_iter L=listM2L[Ci-Ci0].begin(); L!=listM2L[Ci-Ci0].end(); ++L ) {//  Loop over interaction list
         C_iter Cj = *L;                                         //    Set source cell
-        sourceSize[Cj] = 6 * NTERM;                             //    Key : iterator, Value : number of coefs
+        sourceSize[Cj] = 2 * NTERM;                             //    Key : iterator, Value : number of coefs
       }                                                         //   End loop over interaction list
     }                                                           //  End loop over target cells
     stopTimer("Get list     ");                                 //  Stop timer
@@ -454,7 +454,7 @@ void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {  // Evaluate M2P
     for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over target cells
       for( LC_iter L=listM2P[Ci-Ci0].begin(); L!=listM2P[Ci-Ci0].end(); ++L ) {//  Loop over interaction list
         C_iter Cj = *L;                                         //    Set source cell
-        sourceSize[Cj] = 6 * NTERM;                             //    Key : iterator, Value : number of coefs
+        sourceSize[Cj] = 2 * NTERM;                             //    Key : iterator, Value : number of coefs
       }                                                         //   End loop over interaction list
     }                                                           //  End loop over target cells
     stopTimer("Get list     ");                                 //  Stop timer
@@ -507,7 +507,7 @@ void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate P2P
 template<Equation equation>
 void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate L2L
   Ci0 = cells.begin();                                          // Set begin iterator
-  const int numCell = MAXCELL / NTERM / 6;                      // Number of cells per icall
+  const int numCell = MAXCELL / NTERM / 2;                      // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int maxLevel = getLevel(Ci0->ICELL);                          // Level of twig
   int level = 1;                                                // Start level from 1
@@ -526,7 +526,7 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate L2L
           listL2L[Ci-Ci0].push_back(Cj);                        //     Push source cell into L2L interaction list
           flagL2L[Ci-Ci0][Cj] |= Icenter;                       //     Flip bit of periodic image flag
           if( sourceSize[Cj] == 0 ) {                           //     If the source cell has not been stored yet
-            sourceSize[Cj] = 6 * NTERM;                         //      Key : iterator, Value : number of coefs
+            sourceSize[Cj] = 2 * NTERM;                         //      Key : iterator, Value : number of coefs
           }                                                     //     Endif for current level
         }                                                       //    Endif for stored source cell
       }                                                         //   End loop over cells topdown
@@ -562,7 +562,7 @@ void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate L2P
       if( Ci->NCHILD == 0 ) {                                   //   If cell is a twig evaluate L2P kernel
         listL2P[Ci-Ci0].push_back(Ci);                          //    Push source cell into L2P interaction list
         flagL2P[Ci-Ci0][Ci] |= Icenter;                         //    Flip bit of periodic image flag
-        sourceSize[Ci] = 6 * NTERM;                             //    Key : iterator, Value : number of coefs
+        sourceSize[Ci] = 2 * NTERM;                             //    Key : iterator, Value : number of coefs
       }                                                         //   Endif for twig cells
     }                                                           //  End loop over cells topdown
     stopTimer("Get list     ");                                 //  Stop timer

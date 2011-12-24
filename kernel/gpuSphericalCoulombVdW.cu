@@ -53,7 +53,7 @@ void Kernel<CoulombVdW>::M2M(C_iter Ci, C_iter Cj) const {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += Cj->M[3*jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
+            M += Cj->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
                * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
@@ -62,18 +62,19 @@ void Kernel<CoulombVdW>::M2M(C_iter Ci, C_iter Cj) const {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
-            M += std::conj(Cj->M[3*jnkms]) * Ynm[nm]
+            M += std::conj(Cj->M[jnkms]) * Ynm[nm]
                * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
       }
-      Ci->M[3*jks] += M;
+      Ci->M[jks] += M;
     }
   }
 }
 
 template<>
-void Kernel<CoulombVdW>::finalize() {}
+void Kernel<CoulombVdW>::finalize() {
+}
 
 template<>
 void Kernel<CoulombVdW>::allocate() {
@@ -178,9 +179,9 @@ __global__ void CoulombVdWP2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   __shared__ gpureal targetShrd[3];
   __shared__ gpureal sourceShrd[4*THREADS];
   int itarget = blockIdx.x * THREADS;
-  targetShrd[0] = targetGlob[6*itarget+0];
-  targetShrd[1] = targetGlob[6*itarget+1];
-  targetShrd[2] = targetGlob[6*itarget+2];
+  targetShrd[0] = targetGlob[2*itarget+0];
+  targetShrd[1] = targetGlob[2*itarget+1];
+  targetShrd[2] = targetGlob[2*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     int size  = rangeGlob[keys+3*ilist+2];
@@ -223,8 +224,8 @@ __global__ void CoulombVdWP2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
+  targetGlob[2*itarget+0] = target[0];
+  targetGlob[2*itarget+1] = target[1];
 }
 
 template<>
@@ -302,13 +303,13 @@ __global__ void CoulombVdWM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
-    d.x = targetGlob[6*itarget+0] - sourceGlob[begin+0];
-    d.y = targetGlob[6*itarget+1] - sourceGlob[begin+1];
-    d.z = targetGlob[6*itarget+2] - sourceGlob[begin+2];
+    d.x = targetGlob[2*itarget+0] - sourceGlob[begin+0];
+    d.y = targetGlob[2*itarget+1] - sourceGlob[begin+1];
+    d.z = targetGlob[2*itarget+2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
     gpureal rho,alpha,beta;
@@ -317,8 +318,8 @@ __global__ void CoulombVdWM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     CoulombVdWM2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
+  targetGlob[2*itarget+0] = target[0];
+  targetGlob[2*itarget+1] = target[1];
 }
 
 template<>
@@ -394,8 +395,8 @@ __global__ void CoulombVdWM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     int Iperiodic = rangeGlob[keys+3*ilist+3];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
     int I = 0;
@@ -407,9 +408,9 @@ __global__ void CoulombVdWM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *target
             d.x = ix * D0;
             d.y = iy * D0;
             d.z = iz * D0;
-            d.x += targetGlob[6*itarget+0] - sourceGlob[begin+0];
-            d.y += targetGlob[6*itarget+1] - sourceGlob[begin+1];
-            d.z += targetGlob[6*itarget+2] - sourceGlob[begin+2];
+            d.x += targetGlob[2*itarget+0] - sourceGlob[begin+0];
+            d.y += targetGlob[2*itarget+1] - sourceGlob[begin+1];
+            d.z += targetGlob[2*itarget+2] - sourceGlob[begin+2];
             gpureal rho,alpha,beta;
             cart2sph(rho,alpha,beta,d.x,d.y,d.z);
             evalLocal(YnmShrd,rho,alpha,factShrd);
@@ -420,8 +421,8 @@ __global__ void CoulombVdWM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[6*itarget+0] = target[0] * 1e-6;
-  targetGlob[6*itarget+1] = target[1] * 1e-6;
+  targetGlob[2*itarget+0] = target[0] * 1e-6;
+  targetGlob[2*itarget+1] = target[1] * 1e-6;
 }
 
 template<>
@@ -514,8 +515,8 @@ __global__ void CoulombVdWM2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     int Iperiodic = rangeGlob[keys+3*ilist+3];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
     int I = 0;
@@ -564,7 +565,9 @@ __device__ inline void CoulombVdWP2P_core(gpureal *target, gpureal *targetX, gpu
   d.y -= sourceShrd[4*i+1];
   d.z += targetX[2];
   d.z -= sourceShrd[4*i+2];
-  gpureal invR = rsqrtf(d.x * d.x + d.y * d.y + d.z * d.z + EPS2);
+  gpureal R2 = d.x * d.x + d.y * d.y + d.z * d.z + EPS2;
+  gpureal invR = rsqrtf(R2);
+  if( R2 == 0 ) invR = 0;
   gpureal invR3 = sourceShrd[4*i+3] * invR * invR * invR;
   target[0] += sourceShrd[4*i+3] * invR;
   target[1] -= d.x * invR3;
@@ -720,13 +723,13 @@ __global__ void CoulombVdWL2L_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
-    d.x = targetGlob[6*itarget+0] - sourceGlob[begin+0];
-    d.y = targetGlob[6*itarget+1] - sourceGlob[begin+1];
-    d.z = targetGlob[6*itarget+2] - sourceGlob[begin+2];
+    d.x = targetGlob[2*itarget+0] - sourceGlob[begin+0];
+    d.y = targetGlob[2*itarget+1] - sourceGlob[begin+1];
+    d.z = targetGlob[2*itarget+2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
     gpureal rho,alpha,beta;
@@ -735,8 +738,8 @@ __global__ void CoulombVdWL2L_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     CoulombVdWL2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
+  targetGlob[2*itarget+0] = target[0];
+  targetGlob[2*itarget+1] = target[1];
 }
 
 template<>
@@ -831,8 +834,8 @@ __global__ void CoulombVdWL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     d.z = targetX[2] - sourceGlob[begin+2];
     __syncthreads();
     if( threadIdx.x < NTERM ) {
-      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+6*threadIdx.x+3];
-      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+6*threadIdx.x+4];
+      sourceShrd[2*threadIdx.x+0] = sourceGlob[begin+2*threadIdx.x+3];
+      sourceShrd[2*threadIdx.x+1] = sourceGlob[begin+2*threadIdx.x+4];
     }
     __syncthreads();
     gpureal r,theta,phi;
