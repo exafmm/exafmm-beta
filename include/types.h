@@ -110,11 +110,7 @@ struct JBody {
   int         IPROC;                                            //!< Initial process numbering for partitioning back
   unsigned    ICELL;                                            //!< Cell index
   vect        X;                                                //!< Position
-#if Cartesian
-  vec<1,real> SRC;                                              //!< Scalar source values
-#elif Spherical
-  vec<4,real> SRC;                                              //!< Scalar+vector source values
-#endif
+  real        SRC;                                              //!< Scalar source values
 };
 //! Structure of bodies
 struct Body : JBody {

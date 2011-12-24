@@ -83,8 +83,8 @@ private:
     real m = 0;                                                 // Mass accumulator
     vect X = 0;                                                 // Moment accumulator
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NDLEAF; ++B ) {        // Loop over leafs
-      m += B->SRC[0];                                           //  Accumulate mass
-      X += B->X * B->SRC[0];                                    //  Accumulate moment
+      m += B->SRC;                                              //  Accumulate mass
+      X += B->X * B->SRC;                                       //  Accumulate moment
     }                                                           // End loop over leafs
     X /= m;                                                     // Center of mass
     C->X = X;                                                   // Set center of twig cell to center of mass

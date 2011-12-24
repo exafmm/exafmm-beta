@@ -369,7 +369,7 @@ public:
       for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {
         vect dR = Bi->X - Bj->X;
         real D1 = norm(dR) + EPS2;
-        real D0 = Bi->SRC[0] * Bj->SRC[0];
+        real D0 = Bi->SRC * Bj->SRC;
         real XX = 1.0 / D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
@@ -396,7 +396,7 @@ public:
       for( B_iter Bj=Bi+1; Bj!=Bi+NJ; ++Bj ) {
         vect dR = Bi->X - Bj->X;
         real D1 = norm(dR) + EPS2;
-        real D0 = Bi->SRC[0] * Bj->SRC[0];
+        real D0 = Bi->SRC * Bj->SRC;
         real XX = 1.0 / D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
@@ -423,7 +423,7 @@ public:
       real rho, alpha, beta;
       cart2sph(rho,alpha,beta,dist);
       evalMultipole(rho,alpha,-beta);
-      Terms<P-1,P-1>::P2M(C->M,B->SRC[0],Ynm);
+      Terms<P-1,P-1>::P2M(C->M,B->SRC,Ynm);
     }
     C->RCRIT = std::min(C->R,Rmax);
   }
@@ -491,16 +491,16 @@ public:
       for( int n=0; n!=P; ++n ) {
         int nm  = n * n + n;
         int nms = n * (n + 1) / 2;
-        B->TRG[0] -= B->SRC[0] * (Cj->M[nms] * Ynm[nm]).real();
-        spherical[0] -= B->SRC[0] * (Cj->M[nms] * Ynm[nm]).real() / r * (n+1);
-        spherical[1] += B->SRC[0] * (Cj->M[nms] * YnmTheta[nm]).real();
+        B->TRG[0] -= B->SRC * (Cj->M[nms] * Ynm[nm]).real();
+        spherical[0] -= B->SRC * (Cj->M[nms] * Ynm[nm]).real() / r * (n+1);
+        spherical[1] += B->SRC * (Cj->M[nms] * YnmTheta[nm]).real();
         for( int m=1; m<=n; ++m ) {
           nm  = n * n + n + m;
           nms = n * (n + 1) / 2 + m;
-          B->TRG[0] -= 2 * B->SRC[0] * (Cj->M[nms] * Ynm[nm]).real();
-          spherical[0] -= 2 * B->SRC[0] * (Cj->M[nms] *Ynm[nm]).real() / r * (n+1);
-          spherical[1] += 2 * B->SRC[0] * (Cj->M[nms] *YnmTheta[nm]).real();
-          spherical[2] += 2 * B->SRC[0] * (Cj->M[nms] *Ynm[nm] * I).real() * m;
+          B->TRG[0] -= 2 * B->SRC * (Cj->M[nms] * Ynm[nm]).real();
+          spherical[0] -= 2 * B->SRC * (Cj->M[nms] *Ynm[nm]).real() / r * (n+1);
+          spherical[1] += 2 * B->SRC * (Cj->M[nms] *YnmTheta[nm]).real();
+          spherical[2] += 2 * B->SRC * (Cj->M[nms] *Ynm[nm] * I).real() * m;
         }
       }
       sph2cart(r,theta,phi,spherical,cartesian);
@@ -519,16 +519,16 @@ public:
         for( int n=0; n!=P; ++n ) {
           int nm  = n * n + n;
           int nms = n * (n + 1) / 2;
-          B->TRG[0] -= B->SRC[0] * (Ci->M[nms] * Ynm[nm]).real();
-          spherical[0] -= B->SRC[0] * (Ci->M[nms] * Ynm[nm]).real() / r * (n+1);
-          spherical[1] += B->SRC[0] * (Ci->M[nms] * YnmTheta[nm]).real();
+          B->TRG[0] -= B->SRC * (Ci->M[nms] * Ynm[nm]).real();
+          spherical[0] -= B->SRC * (Ci->M[nms] * Ynm[nm]).real() / r * (n+1);
+          spherical[1] += B->SRC * (Ci->M[nms] * YnmTheta[nm]).real();
           for( int m=1; m<=n; ++m ) {
             nm  = n * n + n + m;
             nms = n * (n + 1) / 2 + m;
-            B->TRG[0] -= 2 * B->SRC[0] * (Ci->M[nms] * Ynm[nm]).real();
-            spherical[0] -= 2 * B->SRC[0] * (Ci->M[nms] *Ynm[nm]).real() / r * (n+1);
-            spherical[1] += 2 * B->SRC[0] * (Ci->M[nms] *YnmTheta[nm]).real();
-            spherical[2] += 2 * B->SRC[0] * (Ci->M[nms] *Ynm[nm] * I).real() * m;
+            B->TRG[0] -= 2 * B->SRC * (Ci->M[nms] * Ynm[nm]).real();
+            spherical[0] -= 2 * B->SRC * (Ci->M[nms] *Ynm[nm]).real() / r * (n+1);
+            spherical[1] += 2 * B->SRC * (Ci->M[nms] *YnmTheta[nm]).real();
+            spherical[2] += 2 * B->SRC * (Ci->M[nms] *Ynm[nm] * I).real() * m;
           }
         }
         sph2cart(r,theta,phi,spherical,cartesian);
@@ -576,7 +576,7 @@ public:
     const complex I(0.,1.);
     for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
       vect dist = B->X - Ci->X;
-      B->TRG /= B->SRC[0];
+      B->TRG /= B->SRC;
       vect spherical = 0;
       vect cartesian = 0;
       real r, theta, phi;

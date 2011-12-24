@@ -140,8 +140,8 @@ protected:
     real m = 0;
     vect X = 0;
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-      m += B->SRC[0];
-      X += B->X * B->SRC[0];
+      m += B->SRC;
+      X += B->X * B->SRC;
     }
     for( C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; ++c ) {
       m += std::abs(c->M[0]);

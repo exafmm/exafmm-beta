@@ -483,7 +483,7 @@ void Kernel<CoulombVdW>::P2M(C_iter Ci) const {
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;
     Lset M;
-    M[0] = B->SRC[0];
+    M[0] = B->SRC;
     Terms<0,0,P-1>::power(M,dist);
     Ci->M[0] += M[0];
     for( int i=1; i<MTERM; ++i ) Ci->M[i] += M[i+3];
@@ -518,7 +518,7 @@ void Kernel<CoulombVdW>::M2P(C_iter Ci, C_iter Cj) const {
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Cj->X - Xperiodic;
     real invR2 = 1 / norm(dist);
-    real invR  = B->SRC[0] * Cj->M[0] * std::sqrt(invR2);
+    real invR  = B->SRC * Cj->M[0] * std::sqrt(invR2);
     Lset C;
     getCoef(C,dist,invR2,invR);
     sumM2P(B,C,Cj->M);

@@ -55,7 +55,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
     B->X[0]   = xi[3*i+0];
     B->X[1]   = xi[3*i+1];
     B->X[2]   = xi[3*i+2];
-    B->SRC[0] = qi[i];
+    B->SRC = qi[i];
     switch (tblno) {
     case 0 :
       B->TRG[1] = -fi[3*i+0];
@@ -75,7 +75,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
     B->X[0]   = xj[3*i+0];
     B->X[1]   = xj[3*i+1];
     B->X[2]   = xj[3*i+2];
-    B->SRC[0] = qj[i];
+    B->SRC = qj[i];
   }
 
   FMM.initialize();
@@ -97,7 +97,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
     xi[3*i+0] = B->X[0];
     xi[3*i+1] = B->X[1];
     xi[3*i+2] = B->X[2];
-    qi[i]     = B->SRC[0];
+    qi[i]     = B->SRC;
     switch (tblno) {
     case 0 :
       fi[3*i+0] = -B->TRG[1];
@@ -143,7 +143,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
     B->X[0]   = xi[3*i+0];
     B->X[1]   = xi[3*i+1];
     B->X[2]   = xi[3*i+2];
-    B->SRC[1] = atypei[i] + .5;
+    B->SRC = atypei[i] + .5;
     switch (tblno) {
     case 2 :
       B->TRG[1] = fi[3*i+0];
@@ -162,7 +162,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
     B->X[0]   = xj[3*i+0];
     B->X[1]   = xj[3*i+1];
     B->X[2]   = xj[3*i+2];
-    B->SRC[1] = atypej[i] + .5;
+    B->SRC = atypej[i] + .5;
   }
 
 
@@ -179,7 +179,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
     xi[3*i+0] = B->X[0];
     xi[3*i+1] = B->X[1];
     xi[3*i+2] = B->X[2];
-    atypei[i] = B->SRC[1];
+    atypei[i] = B->SRC;
     switch (tblno) {
     case 2 :
       fi[3*i+0] = B->TRG[1];

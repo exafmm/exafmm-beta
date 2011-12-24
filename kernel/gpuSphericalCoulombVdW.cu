@@ -188,10 +188,10 @@ __global__ void CoulombVdWP2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
       int isource = begin + iblok * THREADS + threadIdx.x;
       __syncthreads();
-      sourceShrd[4*threadIdx.x+0] = sourceGlob[7*isource+0];
-      sourceShrd[4*threadIdx.x+1] = sourceGlob[7*isource+1];
-      sourceShrd[4*threadIdx.x+2] = sourceGlob[7*isource+2];
-      sourceShrd[4*threadIdx.x+3] = sourceGlob[7*isource+3];
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
       __syncthreads();
       for( int i=0; i<THREADS; ++i ) {
         float3 d;
@@ -207,10 +207,10 @@ __global__ void CoulombVdWP2M_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     int isource = begin + iblok * THREADS + threadIdx.x;
     __syncthreads();
     if( threadIdx.x < size - iblok * THREADS ) {
-      sourceShrd[4*threadIdx.x+0] = sourceGlob[7*isource+0];
-      sourceShrd[4*threadIdx.x+1] = sourceGlob[7*isource+1];
-      sourceShrd[4*threadIdx.x+2] = sourceGlob[7*isource+2];
-      sourceShrd[4*threadIdx.x+3] = sourceGlob[7*isource+3];
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
     }
     __syncthreads();
     for( int i=0; i<size-iblok*THREADS; ++i ) {
@@ -507,9 +507,9 @@ __global__ void CoulombVdWM2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   }
   __syncthreads();
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetX[0] = targetGlob[6*itarget+0];
-  targetX[1] = targetGlob[6*itarget+1];
-  targetX[2] = targetGlob[6*itarget+2];
+  targetX[0] = targetGlob[4*itarget+0];
+  targetX[1] = targetGlob[4*itarget+1];
+  targetX[2] = targetGlob[4*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin     = rangeGlob[keys+3*ilist+1];
     int Iperiodic = rangeGlob[keys+3*ilist+3];
@@ -539,10 +539,10 @@ __global__ void CoulombVdWM2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
       }
     }
   }
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
-  targetGlob[6*itarget+2] = target[2];
-  targetGlob[6*itarget+3] = target[3];
+  targetGlob[4*itarget+0] = target[0];
+  targetGlob[4*itarget+1] = target[1];
+  targetGlob[4*itarget+2] = target[2];
+  targetGlob[4*itarget+3] = target[3];
 }
 
 template<>
@@ -583,9 +583,9 @@ __global__ void CoulombVdWP2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   gpureal target[4] = {0, 0, 0, 0};
   __shared__ gpureal sourceShrd[4*THREADS];
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetX[0] = targetGlob[6*itarget+0];
-  targetX[1] = targetGlob[6*itarget+1];
-  targetX[2] = targetGlob[6*itarget+2];
+  targetX[0] = targetGlob[4*itarget+0];
+  targetX[1] = targetGlob[4*itarget+1];
+  targetX[2] = targetGlob[4*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin     = rangeGlob[keys+3*ilist+1];
     int size      = rangeGlob[keys+3*ilist+2];
@@ -593,10 +593,10 @@ __global__ void CoulombVdWP2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     for( int iblok=0; iblok<(size-1)/THREADS; ++iblok ) {
       int isource = begin + iblok * THREADS + threadIdx.x;
       __syncthreads();
-      sourceShrd[4*threadIdx.x+0] = sourceGlob[7*isource+0];
-      sourceShrd[4*threadIdx.x+1] = sourceGlob[7*isource+1];
-      sourceShrd[4*threadIdx.x+2] = sourceGlob[7*isource+2];
-      sourceShrd[4*threadIdx.x+3] = sourceGlob[7*isource+3];
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
       __syncthreads();
       int I = 0;
       for( int ix=-1; ix<=1; ++ix ) {
@@ -620,10 +620,10 @@ __global__ void CoulombVdWP2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     int isource = begin + iblok * THREADS + threadIdx.x;
     __syncthreads();
     if( threadIdx.x < size - iblok * THREADS ) {
-      sourceShrd[4*threadIdx.x+0] = sourceGlob[7*isource+0];
-      sourceShrd[4*threadIdx.x+1] = sourceGlob[7*isource+1];
-      sourceShrd[4*threadIdx.x+2] = sourceGlob[7*isource+2];
-      sourceShrd[4*threadIdx.x+3] = sourceGlob[7*isource+3];
+      sourceShrd[4*threadIdx.x+0] = sourceGlob[4*isource+0];
+      sourceShrd[4*threadIdx.x+1] = sourceGlob[4*isource+1];
+      sourceShrd[4*threadIdx.x+2] = sourceGlob[4*isource+2];
+      sourceShrd[4*threadIdx.x+3] = sourceGlob[4*isource+3];
     }
     __syncthreads();
     int I = 0;
@@ -645,10 +645,10 @@ __global__ void CoulombVdWP2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
       }
     }
   }
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
-  targetGlob[6*itarget+2] = target[2];
-  targetGlob[6*itarget+3] = target[3];
+  targetGlob[4*itarget+0] = target[0];
+  targetGlob[4*itarget+1] = target[1];
+  targetGlob[4*itarget+2] = target[2];
+  targetGlob[4*itarget+3] = target[3];
 }
 
 template<>
@@ -823,9 +823,9 @@ __global__ void CoulombVdWL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
   }
   __syncthreads();
   int itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetX[0] = targetGlob[6*itarget+0];
-  targetX[1] = targetGlob[6*itarget+1];
-  targetX[2] = targetGlob[6*itarget+2];
+  targetX[0] = targetGlob[4*itarget+0];
+  targetX[1] = targetGlob[4*itarget+1];
+  targetX[2] = targetGlob[4*itarget+2];
   for( int ilist=0; ilist<numList; ++ilist ) {
     int begin = rangeGlob[keys+3*ilist+1];
     float3 d;
@@ -842,10 +842,10 @@ __global__ void CoulombVdWL2P_GPU(int *keysGlob, int *rangeGlob, gpureal *target
     cart2sph(r,theta,phi,d.x,d.y,d.z);
     CoulombVdWL2P_core(target,r,theta,phi,factShrd,sourceShrd);
   }
-  targetGlob[6*itarget+0] = target[0];
-  targetGlob[6*itarget+1] = target[1];
-  targetGlob[6*itarget+2] = target[2];
-  targetGlob[6*itarget+3] = target[3];
+  targetGlob[4*itarget+0] = target[0];
+  targetGlob[4*itarget+1] = target[1];
+  targetGlob[4*itarget+2] = target[2];
+  targetGlob[4*itarget+3] = target[3];
 }
 
 template<>

@@ -24,15 +24,12 @@ void Evaluator<equation>::setSourceBody() {                     // Set source bu
   startTimer("Set sourceB  ");                                  // Start timer
   for( MC_iter M=sourceSize.begin(); M!=sourceSize.end(); ++M ) {// Loop over source map
     C_iter Cj = M->first;                                       //  Set source cell
-    sourceBegin[Cj] = sourceHost.size() / 7;                    //  Key : iterator, Value : offset of source leafs
+    sourceBegin[Cj] = sourceHost.size() / 4;                    //  Key : iterator, Value : offset of source leafs
     for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NDLEAF; ++B ) {     //  Loop over leafs in source cell
       sourceHost.push_back(B->X[0]);                            //   Copy x position to GPU buffer
       sourceHost.push_back(B->X[1]);                            //   Copy y position to GPU buffer
       sourceHost.push_back(B->X[2]);                            //   Copy z position to GPU buffer
-      sourceHost.push_back(B->SRC[0]);                          //   Copy 1st source value to GPU buffer
-      sourceHost.push_back(B->SRC[1]);                          //   Copy 2nd source value to GPU buffer
-      sourceHost.push_back(B->SRC[2]);                          //   Copy 3rd source value to GPU buffer
-      sourceHost.push_back(B->SRC[3]);                          //   Copy 4th source value to GPU buffer
+      sourceHost.push_back(B->SRC);                             //   Copy source value to GPU buffer
     }                                                           //  End loop over leafs
   }                                                             // End loop over source map
   stopTimer("Set sourceB  ");                                   // Stop timer
@@ -80,23 +77,19 @@ void Evaluator<equation>::setTargetBody(Lists lists, Maps flags) {// Set target 
         rangeHost.push_back(sourceSize[Cj]);                    //    Set number of coefs in source cell
         rangeHost.push_back(flags[Ci-Ci0][Cj]);                 //    Set periodic image flag of source cell
       }                                                         //   End loop over interaction list
-      targetBegin[Ci] = targetHost.size() / 6;                  //   Key : iterator, Value : offset of target leafs
+      targetBegin[Ci] = targetHost.size() / 4;                  //   Key : iterator, Value : offset of target leafs
       for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {   //   Loop over leafs in target cell
         targetHost.push_back(B->X[0]);                          //    Copy x position to GPU buffer
         targetHost.push_back(B->X[1]);                          //    Copy y position to GPU buffer
         targetHost.push_back(B->X[2]);                          //    Copy z position to GPU buffer
-        targetHost.push_back(B->SRC[0]);                        //    Copy 1st target value to GPU buffer
-        targetHost.push_back(B->SRC[1]);                        //    Copy 2nd target value to GPU buffer
-        targetHost.push_back(B->SRC[2]);                        //    Copy 3rd target value to GPU buffer
+        targetHost.push_back(B->SRC);                           //    Copy target value to GPU buffer
       }                                                         //   End loop over leafs
       int numPad = blocks * THREADS - Ci->NDLEAF;               //   Number of elements to pad in target GPU buffer
       for( int i=0; i!=numPad; ++i ) {                          //   Loop over elements to pad
         targetHost.push_back(0);                                //    Pad x position in GPU buffer
         targetHost.push_back(0);                                //    Pad y position in GPU buffer
         targetHost.push_back(0);                                //    Pad z position in GPU buffer
-        targetHost.push_back(0);                                //    Pad 1st target value to GPU buffer
-        targetHost.push_back(0);                                //    Pad 2nd target value to GPU buffer
-        targetHost.push_back(0);                                //    Pad 3rd target value to GPU buffer
+        targetHost.push_back(0);                                //    Pad target value to GPU buffer
       }                                                         //   End loop over elements to pad
     }                                                           //  End if for empty interation list
   }                                                             // End loop over target cells
@@ -144,10 +137,10 @@ void Evaluator<equation>::getTargetBody(Lists &lists) {         // Get body valu
     if( !lists[Ci-Ci0].empty() ) {                              //  If the interation list is not empty
       int begin = targetBegin[Ci];                              //   Offset of target leafs
         for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) { //    Loop over target bodies
-          B->TRG[0] += targetHost[6*(begin+B-Ci->LEAF)+0];      //     Copy 1st target value from GPU buffer
-          B->TRG[1] += targetHost[6*(begin+B-Ci->LEAF)+1];      //     Copy 2nd target value from GPU buffer
-          B->TRG[2] += targetHost[6*(begin+B-Ci->LEAF)+2];      //     Copy 3rd target value from GPU buffer
-          B->TRG[3] += targetHost[6*(begin+B-Ci->LEAF)+3];      //     Copy 4th target value from GPU buffer
+          B->TRG[0] += targetHost[4*(begin+B-Ci->LEAF)+0];      //     Copy 1st target value from GPU buffer
+          B->TRG[1] += targetHost[4*(begin+B-Ci->LEAF)+1];      //     Copy 2nd target value from GPU buffer
+          B->TRG[2] += targetHost[4*(begin+B-Ci->LEAF)+2];      //     Copy 3rd target value from GPU buffer
+          B->TRG[3] += targetHost[4*(begin+B-Ci->LEAF)+3];      //     Copy 4th target value from GPU buffer
         }                                                       //    End loop over target bodies
       lists[Ci-Ci0].clear();                                    //   Clear interaction list
     }                                                           //  End if for empty interation list
@@ -279,10 +272,7 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
           sourceHost.push_back(B->X[0]);                        //   Copy x position to GPU buffer
           sourceHost.push_back(B->X[1]);                        //   Copy y position to GPU buffer
           sourceHost.push_back(B->X[2]);                        //   Copy z position to GPU buffer
-          sourceHost.push_back(B->SRC[0]);                      //   Copy 1st source value to GPU buffer
-          sourceHost.push_back(B->SRC[1]);                      //   Copy 2nd source value to GPU buffer
-          sourceHost.push_back(B->SRC[2]);                      //   Copy 3rd source value to GPU buffer
-          sourceHost.push_back(B->SRC[3]);                      //   Copy 4th source value to GPU buffer
+          sourceHost.push_back(B->SRC);                         //   Copy source value to GPU buffer
         }                                                       //   End loop over source bodies
         int key = 0;                                            //   Initialize key to range of leafs in source cells
         int blocks = (BiN - Bi0 - 1) / THREADS + 1;             //   Number of thread blocks needed for this target cell
@@ -297,28 +287,24 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
           targetHost.push_back(B->X[0]);                        //    Copy x position to GPU buffer
           targetHost.push_back(B->X[1]);                        //    Copy y position to GPU buffer
           targetHost.push_back(B->X[2]);                        //    Copy z position to GPU buffer
-          targetHost.push_back(B->SRC[0]);                      //    Copy 1st target value to GPU buffer
-          targetHost.push_back(B->SRC[1]);                      //    Copy 2nd target value to GPU buffer
-          targetHost.push_back(B->SRC[2]);                      //    Copy 3rd target value to GPU buffer
+          targetHost.push_back(B->SRC);                         //    Copy target value to GPU buffer
         }                                                       //   End loop over target bodies
         int numPad = blocks * THREADS - (BiN - Bi0);            //   Number of elements to pad in target GPU buffer
         for( int i=0; i!=numPad; ++i ) {                        //   Loop over elements to pad
           targetHost.push_back(0);                              //    Pad x position in GPU buffer
           targetHost.push_back(0);                              //    Pad y position in GPU buffer
           targetHost.push_back(0);                              //    Pad z position in GPU buffer
-          targetHost.push_back(0);                              //    Pad 1st target value to GPU buffer
-          targetHost.push_back(0);                              //    Pad 2nd target value to GPU buffer
-          targetHost.push_back(0);                              //    Pad 3rd target value to GPU buffer
+          targetHost.push_back(0);                              //    Pad target value to GPU buffer
         }                                                       //   End loop over elements to pad
         allocate();                                             //   Allocate GPU memory
         hostToDevice();                                         //   Copy from host to device
         P2P();                                                  //   Perform P2P kernel
         deviceToHost();                                         //   Copy from device to host
         for( B_iter B=Bi0; B!=BiN; ++B ) {                      //   Loop over target bodies
-          B->TRG[0] += targetHost[6*(B-Bi0)+0];                 //    Copy 1st target value from GPU buffer
-          B->TRG[1] += targetHost[6*(B-Bi0)+1];                 //    Copy 2nd target value from GPU buffer
-          B->TRG[2] += targetHost[6*(B-Bi0)+2];                 //    Copy 3rd target value from GPU buffer
-          B->TRG[3] += targetHost[6*(B-Bi0)+3];                 //    Copy 4th target value from GPU buffer
+          B->TRG[0] += targetHost[4*(B-Bi0)+0];                 //    Copy 1st target value from GPU buffer
+          B->TRG[1] += targetHost[4*(B-Bi0)+1];                 //    Copy 2nd target value from GPU buffer
+          B->TRG[2] += targetHost[4*(B-Bi0)+2];                 //    Copy 3rd target value from GPU buffer
+          B->TRG[3] += targetHost[4*(B-Bi0)+3];                 //    Copy 4th target value from GPU buffer
         }                                                       //   End loop over target bodies
         keysHost.clear();                                       //   Clear keys vector
         rangeHost.clear();                                      //   Clear range vector
@@ -335,7 +321,7 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
 template<Equation equation>
 void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
   Ci0 = cells.begin();                                          // Set begin iterator for target
-  const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
+  const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
@@ -443,7 +429,7 @@ void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {  // Evaluate M2L
 template<Equation equation>
 void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {  // Evaluate M2P
   Ci0 = cells.begin();                                          // Set begin iterator for target
-  const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
+  const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0 * kernel;                                     // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
@@ -475,7 +461,7 @@ void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {  // Evaluate M2P
 template<Equation equation>
 void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate P2P
   Ci0 = cells.begin();                                          // Set begin iterator
-  const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
+  const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0 * kernel;                                     // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
@@ -548,7 +534,7 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate L2L
 template<Equation equation>
 void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate L2P
   Ci0 = cells.begin();                                          // Set begin iterator
-  const int numCell = MAXCELL/NCRIT/7;                          // Number of cells per icall
+  const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall

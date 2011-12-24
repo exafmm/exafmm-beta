@@ -38,7 +38,7 @@ void Kernel<Laplace>::P2M(C_iter Ci) const {
       for( int m=0; m<=n; ++m ) {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
-        Ci->M[nms] += double(B->SRC[0]) * Ynm[nm];
+        Ci->M[nms] += double(B->SRC) * Ynm[nm];
       }
     }
   }

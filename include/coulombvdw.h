@@ -25,9 +25,9 @@ THE SOFTWARE.
 template<>
 void Kernel<CoulombVdW>::P2P(C_iter Ci, C_iter Cj) const {      // Coulomb + Van der Waals P2P kernel on CPU
   for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
-    int atypei = Bi->SRC[1];                                    //  Atom type of target
+    int atypei = Bi->SRC;                                       //  Atom type of target
     for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
-      int atypej = Bj->SRC[1];                                  //   Atom type of source
+      int atypej = Bj->SRC;                                     //   Atom type of source
       vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
       real R2 = norm(dist);                                     //   R squared
       if( R2 != 0 ) {                                           //   Exclude self interaction

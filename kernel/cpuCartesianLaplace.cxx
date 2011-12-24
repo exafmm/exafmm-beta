@@ -483,7 +483,7 @@ void Kernel<Laplace>::P2M(C_iter Ci) const {
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;
     Lset M;
-    M[0] = B->SRC[0];
+    M[0] = B->SRC;
     Terms<0,0,P-1>::power(M,dist);
     Ci->M[0] += M[0];
     for( int i=1; i<MTERM; ++i ) Ci->M[i] += M[i+3];

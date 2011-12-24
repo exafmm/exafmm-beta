@@ -30,8 +30,8 @@ void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P k
       real R2 = norm(dist) + EPS2;                              //   R^2
       real invR = 1 / std::sqrt(R2);                            //   1 / R
       if( R2 == 0 ) invR = 0;                                   //   Exclude self interaction
-      real invR3 = Bj->SRC[0] * invR * invR * invR;             //   charge / R^3
-      Bi->TRG[0] += Bj->SRC[0] * invR;                          //   potential
+      real invR3 = Bj->SRC * invR * invR * invR;                //   charge / R^3
+      Bi->TRG[0] += Bj->SRC * invR;                             //   potential
       Bi->TRG[1] -= dist[0] * invR3;                            //   x component of force
       Bi->TRG[2] -= dist[1] * invR3;                            //   y component of force
       Bi->TRG[3] -= dist[2] * invR3;                            //   z component of force

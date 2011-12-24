@@ -52,7 +52,7 @@ public:
     C->NDLEAF = bodies.size();
     P2P(C);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      B->TRG /= B->SRC[0];
+      B->TRG /= B->SRC;
     }
   }
 
@@ -66,7 +66,7 @@ public:
     Cj->NDLEAF = jbodies.size();
     P2P(Ci,Cj,false);
     for( B_iter B=ibodies.begin(); B!=ibodies.end(); ++B ) {
-      B->TRG /= B->SRC[0];
+      B->TRG /= B->SRC;
     }
   }
 

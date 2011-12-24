@@ -595,7 +595,7 @@ public:
       for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {
         vect dR = Bi->X - Bj->X;
         real D1 = norm(dR) + EPS2;
-        real D0 = Bi->SRC[0] * Bj->SRC[0];
+        real D0 = Bi->SRC * Bj->SRC;
         real XX = 1.0 / D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
@@ -622,7 +622,7 @@ public:
       for( B_iter Bj=Bi+1; Bj!=Bi+NJ; ++Bj ) {
         vect dR = Bi->X - Bj->X;
         real D1 = norm(dR) + EPS2;
-        real D0 = Bi->SRC[0] * Bj->SRC[0];
+        real D0 = Bi->SRC * Bj->SRC;
         real XX = 1.0 / D1;
         D0 *= std::sqrt(XX);
         D1  = XX * D0;
@@ -647,7 +647,7 @@ public:
       real R = std::sqrt(norm(dist));
       if( R > Rmax ) Rmax = R;
       Lset M;
-      M[0] = B->SRC[0];
+      M[0] = B->SRC;
       Terms<0,0,P-1>::power(M,dist);
       C->M[0] += M[0];
       for( int i=1; i<MTERM; ++i ) C->M[i] += M[i+3];
@@ -689,7 +689,7 @@ public:
     for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
       vect dist = B->X - Cj->X;
       real invR2 = 1 / norm(dist);
-      real invR  = B->SRC[0] * Cj->M[0] * std::sqrt(invR2);
+      real invR  = B->SRC * Cj->M[0] * std::sqrt(invR2);
       Lset C;
       getCoef(C,dist,invR2,invR);
       sumM2P(B,C,Cj->M);
@@ -698,7 +698,7 @@ public:
       for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NDLEAF; ++B ) {
         vect dist = B->X - Ci->X;
         real invR2 = 1 / norm(dist);
-        real invR  = B->SRC[0] * Ci->M[0] * std::sqrt(invR2);
+        real invR  = B->SRC * Ci->M[0] * std::sqrt(invR2);
         Lset C;
         getCoef(C,dist,invR2,invR);
         sumM2P(B,C,Ci->M);
@@ -728,7 +728,7 @@ public:
       Terms<0,0,P>::power(C,dist);
 
       L = Ci->L;
-      B->TRG /= B->SRC[0];
+      B->TRG /= B->SRC;
       B->TRG[0] -= L[0];
       B->TRG[1] += L[1];
       B->TRG[2] += L[2];
@@ -738,7 +738,7 @@ public:
 #else
       Lset C;
       vect dist = B->X - Ci->X;
-      B->TRG /= B->SRC[0];
+      B->TRG /= B->SRC;
       B->TRG[0] -= Ci->L[0];
       B->TRG[1] += Ci->L[1];
       B->TRG[2] += Ci->L[2];
