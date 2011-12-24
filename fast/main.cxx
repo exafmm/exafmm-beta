@@ -29,7 +29,6 @@ int main() {
   Bodies bodies, bodies2;
   Cells cells;
   Dataset DATA;
-  DATA.equation = "Laplace";
   SerialFMM FMM;
 #if HYBRID
   FMM.timeKernels();

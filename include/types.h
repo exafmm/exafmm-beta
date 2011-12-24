@@ -101,9 +101,6 @@ typedef std::map<std::string,double>::iterator TI_iter;         //!< Iterator fo
 
 enum Equation {                                                 //!< Equation type enumeration
   Laplace,                                                      //!< Laplace potential + force
-  BiotSavart,                                                   //!< Biot-Savart velocity
-  Stretching,                                                   //!< Stretching term of vorticity equation
-  Gaussian,                                                     //!< Gaussian function
   CoulombVdW                                                    //!< Coulomb + Van der Walls force
 };
 
@@ -114,14 +111,14 @@ struct JBody {
   unsigned    ICELL;                                            //!< Cell index
   vect        X;                                                //!< Position
 #if Cartesian
-  vec<1,real> SRC;                                              //!< Source values
+  vec<1,real> SRC;                                              //!< Scalar source values
 #elif Spherical
-  vec<4,real> SRC;
+  vec<4,real> SRC;                                              //!< Scalar+vector source values
 #endif
 };
 //! Structure of bodies
 struct Body : JBody {
-  vec<4,real> TRG;                                              //!< Target values
+  vec<4,real> TRG;                                              //!< Scalar+vector target values
   bool operator<(const Body &rhs) const {                       //!< Overload operator for comparing body index
     return this->IBODY < rhs.IBODY;                             //!< Comparison function for body index
   }
