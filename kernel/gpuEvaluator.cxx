@@ -348,6 +348,7 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
     for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over target cells
       Ci->M = Ci->L = 0;                                        //   Initialize multipole & local coefficients
       if( Ci->NCHILD == 0 ) {                                   //   If cell is a twig
+        setTwigCenter(Ci);                                      //   Set center of twig cell to center of mass
         listP2M[Ci-Ci0].push_back(Ci);                          //    Push source cell into P2M interaction list
         flagP2M[Ci-Ci0][Ci] |= Icenter;                         //    Flip bit of periodic image flag
         sourceSize[Ci] = Ci->NDLEAF;                            //    Key : iterator, Value : number of leafs
@@ -383,6 +384,7 @@ void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
       Maps  flagM2M(cells.size());                              //   Define M2M periodic image flag
       for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                     //   Loop over cells bottomup (except root cell)
         if( getLevel(Ci->ICELL) == level ) {                    //    If target cell is at current level
+          if( Ci->NCHILD != 0 ) setCellCenter(Ci);              //     Set center of parent cell to center of mass
           for( int i=0; i<Ci->NCHILD; ++i ) {                   //     Loop over child cells
             C_iter Cj = Ci0 + Ci->CHILD+i;                      //      Set iterator for source cell
             listM2M[Ci-Ci0].push_back(Cj);                      //      Push source cell into M2M interaction list

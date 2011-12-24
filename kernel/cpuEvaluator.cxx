@@ -118,11 +118,12 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
 template<Equation equation>
 void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
   startTimer("evalP2M      ");                                  // Start timer
-  for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {       // Loop over cells
-    C->M = 0;                                                  //  Initialize multipole coefficients
-    C->L = 0;                                                  //  Initialize local coefficients
-    if( C->NCHILD == 0 ) {                                     //  If cell is a twig
-      P2M(C);                                                  //   Perform P2M kernel
+  for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {          // Loop over cells
+    C->M = 0;                                                   //  Initialize multipole coefficients
+    C->L = 0;                                                   //  Initialize local coefficients
+    if( C->NCHILD == 0 ) {                                      //  If cell is a twig
+      setTwigCenter(C);                                         //   Set center of twig cell to center of mass
+      P2M(C);                                                   //   Perform P2M kernel
     }                                                           //  Endif for twig
   }                                                             // End loop over cells
   stopTimer("evalP2M      ");                                   // Stop timer
@@ -131,11 +132,13 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
 template<Equation equation>
 void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
   startTimer("evalM2M      ");                                  // Start timer
-  Cj0 = cells.begin();                                          // Set begin iterator
-  for( C_iter Cj=cells.begin(); Cj!=cells.end()-1; ++Cj ) {     // Loop over cells bottomup (except root cell)
-    C_iter Ci = Cj0 + Cj->PARENT;                               //  Set target cell iterator
-    M2M(Ci,Cj);                                                 //  Perform M2M kernel
-  }                                                             // End loop over cells
+  Ci0 = cells.begin();                                          // Set begin iterator
+  for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over target cells bottomup
+    if( Ci->NCHILD != 0 ) setCellCenter(Ci);                    //  Set center of parent cell to center of mass
+    for( C_iter Cj=Ci0+Ci->CHILD; Cj!=Ci0+Ci->CHILD+Ci->NCHILD; ++Cj ) {// Loop over child cells
+      M2M(Ci,Cj);                                               //   Perform M2M kernel
+    }                                                           //  End loop over child cells
+  }                                                             // End loop target over cells
   stopTimer("evalM2M      ");                                   // Stop timer
 }
 

@@ -25,7 +25,7 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  const int numBodies = 100;
+  const int numBodies = 10000;
   const int numTarget = 100;
   IMAGES = 0;
   THETA = 1 / sqrtf(4);

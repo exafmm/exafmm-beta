@@ -78,6 +78,30 @@ public:
   using Dataset<equation>::initTarget;                          //!< Initialize target values
 
 private:
+//! Set center of twig cell to center of mass
+  void setTwigCenter(C_iter C) const {
+    real m = 0;                                                 // Mass accumulator
+    vect X = 0;                                                 // Moment accumulator
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NDLEAF; ++B ) {        // Loop over leafs
+      m += B->SRC[0];                                           //  Accumulate mass
+      X += B->X * B->SRC[0];                                    //  Accumulate moment
+    }                                                           // End loop over leafs
+    X /= m;                                                     // Center of mass
+    C->X = X;                                                   // Set center of twig cell to center of mass
+  }
+
+//! Set center of parent cell to center of mass
+  void setCellCenter(C_iter C) const {
+    real m = 0;                                                 // Mass accumulator
+    vect X = 0;                                                 // Moment accumulator
+    for( C_iter c=Ci0+C->CHILD; c!=Ci0+C->CHILD+C->NCHILD; ++c ) {// Loop over child cells
+      m += std::abs(c->M[0]);                                   //  Accumulate mass
+      X += c->X * std::abs(c->M[0]);                            //  Accumulate moment
+    }                                                           // End loop over child cells
+    X /= m;                                                     // Center of mass
+    C->X = X;                                                   // Set center of parent cell to center of mass
+  }
+
 //! Tree walk for treecode
   void treecode(C_iter Ci, C_iter Cj) {
     if( Ci->NCHILD == 0 && Cj->NCHILD == 0) {                   // If both cells are twigs
