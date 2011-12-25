@@ -52,10 +52,10 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
-    B->X[0]   = xi[3*i+0];
-    B->X[1]   = xi[3*i+1];
-    B->X[2]   = xi[3*i+2];
-    B->SRC = qi[i];
+    B->X[0] = xi[3*i+0];
+    B->X[1] = xi[3*i+1];
+    B->X[2] = xi[3*i+2];
+    B->SRC  = qi[i];
     switch (tblno) {
     case 0 :
       B->TRG[1] = -fi[3*i+0];
@@ -72,10 +72,10 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
 
   for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
     int i = B-jbodies.begin();
-    B->X[0]   = xj[3*i+0];
-    B->X[1]   = xj[3*i+1];
-    B->X[2]   = xj[3*i+2];
-    B->SRC = qj[i];
+    B->X[0] = xj[3*i+0];
+    B->X[1] = xj[3*i+1];
+    B->X[2] = xj[3*i+2];
+    B->SRC  = qj[i];
   }
 
   FMM.initialize();
@@ -91,7 +91,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
   FMM.unpartition(bodies);
   std::sort(bodies.begin(),bodies.end());
 
-#if 0
+#if 1
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
     xi[3*i+0] = B->X[0];
@@ -118,10 +118,13 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
         double dx = xi[3*i+0] - xj[3*j+0];
         double dy = xi[3*i+1] - xj[3*j+1];
         double dz = xi[3*i+2] - xj[3*j+2];
-        double r2 = dx * dx + dy * dy + dz * dz;
-        if( r2 != 0 ) {
-          fi[3*i+0] += qj[j] / std::sqrt(r2);
-        }
+        double R2 = dx * dx + dy * dy + dz * dz;
+        double invR = 1 / sqrtf(R2);
+        if( R2 == 0 ) invR = 0;
+        double invR3 = qj[j] * invR * invR * invR;
+        fi[3*i+0] += dx * invR3;
+        fi[3*i+1] += dy * invR3;
+        fi[3*i+2] += dz * invR3;
       }
     }
   }
@@ -140,10 +143,10 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
-    B->X[0]   = xi[3*i+0];
-    B->X[1]   = xi[3*i+1];
-    B->X[2]   = xi[3*i+2];
-    B->SRC = atypei[i] + .5;
+    B->X[0] = xi[3*i+0];
+    B->X[1] = xi[3*i+1];
+    B->X[2] = xi[3*i+2];
+    B->SRC  = atypei[i] + .5;
     switch (tblno) {
     case 2 :
       B->TRG[1] = fi[3*i+0];
@@ -159,10 +162,10 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
 
   for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
     int i = B-jbodies.begin();
-    B->X[0]   = xj[3*i+0];
-    B->X[1]   = xj[3*i+1];
-    B->X[2]   = xj[3*i+2];
-    B->SRC = atypej[i] + .5;
+    B->X[0] = xj[3*i+0];
+    B->X[1] = xj[3*i+1];
+    B->X[2] = xj[3*i+2];
+    B->SRC  = atypej[i] + .5;
   }
 
 
@@ -173,7 +176,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
   FMM.downward(cells,jcells,1);
   std::sort(bodies.begin(),bodies.end());
 
-#if 0
+#if 1
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
     xi[3*i+0] = B->X[0];
