@@ -457,7 +457,7 @@ private:
         cells.back() = twigs.back();                            //   Copy twigs to cells
         cells.back().M = M;                                     //   Copy back multipoles to cells
         twigs.back().M = M - twigs.back().M;                    //   Take the difference of the two
-        if( std::abs(twigs.back().M[0]/M[0]) > 1e-6 ) {         //   If the difference is non-zero
+        if( std::abs(twigs.back().M[0]/M[0]) > EPS ) {          //   If the difference is non-zero
           sticks.push_back(twigs.back());                       //    Save this difference in the sticks vector
         }                                                       //   Endif for non-zero difference
       } else {                                                  //  Else body-body collision (don't do anything)
@@ -542,13 +542,13 @@ private:
 
 //! Check total charge
   void checkSumMass(Cells &cells) {
-    double localMass = 0;
+    real localMass = 0;
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       if( C->NCHILD == 0 ) {
-        localMass += C->M[0].real();
+        localMass += std::abs(C->M[0]);
       }
     }
-    double globalMass;
+    real globalMass;
     MPI_Allreduce(&localMass,&globalMass,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
     print("localMass : ",0);
     print(localMass);

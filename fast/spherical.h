@@ -24,8 +24,6 @@ THE SOFTWARE.
 #include "../include/sort.h"
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
-const real EPS = 1e-6; 
-
 template<int n, int m>
 struct Index {
   static const int npm = Index<n,m-1>::npm + 1;
@@ -49,10 +47,10 @@ struct Index<0,0> {
 
 template<int p, int n=p-1, int m=p-1>
 struct Expansion {
-  static inline void getYnm(double &x, double &y, real &rho,
-                            double &rhom, double &rhon, real &beta, complex &eim,
-                            double &Pn, double &P0, double &P1, double &P2,
-                            double *prefactor, complex *Ynm) {
+  static inline void getYnm(real &x, real &y, real &rho,
+                            real &rhom, real &rhon, real &beta, complex &eim,
+                            real &Pn, real &P0, real &P1, real &P2,
+                            real *prefactor, complex *Ynm) {
     Expansion<p,n-1,m>::getYnm(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
     Ynm[Index<n,m>::npm] = rhon * P0 * prefactor[Index<n,m>::npm] * eim;
     Ynm[Index<n,m>::nmm] = std::conj(Ynm[Index<n,m>::npm]);
@@ -61,10 +59,10 @@ struct Expansion {
     P0 = (x * (2 * n + 1) * P1 - (n + m) * P2) / (n - m + 1);
     rhon *= rho;
   }
-  static inline void getYnmTheta(double &x, double &y, real &rho,
-                                 double &rhom, double &rhon, real &beta, complex &eim,
-                                 double &Pn, double &P0, double &P1, double &P2,
-                                 double *prefactor, complex *Ynm, complex *YnmTheta) {
+  static inline void getYnmTheta(real &x, real &y, real &rho,
+                                 real &rhom, real &rhon, real &beta, complex &eim,
+                                 real &Pn, real &P0, real &P1, real &P2,
+                                 real *prefactor, complex *Ynm, complex *YnmTheta) {
     Expansion<p,n-1,m>::getYnmTheta(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
     Ynm[Index<n,m>::npm] = rhon * P0 * prefactor[Index<n,m>::npm] * eim;
     Ynm[Index<n,m>::nmm] = std::conj(Ynm[Index<n,m>::npm]);
@@ -78,13 +76,13 @@ struct Expansion {
 
 template<int p, int m>
 struct Expansion<p,m,m> {
-  static inline void getYnm(double &x, double &y, real &rho,
-                            double &rhom, double &rhon, real &beta, complex &eim,
-                            double &Pn, double &P0, double &P1, double &P2,
-                            double *prefactor, complex *Ynm) {
+  static inline void getYnm(real &x, real &y, real &rho,
+                            real &rhom, real &rhon, real &beta, complex &eim,
+                            real &Pn, real &P0, real &P1, real &P2,
+                            real *prefactor, complex *Ynm) {
     Expansion<p,p-1,m-1>::getYnm(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
     const complex I(0.,1.);
-    eim = std::exp(I * double(m * beta));
+    eim = std::exp(I * real(m * beta));
     Pn = -Pn * (2 * m - 1) * y;
     P0 = Pn;
     Ynm[Index<m,m>::npm] = rhom * P0 * prefactor[Index<m,m>::npm] * eim;
@@ -94,13 +92,13 @@ struct Expansion<p,m,m> {
     rhom *= rho;
     rhon = rhom;
   }
-  static inline void getYnmTheta(double &x, double &y, real &rho,
-                                 double &rhom, double &rhon, real &beta, complex &eim,
-                                 double &Pn, double &P0, double &P1, double &P2,
-                                 double *prefactor, complex *Ynm, complex *YnmTheta) {
+  static inline void getYnmTheta(real &x, real &y, real &rho,
+                                 real &rhom, real &rhon, real &beta, complex &eim,
+                                 real &Pn, real &P0, real &P1, real &P2,
+                                 real *prefactor, complex *Ynm, complex *YnmTheta) {
     Expansion<p,p-1,m-1>::getYnmTheta(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
     const complex I(0.,1.);
-    eim = std::exp(I * double(m * beta));
+    eim = std::exp(I * real(m * beta));
     Pn = -Pn * (2 * m - 1) * y;
     P0 = Pn;
     Ynm[Index<m,m>::npm] = rhom * P0 * prefactor[Index<m,m>::npm] * eim;
@@ -115,18 +113,18 @@ struct Expansion<p,m,m> {
 
 template<int p>
 struct Expansion<p,0,0> {
-  static inline void getYnm(double &, double &, real &rho,
-                            double &rhom, double &rhon, real&, complex&,
-                            double&, double &, double &, double&,
-                            double*, complex *Ynm) {
+  static inline void getYnm(real &, real &, real &rho,
+                            real &rhom, real &rhon, real&, complex&,
+                            real&, real &, real &, real&,
+                            real*, complex *Ynm) {
     Ynm[0] = rhom;
     rhom *= rho;
     rhon = rhom;
   }
-  static inline void getYnmTheta(double &, double &, real &rho,
-                                 double &rhom, double &rhon, real&, complex&,
-                                 double&, double &, double &, double&,
-                                 double*, complex *Ynm, complex *YnmTheta) {
+  static inline void getYnmTheta(real &, real &, real &rho,
+                                 real &rhom, real &rhon, real&, complex&,
+                                 real&, real &, real &, real&,
+                                 real*, complex *Ynm, complex *YnmTheta) {
     Ynm[0] = rhom;
     YnmTheta[0] = 0;
     rhom *= rho;
@@ -136,7 +134,7 @@ struct Expansion<p,0,0> {
 
 template<int n, int m>
 struct Terms {
-  static inline void P2M(Mset &M, const double &C, complex *Ynm) {
+  static inline void P2M(Mset &M, const real &C, complex *Ynm) {
     Terms<n,m-1>::P2M(M,C,Ynm);
     M[Index<n,m>::nms] += C * Ynm[Index<n,m>::npm];
   }
@@ -144,7 +142,7 @@ struct Terms {
 
 template<int n>
 struct Terms<n,0> {
-  static inline void P2M(Mset &M, const double &C, complex *Ynm) {
+  static inline void P2M(Mset &M, const real &C, complex *Ynm) {
     Terms<n-1,n-1>::P2M(M,C,Ynm);
     M[Index<n,0>::nms] += C * Ynm[Index<n,0>::npm];
   }
@@ -152,7 +150,7 @@ struct Terms<n,0> {
 
 template<>
 struct Terms<0,0> {
-  static inline void P2M(Mset &M, const double &C, complex *Ynm) {
+  static inline void P2M(Mset &M, const real &C, complex *Ynm) {
     M[Index<0,0>::nms] += C * Ynm[Index<0,0>::npm];
   }
 };
@@ -248,7 +246,7 @@ struct M2Ltemplate<p,0,0,2,1> {
 
 class Kernel : public Sort {
 private:
-  double *factorial, *prefactor, *Anm;
+  real *factorial, *prefactor, *Anm;
   complex *Ynm, *YnmTheta, *Cnm;
 
 protected:
@@ -285,26 +283,26 @@ private:
   }
 
   void evalMultipole(real rho, real alpha, real beta) const {
-    double x = std::cos(alpha);
-    double y = std::sin(alpha);
-    double rhom=1,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
+    real x = std::cos(alpha);
+    real y = std::sin(alpha);
+    real rhom=1,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
     complex eim = 1;
     Expansion<P>::getYnm(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
   }
 
   void evalMultipoleTheta(real rho, real alpha, real beta) const {
-    double x = std::cos(alpha);
-    double y = std::sin(alpha);
-    double rhom=1,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
+    real x = std::cos(alpha);
+    real y = std::sin(alpha);
+    real rhom=1,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
     complex eim = 1;
     Expansion<P>::getYnmTheta(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
   }
 
   void evalLocal(real rho, real alpha, real beta) const {
-    double x = std::cos(alpha);
-    double y = std::sin(alpha);
+    real x = std::cos(alpha);
+    real y = std::sin(alpha);
     real invR = 1 / rho;
-    double rhom=invR,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
+    real rhom=invR,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
     complex eim = 1;
     Expansion<2*P>::getYnm(x,y,invR,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
   }
@@ -312,9 +310,9 @@ private:
 public:
   Kernel() : X0(0), R0(0) {
     const complex I(0.,1.);                                     // Imaginary unit
-    factorial = new double  [P];
-    prefactor = new double  [4*P*P];
-    Anm       = new double  [4*P*P];
+    factorial = new real  [P];
+    prefactor = new real  [4*P*P];
+    Anm       = new real  [4*P*P];
     Ynm       = new complex [4*P*P];
     YnmTheta  = new complex [4*P*P];
     Cnm       = new complex [P*P*P*P];
@@ -328,13 +326,13 @@ public:
       for( int m=-n; m<=n; ++m ) {
         int nm = n*n+n+m;
         int nabsm = abs(m);
-        double fnmm = 1.0;
+        real fnmm = 1.0;
         for( int i=1; i<=n-m; ++i ) fnmm *= i;
-        double fnpm = 1.0;
+        real fnpm = 1.0;
         for( int i=1; i<=n+m; ++i ) fnpm *= i;
-        double fnma = 1.0;
+        real fnma = 1.0;
         for( int i=1; i<=n-nabsm; ++i ) fnma *= i;
-        double fnpa = 1.0;
+        real fnpa = 1.0;
         for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;
         prefactor[nm] = std::sqrt(fnma/fnpa);
         Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);
@@ -346,7 +344,7 @@ public:
         for( int n=0, nm=0; n!=P; ++n ) {
           for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {
             int jnkm = (j+n)*(j+n)+j+n+m-k;
-            Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
+            Cnm[jknm] = std::pow(I,abs(k-m)-abs(k)-abs(m))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);
           }
         }
       }
@@ -447,15 +445,15 @@ public:
               int jnkm  = (j - n) * (j - n) + j - n + k - m;
               int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
               int nm    = n * n + n + m;
-              M += Cj->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
-                 * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+              M += Cj->M[jnkms] * std::pow(I,real(m-abs(m))) * Ynm[nm]
+                 * real(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
             for( int m=k; m<=std::min(n,j+k-n); ++m ) {
               int jnkm  = (j - n) * (j - n) + j - n + k - m;
               int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
               int nm    = n * n + n + m;
               M += std::conj(Cj->M[jnkms]) * Ynm[nm]
-                 * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+                 * real(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
           }
           Ci->M[jks] += M;
@@ -491,16 +489,16 @@ public:
       for( int n=0; n!=P; ++n ) {
         int nm  = n * n + n;
         int nms = n * (n + 1) / 2;
-        B->TRG[0] -= B->SRC * (Cj->M[nms] * Ynm[nm]).real();
-        spherical[0] -= B->SRC * (Cj->M[nms] * Ynm[nm]).real() / r * (n+1);
-        spherical[1] += B->SRC * (Cj->M[nms] * YnmTheta[nm]).real();
+        B->TRG[0] -= B->SRC * std::real(Cj->M[nms] * Ynm[nm]);
+        spherical[0] -= B->SRC * std::real(Cj->M[nms] * Ynm[nm]) / r * (n+1);
+        spherical[1] += B->SRC * std::real(Cj->M[nms] * YnmTheta[nm]);
         for( int m=1; m<=n; ++m ) {
           nm  = n * n + n + m;
           nms = n * (n + 1) / 2 + m;
-          B->TRG[0] -= 2 * B->SRC * (Cj->M[nms] * Ynm[nm]).real();
-          spherical[0] -= 2 * B->SRC * (Cj->M[nms] *Ynm[nm]).real() / r * (n+1);
-          spherical[1] += 2 * B->SRC * (Cj->M[nms] *YnmTheta[nm]).real();
-          spherical[2] += 2 * B->SRC * (Cj->M[nms] *Ynm[nm] * I).real() * m;
+          B->TRG[0] -= 2 * B->SRC * std::real(Cj->M[nms] * Ynm[nm]);
+          spherical[0] -= 2 * B->SRC * std::real(Cj->M[nms] *Ynm[nm]) / r * (n+1);
+          spherical[1] += 2 * B->SRC * std::real(Cj->M[nms] *YnmTheta[nm]);
+          spherical[2] += 2 * B->SRC * std::real(Cj->M[nms] *Ynm[nm] * I) * m;
         }
       }
       sph2cart(r,theta,phi,spherical,cartesian);
@@ -519,16 +517,16 @@ public:
         for( int n=0; n!=P; ++n ) {
           int nm  = n * n + n;
           int nms = n * (n + 1) / 2;
-          B->TRG[0] -= B->SRC * (Ci->M[nms] * Ynm[nm]).real();
-          spherical[0] -= B->SRC * (Ci->M[nms] * Ynm[nm]).real() / r * (n+1);
-          spherical[1] += B->SRC * (Ci->M[nms] * YnmTheta[nm]).real();
+          B->TRG[0] -= B->SRC * std::real(Ci->M[nms] * Ynm[nm]);
+          spherical[0] -= B->SRC * std::real(Ci->M[nms] * Ynm[nm]) / r * (n+1);
+          spherical[1] += B->SRC * std::real(Ci->M[nms] * YnmTheta[nm]);
           for( int m=1; m<=n; ++m ) {
             nm  = n * n + n + m;
             nms = n * (n + 1) / 2 + m;
-            B->TRG[0] -= 2 * B->SRC * (Ci->M[nms] * Ynm[nm]).real();
-            spherical[0] -= 2 * B->SRC * (Ci->M[nms] *Ynm[nm]).real() / r * (n+1);
-            spherical[1] += 2 * B->SRC * (Ci->M[nms] *YnmTheta[nm]).real();
-            spherical[2] += 2 * B->SRC * (Ci->M[nms] *Ynm[nm] * I).real() * m;
+            B->TRG[0] -= 2 * B->SRC * std::real(Ci->M[nms] * Ynm[nm]);
+            spherical[0] -= 2 * B->SRC * std::real(Ci->M[nms] *Ynm[nm]) / r * (n+1);
+            spherical[1] += 2 * B->SRC * std::real(Ci->M[nms] *YnmTheta[nm]);
+            spherical[2] += 2 * B->SRC * std::real(Ci->M[nms] *Ynm[nm] * I) * m;
           }
         }
         sph2cart(r,theta,phi,spherical,cartesian);
@@ -557,14 +555,14 @@ public:
             int nm   = n * n + n - m;
             int nms  = n * (n + 1) / 2 - m;
             L += std::conj(Cj->L[nms]) * Ynm[jnkm]
-               * double(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
+               * real(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
           }
           for( int m=std::max(0,j+k-n); m<=std::min(n,-j+k+n); ++m ) {
             int jnkm = (n - j) * (n - j) + n - j + m - k;
             int nm   = n * n + n + m;
             int nms  = n * (n + 1) / 2 + m;
-            L += Cj->L[nms] * std::pow(I,double(m-k-abs(m-k)))
-               * Ynm[jnkm] * double(Anm[jnkm] * Anm[jk] / Anm[nm]);
+            L += Cj->L[nms] * std::pow(I,real(m-k-abs(m-k)))
+               * Ynm[jnkm] * Anm[jnkm] * Anm[jk] / Anm[nm];
           }
         }
         Ci->L[jks] += L;
@@ -585,16 +583,16 @@ public:
       for( int n=0; n!=P; ++n ) {
         int nm  = n * n + n;
         int nms = n * (n + 1) / 2;
-        B->TRG[0] -= (Ci->L[nms] * Ynm[nm]).real();
-        spherical[0] += (Ci->L[nms] * Ynm[nm]).real() / r * n;
-        spherical[1] += (Ci->L[nms] * YnmTheta[nm]).real();
+        B->TRG[0] -= std::real(Ci->L[nms] * Ynm[nm]);
+        spherical[0] += std::real(Ci->L[nms] * Ynm[nm]) / r * n;
+        spherical[1] += std::real(Ci->L[nms] * YnmTheta[nm]);
         for( int m=1; m<=n; ++m ) {
           nm  = n * n + n + m;
           nms = n * (n + 1) / 2 + m;
-          B->TRG[0] -= 2 * (Ci->L[nms] * Ynm[nm]).real();
-          spherical[0] += 2 * (Ci->L[nms] * Ynm[nm]).real() / r * n;
-          spherical[1] += 2 * (Ci->L[nms] * YnmTheta[nm]).real();
-          spherical[2] += 2 * (Ci->L[nms] * Ynm[nm] * I).real() * m;
+          B->TRG[0] -= 2 * std::real(Ci->L[nms] * Ynm[nm]);
+          spherical[0] += 2 * std::real(Ci->L[nms] * Ynm[nm]) / r * n;
+          spherical[1] += 2 * std::real(Ci->L[nms] * YnmTheta[nm]);
+          spherical[2] += 2 * std::real(Ci->L[nms] * Ynm[nm] * I) * m;
         }
       }
       sph2cart(r,theta,phi,spherical,cartesian);

@@ -285,7 +285,7 @@ void spring() {
 void moveVertices() {
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {
     vect dX;
-    if( norm(V->F) < 1e-6 ) dX = 0;
+    if( norm(V->F) < EPS ) dX = 0;
     else dX = V->F / std::sqrt(norm(V->F));
     V->X += dX;
   }

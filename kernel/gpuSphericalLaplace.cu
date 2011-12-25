@@ -55,8 +55,8 @@ void Kernel<Laplace>::M2M(C_iter Ci, C_iter Cj) const {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += Cj->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
-               * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+            M += Cj->M[jnkms] * std::pow(I,m-abs(m)) * Ynm[nm]
+               * real(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
         for( int m=k; m<=n; ++m ) {
@@ -65,11 +65,11 @@ void Kernel<Laplace>::M2M(C_iter Ci, C_iter Cj) const {
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
             M += std::conj(Cj->M[jnkms]) * Ynm[nm]
-               * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+               * real(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
       }
-      Ci->M[jks] += M;
+      Ci->M[jks] += M * EPS;
     }
   }
 }
@@ -387,7 +387,7 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
   __shared__ gpureal sourceShrd[2*THREADS];
   __shared__ gpureal factShrd[2*P];
   __shared__ gpureal YnmShrd[4*NTERM];
-  gpureal fact = 1e-6;
+  gpureal fact = EPS;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -425,8 +425,8 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[2*itarget+0] = target[0] * 1e-6;
-  targetGlob[2*itarget+1] = target[1] * 1e-6;
+  targetGlob[2*itarget+0] = target[0] * EPS;
+  targetGlob[2*itarget+1] = target[1] * EPS;
 }
 
 template<>

@@ -46,13 +46,13 @@ void Evaluator<equation>::setSourceCell(bool isM) {             // Set source bu
     sourceHost.push_back(Cj->X[2]);                             //  Copy z position to GPU buffer
     if( isM ) {                                                 //  If source is M
       for( int i=0; i!=NTERM; ++i ) {                           //   Loop over coefs in source cell
-        sourceHost.push_back((Cj->M[i]).real());                //    Copy real multipole to GPU buffer
-        sourceHost.push_back((Cj->M[i]).imag());                //    Copy imaginary multipole to GPU buffer
+        sourceHost.push_back(std::real(Cj->M[i]));              //    Copy real multipole to GPU buffer
+        sourceHost.push_back(std::imag(Cj->M[i]));              //    Copy imaginary multipole to GPU buffer
       }                                                         //   End loop over coefs
     } else {                                                    //  If source is L
       for( int i=0; i!=NTERM; ++i ) {                           //   Loop over coefs in source cell
-        sourceHost.push_back((Cj->L[i]).real());                //    Copy real multipole to GPU buffer
-        sourceHost.push_back((Cj->L[i]).imag());                //    Copy imaginary multipole to GPU buffer
+        sourceHost.push_back(std::real(Cj->L[i]));              //    Copy real multipole to GPU buffer
+        sourceHost.push_back(std::imag(Cj->L[i]));              //    Copy imaginary multipole to GPU buffer
       }                                                         //   End loop over coefs
     }                                                           //  Endif for source type
   }                                                             // End loop over source map

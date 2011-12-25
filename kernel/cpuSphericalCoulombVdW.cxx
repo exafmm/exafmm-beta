@@ -38,7 +38,7 @@ void Kernel<CoulombVdW>::P2M(C_iter Ci) const {
       for( int m=0; m<=n; ++m ) {
         const int nm  = n * n + n + m;
         const int nms = n * (n + 1) / 2 + m;
-        Ci->M[nms] += double(B->SRC) * Ynm[nm];
+        Ci->M[nms] += B->SRC * Ynm[nm];
       }
     }
   }
@@ -62,8 +62,8 @@ void Kernel<CoulombVdW>::M2M(C_iter Ci, C_iter Cj) const {
             const int jnkm  = (j - n) * (j - n) + j - n + k - m;
             const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             const int nm    = n * n + n + m;
-            M += Cj->M[jnkms] * std::pow(I,double(m-abs(m))) * Ynm[nm]
-               * double(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+            M += Cj->M[jnkms] * std::pow(I,m-abs(m)) * Ynm[nm]
+               * real(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
         for( int m=k; m<=n; ++m ) {
@@ -72,11 +72,11 @@ void Kernel<CoulombVdW>::M2M(C_iter Ci, C_iter Cj) const {
             const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             const int nm    = n * n + n + m;
             M += std::conj(Cj->M[jnkms]) * Ynm[nm]
-               * double(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+               * real(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
           }
         }
       }
-      Ci->M[jks] += M;
+      Ci->M[jks] += M * EPS;
     }
   }
 }
@@ -126,16 +126,16 @@ void Kernel<CoulombVdW>::M2P(C_iter Ci, C_iter Cj) const {
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
-      B->TRG[0] += (Cj->M[nms] * Ynm[nm]).real();
-      spherical[0] -= (Cj->M[nms] * Ynm[nm]).real() / r * (n+1);
-      spherical[1] += (Cj->M[nms] * YnmTheta[nm]).real();
+      B->TRG[0] += std::real(Cj->M[nms] * Ynm[nm]);
+      spherical[0] -= std::real(Cj->M[nms] * Ynm[nm]) / r * (n+1);
+      spherical[1] += std::real(Cj->M[nms] * YnmTheta[nm]);
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
-        B->TRG[0] += 2 * (Cj->M[nms] * Ynm[nm]).real();
-        spherical[0] -= 2 * (Cj->M[nms] *Ynm[nm]).real() / r * (n+1);
-        spherical[1] += 2 * (Cj->M[nms] *YnmTheta[nm]).real();
-        spherical[2] += 2 * (Cj->M[nms] *Ynm[nm] * I).real() * m;
+        B->TRG[0] += 2 * std::real(Cj->M[nms] * Ynm[nm]);
+        spherical[0] -= 2 * std::real(Cj->M[nms] *Ynm[nm]) / r * (n+1);
+        spherical[1] += 2 * std::real(Cj->M[nms] *YnmTheta[nm]);
+        spherical[2] += 2 * std::real(Cj->M[nms] *Ynm[nm] * I) * m;
       }
     }
     sph2cart(r,theta,phi,spherical,cartesian);
@@ -163,19 +163,19 @@ void Kernel<CoulombVdW>::L2L(C_iter Ci, C_iter Cj) const {
           const int nm   = n * n + n - m;
           const int nms  = n * (n + 1) / 2 - m;
           L += std::conj(Cj->L[nms]) * Ynm[jnkm]
-             * double(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
+             * real(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
         }
         for( int m=0; m<=n; ++m ) {
           if( n-j >= abs(m-k) ) {
             const int jnkm = (n - j) * (n - j) + n - j + m - k;
             const int nm   = n * n + n + m;
             const int nms  = n * (n + 1) / 2 + m;
-            L += Cj->L[nms] * std::pow(I,double(m-k-abs(m-k)))
-               * Ynm[jnkm] * double(Anm[jnkm] * Anm[jk] / Anm[nm]);
+            L += Cj->L[nms] * std::pow(I,m-k-abs(m-k))
+               * Ynm[jnkm] * Anm[jnkm] * Anm[jk] / Anm[nm];
           }
         }
       }
-      Ci->L[jks] += L;
+      Ci->L[jks] += L * EPS;
     }
   }
 }
@@ -193,16 +193,16 @@ void Kernel<CoulombVdW>::L2P(C_iter Ci) const {
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
-      B->TRG[0] += (Ci->L[nms] * Ynm[nm]).real();
-      spherical[0] += (Ci->L[nms] * Ynm[nm]).real() / r * n;
-      spherical[1] += (Ci->L[nms] * YnmTheta[nm]).real();
+      B->TRG[0] += std::real(Ci->L[nms] * Ynm[nm]);
+      spherical[0] += std::real(Ci->L[nms] * Ynm[nm]) / r * n;
+      spherical[1] += std::real(Ci->L[nms] * YnmTheta[nm]);
       for( int m=1; m<=n; ++m ) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
-        B->TRG[0] += 2 * (Ci->L[nms] * Ynm[nm]).real();
-        spherical[0] += 2 * (Ci->L[nms] * Ynm[nm]).real() / r * n;
-        spherical[1] += 2 * (Ci->L[nms] * YnmTheta[nm]).real();
-        spherical[2] += 2 * (Ci->L[nms] * Ynm[nm] * I).real() * m;
+        B->TRG[0] += 2 * std::real(Ci->L[nms] * Ynm[nm]);
+        spherical[0] += 2 * std::real(Ci->L[nms] * Ynm[nm]) / r * n;
+        spherical[1] += 2 * std::real(Ci->L[nms] * YnmTheta[nm]);
+        spherical[2] += 2 * std::real(Ci->L[nms] * Ynm[nm] * I) * m;
       }
     }
     sph2cart(r,theta,phi,spherical,cartesian);

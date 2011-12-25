@@ -26,7 +26,6 @@ THE SOFTWARE.
 
 const int  P2 = P * P;                                          //!< P^2
 const int  P4 = P2 * P2;                                        //!< P^4
-const real EPS = 1e-6;                                          //!< Single precision epsilon
 
 //! Unified CPU/GPU kernel class
 class KernelBase : public Sort {
@@ -57,9 +56,9 @@ protected:
   gpureal             *sourceDevc;                              //!< Sources on device
   gpureal             *targetDevc;                              //!< Targets on device
 
-  double *factorial;                                            //!< Factorial
-  double *prefactor;                                            //!< \f$ \sqrt{ \frac{(n - |m|)!}{(n + |m|)!} } \f$
-  double *Anm;                                                  //!< \f$ (-1)^n / \sqrt{ \frac{(n + m)!}{(n - m)!} } \f$
+  real *factorial;                                              //!< Factorial
+  real *prefactor;                                              //!< \f$ \sqrt{ \frac{(n - |m|)!}{(n + |m|)!} } \f$
+  real *Anm;                                                    //!< \f$ (-1)^n / \sqrt{ \frac{(n + m)!}{(n - m)!} } \f$
   complex *Ynm;                                                 //!< \f$ r^n Y_n^m \f$
   complex *YnmTheta;                                            //!< \f$ \theta \f$ derivative of \f$ r^n Y_n^m \f$
   complex *Cnm;                                                 //!< M2L translation matrix \f$ C_{jn}^{km} \f$
@@ -100,29 +99,29 @@ protected:
 //! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
   void evalMultipole(real rho, real alpha, real beta) const {
     const complex I(0.,1.);                                     // Imaginary unit
-    double x = std::cos(alpha);                                 // x = cos(alpha)
-    double y = std::sin(alpha);                                 // y = sin(alpha)
-    double fact = 1;                                            // Initialize 2 * m + 1
-    double pn = 1;                                              // Initialize Legendre polynomial Pn
-    double rhom = 1;                                            // Initialize rho^m
+    real x = std::cos(alpha);                                   // x = cos(alpha)
+    real y = std::sin(alpha);                                   // y = sin(alpha)
+    real fact = 1;                                              // Initialize 2 * m + 1
+    real pn = 1;                                                // Initialize Legendre polynomial Pn
+    real rhom = 1;                                              // Initialize rho^m
     for( int m=0; m!=P; ++m ) {                                 // Loop over m in Ynm
-      complex eim = std::exp(I * double(m * beta));             //  exp(i * m * beta)
-      double p = pn;                                            //  Associated Legendre polynomial Pnm
+      complex eim = std::exp(I * real(m * beta));               //  exp(i * m * beta)
+      real p = pn;                                              //  Associated Legendre polynomial Pnm
       int npn = m * m + 2 * m;                                  //  Index of Ynm for m > 0
       int nmn = m * m;                                          //  Index of Ynm for m < 0
       Ynm[npn] = rhom * p * prefactor[npn] * eim;               //  rho^m * Ynm for m > 0
       Ynm[nmn] = std::conj(Ynm[npn]);                           //  Use conjugate relation for m < 0
-      double p1 = p;                                            //  Pnm-1
+      real p1 = p;                                              //  Pnm-1
       p = x * (2 * m + 1) * p1;                                 //  Pnm using recurrence relation
       YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
       rhom *= rho;                                              //  rho^m
-      double rhon = rhom;                                       //  rho^n
+      real rhon = rhom;                                         //  rho^n
       for( int n=m+1; n!=P; ++n ) {                             //  Loop over n in Ynm
         int npm = n * n + n + m;                                //   Index of Ynm for m > 0
         int nmm = n * n + n - m;                                //   Index of Ynm for m < 0
         Ynm[npm] = rhon * p * prefactor[npm] * eim;             //   rho^n * Ynm
         Ynm[nmm] = std::conj(Ynm[npm]);                         //   Use conjugate relation for m < 0
-        double p2 = p1;                                         //   Pnm-2
+        real p2 = p1;                                           //   Pnm-2
         p1 = p;                                                 //   Pnm-1
         p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);//   Pnm using recurrence relation
         YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;// theta derivative
@@ -136,29 +135,29 @@ protected:
 //! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
   void evalLocal(real rho, real alpha, real beta) const {
     const complex I(0.,1.);                                     // Imaginary unit
-    double x = std::cos(alpha);                                 // x = cos(alpha)
-    double y = std::sin(alpha);                                 // y = sin(alpha)
-    double fact = 1;                                            // Initialize 2 * m + 1
-    double pn = 1;                                              // Initialize Legendre polynomial Pn
-    double rhom = 1.0 / rho;                                    // Initialize rho^(-m-1)
+    real x = std::cos(alpha);                                   // x = cos(alpha)
+    real y = std::sin(alpha);                                   // y = sin(alpha)
+    real fact = 1;                                              // Initialize 2 * m + 1
+    real pn = 1;                                                // Initialize Legendre polynomial Pn
+    real rhom = 1.0 / rho;                                      // Initialize rho^(-m-1)
     for( int m=0; m!=2*P; ++m ) {                               // Loop over m in Ynm
-      complex eim = std::exp(I * double(m * beta));             //  exp(i * m * beta)
-      double p = pn;                                            //  Associated Legendre polynomial Pnm
+      complex eim = std::exp(I * real(m * beta));               //  exp(i * m * beta)
+      real p = pn;                                              //  Associated Legendre polynomial Pnm
       int npn = m * m + 2 * m;                                  //  Index of Ynm for m > 0
       int nmn = m * m;                                          //  Index of Ynm for m < 0
       Ynm[npn] = rhom * p * prefactor[npn] * eim;               //  rho^(-m-1) * Ynm for m > 0
       Ynm[nmn] = std::conj(Ynm[npn]);                           //  Use conjugate relation for m < 0
-      double p1 = p;                                            //  Pnm-1
+      real p1 = p;                                              //  Pnm-1
       p = x * (2 * m + 1) * p1;                                 //  Pnm using recurrence relation
       YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
       rhom /= rho;                                              //  rho^(-m-1)
-      double rhon = rhom;                                       //  rho^(-n-1)
+      real rhon = rhom;                                         //  rho^(-n-1)
       for( int n=m+1; n!=2*P; ++n ) {                           //  Loop over n in Ynm
         int npm = n * n + n + m;                                //   Index of Ynm for m > 0
         int nmm = n * n + n - m;                                //   Index of Ynm for m < 0
         Ynm[npm] = rhon * p * prefactor[npm] * eim;             //   rho^n * Ynm for m > 0
         Ynm[nmm] = std::conj(Ynm[npm]);                         //   Use conjugate relation for m < 0
-        double p2 = p1;                                         //   Pnm-2
+        real p2 = p1;                                           //   Pnm-2
         p1 = p;                                                 //   Pnm-1
         p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);//   Pnm using recurrence relation
         YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;// theta derivative
@@ -215,7 +214,7 @@ public:
   }
 
 //! Set scaling paramters in Van der Waals
-  void setVanDerWaals(int atoms, double *rscale, double *gscale) {
+  void setVanDerWaals(int atoms, real *rscale, real *gscale) {
     ATOMS = atoms;                                              // Set number of atom types
     RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
     GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector
@@ -228,9 +227,9 @@ public:
 //! Precalculate M2L translation matrix
   void preCalculation() {
     const complex I(0.,1.);                                     // Imaginary unit
-    factorial = new double  [P];                                // Factorial
-    prefactor = new double  [4*P2];                             // sqrt( (n - |m|)! / (n + |m|)! )
-    Anm       = new double  [4*P2];                             // (-1)^n / sqrt( (n + m)! / (n - m)! )
+    factorial = new real  [P];                                  // Factorial
+    prefactor = new real  [4*P2];                               // sqrt( (n - |m|)! / (n + |m|)! )
+    Anm       = new real  [4*P2];                               // (-1)^n / sqrt( (n + m)! / (n - m)! )
     Ynm       = new complex [4*P2];                             // r^n * Ynm
     YnmTheta  = new complex [4*P2];                             // theta derivative of r^n * Ynm
     Cnm       = new complex [P4];                               // M2L translation matrix Cjknm
@@ -244,13 +243,13 @@ public:
       for( int m=-n; m<=n; ++m ) {                              //  Loop over m in Anm
         int nm = n*n+n+m;                                       //   Index of Anm
         int nabsm = abs(m);                                     //   |m|
-        double fnmm = 1.0;                                      //   Initialize (n - m)!
+        real fnmm = EPS;                                        //   Initialize (n - m)!
         for( int i=1; i<=n-m; ++i ) fnmm *= i;                  //   (n - m)!
-        double fnpm = 1.0;                                      //   Initialize (n + m)!
+        real fnpm = EPS;                                        //   Initialize (n + m)!
         for( int i=1; i<=n+m; ++i ) fnpm *= i;                  //   (n + m)!
-        double fnma = 1.0;                                      //   Initialize (n - |m|)!
+        real fnma = 1.0;                                        //   Initialize (n - |m|)!
         for( int i=1; i<=n-nabsm; ++i ) fnma *= i;              //   (n - |m|)!
-        double fnpa = 1.0;                                      //   Initialize (n + |m|)!
+        real fnpa = 1.0;                                        //   Initialize (n + |m|)!
         for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;              //   (n + |m|)!
         prefactor[nm] = std::sqrt(fnma/fnpa);                   //   sqrt( (n - |m|)! / (n + |m|)! )
         Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);              //   (-1)^n / sqrt( (n + m)! / (n - m)! )
@@ -262,7 +261,8 @@ public:
         for( int n=0, nm=0; n!=P; ++n ) {                       //   Loop over n in Cjknm
           for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {            //    Loop over m in Cjknm
             const int jnkm = (j+n)*(j+n)+j+n+m-k;               //     Index C_{j+n}^{m-k}
-            Cnm[jknm] = std::pow(I,double(abs(k-m)-abs(k)-abs(m)))*(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]);// Cjknm
+            Cnm[jknm] = std::pow(I,real(abs(k-m)-abs(k)-abs(m)))//     Cjknm
+                      * real(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]) * EPS;
           }                                                     //    End loop over m in Cjknm
         }                                                       //   End loop over n in Cjknm
       }                                                         //  End loop over in k in Cjknm

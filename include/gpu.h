@@ -107,7 +107,7 @@ __device__ void evalLocal(gpureal *YnmShrd, gpureal rho,        // Evaluate sing
     }                                                           //  End loop up to m
     int m = mm;                                                 //  Define temporary m
     gpureal p = pn;                                             //  Associated Legendre polynomial Pnm
-    if( mm == nn ) Ynm = rhom * p * 1e-6;                       //  Ynm for n == m
+    if( mm == nn ) Ynm = rhom * p * EPS;                        //  Ynm for n == m
     gpureal p1 = p;                                             //  Pnm-1
     p = x * (2 * m + 1) * p;                                    //  Pnm
     rhom *= rho_1;                                              //  rho^(-m-1)
