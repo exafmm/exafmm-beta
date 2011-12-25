@@ -83,8 +83,8 @@ private:
     real m = 0;                                                 // Mass accumulator
     vect X = 0;                                                 // Moment accumulator
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NDLEAF; ++B ) {        // Loop over leafs
-      m += std::abs(B->SRC);                                    //  Accumulate mass
-      X += (B->X - C->X) * std::abs(B->SRC);                    //  Accumulate moment
+      m += B->SRC;                                              //  Accumulate mass
+      X += B->X * B->SRC;                                       //  Accumulate moment
     }                                                           // End loop over leafs
     X /= m;                                                     // Center of mass
     C->X += X;                                                  // Set center of twig cell to center of mass
@@ -96,10 +96,10 @@ private:
     vect X = 0;                                                 // Moment accumulator
     for( C_iter c=Ci0+C->CHILD; c!=Ci0+C->CHILD+C->NCHILD; ++c ) {// Loop over child cells
       m += std::abs(c->M[0]);                                   //  Accumulate mass
-      X += (c->X - C->X) * std::abs(c->M[0]);                   //  Accumulate moment
+      X += c->X * std::abs(c->M[0]);                            //  Accumulate moment
     }                                                           // End loop over child cells
     X /= m;                                                     // Center of mass
-    C->X += X;                                                  // Set center of parent cell to center of mass
+    C->X = X;                                                   // Set center of parent cell to center of mass
   }
 
 //! Tree walk for treecode

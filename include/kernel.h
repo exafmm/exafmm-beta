@@ -214,7 +214,7 @@ public:
   }
 
 //! Set scaling paramters in Van der Waals
-  void setVanDerWaals(int atoms, real *rscale, real *gscale) {
+  void setVanDerWaals(int atoms, double *rscale, double *gscale) {
     ATOMS = atoms;                                              // Set number of atom types
     RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
     GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector

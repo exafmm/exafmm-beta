@@ -48,7 +48,7 @@ int main() {
     xi[3*i+0] = drand48() * size;
     xi[3*i+1] = drand48() * size;
     xi[3*i+2] = drand48() * size;
-    qi[i] = drand48()*2.0-1.0;
+    qi[i] = drand48()*2 - 1;
     fi[3*i+0] = fi[3*i+1] = fi[3*i+2] = 0;
     atypei[i] = drand48() * nat;
   }
@@ -56,7 +56,7 @@ int main() {
     xj[3*i+0] = drand48() * size;
     xj[3*i+1] = drand48() * size;
     xj[3*i+2] = drand48() * size;
-    qj[i] = drand48()*2.0-1.0;
+    qj[i] = drand48()*2 - 1;
     atypej[i] = drand48() * nat;
   }
   for( int i=0; i!=nat; ++i ) {
@@ -110,9 +110,9 @@ int main() {
         double rs = rscale[atypei[i]*nat+atypej[j]];
         double gs = gscale[atypei[i]*nat+atypej[j]];
         double R2s = R2 * rs;
-        double invR2 = 1.0 / R2s;
+        double invR2 = 1. / R2s;
         double invR6 = invR2 * invR2 * invR2;
-        double dtmp = gs * invR6 * invR2 * (2.0 * invR6 - 1.0);
+        double dtmp = gs * invR6 * invR2 * (2 * invR6 - 1);
         Fx += dx * dtmp;
         Fy += dy * dtmp;
         Fz += dz * dtmp;

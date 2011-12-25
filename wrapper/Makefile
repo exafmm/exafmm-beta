@@ -9,6 +9,7 @@ device: device.o ../kernel/gpu$(EXPAND)Laplace.o ../kernel/gpu$(EXPAND)CoulombVd
 	ranlib libFMM.a
 
 testlib: testlib.cxx
+	make cleanall
 	make host
 	@$(CXX) $? libFMM.a
 	./a.out

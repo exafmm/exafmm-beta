@@ -39,13 +39,15 @@ THE SOFTWARE.
 #include <string>
 #include <utility>
 #include <vector>
-#include "vec.h"
 
 typedef unsigned           bigint;                              //!< Big integer type
 typedef float              real;                                //!< Real number type on CPU
 typedef float              gpureal;                             //!< Real number type on GPU
 typedef std::complex<real> complex;                             //!< Complex number type
+
+#include "vec.h"                                                //!< My vector type with operator overloading
 typedef vec<3,real>        vect;                                //!< 3-D vector type
+
 
 #ifndef KERNEL
 int MPIRANK = 0;                                                //!< MPI comm rank
@@ -63,8 +65,8 @@ extern real THETA;                                              //!< Box opening
 extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
 #endif
 
-const int  P        = 10;                                       //!< Order of expansions
-const int  NCRIT    = 100;                                      //!< Number of bodies per cell
+const int  P        = 3;                                        //!< Order of expansions
+const int  NCRIT    = 8;                                        //!< Number of bodies per cell
 const int  MAXBODY  = 200000;                                   //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET     = 2;                                        //!< LET opening critetia
