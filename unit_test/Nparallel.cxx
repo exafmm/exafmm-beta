@@ -54,7 +54,7 @@ int main() {
     jcells = cells;                                             //  Vector of source cells
     FMM.commCells(jbodies,jcells);                              //  Communicate cells (receive bodies here)
 
-    FMM.downward(cells,jcells,1);                               //  Downward sweep
+    FMM.downward(cells,jcells);                                 //  Downward sweep
     FMM.stopTimer("FMM          ",printNow);                    //  Stop timer
     FMM.eraseTimer("FMM          ");                            //  Erase entry from timer to avoid timer overlap
 

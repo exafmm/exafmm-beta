@@ -20,38 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 template<Equation equation>
-void Evaluator<equation>::testMACP2P(C_iter Ci, C_iter Cj) {    // Test MAC for P2P kernel
-  P2P(Ci,Cj);                                                   // Perform P2P kernel
-  NP2P++;                                                       // Count P2P kernel execution
-}
-
-template<Equation equation>
-void Evaluator<equation>::testMACM2L(C_iter Ci, C_iter Cj) {    // Test MAC for M2L kernel
-  vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
-  real R = std::sqrt(norm(dist));                               // Distance between cells
-  if( Ci->R + Cj->R > THETA*R ) {                               // If cell is too large
-    Pair pair(Ci,Cj);                                           //  Form pair of interacting cells
-    pairStack.push(pair);                                       //  Push interacting pair into stack
-  } else {                                                      // If cell is small enough
-    M2L(Ci,Cj);                                                 //  Perform M2L kernel
-    NM2L++;                                                     //  Count M2L kernel execution
-  }                                                             // Endif for interaction
-}
-
-template<Equation equation>
-void Evaluator<equation>::testMACM2P(C_iter Ci, C_iter Cj) {    // Test MAC for M2P kernel
-  vect dist = Ci->X - Cj->X - Xperiodic;                        // Distance vector between cells
-  real R = std::sqrt(norm(dist));                               // Distance between cells
-  if( Ci->NCHILD != 0 || Ci->R + Cj->R > THETA*R ) {            // If target is not twig or cell is too large
-    Pair pair(Ci,Cj);                                           //  Form pair of interacting cells
-    pairStack.push(pair);                                       //  Push interacting pair into stack
-  } else {                                                      // If target is twig and cell is small enough
-    M2P(Ci,Cj);                                                 //  Perform M2P kernel
-    NM2P++;                                                     //  Count M2P kernel execution
-  }                                                             // Endif for interaction
-}
-
-template<Equation equation>
 void Evaluator<equation>::timeKernels() {                       // Time all kernels for auto-tuning
   Bodies ibodies(1000), jbodies(1000);                          // Artificial bodies
   for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {// Loop over artificial bodies
@@ -79,31 +47,7 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
 }
 
 template<Equation equation>
-void Evaluator<equation>::traversePeriodic(Cells &cells, Cells &jcells, int method) {// Traverse tree for periodic cells
-  Xperiodic = 0;                                                // Set periodic coordinate offset
-  C_iter Cj = jcells.end()-1;                                   // Initialize iterator for periodic source cell
-  for( int level=0; level<IMAGES-1; ++level ) {                 // Loop over sublevels of tree
-    for( int I=0; I!=26*27; ++I, --Cj ) {                       //  Loop over periodic images (exclude center)
-      switch (method) {                                         //   Switch between method
-      case 0 :                                                  //   0 : treecode
-        for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) { //   Loop over cells
-          if( Ci->NCHILD == 0 ) {                               //     If cell is twig
-            M2P(Ci,Cj);                                         //      Perform M2P kernel
-          }                                                     //     Endif for twig
-        }                                                       //    End loop over cells
-        break;                                                  //    Terminate this case
-      case 1 :                                                  //   1 : FMM
-      case 2 :                                                  //   2 : hybrid
-        C_iter Ci = cells.end() - 1;                            //    Set root cell as target iterator
-        M2L(Ci,Cj);                                             //    Perform M2P kernel
-        break;                                                  //    Terminate this case
-      }                                                         //   End switch between methods
-    }                                                           //  End loop over x periodic direction
-  }                                                             // End loop over sublevels of tree
-}
-
-template<Equation equation>
-void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate P2P
+void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate all P2P kernels
   Xperiodic = 0 * onCPU;                                        // Set periodic coordinate offset (onCPU is dummy)
   Cells cells;                                                  // Cells to put target and source bodies
   cells.resize(2);                                              // Resize cells to put target and source bodies
@@ -116,7 +60,7 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
+void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate all P2M kernels
   startTimer("evalP2M      ");                                  // Start timer
   for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {          // Loop over cells
     C->M = 0;                                                   //  Initialize multipole coefficients
@@ -130,12 +74,12 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate P2M
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
+void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all M2M kernels
   startTimer("evalM2M      ");                                  // Start timer
-  Ci0 = cells.begin();                                          // Set begin iterator
+  Cj0 = jcells.begin();                                         // Set begin iterator
   for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over target cells bottomup
     if( Ci->NCHILD != 0 ) setCellCenter(Ci);                    //  Set center of parent cell to center of mass
-    for( C_iter Cj=Ci0+Ci->CHILD; Cj!=Ci0+Ci->CHILD+Ci->NCHILD; ++Cj ) {// Loop over child cells
+    for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {// Loop over child cells
       M2M(Ci,Cj);                                               //   Perform M2M kernel
     }                                                           //  End loop over child cells
   }                                                             // End loop target over cells
@@ -143,7 +87,13 @@ void Evaluator<equation>::evalM2M(Cells &cells) {               // Evaluate M2M
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {  // Evaluate M2L
+void Evaluator<equation>::evalM2L(C_iter Ci, C_iter Cj) {       // Evaluate single M2L kernel
+  M2L(Ci,Cj);                                                   // Perform M2L kernel
+  NM2L++;                                                       // Count M2L kernel execution
+}
+
+template<Equation equation>
+void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {  // Evaluate queued M2L kernels
   if( kernel ) {                                                // If this is a kernel unit test
     startTimer("evalM2L      ");                                // Start timer
     Ci0 = cells.begin();                                        // Set begin iterator
@@ -174,7 +124,13 @@ void Evaluator<equation>::evalM2L(Cells &cells, bool kernel) {  // Evaluate M2L
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {  // Evaluate M2P
+void Evaluator<equation>::evalM2P(C_iter Ci, C_iter Cj) {       // Evaluate single M2P kernel
+  M2P(Ci,Cj);                                                   // Perform M2P kernel
+  NM2P++;                                                       // Count M2P kernel execution
+}
+
+template<Equation equation>
+void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {  // Evaluate queued M2P kernels
   if( kernel ) {                                                // If this is a kernel unit test
     startTimer("evalM2P      ");                                // Start timer
     Ci0 = cells.begin();                                        // Set begin iterator
@@ -205,7 +161,13 @@ void Evaluator<equation>::evalM2P(Cells &cells, bool kernel) {  // Evaluate M2P
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate P2P
+void Evaluator<equation>::evalP2P(C_iter Ci, C_iter Cj) {       // Evaluate single P2P kernel
+  P2P(Ci,Cj);                                                   // Perform P2P kernel
+  NP2P++;                                                       // Count P2P kernel execution
+}
+
+template<Equation equation>
+void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate queued P2P kernels
   if( kernel ) {                                                // If this is a kernel unit test
     startTimer("evalP2P      ");                                // Start timer
     Ci0 = cells.begin();                                        // Set begin iterator
@@ -236,7 +198,7 @@ void Evaluator<equation>::evalP2P(Cells &cells, bool kernel) {  // Evaluate P2P
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate L2L
+void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate all L2L kernels
   startTimer("evalL2L      ");                                  // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
   for( C_iter Ci=cells.end()-2; Ci!=cells.begin()-1; --Ci ) {   // Loop over cells topdown (except root cell)
@@ -247,7 +209,7 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate L2L
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate L2P
+void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate all L2P kernels
   startTimer("evalL2P      ");                                  // Start timer
   for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {          // Loop over cells
     if( C->NCHILD == 0 ) {                                      //  If cell is a twig

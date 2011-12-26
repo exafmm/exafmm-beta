@@ -59,7 +59,7 @@ int main() {
   FMM.commCells(jbodies,jcells);
 
   FMM.startTimer("Downward     ");
-  FMM.downward(cells,jcells,1);
+  FMM.downward(cells,jcells);
   FMM.stopTimer("Downward     ",FMM.printNow);
   FMM.eraseTimer("Downward     ");
 

@@ -48,7 +48,7 @@ int main() {
     FMM.bottomup(bodies,cells);
 #endif
     jcells = cells;
-    FMM.downward(cells,jcells,1);
+    FMM.downward(cells,jcells);
     FMM.stopTimer("FMM          ",true);
     FMM.eraseTimer("FMM          ");
 

@@ -248,7 +248,7 @@ void repulsion(ParallelFMM<Laplace> &FMM) {
   jbodies = bodies;
   jcells = cells;
   FMM.commCells(jbodies,jcells);
-  FMM.downward(cells,jcells,1);
+  FMM.downward(cells,jcells);
   FMM.unpartition(bodies);
   for( B=bodies.begin(); B!=bodies.end(); ++B ) {
     vertices[B->IBODY].F[0] = B->TRG[1];

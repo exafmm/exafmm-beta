@@ -87,7 +87,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
   FMM.commBodies(jcells);
   FMM.commCells(jbodies,jcells);
 
-  FMM.downward(cells,jcells,1);
+  FMM.downward(cells,jcells);
   FMM.unpartition(bodies);
   std::sort(bodies.begin(),bodies.end());
 
@@ -173,7 +173,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
   FMM.setVanDerWaals(nat,rscale,gscale);
   FMM.bottomup(bodies,cells);
   FMM.bottomup(jbodies,jcells);
-  FMM.downward(cells,jcells,1);
+  FMM.downward(cells,jcells);
   std::sort(bodies.begin(),bodies.end());
 
 #if 1

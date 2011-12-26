@@ -170,7 +170,7 @@ protected:
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
     stopTimer("Bodies2twigs ",printNow);                        // Stop timer & print
-    evalP2M(twigs);                                             // Evaluate P2M kernel
+    evalP2M(twigs);                                             // Evaluate all P2M kernels
   }
 
 //! Link twigs bottomup to create all cells in tree
@@ -206,13 +206,15 @@ protected:
     startTimer("Twigs2cells  ");                                // Start timer
     unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
     stopTimer("Twigs2cells  ");                                 // Stop timer & print
-    evalM2M(cells);                                             // Evaluate M2M kernel
+    evalM2M(cells,cells);                                       // Evaluate all M2M kernels
   }
 
 public:
 //! Downward phase
-  void downward(Cells &cells, Cells &jcells, int method, bool periodic=true) {
-    if( method == 2 ) timeKernels();                            // Time all kernels for auto-tuning
+  void downward(Cells &cells, Cells &jcells, bool periodic=true) {
+#if HYBRID
+    timeKernels();                                              // Time all kernels for auto-tuning
+#endif
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) C->L = 0;// Initialize local coefficients
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
       startTimer("Upward P     ");                              //  Start timer
@@ -220,18 +222,18 @@ public:
       stopTimer("Upward P     ",printNow);                      //  Stop timer & print
     }                                                           // Endif for periodic boundary condition
     startTimer("Traverse     ");                                // Start timer
-    traverse(cells,jcells,method);                              // Traverse tree to get interaction list
+    traverse(cells,jcells);                                     // Traverse tree to get interaction list
     stopTimer("Traverse     ",printNow);                        // Stop timer & print
     if( IMAGES != 0 && periodic ) {                             // If periodic boundary condition
       startTimer("Traverse P   ");                              // Start timer
-      traversePeriodic(cells,jcells,method);                    // Traverse tree for periodic images
+      traversePeriodic(cells,jcells);                           // Traverse tree for periodic images
       stopTimer("Traverse P   ",printNow);                      // Stop timer & print
     }                                                           // Endif for periodic boundary condition
-    evalM2L(cells);                                             // Evaluate M2L kernel
-    evalM2P(cells);                                             // Evaluate M2P kernel
-    evalP2P(cells);                                             // Evaluate P2P kernel
-    evalL2L(cells);                                             // Evaluate L2L kernel
-    evalL2P(cells);                                             // Evaluate L2P kernel
+    evalM2L(cells);                                             // Evaluate queued M2L kernels (only GPU)
+    evalM2P(cells);                                             // Evaluate queued M2P kernels (only GPU)
+    evalP2P(cells);                                             // Evaluate queued P2P kernels (only GPU)
+    evalL2L(cells);                                             // Evaluate all L2L kernels
+    evalL2P(cells);                                             // Evaluate all L2P kernels
     if(printNow) std::cout << "P2P: "  << NP2P
                            << " M2P: " << NM2P
                            << " M2L: " << NM2L << std::endl;

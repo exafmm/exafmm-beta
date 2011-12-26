@@ -25,9 +25,9 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  const int numBodies = 10000;
+  const int numBodies = 1000;
   const int numTarget = 100;
-  IMAGES = 0;
+  IMAGES = 2;
   THETA = 1 / sqrtf(4);
   Bodies bodies(numBodies);
   Bodies jbodies;
@@ -53,7 +53,7 @@ int main() {
 #endif
   jcells = cells;
   FMM.startTimer("Downward     ");
-  FMM.downward(cells,jcells,1);
+  FMM.downward(cells,jcells);
   FMM.stopTimer("Downward     ",FMM.printNow);
   FMM.eraseTimer("Downward     ");
 

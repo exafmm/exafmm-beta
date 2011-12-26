@@ -85,7 +85,7 @@ int main() {
     {
       #pragma omp section
       {
-        FMM.downward(cells,jcells,1,false);
+        FMM.downward(cells,jcells,false);
       }
       #pragma omp section
       {
@@ -97,7 +97,7 @@ int main() {
     FMM.commCells(jbodies,jcells);
     FMM.eraseLocalTree(jcells);
   }
-  FMM.downward(cells,jcells,1);
+  FMM.downward(cells,jcells);
   if(FMM.printNow) FMM.writeTime();
   if(FMM.printNow) FMM.writeTime();
 

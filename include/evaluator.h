@@ -23,6 +23,7 @@ THE SOFTWARE.
 #define evaluator_h
 #include "kernel.h"
 #include "dataset.h"
+#define splitFirst(Ci,Cj) Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R)
 
 //! Interface between tree and kernel
 template<Equation equation>
@@ -87,7 +88,7 @@ private:
       X += B->X * B->SRC;                                       //  Accumulate moment
     }                                                           // End loop over leafs
     X /= m;                                                     // Center of mass
-    C->X += X;                                                  // Set center of twig cell to center of mass
+//    C->X = X;                                                   // Set center of twig cell to center of mass
   }
 
 //! Set center of parent cell to center of mass
@@ -99,89 +100,44 @@ private:
       X += c->X * std::abs(c->M[0]);                            //  Accumulate moment
     }                                                           // End loop over child cells
     X /= m;                                                     // Center of mass
-    C->X = X;                                                   // Set center of parent cell to center of mass
+//    C->X = X;                                                   // Set center of parent cell to center of mass
   }
 
-//! Tree walk for treecode
-  void treecode(C_iter Ci, C_iter Cj) {
-    if( Ci->NCHILD == 0 && Cj->NCHILD == 0) {                   // If both cells are twigs
-      if( Cj->NDLEAF != 0 ) {                                   // If the twig has leafs
-        testMACP2P(Ci,Cj);                                      //  Test multipole acceptance criteria for P2P kernel
-      } else {                                                  // If the twig has no leafs
-//#ifdef DEBUG
-        std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
-//#endif
-        listM2P[Ci-Ci0].push_back(Cj);                          // Push source cell into M2P interaction list
-      }                                                         // Endif for twigs with leafs
-    } else if ( Ci->NCHILD != 0 ) {                             // If target is not twig
-      for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        testMACM2P(Ci0+Ci->CHILD+i,Cj);                         //   Test multipole acceptance criteria for M2P kernel
-      }                                                         //  End loop over child cells of target
-    } else {                                                    // If target is twig
-      for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
-        testMACM2P(Ci,Cj0+Cj->CHILD+i);                         //   Test multipole acceptance criteria for M2P kernel
-      }                                                         //  End loop over child cells of source
-    }                                                           // Endif for type of interaction
+//! Approximate interaction between two cells
+  inline void approximate(C_iter Ci, C_iter Cj) {
+#if HYBRID
+    if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {// If P2P is fastest
+      evalP2P(Ci,Cj);                                           //  Evaluate on CPU, queue on GPU
+      NP2P++;                                                   //  Increment P2P counter
+    } else if ( timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L ) {// If M2P is fastest
+      evalM2P(Ci,Cj);                                           //  Evaluate on CPU, queue on GPU
+      NM2P++;                                                   //  Increment M2P counter
+    } else {                                                    // If M2L is fastest
+      evalM2L(Ci,Cj);                                           //  Evaluate on CPU, queue on GPU
+      NM2L++;                                                   //  Increment M2L counter
+    }                                                           // End if for kernel selection
+#elif TREECODE
+    evalM2P(Ci,Cj);                                             // Evaluate on CPU, queue on GPU
+    NM2P++;                                                     // Increment M2P counter
+#else
+    evalM2L(Ci,Cj);                                             // Evalaute on CPU, queue on GPU
+    NM2L++;                                                     // Increment M2L counter
+#endif
   }
 
-//! Tree walk for FMM
-  void FMM(C_iter Ci, C_iter Cj) {
-    if( Ci->NCHILD == 0 && Cj->NCHILD == 0 ) {                  // If both cells are twigs
-      if( Cj->NDLEAF != 0 ) {                                   // If the twig has leafs
-        testMACP2P(Ci,Cj);                                      //  Test multipole acceptance criteria for P2P kernel
-      } else {                                                  // If the twig has no leafs
-//#ifdef DEBUG
-        std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
-//#endif
-        listM2P[Ci-Ci0].push_back(Cj);                          // Push source cell into M2P interaction list
-      }                                                         // Endif for twigs with leafs
-    } else if ( Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R) ) {// If source is twig or target is larger
-      for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        testMACM2L(Ci0+Ci->CHILD+i,Cj);                         //   Test multipole acceptance criteria for M2L kernel
-      }                                                         //  End loop over child cells of target
-    } else {                                                    // If target is twig or source is larger
-      for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
-        testMACM2L(Ci,Cj0+Cj->CHILD+i);                         //   Test multipole acceptance criteria for M2L kernel
-      }                                                         //  End loop over child cells of source
-    }                                                           // Endif for type of interaction
-  }
-
-//! Tree walk for treecode-FMM hybrid
-  void hybrid(C_iter Ci, C_iter Cj) {
-    if( Ci->NCHILD == 0 && Cj->NCHILD == 0 ) {                  // If both cells are twigs
-      if( Cj->NDLEAF != 0 ) {                                   // If the twig has leafs
-        testMACP2P(Ci,Cj);                                      //  Test MAC for P2P kernel
-      } else {                                                  // If the twig has no leafs
-//#ifdef DEBUG
-        std::cout << "Cj->ICELL=" << Cj->ICELL << " has no leaf. Doing M2P instead of P2P." << std::endl;
-//#endif
-        listM2P[Ci-Ci0].push_back(Cj);                          // Push source cell into M2P interaction list
-      }                                                         // Endif for twigs with leafs
-    } else if ( Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->R > Cj->R) ) {// If source is twig or target is larger
-      for( int i=0; i<Ci->NCHILD; i++ ) {                       //  Loop over child cells of target
-        int Ni = (Ci0+Ci->CHILD+i)->NDLEAF;                     //   Number of target leafs
-        int Nj = Cj->NDLEAF;                                    //   Number of source leafs
-        if( timeP2P*Nj < timeM2P && timeP2P*Ni*Nj < timeM2L ) { //   If P2P is fastest
-          testMACP2P(Ci0+Ci->CHILD+i,Cj);                       //    Test MAC for P2P kernel
-        } else if ( timeM2P < timeP2P*Nj && timeM2P*Ni < timeM2L ) {// If M2P is fastest
-          testMACM2P(Ci0+Ci->CHILD+i,Cj);                       //    Test MAC for M2P kernel
-        } else {                                                //   If M2L is fastest
-          testMACM2L(Ci0+Ci->CHILD+i,Cj);                       //    Test MAC for M2L kernel
-        }                                                       //   End if for fastest kernel
-      }                                                         //  End loop over child cells of target
-    } else {                                                    // If target is twig or source is larger
-      for( int i=0; i<Cj->NCHILD; i++ ) {                       //  Loop over child cells of source
-        int Ni = Ci->NDLEAF;                                    //   Number of target leafs
-        int Nj = (Cj0+Cj->CHILD+i)->NDLEAF;                     //   Number of source leafs
-        if( timeP2P*Nj < timeM2P && timeP2P*Ni*Nj < timeM2L ) { //   If P2P is fastest
-          testMACP2P(Ci,Cj0+Cj->CHILD+i);                       //    Test MAC for P2P kernel
-        } else if ( timeM2P < timeP2P*Nj && timeM2P*Ni < timeM2L ) {// If M2P is fastest
-          testMACM2P(Ci,Cj0+Cj->CHILD+i);                       //    Test MAC for M2P kernel
-        } else {                                                //   If M2L is fastest
-          testMACM2L(Ci,Cj0+Cj->CHILD+i);                       //    Test MAC for M2L kernel
-        }                                                       //   End if for fastest kernel
-      }                                                         //  End loop over child cells of source
-    }                                                           // Endif for type of interaction
+//! Use multipole acceptance criteria to determine whether to approximate, do P2P, or subdivide
+  void interact(C_iter Ci, C_iter Cj) {
+    vect dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
+    real Rq = std::sqrt(norm(dX));                              // Scalar distance
+    if(Rq * THETA > Ci->R + Cj->R ) {                           // If distance if far enough
+      approximate(Ci,Cj);                                       //  Use approximate kernels, e.g. M2L, M2P
+    } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {             // Else if both cells are leafs
+      evalP2P(Ci,Cj);                                           //  Use P2P
+      NP2P++;                                                   //  Increment P2P counter
+    } else {                                                    // If cells are close but not leafs
+      Pair pair(Ci,Cj);                                         //  Form a pair of cell iterators
+      pairStack.push(pair);                                     //  Push pari to stack
+    }                                                           // End if for multipole acceptance
   }
 
 protected:
@@ -307,7 +263,7 @@ public:
   }
 
 //! Traverse tree to get interaction list
-  void traverse(Cells &cells, Cells &jcells, int method) {
+  void traverse(Cells &cells, Cells &jcells) {
     C_iter root = cells.end() - 1;                              // Iterator for root target cell
     C_iter jroot = jcells.end() - 1;                            // Iterator for root source cell
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
@@ -329,11 +285,17 @@ public:
       while( !pairStack.empty() ) {                             //  While interaction stack is not empty
         pair = pairStack.top();                                 //   Get interaction pair from top of stack
         pairStack.pop();                                        //   Pop interaction stack
-        switch (method) {                                       //   Swtich between methods
-        case 0 : treecode(pair.first,pair.second); break;       //    0 : treecode
-        case 1 : FMM(pair.first,pair.second);      break;       //    1 : FMM
-        case 2 : hybrid(pair.first,pair.second);   break;       //    2 : hybrid
-        }                                                       //   End switch between methods
+        if(splitFirst(pair.first,pair.second)) {
+          C_iter C = pair.first;
+          for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
+            interact(Ci,pair.second);
+          }
+        } else {
+          C_iter C = pair.second;
+          for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
+            interact(pair.first,Cj);
+          }
+        }
       }                                                         //  End while loop for interaction stack
     } else {                                                    // If periodic boundary condition
       int I = 0;                                                //  Initialize index of periodic image
@@ -349,11 +311,17 @@ public:
             while( !pairStack.empty() ) {                       //     While interaction stack is not empty
               pair = pairStack.top();                           //      Get interaction pair from top of stack
               pairStack.pop();                                  //      Pop interaction stack
-              switch (method) {                                 //      Swtich between methods
-              case 0 : treecode(pair.first,pair.second); break; //       0 : treecode
-              case 1 : FMM(pair.first,pair.second);      break; //       1 : FMM
-              case 2 : hybrid(pair.first,pair.second);   break; //       2 : hybrid
-              }                                                 //      End switch between methods
+              if(splitFirst(pair.first,pair.second)) {
+                C_iter C = pair.first;
+                for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
+                  interact(Ci,pair.second);
+                }
+              } else {
+                C_iter C = pair.second;
+                for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
+                  interact(pair.first,Cj);
+                }
+              }
             }                                                   //     End while loop for interaction stack
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
@@ -376,6 +344,7 @@ public:
     for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
       Cell cell;                                                //  New periodic cell at next sublevel
       C_iter C = pccells.end() - 1;                             //  Set previous periodic cell as source
+      pccells.pop_back();                                       //  Pop initial root cell since it's not used anymore
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
@@ -411,11 +380,30 @@ public:
       cell.R = 3 * C->R;                                        //  The cell size increases three times
       pccells.push_back(cell);                                  //  Push cell into periodic cell vector
       C_iter Ci = pccells.end() - 1;                            //  Set current cell as target for M2M
-      while( !pjcells.empty() ) {                               //  While there are periodic jcells remaining
-        C_iter Cj = pjcells.end() - 1;                          //   Set current jcell as source for M2M
-        M2M(Ci,Cj);                                             //   Perform M2M kernel on CPU
-        pjcells.pop_back();                                     //   Pop last element from periodic jcell vector
-      }                                                         //  End while for remaining periodic jcells
+      Ci->CHILD = 0;                                            //  Set child cells for periodic M2M
+      Ci->NCHILD = 27;                                          //  Set number of child cells for periodic M2M
+      evalM2M(pccells,pjcells);                                 // Evaluate all periodic M2M kernels for this sublevel
+      pjcells.clear();                                          // Clear periodic jcell vector
+    }                                                           // End loop over sublevels of tree
+  }
+
+  void traversePeriodic(Cells &cells, Cells &jcells) {          // Traverse tree for periodic cells
+    Xperiodic = 0;                                              // Set periodic coordinate offset
+    Iperiodic = Icenter;                                        // Set periodic flag to center
+    C_iter Cj = jcells.end()-1;                                 // Initialize iterator for periodic source cell
+    for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
+      for( int I=0; I!=26*27; ++I, --Cj ) {                     //  Loop over periodic images (exclude center)
+#if TREECODE
+        for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) { //   Loop over cells
+          if( Ci->NCHILD == 0 ) {                               //    If cell is twig
+            evalM2P(Ci,Cj);                                     //     Perform M2P kernel
+          }                                                     //    Endif for twig
+        }                                                       //   End loop over cells
+#else
+        C_iter Ci = cells.end() - 1;                            //   Set root cell as target iterator
+        evalM2L(Ci,Cj);                                         //   Perform M2P kernel
+#endif
+      }                                                         //  End loop over x periodic direction
     }                                                           // End loop over sublevels of tree
   }
 
@@ -427,18 +415,17 @@ public:
   void getTargetCell(Lists &lists, bool isM);                   //!< Get cell values from target buffer
   void clearBuffers();                                          //!< Clear GPU buffers
 
-  void testMACP2P(C_iter Ci, C_iter Cj);                        //!< Test MAC for P2P kernel
-  void testMACM2L(C_iter Ci, C_iter Cj);                        //!< Test MAC for M2L kernel
-  void testMACM2P(C_iter Ci, C_iter Cj);                        //!< Test MAC for M2P kernel
-  void traversePeriodic(Cells &cells, Cells &jcells, int method);//!< Traverse tree for periodic cells
-  void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);//!< Evaluate P2P kernel (all pairs)
-  void evalP2M(Cells &twigs);                                   //!< Evaluate P2M kernel
-  void evalM2M(Cells &cells);                                   //!< Evaluate M2M kernel
-  void evalM2L(Cells &cells, bool kernel=false);                //!< Evaluate M2L kernel
-  void evalM2P(Cells &cells, bool kernel=false);                //!< Evaluate M2P kernel
-  void evalP2P(Cells &cells, bool kernel=false);                //!< Evaluate P2P kernel (near field)
-  void evalL2L(Cells &cells);                                   //!< Evaluate L2L kernel
-  void evalL2P(Cells &cells);                                   //!< Evaluate L2P kernel
+  void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);//!< Evaluate all P2P kernels (all pairs)
+  void evalP2M(Cells &cells);                                   //!< Evaluate all P2M kernels
+  void evalM2M(Cells &cells, Cells &jcells);                    //!< Evaluate all M2M kernels
+  void evalM2L(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
+  void evalM2L(Cells &cells, bool kernel=false);                //!< Evaluate queued M2L kernels
+  void evalM2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
+  void evalM2P(Cells &cells, bool kernel=false);                //!< Evaluate queued M2P kernels
+  void evalP2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
+  void evalP2P(Cells &cells, bool kernel=false);                //!< Evaluate queued P2P kernels (near field)
+  void evalL2L(Cells &cells);                                   //!< Evaluate all L2L kernels
+  void evalL2P(Cells &cells);                                   //!< Evaluate all L2P kernels
 };
 #if cpu
 #include "../kernel/cpuEvaluator.cxx"

@@ -69,7 +69,7 @@ int main() {
 
   jcells = cells;
   FMM.startTimer("Downward     ");
-  FMM.downward(cells,jcells,1);
+  FMM.downward(cells,jcells);
   FMM.stopTimer("Downward     ",FMM.printNow);
 
   FMM.startTimer("Unsort bodies");

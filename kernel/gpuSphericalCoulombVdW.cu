@@ -36,43 +36,6 @@ void Kernel<CoulombVdW>::initialize() {
 }
 
 template<>
-void Kernel<CoulombVdW>::M2M(C_iter Ci, C_iter Cj) const {
-  const complex I(0.,1.);                                       // Imaginary unit
-  vect dist = Ci->X - Cj->X;
-  real rho, alpha, beta;
-  cart2sph(rho,alpha,beta,dist);
-  evalMultipole(rho,alpha,-beta);
-  for( int j=0; j!=P; ++j ) {
-    for( int k=0; k<=j; ++k ) {
-      const int jk = j * j + j + k;
-      const int jks = j * (j + 1) / 2 + k;
-      complex M = 0;
-      for( int n=0; n<=j; ++n ) {
-        for( int m=-n; m<=std::min(k-1,n); ++m ) {
-          if( j-n >= k-m ) {
-            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-            const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
-            const int nm    = n * n + n + m;
-            M += Cj->M[jnkms] * std::pow(I,m-abs(m)) * Ynm[nm]
-               * real(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-          }
-        }
-        for( int m=k; m<=n; ++m ) {
-          if( j-n >= m-k ) {
-            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-            const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-            const int nm    = n * n + n + m;
-            M += std::conj(Cj->M[jnkms]) * Ynm[nm]
-               * real(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-          }
-        }
-      }
-      Ci->M[jks] += M * EPS;
-    }
-  }
-}
-
-template<>
 void Kernel<CoulombVdW>::finalize() {
 }
 
