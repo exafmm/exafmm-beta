@@ -19,7 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-#include "cuprintf.h"
 #define KERNEL
 #include "kernel.h"
 #undef KERNEL
@@ -31,7 +30,6 @@ void Kernel<Laplace>::initialize() {
   startTimer("Init GPU     ");                                  // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(DEVICE);                                        // Set GPU device
-  cudaPrintfInit();                                             // Initialize cuPrintf
   cudaThreadSynchronize();                                      // Sync GPU threads
   stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
   eraseTimer("Init GPU     ");                                  // Erase timer
@@ -39,8 +37,6 @@ void Kernel<Laplace>::initialize() {
 
 template<>
 void Kernel<Laplace>::finalize() {
-  if( MPIRANK == 0 ) cudaPrintfDisplay(stdout, true);           // Print cuPrintf buffer to display
-  cudaPrintfEnd();                                              // Finalize cuPrintf
 }
 
 template<>

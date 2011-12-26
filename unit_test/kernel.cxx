@@ -66,14 +66,15 @@ int main() {
     cell.NCHILD   = 1;
     cell.CHILD    = 0;
     jcells.push_back(cell);
-    FMM.evalM2M(jcells);
+    FMM.evalM2M(jcells,jcells);
     jcells.erase(jcells.begin());
     cell.X        = -1 - dist;
+    cell.M        = 1;
     cell.L        = 0;
     cell.ICELL    = 0;
     icells.push_back(cell);
     FMM.addM2L(jcells.begin());
-    FMM.evalM2L(icells,true);
+    FMM.evalM2L(icells);
     cell.NDLEAF    = numBodies;
     cell.LEAF     = ibodies.begin();
     cell.X        = -0.5 - dist;
@@ -97,7 +98,7 @@ int main() {
 
     FMM.initTarget(ibodies);
     FMM.addM2P(jcells.begin());
-    FMM.evalM2P(icells,true);
+    FMM.evalM2P(icells);
     icells.clear();
     jcells.clear();
     diff1 = norm1 = diff2 = norm2 = 0;

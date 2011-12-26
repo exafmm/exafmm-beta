@@ -29,11 +29,12 @@ void Kernel<Laplace>::initialize() {}
 
 template<>
 void Kernel<Laplace>::P2M(C_iter Ci) const {
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
-    evalMultipole(rho,alpha,-beta);
+    evalMultipole(rho,alpha,-beta,Ynm,YnmTheta);
     for( int n=0; n!=P; ++n ) {
       for( int m=0; m<=n; ++m ) {
         const int nm  = n * n + n + m;
@@ -47,10 +48,11 @@ void Kernel<Laplace>::P2M(C_iter Ci) const {
 template<>
 void Kernel<Laplace>::M2M(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
-  evalMultipole(rho,alpha,-beta);
+  evalMultipole(rho,alpha,-beta,Ynm,YnmTheta);
   for( int j=0; j!=P; ++j ) {
     for( int k=0; k<=j; ++k ) {
       const int jk = j * j + j + k;
@@ -83,10 +85,11 @@ void Kernel<Laplace>::M2M(C_iter Ci, C_iter Cj) const {
 
 template<>
 void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
   vect dist = Ci->X - Cj->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
-  evalLocal(rho,alpha,beta);
+  evalLocal(rho,alpha,beta,Ynm,YnmTheta);
   for( int j=0; j!=P; ++j ) {
     for( int k=0; k<=j; ++k ) {
       const int jk = j * j + j + k;
@@ -116,13 +119,14 @@ void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
 template<>
 void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Cj->X - Xperiodic;
     vect spherical = 0;
     vect cartesian = 0;
     real r, theta, phi;
     cart2sph(r,theta,phi,dist);
-    evalLocal(r,theta,phi);
+    evalLocal(r,theta,phi,Ynm,YnmTheta);
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
@@ -148,10 +152,11 @@ void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
 template<>
 void Kernel<Laplace>::L2L(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
-  evalMultipole(rho,alpha,beta);
+  evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
   for( int j=0; j!=P; ++j ) {
     for( int k=0; k<=j; ++k ) {
       const int jk = j * j + j + k;
@@ -183,13 +188,14 @@ void Kernel<Laplace>::L2L(C_iter Ci, C_iter Cj) const {
 template<>
 void Kernel<Laplace>::L2P(C_iter Ci) const {
   const complex I(0.,1.);                                       // Imaginary unit
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;
     vect spherical = 0;
     vect cartesian = 0;
     real r, theta, phi;
     cart2sph(r,theta,phi,dist);
-    evalMultipole(r,theta,phi);
+    evalMultipole(r,theta,phi,Ynm,YnmTheta);
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;

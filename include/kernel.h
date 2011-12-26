@@ -59,8 +59,6 @@ protected:
   real *factorial;                                              //!< Factorial
   real *prefactor;                                              //!< \f$ \sqrt{ \frac{(n - |m|)!}{(n + |m|)!} } \f$
   real *Anm;                                                    //!< \f$ (-1)^n / \sqrt{ \frac{(n + m)!}{(n - m)!} } \f$
-  complex *Ynm;                                                 //!< \f$ r^n Y_n^m \f$
-  complex *YnmTheta;                                            //!< \f$ \theta \f$ derivative of \f$ r^n Y_n^m \f$
   complex *Cnm;                                                 //!< M2L translation matrix \f$ C_{jn}^{km} \f$
 public:
   real NP2P;                                                    //!< Number of P2P kernel calls
@@ -97,7 +95,7 @@ protected:
   }
 
 //! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
-  void evalMultipole(real rho, real alpha, real beta) const {
+  void evalMultipole(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const {
     const complex I(0.,1.);                                     // Imaginary unit
     real x = std::cos(alpha);                                   // x = cos(alpha)
     real y = std::sin(alpha);                                   // y = sin(alpha)
@@ -133,7 +131,7 @@ protected:
   }
 
 //! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
-  void evalLocal(real rho, real alpha, real beta) const {
+  void evalLocal(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const {
     const complex I(0.,1.);                                     // Imaginary unit
     real x = std::cos(alpha);                                   // x = cos(alpha)
     real y = std::sin(alpha);                                   // y = sin(alpha)
@@ -230,8 +228,6 @@ public:
     factorial = new real  [P];                                  // Factorial
     prefactor = new real  [4*P2];                               // sqrt( (n - |m|)! / (n + |m|)! )
     Anm       = new real  [4*P2];                               // (-1)^n / sqrt( (n + m)! / (n - m)! )
-    Ynm       = new complex [4*P2];                             // r^n * Ynm
-    YnmTheta  = new complex [4*P2];                             // theta derivative of r^n * Ynm
     Cnm       = new complex [P4];                               // M2L translation matrix Cjknm
 
     factorial[0] = 1;                                           // Initialize factorial
@@ -274,8 +270,6 @@ public:
     delete[] factorial;                                         // Free factorial
     delete[] prefactor;                                         // Free sqrt( (n - |m|)! / (n + |m|)! )
     delete[] Anm;                                               // Free (-1)^n / sqrt( (n + m)! / (n - m)! )
-    delete[] Ynm;                                               // Free r^n * Ynm
-    delete[] YnmTheta;                                          // Free theta derivative of r^n * Ynm
     delete[] Cnm;                                               // Free M2L translation matrix Cjknm
   }
 

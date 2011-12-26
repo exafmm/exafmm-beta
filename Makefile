@@ -8,8 +8,8 @@ VTK_INCLUDE_PATH = /usr/include/vtk-5.6
 DEVICE  = cpu
 #DEVICE  = gpu
 
-#EXPAND  = Cartesian
-EXPAND  = Spherical
+EXPAND  = Cartesian
+#EXPAND  = Spherical
 
 ifeq ($(shell mpicxx --version | grep Intel | wc -l),0)
 CXX     = mpicxx -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O3 -fPIC -fopenmp\

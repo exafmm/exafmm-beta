@@ -1,5 +1,5 @@
 include ../Makefile
-#LFLAGS	+= -DIneJ
+LFLAGS	+= -DIneJ
 #LFLAGS	+= -DBOTTOMUP
 #LFLAGS	+= -DHYBRID
 #LFLAGS	+= -DTREECODE

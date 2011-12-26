@@ -343,7 +343,7 @@ void Evaluator<equation>::evalM2L(C_iter Ci, C_iter Cj) {       // Queue single 
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalM2L(Cells &cells, bool) {         // Evaluate queued M2L kernels
+void Evaluator<equation>::evalM2L(Cells &cells) {               // Evaluate queued M2L kernels
   Ci0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL / NTERM / 2;                      // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -382,7 +382,7 @@ void Evaluator<equation>::evalM2P(C_iter Ci, C_iter Cj) {       // Queue single 
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalM2P(Cells &cells, bool) {         // Evaluate queued M2P kernels
+void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queued M2P kernels
   Ci0 = cells.begin();                                          // Set begin iterator for target
   const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -421,7 +421,7 @@ void Evaluator<equation>::evalP2P(C_iter Ci, C_iter Cj) {       // Queue single 
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalP2P(Cells &cells, bool) {         // Evaluate queued P2P kernels
+void Evaluator<equation>::evalP2P(Cells &cells) {               // Evaluate queued P2P kernels
   Ci0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -569,4 +569,26 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
   startTimer("M2P kernel   ");                                  // Start timer
   evalM2P(icells);                                              // Evaluate queued M2P kernels
   timeM2P = stopTimer("M2P kernel   ") / 100;                   // Stop timer
+}
+
+template<Equation equation>
+void Evaluator<equation>::interact(C_iter CI, C_iter CJ, Quark*) {
+  PairQueue privateQueue;
+  Pair pair(CI,CJ);
+  privateQueue.push(pair);
+  while( !privateQueue.empty() ) {
+    Pair Cij = privateQueue.front();
+    privateQueue.pop();
+    if(splitFirst(Cij.first,Cij.second)) {
+      C_iter C = Cij.first;
+      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
+        interact(Ci,Cij.second,privateQueue);
+      }
+    } else {
+      C_iter C = Cij.second;
+      for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
+        interact(Cij.first,Cj,privateQueue);
+      }
+    }
+  }
 }

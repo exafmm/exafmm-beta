@@ -117,36 +117,36 @@ public:
 
 //! Write traces of all events
   inline void writeTrace() {
-    std::ofstream traceFile("trace.svg");
-    double scale = 30000.0;
-    traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+    std::ofstream traceFile("trace.svg");                       // Open trace log file
+    traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" // Header statements for trace log file
         << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
         << "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
         << "  width=\"200mm\" height=\"40mm\" viewBox=\"0 0 20000 4000\">\n"
         << "  <g>\n";
-    int num_thread = 0;
-    ThreadMap threadMap;
-    double base = traces.front().begin;
-    while( !traces.empty() ) {
-      Trace trace = traces.front();
-      traces.pop();
-      pthread_t thread = trace.thread;
-      double begin  = trace.begin;
-      double end    = trace.end;
-      int    color  = trace.color;
-      if( threadMap[thread] == 0 ) {
-        threadMap[thread] = ++num_thread;
-      }
-      begin -= base;
-      end   -= base;
-      traceFile << "    <rect x=\"" << begin * scale
-          << "\" y=\"" << (threadMap[thread] - 1) * 100.0
-          << "\" width=\"" << (end - begin) * scale
-          << "\" height=\"90.0\" fill=\"#"<< std::setfill('0') << std::setw(6) << std::hex << color
-          << "\" stroke=\"#000000\" stroke-width=\"1\"/>\n";
-    }
-    traceFile << "  </g>\n" "</svg>\n";
-    traceFile.close();
+    int num_thread = 0;                                         // Counter for number of threads to trace
+    ThreadMap threadMap;                                        // Map pthread ID to thread ID
+    double base = traces.front().begin;                         // Base time
+    double scale = 30000.0;                                     // Scale the length of bar plots
+    while( !traces.empty() ) {                                  // While queue of traces is not empty
+      Trace trace = traces.front();                             //  Get trace at front of the queue
+      traces.pop();                                             //  Pop trace at front
+      pthread_t thread = trace.thread;                          //  Get pthread ID of trace
+      double begin  = trace.begin;                              //  Get begin time of trace
+      double end    = trace.end;                                //  Get end time of trace
+      int    color  = trace.color;                              //  Get color of trace
+      if( threadMap[thread] == 0 ) {                            //  If it's a new pthread ID
+        threadMap[thread] = ++num_thread;                       //   Map it to an incremented thread ID
+      }                                                         //  End if for new pthread ID
+      begin -= base;                                            //  Subtract base time from begin time
+      end   -= base;                                            //  Subtract base time from end time
+      traceFile << "    <rect x=\"" << begin * scale            //  x position of bar plot
+          << "\" y=\"" << (threadMap[thread] - 1) * 100.0       //  y position of bar plot
+          << "\" width=\"" << (end - begin) * scale             //  width of bar
+          << "\" height=\"90.0\" fill=\"#"<< std::setfill('0') << std::setw(6) << std::hex << color// height of bar
+          << "\" stroke=\"#000000\" stroke-width=\"1\"/>\n";    //  stroke color and width
+    }                                                           // End while loop for queue of traces
+    traceFile << "  </g>\n" "</svg>\n";                         // Footer for trace log file 
+    traceFile.close();                                          // Close trace log file
   }
 };
 
