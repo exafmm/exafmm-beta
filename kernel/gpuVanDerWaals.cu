@@ -22,7 +22,6 @@ THE SOFTWARE.
 #define KERNEL
 #include "kernel.h"
 #undef KERNEL
-#include "vanderwaals.h"
 #include "gpu.h"
 
 template<>

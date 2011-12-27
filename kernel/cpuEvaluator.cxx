@@ -48,8 +48,8 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
 }
 
 template<Equation equation>
-void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate all P2P kernels
-  Xperiodic = 0 * onCPU;                                        // Set periodic coordinate offset (onCPU is dummy)
+void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Evaluate all P2P kernels
+  Xperiodic = 0;                                                // Set periodic coordinate offset
   Cells cells;                                                  // Cells to put target and source bodies
   cells.resize(2);                                              // Resize cells to put target and source bodies
   cells[0].LEAF = ibodies.begin();                              // Iterator of first target leaf

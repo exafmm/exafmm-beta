@@ -22,7 +22,6 @@ THE SOFTWARE.
 #define KERNEL
 #include "kernel.h"
 #undef KERNEL
-#include "vanderwaals.h"
 
 template<>
 void Kernel<VanDerWaals>::initialize() {}

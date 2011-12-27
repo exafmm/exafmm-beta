@@ -144,7 +144,6 @@ private:
           interact(pair.first,Cj,pairQueue);                    //    Calculate interaction betwen cells
         }                                                       //   End loop over second cell's children
       }                                                         //  End if for which cell to split
-/*
       if( pairQueue.size() > 100 ) {                            //  When queue size reaches threshold
         while( !pairQueue.empty() ) {                           //   While interaction queue is not empty
           pair = pairQueue.front();                             //    Get interaction pair from front of queue
@@ -152,7 +151,6 @@ private:
           interact(pair.first,pair.second,quark);               //    Schedule interact() task on QUARK
         }                                                       //   End while loop for interaction queue
       }                                                         //  End if for queue size
-*/
     }                                                           // End while loop for interaction queue
     QUARK_Delete(quark);                                        // Delete QUARK object 
     writeTrace();                                               // Write event trace to file

@@ -22,7 +22,6 @@ THE SOFTWARE.
 #define KERNEL
 #include "kernel.h"
 #undef KERNEL
-#include "laplace.h"
 
 template<int nx, int ny, int nz>
 struct Index {
