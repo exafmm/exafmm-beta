@@ -1,17 +1,12 @@
 include ../Makefile
 
-host: host.o ../kernel/cpu$(EXPAND)Laplace.o ../kernel/cpuVanDerWaals.o
-	rm -f libFMM.a
-	ar ruv libFMM.a $?
-	ranlib libFMM.a
-
-device: device.o ../kernel/gpu$(EXPAND)Laplace.o ../kernel/gpuVanDerWaals.o
-	rm -f libFMM.a
-	ar ruv libFMM.a $?
-	ranlib libFMM.a
+coulombVdW: coulombVdW.o $(OBJECT)
+	ar ruv libcoulombVdW.a $?
+	ranlib libcoulombVdW.a
 
 testlib: testlib.cxx
 	make cleanall
-	make host
-	@$(CXX) $? libFMM.a $(LFLAGS)
+	rm -f libcoulombVdW.a
+	make coulombVdW
+	@$(CXX) $? libcoulombVdW.a $(LFLAGS)
 	./a.out

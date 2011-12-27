@@ -23,10 +23,10 @@ THE SOFTWARE.
 #include <cstdlib>
 #include <iostream>
 
-extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* fi,
+extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   int nj, double* xj, double* qj, double rscale, int tblno, double size, int periodicflag);
 
-extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
+extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
   int nj, double* xj, int* atypej, int nat, double* gscale, double* rscale,
   int tblno, double size, int periodicflag);
 
@@ -36,6 +36,7 @@ int main() {
   const double size = 2;
   double *xi     = new double [3*N];
   double *qi     = new double [N];
+  double *pi     = new double [3*N];
   double *fi     = new double [3*N];
   double *xj     = new double [3*N];
   double *qj     = new double [N];
@@ -74,33 +75,39 @@ int main() {
     }
   }
 
-  FMMcalccoulomb_ij_host(N, xi, qi, fi, N, xj, qj, 0.0, 0, size, 0);
-  double Fd = 0, Fn = 0;
+  FMMcalccoulomb_ij(N, xi, qi, pi, N, xj, qj, 0.0, 1, size, 0);
+  FMMcalccoulomb_ij(N, xi, qi, fi, N, xj, qj, 0.0, 0, size, 0);
+  double Pd = 0, Pn = 0, Fd = 0, Fn = 0;
   for( int i=0; i!=N; ++i ) {
-    double Fx = 0, Fy = 0, Fz = 0;
+    double P = 0, Fx = 0, Fy = 0, Fz = 0;
     for( int j=0; j!=N; ++j ) {
       double dx = xi[3*i+0] - xj[3*j+0];
       double dy = xi[3*i+1] - xj[3*j+1];
       double dz = xi[3*i+2] - xj[3*j+2];
       double R2 = dx * dx + dy * dy + dz * dz;
-      double invR = 1 / sqrtf(R2);
+      double invR = 1 / std::sqrt(R2);
       if( R2 == 0 ) invR = 0;
       double invR3 = qj[j] * invR * invR * invR;
+      P += qj[j] * invR;
       Fx += dx * invR3;
       Fy += dy * invR3;
       Fz += dz * invR3;
     }
+    Pd += (pi[3*i+0] - P) * (pi[3*i+0] - P);
+    Pn += P * P;
     Fd += (fi[3*i+0] - Fx) * (fi[3*i+0] - Fx)
         + (fi[3*i+1] - Fy) * (fi[3*i+1] - Fy)
         + (fi[3*i+2] - Fz) * (fi[3*i+2] - Fz);
     Fn += Fx * Fx + Fy * Fy + Fz * Fz;
   }
-  std::cout << "Coulomb error : " << sqrtf(Fd/Fn) << std::endl;
+  std::cout << "Coulomb       potential : " << sqrtf(Pd/Pn) << std::endl;
+  std::cout << "Coulomb       force     : " << sqrtf(Fd/Fn) << std::endl;
 
-  FMMcalcvdw_ij_host(N,xi,atypei,fi,N,xj,atypej,nat,gscale,rscale,2,size,0);
-  Fd = Fn = 0;
+  FMMcalcvdw_ij(N,xi,atypei,pi,N,xj,atypej,nat,gscale,rscale,3,size,0);
+  FMMcalcvdw_ij(N,xi,atypei,fi,N,xj,atypej,nat,gscale,rscale,2,size,0);
+  Pd = Pn = Fd = Fn = 0;
   for( int i=0; i!=N; ++i ) {
-    double Fx = 0, Fy = 0, Fz = 0;
+    double P = 0, Fx = 0, Fy = 0, Fz = 0;
     for( int j=0; j!=N; ++j ) {
       double dx = xi[3*i+0] - xj[3*j+0];
       double dy = xi[3*i+1] - xj[3*j+1];
@@ -110,23 +117,29 @@ int main() {
         double rs = rscale[atypei[i]*nat+atypej[j]];
         double gs = gscale[atypei[i]*nat+atypej[j]];
         double R2s = R2 * rs;
-        double invR2 = 1.0 / R2s;
+        double invR = 1.0 / std::sqrt(R2s);
+        double invR2 = invR * invR;
         double invR6 = invR2 * invR2 * invR2;
-        double dtmp = gs * invR6 * invR2 * (2.0 * invR6 - 1.0);
+        double dtmp = gs * invR6 * invR * (2.0 * invR6 - 1.0);
+        P += gs * invR6 * (invR6 - 1.0);
         Fx += dx * dtmp;
         Fy += dy * dtmp;
         Fz += dz * dtmp;
       }
     }
+    Pd += (pi[3*i+0] - P) * (pi[3*i+0] - P);
+    Pn += P * P;
     Fd += (fi[3*i+0] - Fx) * (fi[3*i+0] - Fx)
         + (fi[3*i+1] - Fy) * (fi[3*i+1] - Fy)
         + (fi[3*i+2] - Fz) * (fi[3*i+2] - Fz);
     Fn += Fx * Fx + Fy * Fy + Fz * Fz;
   }
-  std::cout << "Vdw error     : " << sqrtf(Fd/Fn) << std::endl;
+  std::cout << "Van der Waals potential : " << sqrtf(Pd/Pn) << std::endl;
+  std::cout << "Van der Waals force     : " << sqrtf(Fd/Fn) << std::endl;
 
   delete[] xi;
   delete[] qi;
+  delete[] pi;
   delete[] fi;
   delete[] xj;
   delete[] qj;
