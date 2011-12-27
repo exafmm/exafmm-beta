@@ -41,7 +41,7 @@ int main() {
   FMM.setGlobDomain(bodies);
   FMM.stopTimer("Set domain   ",FMM.printNow);
 
-  FMM.BottomUp::setIndex(bodies);
+  FMM.setIndex(bodies);
   FMM.binBodies(bodies,0);
 
   FMM.buffer.resize(bodies.size());

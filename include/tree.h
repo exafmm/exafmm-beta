@@ -205,7 +205,7 @@ protected:
     }                                                           // End loop over levels
     startTimer("Twigs2cells  ");                                // Start timer
     unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
-    stopTimer("Twigs2cells  ");                                 // Stop timer & print
+    stopTimer("Twigs2cells  ",printNow);                        // Stop timer & print
     evalM2M(cells,cells);                                       // Evaluate all M2M kernels
   }
 

@@ -87,7 +87,7 @@ int main() {
   FMM.resetTimer();
   FMM.initTarget(bodies);
   FMM.evalP2M(cells);
-  FMM.evalM2M(cells);
+  FMM.evalM2M(cells,cells);
   FMM.updateBodies();
   jbodies = bodies;
   jcells = cells;

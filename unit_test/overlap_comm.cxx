@@ -78,7 +78,7 @@ int main() {
   FMM.resetTimer();
   FMM.initTarget(bodies);
   FMM.evalP2M(cells);
-  FMM.evalM2M(cells);
+  FMM.evalM2M(cells,cells);
   jcells = cells;
   if( MPISIZE != 1 ) {
     #pragma omp parallel sections num_threads(2)

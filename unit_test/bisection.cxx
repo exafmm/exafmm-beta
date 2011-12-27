@@ -42,7 +42,7 @@ int main() {
   FMM.stopTimer("Set domain   ");
 
   FMM.startTimer("Set index    ");
-  FMM.BottomUp::setIndex(bodies);
+  FMM.setIndex(bodies);
   FMM.stopTimer("Set index    ");
 
   FMM.buffer.resize(bodies.size());

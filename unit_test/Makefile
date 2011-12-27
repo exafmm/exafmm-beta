@@ -3,10 +3,6 @@ SERIALRUN = ./a.out
 #PARALLELRUN = mpirun -np 3 -machinefile ~/hosts ./a.out
 PARALLELRUN = mpirun -np 2 ./a.out
 
-index: index.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS) $(VFLAGS)
-	$(SERIALRUN)
-
 topdown: construct.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS) -DTOPDOWN
 	$(SERIALRUN)
@@ -96,17 +92,13 @@ fdgl: fdgl.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(PARALLELRUN)
 
-cuprintf: cuprintf.cu
-	$(NVCC) $? $(LFLAGS)
-	$(SERIALRUN)
-
 all      :
-	make index
 	make topdown
 	make bottomup
 	make kernel
 	make serialrun
 	make unsort
+	make ijserialrun
 	make direct_gpu
 	make mpi
 	make check_gpus
