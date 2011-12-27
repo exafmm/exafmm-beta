@@ -44,7 +44,7 @@ int main() {
   FMM.stopTimer("Set bodies   ",FMM.printNow);
 
   FMM.startTimer("Set domain   ");
-  FMM.setGlobDomain(bodies2);
+  FMM.setGlobDomain(bodies,0,M_PI);
   FMM.stopTimer("Set domain   ",FMM.printNow);
 
   if( IMAGES != 0 ) {

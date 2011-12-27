@@ -27,6 +27,10 @@ unsort: unsort.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) -DTOPDOWN
 	$(SERIALRUN)
 
+ijserialrun: ijserialrun.cxx $(OBJECT)
+	$(CXX) $? $(LFLAGS)
+	$(SERIALRUN)
+
 Nserial: Nserial.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS)
 	$(SERIALRUN)

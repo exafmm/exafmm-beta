@@ -70,7 +70,7 @@ private:
       } else if( c != c_old ) {                                 //  If cell index is repeated
         if( cells[c].NCHILD != 0 ) {                            //   Stick-cell collision
           cells[c_old].NCHILD = cells[c].NCHILD;                //    Copy number of children
-          cells[c_old].NDLEAF  = cells[c].NDLEAF;               //    Copy number of leafs
+          cells[c_old].NDLEAF = cells[c].NDLEAF;                //    Copy number of leafs
           cells[c_old].PARENT = cells[c].PARENT;                //    Copy parent link
           cells[c_old].CHILD = cells[c].CHILD;                  //    Copy child link
           cells[c_old].LEAF = cells[c].LEAF;                    //    Copy iterator of first leaf
@@ -151,7 +151,7 @@ protected:
     Cell cell;                                                  // Cell structure
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( B->ICELL != index ) {                                 //  If it belongs to a new cell
-        cell.NDLEAF  = nleaf;                                   //   Set number of leafs
+        cell.NDLEAF = nleaf;                                    //   Set number of leafs
         cell.NCHILD = 0;                                        //   Set number of child cells
         cell.ICELL  = index;                                    //   Set cell index
         cell.LEAF   = firstLeaf;                                //   Set pointer to first leaf
@@ -163,7 +163,7 @@ protected:
       }                                                         //  Endif for new cell
       nleaf++;                                                  //  Increment body counter
     }                                                           // End loop over bodies
-    cell.NDLEAF  = nleaf;                                       // Set number of leafs
+    cell.NDLEAF = nleaf;                                        // Set number of leafs
     cell.NCHILD = 0;                                            // Set number of child cells
     cell.ICELL  = index;                                        // Set cell index
     cell.LEAF   = firstLeaf;                                    // Set pointer to first leaf

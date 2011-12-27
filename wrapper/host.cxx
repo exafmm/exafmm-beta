@@ -45,7 +45,6 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
   int nj, double* xj, double* qj, double, int tblno, double size, int periodicflag) {
   IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
   THETA = .5;
-  vect shift = size/2;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
   ParallelFMM<Laplace> FMM;
@@ -79,7 +78,7 @@ extern "C" void FMMcalccoulomb_ij_host(int ni, double* xi, double* qi, double* f
   }
 
   FMM.initialize();
-  FMM.setGlobDomain(bodies,shift,size/2);
+  FMM.setGlobDomain(bodies,size/2,size/2);
   FMM.octsection(bodies);
   FMM.octsection(jbodies);
   FMM.bottomup(bodies,cells);
@@ -136,7 +135,6 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
   int tblno, double size, int periodicflag) {
   IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
   THETA = .5;
-  vect shift = size/2;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
   SerialFMM<CoulombVdW> FMM;
@@ -169,7 +167,7 @@ extern "C" void FMMcalcvdw_ij_host(int ni, double* xi, int* atypei, double* fi,
   }
 
 
-  FMM.setDomain(bodies,shift,size/2);
+  FMM.setDomain(bodies,size/2,size/2);
   FMM.setVanDerWaals(nat,rscale,gscale);
   FMM.bottomup(bodies,cells);
   FMM.bottomup(jbodies,jcells);

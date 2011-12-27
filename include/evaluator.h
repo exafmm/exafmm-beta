@@ -88,7 +88,9 @@ private:
       X += B->X * B->SRC;                                       //  Accumulate moment
     }                                                           // End loop over leafs
     X /= m;                                                     // Center of mass
+#if Cartesian
     C->X = X;                                                   // Set center of twig cell to center of mass
+#endif
   }
 
 //! Set center of parent cell to center of mass
@@ -100,7 +102,9 @@ private:
       X += c->X * std::abs(c->M[0]);                            //  Accumulate moment
     }                                                           // End loop over child cells
     X /= m;                                                     // Center of mass
+#if Cartesian
     C->X = X;                                                   // Set center of parent cell to center of mass
+#endif
   }
 
 //! Approximate interaction between two cells
@@ -375,7 +379,6 @@ public:
     flagM2L.resize(cells.size());                               // Resize M2L periodic image flag
     flagM2P.resize(cells.size());                               // Resize M2P periodic image flag
     flagP2P.resize(cells.size());                               // Resize P2P periodic image flag
-    PairQueue pairQueue;                                        // Queue of interacting cell pairs
     if( IMAGES == 0 ) {                                         // If free boundary condition
       Iperiodic = Icenter;                                      //  Set periodic image flag to center
       Xperiodic = 0;                                            //  Set periodic coordinate offset

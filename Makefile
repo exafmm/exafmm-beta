@@ -8,8 +8,8 @@ VTK_INCLUDE_PATH = /usr/include/vtk-5.6
 DEVICE  = cpu
 #DEVICE  = gpu
 
-EXPAND  = Cartesian
-#EXPAND  = Spherical
+#EXPAND  = Cartesian
+EXPAND  = Spherical
 
 ifeq ($(shell mpicxx --version | grep Intel | wc -l),0)
 CXX     = mpicxx -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O3 -fPIC -fopenmp\
@@ -26,7 +26,7 @@ LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudar
 endif
 #CXX     += -I$(VTK_INCLUDE_PATH)
 #VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
-OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)$(EXPAND)CoulombVdW.o
+OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)CoulombVdW.o
 
 .cxx.o  :
 	$(CXX) -c $? -o $@ $(LFLAGS)
