@@ -20,7 +20,7 @@ kernel: kernel.cxx $(OBJECT)
 	$(SERIALRUN)
 
 serialrun: serialrun.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS) -pg
+	$(CXX) $? $(LFLAGS)
 	$(SERIALRUN)
 
 unsort: unsort.cxx $(OBJECT)

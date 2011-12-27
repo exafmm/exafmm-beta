@@ -22,28 +22,28 @@ THE SOFTWARE.
 #define KERNEL
 #include "kernel.h"
 #undef KERNEL
-#include "coulombvdw.h"
+#include "vanderwaals.h"
 
 template<>
-void Kernel<CoulombVdW>::initialize() {}
+void Kernel<VanDerWaals>::initialize() {}
 
 template<>
-void Kernel<CoulombVdW>::P2M(C_iter) const {}
+void Kernel<VanDerWaals>::P2M(C_iter) const {}
 
 template<>
-void Kernel<CoulombVdW>::M2M(C_iter, C_iter) const {}
+void Kernel<VanDerWaals>::M2M(C_iter, C_iter) const {}
 
 template<>
-void Kernel<CoulombVdW>::M2L(C_iter, C_iter) const {}
+void Kernel<VanDerWaals>::M2L(C_iter, C_iter) const {}
 
 template<>
-void Kernel<CoulombVdW>::M2P(C_iter, C_iter) const {}
+void Kernel<VanDerWaals>::M2P(C_iter, C_iter) const {}
 
 template<>
-void Kernel<CoulombVdW>::L2L(C_iter, C_iter) const {}
+void Kernel<VanDerWaals>::L2L(C_iter, C_iter) const {}
 
 template<>
-void Kernel<CoulombVdW>::L2P(C_iter) const {}
+void Kernel<VanDerWaals>::L2P(C_iter) const {}
 
 template<>
-void Kernel<CoulombVdW>::finalize() {}
+void Kernel<VanDerWaals>::finalize() {}

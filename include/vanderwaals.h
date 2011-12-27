@@ -23,7 +23,7 @@ THE SOFTWARE.
 #define coulombvdw_h
 
 template<>
-void Kernel<CoulombVdW>::P2P(C_iter Ci, C_iter Cj) const {      // Coulomb + Van der Waals P2P kernel on CPU
+void Kernel<VanDerWaals>::P2P(C_iter Ci, C_iter Cj) const {     // Van der Waals P2P kernel on CPU
   for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
     int atypei = Bi->SRC;                                       //  Atom type of target
     for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
@@ -34,9 +34,11 @@ void Kernel<CoulombVdW>::P2P(C_iter Ci, C_iter Cj) const {      // Coulomb + Van
         real rs = RSCALE[atypei*ATOMS+atypej];                  //    r scale
         real gs = GSCALE[atypei*ATOMS+atypej];                  //    g scale
         real R2s = R2 * rs;                                     //    R^2 * r scale
-        real invR2 = 1.0 / R2s;                                 //    1 / R^2
+        real invR = 1.0 / std::sqrt(R2s);                       //    1 / R
+        real invR2 = invR * invR;                               //    1 / R^2
         real invR6 = invR2 * invR2 * invR2;                     //    1 / R^6
-        real dtmp = gs * invR6 * invR2 * (2.0 * invR6 - 1.0);   //    g scale / R^2 * (2 / R^12 + 1 / R^6)
+        real dtmp = gs * invR6 * invR * (2.0 * invR6 - 1.0);    //    g scale / R * (2 / R^12 + 1 / R^6)
+        Bi->TRG[0] += gs * invR6 * (invR6 - 1.0);               //    Van der Waals potential
         Bi->TRG[1] += dist[0] * dtmp;                           //    x component of Van der Waals force
         Bi->TRG[2] += dist[1] * dtmp;                           //    y component of Van der Waals force
         Bi->TRG[3] += dist[2] * dtmp;                           //    z component of Van der Waals force

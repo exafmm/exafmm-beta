@@ -103,7 +103,7 @@ typedef std::map<std::string,double>::iterator TI_iter;         //!< Iterator fo
 
 enum Equation {                                                 //!< Equation type enumeration
   Laplace,                                                      //!< Laplace potential + force
-  CoulombVdW                                                    //!< Coulomb + Van der Walls force
+  VanDerWaals                                                   //!< Van der Walls force
 };
 
 //! Structure of source bodies (stuff to send)

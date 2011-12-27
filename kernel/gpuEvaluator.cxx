@@ -174,9 +174,9 @@ void Evaluator<equation>::getTargetCell(Lists &lists, bool isM) {// Get body val
 template<Equation equation>
 void Evaluator<equation>::clearBuffers() {                      // Clear GPU buffers
   startTimer("Clear buffer ");                                  // Start timer
+  constHost.clear();                                            // Clear const vector
   keysHost.clear();                                             // Clear keys vector
   rangeHost.clear();                                            // Clear range vector
-  constHost.clear();                                            // Clear const vector
   sourceHost.clear();                                           // Clear source vector
   targetHost.clear();                                           // Clear target vector
   sourceBegin.clear();                                          // Clear map for offset of source cells

@@ -23,7 +23,7 @@ THE SOFTWARE.
 #define pregpu_h
 #include <cutil.h>
 
-__device__ __constant__ gpureal constDevc[1];                   // Constants on device
+__device__ __constant__ gpureal constDevc[514];                 // Constants on device
 
 namespace {                                                     // Prevent overlap of definitions among equations
 __device__ void cart2sph(gpureal& r, gpureal& theta, gpureal& phi,// Get r,theta,phi from x,y,z on GPU

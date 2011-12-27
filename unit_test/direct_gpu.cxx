@@ -28,7 +28,7 @@ int main() {
   THETA = 1 / sqrtf(4);
   Bodies bodies(numBodies);
   Bodies jbodies;
-  Evaluator<Laplace> FMM;
+  Evaluator<VanDerWaals> FMM;
   FMM.initialize();
   FMM.preCalculation();
   FMM.printNow = true;

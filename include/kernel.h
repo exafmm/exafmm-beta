@@ -211,17 +211,6 @@ public:
     }                                                           // Endif for periodic boundary condition
   }
 
-//! Set scaling paramters in Van der Waals
-  void setVanDerWaals(int atoms, double *rscale, double *gscale) {
-    ATOMS = atoms;                                              // Set number of atom types
-    RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
-    GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector
-    for( int i=0; i!=ATOMS*ATOMS; ++i ) {                       // Loop over scale vector
-      RSCALE[i] = rscale[i];                                    //  Set rscale vector
-      GSCALE[i] = gscale[i];                                    //  Set gscale vector
-    }                                                           // End loop over scale vector
-  }
-
 //! Precalculate M2L translation matrix
   void preCalculation() {
     const complex I(0.,1.);                                     // Imaginary unit
@@ -271,6 +260,18 @@ public:
     delete[] prefactor;                                         // Free sqrt( (n - |m|)! / (n + |m|)! )
     delete[] Anm;                                               // Free (-1)^n / sqrt( (n + m)! / (n - m)! )
     delete[] Cnm;                                               // Free M2L translation matrix Cjknm
+  }
+
+//! Set scaling paramters in Van der Waals
+  void setVanDerWaals(int atoms, double *rscale, double *gscale) {
+    assert(atoms <= 16);                                        // Change GPU constant memory alloc if needed
+    ATOMS = atoms;                                              // Set number of atom types
+    RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
+    GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector
+    for( int i=0; i!=ATOMS*ATOMS; ++i ) {                       // Loop over scale vector
+      RSCALE[i] = rscale[i];                                    //  Set rscale vector
+      GSCALE[i] = gscale[i];                                    //  Set gscale vector
+    }                                                           // End loop over scale vector
   }
 
 };

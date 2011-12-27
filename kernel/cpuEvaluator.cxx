@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+
 template<Equation equation>
 void Evaluator<equation>::timeKernels() {                       // Time all kernels for auto-tuning
   Bodies ibodies(1000), jbodies(1000);                          // Artificial bodies

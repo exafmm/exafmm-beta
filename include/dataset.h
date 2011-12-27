@@ -21,11 +21,11 @@ THE SOFTWARE.
 */
 #ifndef dataset_h
 #define dataset_h
-#include "types.h"
+#include "kernel.h"
 
 //! Contains all the different datasets
 template<Equation equation>
-class Dataset {
+class Dataset : public Kernel<equation> {
 private:
   long filePosition;                                            //!< Position of file stream
 
@@ -112,7 +112,7 @@ public:
 };
 
 template<>
-class Dataset<CoulombVdW> {
+class Dataset<VanDerWaals> : public Kernel<VanDerWaals> {
 private:
   long filePosition;                                            //!< Position of file stream
 
@@ -124,11 +124,27 @@ public:
 
 //! Initialize source values
   void initSource(Bodies &bodies) {
+    ATOMS = 16;                                                 // Set number of atoms
+    RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
+    GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->SRC = 1. / bodies.size() / MPISIZE;                    //  Initialize mass/charge
+      B->SRC = drand48() * ATOMS;                               //  Initialize mass/charge
     }                                                           // End loop over bodies
+    for( int i=0; i!=ATOMS; ++i ) {                             // Loop over atoms
+      GSCALE[i*ATOMS+i] = drand48();                            //  Set VanDerWaals post scaling factor
+      RSCALE[i*ATOMS+i] = drand48();                            //  Set VanDerWaals pre scaling factor
+    }                                                           // End loop over atoms
+    for( int i=0; i!=ATOMS; ++i ) {                             // Loop over target atoms
+      for( int j=0; j!=ATOMS; ++j ) {                           //  Loop over source atoms
+        if( i != j ) {                                          //   If target and source are different
+          GSCALE[i*ATOMS+j] = std::sqrt(GSCALE[i*ATOMS+i] * GSCALE[j*ATOMS+j]);// Set post scaling factor
+          RSCALE[i*ATOMS+j] = (std::sqrt(RSCALE[i*ATOMS+i]) + std::sqrt(RSCALE[j*ATOMS+j])) * 0.5;
+          RSCALE[i*ATOMS+j] *= RSCALE[i*ATOMS+j];               //    Set pre scaling factor
+        }                                                       //   End if for different target and source
+      }                                                         //  End loop over source atoms
+    }                                                           // End loop over target atoms
   }
 
 //! Initialize target values
@@ -137,8 +153,7 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->TRG = 0;                                               //  Clear previous target values (IeqJ is dummy)
-      if( EPS2 != 0 ) B->TRG[0] = -B->SRC / std::sqrt(EPS2) * IeqJ;//  Initialize potential (0 if I != J)
+      B->TRG = 0 * IeqJ;                                        //  Clear previous target values
     }                                                           // End loop over bodies
   }
 
