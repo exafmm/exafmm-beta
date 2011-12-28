@@ -111,12 +111,11 @@ __device__ inline void VanDerWaalsP2P_core(gpureal *target, gpureal *targetX, gp
   gpureal invR = rsqrtf(R2 * rscale);
   gpureal invR2 = invR * invR;
   gpureal invR6 = invR2 * invR2 * invR2;
-  gpureal dtmp = gscale * invR6 * invR * (2.0f * invR6 - 1.0f);
+  gpureal dtmp = gscale * invR6 * invR2 * (2.0f * invR6 - 1.0f);
   target[0] += gscale * invR6 * (invR6 - 1.0f);
   target[1] += d.x * dtmp;
   target[2] += d.y * dtmp;
   target[3] += d.z * dtmp;
-//  if(blockIdx.x==0&&threadIdx.x==0&&i==0) printf("%d %f %f %f %f\n",i,invR,invR6,dtmp,target[0]);
 }
 
 __global__ void VanDerWaalsP2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {
