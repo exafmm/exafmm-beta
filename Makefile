@@ -24,8 +24,8 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib -lquark
 ifeq ($(DEVICE),gpu)
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
-CXX     += -I$(VTK_INCLUDE_PATH)
-VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+#CXX     += -I$(VTK_INCLUDE_PATH)
+#VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o ../kernel/cpuP2P.o
 
 .cxx.o  :

@@ -9,4 +9,4 @@ testlib: testlib.cxx
 	rm -f libcoulombVdW.a
 	make coulombVdW
 	@$(CXX) $? libcoulombVdW.a $(LFLAGS)
-	./a.out
+	mpirun -np 2 ./a.out

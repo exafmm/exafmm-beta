@@ -24,10 +24,10 @@ THE SOFTWARE.
 #define MD_LJ_R2MIN 0.0001f
 #define MD_LJ_R2MAX 100.0f
 
-void MPI_Shift(int *var, int n) {
+extern "C" void MPI_ShiftI(int *var, int n, int mpisize, int mpirank) {
   int *buf = new int [n];
-  const int isend = (MPIRANK + 1          ) % MPISIZE;
-  const int irecv = (MPIRANK - 1 + MPISIZE) % MPISIZE;
+  const int isend = (mpirank + 1          ) % mpisize;
+  const int irecv = (mpirank - 1 + mpisize) % mpisize;
   MPI_Request sreq, rreq;
 
   MPI_Isend(var,n,MPI_INT,irecv,1,MPI_COMM_WORLD,&sreq);
@@ -41,10 +41,10 @@ void MPI_Shift(int *var, int n) {
   delete[] buf;
 }
 
-void MPI_Shift(double *var, int n) {
+extern "C" void MPI_Shift(double *var, int n, int mpisize, int mpirank) {
   double *buf = new double [n];
-  const int isend = (MPIRANK + 1          ) % MPISIZE;
-  const int irecv = (MPIRANK - 1 + MPISIZE) % MPISIZE;
+  const int isend = (mpirank + 1          ) % mpisize;
+  const int irecv = (mpirank - 1 + mpisize) % mpisize;
   MPI_Request sreq, rreq;
 
   MPI_Isend(var,n,MPI_DOUBLE,irecv,1,MPI_COMM_WORLD,&sreq);
@@ -106,6 +106,7 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   FMM.downward(cells,jcells);
   FMM.unpartition(bodies);
   std::sort(bodies.begin(),bodies.end());
+  FMM.finalize();
 
 #if 1
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -127,8 +128,8 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   }
 #else
   for( int irank=0; irank!=MPISIZE; ++irank ) {
-    MPI_Shift(xj,3*nj);
-    MPI_Shift(qj,nj);
+    MPI_Shift(xj,3*nj,MPISIZE,MPIRANK);
+    MPI_Shift(qj,nj,MPISIZE,MPIRANK);
     switch (tblno) {
     case 0 :
       for( int i=0; i<ni; i++ ) {
@@ -171,7 +172,7 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
   THETA = .5;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
-  SerialFMM<VanDerWaals> FMM;
+  ParallelFMM<VanDerWaals> FMM;
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
@@ -190,6 +191,7 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
       break;
     }
     B->IBODY = i;
+    B->IPROC = MPIRANK;
   }
 
   for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
@@ -200,13 +202,20 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
     B->SRC  = atypej[i] + .5;
   }
 
-
-  FMM.setDomain(bodies,size/2,size/2);
+  FMM.initialize();
+  FMM.setGlobDomain(bodies,size/2,size/2);
   FMM.setVanDerWaals(nat,rscale,gscale);
+  FMM.octsection(bodies);
+  FMM.octsection(jbodies);
   FMM.bottomup(bodies,cells);
   FMM.bottomup(jbodies,jcells);
+  FMM.commBodies(jcells);
+  FMM.commCells(jbodies,jcells);
+
   FMM.downward(cells,jcells);
+  FMM.unpartition(bodies);
   std::sort(bodies.begin(),bodies.end());
+  FMM.finalize();
 
 #if 1
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -228,8 +237,8 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
   }
 #else
   for( int irank=0; irank!=MPISIZE; ++irank ) {
-    MPI_Shift(xj,3*nj);
-    MPI_Shift(atypej,nj);
+    MPI_Shift(xj,3*nj,MPISIZE,MPIRANK);
+    MPI_ShiftI(atypej,nj,MPISIZE,MPIRANK);
     switch (tblno) {
     case 2 :
       for( int i=0; i<ni; i++ ) {
