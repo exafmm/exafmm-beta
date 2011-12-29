@@ -129,9 +129,9 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
     MPI_Shift(qj,nj,MPISIZE,MPIRANK);
     switch (tblno) {
     case 0 :
-      for( int i=0; i<ni; i++ ) {
+      for( int i=0; i!=ni; ++i ) {
         double Fx = 0, Fy = 0, Fz = 0;
-        for( int j=0; j<nj; j++ ) {
+        for( int j=0; j!=nj; ++j ) {
           double dx = xi[3*i+0] - xj[3*j+0];
           double dy = xi[3*i+1] - xj[3*j+1];
           double dz = xi[3*i+2] - xj[3*j+2];
@@ -149,9 +149,9 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
       }
       break;
     case 1:
-      for( int i=0; i<ni; i++ ) {
+      for( int i=0; i!=ni; ++i ) {
         double Po = 0;
-        for( int j=0; j<nj; j++ ) {
+        for( int j=0; j!=nj; ++j ) {
           double dx = xi[3*i+0] - xj[3*j+0];
           double dy = xi[3*i+1] - xj[3*j+1];
           double dz = xi[3*i+2] - xj[3*j+2];
@@ -185,9 +185,9 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
     B->SRC  = atypei[i] + .5;
     switch (tblno) {
     case 2 :
-      B->TRG[1] = fi[3*i+0];
-      B->TRG[2] = fi[3*i+1];
-      B->TRG[3] = fi[3*i+2];
+      B->TRG[1] = -fi[3*i+0];
+      B->TRG[2] = -fi[3*i+1];
+      B->TRG[3] = -fi[3*i+2];
       break;
     case 3 :
       B->TRG[0] = fi[3*i+0];
@@ -228,9 +228,9 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
     atypei[i] = B->SRC;
     switch (tblno) {
     case 2 :
-      fi[3*i+0] = B->TRG[1];
-      fi[3*i+1] = B->TRG[2];
-      fi[3*i+2] = B->TRG[3];
+      fi[3*i+0] = -B->TRG[1];
+      fi[3*i+1] = -B->TRG[2];
+      fi[3*i+2] = -B->TRG[3];
       break;
     case 3 :
       fi[3*i+0] = B->TRG[0];
@@ -243,9 +243,9 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
     MPI_ShiftI(atypej,nj,MPISIZE,MPIRANK);
     switch (tblno) {
     case 2 :
-      for( int i=0; i<ni; i++ ) {
+      for( int i=0; i!=ni; ++i ) {
         double Fx = 0, Fy = 0, Fz = 0;
-        for( int j=0; j<nj; j++ ) {
+        for( int j=0; j!=nj; ++j ) {
           double dx = xi[3*i+0] - xj[3*j+0];
           double dy = xi[3*i+1] - xj[3*j+1];
           double dz = xi[3*i+2] - xj[3*j+2];
@@ -270,9 +270,9 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
       }
       break;
     case 3:
-      for( int i=0; i<ni; i++ ) {
+      for( int i=0; i!=ni; ++i ) {
         double Po = 0;
-        for( int j=0; j<nj; j++ ) {
+        for( int j=0; j!=nj; ++j ) {
           double dx = xi[3*i+0] - xj[3*j+0];
           double dy = xi[3*i+1] - xj[3*j+1];
           double dz = xi[3*i+2] - xj[3*j+2];

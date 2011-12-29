@@ -10,7 +10,7 @@ int main(int, char **argv) {
   const int N = 1000;
   const double xmax = 100.0;
   const double ksize = 11.0;
-  const double alpha=0.1;
+  const double alpha = 0.1;
 
   int calcmode = atoi(argv[1]);
   int images = atoi(argv[2]);
@@ -28,16 +28,16 @@ int main(int, char **argv) {
 
   srand48(2);
   // set positions and types
-  for( int i=0; i<N; i++ ) {
-    for( int d=0; d<3; d++ ) {
+  for( int i=0; i!=N; ++i ) {
+    for( int d=0; d!=3; ++d ) {
       x[3*i+d] = drand48() * xmax;
       f[3*i+d] = fd[3*i+d] = 0;
     }
     q[i] = drand48();
   }
   double qsum = 0;
-  for( int i=0; i<N; i++ ) qsum += q[i];
-  for( int i=0; i<N; i++ ) q[i] -= qsum / N;
+  for( int i=0; i!=N; ++i ) qsum += q[i];
+  for( int i=0; i!=N; ++i ) q[i] -= qsum / N;
 
   // calc with target routine
   switch( calcmode ) {
@@ -63,8 +63,8 @@ int main(int, char **argv) {
 
   // Potential energy self term
   if( (calcmode % 2) == 1 ) {
-    for( int i=0; i<N; i++ ) {
-      for( int d=0; d<3; d++ ) {
+    for( int i=0; i!=N; ++i ) {
+      for( int d=0; d!=3; ++d ) {
         f[3*i+d] *= 0.5;
         f[3*i+d] -= q[i] * q[i] * alpha / sqrt(M_PI);
       }
@@ -73,23 +73,23 @@ int main(int, char **argv) {
 
   // Dipole correction
   double fc[3];
-  for( int d=0; d<3; d++ ) fc[d]=0;
-  for( int i=0; i<N; i++ ) {
-    for( int d=0; d<3; d++ ) {
+  for( int d=0; d!=3; ++d ) fc[d]=0;
+  for( int i=0; i!=N; ++i ) {
+    for( int d=0; d!=3; ++d ) {
       fc[d] += q[i] * (x[3*i+d] - 0.5 * xmax);
     }
   }
   if( (calcmode % 2) == 1 ) {
-    for( int i=0; i<N; i++ ) {
-      for( int d=0; d<3; d++ ) {
+    for( int i=0; i!=N; ++i ) {
+      for( int d=0; d!=3; ++d ) {
         f[3*i+d] += 2.0 * M_PI / (3.0 * xmax * xmax * xmax)
                   * (fc[0] * fc[0] + fc[1] * fc[1] + fc[2] * fc[2]) / N;
       }
       f[3*i+2] = f[3*i+1] = f[3*i];
     }
   } else {
-    for( int i=0; i<N; i++ ) {
-      for( int d=0; d<3; d++ ) {
+    for( int i=0; i!=N; ++i ) {
+      for( int d=0; d!=3; ++d ) {
         f[3*i+d] -= 4.0 * M_PI * q[i] * fc[d] / (3.0 * xmax * xmax * xmax);
       }
     }
@@ -99,7 +99,7 @@ int main(int, char **argv) {
   for( int ix=-images; ix<=images; ix++ ) {
     for( int iy=-images; iy<=images; iy++ ) {
       for( int iz=-images; iz<=images; iz++ ) {
-        for( int i=0; i<N; i++ ) {
+        for( int i=0; i!=N; ++i ) {
           xj[3*i+0] = x[3*i+0] + ix * xmax;
           xj[3*i+1] = x[3*i+1] + iy * xmax;
           xj[3*i+2] = x[3*i+2] + iz * xmax;
@@ -111,14 +111,14 @@ int main(int, char **argv) {
       }
     }
   }
-  for( int i=0; i<N; i++ ) {
-    for( int d=0; d<3; d++ ) {
+  for( int i=0; i!=N; ++i ) {
+    for( int d=0; d!=3; ++d ) {
       fd[3*i+d] *= q[i];
     }
   }
   if( (calcmode % 2) == 1 ) {
-    for( int i=0; i<N; i++ ) {
-      for( int d=0; d<3; d++ ) {
+    for( int i=0; i!=N; ++i ) {
+      for( int d=0; d!=3; ++d ) {
         fd[3*i+d] *= 0.5;
       }
     }
@@ -128,15 +128,15 @@ int main(int, char **argv) {
   double diff = 0, norm = 0;
   if( (calcmode % 2) == 1 ) {
     double e = 0, ed = 0;
-    for( int i=0; i<N; i++ ) {
+    for( int i=0; i!=N; ++i ) {
       e += f[3*i];
       ed += fd[3*i];
     }
     diff = (e - ed) * (e - ed);
     norm = ed * ed;
   } else {
-    for( int i=0; i<N; i++ ) {
-      for( int d=0; d<3; d++ ) {
+    for( int i=0; i!=N; ++i ) {
+      for( int d=0; d!=3; ++d ) {
         diff += (f[3*i+d] - fd[3*i+d]) * (f[3*i+d] - fd[3*i+d]);
         norm += fd[3*i+d] * fd[3*i+d];
       }

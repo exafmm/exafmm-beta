@@ -115,9 +115,9 @@ __device__ inline void VanDerWaalsP2P_core(gpureal *target, gpureal *targetX, gp
   gpureal invR6 = invR2 * invR2 * invR2;
   gpureal dtmp = gscale * invR6 * invR2 * (2.0f * invR6 - 1.0f);
   target[0] += gscale * invR6 * (invR6 - 1.0f);
-  target[1] += d.x * dtmp;
-  target[2] += d.y * dtmp;
-  target[3] += d.z * dtmp;
+  target[1] -= d.x * dtmp;
+  target[2] -= d.y * dtmp;
+  target[3] -= d.z * dtmp;
 }
 
 __global__ void VanDerWaalsP2P_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlob, gpureal *sourceGlob) {

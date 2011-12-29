@@ -53,14 +53,14 @@ int MPIRANK = 0;                                                //!< MPI comm ra
 int MPISIZE = 1;                                                //!< MPI comm size
 int DEVICE  = 0;                                                //!< GPU device ID
 int IMAGES  = 0;                                                //!< Number of periodic image sublevels
-real THETA  = .5;                                               //!< Box opening criteria
+real THETA  = .5;                                               //!< Multipole acceptance criteria
 vect Xperiodic = 0;                                             //!< Coordinate offset of periodic image
 #else
 extern int MPIRANK;                                             //!< MPI comm rank
 extern int MPISIZE;                                             //!< MPI comm size
 extern int DEVICE;                                              //!< GPU device ID
 extern int IMAGES;                                              //!< Number of periodic image sublevels
-extern real THETA;                                              //!< Box opening criteria
+extern real THETA;                                              //!< Multipole acceptance criteria
 extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
 #endif
 
@@ -105,7 +105,7 @@ typedef std::map<std::string,double>::iterator TI_iter;         //!< Iterator fo
 
 enum Equation {                                                 //!< Equation type enumeration
   Laplace,                                                      //!< Laplace potential + force
-  VanDerWaals                                                   //!< Van der Walls force
+  VanDerWaals                                                   //!< Van der Walls potential + force
 };
 
 //! Structure of source bodies (stuff to send)
@@ -116,6 +116,9 @@ struct JBody {
   vect        X;                                                //!< Position
   real        SRC;                                              //!< Scalar source values
 };
+typedef std::vector<JBody>             JBodies;                 //!< Vector of source bodies
+typedef std::vector<JBody>::iterator   JB_iter;                 //!< Iterator for source body vector
+
 //! Structure of bodies
 struct Body : JBody {
   vec<4,real> TRG;                                              //!< Scalar+vector target values
@@ -125,36 +128,39 @@ struct Body : JBody {
 };
 typedef std::vector<Body>              Bodies;                  //!< Vector of bodies
 typedef std::vector<Body>::iterator    B_iter;                  //!< Iterator for body vector
-typedef std::vector<JBody>             JBodies;                 //!< Vector of source bodies
-typedef std::vector<JBody>::iterator   JB_iter;                 //!< Iterator for source body vector
 
+//! Linked list of leafs (only used in fast/topdown.h)
 struct Leaf {
-  int I;
-  vect X;
-  Leaf *NEXT;
+  int I;                                                        //!< Unique index for every leaf
+  vect X;                                                       //!< Coordinate of leaf
+  Leaf *NEXT;                                                   //!< Pointer to next leaf
 };
-typedef std::vector<Leaf>           Leafs;                      // Vector of leafs
-typedef std::vector<Leaf>::iterator L_iter;                     // Iterator for leaf vector
+typedef std::vector<Leaf>              Leafs;                   //!< Vector of leafs
+typedef std::vector<Leaf>::iterator    L_iter;                  //!< Iterator for leaf vector
 
+//! Structure of nodes (only used in fast/topdown.h)
 struct Node {
-  bool NOCHILD;
-  int  LEVEL;
-  int  NLEAF;
-  int  CHILD[8];
-  vect X;
-  Leaf *LEAF;
+  bool NOCHILD;                                                 //!< Flag for twig nodes
+  int  LEVEL;                                                   //!< Level in the tree structure
+  int  NLEAF;                                                   //!< Number of descendant leafs
+  int  CHILD[8];                                                //!< Index of child node
+  vect X;                                                       //!< Coordinate at center
+  Leaf *LEAF;                                                   //!< Pointer to first leaf
 };
-typedef std::vector<Node>           Nodes;
-typedef std::vector<Node>::iterator N_iter;
+typedef std::vector<Node>              Nodes;                   //!< Vector of nodes
+typedef std::vector<Node>::iterator    N_iter;                  //!< Iterator for node vector
 
 //! Structure of source cells (stuff to send)
 struct JCell {
   unsigned ICELL;                                               //!< Cell index
   Mset   M;                                                     //!< Multipole coefficients
 };
+typedef std::vector<JCell>             JCells;                  //!< Vector of source cells
+typedef std::vector<JCell>::iterator   JC_iter;                 //!< Iterator for source cell vector
+
 //! Structure of cells
 struct Cell {
-  unsigned ICELL;
+  unsigned ICELL;                                               //!< Cell index
   int      NCHILD;                                              //!< Number of child cells
   int      NCLEAF;                                              //!< Number of child leafs
   int      NDLEAF;                                              //!< Number of descendant leafs
@@ -169,9 +175,6 @@ struct Cell {
 };
 typedef std::vector<Cell>              Cells;                   //!< Vector of cells
 typedef std::vector<Cell>::iterator    C_iter;                  //!< Iterator for cell vector
-typedef std::vector<JCell>             JCells;                  //!< Vector of source cells
-typedef std::vector<JCell>::iterator   JC_iter;                 //!< Iterator for source cell vector
-
 typedef std::queue<C_iter>             CellQueue;               //!< Queue of cell iterators
 typedef std::stack<C_iter>             CellStack;               //!< Stack of cell iterators
 typedef std::pair<C_iter,C_iter>       Pair;                    //!< Pair of interacting cells
@@ -183,5 +186,14 @@ typedef std::vector<List>              Lists;                   //!< Vector of i
 typedef std::map<C_iter,int>           Map;                     //!< Map of interaction lists
 typedef std::map<C_iter,int>::iterator MC_iter;                 //!< Iterator for interation list map
 typedef std::vector<Map>               Maps;                    //!< Vector of map of interaction lists
+
+//! Structure for Ewald summation
+struct Ewald {
+  vect K;                                                       //!< 3-D wave number vector
+  real REAL;                                                    //!< real part of wave
+  real IMAG;                                                    //!< imaginary part of wave
+};
+typedef std::vector<Ewald>             Ewalds;                  //!< Vector of Ewald summation types
+typedef std::vector<Ewald>::iterator   E_iter;                  //!< Iterator for Ewald summation types
 
 #endif

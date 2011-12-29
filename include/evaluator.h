@@ -74,6 +74,7 @@ public:
   using Kernel<equation>::P2P;                                  //!< Evaluate P2P kernel
   using Kernel<equation>::L2L;                                  //!< Evaluate L2L kernel
   using Kernel<equation>::L2P;                                  //!< Evaluate L2P kernel
+  using Kernel<equation>::EwaldReal;                            //!< Evaluate Ewald real part
   using Dataset<equation>::initSource;                          //!< Initialize source values
   using Dataset<equation>::initTarget;                          //!< Initialize target values
 
@@ -125,14 +126,33 @@ private:
 
   inline void interact(C_iter Ci, C_iter Cj, Quark *quark);     //!< interact() function using QUARK
 
-//! Traverse a pair of trees starting from the root pair
+//! Traverse a single tree using a stack
+  void traverseStack(C_iter Ci, C_iter C) {
+    CellStack cellStack;                                        // Stack of cells
+    cellStack.push(C);                                          // Push pair to queue
+    while( !cellStack.empty() ) {                               // While traversal stack is not empty
+      C = cellStack.top();                                      //  Get cell from top of stack
+      cellStack.pop();                                          //  Pop traversal stack
+      for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {// Loop over cell's children
+        vect dX = Ci->X - Cj->X - Xperiodic;                    //   Distance vector from source to target
+        real Rq = std::sqrt(norm(dX));                          //   Scalar distance
+        if( Rq * THETA < Ci->R + Cj->R && Cj->NCHILD == 0 ) {   //   If twigs are close
+          EwaldReal(Ci,Cj);                                     //    Use P2P
+        } else if( Cj->NCHILD != 0 ) {                          //   If cells are not twigs
+          cellStack.push(Cj);                                   //    Push source cell to stack
+        }                                                       //   End if for twig cells
+      }                                                         //  End loop over cell's children
+    }                                                           // End while loop for traversal stack
+  }
+
+//! Traverse a pair of trees using a queue
   void traverseQueue(Pair pair) {
     PairQueue pairQueue;                                        // Queue of interacting cell pairs
     Quark *quark = QUARK_New(4);                                // Initialize QUARK object
     pairQueue.push(pair);                                       // Push pair to queue
-    while( !pairQueue.empty() ) {                               // While interaction queue is not empty
+    while( !pairQueue.empty() ) {                               // While dual traversal queue is not empty
       pair = pairQueue.front();                                 //  Get interaction pair from front of queue
-      pairQueue.pop();                                          //  Pop interaction queue
+      pairQueue.pop();                                          //  Pop dual traversal queue
       if(splitFirst(pair.first,pair.second)) {                  //  If first cell is larger
         C_iter C = pair.first;                                  //   Split the first cell
         for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {// Loop over first cell's children
@@ -145,13 +165,13 @@ private:
         }                                                       //   End loop over second cell's children
       }                                                         //  End if for which cell to split
       if( pairQueue.size() > 100 ) {                            //  When queue size reaches threshold
-        while( !pairQueue.empty() ) {                           //   While interaction queue is not empty
+        while( !pairQueue.empty() ) {                           //   While dual traversal queue is not empty
           pair = pairQueue.front();                             //    Get interaction pair from front of queue
-          pairQueue.pop();                                      //    Pop interaction queue
+          pairQueue.pop();                                      //    Pop dual traversal queue
           interact(pair.first,pair.second,quark);               //    Schedule interact() task on QUARK
-        }                                                       //   End while loop for interaction queue
+        }                                                       //   End while loop for dual traversal queue
       }                                                         //  End if for queue size
-    }                                                           // End while loop for interaction queue
+    }                                                           // End while loop for dual traversal queue
     QUARK_Delete(quark);                                        // Delete QUARK object 
     writeTrace();                                               // Write event trace to file
   }
@@ -353,7 +373,7 @@ public:
   void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue) {
     vect dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real Rq = std::sqrt(norm(dX));                              // Scalar distance
-    if(Rq * THETA > Ci->R + Cj->R ) {                           // If distance if far enough
+    if( Rq * THETA > Ci->R + Cj->R ) {                          // If distance if far enough
       approximate(Ci,Cj);                                       //  Use approximate kernels, e.g. M2L, M2P
     } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {             // Else if both cells are leafs
       evalP2P(Ci,Cj);                                           //  Use P2P
@@ -406,6 +426,40 @@ public:
         listP2P[Ci-Ci0].unique();                               //  Eliminate duplicate periodic entries
       }                                                         //  End loop over target cells
     }                                                           // Endif for periodic boundary condition
+  }
+
+//! Traverse neighbor cells only (for cutoff based methods)
+  void neighbor(Cells &cells, Cells &jcells) {
+    C_iter root = cells.end() - 1;                              // Iterator for root target cell
+    C_iter jroot = jcells.end() - 1;                            // Iterator for root source cell
+    Ci0 = cells.begin();                                        // Set begin iterator for target cells
+    Cj0 = jcells.begin();                                       // Set begin iterator for source cells
+    listP2P.resize(cells.size());                               // Resize P2P interaction list
+    flagP2P.resize(cells.size());                               // Resize P2P periodic image flag
+    for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {     // Loop over target cells
+      if( Ci->NCHILD == 0 ) {                                   //  If cell is a twig
+        if( IMAGES == 0 ) {                                     //   If free boundary condition
+          Iperiodic = Icenter;                                  //    Set periodic image flag to center
+          Xperiodic = 0;                                        //    Set periodic coordinate offset
+          traverseStack(Ci,jroot);                              //    Traverse the source tree
+        } else {                                                //   If periodic boundary condition
+          int I = 0;                                            //    Initialize index of periodic image
+          for( int ix=-1; ix<=1; ++ix ) {                       //    Loop over x periodic direction
+            for( int iy=-1; iy<=1; ++iy ) {                     //     Loop over y periodic direction
+              for( int iz=-1; iz<=1; ++iz, ++I ) {              //      Loop over z periodic direction
+                Iperiodic = 1 << I;                             //       Set periodic image flag
+                Xperiodic[0] = ix * 2 * R0;                     //       Coordinate offset for x periodic direction
+                Xperiodic[1] = iy * 2 * R0;                     //       Coordinate offset for y periodic direction
+                Xperiodic[2] = iz * 2 * R0;                     //       Coordinate offset for z periodic direction
+                traverseStack(Ci,jroot);                        //       Traverse the source tree
+              }                                                 //      End loop over z periodic direction
+            }                                                   //     End loop over y periodic direction
+          }                                                     //    End loop over x periodic direction
+        }                                                       //   Endif for periodic boundary condition
+        listP2P[Ci-Ci0].sort();                                 //   Sort interaction list
+        listP2P[Ci-Ci0].unique();                               //   Eliminate duplicate periodic entries
+      }                                                         //  End if for twig cells
+    }                                                           // End loop over target cells
   }
 
   void setSourceBody();                                         //!< Set source buffer for bodies (for GPU)

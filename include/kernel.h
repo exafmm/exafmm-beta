@@ -38,6 +38,7 @@ protected:
   int                  ATOMS;                                   //!< Number of atom types in Van der Waals
   std::vector<real>    RSCALE;                                  //!< Scaling parameter for Van der Waals
   std::vector<real>    GSCALE;                                  //!< Scaling parameter for Van der Waals
+  real                 ALPHA;                                   //!< Ewald summation scaling
 
   std::vector<int>     keysHost;                                //!< Offsets for rangeHost
   std::vector<int>     rangeHost;                               //!< Offsets for sourceHost
@@ -275,6 +276,11 @@ public:
     }                                                           // End loop over scale vector
   }
 
+//! Set scaling paramters in Ewald summation
+  void setEwald(real alpha) {
+    ALPHA = alpha;                                              // Set Ewald summation scaling
+  }
+
 };
 
 template<Equation equation>
@@ -284,11 +290,11 @@ public:
   void P2M(C_iter Ci) const;                                    //!< Evaluate P2M kernel on CPU
   void M2M(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2M kernel on CPU
   void M2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2L kernel on CPU
-  void M2L(Quark*, C_iter Ci, C_iter Cj) const;                 //!< Evaluate M2L kernel on CPU
   void M2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2P kernel on CPU
   void P2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate P2P kernel on CPU
   void L2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate L2L kernel on CPU
   void L2P(C_iter Ci) const;                                    //!< Evaluate L2P kernel on CPU
+  void EwaldReal(C_iter Ci, C_iter Cj) const;                   //!< Evaluate Ewald real part on CPU
   void P2M();                                                   //!< Evaluate P2M kernel on GPU
   void M2M();                                                   //!< Evaluate M2M kernel on GPU
   void M2L();                                                   //!< Evaluate M2L kernel on GPU
@@ -296,6 +302,7 @@ public:
   void P2P();                                                   //!< Evalaute P2P kernel on GPU
   void L2L();                                                   //!< Evaluate L2L kernel on GPU
   void L2P();                                                   //!< Evaluate L2P kernel on GPU
+  void EwaldReal();                                             //!< Evaluate Ewald real part on GPU
   void finalize();                                              //!< Finalize kernels
 
   void allocate();                                              //!< Allocate GPU variables

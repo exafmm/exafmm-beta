@@ -19,8 +19,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-#ifndef pregpu_h
-#define pregpu_h
+#ifndef gpu_h
+#define gpu_h
 #include <cutil.h>
 
 __device__ __constant__ gpureal constDevc[514];                 // Constants on device

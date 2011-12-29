@@ -15,6 +15,10 @@ kernel: kernel.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS)
 	$(SERIALRUN)
 
+ewald_direct: ewald_direct.cxx $(OBJECT)
+	$(CXX) $? $(LFLAGS)
+	$(SERIALRUN)
+
 serialrun: serialrun.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS)
 	$(SERIALRUN)

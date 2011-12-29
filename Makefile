@@ -41,7 +41,7 @@ commit  :
 	hg pull -u
 save    :
 	make cleanall
-	tar zcvf ../../exafmm.tgz ../../exafmm
+	tar zcf ../../exafmm.tgz ../../exafmm
 docs:
 	doxygen Doxyfile
 	cd docs/html ;tar czf ../../docs.tar *

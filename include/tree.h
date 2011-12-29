@@ -43,6 +43,7 @@ public:
   using Evaluator<equation>::upwardPeriodic;                    //!< Upward phase for periodic cells
   using Evaluator<equation>::traverse;                          //!< Traverse tree to get interaction list
   using Evaluator<equation>::traversePeriodic;                  //!< Traverse tree for periodic images
+  using Evaluator<equation>::neighbor;                          //!< Traverse source tree to get neighbor list
   using Evaluator<equation>::evalP2M;                           //!< Evaluate P2M kernel
   using Evaluator<equation>::evalM2M;                           //!< Evaluate M2M kernel
   using Evaluator<equation>::evalM2L;                           //!< Evaluate M2L kernel
@@ -210,7 +211,7 @@ protected:
   }
 
 public:
-//! Downward phase
+//! Downward phase (M2L,M2P,P2P,L2L,L2P evaluation)
   void downward(Cells &cells, Cells &jcells, bool periodic=true) {
 #if HYBRID
     timeKernels();                                              // Time all kernels for auto-tuning
@@ -237,6 +238,14 @@ public:
     if(printNow) std::cout << "P2P: "  << NP2P
                            << " M2P: " << NM2P
                            << " M2L: " << NM2L << std::endl;
+  }
+
+//! Calculate only neighbor P2P evaluation
+  void cutoff(Cells &cells, Cells &jcells) {
+    startTimer("Get neighbor ");                                // Start timer
+    neighbor(cells,jcells);                                     // Traverse tree to get neighbor
+    stopTimer("Get neighbor ",printNow);                        // Stop timer & print
+    evalP2P(cells);                                             // Evaluate queued P2P kernels (only GPU)
   }
 };
 
