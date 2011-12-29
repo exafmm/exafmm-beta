@@ -265,6 +265,7 @@ public:
 //! Set scaling paramters in Van der Waals
   void setVanDerWaals(int atoms, double *rscale, double *gscale) {
     assert(atoms <= 16);                                        // Change GPU constant memory alloc if needed
+    THETA = .1;                                                 // Force opening angle to be small
     ATOMS = atoms;                                              // Set number of atom types
     RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
     GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector

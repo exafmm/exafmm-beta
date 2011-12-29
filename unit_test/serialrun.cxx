@@ -28,7 +28,7 @@ int main() {
   const int numBodies = 10000;
   const int numTarget = 100;
   IMAGES = 0;
-  THETA = 1 / sqrtf(4);
+  THETA = 1 / sqrt(4);
   Bodies bodies(numBodies);
   Bodies jbodies;
   Cells cells, jcells;

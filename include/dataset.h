@@ -124,6 +124,7 @@ public:
 
 //! Initialize source values
   void initSource(Bodies &bodies) {
+    THETA = .1;                                                 // Force opening angle to be small
     ATOMS = 16;                                                 // Set number of atoms
     RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
     GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector

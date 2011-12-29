@@ -6,6 +6,8 @@
 
 #include "mr3.h"
 
+__device__ __constant__ VG_MATRIX      d_matrix[ATYPE2];
+
 __device__ __inline__ 
 void coulombforce_inter(int xj[3], float qj, int xi[3], float fi[3], float rscale2f, float al2)
 {
@@ -202,6 +204,110 @@ void realpot_kernel(int ni, VG_XVEC *xivec, int nj, VG_XVEC *xjvec,
   if(tid < nj - j) s_xj[tid] = xjvec[j + tid];
   __syncthreads();
   for (js = 0; js < nj - j; js++) realpot_inter(s_xj[js].r,s_xj[js].qatype.q,xi,fi,rscale2f,al2,r2min,r2max);
+  if(i<ni) for(k=0; k<3; k++) fvec[i*3+k] = fi[k];
+}
+
+
+__device__ __inline__
+void vdwforce_inter(int xj[3], int xi[3], float fi[3], int t, float al2,
+                    float r2min, float r2max)
+{
+  int k;
+  float dn2,inr2,dn6,dr[3],dphir;
+
+  dn2 = 0.0f;
+  for(k=0; k<3; k++){
+    dr[k]  = xi[k] - xj[k];
+    dr[k] *= al2;
+    dn2   += dr[k] * dr[k];
+  }
+  dn2  *= d_matrix[t].rscale;
+  inr2  = 1.0f/dn2;
+  dn6   = inr2*inr2*inr2;
+  dphir = d_matrix[t].gscale * dn6 * inr2 * (2.0f * dn6 - 1.0f);
+  if(dn2<r2min || dn2>=r2max) dphir = 0.0f;
+  for(k=0; k<3; k++) fi[k] += dphir * dr[k];
+}
+
+__global__
+void vdwforce_kernel(int ni, VG_XVEC *xivec, int nj, VG_XVEC *xjvec,
+                     int nat, float xmax, float r2min, float r2max, float *fvec)
+{
+  int tid = threadIdx.x;
+  int i = blockIdx.x * NTHRE + tid;
+  int j,k;
+  float fi[3],al2;
+  int js,atypei;
+  __shared__ VG_XVEC s_xj[NLOAD];
+  int xi[3];
+
+  al2=scalbnf(xmax,-32);
+  for(k=0; k<3; k++) fi[k] = 0.0f;
+  for(k=0; k<3; k++) xi[k] = xivec[i].r[k];
+  atypei = xivec[i].qatype.atype * nat;
+  for (j = 0; j < nj - NLOAD; j+=NLOAD){
+    __syncthreads();
+    if(tid < NLOAD) s_xj[tid] = xjvec[j + tid];
+    __syncthreads();
+#pragma unroll 16
+    for (js = 0; js < NLOAD; js++) vdwforce_inter(s_xj[js].r,xi,fi,atypei+s_xj[js].qatype.atype,al2,r2min,r2max);
+  }
+  __syncthreads();
+  if(tid < nj - j) s_xj[tid] = xjvec[j + tid];
+  __syncthreads();
+  for (js = 0; js < nj - j; js++) vdwforce_inter(s_xj[js].r,xi,fi,atypei+s_xj[js].qatype.atype,al2,r2min,r2max);
+  if(i<ni) for(k=0; k<3; k++) fvec[i*3+k] = fi[k];
+}
+
+
+__device__ __inline__
+void vdwpot_inter(int xj[3], int xi[3], float fi[3], int t, float al2,
+                  float r2min, float r2max)
+{
+  int k;
+  float dn2,inr2,dn6,dr[3],dphir;
+
+  dn2 = 0.0f;
+  for(k=0; k<3; k++){
+    dr[k]  = xi[k] - xj[k];
+    dr[k] *= al2;
+    dn2   += dr[k] * dr[k];
+  }
+  dn2  *= d_matrix[t].rscale;
+  inr2  = 1.0f/dn2;
+  dn6   = inr2*inr2*inr2;
+  dphir = d_matrix[t].gscale * dn6 * (dn6 - 1.0f);
+  if(dn2<r2min || dn2>=r2max) dphir = 0.0f;
+  for(k=0; k<3; k++) fi[k] += dphir;
+}
+
+__global__
+void vdwpot_kernel(int ni, VG_XVEC *xivec, int nj, VG_XVEC *xjvec,
+                   int nat, float xmax, float r2min, float r2max, float *fvec)
+{
+  int tid = threadIdx.x;
+  int i = blockIdx.x * NTHRE + tid;
+  int j,k;
+  float fi[3],al2;
+  int js,atypei;
+  __shared__ VG_XVEC s_xj[NLOAD];
+  int xi[3];
+
+  al2=scalbnf(xmax,-32);
+  for(k=0; k<3; k++) fi[k] = 0.0f;
+  for(k=0; k<3; k++) xi[k] = xivec[i].r[k];
+  atypei = xivec[i].qatype.atype * nat;
+  for (j = 0; j < nj - NLOAD; j+=NLOAD){
+    __syncthreads();
+    if(tid < NLOAD) s_xj[tid] = xjvec[j + tid];
+    __syncthreads();
+#pragma unroll 16
+    for (js = 0; js < NLOAD; js++) vdwpot_inter(s_xj[js].r,xi,fi,atypei+s_xj[js].qatype.atype,al2,r2min,r2max);
+  }
+  __syncthreads();
+  if(tid < nj - j) s_xj[tid] = xjvec[j + tid];
+  __syncthreads();
+  for (js = 0; js < nj - j; js++) vdwpot_inter(s_xj[js].r,xi,fi,atypei+s_xj[js].qatype.atype,al2,r2min,r2max);
   if(i<ni) for(k=0; k<3; k++) fvec[i*3+k] = fi[k];
 }
 
@@ -438,6 +544,72 @@ static void malloc_k(VG_KVEC **d_k, VG_KVEC **kf, int kalloc, int nthre)
 }
 
 
+static void malloc_and_make_index(int n, int nat, int atype[], int **index_ret)
+{
+  int i,at,na[ATYPE],offset[ATYPE],*index;
+  if((index=(int *)malloc(sizeof(int)*n))==NULL){
+    fprintf(stderr,"** error : can't malloc index **\n");
+    exit(1);
+  }
+  for(at=0;at<nat;at++) na[at]=0;
+  for(i=0;i<n;i++) na[atype[i]]++;
+  offset[0]=0;
+  for(at=1;at<nat;at++) offset[at]=offset[at-1]+na[at-1];
+  for(at=0;at<nat;at++) na[at]=0;
+  for(i=0;i<n;i++){
+    at=atype[i];
+    index[i]=offset[at]+na[at];// i:original, index[i]:new
+    na[at]++;
+  }
+  *index_ret=index;
+}
+
+
+static void free_index(int *index)
+{
+  free(index);
+}
+
+
+static void send_matrix(int nat, double *gscale, double *rscale)
+{
+  int i,j;
+  VG_MATRIX *matrix;
+
+  // send matrix
+  if((matrix=(VG_MATRIX *)malloc(sizeof(VG_MATRIX)*nat*nat))==NULL){
+    fprintf(stderr,"** error : can't malloc matrix **\n");
+    exit(1);
+  }
+  for(i=0;i<nat;i++){
+    for(j=0;j<nat;j++){
+      matrix[i*nat+j].gscale=(float)(gscale[i*nat+j]);
+      matrix[i*nat+j].rscale=(float)(rscale[i*nat+j]);
+    }
+  }
+  CUDA_SAFE_CALL(cudaMemcpyToSymbol(d_matrix,matrix,sizeof(VG_MATRIX)*nat*nat));
+  free(matrix);
+}
+
+
+static void copy_and_send_x(int n, double *x, int *atype, int *index,
+                            double xmax_1[3], VG_XVEC *vec, VG_XVEC *d_x)
+{
+  int i,j;
+  DI2 di2;
+
+  for(i=0;i<n;i++){
+    int idx=index[i];
+    for(j=0;j<3;j++){
+      di2.d=x[i*3+j]*xmax_1[j]+0x180000;
+      vec[idx].r[j]=di2.fi2.fi0.i;
+    }
+    vec[idx].qatype.atype=atype[i];
+  }
+  CUDA_SAFE_CALL(cudaMemcpy(d_x,vec,sizeof(VG_XVEC)*n,cudaMemcpyHostToDevice));
+}
+
+
 static void copy_and_send_xq(int n, double *x, double *q,
                              double xmax_1[3], VG_XVEC *vec, VG_XVEC *d_x)
 {
@@ -519,6 +691,16 @@ static void get_result(int n, float *d_force, float *forcef, double *force)
 }
 
 
+static void get_result_index(int n, int *index, float *d_force, float *forcef, double *force)
+{
+  // copy GPU result to host, and convert it to double
+  int i,j;
+
+  CUDA_SAFE_CALL(cudaMemcpy(forcef,d_force,sizeof(float)*n*3,cudaMemcpyDeviceToHost));
+  for(i=0;i<n;i++) for(j=0;j<3;j++) force[i*3+j]+=forcef[index[i]*3+j];
+}
+
+
 void MR3calccoulomb_ij(int ni, double xi[], double qi[], double force[],
                        int nj, double xj[], double qj[],
                        double rscale,
@@ -563,6 +745,52 @@ void MR3calccoulomb_ij(int ni, double xi[], double qi[], double force[],
   if(tblno==0 || tblno==1) get_result(ni,d_force,forcef,force);
   else if(tblno==6)        get_result_q(ni,d_force,forcef,qi,rscale*rscale*rscale,force);
   else if(tblno==7)        get_result_q(ni,d_force,forcef,qi,rscale,force);
+}
+
+
+void MR3calcvdw_ij(int ni, double xi[], int atypei[], double force[],
+                   int nj, double xj[], int atypej[],
+                   int nat, double gscale[], double rscale[],
+                   int tblno, double xmax, int periodicflag)
+{
+  VG_XVEC *d_xi,*xif;
+  VG_XVEC *d_xj,*xjf;
+  float *d_force,*forcef;
+  int *indexi,*indexj;
+  if((periodicflag & 1)==0) xmax*=2.0;
+  double xmax_1[3]={1.0/xmax,1.0/xmax,1.0/xmax};
+  float r2min=MD_LJ_R2MIN,r2max=MD_LJ_R2MAX;
+
+  if(nat>ATYPE){
+    fprintf(stderr,"** error : nat is too large **\n");
+    exit(1);
+  }
+  malloc_x(&d_xi,&xif,ni,NTHRE);
+  malloc_x2(&d_xj,&xjf,nj,NTHRE);
+  malloc_f(&d_force,&forcef,ni);
+  malloc_and_make_index(ni,nat,atypei,&indexi);
+  malloc_and_make_index(nj,nat,atypej,&indexj);
+  send_matrix(nat,gscale,rscale);
+  copy_and_send_x(ni,xi,atypei,indexi,xmax_1,xif,d_xi);
+  copy_and_send_x(nj,xj,atypej,indexj,xmax_1,xjf,d_xj);
+  switch(tblno){
+  case 2:
+    vdwforce_kernel<<< (ni+NTHRE-1)/NTHRE, NTHRE >>>(ni,d_xi,nj,d_xj,
+                   nat,(float)xmax,r2min,r2max,d_force);
+    break;
+  case 3:
+    vdwpot_kernel<<< (ni+NTHRE-1)/NTHRE, NTHRE >>>(ni,d_xi,nj,d_xj,
+                 nat,(float)xmax,r2min,r2max,d_force);
+    break;
+  default:
+    fprintf(stderr,"** error : not supported tblno = %d **\n",tblno);
+    exit(1);
+    break;
+  }
+  CUT_CHECK_ERROR("Kernel execution failed");
+  get_result_index(ni,indexi,d_force,forcef,force);
+  free_index(indexi);
+  free_index(indexj);
 }
 
 

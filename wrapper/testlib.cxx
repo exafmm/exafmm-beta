@@ -23,6 +23,10 @@ THE SOFTWARE.
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
+#include "mr3.h"
+
+const double R2MIN = 0.25;
+const double R2MAX = 64;
 
 extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   int nj, double* xj, double* qj, double rscale, int tblno, double size, int periodicflag);
@@ -95,6 +99,10 @@ int main(int argc, char **argv) {
   for( int irank=0; irank!=mpisize; ++irank ) {
     MPI_Shift(xj,3*N,mpisize,mpirank);
     MPI_Shift(qj,N,mpisize,mpirank);
+#if 1
+    MR3calccoulomb_ij(N, xi, qi, pd, N, xj, qj, 1.0, 1, size, 0);
+    MR3calccoulomb_ij(N, xi, qi, fd, N, xj, qj, 1.0, 0, size, 0);
+#else
     for( int i=0; i!=N; ++i ) {
       double P = 0, Fx = 0, Fy = 0, Fz = 0;
       for( int j=0; j!=N; ++j ) {
@@ -115,6 +123,7 @@ int main(int argc, char **argv) {
       fd[3*i+1] += Fy;
       fd[3*i+2] += Fz;
     }
+#endif
   }
   double Pd = 0, Pn = 0, Fd = 0, Fn = 0;
   for( int i=0; i!=N; ++i ) {
@@ -124,6 +133,8 @@ int main(int argc, char **argv) {
         + (fi[3*i+1] - fd[3*i+1]) * (fi[3*i+1] - fd[3*i+1])
         + (fi[3*i+2] - fd[3*i+2]) * (fi[3*i+2] - fd[3*i+2]);
     Fn += fd[3*i+0] * fd[3*i+0] + fd[3*i+1] * fd[3*i+1] + fd[3*i+2] * fd[3*i+2];
+    pi[3*i+0] = pi[3*i+1] = pi[3*i+2] = 0;
+    fi[3*i+0] = fi[3*i+1] = fi[3*i+2] = 0;
     pd[3*i+0] = pd[3*i+1] = pd[3*i+2] = 0;
     fd[3*i+0] = fd[3*i+1] = fd[3*i+2] = 0;
   }
@@ -135,6 +146,10 @@ int main(int argc, char **argv) {
   for( int irank=0; irank!=mpisize; ++irank ) {
     MPI_Shift(xj,3*N,mpisize,mpirank);
     MPI_ShiftI(atypej,N,mpisize,mpirank);
+#if 0
+    MR3calcvdw_ij(N,xi,atypei,pd,N,xj,atypej,nat,gscale,rscale,3,size,0);
+    MR3calcvdw_ij(N,xi,atypei,fd,N,xj,atypej,nat,gscale,rscale,2,size,0);
+#else
     for( int i=0; i!=N; ++i ) {
       double P = 0, Fx = 0, Fy = 0, Fz = 0;
       for( int j=0; j!=N; ++j ) {
@@ -146,14 +161,15 @@ int main(int argc, char **argv) {
           double rs = rscale[atypei[i]*nat+atypej[j]];
           double gs = gscale[atypei[i]*nat+atypej[j]];
           double R2s = R2 * rs;
-          double invR = 1.0 / std::sqrt(R2s);
-          double invR2 = invR * invR;
-          double invR6 = invR2 * invR2 * invR2;
-          double dtmp = gs * invR6 * invR * (2.0 * invR6 - 1.0);
-          P += gs * invR6 * (invR6 - 1.0);
-          Fx += dx * dtmp;
-          Fy += dy * dtmp;
-          Fz += dz * dtmp;
+          if( R2MIN <= R2s && R2s < R2MAX ) {
+            double invR2 = 1.0 / R2s;
+            double invR6 = invR2 * invR2 * invR2;
+            double dtmp = gs * invR6 * invR2 * (2.0 * invR6 - 1.0);
+            P += gs * invR6 * (invR6 - 1.0);
+            Fx += dx * dtmp;
+            Fy += dy * dtmp;
+            Fz += dz * dtmp;
+          }
         }
       }
       pd[3*i+0] += P;
@@ -161,6 +177,7 @@ int main(int argc, char **argv) {
       fd[3*i+1] += Fy;
       fd[3*i+2] += Fz;
     }
+#endif
   }
   Pd = Pn = Fd = Fn = 0;
   for( int i=0; i!=N; ++i ) {
@@ -174,7 +191,6 @@ int main(int argc, char **argv) {
   std::cout << "Van der Waals potential : " << sqrtf(Pd/Pn) << std::endl;
   std::cout << "Van der Waals force     : " << sqrtf(Fd/Fn) << std::endl;
 
-/*
   delete[] xi;
   delete[] qi;
   delete[] pi;
@@ -187,6 +203,6 @@ int main(int argc, char **argv) {
   delete[] atypej;
   delete[] rscale;
   delete[] gscale;
-*/
+
   MPI_Finalize();
 }

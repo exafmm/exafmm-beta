@@ -4,8 +4,7 @@ coulombVdW: coulombVdW.o $(OBJECT)
 	ar ruv libcoulombVdW.a $?
 	ranlib libcoulombVdW.a
 
-testlib: testlib.cxx
-	make cleanall
+testlib: testlib.cxx mr3.o mr3_host.o
 	rm -f libcoulombVdW.a
 	make coulombVdW
 	@$(CXX) $? libcoulombVdW.a $(LFLAGS)

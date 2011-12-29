@@ -89,6 +89,69 @@ void MR3calccoulomb_ij_host(int ni, double xi[], double qi[], double force[],
 }
 
 
+void MR3calcvdw_ij_host(int ni, double xi[], int atypei[], double force[],
+                        int nj, double xj[], int atypej[],
+                        int nat, double gscale[], double rscale[],
+                        int tblno, double xmax, int periodicflag)
+{
+  /* periodic flag 0 --- non periodic
+                   1 --- periodic
+  */
+  int i,j,k;
+  double dr[3],r,dtmp,rs,gs,rrs,r2,r1,r6;
+  //  double r2min=0.25,r2max=64.0;
+  double r2min=MD_LJ_R2MIN,r2max=MD_LJ_R2MAX;
+
+  if((periodicflag & 1)==0){
+    xmax*=2.0;
+  }
+  if(tblno==5){ r2min=0.01;r2max=1e6;}
+  for(i=0;i<ni;i++){
+    for(j=0;j<nj;j++){
+      r2=0.0;
+      for(k=0;k<3;k++){
+        dr[k]=xi[i*3+k]-xj[j*3+k];
+        if(dr[k]<-xmax/2.0){
+          dr[k]+=xmax;
+        }
+        if(dr[k]>=xmax/2.0){
+          dr[k]-=xmax;
+        }
+        r2+=dr[k]*dr[k];
+      }
+      if(r2!=0.0){
+        r=sqrt(r2);
+        rs=rscale[atypei[i]*nat+atypej[j]];
+        gs=gscale[atypei[i]*nat+atypej[j]];
+        rrs=r2*rs;
+        if(rrs>=r2min && rrs<r2max){
+          r1=1.0/rrs;
+          r6=r1*r1*r1;
+          if(tblno==2){
+            dtmp=gs*r6*r1*(2.0*r6-1.0);
+            for(k=0;k<3;k++){
+              force[i*3+k]+=dtmp*dr[k];
+            }
+          }
+          else if(tblno==3){
+            dtmp=gs*r6*(r6-1.0);
+            for(k=0;k<3;k++){
+              force[i*3+k]+=dtmp;
+            }
+          }
+          else if(tblno==5){
+            dtmp=-gs*r6;
+            for(k=0;k<3;k++){
+              force[i*3+k]+=dtmp*dr[k];
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
 void MR3calcewald_dft_host(int k[], int knum, double x[], int n,
                                   double chg[], double cellsize[3],
                                   double bs[], double bc[])
@@ -181,13 +244,13 @@ void MR3calcewald_host(int *k, int knum_org, double *x, int n, double *chg,
   double factor1_tmp,vol1,eps1,alpha4,r2,kvtmp;
 
   knum=knum_org<0 ? -knum_org:knum_org;
-  if((bs=(double *)MR3_malloc_pointer(sizeof(double)*knum,"bs in MR3calcewald_host"))==NULL){
+  if((bs=(double *)malloc(sizeof(double)*knum))==NULL){
     fprintf(stderr,"** error : can't malloc bs **\n");
-    MR3_exit(1);
+    exit(1);
   }
-  if((bc=(double *)MR3_malloc_pointer(sizeof(double)*knum,"bc in MR3calcewald_host"))==NULL){
+  if((bc=(double *)malloc(sizeof(double)*knum))==NULL){
     fprintf(stderr,"** error : can't malloc bc **\n");
-    MR3_exit(1);
+    exit(1);
   }
   for(i=0;i<3;i++) cellsize[i]=cell[i][i];
   for(i=0;i<3;i++) cellsize_1[i]=1.0/cellsize[i];
@@ -224,8 +287,8 @@ void MR3calcewald_host(int *k, int knum_org, double *x, int n, double *chg,
     }
   }
 
-  MR3_free_pointer(bs,"bs in MR3calcewald_host");
-  MR3_free_pointer(bc,"bc in MR3calcewald_host");
+  free(bs);
+  free(bc);
 }
 
 int get_knum(double ksize) {

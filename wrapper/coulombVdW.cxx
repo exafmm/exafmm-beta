@@ -21,9 +21,6 @@ THE SOFTWARE.
 */
 #include "parallelfmm.h"
 
-#define MD_LJ_R2MIN 0.0001f
-#define MD_LJ_R2MAX 100.0f
-
 extern "C" void MPI_ShiftI(int *var, int n, int mpisize, int mpirank) {
   int *buf = new int [n];
   const int isend = (mpirank + 1          ) % mpisize;
@@ -133,31 +130,37 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
     switch (tblno) {
     case 0 :
       for( int i=0; i<ni; i++ ) {
+        double Fx = 0, Fy = 0, Fz = 0;
         for( int j=0; j<nj; j++ ) {
           double dx = xi[3*i+0] - xj[3*j+0];
           double dy = xi[3*i+1] - xj[3*j+1];
           double dz = xi[3*i+2] - xj[3*j+2];
           double R2 = dx * dx + dy * dy + dz * dz;
-          double invR = 1 / sqrtf(R2);
+          double invR = 1 / std::sqrt(R2);
           if( R2 == 0 ) invR = 0;
           double invR3 = qj[j] * invR * invR * invR;
-          fi[3*i+0] += dx * invR3;
-          fi[3*i+1] += dy * invR3;
-          fi[3*i+2] += dz * invR3;
+          Fx += dx * invR3;
+          Fy += dy * invR3;
+          Fz += dz * invR3;
         }
+        fi[3*i+0] += Fx;
+        fi[3*i+1] += Fy;
+        fi[3*i+2] += Fz;
       }
       break;
     case 1:
       for( int i=0; i<ni; i++ ) {
+        double Po = 0;
         for( int j=0; j<nj; j++ ) {
           double dx = xi[3*i+0] - xj[3*j+0];
           double dy = xi[3*i+1] - xj[3*j+1];
           double dz = xi[3*i+2] - xj[3*j+2];
           double R2 = dx * dx + dy * dy + dz * dz;
-          double invR = 1 / sqrtf(R2);
+          double invR = 1 / std::sqrt(R2);
           if( R2 == 0 ) invR = 0;
-          fi[3*i+0] += qj[j] * invR;
+          Po += qj[j] * invR;
         }
+        fi[3*i+0] += Po;
       }
       break;
     }
@@ -211,7 +214,6 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
   FMM.bottomup(jbodies,jcells);
   FMM.commBodies(jcells);
   FMM.commCells(jbodies,jcells);
-
   FMM.downward(cells,jcells);
   FMM.unpartition(bodies);
   std::sort(bodies.begin(),bodies.end());
@@ -242,6 +244,7 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
     switch (tblno) {
     case 2 :
       for( int i=0; i<ni; i++ ) {
+        double Fx = 0, Fy = 0, Fz = 0;
         for( int j=0; j<nj; j++ ) {
           double dx = xi[3*i+0] - xj[3*j+0];
           double dy = xi[3*i+1] - xj[3*j+1];
@@ -250,20 +253,25 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
           if( R2 != 0 ) {
             double rs = rscale[atypei[i]*nat+atypej[j]];
             double gs = gscale[atypei[i]*nat+atypej[j]];
-            double rrs = R2 * rs;
-            double invR = 1.0 / std::sqrt(rrs);
-            double invR2 = invR * invR;
-            double invR6 = invR2 * invR2 * invR2;
-            double dtmp = gs * invR6 * invR * (2.0 * invR6 - 1.0);
-            fi[3*i+0] += dtmp * dx;
-            fi[3*i+1] += dtmp * dy;
-            fi[3*i+2] += dtmp * dz;
+            double R2s = R2 * rs;
+            if( R2MIN <= R2s && R2s < R2MAX ) {
+              double invR2 = 1.0 / R2s;
+              double invR6 = invR2 * invR2 * invR2;
+              double dtmp = gs * invR6 * invR2 * (2.0 * invR6 - 1.0);
+              Fx += dx * dtmp;
+              Fy += dy * dtmp;
+              Fz += dz * dtmp;
+            }
           }
         }
+        fi[3*i+0] += Fx;
+        fi[3*i+1] += Fy;
+        fi[3*i+2] += Fz;
       }
       break;
     case 3:
       for( int i=0; i<ni; i++ ) {
+        double Po = 0;
         for( int j=0; j<nj; j++ ) {
           double dx = xi[3*i+0] - xj[3*j+0];
           double dy = xi[3*i+1] - xj[3*j+1];
@@ -272,12 +280,15 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
           if( R2 != 0 ) {
             double rs = rscale[atypei[i]*nat+atypej[j]];
             double gs = gscale[atypei[i]*nat+atypej[j]];
-            double rrs = R2 * rs;
-            double invR2 = 1.0 / rrs;
-            double invR6 = invR2 * invR2 * invR2;
-            fi[3*i+0] += gs * invR6 * (invR6 - 1.0);
+            double R2s = R2 * rs;
+            if( R2MIN <= R2s && R2s < R2MAX ) {
+              double invR2 = 1.0 / R2s;
+              double invR6 = invR2 * invR2 * invR2;
+              Po += gs * invR6 * (invR6 - 1.0);
+            }
           }
         }
+        fi[3*i+0] += Po;
       }
       break;
     }
