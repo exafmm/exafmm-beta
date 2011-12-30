@@ -527,6 +527,44 @@ void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate all 
 }
 
 template<Equation equation>
+void Evaluator<equation>::evalEwaldReal(C_iter Ci, C_iter Cj) { // Queue single Ewald real kernel
+  listP2P[Ci-Ci0].push_back(Cj);                                // Push source cell into P2P interaction list
+  flagP2P[Ci-Ci0][Cj] |= Icenter;                               // Flip bit of periodic image flag
+}
+
+template<Equation equation>
+void Evaluator<equation>::evalEwaldReal(Cells &cells) {         // Evaluate queued Ewald real kernels
+  Ci0 = cells.begin();                                          // Set begin iterator
+  const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
+  int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
+  int ioffset = 0;                                              // Initialzie offset for icall loops
+  for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
+    CiB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
+    CiE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
+    constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
+    startTimer("Get list     ");                                //  Start timer
+    for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over target cells
+      for( LC_iter L=listP2P[Ci-Ci0].begin(); L!=listP2P[Ci-Ci0].end(); ++L ) {//  Loop over interaction list
+        C_iter Cj = *L;                                         //    Set source cell
+        sourceSize[Cj] = Cj->NDLEAF;                            //    Key : iterator, Value : number of leafs
+      }                                                         //   End loop over interaction list
+    }                                                           //  End loop over target cells
+    stopTimer("Get list     ");                                 //  Stop timer
+    setSourceBody();                                            //  Set source buffer for bodies
+    setTargetBody(listP2P,flagP2P);                             //  Set target buffer for bodies
+    allocate();                                                 //  Allocate GPU memory
+    hostToDevice();                                             //  Copy from host to device
+    EwaldReal();                                                //  Perform Ewald real kernel
+    deviceToHost();                                             //  Copy from device to host
+    getTargetBody(listP2P);                                     //  Get body values from target buffer
+    clearBuffers();                                             //  Clear GPU buffers
+    ioffset += numCell;                                         //  Increment ioffset
+  }                                                             // End loop over icall
+  listP2P.clear();                                              // Clear interaction lists
+  flagP2P.clear();                                              // Clear periodic image flags
+}
+
+template<Equation equation>
 void Evaluator<equation>::timeKernels() {                       // Time all kernels for auto-tuning
   Bodies ibodies(100), jbodies(100);                            // Artificial bodies
   for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {// Loop over artificial bodies

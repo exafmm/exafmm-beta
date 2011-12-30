@@ -26,7 +26,8 @@ LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudar
 #endif
 #CXX     += -I$(VTK_INCLUDE_PATH)
 #VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
-OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o ../kernel/cpuP2P.o
+OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/cpuEwaldLaplace.o ../kernel/$(DEVICE)VanDerWaals.o\
+	../kernel/cpuP2P.o
 
 .cxx.o  :
 	$(CXX) -c $? -o $@ $(LFLAGS)

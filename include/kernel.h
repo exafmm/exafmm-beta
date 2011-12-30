@@ -38,7 +38,9 @@ protected:
   int                  ATOMS;                                   //!< Number of atom types in Van der Waals
   std::vector<real>    RSCALE;                                  //!< Scaling parameter for Van der Waals
   std::vector<real>    GSCALE;                                  //!< Scaling parameter for Van der Waals
-  real                 ALPHA;                                   //!< Ewald summation scaling
+  real                 KSIZE;                                   //!< Number of waves in Ewald summation
+  real                 ALPHA;                                   //!< Scaling parameter for Ewald summation
+  real                 SIGMA;                                   //!< Scaling parameter for Ewald summation
 
   std::vector<int>     keysHost;                                //!< Offsets for rangeHost
   std::vector<int>     rangeHost;                               //!< Offsets for sourceHost
@@ -263,7 +265,7 @@ public:
     delete[] Cnm;                                               // Free M2L translation matrix Cjknm
   }
 
-//! Set scaling paramters in Van der Waals
+//! Set paramters for Van der Waals
   void setVanDerWaals(int atoms, double *rscale, double *gscale) {
     assert(atoms <= 16);                                        // Change GPU constant memory alloc if needed
     THETA = .1;                                                 // Force opening angle to be small
@@ -276,9 +278,11 @@ public:
     }                                                           // End loop over scale vector
   }
 
-//! Set scaling paramters in Ewald summation
-  void setEwald(real alpha) {
-    ALPHA = alpha;                                              // Set Ewald summation scaling
+//! Set paramters for Ewald summation
+  void setEwald(real ksize, real alpha, real sigma) {
+    KSIZE = ksize;                                              // Set number of waves
+    ALPHA = alpha;                                              // Set scaling parameter
+    SIGMA = sigma;                                              // Set scaling parameter
   }
 
 };
@@ -295,6 +299,7 @@ public:
   void L2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate L2L kernel on CPU
   void L2P(C_iter Ci) const;                                    //!< Evaluate L2P kernel on CPU
   void EwaldReal(C_iter Ci, C_iter Cj) const;                   //!< Evaluate Ewald real part on CPU
+  void EwaldWave(Bodies &bodies) const;                         //!< Evaluate Ewald wave part on CPU
   void P2M();                                                   //!< Evaluate P2M kernel on GPU
   void M2M();                                                   //!< Evaluate M2M kernel on GPU
   void M2L();                                                   //!< Evaluate M2L kernel on GPU
@@ -303,6 +308,7 @@ public:
   void L2L();                                                   //!< Evaluate L2L kernel on GPU
   void L2P();                                                   //!< Evaluate L2P kernel on GPU
   void EwaldReal();                                             //!< Evaluate Ewald real part on GPU
+  void EwaldWave();                                             //!< Evalaute Ewald wave part on GPU
   void finalize();                                              //!< Finalize kernels
 
   void allocate();                                              //!< Allocate GPU variables

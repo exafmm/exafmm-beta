@@ -51,6 +51,7 @@ public:
   using Evaluator<equation>::evalP2P;                           //!< Evaluate P2P kernel
   using Evaluator<equation>::evalL2L;                           //!< Evaluate L2L kernel
   using Evaluator<equation>::evalL2P;                           //!< Evaluate L2P kernel
+  using Evaluator<equation>::EwaldWave;                         //!< Evalaute Ewald wave part
 
 private:
 //! Get parent cell index from current cell index
@@ -240,12 +241,15 @@ public:
                            << " M2L: " << NM2L << std::endl;
   }
 
-//! Calculate only neighbor P2P evaluation
-  void cutoff(Cells &cells, Cells &jcells) {
-    startTimer("Get neighbor ");                                // Start timer
-    neighbor(cells,jcells);                                     // Traverse tree to get neighbor
-    stopTimer("Get neighbor ",printNow);                        // Stop timer & print
-    evalP2P(cells);                                             // Evaluate queued P2P kernels (only GPU)
+//! Calculate Ewald summation
+  void Ewald(Bodies &bodies, Cells &cells, Cells &jcells) {
+    startTimer("Ewald wave   ");                                // Start timer
+    EwaldWave(bodies);                                          // Ewald wave part
+    stopTimer("Ewald wave   ",printNow);                        // Stop timer & print
+    startTimer("Ewald real   ");                                // Start timer
+    neighbor(cells,jcells);                                     // Neighbor calculation for real part
+    evalP2P(cells);                                             // Evaluate queued Ewald real kernels (only GPU)
+    stopTimer("Ewald real   ",printNow);                        // Stop timer & print
   }
 };
 

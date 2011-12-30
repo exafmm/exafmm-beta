@@ -53,6 +53,7 @@ public:
   using Kernel<equation>::R0;                                   //!< Radius of root cell
   using Kernel<equation>::Ci0;                                  //!< icells.begin()
   using Kernel<equation>::Cj0;                                  //!< jcells.begin()
+  using Kernel<equation>::ALPHA;                                //!< Scaling parameter for Ewald summation
   using Kernel<equation>::keysHost;                             //!< Offsets for rangeHost
   using Kernel<equation>::rangeHost;                            //!< Offsets for sourceHost
   using Kernel<equation>::constHost;                            //!< Constants on host
@@ -137,7 +138,7 @@ private:
         vect dX = Ci->X - Cj->X - Xperiodic;                    //   Distance vector from source to target
         real Rq = std::sqrt(norm(dX));                          //   Scalar distance
         if( Rq * THETA < Ci->R + Cj->R && Cj->NCHILD == 0 ) {   //   If twigs are close
-          EwaldReal(Ci,Cj);                                     //    Use P2P
+          EwaldReal(Ci,Cj);                                     //    Ewald real part
         } else if( Cj->NCHILD != 0 ) {                          //   If cells are not twigs
           cellStack.push(Cj);                                   //    Push source cell to stack
         }                                                       //   End if for twig cells
@@ -438,26 +439,21 @@ public:
     flagP2P.resize(cells.size());                               // Resize P2P periodic image flag
     for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {     // Loop over target cells
       if( Ci->NCHILD == 0 ) {                                   //  If cell is a twig
-        if( IMAGES == 0 ) {                                     //   If free boundary condition
-          Iperiodic = Icenter;                                  //    Set periodic image flag to center
-          Xperiodic = 0;                                        //    Set periodic coordinate offset
-          traverseStack(Ci,jroot);                              //    Traverse the source tree
-        } else {                                                //   If periodic boundary condition
-          int I = 0;                                            //    Initialize index of periodic image
-          for( int ix=-1; ix<=1; ++ix ) {                       //    Loop over x periodic direction
-            for( int iy=-1; iy<=1; ++iy ) {                     //     Loop over y periodic direction
-              for( int iz=-1; iz<=1; ++iz, ++I ) {              //      Loop over z periodic direction
-                Iperiodic = 1 << I;                             //       Set periodic image flag
-                Xperiodic[0] = ix * 2 * R0;                     //       Coordinate offset for x periodic direction
-                Xperiodic[1] = iy * 2 * R0;                     //       Coordinate offset for y periodic direction
-                Xperiodic[2] = iz * 2 * R0;                     //       Coordinate offset for z periodic direction
-                traverseStack(Ci,jroot);                        //       Traverse the source tree
-              }                                                 //      End loop over z periodic direction
-            }                                                   //     End loop over y periodic direction
-          }                                                     //    End loop over x periodic direction
-        }                                                       //   Endif for periodic boundary condition
-        listP2P[Ci-Ci0].sort();                                 //   Sort interaction list
-        listP2P[Ci-Ci0].unique();                               //   Eliminate duplicate periodic entries
+        int I = 0;                                              //   Initialize index of periodic image
+        for( int ix=-1; ix<=1; ++ix ) {                         //   Loop over x periodic direction
+          for( int iy=-1; iy<=1; ++iy ) {                       //    Loop over y periodic direction
+            for( int iz=-1; iz<=1; ++iz, ++I ) {                //     Loop over z periodic direction
+              Iperiodic = 1 << I;                               //      Set periodic image flag
+              Xperiodic[0] = ix * 2 * R0;                       //      Coordinate offset for x periodic direction
+              Xperiodic[1] = iy * 2 * R0;                       //      Coordinate offset for y periodic direction
+              Xperiodic[2] = iz * 2 * R0;                       //      Coordinate offset for z periodic direction
+              traverseStack(Ci,jroot);                          //      Traverse the source tree
+            }                                                   //     End loop over z periodic direction
+          }                                                     //    End loop over y periodic direction
+        }                                                       //   End loop over x periodic direction
+        for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B) {  //   Loop over all leafs in cell
+          B->TRG[0] -= M_2_SQRTPI * B->SRC * ALPHA;             //    Self term of Ewald real part
+        }                                                       //   End loop over all leafs in cell
       }                                                         //  End if for twig cells
     }                                                           // End loop over target cells
   }
@@ -481,6 +477,8 @@ public:
   void evalP2P(Cells &cells);                                   //!< Evaluate queued P2P kernels (near field)
   void evalL2L(Cells &cells);                                   //!< Evaluate all L2L kernels
   void evalL2P(Cells &cells);                                   //!< Evaluate all L2P kernels
+  void evalEwaldReal(C_iter Ci, C_iter Cj);                     //!< Evaluate on CPU, queue on GPU
+  void evalEwaldReal(Cells &cells);                             //!< Evaluate queued Ewald real kernels
 };
 
 #if cpu

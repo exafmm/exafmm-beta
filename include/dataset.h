@@ -87,14 +87,20 @@ public:
 
 //! Evaluate relative L2 norm error
   void evalError(Bodies &bodies, Bodies &bodies2,
-                 real &diff1, real &norm1, real &diff2, real &norm2) {
-    B_iter B2 = bodies2.begin();                                //  Set iterator for bodies2
+                 real &diff1, real &norm1, real &diff2, real &norm2, bool ewald=false) {
+    real p = 0, p2 = 0;                                         // Total energy
+    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
       std::cout << B->ICELL << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;// Compare every element
 #endif
-      diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
-      norm1 += B2->TRG[0] * B2->TRG[0];                         //  Value of potential
+      if( ewald ) {                                             // If ewald method is used
+        p += B->TRG[0] * B->SRC;                                //  total energy
+        p2 += B2->TRG[0] * B2->SRC;                             //  total energy
+      } else {                                                  // If normal Laplace kernel is used
+        diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
+        norm1 += B2->TRG[0] * B2->TRG[0];                       //  Value of potential
+      }                                                         // End if for Ewald method
       diff2 += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);// Difference of x acceleration
       diff2 += (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2]);// Difference of y acceleration
       diff2 += (B->TRG[3] - B2->TRG[3]) * (B->TRG[3] - B2->TRG[3]);// Difference of z acceleration
@@ -102,6 +108,10 @@ public:
       norm2 += B2->TRG[2] * B2->TRG[2];                         //  Value of y acceleration
       norm2 += B2->TRG[3] * B2->TRG[3];                         //  Value of z acceleration
     }                                                           //  End loop over bodies & bodies2
+    if( ewald ) {                                               // If ewald method is used
+      diff1 = (p - p2) * (p - p2);                              //  Difference of total energy
+      norm1 = p2 * p2;                                          //  Value of total energy
+    }                                                           // End if for Ewald method
   }
 
 //! Print relative L2 norm error

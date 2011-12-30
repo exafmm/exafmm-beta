@@ -41,37 +41,6 @@ void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P k
 }
 
 template<>
-void Kernel<Laplace>::EwaldReal(C_iter Ci, C_iter Cj) const {   // Ewald real part on CPU
-  for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
-    for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
-      vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
-      for( int d=0; d<3; d++ ) {                                //   Loop over dimensions
-        if( dist[d] < -R0 ) {
-          dist[d] += 2 * R0;
-        }
-        if( dist[d] >= R0 ) {
-          dist[d] -= 2 * R0;
-        }
-      }                                                         //   End loop over dimensions
-      real R2 = norm(dist);                                     //   R^2
-      if( R2 != 0 ) {                                           //   Exclude self interaction
-        real R2s = R2 * ALPHA * ALPHA;                          //    (R * alpha)^2
-        real Rs = std::sqrt(R2s);                               //    R * alpha
-        real invRs = 1 / Rs;                                    //    1 / (R * alpha)
-        real invR2s = invRs * invRs;                            //    1 / (R * alpha)^2
-        real invR3s = invR2s * invRs;                           //    1 / (R * alpha)^3
-        real dtmp = Bj->SRC * (M_2_SQRTPI * exp(-R2s) * invR2s + erfc(Rs) * invR3s);
-        dtmp *= ALPHA * ALPHA * ALPHA;                          //    Scale temporary value
-        Bi->TRG[0] += Bj->SRC * erfc(Rs) * invRs * ALPHA;       //    Ewald real potential
-        Bi->TRG[1] -= dist[0] * dtmp;                           //    x component of Ewald real force
-        Bi->TRG[2] -= dist[1] * dtmp;                           //    y component of Ewald real force
-        Bi->TRG[3] -= dist[2] * dtmp;                           //    z component of Ewald real force
-      }                                                         //   End if for self interaction
-    }                                                           //  End loop over source bodies
-  }                                                             // End loop over target bodies
-}
-
-template<>
 void Kernel<VanDerWaals>::P2P(C_iter Ci, C_iter Cj) const {     // Van der Waals P2P kernel on CPU
   for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
     int atypei = Bi->SRC;                                       //  Atom type of target

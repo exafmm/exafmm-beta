@@ -21,33 +21,6 @@ THE SOFTWARE.
 */
 
 template<Equation equation>
-void Evaluator<equation>::timeKernels() {                       // Time all kernels for auto-tuning
-  Bodies ibodies(1000), jbodies(1000);                          // Artificial bodies
-  for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {// Loop over artificial bodies
-    Bi->X = 0;                                                  //  Set coordinates of target body
-    Bj->X = 1;                                                  //  Set coordinates of source body
-  }                                                             // End loop over artificial bodies
-  Cells cells;                                                  // Artificial cells
-  cells.resize(2);                                              // Two artificial cells
-  C_iter Ci = cells.begin(), Cj = cells.begin()+1;              // Artificial target & source cell
-  Ci->X = 0;                                                    // Set coordinates of target cell
-  Ci->NDLEAF = 10;                                              // Number of leafs in target cell
-  Ci->LEAF = ibodies.begin();                                   // Leaf iterator in target cell
-  Cj->X = 1;                                                    // Set coordinates of source cell
-  Cj->NDLEAF = 1000;                                            // Number of leafs in source cell
-  Cj->LEAF = jbodies.begin();                                   // Leaf iterator in source cell
-  startTimer("P2P kernel   ");                                  // Start timer
-  for( int i=0; i!=1; ++i ) P2P(Ci,Cj);                         // Perform P2P kernel
-  timeP2P = stopTimer("P2P kernel   ") / 10000;                 // Stop timer
-  startTimer("M2L kernel   ");                                  // Start timer
-  for( int i=0; i!=1000; ++i ) M2L(Ci,Cj);                      // Perform M2L kernel
-  timeM2L = stopTimer("M2L kernel   ") / 1000;                  // Stop timer
-  startTimer("M2P kernel   ");                                  // Start timer
-  for( int i=0; i!=100; ++i ) M2P(Ci,Cj);                       // Perform M2P kernel
-  timeM2P = stopTimer("M2P kernel   ") / 1000;                  // Stop timer
-}
-
-template<Equation equation>
 void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Evaluate all P2P kernels
   Xperiodic = 0;                                                // Set periodic coordinate offset
   Cells cells;                                                  // Cells to put target and source bodies
@@ -212,6 +185,54 @@ void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate all 
     }                                                           //  Endif for twig
   }                                                             // End loop over cells topdown
   stopTimer("evalL2P      ");                                   // Stop timer
+}
+
+template<Equation equation>
+void Evaluator<equation>::evalEwaldReal(C_iter Ci, C_iter Cj) { // Evaluate single Ewald real kernel
+  EwaldReal(Ci,Cj);                                             // Perform Ewald real kernel
+}
+
+template<Equation equation>
+void Evaluator<equation>::evalEwaldReal(Cells &cells) {         // Evaluate queued Ewald real kernels
+  startTimer("evalEwaldReal");                                  // Start timer
+  Ci0 = cells.begin();                                          // Set begin iterator
+  for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over cells
+    while( !listP2P[Ci-Ci0].empty() ) {                         //  While M2P interaction list is not empty
+      C_iter Cj = listP2P[Ci-Ci0].back();                       //   Set source cell iterator
+      EwaldReal(Ci,Cj);                                         //   Perform Ewald real kernel
+      listP2P[Ci-Ci0].pop_back();                               //   Pop last element from M2P interaction list
+    }                                                           //  End while for M2P interaction list
+  }                                                             // End loop over cells topdown
+  listP2P.clear();                                              // Clear interaction lists
+  flagP2P.clear();                                              // Clear periodic image flags
+  stopTimer("evalEwaldReal");                                   // Stop timer
+}
+
+template<Equation equation>
+void Evaluator<equation>::timeKernels() {                       // Time all kernels for auto-tuning
+  Bodies ibodies(1000), jbodies(1000);                          // Artificial bodies
+  for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {// Loop over artificial bodies
+    Bi->X = 0;                                                  //  Set coordinates of target body
+    Bj->X = 1;                                                  //  Set coordinates of source body
+  }                                                             // End loop over artificial bodies
+  Cells cells;                                                  // Artificial cells
+  cells.resize(2);                                              // Two artificial cells
+  C_iter Ci = cells.begin(), Cj = cells.begin()+1;              // Artificial target & source cell
+  Ci->X = 0;                                                    // Set coordinates of target cell
+  Ci->NDLEAF = 10;                                              // Number of leafs in target cell
+  Ci->LEAF = ibodies.begin();                                   // Leaf iterator in target cell
+  Cj->X = 1;                                                    // Set coordinates of source cell
+  Cj->NDLEAF = 1000;                                            // Number of leafs in source cell
+  Cj->LEAF = jbodies.begin();                                   // Leaf iterator in source cell
+  startTimer("P2P kernel   ");                                  // Start timer
+  for( int i=0; i!=1; ++i ) P2P(Ci,Cj);                         // Perform P2P kernel
+  timeP2P = stopTimer("P2P kernel   ") / 10000;                 // Stop timer
+  startTimer("M2L kernel   ");                                  // Start timer
+  for( int i=0; i!=1000; ++i ) M2L(Ci,Cj);                      // Perform M2L kernel
+  timeM2L = stopTimer("M2L kernel   ") / 1000;                  // Stop timer
+  startTimer("M2P kernel   ");                                  // Start timer
+  for( int i=0; i!=100; ++i ) M2P(Ci,Cj);                       // Perform M2P kernel
+  timeM2P = stopTimer("M2P kernel   ") / 1000;                  // Stop timer
 }
 
 template<Equation equation>
