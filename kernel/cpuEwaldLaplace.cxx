@@ -23,8 +23,9 @@ THE SOFTWARE.
 #include "kernel.h"
 #undef KERNEL
 
-void dft(Ewalds &ewalds, Bodies &bodies, real xmax) {
-  real scale = 2 * M_PI / xmax;
+namespace {
+void dft(Ewalds &ewalds, Bodies &bodies, real R0) {
+  real scale = M_PI / R0;
   for( E_iter E=ewalds.begin(); E!=ewalds.end(); ++E ) {
     E->REAL = E->IMAG = 0;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -36,21 +37,20 @@ void dft(Ewalds &ewalds, Bodies &bodies, real xmax) {
   }
 }
 
-void idft(Ewalds &ewalds, Bodies &bodies, real xmax) {
-  real scale = 2 * M_PI / xmax;
+void idft(Ewalds &ewalds, Bodies &bodies, real R0) {
+  real scale = M_PI / R0;
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     vec<4,real> TRG = 0;
     for( E_iter E=ewalds.begin(); E!=ewalds.end(); ++E ) {
       real th = 0;
       for( int d=0; d<3; d++ ) th += E->K[d] * B->X[d] * scale;
       real dtmp = E->REAL * sin(th) - E->IMAG * cos(th);
-      TRG[0]    += E->REAL * cos(th) + E->IMAG * sin(th);
-      for( int d=0; d<3; d++ ) {
-        TRG[d+1] -= dtmp * E->K[d];
-      }
+      TRG[0]   += E->REAL * cos(th) + E->IMAG * sin(th);
+      for( int d=0; d<3; d++ ) TRG[d+1] -= dtmp * E->K[d];
     }
     B->TRG = TRG;
   }
+}
 }
 
 template<>
@@ -108,14 +108,14 @@ void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {         // Ewald wave pa
     }
   }
 
-  dft(ewalds,bodies,2*R0);
+  dft(ewalds,bodies,R0);
   for( E_iter E=ewalds.begin(); E!=ewalds.end(); ++E ) {
     real R2 = norm(E->K);
     real factor = coef * exp(-R2 * coef2) / R2;
     E->REAL *= factor;
     E->IMAG *= factor;
   }
-  idft(ewalds,bodies,2*R0);
+  idft(ewalds,bodies,R0);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     for( int d=0; d<3; d++ ) B->TRG[d+1] *= scale;
   }

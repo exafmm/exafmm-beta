@@ -19,6 +19,10 @@ ewald_direct: ewald_direct.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS)
 	$(SERIALRUN)
 
+ewald_fmm: ewald_fmm.cxx $(OBJECT)
+	$(CXX) $? $(LFLAGS)
+	$(SERIALRUN)
+
 serialrun: serialrun.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS)
 	$(SERIALRUN)

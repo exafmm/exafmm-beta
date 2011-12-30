@@ -43,20 +43,15 @@ int main() {
   jcells = cells;
   FMM.Ewald(bodies,cells,jcells);
 
-  FMM.startTimer("Set periodic ");
-  jbodies = FMM.periodicBodies(bodies);
-  FMM.stopTimer("Set periodic ",FMM.printNow);
-  FMM.eraseTimer("Set periodic ");
-
-  FMM.startTimer("Direct sum   ");
-  FMM.buffer = bodies;
-  FMM.initTarget(FMM.buffer);
-  FMM.evalP2P(FMM.buffer,jbodies);
-  FMM.stopTimer("Direct sum   ",FMM.printNow);
-  FMM.eraseTimer("Direct sum   ");
+  Bodies bodies2 = bodies;
+  FMM.initTarget(bodies);
+  FMM.startTimer("Downward     ");
+  FMM.downward(cells,jcells);
+  FMM.stopTimer("Downward     ",FMM.printNow);
+  FMM.eraseTimer("Downward     ");
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  FMM.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2,true);
+  FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2,true);
   FMM.printError(diff1,norm1,diff2,norm2);
   FMM.finalize();
 }
