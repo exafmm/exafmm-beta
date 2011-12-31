@@ -22,7 +22,8 @@ THE SOFTWARE.
 #define KERNEL
 #include "kernel.h"
 #undef KERNEL
-#include "gpu.h"
+#include <cutil.h>
+__device__ __constant__ gpureal constDevc[514];                 // Constants on device
 
 template<>
 void Kernel<VanDerWaals>::initialize() {

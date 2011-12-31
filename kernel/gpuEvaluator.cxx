@@ -529,7 +529,7 @@ void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate all 
 template<Equation equation>
 void Evaluator<equation>::evalEwaldReal(C_iter Ci, C_iter Cj) { // Queue single Ewald real kernel
   listP2P[Ci-Ci0].push_back(Cj);                                // Push source cell into P2P interaction list
-  flagP2P[Ci-Ci0][Cj] |= Icenter;                               // Flip bit of periodic image flag
+  flagP2P[Ci-Ci0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
 }
 
 template<Equation equation>
@@ -542,6 +542,7 @@ void Evaluator<equation>::evalEwaldReal(Cells &cells) {         // Evaluate queu
     CiB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CiE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
+    constHost.push_back(ALPHA);                                 //  Copy Ewald scaling to GPU buffer
     startTimer("Get list     ");                                //  Start timer
     for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over target cells
       for( LC_iter L=listP2P[Ci-Ci0].begin(); L!=listP2P[Ci-Ci0].end(); ++L ) {//  Loop over interaction list

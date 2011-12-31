@@ -51,6 +51,7 @@ public:
   using Evaluator<equation>::evalP2P;                           //!< Evaluate P2P kernel
   using Evaluator<equation>::evalL2L;                           //!< Evaluate L2L kernel
   using Evaluator<equation>::evalL2P;                           //!< Evaluate L2P kernel
+  using Evaluator<equation>::evalEwaldReal;                     //!< Evaluate Ewald real part
   using Evaluator<equation>::EwaldWave;                         //!< Evalaute Ewald wave part
 
 private:
@@ -248,7 +249,7 @@ public:
     stopTimer("Ewald wave   ",printNow);                        // Stop timer & print
     startTimer("Ewald real   ");                                // Start timer
     neighbor(cells,jcells);                                     // Neighbor calculation for real part
-    evalP2P(cells);                                             // Evaluate queued Ewald real kernels (only GPU)
+    evalEwaldReal(cells);                                       // Evaluate queued Ewald real kernels (only GPU)
     stopTimer("Ewald real   ",printNow);                        // Stop timer & print
   }
 };

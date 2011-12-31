@@ -6,7 +6,7 @@ int main() {
   const real ksize = 11.0;
   const real alpha = 0.1;
   const real sigma = .25 / M_PI;
-  IMAGES = 2;
+  IMAGES = 3;
   THETA = 1 / sqrt(4);
   Bodies bodies(numBodies);
   Bodies jbodies;

@@ -138,7 +138,7 @@ private:
         vect dX = Ci->X - Cj->X - Xperiodic;                    //   Distance vector from source to target
         real Rq = std::sqrt(norm(dX));                          //   Scalar distance
         if( Rq * THETA < Ci->R + Cj->R && Cj->NCHILD == 0 ) {   //   If twigs are close
-          EwaldReal(Ci,Cj);                                     //    Ewald real part
+          evalEwaldReal(Ci,Cj);                                 //    Ewald real part
         } else if( Cj->NCHILD != 0 ) {                          //   If cells are not twigs
           cellStack.push(Cj);                                   //    Push source cell to stack
         }                                                       //   End if for twig cells
@@ -455,6 +455,8 @@ public:
           B->TRG[0] -= M_2_SQRTPI * B->SRC * ALPHA;             //    Self term of Ewald real part
         }                                                       //   End loop over all leafs in cell
       }                                                         //  End if for twig cells
+      listP2P[Ci-Ci0].sort();                                   //  Sort interaction list
+      listP2P[Ci-Ci0].unique();                                 //  Eliminate duplicate periodic entries
     }                                                           // End loop over target cells
   }
 
