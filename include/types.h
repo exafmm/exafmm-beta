@@ -64,7 +64,7 @@ extern real THETA;                                              //!< Multipole a
 extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
 #endif
 
-const int  P        = 10;                                       //!< Order of expansions
+const int  P        = 6;                                       //!< Order of expansions
 const int  NCRIT    = 100;                                      //!< Number of bodies per cell
 const int  MAXBODY  = 200000;                                   //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
@@ -77,7 +77,7 @@ const int  GPUS     = 3;                                        //!< Number of G
 const int  THREADS  = 64;                                       //!< Number of threads per thread-block
 const int  PTHREADS = 4;                                        //!< Number of pthreads in quark
 
-const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms
+const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
 const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
 

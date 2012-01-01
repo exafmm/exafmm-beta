@@ -40,7 +40,6 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate all 
     C->M = 0;                                                   //  Initialize multipole coefficients
     C->L = 0;                                                   //  Initialize local coefficients
     if( C->NCHILD == 0 ) {                                      //  If cell is a twig
-      setTwigCenter(C);                                         //   Set center of twig cell to center of mass
       P2M(C);                                                   //   Perform P2M kernel
     }                                                           //  Endif for twig
   }                                                             // End loop over cells
@@ -52,7 +51,6 @@ void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all 
   startTimer("evalM2M      ");                                  // Start timer
   Cj0 = jcells.begin();                                         // Set begin iterator
   for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over target cells bottomup
-    if( Ci->NCHILD != 0 ) setCellCenter(Ci);                    //  Set center of parent cell to center of mass
     for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {// Loop over child cells
       M2M(Ci,Cj);                                               //   Perform M2M kernel
     }                                                           //  End loop over child cells

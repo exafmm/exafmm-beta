@@ -25,56 +25,24 @@ THE SOFTWARE.
 
 template<int nx, int ny, int nz>
 struct Index {
-  static const int  M = Index<nx,ny+1,nz-1>::M + 1;
   static const int  I = Index<nx,ny+1,nz-1>::I + 1;
   static const real F = Index<nx,ny,nz-1>::F * nz;
 };
 
 template<int nx, int ny>
 struct Index<nx,ny,0> {
-  static const int  M = Index<nx+1,0,ny-1>::M + 1;
   static const int  I = Index<nx+1,0,ny-1>::I + 1;
   static const real F = Index<nx,ny-1,0>::F * ny;
 };
 
 template<int nx>
 struct Index<nx,0,0> {
-  static const int  M = Index<0,0,nx-1>::M + 1;
   static const int  I = Index<0,0,nx-1>::I + 1;
   static const real F = Index<nx-1,0,0>::F * nx;
 };
 
 template<>
-struct Index<2,0,0> {
-  static const int  M = 1;
-  static const int  I = 4;
-  static const real F = 2;
-};
-
-template<>
-struct Index<0,0,1> {
-  static const int  M = -1;
-  static const int  I = 3;
-  static const real F = 1;
-};
-
-template<>
-struct Index<0,1,0> {
-  static const int  M = -1;
-  static const int  I = 2;
-  static const real F = 1;
-};
-
-template<>
-struct Index<1,0,0> {
-  static const int  M = -1;
-  static const int  I = 1;
-  static const real F = 1;
-};
-
-template<>
 struct Index<0,0,0> {
-  static const int  M = 0;
   static const int  I = 0;
   static const real F = 1;
 };
@@ -224,7 +192,7 @@ template<int nx, int ny, int nz, int kx=nx, int ky=ny, int kz=nz>
 struct M2MSum {
   static inline real kernel(const Lset &C, const Mset &M) {
     return M2MSum<nx,ny,nz,kx,ky,kz-1>::kernel(C,M)
-         + C[Index<nx-kx,ny-ky,nz-kz>::I]*M[Index<kx,ky,kz>::M];
+         + C[Index<nx-kx,ny-ky,nz-kz>::I]*M[Index<kx,ky,kz>::I];
   }
 };
 
@@ -232,7 +200,7 @@ template<int nx, int ny, int nz, int kx, int ky>
 struct M2MSum<nx,ny,nz,kx,ky,0> {
   static inline real kernel(const Lset &C, const Mset &M) {
     return M2MSum<nx,ny,nz,kx,ky-1,nz>::kernel(C,M)
-         + C[Index<nx-kx,ny-ky,nz>::I]*M[Index<kx,ky,0>::M];
+         + C[Index<nx-kx,ny-ky,nz>::I]*M[Index<kx,ky,0>::I];
   }
 };
 
@@ -240,23 +208,8 @@ template<int nx, int ny, int nz, int kx>
 struct M2MSum<nx,ny,nz,kx,0,0> {
   static inline real kernel(const Lset &C, const Mset &M) {
     return M2MSum<nx,ny,nz,kx-1,ny,nz>::kernel(C,M)
-         + C[Index<nx-kx,ny,nz>::I]*M[Index<kx,0,0>::M];
+         + C[Index<nx-kx,ny,nz>::I]*M[Index<kx,0,0>::I];
   }
-};
-
-template<int nx, int ny, int nz>
-struct M2MSum<nx,ny,nz,0,0,1> {
-  static inline real kernel(const Lset&, const Mset&) { return 0; }
-};
-
-template<int nx, int ny, int nz>
-struct M2MSum<nx,ny,nz,0,1,0> {
-  static inline real kernel(const Lset&, const Mset&) { return 0; }
-};
-
-template<int nx, int ny, int nz>
-struct M2MSum<nx,ny,nz,1,0,0> {
-  static inline real kernel(const Lset&, const Mset&) { return 0; }
 };
 
 template<int nx, int ny, int nz>
@@ -269,7 +222,7 @@ template<int nx, int ny, int nz, int kx=0, int ky=0, int kz=P-nx-ny-nz>
 struct M2LSum {
   static inline real kernel(const Lset &L, const Mset &M) {
     return M2LSum<nx,ny,nz,kx,ky+1,kz-1>::kernel(L,M)
-         + M[Index<kx,ky,kz>::M] * L[Index<nx+kx,ny+ky,nz+kz>::I];
+         + M[Index<kx,ky,kz>::I] * L[Index<nx+kx,ny+ky,nz+kz>::I];
   }
 };
 
@@ -277,7 +230,7 @@ template<int nx, int ny, int nz, int kx, int ky>
 struct M2LSum<nx,ny,nz,kx,ky,0> {
   static inline real kernel(const Lset &L, const Mset &M) {
     return M2LSum<nx,ny,nz,kx+1,0,ky-1>::kernel(L,M)
-         + M[Index<kx,ky,0>::M] * L[Index<nx+kx,ny+ky,nz>::I];
+         + M[Index<kx,ky,0>::I] * L[Index<nx+kx,ny+ky,nz>::I];
   }
 };
 
@@ -285,23 +238,8 @@ template<int nx, int ny, int nz, int kx>
 struct M2LSum<nx,ny,nz,kx,0,0> {
   static inline real kernel(const Lset &L, const Mset &M) {
     return M2LSum<nx,ny,nz,0,0,kx-1>::kernel(L,M)
-         + M[Index<kx,0,0>::M] * L[Index<nx+kx,ny,nz>::I];
+         + M[Index<kx,0,0>::I] * L[Index<nx+kx,ny,nz>::I];
   }
-};
-
-template<int nx, int ny, int nz>
-struct M2LSum<nx,ny,nz,0,0,1> {
-  static inline real kernel(const Lset&, const Mset&) { return 0; }
-};
-
-template<int nx, int ny, int nz>
-struct M2LSum<nx,ny,nz,0,1,0> {
-  static inline real kernel(const Lset&, const Mset&) { return 0; }
-};
-
-template<int nx, int ny, int nz>
-struct M2LSum<nx,ny,nz,1,0,0> {
-  static inline real kernel(const Lset&, const Mset&) { return 0; }
 };
 
 template<int nx, int ny, int nz>
@@ -344,7 +282,7 @@ template<int nx, int ny, int nz>
 struct Upward {
   static inline void M2M(Mset &MI, const Lset &C, const Mset &MJ) {
     Upward<nx,ny+1,nz-1>::M2M(MI,C,MJ);
-    MI[Index<nx,ny,nz>::M] += M2MSum<nx,ny,nz>::kernel(C,MJ);
+    MI[Index<nx,ny,nz>::I] += M2MSum<nx,ny,nz>::kernel(C,MJ);
   }
 };
 
@@ -352,7 +290,7 @@ template<int nx, int ny>
 struct Upward<nx,ny,0> {
   static inline void M2M(Mset &MI, const Lset &C, const Mset &MJ) {
     Upward<nx+1,0,ny-1>::M2M(MI,C,MJ);
-    MI[Index<nx,ny,0>::M] += M2MSum<nx,ny,0>::kernel(C,MJ);
+    MI[Index<nx,ny,0>::I] += M2MSum<nx,ny,0>::kernel(C,MJ);
   }
 };
 
@@ -360,23 +298,8 @@ template<int nx>
 struct Upward<nx,0,0> {
   static inline void M2M(Mset &MI, const Lset &C, const Mset &MJ) {
     Upward<0,0,nx-1>::M2M(MI,C,MJ);
-    MI[Index<nx,0,0>::M] += M2MSum<nx,0,0>::kernel(C,MJ);
+    MI[Index<nx,0,0>::I] += M2MSum<nx,0,0>::kernel(C,MJ);
   }
-};
-
-template<>
-struct Upward<0,0,1> {
-  static inline void M2M(Mset&, const Lset&, const Mset&) {}
-};
-
-template<>
-struct Upward<0,1,0> {
-  static inline void M2M(Mset&, const Lset&, const Mset&) {}
-};
-
-template<>
-struct Upward<1,0,0> {
-  static inline void M2M(Mset&, const Lset&, const Mset&) {}
 };
 
 template<>
@@ -460,17 +383,17 @@ inline void getCoef(Lset &C, const vect &dist, real &invR2, const real &invR) {
 }
 
 inline void sumM2L(Lset &L, const Lset &C, const Mset &M) {
-  L += C;
-  for( int i=1; i<MTERM; ++i ) L[0] += M[i] * C[i+3];
+  L += C * M[0];
+  for( int i=1; i<MTERM; ++i ) L[0] += M[i] * C[i];
   Downward<0,0,P-1>::M2L(L,C,M);
 }
 
 inline void sumM2P(B_iter B, const Lset &C, const Mset &M) {
-  B->TRG[0] += C[0];
-  B->TRG[1] += C[1];
-  B->TRG[2] += C[2];
-  B->TRG[3] += C[3];
-  for( int i=1; i<MTERM; ++i ) B->TRG[0] += M[i] * C[i+3];
+  B->TRG[0] += C[0] * M[0];
+  B->TRG[1] += C[1] * M[0];
+  B->TRG[2] += C[2] * M[0];
+  B->TRG[3] += C[3] * M[0];
+  for( int i=1; i<MTERM; ++i ) B->TRG[0] += M[i] * C[i];
   Downward<0,0,1>::M2P(B,C,M);
 }
 
@@ -480,25 +403,23 @@ void Kernel<Laplace>::initialize() {}
 template<>
 void Kernel<Laplace>::P2M(C_iter Ci) const {
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
-    vect dist = B->X - Ci->X;
+    vect dist = Ci->X - B->X;
     Lset M;
     M[0] = B->SRC;
     Terms<0,0,P-1>::power(M,dist);
-    Ci->M[0] += M[0];
-    for( int i=1; i<MTERM; ++i ) Ci->M[i] += M[i+3];
+    for( int i=0; i<MTERM; ++i ) Ci->M[i] += M[i];
   }
 }
 
 template<>
 void Kernel<Laplace>::M2M(C_iter Ci, C_iter Cj) const {
-  vect dist = Cj->X - Ci->X;
+  vect dist = Ci->X - Cj->X;
   Mset M;
   Lset C;
   C[0] = 1;
   Terms<0,0,P-1>::power(C,dist);
   M = Cj->M;
-  Ci->M[0] += C[0] * M[0];
-  for( int i=1; i<MTERM; ++i ) Ci->M[i] += C[i+3] * M[0];
+  for( int i=0; i<MTERM; ++i ) Ci->M[i] += C[i] * M[0];
   Upward<0,0,P-1>::M2M(Ci->M,C,M);
 }
 
@@ -506,7 +427,7 @@ template<>
 void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
   vect dist = Ci->X - Cj->X - Xperiodic;
   real invR2 = 1 / norm(dist);
-  real invR  = Ci->M[0] * Cj->M[0] * std::sqrt(invR2);
+  real invR  = std::sqrt(invR2);
   Lset C;
   getCoef(C,dist,invR2,invR);
   sumM2L(Ci->L,C,Cj->M);
@@ -517,7 +438,7 @@ void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Cj->X - Xperiodic;
     real invR2 = 1 / norm(dist);
-    real invR  = Cj->M[0] * std::sqrt(invR2);
+    real invR  = std::sqrt(invR2);
     Lset C;
     getCoef(C,dist,invR2,invR);
     sumM2P(B,C,Cj->M);
@@ -531,7 +452,6 @@ void Kernel<Laplace>::L2L(C_iter Ci, C_iter Cj) const {
   C[0] = 1;
   Terms<0,0,P>::power(C,dist);
 
-  Ci->L /= Ci->M[0];
   Ci->L += Cj->L;
   for( int i=1; i<LTERM; ++i ) Ci->L[0] += C[i] * Cj->L[i];
   Downward<0,0,P-1>::L2L(Ci->L,C,Cj->L);
