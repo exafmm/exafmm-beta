@@ -57,18 +57,6 @@ void MR3calcewald(int *k, int knum_org, double *x, int n, double *q,
                   double alpha, double epsilon, double cell[3][3],
                   double *force, double *tpot, double stress[3][3]);
 
-void MR3calccoulomb_ij_host(int ni, double xi[], double qi[], double force[], int nj, double xj[], double qj[], double rscale, int tblno, double xmax, int periodicflag);
-
-void MR3calcvdw_ij_host(int ni, double xi[], int atypei[], double force[], int nj, double xj[], int atypej[], int nat, double gscale[], double rscale[], int tblno, double xmax, int periodicflag);
-
-void MR3calcewald_dft_host(int k[], int knum, double x[], int n, double chg[], double cellsize[3], double bs[], double bc[]);
-
-void MR3calcewald_idft_eng_host(int k[], double bs[], double bc[], int knum, double x[], int n, double cellsize[3], double force[]);
-
-void MR3calcewald_idft_force_host(int k[], double bs[], double bc[], int knum, double x[], int n, double cellsize[3], double force[]);
-
-void MR3calcewald_host(int *k, int knum_org, double *x, int n, double *chg, double alpha, double epsilon, double cell[3][3], double *force, double *tpot, double stress[3][3]);
-
 int get_knum(double ksize);
 
 void init_kvec(double ksize, int *kvec);

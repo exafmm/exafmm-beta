@@ -64,7 +64,7 @@ extern real THETA;                                              //!< Multipole a
 extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
 #endif
 
-const int  P        = 6;                                       //!< Order of expansions
+const int  P        = 10;                                       //!< Order of expansions
 const int  NCRIT    = 100;                                      //!< Number of bodies per cell
 const int  MAXBODY  = 200000;                                   //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel

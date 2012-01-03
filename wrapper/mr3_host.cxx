@@ -4,10 +4,11 @@
 
 #include "mr3.h"
 
-void MR3calccoulomb_ij_host(int ni, double xi[], double qi[], double force[],
-			    int nj, double xj[], double qj[],
-			    double rscale, 
-			    int tblno, double xmax, int periodicflag)
+#if cpu
+void MR3calccoulomb_ij(int ni, double xi[], double qi[], double force[],
+                       int nj, double xj[], double qj[],
+                       double rscale, 
+                       int tblno, double xmax, int periodicflag)
 {
   /* periodic flag bit 0 : 0 --- non periodic, 1 --- periodic
                    bit 1 : 0 --- no multiplication of qi
@@ -39,60 +40,60 @@ void MR3calccoulomb_ij_host(int ni, double xi[], double qi[], double force[],
     for(j=0;j<nj;j++){
       r2=0.0;
       for(k=0;k<3;k++){
-	dr[k]=xi[i*3+k]-xj[j*3+k];
-	if(dr[k]<-xmax/2.0){
-	  dr[k]+=xmax;
-	}
-	if(dr[k]>=xmax/2.0){
-	  dr[k]-=xmax;
-	}
-	r2+=dr[k]*dr[k];
+        dr[k]=xi[i*3+k]-xj[j*3+k];
+        if(dr[k]<-xmax/2.0){
+          dr[k]+=xmax;
+        }
+        if(dr[k]>=xmax/2.0){
+          dr[k]-=xmax;
+        }
+        r2+=dr[k]*dr[k];
       }
       x=r2*rscale*rscale;
       if(r2!=0.0 && (rcutflag==0 || (rcutflag==1 && x<rcut2))){
-	if(tblno==0){
-	  rsqrt=1.0/sqrt(r2);
-	  dtmp=qj[j]*rsqrt*rsqrt*rsqrt;
-	  if(multiplyq) dtmp*=qi[i];
-	  for(k=0;k<3;k++){
-	    force[i*3+k]+=dtmp*dr[k];
-	  }
-	}
-	else if(tblno==1){
-	  rsqrt=1.0/sqrt(r2);
-	  dtmp=qj[j]*rsqrt;
-	  if(multiplyq) dtmp*=qi[i];
-	  for(k=0;k<3;k++){
-	    force[i*3+k]+=dtmp;
-	  }
-	}
-	else if(tblno==6){
-	  x=r2*rscale*rscale;
-	  dtmp=qj[j]*(M_2_SQRTPI*exp(-x)*pow(x,-1.0)
-	              + erfc(sqrt(x))*pow(x,-1.5));
-	  factor=rscale*rscale*rscale*qi[i];
-	  for(k=0;k<3;k++){
-	    force[i*3+k]+=dtmp*dr[k]*factor;
-	  }
-	}
-	else if(tblno==7){
-	  x=r2*rscale*rscale;
-	  dtmp=qj[j]*erfc(sqrt(x))*pow(x,-0.5);
-	  factor=rscale*qi[i];
-	  for(k=0;k<3;k++){
-	    force[i*3+k]+=dtmp*factor;
-	  }
-	}
+        if(tblno==0){
+          rsqrt=1.0/sqrt(r2);
+          dtmp=qj[j]*rsqrt*rsqrt*rsqrt;
+          if(multiplyq) dtmp*=qi[i];
+          for(k=0;k<3;k++){
+            force[i*3+k]+=dtmp*dr[k];
+          }
+        }
+        else if(tblno==1){
+          rsqrt=1.0/sqrt(r2);
+          dtmp=qj[j]*rsqrt;
+          if(multiplyq) dtmp*=qi[i];
+          for(k=0;k<3;k++){
+            force[i*3+k]+=dtmp;
+          }
+        }
+        else if(tblno==6){
+          x=r2*rscale*rscale;
+          dtmp=qj[j]*(M_2_SQRTPI*exp(-x)*pow(x,-1.0)
+                      + erfc(sqrt(x))*pow(x,-1.5));
+          factor=rscale*rscale*rscale*qi[i];
+          for(k=0;k<3;k++){
+            force[i*3+k]+=dtmp*dr[k]*factor;
+          }
+        }
+        else if(tblno==7){
+          x=r2*rscale*rscale;
+          dtmp=qj[j]*erfc(sqrt(x))*pow(x,-0.5);
+          factor=rscale*qi[i];
+          for(k=0;k<3;k++){
+            force[i*3+k]+=dtmp*factor;
+          }
+        }
       }
     }
   }
 }
 
 
-void MR3calcvdw_ij_host(int ni, double xi[], int atypei[], double force[],
-                        int nj, double xj[], int atypej[],
-                        int nat, double gscale[], double rscale[],
-                        int tblno, double xmax, int periodicflag)
+void MR3calcvdw_ij(int ni, double xi[], int atypei[], double force[],
+                   int nj, double xj[], int atypej[],
+                   int nat, double gscale[], double rscale[],
+                   int tblno, double xmax, int periodicflag)
 {
   /* periodic flag 0 --- non periodic
                    1 --- periodic
@@ -152,9 +153,9 @@ void MR3calcvdw_ij_host(int ni, double xi[], int atypei[], double force[],
 }
 
 
-void MR3calcewald_dft_host(int k[], int knum, double x[], int n,
-                                  double chg[], double cellsize[3],
-                                  double bs[], double bc[])
+void MR3calcewald_dft(int k[], int knum, double x[], int n,
+                      double chg[], double cellsize[3],
+                      double bs[], double bc[])
 {
     int i,i3,j,j3,c;
     double th,cellsize_1[3];
@@ -172,10 +173,10 @@ void MR3calcewald_dft_host(int k[], int knum, double x[], int n,
     }
 }
 
-void MR3calcewald_idft_eng_host(int k[], double bs[], double bc[],
-                                       int knum, double x[], int n,
-                                       double cellsize[3],
-                                       double force[])
+void MR3calcewald_idft_eng(int k[], double bs[], double bc[],
+                           int knum, double x[], int n,
+                           double cellsize[3],
+                           double force[])
 {
   int i,i3,j,j3,c;
   double th,sth,cth;
@@ -199,10 +200,10 @@ void MR3calcewald_idft_eng_host(int k[], double bs[], double bc[],
 }
 
 
-void MR3calcewald_idft_force_host(int k[], double bs[], double bc[],
-                                         int knum, double x[], int n,
-                                         double cellsize[3],
-                                         double force[])
+void MR3calcewald_idft_force(int k[], double bs[], double bc[],
+                             int knum, double x[], int n,
+                             double cellsize[3],
+                             double force[])
 {
   int i,i3,j,j3,c;
   double th,sth,cth,cellsize_1[3];
@@ -236,9 +237,9 @@ void MR3calcewald_idft_force_host(int k[], double bs[], double bc[],
 }
 
 
-void MR3calcewald_host(int *k, int knum_org, double *x, int n, double *chg,
-                       double alpha, double epsilon, double cell[3][3],
-                       double *force, double *tpot, double(*)[3]) {
+void MR3calcewald(int *k, int knum_org, double *x, int n, double *chg,
+                  double alpha, double epsilon, double cell[3][3],
+                  double *force, double *tpot, double(*)[3]) {
   double *bs,*bc,cellsize[3],cellsize_1[3];
   int knum,i,j,c,i3,j3;
   double factor1_tmp,vol1,eps1,alpha4,r2,kvtmp;
@@ -260,7 +261,7 @@ void MR3calcewald_host(int *k, int knum_org, double *x, int n, double *chg,
   for(i=0;i<n*3;i++) force[i]=0.0;
 
   /* DFT */
-  MR3calcewald_dft_host(k,knum,x,n,chg,cellsize,bs,bc);
+  MR3calcewald_dft(k,knum,x,n,chg,cellsize,bs,bc);
 
   /* multiply factor etc */  
   *tpot=0.0;
@@ -277,11 +278,11 @@ void MR3calcewald_host(int *k, int knum_org, double *x, int n, double *chg,
 
   /* IDFT */
   if(knum_org<0){ /* potential energy */
-    MR3calcewald_idft_eng_host(k,bs,bc,knum,x,n,cellsize,force);
+    MR3calcewald_idft_eng(k,bs,bc,knum,x,n,cellsize,force);
     for(i=i3=0;i<n;i++,i3+=3) force[i3]*=chg[i];
   }
   else{           /* force */
-    MR3calcewald_idft_force_host(k,bs,bc,knum,x,n,cellsize,force);
+    MR3calcewald_idft_force(k,bs,bc,knum,x,n,cellsize,force);
     for(i=i3=0;i<n;i++,i3+=3){
       for(c=0;c<3;c++) force[i3+c]*=2.0*M_PI*chg[i]*cellsize_1[c];
     }
@@ -335,4 +336,4 @@ void init_kvec(double ksize, int *kvec) {
   }
 }
 
-
+#endif

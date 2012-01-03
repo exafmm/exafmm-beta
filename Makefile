@@ -3,13 +3,13 @@
 
 #CUDA_INSTALL_PATH = /usr/local/cuda
 #SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
-VTK_INCLUDE_PATH = /usr/include/vtk-5.6
+#VTK_INCLUDE_PATH = /usr/include/vtk-5.6
 
 DEVICE  = cpu
 #DEVICE  = gpu
 
-EXPAND  = Cartesian
-#EXPAND  = Spherical
+#EXPAND  = Cartesian
+EXPAND  = Spherical
 
 ifeq ($(shell mpicxx --version | grep Intel | wc -l),0)
 CXX     = mpicxx -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O3 -fPIC -fopenmp\
@@ -21,9 +21,9 @@ endif
 NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_21\
 	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(SDK_INSTALL_PATH)/common/inc
 LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib -lquark
-#ifeq ($(DEVICE),gpu)
+ifeq ($(DEVICE),gpu)
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
-#endif
+endif
 #CXX     += -I$(VTK_INCLUDE_PATH)
 #VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
@@ -45,7 +45,7 @@ save    :
 	tar zcf ../../exafmm.tgz ../../exafmm
 docs:
 	doxygen Doxyfile
-	cd docs/html ;tar czf ../../docs.tar *
-	scp docs.tar $(EXAFMM_DOCS_USER)@barbagroup.bu.edu:~/
-	ssh $(EXAFMM_DOCS_USER)@barbagroup.bu.edu 'tar -xmzf docs.tar -C /Library/WebServer/Documents/exafmm_docs/html/; rm docs.tar; chmod -R 775 /Library/WebServer/Documents/exafmm_docs/'
+	cd docs/html; tar czf ../../docs.tar *
+	scp docs.tar pl:~/
+	ssh pl 'tar -xmzf docs.tar -C /Library/WebServer/Documents/exafmm_docs/html/; rm docs.tar; chmod -R 775 /Library/WebServer/Documents/exafmm_docs/'
 	rm -rf docs*

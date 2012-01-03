@@ -35,9 +35,9 @@ private:
   inline void getIndex(Bodies &bodies) {
     float d = 2 * R0 / (1 << MAXLEVEL);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      int ix = (B->X[0] + R0 - X0[0]) / d;
-      int iy = (B->X[1] + R0 - X0[1]) / d;
-      int iz = (B->X[2] + R0 - X0[2]) / d;
+      int ix = int((B->X[0] + R0 - X0[0]) / d);
+      int iy = int((B->X[1] + R0 - X0[1]) / d);
+      int iz = int((B->X[2] + R0 - X0[2]) / d);
       int id = 0;
       for( int l=0; l!=MAXLEVEL; ++l ) {
         id += ix % 2 << (3 * l);
@@ -57,9 +57,9 @@ private:
     cell.NDLEAF = 0;
     cell.CHILD  = child;
     cell.LEAF   = LEAF;
-    int ix = (LEAF->X[0] + R0 - X0[0]) / diameter;
-    int iy = (LEAF->X[1] + R0 - X0[1]) / diameter;
-    int iz = (LEAF->X[2] + R0 - X0[2]) / diameter;
+    int ix = int((LEAF->X[0] + R0 - X0[0]) / diameter);
+    int iy = int((LEAF->X[1] + R0 - X0[1]) / diameter);
+    int iz = int((LEAF->X[2] + R0 - X0[2]) / diameter);
     cell.X[0]   = diameter * (ix + .5) + X0[0] - R0;
     cell.X[1]   = diameter * (iy + .5) + X0[1] - R0;
     cell.X[2]   = diameter * (iz + .5) + X0[2] - R0;

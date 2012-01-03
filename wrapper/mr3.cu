@@ -6,6 +6,7 @@
 
 #include "mr3.h"
 
+#if gpu
 __device__ __constant__ VG_MATRIX      d_matrix[ATYPE2];
 
 __device__ __inline__ 
@@ -829,3 +830,5 @@ void MR3calcewald(int *k, int knum_org, double *x, int n, double *q,
     get_result_q(n,d_force,forcef,q,1.0,force);
   }
 }
+
+#endif

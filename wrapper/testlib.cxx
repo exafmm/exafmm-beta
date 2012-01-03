@@ -138,8 +138,8 @@ int main(int argc, char **argv) {
     pd[3*i+0] = pd[3*i+1] = pd[3*i+2] = 0;
     fd[3*i+0] = fd[3*i+1] = fd[3*i+2] = 0;
   }
-  std::cout << "Coulomb       potential : " << sqrtf(Pd/Pn) << std::endl;
-  std::cout << "Coulomb       force     : " << sqrtf(Fd/Fn) << std::endl;
+  std::cout << "Coulomb       potential @ rank " << mpirank << " : " << sqrtf(Pd/Pn) << std::endl;
+  std::cout << "Coulomb       force     @ rank " << mpirank << " : " << sqrtf(Fd/Fn) << std::endl;
 
   FMMcalcvdw_ij(N,xi,atypei,pi,N,xj,atypej,nat,gscale,rscale,3,size,0);
   FMMcalcvdw_ij(N,xi,atypei,fi,N,xj,atypej,nat,gscale,rscale,2,size,0);
@@ -188,8 +188,8 @@ int main(int argc, char **argv) {
         + (fi[3*i+2] - fd[3*i+2]) * (fi[3*i+2] - fd[3*i+2]);
     Fn += fd[3*i+0] * fd[3*i+0] + fd[3*i+1] * fd[3*i+1] + fd[3*i+2] * fd[3*i+2];
   }
-  std::cout << "Van der Waals potential : " << sqrtf(Pd/Pn) << std::endl;
-  std::cout << "Van der Waals force     : " << sqrtf(Fd/Fn) << std::endl;
+  std::cout << "Van der Waals potential @ rank " << mpirank << " : " << sqrtf(Pd/Pn) << std::endl;
+  std::cout << "Van der Waals force     @ rank " << mpirank << " : " << sqrtf(Fd/Fn) << std::endl;
 
   delete[] xi;
   delete[] qi;

@@ -88,7 +88,7 @@ void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {         // Ewald wave pa
 
   Ewalds ewalds;
   real kmaxsq = KSIZE * KSIZE;
-  int kmax = KSIZE;
+  int kmax = int(KSIZE);
   for( int l=0; l<=kmax; l++ ) {
     int mmin = -kmax;
     if( l==0 ) mmin = 0;
