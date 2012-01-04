@@ -100,6 +100,10 @@ fdgl: fdgl.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(PARALLELRUN)
 
+poisson: poisson.cxx $(OBJECT)
+	$(CXX) $? $(LFLAGS)
+	$(SERIALRUN)
+
 all      :
 	make topdown
 	make bottomup

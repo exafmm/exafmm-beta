@@ -149,10 +149,15 @@ public:
 //! Destructor
   ~KernelBase() {}
 
+//! Set center of root cell
+  void setX0(vect x0) {X0 = x0;}
+//! Set radius of root cell
+  void setR0(real r0) {R0 = r0;}
+
 //! Get center of root cell
-  vect getX0() {return X0;}
+  vect getX0() const {return X0;}
 //! Get radius of root cell
-  real getR0() {return R0;}
+  real getR0() const {return R0;}
 
 //! Set center and size of root cell
   void setDomain(Bodies &bodies, vect x0=0, real r0=M_PI) {
