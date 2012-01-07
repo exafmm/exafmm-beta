@@ -94,7 +94,7 @@ public:
     bigint Imin = 0;                                            // Initialize minimum index
     getBucketSize(cells,begin,end,Imin,numBucket);              // Get bucket size for sorting
     stopTimer("Sort cells   ");                                 // Stop timer
-    assert( buffer.size() >= cells.size() );                    // Check sort buffer size
+    if( buffer.size() < cells.size() ) buffer.resize(cells.size());// Resize sort buffer if necessary
     sortICELL(cells,buffer,Imin,numBucket,ascend,begin,end);    // Call bucket sort for small indices
   }
 };

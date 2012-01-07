@@ -137,7 +137,7 @@ void readGraph(std::string fileid) {
 void shiftVertices() {
   int newSize = 0;
   int oldSize = vertices.size();
-  const int bytes = sizeof(Vertex);
+  const int bytes = sizeof(Vertex) / 8;
   const int isend = (MPIRANK + 1          ) % MPISIZE;
   const int irecv = (MPIRANK - 1 + MPISIZE) % MPISIZE;
   MPI_Request sreq,rreq;
@@ -148,9 +148,9 @@ void shiftVertices() {
   MPI_Wait(&rreq,MPI_STATUS_IGNORE);
 
   std::vector<Vertex> buffer(newSize);
-  MPI_Isend(&vertices[0],oldSize*bytes,MPI_BYTE,irecv,
+  MPI_Isend(&vertices[0],oldSize*bytes,MPI_DOUBLE,irecv,
             1,MPI_COMM_WORLD,&sreq);
-  MPI_Irecv(&buffer[0]  ,newSize*bytes,MPI_BYTE,isend,
+  MPI_Irecv(&buffer[0]  ,newSize*bytes,MPI_DOUBLE,isend,
             1,MPI_COMM_WORLD,&rreq);
   MPI_Wait(&sreq,MPI_STATUS_IGNORE);
   MPI_Wait(&rreq,MPI_STATUS_IGNORE);
@@ -160,7 +160,6 @@ void shiftVertices() {
 void shiftEdges() {
   int newSize = 0;
   int oldSize = edges.size();
-  const int bytes = sizeof(int);
   const int isend = (MPIRANK + 1          ) % MPISIZE;
   const int irecv = (MPIRANK - 1 + MPISIZE) % MPISIZE;
   MPI_Request sreq,rreq;
@@ -171,9 +170,9 @@ void shiftEdges() {
   MPI_Wait(&rreq,MPI_STATUS_IGNORE);
 
   std::vector<int> buffer(newSize);
-  MPI_Isend(&edges[0] ,oldSize*bytes,MPI_BYTE,irecv,
+  MPI_Isend(&edges[0] ,oldSize,MPI_INT,irecv,
             1,MPI_COMM_WORLD,&sreq);
-  MPI_Irecv(&buffer[0],newSize*bytes,MPI_BYTE,isend,
+  MPI_Irecv(&buffer[0],newSize,MPI_INT,isend,
             1,MPI_COMM_WORLD,&rreq);
   MPI_Wait(&sreq,MPI_STATUS_IGNORE);
   MPI_Wait(&rreq,MPI_STATUS_IGNORE);
@@ -181,14 +180,14 @@ void shiftEdges() {
 }
 
 void gatherVertices() {
-  int sendCnt = localVertices * sizeof(Vertex);
+  int sendCnt = localVertices * sizeof(Vertex) / 8;
   int *recvCnt = new int [MPISIZE];
   MPI_Allgather(&sendCnt,1,MPI_INT,recvCnt,1,MPI_INT,MPI_COMM_WORLD);
   offset[0] = 0;
   for( int i=1; i!=MPISIZE; ++i ) {
     offset[i] = offset[i-1] + recvCnt[i-1];
   }
-  MPI_Allgatherv(&vertices[0],sendCnt,MPI_BYTE,&verticesG[0],recvCnt,offset,MPI_BYTE,MPI_COMM_WORLD);
+  MPI_Allgatherv(&vertices[0],sendCnt,MPI_DOUBLE,&verticesG[0],recvCnt,offset,MPI_DOUBLE,MPI_COMM_WORLD);
   delete[] recvCnt;
 }
 
@@ -373,7 +372,6 @@ int main() {
 //    if( MPIRANK == 0 ) writeGraph(fileid,step);
     t[6] += get_time() - t0;
 
-    usleep(1000);
   }
 
   if( MPIRANK == 0 ) {
@@ -388,6 +386,6 @@ int main() {
     std::cout << "writeGraph : " << t[6] << std::endl;
   }
 
-  FMM.finalize();
   if( MPIRANK == 0 ) finalizeGraph();
+  FMM.finalize();
 }
