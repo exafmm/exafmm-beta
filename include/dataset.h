@@ -116,8 +116,8 @@ public:
 
 //! Print relative L2 norm error
   void printError(real diff1, real norm1, real diff2, real norm2) {
-    std::cout << "Error (pot)   : " << std::sqrt(diff1/norm1) << std::endl;
-    std::cout << "Error (acc)   : " << std::sqrt(diff2/norm2) << std::endl;
+    std::cout << "Rel L_2 Error (pot)   : " << std::sqrt(diff1/norm1) << std::endl;
+    std::cout << "Rel L_2 Error (acc)   : " << std::sqrt(diff2/norm2) << std::endl;
   }
 };
 

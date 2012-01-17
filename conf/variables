@@ -1,0 +1,13 @@
+# -*- mode: makefile -*-
+# EXAFMM_CC_INCLUDES - locations of include files, defined in ${EXAFMM_ARCH}/conf/exafmmvariables
+EXAFMM_CCPPFLAGS = ${EXAFMM_CC_INCLUDES} ${EXAFMMFLAGS} ${CPP_FLAGS} ${CPPFLAGS}
+CCPPFLAGS        = ${EXAFMM_CCPPFLAGS}
+#
+EXAFMM_COMPILE_SINGLE = ${PCC} -o $*.o -c ${PCC_FLAGS} ${CFLAGS} ${CCPPFLAGS}
+#
+EXAFMM_LIB_DIR = ${EXAFMM_DIR}/${EXAFMM_ARCH}/lib
+EXAFMM_LIB     = -L${EXAFMM_LIB_DIR} -lexafmm${DEVICE}${EXPAND}
+#
+CLINKER = ${PCC_LINKER} ${PCC_LINKER_FLAGS} ${CFLAGS}
+#
+include ../${EXAFMM_ARCH}/conf/exafmmvariables

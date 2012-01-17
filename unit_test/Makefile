@@ -1,4 +1,4 @@
-include ../Makefile
+#include ../Makefile
 SERIALRUN = ./a.out
 #PARALLELRUN = mpirun -np 3 -machinefile ~/hosts ./a.out
 PARALLELRUN = mpirun -np 2 ./a.out
@@ -23,9 +23,10 @@ ewald_fmm: ewald_fmm.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS)
 	$(SERIALRUN)
 
-serialrun: serialrun.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS)
-	$(SERIALRUN)
+serialrun: serialrun.o
+	${CLINKER} -o serialrun serialrun.o ${EXAFMM_LIB}
+	./serialrun
+	${RM} serialrun.o
 
 unsort: unsort.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) -DTOPDOWN
@@ -123,3 +124,6 @@ all      :
 	make ijparallelrun
 	make skip_tree
 	make overlap_comm
+
+include ../conf/variables
+include ../conf/rules

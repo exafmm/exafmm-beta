@@ -3,5 +3,8 @@ syntax: glob
 *.dat
 *.o
 *.out
+*.pyc
 *.swp
 .Apple*
+config/BuildSystem
+conf/exafmmvariables

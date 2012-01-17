@@ -33,7 +33,9 @@ THE SOFTWARE.
 #include <list>
 #include <map>
 #include <omp.h>
-#include "quark.h"
+#ifdef HAVE_QUARK
+  #include "quark.h"
+#endif
 #include <queue>
 #include <stack>
 #include <string>

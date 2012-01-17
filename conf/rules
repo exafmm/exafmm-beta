@@ -1,0 +1,13 @@
+# -*- mode: makefile -*-
+#
+.SUFFIXES: .cxx
+
+.cxx.o:
+	${EXAFMM_COMPILE_SINGLE} $<
+
+.cxx.a: 
+	${PETSC_COMPILE_SINGLE} $<
+	${AR} ${AR_FLAGS} ${LIBNAME} $*.o
+	${RM} $*.o
+
+include ../${EXAFMM_ARCH}/conf/exafmmrules
