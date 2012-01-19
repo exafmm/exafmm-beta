@@ -17,6 +17,10 @@ save:
 	hg st -un0 | xargs -0 rm
 	tar zcf ../../exafmm.tgz ../../exafmm
 
+revert:
+	hg revert --all
+	rm -rf `find .. -name "*.orig"`
+
 docs:
 	doxygen Doxyfile
 	cd docs/html; tar czf ../../docs.tar *
