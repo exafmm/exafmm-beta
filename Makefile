@@ -11,7 +11,7 @@ DEVICE  = cpu
 EXPAND  = Cartesian
 #EXPAND  = Spherical
 
-ifeq ($(shell mpicxx --version | grep Intel | wc -l),0)
+ifeq ($(shell mpicxx --version | grep -c Intel ),0)
 CXX     = mpicxx -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O3 -fPIC -fopenmp\
 	-ffast-math -funroll-loops -fforce-addr -rdynamic -D_FILE_OFFSET_BITS=64\
 	-I../include
