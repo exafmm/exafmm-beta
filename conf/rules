@@ -6,8 +6,9 @@
 	${EXAFMM_COMPILE_SINGLE} $<
 
 .cxx.a: 
-	${PETSC_COMPILE_SINGLE} $<
-	${AR} ${AR_FLAGS} ${LIBNAME} $*.o
+	-echo "In our library compile rule"
+	${EXAFMM_COMPILE_SINGLE} $<
+	${AR} ${AR_FLAGS} $@ $*.o
 	${RM} $*.o
 
 include ../${EXAFMM_ARCH}/conf/exafmmrules
