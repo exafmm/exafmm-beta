@@ -1,4 +1,4 @@
-include ../Makefile
+include ../Makefile.include
 
 ifeq ($(DEVICE),gpu)
 MR3 = mr3.o
