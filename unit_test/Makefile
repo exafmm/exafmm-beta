@@ -1,4 +1,4 @@
-include ../Makefile
+include ../Makefile.include
 SERIALRUN = ./a.out
 #PARALLELRUN = mpirun -np 3 -machinefile ~/hosts ./a.out
 PARALLELRUN = mpirun -np 2 ./a.out

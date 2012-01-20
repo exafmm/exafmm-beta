@@ -1,4 +1,4 @@
-include ../Makefile
+include ../Makefile.include
 LFLAGS	+= -DIneJ
 #LFLAGS	+= -DBOTTOMUP
 #LFLAGS	+= -DHYBRID
