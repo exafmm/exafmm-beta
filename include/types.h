@@ -65,7 +65,7 @@ extern vect Xperiodic;                                          //!< Coordinate 
 #endif
 
 const int  P        = 10;                                       //!< Order of expansions
-const int  NCRIT    = 1000;                                     //!< Number of bodies per cell
+const int  NCRIT    = 100;                                      //!< Number of bodies per cell
 const int  MAXBODY  = 200000;                                   //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET     = 2;                                        //!< LET opening critetia

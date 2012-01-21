@@ -233,6 +233,7 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
   timeM2P = stopTimer("M2P kernel   ") / 1000;                  // Stop timer
 }
 
+#if QUARK
 template<Equation equation>
 inline void interactQuark(Quark *quark) {
   Evaluator<equation> *E;
@@ -275,3 +276,4 @@ void Evaluator<equation>::interact(C_iter Ci, C_iter Cj, Quark *quark) {
                     sizeof(Cell),&*Cj0,NODEP,
                     0);
 }
+#endif

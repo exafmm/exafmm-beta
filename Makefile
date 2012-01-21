@@ -1,5 +1,5 @@
 cleanall:
-	find -name "*.o" -o -name "*.out*" -o -name "*.dat" -o -name "*.dot" -o -name "*.svg" | xargs rm -rf
+	find . -name "*.o" -o -name "*.out*" -o -name "*.dat" -o -name "*.dot" -o -name "*.svg" | xargs rm -rf
 commit  :
 	hg commit
 	hg push
