@@ -1,3 +1,5 @@
+help:
+	@echo "hello\nhello"
 cleanall:
 	find . -name "*.o" -o -name "*.out*" -o -name "*.dat" -o -name "*.dot" -o -name "*.svg" | xargs rm -rf
 commit  :
@@ -12,7 +14,7 @@ revert	:
 	rm -rf `find -name "*.orig"`
 docs:
 	doxygen Doxyfile
-	cd docs/html; tar czf ../../docs.tar *
-	scp docs.tar pl:~/
-	ssh pl 'tar -xmzf docs.tar -C /Library/WebServer/Documents/exafmm_docs/html/; rm docs.tar; chmod -R 775 /Library/WebServer/Documents/exafmm_docs/'
+	cd docs/html; tar zcf ../../docs.tgz *
+	scp docs.tgz pl:
+	ssh pl 'tar -zxf docs.tgz -C /Library/WebServer/Documents/exafmm_docs/html/; rm docs.tgz; chmod -R 775 /Library/WebServer/Documents/exafmm_docs/'
 	rm -rf docs*

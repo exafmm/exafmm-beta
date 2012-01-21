@@ -35,13 +35,15 @@ OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o
 .cu.o   :
 	$(NVCC) -c $? -o $@ $(LFLAGS)
 
+help:
+	@make -C .. help
 cleanall:
-	make -C .. cleanall
+	@make -C .. cleanall
 commit:
-	make -C .. commit
+	@make -C .. commit
 save:
-	make -C .. save
+	@make -C .. save
 revert:
-	make -C .. revert
+	@make -C .. revert
 docs:
-	make -C .. docs
+	@make -C .. docs
