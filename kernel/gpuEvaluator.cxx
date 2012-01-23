@@ -608,6 +608,7 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
   timeM2P = stopTimer("M2P kernel   ") / 100;                   // Stop timer
 }
 
+#if QUARK
 template<Equation equation>
 void Evaluator<equation>::interact(C_iter CI, C_iter CJ, Quark*) {
   PairQueue privateQueue;
@@ -629,3 +630,4 @@ void Evaluator<equation>::interact(C_iter CI, C_iter CJ, Quark*) {
     }
   }
 }
+#endif
