@@ -33,13 +33,15 @@ THE SOFTWARE.
 #include <list>
 #include <map>
 #include <omp.h>
-#include "quark.h"
 #include <queue>
 #include <stack>
 #include <string>
 #include <utility>
 #include <vector>
 #include "vec.h"                                                //!< My vector type with operator overloading
+#if QUARK
+#include "quark.h"
+#endif
 
 typedef unsigned           bigint;                              //!< Big integer type
 typedef float              real;                                //!< Real number type on CPU
