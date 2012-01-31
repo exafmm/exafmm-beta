@@ -1,8 +1,8 @@
 .SUFFIXES: .cxx .cu .o
 .PHONY: docs
 
-#CUDA_INSTALL_PATH = /usr/local/cuda
-#SDK_INSTALL_PATH = /usr/local/cuda_sdk/C
+CUDA_INSTALL_PATH = /usr/local/cuda
+CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 VTK_INCLUDE_PATH = /usr/include/vtk-5.6
 
 DEVICE  = cpu
@@ -19,11 +19,11 @@ else
 CXX     = mpicxx -O2 -fPIC -openmp -I../include
 endif
 NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_21\
-	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(SDK_INSTALL_PATH)/common/inc
+	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
 LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib
 #LFLAGS	+= -DQUARK -lquark
 ifeq ($(DEVICE),gpu)
-LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(SDK_INSTALL_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
+LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
 CXX     += -I$(VTK_INCLUDE_PATH)
 VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
