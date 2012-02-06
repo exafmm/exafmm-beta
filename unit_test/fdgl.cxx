@@ -19,6 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
+#if VTK
 #define VTK_EXCLUDE_STRSTREAM_HEADERS
 #include <vtkPoints.h>
 #include <vtkGraphLayoutView.h>
@@ -28,6 +29,7 @@ THE SOFTWARE.
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkGraphWriter.h>
 #include <vtkViewTheme.h>
+#endif
 #include "parallelfmm.h"
 
 struct JVertex {
@@ -37,7 +39,9 @@ struct JVertex {
 };
 
 struct Vertex : JVertex {
+#if VTK
   vtkIdType Id;
+#endif
   vect      F;
 };
 
@@ -50,9 +54,11 @@ std::vector<Vertex> verticesG;
 std::vector<JVertex> jvertices;
 typedef std::vector<Vertex>::iterator V_iter;
 typedef std::vector<JVertex>::iterator JV_iter;
+#if VTK
 vtkMutableUndirectedGraph *graph = vtkMutableUndirectedGraph::New();
 vtkGraphLayoutView *view = vtkGraphLayoutView::New();
 vtkGraphWriter *writer = vtkGraphWriter::New();
+#endif
 int numVertices, numEdges, localVertices, maxEdges=0;
 int *offset = new int [MPISIZE];
 static real radius = 2;
@@ -80,7 +86,9 @@ void initVertices() {
   srand48(0);
   for( int i=0; i<numVertices; ++i ) {
     Vertex vertex;
+#if VTK
     vertex.Id = graph->AddVertex();
+#endif
     vertex.Ista = vertex.Iend = 0;
     vertex.X[0] = 2 * drand48() - 1;
     vertex.X[1] = 2 * drand48() - 1;
@@ -191,6 +199,7 @@ void gatherVertices() {
   delete[] recvCnt;
 }
 
+#if VTK
 void setEdges() {
   gatherVertices();
   for( int irank=0; irank!=MPISIZE; ++irank ) {
@@ -217,6 +226,7 @@ void setVertices() {
   }
   graph->SetPoints(points);
 }
+#endif
 
 void repulsion(ParallelFMM<Laplace> &FMM) {
   Bodies bodies(localVertices);
@@ -290,6 +300,7 @@ void moveVertices() {
   }
 }
 
+#if VTK
 void drawGraph() {
   vtkViewTheme* theme = vtkViewTheme::New();
   theme->SetBackgroundColor(1.,1.,1.);
@@ -319,6 +330,7 @@ void writeGraph(std::string fileid, int step) {
   writer->SetInput(graph);
   writer->Write();
 }
+#endif
 
 int main() {
   double t0, t[7] = {0,0,0,0,0,0,0};
@@ -341,7 +353,9 @@ int main() {
 
   t0 = get_time();
   readGraph(fileid);
+#if VTK
   setEdges();
+#endif
   t[0] += get_time() - t0;
 
   for( int step=0; step<1000; ++step ) {
@@ -360,6 +374,7 @@ int main() {
     moveVertices();
     t[3] += get_time() - t0;
 
+#if VTK
     t0 = get_time();
     setVertices();
     t[4] += get_time() - t0;
@@ -371,6 +386,7 @@ int main() {
     t0 = get_time();
 //    if( MPIRANK == 0 ) writeGraph(fileid,step);
     t[6] += get_time() - t0;
+#endif
 
   }
 
@@ -381,11 +397,15 @@ int main() {
     std::cout << "repulsion  : " << t[1] << std::endl;
     std::cout << "spring     : " << t[2] << std::endl;
     std::cout << "move       : " << t[3] << std::endl;
+#if VTK
     std::cout << "setVer     : " << t[4] << std::endl;
     std::cout << "draw       : " << t[5] << std::endl;
     std::cout << "writeGraph : " << t[6] << std::endl;
+#endif
   }
 
+#if VTK
   if( MPIRANK == 0 ) finalizeGraph();
+#endif
   FMM.finalize();
 }
