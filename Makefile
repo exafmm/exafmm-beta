@@ -1,7 +1,15 @@
 help:
-	@echo "hello\nhello"
+	@echo "Help documentation will be available soon.\n"
+clean:
+	find . -name "*.o" -o -name "*.out*" | xargs rm -rf
+cleandat:
+	find . -name "*.dat" -o -name "*.dot" -o -name "*.svg" | xargs rm -rf
+cleanlib:
+	find . -name "*.a" -o -name "*.so" | xargs rm -rf
 cleanall:
-	find . -name "*.o" -o -name "*.out*" -o -name "*.dat" -o -name "*.dot" -o -name "*.svg" | xargs rm -rf
+	make clean
+	make cleandat
+	make cleanlib
 commit  :
 	hg commit
 	hg push
