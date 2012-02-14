@@ -55,6 +55,63 @@ extern "C" void MPI_Shift(double *var, int n, int mpisize, int mpirank) {
   delete[] buf;
 }
 
+extern "C" void FMMcalccoulomb_fp_ij(int ni, double* xi, double* qi, double* fi, double* p,
+  int nj, double* xj, double* qj, double size, int periodicflag) {
+  IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
+  THETA = .5;
+  Bodies bodies(ni),jbodies(nj);
+  Cells cells,jcells;
+  ParallelFMM<Laplace> FMM;
+
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+    int i = B-bodies.begin();
+    B->X[0] = xi[3*i+0];
+    B->X[1] = xi[3*i+1];
+    B->X[2] = xi[3*i+2];
+    B->SRC  = qi[i];
+    B->TRG[1] = -fi[3*i+0];
+    B->TRG[2] = -fi[3*i+1];
+    B->TRG[3] = -fi[3*i+2];
+    B->TRG[0] = p[i];
+    B->IBODY = i;
+    B->IPROC = MPIRANK;
+  }
+
+  for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) {
+    int i = B-jbodies.begin();
+    B->X[0] = xj[3*i+0];
+    B->X[1] = xj[3*i+1];
+    B->X[2] = xj[3*i+2];
+    B->SRC  = qj[i];
+  }
+
+  FMM.initialize();
+  FMM.setGlobDomain(bodies,size/2,size/2);
+  FMM.octsection(bodies);
+  FMM.octsection(jbodies);
+  FMM.bottomup(bodies,cells);
+  FMM.bottomup(jbodies,jcells);
+  FMM.commBodies(jcells);
+  FMM.commCells(jbodies,jcells);
+
+  FMM.downward(cells,jcells);
+  FMM.unpartition(bodies);
+  std::sort(bodies.begin(),bodies.end());
+  FMM.finalize();
+
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+    int i = B-bodies.begin();
+    xi[3*i+0] = B->X[0];
+    xi[3*i+1] = B->X[1];
+    xi[3*i+2] = B->X[2];
+    qi[i]     = B->SRC;
+    fi[3*i+0] = -B->TRG[1];
+    fi[3*i+1] = -B->TRG[2];
+    fi[3*i+2] = -B->TRG[3];
+    p[i] = B->TRG[0];
+  }
+}
+
 extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   int nj, double* xj, double* qj, double, int tblno, double size, int periodicflag) {
   IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;

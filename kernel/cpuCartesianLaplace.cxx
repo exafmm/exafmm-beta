@@ -23,380 +23,6 @@ THE SOFTWARE.
 #include "kernel.h"
 #undef KERNEL
 
-template<int nx, int ny, int nz>
-struct Index {
-  static const int  I = Index<nx,ny+1,nz-1>::I + 1;
-  static const real F = Index<nx,ny,nz-1>::F * nz;
-};
-
-template<int nx, int ny>
-struct Index<nx,ny,0> {
-  static const int  I = Index<nx+1,0,ny-1>::I + 1;
-  static const real F = Index<nx,ny-1,0>::F * ny;
-};
-
-template<int nx>
-struct Index<nx,0,0> {
-  static const int  I = Index<0,0,nx-1>::I + 1;
-  static const real F = Index<nx-1,0,0>::F * nx;
-};
-
-template<>
-struct Index<0,0,0> {
-  static const int  I = 0;
-  static const real F = 1;
-};
-
-
-template<int n, int kx, int ky , int kz, int d>
-struct DerivativeTerm {
-  static const int coef = 1 - 2 * n;
-  static inline real kernel(const Lset &C, const vect &dist) {
-    return coef * dist[d] * C[Index<kx,ky,kz>::I];
-  }
-};
-
-template<int n, int kx, int ky , int kz>
-struct DerivativeTerm<n,kx,ky,kz,-1> {
-  static const int coef = 1 - n;
-  static inline real kernel(const Lset &C, const vect&) {
-    return coef * C[Index<kx,ky,kz>::I];
-  }
-};
-
-
-template<int nx, int ny, int nz, int kx=nx, int ky=ny, int kz=nz, int flag=5>
-struct DerivativeSum {
-  static const int nextflag = 5 - (kz < nz || kz == 1);
-  static const int dim = kz == (nz-1) ? -1 : 2;
-  static const int n = nx + ny + nz;
-  static inline real loop(const Lset &C, const vect &dist) {
-    return DerivativeSum<nx,ny,nz,nx,ny,kz-1,nextflag>::loop(C,dist)
-         + DerivativeTerm<n,nx,ny,kz-1,dim>::kernel(C,dist);
-  }
-};
-
-template<int nx, int ny, int nz, int kx, int ky, int kz>
-struct DerivativeSum<nx,ny,nz,kx,ky,kz,4> {
-  static const int nextflag = 3 - (ny == 0);
-  static inline real loop(const Lset &C, const vect &dist) {
-    return DerivativeSum<nx,ny,nz,nx,ny,nz,nextflag>::loop(C,dist);
-  }
-};
-
-template<int nx, int ny, int nz, int kx, int ky, int kz>
-struct DerivativeSum<nx,ny,nz,kx,ky,kz,3> {
-  static const int nextflag = 3 - (ky < ny || ky == 1);
-  static const int dim = ky == (ny-1) ? -1 : 1;
-  static const int n = nx + ny + nz;
-  static inline real loop(const Lset &C, const vect &dist) {
-    return DerivativeSum<nx,ny,nz,nx,ky-1,nz,nextflag>::loop(C,dist)
-         + DerivativeTerm<n,nx,ky-1,nz,dim>::kernel(C,dist);
-  }
-};
-
-template<int nx, int ny, int nz, int kx, int ky, int kz>
-struct DerivativeSum<nx,ny,nz,kx,ky,kz,2> {
-  static const int nextflag = 1 - (nx == 0);
-  static inline real loop(const Lset &C, const vect &dist) {
-    return DerivativeSum<nx,ny,nz,nx,ny,nz,nextflag>::loop(C,dist);
-  }
-};
-
-template<int nx, int ny, int nz, int kx, int ky, int kz>
-struct DerivativeSum<nx,ny,nz,kx,ky,kz,1> {
-  static const int nextflag = 1 - (kx < nx || kx == 1);
-  static const int dim = kx == (nx-1) ? -1 : 0;
-  static const int n = nx + ny + nz;
-  static inline real loop(const Lset &C, const vect &dist) {
-    return DerivativeSum<nx,ny,nz,kx-1,ny,nz,nextflag>::loop(C,dist)
-         + DerivativeTerm<n,kx-1,ny,nz,dim>::kernel(C,dist);
-  }
-};
-
-template<int nx, int ny, int nz, int kx, int ky, int kz>
-struct DerivativeSum<nx,ny,nz,kx,ky,kz,0> {
-  static inline real loop(const Lset&, const vect&) {
-    return 0;
-  }
-};
-
-template<int nx, int ny, int nz, int kx, int ky>
-struct DerivativeSum<nx,ny,nz,kx,ky,0,5> {
-  static inline real loop(const Lset &C, const vect &dist) {
-    return DerivativeSum<nx,ny,nz,nx,ny,0,4>::loop(C,dist);
-  }
-};
-
-
-template<int nx, int ny, int nz>
-struct Terms {
-  static inline void power(Lset &C, const vect &dist) {
-    Terms<nx,ny+1,nz-1>::power(C,dist);
-    C[Index<nx,ny,nz>::I] = C[Index<nx,ny,nz-1>::I] * dist[2] / nz;
-  }
-  static inline void derivative(Lset &C, const vect &dist, const real &invR2) {
-    static const int n = nx + ny + nz;
-    Terms<nx,ny+1,nz-1>::derivative(C,dist,invR2);
-    C[Index<nx,ny,nz>::I] = DerivativeSum<nx,ny,nz>::loop(C,dist) / n * invR2;
-  }
-  static inline void scale(Lset &C) {
-    Terms<nx,ny+1,nz-1>::scale(C);
-    C[Index<nx,ny,nz>::I] *= Index<nx,ny,nz>::F;
-  }
-};
-
-template<int nx, int ny>
-struct Terms<nx,ny,0> {
-  static inline void power(Lset &C, const vect &dist) {
-    Terms<nx+1,0,ny-1>::power(C,dist);
-    C[Index<nx,ny,0>::I] = C[Index<nx,ny-1,0>::I] * dist[1] / ny;
-  }
-  static inline void derivative(Lset &C, const vect &dist, const real &invR2) {
-    static const int n = nx + ny;
-    Terms<nx+1,0,ny-1>::derivative(C,dist,invR2);
-    C[Index<nx,ny,0>::I] = DerivativeSum<nx,ny,0>::loop(C,dist) / n * invR2;
-  }
-  static inline void scale(Lset &C) {
-    Terms<nx+1,0,ny-1>::scale(C);
-    C[Index<nx,ny,0>::I] *= Index<nx,ny,0>::F;
-  }
-};
-
-template<int nx>
-struct Terms<nx,0,0> {
-  static inline void power(Lset &C, const vect &dist) {
-    Terms<0,0,nx-1>::power(C,dist);
-    C[Index<nx,0,0>::I] = C[Index<nx-1,0,0>::I] * dist[0] / nx;
-  }
-  static inline void derivative(Lset &C, const vect &dist, const real &invR2) {
-    static const int n = nx;
-    Terms<0,0,nx-1>::derivative(C,dist,invR2);
-    C[Index<nx,0,0>::I] = DerivativeSum<nx,0,0>::loop(C,dist) / n * invR2;
-  }
-  static inline void scale(Lset &C) {
-    Terms<0,0,nx-1>::scale(C);
-    C[Index<nx,0,0>::I] *= Index<nx,0,0>::F;
-  }
-};
-
-template<>
-struct Terms<0,0,0> {
-  static inline void power(Lset&, const vect&) {}
-  static inline void derivative(Lset&, const vect&, const real&) {}
-  static inline void scale(Lset&) {}
-};
-
-
-template<int nx, int ny, int nz, int kx=nx, int ky=ny, int kz=nz>
-struct M2MSum {
-  static inline real kernel(const Lset &C, const Mset &M) {
-    return M2MSum<nx,ny,nz,kx,ky,kz-1>::kernel(C,M)
-         + C[Index<nx-kx,ny-ky,nz-kz>::I]*M[Index<kx,ky,kz>::I];
-  }
-};
-
-template<int nx, int ny, int nz, int kx, int ky>
-struct M2MSum<nx,ny,nz,kx,ky,0> {
-  static inline real kernel(const Lset &C, const Mset &M) {
-    return M2MSum<nx,ny,nz,kx,ky-1,nz>::kernel(C,M)
-         + C[Index<nx-kx,ny-ky,nz>::I]*M[Index<kx,ky,0>::I];
-  }
-};
-
-template<int nx, int ny, int nz, int kx>
-struct M2MSum<nx,ny,nz,kx,0,0> {
-  static inline real kernel(const Lset &C, const Mset &M) {
-    return M2MSum<nx,ny,nz,kx-1,ny,nz>::kernel(C,M)
-         + C[Index<nx-kx,ny,nz>::I]*M[Index<kx,0,0>::I];
-  }
-};
-
-template<int nx, int ny, int nz>
-struct M2MSum<nx,ny,nz,0,0,0> {
-  static inline real kernel(const Lset&, const Mset&) { return 0; }
-};
-
-
-template<int nx, int ny, int nz, int kx=0, int ky=0, int kz=P-nx-ny-nz>
-struct M2LSum {
-  static inline real kernel(const Lset &L, const Mset &M) {
-    return M2LSum<nx,ny,nz,kx,ky+1,kz-1>::kernel(L,M)
-         + M[Index<kx,ky,kz>::I] * L[Index<nx+kx,ny+ky,nz+kz>::I];
-  }
-};
-
-template<int nx, int ny, int nz, int kx, int ky>
-struct M2LSum<nx,ny,nz,kx,ky,0> {
-  static inline real kernel(const Lset &L, const Mset &M) {
-    return M2LSum<nx,ny,nz,kx+1,0,ky-1>::kernel(L,M)
-         + M[Index<kx,ky,0>::I] * L[Index<nx+kx,ny+ky,nz>::I];
-  }
-};
-
-template<int nx, int ny, int nz, int kx>
-struct M2LSum<nx,ny,nz,kx,0,0> {
-  static inline real kernel(const Lset &L, const Mset &M) {
-    return M2LSum<nx,ny,nz,0,0,kx-1>::kernel(L,M)
-         + M[Index<kx,0,0>::I] * L[Index<nx+kx,ny,nz>::I];
-  }
-};
-
-template<int nx, int ny, int nz>
-struct M2LSum<nx,ny,nz,0,0,0> {
-  static inline real kernel(const Lset&, const Mset&) { return 0; }
-};
-
-
-template<int nx, int ny, int nz, int kx=0, int ky=0, int kz=P-nx-ny-nz>
-struct LocalSum {
-  static inline real kernel(const Lset &C, const Lset &L) {
-    return LocalSum<nx,ny,nz,kx,ky+1,kz-1>::kernel(C,L)
-         + C[Index<kx,ky,kz>::I] * L[Index<nx+kx,ny+ky,nz+kz>::I];
-  }
-};
-
-template<int nx, int ny, int nz, int kx, int ky>
-struct LocalSum<nx,ny,nz,kx,ky,0> {
-  static inline real kernel(const Lset &C, const Lset &L) {
-    return LocalSum<nx,ny,nz,kx+1,0,ky-1>::kernel(C,L)
-         + C[Index<kx,ky,0>::I] * L[Index<nx+kx,ny+ky,nz>::I];
-  }
-};
-
-template<int nx, int ny, int nz, int kx>
-struct LocalSum<nx,ny,nz,kx,0,0> {
-  static inline real kernel(const Lset &C, const Lset &L) {
-    return LocalSum<nx,ny,nz,0,0,kx-1>::kernel(C,L)
-         + C[Index<kx,0,0>::I] * L[Index<nx+kx,ny,nz>::I];
-  }
-};
-
-template<int nx, int ny, int nz>
-struct LocalSum<nx,ny,nz,0,0,0> {
-  static inline real kernel(const Lset&, const Lset&) { return 0; }
-};
-
-
-template<int nx, int ny, int nz>
-struct Upward {
-  static inline void M2M(Mset &MI, const Lset &C, const Mset &MJ) {
-    Upward<nx,ny+1,nz-1>::M2M(MI,C,MJ);
-    MI[Index<nx,ny,nz>::I] += M2MSum<nx,ny,nz>::kernel(C,MJ);
-  }
-};
-
-template<int nx, int ny>
-struct Upward<nx,ny,0> {
-  static inline void M2M(Mset &MI, const Lset &C, const Mset &MJ) {
-    Upward<nx+1,0,ny-1>::M2M(MI,C,MJ);
-    MI[Index<nx,ny,0>::I] += M2MSum<nx,ny,0>::kernel(C,MJ);
-  }
-};
-
-template<int nx>
-struct Upward<nx,0,0> {
-  static inline void M2M(Mset &MI, const Lset &C, const Mset &MJ) {
-    Upward<0,0,nx-1>::M2M(MI,C,MJ);
-    MI[Index<nx,0,0>::I] += M2MSum<nx,0,0>::kernel(C,MJ);
-  }
-};
-
-template<>
-struct Upward<0,0,0> {
-  static inline void M2M(Mset&, const Lset&, const Mset&) {}
-};
-
-
-template<int nx, int ny, int nz>
-struct Downward {
-  static inline void M2L(Lset &L, const Lset &C, const Mset &M) {
-    Downward<nx,ny+1,nz-1>::M2L(L,C,M);
-    L[Index<nx,ny,nz>::I] += M2LSum<nx,ny,nz>::kernel(C,M);
-  }
-  static inline void M2P(B_iter B, const Lset &C, const Mset &M) {
-    Downward<nx,ny+1,nz-1>::M2P(B,C,M);
-    B->TRG[Index<nx,ny,nz>::I] += M2LSum<nx,ny,nz>::kernel(C,M);
-  }
-  static inline void L2L(Lset &LI, const Lset &C, const Lset &LJ) {
-    Downward<nx,ny+1,nz-1>::L2L(LI,C,LJ);
-    LI[Index<nx,ny,nz>::I] += LocalSum<nx,ny,nz>::kernel(C,LJ);
-  }
-  static inline void L2P(B_iter B, const Lset &C, const Lset &L) {
-    Downward<nx,ny+1,nz-1>::L2P(B,C,L);
-    B->TRG[Index<nx,ny,nz>::I] += LocalSum<nx,ny,nz>::kernel(C,L);
-  }
-};
-
-template<int nx, int ny>
-struct Downward<nx,ny,0> {
-  static inline void M2L(Lset &L, const Lset &C, const Mset &M) {
-    Downward<nx+1,0,ny-1>::M2L(L,C,M);
-    L[Index<nx,ny,0>::I] += M2LSum<nx,ny,0>::kernel(C,M);
-  }
-  static inline void M2P(B_iter B, const Lset &C, const Mset &M) {
-    Downward<nx+1,0,ny-1>::M2P(B,C,M);
-    B->TRG[Index<nx,ny,0>::I] += M2LSum<nx,ny,0>::kernel(C,M);
-  }
-  static inline void L2L(Lset &LI, const Lset &C, const Lset &LJ) {
-    Downward<nx+1,0,ny-1>::L2L(LI,C,LJ);
-    LI[Index<nx,ny,0>::I] += LocalSum<nx,ny,0>::kernel(C,LJ);
-  }
-  static inline void L2P(B_iter B, const Lset &C, const Lset &L) {
-    Downward<nx+1,0,ny-1>::L2P(B,C,L);
-    B->TRG[Index<nx,ny,0>::I] += LocalSum<nx,ny,0>::kernel(C,L);
-  }
-};
-
-template<int nx>
-struct Downward<nx,0,0> {
-  static inline void M2L(Lset &L, const Lset &C, const Mset &M) {
-    Downward<0,0,nx-1>::M2L(L,C,M);
-    L[Index<nx,0,0>::I] += M2LSum<nx,0,0>::kernel(C,M);
-  }
-  static inline void M2P(B_iter B, const Lset &C, const Mset &M) {
-    Downward<0,0,nx-1>::M2P(B,C,M);
-    B->TRG[Index<nx,0,0>::I] += M2LSum<nx,0,0>::kernel(C,M);
-  }
-  static inline void L2L(Lset &LI, const Lset &C, const Lset &LJ) {
-    Downward<0,0,nx-1>::L2L(LI,C,LJ);
-    LI[Index<nx,0,0>::I] += LocalSum<nx,0,0>::kernel(C,LJ);
-  }
-  static inline void L2P(B_iter B, const Lset &C, const Lset &L) {
-    Downward<0,0,nx-1>::L2P(B,C,L);
-    B->TRG[Index<nx,0,0>::I] += LocalSum<nx,0,0>::kernel(C,L);
-  }
-};
-
-template<>
-struct Downward<0,0,0> {
-  static inline void M2L(Lset&, const Lset&, const Mset&) {}
-  static inline void M2P(B_iter, const Lset&, const Mset&) {}
-  static inline void L2L(Lset&, const Lset&, const Lset&) {}
-  static inline void L2P(B_iter, const Lset&, const Lset&) {}
-};
-
-inline void getCoef(Lset &C, const vect &dist, real &invR2, const real &invR) {
-  C[0] = invR;
-  Terms<0,0,P>::derivative(C,dist,invR2);
-  Terms<0,0,P>::scale(C);
-}
-
-inline void sumM2L(Lset &L, const Lset &C, const Mset &M) {
-  L += C * M[0];
-  for( int i=1; i<MTERM; ++i ) L[0] += M[i] * C[i];
-  Downward<0,0,P-1>::M2L(L,C,M);
-}
-
-inline void sumM2P(B_iter B, const Lset &C, const Mset &M) {
-  B->TRG[0] += C[0] * M[0];
-  B->TRG[1] += C[1] * M[0];
-  B->TRG[2] += C[2] * M[0];
-  B->TRG[3] += C[3] * M[0];
-  for( int i=1; i<MTERM; ++i ) B->TRG[0] += M[i] * C[i];
-  Downward<0,0,1>::M2P(B,C,M);
-}
-
 template<>
 void Kernel<Laplace>::initialize() {}
 
@@ -406,7 +32,236 @@ void Kernel<Laplace>::P2M(C_iter Ci) const {
     vect dist = Ci->X - B->X;
     Lset M;
     M[0] = B->SRC;
-    Terms<0,0,P-1>::power(M,dist);
+
+    M[1] = M[0] * dist[0];
+    M[2] = M[0] * dist[1];
+    M[3] = M[0] * dist[2];
+
+    M[4] = M[1] * dist[0] / 2;
+    M[5] = M[2] * dist[0];
+    M[6] = M[3] * dist[0];
+    M[7] = M[2] * dist[1] / 2;
+    M[8] = M[3] * dist[1];
+    M[9] = M[3] * dist[2] / 2;
+
+    M[10] = M[4] * dist[0] / 3;
+    M[11] = M[5] * dist[0] / 2;
+    M[12] = M[6] * dist[0] / 2;
+    M[13] = M[7] * dist[0];
+    M[14] = M[8] * dist[0];
+    M[15] = M[9] * dist[0];
+    M[16] = M[7] * dist[1] / 3;
+    M[17] = M[8] * dist[1] / 2;
+    M[18] = M[9] * dist[1];
+    M[19] = M[9] * dist[2] / 3;
+
+    M[20] = M[10] * dist[0] / 4;
+    M[21] = M[11] * dist[0] / 3;
+    M[22] = M[12] * dist[0] / 3;
+    M[23] = M[13] * dist[0] / 2;
+    M[24] = M[14] * dist[0] / 2;
+    M[25] = M[15] * dist[0] / 2;
+    M[26] = M[16] * dist[0];
+    M[27] = M[17] * dist[0];
+    M[28] = M[18] * dist[0];
+    M[29] = M[19] * dist[0];
+    M[30] = M[16] * dist[1] / 4;
+    M[31] = M[17] * dist[1] / 3;
+    M[32] = M[18] * dist[1] / 2;
+    M[33] = M[19] * dist[1];
+    M[34] = M[19] * dist[2] / 4;
+
+    M[35] = M[20] * dist[0] / 5;
+    M[36] = M[21] * dist[0] / 4;
+    M[37] = M[22] * dist[0] / 4;
+    M[38] = M[23] * dist[0] / 3;
+    M[39] = M[24] * dist[0] / 3;
+    M[40] = M[25] * dist[0] / 3;
+    M[41] = M[26] * dist[0] / 2;
+    M[42] = M[27] * dist[0] / 2;
+    M[43] = M[28] * dist[0] / 2;
+    M[44] = M[29] * dist[0] / 2;
+    M[45] = M[30] * dist[0];
+    M[46] = M[31] * dist[0];
+    M[47] = M[32] * dist[0];
+    M[48] = M[33] * dist[0];
+    M[49] = M[34] * dist[0];
+    M[50] = M[30] * dist[1] / 5;
+    M[51] = M[31] * dist[1] / 4;
+    M[52] = M[32] * dist[1] / 3;
+    M[53] = M[33] * dist[1] / 2;
+    M[54] = M[34] * dist[1];
+    M[55] = M[34] * dist[2] / 5;
+
+/*
+    M[56] = M[35] * dist[0] / 6;
+    M[57] = M[36] * dist[0] / 5;
+    M[58] = M[37] * dist[0] / 5;
+    M[59] = M[38] * dist[0] / 4;
+    M[60] = M[39] * dist[0] / 4;
+    M[61] = M[40] * dist[0] / 4;
+    M[62] = M[41] * dist[0] / 3;
+    M[63] = M[42] * dist[0] / 3;
+    M[64] = M[43] * dist[0] / 3;
+    M[65] = M[44] * dist[0] / 3;
+    M[66] = M[45] * dist[0] / 2;
+    M[67] = M[46] * dist[0] / 2;
+    M[68] = M[47] * dist[0] / 2;
+    M[69] = M[48] * dist[0] / 2;
+    M[70] = M[49] * dist[0] / 2;
+    M[71] = M[50] * dist[0];
+    M[72] = M[51] * dist[0];
+    M[73] = M[52] * dist[0];
+    M[74] = M[53] * dist[0];
+    M[75] = M[54] * dist[0];
+    M[76] = M[55] * dist[0];
+    M[77] = M[50] * dist[1] / 6;
+    M[78] = M[51] * dist[1] / 5;
+    M[79] = M[52] * dist[1] / 4;
+    M[80] = M[53] * dist[1] / 3;
+    M[81] = M[54] * dist[1] / 2;
+    M[82] = M[55] * dist[1];
+    M[83] = M[55] * dist[2] / 6;
+
+    M[84] = M[56] * dist[0] / 7;
+    M[85] = M[57] * dist[0] / 6;
+    M[86] = M[58] * dist[0] / 6;
+    M[87] = M[59] * dist[0] / 5;
+    M[88] = M[60] * dist[0] / 5;
+    M[89] = M[61] * dist[0] / 5;
+    M[90] = M[62] * dist[0] / 4;
+    M[91] = M[63] * dist[0] / 4;
+    M[92] = M[64] * dist[0] / 4;
+    M[93] = M[65] * dist[0] / 4;
+    M[94] = M[66] * dist[0] / 3;
+    M[95] = M[67] * dist[0] / 3;
+    M[96] = M[68] * dist[0] / 3;
+    M[97] = M[69] * dist[0] / 3;
+    M[98] = M[70] * dist[0] / 3;
+    M[99] = M[71] * dist[0] / 2;
+    M[100] = M[72] * dist[0] / 2;
+    M[101] = M[73] * dist[0] / 2;
+    M[102] = M[74] * dist[0] / 2;
+    M[103] = M[75] * dist[0] / 2;
+    M[104] = M[76] * dist[0] / 2;
+    M[105] = M[77] * dist[0];
+    M[106] = M[78] * dist[0];
+    M[107] = M[79] * dist[0];
+    M[108] = M[80] * dist[0];
+    M[109] = M[81] * dist[0];
+    M[110] = M[82] * dist[0];
+    M[111] = M[83] * dist[0];
+    M[112] = M[77] * dist[1] / 7;
+    M[113] = M[78] * dist[1] / 6;
+    M[114] = M[79] * dist[1] / 5;
+    M[115] = M[80] * dist[1] / 4;
+    M[116] = M[81] * dist[1] / 3;
+    M[117] = M[82] * dist[1] / 2;
+    M[118] = M[83] * dist[1];
+    M[119] = M[83] * dist[2] / 7;
+
+    M[120] = M[84] * dist[0] / 8;
+    M[121] = M[85] * dist[0] / 7;
+    M[122] = M[86] * dist[0] / 7;
+    M[123] = M[87] * dist[0] / 6;
+    M[124] = M[88] * dist[0] / 6;
+    M[125] = M[89] * dist[0] / 6;
+    M[126] = M[90] * dist[0] / 5;
+    M[127] = M[91] * dist[0] / 5;
+    M[128] = M[92] * dist[0] / 5;
+    M[129] = M[93] * dist[0] / 5;
+    M[130] = M[94] * dist[0] / 4;
+    M[131] = M[95] * dist[0] / 4;
+    M[132] = M[96] * dist[0] / 4;
+    M[133] = M[97] * dist[0] / 4;
+    M[134] = M[98] * dist[0] / 4;
+    M[135] = M[99] * dist[0] / 3;
+    M[136] = M[100] * dist[0] / 3;
+    M[137] = M[101] * dist[0] / 3;
+    M[138] = M[102] * dist[0] / 3;
+    M[139] = M[103] * dist[0] / 3;
+    M[140] = M[104] * dist[0] / 3;
+    M[141] = M[105] * dist[0] / 2;
+    M[142] = M[106] * dist[0] / 2;
+    M[143] = M[107] * dist[0] / 2;
+    M[144] = M[108] * dist[0] / 2;
+    M[145] = M[109] * dist[0] / 2;
+    M[146] = M[110] * dist[0] / 2;
+    M[147] = M[111] * dist[0] / 2;
+    M[148] = M[112] * dist[0];
+    M[149] = M[113] * dist[0];
+    M[150] = M[114] * dist[0];
+    M[151] = M[115] * dist[0];
+    M[152] = M[116] * dist[0];
+    M[153] = M[117] * dist[0];
+    M[154] = M[118] * dist[0];
+    M[155] = M[119] * dist[0];
+    M[156] = M[112] * dist[1] / 8;
+    M[157] = M[113] * dist[1] / 7;
+    M[158] = M[114] * dist[1] / 6;
+    M[159] = M[115] * dist[1] / 5;
+    M[160] = M[116] * dist[1] / 4;
+    M[161] = M[117] * dist[1] / 3;
+    M[162] = M[118] * dist[1] / 2;
+    M[163] = M[119] * dist[1];
+    M[164] = M[119] * dist[2] / 8;
+
+    M[165] = M[120] * dist[0] / 9;
+    M[166] = M[121] * dist[0] / 8;
+    M[167] = M[122] * dist[0] / 8;
+    M[168] = M[123] * dist[0] / 7;
+    M[169] = M[124] * dist[0] / 7;
+    M[170] = M[125] * dist[0] / 7;
+    M[171] = M[126] * dist[0] / 6;
+    M[172] = M[127] * dist[0] / 6;
+    M[173] = M[128] * dist[0] / 6;
+    M[174] = M[129] * dist[0] / 6;
+    M[175] = M[130] * dist[0] / 5;
+    M[176] = M[131] * dist[0] / 5;
+    M[177] = M[132] * dist[0] / 5;
+    M[178] = M[133] * dist[0] / 5;
+    M[179] = M[134] * dist[0] / 5;
+    M[180] = M[135] * dist[0] / 4;
+    M[181] = M[136] * dist[0] / 4;
+    M[182] = M[137] * dist[0] / 4;
+    M[183] = M[138] * dist[0] / 4;
+    M[184] = M[139] * dist[0] / 4;
+    M[185] = M[140] * dist[0] / 4;
+    M[186] = M[141] * dist[0] / 3;
+    M[187] = M[142] * dist[0] / 3;
+    M[188] = M[143] * dist[0] / 3;
+    M[189] = M[144] * dist[0] / 3;
+    M[190] = M[145] * dist[0] / 3;
+    M[191] = M[146] * dist[0] / 3;
+    M[192] = M[147] * dist[0] / 3;
+    M[193] = M[148] * dist[0] / 2;
+    M[194] = M[149] * dist[0] / 2;
+    M[195] = M[150] * dist[0] / 2;
+    M[196] = M[151] * dist[0] / 2;
+    M[197] = M[152] * dist[0] / 2;
+    M[198] = M[153] * dist[0] / 2;
+    M[199] = M[154] * dist[0] / 2;
+    M[200] = M[155] * dist[0] / 2;
+    M[201] = M[156] * dist[0];
+    M[202] = M[157] * dist[0];
+    M[203] = M[158] * dist[0];
+    M[204] = M[159] * dist[0];
+    M[205] = M[160] * dist[0];
+    M[206] = M[161] * dist[0];
+    M[207] = M[162] * dist[0];
+    M[208] = M[163] * dist[0];
+    M[209] = M[164] * dist[0];
+    M[210] = M[156] * dist[1] / 9;
+    M[211] = M[157] * dist[1] / 8;
+    M[212] = M[158] * dist[1] / 7;
+    M[213] = M[159] * dist[1] / 6;
+    M[214] = M[160] * dist[1] / 5;
+    M[215] = M[161] * dist[1] / 4;
+    M[216] = M[162] * dist[1] / 3;
+    M[217] = M[163] * dist[1] / 2;
+    M[218] = M[164] * dist[1];
+    M[219] = M[164] * dist[2] / 9;
+*/
     for( int i=0; i<MTERM; ++i ) Ci->M[i] += M[i];
   }
 }
@@ -417,10 +272,299 @@ void Kernel<Laplace>::M2M(C_iter Ci, C_iter Cj) const {
   Mset M;
   Lset C;
   C[0] = 1;
-  Terms<0,0,P-1>::power(C,dist);
+
+  C[1] = C[0] * dist[0];
+  C[2] = C[0] * dist[1];
+  C[3] = C[0] * dist[2];
+
+  C[4] = C[1] * dist[0] / 2;
+  C[5] = C[2] * dist[0];
+  C[6] = C[3] * dist[0];
+  C[7] = C[2] * dist[1] / 2;
+  C[8] = C[3] * dist[1];
+  C[9] = C[3] * dist[2] / 2;
+
+  C[10] = C[4] * dist[0] / 3;
+  C[11] = C[5] * dist[0] / 2;
+  C[12] = C[6] * dist[0] / 2;
+  C[13] = C[7] * dist[0];
+  C[14] = C[8] * dist[0];
+  C[15] = C[9] * dist[0];
+  C[16] = C[7] * dist[1] / 3;
+  C[17] = C[8] * dist[1] / 2;
+  C[18] = C[9] * dist[1];
+  C[19] = C[9] * dist[2] / 3;
+
+  C[20] = C[10] * dist[0] / 4;
+  C[21] = C[11] * dist[0] / 3;
+  C[22] = C[12] * dist[0] / 3;
+  C[23] = C[13] * dist[0] / 2;
+  C[24] = C[14] * dist[0] / 2;
+  C[25] = C[15] * dist[0] / 2;
+  C[26] = C[16] * dist[0];
+  C[27] = C[17] * dist[0];
+  C[28] = C[18] * dist[0];
+  C[29] = C[19] * dist[0];
+  C[30] = C[16] * dist[1] / 4;
+  C[31] = C[17] * dist[1] / 3;
+  C[32] = C[18] * dist[1] / 2;
+  C[33] = C[19] * dist[1];
+  C[34] = C[19] * dist[2] / 4;
+
+  C[35] = C[20] * dist[0] / 5;
+  C[36] = C[21] * dist[0] / 4;
+  C[37] = C[22] * dist[0] / 4;
+  C[38] = C[23] * dist[0] / 3;
+  C[39] = C[24] * dist[0] / 3;
+  C[40] = C[25] * dist[0] / 3;
+  C[41] = C[26] * dist[0] / 2;
+  C[42] = C[27] * dist[0] / 2;
+  C[43] = C[28] * dist[0] / 2;
+  C[44] = C[29] * dist[0] / 2;
+  C[45] = C[30] * dist[0];
+  C[46] = C[31] * dist[0];
+  C[47] = C[32] * dist[0];
+  C[48] = C[33] * dist[0];
+  C[49] = C[34] * dist[0];
+  C[50] = C[30] * dist[1] / 5;
+  C[51] = C[31] * dist[1] / 4;
+  C[52] = C[32] * dist[1] / 3;
+  C[53] = C[33] * dist[1] / 2;
+  C[54] = C[34] * dist[1];
+  C[55] = C[34] * dist[2] / 5;
+
+/*
+  C[56] = C[35] * dist[0] / 6;
+  C[57] = C[36] * dist[0] / 5;
+  C[58] = C[37] * dist[0] / 5;
+  C[59] = C[38] * dist[0] / 4;
+  C[60] = C[39] * dist[0] / 4;
+  C[61] = C[40] * dist[0] / 4;
+  C[62] = C[41] * dist[0] / 3;
+  C[63] = C[42] * dist[0] / 3;
+  C[64] = C[43] * dist[0] / 3;
+  C[65] = C[44] * dist[0] / 3;
+  C[66] = C[45] * dist[0] / 2;
+  C[67] = C[46] * dist[0] / 2;
+  C[68] = C[47] * dist[0] / 2;
+  C[69] = C[48] * dist[0] / 2;
+  C[70] = C[49] * dist[0] / 2;
+  C[71] = C[50] * dist[0];
+  C[72] = C[51] * dist[0];
+  C[73] = C[52] * dist[0];
+  C[74] = C[53] * dist[0];
+  C[75] = C[54] * dist[0];
+  C[76] = C[55] * dist[0];
+  C[77] = C[50] * dist[1] / 6;
+  C[78] = C[51] * dist[1] / 5;
+  C[79] = C[52] * dist[1] / 4;
+  C[80] = C[53] * dist[1] / 3;
+  C[81] = C[54] * dist[1] / 2;
+  C[82] = C[55] * dist[1];
+  C[83] = C[55] * dist[2] / 6;
+
+  C[84] = C[56] * dist[0] / 7;
+  C[85] = C[57] * dist[0] / 6;
+  C[86] = C[58] * dist[0] / 6;
+  C[87] = C[59] * dist[0] / 5;
+  C[88] = C[60] * dist[0] / 5;
+  C[89] = C[61] * dist[0] / 5;
+  C[90] = C[62] * dist[0] / 4;
+  C[91] = C[63] * dist[0] / 4;
+  C[92] = C[64] * dist[0] / 4;
+  C[93] = C[65] * dist[0] / 4;
+  C[94] = C[66] * dist[0] / 3;
+  C[95] = C[67] * dist[0] / 3;
+  C[96] = C[68] * dist[0] / 3;
+  C[97] = C[69] * dist[0] / 3;
+  C[98] = C[70] * dist[0] / 3;
+  C[99] = C[71] * dist[0] / 2;
+  C[100] = C[72] * dist[0] / 2;
+  C[101] = C[73] * dist[0] / 2;
+  C[102] = C[74] * dist[0] / 2;
+  C[103] = C[75] * dist[0] / 2;
+  C[104] = C[76] * dist[0] / 2;
+  C[105] = C[77] * dist[0];
+  C[106] = C[78] * dist[0];
+  C[107] = C[79] * dist[0];
+  C[108] = C[80] * dist[0];
+  C[109] = C[81] * dist[0];
+  C[110] = C[82] * dist[0];
+  C[111] = C[83] * dist[0];
+  C[112] = C[77] * dist[1] / 7;
+  C[113] = C[78] * dist[1] / 6;
+  C[114] = C[79] * dist[1] / 5;
+  C[115] = C[80] * dist[1] / 4;
+  C[116] = C[81] * dist[1] / 3;
+  C[117] = C[82] * dist[1] / 2;
+  C[118] = C[83] * dist[1];
+  C[119] = C[83] * dist[2] / 7;
+
+  C[120] = C[84] * dist[0] / 8;
+  C[121] = C[85] * dist[0] / 7;
+  C[122] = C[86] * dist[0] / 7;
+  C[123] = C[87] * dist[0] / 6;
+  C[124] = C[88] * dist[0] / 6;
+  C[125] = C[89] * dist[0] / 6;
+  C[126] = C[90] * dist[0] / 5;
+  C[127] = C[91] * dist[0] / 5;
+  C[128] = C[92] * dist[0] / 5;
+  C[129] = C[93] * dist[0] / 5;
+  C[130] = C[94] * dist[0] / 4;
+  C[131] = C[95] * dist[0] / 4;
+  C[132] = C[96] * dist[0] / 4;
+  C[133] = C[97] * dist[0] / 4;
+  C[134] = C[98] * dist[0] / 4;
+  C[135] = C[99] * dist[0] / 3;
+  C[136] = C[100] * dist[0] / 3;
+  C[137] = C[101] * dist[0] / 3;
+  C[138] = C[102] * dist[0] / 3;
+  C[139] = C[103] * dist[0] / 3;
+  C[140] = C[104] * dist[0] / 3;
+  C[141] = C[105] * dist[0] / 2;
+  C[142] = C[106] * dist[0] / 2;
+  C[143] = C[107] * dist[0] / 2;
+  C[144] = C[108] * dist[0] / 2;
+  C[145] = C[109] * dist[0] / 2;
+  C[146] = C[110] * dist[0] / 2;
+  C[147] = C[111] * dist[0] / 2;
+  C[148] = C[112] * dist[0];
+  C[149] = C[113] * dist[0];
+  C[150] = C[114] * dist[0];
+  C[151] = C[115] * dist[0];
+  C[152] = C[116] * dist[0];
+  C[153] = C[117] * dist[0];
+  C[154] = C[118] * dist[0];
+  C[155] = C[119] * dist[0];
+  C[156] = C[112] * dist[1] / 8;
+  C[157] = C[113] * dist[1] / 7;
+  C[158] = C[114] * dist[1] / 6;
+  C[159] = C[115] * dist[1] / 5;
+  C[160] = C[116] * dist[1] / 4;
+  C[161] = C[117] * dist[1] / 3;
+  C[162] = C[118] * dist[1] / 2;
+  C[163] = C[119] * dist[1];
+  C[164] = C[119] * dist[2] / 8;
+
+  C[165] = C[120] * dist[0] / 9;
+  C[166] = C[121] * dist[0] / 8;
+  C[167] = C[122] * dist[0] / 8;
+  C[168] = C[123] * dist[0] / 7;
+  C[169] = C[124] * dist[0] / 7;
+  C[170] = C[125] * dist[0] / 7;
+  C[171] = C[126] * dist[0] / 6;
+  C[172] = C[127] * dist[0] / 6;
+  C[173] = C[128] * dist[0] / 6;
+  C[174] = C[129] * dist[0] / 6;
+  C[175] = C[130] * dist[0] / 5;
+  C[176] = C[131] * dist[0] / 5;
+  C[177] = C[132] * dist[0] / 5;
+  C[178] = C[133] * dist[0] / 5;
+  C[179] = C[134] * dist[0] / 5;
+  C[180] = C[135] * dist[0] / 4;
+  C[181] = C[136] * dist[0] / 4;
+  C[182] = C[137] * dist[0] / 4;
+  C[183] = C[138] * dist[0] / 4;
+  C[184] = C[139] * dist[0] / 4;
+  C[185] = C[140] * dist[0] / 4;
+  C[186] = C[141] * dist[0] / 3;
+  C[187] = C[142] * dist[0] / 3;
+  C[188] = C[143] * dist[0] / 3;
+  C[189] = C[144] * dist[0] / 3;
+  C[190] = C[145] * dist[0] / 3;
+  C[191] = C[146] * dist[0] / 3;
+  C[192] = C[147] * dist[0] / 3;
+  C[193] = C[148] * dist[0] / 2;
+  C[194] = C[149] * dist[0] / 2;
+  C[195] = C[150] * dist[0] / 2;
+  C[196] = C[151] * dist[0] / 2;
+  C[197] = C[152] * dist[0] / 2;
+  C[198] = C[153] * dist[0] / 2;
+  C[199] = C[154] * dist[0] / 2;
+  C[200] = C[155] * dist[0] / 2;
+  C[201] = C[156] * dist[0];
+  C[202] = C[157] * dist[0];
+  C[203] = C[158] * dist[0];
+  C[204] = C[159] * dist[0];
+  C[205] = C[160] * dist[0];
+  C[206] = C[161] * dist[0];
+  C[207] = C[162] * dist[0];
+  C[208] = C[163] * dist[0];
+  C[209] = C[164] * dist[0];
+  C[210] = C[156] * dist[1] / 9;
+  C[211] = C[157] * dist[1] / 8;
+  C[212] = C[158] * dist[1] / 7;
+  C[213] = C[159] * dist[1] / 6;
+  C[214] = C[160] * dist[1] / 5;
+  C[215] = C[161] * dist[1] / 4;
+  C[216] = C[162] * dist[1] / 3;
+  C[217] = C[163] * dist[1] / 2;
+  C[218] = C[164] * dist[1];
+  C[219] = C[164] * dist[2] / 9;
+*/
+
   M = Cj->M;
-  for( int i=0; i<MTERM; ++i ) Ci->M[i] += C[i] * M[0];
-  Upward<0,0,P-1>::M2M(Ci->M,C,M);
+  Ci->M += M;
+
+  Ci->M[1] += C[1]*M[0];
+  Ci->M[2] += C[2]*M[0];
+  Ci->M[3] += C[3]*M[0];
+
+  Ci->M[4] += C[1]*M[1]+C[4]*M[0];
+  Ci->M[5] += C[1]*M[2]+C[2]*M[1]+C[5]*M[0];
+  Ci->M[6] += C[1]*M[3]+C[3]*M[1]+C[6]*M[0];
+  Ci->M[7] += C[2]*M[2]+C[7]*M[0];
+  Ci->M[8] += C[2]*M[3]+C[3]*M[2]+C[8]*M[0];
+  Ci->M[9] += C[3]*M[3]+C[9]*M[0];
+
+  Ci->M[10] += C[1]*M[4]+C[4]*M[1]+C[10]*M[0];
+  Ci->M[11] += C[1]*M[5]+C[2]*M[4]+C[4]*M[2]+C[5]*M[1]+C[11]*M[0];
+  Ci->M[12] += C[1]*M[6]+C[3]*M[4]+C[4]*M[3]+C[6]*M[1]+C[12]*M[0];
+  Ci->M[13] += C[1]*M[7]+C[2]*M[5]+C[5]*M[2]+C[7]*M[1]+C[13]*M[0];
+  Ci->M[14] += C[1]*M[8]+C[2]*M[6]+C[3]*M[5]+C[5]*M[3]+C[6]*M[2]+C[8]*M[1]+C[14]*M[0];
+  Ci->M[15] += C[1]*M[9]+C[3]*M[6]+C[6]*M[3]+C[9]*M[1]+C[15]*M[0];
+  Ci->M[16] += C[2]*M[7]+C[7]*M[2]+C[16]*M[0];
+  Ci->M[17] += C[2]*M[8]+C[3]*M[7]+C[7]*M[3]+C[8]*M[2]+C[17]*M[0];
+  Ci->M[18] += C[2]*M[9]+C[3]*M[8]+C[8]*M[3]+C[9]*M[2]+C[18]*M[0];
+  Ci->M[19] += C[3]*M[9]+C[9]*M[3]+C[19]*M[0];
+
+  Ci->M[20] += C[1]*M[10]+C[4]*M[4]+C[10]*M[1]+C[20]*M[0];
+  Ci->M[21] += C[1]*M[11]+C[2]*M[10]+C[4]*M[5]+C[5]*M[4]+C[10]*M[2]+C[11]*M[1]+C[21]*M[0];
+  Ci->M[22] += C[1]*M[12]+C[3]*M[10]+C[4]*M[6]+C[6]*M[4]+C[10]*M[3]+C[12]*M[1]+C[22]*M[0];
+  Ci->M[23] += C[1]*M[13]+C[2]*M[11]+C[4]*M[7]+C[5]*M[5]+C[7]*M[4]+C[11]*M[2]+C[13]*M[1]+C[23]*M[0];
+  Ci->M[24] += C[1]*M[14]+C[2]*M[12]+C[3]*M[11]+C[4]*M[8]+C[5]*M[6]+C[6]*M[5]+C[8]*M[4]+C[11]*M[3]+C[12]*M[2]+C[14]*M[1]+C[24]*M[0];
+  Ci->M[25] += C[1]*M[15]+C[3]*M[12]+C[4]*M[9]+C[6]*M[6]+C[9]*M[4]+C[12]*M[3]+C[15]*M[1]+C[25]*M[0];
+  Ci->M[26] += C[1]*M[16]+C[2]*M[13]+C[5]*M[7]+C[7]*M[5]+C[13]*M[2]+C[16]*M[1]+C[26]*M[0];
+  Ci->M[27] += C[1]*M[17]+C[2]*M[14]+C[3]*M[13]+C[5]*M[8]+C[6]*M[7]+C[7]*M[6]+C[8]*M[5]+C[13]*M[3]+C[14]*M[2]+C[17]*M[1]+C[27]*M[0];
+  Ci->M[28] += C[1]*M[18]+C[2]*M[15]+C[3]*M[14]+C[5]*M[9]+C[6]*M[8]+C[8]*M[6]+C[9]*M[5]+C[14]*M[3]+C[15]*M[2]+C[18]*M[1]+C[28]*M[0];
+  Ci->M[29] += C[1]*M[19]+C[3]*M[15]+C[6]*M[9]+C[9]*M[6]+C[15]*M[3]+C[19]*M[1]+C[29]*M[0];
+  Ci->M[30] += C[2]*M[16]+C[7]*M[7]+C[16]*M[2]+C[30]*M[0];
+  Ci->M[31] += C[2]*M[17]+C[3]*M[16]+C[7]*M[8]+C[8]*M[7]+C[16]*M[3]+C[17]*M[2]+C[31]*M[0];
+  Ci->M[32] += C[2]*M[18]+C[3]*M[17]+C[7]*M[9]+C[8]*M[8]+C[9]*M[7]+C[17]*M[3]+C[18]*M[2]+C[32]*M[0];
+  Ci->M[33] += C[2]*M[19]+C[3]*M[18]+C[8]*M[9]+C[9]*M[8]+C[18]*M[3]+C[19]*M[2]+C[33]*M[0];
+  Ci->M[34] += C[3]*M[19]+C[9]*M[9]+C[19]*M[3]+C[34]*M[0];
+
+  Ci->M[35] += C[1]*M[20]+C[4]*M[10]+C[10]*M[4]+C[20]*M[1]+C[35]*M[0];
+  Ci->M[36] += C[1]*M[21]+C[2]*M[20]+C[4]*M[11]+C[5]*M[10]+C[10]*M[5]+C[11]*M[4]+C[20]*M[2]+C[21]*M[1]+C[36]*M[0];
+  Ci->M[37] += C[1]*M[22]+C[3]*M[20]+C[4]*M[12]+C[6]*M[10]+C[10]*M[6]+C[12]*M[4]+C[20]*M[3]+C[22]*M[1]+C[37]*M[0];
+  Ci->M[38] += C[1]*M[23]+C[2]*M[21]+C[4]*M[13]+C[5]*M[11]+C[7]*M[10]+C[10]*M[7]+C[11]*M[5]+C[13]*M[4]+C[21]*M[2]+C[23]*M[1]+C[38]*M[0];
+  Ci->M[39] += C[1]*M[24]+C[2]*M[22]+C[3]*M[21]+C[4]*M[14]+C[6]*M[12]+C[8]*M[11]+C[10]*M[10]+C[11]*M[8]+C[12]*M[6]+C[14]*M[4]+C[21]*M[3]+C[22]*M[2]+C[24]*M[1]+C[39]*M[0];
+  Ci->M[40] += C[1]*M[25]+C[3]*M[22]+C[4]*M[15]+C[6]*M[12]+C[9]*M[10]+C[10]*M[9]+C[12]*M[6]+C[15]*M[4]+C[22]*M[3]+C[25]*M[1]+C[40]*M[0];
+  Ci->M[41] += C[1]*M[26]+C[2]*M[23]+C[4]*M[16]+C[5]*M[13]+C[7]*M[11]+C[11]*M[7]+C[13]*M[5]+C[16]*M[4]+C[23]*M[2]+C[26]*M[1]+C[41]*M[0];
+  Ci->M[42] += C[1]*M[27]+C[2]*M[24]+C[3]*M[23]+C[4]*M[17]+C[5]*M[14]+C[6]*M[13]+C[7]*M[12]+C[8]*M[11]+C[11]*M[8]+C[12]*M[7]+C[13]*M[6]+C[14]*M[5]+C[17]*M[4]+C[23]*M[3]+C[24]*M[2]+C[27]*M[1]+C[42]*M[0];
+  Ci->M[43] += C[1]*M[28]+C[2]*M[25]+C[3]*M[24]+C[4]*M[18]+C[5]*M[15]+C[6]*M[14]+C[8]*M[12]+C[9]*M[11]+C[11]*M[9]+C[12]*M[8]+C[14]*M[6]+C[15]*M[5]+C[18]*M[4]+C[24]*M[3]+C[25]*M[2]+C[28]*M[1]+C[43]*M[0];
+  Ci->M[44] += C[1]*M[29]+C[3]*M[25]+C[4]*M[19]+C[6]*M[15]+C[9]*M[12]+C[12]*M[9]+C[15]*M[6]+C[19]*M[4]+C[25]*M[3]+C[29]*M[1]+C[44]*M[0];
+  Ci->M[45] += C[1]*M[30]+C[2]*M[26]+C[5]*M[16]+C[7]*M[13]+C[13]*M[7]+C[16]*M[5]+C[26]*M[2]+C[30]*M[1]+C[45]*M[0];
+  Ci->M[46] += C[1]*M[31]+C[2]*M[27]+C[3]*M[26]+C[5]*M[17]+C[7]*M[16]+C[8]*M[14]+C[13]*M[13]+C[14]*M[8]+C[16]*M[7]+C[17]*M[5]+C[26]*M[3]+C[27]*M[2]+C[31]*M[1]+C[46]*M[0];
+  Ci->M[47] += C[1]*M[32]+C[2]*M[28]+C[3]*M[27]+C[5]*M[18]+C[6]*M[17]+C[7]*M[15]+C[8]*M[14]+C[9]*M[13]+C[13]*M[9]+C[14]*M[8]+C[15]*M[7]+C[17]*M[6]+C[18]*M[5]+C[27]*M[3]+C[28]*M[2]+C[32]*M[1]+C[47]*M[0];
+  Ci->M[48] += C[1]*M[33]+C[2]*M[29]+C[3]*M[28]+C[5]*M[19]+C[8]*M[18]+C[9]*M[15]+C[14]*M[14]+C[15]*M[9]+C[18]*M[8]+C[19]*M[5]+C[28]*M[3]+C[29]*M[2]+C[33]*M[1]+C[48]*M[0];
+  Ci->M[49] += C[1]*M[34]+C[3]*M[29]+C[6]*M[19]+C[9]*M[15]+C[15]*M[9]+C[19]*M[6]+C[29]*M[3]+C[34]*M[1]+C[49]*M[0];
+  Ci->M[50] += C[2]*M[30]+C[7]*M[16]+C[16]*M[7]+C[30]*M[2]+C[50]*M[0];
+  Ci->M[51] += C[2]*M[31]+C[3]*M[30]+C[7]*M[17]+C[8]*M[16]+C[16]*M[8]+C[17]*M[7]+C[30]*M[3]+C[31]*M[2]+C[51]*M[0];
+  Ci->M[52] += C[2]*M[32]+C[3]*M[31]+C[7]*M[18]+C[8]*M[17]+C[9]*M[16]+C[16]*M[9]+C[17]*M[8]+C[18]*M[7]+C[31]*M[3]+C[32]*M[2]+C[52]*M[0];
+  Ci->M[53] += C[2]*M[33]+C[3]*M[32]+C[7]*M[19]+C[8]*M[18]+C[9]*M[17]+C[17]*M[9]+C[18]*M[8]+C[19]*M[7]+C[32]*M[3]+C[33]*M[2]+C[53]*M[0];
+  Ci->M[54] += C[2]*M[34]+C[3]*M[33]+C[8]*M[19]+C[9]*M[18]+C[18]*M[9]+C[19]*M[8]+C[33]*M[3]+C[34]*M[2]+C[54]*M[0];
+  Ci->M[55] += C[3]*M[34]+C[9]*M[19]+C[19]*M[9]+C[34]*M[3]+C[55]*M[0];
 }
 
 template<>
@@ -428,21 +572,244 @@ void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
   vect dist = Ci->X - Cj->X - Xperiodic;
   real invR2 = 1 / norm(dist);
   real invR  = std::sqrt(invR2);
+  invR2 = -invR2;
+  real invR3 = invR * invR2;
+  real invR5 = 3 * invR3 * invR2;
+  real invR7 = 5 * invR5 * invR2;
+  real invR9 = 7 * invR7 * invR2;
+  real invR11 = 9 * invR9 * invR2;
+  real invR13 = 11 * invR11 * invR2;
+  real x = dist[0], y = dist[1], z = dist[2];
   Lset C;
-  getCoef(C,dist,invR2,invR);
-  sumM2L(Ci->L,C,Cj->M);
+
+  C[0] = invR;
+
+  C[1] = x * invR3;
+  C[2] = y * invR3;
+  C[3] = z * invR3;
+
+  C[4] = x * x * invR5 + invR3;
+  C[5] = x * y * invR5;
+  C[6] = x * z * invR5;
+  C[7] = y * y * invR5 + invR3;
+  C[8] = y * z * invR5;
+  C[9] = z * z * invR5 + invR3;
+
+  C[10] = x * x * x * invR7 + 3 * x * invR5;
+  C[11] = x * x * y * invR7 +     y * invR5;
+  C[12] = x * x * z * invR7 +     z * invR5;
+  C[13] = x * y * y * invR7 +     x * invR5;
+  C[14] = x * y * z * invR7;
+  C[15] = x * z * z * invR7 +     x * invR5;
+  C[16] = y * y * y * invR7 + 3 * y * invR5;
+  C[17] = y * y * z * invR7 +     z * invR5;
+  C[18] = y * z * z * invR7 +     y * invR5;
+  C[19] = z * z * z * invR7 + 3 * z * invR5;
+
+  C[20] = x * x * x * x * invR9 + 6 * x * x * invR7 + 3 * invR5;
+  C[21] = x * x * x * y * invR9 + 3 * x * y * invR7;
+  C[22] = x * x * x * z * invR9 + 3 * x * z * invR7;
+  C[23] = x * x * y * y * invR9 + (x * x + y * y) * invR7 + invR5;
+  C[24] = x * x * y * z * invR9 + y * z * invR7;
+  C[25] = x * x * z * z * invR9 + (x * x + z * z) * invR7 + invR5;
+  C[26] = x * y * y * y * invR9 + 3 * x * y * invR7;
+  C[27] = x * y * y * z * invR9 + x * z * invR7;
+  C[28] = x * y * z * z * invR9 + x * y * invR7;
+  C[29] = x * z * z * z * invR9 + 3 * x * z * invR7;
+  C[30] = y * y * y * y * invR9 + 6 * y * y * invR7 + 3 * invR5;
+  C[31] = y * y * y * z * invR9 + 3 * y * z * invR7;
+  C[32] = y * y * z * z * invR9 + (y * y + z * z) * invR7 + invR5;
+  C[33] = y * z * z * z * invR9 + 3 * y * z * invR7;
+  C[34] = z * z * z * z * invR9 + 6 * z * z * invR7 + 3 * invR5;
+
+  C[35] = x * x * x * x * x * invR11 + 10 * x * x * x * invR9 + 15 * x * invR7;
+  C[36] = x * x * x * x * y * invR11 + 6 * x * x * y * invR9 + 3 * y * invR7;
+  C[37] = x * x * x * x * z * invR11 + 6 * x * x * z * invR9 + 3 * z * invR7;
+  C[38] = x * x * x * y * y * invR11 + (x * x * x + 3 * x * y * y) * invR9 + 3 * x * invR7;
+  C[39] = x * x * x * y * z * invR11 + 3 * x * y * z * invR9;
+  C[40] = x * x * x * z * z * invR11 + (x * x * x + 3 * x * z * z) * invR9 + 3 * x * invR7;
+  C[41] = x * x * y * y * y * invR11 + (3 * x * x * y + y * y * y) * invR9 + 3 * y * invR7;
+  C[42] = x * x * y * y * z * invR11 + (x * x * z + y * y * z) * invR9 + z * invR7;
+  C[43] = x * x * y * z * z * invR11 + (x * x * y + y * z * z) * invR9 + y * invR7;
+  C[44] = x * x * z * z * z * invR11 + (3 * x * x * z + z * z * z) * invR9 + 3 * z * invR7;
+  C[45] = x * y * y * y * y * invR11 + 6 * x * y * y * invR9 + 3 * x * invR7;
+  C[46] = x * y * y * y * z * invR11 + 3 * x * y * z * invR9;
+  C[47] = x * y * y * z * z * invR11 + (x * y * y + x * z * z) * invR9 + x * invR7;
+  C[48] = x * y * z * z * z * invR11 + 3 * x * y * z * invR9;
+  C[49] = x * z * z * z * z * invR11 + 6 * x * z * z * invR9 + 3 * x * invR7;
+  C[50] = y * y * y * y * y * invR11 + 10 * y * y * y * invR9 + 15 * y * invR7;
+  C[51] = y * y * y * y * z * invR11 + 6 * y * y * z * invR9 + 3 * z * invR7;
+  C[52] = y * y * y * z * z * invR11 + (y * y * y + 3 * y * z * z) * invR9 + 3 * y * invR7;
+  C[53] = y * y * z * z * z * invR11 + (3 * y * y * z + z * z * z) * invR9 + 3 * z * invR7;
+  C[54] = y * z * z * z * z * invR11 + 6 * y * z * z * invR9 + 3 * y * invR7;
+  C[55] = z * z * z * z * z * invR11 + 10 * z * z * z * invR9 + 15 * z * invR7;
+ 
+  C[56] = x * x * x * x * x * x * invR13 + 15 * x * x * x * x * invR11 + 45 * x * x * invR9 + 15 * invR7;
+  C[57] = x * x * x * x * x * y * invR13 + 10 * x * x * x * y * invR11 + 15 * x * y * invR9;
+  C[58] = x * x * x * x * x * z * invR13 + 10 * x * x * x * z * invR11 + 15 * x * z * invR9;
+  C[59] = x * x * x * x * y * y * invR13 + (x * x * x * x + 6 * x * x * y * y) * invR11 + (6 * x * x + 3 * y * y) * invR9 + 3 * invR7;
+  C[60] = x * x * x * x * y * z * invR13 + 6 * x * x * y * z * invR11 + 3 * y * z * invR9;
+  C[61] = x * x * x * x * z * z * invR13 + (x * x * x * x + 6 * x * x * z * z) * invR11 + (6 * x * x + 3 * z * z) * invR9 + 3 * invR7;
+  C[62] = x * x * x * y * y * y * invR13 + (3 * x * x * x * y + 3 * x * y * y * y) * invR11 + 9 * x * y * invR9;
+  C[63] = x * x * x * y * y * z * invR13 + (x * x * x * z + 3 * x * y * y * z) * invR11 + 3 * x * z * invR9;
+  C[64] = x * x * x * y * z * z * invR13 + (x * x * x * y + 3 * x * y * z * z) * invR11 + 3 * x * y * invR9;
+  C[65] = x * x * x * z * z * z * invR13 + (3 * x * x * x * z + 3 * x * z * z * z) * invR11 + 9 * x * z * invR9;
+  C[66] = x * x * y * y * y * y * invR13 + (6 * x * x * y * y + y * y * y * y) * invR11 + (3 * x * x + 6 * y * y) * invR9 + 3 * invR7;
+  C[67] = x * x * y * y * y * z * invR13 + (3 * x * x * y * z + y * y * y * z) * invR11 + 3 * y * z * invR9;
+  C[68] = x * x * y * y * z * z * invR13 + (x * x * y * y + x * x * z * z + y * y * z * z) * invR11 + (x * x + y * y + z * z) * invR9 + invR7;
+  C[69] = x * x * y * z * z * z * invR13 + (3 * x * x * y * z + y * z * z * z) * invR11 + 3 * y * z * invR9;
+  C[70] = x * x * z * z * z * z * invR13 + (6 * x * x * z * z + z * z * z * z) * invR11 + (3 * x * x + 6 * z * z) * invR9 + 3 * invR7;
+  C[71] = x * y * y * y * y * y * invR13 + 10 * x * y * y * y * invR11 + 15 * x * y * invR9;
+  C[72] = x * y * y * y * y * z * invR13 + 6 * x * y * y * z * invR11 + 3 * x * z * invR9;
+  C[73] = x * y * y * y * z * z * invR13 + (x * y * y * y + 3 * x * y * z * z) * invR11 + 3 * x * y * invR9;
+  C[74] = x * y * y * z * z * z * invR13 + (3 * x * y * y * z + x * z * z * z) * invR11 + 3 * x * z * invR9;
+  C[75] = x * y * z * z * z * z * invR13 + 6 * x * y * z * z * invR11 + 3 * x * y * invR9;
+  C[76] = x * z * z * z * z * z * invR13 + 10 * x * z * z * z * invR11 + 15 * x * z * invR9;
+  C[77] = y * y * y * y * y * y * invR13 + 15 * y * y * y * y * invR11 + 45 * y * y * invR9 + 15 * invR7;
+  C[78] = y * y * y * y * y * z * invR13 + 10 * y * y * y * z * invR11 + 15 * y * z * invR9;
+  C[79] = y * y * y * y * z * z * invR13 + (y * y * y * y + 6 * y * y * z * z) * invR11 + (6 * y * y + 3 * z * z) * invR9 + 3 * invR7;
+  C[80] = y * y * y * z * z * z * invR13 + (3 * y * y * y * z + 3 * y * z * z * z) * invR11 + 9 * y * z * invR9;
+  C[81] = y * y * z * z * z * z * invR13 + (6 * y * y * z * z + z * z * z * z) * invR11 + (3 * y * y + 6 * z * z) * invR9 + 3 * invR7;
+  C[82] = y * z * z * z * z * z * invR13 + 10 * y * z * z * z * invR11 + 15 * y * z * invR9;
+  C[83] = z * z * z * z * z * z * invR13 + 15 * z * z * z * z * invR11 + 45 * z * z * invR9 + 15 * invR7;
+
+  Mset M = Cj->M;
+  Ci->L += C*M[0];
+
+  Ci->L[0] += M[1]*C[1]+M[2]*C[2]+M[3]*C[3];
+
+  Ci->L[1] += M[1]*C[4]+M[2]*C[5]+M[3]*C[6];
+  Ci->L[2] += M[1]*C[5]+M[2]*C[7]+M[3]*C[8];
+  Ci->L[3] += M[1]*C[6]+M[2]*C[8]+M[3]*C[9];
+
+  for( int i=4; i<10; ++i ) Ci->L[0] += M[i]*C[i];
+  Ci->L[1] += M[4]*C[10]+M[5]*C[11]+M[6]*C[12]+M[7]*C[13]+M[8]*C[14]+M[9]*C[15];
+  Ci->L[2] += M[4]*C[11]+M[5]*C[13]+M[6]*C[14]+M[7]*C[16]+M[8]*C[17]+M[9]*C[18];
+  Ci->L[3] += M[4]*C[12]+M[5]*C[14]+M[6]*C[15]+M[7]*C[17]+M[8]*C[18]+M[9]*C[19];
+  Ci->L[4] += M[1]*C[10]+M[2]*C[11]+M[3]*C[12];
+  Ci->L[5] += M[1]*C[11]+M[2]*C[13]+M[3]*C[14];
+  Ci->L[6] += M[1]*C[12]+M[2]*C[14]+M[3]*C[15];
+  Ci->L[7] += M[1]*C[13]+M[2]*C[16]+M[3]*C[17];
+  Ci->L[8] += M[1]*C[14]+M[2]*C[17]+M[3]*C[18];
+  Ci->L[9] += M[1]*C[15]+M[2]*C[18]+M[3]*C[19];
+
+  for( int i=10; i<20; ++i ) Ci->L[0] += M[i]*C[i];
+  Ci->L[1] += M[10]*C[20]+M[11]*C[21]+M[12]*C[22]+M[13]*C[23]+M[14]*C[24]+M[15]*C[25]+M[16]*C[26]+M[17]*C[27]+M[18]*C[28]+M[19]*C[29];
+  Ci->L[2] += M[10]*C[21]+M[11]*C[23]+M[12]*C[24]+M[13]*C[26]+M[14]*C[27]+M[15]*C[28]+M[16]*C[30]+M[17]*C[31]+M[18]*C[32]+M[19]*C[33];
+  Ci->L[3] += M[10]*C[22]+M[11]*C[24]+M[12]*C[25]+M[13]*C[27]+M[14]*C[28]+M[15]*C[29]+M[16]*C[31]+M[17]*C[32]+M[18]*C[33]+M[19]*C[34];
+  Ci->L[4] += M[4]*C[20]+M[5]*C[21]+M[6]*C[22]+M[7]*C[23]+M[8]*C[24]+M[9]*C[25];
+  Ci->L[5] += M[4]*C[21]+M[5]*C[23]+M[6]*C[24]+M[7]*C[26]+M[8]*C[27]+M[9]*C[28];
+  Ci->L[6] += M[4]*C[22]+M[5]*C[24]+M[6]*C[25]+M[7]*C[27]+M[8]*C[28]+M[9]*C[29];
+  Ci->L[7] += M[4]*C[23]+M[5]*C[26]+M[6]*C[27]+M[7]*C[30]+M[8]*C[31]+M[9]*C[32];
+  Ci->L[8] += M[4]*C[24]+M[5]*C[27]+M[6]*C[28]+M[7]*C[31]+M[8]*C[32]+M[9]*C[33];
+  Ci->L[9] += M[4]*C[25]+M[5]*C[28]+M[6]*C[29]+M[7]*C[32]+M[8]*C[33]+M[9]*C[34];
+  Ci->L[10] += M[1]*C[20]+M[2]*C[21]+M[3]*C[22];
+  Ci->L[11] += M[1]*C[21]+M[2]*C[23]+M[3]*C[24];
+  Ci->L[12] += M[1]*C[22]+M[2]*C[24]+M[3]*C[25];
+  Ci->L[13] += M[1]*C[23]+M[2]*C[26]+M[3]*C[27];
+  Ci->L[14] += M[1]*C[24]+M[2]*C[27]+M[3]*C[28];
+  Ci->L[15] += M[1]*C[25]+M[2]*C[28]+M[3]*C[29];
+  Ci->L[16] += M[1]*C[26]+M[2]*C[30]+M[3]*C[31];
+  Ci->L[17] += M[1]*C[27]+M[2]*C[31]+M[3]*C[32];
+  Ci->L[18] += M[1]*C[28]+M[2]*C[32]+M[3]*C[33];
+  Ci->L[19] += M[1]*C[29]+M[2]*C[33]+M[3]*C[34];
+
+  for( int i=20; i<35; ++i ) Ci->L[0] += M[i]*C[i];
+  Ci->L[1] += M[20]*C[35]+M[21]*C[36]+M[22]*C[37]+M[23]*C[38]+M[24]*C[39]+M[25]*C[40]+M[26]*C[41]+M[27]*C[42]+M[28]*C[43]+M[29]*C[44]+M[30]*C[45]+M[31]*C[46]+M[32]*C[47]+M[33]*C[48]+M[34]*C[49];
+  Ci->L[2] += M[20]*C[36]+M[21]*C[38]+M[22]*C[39]+M[23]*C[41]+M[24]*C[42]+M[25]*C[43]+M[26]*C[45]+M[27]*C[46]+M[28]*C[47]+M[29]*C[48]+M[30]*C[50]+M[31]*C[51]+M[32]*C[52]+M[33]*C[53]+M[34]*C[54];
+  Ci->L[3] += M[20]*C[37]+M[21]*C[39]+M[22]*C[40]+M[23]*C[42]+M[24]*C[43]+M[25]*C[44]+M[26]*C[46]+M[27]*C[47]+M[28]*C[48]+M[29]*C[49]+M[30]*C[51]+M[31]*C[52]+M[32]*C[53]+M[33]*C[54]+M[34]*C[55];
+  Ci->L[4] += M[10]*C[35]+M[11]*C[36]+M[12]*C[37]+M[13]*C[38]+M[14]*C[39]+M[15]*C[40]+M[16]*C[41]+M[17]*C[42]+M[18]*C[43]+M[19]*C[44];
+  Ci->L[5] += M[10]*C[36]+M[11]*C[38]+M[12]*C[39]+M[13]*C[41]+M[14]*C[42]+M[15]*C[43]+M[16]*C[45]+M[17]*C[46]+M[18]*C[47]+M[19]*C[48];
+  Ci->L[6] += M[10]*C[37]+M[11]*C[39]+M[12]*C[40]+M[13]*C[42]+M[14]*C[43]+M[15]*C[44]+M[16]*C[46]+M[17]*C[47]+M[18]*C[48]+M[19]*C[49];
+  Ci->L[7] += M[10]*C[38]+M[11]*C[41]+M[12]*C[42]+M[13]*C[45]+M[14]*C[46]+M[15]*C[47]+M[16]*C[50]+M[17]*C[51]+M[18]*C[52]+M[19]*C[53];
+  Ci->L[8] += M[10]*C[39]+M[11]*C[42]+M[12]*C[43]+M[13]*C[46]+M[14]*C[47]+M[15]*C[48]+M[16]*C[51]+M[17]*C[52]+M[18]*C[53]+M[19]*C[54];
+  Ci->L[9] += M[10]*C[40]+M[11]*C[43]+M[12]*C[44]+M[13]*C[47]+M[14]*C[48]+M[15]*C[49]+M[16]*C[52]+M[17]*C[53]+M[18]*C[54]+M[19]*C[55];
+  Ci->L[10] += M[4]*C[35]+M[5]*C[36]+M[6]*C[37]+M[7]*C[38]+M[8]*C[39]+M[9]*C[40];
+  Ci->L[11] += M[4]*C[36]+M[5]*C[38]+M[6]*C[39]+M[7]*C[41]+M[8]*C[42]+M[9]*C[43];
+  Ci->L[12] += M[4]*C[37]+M[5]*C[39]+M[6]*C[40]+M[7]*C[42]+M[8]*C[43]+M[9]*C[44];
+  Ci->L[13] += M[4]*C[38]+M[5]*C[41]+M[6]*C[42]+M[7]*C[45]+M[8]*C[46]+M[9]*C[47];
+  Ci->L[14] += M[4]*C[39]+M[5]*C[42]+M[6]*C[43]+M[7]*C[46]+M[8]*C[47]+M[9]*C[48];
+  Ci->L[15] += M[4]*C[40]+M[5]*C[43]+M[6]*C[44]+M[7]*C[47]+M[8]*C[48]+M[9]*C[49];
+  Ci->L[16] += M[4]*C[41]+M[5]*C[45]+M[6]*C[46]+M[7]*C[50]+M[8]*C[51]+M[9]*C[52];
+  Ci->L[17] += M[4]*C[42]+M[5]*C[46]+M[6]*C[47]+M[7]*C[51]+M[8]*C[52]+M[9]*C[53];
+  Ci->L[18] += M[4]*C[43]+M[5]*C[47]+M[6]*C[48]+M[7]*C[52]+M[8]*C[53]+M[9]*C[54];
+  Ci->L[19] += M[4]*C[44]+M[5]*C[48]+M[6]*C[49]+M[7]*C[53]+M[8]*C[54]+M[9]*C[55];
+  Ci->L[20] += M[1]*C[35]+M[2]*C[36]+M[3]*C[37];
+  Ci->L[21] += M[1]*C[36]+M[2]*C[38]+M[3]*C[39];
+  Ci->L[22] += M[1]*C[37]+M[2]*C[39]+M[3]*C[40];
+  Ci->L[23] += M[1]*C[38]+M[2]*C[41]+M[3]*C[42];
+  Ci->L[24] += M[1]*C[39]+M[2]*C[42]+M[3]*C[43];
+  Ci->L[25] += M[1]*C[40]+M[2]*C[43]+M[3]*C[44];
+  Ci->L[26] += M[1]*C[41]+M[2]*C[45]+M[3]*C[46];
+  Ci->L[27] += M[1]*C[42]+M[2]*C[46]+M[3]*C[47];
+  Ci->L[28] += M[1]*C[43]+M[2]*C[47]+M[3]*C[48];
+  Ci->L[29] += M[1]*C[44]+M[2]*C[48]+M[3]*C[49];
+  Ci->L[30] += M[1]*C[45]+M[2]*C[50]+M[3]*C[51];
+  Ci->L[31] += M[1]*C[46]+M[2]*C[51]+M[3]*C[52];
+  Ci->L[32] += M[1]*C[47]+M[2]*C[52]+M[3]*C[53];
+  Ci->L[33] += M[1]*C[48]+M[2]*C[53]+M[3]*C[54];
+  Ci->L[34] += M[1]*C[49]+M[2]*C[54]+M[3]*C[55];
+
+  for( int i=35; i<56; ++i ) Ci->L[0] += M[i]*C[i];
+  Ci->L[1] += M[35]*C[56]+M[36]*C[57]+M[37]*C[58]+M[38]*C[59]+M[39]*C[60]+M[40]*C[61]+M[41]*C[62]+M[42]*C[63]+M[43]*C[64]+M[44]*C[65]+M[45]*C[66]+M[46]*C[67]+M[47]*C[68]+M[48]*C[69]+M[49]*C[70]+M[50]*C[71]+M[51]*C[72]+M[52]*C[73]+M[53]*C[74]+M[54]*C[75]+M[55]*C[76];
+  Ci->L[2] += M[35]*C[57]+M[36]*C[59]+M[37]*C[60]+M[38]*C[62]+M[39]*C[63]+M[40]*C[64]+M[41]*C[66]+M[42]*C[67]+M[43]*C[68]+M[44]*C[69]+M[45]*C[71]+M[46]*C[72]+M[47]*C[73]+M[48]*C[74]+M[49]*C[75]+M[50]*C[77]+M[51]*C[78]+M[52]*C[79]+M[53]*C[80]+M[54]*C[81]+M[55]*C[82];
+  Ci->L[3] += M[35]*C[58]+M[36]*C[60]+M[37]*C[61]+M[38]*C[63]+M[39]*C[64]+M[40]*C[65]+M[41]*C[67]+M[42]*C[68]+M[43]*C[69]+M[44]*C[70]+M[45]*C[72]+M[46]*C[73]+M[47]*C[74]+M[48]*C[75]+M[49]*C[76]+M[50]*C[78]+M[51]*C[79]+M[52]*C[80]+M[53]*C[81]+M[54]*C[82]+M[55]*C[83];
+  Ci->L[4] += M[20]*C[56]+M[21]*C[57]+M[22]*C[58]+M[23]*C[59]+M[24]*C[60]+M[25]*C[61]+M[26]*C[62]+M[27]*C[63]+M[28]*C[64]+M[29]*C[65]+M[30]*C[66]+M[31]*C[67]+M[32]*C[68]+M[33]*C[69]+M[34]*C[70];
+  Ci->L[5] += M[20]*C[57]+M[21]*C[59]+M[22]*C[60]+M[23]*C[62]+M[24]*C[63]+M[25]*C[64]+M[26]*C[66]+M[27]*C[67]+M[28]*C[68]+M[29]*C[69]+M[30]*C[71]+M[31]*C[72]+M[32]*C[73]+M[33]*C[74]+M[34]*C[75];
+  Ci->L[6] += M[20]*C[58]+M[21]*C[60]+M[22]*C[61]+M[23]*C[63]+M[24]*C[64]+M[25]*C[65]+M[26]*C[67]+M[27]*C[68]+M[28]*C[69]+M[29]*C[70]+M[30]*C[72]+M[31]*C[73]+M[32]*C[74]+M[33]*C[75]+M[34]*C[76];
+  Ci->L[7] += M[20]*C[59]+M[21]*C[62]+M[22]*C[63]+M[23]*C[66]+M[24]*C[67]+M[25]*C[68]+M[26]*C[71]+M[27]*C[72]+M[28]*C[73]+M[29]*C[74]+M[30]*C[77]+M[31]*C[78]+M[32]*C[79]+M[33]*C[80]+M[34]*C[81];
+  Ci->L[8] += M[20]*C[60]+M[21]*C[63]+M[22]*C[64]+M[23]*C[67]+M[24]*C[68]+M[25]*C[69]+M[26]*C[72]+M[27]*C[73]+M[28]*C[74]+M[29]*C[75]+M[30]*C[78]+M[31]*C[79]+M[32]*C[80]+M[33]*C[81]+M[34]*C[82];
+  Ci->L[9] += M[20]*C[61]+M[21]*C[64]+M[22]*C[65]+M[23]*C[68]+M[24]*C[69]+M[25]*C[70]+M[26]*C[73]+M[27]*C[74]+M[28]*C[75]+M[29]*C[76]+M[30]*C[79]+M[31]*C[80]+M[32]*C[81]+M[33]*C[82]+M[34]*C[83];
+  Ci->L[10] += M[10]*C[56]+M[11]*C[57]+M[12]*C[58]+M[13]*C[59]+M[14]*C[60]+M[15]*C[61]+M[16]*C[62]+M[17]*C[63]+M[18]*C[64]+M[19]*C[65];
+  Ci->L[11] += M[10]*C[57]+M[11]*C[59]+M[12]*C[60]+M[13]*C[62]+M[14]*C[63]+M[15]*C[64]+M[16]*C[66]+M[17]*C[67]+M[18]*C[68]+M[19]*C[69];
+  Ci->L[12] += M[10]*C[58]+M[11]*C[60]+M[12]*C[61]+M[13]*C[63]+M[14]*C[64]+M[15]*C[65]+M[16]*C[67]+M[17]*C[68]+M[18]*C[69]+M[19]*C[70];
+  Ci->L[13] += M[10]*C[59]+M[11]*C[62]+M[12]*C[63]+M[13]*C[66]+M[14]*C[67]+M[15]*C[68]+M[16]*C[71]+M[17]*C[72]+M[18]*C[73]+M[19]*C[74];
+  Ci->L[14] += M[10]*C[60]+M[11]*C[63]+M[12]*C[64]+M[13]*C[67]+M[14]*C[68]+M[15]*C[69]+M[16]*C[72]+M[17]*C[73]+M[18]*C[74]+M[19]*C[75];
+  Ci->L[15] += M[10]*C[61]+M[11]*C[64]+M[12]*C[65]+M[13]*C[68]+M[14]*C[69]+M[15]*C[70]+M[16]*C[73]+M[17]*C[74]+M[18]*C[75]+M[19]*C[76];
+  Ci->L[16] += M[10]*C[62]+M[11]*C[66]+M[12]*C[67]+M[13]*C[71]+M[14]*C[72]+M[15]*C[73]+M[16]*C[77]+M[17]*C[78]+M[18]*C[79]+M[19]*C[80];
+  Ci->L[17] += M[10]*C[63]+M[11]*C[67]+M[12]*C[68]+M[13]*C[72]+M[14]*C[73]+M[15]*C[74]+M[16]*C[78]+M[17]*C[79]+M[18]*C[80]+M[19]*C[81];
+  Ci->L[18] += M[10]*C[64]+M[11]*C[68]+M[12]*C[69]+M[13]*C[73]+M[14]*C[74]+M[15]*C[75]+M[16]*C[79]+M[17]*C[80]+M[18]*C[81]+M[19]*C[82];
+  Ci->L[19] += M[10]*C[65]+M[11]*C[69]+M[12]*C[70]+M[13]*C[74]+M[14]*C[75]+M[15]*C[76]+M[16]*C[80]+M[17]*C[81]+M[18]*C[82]+M[19]*C[83];
+  Ci->L[20] += M[4]*C[56]+M[5]*C[57]+M[6]*C[58]+M[7]*C[59]+M[8]*C[60]+M[9]*C[61];
+  Ci->L[21] += M[4]*C[57]+M[5]*C[59]+M[6]*C[60]+M[7]*C[62]+M[8]*C[63]+M[9]*C[64];
+  Ci->L[22] += M[4]*C[58]+M[5]*C[60]+M[6]*C[61]+M[7]*C[63]+M[8]*C[64]+M[9]*C[65];
+  Ci->L[23] += M[4]*C[59]+M[5]*C[62]+M[6]*C[63]+M[7]*C[66]+M[8]*C[67]+M[9]*C[68];
+  Ci->L[24] += M[4]*C[60]+M[5]*C[63]+M[6]*C[64]+M[7]*C[67]+M[8]*C[68]+M[9]*C[69];
+  Ci->L[25] += M[4]*C[61]+M[5]*C[64]+M[6]*C[65]+M[7]*C[68]+M[8]*C[69]+M[9]*C[70];
+  Ci->L[26] += M[4]*C[62]+M[5]*C[66]+M[6]*C[67]+M[7]*C[71]+M[8]*C[72]+M[9]*C[73];
+  Ci->L[27] += M[4]*C[63]+M[5]*C[67]+M[6]*C[68]+M[7]*C[72]+M[8]*C[73]+M[9]*C[74];
+  Ci->L[28] += M[4]*C[64]+M[5]*C[68]+M[6]*C[69]+M[7]*C[73]+M[8]*C[74]+M[9]*C[75];
+  Ci->L[29] += M[4]*C[65]+M[5]*C[69]+M[6]*C[70]+M[7]*C[74]+M[8]*C[75]+M[9]*C[76];
+  Ci->L[30] += M[4]*C[66]+M[5]*C[71]+M[6]*C[72]+M[7]*C[77]+M[8]*C[78]+M[9]*C[79];
+  Ci->L[31] += M[4]*C[67]+M[5]*C[72]+M[6]*C[73]+M[7]*C[78]+M[8]*C[79]+M[9]*C[80];
+  Ci->L[32] += M[4]*C[68]+M[5]*C[73]+M[6]*C[74]+M[7]*C[79]+M[8]*C[80]+M[9]*C[81];
+  Ci->L[33] += M[4]*C[69]+M[5]*C[74]+M[6]*C[75]+M[7]*C[80]+M[8]*C[81]+M[9]*C[82];
+  Ci->L[34] += M[4]*C[70]+M[5]*C[75]+M[6]*C[76]+M[7]*C[81]+M[8]*C[82]+M[9]*C[83];
+  Ci->L[35] += M[1]*C[56]+M[2]*C[57]+M[3]*C[58];
+  Ci->L[36] += M[1]*C[57]+M[2]*C[59]+M[3]*C[60];
+  Ci->L[37] += M[1]*C[58]+M[2]*C[60]+M[3]*C[61];
+  Ci->L[38] += M[1]*C[59]+M[2]*C[62]+M[3]*C[63];
+  Ci->L[39] += M[1]*C[60]+M[2]*C[63]+M[3]*C[64];
+  Ci->L[40] += M[1]*C[61]+M[2]*C[64]+M[3]*C[65];
+  Ci->L[41] += M[1]*C[62]+M[2]*C[66]+M[3]*C[67];
+  Ci->L[42] += M[1]*C[63]+M[2]*C[67]+M[3]*C[68];
+  Ci->L[43] += M[1]*C[64]+M[2]*C[68]+M[3]*C[69];
+  Ci->L[44] += M[1]*C[65]+M[2]*C[69]+M[3]*C[70];
+  Ci->L[45] += M[1]*C[66]+M[2]*C[71]+M[3]*C[72];
+  Ci->L[46] += M[1]*C[67]+M[2]*C[72]+M[3]*C[73];
+  Ci->L[47] += M[1]*C[68]+M[2]*C[73]+M[3]*C[74];
+  Ci->L[48] += M[1]*C[69]+M[2]*C[74]+M[3]*C[75];
+  Ci->L[49] += M[1]*C[70]+M[2]*C[75]+M[3]*C[76];
+  Ci->L[50] += M[1]*C[71]+M[2]*C[77]+M[3]*C[78];
+  Ci->L[51] += M[1]*C[72]+M[2]*C[78]+M[3]*C[79];
+  Ci->L[52] += M[1]*C[73]+M[2]*C[79]+M[3]*C[80];
+  Ci->L[53] += M[1]*C[74]+M[2]*C[80]+M[3]*C[81];
+  Ci->L[54] += M[1]*C[75]+M[2]*C[81]+M[3]*C[82];
+  Ci->L[55] += M[1]*C[76]+M[2]*C[82]+M[3]*C[83];
 }
 
 template<>
-void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
-    vect dist = B->X - Cj->X - Xperiodic;
-    real invR2 = 1 / norm(dist);
-    real invR  = std::sqrt(invR2);
-    Lset C;
-    getCoef(C,dist,invR2,invR);
-    sumM2P(B,C,Cj->M);
-  }
+void Kernel<Laplace>::M2P(C_iter, C_iter) const {
 }
 
 template<>
@@ -450,28 +817,642 @@ void Kernel<Laplace>::L2L(C_iter Ci, C_iter Cj) const {
   vect dist = Ci->X - Cj->X;
   Lset C;
   C[0] = 1;
-  Terms<0,0,P>::power(C,dist);
 
-  Ci->L += Cj->L;
-  for( int i=1; i<LTERM; ++i ) Ci->L[0] += C[i] * Cj->L[i];
-  Downward<0,0,P-1>::L2L(Ci->L,C,Cj->L);
+  C[1] = C[0] * dist[0];
+  C[2] = C[0] * dist[1];
+  C[3] = C[0] * dist[2];
+
+  C[4] = C[1] * dist[0] / 2;
+  C[5] = C[2] * dist[0];
+  C[6] = C[3] * dist[0];
+  C[7] = C[2] * dist[1] / 2;
+  C[8] = C[3] * dist[1];
+  C[9] = C[3] * dist[2] / 2;
+
+  C[10] = C[4] * dist[0] / 3;
+  C[11] = C[5] * dist[0] / 2;
+  C[12] = C[6] * dist[0] / 2;
+  C[13] = C[7] * dist[0];
+  C[14] = C[8] * dist[0];
+  C[15] = C[9] * dist[0];
+  C[16] = C[7] * dist[1] / 3;
+  C[17] = C[8] * dist[1] / 2;
+  C[18] = C[9] * dist[1];
+  C[19] = C[9] * dist[2] / 3;
+
+  C[20] = C[10] * dist[0] / 4;
+  C[21] = C[11] * dist[0] / 3;
+  C[22] = C[12] * dist[0] / 3;
+  C[23] = C[13] * dist[0] / 2;
+  C[24] = C[14] * dist[0] / 2;
+  C[25] = C[15] * dist[0] / 2;
+  C[26] = C[16] * dist[0];
+  C[27] = C[17] * dist[0];
+  C[28] = C[18] * dist[0];
+  C[29] = C[19] * dist[0];
+  C[30] = C[16] * dist[1] / 4;
+  C[31] = C[17] * dist[1] / 3;
+  C[32] = C[18] * dist[1] / 2;
+  C[33] = C[19] * dist[1];
+  C[34] = C[19] * dist[2] / 4;
+
+  C[35] = C[20] * dist[0] / 5;
+  C[36] = C[21] * dist[0] / 4;
+  C[37] = C[22] * dist[0] / 4;
+  C[38] = C[23] * dist[0] / 3;
+  C[39] = C[24] * dist[0] / 3;
+  C[40] = C[25] * dist[0] / 3;
+  C[41] = C[26] * dist[0] / 2;
+  C[42] = C[27] * dist[0] / 2;
+  C[43] = C[28] * dist[0] / 2;
+  C[44] = C[29] * dist[0] / 2;
+  C[45] = C[30] * dist[0];
+  C[46] = C[31] * dist[0];
+  C[47] = C[32] * dist[0];
+  C[48] = C[33] * dist[0];
+  C[49] = C[34] * dist[0];
+  C[50] = C[30] * dist[1] / 5;
+  C[51] = C[31] * dist[1] / 4;
+  C[52] = C[32] * dist[1] / 3;
+  C[53] = C[33] * dist[1] / 2;
+  C[54] = C[34] * dist[1];
+  C[55] = C[34] * dist[2] / 5;
+
+  C[56] = C[35] * dist[0] / 6;
+  C[57] = C[36] * dist[0] / 5;
+  C[58] = C[37] * dist[0] / 5;
+  C[59] = C[38] * dist[0] / 4;
+  C[60] = C[39] * dist[0] / 4;
+  C[61] = C[40] * dist[0] / 4;
+  C[62] = C[41] * dist[0] / 3;
+  C[63] = C[42] * dist[0] / 3;
+  C[64] = C[43] * dist[0] / 3;
+  C[65] = C[44] * dist[0] / 3;
+  C[66] = C[45] * dist[0] / 2;
+  C[67] = C[46] * dist[0] / 2;
+  C[68] = C[47] * dist[0] / 2;
+  C[69] = C[48] * dist[0] / 2;
+  C[70] = C[49] * dist[0] / 2;
+  C[71] = C[50] * dist[0];
+  C[72] = C[51] * dist[0];
+  C[73] = C[52] * dist[0];
+  C[74] = C[53] * dist[0];
+  C[75] = C[54] * dist[0];
+  C[76] = C[55] * dist[0];
+  C[77] = C[50] * dist[1] / 6;
+  C[78] = C[51] * dist[1] / 5;
+  C[79] = C[52] * dist[1] / 4;
+  C[80] = C[53] * dist[1] / 3;
+  C[81] = C[54] * dist[1] / 2;
+  C[82] = C[55] * dist[1];
+  C[83] = C[55] * dist[2] / 6;
+
+/*
+  C[84] = C[56] * dist[0] / 7;
+  C[85] = C[57] * dist[0] / 6;
+  C[86] = C[58] * dist[0] / 6;
+  C[87] = C[59] * dist[0] / 5;
+  C[88] = C[60] * dist[0] / 5;
+  C[89] = C[61] * dist[0] / 5;
+  C[90] = C[62] * dist[0] / 4;
+  C[91] = C[63] * dist[0] / 4;
+  C[92] = C[64] * dist[0] / 4;
+  C[93] = C[65] * dist[0] / 4;
+  C[94] = C[66] * dist[0] / 3;
+  C[95] = C[67] * dist[0] / 3;
+  C[96] = C[68] * dist[0] / 3;
+  C[97] = C[69] * dist[0] / 3;
+  C[98] = C[70] * dist[0] / 3;
+  C[99] = C[71] * dist[0] / 2;
+  C[100] = C[72] * dist[0] / 2;
+  C[101] = C[73] * dist[0] / 2;
+  C[102] = C[74] * dist[0] / 2;
+  C[103] = C[75] * dist[0] / 2;
+  C[104] = C[76] * dist[0] / 2;
+  C[105] = C[77] * dist[0];
+  C[106] = C[78] * dist[0];
+  C[107] = C[79] * dist[0];
+  C[108] = C[80] * dist[0];
+  C[109] = C[81] * dist[0];
+  C[110] = C[82] * dist[0];
+  C[111] = C[83] * dist[0];
+  C[112] = C[77] * dist[1] / 7;
+  C[113] = C[78] * dist[1] / 6;
+  C[114] = C[79] * dist[1] / 5;
+  C[115] = C[80] * dist[1] / 4;
+  C[116] = C[81] * dist[1] / 3;
+  C[117] = C[82] * dist[1] / 2;
+  C[118] = C[83] * dist[1];
+  C[119] = C[83] * dist[2] / 7;
+
+  C[120] = C[84] * dist[0] / 8;
+  C[121] = C[85] * dist[0] / 7;
+  C[122] = C[86] * dist[0] / 7;
+  C[123] = C[87] * dist[0] / 6;
+  C[124] = C[88] * dist[0] / 6;
+  C[125] = C[89] * dist[0] / 6;
+  C[126] = C[90] * dist[0] / 5;
+  C[127] = C[91] * dist[0] / 5;
+  C[128] = C[92] * dist[0] / 5;
+  C[129] = C[93] * dist[0] / 5;
+  C[130] = C[94] * dist[0] / 4;
+  C[131] = C[95] * dist[0] / 4;
+  C[132] = C[96] * dist[0] / 4;
+  C[133] = C[97] * dist[0] / 4;
+  C[134] = C[98] * dist[0] / 4;
+  C[135] = C[99] * dist[0] / 3;
+  C[136] = C[100] * dist[0] / 3;
+  C[137] = C[101] * dist[0] / 3;
+  
+  C[138] = C[102] * dist[0] / 3;
+  C[139] = C[103] * dist[0] / 3;
+  C[140] = C[104] * dist[0] / 3;
+  C[141] = C[105] * dist[0] / 2;
+  C[142] = C[106] * dist[0] / 2;
+  C[143] = C[107] * dist[0] / 2;
+  C[144] = C[108] * dist[0] / 2;
+  C[145] = C[109] * dist[0] / 2;
+  C[146] = C[110] * dist[0] / 2;
+  C[147] = C[111] * dist[0] / 2;
+  C[148] = C[112] * dist[0];
+  C[149] = C[113] * dist[0];
+  C[150] = C[114] * dist[0];
+  C[151] = C[115] * dist[0];
+  C[152] = C[116] * dist[0];
+  C[153] = C[117] * dist[0];
+  C[154] = C[118] * dist[0];
+  C[155] = C[119] * dist[0];
+  C[156] = C[112] * dist[1] / 8;
+  C[157] = C[113] * dist[1] / 7;
+  C[158] = C[114] * dist[1] / 6;
+  C[159] = C[115] * dist[1] / 5;
+  C[160] = C[116] * dist[1] / 4;
+  C[161] = C[117] * dist[1] / 3;
+  C[162] = C[118] * dist[1] / 2;
+  C[163] = C[119] * dist[1];
+  C[164] = C[119] * dist[2] / 8;
+
+  C[165] = C[120] * dist[0] / 9;
+  C[166] = C[121] * dist[0] / 8;
+  C[167] = C[122] * dist[0] / 8;
+  C[168] = C[123] * dist[0] / 7;
+  C[169] = C[124] * dist[0] / 7;
+  C[170] = C[125] * dist[0] / 7;
+  C[171] = C[126] * dist[0] / 6;
+  C[172] = C[127] * dist[0] / 6;
+  C[173] = C[128] * dist[0] / 6;
+  C[174] = C[129] * dist[0] / 6;
+  C[175] = C[130] * dist[0] / 5;
+  C[176] = C[131] * dist[0] / 5;
+  C[177] = C[132] * dist[0] / 5;
+  C[178] = C[133] * dist[0] / 5;
+  C[179] = C[134] * dist[0] / 5;
+  C[180] = C[135] * dist[0] / 4;
+  C[181] = C[136] * dist[0] / 4;
+  C[182] = C[137] * dist[0] / 4;
+  C[183] = C[138] * dist[0] / 4;
+  C[184] = C[139] * dist[0] / 4;
+  C[185] = C[140] * dist[0] / 4;
+  C[186] = C[141] * dist[0] / 3;
+  C[187] = C[142] * dist[0] / 3;
+  C[188] = C[143] * dist[0] / 3;
+  C[189] = C[144] * dist[0] / 3;
+  C[190] = C[145] * dist[0] / 3;
+  C[191] = C[146] * dist[0] / 3;
+  C[192] = C[147] * dist[0] / 3;
+  C[193] = C[148] * dist[0] / 2;
+  C[194] = C[149] * dist[0] / 2;
+  C[195] = C[150] * dist[0] / 2;
+  C[196] = C[151] * dist[0] / 2;
+  C[197] = C[152] * dist[0] / 2;
+  C[198] = C[153] * dist[0] / 2;
+  C[199] = C[154] * dist[0] / 2;
+  C[200] = C[155] * dist[0] / 2;
+  C[201] = C[156] * dist[0];
+  C[202] = C[157] * dist[0];
+  C[203] = C[158] * dist[0];
+  C[204] = C[159] * dist[0];
+  C[205] = C[160] * dist[0];
+  C[206] = C[161] * dist[0];
+  C[207] = C[162] * dist[0];
+  C[208] = C[163] * dist[0];
+  C[209] = C[164] * dist[0];
+  C[210] = C[156] * dist[1] / 9;
+  C[211] = C[157] * dist[1] / 8;
+  C[212] = C[158] * dist[1] / 7;
+  C[213] = C[159] * dist[1] / 6;
+  C[214] = C[160] * dist[1] / 5;
+  C[215] = C[161] * dist[1] / 4;
+  C[216] = C[162] * dist[1] / 3;
+  C[217] = C[163] * dist[1] / 2;
+  C[218] = C[164] * dist[1];
+  C[219] = C[164] * dist[2] / 9;
+*/
+
+  Lset L = Cj->L;
+  Ci->L += L;
+
+  Ci->L[0] += C[1]*L[1]+C[2]*L[2]+C[3]*L[3];
+
+  for( int i=4; i<10; ++i ) Ci->L[0] += C[i]*L[i];
+  Ci->L[1] += C[1]*L[4]+C[2]*L[5]+C[3]*L[6];
+  Ci->L[2] += C[1]*L[5]+C[2]*L[7]+C[3]*L[8];
+  Ci->L[3] += C[1]*L[6]+C[2]*L[8]+C[3]*L[9];
+
+  for( int i=10; i<20; ++i ) Ci->L[0] += C[i]*L[i];
+  Ci->L[1] += C[4]*L[10]+C[5]*L[11]+C[6]*L[12]+C[7]*L[13]+C[8]*L[14]+C[9]*L[15];
+  Ci->L[2] += C[4]*L[11]+C[5]*L[13]+C[6]*L[14]+C[7]*L[16]+C[8]*L[17]+C[9]*L[18];
+  Ci->L[3] += C[4]*L[12]+C[5]*L[14]+C[6]*L[15]+C[7]*L[17]+C[8]*L[18]+C[9]*L[19];
+  Ci->L[4] += C[1]*L[10]+C[2]*L[11]+C[3]*L[12];
+  Ci->L[5] += C[1]*L[11]+C[2]*L[13]+C[3]*L[14];
+  Ci->L[6] += C[1]*L[12]+C[2]*L[14]+C[3]*L[15];
+  Ci->L[7] += C[1]*L[13]+C[2]*L[16]+C[3]*L[17];
+  Ci->L[8] += C[1]*L[14]+C[2]*L[17]+C[3]*L[18];
+  Ci->L[9] += C[1]*L[15]+C[2]*L[18]+C[3]*L[19];
+
+  for( int i=20; i<35; ++i ) Ci->L[0] += C[i]*L[i];
+  Ci->L[1] += C[10]*L[20]+C[11]*L[21]+C[12]*L[22]+C[13]*L[23]+C[14]*L[24]+C[15]*L[25]+C[16]*L[26]+C[17]*L[27]+C[18]*L[28]+C[19]*L[29];
+  Ci->L[2] += C[10]*L[21]+C[11]*L[23]+C[12]*L[24]+C[13]*L[26]+C[14]*L[27]+C[15]*L[28]+C[16]*L[30]+C[17]*L[31]+C[18]*L[32]+C[19]*L[33];
+  Ci->L[3] += C[10]*L[22]+C[11]*L[24]+C[12]*L[25]+C[13]*L[27]+C[14]*L[28]+C[15]*L[29]+C[16]*L[31]+C[17]*L[32]+C[18]*L[33]+C[19]*L[34];
+  Ci->L[4] += C[4]*L[20]+C[5]*L[21]+C[6]*L[22]+C[7]*L[23]+C[8]*L[24]+C[9]*L[25];
+  Ci->L[5] += C[4]*L[21]+C[5]*L[23]+C[6]*L[24]+C[7]*L[26]+C[8]*L[27]+C[9]*L[28];
+  Ci->L[6] += C[4]*L[22]+C[5]*L[24]+C[6]*L[25]+C[7]*L[27]+C[8]*L[28]+C[9]*L[29];
+  Ci->L[7] += C[4]*L[23]+C[5]*L[26]+C[6]*L[27]+C[7]*L[30]+C[8]*L[31]+C[9]*L[32];
+  Ci->L[8] += C[4]*L[24]+C[5]*L[27]+C[6]*L[28]+C[7]*L[31]+C[8]*L[32]+C[9]*L[33];
+  Ci->L[9] += C[4]*L[25]+C[5]*L[28]+C[6]*L[29]+C[7]*L[32]+C[8]*L[33]+C[9]*L[34];
+  Ci->L[10] += C[1]*L[20]+C[2]*L[21]+C[3]*L[22];
+  Ci->L[11] += C[1]*L[21]+C[2]*L[23]+C[3]*L[24];
+  Ci->L[12] += C[1]*L[22]+C[2]*L[24]+C[3]*L[25];
+  Ci->L[13] += C[1]*L[23]+C[2]*L[26]+C[3]*L[27];
+  Ci->L[14] += C[1]*L[24]+C[2]*L[27]+C[3]*L[28];
+  Ci->L[15] += C[1]*L[25]+C[2]*L[28]+C[3]*L[29];
+  Ci->L[16] += C[1]*L[26]+C[2]*L[30]+C[3]*L[31];
+  Ci->L[17] += C[1]*L[27]+C[2]*L[31]+C[3]*L[32];
+  Ci->L[18] += C[1]*L[28]+C[2]*L[32]+C[3]*L[33];
+  Ci->L[19] += C[1]*L[29]+C[2]*L[33]+C[3]*L[34];
+
+  for( int i=35; i<56; ++i ) Ci->L[0] += C[i]*L[i];
+  Ci->L[1] += C[20]*L[35]+C[21]*L[36]+C[22]*L[37]+C[23]*L[38]+C[24]*L[39]+C[25]*L[40]+C[26]*L[41]+C[27]*L[42]+C[28]*L[43]+C[29]*L[44]+C[30]*L[45]+C[31]*L[46]+C[32]*L[47]+C[33]*L[48]+C[34]*L[49];
+  Ci->L[2] += C[20]*L[36]+C[21]*L[38]+C[22]*L[39]+C[23]*L[41]+C[24]*L[42]+C[25]*L[43]+C[26]*L[45]+C[27]*L[46]+C[28]*L[47]+C[29]*L[48]+C[30]*L[50]+C[31]*L[51]+C[32]*L[52]+C[33]*L[53]+C[34]*L[54];
+  Ci->L[2] += C[20]*L[36]+C[21]*L[38]+C[22]*L[39]+C[23]*L[41]+C[24]*L[42]+C[25]*L[43]+C[26]*L[45]+C[27]*L[46]+C[28]*L[47]+C[29]*L[48]+C[30]*L[50]+C[31]*L[51]+C[32]*L[52]+C[33]*L[53]+C[34]*L[54];
+  Ci->L[3] += C[20]*L[37]+C[21]*L[39]+C[22]*L[40]+C[23]*L[42]+C[24]*L[43]+C[25]*L[44]+C[26]*L[46]+C[27]*L[47]+C[28]*L[48]+C[29]*L[49]+C[30]*L[51]+C[31]*L[52]+C[32]*L[53]+C[33]*L[54]+C[34]*L[55];
+  Ci->L[4] += C[10]*L[35]+C[11]*L[36]+C[12]*L[37]+C[13]*L[38]+C[14]*L[39]+C[15]*L[40]+C[16]*L[41]+C[17]*L[42]+C[18]*L[43]+C[19]*L[44];
+  Ci->L[5] += C[10]*L[36]+C[11]*L[38]+C[12]*L[39]+C[13]*L[41]+C[14]*L[42]+C[15]*L[43]+C[16]*L[45]+C[17]*L[46]+C[18]*L[47]+C[19]*L[48];
+  Ci->L[6] += C[10]*L[37]+C[11]*L[39]+C[12]*L[40]+C[13]*L[42]+C[14]*L[43]+C[15]*L[44]+C[16]*L[46]+C[17]*L[47]+C[18]*L[48]+C[19]*L[49];
+  Ci->L[7] += C[10]*L[38]+C[11]*L[41]+C[12]*L[42]+C[13]*L[45]+C[14]*L[46]+C[15]*L[47]+C[16]*L[50]+C[17]*L[51]+C[18]*L[52]+C[19]*L[53];
+  Ci->L[8] += C[10]*L[39]+C[11]*L[42]+C[12]*L[43]+C[13]*L[46]+C[14]*L[47]+C[15]*L[48]+C[16]*L[51]+C[17]*L[52]+C[18]*L[53]+C[19]*L[54];
+  Ci->L[9] += C[10]*L[40]+C[11]*L[43]+C[12]*L[44]+C[13]*L[47]+C[14]*L[48]+C[15]*L[49]+C[16]*L[52]+C[17]*L[53]+C[18]*L[54]+C[19]*L[55];
+  Ci->L[10] += C[4]*L[35]+C[5]*L[36]+C[6]*L[37]+C[7]*L[38]+C[8]*L[39]+C[9]*L[40];
+  Ci->L[11] += C[4]*L[36]+C[5]*L[38]+C[6]*L[39]+C[7]*L[41]+C[8]*L[42]+C[9]*L[43];
+  Ci->L[12] += C[4]*L[37]+C[5]*L[39]+C[6]*L[40]+C[7]*L[42]+C[8]*L[43]+C[9]*L[44];
+  Ci->L[13] += C[4]*L[38]+C[5]*L[41]+C[6]*L[42]+C[7]*L[45]+C[8]*L[46]+C[9]*L[47];
+  Ci->L[14] += C[4]*L[39]+C[5]*L[42]+C[6]*L[43]+C[7]*L[46]+C[8]*L[47]+C[9]*L[48];
+  Ci->L[15] += C[4]*L[40]+C[5]*L[43]+C[6]*L[44]+C[7]*L[47]+C[8]*L[48]+C[9]*L[49];
+  Ci->L[16] += C[4]*L[41]+C[5]*L[45]+C[6]*L[46]+C[7]*L[50]+C[8]*L[51]+C[9]*L[52];
+  Ci->L[17] += C[4]*L[42]+C[5]*L[46]+C[6]*L[47]+C[7]*L[51]+C[8]*L[52]+C[9]*L[53];
+  Ci->L[18] += C[4]*L[43]+C[5]*L[47]+C[6]*L[48]+C[7]*L[52]+C[8]*L[53]+C[9]*L[54];
+  Ci->L[19] += C[4]*L[44]+C[5]*L[48]+C[6]*L[49]+C[7]*L[53]+C[8]*L[54]+C[9]*L[55];
+  Ci->L[20] += C[1]*L[35]+C[2]*L[36]+C[3]*L[37];
+  Ci->L[21] += C[1]*L[36]+C[2]*L[38]+C[3]*L[39];
+  Ci->L[22] += C[1]*L[37]+C[2]*L[39]+C[3]*L[40];
+  Ci->L[23] += C[1]*L[38]+C[2]*L[41]+C[3]*L[42];
+  Ci->L[24] += C[1]*L[39]+C[2]*L[42]+C[3]*L[43];
+  Ci->L[25] += C[1]*L[40]+C[2]*L[43]+C[3]*L[44];
+  Ci->L[26] += C[1]*L[41]+C[2]*L[45]+C[3]*L[46];
+  Ci->L[27] += C[1]*L[42]+C[2]*L[46]+C[3]*L[47];
+  Ci->L[28] += C[1]*L[43]+C[2]*L[47]+C[3]*L[48];
+  Ci->L[29] += C[1]*L[44]+C[2]*L[48]+C[3]*L[49];
+  Ci->L[30] += C[1]*L[45]+C[2]*L[50]+C[3]*L[51];
+  Ci->L[31] += C[1]*L[46]+C[2]*L[51]+C[3]*L[52];
+  Ci->L[32] += C[1]*L[47]+C[2]*L[52]+C[3]*L[53];
+  Ci->L[33] += C[1]*L[48]+C[2]*L[53]+C[3]*L[54];
+  Ci->L[34] += C[1]*L[49]+C[2]*L[54]+C[3]*L[55];
+
+  for( int i=56; i<84; ++i ) Ci->L[0] += C[i]*L[i];
+  Ci->L[1] += C[35]*L[56]+C[36]*L[57]+C[37]*L[58]+C[38]*L[59]+C[39]*L[60]+C[40]*L[61]+C[41]*L[62]+C[42]*L[63]+C[43]*L[64]+C[44]*L[65]+C[45]*L[66]+C[46]*L[67]+C[47]*L[68]+C[48]*L[69]+C[49]*L[70]+C[50]*L[71]+C[51]*L[72]+C[52]*L[73]+C[53]*L[74]+C[54]*L[75]+C[55]*L[76];
+  Ci->L[2] += C[35]*L[57]+C[36]*L[59]+C[37]*L[60]+C[38]*L[62]+C[39]*L[63]+C[40]*L[64]+C[41]*L[66]+C[42]*L[67]+C[43]*L[68]+C[44]*L[69]+C[45]*L[71]+C[46]*L[72]+C[47]*L[73]+C[48]*L[74]+C[49]*L[75]+C[50]*L[77]+C[51]*L[78]+C[52]*L[79]+C[53]*L[80]+C[54]*L[81]+C[55]*L[82];
+  Ci->L[3] += C[35]*L[58]+C[36]*L[60]+C[37]*L[61]+C[38]*L[63]+C[39]*L[64]+C[40]*L[65]+C[41]*L[67]+C[42]*L[68]+C[43]*L[69]+C[44]*L[70]+C[45]*L[72]+C[46]*L[73]+C[47]*L[74]+C[48]*L[75]+C[49]*L[76]+C[50]*L[78]+C[51]*L[79]+C[52]*L[80]+C[53]*L[81]+C[54]*L[82]+C[55]*L[83];
+  Ci->L[4] += C[20]*L[56]+C[21]*L[57]+C[22]*L[58]+C[23]*L[59]+C[24]*L[60]+C[25]*L[61]+C[26]*L[62]+C[27]*L[63]+C[28]*L[64]+C[29]*L[65]+C[30]*L[66]+C[31]*L[67]+C[32]*L[68]+C[33]*L[69]+C[34]*L[70];
+  Ci->L[5] += C[20]*L[57]+C[21]*L[59]+C[22]*L[60]+C[23]*L[62]+C[24]*L[63]+C[25]*L[64]+C[26]*L[66]+C[27]*L[67]+C[28]*L[68]+C[29]*L[69]+C[30]*L[71]+C[31]*L[72]+C[32]*L[73]+C[33]*L[74]+C[34]*L[75];
+  Ci->L[6] += C[20]*L[58]+C[21]*L[60]+C[22]*L[61]+C[23]*L[63]+C[24]*L[64]+C[25]*L[65]+C[26]*L[67]+C[27]*L[68]+C[28]*L[69]+C[29]*L[70]+C[30]*L[72]+C[31]*L[73]+C[32]*L[74]+C[33]*L[75]+C[34]*L[76];
+  Ci->L[7] += C[20]*L[59]+C[21]*L[62]+C[22]*L[63]+C[23]*L[66]+C[24]*L[67]+C[25]*L[68]+C[26]*L[71]+C[27]*L[72]+C[28]*L[73]+C[29]*L[74]+C[30]*L[77]+C[31]*L[78]+C[32]*L[79]+C[33]*L[80]+C[34]*L[81];
+  Ci->L[8] += C[20]*L[60]+C[21]*L[63]+C[22]*L[64]+C[23]*L[67]+C[24]*L[68]+C[25]*L[69]+C[26]*L[72]+C[27]*L[73]+C[28]*L[74]+C[29]*L[75]+C[30]*L[78]+C[31]*L[79]+C[32]*L[80]+C[33]*L[81]+C[34]*L[82];
+  Ci->L[9] += C[20]*L[61]+C[21]*L[64]+C[22]*L[65]+C[23]*L[68]+C[24]*L[69]+C[25]*L[70]+C[26]*L[73]+C[27]*L[74]+C[28]*L[75]+C[29]*L[76]+C[30]*L[79]+C[31]*L[80]+C[32]*L[81]+C[33]*L[82]+C[34]*L[83];
+  Ci->L[10] += C[10]*L[56]+C[11]*L[57]+C[12]*L[58]+C[13]*L[59]+C[14]*L[60]+C[15]*L[61]+C[16]*L[62]+C[17]*L[63]+C[18]*L[64]+C[19]*L[65];
+  Ci->L[11] += C[10]*L[57]+C[11]*L[59]+C[12]*L[60]+C[13]*L[62]+C[14]*L[63]+C[15]*L[64]+C[16]*L[66]+C[17]*L[67]+C[18]*L[68]+C[19]*L[69];
+  Ci->L[12] += C[10]*L[58]+C[11]*L[60]+C[12]*L[61]+C[13]*L[63]+C[14]*L[64]+C[15]*L[65]+C[16]*L[67]+C[17]*L[68]+C[18]*L[69]+C[19]*L[70];
+  Ci->L[13] += C[10]*L[59]+C[11]*L[62]+C[12]*L[63]+C[13]*L[66]+C[14]*L[67]+C[15]*L[68]+C[16]*L[71]+C[17]*L[72]+C[18]*L[73]+C[19]*L[74];
+  Ci->L[14] += C[10]*L[60]+C[11]*L[63]+C[12]*L[64]+C[13]*L[67]+C[14]*L[68]+C[15]*L[69]+C[16]*L[72]+C[17]*L[73]+C[18]*L[74]+C[19]*L[75];
+  Ci->L[15] += C[10]*L[61]+C[11]*L[64]+C[12]*L[65]+C[13]*L[68]+C[14]*L[69]+C[15]*L[70]+C[16]*L[73]+C[17]*L[74]+C[18]*L[75]+C[19]*L[76];
+  Ci->L[16] += C[10]*L[62]+C[11]*L[66]+C[12]*L[67]+C[13]*L[71]+C[14]*L[72]+C[15]*L[73]+C[16]*L[77]+C[17]*L[78]+C[18]*L[79]+C[19]*L[80];
+  Ci->L[17] += C[10]*L[63]+C[11]*L[67]+C[12]*L[68]+C[13]*L[72]+C[14]*L[73]+C[15]*L[74]+C[16]*L[78]+C[17]*L[79]+C[18]*L[80]+C[19]*L[81];
+  Ci->L[18] += C[10]*L[64]+C[11]*L[68]+C[12]*L[69]+C[13]*L[73]+C[14]*L[74]+C[15]*L[75]+C[16]*L[79]+C[17]*L[80]+C[18]*L[81]+C[19]*L[82];
+  Ci->L[19] += C[10]*L[65]+C[11]*L[69]+C[12]*L[70]+C[13]*L[74]+C[14]*L[75]+C[15]*L[76]+C[16]*L[80]+C[17]*L[81]+C[18]*L[82]+C[19]*L[83];
+  Ci->L[20] += C[4]*L[56]+C[5]*L[57]+C[6]*L[58]+C[7]*L[59]+C[8]*L[60]+C[9]*L[61];
+  Ci->L[21] += C[4]*L[57]+C[5]*L[59]+C[6]*L[60]+C[7]*L[62]+C[8]*L[63]+C[9]*L[64];
+  Ci->L[22] += C[4]*L[58]+C[5]*L[60]+C[6]*L[61]+C[7]*L[63]+C[8]*L[64]+C[9]*L[65];
+  Ci->L[23] += C[4]*L[59]+C[5]*L[62]+C[6]*L[63]+C[7]*L[66]+C[8]*L[67]+C[9]*L[68];
+  Ci->L[24] += C[4]*L[60]+C[5]*L[63]+C[6]*L[64]+C[7]*L[67]+C[8]*L[68]+C[9]*L[69];
+  Ci->L[25] += C[4]*L[61]+C[5]*L[64]+C[6]*L[65]+C[7]*L[68]+C[8]*L[69]+C[9]*L[70];
+  Ci->L[26] += C[4]*L[62]+C[5]*L[66]+C[6]*L[67]+C[7]*L[71]+C[8]*L[72]+C[9]*L[73];
+  Ci->L[27] += C[4]*L[63]+C[5]*L[67]+C[6]*L[68]+C[7]*L[72]+C[8]*L[73]+C[9]*L[74];
+  Ci->L[28] += C[4]*L[64]+C[5]*L[68]+C[6]*L[69]+C[7]*L[73]+C[8]*L[74]+C[9]*L[75];
+  Ci->L[29] += C[4]*L[65]+C[5]*L[69]+C[6]*L[70]+C[7]*L[74]+C[8]*L[75]+C[9]*L[76];
+  Ci->L[30] += C[4]*L[66]+C[5]*L[71]+C[6]*L[72]+C[7]*L[77]+C[8]*L[78]+C[9]*L[79];
+  Ci->L[31] += C[4]*L[67]+C[5]*L[72]+C[6]*L[73]+C[7]*L[78]+C[8]*L[79]+C[9]*L[80];
+  Ci->L[32] += C[4]*L[68]+C[5]*L[73]+C[6]*L[74]+C[7]*L[79]+C[8]*L[80]+C[9]*L[81];
+  Ci->L[33] += C[4]*L[69]+C[5]*L[74]+C[6]*L[75]+C[7]*L[80]+C[8]*L[81]+C[9]*L[82];
+  Ci->L[34] += C[4]*L[70]+C[5]*L[75]+C[6]*L[76]+C[7]*L[81]+C[8]*L[82]+C[9]*L[83];
+  Ci->L[35] += C[1]*L[56]+C[2]*L[57]+C[3]*L[58];
+  Ci->L[36] += C[1]*L[57]+C[2]*L[59]+C[3]*L[60];
+  Ci->L[37] += C[1]*L[58]+C[2]*L[60]+C[3]*L[61];
+  Ci->L[38] += C[1]*L[59]+C[2]*L[62]+C[3]*L[63];
+  Ci->L[39] += C[1]*L[60]+C[2]*L[63]+C[3]*L[64];
+  Ci->L[40] += C[1]*L[61]+C[2]*L[64]+C[3]*L[65];
+  Ci->L[41] += C[1]*L[62]+C[2]*L[66]+C[3]*L[67];
+  Ci->L[42] += C[1]*L[63]+C[2]*L[67]+C[3]*L[68];
+  Ci->L[43] += C[1]*L[64]+C[2]*L[68]+C[3]*L[69];
+  Ci->L[44] += C[1]*L[65]+C[2]*L[69]+C[3]*L[70];
+  Ci->L[45] += C[1]*L[66]+C[2]*L[71]+C[3]*L[72];
+  Ci->L[46] += C[1]*L[67]+C[2]*L[72]+C[3]*L[73];
+  Ci->L[47] += C[1]*L[68]+C[2]*L[73]+C[3]*L[74];
+  Ci->L[48] += C[1]*L[69]+C[2]*L[74]+C[3]*L[75];
+  Ci->L[49] += C[1]*L[70]+C[2]*L[75]+C[3]*L[76];
+  Ci->L[50] += C[1]*L[71]+C[2]*L[77]+C[3]*L[78];
+  Ci->L[51] += C[1]*L[72]+C[2]*L[78]+C[3]*L[79];
+  Ci->L[52] += C[1]*L[73]+C[2]*L[79]+C[3]*L[80];
+  Ci->L[53] += C[1]*L[74]+C[2]*L[80]+C[3]*L[81];
+  Ci->L[54] += C[1]*L[75]+C[2]*L[81]+C[3]*L[82];
+  Ci->L[55] += C[1]*L[76]+C[2]*L[82]+C[3]*L[83];
 }
 
 template<>
 void Kernel<Laplace>::L2P(C_iter Ci) const {
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
-      vect dist = B->X - Ci->X;
-      Lset C, L;
-      C[0] = 1;
-      Terms<0,0,P>::power(C,dist);
+    vect dist = B->X - Ci->X;
+    Lset C, L;
+    C[0] = 1;
 
-      L = Ci->L;
-      B->TRG[0] += L[0];
-      B->TRG[1] += L[1];
-      B->TRG[2] += L[2];
-      B->TRG[3] += L[3];
-      for( int i=1; i<LTERM; ++i ) B->TRG[0] += C[i]*L[i];
-      Downward<0,0,1>::L2P(B,C,L);
+    C[1] = C[0] * dist[0];
+    C[2] = C[0] * dist[1];
+    C[3] = C[0] * dist[2];
+
+    C[4] = C[1] * dist[0] / 2;
+    C[5] = C[2] * dist[0];
+    C[6] = C[3] * dist[0];
+    C[7] = C[2] * dist[1] / 2;
+    C[8] = C[3] * dist[1];
+    C[9] = C[3] * dist[2] / 2;
+
+    C[10] = C[4] * dist[0] / 3;
+    C[11] = C[5] * dist[0] / 2;
+    C[12] = C[6] * dist[0] / 2;
+    C[13] = C[7] * dist[0];
+    C[14] = C[8] * dist[0];
+    C[15] = C[9] * dist[0];
+    C[16] = C[7] * dist[1] / 3;
+    C[17] = C[8] * dist[1] / 2;
+    C[18] = C[9] * dist[1];
+    C[19] = C[9] * dist[2] / 3;
+
+    C[20] = C[10] * dist[0] / 4;
+    C[21] = C[11] * dist[0] / 3;
+    C[22] = C[12] * dist[0] / 3;
+    C[23] = C[13] * dist[0] / 2;
+    C[24] = C[14] * dist[0] / 2;
+    C[25] = C[15] * dist[0] / 2;
+    C[26] = C[16] * dist[0];
+    C[27] = C[17] * dist[0];
+    C[28] = C[18] * dist[0];
+    C[29] = C[19] * dist[0];
+    C[30] = C[16] * dist[1] / 4;
+    C[31] = C[17] * dist[1] / 3;
+    C[32] = C[18] * dist[1] / 2;
+    C[33] = C[19] * dist[1];
+    C[34] = C[19] * dist[2] / 4;
+
+    C[35] = C[20] * dist[0] / 5;
+    C[36] = C[21] * dist[0] / 4;
+    C[37] = C[22] * dist[0] / 4;
+    C[38] = C[23] * dist[0] / 3;
+    C[39] = C[24] * dist[0] / 3;
+    C[40] = C[25] * dist[0] / 3;
+    C[41] = C[26] * dist[0] / 2;
+    C[42] = C[27] * dist[0] / 2;
+    C[43] = C[28] * dist[0] / 2;
+    C[44] = C[29] * dist[0] / 2;
+    C[45] = C[30] * dist[0];
+    C[46] = C[31] * dist[0];
+    C[47] = C[32] * dist[0];
+    C[48] = C[33] * dist[0];
+    C[49] = C[34] * dist[0];
+    C[50] = C[30] * dist[1] / 5;
+    C[51] = C[31] * dist[1] / 4;
+    C[52] = C[32] * dist[1] / 3;
+    C[53] = C[33] * dist[1] / 2;
+    C[54] = C[34] * dist[1];
+    C[55] = C[34] * dist[2] / 5;
+
+    C[56] = C[35] * dist[0] / 6;
+    C[57] = C[36] * dist[0] / 5;
+    C[58] = C[37] * dist[0] / 5;
+    C[59] = C[38] * dist[0] / 4;
+    C[60] = C[39] * dist[0] / 4;
+    C[61] = C[40] * dist[0] / 4;
+    C[62] = C[41] * dist[0] / 3;
+    C[63] = C[42] * dist[0] / 3;
+    C[64] = C[43] * dist[0] / 3;
+    C[65] = C[44] * dist[0] / 3;
+    C[66] = C[45] * dist[0] / 2;
+    C[67] = C[46] * dist[0] / 2;
+    C[68] = C[47] * dist[0] / 2;
+    C[69] = C[48] * dist[0] / 2;
+    C[70] = C[49] * dist[0] / 2;
+    C[71] = C[50] * dist[0];
+    C[72] = C[51] * dist[0];
+    C[73] = C[52] * dist[0];
+    C[74] = C[53] * dist[0];
+    C[75] = C[54] * dist[0];
+    C[76] = C[55] * dist[0];
+    C[77] = C[50] * dist[1] / 6;
+    C[78] = C[51] * dist[1] / 5;
+    C[79] = C[52] * dist[1] / 4;
+    C[80] = C[53] * dist[1] / 3;
+    C[81] = C[54] * dist[1] / 2;
+    C[82] = C[55] * dist[1];
+    C[83] = C[55] * dist[2] / 6;
+
+/*
+    C[84] = C[56] * dist[0] / 7;
+    C[85] = C[57] * dist[0] / 6;
+    C[86] = C[58] * dist[0] / 6;
+    C[87] = C[59] * dist[0] / 5;
+    C[88] = C[60] * dist[0] / 5;
+    C[89] = C[61] * dist[0] / 5;
+    C[90] = C[62] * dist[0] / 4;
+    C[91] = C[63] * dist[0] / 4;
+    C[92] = C[64] * dist[0] / 4;
+    C[93] = C[65] * dist[0] / 4;
+    C[94] = C[66] * dist[0] / 3;
+    C[95] = C[67] * dist[0] / 3;
+    C[96] = C[68] * dist[0] / 3;
+    C[97] = C[69] * dist[0] / 3;
+    C[98] = C[70] * dist[0] / 3;
+    C[99] = C[71] * dist[0] / 2;
+    C[100] = C[72] * dist[0] / 2;
+    C[101] = C[73] * dist[0] / 2;
+    C[102] = C[74] * dist[0] / 2;
+    C[103] = C[75] * dist[0] / 2;
+    C[104] = C[76] * dist[0] / 2;
+    C[105] = C[77] * dist[0];
+    C[106] = C[78] * dist[0];
+    C[107] = C[79] * dist[0];
+    C[108] = C[80] * dist[0];
+    C[109] = C[81] * dist[0];
+    C[110] = C[82] * dist[0];
+    C[111] = C[83] * dist[0];
+    C[112] = C[77] * dist[1] / 7;
+    C[113] = C[78] * dist[1] / 6;
+    C[114] = C[79] * dist[1] / 5;
+    C[115] = C[80] * dist[1] / 4;
+    C[116] = C[81] * dist[1] / 3;
+    C[117] = C[82] * dist[1] / 2;
+    C[118] = C[83] * dist[1];
+    C[119] = C[83] * dist[2] / 7;
+
+    C[120] = C[84] * dist[0] / 8;
+    C[121] = C[85] * dist[0] / 7;
+    C[122] = C[86] * dist[0] / 7;
+    C[123] = C[87] * dist[0] / 6;
+    C[124] = C[88] * dist[0] / 6;
+    C[125] = C[89] * dist[0] / 6;
+    C[126] = C[90] * dist[0] / 5;
+    C[127] = C[91] * dist[0] / 5;
+    C[128] = C[92] * dist[0] / 5;
+    C[129] = C[93] * dist[0] / 5;
+    C[130] = C[94] * dist[0] / 4;
+    C[131] = C[95] * dist[0] / 4;
+    C[132] = C[96] * dist[0] / 4;
+    C[133] = C[97] * dist[0] / 4;
+    C[134] = C[98] * dist[0] / 4;
+    C[135] = C[99] * dist[0] / 3;
+    C[136] = C[100] * dist[0] / 3;
+    C[137] = C[101] * dist[0] / 3;
+    C[138] = C[102] * dist[0] / 3;
+    C[139] = C[103] * dist[0] / 3;
+    C[140] = C[104] * dist[0] / 3;
+    C[141] = C[105] * dist[0] / 2;
+    C[142] = C[106] * dist[0] / 2;
+    C[143] = C[107] * dist[0] / 2;
+    C[144] = C[108] * dist[0] / 2;
+    C[145] = C[109] * dist[0] / 2;
+    C[146] = C[110] * dist[0] / 2;
+    C[147] = C[111] * dist[0] / 2;
+    C[148] = C[112] * dist[0];
+    C[149] = C[113] * dist[0];
+    C[150] = C[114] * dist[0];
+    C[151] = C[115] * dist[0];
+    C[152] = C[116] * dist[0];
+    C[153] = C[117] * dist[0];
+    C[154] = C[118] * dist[0];
+    C[155] = C[119] * dist[0];
+    C[156] = C[112] * dist[1] / 8;
+    C[157] = C[113] * dist[1] / 7;
+    C[158] = C[114] * dist[1] / 6;
+    C[159] = C[115] * dist[1] / 5;
+    C[160] = C[116] * dist[1] / 4;
+    C[161] = C[117] * dist[1] / 3;
+    C[162] = C[118] * dist[1] / 2;
+    C[163] = C[119] * dist[1];
+    C[164] = C[119] * dist[2] / 8;
+
+    C[165] = C[120] * dist[0] / 9;
+    C[166] = C[121] * dist[0] / 8;
+    C[167] = C[122] * dist[0] / 8;
+    C[168] = C[123] * dist[0] / 7;
+    C[169] = C[124] * dist[0] / 7;
+    C[170] = C[125] * dist[0] / 7;
+    C[171] = C[126] * dist[0] / 6;
+    C[172] = C[127] * dist[0] / 6;
+    C[173] = C[128] * dist[0] / 6;
+    C[174] = C[129] * dist[0] / 6;
+    C[175] = C[130] * dist[0] / 5;
+    C[176] = C[131] * dist[0] / 5;
+    C[177] = C[132] * dist[0] / 5;
+    C[178] = C[133] * dist[0] / 5;
+    C[179] = C[134] * dist[0] / 5;
+    C[180] = C[135] * dist[0] / 4;
+    C[181] = C[136] * dist[0] / 4;
+    C[182] = C[137] * dist[0] / 4;
+    C[183] = C[138] * dist[0] / 4;
+    C[184] = C[139] * dist[0] / 4;
+    C[185] = C[140] * dist[0] / 4;
+    C[186] = C[141] * dist[0] / 3;
+    C[187] = C[142] * dist[0] / 3;
+    C[188] = C[143] * dist[0] / 3;
+    C[189] = C[144] * dist[0] / 3;
+    C[190] = C[145] * dist[0] / 3;
+    C[191] = C[146] * dist[0] / 3;
+    C[192] = C[147] * dist[0] / 3;
+    C[193] = C[148] * dist[0] / 2;
+    C[194] = C[149] * dist[0] / 2;
+    C[195] = C[150] * dist[0] / 2;
+    C[196] = C[151] * dist[0] / 2;
+    C[197] = C[152] * dist[0] / 2;
+    C[198] = C[153] * dist[0] / 2;
+    C[199] = C[154] * dist[0] / 2;
+    C[200] = C[155] * dist[0] / 2;
+    C[201] = C[156] * dist[0];
+    C[202] = C[157] * dist[0];
+    C[203] = C[158] * dist[0];
+    C[204] = C[159] * dist[0];
+    C[205] = C[160] * dist[0];
+    C[206] = C[161] * dist[0];
+    C[207] = C[162] * dist[0];
+    C[208] = C[163] * dist[0];
+    C[209] = C[164] * dist[0];
+    C[210] = C[156] * dist[1] / 9;
+    C[211] = C[157] * dist[1] / 8;
+    C[212] = C[158] * dist[1] / 7;
+    C[213] = C[159] * dist[1] / 6;
+    C[214] = C[160] * dist[1] / 5;
+    C[215] = C[161] * dist[1] / 4;
+    C[216] = C[162] * dist[1] / 3;
+    C[217] = C[163] * dist[1] / 2;
+    C[218] = C[164] * dist[1];
+    C[219] = C[164] * dist[2] / 9;
+*/
+    L = Ci->L;
+
+    B->TRG[0] += L[0]+C[1]*L[1]+C[2]*L[2]+C[3]*L[3];
+    B->TRG[1] += L[1];
+    B->TRG[2] += L[2];
+    B->TRG[3] += L[3];
+
+    B->TRG[0] += C[4]*L[4]+C[5]*L[5]+C[6]*L[6]+C[7]*L[7]+C[8]*L[8]+C[9]*L[9];
+    B->TRG[1] += C[1]*L[4]+C[2]*L[5]+C[3]*L[6];
+    B->TRG[2] += C[1]*L[5]+C[2]*L[7]+C[3]*L[8];
+    B->TRG[3] += C[1]*L[6]+C[2]*L[8]+C[3]*L[9];
+
+    for( int i=10; i<20; ++i ) B->TRG[0] += C[i]*L[i];
+    B->TRG[1] += C[4]*L[10]+C[5]*L[11]+C[6]*L[12]+C[7]*L[13]+C[8]*L[14]+C[9]*L[15];
+    B->TRG[2] += C[4]*L[11]+C[5]*L[13]+C[6]*L[14]+C[7]*L[16]+C[8]*L[17]+C[9]*L[18];
+    B->TRG[3] += C[4]*L[12]+C[5]*L[14]+C[6]*L[15]+C[7]*L[17]+C[8]*L[18]+C[9]*L[19];
+
+    for( int i=20; i<35; ++i ) B->TRG[0] += C[i]*L[i];
+    B->TRG[1] += C[10]*L[20]+C[11]*L[21]+C[12]*L[22]+C[13]*L[23]+C[14]*L[24]+C[15]*L[25]+C[16]*L[26]+C[17]*L[27]+C[18]*L[28]+C[19]*L[29];
+    B->TRG[2] += C[10]*L[21]+C[11]*L[23]+C[12]*L[24]+C[13]*L[26]+C[14]*L[27]+C[15]*L[28]+C[16]*L[30]+C[17]*L[31]+C[18]*L[32]+C[19]*L[33];
+    B->TRG[3] += C[10]*L[22]+C[11]*L[24]+C[12]*L[25]+C[13]*L[27]+C[14]*L[28]+C[15]*L[29]+C[16]*L[31]+C[17]*L[32]+C[18]*L[33]+C[19]*L[34];
+
+    for( int i=35; i<56; ++i ) B->TRG[0] += C[i]*L[i];
+    B->TRG[1] += C[20]*L[35]+C[21]*L[36]+C[22]*L[37]+C[23]*L[38]+C[24]*L[39]+C[25]*L[40]+C[26]*L[41]+C[27]*L[42]+C[28]*L[43]+C[29]*L[44]+C[30]*L[45]+C[31]*L[46]+C[32]*L[47]+C[33]*L[48]+C[34]*L[49];
+    B->TRG[2] += C[20]*L[36]+C[21]*L[38]+C[22]*L[39]+C[23]*L[41]+C[24]*L[42]+C[25]*L[43]+C[26]*L[45]+C[27]*L[46]+C[28]*L[47]+C[29]*L[48]+C[30]*L[50]+C[31]*L[51]+C[32]*L[52]+C[33]*L[53]+C[34]*L[54];
+    B->TRG[3] += C[20]*L[37]+C[21]*L[39]+C[22]*L[40]+C[23]*L[42]+C[24]*L[43]+C[25]*L[44]+C[26]*L[46]+C[27]*L[47]+C[28]*L[48]+C[29]*L[49]+C[30]*L[51]+C[31]*L[52]+C[32]*L[53]+C[33]*L[54]+C[34]*L[55];
+
+    for( int i=56; i<84; ++i ) B->TRG[0] += C[i]*L[i];
+    B->TRG[1] += C[35]*L[56]+C[36]*L[57]+C[37]*L[58]+C[38]*L[59]+C[39]*L[60]+C[40]*L[61]+C[41]*L[62]+C[42]*L[63]+C[43]*L[64]+C[44]*L[65]+C[45]*L[66]+C[46]*L[67]+C[47]*L[68]+C[48]*L[69]+C[49]*L[70]+C[50]*L[71]+C[51]*L[72]+C[52]*L[73]+C[53]*L[74]+C[54]*L[75]+C[55]*L[76];
+    B->TRG[2] += C[35]*L[57]+C[36]*L[59]+C[37]*L[60]+C[38]*L[62]+C[39]*L[63]+C[40]*L[64]+C[41]*L[66]+C[42]*L[67]+C[43]*L[68]+C[44]*L[69]+C[45]*L[71]+C[46]*L[72]+C[47]*L[73]+C[48]*L[74]+C[49]*L[75]+C[50]*L[77]+C[51]*L[78]+C[52]*L[79]+C[53]*L[80]+C[54]*L[81]+C[55]*L[82];
+    B->TRG[3] += C[35]*L[58]+C[36]*L[60]+C[37]*L[61]+C[38]*L[63]+C[39]*L[64]+C[40]*L[65]+C[41]*L[67]+C[42]*L[68]+C[43]*L[69]+C[44]*L[70]+C[45]*L[72]+C[46]*L[73]+C[47]*L[74]+C[48]*L[75]+C[49]*L[76]+C[50]*L[78]+C[51]*L[79]+C[52]*L[80]+C[53]*L[81]+C[54]*L[82]+C[55]*L[83];
   }
 }
 

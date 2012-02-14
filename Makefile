@@ -19,7 +19,7 @@ save    :
 	cd .. && tar zcvf exafmm.tgz exafmm
 revert	:
 	hg revert --all
-	rm -rf `find -name "*.orig"`
+	rm -rf `find . -name "*.orig"`
 docs:
 	doxygen Doxyfile
 	cd docs/html; tar zcf ../../docs.tgz *
