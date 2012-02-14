@@ -26,16 +26,16 @@ THE SOFTWARE.
 namespace{
 //! Get r,theta,phi from x,y,z
 void cart2sph(real& r, real& theta, real& phi, vect dist) {
-  r = std::sqrt(norm(dist))+EPS;                              // r = sqrt(x^2 + y^2 + z^2) + eps
-  theta = std::acos(dist[2] / r);                             // theta = acos(z / r)
-  if( std::abs(dist[0]) + std::abs(dist[1]) < EPS ) {         // If |x| < eps & |y| < eps
+  r = sqrt(norm(dist))+EPS;                                   // r = sqrt(x^2 + y^2 + z^2) + eps
+  theta = acos(dist[2] / r);                                  // theta = acos(z / r)
+  if( fabs(dist[0]) + fabs(dist[1]) < EPS ) {                 // If |x| < eps & |y| < eps
     phi = 0;                                                  //  phi can be anything so we set it to 0
-  } else if( std::abs(dist[0]) < EPS ) {                      // If |x| < eps
-    phi = dist[1] / std::abs(dist[1]) * M_PI * 0.5;           //  phi = sign(y) * pi / 2
+  } else if( fabs(dist[0]) < EPS ) {                          // If |x| < eps
+    phi = dist[1] / fabs(dist[1]) * M_PI * 0.5;               //  phi = sign(y) * pi / 2
   } else if( dist[0] > 0 ) {                                  // If x > 0
-    phi = std::atan(dist[1] / dist[0]);                       //  phi = atan(y / x)
+    phi = atan(dist[1] / dist[0]);                            //  phi = atan(y / x)
   } else {                                                    // If x < 0
-    phi = std::atan(dist[1] / dist[0]) + M_PI;                //  phi = atan(y / x) + pi
+    phi = atan(dist[1] / dist[0]) + M_PI;                     //  phi = atan(y / x) + pi
   }                                                           // End if for x,y cases
 }
 

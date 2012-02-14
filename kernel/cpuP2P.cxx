@@ -25,6 +25,7 @@ THE SOFTWARE.
 
 template<>
 void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P kernel on CPU
+#ifndef SPARC_SIMD
   for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
     for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
       vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
@@ -38,6 +39,30 @@ void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P k
       Bi->TRG[3] -= dist[2] * invR3;                            //   z component of force
     }                                                           //  End loop over source bodies
   }                                                             // End loop over target bodies
+#else
+  real (* cbi)[10] =  (real (*)[10])(&(Ci->LEAF->IBODY));
+  real (* cbj)[10] =  (real (*)[10])(&(Cj->LEAF->IBODY));
+  real xp[3] = {Xperiodic[0],Xperiodic[1],Xperiodic[2]};
+  int ni = Ci->NDLEAF;
+  int nj = Cj->NDLEAF;
+  int i,j;
+#pragma loop norecurrence
+  for(i=0;i<ni;i++){
+    for(j=0;j<nj;j++){
+      real dist_x = cbi[i][2] - cbj[j][2] - xp[0];
+      real dist_y = cbi[i][3] - cbj[j][3] - xp[1];
+      real dist_z = cbi[i][4] - cbj[j][4] - xp[2];
+      real R2 = EPS2+dist_x*dist_x+dist_y*dist_y+dist_z*dist_z;
+      real invR = 1.0/sqrt(R2);
+      if( R2 == 0 ) invR = 0;
+      real invR3 = cbj[j][5] * invR * invR * invR;
+      cbi[i][6] += cbj[j][5] * invR;
+      cbi[i][7] -= dist_x * invR3;
+      cbi[i][8] -= dist_y * invR3;
+      cbi[i][9] -= dist_z * invR3;
+    }
+  }
+#endif
 }
 
 template<>

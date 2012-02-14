@@ -44,7 +44,7 @@ THE SOFTWARE.
 #endif
 
 typedef unsigned           bigint;                              //!< Big integer type
-typedef float              real;                                //!< Real number type on CPU
+typedef double             real;                                //!< Real number type on CPU
 typedef float              gpureal;                             //!< Real number type on GPU
 typedef std::complex<real> complex;                             //!< Complex number type
 typedef vec<3,real>        vect;                                //!< 3-D vector type
