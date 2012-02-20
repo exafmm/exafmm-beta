@@ -111,7 +111,9 @@ public:
     }
   }
 
+#if QUARK
   inline void interact(C_iter Ci, C_iter Cj, Quark *quark, bool mutual=true);
+#endif
 
 protected:
   void setRootCell(Cells &cells) {
@@ -199,7 +201,9 @@ protected:
 
   void traverse(bool) {
     PairQueue pairQueue;
+#if QUARK
     Quark *quark = QUARK_New(4);
+#endif
     for( C_iter Cj=Cj0+ROOT->CHILD; Cj!=Cj0+ROOT->CHILD+ROOT->NCHILD; ++Cj ) {
       Pair pair(ROOT,Cj);
       pairQueue.push(pair);
@@ -218,6 +222,7 @@ protected:
           interact(Cij.first,Cj,pairQueue,false);
         }
       }
+#if QUARK
       if( pairQueue.size() > 100 ) {
         while( !pairQueue.empty() ) {
           Cij = pairQueue.front();
@@ -225,9 +230,12 @@ protected:
           interact(Cij.first,Cij.second,quark,false);
         }
       }
+#endif
     }
+#if QUARK
     QUARK_Delete(quark);
     writeTrace();
+#endif
   }
 
 public:
@@ -265,6 +273,7 @@ public:
 
 };
 
+#if QUARK
 inline void interactQuark(Quark *quark) {
   Evaluator *E;
   C_iter CI, CJ, Ci0, Cj0;
@@ -318,5 +327,6 @@ void Evaluator::interact(C_iter Ci, C_iter Cj, Quark *quark, bool mutual) {
                       0);
   }
 }
+#endif
 #undef splitFirst
 #endif
