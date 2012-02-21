@@ -17,11 +17,9 @@ EXPAND  = Cartesian
 #EXPAND  = Spherical
 
 ### GCC compiler
-CXX     = mpicxx -ggdb3 -Wall -Wextra -Winit-self -Wshadow -O3 -fPIC -fopenmp\
-	-ffast-math -funroll-loops -fforce-addr -rdynamic -D_FILE_OFFSET_BITS=64\
-	-I../include
+CXX     = mpicxx -ggdb3 -Wall -Wextra -O3 -fopenmp -ffast-math -funroll-loops -fforce-addr -msse3 -I../include
 ### Intel compiler
-# CXX	= mpicxx -O2 -fPIC -openmp -I../include
+#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -ansi-alias -I../include
 
 ### K computer
 # CXX	= mpiFCCpx -Kopenmp,fast,ocl,preex,array_private -Ksimd=2,NOFLTLD,mfunc=3,optmsg=2 -Nsrc,sta -I../include -DNDEBUG
