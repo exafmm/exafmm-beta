@@ -46,6 +46,3 @@ ewald: ewald.cxx $(MR3)
 	$(CXX) $? libcoulombVdW.a $(LFLAGS)
 	./a.out 0 12
 	./a.out 1 12
-
-cleanlib:
-	rm -f *.a *.so
