@@ -296,13 +296,13 @@ template<>
 void Kernel<Laplace>::P2M() {
   cudaThreadSynchronize();
   startTimer("P2M GPUkernel");
-  int numBlocks = keysHost.size();\
-  if( numBlocks != 0 ) {\
-    LaplaceP2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
-  }\
-  CUT_CHECK_ERROR("Kernel execution failed");\
-  cudaThreadSynchronize();\
-  stopTimer("P2M GPUkernel");\
+  int numBlocks = keysHost.size();
+  if( numBlocks != 0 ) {
+    LaplaceP2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  }
+  CUT_CHECK_ERROR("Kernel execution failed");
+  cudaThreadSynchronize();
+  stopTimer("P2M GPUkernel");
 }
 
 __device__ void LaplaceM2M_core(gpureal *target, gpureal beta, gpureal *factShrd, gpureal *YnmShrd, gpureal *sourceShrd) {
@@ -390,13 +390,13 @@ template<>
 void Kernel<Laplace>::M2M() {
   cudaThreadSynchronize();
   startTimer("M2M GPUkernel");
-  int numBlocks = keysHost.size();\
-  if( numBlocks != 0 ) {\
-    LaplaceM2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
-  }\
-  CUT_CHECK_ERROR("Kernel execution failed");\
-  cudaThreadSynchronize();\
-  stopTimer("M2M GPUkernel");\
+  int numBlocks = keysHost.size();
+  if( numBlocks != 0 ) {
+    LaplaceM2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  }
+  CUT_CHECK_ERROR("Kernel execution failed");
+  cudaThreadSynchronize();
+  stopTimer("M2M GPUkernel");
 }
 
 __device__ void LaplaceM2L_core(gpureal *target, gpureal  beta, gpureal *factShrd, gpureal *YnmShrd, gpureal *sourceShrd) {
@@ -493,13 +493,13 @@ template<>
 void Kernel<Laplace>::M2L() {
   cudaThreadSynchronize();
   startTimer("M2L GPUkernel");
-  int numBlocks = keysHost.size();\
-  if( numBlocks != 0 ) {\
-    LaplaceM2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
-  }\
-  CUT_CHECK_ERROR("Kernel execution failed");\
-  cudaThreadSynchronize();\
-  stopTimer("M2L GPUkernel");\
+  int numBlocks = keysHost.size();
+  if( numBlocks != 0 ) {
+    LaplaceM2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  }
+  CUT_CHECK_ERROR("Kernel execution failed");
+  cudaThreadSynchronize();
+  stopTimer("M2L GPUkernel");
 }
 
 __device__ void LaplaceM2P_core(gpureal *target, gpureal r, gpureal theta, gpureal phi, gpureal *factShrd, gpureal *sourceShrd) {
@@ -613,13 +613,13 @@ template<>
 void Kernel<Laplace>::M2P() {
   cudaThreadSynchronize();
   startTimer("M2P GPUkernel");
-  int numBlocks = keysHost.size();\
-  if( numBlocks != 0 ) {\
-    LaplaceM2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
-  }\
-  CUT_CHECK_ERROR("Kernel execution failed");\
-  cudaThreadSynchronize();\
-  stopTimer("M2P GPUkernel");\
+  int numBlocks = keysHost.size();
+  if( numBlocks != 0 ) {
+    LaplaceM2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  }
+  CUT_CHECK_ERROR("Kernel execution failed");
+  cudaThreadSynchronize();
+  stopTimer("M2P GPUkernel");
 }
 
 __device__ inline void LaplaceP2P_core(gpureal *target, gpureal *targetX, gpureal *sourceShrd, float3 d, int i) {
@@ -719,13 +719,13 @@ template<>
 void Kernel<Laplace>::P2P() {
   cudaThreadSynchronize();
   startTimer("P2P GPUkernel");
-  int numBlocks = keysHost.size();\
-  if( numBlocks != 0 ) {\
-    LaplaceP2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
-  }\
-  CUT_CHECK_ERROR("Kernel execution failed");\
-  cudaThreadSynchronize();\
-  stopTimer("P2P GPUkernel");\
+  int numBlocks = keysHost.size();
+  if( numBlocks != 0 ) {
+    LaplaceP2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  }
+  CUT_CHECK_ERROR("Kernel execution failed");
+  cudaThreadSynchronize();
+  stopTimer("P2P GPUkernel");
 }
 
 __device__ void LaplaceL2L_core(gpureal *target, gpureal beta, gpureal *factShrd, gpureal *YnmShrd, gpureal *sourceShrd) {
@@ -810,13 +810,13 @@ template<>
 void Kernel<Laplace>::L2L() {
   cudaThreadSynchronize();
   startTimer("L2L GPUkernel");
-  int numBlocks = keysHost.size();\
-  if( numBlocks != 0 ) {\
-    LaplaceL2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
-  }\
-  CUT_CHECK_ERROR("Kernel execution failed");\
-  cudaThreadSynchronize();\
-  stopTimer("L2L GPUkernel");\
+  int numBlocks = keysHost.size();
+  if( numBlocks != 0 ) {
+    LaplaceL2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  }
+  CUT_CHECK_ERROR("Kernel execution failed");
+  cudaThreadSynchronize();
+  stopTimer("L2L GPUkernel");
 }
 
 __device__ void LaplaceL2P_core(gpureal *target, gpureal r, gpureal theta, gpureal phi, gpureal *factShrd, gpureal *sourceShrd) {
@@ -916,13 +916,13 @@ template<>
 void Kernel<Laplace>::L2P() {
   cudaThreadSynchronize();
   startTimer("L2P GPUkernel");
-  int numBlocks = keysHost.size();\
-  if( numBlocks != 0 ) {\
-    LaplaceL2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
-  }\
-  CUT_CHECK_ERROR("Kernel execution failed");\
-  cudaThreadSynchronize();\
-  stopTimer("L2P GPUkernel");\
+  int numBlocks = keysHost.size();
+  if( numBlocks != 0 ) {
+    LaplaceL2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  }
+  CUT_CHECK_ERROR("Kernel execution failed");
+  cudaThreadSynchronize();
+  stopTimer("L2P GPUkernel");
 }
 
 #include "../kernel/gpuEwaldLaplace.cu"

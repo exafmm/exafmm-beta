@@ -203,13 +203,13 @@ template<>
 void Kernel<VanDerWaals>::P2P() {
   cudaThreadSynchronize();
   startTimer("P2P GPUkernel");
-  int numBlocks = keysHost.size();\
-  if( numBlocks != 0 ) {\
-    VanDerWaalsP2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
-  }\
-  CUT_CHECK_ERROR("Kernel execution failed");\
-  cudaThreadSynchronize();\
-  stopTimer("P2P GPUkernel");\
+  int numBlocks = keysHost.size();
+  if( numBlocks != 0 ) {
+    VanDerWaalsP2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  }
+  CUT_CHECK_ERROR("Kernel execution failed");
+  cudaThreadSynchronize();
+  stopTimer("P2P GPUkernel");
 }
 
 template<>
