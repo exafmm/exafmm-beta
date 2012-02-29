@@ -62,8 +62,8 @@ protected:
   real *Anm;                                                    //!< \f$ (-1)^n / \sqrt{ \frac{(n + m)!}{(n - m)!} } \f$
   complex *Cnm;                                                 //!< M2L translation matrix \f$ C_{jn}^{km} \f$
 public:
-  vect                 X0;                                      //!< Center of root cell
-  real                 R0;                                      //!< Radius of root cell
+  vect X0;                                                      //!< Center of root cell
+  real R0;                                                      //!< Radius of root cell
   real NP2P;                                                    //!< Number of P2P kernel calls
   real NM2P;                                                    //!< Number of M2P kernel calls
   real NM2L;                                                    //!< Number of M2L kernel calls
@@ -143,9 +143,9 @@ protected:
 
 public:
 //! Constructor
-  KernelBase() : X0(0), R0(0), keysDevcSize(0), rangeDevcSize(0),
+  KernelBase() : keysDevcSize(0), rangeDevcSize(0),
                  sourceDevcSize(0), targetDevcSize(0),
-                 NP2P(0), NM2P(0), NM2L(0) {}
+                 X0(0), R0(0), NP2P(0), NM2P(0), NM2L(0) {}
 //! Destructor
   ~KernelBase() {}
 
