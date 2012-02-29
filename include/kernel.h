@@ -30,8 +30,6 @@ const int  P4 = P2 * P2;                                        //!< P^4
 //! Unified CPU/GPU kernel class
 class KernelBase : public Sort {
 protected:
-  vect                 X0;                                      //!< Center of root cell
-  real                 R0;                                      //!< Radius of root cell
   C_iter               Ci0;                                     //!< icells.begin()
   C_iter               Cj0;                                     //!< jcells.begin()
 
@@ -64,6 +62,8 @@ protected:
   real *Anm;                                                    //!< \f$ (-1)^n / \sqrt{ \frac{(n + m)!}{(n - m)!} } \f$
   complex *Cnm;                                                 //!< M2L translation matrix \f$ C_{jn}^{km} \f$
 public:
+  vect                 X0;                                      //!< Center of root cell
+  real                 R0;                                      //!< Radius of root cell
   real NP2P;                                                    //!< Number of P2P kernel calls
   real NM2P;                                                    //!< Number of M2P kernel calls
   real NM2L;                                                    //!< Number of M2L kernel calls

@@ -76,6 +76,26 @@ public:
     for_i a[i] /= b[i];
     return *this;
   }
+  vec operator+(const T b) const {                                 // Scalar arithmetic (add)
+    vec c;
+    for_i c[i] = a[i] + b;
+    return c;
+  }
+  vec operator-(const T b) const {                                 // Scalar arithmetic (subtract)
+    vec c;
+    for_i c[i] = a[i] - b;
+    return c;
+  }
+  vec operator*(const T b) const {                                 // Scalar arithmetic (multiply)
+    vec c;
+    for_i c[i] = a[i] * b;
+    return c;
+  }
+  vec operator/(const T b) const {                                 // Scalar arithmetic (divide)
+    vec c;
+    for_i c[i] = a[i] / b;
+    return c;
+  }
   vec operator+(const vec &b) const {                              // Vector arithmetic (add)
     vec c;
     for_i c[i] = a[i] + b[i];

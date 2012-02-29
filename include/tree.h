@@ -145,6 +145,7 @@ protected:
     }                                                           // End loop over dimensions
   }
 
+public:
 //! Group bodies into twig cells
   void bodies2twigs(Bodies &bodies, Cells &twigs) {
     startTimer("Bodies2twigs ");                                // Start timer
@@ -212,7 +213,6 @@ protected:
     evalM2M(cells,cells);                                       // Evaluate all M2M kernels
   }
 
-public:
 //! Downward phase (M2L,M2P,P2P,L2L,L2P evaluation)
   void downward(Cells &cells, Cells &jcells, bool periodic=true) {
 #if HYBRID
