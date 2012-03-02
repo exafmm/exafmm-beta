@@ -41,14 +41,14 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib
 ### QUARK flags
 #LFLAGS	+= -DQUARK -lquark
 
+### VTK flags
+CXX     += -I$(VTK_INCLUDE_PATH)
+VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+
 ifeq ($(DEVICE),gpu)
 ### CUDA flags
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
-
-### VTK flags
-#CXX     += -I$(VTK_INCLUDE_PATH)
-#VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
 OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
 	../kernel/CPUP2P.o

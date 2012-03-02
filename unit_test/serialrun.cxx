@@ -66,6 +66,7 @@ int main() {
     jbodies = bodies;
   }
 
+#ifndef VTK
   FMM.startTimer("Direct sum   ");
   bodies.resize(numTarget);
   FMM.buffer = bodies;
@@ -79,7 +80,7 @@ int main() {
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   FMM.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2);
   FMM.printError(diff1,norm1,diff2,norm2);
-#ifdef VTK
+#else
   int Ncell = 0;
   vtkPlot vtk;
   vtk.setDomain(FMM.getR0(),FMM.getX0());

@@ -24,15 +24,15 @@ ewald_fmm: ewald_fmm.cxx $(OBJECT)
 	$(SERIALRUN)
 
 serialrun: serialrun.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS)
+	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(SERIALRUN)
 
 unsort: unsort.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS) -DTOPDOWN
+	$(CXX) $? $(LFLAGS) $(VFLAGS) -DTOPDOWN
 	$(SERIALRUN)
 
 ijserialrun: ijserialrun.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS)
+	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(SERIALRUN)
 
 Nserial: Nserial.cxx $(OBJECT)

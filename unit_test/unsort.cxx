@@ -78,9 +78,17 @@ int main() {
   FMM.writeTime();
   FMM.writeTime();
 
+#ifndef VTK
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   bodies.resize(numTarget);
   FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   FMM.printError(diff1,norm1,diff2,norm2);
+#else
+  int Ncell = 0;
+  vtkPlot vtk;
+  vtk.setDomain(FMM.getR0(),FMM.getX0());
+  vtk.setGroupOfPoints(bodies,Ncell);
+  vtk.plot(Ncell);
+#endif
   FMM.finalize();
 }
