@@ -27,6 +27,8 @@ THE SOFTWARE.
 
 //! Custom MPI utilities
 class MyMPI {
+private:
+  int       EXTERNAL;                                           //!< Flag to indicate external MPI_Init/Finalize
 protected:
   const int WAIT;                                               //!< Waiting time between output of different ranks
   int       MPISIZES;                                           //!< Number of MPI processes for split communicator
@@ -36,9 +38,8 @@ public:
   MyMPI() : WAIT(100) {                                         // Constructor, initialize WAIT time
     int argc(0);                                                // Dummy argument count
     char **argv;                                                // Dummy argument value
-    int ExternalMPI;                                            // Flag for external MPI call
-    MPI_Initialized(&ExternalMPI);                              // Check if MPI_Init has been called
-    if(!ExternalMPI) MPI_Init(&argc,&argv);                     // Initialize MPI communicator
+    MPI_Initialized(&EXTERNAL);                                 // Check if MPI_Init has been called
+    if(!EXTERNAL) MPI_Init(&argc,&argv);                        // Initialize MPI communicator
     MPI_Comm_size(MPI_COMM_WORLD,&MPISIZE);                     // Get number of MPI processes
     MPI_Comm_rank(MPI_COMM_WORLD,&MPIRANK);                     // Get rank of current MPI process
     DEVICE = MPIRANK % GPUS;                                    // Get GPU device ID from MPI rank
@@ -46,9 +47,7 @@ public:
 
 //! Destructor
   ~MyMPI() {
-    int ExternalMPI;                                            // Flag for external MPI call
-    MPI_Initialized(&ExternalMPI);                              // Check if MPI_Init has been called
-    if(!ExternalMPI) MPI_Finalize();                            // Finalize MPI communicator
+    if(!EXTERNAL) MPI_Finalize();                               // Finalize MPI communicator
   }
 
 //! If n is power of two return true
