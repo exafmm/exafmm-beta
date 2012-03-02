@@ -463,10 +463,10 @@ public:
   void evalEwaldReal(Cells &cells);                             //!< Evaluate queued Ewald real kernels
 };
 
-#if cpu
-#include "../kernel/cpuEvaluator.cxx"
-#elif gpu
-#include "../kernel/gpuEvaluator.cxx"
+#if CPU
+#include "../kernel/CPUEvaluator.cxx"
+#elif GPU
+#include "../kernel/GPUEvaluator.cxx"
 #endif
 
 #undef splitFirst

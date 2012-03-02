@@ -1,6 +1,6 @@
 include ../Makefile.include
 
-ifeq ($(DEVICE),gpu)
+ifeq ($(DEVICE),GPU)
 MR3 = mr3.o
 else
 MR3 = mr3_host.o

@@ -6,7 +6,7 @@
 
 #include "mr3.h"
 
-#if gpu
+#if GPU
 __device__ __constant__ VG_MATRIX      d_matrix[ATYPE2];
 
 __device__ __inline__ 

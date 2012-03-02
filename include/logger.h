@@ -96,6 +96,28 @@ public:
     }                                                           // End loop over all events
   }
 
+//! Start PAPI event
+  inline void startPAPI() {
+#if PAPI
+    int events[3] = { PAPI_L2_DCM, PAPI_L2_DCA, PAPI_TLB_DM };  // PAPI event type
+    PAPI_library_init(PAPI_VER_CURRENT);                        // PAPI initialize
+    PAPI_create_eventset(&PAPIEVENT);                           // PAPI create event set
+    PAPI_add_events(PAPIEVENT, events, 3);                      // PAPI add events
+    PAPI_start(PAPIEVENT);                                      // PAPI start
+#endif
+  }
+
+//! Stop PAPI event
+  inline void stopPAPI() {
+#if PAPI
+    long long values[3] = {0,0,0};                              // Values for each event
+    PAPI_stop(PAPIEVENT,values);                                // PAPI stop
+    std::cout << "L2 Miss: " << values[0]                       // Print L2 Misses
+              << " L2 Access: " << values[1]                    // Print L2 Access
+              << " TLB Miss: " << values[2] << std::endl;       // Print TLB Misses
+#endif
+  }
+
 //! Start tracer for given event
   inline void startTracer(ThreadTrace &beginTrace) {
     pthread_mutex_lock(&mutex);                                 // Lock shared variable access

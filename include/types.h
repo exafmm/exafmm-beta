@@ -39,6 +39,9 @@ THE SOFTWARE.
 #include <utility>
 #include <vector>
 #include "vec.h"                                                //!< My vector type with operator overloading
+#if PAPI
+#include <papi.h>
+#endif
 #if QUARK
 #include "quark.h"
 #endif
@@ -51,12 +54,15 @@ typedef vec<3,real>        vect;                                //!< 3-D vector 
 
 
 #ifndef KERNEL
-int MPIRANK = 0;                                                //!< MPI comm rank
-int MPISIZE = 1;                                                //!< MPI comm size
-int DEVICE  = 0;                                                //!< GPU device ID
-int IMAGES  = 0;                                                //!< Number of periodic image sublevels
-real THETA  = .5;                                               //!< Multipole acceptance criteria
+int MPIRANK    = 0;                                             //!< MPI comm rank
+int MPISIZE    = 1;                                             //!< MPI comm size
+int DEVICE     = 0;                                             //!< GPU device ID
+int IMAGES     = 0;                                             //!< Number of periodic image sublevels
+real THETA     = .5;                                            //!< Multipole acceptance criteria
 vect Xperiodic = 0;                                             //!< Coordinate offset of periodic image
+#if PAPI
+int PAPIEVENT  = PAPI_NULL;                                     //!< PAPI event handle
+#endif
 #else
 extern int MPIRANK;                                             //!< MPI comm rank
 extern int MPISIZE;                                             //!< MPI comm size
@@ -64,6 +70,9 @@ extern int DEVICE;                                              //!< GPU device 
 extern int IMAGES;                                              //!< Number of periodic image sublevels
 extern real THETA;                                              //!< Multipole acceptance criteria
 extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
+#if PAPI
+extern int PAPIEVENT;                                           //!< PAPI event handle
+#endif
 #endif
 
 const int  P        = 6;                                        //!< Order of expansions

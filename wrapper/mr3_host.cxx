@@ -4,7 +4,7 @@
 
 #include "mr3.h"
 
-#if cpu
+#if CPU
 void MR3calccoulomb_ij(int ni, double xi[], double qi[], double force[],
                        int nj, double xj[], double qj[],
                        double rscale, 

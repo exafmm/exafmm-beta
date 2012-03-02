@@ -239,7 +239,7 @@ protected:
   }
 
 public:
-  Evaluator() {}
+  Evaluator() : NP2P(0), NM2P(0), NM2L(0) {}
   ~Evaluator() {}
 
   void timeKernels(bool mutual=true) {

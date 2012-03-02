@@ -55,11 +55,13 @@ int main() {
 #endif
 #if BUILD
 #else
+  FMM.startPAPI();
 #if IneJ
   FMM.evaluate(cells,cells);
 #else
   FMM.evaluate(cells);
 #endif
+  FMM.stopPAPI();
   FMM.stopTimer("FMM          ",true);
   FMM.eraseTimer("FMM          ");
   FMM.writeTime();
