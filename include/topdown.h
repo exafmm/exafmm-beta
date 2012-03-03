@@ -113,11 +113,6 @@ private:
   }
 
 public:
-//! Constructor
-  TopDown() : TreeStructure<equation>() {}
-//! Destructor
-  ~TopDown() {}
-
 //! Grow tree from root
   void grow(Bodies &bodies) {
     startTimer("Grow tree    ");                                // Start timer

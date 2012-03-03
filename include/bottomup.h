@@ -52,11 +52,6 @@ protected:
   }
 
 public:
-//! Constructor
-  BottomUp() : TopDown<equation>() {}
-//! Destructor
-  ~BottomUp() {}
-
 //! Set cell index of all bodies
   void setIndex(Bodies &bodies, int level=-1, int begin=0, int end=0, bool update=false) {
     startTimer("Set index    ");                                // Start timer

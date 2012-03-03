@@ -558,11 +558,6 @@ private:
   }
 
 public:
-//! Constructor
-  ParallelFMM() : Partition<equation>() {}
-//! Destructor
-  ~ParallelFMM() {}
-
 //! Set bodies to communicate
   void setCommBodies(Cells &cells) {
     startTimer("Gather bounds");                                // Start timer
