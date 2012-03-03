@@ -20,6 +20,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+#include <boost/lexical_cast.hpp>
+
+
 template<Equation equation>
 void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Evaluate all P2P kernels
   Xperiodic = 0;                                                // Set periodic coordinate offset
@@ -48,27 +51,40 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate all 
 
 template<Equation equation>
 void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all M2M kernels
-  startTimer("evalM2M      ");                                  // Start timer
   Cj0 = jcells.begin();                                         // Set begin iterator
   for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over target cells bottomup
+    int level = getLevel(Ci->ICELL);
+    std::string level_s = boost::lexical_cast<std::string>(level);
+    std::string str;
+    str.append("evalM2M: "); 
+    str.append(level_s);
+    str.append("   ");                                           
+    startTimer(str);                                            // Start timer
     for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {// Loop over child cells
       M2M(Ci,Cj);                                               //   Perform M2M kernel
     }                                                           //  End loop over child cells
+     stopTimer(str);                                            // Stop timer
   }                                                             // End loop target over cells
-  stopTimer("evalM2M      ");                                   // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalM2L(C_iter Ci, C_iter Cj) {       // Evaluate single M2L kernel
-  M2L(Ci,Cj);                                                   // Perform M2L kernel
+  listM2L[Ci-Ci0].push_back(Cj);                                // Push source cell into M2L interaction list
+  flagM2L[Ci-Ci0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
   NM2L++;                                                       // Count M2L kernel execution
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalM2L(Cells &cells) {               // Evaluate queued M2L kernels
-  startTimer("evalM2L      ");                                  // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
   for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over cells
+    int level = getLevel(Ci->ICELL);
+    std::string level_s = boost::lexical_cast<std::string>(level);
+    std::string str;
+    str.append("evalM2L: ");
+    str.append(level_s);
+    str.append("   "); 
+    startTimer(str);                                            // Start timer
     while( !listM2L[Ci-Ci0].empty() ) {                         //  While M2L interaction list is not empty
       C_iter Cj = listM2L[Ci-Ci0].back();                       //   Set source cell iterator
       Iperiodic = flagM2L[Ci-Ci0][Cj];                          //   Set periodic image flag
@@ -87,15 +103,16 @@ void Evaluator<equation>::evalM2L(Cells &cells) {               // Evaluate queu
       }                                                         //   End loop over z periodic direction
       listM2L[Ci-Ci0].pop_back();                               //   Pop last element from M2L interaction list
     }                                                           //  End while for M2L interaction list
+    stopTimer(str);                                             // Stop timer
   }                                                             // End loop over cells topdown
   listM2L.clear();                                              // Clear interaction lists
   flagM2L.clear();                                              // Clear periodic image flags
-  stopTimer("evalM2L      ");                                   // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalM2P(C_iter Ci, C_iter Cj) {       // Evaluate single M2P kernel
-  M2P(Ci,Cj);                                                   // Perform M2P kernel
+  listM2P[Ci-Ci0].push_back(Cj);                                // Push source cell into M2P interaction list
+  flagM2P[Ci-Ci0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
   NM2P++;                                                       // Count M2P kernel execution
 }
 
@@ -130,7 +147,8 @@ void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queu
 
 template<Equation equation>
 void Evaluator<equation>::evalP2P(C_iter Ci, C_iter Cj) {       // Evaluate single P2P kernel
-  P2P(Ci,Cj);                                                   // Perform P2P kernel
+  listP2P[Ci-Ci0].push_back(Cj);                                // Push source cell into P2P interaction list
+  flagP2P[Ci-Ci0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
   NP2P++;                                                       // Count P2P kernel execution
 }
 
@@ -165,13 +183,19 @@ void Evaluator<equation>::evalP2P(Cells &cells) {               // Evaluate queu
 
 template<Equation equation>
 void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate all L2L kernels
-  startTimer("evalL2L      ");                                  // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
   for( C_iter Ci=cells.end()-2; Ci!=cells.begin()-1; --Ci ) {   // Loop over cells topdown (except root cell)
+    int level = getLevel(Ci->ICELL);
+    std::string level_s = boost::lexical_cast<std::string>(level);
+    std::string str;
+    str.append("evalL2L: ");
+    str.append(level_s);
+    str.append("   "); 
+    startTimer(str);                                            // Start timer    
     C_iter Cj = Ci0 + Ci->PARENT;                               //  Set source cell iterator
     L2L(Ci,Cj);                                                 //  Perform L2L kernel
+    stopTimer(str);                                             // Stop timer
   }                                                             // End loop over cells topdown
-  stopTimer("evalL2L      ");                                   // Stop timer
 }
 
 template<Equation equation>

@@ -42,8 +42,8 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib
 #LFLAGS	+= -DQUARK -lquark
 
 ### VTK flags
-CXX     += -I$(VTK_INCLUDE_PATH)
-VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+#CXX     += -I$(VTK_INCLUDE_PATH)
+#VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
 ifeq ($(DEVICE),gpu)
 ### CUDA flags
