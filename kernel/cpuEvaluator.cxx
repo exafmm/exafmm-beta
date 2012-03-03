@@ -20,9 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-#include <boost/lexical_cast.hpp>
-
-
 template<Equation equation>
 void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Evaluate all P2P kernels
   Xperiodic = 0;                                                // Set periodic coordinate offset
@@ -53,17 +50,14 @@ template<Equation equation>
 void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all M2M kernels
   Cj0 = jcells.begin();                                         // Set begin iterator
   for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over target cells bottomup
-    int level = getLevel(Ci->ICELL);
-    std::string level_s = boost::lexical_cast<std::string>(level);
-    std::string str;
-    str.append("evalM2M: "); 
-    str.append(level_s);
-    str.append("   ");                                           
-    startTimer(str);                                            // Start timer
+    int level = getLevel(Ci->ICELL);                            // Get current level
+    std::stringstream eventName;                                // Declare event name
+    eventName << "evalM2M: " << level << "   ";                 // Set event name with level
+    startTimer(eventName.str());                                // Start timer
     for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {// Loop over child cells
       M2M(Ci,Cj);                                               //   Perform M2M kernel
     }                                                           //  End loop over child cells
-     stopTimer(str);                                            // Stop timer
+    stopTimer(eventName.str());                                 // Stop timer
   }                                                             // End loop target over cells
 }
 
@@ -78,13 +72,10 @@ template<Equation equation>
 void Evaluator<equation>::evalM2L(Cells &cells) {               // Evaluate queued M2L kernels
   Ci0 = cells.begin();                                          // Set begin iterator
   for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over cells
-    int level = getLevel(Ci->ICELL);
-    std::string level_s = boost::lexical_cast<std::string>(level);
-    std::string str;
-    str.append("evalM2L: ");
-    str.append(level_s);
-    str.append("   "); 
-    startTimer(str);                                            // Start timer
+    int level = getLevel(Ci->ICELL);                            // Get current level
+    std::stringstream eventName;                                // Declare event name
+    eventName << "evalM2L: " << level << "   ";                 // Set event name with level
+    startTimer(eventName.str());                                // Start timer
     while( !listM2L[Ci-Ci0].empty() ) {                         //  While M2L interaction list is not empty
       C_iter Cj = listM2L[Ci-Ci0].back();                       //   Set source cell iterator
       Iperiodic = flagM2L[Ci-Ci0][Cj];                          //   Set periodic image flag
@@ -103,7 +94,7 @@ void Evaluator<equation>::evalM2L(Cells &cells) {               // Evaluate queu
       }                                                         //   End loop over z periodic direction
       listM2L[Ci-Ci0].pop_back();                               //   Pop last element from M2L interaction list
     }                                                           //  End while for M2L interaction list
-    stopTimer(str);                                             // Stop timer
+    stopTimer(eventName.str());                                 // Stop timer
   }                                                             // End loop over cells topdown
   listM2L.clear();                                              // Clear interaction lists
   flagM2L.clear();                                              // Clear periodic image flags
@@ -118,9 +109,12 @@ void Evaluator<equation>::evalM2P(C_iter Ci, C_iter Cj) {       // Evaluate sing
 
 template<Equation equation>
 void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queued M2P kernels
-  startTimer("evalM2P      ");                                  // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
   for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over cells
+    int level = getLevel(Ci->ICELL);                            // Get current level
+    std::stringstream eventName;                                // Declare event name
+    eventName << "evalM2P: " << level << "   ";                 // Set event name with level
+    startTimer(eventName.str());                                // Start timer
     while( !listM2P[Ci-Ci0].empty() ) {                         //  While M2P interaction list is not empty
       C_iter Cj = listM2P[Ci-Ci0].back();                       //   Set source cell iterator
       Iperiodic = flagM2P[Ci-Ci0][Cj];                          //   Set periodic image flag
@@ -139,10 +133,10 @@ void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queu
       }                                                         //   End loop over z periodic direction
       listM2P[Ci-Ci0].pop_back();                               //   Pop last element from M2P interaction list
     }                                                           //  End while for M2P interaction list
+    stopTimer(eventName.str());                                 // Stop timer
   }                                                             // End loop over cells topdown
   listM2P.clear();                                              // Clear interaction lists
   flagM2P.clear();                                              // Clear periodic image flags
-  stopTimer("evalM2P      ");                                   // Stop timer
 }
 
 template<Equation equation>
@@ -185,16 +179,13 @@ template<Equation equation>
 void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate all L2L kernels
   Ci0 = cells.begin();                                          // Set begin iterator
   for( C_iter Ci=cells.end()-2; Ci!=cells.begin()-1; --Ci ) {   // Loop over cells topdown (except root cell)
-    int level = getLevel(Ci->ICELL);
-    std::string level_s = boost::lexical_cast<std::string>(level);
-    std::string str;
-    str.append("evalL2L: ");
-    str.append(level_s);
-    str.append("   "); 
-    startTimer(str);                                            // Start timer    
+    int level = getLevel(Ci->ICELL);                            // Get current level
+    std::stringstream eventName;                                // Declare event name
+    eventName << "evalL2L: " << level << "   ";                 // Set event name with level
+    startTimer(eventName.str());                                // Start timer
     C_iter Cj = Ci0 + Ci->PARENT;                               //  Set source cell iterator
     L2L(Ci,Cj);                                                 //  Perform L2L kernel
-    stopTimer(str);                                             // Stop timer
+    stopTimer(eventName.str());                                 // Stop timer
   }                                                             // End loop over cells topdown
 }
 
