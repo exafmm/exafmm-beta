@@ -25,70 +25,69 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  const int numBodies = 10000;
-  const int numTarget = 100;
-  IMAGES = 0;
-  THETA = 1 / sqrtf(4);
-  Bodies bodies(numTarget);
-  Bodies jbodies(numBodies);
-  Bodies jbodies2;
-  Cells cells, jcells;
-  SerialFMM<Laplace> FMM;
-  FMM.initialize();
-  FMM.printNow = true;
+  const int numBodies = 10000;                                  // Number of bodies
+  const int numTarget = 100;                                    // Number of target points to be used for error eval
+  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
+  Bodies bodies(numTarget);                                     // Define vector of target bodies
+  Bodies jbodies(numBodies);                                    // Define vector of source bodies
+  Bodies jbodies2;                                              // Define another vector of source bodies
+  Cells cells, jcells;                                          // Define vector of cells
+  SerialFMM<Laplace> FMM;                                       // Instantiate SerialFMM class
+  FMM.initialize();                                             // Initialize FMM
+  FMM.printNow = true;                                          // Print timer
 
-  FMM.startTimer("Set bodies   ");
-  FMM.random(bodies,1,1);
-  FMM.random(jbodies,2,1);
-  FMM.stopTimer("Set bodies   ",FMM.printNow);
-  FMM.eraseTimer("Set bodies   ");
+  FMM.startTimer("Set bodies");                                 // Start timer
+  FMM.cube(bodies,1,1);                                         // Initialize target bodies in a cube
+  FMM.cube(jbodies,2,1);                                        // Initialize source bodies in a cube
+  FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
+  FMM.eraseTimer("Set bodies");                                 // Erase entry from timer to avoid timer overlap
 
-  FMM.startTimer("Set domain   ");
-  FMM.setDomain(bodies,0,M_PI);
-  FMM.stopTimer("Set domain   ",FMM.printNow);
-  FMM.eraseTimer("Set domain   ");
+  FMM.startTimer("Set domain");                                 // Start timer
+  FMM.setDomain(bodies,0,M_PI);                                 // Set domain size of FMM
+  FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
+  FMM.eraseTimer("Set domain");                                 // Erase entry from timer to avoid timer overlap
 
 #ifdef TOPDOWN
-  FMM.topdown(bodies,cells);
-  FMM.topdown(jbodies,jcells);
+  FMM.topdown(bodies,cells);                                    // Tree construction (top down) & upward sweep
+  FMM.topdown(jbodies,jcells);                                  // Tree construction (top down) & upward sweep
 #else
-  FMM.bottomup(bodies,cells);
-  FMM.bottomup(jbodies,jcells);
+  FMM.bottomup(bodies,cells);                                   // Tree construction (bottom up) & upward sweep
+  FMM.bottomup(jbodies,jcells);                                 // Tree construction (bottom up) & upward sweep
 #endif
-  FMM.startTimer("Downward     ");
-  FMM.downward(cells,jcells);
-  FMM.stopTimer("Downward     ",FMM.printNow);
-  FMM.eraseTimer("Downward     ");
-
-  if( IMAGES != 0 ) {
-    FMM.startTimer("Set periodic ");
-    jbodies2 = FMM.periodicBodies(jbodies);
-    FMM.stopTimer("Set periodic ",FMM.printNow);
-    FMM.eraseTimer("Set periodic ");
-  } else {
-    jbodies2 = jbodies;
-  }
+  FMM.startTimer("Downward");                                   // Start timer
+  FMM.downward(cells,jcells);                                   // Downward sweep
+  FMM.stopTimer("Downward",FMM.printNow);                       // Stop timer
+  FMM.eraseTimer("Downward");                                   // Erase entry from timer to avoid timer overlap
 
 #ifndef VTK
-  FMM.startTimer("Direct sum   ");
-  bodies.resize(numTarget);
-  FMM.buffer = bodies;
-  FMM.initTarget(FMM.buffer);
-  FMM.evalP2P(FMM.buffer,jbodies2);
-  FMM.stopTimer("Direct sum   ",FMM.printNow);
-  FMM.eraseTimer("Direct sum   ");
-  FMM.writeTime();
-  FMM.writeTime();
+  if( IMAGES != 0 ) {                                           // For periodic boundary condition
+    FMM.startTimer("Set periodic");                             //  Start timer
+    jbodies2 = FMM.periodicBodies(jbodies);                     //  Copy source bodies for all periodic images
+    FMM.stopTimer("Set periodic",FMM.printNow);                 //  Stop timer
+    FMM.eraseTimer("Set periodic");                             //  Erase entry from timer to avoid timer overlap
+  } else {                                                      // For free field boundary condition
+    jbodies2 = jbodies;                                         //  Copy source bodies
+  }                                                             // End if for periodic boundary condition
+  FMM.startTimer("Direct sum");                                 // Start timer
+  bodies.resize(numTarget);                                     // Shrink target bodies vector to save time
+  FMM.buffer = bodies;                                          // Define new bodies vector for direct sum
+  FMM.initTarget(FMM.buffer);                                   // Reinitialize target values
+  FMM.evalP2P(FMM.buffer,jbodies2);                             // Direct summation between buffer and jbodies2
+  FMM.stopTimer("Direct sum",FMM.printNow);                     // Stop timer
+  FMM.eraseTimer("Direct sum");                                 // Erase entry from timer to avoid timer overlap
+  FMM.writeTime();                                              // Write timings of all events to file
+  FMM.writeTime();                                              // Write again to have at least two data sets
 
-  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  FMM.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2);
-  FMM.printError(diff1,norm1,diff2,norm2);
+  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
+  FMM.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2);     // Evaluate error on the reduced set of bodies
+  FMM.printError(diff1,norm1,diff2,norm2);                      // Print the L2 norm error
 #else
-  int Ncell = 0;
-  vtkPlot vtk;
-  vtk.setDomain(FMM.getR0(),FMM.getX0());
-  vtk.setGroupOfPoints(bodies,Ncell);
-  vtk.plot(Ncell);
+  int Ncell = 0;                                                // Initialize number of cells
+  vtkPlot vtk;                                                  // Instantiate vtkPlot class
+  vtk.setDomain(FMM.getR0(),FMM.getX0());                       // Set bounding box for VTK
+  vtk.setGroupOfPoints(bodies,Ncell);                           // Set group of points
+  vtk.plot(Ncell);                                              // plot using VTK
 #endif
-  FMM.finalize();
+  FMM.finalize();                                               // Finalize FMM
 }

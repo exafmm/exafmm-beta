@@ -187,7 +187,7 @@ public:
         R0 = std::max(xmax[d] - X0[d], R0);                     //  Calculate max distance from center
         R0 = std::max(X0[d] - xmin[d], R0);                     //  Calculate max distance from center
       }                                                         // End loop over each dimension
-      R0 += 1e-5;                                               // Add some leeway to root radius
+      R0 *= 1.000001;                                           // Add some leeway to root radius
     }                                                           // Endif for periodic boundary condition
   }
 

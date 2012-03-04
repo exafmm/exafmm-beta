@@ -72,9 +72,9 @@ public:
 
   void evaluate(Cells &cells) {
     setRootCell(cells);
-    startTimer("Traverse     ");
+    startTimer("Traverse");
     traverse();
-    stopTimer("Traverse     ",printNow);
+    stopTimer("Traverse",printNow);
     startTimer("Downward pass");
     if( TOPDOWN ) {
       TopDown::downwardPass(cells);
@@ -87,9 +87,9 @@ public:
 
   void evaluate(Cells &icells, Cells &jcells) {
     setRootCell(icells,jcells);
-    startTimer("Traverse     ");
+    startTimer("Traverse");
     traverse(false);
-    stopTimer("Traverse     ",printNow);
+    stopTimer("Traverse",printNow);
     startTimer("Downward pass");
     if( TOPDOWN ) {
       TopDown::downwardPass(icells);

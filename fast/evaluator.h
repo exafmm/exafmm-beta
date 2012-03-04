@@ -260,15 +260,15 @@ public:
     Cj->NDLEAF = 1000;
     Cj->LEAF = jbodies.begin();
     Cj->M = 0;
-    startTimer("P2P kernel   ");
+    startTimer("P2P kernel");
     P2P(Ci,Cj,mutual);
-    timeP2P = stopTimer("P2P kernel   ") / 10000;
-    startTimer("M2L kernel   ");
+    timeP2P = stopTimer("P2P kernel") / 10000;
+    startTimer("M2L kernel");
     for( int i=0; i!=1000; ++i ) M2L(Ci,Cj);
-    timeM2L = stopTimer("M2L kernel   ") / 1000;
-    startTimer("M2P kernel   ");
+    timeM2L = stopTimer("M2L kernel") / 1000;
+    startTimer("M2P kernel");
     for( int i=0; i!=100; ++i ) M2P(Ci,Cj,mutual);
-    timeM2P = stopTimer("M2P kernel   ") / 1000;
+    timeM2P = stopTimer("M2P kernel") / 1000;
   }
 
 };

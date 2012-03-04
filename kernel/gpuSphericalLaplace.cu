@@ -128,12 +128,12 @@ __device__ void evalLocal(gpureal *YnmShrd, gpureal rho,        // Evaluate sing
 
 template<>
 void Kernel<Laplace>::initialize() {
-  startTimer("Init GPU     ");                                  // Start timer
+  startTimer("Init GPU");                                       // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(DEVICE);                                        // Set GPU device
   cudaThreadSynchronize();                                      // Sync GPU threads
-  stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
-  eraseTimer("Init GPU     ");                                  // Erase timer
+  stopTimer("Init GPU",MPIRANK==0);                             // Stop timer & print
+  eraseTimer("Init GPU");                                       // Erase timer
 }
 
 template<>
@@ -143,7 +143,7 @@ void Kernel<Laplace>::finalize() {
 template<>
 void Kernel<Laplace>::allocate() {
   cudaThreadSynchronize();
-  startTimer("cudaMalloc   ");
+  startTimer("cudaMalloc");
   if( keysHost.size() > keysDevcSize ) {
     if( keysDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(keysDevc));
     CUDA_SAFE_CALL(cudaMalloc( (void**) &keysDevc, keysHost.size()*sizeof(int) ));
@@ -165,29 +165,29 @@ void Kernel<Laplace>::allocate() {
     targetDevcSize = targetHost.size();
   }
   cudaThreadSynchronize();
-  stopTimer("cudaMalloc   ");
+  stopTimer("cudaMalloc");
 }
 
 template<>
 void Kernel<Laplace>::hostToDevice() {
   cudaThreadSynchronize();
-  startTimer("cudaMemcpy   ");
+  startTimer("cudaMemcpy");
   CUDA_SAFE_CALL(cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),cudaMemcpyHostToDevice));
   CUDA_SAFE_CALL(cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),cudaMemcpyHostToDevice));
   CUDA_SAFE_CALL(cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
   CUDA_SAFE_CALL(cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
   CUDA_SAFE_CALL(cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(gpureal)));
   cudaThreadSynchronize();
-  stopTimer("cudaMemcpy   ");
+  stopTimer("cudaMemcpy");
 }
 
 template<>
 void Kernel<Laplace>::deviceToHost() {
   cudaThreadSynchronize();
-  startTimer("cudaMemcpy   ");
+  startTimer("cudaMemcpy");
   CUDA_SAFE_CALL(cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(gpureal),cudaMemcpyDeviceToHost));
   cudaThreadSynchronize();
-  stopTimer("cudaMemcpy   ");
+  stopTimer("cudaMemcpy");
 }
 
 __device__ void LaplaceP2M_core(gpureal *target, gpureal rho, gpureal alpha, gpureal beta, gpureal source) {

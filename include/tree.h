@@ -148,7 +148,7 @@ protected:
 public:
 //! Group bodies into twig cells
   void bodies2twigs(Bodies &bodies, Cells &twigs) {
-    startTimer("Bodies2twigs ");                                // Start timer
+    startTimer("Bodies2twigs");                                 // Start timer
     int nleaf = 0;                                              // Initialize number of leafs
     bigint index = bodies[0].ICELL;                             // Initialize cell index
     B_iter firstLeaf = bodies.begin();                          // Initialize body iterator for first leaf
@@ -173,7 +173,7 @@ public:
     cell.LEAF   = firstLeaf;                                    // Set pointer to first leaf
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
-    stopTimer("Bodies2twigs ",printNow);                        // Stop timer & print
+    stopTimer("Bodies2twigs",printNow);                         // Stop timer & print
     evalP2M(twigs);                                             // Evaluate all P2M kernels
   }
 
@@ -181,35 +181,35 @@ public:
   void twigs2cells(Cells &twigs, Cells &cells, Cells &sticks) {
     int begin = 0, end = 0;                                     // Initialize range of cell vector
     int level = getLevel(twigs.back().ICELL);                   // Initialize level of tree
-    startTimer("Sort resize  ");                                // Start timer
+    startTimer("Sort resize");                                  // Start timer
     Cells cbuffer;                                              // Sort buffer for cells
     cbuffer.resize(2*twigs.size());                             // Resize sort buffer for cells
-    stopTimer("Sort resize  ");                                 // Stop timer
+    stopTimer("Sort resize");                                   // Stop timer
     while( !twigs.empty() ) {                                   // Keep poppig twigs until the vector is empty
       while( getLevel(twigs.back().ICELL) != level ) {          //  While cell belongs to a higher level
         sortCells(cells,cbuffer,false,begin,end);               //   Sort cells at this level
-        startTimer("Twigs2cells  ");                            //   Start timer
+        startTimer("Twigs2cells");                              //   Start timer
         unique(cells,sticks,begin,end);                         //   Get rid of duplicate cells
         linkParent(cells,begin,end);                            //   Form parent-child mutual link
         level--;                                                //   Go up one level
-        stopTimer("Twigs2cells  ");                             //   Stop timer
+        stopTimer("Twigs2cells");                               //   Stop timer
       }                                                         //  End while for higher level
-      startTimer("Twigs2cells  ");                              //  Start timer
+      startTimer("Twigs2cells");                                //  Start timer
       cells.push_back(twigs.back());                            //  Push cells into vector
       twigs.pop_back();                                         //  Pop twigs from vector
       end++;                                                    //  Increment cell counter
-      stopTimer("Twigs2cells  ");                               //  Stop timer
+      stopTimer("Twigs2cells");                                 //  Stop timer
     }                                                           // End while for popping twigs
     for( int l=level; l>0; --l ) {                              // Once all the twigs are done, do the rest
       sortCells(cells,cbuffer,false,begin,end);                 //  Sort cells at this level
-      startTimer("Twigs2cells  ");                              //  Start timer
+      startTimer("Twigs2cells");                                //  Start timer
       unique(cells,sticks,begin,end);                           //  Get rid of duplicate cells
       linkParent(cells,begin,end);                              //  Form parent-child mutual link
-      stopTimer("Twigs2cells  ");                               //  Stop timer
+      stopTimer("Twigs2cells");                                 //  Stop timer
     }                                                           // End loop over levels
-    startTimer("Twigs2cells  ");                                // Start timer
+    startTimer("Twigs2cells");                                  // Start timer
     unique(cells,sticks,begin,end);                             // Just in case there is a collision at root
-    stopTimer("Twigs2cells  ",printNow);                        // Stop timer & print
+    stopTimer("Twigs2cells",printNow);                          // Stop timer & print
     evalM2M(cells,cells);                                       // Evaluate all M2M kernels
   }
 
@@ -220,17 +220,17 @@ public:
 #endif
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) C->L = 0;// Initialize local coefficients
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
-      startTimer("Upward P     ");                              //  Start timer
+      startTimer("Upward P");                                   //  Start timer
       upwardPeriodic(jcells);                                   //  Upward phase for periodic images
-      stopTimer("Upward P     ",printNow);                      //  Stop timer & print
+      stopTimer("Upward P",printNow);                           //  Stop timer & print
     }                                                           // Endif for periodic boundary condition
-    startTimer("Traverse     ");                                // Start timer
+    startTimer("Traverse");                                     // Start timer
     traverse(cells,jcells);                                     // Traverse tree to get interaction list
-    stopTimer("Traverse     ",printNow);                        // Stop timer & print
+    stopTimer("Traverse",printNow);                             // Stop timer & print
     if( IMAGES != 0 && periodic ) {                             // If periodic boundary condition
-      startTimer("Traverse P   ");                              // Start timer
+      startTimer("Traverse P");                                 // Start timer
       traversePeriodic(cells,jcells);                           // Traverse tree for periodic images
-      stopTimer("Traverse P   ",printNow);                      // Stop timer & print
+      stopTimer("Traverse P",printNow);                         // Stop timer & print
     }                                                           // Endif for periodic boundary condition
     evalM2L(cells);                                             // Evaluate queued M2L kernels (only GPU)
     evalM2P(cells);                                             // Evaluate queued M2P kernels (only GPU)
@@ -244,13 +244,13 @@ public:
 
 //! Calculate Ewald summation
   void Ewald(Bodies &bodies, Cells &cells, Cells &jcells) {
-    startTimer("Ewald wave   ");                                // Start timer
+    startTimer("Ewald wave");                                   // Start timer
     EwaldWave(bodies);                                          // Ewald wave part
-    stopTimer("Ewald wave   ",printNow);                        // Stop timer & print
-    startTimer("Ewald real   ");                                // Start timer
+    stopTimer("Ewald wave",printNow);                           // Stop timer & print
+    startTimer("Ewald real");                                   // Start timer
     neighbor(cells,jcells);                                     // Neighbor calculation for real part
     evalEwaldReal(cells);                                       // Evaluate queued Ewald real kernels (only GPU)
-    stopTimer("Ewald real   ",printNow);                        // Stop timer & print
+    stopTimer("Ewald real",printNow);                           // Stop timer & print
   }
 };
 

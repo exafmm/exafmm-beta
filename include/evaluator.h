@@ -258,7 +258,7 @@ public:
   ~Evaluator() {}
 
 //! Random distribution in [-1,1]^3 cube
-  void random(Bodies &bodies, int seed=1, int numSplit=1) {
+  void cube(Bodies &bodies, int seed=1, int numSplit=1) {
     srand48(seed);                                              // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset

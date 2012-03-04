@@ -25,60 +25,60 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  const int numBodies = 100000;
-  IMAGES = 0;
-  THETA = 1 / sqrtf(4);
-  Bodies bodies(numBodies);
-  Cells cells;
-  ParallelFMM<Laplace> FMM;
-  FMM.initialize();
-  if( MPIRANK == 0 ) FMM.printNow = true;
+  const int numBodies = 100000;                                 // Number of bodies
+  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
+  Bodies bodies(numBodies);                                     // Define vector of bodies
+  Cells cells;                                                  // Define vector of cells
+  ParallelFMM<Laplace> FMM;                                     // Instantiate Partition class
+  FMM.initialize();                                             // Initialize FMM
+  if( MPIRANK == 0 ) FMM.printNow = true;                       // Print only if MPIRANK == 0
 
-  FMM.startTimer("Set bodies   ");
-  FMM.random(bodies,MPIRANK+1);
-  FMM.stopTimer("Set bodies   ",FMM.printNow);
+  FMM.startTimer("Set bodies");                                 // Start timer
+  FMM.cube(bodies,MPIRANK+1);                                   // Initialize bodies in a cube
+  FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
 
-  FMM.startTimer("Set domain   ");
-  FMM.setGlobDomain(bodies);
-  FMM.stopTimer("Set domain   ",FMM.printNow);
+  FMM.startTimer("Set domain");                                 // Start timer
+  FMM.setGlobDomain(bodies);                                    // Set global domain size of FMM
+  FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
 
-  FMM.octsection(bodies);
+  FMM.octsection(bodies);                                       // Partition domain and redistribute bodies
 
 #ifdef TOPDOWN
-  FMM.topdown(bodies,cells);
+  FMM.topdown(bodies,cells);                                    // Tree construction (top down) & upward sweep
 #else
-  FMM.bottomup(bodies,cells);
+  FMM.bottomup(bodies,cells);                                   // Tree construction (bottom up) & upward sweep
 #endif
 
-  FMM.commBodies(cells);
+  FMM.commBodies(cells);                                        // Send bodies (not receiving yet)
 
-  FMM.commCells(bodies,cells);
+  FMM.commCells(bodies,cells);                                  // Communicate cells (receive bodies here)
 
 #ifdef VTK
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->ICELL = 0;
-  for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-    Body body;
-    body.ICELL = 1;
-    body.X     = C->X;
-    body.SRC   = 0;
-    bodies.push_back(body);
-  }
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->ICELL = 0;// Reinitialize cell index
+  for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {          // Loop over source cells
+    Body body;                                                  //  Create one body per jcell
+    body.ICELL = 1;                                             //  Set cell index to 1
+    body.X     = C->X;                                          //  Copy cell position to body
+    body.SRC   = 0;                                             //  Set source value to 0
+    bodies.push_back(body);                                     //  Push body into vector
+  }                                                             // End loop over source cells
 
-  int Ncell = 0;
-  vtkPlot vtk;
-  if( MPIRANK == 0 ) {
-    vtk.setDomain(FMM.getR0(),FMM.getX0());
-    vtk.setGroupOfPoints(bodies,Ncell);
-  }
-  for( int i=1; i!=MPISIZE; ++i ) {
-    FMM.shiftBodies(bodies);
-    if( MPIRANK == 0 ) {
-      vtk.setGroupOfPoints(bodies,Ncell);
-    }
-  }
-  if( MPIRANK == 0 ) {
-    vtk.plot(Ncell);
-  }
+  int Ncell = 0;                                                // Initialize number of cells
+  vtkPlot vtk;                                                  // Instantiate vtkPlot class
+  if( MPIRANK == 0 ) {                                          // If MPI rank is 0
+    vtk.setDomain(FMM.getR0(),FMM.getX0());                     //  Set bounding box for VTK
+    vtk.setGroupOfPoints(bodies,Ncell);                         //  Set group of points
+  }                                                             // Endif for MPI rank
+  for( int i=1; i!=MPISIZE; ++i ) {                             // Loop over MPI ranks
+    FMM.shiftBodies(bodies);                                    //  Communicate bodies round-robin
+    if( MPIRANK == 0 ) {                                        //  If MPI rank is 0
+      vtk.setGroupOfPoints(bodies,Ncell);                       //   Set group of points
+    }                                                           //  Endif for MPI rank
+  }                                                             // End loop over MPI ranks
+  if( MPIRANK == 0 ) {                                          // If MPI rank is 0
+    vtk.plot(Ncell);                                            //  plot using VTK
+  }                                                             // Endif for MPI rank
 #endif
-  FMM.finalize();
+  FMM.finalize();                                               // Finalize FMM
 }

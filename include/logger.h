@@ -41,11 +41,13 @@ private:
   }
 
 public:
+  int stringLength;                                             //!< Max length of event name
   bool printNow;                                                //!< Switch to print timings
 
 //! Constructor
   Logger() {
     timerFile.open("time.dat");                                 // Open timer log file
+    stringLength = 20;                                          // Max length of event name
     printNow = false;                                           // Don't print by default
     pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
   }
@@ -63,7 +65,8 @@ public:
   inline double stopTimer(std::string event, bool print=false) {
     double endTimer = get_time();                               // Get time of day and store in endTimer
     timer[event] += endTimer - beginTimer[event];               // Accumulate event time to timer
-    if(print) std::cout << event << " : " << timer[event] << std::endl;// Print event and timer to screen
+    if(print) std::cout << std::setw(stringLength) << std::left // Set format
+                        << event << " : " << timer[event] << std::endl;// Print event and timer to screen
     return endTimer - beginTimer[event];                        // Return the event time
   }
 
@@ -79,20 +82,23 @@ public:
 
 //! Print timings of a specific event
   inline void printTime(std::string event) {
-    std::cout << event << " : " << timer[event] << std::endl;   // Print event and timer
+    std::cout << std::setw(stringLength) << std::left           // Set format
+              << event << " : " << timer[event] << std::endl;   // Print event and timer
   }
 
 //! Print timings of all events
   inline void printAllTime() {
     for( TI_iter E=timer.begin(); E!=timer.end(); ++E ) {       // Loop over all events
-      std::cout << E->first << " : " << E->second << std::endl; //  Print event and timer
+      std::cout << std::setw(stringLength) << std::left         //  Set format
+                << E->first << " : " << E->second << std::endl; //  Print event and timer
     }                                                           // End loop over all events
   }
 
 //! Write timings of all events
   inline void writeTime() {
     for( TI_iter E=timer.begin(); E!=timer.end(); ++E ) {       // Loop over all events
-      timerFile << E->first << " " << E->second << std::endl;   //  Print event and timer
+      timerFile << std::setw(stringLength) << std::left         //  Set format
+                << E->first << " " << E->second << std::endl;   //  Print event and timer
     }                                                           // End loop over all events
   }
 

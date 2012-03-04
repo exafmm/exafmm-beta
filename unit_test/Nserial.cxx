@@ -25,57 +25,57 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  int numBodies = 10000;
-  int numTarget = 100;
-  IMAGES = 0;
-  THETA = 1 / sqrtf(4);
-  Bodies bodies, jbodies;
-  Cells cells, jcells;
-  SerialFMM<Laplace> FMM;
-  FMM.initialize();
+  int numBodies = 10000;                                        // Number of bodies
+  int numTarget = 100;                                          // Number of target points to be used for error eval
+  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
+  Bodies bodies, jbodies;                                       // Define vector of bodies
+  Cells cells, jcells;                                          // Define vector of cells
+  SerialFMM<Laplace> FMM;                                       // Instantiate SerialFMM class
+  FMM.initialize();                                             // Initialize FMM
 
-  for( int it=0; it!=25; ++it ) {
-    numBodies = int(pow(10,(it+24)/8.0));
-    std::cout << "N             : " << numBodies << std::endl;
-    bodies.resize(numBodies);
-    FMM.random(bodies,1,1);
-    FMM.startTimer("FMM          ");
-    FMM.setDomain(bodies);
-    cells.clear();
+  for( int it=0; it!=25; ++it ) {                               // Loop over FMM iterations
+    numBodies = int(pow(10,(it+24)/8.0));                       //  Exponentially increase N
+    std::cout << "N             : " << numBodies << std::endl;  //  Print N
+    bodies.resize(numBodies);                                   //  Resize bodies vector
+    FMM.cube(bodies,1,1);                                       //  Initialize bodies in a cube
+    FMM.startTimer("FMM");                                      //  Start timer
+    FMM.setDomain(bodies);                                      //  Set domain size of FMM
+    cells.clear();                                              //  Make sure cells vector is empty
 #ifdef TOPDOWN
-    FMM.topdown(bodies,cells);
+    FMM.topdown(bodies,cells);                                  //  Tree construction (top down) & upward sweep
 #else
-    FMM.bottomup(bodies,cells);
+    FMM.bottomup(bodies,cells);                                 //  Tree construction (bottom up) & upward sweep
 #endif
-    jcells = cells;
-    FMM.downward(cells,jcells);
-    FMM.stopTimer("FMM          ",true);
-    FMM.eraseTimer("FMM          ");
+    jcells = cells;                                             //  Vector of source cells
+    FMM.downward(cells,jcells);                                 //  Downward sweep
+    FMM.stopTimer("FMM",printNow);                              //  Stop timer
+    FMM.eraseTimer("FMM");                                      //  Erase entry from timer to avoid timer overlap
 
-    FMM.startTimer("Direct sum   ");
-    FMM.buffer = bodies;
+    FMM.startTimer("Direct sum");                               //  Start timer
+    FMM.buffer = bodies;                                        //  Define new bodies vector for direct sum
 #if 1
-    FMM.initTarget(FMM.buffer);
-    if( IMAGES != 0 ) {
-      jbodies = FMM.periodicBodies(FMM.buffer);
-    } else {
-      jbodies = FMM.buffer;
-    }
-    FMM.buffer.resize(numTarget);
-    FMM.evalP2P(FMM.buffer,jbodies);
-    FMM.writeTarget(FMM.buffer);
+    FMM.initTarget(FMM.buffer);                                 //  Reinitialize target values
+    if( IMAGES != 0 ) {                                         //  For periodic boundary condition
+      jbodies = FMM.periodicBodies(FMM.buffer);                 //   Copy source bodies for all periodic images
+    } else {                                                    //  For free field boundary condition
+      jbodies = FMM.buffer;                                     //   Source bodies = target bodies
+    }                                                           //  End if for periodic boundary condition
+    FMM.buffer.resize(numTarget);                               //  Shrink target bodies vector to save time
+    FMM.evalP2P(FMM.buffer,jbodies);                            //  Direct summation between buffer and jbodies
+    FMM.writeTarget(FMM.buffer);                                //  Write direct summation results to file
 #else
-    FMM.readTarget(FMM.buffer);
+    FMM.readTarget(FMM.buffer);                                 //  Read direct summation results from file
 #endif
-    FMM.stopTimer("Direct sum   ",true);
-    FMM.eraseTimer("Direct sum   ");
-    FMM.writeTime();
-    FMM.resetTimer();
+    FMM.stopTimer("Direct sum",printNow);                       //  Stop timer
+    FMM.eraseTimer("Direct sum");                               //  Erase entry from timer to avoid timer overlap
+    FMM.writeTime();                                            //  Write timings of all events to file
+    FMM.resetTimer();                                           //  Erase all events in timer
 
-    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-    bodies.resize(numTarget);
-    FMM.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2);
-    FMM.printError(diff1,norm1,diff2,norm2);
-  }
-  FMM.finalize();
+    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;            //  Initialize accumulators
+    bodies.resize(numTarget);                                   //  Shrink target bodies vector to save time
+    FMM.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2);   //  Evaluate error on the reduced set of bodies
+    FMM.printError(diff1,norm1,diff2,norm2);                    //  Print the L2 norm error
+  }                                                             // End loop over FMM iteration
+  FMM.finalize();                                               // Finalize FMM
 }

@@ -23,32 +23,32 @@ THE SOFTWARE.
 #include "vtk.h"
 
 int main() {
-  const int numBodies = 10000;
-  IMAGES = 0;
-  THETA = 1 / sqrtf(4);
-  Bodies bodies(numBodies);
-  TreeStructure<Laplace> FMM;
-  FMM.initialize();
-  FMM.printNow = true;
+  const int numBodies = 10000;                                  // Number of bodies
+  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
+  Bodies bodies(numBodies);                                     // Define vector of bodies
+  TreeStructure<Laplace> FMM;                                   // Instantiate TreeStructure class
+  FMM.initialize();                                             // Initialize FMM
+  FMM.printNow = true;                                          // Print timer
 
-  FMM.startTimer("Set bodies   ");
-  FMM.sphere(bodies);
-  FMM.stopTimer("Set bodies   ",FMM.printNow);
+  FMM.startTimer("Set bodies");                                 // Start timer
+  FMM.sphere(bodies);                                           // Initialize bodies on a spherical shell
+  FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
 
-  FMM.startTimer("Set domain   ");
-  FMM.setDomain(bodies);
-  FMM.stopTimer("Set domain   ",FMM.printNow);
+  FMM.startTimer("Set domain");                                 // Start timer
+  FMM.setDomain(bodies);                                        // Set domain size of FMM
+  FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
 
-  vtkPlot vtk;
-  vtk.setDomain(FMM.getR0(),FMM.getX0());
-  vtk.setGroup(0,bodies.size()/2);
-  for( B_iter B=bodies.begin(); B!=bodies.begin()+bodies.size()/2; ++B ) {
-    vtk.setPoints(0,B->X);
-  }
-  vtk.setGroup(1,bodies.size()/2);
-  for( B_iter B=bodies.begin()+bodies.size()/2; B!=bodies.end(); ++B ) {
-    vtk.setPoints(1,B->X);
-  }
-  vtk.plot(2);
-  FMM.finalize();
+  vtkPlot vtk;                                                  // Instantiate vtkPlot class
+  vtk.setDomain(FMM.getR0(),FMM.getX0());                       // Set bounding box for VTK
+  vtk.setGroup(0,bodies.size()/2);                              // Set first group
+  for( B_iter B=bodies.begin(); B!=bodies.begin()+bodies.size()/2; ++B ) {// Loop over half of the bodies
+    vtk.setPoints(0,B->X);                                      //  Set points
+  }                                                             // End loop over half of the bodies
+  vtk.setGroup(1,bodies.size()/2);                              // Set second group
+  for( B_iter B=bodies.begin()+bodies.size()/2; B!=bodies.end(); ++B ) {// Loop over other half of the bodies
+    vtk.setPoints(1,B->X);                                      //  Set points
+  }                                                             // End loop over other half of the bodies
+  vtk.plot(2);                                                  // Plot the two groups
+  FMM.finalize();                                               // Finalize FMM
 }

@@ -54,7 +54,7 @@ protected:
 public:
 //! Set cell index of all bodies
   void setIndex(Bodies &bodies, int level=-1, int begin=0, int end=0, bool update=false) {
-    startTimer("Set index    ");                                // Start timer
+    startTimer("Set index");                                    // Start timer
     bigint i;                                                   // Levelwise cell index
     if( level == -1 ) level = getMaxLevel(bodies);              // Decide max level
     bigint off = ((1 << 3*level) - 1) / 7;                      // Offset for each level
@@ -78,12 +78,12 @@ public:
         bodies[b].ICELL = i+off;                                //   Store index in bodies
       }                                                         //  Endif for update
     }                                                           // End loop over bodies
-    stopTimer("Set index    ",printNow);                        // Stop timer
+    stopTimer("Set index",printNow);                            // Stop timer
   }
 
 //! Prune tree by merging cells
   void prune(Bodies &bodies) {
-    startTimer("Prune tree   ");                                // Start timer
+    startTimer("Prune tree");                                   // Start timer
     int maxLevel = getMaxLevel(bodies);                         // Max level for bottom up tree build
     for( int l=maxLevel; l>0; --l ) {                           // Loop upwards from bottom level
       int level = getLevel(bodies[0].ICELL);                    //  Current level
@@ -115,7 +115,7 @@ public:
         }                                                       //   End loop over bodies in cell
       }                                                         //  Endif for merging
     }                                                           // End loop over levels
-    stopTimer("Prune tree   ",printNow);                        // Stop timer
+    stopTimer("Prune tree",printNow);                           // Stop timer
   }
 
 //! Grow tree by splitting cells

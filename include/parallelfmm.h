@@ -240,7 +240,7 @@ private:
 
 //! Get boundries of domains on other processes
   void getOtherDomain(vect &xmin, vect &xmax, int l) {
-    startTimer("Get domain   ");                                // Start timer
+    startTimer("Get domain");                                   // Start timer
     MPI_Datatype MPI_TYPE = getType(XMIN[l][0]);                // Get MPI data type
     vect send[2],recv[2];                                       // Send and recv buffer
     MPI_Request req;                                            // MPI requests
@@ -270,7 +270,7 @@ private:
       xmin = XMIN[l];                                           //  Use own XMIN value for xmin
       xmax = XMAX[l];                                           //  Use own XMAX value for xmax
     }                                                           // Endif for isolated process
-    stopTimer("Get domain   ",printNow);                        // Stop timer 
+    stopTimer("Get domain",printNow);                           // Stop timer 
   }
 
 //! Get disatnce to other domain
@@ -380,7 +380,7 @@ private:
 
 //! Turn recv bodies to twigs
   void rbodies2twigs(Bodies &bodies, Cells &twigs) {
-    startTimer("Recv bodies  ");                                //  Start timer
+    startTimer("Recv bodies");                                  //  Start timer
     for( JB_iter JB=recvBodies.begin(); JB!=recvBodies.end(); ++JB ) {// Loop over recv bodies
       Body body;                                                //  Body structure
       body.IBODY = 0;                                           //  Initialize body index
@@ -392,7 +392,7 @@ private:
       bodies.push_back(body);                                   //  Push body into bodies vector
     }                                                           // End loop over recv bodies
     buffer.resize(bodies.size());                               // Resize sort buffer
-    stopTimer("Recv bodies  ",printNow);                        //  Stop timer 
+    stopTimer("Recv bodies",printNow);                          //  Stop timer 
     sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
   }
@@ -439,11 +439,11 @@ private:
 
 //! Zip two groups of twigs that overlap
   void zipTwigs(Cells &twigs, Cells &cells, Cells &sticks, bool last) {
-    startTimer("Sort resize  ");                                // Start timer
+    startTimer("Sort resize");                                  // Start timer
     Cells cbuffer = twigs;                                      // Sort buffer for cells
-    stopTimer("Sort resize  ",printNow);                        // Stop timer 
+    stopTimer("Sort resize",printNow);                          // Stop timer 
     sortCells(twigs,cbuffer);                                   // Sort twigs in ascending order
-    startTimer("Ziptwigs     ");                                // Start timer
+    startTimer("Ziptwigs");                                     // Start timer
     bigint index = 1e8;                                         // Initialize index counter
     while( !twigs.empty() ) {                                   // While twig vector is not empty
       if( twigs.back().ICELL != index ) {                       //  If twig's index is different from previous
@@ -464,17 +464,17 @@ private:
       }                                                         //  Endif for collision type
       twigs.pop_back();                                         //  Pop last element from twig vector
     }                                                           // End while for twig vector
-    stopTimer("Ziptwigs     ",printNow);                        // Stop timer 
+    stopTimer("Ziptwigs",printNow);                             // Stop timer 
     sortCells(cells,cbuffer);                                   // Sort cells in ascending order
-    startTimer("Ziptwigs     ");                                // Start timer
+    startTimer("Ziptwigs");                                     // Start timer
     twigs = cells;                                              // Copy cells to twigs
     cells.clear();                                              // Clear cells
-    stopTimer("Ziptwigs     ",printNow);                        // Stop timer 
+    stopTimer("Ziptwigs",printNow);                             // Stop timer 
   }
 
 //! Re-index bodies
   void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ,Cells &sticks) {
-    startTimer("Reindex      ");                                // Start timer
+    startTimer("Reindex");                                      // Start timer
     while( !twigs.empty() ) {                                   // While twig vector is not empty
       if( twigs.back().NDLEAF == 0 ) {                          //  If twig has no leafs
         cells.push_back(twigs.back());                          //   Push twig into cell vector
@@ -483,12 +483,12 @@ private:
     }                                                           // End while for twig vector
 //    BottomUp::setIndex(bodies,-1,0,0,true);                     // Set index of bodies
     buffer.resize(bodies.size());                               // Resize sort buffer
-    stopTimer("Reindex      ",printNow);                        // Stop timer 
+    stopTimer("Reindex",printNow);                              // Stop timer 
 //    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
 //    BottomUp::grow(bodies);                                     // Grow tree structure
-    sortBodies(bodies,buffer,false);                              // Sort bodies in descending order
+    sortBodies(bodies,buffer,false);                            // Sort bodies in descending order
     bodies2twigs(bodies,twigs);                                 // Turn bodies to twigs
-    startTimer("Reindex      ");                                // Start timer
+    startTimer("Reindex");                                      // Start timer
     for( C_iter C=twigs.begin(); C!=twigs.end(); ++C ) {        // Loop over cells
       if( sticks.size() > 0 ) {                                 //  If stick vector is not empty
         if( C->ICELL == sticks.back().ICELL ) {                 //   If twig's index is equal to stick's index
@@ -501,12 +501,12 @@ private:
     cells.insert(cells.begin(),sticks.begin(),sticks.end());    // Add remaining sticks to the end of cell vector
     sticks.clear();                                             // Clear sticks
     Cells cbuffer = cells;                                      // Sort buffer for cells
-    stopTimer("Reindex      ",printNow);                        // Stop timer 
+    stopTimer("Reindex",printNow);                              // Stop timer 
     sortCells(cells,cbuffer);                                   // Sort cells in ascending order
-    startTimer("Reindex      ");                                // Start timer
+    startTimer("Reindex");                                      // Start timer
     twigs = cells;                                              // Copy cells to twigs
     cells.clear();                                              // Clear cells
-    stopTimer("Reindex      ",printNow);                        // Stop timer 
+    stopTimer("Reindex",printNow);                              // Stop timer 
   }
 
 //! Turn sticks to send buffer
@@ -570,10 +570,10 @@ public:
 
 //! Update bodies using the previous send count
   void updateBodies(bool comm=true) {
-    startTimer("Get send cnt ");                                // Start timer
+    startTimer("Get send cnt");                                 // Start timer
     getSendCount(comm);                                         // Get size of data to send
-    stopTimer("Get send cnt ",printNow);                        // Stop timer 
-    startTimer("Alltoall B   ");                                // Start timer
+    stopTimer("Get send cnt",printNow);                         // Stop timer 
+    startTimer("Alltoall B");                                   // Start timer
 #if 1
     int bytes = sizeof(sendBodies[0]);                          // Byte size of jbody structure
     for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
@@ -595,7 +595,7 @@ public:
     commBodiesAlltoall();
 #endif
     sendBodies.clear();                                         // Clear send buffer for bodies
-    stopTimer("Alltoall B   ",printNow);                        // Stop timer 
+    stopTimer("Alltoall B",printNow);                           // Stop timer 
   }
 
 //! Communicate bodies in the local essential tree
@@ -617,7 +617,7 @@ public:
     Cells twigs,sticks;                                         // Twigs and sticks are special types of cells
 
 #if 1
-    startTimer("Get LET      ");                                // Start timer
+    startTimer("Get LET");                                      // Start timer
     int ssize = 0;                                              // Initialize offset for send cells
     sendCellCnt.assign(MPISIZE,0);                              // Initialize cell send count
     sendCellDsp.assign(MPISIZE,0);                              // Initialize cell send displacement
@@ -638,8 +638,8 @@ public:
         }
       }
     }                                                           // End loop over ranks
-    stopTimer("Get LET      ",printNow);                        // Stop timer 
-    startTimer("Alltoall C   ");                                // Start timer
+    stopTimer("Get LET",printNow);                              // Stop timer 
+    startTimer("Alltoall C");                                   // Start timer
     MPI_Alltoall(&sendCellCnt[0],1,MPI_INT,&recvCellCnt[0],1,MPI_INT,MPI_COMM_WORLD);// Communicate the send counts
     int rsize = 0;                                              // Initialize total recv count
     for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks to recv from
@@ -663,14 +663,14 @@ public:
       recvCellCnt[i] /= bytes;                                  //  Divide by bytes
       recvCellDsp[i] /= bytes;                                  //  Divide by bytes
     }                                                           // End loop over ranks
-    stopTimer("Alltoall C   ",printNow);                        // Stop timer 
+    stopTimer("Alltoall C",printNow);                           // Stop timer 
     rbodies2twigs(bodies,twigs);                                // Put recv bodies into twig vector
-    startTimer("Cells2twigs  ");                                // Start timer
+    startTimer("Cells2twigs");                                  // Start timer
     cells2twigs(cells,twigs,true);                              // Put cells into twig vector
-    stopTimer("Cells2twigs  ",printNow);                        // Stop timer 
-    startTimer("Recv2twigs   ");                                // Start timer
+    stopTimer("Cells2twigs",printNow);                          // Stop timer 
+    startTimer("Recv2twigs");                                   // Start timer
     recv2twigs(bodies,twigs);                                   // Put recv buffer into twig vector
-    stopTimer("Recv2twigs   ",printNow);                        // Stop timer 
+    stopTimer("Recv2twigs",printNow);                           // Stop timer 
     zipTwigs(twigs,cells,sticks,true);                          // Zip two groups of twigs that overlap
     reindexBodies(bodies,twigs,cells,sticks);                   // Re-index bodies
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
@@ -680,29 +680,29 @@ public:
     int offTwigs = 0;                                           // Initialize offset of twigs
     for( int l=0; l!=LEVEL; ++l ) {                             // Loop over levels of N-D hypercube communication
       getOtherDomain(xmin,xmax,l+1);                            //  Get boundries of domains on other processes
-      startTimer("Get LET      ");                              //  Start timer
+      startTimer("Get LET");                                    //  Start timer
       getLET(cells.begin(),cells.end()-1,xmin,xmax);            //  Determine which cells to send
 #ifdef DEBUG
       checkNumCells(LEVEL-l-1);
       checkSumMass(cells);
 #endif
-      stopTimer("Get LET      ",printNow);                      //  Stop timer 
-      startTimer("Alltoall C   ");                              //  Start timer
+      stopTimer("Get LET",printNow);                            //  Stop timer 
+      startTimer("Alltoall C");                                 //  Start timer
       commCellsAlltoall(l);                                     //  Communicate cells by one-to-one MPI_Alltoallv
       if( nprocs[l][0] % 2 == 1 && nprocs[l][0] != 1 && nprocs[l+1][0] <= nprocs[l+1][1] ) {// If scatter is necessary
         commCellsScatter(l);                                    //   Communicate cells by scattering from leftover proc
       }                                                         //  Endif for odd number of procs
-      stopTimer("Alltoall C   ",printNow);                      //  Stop timer 
+      stopTimer("Alltoall C",printNow);                         //  Stop timer 
       if( l == LEVEL - 1 ) rbodies2twigs(bodies,twigs);         //  Put recv bodies into twig vector
-      startTimer("Cells2twigs  ");                              //  Start timer
+      startTimer("Cells2twigs");                                //  Start timer
       cells2twigs(cells,twigs,l==LEVEL-1);                      //  Put cells into twig vector
-      stopTimer("Cells2twigs  ",printNow);                      //  Stop timer 
-      startTimer("Send2twigs   ");                              //  Start timer
+      stopTimer("Cells2twigs",printNow);                        //  Stop timer 
+      startTimer("Send2twigs");                                 //  Start timer
       send2twigs(bodies,twigs,offTwigs);                        //  Put send buffer (sticks) into twig vector
-      stopTimer("Send2twigs   ",printNow);                      //  Stop timer 
-      startTimer("Recv2twigs   ");                              //  Start timer
+      stopTimer("Send2twigs",printNow);                         //  Stop timer 
+      startTimer("Recv2twigs");                                 //  Start timer
       recv2twigs(bodies,twigs);                                 //  Put recv buffer into twig vector
-      stopTimer("Recv2twigs   ",printNow);                      //  Stop timer 
+      stopTimer("Recv2twigs",printNow);                         //  Stop timer 
 #ifdef DEBUG
       if( l == LEVEL - 1 ) {                                    //  If at last level
         complex SUM = 0;                                        //   Initialize accumulator
@@ -728,9 +728,9 @@ public:
 #endif
       if( l == LEVEL - 1 ) reindexBodies(bodies,twigs,cells,sticks);// Re-index bodies
       twigs2cells(twigs,cells,sticks);                          //  Turn twigs to cells
-      startTimer("Sticks2send  ");                              //  Start timer
+      startTimer("Sticks2send");                                //  Start timer
       sticks2send(sticks,offTwigs);                             //  Turn sticks to send buffer
-      stopTimer("Sticks2send  ",printNow);                      //  Stop timer 
+      stopTimer("Sticks2send",printNow);                        //  Stop timer 
     }                                                           // End loop over levels of N-D hypercube communication
 #endif
 

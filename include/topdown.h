@@ -115,7 +115,7 @@ private:
 public:
 //! Grow tree from root
   void grow(Bodies &bodies) {
-    startTimer("Grow tree    ");                                // Start timer
+    startTimer("Grow tree");                                    // Start timer
     int octant;                                                 // In which octant is the body located?
     Node node;                                                  // Node structure
     node.LEVEL = node.NLEAF = node.ICHILD = node.I = 0;         // Initialize root node counters
@@ -137,14 +137,14 @@ public:
         splitNode(i);                                           //   Split the node into smaller ones
       }                                                         //  Endif for splitting
     }                                                           // End loop over bodies
-    stopTimer("Grow tree    ",printNow);                        // Stop timer
+    stopTimer("Grow tree",printNow);                            // Stop timer
   }
 
 //! Store cell index of all bodies
   void setIndex() {
-    startTimer("Set index    ");                                // Start timer
+    startTimer("Set index");                                    // Start timer
     traverse(nodes.begin());                                    // Traverse tree
-    stopTimer("Set index    ",printNow);                        // Stop timer 
+    stopTimer("Set index",printNow);                            // Stop timer 
   }
 };
 

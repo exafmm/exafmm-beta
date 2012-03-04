@@ -30,6 +30,8 @@ private:
   long filePosition;                                            //!< Position of file stream
 
 public:
+  using Logger::stringLength;                                   //!< Max length of event name
+
 //! Constructor
   Dataset() : filePosition(0) {}
 //! Destructor
@@ -116,8 +118,10 @@ public:
 
 //! Print relative L2 norm error
   void printError(real diff1, real norm1, real diff2, real norm2) {
-    std::cout << "Error (pot)   : " << std::sqrt(diff1/norm1) << std::endl;
-    std::cout << "Error (acc)   : " << std::sqrt(diff2/norm2) << std::endl;
+    std::cout << std::setw(stringLength) << std::left
+              << "Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
+    std::cout << std::setw(stringLength) << std::left
+              << "Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
   }
 };
 
@@ -219,8 +223,10 @@ public:
 
 //! Print relative L2 norm error
   void printError(real diff1, real norm1, real diff2, real norm2) {
-    std::cout << "Error (pot)   : " << std::sqrt(diff1/norm1) << std::endl;
-    std::cout << "Error (acc)   : " << std::sqrt(diff2/norm2) << std::endl;
+    std::cout << std::setw(stringLength) << std::left
+              << "Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
+    std::cout << std::setw(stringLength) << std::left
+              << "Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
   }
 };
 

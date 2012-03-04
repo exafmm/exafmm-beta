@@ -25,35 +25,35 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  const int numBodies = 1000000;
-  IMAGES = 0;
-  THETA = 1 / sqrtf(4);
-  Bodies bodies(numBodies);
-  Cells cells;
-  SerialFMM<Laplace> FMM;
-  FMM.initialize();
-  FMM.printNow = true;
+  const int numBodies = 1000000;                                // Number of bodies
+  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
+  Bodies bodies(numBodies);                                     // Define vector of bodies
+  Cells cells;                                                  // Define vector of cells
+  SerialFMM<Laplace> FMM;                                       // Instantiate SerialFMM class
+  FMM.initialize();                                             // Initialize FMM
+  FMM.printNow = true;                                          // Print timings
 
-  FMM.startTimer("Set bodies   ");
-  FMM.random(bodies);
-  FMM.stopTimer("Set bodies   ",FMM.printNow);
+  FMM.startTimer("Set bodies");                                 // Start timer
+  FMM.cube(bodies);                                             // Initialize bodies in a cube
+  FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
 
-  FMM.startTimer("Set domain   ");
-  FMM.setDomain(bodies);
-  FMM.stopTimer("Set domain   ",FMM.printNow);
+  FMM.startTimer("Set domain");                                 // Start timer
+  FMM.setDomain(bodies);                                        // Set domain size of FMM
+  FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
 
 #ifdef TOPDOWN
-  FMM.topdown(bodies,cells);
+  FMM.topdown(bodies,cells);                                    // Tree construction (top down) & upward sweep
 #else
-  FMM.bottomup(bodies,cells);
+  FMM.bottomup(bodies,cells);                                   // Tree construction (bottom up) & upward sweep
 #endif
 
 #ifdef VTK
-  int Ncell = 0;
-  vtkPlot vtk;
-  vtk.setDomain(FMM.getR0(),FMM.getX0());
-  vtk.setGroupOfPoints(bodies,Ncell);
-  vtk.plot(Ncell);
+  int Ncell = 0;                                                // Initialize number of cells
+  vtkPlot vtk;                                                  // Instantiate vtkPlot class
+  vtk.setDomain(FMM.getR0(),FMM.getX0());                       // Set bounding box for VTK
+  vtk.setGroupOfPoints(bodies,Ncell);                           // Set group of points
+  vtk.plot(Ncell);                                              // plot using VTK
 #endif
-  FMM.finalize();
+  FMM.finalize();                                               // Finalize FMM
 }

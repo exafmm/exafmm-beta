@@ -48,7 +48,7 @@ public:
     }                                                           // End loop over bodies
   }
 
-  void random(Bodies &bodies, int seed=0, int numSplit=1) {     // Random distribution in [-1,1]^3 cube
+  void cube(Bodies &bodies, int seed=0, int numSplit=1) {       // Random distribution in [-1,1]^3 cube
     srand48(seed);                                              // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset
@@ -150,8 +150,10 @@ public:
   }
 
   void printError(real diff1, real norm1, real diff2, real norm2) {// Print relative L2 norm error
-    std::cout << "Error (pot)   : " << std::sqrt(diff1/norm1) << std::endl;
-    std::cout << "Error (acc)   : " << std::sqrt(diff2/norm2) << std::endl;
+    std::cout << std::setw(stringLength) << std::left
+              << "Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
+    std::cout << std::setw(stringLength) << std::left
+              << "Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
   }
 };
 

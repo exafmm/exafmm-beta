@@ -25,117 +25,114 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  const int numBodies = 10000;
-  const int numTarget = 100;
-  IMAGES = 0;
-  THETA = 1 / sqrtf(4);
-  Bodies bodies(numTarget);
-  Bodies jbodies(numBodies);
-  Bodies jbodies2;
-  Cells cells, jcells;
-  ParallelFMM<Laplace> FMM;
-  FMM.initialize();
-  if( MPIRANK == 0 ) FMM.printNow = true;
+  const int numBodies = 10000;                                  // Number of bodies
+  const int numTarget = 100;                                    // Number of target points to be used for error eval
+  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
+  Bodies bodies(numTarget);                                     // Define vector of target bodies
+  Bodies jbodies(numBodies);                                    // Define vector of source bodies
+  Bodies jbodies2;                                              // Define another vector of source bodies
+  Cells cells, jcells;                                          // Define vector of cells
+  ParallelFMM<Laplace> FMM;                                     // Instantiate ParallelFMM class
+  FMM.initialize();                                             // Initialize FMM
+  if( MPIRANK == 0 ) FMM.printNow = true;                       // Print only if MPIRANK == 0
 
-  FMM.startTimer("Set bodies   ");
-  FMM.random(bodies,MPIRANK+1);
-  FMM.random(jbodies,MPIRANK+MPISIZE+1);
-  Bodies bodies2 = bodies;
-  FMM.stopTimer("Set bodies   ",FMM.printNow);
+  FMM.startTimer("Set bodies");                                 // Start timer
+  FMM.cube(bodies,MPIRANK+1);                                   // Initialize target bodies in a cube
+  FMM.cube(jbodies,MPIRANK+MPISIZE+1);                          // Initialize source bodies in a cube
+  Bodies bodies2 = bodies;                                      // Define new bodies vector for direct sum
+  FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
 
-  FMM.startTimer("Set domain   ");
-  FMM.setGlobDomain(bodies,0,M_PI);
-  FMM.stopTimer("Set domain   ",FMM.printNow);
+  FMM.startTimer("Set domain");                                 // Start timer
+  FMM.setGlobDomain(bodies,0,M_PI);                             // Set global domain size of FMM
+  FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
 
-  if( IMAGES != 0 ) {
-    FMM.startTimer("Set periodic ");
-    jbodies2 = FMM.periodicBodies(jbodies);
-    FMM.stopTimer("Set periodic ",FMM.printNow);
-    FMM.eraseTimer("Set periodic ");
-  } else {
-    jbodies2 = jbodies;
-  }
+  if( IMAGES != 0 ) {                                           // For periodic boundary condition
+    FMM.startTimer("Set periodic");                             //  Start timer
+    jbodies2 = FMM.periodicBodies(jbodies);                     //  Copy source bodies for all periodic images
+    FMM.stopTimer("Set periodic",FMM.printNow);                 //  Stop timer
+    FMM.eraseTimer("Set periodic");                             //  Erase entry from timer to avoid timer overlap
+  } else {                                                      // For free field boundary condition
+    jbodies2 = jbodies;                                         //  Copy source bodies
+  }                                                             // End if for periodic boundary condition
 
-  FMM.startTimer("Direct sum   ");
-  for( int i=0; i!=MPISIZE; ++i ) {
-    FMM.shiftBodies(jbodies2);
-    FMM.evalP2P(bodies2,jbodies2);
-    if(FMM.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;
-  }
-  FMM.stopTimer("Direct sum   ",FMM.printNow);
-  FMM.eraseTimer("Direct sum   ");
+  FMM.startTimer("Direct sum");                                 // Start timer
+  for( int i=0; i!=MPISIZE; ++i ) {                             // Loop over all MPI processes
+    FMM.shiftBodies(jbodies2);                                  //  Communicate bodies round-robin
+    FMM.evalP2P(bodies2,jbodies2);                              //  Direct summation between bodies2 and jbodies2
+    if(FMM.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;// Print loop counter
+  }                                                             // End loop over all MPI processes
+  FMM.stopTimer("Direct sum",FMM.printNow);                     // Stop timer
+  FMM.eraseTimer("Direct sum");                                 // Erase entry from timer to avoid timer overlap
 
-  FMM.initTarget(bodies);
+  FMM.initTarget(bodies);                                       // Reinitialize target values
 
-  FMM.octsection(bodies);
-  FMM.octsection(jbodies);
+  FMM.octsection(bodies);                                       // Partition domain and redistribute target bodies
+  FMM.octsection(jbodies);                                      // Partition domain and redistribute source bodies
 
 #ifdef TOPDOWN
-  FMM.topdown(bodies,cells);
-  FMM.topdown(jbodies,jcells);
+  FMM.topdown(bodies,cells);                                    // Tree construction (top down) & upward sweep
+  FMM.topdown(jbodies,jcells);                                  // Tree construction (top down) & upward sweep
 #else
-  FMM.bottomup(bodies,cells);
-  FMM.bottomup(jbodies,jcells);
+  FMM.bottomup(bodies,cells);                                   // Tree construction (bottom up) & upward sweep
+  FMM.bottomup(jbodies,jcells);                                 // Tree construction (bottom up) & upward sweep
 #endif
 
-  FMM.commBodies(jcells);
+  FMM.commBodies(jcells);                                       // Send bodies (not receiving yet)
 
-  FMM.commCells(jbodies,jcells);
+  FMM.commCells(jbodies,jcells);                                // Communicate cells (receive bodies here)
 
-  FMM.startTimer("Downward     ");
-  FMM.downward(cells,jcells);
-  FMM.stopTimer("Downward     ",FMM.printNow);
-  FMM.eraseTimer("Downward     ");
+  FMM.startTimer("Downward");                                   // Start timer
+  FMM.downward(cells,jcells);                                   // Downward sweep
+  FMM.stopTimer("Downward",FMM.printNow);                       // Stop timer
+  FMM.eraseTimer("Downward");                                   // Erase entry from timer to avoid timer overlap
 
-  FMM.startTimer("Unpartition  ");
-  FMM.unpartition(bodies);
-  FMM.stopTimer("Unpartition  ",FMM.printNow);
-  FMM.eraseTimer("Unpartition  ");
+  FMM.startTimer("Unpartition");                                // Start timer
+  FMM.unpartition(bodies);                                      // Send bodies back to where they came from
+  FMM.stopTimer("Unpartition",FMM.printNow);                    // Stop timer
+  FMM.eraseTimer("Unpartition");                                // Erase entry from timer to avoid timer overlap
 
-  FMM.startTimer("Unsort bodies");
-  std::sort(bodies.begin(),bodies.end());
-  FMM.stopTimer("Unsort bodies",FMM.printNow);
-  FMM.eraseTimer("Unsort bodies");
-  if(FMM.printNow) FMM.writeTime();
-  if(FMM.printNow) FMM.writeTime();
+  FMM.startTimer("Unsort bodies");                              // Start timer
+  std::sort(bodies.begin(),bodies.end());                       // Sort bodies back to original order
+  FMM.stopTimer("Unsort bodies",FMM.printNow);                  // Stop timer
+  FMM.eraseTimer("Unsort bodies");                              // Erase entry from timer to avoid timer overlap
+  if(FMM.printNow) FMM.writeTime();                             // Write timings of all events to file
+  if(FMM.printNow) FMM.writeTime();                             // Write again to have at least two data sets
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
-  FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-  MPI_Datatype MPI_TYPE = FMM.getType(diff1);
-  MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  MPI_Reduce(&norm1,&norm3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
-  if(FMM.printNow) FMM.printError(diff3,norm3,diff4,norm4);
-#ifdef DEBUG
-  FMM.print(std::sqrt(potDiff/potNorm));
-#endif
+  FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);        // Evaluate error on the reduced set of bodies
+  MPI_Datatype MPI_TYPE = FMM.getType(diff1);                   // Get MPI datatype
+  MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce difference in potential
+  MPI_Reduce(&norm1,&norm3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce norm of potential
+  MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce difference in force
+  MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Recude norm of force
+  if(FMM.printNow) FMM.printError(diff3,norm3,diff4,norm4);     // Print the L2 norm error
 
 #ifdef VTK
-  for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) B->ICELL = 0;
-  for( C_iter C=jcells.begin(); C!=jcells.end(); ++C ) {
-    Body body;
-    body.ICELL = 1;
-    body.X     = C->X;
-    body.SRC   = 0;
-    jbodies.push_back(body);
-  }
+  for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) B->ICELL = 0;// Reinitialize cell index
+  for( C_iter C=jcells.begin(); C!=jcells.end(); ++C ) {        // Loop over source cells
+    Body body;                                                  //  Create one body per jcell
+    body.ICELL = 1;                                             //  Set cell index to 1
+    body.X     = C->X;                                          //  Copy cell position to body
+    body.SRC   = 0;                                             //  Set source value to 0
+    jbodies.push_back(body);                                    //  Push body into vector
+  }                                                             // End loop over source cells
 
-  int Ncell = 0;
-  vtkPlot vtk;
-  if( MPIRANK == 0 ) {
-    vtk.setDomain(FMM.getR0(),FMM.getX0());
-    vtk.setGroupOfPoints(jbodies,Ncell);
-  }
-  for( int i=1; i!=MPISIZE; ++i ) {
-    FMM.shiftBodies(jbodies);
-    if( MPIRANK == 0 ) {
-      vtk.setGroupOfPoints(jbodies,Ncell);
-    }
-  }
-  if( MPIRANK == 0 ) {
-    vtk.plot(Ncell);
-  }
+  int Ncell = 0;                                                // Initialize number of cells
+  vtkPlot vtk;                                                  // Instantiate vtkPlot class
+  if( MPIRANK == 0 ) {                                          // If MPI rank is 0
+    vtk.setDomain(FMM.getR0(),FMM.getX0());                     //  Set bounding box for VTK
+    vtk.setGroupOfPoints(jbodies,Ncell);                        //  Set group of points
+  }                                                             // Endif for MPI rank
+  for( int i=1; i!=MPISIZE; ++i ) {                             // Loop over MPI ranks
+    FMM.shiftBodies(jbodies);                                   //  Communicate bodies round-robin
+    if( MPIRANK == 0 ) {                                        //  If MPI rank is 0
+      vtk.setGroupOfPoints(jbodies,Ncell);                      //   Set group of points
+    }                                                           //  Endif for MPI rank
+  }                                                             // End loop over MPI ranks
+  if( MPIRANK == 0 ) {                                          // If MPI rank is 0
+    vtk.plot(Ncell);                                            //  plot using VTK
+  }                                                             // Endif for MPI rank
 #endif
-  FMM.finalize();
+  FMM.finalize();                                               // Finalize FMM
 }

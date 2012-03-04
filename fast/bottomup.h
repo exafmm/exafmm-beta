@@ -115,49 +115,49 @@ private:
 
 protected:
   void setDomain(Bodies &bodies) {
-    startTimer("Set domain   ");
+    startTimer("Set domain");
     MAXLEVEL = getMaxLevel(bodies);
     vect xmin, xmax;
     X0 = 0;
     xmax = xmin = bodies.begin()->X;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
-        if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];           //   Determine xmin
-        else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];           //   Determine xmax
-      }                                                         //  End loop over each dimension
-      X0 += B->X;                                               //  Sum positions
-    }                                                           // End loop over bodies
-    X0 /= bodies.size();                                        // Calculate average position
-    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
-      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
-      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
-      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
-    }                                                           // End loop over each dimension
-    R0 *= 1.000001;                                             // Add some leeway to root radius
-    stopTimer("Set domain   ",printNow);
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      for( int d=0; d!=3; ++d ) {
+        if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];
+        else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];
+      }
+      X0 += B->X;
+    }
+    X0 /= bodies.size();
+    for( int d=0; d!=3; ++d ) {
+      X0[d] = int(X0[d]+.5);
+      R0 = std::max(xmax[d] - X0[d], R0);
+      R0 = std::max(X0[d] - xmin[d], R0);
+    }
+    R0 *= 1.000001;
+    stopTimer("Set domain",printNow);
   }
 
   void buildTree(Bodies &bodies, Cells &cells) {
-    startTimer("Morton index ");
+    startTimer("Morton index");
     getIndex(bodies);
     Bodies buffer = bodies;
-    stopTimer("Morton index ",printNow);
-    startTimer("Sort bodies  ");
+    stopTimer("Morton index",printNow);
+    startTimer("Sort bodies");
     sortBodies(bodies,buffer);
-    stopTimer("Sort bodies  ",printNow);
-    startTimer("Build bottom ");
+    stopTimer("Sort bodies",printNow);
+    startTimer("Build bottom");
     buildBottom(bodies,cells);
-    stopTimer("Build bottom ",printNow);
+    stopTimer("Build bottom",printNow);
   }
 
   void linkTree(Cells &cells) {
-    startTimer("Link tree    ");
+    startTimer("Link tree");
     twigs2cells(cells);
-    stopTimer("Link tree    ",printNow);
+    stopTimer("Link tree",printNow);
   }
 
   void upwardPass(Cells &cells) {
-    startTimer("Upward pass  ");
+    startTimer("Upward pass");
     setRootCell(cells);
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       C->M = 0;
@@ -175,7 +175,7 @@ protected:
     }
 #endif
     setRcrit(cells);
-    stopTimer("Upward pass  ",printNow);
+    stopTimer("Upward pass",printNow);
   }
 
   void downwardPass(Cells &cells) const {

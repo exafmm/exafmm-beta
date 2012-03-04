@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 template<Equation equation>
 void Evaluator<equation>::setSourceBody() {                     // Set source buffer for bodies
-  startTimer("Set sourceB  ");                                  // Start timer
+  startTimer("Set sourceB");                                    // Start timer
   for( MC_iter M=sourceSize.begin(); M!=sourceSize.end(); ++M ) {// Loop over source map
     C_iter Cj = M->first;                                       //  Set source cell
     sourceBegin[Cj] = sourceHost.size() / 4;                    //  Key : iterator, Value : offset of source leafs
@@ -32,12 +32,12 @@ void Evaluator<equation>::setSourceBody() {                     // Set source bu
       sourceHost.push_back(B->SRC);                             //   Copy source value to GPU buffer
     }                                                           //  End loop over leafs
   }                                                             // End loop over source map
-  stopTimer("Set sourceB  ");                                   // Stop timer
+  stopTimer("Set sourceB");                                     // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::setSourceCell(bool isM) {             // Set source buffer for cells
-  startTimer("Set sourceC  ");                                  // Start timer
+  startTimer("Set sourceC");                                    // Start timer
   for( MC_iter M=sourceSize.begin(); M!=sourceSize.end(); ++M ) {// Loop over source map
     C_iter Cj = M->first;                                       //  Set source cell
     sourceBegin[Cj] = sourceHost.size();                        //  Key : iterator, Value : offset of sources
@@ -56,12 +56,12 @@ void Evaluator<equation>::setSourceCell(bool isM) {             // Set source bu
       }                                                         //   End loop over coefs
     }                                                           //  Endif for source type
   }                                                             // End loop over source map
-  stopTimer("Set sourceC  ");                                   // Stop timer
+  stopTimer("Set sourceC");                                     // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::setTargetBody(Lists lists, Maps flags) {// Set target buffer for bodies
-  startTimer("Set targetB  ");                                  // Start timer
+  startTimer("Set targetB");                                    // Start timer
   int key = 0;                                                  // Initialize key to range of coefs in source cells
   for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                         // Loop over target cells
     if( !lists[Ci-Ci0].empty() ) {                              //  If the interation list is not empty
@@ -93,12 +93,12 @@ void Evaluator<equation>::setTargetBody(Lists lists, Maps flags) {// Set target 
       }                                                         //   End loop over elements to pad
     }                                                           //  End if for empty interation list
   }                                                             // End loop over target cells
-  stopTimer("Set targetB  ");                                   // Stop timer
+  stopTimer("Set targetB");                                     // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::setTargetCell(Lists lists, Maps flags) {// Set target buffer for cells
-  startTimer("Set targetC  ");                                  // Start timer
+  startTimer("Set targetC");                                    // Start timer
   int key = 0;                                                  // Initialize key to range of coefs in target cells
   for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                         // Loop over target cells
     if( !lists[Ci-Ci0].empty() ) {                              //  If the interation list is not empty
@@ -127,12 +127,12 @@ void Evaluator<equation>::setTargetCell(Lists lists, Maps flags) {// Set target 
       }                                                         //   End loop over elements to pad
     }                                                           //  End if for empty interation list
   }                                                             // End loop over target cells
-  stopTimer("Set targetC  ");                                   // Stop timer
+  stopTimer("Set targetC");                                     // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::getTargetBody(Lists &lists) {         // Get body values from target buffer
-  startTimer("Get targetB  ");                                  // Start timer
+  startTimer("Get targetB");                                    // Start timer
   for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                         // Loop over target cells
     if( !lists[Ci-Ci0].empty() ) {                              //  If the interation list is not empty
       int begin = targetBegin[Ci];                              //   Offset of target leafs
@@ -145,12 +145,12 @@ void Evaluator<equation>::getTargetBody(Lists &lists) {         // Get body valu
       lists[Ci-Ci0].clear();                                    //   Clear interaction list
     }                                                           //  End if for empty interation list
   }                                                             // End loop over target cells
-  stopTimer("Get targetB  ");                                   // Stop timer
+  stopTimer("Get targetB");                                     // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::getTargetCell(Lists &lists, bool isM) {// Get body values from target buffer
-  startTimer("Get targetC  ");                                  // Start timer
+  startTimer("Get targetC");                                    // Start timer
   for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                         // Loop over target cells
     if( !lists[Ci-Ci0].empty() ) {                              //  If the interation list is not empty
       int begin = targetBegin[Ci];                              //   Offset of target coefs
@@ -168,12 +168,12 @@ void Evaluator<equation>::getTargetCell(Lists &lists, bool isM) {// Get body val
       lists[Ci-Ci0].clear();                                    //   Clear interaction list
     }                                                           //  End if for empty interation list
   }                                                             // End loop over target cells
-  stopTimer("Get targetC  ");                                   // Stop timer
+  stopTimer("Get targetC");                                     // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::clearBuffers() {                      // Clear GPU buffers
-  startTimer("Clear buffer ");                                  // Start timer
+  startTimer("Clear buffer");                                   // Start timer
   constHost.clear();                                            // Clear const vector
   keysHost.clear();                                             // Clear keys vector
   rangeHost.clear();                                            // Clear range vector
@@ -182,7 +182,7 @@ void Evaluator<equation>::clearBuffers() {                      // Clear GPU buf
   sourceBegin.clear();                                          // Clear map for offset of source cells
   sourceSize.clear();                                           // Clear map for size of source cells
   targetBegin.clear();                                          // Clear map for offset of target cells
-  stopTimer("Clear buffer ");                                   // Stop timer
+  stopTimer("Clear buffer");                                    // Stop timer
 }
 
 template<Equation equation>
@@ -268,7 +268,7 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate all 
     CiB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CiE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
-    startTimer("Get list     ");                                //  Start timer
+    startTimer("Get list");                                     //  Start timer
     Lists listP2M(cells.size());                                //  Define P2M interation list vector
     Maps  flagP2M(cells.size());                                //  Define P2M periodic image flag
     for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over target cells
@@ -279,7 +279,7 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate all 
         sourceSize[Ci] = Ci->NDLEAF;                            //    Key : iterator, Value : number of leafs
       }                                                         //   End loop over cells topdown
     }                                                           //  End loop over source map
-    stopTimer("Get list     ");                                 //  Stop timer
+    stopTimer("Get list");                                      //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetCell(listP2M,flagP2M);                             //  Set target buffer for cells
     allocate();                                                 //  Allocate GPU memory
@@ -305,7 +305,7 @@ void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all 
       CiB = cells.begin()+ioffset;                              //   Set begin iterator for target per call
       CiE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
       constHost.push_back(2*R0);                                //   Copy domain size to GPU buffer
-      startTimer("Get list     ");                              //   Start timer
+      startTimer("Get list");                                   //   Start timer
       Lists listM2M(cells.size());                              //   Define M2M interation list vector
       Maps  flagM2M(cells.size());                              //   Define M2M periodic image flag
       for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                     //   Loop over cells bottomup (except root cell)
@@ -318,7 +318,7 @@ void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all 
           }                                                     //     End loop over child cells
         }                                                       //    Endif for current level
       }                                                         //   End loop over cells
-      stopTimer("Get list     ");                               //   Stop timer
+      stopTimer("Get list");                                    //   Stop timer
       setSourceCell(true);                                      //   Set source buffer for cells
       setTargetCell(listM2M,flagM2M);                           //   Set target buffer for cells
       allocate();                                               //   Allocate GPU memory
@@ -350,14 +350,14 @@ void Evaluator<equation>::evalM2L(Cells &cells) {               // Evaluate queu
     CiB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CiE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
-    startTimer("Get list     ");                                //  Start timer
+    startTimer("Get list");                                     //  Start timer
     for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over target cells
       for( LC_iter L=listM2L[Ci-Ci0].begin(); L!=listM2L[Ci-Ci0].end(); ++L ) {//  Loop over interaction list
         C_iter Cj = *L;                                         //    Set source cell
         sourceSize[Cj] = 2 * NTERM;                             //    Key : iterator, Value : number of coefs
       }                                                         //   End loop over interaction list
     }                                                           //  End loop over target cells
-    stopTimer("Get list     ");                                 //  Stop timer
+    stopTimer("Get list");                                      //  Stop timer
     setSourceCell(true);                                        //  Set source buffer for cells
     setTargetCell(listM2L,flagM2L);                             //  Set target buffer for cells
     allocate();                                                 //  Allocate GPU memory
@@ -389,14 +389,14 @@ void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queu
     CiB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CiE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
-    startTimer("Get list     ");                                //  Start timer
+    startTimer("Get list");                                     //  Start timer
     for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over target cells
       for( LC_iter L=listM2P[Ci-Ci0].begin(); L!=listM2P[Ci-Ci0].end(); ++L ) {//  Loop over interaction list
         C_iter Cj = *L;                                         //    Set source cell
         sourceSize[Cj] = 2 * NTERM;                             //    Key : iterator, Value : number of coefs
       }                                                         //   End loop over interaction list
     }                                                           //  End loop over target cells
-    stopTimer("Get list     ");                                 //  Stop timer
+    stopTimer("Get list");                                      //  Stop timer
     setSourceCell(true);                                        //  Set source buffer for cells
     setTargetBody(listM2P,flagM2P);                             //  Set target buffer for bodies
     allocate();                                                 //  Allocate GPU memory
@@ -428,14 +428,14 @@ void Evaluator<equation>::evalP2P(Cells &cells) {               // Evaluate queu
     CiB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CiE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
-    startTimer("Get list     ");                                //  Start timer
+    startTimer("Get list");                                     //  Start timer
     for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over target cells
       for( LC_iter L=listP2P[Ci-Ci0].begin(); L!=listP2P[Ci-Ci0].end(); ++L ) {//  Loop over interaction list
         C_iter Cj = *L;                                         //    Set source cell
         sourceSize[Cj] = Cj->NDLEAF;                            //    Key : iterator, Value : number of leafs
       }                                                         //   End loop over interaction list
     }                                                           //  End loop over target cells
-    stopTimer("Get list     ");                                 //  Stop timer
+    stopTimer("Get list");                                      //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetBody(listP2P,flagP2P);                             //  Set target buffer for bodies
     allocate();                                                 //  Allocate GPU memory
@@ -463,7 +463,7 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate all 
       CiB = cells.begin()+ioffset;                              //   Set begin iterator for target per call
       CiE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
       constHost.push_back(2*R0);                                //   Copy domain size to GPU buffer
-      startTimer("Get list     ");                              //   Start timer
+      startTimer("Get list");                                   //   Start timer
       Lists listL2L(cells.size());                              //   Define L2L interation list vector
       Maps  flagL2L(cells.size());                              //   Define L2L periodic image flag
       for( C_iter Ci=CiE-2; Ci!=CiB-1; --Ci ) {                 //   Loop over cells topdown (except root cell)
@@ -476,7 +476,7 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate all 
           }                                                     //     Endif for current level
         }                                                       //    Endif for stored source cell
       }                                                         //   End loop over cells topdown
-      stopTimer("Get list     ");                               //   Stop timer
+      stopTimer("Get list");                                    //   Stop timer
       setSourceCell(false);                                     //   Set source buffer for cells
       setTargetCell(listL2L,flagL2L);                           //   Set target buffer for cells
       allocate();                                               //   Allocate GPU memory
@@ -501,7 +501,7 @@ void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate all 
     CiB = cells.begin()+ioffset;                                //  Set begin iterator for target per call
     CiE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
-    startTimer("Get list     ");                                //  Start timer
+    startTimer("Get list");                                     //  Start timer
     Lists listL2P(cells.size());                                //  Define L2P interation list vector
     Maps  flagL2P(cells.size());                                //  Define L2P periodic image flag
     for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over cells
@@ -511,7 +511,7 @@ void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate all 
         sourceSize[Ci] = 2 * NTERM;                             //    Key : iterator, Value : number of coefs
       }                                                         //   Endif for twig cells
     }                                                           //  End loop over cells topdown
-    stopTimer("Get list     ");                                 //  Stop timer
+    stopTimer("Get list");                                      //  Stop timer
     setSourceCell(false);                                       //  Set source buffer for cells
     setTargetBody(listL2P,flagL2P);                             //  Set target buffer for bodies
     allocate();                                                 //  Allocate GPU memory
@@ -541,14 +541,14 @@ void Evaluator<equation>::evalEwaldReal(Cells &cells) {         // Evaluate queu
     CiE = cells.begin()+std::min(ioffset+numCell,int(cells.size()));// Set end iterator for target per call
     constHost.push_back(2*R0);                                  //  Copy domain size to GPU buffer
     constHost.push_back(ALPHA);                                 //  Copy Ewald scaling to GPU buffer
-    startTimer("Get list     ");                                //  Start timer
+    startTimer("Get list");                                     //  Start timer
     for( C_iter Ci=CiB; Ci!=CiE; ++Ci ) {                       //  Loop over target cells
       for( LC_iter L=listP2P[Ci-Ci0].begin(); L!=listP2P[Ci-Ci0].end(); ++L ) {//  Loop over interaction list
         C_iter Cj = *L;                                         //    Set source cell
         sourceSize[Cj] = Cj->NDLEAF;                            //    Key : iterator, Value : number of leafs
       }                                                         //   End loop over interaction list
     }                                                           //  End loop over target cells
-    stopTimer("Get list     ");                                 //  Stop timer
+    stopTimer("Get list");                                      //  Stop timer
     setSourceBody();                                            //  Set source buffer for bodies
     setTargetBody(listP2P,flagP2P);                             //  Set target buffer for bodies
     allocate();                                                 //  Allocate GPU memory
@@ -597,15 +597,15 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
       listM2L[Ci-Ci0].push_back(Cj);                            //   Push source cell into P2P interaction list
     }                                                           //  End loop over source cells
   }                                                             // End loop over target cells
-  startTimer("P2P kernel   ");                                  // Start timer
+  startTimer("P2P kernel");                                     // Start timer
   evalP2P(icells);                                              // Evaluate queued P2P kernels
-  timeP2P = stopTimer("P2P kernel   ") / 100 / 100;             // Stop timer
-  startTimer("M2L kernel   ");                                  // Start timer
+  timeP2P = stopTimer("P2P kernel") / 100 / 100;                // Stop timer
+  startTimer("M2L kernel");                                     // Start timer
   evalM2L(icells);                                              // Evaluate queued M2L kernels
-  timeM2L = stopTimer("M2L kernel   ");                         // Stop timer
-  startTimer("M2P kernel   ");                                  // Start timer
+  timeM2L = stopTimer("M2L kernel");                            // Stop timer
+  startTimer("M2P kernel");                                     // Start timer
   evalM2P(icells);                                              // Evaluate queued M2P kernels
-  timeM2P = stopTimer("M2P kernel   ") / 100;                   // Stop timer
+  timeM2P = stopTimer("M2P kernel") / 100;                      // Stop timer
 }
 
 #if QUARK

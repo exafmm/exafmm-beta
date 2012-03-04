@@ -22,48 +22,48 @@ THE SOFTWARE.
 #include "evaluator.h"
 
 int main() {
-  const int numBodies = 10000;
-  const int numTarget = 100;
-  IMAGES = 0;
-  THETA = 1 / sqrtf(4);
-  Bodies bodies(numBodies);
-  Bodies jbodies;
-  Evaluator<Laplace> FMM;
-  FMM.initialize();
-  FMM.preCalculation();
-  FMM.printNow = true;
+  const int numBodies = 10000;                                  // Number of bodies
+  const int numTarget = 100;                                    // Number of target points to be used for error eval
+  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
+  Bodies bodies(numBodies);                                     // Define vector of bodies
+  Bodies jbodies;                                               // Define vector of source bodies
+  Evaluator<Laplace> FMM;                                       // Instantiate Evaluator class
+  FMM.initialize();                                             // Initialize FMM
+  FMM.preCalculation();                                         // Kernel pre-processing
+  FMM.printNow = true;                                          // Print timings
 
-  FMM.startTimer("Set bodies   ");
-  FMM.sphere(bodies);
-  FMM.stopTimer("Set bodies   ",FMM.printNow);
+  FMM.startTimer("Set bodies");                                 // Start timer
+  FMM.sphere(bodies);                                           // Initialize bodies on a spherical shell
+  FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
 
-  FMM.startTimer("Set domain   ");
-  FMM.setDomain(bodies);
-  FMM.stopTimer("Set domain   ",FMM.printNow);
+  FMM.startTimer("Set domain");                                 // Start timer
+  FMM.setDomain(bodies);                                        // Set domain size of FMM
+  FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
 
-  if( IMAGES != 0 ) {
-    FMM.startTimer("Set periodic ");
-    jbodies = FMM.periodicBodies(bodies);
-    FMM.stopTimer("Set periodic ",FMM.printNow);
-  } else {
-    jbodies = bodies;
-  }
+  if( IMAGES != 0 ) {                                           // If periodic FMM
+    FMM.startTimer("Set periodic");                             //  Start timer
+    jbodies = FMM.periodicBodies(bodies);                       //  Copy source bodies for all periodic images
+    FMM.stopTimer("Set periodic",FMM.printNow);                 //  Stop timer
+  } else {                                                      // If non-periodic FMM
+    jbodies = bodies;                                           //  Set source bodies
+  }                                                             // Endif for periodic FMM
 
-  FMM.startTimer("Direct GPU   ");
-  FMM.evalP2P(bodies,jbodies);
-  FMM.stopTimer("Direct GPU   ",FMM.printNow);
+  FMM.startTimer("Direct GPU");                                 // Start timer
+  FMM.evalP2P(bodies,jbodies);                                  // Direct summation on GPU
+  FMM.stopTimer("Direct GPU",FMM.printNow);                     // Stop timer
 
-  FMM.startTimer("Direct CPU   ");
-  bool onCPU = true;
-  bodies.resize(numTarget);
-  Bodies bodies2 = bodies;
-  FMM.initTarget(bodies2);
-  FMM.evalP2P(bodies2,jbodies,onCPU);
-  FMM.stopTimer("Direct CPU   ",FMM.printNow);
+  FMM.startTimer("Direct CPU");                                 // Start timer
+  bool onCPU = true;                                            // Bool for CPU run
+  bodies.resize(numTarget);                                     // Shrink target bodies vector to save time
+  Bodies bodies2 = bodies;                                      // Define new bodies vector for direct sum
+  FMM.initTarget(bodies2);                                      // Reinitialize target values
+  FMM.evalP2P(bodies2,jbodies,onCPU);                           // Direct summation on CPU
+  FMM.stopTimer("Direct CPU",FMM.printNow);                     // Stop timer
 
-  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-  FMM.printError(diff1,norm1,diff2,norm2);
-  FMM.postCalculation();
-  FMM.finalize();
+  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
+  FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);        // Evaluate error on the reduced set of bodies
+  FMM.printError(diff1,norm1,diff2,norm2);                      // Print the L2 norm error
+  FMM.postCalculation();                                        // Kernel post-processing
+  FMM.finalize();                                               // Finalize FMM
 }

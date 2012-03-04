@@ -124,35 +124,35 @@ private:
 
 protected:
   void setDomain(Bodies &bodies) {
-    startTimer("Set domain   ");
+    startTimer("Set domain");
     vect xmin, xmax;
     NLEAF = bodies.size();
     leafs.reserve(NLEAF);
     X0 = 0;
     xmax = xmin = bodies.begin()->X;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      Leaf leaf;                                                //  Leafs are bodies attached to the tree
-      leaf.I = B-bodies.begin();                                //  Set leaf index
-      leaf.X = B->X;                                            //  Set leaf coordinate
-      leafs.push_back(leaf);                                    //  Push leaf into vector
-      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
-        if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];           //   Determine xmin
-        else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];           //   Determine xmax
-      }                                                         //  End loop over each dimension
-      X0 += B->X;                                               //  Sum positions
-    }                                                           // End loop over bodies
-    X0 /= bodies.size();                                        // Calculate average position
-    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
-      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
-      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
-      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
-    }                                                           // End loop over each dimension
-    R0 *= 1.000001;                                             // Add some leeway to root radius
-    stopTimer("Set domain   ",printNow);
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      Leaf leaf;
+      leaf.I = B-bodies.begin();
+      leaf.X = B->X;
+      leafs.push_back(leaf);
+      for( int d=0; d!=3; ++d ) {
+        if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];
+        else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];
+      }
+      X0 += B->X;
+    }
+    X0 /= bodies.size();
+    for( int d=0; d!=3; ++d ) {
+      X0[d] = int(X0[d]+.5);
+      R0 = std::max(xmax[d] - X0[d], R0);
+      R0 = std::max(X0[d] - xmin[d], R0);
+    }
+    R0 *= 1.000001;
+    stopTimer("Set domain",printNow);
   }
 
   void buildTree() {
-    startTimer("Grow tree    ");
+    startTimer("Grow tree");
     NCELL = 1;
     nodes.reserve(NLEAF);
     Node node;
@@ -177,11 +177,11 @@ protected:
       if( MAXLEVEL < N->LEVEL ) MAXLEVEL = N->LEVEL;
     }
     MAXLEVEL++;
-    stopTimer("Grow tree    ",printNow);
+    stopTimer("Grow tree",printNow);
   }
 
   void linkTree(Bodies &bodies, Cells &cells) {
-    startTimer("Link tree    ");
+    startTimer("Link tree");
     cells.resize(NCELL);
     Ci0 = cells.begin();
     BN = bodies.begin();
@@ -190,11 +190,11 @@ protected:
     nodes.clear();
     leafs.clear();
     permuteBodies(bodies);
-    stopTimer("Link tree    ",printNow);
+    stopTimer("Link tree",printNow);
   }
 
   void upwardPass(Cells &cells) {
-    startTimer("Upward pass  ");
+    startTimer("Upward pass");
     setRootCell(cells);
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       C->M = 0;
@@ -212,7 +212,7 @@ protected:
     }
 #endif
     setRcrit(cells);
-    stopTimer("Upward pass  ",printNow);
+    stopTimer("Upward pass",printNow);
   }
 
   void downwardPass(Cells &cells) const {

@@ -25,50 +25,50 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  const int numBodies = 100000;
-  IMAGES = 0;
-  THETA = 1 / sqrtf(4);
-  Bodies bodies(numBodies);
-  Partition<Laplace> FMM;
-  FMM.initialize();
-  if( MPIRANK == 0 ) FMM.printNow = true;
+  const int numBodies = 100000;                                 // Number of bodies
+  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
+  Bodies bodies(numBodies);                                     // Define vector of bodies
+  Partition<Laplace> FMM;                                       // Instantiate Partition class
+  FMM.initialize();                                             // Initialize FMM
+  if( MPIRANK == 0 ) FMM.printNow = true;                       // Print only if MPIRANK == 0
 
-  FMM.startTimer("Set bodies   ");
-  FMM.random(bodies,MPIRANK+1);
-  FMM.stopTimer("Set bodies   ",FMM.printNow);
+  FMM.startTimer("Set bodies");                                 // Start timer
+  FMM.cube(bodies,MPIRANK+1);                                   // Initialize bodies in a cube
+  FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
 
-  FMM.startTimer("Set domain   ");
-  FMM.setGlobDomain(bodies);
-  FMM.stopTimer("Set domain   ");
+  FMM.startTimer("Set domain");                                 // Start timer
+  FMM.setGlobDomain(bodies);                                    // Set global domain size of FMM
+  FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
 
-  FMM.startTimer("Set index    ");
-  FMM.setIndex(bodies);
-  FMM.stopTimer("Set index    ");
+  FMM.startTimer("Set index");                                  // Start timer
+  FMM.setIndex(bodies);                                         // Set index of cells
+  FMM.stopTimer("Set index",FMM.printNow);                      // Stop timer
 
-  FMM.buffer.resize(bodies.size());
-  FMM.sortBodies(bodies,FMM.buffer);
+  FMM.buffer.resize(bodies.size());                             // Resize sort buffer
+  FMM.sortBodies(bodies,FMM.buffer);                            // Sort bodies in ascending order
 
-  FMM.bisection(bodies);
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-    B->ICELL = 0;
-  }
+  FMM.bisection(bodies);                                        // Partitioning by recursive bisection
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
+    B->ICELL = 0;                                               //  Set cell index to 0
+  }                                                             // End loop over bodies
 
 #ifdef VTK
-  int Ncell = 0;
-  vtkPlot vtk;
-  if( MPIRANK == 0 ) {
-    vtk.setDomain(FMM.getR0(),FMM.getX0());
-    vtk.setGroupOfPoints(bodies,Ncell);
-  }
-  for( int i=1; i!=MPISIZE; ++i ) {
-    FMM.shiftBodies(bodies);
-    if( MPIRANK == 0 ) {
-      vtk.setGroupOfPoints(bodies,Ncell);
-    }
-  }
-  if( MPIRANK == 0 ) {
-    vtk.plot(Ncell);
-  }
+  int Ncell = 0;                                                // Initialize number of cells
+  vtkPlot vtk;                                                  // Instantiate vtkPlot class
+  if( MPIRANK == 0 ) {                                          // If MPI rank is 0
+    vtk.setDomain(FMM.getR0(),FMM.getX0());                     //  Set bounding box for VTK
+    vtk.setGroupOfPoints(bodies,Ncell);                         //  Set group of points
+  }                                                             // Endif for MPI rank
+  for( int i=1; i!=MPISIZE; ++i ) {                             // Loop over MPI ranks
+    FMM.shiftBodies(bodies);                                    //  Communicate bodies round-robin
+    if( MPIRANK == 0 ) {                                        //  If MPI rank is 0
+      vtk.setGroupOfPoints(bodies,Ncell);                       //   Set group of points
+    }                                                           //  Endif for MPI rank
+  }                                                             // End loop over MPI ranks
+  if( MPIRANK == 0 ) {                                          // If MPI rank is 0
+    vtk.plot(Ncell);                                            //  plot using VTK
+  }                                                             // Endif for MPI rank
 #endif
-  FMM.finalize();
+  FMM.finalize();                                               // Finalize FMM
 }

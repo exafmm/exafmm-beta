@@ -26,21 +26,21 @@ THE SOFTWARE.
 
 int main() {
   int numBodies = 10000;                                        // Number of bodies
-  int numTarget = 100;                                          // Number of target points to be used for error eval.
-  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic FMM)
-  THETA = 1 / sqrtf(4);                                         // Multipole acceptace criteria
+  int numTarget = 100;                                          // Number of target points to be used for error eval
+  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
   Bodies bodies, jbodies;                                       // Define vector of bodies
   Cells cells, jcells;                                          // Define vector of cells
   ParallelFMM<Laplace> FMM;                                     // Instantiate ParallelFMM class
   FMM.initialize();                                             // Initialize FMM
-  bool printNow = MPIRANK == 0;                                 // Print only if MPIRANK == 0
+  if( MPIRANK == 0 ) bool printNow = true;                      // Print only if MPIRANK == 0
 
-  for( int it=0; it!=25; ++it ) {                               // Loop from N = 10^4 to 10^7
+  for( int it=0; it!=25; ++it ) {                               // Loop over FMM iterations
     numBodies = int(pow(10,(it+32)/8.0));                       //  Exponentially increase N
     if(printNow) std::cout << "N             : " << numBodies << std::endl;// Print N
     bodies.resize(numBodies);                                   //  Resize bodies vector
-    FMM.random(bodies,MPIRANK+1);                               //  Initialize bodies with random coordinates
-    FMM.startTimer("FMM          ");                            //  Start timer
+    FMM.cube(bodies,MPIRANK+1);                                 //  Initialize bodies in a cube
+    FMM.startTimer("FMM");                                      //  Start timer
     FMM.setGlobDomain(bodies);                                  //  Set global domain size of FMM
     FMM.octsection(bodies);                                     //  Partition domain and redistribute bodies
     cells.clear();                                              //  Make sure cells vector is empty
@@ -55,13 +55,13 @@ int main() {
     FMM.commCells(jbodies,jcells);                              //  Communicate cells (receive bodies here)
 
     FMM.downward(cells,jcells);                                 //  Downward sweep
-    FMM.stopTimer("FMM          ",printNow);                    //  Stop timer
-    FMM.eraseTimer("FMM          ");                            //  Erase entry from timer to avoid timer overlap
+    FMM.stopTimer("FMM",printNow);                              //  Stop timer
+    FMM.eraseTimer("FMM");                                      //  Erase entry from timer to avoid timer overlap
 
-    FMM.startTimer("Direct sum   ");                            //  Start timer
+    FMM.startTimer("Direct sum");                               //  Start timer
     Bodies bodies2 = bodies;                                    //  Define new bodies vector for direct sum
 #if 1
-    FMM.initTarget(bodies2);                                    //  Reset target values to 0
+    FMM.initTarget(bodies2);                                    //  Reinitialize target values
     if( IMAGES != 0 ) {                                         //  For periodic boundary condition
       jbodies = FMM.periodicBodies(bodies2);                    //   Copy source bodies for all periodic images
     } else {                                                    //  For free field boundary condition
@@ -77,20 +77,20 @@ int main() {
 #else
     FMM.readTarget(bodies2);                                    //  Read direct summation results from file
 #endif
-    FMM.stopTimer("Direct sum   ",printNow);                    //  Stop timer
-    FMM.eraseTimer("Direct sum   ");                            //  Erase entry from timer to avoid timer overlap
+    FMM.stopTimer("Direct sum",printNow);                       //  Stop timer
+    FMM.eraseTimer("Direct sum");                               //  Erase entry from timer to avoid timer overlap
     if(printNow) FMM.writeTime();                               //  Write timings of all events to file
     if(printNow) FMM.resetTimer();                              //  Erase all events in timer
 
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
-    bodies.resize(numTarget);                                   //  Shrink bodies to match bodies2
+    bodies.resize(numTarget);                                   //  Shrink target bodies vector to save time
     FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);      //  Evaluate error on the reduced set of bodies
     MPI_Datatype MPI_TYPE = FMM.getType(diff1);                 //  Get MPI datatype
     MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce difference in potential
     MPI_Reduce(&norm1,&norm3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce norm of potential
     MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce difference in force
     MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Recude norm of force
-    if(printNow) FMM.printError(diff3,norm3,diff4,norm4);       //  Print the L2 norm error of potential & force
+    if(printNow) FMM.printError(diff3,norm3,diff4,norm4);       //  Print the L2 norm error
   }                                                             // End loop over N
   FMM.finalize();                                               // Finalize FMM
 }

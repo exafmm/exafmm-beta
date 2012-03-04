@@ -27,12 +27,12 @@ __device__ __constant__ gpureal constDevc[514];                 // Constants on 
 
 template<>
 void Kernel<VanDerWaals>::initialize() {
-  startTimer("Init GPU     ");                                  // Start timer
+  startTimer("Init GPU");                                       // Start timer
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(DEVICE);                                        // Set GPU device
   cudaThreadSynchronize();                                      // Sync GPU threads
-  stopTimer("Init GPU     ",MPIRANK==0);                        // Stop timer & print
-  eraseTimer("Init GPU     ");                                  // Erase timer
+  stopTimer("Init GPU",MPIRANK==0);                             // Stop timer & print
+  eraseTimer("Init GPU");                                       // Erase timer
 }
 
 template<>
@@ -42,7 +42,7 @@ void Kernel<VanDerWaals>::finalize() {
 template<>
 void Kernel<VanDerWaals>::allocate() {
   cudaThreadSynchronize();
-  startTimer("cudaMalloc   ");
+  startTimer("cudaMalloc");
   if( keysHost.size() > keysDevcSize ) {
     if( keysDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(keysDevc));
     CUDA_SAFE_CALL(cudaMalloc( (void**) &keysDevc, keysHost.size()*sizeof(int) ));
@@ -64,13 +64,13 @@ void Kernel<VanDerWaals>::allocate() {
     targetDevcSize = targetHost.size();
   }
   cudaThreadSynchronize();
-  stopTimer("cudaMalloc   ");
+  stopTimer("cudaMalloc");
 }
 
 template<>
 void Kernel<VanDerWaals>::hostToDevice() {
   cudaThreadSynchronize();
-  startTimer("cudaMemcpy   ");
+  startTimer("cudaMemcpy");
   constHost.push_back(ATOMS);
   for( int i=0; i!=ATOMS*ATOMS; ++i ) {
     constHost.push_back(RSCALE[i]);
@@ -83,16 +83,16 @@ void Kernel<VanDerWaals>::hostToDevice() {
   CUDA_SAFE_CALL(cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
   CUDA_SAFE_CALL(cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(gpureal)));
   cudaThreadSynchronize();
-  stopTimer("cudaMemcpy   ");
+  stopTimer("cudaMemcpy");
 }
 
 template<>
 void Kernel<VanDerWaals>::deviceToHost() {
   cudaThreadSynchronize();
-  startTimer("cudaMemcpy   ");
+  startTimer("cudaMemcpy");
   CUDA_SAFE_CALL(cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(gpureal),cudaMemcpyDeviceToHost));
   cudaThreadSynchronize();
-  stopTimer("cudaMemcpy   ");
+  stopTimer("cudaMemcpy");
 }
 
 __device__ inline void VanDerWaalsP2P_core(gpureal *target, gpureal *targetX, gpureal *sourceShrd,

@@ -35,7 +35,7 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Ev
 
 template<Equation equation>
 void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate all P2M kernels
-  startTimer("evalP2M      ");                                  // Start timer
+  startTimer("evalP2M");                                        // Start timer
   for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {          // Loop over cells
     C->M = 0;                                                   //  Initialize multipole coefficients
     C->L = 0;                                                   //  Initialize local coefficients
@@ -43,7 +43,7 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate all 
       P2M(C);                                                   //   Perform P2M kernel
     }                                                           //  Endif for twig
   }                                                             // End loop over cells
-  stopTimer("evalP2M      ");                                   // Stop timer
+  stopTimer("evalP2M");                                         // Stop timer
 }
 
 template<Equation equation>
@@ -148,7 +148,7 @@ void Evaluator<equation>::evalP2P(C_iter Ci, C_iter Cj) {       // Evaluate sing
 
 template<Equation equation>
 void Evaluator<equation>::evalP2P(Cells &cells) {               // Evaluate queued P2P kernels
-  startTimer("evalP2P      ");                                  // Start timer
+  startTimer("evalP2P");                                        // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
   for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over cells
     while( !listP2P[Ci-Ci0].empty() ) {                         //  While M2P interaction list is not empty
@@ -172,7 +172,7 @@ void Evaluator<equation>::evalP2P(Cells &cells) {               // Evaluate queu
   }                                                             // End loop over cells topdown
   listP2P.clear();                                              // Clear interaction lists
   flagP2P.clear();                                              // Clear periodic image flags
-  stopTimer("evalP2P      ");                                   // Stop timer
+  stopTimer("evalP2P");                                         // Stop timer
 }
 
 template<Equation equation>
@@ -191,13 +191,13 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate all 
 
 template<Equation equation>
 void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate all L2P kernels
-  startTimer("evalL2P      ");                                  // Start timer
+  startTimer("evalL2P");                                        // Start timer
   for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {          // Loop over cells
     if( C->NCHILD == 0 ) {                                      //  If cell is a twig
       L2P(C);                                                   //   Perform L2P kernel
     }                                                           //  Endif for twig
   }                                                             // End loop over cells topdown
-  stopTimer("evalL2P      ");                                   // Stop timer
+  stopTimer("evalL2P");                                         // Stop timer
 }
 
 template<Equation equation>
@@ -237,15 +237,15 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
   Cj->X = 1;                                                    // Set coordinates of source cell
   Cj->NDLEAF = 1000;                                            // Number of leafs in source cell
   Cj->LEAF = jbodies.begin();                                   // Leaf iterator in source cell
-  startTimer("P2P kernel   ");                                  // Start timer
+  startTimer("P2P kernel");                                     // Start timer
   for( int i=0; i!=1; ++i ) P2P(Ci,Cj);                         // Perform P2P kernel
-  timeP2P = stopTimer("P2P kernel   ") / 10000;                 // Stop timer
-  startTimer("M2L kernel   ");                                  // Start timer
+  timeP2P = stopTimer("P2P kernel") / 10000;                    // Stop timer
+  startTimer("M2L kernel");                                     // Start timer
   for( int i=0; i!=1000; ++i ) M2L(Ci,Cj);                      // Perform M2L kernel
-  timeM2L = stopTimer("M2L kernel   ") / 1000;                  // Stop timer
-  startTimer("M2P kernel   ");                                  // Start timer
+  timeM2L = stopTimer("M2L kernel") / 1000;                     // Stop timer
+  startTimer("M2P kernel");                                     // Start timer
   for( int i=0; i!=100; ++i ) M2P(Ci,Cj);                       // Perform M2P kernel
-  timeM2P = stopTimer("M2P kernel   ") / 1000;                  // Stop timer
+  timeM2P = stopTimer("M2P kernel") / 1000;                     // Stop timer
 }
 
 #if QUARK

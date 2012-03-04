@@ -25,45 +25,45 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  const int numBodies = 1000000;
-  IMAGES = 0;
-  THETA = 1 / sqrtf(4);
-  Bodies bodies(numBodies);
-  Partition<Laplace> FMM;
-  FMM.initialize();
-  if( MPIRANK == 0 ) FMM.printNow = true;
+  const int numBodies = 1000000;                                // Number of bodies
+  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
+  Bodies bodies(numBodies);                                     // Define vector of bodies
+  Partition<Laplace> FMM;                                       // Instantiate Partition class
+  FMM.initialize();                                             // Initialize FMM
+  if( MPIRANK == 0 ) FMM.printNow = true;                       // Print only if MPIRANK == 0
 
-  FMM.startTimer("Set bodies   ");
-  FMM.random(bodies,MPIRANK+1);
-  FMM.stopTimer("Set bodies   ",FMM.printNow);
+  FMM.startTimer("Set bodies");                                 // Start timer
+  FMM.cube(bodies,MPIRANK+1);                                   // Initialize bodies in a cube
+  FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
 
-  FMM.startTimer("Set domain   ");
-  FMM.setGlobDomain(bodies);
-  FMM.stopTimer("Set domain   ",FMM.printNow);
+  FMM.startTimer("Set domain");                                 // Start timer
+  FMM.setGlobDomain(bodies);                                    // Set global domain size of FMM
+  FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
 
-  FMM.setIndex(bodies);
-  FMM.binBodies(bodies,0);
+  FMM.setIndex(bodies);                                         // Set index of cells
+  FMM.binBodies(bodies,0);                                      // Bin bodies into leaf level cells
 
-  FMM.buffer.resize(bodies.size());
-  FMM.sortBodies(bodies,FMM.buffer);
+  FMM.buffer.resize(bodies.size());                             // Resize sort buffer
+  FMM.sortBodies(bodies,FMM.buffer);                            // Sort bodies in ascending order
 
-  FMM.startTimer("Nth element  ");
-  bigint nthGlobal = numBodies * MPISIZE / 3;
-  bigint iSplit = FMM.nth_element(bodies,nthGlobal);
-  int nthLocal = FMM.splitBodies(bodies,iSplit);
-  FMM.stopTimer("Nth element  ",FMM.printNow);
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-    B->ICELL = B-bodies.begin() > nthLocal;
-  }
+  FMM.startTimer("Nth element");                                // Start timer
+  bigint nthGlobal = numBodies * MPISIZE / 3;                   // Split at nth global element
+  bigint iSplit = FMM.nth_element(bodies,nthGlobal);            // Get cell index of nth global element
+  int nthLocal = FMM.splitBodies(bodies,iSplit);                // Split bodies based on iSplit
+  FMM.stopTimer("Nth element",FMM.printNow);                    // Stop timer
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
+    B->ICELL = B-bodies.begin() > nthLocal;                     //  Set cell index according to the split
+  }                                                             // End loop over bodies
 
 #ifdef VTK
-  if( MPIRANK == 0 ) {
-    int Ncell = 0;
-    vtkPlot vtk;
-    vtk.setDomain(FMM.getR0(),FMM.getX0());
-    vtk.setGroupOfPoints(bodies,Ncell);
-    vtk.plot(Ncell);
-  }
+  if( MPIRANK == 0 ) {                                          // If MPI rank is 0
+    int Ncell = 0;                                              //  Initialize number of cells
+    vtkPlot vtk;                                                //  Instantiate vtkPlot class
+    vtk.setDomain(FMM.getR0(),FMM.getX0());                     //  Set bounding box for VTK
+    vtk.setGroupOfPoints(bodies,Ncell);                         //  Set group of points
+    vtk.plot(Ncell);                                            //  plot using VTK
+  }                                                             // Endif for MPI rank
 #endif
-  FMM.finalize();
+  FMM.finalize();                                               // Finalize FMM
 }
