@@ -259,11 +259,11 @@ public:
 
 //! Random distribution in [-1,1]^3 cube
   void random(Bodies &bodies, int seed=1, int numSplit=1) {
-    srand(seed);                                                // Set seed for random number generator
+    srand48(seed);                                              // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset
         seed++;                                                 //   Mimic seed at next rank
-        srand(seed);                                            //   Set seed for random number generator
+        srand48(seed);                                          //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->X[d] = drand48() * 2 * M_PI - M_PI;                  //   Initialize positions
@@ -275,11 +275,11 @@ public:
 
 //! Random distribution on r = 1 sphere
   void sphere(Bodies &bodies, int seed=1, int numSplit=1) {
-    srand(seed);                                                // Set seed for random number generator
+    srand48(seed);                                              // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset
         seed++;                                                 //   Mimic seed at next rank
-        srand(seed);                                            //   Set seed for random number generator
+        srand48(seed);                                          //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->X[d] = drand48() * 2 - 1;                            //   Initialize positions

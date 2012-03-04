@@ -21,6 +21,11 @@ THE SOFTWARE.
 */
 #ifndef types_h
 #define types_h
+
+#ifdef __INTEL_COMPILER
+#pragma warning(disable:193 383 444 981 1572 2259)
+#endif
+
 #include <algorithm>
 #include <assert.h>
 #include <cmath>
@@ -123,7 +128,7 @@ enum Equation {                                                 //!< Equation ty
 struct JBody {
   int         IBODY;                                            //!< Initial body numbering for sorting back
   int         IPROC;                                            //!< Initial process numbering for partitioning back
-  unsigned    ICELL;                                            //!< Cell index
+  bigint      ICELL;                                            //!< Cell index
   vect        X;                                                //!< Position
   real        SRC;                                              //!< Scalar source values
 };
@@ -131,7 +136,7 @@ typedef std::vector<JBody>             JBodies;                 //!< Vector of s
 typedef std::vector<JBody>::iterator   JB_iter;                 //!< Iterator for source body vector
 
 //! Structure of bodies
-struct Body : JBody {
+struct Body : public JBody {
   vec<4,real> TRG;                                              //!< Scalar+vector target values
   bool operator<(const Body &rhs) const {                       //!< Overload operator for comparing body index
     return this->IBODY < rhs.IBODY;                             //!< Comparison function for body index
@@ -163,7 +168,7 @@ typedef std::vector<Node>::iterator    N_iter;                  //!< Iterator fo
 
 //! Structure of source cells (stuff to send)
 struct JCell {
-  unsigned ICELL;                                               //!< Cell index
+  bigint ICELL;                                                 //!< Cell index
   Mset   M;                                                     //!< Multipole coefficients
 };
 typedef std::vector<JCell>             JCells;                  //!< Vector of source cells
@@ -171,7 +176,7 @@ typedef std::vector<JCell>::iterator   JC_iter;                 //!< Iterator fo
 
 //! Structure of cells
 struct Cell {
-  unsigned ICELL;                                               //!< Cell index
+  bigint   ICELL;                                               //!< Cell index
   int      NCHILD;                                              //!< Number of child cells
   int      NCLEAF;                                              //!< Number of child leafs
   int      NDLEAF;                                              //!< Number of descendant leafs

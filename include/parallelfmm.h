@@ -444,7 +444,7 @@ private:
     stopTimer("Sort resize  ",printNow);                        // Stop timer 
     sortCells(twigs,cbuffer);                                   // Sort twigs in ascending order
     startTimer("Ziptwigs     ");                                // Start timer
-    bigint index = -1;                                          // Initialize index counter
+    bigint index = 1e8;                                         // Initialize index counter
     while( !twigs.empty() ) {                                   // While twig vector is not empty
       if( twigs.back().ICELL != index ) {                       //  If twig's index is different from previous
         cells.push_back(twigs.back());                          //   Push twig into cell vector

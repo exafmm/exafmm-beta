@@ -170,23 +170,23 @@ public:
         else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];           //   Determine xmax
       }                                                         //  End loop over each dimension
     }                                                           // End loop over bodies
-    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
-      X0[d] = (xmax[d] + xmin[d]) / 2;                          // Calculate center of domain
-      X0[d] = int(X0[d]+.5);                                    //  Shift center to nearest integer
-      R0 = std::max(xmax[d] - X0[d], R0);                       //  Calculate max distance from center
-      R0 = std::max(X0[d] - xmin[d], R0);                       //  Calculate max distance from center
-    }                                                           // End loop over each dimension
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
-      if( X0[0]-R0 < x0[0]-r0 || x0[0]+r0 < X0[0]+R0            //  Check for outliers in x direction
-       || X0[1]-R0 < x0[1]-r0 || x0[1]+r0 < X0[1]+R0            //  Check for outliers in y direction
-       || X0[2]-R0 < x0[2]-r0 || x0[2]+r0 < X0[2]+R0 ) {        //  Check for outliers in z direction
+      if( xmin[0] < x0[0]-r0 || x0[0]+r0 < xmax[0]              //  Check for outliers in x direction
+       || xmin[1] < x0[1]-r0 || x0[1]+r0 < xmax[1]              //  Check for outliers in y direction
+       || xmin[2] < x0[2]-r0 || x0[2]+r0 < xmax[2] ) {          //  Check for outliers in z direction
         std::cout << "Error: Particles located outside periodic domain : " << std::endl;// Print error message
-        std::cout << X0-R0 << std::endl;
-        std::cout << X0+R0 << std::endl;
+        std::cout << xmin << std::endl;
+        std::cout << xmax << std::endl;
       }                                                         //  End if for outlier checking
       X0 = x0;                                                  //  Center is [0, 0, 0]
       R0 = r0;                                                  //  Radius is r0
     } else {
+      for( int d=0; d!=3; ++d ) {                               // Loop over each dimension
+        X0[d] = (xmax[d] + xmin[d]) / 2;                        // Calculate center of domain
+        X0[d] = int(X0[d]+.5);                                  //  Shift center to nearest integer
+        R0 = std::max(xmax[d] - X0[d], R0);                     //  Calculate max distance from center
+        R0 = std::max(X0[d] - xmin[d], R0);                     //  Calculate max distance from center
+      }                                                         // End loop over each dimension
       R0 += 1e-5;                                               // Add some leeway to root radius
     }                                                           // Endif for periodic boundary condition
   }

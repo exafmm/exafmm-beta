@@ -925,4 +925,4 @@ void Kernel<Laplace>::L2P() {
   stopTimer("L2P GPUkernel");
 }
 
-#include "../kernel/CPUEwaldLaplace.cu"
+#include "../kernel/GPUEwaldLaplace.cu"

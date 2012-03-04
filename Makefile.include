@@ -45,7 +45,7 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib
 #CXX     += -I$(VTK_INCLUDE_PATH)
 #VFLAGS  = -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
-ifeq ($(DEVICE),gpu)
+ifeq ($(DEVICE),GPU)
 ### CUDA flags
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
