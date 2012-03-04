@@ -293,24 +293,27 @@ public:
     initTarget(bodies);                                         // Initialize target values
   }
 
-//! Uniform distribution on [-1,1]^3 lattice (for debugging)
+//! Uniform distribution on [-pi,pi]^3 lattice (for debugging)
   void lattice(Bodies &bodies) {
-    int level = int(log(bodies.size()*MPISIZE+1.)/M_LN2/3);     // Level of tree
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      int d = 0, l = 0;                                         //  Initialize dimension and level
-      int index = MPIRANK * bodies.size() + (B-bodies.begin()); //  Set index of body iterator
-      vec<3,int> nx = 0;                                        //  Initialize 3-D cell index
-      while( index != 0 ) {                                     //  Deinterleave bits while index is nonzero
-        nx[d] += (index % 2) * (1 << l);                        //   Add deinterleaved bit to 3-D cell index
-        index >>= 1;                                            //   Right shift the bits
-        d = (d+1) % 3;                                          //   Increment dimension
-        if( d == 0 ) l++;                                       //   If dimension is 0 again, increment level
-      }                                                         //  End while loop for deinterleaving bits
-      for( d=0; d!=3; ++d ) {                                   //  Loop over dimensions
-        B->X[d] = -1 + (2 * nx[d] + 1.) / (1 << level);         //   Calculate cell center from 3-D cell index
-      }                                                         //  End loop over dimensions
-    }                                                           // End loop over bodies
-    initSource(bodies);                                         // Initialize source values
+    int nx = int(powf(bodies.size()*MPISIZE,1./3));             // Size of lattice per dimension
+    assert( int(bodies.size()*MPISIZE) == nx*nx*nx );           // Number of bodies must be cube of integer
+    int sign = 1;                                               // Initialize alternating sign
+    B_iter B=bodies.begin();                                    // Initialize body iterator
+    for( int ix=0; ix!=nx; ++ix ) {                             // Loop over x direction
+      for( int iy=0; iy!=nx; ++iy ) {                           //  Loop over y direction
+        for( int iz=0; iz!=nx; ++iz, ++B ) {                    //   Loop over z direction
+          B->X[0] = -M_PI + (2 * M_PI * ix + M_PI) / nx;        //    Set x coordinate
+          B->X[1] = -M_PI + (2 * M_PI * iy + M_PI) / nx;        //    Set y coordinate
+          B->X[2] = -M_PI + (2 * M_PI * iz + M_PI) / nx;        //    Set z coordinate
+          B->SRC = sign;                                        //    Source alternates between -1 and 1
+          B->IBODY = B-bodies.begin();                          //    Tag body with initial index
+          B->IPROC = MPIRANK;                                   //    Tag body with initial MPI rank
+          sign = -sign;                                         //    Alternate sign in x direction
+        }                                                       //   End loop over z direction
+        sign = -sign;                                           //   Alternate sign in y direction
+      }                                                         //  End loop over y direction
+      sign = -sign;                                             //  Alternate sign in z direction
+    }                                                           // End loop over x direction
     initTarget(bodies);                                         // Initialize target values
   }
 
