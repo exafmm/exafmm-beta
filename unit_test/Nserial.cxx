@@ -33,6 +33,7 @@ int main() {
   Cells cells, jcells;                                          // Define vector of cells
   SerialFMM<Laplace> FMM;                                       // Instantiate SerialFMM class
   FMM.initialize();                                             // Initialize FMM
+  bool printNow = true;                                         // Print timer
 
   for( int it=0; it!=25; ++it ) {                               // Loop over FMM iterations
     numBodies = int(pow(10,(it+24)/8.0));                       //  Exponentially increase N
