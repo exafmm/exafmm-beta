@@ -56,11 +56,7 @@ int main() {
 #if BUILD
 #else
   FMM.startPAPI();
-#if IneJ
   FMM.evaluate(cells,cells);
-#else
-  FMM.evaluate(cells);
-#endif
   FMM.stopPAPI();
   FMM.stopTimer("FMM",true);
   FMM.eraseTimer("FMM");
@@ -71,11 +67,7 @@ int main() {
   bodies2 = bodies;
   DATA.initTarget(bodies);
   FMM.startTimer("Direct sum");
-#if IneJ
   FMM.direct(bodies,bodies);
-#else
-  FMM.direct(bodies);
-#endif
   FMM.stopTimer("Direct sum",true);
   FMM.eraseTimer("Direct sum");
 
