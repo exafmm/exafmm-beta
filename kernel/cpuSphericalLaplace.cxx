@@ -58,9 +58,9 @@ template<>
 void Kernel<Laplace>::initialize() {}
 
 template<>
-void Kernel<Laplace>::P2M(C_iter Ci) const {
+void Kernel<Laplace>::P2M(C_iter Ci) {
   complex Ynm[4*P*P], YnmTheta[4*P*P];
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
     vect dist = B->X - Ci->X;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
@@ -76,39 +76,41 @@ void Kernel<Laplace>::P2M(C_iter Ci) const {
 }
 
 template<>
-void Kernel<Laplace>::M2M(C_iter Ci, C_iter Cj) const {
-  const complex I(0.,1.);                                       // Imaginary unit
+void Kernel<Laplace>::M2M(C_iter Ci) {
+  const complex I(0.,1.);
   complex Ynm[4*P*P], YnmTheta[4*P*P];
-  vect dist = Ci->X - Cj->X;
-  real rho, alpha, beta;
-  cart2sph(rho,alpha,beta,dist);
-  evalMultipole(rho,alpha,-beta,Ynm,YnmTheta);
-  for( int j=0; j!=P; ++j ) {
-    for( int k=0; k<=j; ++k ) {
-      const int jk = j * j + j + k;
-      const int jks = j * (j + 1) / 2 + k;
-      complex M = 0;
-      for( int n=0; n<=j; ++n ) {
-        for( int m=-n; m<=std::min(k-1,n); ++m ) {
-          if( j-n >= k-m ) {
-            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-            const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
-            const int nm    = n * n + n + m;
-            M += Cj->M[jnkms] * std::pow(I,real(m-abs(m))) * Ynm[nm]
-               * real(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+  for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
+    vect dist = Ci->X - Cj->X;
+    real rho, alpha, beta;
+    cart2sph(rho,alpha,beta,dist);
+    evalMultipole(rho,alpha,-beta,Ynm,YnmTheta);
+    for( int j=0; j!=P; ++j ) {
+      for( int k=0; k<=j; ++k ) {
+        const int jk = j * j + j + k;
+        const int jks = j * (j + 1) / 2 + k;
+        complex M = 0;
+        for( int n=0; n<=j; ++n ) {
+          for( int m=-n; m<=std::min(k-1,n); ++m ) {
+            if( j-n >= k-m ) {
+              const int jnkm  = (j - n) * (j - n) + j - n + k - m;
+              const int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
+              const int nm    = n * n + n + m;
+              M += Cj->M[jnkms] * std::pow(I,real(m-abs(m))) * Ynm[nm]
+                 * real(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+            }
+          }
+          for( int m=k; m<=n; ++m ) {
+            if( j-n >= m-k ) {
+              const int jnkm  = (j - n) * (j - n) + j - n + k - m;
+              const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
+              const int nm    = n * n + n + m;
+              M += std::conj(Cj->M[jnkms]) * Ynm[nm]
+                 * real(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
+            }
           }
         }
-        for( int m=k; m<=n; ++m ) {
-          if( j-n >= m-k ) {
-            const int jnkm  = (j - n) * (j - n) + j - n + k - m;
-            const int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-            const int nm    = n * n + n + m;
-            M += std::conj(Cj->M[jnkms]) * Ynm[nm]
-               * real(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-          }
-        }
+        Ci->M[jks] += M * EPS;
       }
-      Ci->M[jks] += M * EPS;
     }
   }
 }
@@ -180,9 +182,10 @@ void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
 }
 
 template<>
-void Kernel<Laplace>::L2L(C_iter Ci, C_iter Cj) const {
-  const complex I(0.,1.);                                       // Imaginary unit
+void Kernel<Laplace>::L2L(C_iter Ci) const {
+  const complex I(0.,1.);
   complex Ynm[4*P*P], YnmTheta[4*P*P];
+  C_iter Cj = Ci0 + Ci->PARENT;
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -219,7 +222,7 @@ template<>
 void Kernel<Laplace>::L2P(C_iter Ci) const {
   const complex I(0.,1.);                                       // Imaginary unit
   complex Ynm[4*P*P], YnmTheta[4*P*P];
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
     vect dist = B->X - Ci->X;
     vect spherical = 0;
     vect cartesian = 0;

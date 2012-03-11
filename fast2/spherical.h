@@ -246,6 +246,7 @@ struct M2Ltemplate<p,0,0,2,1> {
 
 class Kernel : public Sort {
 private:
+  real Rmax;
   real *factorial, *prefactor, *Anm;
   complex *Ynm, *YnmTheta, *Cnm;
 
@@ -308,7 +309,7 @@ private:
   }
 
 public:
-  Kernel() : X0(0), R0(0) {
+  Kernel() : Rmax(0), X0(0), R0(0) {
     const complex I(0.,1.);                                     // Imaginary unit
     factorial = new real  [P];
     prefactor = new real  [4*P*P];
@@ -369,45 +370,20 @@ public:
         real R2 = norm(dX) + EPS2;
         real invR2 = 1.0 / R2;
         if( R2 == 0 ) invR2 = 0;
-        real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
+        real invR = Bj->SRC * std::sqrt(invR2);
         dX *= invR2 * invR;
         P0 += invR;
         F0 += dX;
       }
-      Bi->TRG[0] -= P0;
+      Bi->TRG[0] += P0;
       Bi->TRG[1] -= F0[0];
       Bi->TRG[2] -= F0[1];
       Bi->TRG[3] -= F0[2];
     }
   }
 
-  void P2P(C_iter C) const {
-    int NJ = C->NDLEAF;
-    for( B_iter Bi=C->LEAF; Bi!=C->LEAF+C->NDLEAF; ++Bi, --NJ ) {
-      real P0 = 0;
-      vect F0 = 0;
-      for( B_iter Bj=Bi+1; Bj!=Bi+NJ; ++Bj ) {
-        vect dX = Bi->X - Bj->X;
-        real R2 = norm(dX) + EPS2;
-        real invR2 = 1.0 / R2;
-        if( R2 == 0 ) invR2 = 0;
-        real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
-        dX *= invR2 * invR;
-        P0 += invR;
-        F0 += dX;
-        Bj->TRG[0] -= invR;
-        Bj->TRG[1] += dX[0];
-        Bj->TRG[2] += dX[1];
-        Bj->TRG[3] += dX[2];
-      }
-      Bi->TRG[0] -= P0;
-      Bi->TRG[1] -= F0[0];
-      Bi->TRG[2] -= F0[1];
-      Bi->TRG[3] -= F0[2];
-    }
-  }
-
-  void P2M(C_iter C, real &Rmax) const {
+  void P2M(C_iter C) {
+    Rmax = 0;
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
       vect dist = B->X - C->X;
       real R = std::sqrt(norm(dist));
@@ -420,7 +396,7 @@ public:
     C->RCRIT = std::min(C->R,Rmax);
   }
 
-  void M2M(C_iter Ci, real &Rmax) const {
+  void M2M(C_iter Ci) {
     for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
       vect dist = Ci->X - Cj->X;
       real R = std::sqrt(norm(dist)) + Cj->RCRIT;
@@ -477,16 +453,16 @@ public:
       for( int n=0; n!=P; ++n ) {
         int nm  = n * n + n;
         int nms = n * (n + 1) / 2;
-        B->TRG[0] -= B->SRC * std::real(Cj->M[nms] * Ynm[nm]);
-        spherical[0] -= B->SRC * std::real(Cj->M[nms] * Ynm[nm]) / r * (n+1);
-        spherical[1] += B->SRC * std::real(Cj->M[nms] * YnmTheta[nm]);
+        B->TRG[0] += std::real(Cj->M[nms] * Ynm[nm]);
+        spherical[0] -= std::real(Cj->M[nms] * Ynm[nm]) / r * (n+1);
+        spherical[1] += std::real(Cj->M[nms] * YnmTheta[nm]);
         for( int m=1; m<=n; ++m ) {
           nm  = n * n + n + m;
           nms = n * (n + 1) / 2 + m;
-          B->TRG[0] -= 2 * B->SRC * std::real(Cj->M[nms] * Ynm[nm]);
-          spherical[0] -= 2 * B->SRC * std::real(Cj->M[nms] *Ynm[nm]) / r * (n+1);
-          spherical[1] += 2 * B->SRC * std::real(Cj->M[nms] *YnmTheta[nm]);
-          spherical[2] += 2 * B->SRC * std::real(Cj->M[nms] *Ynm[nm] * I) * m;
+          B->TRG[0] += 2 * std::real(Cj->M[nms] * Ynm[nm]);
+          spherical[0] -= 2 * std::real(Cj->M[nms] *Ynm[nm]) / r * (n+1);
+          spherical[1] += 2 * std::real(Cj->M[nms] *YnmTheta[nm]);
+          spherical[2] += 2 * std::real(Cj->M[nms] *Ynm[nm] * I) * m;
         }
       }
       sph2cart(r,theta,phi,spherical,cartesian);
@@ -533,7 +509,6 @@ public:
     const complex I(0.,1.);
     for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
       vect dist = B->X - Ci->X;
-      B->TRG /= B->SRC;
       vect spherical = 0;
       vect cartesian = 0;
       real r, theta, phi;
@@ -542,13 +517,13 @@ public:
       for( int n=0; n!=P; ++n ) {
         int nm  = n * n + n;
         int nms = n * (n + 1) / 2;
-        B->TRG[0] -= std::real(Ci->L[nms] * Ynm[nm]);
+        B->TRG[0] += std::real(Ci->L[nms] * Ynm[nm]);
         spherical[0] += std::real(Ci->L[nms] * Ynm[nm]) / r * n;
         spherical[1] += std::real(Ci->L[nms] * YnmTheta[nm]);
         for( int m=1; m<=n; ++m ) {
           nm  = n * n + n + m;
           nms = n * (n + 1) / 2 + m;
-          B->TRG[0] -= 2 * std::real(Ci->L[nms] * Ynm[nm]);
+          B->TRG[0] += 2 * std::real(Ci->L[nms] * Ynm[nm]);
           spherical[0] += 2 * std::real(Ci->L[nms] * Ynm[nm]) / r * n;
           spherical[1] += 2 * std::real(Ci->L[nms] * YnmTheta[nm]);
           spherical[2] += 2 * std::real(Ci->L[nms] * Ynm[nm] * I) * m;

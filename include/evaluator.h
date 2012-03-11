@@ -199,7 +199,7 @@ protected:
                     cell.X[1]  = C->X[1] + (iy * 6 + cy * 2) * C->R;//     Set new y cooridnate for periodic image
                     cell.X[2]  = C->X[2] + (iz * 6 + cz * 2) * C->R;//     Set new z coordinate for periodic image
                     cell.M     = C->M;                          //         Copy multipoles to new periodic image
-                    cell.NDLEAF = cell.NCHILD = 0;              //         Initialize NDLEAF & NCHILD
+                    cell.NCLEAF = cell.NDLEAF = cell.NCHILD = 0;//         Initialize NCLEAF, NDLEAF, & NCHILD
                     jcells.push_back(cell);                     //         Push cell into periodic jcell vector
                   }                                             //        End loop over z periodic direction (child)
                 }                                               //       End loop over y periodic direction (child)
@@ -434,7 +434,7 @@ public:
             }                                                   //     End loop over z periodic direction
           }                                                     //    End loop over y periodic direction
         }                                                       //   End loop over x periodic direction
-        for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B) {  //   Loop over all leafs in cell
+        for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B) {  //   Loop over all leafs in cell
           B->TRG[0] -= M_2_SQRTPI * B->SRC * ALPHA;             //    Self term of Ewald real part
         }                                                       //   End loop over all leafs in cell
       }                                                         //  End if for twig cells

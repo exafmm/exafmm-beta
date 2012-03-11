@@ -54,9 +54,7 @@ void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all 
     std::stringstream eventName;                                // Declare event name
     eventName << "evalM2M: " << level << "   ";                 // Set event name with level
     startTimer(eventName.str());                                // Start timer
-    for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {// Loop over child cells
-      M2M(Ci,Cj);                                               //   Perform M2M kernel
-    }                                                           //  End loop over child cells
+    M2M(Ci);                                                    // Perform M2M kernel
     stopTimer(eventName.str());                                 // Stop timer
   }                                                             // End loop target over cells
 }
@@ -183,8 +181,7 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate all 
     std::stringstream eventName;                                // Declare event name
     eventName << "evalL2L: " << level << "   ";                 // Set event name with level
     startTimer(eventName.str());                                // Start timer
-    C_iter Cj = Ci0 + Ci->PARENT;                               //  Set source cell iterator
-    L2L(Ci,Cj);                                                 //  Perform L2L kernel
+    L2L(Ci);                                                    // Perform L2L kernel
     stopTimer(eventName.str());                                 // Stop timer
   }                                                             // End loop over cells topdown
 }

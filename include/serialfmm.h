@@ -58,6 +58,11 @@ public:
 
     Cells sticks;                                               // Sticks are twigs from other processes that are not twigs in the current process
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
+#if Cartesian
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
+      for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
+    }
+#endif
   }
 
 //! Bottomup tree constructor interface. Input: bodies, Output: cells
@@ -80,6 +85,11 @@ public:
 
     Cells sticks;                                               // Sticks are twigs from other processes not twigs here
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
+#if Cartesian
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
+      for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
+    }
+#endif
   }
 };
 

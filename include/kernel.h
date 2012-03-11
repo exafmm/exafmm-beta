@@ -57,6 +57,7 @@ protected:
   gpureal             *sourceDevc;                              //!< Sources on device
   gpureal             *targetDevc;                              //!< Targets on device
 
+  real Rmax;                                                    //!< Maximum distance from center of mass
   real *factorial;                                              //!< Factorial
   real *prefactor;                                              //!< \f$ \sqrt{ \frac{(n - |m|)!}{(n + |m|)!} } \f$
   real *Anm;                                                    //!< \f$ (-1)^n / \sqrt{ \frac{(n + m)!}{(n - m)!} } \f$
@@ -145,7 +146,7 @@ public:
 //! Constructor
   KernelBase() : keysDevcSize(0), rangeDevcSize(0),
                  sourceDevcSize(0), targetDevcSize(0),
-                 X0(0), R0(0), NP2P(0), NM2P(0), NM2L(0) {}
+                 Rmax(0), X0(0), R0(0), NP2P(0), NM2P(0), NM2L(0) {}
 //! Destructor
   ~KernelBase() {}
 
@@ -268,12 +269,12 @@ template<Equation equation>
 class Kernel : public KernelBase {
 public:
   void initialize();                                            //!< Initialize kernels
-  void P2M(C_iter Ci) const;                                    //!< Evaluate P2M kernel on CPU
-  void M2M(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2M kernel on CPU
+  void P2M(C_iter Ci);                                          //!< Evaluate P2M kernel on CPU
+  void M2M(C_iter Ci);                                          //!< Evaluate M2M kernel on CPU
   void M2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2L kernel on CPU
   void M2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2P kernel on CPU
   void P2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate P2P kernel on CPU
-  void L2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate L2L kernel on CPU
+  void L2L(C_iter Ci) const;                                    //!< Evaluate L2L kernel on CPU
   void L2P(C_iter Ci) const;                                    //!< Evaluate L2P kernel on CPU
   void EwaldReal(C_iter Ci, C_iter Cj) const;                   //!< Evaluate Ewald real part on CPU
   void EwaldWave(Bodies &bodies) const;                         //!< Evaluate Ewald wave part on CPU

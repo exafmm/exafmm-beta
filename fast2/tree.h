@@ -44,18 +44,6 @@ public:
 
 class SerialFMM : public TreeConstructor {
 public:
-  void direct(Bodies &bodies) {
-    Cells cells;
-    cells.resize(1);
-    C_iter C = cells.begin();
-    C->LEAF = bodies.begin();
-    C->NDLEAF = bodies.size();
-    P2P(C);
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      B->TRG /= B->SRC;
-    }
-  }
-
   void direct(Bodies &ibodies, Bodies &jbodies) {
     Cells cells;
     cells.resize(2);
@@ -65,9 +53,6 @@ public:
     Cj->LEAF = jbodies.begin();
     Cj->NDLEAF = jbodies.size();
     P2P(Ci,Cj);
-    for( B_iter B=ibodies.begin(); B!=ibodies.end(); ++B ) {
-      B->TRG /= B->SRC;
-    }
   }
 
   void evaluate(Cells &icells, Cells &jcells) {

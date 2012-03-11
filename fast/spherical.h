@@ -365,51 +365,49 @@ public:
       real P0 = 0;
       vect F0 = 0;
       for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {
-        vect dR = Bi->X - Bj->X;
-        real D1 = norm(dR) + EPS2;
-        real D0 = Bi->SRC * Bj->SRC;
-        real XX = 1.0 / D1;
-        D0 *= std::sqrt(XX);
-        D1  = XX * D0;
-        dR *= D1;
-        P0 -= D0;
-        F0 -= dR;
-        Bj->TRG[0] -= D0 * mutual;
-        Bj->TRG[1] += dR[0] * mutual;
-        Bj->TRG[2] += dR[1] * mutual;
-        Bj->TRG[3] += dR[2] * mutual;
+        vect dX = Bi->X - Bj->X;
+        real R2 = norm(dX) + EPS2;
+        real invR2 = 1.0 / R2;
+        if( R2 == 0 ) invR2 = 0;
+        real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
+        dX *= invR2 * invR;
+        P0 += invR;
+        F0 += dX;
+        Bj->TRG[0] += invR * mutual;
+        Bj->TRG[1] += dX[0] * mutual;
+        Bj->TRG[2] += dX[1] * mutual;
+        Bj->TRG[3] += dX[2] * mutual;
       }
       Bi->TRG[0] += P0;
-      Bi->TRG[1] += F0[0];
-      Bi->TRG[2] += F0[1];
-      Bi->TRG[3] += F0[2];
+      Bi->TRG[1] -= F0[0];
+      Bi->TRG[2] -= F0[1];
+      Bi->TRG[3] -= F0[2];
     }
   }
 
   void P2P(C_iter C) const {
-    unsigned NJ = C->NDLEAF;
+    int NJ = C->NDLEAF;
     for( B_iter Bi=C->LEAF; Bi!=C->LEAF+C->NDLEAF; ++Bi, --NJ ) {
       real P0 = 0;
       vect F0 = 0;
       for( B_iter Bj=Bi+1; Bj!=Bi+NJ; ++Bj ) {
-        vect dR = Bi->X - Bj->X;
-        real D1 = norm(dR) + EPS2;
-        real D0 = Bi->SRC * Bj->SRC;
-        real XX = 1.0 / D1;
-        D0 *= std::sqrt(XX);
-        D1  = XX * D0;
-        dR *= D1;
-        P0 -= D0;
-        F0 -= dR;
-        Bj->TRG[0] -= D0;
-        Bj->TRG[1] += dR[0];
-        Bj->TRG[2] += dR[1];
-        Bj->TRG[3] += dR[2];
+        vect dX = Bi->X - Bj->X;
+        real R2 = norm(dX) + EPS2;
+        real invR2 = 1.0 / R2;
+        if( R2 == 0 ) invR2 = 0;
+        real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
+        dX *= invR2 * invR;
+        P0 += invR;
+        F0 += dX;
+        Bj->TRG[0] += invR;
+        Bj->TRG[1] += dX[0];
+        Bj->TRG[2] += dX[1];
+        Bj->TRG[3] += dX[2];
       }
       Bi->TRG[0] += P0;
-      Bi->TRG[1] += F0[0];
-      Bi->TRG[2] += F0[1];
-      Bi->TRG[3] += F0[2];
+      Bi->TRG[1] -= F0[0];
+      Bi->TRG[2] -= F0[1];
+      Bi->TRG[3] -= F0[2];
     }
   }
 
@@ -489,13 +487,13 @@ public:
       for( int n=0; n!=P; ++n ) {
         int nm  = n * n + n;
         int nms = n * (n + 1) / 2;
-        B->TRG[0] -= B->SRC * std::real(Cj->M[nms] * Ynm[nm]);
+        B->TRG[0] += B->SRC * std::real(Cj->M[nms] * Ynm[nm]);
         spherical[0] -= B->SRC * std::real(Cj->M[nms] * Ynm[nm]) / r * (n+1);
         spherical[1] += B->SRC * std::real(Cj->M[nms] * YnmTheta[nm]);
         for( int m=1; m<=n; ++m ) {
           nm  = n * n + n + m;
           nms = n * (n + 1) / 2 + m;
-          B->TRG[0] -= 2 * B->SRC * std::real(Cj->M[nms] * Ynm[nm]);
+          B->TRG[0] += 2 * B->SRC * std::real(Cj->M[nms] * Ynm[nm]);
           spherical[0] -= 2 * B->SRC * std::real(Cj->M[nms] *Ynm[nm]) / r * (n+1);
           spherical[1] += 2 * B->SRC * std::real(Cj->M[nms] *YnmTheta[nm]);
           spherical[2] += 2 * B->SRC * std::real(Cj->M[nms] *Ynm[nm] * I) * m;
@@ -583,13 +581,13 @@ public:
       for( int n=0; n!=P; ++n ) {
         int nm  = n * n + n;
         int nms = n * (n + 1) / 2;
-        B->TRG[0] -= std::real(Ci->L[nms] * Ynm[nm]);
+        B->TRG[0] += std::real(Ci->L[nms] * Ynm[nm]);
         spherical[0] += std::real(Ci->L[nms] * Ynm[nm]) / r * n;
         spherical[1] += std::real(Ci->L[nms] * YnmTheta[nm]);
         for( int m=1; m<=n; ++m ) {
           nm  = n * n + n + m;
           nms = n * (n + 1) / 2 + m;
-          B->TRG[0] -= 2 * std::real(Ci->L[nms] * Ynm[nm]);
+          B->TRG[0] += 2 * std::real(Ci->L[nms] * Ynm[nm]);
           spherical[0] += 2 * std::real(Ci->L[nms] * Ynm[nm]) / r * n;
           spherical[1] += 2 * std::real(Ci->L[nms] * YnmTheta[nm]);
           spherical[2] += 2 * std::real(Ci->L[nms] * Ynm[nm] * I) * m;

@@ -73,6 +73,7 @@ private:
       } else if( c != c_old ) {                                 //  If cell index is repeated
         if( cells[c].NCHILD != 0 ) {                            //   Stick-cell collision
           cells[c_old].NCHILD = cells[c].NCHILD;                //    Copy number of children
+          cells[c_old].NCLEAF = cells[c].NCLEAF;                //    Copy number of leafs
           cells[c_old].NDLEAF = cells[c].NDLEAF;                //    Copy number of leafs
           cells[c_old].PARENT = cells[c].PARENT;                //    Copy parent link
           cells[c_old].CHILD = cells[c].CHILD;                  //    Copy child link
@@ -95,7 +96,7 @@ private:
     parent.ICELL = getParent(cells[begin].ICELL);               // Set cell index
     parent.M = 0;                                               // Initialize multipole coefficients
     parent.L = 0;                                               // Initlalize local coefficients
-    parent.NDLEAF = parent.NCHILD = 0;                          // Initialize NDLEAF & NCHILD
+    parent.NCLEAF = parent.NDLEAF = parent.NCHILD = 0;          // Initialize NCLEAF, NDLEAF, & NCHILD
     parent.LEAF = cells[begin].LEAF;                            // Set pointer to first leaf
     parent.CHILD = begin;                                       // Link to child
     getCenter(parent);                                          // Set cell center and radius
@@ -106,7 +107,7 @@ private:
         parent.ICELL = getParent(cells[i].ICELL);               //   Set cell index
         parent.M = 0;                                           //   Initialize multipole coefficients
         parent.L = 0;                                           //   Initialize local coefficients
-        parent.NDLEAF = parent.NCHILD = 0;                      //   Initialize NDLEAF & NCHILD
+        parent.NCLEAF = parent.NDLEAF = parent.NCHILD = 0;      //   Initialize NCLEAF, NDLEAF, & NCHILD
         parent.LEAF = cells[i].LEAF;                            //   Set pointer to first leaf
         parent.CHILD = i;                                       //   Link to child
         getCenter(parent);                                      //   Set cell center and radius
@@ -155,7 +156,8 @@ public:
     Cell cell;                                                  // Cell structure
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( B->ICELL != index ) {                                 //  If it belongs to a new cell
-        cell.NDLEAF = nleaf;                                    //   Set number of leafs
+        cell.NCLEAF = nleaf;                                    //   Set number of child leafs
+        cell.NDLEAF = nleaf;                                    //   Set number of decendant leafs
         cell.NCHILD = 0;                                        //   Set number of child cells
         cell.ICELL  = index;                                    //   Set cell index
         cell.LEAF   = firstLeaf;                                //   Set pointer to first leaf
@@ -167,7 +169,8 @@ public:
       }                                                         //  Endif for new cell
       nleaf++;                                                  //  Increment body counter
     }                                                           // End loop over bodies
-    cell.NDLEAF = nleaf;                                        // Set number of leafs
+    cell.NCLEAF = nleaf;                                        // Set number of child leafs
+    cell.NDLEAF = nleaf;                                        // Set number of decendant leafs
     cell.NCHILD = 0;                                            // Set number of child cells
     cell.ICELL  = index;                                        // Set cell index
     cell.LEAF   = firstLeaf;                                    // Set pointer to first leaf

@@ -569,15 +569,15 @@ private:
   }
 
   inline void sumM2P(B_iter B, const Lset &C, const Mset &M) const {
-    B->TRG[0] -= C[0];
+    B->TRG[0] += C[0];
     B->TRG[1] += C[1];
     B->TRG[2] += C[2];
     B->TRG[3] += C[3];
 #if 0
-    for( int i=1; i<MTERM; ++i ) B->TRG[0] -= M[i] * C[i+3];
+    for( int i=1; i<MTERM; ++i ) B->TRG[0] += M[i] * C[i+3];
     Downward<0,0,1>::M2P(B,C,M);
 #else
-    B->TRG[0] -= C[4] *M[1] + C[5] *M[2] + C[6] *M[3] + C[7] *M[4] + C[8] *M[5] + C[9] *M[6];
+    B->TRG[0] += C[4] *M[1] + C[5] *M[2] + C[6] *M[3] + C[7] *M[4] + C[8] *M[5] + C[9] *M[6];
     B->TRG[1] += C[10]*M[1] + C[11]*M[2] + C[12]*M[3] + C[13]*M[4] + C[14]*M[5] + C[15]*M[6];
     B->TRG[2] += C[11]*M[1] + C[13]*M[2] + C[14]*M[3] + C[16]*M[4] + C[17]*M[5] + C[18]*M[6];
     B->TRG[3] += C[12]*M[1] + C[14]*M[2] + C[15]*M[3] + C[17]*M[4] + C[18]*M[5] + C[19]*M[6];
@@ -601,12 +601,12 @@ public:
         dX *= invR2 * invR;
         P0 += invR;
         F0 += dX;
-        Bj->TRG[0] -= invR * mutual;
+        Bj->TRG[0] += invR * mutual;
         Bj->TRG[1] += dX[0] * mutual;
         Bj->TRG[2] += dX[1] * mutual;
         Bj->TRG[3] += dX[2] * mutual;
       }
-      Bi->TRG[0] -= P0;
+      Bi->TRG[0] += P0;
       Bi->TRG[1] -= F0[0];
       Bi->TRG[2] -= F0[1];
       Bi->TRG[3] -= F0[2];
@@ -627,12 +627,12 @@ public:
         dX *= invR2 * invR;
         P0 += invR;
         F0 += dX;
-        Bj->TRG[0] -= invR;
+        Bj->TRG[0] += invR;
         Bj->TRG[1] += dX[0];
         Bj->TRG[2] += dX[1];
         Bj->TRG[3] += dX[2];
       }
-      Bi->TRG[0] -= P0;
+      Bi->TRG[0] += P0;
       Bi->TRG[1] -= F0[0];
       Bi->TRG[2] -= F0[1];
       Bi->TRG[3] -= F0[2];
@@ -727,17 +727,17 @@ public:
 
       L = Ci->L;
       B->TRG /= B->SRC;
-      B->TRG[0] -= L[0];
+      B->TRG[0] += L[0];
       B->TRG[1] += L[1];
       B->TRG[2] += L[2];
       B->TRG[3] += L[3];
-      for( int i=1; i<LTERM; ++i ) B->TRG[0] -= C[i]*L[i];
+      for( int i=1; i<LTERM; ++i ) B->TRG[0] += C[i]*L[i];
       Downward<0,0,1>::L2P(B,C,L);
 #else
       Lset C;
       vect dist = B->X - Ci->X;
       B->TRG /= B->SRC;
-      B->TRG[0] -= Ci->L[0];
+      B->TRG[0] += Ci->L[0];
       B->TRG[1] += Ci->L[1];
       B->TRG[2] += Ci->L[2];
       B->TRG[3] += Ci->L[3];
@@ -751,7 +751,7 @@ public:
       C[7] = Ci->L[13]*dist[0] + Ci->L[16]*dist[1] + Ci->L[17]*dist[2];
       C[8] = Ci->L[14]*dist[0] + Ci->L[17]*dist[1] + Ci->L[18]*dist[2];
       C[9] = Ci->L[15]*dist[0] + Ci->L[18]*dist[1] + Ci->L[19]*dist[2];
-      B->TRG[0] -= C[0];
+      B->TRG[0] += C[0];
       B->TRG[1] += C[1];
       B->TRG[2] += C[2];
       B->TRG[3] += C[3];
@@ -759,7 +759,7 @@ public:
       C[1] = (C[4]*dist[0] + C[6]*dist[2] + C[5]*dist[1]) / 2;
       C[2] = (C[5]*dist[0] + C[8]*dist[2] + C[7]*dist[1]) / 2;
       C[3] = (C[6]*dist[0] + C[9]*dist[2] + C[8]*dist[1]) / 2;
-      B->TRG[0] -= C[0] + (dist[0]*C[1]+dist[1]*C[2]+dist[2]*C[3]) / 3;
+      B->TRG[0] += C[0] + (dist[0]*C[1]+dist[1]*C[2]+dist[2]*C[3]) / 3;
       B->TRG[1] += C[1];
       B->TRG[2] += C[2];
       B->TRG[3] += C[3];

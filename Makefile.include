@@ -50,7 +50,7 @@ ifeq ($(DEVICE),GPU)
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
 
-OBJECT  = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
+OBJECT = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
 	../kernel/CPUP2P.o
 
 .cxx.o  :

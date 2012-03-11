@@ -201,10 +201,9 @@ protected:
       C->L = 0;
     }
     for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {
-      real Rmax = 0;
       setCenter(C);
-      P2M(C,Rmax);
-      M2M(C,Rmax);
+      P2M(C);
+      M2M(C);
     }
 #if Cartesian
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
