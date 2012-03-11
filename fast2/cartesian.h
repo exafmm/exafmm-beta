@@ -559,7 +559,7 @@ public:
 
   void P2M(C_iter C, real &Rmax) const {
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-      vect dist = B->X - C->X;
+      vect dist = C->X - B->X;
       real R = std::sqrt(norm(dist));
       if( R > Rmax ) Rmax = R;
       Lset M;
@@ -572,7 +572,7 @@ public:
 
   void M2M(C_iter Ci, real &Rmax) const {
     for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
-      vect dist = Cj->X - Ci->X;
+      vect dist = Ci->X - Cj->X;
       real R = std::sqrt(norm(dist)) + Cj->RCRIT;
       if( R > Rmax ) Rmax = R;
       Mset M;

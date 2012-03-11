@@ -42,7 +42,7 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->SRC = 1. / bodies.size() / MPISIZE;                    //  Initialize mass/charge
+      B->SRC = (drand48() - .5) / bodies.size() / MPISIZE;      //  Initialize mass/charge
     }                                                           // End loop over bodies
   }
 

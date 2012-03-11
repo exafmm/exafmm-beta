@@ -35,7 +35,7 @@ public:
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
       B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->SRC = 1. / bodies.size() / MPISIZE;                    //  Initialize mass/charge
+      B->SRC = (drand48() - .5) / bodies.size() / MPISIZE;      //  Initialize mass/charge
     }                                                           // End loop over bodies
   }
 
@@ -58,7 +58,6 @@ public:
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->X[d] = drand48() * 2 * M_PI - M_PI;                  //   Initialize positions
       }                                                         //  End loop over dimension
-      std::cout << B-bodies.begin() << " " << B->X << std::endl;
     }                                                           // End loop over bodies
     initSource(bodies);                                         // Initialize source values
     initTarget(bodies);                                         // Initialize target values
