@@ -23,8 +23,7 @@ THE SOFTWARE.
 #include "tree.h"
 
 int main() {
-  const int numBodies = 1000;
-  const int numTarget = 100;
+  int numBodies = 1000;
   IMAGES = 0;
   THETA = 0.6;
   Bodies bodies;
@@ -70,7 +69,7 @@ int main() {
 
   Bodies bodies2 = bodies;
 #ifdef MANY
-  bodies2.resize(numTarget);
+  bodies2.resize(100);
 #endif
   DATA.initTarget(bodies2);
   FMM.startTimer("Direct sum");
@@ -85,7 +84,7 @@ int main() {
   FMM.eraseTimer("Direct sum");
 
 #ifdef MANY
-  bodies.resize(numTarget);
+  bodies.resize(100);
 #endif
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
