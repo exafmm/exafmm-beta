@@ -593,24 +593,23 @@ public:
       real P0 = 0;
       vect F0 = 0;
       for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {
-        vect dR = Bi->X - Bj->X;
-        real D1 = norm(dR) + EPS2;
-        real D0 = Bi->SRC * Bj->SRC;
-        real XX = 1.0 / D1;
-        D0 *= std::sqrt(XX);
-        D1  = XX * D0;
-        dR *= D1;
-        P0 -= D0;
-        F0 -= dR;
-        Bj->TRG[0] -= D0 * mutual;
-        Bj->TRG[1] += dR[0] * mutual;
-        Bj->TRG[2] += dR[1] * mutual;
-        Bj->TRG[3] += dR[2] * mutual;
+        vect dX = Bi->X - Bj->X;
+        real R2 = norm(dX) + EPS2;
+        real invR2 = 1.0 / R2;
+        if( R2 == 0 ) invR2 = 0;
+        real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
+        dX *= invR2 * invR;
+        P0 += invR;
+        F0 += dX;
+        Bj->TRG[0] -= invR * mutual;
+        Bj->TRG[1] += dX[0] * mutual;
+        Bj->TRG[2] += dX[1] * mutual;
+        Bj->TRG[3] += dX[2] * mutual;
       }
-      Bi->TRG[0] += P0;
-      Bi->TRG[1] += F0[0];
-      Bi->TRG[2] += F0[1];
-      Bi->TRG[3] += F0[2];
+      Bi->TRG[0] -= P0;
+      Bi->TRG[1] -= F0[0];
+      Bi->TRG[2] -= F0[1];
+      Bi->TRG[3] -= F0[2];
     }
   }
 
@@ -620,30 +619,29 @@ public:
       real P0 = 0;
       vect F0 = 0;
       for( B_iter Bj=Bi+1; Bj!=Bi+NJ; ++Bj ) {
-        vect dR = Bi->X - Bj->X;
-        real D1 = norm(dR) + EPS2;
-        real D0 = Bi->SRC * Bj->SRC;
-        real XX = 1.0 / D1;
-        D0 *= std::sqrt(XX);
-        D1  = XX * D0;
-        dR *= D1;
-        P0 -= D0;
-        F0 -= dR;
-        Bj->TRG[0] -= D0;
-        Bj->TRG[1] += dR[0];
-        Bj->TRG[2] += dR[1];
-        Bj->TRG[3] += dR[2];
+        vect dX = Bi->X - Bj->X;
+        real R2 = norm(dX) + EPS2;
+        real invR2 = 1.0 / R2;
+        if( R2 == 0 ) invR2 = 0;
+        real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
+        dX *= invR2 * invR;
+        P0 += invR;
+        F0 += dX;
+        Bj->TRG[0] -= invR;
+        Bj->TRG[1] += dX[0];
+        Bj->TRG[2] += dX[1];
+        Bj->TRG[3] += dX[2];
       }
-      Bi->TRG[0] += P0;
-      Bi->TRG[1] += F0[0];
-      Bi->TRG[2] += F0[1];
-      Bi->TRG[3] += F0[2];
+      Bi->TRG[0] -= P0;
+      Bi->TRG[1] -= F0[0];
+      Bi->TRG[2] -= F0[1];
+      Bi->TRG[3] -= F0[2];
     }
   }
 
   void P2M(C_iter C, real &Rmax) const {
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-      vect dist = B->X - C->X;
+      vect dist = C->X - B->X;
       real R = std::sqrt(norm(dist));
       if( R > Rmax ) Rmax = R;
       Lset M;
@@ -657,7 +655,7 @@ public:
 
   void M2M(C_iter Ci, real &Rmax) const {
     for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
-      vect dist = Cj->X - Ci->X;
+      vect dist = Ci->X - Cj->X;
       real R = std::sqrt(norm(dist)) + Cj->RCRIT;
       if( R > Rmax ) Rmax = R;
       Mset M;

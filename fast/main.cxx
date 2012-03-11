@@ -23,10 +23,11 @@ THE SOFTWARE.
 #include "tree.h"
 
 int main() {
-  int numBodies = 1000;
+  const int numBodies = 1000;
+  const int numTarget = 100;
   IMAGES = 0;
   THETA = 0.6;
-  Bodies bodies, bodies2;
+  Bodies bodies;
   Cells cells;
   Dataset DATA;
   SerialFMM FMM;
@@ -67,22 +68,28 @@ int main() {
   FMM.writeTime();
   FMM.resetTimer();
 
-#ifdef DIRECT
-  bodies2 = bodies;
-  DATA.initTarget(bodies);
+  Bodies bodies2 = bodies;
+#ifdef MANY
+  bodies2.resize(numTarget);
+#endif
+  DATA.initTarget(bodies2);
   FMM.startTimer("Direct sum");
 #if IneJ
-  FMM.direct(bodies,bodies);
+  FMM.direct(bodies2,bodies);
+#elif MANY
+  FMM.direct(bodies2,bodies);
 #else
-  FMM.direct(bodies);
+  FMM.direct(bodies2);
 #endif
   FMM.stopTimer("Direct sum",true);
   FMM.eraseTimer("Direct sum");
 
+#ifdef MANY
+  bodies.resize(numTarget);
+#endif
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   DATA.printError(diff1,norm1,diff2,norm2);
-#endif
 #endif
   }
 }

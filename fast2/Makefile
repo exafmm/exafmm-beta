@@ -5,7 +5,7 @@ include ../Makefile.include
 
 a	: main.cxx
 	make clean
-	$(CXX) $? $(LFLAGS) -DDIRECT
+	$(CXX) $? $(LFLAGS)
 	./a.out
 
 b	: main.cxx
@@ -14,11 +14,6 @@ b	: main.cxx
 	./a.out
 
 c	: main.cxx
-	make clean
-	$(CXX) $? $(LFLAGS) -DMANY -DDIRECT
-	./a.out
-
-d	: main.cxx
 	make clean
 	$(CXX) $? $(LFLAGS) -DBUILD
 	./a.out
