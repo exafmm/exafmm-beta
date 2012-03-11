@@ -741,6 +741,7 @@ void Kernel<Laplace>::M2M(C_iter Ci) {
     for( int i=0; i<MTERM; ++i ) Ci->M[i] += C[i] * M[0];
     Upward<0,0,P-1>::M2M(Ci->M,C,M);
   }
+  Ci->RCRIT = std::min(Ci->R,Rmax);
 }
 
 template<>

@@ -3,17 +3,14 @@ include ../Makefile.include
 #LFLAGS	+= -DHYBRID
 #LFLAGS	+= -DTREECODE
 
-a	: main.cxx
-	make clean
+a	: main.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS)
 	./a.out
 
-b	: main.cxx
-	make clean
+b	: main.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) -DMANY
 	./a.out
 
-c	: main.cxx
-	make clean
+c	: main.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) -DBUILD
 	./a.out

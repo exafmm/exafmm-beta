@@ -21,14 +21,10 @@ THE SOFTWARE.
 */
 #ifndef evaluator_h
 #define evaluator_h
-#if Cartesian
-#include "cartesian.h"
-#elif Spherical
-#include "spherical.h"
-#endif
+#include "../include/kernel.h"
 #define splitFirst(Ci,Cj) Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT > Cj->RCRIT)
 
-class Evaluator : public Kernel {
+class Evaluator : public Kernel<Laplace> {
 private:
   real timeP2P;
   real timeM2P;
