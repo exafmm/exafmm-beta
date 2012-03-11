@@ -258,7 +258,7 @@ public:
   ~Evaluator() {}
 
 //! Random distribution in [-1,1]^3 cube
-  void cube(Bodies &bodies, int seed=1, int numSplit=1) {
+  void cube(Bodies &bodies, int seed=0, int numSplit=1) {
     srand48(seed);                                              // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset
@@ -268,13 +268,14 @@ public:
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->X[d] = drand48() * 2 * M_PI - M_PI;                  //   Initialize positions
       }                                                         //  End loop over dimension
+      std::cout << B-bodies.begin() << " " << B->X << std::endl;
     }                                                           // End loop over bodies
     initSource(bodies);                                         // Initialize source values
     initTarget(bodies);                                         // Initialize target values
   }
 
 //! Random distribution on r = 1 sphere
-  void sphere(Bodies &bodies, int seed=1, int numSplit=1) {
+  void sphere(Bodies &bodies, int seed=0, int numSplit=1) {
     srand48(seed);                                              // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) {// Mimic parallel dataset

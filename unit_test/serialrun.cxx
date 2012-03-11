@@ -37,7 +37,7 @@ int main() {
   FMM.printNow = true;                                          // Print timer
 
   FMM.startTimer("Set bodies");                                 // Start timer
-  FMM.cube(bodies,1,1);                                         // Initialize bodies in a cube
+  FMM.cube(bodies);                                             // Initialize bodies in a cube
   FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
   FMM.eraseTimer("Set bodies");                                 // Erase entry from timer to avoid timer overlap
 
