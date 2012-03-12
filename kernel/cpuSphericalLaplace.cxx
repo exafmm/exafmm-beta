@@ -305,11 +305,20 @@ void Kernel<Laplace>::evalLocal(real rho, real alpha, real beta, complex *Ynm) c
   Expansion<2*P>::getYnm(x,y,invR,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
 }
 
+template<>
+void Kernel<Laplace>::evalLocalTheta(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const {
+  real x = std::cos(alpha);
+  real y = std::sin(alpha);
+  real invR = 1 / rho;
+  real rhom=invR,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
+  complex eim = 1;
+  Expansion<2*P>::getYnmTheta(x,y,invR,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
+}
 
 template<>
 void Kernel<Laplace>::P2M(C_iter Cj) {
   Rmax = 0;
-  complex Ynm[4*P*P], YnmTheta[4*P*P];
+  complex Ynm[4*P*P];
   for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NCLEAF; ++B ) {
     vect dist = B->X - Cj->X;
     real R = std::sqrt(norm(dist));
@@ -325,7 +334,7 @@ void Kernel<Laplace>::P2M(C_iter Cj) {
 template<>
 void Kernel<Laplace>::M2M(C_iter Ci) {
   const complex I(0.,1.);
-  complex Ynm[4*P*P], YnmTheta[4*P*P];
+  complex Ynm[4*P*P];
   for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
     vect dist = Ci->X - Cj->X;
     real R = std::sqrt(norm(dist)) + Cj->RCRIT;
@@ -367,7 +376,7 @@ void Kernel<Laplace>::M2M(C_iter Ci) {
 
 template<>
 void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
-  complex Ynm[4*P*P], YnmTheta[4*P*P];
+  complex Ynm[4*P*P];
   vect dist = Ci->X - Cj->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -385,7 +394,7 @@ void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
     vect cartesian = 0;
     real r, theta, phi;
     cart2sph(r,theta,phi,dist);
-    evalLocal(r,theta,phi,Ynm);
+    evalLocalTheta(r,theta,phi,Ynm,YnmTheta);
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
@@ -411,7 +420,7 @@ void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
 template<>
 void Kernel<Laplace>::L2L(C_iter Ci) const {
   const complex I(0.,1.);
-  complex Ynm[4*P*P], YnmTheta[4*P*P];
+  complex Ynm[4*P*P];
   C_iter Cj = Ci0 + Ci->PARENT;
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;

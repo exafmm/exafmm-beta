@@ -27,17 +27,22 @@ template<>
 void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P kernel on CPU
 #ifndef SPARC_SIMD
   for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
+    real P0 = 0;                                                //  Initialize potential
+    vect F0 = 0;                                                //  Initialize force
     for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
-      vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+      vect dist = Bi->X - Bj->X;                                //   Distance vector from source to target
       real R2 = norm(dist) + EPS2;                              //   R^2
-      real invR = 1 / std::sqrt(R2);                            //   1 / R
-      if( R2 == 0 ) invR = 0;                                   //   Exclude self interaction
-      real invR3 = Bj->SRC * invR * invR * invR;                //   charge / R^3
-      Bi->TRG[0] += Bj->SRC * invR;                             //   potential
-      Bi->TRG[1] -= dist[0] * invR3;                            //   x component of force
-      Bi->TRG[2] -= dist[1] * invR3;                            //   y component of force
-      Bi->TRG[3] -= dist[2] * invR3;                            //   z component of force
+      real invR2 = 1.0 / R2;                                    //   1 / R^2
+      if( R2 == 0 ) invR2 = 0;                                  //   Exclude self interaction
+      real invR = Bj->SRC * std::sqrt(invR2);                   //   potential
+      dist *= invR2 * invR;                                     //   force
+      P0 += invR;                                               //   accumulate potential
+      F0 += dist;                                               //   accumulate force
     }                                                           //  End loop over source bodies
+    Bi->TRG[0] += P0;                                           //  potential
+    Bi->TRG[1] -= F0[0];                                        //  x component of force
+    Bi->TRG[2] -= F0[1];                                        //  y component of force
+    Bi->TRG[3] -= F0[2];                                        //  z component of force
   }                                                             // End loop over target bodies
 #else
   real (* cbi)[10] =  (real (*)[10])(&(Ci->LEAF->IBODY));

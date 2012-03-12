@@ -199,6 +199,7 @@ public:
   void evalMultipole(real rho, real alpha, real beta, complex *Ynm) const;//!< Set Spherical multipole expansion
   void evalMultipoleTheta(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const;//!< With dY/dtheta
   void evalLocal(real rho, real alpha, real beta, complex *Ynm) const;//!< Set Spherical local expansion
+  void evalLocalTheta(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const;//!< With dY/dtheta
   void P2M(C_iter Ci);                                          //!< Evaluate P2M kernel on CPU
   void M2M(C_iter Ci);                                          //!< Evaluate M2M kernel on CPU
   void M2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2L kernel on CPU
