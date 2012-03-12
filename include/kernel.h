@@ -69,79 +69,6 @@ public:
   real NM2P;                                                    //!< Number of M2P kernel calls
   real NM2L;                                                    //!< Number of M2L kernel calls
 
-protected:
-//! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
-  void evalMultipole(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const {
-    const complex I(0.,1.);                                     // Imaginary unit
-    real x = std::cos(alpha);                                   // x = cos(alpha)
-    real y = std::sin(alpha);                                   // y = sin(alpha)
-    real fact = 1;                                              // Initialize 2 * m + 1
-    real pn = 1;                                                // Initialize Legendre polynomial Pn
-    real rhom = 1;                                              // Initialize rho^m
-    for( int m=0; m!=P; ++m ) {                                 // Loop over m in Ynm
-      complex eim = std::exp(I * real(m * beta));               //  exp(i * m * beta)
-      real p = pn;                                              //  Associated Legendre polynomial Pnm
-      int npn = m * m + 2 * m;                                  //  Index of Ynm for m > 0
-      int nmn = m * m;                                          //  Index of Ynm for m < 0
-      Ynm[npn] = rhom * p * prefactor[npn] * eim;               //  rho^m * Ynm for m > 0
-      Ynm[nmn] = std::conj(Ynm[npn]);                           //  Use conjugate relation for m < 0
-      real p1 = p;                                              //  Pnm-1
-      p = x * (2 * m + 1) * p1;                                 //  Pnm using recurrence relation
-      YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
-      rhom *= rho;                                              //  rho^m
-      real rhon = rhom;                                         //  rho^n
-      for( int n=m+1; n!=P; ++n ) {                             //  Loop over n in Ynm
-        int npm = n * n + n + m;                                //   Index of Ynm for m > 0
-        int nmm = n * n + n - m;                                //   Index of Ynm for m < 0
-        Ynm[npm] = rhon * p * prefactor[npm] * eim;             //   rho^n * Ynm
-        Ynm[nmm] = std::conj(Ynm[npm]);                         //   Use conjugate relation for m < 0
-        real p2 = p1;                                           //   Pnm-2
-        p1 = p;                                                 //   Pnm-1
-        p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);//   Pnm using recurrence relation
-        YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;// theta derivative
-        rhon *= rho;                                            //   Update rho^n
-      }                                                         //  End loop over n in Ynm
-      pn = -pn * fact * y;                                      //  Pn
-      fact += 2;                                                //  2 * m + 1
-    }                                                           // End loop over m in Ynm
-  }
-
-//! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
-  void evalLocal(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const {
-    const complex I(0.,1.);                                     // Imaginary unit
-    real x = std::cos(alpha);                                   // x = cos(alpha)
-    real y = std::sin(alpha);                                   // y = sin(alpha)
-    real fact = 1;                                              // Initialize 2 * m + 1
-    real pn = 1;                                                // Initialize Legendre polynomial Pn
-    real rhom = 1.0 / rho;                                      // Initialize rho^(-m-1)
-    for( int m=0; m!=2*P; ++m ) {                               // Loop over m in Ynm
-      complex eim = std::exp(I * real(m * beta));               //  exp(i * m * beta)
-      real p = pn;                                              //  Associated Legendre polynomial Pnm
-      int npn = m * m + 2 * m;                                  //  Index of Ynm for m > 0
-      int nmn = m * m;                                          //  Index of Ynm for m < 0
-      Ynm[npn] = rhom * p * prefactor[npn] * eim;               //  rho^(-m-1) * Ynm for m > 0
-      Ynm[nmn] = std::conj(Ynm[npn]);                           //  Use conjugate relation for m < 0
-      real p1 = p;                                              //  Pnm-1
-      p = x * (2 * m + 1) * p1;                                 //  Pnm using recurrence relation
-      YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
-      rhom /= rho;                                              //  rho^(-m-1)
-      real rhon = rhom;                                         //  rho^(-n-1)
-      for( int n=m+1; n!=2*P; ++n ) {                           //  Loop over n in Ynm
-        int npm = n * n + n + m;                                //   Index of Ynm for m > 0
-        int nmm = n * n + n - m;                                //   Index of Ynm for m < 0
-        Ynm[npm] = rhon * p * prefactor[npm] * eim;             //   rho^n * Ynm for m > 0
-        Ynm[nmm] = std::conj(Ynm[npm]);                         //   Use conjugate relation for m < 0
-        real p2 = p1;                                           //   Pnm-2
-        p1 = p;                                                 //   Pnm-1
-        p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);//   Pnm using recurrence relation
-        YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;// theta derivative
-        rhon /= rho;                                            //   rho^(-n-1)
-      }                                                         //  End loop over n in Ynm
-      pn = -pn * fact * y;                                      //  Pn
-      fact += 2;                                                //  2 * m + 1
-    }                                                           // End loop over m in Ynm
-  }
-
 public:
 //! Constructor
   KernelBase() : keysDevcSize(0), rangeDevcSize(0),
@@ -269,6 +196,9 @@ template<Equation equation>
 class Kernel : public KernelBase {
 public:
   void initialize();                                            //!< Initialize kernels
+  void evalMultipole(real rho, real alpha, real beta, complex *Ynm) const;//!< Set Spherical multipole expansion
+  void evalMultipoleTheta(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const;//!< With dY/dtheta
+  void evalLocal(real rho, real alpha, real beta, complex *Ynm) const;//!< Set Spherical local expansion
   void P2M(C_iter Ci);                                          //!< Evaluate P2M kernel on CPU
   void M2M(C_iter Ci);                                          //!< Evaluate M2M kernel on CPU
   void M2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2L kernel on CPU

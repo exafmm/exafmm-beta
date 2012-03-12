@@ -54,8 +54,257 @@ void sph2cart(real r, real theta, real phi, T spherical, T &cartesian) {
 
 }
 
+template<int n, int m>
+struct Index {
+  static const int npm = Index<n,m-1>::npm + 1;
+  static const int nmm = Index<n,m-1>::nmm - 1;
+  static const int nms = Index<n,m-1>::nms + 1;
+};
+
+template<int n>
+struct Index<n,0> {
+  static const int npm = Index<n-1,n-1>::npm + n + 1;
+  static const int nmm = Index<n-1,n-1>::npm + n + 1;
+  static const int nms = Index<n-1,n-1>::nms + 1;
+};
+
+template<>
+struct Index<0,0> {
+  static const int npm = 0;
+  static const int nmm = 0;
+  static const int nms = 0;
+};
+
+template<int p, int n=p-1, int m=p-1>
+struct Expansion {
+  static inline void getYnm(real &x, real &y, real &rho,
+                            real &rhom, real &rhon, real &beta, complex &eim,
+                            real &Pn, real &P0, real &P1, real &P2,
+                            real *prefactor, complex *Ynm) {
+    Expansion<p,n-1,m>::getYnm(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
+    Ynm[Index<n,m>::npm] = rhon * P0 * prefactor[Index<n,m>::npm] * eim;
+    Ynm[Index<n,m>::nmm] = std::conj(Ynm[Index<n,m>::npm]);
+    P2 = P1;
+    P1 = P0;
+    P0 = (x * (2 * n + 1) * P1 - (n + m) * P2) / (n - m + 1);
+    rhon *= rho;
+  }
+  static inline void getYnmTheta(real &x, real &y, real &rho,
+                                 real &rhom, real &rhon, real &beta, complex &eim,
+                                 real &Pn, real &P0, real &P1, real &P2,
+                                 real *prefactor, complex *Ynm, complex *YnmTheta) {
+    Expansion<p,n-1,m>::getYnmTheta(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
+    Ynm[Index<n,m>::npm] = rhon * P0 * prefactor[Index<n,m>::npm] * eim;
+    Ynm[Index<n,m>::nmm] = std::conj(Ynm[Index<n,m>::npm]);
+    P2 = P1;
+    P1 = P0;
+    P0 = (x * (2 * n + 1) * P1 - (n + m) * P2) / (n - m + 1);
+    YnmTheta[Index<n,m>::npm] = rhon * ((n - m + 1) * P0 - (n + 1) * x * P1) / y * prefactor[Index<n,m>::npm] * eim;
+    rhon *= rho;
+  }
+};
+
+template<int p, int m>
+struct Expansion<p,m,m> {
+  static inline void getYnm(real &x, real &y, real &rho,
+                            real &rhom, real &rhon, real &beta, complex &eim,
+                            real &Pn, real &P0, real &P1, real &P2,
+                            real *prefactor, complex *Ynm) {
+    Expansion<p,p-1,m-1>::getYnm(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
+    const complex I(0.,1.);
+    eim = std::exp(I * real(m * beta));
+    Pn = -Pn * (2 * m - 1) * y;
+    P0 = Pn;
+    Ynm[Index<m,m>::npm] = rhom * P0 * prefactor[Index<m,m>::npm] * eim;
+    Ynm[Index<m,m>::nmm] = std::conj(Ynm[Index<m,m>::npm]);
+    P1 = P0;
+    P0 = x * (2*m+1) * P0;
+    rhom *= rho;
+    rhon = rhom;
+  }
+  static inline void getYnmTheta(real &x, real &y, real &rho,
+                                 real &rhom, real &rhon, real &beta, complex &eim,
+                                 real &Pn, real &P0, real &P1, real &P2,
+                                 real *prefactor, complex *Ynm, complex *YnmTheta) {
+    Expansion<p,p-1,m-1>::getYnmTheta(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
+    const complex I(0.,1.);
+    eim = std::exp(I * real(m * beta));
+    Pn = -Pn * (2 * m - 1) * y;
+    P0 = Pn;
+    Ynm[Index<m,m>::npm] = rhom * P0 * prefactor[Index<m,m>::npm] * eim;
+    Ynm[Index<m,m>::nmm] = std::conj(Ynm[Index<m,m>::npm]);
+    P1 = P0;
+    P0 = x * (2*m+1) * P0;
+    YnmTheta[Index<m,m>::npm] = rhom * (P0 - (m + 1) * x * P1) / y * prefactor[Index<m,m>::npm] * eim;
+    rhom *= rho;
+    rhon = rhom;
+  }
+};
+
+template<int p>
+struct Expansion<p,0,0> {
+  static inline void getYnm(real &, real &, real &rho,
+                            real &rhom, real &rhon, real&, complex&,
+                            real&, real &, real &, real&,
+                            real*, complex *Ynm) {
+    Ynm[0] = rhom;
+    rhom *= rho;
+    rhon = rhom;
+  }
+  static inline void getYnmTheta(real &, real &, real &rho,
+                                 real &rhom, real &rhon, real&, complex&,
+                                 real&, real &, real &, real&,
+                                 real*, complex *Ynm, complex *YnmTheta) {
+    Ynm[0] = rhom;
+    YnmTheta[0] = 0;
+    rhom *= rho;
+    rhon = rhom;
+  }
+};
+
+template<int n, int m>
+struct Terms {
+  static inline void P2M(Mset &M, const real &C, complex *Ynm) {
+    Terms<n,m-1>::P2M(M,C,Ynm);
+    M[Index<n,m>::nms] += C * Ynm[Index<n,m>::npm];
+  }
+};
+
+template<int n>
+struct Terms<n,0> {
+  static inline void P2M(Mset &M, const real &C, complex *Ynm) {
+    Terms<n-1,n-1>::P2M(M,C,Ynm);
+    M[Index<n,0>::nms] += C * Ynm[Index<n,0>::npm];
+  }
+};
+
+template<>
+struct Terms<0,0> {
+  static inline void P2M(Mset &M, const real &C, complex *Ynm) {
+    M[Index<0,0>::nms] += C * Ynm[Index<0,0>::npm];
+  }
+};
+
+template<int p, int j=p-1, int k=p-1, int n=p-1, int m=p-1>
+struct M2Ltemplate {
+  static inline void loop(Mset &M, Lset &L, complex *Cnm, complex *Ynm) {
+    M2Ltemplate<p,j,k,n,m-1>::loop(M,L,Cnm,Ynm);
+    int nm   = n * n + n + m;
+    int nms  = n * (n + 1) / 2 + m;
+    int jk = j * j + j + k;
+    int jks = j * (j + 1) / 2 + k;
+    int jknm = jk * P * P + nm;
+    int jnkm = (j + n) * (j + n) + j + n + m - k;
+    L[jks] += M[nms] * Cnm[jknm] * Ynm[jnkm];
+    nm   = n * n + n - m;
+    jknm = jk * P * P + nm;
+    jnkm = (j + n) * (j + n) + j + n - m - k;
+    L[jks] += std::conj(M[nms]) * Cnm[jknm] * Ynm[jnkm];
+  }
+};
+
+template<int p, int j, int k, int n>
+struct M2Ltemplate<p,j,k,n,1> {
+  static inline void loop(Mset &M, Lset &L, complex *Cnm, complex *Ynm) {
+    M2Ltemplate<p,j,k,n-1,n-1>::loop(M,L,Cnm,Ynm);
+    int nm   = n * n + n;
+    int nms  = n * (n + 1) / 2;
+    int jk = j * j + j + k;
+    int jks = j * (j + 1) / 2 + k;
+    int jknm = jk * P * P + nm;
+    int jnkm = (j + n) * (j + n) + j + n - k;
+    L[jks] += M[nms] * Cnm[jknm] * Ynm[jnkm];
+    nm   = n * n + n + 1;
+    nms  = n * (n + 1) / 2 + 1;
+    jknm = jk * P * P + nm;
+    jnkm = (j + n) * (j + n) + j + n + 1 - k;
+    L[jks] += M[nms] * Cnm[jknm] * Ynm[jnkm];
+    nm   = n * n + n - 1;
+    jknm = jk * P * P + nm;
+    jnkm = (j + n) * (j + n) + j + n - 1 - k;
+    L[jks] += std::conj(M[nms]) * Cnm[jknm] * Ynm[jnkm];
+  }
+};
+
+template<int p, int j, int k>
+struct M2Ltemplate<p,j,k,2,1> {
+  static inline void loop(Mset &M, Lset &L, complex *Cnm, complex *Ynm) {
+    M2Ltemplate<p,j,k-1,p-1,p-1>::loop(M,L,Cnm,Ynm);
+    int jk = j * j + j + k;
+    int jks = j * (j + 1) / 2 + k;
+    L[jks] += M[0] * Cnm[jk*P*P] * Ynm[j*j+j-k];
+    int jknm = jk * P * P + 6;
+    int jnkm = (j + 2) * (j + 2) + j + 2 - k;
+    L[jks] += M[3] * Cnm[jknm] * Ynm[jnkm];
+    jknm = jk * P * P + 7;
+    jnkm = (j + 2) * (j + 2) + j + 3 - k;
+    L[jks] += M[4] * Cnm[jknm] * Ynm[jnkm];
+    jknm = jk * P * P + 5;
+    jnkm = (j + 2) * (j + 2) + j + 1 - k;
+    L[jks] += std::conj(M[4]) * Cnm[jknm] * Ynm[jnkm];
+  }
+};
+
+template<int p, int j>
+struct M2Ltemplate<p,j,0,2,1> {
+  static inline void loop(Mset &M, Lset &L, complex *Cnm, complex *Ynm) {
+    M2Ltemplate<p,j-1,j-1,p-1,p-1>::loop(M,L,Cnm,Ynm);
+    int jk = j * j + j;
+    int jks = j * (j + 1) / 2;
+    L[jks] += M[0] * Cnm[jk*P*P] * Ynm[j*j+j];
+    int jknm = jk * P * P + 6;
+    int jnkm = (j + 2) * (j + 2) + j + 2;
+    L[jks] += M[3] * Cnm[jknm] * Ynm[jnkm];
+    jknm = jk * P * P + 7;
+    jnkm = (j + 2) * (j + 2) + j + 3;
+    L[jks] += M[4] * Cnm[jknm] * Ynm[jnkm];
+    jknm = jk * P * P + 5;
+    jnkm = (j + 2) * (j + 2) + j + 1;
+    L[jks] += std::conj(M[4]) * Cnm[jknm] * Ynm[jnkm];
+  }
+};
+
+template<int p>
+struct M2Ltemplate<p,0,0,2,1> {
+  static inline void loop(Mset &M, Lset &L, complex *Cnm, complex *Ynm) {
+    L[0] += M[0] * Cnm[0] * Ynm[0];
+    L[0] += M[3] * Cnm[6] * Ynm[6];
+    L[0] += M[4] * Cnm[7] * Ynm[7];
+    L[0] += std::conj(M[4]) * Cnm[5] * Ynm[5];
+  }
+};
+
 template<>
 void Kernel<Laplace>::initialize() {}
+
+template<>
+void Kernel<Laplace>::evalMultipole(real rho, real alpha, real beta, complex *Ynm) const {
+  real x = std::cos(alpha);
+  real y = std::sin(alpha);
+  real rhom=1,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
+  complex eim = 1;
+  Expansion<P>::getYnm(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
+}
+
+template<>
+void Kernel<Laplace>::evalMultipoleTheta(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const {
+  real x = std::cos(alpha);
+  real y = std::sin(alpha);
+  real rhom=1,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
+  complex eim = 1;
+  Expansion<P>::getYnmTheta(x,y,rho,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm,YnmTheta);
+}
+
+template<>
+void Kernel<Laplace>::evalLocal(real rho, real alpha, real beta, complex *Ynm) const {
+  real x = std::cos(alpha);
+  real y = std::sin(alpha);
+  real invR = 1 / rho;
+  real rhom=invR,rhon=rhom,P0=x,P1=1,P2=1,Pn=1;
+  complex eim = 1;
+  Expansion<2*P>::getYnm(x,y,invR,rhom,rhon,beta,eim,Pn,P0,P1,P2,prefactor,Ynm);
+}
+
 
 template<>
 void Kernel<Laplace>::P2M(C_iter Cj) {
@@ -67,14 +316,8 @@ void Kernel<Laplace>::P2M(C_iter Cj) {
     if( R > Rmax ) Rmax = R;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
-    evalMultipole(rho,alpha,-beta,Ynm,YnmTheta);
-    for( int n=0; n!=P; ++n ) {
-      for( int m=0; m<=n; ++m ) {
-        const int nm  = n * n + n + m;
-        const int nms = n * (n + 1) / 2 + m;
-        Cj->M[nms] += B->SRC * Ynm[nm];
-      }
-    }
+    evalMultipole(rho,alpha,-beta,Ynm);
+    Terms<P-1,P-1>::P2M(Cj->M,B->SRC,Ynm);
   }
   Cj->RCRIT = std::min(Cj->R,Rmax);
 }
@@ -89,7 +332,7 @@ void Kernel<Laplace>::M2M(C_iter Ci) {
     if( R > Rmax ) Rmax = R;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
-    evalMultipole(rho,alpha,-beta,Ynm,YnmTheta);
+    evalMultipole(rho,alpha,-beta,Ynm);
     for( int j=0; j!=P; ++j ) {
       for( int k=0; k<=j; ++k ) {
         const int jk = j * j + j + k;
@@ -128,31 +371,8 @@ void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
   vect dist = Ci->X - Cj->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
-  evalLocal(rho,alpha,beta,Ynm,YnmTheta);
-  for( int j=0; j!=P; ++j ) {
-    for( int k=0; k<=j; ++k ) {
-      const int jk = j * j + j + k;
-      const int jks = j * (j + 1) / 2 + k;
-      complex L = 0;
-      for( int n=0; n!=P; ++n ) {
-        for( int m=-n; m<0; ++m ) {
-          const int nm   = n * n + n + m;
-          const int nms  = n * (n + 1) / 2 - m;
-          const int jknm = jk * P2 + nm;
-          const int jnkm = (j + n) * (j + n) + j + n + m - k;
-          L += std::conj(Cj->M[nms]) * Cnm[jknm] * Ynm[jnkm];
-        }
-        for( int m=0; m<=n; ++m ) {
-          const int nm   = n * n + n + m;
-          const int nms  = n * (n + 1) / 2 + m;
-          const int jknm = jk * P2 + nm;
-          const int jnkm = (j + n) * (j + n) + j + n + m - k;
-          L += Cj->M[nms] * Cnm[jknm] * Ynm[jnkm];
-        }
-      }
-      Ci->L[jks] += L;
-    }
-  }
+  evalLocal(rho,alpha,beta,Ynm);
+  M2Ltemplate<P>::loop(Cj->M,Ci->L,Cnm,Ynm);
 }
 
 template<>
@@ -165,7 +385,7 @@ void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
     vect cartesian = 0;
     real r, theta, phi;
     cart2sph(r,theta,phi,dist);
-    evalLocal(r,theta,phi,Ynm,YnmTheta);
+    evalLocal(r,theta,phi,Ynm);
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
@@ -196,7 +416,7 @@ void Kernel<Laplace>::L2L(C_iter Ci) const {
   vect dist = Ci->X - Cj->X;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
-  evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
+  evalMultipole(rho,alpha,beta,Ynm);
   for( int j=0; j!=P; ++j ) {
     for( int k=0; k<=j; ++k ) {
       const int jk = j * j + j + k;
@@ -235,7 +455,7 @@ void Kernel<Laplace>::L2P(C_iter Ci) const {
     vect cartesian = 0;
     real r, theta, phi;
     cart2sph(r,theta,phi,dist);
-    evalMultipole(r,theta,phi,Ynm,YnmTheta);
+    evalMultipoleTheta(r,theta,phi,Ynm,YnmTheta);
     for( int n=0; n!=P; ++n ) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
