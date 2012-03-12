@@ -29,6 +29,33 @@ void Evaluator<equation>::timeKernels() {
 }
 
 template<Equation equation>
+inline void Evaluator<equation>::evalP2M(Cells &cells) {        // Evaluate all P2M kernels
+  if( TOPDOWN ) {                                               // If tree was constructed top down
+    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {    //  Loop over cells
+      if( C->NCHILD == 0 ) P2M(C);                              //   If cell is a twig do P2M
+    }                                                           //  End loop over cells
+  } else {                                                      // If tree was constructed bottom up
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        //  Loop over cells
+      if( C->NCHILD == 0 ) P2M(C);                              //   If cell is a twig do P2M
+    }                                                           //  End loop over cells
+  }                                                             // End loop over cells
+}
+
+template<Equation equation>
+inline void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all M2M kernels
+  Cj0 = jcells.begin();                                         // Set begin iterator
+  if( TOPDOWN ) {                                               // If tree was constructed top down
+    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {    //  Loop over cells
+      if( C->NCHILD != 0 ) M2M(C);                              //   If cell is not a twig do M2M
+    }                                                           //  End loop over cells
+  } else {                                                      // If tree was constructed bottom up
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        //  Loop over cells
+      if( C->NCHILD != 0 ) M2M(C);                              //   If cell is not a twig do M2M
+    }                                                           //  End loop over cells
+  }                                                             // End loop over cells
+}
+
+template<Equation equation>
 void Evaluator<equation>::evalM2L(C_iter Ci, C_iter Cj) {       // Evaluate single M2L kernel
   M2L(Ci,Cj);                                                   // Call M2L kernel
   NM2L++;                                                       // Count M2L kernel execution

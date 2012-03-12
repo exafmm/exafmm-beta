@@ -32,6 +32,7 @@ public:
   using Kernel<equation>::preCalculation;                       //!< Precalculate M2L translation matrix
   using Kernel<equation>::postCalculation;                      //!< Free temporary allocations
   using Evaluator<equation>::TOPDOWN;                           //!< Flag for top down tree construction
+  using Evaluator<equation>::upwardPass;                        //!< Upward pass to get all multipoles
   using Evaluator<equation>::traverse;                          //!< Traverse tree to get interaction list
 
   using Kernel<equation>::P2P;
@@ -60,7 +61,7 @@ public:
     TopDown<equation>::setDomain(bodies);
     TopDown<equation>::buildTree();
     TopDown<equation>::linkTree(bodies,cells);
-    TopDown<equation>::upwardPass(cells);
+    upwardPass(cells);
   }
 
   void bottomup(Bodies &bodies, Cells &cells) {
@@ -68,7 +69,7 @@ public:
     BottomUp<equation>::setDomain(bodies);
     BottomUp<equation>::buildTree(bodies,cells);
     BottomUp<equation>::linkTree(cells);
-    BottomUp<equation>::upwardPass(cells);
+    upwardPass(cells);
   }
 
   void evaluate(Cells &icells, Cells &jcells) {

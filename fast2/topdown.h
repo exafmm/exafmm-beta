@@ -47,9 +47,9 @@ public:
   using Evaluator<equation>::NM2L;                              //!< Number of M2L kernel calls
   using Evaluator<equation>::NM2P;                              //!< Number of M2P kernel calls
   using Evaluator<equation>::NP2P;                              //!< Number of P2P kernel calls
+  using Evaluator<equation>::evalP2M;                           //!< Evaluate P2M kernel
+  using Evaluator<equation>::evalM2M;                           //!< Evaluate M2M kernel
 
-  using Kernel<equation>::P2M;
-  using Kernel<equation>::M2M;
   using Kernel<equation>::L2L;
   using Kernel<equation>::L2P;
   using Evaluator<equation>::setRcrit;
@@ -213,24 +213,6 @@ protected:
     leafs.clear();
     permuteBodies(bodies);
     stopTimer("Link tree",printNow);
-  }
-
-  void upwardPass(Cells &cells) {
-    startTimer("Upward pass");
-    Cj0 = cells.begin();
-    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {
-      if( C->NCHILD == 0 ) P2M(C);
-    }
-    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {
-      if( C->NCHILD != 0 ) M2M(C);
-    }
-#if Cartesian
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
-    }
-#endif
-    setRcrit(cells);
-    stopTimer("Upward pass",printNow);
   }
 
   void downwardPass(Cells &cells) const {

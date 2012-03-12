@@ -93,15 +93,6 @@ public:
   inline void interact(C_iter Ci, C_iter Cj, Quark *quark);
 #endif
 
-protected:
-  C_iter setRootCell(Cells &cells) {
-    if( TOPDOWN ) {
-      return cells.begin();
-    } else {
-      return cells.end() - 1;
-    }
-  }
-
   void setRcrit(Cells &cells) {
     C_iter root = setRootCell(cells);
     real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(root->M[0]),1.0/3);
@@ -115,6 +106,28 @@ protected:
       }
       C->RCRIT *= x;
     }
+  }
+
+protected:
+  C_iter setRootCell(Cells &cells) {
+    if( TOPDOWN ) {
+      return cells.begin();
+    } else {
+      return cells.end() - 1;
+    }
+  }
+
+  void upwardPass(Cells &cells) {
+    startTimer("Upward pass");
+    evalP2M(cells);                                             // Evaluate all P2M kernels
+    evalM2M(cells,cells);                                       // Evaluate all M2M kernels
+#if Cartesian
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
+      for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
+    }
+#endif
+    setRcrit(cells);
+    stopTimer("Upward pass",printNow);
   }
 
   void traverse(Cells &icells, Cells &jcells) {
@@ -167,9 +180,13 @@ public:
   Evaluator() : NM2L(0), NM2P(0), NP2P(0) {}
   ~Evaluator() {}
 
+  inline void evalP2M(Cells &cells);                            //!< Evaluate all P2M kernels
+  inline void evalM2M(Cells &cells, Cells &jcells);             //!< Evaluate all M2M kernels
   void evalM2L(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
   void evalM2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
   void evalP2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
+  void evalL2L(Cells &cells);                                   //!< Evaluate all L2L kernels
+  void evalL2P(Cells &cells);                                   //!< Evaluate all L2P kernels
 
 };
 

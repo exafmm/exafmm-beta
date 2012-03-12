@@ -175,24 +175,6 @@ protected:
     stopTimer("Link tree",printNow);
   }
 
-  void upwardPass(Cells &cells) {
-    startTimer("Upward pass");
-    Cj0 = cells.begin();
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      P2M(C);
-    }
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      M2M(C);
-    }
-#if Cartesian
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
-    }
-#endif
-    setRcrit(cells);
-    stopTimer("Upward pass",printNow);
-  }
-
   void downwardPass(Cells &cells) const {
     for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {
       L2L(C);
