@@ -416,7 +416,7 @@ private:
       Cell cell;                                                //  Cell structure
       cell.ICELL = JC->ICELL;                                   //  Set index of cell
       cell.M     = JC->M;                                       //  Set multipole of cell
-      cell.NCLEAF = cell.NDLEAF = cell.NCHILD = 0;              //  Set number of leafs and children
+      cell.CHILD = cell.NCLEAF = cell.NDLEAF = cell.NCHILD = 0; //  Set number of leafs and children
       cell.LEAF  = bodies.end();                                //  Set pointer to first leaf
       getCenter(cell);                                          //  Set center and radius
       twigs.push_back(cell);                                    //  Push cell into twig vector
@@ -430,7 +430,7 @@ private:
       Cell cell;                                                //  Cell structure
       cell.ICELL = JC->ICELL;                                   //  Set index of cell
       cell.M     = JC->M;                                       //  Set multipole of cell
-      cell.NCLEAF = cell.NDLEAF = cell.NCHILD = 0;              //  Set number of leafs and children
+      cell.CHILD = cell.NCLEAF = cell.NDLEAF = cell.NCHILD = 0; //  Set number of leafs and children
       cell.LEAF  = bodies.end();                                //  Set pointer to first leaf
       getCenter(cell);                                          //  Set center and radius
       twigs.push_back(cell);                                    //  Push cell into twig vector

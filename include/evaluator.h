@@ -187,7 +187,6 @@ protected:
     for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
       Cell cell;                                                //  New periodic cell at next sublevel
       C_iter C = pccells.end() - 1;                             //  Set previous periodic center cell as source
-      pccells.pop_back();                                       //  Pop periodic center cell from vector
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
@@ -221,6 +220,7 @@ protected:
       }                                                         //  End loop over x periodic direction
       cell.X = C->X;                                            //  This is the center cell
       cell.R = 3 * C->R;                                        //  The cell size increases three times
+      pccells.pop_back();                                       //  Pop periodic center cell from vector
       pccells.push_back(cell);                                  //  Push cell into periodic cell vector
       C_iter Ci = pccells.end() - 1;                            //  Set current cell as target for M2M
       Ci->CHILD = 0;                                            //  Set child cells for periodic M2M

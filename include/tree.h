@@ -158,6 +158,7 @@ public:
       if( B->ICELL != index ) {                                 //  If it belongs to a new cell
         cell.NCLEAF = nleaf;                                    //   Set number of child leafs
         cell.NDLEAF = nleaf;                                    //   Set number of decendant leafs
+        cell.CHILD  = 0;                                        //   Set pointer offset to first child
         cell.NCHILD = 0;                                        //   Set number of child cells
         cell.ICELL  = index;                                    //   Set cell index
         cell.LEAF   = firstLeaf;                                //   Set pointer to first leaf
@@ -171,6 +172,7 @@ public:
     }                                                           // End loop over bodies
     cell.NCLEAF = nleaf;                                        // Set number of child leafs
     cell.NDLEAF = nleaf;                                        // Set number of decendant leafs
+    cell.CHILD  = 0;                                            //   Set pointer offset to first child
     cell.NCHILD = 0;                                            // Set number of child cells
     cell.ICELL  = index;                                        // Set cell index
     cell.LEAF   = firstLeaf;                                    // Set pointer to first leaf
