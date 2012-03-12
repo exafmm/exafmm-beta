@@ -32,7 +32,8 @@ private:
   real timeP2P;                                                 //!< P2P execution time
 
 protected:
-  bool TOPDOWN;
+  bool TOPDOWN;                                                 //!< Flag to indicate top down tree construction
+  int  MAXLEVEL;                                                //!< Maximum depth of tree
   real NM2L;                                                    //!< Number of M2L kernel calls
   real NM2P;                                                    //!< Number of M2P kernel calls
   real NP2P;                                                    //!< Number of P2P kernel calls
@@ -42,6 +43,7 @@ public:
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
   using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
   using Kernel<equation>::writeTrace;                           //!< Write traces of all events
+  using Kernel<equation>::R0;                                   //!< Radius of root cell
   using Kernel<equation>::Ci0;                                  //!< icells.begin()
   using Kernel<equation>::Cj0;                                  //!< jcells.begin()
   using Kernel<equation>::P2M;                                  //!< Evaluate P2M kernel
@@ -93,8 +95,16 @@ public:
   inline void interact(C_iter Ci, C_iter Cj, Quark *quark);
 #endif
 
+  C_iter getRootCell(Cells &cells) {
+    if( TOPDOWN ) {
+      return cells.begin();
+    } else {
+      return cells.end() - 1;
+    }
+  }
+
   void setRcrit(Cells &cells) {
-    C_iter root = setRootCell(cells);
+    C_iter root = getRootCell(cells);
     real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(root->M[0]),1.0/3);
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       real a = c * pow(std::abs(C->M[0]),1.0/3);
@@ -109,18 +119,10 @@ public:
   }
 
 protected:
-  C_iter setRootCell(Cells &cells) {
-    if( TOPDOWN ) {
-      return cells.begin();
-    } else {
-      return cells.end() - 1;
-    }
-  }
-
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");
-    evalP2M(cells);                                             // Evaluate all P2M kernels
-    evalM2M(cells,cells);                                       // Evaluate all M2M kernels
+    evalP2M(cells);
+    evalM2M(cells,cells);
 #if Cartesian
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
@@ -131,6 +133,7 @@ protected:
   }
 
   void traverse(Cells &icells, Cells &jcells) {
+    startTimer("Traverse");
     Ci0 = icells.begin();
     Cj0 = jcells.begin();
     Pair pair;
@@ -172,6 +175,14 @@ protected:
     QUARK_Delete(quark);
     writeTrace();
 #endif
+    stopTimer("Traverse",printNow);
+  }
+
+  void downwardPass(Cells &cells) {
+    startTimer("Downward pass");
+    evalL2L(cells);
+    evalL2P(cells);
+    stopTimer("Downward pass",printNow);
   }
 
   void timeKernels();
@@ -180,13 +191,29 @@ public:
   Evaluator() : NM2L(0), NM2P(0), NP2P(0) {}
   ~Evaluator() {}
 
+  void printTreeData(Cells &cells) {
+    C_iter root = getRootCell(cells);
+    std::cout << "-----------------------------------------------" << std::endl;
+    std::cout << "Root center          : " << root->X              << std::endl;
+    std::cout << "Root radius          : " << R0                   << std::endl;
+    std::cout << "Bodies               : " << root->NDLEAF         << std::endl;
+    std::cout << "Cells                : " << cells.size()         << std::endl;
+    std::cout << "Tree depth           : " << MAXLEVEL             << std::endl;
+    std::cout << "Total charge         : " << std::abs(root->M[0]) << std::endl;
+    std::cout << "M2L calls            : " << NM2L                 << std::endl;
+    std::cout << "M2P calls            : " << NM2P                 << std::endl;
+    std::cout << "P2P calls            : " << NP2P                 << std::endl;
+    std::cout << "-----------------------------------------------" << std::endl;
+  }
+
+  void direct(Bodies &ibodies, Bodies &jbodies);                //!< Evaluate direct summation
   inline void evalP2M(Cells &cells);                            //!< Evaluate all P2M kernels
   inline void evalM2M(Cells &cells, Cells &jcells);             //!< Evaluate all M2M kernels
   void evalM2L(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
   void evalM2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
   void evalP2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
-  void evalL2L(Cells &cells);                                   //!< Evaluate all L2L kernels
-  void evalL2P(Cells &cells);                                   //!< Evaluate all L2P kernels
+  inline void evalL2L(Cells &cells);                            //!< Evaluate all L2L kernels
+  inline void evalL2P(Cells &cells);                            //!< Evaluate all L2P kernels
 
 };
 

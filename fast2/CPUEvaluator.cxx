@@ -29,6 +29,18 @@ void Evaluator<equation>::timeKernels() {
 }
 
 template<Equation equation>
+inline void Evaluator<equation>::direct(Bodies &ibodies, Bodies &jbodies) {// Evaluate direct summation
+  Cells cells;
+  cells.resize(2);
+  C_iter Ci = cells.begin(), Cj = cells.begin()+1;
+  Ci->LEAF = ibodies.begin();
+  Ci->NDLEAF = ibodies.size();
+  Cj->LEAF = jbodies.begin();
+  Cj->NDLEAF = jbodies.size();
+  P2P(Ci,Cj);
+}
+
+template<Equation equation>
 inline void Evaluator<equation>::evalP2M(Cells &cells) {        // Evaluate all P2M kernels
   if( TOPDOWN ) {                                               // If tree was constructed top down
     for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {    //  Loop over cells
@@ -71,6 +83,32 @@ template<Equation equation>
 void Evaluator<equation>::evalP2P(C_iter Ci, C_iter Cj) {       // Evaluate single P2P kernel
   P2P(Ci,Cj);                                                   // Call P2P kernel
   NP2P++;                                                       // Count P2P kernel execution
+}
+
+template<Equation equation>
+inline void Evaluator<equation>::evalL2L(Cells &cells) {        // Evaluate all L2L kernels
+  if( TOPDOWN ) {                                               // If tree was constructed top down
+    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {      //  Loop over cells
+      L2L(C);                                                   //   Do L2L
+    }                                                           //  End loop over cells
+  } else {                                                      // If tree was constructed bottom up
+    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {    //  Loop over cells
+      L2L(C);                                                   //   Do L2L
+    }                                                           //  End loop over cells
+  }                                                             // End loop over cells
+}
+
+template<Equation equation>
+inline void Evaluator<equation>::evalL2P(Cells &cells) {        // Evaluate all L2P kernels
+  if( TOPDOWN ) {                                               // If tree was constructed top down
+    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {      //  Loop over cells
+      if( C->NCHILD == 0 ) L2P(C);                              //   If cell is a twig do L2P
+    }                                                           //  End loop over cells
+  } else {                                                      // If tree was constructed bottom up
+    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {    //  Loop over cells
+      L2P(C);                                                   //   Do L2P
+    }                                                           //  End loop over cells
+  }                                                             // End loop over cells
 }
 
 #if QUARK

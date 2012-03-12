@@ -33,9 +33,6 @@ private:
   unsigned NLEAF;
   unsigned NCELL;
 
-protected:
-  int      MAXLEVEL;
-
 public:
   using Kernel<equation>::printNow;                             //!< Switch to print timings
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
@@ -43,17 +40,7 @@ public:
   using Kernel<equation>::X0;                                   //!< Center of root cell
   using Kernel<equation>::R0;                                   //!< Radius of root cell
   using Kernel<equation>::Ci0;                                  //!< icells.begin()
-  using Kernel<equation>::Cj0;                                  //!< jcells.begin()
-  using Evaluator<equation>::NM2L;                              //!< Number of M2L kernel calls
-  using Evaluator<equation>::NM2P;                              //!< Number of M2P kernel calls
-  using Evaluator<equation>::NP2P;                              //!< Number of P2P kernel calls
-  using Evaluator<equation>::evalP2M;                           //!< Evaluate P2M kernel
-  using Evaluator<equation>::evalM2M;                           //!< Evaluate M2M kernel
-
-  using Kernel<equation>::L2L;
-  using Kernel<equation>::L2P;
-  using Evaluator<equation>::setRcrit;
-  using Evaluator<equation>::setRootCell;
+  using Evaluator<equation>::MAXLEVEL;                          //!< Max depth of tree
 
 private:
   void init(Node &node) {
@@ -213,31 +200,6 @@ protected:
     leafs.clear();
     permuteBodies(bodies);
     stopTimer("Link tree",printNow);
-  }
-
-  void downwardPass(Cells &cells) const {
-    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {
-      L2L(C);
-    }
-    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {
-      L2P(C);
-    }
-  }
-
-public:
-  void printTreeData(Cells &cells) {
-    C_iter root = setRootCell(cells);
-    std::cout << "-----------------------------------------------" << std::endl;
-    std::cout << "Root center          : " << root->X              << std::endl;
-    std::cout << "Root radius          : " << R0                   << std::endl;
-    std::cout << "Bodies               : " << root->NDLEAF         << std::endl;
-    std::cout << "Cells                : " << cells.size()         << std::endl;
-    std::cout << "Tree depth           : " << MAXLEVEL             << std::endl;
-    std::cout << "Total charge         : " << std::abs(root->M[0]) << std::endl;
-    std::cout << "M2L calls            : " << NM2L                 << std::endl;
-    std::cout << "M2P calls            : " << NM2P                 << std::endl;
-    std::cout << "P2P calls            : " << NP2P                 << std::endl;
-    std::cout << "-----------------------------------------------" << std::endl;
   }
 
 };

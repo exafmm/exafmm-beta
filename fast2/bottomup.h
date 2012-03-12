@@ -31,15 +31,8 @@ public:
   using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
   using Kernel<equation>::X0;                                   //!< Center of root cell
   using Kernel<equation>::R0;                                   //!< Radius of root cell
-  using Kernel<equation>::Cj0;                                  //!< jcells.begin()
   using Kernel<equation>::sortBodies;                           //!< Sort bodies according to cell index
-  using TopDown<equation>::MAXLEVEL;                            //!< Max level of tree
-
-  using Kernel<equation>::P2M;
-  using Kernel<equation>::M2M;
-  using Kernel<equation>::L2L;
-  using Kernel<equation>::L2P;
-  using Evaluator<equation>::setRcrit;
+  using Evaluator<equation>::MAXLEVEL;                          //!< Max depth of tree
 
 private:
   int getMaxLevel(Bodies &bodies) {
@@ -173,15 +166,6 @@ protected:
     startTimer("Link tree");
     twigs2cells(cells);
     stopTimer("Link tree",printNow);
-  }
-
-  void downwardPass(Cells &cells) const {
-    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {
-      L2L(C);
-    }
-    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {
-      L2P(C);
-    }
   }
 
 };

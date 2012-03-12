@@ -32,8 +32,9 @@ public:
   using Kernel<equation>::preCalculation;                       //!< Precalculate M2L translation matrix
   using Kernel<equation>::postCalculation;                      //!< Free temporary allocations
   using Evaluator<equation>::TOPDOWN;                           //!< Flag for top down tree construction
-  using Evaluator<equation>::upwardPass;                        //!< Upward pass to get all multipoles
+  using Evaluator<equation>::upwardPass;                        //!< Upward pass to get all multipole expansions
   using Evaluator<equation>::traverse;                          //!< Traverse tree to get interaction list
+  using Evaluator<equation>::downwardPass;                      //!< Downward pass to evaluate all local expansions
 
   using Kernel<equation>::P2P;
 
@@ -43,17 +44,6 @@ public:
   }
   ~SerialFMM() {
     postCalculation();
-  }
-
-  void direct(Bodies &ibodies, Bodies &jbodies) {
-    Cells cells;
-    cells.resize(2);
-    C_iter Ci = cells.begin(), Cj = cells.begin()+1;
-    Ci->LEAF = ibodies.begin();
-    Ci->NDLEAF = ibodies.size();
-    Cj->LEAF = jbodies.begin();
-    Cj->NDLEAF = jbodies.size();
-    P2P(Ci,Cj);
   }
 
   void topdown(Bodies &bodies, Cells &cells) {
@@ -73,16 +63,8 @@ public:
   }
 
   void evaluate(Cells &icells, Cells &jcells) {
-    startTimer("Traverse");
     traverse(icells,jcells);
-    stopTimer("Traverse",printNow);
-    startTimer("Downward pass");
-    if( TOPDOWN ) {
-      TopDown<equation>::downwardPass(icells);
-    } else {
-      BottomUp<equation>::downwardPass(icells);
-    }
-    stopTimer("Downward pass",printNow);
+    downwardPass(icells);
   }
 
 };
