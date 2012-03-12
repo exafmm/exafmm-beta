@@ -35,9 +35,9 @@ public:
   using Kernel<equation>::sortCells;                            //!< Sort cells according to cell index
   using Kernel<equation>::X0;                                   //!< Center of root cell
   using Kernel<equation>::R0;                                   //!< Radius of root cell
-  using Kernel<equation>::NP2P;                                 //!< Number of P2P kernel calls
-  using Kernel<equation>::NM2P;                                 //!< Number of M2P kernel calls
-  using Kernel<equation>::NM2L;                                 //!< Number of M2L kernel calls
+  using Evaluator<equation>::NP2P;                              //!< Number of P2P kernel calls
+  using Evaluator<equation>::NM2P;                              //!< Number of M2P kernel calls
+  using Evaluator<equation>::NM2L;                              //!< Number of M2L kernel calls
   using Evaluator<equation>::getLevel;                          //!< Get level from cell index
   using Evaluator<equation>::timeKernels;                       //!< Time all kernels for auto-tuning
   using Evaluator<equation>::upwardPeriodic;                    //!< Upward phase for periodic cells

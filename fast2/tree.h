@@ -23,26 +23,19 @@ THE SOFTWARE.
 #define tree_h
 #include "bottomup.h"
 
-class TreeConstructor : public BottomUp {
+template<Equation equation>
+class SerialFMM : public BottomUp<equation> {
 public:
-  void topdown(Bodies &bodies, Cells &cells) {
-    TOPDOWN = true;
-    TopDown::setDomain(bodies);
-    TopDown::buildTree();
-    TopDown::linkTree(bodies,cells);
-    TopDown::upwardPass(cells);
-  }
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::preCalculation;                       //!< Precalculate M2L translation matrix
+  using Kernel<equation>::postCalculation;                      //!< Free temporary allocations
+  using Evaluator<equation>::TOPDOWN;                           //!< Flag for top down tree construction
+  using Evaluator<equation>::traverse;                          //!< Traverse tree to get interaction list
 
-  void bottomup(Bodies &bodies, Cells &cells) {
-    TOPDOWN = false;
-    BottomUp::setDomain(bodies);
-    BottomUp::buildTree(bodies,cells);
-    BottomUp::linkTree(cells);
-    BottomUp::upwardPass(cells);
-  }
-};
+  using Kernel<equation>::P2P;
 
-class SerialFMM : public TreeConstructor {
 public:
   SerialFMM() {
     preCalculation();
@@ -62,18 +55,33 @@ public:
     P2P(Ci,Cj);
   }
 
+  void topdown(Bodies &bodies, Cells &cells) {
+    TOPDOWN = true;
+    TopDown<equation>::setDomain(bodies);
+    TopDown<equation>::buildTree();
+    TopDown<equation>::linkTree(bodies,cells);
+    TopDown<equation>::upwardPass(cells);
+  }
+
+  void bottomup(Bodies &bodies, Cells &cells) {
+    TOPDOWN = false;
+    BottomUp<equation>::setDomain(bodies);
+    BottomUp<equation>::buildTree(bodies,cells);
+    BottomUp<equation>::linkTree(cells);
+    BottomUp<equation>::upwardPass(cells);
+  }
+
   void evaluate(Cells &icells, Cells &jcells) {
     startTimer("Traverse");
     traverse(icells,jcells);
     stopTimer("Traverse",printNow);
     startTimer("Downward pass");
     if( TOPDOWN ) {
-      TopDown::downwardPass(icells);
+      TopDown<equation>::downwardPass(icells);
     } else {
-      BottomUp::downwardPass(icells);
+      BottomUp<equation>::downwardPass(icells);
     }
     stopTimer("Downward pass",printNow);
-    if(printNow) printTreeData(icells);
   }
 
 };

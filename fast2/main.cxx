@@ -29,7 +29,7 @@ int main() {
   Bodies bodies;
   Cells cells;
   Dataset DATA;
-  SerialFMM FMM;
+  SerialFMM<Laplace> FMM;
 #if HYBRID
   FMM.timeKernels();
 #endif
@@ -62,6 +62,7 @@ int main() {
   FMM.eraseTimer("FMM");
   FMM.writeTime();
   FMM.resetTimer();
+  if(FMM.printNow) FMM.printTreeData(cells);
 
   Bodies bodies2 = bodies;
 #ifdef MANY

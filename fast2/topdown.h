@@ -23,7 +23,8 @@ THE SOFTWARE.
 #define topdown_h
 #include "evaluator.h"
 
-class TopDown : public Evaluator {
+template<Equation equation>
+class TopDown : public Evaluator<equation> {
 private:
   Nodes    nodes;
   Leafs    leafs;
@@ -34,6 +35,26 @@ private:
 
 protected:
   int      MAXLEVEL;
+
+public:
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::X0;                                   //!< Center of root cell
+  using Kernel<equation>::R0;                                   //!< Radius of root cell
+  using Kernel<equation>::Ci0;                                  //!< icells.begin()
+  using Kernel<equation>::Cj0;                                  //!< jcells.begin()
+  using Evaluator<equation>::NM2L;                              //!< Number of M2L kernel calls
+  using Evaluator<equation>::NM2P;                              //!< Number of M2P kernel calls
+  using Evaluator<equation>::NP2P;                              //!< Number of P2P kernel calls
+
+  using Kernel<equation>::P2M;
+  using Kernel<equation>::M2M;
+  using Kernel<equation>::L2L;
+  using Kernel<equation>::L2P;
+  using Evaluator<equation>::setCenter;
+  using Evaluator<equation>::setRcrit;
+  using Evaluator<equation>::setRootCell;
 
 private:
   void init(Node &node) {
@@ -221,6 +242,7 @@ protected:
     }
   }
 
+public:
   void printTreeData(Cells &cells) {
     C_iter root = setRootCell(cells);
     std::cout << "-----------------------------------------------" << std::endl;
@@ -230,9 +252,9 @@ protected:
     std::cout << "Cells                : " << cells.size()         << std::endl;
     std::cout << "Tree depth           : " << MAXLEVEL             << std::endl;
     std::cout << "Total charge         : " << std::abs(root->M[0]) << std::endl;
-    std::cout << "P2P calls            : " << NP2P                 << std::endl;
-    std::cout << "M2P calls            : " << NM2P                 << std::endl;
     std::cout << "M2L calls            : " << NM2L                 << std::endl;
+    std::cout << "M2P calls            : " << NM2P                 << std::endl;
+    std::cout << "P2P calls            : " << NP2P                 << std::endl;
     std::cout << "-----------------------------------------------" << std::endl;
   }
 

@@ -24,14 +24,32 @@ THE SOFTWARE.
 #include "../include/kernel.h"
 #define splitFirst(Ci,Cj) Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT > Cj->RCRIT)
 
-class Evaluator : public Kernel<Laplace> {
+template<Equation equation>
+class Evaluator : public Kernel<equation> {
 private:
-  real timeP2P;
-  real timeM2P;
-  real timeM2L;
+  real timeM2L;                                                 //!< M2L execution time
+  real timeM2P;                                                 //!< M2P execution time
+  real timeP2P;                                                 //!< P2P execution time
 
 protected:
-  bool    TOPDOWN;
+  bool TOPDOWN;
+  real NM2L;                                                    //!< Number of M2L kernel calls
+  real NM2P;                                                    //!< Number of M2P kernel calls
+  real NP2P;                                                    //!< Number of P2P kernel calls
+
+public:
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::Ci0;                                  //!< icells.begin()
+  using Kernel<equation>::Cj0;                                  //!< jcells.begin()
+  using Kernel<equation>::P2M;                                  //!< Evaluate P2M kernel
+  using Kernel<equation>::M2M;                                  //!< Evaluate M2M kernel
+  using Kernel<equation>::M2L;                                  //!< Evaluate M2L kernel
+  using Kernel<equation>::M2P;                                  //!< Evaluate M2P kernel
+  using Kernel<equation>::P2P;                                  //!< Evaluate P2P kernel
+  using Kernel<equation>::L2L;                                  //!< Evaluate L2L kernel
+  using Kernel<equation>::L2P;                                  //!< Evaluate L2P kernel
 
 private:
   real getBmax(vect const&X, C_iter C) const {
@@ -167,7 +185,7 @@ protected:
   }
 
 public:
-  Evaluator() {}
+  Evaluator() : NM2L(0), NM2P(0), NP2P(0) {}
   ~Evaluator() {}
 
   void timeKernels() {

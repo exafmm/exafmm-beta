@@ -45,8 +45,11 @@ protected:
   Maps        flagM2P;                                          //!< Existance of periodic image for M2P
   Maps        flagP2P;                                          //!< Existance of periodic image for P2P
 
+  real        NP2P;                                             //!< Number of P2P kernel calls
+  real        NM2P;                                             //!< Number of M2P kernel calls
+  real        NM2L;                                             //!< Number of M2L kernel calls
+
 public:
-  using Kernel<equation>::printNow;                             //!< Switch to print timings
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
   using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
   using Kernel<equation>::writeTrace;                           //!< Write traces of all events
@@ -62,9 +65,6 @@ public:
   using Kernel<equation>::sourceBegin;                          //!< Define map for offset of source cells
   using Kernel<equation>::sourceSize;                           //!< Define map for size of source cells
   using Kernel<equation>::targetBegin;                          //!< Define map for offset of target cells
-  using Kernel<equation>::NP2P;                                 //!< Number of P2P kernel calls
-  using Kernel<equation>::NM2P;                                 //!< Number of M2P kernel calls
-  using Kernel<equation>::NM2L;                                 //!< Number of M2L kernel calls
   using Kernel<equation>::allocate;                             //!< Allocate GPU kernels
   using Kernel<equation>::hostToDevice;                         //!< Copy from host to device
   using Kernel<equation>::deviceToHost;                         //!< Copy from device to host
@@ -253,7 +253,7 @@ protected:
 
 public:
 //! Constructor
-  Evaluator() : Icenter(1 << 13) {}
+  Evaluator() : Icenter(1 << 13), NP2P(0), NM2P(0), NM2L(0) {}
 //! Destructor
   ~Evaluator() {}
 

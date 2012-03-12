@@ -23,7 +23,25 @@ THE SOFTWARE.
 #define bottomup_h
 #include "topdown.h"
 
-class BottomUp : public TopDown {
+template<Equation equation>
+class BottomUp : public TopDown<equation> {
+public:
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::X0;                                   //!< Center of root cell
+  using Kernel<equation>::R0;                                   //!< Radius of root cell
+  using Kernel<equation>::Cj0;                                  //!< jcells.begin()
+  using Kernel<equation>::sortBodies;                           //!< Sort bodies according to cell index
+  using TopDown<equation>::MAXLEVEL;                            //!< Max level of tree
+
+  using Kernel<equation>::P2M;
+  using Kernel<equation>::M2M;
+  using Kernel<equation>::L2L;
+  using Kernel<equation>::L2P;
+  using Evaluator<equation>::setCenter;
+  using Evaluator<equation>::setRcrit;
+
 private:
   int getMaxLevel(Bodies &bodies) {
     const long N = bodies.size();

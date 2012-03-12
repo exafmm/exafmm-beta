@@ -65,15 +65,12 @@ protected:
 public:
   vect X0;                                                      //!< Center of root cell
   real R0;                                                      //!< Radius of root cell
-  real NP2P;                                                    //!< Number of P2P kernel calls
-  real NM2P;                                                    //!< Number of M2P kernel calls
-  real NM2L;                                                    //!< Number of M2L kernel calls
 
 public:
 //! Constructor
   KernelBase() : keysDevcSize(0), rangeDevcSize(0),
                  sourceDevcSize(0), targetDevcSize(0),
-                 Rmax(0), X0(0), R0(0), NP2P(0), NM2P(0), NM2L(0) {}
+                 Rmax(0), X0(0), R0(0) {}
 //! Destructor
   ~KernelBase() {}
 
