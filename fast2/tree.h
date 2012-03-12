@@ -44,6 +44,12 @@ public:
 
 class SerialFMM : public TreeConstructor {
 public:
+  SerialFMM() {
+    preCalculation();
+  }
+  ~SerialFMM() {
+    postCalculation();
+  }
   void direct(Bodies &ibodies, Bodies &jbodies) {
     Cells cells;
     cells.resize(2);
