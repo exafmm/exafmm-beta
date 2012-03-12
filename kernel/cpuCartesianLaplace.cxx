@@ -713,22 +713,26 @@ template<>
 void Kernel<Laplace>::initialize() {}
 
 template<>
-void Kernel<Laplace>::P2M(C_iter Cj) {
-  Rmax = 0;
-  for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NCLEAF; ++B ) {
-    vect dist = Cj->X - B->X;
+void Kernel<Laplace>::P2M(C_iter Ci) const {
+  real Rmax = 0;
+  setCenter(Ci);
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
+    vect dist = Ci->X - B->X;
     real R = std::sqrt(norm(dist));
     if( R > Rmax ) Rmax = R;
     Lset M;
     M[0] = B->SRC;
     Terms<0,0,P-1>::power(M,dist);
-    for( int i=0; i<MTERM; ++i ) Cj->M[i] += M[i];
+    for( int i=0; i<MTERM; ++i ) Ci->M[i] += M[i];
   }
-  Cj->RCRIT = std::min(Cj->R,Rmax);
+  Ci->RMAX = Rmax;
+  Ci->RCRIT = std::min(Ci->R,Rmax);
 }
 
 template<>
-void Kernel<Laplace>::M2M(C_iter Ci) {
+void Kernel<Laplace>::M2M(C_iter Ci) const {
+  real Rmax = Ci->RMAX;
+  setCenter(Ci);
   for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
     vect dist = Ci->X - Cj->X;
     real R = std::sqrt(norm(dist)) + Cj->RCRIT;

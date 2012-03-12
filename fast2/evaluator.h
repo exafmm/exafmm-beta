@@ -52,14 +52,6 @@ public:
   using Kernel<equation>::L2P;                                  //!< Evaluate L2P kernel
 
 private:
-  real getBmax(vect const&X, C_iter C) const {
-    real rad = C->R;
-    real dx = rad+std::abs(X[0]-C->X[0]);
-    real dy = rad+std::abs(X[1]-C->X[1]);
-    real dz = rad+std::abs(X[2]-C->X[2]);
-    return std::sqrt( dx*dx + dy*dy + dz*dz );
-  }
-
   inline void approximate(C_iter Ci, C_iter Cj) {
 #if HYBRID
     if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {
@@ -107,22 +99,6 @@ protected:
     } else {
       return cells.end() - 1;
     }
-  }
-
-  void setCenter(C_iter C) const {
-    real m = 0;
-    vect X = 0;
-    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-      m += std::abs(B->SRC);
-      X += B->X * std::abs(B->SRC);
-    }
-    for( C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; ++c ) {
-      m += std::abs(c->M[0]);
-      X += c->X * std::abs(c->M[0]);
-    }
-    X /= m;
-    C->R = getBmax(X,C);
-    C->X = X;
   }
 
   void setRcrit(Cells &cells) {

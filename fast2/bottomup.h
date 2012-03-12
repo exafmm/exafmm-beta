@@ -39,7 +39,6 @@ public:
   using Kernel<equation>::M2M;
   using Kernel<equation>::L2L;
   using Kernel<equation>::L2P;
-  using Evaluator<equation>::setCenter;
   using Evaluator<equation>::setRcrit;
 
 private:
@@ -82,6 +81,8 @@ private:
     cell.X[1]   = diameter * (iy + .5) + X0[1] - R0;
     cell.X[2]   = diameter * (iz + .5) + X0[2] - R0;
     cell.R      = diameter * .5;
+    cell.M      = 0;
+    cell.L      = 0;
   }
 
   void buildBottom(Bodies &bodies, Cells &cells) {
@@ -176,14 +177,11 @@ protected:
 
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      C->M = 0;
-      C->L = 0;
-    }
     Cj0 = cells.begin();
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      setCenter(C);
       P2M(C);
+    }
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       M2M(C);
     }
 #if Cartesian
@@ -198,6 +196,8 @@ protected:
   void downwardPass(Cells &cells) const {
     for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {
       L2L(C);
+    }
+    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {
       L2P(C);
     }
   }

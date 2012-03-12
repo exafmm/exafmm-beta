@@ -316,25 +316,29 @@ void Kernel<Laplace>::evalLocalTheta(real rho, real alpha, real beta, complex *Y
 }
 
 template<>
-void Kernel<Laplace>::P2M(C_iter Cj) {
-  Rmax = 0;
+void Kernel<Laplace>::P2M(C_iter Ci) const {
+  real Rmax = 0;
   complex Ynm[4*P*P];
-  for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NCLEAF; ++B ) {
-    vect dist = B->X - Cj->X;
+  setCenter(Ci);
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
+    vect dist = B->X - Ci->X;
     real R = std::sqrt(norm(dist));
     if( R > Rmax ) Rmax = R;
     real rho, alpha, beta;
     cart2sph(rho,alpha,beta,dist);
     evalMultipole(rho,alpha,-beta,Ynm);
-    Terms<P-1,P-1>::P2M(Cj->M,B->SRC,Ynm);
+    Terms<P-1,P-1>::P2M(Ci->M,B->SRC,Ynm);
   }
-  Cj->RCRIT = std::min(Cj->R,Rmax);
+  Ci->RMAX = Rmax;
+  Ci->RCRIT = std::min(Ci->R,Rmax);
 }
 
 template<>
-void Kernel<Laplace>::M2M(C_iter Ci) {
+void Kernel<Laplace>::M2M(C_iter Ci) const {
+  real Rmax = Ci->RMAX;
   const complex I(0.,1.);
   complex Ynm[4*P*P];
+  setCenter(Ci);
   for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
     vect dist = Ci->X - Cj->X;
     real R = std::sqrt(norm(dist)) + Cj->RCRIT;

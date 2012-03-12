@@ -185,6 +185,7 @@ struct Cell {
   B_iter   LEAF;                                                //!< Iterator of first leaf
   vect     X;                                                   //!< Cell center
   real     R;                                                   //!< Cell radius
+  real     RMAX;                                                //!< Max cell radius
   real     RCRIT;                                               //!< Critical cell radius
   Mset     M;                                                   //!< Multipole coefficients
   Lset     L;                                                   //!< Local coefficients

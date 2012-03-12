@@ -52,7 +52,6 @@ public:
   using Kernel<equation>::M2M;
   using Kernel<equation>::L2L;
   using Kernel<equation>::L2P;
-  using Evaluator<equation>::setCenter;
   using Evaluator<equation>::setRcrit;
   using Evaluator<equation>::setRootCell;
 
@@ -104,6 +103,8 @@ private:
     C->X      = nodes[i].X;
     C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
+    C->M      = 0;
+    C->L      = 0;
     if( nodes[i].NOCHILD ) {
       C->CHILD = 0;
       C->NCHILD = 0;
@@ -216,15 +217,12 @@ protected:
 
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      C->M = 0;
-      C->L = 0;
-    }
     Cj0 = cells.begin();
     for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {
-      setCenter(C);
-      P2M(C);
-      M2M(C);
+      if( C->NCHILD == 0 ) P2M(C);
+    }
+    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {
+      if( C->NCHILD != 0 ) M2M(C);
     }
 #if Cartesian
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
@@ -238,6 +236,8 @@ protected:
   void downwardPass(Cells &cells) const {
     for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {
       L2L(C);
+    }
+    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {
       L2P(C);
     }
   }

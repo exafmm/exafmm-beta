@@ -57,7 +57,6 @@ protected:
   gpureal             *sourceDevc;                              //!< Sources on device
   gpureal             *targetDevc;                              //!< Targets on device
 
-  real Rmax;                                                    //!< Maximum distance from center of mass
   real *factorial;                                              //!< Factorial
   real *prefactor;                                              //!< \f$ \sqrt{ \frac{(n - |m|)!}{(n + |m|)!} } \f$
   real *Anm;                                                    //!< \f$ (-1)^n / \sqrt{ \frac{(n + m)!}{(n - m)!} } \f$
@@ -66,11 +65,37 @@ public:
   vect X0;                                                      //!< Center of root cell
   real R0;                                                      //!< Radius of root cell
 
+private:
+  real getBmax(vect const&X, C_iter C) const {
+    real rad = C->R;
+    real dx = rad+std::abs(X[0]-C->X[0]);
+    real dy = rad+std::abs(X[1]-C->X[1]);
+    real dz = rad+std::abs(X[2]-C->X[2]);
+    return std::sqrt( dx*dx + dy*dy + dz*dz );
+  }
+
+protected:
+  void setCenter(C_iter C) const {
+    real m = 0;
+    vect X = 0;
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
+      m += std::abs(B->SRC);
+      X += B->X * std::abs(B->SRC);
+    }
+    for( C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; ++c ) {
+      m += std::abs(c->M[0]);
+      X += c->X * std::abs(c->M[0]);
+    }
+    X /= m;
+    C->R = getBmax(X,C);
+    C->X = X;
+  }
+
 public:
 //! Constructor
   KernelBase() : keysDevcSize(0), rangeDevcSize(0),
                  sourceDevcSize(0), targetDevcSize(0),
-                 Rmax(0), X0(0), R0(0) {}
+                 X0(0), R0(0) {}
 //! Destructor
   ~KernelBase() {}
 
@@ -197,8 +222,8 @@ public:
   void evalMultipoleTheta(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const;//!< With dY/dtheta
   void evalLocal(real rho, real alpha, real beta, complex *Ynm) const;//!< Set Spherical local expansion
   void evalLocalTheta(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const;//!< With dY/dtheta
-  void P2M(C_iter Ci);                                          //!< Evaluate P2M kernel on CPU
-  void M2M(C_iter Ci);                                          //!< Evaluate M2M kernel on CPU
+  void P2M(C_iter Ci) const;                                    //!< Evaluate P2M kernel on CPU
+  void M2M(C_iter Ci) const;                                    //!< Evaluate M2M kernel on CPU
   void M2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2L kernel on CPU
   void M2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2P kernel on CPU
   void P2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate P2P kernel on CPU
