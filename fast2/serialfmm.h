@@ -26,17 +26,12 @@ THE SOFTWARE.
 template<Equation equation>
 class SerialFMM : public BottomUp<equation> {
 public:
-  using Kernel<equation>::printNow;                             //!< Switch to print timings
-  using Kernel<equation>::startTimer;                           //!< Start timer for given event
-  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
   using Kernel<equation>::preCalculation;                       //!< Precalculate M2L translation matrix
   using Kernel<equation>::postCalculation;                      //!< Free temporary allocations
   using Evaluator<equation>::TOPDOWN;                           //!< Flag for top down tree construction
   using Evaluator<equation>::upwardPass;                        //!< Upward pass to get all multipole expansions
   using Evaluator<equation>::traverse;                          //!< Traverse tree to get interaction list
   using Evaluator<equation>::downwardPass;                      //!< Downward pass to evaluate all local expansions
-
-  using Kernel<equation>::P2P;
 
 public:
   SerialFMM() {

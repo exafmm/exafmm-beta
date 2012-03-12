@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 #include "dataset.h"
-#include "tree.h"
+#include "serialfmm.h"
 
 int main() {
   int numBodies = 1000;
