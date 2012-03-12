@@ -13,8 +13,8 @@ DEVICE  = CPU
 #DEVICE  = GPU
 
 ### choose Cartesian or spherical expansion
-#EXPAND  = Cartesian
-EXPAND  = Spherical
+EXPAND  = Cartesian
+#EXPAND  = Spherical
 
 ### GCC compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -fopenmp -ffast-math -funroll-loops -fforce-addr -fPIC -I../include

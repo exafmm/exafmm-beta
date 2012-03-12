@@ -158,11 +158,11 @@ protected:
 
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");
-    setRootCell(cells);
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       C->M = 0;
       C->L = 0;
     }
+    Cj0 = cells.begin();
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       setCenter(C);
       P2M(C);

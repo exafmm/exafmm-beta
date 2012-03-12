@@ -195,11 +195,11 @@ protected:
 
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");
-    setRootCell(cells);
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       C->M = 0;
       C->L = 0;
     }
+    Cj0 = cells.begin();
     for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {
       setCenter(C);
       P2M(C);
@@ -222,14 +222,14 @@ protected:
   }
 
   void printTreeData(Cells &cells) {
-    setRootCell(cells);
+    C_iter root = setRootCell(cells);
     std::cout << "-----------------------------------------------" << std::endl;
-    std::cout << "Root center          : " << ROOT->X              << std::endl;
+    std::cout << "Root center          : " << root->X              << std::endl;
     std::cout << "Root radius          : " << R0                   << std::endl;
-    std::cout << "Bodies               : " << ROOT->NDLEAF         << std::endl;
+    std::cout << "Bodies               : " << root->NDLEAF         << std::endl;
     std::cout << "Cells                : " << cells.size()         << std::endl;
     std::cout << "Tree depth           : " << MAXLEVEL             << std::endl;
-    std::cout << "Total charge         : " << std::abs(ROOT->M[0]) << std::endl;
+    std::cout << "Total charge         : " << std::abs(root->M[0]) << std::endl;
     std::cout << "P2P calls            : " << NP2P                 << std::endl;
     std::cout << "M2P calls            : " << NM2P                 << std::endl;
     std::cout << "M2L calls            : " << NM2L                 << std::endl;

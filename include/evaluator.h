@@ -27,17 +27,17 @@ THE SOFTWARE.
 //! Interface between tree and kernel
 template<Equation equation>
 class Evaluator : public Dataset<equation> {
-protected:
-  C_iter      CiB;                                              //!< icells begin per call
-  C_iter      CiE;                                              //!< icells end per call
-  C_iter      CjB;                                              //!< jcells begin per call
-  C_iter      CjE;                                              //!< jcells end per call
-  Lists       listM2L;                                          //!< M2L interaction list
-  Lists       listM2P;                                          //!< M2P interaction list
-  Lists       listP2P;                                          //!< P2P interaction list
+private:
   real        timeM2L;                                          //!< M2L execution time
   real        timeM2P;                                          //!< M2P execution time
   real        timeP2P;                                          //!< P2P execution time
+
+protected:
+  C_iter      CiB;                                              //!< icells begin per call
+  C_iter      CiE;                                              //!< icells end per call
+  Lists       listM2L;                                          //!< M2L interaction list
+  Lists       listM2P;                                          //!< M2P interaction list
+  Lists       listP2P;                                          //!< P2P interaction list
 
   int         Iperiodic;                                        //!< Periodic image flag (using each bit for images)
   const int   Icenter;                                          //!< Periodic image flag at center

@@ -32,12 +32,6 @@ private:
 
 protected:
   bool    TOPDOWN;
-  C_iter  ROOT, ROOT2;
-
-public:
-  real NP2P;
-  real NM2P;
-  real NM2L;
 
 private:
   real getBmax(vect const&X, C_iter C) const {
@@ -89,25 +83,11 @@ public:
 #endif
 
 protected:
-  void setRootCell(Cells &cells) {
-    Ci0 = cells.begin();
-    Cj0 = cells.begin();
+  C_iter setRootCell(Cells &cells) {
     if( TOPDOWN ) {
-      ROOT = Ci0;
+      return cells.begin();
     } else {
-      ROOT = cells.end() - 1;
-    }
-  }
-
-  void setRootCell(Cells &icells, Cells &jcells) {
-    Ci0 = icells.begin();
-    Cj0 = jcells.begin();
-    if( TOPDOWN ) {
-      ROOT  = Ci0;
-      ROOT2 = Cj0;
-    } else {
-      ROOT  = icells.end() - 1;
-      ROOT2 = jcells.end() - 1;
+      return cells.end() - 1;
     }
   }
 
@@ -128,7 +108,8 @@ protected:
   }
 
   void setRcrit(Cells &cells) {
-    real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(ROOT->M[0]),1.0/3);
+    C_iter root = setRootCell(cells);
+    real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(root->M[0]),1.0/3);
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       real a = c * pow(std::abs(C->M[0]),1.0/3);
       real x = 1.0 / THETA;
@@ -141,15 +122,20 @@ protected:
     }
   }
 
-  void traverse(bool) {
+  void traverse(Cells &icells, Cells &jcells) {
+    Ci0 = icells.begin();
+    Cj0 = jcells.begin();
+    Pair pair;
+    if( TOPDOWN ) {
+      pair = make_pair(icells.begin(),jcells.begin());
+    } else {
+      pair = make_pair(icells.end()-1,jcells.end()-1);
+    }
     PairQueue pairQueue;
+    pairQueue.push(pair);
 #if QUARK
     Quark *quark = QUARK_New(4);
 #endif
-    for( C_iter Cj=Cj0+ROOT->CHILD; Cj!=Cj0+ROOT->CHILD+ROOT->NCHILD; ++Cj ) {
-      Pair pair(ROOT,Cj);
-      pairQueue.push(pair);
-    }
     while( !pairQueue.empty() ) {
       Pair Cij = pairQueue.front();
       pairQueue.pop();
@@ -181,7 +167,7 @@ protected:
   }
 
 public:
-  Evaluator() : NP2P(0), NM2P(0), NM2L(0) {}
+  Evaluator() {}
   ~Evaluator() {}
 
   void timeKernels() {

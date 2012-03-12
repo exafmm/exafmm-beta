@@ -50,6 +50,7 @@ public:
   ~SerialFMM() {
     postCalculation();
   }
+
   void direct(Bodies &ibodies, Bodies &jbodies) {
     Cells cells;
     cells.resize(2);
@@ -62,9 +63,8 @@ public:
   }
 
   void evaluate(Cells &icells, Cells &jcells) {
-    setRootCell(icells,jcells);
     startTimer("Traverse");
-    traverse(false);
+    traverse(icells,jcells);
     stopTimer("Traverse",printNow);
     startTimer("Downward pass");
     if( TOPDOWN ) {
