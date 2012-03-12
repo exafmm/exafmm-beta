@@ -41,6 +41,7 @@ public:
   using Kernel<equation>::printNow;                             //!< Switch to print timings
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
   using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::writeTrace;                           //!< Write traces of all events
   using Kernel<equation>::Ci0;                                  //!< icells.begin()
   using Kernel<equation>::Cj0;                                  //!< jcells.begin()
   using Kernel<equation>::P2M;                                  //!< Evaluate P2M kernel
@@ -55,20 +56,20 @@ private:
   inline void approximate(C_iter Ci, C_iter Cj) {
 #if HYBRID
     if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {
-      P2P(Ci,Cj);
+      evalP2P(Ci,Cj);
       NP2P++;
     } else if ( timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L ) {
-      M2P(Ci,Cj);
+      evalM2P(Ci,Cj);
       NM2P++;
     } else {
-      M2L(Ci,Cj);
+      evalM2L(Ci,Cj);
       NM2L++;
     }
 #elif TREECODE
-    M2P(Ci,Cj);
+    evalM2P(Ci,Cj);
     NM2P++;
 #else
-    M2L(Ci,Cj);
+    evalM2L(Ci,Cj);
     NM2L++;
 #endif
   }
@@ -80,7 +81,7 @@ public:
     if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
       approximate(Ci,Cj);
     } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
-      P2P(Ci,Cj);
+      evalP2P(Ci,Cj);
       NP2P++;
     } else {
       Pair pair(Ci,Cj);
@@ -160,82 +161,19 @@ protected:
 #endif
   }
 
+  void timeKernels();
+
 public:
   Evaluator() : NM2L(0), NM2P(0), NP2P(0) {}
   ~Evaluator() {}
 
-  void timeKernels() {
-    Bodies ibodies(1000), jbodies(1000);
-    for( B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); ++Bi, ++Bj ) {
-      Bi->X = 0;
-      Bj->X = 1;
-    }
-    Cells cells;
-    cells.resize(2);
-    C_iter Ci = cells.begin(), Cj = cells.begin()+1;
-    Ci->X = 0;
-    Ci->NDLEAF = 10;
-    Ci->LEAF = ibodies.begin();
-    Ci->M = 0;
-    Ci->L = 0;
-    Cj->X = 1;
-    Cj->NDLEAF = 1000;
-    Cj->LEAF = jbodies.begin();
-    Cj->M = 0;
-    startTimer("P2P kernel");
-    P2P(Ci,Cj);
-    timeP2P = stopTimer("P2P kernel") / 10000;
-    startTimer("M2L kernel");
-    for( int i=0; i!=1000; ++i ) M2L(Ci,Cj);
-    timeM2L = stopTimer("M2L kernel") / 1000;
-    startTimer("M2P kernel");
-    for( int i=0; i!=100; ++i ) M2P(Ci,Cj);
-    timeM2P = stopTimer("M2P kernel") / 1000;
-  }
+  void evalM2L(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
+  void evalM2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
+  void evalP2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
 
 };
 
-#if QUARK
-inline void interactQuark(Quark *quark) {
-  Evaluator *E;
-  C_iter CI, CJ, Ci0, Cj0;
-  quark_unpack_args_5(quark,E,CI,CJ,Ci0,Cj0);
-  ThreadTrace beginTrace;
-  E->startTracer(beginTrace);
-  PairQueue privateQueue;
-  Pair pair(CI,CJ);
-  privateQueue.push(pair);
-  while( !privateQueue.empty() ) {
-    Pair Cij = privateQueue.front();
-    privateQueue.pop();
-    if(splitFirst(Cij.first,Cij.second)) {
-      C_iter C = Cij.first;
-      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-        E->interact(Ci,Cij.second,privateQueue);
-      }
-    } else {
-      C_iter C = Cij.second;
-      for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-        E->interact(Cij.first,Cj,privateQueue);
-      }
-    }
-  }
-  E->stopTracer(beginTrace,0x0000ff);
-}
+#include "CPUEvaluator.cxx"
 
-void Evaluator::interact(C_iter Ci, C_iter Cj, Quark *quark) {
-  char string[256];
-  sprintf(string,"%d %d",int(Ci-Ci0),int(Cj-Cj0));
-  Quark_Task_Flags tflags = Quark_Task_Flags_Initializer;
-  QUARK_Task_Flag_Set(&tflags,TASK_LABEL,intptr_t(string) );
-  QUARK_Insert_Task(quark,interactQuark,&tflags,
-                    sizeof(Evaluator),this,NODEP,
-                    sizeof(Cell),&*Ci,OUTPUT,
-                    sizeof(Cell),&*Cj,NODEP,
-                    sizeof(Cell),&*Ci0,NODEP,
-                    sizeof(Cell),&*Cj0,NODEP,
-                    0);
-}
-#endif
 #undef splitFirst
 #endif
