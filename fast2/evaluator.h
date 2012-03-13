@@ -38,6 +38,9 @@ protected:
   real NM2P;                                                    //!< Number of M2P kernel calls
   real NP2P;                                                    //!< Number of P2P kernel calls
 
+  int       Iperiodic;                                          //!< Periodic image flag (using each bit for images)
+  const int Icenter;                                            //!< Periodic image flag at center
+
 public:
   using Kernel<equation>::printNow;                             //!< Switch to print timings
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
@@ -59,41 +62,17 @@ private:
 #if HYBRID
     if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {
       evalP2P(Ci,Cj);
-      NP2P++;
     } else if ( timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L ) {
       evalM2P(Ci,Cj);
-      NM2P++;
     } else {
       evalM2L(Ci,Cj);
-      NM2L++;
     }
 #elif TREECODE
     evalM2P(Ci,Cj);
-    NM2P++;
 #else
     evalM2L(Ci,Cj);
-    NM2L++;
 #endif
   }
-
-public:
-  void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue) {
-    vect dX = Ci->X - Cj->X;
-    real Rq = norm(dX);
-    if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
-      approximate(Ci,Cj);
-    } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
-      evalP2P(Ci,Cj);
-      NP2P++;
-    } else {
-      Pair pair(Ci,Cj);
-      pairQueue.push(pair);
-    }
-  }
-
-#if QUARK
-  inline void interact(C_iter Ci, C_iter Cj, Quark *quark);
-#endif
 
   C_iter getRootCell(Cells &cells) {
     if( TOPDOWN ) {
@@ -118,6 +97,15 @@ public:
     }
   }
 
+//! Get range of periodic images
+  int getPeriodicRange() {
+    int prange = 0;                                             //  Range of periodic images
+    for( int i=0; i!=IMAGES; ++i ) {                            //  Loop over periodic image sublevels
+      prange += int(pow(3,i));                                  //   Accumulate range of periodic images
+    }                                                           //  End loop over perioidc image sublevels
+    return prange;                                              // Return range of periodic images
+  }
+
 protected:
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");
@@ -132,50 +120,123 @@ protected:
     stopTimer("Upward pass",printNow);
   }
 
+//! Upward phase for periodic cells
+  void upwardPeriodic(Cells &cells) {
+    startTimer("Upward periodic");                              // Start timer
+    Cells pccells, pjcells;                                     // Periodic center cell and jcell
+    pccells.push_back(cells.back());                            // Root cell is first periodic cell
+    for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
+      Cell cell;                                                //  New periodic cell at next sublevel
+      C_iter C = pccells.end() - 1;                             //  Set previous periodic center cell as source
+      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
+            if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
+              for( int cx=-1; cx<=1; ++cx ) {                   //      Loop over x periodic direction (child)
+                for( int cy=-1; cy<=1; ++cy ) {                 //       Loop over y periodic direction (child)
+                  for( int cz=-1; cz<=1; ++cz ) {               //        Loop over z periodic direction (child)
+                    cell.X[0]  = C->X[0] + (ix * 6 + cx * 2) * C->R;//     Set new x coordinate for periodic image
+                    cell.X[1]  = C->X[1] + (iy * 6 + cy * 2) * C->R;//     Set new y cooridnate for periodic image
+                    cell.X[2]  = C->X[2] + (iz * 6 + cz * 2) * C->R;//     Set new z coordinate for periodic image
+                    cell.M     = C->M;                          //         Copy multipoles to new periodic image
+                    cell.NCLEAF = cell.NDLEAF = cell.NCHILD = 0;//         Initialize NCLEAF, NDLEAF, & NCHILD
+                    cells.push_back(cell);                      //         Push cell into periodic jcell vector
+                  }                                             //        End loop over z periodic direction (child)
+                }                                               //       End loop over y periodic direction (child)
+              }                                                 //      End loop over x periodic direction (child)
+            }                                                   //     Endif for periodic center cell
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
+            cell.X[0] = C->X[0] + ix * 2 * C->R;                //     Set new x coordinate for periodic image
+            cell.X[1] = C->X[1] + iy * 2 * C->R;                //     Set new y cooridnate for periodic image
+            cell.X[2] = C->X[2] + iz * 2 * C->R;                //     Set new z coordinate for periodic image
+            cell.M = C->M;                                      //     Copy multipoles to new periodic image
+            pjcells.push_back(cell);                            //     Push cell into periodic jcell vector
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+      cell.X = C->X;                                            //  This is the center cell
+      cell.R = 3 * C->R;                                        //  The cell size increases three times
+      pccells.pop_back();                                       //  Pop periodic center cell from vector
+      pccells.push_back(cell);                                  //  Push cell into periodic cell vector
+      C_iter Ci = pccells.end() - 1;                            //  Set current cell as target for M2M
+      Ci->CHILD = 0;                                            //  Set child cells for periodic M2M
+      Ci->NCHILD = 27;                                          //  Set number of child cells for periodic M2M
+      evalM2M(pccells,pjcells);                                 // Evaluate periodic M2M kernels for this sublevel
+      pjcells.clear();                                          // Clear periodic jcell vector
+    }                                                           // End loop over sublevels of tree
+    stopTimer("Upward periodic",printNow);                      // Stop timer
+  }
+
   void traverse(Cells &icells, Cells &jcells) {
-    startTimer("Traverse");
     Ci0 = icells.begin();
     Cj0 = jcells.begin();
     Pair pair;
     if( TOPDOWN ) {
-      pair = make_pair(icells.begin(),jcells.begin());
+      pair = make_pair(icells.begin(),jcells.begin());          // Make pair of root cells
     } else {
-      pair = make_pair(icells.end()-1,jcells.end()-1);
+      pair = make_pair(icells.end()-1,jcells.end()-1);          // Make pair of root cells
     }
-    PairQueue pairQueue;
-    pairQueue.push(pair);
+    PairQueue pairQueue;                                        // Queue of interacting cell pairs
+    pairQueue.push(pair);                                       // Push pair of root cells to queue
 #if QUARK
-    Quark *quark = QUARK_New(4);
+    Quark *quark = QUARK_New(4);                                // Initialize QUARK object
 #endif
-    while( !pairQueue.empty() ) {
-      Pair Cij = pairQueue.front();
-      pairQueue.pop();
-      if(splitFirst(Cij.first,Cij.second)) {
-        C_iter C = Cij.first;
-        for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-          interact(Ci,Cij.second,pairQueue);
-        }
-      } else {
-        C_iter C = Cij.second;
-        for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          interact(Cij.first,Cj,pairQueue);
-        }
-      }
+    while( !pairQueue.empty() ) {                               // While dual traversal queue is not empty
+      pair = pairQueue.front();                                 //  Get interaction pair from front of queue
+      pairQueue.pop();                                          //  Pop dual traversal queue
+      if(splitFirst(pair.first,pair.second)) {                  //  If first cell is larger
+        C_iter C = pair.first;                                  //   Split the first cell
+        for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {// Loop over first cell's children
+          interact(Ci,pair.second,pairQueue);                   //    Calculate interaction between cells
+        }                                                       //   End loop over fist cell's children
+      } else {                                                  //  Else if second cell is larger
+        C_iter C = pair.second;                                 //   Split the second cell
+        for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {// Loop over second cell's children
+          interact(pair.first,Cj,pairQueue);                    //    Calculate interaction betwen cells
+        }                                                       //   End loop over second cell's children
+      }                                                         //  End if for which cell to split
 #if QUARK
-      if( pairQueue.size() > 100 ) {
-        while( !pairQueue.empty() ) {
-          Cij = pairQueue.front();
-          pairQueue.pop();
-          interact(Cij.first,Cij.second,quark);
-        }
-      }
+      if( pairQueue.size() > 100 ) {                            //  When queue size reaches threshold
+        while( !pairQueue.empty() ) {                           //   While dual traversal queue is not empty
+          pair = pairQueue.front();                             //    Get interaction pair from front of queue
+          pairQueue.pop();                                      //    Pop dual traversal queue
+          interact(pair.first,pair.second,quark);               //    Schedule interact() task on QUARK
+        }                                                       //   End while loop for dual traversal queue
+      }                                                         //  End if for queue size
 #endif
-    }
+    }                                                           // End while loop for dual traversal queue
 #if QUARK
-    QUARK_Delete(quark);
-    writeTrace();
+    QUARK_Delete(quark);                                        // Delete QUARK object 
+    writeTrace();                                               // Write event trace to file
 #endif
-    stopTimer("Traverse",printNow);
+  }
+
+//! Traverse tree for periodic cells
+  void traversePeriodic(Cells &cells, Cells &jcells) {
+    startTimer("Traverse periodic");                            // Start timer
+    Xperiodic = 0;                                              // Set periodic coordinate offset
+    Iperiodic = Icenter;                                        // Set periodic flag to center
+    C_iter Cj = jcells.end()-1;                                 // Initialize iterator for periodic source cell
+    for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
+      for( int I=0; I!=26*27; ++I, --Cj ) {                     //  Loop over periodic images (exclude center)
+#if TREECODE
+        for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) { //   Loop over cells
+          if( Ci->NCHILD == 0 ) {                               //    If cell is twig
+            evalM2P(Ci,Cj);                                     //     Perform M2P kernel
+          }                                                     //    Endif for twig
+        }                                                       //   End loop over cells
+#else
+        C_iter Ci = cells.end() - 1;                            //   Set root cell as target iterator
+        evalM2L(Ci,Cj);                                         //   Perform M2P kernel
+#endif
+      }                                                         //  End loop over x periodic direction
+    }                                                           // End loop over sublevels of tree
+    stopTimer("Traverse periodic",printNow);                    // Stop timer
   }
 
   void downwardPass(Cells &cells) {
@@ -188,14 +249,14 @@ protected:
   void timeKernels();
 
 public:
-  Evaluator() : NM2L(0), NM2P(0), NP2P(0) {}
+  Evaluator() : NM2L(0), NM2P(0), NP2P(0), Icenter(1 << 13) {}
   ~Evaluator() {}
 
   void printTreeData(Cells &cells) {
     C_iter root = getRootCell(cells);
     std::cout << "-----------------------------------------------" << std::endl;
     std::cout << "Root center          : " << root->X              << std::endl;
-    std::cout << "Root radius          : " << R0                   << std::endl;
+    std::cout << "Root radius          : " << root->R              << std::endl;
     std::cout << "Bodies               : " << root->NDLEAF         << std::endl;
     std::cout << "Cells                : " << cells.size()         << std::endl;
     std::cout << "Tree depth           : " << MAXLEVEL             << std::endl;
@@ -206,6 +267,43 @@ public:
     std::cout << "-----------------------------------------------" << std::endl;
   }
 
+//! Create periodic images of bodies
+  Bodies periodicBodies(Bodies &bodies) {
+    Bodies jbodies;                                             // Vector for periodic images of bodies
+    int prange = getPeriodicRange();                            // Get range of periodic images
+    for( int ix=-prange; ix<=prange; ++ix ) {                   // Loop over x periodic direction
+      for( int iy=-prange; iy<=prange; ++iy ) {                 //  Loop over y periodic direction
+        for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
+          for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {//    Loop over bodies
+            Body body = *B;                                     //     Copy current body
+            body.X[0] += ix * 2 * R0;                           //     Shift x position
+            body.X[1] += iy * 2 * R0;                           //     Shift y position
+            body.X[2] += iz * 2 * R0;                           //     Shift z position
+            jbodies.push_back(body);                            //     Push shifted body into jbodies
+          }                                                     //    End loop over bodies
+        }                                                       //   End loop over z periodic direction
+      }                                                         //  End loop over y periodic direction
+    }                                                           // End loop over x periodic direction
+    return jbodies;                                             // Return vector for periodic images of bodies
+  }
+
+//! Use multipole acceptance criteria to determine whether to approximate, do P2P, or subdivide
+  void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue) {
+    vect dist = Ci->X - Cj->X - Xperiodic;                      // Distance vector from source to target
+    real R2 = norm(dist);                                       // R^2
+    if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {      // If distance if far enough
+      approximate(Ci,Cj);                                       //  Use approximate kernels, e.g. M2L, M2P
+    } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {             // If both cells are leafs
+      evalP2P(Ci,Cj);                                           //  Use P2P
+    } else {                                                    // If cells are close but not leafs 
+      Pair pair(Ci,Cj);                                         //  Form a pair of cell iterators
+      pairQueue.push(pair);                                     //  Push pair to queue
+    }                                                           // End if for multipole acceptance
+  }
+
+#if QUARK
+  inline void interact(C_iter Ci, C_iter Cj, Quark *quark);     //!< interact() function using QUARK
+#endif
   void direct(Bodies &ibodies, Bodies &jbodies);                //!< Evaluate direct summation
   inline void evalP2M(Cells &cells);                            //!< Evaluate all P2M kernels
   inline void evalM2M(Cells &cells, Cells &jcells);             //!< Evaluate all M2M kernels

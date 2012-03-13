@@ -26,11 +26,19 @@ THE SOFTWARE.
 template<Equation equation>
 class SerialFMM : public BottomUp<equation> {
 public:
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
+  using Kernel<equation>::R0;                                   //!< Radius of root cell
   using Kernel<equation>::preCalculation;                       //!< Precalculate M2L translation matrix
   using Kernel<equation>::postCalculation;                      //!< Free temporary allocations
   using Evaluator<equation>::TOPDOWN;                           //!< Flag for top down tree construction
+  using Evaluator<equation>::Iperiodic;                         //!< Periodic image flag (using each bit for images)
+  using Evaluator<equation>::Icenter;                           //!< Periodic image flag at center
   using Evaluator<equation>::upwardPass;                        //!< Upward pass to get all multipole expansions
+  using Evaluator<equation>::upwardPeriodic;                    //!< Upward pass for periodic images             
   using Evaluator<equation>::traverse;                          //!< Traverse tree to get interaction list
+  using Evaluator<equation>::traversePeriodic;                  //!< Traverse tree for periodic images     
   using Evaluator<equation>::downwardPass;                      //!< Downward pass to evaluate all local expansions
 
 public:
@@ -58,7 +66,28 @@ public:
   }
 
   void evaluate(Cells &icells, Cells &jcells) {
-    traverse(icells,jcells);
+    if( IMAGES != 0 ) upwardPeriodic(jcells);
+    startTimer("Traverse");
+    if( IMAGES == 0 ) {
+      Iperiodic = Icenter;
+      Xperiodic = 0;
+      traverse(icells,jcells);
+    } else {
+      int I = 0;                                                //  Initialize index of periodic image
+      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz, ++I ) {                  //    Loop over z periodic direction
+            Iperiodic = 1 << I;                                 //     Set periodic image flag
+            Xperiodic[0] = ix * 2 * R0;                         //     Coordinate offset for x periodic direction
+            Xperiodic[1] = iy * 2 * R0;                         //     Coordinate offset for y periodic direction
+            Xperiodic[2] = iz * 2 * R0;                         //     Coordinate offset for z periodic direction
+            traverse(icells,jcells);                            //     Traverse a pair of trees
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+    }
+    stopTimer("Traverse",printNow);
+    if( IMAGES != 0 ) traversePeriodic(icells,jcells);
     downwardPass(icells);
   }
 

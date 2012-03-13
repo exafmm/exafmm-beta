@@ -157,6 +157,10 @@ protected:
       R0 = std::max(X0[d] - xmin[d], R0);
     }
     R0 *= 1.000001;
+    if( IMAGES != 0 ) {
+      X0 = 0;
+      R0 = M_PI;
+    }
     stopTimer("Set domain",printNow);
   }
 

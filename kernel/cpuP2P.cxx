@@ -30,7 +30,7 @@ void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P k
     real P0 = 0;                                                //  Initialize potential
     vect F0 = 0;                                                //  Initialize force
     for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
-      vect dist = Bi->X - Bj->X;                                //   Distance vector from source to target
+      vect dist = Bi->X - Bj->X -Xperiodic;                     //   Distance vector from source to target
       real R2 = norm(dist) + EPS2;                              //   R^2
       real invR2 = 1.0 / R2;                                    //   1 / R^2
       if( R2 == 0 ) invR2 = 0;                                  //   Exclude self interaction

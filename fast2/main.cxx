@@ -26,7 +26,7 @@ int main() {
   int numBodies = 1000;
   IMAGES = 0;
   THETA = 0.6;
-  Bodies bodies;
+  Bodies bodies, jbodies;
   Cells cells;
   Dataset DATA;
   SerialFMM<Laplace> FMM;
@@ -55,8 +55,9 @@ int main() {
 #endif
 #if BUILD
 #else
+  Cells jcells = cells;
   FMM.startPAPI();
-  FMM.evaluate(cells,cells);
+  FMM.evaluate(cells,jcells);
   FMM.stopPAPI();
   FMM.stopTimer("FMM",true);
   FMM.eraseTimer("FMM");
@@ -68,9 +69,17 @@ int main() {
 #ifdef MANY
   bodies2.resize(100);
 #endif
+  if( IMAGES != 0 ) {
+    FMM.startTimer("Set periodic");
+    jbodies = FMM.periodicBodies(bodies);
+    FMM.stopTimer("Set periodic",FMM.printNow);
+    FMM.eraseTimer("Set periodic");
+  } else {
+    jbodies = bodies;
+  }
   DATA.initTarget(bodies2);
   FMM.startTimer("Direct sum");
-  FMM.direct(bodies2,bodies);
+  FMM.direct(bodies2,jbodies);
   FMM.stopTimer("Direct sum",true);
   FMM.eraseTimer("Direct sum");
 
