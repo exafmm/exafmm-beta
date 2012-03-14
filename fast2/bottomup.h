@@ -42,25 +42,6 @@ private:
     return level;
   }
 
-  inline void getIndex(Bodies &bodies) {
-    float d = 2 * R0 / (1 << MAXLEVEL);
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      int ix = int((B->X[0] + R0 - X0[0]) / d);
-      int iy = int((B->X[1] + R0 - X0[1]) / d);
-      int iz = int((B->X[2] + R0 - X0[2]) / d);
-      int id = 0;
-      for( int l=0; l!=MAXLEVEL; ++l ) {
-        id += ix % 2 << (3 * l);
-        id += iy % 2 << (3 * l + 1);
-        id += iz % 2 << (3 * l + 2);
-        ix >>= 1;
-        iy >>= 1;
-        iz >>= 1;
-      }
-      B->ICELL = id;
-    }
-  }
-
   inline void initCell(Cell &cell, int child, B_iter LEAF, real diameter) {
     cell.NCHILD = 0;
     cell.NCLEAF = 0;
@@ -126,6 +107,25 @@ private:
   }
 
 protected:
+  inline void setIndex(Bodies &bodies) {
+    float d = 2 * R0 / (1 << MAXLEVEL);
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+      int ix = int((B->X[0] + R0 - X0[0]) / d);
+      int iy = int((B->X[1] + R0 - X0[1]) / d);
+      int iz = int((B->X[2] + R0 - X0[2]) / d);
+      int id = 0;
+      for( int l=0; l!=MAXLEVEL; ++l ) {
+        id += ix % 2 << (3 * l);
+        id += iy % 2 << (3 * l + 1);
+        id += iz % 2 << (3 * l + 2);
+        ix >>= 1;
+        iy >>= 1;
+        iz >>= 1;
+      }
+      B->ICELL = id;
+    }
+  }
+
   void setDomain(Bodies &bodies) {
     startTimer("Set domain");
     MAXLEVEL = getMaxLevel(bodies);
@@ -155,7 +155,7 @@ protected:
 
   void buildTree(Bodies &bodies, Cells &cells) {
     startTimer("Morton index");
-    getIndex(bodies);
+    setIndex(bodies);
     Bodies buffer = bodies;
     stopTimer("Morton index",printNow);
     startTimer("Sort bodies");

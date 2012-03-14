@@ -20,7 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 #include "dataset.h"
-#include "serialfmm.h"
+#include "parallelfmm.h"
+#ifdef VTK
+#include "vtk.h"
+#endif
 
 int main() {
   int numBodies = 1000;
@@ -29,24 +32,25 @@ int main() {
   Bodies bodies, jbodies;
   Cells cells;
   Dataset DATA;
-  SerialFMM<Laplace> FMM;
+  ParallelFMM<Laplace> FMM;
+  bool printNow = MPIRANK == 0;
 #if HYBRID
   FMM.timeKernels();
 #endif
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {
 #else
-  FMM.printNow = true;
+  FMM.printNow = MPIRANK == 0;
 #if BUILD
   for ( int it=32; it<33; it++ ) {
 #else
-  for ( int it=8; it<9; it++ ) {
+  for ( int it=0; it<1; it++ ) {
 #endif
 #endif
   numBodies = int(pow(10,(it+24)/8.0));
-  std::cout << "N                    : " << numBodies << std::endl;
+  if( printNow ) std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
-  DATA.cube(bodies);
+  DATA.cube(bodies,MPIRANK+1);
   FMM.startTimer("FMM");
 #if BOTTOMUP
   FMM.bottomup(bodies,cells);
@@ -59,7 +63,7 @@ int main() {
   FMM.startPAPI();
   FMM.evaluate(cells,jcells);
   FMM.stopPAPI();
-  FMM.stopTimer("FMM",true);
+  FMM.stopTimer("FMM",printNow);
   FMM.eraseTimer("FMM");
   FMM.writeTime();
   FMM.resetTimer();
@@ -72,7 +76,7 @@ int main() {
   if( IMAGES != 0 ) {
     FMM.startTimer("Set periodic");
     jbodies = FMM.periodicBodies(bodies);
-    FMM.stopTimer("Set periodic",FMM.printNow);
+    FMM.stopTimer("Set periodic",printNow);
     FMM.eraseTimer("Set periodic");
   } else {
     jbodies = bodies;
@@ -80,7 +84,7 @@ int main() {
   DATA.initTarget(bodies2);
   FMM.startTimer("Direct sum");
   FMM.direct(bodies2,jbodies);
-  FMM.stopTimer("Direct sum",true);
+  FMM.stopTimer("Direct sum",printNow);
   FMM.eraseTimer("Direct sum");
 
 #ifdef MANY
@@ -88,7 +92,28 @@ int main() {
 #endif
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-  DATA.printError(diff1,norm1,diff2,norm2);
+  if( printNow ) DATA.printError(diff1,norm1,diff2,norm2);
 #endif
   }
+
+//  FMM.octsection(bodies);
+//  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->ICELL = 0;
+//  FMM.commBodies(cells);
+#ifdef VTK
+  int Ncell = 0;                                                // Initialize number of cells
+  vtkPlot vtk;                                                  // Instantiate vtkPlot class
+  if( MPIRANK == 0 ) {                                          // If MPI rank is 0
+    vtk.setDomain(FMM.getR0(),FMM.getX0());                     //  Set bounding box for VTK
+    vtk.setGroupOfPoints(bodies,Ncell);                         //  Set group of points
+  }                                                             // Endif for MPI rank
+  for( int i=1; i!=MPISIZE; ++i ) {                             // Loop over MPI ranks
+    FMM.shiftBodies(bodies);                                    //  Communicate bodies round-robin
+    if( MPIRANK == 0 ) {                                        //  If MPI rank is 0
+      vtk.setGroupOfPoints(bodies,Ncell);                       //   Set group of points
+    }                                                           //  Endif for MPI rank
+  }                                                             // End loop over MPI ranks
+  if( MPIRANK == 0 ) {                                          // If MPI rank is 0
+    vtk.plot(Ncell);                                            //  plot using VTK
+  }                                                             // Endif for MPI rank
+#endif
 }

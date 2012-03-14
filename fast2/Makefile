@@ -4,8 +4,8 @@ include ../Makefile.include
 #LFLAGS	+= -DTREECODE
 
 a	: main.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS)
-	./a.out
+	$(CXX) $? $(LFLAGS) $(VFLAGS)
+	mpirun -np 16 ./a.out
 
 b	: main.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) -DMANY
