@@ -80,16 +80,17 @@ private:
   inline void twigs2cells(Cells &cells) const {
     int begin = 0, end = cells.size();
     float diameter = 2 * R0 / (1 << MAXLEVEL);
-    for( int l=MAXLEVEL-1; l>=0; --l ) {
+    for( int level=MAXLEVEL-1; level>=0; --level ) {
       int I = -1;
       int p = end - 1;
+      int offset = ((1 << 3 * (level + 1)) - 1) / 7;
       diameter *= 2;
       for( int c=begin; c!=end; ++c ) {
         B_iter B = cells[c].LEAF;
-        int IC = cells[c].ICELL / 8;
+        int IC = (cells[c].ICELL - offset) / 8;
         if( IC != I ) {
           Cell cell;
-          initCell(cell,c,cells[c].LEAF,l,diameter);
+          initCell(cell,c,cells[c].LEAF,level,diameter);
           cells.push_back(cell);
           p++;
           I = IC;
@@ -105,11 +106,11 @@ private:
 
 protected:
   inline void setIndex(Bodies &bodies) const {
-    float d = 2 * R0 / (1 << MAXLEVEL);
+    float diameter = 2 * R0 / (1 << MAXLEVEL);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      int ix = int((B->X[0] + R0 - X0[0]) / d);
-      int iy = int((B->X[1] + R0 - X0[1]) / d);
-      int iz = int((B->X[2] + R0 - X0[2]) / d);
+      int ix = int((B->X[0] + R0 - X0[0]) / diameter);
+      int iy = int((B->X[1] + R0 - X0[1]) / diameter);
+      int iz = int((B->X[2] + R0 - X0[2]) / diameter);
       B->ICELL = getMorton(ix,iy,iz,MAXLEVEL);
     }
   }

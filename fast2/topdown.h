@@ -126,7 +126,7 @@ private:
 
 protected:
   inline int getMorton(int ix, int iy, int iz, const int &level) const {
-    int id = 0;
+    int id = ((1 << 3 * level) - 1) / 7;
     for( int l=0; l!=level; ++l ) {
       id += ix % 2 << (3 * l);
       id += iy % 2 << (3 * l + 1);
@@ -200,6 +200,7 @@ protected:
 
   void linkTree(Bodies &bodies, Cells &cells) {
     startTimer("Link tree");
+    cells.clear();
     cells.resize(NCELL);
     Ci0 = cells.begin();
     BN = bodies.begin();
@@ -214,6 +215,8 @@ protected:
 public:
 //! Constructor
   TopDown() : nodes(), leafs(), BN(), CN(), NLEAF(0), NCELL(0) {}
+//! Destructor
+  ~TopDown() {}
 
 };
 
