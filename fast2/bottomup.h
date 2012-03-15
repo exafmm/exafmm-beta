@@ -33,16 +33,17 @@ public:
   using Kernel<equation>::R0;                                   //!< Radius of root cell
   using Kernel<equation>::sortBodies;                           //!< Sort bodies according to cell index
   using Evaluator<equation>::MAXLEVEL;                          //!< Max depth of tree
+  using TopDown<equation>::getMorton;                           //!< Get Morton index
 
 private:
-  int getMaxLevel(Bodies &bodies) {
+  inline int getMaxLevel(Bodies &bodies) const {
     const long N = bodies.size();
     int level;
     level = N >= NCRIT ? 1 + int(log(N / NCRIT)/M_LN2/3) : 0;
     return level;
   }
 
-  inline void initCell(Cell &cell, int child, B_iter LEAF, real diameter) {
+  inline void initCell(Cell &cell, int child, B_iter LEAF, int level, real diameter) const {
     cell.NCHILD = 0;
     cell.NCLEAF = 0;
     cell.NDLEAF = 0;
@@ -51,6 +52,7 @@ private:
     int ix = int((LEAF->X[0] + R0 - X0[0]) / diameter);
     int iy = int((LEAF->X[1] + R0 - X0[1]) / diameter);
     int iz = int((LEAF->X[2] + R0 - X0[2]) / diameter);
+    cell.ICELL  = getMorton(ix,iy,iz,level);
     cell.X[0]   = diameter * (ix + .5) + X0[0] - R0;
     cell.X[1]   = diameter * (iy + .5) + X0[1] - R0;
     cell.X[2]   = diameter * (iz + .5) + X0[2] - R0;
@@ -59,7 +61,7 @@ private:
     cell.L      = 0;
   }
 
-  void buildBottom(Bodies &bodies, Cells &cells) {
+  inline void buildBottom(Bodies &bodies, Cells &cells) const {
     int I = -1;
     C_iter C;
     cells.clear();
@@ -69,7 +71,7 @@ private:
       int IC = B->ICELL;
       if( IC != I ) {
         Cell cell;
-        initCell(cell,0,B,d);
+        initCell(cell,0,B,MAXLEVEL,d);
         cells.push_back(cell);
         C = cells.end()-1;
         I = IC;
@@ -79,7 +81,7 @@ private:
     }
   }
 
-  void twigs2cells(Cells &cells) {
+  inline void twigs2cells(Cells &cells) const {
     int begin = 0, end = cells.size();
     float d = 2 * R0 / (1 << MAXLEVEL);
     for( int l=0; l!=MAXLEVEL; ++l ) {
@@ -92,7 +94,7 @@ private:
         int IC = B->ICELL / div;
         if( IC != I ) {
           Cell cell;
-          initCell(cell,c,cells[c].LEAF,d);
+          initCell(cell,c,cells[c].LEAF,l,d);
           cells.push_back(cell);
           p++;
           I = IC;
@@ -107,22 +109,13 @@ private:
   }
 
 protected:
-  inline void setIndex(Bodies &bodies) {
+  inline void setIndex(Bodies &bodies) const {
     float d = 2 * R0 / (1 << MAXLEVEL);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int ix = int((B->X[0] + R0 - X0[0]) / d);
       int iy = int((B->X[1] + R0 - X0[1]) / d);
       int iz = int((B->X[2] + R0 - X0[2]) / d);
-      int id = 0;
-      for( int l=0; l!=MAXLEVEL; ++l ) {
-        id += ix % 2 << (3 * l);
-        id += iy % 2 << (3 * l + 1);
-        id += iz % 2 << (3 * l + 2);
-        ix >>= 1;
-        iy >>= 1;
-        iz >>= 1;
-      }
-      B->ICELL = id;
+      B->ICELL = getMorton(ix,iy,iz,MAXLEVEL);
     }
   }
 

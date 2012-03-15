@@ -90,6 +90,11 @@ private:
     C->X      = nodes[i].X;
     C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
+    float diameter = 2 * C->R;
+    int ix = int((C->LEAF->X[0] + R0 - X0[0]) / diameter);
+    int iy = int((C->LEAF->X[1] + R0 - X0[1]) / diameter);
+    int iz = int((C->LEAF->X[2] + R0 - X0[2]) / diameter);
+    C->ICELL  = getMorton(ix,iy,iz,nodes[i].LEVEL);
     C->M      = 0;
     C->L      = 0;
     if( nodes[i].NOCHILD ) {
@@ -132,6 +137,19 @@ private:
   }
 
 protected:
+  inline int getMorton(int &ix, int &iy, int &iz, const int &level) const {
+    int id = 0;
+    for( int l=0; l!=level; ++l ) {
+      id += ix % 2 << (3 * l);
+      id += iy % 2 << (3 * l + 1);
+      id += iz % 2 << (3 * l + 2);
+      ix >>= 1;
+      iy >>= 1;
+      iz >>= 1;
+    }
+    return id;
+  }
+
   void setDomain(Bodies &bodies) {
     startTimer("Set domain");
     vect xmin, xmax;
