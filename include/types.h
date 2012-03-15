@@ -247,8 +247,9 @@ typedef std::vector<Map>               Maps;                    //!< Vector of m
 //! Structure for Ewald summation
 struct Ewald {
   vect K;                                                       //!< 3-D wave number vector
-  real REAL;                                                    //!< real part of wave
-  real IMAG;                                                    //!< imaginary part of wave
+  real REAL;                                                    //!< Real part of wave
+  real IMAG;                                                    //!< Imaginary part of wave
+  Ewald() : K(0), REAL(0), IMAG(0) {}                           //!< Constructor
 };
 typedef std::vector<Ewald>             Ewalds;                  //!< Vector of Ewald summation types
 typedef std::vector<Ewald>::iterator   E_iter;                  //!< Iterator for Ewald summation types

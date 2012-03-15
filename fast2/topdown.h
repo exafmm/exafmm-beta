@@ -93,9 +93,9 @@ private:
     C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
     float diameter = 2 * C->R;
-    int ix = int((C->LEAF->X[0] + R0 - X0[0]) / diameter);
-    int iy = int((C->LEAF->X[1] + R0 - X0[1]) / diameter);
-    int iz = int((C->LEAF->X[2] + R0 - X0[2]) / diameter);
+    int ix = int((nodes[i].X[0] + R0 - X0[0]) / diameter);
+    int iy = int((nodes[i].X[1] + R0 - X0[1]) / diameter);
+    int iz = int((nodes[i].X[2] + R0 - X0[2]) / diameter);
     C->ICELL  = getMorton(ix,iy,iz,nodes[i].LEVEL);
     C->M      = 0;
     C->L      = 0;
