@@ -176,17 +176,17 @@ struct Node {
   bool NOCHILD;                                                 //!< Flag for twig nodes
   int  LEVEL;                                                   //!< Level in the tree structure
   int  NLEAF;                                                   //!< Number of descendant leafs
-  int  CHILD[8];                                                //!< Index of child node
+  vec<8,int> CHILD;                                             //!< Index of child node
   vect X;                                                       //!< Coordinate at center
   Leaf *LEAF;                                                   //!< Pointer to first leaf
-  Node() : NOCHILD(true), LEVEL(0), NLEAF(0), X(0), LEAF(NULL) {}//!< Constructor
+  Node() : NOCHILD(true), LEVEL(0), NLEAF(0), CHILD(0), X(0), LEAF(NULL) {}//!< Constructor
   ~Node() {}                                                    //!< Destructor
 //! Copy constructor
-  Node(const Node &node) : NOCHILD(true), LEVEL(0), NLEAF(0), X(0), LEAF(NULL) {
+  Node(const Node &node) : NOCHILD(true), LEVEL(0), NLEAF(0), CHILD(0), X(0), LEAF(NULL) {
     NOCHILD = node.NOCHILD;                                     // Copy NOCHILD
     LEVEL   = node.LEVEL;                                       // Copy LEVEL
     NLEAF   = node.NLEAF;                                       // Copy NLEAF
-    for( int i=0; i!=8; ++i ) CHILD[i] = node.CHILD[i];         // Copy CHILD
+    CHILD   = node.CHILD;                                       // Copy CHILD
     X       = node.X;                                           // Copy X
     LEAF    = node.LEAF;                                        // Copy LEAF
   }
@@ -195,7 +195,7 @@ struct Node {
     NOCHILD = node.NOCHILD;                                     // Copy NOCHILD
     LEVEL   = node.LEVEL;                                       // Copy LEVEL
     NLEAF   = node.NLEAF;                                       // Copy NLEAF
-    for( int i=0; i!=8; ++i ) CHILD[i] = node.CHILD[i];         // Copy CHILD
+    CHILD   = node.CHILD;                                       // Copy CHILD
     X       = node.X;                                           // Copy X
     LEAF    = node.LEAF;                                        // Copy LEAF
     return *this;

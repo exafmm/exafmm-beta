@@ -43,16 +43,8 @@ public:
   using Evaluator<equation>::MAXLEVEL;                          //!< Max depth of tree
 
 private:
-  void init(Node &node) {
-    node.NOCHILD = true;
-    node.NLEAF = 0;
-    node.LEAF = NULL;
-    for( int b=0; b!=8; ++b ) node.CHILD[b] = -1;
-  }
-
   inline void addChild(int octant, N_iter N) {
     Node child;
-    init(child);
     child.LEVEL = N->LEVEL+1;
     child.X = N->X;
     real r = R0 / (1 << child.LEVEL);
@@ -72,7 +64,7 @@ private:
       for( Leaf *L=N->LEAF; L; L=Ln ) {
         Ln = L->NEXT;
         int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
-        if( N->CHILD[octant] == -1 ) {
+        if( N->CHILD[octant] == 0 ) {
           addChild(octant,N);
         }
         c = N->CHILD[octant];
@@ -87,7 +79,6 @@ private:
 
   void nodes2cells(int i, C_iter C) {
     C->R      = R0 / (1 << nodes[i].LEVEL);
-    C->RMAX   = 0;
     C->RCRIT  = C->R / THETA;
     C->X      = nodes[i].X;
     C->NDLEAF = nodes[i].NLEAF;
@@ -97,21 +88,16 @@ private:
     int iy = int((nodes[i].X[1] + R0 - X0[1]) / diameter);
     int iz = int((nodes[i].X[2] + R0 - X0[2]) / diameter);
     C->ICELL  = getMorton(ix,iy,iz,nodes[i].LEVEL);
-    C->M      = 0;
-    C->L      = 0;
     if( nodes[i].NOCHILD ) {
-      C->CHILD = 0;
-      C->NCHILD = 0;
       C->NCLEAF = nodes[i].NLEAF;
       for( Leaf *L=nodes[i].LEAF; L; L=L->NEXT ) {
         BN->IBODY = L->I;
         BN++;
       }
     } else {
-      C->NCLEAF = 0;
       int nsub=0;
       for( int octant=0; octant!=8; ++octant ) {
-        if( nodes[i].CHILD[octant] != -1 ) {
+        if( nodes[i].CHILD[octant] != 0 ) {
           ++nsub;
         }
       }
@@ -120,7 +106,7 @@ private:
       C->NCHILD = nsub;
       CN += nsub;
       for( int octant=0; octant!=8; ++octant ) {
-        if( nodes[i].CHILD[octant] != -1 ) {
+        if( nodes[i].CHILD[octant] != 0 ) {
           Ci->PARENT = C - Ci0;
           nodes2cells(nodes[i].CHILD[octant], Ci++);
         }
@@ -189,7 +175,6 @@ protected:
     NCELL = 1;
     nodes.reserve(NLEAF);
     Node node;
-    init(node);
     node.LEVEL = 0;
     node.X     = X0;
     nodes.push_back(node);
@@ -200,7 +185,7 @@ protected:
       while( !N->NOCHILD ) {
         int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
         N->NLEAF++;
-        if( N->CHILD[octant] == -1 ) addChild(octant,N);
+        if( N->CHILD[octant] == 0 ) addChild(octant,N);
         N = nodes.begin()+N->CHILD[octant];
       }
       L->NEXT = N->LEAF;

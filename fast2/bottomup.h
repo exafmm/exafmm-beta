@@ -44,9 +44,6 @@ private:
   }
 
   inline void initCell(Cell &cell, int child, B_iter LEAF, int level, real diameter) const {
-    cell.NCHILD = 0;
-    cell.NCLEAF = 0;
-    cell.NDLEAF = 0;
     cell.CHILD  = child;
     cell.LEAF   = LEAF;
     int ix = int((LEAF->X[0] + R0 - X0[0]) / diameter);
@@ -57,10 +54,7 @@ private:
     cell.X[1]   = diameter * (iy + .5) + X0[1] - R0;
     cell.X[2]   = diameter * (iz + .5) + X0[2] - R0;
     cell.R      = diameter * .5;
-    cell.RMAX   = 0;
     cell.RCRIT  = cell.R / THETA;
-    cell.M      = 0;
-    cell.L      = 0;
   }
 
   inline void buildBottom(Bodies &bodies, Cells &cells) const {
