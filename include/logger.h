@@ -45,10 +45,10 @@ public:
   bool printNow;                                                //!< Switch to print timings
 
 //! Constructor
-  Logger() {
-    timerFile.open("time.dat");                                 // Open timer log file
-    stringLength = 20;                                          // Max length of event name
-    printNow = false;                                           // Don't print by default
+  Logger() : timerFile("time.dat"),                             // Open timer log file
+             beginTimer(), timer(), traces(), mutex(),          // Initializing class variables (empty)
+             stringLength(20),                                  // Max length of event name
+             printNow(false) {                                  // Don't print timings by default
     pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
   }
 //! Destructor

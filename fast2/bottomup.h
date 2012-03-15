@@ -57,6 +57,8 @@ private:
     cell.X[1]   = diameter * (iy + .5) + X0[1] - R0;
     cell.X[2]   = diameter * (iz + .5) + X0[2] - R0;
     cell.R      = diameter * .5;
+    cell.RMAX   = 0;
+    cell.RCRIT  = cell.R / THETA;
     cell.M      = 0;
     cell.L      = 0;
   }
@@ -66,12 +68,12 @@ private:
     C_iter C;
     cells.clear();
     cells.reserve(1 << (3 * MAXLEVEL));
-    float d = 2 * R0 / (1 << MAXLEVEL);
+    float diameter = 2 * R0 / (1 << MAXLEVEL);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       int IC = B->ICELL;
       if( IC != I ) {
         Cell cell;
-        initCell(cell,0,B,MAXLEVEL,d);
+        initCell(cell,0,B,MAXLEVEL,diameter);
         cells.push_back(cell);
         C = cells.end()-1;
         I = IC;
@@ -83,18 +85,17 @@ private:
 
   inline void twigs2cells(Cells &cells) const {
     int begin = 0, end = cells.size();
-    float d = 2 * R0 / (1 << MAXLEVEL);
-    for( int l=0; l!=MAXLEVEL; ++l ) {
-      int div = (8 << (3 * l));
+    float diameter = 2 * R0 / (1 << MAXLEVEL);
+    for( int l=MAXLEVEL-1; l>=0; --l ) {
       int I = -1;
       int p = end - 1;
-      d *= 2;
+      diameter *= 2;
       for( int c=begin; c!=end; ++c ) {
         B_iter B = cells[c].LEAF;
-        int IC = B->ICELL / div;
+        int IC = cells[c].ICELL / 8;
         if( IC != I ) {
           Cell cell;
-          initCell(cell,c,cells[c].LEAF,l,d);
+          initCell(cell,c,cells[c].LEAF,l,diameter);
           cells.push_back(cell);
           p++;
           I = IC;

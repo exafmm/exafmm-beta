@@ -29,13 +29,15 @@ THE SOFTWARE.
 class MyMPI {
 private:
   int       EXTERNAL;                                           //!< Flag to indicate external MPI_Init/Finalize
+
 protected:
-  const int WAIT;                                               //!< Waiting time between output of different ranks
   int       MPISIZES;                                           //!< Number of MPI processes for split communicator
   int       MPIRANKS;                                           //!< Rank of current MPI process for split communicator
+  const int WAIT;                                               //!< Waiting time between output of different ranks
+
 public:
 //! Constructor, initialize WAIT time
-  MyMPI() : WAIT(100) {                                         // Constructor, initialize WAIT time
+  MyMPI() : EXTERNAL(0), MPISIZES(0), MPIRANKS(0), WAIT(100) {  // Constructor, initialize WAIT time
     int argc(0);                                                // Dummy argument count
     char **argv;                                                // Dummy argument value
     MPI_Initialized(&EXTERNAL);                                 // Check if MPI_Init has been called

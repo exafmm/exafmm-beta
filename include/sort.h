@@ -73,6 +73,11 @@ private:
   }
 
 public:
+//! Constructor
+  Sort() : bucket() {}
+//! Destructor
+  ~Sort() {}
+
 //! Sort bodies accoring to cell index
   void sortBodies(Bodies &bodies, Bodies &buffer, bool ascend=true, int begin=0, int end=0) {
     startTimer("Sort bodies");                                  // Start timer

@@ -87,6 +87,8 @@ private:
 
   void nodes2cells(int i, C_iter C) {
     C->R      = R0 / (1 << nodes[i].LEVEL);
+    C->RMAX   = 0;
+    C->RCRIT  = C->R / THETA;
     C->X      = nodes[i].X;
     C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
@@ -137,7 +139,7 @@ private:
   }
 
 protected:
-  inline int getMorton(int &ix, int &iy, int &iz, const int &level) const {
+  inline int getMorton(int ix, int iy, int iz, const int &level) const {
     int id = 0;
     for( int l=0; l!=level; ++l ) {
       id += ix % 2 << (3 * l);
@@ -223,6 +225,10 @@ protected:
     permuteBodies(bodies);
     stopTimer("Link tree",printNow);
   }
+
+public:
+//! Constructor
+  TopDown() : nodes(), leafs(), BN(), CN(), NLEAF(0), NCELL(0) {}
 
 };
 

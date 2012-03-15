@@ -249,7 +249,10 @@ protected:
   void timeKernels();
 
 public:
-  Evaluator() : NM2L(0), NM2P(0), NP2P(0), Icenter(1 << 13) {}
+  Evaluator() : timeM2L(0), timeM2P(0), timeP2P(0),
+                TOPDOWN(false), MAXLEVEL(0),
+                NM2L(0), NM2P(0), NP2P(0),
+                Iperiodic(0), Icenter(1 << 13) {}
   ~Evaluator() {}
 
   void printTreeData(Cells &cells) {

@@ -93,11 +93,27 @@ protected:
 
 public:
 //! Constructor
-  KernelBase() : keysDevcSize(0), rangeDevcSize(0),
+  KernelBase() : Ci0(), Cj0(), ATOMS(), RSCALE(), GSCALE(), KSIZE(), ALPHA(), SIGMA(),
+                 keysHost(), rangeHost(), sourceHost(), targetHost(), constHost(),
+                 sourceBegin(), sourceSize(), targetBegin(),
+                 keysDevcSize(0), rangeDevcSize(0),
                  sourceDevcSize(0), targetDevcSize(0),
+                 keysDevc(), rangeDevc(), sourceDevc(), targetDevc(),
+                 factorial(), prefactor(), Anm(), Cnm(),
                  X0(0), R0(0) {}
 //! Destructor
   ~KernelBase() {}
+//! Copy constructor
+  KernelBase(const KernelBase&) : Sort(), Ci0(), Cj0(), ATOMS(), RSCALE(), GSCALE(), KSIZE(), ALPHA(), SIGMA(),
+                 keysHost(), rangeHost(), sourceHost(), targetHost(), constHost(),
+                 sourceBegin(), sourceSize(), targetBegin(),
+                 keysDevcSize(0), rangeDevcSize(0),
+                 sourceDevcSize(0), targetDevcSize(0),
+                 keysDevc(), rangeDevc(), sourceDevc(), targetDevc(),
+                 factorial(), prefactor(), Anm(), Cnm(),
+                 X0(0), R0(0) {}
+//! Overload assignment
+  KernelBase &operator=(const KernelBase) {return *this;}
 
 //! Set center of root cell
   void setX0(vect x0) {X0 = x0;}
