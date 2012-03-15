@@ -5,7 +5,7 @@ include ../Makefile.include
 
 a	: main.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
-	mpirun -np 16 ./a.out
+	./a.out
 
 b	: main.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) -DMANY

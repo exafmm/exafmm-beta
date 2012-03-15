@@ -44,13 +44,13 @@ int main() {
 #if BUILD
   for ( int it=32; it<33; it++ ) {
 #else
-  for ( int it=0; it<1; it++ ) {
+  for ( int it=8; it<9; it++ ) {
 #endif
 #endif
   numBodies = int(pow(10,(it+24)/8.0));
   if( printNow ) std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
-  DATA.cube(bodies,MPIRANK+1);
+  DATA.cube(bodies,MPIRANK);
   FMM.startTimer("FMM");
 #if BOTTOMUP
   FMM.bottomup(bodies,cells);
