@@ -148,7 +148,7 @@ protected:
     Bodies buffer = bodies;
     stopTimer("Morton index",printNow);
     startTimer("Sort bodies");
-    sortBodies(bodies,buffer);
+    sortBodies(bodies,buffer,false);
     stopTimer("Sort bodies",printNow);
     startTimer("Build bottom");
     buildBottom(bodies,cells);
