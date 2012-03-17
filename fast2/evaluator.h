@@ -123,62 +123,6 @@ protected:
     stopTimer("Upward pass",printNow);
   }
 
-//! Upward phase for periodic cells
-  void upwardPeriodic(Cells &cells) {
-    startTimer("Upward periodic");                              // Start timer
-    Cells pccells, pjcells;                                     // Periodic center cell and jcell
-    if( TOPDOWN ) {                                             // If tree was constructed top down
-      pccells.push_back(cells.front());                         //  The first cell is the first periodic cell
-    } else {                                                    // If tree was constructed bottom up
-      pccells.push_back(cells.back());                          //  The last cell is the first periodic cell
-    }                                                           // Endif for tree construction
-    for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
-      Cell cell;                                                //  New periodic cell at next sublevel
-      C_iter C = pccells.end() - 1;                             //  Set previous periodic center cell as source
-      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
-        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
-          for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
-            if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
-              for( int cx=-1; cx<=1; ++cx ) {                   //      Loop over x periodic direction (child)
-                for( int cy=-1; cy<=1; ++cy ) {                 //       Loop over y periodic direction (child)
-                  for( int cz=-1; cz<=1; ++cz ) {               //        Loop over z periodic direction (child)
-                    cell.X[0]  = C->X[0] + (ix * 6 + cx * 2) * C->R;//     Set new x coordinate for periodic image
-                    cell.X[1]  = C->X[1] + (iy * 6 + cy * 2) * C->R;//     Set new y cooridnate for periodic image
-                    cell.X[2]  = C->X[2] + (iz * 6 + cz * 2) * C->R;//     Set new z coordinate for periodic image
-                    cell.M     = C->M;                          //         Copy multipoles to new periodic image
-                    cell.NCLEAF = cell.NDLEAF = cell.NCHILD = 0;//         Initialize NCLEAF, NDLEAF, & NCHILD
-                    cells.push_back(cell);                      //         Push cell into periodic jcell vector
-                  }                                             //        End loop over z periodic direction (child)
-                }                                               //       End loop over y periodic direction (child)
-              }                                                 //      End loop over x periodic direction (child)
-            }                                                   //     Endif for periodic center cell
-          }                                                     //    End loop over z periodic direction
-        }                                                       //   End loop over y periodic direction
-      }                                                         //  End loop over x periodic direction
-      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
-        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
-          for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
-            cell.X[0] = C->X[0] + ix * 2 * C->R;                //     Set new x coordinate for periodic image
-            cell.X[1] = C->X[1] + iy * 2 * C->R;                //     Set new y cooridnate for periodic image
-            cell.X[2] = C->X[2] + iz * 2 * C->R;                //     Set new z coordinate for periodic image
-            cell.M = C->M;                                      //     Copy multipoles to new periodic image
-            pjcells.push_back(cell);                            //     Push cell into periodic jcell vector
-          }                                                     //    End loop over z periodic direction
-        }                                                       //   End loop over y periodic direction
-      }                                                         //  End loop over x periodic direction
-      cell.X = C->X;                                            //  This is the center cell
-      cell.R = 3 * C->R;                                        //  The cell size increases three times
-      pccells.pop_back();                                       //  Pop periodic center cell from vector
-      pccells.push_back(cell);                                  //  Push cell into periodic cell vector
-      C_iter Ci = pccells.end() - 1;                            //  Set current cell as target for M2M
-      Ci->CHILD = 0;                                            //  Set child cells for periodic M2M
-      Ci->NCHILD = 27;                                          //  Set number of child cells for periodic M2M
-      evalM2M(pccells,pjcells);                                 // Evaluate periodic M2M kernels for this sublevel
-      pjcells.clear();                                          // Clear periodic jcell vector
-    }                                                           // End loop over sublevels of tree
-    stopTimer("Upward periodic",printNow);                      // Stop timer
-  }
-
   void traverse(Cells &icells, Cells &jcells) {
     Ci0 = icells.begin();                                       // Begin iterator for target cells
     Cj0 = jcells.begin();                                       // Begin iterator for source cells
@@ -224,29 +168,67 @@ protected:
   }
 
 //! Traverse tree for periodic cells
-  void traversePeriodic(Cells &cells, Cells &jcells) {
+  void traversePeriodic(Cells &icells, Cells &jcells) {
     startTimer("Traverse periodic");                            // Start timer
     Xperiodic = 0;                                              // Set periodic coordinate offset
     Iperiodic = Icenter;                                        // Set periodic flag to center
+    Cells ccells(1), pcells(1), ncells(27);                     // Create cells
+    C_iter C = ccells.begin();                                  // ccells is periodic center cell
+    C_iter Cj = pcells.begin();                                 // pcells is periodic source cell
     C_iter Ci;                                                  // Initialize iterator for periodic target cell
-    C_iter Cj = jcells.end()-1;                                 // Initialize iterator for periodic source cell
+    if( TOPDOWN ) {                                             // If tree was constructed top down
+      C = jcells.begin();                                       //  The first cell is the first periodic cell
+    } else {                                                    // If tree was constructed bottom up
+      C = jcells.end() - 1;                                     //  The last cell is the first periodic cell
+    }                                                           // Endif for tree construction
+    C->CHILD = 0;                                               // Set child cells for periodic center cell
+    C->NCHILD = 27;                                             // Set number of child cells for periodic center cell
     for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
-      for( int I=0; I!=26*27; ++I, --Cj ) {                     //  Loop over periodic images (exclude center)
+      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
+            if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
+              for( int cx=-1; cx<=1; ++cx ) {                   //      Loop over x periodic direction (child)
+                for( int cy=-1; cy<=1; ++cy ) {                 //       Loop over y periodic direction (child)
+                  for( int cz=-1; cz<=1; ++cz ) {               //        Loop over z periodic direction (child)
+                    Cj->X[0]  = C->X[0] + (ix * 6 + cx * 2) * C->R;//     Set new x coordinate for periodic image
+                    Cj->X[1]  = C->X[1] + (iy * 6 + cy * 2) * C->R;//     Set new y cooridnate for periodic image
+                    Cj->X[2]  = C->X[2] + (iz * 6 + cz * 2) * C->R;//     Set new z coordinate for periodic image
+                    Cj->M     = C->M;                           //         Copy multipoles to new periodic image
 #if TREECODE
-        for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) { //   Loop over cells
-          if( Ci->NCHILD == 0 ) {                               //    If cell is twig
-            evalM2P(Ci,Cj);                                     //     Perform M2P kernel
-          }                                                     //    Endif for twig
-        }                                                       //   End loop over cells
+                    for( C_iter Ci=icells.begin(); Ci!=icells.end(); ++Ci ) {//  Loop over target cells
+                      if( Ci->NCHILD == 0 ) {                   //         If cell is twig
+                        evalM2P(Ci,Cj);                         //          Perform M2P kernel
+                      }                                         //         Endif for twig
+                    }                                           //        End loop over target cells
 #else
-        if( TOPDOWN ) {                                         //   If tree was constructed top down
-          Ci = cells.begin();                                   //    Set first cell as periodic target iterator
-        } else {                                                //   If tree was constructed bottom up
-          Ci = cells.end() - 1;                                 //    Set last cell as periodic target iterator
-        }                                                       //   Endif for tree constructed
-        evalM2L(Ci,Cj);                                         //   Perform M2P kernel
+                   if( TOPDOWN ) {                              //        If tree was constructed top down
+                     Ci = icells.begin();                       //         Set first cell as periodic target
+                   } else {                                     //        If tree was constructed bottom up
+                     Ci = icells.end() - 1;                     //         Set last cell as periodic target
+                   }                                            //        Endif for tree constructed
+                   evalM2L(Ci,Cj);                              //        Perform M2P kernel
 #endif
+                  }                                             //        End loop over z periodic direction (child)
+                }                                               //       End loop over y periodic direction (child)
+              }                                                 //      End loop over x periodic direction (child)
+            }                                                   //     Endif for periodic center cell
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
+      C_iter Cp = ncells.begin();                               //  Iterator for periodic neighbor cells
+      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz, ++Cp ) {                 //    Loop over z periodic direction
+            Cp->X[0] = C->X[0] + ix * 2 * C->R;                 //     Set new x coordinate for periodic image
+            Cp->X[1] = C->X[1] + iy * 2 * C->R;                 //     Set new y cooridnate for periodic image
+            Cp->X[2] = C->X[2] + iz * 2 * C->R;                 //     Set new z coordinate for periodic image
+            Cp->M    = C->M;                                    //     Copy multipoles to new periodic image
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+      evalM2M(ccells,ncells);                                   //  Evaluate periodic M2M kernels for this sublevel
+      C->R *= 3;                                                //  Increases center cell size three times
     }                                                           // End loop over sublevels of tree
     stopTimer("Traverse periodic",printNow);                    // Stop timer
   }

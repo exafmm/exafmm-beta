@@ -36,7 +36,6 @@ public:
   using Evaluator<equation>::Iperiodic;                         //!< Periodic image flag (using each bit for images)
   using Evaluator<equation>::Icenter;                           //!< Periodic image flag at center
   using Evaluator<equation>::upwardPass;                        //!< Upward pass to get all multipole expansions
-  using Evaluator<equation>::upwardPeriodic;                    //!< Upward pass for periodic images             
   using Evaluator<equation>::traverse;                          //!< Traverse tree to get interaction list
   using Evaluator<equation>::traversePeriodic;                  //!< Traverse tree for periodic images     
   using Evaluator<equation>::downwardPass;                      //!< Downward pass to evaluate all local expansions
@@ -84,7 +83,6 @@ public:
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
-      upwardPeriodic(jcells);                                   //  Upward pass for periodic images
       traversePeriodic(icells,jcells);                          //  Traverse tree for periodic images
     }
     stopTimer("Traverse",printNow);
