@@ -27,7 +27,7 @@ THE SOFTWARE.
 
 int main() {
   int numBodies = 1000;
-  IMAGES = 2;
+  IMAGES = 0;
   THETA = 0.6;
   Bodies bodies, jbodies;
   Cells cells;
@@ -48,7 +48,6 @@ int main() {
 #endif
 #endif
   numBodies = int(pow(10,(it+24)/8.0));
-  numBodies = 100;                      
   if( printNow ) std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
   DATA.cube(bodies,MPIRANK);
@@ -71,9 +70,9 @@ int main() {
   if(FMM.printNow) FMM.printTreeData(cells);
 
   Bodies bodies2 = bodies;
-//#ifdef MANY
+#ifdef MANY
   bodies2.resize(100);
-//#endif
+#endif
   if( IMAGES != 0 ) {
     FMM.startTimer("Set periodic");
     jbodies = FMM.periodicBodies(bodies);
@@ -88,9 +87,9 @@ int main() {
   FMM.stopTimer("Direct sum",printNow);
   FMM.eraseTimer("Direct sum");
 
-//#ifdef MANY
+#ifdef MANY
   bodies.resize(100);
-//#endif
+#endif
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   if( printNow ) DATA.printError(diff1,norm1,diff2,norm2);

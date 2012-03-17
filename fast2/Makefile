@@ -1,5 +1,5 @@
 include ../Makefile.include
-LFLAGS	+= -DBOTTOMUP
+#LFLAGS	+= -DBOTTOMUP
 #LFLAGS	+= -DHYBRID
 #LFLAGS	+= -DTREECODE
 
