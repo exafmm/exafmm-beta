@@ -96,7 +96,9 @@ int main() {
 #endif
   }
 
-//  FMM.octsection(bodies);
+  std::cout << std::endl;
+  FMM.octsection(bodies);
+  FMM.getLET(cells);
 #ifdef VTK
   int Ncell = 0;                                                // Initialize number of cells
   vtkPlot vtk;                                                  // Instantiate vtkPlot class

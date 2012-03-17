@@ -6,7 +6,7 @@ include ../Makefile.include
 a	: main.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
 #	mpirun -np 2 -machinefile ~/hosts ./a.out
-	./a.out
+	mpirun -np 2 ./a.out
 
 b	: main.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) -DMANY

@@ -26,7 +26,14 @@ THE SOFTWARE.
 //! Handles all the communication of local essential trees
 template<Equation equation>
 class ParallelFMM : public Partition<equation> {
+private:
+  vect thisXMIN;                                                //!< XMIN for a given rank
+  vect thisXMAX;                                                //!< XMAX for a given rank
+
 public:
+  using Kernel<equation>::printNow;                             //!< Switch to print timings
+  using Kernel<equation>::startTimer;                           //!< Start timer for given event
+  using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
   using Kernel<equation>::X0;                                   //!< Center of root cell
   using Kernel<equation>::R0;                                   //!< Radius of root cel
   using Kernel<equation>::Cj0;                                  //!< Begin iterator for source cells
@@ -40,10 +47,10 @@ private:
   real getDistance(C_iter C) {
     vect dist;                                                  // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
-      dist[d] = (C->X[d] + Xperiodic[d] > XMAX[d])*             //  Calculate the distance between cell C and
-                (C->X[d] + Xperiodic[d] - XMAX[d])+             //  the nearest point in domain [xmin,xmax]^3
-                (C->X[d] + Xperiodic[d] < XMIN[d])*             //  Take the differnece from xmin or xmax
-                (C->X[d] + Xperiodic[d] - XMIN[d]);             //  or 0 if between xmin and xmax
+      dist[d] = (C->X[d] + Xperiodic[d] > thisXMAX[d])*         //  Calculate the distance between cell C and
+                (C->X[d] + Xperiodic[d] - thisXMAX[d])+         //  the nearest point in domain [xmin,xmax]^3
+                (C->X[d] + Xperiodic[d] < thisXMIN[d])*         //  Take the differnece from xmin or xmax
+                (C->X[d] + Xperiodic[d] - thisXMIN[d]);         //  or 0 if between xmin and xmax
     }                                                           // End loop over dimensions
     real R = std::sqrt(norm(dist));                             // Scalar distance
     return R;                                                   // Return scalar distance
@@ -78,18 +85,19 @@ private:
         }                                                       //   Endif for periodic boundary condition
         divide |= CC->R > (R0 / (1 << level));                  //   Divide if cell is larger than local root cell
         if( divide ) {                                          //   If cell has to be divided
-          getLET(CC);                                           //    Traverse the tree further
+          traverseLET(CC);                                      //    Traverse the tree further
         }                                                       //   Endif for cell division
       }                                                         //  Endif for twig
     }                                                           // End loop over child cells
   }
 
 public:
-  ParallelFMM() {}
+  ParallelFMM() : thisXMIN(0), thisXMAX(0) {}
   ~ParallelFMM() {};
 
 //! Get local essential tree to send to each process
   void getLET(Cells &cells) {
+    startTimer("Get LET");                                      // Start timer
     Cj0 = cells.begin();                                        // Set begin iterator
     C_iter Root;                                                // Root cell
     if( TOPDOWN ) {                                             // If tree was constructed top down
@@ -97,7 +105,14 @@ public:
     } else {                                                    // If tree was constructed bottom up
       Root = cells.end() - 1;                                   //  The last cell is the root cell
     }                                                           // Endif for tree construction
-    traverseLET(Root);                                          // Traverse tree to get LET
+    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
+      if( irank != MPIRANK ) {                                  //  If not current rank
+        thisXMIN = XMIN[irank];                                 //   Set XMIN for irank
+        thisXMAX = XMAX[irank];                                 //   Set XMAX for irank
+        traverseLET(Root);                                      //   Traverse tree to get LET
+      }                                                         //  Endif for current rank
+    }                                                           // End loop over ranks
+    stopTimer("Get LET",printNow);                              // Stop timer
   }
 
 };
