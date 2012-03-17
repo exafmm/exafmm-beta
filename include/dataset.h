@@ -30,7 +30,7 @@ private:
   long filePosition;                                            //!< Position of file stream
 
 public:
-  using Logger::stringLength;                                   //!< Max length of event name
+  using Kernel<equation>::stringLength;                         //!< Max length of event name
 
 //! Constructor
   Dataset() : filePosition(0) {}

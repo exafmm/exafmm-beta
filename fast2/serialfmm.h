@@ -66,7 +66,6 @@ public:
   }
 
   void evaluate(Cells &icells, Cells &jcells) {
-    if( IMAGES != 0 ) upwardPeriodic(jcells);
     startTimer("Traverse");
     if( IMAGES == 0 ) {
       Iperiodic = Icenter;
@@ -85,9 +84,10 @@ public:
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
+      upwardPeriodic(jcells);                                   //  Upward pass for periodic images
+      traversePeriodic(icells,jcells);                          //  Traverse tree for periodic images
     }
     stopTimer("Traverse",printNow);
-    if( IMAGES != 0 ) traversePeriodic(icells,jcells);
     downwardPass(icells);
   }
 

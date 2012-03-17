@@ -23,77 +23,81 @@ THE SOFTWARE.
 #define parallelfmm_h
 #include "partition.h"
 
-const int MPIDIM[3] = {4,2,2};
-
 //! Handles all the communication of local essential trees
 template<Equation equation>
 class ParallelFMM : public Partition<equation> {
 public:
   using Kernel<equation>::X0;                                   //!< Center of root cell
   using Kernel<equation>::R0;                                   //!< Radius of root cel
-  using Evaluator<equation>::MAXLEVEL;                          //!< Max depth of tree
+  using Kernel<equation>::Cj0;                                  //!< Begin iterator for source cells
+  using Evaluator<equation>::TOPDOWN;                           //!< Flag for top down tree construction
   using Partition<equation>::print;                             //!< Print in MPI
+  using Partition<equation>::XMIN;                              //!< Minimum position vector of bodies
+  using Partition<equation>::XMAX;                              //!< Maximum position vector of bodies
 
 private:
-  vec<3,int> Morton2Ivec(int n) const {
-    int d = 0, level = 0;
-    vec<3,int> Ivec = 0;
-    while( n != 0 ) {
-      Ivec[d] += (n % 2) * (1 << level);
-      n >>= 1;
-      d = (d+1) % 3;
-      if( d == 0 ) level++;
-    }
-    return Ivec;
+//! Get disatnce to other domain
+  real getDistance(C_iter C) {
+    vect dist;                                                  // Distance vector
+    for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
+      dist[d] = (C->X[d] + Xperiodic[d] > XMAX[d])*             //  Calculate the distance between cell C and
+                (C->X[d] + Xperiodic[d] - XMAX[d])+             //  the nearest point in domain [xmin,xmax]^3
+                (C->X[d] + Xperiodic[d] < XMIN[d])*             //  Take the differnece from xmin or xmax
+                (C->X[d] + Xperiodic[d] - XMIN[d]);             //  or 0 if between xmin and xmax
+    }                                                           // End loop over dimensions
+    real R = std::sqrt(norm(dist));                             // Scalar distance
+    return R;                                                   // Return scalar distance
   }
 
-  int Ivec2Morton(vec<3,int> Ivec, int level) const {
-    int n = 0;
-    for( int l=0; l!=level; ++l ) {
-      n += Ivec[0] % 2 << (3 * l);
-      n += Ivec[1] % 2 << (3 * l + 1);
-      n += Ivec[2] % 2 << (3 * l + 2);
-      Ivec[0] >>= 1;
-      Ivec[1] >>= 1;
-      Ivec[2] >>= 1;
-    }
-    return n;
-  }
-
-  void getLocalDomain(vect &xmin, vect &xmax, vec<3,int> &IvecSelf) const {
-    assert(MPIDIM[0]*MPIDIM[1]*MPIDIM[2] == MPISIZE);
-    int d = 0, n = MPIRANK;
-    IvecSelf = Morton2Ivec(n);
-    for( d=0; d!=3; ++d ) xmin[d] = X0[d] - R0 +  IvecSelf[d]      * 2 * R0 / MPIDIM[d];
-    for( d=0; d!=3; ++d ) xmax[d] = X0[d] - R0 + (IvecSelf[d] + 1) * 2 * R0 / MPIDIM[d];
-  }
-
-  void getNeighborList(vec<3,int> &IvecSelf, const vect &xmin, const vect &xmax) const {
-    vec<3,int> IvecNeighbor;
-    int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;
-    if( MPISIZE == 1 ) level = 0;
-    for( int ix=-1; ix<=1; ++ix ) {
-      for( int iy=-1; iy<=1; ++iy ) {
-        for( int iz=-1; iz<=1; ++iz ) {
-          IvecNeighbor[0] = (IvecSelf[0] + ix + MPIDIM[0]) % MPIDIM[0];
-          IvecNeighbor[1] = (IvecSelf[1] + iy + MPIDIM[1]) % MPIDIM[1];
-          IvecNeighbor[2] = (IvecSelf[2] + iz + MPIDIM[2]) % MPIDIM[2];
-          int irank = Ivec2Morton(IvecNeighbor,level);
-          if(MPIRANK==0) std::cout << irank << " " << IvecNeighbor << std::endl;
-        }
-      }
-    }
+//! Determine which cells to send
+  void traverseLET(C_iter C) {
+    int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
+    if( MPISIZE == 1 ) level = 0;                               // Account for serial case
+    for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {// Loop over child cells
+      // send CC
+      if( CC->NCHILD == 0 ) {                                   //  If cell is twig
+      // send CC->LEAF
+      } else {                                                  //  If cell is not twig
+        bool divide = false;                                    //   Initialize logical for dividing
+        if( IMAGES == 0 ) {                                     //   If free boundary condition
+          Xperiodic = 0;                                        //    Set periodic coordinate offset
+          real R = getDistance(CC);                             //    Get distance to other domain
+          divide |= 2 * CC->R > THETA * R;                      //    Divide if the cell seems too close
+        } else {                                                //   If periodic boundary condition
+          for( int ix=-1; ix<=1; ++ix ) {                       //    Loop over x periodic direction
+            for( int iy=-1; iy<=1; ++iy ) {                     //     Loop over y periodic direction
+              for( int iz=-1; iz<=1; ++iz ) {                   //      Loop over z periodic direction
+                Xperiodic[0] = ix * 2 * R0;                     //       Coordinate offset for x periodic direction
+                Xperiodic[1] = iy * 2 * R0;                     //       Coordinate offset for y periodic direction
+                Xperiodic[2] = iz * 2 * R0;                     //       Coordinate offset for z periodic direction
+                real R = getDistance(CC);                       //       Get distance to other domain
+                divide |= 2 * CC->R > THETA * R;                //       Divide if cell seems too close
+              }                                                 //      End loop over z periodic direction
+            }                                                   //     End loop over y periodic direction
+          }                                                     //    End loop over x periodic direction
+        }                                                       //   Endif for periodic boundary condition
+        divide |= CC->R > (R0 / (1 << level));                  //   Divide if cell is larger than local root cell
+        if( divide ) {                                          //   If cell has to be divided
+          getLET(CC);                                           //    Traverse the tree further
+        }                                                       //   Endif for cell division
+      }                                                         //  Endif for twig
+    }                                                           // End loop over child cells
   }
 
 public:
   ParallelFMM() {}
   ~ParallelFMM() {};
 
-  void commBodies(Cells &cells) {
-    vec<3,int> IvecSelf = 0;
-    vect xmin, xmax;
-    getLocalDomain(xmin,xmax,IvecSelf);
-    getNeighborList(IvecSelf,xmin,xmax);
+//! Get local essential tree to send to each process
+  void getLET(Cells &cells) {
+    Cj0 = cells.begin();                                        // Set begin iterator
+    C_iter Root;                                                // Root cell
+    if( TOPDOWN ) {                                             // If tree was constructed top down
+      Root = cells.begin();                                     //  The first cell is the root cell
+    } else {                                                    // If tree was constructed bottom up
+      Root = cells.end() - 1;                                   //  The last cell is the root cell
+    }                                                           // Endif for tree construction
+    traverseLET(Root);                                          // Traverse tree to get LET
   }
 
 };

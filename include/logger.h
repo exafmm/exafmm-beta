@@ -62,7 +62,7 @@ public:
   }
 
 //! Stop timer for given event
-  inline double stopTimer(std::string event, bool print=false) {
+  double stopTimer(std::string event, bool print=false) {
     double endTimer = get_time();                               // Get time of day and store in endTimer
     timer[event] += endTimer - beginTimer[event];               // Accumulate event time to timer
     if(print) std::cout << std::setw(stringLength) << std::left // Set format

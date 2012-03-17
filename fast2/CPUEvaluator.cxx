@@ -43,28 +43,32 @@ inline void Evaluator<equation>::direct(Bodies &ibodies, Bodies &jbodies) {// Ev
 template<Equation equation>
 inline void Evaluator<equation>::evalP2M(Cells &cells) {        // Evaluate all P2M kernels
   if( TOPDOWN ) {                                               // If tree was constructed top down
-    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {    //  Loop over cells
+    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {    //  Loop over cells forwards
       if( C->NCHILD == 0 ) P2M(C);                              //   If cell is a twig do P2M
     }                                                           //  End loop over cells
   } else {                                                      // If tree was constructed bottom up
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        //  Loop over cells
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        //  Loop over cells backwards
       if( C->NCHILD == 0 ) P2M(C);                              //   If cell is a twig do P2M
     }                                                           //  End loop over cells
-  }                                                             // End loop over cells
+  }                                                             // Endif for tree construction
 }
 
 template<Equation equation>
 inline void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all M2M kernels
   Cj0 = jcells.begin();                                         // Set begin iterator
   if( TOPDOWN ) {                                               // If tree was constructed top down
-    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {    //  Loop over cells
+    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {    //  Loop over cells forwards
       if( C->NCHILD != 0 ) M2M(C);                              //   If cell is not a twig do M2M
     }                                                           //  End loop over cells
+    cells.front().X = X0;                                       //  Set root center
+    cells.front().R = R0;                                       //  Set root radius
   } else {                                                      // If tree was constructed bottom up
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        //  Loop over cells
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        //  Loop over cells backwards
       if( C->NCHILD != 0 ) M2M(C);                              //   If cell is not a twig do M2M
     }                                                           //  End loop over cells
-  }                                                             // End loop over cells
+    cells.back().X = X0;                                        //  Set root center
+    cells.back().R = R0;                                        //  Set root radius
+  }                                                             // Endif for tree construction
 }
 
 template<Equation equation>
@@ -88,27 +92,27 @@ void Evaluator<equation>::evalP2P(C_iter Ci, C_iter Cj) {       // Evaluate sing
 template<Equation equation>
 inline void Evaluator<equation>::evalL2L(Cells &cells) {        // Evaluate all L2L kernels
   if( TOPDOWN ) {                                               // If tree was constructed top down
-    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {      //  Loop over cells
+    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {      //  Loop over cells forwards
       L2L(C);                                                   //   Do L2L
     }                                                           //  End loop over cells
   } else {                                                      // If tree was constructed bottom up
-    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {    //  Loop over cells
+    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {    //  Loop over cells backwards
       L2L(C);                                                   //   Do L2L
     }                                                           //  End loop over cells
-  }                                                             // End loop over cells
+  }                                                             // Endif for tree construction
 }
 
 template<Equation equation>
 inline void Evaluator<equation>::evalL2P(Cells &cells) {        // Evaluate all L2P kernels
   if( TOPDOWN ) {                                               // If tree was constructed top down
-    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {      //  Loop over cells
+    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {      //  Loop over cells forwards
       if( C->NCHILD == 0 ) L2P(C);                              //   If cell is a twig do L2P
     }                                                           //  End loop over cells
   } else {                                                      // If tree was constructed bottom up
-    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {    //  Loop over cells
+    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {    //  Loop over cells backwards
       L2P(C);                                                   //   Do L2P
     }                                                           //  End loop over cells
-  }                                                             // End loop over cells
+  }                                                             // Endif for tree construction
 }
 
 #if QUARK

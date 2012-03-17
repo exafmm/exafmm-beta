@@ -30,8 +30,8 @@ const int  P4 = P2 * P2;                                        //!< P^4
 //! Unified CPU/GPU kernel class
 class KernelBase : public Sort {
 protected:
-  C_iter               Ci0;                                     //!< icells.begin()
-  C_iter               Cj0;                                     //!< jcells.begin()
+  C_iter               Ci0;                                     //!< Begin iterator for target cells
+  C_iter               Cj0;                                     //!< Begin iterator for source cells
 
   int                  ATOMS;                                   //!< Number of atom types in Van der Waals
   std::vector<real>    RSCALE;                                  //!< Scaling parameter for Van der Waals

@@ -5,6 +5,7 @@ LFLAGS	+= -DBOTTOMUP
 
 a	: main.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
+#	mpirun -np 2 -machinefile ~/hosts ./a.out
 	./a.out
 
 b	: main.cxx $(OBJECT)

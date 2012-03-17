@@ -46,9 +46,10 @@ public:
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
   using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
   using Kernel<equation>::writeTrace;                           //!< Write traces of all events
+  using Kernel<equation>::X0;                                   //!< Center of root cell
   using Kernel<equation>::R0;                                   //!< Radius of root cell
-  using Kernel<equation>::Ci0;                                  //!< icells.begin()
-  using Kernel<equation>::Cj0;                                  //!< jcells.begin()
+  using Kernel<equation>::Ci0;                                  //!< Begin iterator for target cells
+  using Kernel<equation>::Cj0;                                  //!< Begin iterator for source cells
   using Kernel<equation>::P2M;                                  //!< Evaluate P2M kernel
   using Kernel<equation>::M2M;                                  //!< Evaluate M2M kernel
   using Kernel<equation>::M2L;                                  //!< Evaluate M2L kernel
@@ -74,14 +75,16 @@ private:
 #endif
   }
 
+//! Get iterator for root cell
   C_iter getRootCell(Cells &cells) {
-    if( TOPDOWN ) {
-      return cells.begin();
-    } else {
-      return cells.end() - 1;
-    }
+    if( TOPDOWN ) {                                             // If tree was constructed top down
+      return cells.begin();                                     //  Root cell is stored first
+    } else {                                                    // If tree was constructed bottom up
+      return cells.end() - 1;                                   //  Root cell is stored last
+    }                                                           // End if for tree construction
   }
 
+//! Set error controlled theta and corresponding critical cell radius
   void setRcrit(Cells &cells) {
     C_iter root = getRootCell(cells);
     real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(root->M[0]),1.0/3);
@@ -124,7 +127,11 @@ protected:
   void upwardPeriodic(Cells &cells) {
     startTimer("Upward periodic");                              // Start timer
     Cells pccells, pjcells;                                     // Periodic center cell and jcell
-    pccells.push_back(cells.back());                            // Root cell is first periodic cell
+    if( TOPDOWN ) {                                             // If tree was constructed top down
+      pccells.push_back(cells.front());                         //  The first cell is the first periodic cell
+    } else {                                                    // If tree was constructed bottom up
+      pccells.push_back(cells.back());                          //  The last cell is the first periodic cell
+    }                                                           // Endif for tree construction
     for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
       Cell cell;                                                //  New periodic cell at next sublevel
       C_iter C = pccells.end() - 1;                             //  Set previous periodic center cell as source
@@ -173,14 +180,14 @@ protected:
   }
 
   void traverse(Cells &icells, Cells &jcells) {
-    Ci0 = icells.begin();
-    Cj0 = jcells.begin();
-    Pair pair;
-    if( TOPDOWN ) {
-      pair = make_pair(icells.begin(),jcells.begin());          // Make pair of root cells
-    } else {
-      pair = make_pair(icells.end()-1,jcells.end()-1);          // Make pair of root cells
-    }
+    Ci0 = icells.begin();                                       // Begin iterator for target cells
+    Cj0 = jcells.begin();                                       // Begin iterator for source cells
+    Pair pair;                                                  // Form pair of cells
+    if( TOPDOWN ) {                                             // If tree was constructed top down
+      pair = make_pair(icells.begin(),jcells.begin());          //  The first cell is the root cell
+    } else {                                                    // If tree was constructed bottom up
+      pair = make_pair(icells.end()-1,jcells.end()-1);          //  The last cell is the root cell
+    }                                                           // Endif for tree construction
     PairQueue pairQueue;                                        // Queue of interacting cell pairs
     pairQueue.push(pair);                                       // Push pair of root cells to queue
 #if QUARK
@@ -221,6 +228,7 @@ protected:
     startTimer("Traverse periodic");                            // Start timer
     Xperiodic = 0;                                              // Set periodic coordinate offset
     Iperiodic = Icenter;                                        // Set periodic flag to center
+    C_iter Ci;                                                  // Initialize iterator for periodic target cell
     C_iter Cj = jcells.end()-1;                                 // Initialize iterator for periodic source cell
     for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
       for( int I=0; I!=26*27; ++I, --Cj ) {                     //  Loop over periodic images (exclude center)
@@ -231,7 +239,11 @@ protected:
           }                                                     //    Endif for twig
         }                                                       //   End loop over cells
 #else
-        C_iter Ci = cells.end() - 1;                            //   Set root cell as target iterator
+        if( TOPDOWN ) {                                         //   If tree was constructed top down
+          Ci = cells.begin();                                   //    Set first cell as periodic target iterator
+        } else {                                                //   If tree was constructed bottom up
+          Ci = cells.end() - 1;                                 //    Set last cell as periodic target iterator
+        }                                                       //   Endif for tree constructed
         evalM2L(Ci,Cj);                                         //   Perform M2P kernel
 #endif
       }                                                         //  End loop over x periodic direction

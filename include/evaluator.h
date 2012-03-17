@@ -54,8 +54,8 @@ public:
   using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
   using Kernel<equation>::writeTrace;                           //!< Write traces of all events
   using Kernel<equation>::R0;                                   //!< Radius of root cell
-  using Kernel<equation>::Ci0;                                  //!< icells.begin()
-  using Kernel<equation>::Cj0;                                  //!< jcells.begin()
+  using Kernel<equation>::Ci0;                                  //!< Begin iterator for target cells
+  using Kernel<equation>::Cj0;                                  //!< Begin iterator for source cells
   using Kernel<equation>::ALPHA;                                //!< Scaling parameter for Ewald summation
   using Kernel<equation>::keysHost;                             //!< Offsets for rangeHost
   using Kernel<equation>::rangeHost;                            //!< Offsets for sourceHost
