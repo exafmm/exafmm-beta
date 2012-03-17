@@ -77,32 +77,6 @@ private:
     }
   }
 
-  inline void twigs2cells(Cells &cells) const {
-    int begin = 0, end = cells.size();
-    float diameter = 2 * R0 / (1 << MAXLEVEL);
-    for( int level=MAXLEVEL-1; level>=0; --level ) {
-      int I = -1;
-      int p = end - 1;
-      int offset = ((1 << 3 * (level + 1)) - 1) / 7;
-      diameter *= 2;
-      for( int c=begin; c!=end; ++c ) {
-        int IC = (cells[c].ICELL - offset) / 8;
-        if( IC != I ) {
-          Cell cell;
-          initCell(cell,c,cells[c].LEAF,level,diameter);
-          cells.push_back(cell);
-          p++;
-          I = IC;
-        }
-        cells[p].NCHILD++;
-        cells[p].NDLEAF += cells[c].NDLEAF;
-        cells[c].PARENT = p;
-      }
-      begin = end;
-      end = cells.size();
-    }
-  }
-
 protected:
   inline void setIndex(Bodies &bodies) const {
     float diameter = 2 * R0 / (1 << MAXLEVEL);
@@ -156,7 +130,29 @@ protected:
 
   void linkTree(Cells &cells) {
     startTimer("Link tree");
-    twigs2cells(cells);
+    int begin = 0, end = cells.size();
+    float diameter = 2 * R0 / (1 << MAXLEVEL);
+    for( int level=MAXLEVEL-1; level>=0; --level ) {
+      int I = -1;
+      int p = end - 1;
+      int offset = ((1 << 3 * (level + 1)) - 1) / 7;
+      diameter *= 2;
+      for( int c=begin; c!=end; ++c ) {
+        int IC = (cells[c].ICELL - offset) / 8;
+        if( IC != I ) {
+          Cell cell;
+          initCell(cell,c,cells[c].LEAF,level,diameter);
+          cells.push_back(cell);
+          p++;
+          I = IC;
+        }
+        cells[p].NCHILD++;
+        cells[p].NDLEAF += cells[c].NDLEAF;
+        cells[c].PARENT = p;
+      }
+      begin = end;
+      end = cells.size();
+    }
     stopTimer("Link tree",printNow);
   }
 
