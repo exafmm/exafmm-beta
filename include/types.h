@@ -179,10 +179,10 @@ struct Node {
   vec<8,int> CHILD;                                             //!< Index of child node
   vect X;                                                       //!< Coordinate at center
   Leaf *LEAF;                                                   //!< Pointer to first leaf
-  Node() : NOCHILD(true), LEVEL(0), NLEAF(0), CHILD(0), X(0), LEAF(NULL) {}//!< Constructor
+  Node() : NOCHILD(true), LEVEL(0), NLEAF(0), CHILD(-1), X(0), LEAF(NULL) {}//!< Constructor
   ~Node() {}                                                    //!< Destructor
 //! Copy constructor
-  Node(const Node &node) : NOCHILD(true), LEVEL(0), NLEAF(0), CHILD(0), X(0), LEAF(NULL) {
+  Node(const Node &node) : NOCHILD(true), LEVEL(0), NLEAF(0), CHILD(-1), X(0), LEAF(NULL) {
     NOCHILD = node.NOCHILD;                                     // Copy NOCHILD
     LEVEL   = node.LEVEL;                                       // Copy LEVEL
     NLEAF   = node.NLEAF;                                       // Copy NLEAF
