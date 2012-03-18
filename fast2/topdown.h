@@ -122,7 +122,7 @@ private:
 
   void permuteBodies(Bodies &bodies) {
     Bodies buffer = bodies;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       B->ICELL = buffer[B->IBODY].ICELL;
       B->X     = buffer[B->IBODY].X;
       B->SRC   = buffer[B->IBODY].SRC;

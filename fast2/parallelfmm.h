@@ -31,8 +31,6 @@ private:
   vect thisXMIN;                                                //!< XMIN for a given rank
   vect thisXMAX;                                                //!< XMAX for a given rank
   B_iter Bj0;                                                   //!< Source bodies begin iterator
-  Bodies sendBodies;                                            //!< Send buffer for bodies
-  Bodies recvBodies;                                            //!< Receive buffer for bodies
   Cells sendCells;                                              //!< Send buffer for cells
   Cells recvCells;                                              //!< Receive buffer for cells
   int *sendCellCount;                                           //!< Send count
@@ -51,10 +49,14 @@ public:
   using Partition<equation>::print;                             //!< Print in MPI
   using Partition<equation>::XMIN;                              //!< Minimum position vector of bodies
   using Partition<equation>::XMAX;                              //!< Maximum position vector of bodies
+  using Partition<equation>::sendBodies;                        //!< Send buffer for bodies
+  using Partition<equation>::recvBodies;                        //!< Receive buffer for bodies
   using Partition<equation>::sendBodyCount;                     //!< Send count
   using Partition<equation>::sendBodyDispl;                     //!< Send displacement
   using Partition<equation>::recvBodyCount;                     //!< Receive count
   using Partition<equation>::recvBodyDispl;                     //!< Receive displacement
+  using Partition<equation>::alltoall;                          //!< Exchange send count for bodies
+  using Partition<equation>::alltoallv;                         //!< Exchange bodies
 
 private:
 //! Get disatnce to other domain
@@ -90,6 +92,7 @@ private:
     Csend->NDLEAF = C->NDLEAF;
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
       sendBodies.push_back(*B);
+      sendBodies.back().IPROC = IRANK;
       ibody++;
     }
   }
@@ -127,6 +130,30 @@ private:
         }                                                       //   Endif for cell division
       }                                                         //  Endif for twig
     }                                                           // End loop over child cells
+  }
+
+//! Exchange send count for cells
+  void alltoall(Cells &cells) {
+    MPI_Alltoall(sendCellCount,1,MPI_INT,                       // Communicate send count to get receive count
+                 recvCellCount,1,MPI_INT,MPI_COMM_WORLD);
+    recvCellDispl[0] = 0;                                       // Initialize receive displacements
+    for( int irank=0; irank!=MPISIZE-1; ++irank ) {             // Loop over ranks
+      recvCellDispl[irank+1] = recvCellDispl[irank] + recvCellCount[irank];//  Set receive displacement
+    }                                                           // End loop over ranks
+  }
+
+//! Exchange cells
+  void alltoallv(Cells &cells) {
+    int word = sizeof(cells[0]) / 4;                           // Word size of body structure
+    recvCells.resize(recvCellDispl[MPISIZE-1]+recvCellCount[MPISIZE-1]);// Resize receive buffer
+    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
+      sendCellCount[irank] *= word;                             //  Multiply send count by word size of data
+      sendCellDispl[irank] *= word;                             //  Multiply send displacement by word size of data
+      recvCellCount[irank] *= word;                             //  Multiply receive count by word size of data
+      recvCellDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
+    }                                                           // End loop over ranks
+    MPI_Alltoallv(&cells[0],sendCellCount,sendCellDispl,MPI_INT,// Communicate cells
+                  &recvCells[0],recvCellCount,recvCellDispl,MPI_INT,MPI_COMM_WORLD);
   }
 
 public:
@@ -174,6 +201,19 @@ public:
     stopTimer("Get LET",printNow);                              // Stop timer
     std::cout << MPIRANK << " " << cells.size() << " " << sendCells.size() << std::endl;
     std::cout << MPIRANK << " " << bodies.size() << " " << sendBodies.size() << std::endl;
+  }
+
+//! Send bodies
+  void commBodies() {
+    startTimer("Comm bodies");                                  // Start timer
+    alltoall(sendBodies);
+    alltoallv(sendBodies);
+    stopTimer("Comm bodies",printNow);                          // Stop timer
+  }
+
+//! Send cells
+  void commCells() {
+
   }
 
 };
