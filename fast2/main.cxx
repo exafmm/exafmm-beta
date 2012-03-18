@@ -96,9 +96,16 @@ int main() {
 #endif
   }
 
-  std::cout << std::endl;
+/*
+  if( printNow ) std::cout << std::endl;
   FMM.octsection(bodies);
-  FMM.getLET(cells);
+#if BOTTOMUP
+  FMM.bottomup(bodies,cells);
+#else
+  FMM.topdown(bodies,cells);
+#endif
+  FMM.getLET(bodies,cells);
+*/
 #ifdef VTK
   int Ncell = 0;                                                // Initialize number of cells
   vtkPlot vtk;                                                  // Instantiate vtkPlot class

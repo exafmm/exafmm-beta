@@ -127,7 +127,7 @@ enum Equation {                                                 //!< Equation ty
 //! Structure of source bodies (stuff to send)
 struct JBody {
   int         IBODY;                                            //!< Initial body numbering for sorting back
-  int         IPROC;                                            //!< Initial process numbering for partitioning back
+  int         IPROC;                                            //!< Initial process numbering for sending back
   bigint      ICELL;                                            //!< Cell index
   vect        X;                                                //!< Position
   real        SRC;                                              //!< Scalar source values
@@ -220,6 +220,7 @@ struct Cell {
   int    NDLEAF;                                                //!< Number of descendant leafs
   int    PARENT;                                                //!< Iterator offset of parent cell
   int    CHILD;                                                 //!< Iterator offset of child cells
+  int    ILEAF;                                                 //!< Iterator offset of first leaf
   B_iter LEAF;                                                  //!< Iterator of first leaf
   vect   X;                                                     //!< Cell center
   real   R;                                                     //!< Cell radius

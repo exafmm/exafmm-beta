@@ -34,7 +34,7 @@ public:
   void initSource(Bodies &bodies) {                             // Initialize source values
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       B->IBODY = B-bodies.begin();                              //  Tag body with initial index
-      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
+      B->IPROC = MPIRANK;
 //      B->SRC = (drand48() - .5) / bodies.size() / MPISIZE;      //  Initialize mass/charge
       B->SRC = 1. / bodies.size() / MPISIZE;                    //  Initialize mass/charge
     }                                                           // End loop over bodies
@@ -43,8 +43,6 @@ public:
   void initTarget(Bodies &bodies, bool IeqJ=true) {             // Initialize target values
     srand48(0);                                                 // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-//      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
-      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
       B->TRG = 0 * IeqJ;                                        //  Clear previous target values (IeqJ is dummy)
     }                                                           // End loop over bodies
   }

@@ -27,8 +27,18 @@ THE SOFTWARE.
 template<Equation equation>
 class ParallelFMM : public Partition<equation> {
 private:
+  int IRANK;                                                    //!< MPI rank loop counter
   vect thisXMIN;                                                //!< XMIN for a given rank
   vect thisXMAX;                                                //!< XMAX for a given rank
+  B_iter Bj0;                                                   //!< Source bodies begin iterator
+  Bodies sendBodies;                                            //!< Send buffer for bodies
+  Bodies recvBodies;                                            //!< Receive buffer for bodies
+  Cells sendCells;                                              //!< Send buffer for cells
+  Cells recvCells;                                              //!< Receive buffer for cells
+  int *sendCellCount;                                           //!< Send count
+  int *sendCellDispl;                                           //!< Send displacement
+  int *recvCellCount;                                           //!< Receive count
+  int *recvCellDispl;                                           //!< Receive displacement
 
 public:
   using Kernel<equation>::printNow;                             //!< Switch to print timings
@@ -41,6 +51,10 @@ public:
   using Partition<equation>::print;                             //!< Print in MPI
   using Partition<equation>::XMIN;                              //!< Minimum position vector of bodies
   using Partition<equation>::XMAX;                              //!< Maximum position vector of bodies
+  using Partition<equation>::sendBodyCount;                     //!< Send count
+  using Partition<equation>::sendBodyDispl;                     //!< Send displacement
+  using Partition<equation>::recvBodyCount;                     //!< Receive count
+  using Partition<equation>::recvBodyDispl;                     //!< Receive displacement
 
 private:
 //! Get disatnce to other domain
@@ -56,14 +70,38 @@ private:
     return R;                                                   // Return scalar distance
   }
 
+//! Add cells to send buffer
+  void addSendCell(C_iter C, int &icell) {
+    Cell cell(*C);
+    cell.NCHILD = cell.NCLEAF = cell.NDLEAF = 0;
+    cell.PARENT = icell - sendCellDispl[IRANK];
+    sendCells.push_back(cell);
+    C_iter Cparent = sendCells.begin() + icell;
+    icell = sendCells.size() - 1;
+    if( Cparent->NCHILD == 0 ) Cparent->CHILD = icell - sendCellDispl[IRANK];
+    Cparent->NCHILD++;
+  }
+
+//! Add bodies to send buffer
+  void addSendBody(C_iter C, int &ibody, int icell) {
+    C_iter Csend = sendCells.begin() + icell;
+    Csend->ILEAF = ibody;
+    Csend->NCLEAF = C->NCLEAF;
+    Csend->NDLEAF = C->NDLEAF;
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
+      sendBodies.push_back(*B);
+      ibody++;
+    }
+  }
+
 //! Determine which cells to send
-  void traverseLET(C_iter C) {
+  void traverseLET(C_iter C, int &ibody, int icell) {
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
     if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {// Loop over child cells
-      // send CC
+      addSendCell(CC,icell);                                    //  Add cells to send
       if( CC->NCHILD == 0 ) {                                   //  If cell is twig
-      // send CC->LEAF
+        addSendBody(CC,ibody,icell);                            //   Add bodies to send
       } else {                                                  //  If cell is not twig
         bool divide = false;                                    //   Initialize logical for dividing
         if( IMAGES == 0 ) {                                     //   If free boundary condition
@@ -85,34 +123,57 @@ private:
         }                                                       //   Endif for periodic boundary condition
         divide |= CC->R > (R0 / (1 << level));                  //   Divide if cell is larger than local root cell
         if( divide ) {                                          //   If cell has to be divided
-          traverseLET(CC);                                      //    Traverse the tree further
+          traverseLET(CC,ibody,icell);                          //    Traverse the tree further
         }                                                       //   Endif for cell division
       }                                                         //  Endif for twig
     }                                                           // End loop over child cells
   }
 
 public:
-  ParallelFMM() : thisXMIN(0), thisXMAX(0) {}
-  ~ParallelFMM() {};
+  ParallelFMM() {
+    sendCellCount = new int [MPISIZE];                          // Allocate send count
+    sendCellDispl = new int [MPISIZE];                          // Allocate send displacement
+    recvCellCount = new int [MPISIZE];                          // Allocate receive count
+    recvCellDispl = new int [MPISIZE];                          // Allocate receive displacement
+  }
+//! Destructor
+  ~ParallelFMM() {
+    delete[] sendCellCount;                                     // Deallocate send count
+    delete[] sendCellDispl;                                     // Deallocate send displacement
+    delete[] recvCellCount;                                     // Deallocate receive count
+    delete[] recvCellDispl;                                     // Deallocate receive displacement
+  }
 
 //! Get local essential tree to send to each process
-  void getLET(Cells &cells) {
+  void getLET(Bodies &bodies, Cells &cells) {
     startTimer("Get LET");                                      // Start timer
-    Cj0 = cells.begin();                                        // Set begin iterator
+    Bj0 = bodies.begin();                                       // Set bodies begin iterator
+    Cj0 = cells.begin();                                        // Set cells begin iterator
     C_iter Root;                                                // Root cell
     if( TOPDOWN ) {                                             // If tree was constructed top down
       Root = cells.begin();                                     //  The first cell is the root cell
     } else {                                                    // If tree was constructed bottom up
       Root = cells.end() - 1;                                   //  The last cell is the root cell
     }                                                           // Endif for tree construction
-    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
-      if( irank != MPIRANK ) {                                  //  If not current rank
-        thisXMIN = XMIN[irank];                                 //   Set XMIN for irank
-        thisXMAX = XMAX[irank];                                 //   Set XMAX for irank
-        traverseLET(Root);                                      //   Traverse tree to get LET
+    sendCells.reserve(cells.size()*27);                         // Reserve space for send buffer
+    sendCellDispl[0] = 0;                                       // Initialize displacement vector
+    for( IRANK=0; IRANK!=MPISIZE; ++IRANK ) {                   // Loop over ranks
+      if( IRANK != 0 ) sendCellDispl[IRANK] = sendCellDispl[IRANK-1] + sendCellCount[IRANK-1];// Update displacement
+      if( IRANK != MPIRANK ) {                                  //  If not current rank
+        thisXMIN = XMIN[IRANK];                                 //   Set XMIN for IRANK
+        thisXMAX = XMAX[IRANK];                                 //   Set XMAX for IRANK
+        Cell cell(*Root);                                       //   Send root cell
+        cell.NCHILD = cell.NCLEAF = cell.NDLEAF = 0;            //   Reset link to children and leafs
+        sendCells.push_back(cell);                              //   Push it into send buffer
+        int ibody = sendBodyDispl[IRANK];                       //   Current send bodies offset
+        int icell = sendCellDispl[IRANK];                       //   Current send cells offset
+        traverseLET(Root,ibody,icell);                          //   Traverse tree to get LET
       }                                                         //  Endif for current rank
+      sendCellCount[IRANK] = sendCells.size() - sendCellDispl[IRANK];// Send count for IRANK
     }                                                           // End loop over ranks
     stopTimer("Get LET",printNow);                              // Stop timer
+    std::cout << MPIRANK << " " << cells.size() << " " << sendCells.size() << std::endl;
+    std::cout << MPIRANK << " " << bodies.size() << " " << sendBodies.size() << std::endl;
   }
 
 };

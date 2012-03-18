@@ -30,14 +30,14 @@ class Partition : public MyMPI, public SerialFMM<equation> {
 private:
   vec<3,int> Npartition;                                        //!< Number of partitions in each direction
   vect       Xpartition;                                        //!< Size of partitions in each direction
-  int       *sendCount;                                         //!< Send count
-  int       *sendDispl;                                         //!< Send displacement
-  int       *recvCount;                                         //!< Receive count
-  int       *recvDispl;                                         //!< Receive displacement
 
 protected:
   std::vector<vect> XMIN;                                       //!< Minimum position vector of bodies
   std::vector<vect> XMAX;                                       //!< Maximum position vector of bodies
+  int       *sendBodyCount;                                     //!< Send count
+  int       *sendBodyDispl;                                     //!< Send displacement
+  int       *recvBodyCount;                                     //!< Receive count
+  int       *recvBodyDispl;                                     //!< Receive displacement
 
 public:
   using Kernel<equation>::printNow;                             //!< Switch to print timings
@@ -64,8 +64,11 @@ private:
       int ix = int((B->X[0] + R0 - X0[0]) / Xpartition[0]);     //  x contribution to send rank
       int iy = int((B->X[1] + R0 - X0[1]) / Xpartition[1]);     //  y contribution
       int iz = int((B->X[2] + R0 - X0[2]) / Xpartition[2]);     //  z contribution
-      B->ICELL = ix + Npartition[0] * (iy + iz * Npartition[1]);//  Set cell index to send rank
+      B->IPROC = ix + Npartition[0] * (iy + iz * Npartition[1]);//  Set send rank
+      B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
+    Bodies buffer = bodies;                                     // Sort buffer
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order of ICELL
   }
 
 //! Allgather boundaries of all partitions
@@ -89,55 +92,52 @@ private:
 
 //! Alltoall send count
   void alltoall(Bodies &bodies) {
-    Bodies buffer = bodies;                                     // Sort buffer
-    stopTimer("Partition");                                     // Stop timer 
-    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
-    startTimer("Partition");                                    // Start timer
     for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
-      sendCount[i] = 0;                                         //  Initialize send counts
+      sendBodyCount[i] = 0;                                     //  Initialize send counts
     }                                                           // End loop over ranks
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      sendCount[B->ICELL]++;                                    //  Fill send count bucket
+      sendBodyCount[B->IPROC]++;                                //  Fill send count bucket
+      B->IPROC = MPIRANK;                                       //  Tag for sending back to original rank
     }                                                           // End loop over bodies
-    MPI_Alltoall(sendCount,1,MPI_INT,recvCount,1,MPI_INT,MPI_COMM_WORLD);// Communicate send count to get recv count
+    MPI_Alltoall(sendBodyCount,1,MPI_INT,                       // Communicate send count to get recv count
+                 recvBodyCount,1,MPI_INT,MPI_COMM_WORLD);
   }
 
 //! Alltoallv bodies
   void alltoallv(Bodies &bodies) {
     int word = sizeof(bodies[0]) / 4;                           // Word size of body structure
-    sendDispl[0] = recvDispl[0] = 0;                            // Initialize send/recv displacements
+    sendBodyDispl[0] = recvBodyDispl[0] = 0;                    // Initialize send/recv displacements
     for( int irank=0; irank!=MPISIZE-1; ++irank ) {             // Loop over ranks
-      sendDispl[irank+1] = sendDispl[irank] + sendCount[irank]; //  Set send displacement based on send count
-      recvDispl[irank+1] = recvDispl[irank] + recvCount[irank]; //  Set recv displacement based on recv count
+      sendBodyDispl[irank+1] = sendBodyDispl[irank] + sendBodyCount[irank];//  Set send displacement based on send count
+      recvBodyDispl[irank+1] = recvBodyDispl[irank] + recvBodyCount[irank];//  Set recv displacement based on recv count
     }                                                           // End loop over ranks
-    Bodies buffer(recvDispl[MPISIZE-1]+recvCount[MPISIZE-1]);   // Resize recv buffer
+    Bodies buffer(recvBodyDispl[MPISIZE-1]+recvBodyCount[MPISIZE-1]);// Resize recv buffer
     for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
-      sendCount[irank] *= word;                                 //  Multiply send count by word size of data
-      sendDispl[irank] *= word;                                 //  Multiply send displacement by word size of data
-      recvCount[irank] *= word;                                 //  Multiply recv count by word size of data
-      recvDispl[irank] *= word;                                 //  Multiply recv displacement by word size of data
+      sendBodyCount[irank] *= word;                             //  Multiply send count by word size of data
+      sendBodyDispl[irank] *= word;                             //  Multiply send displacement by word size of data
+      recvBodyCount[irank] *= word;                             //  Multiply recv count by word size of data
+      recvBodyDispl[irank] *= word;                             //  Multiply recv displacement by word size of data
     }                                                           // End loop over ranks
-    MPI_Alltoallv(&bodies[0],sendCount,sendDispl,MPI_INT,       // Communicate bodies
-                  &buffer[0],recvCount,recvDispl,MPI_INT,MPI_COMM_WORLD);
+    MPI_Alltoallv(&bodies[0],sendBodyCount,sendBodyDispl,MPI_INT,// Communicate bodies
+                  &buffer[0],recvBodyCount,recvBodyDispl,MPI_INT,MPI_COMM_WORLD);
     bodies = buffer;                                            // Copy recv buffer to bodies
   }
 
 public:
 //! Constructor
-  Partition() : MyMPI(), Npartition(1), Xpartition(0),
-                sendCount(NULL), sendDispl(NULL), recvCount(NULL), recvDispl(NULL),
-                XMIN(), XMAX() {
-    sendCount = new int [MPISIZE];                              // Allocate send count
-    sendDispl = new int [MPISIZE];                              // Allocate send displacement
-    recvCount = new int [MPISIZE];                              // Allocate receive count
-    recvDispl = new int [MPISIZE];                              // Allocate receive displacement
+  Partition() : MyMPI(), Npartition(1), Xpartition(0), XMIN(), XMAX(),
+                sendBodyCount(NULL), sendBodyDispl(NULL), recvBodyCount(NULL), recvBodyDispl(NULL) {
+    sendBodyCount = new int [MPISIZE];                          // Allocate send count
+    sendBodyDispl = new int [MPISIZE];                          // Allocate send displacement
+    recvBodyCount = new int [MPISIZE];                          // Allocate receive count
+    recvBodyDispl = new int [MPISIZE];                          // Allocate receive displacement
   }
 //! Destructor
   ~Partition() {
-    delete[] sendCount;                                         // Deallocate send count
-    delete[] sendDispl;                                         // Deallocate send displacement
-    delete[] recvCount;                                         // Deallocate receive count
-    delete[] recvDispl;                                         // Deallocate receive displacement
+    delete[] sendBodyCount;                                     // Deallocate send count
+    delete[] sendBodyDispl;                                     // Deallocate send displacement
+    delete[] recvBodyCount;                                     // Deallocate receive count
+    delete[] recvBodyDispl;                                     // Deallocate receive displacement
   }
 
 //! Send bodies to next rank (round robin)
@@ -180,18 +180,12 @@ public:
   void unpartition(Bodies &bodies) {
     startTimer("Unpartition");                                  // Start timer
     int word = sizeof(bodies[0]) / 4;                           // Word size of body structure
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      B->ICELL = B->IPROC;                                      //  Copy process rank to cell index for sorting
-    }                                                           // End loop over bodies
-    Bodies buffer = bodies;                                     // Resize sort buffer
     stopTimer("Unpartition");                                   // Stop timer 
+    Bodies buffer = bodies;                                     // Resize sort buffer
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
     startTimer("Unpartition");                                  // Start timer
     alltoall(bodies);                                           // Alltoall send count
     alltoallv(bodies);                                          // Alltoallv bodies
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      assert(B->IPROC == MPIRANK);                              //  Make sure bodies are in the right rank
-    }                                                           // End loop over bodies
     stopTimer("Unpartition",printNow);                          // Stop timer 
   }
 };
