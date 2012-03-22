@@ -21,10 +21,10 @@ THE SOFTWARE.
 */
 #ifndef evaluator_h
 #define evaluator_h
-#if Cartesian
-#include "cartesian.h"
-#elif Spherical
+#if SPHERICAL
 #include "spherical.h"
+#else
+#include "cartesian.h"
 #endif
 #define splitFirst(Ci,Cj) Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT > Cj->RCRIT)
 

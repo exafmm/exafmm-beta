@@ -42,7 +42,10 @@ THE SOFTWARE.
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 #include "types.h"
-const int maxGroups = 1000000;
+
+// FIXME: This global is causing problems, since it used to initialize objects in the stack (stack overflow)
+// I think is best to allocate vtk data in heap using std::vector or something else
+const int maxGroups = 1000000; 
 
 //! Interactive VTK class
 class vtkSliderCallback : public vtkCommand {

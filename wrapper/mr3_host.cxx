@@ -4,7 +4,6 @@
 
 #include "mr3.h"
 
-#if CPU
 void MR3calccoulomb_ij(int ni, double xi[], double qi[], double force[],
                        int nj, double xj[], double qj[],
                        double rscale, 
@@ -335,5 +334,3 @@ void init_kvec(double ksize, int *kvec) {
     }
   }
 }
-
-#endif

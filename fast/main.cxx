@@ -48,10 +48,10 @@ int main() {
   bodies.resize(numBodies);
   DATA.cube(bodies);
   FMM.startTimer("FMM");
-#if BOTTOMUP
-  FMM.bottomup(bodies,cells);
-#else
+#if TOPDOWN
   FMM.topdown(bodies,cells);
+#else
+  FMM.bottomup(bodies,cells);
 #endif
 #if BUILD
 #else

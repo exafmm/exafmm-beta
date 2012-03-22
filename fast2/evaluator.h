@@ -114,7 +114,7 @@ protected:
     startTimer("Upward pass");
     evalP2M(cells);
     evalM2M(cells,cells);
-#if Cartesian
+#ifndef SPHERICAL
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
     }

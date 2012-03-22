@@ -53,13 +53,13 @@ int main(int, char **argv) {
   if( calcmode <= 1 )
     MR3calcewald(ki,((calcmode % 2)==0 ? 1:-1)*knum,x,N,q,alpha,1.0/(M_PI*4.0),cell,f,&tpot2,stress);
   else
-    MR3calcewald_host(ki,((calcmode % 2)==0 ? 1:-1)*knum,x,N,q,alpha,1.0/(M_PI*4.0),cell,f,&tpot2,stress);
+    MR3calcewald(ki,((calcmode % 2)==0 ? 1:-1)*knum,x,N,q,alpha,1.0/(M_PI*4.0),cell,f,&tpot2,stress);
 
   // Ewald real part
   if( calcmode <= 1 )
     MR3calccoulomb_ij(N,x,q,f,N,x,q,alpha,6+(calcmode % 2),xmax,1);
   else
-    MR3calccoulomb_ij_host(N,x,q,f,N,x,q,alpha,6+(calcmode % 2),xmax,1);
+    MR3calccoulomb_ij(N,x,q,f,N,x,q,alpha,6+(calcmode % 2),xmax,1);
 
   // Potential energy self term
   if( (calcmode % 2) == 1 ) {
@@ -107,7 +107,7 @@ int main(int, char **argv) {
         if( calcmode <= 1 )
           MR3calccoulomb_ij(N,x,q,fd,N,xj,q,1.0,0+(calcmode % 2),xmax*(2*images+2),0);
         else 
-          MR3calccoulomb_ij_host(N,x,q,fd,N,xj,q,1.0,0+(calcmode % 2),xmax*(2*images+2),0);
+          MR3calccoulomb_ij(N,x,q,fd,N,xj,q,1.0,0+(calcmode % 2),xmax*(2*images+2),0);
       }
     }
   }

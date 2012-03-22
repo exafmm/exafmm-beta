@@ -206,7 +206,7 @@ protected:
       P2M(C,Rmax);
       M2M(C,Rmax);
     }
-#if Cartesian
+#ifndef SPHERICAL
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
     }

@@ -1,8 +1,17 @@
 syntax: glob
-
 *.a
 *.dat
 *.o
 *.out
 *.swp
 .Apple*
+*~
+*.kdev*
+!.gitignore
+*.kate-swp
+build*
+bin*
+*.nfs*
+*.svn
+.directory
+*.git*

@@ -33,7 +33,8 @@ int main() {
   Cells cells, jcells;                                          // Define vector of cells
   ParallelFMM<Laplace> FMM;                                     // Instantiate ParallelFMM class
   FMM.initialize();                                             // Initialize FMM
-  if( MPIRANK == 0 ) bool printNow = true;                      // Print only if MPIRANK == 0
+  bool printNow = false;                                        // Print timer
+  if( MPIRANK == 0 ) printNow = true;                      // Print only if MPIRANK == 0
 
   for( int it=0; it!=25; ++it ) {                               // Loop over FMM iterations
     numBodies = int(pow(10,(it+32)/8.0));                       //  Exponentially increase N

@@ -58,7 +58,7 @@ public:
 
     Cells sticks;                                               // Sticks are twigs from other processes that are not twigs in the current process
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
-#if Cartesian
+#ifndef SPHERICAL
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
     }
@@ -85,7 +85,7 @@ public:
 
     Cells sticks;                                               // Sticks are twigs from other processes not twigs here
     twigs2cells(twigs,cells,sticks);                            // Turn twigs to cells
-#if Cartesian
+#ifndef SPHERICAL
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
     }
