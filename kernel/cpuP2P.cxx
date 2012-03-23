@@ -95,3 +95,26 @@ void Kernel<VanDerWaals>::P2P(C_iter Ci, C_iter Cj) const {     // Van der Waals
     }                                                           //  End loop over source bodies
   }                                                             // End loop over target bodies
 }
+
+#ifdef STOKES
+void Kernel<Stokes>::P2P(C_iter Ci, C_iter Cj) const           // Stokes P2P kernel on CPU
+{
+    for ( B_iter Bi = Ci->LEAF; Bi != Ci->LEAF + Ci->NDLEAF; ++Bi ){      // Loop over target bodies
+        for ( B_iter Bj = Cj->LEAF; Bj != Cj->LEAF + Cj->NDLEAF; ++Bj ){    //  Loop over source bodies
+            vect dx = Bi->X - Bj->X;
+            real r2 = norm(dx);
+            real d2 = delta * delta;
+            real R1 = r2 + d2;
+            real R2 = R1 + d2;
+            real invR = 1.0 / R1;
+            real H = std::sqrt(invR) * invR;
+            
+            real fdx = (Bj->FORCE[0] * dx[0] + Bj->FORCE[1] * dx[1] + Bj->FORCE[2] * dx[2]);
+            
+            Bi->TRG[0] += H * (Bj->FORCE[0] * R2 + fdx * dx[0]);
+            Bi->TRG[1] += H * (Bj->FORCE[1] * R2 + fdx * dx[1]);
+            Bi->TRG[2] += H * (Bj->FORCE[2] * R2 + fdx * dx[2]);
+        }                                                           //  End loop over source bodies
+    }                                                             // End loop over target bodies
+}
+#endif

@@ -83,13 +83,16 @@ IF(BUILD_TESTING)
 ENDIF(BUILD_TESTING)
 
 # Set documentation target
-SET(EXAFMM_VERSION 0.0)
-configure_file(
-  ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-)
+OPTION(BUILD_DOCS "Build doxygen documentation" OFF)
+IF(BUILD_DOCS)
+    SET(EXAFMM_VERSION 0.0)
+    configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    )
+    ADD_CUSTOM_TARGET(docs ALL COMMAND doxygen ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+ENDIF()
 
-ADD_CUSTOM_TARGET(docs ALL COMMAND doxygen ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Set/Check compiler flags
 INCLUDE(CheckCXXCompilerFlag)

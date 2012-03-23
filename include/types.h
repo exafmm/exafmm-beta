@@ -95,7 +95,11 @@ const int  PTHREADS = 4;                                        //!< Number of p
 
 const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
+#ifdef STOKES
+const int NTERM = 4*P*(P+1)/2;                                  //!< Number of Spherical multipole/local terms
+#else
 const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
+#endif
 
 #if SPHERICAL
 typedef vec<NTERM,complex>                     Mset;            //!< Multipole coefficient type for spherical
@@ -121,7 +125,8 @@ typedef std::map<std::string,double>::iterator TI_iter;         //!< Iterator fo
 
 enum Equation {                                                 //!< Equation type enumeration
   Laplace,                                                      //!< Laplace potential + force
-  VanDerWaals                                                   //!< Van der Walls potential + force
+  VanDerWaals,                                                  //!< Van der Walls potential + force
+  Stokes                                                        //!< Stokes kernels
 };
 
 //! Structure of source bodies (stuff to send)
@@ -130,6 +135,9 @@ struct JBody {
   int         IPROC;                                            //!< Initial process numbering for sending back
   bigint      ICELL;                                            //!< Cell index
   vect        X;                                                //!< Position
+#ifdef Stokes
+  vec         FORCES;
+#endif  
   real        SRC;                                              //!< Scalar source values
   JBody() : IBODY(0), IPROC(0), ICELL(0), X(0), SRC(0) {}       //!< Constructor
 };

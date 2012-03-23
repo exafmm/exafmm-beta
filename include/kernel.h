@@ -263,4 +263,37 @@ public:
   void deviceToHost();
 };
 
+template<>
+class Kernel<Stokes> : public KernelBase {
+public:
+    void initialize();                                            //!< Initialize kernels
+    void evalMultipole(real rho, real alpha, real beta, complex *Ynm) const;//!< Set Spherical multipole expansion
+    void evalMultipoleTheta(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const;//!< With dY/dtheta
+    void evalLocal(real rho, real alpha, real beta, complex *Ynm) const;//!< Set Spherical local expansion
+    void evalLocalTheta(real rho, real alpha, real beta, complex *Ynm, complex *YnmTheta) const;//!< With dY/dtheta    
+    void P2M(C_iter Ci) const;                                    //!< Evaluate P2M kernel on CPU
+    void M2M(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2M kernel on CPU
+    void M2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2L kernel on CPU
+    void M2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2P kernel on CPU
+    void P2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate P2P kernel on CPU
+    void L2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate L2L kernel on CPU
+    void L2P(C_iter Ci) const;                                    //!< Evaluate L2P kernel on CPU
+    void D2M(C_iter Ci) const;                                    //!< Evaluate D2P kernel on CPU
+    void P2M();                                                   //!< Evaluate P2M kernel on GPU
+    void M2M();                                                   //!< Evaluate M2M kernel on GPU
+    void M2L();                                                   //!< Evaluate M2L kernel on GPU
+    void M2P();                                                   //!< Evaluate M2P kernel on GPU
+    void P2P();                                                   //!< Evalaute P2P kernel on GPU
+    void L2L();                                                   //!< Evaluate L2L kernel on GPU
+    void L2P();                                                   //!< Evaluate L2P kernel on GPU
+    void finalize();                                              //!< Finalize kernels
+    
+    void allocate();                                              //!< Allocate GPU variables
+    void hostToDevice();                                          //!< Copy from host to device
+    void deviceToHost();
+    void setDelta(real _delta) { delta = _delta; }
+    real delta;
+};
+
+
 #endif
