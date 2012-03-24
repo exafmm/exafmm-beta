@@ -95,15 +95,16 @@ const int  PTHREADS = 4;                                        //!< Number of p
 
 const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
-#ifdef STOKES
-const int NTERM = 4*P*(P+1)/2;                                  //!< Number of Spherical multipole/local terms
-#else
 const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
-#endif
 
 #if SPHERICAL
+#if STOKES
+typedef vec<4*NTERM,complex>                     Mset;            //!< Multipole coefficient type for spherical
+typedef vec<4*NTERM,complex>                     Lset;            //!< Local coefficient type for spherical
+#else
 typedef vec<NTERM,complex>                     Mset;            //!< Multipole coefficient type for spherical
 typedef vec<NTERM,complex>                     Lset;            //!< Local coefficient type for spherical
+#endif
 #else
 typedef vec<MTERM,real>                        Mset;            //!< Multipole coefficient type for Cartesian
 typedef vec<LTERM,real>                        Lset;            //!< Local coefficient type for Cartesian
@@ -135,11 +136,15 @@ struct JBody {
   int         IPROC;                                            //!< Initial process numbering for sending back
   bigint      ICELL;                                            //!< Cell index
   vect        X;                                                //!< Position
-#ifdef Stokes
-  vec         FORCES;
+#if STOKES
+  vect        FORCE;
 #endif  
   real        SRC;                                              //!< Scalar source values
-  JBody() : IBODY(0), IPROC(0), ICELL(0), X(0), SRC(0) {}       //!< Constructor
+  JBody() :
+#if STOKES
+  FORCE(0),
+#endif
+  IBODY(0), IPROC(0), ICELL(0), X(0), SRC(0) {}       //!< Constructor
 };
 typedef std::vector<JBody>             JBodies;                 //!< Vector of source bodies
 typedef std::vector<JBody>::iterator   JB_iter;                 //!< Iterator for source body vector

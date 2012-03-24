@@ -468,10 +468,12 @@ public:
 
 #if GPU
 #include "../kernel/GPUEvaluator.cxx"
-#elif STOKES
-#include "../kernel/hybridStokesEvaluator.cxx"
 #else
 #include "../kernel/CPUEvaluator.cxx"
+#endif
+
+#if STOKES
+#include "../kernel/hybridStokesEvaluator.cxx"
 #endif
 
 #undef splitFirst

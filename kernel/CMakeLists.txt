@@ -1,14 +1,15 @@
 
 IF(USE_SPHERICAL)
-    set(cpu_kernels CPUP2P.cxx CPUSphericalLaplace.cxx CPUSphericalStokes.cxx)
+    set(cpu_kernels CPUSphericalStokes.cxx CPUSphericalLaplace.cxx)
 ELSE()
-    set(cpu_kernels CPUP2P.cxx CPUCartesianLaplace.cxx)
+    set(cpu_kernels CPUCartesianLaplace.cxx)
 ENDIF()
 
-ADD_LIBRARY(cpuKernel ${cpu_kernels} CPUVanDerWaals.cxx CPUEwaldLaplace.cxx)
+set(gpu_kernels GPUSphericalStokes.cu GPUSphericalLaplace.cu GPUVanDerWaals.cu)
 
-IF(USE_GPU)
-    SET(CUDA_TARGETS_SOURCES GPUSphericalLaplace.cu GPUSphericalStokes.cu GPUVanDerWaals.cu CPUP2P.cxx)
-    cuda_add_library(gpuKernel STATIC ${CUDA_TARGETS_SOURCES})
-    TARGET_LINK_LIBRARIES(gpuKernel ${CUDA_LIBRARIES})
-ENDIF(USE_GPU)
+IF(USE_CUDA)
+    cuda_add_library(Kernels STATIC ${gpu_kernels} ${cpu_kernels} CPUP2P.cxx)
+    TARGET_LINK_LIBRARIES(Kernels ${CUDA_LIBRARIES})
+ELSE()
+    ADD_LIBRARY(Kernels ${cpu_kernels} CPUP2P.cxx CPUVanDerWaals.cxx CPUEwaldLaplace.cxx)
+ENDIF()

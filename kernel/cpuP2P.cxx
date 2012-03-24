@@ -96,7 +96,7 @@ void Kernel<VanDerWaals>::P2P(C_iter Ci, C_iter Cj) const {     // Van der Waals
   }                                                             // End loop over target bodies
 }
 
-#ifdef STOKES
+#if STOKES
 void Kernel<Stokes>::P2P(C_iter Ci, C_iter Cj) const           // Stokes P2P kernel on CPU
 {
     for ( B_iter Bi = Ci->LEAF; Bi != Ci->LEAF + Ci->NDLEAF; ++Bi ){      // Loop over target bodies

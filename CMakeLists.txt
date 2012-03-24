@@ -5,6 +5,49 @@ IF (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
        message(FATAL_ERROR "Rejecting in-place build. Please use a build directory")
 ENDIF()
 
+## Setup configuration parameters ##
+
+option(USE_STOKES "Use Stokes kernels" OFF)
+IF(USE_STOKES)
+    SET(USE_CUDA ON)
+    SET(USE_SPHERICAL ON)
+    ADD_DEFINITIONS(-DSTOKES)
+ENDIF()
+
+# Use periodic images
+OPTION(USE_IMAGES "Use periodic images" OFF)
+IF(USE_IMAGES)
+    ADD_DEFINITIONS(-DIMAGES)
+ENDIF()
+
+# Use topdown tree construction
+OPTION(USE_TOPDOWN "Use topdown tree construction" OFF)
+IF(USE_TOPDOWN)
+    ADD_DEFINITIONS(-DTOPDOWN)
+ENDIF()
+
+# Optimization for spark processors
+OPTION(USE_SPARC_SIMD "Use Spark optimizations" OFF)
+IF(USE_TOPDOWN)
+    ADD_DEFINITIONS(-DSPARC_SIMD)
+ENDIF()
+
+# Use spherical harmonics
+OPTION(USE_SPHERICAL "Use Spherical Harmonics Expansions" OFF)
+IF(USE_SPHERICAL)
+    ADD_DEFINITIONS(-DSPHERICAL)
+ENDIF()
+
+OPTION(USE_TREECODE "Use treecode methods" OFF)
+OPTION(USE_HYBRID "Use a hybrid algorithm (FMM+Treecode)" OFF)
+
+IF(USE_TREECODE)
+    add_definitions(-DTREECODE)
+ENDIF()
+
+IF(USE_HYBRID)
+    add_definitions(-DHYBRID)
+ENDIF()
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include)
 ADD_DEFINITIONS(-D_FILE_OFFSET_BITS=64)
 
@@ -27,10 +70,14 @@ IF(USE_MPI)
     INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
 ENDIF()
 
-#FindCUDA
-OPTION(USE_GPU "Use GPU kernels" OFF)
+OPTION(USE_GPU "Build GPU kernels" OFF)
 IF(USE_GPU)
+    SET(USE_CUDA ON)
     ADD_DEFINITIONS(-DGPU)
+ENDIF()
+
+#FindCUDA
+IF(USE_CUDA)
     FIND_PACKAGE(CUDA REQUIRED)
     SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -gencode arch=compute_20,code=sm_20 --ptxas-options=-v -use_fast_math)
     IF(NOT CMAKE_COMPILER_IS_GNUCXX)
@@ -52,30 +99,6 @@ IF(USE_QUARK)
     INCLUDE_DIRECTORIES(external/quark)
 ENDIF(USE_QUARK)
 
-## Setup configuration parameters ##
-
-# Use topdown tree construction
-OPTION(USE_TOPDOWN "Use topdown tree construction" OFF)
-IF(USE_TOPDOWN)
-    ADD_DEFINITIONS(-DTOPDOWN)
-ENDIF()
-
-# Use spherical harmonics
-OPTION(USE_SPHERICAL "Use Spherical Harmonics Expansions" OFF)
-IF(USE_SPHERICAL)
-    ADD_DEFINITIONS(-DSPHERICAL)
-ENDIF()
-
-OPTION(USE_TREECODE "Use treecode methods" OFF)
-OPTION(USE_HYBRID "Use a hybrid algorithm (FMM+Treecode)" OFF)
-
-IF(USE_TREECODE)
-    add_definitions(-DTREECODE)
-ENDIF()
-
-IF(USE_HYBRID)
-    add_definitions(-DHYBRID)
-ENDIF()
 
 INCLUDE(CTest)
 IF(BUILD_TESTING)

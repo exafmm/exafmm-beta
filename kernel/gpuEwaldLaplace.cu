@@ -125,13 +125,13 @@ template<>
 void Kernel<Laplace>::EwaldReal() {
   cudaThreadSynchronize();
   startTimer("EwaldReal GPU");
-  int numBlocks = keysHost.size();\
-  if( numBlocks != 0 ) {\
-    LaplaceEwaldReal_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
-  }\
-  CUT_CHECK_ERROR("Kernel execution failed");\
-  cudaThreadSynchronize();\
-  stopTimer("EwaldReal GPU");\
+  int numBlocks = keysHost.size();
+  if( numBlocks != 0 ) {
+    LaplaceEwaldReal_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
+  }
+  CUT_CHECK_ERROR("Kernel execution failed");
+  cudaThreadSynchronize();
+  stopTimer("EwaldReal GPU");
 }
 
 __global__ void dft(gpureal *ewaldsGlob, gpureal *bodiesGlob, const int numEwalds, const int numBodies, const real R0) {
@@ -261,6 +261,8 @@ void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {     // Ewald wave part o
   int numEwalds = ewalds.size();
   int paddedBodies = ((numBodies-1) / THREADS + 1) * THREADS;
   int paddedEwalds = ((numEwalds-1) / THREADS + 1) * THREADS;
+
+  // FIXME: Possible memory leak! where are the delete [] statements?
   gpureal *bodiesHost = new gpureal [8*paddedBodies];
   gpureal *ewaldsHost = new gpureal [5*paddedEwalds];
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {

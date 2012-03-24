@@ -20,7 +20,8 @@
  * THE SOFTWARE.
  */
 
-#ifdef STOKES
+#if STOKES
+template<>
 void Evaluator<Stokes>::setSourceBody()                       // Set source buffer for bodies
 {
     startTimer("Set sourceB  ");                                  // Start timer
@@ -42,6 +43,7 @@ void Evaluator<Stokes>::setSourceBody()                       // Set source buff
 }
 #endif
 
+template<>
 void Evaluator<Stokes>::setTargetBody(Lists lists, Maps flags)  // Set target buffer for bodies
 {
     startTimer("Set targetB  ");                                  // Start timer
@@ -85,6 +87,7 @@ void Evaluator<Stokes>::setTargetBody(Lists lists, Maps flags)  // Set target bu
     stopTimer("Set targetB  ");                                   // Stop timer
 }
 
+template<>
 void Evaluator<Stokes>::getTargetBody(Lists &lists)           // Get body values from target buffer
 {
     startTimer("Get targetB  ");                                  // Start timer
@@ -106,6 +109,7 @@ void Evaluator<Stokes>::getTargetBody(Lists &lists)           // Get body values
     stopTimer("Get targetB  ");                                   // Stop timer
 }
 
+template<>
 void Evaluator<Stokes>::clearBuffers()                        // Clear GPU buffers
 {
     startTimer("Clear buffer ");                                  // Start timer
@@ -119,7 +123,8 @@ void Evaluator<Stokes>::clearBuffers()                        // Clear GPU buffe
     targetBegin.clear();                                          // Clear map for offset of target cells
     stopTimer("Clear buffer ");                                   // Stop timer
 }
-#ifdef STOKES
+#if STOKES
+template<>
 void Evaluator<Stokes>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU)  // Evaluate all P2P kernels
 {
     int numIcall = int(ibodies.size() - 1) / MAXBODY + 1;         // Number of icall loops
@@ -206,137 +211,7 @@ void Evaluator<Stokes>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU)  /
 }
 #endif
 
-void Evaluator<Stokes>::evalP2M(Cells &cells)                 // Evaluate all P2M kernels
-{
-    startTimer("evalP2M      ");                                  // Start timer
-    for (C_iter C = cells.begin(); C != cells.end(); ++C)         // Loop over cells
-    {
-        C->M = 0;                                                   //  Initialize multipole coefficients
-        C->L = 0;                                                   //  Initialize local coefficients
-        if (C->NCHILD == 0)                                         //  If cell is a twig
-        {
-            P2M(C);                                                   //   Perform P2M kernel
-        }                                                           //  Endif for twig
-    }                                                             // End loop over cells
-    stopTimer("evalP2M      ");                                   // Stop timer
-}
-
-
-void Evaluator<Stokes>::evalM2M(Cells &cells, Cells &jcells)  // Evaluate all M2M kernels
-{
-    startTimer("evalM2M      ");                                  // Start timer
-    Cj0 = jcells.begin();                                         // Set begin iterator
-    for (C_iter Ci = cells.begin(); Ci != cells.end(); ++Ci)      // Loop over target cells bottomup
-    {
-        for (C_iter Cj = Cj0 + Ci->CHILD; Cj != Cj0 + Ci->CHILD + Ci->NCHILD; ++Cj)  // Loop over child cells
-        {
-            M2M(Ci, Cj);                                              //   Perform M2M kernel
-        }                                                           //  End loop over child cells
-    }                                                             // End loop target over cells
-    stopTimer("evalM2M      ");                                   // Stop timer
-}
-
-
-void Evaluator<Stokes>::evalM2L(C_iter Ci, C_iter Cj)         // Evaluate single M2L kernel
-{
-    startTimer("evalM2L      ");
-    M2L(Ci, Cj);                                                  // Perform M2L kernel
-    stopTimer("evalM2L      ");
-    NM2L++;                                                       // Count M2L kernel execution
-}
-
-
-void Evaluator<Stokes>::evalM2L(Cells &cells)                 // Evaluate queued M2L kernels
-{
-    startTimer("evalM2L      ");                                  // Start timer
-    Ci0 = cells.begin();                                          // Set begin iterator
-    for (C_iter Ci = cells.begin(); Ci != cells.end(); ++Ci)      // Loop over cells
-    {
-        while (!listM2L[Ci-Ci0].empty())                            //  While M2L interaction list is not empty
-        {
-            C_iter Cj = listM2L[Ci-Ci0].back();                       //   Set source cell iterator
-            Iperiodic = flagM2L[Ci-Ci0][Cj];                          //   Set periodic image flag
-            int I = 0;                                                //   Initialize index of periodic image
-            for (int ix = -1; ix <= 1; ++ix)                          //   Loop over x periodic direction
-            {
-                for (int iy = -1; iy <= 1; ++iy)                        //    Loop over y periodic direction
-                {
-                    for (int iz = -1; iz <= 1; ++iz, ++I)                 //     Loop over z periodic direction
-                    {
-                        if (Iperiodic & (1 << I))                           //      If periodic flag is on
-                        {
-                            Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
-                            Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
-                            Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
-                            M2L(Ci, Cj);                                      //       Perform M2L kernel
-                            NM2L++;       
-                        }                                                   //      Endif for periodic flag
-                    }                                                     //     End loop over x periodic direction
-                }                                                       //    End loop over y periodic direction
-            }                                                         //   End loop over z periodic direction
-            listM2L[Ci-Ci0].pop_back();                               //   Pop last element from M2L interaction list
-        }                                                           //  End while for M2L interaction list
-    }                                                             // End loop over cells topdown
-    listM2L.clear();                                              // Clear interaction lists
-    flagM2L.clear();                                              // Clear periodic image flags
-    stopTimer("evalM2L      ");                                   // Stop timer
-}
-
-
-void Evaluator<Stokes>::evalM2P(C_iter Ci, C_iter Cj)         // Evaluate single M2P kernel
-{
-    startTimer("evalM2P      ");                                  // Start timer
-    M2P(Ci, Cj);                                                  // Perform M2P kernel
-    stopTimer("evalM2P      ");                                   // Stop timer
-    NM2P++;                                                       // Count M2P kernel execution
-}
-
-
-void Evaluator<Stokes>::evalM2P(Cells &cells)                 // Evaluate queued M2P kernels
-{
-    startTimer("evalM2P      ");                                  // Start timer
-    Ci0 = cells.begin();                                          // Set begin iterator
-    for (C_iter Ci = cells.begin(); Ci != cells.end(); ++Ci)      // Loop over cells
-    {
-        while (!listM2P[Ci-Ci0].empty())                            //  While M2P interaction list is not empty
-        {
-            C_iter Cj = listM2P[Ci-Ci0].back();                       //   Set source cell iterator
-            Iperiodic = flagM2P[Ci-Ci0][Cj];                          //   Set periodic image flag
-            int I = 0;                                                //   Initialize index of periodic image
-            for (int ix = -1; ix <= 1; ++ix)                          //   Loop over x periodic direction
-            {
-                for (int iy = -1; iy <= 1; ++iy)                        //    Loop over y periodic direction
-                {
-                    for (int iz = -1; iz <= 1; ++iz, ++I)                 //     Loop over z periodic direction
-                    {
-                        if (Iperiodic & (1 << I))                           //      If periodic flag is on
-                        {
-                            Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
-                            Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
-                            Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
-                            M2P(Ci, Cj);                                      //       Perform M2P kernel
-                            NM2P++;
-                        }                                                   //      Endif for periodic flag
-                    }                                                     //     End loop over x periodic direction
-                }                                                       //    End loop over y periodic direction
-            }                                                         //   End loop over z periodic direction
-            listM2P[Ci-Ci0].pop_back();                               //   Pop last element from M2P interaction list
-        }                                                           //  End while for M2P interaction list
-    }                                                             // End loop over cells topdown
-    listM2P.clear();                                              // Clear interaction lists
-    flagM2P.clear();                                              // Clear periodic image flags
-    stopTimer("evalM2P      ");                                   // Stop timer
-}
-
-
-void Evaluator<Stokes>::evalP2P(C_iter Ci, C_iter Cj)         // Queue single P2P kernel
-{
-    listP2P[Ci-Ci0].push_back(Cj);                                // Push source cell into P2P interaction list
-    flagP2P[Ci-Ci0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
-    NP2P++;                                                       // Count P2P kernel execution
-}
-
-
+template<>
 void Evaluator<Stokes>::evalP2P(Cells &cells)                 // Evaluate queued P2P kernels
 {
     Ci0 = cells.begin();                                          // Set begin iterator
@@ -372,107 +247,4 @@ void Evaluator<Stokes>::evalP2P(Cells &cells)                 // Evaluate queued
     flagP2P.clear();                                              // Clear periodic image flags
 }
 
-
-void Evaluator<Stokes>::evalL2L(Cells &cells)                 // Evaluate all L2L kernels
-{
-    startTimer("evalL2L      ");                                  // Start timer
-    Ci0 = cells.begin();                                          // Set begin iterator
-    for (C_iter Ci = cells.end() - 2; Ci != cells.begin() - 1; --Ci)     // Loop over cells topdown (except root cell)
-    {
-        C_iter Cj = Ci0 + Ci->PARENT;                               //  Set source cell iterator
-        L2L(Ci, Cj);                                                //  Perform L2L kernel
-    }                                                             // End loop over cells topdown
-    stopTimer("evalL2L      ");                                   // Stop timer
-}
-
-
-void Evaluator<Stokes>::evalL2P(Cells &cells)                 // Evaluate all L2P kernels
-{
-    startTimer("evalL2P      ");                                  // Start timer
-    for (C_iter C = cells.begin(); C != cells.end(); ++C)         // Loop over cells
-    {
-        if (C->NCHILD == 0)                                         //  If cell is a twig
-        {
-            L2P(C);                                                   //   Perform L2P kernel
-        }                                                           //  Endif for twig
-    }                                                             // End loop over cells topdown
-    stopTimer("evalL2P      ");                                   // Stop timer
-}
-
-
-void Evaluator<Stokes>::timeKernels()                         // Time all kernels for auto-tuning
-{
-    Bodies ibodies(1000), jbodies(1000);                          // Artificial bodies
-    for (B_iter Bi = ibodies.begin(), Bj = jbodies.begin(); Bi != ibodies.end(); ++Bi, ++Bj)  // Loop over artificial bodies
-    {
-        Bi->X = 0;                                                  //  Set coordinates of target body
-        Bj->X = 1;                                                  //  Set coordinates of source body
-    }                                                             // End loop over artificial bodies
-    Cells cells;                                                  // Artificial cells
-    cells.resize(2);                                              // Two artificial cells
-    C_iter Ci = cells.begin(), Cj = cells.begin() + 1;            // Artificial target & source cell
-    Ci->X = 0;                                                    // Set coordinates of target cell
-    Ci->NDLEAF = 10;                                              // Number of leafs in target cell
-    Ci->LEAF = ibodies.begin();                                   // Leaf iterator in target cell
-    Cj->X = 1;                                                    // Set coordinates of source cell
-    Cj->NDLEAF = 1000;                                            // Number of leafs in source cell
-    Cj->LEAF = jbodies.begin();                                   // Leaf iterator in source cell
-    
-    startTimer("M2L kernel   ");                                  // Start timer
-    for (int i = 0; i != 1000; ++i) M2L(Ci, Cj);                  // Perform M2L kernel
-    timeM2L = stopTimer("M2L kernel   ") / 1000;                  // Stop timer
-    startTimer("M2P kernel   ");                                  // Start timer
-    for (int i = 0; i != 100; ++i) M2P(Ci, Cj);                   // Perform M2P kernel
-    timeM2P = stopTimer("M2P kernel   ") / 1000;                  // Stop timer
-    
-    Cells icells, jcells;                                         // Artificial cells
-    icells.resize(10);                                            // 100 artificial target cells
-    jcells.resize(100);                                           // 100 artificial source cells
-    Ci0 = icells.begin();                                         // Set global begin iterator for source
-    for (Ci = icells.begin(); Ci != icells.end(); ++Ci)    // Loop over target cells
-    {
-        Ci->X = 0;                                                  //  Set coordinates of target cell
-        Ci->NDLEAF = 100;                                           //  Number of leafs in target cell
-        Ci->LEAF = ibodies.begin();                                 //  Leaf iterator in target cell
-    }                                                             // End loop over target cells
-    for (Cj = jcells.begin(); Cj != jcells.end(); ++Cj)    // Loop over source cells
-    {
-        Cj->X = 1;                                                  //  Set coordinates of source cell
-        Cj->NDLEAF = 100;                                           //  Number of leafs in source cell
-        Cj->LEAF = jbodies.begin();                                 //  Leaf iterator in source cell
-    }                                                             // End loop over source cells
-    listP2P.resize(icells.size());                                // Resize P2P interaction list
-    flagP2P.resize(icells.size());
-    for (Ci = icells.begin(); Ci != icells.end(); ++Ci)    // Loop over target cells
-    {
-        for (Cj = jcells.begin(); Cj != jcells.end(); ++Cj)  //  Loop over source cells
-        {
-            listP2P[Ci-Ci0].push_back(Cj);                            //   Push source cell into P2P interaction list
-        }                                                           //  End loop over source cells
-    }
-}
-
-#if QUARK
-template<>
-void Evaluator<Stokes>::interact(C_iter CI, C_iter CJ, Quark*) {
-    PairQueue privateQueue;
-    Pair pair(CI,CJ);
-    privateQueue.push(pair);
-    while( !privateQueue.empty() ) {
-        Pair Cij = privateQueue.front();
-        privateQueue.pop();
-        if(splitFirst(Cij.first,Cij.second)) {
-            C_iter C = Cij.first;
-            for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-                interact(Ci,Cij.second,privateQueue);
-            }
-        } else {
-            C_iter C = Cij.second;
-            for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-                interact(Cij.first,Cj,privateQueue);
-            }
-        }
-    }
-}
-#endif
 
