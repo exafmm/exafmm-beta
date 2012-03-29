@@ -55,7 +55,7 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib
 
 ### MassiveThreads flags
 ###   -std=c++0x necessary for closures
-LFLAGS  +=  -std=c++0x -DMTHREADS -I$(MT_INCLUDE_PATH) -L$(MT_LIBRARY_PATH) -Wl,-R$(MT_LIBRARY_PATH) -lmyth -ldl 
+# LFLAGS  +=  -std=c++0x -DMTHREADS -I$(MT_INCLUDE_PATH) -L$(MT_LIBRARY_PATH) -Wl,-R$(MT_LIBRARY_PATH) -lmyth -ldl 
 
 
 ifeq ($(DEVICE),GPU)
