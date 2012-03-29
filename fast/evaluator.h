@@ -69,7 +69,12 @@ private:
     NM2P++;
 #else
     M2L(Ci,Cj,mutual);
+#if MTHREADS
+      /* cause race and cause lots of cache pingpong. we need an alternative
+	 method but we simply turn it off for now */
+#else
     NM2L++;
+#endif
 #endif
   }
 
@@ -236,6 +241,76 @@ protected:
     QUARK_Delete(quark);
     writeTrace();
 #endif
+  }
+
+#if MTHREADS
+#define spawn_if(cond, block) if(cond) tg.run([=] block); else block
+#define spawn_block() task_group tg
+#define wait_spawned() tg.wait()
+#else
+#define spawn_if(cond, block) block
+#define spawn_block() 
+#define wait_spawned() 
+#endif
+
+  /* note: parallelization is valid only when mutual=false.
+     otherwise race condition will occur when accmulating force/potential */
+
+  void traverse_rec(C_iter C, bool mutual, int create_thresh) {
+    if(C->NCHILD == 0 || C->NDLEAF < 64) {
+      P2P(C);
+#if MTHREADS
+      /* cause race and cause lots of cache pingpong. we need an alternative
+	 method but we simply turn it off for now */
+#else
+      NP2P++;
+#endif
+    } else {
+      spawn_block();
+      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
+	spawn_if(C->NDLEAF > create_thresh, 
+	 {
+	   if (!mutual) {
+	     for( C_iter Cj=Ci0+C->CHILD; Cj!=Ci; ++Cj ) {
+	       traverse_rec(Ci,Cj,mutual,create_thresh);
+	     }
+	   }
+	   traverse_rec(Ci,mutual,create_thresh);
+	   for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
+	     traverse_rec(Ci,Cj,mutual,create_thresh);
+	   }
+	 });
+      }
+      wait_spawned();
+    }
+  }
+
+  void traverse_rec(C_iter Ci, C_iter Cj, bool mutual, int create_thresh) {
+    vect dX = Ci->X - Cj->X;
+    real Rq = norm(dX);
+    if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+      approximate(Ci,Cj,mutual);
+    } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
+      P2P(Ci,Cj,mutual);
+#if MTHREADS
+      /* cause race and cause lots of cache pingpong. we need an alternative
+	 method but we simply turn it off for now */
+#else
+      NP2P++;
+#endif
+    } else if(splitFirst(Ci,Cj)) {
+      spawn_block();
+      for( C_iter Cx=Ci0+Ci->CHILD; Cx!=Ci0+Ci->CHILD+Ci->NCHILD; ++Cx ) {
+	spawn_if(Cj->NDLEAF > create_thresh,
+		 { traverse_rec(Cx,Cj,mutual,create_thresh); });
+      }
+      wait_spawned();
+    } else {
+      /* we cannot parallelize it due to race condition on Ci */
+      for( C_iter Cx=Cj0+Cj->CHILD; Cx!=Cj0+Cj->CHILD+Cj->NCHILD; ++Cx ) {
+	traverse_rec(Ci,Cx,mutual,create_thresh);
+      }
+    }
   }
 
 public:

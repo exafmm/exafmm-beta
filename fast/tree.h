@@ -70,10 +70,14 @@ public:
     }
   }
 
-  void evaluate(Cells &cells) {
+  void evaluate(Cells &cells, bool mutual, int create_thresh) {
     setRootCell(cells);
     startTimer("Traverse");
+#if RECURSIVE
+    traverse_rec(ROOT, mutual, create_thresh);
+#else
     traverse();
+#endif
     stopTimer("Traverse",printNow);
     startTimer("Downward pass");
     if( TOPDOWN ) {

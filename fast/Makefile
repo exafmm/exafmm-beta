@@ -3,6 +3,10 @@ include ../Makefile.include
 #LFLAGS	+= -DBOTTOMUP
 #LFLAGS	+= -DHYBRID
 #LFLAGS	+= -DTREECODE
+LFLAGS += -DRECURSIVE -DCOMMAND_LINE
+
+a.out : main.cxx
+	$(CXX) -o $@ $< $(LFLAGS)
 
 a	: main.cxx
 	make clean

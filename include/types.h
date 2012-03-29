@@ -50,6 +50,9 @@ THE SOFTWARE.
 #if QUARK
 #include "quark.h"
 #endif
+#if MTHREADS
+#include <mttb/task_group.h>
+#endif
 
 typedef unsigned           bigint;                              //!< Big integer type
 typedef float              real;                                //!< Real number type on CPU
