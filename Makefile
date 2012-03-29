@@ -1,5 +1,5 @@
 help:
-	@echo "Help documentation will be available soon.\n"
+	@echo "Help documentation will be available soon...\n"
 clean:
 	find . -name "*.o" -o -name "*.out*" | xargs rm -rf
 cleandat:
