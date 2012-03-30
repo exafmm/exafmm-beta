@@ -42,7 +42,7 @@ THE SOFTWARE.
 #include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 #include "types.h"
-const int maxGroups = 1000000;
+const int maxGroups = 100000;
 
 //! Interactive VTK class
 class vtkSliderCallback : public vtkCommand {

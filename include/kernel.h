@@ -24,9 +24,6 @@ THE SOFTWARE.
 #include "sort.h"
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
-const int  P2 = P * P;                                          //!< P^2
-const int  P4 = P2 * P2;                                        //!< P^4
-
 //! Unified CPU/GPU kernel class
 class KernelBase : public Sort {
 protected:
@@ -161,9 +158,9 @@ public:
   void preCalculation() {
     const complex I(0.,1.);                                     // Imaginary unit
     factorial = new real  [P];                                  // Factorial
-    prefactor = new real  [4*P2];                               // sqrt( (n - |m|)! / (n + |m|)! )
-    Anm       = new real  [4*P2];                               // (-1)^n / sqrt( (n + m)! / (n - m)! )
-    Cnm       = new complex [P4];                               // M2L translation matrix Cjknm
+    prefactor = new real  [4*P*P];                              // sqrt( (n - |m|)! / (n + |m|)! )
+    Anm       = new real  [4*P*P];                              // (-1)^n / sqrt( (n + m)! / (n - m)! )
+    Cnm       = new complex [P*P*P*P];                          // M2L translation matrix Cjknm
 
     factorial[0] = 1;                                           // Initialize factorial
     for( int n=1; n!=P; ++n ) {                                 // Loop to P
