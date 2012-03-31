@@ -70,13 +70,17 @@ public:
     }
   }
 
-  void evaluate(Cells &cells, bool mutual, int create_thresh) {
+  void evaluate(Cells &cells) {
     setRootCell(cells);
     startTimer("Traverse");
-#if RECURSIVE
-    traverse_rec(ROOT, mutual, create_thresh);
+#if STACK
+    CellStack cellStack;
+    cellStack.push(ROOT);
+    traverse(cellStack);
 #else
-    traverse();
+    CellQueue cellQueue;
+    cellQueue.push(ROOT);
+    traverse(cellQueue);
 #endif
     stopTimer("Traverse",printNow);
     startTimer("Downward pass");
@@ -91,8 +95,17 @@ public:
 
   void evaluate(Cells &icells, Cells &jcells) {
     setRootCell(icells,jcells);
+    Pair pair(ROOT,ROOT2);
     startTimer("Traverse");
-    traverse(false);
+#if STACK
+    PairStack pairStack;
+    pairStack.push(pair);
+    traverse(pairStack);
+#else
+    PairQueue pairQueue;
+    pairQueue.push_front(pair);
+    traverse(pairQueue);
+#endif
     stopTimer("Traverse",printNow);
     startTimer("Downward pass");
     if( TOPDOWN ) {

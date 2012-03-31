@@ -9,22 +9,16 @@ CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 VTK_INCLUDE_PATH = /usr/include/vtk-5.6
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.6
 
-### MassiveThreads path (choose your path)
-MT_LIBRARY_PATH=$(realpath ../../../../../../../sys/lib)
-MT_INCLUDE_PATH=$(realpath ../../../../../../../sys/include)
-
 ### choose CPU or GPU
-#DEVICE  = CPU
-DEVICE  = GPU
+DEVICE  = CPU
+#DEVICE  = GPU
 
 ### choose Cartesian or spherical expansion
-#EXPAND  = Cartesian
-EXPAND  = Spherical
+EXPAND  = Cartesian
+#EXPAND  = Spherical
 
 ### GCC compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -fopenmp -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
-
 
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../include
@@ -49,14 +43,12 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib
 ### QUARK flags
 #LFLAGS	+= -DQUARK -lquark
 
-### VTK flags
-CXX     += -I$(VTK_INCLUDE_PATH)
-VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
-
 ### MassiveThreads flags
-###   -std=c++0x necessary for closures
-# LFLAGS  +=  -std=c++0x -DMTHREADS -I$(MT_INCLUDE_PATH) -L$(MT_LIBRARY_PATH) -Wl,-R$(MT_LIBRARY_PATH) -lmyth -ldl 
+LFLAGS += -std=c++0x -DMTHREADS -I -lmyth -ldl
 
+### VTK flags
+#CXX     += -I$(VTK_INCLUDE_PATH)
+#VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags

@@ -39,6 +39,7 @@ protected:
   C_iter  ROOT, ROOT2;
 
 public:
+  int  NDLEAF_THRESHOLD;
   real NP2P;
   real NM2P;
   real NM2L;
@@ -56,38 +57,62 @@ private:
 #if HYBRID
     if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {
       P2P(Ci,Cj,mutual);
-      NP2P++;
+//      NP2P++;
     } else if ( timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L ) {
       M2P(Ci,Cj,mutual);
-      NM2P++;
+//      NM2P++;
     } else {
       M2L(Ci,Cj,mutual);
-      NM2L++;
+//      NM2L++;
     }
 #elif TREECODE
     M2P(Ci,Cj,mutual);
-    NM2P++;
+//    NM2P++;
 #else
     M2L(Ci,Cj,mutual);
-#if MTHREADS
-      /* cause race and cause lots of cache pingpong. we need an alternative
-	 method but we simply turn it off for now */
-#else
-    NM2L++;
-#endif
+//    NM2L++;
 #endif
   }
 
   void interact(C_iter C, CellStack &cellStack) {
     if(C->NCHILD == 0 || C->NDLEAF < 64) {
       P2P(C);
-      NP2P++;
+//      NP2P++;
     } else {
       cellStack.push(C);
     }
   }
 
-public:
+  void interact(C_iter C, CellQueue &cellQueue) {
+    if(C->NCHILD == 0 || C->NDLEAF < 64) {
+      P2P(C);
+//      NP2P++;
+    } else {
+      cellQueue.push(C);
+    }
+  }
+
+  void interact(C_iter Ci, C_iter Cj, bool mutual=true) {
+    PairQueue privateQueue;
+    Pair pair(Ci,Cj);
+    privateQueue.push_back(pair);
+    while( !privateQueue.empty() ) {
+      pair = privateQueue.front();
+      privateQueue.pop_front();
+      if(splitFirst(pair.first,pair.second)) {
+        C_iter C = pair.first;
+        for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
+          interact(CC,pair.second,privateQueue,mutual);
+        }
+      } else {
+        C_iter C = pair.second;
+        for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
+          interact(pair.first,CC,privateQueue,mutual);
+        }
+      }
+    }
+  }
+
   void interact(C_iter Ci, C_iter Cj, PairStack &pairStack, bool mutual=true) {
     vect dX = Ci->X - Cj->X;
     real Rq = norm(dX);
@@ -95,13 +120,14 @@ public:
       approximate(Ci,Cj,mutual);
     } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
       P2P(Ci,Cj,mutual);
-      NP2P++;
+//      NP2P++;
     } else {
       Pair pair(Ci,Cj);
       pairStack.push(pair);
     }
   }
 
+public:
   void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {
     vect dX = Ci->X - Cj->X;
     real Rq = norm(dX);
@@ -109,10 +135,10 @@ public:
       approximate(Ci,Cj,mutual);
     } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
       P2P(Ci,Cj,mutual);
-      NP2P++;
+//      NP2P++;
     } else {
       Pair pair(Ci,Cj);
-      pairQueue.push(pair);
+      pairQueue.push_back(pair);
     }
   }
 
@@ -173,10 +199,8 @@ protected:
     }
   }
 
-  void traverse() {
-    CellStack cellStack;
+  void traverse(CellStack &cellStack) {
     PairStack pairStack;
-    cellStack.push(ROOT);
     while( !cellStack.empty() ) {
       C_iter C = cellStack.top();
       cellStack.pop();
@@ -187,53 +211,109 @@ protected:
         }
       }
       while( !pairStack.empty() ) {
-        Pair Cij = pairStack.top();
+        Pair pair = pairStack.top();
         pairStack.pop();
-        if(splitFirst(Cij.first,Cij.second)) {
-          C = Cij.first;
+        if(splitFirst(pair.first,pair.second)) {
+          C = pair.first;
           for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-            interact(Ci,Cij.second,pairStack);
+            interact(Ci,pair.second,pairStack);
           }
         } else {
-          C = Cij.second;
+          C = pair.second;
           for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-            interact(Cij.first,Cj,pairStack);
+            interact(pair.first,Cj,pairStack);
           }
         }
       }
     }
   }
 
-  void traverse(bool) {
+  void traverse(CellQueue &cellQueue) {
     PairQueue pairQueue;
-#if QUARK
-    Quark *quark = QUARK_New(4);
-#endif
-    for( C_iter Cj=Cj0+ROOT->CHILD; Cj!=Cj0+ROOT->CHILD+ROOT->NCHILD; ++Cj ) {
-      Pair pair(ROOT,Cj);
-      pairQueue.push(pair);
+    while( !cellQueue.empty() ) {
+      C_iter C = cellQueue.front();
+      cellQueue.pop();
+      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
+        interact(Ci,cellQueue);
+        for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
+          interact(Ci,Cj,pairQueue);
+        }
+      }
+      while( !pairQueue.empty() ) {
+        Pair pair = pairQueue.front();
+        pairQueue.pop_front();
+        if(splitFirst(pair.first,pair.second)) {
+          C = pair.first;
+          for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
+            interact(Ci,pair.second,pairQueue);
+          }
+        } else {
+          C = pair.second;
+          for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
+            interact(pair.first,Cj,pairQueue);
+          }
+        }
+      }
     }
-    while( !pairQueue.empty() ) {
-      Pair Cij = pairQueue.front();
-      pairQueue.pop();
-      if(splitFirst(Cij.first,Cij.second)) {
-        C_iter C = Cij.first;
+  }
+
+  void traverse(PairStack &pairStack) {
+#if MTHREADS
+    Pair pair = pairStack.top();
+    pairStack.pop();
+    traverse(pair.first,pair.second);
+#else
+    while( !pairStack.empty() ) {
+      Pair pair = pairStack.top();
+      pairStack.pop();
+      if(splitFirst(pair.first,pair.second)) {
+        C_iter C = pair.first;
         for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-          interact(Ci,Cij.second,pairQueue,false);
+          interact(Ci,pair.second,pairStack,false);
         }
       } else {
-        C_iter C = Cij.second;
+        C_iter C = pair.second;
         for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          interact(Cij.first,Cj,pairQueue,false);
+          interact(pair.first,Cj,pairStack,false);
+        }
+      }
+    }
+#endif
+  }
+
+  void traverse(PairQueue &pairQueue) {
+#if QUARK
+    Quark *quark = QUARK_New(12);
+#endif
+    while( !pairQueue.empty() ) {
+      Pair pair = pairQueue.front();
+      pairQueue.pop_front();
+      if(splitFirst(pair.first,pair.second)) {
+        C_iter C = pair.first;
+        for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
+          interact(Ci,pair.second,pairQueue,false);
+        }
+      } else {
+        C_iter C = pair.second;
+        for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
+          interact(pair.first,Cj,pairQueue,false);
         }
       }
 #if QUARK
-      if( pairQueue.size() > 100 ) {
+      if( int(pairQueue.size()) > ROOT->NDLEAF / 100 ) {
         while( !pairQueue.empty() ) {
-          Cij = pairQueue.front();
-          pairQueue.pop();
-          interact(Cij.first,Cij.second,quark,false);
+          pair = pairQueue.front();
+          pairQueue.pop_front();
+          interact(pair.first,pair.second,quark,false);
         }
+      }
+#else
+      if( int(pairQueue.size()) > ROOT->NDLEAF / 100 ) {
+#pragma omp parallel for schedule(dynamic)
+        for( int i=0; i<int(pairQueue.size()); i++ ) {
+          interact(pairQueue[i].first,pairQueue[i].second,false);
+        }
+        pairQueue.clear();
       }
 #endif
     }
@@ -244,77 +324,38 @@ protected:
   }
 
 #if MTHREADS
-#define spawn_if(cond, block) if(cond) tg.run([=] block); else block
-#define spawn_block() task_group tg
-#define wait_spawned() tg.wait()
-#else
-#define spawn_if(cond, block) block
-#define spawn_block() 
-#define wait_spawned() 
-#endif
-
-  /* note: parallelization is valid only when mutual=false.
-     otherwise race condition will occur when accmulating force/potential */
-
-  void traverse_rec(C_iter C, bool mutual, int create_thresh) {
-    if(C->NCHILD == 0 || C->NDLEAF < 64) {
-      P2P(C);
-#if MTHREADS
-      /* cause race and cause lots of cache pingpong. we need an alternative
-	 method but we simply turn it off for now */
-#else
-      NP2P++;
-#endif
-    } else {
-      spawn_block();
-      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-	spawn_if(C->NDLEAF > create_thresh, 
-	 {
-	   if (!mutual) {
-	     for( C_iter Cj=Ci0+C->CHILD; Cj!=Ci; ++Cj ) {
-	       traverse_rec(Ci,Cj,mutual,create_thresh);
-	     }
-	   }
-	   traverse_rec(Ci,mutual,create_thresh);
-	   for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-	     traverse_rec(Ci,Cj,mutual,create_thresh);
-	   }
-	 });
-      }
-      wait_spawned();
-    }
-  }
-
-  void traverse_rec(C_iter Ci, C_iter Cj, bool mutual, int create_thresh) {
+  void traverse(C_iter Ci, C_iter Cj) {
     vect dX = Ci->X - Cj->X;
     real Rq = norm(dX);
     if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
-      approximate(Ci,Cj,mutual);
+      approximate(Ci,Cj,false);
     } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
-      P2P(Ci,Cj,mutual);
-#if MTHREADS
-      /* cause race and cause lots of cache pingpong. we need an alternative
-	 method but we simply turn it off for now */
-#else
-      NP2P++;
-#endif
-    } else if(splitFirst(Ci,Cj)) {
-      spawn_block();
-      for( C_iter Cx=Ci0+Ci->CHILD; Cx!=Ci0+Ci->CHILD+Ci->NCHILD; ++Cx ) {
-	spawn_if(Cj->NDLEAF > create_thresh,
-		 { traverse_rec(Cx,Cj,mutual,create_thresh); });
-      }
-      wait_spawned();
+      P2P(Ci,Cj,false);
+//      NP2P++;
     } else {
-      /* we cannot parallelize it due to race condition on Ci */
-      for( C_iter Cx=Cj0+Cj->CHILD; Cx!=Cj0+Cj->CHILD+Cj->NCHILD; ++Cx ) {
-	traverse_rec(Ci,Cx,mutual,create_thresh);
+      if(splitFirst(Ci,Cj)) {
+        C_iter C = Ci;
+        task_group tg;
+        for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
+          if( CC->NDLEAF > NDLEAF_THRESHOLD ) tg.run([=]{traverse(CC,Cj);});
+          else traverse(CC,Cj);
+        }
+        tg.wait();
+      } else {
+        C_iter C = Cj;
+        task_group tg;
+        for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
+          if( CC->NDLEAF > NDLEAF_THRESHOLD ) tg.run([=]{traverse(Ci,CC);});
+          else traverse(Ci,CC);
+        }
+        tg.wait();
       }
     }
   }
+#endif
 
 public:
-  Evaluator() : NP2P(0), NM2P(0), NM2L(0) {}
+  Evaluator() : NDLEAF_THRESHOLD(10000), NP2P(0), NM2P(0), NM2L(0) {}
   ~Evaluator() {}
 
   void timeKernels(bool mutual=true) {
@@ -358,19 +399,19 @@ inline void interactQuark(Quark *quark) {
   E->startTracer(beginTrace);
   PairQueue privateQueue;
   Pair pair(CI,CJ);
-  privateQueue.push(pair);
+  privateQueue.push_back(pair);
   while( !privateQueue.empty() ) {
-    Pair Cij = privateQueue.front();
-    privateQueue.pop();
-    if(splitFirst(Cij.first,Cij.second)) {
-      C_iter C = Cij.first;
+    pair = privateQueue.front();
+    privateQueue.pop_front();
+    if(splitFirst(pair.first,pair.second)) {
+      C_iter C = pair.first;
       for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-        E->interact(Ci,Cij.second,privateQueue,mutual);
+        E->interact(Ci,pair.second,privateQueue,mutual);
       }
     } else {
-      C_iter C = Cij.second;
+      C_iter C = pair.second;
       for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-        E->interact(Cij.first,Cj,privateQueue,mutual);
+        E->interact(pair.first,Cj,privateQueue,mutual);
       }
     }
   }

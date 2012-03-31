@@ -23,71 +23,63 @@ THE SOFTWARE.
 #define kernel_h
 #include "../include/sort.h"
 
-/* with -std=c++0x, which is required for MassiveThreads,
-   some constant definitions, like the following in cartesian.h:
-   static const real F = Index<nx,ny,nz-1>::F * nz;
-   are not accepted and must instead be:
-   static constexpr real F = Index<nx,ny,nz-1>::F * nz;
-   but constexpr is not accepted without -std=c++0x, so
-   here is a workaround macro.
- */
-#if !defined(__GXX_EXPERIMENTAL_CXX0X__)
+#ifndef __GXX_EXPERIMENTAL_CXX0X__
 #define constexpr const
 #endif
 
 template<int nx, int ny, int nz>
 struct Index {
-  static const int  M = Index<nx,ny+1,nz-1>::M + 1;
-  static const int  I = Index<nx,ny+1,nz-1>::I + 1;
+  static const int      M = Index<nx,ny+1,nz-1>::M + 1;
+  static const int      I = Index<nx,ny+1,nz-1>::I + 1;
   static constexpr real F = Index<nx,ny,nz-1>::F * nz;
 };
 
 template<int nx, int ny>
 struct Index<nx,ny,0> {
-  static const int  M = Index<nx+1,0,ny-1>::M + 1;
-  static const int  I = Index<nx+1,0,ny-1>::I + 1;
+  static const int      M = Index<nx+1,0,ny-1>::M + 1;
+  static const int      I = Index<nx+1,0,ny-1>::I + 1;
   static constexpr real F = Index<nx,ny-1,0>::F * ny;
 };
 
 template<int nx>
 struct Index<nx,0,0> {
-  static const int  M = Index<0,0,nx-1>::M + 1;
-  static const int  I = Index<0,0,nx-1>::I + 1;
+  static const int      M = Index<0,0,nx-1>::M + 1;
+  static const int      I = Index<0,0,nx-1>::I + 1;
   static constexpr real F = Index<nx-1,0,0>::F * nx;
 };
 
 template<>
 struct Index<2,0,0> {
-  static const int  M = 1;
-  static const int  I = 4;
+  static const int      M = 1;
+  static const int      I = 4;
   static constexpr real F = 2;
 };
 
 template<>
 struct Index<0,0,1> {
-  static const int  M = -1;
-  static const int  I = 3;
+  static const int      M = -1;
+  static const int      I = 3;
   static constexpr real F = 1;
 };
 
 template<>
 struct Index<0,1,0> {
-  static const int  M = -1;
-  static const int  I = 2;
+  static const int      M = -1;
+  static const int      I = 2;
   static constexpr real F = 1;
 };
 
 template<>
 struct Index<1,0,0> {
-  static const int  M = -1;
-  static const int  I = 1;
+  static const int      M = -1;
+  static const int      I = 1;
   static constexpr real F = 1;
 };
 
 template<>
 struct Index<0,0,0> {
-  static const int  M = 0;
-  static const int  I = 0;
+  static const int      M = 0;
+  static const int      I = 0;
   static constexpr real F = 1;
 };
 
@@ -613,19 +605,10 @@ public:
         dX *= invR2 * invR;
         P0 += invR;
         F0 += dX;
-#if 0
-	Bj->TRG[0] += invR * mutual;
-	Bj->TRG[1] += dX[0] * mutual;
-	Bj->TRG[2] += dX[1] * mutual;
-	Bj->TRG[3] += dX[2] * mutual;
-#else
-	if (mutual) {
-	  Bj->TRG[0] += invR;
-	  Bj->TRG[1] += dX[0];
-	  Bj->TRG[2] += dX[1];
-	  Bj->TRG[3] += dX[2];
-	}
-#endif
+        Bj->TRG[0] += invR * mutual;
+        Bj->TRG[1] += dX[0] * mutual;
+        Bj->TRG[2] += dX[1] * mutual;
+        Bj->TRG[3] += dX[2] * mutual;
       }
       Bi->TRG[0] += P0;
       Bi->TRG[1] -= F0[0];

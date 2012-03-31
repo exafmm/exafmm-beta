@@ -130,11 +130,10 @@ enum Equation {                                                 //!< Equation ty
 //! Structure of source bodies (stuff to send)
 struct JBody {
   int         IBODY;                                            //!< Initial body numbering for sorting back
-  int         IPROC;                                            //!< Initial process numbering for sending back
+  int         IPROC;                                            //!< Initial process numbering for partitioning back
   bigint      ICELL;                                            //!< Cell index
   vect        X;                                                //!< Position
   real        SRC;                                              //!< Scalar source values
-  JBody() : IBODY(0), IPROC(0), ICELL(0), X(0), SRC(0) {}       //!< Constructor
 };
 typedef std::vector<JBody>             JBodies;                 //!< Vector of source bodies
 typedef std::vector<JBody>::iterator   JB_iter;                 //!< Iterator for source body vector
@@ -144,8 +143,7 @@ struct Body : public JBody {
   vec<4,real> TRG;                                              //!< Scalar+vector target values
   bool operator<(const Body &rhs) const {                       //!< Overload operator for comparing body index
     return this->IBODY < rhs.IBODY;                             //!< Comparison function for body index
-  }                                                             //!< End operator overload
-  Body() : TRG(0) {}                                            //!< Constructor
+  }
 };
 typedef std::vector<Body>              Bodies;                  //!< Vector of bodies
 typedef std::vector<Body>::iterator    B_iter;                  //!< Iterator for body vector
@@ -155,21 +153,6 @@ struct Leaf {
   int I;                                                        //!< Unique index for every leaf
   vect X;                                                       //!< Coordinate of leaf
   Leaf *NEXT;                                                   //!< Pointer to next leaf
-  Leaf() : I(0), X(0), NEXT(NULL) {}                            //!< Constructor
-  ~Leaf() {}                                                    //!< Destructor
-//! Copy constructor
-  Leaf(const Leaf &leaf) : I(0), X(0), NEXT(NULL) {
-    I    = leaf.I;                                              // Copy I
-    X    = leaf.X;                                              // Copy X
-    NEXT = leaf.NEXT;                                           // Copy NEXT
-  }
-//! Overload assignment
-  Leaf &operator=(const Leaf &leaf) {
-    I    = leaf.I;                                              // Copy I
-    X    = leaf.X;                                              // Copy X
-    NEXT = leaf.NEXT;                                           // Copy NEXT
-    return *this;
-  }
 };
 typedef std::vector<Leaf>              Leafs;                   //!< Vector of leafs
 typedef std::vector<Leaf>::iterator    L_iter;                  //!< Iterator for leaf vector
@@ -179,30 +162,9 @@ struct Node {
   bool NOCHILD;                                                 //!< Flag for twig nodes
   int  LEVEL;                                                   //!< Level in the tree structure
   int  NLEAF;                                                   //!< Number of descendant leafs
-  vec<8,int> CHILD;                                             //!< Index of child node
+  int  CHILD[8];                                                //!< Index of child node
   vect X;                                                       //!< Coordinate at center
   Leaf *LEAF;                                                   //!< Pointer to first leaf
-  Node() : NOCHILD(true), LEVEL(0), NLEAF(0), CHILD(-1), X(0), LEAF(NULL) {}//!< Constructor
-  ~Node() {}                                                    //!< Destructor
-//! Copy constructor
-  Node(const Node &node) : NOCHILD(true), LEVEL(0), NLEAF(0), CHILD(-1), X(0), LEAF(NULL) {
-    NOCHILD = node.NOCHILD;                                     // Copy NOCHILD
-    LEVEL   = node.LEVEL;                                       // Copy LEVEL
-    NLEAF   = node.NLEAF;                                       // Copy NLEAF
-    CHILD   = node.CHILD;                                       // Copy CHILD
-    X       = node.X;                                           // Copy X
-    LEAF    = node.LEAF;                                        // Copy LEAF
-  }
-//! Overload assignment
-  Node &operator=(const Node &node) {
-    NOCHILD = node.NOCHILD;                                     // Copy NOCHILD
-    LEVEL   = node.LEVEL;                                       // Copy LEVEL
-    NLEAF   = node.NLEAF;                                       // Copy NLEAF
-    CHILD   = node.CHILD;                                       // Copy CHILD
-    X       = node.X;                                           // Copy X
-    LEAF    = node.LEAF;                                        // Copy LEAF
-    return *this;
-  }
 };
 typedef std::vector<Node>              Nodes;                   //!< Vector of nodes
 typedef std::vector<Node>::iterator    N_iter;                  //!< Iterator for node vector
@@ -217,29 +179,26 @@ typedef std::vector<JCell>::iterator   JC_iter;                 //!< Iterator fo
 
 //! Structure of cells
 struct Cell {
-  bigint ICELL;                                                 //!< Cell index
-  int    NCHILD;                                                //!< Number of child cells
-  int    NCLEAF;                                                //!< Number of child leafs
-  int    NDLEAF;                                                //!< Number of descendant leafs
-  int    PARENT;                                                //!< Iterator offset of parent cell
-  int    CHILD;                                                 //!< Iterator offset of child cells
-  int    ILEAF;                                                 //!< Iterator offset of first leaf
-  B_iter LEAF;                                                  //!< Iterator of first leaf
-  vect   X;                                                     //!< Cell center
-  real   R;                                                     //!< Cell radius
-  real   RMAX;                                                  //!< Max cell radius
-  real   RCRIT;                                                 //!< Critical cell radius
-  Mset   M;                                                     //!< Multipole coefficients
-  Lset   L;                                                     //!< Local coefficients
-  Cell() : ICELL(0), NCHILD(0), NCLEAF(0), NDLEAF(0), PARENT(0), CHILD(0),
-           LEAF(), X(0), R(0), RMAX(0), RCRIT(0), M(0), L(0) {} //!< Constructor
+  bigint   ICELL;                                               //!< Cell index
+  int      NCHILD;                                              //!< Number of child cells
+  int      NCLEAF;                                              //!< Number of child leafs
+  int      NDLEAF;                                              //!< Number of descendant leafs
+  int      PARENT;                                              //!< Iterator offset of parent cell
+  int      CHILD;                                               //!< Iterator offset of child cells
+  B_iter   LEAF;                                                //!< Iterator of first leaf
+  vect     X;                                                   //!< Cell center
+  real     R;                                                   //!< Cell radius
+  real     RMAX;                                                //!< Max cell radius
+  real     RCRIT;                                               //!< Critical cell radius
+  Mset     M;                                                   //!< Multipole coefficients
+  Lset     L;                                                   //!< Local coefficients
 };
 typedef std::vector<Cell>              Cells;                   //!< Vector of cells
 typedef std::vector<Cell>::iterator    C_iter;                  //!< Iterator for cell vector
 typedef std::queue<C_iter>             CellQueue;               //!< Queue of cell iterators
 typedef std::stack<C_iter>             CellStack;               //!< Stack of cell iterators
 typedef std::pair<C_iter,C_iter>       Pair;                    //!< Pair of interacting cells
-typedef std::queue<Pair>               PairQueue;               //!< Queue of interacting cell pairs
+typedef std::deque<Pair>               PairQueue;               //!< Queue of interacting cell pairs
 typedef std::stack<Pair>               PairStack;               //!< Stack of interacting cell pairs
 typedef std::list<C_iter>              List;                    //!< Interaction list
 typedef std::list<C_iter>::iterator    LC_iter;                 //!< Iterator for interaction list
@@ -251,9 +210,8 @@ typedef std::vector<Map>               Maps;                    //!< Vector of m
 //! Structure for Ewald summation
 struct Ewald {
   vect K;                                                       //!< 3-D wave number vector
-  real REAL;                                                    //!< Real part of wave
-  real IMAG;                                                    //!< Imaginary part of wave
-  Ewald() : K(0), REAL(0), IMAG(0) {}                           //!< Constructor
+  real REAL;                                                    //!< real part of wave
+  real IMAG;                                                    //!< imaginary part of wave
 };
 typedef std::vector<Ewald>             Ewalds;                  //!< Vector of Ewald summation types
 typedef std::vector<Ewald>::iterator   E_iter;                  //!< Iterator for Ewald summation types

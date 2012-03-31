@@ -22,28 +22,15 @@ THE SOFTWARE.
 #include "dataset.h"
 #include "tree.h"
 
-int main(int argc, char ** argv) {
-  int numBodies     = 1000;
-  int mutual        = 1;	// should be zero when parallel, for now
-  int create_thresh = 0;	// irrelevant unless MassiveThreads
-  int check_result  = 1;
-#if COMMAND_LINE
-  numBodies = (argc > 1 ? atoi(argv[1]) : 1000);
-  // mutual=1 is valid only when executing in serial (MYTH_WORKER_NUM=1)
-  mutual        = (argc > 2 ? atoi(argv[2]) : 1);
-  create_thresh = (argc > 3 ? atoi(argv[3]) : 0);
-  check_result  = (argc > 4 ? atoi(argv[4]) : 0);
-#endif
-
-  std::cout << "mutual               : "        << mutual        << std::endl;
-  std::cout << "create_thresh        : " << create_thresh << std::endl;
-
+int main(int argc, char** argv) {
+  int numBodies = argc > 1 ? atoi(argv[1]) : 1000;
   IMAGES = 0;
   THETA = 0.6;
-  Bodies bodies;
+  Bodies bodies, bodies2;
   Cells cells;
   Dataset DATA;
   SerialFMM FMM;
+  FMM.NDLEAF_THRESHOLD = argc > 2 ? atoi(argv[2]) : 10000;
 #if HYBRID
   FMM.timeKernels();
 #endif
@@ -54,13 +41,10 @@ int main(int argc, char ** argv) {
 #if BUILD
   for ( int it=32; it<33; it++ ) {
 #else
-  for ( int it=16; it<17; it++ ) {
+  for ( int it=8; it<9; it++ ) {
 #endif
 #endif
-#if COMMAND_LINE
-#else
-    numBodies = int(pow(10,(it+24)/8.0));
-#endif
+  numBodies = int(pow(10,(it+24)/8.0));
   std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
   DATA.cube(bodies);
@@ -76,7 +60,7 @@ int main(int argc, char ** argv) {
 #if IneJ
   FMM.evaluate(cells,cells);
 #else
-  FMM.evaluate(cells, mutual, create_thresh);
+  FMM.evaluate(cells);
 #endif
   FMM.stopPAPI();
   FMM.stopTimer("FMM",true);
@@ -84,30 +68,28 @@ int main(int argc, char ** argv) {
   FMM.writeTime();
   FMM.resetTimer();
 
-  if (check_result) {
-    Bodies bodies2 = bodies;
+  bodies2 = bodies;
 #ifdef MANY
-    bodies2.resize(100);
+  bodies2.resize(100);
 #endif
-    DATA.initTarget(bodies2);
-    FMM.startTimer("Direct sum");
+  DATA.initTarget(bodies2);
+  FMM.startTimer("Direct sum");
 #if IneJ
-    FMM.direct(bodies2,bodies);
+  FMM.direct(bodies2,bodies);
 #elif MANY
-    FMM.direct(bodies2,bodies);
+  FMM.direct(bodies2,bodies);
 #else
-    FMM.direct(bodies2);
+  FMM.direct(bodies2);
 #endif
-    FMM.stopTimer("Direct sum",true);
-    FMM.eraseTimer("Direct sum");
+  FMM.stopTimer("Direct sum",true);
+  FMM.eraseTimer("Direct sum");
 
 #ifdef MANY
-    bodies.resize(100);
+  bodies.resize(100);
 #endif
-    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-    DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-    DATA.printError(diff1,norm1,diff2,norm2);
-  }
+  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+  DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  DATA.printError(diff1,norm1,diff2,norm2);
 #endif
   }
 }
