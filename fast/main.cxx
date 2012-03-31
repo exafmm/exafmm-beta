@@ -23,28 +23,29 @@ THE SOFTWARE.
 #include "tree.h"
 
 int main(int argc, char** argv) {
-  int numBodies = argc > 1 ? atoi(argv[1]) : 1000;
+  int numBodies = 1000;
   IMAGES = 0;
   THETA = 0.6;
   Bodies bodies, bodies2;
   Cells cells;
   Dataset DATA;
   SerialFMM FMM;
-  FMM.NDLEAF_THRESHOLD = argc > 2 ? atoi(argv[2]) : 10000;
+  FMM.NDLEAF_THRESHOLD = argc > 1 ? atoi(argv[1]) : 10000;
 #if HYBRID
   FMM.timeKernels();
 #endif
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {
+  numBodies = int(pow(10,(it+24)/8.0));
 #else
+  for ( int it=0; it<1; it++ ) {
   FMM.printNow = true;
 #if BUILD
-  for ( int it=32; it<33; it++ ) {
+  numBodies = 10000000;
 #else
-  for ( int it=8; it<9; it++ ) {
+  numBodies = 10000;
 #endif
 #endif
-  numBodies = int(pow(10,(it+24)/8.0));
   std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
   DATA.cube(bodies);

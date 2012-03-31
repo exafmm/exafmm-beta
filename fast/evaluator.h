@@ -343,12 +343,9 @@ protected:
         tg.wait();
       } else {
         C_iter C = Cj;
-        task_group tg;
         for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
-          if( CC->NDLEAF > NDLEAF_THRESHOLD ) tg.run([=]{traverse(Ci,CC);});
-          else traverse(Ci,CC);
+          traverse(Ci,CC);
         }
-        tg.wait();
       }
     }
   }

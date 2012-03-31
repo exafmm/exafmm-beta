@@ -18,7 +18,7 @@ EXPAND  = Cartesian
 #EXPAND  = Spherical
 
 ### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -fopenmp -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
 
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../include
@@ -35,7 +35,7 @@ NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=s
 	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
 
 ### Base flags
-LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib
+LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 
 ### PAPI flags
 #LFLAGS += -DPAPI -lpapi
@@ -44,7 +44,7 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND) -L../lib
 #LFLAGS	+= -DQUARK -lquark
 
 ### MassiveThreads flags
-LFLAGS += -std=c++0x -DMTHREADS -I -lmyth -ldl
+LFLAGS += -std=c++0x -DMTHREADS -lmyth -ldl
 
 ### VTK flags
 #CXX     += -I$(VTK_INCLUDE_PATH)
