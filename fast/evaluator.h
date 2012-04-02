@@ -26,7 +26,7 @@ THE SOFTWARE.
 #elif Spherical
 #include "spherical.h"
 #endif
-#define splitFirst(Ci,Cj) Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT > Cj->RCRIT)
+#define splitFirst(Ci,Cj) Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT >= Cj->RCRIT)
 
 class Evaluator : public Kernel {
 private:
@@ -309,7 +309,10 @@ protected:
       }
 #else
       if( int(pairQueue.size()) > ROOT->NDLEAF / 100 ) {
+#if MTHREADS
+#else
 #pragma omp parallel for schedule(dynamic)
+#endif
         for( int i=0; i<int(pairQueue.size()); i++ ) {
           interact(pairQueue[i].first,pairQueue[i].second,false);
         }

@@ -18,7 +18,7 @@ EXPAND  = Cartesian
 #EXPAND  = Spherical
 
 ### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -fopenmp -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
 
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../include
@@ -44,7 +44,7 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 #LFLAGS	+= -DQUARK -lquark
 
 ### MassiveThreads flags
-LFLAGS += -std=c++0x -DMTHREADS -lmyth -ldl
+#LFLAGS += -std=c++0x -DMTHREADS -lpthread
 
 ### VTK flags
 #CXX     += -I$(VTK_INCLUDE_PATH)
