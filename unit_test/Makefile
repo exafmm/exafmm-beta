@@ -1,7 +1,7 @@
 include ../Makefile.include
 SERIALRUN = ./a.out
 #PARALLELRUN = mpirun -np 3 -machinefile ~/hosts ./a.out
-PARALLELRUN = mpirun -np 2 ./a.out
+PARALLELRUN = mpirun -np 4 ./a.out
 
 topdown: construct.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS) -DTOPDOWN
