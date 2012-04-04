@@ -10,15 +10,15 @@ VTK_INCLUDE_PATH = /usr/include/vtk-5.6
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.6
 
 ### choose CPU or GPU
-DEVICE  = CPU
-#DEVICE  = GPU
+#DEVICE  = CPU
+DEVICE  = GPU
 
 ### choose Cartesian or spherical expansion
-EXPAND  = Cartesian
-#EXPAND  = Spherical
+#EXPAND  = Cartesian
+EXPAND  = Spherical
 
 ### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -fopenmp -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
+CXX	= g++ -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -fopenmp -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
 
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../include
@@ -31,8 +31,8 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -fopenmp -ffast-m
 # -Kdalign,ns,mfunc,eval,prefetch_conditional,ilfunc -x-
 
 ### CUDA compiler
-NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_21\
-	-I../include -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
+NVCC    = nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v -O3\
+	 -use_fast_math -arch=sm_21 -I../include -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
 
 ### Base flags
 LFLAGS  = -D$(DEVICE) -D$(EXPAND)
@@ -44,7 +44,9 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 #LFLAGS	+= -DQUARK -lquark
 
 ### MassiveThreads flags
-#LFLAGS += -std=c++0x -DMTHREADS -lpthread
+#LFLAGS += -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
+#LFLAGS += -std=c++0x -lmyth -lpthread -ldl
+#LFLAGS += -std=c++0x
 
 ### VTK flags
 #CXX     += -I$(VTK_INCLUDE_PATH)

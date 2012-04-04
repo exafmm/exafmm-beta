@@ -8,14 +8,12 @@ LFLAGS	+= -DSTACK
 a	: main.cxx
 	make clean
 	$(CXX) $? $(LFLAGS)
-#	MYTH_WORKER_NUM=1 LD_PRELOAD=/usr/local/lib/libmyth-compat.so ./a.out
-	./a.out
+	MYTH_WORKER_NUM=1 ./a.out
 
 b	: main.cxx
 	make clean
 	$(CXX) $? $(LFLAGS) -DMANY
-#	MYTH_WORKER_NUM=1 LD_PRELOAD=/usr/local/lib/libmyth-compat.so ./a.out
-	./a.out
+	MYTH_WORKER_NUM=1 ./a.out
 
 c	: main.cxx
 	make clean
