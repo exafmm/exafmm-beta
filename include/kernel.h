@@ -73,7 +73,6 @@ private:
 
 protected:
   void setCenter(C_iter C) const {
-/*
     real m = 0;
     vect X = 0;
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
@@ -85,9 +84,8 @@ protected:
       X += c->X * std::abs(c->M[0]);
     }
     X /= m;
-    C->R = getBmax(X,C);
-    C->X = X;
-*/
+//    C->R = getBmax(X,C);
+//    C->X = X;
   }
 
 public:

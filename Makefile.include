@@ -45,8 +45,6 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 
 ### MassiveThreads flags
 #LFLAGS += -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
-#LFLAGS += -std=c++0x -lmyth -lpthread -ldl
-#LFLAGS += -std=c++0x -lpthread -ldl
 
 ### VTK flags
 #CXX     += -I$(VTK_INCLUDE_PATH)

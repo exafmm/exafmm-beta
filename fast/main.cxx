@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 #if BUILD
   numBodies = 10000000;
 #else
-  numBodies = 1000000;
+  numBodies = 10000;
 #endif
 #endif
   std::cout << "N                    : " << numBodies << std::endl;
@@ -70,9 +70,9 @@ int main(int argc, char** argv) {
   FMM.resetTimer();
 
   bodies2 = bodies;
-//#ifdef MANY
+#ifdef MANY
   bodies2.resize(100);
-//#endif
+#endif
   DATA.initTarget(bodies2);
   FMM.startTimer("Direct sum");
 #if IneJ
@@ -85,9 +85,9 @@ int main(int argc, char** argv) {
   FMM.stopTimer("Direct sum",true);
   FMM.eraseTimer("Direct sum");
 
-//#ifdef MANY
+#ifdef MANY
   bodies.resize(100);
-//#endif
+#endif
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   DATA.printError(diff1,norm1,diff2,norm2);

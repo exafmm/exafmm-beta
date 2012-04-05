@@ -102,6 +102,7 @@ void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {         // Ewald wave pa
           ewald.K[0] = l;
           ewald.K[1] = m;
           ewald.K[2] = n;
+          ewald.REAL = ewald.IMAG = 0;
           ewalds.push_back(ewald);
         }
       }
