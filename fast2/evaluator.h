@@ -133,13 +133,13 @@ protected:
       pair = make_pair(icells.end()-1,jcells.end()-1);          //  The last cell is the root cell
     }                                                           // Endif for tree construction
     PairQueue pairQueue;                                        // Queue of interacting cell pairs
-    pairQueue.push(pair);                                       // Push pair of root cells to queue
+    pairQueue.push_back(pair);                                  // Push pair of root cells to queue
 #if QUARK
     Quark *quark = QUARK_New(4);                                // Initialize QUARK object
 #endif
     while( !pairQueue.empty() ) {                               // While dual traversal queue is not empty
       pair = pairQueue.front();                                 //  Get interaction pair from front of queue
-      pairQueue.pop();                                          //  Pop dual traversal queue
+      pairQueue.pop_front();                                    //  Pop dual traversal queue
       if(splitFirst(pair.first,pair.second)) {                  //  If first cell is larger
         C_iter C = pair.first;                                  //   Split the first cell
         for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {// Loop over first cell's children
@@ -294,7 +294,7 @@ public:
       evalP2P(Ci,Cj);                                           //  Use P2P
     } else {                                                    // If cells are close but not leafs 
       Pair pair(Ci,Cj);                                         //  Form a pair of cell iterators
-      pairQueue.push(pair);                                     //  Push pair to queue
+      pairQueue.push_back(pair);                                //  Push pair to queue
     }                                                           // End if for multipole acceptance
   }
 

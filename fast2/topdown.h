@@ -43,8 +43,16 @@ public:
   using Evaluator<equation>::MAXLEVEL;                          //!< Max depth of tree
 
 private:
+  void init(Node &node) {
+    node.NOCHILD = true;
+    node.NLEAF = 0;
+    node.LEAF = NULL;
+    for( int b=0; b!=8; ++b ) node.CHILD[b] = -1;
+  }
+
   inline void addChild(int octant, N_iter N) {
     Node child;
+    init(child);
     child.LEVEL = N->LEVEL+1;
     child.X = N->X;
     real r = R0 / (1 << child.LEVEL);
@@ -181,6 +189,7 @@ protected:
     NCELL = 1;
     nodes.reserve(NLEAF);
     Node node;
+    init(node);
     node.LEVEL = 0;
     node.X     = X0;
     nodes.push_back(node);

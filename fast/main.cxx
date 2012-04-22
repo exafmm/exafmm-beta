@@ -75,13 +75,13 @@ int main(int argc, char** argv) {
 //#endif
   DATA.initTarget(bodies2);
   FMM.startTimer("Direct sum");
-#if IneJ
+//#if IneJ
   FMM.direct(bodies2,bodies);
-#elif MANY
-  FMM.direct(bodies2,bodies);
-#else
-  FMM.direct(bodies2);
-#endif
+//#elif MANY
+//  FMM.direct(bodies2,bodies);
+//#else
+//  FMM.direct(bodies2);
+//#endif
   FMM.stopTimer("Direct sum",true);
   FMM.eraseTimer("Direct sum");
 

@@ -87,7 +87,6 @@ private:
 //! Add bodies to send buffer
   void addSendBody(C_iter C, int &ibody, int icell) {
     C_iter Csend = sendCells.begin() + icell;
-    Csend->ILEAF = ibody;
     Csend->NCLEAF = C->NCLEAF;
     Csend->NDLEAF = C->NDLEAF;
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
