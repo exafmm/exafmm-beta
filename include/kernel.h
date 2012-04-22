@@ -84,8 +84,8 @@ protected:
       X += c->X * std::abs(c->M[0]);
     }
     X /= m;
-//    C->R = getBmax(X,C);
-//    C->X = X;
+    C->R = getBmax(X,C);
+    C->X = X;
   }
 
 public:
