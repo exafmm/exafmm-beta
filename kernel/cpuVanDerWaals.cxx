@@ -27,10 +27,10 @@ template<>
 void Kernel<VanDerWaals>::initialize() {}
 
 template<>
-void Kernel<VanDerWaals>::P2M(C_iter) const {}
+void Kernel<VanDerWaals>::P2M(C_iter) {}
 
 template<>
-void Kernel<VanDerWaals>::M2M(C_iter) const {}
+void Kernel<VanDerWaals>::M2M(C_iter) {}
 
 template<>
 void Kernel<VanDerWaals>::M2L(C_iter, C_iter) const {}
