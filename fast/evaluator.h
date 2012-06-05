@@ -74,24 +74,6 @@ private:
 #endif
   }
 
-  void interact(C_iter C, CellStack &cellStack) {
-    if(C->NCHILD == 0 || C->NDLEAF < 64) {
-      P2P(C);
-//      NP2P++;
-    } else {
-      cellStack.push(C);
-    }
-  }
-
-  void interact(C_iter C, CellQueue &cellQueue) {
-    if(C->NCHILD == 0 || C->NDLEAF < 64) {
-      P2P(C);
-//      NP2P++;
-    } else {
-      cellQueue.push(C);
-    }
-  }
-
   void interact(C_iter Ci, C_iter Cj, bool mutual=true) {
     PairQueue privateQueue;
     Pair pair(Ci,Cj);
@@ -124,6 +106,25 @@ private:
     } else {
       Pair pair(Ci,Cj);
       pairStack.push(pair);
+    }
+  }
+
+ protected:
+  void interact(C_iter C, CellStack &cellStack) {
+    if(C->NCHILD == 0 || C->NDLEAF < 64) {
+      P2P(C);
+//      NP2P++;
+    } else {
+      cellStack.push(C);
+    }
+  }
+
+  void interact(C_iter C, CellQueue &cellQueue) {
+    if(C->NCHILD == 0 || C->NDLEAF < 64) {
+      P2P(C);
+//      NP2P++;
+    } else {
+      cellQueue.push(C);
     }
   }
 

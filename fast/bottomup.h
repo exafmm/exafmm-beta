@@ -179,7 +179,9 @@ protected:
   }
 
   void downwardPass(Cells &cells) const {
-    for( C_iter C=cells.end()-2; C!=cells.begin()-1; --C ) {
+    C_iter C1 = cells.end() - 1;
+    L2P(C1);
+    for( C_iter C=C1-1; C!=cells.begin()-1; --C ) {
       L2L(C);
       L2P(C);
     }

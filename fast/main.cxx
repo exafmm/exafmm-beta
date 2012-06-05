@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 
   bodies2 = bodies;
 //#ifdef MANY
-  bodies2.resize(100);
+  if (bodies2.size() > 100) bodies2.resize(100);
 //#endif
   DATA.initTarget(bodies2);
   FMM.startTimer("Direct sum");
@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
   FMM.eraseTimer("Direct sum");
 
 //#ifdef MANY
-  bodies.resize(100);
+  if (bodies.size() > 100) bodies.resize(100);
 //#endif
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);

@@ -43,7 +43,8 @@ private:
     for( int b=0; b!=8; ++b ) node.CHILD[b] = -1;
   }
 
-  inline void addChild(int octant, N_iter N) {
+  inline void addChild(int octant, bigint n) {
+    N_iter N = nodes.begin()+n;
     Node child;
     init(child);
     child.LEVEL = N->LEVEL+1;
@@ -58,23 +59,24 @@ private:
     NCELL++;
   }
 
-  void splitNode(N_iter N) {
-    while( N->NLEAF > NCRIT ) {
+  void splitNode(bigint n) {
+    while( nodes[n].NLEAF > NCRIT ) {
       int c = 0;
       Leaf *Ln;
-      for( Leaf *L=N->LEAF; L; L=Ln ) {
+      for( Leaf *L=nodes[n].LEAF; L; L=Ln ) {
+	N_iter N = nodes.begin()+n;
         Ln = L->NEXT;
         int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
         if( N->CHILD[octant] == -1 ) {
-          addChild(octant,N);
+          addChild(octant,n);
         }
-        c = N->CHILD[octant];
+        c = nodes[n].CHILD[octant];
         Node *child = &nodes[c];
         L->NEXT = child->LEAF;
         child->LEAF = &*L;
         child->NLEAF++;
       }
-      N = nodes.begin()+c;
+      n = c;
     }
   }
 
@@ -162,19 +164,21 @@ protected:
     nodes.push_back(node);
     MAXLEVEL = 0;
     for( L_iter L=leafs.begin(); L!=leafs.end(); ++L ) {
-      int i = 0;
-      N_iter N = nodes.begin()+i;
-      while( !N->NOCHILD ) {
+      /* we use node index rather than iterator
+	 since nodes may expand along the way */
+      int n = 0;
+      while( !nodes[n].NOCHILD ) {
+	N_iter N = nodes.begin() + n;
         int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
         N->NLEAF++;
-        if( N->CHILD[octant] == -1 ) addChild(octant,N);
-        N = nodes.begin()+N->CHILD[octant];
+        if( nodes[n].CHILD[octant] == -1 ) addChild(octant,n);
+        n = nodes[n].CHILD[octant];
       }
-      L->NEXT = N->LEAF;
-      N->LEAF = &*L;
-      N->NLEAF++;
-      if( N->NLEAF > NCRIT ) splitNode(N);
-      if( MAXLEVEL < N->LEVEL ) MAXLEVEL = N->LEVEL;
+      L->NEXT = nodes[n].LEAF;
+      nodes[n].LEAF = &*L;
+      nodes[n].NLEAF++;
+      if( nodes[n].NLEAF > NCRIT ) splitNode(n);
+      if( MAXLEVEL < nodes[n].LEVEL ) MAXLEVEL = nodes[n].LEVEL;
     }
     MAXLEVEL++;
     stopTimer("Grow tree",printNow);
@@ -216,7 +220,9 @@ protected:
   }
 
   void downwardPass(Cells &cells) const {
-    for( C_iter C=cells.begin()+1; C!=cells.end(); ++C ) {
+    C_iter C0 = cells.begin();
+    L2P(C0);
+    for( C_iter C=C0+1; C!=cells.end(); ++C ) {
       L2L(C);
       L2P(C);
     }

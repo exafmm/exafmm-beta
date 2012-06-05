@@ -75,11 +75,11 @@ public:
     startTimer("Traverse");
 #if STACK
     CellStack cellStack;
-    cellStack.push(ROOT);
+    interact(ROOT, cellStack);
     traverse(cellStack);
 #else
     CellQueue cellQueue;
-    cellQueue.push(ROOT);
+    interact(ROOT, cellQueue);
     traverse(cellQueue);
 #endif
     stopTimer("Traverse",printNow);
