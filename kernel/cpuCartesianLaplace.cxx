@@ -717,7 +717,7 @@ template<>
 void Kernel<Laplace>::initialize() {}
 
 template<>
-void Kernel<Laplace>::P2M(C_iter Ci) const {
+void Kernel<Laplace>::P2M(C_iter Ci) {
   real Rmax = 0;
   setCenter(Ci);
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
@@ -734,7 +734,7 @@ void Kernel<Laplace>::P2M(C_iter Ci) const {
 }
 
 template<>
-void Kernel<Laplace>::M2M(C_iter Ci) const {
+void Kernel<Laplace>::M2M(C_iter Ci) {
   real Rmax = Ci->RMAX;
   setCenter(Ci);
   for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
