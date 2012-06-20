@@ -127,15 +127,18 @@ protected:
     Ci0 = icells.begin();                                       // Begin iterator for target cells
     Cj0 = jcells.begin();                                       // Begin iterator for source cells
     Pair pair;                                                  // Form pair of cells
+    C_iter root;                                                // Root node
     if( TOPDOWN ) {                                             // If tree was constructed top down
-      pair = make_pair(icells.begin(),jcells.begin());          //  The first cell is the root cell
+      root = icells.begin();                                    //  Root cell is the first cell
+      pair = make_pair(icells.begin(),jcells.begin());          //  Pair of root cells
     } else {                                                    // If tree was constructed bottom up
-      pair = make_pair(icells.end()-1,jcells.end()-1);          //  The last cell is the root cell
+      root = icells.end()-1;                                    //  Root cell is the last cell
+      pair = make_pair(icells.end()-1,jcells.end()-1);          //  Pair of root cells
     }                                                           // Endif for tree construction
     PairQueue pairQueue;                                        // Queue of interacting cell pairs
     pairQueue.push_back(pair);                                  // Push pair of root cells to queue
 #if QUARK
-    Quark *quark = QUARK_New(4);                                // Initialize QUARK object
+    Quark *quark = QUARK_New(6);                                // Initialize QUARK object
 #endif
     while( !pairQueue.empty() ) {                               // While dual traversal queue is not empty
       pair = pairQueue.front();                                 //  Get interaction pair from front of queue
@@ -152,10 +155,10 @@ protected:
         }                                                       //   End loop over second cell's children
       }                                                         //  End if for which cell to split
 #if QUARK
-      if( pairQueue.size() > 100 ) {                            //  When queue size reaches threshold
+      if( int(pairQueue.size()) > root->NDLEAF / 100 ) {        //  When queue size reaches threshold
         while( !pairQueue.empty() ) {                           //   While dual traversal queue is not empty
           pair = pairQueue.front();                             //    Get interaction pair from front of queue
-          pairQueue.pop();                                      //    Pop dual traversal queue
+          pairQueue.pop_front();                                //    Pop dual traversal queue
           interact(pair.first,pair.second,quark);               //    Schedule interact() task on QUARK
         }                                                       //   End while loop for dual traversal queue
       }                                                         //  End if for queue size

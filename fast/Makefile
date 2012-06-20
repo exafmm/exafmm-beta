@@ -1,6 +1,6 @@
 include ../Makefile.include
-LFLAGS	+= -DSTACK
-#LFLAGS	+= -DIneJ
+#LFLAGS	+= -DSTACK
+LFLAGS	+= -DIneJ
 #LFLAGS	+= -DBOTTOMUP
 #LFLAGS	+= -DHYBRID
 #LFLAGS	+= -DTREECODE

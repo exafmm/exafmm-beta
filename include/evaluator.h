@@ -125,6 +125,7 @@ private:
     PairQueue pairQueue;                                        // Queue of interacting cell pairs
 #if QUARK
     Quark *quark = QUARK_New(4);                                // Initialize QUARK object
+    C_iter root = pair.first;                                   // Iterator for root target cell
 #endif
     pairQueue.push_back(pair);                                  // Push pair to queue
     while( !pairQueue.empty() ) {                               // While dual traversal queue is not empty
@@ -142,10 +143,10 @@ private:
         }                                                       //   End loop over second cell's children
       }                                                         //  End if for which cell to split
 #if QUARK
-      if( pairQueue.size() > 100 ) {                            //  When queue size reaches threshold
+      if( int(pairQueue.size()) > root->NDLEAF / 100 ) {        //  When queue size reaches threshold
         while( !pairQueue.empty() ) {                           //   While dual traversal queue is not empty
           pair = pairQueue.front();                             //    Get interaction pair from front of queue
-          pairQueue.pop();                                      //    Pop dual traversal queue
+          pairQueue.pop_front();                                //    Pop dual traversal queue
           interact(pair.first,pair.second,quark);               //    Schedule interact() task on QUARK
         }                                                       //   End while loop for dual traversal queue
       }                                                         //  End if for queue size
