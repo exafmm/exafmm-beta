@@ -61,8 +61,12 @@ void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all 
 
 template<Equation equation>
 void Evaluator<equation>::evalM2L(C_iter Ci, C_iter Cj) {       // Evaluate single M2L kernel
+#if QUEUE
   listM2L[Ci-Ci0].push_back(Cj);                                // Push source cell into M2L interaction list
   flagM2L[Ci-Ci0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
+#else
+  M2L(Ci,Cj);                                                   // Perform M2L kernel
+#endif
   NM2L++;                                                       // Count M2L kernel execution
 }
 
@@ -100,8 +104,12 @@ void Evaluator<equation>::evalM2L(Cells &cells) {               // Evaluate queu
 
 template<Equation equation>
 void Evaluator<equation>::evalM2P(C_iter Ci, C_iter Cj) {       // Evaluate single M2P kernel
+#if QUEUE
   listM2P[Ci-Ci0].push_back(Cj);                                // Push source cell into M2P interaction list
   flagM2P[Ci-Ci0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
+#else
+  M2P(Ci,Cj);                                                   // Perform M2P kernel
+#endif
   NM2P++;                                                       // Count M2P kernel execution
 }
 
@@ -139,8 +147,12 @@ void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queu
 
 template<Equation equation>
 void Evaluator<equation>::evalP2P(C_iter Ci, C_iter Cj) {       // Evaluate single P2P kernel
+#if QUEUE
   listP2P[Ci-Ci0].push_back(Cj);                                // Push source cell into P2P interaction list
   flagP2P[Ci-Ci0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
+#else
+  P2P(Ci,Cj);                                                   // Perform P2P kernel
+#endif
   NP2P++;                                                       // Count P2P kernel execution
 }
 

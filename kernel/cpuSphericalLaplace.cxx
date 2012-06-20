@@ -59,7 +59,7 @@ void Kernel<Laplace>::initialize() {}
 
 template<>
 void Kernel<Laplace>::P2M(C_iter Cj) {
-  Rmax = 0;
+  real Rmax = 0;
   complex Ynm[4*P*P], YnmTheta[4*P*P];
   for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NCLEAF; ++B ) {
     vect dist = B->X - Cj->X;
@@ -76,6 +76,7 @@ void Kernel<Laplace>::P2M(C_iter Cj) {
       }
     }
   }
+  Cj->RMAX = Rmax;
   Cj->RCRIT = std::min(Cj->R,Rmax);
 }
 
@@ -83,6 +84,7 @@ template<>
 void Kernel<Laplace>::M2M(C_iter Ci) {
   const complex I(0.,1.);
   complex Ynm[4*P*P], YnmTheta[4*P*P];
+  real Rmax = Ci->RMAX;
   for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
     vect dist = Ci->X - Cj->X;
     real R = std::sqrt(norm(dist)) + Cj->RCRIT;
@@ -119,6 +121,7 @@ void Kernel<Laplace>::M2M(C_iter Ci) {
       }
     }
   }
+  Ci->RMAX = Rmax;
   Ci->RCRIT = std::min(Ci->R,Rmax);
 }
 

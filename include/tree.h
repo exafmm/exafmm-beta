@@ -237,9 +237,11 @@ public:
       traversePeriodic(cells,jcells);                           // Traverse tree for periodic images
       stopTimer("Traverse P",printNow);                         // Stop timer & print
     }                                                           // Endif for periodic boundary condition
+#if QUEUE
     evalM2L(cells);                                             // Evaluate queued M2L kernels (only GPU)
     evalM2P(cells);                                             // Evaluate queued M2P kernels (only GPU)
     evalP2P(cells);                                             // Evaluate queued P2P kernels (only GPU)
+#endif
     evalL2L(cells);                                             // Evaluate all L2L kernels
     evalL2P(cells);                                             // Evaluate all L2P kernels
     if(printNow) std::cout << "P2P: "  << NP2P

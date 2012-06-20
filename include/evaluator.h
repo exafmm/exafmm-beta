@@ -376,12 +376,14 @@ public:
     }                                                           // Endif for periodic boundary condition
     Ci0 = cells.begin();                                        // Set begin iterator for target cells
     Cj0 = jcells.begin();                                       // Set begin iterator for source cells
+#if QUEUE
     listM2L.resize(cells.size());                               // Resize M2L interaction list
     listM2P.resize(cells.size());                               // Resize M2P interaction list
     listP2P.resize(cells.size());                               // Resize P2P interaction list
     flagM2L.resize(cells.size());                               // Resize M2L periodic image flag
     flagM2P.resize(cells.size());                               // Resize M2P periodic image flag
     flagP2P.resize(cells.size());                               // Resize P2P periodic image flag
+#endif
     if( IMAGES == 0 ) {                                         // If free boundary condition
       Iperiodic = Icenter;                                      //  Set periodic image flag to center
       Xperiodic = 0;                                            //  Set periodic coordinate offset

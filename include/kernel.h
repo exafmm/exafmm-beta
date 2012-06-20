@@ -54,7 +54,6 @@ protected:
   gpureal             *sourceDevc;                              //!< Sources on device
   gpureal             *targetDevc;                              //!< Targets on device
 
-  real Rmax;                                                    //!< Maximum distance from center of mass
   real *factorial;                                              //!< Factorial
   real *prefactor;                                              //!< \f$ \sqrt{ \frac{(n - |m|)!}{(n + |m|)!} } \f$
   real *Anm;                                                    //!< \f$ (-1)^n / \sqrt{ \frac{(n + m)!}{(n - m)!} } \f$
