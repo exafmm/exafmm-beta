@@ -29,8 +29,8 @@ int main() {
   int numBodies = 1000;
   IMAGES = 0;
   THETA = 0.6;
-  Bodies bodies, jbodies;
-  Cells cells;
+  Bodies bodies, bodies2, jbodies;
+  Cells cells, jcells;
   Dataset DATA;
   ParallelFMM<Laplace> FMM;
   bool printNow = MPIRANK == 0;
@@ -48,9 +48,13 @@ int main() {
 #endif
 #endif
   numBodies = int(pow(10,(it+24)/8.0));
+  numBodies = 1000000;
   if( printNow ) std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
   DATA.cube(bodies,MPIRANK);
+
+
+/*
   FMM.startTimer("FMM");
 #if BOTTOMUP
   FMM.bottomup(bodies,cells);
@@ -59,7 +63,7 @@ int main() {
 #endif
 #if BUILD
 #else
-  Cells jcells = cells;
+  jcells = cells;
   FMM.startPAPI();
   FMM.evaluate(cells,jcells);
   FMM.stopPAPI();
@@ -69,7 +73,7 @@ int main() {
   FMM.resetTimer();
   if(FMM.printNow) FMM.printTreeData(cells);
 
-  Bodies bodies2 = bodies;
+  bodies2 = bodies;
 #ifdef MANY
   bodies2.resize(100);
 #endif
@@ -94,18 +98,66 @@ int main() {
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   if( printNow ) DATA.printError(diff1,norm1,diff2,norm2);
 #endif
-  }
-
   if( printNow ) std::cout << std::endl;
+*/
+
+
+
   FMM.octsection(bodies);
 #if BOTTOMUP
   FMM.bottomup(bodies,cells);
 #else
   FMM.topdown(bodies,cells);
 #endif
-  FMM.getLET(bodies,cells);
+  FMM.getLET(cells);
   FMM.commBodies();
   FMM.commCells();
+  for( int irank=0; irank!=MPISIZE; irank++ ) {
+    if( irank != MPIRANK ) {
+      FMM.setLET(jcells,irank);
+    } else {
+      jcells = cells;
+    }
+    FMM.evaluate(cells,jcells);
+  }
+
+/*
+  if( IMAGES != 0 ) {
+    FMM.startTimer("Set periodic");
+    jbodies = FMM.periodicBodies(bodies);
+    FMM.stopTimer("Set periodic",FMM.printNow);
+    FMM.eraseTimer("Set periodic");
+  } else {
+    jbodies = bodies;
+  }
+  FMM.startTimer("Direct sum");
+  bodies2 = bodies;
+#ifdef MANY
+  bodies2.resize(100);
+#endif
+  DATA.initTarget(bodies2);
+  for( int i=0; i!=MPISIZE; ++i ) {
+    FMM.shiftBodies(jbodies);
+    FMM.direct(bodies2,jbodies);
+    if(FMM.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;
+  }
+  FMM.stopTimer("Direct sum",FMM.printNow);
+  FMM.eraseTimer("Direct sum");
+
+#ifdef MANY
+  bodies.resize(100);
+#endif
+  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+  real diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
+  DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
+  MPI_Datatype MPI_TYPE = FMM.getType(diff1);
+  MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&norm1,&norm3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  if(FMM.printNow) DATA.printError(diff3,norm3,diff4,norm4);
+*/
+  }
 
 #ifdef VTK
   int Ncell = 0;                                                // Initialize number of cells

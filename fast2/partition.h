@@ -148,7 +148,7 @@ public:
   void shiftBodies(Bodies &bodies) {
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
-    const int word = sizeof(bodies[0]);                         // Word size of body structure
+    const int word = sizeof(bodies[0]) / 4;                     // Word size of body structure
     const int isend = (MPIRANK + 1          ) % MPISIZE;        // Send to next rank (wrap around)
     const int irecv = (MPIRANK - 1 + MPISIZE) % MPISIZE;        // Receive from previous rank (wrap around)
     MPI_Request sreq,rreq;                                      // Send, receive request handles
