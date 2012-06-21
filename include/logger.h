@@ -145,7 +145,9 @@ public:
 
 //! Write traces of all events
   inline void writeTrace() {
-    std::ofstream traceFile("trace.svg");                       // Open trace log file
+    char fname[256];                                            // File name
+    sprintf(fname,"trace%4.4d.svg",MPIRANK);                    // Create file name for trace
+    std::ofstream traceFile(fname);                             // Open trace log file
     traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" // Header statements for trace log file
         << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
         << "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"

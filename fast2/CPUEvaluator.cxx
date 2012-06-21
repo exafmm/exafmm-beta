@@ -74,19 +74,19 @@ inline void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evalua
 template<Equation equation>
 void Evaluator<equation>::evalM2L(C_iter Ci, C_iter Cj) {       // Evaluate single M2L kernel
   M2L(Ci,Cj);                                                   // Call M2L kernel
-  NM2L++;                                                       // Count M2L kernel execution
+//  NM2L++;                                                       // Count M2L kernel execution
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalM2P(C_iter Ci, C_iter Cj) {       // Evaluate single M2P kernel
   M2P(Ci,Cj);                                                   // Call M2P kernel
-  NM2P++;                                                       // Count M2P kernel execution
+//  NM2P++;                                                       // Count M2P kernel execution
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalP2P(C_iter Ci, C_iter Cj) {       // Evaluate single P2P kernel
   P2P(Ci,Cj);                                                   // Call P2P kernel
-  NP2P++;                                                       // Count P2P kernel execution
+//  NP2P++;                                                       // Count P2P kernel execution
 }
 
 template<Equation equation>

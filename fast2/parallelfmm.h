@@ -132,7 +132,7 @@ private:
   }
 
 //! Exchange send count for cells
-  void alltoall(Cells &cells) {
+  void alltoall(Cells) {
     MPI_Alltoall(sendCellCount,1,MPI_INT,                       // Communicate send count to get receive count
                  recvCellCount,1,MPI_INT,MPI_COMM_WORLD);
     recvCellDispl[0] = 0;                                       // Initialize receive displacements
@@ -198,21 +198,22 @@ public:
       sendCellCount[IRANK] = sendCells.size() - sendCellDispl[IRANK];// Send count for IRANK
     }                                                           // End loop over ranks
     stopTimer("Get LET",printNow);                              // Stop timer
-    std::cout << MPIRANK << " " << cells.size() << " " << sendCells.size() << std::endl;
-    std::cout << MPIRANK << " " << bodies.size() << " " << sendBodies.size() << std::endl;
   }
 
 //! Send bodies
   void commBodies() {
     startTimer("Comm bodies");                                  // Start timer
-    alltoall(sendBodies);
-    alltoallv(sendBodies);
+    alltoall(sendBodies);                                       // Send body count
+    alltoallv(sendBodies);                                      // Send bodies
     stopTimer("Comm bodies",printNow);                          // Stop timer
   }
 
 //! Send cells
   void commCells() {
-
+    startTimer("Comm cells");                                   // Start timer
+    alltoall(sendCells);                                        // Send cell count
+    alltoallv(sendCells);                                       // Senc cells
+    stopTimer("Comm cells",printNow);                           // Stop timer
   }
 
 };
