@@ -10,12 +10,12 @@ VTK_INCLUDE_PATH = /usr/include/vtk-5.6
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.6
 
 ### choose CPU or GPU
-DEVICE  = CPU
-#DEVICE  = GPU
+#DEVICE  = CPU
+DEVICE  = GPU
 
 ### choose Cartesian or spherical expansion
-EXPAND  = Cartesian
-#EXPAND  = Spherical
+#EXPAND  = Cartesian
+EXPAND  = Spherical
 
 ### GCC compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -fopenmp -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
@@ -41,7 +41,7 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 #LFLAGS += -DPAPI -lpapi
 
 ### QUARK flags
-LFLAGS	+= -DQUARK -lquark
+#LFLAGS	+= -DQUARK -lquark
 
 ### MassiveThreads flags
 #LFLAGS += -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
@@ -52,7 +52,7 @@ LFLAGS	+= -DQUARK -lquark
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags
-LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
+LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
 
 OBJECT = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
