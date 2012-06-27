@@ -613,10 +613,10 @@ template<Equation equation>
 void Evaluator<equation>::interact(C_iter CI, C_iter CJ, Quark*) {
   PairQueue privateQueue;
   Pair pair(CI,CJ);
-  privateQueue.push(pair);
+  privateQueue.push_back(pair);
   while( !privateQueue.empty() ) {
     Pair Cij = privateQueue.front();
-    privateQueue.pop();
+    privateQueue.pop_front();
     if(splitFirst(Cij.first,Cij.second)) {
       C_iter C = Cij.first;
       for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
