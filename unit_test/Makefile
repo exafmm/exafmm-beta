@@ -98,7 +98,7 @@ vtk: vtk.cxx $(OBJECT)
 
 fdgl: fdgl.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
-	$(PARALLELRUN)
+	$(SERIALRUN)
 
 poisson: poisson.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS)

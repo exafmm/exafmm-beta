@@ -47,8 +47,8 @@ struct Vertex : public JVertex {
   vect      F;                                                  //!< Force vector
 };
 
-const std::string  INPUT_PATH = "../../fdgl_in/";               //!< Input file name
-const std::string OUTPUT_PATH = "../../fdgl_out/";              //!< Output file name
+const std::string  INPUT_PATH = "../../archive/fdgl_in/";       //!< Input file name
+const std::string OUTPUT_PATH = "../../archive/fdgl_out/";      //!< Output file name
 
 std::vector<int> edges;                                         // Vector of edges
 std::vector<Vertex> vertices;                                   // Vector of vertices

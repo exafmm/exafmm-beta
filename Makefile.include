@@ -6,8 +6,8 @@ CUDA_INSTALL_PATH = /usr/local/cuda
 CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 
 ### VTK path
-VTK_INCLUDE_PATH = /usr/include/vtk-5.6
-VTK_LIBRARY_PATH = /usr/lib/vtk-5.6
+VTK_INCLUDE_PATH = /usr/include/vtk-5.8
+VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
 ### choose CPU or GPU
 DEVICE  = CPU
@@ -41,14 +41,14 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 #LFLAGS += -DPAPI -lpapi
 
 ### QUARK flags
-LFLAGS	+= -DQUARK -lquark
+#LFLAGS	+= -DQUARK -lquark
 
 ### MassiveThreads flags
 #LFLAGS += -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
 
 ### VTK flags
-#CXX     += -I$(VTK_INCLUDE_PATH)
-#VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+CXX     += -I$(VTK_INCLUDE_PATH)
+VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags
