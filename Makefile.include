@@ -6,16 +6,16 @@ CUDA_INSTALL_PATH = /usr/local/cuda
 CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 
 ### VTK path
-VTK_INCLUDE_PATH = /usr/include/vtk-5.8
-VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
+#VTK_INCLUDE_PATH = /usr/include/vtk-5.8
+#VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
 ### choose CPU or GPU
-#DEVICE  = CPU
-DEVICE  = GPU
+DEVICE  = CPU
+#DEVICE  = GPU
 
 ### choose Cartesian or spherical expansion
-#EXPAND  = Cartesian
-EXPAND  = Spherical
+EXPAND  = Cartesian
+#EXPAND  = Spherical
 
 ### GCC compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -fopenmp -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
@@ -47,8 +47,8 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 #LFLAGS += -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
 
 ### VTK flags
-CXX     += -I$(VTK_INCLUDE_PATH)
-VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+#CXX     += -I$(VTK_INCLUDE_PATH)
+#VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags
