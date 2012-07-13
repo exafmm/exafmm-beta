@@ -23,6 +23,8 @@ THE SOFTWARE.
 #define bottomup_h
 #include "topdown.h"
 
+#define OMP_NUM_THREADS 12
+
 class BottomUp : public TopDown {
 private:
   int getMaxLevel(Bodies &bodies) {
@@ -34,21 +36,78 @@ private:
 
   inline void getIndex(Bodies &bodies) {
     float d = 2 * R0 / (1 << MAXLEVEL);
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+#pragma omp parallel for
+    for( uint b=0; b<bodies.size(); b++ ) {
+      B_iter B = bodies.begin() + b;
       int ix = int((B->X[0] + R0 - X0[0]) / d);
       int iy = int((B->X[1] + R0 - X0[1]) / d);
       int iz = int((B->X[2] + R0 - X0[2]) / d);
       int id = 0;
       for( int l=0; l!=MAXLEVEL; ++l ) {
-        id += ix % 2 << (3 * l);
-        id += iy % 2 << (3 * l + 1);
-        id += iz % 2 << (3 * l + 2);
+        id += (ix & 1) << (3 * l);
+        id += (iy & 1) << (3 * l + 1);
+        id += (iz & 1) << (3 * l + 2);
         ix >>= 1;
         iy >>= 1;
         iz >>= 1;
       }
       B->ICELL = id;
     }
+  }
+
+  void radixSort(Bodies &bodies, int **index) {
+    const int n = bodies.size();
+    const int bitStride = 8;
+    const int stride = 1 << bitStride;
+    const int mask = stride - 1;
+    int (*bucket2D)[stride] = new int [OMP_NUM_THREADS][stride]();
+    int aMaxPerThread[OMP_NUM_THREADS] = {0};
+#pragma omp parallel for num_threads(OMP_NUM_THREADS)
+    for( int b=0; b<n; b++ ) {
+      int i = bodies[b].ICELL;
+      index[0][b] = i;
+      index[2][b] = b;
+      index[4][b] = i;
+      if( i > aMaxPerThread[omp_get_thread_num()] )
+        aMaxPerThread[omp_get_thread_num()] = i;
+    }
+    int aMax = 0;
+    for( int i=0; i<OMP_NUM_THREADS; i++ )
+      if( aMaxPerThread[i] > aMax ) aMax = aMaxPerThread[i];
+    while( aMax > 0 ) {
+      int bucket2[stride] = {0};
+      for( int t=0; t<OMP_NUM_THREADS; t++ )
+        for( int i=0; i<stride; i++ )
+          bucket2D[t][i] = 0;
+#pragma omp parallel for num_threads(OMP_NUM_THREADS)
+      for( int i=0; i<n; i++ )
+        bucket2D[omp_get_thread_num()][index[0][i] & mask]++;
+      for( int t=0; t<OMP_NUM_THREADS; t++ )
+        for( int i=0; i<stride; i++ )
+          bucket2[i] += bucket2D[t][i];
+      for( int i=1; i<stride; i++ )
+        bucket2[i] += bucket2[i-1];
+      for( int i=n-1; i>=0; i-- )
+        index[3][i] = --bucket2[index[0][i] & mask];
+#pragma omp parallel for num_threads(OMP_NUM_THREADS)
+      for( int i=0; i<n; i++ )
+        index[1][index[3][i]] = index[2][i];
+#pragma omp parallel for num_threads(OMP_NUM_THREADS)
+      for( int i=0; i<n; i++ )
+        index[2][i] = index[1][i];
+#pragma omp parallel for num_threads(OMP_NUM_THREADS)
+      for( int i=0; i<n; i++ )
+        index[1][index[3][i]] = index[0][i];
+#pragma omp parallel for num_threads(OMP_NUM_THREADS)
+      for( int i=0; i<n; i++ )
+        index[0][i] = index[1][i] >> bitStride;
+      aMax >>= bitStride;
+    }
+    Bodies buffer = bodies;
+#pragma omp parallel for num_threads(OMP_NUM_THREADS)
+    for( int b=0; b<n; b++ )
+      bodies[b] = buffer[index[2][b]];
+    delete[] bucket2D;
   }
 
   inline void initCell(Cell &cell, int child, B_iter LEAF, real diameter) {
@@ -140,10 +199,13 @@ protected:
   void buildTree(Bodies &bodies, Cells &cells) {
     startTimer("Morton index");
     getIndex(bodies);
-    Bodies buffer = bodies;
     stopTimer("Morton index",printNow);
     startTimer("Sort bodies");
-    sortBodies(bodies,buffer);
+    int **index = new int* [5];
+    for( int i=0; i<5; i++ ) index[i] = new int [bodies.size()];
+    radixSort(bodies,index);
+    for( int i=0; i<5; i++ ) delete[] index[i];
+    delete[] index;
     stopTimer("Sort bodies",printNow);
     startTimer("Build bottom");
     buildBottom(bodies,cells);
