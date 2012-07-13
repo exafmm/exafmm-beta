@@ -44,6 +44,7 @@ THE SOFTWARE.
 #include <utility>
 #include <vector>
 #include "vec.h"                                                //!< My vector type with operator overloading
+#include <xmmintrin.h>
 #if PAPI
 #include <papi.h>
 #endif
