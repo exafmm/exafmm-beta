@@ -54,7 +54,6 @@ int main() {
   DATA.cube(bodies,MPIRANK);
 
 
-/*
   FMM.startTimer("FMM");
 #if BOTTOMUP
   FMM.bottomup(bodies,cells);
@@ -74,9 +73,9 @@ int main() {
   if(FMM.printNow) FMM.printTreeData(cells);
 
   bodies2 = bodies;
-#ifdef MANY
+//#ifdef MANY
   bodies2.resize(100);
-#endif
+//#endif
   if( IMAGES != 0 ) {
     FMM.startTimer("Set periodic");
     jbodies = FMM.periodicBodies(bodies);
@@ -91,18 +90,17 @@ int main() {
   FMM.stopTimer("Direct sum",printNow);
   FMM.eraseTimer("Direct sum");
 
-#ifdef MANY
+//#ifdef MANY
   bodies.resize(100);
-#endif
+//#endif
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   if( printNow ) DATA.printError(diff1,norm1,diff2,norm2);
 #endif
   if( printNow ) std::cout << std::endl;
-*/
 
 
-
+/*
   FMM.octsection(bodies);
 #if BOTTOMUP
   FMM.bottomup(bodies,cells);
@@ -121,7 +119,6 @@ int main() {
     FMM.evaluate(cells,jcells);
   }
 
-/*
   if( IMAGES != 0 ) {
     FMM.startTimer("Set periodic");
     jbodies = FMM.periodicBodies(bodies);
