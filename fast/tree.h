@@ -73,15 +73,9 @@ public:
   void evaluate(Cells &cells) {
     setRootCell(cells);
     startTimer("Traverse");
-#if STACK
-    CellStack cellStack;
-    interact(ROOT, cellStack);
-    traverse(cellStack);
-#else
     CellQueue cellQueue;
-    interact(ROOT, cellQueue);
+    pushCell(ROOT, cellQueue);
     traverse(cellQueue);
-#endif
     stopTimer("Traverse",printNow);
     startTimer("Downward pass");
     if( TOPDOWN ) {
@@ -97,15 +91,9 @@ public:
     setRootCell(icells,jcells);
     Pair pair(ROOT,ROOT2);
     startTimer("Traverse");
-#if STACK
-    PairStack pairStack;
-    pairStack.push(pair);
-    traverse(pairStack);
-#else
     PairQueue pairQueue;
     pairQueue.push_front(pair);
     traverse(pairQueue);
-#endif
     stopTimer("Traverse",printNow);
     startTimer("Downward pass");
     if( TOPDOWN ) {

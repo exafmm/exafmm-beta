@@ -421,7 +421,11 @@ public:
       evalMultipole(rho,alpha,-beta);
       Terms<P-1,P-1>::P2M(C->M,B->SRC,Ynm);
     }
+#if USE_RMAX
     C->RCRIT = std::min(C->R,Rmax);
+#else
+    C->RCRIT = C->R;
+#endif
   }
 
   void M2M(C_iter Ci, real &Rmax) const {
@@ -458,7 +462,11 @@ public:
         }
       }
     }
+#if USE_RMAX
     Ci->RCRIT = std::min(Ci->R,Rmax);
+#else
+    Ci->RCRIT = Ci->R;
+#endif
   }
 
   void M2L(C_iter Ci, C_iter Cj, bool mutual=true) const {

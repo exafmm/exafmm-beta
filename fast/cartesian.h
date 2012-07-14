@@ -72,14 +72,14 @@ struct Index<T,nx,0,0> {
 template<typename T>
 struct Index<T,0,0,0> {
   static const int      I = 0;
-  static constexpr real F = 1;
+  static constexpr real F = 1.;
 };
 
 #if COMkernel
 template<>
 struct Index<Mset,2,0,0> {
   static const int      I = 1;
-  static constexpr real F = 2;
+  static constexpr real F = 2.;
 };
 #endif
 
@@ -910,104 +910,129 @@ public:
   ~Kernel() {}
 
 #if 1
-  void P2P(C_iter Ci, C_iter Cj, bool) const {
-    for( int bi=0; bi<Ci->NDLEAF; bi+=4 ) {
-      B_iter Bi = Ci->LEAF + bi;
-      int nvec = std::min(Ci->NDLEAF-bi,4);
-      float16 target4;
-      for( int i=0; i<nvec; i++ ) {
-        target4.x[i] = Bi[i].X[0];
-        target4.y[i] = Bi[i].X[1];
-        target4.z[i] = Bi[i].X[2];
-        target4.w[i] = EPS2;
+  void P2P(C_iter Ci, C_iter Cj, bool mutual) const {
+    if( mutual ) {
+      for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {
+        real P0 = 0;
+        vect F0 = 0;
+        for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {
+          vect dX = Bi->X - Bj->X;
+          real R2 = norm(dX) + EPS2;
+          real invR2 = 1.0 / R2;
+          if( R2 == 0 ) invR2 = 0;
+          real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
+          dX *= invR2 * invR;
+          P0 += invR;
+          F0 += dX;
+          Bj->TRG[0] += invR * mutual;
+          Bj->TRG[1] += dX[0] * mutual;
+          Bj->TRG[2] += dX[1] * mutual;
+          Bj->TRG[3] += dX[2] * mutual;
+        }
+        Bi->TRG[0] += P0;
+        Bi->TRG[1] -= F0[0];
+        Bi->TRG[2] -= F0[1];
+        Bi->TRG[3] -= F0[2];
       }
-      B_iter Bj = Cj->LEAF;
-      __m128 mi = _mm_load1_ps(&Bi->SRC);
-      __m128 zero = _mm_setzero_ps();
-      __m128 ax = _mm_setzero_ps();
-      __m128 ay = _mm_setzero_ps();
-      __m128 az = _mm_setzero_ps();
-      __m128 phi = _mm_setzero_ps();
-  
-      __m128 xi = _mm_load_ps(target4.x);
-      __m128 yi = _mm_load_ps(target4.y);
-      __m128 zi = _mm_load_ps(target4.z);
-      __m128 R2 = _mm_load_ps(target4.w);
-  
-      float4 source = make_float4(Bj);
-      __m128 x2 = _mm_load1_ps(&source.x);
-      x2 = _mm_sub_ps(x2, xi);
-      __m128 y2 = _mm_load1_ps(&source.y);
-      y2 = _mm_sub_ps(y2, yi);
-      __m128 z2 = _mm_load1_ps(&source.z);
-      z2 = _mm_sub_ps(z2, zi);
-      __m128 mj = _mm_load1_ps(&source.w);
-  
-      __m128 xj = x2;
-      x2 = _mm_mul_ps(x2, x2);
-      R2 = _mm_add_ps(R2, x2);
-      __m128 yj = y2;
-      y2 = _mm_mul_ps(y2, y2);
-      R2 = _mm_add_ps(R2, y2);
-      __m128 zj = z2;
-      z2 = _mm_mul_ps(z2, z2);
-      R2 = _mm_add_ps(R2, z2);
-  
-      source = make_float4(++Bj);
-      x2 = _mm_load_ps(&source.x);
-      y2 = x2;
-      z2 = x2;
-      for( int j=0; j<Cj->NDLEAF; j++ ) {
-        __m128 invR = _mm_rsqrt_ps(R2);
-        __m128 mask = _mm_cmpgt_ps(R2,zero);
-        invR = _mm_and_ps(invR,mask);
-        R2 = _mm_load_ps(target4.w);
-        x2 = _mm_shuffle_ps(x2, x2, 0x00);
+    } else {
+      for( int bi=0; bi<Ci->NDLEAF; bi+=4 ) {
+        B_iter Bi = Ci->LEAF + bi;
+        int nvec = std::min(Ci->NDLEAF-bi,4);
+        float16 target4;
+        for( int i=0; i<nvec; i++ ) {
+          target4.x[i] = Bi[i].X[0];
+          target4.y[i] = Bi[i].X[1];
+          target4.z[i] = Bi[i].X[2];
+          target4.w[i] = EPS2;
+        }
+        B_iter Bj = Cj->LEAF;
+        __m128 mi = _mm_load1_ps(&Bi->SRC);
+        __m128 zero = _mm_setzero_ps();
+        __m128 ax = _mm_setzero_ps();
+        __m128 ay = _mm_setzero_ps();
+        __m128 az = _mm_setzero_ps();
+        __m128 phi = _mm_setzero_ps();
+    
+        __m128 xi = _mm_load_ps(target4.x);
+        __m128 yi = _mm_load_ps(target4.y);
+        __m128 zi = _mm_load_ps(target4.z);
+        __m128 R2 = _mm_load_ps(target4.w);
+    
+        float4 source = make_float4(Bj);
+        __m128 x2 = _mm_load1_ps(&source.x);
         x2 = _mm_sub_ps(x2, xi);
-        y2 = _mm_shuffle_ps(y2, y2, 0x55);
+        __m128 y2 = _mm_load1_ps(&source.y);
         y2 = _mm_sub_ps(y2, yi);
-        z2 = _mm_shuffle_ps(z2, z2, 0xaa);
+        __m128 z2 = _mm_load1_ps(&source.z);
         z2 = _mm_sub_ps(z2, zi);
-  
-        mj = _mm_mul_ps(mj, invR);
-        mj = _mm_mul_ps(mj, mi);
-        phi = _mm_add_ps(phi, mj);
-        invR = _mm_mul_ps(invR, invR);
-        invR = _mm_mul_ps(invR, mj);
-        mj = _mm_load_ps(&source.x);
-        mj = _mm_shuffle_ps(mj, mj, 0xff);
-  
-        source = make_float4(++Bj);
-        xj = _mm_mul_ps(xj, invR);
-        ax = _mm_add_ps(ax, xj);
-        xj = x2;
+        __m128 mj = _mm_load1_ps(&source.w);
+    
+        __m128 xj = x2;
         x2 = _mm_mul_ps(x2, x2);
         R2 = _mm_add_ps(R2, x2);
-        x2 = _mm_load_ps(&source.x);
-  
-        yj = _mm_mul_ps(yj, invR);
-        ay = _mm_add_ps(ay, yj);
-        yj = y2;
+        __m128 yj = y2;
         y2 = _mm_mul_ps(y2, y2);
         R2 = _mm_add_ps(R2, y2);
-        y2 = x2;
-  
-        zj = _mm_mul_ps(zj, invR);
-        az = _mm_add_ps(az, zj);
-        zj = z2;
+        __m128 zj = z2;
         z2 = _mm_mul_ps(z2, z2);
         R2 = _mm_add_ps(R2, z2);
+    
+        source = make_float4(++Bj);
+        x2 = _mm_load_ps(&source.x);
+        y2 = x2;
         z2 = x2;
-      }
-      _mm_store_ps(target4.x, ax);
-      _mm_store_ps(target4.y, ay);
-      _mm_store_ps(target4.z, az);
-      _mm_store_ps(target4.w, phi);
-      for( int i=0; i<nvec; i++ ) {
-        Bi[i].TRG[0] += target4.w[i];
-        Bi[i].TRG[1] += target4.x[i];
-        Bi[i].TRG[2] += target4.y[i];
-        Bi[i].TRG[3] += target4.z[i];
+        for( int j=0; j<Cj->NDLEAF; j++ ) {
+          __m128 invR = _mm_rsqrt_ps(R2);
+          __m128 mask = _mm_cmpgt_ps(R2,zero);
+          invR = _mm_and_ps(invR,mask);
+          R2 = _mm_load_ps(target4.w);
+          x2 = _mm_shuffle_ps(x2, x2, 0x00);
+          x2 = _mm_sub_ps(x2, xi);
+          y2 = _mm_shuffle_ps(y2, y2, 0x55);
+          y2 = _mm_sub_ps(y2, yi);
+          z2 = _mm_shuffle_ps(z2, z2, 0xaa);
+          z2 = _mm_sub_ps(z2, zi);
+    
+          mj = _mm_mul_ps(mj, invR);
+          mj = _mm_mul_ps(mj, mi);
+          phi = _mm_add_ps(phi, mj);
+          invR = _mm_mul_ps(invR, invR);
+          invR = _mm_mul_ps(invR, mj);
+          mj = _mm_load_ps(&source.x);
+          mj = _mm_shuffle_ps(mj, mj, 0xff);
+    
+          source = make_float4(++Bj);
+          xj = _mm_mul_ps(xj, invR);
+          ax = _mm_add_ps(ax, xj);
+          xj = x2;
+          x2 = _mm_mul_ps(x2, x2);
+          R2 = _mm_add_ps(R2, x2);
+          x2 = _mm_load_ps(&source.x);
+    
+          yj = _mm_mul_ps(yj, invR);
+          ay = _mm_add_ps(ay, yj);
+          yj = y2;
+          y2 = _mm_mul_ps(y2, y2);
+          R2 = _mm_add_ps(R2, y2);
+          y2 = x2;
+    
+          zj = _mm_mul_ps(zj, invR);
+          az = _mm_add_ps(az, zj);
+          zj = z2;
+          z2 = _mm_mul_ps(z2, z2);
+          R2 = _mm_add_ps(R2, z2);
+          z2 = x2;
+        }
+        _mm_store_ps(target4.x, ax);
+        _mm_store_ps(target4.y, ay);
+        _mm_store_ps(target4.z, az);
+        _mm_store_ps(target4.w, phi);
+        for( int i=0; i<nvec; i++ ) {
+          Bi[i].TRG[0] += target4.w[i];
+          Bi[i].TRG[1] += target4.x[i];
+          Bi[i].TRG[2] += target4.y[i];
+          Bi[i].TRG[3] += target4.z[i];
+        }
       }
     }
   }
@@ -1079,7 +1104,11 @@ public:
       for( int i=0; i<MTERM; ++i ) C->M[i] += M[i];
 #endif
     }
+#if USE_RMAX
     C->RCRIT = std::min(C->R,Rmax);
+#else
+    C->RCRIT = C->R;
+#endif
   }
 
   void M2M(C_iter Ci, real &Rmax) const {
@@ -1100,7 +1129,11 @@ public:
 #endif
       Kernels<0,0,P-1>::M2M(Ci->M,C,M);
     }
+#if USE_RMAX
     Ci->RCRIT = std::min(Ci->R,Rmax);
+#else
+    Ci->RCRIT = Ci->R;
+#endif
   }
 
   void M2L(C_iter Ci, C_iter Cj, bool mutual=true) const {

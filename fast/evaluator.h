@@ -95,31 +95,8 @@ private:
     }
   }
 
-  void interact(C_iter Ci, C_iter Cj, PairStack &pairStack, bool mutual=true) {
-    vect dX = Ci->X - Cj->X;
-    real Rq = norm(dX);
-    if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
-      approximate(Ci,Cj,mutual);
-    } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
-      P2P(Ci,Cj,mutual);
-//      NP2P++;
-    } else {
-      Pair pair(Ci,Cj);
-      pairStack.push(pair);
-    }
-  }
-
- protected:
-  void interact(C_iter C, CellStack &cellStack) {
-    if(C->NCHILD == 0 || C->NDLEAF < 64) {
-      P2P(C);
-//      NP2P++;
-    } else {
-      cellStack.push(C);
-    }
-  }
-
-  void interact(C_iter C, CellQueue &cellQueue) {
+protected:
+  void pushCell(C_iter C, CellQueue &cellQueue) {
     if(C->NCHILD == 0 || C->NDLEAF < 64) {
       P2P(C);
 //      NP2P++;
@@ -132,14 +109,23 @@ public:
   void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {
     vect dX = Ci->X - Cj->X;
     real Rq = norm(dX);
-    if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
-      approximate(Ci,Cj,mutual);
-    } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
-      P2P(Ci,Cj,mutual);
-//      NP2P++;
-    } else {
+#if DUAL
+    {
+#else
+    if(Ci->RCRIT != Cj->RCRIT) {
       Pair pair(Ci,Cj);
       pairQueue.push_back(pair);
+    } else {
+#endif
+      if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+        approximate(Ci,Cj,mutual);
+      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
+        P2P(Ci,Cj,mutual);
+  //      NP2P++;
+      } else {
+        Pair pair(Ci,Cj);
+        pairQueue.push_back(pair);
+      }
     }
   }
 
@@ -182,50 +168,29 @@ protected:
       X += c->X * std::abs(c->M[0]);
     }
     X /= m;
+#if USE_BMAX
     C->R = getBmax(X,C);
+#endif
+#if COMcenter
     C->X = X;
+#endif
   }
 
   void setRcrit(Cells &cells) {
+#if ERROR_OPT
     real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(ROOT->M[0]),1.0/3);
+#endif
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      real a = c * pow(std::abs(C->M[0]),1.0/3);
       real x = 1.0 / THETA;
+#if ERROR_OPT
+      real a = c * pow(std::abs(C->M[0]),1.0/3);
       for( int i=0; i<5; ++i ) {
         real f = x * x - 2 * x + 1 - a * pow(x,-P);
         real df = (P + 2) * x - 2 * (P + 1) + P / x;
         x -= f / df;
       }
+#endif
       C->RCRIT *= x;
-    }
-  }
-
-  void traverse(CellStack &cellStack) {
-    PairStack pairStack;
-    while( !cellStack.empty() ) {
-      C_iter C = cellStack.top();
-      cellStack.pop();
-      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-        interact(Ci,cellStack);
-        for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          interact(Ci,Cj,pairStack);
-        }
-      }
-      while( !pairStack.empty() ) {
-        Pair pair = pairStack.top();
-        pairStack.pop();
-        if(splitFirst(pair.first,pair.second)) {
-          C = pair.first;
-          for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-            interact(Ci,pair.second,pairStack);
-          }
-        } else {
-          C = pair.second;
-          for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-            interact(pair.first,Cj,pairStack);
-          }
-        }
-      }
     }
   }
 
@@ -235,54 +200,21 @@ protected:
       C_iter C = cellQueue.front();
       cellQueue.pop();
       for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-        interact(Ci,cellQueue);
+        pushCell(Ci,cellQueue);
         for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
           interact(Ci,Cj,pairQueue);
         }
       }
-      while( !pairQueue.empty() ) {
-        Pair pair = pairQueue.front();
-        pairQueue.pop_front();
-        if(splitFirst(pair.first,pair.second)) {
-          C = pair.first;
-          for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-            interact(Ci,pair.second,pairQueue);
-          }
-        } else {
-          C = pair.second;
-          for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-            interact(pair.first,Cj,pairQueue);
-          }
-        }
-      }
+      traverse(pairQueue,true);
     }
   }
 
-  void traverse(PairStack &pairStack) {
+  void traverse(PairQueue &pairQueue, bool mutual=false) {
 #if MTHREADS
-    Pair pair = pairStack.top();
-    pairStack.pop();
-    traverse(pair.first,pair.second);
+    Pair pair = pairQueue.front();
+    pairQueue.pop_back();
+    traverse(pair.first,pair.second,mutual);
 #else
-    while( !pairStack.empty() ) {
-      Pair pair = pairStack.top();
-      pairStack.pop();
-      if(splitFirst(pair.first,pair.second)) {
-        C_iter C = pair.first;
-        for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-          interact(Ci,pair.second,pairStack,false);
-        }
-      } else {
-        C_iter C = pair.second;
-        for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          interact(pair.first,Cj,pairStack,false);
-        }
-      }
-    }
-#endif
-  }
-
-  void traverse(PairQueue &pairQueue) {
 #if QUARK
     Quark *quark = QUARK_New(12);
 #endif
@@ -292,12 +224,12 @@ protected:
       if(splitFirst(pair.first,pair.second)) {
         C_iter C = pair.first;
         for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-          interact(Ci,pair.second,pairQueue,false);
+          interact(Ci,pair.second,pairQueue,mutual);
         }
       } else {
         C_iter C = pair.second;
         for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          interact(pair.first,Cj,pairQueue,false);
+          interact(pair.first,Cj,pairQueue,mutual);
         }
       }
 #if QUARK
@@ -305,55 +237,62 @@ protected:
         while( !pairQueue.empty() ) {
           pair = pairQueue.front();
           pairQueue.pop_front();
-          interact(pair.first,pair.second,quark,false);
+          interact(pair.first,pair.second,quark,mutual);
         }
       }
 #else
       if( int(pairQueue.size()) > ROOT->NDLEAF / 100 ) {
-#if MTHREADS
-#else
 #pragma omp parallel for schedule(dynamic)
-#endif
         for( int i=0; i<int(pairQueue.size()); i++ ) {
-          interact(pairQueue[i].first,pairQueue[i].second,false);
+          interact(pairQueue[i].first,pairQueue[i].second,mutual);
         }
         pairQueue.clear();
       }
-#endif
+#endif // QUARK
     }
 #if QUARK
     QUARK_Delete(quark);
     writeTrace();
 #endif
+#endif // MTHREADS
   }
 
 #if MTHREADS
-  void traverse(C_iter Ci, C_iter Cj) {
+  void traverse(C_iter Ci, C_iter Cj, bool mutual) {
     vect dX = Ci->X - Cj->X;
     real Rq = norm(dX);
-    if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
-      approximate(Ci,Cj,false);
-    } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
-      P2P(Ci,Cj,false);
-//      NP2P++;
+#if DUAL
+    {
+#else
+    if(Ci->RCRIT != Cj->RCRIT) {
+      Pair pair(Ci,Cj);
+      pairQueue.push_back(pair);
     } else {
-      if(splitFirst(Ci,Cj)) {
-        C_iter C = Ci;
-        task_group tg;
-        for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
-          if( CC->NDLEAF > NDLEAF_THRESHOLD ) tg.run([=]{traverse(CC,Cj);});
-          else traverse(CC,Cj);
-        }
-        tg.wait();
+#endif
+      if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+        approximate(Ci,Cj,mutual);
+      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
+        P2P(Ci,Cj,mutual);
+  //      NP2P++;
       } else {
-        C_iter C = Cj;
-        for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
-          traverse(Ci,CC);
+        if(splitFirst(Ci,Cj)) {
+          C_iter C = Ci;
+          task_group tg;
+          for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
+            if( CC->NDLEAF > NDLEAF_THRESHOLD ) tg.run([=]{traverse(CC,Cj,mutual);});
+            else traverse(CC,Cj,mutual);
+          }
+          tg.wait();
+        } else {
+          C_iter C = Cj;
+          for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
+            traverse(Ci,CC,mutual);
+          }
         }
       }
     }
   }
-#endif
+#endif // MTHREADS
 
 public:
   Evaluator() : NDLEAF_THRESHOLD(10000), NP2P(0), NM2P(0), NM2L(0) {}
@@ -444,6 +383,6 @@ void Evaluator::interact(C_iter Ci, C_iter Cj, Quark *quark, bool mutual) {
                       0);
   }
 }
-#endif
+#endif // QUARK
 #undef splitFirst
 #endif
