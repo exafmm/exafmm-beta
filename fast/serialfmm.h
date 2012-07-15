@@ -19,11 +19,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
-#ifndef tree_h
-#define tree_h
+#ifndef serialfmm_h
+#define serialfmm_h
 #include "bottomup.h"
 
-class TreeConstructor : public BottomUp {
+class SerialFMM : public BottomUp {
 public:
   void topdown(Bodies &bodies, Cells &cells) {
     TOPDOWN = true;
@@ -40,10 +40,7 @@ public:
     BottomUp::linkTree(cells);
     BottomUp::upwardPass(cells);
   }
-};
 
-class SerialFMM : public TreeConstructor {
-public:
   void direct(Bodies &bodies) {
     Cells cells;
     cells.resize(1);

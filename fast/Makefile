@@ -18,7 +18,7 @@ a	: main.cxx
 b	: main.cxx
 	make clean
 	$(CXX) $? $(LFLAGS) -DMANY
-	MYTH_WORKER_NUM=1 ./a.out
+	MYTH_WORKER_NUM=12 ./a.out
 
 c	: main.cxx
 	make clean

@@ -21,11 +21,7 @@ THE SOFTWARE.
 */
 #ifndef evaluator_h
 #define evaluator_h
-#if Cartesian
 #include "cartesian.h"
-#elif Spherical
-#include "spherical.h"
-#endif
 #define splitFirst(Ci,Cj) Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT >= Cj->RCRIT)
 
 class Evaluator : public Kernel {
@@ -73,7 +69,7 @@ private:
 #endif
   }
 
-  void interact(C_iter Ci, C_iter Cj, bool mutual=true) {
+  void traverse(C_iter Ci, C_iter Cj, bool mutual=true) {
     PairQueue privateQueue;
     Pair pair(Ci,Cj);
     privateQueue.push_back(pair);
@@ -106,7 +102,7 @@ protected:
 
 public:
   void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {
-    vect dX = Ci->X - Cj->X;
+    vect dX = Ci->X - Cj->X - Xperiodic;
     real Rq = norm(dX);
 #if DUAL
     {
@@ -129,7 +125,7 @@ public:
   }
 
 #if QUARK
-  inline void interact(C_iter Ci, C_iter Cj, Quark *quark, bool mutual=true);
+  inline void traverse(C_iter Ci, C_iter Cj, Quark *quark, bool mutual=true);
 #endif
 
 protected:
@@ -212,7 +208,7 @@ protected:
 #if MTHREADS
     Pair pair = pairQueue.front();
     pairQueue.pop_back();
-    traverse(pair.first,pair.second,mutual);
+    recursiveTraverse(pair.first,pair.second,mutual);
 #else
 #if QUARK
     Quark *quark = QUARK_New(12);
@@ -236,14 +232,14 @@ protected:
         while( !pairQueue.empty() ) {
           pair = pairQueue.front();
           pairQueue.pop_front();
-          interact(pair.first,pair.second,quark,mutual);
+          traverse(pair.first,pair.second,quark,mutual);
         }
       }
 #else
       if( int(pairQueue.size()) > ROOT->NDLEAF / 100 ) {
 #pragma omp parallel for schedule(dynamic)
         for( int i=0; i<int(pairQueue.size()); i++ ) {
-          interact(pairQueue[i].first,pairQueue[i].second,mutual);
+          traverse(pairQueue[i].first,pairQueue[i].second,mutual);
         }
         pairQueue.clear();
       }
@@ -257,8 +253,8 @@ protected:
   }
 
 #if MTHREADS
-  void traverse(C_iter Ci, C_iter Cj, bool mutual) {
-    vect dX = Ci->X - Cj->X;
+  void recursiveTraverse(C_iter Ci, C_iter Cj, bool mutual) {
+    vect dX = Ci->X - Cj->X - Xperiodic;
     real Rq = norm(dX);
 #if DUAL
     {
@@ -278,14 +274,14 @@ protected:
           C_iter C = Ci;
           task_group tg;
           for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
-            if( CC->NDLEAF > 10000 ) tg.run([=]{traverse(CC,Cj,mutual);});
-            else traverse(CC,Cj,mutual);
+            if( CC->NDLEAF > 10000 ) tg.run([=]{recursiveTraverse(CC,Cj,mutual);});
+            else recursiveTraverse(CC,Cj,mutual);
           }
           tg.wait();
         } else {
           C_iter C = Cj;
           for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
-            traverse(Ci,CC,mutual);
+            recursiveTraverse(Ci,CC,mutual);
           }
         }
       }
@@ -329,7 +325,7 @@ public:
 };
 
 #if QUARK
-inline void interactQuark(Quark *quark) {
+inline void traverseQuark(Quark *quark) {
   Evaluator *E;
   C_iter CI, CJ, Ci0, Cj0;
   bool mutual;
@@ -357,13 +353,13 @@ inline void interactQuark(Quark *quark) {
   E->stopTracer(beginTrace,0x0000ff);
 }
 
-void Evaluator::interact(C_iter Ci, C_iter Cj, Quark *quark, bool mutual) {
+void Evaluator::traverse(C_iter Ci, C_iter Cj, Quark *quark, bool mutual) {
   char string[256];
   sprintf(string,"%d %d",int(Ci-Ci0),int(Cj-Cj0));
   Quark_Task_Flags tflags = Quark_Task_Flags_Initializer;
   QUARK_Task_Flag_Set(&tflags,TASK_LABEL,intptr_t(string) );
   if( mutual ) {
-    QUARK_Insert_Task(quark,interactQuark,&tflags,
+    QUARK_Insert_Task(quark,traverseQuark,&tflags,
                       sizeof(Evaluator),this,NODEP,
                       sizeof(Cell),&*Ci,OUTPUT,
                       sizeof(Cell),&*Cj,OUTPUT,
@@ -372,7 +368,7 @@ void Evaluator::interact(C_iter Ci, C_iter Cj, Quark *quark, bool mutual) {
                       sizeof(bool),&mutual,VALUE,
                       0);
   } else {
-    QUARK_Insert_Task(quark,interactQuark,&tflags,
+    QUARK_Insert_Task(quark,traverseQuark,&tflags,
                       sizeof(Evaluator),this,NODEP,
                       sizeof(Cell),&*Ci,OUTPUT,
                       sizeof(Cell),&*Cj,NODEP,

@@ -29,7 +29,6 @@ THE SOFTWARE.
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <complex>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -64,7 +63,6 @@ int omp_get_thread_num() {
 
 typedef float              real;                                //!< Real number type on CPU
 typedef float              gpureal;                             //!< Real number type on GPU
-typedef std::complex<real> complex;                             //!< Complex number type
 typedef vec<3,real>        vect;                                //!< 3-D vector type
 
 #ifndef KERNEL
@@ -73,7 +71,7 @@ int MPISIZE    = 1;                                             //!< MPI comm si
 int DEVICE     = 0;                                             //!< GPU device ID
 int IMAGES     = 0;                                             //!< Number of periodic image sublevels
 real THETA     = .5;                                            //!< Multipole acceptance criteria
-vect Xperiodic = 0;                                             //!< Coordinate offset of periodic image
+vect Xperiodic = .0;                                            //!< Coordinate offset of periodic image
 #if PAPI
 int PAPIEVENT  = PAPI_NULL;                                     //!< PAPI event handle
 #endif
@@ -92,7 +90,7 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 const int  P        = 3;                                        //!< Order of expansions
 const int  NCRIT    = 10;                                       //!< Number of bodies per cell
 const real EPS      = 1e-6;                                     //!< Single precision epsilon
-const real EPS2     = 0;                                        //!< Softening parameter (squared)
+const real EPS2     = .0;                                       //!< Softening parameter (squared)
 
 #if COMkernel
 const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms
@@ -100,15 +98,9 @@ const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of C
 const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms
 #endif
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
-const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
 
-#if Cartesian
 typedef vec<MTERM,real>    Mset;                                //!< Multipole coefficient type for Cartesian
 typedef vec<LTERM,real>    Lset;                                //!< Local coefficient type for Cartesian
-#elif Spherical
-typedef vec<NTERM,complex> Mset;                                //!< Multipole coefficient type for spherical
-typedef vec<NTERM,complex> Lset;                                //!< Local coefficient type for spherical
-#endif
 
 //! Structure for pthread based trace
 struct Trace {

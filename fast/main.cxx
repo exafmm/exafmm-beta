@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 #include "dataset.h"
-#include "tree.h"
+#include "serialfmm.h"
 
 int main() {
   int numBodies = 1000;
@@ -37,14 +37,14 @@ int main() {
   for ( int it=0; it<25; it++ ) {
   numBodies = int(pow(10,(it+24)/8.0));
 #else
-  for ( int it=0; it<1; it++ ) {
+  {
   FMM.printNow = true;
 #if BUILD
   numBodies = 10000000;
 #else
   numBodies = 1000000;
 #endif
-#endif
+#endif // MANY
   std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
   DATA.cube(bodies);
@@ -69,27 +69,16 @@ int main() {
   FMM.resetTimer();
 
   bodies2 = bodies;
-//#ifdef MANY
   if (bodies2.size() > 100) bodies2.resize(100);
-//#endif
   DATA.initTarget(bodies2);
   FMM.startTimer("Direct sum");
-//#if IneJ
   FMM.direct(bodies2,bodies);
-//#elif MANY
-//  FMM.direct(bodies2,bodies);
-//#else
-//  FMM.direct(bodies2);
-//#endif
   FMM.stopTimer("Direct sum",true);
   FMM.eraseTimer("Direct sum");
-
-//#ifdef MANY
   if (bodies.size() > 100) bodies.resize(100);
-//#endif
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   DATA.printError(diff1,norm1,diff2,norm2);
-#endif
+#endif // BUILD
   }
 }
