@@ -69,7 +69,7 @@ private:
 #endif
   }
 
-  void traverse(C_iter Ci, C_iter Cj, bool mutual=true) {
+  void traverseBranch(C_iter Ci, C_iter Cj, bool mutual=true) {
     PairQueue privateQueue;
     Pair pair(Ci,Cj);
     privateQueue.push_back(pair);
@@ -79,54 +79,16 @@ private:
       if(splitFirst(pair.first,pair.second)) {
         C_iter C = pair.first;
         for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
-          interact(CC,pair.second,privateQueue,mutual);
+          applyMAC(CC,pair.second,privateQueue,mutual);
         }
       } else {
         C_iter C = pair.second;
         for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
-          interact(pair.first,CC,privateQueue,mutual);
+          applyMAC(pair.first,CC,privateQueue,mutual);
         }
       }
     }
   }
-
-protected:
-  void pushCell(C_iter C, CellQueue &cellQueue) {
-    if(C->NCHILD == 0 || C->NDLEAF < 64) {
-      P2P(C);
-//      NP2P++;
-    } else {
-      cellQueue.push(C);
-    }
-  }
-
-public:
-  void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {
-    vect dX = Ci->X - Cj->X - Xperiodic;
-    real Rq = norm(dX);
-#if DUAL
-    {
-#else
-    if(Ci->RCRIT != Cj->RCRIT) {
-      Pair pair(Ci,Cj);
-      pairQueue.push_back(pair);
-    } else {
-#endif
-      if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
-        approximate(Ci,Cj,mutual);
-      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
-        P2P(Ci,Cj,mutual);
-  //      NP2P++;
-      } else {
-        Pair pair(Ci,Cj);
-        pairQueue.push_back(pair);
-      }
-    }
-  }
-
-#if QUARK
-  inline void traverse(C_iter Ci, C_iter Cj, Quark *quark, bool mutual=true);
-#endif
 
 protected:
   void setRootCell(Cells &cells) {
@@ -189,6 +151,15 @@ protected:
     }
   }
 
+  void pushCell(C_iter C, CellQueue &cellQueue) {
+    if(C->NCHILD == 0 || C->NDLEAF < 64) {
+      P2P(C);
+//      NP2P++;
+    } else {
+      cellQueue.push(C);
+    }
+  }
+
   void traverse(CellQueue &cellQueue) {
     PairQueue pairQueue;
     while( !cellQueue.empty() ) {
@@ -197,7 +168,7 @@ protected:
       for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
         pushCell(Ci,cellQueue);
         for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          interact(Ci,Cj,pairQueue);
+          applyMAC(Ci,Cj,pairQueue);
         }
       }
       traverse(pairQueue,true);
@@ -219,12 +190,12 @@ protected:
       if(splitFirst(pair.first,pair.second)) {
         C_iter C = pair.first;
         for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-          interact(Ci,pair.second,pairQueue,mutual);
+          applyMAC(Ci,pair.second,pairQueue,mutual);
         }
       } else {
         C_iter C = pair.second;
         for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          interact(pair.first,Cj,pairQueue,mutual);
+          applyMAC(pair.first,Cj,pairQueue,mutual);
         }
       }
 #if QUARK
@@ -232,14 +203,14 @@ protected:
         while( !pairQueue.empty() ) {
           pair = pairQueue.front();
           pairQueue.pop_front();
-          traverse(pair.first,pair.second,quark,mutual);
+          traverseBranch(pair.first,pair.second,quark,mutual);
         }
       }
 #else
       if( int(pairQueue.size()) > ROOT->NDLEAF / 100 ) {
 #pragma omp parallel for schedule(dynamic)
         for( int i=0; i<int(pairQueue.size()); i++ ) {
-          traverse(pairQueue[i].first,pairQueue[i].second,mutual);
+          traverseBranch(pairQueue[i].first,pairQueue[i].second,mutual);
         }
         pairQueue.clear();
       }
@@ -260,8 +231,20 @@ protected:
     {
 #else
     if(Ci->RCRIT != Cj->RCRIT) {
-      Pair pair(Ci,Cj);
-      pairQueue.push_back(pair);
+      if(splitFirst(Ci,Cj)) {
+        C_iter C = Ci;
+        task_group tg;
+        for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
+          if( CC->NDLEAF > 10000 ) tg.run([=]{recursiveTraverse(CC,Cj,mutual);});
+          else recursiveTraverse(CC,Cj,mutual);
+        }
+        tg.wait();
+      } else {
+        C_iter C = Cj;
+        for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
+          recursiveTraverse(Ci,CC,mutual);
+        }
+      }
     } else {
 #endif
       if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
@@ -289,9 +272,88 @@ protected:
   }
 #endif // MTHREADS
 
+//! Traverse tree for periodic cells
+  void traversePeriodic() {
+    startTimer("Traverse periodic");                            // Start timer
+    Xperiodic = 0;                                              // Periodic coordinate offset
+    real R = R0;                                                // Radius at current level
+    Cells pcells(28);                                           // Create cells
+    C_iter Ci = pcells.end()-1;                                 // Last cell is periodic parent cell
+    *Ci = *ROOT2;                                               // Copy values from source root
+    Ci->CHILD = 0;                                              // Child cells for periodic center cell
+    Ci->NCHILD = 27;                                            // Number of child cells for periodic center cell
+    C_iter C0 = Cj0;                                            // Placeholder for Cj0
+    for( int level=0; level<IMAGES-1; ++level ) {               // Loop over sublevels of tree
+      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
+            if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
+              for( int cx=-1; cx<=1; ++cx ) {                   //      Loop over x periodic direction (child)
+                for( int cy=-1; cy<=1; ++cy ) {                 //       Loop over y periodic direction (child)
+                  for( int cz=-1; cz<=1; ++cz ) {               //        Loop over z periodic direction (child)
+                    Xperiodic[0] = (ix * 3 + cx) * 2 * R;       //         Coordinate offset for x periodic direction
+                    Xperiodic[1] = (iy * 3 + cy) * 2 * R;       //         Coordinate offset for y periodic directio
+                    Xperiodic[2] = (iz * 3 + cz) * 2 * R;       //         Coordinate offset for y periodic directio
+                    M2L(ROOT,Ci,false);                         //         Perform M2L kernel
+                  }                                             //        End loop over z periodic direction (child)
+                }                                               //       End loop over y periodic direction (child)
+              }                                                 //      End loop over x periodic direction (child)
+            }                                                   //     Endif for periodic center cell
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+      Cj0 = pcells.begin();                                     //  Redefine Cj0 for M2M
+      C_iter Cj = Cj0;                                          //  Iterator for periodic neighbor cells
+      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz, ++Cj ) {                 //    Loop over z periodic direction
+            Cj->X[0] = Ci->X[0] + ix * 2 * R;                   //     Set new x coordinate for periodic image
+            Cj->X[1] = Ci->X[0] + iy * 2 * R;                   //     Set new y cooridnate for periodic image
+            Cj->X[2] = Ci->X[0] + iz * 2 * R;                   //     Set new z coordinate for periodic image
+            Cj->M    = Ci->M;                                   //     Copy multipoles to new periodic image
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+      Ci->M = 0;                                                //  Reset multipoles of periodic parent
+      real Rmax = 0;                                            //  Dummy parameter for calling M2M
+      setCenter(Ci);                                            //  Set center of mass for periodic parent
+      M2M(Ci,Rmax);                                             //  Evaluate periodic M2M kernels for this sublevel
+      R *= 3;                                                   //  Increase center cell size three times
+      Cj0 = C0;                                                 //  Reset Cj0 back
+    }                                                           // End loop over sublevels of tree
+    stopTimer("Traverse periodic",printNow);                    // Stop timer
+  }
+
 public:
   Evaluator() : NP2P(0), NM2P(0), NM2L(0) {}
   ~Evaluator() {}
+
+  void applyMAC(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {
+    vect dX = Ci->X - Cj->X - Xperiodic;
+    real Rq = norm(dX);
+#if DUAL
+    {
+#else
+    if(Ci->RCRIT != Cj->RCRIT) {
+      Pair pair(Ci,Cj);
+      pairQueue.push_back(pair);
+    } else {
+#endif
+      if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+        approximate(Ci,Cj,mutual);
+      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
+        P2P(Ci,Cj,mutual);
+  //      NP2P++;
+      } else {
+        Pair pair(Ci,Cj);
+        pairQueue.push_back(pair);
+      }
+    }
+  }
+
+#if QUARK
+  inline void traverseBranch(C_iter Ci, C_iter Cj, Quark *quark, bool mutual=true);
+#endif
 
   void timeKernels(bool mutual=true) {
     Bodies ibodies(1000), jbodies(1000);
@@ -341,19 +403,19 @@ inline void traverseQuark(Quark *quark) {
     if(splitFirst(pair.first,pair.second)) {
       C_iter C = pair.first;
       for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-        E->interact(Ci,pair.second,privateQueue,mutual);
+        E->applyMAC(Ci,pair.second,privateQueue,mutual);
       }
     } else {
       C_iter C = pair.second;
       for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-        E->interact(pair.first,Cj,privateQueue,mutual);
+        E->applyMAC(pair.first,Cj,privateQueue,mutual);
       }
     }
   }
   E->stopTracer(beginTrace,0x0000ff);
 }
 
-void Evaluator::traverse(C_iter Ci, C_iter Cj, Quark *quark, bool mutual) {
+void Evaluator::traverseBranch(C_iter Ci, C_iter Cj, Quark *quark, bool mutual) {
   char string[256];
   sprintf(string,"%d %d",int(Ci-Ci0),int(Cj-Cj0));
   Quark_Task_Flags tflags = Quark_Task_Flags_Initializer;

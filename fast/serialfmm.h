@@ -41,18 +41,6 @@ public:
     BottomUp::upwardPass(cells);
   }
 
-  void direct(Bodies &bodies) {
-    Cells cells;
-    cells.resize(1);
-    C_iter C = cells.begin();
-    C->LEAF = bodies.begin();
-    C->NDLEAF = bodies.size();
-    P2P(C);
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      B->TRG /= B->SRC;
-    }
-  }
-
   void direct(Bodies &ibodies, Bodies &jbodies) {
     Cells cells;
     cells.resize(2);
@@ -61,7 +49,20 @@ public:
     Ci->NDLEAF = ibodies.size();
     Cj->LEAF = jbodies.begin();
     Cj->NDLEAF = jbodies.size();
-    P2P(Ci,Cj,false);
+    int prange = 0;                                             // Range of periodic images
+    for( int i=0; i<IMAGES; i++ ) {                             // Loop over periodic image sublevels
+      prange += int(pow(3,i));                                  //  Accumulate range of periodic images
+    }                                                           // End loop over perioidc image sublevels
+    for( int ix=-prange; ix<=prange; ++ix ) {                   // Loop over x periodic direction
+      for( int iy=-prange; iy<=prange; ++iy ) {                 //  Loop over y periodic direction
+        for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
+          Xperiodic[0] = ix * 2 * R0;                           //    Coordinate offset for x periodic direction
+          Xperiodic[1] = iy * 2 * R0;                           //    Coordinate offset for y periodic direction
+          Xperiodic[2] = iz * 2 * R0;                           //    Coordinate offset for z periodic direction
+          P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
+        }                                                       //   End loop over z periodic direction
+      }                                                         //  End loop over y periodic direction
+    }                                                           // End loop over x periodic direction
     for( B_iter B=ibodies.begin(); B!=ibodies.end(); ++B ) {
       B->TRG /= B->SRC;
     }
@@ -69,9 +70,10 @@ public:
 
   void evaluate(Cells &cells) {
     setRootCell(cells);
-    startTimer("Traverse");
     CellQueue cellQueue;
-    pushCell(ROOT, cellQueue);
+    pushCell(ROOT,cellQueue);
+    Xperiodic = 0;
+    startTimer("Traverse");
     traverse(cellQueue);
     stopTimer("Traverse",printNow);
     startTimer("Downward pass");
@@ -87,10 +89,26 @@ public:
   void evaluate(Cells &icells, Cells &jcells) {
     setRootCell(icells,jcells);
     Pair pair(ROOT,ROOT2);
-    startTimer("Traverse");
     PairQueue pairQueue;
-    pairQueue.push_front(pair);
-    traverse(pairQueue);
+    startTimer("Traverse");
+    if( IMAGES == 0 ) {
+      Xperiodic = 0;
+      pairQueue.push_back(pair);
+      traverse(pairQueue);
+    } else {
+      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
+        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
+          for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
+            Xperiodic[0] = ix * 2 * R0;                         //     Coordinate offset for x periodic direction
+            Xperiodic[1] = iy * 2 * R0;                         //     Coordinate offset for y periodic direction
+            Xperiodic[2] = iz * 2 * R0;                         //     Coordinate offset for z periodic direction
+            pairQueue.push_back(pair);                          //     Push pair to queue
+            traverse(pairQueue);                                //     Traverse a pair of trees
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+      traversePeriodic();                                       //  Traverse tree for periodic images
+    }
     stopTimer("Traverse",printNow);
     startTimer("Downward pass");
     if( TOPDOWN ) {

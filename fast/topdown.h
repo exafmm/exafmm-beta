@@ -143,13 +143,18 @@ protected:
       }
       X0 += B->X;
     }
-    X0 /= bodies.size();
-    for( int d=0; d!=3; ++d ) {
-      X0[d] = int(X0[d]+.5);
-      R0 = std::max(xmax[d] - X0[d], R0);
-      R0 = std::max(X0[d] - xmin[d], R0);
+    if( IMAGES != 0 ) {
+      X0 = 0;
+      R0 = M_PI;
+    } else {
+      X0 /= bodies.size();
+      for( int d=0; d!=3; ++d ) {
+        X0[d] = int(X0[d]+.5);
+        R0 = std::max(xmax[d] - X0[d], R0);
+        R0 = std::max(X0[d] - xmin[d], R0);
+      }
+      R0 *= 1.000001;
     }
-    R0 *= 1.000001;
     stopTimer("Set domain",printNow);
   }
 

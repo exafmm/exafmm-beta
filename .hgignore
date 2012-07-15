@@ -4,5 +4,7 @@ syntax: glob
 *.dat
 *.o
 *.out
+*.dot
+*.svg
 *.swp
 .Apple*
