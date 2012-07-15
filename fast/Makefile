@@ -13,7 +13,7 @@ LFLAGS	+= -DBOTTOMUP
 a	: main.cxx
 	make clean
 	$(CXX) $? $(LFLAGS)
-	MYTH_WORKER_NUM=1 ./a.out
+	MYTH_WORKER_NUM=12 ./a.out
 
 b	: main.cxx
 	make clean

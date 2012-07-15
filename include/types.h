@@ -37,7 +37,6 @@ THE SOFTWARE.
 #include <iostream>
 #include <list>
 #include <map>
-#include <omp.h>
 #include <queue>
 #include <stack>
 #include <string>
@@ -53,6 +52,13 @@ THE SOFTWARE.
 #endif
 #if MTHREADS
 #include <mttb/task_group.h>
+int omp_get_thread_num() {
+  return 0;
+}
+#define OMP_NUM_THREADS 1
+#else
+#include <omp.h>
+#define OMP_NUM_THREADS 12
 #endif
 
 typedef unsigned           bigint;                              //!< Big integer type

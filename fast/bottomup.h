@@ -23,8 +23,6 @@ THE SOFTWARE.
 #define bottomup_h
 #include "topdown.h"
 
-#define OMP_NUM_THREADS 12
-
 class BottomUp : public TopDown {
 private:
   int getMaxLevel(Bodies &bodies) {
@@ -36,7 +34,10 @@ private:
 
   inline void getIndex(Bodies &bodies) {
     float d = 2 * R0 / (1 << MAXLEVEL);
-#pragma omp parallel for
+#if MTHREADS
+#else
+#pragma omp parallel for num_threads(OMP_NUM_THREADS)
+#endif
     for( uint b=0; b<bodies.size(); b++ ) {
       B_iter B = bodies.begin() + b;
       int ix = int((B->X[0] + R0 - X0[0]) / d);
@@ -62,7 +63,10 @@ private:
     const int mask = stride - 1;
     int (*bucket2D)[stride] = new int [OMP_NUM_THREADS][stride]();
     int aMaxPerThread[OMP_NUM_THREADS] = {0};
+#if MTHREADS
+#else
 #pragma omp parallel for num_threads(OMP_NUM_THREADS)
+#endif
     for( int b=0; b<n; b++ ) {
       int i = bodies[b].ICELL;
       index[0][b] = i;
@@ -79,7 +83,10 @@ private:
       for( int t=0; t<OMP_NUM_THREADS; t++ )
         for( int i=0; i<stride; i++ )
           bucket2D[t][i] = 0;
+#if MTHREADS
+#else
 #pragma omp parallel for num_threads(OMP_NUM_THREADS)
+#endif
       for( int i=0; i<n; i++ )
         bucket2D[omp_get_thread_num()][index[0][i] & mask]++;
       for( int t=0; t<OMP_NUM_THREADS; t++ )
@@ -89,22 +96,37 @@ private:
         bucket2[i] += bucket2[i-1];
       for( int i=n-1; i>=0; i-- )
         index[3][i] = --bucket2[index[0][i] & mask];
+#if MTHREADS
+#else
 #pragma omp parallel for num_threads(OMP_NUM_THREADS)
+#endif
       for( int i=0; i<n; i++ )
         index[1][index[3][i]] = index[2][i];
+#if MTHREADS
+#else
 #pragma omp parallel for num_threads(OMP_NUM_THREADS)
+#endif
       for( int i=0; i<n; i++ )
         index[2][i] = index[1][i];
+#if MTHREADS
+#else
 #pragma omp parallel for num_threads(OMP_NUM_THREADS)
+#endif
       for( int i=0; i<n; i++ )
         index[1][index[3][i]] = index[0][i];
+#if MTHREADS
+#else
 #pragma omp parallel for num_threads(OMP_NUM_THREADS)
+#endif
       for( int i=0; i<n; i++ )
         index[0][i] = index[1][i] >> bitStride;
       aMax >>= bitStride;
     }
     Bodies buffer = bodies;
+#if MTHREADS
+#else
 #pragma omp parallel for num_threads(OMP_NUM_THREADS)
+#endif
     for( int b=0; b<n; b++ )
       bodies[b] = buffer[index[2][b]];
     delete[] bucket2D;
