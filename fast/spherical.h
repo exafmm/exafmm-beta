@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 #ifndef kernel_h
 #define kernel_h
-#include "../include/sort.h"
+#include "logger.h"
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
 template<int n, int m>
@@ -244,7 +244,7 @@ struct M2Ltemplate<p,0,0,2,1> {
   }
 };
 
-class Kernel : public Sort {
+class Kernel : public Logger {
 private:
   real *factorial, *prefactor, *Anm;
   complex *Ynm, *YnmTheta, *Cnm;

@@ -22,7 +22,7 @@ THE SOFTWARE.
 #include "dataset.h"
 #include "tree.h"
 
-int main(int argc, char** argv) {
+int main() {
   int numBodies = 1000;
   IMAGES = 0;
   THETA = 0.6;
@@ -30,7 +30,6 @@ int main(int argc, char** argv) {
   Cells cells;
   Dataset DATA;
   SerialFMM FMM;
-  FMM.NDLEAF_THRESHOLD = argc > 1 ? atoi(argv[1]) : 10000;
 #if HYBRID
   FMM.timeKernels();
 #endif

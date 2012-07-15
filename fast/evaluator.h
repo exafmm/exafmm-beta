@@ -39,7 +39,6 @@ protected:
   C_iter  ROOT, ROOT2;
 
 public:
-  int  NDLEAF_THRESHOLD;
   real NP2P;
   real NM2P;
   real NM2L;
@@ -279,7 +278,7 @@ protected:
           C_iter C = Ci;
           task_group tg;
           for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
-            if( CC->NDLEAF > NDLEAF_THRESHOLD ) tg.run([=]{traverse(CC,Cj,mutual);});
+            if( CC->NDLEAF > 10000 ) tg.run([=]{traverse(CC,Cj,mutual);});
             else traverse(CC,Cj,mutual);
           }
           tg.wait();
@@ -295,7 +294,7 @@ protected:
 #endif // MTHREADS
 
 public:
-  Evaluator() : NDLEAF_THRESHOLD(10000), NP2P(0), NM2P(0), NM2L(0) {}
+  Evaluator() : NP2P(0), NM2P(0), NM2L(0) {}
   ~Evaluator() {}
 
   void timeKernels(bool mutual=true) {

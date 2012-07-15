@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 #ifndef kernel_h
 #define kernel_h
-#include "../include/sort.h"
+#include "logger.h"
 
 #ifndef __GXX_EXPERIMENTAL_CXX0X__
 #define constexpr const
@@ -892,7 +892,7 @@ inline void sumM2P<6>(B_iter B, const Lset &C, const Mset &M) {
 #endif
 }
 
-class Kernel : public Sort {
+class Kernel : public Logger {
 protected:
   vect   X0;
   real   R0;

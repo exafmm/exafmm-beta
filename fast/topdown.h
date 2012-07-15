@@ -43,7 +43,7 @@ private:
     for( int b=0; b!=8; ++b ) node.CHILD[b] = -1;
   }
 
-  inline void addChild(int octant, bigint n) {
+  inline void addChild(int octant, int n) {
     N_iter N = nodes.begin()+n;
     Node child;
     init(child);
@@ -59,7 +59,7 @@ private:
     NCELL++;
   }
 
-  void splitNode(bigint n) {
+  void splitNode(int n) {
     while( nodes[n].NLEAF > NCRIT ) {
       int c = 0;
       Leaf *Ln;
