@@ -1,24 +1,3 @@
-/*
-Copyright (C) 2011 by Rio Yokota, Simon Layton, Lorena Barba
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
 #ifndef types_h
 #define types_h
 
@@ -29,6 +8,7 @@ THE SOFTWARE.
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <complex>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -68,7 +48,6 @@ typedef vec<3,real>        vect;                                //!< 3-D vector 
 #ifndef KERNEL
 int MPIRANK    = 0;                                             //!< MPI comm rank
 int MPISIZE    = 1;                                             //!< MPI comm size
-int DEVICE     = 0;                                             //!< GPU device ID
 int IMAGES     = 0;                                             //!< Number of periodic image sublevels
 real THETA     = .5;                                            //!< Multipole acceptance criteria
 vect Xperiodic = .0;                                            //!< Coordinate offset of periodic image
@@ -78,7 +57,6 @@ int PAPIEVENT  = PAPI_NULL;                                     //!< PAPI event 
 #else
 extern int MPIRANK;                                             //!< MPI comm rank
 extern int MPISIZE;                                             //!< MPI comm size
-extern int DEVICE;                                              //!< GPU device ID
 extern int IMAGES;                                              //!< Number of periodic image sublevels
 extern real THETA;                                              //!< Multipole acceptance criteria
 extern vect Xperiodic;                                          //!< Coordinate offset of periodic image

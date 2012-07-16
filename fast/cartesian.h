@@ -1,27 +1,6 @@
-/*
-Copyright (C) 2011 by Rio Yokota, Simon Layton, Lorena Barba
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
 #ifndef kernel_h
 #define kernel_h
-#include "logger.h"
+#include "sort.h"
 
 #ifndef __GXX_EXPERIMENTAL_CXX0X__
 #define constexpr const
@@ -546,7 +525,7 @@ inline void getCoef<6>(Lset &C, const vect &dX, real &invR2, const real &invR) {
 
 template<int PP>
 inline void sumM2L(Lset &L, const Lset &C, const Mset &M) {
-  L += C;
+  L = C;
 #if COMkernel
   for( int i=1; i<MTERM; ++i ) L[0] += M[i] * C[i+3];
 #else
@@ -557,7 +536,7 @@ inline void sumM2L(Lset &L, const Lset &C, const Mset &M) {
 
 template<>
 inline void sumM2L<1>(Lset &L, const Lset &C, const Mset&) {
-  L += C;
+  L = C;
 }
 
 template<>
@@ -892,7 +871,7 @@ inline void sumM2P<6>(B_iter B, const Lset &C, const Mset &M) {
 #endif
 }
 
-class Kernel : public Logger {
+class Kernel : public Sort {
 protected:
   vect   X0;
   real   R0;
@@ -1140,12 +1119,14 @@ public:
     vect dX = Ci->X - Cj->X - Xperiodic;
     real invR2 = 1 / norm(dX);
     real invR  = Ci->M[0] * Cj->M[0] * std::sqrt(invR2);
-    Lset C;
+    Lset C, L;
     getCoef<P>(C,dX,invR2,invR);
-    sumM2L<P>(Ci->L,C,Cj->M);
+    sumM2L<P>(L,C,Cj->M);
+    Ci->L += L;
     if( mutual ) {
       flipCoef(C);
-      sumM2L<P>(Cj->L,C,Ci->M);
+      sumM2L<P>(L,C,Ci->M);
+      Cj->L = L;
     }
   }
 
