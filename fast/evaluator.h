@@ -31,20 +31,20 @@ private:
 #if HYBRID
     if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {
       P2P(Ci,Cj,mutual);
-//      NP2P++;
+      NP2P++;
     } else if ( timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L ) {
       M2P(Ci,Cj,mutual);
-//      NM2P++;
+      NM2P++;
     } else {
       M2L(Ci,Cj,mutual);
-//      NM2L++;
+      NM2L++;
     }
 #elif TREECODE
     M2P(Ci,Cj,mutual);
-//    NM2P++;
+    NM2P++;
 #else
     M2L(Ci,Cj,mutual);
-//    NM2L++;
+    NM2L++;
 #endif
   }
 
@@ -133,7 +133,7 @@ protected:
   void pushCell(C_iter C, CellQueue &cellQueue) {
     if(C->NCHILD == 0 || C->NDLEAF < 64) {
       P2P(C);
-//      NP2P++;
+      NP2P++;
     } else {
       cellQueue.push(C);
     }
@@ -187,7 +187,7 @@ protected:
       }
 #else
       if( int(pairQueue.size()) > ROOT->NDLEAF / 100 ) {
-#pragma omp parallel for schedule(dynamic)
+//#pragma omp parallel for schedule(dynamic)
         for( int i=0; i<int(pairQueue.size()); i++ ) {
           traverseBranch(pairQueue[i].first,pairQueue[i].second,mutual);
         }
@@ -230,7 +230,7 @@ protected:
         approximate(Ci,Cj,mutual);
       } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
         P2P(Ci,Cj,mutual);
-  //      NP2P++;
+        NP2P++;
       } else {
         if(splitFirst(Ci,Cj)) {
           C_iter C = Ci;
@@ -304,7 +304,7 @@ protected:
   }
 
 public:
-  Evaluator() : NP2P(0), NM2P(0), NM2L(0) {}
+  Evaluator() : TOPDOWN(false), NP2P(0), NM2P(0), NM2L(0) {}
   ~Evaluator() {}
 
   void applyMAC(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {
@@ -322,7 +322,7 @@ public:
         approximate(Ci,Cj,mutual);
       } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
         P2P(Ci,Cj,mutual);
-  //      NP2P++;
+        NP2P++;
       } else {
         Pair pair(Ci,Cj);
         pairQueue.push_back(pair);

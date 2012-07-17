@@ -5,7 +5,7 @@ int main() {
   int numBodies = 1000;
   IMAGES = 0;
   THETA = 0.6;
-  Bodies bodies, bodies2;
+  Bodies bodies;
   Cells cells;
   Dataset DATA;
   ParallelFMM FMM;
@@ -17,17 +17,19 @@ int main() {
   numBodies = int(pow(10,(it+24)/8.0));
 #else
   {
-  FMM.printNow = true;
+  FMM.printNow = MPIRANK == 0;
 #if BUILD
   numBodies = 10000000;
 #else
   numBodies = 1000000;
 #endif
 #endif // MANY
-  std::cout << "N                    : " << numBodies << std::endl;
+  if(FMM.printNow) std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
   DATA.cube(bodies);
   FMM.startTimer("FMM");
+
+  FMM.octsection(bodies);
 #if BOTTOMUP
   FMM.bottomup(bodies,cells);
 #else
@@ -37,27 +39,41 @@ int main() {
 #else
   FMM.startPAPI();
 #if IneJ
-  FMM.evaluate(cells,cells);
+  Bodies jbodies = bodies;
+  for( int irank=0; irank!=MPISIZE; irank++ ) {
+    FMM.shiftBodies(jbodies);
+    Cells jcells;
+    FMM.bottomup(jbodies,jcells);
+    FMM.evaluate(cells,jcells);
+  }
 #else
   FMM.evaluate(cells);
 #endif
   FMM.stopPAPI();
-  FMM.stopTimer("FMM",true);
+  FMM.stopTimer("FMM",FMM.printNow);
   FMM.eraseTimer("FMM");
   FMM.writeTime();
   FMM.resetTimer();
 
-  bodies2 = bodies;
-  if (bodies2.size() > 100) bodies2.resize(100);
+  if (bodies.size() > 100) bodies.resize(100);
+  Bodies bodies2 = bodies;
   DATA.initTarget(bodies2);
   FMM.startTimer("Direct sum");
-  FMM.direct(bodies2,bodies);
-  FMM.stopTimer("Direct sum",true);
+  for( int i=0; i!=MPISIZE; ++i ) {
+    FMM.shiftBodies(jbodies);
+    FMM.direct(bodies2,jbodies);
+    if(FMM.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;
+  }
+  FMM.stopTimer("Direct sum",FMM.printNow);
   FMM.eraseTimer("Direct sum");
-  if (bodies.size() > 100) bodies.resize(100);
-  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-  DATA.printError(diff1,norm1,diff2,norm2);
+  MPI_Datatype MPI_TYPE = FMM.getType(diff1);
+  MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&norm1,&norm3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
+  if(FMM.printNow) DATA.printError(diff3,norm3,diff4,norm4);
 #endif // BUILD
   }
 }

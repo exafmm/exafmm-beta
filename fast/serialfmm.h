@@ -43,11 +43,12 @@ public:
       }                                                         //  End loop over y periodic direction
     }                                                           // End loop over x periodic direction
     for( B_iter B=ibodies.begin(); B!=ibodies.end(); ++B ) {
-      B->TRG /= B->SRC;
+//      B->TRG /= B->SRC;
     }
   }
 
   void evaluate(Cells &cells) {
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) C->L = 0;// Initialize local coefficients
     setRootCell(cells);
     CellQueue cellQueue;
     pushCell(ROOT,cellQueue);
@@ -66,6 +67,7 @@ public:
   }
 
   void evaluate(Cells &icells, Cells &jcells) {
+    for( C_iter C=icells.begin(); C!=icells.end(); ++C ) C->L = 0;// Initialize local coefficients
     setRootCell(icells,jcells);
     Pair pair(ROOT,ROOT2);
     PairQueue pairQueue;
@@ -96,7 +98,7 @@ public:
       BottomUp::downwardPass(icells);
     }
     stopTimer("Downward pass",printNow);
-    if(printNow) printTreeData(icells);
+//    if(printNow) printTreeData(icells);
   }
 };
 

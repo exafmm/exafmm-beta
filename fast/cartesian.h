@@ -396,6 +396,7 @@ inline void getCoef<2>(Lset &C, const vect &dX, real &invR2, const real &invR) {
 }
 template<>
 inline void getCoef<3>(Lset &C, const vect &dX, real &invR2, const real &invR) {
+#if 1
   getCoef<2>(C,dX,invR2,invR);
   real x = dX[0], y = dX[1], z = dX[2];
   real invR3 = invR * invR2;
@@ -414,6 +415,54 @@ inline void getCoef<3>(Lset &C, const vect &dX, real &invR2, const real &invR) {
   C[18] = y * (t +     invR5);
   C[19] = z * (t + 3 * invR5);
   C[14] = x * y * z * invR7;
+#else
+  real* C_arr = (real*) C;
+
+  __m128 result[5];
+  __m128 term0;
+  __m128 term1;
+
+  invR2 = -invR2;
+  real x = dX[0], y = dX[1], z = dX[2];
+  real invR3 = invR * invR2;
+  real invR5 = 3 * invR3 * invR2;
+  real t = x * invR5;
+  real invR7 = 5 * invR5 * invR2;
+  real t1 = y * invR5;
+  real t2 = x * x * invR7;
+  real t3 = y * y * invR7;
+  real t4 = z * z * invR7;
+
+  term0 = _mm_set_ps(z, y, x, invR);
+  term1 = _mm_set_ps(invR3, invR3, invR3, 1);
+  result[0] = _mm_mul_ps(term0, term1);
+
+  term0 = _mm_set_ps(y, z, y, x);
+  term1 = _mm_set_ps(t1, t, t, t);
+  result[1] = _mm_mul_ps(term0, term1);
+  term1 = _mm_set_ps(invR3, 0, 0, invR3);
+  result[1] = _mm_add_ps(result[1], term1);
+
+  term0 = _mm_set_ps(y, x, z, z);
+  term1 = _mm_set_ps(t2 + invR5, t2 + 3 * invR5, z * invR5, t1);
+  result[2] = _mm_mul_ps(term0, term1);
+  term1 = _mm_set_ps(0, 0, invR3, 0);
+  result[2] = _mm_add_ps(result[2], term1);
+
+  term0 = _mm_set_ps(x, x, x, z);
+  term1 = _mm_set_ps(t4 + invR5, y * z * invR7, t3 + invR5, t2 + invR5);
+  result[3] = _mm_mul_ps(term0, term1);
+
+  term0 = _mm_set_ps(z, y, z, y);
+  term1 = _mm_set_ps(t4 + 3 * invR5, t4 + invR5, t3 + invR5, t3 + 3 * invR5);
+  result[4] = _mm_mul_ps(term0, term1);
+
+  _mm_store_ps(C_arr, result[0]);
+  _mm_store_ps(C_arr + 4, result[1]);
+  _mm_store_ps(C_arr + 8, result[2]);
+  _mm_store_ps(C_arr + 12, result[3]);
+  _mm_store_ps(C_arr + 16, result[4]);
+#endif
 }
 
 template<>
@@ -888,7 +937,7 @@ public:
   Kernel() : X0(0), R0(0) {}
   ~Kernel() {}
 
-#if 1
+#if 0
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     if( mutual ) {
       for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {
@@ -1025,7 +1074,8 @@ public:
         real R2 = norm(dX) + EPS2;
         real invR2 = 1.0 / R2;
         if( R2 == 0 ) invR2 = 0;
-        real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
+//        real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
+        real invR = Bj->SRC * std::sqrt(invR2);
         dX *= invR2 * invR;
         P0 += invR;
         F0 += dX;
@@ -1170,7 +1220,7 @@ public:
       C[0] = 1;
       Kernels<0,0,P>::power(C,dX);
       L = Ci->L;
-      B->TRG /= B->SRC;
+//      B->TRG /= B->SRC;
       B->TRG[0] += L[0];
       B->TRG[1] += L[1];
       B->TRG[2] += L[2];

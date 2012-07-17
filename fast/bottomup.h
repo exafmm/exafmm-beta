@@ -199,6 +199,8 @@ protected:
       }
       R0 *= 1.000001;
     }
+    X0 = 0;
+    R0 = M_PI;
     stopTimer("Set domain",printNow);
   }
 
@@ -228,12 +230,9 @@ protected:
     startTimer("Upward pass");
     setRootCell(cells);
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      C->M = 0;
-      C->L = 0;
-    }
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       real Rmax = 0;
       setCenter(C);
+      C->M = 0;
       P2M(C,Rmax);
       M2M(C,Rmax);
     }

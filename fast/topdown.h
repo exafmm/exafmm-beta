@@ -148,8 +148,6 @@ protected:
     nodes.push_back(node);
     MAXLEVEL = 0;
     for( L_iter L=leafs.begin(); L!=leafs.end(); ++L ) {
-      /* we use node index rather than iterator
-	 since nodes may expand along the way */
       int n = 0;
       while( !nodes[n].NOCHILD ) {
 	N_iter N = nodes.begin() + n;
@@ -184,13 +182,10 @@ protected:
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");
     setRootCell(cells);
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      C->M = 0;
-      C->L = 0;
-    }
     for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {
       real Rmax = 0;
       setCenter(C);
+      C->M = 0;
       P2M(C,Rmax);
       M2M(C,Rmax);
     }
