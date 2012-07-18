@@ -5,8 +5,8 @@ int main() {
   int numBodies = 1000;
   IMAGES = 0;
   THETA = 0.6;
-  Bodies bodies;
-  Cells cells;
+  Bodies bodies, jbodies;
+  Cells cells, jcells;
   Dataset DATA;
   ParallelFMM FMM;
 #if HYBRID
@@ -39,13 +39,34 @@ int main() {
 #else
   FMM.startPAPI();
 #if IneJ
-  Bodies jbodies = bodies;
+
+#if 1
+  FMM.getLET(cells);
+  FMM.commBodies();
+  FMM.commCells();
+  jbodies = bodies;
   for( int irank=0; irank!=MPISIZE; irank++ ) {
-    FMM.shiftBodies(jbodies);
-    Cells jcells;
-    FMM.bottomup(jbodies,jcells);
+    if( irank == MPIRANK ) {
+      jcells = cells;
+    } else {
+      FMM.setLET(jcells,irank);
+    }
     FMM.evaluate(cells,jcells);
   }
+#else
+  jbodies = bodies;
+  for( int irank=0; irank!=MPISIZE; irank++ ) {
+    FMM.shiftBodies(jbodies);
+    jcells.clear();
+#if BOTTOMUP
+    FMM.bottomup(jbodies,jcells);
+#else
+    FMM.topdown(jbodies,jcells);
+#endif
+    FMM.evaluate(cells,jcells);
+  }
+#endif
+
 #else
   FMM.evaluate(cells);
 #endif
@@ -55,6 +76,7 @@ int main() {
   FMM.writeTime();
   FMM.resetTimer();
 
+  jbodies = bodies;
   if (bodies.size() > 100) bodies.resize(100);
   Bodies bodies2 = bodies;
   DATA.initTarget(bodies2);

@@ -23,15 +23,15 @@ public:
 private:
 //! Get disatnce to other domain
   real getDistance(C_iter C) {
-    vect dist;                                                  // Distance vector
+    vect dX;                                                    // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
-      dist[d] = (C->X[d] + Xperiodic[d] > thisXMAX[d])*         //  Calculate the distance between cell C and
-                (C->X[d] + Xperiodic[d] - thisXMAX[d])+         //  the nearest point in domain [xmin,xmax]^3
-                (C->X[d] + Xperiodic[d] < thisXMIN[d])*         //  Take the differnece from xmin or xmax
-                (C->X[d] + Xperiodic[d] - thisXMIN[d]);         //  or 0 if between xmin and xmax
+      dX[d] = (C->X[d] + Xperiodic[d] > thisXMAX[d])*           //  Calculate the dXance between cell C and
+              (C->X[d] + Xperiodic[d] - thisXMAX[d])+           //  the nearest point in domain [xmin,xmax]^3
+              (C->X[d] + Xperiodic[d] < thisXMIN[d])*           //  Take the differnece from xmin or xmax
+              (C->X[d] + Xperiodic[d] - thisXMIN[d]);           //  or 0 if between xmin and xmax
     }                                                           // End loop over dimensions
-    real R = std::sqrt(norm(dist));                             // Scalar distance
-    return R;                                                   // Return scalar distance
+    real R2 = norm(dX);                                         // Distance squared
+    return R2;                                                  // Return dXance squared
   }
 
 //! Add cells to send buffer
@@ -76,8 +76,8 @@ private:
           bool divide = false;                                  //    Initialize logical for dividing
           if( IMAGES == 0 ) {                                   //    If free boundary condition
             Xperiodic = 0;                                      //     Set periodic coordinate offset
-            real R = getDistance(CC);                           //     Get distance to other domain
-            divide |= 2 * CC->R > THETA * R;                    //     Divide if the cell seems too close
+            real R2 = getDistance(CC);                          //     Get dXance to other domain
+            divide |= 1e10 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
           } else {                                              //    If periodic boundary condition
             for( int ix=-1; ix<=1; ++ix ) {                     //     Loop over x periodic direction
               for( int iy=-1; iy<=1; ++iy ) {                   //      Loop over y periodic direction
@@ -85,8 +85,8 @@ private:
                   Xperiodic[0] = ix * 2 * R0;                   //        Coordinate offset for x periodic direction
                   Xperiodic[1] = iy * 2 * R0;                   //        Coordinate offset for y periodic direction
                   Xperiodic[2] = iz * 2 * R0;                   //        Coordinate offset for z periodic direction
-                  real R = getDistance(CC);                     //        Get distance to other domain
-                  divide |= 2 * CC->R > THETA * R;              //        Divide if cell seems too close
+                  real R2 = getDistance(CC);                    //        Get dXance to other domain
+                  divide |= 4 * CC->RCRIT * CC->RCRIT > R2;     //        Divide if cell seems too close
                 }                                               //       End loop over z periodic direction
               }                                                 //      End loop over y periodic direction
             }                                                   //     End loop over x periodic direction

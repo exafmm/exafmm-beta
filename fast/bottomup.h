@@ -193,7 +193,6 @@ protected:
     } else {
       X0 /= bodies.size();
       for( int d=0; d!=3; ++d ) {
-        X0[d] = int(X0[d]+.5);
         R0 = std::max(xmax[d] - X0[d], R0);
         R0 = std::max(X0[d] - xmin[d], R0);
       }

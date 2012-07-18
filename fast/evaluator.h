@@ -205,7 +205,7 @@ protected:
 #if MTHREADS
   void recursiveTraverse(C_iter Ci, C_iter Cj, bool mutual) {
     vect dX = Ci->X - Cj->X - Xperiodic;
-    real Rq = norm(dX);
+    real R2 = norm(dX);
 #if DUAL
     {
 #else
@@ -226,7 +226,7 @@ protected:
       }
     } else {
 #endif
-      if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
         approximate(Ci,Cj,mutual);
       } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
         P2P(Ci,Cj,mutual);
@@ -309,7 +309,7 @@ public:
 
   void applyMAC(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {
     vect dX = Ci->X - Cj->X - Xperiodic;
-    real Rq = norm(dX);
+    real R2 = norm(dX);
 #if DUAL
     {
 #else
@@ -318,7 +318,7 @@ public:
       pairQueue.push_back(pair);
     } else {
 #endif
-      if(Rq > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
         approximate(Ci,Cj,mutual);
       } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
         P2P(Ci,Cj,mutual);
