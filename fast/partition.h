@@ -24,6 +24,7 @@ private:
   void setPartition(Bodies &bodies) {
     startTimer("Partition");                                    // Start timer
     int mpisize = MPISIZE;                                      // Initialize MPI size counter
+    Npartition = 1;                                             // Initialize dimension
     int d = 0;                                                  // Initialize dimension counter
     while( mpisize != 1 ) {                                     // Divide domain  while counter is not one
       Npartition[d] <<= 1;                                      //  Divide this dimension
@@ -48,15 +49,15 @@ private:
 //! Allgather boundaries of all partitions
   void allgather() {
     int ix = MPIRANK % Npartition[0];                           // x index of partition
-    int iy = MPIRANK / Npartition[0] % Npartition[1];           // y index of partition
-    int iz = MPIRANK / Npartition[0] / Npartition[1];           // z index of partition
+    int iy = MPIRANK / Npartition[0] % Npartition[1];           // y index
+    int iz = MPIRANK / Npartition[0] / Npartition[1];           // z index
     vect xmin, xmax;                                            // Local domain boundaries at current rank
     xmin[0] = X0[0] - R0 + ix * Xpartition[0];                  // xmin of local domain at current rank
-    xmin[1] = X0[1] - R0 + iy * Xpartition[1];                  // ymin of local domain at current rank
-    xmin[2] = X0[2] - R0 + iz * Xpartition[2];                  // zmin of local domain at current rank
+    xmin[1] = X0[1] - R0 + iy * Xpartition[1];                  // ymin
+    xmin[2] = X0[2] - R0 + iz * Xpartition[2];                  // zmin
     xmax[0] = X0[0] - R0 + (ix + 1) * Xpartition[0];            // xmax of local domain at current rank
-    xmax[1] = X0[1] - R0 + (iy + 1) * Xpartition[1];            // ymax of local domain at current rank
-    xmax[2] = X0[2] - R0 + (iz + 1) * Xpartition[2];            // zmax of local domain at current rank
+    xmax[1] = X0[1] - R0 + (iy + 1) * Xpartition[1];            // ymax
+    xmax[2] = X0[2] - R0 + (iz + 1) * Xpartition[2];            // zmax
     MPI_Datatype MPI_TYPE = getType(xmin[0]);                   // Get MPI data type
     XMIN.resize(MPISIZE);                                       // Xmin of every local domain
     XMAX.resize(MPISIZE);                                       // Xmax of every local domain
@@ -95,6 +96,12 @@ protected:
     }                                                           // End loop over ranks
     MPI_Alltoallv(&bodies[0],sendBodyCount,sendBodyDispl,MPI_INT,// Communicate bodies
                   &recvBodies[0],recvBodyCount,recvBodyDispl,MPI_INT,MPI_COMM_WORLD);
+    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
+      sendBodyCount[irank] /= word;                             //  Divide send count by word size of data
+      sendBodyDispl[irank] /= word;                             //  Divide send displacement by word size of data
+      recvBodyCount[irank] /= word;                             //  Divide receive count by word size of data
+      recvBodyDispl[irank] /= word;                             //  Divide receive displacement by word size of data
+    }                                                           // End loop over ranks
   }
 
 public:

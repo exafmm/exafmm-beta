@@ -12,13 +12,13 @@ LFLAGS	+= -DIneJ
 
 a	: main.cxx
 	make clean
-	$(CXX) $? $(LFLAGS)
-	MYTH_WORKER_NUM=12 mpirun -np 2 ./a.out
+	$(CXX) $? $(LFLAGS) $(VFLAGS)
+	MYTH_WORKER_NUM=12 mpirun -np 4 ./a.out
 
 b	: main.cxx
 	make clean
 	$(CXX) $? $(LFLAGS) -DMANY
-	MYTH_WORKER_NUM=12 ./a.out
+	MYTH_WORKER_NUM=12 mpirun -np 4 ./a.out
 
 c	: main.cxx
 	make clean

@@ -6,8 +6,8 @@ CUDA_INSTALL_PATH = /usr/local/cuda
 CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 
 ### VTK path
-#VTK_INCLUDE_PATH = /usr/include/vtk-5.8
-#VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
+VTK_INCLUDE_PATH = /usr/include/vtk-5.8
+VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
 ### choose CPU or GPU
 DEVICE  = CPU

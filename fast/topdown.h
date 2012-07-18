@@ -22,6 +22,23 @@ private:
     for( int b=0; b!=8; ++b ) node.CHILD[b] = -1;
   }
 
+  inline int getIndex(vect X, int level) {
+    float d = 2 * R0 / (1 << level);
+    int ix = int((X[0] + R0 - X0[0]) / d);
+    int iy = int((X[1] + R0 - X0[1]) / d);
+    int iz = int((X[2] + R0 - X0[2]) / d);
+    int id = 0;
+    for( int l=0; l<level; l++ ) {
+       id += (ix & 1) << (3 * l);
+      id += (iy & 1) << (3 * l + 1);
+      id += (iz & 1) << (3 * l + 2);
+      ix >>= 1;
+      iy >>= 1;
+      iz >>= 1;
+    }
+    return id;
+  }
+
   inline void addChild(int octant, int n) {
     N_iter N = nodes.begin()+n;
     Node child;
@@ -64,6 +81,7 @@ private:
     C->X      = nodes[i].X;
     C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
+    C->ICELL  = getIndex(C->X,nodes[i].LEVEL);
     if( nodes[i].NOCHILD ) {
       C->CHILD = 0;
       C->NCHILD = 0;
@@ -169,6 +187,7 @@ protected:
 
   void linkTree(Bodies &bodies, Cells &cells) {
     startTimer("Link tree");
+    cells.clear();
     cells.resize(NCELL);
     Ci0 = cells.begin();
     BN = bodies.begin();

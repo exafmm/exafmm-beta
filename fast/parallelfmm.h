@@ -41,14 +41,15 @@ private:
     cell.PARENT = iparent;                                      // Iterator offset for parent
     sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
-    C_iter Cparent = sendCells.begin() + iparent + sendCellDispl[IRANK];// Get parent iterator
+    C_iter Cparent = sendCells.begin() + sendCellDispl[IRANK] + iparent;// Get parent iterator
     if( Cparent->NCHILD == 0 ) Cparent->CHILD = icell;          // Iterator offset for parent's first child
     Cparent->NCHILD++;                                          // Increment parent's child counter
+    assert( Cparent->ICELL == C->ICELL/8 );                     // Check if parent matches
   }
 
 //! Add bodies to send buffer
   void addSendBody(C_iter C, int &ibody, int icell) {
-    C_iter Csend = sendCells.begin() + icell + sendCellDispl[IRANK];// Get send cell iterator
+    C_iter Csend = sendCells.begin() + sendCellDispl[IRANK] + icell;// Get send cell iterator
     Csend->NCLEAF = C->NCLEAF;                                  // Set number of bodies
     Csend->NDLEAF = ibody;                                      // Set body index per rank
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {        // Loop over bodies in cell
@@ -67,7 +68,7 @@ private:
     if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     while( !cellQueue.empty() ) {                               // While traversal queue is not empty
       C_iter C = cellQueue.front();                             //  Get front item in traversal queue
-      cellQueue.pop();                                          //   Pop item from traversal queue
+      cellQueue.pop();                                          //  Pop item from traversal queue
       for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {// Loop over child cells
         addSendCell(CC,iparent,icell);                          //   Add cells to send
         if( CC->NCHILD == 0 ) {                                 //   If cell is twig
@@ -77,7 +78,7 @@ private:
           if( IMAGES == 0 ) {                                   //    If free boundary condition
             Xperiodic = 0;                                      //     Set periodic coordinate offset
             real R2 = getDistance(CC);                          //     Get dXance to other domain
-            divide |= 1e10 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
+            divide |= 1e6 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
           } else {                                              //    If periodic boundary condition
             for( int ix=-1; ix<=1; ++ix ) {                     //     Loop over x periodic direction
               for( int iy=-1; iy<=1; ++iy ) {                   //      Loop over y periodic direction
@@ -92,10 +93,11 @@ private:
             }                                                   //     End loop over x periodic direction
           }                                                     //    Endif for periodic boundary condition
           divide |= CC->R > (R0 / (1 << level));                //    Divide if cell is larger than local root cell
-          if( divide ) {                                        //    If cell has to be divided
-            cellQueue.push(CC);                                 //     Push cell to traveral queue
+          if( !divide ) {                                       //    If cell does not have to be divided
+            CC->NCHILD = 0;                                     //     Cut off child links
           }                                                     //    Endif for cell division
         }                                                       //   Endif for twig
+        cellQueue.push(CC);                                     //   Push cell to traveral queue
       }                                                         //  End loop over child cells
       iparent++;                                                //  Increment parent send cell's offset
     }                                                           // End while loop for traversal queue
@@ -156,6 +158,8 @@ public:
     } else {                                                    // If tree was constructed bottom up
       Root = cells.end() - 1;                                   //  The last cell is the root cell
     }                                                           // Endif for tree construction
+    sendBodies.clear();                                         // Clear send buffer for bodies
+    sendCells.clear();                                          // Clear send buffer for cells
     sendCells.reserve(cells.size()*27);                         // Reserve space for send buffer
     sendCellDispl[0] = 0;                                       // Initialize displacement vector
     for( IRANK=0; IRANK!=MPISIZE; ++IRANK ) {                   // Loop over ranks
@@ -177,17 +181,16 @@ public:
 //! Set local essential tree from rank "irank".
   void setLET(Cells &cells, int irank) {
     startTimer("Set LET");                                      // Start timer
-    for( int i=recvCellDispl[irank]+recvCellCount[irank]-1; i>=recvCellDispl[irank]; i-- ) { // Loop over receive cells
-      C_iter C = recvCells.begin() + i;                         //  Iterator for receive cell
+    for( int i=recvCellCount[irank]-1; i>=0; i-- ) {            // Loop over receive cells
+      C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator for receive cell
       if( C->NCLEAF != 0 ) {                                    //  If cell has leafs
-        C->LEAF = recvBodies.begin() + C->NDLEAF + recvBodyDispl[irank];// Iterator of first leaf
+        C->LEAF = recvBodies.begin() + recvBodyDispl[irank] + C->NDLEAF;// Iterator of first leaf
         C->NDLEAF = C->NCLEAF;                                  //   Initialize number of leafs
       }                                                         //  End if for leafs
-      if( C->NCHILD != 0 ) C->CHILD += recvCellDispl[irank];    //  Add receive rank offset to child index
-      if( i != recvCellDispl[irank] ) {                         //  If cell is not root
-        C->PARENT += recvCellDispl[irank];                      //   Add receive rank offset to parent index
-        C_iter Cparent = recvCells.begin() + C->PARENT;         //   Iterator for parent cell
+      if( i != 0 ) {                                            //  If cell is not root
+        C_iter Cparent = recvCells.begin() + recvCellDispl[irank] + C->PARENT;//   Iterator for parent cell
         Cparent->NDLEAF += C->NDLEAF;                           //   Accululate number of leafs
+        assert( Cparent->ICELL == C->ICELL/8 );                 //   Check if parent matches
       }                                                         //  End if for root cell
     }                                                           // End loop over receive cells
     cells.resize(recvCellCount[irank]);                         // Resize cell vector for LET
