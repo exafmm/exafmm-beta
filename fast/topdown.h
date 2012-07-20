@@ -57,7 +57,7 @@ private:
   }
 
   void splitNode(int n) {
-    while( nodes[n].NLEAF > NCRIT ) {
+    if( nodes[n].NLEAF > NCRIT ) {
       int c = 0;
       Leaf *Ln;
       for( Leaf *L=nodes[n].LEAF; L; L=Ln ) {
