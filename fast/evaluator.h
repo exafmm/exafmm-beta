@@ -320,7 +320,7 @@ public:
 #endif
       if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
         approximate(Ci,Cj,mutual);
-      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
+      } else if(Ci->NCHILD==0 && Cj->NCHILD == 0) {
         P2P(Ci,Cj,mutual);
         NP2P++;
       } else {

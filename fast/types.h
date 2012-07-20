@@ -136,19 +136,19 @@ typedef std::vector<Node>::iterator N_iter;                     //!< Iterator fo
 
 //! Structure of cells
 struct Cell {
-  int      ICELL;                                               //!< Cell index
-  int      NCHILD;                                              //!< Number of child cells
-  int      NCLEAF;                                              //!< Number of child leafs
-  int      NDLEAF;                                              //!< Number of descendant leafs
-  int      PARENT;                                              //!< Iterator offset of parent cell
-  int      CHILD;                                               //!< Iterator offset of child cells
-  B_iter   LEAF;                                                //!< Iterator of first leaf
-  vect     X;                                                   //!< Cell center
-  real     R;                                                   //!< Cell radius
-  real     RMAX;                                                //!< Max cell radius
-  real     RCRIT;                                               //!< Critical cell radius
-  Mset     M;                                                   //!< Multipole coefficients
-  Lset     L;                                                   //!< Local coefficients
+  int       NCHILD;                                             //!< Number of child cells
+  int       NCLEAF;                                             //!< Number of child leafs
+  int       NDLEAF;                                             //!< Number of descendant leafs
+  int       PARENT;                                             //!< Iterator offset of parent cell
+  int       CHILD;                                              //!< Iterator offset of child cells
+  long long ICELL;                                              //!< Cell index
+  B_iter    LEAF;                                               //!< Iterator of first leaf
+  vect      X;                                                  //!< Cell center
+  real      R;                                                  //!< Cell radius
+  real      RMAX;                                               //!< Max cell radius
+  real      RCRIT;                                              //!< Critical cell radius
+  Mset      M;                                                  //!< Multipole coefficients
+  Lset      L;                                                  //!< Local coefficients
 };
 typedef std::vector<Cell>           Cells;                      //!< Vector of cells
 typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator for cell vector

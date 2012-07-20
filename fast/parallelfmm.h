@@ -25,13 +25,13 @@ private:
   real getDistance(C_iter C) {
     vect dX;                                                    // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
-      dX[d] = (C->X[d] + Xperiodic[d] > thisXMAX[d])*           //  Calculate the dXance between cell C and
+      dX[d] = (C->X[d] + Xperiodic[d] > thisXMAX[d])*           //  Calculate the disance between cell C and
               (C->X[d] + Xperiodic[d] - thisXMAX[d])+           //  the nearest point in domain [xmin,xmax]^3
               (C->X[d] + Xperiodic[d] < thisXMIN[d])*           //  Take the differnece from xmin or xmax
               (C->X[d] + Xperiodic[d] - thisXMIN[d]);           //  or 0 if between xmin and xmax
     }                                                           // End loop over dimensions
     real R2 = norm(dX);                                         // Distance squared
-    return R2;                                                  // Return dXance squared
+    return R2;                                                  // Return disance squared
   }
 
 //! Add cells to send buffer
@@ -44,7 +44,6 @@ private:
     C_iter Cparent = sendCells.begin() + sendCellDispl[IRANK] + iparent;// Get parent iterator
     if( Cparent->NCHILD == 0 ) Cparent->CHILD = icell;          // Iterator offset for parent's first child
     Cparent->NCHILD++;                                          // Increment parent's child counter
-    assert( Cparent->ICELL == C->ICELL/8 );                     // Check if parent matches
   }
 
 //! Add bodies to send buffer
@@ -77,8 +76,8 @@ private:
           bool divide = false;                                  //    Initialize logical for dividing
           if( IMAGES == 0 ) {                                   //    If free boundary condition
             Xperiodic = 0;                                      //     Set periodic coordinate offset
-            real R2 = getDistance(CC);                          //     Get dXance to other domain
-            divide |= 1e6 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
+            real R2 = getDistance(CC);                          //     Get disance to other domain
+            divide |= 16 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
           } else {                                              //    If periodic boundary condition
             for( int ix=-1; ix<=1; ++ix ) {                     //     Loop over x periodic direction
               for( int iy=-1; iy<=1; ++iy ) {                   //      Loop over y periodic direction
@@ -86,7 +85,7 @@ private:
                   Xperiodic[0] = ix * 2 * R0;                   //        Coordinate offset for x periodic direction
                   Xperiodic[1] = iy * 2 * R0;                   //        Coordinate offset for y periodic direction
                   Xperiodic[2] = iz * 2 * R0;                   //        Coordinate offset for z periodic direction
-                  real R2 = getDistance(CC);                    //        Get dXance to other domain
+                  real R2 = getDistance(CC);                    //        Get disance to other domain
                   divide |= 4 * CC->RCRIT * CC->RCRIT > R2;     //        Divide if cell seems too close
                 }                                               //       End loop over z periodic direction
               }                                                 //      End loop over y periodic direction
@@ -148,9 +147,9 @@ public:
     delete[] recvCellDispl;                                     // Deallocate receive displacement
   }
 
-//! Get local essential tree to send to each process
-  void getLET(Cells &cells) {
-    startTimer("Get LET");                                      // Start timer
+//! Set local essential tree to send to each process
+  void setLET(Cells &cells) {
+    startTimer("Set LET");                                      // Start timer
     Cj0 = cells.begin();                                        // Set cells begin iterator
     C_iter Root;                                                // Root cell
     if( TOPDOWN ) {                                             // If tree was constructed top down
@@ -175,12 +174,12 @@ public:
       }                                                         //  Endif for current rank
       sendCellCount[IRANK] = sendCells.size() - sendCellDispl[IRANK];// Send count for IRANK
     }                                                           // End loop over ranks
-    stopTimer("Get LET",printNow);                              // Stop timer
+    stopTimer("Set LET",printNow);                              // Stop timer
   }
 
-//! Set local essential tree from rank "irank".
-  void setLET(Cells &cells, int irank) {
-    startTimer("Set LET");                                      // Start timer
+//! Get local essential tree from rank "irank".
+  void getLET(Cells &cells, int irank) {
+    startTimer("Get LET");                                      // Start timer
     for( int i=recvCellCount[irank]-1; i>=0; i-- ) {            // Loop over receive cells
       C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator for receive cell
       if( C->NCLEAF != 0 ) {                                    //  If cell has leafs
@@ -190,12 +189,11 @@ public:
       if( i != 0 ) {                                            //  If cell is not root
         C_iter Cparent = recvCells.begin() + recvCellDispl[irank] + C->PARENT;//   Iterator for parent cell
         Cparent->NDLEAF += C->NDLEAF;                           //   Accululate number of leafs
-        assert( Cparent->ICELL == C->ICELL/8 );                 //   Check if parent matches
       }                                                         //  End if for root cell
     }                                                           // End loop over receive cells
     cells.resize(recvCellCount[irank]);                         // Resize cell vector for LET
     cells.assign(recvCells.begin()+recvCellDispl[irank],recvCells.begin()+recvCellDispl[irank]+recvCellCount[irank]);
-    stopTimer("Set LET",printNow);                              // Stop timer
+    stopTimer("Get LET",printNow);                              // Stop timer
   }
 
 //! Send bodies

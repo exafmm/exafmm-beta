@@ -44,18 +44,19 @@ int main() {
 #if IneJ
 
 #if 1
-  FMM.getLET(cells);
+  FMM.setLET(cells);
   FMM.commBodies();
   FMM.commCells();
   FMM.evaluate(cells,cells);
   jbodies = bodies;
   for( int irank=1; irank<MPISIZE; irank++ ) {
-    FMM.setLET(jcells,(MPIRANK+irank)%MPISIZE);
+    FMM.getLET(jcells,(MPIRANK+irank)%MPISIZE);
     FMM.shiftBodies(jbodies);
     Cells icells;
     FMM.topdown(jbodies,icells);
 
-
+#if 0
+    assert( icells.size() == jcells.size() );
     CellQueue Qi, Qj;
     Qi.push(icells.begin());
     Qj.push(jcells.begin());
@@ -64,30 +65,23 @@ int main() {
       C_iter Ci=Qi.front(); Qi.pop();
       C_iter Cj=Qj.front(); Qj.pop();
       if( Ci->ICELL != Cj->ICELL ) {
-        std::cout << MPIRANK << " " << Ci->ICELL << " " << Cj->ICELL << std::endl;
+        std::cout << MPIRANK << " ICELL  : " << Ci->ICELL << " " << Cj->ICELL << std::endl;
         break;
       }
       if( Ci->NCHILD != Cj->NCHILD ) {
-        std::cout << MPIRANK << " " << Ci->NCHILD << " " << Cj->NCHILD << std::endl;
+        std::cout << MPIRANK << " NCHILD : " << Ci->NCHILD << " " << Cj->NCHILD << std::endl;
         break;
       }
       if( Ci->NCLEAF != Cj->NCLEAF ) {
-        std::cout << MPIRANK << " " << Ci->NCLEAF << " " << Cj->NCLEAF << std::endl;
+        std::cout << MPIRANK << " NCLEAF : " << Ci->NCLEAF << " " << Cj->NCLEAF << std::endl;
         break;
       }
-      real bi = 0, bj = 0;
-      for( int i=0; i<Ci->NCLEAF; i++ ) {
-        B_iter Bi=Ci->LEAF+i, Bj=Cj->LEAF+i;
-        bi += Bi->X[0];
-        bj += Bj->X[0];
-      }
-//      if( fabs(bi-bj) > 1e-6 ) std::cout << bi << " " << bj << std::endl;
       for( int i=0; i<Ci->NCHILD; i++ )  Qi.push(icells.begin()+Ci->CHILD+i);
       for( int i=0; i<Cj->NCHILD; i++ )  Qj.push(jcells.begin()+Cj->CHILD+i);
       ic++;
     }
     assert( ic == icells.size() );
-    assert( icells.size() == jcells.size() );
+#endif
 
     FMM.evaluate(cells,jcells);
   }
@@ -123,7 +117,7 @@ int main() {
   for( int i=0; i!=MPISIZE; ++i ) {
     FMM.shiftBodies(jbodies);
     FMM.direct(bodies2,jbodies);
-    if(FMM.printNow) std::cout << "Direct loop   : " << i+1 << "/" << MPISIZE << std::endl;
+    if(FMM.printNow) std::cout << "Direct loop          : " << i+1 << "/" << MPISIZE << std::endl;
   }
   FMM.stopTimer("Direct sum",FMM.printNow);
   FMM.eraseTimer("Direct sum");

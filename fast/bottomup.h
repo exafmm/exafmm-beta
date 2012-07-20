@@ -19,10 +19,10 @@ private:
 #endif
     for( uint b=0; b<bodies.size(); b++ ) {
       B_iter B = bodies.begin() + b;
-      int ix = int((B->X[0] + R0 - X0[0]) / d);
-      int iy = int((B->X[1] + R0 - X0[1]) / d);
-      int iz = int((B->X[2] + R0 - X0[2]) / d);
-      int id = 0;
+      long long ix = int((B->X[0] + R0 - X0[0]) / d);
+      long long iy = int((B->X[1] + R0 - X0[1]) / d);
+      long long iz = int((B->X[2] + R0 - X0[2]) / d);
+      long long id = 0;
       for( int l=0; l!=MAXLEVEL; ++l ) {
         id += (ix & 1) << (3 * l);
         id += (iy & 1) << (3 * l + 1);
@@ -127,13 +127,13 @@ private:
   }
 
   void buildBottom(Bodies &bodies, Cells &cells) {
-    int I = -1;
+    long long I = -1;
     C_iter C;
     cells.clear();
     cells.reserve(1 << (3 * MAXLEVEL));
     float d = 2 * R0 / (1 << MAXLEVEL);
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      int IC = B->ICELL;
+      long long IC = B->ICELL;
       if( IC != I ) {
         Cell cell;
         initCell(cell,0,B,d);
@@ -151,12 +151,12 @@ private:
     float d = 2 * R0 / (1 << MAXLEVEL);
     for( int l=0; l!=MAXLEVEL; ++l ) {
       int div = (8 << (3 * l));
-      int I = -1;
+      long long I = -1;
       int p = end - 1;
       d *= 2;
       for( int c=begin; c!=end; ++c ) {
         B_iter B = cells[c].LEAF;
-        int IC = B->ICELL / div;
+        long long IC = B->ICELL / div;
         if( IC != I ) {
           Cell cell;
           initCell(cell,c,cells[c].LEAF,d);

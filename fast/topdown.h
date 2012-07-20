@@ -22,14 +22,15 @@ private:
     for( int b=0; b!=8; ++b ) node.CHILD[b] = -1;
   }
 
-  inline int getIndex(vect X, int level) {
+  inline long long getIndex(vect X, int level) {
     float d = 2 * R0 / (1 << level);
-    int ix = int((X[0] + R0 - X0[0]) / d);
-    int iy = int((X[1] + R0 - X0[1]) / d);
-    int iz = int((X[2] + R0 - X0[2]) / d);
-    int id = 0;
+    long long ix = int((X[0] + R0 - X0[0]) / d);
+    long long iy = int((X[1] + R0 - X0[1]) / d);
+    long long iz = int((X[2] + R0 - X0[2]) / d);
+    long long id = ((1 << 3 * level) - 1) / 7;
+    assert( level < 22 );
     for( int l=0; l<level; l++ ) {
-       id += (ix & 1) << (3 * l);
+      id += (ix & 1) << (3 * l);
       id += (iy & 1) << (3 * l + 1);
       id += (iz & 1) << (3 * l + 2);
       ix >>= 1;
