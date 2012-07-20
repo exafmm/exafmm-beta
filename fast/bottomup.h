@@ -17,7 +17,7 @@ private:
 #else
 #pragma omp parallel for num_threads(OMP_NUM_THREADS)
 #endif
-    for( uint b=0; b<bodies.size(); b++ ) {
+    for( int b=0; b<int(bodies.size()); b++ ) {
       B_iter B = bodies.begin() + b;
       long long ix = int((B->X[0] + R0 - X0[0]) / d);
       long long iy = int((B->X[1] + R0 - X0[1]) / d);

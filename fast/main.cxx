@@ -60,7 +60,7 @@ int main() {
     CellQueue Qi, Qj;
     Qi.push(icells.begin());
     Qj.push(jcells.begin());
-    uint ic=0;
+    int ic=0;
     while( !Qi.empty() ) {
       C_iter Ci=Qi.front(); Qi.pop();
       C_iter Cj=Qj.front(); Qj.pop();
@@ -80,7 +80,7 @@ int main() {
       for( int i=0; i<Cj->NCHILD; i++ )  Qj.push(jcells.begin()+Cj->CHILD+i);
       ic++;
     }
-    assert( ic == icells.size() );
+    assert( ic == int(icells.size()) );
 #endif
 
     FMM.evaluate(cells,jcells);
