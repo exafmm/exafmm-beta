@@ -43,7 +43,7 @@ int main() {
   FMM.startPAPI();
 #if IneJ
 
-#if 1
+#if 1 // For debugging shift and reconstruct tree : Step 1
   FMM.setLET(cells);
   FMM.commBodies();
   FMM.commCells();
@@ -51,11 +51,11 @@ int main() {
   jbodies = bodies;
   for( int irank=1; irank<MPISIZE; irank++ ) {
     FMM.getLET(jcells,(MPIRANK+irank)%MPISIZE);
-    FMM.shiftBodies(jbodies);
+
+#if 0 // For debugging full LET communication : Step 2
+    FMM.shiftBodies(jbodies); // This will overwrite recvBodies.
     Cells icells;
     FMM.topdown(jbodies,icells);
-
-#if 0
     assert( icells.size() == jcells.size() );
     CellQueue Qi, Qj;
     Qi.push(icells.begin());
@@ -82,7 +82,6 @@ int main() {
     }
     assert( ic == int(icells.size()) );
 #endif
-
     FMM.evaluate(cells,jcells);
   }
 #else

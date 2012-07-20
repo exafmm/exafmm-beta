@@ -321,8 +321,12 @@ public:
       if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
         approximate(Ci,Cj,mutual);
       } else if(Ci->NCHILD==0 && Cj->NCHILD == 0) {
-        P2P(Ci,Cj,mutual);
-        NP2P++;
+        if( Cj->NCLEAF == 0 ) {
+          approximate(Ci,Cj,mutual);
+        } else {
+          P2P(Ci,Cj,mutual);
+          NP2P++;
+        }
       } else {
         Pair pair(Ci,Cj);
         pairQueue.push_back(pair);

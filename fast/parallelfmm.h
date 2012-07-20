@@ -77,7 +77,7 @@ private:
           if( IMAGES == 0 ) {                                   //    If free boundary condition
             Xperiodic = 0;                                      //     Set periodic coordinate offset
             real R2 = getDistance(CC);                          //     Get disance to other domain
-            divide |= 16 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
+            divide |= 4 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
           } else {                                              //    If periodic boundary condition
             for( int ix=-1; ix<=1; ++ix ) {                     //     Loop over x periodic direction
               for( int iy=-1; iy<=1; ++iy ) {                   //      Loop over y periodic direction
@@ -150,12 +150,13 @@ public:
 //! Set local essential tree to send to each process
   void setLET(Cells &cells) {
     startTimer("Set LET");                                      // Start timer
-    Cj0 = cells.begin();                                        // Set cells begin iterator
+    recvCells = cells;                                          // Use recvCells as temporary storage
+    Cj0 = recvCells.begin();                                    // Set cells begin iterator
     C_iter Root;                                                // Root cell
     if( TOPDOWN ) {                                             // If tree was constructed top down
-      Root = cells.begin();                                     //  The first cell is the root cell
+      Root = recvCells.begin();                                 //  The first cell is the root cell
     } else {                                                    // If tree was constructed bottom up
-      Root = cells.end() - 1;                                   //  The last cell is the root cell
+      Root = recvCells.end() - 1;                               //  The last cell is the root cell
     }                                                           // Endif for tree construction
     sendBodies.clear();                                         // Clear send buffer for bodies
     sendCells.clear();                                          // Clear send buffer for cells
