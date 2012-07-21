@@ -171,6 +171,11 @@ public:
     alltoallv(bodies);                                          // Alltoallv bodies
     bodies = recvBodies;                                        // Copy receive buffer to bodies
     stopTimer("Unpartition comm",printNow);                     // Stop timer 
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      B->ICELL = B->IBODY;                                      //  Do this to sort accroding to IPROC
+    }                                                           // End loop over bodies
+    buffer = bodies;                                            // Resize sort buffer
+    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
   }
 };
 

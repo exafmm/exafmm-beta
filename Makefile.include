@@ -36,6 +36,15 @@ NVCC    = nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-op
 
 ### Base flags
 LFLAGS  = -D$(DEVICE) -D$(EXPAND)
+LFLAGS  += -DCOMkernel
+LFLAGS  += -DERROR_OPT
+LFLAGS  += -DUSE_RMAX
+LFLAGS  += -DUSE_BMAX
+LFLAGS  += -DCOMcenter
+LFLAGS  += -DDUAL
+LFLAGS  += -DIneJ
+#LFLAGS += -DHYBRID
+#LFLAGS += -DTREECODE
 
 ### PAPI flags
 #LFLAGS += -DPAPI -lpapi

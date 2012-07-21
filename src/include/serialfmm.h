@@ -27,6 +27,8 @@ public:
       }
       R0 *= 1.000001;
     }
+    X0 = 0;
+    R0 = M_PI;
     stopTimer("Set bounds",printNow);
   }
 

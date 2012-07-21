@@ -1,13 +1,4 @@
 include ../Makefile.include
-LFLAGS	+= -DCOMkernel
-LFLAGS	+= -DERROR_OPT
-LFLAGS	+= -DUSE_RMAX
-LFLAGS	+= -DUSE_BMAX
-LFLAGS	+= -DCOMcenter
-LFLAGS	+= -DDUAL
-LFLAGS	+= -DIneJ
-#LFLAGS	+= -DHYBRID
-#LFLAGS	+= -DTREECODE
 
 serial	: serial.cxx
 	make clean

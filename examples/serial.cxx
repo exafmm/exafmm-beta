@@ -24,7 +24,6 @@ int main() {
   bodies.resize(numBodies);
   DATA.cube(bodies);
   FMM.startTimer("FMM");
-
   FMM.setBounds(bodies);
   FMM.buildTree(bodies,cells);
   FMM.upwardPass(cells);
@@ -34,9 +33,8 @@ int main() {
 #else
   FMM.evaluate(cells);
 #endif
-  FMM.downwardPass(cells);
-
   FMM.stopPAPI();
+  FMM.downwardPass(cells);
   FMM.stopTimer("FMM",FMM.printNow);
   FMM.eraseTimer("FMM");
   FMM.writeTime();

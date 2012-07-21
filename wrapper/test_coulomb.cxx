@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   int mpisize, mpirank;
   MPI_Comm_size(MPI_COMM_WORLD,&mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD,&mpirank);
-  const int N = 10000;
+  const int N = 1000000;
   const double size = 2 * M_PI;
   double *xi     = new double [3*N];
   double *qi     = new double [N];
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
   for( int irank=0; irank!=mpisize; ++irank ) {
     MPI_Shift(xj,3*N,mpisize,mpirank);
     MPI_Shift(qj,N,mpisize,mpirank);
-    for( int i=0; i!=N; ++i ) {
+    for( int i=0; i!=100; ++i ) {
       double P = 0, Fx = 0, Fy = 0, Fz = 0;
       for( int j=0; j!=N; ++j ) {
         double dx = xi[3*i+0] - xj[3*j+0];

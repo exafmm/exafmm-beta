@@ -6,6 +6,7 @@ extern "C" void FMMcalccoulomb(int n, double* x, double* q, double *p, double* f
   Bodies bodies, jbodies;
   Cells cells, jcells;
   ParallelFMM FMM;
+  FMM.printNow = MPIRANK == 0;
 
   bodies.resize(n);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -18,6 +19,7 @@ extern "C" void FMMcalccoulomb(int n, double* x, double* q, double *p, double* f
     B->TRG[1] = -f[3*i+0];
     B->TRG[2] = -f[3*i+1];
     B->TRG[3] = -f[3*i+2];
+    B->IBODY  = i;
   }
 
   FMM.partition(bodies);
