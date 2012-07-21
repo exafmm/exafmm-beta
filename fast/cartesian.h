@@ -937,7 +937,7 @@ public:
   Kernel() : X0(0), R0(0) {}
   ~Kernel() {}
 
-#if 0
+#if 1
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     if( mutual ) {
       for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {
@@ -1074,8 +1074,7 @@ public:
         real R2 = norm(dX) + EPS2;
         real invR2 = 1.0 / R2;
         if( R2 == 0 ) invR2 = 0;
-//        real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
-        real invR = Bj->SRC * std::sqrt(invR2);
+        real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
         dX *= invR2 * invR;
         P0 += invR;
         F0 += dX;
@@ -1220,7 +1219,7 @@ public:
       C[0] = 1;
       Kernels<0,0,P>::power(C,dX);
       L = Ci->L;
-//      B->TRG /= B->SRC;
+      B->TRG /= B->SRC;
       B->TRG[0] += L[0];
       B->TRG[1] += L[1];
       B->TRG[2] += L[2];

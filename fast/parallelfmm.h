@@ -8,7 +8,6 @@ private:
   int IRANK;                                                    //!< MPI rank loop counter
   vect thisXMIN;                                                //!< XMIN for a given rank
   vect thisXMAX;                                                //!< XMAX for a given rank
-  CellQueue cellQueue;                                          //!< Queue for tree traversal
   Cells sendCells;                                              //!< Send buffer for cells
   Cells recvCells;                                              //!< Receive buffer for cells
   int *sendCellCount;                                           //!< Send count
@@ -59,7 +58,7 @@ private:
   }
 
 //! Determine which cells to send
-  void traverseLET() {
+  void traverseLET(CellQueue cellQueue) {
     int ibody = 0;                                              // Current send body's offset
     int icell = 0;                                              // Current send cell's offset
     int iparent = 0;                                            // Parent send cell's offset
@@ -147,17 +146,19 @@ public:
     delete[] recvCellDispl;                                     // Deallocate receive displacement
   }
 
+//! Reduce root multipole
+  void reduceRoot(Cells &cells) {
+    C_iter root = cells.begin();                                // Get root cell
+    Mset M = root->M;                                           // Copy multipole to buffer
+    MPI_Datatype MPI_TYPE = getType(root->M[0]);                // Get MPI data type
+    MPI_Allreduce(&M[0],&root->M[0],MTERM,MPI_TYPE,MPI_SUM,MPI_COMM_WORLD);// Reduce multipoles
+  }
+
 //! Set local essential tree to send to each process
   void setLET(Cells &cells) {
     startTimer("Set LET");                                      // Start timer
     recvCells = cells;                                          // Use recvCells as temporary storage
     Cj0 = recvCells.begin();                                    // Set cells begin iterator
-    C_iter Root;                                                // Root cell
-    if( TOPDOWN ) {                                             // If tree was constructed top down
-      Root = recvCells.begin();                                 //  The first cell is the root cell
-    } else {                                                    // If tree was constructed bottom up
-      Root = recvCells.end() - 1;                               //  The last cell is the root cell
-    }                                                           // Endif for tree construction
     sendBodies.clear();                                         // Clear send buffer for bodies
     sendCells.clear();                                          // Clear send buffer for cells
     sendCells.reserve(cells.size()*27);                         // Reserve space for send buffer
@@ -167,11 +168,12 @@ public:
       if( IRANK != MPIRANK ) {                                  //  If not current rank
         thisXMIN = XMIN[IRANK];                                 //   Set XMIN for IRANK
         thisXMAX = XMAX[IRANK];                                 //   Set XMAX for IRANK
-        Cell cell(*Root);                                       //   Send root cell
+        Cell cell(*Cj0);                                        //   Send root cell
         cell.NCHILD = cell.NCLEAF = cell.NDLEAF = 0;            //   Reset link to children and leafs
         sendCells.push_back(cell);                              //   Push it into send buffer
-        cellQueue.push(Root);                                   //   Push root to traversal queue
-        traverseLET();                                          //   Traverse tree to get LET
+        CellQueue cellQueue;                                    //   Traversal queue
+        cellQueue.push(Cj0);                                    //   Push root to traversal queue
+        traverseLET(cellQueue);                                 //   Traverse tree to get LET
       }                                                         //  Endif for current rank
       sendCellCount[IRANK] = sendCells.size() - sendCellDispl[IRANK];// Send count for IRANK
     }                                                           // End loop over ranks

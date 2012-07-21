@@ -7,4 +7,5 @@ syntax: glob
 *.dot
 *.svg
 *.swp
+*.plist
 .Apple*

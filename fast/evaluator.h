@@ -9,10 +9,6 @@ private:
   real timeM2P;
   real timeM2L;
 
-protected:
-  bool    TOPDOWN;
-  C_iter  ROOT, ROOT2;
-
 public:
   real NP2P;
   real NM2P;
@@ -73,23 +69,11 @@ protected:
   void setRootCell(Cells &cells) {
     Ci0 = cells.begin();
     Cj0 = cells.begin();
-    if( TOPDOWN ) {
-      ROOT = Ci0;
-    } else {
-      ROOT = cells.end() - 1;
-    }
   }
 
   void setRootCell(Cells &icells, Cells &jcells) {
     Ci0 = icells.begin();
     Cj0 = jcells.begin();
-    if( TOPDOWN ) {
-      ROOT  = Ci0;
-      ROOT2 = Cj0;
-    } else {
-      ROOT  = icells.end() - 1;
-      ROOT2 = jcells.end() - 1;
-    }
   }
 
   void setCenter(C_iter C) const {
@@ -114,7 +98,7 @@ protected:
 
   void setRcrit(Cells &cells) {
 #if ERROR_OPT
-    real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(ROOT->M[0]),1.0/3);
+    real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(Ci0->M[0]),1.0/3);
 #endif
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       real x = 1.0 / THETA;
@@ -178,7 +162,7 @@ protected:
         }
       }
 #if QUARK
-      if( int(pairQueue.size()) > ROOT->NDLEAF / 100 ) {
+      if( int(pairQueue.size()) > Ci0->NDLEAF / 100 ) {
         while( !pairQueue.empty() ) {
           pair = pairQueue.front();
           pairQueue.pop_front();
@@ -186,7 +170,7 @@ protected:
         }
       }
 #else
-      if( int(pairQueue.size()) > ROOT->NDLEAF / 100 ) {
+      if( int(pairQueue.size()) > Ci0->NDLEAF / 100 ) {
 //#pragma omp parallel for schedule(dynamic)
         for( int i=0; i<int(pairQueue.size()); i++ ) {
           traverseBranch(pairQueue[i].first,pairQueue[i].second,mutual);
@@ -258,7 +242,7 @@ protected:
     real R = R0;                                                // Radius at current level
     Cells pcells(28);                                           // Create cells
     C_iter Ci = pcells.end()-1;                                 // Last cell is periodic parent cell
-    *Ci = *ROOT2;                                               // Copy values from source root
+    *Ci = *Cj0;                                                 // Copy values from source root
     Ci->CHILD = 0;                                              // Child cells for periodic center cell
     Ci->NCHILD = 27;                                            // Number of child cells for periodic center cell
     C_iter C0 = Cj0;                                            // Placeholder for Cj0
@@ -271,9 +255,9 @@ protected:
                 for( int cy=-1; cy<=1; ++cy ) {                 //       Loop over y periodic direction (child)
                   for( int cz=-1; cz<=1; ++cz ) {               //        Loop over z periodic direction (child)
                     Xperiodic[0] = (ix * 3 + cx) * 2 * R;       //         Coordinate offset for x periodic direction
-                    Xperiodic[1] = (iy * 3 + cy) * 2 * R;       //         Coordinate offset for y periodic directio
-                    Xperiodic[2] = (iz * 3 + cz) * 2 * R;       //         Coordinate offset for y periodic directio
-                    M2L(ROOT,Ci,false);                         //         Perform M2L kernel
+                    Xperiodic[1] = (iy * 3 + cy) * 2 * R;       //         Coordinate offset for y periodic direction
+                    Xperiodic[2] = (iz * 3 + cz) * 2 * R;       //         Coordinate offset for z periodic direction
+                    M2L(Ci0,Ci,false);                          //         Perform M2L kernel
                   }                                             //        End loop over z periodic direction (child)
                 }                                               //       End loop over y periodic direction (child)
               }                                                 //      End loop over x periodic direction (child)
@@ -304,7 +288,7 @@ protected:
   }
 
 public:
-  Evaluator() : TOPDOWN(false), NP2P(0), NM2P(0), NM2L(0) {}
+  Evaluator() : NP2P(0), NM2P(0), NM2L(0) {}
   ~Evaluator() {}
 
   void applyMAC(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {

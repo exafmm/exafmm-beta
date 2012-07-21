@@ -21,29 +21,21 @@ int main() {
   numBodies = int(pow(10,(it+24)/8.0));
 #else
   {
-#if BUILD
-  numBodies = 10000000;
-#else
-  numBodies = 1000000;
-#endif
+  numBodies = 1000000 / MPISIZE;
 #endif // MANY
   if(FMM.printNow) std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
-  DATA.cube(bodies);
+  DATA.cube(bodies,MPIRANK);
   FMM.startTimer("FMM");
 
-  FMM.octsection(bodies);
-#if BOTTOMUP
-  FMM.bottomup(bodies,cells);
-#else
-  FMM.topdown(bodies,cells);
-#endif
-#if BUILD
-#else
+  FMM.partition(bodies);
+  FMM.buildTree(bodies,cells);
+  FMM.upwardPass(cells);
+  FMM.reduceRoot(cells);
   FMM.startPAPI();
 #if IneJ
 
-#if 1 // For debugging shift and reconstruct tree : Step 1
+#if 0 // For debugging shift and reconstruct tree : Step 1
   FMM.setLET(cells);
   FMM.commBodies();
   FMM.commCells();
@@ -55,7 +47,8 @@ int main() {
 #if 0 // For debugging full LET communication : Step 2
     FMM.shiftBodies(jbodies); // This will overwrite recvBodies.
     Cells icells;
-    FMM.topdown(jbodies,icells);
+    FMM.buildTree(jbodies,icells);
+    FMM.upwardPass(icells);
     assert( icells.size() == jcells.size() );
     CellQueue Qi, Qj;
     Qi.push(icells.begin());
@@ -89,11 +82,8 @@ int main() {
   for( int irank=0; irank!=MPISIZE; irank++ ) {
     FMM.shiftBodies(jbodies);
     jcells.clear();
-#if BOTTOMUP
-    FMM.bottomup(jbodies,jcells);
-#else
-    FMM.topdown(jbodies,jcells);
-#endif
+    FMM.buildTree(jbodies,jcells);
+    FMM.upwardPass(jcells);
     FMM.evaluate(cells,jcells);
   }
 #endif
@@ -101,6 +91,7 @@ int main() {
 #else
   FMM.evaluate(cells);
 #endif
+  FMM.downwardPass(cells);
 
   FMM.stopPAPI();
   FMM.stopTimer("FMM",FMM.printNow);
@@ -118,6 +109,7 @@ int main() {
     FMM.direct(bodies2,jbodies);
     if(FMM.printNow) std::cout << "Direct loop          : " << i+1 << "/" << MPISIZE << std::endl;
   }
+  FMM.normalize(bodies2);
   FMM.stopTimer("Direct sum",FMM.printNow);
   FMM.eraseTimer("Direct sum");
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
@@ -128,7 +120,6 @@ int main() {
   MPI_Reduce(&diff2,&diff4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   MPI_Reduce(&norm2,&norm4,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);
   if(FMM.printNow) DATA.printError(diff3,norm3,diff4,norm4);
-#endif // BUILD
   }
 
 #ifdef VTK

@@ -2,7 +2,7 @@
 #define topdown_h
 #include "evaluator.h"
 
-class TopDown : public Evaluator {
+class TreeBuilder : public Evaluator {
 private:
   Nodes    nodes;
   Leafs    leafs;
@@ -10,8 +10,6 @@ private:
   C_iter   CN;
   unsigned NLEAF;
   unsigned NCELL;
-
-protected:
   int      MAXLEVEL;
 
 private:
@@ -123,41 +121,20 @@ private:
   }
 
 protected:
-  void setDomain(Bodies &bodies) {
-    startTimer("Set domain");
-    vect xmin, xmax;
+  void setLeafs(Bodies &bodies) {
+    startTimer("Set leafs");
     NLEAF = bodies.size();
     leafs.reserve(NLEAF);
-    X0 = 0;
-    xmax = xmin = bodies.begin()->X;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       Leaf leaf;
       leaf.I = B-bodies.begin();
       leaf.X = B->X;
       leafs.push_back(leaf);
-      for( int d=0; d!=3; ++d ) {
-        if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];
-        else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];
-      }
-      X0 += B->X;
     }
-    if( IMAGES != 0 ) {
-      X0 = 0;
-      R0 = M_PI;
-    } else {
-      X0 /= bodies.size();
-      for( int d=0; d!=3; ++d ) {
-        R0 = std::max(xmax[d] - X0[d], R0);
-        R0 = std::max(X0[d] - xmin[d], R0);
-      }
-      R0 *= 1.000001;
-    }
-    X0 = 0;
-    R0 = M_PI;
-    stopTimer("Set domain",printNow);
+    stopTimer("Set leafs",printNow);
   }
 
-  void buildTree() {
+  void growTree() {
     startTimer("Grow tree");
     NCELL = 1;
     nodes.reserve(NLEAF);
@@ -200,43 +177,15 @@ protected:
     stopTimer("Link tree",printNow);
   }
 
-  void upwardPass(Cells &cells) {
-    startTimer("Upward pass");
-    setRootCell(cells);
-    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {
-      real Rmax = 0;
-      setCenter(C);
-      C->M = 0;
-      P2M(C,Rmax);
-      M2M(C,Rmax);
-    }
-#if Cartesian
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
-    }
-#endif
-    setRcrit(cells);
-    stopTimer("Upward pass",printNow);
-  }
-
-  void downwardPass(Cells &cells) const {
-    C_iter C0 = cells.begin();
-    L2P(C0);
-    for( C_iter C=C0+1; C!=cells.end(); ++C ) {
-      L2L(C);
-      L2P(C);
-    }
-  }
-
   void printTreeData(Cells &cells) {
     setRootCell(cells);
     std::cout << "-----------------------------------------------" << std::endl;
-    std::cout << "Root center          : " << ROOT->X              << std::endl;
+    std::cout << "Root center          : " << X0                   << std::endl;
     std::cout << "Root radius          : " << R0                   << std::endl;
-    std::cout << "Bodies               : " << ROOT->NDLEAF         << std::endl;
+    std::cout << "Bodies               : " << Ci0->NDLEAF          << std::endl;
     std::cout << "Cells                : " << cells.size()         << std::endl;
     std::cout << "Tree depth           : " << MAXLEVEL             << std::endl;
-    std::cout << "Total charge         : " << std::abs(ROOT->M[0]) << std::endl;
+    std::cout << "Total charge         : " << std::abs(Ci0->M[0])  << std::endl;
     std::cout << "P2P calls            : " << NP2P                 << std::endl;
     std::cout << "M2P calls            : " << NM2P                 << std::endl;
     std::cout << "M2L calls            : " << NM2L                 << std::endl;
