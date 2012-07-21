@@ -9,7 +9,12 @@ LFLAGS	+= -DIneJ
 #LFLAGS	+= -DHYBRID
 #LFLAGS	+= -DTREECODE
 
-a	: main.cxx
+serial	: serial.cxx
+	make clean
+	$(CXX) $? $(LFLAGS) $(VFLAGS)
+	MYTH_WORKER_NUM=12 ./a.out
+
+parallel: parallel.cxx
 	make clean
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	MYTH_WORKER_NUM=12 mpirun -np 4 ./a.out

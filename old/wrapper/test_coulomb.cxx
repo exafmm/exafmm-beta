@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
   MPI_Comm_size(MPI_COMM_WORLD,&mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD,&mpirank);
   const int N = 10000;
-  const double size = 2 * M_PI;
+  const double size = 2;
   double *xi     = new double [3*N];
   double *qi     = new double [N];
   double *pi     = new double [N];
@@ -61,9 +61,9 @@ int main(int argc, char **argv) {
 
   srand48(mpirank);
   for( int i=0; i!=N; ++i ) {
-    xi[3*i+0] = drand48() * size - M_PI;
-    xi[3*i+1] = drand48() * size - M_PI;
-    xi[3*i+2] = drand48() * size - M_PI;
+    xi[3*i+0] = drand48() * size;
+    xi[3*i+1] = drand48() * size;
+    xi[3*i+2] = drand48() * size;
     qi[i] = 1. / N;
     pi[i] = 0;
     fi[3*i+0] = fi[3*i+1] = fi[3*i+2] = 0;
@@ -76,11 +76,6 @@ int main(int argc, char **argv) {
   }
 
   FMMcalccoulomb(N, xi, qi, pi, fi, 0);
-  for( int i=0; i!=N; ++i ) {
-    xj[3*i+0] = xi[3*i+0];
-    xj[3*i+1] = xi[3*i+1];
-    xj[3*i+2] = xi[3*i+2];
-  }
   for( int irank=0; irank!=mpisize; ++irank ) {
     MPI_Shift(xj,3*N,mpisize,mpirank);
     MPI_Shift(qj,N,mpisize,mpirank);
@@ -106,7 +101,7 @@ int main(int argc, char **argv) {
     }
   }
   double Pd = 0, Pn = 0, Fd = 0, Fn = 0;
-  for( int i=0; i!=100; ++i ) {
+  for( int i=0; i!=N; ++i ) {
     Pd += (pi[i] - pd[i]) * (pi[i] - pd[i]);
     Pn += pd[i] * pd[i];
     Fd += (fi[3*i+0] - fd[3*i+0]) * (fi[3*i+0] - fd[3*i+0])
