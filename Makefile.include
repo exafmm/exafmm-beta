@@ -1,5 +1,8 @@
 .SUFFIXES: .cxx .cu .o
 .PHONY: docs
+## ExaFMM path
+EXAFMM_INCLUDE_PATH = ../include
+EXAFMM_LIBRARY_PATH = ../lib
 
 ### CUDA path
 CUDA_INSTALL_PATH = /usr/local/cuda
@@ -18,24 +21,25 @@ EXPAND  = Cartesian
 #EXPAND  = Spherical
 
 ### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fPIC -I../src/include
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fPIC -I$(EXAFMM_INCLUDE_PATH)
 
 ### Intel compiler
-#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../src/include
+#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../include
 
 ### BG/P compiler
-#CXX	= mpixlcxx -qarch=450 -qtune=450 -I../src/include
+#CXX	= mpixlcxx -qarch=450 -qtune=450 -I../include
 
 ### K computer
-#CXX	= mpiFCCpx -Kopenmp,fast,ocl,preex,array_private -Ksimd=2,NOFLTLD,mfunc=3,optmsg=2 -Nsrc,sta -I../src/include -DNDEBUG
+#CXX	= mpiFCCpx -Kopenmp,fast,ocl,preex,array_private -Ksimd=2,NOFLTLD,mfunc=3,optmsg=2 -Nsrc,sta -I../include -DNDEBUG
 # -Kdalign,ns,mfunc,eval,prefetch_conditional,ilfunc -x-
 
 ### CUDA compiler
-NVCC    = nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v -O3\
-	 -use_fast_math -arch=sm_21 -I../src/include -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
+NVCC    = nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v\
+	-O3 -use_fast_math -arch=sm_21\
+	-I$(EXAFMM_INCLUDE_PATH) -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
 
 ### Base flags
-LFLAGS  = -D$(DEVICE) -D$(EXPAND)
+LFLAGS  = -L$(EXAFMM_LIBRARY_PATH) -D$(DEVICE) -D$(EXPAND)
 LFLAGS  += -DCOMkernel
 LFLAGS  += -DERROR_OPT
 LFLAGS  += -DUSE_RMAX

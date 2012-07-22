@@ -1,6 +1,7 @@
 syntax: glob
 
 *.a
+*.so
 *.dat
 *.o
 *.out

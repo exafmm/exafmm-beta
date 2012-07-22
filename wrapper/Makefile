@@ -9,23 +9,8 @@ endif
 libcoulomb.a: coulomb.o
 	ar ruv libcoulomb.a $?
 	ranlib libcoulomb.a
+	mv libcoulomb.a $(EXAFMM_LIBRARY_PATH)
 
 libcoulomb.so: coulomb.o
 	$(CXX) $? -shared -o libcoulomb.so $(LFLAGS)
-
-test_coulomb: test_coulomb.cxx $(MR3)
-	rm -f libcoulomb.*
-	make libcoulomb.a
-	$(CXX) $? -L. -lcoulomb $(LFLAGS)
-	mpirun -np 2 ./a.out
-	rm -f libcoulomb.*
-	make libcoulomb.so
-	$(CXX) $? -L. -lcoulomb $(LFLAGS)
-	mpirun -np 2 ./a.out
-
-ewald: ewald.cxx $(MR3)
-	rm -f libcoulombVdW.a
-	make coulombVdW
-	$(CXX) $? libcoulombVdW.a $(LFLAGS)
-	./a.out 0 12
-	./a.out 1 12
+	mv libcoulomb.so $(EXAFMM_LIBRARY_PATH)

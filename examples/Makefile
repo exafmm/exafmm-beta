@@ -1,8 +1,10 @@
 include ../Makefile.include
 
+LFLAGS	+= -DMANY
+
 serial	: serial.cxx
 	make clean
-	$(CXX) $? $(LFLAGS) $(VFLAGS)
+	$(CXX) $? $(LFLAGS)
 	MYTH_WORKER_NUM=12 ./a.out
 
 parallel: parallel.cxx
@@ -10,7 +12,12 @@ parallel: parallel.cxx
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	MYTH_WORKER_NUM=12 mpirun -np 4 ./a.out
 
-b	: main.cxx
+wrapper: wrapper.cxx
 	make clean
-	$(CXX) $? $(LFLAGS) -DMANY
+	make -C ../wrapper libcoulomb.a
+	$(CXX) $? $(LFLAGS) -lcoulomb
+	MYTH_WORKER_NUM=12 mpirun -np 4 ./a.out
+	$(RM) libcoulomb.a
+	make -C ../wrapper libcoulomb.so
+	$(CXX) $? $(LFLAGS) -lcoulomb
 	MYTH_WORKER_NUM=12 mpirun -np 4 ./a.out
