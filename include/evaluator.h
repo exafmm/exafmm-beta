@@ -5,42 +5,44 @@
 
 class Evaluator : public Kernel {
 private:
-  real timeP2P;
-  real timeM2P;
-  real timeM2L;
+  real timeP2P;                                                 //!< P2P execution time
+  real timeM2P;                                                 //!< M2P execution time
+  real timeM2L;                                                 //!< M2L execution time
 
 public:
-  real NP2P;
-  real NM2P;
-  real NM2L;
+  real NP2P;                                                    //!< Number of P2P kernel calls
+  real NM2P;                                                    //!< Number of M2P kenrel calls
+  real NM2L;                                                    //!< Number of M2L kernel calls
 
 private:
+//! Calculate Bmax
   real getBmax(vect const&X, C_iter C) const {
-    real rad = C->R;
-    real dx = rad+std::abs(X[0]-C->X[0]);
-    real dy = rad+std::abs(X[1]-C->X[1]);
-    real dz = rad+std::abs(X[2]-C->X[2]);
-    return std::sqrt( dx*dx + dy*dy + dz*dz );
+    real rad = C->R;                                            // Radius of cell
+    real dx = rad+std::abs(X[0]-C->X[0]);                       // Add x distance from center of mass
+    real dy = rad+std::abs(X[1]-C->X[1]);                       // Add y distance from center of mass
+    real dz = rad+std::abs(X[2]-C->X[2]);                       // Add z distance from center of mass
+    return std::sqrt( dx*dx + dy*dy + dz*dz );                  // Return scalar distance
   }
 
+//! Approximate interaction between two cells
   inline void approximate(C_iter Ci, C_iter Cj, bool mutual=true) {
 #if HYBRID
-    if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {
-      P2P(Ci,Cj,mutual);
-      NP2P++;
-    } else if ( timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L ) {
-      M2P(Ci,Cj,mutual);
-      NM2P++;
-    } else {
-      M2L(Ci,Cj,mutual);
-      NM2L++;
-    }
+    if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {// If P2P is fastest
+      P2P(Ci,Cj,mutual);                                        //  P2P kernel
+      NP2P++;                                                   //  Increment P2P counter
+    } else if ( timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L ) {// If M2P is fastest
+      M2P(Ci,Cj,mutual);                                        //  M2P kernel
+      NM2P++;                                                   //  Increment M2P counter
+    } else {                                                    // If M2L is fastest
+      M2L(Ci,Cj,mutual);                                        //  M2L kernel
+      NM2L++;                                                   //  Increment M2L counter
+    }                                                           // End if for fastest kernel
 #elif TREECODE
-    M2P(Ci,Cj,mutual);
-    NM2P++;
+    M2P(Ci,Cj,mutual);                                          // M2P kernel
+    NM2P++;                                                     // Increment M2P counter
 #else
-    M2L(Ci,Cj,mutual);
-    NM2L++;
+    M2L(Ci,Cj,mutual);                                          // M2L kernel
+    NM2L++;                                                     // Increment M2L counter
 #endif
   }
 

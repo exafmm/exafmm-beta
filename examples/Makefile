@@ -1,6 +1,6 @@
 include ../Makefile.include
 
-LFLAGS	+= -DMANY
+#LFLAGS	+= -DMANY
 
 serial	: serial.cxx
 	make clean
