@@ -21,16 +21,16 @@ EXPAND	= Cartesian
 #EXPAND	= Spherical
 
 ### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fPIC -I$(EXAFMM_INCLUDE_PATH)
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fPIC -DSSE
 
 ### Intel compiler
-#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../include
+#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -DSSE
 
 ### BG/P compiler
-#CXX	= mpixlcxx -qarch=450 -qtune=450 -I../include
+#CXX	= mpixlcxx -qarch=450 -qtune=450 -O3
 
 ### K computer
-#CXX	= mpiFCCpx -Kopenmp,fast,ocl,preex,array_private -Ksimd=2,NOFLTLD,mfunc=3,optmsg=2 -Nsrc,sta -I../include -DNDEBUG
+#CXX	= mpiFCCpx -Kopenmp,fast,ocl,preex,array_private -Ksimd=2,NOFLTLD,mfunc=3,optmsg=2 -Nsrc,sta -DNDEBUG
 # -Kdalign,ns,mfunc,eval,prefetch_conditional,ilfunc -x-
 
 ### CUDA compiler
@@ -39,6 +39,7 @@ NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-optio
 	-I$(EXAFMM_INCLUDE_PATH) -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
 
 ### Base flags
+CXX	+= -I$(EXAFMM_INCLUDE_PATH)
 LFLAGS	= -L$(EXAFMM_LIBRARY_PATH) -D$(DEVICE) -D$(EXPAND)
 LFLAGS	+= -DCOMkernel
 LFLAGS	+= -DERROR_OPT

@@ -2,10 +2,6 @@
 #define kernel_h
 #include "sort.h"
 
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
-#define constexpr const
-#endif
-
 struct float4 {
   float x;
   float y;
@@ -32,33 +28,33 @@ struct float16 {
 
 template<typename T, int nx, int ny, int nz>
 struct Index {
-  static const int      I = Index<T,nx,ny+1,nz-1>::I + 1;
-  static constexpr real F = Index<T,nx,ny,nz-1>::F * nz;
+  static const int                I = Index<T,nx,ny+1,nz-1>::I + 1;
+  static const unsigned long long F = Index<T,nx,ny,nz-1>::F * nz;
 };
 
 template<typename T, int nx, int ny>
 struct Index<T,nx,ny,0> {
-  static const int      I = Index<T,nx+1,0,ny-1>::I + 1;
-  static constexpr real F = Index<T,nx,ny-1,0>::F * ny;
+  static const int                I = Index<T,nx+1,0,ny-1>::I + 1;
+  static const unsigned long long F = Index<T,nx,ny-1,0>::F * ny;
 };
 
 template<typename T, int nx>
 struct Index<T,nx,0,0> {
-  static const int      I = Index<T,0,0,nx-1>::I + 1;
-  static constexpr real F = Index<T,nx-1,0,0>::F * nx;
+  static const int                I = Index<T,0,0,nx-1>::I + 1;
+  static const unsigned long long F = Index<T,nx-1,0,0>::F * nx;
 };
 
 template<typename T>
 struct Index<T,0,0,0> {
-  static const int      I = 0;
-  static constexpr real F = 1.;
+  static const int                I = 0;
+  static const unsigned long long F = 1.;
 };
 
 #if COMkernel
 template<>
 struct Index<Mset,2,0,0> {
-  static const int      I = 1;
-  static constexpr real F = 2.;
+  static const int                I = 1;
+  static const unsigned long long F = 2.;
 };
 #endif
 
@@ -937,7 +933,7 @@ public:
   Kernel() : X0(0), R0(0) {}
   ~Kernel() {}
 
-#if 1
+#ifndef SSE
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     if( mutual ) {
       for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {

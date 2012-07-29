@@ -20,7 +20,10 @@
 #include <utility>
 #include <vector>
 #include "vec.h"
+
+#if SSE
 #include <xmmintrin.h>
+#endif
 
 #if PAPI
 #include <papi.h>
