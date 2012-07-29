@@ -13,12 +13,12 @@ VTK_INCLUDE_PATH = /usr/include/vtk-5.8
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
 ### choose CPU or GPU
-DEVICE  = CPU
-#DEVICE  = GPU
+DEVICE	= CPU
+#DEVICE	= GPU
 
 ### choose Cartesian or spherical expansion
-EXPAND  = Cartesian
-#EXPAND  = Spherical
+EXPAND	= Cartesian
+#EXPAND	= Spherical
 
 ### GCC compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fPIC -I$(EXAFMM_INCLUDE_PATH)
@@ -34,34 +34,34 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fope
 # -Kdalign,ns,mfunc,eval,prefetch_conditional,ilfunc -x-
 
 ### CUDA compiler
-NVCC    = nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v\
+NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v\
 	-O3 -use_fast_math -arch=sm_21\
 	-I$(EXAFMM_INCLUDE_PATH) -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
 
 ### Base flags
-LFLAGS  = -L$(EXAFMM_LIBRARY_PATH) -D$(DEVICE) -D$(EXPAND)
-LFLAGS  += -DCOMkernel
-LFLAGS  += -DERROR_OPT
-LFLAGS  += -DUSE_RMAX
-LFLAGS  += -DUSE_BMAX
-LFLAGS  += -DCOMcenter
-LFLAGS  += -DDUAL
-LFLAGS  += -DIneJ
-#LFLAGS += -DHYBRID
-#LFLAGS += -DTREECODE
+LFLAGS	= -L$(EXAFMM_LIBRARY_PATH) -D$(DEVICE) -D$(EXPAND)
+LFLAGS	+= -DCOMkernel
+LFLAGS	+= -DERROR_OPT
+LFLAGS	+= -DUSE_RMAX
+LFLAGS	+= -DUSE_BMAX
+LFLAGS	+= -DCOMcenter
+LFLAGS	+= -DDUAL
+LFLAGS	+= -DIneJ
+#LFLAGS	+= -DHYBRID
+#LFLAGS	+= -DTREECODE
 
 ### PAPI flags
-#LFLAGS += -DPAPI -lpapi
+#LFLAGS	+= -DPAPI -lpapi
 
 ### QUARK flags
 #LFLAGS	+= -DQUARK -lquark
 
 ### MassiveThreads flags
-#LFLAGS += -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
+#LFLAGS	+= -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
 
 ### VTK flags
-#CXX     += -I$(VTK_INCLUDE_PATH)
-#VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+#CXX	+= -I$(VTK_INCLUDE_PATH)
+#VFLAGS	= -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags
