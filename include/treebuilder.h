@@ -178,11 +178,10 @@ protected:
   }
 
   void printTreeData(Cells &cells) {
-    setRootCell(cells);
     std::cout << "-----------------------------------------------" << std::endl;
     std::cout << "Root center          : " << X0                   << std::endl;
     std::cout << "Root radius          : " << R0                   << std::endl;
-    std::cout << "Bodies               : " << Ci0->NDLEAF          << std::endl;
+    std::cout << "Bodies               : " << cells.front().NDLEAF  << std::endl;
     std::cout << "Cells                : " << cells.size()         << std::endl;
     std::cout << "Tree depth           : " << MAXLEVEL             << std::endl;
     std::cout << "Total charge         : " << std::abs(Ci0->M[0])  << std::endl;

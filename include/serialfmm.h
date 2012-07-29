@@ -41,7 +41,8 @@ public:
 //! Upward pass (P2M, M2M)
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");                                  // Start timer
-    setRootCell(cells);                                         // Set iterator of root cell
+    Ci0 = cells.begin();                                        // Set iterator of target root cell
+    Cj0 = cells.begin();                                        // Set iterator of source root cell
     for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {    // Loop over cells bottomup
       real Rmax = 0;                                            //  Initialize Rmax
       setCenter(C);                                             //  Set center of cell to center of mass
@@ -61,7 +62,8 @@ public:
 
 //! Interface for tree traversal when I = J (M2L, P2P)
   void evaluate(Cells &cells) {
-    setRootCell(cells);                                         // Set iterator of root cell
+    Ci0 = cells.begin();                                        // Set iterator of target root cell
+    Cj0 = cells.begin();                                        // Set iterator of source root cell
     CellQueue cellQueue;                                        // Traversal queue
     pushCell(Ci0,cellQueue);                                    // Push root into queue
     Xperiodic = 0;                                              // No periodic shift
@@ -72,7 +74,8 @@ public:
 
 //! Interface for tree traversal when I != J (M2L, P2P)
   void evaluate(Cells &icells, Cells &jcells) {
-    setRootCell(icells,jcells);                                 // Set iterator of root cell
+    Ci0 = icells.begin();                                       // Set iterator of target root cell
+    Cj0 = jcells.begin();                                       // Set iterator of source root cell
     Pair pair(Ci0,Cj0);                                         // Pair of root cells
     PairQueue pairQueue;                                        // Traversal queue
     startTimer("Traverse");                                     // Start timer

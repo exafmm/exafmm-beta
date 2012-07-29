@@ -46,100 +46,96 @@ private:
 #endif
   }
 
+//! Traverse branch of tree
   void traverseBranch(C_iter Ci, C_iter Cj, bool mutual=true) {
-    PairQueue privateQueue;
-    Pair pair(Ci,Cj);
-    privateQueue.push_back(pair);
-    while( !privateQueue.empty() ) {
-      pair = privateQueue.front();
-      privateQueue.pop_front();
-      if(splitFirst(pair.first,pair.second)) {
-        C_iter C = pair.first;
-        for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
-          applyMAC(CC,pair.second,privateQueue,mutual);
-        }
-      } else {
-        C_iter C = pair.second;
-        for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
-          applyMAC(pair.first,CC,privateQueue,mutual);
-        }
-      }
-    }
+    PairQueue privateQueue;                                     // Queue of interacting cell pairs
+    Pair pair(Ci,Cj);                                           // Form a pair of cell iterators
+    privateQueue.push_back(pair);                               // Push pair to queue
+    while( !privateQueue.empty() ) {                            // While dual traversal queue is not empty
+      pair = privateQueue.front();                              //  Get interaction pair from front of queue
+      privateQueue.pop_front();                                 //  Pop dual traversal queue
+      if(splitFirst(pair.first,pair.second)) {                  //  If first cell is larger or equal
+        C_iter C = pair.first;                                  //   Iterator of first of the pair
+        for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {// Loop over first cell's children
+          applyMAC(CC,pair.second,privateQueue,mutual);         //    Apply multipole acceptance criterion to pair
+        }                                                       //   End loop over first cell's children
+      } else {                                                  //  If second cell is larger
+        C_iter C = pair.second;                                 //   Iterator of second of the pair
+        for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {// Loop over second cell's children
+          applyMAC(pair.first,CC,privateQueue,mutual);          //    Apply multipole acceptance criterion to pair
+        }                                                       //   End loop over second cell's children
+      }                                                         //  End if for which cell to split
+    }                                                           // End while loop for traversal queue
   }
 
 protected:
-  void setRootCell(Cells &cells) {
-    Ci0 = cells.begin();
-    Cj0 = cells.begin();
-  }
-
-  void setRootCell(Cells &icells, Cells &jcells) {
-    Ci0 = icells.begin();
-    Cj0 = jcells.begin();
-  }
-
+//! Set center of expansion to center of mass
   void setCenter(C_iter C) const {
-    real m = 0;
-    vect X = 0;
-    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
-      m += B->SRC;
-      X += B->X * B->SRC;
-    }
-    for( C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; ++c ) {
-      m += std::abs(c->M[0]);
-      X += c->X * std::abs(c->M[0]);
-    }
-    X /= m;
+    real m = 0;                                                 // Initialize mass
+    vect X = 0;                                                 // Initialize coordinates
+    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {        // Loop over leafs
+      m += B->SRC;                                              //  Accumulate mass
+      X += B->X * B->SRC;                                       //  Accumulate dipole
+    }                                                           // End loop over leafs
+    for( C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; ++c ) {// Loop over cell's children
+      m += std::abs(c->M[0]);                                   //  Accumulate mass
+      X += c->X * std::abs(c->M[0]);                            //  Accumulate dipole
+    }                                                           // End loop over child cells
+    X /= m;                                                     // Center of mass
 #if USE_BMAX
-    C->R = getBmax(X,C);
+    C->R = getBmax(X,C);                                        // Use Bmax as cell radius
 #endif
 #if COMcenter
-    C->X = X;
+    C->X = X;                                                   // Use center of mass as center of expansion
 #endif
   }
 
+//! Error optimization of Rcrit
   void setRcrit(Cells &cells) {
 #if ERROR_OPT
-    real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(Ci0->M[0]),1.0/3);
+    real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(Ci0->M[0]),1.0/3);// Root coefficient
 #endif
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
-      real x = 1.0 / THETA;
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
+      real x = 1.0 / THETA;                                     //  Inverse of theta
 #if ERROR_OPT
-      real a = c * pow(std::abs(C->M[0]),1.0/3);
-      for( int i=0; i<5; ++i ) {
-        real f = x * x - 2 * x + 1 - a * pow(x,-P);
-        real df = (P + 2) * x - 2 * (P + 1) + P / x;
-        x -= f / df;
-      }
+      real a = c * pow(std::abs(C->M[0]),1.0/3);                //  Cell coefficient
+      for( int i=0; i<5; ++i ) {                                //  Newton-Rhapson iteration
+        real f = x * x - 2 * x + 1 - a * pow(x,-P);             //   Function value
+        real df = (P + 2) * x - 2 * (P + 1) + P / x;            //   Function derivative value
+        x -= f / df;                                            //   Increment x
+      }                                                         //  End Newton-Rhapson iteration
 #endif
-      C->RCRIT *= x;
-    }
+      C->RCRIT *= x;                                            //  Multiply Rcrit by error optimized parameter x
+    }                                                           // End loop over cells
   }
 
+//! Push iterm to cell queue
   void pushCell(C_iter C, CellQueue &cellQueue) {
-    if(C->NCHILD == 0 || C->NDLEAF < 64) {
-      P2P(C);
-      NP2P++;
-    } else {
-      cellQueue.push(C);
-    }
+    if(C->NCHILD == 0 || C->NDLEAF < 64) {                      // If cell has no child or has few leafs
+      P2P(C);                                                   //  P2P kernel
+      NP2P++;                                                   //  Increment P2P counter
+    } else {                                                    // Else
+      cellQueue.push(C);                                        //  Push cell to queue
+    }                                                           // End if for pushing cell
   }
 
+//! Dual tree traversal of a single tree using a queue of cells
   void traverse(CellQueue &cellQueue) {
-    PairQueue pairQueue;
-    while( !cellQueue.empty() ) {
-      C_iter C = cellQueue.front();
-      cellQueue.pop();
-      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-        pushCell(Ci,cellQueue);
-        for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          applyMAC(Ci,Cj,pairQueue);
-        }
-      }
-      traverse(pairQueue,true);
-    }
+    PairQueue pairQueue;                                        // Queue of cell pairs
+    while( !cellQueue.empty() ) {                               // While cell queue is not empty
+      C_iter C = cellQueue.front();                             //  Get cell from front of queue
+      cellQueue.pop();                                          //  Pop this front item from queue
+      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {// Loop over target cell's children
+        pushCell(Ci,cellQueue);                                 //   Push target cell's child to queue
+        for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {//  Loop over upper half of source cell's children
+          applyMAC(Ci,Cj,pairQueue);                            //    Apply multipole acceptance criterion to pair 
+        }                                                       //   End loop over source cell's children
+      }                                                         //  End loop over target cell's children
+      traverse(pairQueue,true);                                 //  Traverse tree for all the pairs that were created
+    }                                                           // End while loop over cell queue
   }
 
+//! Dual tree traversal of a pair of trees using a queue of pairs
   void traverse(PairQueue &pairQueue, bool mutual=false) {
 #if MTHREADS
     Pair pair = pairQueue.front();
