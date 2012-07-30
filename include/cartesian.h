@@ -1167,11 +1167,17 @@ public:
     Lset C, L;
     getCoef<P>(C,dX,invR2,invR);
     sumM2L<P>(L,C,Cj->M);
-    Ci->L += L;
+    for( int i=0; i<LTERM; ++i ) {
+//#pragma omp atomic
+      Ci->L[i] += L[i];
+    }
     if( mutual ) {
       flipCoef(C);
       sumM2L<P>(L,C,Ci->M);
-      Cj->L += L;
+      for( int i=0; i<LTERM; ++i ) {
+//#pragma omp atomic
+        Cj->L[i] += L[i];
+      }
     }
   }
 

@@ -2,6 +2,11 @@
 #define evaluator_h
 #include "cartesian.h"
 #define splitFirst(Ci,Cj) Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT >= Cj->RCRIT)
+#if COUNT
+#define count(N) N++
+#else
+#define count(N)
+#endif
 
 class Evaluator : public Kernel {
 private:
@@ -9,7 +14,7 @@ private:
   real timeM2P;                                                 //!< M2P execution time
   real timeM2L;                                                 //!< M2L execution time
 
-public:
+protected:
   real NP2P;                                                    //!< Number of P2P kernel calls
   real NM2P;                                                    //!< Number of M2P kenrel calls
   real NM2L;                                                    //!< Number of M2L kernel calls
@@ -29,20 +34,20 @@ private:
 #if HYBRID
     if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {// If P2P is fastest
       P2P(Ci,Cj,mutual);                                        //  P2P kernel
-      NP2P++;                                                   //  Increment P2P counter
+      count(NP2P);                                              //  Increment P2P counter
     } else if ( timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L ) {// If M2P is fastest
       M2P(Ci,Cj,mutual);                                        //  M2P kernel
-      NM2P++;                                                   //  Increment M2P counter
+      count(NM2P);                                              //  Increment M2P counter
     } else {                                                    // If M2L is fastest
       M2L(Ci,Cj,mutual);                                        //  M2L kernel
-      NM2L++;                                                   //  Increment M2L counter
+      count(NM2L);                                              //  Increment M2L counter
     }                                                           // End if for fastest kernel
 #elif TREECODE
     M2P(Ci,Cj,mutual);                                          // M2P kernel
-    NM2P++;                                                     // Increment M2P counter
+    count(NM2P);                                                // Increment M2P counter
 #else
     M2L(Ci,Cj,mutual);                                          // M2L kernel
-    NM2L++;                                                     // Increment M2L counter
+    count(NM2L);                                                // Increment M2L counter
 #endif
   }
 
@@ -113,7 +118,7 @@ protected:
   void pushCell(C_iter C, CellQueue &cellQueue) {
     if(C->NCHILD == 0 || C->NDLEAF < 64) {                      // If cell has no child or has few leafs
       P2P(C);                                                   //  P2P kernel
-      NP2P++;                                                   //  Increment P2P counter
+      count(NP2P);                                              //  Increment P2P counter
     } else {                                                    // Else
       cellQueue.push(C);                                        //  Push cell to queue
     }                                                           // End if for pushing cell
@@ -212,7 +217,7 @@ protected:
         approximate(Ci,Cj,mutual);
       } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
         P2P(Ci,Cj,mutual);
-        NP2P++;
+        count(NP2P);
       } else {
         if(splitFirst(Ci,Cj)) {
           C_iter C = Ci;
@@ -307,7 +312,7 @@ public:
           approximate(Ci,Cj,mutual);
         } else {
           P2P(Ci,Cj,mutual);
-          NP2P++;
+          count(NP2P);
         }
       } else {
         Pair pair(Ci,Cj);

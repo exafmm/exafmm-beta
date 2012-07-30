@@ -36,16 +36,17 @@ NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-optio
 
 ### Base flags
 CXX	+= -I$(EXAFMM_INCLUDE_PATH)
-LFLAGS	= -L$(EXAFMM_LIBRARY_PATH) -D$(DEVICE) -D$(EXPAND)
+LFLAGS	= -L$(EXAFMM_LIBRARY_PATH)
 LFLAGS	+= -DCOMkernel
 LFLAGS	+= -DERROR_OPT
 LFLAGS	+= -DUSE_RMAX
 LFLAGS	+= -DUSE_BMAX
 LFLAGS	+= -DCOMcenter
 LFLAGS	+= -DDUAL
-#LFLAGS	+= -DIneJ
+LFLAGS	+= -DIneJ
 #LFLAGS	+= -DHYBRID
 #LFLAGS	+= -DTREECODE
+#LFLAGS	+= -DCOUNT
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi
@@ -62,7 +63,7 @@ LFLAGS	+= -DDUAL
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags
-LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
+LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
 
 .cxx.o  :
