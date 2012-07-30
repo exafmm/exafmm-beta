@@ -21,17 +21,13 @@ EXPAND	= Cartesian
 #EXPAND	= Spherical
 
 ### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fPIC -DSSE
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fbounds-check -DSSE
 
 ### Intel compiler
-#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -DSSE
+#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -ansi-alias -DSSE
 
 ### BG/P compiler
 #CXX	= mpixlcxx -qarch=450 -qtune=450 -O3
-
-### K computer
-#CXX	= mpiFCCpx -Kopenmp,fast,ocl,preex,array_private -Ksimd=2,NOFLTLD,mfunc=3,optmsg=2 -Nsrc,sta -DNDEBUG
-# -Kdalign,ns,mfunc,eval,prefetch_conditional,ilfunc -x-
 
 ### CUDA compiler
 NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v\
@@ -47,7 +43,7 @@ LFLAGS	+= -DUSE_RMAX
 LFLAGS	+= -DUSE_BMAX
 LFLAGS	+= -DCOMcenter
 LFLAGS	+= -DDUAL
-LFLAGS	+= -DIneJ
+#LFLAGS	+= -DIneJ
 #LFLAGS	+= -DHYBRID
 #LFLAGS	+= -DTREECODE
 

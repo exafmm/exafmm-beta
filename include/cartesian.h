@@ -933,7 +933,7 @@ public:
   Kernel() : X0(0), R0(0) {}
   ~Kernel() {}
 
-#ifndef SSE
+#ifdef SSE
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     if( mutual ) {
       for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {
@@ -1171,7 +1171,7 @@ public:
     if( mutual ) {
       flipCoef(C);
       sumM2L<P>(L,C,Ci->M);
-      Cj->L = L;
+      Cj->L += L;
     }
   }
 
