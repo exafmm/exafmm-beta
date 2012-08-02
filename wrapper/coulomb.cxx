@@ -25,7 +25,6 @@ extern "C" void FMMcalccoulomb(int n, double* x, double* q, double *p, double* f
   FMM.partition(bodies);
   FMM.buildTree(bodies,cells);
   FMM.upwardPass(cells);
-  FMM.reduceRoot(cells);
   FMM.setLET(cells);
   FMM.commBodies();
   FMM.commCells();

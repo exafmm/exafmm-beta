@@ -31,7 +31,6 @@ int main() {
   FMM.partition(bodies);
   FMM.buildTree(bodies,cells);
   FMM.upwardPass(cells);
-  FMM.reduceRoot(cells);
   FMM.startPAPI();
 #if IneJ
 
@@ -69,8 +68,19 @@ int main() {
         std::cout << MPIRANK << " NCLEAF : " << Ci->NCLEAF << " " << Cj->NCLEAF << std::endl;
         break;
       }
-      for( int i=0; i<Ci->NCHILD; i++ )  Qi.push(icells.begin()+Ci->CHILD+i);
-      for( int i=0; i<Cj->NCHILD; i++ )  Qj.push(jcells.begin()+Cj->CHILD+i);
+      real sumi = 0, sumj = 0;
+      if( Ci->NCLEAF != 0 ) {
+        for( int i=0; i<Ci->NCLEAF; i++ ) {
+          B_iter Bi = Ci->LEAF+i;
+          B_iter Bj = Cj->LEAF+i;
+          sumi += Bi->X[0];
+          sumj += Bj->X[0];
+        }
+      }
+      if( fabs(sumi-sumj)/fabs(sumi) > 1e-6 ) std::cout << MPIRANK << " " << Ci->ICELL << " " << sumi << " " << sumj << std::endl;
+      assert( fabs(sumi-sumj)/fabs(sumi) < 1e-6 );
+      for( int i=0; i<Ci->NCHILD; i++ ) Qi.push(icells.begin()+Ci->CHILD+i);
+      for( int i=0; i<Cj->NCHILD; i++ ) Qj.push(jcells.begin()+Cj->CHILD+i);
       ic++;
     }
     assert( ic == int(icells.size()) );

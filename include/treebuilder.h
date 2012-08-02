@@ -55,7 +55,7 @@ private:
   }
 
   void splitNode(int n) {
-    if( nodes[n].NLEAF > NCRIT ) {
+    while( nodes[n].NLEAF > NCRIT ) {
       int c = 0;
       Leaf *Ln;
       for( Leaf *L=nodes[n].LEAF; L; L=Ln ) {
@@ -185,9 +185,11 @@ protected:
     std::cout << "Cells                : " << cells.size()         << std::endl;
     std::cout << "Tree depth           : " << MAXLEVEL             << std::endl;
     std::cout << "Total charge         : " << std::abs(Ci0->M[0])  << std::endl;
+#if COUNT
     std::cout << "P2P calls            : " << NP2P                 << std::endl;
     std::cout << "M2P calls            : " << NM2P                 << std::endl;
     std::cout << "M2L calls            : " << NM2L                 << std::endl;
+#endif
     std::cout << "-----------------------------------------------" << std::endl;
   }
 };

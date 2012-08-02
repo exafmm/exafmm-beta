@@ -51,6 +51,8 @@ public:
       P2M(C,Rmax);                                              //  P2M kernel
       M2M(C,Rmax);                                              //  M2M kernel
     }                                                           // End loop over cells
+    Ci0->X = X0;                                              
+    Ci0->R = R0;
 #if Cartesian
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
       for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];          //  Normalize multipole expansion coefficients

@@ -20,17 +20,17 @@ public:
   using Partition::alltoallv;
 
 private:
-//! Get disatnce to other domain
+//! Get distance to other domain
   real getDistance(C_iter C) {
     vect dX;                                                    // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
-      dX[d] = (C->X[d] + Xperiodic[d] > thisXMAX[d])*           //  Calculate the disance between cell C and
+      dX[d] = (C->X[d] + Xperiodic[d] > thisXMAX[d])*           //  Calculate the distance between cell C and
               (C->X[d] + Xperiodic[d] - thisXMAX[d])+           //  the nearest point in domain [xmin,xmax]^3
               (C->X[d] + Xperiodic[d] < thisXMIN[d])*           //  Take the differnece from xmin or xmax
               (C->X[d] + Xperiodic[d] - thisXMIN[d]);           //  or 0 if between xmin and xmax
     }                                                           // End loop over dimensions
     real R2 = norm(dX);                                         // Distance squared
-    return R2;                                                  // Return disance squared
+    return R2;                                                  // Return distance squared
   }
 
 //! Add cells to send buffer
@@ -75,7 +75,7 @@ private:
           bool divide = false;                                  //    Initialize logical for dividing
           if( IMAGES == 0 ) {                                   //    If free boundary condition
             Xperiodic = 0;                                      //     Set periodic coordinate offset
-            real R2 = getDistance(CC);                          //     Get disance to other domain
+            real R2 = getDistance(CC);                          //     Get distance to other domain
             divide |= 4 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
           } else {                                              //    If periodic boundary condition
             for( int ix=-1; ix<=1; ++ix ) {                     //     Loop over x periodic direction
@@ -84,7 +84,7 @@ private:
                   Xperiodic[0] = ix * 2 * R0;                   //        Coordinate offset for x periodic direction
                   Xperiodic[1] = iy * 2 * R0;                   //        Coordinate offset for y periodic direction
                   Xperiodic[2] = iz * 2 * R0;                   //        Coordinate offset for z periodic direction
-                  real R2 = getDistance(CC);                    //        Get disance to other domain
+                  real R2 = getDistance(CC);                    //        Get distance to other domain
                   divide |= 4 * CC->RCRIT * CC->RCRIT > R2;     //        Divide if cell seems too close
                 }                                               //       End loop over z periodic direction
               }                                                 //      End loop over y periodic direction
@@ -146,14 +146,6 @@ public:
     delete[] recvCellDispl;                                     // Deallocate receive displacement
   }
 
-//! Reduce root multipole
-  void reduceRoot(Cells &cells) {
-    C_iter root = cells.begin();                                // Get root cell
-    Mset M = root->M;                                           // Copy multipole to buffer
-    MPI_Datatype MPI_TYPE = getType(root->M[0]);                // Get MPI data type
-    MPI_Allreduce(&M[0],&root->M[0],MTERM,MPI_TYPE,MPI_SUM,MPI_COMM_WORLD);// Reduce multipoles
-  }
-
 //! Set local essential tree to send to each process
   void setLET(Cells &cells) {
     startTimer("Set LET");                                      // Start timer
@@ -176,6 +168,7 @@ public:
         traverseLET(cellQueue);                                 //   Traverse tree to get LET
       }                                                         //  Endif for current rank
       sendCellCount[IRANK] = sendCells.size() - sendCellDispl[IRANK];// Send count for IRANK
+      assert( sendCells.size() <= cells.size()*27 );            //  Check for overflow
     }                                                           // End loop over ranks
     stopTimer("Set LET",printNow);                              // Stop timer
   }
