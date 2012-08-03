@@ -80,8 +80,8 @@ const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of C
 #endif
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
 
-typedef vec<MTERM,real>    Mset;                                //!< Multipole coefficient type for Cartesian
-typedef vec<LTERM,real>    Lset;                                //!< Local coefficient type for Cartesian
+typedef vec<MTERM,real>    vecM;                                //!< Multipole coefficient type for Cartesian
+typedef vec<LTERM,real>    vecL;                                //!< Local coefficient type for Cartesian
 
 //! Structure for pthread based trace
 struct Trace {
@@ -150,8 +150,8 @@ struct Cell {
   real      R;                                                  //!< Cell radius
   real      RMAX;                                               //!< Max cell radius
   real      RCRIT;                                              //!< Critical cell radius
-  Mset      M;                                                  //!< Multipole coefficients
-  Lset      L;                                                  //!< Local coefficients
+  vecM      M;                                                  //!< Multipole coefficients
+  vecL      L;                                                  //!< Local coefficients
 };
 typedef std::vector<Cell>           Cells;                      //!< Vector of cells
 typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator for cell vector
