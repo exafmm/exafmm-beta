@@ -6,8 +6,8 @@
 //! Handles all the partitioning of domains
 class Partition : public MyMPI, public SerialFMM {
 protected:
-  std::vector<vect> XMIN;                                       //!< Minimum position vector of bodies
-  std::vector<vect> XMAX;                                       //!< Maximum position vector of bodies
+  std::vector<vec3> XMIN;                                       //!< Minimum position vector of bodies
+  std::vector<vec3> XMAX;                                       //!< Maximum position vector of bodies
   Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
   int *sendBodyCount;                                           //!< Send count
@@ -17,7 +17,7 @@ protected:
 
 private:
 //! Allgather bounds of all partitions
-  void allgather(vect xmin, vect xmax) {
+  void allgather(vec3 xmin, vec3 xmax) {
     MPI_Datatype MPI_TYPE = getType(xmin[0]);                   // Get MPI data type
     XMIN.resize(MPISIZE);                                       // Xmin of every local domain
     XMAX.resize(MPISIZE);                                       // Xmax of every local domain
@@ -36,14 +36,14 @@ private:
       d = (d+1) % 3;                                            //  Increment dimension
       mpisize >>= 1;                                            //  Right shift the bits of counter
     }                                                           // End while loop for domain subdivision
-    vect Xpartition;                                            // Size of partitions in each direction
+    vec3 Xpartition;                                            // Size of partitions in each direction
     for( d=0; d!=3; ++d ) {                                     // Loop over dimensions
       Xpartition[d] = 2 * R0 / Npartition[d];                   //  Size of partition in each direction
     }                                                           // End loop over dimensions
     int ix = MPIRANK % Npartition[0];                           // x index of partition
     int iy = MPIRANK / Npartition[0] % Npartition[1];           // y index
     int iz = MPIRANK / Npartition[0] / Npartition[1];           // z index
-    vect xmin, xmax;                                            // Local domain boundaries at current rank
+    vec3 xmin, xmax;                                            // Local domain boundaries at current rank
     xmin[0] = X0[0] - R0 + ix * Xpartition[0];                  // xmin of local domain at current rank
     xmin[1] = X0[1] - R0 + iy * Xpartition[1];                  // ymin
     xmin[2] = X0[2] - R0 + iz * Xpartition[2];                  // zmin

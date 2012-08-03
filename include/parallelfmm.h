@@ -6,8 +6,8 @@
 class ParallelFMM : public Partition {
 private:
   int IRANK;                                                    //!< MPI rank loop counter
-  vect thisXMIN;                                                //!< XMIN for a given rank
-  vect thisXMAX;                                                //!< XMAX for a given rank
+  vec3 thisXMIN;                                                //!< XMIN for a given rank
+  vec3 thisXMAX;                                                //!< XMAX for a given rank
   Cells sendCells;                                              //!< Send buffer for cells
   Cells recvCells;                                              //!< Receive buffer for cells
   int *sendCellCount;                                           //!< Send count
@@ -22,7 +22,7 @@ public:
 private:
 //! Get distance to other domain
   real getDistance(C_iter C) {
-    vect dX;                                                    // Distance vector
+    vec3 dX;                                                    // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       dX[d] = (C->X[d] + Xperiodic[d] > thisXMAX[d])*           //  Calculate the distance between cell C and
               (C->X[d] + Xperiodic[d] - thisXMAX[d])+           //  the nearest point in domain [xmin,xmax]^3

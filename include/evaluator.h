@@ -21,7 +21,7 @@ protected:
 
 private:
 //! Calculate Bmax
-  real getBmax(vect const&X, C_iter C) const {
+  real getBmax(vec3 const&X, C_iter C) const {
     real rad = C->R;                                            // Radius of cell
     real dx = rad+std::abs(X[0]-C->X[0]);                       // Add x distance from center of mass
     real dy = rad+std::abs(X[1]-C->X[1]);                       // Add y distance from center of mass
@@ -77,7 +77,7 @@ protected:
 //! Set center of expansion to center of mass
   void setCenter(C_iter C) const {
     real m = 0;                                                 // Initialize mass
-    vect X = 0;                                                 // Initialize coordinates
+    vec3 X = 0;                                                 // Initialize coordinates
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {        // Loop over leafs
       m += B->SRC;                                              //  Accumulate mass
       X += B->X * B->SRC;                                       //  Accumulate dipole
@@ -191,7 +191,7 @@ protected:
 
 #if MTHREADS
   void recursiveTraverse(C_iter Ci, C_iter Cj, bool mutual) {
-    vect dX = Ci->X - Cj->X - Xperiodic;
+    vec3 dX = Ci->X - Cj->X - Xperiodic;
     real R2 = norm(dX);
 #if DUAL
     {
@@ -295,7 +295,7 @@ public:
   ~Evaluator() {}
 
   void applyMAC(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {
-    vect dX = Ci->X - Cj->X - Xperiodic;
+    vec3 dX = Ci->X - Cj->X - Xperiodic;
     real R2 = norm(dX);
 #if DUAL
     {

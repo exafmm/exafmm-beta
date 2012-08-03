@@ -20,7 +20,7 @@ private:
     for( int b=0; b!=8; ++b ) node.CHILD[b] = -1;
   }
 
-  inline long long getIndex(vect X, int level) {
+  inline long long getIndex(vec3 X, int level) {
     float d = 2 * R0 / (1 << level);
     long long ix = int((X[0] + R0 - X0[0]) / d);
     long long iy = int((X[1] + R0 - X0[1]) / d);

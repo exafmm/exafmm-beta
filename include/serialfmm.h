@@ -11,7 +11,7 @@ public:
       X0 = 0;                                                   //  Center of domain is [0, 0, 0]
       R0 = M_PI;                                                //  Radius of domain is M_PI
     } else {                                                    // If non-periodic boundary condition
-      vect xmin, xmax;                                          //  Min, Max of domain
+      vec3 xmin, xmax;                                          //  Min, Max of domain
       xmax = xmin = bodies.begin()->X;                          //  Initialize xmin, xmax
       for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {    //  Loop over bodies
         for( int d=0; d!=3; ++d ) {                             //   Loop over dimensions
