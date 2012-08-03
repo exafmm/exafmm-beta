@@ -34,7 +34,7 @@ int main() {
   FMM.startPAPI();
 #if IneJ
 
-#if 1 // For debugging shift and reconstruct tree : Step 1
+#if 1 // Set to 0 for debugging shift and reconstruct tree : Step 1
   FMM.setLET(cells);
   FMM.commBodies();
   FMM.commCells();
@@ -43,8 +43,8 @@ int main() {
   for( int irank=1; irank<MPISIZE; irank++ ) {
     FMM.getLET(jcells,(MPIRANK+irank)%MPISIZE);
 
-#if 0 // For debugging full LET communication : Step 2
-    FMM.shiftBodies(jbodies); // This will overwrite recvBodies.
+#if 0 // Set to 1 for debugging full LET communication : Step 2 (LET must be set to full tree)
+    FMM.shiftBodies(jbodies); // This will overwrite recvBodies. (define recvBodies2 in partition.h to avoid this)
     Cells icells;
     FMM.buildTree(jbodies,icells);
     FMM.upwardPass(icells);

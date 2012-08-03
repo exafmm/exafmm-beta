@@ -149,8 +149,6 @@ public:
 //! Set local essential tree to send to each process
   void setLET(Cells &cells) {
     startTimer("Set LET");                                      // Start timer
-    recvCells = cells;                                          // Use recvCells as temporary storage
-    Cj0 = recvCells.begin();                                    // Set cells begin iterator
     sendBodies.clear();                                         // Clear send buffer for bodies
     sendCells.clear();                                          // Clear send buffer for cells
     sendCells.reserve(cells.size()*27);                         // Reserve space for send buffer
@@ -158,6 +156,8 @@ public:
     for( IRANK=0; IRANK!=MPISIZE; ++IRANK ) {                   // Loop over ranks
       if( IRANK != 0 ) sendCellDispl[IRANK] = sendCellDispl[IRANK-1] + sendCellCount[IRANK-1];// Update displacement
       if( IRANK != MPIRANK ) {                                  //  If not current rank
+        recvCells = cells;                                      // Use recvCells as temporary storage
+        Cj0 = recvCells.begin();                                // Set cells begin iterator
         thisXMIN = XMIN[IRANK];                                 //   Set XMIN for IRANK
         thisXMAX = XMAX[IRANK];                                 //   Set XMAX for IRANK
         Cell cell(*Cj0);                                        //   Send root cell
