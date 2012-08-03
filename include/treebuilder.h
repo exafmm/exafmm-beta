@@ -12,6 +12,12 @@ private:
   unsigned NCELL;
   int      MAXLEVEL;
 
+protected:
+  real localRadius;                                             //!< Radius of local root cell
+  vec3 localCenter;                                             //!< Center of local root cell
+  vec3 localXmin;                                               //!< Local Xmin for a given rank
+  vec3 localXmax;                                               //!< Local Xmax for a given rank
+
 private:
   void init(Node &node) {
     node.NOCHILD = true;
@@ -21,10 +27,10 @@ private:
   }
 
   inline long long getIndex(vec3 X, int level) {
-    float d = 2 * R0 / (1 << level);
-    long long ix = int((X[0] + R0 - X0[0]) / d);
-    long long iy = int((X[1] + R0 - X0[1]) / d);
-    long long iz = int((X[2] + R0 - X0[2]) / d);
+    float d = 2 * localRadius / (1 << level);
+    long long ix = int((X[0] - localXmin[0]) / d);
+    long long iy = int((X[1] - localXmin[1]) / d);
+    long long iz = int((X[2] - localXmin[2]) / d);
     long long id = ((1 << 3 * level) - 1) / 7;
     assert( level < 22 );
     for( int l=0; l<level; l++ ) {
@@ -44,7 +50,7 @@ private:
     init(child);
     child.LEVEL = N->LEVEL+1;
     child.X = N->X;
-    real r = R0 / (1 << child.LEVEL);
+    real r = localRadius / (1 << child.LEVEL);
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       child.X[d] += r * (((octant & 1 << d) >> d) * 2 - 1);     //  Calculate new center position
     }                                                           // End loop over dimensions
@@ -76,7 +82,7 @@ private:
   }
 
   void nodes2cells(int i, C_iter C) {
-    C->R      = R0 / (1 << nodes[i].LEVEL);
+    C->R      = localRadius / (1 << nodes[i].LEVEL);
     C->X      = nodes[i].X;
     C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
@@ -141,7 +147,7 @@ protected:
     Node node;
     init(node);
     node.LEVEL = 0;
-    node.X     = X0;
+    node.X = localCenter;
     nodes.push_back(node);
     MAXLEVEL = 0;
     for( L_iter L=leafs.begin(); L!=leafs.end(); ++L ) {
@@ -179,12 +185,9 @@ protected:
 
   void printTreeData(Cells &cells) {
     std::cout << "-----------------------------------------------" << std::endl;
-    std::cout << "Root center          : " << X0                   << std::endl;
-    std::cout << "Root radius          : " << R0                   << std::endl;
-    std::cout << "Bodies               : " << cells.front().NDLEAF  << std::endl;
+    std::cout << "Bodies               : " << cells.front().NDLEAF << std::endl;
     std::cout << "Cells                : " << cells.size()         << std::endl;
     std::cout << "Tree depth           : " << MAXLEVEL             << std::endl;
-    std::cout << "Total charge         : " << std::abs(Ci0->M[0])  << std::endl;
 #if COUNT
     std::cout << "P2P calls            : " << NP2P                 << std::endl;
     std::cout << "M2P calls            : " << NM2P                 << std::endl;

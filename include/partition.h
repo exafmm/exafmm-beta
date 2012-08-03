@@ -6,23 +6,34 @@
 //! Handles all the partitioning of domains
 class Partition : public MyMPI, public SerialFMM {
 protected:
-  std::vector<vec3> XMIN;                                       //!< Minimum position vector of bodies
-  std::vector<vec3> XMAX;                                       //!< Maximum position vector of bodies
   Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
+  vec3 *rankXmin;                                               //!< Array for minimum of local domains
+  vec3 *rankXmax;                                               //!< Array for maximum of local domains
   int *sendBodyCount;                                           //!< Send count
   int *sendBodyDispl;                                           //!< Send displacement
   int *recvBodyCount;                                           //!< Receive count
   int *recvBodyDispl;                                           //!< Receive displacement
 
 private:
+//! Allreduce bounds from all ranks
+  void allreduceBounds() {
+    MPI_Datatype MPI_TYPE = getType(localXmin[0]);              // Get MPI data type
+    MPI_Allreduce(localXmin,globalXmin,3,MPI_TYPE,MPI_MIN,MPI_COMM_WORLD);// Reduce domain Xmin
+    MPI_Allreduce(localXmax,globalXmax,3,MPI_TYPE,MPI_MAX,MPI_COMM_WORLD);// Reduce domain Xmax
+    globalRadius = 0;                                           // Initialize global radius
+    for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
+      globalCenter = (globalXmax + globalXmin) / 2;             //  Calculate global center
+      globalRadius = std::min(globalCenter[d] - globalXmin[d], globalRadius);// Calculate min distance from center
+      globalRadius = std::max(globalXmax[d] - globalCenter[d], globalRadius);// Calculate max distance from center 
+    }                                                           // End loop over dimensions
+  }
+
 //! Allgather bounds of all partitions
-  void allgather(vec3 xmin, vec3 xmax) {
-    MPI_Datatype MPI_TYPE = getType(xmin[0]);                   // Get MPI data type
-    XMIN.resize(MPISIZE);                                       // Xmin of every local domain
-    XMAX.resize(MPISIZE);                                       // Xmax of every local domain
-    MPI_Allgather(xmin,3,MPI_TYPE,&XMIN[0],3,MPI_TYPE,MPI_COMM_WORLD);// Gather all domain bounds
-    MPI_Allgather(xmax,3,MPI_TYPE,&XMAX[0],3,MPI_TYPE,MPI_COMM_WORLD);// Gather all domain bounds
+  void allgatherBounds() {
+    MPI_Datatype MPI_TYPE = getType(localXmin[0]);              // Get MPI data type
+    MPI_Allgather(localXmin,3,MPI_TYPE,&rankXmin[0],3,MPI_TYPE,MPI_COMM_WORLD);// Gather all domain bounds
+    MPI_Allgather(localXmax,3,MPI_TYPE,&rankXmax[0],3,MPI_TYPE,MPI_COMM_WORLD);// Gather all domain bounds
   }
 
 //! Set partition of global domain
@@ -31,30 +42,30 @@ private:
     int mpisize = MPISIZE;                                      // Initialize MPI size counter
     vec<3,int> Npartition = 1;                                  // Number of partitions in each direction
     int d = 0;                                                  // Initialize dimension counter
-    while( mpisize != 1 ) {                                     // Divide domain  while counter is not one
+    while( mpisize != 1 ) {                                     // Divide domain while counter is not one
       Npartition[d] <<= 1;                                      //  Divide this dimension
       d = (d+1) % 3;                                            //  Increment dimension
       mpisize >>= 1;                                            //  Right shift the bits of counter
     }                                                           // End while loop for domain subdivision
+    if( IMAGES == 0 ) allreduceBounds();                        // Allreduce bounds from all ranks
     vec3 Xpartition;                                            // Size of partitions in each direction
     for( d=0; d!=3; ++d ) {                                     // Loop over dimensions
-      Xpartition[d] = 2 * R0 / Npartition[d];                   //  Size of partition in each direction
+      Xpartition[d] = 2 * globalRadius / Npartition[d];         //  Size of partition in each direction
     }                                                           // End loop over dimensions
     int ix = MPIRANK % Npartition[0];                           // x index of partition
     int iy = MPIRANK / Npartition[0] % Npartition[1];           // y index
     int iz = MPIRANK / Npartition[0] / Npartition[1];           // z index
-    vec3 xmin, xmax;                                            // Local domain boundaries at current rank
-    xmin[0] = X0[0] - R0 + ix * Xpartition[0];                  // xmin of local domain at current rank
-    xmin[1] = X0[1] - R0 + iy * Xpartition[1];                  // ymin
-    xmin[2] = X0[2] - R0 + iz * Xpartition[2];                  // zmin
-    xmax[0] = X0[0] - R0 + (ix + 1) * Xpartition[0];            // xmax of local domain at current rank
-    xmax[1] = X0[1] - R0 + (iy + 1) * Xpartition[1];            // ymax
-    xmax[2] = X0[2] - R0 + (iz + 1) * Xpartition[2];            // zmax
-    allgather(xmin,xmax);                                       // Allgather bounds of partitions
+    localXmin[0] = globalXmin[0] + ix * Xpartition[0];          // xmin of local domain at current rank
+    localXmin[1] = globalXmin[1] + iy * Xpartition[1];          // ymin
+    localXmin[2] = globalXmin[2] + iz * Xpartition[2];          // zmin
+    localXmax[0] = globalXmin[0] + (ix + 1) * Xpartition[0];    // xmax of local domain at current rank
+    localXmax[1] = globalXmin[1] + (iy + 1) * Xpartition[1];    // ymax
+    localXmax[2] = globalXmin[2] + (iz + 1) * Xpartition[2];    // zmax
+    allgatherBounds();                                          // Allgather bounds of partitions
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      ix = int((B->X[0] + R0 - X0[0]) / Xpartition[0]);         //  x contribution to send rank
-      iy = int((B->X[1] + R0 - X0[1]) / Xpartition[1]);         //  y contribution
-      iz = int((B->X[2] + R0 - X0[2]) / Xpartition[2]);         //  z contribution
+      ix = int((B->X[0] - globalXmin[0]) / Xpartition[0]);      //  x contribution to send rank
+      iy = int((B->X[1] - globalXmin[1]) / Xpartition[1]);      //  y contribution
+      iz = int((B->X[2] - globalXmin[2]) / Xpartition[2]);      //  z contribution
       B->IPROC = ix + Npartition[0] * (iy + iz * Npartition[1]);//  Set send rank
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
@@ -62,7 +73,6 @@ private:
     stopTimer("Partition",printNow);                            // Stop timer 
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order of ICELL
   }
-
 
 protected:
 //! Exchange send count for bodies
@@ -105,8 +115,9 @@ protected:
 
 public:
 //! Constructor
-  Partition() : MyMPI(), XMIN(), XMAX(),
-                sendBodyCount(NULL), sendBodyDispl(NULL), recvBodyCount(NULL), recvBodyDispl(NULL) {
+  Partition() {
+    rankXmin = new vec3 [MPISIZE];                              // Allocate array for minimum of local domains
+    rankXmax = new vec3 [MPISIZE];                              // Allocate array for maximum of local domains
     sendBodyCount = new int [MPISIZE];                          // Allocate send count
     sendBodyDispl = new int [MPISIZE];                          // Allocate send displacement
     recvBodyCount = new int [MPISIZE];                          // Allocate receive count
@@ -114,6 +125,8 @@ public:
   }
 //! Destructor
   ~Partition() {
+    delete[] rankXmin;                                          // Deallocate array for minimum of local domains
+    delete[] rankXmax;                                          // Deallocate array for maximum of local domains
     delete[] sendBodyCount;                                     // Deallocate send count
     delete[] sendBodyDispl;                                     // Deallocate send displacement
     delete[] recvBodyCount;                                     // Deallocate receive count
@@ -147,8 +160,6 @@ public:
 //! Partition bodies
   void partition(Bodies &bodies) {
     setBounds(bodies);                                          // Set global bounds
-    X0 = 0;                                                     // Override center of global domain
-    R0 = M_PI;                                                  // Override radius of global domain
     setPartition(bodies);                                       // Set partitioning strategy
     startTimer("Partition comm");                               // Start timer
     alltoall(bodies);                                           // Alltoall send count

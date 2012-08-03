@@ -6,8 +6,6 @@
 class ParallelFMM : public Partition {
 private:
   int IRANK;                                                    //!< MPI rank loop counter
-  vec3 thisXMIN;                                                //!< XMIN for a given rank
-  vec3 thisXMAX;                                                //!< XMAX for a given rank
   Cells sendCells;                                              //!< Send buffer for cells
   Cells recvCells;                                              //!< Receive buffer for cells
   int *sendCellCount;                                           //!< Send count
@@ -24,10 +22,10 @@ private:
   real getDistance(C_iter C) {
     vec3 dX;                                                    // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
-      dX[d] = (C->X[d] + Xperiodic[d] > thisXMAX[d])*           //  Calculate the distance between cell C and
-              (C->X[d] + Xperiodic[d] - thisXMAX[d])+           //  the nearest point in domain [xmin,xmax]^3
-              (C->X[d] + Xperiodic[d] < thisXMIN[d])*           //  Take the differnece from xmin or xmax
-              (C->X[d] + Xperiodic[d] - thisXMIN[d]);           //  or 0 if between xmin and xmax
+      dX[d] = (C->X[d] + Xperiodic[d] > localXmax[d])*          //  Calculate the distance between cell C and
+              (C->X[d] + Xperiodic[d] - localXmax[d])+          //  the nearest point in domain [xmin,xmax]^3
+              (C->X[d] + Xperiodic[d] < localXmin[d])*          //  Take the differnece from xmin or xmax
+              (C->X[d] + Xperiodic[d] - localXmin[d]);          //  or 0 if between xmin and xmax
     }                                                           // End loop over dimensions
     real R2 = norm(dX);                                         // Distance squared
     return R2;                                                  // Return distance squared
@@ -81,16 +79,16 @@ private:
             for( int ix=-1; ix<=1; ++ix ) {                     //     Loop over x periodic direction
               for( int iy=-1; iy<=1; ++iy ) {                   //      Loop over y periodic direction
                 for( int iz=-1; iz<=1; ++iz ) {                 //       Loop over z periodic direction
-                  Xperiodic[0] = ix * 2 * R0;                   //        Coordinate offset for x periodic direction
-                  Xperiodic[1] = iy * 2 * R0;                   //        Coordinate offset for y periodic direction
-                  Xperiodic[2] = iz * 2 * R0;                   //        Coordinate offset for z periodic direction
+                  Xperiodic[0] = ix * 2 * globalRadius;         //        Coordinate offset for x periodic direction
+                  Xperiodic[1] = iy * 2 * globalRadius;         //        Coordinate offset for y periodic direction
+                  Xperiodic[2] = iz * 2 * globalRadius;         //        Coordinate offset for z periodic direction
                   real R2 = getDistance(CC);                    //        Get distance to other domain
                   divide |= 4 * CC->RCRIT * CC->RCRIT > R2;     //        Divide if cell seems too close
                 }                                               //       End loop over z periodic direction
               }                                                 //      End loop over y periodic direction
             }                                                   //     End loop over x periodic direction
           }                                                     //    Endif for periodic boundary condition
-          divide |= CC->R > (R0 / (1 << level));                //    Divide if cell is larger than local root cell
+          divide |= CC->R > (globalRadius / (1 << level));      //    Divide if cell is larger than local root cell
           if( !divide ) {                                       //    If cell does not have to be divided
             CC->NCHILD = 0;                                     //     Cut off child links
           }                                                     //    Endif for cell division
@@ -158,8 +156,8 @@ public:
       if( IRANK != MPIRANK ) {                                  //  If not current rank
         recvCells = cells;                                      // Use recvCells as temporary storage
         Cj0 = recvCells.begin();                                // Set cells begin iterator
-        thisXMIN = XMIN[IRANK];                                 //   Set XMIN for IRANK
-        thisXMAX = XMAX[IRANK];                                 //   Set XMAX for IRANK
+        localXmin = rankXmin[IRANK];                            //   Set local Xmin for IRANK
+        localXmax = rankXmax[IRANK];                            //   Set local Xmax for IRANK
         Cell cell(*Cj0);                                        //   Send root cell
         cell.NCHILD = cell.NCLEAF = cell.NDLEAF = 0;            //   Reset link to children and leafs
         sendCells.push_back(cell);                              //   Push it into send buffer

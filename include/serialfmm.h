@@ -3,31 +3,44 @@
 #include "treebuilder.h"
 
 class SerialFMM : public TreeBuilder {
+protected:
+  real globalRadius;                                            //!< Radius of global root cell
+  vec3 globalCenter;                                            //!< Center of global root cell
+  vec3 globalXmin;                                              //!< Global Xmin for a given rank
+  vec3 globalXmax;                                              //!< Global Xmax for a given rank
+
 public:
 //! Set center and size of root cell
   void setBounds(Bodies &bodies) {
     startTimer("Set bounds");                                   // Start timer
-    if( IMAGES != 0 ) {                                         // If periodic boundary condition
-      X0 = 0;                                                   //  Center of domain is [0, 0, 0]
-      R0 = M_PI;                                                //  Radius of domain is M_PI
-    } else {                                                    // If non-periodic boundary condition
-      vec3 xmin, xmax;                                          //  Min, Max of domain
-      xmax = xmin = bodies.begin()->X;                          //  Initialize xmin, xmax
-      for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {    //  Loop over bodies
-        for( int d=0; d!=3; ++d ) {                             //   Loop over dimensions
-          if     (B->X[d] < xmin[d]) xmin[d] = B->X[d];         //    Determine xmin
-          else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];         //    Determine xmax
-        }                                                       //   End loop over dimensions
-      }                                                         //  End loop over bodies
+    localXmax = localXmin = bodies.begin()->X;                  // Initialize Xmin, Xmax
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimensions
-        X0[d] = (xmax[d] + xmin[d]) / 2;                        //   Calculate center of domain
-        R0 = std::max(xmax[d] - X0[d], R0);                     //   Calculate max distance from center 
-        R0 = std::max(X0[d] - xmin[d], R0);                     //   Calculate max distance from center
+        if     (B->X[d] < localXmin[d]) localXmin[d] = B->X[d]; //   Determine Xmin
+        else if(B->X[d] > localXmax[d]) localXmax[d] = B->X[d]; //   Determine Xmax
       }                                                         //  End loop over dimensions
-      R0 *= 1.000001;                                           //  Add some leeway to radius
+    }                                                           // End loop over bodies
+    for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
+      localCenter = (localXmax + localXmin) / 2;                //  Calculate center of domain
+      localRadius = std::min(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
+      localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
+    }                                                           // End loop over dimensions
+    localRadius *= 1.000001;                                    // Add some leeway to radius
+//    localRadius = M_PI;
+//    localCenter = 0;
+//    localXmin = -M_PI;
+//    localXmax = M_PI;
+    if( IMAGES == 0 ) {                                         // If non-periodic boundary condition
+      globalRadius = localRadius;                               //  Set global radius for serial run
+      globalCenter = localCenter;                               //  Set global center for serial run
+      globalXmin = localXmin;                                   //  Set global Xmin for serial run
+      globalXmax = localXmax;                                   //  Set global Xmax for serial run
+    } else {                                                    // If periodic boundary condition
+      globalRadius = M_PI;                                      //  Set global radius for serial run
+      globalCenter = 0;                                         //  Set global radius for serial run
+      globalXmin = -M_PI;                                       //  Set global Xmin for serial run
+      globalXmax = M_PI;                                        //  Set global Xmax for serial run
     }                                                           // End if for periodic boundary condition
-    X0 = 0;
-    R0 = M_PI;
     stopTimer("Set bounds",printNow);                           // Stop timer
   }
 
@@ -51,8 +64,8 @@ public:
       P2M(C,Rmax);                                              //  P2M kernel
       M2M(C,Rmax);                                              //  M2M kernel
     }                                                           // End loop over cells
-    Ci0->X = X0;                                              
-    Ci0->R = R0;
+    Ci0->X = localCenter;
+    Ci0->R = localRadius;
 #if Cartesian
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
       for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];          //  Normalize multipole expansion coefficients
@@ -89,15 +102,15 @@ public:
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
-            Xperiodic[0] = ix * 2 * R0;                         //     Coordinate shift for x periodic direction
-            Xperiodic[1] = iy * 2 * R0;                         //     Coordinate shift for y periodic direction
-            Xperiodic[2] = iz * 2 * R0;                         //     Coordinate shift for z periodic direction
+            Xperiodic[0] = ix * 2 * globalRadius;               //     Coordinate shift for x periodic direction
+            Xperiodic[1] = iy * 2 * globalRadius;               //     Coordinate shift for y periodic direction
+            Xperiodic[2] = iz * 2 * globalRadius;               //     Coordinate shift for z periodic direction
             pairQueue.push_back(pair);                          //     Push pair to queue
             traverse(pairQueue);                                //     Traverse a pair of trees
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
-      traversePeriodic();                                       //  Traverse tree for periodic images
+      traversePeriodic(globalRadius);                           //  Traverse tree for periodic images
     }                                                           // End if for periodic boundary condition
     stopTimer("Traverse",printNow);                             // Stop timer
   }
@@ -130,9 +143,9 @@ public:
     for( int ix=-prange; ix<=prange; ++ix ) {                   // Loop over x periodic direction
       for( int iy=-prange; iy<=prange; ++iy ) {                 //  Loop over y periodic direction
         for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
-          Xperiodic[0] = ix * 2 * R0;                           //    Coordinate shift for x periodic direction
-          Xperiodic[1] = iy * 2 * R0;                           //    Coordinate shift for y periodic direction
-          Xperiodic[2] = iz * 2 * R0;                           //    Coordinate shift for z periodic direction
+          Xperiodic[0] = ix * 2 * globalRadius;                 //    Coordinate shift for x periodic direction
+          Xperiodic[1] = iy * 2 * globalRadius;                 //    Coordinate shift for y periodic direction
+          Xperiodic[2] = iz * 2 * globalRadius;                 //    Coordinate shift for z periodic direction
           P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
         }                                                       //   End loop over z periodic direction
       }                                                         //  End loop over y periodic direction

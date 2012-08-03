@@ -44,9 +44,9 @@ int omp_get_thread_num() {
 #define OMP_NUM_THREADS 12
 #endif
 
-typedef float              real;                                //!< Real number type on CPU
-typedef float              gpureal;                             //!< Real number type on GPU
-typedef vec<3,real>        vec3;                                //!< 3-D vector type
+typedef float       real;                                       //!< Real number type on CPU
+typedef float       gpureal;                                    //!< Real number type on GPU
+typedef vec<3,real> vec3;                                       //!< 3-D vector type
 
 #ifndef KERNEL
 int MPIRANK    = 0;                                             //!< MPI comm rank
@@ -85,10 +85,10 @@ typedef vec<LTERM,real>    vecL;                                //!< Local coeff
 
 //! Structure for pthread based trace
 struct Trace {
-  pthread_t thread;
-  double    begin;
-  double    end;
-  int       color;
+  pthread_t thread;                                             //!< pthread id
+  double    begin;                                              //!< Begin timer of trace
+  double    end;                                                //!< End timer of trace
+  int       color;                                              //!< Color of trace
 };
 typedef std::map<pthread_t,double>             ThreadTrace;     //!< Map of pthread id to traced value
 typedef std::map<pthread_t,int>                ThreadMap;       //!< Map of pthread id to thread id
@@ -118,8 +118,8 @@ typedef std::vector<Body>::iterator  B_iter;                    //!< Iterator fo
 
 //! Linked list of leafs (only used in fast/topdown.h)
 struct Leaf {
-  int I;                                                        //!< Unique index for every leaf
-  vec3 X;                                                       //!< Coordinate of leaf
+  int   I;                                                      //!< Unique index for every leaf
+  vec3  X;                                                      //!< Coordinate of leaf
   Leaf *NEXT;                                                   //!< Pointer to next leaf
 };
 typedef std::vector<Leaf>           Leafs;                      //!< Vector of leafs
@@ -127,11 +127,11 @@ typedef std::vector<Leaf>::iterator L_iter;                     //!< Iterator fo
 
 //! Structure of nodes (only used in fast/topdown.h)
 struct Node {
-  bool NOCHILD;                                                 //!< Flag for twig nodes
-  int  LEVEL;                                                   //!< Level in the tree structure
-  int  NLEAF;                                                   //!< Number of descendant leafs
-  int  CHILD[8];                                                //!< Index of child node
-  vec3 X;                                                       //!< Coordinate at center
+  bool  NOCHILD;                                                //!< Flag for twig nodes
+  int   LEVEL;                                                  //!< Level in the tree structure
+  int   NLEAF;                                                  //!< Number of descendant leafs
+  int   CHILD[8];                                               //!< Index of child node
+  vec3  X;                                                      //!< Coordinate at center
   Leaf *LEAF;                                                   //!< Pointer to first leaf
 };
 typedef std::vector<Node>           Nodes;                      //!< Vector of nodes

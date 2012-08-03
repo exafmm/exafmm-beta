@@ -34,7 +34,7 @@ int main() {
   FMM.startPAPI();
 #if IneJ
 
-#if 1 // Set to 0 for debugging shift and reconstruct tree : Step 1
+#if 0 // Set to 0 for debugging by shifting and reconstructing tree : Step 1
   FMM.setLET(cells);
   FMM.commBodies();
   FMM.commCells();

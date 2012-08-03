@@ -96,7 +96,7 @@ protected:
   }
 
 //! Error optimization of Rcrit
-  void setRcrit(Cells &cells) {
+  void setRcrit(Cells &cells) const {
 #if ERROR_OPT
     real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(Ci0->M[0]),1.0/3);// Root coefficient
 #endif
@@ -239,10 +239,9 @@ protected:
 #endif // MTHREADS
 
 //! Traverse tree for periodic cells
-  void traversePeriodic() {
+  void traversePeriodic(real R) {
     startTimer("Traverse periodic");                            // Start timer
     Xperiodic = 0;                                              // Periodic coordinate offset
-    real R = R0;                                                // Radius at current level
     Cells pcells(28);                                           // Create cells
     C_iter Ci = pcells.end()-1;                                 // Last cell is periodic parent cell
     *Ci = *Cj0;                                                 // Copy values from source root

@@ -918,8 +918,6 @@ inline void sumM2P<6>(B_iter B, const vecL &C, const vecM &M) {
 
 class Kernel : public Sort {
 protected:
-  vec3   X0;
-  real   R0;
   C_iter Ci0;
   C_iter Cj0;
 
@@ -930,9 +928,6 @@ private:
   }
 
 public:
-  Kernel() : X0(0), R0(0) {}
-  ~Kernel() {}
-
 #ifdef SSE
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     if( mutual ) {
