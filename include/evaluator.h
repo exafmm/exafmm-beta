@@ -112,6 +112,9 @@ protected:
 #endif
       C->RCRIT *= x;                                            //  Multiply Rcrit by error optimized parameter x
     }                                                           // End loop over cells
+    for( C_iter C=cells.begin(); C!=cells.begin()+9; ++C ) {    // Loop over top 2 levels of cells
+      C->RCRIT *= 10;                                           //  Prevent approximation
+    }                                                           // End loop over top 2 levels of cells
   }
 
 //! Push iterm to cell queue
@@ -304,7 +307,7 @@ public:
       pairQueue.push_back(pair);
     } else {
 #endif
-      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT) && Ci->ICELL > 8 && Cj->ICELL > 8 ) {
+      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
         approximate(Ci,Cj,mutual);
       } else if(Ci->NCHILD==0 && Cj->NCHILD == 0) {
         if( Cj->NCLEAF == 0 ) {
