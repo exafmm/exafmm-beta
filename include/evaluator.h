@@ -304,7 +304,7 @@ public:
       pairQueue.push_back(pair);
     } else {
 #endif
-      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT) && Ci->ICELL > 8 && Cj->ICELL > 8 ) {
         approximate(Ci,Cj,mutual);
       } else if(Ci->NCHILD==0 && Cj->NCHILD == 0) {
         if( Cj->NCLEAF == 0 ) {

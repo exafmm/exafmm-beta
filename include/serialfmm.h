@@ -26,12 +26,6 @@ public:
       localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
     }                                                           // End loop over dimensions
     localRadius *= 1.00001;                                     // Add some leeway to radius
-#if 0
-    localRadius = M_PI;
-    localCenter = 0;
-    localXmin = -M_PI;
-    localXmax = M_PI;
-#endif
     if( IMAGES == 0 ) {                                         // If non-periodic boundary condition
       globalRadius = localRadius;                               //  Set global radius for serial run
       globalCenter = localCenter;                               //  Set global center for serial run
@@ -66,8 +60,6 @@ public:
       P2M(C,Rmax);                                              //  P2M kernel
       M2M(C,Rmax);                                              //  M2M kernel
     }                                                           // End loop over cells
-    Ci0->X = localCenter;
-    Ci0->R = localRadius;
 #if Cartesian
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
       for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];          //  Normalize multipole expansion coefficients

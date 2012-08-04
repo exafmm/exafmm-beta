@@ -1133,7 +1133,6 @@ public:
   void M2M(C_iter Ci, real &Rmax) const {
     for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
       vec3 dX = Ci->X - Cj->X;
-//      if( norm(dX) < 1e-6 && MPIRANK == 1 ) std::cout << Ci->ICELL << " " << Ci->X << " : " << Cj->X << std::endl;
       real R = std::sqrt(norm(dX)) + Cj->RCRIT;
       if( R > Rmax ) Rmax = R;
       vecM M;

@@ -29,6 +29,7 @@ int main() {
   FMM.startTimer("FMM");
 
   FMM.partition(bodies);
+  FMM.setBounds(bodies);
   FMM.buildTree(bodies,cells);
   FMM.upwardPass(cells);
   FMM.startPAPI();
@@ -92,7 +93,7 @@ int main() {
   for( int irank=0; irank!=MPISIZE; irank++ ) {
     FMM.shiftBodies(jbodies);
     jcells.clear();
-//    FMM.setBounds(jbodies);
+    FMM.setBounds(jbodies);
     FMM.buildTree(jbodies,jcells);
     FMM.upwardPass(jcells);
     FMM.evaluate(cells,jcells);
