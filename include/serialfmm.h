@@ -20,26 +20,28 @@ public:
         else if(B->X[d] > localXmax[d]) localXmax[d] = B->X[d]; //   Determine Xmax
       }                                                         //  End loop over dimensions
     }                                                           // End loop over bodies
+    localCenter = (localXmax + localXmin) / 2;                  //  Calculate center of domain
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
-      localCenter = (localXmax + localXmin) / 2;                //  Calculate center of domain
       localRadius = std::min(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
       localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
     }                                                           // End loop over dimensions
-    localRadius *= 1.000001;                                    // Add some leeway to radius
-//    localRadius = M_PI;
-//    localCenter = 0;
-//    localXmin = -M_PI;
-//    localXmax = M_PI;
+    localRadius *= 1.00001;                                     // Add some leeway to radius
+#if 0
+    localRadius = M_PI;
+    localCenter = 0;
+    localXmin = -M_PI;
+    localXmax = M_PI;
+#endif
     if( IMAGES == 0 ) {                                         // If non-periodic boundary condition
       globalRadius = localRadius;                               //  Set global radius for serial run
       globalCenter = localCenter;                               //  Set global center for serial run
       globalXmin = localXmin;                                   //  Set global Xmin for serial run
       globalXmax = localXmax;                                   //  Set global Xmax for serial run
     } else {                                                    // If periodic boundary condition
-      globalRadius = M_PI;                                      //  Set global radius for serial run
-      globalCenter = 0;                                         //  Set global radius for serial run
-      globalXmin = -M_PI;                                       //  Set global Xmin for serial run
-      globalXmax = M_PI;                                        //  Set global Xmax for serial run
+      globalRadius = M_PI;                                      //  Set global radius
+      globalCenter = 0;                                         //  Set global radius
+      globalXmin = -M_PI;                                       //  Set global Xmin
+      globalXmax = M_PI;                                        //  Set global Xmax
     }                                                           // End if for periodic boundary condition
     stopTimer("Set bounds",printNow);                           // Stop timer
   }

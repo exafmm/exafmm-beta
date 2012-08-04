@@ -92,6 +92,7 @@ int main() {
   for( int irank=0; irank!=MPISIZE; irank++ ) {
     FMM.shiftBodies(jbodies);
     jcells.clear();
+//    FMM.setBounds(jbodies);
     FMM.buildTree(jbodies,jcells);
     FMM.upwardPass(jcells);
     FMM.evaluate(cells,jcells);
