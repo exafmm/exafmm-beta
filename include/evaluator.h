@@ -177,7 +177,9 @@ protected:
       }
 #else
       if( int(pairQueue.size()) > Ci0->NDLEAF / 100 ) {
-//#pragma omp parallel for schedule(dynamic)
+#if OPENMP
+#pragma omp parallel for schedule(dynamic)
+#endif
         for( int i=0; i<int(pairQueue.size()); i++ ) {
           traverseBranch(pairQueue[i].first,pairQueue[i].second,mutual);
         }

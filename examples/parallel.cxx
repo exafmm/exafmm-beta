@@ -22,7 +22,7 @@ int main() {
 #else
   {
   numBodies = 1000000 / MPISIZE;
-#endif // MANY
+#endif
   if(FMM.printNow) std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
   DATA.cube(bodies,MPIRANK);

@@ -1163,14 +1163,18 @@ public:
     getCoef<P>(C,dX,invR2,invR);
     sumM2L<P>(L,C,Cj->M);
     for( int i=0; i<LTERM; ++i ) {
-//#pragma omp atomic
+#if OPENMP
+#pragma omp atomic
+#endif
       Ci->L[i] += L[i];
     }
     if( mutual ) {
       flipCoef(C);
       sumM2L<P>(L,C,Ci->M);
       for( int i=0; i<LTERM; ++i ) {
-//#pragma omp atomic
+#if OPENMP
+#pragma omp atomic
+#endif
         Cj->L[i] += L[i];
       }
     }

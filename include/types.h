@@ -25,8 +25,10 @@
 #include <xmmintrin.h>
 #endif
 
-#if PAPI
-#include <papi.h>
+#if OPENMP
+#include <omp.h>
+#else
+int omp_get_thread_num() { return 0; }
 #endif
 
 #if QUARK
@@ -34,14 +36,11 @@
 #endif
 
 #if MTHREADS
-#include <mttb/task_group.h>
-int omp_get_thread_num() {
-  return 0;
-}
-#define OMP_NUM_THREADS 1
-#else
-#include <omp.h>
-#define OMP_NUM_THREADS 12
+#include <task_group.h>
+#endif
+
+#if PAPI
+#include <papi.h>
 #endif
 
 typedef float       real;                                       //!< Real number type on CPU
