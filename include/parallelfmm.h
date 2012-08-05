@@ -130,6 +130,7 @@ private:
   }
 
 public:
+//! Constructor
   ParallelFMM() {
     sendCellCount = new int [MPISIZE];                          // Allocate send count
     sendCellDispl = new int [MPISIZE];                          // Allocate send displacement
@@ -149,13 +150,12 @@ public:
     startTimer("Set LET");                                      // Start timer
     sendBodies.clear();                                         // Clear send buffer for bodies
     sendCells.clear();                                          // Clear send buffer for cells
-    sendCells.reserve(cells.size()*27);                         // Reserve space for send buffer
     sendCellDispl[0] = 0;                                       // Initialize displacement vector
     for( IRANK=0; IRANK!=MPISIZE; ++IRANK ) {                   // Loop over ranks
       if( IRANK != 0 ) sendCellDispl[IRANK] = sendCellDispl[IRANK-1] + sendCellCount[IRANK-1];// Update displacement
       if( IRANK != MPIRANK ) {                                  //  If not current rank
-        recvCells = cells;                                      // Use recvCells as temporary storage
-        Cj0 = recvCells.begin();                                // Set cells begin iterator
+        recvCells = cells;                                      //   Use recvCells as temporary storage
+        Cj0 = recvCells.begin();                                //   Set cells begin iterator
         localXmin = rankXmin[IRANK];                            //   Set local Xmin for IRANK
         localXmax = rankXmax[IRANK];                            //   Set local Xmax for IRANK
         Cell cell(*Cj0);                                        //   Send root cell
@@ -166,7 +166,6 @@ public:
         traverseLET(cellQueue);                                 //   Traverse tree to get LET
       }                                                         //  Endif for current rank
       sendCellCount[IRANK] = sendCells.size() - sendCellDispl[IRANK];// Send count for IRANK
-      assert( sendCells.size() <= cells.size()*27 );            //  Check for overflow
     }                                                           // End loop over ranks
     stopTimer("Set LET",printNow);                              // Stop timer
   }
