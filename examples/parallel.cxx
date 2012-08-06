@@ -69,7 +69,7 @@ int main() {
         std::cout << MPIRANK << " NCLEAF : " << Ci->NCLEAF << " " << Cj->NCLEAF << std::endl;
         break;
       }
-      real sumi = 0, sumj = 0;
+      real_t sumi = 0, sumj = 0;
       if( Ci->NCLEAF != 0 ) {
         for( int i=0; i<Ci->NCLEAF; i++ ) {
           B_iter Bi = Ci->LEAF+i;
@@ -124,7 +124,7 @@ int main() {
   FMM.normalize(bodies2);
   FMM.stopTimer("Direct sum",FMM.printNow);
   FMM.eraseTimer("Direct sum");
-  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
+  real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   MPI_Datatype MPI_TYPE = FMM.getType(diff1);
   MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);

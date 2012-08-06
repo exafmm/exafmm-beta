@@ -21,13 +21,13 @@ EXPAND	= Cartesian
 #EXPAND	= Spherical
 
 ### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fbounds-check -DSSE
-
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fbounds-check -DSSE
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -ansi-alias -DSSE
-
 ### BG/P compiler
 #CXX	= mpixlcxx_r -qarch=450 -qtune=450 -qsmp=omp -O3
+### TAU compiler
+CXX	= tau_cxx.sh -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fbounds-check
 
 ### CUDA compiler
 NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v\

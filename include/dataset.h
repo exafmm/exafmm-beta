@@ -53,7 +53,7 @@ public:
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->X[d] = drand48() * 2 - 1;                            //   Initialize positions
       }                                                         //  End loop over dimension
-      real r = std::sqrt(norm(B->X));                           //  Distance from center
+      real_t r = std::sqrt(norm(B->X));                         //  Distance from center
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->X[d] /= r * 1.1;                                     //   Normalize positions
       }                                                         //  End loop over dimension
@@ -112,7 +112,7 @@ public:
   }
 
   void evalError(Bodies &bodies, Bodies &bodies2,               // Evaluate error
-                 real &diff1, real &norm1, real &diff2, real &norm2) {
+                 real_t &diff1, real_t &norm1, real_t &diff2, real_t &norm2) {
     B_iter B2 = bodies2.begin();                                //  Set iterator for bodies2
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
@@ -129,11 +129,11 @@ public:
     }                                                           //  End loop over bodies & bodies2
   }
 
-  void printError(real diff1, real norm1, real diff2, real norm2) {// Print relative L2 norm error
+  void printError(real_t diff1, real_t norm1, real_t diff2, real_t norm2) {// Print relative L2 norm error
     std::cout << std::setw(20) << std::left
-              << "Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
+              << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
     std::cout << std::setw(20) << std::left
-              << "Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
+              << "Rel. L2 Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
   }
 };
 

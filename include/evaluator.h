@@ -10,22 +10,22 @@
 
 class Evaluator : public Kernel {
 private:
-  real timeP2P;                                                 //!< P2P execution time
-  real timeM2P;                                                 //!< M2P execution time
-  real timeM2L;                                                 //!< M2L execution time
+  real_t timeP2P;                                               //!< P2P execution time
+  real_t timeM2P;                                               //!< M2P execution time
+  real_t timeM2L;                                               //!< M2L execution time
 
 protected:
-  real NP2P;                                                    //!< Number of P2P kernel calls
-  real NM2P;                                                    //!< Number of M2P kenrel calls
-  real NM2L;                                                    //!< Number of M2L kernel calls
+  real_t NP2P;                                                  //!< Number of P2P kernel calls
+  real_t NM2P;                                                  //!< Number of M2P kenrel calls
+  real_t NM2L;                                                  //!< Number of M2L kernel calls
 
 private:
 //! Calculate Bmax
-  real getBmax(vec3 const&X, C_iter C) const {
-    real rad = C->R;                                            // Radius of cell
-    real dx = rad+std::abs(X[0]-C->X[0]);                       // Add x distance from center of mass
-    real dy = rad+std::abs(X[1]-C->X[1]);                       // Add y distance from center of mass
-    real dz = rad+std::abs(X[2]-C->X[2]);                       // Add z distance from center of mass
+  real_t getBmax(vec3 const&X, C_iter C) const {
+    real_t rad = C->R;                                          // Radius of cell
+    real_t dx = rad+std::abs(X[0]-C->X[0]);                     // Add x distance from center of mass
+    real_t dy = rad+std::abs(X[1]-C->X[1]);                     // Add y distance from center of mass
+    real_t dz = rad+std::abs(X[2]-C->X[2]);                     // Add z distance from center of mass
     return std::sqrt( dx*dx + dy*dy + dz*dz );                  // Return scalar distance
   }
 
@@ -76,7 +76,7 @@ private:
 protected:
 //! Set center of expansion to center of mass
   void setCenter(C_iter C) const {
-    real m = 0;                                                 // Initialize mass
+    real_t m = 0;                                               // Initialize mass
     vec3 X = 0;                                                 // Initialize coordinates
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {        // Loop over leafs
       m += B->SRC;                                              //  Accumulate mass
@@ -93,28 +93,6 @@ protected:
 #if COMcenter
     C->X = X;                                                   // Use center of mass as center of expansion
 #endif
-  }
-
-//! Error optimization of Rcrit
-  void setRcrit(Cells &cells) const {
-#if ERROR_OPT
-    real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(Ci0->M[0]),1.0/3);// Root coefficient
-#endif
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
-      real x = 1.0 / THETA;                                     //  Inverse of theta
-#if ERROR_OPT
-      real a = c * pow(std::abs(C->M[0]),1.0/3);                //  Cell coefficient
-      for( int i=0; i<5; ++i ) {                                //  Newton-Rhapson iteration
-        real f = x * x - 2 * x + 1 - a * pow(x,-P);             //   Function value
-        real df = (P + 2) * x - 2 * (P + 1) + P / x;            //   Function derivative value
-        x -= f / df;                                            //   Increment x
-      }                                                         //  End Newton-Rhapson iteration
-#endif
-      C->RCRIT *= x;                                            //  Multiply Rcrit by error optimized parameter x
-    }                                                           // End loop over cells
-    for( C_iter C=cells.begin(); C!=cells.begin()+9; ++C ) {    // Loop over top 2 levels of cells
-      C->RCRIT *= 10;                                           //  Prevent approximation
-    }                                                           // End loop over top 2 levels of cells
   }
 
 //! Push iterm to cell queue
@@ -197,22 +175,20 @@ protected:
 #if MTHREADS
   void recursiveTraverse(C_iter Ci, C_iter Cj, bool mutual) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;
-    real R2 = norm(dX);
+    real_t R2 = norm(dX);
 #if DUAL
     {
 #else
     if(Ci->RCRIT != Cj->RCRIT) {
       if(splitFirst(Ci,Cj)) {
-        C_iter C = Ci;
         task_group tg;
-        for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
+        for( C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; ++CC ) {
           if( CC->NDLEAF > 10000 ) tg.run([=]{recursiveTraverse(CC,Cj,mutual);});
           else recursiveTraverse(CC,Cj,mutual);
         }
         tg.wait();
       } else {
-        C_iter C = Cj;
-        for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
+        for( C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; ++CC ) {
           recursiveTraverse(Ci,CC,mutual);
         }
       }
@@ -225,16 +201,14 @@ protected:
         count(NP2P);
       } else {
         if(splitFirst(Ci,Cj)) {
-          C_iter C = Ci;
           task_group tg;
-          for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {
+          for( C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; ++CC ) {
             if( CC->NDLEAF > 10000 ) tg.run([=]{recursiveTraverse(CC,Cj,mutual);});
             else recursiveTraverse(CC,Cj,mutual);
           }
           tg.wait();
         } else {
-          C_iter C = Cj;
-          for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {
+          for( C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; ++CC ) {
             recursiveTraverse(Ci,CC,mutual);
           }
         }
@@ -244,7 +218,7 @@ protected:
 #endif // MTHREADS
 
 //! Traverse tree for periodic cells
-  void traversePeriodic(real R) {
+  void traversePeriodic(real_t R) {
     startTimer("Traverse periodic");                            // Start timer
     Xperiodic = 0;                                              // Periodic coordinate offset
     Cells pcells(28);                                           // Create cells
@@ -285,7 +259,7 @@ protected:
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
-      real Rmax = 0;                                            //  Dummy parameter for calling M2M
+      real_t Rmax = 0;                                          //  Dummy parameter for calling M2M
       setCenter(Ci);                                            //  Set center of mass for periodic parent
       M2M(Ci,Rmax);                                             //  Evaluate periodic M2M kernels for this sublevel
       R *= 3;                                                   //  Increase center cell size three times
@@ -300,7 +274,7 @@ public:
 
   void applyMAC(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;
-    real R2 = norm(dX);
+    real_t R2 = norm(dX);
 #if DUAL
     {
 #else
@@ -375,14 +349,14 @@ inline void traverseQuark(Quark *quark) {
     pair = privateQueue.front();
     privateQueue.pop_front();
     if(splitFirst(pair.first,pair.second)) {
-      C_iter C = pair.first;
-      for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-        E->applyMAC(Ci,pair.second,privateQueue,mutual);
+      C_iter Ci = pair.first;
+      for( C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; ++CC ) {
+        E->applyMAC(CC,pair.second,privateQueue,mutual);
       }
     } else {
-      C_iter C = pair.second;
-      for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-        E->applyMAC(pair.first,Cj,privateQueue,mutual);
+      C_iter Cj = pair.second;
+      for( C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; ++CC ) {
+        E->applyMAC(pair.first,CC,privateQueue,mutual);
       }
     }
   }

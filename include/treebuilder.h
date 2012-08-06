@@ -13,7 +13,7 @@ private:
   int      MAXLEVEL;
 
 protected:
-  real localRadius;                                             //!< Radius of local root cell
+  real_t localRadius;                                           //!< Radius of local root cell
   vec3 localCenter;                                             //!< Center of local root cell
   vec3 localXmin;                                               //!< Local Xmin for a given rank
   vec3 localXmax;                                               //!< Local Xmax for a given rank
@@ -50,7 +50,7 @@ private:
     init(child);
     child.LEVEL = N->LEVEL+1;
     child.X = N->X;
-    real r = localRadius / (1 << child.LEVEL);
+    real_t r = localRadius / (1 << child.LEVEL);
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       child.X[d] += r * (((octant & 1 << d) >> d) * 2 - 1);     //  Calculate new center position
     }                                                           // End loop over dimensions

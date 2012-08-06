@@ -4,10 +4,33 @@
 
 class SerialFMM : public TreeBuilder {
 protected:
-  real globalRadius;                                            //!< Radius of global root cell
+  real_t globalRadius;                                          //!< Radius of global root cell
   vec3 globalCenter;                                            //!< Center of global root cell
   vec3 globalXmin;                                              //!< Global Xmin for a given rank
   vec3 globalXmax;                                              //!< Global Xmax for a given rank
+
+private:
+//! Error optimization of Rcrit
+  void setRcrit(Cells &cells) const {
+#if ERROR_OPT
+    real_t c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / powf(std::abs(Ci0->M[0]),1.0/3);// Root coefficient
+#endif
+    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
+      real_t x = 1.0 / THETA;                                   //  Inverse of theta
+#if ERROR_OPT
+      real_t a = c * powf(std::abs(C->M[0]),1.0/3);             //  Cell coefficient
+      for( int i=0; i<5; ++i ) {                                //  Newton-Rhapson iteration
+        real_t f = x * x - 2 * x + 1 - a * pow(x,-P);           //   Function value
+        real_t df = (P + 2) * x - 2 * (P + 1) + P / x;          //   Function derivative value
+        x -= f / df;                                            //   Increment x
+      }                                                         //  End Newton-Rhapson iteration
+#endif
+      C->RCRIT *= x;                                            //  Multiply Rcrit by error optimized parameter x
+    }                                                           // End loop over cells
+    for( C_iter C=cells.begin(); C!=cells.begin()+9; ++C ) {    // Loop over top 2 levels of cells
+      C->RCRIT *= 10;                                           //  Prevent approximation
+    }                                                           // End loop over top 2 levels of cells
+  }
 
 public:
 //! Set center and size of root cell
@@ -53,7 +76,7 @@ public:
     Ci0 = cells.begin();                                        // Set iterator of target root cell
     Cj0 = cells.begin();                                        // Set iterator of source root cell
     for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {    // Loop over cells bottomup
-      real Rmax = 0;                                            //  Initialize Rmax
+      real_t Rmax = 0;                                          //  Initialize Rmax
       setCenter(C);                                             //  Set center of cell to center of mass
       C->M = 0;                                                 //  Initialize multipole expansion coefficients
       C->L = 0;                                                 //  Initialize local expansion coefficients
@@ -132,7 +155,7 @@ public:
     Cj->NDLEAF = jbodies.size();                                // Number of source leafs
     int prange = 0;                                             // Range of periodic images
     for( int i=0; i<IMAGES; i++ ) {                             // Loop over periodic image sublevels
-      prange += int(pow(3,i));                                  //  Accumulate range of periodic images
+      prange += int(powf(3,i));                                 //  Accumulate range of periodic images
     }                                                           // End loop over perioidc image sublevels
     for( int ix=-prange; ix<=prange; ++ix ) {                   // Loop over x periodic direction
       for( int iy=-prange; iy<=prange; ++iy ) {                 //  Loop over y periodic direction

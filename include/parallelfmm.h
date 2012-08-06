@@ -19,7 +19,7 @@ public:
 
 private:
 //! Get distance to other domain
-  real getDistance(C_iter C) {
+  real_t getDistance(C_iter C) {
     vec3 dX;                                                    // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       dX[d] = (C->X[d] + Xperiodic[d] > localXmax[d])*          //  Calculate the distance between cell C and
@@ -27,7 +27,7 @@ private:
               (C->X[d] + Xperiodic[d] < localXmin[d])*          //  Take the differnece from xmin or xmax
               (C->X[d] + Xperiodic[d] - localXmin[d]);          //  or 0 if between xmin and xmax
     }                                                           // End loop over dimensions
-    real R2 = norm(dX);                                         // Distance squared
+    real_t R2 = norm(dX);                                       // Distance squared
     return R2;                                                  // Return distance squared
   }
 
@@ -60,7 +60,7 @@ private:
     int ibody = 0;                                              // Current send body's offset
     int icell = 0;                                              // Current send cell's offset
     int iparent = 0;                                            // Parent send cell's offset
-    int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
+    int level = int(logf(MPISIZE-1) / M_LN2 / 3) + 1;           // Level of local root cell
     if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     while( !cellQueue.empty() ) {                               // While traversal queue is not empty
       C_iter C = cellQueue.front();                             //  Get front item in traversal queue
@@ -73,7 +73,7 @@ private:
           bool divide = false;                                  //    Initialize logical for dividing
           if( IMAGES == 0 ) {                                   //    If free boundary condition
             Xperiodic = 0;                                      //     Set periodic coordinate offset
-            real R2 = getDistance(CC);                          //     Get distance to other domain
+            real_t R2 = getDistance(CC);                        //     Get distance to other domain
             divide |= 4 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
           } else {                                              //    If periodic boundary condition
             for( int ix=-1; ix<=1; ++ix ) {                     //     Loop over x periodic direction
@@ -82,7 +82,7 @@ private:
                   Xperiodic[0] = ix * 2 * globalRadius;         //        Coordinate offset for x periodic direction
                   Xperiodic[1] = iy * 2 * globalRadius;         //        Coordinate offset for y periodic direction
                   Xperiodic[2] = iz * 2 * globalRadius;         //        Coordinate offset for z periodic direction
-                  real R2 = getDistance(CC);                    //        Get distance to other domain
+                  real_t R2 = getDistance(CC);                  //        Get distance to other domain
                   divide |= 4 * CC->RCRIT * CC->RCRIT > R2;     //        Divide if cell seems too close
                 }                                               //       End loop over z periodic direction
               }                                                 //      End loop over y periodic direction

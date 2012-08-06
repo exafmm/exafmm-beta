@@ -10,7 +10,7 @@ serial	: serial.cxx
 parallel: parallel.cxx
 	make clean
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
-	mpirun -np 32 ./a.out
+	mpirun -np 2 ./a.out
 
 wrapper: wrapper.cxx
 	make clean

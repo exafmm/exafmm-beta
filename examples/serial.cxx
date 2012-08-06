@@ -49,7 +49,7 @@ int main() {
   FMM.normalize(bodies2);
   FMM.stopTimer("Direct sum",FMM.printNow);
   FMM.eraseTimer("Direct sum");
-  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+  real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
   if(FMM.printNow) DATA.printError(diff1,norm1,diff2,norm2);
   }

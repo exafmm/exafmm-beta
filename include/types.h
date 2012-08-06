@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <pthread.h>
 #include <queue>
 #include <string>
 #include <utility>
@@ -43,15 +44,14 @@ int omp_get_thread_num() { return 0; }
 #include <papi.h>
 #endif
 
-typedef float       real;                                       //!< Real number type on CPU
-typedef float       gpureal;                                    //!< Real number type on GPU
-typedef vec<3,real> vec3;                                       //!< 3-D vector type
+typedef float       real_t;                                     //!< Real number type on CPU
+typedef vec<3,real_t> vec3;                                     //!< 3-D vector type
 
 #ifndef KERNEL
 int MPIRANK    = 0;                                             //!< MPI comm rank
 int MPISIZE    = 1;                                             //!< MPI comm size
 int IMAGES     = 0;                                             //!< Number of periodic image sublevels
-real THETA     = .5;                                            //!< Multipole acceptance criteria
+real_t THETA   = .5;                                            //!< Multipole acceptance criteria
 vec3 Xperiodic = .0;                                            //!< Coordinate offset of periodic image
 #if PAPI
 int PAPIEVENT  = PAPI_NULL;                                     //!< PAPI event handle
@@ -60,17 +60,17 @@ int PAPIEVENT  = PAPI_NULL;                                     //!< PAPI event 
 extern int MPIRANK;                                             //!< MPI comm rank
 extern int MPISIZE;                                             //!< MPI comm size
 extern int IMAGES;                                              //!< Number of periodic image sublevels
-extern real THETA;                                              //!< Multipole acceptance criteria
+extern real_t THETA;                                            //!< Multipole acceptance criteria
 extern vec3 Xperiodic;                                          //!< Coordinate offset of periodic image
 #if PAPI
 extern int PAPIEVENT;                                           //!< PAPI event handle
 #endif
 #endif
 
-const int  P        = 3;                                        //!< Order of expansions
-const int  NCRIT    = 10;                                       //!< Number of bodies per cell
-const real EPS      = 1e-6;                                     //!< Single precision epsilon
-const real EPS2     = .0;                                       //!< Softening parameter (squared)
+const int    P      = 3;                                        //!< Order of expansions
+const int    NCRIT  = 10;                                       //!< Number of bodies per cell
+const real_t EPS    = 1e-6;                                     //!< Single precision epsilon
+const real_t EPS2   = .0;                                       //!< Softening parameter (squared)
 
 #if COMkernel
 const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms
@@ -79,8 +79,8 @@ const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of C
 #endif
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
 
-typedef vec<MTERM,real>    vecM;                                //!< Multipole coefficient type for Cartesian
-typedef vec<LTERM,real>    vecL;                                //!< Local coefficient type for Cartesian
+typedef vec<MTERM,real_t>  vecM;                                //!< Multipole coefficient type for Cartesian
+typedef vec<LTERM,real_t>  vecL;                                //!< Local coefficient type for Cartesian
 
 //! Structure for pthread based trace
 struct Trace {
@@ -109,8 +109,8 @@ struct Body {
   int  IPROC;                                                   //!< Initial process numbering for partitioning back
   int  ICELL;                                                   //!< Cell index
   vec3 X;                                                       //!< Position
-  real SRC;                                                     //!< Scalar source values
-  vec<4,real> TRG;                                              //!< Scalar+vector target values
+  real_t SRC;                                                   //!< Scalar source values
+  vec<4,real_t> TRG;                                            //!< Scalar+vector target values
 };
 typedef std::vector<Body>            Bodies;                    //!< Vector of bodies
 typedef std::vector<Body>::iterator  B_iter;                    //!< Iterator for body vector
@@ -146,9 +146,9 @@ struct Cell {
   long long ICELL;                                              //!< Cell index
   B_iter    LEAF;                                               //!< Iterator of first leaf
   vec3      X;                                                  //!< Cell center
-  real      R;                                                  //!< Cell radius
-  real      RMAX;                                               //!< Max cell radius
-  real      RCRIT;                                              //!< Critical cell radius
+  real_t    R;                                                  //!< Cell radius
+  real_t    RMAX;                                               //!< Max cell radius
+  real_t    RCRIT;                                              //!< Critical cell radius
   vecM      M;                                                  //!< Multipole coefficients
   vecL      L;                                                  //!< Local coefficients
 };
@@ -160,9 +160,9 @@ typedef std::deque<Pair>            PairQueue;                  //!< Queue of in
 
 //! Structure for Ewald summation
 struct Ewald {
-  vec3 K;                                                       //!< 3-D wave number vector
-  real REAL;                                                    //!< real part of wave
-  real IMAG;                                                    //!< imaginary part of wave
+  vec3   K;                                                     //!< 3-D wave number vector
+  real_t REAL;                                                  //!< real part of wave
+  real_t IMAG;                                                  //!< imaginary part of wave
 };
 typedef std::vector<Ewald>           Ewalds;                    //!< Vector of Ewald summation types
 typedef std::vector<Ewald>::iterator E_iter;                    //!< Iterator for Ewald summation types
