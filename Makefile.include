@@ -51,9 +51,6 @@ LFLAGS	+= -DIneJ
 ### OPENMP flags
 LFLAGS += -DOPENMP
 
-### QUARK flags
-#LFLAGS	+= -DQUARK -lquark
-
 ### MassiveThreads flags
 #LFLAGS	+= -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
 

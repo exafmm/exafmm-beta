@@ -32,10 +32,6 @@
 int omp_get_thread_num() { return 0; }
 #endif
 
-#if QUARK
-#include <quark.h>
-#endif
-
 #if MTHREADS
 #include <task_group.h>
 #endif

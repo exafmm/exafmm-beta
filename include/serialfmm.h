@@ -96,11 +96,13 @@ public:
   void evaluate(Cells &cells) {
     Ci0 = cells.begin();                                        // Set iterator of target root cell
     Cj0 = cells.begin();                                        // Set iterator of source root cell
-    CellQueue cellQueue;                                        // Traversal queue
-    pushCell(Ci0,cellQueue);                                    // Push root into queue
     Xperiodic = 0;                                              // No periodic shift
     startTimer("Traverse");                                     // Start timer
-    traverse(cellQueue);                                        // Traverse the tree
+#if OPENMP
+#pragma omp parallel
+#pragma omp single
+#endif
+    traverse(Ci0);                                              // Traverse the tree
     stopTimer("Traverse",printNow);                             // Stop timer
   }
 
@@ -108,13 +110,14 @@ public:
   void evaluate(Cells &icells, Cells &jcells) {
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
-    Pair pair(Ci0,Cj0);                                         // Pair of root cells
-    PairQueue pairQueue;                                        // Traversal queue
     startTimer("Traverse");                                     // Start timer
+#if OPENMP
+#pragma omp parallel
+#pragma omp single
+#endif
     if( IMAGES == 0 ) {                                         // If non-periodic boundary condition
       Xperiodic = 0;                                            //  No periodic shift
-      pairQueue.push_back(pair);                                //  Push root pair into queue
-      traverse(pairQueue);                                      //  Traverse the tree
+      traverse(Ci0,Cj0);                                        //  Traverse the tree
     } else {                                                    // If periodic boundary condition
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
@@ -122,8 +125,7 @@ public:
             Xperiodic[0] = ix * 2 * globalRadius;               //     Coordinate shift for x periodic direction
             Xperiodic[1] = iy * 2 * globalRadius;               //     Coordinate shift for y periodic direction
             Xperiodic[2] = iz * 2 * globalRadius;               //     Coordinate shift for z periodic direction
-            pairQueue.push_back(pair);                          //     Push pair to queue
-            traverse(pairQueue);                                //     Traverse a pair of trees
+            traverse(Ci0,Cj0);                                  //     Traverse a pair of trees
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
