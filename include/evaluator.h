@@ -72,13 +72,29 @@ private:
     if(splitFirst(Ci,Cj)) {                                     // If first cell is larger or equal
       task_group tg;                                            //  Create task group
       for( C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; ++CC ) {// Loop over first cell's children 
-        if( CC->NDLEAF > 10000 ) tg.run([=]{recursiveTraverse(CC,Cj,mutual);});// Create a new task and recurse
-        else recursiveTraverse(CC,Cj,mutual);                   //    Recurse without creating new task
+        if( CC->NDLEAF > 10000 ) tg.run([=]{applyMAC(CC,Cj,mutual);});// Create a new task and recurse
+        else applyMAC(CC,Cj,mutual);                            //    Recurse without creating new task
       }                                                         //   End loop over first cell's children
       tg.wait();                                                //  Wait for task group to finish
     } else {                                                    // If second cell is larger
       for( C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; ++CC ) {// Loop over second cell's children
-        recursiveTraverse(Ci,CC,mutual);                        //   Recurse without creating new task
+        applyMAC(Ci,CC,mutual);                                 //   Recurse without creating new task
+      }                                                         //  End loop over second cell's children
+    }                                                           // End if for which cell to split
+  }
+#elif OPENMP
+  void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
+    if(splitFirst(Ci,Cj)) {                                     // If first cell is larger or equal
+      for( C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; ++CC ) {// Loop over first cell's children 
+        if( CC->NDLEAF > 10000 ) {
+#pragma omp task
+          applyMAC(CC,Cj,mutual);                               // Create a new task and recurse
+        }
+        else applyMAC(CC,Cj,mutual);                            //    Recurse without creating new task
+      }                                                         //   End loop over first cell's children
+    } else {                                                    // If second cell is larger
+      for( C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; ++CC ) {// Loop over second cell's children
+        applyMAC(Ci,CC,mutual);                                 //   Recurse without creating new task
       }                                                         //  End loop over second cell's children
     }                                                           // End if for which cell to split
   }
@@ -134,7 +150,32 @@ private:
       }
     }
   }
-#endif // MTHREADS
+#elif OPENMP
+  void applyMAC(C_iter Ci, C_iter Cj, bool mutual) {
+    vec3 dX = Ci->X - Cj->X - Xperiodic;
+    real_t R2 = norm(dX);
+#if DUAL
+    {
+#else
+    if(Ci->RCRIT != Cj->RCRIT) {
+      splitCell(Ci,Cj,mutual);
+    } else {
+#endif
+      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+        approximate(Ci,Cj,mutual);
+      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
+        if( Cj->NCLEAF == 0 ) {
+          approximate(Ci,Cj,mutual);
+        } else {
+          P2P(Ci,Cj,mutual);
+          count(NP2P);
+        }
+      } else {
+        splitCell(Ci,Cj,mutual);
+      }
+    }
+  }
+#endif
 
 protected:
 //! Set center of expansion to center of mass
@@ -190,6 +231,12 @@ protected:
     Pair pair = pairQueue.front();
     pairQueue.pop_back();
     applyMAC(pair.first,pair.second,mutual);
+#elif OPENMP
+    Pair pair = pairQueue.front();
+    pairQueue.pop_back();
+#pragma omp parallel
+#pragma omp single
+    applyMAC(pair.first,pair.second,mutual);
 #else
 #if QUARK
     Quark *quark = QUARK_New(12);
@@ -205,16 +252,6 @@ protected:
           pairQueue.pop_front();
           traverseBranch(pair.first,pair.second,quark,mutual);
         }
-      }
-#else
-      if( int(pairQueue.size()) > Ci0->NDLEAF / 50 ) {
-#if OPENMP
-#pragma omp parallel for schedule(dynamic)
-#endif
-        for( int i=0; i<int(pairQueue.size()); i++ ) {
-          traverseBranch(pairQueue[i].first,pairQueue[i].second,mutual);
-        }
-        pairQueue.clear();
       }
 #endif // QUARK
     }

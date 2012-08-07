@@ -49,13 +49,13 @@ LFLAGS	+= -DIneJ
 #LFLAGS	+= -DTREECODE
 
 ### OPENMP flags
-#LFLAGS += -DOPENMP
+LFLAGS += -DOPENMP
 
 ### QUARK flags
 #LFLAGS	+= -DQUARK -lquark
 
 ### MassiveThreads flags
-LFLAGS	+= -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
+#LFLAGS	+= -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi
