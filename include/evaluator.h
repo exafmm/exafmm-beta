@@ -30,7 +30,7 @@ private:
   }
 
 //! Approximate interaction between two cells
-  inline void approximate(C_iter Ci, C_iter Cj, bool mutual=true) {
+  inline void approximate(C_iter Ci, C_iter Cj, bool mutual) {
 #if HYBRID
     if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {// If P2P is fastest
       P2P(Ci,Cj,mutual);                                        //  P2P kernel
@@ -51,27 +51,90 @@ private:
 #endif
   }
 
-//! Traverse branch of tree
-  void traverseBranch(C_iter Ci, C_iter Cj, bool mutual=true) {
-    PairQueue privateQueue;                                     // Queue of interacting cell pairs
-    Pair pair(Ci,Cj);                                           // Form a pair of cell iterators
-    privateQueue.push_back(pair);                               // Push pair to queue
-    while( !privateQueue.empty() ) {                            // While dual traversal queue is not empty
-      pair = privateQueue.front();                              //  Get interaction pair from front of queue
-      privateQueue.pop_front();                                 //  Pop dual traversal queue
-      if(splitFirst(pair.first,pair.second)) {                  //  If first cell is larger or equal
-        C_iter C = pair.first;                                  //   Iterator of first of the pair
-        for( C_iter CC=Ci0+C->CHILD; CC!=Ci0+C->CHILD+C->NCHILD; ++CC ) {// Loop over first cell's children
-          applyMAC(CC,pair.second,privateQueue,mutual);         //    Apply multipole acceptance criterion to pair
-        }                                                       //   End loop over first cell's children
-      } else {                                                  //  If second cell is larger
-        C_iter C = pair.second;                                 //   Iterator of second of the pair
-        for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {// Loop over second cell's children
-          applyMAC(pair.first,CC,privateQueue,mutual);          //    Apply multipole acceptance criterion to pair
-        }                                                       //   End loop over second cell's children
-      }                                                         //  End if for which cell to split
-    }                                                           // End while loop for traversal queue
+//! Split cell and push children to queue
+  void splitCell(C_iter Ci, C_iter Cj, PairQueue &pairQueue) {
+    if(splitFirst(Ci,Cj)) {                                     // If first cell is larger or equal
+      for( C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; ++CC ) {// Loop over first cell's children
+        Pair pair(CC,Cj);                                       //   Form a pair of cell iterators
+        pairQueue.push_back(pair);                              //   Push pair to queue
+      }                                                         //  End loop over first cell's children
+    } else {                                                    // If second cell is larger
+      for( C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; ++CC ) {// Loop over second cell's children
+        Pair pair(Ci,CC);                                       //   Form a pair of cell iterators
+        pairQueue.push_back(pair);                              //   Push pair to queue
+      }                                                         //  End loop over second cell's children
+    }                                                           // End if for which cell to split
   }
+
+//! Split cell and call function recursively for child
+#if MTHREADS
+  void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
+    if(splitFirst(Ci,Cj)) {                                     // If first cell is larger or equal
+      task_group tg;                                            //  Create task group
+      for( C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; ++CC ) {// Loop over first cell's children 
+        if( CC->NDLEAF > 10000 ) tg.run([=]{recursiveTraverse(CC,Cj,mutual);});// Create a new task and recurse
+        else recursiveTraverse(CC,Cj,mutual);                   //    Recurse without creating new task
+      }                                                         //   End loop over first cell's children
+      tg.wait();                                                //  Wait for task group to finish
+    } else {                                                    // If second cell is larger
+      for( C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; ++CC ) {// Loop over second cell's children
+        recursiveTraverse(Ci,CC,mutual);                        //   Recurse without creating new task
+      }                                                         //  End loop over second cell's children
+    }                                                           // End if for which cell to split
+  }
+#endif
+
+  void applyMAC(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual) {
+    vec3 dX = Ci->X - Cj->X - Xperiodic;
+    real_t R2 = norm(dX);
+#if DUAL
+    {
+#else
+    if(Ci->RCRIT != Cj->RCRIT) {
+      splitCell(Ci,Cj,pairQueue);
+    } else {
+#endif
+      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+        approximate(Ci,Cj,mutual);
+      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
+        if( Cj->NCLEAF == 0 ) {
+          approximate(Ci,Cj,mutual);
+        } else {
+          P2P(Ci,Cj,mutual);
+          count(NP2P);
+        }
+      } else {
+        splitCell(Ci,Cj,pairQueue);
+      }
+    }
+  }
+
+#if MTHREADS
+  void applyMAC(C_iter Ci, C_iter Cj, bool mutual) {
+    vec3 dX = Ci->X - Cj->X - Xperiodic;
+    real_t R2 = norm(dX);
+#if DUAL
+    {
+#else
+    if(Ci->RCRIT != Cj->RCRIT) {
+      splitCell(Ci,Cj,mutual);
+    } else {
+#endif
+      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
+        approximate(Ci,Cj,mutual);
+      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
+        if( Cj->NCLEAF == 0 ) {
+          approximate(Ci,Cj,mutual);
+        } else {
+          P2P(Ci,Cj,mutual);
+          count(NP2P);
+        }
+      } else {
+        splitCell(Ci,Cj,mutual);
+      }
+    }
+  }
+#endif // MTHREADS
 
 protected:
 //! Set center of expansion to center of mass
@@ -114,7 +177,7 @@ protected:
       for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {// Loop over target cell's children
         pushCell(Ci,cellQueue);                                 //   Push target cell's child to queue
         for( C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {//  Loop over upper half of source cell's children
-          applyMAC(Ci,Cj,pairQueue);                            //    Apply multipole acceptance criterion to pair 
+          applyMAC(Ci,Cj,pairQueue,true);                       //    Apply multipole acceptance criterion to pair 
         }                                                       //   End loop over source cell's children
       }                                                         //  End loop over target cell's children
       traverse(pairQueue,true);                                 //  Traverse tree for all the pairs that were created
@@ -126,7 +189,7 @@ protected:
 #if MTHREADS
     Pair pair = pairQueue.front();
     pairQueue.pop_back();
-    recursiveTraverse(pair.first,pair.second,mutual);
+    applyMAC(pair.first,pair.second,mutual);
 #else
 #if QUARK
     Quark *quark = QUARK_New(12);
@@ -134,19 +197,9 @@ protected:
     while( !pairQueue.empty() ) {
       Pair pair = pairQueue.front();
       pairQueue.pop_front();
-      if(splitFirst(pair.first,pair.second)) {
-        C_iter C = pair.first;
-        for( C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; ++Ci ) {
-          applyMAC(Ci,pair.second,pairQueue,mutual);
-        }
-      } else {
-        C_iter C = pair.second;
-        for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {
-          applyMAC(pair.first,Cj,pairQueue,mutual);
-        }
-      }
+      applyMAC(pair.first,pair.second,pairQueue,mutual);
 #if QUARK
-      if( int(pairQueue.size()) > Ci0->NDLEAF / 100 ) {
+      if( int(pairQueue.size()) > Ci0->NDLEAF / 50 ) {
         while( !pairQueue.empty() ) {
           pair = pairQueue.front();
           pairQueue.pop_front();
@@ -154,7 +207,7 @@ protected:
         }
       }
 #else
-      if( int(pairQueue.size()) > Ci0->NDLEAF / 100 ) {
+      if( int(pairQueue.size()) > Ci0->NDLEAF / 50 ) {
 #if OPENMP
 #pragma omp parallel for schedule(dynamic)
 #endif
@@ -172,52 +225,7 @@ protected:
 #endif // MTHREADS
   }
 
-#if MTHREADS
-  void recursiveTraverse(C_iter Ci, C_iter Cj, bool mutual) {
-    vec3 dX = Ci->X - Cj->X - Xperiodic;
-    real_t R2 = norm(dX);
-#if DUAL
-    {
-#else
-    if(Ci->RCRIT != Cj->RCRIT) {
-      if(splitFirst(Ci,Cj)) {
-        task_group tg;
-        for( C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; ++CC ) {
-          if( CC->NDLEAF > 10000 ) tg.run([=]{recursiveTraverse(CC,Cj,mutual);});
-          else recursiveTraverse(CC,Cj,mutual);
-        }
-        tg.wait();
-      } else {
-        for( C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; ++CC ) {
-          recursiveTraverse(Ci,CC,mutual);
-        }
-      }
-    } else {
-#endif
-      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
-        approximate(Ci,Cj,mutual);
-      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {
-        P2P(Ci,Cj,mutual);
-        count(NP2P);
-      } else {
-        if(splitFirst(Ci,Cj)) {
-          task_group tg;
-          for( C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; ++CC ) {
-            if( CC->NDLEAF > 10000 ) tg.run([=]{recursiveTraverse(CC,Cj,mutual);});
-            else recursiveTraverse(CC,Cj,mutual);
-          }
-          tg.wait();
-        } else {
-          for( C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; ++CC ) {
-            recursiveTraverse(Ci,CC,mutual);
-          }
-        }
-      }
-    }
-  }
-#endif // MTHREADS
-
-//! Traverse tree for periodic cells
+//! Tree traversal of periodic cells
   void traversePeriodic(real_t R) {
     startTimer("Traverse periodic");                            // Start timer
     Xperiodic = 0;                                              // Periodic coordinate offset
@@ -272,36 +280,17 @@ public:
   Evaluator() : NP2P(0), NM2P(0), NM2L(0) {}
   ~Evaluator() {}
 
-  void applyMAC(C_iter Ci, C_iter Cj, PairQueue &pairQueue, bool mutual=true) {
-    vec3 dX = Ci->X - Cj->X - Xperiodic;
-    real_t R2 = norm(dX);
-#if DUAL
-    {
-#else
-    if(Ci->RCRIT != Cj->RCRIT) {
-      Pair pair(Ci,Cj);
-      pairQueue.push_back(pair);
-    } else {
-#endif
-      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {
-        approximate(Ci,Cj,mutual);
-      } else if(Ci->NCHILD==0 && Cj->NCHILD == 0) {
-        if( Cj->NCLEAF == 0 ) {
-          approximate(Ci,Cj,mutual);
-        } else {
-          P2P(Ci,Cj,mutual);
-          count(NP2P);
-        }
-      } else {
-        Pair pair(Ci,Cj);
-        pairQueue.push_back(pair);
-      }
-    }
+//! Traverse branch of tree
+  void traverseBranch(C_iter Ci, C_iter Cj, bool mutual) {
+    PairQueue privateQueue;                                     // Queue of interacting cell pairs
+    Pair pair(Ci,Cj);                                           // Form a pair of cell iterators
+    privateQueue.push_back(pair);                               // Push pair to queue
+    while( !privateQueue.empty() ) {                            // While dual traversal queue is not empty
+      pair = privateQueue.front();                              //  Get interaction pair from front of queue
+      privateQueue.pop_front();                                 //  Pop dual traversal queue
+      applyMAC(pair.first,pair.second,privateQueue,mutual);     //    Apply multipole acceptance criterion to pair
+    }                                                           // End while loop for traversal queue
   }
-
-#if QUARK
-  inline void traverseBranch(C_iter Ci, C_iter Cj, Quark *quark, bool mutual=true);
-#endif
 
   void timeKernels(bool mutual=true) {
     Bodies ibodies(1000), jbodies(1000);
@@ -332,34 +321,21 @@ public:
     timeM2P = stopTimer("M2P kernel") / 1000;
   }
 
+#if QUARK
+  inline void traverseBranch(C_iter Ci, C_iter Cj, Quark *quark, bool mutual);
+#endif
+
 };
 
 #if QUARK
 inline void traverseQuark(Quark *quark) {
   Evaluator *E;
-  C_iter CI, CJ, Ci0, Cj0;
+  C_iter Ci, Cj, Ci0, Cj0;
   bool mutual;
-  quark_unpack_args_6(quark,E,CI,CJ,Ci0,Cj0,mutual);
+  quark_unpack_args_6(quark,E,Ci,Cj,Ci0,Cj0,mutual);
   ThreadTrace beginTrace;
   E->startTracer(beginTrace);
-  PairQueue privateQueue;
-  Pair pair(CI,CJ);
-  privateQueue.push_back(pair);
-  while( !privateQueue.empty() ) {
-    pair = privateQueue.front();
-    privateQueue.pop_front();
-    if(splitFirst(pair.first,pair.second)) {
-      C_iter Ci = pair.first;
-      for( C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; ++CC ) {
-        E->applyMAC(CC,pair.second,privateQueue,mutual);
-      }
-    } else {
-      C_iter Cj = pair.second;
-      for( C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; ++CC ) {
-        E->applyMAC(pair.first,CC,privateQueue,mutual);
-      }
-    }
-  }
+  E->traverseBranch(Ci,Cj,mutual);
   E->stopTracer(beginTrace,0x0000ff);
 }
 
