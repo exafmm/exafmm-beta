@@ -120,8 +120,10 @@ static void exafmm_usage(char * progname) {
 	  "  split both cells on recursion when the two cells contain >= N particles (%d)\n"
 	  " --steps N :\n"
 	  "  set number of steps to N (%d)\n"
+#if 0
 	  " --parallelSplitThreshold N :\n"
 	  "  parallel recursion for >= N particles (%d)\n"
+#endif
 	  " --images [0/1] :\n"
 	  "  when set, periodic (%d)\n"
 	  " --theta T :\n"
@@ -136,8 +138,11 @@ static void exafmm_usage(char * progname) {
 	  "  check and show error of D particles (%d)\n"
 	  " --buildOnly [0/1] :\n"
 	  "  build tree and do not evaluate force (%d)\n"
+#if 0
 	  " --dumpcells [0/1] :\n"
-	  "  dump cells after building tree (%d)\n",
+	  "  dump cells after building tree (%d)\n"
+#endif
+	  ,
 	  progname,
 	  o.numBodies,
 	  o.distribution,
@@ -149,7 +154,9 @@ static void exafmm_usage(char * progname) {
 #endif
 	  o.splitBothThreshold,
 	  o.steps,
+#if 0
 	  o.parallelSplitThreshold,
+#endif
 	  o.images,
 	  o.theta,
 	  o.ncrit,
@@ -157,8 +164,10 @@ static void exafmm_usage(char * progname) {
 	  o.simdize,
 #endif
 	  o.evalError,
-	  o.buildOnly,
-	  o.dumpcells
+	  o.buildOnly
+#if 0
+	  , o.dumpcells
+#endif
 	  );
 }
 

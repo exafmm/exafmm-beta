@@ -10,7 +10,7 @@ serial	: serial.cxx
 serial_argv : serial_argv.cxx
 	make clean
 	$(CXX) -DCMDLINE_ARGS $? $(LFLAGS)
-	./a.out
+	./a.out --mutual 1 --parallelEverything 1 --splitBothThreshold 1000 --ncrit 32 --simdize sse 
 
 parallel: parallel.cxx
 	make clean

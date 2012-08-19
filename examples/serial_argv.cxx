@@ -85,32 +85,35 @@ int main(int argc, char ** argv) {
       FMM.buildTree(bodies,cells);
       FMM.upwardPass(cells);
 #endif
-      FMM.startPAPI();
+
+      if (o->buildOnly == 0) {
+	FMM.startPAPI();
 #if IneJ
 #if IMPL_MUTUAL
-      FMM.evaluate(cells,cells,o->mutual);
+	FMM.evaluate(cells,cells,o->mutual);
 #else
-      FMM.evaluate(cells,cells);
+	FMM.evaluate(cells,cells);
 #endif
 #else
-      FMM.evaluate(cells);
+	FMM.evaluate(cells);
 #endif
-      FMM.stopPAPI();
+	FMM.stopPAPI();
 #if PARALLEL_EVERYTHING
-      if (o->parallelEverything)
-	FMM.downwardPassRec(cells);
-      else
-	FMM.downwardPass(cells);
+	if (o->parallelEverything)
+	  FMM.downwardPassRec(cells);
+	else
+	  FMM.downwardPass(cells);
 #else
-      FMM.downwardPass(cells);
+	FMM.downwardPass(cells);
 #endif
+      }
       FMM.stopTimer("FMM",FMM.printNow);
       FMM.eraseTimer("FMM");
       FMM.writeTime();
       FMM.resetTimer();
     }
     
-    if (o->evalError) {
+    if (o->buildOnly == 0 && o->evalError) {
       jbodies = bodies;
       if (bodies.size() > o->evalError) bodies.resize(o->evalError);
       Bodies bodies2 = bodies;
