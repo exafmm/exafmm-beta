@@ -22,18 +22,32 @@
 #include <vector>
 #include "vec.h"
 
+#if CMDLINE_ARGS
+#include "exafmm_config.h"
+#endif
+
+#if SIMDIZATION
+#include <immintrin.h>
+#endif
+
 #if SSE
 #include <xmmintrin.h>
 #endif
 
-#if OPENMP
+#if 0
+#if _OPENMP
 #include <omp.h>
 #else
 int omp_get_thread_num() { return 0; }
 #endif
+#endif
 
+#if 0
 #if MTHREADS
 #include <task_group.h>
+#endif
+#else
+#include <common.cilkh>
 #endif
 
 #if PAPI
@@ -64,7 +78,11 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 #endif
 
 const int    P      = 3;                                        //!< Order of expansions
+#if CMDLINE_ARGS
+int    NCRIT  = 0;
+#else
 const int    NCRIT  = 10;                                       //!< Number of bodies per cell
+#endif
 const real_t EPS    = 1e-6;                                     //!< Single precision epsilon
 const real_t EPS2   = .0;                                       //!< Softening parameter (squared)
 

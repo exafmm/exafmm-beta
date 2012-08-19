@@ -8,6 +8,10 @@
 #define count(N)
 #endif
 
+#if IMPL_MUTUAL
+int splitBothThreshold = 0;
+#endif
+
 class Evaluator : public Kernel {
 private:
   real_t timeP2P;                                               //!< P2P execution time
@@ -18,6 +22,8 @@ protected:
   real_t NP2P;                                                  //!< Number of P2P kernel calls
   real_t NM2P;                                                  //!< Number of M2P kenrel calls
   real_t NM2L;                                                  //!< Number of M2L kernel calls
+
+  real_t NTRAVERSE;
 
 private:
 //! Calculate Bmax
@@ -61,6 +67,89 @@ private:
     }                                                           // End if for pushing cell
   }
 
+#if IMPL_MUTUAL
+
+  void traverseCells(C_iter Ci_beg, C_iter Ci_end, 
+		     C_iter Cj_beg, C_iter Cj_end, 
+		     bool mutual) {
+    if (Ci_end - Ci_beg == 1 || Cj_end - Cj_beg == 1) {
+      if (Ci_beg == Cj_beg) {
+	assert(Ci_end == Cj_end);
+	traverse(Ci_beg, Cj_beg, mutual);
+      } else {
+	for (C_iter Ci = Ci_beg; Ci != Ci_end; Ci++) {
+	  for (C_iter Cj = Cj_beg; Cj != Cj_end; Cj++) {
+	    traverse(Ci, Cj, mutual);
+	  }
+	}
+      }
+    } else {
+      C_iter Ci_mid = Ci_beg + (Ci_end - Ci_beg) / 2;
+      C_iter Cj_mid = Cj_beg + (Cj_end - Cj_beg) / 2;
+      __spawn_tasks__;
+#if _OPENMP
+#pragma omp task
+#endif
+      spawn_task0(traverseCells(Ci_beg, Ci_mid, Cj_beg, Cj_mid, mutual));
+#if _OPENMP
+#pragma omp task
+#endif
+      spawn_task0(traverseCells(Ci_mid, Ci_end, Cj_mid, Cj_end, mutual));
+#if _OPENMP
+#pragma omp taskwait
+#endif
+      __sync__;
+#if _OPENMP
+#pragma omp task
+#endif
+      spawn_task0(traverseCells(Ci_beg, Ci_mid, Cj_mid, Cj_end, mutual));
+      if (!mutual || Ci_beg != Cj_beg) {
+#if _OPENMP
+#pragma omp task
+#endif
+	spawn_task0(traverseCells(Ci_mid, Ci_end, Cj_beg, Cj_mid, mutual));
+      } else {
+	assert(Ci_end == Cj_end);
+      }
+#if _OPENMP
+#pragma omp taskwait
+#endif
+      __sync__;
+    }
+  }
+
+  void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
+    if (mutual && Ci == Cj) {
+      assert(Ci->NCHILD > 0);
+      traverseCells(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
+		    Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
+    } else if (Cj->NCHILD == 0) {
+      assert(Ci->NCHILD > 0);
+      for( C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ++ci ) {
+	traverse(ci,Cj,mutual);
+      }
+    } else if (Ci->NCHILD == 0) {
+      assert(Cj->NCHILD > 0);
+      for( C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; ++cj ) {
+	traverse(Ci,cj,mutual);
+      }
+    } else if (Ci->NDLEAF + Cj->NDLEAF >= splitBothThreshold) {
+      traverseCells(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
+		    Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
+    } else if (Ci->RCRIT >= Cj->RCRIT) {
+      for( C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ++ci ) {
+	traverse(ci,Cj,mutual);
+      } 
+    } else {
+      for( C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; ++cj ) {
+	traverse(Ci,cj,mutual);
+      }
+    }
+  }
+
+  
+#else  /* IMPL_MUTUAL */
+
 //! Split cell and call function recursively for child
   void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
     if(splitFirst(Ci,Cj)) {                                     // If first cell is larger or equal
@@ -71,7 +160,7 @@ private:
 #if MTHREADS
         if( CC->NDLEAF > 10000 ) tg.run([=]{traverse(CC,Cj,mutual);});// Create a new task and recurse
         else traverse(CC,Cj,mutual);                            //   Recurse without creating new task
-#elif OPENMP
+#elif _OPENMP
         if( CC->NDLEAF > 10000 ) {                              //   If task size is large enough
 #pragma omp task
           traverse(CC,Cj,mutual);                               //    Create a new task and recurse
@@ -89,6 +178,8 @@ private:
       }                                                         //  End loop over second cell's children
     }                                                           // End if for which cell to split
   }
+
+#endif  /* IMPL_MUTUAL */
 
 protected:
 //! Set center of expansion to center of mass
@@ -130,29 +221,50 @@ protected:
 
 //! Dual tree traversal of a pair of trees using a queue of pairs
   void traverse(C_iter Ci, C_iter Cj, bool mutual=false) {
+    count(NTRAVERSE);
+
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
 #if DUAL
     {                                                           // Dummy bracket
 #else
-    if(Ci->RCRIT != Cj->RCRIT) {                                // If cell is not at the same level
-      splitCell(Ci,Cj,mutual);                                  //  Split cell and call function recursively for child
-    } else {                                                    // If we don't care if cell is not at the same level
+      if(Ci->RCRIT != Cj->RCRIT) {                                // If cell is not at the same level
+	splitCell(Ci,Cj,mutual);                                  //  Split cell and call function recursively for child
+      } else {                                                   // If we don't care if cell is not at the same level
 #endif
-      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {    //  If distance is far enough
-        approximate(Ci,Cj,mutual);                              //   Use approximate kernels, e.g. M2L, M2P
-      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {           //  Else if both cells are leafs
-        if( Cj->NCLEAF == 0 ) {                                 //   If the leafs weren't sent from remote node
-          approximate(Ci,Cj,mutual);                            //    Use approximate kernels, e.g. M2L, M2P
-        } else {                                                //   Else if the leafs were sent
-          P2P(Ci,Cj,mutual);                                    //    P2P kernel
-          count(NP2P);                                          //    Increment P2P counter
-        }                                                       //   End if for leafs
-      } else {                                                  //  Else if cells are close but not leafs
-        splitCell(Ci,Cj,mutual);                                //   Split cell and call function recursively for child
-      }                                                         //  End if for multipole acceptance
-    }                                                           // End if for same level cells
+
+#if IMPL_MUTUAL
+	if (mutual && Ci == Cj) {
+	  if (Ci->NCHILD == 0) {
+	    P2P(Ci);
+	    count(NP2P);                                          //    Increment P2P counter
+	  } else {
+	    splitCell(Ci,Cj,mutual);
+	  }
+	} else {
+#endif
+	  if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {    //  If distance is far enough
+	    approximate(Ci,Cj,mutual);                              //   Use approximate kernels, e.g. M2L, M2P
+	  } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {           //  Else if both cells are leafs
+	    if( Cj->NCLEAF == 0 ) { //   If the leafs weren't sent from remote node
+	      approximate(Ci,Cj,mutual);                            //    Use approximate kernels, e.g. M2L, M2P
+	    } else {                                                //   Else if the leafs were sent
+	      P2P(Ci,Cj,mutual);                                    //    P2P kernel
+	      count(NP2P);                                          //    Increment P2P counter
+	    }                                                  //   End if for leafs
+	  } else {                                                  //  Else if cells are close but not leafs
+	    splitCell(Ci,Cj,mutual);	//   Split cell and call function recursively for child
+	  }                                                        //  End if for multipole acceptance
+#if IMPL_MUTUAL
+	}
+#endif
+#if DUAL
+      }                                                           // End if for same level cells
+#else
+    }
+#endif
   }
+
 
 //! Tree traversal of periodic cells
   void traversePeriodic(real_t R) {

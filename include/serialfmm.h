@@ -32,6 +32,96 @@ private:
     }                                                           // End loop over top 2 levels of cells
   }
 
+#if PARALLEL_EVERYTHING
+  //! set RCRIT of cell C; 
+  //! if level is 0 or 1, RCRIT is multiplied by 10 */
+  void setRcrit1(C_iter C, int level, real_t root_coefficient) {
+    real_t x = 1.0 / THETA;
+#if ERROR_OPT
+    real_t a = root_coefficient * pow(std::abs(C->M[0]),1.0/3);
+    for( int i=0; i<5; ++i ) {
+      real_t f = x * x - 2 * x + 1 - a * pow(x,-P);
+      real_t df = (P + 2) * x - 2 * (P + 1) + P / x;
+      x -= f / df;
+    }
+#endif
+    C->RCRIT *= x;
+    if (level <= 1) C->RCRIT *= 10; /* Prevent approximation */
+  }
+
+  //! Y := component-wise minimum of X and Y
+  inline void vec3_min(vec3& X, vec3& Y) {
+    if (X[0] < Y[0]) Y[0] = X[0];
+    if (X[1] < Y[1]) Y[1] = X[1];
+    if (X[2] < Y[2]) Y[2] = X[2];
+  }
+
+  //! Y := component-wise maximum of X and Y
+  inline void vec3_max(vec3& X, vec3& Y) {
+    if (X[0] > Y[0]) Y[0] = X[0];
+    if (X[1] > Y[1]) Y[1] = X[1];
+    if (X[2] > Y[2]) Y[2] = X[2];
+  }
+
+  //! get bounds of bodies in [B0,B1), in parallel
+  //! return the pair of minimum and maximum
+  std::pair<vec3,vec3> getBoundsRec(B_iter B0, B_iter B1) {
+    assert(B1 - B0 > 0);
+    if (B1 - B0 < 1000) {
+      vec3 xmin = B0->X, xmax = B0->X;
+      for( B_iter B=B0; B!=B1; ++B ) {
+	vec3_min(B->X, xmin);
+	vec3_max(B->X, xmax);
+      }
+      return std::pair<vec3,vec3>(xmin, xmax);
+    } else {
+      int nh = (B1 - B0) / 2;
+      std::pair<vec3,vec3> vt0 = getBoundsRec(B0, B0 + nh);
+      std::pair<vec3,vec3> vt1 = getBoundsRec(B0 + nh, B1);
+      vec3_min(vt1.first, vt0.first);
+      vec3_max(vt1.second, vt0.second);
+      return vt0;
+    }
+  }
+
+  void upwardPassRec1(C_iter C, C_iter C0) {
+    __spawn_tasks__;
+    for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+      spawn_task0(spawn upwardPassRec1(CC, C0));
+    }
+    __sync__;
+    C->M = 0;
+    C->L = 0;
+    real_t Rmax = 0;
+    setCenter(C);
+    P2M(C,Rmax);
+    M2M(C,Rmax);
+  }
+
+  void upwardPassRec2(C_iter C, C_iter C0, int level, real_t root_coefficient) {
+    __spawn_tasks__;
+    for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+      spawn_task0(spawn upwardPassRec2(CC, C0, level + 1, root_coefficient));
+    }
+    __sync__;
+#if Cartesian
+    for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
+#endif
+    setRcrit1(C, level, root_coefficient);
+  }
+
+  void downwardPassRec1(C_iter C, C_iter C0) const {
+    L2L(C);
+    L2P(C);
+    __spawn_tasks__;
+    for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+      spawn_task0(spawn downwardPassRec1(CC, C0));
+    }
+    __sync__;
+  }
+
+#endif
+
 public:
 //! Set center and size of root cell
   void setBounds(Bodies &bodies) {
@@ -63,12 +153,46 @@ public:
     stopTimer("Set bounds",printNow);                           // Stop timer
   }
 
+#if PARALLEL_EVERYTHING
+  void setBoundsRec(Bodies &bodies) {
+    startTimer("Set bounds");
+    std::pair<vec3,vec3> vt = getBoundsRec(bodies.begin(), bodies.end());
+    localXmin = vt.first;
+    localXmax = vt.second;
+    localCenter = (localXmax + localXmin) / 2;                  //  Calculate center of domain
+    for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
+      localRadius = std::min(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
+      localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
+    }                                                           // End loop over dimensions
+    localRadius *= 1.00001;                                     // Add some leeway to radius
+    if( IMAGES == 0 ) {                                         // If non-periodic boundary condition
+      globalRadius = localRadius;                               //  Set global radius for serial run
+      globalCenter = localCenter;                               //  Set global center for serial run
+      globalXmin = localXmin;                                   //  Set global Xmin for serial run
+      globalXmax = localXmax;                                   //  Set global Xmax for serial run
+    } else {                                                    // If periodic boundary condition
+      globalRadius = M_PI;                                      //  Set global radius
+      globalCenter = 0;                                         //  Set global radius
+      globalXmin = -M_PI;                                       //  Set global Xmin
+      globalXmax = M_PI;                                        //  Set global Xmax
+    }                                                           // End if for periodic boundary condition
+    stopTimer("Set bounds",printNow);
+  }
+#endif
+
 //! Build tree structure top down
   void buildTree(Bodies &bodies, Cells &cells) {
     setLeafs(bodies);                                           // Copy bodies to leafs
     growTree();                                                 // Grow tree from root
     linkTree(bodies,cells);                                     // Form parent-child links in tree
   }
+
+#if PARALLEL_EVERYTHING
+  void buildTreeRec(Bodies &bodies, Bodies &t_bodies, Cells &cells) {
+    growTreeRec(bodies,t_bodies);                                                 // Grow tree from root
+    linkTreeRec(bodies,cells);                                     // Form parent-child links in tree
+  }
+#endif
 
 //! Upward pass (P2M, M2M)
   void upwardPass(Cells &cells) {
@@ -92,13 +216,25 @@ public:
     stopTimer("Upward pass",printNow);                          // Stop timer
   }
 
+#if PARALLEL_EVERYTHING
+  void upwardPassRec(Cells &cells) {
+    startTimer("Upward pass");
+    Ci0 = cells.begin();                                        // Set iterator of target root cell
+    Cj0 = cells.begin();                                        // Set iterator of source root cell
+    upwardPassRec1(Ci0, Ci0);
+    real_t c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(Ci0->M[0]),1.0/3);
+    upwardPassRec2(Ci0, Ci0, 0, c);
+    stopTimer("Upward pass",printNow);
+  }
+#endif
+
 //! Interface for tree traversal when I = J (M2L, P2P)
   void evaluate(Cells &cells) {
     Ci0 = cells.begin();                                        // Set iterator of target root cell
     Cj0 = cells.begin();                                        // Set iterator of source root cell
     Xperiodic = 0;                                              // No periodic shift
     startTimer("Traverse");                                     // Start timer
-#if OPENMP
+#if _OPENMP
 #pragma omp parallel
 #pragma omp single
 #endif
@@ -107,17 +243,25 @@ public:
   }
 
 //! Interface for tree traversal when I != J (M2L, P2P)
-  void evaluate(Cells &icells, Cells &jcells) {
+  void evaluate(Cells &icells, Cells &jcells
+#if IMPL_MUTUAL
+		, bool mutual
+#endif
+		) {
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     startTimer("Traverse");                                     // Start timer
-#if OPENMP
+#if _OPENMP
 #pragma omp parallel
 #pragma omp single
 #endif
     if( IMAGES == 0 ) {                                         // If non-periodic boundary condition
       Xperiodic = 0;                                            //  No periodic shift
-      traverse(Ci0,Cj0);                                        //  Traverse the tree
+#if IMPL_MUTUAL
+      traverse(Ci0,Cj0,mutual);	//  Traverse the tree
+#else
+      traverse(Ci0,Cj0);	//  Traverse the tree
+#endif
     } else {                                                    // If periodic boundary condition
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
@@ -125,7 +269,11 @@ public:
             Xperiodic[0] = ix * 2 * globalRadius;               //     Coordinate shift for x periodic direction
             Xperiodic[1] = iy * 2 * globalRadius;               //     Coordinate shift for y periodic direction
             Xperiodic[2] = iz * 2 * globalRadius;               //     Coordinate shift for z periodic direction
-            traverse(Ci0,Cj0);                                  //     Traverse a pair of trees
+#if IMPL_MUTUAL
+            traverse(Ci0,Cj0,mutual);                           //     Traverse a pair of trees
+#else
+            traverse(Ci0,Cj0);
+#endif
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
@@ -146,6 +294,19 @@ public:
     stopTimer("Downward pass",printNow);                        // Stop timer
     if(printNow) printTreeData(cells);                          // Print tree data
   }
+
+#if PARALLEL_EVERYTHING
+  void downwardPassRec(Cells &cells) const { 
+    C_iter C0 = cells.begin();
+    C_iter C = C0;
+    L2P(C);
+    __spawn_tasks__;
+    for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+      spawn_task0(spawn downwardPassRec1(CC, C0));
+    }
+    __sync__;
+  }
+#endif
 
 //! Direct summation
   void direct(Bodies &ibodies, Bodies &jbodies) {
