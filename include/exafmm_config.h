@@ -7,7 +7,6 @@
 struct exafmm_config {
   int numBodies;
   const char * distribution;	// cube, lattice, sphere, plummer
-  const char * treebuilder;	// topdown, recursive
 #if IMPL_MUTUAL
   int mutual;
 #endif
@@ -31,7 +30,6 @@ struct exafmm_config {
 static struct option exafmm_options[] = {
   {"numBodies",              1, 0, 'n'},
   {"distribution",           1, 0, 0},
-  {"treebuilder",            1, 0, 0},
 #if IMPL_MUTUAL
   {"mutual",                 1, 0, 0},
 #endif
@@ -56,7 +54,6 @@ static struct option exafmm_options[] = {
 static void show_exafmm_config(exafmm_config * o) {
   printf("numBodies: %d\n", o->numBodies);
   printf("distribution: %s\n", o->distribution);
-  printf("treebuilder: %s\n", o->treebuilder);
 #if IMPL_MUTUAL
   printf("mutual: %d\n", o->mutual);
 #endif
@@ -81,7 +78,6 @@ static exafmm_config mk_default_exafmm_config() {
   exafmm_config o;
   o.numBodies = 1000000;
   o.distribution = "cube";
-  o.treebuilder = "topdown";
 #if IMPL_MUTUAL
   o.mutual = 0;
 #endif
@@ -145,7 +141,6 @@ static void exafmm_usage(char * progname) {
 	  progname,
 	  o.numBodies,
 	  o.distribution,
-	  o.treebuilder,
 #if IMPL_MUTUAL
 	  o.mutual,
 #endif
@@ -228,18 +223,6 @@ static const char * parse_distribution(const char * arg) {
   }
 }
 
-static const char * parse_treebuilder(const char * arg) {
-  switch (arg[0]) {
-  case 't':
-    return "topdown";
-  case 'r':
-    return "recursive";
-  default:
-    fprintf(stderr, "invalid treebuilder %s\n", arg);
-    return NULL;
-  }
-}
-
 #if SIMDIZATION
 static simdize_option parse_simdize_option(const char * arg) {
   switch (arg[0]) {
@@ -276,9 +259,6 @@ static exafmm_config * parse_cmdline_args(int argc, char ** argv, exafmm_config 
 	if (strcmp(name, "distribution") == 0) {
 	  o->distribution = parse_distribution(optarg);
 	  if (o->distribution == NULL) return NULL;
-	} else if (strcmp(name, "treebuilder") == 0) {
-	  o->treebuilder = parse_treebuilder(optarg);
-	  if (o->treebuilder == NULL) return NULL;
 #if IMPL_MUTUAL
 	} else if (strcmp(name, "mutual") == 0) {
 	  if (!safe_atoi(optarg, &o->mutual)) return NULL;
