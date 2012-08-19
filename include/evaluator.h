@@ -113,23 +113,37 @@ private:
     }
   }
 
+  /* call traverse with either:
+     Ci and Cj's children,
+     Ci's children and Cj, or
+     Ci's children and Cj's children, 
+     depending on situation.
+     it is guaranteed that either Ci or Cj have children. */
   void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
-    if (mutual && Ci == Cj) {
-      assert(Ci->NCHILD > 0);
-      traverseCells(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
-		    Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual,
-		    Ci->NDLEAF + Cj->NDLEAF >= splitParallelThreshold);
-    } else if (Cj->NCHILD == 0) {
+    if (Cj->NCHILD == 0) {
+      /* Cj is leaf, so Ci is not.
+	 call traverse on Ci's children and Cj */
       assert(Ci->NCHILD > 0);
       for( C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ++ci ) {
 	traverse(ci,Cj,mutual);
       }
     } else if (Ci->NCHILD == 0) {
+      /* Ci is leaf, so Cj is not.
+	 call traverse on Ci and Cj's children */
       assert(Cj->NCHILD > 0);
       for( C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; ++cj ) {
 	traverse(Ci,cj,mutual);
       }
-    } else if (Ci->NDLEAF + Cj->NDLEAF >= splitBothThreshold) {
+    } else if (Ci->NDLEAF + Cj->NDLEAF >= splitBothThreshold
+	       || (mutual && Ci == Cj)) {
+      /* none are leaves.
+	 when mutual=true and Ci == Cj, we call traverse
+	 on Ci's children and Cj's children, and MUST guarantee
+	 both (ci,cj) and (cj,ci) are not called. it is done
+	 inside traverseCells.
+	 when Ci->NDLEAF + Cj->NDLEAF is large enough, we bet
+	 splitting both will be necessary any ways, so we split
+	 both here and enjoy parallelization */
       traverseCells(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
 		    Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual,
 		    Ci->NDLEAF + Cj->NDLEAF >= splitParallelThreshold);
@@ -229,32 +243,22 @@ protected:
 	splitCell(Ci,Cj,mutual);                                  //  Split cell and call function recursively for child
       } else {                                                   // If we don't care if cell is not at the same level
 #endif
-
-#if IMPL_MUTUAL
-	if (mutual && Ci == Cj) {
-	  if (Ci->NCHILD == 0) {
-	    P2P(Ci);
-	    count(NP2P);                                          //    Increment P2P counter
-	  } else {
-	    splitCell(Ci,Cj,mutual);
-	  }
-	} else {
-#endif
-	  if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {    //  If distance is far enough
-	    approximate(Ci,Cj,mutual);                              //   Use approximate kernels, e.g. M2L, M2P
-	  } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {           //  Else if both cells are leafs
-	    if( Cj->NCLEAF == 0 ) { //   If the leafs weren't sent from remote node
-	      approximate(Ci,Cj,mutual);                            //    Use approximate kernels, e.g. M2L, M2P
-	    } else {                                                //   Else if the leafs were sent
+	if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {    //  If distance is far enough
+	  approximate(Ci,Cj,mutual);                              //   Use approximate kernels, e.g. M2L, M2P
+	} else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {           //  Else if both cells are leafs
+	  if( Cj->NCLEAF == 0 ) { //   If the leafs weren't sent from remote node
+	    approximate(Ci,Cj,mutual);                            //    Use approximate kernels, e.g. M2L, M2P
+	  } else {                                                //   Else if the leafs were sent
+	    if (Ci == Cj) {
+	      P2P(Ci);
+	    } else {
 	      P2P(Ci,Cj,mutual);                                    //    P2P kernel
-	      count(NP2P);                                          //    Increment P2P counter
-	    }                                                  //   End if for leafs
-	  } else {                                                  //  Else if cells are close but not leafs
-	    splitCell(Ci,Cj,mutual);	//   Split cell and call function recursively for child
-	  }                                                        //  End if for multipole acceptance
-#if IMPL_MUTUAL
-	}
-#endif
+	    }
+	    count(NP2P);                                          //    Increment P2P counter
+	  }                                                  //   End if for leafs
+	} else {                                                  //  Else if cells are close but not leafs
+	  splitCell(Ci,Cj,mutual);	//   Split cell and call function recursively for child
+	}                                                        //  End if for multipole acceptance
 #if DUAL
       }                                                           // End if for same level cells
 #else
