@@ -34,7 +34,7 @@ private:
 
 #if PARALLEL_EVERYTHING
   //! set RCRIT of cell C; 
-  //! if level is 0 or 1, RCRIT is multiplied by 10 */
+  //! if level is 0 or 1, RCRIT is multiplied by 10
   void setRcrit1(C_iter C, int level, real_t root_coefficient) {
     real_t x = 1.0 / THETA;
 #if ERROR_OPT
@@ -46,7 +46,7 @@ private:
     }
 #endif
     C->RCRIT *= x;
-    if (level <= 1) C->RCRIT *= 10; /* Prevent approximation */
+    if (level <= 1) C->RCRIT *= 10;                             // Prevent approximation
   }
 
   //! Y := component-wise minimum of X and Y
@@ -278,9 +278,7 @@ public:
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     startTimer("Traverse");                                     // Start timer
-#if !defined(PARALLEL_EVERYTHING)
-    /* when parallelizing other phases,
-       put them in the main function */
+#if !defined(PARALLEL_EVERYTHING)                               // When parallelizing other phases, put them in the main function
 #if _OPENMP
 #pragma omp parallel
 #pragma omp single

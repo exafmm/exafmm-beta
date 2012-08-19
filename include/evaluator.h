@@ -113,37 +113,33 @@ private:
     }
   }
 
-  /* call traverse with either:
-     Ci and Cj's children,
-     Ci's children and Cj, or
-     Ci's children and Cj's children, 
-     depending on situation.
-     it is guaranteed that either Ci or Cj have children. */
+// call traverse with either:
+//	Ci and Cj's children,
+//	Ci's children and Cj, or
+//	Ci's children and Cj's children, 
+//	depending on situation.
+//	it is guaranteed that either Ci or Cj have children.
   void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
-    if (Cj->NCHILD == 0) {
-      /* Cj is leaf, so Ci is not.
-	 call traverse on Ci's children and Cj */
+    if (Cj->NCHILD == 0) {// Cj is leaf, so Ci is not. Call traverse on Ci's children and Cj
       assert(Ci->NCHILD > 0);
       for( C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ++ci ) {
 	traverse(ci,Cj,mutual);
       }
-    } else if (Ci->NCHILD == 0) {
-      /* Ci is leaf, so Cj is not.
-	 call traverse on Ci and Cj's children */
+    } else if (Ci->NCHILD == 0) {// Ci is leaf, so Cj is not. Call traverse on Ci and Cj's children
       assert(Cj->NCHILD > 0);
       for( C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; ++cj ) {
 	traverse(Ci,cj,mutual);
       }
     } else if (Ci->NDLEAF + Cj->NDLEAF >= splitBothThreshold
 	       || (mutual && Ci == Cj)) {
-      /* none are leaves.
-	 when mutual=true and Ci == Cj, we call traverse
-	 on Ci's children and Cj's children, and MUST guarantee
-	 both (ci,cj) and (cj,ci) are not called. it is done
-	 inside traverseCells.
-	 when Ci->NDLEAF + Cj->NDLEAF is large enough, we bet
-	 splitting both will be necessary any ways, so we split
-	 both here and enjoy parallelization */
+// none are leaves.
+//	 when mutual=true and Ci == Cj, we call traverse
+//	 on Ci's children and Cj's children, and MUST guarantee
+//	 both (ci,cj) and (cj,ci) are not called. it is done
+//	 inside traverseCells.
+//	 when Ci->NDLEAF + Cj->NDLEAF is large enough, we bet
+//	 splitting both will be necessary any ways, so we split
+//	 both here and enjoy parallelization
       traverseCells(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
 		    Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual,
 		    Ci->NDLEAF + Cj->NDLEAF >= splitParallelThreshold);
@@ -159,7 +155,7 @@ private:
   }
 
   
-#else  /* IMPL_MUTUAL */
+#else  // IMPL_MUTUAL
 
 //! Split cell and call function recursively for child
   void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
@@ -190,7 +186,7 @@ private:
     }                                                           // End if for which cell to split
   }
 
-#endif  /* IMPL_MUTUAL */
+#endif  // IMPL_MUTUAL
 
 protected:
 //! Set center of expansion to center of mass

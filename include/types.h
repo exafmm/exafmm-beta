@@ -89,7 +89,7 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 
 const int    P      = 3;                                        //!< Order of expansions
 #if CMDLINE_ARGS
-int    NCRIT  = 10;
+int          NCRIT  = 10;
 #else
 const int    NCRIT  = 10;                                       //!< Number of bodies per cell
 #endif

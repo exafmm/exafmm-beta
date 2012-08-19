@@ -964,8 +964,7 @@ public:
     B_iter Bi = Ci->LEAF;
     B_iter Bj = Cj->LEAF;
     int i = 0;
-    /* vector length = 8 */
-#if __AVX__
+#if __AVX__ // vector length = 8
     if (SIMDIZE >= simdize_avx) {
       for( ; i + 8 <= Ci->NDLEAF; i += 8 ) {
 	real_8 P0 = _mm256_setzero_ps();
@@ -1007,10 +1006,9 @@ public:
 	}
       }
     }
-#endif	/* __AVX__ */
+#endif // __AVX__
 
-#if __SSE3__
-    /* vector length = 4 */
+#if __SSE3__ // vector length = 4
     if (SIMDIZE >= simdize_sse) {
       for( ; i + 4 <= Ci->NDLEAF; i += 4 ) {
 	real_4 P0 = _mm_setzero_ps();
@@ -1052,8 +1050,7 @@ public:
       }
     }
 #endif
-
-    /* vector length = 1 */
+// vector length = 1
     for( ; i < Ci->NDLEAF; i++ ) {
       real_t P0 = 0;
       vec3 F0 = 0;
@@ -1085,8 +1082,7 @@ public:
     B_iter B=C->LEAF;
     int n = C->NDLEAF;
     int i = 0;
-#if __AVX__
-    /* vector length 8 */
+#if __AVX__ // vector length 8
     if (SIMDIZE >= simdize_avx) {
       for( ; i + 8 <= n; i += 8 ) {
 	real_8 P0 = _mm256_setzero_ps();
@@ -1129,10 +1125,9 @@ public:
 	}
       }
     }
-#endif	/* __AVX__ */
+#endif // __AVX__
 
-#if __SSE3__
-    /* vector length 4 */
+#if __SSE3__ // vector length 4
     if (SIMDIZE >= simdize_sse) {
       for( ; i + 4 <= n; i += 4 ) {
 	real_4 P0 = _mm_setzero_ps();
@@ -1171,9 +1166,8 @@ public:
 	}
       }
     }
-#endif	/* __SSE3__ */
-
-    /* vector length 1 */
+#endif // __SSE3__
+// vector length 1
     for( ; i < n; i++ ) {
       real_t P0 = 0;
       vec3 F0 = 0;
@@ -1331,7 +1325,7 @@ public:
     }
   }
 
-#else  /* SSE */
+#else // SSE
 
   void P2P(C_iter Ci, C_iter Cj, bool mutual=true) const {
     for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {
@@ -1358,7 +1352,7 @@ public:
     }
   }
 
-#endif	/* SSE */
+#endif // SSE
 
   void P2P(C_iter C) const {
     int NJ = C->NDLEAF;
@@ -1386,7 +1380,7 @@ public:
     }
   }
 
-#endif	/* SIMDIZATION */
+#endif // SIMDIZATION
 
   void P2M(C_iter C, real_t &Rmax) const {
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {

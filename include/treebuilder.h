@@ -230,13 +230,13 @@ protected:
     return n;
   }
 
-  /* maximum ivec8 nodes for n bodies */
+//! maximum ivec8 nodes for n bodies
   int max_ivec8_nodes_to_count(int n, int leaf_len) {
     if (n <= leaf_len) return 1;
     else return 1 + 8 * max_ivec8_nodes_to_count((n + 7) / 8, leaf_len);
   }
 
-  /* maximum ivec8 nodes for n bodies */
+//! maximum ivec8 nodes for n bodies
   int max_ivec8_nodes_to_build(int n, int leaf_len) {
     long d = 7 * leaf_len;
     return (64 * n + d - 1) / d;
