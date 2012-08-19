@@ -70,17 +70,23 @@ private:
     if (B1 - B0 < 1000) {
       vec3 xmin = B0->X, xmax = B0->X;
       for( B_iter B=B0; B!=B1; ++B ) {
-
-	B->TRG = 0;
-
 	vec3_min(B->X, xmin);
 	vec3_max(B->X, xmax);
       }
       return std::pair<vec3,vec3>(xmin, xmax);
     } else {
       int nh = (B1 - B0) / 2;
-      std::pair<vec3,vec3> vt0 = getBoundsRec(B0, B0 + nh);
-      std::pair<vec3,vec3> vt1 = getBoundsRec(B0 + nh, B1);
+      __spawn_tasks__;
+      std::pair<vec3,vec3> vt0, vt1;
+#if _OPENMP
+#pragma omp task
+#endif
+      spawn_task1(vt0, vt0 = spawn getBoundsRec(B0, B0 + nh));
+      call_task(vt1 = getBoundsRec(B0 + nh, B1));
+#if _OPENMP
+#pragma omp taskwait
+#endif
+      __sync__;
       vec3_min(vt1.first, vt0.first);
       vec3_max(vt1.second, vt0.second);
       return vt0;
@@ -272,9 +278,13 @@ public:
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     startTimer("Traverse");                                     // Start timer
+#if !defined(PARALLEL_EVERYTHING)
+    /* when parallelizing other phases,
+       put them in the main function */
 #if _OPENMP
 #pragma omp parallel
 #pragma omp single
+#endif
 #endif
     if( IMAGES == 0 ) {                                         // If non-periodic boundary condition
       Xperiodic = 0;                                            //  No periodic shift

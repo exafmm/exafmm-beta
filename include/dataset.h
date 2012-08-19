@@ -6,6 +6,30 @@ class Dataset {                                                 // Contains all 
 private:
   long filePosition;                                            // Position of file stream
 
+#if PARALLEL_EVERYTHING
+  void initTargetRec1(B_iter B_beg, B_iter B0, B_iter B1, bool IeqJ) {             // Initialize target values
+    if (B1 - B0 < 1000) {
+      for (B_iter B = B0; B < B1; B++) {
+	B->IBODY = B-B_beg;                              //  Tag body with initial index
+	B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
+	B->TRG = 0 * IeqJ;                                        //  Clear previous target values (IeqJ is dummy)
+      } 
+    } else {
+      int nh = (B1 - B0) / 2;
+      __spawn_tasks__;
+#if _OPENMP
+#pragma omp task
+#endif
+      spawn_task0(spawn initTargetRec1(B_beg, B0, B0 + nh, IeqJ));
+      call_task(spawn initTargetRec1(B_beg, B0 + nh, B1, IeqJ));
+#if _OPENMP
+#pragma omp taskwait
+#endif
+      __sync__;
+    }
+  }
+#endif
+
 public:
   Dataset() : filePosition(0) {}                                // Constructor
   ~Dataset() {}                                                 // Destructor
@@ -27,6 +51,14 @@ public:
       B->TRG = 0 * IeqJ;                                        //  Clear previous target values (IeqJ is dummy)
     }                                                           // End loop over bodies
   }
+
+#if PARALLEL_EVERYTHING
+  void initTargetRec(Bodies &bodies, bool IeqJ=true) {
+    initTargetRec1(bodies.begin(), bodies.begin(), bodies.end(), IeqJ);
+  }
+#endif
+
+
 
   void cube(Bodies &bodies, int seed=0, int numSplit=1) {       // Random distribution in [-1,1]^3 cube
     srand48(seed);                                              // Set seed for random number generator
