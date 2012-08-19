@@ -232,10 +232,7 @@ static const char * parse_distribution(const char * arg) {
   }
 }
 
-<<<<<<< local
-=======
 #if SIMDIZATION
->>>>>>> other
 static simdize_option parse_simdize_option(const char * arg) {
   switch (arg[0]) {
   case 'n':
