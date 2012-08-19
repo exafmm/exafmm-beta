@@ -1097,6 +1097,8 @@ public:
 	      - _mm256_set1_ps(B[j].X[d] + Xperiodic[d]);
 	  }
 	  real_8 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm256_set1_ps(EPS2);
+	  __m256 mask0 = _mm256_cmp_ps(_mm256_setr_ps(i,i+1,i+2,i+3,i+4,i+5,i+6,i+7), 
+				       _mm256_set1_ps(j), _CMP_LT_OQ);
 	  __m256 mask = _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ);
 	  real_8 invR2 = _mm256_and_ps(_mm256_set1_ps(1.0) / R2, mask);
 	  real_8 invR = _mm256_and_ps(_mm256_rsqrt_ps(R2), mask);
@@ -1140,7 +1142,8 @@ public:
 	      - _mm_set1_ps(B[j].X[d] + Xperiodic[d]);
 	  }
 	  real_4 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm_set1_ps(EPS2);
-	  __m128 mask = _mm_cmpgt_ps(R2, _mm_setzero_ps());
+	  __m128 mask0 = _mm_cmplt_ps(_mm_setr_ps(i, i+1, i+2, i+3), _mm_set1_ps(j));
+	  __m128 mask = _mm_and_ps(mask0, _mm_cmpgt_ps(R2, _mm_setzero_ps()));
 	  real_4 invR2 = _mm_and_ps(_mm_set1_ps(1.0) / R2, mask);
 	  real_4 invR = _mm_and_ps(_mm_rsqrt_ps(R2), mask);
 	  
