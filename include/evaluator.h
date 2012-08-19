@@ -9,7 +9,7 @@
 #endif
 
 #if IMPL_MUTUAL
-int splitBothThreshold = 0;
+int splitBothThreshold = (1 << 30);
 #endif
 
 class Evaluator : public Kernel {
@@ -90,11 +90,11 @@ private:
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(traverseCells(Ci_beg, Ci_mid, Cj_beg, Cj_mid, mutual));
+      spawn_task0(spawn traverseCells(Ci_beg, Ci_mid, Cj_beg, Cj_mid, mutual));
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(traverseCells(Ci_mid, Ci_end, Cj_mid, Cj_end, mutual));
+      call_task(spawn traverseCells(Ci_mid, Ci_end, Cj_mid, Cj_end, mutual));
 #if _OPENMP
 #pragma omp taskwait
 #endif
@@ -102,12 +102,12 @@ private:
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(traverseCells(Ci_beg, Ci_mid, Cj_mid, Cj_end, mutual));
+      spawn_task0(spawn traverseCells(Ci_beg, Ci_mid, Cj_mid, Cj_end, mutual));
       if (!mutual || Ci_beg != Cj_beg) {
 #if _OPENMP
 #pragma omp task
 #endif
-	spawn_task0(traverseCells(Ci_mid, Ci_end, Cj_beg, Cj_mid, mutual));
+	call_task(spawn traverseCells(Ci_mid, Ci_end, Cj_beg, Cj_mid, mutual));
       } else {
 	assert(Ci_end == Cj_end);
       }

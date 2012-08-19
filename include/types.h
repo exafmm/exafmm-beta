@@ -22,12 +22,18 @@
 #include <vector>
 #include "vec.h"
 
-#if CMDLINE_ARGS
-#include "exafmm_config.h"
+#if SIMDIZATION
+typedef enum {
+  simdize_none,
+  simdize_sse,
+  simdize_avx
+} simdize_option;
+
+#include <immintrin.h>
 #endif
 
-#if SIMDIZATION
-#include <immintrin.h>
+#if CMDLINE_ARGS
+#include "exafmm_config.h"
 #endif
 
 #if SSE
@@ -83,7 +89,7 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 
 const int    P      = 3;                                        //!< Order of expansions
 #if CMDLINE_ARGS
-int    NCRIT  = 0;
+int    NCRIT  = 10;
 #else
 const int    NCRIT  = 10;                                       //!< Number of bodies per cell
 #endif

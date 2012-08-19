@@ -917,7 +917,9 @@ inline void sumM2P<6>(B_iter B, const vecL &C, const vecM &M) {
 }
 
 #if SIMDIZATION
+#if __SSE3__
 typedef __m128 real_4;
+#endif
 #if __AVX__
 typedef __m256 real_8;
 #endif

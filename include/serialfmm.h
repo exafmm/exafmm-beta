@@ -272,7 +272,7 @@ public:
 //! Interface for tree traversal when I != J (M2L, P2P)
   void evaluate(Cells &icells, Cells &jcells
 #if IMPL_MUTUAL
-		, bool mutual
+		, bool mutual=false
 #endif
 		) {
     Ci0 = icells.begin();                                       // Set iterator of target root cell

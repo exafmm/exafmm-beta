@@ -4,12 +4,6 @@
 #include <unistd.h>
 #include <getopt.h>
 
-typedef enum {
-  simdize_none,
-  simdize_sse,
-  simdize_avx
-} simdize_option;
-
 struct exafmm_config {
   int numBodies;
   const char * distribution;	// cube, lattice, sphere, plummer
