@@ -90,8 +90,14 @@ private:
   void upwardPassRec1(C_iter C, C_iter C0) {
     __spawn_tasks__;
     for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+#if _OPENMP
+#pragma omp task
+#endif
       spawn_task0(spawn upwardPassRec1(CC, C0));
     }
+#if _OPENMP
+#pragma omp taskwait
+#endif
     __sync__;
     C->M = 0;
     C->L = 0;
@@ -104,8 +110,14 @@ private:
   void upwardPassRec2(C_iter C, C_iter C0, int level, real_t root_coefficient) {
     __spawn_tasks__;
     for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+#if _OPENMP
+#pragma omp task
+#endif
       spawn_task0(spawn upwardPassRec2(CC, C0, level + 1, root_coefficient));
     }
+#if _OPENMP
+#pragma omp taskwait
+#endif
     __sync__;
 #if Cartesian
     for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
@@ -118,8 +130,14 @@ private:
     L2P(C);
     __spawn_tasks__;
     for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+#if _OPENMP
+#pragma omp task
+#endif
       spawn_task0(spawn downwardPassRec1(CC, C0));
     }
+#if _OPENMP
+#pragma omp taskwait
+#endif
     __sync__;
   }
 
@@ -305,8 +323,14 @@ public:
     L2P(C);
     __spawn_tasks__;
     for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+#if _OPENMP
+#pragma omp task
+#endif
       spawn_task0(spawn downwardPassRec1(CC, C0));
     }
+#if _OPENMP
+#pragma omp taskwait
+#endif
     __sync__;
   }
 #endif

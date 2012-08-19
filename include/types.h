@@ -46,8 +46,12 @@ int omp_get_thread_num() { return 0; }
 #if MTHREADS
 #include <task_group.h>
 #endif
+
 #else
-#include <common.cilkh>
+
+//#include <common.cilkh>
+#include "task_parallel.h"
+
 #endif
 
 #if PAPI
