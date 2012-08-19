@@ -61,6 +61,7 @@ int main(int argc, char ** argv) {
 #endif
   for (int i = 0; i < o->steps; i++) {
     FMM.startTimer("FMM");
+
 #if PARALLEL_EVERYTHING
     if (o->parallelEverything) {
       FMM.setBoundsRec(bodies);

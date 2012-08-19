@@ -70,6 +70,9 @@ private:
     if (B1 - B0 < 1000) {
       vec3 xmin = B0->X, xmax = B0->X;
       for( B_iter B=B0; B!=B1; ++B ) {
+
+	B->TRG = 0;
+
 	vec3_min(B->X, xmin);
 	vec3_max(B->X, xmax);
       }

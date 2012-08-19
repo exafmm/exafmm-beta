@@ -918,7 +918,9 @@ inline void sumM2P<6>(B_iter B, const vecL &C, const vecM &M) {
 
 #if SIMDIZATION
 typedef __m128 real_4;
+#if __AVX__
 typedef __m256 real_8;
+#endif
 simdize_option SIMDIZE = simdize_none; /* no simdization by deafult */
 #endif
 
@@ -936,15 +938,19 @@ private:
 
 #if SIMDIZATION
 
+#if __SSE3__
   inline real_t hadd4(__m128 x) const {
     real_t * r = (real_t *)&x;
     return r[0] + r[1] + r[2] + r[3];
   }
+#endif
 
+#if __AVX__
   inline real_t hadd8(__m256 x) const {
     real_t * r = (real_t *)&x;
     return r[0] + r[1] + r[2] + r[3] + r[4] + r[5] + r[6] + r[7];
   }
+#endif
 
 #endif
 
@@ -957,6 +963,7 @@ public:
     B_iter Bj = Cj->LEAF;
     int i = 0;
     /* vector length = 8 */
+#if __AVX__
     if (SIMDIZE >= simdize_avx) {
       for( ; i + 8 <= Ci->NDLEAF; i += 8 ) {
 	real_8 P0 = _mm256_setzero_ps();
@@ -998,6 +1005,9 @@ public:
 	}
       }
     }
+#endif	/* __AVX__ */
+
+#if __SSE3__
     /* vector length = 4 */
     if (SIMDIZE >= simdize_sse) {
       for( ; i + 4 <= Ci->NDLEAF; i += 4 ) {
@@ -1039,6 +1049,8 @@ public:
 	}
       }
     }
+#endif
+
     /* vector length = 1 */
     for( ; i < Ci->NDLEAF; i++ ) {
       real_t P0 = 0;
@@ -1071,6 +1083,7 @@ public:
     B_iter B=C->LEAF;
     int n = C->NDLEAF;
     int i = 0;
+#if __AVX__
     /* vector length 8 */
     if (SIMDIZE >= simdize_avx) {
       for( ; i + 8 <= n; i += 8 ) {
@@ -1112,6 +1125,9 @@ public:
 	}
       }
     }
+#endif	/* __AVX__ */
+
+#if __SSE3__
     /* vector length 4 */
     if (SIMDIZE >= simdize_sse) {
       for( ; i + 4 <= n; i += 4 ) {
@@ -1150,6 +1166,8 @@ public:
 	}
       }
     }
+#endif	/* __SSE3__ */
+
     /* vector length 1 */
     for( ; i < n; i++ ) {
       real_t P0 = 0;

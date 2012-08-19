@@ -103,7 +103,7 @@ static exafmm_config mk_default_exafmm_config() {
 #if SIMDIZATION
   o.simdize = simdize_none;
 #endif
-  o.evalError = 1;
+  o.evalError = 100;
   o.buildOnly = 0;
   o.dumpcells = 0;
   return o;
