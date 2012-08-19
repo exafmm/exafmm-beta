@@ -42,6 +42,7 @@ int main(int argc, char ** argv) {
 #endif
 #if IMPL_MUTUAL
   splitBothThreshold = o->splitBothThreshold;
+  splitParallelThreshold = o->splitParallelThreshold;
 #endif
 
 #if _OPENMP

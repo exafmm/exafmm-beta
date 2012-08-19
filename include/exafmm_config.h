@@ -14,8 +14,8 @@ struct exafmm_config {
   int parallelEverything;
 #endif
   int splitBothThreshold;
+  int splitParallelThreshold;
   int steps;
-  int parallelSplitThreshold;
   int images;
   double theta;
   int ncrit;
@@ -37,8 +37,8 @@ static struct option exafmm_options[] = {
   {"parallelEverything",     1, 0, 0},
 #endif
   {"splitBothThreshold",     1, 0, 0},
+  {"splitParallelThreshold", 1, 0, 0},
   {"steps",                  1, 0, 0},
-  {"parallelSplitThreshold", 1, 0, 0},
   {"images",                 1, 0, 0},
   {"theta",                  1, 0, 0},
   {"ncrit",                  1, 0, 0},
@@ -61,8 +61,8 @@ static void show_exafmm_config(exafmm_config * o) {
   printf("parallelEverything: %d\n", o->parallelEverything);
 #endif
   printf("splitBothThreshold: %d\n", o->splitBothThreshold);
+  printf("splitParallelThreshold: %d\n", o->splitParallelThreshold);
   printf("steps: %d\n", o->steps);
-  printf("parallelSplitThreshold: %d\n", o->parallelSplitThreshold);
   printf("images: %d\n", o->images);
   printf("theta: %f\n", o->theta);
   printf("ncrit: %d\n", o->ncrit);
@@ -77,21 +77,21 @@ static void show_exafmm_config(exafmm_config * o) {
 static exafmm_config mk_default_exafmm_config() {
   exafmm_config o;
   o.numBodies = 1000000;
-  o.distribution = "cube";
+  o.distribution = "sphere";
 #if IMPL_MUTUAL
-  o.mutual = 0;
+  o.mutual = 1;
 #endif
 #if PARALLEL_EVERYTHING
   o.parallelEverything = true;
 #endif
-  o.splitBothThreshold = 0;
-  o.steps = 1;
-  o.parallelSplitThreshold = 100;
+  o.splitBothThreshold = 1000;
+  o.splitParallelThreshold = 0;
+  o.steps = 2;
   o.images = 0;
   o.theta = 0.6;
-  o.ncrit = 10;
+  o.ncrit = 32;
 #if SIMDIZATION
-  o.simdize = simdize_none;
+  o.simdize = simdize_sse;
 #endif
   o.evalError = 100;
   o.buildOnly = 0;
@@ -118,12 +118,10 @@ static void exafmm_usage(char * progname) {
 #endif
 	  " --splitBothThreshold N :\n"
 	  "  split both cells on recursion when the two cells contain >= N particles (%d)\n"
+	  " --splitParallelThreshold N :\n"
+	  "  parallel recursion for >= N particles (%d)\n"
 	  " --steps N :\n"
 	  "  set number of steps to N (%d)\n"
-#if 0
-	  " --parallelSplitThreshold N :\n"
-	  "  parallel recursion for >= N particles (%d)\n"
-#endif
 	  " --images [0/1] :\n"
 	  "  when set, periodic (%d)\n"
 	  " --theta T :\n"
@@ -153,10 +151,8 @@ static void exafmm_usage(char * progname) {
 	  o.parallelEverything,
 #endif
 	  o.splitBothThreshold,
+	  o.splitParallelThreshold,
 	  o.steps,
-#if 0
-	  o.parallelSplitThreshold,
-#endif
 	  o.images,
 	  o.theta,
 	  o.ncrit,
@@ -232,10 +228,7 @@ static const char * parse_distribution(const char * arg) {
   }
 }
 
-<<<<<<< local
-=======
 #if SIMDIZATION
->>>>>>> other
 static simdize_option parse_simdize_option(const char * arg) {
   switch (arg[0]) {
   case 'n':
@@ -281,10 +274,10 @@ static exafmm_config * parse_cmdline_args(int argc, char ** argv, exafmm_config 
 #endif
 	} else if (strcmp(name, "splitBothThreshold") == 0) {
 	  if (!safe_atoi(optarg, &o->splitBothThreshold)) return NULL;
+	} else if (strcmp(name, "splitParallelThreshold") == 0) {
+	  if (!safe_atoi(optarg, &o->splitParallelThreshold)) return NULL;
 	} else if (strcmp(name, "steps") == 0) {
 	  if (!safe_atoi(optarg, &o->steps)) return NULL;
-	} else if (strcmp(name, "parallelSplitThreshold") == 0) {
-	  if (!safe_atoi(optarg, &o->parallelSplitThreshold)) return NULL;
 	} else if (strcmp(name, "theta") == 0) {
 	  if (!safe_atof(optarg, &o->theta)) return NULL;
 	} else if (strcmp(name, "ncrit") == 0) {

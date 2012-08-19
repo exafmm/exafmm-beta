@@ -9,7 +9,8 @@
 #endif
 
 #if IMPL_MUTUAL
-int splitBothThreshold = (1 << 30);
+int splitBothThreshold = 1000;
+int splitParallelThreshold = 0;
 #endif
 
 class Evaluator : public Kernel {
@@ -71,7 +72,7 @@ private:
 
   void traverseCells(C_iter Ci_beg, C_iter Ci_end, 
 		     C_iter Cj_beg, C_iter Cj_end, 
-		     bool mutual) {
+		     bool mutual, bool parallel) {
     if (Ci_end - Ci_beg == 1 || Cj_end - Cj_beg == 1) {
       if (Ci_beg == Cj_beg) {
 	assert(Ci_end == Cj_end);
@@ -88,26 +89,20 @@ private:
       C_iter Cj_mid = Cj_beg + (Cj_end - Cj_beg) / 2;
       __spawn_tasks__;
 #if _OPENMP
-#pragma omp task
+#pragma omp task if (parallel)
 #endif
-      spawn_task0(spawn traverseCells(Ci_beg, Ci_mid, Cj_beg, Cj_mid, mutual));
-#if _OPENMP
-#pragma omp task
-#endif
-      call_task(spawn traverseCells(Ci_mid, Ci_end, Cj_mid, Cj_end, mutual));
+      spawn_task0_if(parallel, spawn traverseCells(Ci_beg, Ci_mid, Cj_beg, Cj_mid, mutual, parallel));
+      call_task(spawn traverseCells(Ci_mid, Ci_end, Cj_mid, Cj_end, mutual, parallel));
 #if _OPENMP
 #pragma omp taskwait
 #endif
       __sync__;
 #if _OPENMP
-#pragma omp task
+#pragma omp task if (parallel)
 #endif
-      spawn_task0(spawn traverseCells(Ci_beg, Ci_mid, Cj_mid, Cj_end, mutual));
+      spawn_task0_if(parallel, spawn traverseCells(Ci_beg, Ci_mid, Cj_mid, Cj_end, mutual, parallel));
       if (!mutual || Ci_beg != Cj_beg) {
-#if _OPENMP
-#pragma omp task
-#endif
-	call_task(spawn traverseCells(Ci_mid, Ci_end, Cj_beg, Cj_mid, mutual));
+	call_task(spawn traverseCells(Ci_mid, Ci_end, Cj_beg, Cj_mid, mutual, parallel));
       } else {
 	assert(Ci_end == Cj_end);
       }
@@ -122,7 +117,8 @@ private:
     if (mutual && Ci == Cj) {
       assert(Ci->NCHILD > 0);
       traverseCells(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
-		    Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
+		    Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual,
+		    Ci->NDLEAF + Cj->NDLEAF >= splitParallelThreshold);
     } else if (Cj->NCHILD == 0) {
       assert(Ci->NCHILD > 0);
       for( C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ++ci ) {
@@ -135,7 +131,8 @@ private:
       }
     } else if (Ci->NDLEAF + Cj->NDLEAF >= splitBothThreshold) {
       traverseCells(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
-		    Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
+		    Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual,
+		    Ci->NDLEAF + Cj->NDLEAF >= splitParallelThreshold);
     } else if (Ci->RCRIT >= Cj->RCRIT) {
       for( C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ++ci ) {
 	traverse(ci,Cj,mutual);

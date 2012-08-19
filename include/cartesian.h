@@ -923,7 +923,7 @@ typedef __m128 real_4;
 #if __AVX__
 typedef __m256 real_8;
 #endif
-simdize_option SIMDIZE = simdize_none; /* no simdization by deafult */
+simdize_option SIMDIZE = simdize_sse;
 #endif
 
 class Kernel : public Sort {
