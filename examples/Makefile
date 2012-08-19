@@ -7,6 +7,11 @@ serial	: serial.cxx
 	$(CXX) $? $(LFLAGS)
 	./a.out
 
+serial_argv : serial_argv.cxx
+	make clean
+	$(CXX) -DCMDLINE_ARGS $? $(LFLAGS)
+	./a.out
+
 parallel: parallel.cxx
 	make clean
 	$(CXX) $? $(LFLAGS) $(VFLAGS)

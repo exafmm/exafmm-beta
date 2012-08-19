@@ -21,8 +21,8 @@ EXPAND	= Cartesian
 #EXPAND	= Spherical
 
 ### GCC compiler
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fbounds-check -DSSE
-CXX	= g++ -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -funroll-loops -fforce-addr -fbounds-check -DSSE
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fbounds-check -DSSE
+#CXX	= g++ -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -funroll-loops -fforce-addr -fbounds-check -DSSE
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -ansi-alias -DSSE
 ### BG/P compiler
@@ -49,19 +49,26 @@ LFLAGS	+= -DIneJ
 #LFLAGS	+= -DHYBRID
 #LFLAGS	+= -DTREECODE
 
-LFLAGS += -DCMDLINE_ARGS
-LFLAGS += -DPLUMMER_DISTRIBUTION
-LFLAGS += -DIMPL_MUTUAL
+# new flags
+# (1) support command line options with serial_argv.cxx
+#LFLAGS += -DCMDLINE_ARGS
+# (2) support plummer distribution in dataset.h
+#LFLAGS += -DPLUMMER_DISTRIBUTION
+# (3) implement mutual (some fixes and parallelization)
+#LFLAGS += -DIMPL_MUTUAL
+# (4) new simdization including simdizing P2P(C_iter) and avx
+# meant to supersede -DSSE flag
 #LFLAGS += -DSIMDIZATION -msse4.2
-LFLAGS += -DSIMDIZATION -mavx
-LFLAGS += -DPARALLEL_EVERYTHING
+#LFLAGS += -mavx
+# (5) parallelize tree building and other phases
+#LFLAGS += -DPARALLEL_EVERYTHING
 
 ### OPENMP flags
-#LFLAGS += -DOPENMP
+LFLAGS += -DOPENMP
 
 ### MassiveThreads flags
 MTH_DIR:=/home/tau/parallel/sys
-LFLAGS	+= -std=c++0x -DMTHREAD -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth
+#LFLAGS	+= -std=c++0x -DMTHREAD -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi

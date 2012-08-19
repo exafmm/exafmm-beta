@@ -242,6 +242,7 @@ static const char * parse_treebuilder(const char * arg) {
   }
 }
 
+#if SIMDIZATION
 static simdize_option parse_simdize_option(const char * arg) {
   switch (arg[0]) {
   case 'n':
@@ -262,6 +263,7 @@ static simdize_option parse_simdize_option(const char * arg) {
     }
   }
 }
+#endif
 
 static exafmm_config * parse_cmdline_args(int argc, char ** argv, exafmm_config * o) {
   *o = mk_default_exafmm_config();

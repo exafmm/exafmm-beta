@@ -17,9 +17,11 @@ static int gendata(Dataset& data, Bodies& bodies, const char * distribution) {
   case 's':
     data.sphere(bodies);
     return 1;
+#if PLUMMER_DISTRIBUTION
   case 'p':
     data.plummer(bodies);
     return 1;			// OK
+#endif
   default:
     fprintf(stderr, "unknown data distribution %s\n", distribution);
     return 0;			// NG
