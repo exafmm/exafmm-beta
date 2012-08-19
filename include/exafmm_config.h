@@ -112,8 +112,6 @@ static void exafmm_usage(char * progname) {
 	  "  simulate N particles (%d)\n"
 	  " --distribution [l/c/s/p] :\n"
 	  "  lattice, cube, sphere, plummer (%s)\n"
-	  " --treebuilder [t/r] :\n"
-	  "  topdown, recursive (%s)\n"
 #if IMPL_MUTUAL
 	  " --mutual [0/1] :\n"
 	  "  use mutual interaction (%d)\n"
