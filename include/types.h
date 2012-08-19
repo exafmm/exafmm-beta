@@ -65,7 +65,7 @@ int omp_get_thread_num() { return 0; }
 #endif
 
 typedef float       real_t;                                     //!< Real number type on CPU
-typedef vec<3,real_t> vec3;                                     //!< 3-D vector type
+typedef vec<3,real_t> vec3;                                     //!< 3-D floating point vector type
 
 #ifndef KERNEL
 int MPIRANK    = 0;                                             //!< MPI comm rank

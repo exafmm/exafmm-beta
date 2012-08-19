@@ -5,6 +5,9 @@
 
 #include "dataset.h"
 #include "serialfmm.h"
+#ifdef VTK
+#include "vtk.h"
+#endif
 
 static int gendata(Dataset& data, Bodies& bodies, const char * distribution) {
   switch (distribution[0]) {
@@ -17,11 +20,9 @@ static int gendata(Dataset& data, Bodies& bodies, const char * distribution) {
   case 's':
     data.sphere(bodies);
     return 1;
-#if PLUMMER_DISTRIBUTION
   case 'p':
     data.plummer(bodies);
     return 1;			// OK
-#endif
   default:
     fprintf(stderr, "unknown data distribution %s\n", distribution);
     return 0;			// NG
@@ -128,5 +129,13 @@ int main(int argc, char ** argv) {
       DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
       if(FMM.printNow) DATA.printError(diff1,norm1,diff2,norm2);
     }
+#ifdef VTK
+    for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) B->ICELL = 0;
+    int Ncell = 0;
+    vtkPlot vtk;
+    vtk.setDomain(M_PI,0);
+    vtk.setGroupOfPoints(jbodies,Ncell);
+    vtk.plot(Ncell);
+#endif
   }
 }

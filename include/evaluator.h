@@ -210,7 +210,7 @@ protected:
 #endif
   }
 
-//! Dual tree traversal of a single tree using a queue of cells
+//! Dual tree traversal of a single tree
   void traverse(C_iter C) {
     CellQueue cellQueue;                                        // Traversal queue
     pushCell(C,cellQueue);                                      // Push cell to queue
@@ -226,7 +226,7 @@ protected:
     }                                                           // End while loop over cell queue
   }
 
-//! Dual tree traversal of a pair of trees using a queue of pairs
+//! Dual tree traversal of a pair of trees
   void traverse(C_iter Ci, C_iter Cj, bool mutual=false) {
     count(NTRAVERSE);
 
