@@ -65,7 +65,7 @@ int omp_get_thread_num() { return 0; }
 #endif
 
 typedef float       real_t;                                     //!< Real number type on CPU
-typedef vec<3,real_t> vec3;                                     //!< 3-D vector type
+typedef vec<3,real_t> vec3;                                     //!< 3-D floating point vector type
 
 #ifndef KERNEL
 int MPIRANK    = 0;                                             //!< MPI comm rank
@@ -89,7 +89,7 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 
 const int    P      = 3;                                        //!< Order of expansions
 #if CMDLINE_ARGS
-int    NCRIT  = 10;
+int          NCRIT  = 10;
 #else
 const int    NCRIT  = 10;                                       //!< Number of bodies per cell
 #endif

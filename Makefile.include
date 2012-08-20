@@ -52,14 +52,12 @@ LFLAGS	+= -DIneJ
 # new flags
 # (1) support command line options with serial_argv.cxx
 LFLAGS += -DCMDLINE_ARGS
-# (2) support plummer distribution in dataset.h
-LFLAGS += -DPLUMMER_DISTRIBUTION
 # (3) implement mutual (some fixes and parallelization)
 LFLAGS += -DIMPL_MUTUAL
 # (4) new simdization including simdizing P2P(C_iter) and avx
 # meant to supersede -DSSE flag
 LFLAGS += -DSIMDIZATION -msse4.2
-LFLAGS += -mavx
+#LFLAGS += -mavx
 # (5) parallelize tree building and other phases
 LFLAGS += -DPARALLEL_EVERYTHING
 
@@ -67,15 +65,15 @@ LFLAGS += -DPARALLEL_EVERYTHING
 #LFLAGS += -DOPENMP
 
 ### MassiveThreads flags (remove -fopenmp and -DOPENMP from command line)
-MTH_DIR:=/home/tau/parallel/sys
-LFLAGS	+= -std=c++0x -DMTHREAD -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth
+#MTH_DIR:=/home/tau/parallel/sys
+#LFLAGS	+= -std=c++0x -DMTHREAD -DMTHREADS -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth -lpthread -ldl
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi
 
 ### VTK flags
-#CXX	+= -I$(VTK_INCLUDE_PATH)
-#VFLAGS	= -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+CXX	+= -I$(VTK_INCLUDE_PATH)
+VFLAGS	= -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags

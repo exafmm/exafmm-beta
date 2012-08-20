@@ -20,7 +20,8 @@ int main() {
   {
   numBodies = 1000000;
 #endif // MANY
-  if(FMM.printNow) std::cout << "N                    : " << numBodies << std::endl;
+  if(FMM.printNow) std::cout << std::endl
+    << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
   DATA.cube(bodies);
   FMM.startTimer("FMM");

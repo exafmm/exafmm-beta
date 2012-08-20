@@ -58,7 +58,25 @@ public:
   }
 #endif
 
-
+  void lattice(Bodies &bodies) {                                // Uniform distribution on [-1,1]^3 lattice (for debug)
+    int level = int(log(bodies.size()*MPISIZE+1.)/M_LN2/3);     // Level of tree
+    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+      int d = 0, l = 0;                                         //  Initialize dimension and level
+      int index = MPIRANK * bodies.size() + (B-bodies.begin()); //  Set index of body iterator
+      vec<3,int> nx = 0;                                        //  Initialize 3-D cell index
+      while( index != 0 ) {                                     //  Deinterleave bits while index is nonzero
+        nx[d] += (index % 2) * (1 << l);                        //   Add deinterleaved bit to 3-D cell index
+        index >>= 1;                                            //   Right shift the bits
+        d = (d+1) % 3;                                          //   Increment dimension
+        if( d == 0 ) l++;                                       //   If dimension is 0 again, increment level
+      }                                                         //  End while loop for deinterleaving bits
+      for( d=0; d!=3; ++d ) {                                   //  Loop over dimensions
+        B->X[d] = -1 + (2 * nx[d] + 1.) / (1 << level);         //   Calculate cell center from 3-D cell index
+      }                                                         //  End loop over dimensions
+    }                                                           // End loop over bodies
+    initSource(bodies);                                         // Initialize source values
+    initTarget(bodies);                                         // Initialize target values
+  }
 
   void cube(Bodies &bodies, int seed=0, int numSplit=1) {       // Random distribution in [-1,1]^3 cube
     srand48(seed);                                              // Set seed for random number generator
@@ -94,68 +112,21 @@ public:
     initTarget(bodies);                                         // Initialize target values
   }
 
-  void lattice(Bodies &bodies) {                                // Uniform distribution on [-1,1]^3 lattice (for debug)
-    int level = int(log(bodies.size()*MPISIZE+1.)/M_LN2/3);     // Level of tree
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      int d = 0, l = 0;                                         //  Initialize dimension and level
-      int index = MPIRANK * bodies.size() + (B-bodies.begin()); //  Set index of body iterator
-      vec<3,int> nx = 0;                                        //  Initialize 3-D cell index
-      while( index != 0 ) {                                     //  Deinterleave bits while index is nonzero
-        nx[d] += (index % 2) * (1 << l);                        //   Add deinterleaved bit to 3-D cell index
-        index >>= 1;                                            //   Right shift the bits
-        d = (d+1) % 3;                                          //   Increment dimension
-        if( d == 0 ) l++;                                       //   If dimension is 0 again, increment level
-      }                                                         //  End while loop for deinterleaving bits
-      for( d=0; d!=3; ++d ) {                                   //  Loop over dimensions
-        B->X[d] = -1 + (2 * nx[d] + 1.) / (1 << level);         //   Calculate cell center from 3-D cell index
-      }                                                         //  End loop over dimensions
-    }                                                           // End loop over bodies
-    initSource(bodies);                                         // Initialize source values
-    initTarget(bodies);                                         // Initialize target values
-  }
-
-#if PLUMMER_DISTRIBUTION
-  void pickshell(double vec[], int ndim, real_t rad)
-  {
-    real_t rsq, rscale;
-    int i;
-    
-    do {
-      rsq = 0.0;
-      for (i = 0; i < ndim; i++) {
-	vec[i] = (drand48()-0.5)*2.0;   // xrandrom(-1.0, 1.0)
-	rsq = rsq + vec[i] * vec[i];
-      }
-    } while (rsq > 1.0);
-    rscale = rad / sqrt(rsq);
-    for (i = 0; i < ndim; i++)
-      vec[i] = vec[i] * rscale;
-  }
-
-
   void plummer(Bodies &bodies, int seed=0, int numSplit=1) {
-    int i;
-    double x,r, pvec[3];
-    double rsc = (3 * M_PI) / 16;                        /* and length scale factor  */
     srand48(seed);                                              // Set seed for random number generator
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      if( numSplit != 1 && B-bodies.begin() == 
-	  int(seed*bodies.size()/numSplit) ) {  // Mimic parallel dataset
+      if( numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit) ) { // Mimic parallel dataset
 	seed++;                                                 //   Mimic seed at next rank
 	srand48(seed);                                          //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
-      x = drand48()*0.999;      //xrandom(0.0, 0.999)           /* pick enclosed mass */
-      r = 1.0 / sqrt(pow(x, -2.0/3.0) - 1);             /* find enclosing radius    */
-      pickshell(pvec, 3, rsc * r);
-      for(i =0; i < 3; i++)
-	B->X[i] = pvec[i] / 12.5;   // 12.5 chosen to leave even worst case (x=0.999) inside the M_PI box
-      //    worst case is around r=38.714 (such that r/3.1415 = 12.323)
+      for( int d=0; d<3; d++ ) B->X[d] = drand48() * 2 - 1;     //  Generate random number between [-1,1]
+      real_t R2 = powf(drand48()*.999, -2.0/3.0) - 1;           //  Generate distribution radius squared
+      real_t rscale = 0.015 * M_PI / std::sqrt(norm(B->X) * R2);//  Scaling to fit in M_PI box
+      for( int d=0; d<3; d++ ) B->X[d] *= rscale;               //  Rescale particle coordinates
     }                                                           // End loop over bodies
     initSource(bodies);                                         // Initialize source values
     initTarget(bodies);                                         // Initialize target values
   }
-#endif	/* PLUMMER */
-
 
   void readTarget(Bodies &bodies) {                             // Read target values from file
     char fname[256];                                            // File name for saving direct calculation values

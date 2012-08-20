@@ -78,7 +78,7 @@ static void show_exafmm_config(exafmm_config * o) {
 static exafmm_config mk_default_exafmm_config() {
   exafmm_config o;
   o.numBodies = 1000000;
-  o.distribution = "sphere";
+  o.distribution = "plummer";
 #if IMPL_MUTUAL
   o.mutual = 1;
 #endif
