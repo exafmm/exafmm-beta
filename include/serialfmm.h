@@ -15,11 +15,11 @@ private:
 #if ERROR_OPT
     real_t c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / powf(std::abs(Ci0->M[0]),1.0/3);// Root coefficient
 #endif
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
+    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over cells
       real_t x = 1.0 / THETA;                                   //  Inverse of theta
 #if ERROR_OPT
       real_t a = c * powf(std::abs(C->M[0]),1.0/3);             //  Cell coefficient
-      for( int i=0; i<5; ++i ) {                                //  Newton-Rhapson iteration
+      for (int i=0; i<5; i++) {                                 //  Newton-Rhapson iteration
         real_t f = x * x - 2 * x + 1 - a * pow(x,-P);           //   Function value
         real_t df = (P + 2) * x - 2 * (P + 1) + P / x;          //   Function derivative value
         x -= f / df;                                            //   Increment x
@@ -27,7 +27,7 @@ private:
 #endif
       C->RCRIT *= x;                                            //  Multiply Rcrit by error optimized parameter x
     }                                                           // End loop over cells
-    for( C_iter C=cells.begin(); C!=cells.begin()+9; ++C ) {    // Loop over top 2 levels of cells
+    for (C_iter C=cells.begin(); C!=cells.begin()+9; C++) {     // Loop over top 2 levels of cells
       C->RCRIT *= 10;                                           //  Prevent approximation
     }                                                           // End loop over top 2 levels of cells
   }
@@ -39,7 +39,7 @@ private:
     real_t x = 1.0 / THETA;
 #if ERROR_OPT
     real_t a = root_coefficient * pow(std::abs(C->M[0]),1.0/3);
-    for( int i=0; i<5; ++i ) {
+    for (int i=0; i<5; i++) {
       real_t f = x * x - 2 * x + 1 - a * pow(x,-P);
       real_t df = (P + 2) * x - 2 * (P + 1) + P / x;
       x -= f / df;
@@ -69,9 +69,9 @@ private:
     assert(B1 - B0 > 0);
     if (B1 - B0 < 1000) {
       vec3 xmin = B0->X, xmax = B0->X;
-      for( B_iter B=B0; B!=B1; ++B ) {
-	vec3_min(B->X, xmin);
-	vec3_max(B->X, xmax);
+      for (B_iter B=B0; B!=B1; B++) {
+        vec3_min(B->X, xmin);
+        vec3_max(B->X, xmax);
       }
       return std::pair<vec3,vec3>(xmin, xmax);
     } else {
@@ -95,7 +95,7 @@ private:
 
   void upwardPassRec1(C_iter C, C_iter C0) {
     __spawn_tasks__;
-    for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
 #if _OPENMP
 #pragma omp task
 #endif
@@ -115,7 +115,7 @@ private:
 
   void upwardPassRec2(C_iter C, C_iter C0, int level, real_t root_coefficient) {
     __spawn_tasks__;
-    for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
 #if _OPENMP
 #pragma omp task
 #endif
@@ -135,7 +135,7 @@ private:
     L2L(C);
     L2P(C);
     __spawn_tasks__;
-    for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
 #if _OPENMP
 #pragma omp task
 #endif
@@ -154,20 +154,20 @@ public:
   void setBounds(Bodies &bodies) {
     startTimer("Set bounds");                                   // Start timer
     localXmax = localXmin = bodies.begin()->X;                  // Initialize Xmin, Xmax
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      for( int d=0; d!=3; ++d ) {                               //  Loop over dimensions
-        if     (B->X[d] < localXmin[d]) localXmin[d] = B->X[d]; //   Determine Xmin
-        else if(B->X[d] > localXmax[d]) localXmax[d] = B->X[d]; //   Determine Xmax
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      for (int d=0; d<3; d++) {                                 //  Loop over dimensions
+        if      (B->X[d] < localXmin[d]) localXmin[d] = B->X[d];//   Determine Xmin
+        else if (B->X[d] > localXmax[d]) localXmax[d] = B->X[d];//   Determine Xmax
       }                                                         //  End loop over dimensions
     }                                                           // End loop over bodies
     localCenter = (localXmax + localXmin) / 2;                  // Calculate center of domain
     localRadius = 0;                                            // Initialize localRadius
-    for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
       localRadius = std::max(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
       localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
     }                                                           // End loop over dimensions
     localRadius *= 1.00001;                                     // Add some leeway to radius
-    if( IMAGES == 0 ) {                                         // If non-periodic boundary condition
+    if (IMAGES == 0) {                                          // If non-periodic boundary condition
       globalRadius = localRadius;                               //  Set global radius for serial run
       globalCenter = localCenter;                               //  Set global center for serial run
       globalXmin = localXmin;                                   //  Set global Xmin for serial run
@@ -189,12 +189,12 @@ public:
     localXmax = vt.second;
     localCenter = (localXmax + localXmin) / 2;                  // Calculate center of domain
     localRadius = 0;                                            // Initialize localRadius
-    for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
       localRadius = std::max(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
       localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
     }                                                           // End loop over dimensions
     localRadius *= 1.00001;                                     // Add some leeway to radius
-    if( IMAGES == 0 ) {                                         // If non-periodic boundary condition
+    if (IMAGES == 0) {                                          // If non-periodic boundary condition
       globalRadius = localRadius;                               //  Set global radius for serial run
       globalCenter = localCenter;                               //  Set global center for serial run
       globalXmin = localXmin;                                   //  Set global Xmin for serial run
@@ -228,7 +228,7 @@ public:
     startTimer("Upward pass");                                  // Start timer
     Ci0 = cells.begin();                                        // Set iterator of target root cell
     Cj0 = cells.begin();                                        // Set iterator of source root cell
-    for( C_iter C=cells.end()-1; C!=cells.begin()-1; --C ) {    // Loop over cells bottomup
+    for (C_iter C=cells.end()-1; C!=cells.begin()-1; C--) {     // Loop over cells bottomup
       real_t Rmax = 0;                                          //  Initialize Rmax
       setCenter(C);                                             //  Set center of cell to center of mass
       C->M = 0;                                                 //  Initialize multipole expansion coefficients
@@ -237,8 +237,8 @@ public:
       M2M(C,Rmax);                                              //  M2M kernel
     }                                                           // End loop over cells
 #if Cartesian
-    for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {        // Loop over cells
-      for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];          //  Normalize multipole expansion coefficients
+    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over cells
+      for (int i=1; i<MTERM; i++) C->M[i] /= C->M[0];           //  Normalize multipole expansion coefficients
     }                                                           // End loop over cells
 #endif
     setRcrit(cells);                                            // Error optimization of Rcrit
@@ -274,9 +274,9 @@ public:
 //! Interface for tree traversal when I != J (M2L, P2P)
   void evaluate(Cells &icells, Cells &jcells
 #if IMPL_MUTUAL
-		, bool mutual=false
+                , bool mutual=false
 #endif
-		) {
+                ) {
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     startTimer("Traverse");                                     // Start timer
@@ -286,17 +286,17 @@ public:
 #pragma omp single
 #endif
 #endif
-    if( IMAGES == 0 ) {                                         // If non-periodic boundary condition
+    if (IMAGES == 0) {                                          // If non-periodic boundary condition
       Xperiodic = 0;                                            //  No periodic shift
 #if IMPL_MUTUAL
-      traverse(Ci0,Cj0,mutual);	//  Traverse the tree
+      traverse(Ci0,Cj0,mutual);                                 //  Traverse the tree
 #else
-      traverse(Ci0,Cj0);	//  Traverse the tree
+      traverse(Ci0,Cj0);                                        //  Traverse the tree
 #endif
     } else {                                                    // If periodic boundary condition
-      for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
-        for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
-          for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
+      for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
+        for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
+          for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
             Xperiodic[0] = ix * 2 * globalRadius;               //     Coordinate shift for x periodic direction
             Xperiodic[1] = iy * 2 * globalRadius;               //     Coordinate shift for y periodic direction
             Xperiodic[2] = iz * 2 * globalRadius;               //     Coordinate shift for z periodic direction
@@ -318,7 +318,7 @@ public:
     startTimer("Downward pass");                                // Start timer
     C_iter C0 = cells.begin();                                  // Root cell
     L2P(C0);                                                    // If root is the only cell do L2P
-    for( C_iter C=C0+1; C!=cells.end(); ++C ) {                 // Loop over cells
+    for (C_iter C=C0+1; C!=cells.end(); C++) {                  // Loop over cells
       L2L(C);                                                   //  L2L kernel
       L2P(C);                                                   //  L2P kernel
     }                                                           // End loop over cells
@@ -332,7 +332,7 @@ public:
     C_iter C = C0;
     L2P(C);
     __spawn_tasks__;
-    for (C_iter CC = C0+C->CHILD; CC != C0+C->CHILD+C->NCHILD; CC++) {
+    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
 #if _OPENMP
 #pragma omp task
 #endif
@@ -354,12 +354,12 @@ public:
     Cj->LEAF = jbodies.begin();                                 // Iterator of first source leaf
     Cj->NDLEAF = jbodies.size();                                // Number of source leafs
     int prange = 0;                                             // Range of periodic images
-    for( int i=0; i<IMAGES; i++ ) {                             // Loop over periodic image sublevels
+    for (int i=0; i<IMAGES; i++) {                              // Loop over periodic image sublevels
       prange += int(powf(3,i));                                 //  Accumulate range of periodic images
     }                                                           // End loop over perioidc image sublevels
-    for( int ix=-prange; ix<=prange; ++ix ) {                   // Loop over x periodic direction
-      for( int iy=-prange; iy<=prange; ++iy ) {                 //  Loop over y periodic direction
-        for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
+    for (int ix=-prange; ix<=prange; ix++) {                    // Loop over x periodic direction
+      for (int iy=-prange; iy<=prange; iy++) {                  //  Loop over y periodic direction
+        for (int iz=-prange; iz<=prange; iz++) {                //   Loop over z periodic direction
           Xperiodic[0] = ix * 2 * globalRadius;                 //    Coordinate shift for x periodic direction
           Xperiodic[1] = iy * 2 * globalRadius;                 //    Coordinate shift for y periodic direction
           Xperiodic[2] = iz * 2 * globalRadius;                 //    Coordinate shift for z periodic direction
@@ -371,7 +371,7 @@ public:
 
 //! Normalize bodies after direct summation
   void normalize(Bodies &bodies) {
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG /= B->SRC;                                         //  Normalize by target charge
     }                                                           // End loop over bodies
   }

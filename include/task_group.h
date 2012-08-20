@@ -12,7 +12,7 @@ struct task {
 };
 
 void * invoke_task(void * arg_) {
-  task * arg = (task *)arg_;
+  task * arg = (task*)arg_;
   std::function<void()> f = arg->f;
   f();
   return arg_;
@@ -54,7 +54,7 @@ struct task_group {
   }
   void wait() {
     int i;
-    for (i = 0; i < n; i++) {
+    for (i=0; i<n; i++) {
       void * ret;
       pthread_join(tasks[i].tid, &ret);
     }

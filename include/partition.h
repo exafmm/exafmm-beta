@@ -23,7 +23,7 @@ private:
     MPI_Allreduce(localXmax,globalXmax,3,MPI_TYPE,MPI_MAX,MPI_COMM_WORLD);// Reduce domain Xmax
     globalRadius = 0;                                           // Initialize global radius
     globalCenter = (globalXmax + globalXmin) / 2;               //  Calculate global center
-    for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
       globalRadius = std::min(globalCenter[d] - globalXmin[d], globalRadius);// Calculate min distance from center
       globalRadius = std::max(globalXmax[d] - globalCenter[d], globalRadius);// Calculate max distance from center 
     }                                                           // End loop over dimensions
@@ -43,14 +43,14 @@ private:
     int mpisize = MPISIZE;                                      // Initialize MPI size counter
     vec<3,int> Npartition = 1;                                  // Number of partitions in each direction
     int d = 0;                                                  // Initialize dimension counter
-    while( mpisize != 1 ) {                                     // Divide domain while counter is not one
+    while (mpisize != 1) {                                      // Divide domain while counter is not one
       Npartition[d] <<= 1;                                      //  Divide this dimension
       d = (d+1) % 3;                                            //  Increment dimension
       mpisize >>= 1;                                            //  Right shift the bits of counter
     }                                                           // End while loop for domain subdivision
-    if( IMAGES == 0 ) allreduceBounds();                        // Allreduce bounds from all ranks
+    if (IMAGES == 0) allreduceBounds();                         // Allreduce bounds from all ranks
     vec3 Xpartition;                                            // Size of partitions in each direction
-    for( d=0; d!=3; ++d ) {                                     // Loop over dimensions
+    for (d=0; d<3; d++) {                                       // Loop over dimensions
       Xpartition[d] = 2 * globalRadius / Npartition[d];         //  Size of partition in each direction
     }                                                           // End loop over dimensions
     int ix = MPIRANK % Npartition[0];                           // x index of partition
@@ -63,7 +63,7 @@ private:
     localXmax[1] = globalXmin[1] + (iy + 1) * Xpartition[1];    // ymax
     localXmax[2] = globalXmin[2] + (iz + 1) * Xpartition[2];    // zmax
     allgatherBounds();                                          // Allgather bounds of partitions
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       ix = int((B->X[0] - globalXmin[0]) / Xpartition[0]);      //  x contribution to send rank
       iy = int((B->X[1] - globalXmin[1]) / Xpartition[1]);      //  y contribution
       iz = int((B->X[2] - globalXmin[2]) / Xpartition[2]);      //  z contribution
@@ -78,17 +78,17 @@ private:
 protected:
 //! Exchange send count for bodies
   void alltoall(Bodies &bodies) {
-    for( int i=0; i!=MPISIZE; ++i ) {                           // Loop over ranks
+    for (int i=0; i<MPISIZE; i++) {                             // Loop over ranks
       sendBodyCount[i] = 0;                                     //  Initialize send counts
     }                                                           // End loop over ranks
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       sendBodyCount[B->IPROC]++;                                //  Fill send count bucket
       B->IPROC = MPIRANK;                                       //  Tag for sending back to original rank
     }                                                           // End loop over bodies
     MPI_Alltoall(sendBodyCount,1,MPI_INT,                       // Communicate send count to get receive count
                  recvBodyCount,1,MPI_INT,MPI_COMM_WORLD);
     sendBodyDispl[0] = recvBodyDispl[0] = 0;                    // Initialize send/receive displacements
-    for( int irank=0; irank!=MPISIZE-1; ++irank ) {             // Loop over ranks
+    for (int irank=0; irank<MPISIZE-1; irank++) {               // Loop over ranks
       sendBodyDispl[irank+1] = sendBodyDispl[irank] + sendBodyCount[irank];//  Set send displacement
       recvBodyDispl[irank+1] = recvBodyDispl[irank] + recvBodyCount[irank];//  Set receive displacement
     }                                                           // End loop over ranks
@@ -98,7 +98,7 @@ protected:
   void alltoallv(Bodies &bodies) {
     int word = sizeof(bodies[0]) / 4;                           // Word size of body structure
     recvBodies.resize(recvBodyDispl[MPISIZE-1]+recvBodyCount[MPISIZE-1]);// Resize receive buffer
-    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
+    for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
       sendBodyCount[irank] *= word;                             //  Multiply send count by word size of data
       sendBodyDispl[irank] *= word;                             //  Multiply send displacement by word size of data
       recvBodyCount[irank] *= word;                             //  Multiply receive count by word size of data
@@ -106,7 +106,7 @@ protected:
     }                                                           // End loop over ranks
     MPI_Alltoallv(&bodies[0],sendBodyCount,sendBodyDispl,MPI_INT,// Communicate bodies
                   &recvBodies[0],recvBodyCount,recvBodyDispl,MPI_INT,MPI_COMM_WORLD);
-    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
+    for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
       sendBodyCount[irank] /= word;                             //  Divide send count by word size of data
       sendBodyDispl[irank] /= word;                             //  Divide send displacement by word size of data
       recvBodyCount[irank] /= word;                             //  Divide receive count by word size of data
@@ -172,7 +172,7 @@ public:
 //! Send bodies back to where they came from
   void unpartition(Bodies &bodies) {
     startTimer("Unpartition");                                  // Start timer
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
     Bodies buffer = bodies;                                     // Resize sort buffer
@@ -183,7 +183,7 @@ public:
     alltoallv(bodies);                                          // Alltoallv bodies
     bodies = recvBodies;                                        // Copy receive buffer to bodies
     stopTimer("Unpartition comm",printNow);                     // Stop timer 
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->ICELL = B->IBODY;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
     buffer = bodies;                                            // Resize sort buffer

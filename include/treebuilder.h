@@ -49,7 +49,7 @@ private:
     node.NOCHILD = true;
     node.NLEAF = 0;
     node.LEAF = NULL;
-    for( int b=0; b!=8; ++b ) node.CHILD[b] = -1;
+    for (int b=0; b<8; b++) node.CHILD[b] = -1;
   }
 
   inline long long getIndex(vec3 X, int level) {
@@ -59,7 +59,7 @@ private:
     long long iz = int((X[2] - localXmin[2]) / d);
     long long id = ((1 << 3 * level) - 1) / 7;
     assert( level < 22 );
-    for( int l=0; l<level; l++ ) {
+    for (int l=0; l<level; l++) {
       id += (ix & 1) << (3 * l);
       id += (iy & 1) << (3 * l + 1);
       id += (iz & 1) << (3 * l + 2);
@@ -77,7 +77,7 @@ private:
     child.LEVEL = N->LEVEL+1;
     child.X = N->X;
     real_t r = localRadius / (1 << child.LEVEL);
-    for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
       child.X[d] += r * (((octant & 1 << d) >> d) * 2 - 1);     //  Calculate new center position
     }                                                           // End loop over dimensions
     N->NOCHILD = false;
@@ -87,14 +87,14 @@ private:
   }
 
   void splitNode(int n) {
-    while( nodes[n].NLEAF > NCRIT ) {
+    while (nodes[n].NLEAF > NCRIT) {
       int c = 0;
       Leaf *Ln;
-      for( Leaf *L=nodes[n].LEAF; L; L=Ln ) {
-	N_iter N = nodes.begin()+n;
+      for (Leaf *L=nodes[n].LEAF; L; L=Ln) {
+        N_iter N = nodes.begin()+n;
         Ln = L->NEXT;
         int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
-        if( N->CHILD[octant] == -1 ) {
+        if (N->CHILD[octant] == -1) {
           addChild(octant,n);
         }
         c = nodes[n].CHILD[octant];
@@ -113,19 +113,19 @@ private:
     C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
     C->ICELL  = getIndex(C->X,nodes[i].LEVEL);
-    if( nodes[i].NOCHILD ) {
+    if (nodes[i].NOCHILD) {
       C->CHILD = 0;
       C->NCHILD = 0;
       C->NCLEAF = nodes[i].NLEAF;
-      for( Leaf *L=nodes[i].LEAF; L; L=L->NEXT ) {
+      for (Leaf *L=nodes[i].LEAF; L; L=L->NEXT) {
         BN->IBODY = L->I;
         BN++;
       }
     } else {
       C->NCLEAF = 0;
       int nsub=0;
-      for( int octant=0; octant!=8; ++octant ) {
-        if( nodes[i].CHILD[octant] != -1 ) {
+      for (int octant=0; octant<8; octant++) {
+        if (nodes[i].CHILD[octant] != -1) {
           ++nsub;
         }
       }
@@ -133,8 +133,8 @@ private:
       C->CHILD = Ci - Ci0;
       C->NCHILD = nsub;
       CN += nsub;
-      for( int octant=0; octant!=8; ++octant ) {
-        if( nodes[i].CHILD[octant] != -1 ) {
+      for (int octant=0; octant<8; octant++) {
+        if (nodes[i].CHILD[octant] != -1) {
           Ci->PARENT = C - Ci0;
           nodes2cells(nodes[i].CHILD[octant], Ci++);
         }
@@ -144,7 +144,7 @@ private:
 
   void permuteBodies(Bodies &bodies) {
     Bodies buffer = bodies;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       B->ICELL = buffer[B->IBODY].ICELL;
       B->X     = buffer[B->IBODY].X;
       B->SRC   = buffer[B->IBODY].SRC;
@@ -157,7 +157,7 @@ protected:
     startTimer("Set leafs");
     NLEAF = bodies.size();
     leafs.reserve(NLEAF);
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       Leaf leaf;
       leaf.I = B-bodies.begin();
       leaf.X = B->X;
@@ -176,20 +176,20 @@ protected:
     node.X = localCenter;
     nodes.push_back(node);
     MAXLEVEL = 0;
-    for( L_iter L=leafs.begin(); L!=leafs.end(); ++L ) {
+    for (L_iter L=leafs.begin(); L!=leafs.end(); L++) {
       int n = 0;
-      while( !nodes[n].NOCHILD ) {
-	N_iter N = nodes.begin() + n;
+      while (!nodes[n].NOCHILD) {
+        N_iter N = nodes.begin() + n;
         int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
         N->NLEAF++;
-        if( nodes[n].CHILD[octant] == -1 ) addChild(octant,n);
+        if (nodes[n].CHILD[octant] == -1) addChild(octant,n);
         n = nodes[n].CHILD[octant];
       }
       L->NEXT = nodes[n].LEAF;
       nodes[n].LEAF = &*L;
       nodes[n].NLEAF++;
-      if( nodes[n].NLEAF > NCRIT ) splitNode(n);
-      if( MAXLEVEL < nodes[n].LEVEL ) MAXLEVEL = nodes[n].LEVEL;
+      if (nodes[n].NLEAF > NCRIT) splitNode(n);
+      if (MAXLEVEL < nodes[n].LEVEL) MAXLEVEL = nodes[n].LEVEL;
     }
     MAXLEVEL++;
     stopTimer("Grow tree",printNow);
@@ -214,7 +214,7 @@ protected:
   ivec8 prefixSum(ivec8 a, int beg) {
     ivec8 s;
     int p = beg;
-    for (int i = 0; i < 8; i++) {
+    for (int i=0; i<8; i++) {
       s[i] = p;
       p += a[i];
     }
@@ -231,7 +231,7 @@ protected:
     n->NNODE = 1;
     n->NOCHILD = nochild;
     if (nochild) {
-      for( int k=0; k!=8; ++k ) n->CHILD[k] = NULL;
+      for (int k=0; k<8; k++) n->CHILD[k] = NULL;
     }
     return n;
   }
@@ -260,21 +260,21 @@ protected:
      t_beg and t_end.
 */
   ivec8Tree * countBodies(Bodies& bodies, int beg, int end, vec3 X, 
-			  ivec8Tree * t_root, ivec8Tree * t_beg, ivec8Tree * t_end, 
-			  int leaf_len) {
+                          ivec8Tree * t_root, ivec8Tree * t_beg, ivec8Tree * t_end, 
+                          int leaf_len) {
     assert(max_ivec8_nodes_to_count(end - beg, leaf_len) <= t_end - t_beg + 1);
     if (end - beg <= leaf_len) {
       /* the section is small enough -> count sequentially */
-      for (int k = 0; k < 8; k++) t_root->counts[k] = 0;
+      for (int k=0; k<8; k++) t_root->counts[k] = 0;
       t_root->children[0] = t_root->children[1] = NULL;
-      for (int i = beg; i < end; i++) {
-	vec3 x = bodies[i].X;
-	int oct = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);
-	t_root->counts[oct]++;
+      for (int i=beg; i<end; i++) {
+        vec3 x = bodies[i].X;
+        int oct = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);
+        t_root->counts[oct]++;
       } 
     } else {
       /* divide the section into two subsections and count them
-	 in parallel */
+         in parallel */
       int mid = (beg + end) / 2;
       int n0 = max_ivec8_nodes_to_count(mid - beg, leaf_len);
       int n1 = max_ivec8_nodes_to_count(end - mid, leaf_len);
@@ -285,10 +285,10 @@ protected:
 #pragma omp task shared(bodies)
 #endif
       spawn_task1(bodies,
-		  spawn t_root->children[0] 
-		  = countBodies(bodies, beg, mid, X, t_beg, t_beg + 1, t_beg + n0, leaf_len));
+                  spawn t_root->children[0] 
+                  = countBodies(bodies, beg, mid, X, t_beg, t_beg + 1, t_beg + n0, leaf_len));
       call_task(spawn t_root->children[1] 
-		= countBodies(bodies, mid, end, X, t_mid, t_mid + 1, t_mid + n1, leaf_len));
+                = countBodies(bodies, mid, end, X, t_mid, t_mid + 1, t_mid + n1, leaf_len));
 #if _OPENMP
 #pragma omp taskwait
 #endif
@@ -302,18 +302,18 @@ protected:
      particle will be in the right subcube. positions are described
      in offsets. */
   void moveBodies(Bodies& bodies, Bodies& t_bodies, int beg, int end, 
-		  ivec8Tree * t, ivec8 offsets, vec3 X) {
+                  ivec8Tree * t, ivec8 offsets, vec3 X) {
     if (t->children[0] == NULL) {
       /* it is leaf, so we move sequentially */
-      for (int i = beg; i < end; i++) {
-	vec3 x = bodies[i].X;
-	int oct = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);
-	t_bodies[offsets[oct]] = bodies[i];
-	offsets[oct]++;
+      for (int i=beg; i<end; i++) {
+        vec3 x = bodies[i].X;
+        int oct = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);
+        t_bodies[offsets[oct]] = bodies[i];
+        offsets[oct]++;
       }
     } else {
       /* divide the section into two subsections
-	 and work on each in parallel */
+         and work on each in parallel */
       int mid = (beg + end) / 2;
       ivec8 offsets_mid = offsets + t->children[0]->counts;
       __spawn_tasks__;
@@ -321,10 +321,10 @@ protected:
 #pragma omp task shared(bodies, t_bodies)
 #endif
       spawn_task2(bodies, t_bodies,
-		  spawn moveBodies(bodies, t_bodies, beg, mid, 
-				   t->children[0], offsets, X));
+                  spawn moveBodies(bodies, t_bodies, beg, mid, 
+                                   t->children[0], offsets, X));
       call_task(spawn moveBodies(bodies, t_bodies, mid, end,
-				 t->children[1], offsets_mid, X));
+                                 t->children[1], offsets_mid, X));
     
 #if _OPENMP
 #pragma omp taskwait
@@ -334,14 +334,14 @@ protected:
   }
 
   XNode * buildNodes(Bodies& bodies, Bodies& t_bodies, int dest,
-		     int beg,  int end, 
-		     ivec8Tree * t_beg, ivec8Tree * t_end, 
-		     vec3 X, int level, int leaf_len) {
+                     int beg,  int end, 
+                     ivec8Tree * t_beg, ivec8Tree * t_end, 
+                     vec3 X, int level, int leaf_len) {
     assert(max_ivec8_nodes_to_build(end - beg, leaf_len) <= t_end - t_beg);
     if (beg == end) return NULL;
     if (end - beg <= NCRIT) {
       if (dest)
-	for (int i = beg; i < end; i++) t_bodies[i] = bodies[i];
+        for (int i=beg; i<end; i++) t_bodies[i] = bodies[i];
       return makeNode(level, beg, end, X, true);
     }
     XNode * node = makeNode(level, beg, end, X, false);
@@ -351,47 +351,47 @@ protected:
     moveBodies(bodies, t_bodies, beg, end, t_root, offsets, X);
     ivec8Tree * t = t_beg;
     __spawn_tasks__;
-    for (int k = 0; k < 8; k++) {
+    for (int k=0; k<8; k++) {
       int n_nodes = max_ivec8_nodes_to_build(t_root->counts[k], leaf_len);
       assert(t + n_nodes <= t_end);
 #if _OPENMP
 #pragma omp task shared(bodies, t_bodies)
 #endif
       spawn_task2(t_bodies, bodies, {
-	  vec3 Y = X;
-	  real_t r = localRadius / (1 << (level + 1));
-	  for( int d=0; d!=3; ++d ) {
-	    Y[d] += r * (((k & 1 << d) >> d) * 2 - 1);
-	  }
-	  node->CHILD[k] 
-	    = buildNodes(t_bodies, bodies, 1 - dest,
-			 offsets[k], offsets[k] + t_root->counts[k],
-			 t, t + n_nodes,
-			 Y, level + 1, leaf_len);
-	});
+          vec3 Y = X;
+          real_t r = localRadius / (1 << (level + 1));
+          for (int d=0; d<3; d++) {
+            Y[d] += r * (((k & 1 << d) >> d) * 2 - 1);
+          }
+          node->CHILD[k] 
+            = buildNodes(t_bodies, bodies, 1 - dest,
+                         offsets[k], offsets[k] + t_root->counts[k],
+                         t, t + n_nodes,
+                         Y, level + 1, leaf_len);
+        });
       t += n_nodes;
     }
 #if _OPENMP
 #pragma omp taskwait
 #endif
     __sync__;
-    for (int k = 0; k < 8; k++) {
+    for (int k=0; k<8; k++) {
       if (node->CHILD[k]) {
-	node->NNODE += node->CHILD[k]->NNODE;
+        node->NNODE += node->CHILD[k]->NNODE;
       }
     }
     return node;
   }
 
   int nodes2cellsRec(XNode * node, int parent, C_iter C, C_iter H, Cells& cells,
-		     B_iter B0, int level) {
+                     B_iter B0, int level) {
     assert(C < cells.end());
     C->PARENT = parent;
     C->R      = localRadius / (1 << node->LEVEL);
     C->X      = node->X;
     C->NDLEAF = node->NLEAF;
     C->LEAF   = B0 + node->BODY;
-    if( node->NOCHILD ) {
+    if (node->NOCHILD) {
       C->CHILD = 0;
       C->NCHILD = 0;
       C->NCLEAF = node->NLEAF;
@@ -401,9 +401,9 @@ protected:
       C->NCLEAF = 0;
       int nsub=0;
       char child_octants[8];
-      for( int octant=0; octant!=8; ++octant ) {
-        if(node->CHILD[octant]) {
-	  child_octants[nsub] = octant;
+      for (int octant=0; octant<8; octant++) {
+        if (node->CHILD[octant]) {
+          child_octants[nsub] = octant;
           ++nsub;
         }
       }
@@ -414,28 +414,28 @@ protected:
       H += nsub;
       __spawn_tasks__;
       int levels[8];
-      for(int k=0; k < nsub; k++) {
-	int octant = child_octants[k];
+      for (int k=0; k<nsub; k++) {
+        int octant = child_octants[k];
 #if _OPENMP
 #pragma omp task if(node->NNODE > 1000) shared(levels, cells)
 #endif
-	spawn_task2_if(node->NNODE > 1000,
-		       levels, cells,
-		       spawn levels[k] 
-		       = nodes2cellsRec(node->CHILD[octant], C - Ci0, Ci, 
-					H, cells, B0, level + 1));
-	Ci += 1;
-	H += node->CHILD[octant]->NNODE - 1;
+        spawn_task2_if(node->NNODE > 1000,
+                       levels, cells,
+                       spawn levels[k] 
+                       = nodes2cellsRec(node->CHILD[octant], C - Ci0, Ci, 
+                                        H, cells, B0, level + 1));
+        Ci += 1;
+        H += node->CHILD[octant]->NNODE - 1;
       }
 #if _OPENMP
 #pragma omp taskwait
 #endif
       __sync__;
       int max_level = node->LEVEL;
-      for (int k = 0; k < nsub; k++) {
-	int octant = child_octants[k];
-	max_level = std::max(max_level, levels[k]);
-	delete node->CHILD[octant];
+      for (int k=0; k<nsub; k++) {
+        int octant = child_octants[k];
+        max_level = std::max(max_level, levels[k]);
+        delete node->CHILD[octant];
       }
       return max_level;
     }
@@ -450,7 +450,7 @@ protected:
     ivec8Tree * t_beg = new ivec8Tree[n_nodes];
     ivec8Tree * t_end = t_beg + n_nodes;
     root_node = buildNodes(bodies, t_bodies, 0, 0, bodies.size(), 
-			   t_beg, t_end, localCenter, 0, leaf_len);
+                           t_beg, t_end, localCenter, 0, leaf_len);
     delete[] t_beg;
     stopTimer("Grow tree",printNow);
   }

@@ -44,7 +44,7 @@ public:
   double stopTimer(std::string event, bool print=false) {
     double endTimer = get_time();                               // Get time of day and store in endTimer
     timer[event] += endTimer - beginTimer[event];               // Accumulate event time to timer
-    if(print) std::cout << std::setw(stringLength) << std::left // Set format
+    if (print) std::cout << std::setw(stringLength) << std::left// Set format
                         << event << " : " << timer[event] << std::endl;// Print event and timer to screen
     return endTimer - beginTimer[event];                        // Return the event time
   }
@@ -67,7 +67,7 @@ public:
 
 //! Print timings of all events
   inline void printAllTime() {
-    for( TI_iter E=timer.begin(); E!=timer.end(); ++E ) {       // Loop over all events
+    for (TI_iter E=timer.begin(); E!=timer.end(); E++) {        // Loop over all events
       std::cout << std::setw(stringLength) << std::left         //  Set format
                 << E->first << " : " << E->second << std::endl; //  Print event and timer
     }                                                           // End loop over all events
@@ -75,7 +75,7 @@ public:
 
 //! Write timings of all events
   inline void writeTime() {
-    for( TI_iter E=timer.begin(); E!=timer.end(); ++E ) {       // Loop over all events
+    for (TI_iter E=timer.begin(); E!=timer.end(); E++) {        // Loop over all events
       timerFile << std::setw(stringLength) << std::left         //  Set format
                 << E->first << " " << E->second << std::endl;   //  Print event and timer
     }                                                           // End loop over all events
@@ -136,14 +136,14 @@ public:
     ThreadMap threadMap;                                        // Map pthread ID to thread ID
     double base = traces.front().begin;                         // Base time
     double scale = 30000.0;                                     // Scale the length of bar plots
-    while( !traces.empty() ) {                                  // While queue of traces is not empty
+    while (!traces.empty()) {                                   // While queue of traces is not empty
       Trace trace = traces.front();                             //  Get trace at front of the queue
       traces.pop();                                             //  Pop trace at front
       pthread_t thread = trace.thread;                          //  Get pthread ID of trace
       double begin  = trace.begin;                              //  Get begin time of trace
       double end    = trace.end;                                //  Get end time of trace
       int    color  = trace.color;                              //  Get color of trace
-      if( threadMap[thread] == 0 ) {                            //  If it's a new pthread ID
+      if (threadMap[thread] == 0) {                             //  If it's a new pthread ID
         threadMap[thread] = ++num_thread;                       //   Map it to an incremented thread ID
       }                                                         //  End if for new pthread ID
       begin -= base;                                            //  Subtract base time from begin time

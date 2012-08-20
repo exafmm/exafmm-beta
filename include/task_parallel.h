@@ -119,13 +119,13 @@ struct task_group {
 #elif NANOX
       nanos_wd_t wd=NULL;
       nanos_device_t dev[1] = {NANOS_SMP_DESC(invoke_task_arg)};
-      nanos_wd_props_t props;	// originally, ={true,false,false};
+      nanos_wd_props_t props;        // originally, ={true,false,false};
       props.mandatory_creation = true;
       props.tied = false;
       props.reserved0 = false;
       NANOS_SAFE(nanos_create_wd(&wd,1,dev,sizeof(struct task),
-				 __alignof__(struct task),
-				 (void**)&t,nanos_current_wd(),&props,0,NULL));
+                                 __alignof__(struct task),
+                                 (void**)&t,nanos_current_wd(),&props,0,NULL));
       NANOS_SAFE(nanos_submit(wd,0,0,0));
 #else
 #error "neither PTHREAD, QTHREAD, nor NANOX defined"
@@ -138,21 +138,21 @@ struct task_group {
     for (task_list_node * p = head; p && p->n; p = p->next) {
       for (int i = 0; i < p->n; i++) {
 #if TASK_GROUP_NULL_CREATE 
-	/* noop */
+        /* noop */
 #elif PTHREAD
-	void * ret;
-	pthread_join(p->a[i].tid, &ret);
+        void * ret;
+        pthread_join(p->a[i].tid, &ret);
 #elif QTHREAD
-	aligned_t ret;
-	qthread_readFF(&ret,&p->a[i].ret);
+        aligned_t ret;
+        qthread_readFF(&ret,&p->a[i].ret);
 #elif NANOX
-	if (n_joined == 0) {
-	  NANOS_SAFE(nanos_wg_wait_completion(nanos_current_wd()));
-	}
+        if (n_joined == 0) {
+          NANOS_SAFE(nanos_wg_wait_completion(nanos_current_wd()));
+        }
 #else
 #error "neither PTHREAD, QTHREAD, nor NANOX defined"
 #endif
-	n_joined++;
+        n_joined++;
       }
       p->n = 0;
     }
@@ -161,7 +161,7 @@ struct task_group {
 };
 #define task_group_defined 1
 
-#else	/* ! TBB || MTHREAD || PTHREAD || QTHREAD || NANOX || ... */
+#else        /* ! TBB || MTHREAD || PTHREAD || QTHREAD || NANOX || ... */
 
 #define task_group_defined 0
 
@@ -261,6 +261,6 @@ struct task_group {
 #define call_task(E)                  E
 #define spawn 
 
-#endif	/* task_group_defined */
+#endif        /* task_group_defined */
 
 #endif

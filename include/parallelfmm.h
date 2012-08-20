@@ -21,7 +21,7 @@ private:
 //! Get distance to other domain
   real_t getDistance(C_iter C) {
     vec3 dX;                                                    // Distance vector
-    for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
       dX[d] = (C->X[d] + Xperiodic[d] > localXmax[d])*          //  Calculate the distance between cell C and
               (C->X[d] + Xperiodic[d] - localXmax[d])+          //  the nearest point in domain [xmin,xmax]^3
               (C->X[d] + Xperiodic[d] < localXmin[d])*          //  Take the differnece from xmin or xmax
@@ -39,7 +39,7 @@ private:
     sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
     C_iter Cparent = sendCells.begin() + sendCellDispl[IRANK] + iparent;// Get parent iterator
-    if( Cparent->NCHILD == 0 ) Cparent->CHILD = icell;          // Iterator offset for parent's first child
+    if (Cparent->NCHILD == 0) Cparent->CHILD = icell;           // Iterator offset for parent's first child
     Cparent->NCHILD++;                                          // Increment parent's child counter
   }
 
@@ -48,7 +48,7 @@ private:
     C_iter Csend = sendCells.begin() + sendCellDispl[IRANK] + icell;// Get send cell iterator
     Csend->NCLEAF = C->NCLEAF;                                  // Set number of bodies
     Csend->NDLEAF = ibody;                                      // Set body index per rank
-    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {        // Loop over bodies in cell
+    for (B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; B++) {         // Loop over bodies in cell
       sendBodies.push_back(*B);                                 //  Push to send body vector
       sendBodies.back().IPROC = IRANK;                          //  Set current rank
     }                                                           // End loop over bodies in cell
@@ -61,24 +61,24 @@ private:
     int icell = 0;                                              // Current send cell's offset
     int iparent = 0;                                            // Parent send cell's offset
     int level = int(logf(MPISIZE-1) / M_LN2 / 3) + 1;           // Level of local root cell
-    if( MPISIZE == 1 ) level = 0;                               // Account for serial case
-    while( !cellQueue.empty() ) {                               // While traversal queue is not empty
+    if (MPISIZE == 1) level = 0;                                // Account for serial case
+    while (!cellQueue.empty()) {                                // While traversal queue is not empty
       C_iter C = cellQueue.front();                             //  Get front item in traversal queue
       cellQueue.pop();                                          //  Pop item from traversal queue
-      for( C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; ++CC ) {// Loop over child cells
+      for (C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
         addSendCell(CC,iparent,icell);                          //   Add cells to send
-        if( CC->NCHILD == 0 ) {                                 //   If cell is twig
+        if (CC->NCHILD == 0) {                                  //   If cell is twig
           addSendBody(CC,ibody,icell);                          //    Add bodies to send
         } else {                                                //   If cell is not twig
           bool divide = false;                                  //    Initialize logical for dividing
-          if( IMAGES == 0 ) {                                   //    If free boundary condition
+          if (IMAGES == 0) {                                    //    If free boundary condition
             Xperiodic = 0;                                      //     Set periodic coordinate offset
             real_t R2 = getDistance(CC);                        //     Get distance to other domain
             divide |= 4 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
           } else {                                              //    If periodic boundary condition
-            for( int ix=-1; ix<=1; ++ix ) {                     //     Loop over x periodic direction
-              for( int iy=-1; iy<=1; ++iy ) {                   //      Loop over y periodic direction
-                for( int iz=-1; iz<=1; ++iz ) {                 //       Loop over z periodic direction
+            for (int ix=-1; ix<=1; ix++) {                      //     Loop over x periodic direction
+              for (int iy=-1; iy<=1; iy++) {                    //      Loop over y periodic direction
+                for (int iz=-1; iz<=1; iz++) {                  //       Loop over z periodic direction
                   Xperiodic[0] = ix * 2 * globalRadius;         //        Coordinate offset for x periodic direction
                   Xperiodic[1] = iy * 2 * globalRadius;         //        Coordinate offset for y periodic direction
                   Xperiodic[2] = iz * 2 * globalRadius;         //        Coordinate offset for z periodic direction
@@ -89,7 +89,7 @@ private:
             }                                                   //     End loop over x periodic direction
           }                                                     //    Endif for periodic boundary condition
           divide |= CC->R > (globalRadius / (1 << level));      //    Divide if cell is larger than local root cell
-          if( !divide ) {                                       //    If cell does not have to be divided
+          if (!divide) {                                        //    If cell does not have to be divided
             CC->NCHILD = 0;                                     //     Cut off child links
           }                                                     //    Endif for cell division
         }                                                       //   Endif for twig
@@ -104,7 +104,7 @@ private:
     MPI_Alltoall(sendCellCount,1,MPI_INT,                       // Communicate send count to get receive count
                  recvCellCount,1,MPI_INT,MPI_COMM_WORLD);
     recvCellDispl[0] = 0;                                       // Initialize receive displacements
-    for( int irank=0; irank!=MPISIZE-1; ++irank ) {             // Loop over ranks
+    for (int irank=0; irank<MPISIZE-1; irank++) {               // Loop over ranks
       recvCellDispl[irank+1] = recvCellDispl[irank] + recvCellCount[irank];//  Set receive displacement
     }                                                           // End loop over ranks
   }
@@ -113,7 +113,7 @@ private:
   void alltoallv(Cells &cells) {
     int word = sizeof(cells[0]) / 4;                            // Word size of body structure
     recvCells.resize(recvCellDispl[MPISIZE-1]+recvCellCount[MPISIZE-1]);// Resize receive buffer
-    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
+    for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
       sendCellCount[irank] *= word;                             //  Multiply send count by word size of data
       sendCellDispl[irank] *= word;                             //  Multiply send displacement by word size of data
       recvCellCount[irank] *= word;                             //  Multiply receive count by word size of data
@@ -121,7 +121,7 @@ private:
     }                                                           // End loop over ranks
     MPI_Alltoallv(&cells[0],sendCellCount,sendCellDispl,MPI_INT,// Communicate cells
                   &recvCells[0],recvCellCount,recvCellDispl,MPI_INT,MPI_COMM_WORLD);
-    for( int irank=0; irank!=MPISIZE; ++irank ) {               // Loop over ranks
+    for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
       sendCellCount[irank] /= word;                             //  Divide send count by word size of data
       sendCellDispl[irank] /= word;                             //  Divide send displacement by word size of data
       recvCellCount[irank] /= word;                             //  Divide receive count by word size of data
@@ -151,9 +151,9 @@ public:
     sendBodies.clear();                                         // Clear send buffer for bodies
     sendCells.clear();                                          // Clear send buffer for cells
     sendCellDispl[0] = 0;                                       // Initialize displacement vector
-    for( IRANK=0; IRANK!=MPISIZE; ++IRANK ) {                   // Loop over ranks
-      if( IRANK != 0 ) sendCellDispl[IRANK] = sendCellDispl[IRANK-1] + sendCellCount[IRANK-1];// Update displacement
-      if( IRANK != MPIRANK ) {                                  //  If not current rank
+    for (IRANK=0; IRANK<MPISIZE; IRANK++) {                     // Loop over ranks
+      if (IRANK != 0) sendCellDispl[IRANK] = sendCellDispl[IRANK-1] + sendCellCount[IRANK-1];// Update displacement
+      if (IRANK != MPIRANK) {                                   //  If not current rank
         recvCells = cells;                                      //   Use recvCells as temporary storage
         Cj0 = recvCells.begin();                                //   Set cells begin iterator
         localXmin = rankXmin[IRANK];                            //   Set local Xmin for IRANK
@@ -175,11 +175,11 @@ public:
     startTimer("Get LET");                                      // Start timer
     for( int i=recvCellCount[irank]-1; i>=0; i-- ) {            // Loop over receive cells
       C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator for receive cell
-      if( C->NCLEAF != 0 ) {                                    //  If cell has leafs
+      if (C->NCLEAF != 0) {                                     //  If cell has leafs
         C->LEAF = recvBodies.begin() + recvBodyDispl[irank] + C->NDLEAF;// Iterator of first leaf
         C->NDLEAF = C->NCLEAF;                                  //   Initialize number of leafs
       }                                                         //  End if for leafs
-      if( i != 0 ) {                                            //  If cell is not root
+      if (i != 0) {                                             //  If cell is not root
         C_iter Cparent = recvCells.begin() + recvCellDispl[irank] + C->PARENT;//   Iterator for parent cell
         Cparent->NDLEAF += C->NDLEAF;                           //   Accululate number of leafs
       }                                                         //  End if for root cell

@@ -8,6 +8,7 @@
 #ifdef VTK
 #include "vtk.h"
 #endif
+#include "options.h"
 
 static int gendata(Dataset& data, Bodies& bodies, const char * distribution) {
   switch (distribution[0]) {
@@ -22,26 +23,21 @@ static int gendata(Dataset& data, Bodies& bodies, const char * distribution) {
     return 1;
   case 'p':
     data.plummer(bodies);
-    return 1;			// OK
+    return 1;                        // OK
   default:
     fprintf(stderr, "unknown data distribution %s\n", distribution);
-    return 0;			// NG
+    return 0;                        // NG
   }
 }
 
 int main(int argc, char ** argv) {
-  exafmm_config o[1];
-  if (parse_cmdline_args(argc, argv, o) == NULL) {
-    return EXIT_FAILURE;
-  }
-  show_exafmm_config(o);
-  IMAGES = o->images;
-  THETA = o->theta;
-  NCRIT = o->ncrit;
-#if IMPL_MUTUAL
-  splitBothThreshold = o->splitBothThreshold;
-  splitParallelThreshold = o->splitParallelThreshold;
-#endif
+  Args args[1];
+  parse_cmdline_args(argc, argv, args);
+  showArgs(args);
+  NCRIT = args->ncrit;
+  NSPAWN = args->nspawn;
+  IMAGES = args->images;
+  THETA = args->theta;
 
 #if _OPENMP
 #pragma omp parallel
@@ -59,51 +55,41 @@ int main(int argc, char ** argv) {
 #if HYBRID
     FMM.timeKernels();
 #endif
-    if(FMM.printNow) std::cout << "N                    : " << o->numBodies << std::endl;
-    bodies.resize(o->numBodies);
-    gendata(DATA, bodies, o->distribution);
+    if(FMM.printNow) std::cout << "N                    : " << args->numBodies << std::endl;
+    bodies.resize(args->numBodies);
+    gendata(DATA, bodies, args->distribution);
 #if PARALLEL_EVERYTHING
-    if (o->parallelEverything) t_bodies.resize(bodies.size());
+    t_bodies.resize(bodies.size());
 #endif
-    for (int i = 0; i < o->steps; i++) {
+    for( int i=0; i<2; i++ ) {
       FMM.startTimer("FMM");
 #if PARALLEL_EVERYTHING
-      if (o->parallelEverything) {
-	DATA.initTargetRec(bodies);
-	FMM.setBoundsRec(bodies);
-	FMM.buildTreeRec(bodies,t_bodies,cells);
-	FMM.upwardPassRec(cells);
-      } else {
-	DATA.initTarget(bodies);
-	FMM.setBounds(bodies);
-	FMM.buildTree(bodies,cells);
-	FMM.upwardPass(cells);
-      }
+      DATA.initTargetRec(bodies);
+      FMM.setBoundsRec(bodies);
+      FMM.buildTreeRec(bodies,t_bodies,cells);
+      FMM.upwardPassRec(cells);
 #else
       FMM.setBounds(bodies);
       FMM.buildTree(bodies,cells);
       FMM.upwardPass(cells);
 #endif
 
-      if (o->buildOnly == 0) {
-	FMM.startPAPI();
+      if (args->buildOnly == 0) {
+        FMM.startPAPI();
 #if IneJ
 #if IMPL_MUTUAL
-	FMM.evaluate(cells,cells,o->mutual);
+        FMM.evaluate(cells,cells,args->mutual);
 #else
-	FMM.evaluate(cells,cells);
+        FMM.evaluate(cells,cells);
 #endif
 #else
-	FMM.evaluate(cells);
+        FMM.evaluate(cells);
 #endif
-	FMM.stopPAPI();
+        FMM.stopPAPI();
 #if PARALLEL_EVERYTHING
-	if (o->parallelEverything)
-	  FMM.downwardPassRec(cells);
-	else
-	  FMM.downwardPass(cells);
+        FMM.downwardPassRec(cells);
 #else
-	FMM.downwardPass(cells);
+        FMM.downwardPass(cells);
 #endif
       }
       FMM.stopTimer("FMM",FMM.printNow);
@@ -112,9 +98,9 @@ int main(int argc, char ** argv) {
       FMM.resetTimer();
     }
     
-    if (o->buildOnly == 0 && o->evalError) {
+    if (!args->buildOnly) {
       jbodies = bodies;
-      if (bodies.size() > o->evalError) bodies.resize(o->evalError);
+      if (int(bodies.size()) > args->numTarget) bodies.resize(args->numTarget);
       Bodies bodies2 = bodies;
       DATA.initTarget(bodies2);
       FMM.startTimer("Direct sum");

@@ -22,10 +22,6 @@
 #include <vector>
 #include "vec.h"
 
-#if CMDLINE_ARGS
-#include "exafmm_config.h"
-#endif
-
 #if 0
 #if _OPENMP
 #include <omp.h>
@@ -56,8 +52,11 @@ typedef vec<3,real_t> vec3;                                     //!< 3-D floatin
 #ifndef KERNEL
 int MPIRANK    = 0;                                             //!< MPI comm rank
 int MPISIZE    = 1;                                             //!< MPI comm size
+int NCRIT      = 10;                                            //!< Number of bodies per leaf cell
+int NSPAWN      = 1000;                                         //!< Threshold of NDLEAF for spawning new threads
 int IMAGES     = 0;                                             //!< Number of periodic image sublevels
 real_t THETA   = .5;                                            //!< Multipole acceptance criteria
+real_t EPS2    = .0;                                            //!< Softening parameter (squared)
 vec3 Xperiodic = .0;                                            //!< Coordinate offset of periodic image
 #if PAPI
 int PAPIEVENT  = PAPI_NULL;                                     //!< PAPI event handle
@@ -65,8 +64,11 @@ int PAPIEVENT  = PAPI_NULL;                                     //!< PAPI event 
 #else
 extern int MPIRANK;                                             //!< MPI comm rank
 extern int MPISIZE;                                             //!< MPI comm size
+extern int NCRIT;                                               //!< Number of bodies per leaf cell
+extern int NSPAWN;                                              //!< Threshold of NDLEAF for spawning new threads
 extern int IMAGES;                                              //!< Number of periodic image sublevels
 extern real_t THETA;                                            //!< Multipole acceptance criteria
+extern real_t EPS2;                                             //!< Softening parameter (squared)
 extern vec3 Xperiodic;                                          //!< Coordinate offset of periodic image
 #if PAPI
 extern int PAPIEVENT;                                           //!< PAPI event handle
@@ -74,13 +76,7 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 #endif
 
 const int    P      = 3;                                        //!< Order of expansions
-#if CMDLINE_ARGS
-int          NCRIT  = 10;
-#else
-const int    NCRIT  = 10;                                       //!< Number of bodies per cell
-#endif
 const real_t EPS    = 1e-6;                                     //!< Single precision epsilon
-const real_t EPS2   = .0;                                       //!< Softening parameter (squared)
 
 #if COMkernel
 const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms

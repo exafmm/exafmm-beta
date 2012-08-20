@@ -75,10 +75,10 @@ public:
   void setGroupOfPoints(Bodies &bodies, int &Ncell) {
     int begin=0, size=0;
     int index = bodies[0].ICELL;
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      if( B->ICELL != index ) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+      if (B->ICELL != index) {
         setGroup(Ncell,size);
-        for( int i=begin; i!=begin+size; ++i ) {
+        for (int i=begin; i<begin+size; i++) {
           setPoints(Ncell,bodies[i].X);
         }
         begin = B-bodies.begin();
@@ -90,7 +90,7 @@ public:
       size++;
     }
     setGroup(Ncell,size);
-    for( int i=begin; i!=begin+size; ++i ) {
+    for (int i=begin; i<begin+size; i++) {
       setPoints(Ncell,bodies[i].X);
     }
     Ncell++;
@@ -175,7 +175,7 @@ public:
 
     //Create a slider callback
     vtkSliderCallback *callback = vtkSliderCallback::New();
-    for( int i=0; i!=Ngroup; ++i ) {
+    for (int i=0; i<Ngroup; i++) {
       callback->points[i] = points[i];
     }
     callback->polydata = polydata;
