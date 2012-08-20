@@ -160,9 +160,10 @@ public:
         else if(B->X[d] > localXmax[d]) localXmax[d] = B->X[d]; //   Determine Xmax
       }                                                         //  End loop over dimensions
     }                                                           // End loop over bodies
-    localCenter = (localXmax + localXmin) / 2;                  //  Calculate center of domain
+    localCenter = (localXmax + localXmin) / 2;                  // Calculate center of domain
+    localRadius = 0;                                            // Initialize localRadius
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
-      localRadius = std::min(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
+      localRadius = std::max(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
       localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
     }                                                           // End loop over dimensions
     localRadius *= 1.00001;                                     // Add some leeway to radius
@@ -186,9 +187,10 @@ public:
     std::pair<vec3,vec3> vt = getBoundsRec(bodies.begin(), bodies.end());
     localXmin = vt.first;
     localXmax = vt.second;
-    localCenter = (localXmax + localXmin) / 2;                  //  Calculate center of domain
+    localCenter = (localXmax + localXmin) / 2;                  // Calculate center of domain
+    localRadius = 0;                                            // Initialize localRadius
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
-      localRadius = std::min(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
+      localRadius = std::max(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
       localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
     }                                                           // End loop over dimensions
     localRadius *= 1.00001;                                     // Add some leeway to radius
