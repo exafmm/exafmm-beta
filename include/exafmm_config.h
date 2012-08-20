@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <getopt.h>
+#include <errno.h>
 
 struct exafmm_config {
   int numBodies;
@@ -19,9 +20,6 @@ struct exafmm_config {
   int images;
   double theta;
   int ncrit;
-#if SIMDIZATION
-  simdize_option simdize;
-#endif
   unsigned int evalError;
   int buildOnly;
   int dumpcells;
@@ -42,9 +40,6 @@ static struct option exafmm_options[] = {
   {"images",                 1, 0, 0},
   {"theta",                  1, 0, 0},
   {"ncrit",                  1, 0, 0},
-#if SIMDIZATION
-  {"simdize",                1, 0, 0},
-#endif
   {"evalError",              1, 0, 0},
   {"buildOnly",              1, 0, 0},
   {"dumpcells",              1, 0, 0},
@@ -66,9 +61,6 @@ static void show_exafmm_config(exafmm_config * o) {
   printf("images: %d\n", o->images);
   printf("theta: %f\n", o->theta);
   printf("ncrit: %d\n", o->ncrit);
-#if SIMDIZATION
-  printf("simdize: %d\n", o->simdize);
-#endif
   printf("evalError: %u\n", o->evalError);
   printf("buildOnly: %d\n", o->buildOnly);
   printf("dumpcells: %d\n", o->dumpcells);
@@ -77,7 +69,7 @@ static void show_exafmm_config(exafmm_config * o) {
 static exafmm_config mk_default_exafmm_config() {
   exafmm_config o;
   o.numBodies = 1000000;
-  o.distribution = "plummer";
+  o.distribution = "cube";
 #if IMPL_MUTUAL
   o.mutual = 1;
 #endif
@@ -90,9 +82,6 @@ static exafmm_config mk_default_exafmm_config() {
   o.images = 0;
   o.theta = 0.6;
   o.ncrit = 32;
-#if SIMDIZATION
-  o.simdize = simdize_sse;
-#endif
   o.evalError = 100;
   o.buildOnly = 0;
   o.dumpcells = 0;
@@ -128,10 +117,6 @@ static void exafmm_usage(char * progname) {
 	  "  set theta to T (%f)\n"
 	  " --ncrit N :\n"
 	  "  leaf nodes have <= N particles (%d)\n"
-#if SIMDIZATION
-	  " --simdize [none 0/sse 1/avx 2] :\n"
-	  "  use simd instructions (%d)\n"
-#endif
 	  " --evalError D :\n"
 	  "  check and show error of D particles (%d)\n"
 	  " --buildOnly [0/1] :\n"
@@ -156,9 +141,6 @@ static void exafmm_usage(char * progname) {
 	  o.images,
 	  o.theta,
 	  o.ncrit,
-#if SIMDIZATION
-	  o.simdize,
-#endif
 	  o.evalError,
 	  o.buildOnly
 #if 0
@@ -228,29 +210,6 @@ static const char * parse_distribution(const char * arg) {
   }
 }
 
-#if SIMDIZATION
-static simdize_option parse_simdize_option(const char * arg) {
-  switch (arg[0]) {
-  case 'n':
-    return simdize_none;
-  case 's':
-    return simdize_sse;
-  case 'a':
-    return simdize_avx;
-  default:
-    {
-      int x;
-      if (safe_atoi(arg, &x)) {
-	return (simdize_option)x;
-      } else {
-	fprintf(stderr, "invalid simdize argument %s, no simdization\n", arg);
-	return simdize_none;
-      } 
-    }
-  }
-}
-#endif
-
 static exafmm_config * parse_cmdline_args(int argc, char ** argv, exafmm_config * o) {
   *o = mk_default_exafmm_config();
   while (1) {
@@ -282,10 +241,6 @@ static exafmm_config * parse_cmdline_args(int argc, char ** argv, exafmm_config 
 	  if (!safe_atof(optarg, &o->theta)) return NULL;
 	} else if (strcmp(name, "ncrit") == 0) {
 	  if (!safe_atoi(optarg, &o->ncrit)) return NULL;
-#if SIMDIZATION
-	} else if (strcmp(name, "simdize") == 0) {
-	  o->simdize = parse_simdize_option(optarg);
-#endif
 	} else if (strcmp(name, "evalError") == 0) {
 	  if (!safe_atou(optarg, &o->evalError)) return NULL;
 	} else if (strcmp(name, "buildOnly") == 0) {

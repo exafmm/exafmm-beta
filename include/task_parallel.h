@@ -15,7 +15,7 @@ using namespace tbb;
 
 #elif MTHREAD
 /* on MassiveThreads, it's already in the library too */
-#include <mttb/task_group.h>
+#include <mtbb/task_group.h>
 #define task_group_defined 1
 
 #elif PTHREAD || QTHREAD || NANOX

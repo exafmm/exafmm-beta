@@ -21,10 +21,9 @@ EXPAND	= Cartesian
 #EXPAND	= Spherical
 
 ### GCC compiler
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fbounds-check -DSSE
-CXX	= g++ -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -funroll-loops -fforce-addr -fbounds-check -DSSE
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -msse4.2 -ffast-math -funroll-loops -fforce-addr -fbounds-check
 ### Intel compiler
-#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -ansi-alias -DSSE
+#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -ansi-alias
 ### BG/P compiler
 #CXX	= mpixlcxx_r -qarch=450 -qtune=450 -qsmp=omp -O3
 ### TAU compiler
@@ -50,30 +49,23 @@ LFLAGS	+= -DIneJ
 #LFLAGS	+= -DTREECODE
 
 # new flags
-# (1) support command line options with serial_argv.cxx
 LFLAGS += -DCMDLINE_ARGS
-# (3) implement mutual (some fixes and parallelization)
 LFLAGS += -DIMPL_MUTUAL
-# (4) new simdization including simdizing P2P(C_iter) and avx
-# meant to supersede -DSSE flag
-LFLAGS += -DSIMDIZATION -msse4.2
-#LFLAGS += -mavx
-# (5) parallelize tree building and other phases
 LFLAGS += -DPARALLEL_EVERYTHING
 
 ### OPENMP flags
 #LFLAGS += -DOPENMP
 
 ### MassiveThreads flags (remove -fopenmp and -DOPENMP from command line)
-#MTH_DIR:=/home/tau/parallel/sys
-#LFLAGS	+= -std=c++0x -DMTHREAD -DMTHREADS -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth -lpthread -ldl
+MTH_DIR:=/home/tau/parallel/sys
+LFLAGS	+= -std=c++0x -DMTHREAD -DMTHREADS -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth -lpthread -ldl
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi
 
 ### VTK flags
-CXX	+= -I$(VTK_INCLUDE_PATH)
-VFLAGS	= -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+#CXX	+= -I$(VTK_INCLUDE_PATH)
+#VFLAGS	= -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags

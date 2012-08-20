@@ -1,5 +1,6 @@
 #ifndef kernel_h
 #define kernel_h
+#include <immintrin.h>
 #include "sort.h"
 
 struct float4 {
@@ -916,21 +917,10 @@ inline void sumM2P<6>(B_iter B, const vecL &C, const vecM &M) {
 #endif
 }
 
-#if SIMDIZATION
-#if __SSE3__
-typedef __m128 real_4;
-#endif
-#if __AVX__
-typedef __m256 real_8;
-#endif
-simdize_option SIMDIZE = simdize_sse;
-#endif
-
 class Kernel : public Sort {
 protected:
   C_iter Ci0;
   C_iter Cj0;
-
 
 private:
   inline void flipCoef(vecL &C) const {
@@ -938,138 +928,129 @@ private:
     for( int i=10; i!=20; ++i ) C[i] = -C[i];
   }
 
-#if SIMDIZATION
-
 #if __SSE3__
-  inline real_t hadd4(__m128 x) const {
-    real_t * r = (real_t *)&x;
+  inline float hadd4(__m128 x) const {
+    float *r = (float*) &x;
     return r[0] + r[1] + r[2] + r[3];
   }
 #endif
 
 #if __AVX__
-  inline real_t hadd8(__m256 x) const {
-    real_t * r = (real_t *)&x;
+  inline float hadd8(__m256 x) const {
+    float *r = (float*) &x;
     return r[0] + r[1] + r[2] + r[3] + r[4] + r[5] + r[6] + r[7];
   }
 #endif
 
-#endif
-
 public:
-
-#if SIMDIZATION
-
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     B_iter Bi = Ci->LEAF;
     B_iter Bj = Cj->LEAF;
+    int ni = Ci->NDLEAF;
+    int nj = Cj->NDLEAF;
     int i = 0;
-#if __AVX__ // vector length = 8
-    if (SIMDIZE >= simdize_avx) {
-      for( ; i + 8 <= Ci->NDLEAF; i += 8 ) {
-	real_8 P0 = _mm256_setzero_ps();
-	real_8 F0[3] = { _mm256_setzero_ps(), _mm256_setzero_ps(), _mm256_setzero_ps() };
-	for( int j = 0; j < Cj->NDLEAF; j++ ) {
-	  real_8 dX[3];
-	  for (int d = 0; d < 3; d++) {
-	    dX[d] = _mm256_setr_ps(Bi[i].X[d],   Bi[i+1].X[d], Bi[i+2].X[d], Bi[i+3].X[d],
-				   Bi[i+4].X[d], Bi[i+5].X[d], Bi[i+6].X[d], Bi[i+7].X[d])
-	    - _mm256_set1_ps(Bj[j].X[d] + Xperiodic[d]);
-	  }
-	  real_8 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm256_set1_ps(EPS2);
-	  __m256 mask = _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ);
-	  real_8 invR2 = _mm256_and_ps(_mm256_set1_ps(1.0) / R2, mask);
-	  real_8 invR = _mm256_and_ps(_mm256_rsqrt_ps(R2), mask);
-	  invR *= _mm256_setr_ps(Bi[i].SRC,   Bi[i+1].SRC, Bi[i+2].SRC, Bi[i+3].SRC,
-				 Bi[i+4].SRC, Bi[i+5].SRC, Bi[i+6].SRC, Bi[i+7].SRC)
-	    * _mm256_set1_ps(Bj[j].SRC);
-	  real_8 invR3 = invR2 * invR;
-	  dX[0] *= invR3;
-	  dX[1] *= invR3;
-	  dX[2] *= invR3;
-	  P0 += invR;
-	  F0[0] += dX[0];
-	  F0[1] += dX[1];
-	  F0[2] += dX[2];
-	  if (mutual) {
-	    Bj[j].TRG[0] += hadd8(invR);
-	    Bj[j].TRG[1] += hadd8(dX[0]);
-	    Bj[j].TRG[2] += hadd8(dX[1]);
-	    Bj[j].TRG[3] += hadd8(dX[2]);
-	  }
-	}
-	for (int k = 0; k < 8; k++) {
-	  Bi[i+k].TRG[0] += ((real_t*)&P0)[k];
-	  Bi[i+k].TRG[1] -= ((real_t*)&F0[0])[k];
-	  Bi[i+k].TRG[2] -= ((real_t*)&F0[1])[k];
-	  Bi[i+k].TRG[3] -= ((real_t*)&F0[2])[k];
-	}
+#if __AVX__
+    for( ; i<=ni-8; i+=8 ) {
+      __m256 P0 = _mm256_setzero_ps();
+      __m256 F0[3] = { _mm256_setzero_ps(), _mm256_setzero_ps(), _mm256_setzero_ps() };
+      for( int j=0; j<nj; j++ ) {
+        __m256 dX[3];
+        for( int d=0; d<3; d++ ) {
+          dX[d] = _mm256_setr_ps(Bi[i].X[d],   Bi[i+1].X[d], Bi[i+2].X[d], Bi[i+3].X[d],
+                                 Bi[i+4].X[d], Bi[i+5].X[d], Bi[i+6].X[d], Bi[i+7].X[d])
+          - _mm256_set1_ps(Bj[j].X[d] + Xperiodic[d]);
+        }
+        __m256 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm256_set1_ps(EPS2);
+        __m256 mask = _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ);
+        __m256 invR2 = _mm256_and_ps(_mm256_set1_ps(1.0) / R2, mask);
+        __m256 invR = _mm256_and_ps(_mm256_rsqrt_ps(R2), mask);
+        invR *= _mm256_setr_ps(Bi[i].SRC,   Bi[i+1].SRC, Bi[i+2].SRC, Bi[i+3].SRC,
+                               Bi[i+4].SRC, Bi[i+5].SRC, Bi[i+6].SRC, Bi[i+7].SRC)
+          * _mm256_set1_ps(Bj[j].SRC);
+        __m256 invR3 = invR2 * invR;
+        dX[0] *= invR3;
+        dX[1] *= invR3;
+        dX[2] *= invR3;
+        P0 += invR;
+        F0[0] += dX[0];
+        F0[1] += dX[1];
+        F0[2] += dX[2];
+        if( mutual ) {
+          Bj[j].TRG[0] += hadd8(invR);
+          Bj[j].TRG[1] += hadd8(dX[0]);
+          Bj[j].TRG[2] += hadd8(dX[1]);
+          Bj[j].TRG[3] += hadd8(dX[2]);
+        }
+      }
+      for( int k=0; k<8; k++ ) {
+        Bi[i+k].TRG[0] += ((float*) &P0)[k];
+        Bi[i+k].TRG[1] -= ((float*) &F0[0])[k];
+        Bi[i+k].TRG[2] -= ((float*) &F0[1])[k];
+        Bi[i+k].TRG[3] -= ((float*) &F0[2])[k];
       }
     }
 #endif // __AVX__
 
-#if __SSE3__ // vector length = 4
-    if (SIMDIZE >= simdize_sse) {
-      for( ; i + 4 <= Ci->NDLEAF; i += 4 ) {
-	real_4 P0 = _mm_setzero_ps();
-	real_4 F0[3] = { _mm_setzero_ps(), _mm_setzero_ps(), _mm_setzero_ps() };
-	for( int j = 0; j < Cj->NDLEAF; j++ ) {
-	  real_4 dX[3];
-	  for (int d = 0; d < 3; d++) {
-	    dX[d] = _mm_setr_ps(Bi[i].X[d], Bi[i+1].X[d], Bi[i+2].X[d], Bi[i+3].X[d])
-	      - _mm_set1_ps(Bj[j].X[d] + Xperiodic[d]);
-	  }
-	  real_4 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm_set1_ps(EPS2);
-	  __m128 mask = _mm_cmpgt_ps(R2, _mm_setzero_ps());
-	  real_4 invR2 = _mm_and_ps(_mm_set1_ps(1.0) / R2, mask);
-	  real_4 invR = _mm_and_ps(_mm_rsqrt_ps(R2), mask);
-	  
-	  invR *= _mm_setr_ps(Bi[i].SRC, Bi[i+1].SRC, Bi[i+2].SRC, Bi[i+3].SRC) 
-	    * _mm_set1_ps(Bj[j].SRC);
-	  real_4 invR3 = invR2 * invR;
-	  dX[0] *= invR3;
-	  dX[1] *= invR3;
-	  dX[2] *= invR3;
-	  P0 += invR;
-	  F0[0] += dX[0];
-	  F0[1] += dX[1];
-	  F0[2] += dX[2];
-	  if (mutual) {
-	    Bj[j].TRG[0] += hadd4(invR);
-	    Bj[j].TRG[1] += hadd4(dX[0]);
-	    Bj[j].TRG[2] += hadd4(dX[1]);
-	    Bj[j].TRG[3] += hadd4(dX[2]);
-	  }
-	}
-	for (int k = 0; k < 4; k++) {
-	  Bi[i+k].TRG[0] += ((real_t*)&P0)[k];
-	  Bi[i+k].TRG[1] -= ((real_t*)&F0[0])[k];
-	  Bi[i+k].TRG[2] -= ((real_t*)&F0[1])[k];
-	  Bi[i+k].TRG[3] -= ((real_t*)&F0[2])[k];
-	}
+#if __SSE3__
+    for( ; i<=ni-4; i+=4 ) {
+      __m128 P0 = _mm_setzero_ps();
+      __m128 F0[3] = { _mm_setzero_ps(), _mm_setzero_ps(), _mm_setzero_ps() };
+      for( int j=0; j<nj; j++ ) {
+        __m128 dX[3];
+        for( int d=0; d<3; d++ ) {
+          dX[d] = _mm_setr_ps(Bi[i].X[d], Bi[i+1].X[d], Bi[i+2].X[d], Bi[i+3].X[d])
+            - _mm_set1_ps(Bj[j].X[d] + Xperiodic[d]);
+        }
+        __m128 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm_set1_ps(EPS2);
+        __m128 mask = _mm_cmpgt_ps(R2, _mm_setzero_ps());
+        __m128 invR2 = _mm_and_ps(_mm_set1_ps(1.0) / R2, mask);
+        __m128 invR = _mm_and_ps(_mm_rsqrt_ps(R2), mask);
+        
+        invR *= _mm_setr_ps(Bi[i].SRC, Bi[i+1].SRC, Bi[i+2].SRC, Bi[i+3].SRC) 
+          * _mm_set1_ps(Bj[j].SRC);
+        __m128 invR3 = invR2 * invR;
+        dX[0] *= invR3;
+        dX[1] *= invR3;
+        dX[2] *= invR3;
+        P0 += invR;
+        F0[0] += dX[0];
+        F0[1] += dX[1];
+        F0[2] += dX[2];
+        if( mutual ) {
+          Bj[j].TRG[0] += hadd4(invR);
+          Bj[j].TRG[1] += hadd4(dX[0]);
+          Bj[j].TRG[2] += hadd4(dX[1]);
+          Bj[j].TRG[3] += hadd4(dX[2]);
+        }
+      }
+      for( int k=0; k<4; k++ ) {
+        Bi[i+k].TRG[0] += ((float*) &P0)[k];
+        Bi[i+k].TRG[1] -= ((float*) &F0[0])[k];
+        Bi[i+k].TRG[2] -= ((float*) &F0[1])[k];
+        Bi[i+k].TRG[3] -= ((float*) &F0[2])[k];
       }
     }
-#endif
-// vector length = 1
-    for( ; i < Ci->NDLEAF; i++ ) {
+#endif // __SSE3__
+
+    for( ; i<ni; i++ ) {
       real_t P0 = 0;
       vec3 F0 = 0;
-      for( int j = 0; j < Cj->NDLEAF; j++ ) {
+      for( int j=0; j<nj; j++ ) {
         vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
         real_t R2 = norm(dX) + EPS2;
         if( R2 != 0 ) {
-	  real_t invR2 = 1.0 / R2;
-	  real_t invR = Bi[i].SRC * Bj[j].SRC * (1.0f / sqrtf(R2));
-	  dX *= invR2 * invR;
-	  P0 += invR;
-	  F0 += dX;
-	  if (mutual) {
-	    Bj[j].TRG[0] += invR;
-	    Bj[j].TRG[1] += dX[0];
-	    Bj[j].TRG[2] += dX[1];
-	    Bj[j].TRG[3] += dX[2];
-	  }
-	}
+          real_t invR2 = 1.0f / R2;
+          real_t invR = Bi[i].SRC * Bj[j].SRC * sqrtf(invR2);
+          dX *= invR2 * invR;
+          P0 += invR;
+          F0 += dX;
+          if( mutual ) {
+            Bj[j].TRG[0] += invR;
+            Bj[j].TRG[1] += dX[0];
+            Bj[j].TRG[2] += dX[1];
+            Bj[j].TRG[3] += dX[2];
+          }
+        }
       }
       Bi[i].TRG[0] += P0;
       Bi[i].TRG[1] -= F0[0];
@@ -1079,308 +1060,115 @@ public:
   }
 
   void P2P(C_iter C) const {
-    B_iter B=C->LEAF;
+    B_iter B = C->LEAF;
     int n = C->NDLEAF;
     int i = 0;
-#if __AVX__ // vector length 8
-    if (SIMDIZE >= simdize_avx) {
-      for( ; i + 8 <= n; i += 8 ) {
-	real_8 P0 = _mm256_setzero_ps();
-	real_8 F0[3] = { _mm256_setzero_ps(), _mm256_setzero_ps(), _mm256_setzero_ps() };
-	for( int j = i + 1; j < n; j++ ) {
-	  real_8 dX[3];
-	  for (int d = 0; d < 3; d++) {
-	    dX[d] = _mm256_setr_ps(B[i].X[d],   B[i+1].X[d], B[i+2].X[d], B[i+3].X[d],
-				   B[i+4].X[d], B[i+5].X[d], B[i+6].X[d], B[i+7].X[d])
-	      - _mm256_set1_ps(B[j].X[d] + Xperiodic[d]);
-	  }
-	  real_8 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm256_set1_ps(EPS2);
-	  __m256 mask0 = _mm256_cmp_ps(_mm256_setr_ps(i,i+1,i+2,i+3,i+4,i+5,i+6,i+7), 
-				       _mm256_set1_ps(j), _CMP_LT_OQ);
-	  __m256 mask = _mm256_and_ps(mask0, _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ));
-	  real_8 invR2 = _mm256_and_ps(_mm256_set1_ps(1.0) / R2, mask);
-	  real_8 invR = _mm256_and_ps(_mm256_rsqrt_ps(R2), mask);
-	  
-	  invR *= _mm256_setr_ps(B[i].SRC,   B[i+1].SRC, B[i+2].SRC, B[i+3].SRC,
-				 B[i+4].SRC, B[i+5].SRC, B[i+6].SRC, B[i+7].SRC) 
-	    * _mm256_set1_ps(B[j].SRC);
-	  real_8 invR3 = invR2 * invR;
-	  dX[0] *= invR3;
-	  dX[1] *= invR3;
-	  dX[2] *= invR3;
-	  P0 += invR;
-	  F0[0] += dX[0];
-	  F0[1] += dX[1];
-	  F0[2] += dX[2];
-	  B[j].TRG[0] += hadd8(invR);
-	  B[j].TRG[1] += hadd8(dX[0]);
-	  B[j].TRG[2] += hadd8(dX[1]);
-	  B[j].TRG[3] += hadd8(dX[2]);
-	}
-	for (int k = 0; k < 8; k++) {
-	  B[i+k].TRG[0] += ((real_t*)&P0)[k];
-	  B[i+k].TRG[1] -= ((real_t*)&F0[0])[k];
-	  B[i+k].TRG[2] -= ((real_t*)&F0[1])[k];
-	  B[i+k].TRG[3] -= ((real_t*)&F0[2])[k];
-	}
+#if __AVX__
+    for( ; i<=n-8; i+=8 ) {
+      __m256 P0 = _mm256_setzero_ps();
+      __m256 F0[3] = { _mm256_setzero_ps(), _mm256_setzero_ps(), _mm256_setzero_ps() };
+      for( int j=i+1; j<n; j++ ) {
+        __m256 dX[3];
+        for( int d=0; d<3; d++ ) {
+          dX[d] = _mm256_setr_ps(B[i].X[d],   B[i+1].X[d], B[i+2].X[d], B[i+3].X[d],
+                                 B[i+4].X[d], B[i+5].X[d], B[i+6].X[d], B[i+7].X[d])
+            - _mm256_set1_ps(B[j].X[d] + Xperiodic[d]);
+        }
+        __m256 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm256_set1_ps(EPS2);
+        __m256 mask0 = _mm256_cmp_ps(_mm256_setr_ps(i,i+1,i+2,i+3,i+4,i+5,i+6,i+7), 
+                                     _mm256_set1_ps(j), _CMP_LT_OQ);
+        __m256 mask = _mm256_and_ps(mask0, _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ));
+        __m256 invR2 = _mm256_and_ps(_mm256_set1_ps(1.0) / R2, mask);
+        __m256 invR = _mm256_and_ps(_mm256_rsqrt_ps(R2), mask);
+        
+        invR *= _mm256_setr_ps(B[i].SRC,   B[i+1].SRC, B[i+2].SRC, B[i+3].SRC,
+                               B[i+4].SRC, B[i+5].SRC, B[i+6].SRC, B[i+7].SRC) 
+          * _mm256_set1_ps(B[j].SRC);
+        __m256 invR3 = invR2 * invR;
+        dX[0] *= invR3;
+        dX[1] *= invR3;
+        dX[2] *= invR3;
+        P0 += invR;
+        F0[0] += dX[0];
+        F0[1] += dX[1];
+        F0[2] += dX[2];
+        B[j].TRG[0] += hadd8(invR);
+        B[j].TRG[1] += hadd8(dX[0]);
+        B[j].TRG[2] += hadd8(dX[1]);
+        B[j].TRG[3] += hadd8(dX[2]);
+      }
+      for( int k=0; k<8; k++ ) {
+        B[i+k].TRG[0] += ((float*) &P0)[k];
+        B[i+k].TRG[1] -= ((float*) &F0[0])[k];
+        B[i+k].TRG[2] -= ((float*) &F0[1])[k];
+        B[i+k].TRG[3] -= ((float*) &F0[2])[k];
       }
     }
 #endif // __AVX__
 
-#if __SSE3__ // vector length 4
-    if (SIMDIZE >= simdize_sse) {
-      for( ; i + 4 <= n; i += 4 ) {
-	real_4 P0 = _mm_setzero_ps();
-	real_4 F0[3] = { _mm_setzero_ps(), _mm_setzero_ps(), _mm_setzero_ps() };
-	for( int j = i + 1; j < n; j++ ) {
-	  real_4 dX[3];
-	  for (int d = 0; d < 3; d++) {
-	    dX[d] = _mm_setr_ps(B[i].X[d], B[i+1].X[d], B[i+2].X[d], B[i+3].X[d])
-	      - _mm_set1_ps(B[j].X[d] + Xperiodic[d]);
-	  }
-	  real_4 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm_set1_ps(EPS2);
-	  __m128 mask0 = _mm_cmplt_ps(_mm_setr_ps(i, i+1, i+2, i+3), _mm_set1_ps(j));
-	  __m128 mask = _mm_and_ps(mask0, _mm_cmpgt_ps(R2, _mm_setzero_ps()));
-	  real_4 invR2 = _mm_and_ps(_mm_set1_ps(1.0) / R2, mask);
-	  real_4 invR = _mm_and_ps(_mm_rsqrt_ps(R2), mask);
-	  
-	  invR *= _mm_setr_ps(B[i].SRC, B[i+1].SRC, B[i+2].SRC, B[i+3].SRC) * _mm_set1_ps(B[j].SRC);
-	  real_4 invR3 = invR2 * invR;
-	  dX[0] *= invR3;
-	  dX[1] *= invR3;
-	  dX[2] *= invR3;
-	  P0 += invR;
-	  F0[0] += dX[0];
-	  F0[1] += dX[1];
-	  F0[2] += dX[2];
-	  B[j].TRG[0] += hadd4(invR);
-	  B[j].TRG[1] += hadd4(dX[0]);
-	  B[j].TRG[2] += hadd4(dX[1]);
-	  B[j].TRG[3] += hadd4(dX[2]);
-	}
-	for (int k = 0; k < 4; k++) {
-	  B[i+k].TRG[0] += ((real_t*)&P0)[k];
-	  B[i+k].TRG[1] -= ((real_t*)&F0[0])[k];
-	  B[i+k].TRG[2] -= ((real_t*)&F0[1])[k];
-	  B[i+k].TRG[3] -= ((real_t*)&F0[2])[k];
-	}
+#if __SSE3__
+    for( ; i<=n-4; i+=4 ) {
+      __m128 P0 = _mm_setzero_ps();
+      __m128 F0[3] = { _mm_setzero_ps(), _mm_setzero_ps(), _mm_setzero_ps() };
+      for( int j=i+1; j<n; j++ ) {
+        __m128 dX[3];
+        for( int d=0; d<3; d++ ) {
+          dX[d] = _mm_setr_ps(B[i].X[d], B[i+1].X[d], B[i+2].X[d], B[i+3].X[d])
+            - _mm_set1_ps(B[j].X[d] + Xperiodic[d]);
+        }
+        __m128 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm_set1_ps(EPS2);
+        __m128 mask0 = _mm_cmplt_ps(_mm_setr_ps(i, i+1, i+2, i+3), _mm_set1_ps(j));
+        __m128 mask = _mm_and_ps(mask0, _mm_cmpgt_ps(R2, _mm_setzero_ps()));
+        __m128 invR2 = _mm_and_ps(_mm_set1_ps(1.0) / R2, mask);
+        __m128 invR = _mm_and_ps(_mm_rsqrt_ps(R2), mask);
+        
+        invR *= _mm_setr_ps(B[i].SRC, B[i+1].SRC, B[i+2].SRC, B[i+3].SRC) * _mm_set1_ps(B[j].SRC);
+        __m128 invR3 = invR2 * invR;
+        dX[0] *= invR3;
+        dX[1] *= invR3;
+        dX[2] *= invR3;
+        P0 += invR;
+        F0[0] += dX[0];
+        F0[1] += dX[1];
+        F0[2] += dX[2];
+        B[j].TRG[0] += hadd4(invR);
+        B[j].TRG[1] += hadd4(dX[0]);
+        B[j].TRG[2] += hadd4(dX[1]);
+        B[j].TRG[3] += hadd4(dX[2]);
+      }
+      for( int k=0; k<4; k++ ) {
+        B[i+k].TRG[0] += ((float*) &P0)[k];
+        B[i+k].TRG[1] -= ((float*) &F0[0])[k];
+        B[i+k].TRG[2] -= ((float*) &F0[1])[k];
+        B[i+k].TRG[3] -= ((float*) &F0[2])[k];
       }
     }
 #endif // __SSE3__
-// vector length 1
-    for( ; i < n; i++ ) {
+
+    for( ; i<n; i++ ) {
       real_t P0 = 0;
       vec3 F0 = 0;
-      for( int j = i + 1; j < n; j++ ) {
+      for( int j=i+1; j<n; j++ ) {
         vec3 dX = B[i].X - B[j].X;
         real_t R2 = norm(dX) + EPS2;
         if( R2 != 0 ) {
-	  real_t invR2 = 1.0 / R2;
-	  real_t invR = B[i].SRC * B[j].SRC * (1.0f / sqrtf(R2));
-	  dX *= invR2 * invR;
-	  P0 += invR;
-	  F0 += dX;
-	  B[j].TRG[0] += invR;
-	  B[j].TRG[1] += dX[0];
-	  B[j].TRG[2] += dX[1];
-	  B[j].TRG[3] += dX[2];
-	}
+          real_t invR2 = 1.0 / R2;
+          real_t invR = B[i].SRC * B[j].SRC * sqrtf(invR2);
+          dX *= invR2 * invR;
+          P0 += invR;
+          F0 += dX;
+          B[j].TRG[0] += invR;
+          B[j].TRG[1] += dX[0];
+          B[j].TRG[2] += dX[1];
+          B[j].TRG[3] += dX[2];
+        }
       }
       B[i].TRG[0] += P0;
       B[i].TRG[1] -= F0[0];
       B[i].TRG[2] -= F0[1];
       B[i].TRG[3] -= F0[2];
     }
-
   }
-
-#else
-
-#if defined(SSE)
-
-  void P2P(C_iter Ci, C_iter Cj, bool mutual) const {
-    if( mutual ) {
-      for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {
-        real_t P0 = 0;
-        vec3 F0 = 0;
-        for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {
-          vec3 dX = Bi->X - Bj->X - Xperiodic;
-          real_t R2 = norm(dX) + EPS2;
-          real_t invR2 = 1.0 / R2;
-          if( R2 == 0 ) invR2 = 0;
-          real_t invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
-          dX *= invR2 * invR;
-          P0 += invR;
-          F0 += dX;
-          Bj->TRG[0] += invR * mutual;
-          Bj->TRG[1] += dX[0] * mutual;
-          Bj->TRG[2] += dX[1] * mutual;
-          Bj->TRG[3] += dX[2] * mutual;
-        }
-        Bi->TRG[0] += P0;
-        Bi->TRG[1] -= F0[0];
-        Bi->TRG[2] -= F0[1];
-        Bi->TRG[3] -= F0[2];
-      }
-    } else {
-      for( int bi=0; bi<Ci->NDLEAF; bi+=4 ) {
-        B_iter Bi = Ci->LEAF + bi;
-        int nvec = std::min(Ci->NDLEAF-bi,4);
-        float16 target4;
-        for( int i=0; i<nvec; i++ ) {
-          target4.x[i] = Bi[i].X[0] - Xperiodic[0];
-          target4.y[i] = Bi[i].X[1] - Xperiodic[1];
-          target4.z[i] = Bi[i].X[2] - Xperiodic[2];
-          target4.w[i] = EPS2;
-        }
-        B_iter Bj = Cj->LEAF;
-        __m128 mi = _mm_load1_ps(&Bi->SRC);
-        __m128 zero = _mm_setzero_ps();
-        __m128 ax = _mm_setzero_ps();
-        __m128 ay = _mm_setzero_ps();
-        __m128 az = _mm_setzero_ps();
-        __m128 phi = _mm_setzero_ps();
-
-        __m128 xi = _mm_load_ps(target4.x);
-        __m128 yi = _mm_load_ps(target4.y);
-        __m128 zi = _mm_load_ps(target4.z);
-        __m128 R2 = _mm_load_ps(target4.w);
-
-        float4 source = make_float4(Bj);
-        __m128 x2 = _mm_load1_ps(&source.x);
-        x2 = _mm_sub_ps(x2, xi);
-        __m128 y2 = _mm_load1_ps(&source.y);
-        y2 = _mm_sub_ps(y2, yi);
-        __m128 z2 = _mm_load1_ps(&source.z);
-        z2 = _mm_sub_ps(z2, zi);
-        __m128 mj = _mm_load1_ps(&source.w);
-
-        __m128 xj = x2;
-        x2 = _mm_mul_ps(x2, x2);
-        R2 = _mm_add_ps(R2, x2);
-        __m128 yj = y2;
-        y2 = _mm_mul_ps(y2, y2);
-        R2 = _mm_add_ps(R2, y2);
-        __m128 zj = z2;
-        z2 = _mm_mul_ps(z2, z2);
-        R2 = _mm_add_ps(R2, z2);
-
-        source = make_float4(++Bj);
-        x2 = _mm_load_ps(&source.x);
-        y2 = x2;
-        z2 = x2;
-        for( int j=0; j<Cj->NDLEAF; j++ ) {
-          __m128 invR = _mm_rsqrt_ps(R2);
-          __m128 mask = _mm_cmpgt_ps(R2,zero);
-          invR = _mm_and_ps(invR,mask);
-          R2 = _mm_load_ps(target4.w);
-          x2 = _mm_shuffle_ps(x2, x2, 0x00);
-          x2 = _mm_sub_ps(x2, xi);
-          y2 = _mm_shuffle_ps(y2, y2, 0x55);
-          y2 = _mm_sub_ps(y2, yi);
-          z2 = _mm_shuffle_ps(z2, z2, 0xaa);
-          z2 = _mm_sub_ps(z2, zi);
-
-          mj = _mm_mul_ps(mj, invR);
-          mj = _mm_mul_ps(mj, mi);
-          phi = _mm_add_ps(phi, mj);
-          invR = _mm_mul_ps(invR, invR);
-          invR = _mm_mul_ps(invR, mj);
-          mj = _mm_load_ps(&source.x);
-          mj = _mm_shuffle_ps(mj, mj, 0xff);
-
-          source = make_float4(++Bj);
-          xj = _mm_mul_ps(xj, invR);
-          ax = _mm_add_ps(ax, xj);
-          xj = x2;
-          x2 = _mm_mul_ps(x2, x2);
-          R2 = _mm_add_ps(R2, x2);
-          x2 = _mm_load_ps(&source.x);
-
-          yj = _mm_mul_ps(yj, invR);
-          ay = _mm_add_ps(ay, yj);
-          yj = y2;
-          y2 = _mm_mul_ps(y2, y2);
-          R2 = _mm_add_ps(R2, y2);
-          y2 = x2;
-
-          zj = _mm_mul_ps(zj, invR);
-          az = _mm_add_ps(az, zj);
-          zj = z2;
-          z2 = _mm_mul_ps(z2, z2);
-          R2 = _mm_add_ps(R2, z2);
-          z2 = x2;
-        }
-        _mm_store_ps(target4.x, ax);
-        _mm_store_ps(target4.y, ay);
-        _mm_store_ps(target4.z, az);
-        _mm_store_ps(target4.w, phi);
-        for( int i=0; i<nvec; i++ ) {
-          Bi[i].TRG[0] += target4.w[i];
-          Bi[i].TRG[1] += target4.x[i];
-          Bi[i].TRG[2] += target4.y[i];
-          Bi[i].TRG[3] += target4.z[i];
-        }
-      }
-    }
-  }
-
-#else // SSE
-
-  void P2P(C_iter Ci, C_iter Cj, bool mutual=true) const {
-    for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {
-      real_t P0 = 0;
-      vec3 F0 = 0;
-      for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {
-        vec3 dX = Bi->X - Bj->X - Xperiodic;
-        real_t R2 = norm(dX) + EPS2;
-        real_t invR2 = 1.0 / R2;
-        if( R2 == 0 ) invR2 = 0;
-        real_t invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
-        dX *= invR2 * invR;
-        P0 += invR;
-        F0 += dX;
-        Bj->TRG[0] += invR * mutual;
-        Bj->TRG[1] += dX[0] * mutual;
-        Bj->TRG[2] += dX[1] * mutual;
-        Bj->TRG[3] += dX[2] * mutual;
-      }
-      Bi->TRG[0] += P0;
-      Bi->TRG[1] -= F0[0];
-      Bi->TRG[2] -= F0[1];
-      Bi->TRG[3] -= F0[2];
-    }
-  }
-
-#endif // SSE
-
-  void P2P(C_iter C) const {
-    int NJ = C->NDLEAF;
-    for( B_iter Bi=C->LEAF; Bi!=C->LEAF+C->NDLEAF; ++Bi, --NJ ) {
-      real_t P0 = 0;
-      vec3 F0 = 0;
-      for( B_iter Bj=Bi+1; Bj!=Bi+NJ; ++Bj ) {
-        vec3 dX = Bi->X - Bj->X;
-        real_t R2 = norm(dX) + EPS2;
-        real_t invR2 = 1.0 / R2;
-        if( R2 == 0 ) invR2 = 0;
-        real_t invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);
-        dX *= invR2 * invR;
-        P0 += invR;
-        F0 += dX;
-        Bj->TRG[0] += invR;
-        Bj->TRG[1] += dX[0];
-        Bj->TRG[2] += dX[1];
-        Bj->TRG[3] += dX[2];
-      }
-      Bi->TRG[0] += P0;
-      Bi->TRG[1] -= F0[0];
-      Bi->TRG[2] -= F0[1];
-      Bi->TRG[3] -= F0[2];
-    }
-  }
-
-#endif // SIMDIZATION
 
   void P2M(C_iter C, real_t &Rmax) const {
     for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {

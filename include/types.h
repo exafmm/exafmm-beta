@@ -22,22 +22,8 @@
 #include <vector>
 #include "vec.h"
 
-#if SIMDIZATION
-typedef enum {
-  simdize_none,
-  simdize_sse,
-  simdize_avx
-} simdize_option;
-
-#include <immintrin.h>
-#endif
-
 #if CMDLINE_ARGS
 #include "exafmm_config.h"
-#endif
-
-#if SSE
-#include <xmmintrin.h>
 #endif
 
 #if 0

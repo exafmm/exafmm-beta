@@ -235,31 +235,27 @@ protected:
 #if DUAL
     {                                                           // Dummy bracket
 #else
-      if(Ci->RCRIT != Cj->RCRIT) {                                // If cell is not at the same level
-	splitCell(Ci,Cj,mutual);                                  //  Split cell and call function recursively for child
-      } else {                                                   // If we don't care if cell is not at the same level
+    if(Ci->RCRIT != Cj->RCRIT) {                                // If cell is not at the same level
+      splitCell(Ci,Cj,mutual);                                  //  Split cell and call function recursively for child
+    } else {                                                    // If we don't care if cell is not at the same level
 #endif
-	if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {    //  If distance is far enough
-	  approximate(Ci,Cj,mutual);                              //   Use approximate kernels, e.g. M2L, M2P
-	} else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {           //  Else if both cells are leafs
-	  if( Cj->NCLEAF == 0 ) { //   If the leafs weren't sent from remote node
-	    approximate(Ci,Cj,mutual);                            //    Use approximate kernels, e.g. M2L, M2P
-	  } else {                                                //   Else if the leafs were sent
-	    if (Ci == Cj) {
-	      P2P(Ci);
-	    } else {
-	      P2P(Ci,Cj,mutual);                                    //    P2P kernel
-	    }
-	    count(NP2P);                                          //    Increment P2P counter
-	  }                                                  //   End if for leafs
-	} else {                                                  //  Else if cells are close but not leafs
-	  splitCell(Ci,Cj,mutual);	//   Split cell and call function recursively for child
-	}                                                        //  End if for multipole acceptance
-#if DUAL
-      }                                                           // End if for same level cells
-#else
-    }
-#endif
+      if(R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {    //  If distance is far enough
+        approximate(Ci,Cj,mutual);                              //   Use approximate kernels, e.g. M2L, M2P
+      } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {           //  Else if both cells are leafs
+        if( Cj->NCLEAF == 0 ) { //   If the leafs weren't sent from remote node
+          approximate(Ci,Cj,mutual);                            //    Use approximate kernels, e.g. M2L, M2P
+        } else {                                                //   Else if the leafs were sent
+          if (Ci == Cj) {
+            P2P(Ci);
+          } else {
+            P2P(Ci,Cj,mutual);                                  //    P2P kernel
+	  }
+	  count(NP2P);                                          //    Increment P2P counter
+	}                                                       //   End if for leafs
+      } else {                                                  //  Else if cells are close but not leafs
+        splitCell(Ci,Cj,mutual);                                //   Split cell and call function recursively for child
+      }                                                         //  End if for multipole acceptance
+    }                                                           // End if for same level cells
   }
 
 

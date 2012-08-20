@@ -38,9 +38,6 @@ int main(int argc, char ** argv) {
   IMAGES = o->images;
   THETA = o->theta;
   NCRIT = o->ncrit;
-#if SIMDIZATION
-  SIMDIZE = o->simdize;
-#endif
 #if IMPL_MUTUAL
   splitBothThreshold = o->splitBothThreshold;
   splitParallelThreshold = o->splitParallelThreshold;
