@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 #include <getopt.h>
+#include <errno.h>
 
 struct exafmm_config {
   int numBodies;

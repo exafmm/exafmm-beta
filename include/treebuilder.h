@@ -4,11 +4,16 @@
 
 #if PARALLEL_EVERYTHING
 
+/* 8 elements counter to record the number of bodies
+   that should go to each child */
 typedef vec<8,int> ivec8;
 
+/* tree of 8 elements counters.
+   a node corresponds to a contiguous region of 
+   the bodies vector. */
 struct ivec8Tree {
   ivec8 counts;
-  ivec8Tree * children[8];
+  ivec8Tree * children[2];
 };
 
 struct XNode {
@@ -216,6 +221,7 @@ protected:
     return s;
   }
 
+  /* make XNode instance that covers to bodies[beg] ... bodies[end] */
   XNode * makeNode(int level, int beg, int end, vec3 X, bool nochild) {
     XNode * n = new XNode();
     n->LEVEL = level; 
@@ -230,61 +236,75 @@ protected:
     return n;
   }
 
-  /* maximum ivec8 nodes for n bodies */
   int max_ivec8_nodes_to_count(int n, int leaf_len) {
     if (n <= leaf_len) return 1;
-    else return 1 + 8 * max_ivec8_nodes_to_count((n + 7) / 8, leaf_len);
+    else return 4 * ((n - 1) / leaf_len) - 1;
   }
 
   /* maximum ivec8 nodes for n bodies */
   int max_ivec8_nodes_to_build(int n, int leaf_len) {
-    long d = 7 * leaf_len;
-    return (64 * n + d - 1) / d;
+    return (4 * n) / leaf_len;
   }
 
-  ivec8Tree * countBodies(Bodies& bodies, int beg, int end, vec3 X, real_t R, 
+  /* given 
+       bodies[beg:end] : a set of bodies
+       X               : the geometric center of a cubic region,
+     count how many bodies in bodies[beg:end] as well as its subsections
+     are in each of the eight child cubes.
+     the result is returned as a tree of counters.  its root node describes
+     how many bodies in bodies[beg:end] are in ach of the eight child cubes,
+     each of its eight children describes how many bodies in each of its
+     1/8 sections, and so on. the section is divided until the number of
+     bodies <= leaf_len.
+     the root node is allocated at t_root, its descendents allocated between
+     t_beg and t_end.
+*/
+  ivec8Tree * countBodies(Bodies& bodies, int beg, int end, vec3 X, 
 			  ivec8Tree * t_root, ivec8Tree * t_beg, ivec8Tree * t_end, 
 			  int leaf_len) {
-    for (int k = 0; k < 8; k++) {
-      t_root->counts[k] = 0;
-      t_root->children[k] = NULL;
-    }
+    assert(max_ivec8_nodes_to_count(end - beg, leaf_len) <= t_end - t_beg + 1);
     if (end - beg <= leaf_len) {
+      /* the section is small enough -> count sequentially */
+      for (int k = 0; k < 8; k++) t_root->counts[k] = 0;
+      t_root->children[0] = t_root->children[1] = NULL;
       for (int i = beg; i < end; i++) {
 	vec3 x = bodies[i].X;
 	int oct = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);
 	t_root->counts[oct]++;
       } 
     } else {
-      ivec8Tree * t = t_beg;
+      /* divide the section into two subsections and count them
+	 in parallel */
+      int mid = (beg + end) / 2;
+      int n0 = max_ivec8_nodes_to_count(mid - beg, leaf_len);
+      int n1 = max_ivec8_nodes_to_count(end - mid, leaf_len);
+      ivec8Tree * t_mid = t_beg + n0;
+      assert(t_end - t_beg >= n0 + n1);
       __spawn_tasks__;
-      for (int k = 0; k < 8; k++) {
-	int b = beg + ((end - beg) * k) / 8;
-	int e = beg + ((end - beg) * (k + 1)) / 8;
-	int n_nodes = max_ivec8_nodes_to_count(e - b, leaf_len);
-	assert(t + n_nodes <= t_end);
 #if _OPENMP
 #pragma omp task shared(bodies)
 #endif
-	spawn_task1(bodies,
-		    spawn t_root->children[k] 
-		    = countBodies(bodies, b, e, X, R, t, t + 1, t_end, leaf_len));
-	t += n_nodes;
-      }
+      spawn_task1(bodies,
+		  spawn t_root->children[0] 
+		  = countBodies(bodies, beg, mid, X, t_beg, t_beg + 1, t_beg + n0, leaf_len));
+      call_task(spawn t_root->children[1] 
+		= countBodies(bodies, mid, end, X, t_mid, t_mid + 1, t_mid + n1, leaf_len));
 #if _OPENMP
 #pragma omp taskwait
 #endif
       __sync__;
-      for (int k = 0; k < 8; k++) {
-	t_root->counts += t_root->children[k]->counts;
-      }      
+      t_root->counts = t_root->children[0]->counts + t_root->children[1]->counts;
     }
     return t_root;
   }
 
+  /* move bodies in bodies[beg:end] into t_bodies[beg:end], so each
+     particle will be in the right subcube. positions are described
+     in offsets. */
   void moveBodies(Bodies& bodies, Bodies& t_bodies, int beg, int end, 
-		  ivec8Tree * t, ivec8 offsets, vec3 X, real_t R) {
+		  ivec8Tree * t, ivec8 offsets, vec3 X) {
     if (t->children[0] == NULL) {
+      /* it is leaf, so we move sequentially */
       for (int i = beg; i < end; i++) {
 	vec3 x = bodies[i].X;
 	int oct = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);
@@ -292,19 +312,20 @@ protected:
 	offsets[oct]++;
       }
     } else {
+      /* divide the section into two subsections
+	 and work on each in parallel */
+      int mid = (beg + end) / 2;
+      ivec8 offsets_mid = offsets + t->children[0]->counts;
       __spawn_tasks__;
-      for (int k = 0; k < 8; k++) {
-	assert(t->children[k]);
-	int b = beg + ((end - beg) * k) / 8;
-	int e = beg + ((end - beg) * (k + 1)) / 8;
 #if _OPENMP
 #pragma omp task shared(bodies, t_bodies)
 #endif
-	spawn_task2(bodies, t_bodies,
-		    moveBodies(bodies, t_bodies, b, e, 
-			       t->children[k], offsets, X, R));
-	offsets += t->children[k]->counts;
-      }
+      spawn_task2(bodies, t_bodies,
+		  spawn moveBodies(bodies, t_bodies, beg, mid, 
+				   t->children[0], offsets, X));
+      call_task(spawn moveBodies(bodies, t_bodies, mid, end,
+				 t->children[1], offsets_mid, X));
+    
 #if _OPENMP
 #pragma omp taskwait
 #endif
@@ -316,7 +337,7 @@ protected:
 		     int beg,  int end, 
 		     ivec8Tree * t_beg, ivec8Tree * t_end, 
 		     vec3 X, int level, int leaf_len) {
-    assert(max_ivec8_nodes_to_build(end - beg, leaf_len) <= t_end - t_beg + 1);
+    assert(max_ivec8_nodes_to_build(end - beg, leaf_len) <= t_end - t_beg);
     if (beg == end) return NULL;
     if (end - beg <= NCRIT) {
       if (dest)
@@ -325,15 +346,14 @@ protected:
     }
     XNode * node = makeNode(level, beg, end, X, false);
     ivec8Tree t_root_[1]; 
-    ivec8Tree * t_root = countBodies(bodies, beg, end, X, (localRadius / (1 << level)), 
-				     t_root_, t_beg, t_end, leaf_len);
+    ivec8Tree * t_root = countBodies(bodies, beg, end, X, t_root_, t_beg, t_end, leaf_len);
     ivec8 offsets = prefixSum(t_root->counts, beg);
-    moveBodies(bodies, t_bodies, beg, end, t_root, offsets, X, (localRadius / (1 << level)));
+    moveBodies(bodies, t_bodies, beg, end, t_root, offsets, X);
     ivec8Tree * t = t_beg;
     __spawn_tasks__;
     for (int k = 0; k < 8; k++) {
       int n_nodes = max_ivec8_nodes_to_build(t_root->counts[k], leaf_len);
-      assert(t + n_nodes - 1 <= t_end);
+      assert(t + n_nodes <= t_end);
 #if _OPENMP
 #pragma omp task shared(bodies, t_bodies)
 #endif
@@ -346,10 +366,10 @@ protected:
 	  node->CHILD[k] 
 	    = buildNodes(t_bodies, bodies, 1 - dest,
 			 offsets[k], offsets[k] + t_root->counts[k],
-			 t, t + n_nodes - 1,
+			 t, t + n_nodes,
 			 Y, level + 1, leaf_len);
 	});
-      if (n_nodes > 0) t += n_nodes - 1;
+      t += n_nodes;
     }
 #if _OPENMP
 #pragma omp taskwait

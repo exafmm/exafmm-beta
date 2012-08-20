@@ -161,6 +161,11 @@ public:
       }                                                         //  End loop over dimensions
     }                                                           // End loop over bodies
     localCenter = (localXmax + localXmin) / 2;                  //  Calculate center of domain
+#if 1
+    /* localRadius not initialized anywhere
+       but is this correct? */
+    localRadius = localCenter[0] - localXmin[0];
+#endif
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       localRadius = std::min(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
       localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
@@ -187,6 +192,11 @@ public:
     localXmin = vt.first;
     localXmax = vt.second;
     localCenter = (localXmax + localXmin) / 2;                  //  Calculate center of domain
+#if 1
+    /* localRadius not initialized anywhere
+       but is this correct? */
+    localRadius = localCenter[0] - localXmin[0];
+#endif
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       localRadius = std::min(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
       localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
