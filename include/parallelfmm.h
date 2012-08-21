@@ -8,10 +8,10 @@ private:
   int IRANK;                                                    //!< MPI rank loop counter
   Cells sendCells;                                              //!< Send buffer for cells
   Cells recvCells;                                              //!< Receive buffer for cells
-  int *sendCellCount;                                           //!< Send count
-  int *sendCellDispl;                                           //!< Send displacement
-  int *recvCellCount;                                           //!< Receive count
-  int *recvCellDispl;                                           //!< Receive displacement
+  int * sendCellCount;                                          //!< Send count
+  int * sendCellDispl;                                          //!< Send displacement
+  int * recvCellCount;                                          //!< Receive count
+  int * recvCellDispl;                                          //!< Receive displacement
 
 public:
   using Partition::alltoall;

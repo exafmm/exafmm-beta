@@ -8,7 +8,7 @@ serial	: serial.cxx $(KERNELS)
 
 serial_argv : serial_argv.cxx $(KERNELS)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
-	./a.out --numBodies 10000 --distribution plummer
+	./a.out
 
 parallel: parallel.cxx $(KERNELS)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)

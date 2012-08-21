@@ -7,12 +7,12 @@ class Partition : public MyMPI, public SerialFMM {
 protected:
   Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
-  vec3 *rankXmin;                                               //!< Array for minimum of local domains
-  vec3 *rankXmax;                                               //!< Array for maximum of local domains
-  int *sendBodyCount;                                           //!< Send count
-  int *sendBodyDispl;                                           //!< Send displacement
-  int *recvBodyCount;                                           //!< Receive count
-  int *recvBodyDispl;                                           //!< Receive displacement
+  vec3 * rankXmin;                                              //!< Array for minimum of local domains
+  vec3 * rankXmax;                                              //!< Array for maximum of local domains
+  int * sendBodyCount;                                          //!< Send count
+  int * sendBodyDispl;                                          //!< Send displacement
+  int * recvBodyCount;                                          //!< Receive count
+  int * recvBodyDispl;                                          //!< Receive displacement
 
 private:
 //! Allreduce bounds from all ranks

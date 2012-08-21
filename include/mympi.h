@@ -103,7 +103,7 @@ public:
 
 //! Print a vector value on all ranks
   template<typename T>
-  void print(T *data, const int begin, const int end) {
+  void print(T * data, const int begin, const int end) {
     for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
       MPI_Barrier(MPI_COMM_WORLD);                              //  Sync processes
       usleep(WAIT);                                             //  Wait "WAIT" milliseconds
@@ -119,7 +119,7 @@ public:
 
 //! Print a vector value on irank
   template<typename T>
-  void print(T *data, const int begin, const int end, const int irank) {
+  void print(T * data, const int begin, const int end, const int irank) {
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
     if (MPIRANK == irank) {                                     // If it's my rank

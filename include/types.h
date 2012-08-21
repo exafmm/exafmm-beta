@@ -104,21 +104,21 @@ typedef std::vector<Body>::iterator  B_iter;                    //!< Iterator fo
 
 //! Linked list of leafs (only used in fast/topdown.h)
 struct Leaf {
-  int   I;                                                      //!< Unique index for every leaf
-  vec3  X;                                                      //!< Coordinate of leaf
-  Leaf *NEXT;                                                   //!< Pointer to next leaf
+  int    I;                                                     //!< Unique index for every leaf
+  vec3   X;                                                     //!< Coordinate of leaf
+  Leaf * NEXT;                                                  //!< Pointer to next leaf
 };
 typedef std::vector<Leaf>           Leafs;                      //!< Vector of leafs
 typedef std::vector<Leaf>::iterator L_iter;                     //!< Iterator for leaf vector
 
 //! Structure of nodes (only used in fast/topdown.h)
 struct Node {
-  bool  NOCHILD;                                                //!< Flag for twig nodes
-  int   LEVEL;                                                  //!< Level in the tree structure
-  int   NLEAF;                                                  //!< Number of descendant leafs
-  int   CHILD[8];                                               //!< Index of child node
-  vec3  X;                                                      //!< Coordinate at center
-  Leaf *LEAF;                                                   //!< Pointer to first leaf
+  bool   NOCHILD;                                               //!< Flag for twig nodes
+  int    LEVEL;                                                 //!< Level in the tree structure
+  int    NLEAF;                                                 //!< Number of descendant leafs
+  int    CHILD[8];                                              //!< Index of child node
+  vec3   X;                                                     //!< Coordinate at center
+  Leaf * LEAF;                                                  //!< Pointer to first leaf
 };
 typedef std::vector<Node>           Nodes;                      //!< Vector of nodes
 typedef std::vector<Node>::iterator N_iter;                     //!< Iterator for node vector

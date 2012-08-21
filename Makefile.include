@@ -12,7 +12,7 @@ CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 VTK_INCLUDE_PATH = /usr/include/vtk-5.8
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
-### choose PDE to calculate
+### choose kernel
 EQUATION = Laplace
 #EQUATION = Yukawa
 #EQUATION = Helmholtz
@@ -21,7 +21,6 @@ EQUATION = Laplace
 ### choose basis of multipole/local expansion
 BASIS	= Cartesian
 #BASIS	= Spherical
-#BASIS	= Rotation
 #BASIS	= Planewave
 
 ### choose device to use
@@ -61,16 +60,18 @@ LFLAGS += -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 # new flags
 LFLAGS += -DPARALLEL_EVERYTHING
 
-### MassiveThreads flags (doesn't work with -fopenmp)
-#MTH_DIR:=/home/tau/parallel/sys
-#LFLAGS	+= -std=c++0x -DMTHREAD -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth -lpthread -ldl
+### Intel TBB flags (doesn't work with OpenMP) : TBB is available from http://threadingbuildingblocks.org/download.php
+LFLAGS	+= -std=c++0x -DTBB -ltbb
+
+### MassiveThreads flags (doesn't work with OpenMP) : MassiveThreads is available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi
 
-### VTK flags
-CXX	+= -I$(VTK_INCLUDE_PATH)
-VFLAGS	= -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+### VTK flags : VTK is available from http://www.vtk.org/VTK/resources/software.html
+#CXX	+= -I$(VTK_INCLUDE_PATH)
+#VFLAGS	= -L$(VTK_LIBRARY_PATH) -DVTK -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags

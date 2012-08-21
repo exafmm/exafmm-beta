@@ -19,16 +19,16 @@ const int maxGroups = 100000;
 //! Interactive VTK class
 class vtkSliderCallback : public vtkCommand {
 public:
-  vtkPoints *points[maxGroups];
-  vtkPolyData *polydata;
-  vtkVertexGlyphFilter *filter;
+  vtkPoints * points[maxGroups];
+  vtkPolyData * polydata;
+  vtkVertexGlyphFilter * filter;
   vtkSliderCallback() {}
-  static vtkSliderCallback *New() {
+  static vtkSliderCallback * New() {
     return new vtkSliderCallback();
   }
-  virtual void Execute(vtkObject *caller, unsigned long, void*) {
-    vtkSliderWidget *widget = reinterpret_cast<vtkSliderWidget*>(caller);
-    int value = static_cast<int>(static_cast<vtkSliderRepresentation *>(widget->GetRepresentation())->GetValue());
+  virtual void Execute(vtkObject * caller, unsigned long, void*) {
+    vtkSliderWidget * widget = reinterpret_cast<vtkSliderWidget*>(caller);
+    int value = static_cast<int>(static_cast<vtkSliderRepresentation*>(widget->GetRepresentation())->GetValue());
     polydata->SetPoints(points[value]);
     filter->SetInputConnection(polydata->GetProducerPort());
     filter->Update();
@@ -38,8 +38,8 @@ public:
 //! Base VTK class
 class vtkPlot {
   int I[maxGroups];
-  vtkPoints *points[maxGroups];
-  vtkPoints *hexPoints;
+  vtkPoints * points[maxGroups];
+  vtkPoints * hexPoints;
 public:
   void setDomain(const real_t r0, const vec3 x0) {
     hexPoints = vtkPoints::New();
@@ -92,25 +92,25 @@ public:
 
   void plot(const int Ngroup) {
     //Create a polygon object for points
-    vtkPolyData *polydata = vtkPolyData::New();
+    vtkPolyData * polydata = vtkPolyData::New();
     polydata->SetPoints(points[0]);
 
     //Create a filter object for points
-    vtkVertexGlyphFilter *filter = vtkVertexGlyphFilter::New();
+    vtkVertexGlyphFilter * filter = vtkVertexGlyphFilter::New();
     filter->SetInputConnection(polydata->GetProducerPort());
     filter->Update();
 
     //Create a mapper object for points
-    vtkPolyDataMapper *pointMapper = vtkPolyDataMapper::New();
+    vtkPolyDataMapper * pointMapper = vtkPolyDataMapper::New();
     pointMapper->SetInputConnection(filter->GetOutputPort());
 
     //Associate the mapper to an actor object for points
-    vtkActor *pointActor = vtkActor::New();
+    vtkActor * pointActor = vtkActor::New();
     pointActor->SetMapper(pointMapper);
     pointActor->GetProperty()->SetColor(1,0,0);
 
     //Create a hexahedron for cells
-    vtkHexahedron *hex = vtkHexahedron::New();
+    vtkHexahedron * hex = vtkHexahedron::New();
     hex->GetPointIds()->SetId(0,0);
     hex->GetPointIds()->SetId(1,1);
     hex->GetPointIds()->SetId(2,2);
@@ -121,37 +121,37 @@ public:
     hex->GetPointIds()->SetId(7,7);
 
     //Create a grid for cells
-    vtkUnstructuredGrid *grid = vtkUnstructuredGrid::New();
+    vtkUnstructuredGrid * grid = vtkUnstructuredGrid::New();
     grid->Allocate(1,1);
     grid->InsertNextCell(hex->GetCellType(),hex->GetPointIds());
     grid->SetPoints(hexPoints);
 
     //Create a mapper object for cells
-    vtkDataSetMapper *hexMapper = vtkDataSetMapper::New();
+    vtkDataSetMapper * hexMapper = vtkDataSetMapper::New();
     hexMapper->SetInput(grid);
 
     //Associate the mapper to an actor object for cells
-    vtkActor *hexActor = vtkActor::New();
+    vtkActor * hexActor = vtkActor::New();
     hexActor->SetMapper(hexMapper);
     hexActor->GetProperty()->SetOpacity(.1);
 
     //Add that actor to the renderer
-    vtkRenderer *renderer = vtkRenderer::New();
+    vtkRenderer * renderer = vtkRenderer::New();
     renderer->AddActor(pointActor);
     renderer->AddActor(hexActor);
     renderer->SetBackground(0,0,0);
 
     //Create a render window
-    vtkRenderWindow *window = vtkRenderWindow::New();
+    vtkRenderWindow * window = vtkRenderWindow::New();
     window->AddRenderer(renderer);
     window->SetSize(700,700);
 
     //Create an interactor and associate it to the render window
-    vtkRenderWindowInteractor *interactor = vtkRenderWindowInteractor::New();
+    vtkRenderWindowInteractor * interactor = vtkRenderWindowInteractor::New();
     interactor->SetRenderWindow(window);
 
     //Create a slider representation
-    vtkSliderRepresentation2D *representation = vtkSliderRepresentation2D::New();
+    vtkSliderRepresentation2D * representation = vtkSliderRepresentation2D::New();
     representation->SetMinimumValue(0);
     representation->SetMaximumValue(Ngroup-1);
     representation->GetPoint1Coordinate()->SetCoordinateSystemToDisplay();
@@ -160,14 +160,14 @@ public:
     representation->GetPoint2Coordinate()->SetValue(650,50);
 
     //Create a slider widget
-    vtkSliderWidget *widget = vtkSliderWidget::New();
+    vtkSliderWidget * widget = vtkSliderWidget::New();
     widget->SetInteractor(interactor);
     widget->SetRepresentation(representation);
     widget->SetAnimationModeToAnimate();
     widget->EnabledOn();
 
     //Create a slider callback
-    vtkSliderCallback *callback = vtkSliderCallback::New();
+    vtkSliderCallback * callback = vtkSliderCallback::New();
     for (int i=0; i<Ngroup; i++) {
       callback->points[i] = points[i];
     }
@@ -176,7 +176,7 @@ public:
     widget->AddObserver(vtkCommand::InteractionEvent,callback);
 
     //Define the interacting style
-    vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+    vtkInteractorStyleTrackballCamera * style = vtkInteractorStyleTrackballCamera::New();
     interactor->SetInteractorStyle(style);
 
     //Start to interact

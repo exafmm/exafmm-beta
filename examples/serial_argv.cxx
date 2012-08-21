@@ -37,9 +37,9 @@ int main(int argc, char ** argv) {
     t_bodies.resize(bodies.size());
 #endif
     for( int i=0; i<2; i++ ) {
+      DATA.initTarget(bodies);
       FMM.startTimer("FMM");
 #if PARALLEL_EVERYTHING
-      DATA.initTargetRec(bodies);
       FMM.setBoundsRec(bodies);
       FMM.buildTreeRec(bodies,t_bodies,cells);
       FMM.upwardPassRec(cells);
