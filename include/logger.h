@@ -1,5 +1,4 @@
-#ifndef logger_h
-#define logger_h
+#pragma once
 #include <sys/time.h>
 #include "types.h"
 
@@ -158,5 +157,3 @@ public:
     traceFile.close();                                          // Close trace log file
   }
 };
-
-#endif

@@ -1,7 +1,6 @@
-#ifndef evaluator_h
-#define evaluator_h
+#pragma once
 #include "kernel.h"
-#include "task_parallel.h"
+#include "thread.h"
 #if COUNT
 #define count(N) N++
 #else
@@ -76,29 +75,29 @@ private:
     } else {
       C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;
       C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;
-      __spawn_tasks__;
+      __init_tasks__;
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(spawn traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));
-      call_task(spawn traverse(CiMid, CiEnd, CjMid, CjEnd, mutual));
+      spawn_task0(traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));
+      traverse(CiMid, CiEnd, CjMid, CjEnd, mutual);
 #if _OPENMP
 #pragma omp taskwait
 #endif
-      __sync__;
+      __sync_tasks__;
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(spawn traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));
+      spawn_task0(traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));
       if (!mutual || CiBegin != CjBegin) {
-        call_task(spawn traverse(CiMid, CiEnd, CjBegin, CjMid, mutual));
+        traverse(CiMid, CiEnd, CjBegin, CjMid, mutual);
       } else {
         assert(CiEnd == CjEnd);
       }
 #if _OPENMP
 #pragma omp taskwait
 #endif
-      __sync__;
+      __sync_tasks__;
     }
   }
 
@@ -281,5 +280,3 @@ public:
   }
 
 };
-
-#endif

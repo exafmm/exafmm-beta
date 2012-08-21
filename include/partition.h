@@ -1,5 +1,4 @@
-#ifndef partition_h
-#define partition_h
+#pragma once
 #include "mympi.h"
 #include "serialfmm.h"
 
@@ -190,5 +189,3 @@ public:
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
   }
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef vtk_h
-#define vtk_h
+#pragma once
 #define VTK_EXCLUDE_STRSTREAM_HEADERS
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
@@ -191,5 +190,3 @@ public:
     interactor->Start();
   }
 };
-
-#endif

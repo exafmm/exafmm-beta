@@ -1,5 +1,4 @@
-#ifndef kernel_h
-#define kernel_h
+#pragma once
 #include "sort.h"
 
 class Kernel : public Sort {
@@ -17,5 +16,3 @@ public:
   void L2L(C_iter Ci) const;
   void L2P(C_iter Ci) const;
 };
-
-#endif

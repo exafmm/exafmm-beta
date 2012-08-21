@@ -1,5 +1,4 @@
-#ifndef sort_h
-#define sort_h
+#pragma once
 #include "logger.h"
 
 //! Custom bucket sort for body and cell structures
@@ -86,5 +85,3 @@ public:
     sortICELL(cells,buffer,Imin,numBucket,ascend,begin,end);    // Call bucket sort for small indices
   }
 };
-
-#endif

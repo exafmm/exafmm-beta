@@ -1,6 +1,4 @@
-#ifndef options_h
-#define options_h
-
+#pragma once
 #include <getopt.h>
 
 struct Args {
@@ -49,7 +47,7 @@ static Args defaultArgs() {
   args.images = 0;
   args.theta = 0.6;
   args.buildOnly = 0;
-  args.mutual = 0;
+  args.mutual = 1;
   args.distribution = "cube";
   return args;
 }
@@ -138,5 +136,3 @@ static Args * parse_cmdline_args(int argc, char ** argv, Args * args) {
   }
   return args;
 }
-
-#endif

@@ -1,6 +1,4 @@
-#ifndef types_h
-#define types_h
-
+#pragma once
 #ifdef __INTEL_COMPILER
 #pragma warning(disable:193 383 444 981 1572 2259)
 #endif
@@ -160,5 +158,3 @@ struct Ewald {
 };
 typedef std::vector<Ewald>           Ewalds;                    //!< Vector of Ewald summation types
 typedef std::vector<Ewald>::iterator E_iter;                    //!< Iterator for Ewald summation types
-
-#endif

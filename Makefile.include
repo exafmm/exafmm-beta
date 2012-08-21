@@ -59,7 +59,7 @@ LFLAGS += -DPARALLEL_EVERYTHING
 
 ### MassiveThreads flags (doesn't work with -fopenmp)
 MTH_DIR:=/home/tau/parallel/sys
-LFLAGS	+= -std=c++0x -DMTHREAD -DMTHREADS -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth -lpthread -ldl
+LFLAGS	+= -std=c++0x -DMTHREAD -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth -lpthread -ldl
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi

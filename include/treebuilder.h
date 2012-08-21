@@ -1,5 +1,4 @@
-#ifndef topdown_h
-#define topdown_h
+#pragma once
 #include "evaluator.h"
 
 #if PARALLEL_EVERYTHING
@@ -280,19 +279,19 @@ protected:
       int n1 = max_ivec8_nodes_to_count(end - mid, leaf_len);
       ivec8Tree * t_mid = t_beg + n0;
       assert(t_end - t_beg >= n0 + n1);
-      __spawn_tasks__;
+      __init_tasks__;
 #if _OPENMP
 #pragma omp task shared(bodies)
 #endif
       spawn_task1(bodies,
-                  spawn t_root->children[0] 
+                  t_root->children[0] 
                   = countBodies(bodies, beg, mid, X, t_beg, t_beg + 1, t_beg + n0, leaf_len));
-      call_task(spawn t_root->children[1] 
-                = countBodies(bodies, mid, end, X, t_mid, t_mid + 1, t_mid + n1, leaf_len));
+      t_root->children[1] 
+        = countBodies(bodies, mid, end, X, t_mid, t_mid + 1, t_mid + n1, leaf_len);
 #if _OPENMP
 #pragma omp taskwait
 #endif
-      __sync__;
+      __sync_tasks__;
       t_root->counts = t_root->children[0]->counts + t_root->children[1]->counts;
     }
     return t_root;
@@ -316,20 +315,19 @@ protected:
          and work on each in parallel */
       int mid = (beg + end) / 2;
       ivec8 offsets_mid = offsets + t->children[0]->counts;
-      __spawn_tasks__;
+      __init_tasks__;
 #if _OPENMP
 #pragma omp task shared(bodies, t_bodies)
 #endif
       spawn_task2(bodies, t_bodies,
-                  spawn moveBodies(bodies, t_bodies, beg, mid, 
+                  moveBodies(bodies, t_bodies, beg, mid, 
                                    t->children[0], offsets, X));
-      call_task(spawn moveBodies(bodies, t_bodies, mid, end,
-                                 t->children[1], offsets_mid, X));
+      moveBodies(bodies, t_bodies, mid, end, t->children[1], offsets_mid, X);
     
 #if _OPENMP
 #pragma omp taskwait
 #endif
-      __sync__;
+      __sync_tasks__;
     }
   }
 
@@ -350,7 +348,7 @@ protected:
     ivec8 offsets = prefixSum(t_root->counts, beg);
     moveBodies(bodies, t_bodies, beg, end, t_root, offsets, X);
     ivec8Tree * t = t_beg;
-    __spawn_tasks__;
+    __init_tasks__;
     for (int k=0; k<8; k++) {
       int n_nodes = max_ivec8_nodes_to_build(t_root->counts[k], leaf_len);
       assert(t + n_nodes <= t_end);
@@ -374,7 +372,7 @@ protected:
 #if _OPENMP
 #pragma omp taskwait
 #endif
-    __sync__;
+    __sync_tasks__;
     for (int k=0; k<8; k++) {
       if (node->CHILD[k]) {
         node->NNODE += node->CHILD[k]->NNODE;
@@ -412,7 +410,7 @@ protected:
       C->NCHILD = nsub;
       assert(C->NCHILD > 0);
       H += nsub;
-      __spawn_tasks__;
+      __init_tasks__;
       int levels[8];
       for (int k=0; k<nsub; k++) {
         int octant = child_octants[k];
@@ -421,7 +419,7 @@ protected:
 #endif
         spawn_task2_if(node->NNODE > 1000,
                        levels, cells,
-                       spawn levels[k] 
+                       levels[k] 
                        = nodes2cellsRec(node->CHILD[octant], C - Ci0, Ci, 
                                         H, cells, B0, level + 1));
         Ci += 1;
@@ -430,7 +428,7 @@ protected:
 #if _OPENMP
 #pragma omp taskwait
 #endif
-      __sync__;
+      __sync_tasks__;
       int max_level = node->LEVEL;
       for (int k=0; k<nsub; k++) {
         int octant = child_octants[k];
@@ -480,5 +478,3 @@ protected:
     std::cout << "-----------------------------------------------" << std::endl;
   }
 };
-
-#endif

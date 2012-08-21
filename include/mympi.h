@@ -1,5 +1,4 @@
-#ifndef mympi_h
-#define mympi_h
+#pragma once
 #include <mpi.h>
 #include <typeinfo>
 #include "types.h"
@@ -132,5 +131,3 @@ public:
     }                                                           // Endif for my rank
   }
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef serialfmm_h
-#define serialfmm_h
+#pragma once
 #include "treebuilder.h"
 
 class SerialFMM : public TreeBuilder {
@@ -76,17 +75,17 @@ private:
       return std::pair<vec3,vec3>(xmin, xmax);
     } else {
       int nh = (B1 - B0) / 2;
-      __spawn_tasks__;
+      __init_tasks__;
       std::pair<vec3,vec3> vt0, vt1;
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task1(vt0, vt0 = spawn getBoundsRec(B0, B0 + nh));
-      call_task(vt1 = getBoundsRec(B0 + nh, B1));
+      spawn_task1(vt0, vt0 = getBoundsRec(B0, B0 + nh));
+      vt1 = getBoundsRec(B0 + nh, B1);
 #if _OPENMP
 #pragma omp taskwait
 #endif
-      __sync__;
+      __sync_tasks__;
       vec3_min(vt1.first, vt0.first);
       vec3_max(vt1.second, vt0.second);
       return vt0;
@@ -94,17 +93,17 @@ private:
   }
 
   void upwardPassRec1(C_iter C, C_iter C0) {
-    __spawn_tasks__;
+    __init_tasks__;
     for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(spawn upwardPassRec1(CC, C0));
+      spawn_task0(upwardPassRec1(CC, C0));
     }
 #if _OPENMP
 #pragma omp taskwait
 #endif
-    __sync__;
+    __sync_tasks__;
     C->M = 0;
     C->L = 0;
     real_t Rmax = 0;
@@ -114,17 +113,17 @@ private:
   }
 
   void upwardPassRec2(C_iter C, C_iter C0, int level, real_t root_coefficient) {
-    __spawn_tasks__;
+    __init_tasks__;
     for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(spawn upwardPassRec2(CC, C0, level + 1, root_coefficient));
+      spawn_task0(upwardPassRec2(CC, C0, level + 1, root_coefficient));
     }
 #if _OPENMP
 #pragma omp taskwait
 #endif
-    __sync__;
+    __sync_tasks__;
 #if Cartesian
     for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
 #endif
@@ -134,17 +133,17 @@ private:
   void downwardPassRec1(C_iter C, C_iter C0) const {
     L2L(C);
     L2P(C);
-    __spawn_tasks__;
+    __init_tasks__;
     for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(spawn downwardPassRec1(CC, C0));
+      spawn_task0(downwardPassRec1(CC, C0));
     }
 #if _OPENMP
 #pragma omp taskwait
 #endif
-    __sync__;
+    __sync_tasks__;
   }
 
 #endif
@@ -310,17 +309,17 @@ public:
     C_iter C0 = cells.begin();
     C_iter C = C0;
     L2P(C);
-    __spawn_tasks__;
+    __init_tasks__;
     for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(spawn downwardPassRec1(CC, C0));
+      spawn_task0(downwardPassRec1(CC, C0));
     }
 #if _OPENMP
 #pragma omp taskwait
 #endif
-    __sync__;
+    __sync_tasks__;
     stopTimer("Downward pass",printNow);                        // Stop timer
     if(printNow) printTreeData(cells);                          // Print tree data
   }
@@ -357,5 +356,3 @@ public:
     }                                                           // End loop over bodies
   }
 };
-
-#endif

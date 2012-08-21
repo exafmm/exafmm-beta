@@ -1,6 +1,5 @@
-#ifndef dataset_h
-#define dataset_h
-#include "task_parallel.h"
+#pragma once
+#include "thread.h"
 #include "types.h"
 
 class Dataset {                                                 // Contains all the different datasets
@@ -17,16 +16,16 @@ private:
       } 
     } else {
       int nh = (B1 - B0) / 2;
-      __spawn_tasks__;
+      __init_tasks__;
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(spawn initTargetRec1(B_beg, B0, B0 + nh, IeqJ));
-      call_task(spawn initTargetRec1(B_beg, B0 + nh, B1, IeqJ));
+      spawn_task0(initTargetRec1(B_beg, B0, B0 + nh, IeqJ));
+      initTargetRec1(B_beg, B0 + nh, B1, IeqJ);
 #if _OPENMP
 #pragma omp taskwait
 #endif
-      __sync__;
+      __sync_tasks__;
     }
   }
 #endif
@@ -183,5 +182,3 @@ public:
               << "Rel. L2 Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
   }
 };
-
-#endif
