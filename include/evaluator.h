@@ -1,7 +1,6 @@
 #ifndef evaluator_h
 #define evaluator_h
 #include "cartesian.h"
-#define splitFirst(Ci,Cj) Cj->NCHILD == 0 || (Ci->NCHILD != 0 && Ci->RCRIT >= Cj->RCRIT)
 #if COUNT
 #define count(N) N++
 #else
@@ -18,8 +17,6 @@ protected:
   real_t NP2P;                                                  //!< Number of P2P kernel calls
   real_t NM2P;                                                  //!< Number of M2P kenrel calls
   real_t NM2L;                                                  //!< Number of M2L kernel calls
-
-  real_t NTRAVERSE;
 
 private:
 //! Calculate Bmax
@@ -63,31 +60,27 @@ private:
     }                                                           // End if for pushing cell
   }
 
-#if IMPL_MUTUAL
-
-  void traverse(C_iter Ci_beg, C_iter Ci_end, 
-                     C_iter Cj_beg, C_iter Cj_end, 
-                     bool mutual) {
-    if (Ci_end - Ci_beg == 1 || Cj_end - Cj_beg == 1) {
-      if (Ci_beg == Cj_beg) {
-        assert(Ci_end == Cj_end);
-        traverse(Ci_beg, Cj_beg, mutual);
+  void traverse(C_iter CiBegin, C_iter CiEnd, C_iter CjBegin, C_iter CjEnd, bool mutual) {
+    if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {
+      if (CiBegin == CjBegin) {
+        assert(CiEnd == CjEnd);
+        traverse(CiBegin, CjBegin, mutual);
       } else {
-        for (C_iter Ci=Ci_beg; Ci!=Ci_end; Ci++) {
-          for (C_iter Cj=Cj_beg; Cj!=Cj_end; Cj++) {
+        for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {
+          for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {
             traverse(Ci, Cj, mutual);
           }
         }
       }
     } else {
-      C_iter Ci_mid = Ci_beg + (Ci_end - Ci_beg) / 2;
-      C_iter Cj_mid = Cj_beg + (Cj_end - Cj_beg) / 2;
+      C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;
+      C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;
       __spawn_tasks__;
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(spawn traverse(Ci_beg, Ci_mid, Cj_beg, Cj_mid, mutual));
-      call_task(spawn traverse(Ci_mid, Ci_end, Cj_mid, Cj_end, mutual));
+      spawn_task0(spawn traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));
+      call_task(spawn traverse(CiMid, CiEnd, CjMid, CjEnd, mutual));
 #if _OPENMP
 #pragma omp taskwait
 #endif
@@ -95,11 +88,11 @@ private:
 #if _OPENMP
 #pragma omp task
 #endif
-      spawn_task0(spawn traverse(Ci_beg, Ci_mid, Cj_mid, Cj_end, mutual));
-      if (!mutual || Ci_beg != Cj_beg) {
-        call_task(spawn traverse(Ci_mid, Ci_end, Cj_beg, Cj_mid, mutual));
+      spawn_task0(spawn traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));
+      if (!mutual || CiBegin != CjBegin) {
+        call_task(spawn traverse(CiMid, CiEnd, CjBegin, CjMid, mutual));
       } else {
-        assert(Ci_end == Cj_end);
+        assert(CiEnd == CjEnd);
       }
 #if _OPENMP
 #pragma omp taskwait
@@ -119,10 +112,9 @@ private:
       for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {
         traverse(Ci,cj,mutual);
       }
-    } else if (Ci->NDLEAF + Cj->NDLEAF >= NSPAWN
-               || (mutual && Ci == Cj)) {
+    } else if (Ci->NDLEAF + Cj->NDLEAF >= NSPAWN || (mutual && Ci == Cj)) {
       traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
-                    Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
+               Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
     } else if (Ci->RCRIT >= Cj->RCRIT) {
       for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {
         traverse(ci,Cj,mutual);
@@ -133,40 +125,6 @@ private:
       }
     }
   }
-
-  
-#else  // IMPL_MUTUAL
-
-//! Split cell and call function recursively for child
-  void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
-    if (splitFirst(Ci,Cj)) {                                    // If first cell is larger or equal
-#if MTHREADS
-      task_group tg;                                            //  Create task group
-#endif
-      for (C_iter CC=Ci0+Ci->CHILD; CC!=Ci0+Ci->CHILD+Ci->NCHILD; CC++) {// Loop over first cell's children 
-#if MTHREADS
-        if (CC->NDLEAF > 10000) tg.run([=]{traverse(CC,Cj,mutual);});// Create a new task and recurse
-        else traverse(CC,Cj,mutual);                            //   Recurse without creating new task
-#elif _OPENMP
-        if (CC->NDLEAF > 10000) {                               //   If task size is large enough
-#pragma omp task
-          traverse(CC,Cj,mutual);                               //    Create a new task and recurse
-        } else traverse(CC,Cj,mutual);                          //    Recurse without creating new task
-#else
-        traverse(CC,Cj,mutual);                                 //    Recurse without creating new task
-#endif
-      }                                                         //   End loop over first cell's children
-#if MTHREADS
-      tg.wait();                                                //  Wait for task group to finish
-#endif
-    } else {                                                    // If second cell is larger
-      for (C_iter CC=Cj0+Cj->CHILD; CC!=Cj0+Cj->CHILD+Cj->NCHILD; CC++) {// Loop over second cell's children
-        traverse(Ci,CC,mutual);                                 //   Recurse without creating new task
-      }                                                         //  End loop over second cell's children
-    }                                                           // End if for which cell to split
-  }
-
-#endif  // IMPL_MUTUAL
 
 protected:
 //! Set center of expansion to center of mass
@@ -207,9 +165,7 @@ protected:
   }
 
 //! Dual tree traversal of a pair of trees
-  void traverse(C_iter Ci, C_iter Cj, bool mutual=false) {
-    count(NTRAVERSE);
-
+  void traverse(C_iter Ci, C_iter Cj, bool mutual) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
 #if DUAL
@@ -325,5 +281,4 @@ public:
 
 };
 
-#undef splitFirst
 #endif

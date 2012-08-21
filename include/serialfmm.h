@@ -272,11 +272,7 @@ public:
   }
 
 //! Interface for tree traversal when I != J (M2L, P2P)
-  void evaluate(Cells &icells, Cells &jcells
-#if IMPL_MUTUAL
-                , bool mutual=false
-#endif
-                ) {
+  void evaluate(Cells &icells, Cells &jcells, bool mutual=false) {
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     startTimer("Traverse");                                     // Start timer
@@ -288,11 +284,7 @@ public:
 #endif
     if (IMAGES == 0) {                                          // If non-periodic boundary condition
       Xperiodic = 0;                                            //  No periodic shift
-#if IMPL_MUTUAL
       traverse(Ci0,Cj0,mutual);                                 //  Traverse the tree
-#else
-      traverse(Ci0,Cj0);                                        //  Traverse the tree
-#endif
     } else {                                                    // If periodic boundary condition
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
         for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
@@ -300,11 +292,7 @@ public:
             Xperiodic[0] = ix * 2 * globalRadius;               //     Coordinate shift for x periodic direction
             Xperiodic[1] = iy * 2 * globalRadius;               //     Coordinate shift for y periodic direction
             Xperiodic[2] = iz * 2 * globalRadius;               //     Coordinate shift for z periodic direction
-#if IMPL_MUTUAL
-            traverse(Ci0,Cj0,mutual);                           //     Traverse a pair of trees
-#else
-            traverse(Ci0,Cj0);
-#endif
+            traverse(Ci0,Cj0,false);
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction

@@ -1,7 +1,7 @@
-#include <stdlib.h>
-#include <limits.h>
-#include <stdio.h>
-#include <errno.h>
+//#include <stdlib.h>
+//#include <limits.h>
+//#include <stdio.h>
+//#include <errno.h>
 
 #include "dataset.h"
 #include "serialfmm.h"
@@ -77,11 +77,7 @@ int main(int argc, char ** argv) {
       if (args->buildOnly == 0) {
         FMM.startPAPI();
 #if IneJ
-#if IMPL_MUTUAL
         FMM.evaluate(cells,cells,args->mutual);
-#else
-        FMM.evaluate(cells,cells);
-#endif
 #else
         FMM.evaluate(cells);
 #endif

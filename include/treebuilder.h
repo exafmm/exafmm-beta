@@ -476,7 +476,6 @@ protected:
     std::cout << "P2P calls            : " << NP2P                 << std::endl;
     std::cout << "M2P calls            : " << NM2P                 << std::endl;
     std::cout << "M2L calls            : " << NM2L                 << std::endl;
-    std::cout << "traverse calls       : " << NTRAVERSE            << std::endl;
 #endif
     std::cout << "-----------------------------------------------" << std::endl;
   }
