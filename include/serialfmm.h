@@ -263,10 +263,6 @@ public:
     Cj0 = cells.begin();                                        // Set iterator of source root cell
     Xperiodic = 0;                                              // No periodic shift
     startTimer("Traverse");                                     // Start timer
-#if _OPENMP
-#pragma omp parallel
-#pragma omp single
-#endif
     traverse(Ci0);                                              // Traverse the tree
     stopTimer("Traverse",printNow);                             // Stop timer
   }
@@ -276,12 +272,6 @@ public:
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     startTimer("Traverse");                                     // Start timer
-#if !defined(PARALLEL_EVERYTHING)                               // When parallelizing other phases, put them in the main function
-#if _OPENMP
-#pragma omp parallel
-#pragma omp single
-#endif
-#endif
     if (IMAGES == 0) {                                          // If non-periodic boundary condition
       Xperiodic = 0;                                            //  No periodic shift
       traverse(Ci0,Cj0,mutual);                                 //  Traverse the tree
@@ -292,7 +282,7 @@ public:
             Xperiodic[0] = ix * 2 * globalRadius;               //     Coordinate shift for x periodic direction
             Xperiodic[1] = iy * 2 * globalRadius;               //     Coordinate shift for y periodic direction
             Xperiodic[2] = iz * 2 * globalRadius;               //     Coordinate shift for z periodic direction
-            traverse(Ci0,Cj0,false);
+            traverse(Ci0,Cj0,false);                            //     Traverse the tree for this periodic image
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
@@ -315,7 +305,8 @@ public:
   }
 
 #if PARALLEL_EVERYTHING
-  void downwardPassRec(Cells &cells) const { 
+  void downwardPassRec(Cells &cells) { 
+    startTimer("Downward pass");                                // Start timer
     C_iter C0 = cells.begin();
     C_iter C = C0;
     L2P(C);
@@ -330,6 +321,8 @@ public:
 #pragma omp taskwait
 #endif
     __sync__;
+    stopTimer("Downward pass",printNow);                        // Stop timer
+    if(printNow) printTreeData(cells);                          // Print tree data
   }
 #endif
 

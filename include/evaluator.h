@@ -182,11 +182,11 @@ protected:
         if (Cj->NCLEAF == 0) {                                  //   If the leafs weren't sent from remote node
           approximate(Ci,Cj,mutual);                            //    Use approximate kernels, e.g. M2L, M2P
         } else {                                                //   Else if the leafs were sent
-          if (Ci == Cj) {
-            P2P(Ci);
-          } else {
-            P2P(Ci,Cj,mutual);                                  //    P2P kernel
-          }
+          if (Ci == Cj) {                                       //    If source and target are same
+            P2P(Ci);                                            //     P2P kernel for single cell
+          } else {                                              //    Else if source and target are different
+            P2P(Ci,Cj,mutual);                                  //     P2P kernel for pair of cells
+          }                                                     //    End if for same source and target
           count(NP2P);                                          //    Increment P2P counter
         }                                                       //   End if for leafs
       } else {                                                  //  Else if cells are close but not leafs

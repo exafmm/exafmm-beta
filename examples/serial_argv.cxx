@@ -77,7 +77,7 @@ int main(int argc, char ** argv) {
         FMM.evaluate(cells);
 #endif
         FMM.stopPAPI();
-#if PARALLEL_EVERYTHING
+#if 1
         FMM.downwardPassRec(cells);
 #else
         FMM.downwardPass(cells);

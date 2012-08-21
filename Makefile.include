@@ -43,12 +43,12 @@ NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-optio
 ### Base flags
 CXX	+= -I$(EXAFMM_INCLUDE_PATH)
 LFLAGS	= -L$(EXAFMM_LIBRARY_PATH)
+LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
 LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
 LFLAGS	+= -DERROR_OPT # Use error optimized theta
-LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
-LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
-LFLAGS	+= -DDUAL # Use dual tree traversal
+LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
+LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
 LFLAGS	+= -DIneJ # Handle different sources and target bodies
 #LFLAGS	+= -DCOUNT
 #LFLAGS	+= -DHYBRID

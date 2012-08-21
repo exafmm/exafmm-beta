@@ -8,20 +8,15 @@
 #define task_parallel_h
 
 #if TBB
-/* on TBB, task_group is already in */
 #include <tbb/task_group.h>
 #define task_group_defined 1
 using namespace tbb;
 
 #elif MTHREAD
-/* on MassiveThreads, it's already in the library too */
 #include <mtbb/task_group.h>
 #define task_group_defined 1
 
 #elif PTHREAD || QTHREAD || NANOX
-/* roll our own in the way similar to MassiveThreads on
-   Pthreads/Qthread/Nano++ */
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
