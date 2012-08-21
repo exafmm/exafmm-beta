@@ -10,12 +10,10 @@
 class Evaluator : public Kernel {
 private:
   real_t timeP2P;                                               //!< P2P execution time
-  real_t timeM2P;                                               //!< M2P execution time
   real_t timeM2L;                                               //!< M2L execution time
 
 protected:
   real_t NP2P;                                                  //!< Number of P2P kernel calls
-  real_t NM2P;                                                  //!< Number of M2P kenrel calls
   real_t NM2L;                                                  //!< Number of M2L kernel calls
 
 private:
@@ -30,20 +28,14 @@ private:
 
 //! Approximate interaction between two cells
   inline void approximate(C_iter Ci, C_iter Cj, bool mutual) {
-#if HYBRID
-    if (timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {// If P2P is fastest
-      P2P(Ci,Cj,mutual);                                        //  P2P kernel
-      count(NP2P);                                              //  Increment P2P counter
-    } else if (timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L) {// If M2P is fastest
-      M2P(Ci,Cj,mutual);                                        //  M2P kernel
-      count(NM2P);                                              //  Increment M2P counter
-    } else {                                                    // If M2L is fastest
+#if AUTO
+    if (timeP2P*Ci->NDLEAF*Cj->NDLEAF > timeM2L) {              // If M2L is faster
       M2L(Ci,Cj,mutual);                                        //  M2L kernel
       count(NM2L);                                              //  Increment M2L counter
+    } else {                                                    // Else if P2P is faster
+      P2P(Ci,Cj,mutual);                                        //  P2P kernel
+      count(NP2P);                                              //  Increment P2P counter
     }                                                           // End if for fastest kernel
-#elif TREECODE
-    M2P(Ci,Cj,mutual);                                          // M2P kernel
-    count(NM2P);                                                // Increment M2P counter
 #else
     M2L(Ci,Cj,mutual);                                          // M2L kernel
     count(NM2L);                                                // Increment M2L counter
@@ -176,10 +168,10 @@ protected:
     } else {                                                    // If we don't care if cell is not at the same level
 #endif
       if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {   //  If distance is far enough
-        approximate(Ci,Cj,mutual);                              //   Use approximate kernels, e.g. M2L, M2P
+        approximate(Ci,Cj,mutual);                              //   Use approximate kernels
       } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          //  Else if both cells are leafs
         if (Cj->NCLEAF == 0) {                                  //   If the leafs weren't sent from remote node
-          approximate(Ci,Cj,mutual);                            //    Use approximate kernels, e.g. M2L, M2P
+          approximate(Ci,Cj,mutual);                            //    Use approximate kernels
         } else {                                                //   Else if the leafs were sent
           if (Ci == Cj) {                                       //    If source and target are same
             P2P(Ci);                                            //     P2P kernel for single cell
@@ -247,10 +239,10 @@ protected:
   }
 
 public:
-  Evaluator() : NP2P(0), NM2P(0), NM2L(0) {}
+  Evaluator() : NP2P(0), NM2L(0) {}
   ~Evaluator() {}
 
-  void timeKernels(bool mutual) {
+  void timeKernels() {
     Bodies ibodies(1000), jbodies(1000);
     for (B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); Bi++, Bj++) {
       Bi->X = 0;
@@ -269,14 +261,11 @@ public:
     Cj->LEAF = jbodies.begin();
     Cj->M = 0;
     startTimer("P2P kernel");
-    P2P(Ci,Cj,mutual);
+    P2P(Ci,Cj,false);
     timeP2P = stopTimer("P2P kernel") / 10000;
     startTimer("M2L kernel");
-    for (int i=0; i<1000; i++) M2L(Ci,Cj,mutual);
+    for (int i=0; i<1000; i++) M2L(Ci,Cj,false);
     timeM2L = stopTimer("M2L kernel") / 1000;
-    startTimer("M2P kernel");
-    for (int i=0; i<100; i++) M2P(Ci,Cj,mutual);
-    timeM2P = stopTimer("M2P kernel") / 1000;
   }
 
 };

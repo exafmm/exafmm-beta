@@ -233,10 +233,6 @@ struct Kernels {
     Kernels<nx,ny+1,nz-1>::M2L(L,C,M);
     L[Index<vecL,nx,ny,nz>::I] += LocalSum<nx,ny,nz,vecM>::kernel(M,C);
   }
-  static inline void M2P(B_iter B, const vecL &C, const vecM &M) {
-    Kernels<nx,ny+1,nz-1>::M2P(B,C,M);
-    B->TRG[Index<vecL,nx,ny,nz>::I] += LocalSum<nx,ny,nz,vecM>::kernel(M,C);
-  }
   static inline void L2L(vecL &LI, const vecL &C, const vecL &LJ) {
     Kernels<nx,ny+1,nz-1>::L2L(LI,C,LJ);
     LI[Index<vecL,nx,ny,nz>::I] += LocalSum<nx,ny,nz,vecL>::kernel(C,LJ);
@@ -269,10 +265,6 @@ struct Kernels<nx,ny,0> {
   static inline void M2L(vecL &L, const vecL &C, const vecM &M) {
     Kernels<nx+1,0,ny-1>::M2L(L,C,M);
     L[Index<vecL,nx,ny,0>::I] += LocalSum<nx,ny,0,vecM>::kernel(M,C);
-  }
-  static inline void M2P(B_iter B, const vecL &C, const vecM &M) {
-    Kernels<nx+1,0,ny-1>::M2P(B,C,M);
-    B->TRG[Index<vecL,nx,ny,0>::I] += LocalSum<nx,ny,0,vecM>::kernel(M,C);
   }
   static inline void L2L(vecL &LI, const vecL &C, const vecL &LJ) {
     Kernels<nx+1,0,ny-1>::L2L(LI,C,LJ);
@@ -307,10 +299,6 @@ struct Kernels<nx,0,0> {
     Kernels<0,0,nx-1>::M2L(L,C,M);
     L[Index<vecL,nx,0,0>::I] += LocalSum<nx,0,0,vecM>::kernel(M,C);
   }
-  static inline void M2P(B_iter B, const vecL &C, const vecM &M) {
-    Kernels<0,0,nx-1>::M2P(B,C,M);
-    B->TRG[Index<vecL,nx,0,0>::I] += LocalSum<nx,0,0,vecM>::kernel(M,C);
-  }
   static inline void L2L(vecL &LI, const vecL &C, const vecL &LJ) {
     Kernels<0,0,nx-1>::L2L(LI,C,LJ);
     LI[Index<vecL,nx,0,0>::I] += LocalSum<nx,0,0,vecL>::kernel(C,LJ);
@@ -328,7 +316,6 @@ struct Kernels<0,0,0> {
   static inline void scale(vecL&) {}
   static inline void M2M(vecM&, const vecL&, const vecM&) {}
   static inline void M2L(vecL&, const vecL&, const vecM&) {}
-  static inline void M2P(B_iter, const vecL&, const vecM&) {}
   static inline void L2L(vecL&, const vecL&, const vecL&) {}
   static inline void L2P(B_iter, const vecL&, const vecL&) {}
 };
@@ -795,104 +782,6 @@ inline void sumM2L<6>(vecL &L, const vecL &C, const vecM &M) {
 #endif
 }
 
-template<int PP>
-inline void sumM2P(B_iter B, const vecL &C, const vecM &M) {
-  B->TRG[0] += C[0];
-  B->TRG[1] += C[1];
-  B->TRG[2] += C[2];
-  B->TRG[3] += C[3];
-#if COMkernel
-  for( int i=1; i<MTERM; ++i ) B->TRG[0] += M[i] * C[i+3];
-#else
-  for( int i=1; i<MTERM; ++i ) B->TRG[0] += M[i] * C[i];
-#endif
-  Kernels<0,0,1>::M2P(B,C,M);
-}
-
-template<>
-inline void sumM2P<1>(B_iter B, const vecL &C, const vecM&) {
-  B->TRG[0] += C[0];
-  B->TRG[1] += C[1];
-  B->TRG[2] += C[2];
-  B->TRG[3] += C[3];
-}
-
-template<>
-inline void sumM2P<2>(B_iter B, const vecL &C, const vecM &M) {
-  sumM2P<1>(B,C,M);
-#if COMkernel
-#else
-  B->TRG[0] += M[1]*C[1]+M[2]*C[2]+M[3]*C[3];
-  B->TRG[1] += M[1]*C[4]+M[2]*C[5]+M[3]*C[6];
-  B->TRG[2] += M[1]*C[5]+M[2]*C[7]+M[3]*C[8];
-  B->TRG[3] += M[1]*C[6]+M[2]*C[8]+M[3]*C[9];
-#endif
-}
-
-template<>
-inline void sumM2P<3>(B_iter B, const vecL &C, const vecM &M) {
-  sumM2P<2>(B,C,M);
-#if COMkernel
-  B->TRG[0] += M[1]*C[4]+M[2]*C[5]+M[3]*C[6]+M[4]*C[7]+M[5]*C[8]+M[6]*C[9];
-  B->TRG[1] += M[1]*C[10]+M[2]*C[11]+M[3]*C[12]+M[4]*C[13]+M[5]*C[14]+M[6]*C[15];
-  B->TRG[2] += M[1]*C[11]+M[2]*C[13]+M[3]*C[14]+M[4]*C[16]+M[5]*C[17]+M[6]*C[18];
-  B->TRG[3] += M[1]*C[12]+M[2]*C[14]+M[3]*C[15]+M[4]*C[17]+M[5]*C[18]+M[6]*C[19];
-#else
-  B->TRG[0] += M[4]*C[4]+M[5]*C[5]+M[6]*C[6]+M[7]*C[7]+M[8]*C[8]+M[9]*C[9];
-  B->TRG[1] += M[4]*C[10]+M[5]*C[11]+M[6]*C[12]+M[7]*C[13]+M[8]*C[14]+M[9]*C[15];
-  B->TRG[2] += M[4]*C[11]+M[5]*C[13]+M[6]*C[14]+M[7]*C[16]+M[8]*C[17]+M[9]*C[18];
-  B->TRG[3] += M[4]*C[12]+M[5]*C[14]+M[6]*C[15]+M[7]*C[17]+M[8]*C[18]+M[9]*C[19];
-#endif
-}
-
-template<>
-inline void sumM2P<4>(B_iter B, const vecL &C, const vecM &M) {
-  sumM2P<3>(B,C,M);
-#if COMkernel
-  B->TRG[0] += M[7]*C[10]+M[8]*C[11]+M[9]*C[12]+M[10]*C[13]+M[11]*C[14]+M[12]*C[15]+M[13]*C[16]+M[14]*C[17]+M[15]*C[18]+M[16]*C[19];
-  B->TRG[1] += M[7]*C[20]+M[8]*C[21]+M[9]*C[22]+M[10]*C[23]+M[11]*C[24]+M[12]*C[25]+M[13]*C[26]+M[14]*C[27]+M[15]*C[28]+M[16]*C[29];
-  B->TRG[2] += M[7]*C[21]+M[8]*C[23]+M[9]*C[24]+M[10]*C[26]+M[11]*C[27]+M[12]*C[28]+M[13]*C[30]+M[14]*C[31]+M[15]*C[32]+M[16]*C[33];
-  B->TRG[3] += M[7]*C[22]+M[8]*C[24]+M[9]*C[25]+M[10]*C[27]+M[11]*C[28]+M[12]*C[29]+M[13]*C[31]+M[14]*C[32]+M[15]*C[33]+M[16]*C[34];
-#else
-  B->TRG[0] += M[10]*C[10]+M[11]*C[11]+M[12]*C[12]+M[13]*C[13]+M[14]*C[14]+M[15]*C[15]+M[16]*C[16]+M[17]*C[17]+M[18]*C[18]+M[19]*C[19];
-  B->TRG[1] += M[10]*C[20]+M[11]*C[21]+M[12]*C[22]+M[13]*C[23]+M[14]*C[24]+M[15]*C[25]+M[16]*C[26]+M[17]*C[27]+M[18]*C[28]+M[19]*C[29];
-  B->TRG[2] += M[10]*C[21]+M[11]*C[23]+M[12]*C[24]+M[13]*C[26]+M[14]*C[27]+M[15]*C[28]+M[16]*C[30]+M[17]*C[31]+M[18]*C[32]+M[19]*C[33];
-  B->TRG[3] += M[10]*C[22]+M[11]*C[24]+M[12]*C[25]+M[13]*C[27]+M[14]*C[28]+M[15]*C[29]+M[16]*C[31]+M[17]*C[32]+M[18]*C[33]+M[19]*C[34];
-#endif
-}
-
-template<>
-inline void sumM2P<5>(B_iter B, const vecL &C, const vecM &M) {
-  sumM2P<4>(B,C,M);
-#if COMkernel
-  B->TRG[0] += M[17]*C[20]+M[18]*C[21]+M[19]*C[22]+M[20]*C[23]+M[21]*C[24]+M[22]*C[25]+M[23]*C[26]+M[24]*C[27]+M[25]*C[28]+M[26]*C[29]+M[27]*C[30]+M[28]*C[31]+M[29]*C[32]+M[30]*C[33]+M[31]*C[34];
-  B->TRG[1] += M[17]*C[35]+M[18]*C[36]+M[19]*C[37]+M[20]*C[38]+M[21]*C[39]+M[22]*C[40]+M[23]*C[41]+M[24]*C[42]+M[25]*C[43]+M[26]*C[44]+M[27]*C[45]+M[28]*C[46]+M[29]*C[47]+M[30]*C[48]+M[31]*C[49];
-  B->TRG[2] += M[17]*C[36]+M[18]*C[38]+M[19]*C[39]+M[20]*C[41]+M[21]*C[42]+M[22]*C[43]+M[23]*C[45]+M[24]*C[46]+M[25]*C[47]+M[26]*C[48]+M[27]*C[50]+M[28]*C[51]+M[29]*C[52]+M[30]*C[53]+M[31]*C[54];
-  B->TRG[3] += M[17]*C[37]+M[18]*C[39]+M[19]*C[40]+M[20]*C[42]+M[21]*C[43]+M[22]*C[44]+M[23]*C[46]+M[24]*C[47]+M[25]*C[48]+M[26]*C[49]+M[27]*C[51]+M[28]*C[52]+M[29]*C[53]+M[30]*C[54]+M[31]*C[55];
-#else
-  B->TRG[0] += M[20]*C[20]+M[21]*C[21]+M[22]*C[22]+M[23]*C[23]+M[24]*C[24]+M[25]*C[25]+M[26]*C[26]+M[27]*C[27]+M[28]*C[28]+M[29]*C[29]+M[30]*C[30]+M[31]*C[31]+M[32]*C[32]+M[33]*C[33]+M[34]*C[34];
-  B->TRG[1] += M[20]*C[35]+M[21]*C[36]+M[22]*C[37]+M[23]*C[38]+M[24]*C[39]+M[25]*C[40]+M[26]*C[41]+M[27]*C[42]+M[28]*C[43]+M[29]*C[44]+M[30]*C[45]+M[31]*C[46]+M[32]*C[47]+M[33]*C[48]+M[34]*C[49];
-  B->TRG[2] += M[20]*C[36]+M[21]*C[38]+M[22]*C[39]+M[23]*C[41]+M[24]*C[42]+M[25]*C[43]+M[26]*C[45]+M[27]*C[46]+M[28]*C[47]+M[29]*C[48]+M[30]*C[50]+M[31]*C[51]+M[32]*C[52]+M[33]*C[53]+M[34]*C[54];
-  B->TRG[3] += M[20]*C[37]+M[21]*C[39]+M[22]*C[40]+M[23]*C[42]+M[24]*C[43]+M[25]*C[44]+M[26]*C[46]+M[27]*C[47]+M[28]*C[48]+M[29]*C[49]+M[30]*C[51]+M[31]*C[52]+M[32]*C[53]+M[33]*C[54]+M[34]*C[55];
-#endif
-}
-
-template<>
-inline void sumM2P<6>(B_iter B, const vecL &C, const vecM &M) {
-  sumM2P<5>(B,C,M);
-#if COMkernel
-  B->TRG[0] += M[32]*C[35]+M[33]*C[36]+M[34]*C[37]+M[35]*C[38]+M[36]*C[39]+M[37]*C[40]+M[38]*C[41]+M[39]*C[42]+M[40]*C[43]+M[41]*C[44]+M[42]*C[45]+M[43]*C[46]+M[44]*C[47]+M[45]*C[48]+M[46]*C[49]+M[47]*C[50]+M[48]*C[51]+M[49]*C[52]+M[50]*C[53]+M[51]*C[54]+M[52]*C[55];
-  B->TRG[1] += M[32]*C[56]+M[33]*C[57]+M[34]*C[58]+M[35]*C[59]+M[36]*C[60]+M[37]*C[61]+M[38]*C[62]+M[39]*C[63]+M[40]*C[64]+M[41]*C[65]+M[42]*C[66]+M[43]*C[67]+M[44]*C[68]+M[45]*C[69]+M[46]*C[70]+M[47]*C[71]+M[48]*C[72]+M[49]*C[73]+M[50]*C[74]+M[51]*C[75]+M[52]*C[76];
-  B->TRG[2] += M[32]*C[57]+M[33]*C[59]+M[34]*C[60]+M[35]*C[62]+M[36]*C[63]+M[37]*C[64]+M[38]*C[66]+M[39]*C[67]+M[40]*C[68]+M[41]*C[69]+M[42]*C[71]+M[43]*C[72]+M[44]*C[73]+M[45]*C[74]+M[46]*C[75]+M[47]*C[77]+M[48]*C[78]+M[49]*C[79]+M[50]*C[80]+M[51]*C[81]+M[52]*C[82];
-  B->TRG[3] += M[32]*C[58]+M[33]*C[60]+M[34]*C[61]+M[35]*C[63]+M[36]*C[64]+M[37]*C[65]+M[38]*C[67]+M[39]*C[68]+M[40]*C[69]+M[41]*C[70]+M[42]*C[72]+M[43]*C[73]+M[44]*C[74]+M[45]*C[75]+M[46]*C[76]+M[47]*C[78]+M[48]*C[79]+M[49]*C[80]+M[50]*C[81]+M[51]*C[82]+M[52]*C[83];
-#else
-  B->TRG[0] += M[35]*C[35]+M[36]*C[36]+M[37]*C[37]+M[38]*C[38]+M[39]*C[39]+M[40]*C[40]+M[41]*C[41]+M[42]*C[42]+M[43]*C[43]+M[44]*C[44]+M[45]*C[45]+M[46]*C[46]+M[47]*C[47]+M[48]*C[48]+M[49]*C[49]+M[50]*C[50]+M[51]*C[51]+M[52]*C[52]+M[53]*C[53]+M[54]*C[54]+M[55]*C[55];
-  B->TRG[1] += M[35]*C[56]+M[36]*C[57]+M[37]*C[58]+M[38]*C[59]+M[39]*C[60]+M[40]*C[61]+M[41]*C[62]+M[42]*C[63]+M[43]*C[64]+M[44]*C[65]+M[45]*C[66]+M[46]*C[67]+M[47]*C[68]+M[48]*C[69]+M[49]*C[70]+M[50]*C[71]+M[51]*C[72]+M[52]*C[73]+M[53]*C[74]+M[54]*C[75]+M[55]*C[76];
-  B->TRG[2] += M[35]*C[57]+M[36]*C[59]+M[37]*C[60]+M[38]*C[62]+M[39]*C[63]+M[40]*C[64]+M[41]*C[66]+M[42]*C[67]+M[43]*C[68]+M[44]*C[69]+M[45]*C[71]+M[46]*C[72]+M[47]*C[73]+M[48]*C[74]+M[49]*C[75]+M[50]*C[77]+M[51]*C[78]+M[52]*C[79]+M[53]*C[80]+M[54]*C[81]+M[55]*C[82];
-  B->TRG[3] += M[35]*C[58]+M[36]*C[60]+M[37]*C[61]+M[38]*C[63]+M[39]*C[64]+M[40]*C[65]+M[41]*C[67]+M[42]*C[68]+M[43]*C[69]+M[44]*C[70]+M[45]*C[72]+M[46]*C[73]+M[47]*C[74]+M[48]*C[75]+M[49]*C[76]+M[50]*C[78]+M[51]*C[79]+M[52]*C[80]+M[53]*C[81]+M[54]*C[82]+M[55]*C[83];
-#endif
-}
-
 inline void flipCoef(vecL &C) {
   for (int i=1; i<4; i++) C[i] = -C[i];
   for (int i=10; i<20; i++) C[i] = -C[i];
@@ -1201,27 +1090,6 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
     sumM2L<P>(L,C,Ci->M);
     for (int i=0; i<LTERM; i++) {
       Cj->L[i] += L[i];
-    }
-  }
-}
-
-void Kernel::M2P(C_iter Ci, C_iter Cj, bool mutual) const {
-  for (B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; B++) {
-    vec3 dX = B->X - Cj->X - Xperiodic;
-    real_t invR2 = 1 / norm(dX);
-    real_t invR  = B->SRC * Cj->M[0] * std::sqrt(invR2);
-    vecL C;
-    getCoef<P>(C,dX,invR2,invR);
-    sumM2P<P>(B,C,Cj->M);
-  }
-  if (mutual) {
-    for (B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NDLEAF; B++) {
-      vec3 dX = B->X - Ci->X + Xperiodic;
-      real_t invR2 = 1 / norm(dX);
-      real_t invR  = B->SRC * Ci->M[0] * std::sqrt(invR2);
-      vecL C;
-      getCoef<P>(C,dX,invR2,invR);
-      sumM2P<P>(B,C,Ci->M);
     }
   }
 }

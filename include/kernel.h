@@ -12,7 +12,6 @@ public:
   void P2M(C_iter C, real_t &Rmax) const;
   void M2M(C_iter Ci, real_t &Rmax) const;
   void M2L(C_iter Ci, C_iter Cj, bool mutual) const;
-  void M2P(C_iter Ci, C_iter Cj, bool mutual) const;
   void L2L(C_iter Ci) const;
   void L2P(C_iter Ci) const;
 };

@@ -51,8 +51,7 @@ LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
 LFLAGS	+= -DIneJ # Handle different sources and target bodies
 #LFLAGS	+= -DCOUNT
-#LFLAGS	+= -DHYBRID
-#LFLAGS	+= -DTREECODE
+#LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
 
 # new flags
 LFLAGS += -DPARALLEL_EVERYTHING

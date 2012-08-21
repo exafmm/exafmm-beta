@@ -10,8 +10,8 @@ int main() {
   Dataset DATA;
   SerialFMM FMM;
   FMM.printNow = true;
-#if HYBRID
-  FMM.timeKernels(false);
+#if AUTO
+  FMM.timeKernels();
 #endif
 #ifdef MANY
   for( int it=0; it<25; it++ ) {

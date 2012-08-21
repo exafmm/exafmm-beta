@@ -47,8 +47,8 @@ int main(int argc, char ** argv) {
     Dataset DATA;
     SerialFMM FMM;
     FMM.printNow = true;
-#if HYBRID
-    FMM.timeKernels(args->mutual);
+#if AUTO
+    FMM.timeKernels();
 #endif
     if(FMM.printNow) std::cout << "N                    : " << args->numBodies << std::endl;
     bodies.resize(args->numBodies);

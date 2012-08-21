@@ -13,8 +13,8 @@ int main() {
   Dataset DATA;
   ParallelFMM FMM;
   FMM.printNow = MPIRANK == 0;
-#if HYBRID
-  FMM.timeKernels(false);
+#if AUTO
+  FMM.timeKernels();
 #endif
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {
