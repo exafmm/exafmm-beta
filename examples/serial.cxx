@@ -11,7 +11,7 @@ int main() {
   SerialFMM FMM;
   FMM.printNow = true;
 #if HYBRID
-  FMM.timeKernels();
+  FMM.timeKernels(false);
 #endif
 #ifdef MANY
   for( int it=0; it<25; it++ ) {

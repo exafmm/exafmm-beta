@@ -14,7 +14,7 @@ int main() {
   ParallelFMM FMM;
   FMM.printNow = MPIRANK == 0;
 #if HYBRID
-  FMM.timeKernels();
+  FMM.timeKernels(false);
 #endif
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {

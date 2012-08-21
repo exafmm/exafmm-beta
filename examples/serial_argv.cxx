@@ -1,8 +1,3 @@
-//#include <stdlib.h>
-//#include <limits.h>
-//#include <stdio.h>
-//#include <errno.h>
-
 #include "dataset.h"
 #include "serialfmm.h"
 #ifdef VTK
@@ -53,7 +48,7 @@ int main(int argc, char ** argv) {
     SerialFMM FMM;
     FMM.printNow = true;
 #if HYBRID
-    FMM.timeKernels();
+    FMM.timeKernels(args->mutual);
 #endif
     if(FMM.printNow) std::cout << "N                    : " << args->numBodies << std::endl;
     bodies.resize(args->numBodies);

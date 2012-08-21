@@ -1,6 +1,7 @@
 #ifndef evaluator_h
 #define evaluator_h
-#include "cartesian.h"
+#include "kernel.h"
+#include "task_parallel.h"
 #if COUNT
 #define count(N) N++
 #else
@@ -62,7 +63,7 @@ private:
 
   void traverse(C_iter CiBegin, C_iter CiEnd, C_iter CjBegin, C_iter CjEnd, bool mutual) {
     if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {
-      if (CiBegin == CjBegin) {
+      if (CiBegin == CjBegin) {                                 // TODO : unecessary?
         assert(CiEnd == CjEnd);
         traverse(CiBegin, CjBegin, mutual);
       } else {
@@ -250,7 +251,7 @@ public:
   Evaluator() : NP2P(0), NM2P(0), NM2L(0) {}
   ~Evaluator() {}
 
-  void timeKernels(bool mutual=true) {
+  void timeKernels(bool mutual) {
     Bodies ibodies(1000), jbodies(1000);
     for (B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); Bi++, Bj++) {
       Bi->X = 0;
@@ -272,7 +273,7 @@ public:
     P2P(Ci,Cj,mutual);
     timeP2P = stopTimer("P2P kernel") / 10000;
     startTimer("M2L kernel");
-    for (int i=0; i<1000; i++) M2L(Ci,Cj);
+    for (int i=0; i<1000; i++) M2L(Ci,Cj,mutual);
     timeM2L = stopTimer("M2L kernel") / 1000;
     startTimer("M2P kernel");
     for (int i=0; i<100; i++) M2P(Ci,Cj,mutual);

@@ -49,7 +49,7 @@ static Args defaultArgs() {
   args.images = 0;
   args.theta = 0.6;
   args.buildOnly = 0;
-  args.mutual = 1;
+  args.mutual = 0;
   args.distribution = "cube";
   return args;
 }
@@ -80,36 +80,6 @@ static void usage(char * name) {
           args.distribution);
 }
 
-static int safe_atoi(const char * arg, int * x) {
-  char * endptr;
-  errno = 0;
-  *x = strtol(arg, &endptr, 10);
-  if (errno) {
-    perror("strtol");
-    return 0;
-  }
-  if (endptr == arg) {
-    fprintf(stderr, "No digits were found\n");
-    return 0;
-  }
-  return 1;
-}
-
-static int safe_atof(const char * arg, double * x) {
-  char * endptr;
-  errno = 0;
-  *x = strtod(arg, &endptr);
-  if (errno) {
-    perror("strtod");
-    return 0;
-  }
-  if (endptr == arg) {
-    fprintf(stderr, "No digits were found\n");
-    return 0;
-  }
-  return 1;
-}
-
 static const char * parse_distribution(const char * arg) {
   switch (arg[0]) {
   case 'l':
@@ -134,28 +104,28 @@ static Args * parse_cmdline_args(int argc, char ** argv, Args * args) {
     if (c == -1) break;
     switch (c) {
     case 'n':
-      if (!safe_atoi(optarg, &args->numBodies)) return NULL;
+      args->numBodies = atoi(optarg);
       break;
     case 't':
-      if (!safe_atoi(optarg, &args->numTarget)) return NULL;
+      args->numTarget = atoi(optarg);
       break;
     case 'c':
-      if (!safe_atoi(optarg, &args->ncrit)) return NULL;
+      args->ncrit = atoi(optarg);
       break;
     case 's':
-      if (!safe_atoi(optarg, &args->nspawn)) return NULL;
+      args->nspawn = atoi(optarg);
       break;
     case 'i':
-      if (!safe_atoi(optarg, &args->images)) return NULL;
+      args->images = atoi(optarg);
       break;
     case 'h':
-      if (!safe_atof(optarg, &args->theta)) return NULL;
+      args->theta = atof(optarg);
       break;
     case 'b':
-      if (!safe_atoi(optarg, &args->buildOnly)) return NULL;
+      args->buildOnly = atoi(optarg);
       break;
     case 'm':
-      if (!safe_atoi(optarg, &args->mutual)) return NULL;
+      args->mutual = atoi(optarg);
       break;
     case 'd':
       args->distribution = parse_distribution(optarg);

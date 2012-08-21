@@ -1,5 +1,6 @@
 #ifndef dataset_h
 #define dataset_h
+#include "task_parallel.h"
 #include "types.h"
 
 class Dataset {                                                 // Contains all the different datasets
@@ -58,14 +59,14 @@ public:
   }
 #endif
 
-  void lattice(Bodies &bodies) {                                // Uniform distribution on [-1,1]^3 lattice (for debug)
+  void lattice(Bodies &bodies) {                                // Uniform distribution on [-1,1]^3 lattice
     int level = int(log(bodies.size()*MPISIZE+1.)/M_LN2/3);     // Level of tree
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       int d = 0, l = 0;                                         //  Initialize dimension and level
       int index = MPIRANK * bodies.size() + (B-bodies.begin()); //  Set index of body iterator
       vec<3,int> nx = 0;                                        //  Initialize 3-D cell index
       while (index != 0) {                                      //  Deinterleave bits while index is nonzero
-        nx[d] += (index % 2) * (1 << l);                        //   Add deinterleaved bit to 3-D cell index
+        nx[d] += (index & 1) * (1 << l);                        //   Add deinterleaved bit to 3-D cell index
         index >>= 1;                                            //   Right shift the bits
         d = (d+1) % 3;                                          //   Increment dimension
         if( d == 0 ) l++;                                       //   If dimension is 0 again, increment level

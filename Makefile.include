@@ -12,13 +12,19 @@ CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 VTK_INCLUDE_PATH = /usr/include/vtk-5.8
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
+### choose Laplace, Yukawa, Helmholtz, or Stokes equation
+EQUATION = Laplace
+#EQUATION = Yukawa
+#EQUATION = Helmholtz
+#EQUATION = Stokes
+
+### choose Cartesian or spherical expansion
+BASIS	= Cartesian
+#BASIS	= Spherical
+
 ### choose CPU or GPU
 DEVICE	= CPU
 #DEVICE	= GPU
-
-### choose Cartesian or spherical expansion
-EXPAND	= Cartesian
-#EXPAND	= Spherical
 
 ### GCC compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -msse4.2 -ffast-math -funroll-loops -fforce-addr -fbounds-check
@@ -37,13 +43,13 @@ NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-optio
 ### Base flags
 CXX	+= -I$(EXAFMM_INCLUDE_PATH)
 LFLAGS	= -L$(EXAFMM_LIBRARY_PATH)
-LFLAGS	+= -DCOMkernel
-LFLAGS	+= -DERROR_OPT
-LFLAGS	+= -DUSE_RMAX
-LFLAGS	+= -DUSE_BMAX
-LFLAGS	+= -DCOMcenter
-LFLAGS	+= -DDUAL
-LFLAGS	+= -DIneJ
+LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
+LFLAGS	+= -DERROR_OPT # Use error optimized theta
+LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
+LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
+LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
+LFLAGS	+= -DDUAL # Use dual tree traversal
+LFLAGS	+= -DIneJ # Handle different sources and target bodies
 #LFLAGS	+= -DCOUNT
 #LFLAGS	+= -DHYBRID
 #LFLAGS	+= -DTREECODE
@@ -51,10 +57,7 @@ LFLAGS	+= -DIneJ
 # new flags
 LFLAGS += -DPARALLEL_EVERYTHING
 
-### OPENMP flags
-#LFLAGS += -DOPENMP
-
-### MassiveThreads flags (remove -fopenmp and -DOPENMP from command line)
+### MassiveThreads flags (doesn't work with -fopenmp)
 MTH_DIR:=/home/tau/parallel/sys
 LFLAGS	+= -std=c++0x -DMTHREAD -DMTHREADS -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth -lpthread -ldl
 
@@ -69,6 +72,8 @@ ifeq ($(DEVICE),GPU)
 ### CUDA flags
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
+
+KERNELS	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).o
 
 .cxx.o  :
 	$(CXX) -c $? -o $@ $(LFLAGS)

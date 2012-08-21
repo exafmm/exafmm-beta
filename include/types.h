@@ -30,18 +30,6 @@ int omp_get_thread_num() { return 0; }
 #endif
 #endif
 
-#if 0
-#if MTHREADS
-#include <task_group.h>
-#endif
-
-#else
-
-//#include <common.cilkh>
-#include "task_parallel.h"
-
-#endif
-
 #if PAPI
 #include <papi.h>
 #endif
@@ -53,7 +41,7 @@ typedef vec<3,real_t> vec3;                                     //!< 3-D floatin
 int MPIRANK    = 0;                                             //!< MPI comm rank
 int MPISIZE    = 1;                                             //!< MPI comm size
 int NCRIT      = 10;                                            //!< Number of bodies per leaf cell
-int NSPAWN      = 1000;                                         //!< Threshold of NDLEAF for spawning new threads
+int NSPAWN     = 1000;                                          //!< Threshold of NDLEAF for spawning new threads
 int IMAGES     = 0;                                             //!< Number of periodic image sublevels
 real_t THETA   = .5;                                            //!< Multipole acceptance criteria
 real_t EPS2    = .0;                                            //!< Softening parameter (squared)
