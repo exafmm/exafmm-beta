@@ -1,13 +1,10 @@
 #pragma once
 #define VTK_EXCLUDE_STRSTREAM_HEADERS
-#include <vtkPoints.h>
-#include <vtkPolyData.h>
 #include <vtkVertexGlyphFilter.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkHexahedron.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkDataSetMapper.h>
-#include <vtkActor.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
@@ -15,9 +12,6 @@
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkSliderRepresentation2D.h>
 #include <vtkSliderWidget.h>
-#include <vtkWidgetEvent.h>
-#include <vtkWidgetEventTranslator.h>
-#include <vtkCallbackCommand.h>
 #include <vtkCommand.h>
 #include "types.h"
 const int maxGroups = 100000;

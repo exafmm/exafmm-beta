@@ -1,29 +1,9 @@
 #include "dataset.h"
+#include "options.h"
 #include "serialfmm.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
-#include "options.h"
-
-static int gendata(Dataset& data, Bodies& bodies, const char * distribution) {
-  switch (distribution[0]) {
-  case 'l':
-    data.lattice(bodies);
-    return 1;
-  case 'c':
-    data.cube(bodies);
-    return 1;
-  case 's':
-    data.sphere(bodies);
-    return 1;
-  case 'p':
-    data.plummer(bodies);
-    return 1;                        // OK
-  default:
-    fprintf(stderr, "unknown data distribution %s\n", distribution);
-    return 0;                        // NG
-  }
-}
 
 int main(int argc, char ** argv) {
   Args args[1];
@@ -71,11 +51,7 @@ int main(int argc, char ** argv) {
 
       if (args->buildOnly == 0) {
         FMM.startPAPI();
-#if IneJ
         FMM.evaluate(cells,cells,args->mutual);
-#else
-        FMM.evaluate(cells);
-#endif
         FMM.stopPAPI();
 #if 1
         FMM.downwardPassRec(cells);

@@ -29,11 +29,7 @@ int main() {
   FMM.buildTree(bodies,cells);
   FMM.upwardPass(cells);
   FMM.startPAPI();
-#if IneJ
   FMM.evaluate(cells,cells);
-#else
-  FMM.evaluate(cells);
-#endif
   FMM.stopPAPI();
   FMM.downwardPass(cells);
   FMM.stopTimer("FMM",FMM.printNow);

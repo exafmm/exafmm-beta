@@ -12,19 +12,22 @@ CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 VTK_INCLUDE_PATH = /usr/include/vtk-5.8
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
-### choose Laplace, Yukawa, Helmholtz, or Stokes equation
+### choose PDE to calculate
 EQUATION = Laplace
 #EQUATION = Yukawa
 #EQUATION = Helmholtz
 #EQUATION = Stokes
 
-### choose Cartesian or spherical expansion
+### choose basis of multipole/local expansion
 BASIS	= Cartesian
 #BASIS	= Spherical
+#BASIS	= Rotation
+#BASIS	= Planewave
 
-### choose CPU or GPU
+### choose device to use
 DEVICE	= CPU
 #DEVICE	= GPU
+#DEVICE	= MIC
 
 ### GCC compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -msse4.2 -ffast-math -funroll-loops -fforce-addr -fbounds-check
@@ -49,23 +52,25 @@ LFLAGS	+= -DERROR_OPT # Use error optimized theta
 LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
 LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
-LFLAGS	+= -DIneJ # Handle different sources and target bodies
-#LFLAGS	+= -DCOUNT
 #LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
+
+### Debugging flags
+LFLAGS += -DASSERT # Turns on asserttions (otherwise define an empty macro function)
+#LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
 # new flags
 LFLAGS += -DPARALLEL_EVERYTHING
 
 ### MassiveThreads flags (doesn't work with -fopenmp)
-MTH_DIR:=/home/tau/parallel/sys
-LFLAGS	+= -std=c++0x -DMTHREAD -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth -lpthread -ldl
+#MTH_DIR:=/home/tau/parallel/sys
+#LFLAGS	+= -std=c++0x -DMTHREAD -I$(MTH_DIR)/include -L$(MTH_DIR)/lib -Wl,-R$(MTH_DIR)/lib -lmyth -lpthread -ldl
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi
 
 ### VTK flags
-#CXX	+= -I$(VTK_INCLUDE_PATH)
-#VFLAGS	= -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+CXX	+= -I$(VTK_INCLUDE_PATH)
+VFLAGS	= -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags

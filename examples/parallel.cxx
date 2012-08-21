@@ -33,7 +33,6 @@ int main() {
   FMM.buildTree(bodies,cells);
   FMM.upwardPass(cells);
   FMM.startPAPI();
-#if IneJ
 
 #if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree : Step 1
   FMM.setLET(cells);
@@ -100,9 +99,6 @@ int main() {
   }
 #endif
 
-#else
-  FMM.evaluate(cells);
-#endif
   FMM.downwardPass(cells);
 
   FMM.stopPAPI();

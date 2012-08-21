@@ -1,4 +1,9 @@
 #pragma once
+#include <cmath>
+#include <cstdlib>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 #include "thread.h"
 #include "types.h"
 
@@ -154,16 +159,12 @@ public:
       file << B->TRG[3] << std::endl;                           //  Write data for z acceleration
     }                                                           // End loop over bodies
     file.close();                                               // Close file
-
   }
 
   void evalError(Bodies &bodies, Bodies &bodies2,               // Evaluate error
                  real_t &diff1, real_t &norm1, real_t &diff2, real_t &norm2) {
     B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, B2++) { // Loop over bodies & bodies2
-#ifdef DEBUG
-      std::cout << B->IBODY << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;// Compare every element
-#endif
       diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
       norm1 += B2->TRG[0] * B2->TRG[0];                         //  Value of potential
       diff2 += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);// Difference of x acceleration

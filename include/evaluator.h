@@ -42,16 +42,6 @@ private:
 #endif
   }
 
-//! Push item to cell queue
-  void pushCell(C_iter C, CellQueue &cellQueue) {
-    if (C->NCHILD == 0 || C->NDLEAF < 64) {                     // If cell has no child or has few leafs
-      P2P(C);                                                   //  P2P kernel
-      count(NP2P);                                              //  Increment P2P counter
-    } else {                                                    // Else
-      cellQueue.push(C);                                        //  Push cell to queue
-    }                                                           // End if for pushing cell
-  }
-
   void traverse(C_iter CiBegin, C_iter CiEnd, C_iter CjBegin, C_iter CjEnd, bool mutual) {
     if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {
       if (CiBegin == CjBegin) {                                 // TODO : unecessary?
@@ -140,23 +130,7 @@ protected:
 #endif
   }
 
-//! Dual tree traversal of a single tree
-  void traverse(C_iter C) {
-    CellQueue cellQueue;                                        // Traversal queue
-    pushCell(C,cellQueue);                                      // Push cell to queue
-    while (!cellQueue.empty()) {                                // While cell queue is not empty
-      C = cellQueue.front();                                    //  Get cell from front of queue
-      cellQueue.pop();                                          //  Pop this front item from queue
-      for (C_iter Ci=Ci0+C->CHILD; Ci!=Ci0+C->CHILD+C->NCHILD; Ci++) {// Loop over target cell's children
-        pushCell(Ci,cellQueue);                                 //   Push target cell's child to queue
-        for (C_iter Cj=Ci+1; Cj!=Cj0+C->CHILD+C->NCHILD; Cj++) {//  Loop over upper half of source cell's children
-          traverse(Ci,Cj,true);                                 //    Apply multipole acceptance criterion to pair 
-        }                                                       //   End loop over source cell's children
-      }                                                         //  End loop over target cell's children
-    }                                                           // End while loop over cell queue
-  }
-
-//! Dual tree traversal of a pair of trees
+//! Dual tree traversal
   void traverse(C_iter Ci, C_iter Cj, bool mutual) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared

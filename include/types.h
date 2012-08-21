@@ -1,22 +1,12 @@
 #pragma once
+
 #ifdef __INTEL_COMPILER
 #pragma warning(disable:193 383 444 981 1572 2259)
 #endif
 
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <complex>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <map>
 #include <pthread.h>
 #include <queue>
-#include <string>
-#include <utility>
 #include <vector>
 #include "vec.h"
 
@@ -30,6 +20,12 @@ int omp_get_thread_num() { return 0; }
 
 #if PAPI
 #include <papi.h>
+#endif
+
+#if ASSERT
+#include <cassert>
+#else
+#define assert(x)
 #endif
 
 typedef float       real_t;                                     //!< Real number type on CPU
@@ -91,8 +87,7 @@ enum Equation {                                                 //!< Equation ty
   Laplace,                                                      //!< Laplace equation
   Yukawa,                                                       //!< Yukawa equation
   Helmholtz,                                                    //!< Helmholtz equation
-  Stokes,                                                       //!< Stokes equation
-  VanDerWaals                                                   //!< Van der Walls equation
+  Stokes                                                        //!< Stokes equation
 };
 
 //! Structure of source bodies (stuff to send)
@@ -147,8 +142,6 @@ struct Cell {
 typedef std::vector<Cell>           Cells;                      //!< Vector of cells
 typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator for cell vector
 typedef std::queue<C_iter>          CellQueue;                  //!< Queue of cell iterators
-typedef std::pair<C_iter,C_iter>    Pair;                       //!< Pair of interacting cells
-typedef std::deque<Pair>            PairQueue;                  //!< Queue of interacting cell pairs
 
 //! Structure for Ewald summation
 struct Ewald {

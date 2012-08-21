@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include "sort.h"
 
 class Kernel : public Sort {

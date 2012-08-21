@@ -256,17 +256,7 @@ public:
   }
 #endif
 
-//! Interface for tree traversal when I = J (M2L, P2P)
-  void evaluate(Cells &cells) {
-    Ci0 = cells.begin();                                        // Set iterator of target root cell
-    Cj0 = cells.begin();                                        // Set iterator of source root cell
-    Xperiodic = 0;                                              // No periodic shift
-    startTimer("Traverse");                                     // Start timer
-    traverse(Ci0);                                              // Traverse the tree
-    stopTimer("Traverse",printNow);                             // Stop timer
-  }
-
-//! Interface for tree traversal when I != J (M2L, P2P)
+//! Evaluate P2P and M2L using tree traversal
   void evaluate(Cells &icells, Cells &jcells, bool mutual=false) {
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
