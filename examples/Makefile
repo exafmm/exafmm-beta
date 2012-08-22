@@ -3,10 +3,6 @@ include ../Makefile.include
 #LFLAGS	+= -DMANY
 
 serial	: serial.cxx $(KERNELS)
-	$(CXX) $? $(LFLAGS)
-	./a.out
-
-serial_argv : serial_argv.cxx $(KERNELS)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	./a.out
 

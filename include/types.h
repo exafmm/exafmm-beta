@@ -7,6 +7,8 @@
 #include <map>
 #include <pthread.h>
 #include <queue>
+#include <string>
+#include <utility>
 #include <vector>
 #include "vec.h"
 
@@ -24,6 +26,7 @@ typedef float         real_t;                                   //!< Floating po
 typedef vec<3,real_t> vec3;                                     //!< Vector of 3 floating point types
 typedef vec<4,real_t> vec4;                                     //!< Vector of 4 floating point types
 typedef vec<8,int>    ivec8;                                    //!< Vector of 8 integer types
+typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3
 
 #ifndef KERNEL
 int MPIRANK    = 0;                                             //!< MPI comm rank

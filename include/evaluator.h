@@ -106,7 +106,7 @@ protected:
       m += B->SRC;                                              //  Accumulate mass
       X += B->X * B->SRC;                                       //  Accumulate dipole
     }                                                           // End loop over leafs
-    for (C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; c++) {// Loop over cell's children
+    for (C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; c++) {// Loop over child cells
       m += std::abs(c->M[0]);                                   //  Accumulate mass
       X += c->X * std::abs(c->M[0]);                            //  Accumulate dipole
     }                                                           // End loop over child cells

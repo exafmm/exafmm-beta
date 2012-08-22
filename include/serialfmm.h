@@ -11,42 +11,20 @@ protected:
 
 private:
 //! Error optimization of Rcrit
-  void setRcrit(Cells &cells) const {
-#if ERROR_OPT
-    real_t c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / powf(std::abs(Ci0->M[0]),1.0/3);// Root coefficient
+  void setRcrit(C_iter C, real_t c) {
+#if Cartesian
+    for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];            // Normalize multipole expansion coefficients
 #endif
-    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over cells
-      real_t x = 1.0 / THETA;                                   //  Inverse of theta
+    real_t x = 1.0 / THETA;                                     // Inverse of theta
 #if ERROR_OPT
-      real_t a = c * powf(std::abs(C->M[0]),1.0/3);             //  Cell coefficient
-      for (int i=0; i<5; i++) {                                 //  Newton-Rhapson iteration
-        real_t f = x * x - 2 * x + 1 - a * pow(x,-P);           //   Function value
-        real_t df = (P + 2) * x - 2 * (P + 1) + P / x;          //   Function derivative value
-        x -= f / df;                                            //   Increment x
-      }                                                         //  End Newton-Rhapson iteration
+    real_t a = c * pow(std::abs(C->M[0]),1.0/3);                // Cell coefficient
+    for (int i=0; i<5; i++) {                                   // Newton-Rhapson iteration
+      real_t f = x * x - 2 * x + 1 - a * pow(x,-P);             //  Function value
+      real_t df = (P + 2) * x - 2 * (P + 1) + P / x;            //  Function derivative value
+      x -= f / df;                                              //  Increment x
+    }                                                           // End Newton-Rhapson iteration
 #endif
-      C->RCRIT *= x;                                            //  Multiply Rcrit by error optimized parameter x
-    }                                                           // End loop over cells
-    for (C_iter C=cells.begin(); C!=cells.begin()+9; C++) {     // Loop over top 2 levels of cells
-      C->RCRIT *= 10;                                           //  Prevent approximation
-    }                                                           // End loop over top 2 levels of cells
-  }
-
-#if PARALLEL_EVERYTHING
-  //! set RCRIT of cell C; 
-  //! if level is 0 or 1, RCRIT is multiplied by 10
-  void setRcrit1(C_iter C, int level, real_t root_coefficient) {
-    real_t x = 1.0 / THETA;
-#if ERROR_OPT
-    real_t a = root_coefficient * pow(std::abs(C->M[0]),1.0/3);
-    for (int i=0; i<5; i++) {
-      real_t f = x * x - 2 * x + 1 - a * pow(x,-P);
-      real_t df = (P + 2) * x - 2 * (P + 1) + P / x;
-      x -= f / df;
-    }
-#endif
-    C->RCRIT *= x;
-    if (level <= 1) C->RCRIT *= 10;                             // Prevent approximation
+    C->RCRIT *= x;                                              // Multiply Rcrit by error optimized parameter x
   }
 
   //! Y := component-wise minimum of X and Y
@@ -65,7 +43,7 @@ private:
 
   //! get bounds of bodies in [B0,B1), in parallel
   //! return the pair of minimum and maximum
-  std::pair<vec3,vec3> getBoundsRec(B_iter B0, B_iter B1) {
+  vec3Pair getBoundsRec(B_iter B0, B_iter B1) {
     assert(B1 - B0 > 0);
     if (B1 - B0 < 1000) {
       vec3 xmin = B0->X, xmax = B0->X;
@@ -73,11 +51,11 @@ private:
         vec3_min(B->X, xmin);
         vec3_max(B->X, xmax);
       }
-      return std::pair<vec3,vec3>(xmin, xmax);
+      return vec3Pair(xmin, xmax);
     } else {
       int nh = (B1 - B0) / 2;
       __init_tasks__;
-      std::pair<vec3,vec3> vt0, vt1;
+      vec3Pair vt0, vt1;
       spawn_task1(vt0, vt0 = getBoundsRec(B0, B0 + nh));
       vt1 = getBoundsRec(B0 + nh, B1);
       __sync_tasks__;
@@ -88,81 +66,45 @@ private:
   }
 
   void upwardPassRec1(C_iter C, C_iter C0) {
-    __init_tasks__;
-    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
-      spawn_task0(upwardPassRec1(CC, C0));
-    }
-    __sync_tasks__;
-    C->M = 0;
-    C->L = 0;
-    real_t Rmax = 0;
-    setCenter(C);
-    P2M(C,Rmax);
-    M2M(C,Rmax);
+    __init_tasks__;                                             // Initialize tasks
+    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+      spawn_task0(upwardPassRec1(CC, C0));                      //  Recursive tree traversal
+    }                                                           // End loop over child cells
+    __sync_tasks__;                                             // Synchronize tasks
+    real_t Rmax = 0;                                            //  Initialize Rmax
+    setCenter(C);                                               //  Set center of cell to center of mass
+    C->M = 0;                                                   //  Initialize multipole expansion coefficients
+    C->L = 0;                                                   //  Initialize local expansion coefficients
+    P2M(C,Rmax);                                                //  P2M kernel
+    M2M(C,Rmax);                                                //  M2M kernel
   }
 
-  void upwardPassRec2(C_iter C, C_iter C0, int level, real_t root_coefficient) {
-    __init_tasks__;
-    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
-      spawn_task0(upwardPassRec2(CC, C0, level + 1, root_coefficient));
-    }
-    __sync_tasks__;
-#if Cartesian
-    for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
-#endif
-    setRcrit1(C, level, root_coefficient);
+  void upwardPassRec2(C_iter C, C_iter C0, real_t c) {
+    __init_tasks__;                                             // Initialize tasks
+    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+      spawn_task0(upwardPassRec2(CC, C0, c));                   //  Recursive tree traversal
+    }                                                           // End loop over child cells
+    __sync_tasks__;                                             // Synchronize tasks
+    setRcrit(C, c);                                             // Error optimization of Rcrit
   }
 
   void downwardPassRec1(C_iter C, C_iter C0) const {
-    L2L(C);
-    L2P(C);
-    __init_tasks__;
-    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
-      spawn_task0(downwardPassRec1(CC, C0));
-    }
-    __sync_tasks__;
+    L2L(C);                                                     // L2L kernel
+    L2P(C);                                                     // L2P kernel
+    __init_tasks__;                                             // Initialize tasks
+    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+      spawn_task0(downwardPassRec1(CC, C0));                    //  Recursive tree traversal
+    }                                                           // End loop over chlid cells
+    __sync_tasks__;                                             // Synchronize tasks
   }
-
-#endif
 
 public:
 //! Set center and size of root cell
   void setBounds(Bodies &bodies) {
     startTimer("Set bounds");                                   // Start timer
-    localXmax = localXmin = bodies.begin()->X;                  // Initialize Xmin, Xmax
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      for (int d=0; d<3; d++) {                                 //  Loop over dimensions
-        if      (B->X[d] < localXmin[d]) localXmin[d] = B->X[d];//   Determine Xmin
-        else if (B->X[d] > localXmax[d]) localXmax[d] = B->X[d];//   Determine Xmax
-      }                                                         //  End loop over dimensions
-    }                                                           // End loop over bodies
-    localCenter = (localXmax + localXmin) / 2;                  // Calculate center of domain
-    localRadius = 0;                                            // Initialize localRadius
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      localRadius = std::max(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
-      localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
-    }                                                           // End loop over dimensions
-    localRadius *= 1.00001;                                     // Add some leeway to radius
-    if (IMAGES == 0) {                                          // If non-periodic boundary condition
-      globalRadius = localRadius;                               //  Set global radius for serial run
-      globalCenter = localCenter;                               //  Set global center for serial run
-      globalXmin = localXmin;                                   //  Set global Xmin for serial run
-      globalXmax = localXmax;                                   //  Set global Xmax for serial run
-    } else {                                                    // If periodic boundary condition
-      globalRadius = M_PI;                                      //  Set global radius
-      globalCenter = 0;                                         //  Set global radius
-      globalXmin = -M_PI;                                       //  Set global Xmin
-      globalXmax = M_PI;                                        //  Set global Xmax
-    }                                                           // End if for periodic boundary condition
-    stopTimer("Set bounds",printNow);                           // Stop timer
-  }
-
-#if PARALLEL_EVERYTHING
-  void setBoundsRec(Bodies &bodies) {
-    startTimer("Set bounds");
-    std::pair<vec3,vec3> vt = getBoundsRec(bodies.begin(), bodies.end());
-    localXmin = vt.first;
-    localXmax = vt.second;
+    vec3Pair vt = getBoundsRec(bodies.begin(), bodies.end());   // Get Xmin and Xmax of domain
+    localXmin = vt.first;                                       // Set local Xmin
+    localXmax = vt.second;                                      // Set local Xmax
     localCenter = (localXmax + localXmin) / 2;                  // Calculate center of domain
     localRadius = 0;                                            // Initialize localRadius
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
@@ -183,55 +125,26 @@ public:
     }                                                           // End if for periodic boundary condition
     stopTimer("Set bounds",printNow);
   }
-#endif
 
 //! Build tree structure top down
   void buildTree(Bodies &bodies, Cells &cells) {
-    setLeafs(bodies);                                           // Copy bodies to leafs
-    growTree();                                                 // Grow tree from root
-    linkTree(bodies,cells);                                     // Form parent-child links in tree
-  }
-
-#if PARALLEL_EVERYTHING
-  void buildTreeRec(Bodies &bodies, Cells &cells) {
     growTreeRec(bodies);                                        // Grow tree from root
     linkTreeRec(bodies,cells);                                  // Form parent-child links in tree
   }
-#endif
 
 //! Upward pass (P2M, M2M)
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");                                  // Start timer
     Ci0 = cells.begin();                                        // Set iterator of target root cell
     Cj0 = cells.begin();                                        // Set iterator of source root cell
-    for (C_iter C=cells.end()-1; C!=cells.begin()-1; C--) {     // Loop over cells bottomup
-      real_t Rmax = 0;                                          //  Initialize Rmax
-      setCenter(C);                                             //  Set center of cell to center of mass
-      C->M = 0;                                                 //  Initialize multipole expansion coefficients
-      C->L = 0;                                                 //  Initialize local expansion coefficients
-      P2M(C,Rmax);                                              //  P2M kernel
-      M2M(C,Rmax);                                              //  M2M kernel
-    }                                                           // End loop over cells
-#if Cartesian
-    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over cells
-      for (int i=1; i<MTERM; i++) C->M[i] /= C->M[0];           //  Normalize multipole expansion coefficients
-    }                                                           // End loop over cells
-#endif
-    setRcrit(cells);                                            // Error optimization of Rcrit
-    stopTimer("Upward pass",printNow);                          // Stop timer
-  }
-
-#if PARALLEL_EVERYTHING
-  void upwardPassRec(Cells &cells) {
-    startTimer("Upward pass");
-    Ci0 = cells.begin();                                        // Set iterator of target root cell
-    Cj0 = cells.begin();                                        // Set iterator of source root cell
     upwardPassRec1(Ci0, Ci0);
     real_t c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / pow(std::abs(Ci0->M[0]),1.0/3);
-    upwardPassRec2(Ci0, Ci0, 0, c);
-    stopTimer("Upward pass",printNow);
+    upwardPassRec2(Ci0, Ci0, c);
+    for (C_iter C=cells.begin(); C!=cells.begin()+9; C++) {     // Loop over top 2 levels of cells
+      C->RCRIT *= 10;                                           //  Prevent approximation
+    }                                                           // End loop over top 2 levels of cells
+    stopTimer("Upward pass",printNow);                          // Stop timer
   }
-#endif
 
 //! Evaluate P2P and M2L using tree traversal
   void evaluate(Cells &icells, Cells &jcells, bool mutual=false) {
@@ -258,33 +171,18 @@ public:
   }
 
 //! Downward pass (L2L, L2P)
-  void downwardPass(Cells &cells) {
+  void downwardPass(Cells &cells) { 
     startTimer("Downward pass");                                // Start timer
     C_iter C0 = cells.begin();                                  // Root cell
     L2P(C0);                                                    // If root is the only cell do L2P
-    for (C_iter C=C0+1; C!=cells.end(); C++) {                  // Loop over cells
-      L2L(C);                                                   //  L2L kernel
-      L2P(C);                                                   //  L2P kernel
-    }                                                           // End loop over cells
+    __init_tasks__;                                             // Initialize tasks
+    for (C_iter CC=C0+C0->CHILD; CC!=C0+C0->CHILD+C0->NCHILD; CC++) {// Loop over child cells
+      spawn_task0(downwardPassRec1(CC, C0));                    //  Recursive tree traversal
+    }                                                           // End loop over child cells
+    __sync_tasks__;                                             // Synchronize tasks
     stopTimer("Downward pass",printNow);                        // Stop timer
     if(printNow) printTreeData(cells);                          // Print tree data
   }
-
-#if PARALLEL_EVERYTHING
-  void downwardPassRec(Cells &cells) { 
-    startTimer("Downward pass");                                // Start timer
-    C_iter C0 = cells.begin();
-    C_iter C = C0;
-    L2P(C);
-    __init_tasks__;
-    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {
-      spawn_task0(downwardPassRec1(CC, C0));
-    }
-    __sync_tasks__;
-    stopTimer("Downward pass",printNow);                        // Stop timer
-    if(printNow) printTreeData(cells);                          // Print tree data
-  }
-#endif
 
 //! Direct summation
   void direct(Bodies &ibodies, Bodies &jbodies) {
