@@ -80,13 +80,6 @@ typedef std::queue<Trace>                      Traces;          //!< Queue of tr
 typedef std::map<std::string,double>           Timer;           //!< Map of timer event name to timed value
 typedef std::map<std::string,double>::iterator TI_iter;         //!< Iterator for timer event name map
 
-enum Equation {                                                 //!< Equation type enumeration
-  Laplace,                                                      //!< Laplace equation
-  Yukawa,                                                       //!< Yukawa equation
-  Helmholtz,                                                    //!< Helmholtz equation
-  Stokes                                                        //!< Stokes equation
-};
-
 //! Structure of bodies
 struct Body {
   int    IBODY;                                                 //!< Initial body numbering for sorting back
@@ -118,35 +111,5 @@ struct Cell {
 typedef std::vector<Cell>           Cells;                      //!< Vector of cells
 typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator for cell vector
 typedef std::queue<C_iter>          CellQueue;                  //!< Queue of cell iterators
-
-//! Linked list of leafs (only used in treebuilder.h)
-struct Leaf {
-  int    I;                                                     //!< Unique index for every leaf
-  vec3   X;                                                     //!< Coordinate of leaf
-  Leaf * NEXT;                                                  //!< Pointer to next leaf
-};
-typedef std::vector<Leaf>           Leafs;                      //!< Vector of leafs
-typedef std::vector<Leaf>::iterator L_iter;                     //!< Iterator for leaf vector
-
-//! Structure of nodes (only used in treebuilder.h)
-struct Node {
-  int    LEVEL;                                                 //!< Level in the tree structure
-  int    NLEAF;                                                 //!< Number of descendant leafs
-  int    NCHILD;                                                //!< Number of child nodes
-  int    CHILD[8];                                              //!< Index of child node
-  vec3   X;                                                     //!< Coordinate at center
-  Leaf * LEAF;                                                  //!< Pointer to first leaf
-};
-typedef std::vector<Node>           Nodes;                      //!< Vector of nodes
-typedef std::vector<Node>::iterator N_iter;                     //!< Iterator for node vector
-
-//! Structure for Ewald summation (only used in ewald.h)
-struct Ewald {
-  vec3   K;                                                     //!< 3-D wave number vector
-  real_t REAL;                                                  //!< real part of wave
-  real_t IMAG;                                                  //!< imaginary part of wave
-};
-typedef std::vector<Ewald>           Ewalds;                    //!< Vector of Ewald summation types
-typedef std::vector<Ewald>::iterator E_iter;                    //!< Iterator for Ewald summation types
 
 #endif

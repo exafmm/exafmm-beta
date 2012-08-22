@@ -2,33 +2,24 @@
 #define treebuilder_h
 #include "evaluator.h"
 
-#if PARALLEL_EVERYTHING
-
-struct BinaryTree {
-  ivec8 counts;
-  BinaryTree * left;
-  BinaryTree * right;
-};
-
-struct XNode {
-  int   LEVEL;                                                  //!< Level in the tree structure
-  int BODY;
-  int   NLEAF;                                                  //!< Number of descendant leafs
-  XNode * CHILD[8];                                             //!< Pointer to child node
-  vec3  X;                                                      //!< Coordinate at center
-  int NNODE;
-};
-
-#endif
-
 class TreeBuilder : public Evaluator {
 private:
-  Nodes    nodes;
-  Leafs    leafs;
-  B_iter   BN;
-  C_iter   CN;
-  unsigned NLEAF;
-  int      MAXLEVEL;
+  int MAXLEVEL;                                                 //!< Maximum level of tree
+
+  struct BinaryTree {
+    ivec8 counts;                                               //!< Counter
+    BinaryTree * left;                                          //!< Pointer to left child
+    BinaryTree * right;                                         //!< Pointer to right child
+  };
+
+  struct Node {
+    int    LEVEL;                                               //!< Level in the tree structure
+    int    LEAF;                                                //!< Index offset for first leaf in node
+    int    NLEAF;                                               //!< Number of descendant leafs
+    int    NNODE;                                               //!< Number of descendant nodes
+    Node * CHILD[8];                                            //!< Pointer to child node
+    vec3   X;                                                   //!< Coordinate at center
+  };
 
 protected:
   real_t localRadius;                                           //!< Radius of local root cell
@@ -37,170 +28,6 @@ protected:
   vec3 localXmax;                                               //!< Local Xmax for a given rank
 
 private:
-  void init(Node &node) {
-    node.NCHILD = 0;
-    node.NLEAF = 0;
-    node.LEAF = NULL;
-    for (int b=0; b<8; b++) node.CHILD[b] = -1;
-  }
-
-  inline long long getIndex(vec3 X, int level) {
-    float d = 2 * localRadius / (1 << level);
-    long long ix = int((X[0] - localXmin[0]) / d);
-    long long iy = int((X[1] - localXmin[1]) / d);
-    long long iz = int((X[2] - localXmin[2]) / d);
-    long long id = ((1 << 3 * level) - 1) / 7;
-    assert( level < 22 );
-    for (int l=0; l<level; l++) {
-      id += (ix & 1) << (3 * l);
-      id += (iy & 1) << (3 * l + 1);
-      id += (iz & 1) << (3 * l + 2);
-      ix >>= 1;
-      iy >>= 1;
-      iz >>= 1;
-    }
-    return id;
-  }
-
-  inline void addChild(int octant, int n) {
-    N_iter N = nodes.begin()+n;
-    Node child;
-    init(child);
-    child.LEVEL = N->LEVEL+1;
-    child.X = N->X;
-    real_t r = localRadius / (1 << child.LEVEL);
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      child.X[d] += r * (((octant & 1 << d) >> d) * 2 - 1);     //  Calculate new center position
-    }                                                           // End loop over dimensions
-    N->NCHILD++;
-    N->CHILD[octant] = nodes.size();
-    nodes.push_back(child);
-  }
-
-  void splitNode(int n) {
-    while (nodes[n].NLEAF > NCRIT) {
-      int c = 0;
-      Leaf *Ln;
-      for (Leaf *L=nodes[n].LEAF; L; L=Ln) {
-        N_iter N = nodes.begin()+n;
-        Ln = L->NEXT;
-        int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
-        if (N->CHILD[octant] == -1) {
-          addChild(octant,n);
-        }
-        c = nodes[n].CHILD[octant];
-        Node *child = &nodes[c];
-        L->NEXT = child->LEAF;
-        child->LEAF = &*L;
-        child->NLEAF++;
-      }
-      n = c;
-    }
-  }
-
-  void nodes2cells(int i, C_iter C) {
-    C->R      = localRadius / (1 << nodes[i].LEVEL);
-    C->X      = nodes[i].X;
-    C->NDLEAF = nodes[i].NLEAF;
-    C->LEAF   = BN;
-    C->ICELL  = getIndex(C->X,nodes[i].LEVEL);
-    if (!nodes[i].NCHILD) {
-      C->CHILD = 0;
-      C->NCHILD = 0;
-      C->NCLEAF = nodes[i].NLEAF;
-      for (Leaf *L=nodes[i].LEAF; L; L=L->NEXT) {
-        BN->IBODY = L->I;
-        BN++;
-      }
-    } else {
-      C->NCLEAF = 0;
-      int nsub=0;
-      for (int octant=0; octant<8; octant++) {
-        if (nodes[i].CHILD[octant] != -1) {
-          ++nsub;
-        }
-      }
-      C_iter Ci = CN;
-      C->CHILD = Ci - Ci0;
-      C->NCHILD = nsub;
-      CN += nsub;
-      for (int octant=0; octant<8; octant++) {
-        if (nodes[i].CHILD[octant] != -1) {
-          Ci->PARENT = C - Ci0;
-          nodes2cells(nodes[i].CHILD[octant], Ci++);
-        }
-      }
-    }
-  }
-
-  void permuteBodies(Bodies &bodies) {
-    Bodies buffer = bodies;
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      B->ICELL = buffer[B->IBODY].ICELL;
-      B->X     = buffer[B->IBODY].X;
-      B->SRC   = buffer[B->IBODY].SRC;
-      B->TRG   = buffer[B->IBODY].TRG;
-    }
-  }
-
-protected:
-  void setLeafs(Bodies &bodies) {
-    startTimer("Set leafs");
-    NLEAF = bodies.size();
-    leafs.reserve(NLEAF);
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      Leaf leaf;
-      leaf.I = B-bodies.begin();
-      leaf.X = B->X;
-      leafs.push_back(leaf);
-    }
-    stopTimer("Set leafs",printNow);
-  }
-
-  void growTree() {
-    startTimer("Grow tree");
-    nodes.reserve(NLEAF);
-    Node node;
-    init(node);
-    node.LEVEL = 0;
-    node.X = localCenter;
-    nodes.push_back(node);
-    MAXLEVEL = 0;
-    for (L_iter L=leafs.begin(); L!=leafs.end(); L++) {
-      int n = 0;
-      while (nodes[n].NCHILD) {
-        N_iter N = nodes.begin() + n;
-        int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
-        N->NLEAF++;
-        if (nodes[n].CHILD[octant] == -1) addChild(octant,n);
-        n = nodes[n].CHILD[octant];
-      }
-      L->NEXT = nodes[n].LEAF;
-      nodes[n].LEAF = &*L;
-      nodes[n].NLEAF++;
-      if (nodes[n].NLEAF > NCRIT) splitNode(n);
-      if (MAXLEVEL < nodes[n].LEVEL) MAXLEVEL = nodes[n].LEVEL;
-    }
-    MAXLEVEL++;
-    stopTimer("Grow tree",printNow);
-  }
-  
-  void linkTree(Bodies &bodies, Cells &cells) {
-    startTimer("Link tree");
-    cells.clear();
-    cells.resize(nodes.size());
-    Ci0 = cells.begin();
-    BN = bodies.begin();
-    CN = Ci0 + 1;
-    nodes2cells(0,Ci0);
-    nodes.clear();
-    leafs.clear();
-    permuteBodies(bodies);
-    stopTimer("Link tree",printNow);
-  }
-
-#if PARALLEL_EVERYTHING
- private:
   ivec8 prefixSum(ivec8 a, int begin) {
     ivec8 s;
     int p = begin;
@@ -211,10 +38,10 @@ protected:
     return s;
   }
 
-  XNode * makeNode(int level, int begin, int end, vec3 X, bool nochild) {
-    XNode * n = new XNode();
+  Node * makeNode(int level, int begin, int end, vec3 X, bool nochild) {
+    Node * n = new Node();
     n->LEVEL = level; 
-    n->BODY = begin; 
+    n->LEAF = begin; 
     n->NLEAF = end - begin; 
     n->X = X;
     n->NNODE = 1;
@@ -285,7 +112,7 @@ protected:
     }
   }
 
-  XNode * buildNodes(Bodies& bodies, Bodies& buffer, int dest,
+  Node * buildNodes(Bodies& bodies, Bodies& buffer, int dest,
                      int begin,  int end, 
                      BinaryTree * t_begin, BinaryTree * t_end, 
                      vec3 X, int level) {
@@ -296,7 +123,7 @@ protected:
         for (int i=begin; i<end; i++) buffer[i] = bodies[i];
       return makeNode(level, begin, end, X, true);
     }
-    XNode * node = makeNode(level, begin, end, X, false);
+    Node * node = makeNode(level, begin, end, X, false);
     BinaryTree t_root_[1]; 
     BinaryTree * t_root = countBodies(bodies, begin, end, X, t_root_, t_begin, t_end);
     ivec8 offsets = prefixSum(t_root->counts, begin);
@@ -329,13 +156,13 @@ protected:
     return node;
   }
 
-  int nodes2cellsRec(XNode * node, int parent, C_iter C, C_iter H,
+  int nodes2cellsRec(Node * node, int parent, C_iter C, C_iter H,
                      B_iter B0, int level) {
     C->PARENT = parent;
     C->R      = localRadius / (1 << node->LEVEL);
     C->X      = node->X;
     C->NDLEAF = node->NLEAF;
-    C->LEAF   = B0 + node->BODY;
+    C->LEAF   = B0 + node->LEAF;
     if (node->NNODE == 1) {
       C->CHILD = 0;
       C->NCHILD = 0;
@@ -379,9 +206,9 @@ protected:
       return max_level;
     }
   }
-  XNode * root_node;
+  Node * root_node;
 
- protected:
+protected:
   void growTreeRec(Bodies &bodies) {
     Bodies buffer = bodies;
     startTimer("Grow tree");
@@ -402,9 +229,6 @@ protected:
     delete root_node; root_node = NULL;
     stopTimer("Link tree",printNow);
   }
-
-#endif
-
 
   void printTreeData(Cells &cells) {
     std::cout << "-----------------------------------------------" << std::endl;

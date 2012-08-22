@@ -57,9 +57,6 @@ LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before t
 LFLAGS += -DASSERT # Turns on asserttions (otherwise define an empty macro function)
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
-# new flags
-LFLAGS += -DPARALLEL_EVERYTHING
-
 ### Intel TBB flags (doesn't work with OpenMP) : TBB is available from http://threadingbuildingblocks.org/download.php
 #LFLAGS	+= -std=c++0x -DTBB -ltbb
 
