@@ -78,7 +78,7 @@ private:
       __init_tasks__;
       std::pair<vec3,vec3> vt0, vt1;
 #if _OPENMP
-#pragma omp task
+#pragma omp task shared(vt0)
 #endif
       spawn_task1(vt0, vt0 = getBoundsRec(B0, B0 + nh));
       vt1 = getBoundsRec(B0 + nh, B1);
