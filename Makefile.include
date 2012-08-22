@@ -31,11 +31,11 @@ DEVICE	= CPU
 ### GCC compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -msse4.2 -ffast-math -funroll-loops -fforce-addr -fbounds-check
 ### Intel compiler
-#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -ansi-alias
+#CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias
 ### BG/P compiler
-#CXX	= mpixlcxx_r -qarch=450 -qtune=450 -qsmp=omp -O3
+#CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3
 ### TAU compiler
-#CXX	= tau_cxx.sh -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fbounds-check
+#CXX	= tau_cxx.sh -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -funroll-loops -fforce-addr -fbounds-check
 
 ### CUDA compiler
 NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v\
@@ -61,7 +61,7 @@ LFLAGS += -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 LFLAGS += -DPARALLEL_EVERYTHING
 
 ### Intel TBB flags (doesn't work with OpenMP) : TBB is available from http://threadingbuildingblocks.org/download.php
-LFLAGS	+= -std=c++0x -DTBB -ltbb
+#LFLAGS	+= -std=c++0x -DTBB -ltbb
 
 ### MassiveThreads flags (doesn't work with OpenMP) : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -std=c++0x -DMTHREAD -lmyth

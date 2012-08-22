@@ -10,14 +10,6 @@
 #include <vector>
 #include "vec.h"
 
-#if 0
-#if _OPENMP
-#include <omp.h>
-#else
-int omp_get_thread_num() { return 0; }
-#endif
-#endif
-
 #if PAPI
 #include <papi.h>
 #endif

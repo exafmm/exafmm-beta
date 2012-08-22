@@ -58,27 +58,15 @@ private:
       C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;
       C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;
       __init_tasks__;
-#if _OPENMP
-#pragma omp task
-#endif
       spawn_task0(traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));
       traverse(CiMid, CiEnd, CjMid, CjEnd, mutual);
-#if _OPENMP
-#pragma omp taskwait
-#endif
       __sync_tasks__;
-#if _OPENMP
-#pragma omp task
-#endif
       spawn_task0(traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));
       if (!mutual || CiBegin != CjBegin) {
         traverse(CiMid, CiEnd, CjBegin, CjMid, mutual);
       } else {
         assert(CiEnd == CjEnd);
       }
-#if _OPENMP
-#pragma omp taskwait
-#endif
       __sync_tasks__;
     }
   }
