@@ -1,4 +1,5 @@
-#pragma once
+#ifndef serialfmm_h
+#define serialfmm_h
 #include "treebuilder.h"
 
 class SerialFMM : public TreeBuilder {
@@ -316,3 +317,5 @@ public:
     }                                                           // End loop over bodies
   }
 };
+
+#endif

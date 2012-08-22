@@ -42,7 +42,7 @@ int main(int argc, char ** argv) {
       FMM.startPAPI();
       FMM.evaluate(cells,cells,args->mutual);
       FMM.stopPAPI();
-#if 1
+#if PARALLEL_EVERYTHING
       FMM.downwardPassRec(cells);
 #else
       FMM.downwardPass(cells);

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef dataset_h
+#define dataset_h
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
@@ -152,3 +153,5 @@ public:
               << "Rel. L2 Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
   }
 };
+
+#endif

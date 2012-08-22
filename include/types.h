@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef types_h
+#define types_h
 #ifdef __INTEL_COMPILER
 #pragma warning(disable:193 383 444 981 1572 2259)
 #endif
@@ -20,8 +20,10 @@
 #define assert(x)
 #endif
 
-typedef float       real_t;                                     //!< Real number type on CPU
-typedef vec<3,real_t> vec3;                                     //!< 3-D floating point vector type
+typedef float         real_t;                                   //!< Floating point type
+typedef vec<3,real_t> vec3;                                     //!< Vector of 3 floating point types
+typedef vec<4,real_t> vec4;                                     //!< Vector of 4 floating point types
+typedef vec<8,int>    ivec8;                                    //!< Vector of 8 integer types
 
 #ifndef KERNEL
 int MPIRANK    = 0;                                             //!< MPI comm rank
@@ -82,38 +84,17 @@ enum Equation {                                                 //!< Equation ty
   Stokes                                                        //!< Stokes equation
 };
 
-//! Structure of source bodies (stuff to send)
+//! Structure of bodies
 struct Body {
-  int  IBODY;                                                   //!< Initial body numbering for sorting back
-  int  IPROC;                                                   //!< Initial process numbering for partitioning back
-  int  ICELL;                                                   //!< Cell index
-  vec3 X;                                                       //!< Position
+  int    IBODY;                                                 //!< Initial body numbering for sorting back
+  int    IPROC;                                                 //!< Initial process numbering for partitioning back
+  int    ICELL;                                                 //!< Cell index
+  vec3   X;                                                     //!< Position
   real_t SRC;                                                   //!< Scalar source values
-  vec<4,real_t> TRG;                                            //!< Scalar+vector target values
+  vec4   TRG;                                                   //!< Scalar+vector target values
 };
 typedef std::vector<Body>            Bodies;                    //!< Vector of bodies
 typedef std::vector<Body>::iterator  B_iter;                    //!< Iterator for body vector
-
-//! Linked list of leafs (only used in fast/topdown.h)
-struct Leaf {
-  int    I;                                                     //!< Unique index for every leaf
-  vec3   X;                                                     //!< Coordinate of leaf
-  Leaf * NEXT;                                                  //!< Pointer to next leaf
-};
-typedef std::vector<Leaf>           Leafs;                      //!< Vector of leafs
-typedef std::vector<Leaf>::iterator L_iter;                     //!< Iterator for leaf vector
-
-//! Structure of nodes (only used in fast/topdown.h)
-struct Node {
-  bool   NOCHILD;                                               //!< Flag for twig nodes
-  int    LEVEL;                                                 //!< Level in the tree structure
-  int    NLEAF;                                                 //!< Number of descendant leafs
-  int    CHILD[8];                                              //!< Index of child node
-  vec3   X;                                                     //!< Coordinate at center
-  Leaf * LEAF;                                                  //!< Pointer to first leaf
-};
-typedef std::vector<Node>           Nodes;                      //!< Vector of nodes
-typedef std::vector<Node>::iterator N_iter;                     //!< Iterator for node vector
 
 //! Structure of cells
 struct Cell {
@@ -135,7 +116,28 @@ typedef std::vector<Cell>           Cells;                      //!< Vector of c
 typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator for cell vector
 typedef std::queue<C_iter>          CellQueue;                  //!< Queue of cell iterators
 
-//! Structure for Ewald summation
+//! Linked list of leafs (only used in treebuilder.h)
+struct Leaf {
+  int    I;                                                     //!< Unique index for every leaf
+  vec3   X;                                                     //!< Coordinate of leaf
+  Leaf * NEXT;                                                  //!< Pointer to next leaf
+};
+typedef std::vector<Leaf>           Leafs;                      //!< Vector of leafs
+typedef std::vector<Leaf>::iterator L_iter;                     //!< Iterator for leaf vector
+
+//! Structure of nodes (only used in treebuilder.h)
+struct Node {
+  int    LEVEL;                                                 //!< Level in the tree structure
+  int    NLEAF;                                                 //!< Number of descendant leafs
+  int    NCHILD;                                                //!< Number of child nodes
+  int    CHILD[8];                                              //!< Index of child node
+  vec3   X;                                                     //!< Coordinate at center
+  Leaf * LEAF;                                                  //!< Pointer to first leaf
+};
+typedef std::vector<Node>           Nodes;                      //!< Vector of nodes
+typedef std::vector<Node>::iterator N_iter;                     //!< Iterator for node vector
+
+//! Structure for Ewald summation (only used in ewald.h)
 struct Ewald {
   vec3   K;                                                     //!< 3-D wave number vector
   real_t REAL;                                                  //!< real part of wave
@@ -143,3 +145,5 @@ struct Ewald {
 };
 typedef std::vector<Ewald>           Ewalds;                    //!< Vector of Ewald summation types
 typedef std::vector<Ewald>::iterator E_iter;                    //!< Iterator for Ewald summation types
+
+#endif

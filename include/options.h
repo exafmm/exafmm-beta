@@ -1,4 +1,5 @@
-#pragma once
+#ifndef options_h
+#define options_h
 #include <getopt.h>
 
 struct Args {
@@ -156,3 +157,5 @@ static int gendata(Dataset& data, Bodies& bodies, const char * distribution) {
     return 0;                        
   }
 }
+
+#endif

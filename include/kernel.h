@@ -1,4 +1,5 @@
-#pragma once
+#ifndef kernel_h
+#define kernel_h
 #include <cmath>
 #include "sort.h"
 
@@ -16,3 +17,5 @@ public:
   void L2L(C_iter Ci) const;
   void L2P(C_iter Ci) const;
 };
+
+#endif

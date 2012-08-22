@@ -1,4 +1,5 @@
-#pragma once
+#ifndef evaluator_h
+#define evaluator_h
 #include "kernel.h"
 #include "thread.h"
 #if COUNT
@@ -229,5 +230,6 @@ public:
     for (int i=0; i<1000; i++) M2L(Ci,Cj,false);
     timeM2L = stopTimer("M2L kernel") / 1000;
   }
-
 };
+
+#endif

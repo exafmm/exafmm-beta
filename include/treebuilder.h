@@ -1,22 +1,16 @@
-#pragma once
+#ifndef treebuilder_h
+#define treebuilder_h
 #include "evaluator.h"
 
 #if PARALLEL_EVERYTHING
 
-/* 8 elements counter to record the number of bodies
-   that should go to each child */
-typedef vec<8,int> ivec8;
-
-/* tree of 8 elements counters.
-   a node corresponds to a contiguous region of 
-   the bodies vector. */
-struct ivec8Tree {
+struct BinaryTree {
   ivec8 counts;
-  ivec8Tree * children[2];
+  BinaryTree * left;
+  BinaryTree * right;
 };
 
 struct XNode {
-  bool  NOCHILD;                                                //!< Flag for twig nodes
   int   LEVEL;                                                  //!< Level in the tree structure
   int BODY;
   int   NLEAF;                                                  //!< Number of descendant leafs
@@ -34,7 +28,6 @@ private:
   B_iter   BN;
   C_iter   CN;
   unsigned NLEAF;
-  unsigned NCELL;
   int      MAXLEVEL;
 
 protected:
@@ -45,7 +38,7 @@ protected:
 
 private:
   void init(Node &node) {
-    node.NOCHILD = true;
+    node.NCHILD = 0;
     node.NLEAF = 0;
     node.LEAF = NULL;
     for (int b=0; b<8; b++) node.CHILD[b] = -1;
@@ -79,10 +72,9 @@ private:
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
       child.X[d] += r * (((octant & 1 << d) >> d) * 2 - 1);     //  Calculate new center position
     }                                                           // End loop over dimensions
-    N->NOCHILD = false;
+    N->NCHILD++;
     N->CHILD[octant] = nodes.size();
     nodes.push_back(child);
-    NCELL++;
   }
 
   void splitNode(int n) {
@@ -112,7 +104,7 @@ private:
     C->NDLEAF = nodes[i].NLEAF;
     C->LEAF   = BN;
     C->ICELL  = getIndex(C->X,nodes[i].LEVEL);
-    if (nodes[i].NOCHILD) {
+    if (!nodes[i].NCHILD) {
       C->CHILD = 0;
       C->NCHILD = 0;
       C->NCLEAF = nodes[i].NLEAF;
@@ -167,7 +159,6 @@ protected:
 
   void growTree() {
     startTimer("Grow tree");
-    NCELL = 1;
     nodes.reserve(NLEAF);
     Node node;
     init(node);
@@ -177,7 +168,7 @@ protected:
     MAXLEVEL = 0;
     for (L_iter L=leafs.begin(); L!=leafs.end(); L++) {
       int n = 0;
-      while (!nodes[n].NOCHILD) {
+      while (nodes[n].NCHILD) {
         N_iter N = nodes.begin() + n;
         int octant = (L->X[0] > N->X[0]) + ((L->X[1] > N->X[1]) << 1) + ((L->X[2] > N->X[2]) << 2);
         N->NLEAF++;
@@ -197,7 +188,7 @@ protected:
   void linkTree(Bodies &bodies, Cells &cells) {
     startTimer("Link tree");
     cells.clear();
-    cells.resize(NCELL);
+    cells.resize(nodes.size());
     Ci0 = cells.begin();
     BN = bodies.begin();
     CN = Ci0 + 1;
@@ -227,7 +218,6 @@ protected:
     n->NLEAF = end - begin; 
     n->X = X;
     n->NNODE = 1;
-    n->NOCHILD = nochild;
     if (nochild) {
       for (int k=0; k<8; k++) n->CHILD[k] = NULL;
     }
@@ -243,12 +233,12 @@ protected:
     return (4 * n) / NSPAWN;
   }
 
-  ivec8Tree * countBodies(Bodies& bodies, int begin, int end, vec3 X, 
-                          ivec8Tree * t_root, ivec8Tree * t_begin, ivec8Tree * t_end) {
+  BinaryTree * countBodies(Bodies& bodies, int begin, int end, vec3 X, 
+                          BinaryTree * t_root, BinaryTree * t_begin, BinaryTree * t_end) {
     assert(max_ivec8_nodes_to_count(end - begin) <= t_end - t_begin + 1);
     if (end - begin <= NSPAWN) {
       for (int k=0; k<8; k++) t_root->counts[k] = 0;
-      t_root->children[0] = t_root->children[1] = NULL;
+      t_root->left = t_root->right = NULL;
       for (int i=begin; i<end; i++) {
         vec3 x = bodies[i].X;
         int oct = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);
@@ -258,23 +248,24 @@ protected:
       int mid = (begin + end) / 2;
       int n0 = max_ivec8_nodes_to_count(mid - begin);
       int n1 = max_ivec8_nodes_to_count(end - mid);
-      ivec8Tree * t_mid = t_begin + n0;
+      BinaryTree * t_mid = t_begin + n0;
       assert(t_end - t_begin >= n0 + n1);
       __init_tasks__;
-      spawn_task1(bodies,
-                  t_root->children[0] 
-                  = countBodies(bodies, begin, mid, X, t_begin, t_begin + 1, t_begin + n0));
-      t_root->children[1] 
+      spawn_task1(bodies, {
+                  t_root->left
+                  = countBodies(bodies, begin, mid, X, t_begin, t_begin + 1, t_begin + n0);
+      });
+      t_root->right
         = countBodies(bodies, mid, end, X, t_mid, t_mid + 1, t_mid + n1);
       __sync_tasks__;
-      t_root->counts = t_root->children[0]->counts + t_root->children[1]->counts;
+      t_root->counts = t_root->left->counts + t_root->right->counts;
     }
     return t_root;
   }
 
   void moveBodies(Bodies& bodies, Bodies& buffer, int begin, int end, 
-                  ivec8Tree * t, ivec8 offsets, vec3 X) {
-    if (t->children[0] == NULL) {
+                  BinaryTree * t, ivec8 offsets, vec3 X) {
+    if (t->left == NULL) {
       for (int i=begin; i<end; i++) {
         vec3 x = bodies[i].X;
         int oct = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);
@@ -283,19 +274,20 @@ protected:
       }
     } else {
       int mid = (begin + end) / 2;
-      ivec8 offsets_mid = offsets + t->children[0]->counts;
+      ivec8 offsets_mid = offsets + t->left->counts;
       __init_tasks__;
-      spawn_task2(bodies, buffer,
+      spawn_task2(bodies, buffer, {
                   moveBodies(bodies, buffer, begin, mid, 
-                                   t->children[0], offsets, X));
-      moveBodies(bodies, buffer, mid, end, t->children[1], offsets_mid, X);
+                                   t->left, offsets, X);
+      });
+      moveBodies(bodies, buffer, mid, end, t->right, offsets_mid, X);
       __sync_tasks__;
     }
   }
 
   XNode * buildNodes(Bodies& bodies, Bodies& buffer, int dest,
                      int begin,  int end, 
-                     ivec8Tree * t_begin, ivec8Tree * t_end, 
+                     BinaryTree * t_begin, BinaryTree * t_end, 
                      vec3 X, int level) {
     assert(max_ivec8_nodes_to_build(end - begin) <= t_end - t_begin);
     if (begin == end) return NULL;
@@ -305,11 +297,11 @@ protected:
       return makeNode(level, begin, end, X, true);
     }
     XNode * node = makeNode(level, begin, end, X, false);
-    ivec8Tree t_root_[1]; 
-    ivec8Tree * t_root = countBodies(bodies, begin, end, X, t_root_, t_begin, t_end);
+    BinaryTree t_root_[1]; 
+    BinaryTree * t_root = countBodies(bodies, begin, end, X, t_root_, t_begin, t_end);
     ivec8 offsets = prefixSum(t_root->counts, begin);
     moveBodies(bodies, buffer, begin, end, t_root, offsets, X);
-    ivec8Tree * t = t_begin;
+    BinaryTree * t = t_begin;
     __init_tasks__;
     for (int k=0; k<8; k++) {
       int n_nodes = max_ivec8_nodes_to_build(t_root->counts[k]);
@@ -344,7 +336,7 @@ protected:
     C->X      = node->X;
     C->NDLEAF = node->NLEAF;
     C->LEAF   = B0 + node->BODY;
-    if (node->NOCHILD) {
+    if (node->NNODE == 1) {
       C->CHILD = 0;
       C->NCHILD = 0;
       C->NCLEAF = node->NLEAF;
@@ -394,8 +386,8 @@ protected:
     Bodies buffer = bodies;
     startTimer("Grow tree");
     int n_nodes = max_ivec8_nodes_to_build(bodies.size());
-    ivec8Tree * t_begin = new ivec8Tree[n_nodes];
-    ivec8Tree * t_end = t_begin + n_nodes;
+    BinaryTree * t_begin = new BinaryTree[n_nodes];
+    BinaryTree * t_end = t_begin + n_nodes;
     root_node = buildNodes(bodies, buffer, 0, 0, bodies.size(), 
                            t_begin, t_end, localCenter, 0);
     delete[] t_begin;
@@ -426,3 +418,5 @@ protected:
     std::cout << "-----------------------------------------------" << std::endl;
   }
 };
+
+#endif

@@ -1,4 +1,6 @@
-#pragma once
+#ifndef vec_h
+#define vec_h
+#include <ostream>
 //! Custom vector type for small vectors
 template<int N, typename T>
 class vec {
@@ -111,3 +113,5 @@ public:
     return c;
   }
 };
+
+#endif

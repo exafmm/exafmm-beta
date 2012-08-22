@@ -1,4 +1,5 @@
-#pragma once
+#ifndef vtk_h
+#define vtk_h
 #define VTK_EXCLUDE_STRSTREAM_HEADERS
 #include <vtkVertexGlyphFilter.h>
 #include <vtkPolyDataMapper.h>
@@ -184,3 +185,5 @@ public:
     interactor->Start();
   }
 };
+
+#endif

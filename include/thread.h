@@ -1,4 +1,5 @@
-#pragma once
+#ifndef thread_h
+#define thread_h
 #if TBB
 #include <tbb/task_group.h>
 #define task_group_defined 1
@@ -34,3 +35,4 @@ using namespace tbb;
 
 #endif
 
+#endif

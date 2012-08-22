@@ -1,4 +1,5 @@
-#pragma once
+#ifndef logger_h
+#define logger_h
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -160,3 +161,5 @@ public:
     traceFile.close();                                          // Close trace log file
   }
 };
+
+#endif
