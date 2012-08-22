@@ -111,8 +111,8 @@ public:
 
 //! Build tree structure top down
   void buildTree(Bodies &bodies, Cells &cells) {
-    growTreeRec(bodies);                                        // Grow tree from root
-    linkTreeRec(bodies,cells);                                  // Form parent-child links in tree
+    growTree(bodies);                                           // Grow tree from root
+    linkTree(bodies,cells);                                     // Form parent-child links in tree
   }
 
 //! Upward pass (P2M, M2M)
