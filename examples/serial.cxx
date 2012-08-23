@@ -1,23 +1,20 @@
+#include "args.h"
 #include "dataset.h"
-#include "options.h"
 #include "serialfmm.h"
 #ifdef VTK
 #include "vtk.h"
 #endif
 
 int main(int argc, char ** argv) {
-  Args args[1];
-  parse_cmdline_args(argc, argv, args);
-  showArgs(args);
-
+  Args ARGS(argc,argv);
   Bodies bodies, jbodies;
   Cells cells, jcells;
   Dataset DATA;
   SerialFMM FMM;
-  FMM.NCRIT = args->NCRIT;
-  FMM.NSPAWN = args->NSPAWN;
-  FMM.IMAGES = args->IMAGES;
-  FMM.THETA = args->THETA;
+  FMM.NCRIT = ARGS.NCRIT;
+  FMM.NSPAWN = ARGS.NSPAWN;
+  FMM.IMAGES = ARGS.IMAGES;
+  FMM.THETA = ARGS.THETA;
   FMM.printNow = true;
 #if AUTO
   FMM.timeKernels();
@@ -27,21 +24,21 @@ int main(int argc, char ** argv) {
     int numBodies = int(pow(10,(it+24)/8.0));
 #else
   {
-    int numBodies = args->numBodies;
+    int numBodies = ARGS.numBodies;
 #endif // MANY
     if(FMM.printNow) std::cout << std::endl
       << "N                    : " << numBodies << std::endl;
     bodies.resize(numBodies);
-    DATA.initBodies(bodies, args->distribution);
+    DATA.initBodies(bodies, ARGS.distribution);
     FMM.setBounds(bodies);
     FMM.buildTree(bodies,cells);                                // TODO : make it work without this
     FMM.resetTimer();
     FMM.startTimer("FMM");
     FMM.buildTree(bodies,cells);
     FMM.upwardPass(cells);
-    if (!args->buildOnly) {
+    if (!ARGS.buildOnly) {
       FMM.startPAPI();
-      FMM.evaluate(cells,cells,args->mutual);
+      FMM.evaluate(cells,cells,ARGS.mutual);
       FMM.stopPAPI();
       FMM.downwardPass(cells);
     }
@@ -49,9 +46,9 @@ int main(int argc, char ** argv) {
     FMM.eraseTimer("FMM");
     FMM.writeTime();
     FMM.resetTimer();
-    if (!args->buildOnly) {
+    if (!ARGS.buildOnly) {
       jbodies = bodies;
-      if (int(bodies.size()) > args->numTarget) bodies.resize(args->numTarget);
+      if (int(bodies.size()) > ARGS.numTarget) bodies.resize(ARGS.numTarget);
       Bodies bodies2 = bodies;
       DATA.initTarget(bodies2);
       FMM.startTimer("Direct sum");
