@@ -3,7 +3,7 @@
 #include <cmath>
 #include "types.h"
 
-class Kernel : public Parameters {
+class Kernel {
 protected:
   vec3 Xperiodic;
   C_iter Ci0;

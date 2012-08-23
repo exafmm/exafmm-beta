@@ -18,6 +18,11 @@ protected:
   real_t NP2P;                                                  //!< Number of P2P kernel calls
   real_t NM2L;                                                  //!< Number of M2L kernel calls
 
+public:
+  int NSPAWN;                                                   //!< Threshold of NDLEAF for spawning new threads
+  int IMAGES;                                                   //!< Number of periodic image sublevels
+  float THETA;                                                  //!< Multipole acceptance criteria
+
 private:
 //! Calculate Bmax
   real_t getBmax(vec3 const &X, C_iter C) const {

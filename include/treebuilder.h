@@ -32,6 +32,9 @@ protected:
   vec3   localXmin;                                             //!< Local Xmin for a given rank
   vec3   localXmax;                                             //!< Local Xmax for a given rank
 
+public:
+  int NCRIT;                                                    //!< Number of bodies per leaf cell
+
 private:
 //! Get number of binary tree nodes for a given number of bodies
   inline int getNumBinNode(int n) const {

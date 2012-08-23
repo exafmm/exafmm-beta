@@ -2,9 +2,10 @@
 #define partition_h
 #include "mympi.h"
 #include "serialfmm.h"
+#include "sort.h"
 
 //! Handles all the partitioning of domains
-class Partition : public MyMPI, public SerialFMM {
+class Partition : public MyMPI, public SerialFMM, public Sort {
 protected:
   Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
