@@ -1,12 +1,14 @@
 #include "parallelfmm.h"
 
 extern "C" void FMMcalccoulomb(int n, double* x, double* q, double *p, double* f, int periodicflag) {
-  IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
-  THETA = 0.6;
   Bodies bodies, jbodies;
   Cells cells, jcells;
   ParallelFMM FMM;
-  FMM.printNow = MPIRANK == 0;
+  FMM.NCRIT = 10;
+  FMM.NSPAWN = 1000;
+  FMM.IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
+  FMM.THETA = 0.6;
+  FMM.printNow = FMM.MPIRANK == 0;
 
   bodies.resize(n);
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -23,16 +25,16 @@ extern "C" void FMMcalccoulomb(int n, double* x, double* q, double *p, double* f
   }
 
   FMM.partition(bodies);
-  FMM.buildTree(bodies,cells);
+  FMM.buildTree(bodies, cells);
   FMM.upwardPass(cells);
   FMM.setLET(cells);
   FMM.commBodies();
   FMM.commCells();
-  FMM.evaluate(cells,cells);
+  FMM.evaluate(cells, cells);
   jbodies = bodies;
-  for( int irank=1; irank<MPISIZE; irank++ ) {
-    FMM.getLET(jcells,(MPIRANK+irank)%MPISIZE);
-    FMM.evaluate(cells,jcells);
+  for( int irank=1; irank<FMM.MPISIZE; irank++ ) {
+    FMM.getLET(jcells, (FMM.MPIRANK + irank) % FMM.MPISIZE);
+    FMM.evaluate(cells, jcells);
   }
   FMM.downwardPass(cells);
   FMM.unpartition(bodies);

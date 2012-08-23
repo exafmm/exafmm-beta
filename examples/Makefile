@@ -11,6 +11,6 @@ parallel: parallel.cxx $(KERNELS)
 	mpirun -np 32 ./a.out
 
 wrapper: wrapper.cxx $(KERNELS)
-	make -C ../wrapper libcoulomb.a
+	make -C ../wrappers libcoulomb.a
 	$(CXX) $? $(LFLAGS) -lcoulomb
 	mpirun -np 4 ./a.out

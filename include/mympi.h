@@ -1,6 +1,8 @@
 #ifndef mympi_h
 #define mympi_h
 #include <mpi.h>
+#include <cmath>
+#include <iostream>
 #include <typeinfo>
 
 //! Custom MPI utilities

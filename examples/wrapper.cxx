@@ -11,10 +11,10 @@ extern "C" void MPI_Shift(double *var, int n, int mpisize, int mpirank) {
   const int irecv = (mpirank - 1 + mpisize) % mpisize;
   MPI_Request sreq, rreq;
 
-  MPI_Isend(var,n,MPI_DOUBLE,irecv,1,MPI_COMM_WORLD,&sreq);
-  MPI_Irecv(buf,n,MPI_DOUBLE,isend,1,MPI_COMM_WORLD,&rreq);
-  MPI_Wait(&sreq,MPI_STATUS_IGNORE);
-  MPI_Wait(&rreq,MPI_STATUS_IGNORE);
+  MPI_Isend(var, n, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
+  MPI_Irecv(buf, n, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
+  MPI_Wait(&sreq, MPI_STATUS_IGNORE);
+  MPI_Wait(&rreq, MPI_STATUS_IGNORE);
   int i;
   for( i=0; i!=n; ++i ) {
     var[i] = buf[i];
@@ -25,8 +25,8 @@ extern "C" void MPI_Shift(double *var, int n, int mpisize, int mpirank) {
 int main(int argc, char **argv) {
   MPI_Init(&argc,&argv);
   int mpisize, mpirank;
-  MPI_Comm_size(MPI_COMM_WORLD,&mpisize);
-  MPI_Comm_rank(MPI_COMM_WORLD,&mpirank);
+  MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
   const int N = 1000000;
   const double size = 2 * M_PI;
   double *xi     = new double [3*N];
@@ -61,8 +61,8 @@ int main(int argc, char **argv) {
     xj[3*i+2] = xi[3*i+2];
   }
   for( int irank=0; irank!=mpisize; ++irank ) {
-    MPI_Shift(xj,3*N,mpisize,mpirank);
-    MPI_Shift(qj,N,mpisize,mpirank);
+    MPI_Shift(xj, 3*N, mpisize, mpirank);
+    MPI_Shift(qj, N, mpisize, mpirank);
     for( int i=0; i!=100; ++i ) {
       double P = 0, Fx = 0, Fy = 0, Fz = 0;
       for( int j=0; j!=N; ++j ) {
