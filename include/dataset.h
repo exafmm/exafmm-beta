@@ -11,33 +11,24 @@ class Dataset {                                                 // Contains all 
 private:
   long filePosition;                                            // Position of file stream
 
-public:
-  Dataset() : filePosition(0) {}                                // Constructor
-  ~Dataset() {}                                                 // Destructor
-
-  void initSource(Bodies &bodies) {                             // Initialize source values
+private:
+//! Initialize source values
+  void initSource(Bodies &bodies, int mpisize) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
-      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-//      B->SRC = (drand48() - .5) / bodies.size() / MPISIZE;      //  Initialize mass/charge
-      B->SRC = 1. / bodies.size() / MPISIZE;                    //  Initialize mass/charge
+#if 0
+      B->SRC = (drand48() - .5) / bodies.size() / mpisize;      //  Initialize mass/charge
+#else
+      B->SRC = 1. / bodies.size() / mpisize;                    //  Initialize mass/charge
+#endif
     }                                                           // End loop over bodies
   }
 
-  void initTarget(Bodies &bodies, bool IeqJ=true) {             // Initialize target values
-    srand48(0);                                                 // Set seed for random number generator
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
-      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->TRG = 0 * IeqJ;                                        //  Clear previous target values (IeqJ is dummy)
-    }                                                           // End loop over bodies
-  }
-
-  void lattice(Bodies &bodies) {                                // Uniform distribution on [-1,1]^3 lattice
-    int level = int(log(bodies.size()*MPISIZE+1.)/M_LN2/3);     // Level of tree
+//! Uniform distribution on [-1,1]^3 lattice
+  void lattice(Bodies &bodies, int mpirank, int mpisize) {
+    int level = int(log(bodies.size()*mpisize+1.)/M_LN2/3);     // Level of tree
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       int d = 0, l = 0;                                         //  Initialize dimension and level
-      int index = MPIRANK * bodies.size() + (B-bodies.begin()); //  Set index of body iterator
+      int index = mpirank * bodies.size() + (B-bodies.begin()); //  Set index of body iterator
       vec<3,int> nx = 0;                                        //  Initialize 3-D cell index
       while (index != 0) {                                      //  Deinterleave bits while index is nonzero
         nx[d] += (index & 1) * (1 << l);                        //   Add deinterleaved bit to 3-D cell index
@@ -49,11 +40,10 @@ public:
         B->X[d] = -1 + (2 * nx[d] + 1.) / (1 << level);         //   Calculate cell center from 3-D cell index
       }                                                         //  End loop over dimensions
     }                                                           // End loop over bodies
-    initSource(bodies);                                         // Initialize source values
-    initTarget(bodies);                                         // Initialize target values
   }
 
-  void cube(Bodies &bodies, int seed=0, int numSplit=1) {       // Random distribution in [-1,1]^3 cube
+//! Random distribution in [-1,1]^3 cube
+  void cube(Bodies &bodies, int seed, int numSplit) {
     srand48(seed);                                              // Set seed for random number generator
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       if (numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit)) {// Mimic parallel dataset
@@ -64,11 +54,10 @@ public:
         B->X[d] = drand48() * 2 * M_PI - M_PI;                  //   Initialize positions
       }                                                         //  End loop over dimension
     }                                                           // End loop over bodies
-    initSource(bodies);                                         // Initialize source values
-    initTarget(bodies);                                         // Initialize target values
   }
 
-  void sphere(Bodies &bodies, int seed=0, int numSplit=1) {     // Random distribution on r = 1 sphere
+//! Random distribution on r = 1 sphere
+  void sphere(Bodies &bodies, int seed, int numSplit) {
     srand48(seed);                                              // Set seed for random number generator
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       if (numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit)) {// Mimic parallel dataset
@@ -83,11 +72,10 @@ public:
         B->X[d] /= r * 1.1;                                     //   Normalize positions
       }                                                         //  End loop over dimension
     }                                                           // End loop over bodies
-    initSource(bodies);                                         // Initialize source values
-    initTarget(bodies);                                         // Initialize target values
   }
 
-  void plummer(Bodies &bodies, int seed=0, int numSplit=1) {
+//! Plummer distribution in a r = M_PI/2 sphere
+  void plummer(Bodies &bodies, int seed, int numSplit) {
     srand48(seed);                                              // Set seed for random number generator
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       if (numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit)) { // Mimic parallel dataset
@@ -99,13 +87,47 @@ public:
       real_t rscale = 0.015 * M_PI / std::sqrt(norm(B->X) * R2);//  Scaling to fit in M_PI box
       for (int d=0; d<3; d++) B->X[d] *= rscale;                //  Rescale particle coordinates
     }                                                           // End loop over bodies
-    initSource(bodies);                                         // Initialize source values
+  }
+
+public:
+//! Constructor
+  Dataset() : filePosition(0) {}
+//! Destructor
+  ~Dataset() {}
+
+//! Initialize target values
+  void initTarget(Bodies &bodies) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      B->TRG = 0;                                               //  Clear target values
+    }                                                           // End loop over bodies
+  }
+
+//! Initialize dsitribution, source & target value of bodies
+  void initBodies(Bodies &bodies, const char * distribution, int mpirank=0, int mpisize=1) {
+    switch (distribution[0]) {                                  // Switch between data distribution type
+    case 'l':                                                   // Case for lattice
+      lattice(bodies,mpirank,mpisize);                          //  Uniform distribution on [-1,1]^3 lattice
+      break;                                                    // End case for lattice
+    case 'c':                                                   // Case for cube
+      cube(bodies,mpirank,mpisize);                             //  Random distribution in [-1,1]^3 cube
+      break;                                                    // End case for cube
+    case 's':                                                   // Case for sphere
+      sphere(bodies,mpirank,mpisize);                           //  Random distribution on surface of r = 1 sphere
+      break;                                                    // End case for sphere
+    case 'p':                                                   // Case plummer
+      plummer(bodies,mpirank,mpisize);                          //  Plummer distribution in a r = M_PI/2 sphere
+      break;                                                    // End case for plummer
+    default:                                                    // If none of the above
+      fprintf(stderr, "unknown data distribution %s\n", distribution);// Print error message
+    }                                                           // End switch between data distribution type
+    initSource(bodies,mpisize);                                 // Initialize source values
     initTarget(bodies);                                         // Initialize target values
   }
 
-  void readTarget(Bodies &bodies) {                             // Read target values from file
+//! Read target values from file
+  void readTarget(Bodies &bodies, int mpirank) {
     char fname[256];                                            // File name for saving direct calculation values
-    sprintf(fname,"direct%4.4d",MPIRANK);                       // Set file name
+    sprintf(fname,"direct%4.4d",mpirank);                       // Set file name
     std::ifstream file(fname,std::ios::in | std::ios::binary);  // Open file
     file.seekg(filePosition);                                   // Set position in file
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
@@ -118,9 +140,10 @@ public:
     file.close();                                               // Close file
   }
 
-  void writeTarget(Bodies &bodies) {                            // Write target values to file
+//! Write target values to file
+  void writeTarget(Bodies &bodies, int mpirank) {
     char fname[256];                                            // File name for saving direct calculation values
-    sprintf(fname,"direct%4.4d",MPIRANK);                       // Set file name
+    sprintf(fname,"direct%4.4d",mpirank);                       // Set file name
     std::ofstream file(fname,std::ios::out | std::ios::app | std::ios::binary);// Open file
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       file << B->TRG[0] << std::endl;                           //  Write data for potential
@@ -131,7 +154,8 @@ public:
     file.close();                                               // Close file
   }
 
-  void evalError(Bodies &bodies, Bodies &bodies2,               // Evaluate error
+//! Evaluate relaitve L2 norm error
+  void evalError(Bodies &bodies, Bodies &bodies2,
                  real_t &diff1, real_t &norm1, real_t &diff2, real_t &norm2) {
     B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, B2++) { // Loop over bodies & bodies2
@@ -146,7 +170,8 @@ public:
     }                                                           //  End loop over bodies & bodies2
   }
 
-  void printError(real_t diff1, real_t norm1, real_t diff2, real_t norm2) {// Print relative L2 norm error
+//! Print relative L2 norm error
+  void printError(real_t diff1, real_t norm1, real_t diff2, real_t norm2) {
     std::cout << std::setw(20) << std::left
               << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
     std::cout << std::setw(20) << std::left

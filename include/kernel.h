@@ -3,7 +3,7 @@
 #include <cmath>
 #include "sort.h"
 
-class Kernel : public Sort {
+class Kernel : public Sort, public Parameters {
 protected:
   C_iter Ci0;
   C_iter Cj0;

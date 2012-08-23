@@ -138,24 +138,4 @@ static Args * parse_cmdline_args(int argc, char ** argv, Args * args) {
   return args;
 }
 
-static int gendata(Dataset& data, Bodies& bodies, const char * distribution) {
-  switch (distribution[0]) {
-  case 'l':
-    data.lattice(bodies);
-    return 1;
-  case 'c':
-    data.cube(bodies);
-    return 1;
-  case 's':
-    data.sphere(bodies);
-    return 1;
-  case 'p':
-    data.plummer(bodies);
-    return 1;                        
-  default:
-    fprintf(stderr, "unknown data distribution %s\n", distribution);
-    return 0;                        
-  }
-}
-
 #endif

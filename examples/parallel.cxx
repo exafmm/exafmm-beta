@@ -12,7 +12,7 @@ int main() {
   Cells cells, jcells;
   Dataset DATA;
   ParallelFMM FMM;
-  FMM.printNow = MPIRANK == 0;
+  FMM.printNow = FMM.MPIRANK == 0;
 #if AUTO
   FMM.timeKernels();
 #endif
@@ -21,11 +21,11 @@ int main() {
   numBodies = int(pow(10,(it+24)/8.0));
 #else
   {
-  numBodies = 1000000 / MPISIZE;
+  numBodies = 1000000 / FMM.MPISIZE;
 #endif
   if(FMM.printNow) std::cout << "N                    : " << numBodies << std::endl;
   bodies.resize(numBodies);
-  DATA.cube(bodies,MPIRANK);
+  DATA.initBodies(bodies,FMM.MPIRANK,FMM.MPISIZE);
   FMM.startTimer("FMM");
 
   FMM.partition(bodies);
@@ -40,8 +40,8 @@ int main() {
   FMM.commCells();
   FMM.evaluate(cells,cells);
   jbodies = bodies;
-  for( int irank=1; irank<MPISIZE; irank++ ) {
-    FMM.getLET(jcells,(MPIRANK+irank)%MPISIZE);
+  for( int irank=1; irank<FMM.MPISIZE; irank++ ) {
+    FMM.getLET(jcells,(FMM.MPIRANK+irank)%FMM.MPISIZE);
 
 #if 0 // Set to 1 for debugging full LET communication : Step 2 (LET must be set to full tree)
     FMM.shiftBodies(jbodies); // This will overwrite recvBodies. (define recvBodies2 in partition.h to avoid this)
@@ -57,15 +57,15 @@ int main() {
       C_iter Ci=Qi.front(); Qi.pop();
       C_iter Cj=Qj.front(); Qj.pop();
       if( Ci->ICELL != Cj->ICELL ) {
-        std::cout << MPIRANK << " ICELL  : " << Ci->ICELL << " " << Cj->ICELL << std::endl;
+        std::cout << FMM.MPIRANK << " ICELL  : " << Ci->ICELL << " " << Cj->ICELL << std::endl;
         break;
       }
       if( Ci->NCHILD != Cj->NCHILD ) {
-        std::cout << MPIRANK << " NCHILD : " << Ci->NCHILD << " " << Cj->NCHILD << std::endl;
+        std::cout << FMM.MPIRANK << " NCHILD : " << Ci->NCHILD << " " << Cj->NCHILD << std::endl;
         break;
       }
       if( Ci->NCLEAF != Cj->NCLEAF ) {
-        std::cout << MPIRANK << " NCLEAF : " << Ci->NCLEAF << " " << Cj->NCLEAF << std::endl;
+        std::cout << FMM.MPIRANK << " NCLEAF : " << Ci->NCLEAF << " " << Cj->NCLEAF << std::endl;
         break;
       }
       real_t sumi = 0, sumj = 0;
@@ -77,7 +77,7 @@ int main() {
           sumj += Bj->X[0];
         }
       }
-      if( fabs(sumi-sumj)/fabs(sumi) > 1e-6 ) std::cout << MPIRANK << " " << Ci->ICELL << " " << sumi << " " << sumj << std::endl;
+      if( fabs(sumi-sumj)/fabs(sumi) > 1e-6 ) std::cout << FMM.MPIRANK << " " << Ci->ICELL << " " << sumi << " " << sumj << std::endl;
       assert( fabs(sumi-sumj)/fabs(sumi) < 1e-6 );
       for( int i=0; i<Ci->NCHILD; i++ ) Qi.push(icells.begin()+Ci->CHILD+i);
       for( int i=0; i<Cj->NCHILD; i++ ) Qj.push(jcells.begin()+Cj->CHILD+i);
@@ -89,7 +89,7 @@ int main() {
   }
 #else
   jbodies = bodies;
-  for( int irank=0; irank!=MPISIZE; irank++ ) {
+  for( int irank=0; irank!=FMM.MPISIZE; irank++ ) {
     FMM.shiftBodies(jbodies);
     jcells.clear();
     FMM.setBounds(jbodies);
@@ -112,10 +112,10 @@ int main() {
   Bodies bodies2 = bodies;
   DATA.initTarget(bodies2);
   FMM.startTimer("Direct sum");
-  for( int i=0; i!=MPISIZE; ++i ) {
+  for( int i=0; i!=FMM.MPISIZE; ++i ) {
     FMM.shiftBodies(jbodies);
     FMM.direct(bodies2,jbodies);
-    if(FMM.printNow) std::cout << "Direct loop          : " << i+1 << "/" << MPISIZE << std::endl;
+    if(FMM.printNow) std::cout << "Direct loop          : " << i+1 << "/" << FMM.MPISIZE << std::endl;
   }
   FMM.normalize(bodies2);
   FMM.stopTimer("Direct sum",FMM.printNow);
@@ -141,17 +141,17 @@ int main() {
   }
   int Ncell = 0;
   vtkPlot vtk;
-  if( MPIRANK == 0 ) {
+  if( FMM.MPIRANK == 0 ) {
     vtk.setDomain(M_PI,0);
     vtk.setGroupOfPoints(jbodies,Ncell);
   }
-  for( int i=1; i!=MPISIZE; ++i ) {
+  for( int i=1; i!=FMM.MPISIZE; ++i ) {
     FMM.shiftBodies(jbodies);
-    if( MPIRANK == 0 ) {
+    if( FMM.MPIRANK == 0 ) {
       vtk.setGroupOfPoints(jbodies,Ncell);
     }
   }
-  if( MPIRANK == 0 ) {
+  if( FMM.MPIRANK == 0 ) {
     vtk.plot(Ncell);
   }
 #endif

@@ -100,6 +100,8 @@ public:
 #if PAPI
     long long values[3] = {0,0,0};                              // Values for each event
     PAPI_stop(PAPIEVENT,values);                                // PAPI stop
+    std::cout << std::setw(stringLength) << std::left           //  Set format
+              << "L2 Miss" << " : " << values[0] << std::endl;  //  Print PAPI event and count
     std::cout << "L2 Miss: " << values[0]                       // Print L2 Misses
               << " L2 Access: " << values[1]                    // Print L2 Access
               << " TLB Miss: " << values[2] << std::endl;       // Print TLB Misses
@@ -126,9 +128,9 @@ public:
   }
 
 //! Write traces of all events
-  inline void writeTrace() {
+  inline void writeTrace(int mpirank) {
     char fname[256];                                            // File name
-    sprintf(fname,"trace%4.4d.svg",MPIRANK);                    // Create file name for trace
+    sprintf(fname,"trace%4.4d.svg",mpirank);                    // Create file name for trace
     std::ofstream traceFile(fname);                             // Open trace log file
     traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" // Header statements for trace log file
         << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"

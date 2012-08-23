@@ -5,6 +5,7 @@
 #endif
 
 #include <map>
+#include "parameters.h"
 #include <pthread.h>
 #include <queue>
 #include <string>
@@ -28,34 +29,13 @@ typedef vec<4,real_t> vec4;                                     //!< Vector of 4
 typedef vec<8,int>    ivec8;                                    //!< Vector of 8 integer types
 typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3
 
-#ifndef KERNEL
-int MPIRANK    = 0;                                             //!< MPI comm rank
-int MPISIZE    = 1;                                             //!< MPI comm size
-int NCRIT      = 10;                                            //!< Number of bodies per leaf cell
-int NSPAWN     = 1000;                                          //!< Threshold of NDLEAF for spawning new threads
-int IMAGES     = 0;                                             //!< Number of periodic image sublevels
-real_t THETA   = .5;                                            //!< Multipole acceptance criteria
-real_t EPS2    = .0;                                            //!< Softening parameter (squared)
+//#ifndef KERNEL
+namespace {
 vec3 Xperiodic = .0;                                            //!< Coordinate offset of periodic image
 #if PAPI
 int PAPIEVENT  = PAPI_NULL;                                     //!< PAPI event handle
 #endif
-#else
-extern int MPIRANK;                                             //!< MPI comm rank
-extern int MPISIZE;                                             //!< MPI comm size
-extern int NCRIT;                                               //!< Number of bodies per leaf cell
-extern int NSPAWN;                                              //!< Threshold of NDLEAF for spawning new threads
-extern int IMAGES;                                              //!< Number of periodic image sublevels
-extern real_t THETA;                                            //!< Multipole acceptance criteria
-extern real_t EPS2;                                             //!< Softening parameter (squared)
-extern vec3 Xperiodic;                                          //!< Coordinate offset of periodic image
-#if PAPI
-extern int PAPIEVENT;                                           //!< PAPI event handle
-#endif
-#endif
-
-const int    P      = 3;                                        //!< Order of expansions
-const real_t EPS    = 1e-6;                                     //!< Single precision epsilon
+}
 
 #if COMkernel
 const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms

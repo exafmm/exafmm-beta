@@ -9,15 +9,15 @@ int main(int argc, char ** argv) {
   Args args[1];
   parse_cmdline_args(argc, argv, args);
   showArgs(args);
-  NCRIT = args->ncrit;
-  NSPAWN = args->nspawn;
-  IMAGES = args->images;
-  THETA = args->theta;
 
   Bodies bodies, jbodies;
   Cells cells, jcells;
   Dataset DATA;
   SerialFMM FMM;
+  FMM.NCRIT = args->ncrit;
+  FMM.NSPAWN = args->nspawn;
+  FMM.IMAGES = args->images;
+  FMM.THETA = args->theta;
   FMM.printNow = true;
 #if AUTO
   FMM.timeKernels();
@@ -32,7 +32,7 @@ int main(int argc, char ** argv) {
     if(FMM.printNow) std::cout << std::endl
       << "N                    : " << numBodies << std::endl;
     bodies.resize(numBodies);
-    gendata(DATA, bodies, args->distribution);
+    DATA.initBodies(bodies, args->distribution);
     FMM.setBounds(bodies);
     FMM.buildTree(bodies,cells);                                // TODO : make it work without this
     FMM.resetTimer();

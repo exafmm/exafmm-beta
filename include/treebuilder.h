@@ -170,7 +170,7 @@ private:
     C->NDLEAF = octNode->NLEAF;                                 // Number of decendant leafs
     C->LEAF   = B0 + octNode->LEAF;                             // Iterator of first body in cell
     if (octNode->NNODE == 1) {                                  // If node has no children
-      C->CHILD = 0;                                             //  Set index of first child cell to zero
+      C->CHILD  = 0;                                            //  Set index of first child cell to zero
       C->NCHILD = 0;                                            //  Number of child cells
       C->NCLEAF = octNode->NLEAF;                               //  Number of bodies in cell
       assert(C->NCLEAF > 0);

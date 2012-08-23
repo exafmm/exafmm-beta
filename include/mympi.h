@@ -13,6 +13,10 @@ protected:
   const int WAIT;                                               //!< Waiting time between output of different ranks
 
 public:
+  int MPIRANK;                                                  //!< Rank of MPI communicator
+  int MPISIZE:                                                  //!< Size of MPI communicator
+
+public:
 //! Constructor, initialize WAIT time
   MyMPI() : EXTERNAL(0), WAIT(100) {                            // Constructor, initialize WAIT time
     int argc(0);                                                // Dummy argument count
