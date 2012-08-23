@@ -180,7 +180,7 @@ protected:
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
       Cj0 = pcells.begin();                                     //  Redefine Cj0 for M2M
-      C_iter Cj = Cj0;                                          //  Iterator for periodic neighbor cells
+      C_iter Cj = Cj0;                                          //  Iterator of periodic neighbor cells
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
         for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
           for (int iz=-1; iz<=1; iz++, Cj++) {                  //    Loop over z periodic direction

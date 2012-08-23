@@ -14,7 +14,7 @@ private:
   void setRcrit(C_iter C, C_iter C0, real_t c) {
     __init_tasks__;                                             // Initialize tasks
     for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-      spawn_task0(setRcrit(CC, C0, c));                         //  Recursive cell with new task
+      spawn_task0(setRcrit(CC, C0, c));                         //  Recursive call with new task
     }                                                           // End loop over child cells
     __sync_tasks__;                                             // Synchronize tasks
 #if Cartesian
@@ -112,7 +112,7 @@ public:
 //! Build tree structure top down
   void buildTree(Bodies &bodies, Cells &cells) {
     growTree(bodies);                                           // Grow tree from root
-    linkTree(bodies,cells);                                     // Form parent-child links in tree
+    linkTree(cells);                                            // Form parent-child links in tree
   }
 
 //! Upward pass (P2M, M2M)

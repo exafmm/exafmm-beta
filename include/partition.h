@@ -24,7 +24,7 @@ private:
     globalRadius = 0;                                           // Initialize global radius
     globalCenter = (globalXmax + globalXmin) / 2;               //  Calculate global center
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      globalRadius = std::min(globalCenter[d] - globalXmin[d], globalRadius);// Calculate min distance from center
+      globalRadius = std::max(globalCenter[d] - globalXmin[d], globalRadius);// Calculate min distance from center
       globalRadius = std::max(globalXmax[d] - globalCenter[d], globalRadius);// Calculate max distance from center 
     }                                                           // End loop over dimensions
     globalRadius *= 1.00001;                                    // Add some leeway to radius

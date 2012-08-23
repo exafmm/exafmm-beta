@@ -78,7 +78,7 @@ typedef std::map<pthread_t,double>             ThreadTrace;     //!< Map of pthr
 typedef std::map<pthread_t,int>                ThreadMap;       //!< Map of pthread id to thread id
 typedef std::queue<Trace>                      Traces;          //!< Queue of traces
 typedef std::map<std::string,double>           Timer;           //!< Map of timer event name to timed value
-typedef std::map<std::string,double>::iterator TI_iter;         //!< Iterator for timer event name map
+typedef std::map<std::string,double>::iterator TI_iter;         //!< Iterator of timer event name map
 
 //! Structure of bodies
 struct Body {
@@ -90,15 +90,15 @@ struct Body {
   vec4   TRG;                                                   //!< Scalar+vector target values
 };
 typedef std::vector<Body>            Bodies;                    //!< Vector of bodies
-typedef std::vector<Body>::iterator  B_iter;                    //!< Iterator for body vector
+typedef std::vector<Body>::iterator  B_iter;                    //!< Iterator of body vector
 
 //! Structure of cells
 struct Cell {
   int       NCHILD;                                             //!< Number of child cells
   int       NCLEAF;                                             //!< Number of child leafs
   int       NDLEAF;                                             //!< Number of descendant leafs
-  int       PARENT;                                             //!< Iterator offset of parent cell
-  int       CHILD;                                              //!< Iterator offset of child cells
+  int       PARENT;                                             //!< Index of parent cell
+  int       CHILD;                                              //!< Index of child cells
   long long ICELL;                                              //!< Cell index
   B_iter    LEAF;                                               //!< Iterator of first leaf
   vec3      X;                                                  //!< Cell center
@@ -109,7 +109,7 @@ struct Cell {
   vecL      L;                                                  //!< Local coefficients
 };
 typedef std::vector<Cell>           Cells;                      //!< Vector of cells
-typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator for cell vector
+typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator of cell vector
 typedef std::queue<C_iter>          CellQueue;                  //!< Queue of cell iterators
 
 #endif

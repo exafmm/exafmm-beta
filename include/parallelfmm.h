@@ -35,11 +35,11 @@ private:
   void addSendCell(C_iter C, int &iparent, int &icell) {
     Cell cell(*C);                                              // Initialize send cell
     cell.NCHILD = cell.NCLEAF = cell.NDLEAF = 0;                // Reset counters
-    cell.PARENT = iparent;                                      // Iterator offset for parent
+    cell.PARENT = iparent;                                      // Index of parent
     sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
     C_iter Cparent = sendCells.begin() + sendCellDispl[IRANK] + iparent;// Get parent iterator
-    if (Cparent->NCHILD == 0) Cparent->CHILD = icell;           // Iterator offset for parent's first child
+    if (Cparent->NCHILD == 0) Cparent->CHILD = icell;           // Index of parent's first child
     Cparent->NCHILD++;                                          // Increment parent's child counter
   }
 
@@ -174,13 +174,13 @@ public:
   void getLET(Cells &cells, int irank) {
     startTimer("Get LET");                                      // Start timer
     for( int i=recvCellCount[irank]-1; i>=0; i-- ) {            // Loop over receive cells
-      C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator for receive cell
+      C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator of receive cell
       if (C->NCLEAF != 0) {                                     //  If cell has leafs
         C->LEAF = recvBodies.begin() + recvBodyDispl[irank] + C->NDLEAF;// Iterator of first leaf
         C->NDLEAF = C->NCLEAF;                                  //   Initialize number of leafs
       }                                                         //  End if for leafs
       if (i != 0) {                                             //  If cell is not root
-        C_iter Cparent = recvCells.begin() + recvCellDispl[irank] + C->PARENT;//   Iterator for parent cell
+        C_iter Cparent = recvCells.begin() + recvCellDispl[irank] + C->PARENT;// Iterator of parent cell
         Cparent->NDLEAF += C->NDLEAF;                           //   Accululate number of leafs
       }                                                         //  End if for root cell
     }                                                           // End loop over receive cells
