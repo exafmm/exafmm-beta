@@ -1,6 +1,7 @@
 #ifndef evaluator_h
 #define evaluator_h
 #include "kernel.h"
+#include "logger.h"
 #include "thread.h"
 #if COUNT
 #define count(N) N++
@@ -8,7 +9,7 @@
 #define count(N)
 #endif
 
-class Evaluator : public Kernel {
+class Evaluator : public Kernel, public Logger {
 private:
   real_t timeP2P;                                               //!< P2P execution time
   real_t timeM2L;                                               //!< M2L execution time

@@ -5,10 +5,10 @@
 struct Args {
   int numBodies;
   int numTarget;
-  int ncrit;
-  int nspawn;
-  int images;
-  double theta;
+  int NCRIT;
+  int NSPAWN;
+  int IMAGES;
+  double THETA;
   int buildOnly;
   int mutual;
   const char * distribution;
@@ -30,10 +30,10 @@ static struct option long_options[] = {
 static void showArgs(Args * args) {
   printf("numBodies: %d\n", args->numBodies);
   printf("numTarget: %d\n", args->numTarget);
-  printf("ncrit: %d\n", args->ncrit);
-  printf("nspawn: %d\n", args->nspawn);
-  printf("images: %d\n", args->images);
-  printf("theta: %f\n", args->theta);
+  printf("ncrit: %d\n", args->NCRIT);
+  printf("nspawn: %d\n", args->NSPAWN);
+  printf("images: %d\n", args->IMAGES);
+  printf("theta: %f\n", args->THETA);
   printf("buildOnly: %d\n", args->buildOnly);
   printf("mutual: %d\n", args->mutual);
   printf("distribution: %s\n", args->distribution);
@@ -43,10 +43,10 @@ static Args defaultArgs() {
   Args args;
   args.numBodies = 1000000;
   args.numTarget = 100;
-  args.ncrit = 10;
-  args.nspawn = 1000;
-  args.images = 0;
-  args.theta = 0.6;
+  args.NCRIT = 10;
+  args.NSPAWN = 1000;
+  args.IMAGES = 0;
+  args.THETA = 0.6;
   args.buildOnly = 0;
   args.mutual = 1;
   args.distribution = "cube";
@@ -70,10 +70,10 @@ static void usage(char * name) {
           name,
           args.numBodies,
           args.numTarget,
-          args.ncrit,
-          args.nspawn,
-          args.images,
-          args.theta,
+          args.NCRIT,
+          args.NSPAWN,
+          args.IMAGES,
+          args.THETA,
           args.buildOnly,
           args.mutual,
           args.distribution);
@@ -109,16 +109,16 @@ static Args * parse_cmdline_args(int argc, char ** argv, Args * args) {
       args->numTarget = atoi(optarg);
       break;
     case 'c':
-      args->ncrit = atoi(optarg);
+      args->NCRIT = atoi(optarg);
       break;
     case 's':
-      args->nspawn = atoi(optarg);
+      args->NSPAWN = atoi(optarg);
       break;
     case 'i':
-      args->images = atoi(optarg);
+      args->IMAGES = atoi(optarg);
       break;
     case 'h':
-      args->theta = atof(optarg);
+      args->THETA = atof(optarg);
       break;
     case 'b':
       args->buildOnly = atoi(optarg);

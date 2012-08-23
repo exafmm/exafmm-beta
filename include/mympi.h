@@ -14,7 +14,7 @@ protected:
 
 public:
   int MPIRANK;                                                  //!< Rank of MPI communicator
-  int MPISIZE:                                                  //!< Size of MPI communicator
+  int MPISIZE;                                                  //!< Size of MPI communicator
 
 public:
 //! Constructor, initialize WAIT time

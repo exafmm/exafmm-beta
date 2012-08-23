@@ -1,5 +1,7 @@
 #ifndef thread_h
 #define thread_h
+
+// Thread model
 #if TBB
 #include <tbb/task_group.h>
 #define TASKS 1
@@ -11,6 +13,7 @@ using namespace tbb;
 
 #endif
 
+// Task based threading macros
 #if TASKS
 
 #define __init_tasks__                task_group tg

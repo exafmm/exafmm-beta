@@ -1,10 +1,11 @@
 #ifndef kernel_h
 #define kernel_h
 #include <cmath>
-#include "sort.h"
+#include "types.h"
 
-class Kernel : public Sort, public Parameters {
+class Kernel : public Parameters {
 protected:
+  vec3 Xperiodic;
   C_iter Ci0;
   C_iter Cj0;
 

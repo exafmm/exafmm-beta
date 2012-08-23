@@ -14,10 +14,10 @@ int main(int argc, char ** argv) {
   Cells cells, jcells;
   Dataset DATA;
   SerialFMM FMM;
-  FMM.NCRIT = args->ncrit;
-  FMM.NSPAWN = args->nspawn;
-  FMM.IMAGES = args->images;
-  FMM.THETA = args->theta;
+  FMM.NCRIT = args->NCRIT;
+  FMM.NSPAWN = args->NSPAWN;
+  FMM.IMAGES = args->IMAGES;
+  FMM.THETA = args->THETA;
   FMM.printNow = true;
 #if AUTO
   FMM.timeKernels();

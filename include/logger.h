@@ -3,8 +3,29 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <map>
+#include <pthread.h>
+#include <queue>
+#include <string>
 #include <sys/time.h>
 #include "types.h"
+
+#if PAPI
+#include <papi.h>
+#endif
+
+//! Structure for pthread based trace
+struct Trace {
+  pthread_t thread;                                             //!< pthread id
+  double    begin;                                              //!< Begin timer of trace
+  double    end;                                                //!< End timer of trace
+  int       color;                                              //!< Color of trace
+};
+typedef std::map<pthread_t,double>             ThreadTrace;     //!< Map of pthread id to traced value
+typedef std::map<pthread_t,int>                ThreadMap;       //!< Map of pthread id to thread id
+typedef std::queue<Trace>                      Traces;          //!< Queue of traces
+typedef std::map<std::string,double>           Timer;           //!< Map of timer event name to timed value
+typedef std::map<std::string,double>::iterator TI_iter;         //!< Iterator of timer event name map
 
 //! Timer and Trace logger
 class Logger {
@@ -14,6 +35,9 @@ private:
   Timer           timer;                                        //!< Stores timings for all events
   Traces          traces;                                       //!< Stores traces for all events
   pthread_mutex_t mutex;                                        //!< Pthread communicator
+#if PAPI
+  int PAPIEVENT;                                                //!< PAPI event handle
+#endif
 
 //! Timer function
   double get_time() const {
@@ -29,6 +53,9 @@ public:
 //! Constructor
   Logger() : timerFile("time.dat"),                             // Open timer log file
              beginTimer(), timer(), traces(), mutex(),          // Initializing class variables (empty)
+#if PAPI
+             PAPIEVENT(PAPI_NULL),                              // PAPI event handle
+#endif
              stringLength(20),                                  // Max length of event name
              printNow(false) {                                  // Don't print timings by default
     pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
