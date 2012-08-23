@@ -42,7 +42,7 @@ int main(int argc, char ** argv) {
     FMM.setLET(cells);
     FMM.commBodies();
     FMM.commCells();
-    FMM.evaluate(cells,cells);
+    FMM.evaluate(cells, cells);
     jbodies = bodies;
     for( int irank=1; irank<FMM.MPISIZE; irank++ ) {
       FMM.getLET(jcells,(FMM.MPIRANK+irank)%FMM.MPISIZE);
@@ -50,7 +50,7 @@ int main(int argc, char ** argv) {
 #if 0 // Set to 1 for debugging full LET communication : Step 2 (LET must be set to full tree)
       FMM.shiftBodies(jbodies); // This will overwrite recvBodies. (define recvBodies2 in partition.h to avoid this)
       Cells icells;
-      FMM.buildTree(jbodies,icells);
+      FMM.buildTree(jbodies, icells);
       FMM.upwardPass(icells);
       assert( icells.size() == jcells.size() );
       CellQueue Qi, Qj;
@@ -89,7 +89,7 @@ int main(int argc, char ** argv) {
       }
       assert( ic == int(icells.size()) );
 #endif
-      FMM.evaluate(cells,jcells);
+      FMM.evaluate(cells, jcells);
     }
 #else
     jbodies = bodies;
@@ -97,9 +97,9 @@ int main(int argc, char ** argv) {
       FMM.shiftBodies(jbodies);
       jcells.clear();
       FMM.setBounds(jbodies);
-      FMM.buildTree(jbodies,jcells);
+      FMM.buildTree(jbodies, jcells);
       FMM.upwardPass(jcells);
-      FMM.evaluate(cells,jcells);
+      FMM.evaluate(cells, jcells);
     }
 #endif
 
@@ -118,19 +118,19 @@ int main(int argc, char ** argv) {
     FMM.startTimer("Direct sum");
     for( int i=0; i!=FMM.MPISIZE; ++i ) {
       FMM.shiftBodies(jbodies);
-      FMM.direct(bodies2,jbodies);
+      FMM.direct(bodies2, jbodies);
       if(FMM.printNow) std::cout << "Direct loop          : " << i+1 << "/" << FMM.MPISIZE << std::endl;
     }
     FMM.normalize(bodies2);
     FMM.stopTimer("Direct sum",FMM.printNow);
     FMM.eraseTimer("Direct sum");
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
-    DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-    MPI_Reduce(&diff1,&diff3,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-    MPI_Reduce(&norm1,&norm3,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-    MPI_Reduce(&diff2,&diff4,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-    MPI_Reduce(&norm2,&norm4,1,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
-    if(FMM.printNow) DATA.printError(diff3,norm3,diff4,norm4);
+    DATA.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
+    MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&norm1, &norm3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    if(FMM.printNow) DATA.printError(diff3, norm3, diff4, norm4);
   }
 
 #ifdef VTK

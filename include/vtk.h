@@ -62,7 +62,7 @@ public:
   }
 
   void setPoints(const int Igroup, const vec3 X) {
-    points[Igroup]->SetPoint(I[Igroup],X[0],X[1],X[2]);
+    points[Igroup]->SetPoint(I[Igroup], X[0], X[1], X[2]);
     I[Igroup]++;
   }
 
@@ -71,9 +71,9 @@ public:
     int index = bodies[0].ICELL;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       if (B->ICELL != index) {
-        setGroup(Ncell,size);
+        setGroup(Ncell, size);
         for (int i=begin; i<begin+size; i++) {
-          setPoints(Ncell,bodies[i].X);
+          setPoints(Ncell, bodies[i].X);
         }
         begin = B-bodies.begin();
         size = 0;
@@ -85,7 +85,7 @@ public:
     }
     setGroup(Ncell,size);
     for (int i=begin; i<begin+size; i++) {
-      setPoints(Ncell,bodies[i].X);
+      setPoints(Ncell, bodies[i].X);
     }
     Ncell++;
     assert(Ncell < maxGroups);
@@ -108,23 +108,23 @@ public:
     //Associate the mapper to an actor object for points
     vtkActor * pointActor = vtkActor::New();
     pointActor->SetMapper(pointMapper);
-    pointActor->GetProperty()->SetColor(1,0,0);
+    pointActor->GetProperty()->SetColor(1, 0, 0);
 
     //Create a hexahedron for cells
     vtkHexahedron * hex = vtkHexahedron::New();
-    hex->GetPointIds()->SetId(0,0);
-    hex->GetPointIds()->SetId(1,1);
-    hex->GetPointIds()->SetId(2,2);
-    hex->GetPointIds()->SetId(3,3);
-    hex->GetPointIds()->SetId(4,4);
-    hex->GetPointIds()->SetId(5,5);
-    hex->GetPointIds()->SetId(6,6);
-    hex->GetPointIds()->SetId(7,7);
+    hex->GetPointIds()->SetId(0, 0);
+    hex->GetPointIds()->SetId(1, 1);
+    hex->GetPointIds()->SetId(2, 2);
+    hex->GetPointIds()->SetId(3, 3);
+    hex->GetPointIds()->SetId(4, 4);
+    hex->GetPointIds()->SetId(5, 5);
+    hex->GetPointIds()->SetId(6, 6);
+    hex->GetPointIds()->SetId(7, 7);
 
     //Create a grid for cells
     vtkUnstructuredGrid * grid = vtkUnstructuredGrid::New();
-    grid->Allocate(1,1);
-    grid->InsertNextCell(hex->GetCellType(),hex->GetPointIds());
+    grid->Allocate(1, 1);
+    grid->InsertNextCell(hex->GetCellType(), hex->GetPointIds());
     grid->SetPoints(hexPoints);
 
     //Create a mapper object for cells
@@ -140,12 +140,12 @@ public:
     vtkRenderer * renderer = vtkRenderer::New();
     renderer->AddActor(pointActor);
     renderer->AddActor(hexActor);
-    renderer->SetBackground(0,0,0);
+    renderer->SetBackground(0, 0, 0);
 
     //Create a render window
     vtkRenderWindow * window = vtkRenderWindow::New();
     window->AddRenderer(renderer);
-    window->SetSize(700,700);
+    window->SetSize(700, 700);
 
     //Create an interactor and associate it to the render window
     vtkRenderWindowInteractor * interactor = vtkRenderWindowInteractor::New();
@@ -156,9 +156,9 @@ public:
     representation->SetMinimumValue(0);
     representation->SetMaximumValue(Ngroup-1);
     representation->GetPoint1Coordinate()->SetCoordinateSystemToDisplay();
-    representation->GetPoint1Coordinate()->SetValue(50,50);
+    representation->GetPoint1Coordinate()->SetValue(50, 50);
     representation->GetPoint2Coordinate()->SetCoordinateSystemToDisplay();
-    representation->GetPoint2Coordinate()->SetValue(650,50);
+    representation->GetPoint2Coordinate()->SetValue(650, 50);
 
     //Create a slider widget
     vtkSliderWidget * widget = vtkSliderWidget::New();
@@ -174,7 +174,7 @@ public:
     }
     callback->polydata = polydata;
     callback->filter = filter;
-    widget->AddObserver(vtkCommand::InteractionEvent,callback);
+    widget->AddObserver(vtkCommand::InteractionEvent, callback);
 
     //Define the interacting style
     vtkInteractorStyleTrackballCamera * style = vtkInteractorStyleTrackballCamera::New();

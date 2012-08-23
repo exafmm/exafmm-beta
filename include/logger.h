@@ -77,7 +77,7 @@ public:
     double endTimer = get_time();                               // Get time of day and store in endTimer
     timer[event] += endTimer - beginTimer[event];               // Accumulate event time to timer
     if (print) std::cout << std::setw(stringLength) << std::left// Set format
-                        << event << " : " << timer[event] << std::endl;// Print event and timer to screen
+      << event << " : " << timer[event] << std::endl;           // Print event and timer to screen
     return endTimer - beginTimer[event];                        // Return the event time
   }
 
@@ -94,14 +94,14 @@ public:
 //! Print timings of a specific event
   inline void printTime(std::string event) {
     std::cout << std::setw(stringLength) << std::left           // Set format
-              << event << " : " << timer[event] << std::endl;   // Print event and timer
+      << event << " : " << timer[event] << std::endl;           // Print event and timer
   }
 
 //! Print timings of all events
   inline void printAllTime() {
     for (T_iter E=timer.begin(); E!=timer.end(); E++) {         // Loop over all events
       std::cout << std::setw(stringLength) << std::left         //  Set format
-                << E->first << " : " << E->second << std::endl; //  Print event and timer
+        << E->first << " : " << E->second << std::endl;         //  Print event and timer
     }                                                           // End loop over all events
   }
 
@@ -109,7 +109,7 @@ public:
   inline void writeTime() {
     for (T_iter E=timer.begin(); E!=timer.end(); E++) {        // Loop over all events
       timerFile << std::setw(stringLength) << std::left         //  Set format
-                << E->first << " " << E->second << std::endl;   //  Print event and timer
+        << E->first << " " << E->second << std::endl;           //  Print event and timer
     }                                                           // End loop over all events
   }
 
@@ -130,13 +130,13 @@ public:
     long long values[3] = {0,0,0};                              // Values for each event
     PAPI_stop(PAPIEVENT,values);                                // PAPI stop
     std::cout << "--- PAPI stats -------------------" << std::endl
-    << std::setw(stringLength) << std::left                     // Set format
-    << "L2 Miss"    << " : " << values[0] << std::endl          // Print L2 Misses
-    << std::setw(stringLength) << std::left                     // Set format
-    << "L2 Access"  << " : " << values[1] << std::endl          // Print L2 Access
-    << std::setw(stringLength) << std::left                     // Set format
-    << "TLB Miss"   << " : " << values[2] << std::endl          // Print TLB Misses
-    << "--- PAPI stats -------------------" << std::endl;
+      << std::setw(stringLength) << std::left                   // Set format
+      << "L2 Miss"    << " : " << values[0] << std::endl        // Print L2 Misses
+      << std::setw(stringLength) << std::left                   // Set format
+      << "L2 Access"  << " : " << values[1] << std::endl        // Print L2 Access
+      << std::setw(stringLength) << std::left                   // Set format
+      << "TLB Miss"   << " : " << values[2] << std::endl        // Print TLB Misses
+      << "--- PAPI stats -------------------" << std::endl;
 #endif
   }
 
@@ -165,10 +165,10 @@ public:
     sprintf(fname,"trace%4.4d.svg",mpirank);                    // Create file name for trace
     std::ofstream traceFile(fname);                             // Open trace log file
     traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" // Header statements for trace log file
-        << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
-        << "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
-        << "  width=\"200mm\" height=\"40mm\" viewBox=\"0 0 20000 4000\">\n"
-        << "  <g>\n";
+      << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
+      << "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
+      << "  width=\"200mm\" height=\"40mm\" viewBox=\"0 0 20000 4000\">\n"
+      << "  <g>\n";
     int num_thread = 0;                                         // Counter for number of threads to trace
     ThreadMap threadMap;                                        // Map pthread ID to thread ID
     double base = traces.front().begin;                         // Base time
@@ -186,10 +186,10 @@ public:
       begin -= base;                                            //  Subtract base time from begin time
       end   -= base;                                            //  Subtract base time from end time
       traceFile << "    <rect x=\"" << begin * scale            //  x position of bar plot
-          << "\" y=\"" << (threadMap[thread] - 1) * 100.0       //  y position of bar plot
-          << "\" width=\"" << (end - begin) * scale             //  width of bar
-          << "\" height=\"90.0\" fill=\"#"<< std::setfill('0') << std::setw(6) << std::hex << color// height of bar
-          << "\" stroke=\"#000000\" stroke-width=\"1\"/>\n";    //  stroke color and width
+        << "\" y=\"" << (threadMap[thread] - 1) * 100.0         //  y position of bar plot
+        << "\" width=\"" << (end - begin) * scale               //  width of bar
+        << "\" height=\"90.0\" fill=\"#"<< std::setfill('0') << std::setw(6) << std::hex << color// height of bar
+        << "\" stroke=\"#000000\" stroke-width=\"1\"/>\n";      //  stroke color and width
     }                                                           // End while loop for queue of traces
     traceFile << "  </g>\n" "</svg>\n";                         // Footer for trace log file 
     traceFile.close();                                          // Close trace log file

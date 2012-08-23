@@ -51,7 +51,7 @@ int main(int argc, char ** argv) {
     FMM.startTimer("Direct sum");
     FMM.direct(bodies2, jbodies);
     FMM.normalize(bodies2);
-    FMM.stopTimer("Direct sum",FMM.printNow);
+    FMM.stopTimer("Direct sum", FMM.printNow);
     FMM.eraseTimer("Direct sum");
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     DATA.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);

@@ -30,17 +30,17 @@ private:
     real_t dx = rad+std::abs(X[0]-C->X[0]);                     // Add x distance from center of mass
     real_t dy = rad+std::abs(X[1]-C->X[1]);                     // Add y distance from center of mass
     real_t dz = rad+std::abs(X[2]-C->X[2]);                     // Add z distance from center of mass
-    return std::sqrt( dx*dx + dy*dy + dz*dz );                  // Return scalar distance
+    return std::sqrt(dx * dx + dy * dy + dz * dz);              // Return scalar distance
   }
 
 //! Approximate interaction between two cells
   inline void approximate(C_iter Ci, C_iter Cj, bool mutual) {
 #if AUTO
     if (timeP2P*Ci->NDBODY*Cj->NDBODY > timeM2L) {              // If M2L is faster
-      M2L(Ci,Cj,mutual);                                        //  M2L kernel
+      M2L(Ci, Cj, mutual);                                      //  M2L kernel
       count(NM2L);                                              //  Increment M2L counter
     } else {                                                    // Else if P2P is faster
-      P2P(Ci,Cj,mutual);                                        //  P2P kernel
+      P2P(Ci, Cj, mutual);                                      //  P2P kernel
       count(NP2P);                                              //  Increment P2P counter
     }                                                           // End if for fastest kernel
 #else
@@ -51,7 +51,7 @@ private:
 
   void traverse(C_iter CiBegin, C_iter CiEnd, C_iter CjBegin, C_iter CjEnd, bool mutual) {
     if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {
-      if (CiBegin == CjBegin) {                                 // TODO : unecessary?
+      if (CiBegin == CjBegin) {
         assert(CiEnd == CjEnd);
         traverse(CiBegin, CjBegin, mutual);
       } else {
@@ -82,23 +82,23 @@ private:
     if (Cj->NCHILD == 0) {
       assert(Ci->NCHILD > 0);
       for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {
-        traverse(ci,Cj,mutual);
+        traverse(ci, Cj, mutual);
       }
     } else if (Ci->NCHILD == 0) {
       assert(Cj->NCHILD > 0);
       for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {
-        traverse(Ci,cj,mutual);
+        traverse(Ci, cj, mutual);
       }
     } else if (Ci->NDBODY + Cj->NDBODY >= NSPAWN || (mutual && Ci == Cj)) {
       traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
                Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
     } else if (Ci->RCRIT >= Cj->RCRIT) {
       for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {
-        traverse(ci,Cj,mutual);
+        traverse(ci, Cj, mutual);
       } 
     } else {
       for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {
-        traverse(Ci,cj,mutual);
+        traverse(Ci, cj, mutual);
       }
     }
   }
@@ -133,24 +133,24 @@ protected:
     {                                                           // Dummy bracket
 #else
     if (Ci->RCRIT != Cj->RCRIT) {                               // If cell is not at the same level
-      splitCell(Ci,Cj,mutual);                                  //  Split cell and call function recursively for child
+      splitCell(Ci, Cj, mutual);                                //  Split cell and call function recursively for child
     } else {                                                    // If we don't care if cell is not at the same level
 #endif
       if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {   //  If distance is far enough
-        approximate(Ci,Cj,mutual);                              //   Use approximate kernels
+        approximate(Ci, Cj, mutual);                            //   Use approximate kernels
       } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          //  Else if both cells are bodies
         if (Cj->NCBODY == 0) {                                  //   If the bodies weren't sent from remote node
-          approximate(Ci,Cj,mutual);                            //    Use approximate kernels
+          approximate(Ci, Cj, mutual);                          //    Use approximate kernels
         } else {                                                //   Else if the bodies were sent
           if (Ci == Cj) {                                       //    If source and target are same
             P2P(Ci);                                            //     P2P kernel for single cell
           } else {                                              //    Else if source and target are different
-            P2P(Ci,Cj,mutual);                                  //     P2P kernel for pair of cells
+            P2P(Ci, Cj, mutual);                                //     P2P kernel for pair of cells
           }                                                     //    End if for same source and target
           count(NP2P);                                          //    Increment P2P counter
         }                                                       //   End if for bodies
       } else {                                                  //  Else if cells are close but not bodies
-        splitCell(Ci,Cj,mutual);                                //   Split cell and call function recursively for child
+        splitCell(Ci, Cj, mutual);                              //   Split cell and call function recursively for child
       }                                                         //  End if for multipole acceptance
     }                                                           // End if for same level cells
   }
@@ -200,7 +200,7 @@ protected:
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
       real_t Rmax = 0;                                          //  Dummy parameter for calling M2M
       setCenter(Ci);                                            //  Set center of mass for periodic parent
-      M2M(Ci,Rmax);                                             //  Evaluate periodic M2M kernels for this sublevel
+      M2M(Ci, Rmax);                                            //  Evaluate periodic M2M kernels for this sublevel
       R *= 3;                                                   //  Increase center cell size three times
       Cj0 = C0;                                                 //  Reset Cj0 back
     }                                                           // End loop over sublevels of tree

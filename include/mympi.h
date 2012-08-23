@@ -2,7 +2,6 @@
 #define mympi_h
 #include <mpi.h>
 #include <typeinfo>
-#include "types.h"
 
 //! Custom MPI utilities
 class MyMPI {
@@ -22,9 +21,9 @@ public:
     int argc(0);                                                // Dummy argument count
     char **argv;                                                // Dummy argument value
     MPI_Initialized(&EXTERNAL);                                 // Check if MPI_Init has been called
-    if (!EXTERNAL) MPI_Init(&argc,&argv);                       // Initialize MPI communicator
-    MPI_Comm_size(MPI_COMM_WORLD,&MPISIZE);                     // Get number of MPI processes
-    MPI_Comm_rank(MPI_COMM_WORLD,&MPIRANK);                     // Get rank of current MPI process
+    if (!EXTERNAL) MPI_Init(&argc, &argv);                      // Initialize MPI communicator
+    MPI_Comm_size(MPI_COMM_WORLD, &MPISIZE);                    // Get number of MPI processes
+    MPI_Comm_rank(MPI_COMM_WORLD, &MPIRANK);                    // Get rank of current MPI process
   }
 
 //! Destructor

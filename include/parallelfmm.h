@@ -66,9 +66,9 @@ private:
       C_iter C = cellQueue.front();                             //  Get front item in traversal queue
       cellQueue.pop();                                          //  Pop item from traversal queue
       for (C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-        addSendCell(CC,iparent,icell);                          //   Add cells to send
+        addSendCell(CC, iparent, icell);                        //   Add cells to send
         if (CC->NCHILD == 0) {                                  //   If cell is twig
-          addSendBody(CC,ibody,icell);                          //    Add bodies to send
+          addSendBody(CC, ibody, icell);                        //    Add bodies to send
         } else {                                                //   If cell is not twig
           bool divide = false;                                  //    Initialize logical for dividing
           if (IMAGES == 0) {                                    //    If free boundary condition
@@ -101,8 +101,8 @@ private:
 
 //! Exchange send count for cells
   void alltoall(Cells) {
-    MPI_Alltoall(sendCellCount,1,MPI_INT,                       // Communicate send count to get receive count
-                 recvCellCount,1,MPI_INT,MPI_COMM_WORLD);
+    MPI_Alltoall(sendCellCount, 1, MPI_INT,                     // Communicate send count to get receive count
+                 recvCellCount, 1, MPI_INT, MPI_COMM_WORLD);
     recvCellDispl[0] = 0;                                       // Initialize receive displacements
     for (int irank=0; irank<MPISIZE-1; irank++) {               // Loop over ranks
       recvCellDispl[irank+1] = recvCellDispl[irank] + recvCellCount[irank];//  Set receive displacement
@@ -119,8 +119,8 @@ private:
       recvCellCount[irank] *= word;                             //  Multiply receive count by word size of data
       recvCellDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
     }                                                           // End loop over ranks
-    MPI_Alltoallv(&cells[0],sendCellCount,sendCellDispl,MPI_INT,// Communicate cells
-                  &recvCells[0],recvCellCount,recvCellDispl,MPI_INT,MPI_COMM_WORLD);
+    MPI_Alltoallv(&cells[0], sendCellCount, sendCellDispl, MPI_INT,// Communicate cells
+                  &recvCells[0], recvCellCount, recvCellDispl, MPI_INT, MPI_COMM_WORLD);
     for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
       sendCellCount[irank] /= word;                             //  Divide send count by word size of data
       sendCellDispl[irank] /= word;                             //  Divide send displacement by word size of data

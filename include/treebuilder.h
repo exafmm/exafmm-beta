@@ -177,7 +177,7 @@ private:
       C->NCHILD = 0;                                            //  Number of child cells
       C->NCBODY = octNode->NBODY;                               //  Number of bodies in cell
       assert(C->NCBODY > 0);
-      MAXLEVEL = std::max(MAXLEVEL,level);                      //  Update maximum level of tree
+      MAXLEVEL = std::max(MAXLEVEL, level);                     //  Update maximum level of tree
     } else {                                                    // Else if node has children
       C->NCBODY = 0;                                            //  Set number of bodies in cell to zero
       int nchild = 0;                                           //  Initialize number of child cells

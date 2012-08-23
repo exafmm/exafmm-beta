@@ -19,8 +19,8 @@ protected:
 private:
 //! Allreduce bounds from all ranks
   void allreduceBounds() {
-    MPI_Allreduce(localXmin,globalXmin,3,MPI_FLOAT,MPI_MIN,MPI_COMM_WORLD);// Reduce domain Xmin
-    MPI_Allreduce(localXmax,globalXmax,3,MPI_FLOAT,MPI_MAX,MPI_COMM_WORLD);// Reduce domain Xmax
+    MPI_Allreduce(localXmin, globalXmin, 3, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
+    MPI_Allreduce(localXmax, globalXmax, 3, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
     globalRadius = 0;                                           // Initialize global radius
     globalCenter = (globalXmax + globalXmin) / 2;               //  Calculate global center
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
@@ -32,8 +32,8 @@ private:
 
 //! Allgather bounds of all partitions
   void allgatherBounds() {
-    MPI_Allgather(localXmin,3,MPI_FLOAT,&rankXmin[0],3,MPI_FLOAT,MPI_COMM_WORLD);// Gather all domain bounds
-    MPI_Allgather(localXmax,3,MPI_FLOAT,&rankXmax[0],3,MPI_FLOAT,MPI_COMM_WORLD);// Gather all domain bounds
+    MPI_Allgather(localXmin, 3, MPI_FLOAT, &rankXmin[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
+    MPI_Allgather(localXmax, 3, MPI_FLOAT, &rankXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
   }
 
 //! Set partition of global domain
@@ -84,8 +84,8 @@ protected:
       sendBodyCount[B->IPROC]++;                                //  Fill send count bucket
       B->IPROC = MPIRANK;                                       //  Tag for sending back to original rank
     }                                                           // End loop over bodies
-    MPI_Alltoall(sendBodyCount,1,MPI_INT,                       // Communicate send count to get receive count
-                 recvBodyCount,1,MPI_INT,MPI_COMM_WORLD);
+    MPI_Alltoall(sendBodyCount, 1, MPI_INT,                     // Communicate send count to get receive count
+                 recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
     sendBodyDispl[0] = recvBodyDispl[0] = 0;                    // Initialize send/receive displacements
     for (int irank=0; irank<MPISIZE-1; irank++) {               // Loop over ranks
       sendBodyDispl[irank+1] = sendBodyDispl[irank] + sendBodyCount[irank];//  Set send displacement
@@ -103,8 +103,8 @@ protected:
       recvBodyCount[irank] *= word;                             //  Multiply receive count by word size of data
       recvBodyDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
     }                                                           // End loop over ranks
-    MPI_Alltoallv(&bodies[0],sendBodyCount,sendBodyDispl,MPI_INT,// Communicate bodies
-                  &recvBodies[0],recvBodyCount,recvBodyDispl,MPI_INT,MPI_COMM_WORLD);
+    MPI_Alltoallv(&bodies[0], sendBodyCount, sendBodyDispl, MPI_INT,// Communicate bodies
+                  &recvBodies[0], recvBodyCount, recvBodyDispl, MPI_INT, MPI_COMM_WORLD);
     for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
       sendBodyCount[irank] /= word;                             //  Divide send count by word size of data
       sendBodyDispl[irank] /= word;                             //  Divide send displacement by word size of data
@@ -142,18 +142,18 @@ public:
     const int irecv = (MPIRANK - 1 + MPISIZE) % MPISIZE;        // Receive from previous rank (wrap around)
     MPI_Request sreq,rreq;                                      // Send, receive request handles
 
-    MPI_Isend(&oldSize,1,MPI_INT,irecv,0,MPI_COMM_WORLD,&sreq); // Send current number of bodies
-    MPI_Irecv(&newSize,1,MPI_INT,isend,0,MPI_COMM_WORLD,&rreq); // Receive new number of bodies
-    MPI_Wait(&sreq,MPI_STATUS_IGNORE);                          // Wait for send to complete
-    MPI_Wait(&rreq,MPI_STATUS_IGNORE);                          // Wait for receive to complete
+    MPI_Isend(&oldSize, 1, MPI_INT, irecv, 0, MPI_COMM_WORLD, &sreq);// Send current number of bodies
+    MPI_Irecv(&newSize, 1, MPI_INT, isend, 0, MPI_COMM_WORLD, &rreq);// Receive new number of bodies
+    MPI_Wait(&sreq, MPI_STATUS_IGNORE);                         // Wait for send to complete
+    MPI_Wait(&rreq, MPI_STATUS_IGNORE);                         // Wait for receive to complete
 
     recvBodies.resize(newSize);                                 // Resize buffer to new number of bodies
-    MPI_Isend(&bodies[0],oldSize*word,MPI_INT,irecv,            // Send bodies to next rank
-              1,MPI_COMM_WORLD,&sreq);
-    MPI_Irecv(&recvBodies[0],newSize*word,MPI_INT,isend,        // Receive bodies from previous rank
-              1,MPI_COMM_WORLD,&rreq);
-    MPI_Wait(&sreq,MPI_STATUS_IGNORE);                          // Wait for send to complete
-    MPI_Wait(&rreq,MPI_STATUS_IGNORE);                          // Wait for receive to complete
+    MPI_Isend(&bodies[0], oldSize*word, MPI_INT, irecv,         // Send bodies to next rank
+              1, MPI_COMM_WORLD, &sreq);
+    MPI_Irecv(&recvBodies[0], newSize*word, MPI_INT, isend,     // Receive bodies from previous rank
+              1, MPI_COMM_WORLD, &rreq);
+    MPI_Wait(&sreq, MPI_STATUS_IGNORE);                         // Wait for send to complete
+    MPI_Wait(&rreq, MPI_STATUS_IGNORE);                         // Wait for receive to complete
     bodies = recvBodies;                                        // Copy bodies from buffer
   }
 
@@ -175,18 +175,18 @@ public:
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
     Bodies buffer = bodies;                                     // Resize sort buffer
-    stopTimer("Unpartition",printNow);                          // Stop timer 
-    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
+    stopTimer("Unpartition", printNow);                         // Stop timer 
+    sortBodies(bodies, buffer);                                 // Sort bodies in ascending order
     startTimer("Unpartition comm");                             // Start timer
     alltoall(bodies);                                           // Alltoall send count
     alltoallv(bodies);                                          // Alltoallv bodies
     bodies = recvBodies;                                        // Copy receive buffer to bodies
-    stopTimer("Unpartition comm",printNow);                     // Stop timer 
+    stopTimer("Unpartition comm", printNow);                    // Stop timer 
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->ICELL = B->IBODY;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
     buffer = bodies;                                            // Resize sort buffer
-    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order
+    sortBodies(bodies, buffer);                                 // Sort bodies in ascending order
   }
 };
 
