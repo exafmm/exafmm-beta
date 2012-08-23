@@ -11,7 +11,6 @@ struct option long_options[] = {
   {"nspawn",       1, 0, 's'},
   {"images",       1, 0, 'i'},
   {"theta",        1, 0, 'h'},
-  {"buildOnly",    1, 0, 'b'},
   {"mutual",       1, 0, 'm'},
   {"distribution", 1, 0, 'd'},
   {0, 0, 0, 0}
@@ -25,7 +24,6 @@ public:
   int NSPAWN;
   int IMAGES;
   double THETA;
-  int buildOnly;
   int mutual;
   const char * distribution;
 
@@ -40,7 +38,6 @@ private:
             " --nspawn : Threshold for splitting both cells during recursion (%d)\n"
             " --images : Number of periodic image levels (%d)\n"
             " --theta : Multipole acceptance criterion (%f)\n"
-            " --buildOnly [0/1] : build tree and do not evaluate force (%d)\n"
             " --mutual [0/1] :  use mutual interaction (%d)\n"
             " --distribution [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n",
             name,
@@ -50,7 +47,6 @@ private:
             NSPAWN,
             IMAGES,
             THETA,
-            buildOnly,
             mutual,
             distribution);
   }
@@ -73,7 +69,7 @@ private:
 
 public:
   Args(int argc, char ** argv) : numBodies(1000000), numTarget(100), NCRIT(10), NSPAWN(1000), IMAGES(0),
-                                 THETA(.6), buildOnly(0), mutual(1), distribution("cube") {
+                                 THETA(.6), mutual(1), distribution("cube") {
     while (1) {
       int option_index;
       int c = getopt_long(argc, argv, "", long_options, &option_index);
@@ -97,9 +93,6 @@ public:
       case 'h':
         THETA = atof(optarg);
         break;
-      case 'b':
-        buildOnly = atoi(optarg);
-        break;
       case 'm':
         mutual = atoi(optarg);
         break;
@@ -111,15 +104,6 @@ public:
         exit(0);
       }
     }
-    printf("numBodies: %d\n", numBodies);
-    printf("numTarget: %d\n", numTarget);
-    printf("ncrit: %d\n", NCRIT);
-    printf("nspawn: %d\n", NSPAWN);
-    printf("images: %d\n", IMAGES);
-    printf("theta: %f\n", THETA);
-    printf("buildOnly: %d\n", buildOnly);
-    printf("mutual: %d\n", mutual);
-    printf("distribution: %s\n", distribution);
   }
 };
 

@@ -29,8 +29,8 @@ private:
 protected:
   real_t localRadius;                                           //!< Radius of local root cell
   vec3   localCenter;                                           //!< Center of local root cell
-  vec3   localXmin;                                             //!< Local Xmin for a given rank
-  vec3   localXmax;                                             //!< Local Xmax for a given rank
+  fvec3  localXmin;                                             //!< Local Xmin for a given rank
+  fvec3  localXmax;                                             //!< Local Xmax for a given rank
 
 public:
   int NCRIT;                                                    //!< Number of bodies per leaf cell

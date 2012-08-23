@@ -6,7 +6,7 @@
 #endif
 
 int main(int argc, char ** argv) {
-  Args ARGS(argc,argv);
+  Args ARGS(argc, argv);
   Bodies bodies, jbodies;
   Cells cells, jcells;
   Dataset DATA;
@@ -31,35 +31,31 @@ int main(int argc, char ** argv) {
     bodies.resize(numBodies);
     DATA.initBodies(bodies, ARGS.distribution);
     FMM.setBounds(bodies);
-    FMM.buildTree(bodies,cells);                                // TODO : make it work without this
+    FMM.buildTree(bodies, cells);                               // TODO : make it work without this
     FMM.resetTimer();
     FMM.startTimer("FMM");
-    FMM.buildTree(bodies,cells);
+    FMM.buildTree(bodies, cells);
     FMM.upwardPass(cells);
-    if (!ARGS.buildOnly) {
-      FMM.startPAPI();
-      FMM.evaluate(cells,cells,ARGS.mutual);
-      FMM.stopPAPI();
-      FMM.downwardPass(cells);
-    }
-    FMM.stopTimer("FMM",FMM.printNow);
+    FMM.startPAPI();
+    FMM.evaluate(cells,cells,ARGS.mutual);
+    FMM.stopPAPI();
+    FMM.downwardPass(cells);
+    FMM.stopTimer("FMM", FMM.printNow);
     FMM.eraseTimer("FMM");
     FMM.writeTime();
     FMM.resetTimer();
-    if (!ARGS.buildOnly) {
-      jbodies = bodies;
-      if (int(bodies.size()) > ARGS.numTarget) bodies.resize(ARGS.numTarget);
-      Bodies bodies2 = bodies;
-      DATA.initTarget(bodies2);
-      FMM.startTimer("Direct sum");
-      FMM.direct(bodies2,jbodies);
-      FMM.normalize(bodies2);
-      FMM.stopTimer("Direct sum",FMM.printNow);
-      FMM.eraseTimer("Direct sum");
-      real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-      DATA.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);
-      if(FMM.printNow) DATA.printError(diff1,norm1,diff2,norm2);
-    }
+    jbodies = bodies;
+    if (int(bodies.size()) > ARGS.numTarget) bodies.resize(ARGS.numTarget);
+    Bodies bodies2 = bodies;
+    DATA.initTarget(bodies2);
+    FMM.startTimer("Direct sum");
+    FMM.direct(bodies2, jbodies);
+    FMM.normalize(bodies2);
+    FMM.stopTimer("Direct sum",FMM.printNow);
+    FMM.eraseTimer("Direct sum");
+    real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+    DATA.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
+    if(FMM.printNow) DATA.printError(diff1, norm1, diff2, norm2);
   }
 #ifdef VTK
   for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) B->ICELL = 0;
@@ -73,7 +69,7 @@ int main(int argc, char ** argv) {
   int Ncell = 0;
   vtkPlot vtk;
   vtk.setDomain(M_PI,0);
-  vtk.setGroupOfPoints(jbodies,Ncell);
+  vtk.setGroupOfPoints(jbodies, Ncell);
   vtk.plot(Ncell);
 #endif
 }

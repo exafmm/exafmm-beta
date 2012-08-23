@@ -5,9 +5,9 @@
 class SerialFMM : public TreeBuilder {
 protected:
   real_t globalRadius;                                          //!< Radius of global root cell
-  vec3 globalCenter;                                            //!< Center of global root cell
-  vec3 globalXmin;                                              //!< Global Xmin for a given rank
-  vec3 globalXmax;                                              //!< Global Xmax for a given rank
+  vec3   globalCenter;                                          //!< Center of global root cell
+  fvec3  globalXmin;                                            //!< Global Xmin for a given rank
+  fvec3  globalXmax;                                            //!< Global Xmax for a given rank
 
 private:
 //! Error optimization of Rcrit

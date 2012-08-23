@@ -156,7 +156,7 @@ public:
 
 //! Evaluate relaitve L2 norm error
   void evalError(Bodies &bodies, Bodies &bodies2,
-                 real_t &diff1, real_t &norm1, real_t &diff2, real_t &norm2) {
+                 double &diff1, double &norm1, double &diff2, double &norm2) {
     B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, B2++) { // Loop over bodies & bodies2
       diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
@@ -171,7 +171,7 @@ public:
   }
 
 //! Print relative L2 norm error
-  void printError(real_t diff1, real_t norm1, real_t diff2, real_t norm2) {
+  void printError(double diff1, double norm1, double diff2, double norm2) {
     std::cout << std::setw(20) << std::left
               << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
     std::cout << std::setw(20) << std::left

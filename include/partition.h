@@ -9,8 +9,8 @@ class Partition : public MyMPI, public SerialFMM, public Sort {
 protected:
   Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
-  vec3 * rankXmin;                                              //!< Array for minimum of local domains
-  vec3 * rankXmax;                                              //!< Array for maximum of local domains
+  fvec3 * rankXmin;                                             //!< Array for minimum of local domains
+  fvec3 * rankXmax;                                             //!< Array for maximum of local domains
   int * sendBodyCount;                                          //!< Send count
   int * sendBodyDispl;                                          //!< Send displacement
   int * recvBodyCount;                                          //!< Receive count
@@ -19,9 +19,8 @@ protected:
 private:
 //! Allreduce bounds from all ranks
   void allreduceBounds() {
-    MPI_Datatype MPI_TYPE = getType(localXmin[0]);              // Get MPI data type
-    MPI_Allreduce(localXmin,globalXmin,3,MPI_TYPE,MPI_MIN,MPI_COMM_WORLD);// Reduce domain Xmin
-    MPI_Allreduce(localXmax,globalXmax,3,MPI_TYPE,MPI_MAX,MPI_COMM_WORLD);// Reduce domain Xmax
+    MPI_Allreduce(localXmin,globalXmin,3,MPI_FLOAT,MPI_MIN,MPI_COMM_WORLD);// Reduce domain Xmin
+    MPI_Allreduce(localXmax,globalXmax,3,MPI_FLOAT,MPI_MAX,MPI_COMM_WORLD);// Reduce domain Xmax
     globalRadius = 0;                                           // Initialize global radius
     globalCenter = (globalXmax + globalXmin) / 2;               //  Calculate global center
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
@@ -33,9 +32,8 @@ private:
 
 //! Allgather bounds of all partitions
   void allgatherBounds() {
-    MPI_Datatype MPI_TYPE = getType(localXmin[0]);              // Get MPI data type
-    MPI_Allgather(localXmin,3,MPI_TYPE,&rankXmin[0],3,MPI_TYPE,MPI_COMM_WORLD);// Gather all domain bounds
-    MPI_Allgather(localXmax,3,MPI_TYPE,&rankXmax[0],3,MPI_TYPE,MPI_COMM_WORLD);// Gather all domain bounds
+    MPI_Allgather(localXmin,3,MPI_FLOAT,&rankXmin[0],3,MPI_FLOAT,MPI_COMM_WORLD);// Gather all domain bounds
+    MPI_Allgather(localXmax,3,MPI_FLOAT,&rankXmax[0],3,MPI_FLOAT,MPI_COMM_WORLD);// Gather all domain bounds
   }
 
 //! Set partition of global domain

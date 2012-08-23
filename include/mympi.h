@@ -47,44 +47,6 @@ public:
     if (remainder > iSplit) end++;                              // Adjust the end counter for remainder
   }
 
-//! Get MPI data type
-  template<typename T>
-  MPI_Datatype getType(T object) {
-    MPI_Datatype type = MPI_BYTE;                               // MPI data type
-    if        (typeid(object) == typeid(char)) {                // If data type is char
-      type = MPI_CHAR;                                          //  use MPI_CHAR
-    } else if (typeid(object) == typeid(short)) {               // If data type is short
-      type = MPI_SHORT;                                         //  use MPI_SHORT
-    } else if (typeid(object) == typeid(int)) {                 // If data type is int
-      type = MPI_INT;                                           //  use MPI_INT
-    } else if (typeid(object) == typeid(long)) {                // If data type is long
-      type = MPI_LONG;                                          //  use MPI_LONG
-    } else if (typeid(object) == typeid(long long)) {           // If data type is long long
-      type = MPI_LONG_LONG;                                     //  use MPI_LONG_LONG
-    } else if (typeid(object) == typeid(unsigned char)) {       // If data type is unsigned char
-      type = MPI_UNSIGNED_CHAR;                                 //  use MPI_UNSIGNED_CHAR
-    } else if (typeid(object) == typeid(unsigned short)) {      // If data type is unsigned short
-      type = MPI_UNSIGNED_SHORT;                                //  use MPI_UNSIGNED_SHORT
-    } else if (typeid(object) == typeid(unsigned int)) {        // If data type is unsigned int
-      type = MPI_UNSIGNED;                                      //  use MPI_UNSIGNED
-    } else if (typeid(object) == typeid(unsigned long)) {       // If data type is unsigned long
-      type = MPI_UNSIGNED_LONG;                                 //  use MPI_UNSIGNED_LONG
-    } else if (typeid(object) == typeid(unsigned long long)) {  // If data type is unsigned long long
-      type = MPI_UNSIGNED_LONG_LONG;                            //  use MPI_UNSIGNED_LONG_LONG
-    } else if (typeid(object) == typeid(float)) {               // If data type is float
-      type = MPI_FLOAT;                                         //  use MPI_FLOAT
-    } else if (typeid(object) == typeid(double)) {              // If data type is double
-      type = MPI_DOUBLE;                                        //  use MPI_DOUBLE
-    } else if (typeid(object) == typeid(long double)) {         // If data type is long double
-      type = MPI_LONG_DOUBLE;                                   //  use MPI_LONG_DOUBLE
-    } else if (typeid(object) == typeid(std::complex<float>)) { // If data type is complex<float>
-      type = MPI_COMPLEX;                                       //  use MPI_COMPLEX
-    } else if (typeid(object) == typeid(std::complex<double>)) {// If data type is compelx<double>
-      type = MPI_DOUBLE_COMPLEX;                                //  use MPI_DOUBLE_COMPLEX
-    }                                                           // Endif for data type
-    return type;                                                // Return MPI data type
-  }
-
 //! Print a scalar value on all ranks
   template<typename T>
   void print(T data) {
