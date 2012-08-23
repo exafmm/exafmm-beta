@@ -1,5 +1,7 @@
 #ifndef options_h
 #define options_h
+#include <cstdio>
+#include <cstdlib>
 #include <getopt.h>
 
 struct option long_options[] = {
