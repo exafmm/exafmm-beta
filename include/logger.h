@@ -39,6 +39,11 @@ private:
   int PAPIEVENT;                                                //!< PAPI event handle
 #endif
 
+public:
+  int stringLength;                                             //!< Max length of event name
+  bool printNow;                                                //!< Switch to print timings
+
+private:
 //! Timer function
   double get_time() const {
     struct timeval tv;                                          // Time value
@@ -47,9 +52,6 @@ private:
   }
 
 public:
-  int stringLength;                                             //!< Max length of event name
-  bool printNow;                                                //!< Switch to print timings
-
 //! Constructor
   Logger() : timerFile("time.dat"),                             // Open timer log file
              beginTimer(), timer(), traces(), mutex(),          // Initializing class variables (empty)
@@ -127,11 +129,14 @@ public:
 #if PAPI
     long long values[3] = {0,0,0};                              // Values for each event
     PAPI_stop(PAPIEVENT,values);                                // PAPI stop
-    std::cout << std::setw(stringLength) << std::left           //  Set format
-              << "L2 Miss" << " : " << values[0] << std::endl;  //  Print PAPI event and count
-    std::cout << "L2 Miss: " << values[0]                       // Print L2 Misses
-              << " L2 Access: " << values[1]                    // Print L2 Access
-              << " TLB Miss: " << values[2] << std::endl;       // Print TLB Misses
+    std::cout << "--- PAPI stats -------------------" << std::endl
+    << std::setw(stringLength) << std::left                     // Set format
+    << "L2 Miss"    << " : " << values[0] << std::endl          // Print L2 Misses
+    << std::setw(stringLength) << std::left                     // Set format
+    << "L2 Access"  << " : " << values[1] << std::endl          // Print L2 Access
+    << std::setw(stringLength) << std::left                     // Set format
+    << "TLB Miss"   << " : " << values[2] << std::endl          // Print TLB Misses
+    << "--- PAPI stats -------------------" << std::endl;
 #endif
   }
 

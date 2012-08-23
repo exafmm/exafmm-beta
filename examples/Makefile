@@ -8,7 +8,7 @@ serial	: serial.cxx $(KERNELS)
 
 parallel: parallel.cxx $(KERNELS)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
-	mpirun -np 4 ./a.out
+	mpirun -np 32 ./a.out
 
 wrapper: wrapper.cxx $(KERNELS)
 	make -C ../wrapper libcoulomb.a

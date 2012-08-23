@@ -103,19 +103,19 @@ public:
   }
 
 //! Initialize dsitribution, source & target value of bodies
-  void initBodies(Bodies &bodies, const char * distribution, int mpirank=0, int mpisize=1) {
+  void initBodies(Bodies &bodies, const char * distribution, int mpirank=0, int mpisize=1, int numSplit=1) {
     switch (distribution[0]) {                                  // Switch between data distribution type
     case 'l':                                                   // Case for lattice
       lattice(bodies,mpirank,mpisize);                          //  Uniform distribution on [-1,1]^3 lattice
       break;                                                    // End case for lattice
     case 'c':                                                   // Case for cube
-      cube(bodies,mpirank,mpisize);                             //  Random distribution in [-1,1]^3 cube
+      cube(bodies,mpirank,numSplit);                            //  Random distribution in [-1,1]^3 cube
       break;                                                    // End case for cube
     case 's':                                                   // Case for sphere
-      sphere(bodies,mpirank,mpisize);                           //  Random distribution on surface of r = 1 sphere
+      sphere(bodies,mpirank,numSplit);                          //  Random distribution on surface of r = 1 sphere
       break;                                                    // End case for sphere
     case 'p':                                                   // Case plummer
-      plummer(bodies,mpirank,mpisize);                          //  Plummer distribution in a r = M_PI/2 sphere
+      plummer(bodies,mpirank,numSplit);                         //  Plummer distribution in a r = M_PI/2 sphere
       break;                                                    // End case for plummer
     default:                                                    // If none of the above
       fprintf(stderr, "unknown data distribution %s\n", distribution);// Print error message

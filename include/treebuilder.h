@@ -234,15 +234,20 @@ protected:
   }
 
   void printTreeData(Cells &cells) {
-    std::cout << "----------------------------------" << std::endl;
-    std::cout << "Bodies               : " << cells.front().NDBODY << std::endl;
-    std::cout << "Cells                : " << cells.size() << std::endl;
-    std::cout << "Tree depth           : " << MAXLEVEL << std::endl;
+    std::cout << "--- FMM stats --------------------" << std::endl
+    << std::setw(stringLength) << std::left                      // Set format
+    << "Bodies"     << " : " << cells.front().NDBODY << std::endl// Print number of bodies
+    << std::setw(stringLength) << std::left                      // Set format
+    << "Cells"      << " : " << cells.size() << std::endl       // Print number of cells
+    << std::setw(stringLength) << std::left                      // Set format
+    << "Tree depth" << " : " << MAXLEVEL << std::endl           // Print number of levels
 #if COUNT
-    std::cout << "P2P calls            : " << NP2P << std::endl;
-    std::cout << "M2L calls            : " << NM2L << std::endl;
+    << std::setw(stringLength) << std::left                      // Set format
+    << "P2P calls"  << " : " << NP2P << std::endl               // Print number of P2P calls
+    << std::setw(stringLength) << std::left                      // Set format
+    << "M2L calls"  << " : " << NM2L << std::endl               // Print number of M2l calls
 #endif
-    std::cout << "----------------------------------" << std::endl;
+    << "--- FMM stats --------------------" << std::endl;
   }
 public:
   TreeBuilder() : MAXLEVEL(0) {}
