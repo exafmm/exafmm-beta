@@ -34,7 +34,7 @@ private:
 //! Add cells to send buffer
   void addSendCell(C_iter C, int &iparent, int &icell) {
     Cell cell(*C);                                              // Initialize send cell
-    cell.NCHILD = cell.NCLEAF = cell.NDLEAF = 0;                // Reset counters
+    cell.NCHILD = cell.NCBODY = cell.NDBODY = 0;                // Reset counters
     cell.PARENT = iparent;                                      // Index of parent
     sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
@@ -46,13 +46,13 @@ private:
 //! Add bodies to send buffer
   void addSendBody(C_iter C, int &ibody, int icell) {
     C_iter Csend = sendCells.begin() + sendCellDispl[IRANK] + icell;// Get send cell iterator
-    Csend->NCLEAF = C->NCLEAF;                                  // Set number of bodies
-    Csend->NDLEAF = ibody;                                      // Set body index per rank
-    for (B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; B++) {         // Loop over bodies in cell
+    Csend->NCBODY = C->NCBODY;                                  // Set number of bodies
+    Csend->NDBODY = ibody;                                      // Set body index per rank
+    for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {         // Loop over bodies in cell
       sendBodies.push_back(*B);                                 //  Push to send body vector
       sendBodies.back().IPROC = IRANK;                          //  Set current rank
     }                                                           // End loop over bodies in cell
-    ibody+=C->NCLEAF;                                           // Increment body counter
+    ibody+=C->NCBODY;                                           // Increment body counter
   }
 
 //! Determine which cells to send
@@ -159,7 +159,7 @@ public:
         localXmin = rankXmin[IRANK];                            //   Set local Xmin for IRANK
         localXmax = rankXmax[IRANK];                            //   Set local Xmax for IRANK
         Cell cell(*Cj0);                                        //   Send root cell
-        cell.NCHILD = cell.NCLEAF = cell.NDLEAF = 0;            //   Reset link to children and leafs
+        cell.NCHILD = cell.NCBODY = cell.NDBODY = 0;            //   Reset link to children and bodies
         sendCells.push_back(cell);                              //   Push it into send buffer
         CellQueue cellQueue;                                    //   Traversal queue
         cellQueue.push(Cj0);                                    //   Push root to traversal queue
@@ -175,13 +175,13 @@ public:
     startTimer("Get LET");                                      // Start timer
     for( int i=recvCellCount[irank]-1; i>=0; i-- ) {            // Loop over receive cells
       C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator of receive cell
-      if (C->NCLEAF != 0) {                                     //  If cell has leafs
-        C->LEAF = recvBodies.begin() + recvBodyDispl[irank] + C->NDLEAF;// Iterator of first leaf
-        C->NDLEAF = C->NCLEAF;                                  //   Initialize number of leafs
-      }                                                         //  End if for leafs
+      if (C->NCBODY != 0) {                                     //  If cell has bodies
+        C->BODY = recvBodies.begin() + recvBodyDispl[irank] + C->NDBODY;// Iterator of first body
+        C->NDBODY = C->NCBODY;                                  //   Initialize number of bodies
+      }                                                         //  End if for bodies
       if (i != 0) {                                             //  If cell is not root
         C_iter Cparent = recvCells.begin() + recvCellDispl[irank] + C->PARENT;// Iterator of parent cell
-        Cparent->NDLEAF += C->NDLEAF;                           //   Accululate number of leafs
+        Cparent->NDBODY += C->NDBODY;                           //   Accululate number of bodies
       }                                                         //  End if for root cell
     }                                                           // End loop over receive cells
     cells.resize(recvCellCount[irank]);                         // Resize cell vector for LET

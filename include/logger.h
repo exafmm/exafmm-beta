@@ -25,7 +25,7 @@ typedef std::map<pthread_t,double>             ThreadTrace;     //!< Map of pthr
 typedef std::map<pthread_t,int>                ThreadMap;       //!< Map of pthread id to thread id
 typedef std::queue<Trace>                      Traces;          //!< Queue of traces
 typedef std::map<std::string,double>           Timer;           //!< Map of timer event name to timed value
-typedef std::map<std::string,double>::iterator TI_iter;         //!< Iterator of timer event name map
+typedef std::map<std::string,double>::iterator T_iter;          //!< Iterator of timer event name map
 
 //! Timer and Trace logger
 class Logger {
@@ -97,7 +97,7 @@ public:
 
 //! Print timings of all events
   inline void printAllTime() {
-    for (TI_iter E=timer.begin(); E!=timer.end(); E++) {        // Loop over all events
+    for (T_iter E=timer.begin(); E!=timer.end(); E++) {         // Loop over all events
       std::cout << std::setw(stringLength) << std::left         //  Set format
                 << E->first << " : " << E->second << std::endl; //  Print event and timer
     }                                                           // End loop over all events
@@ -105,7 +105,7 @@ public:
 
 //! Write timings of all events
   inline void writeTime() {
-    for (TI_iter E=timer.begin(); E!=timer.end(); E++) {        // Loop over all events
+    for (T_iter E=timer.begin(); E!=timer.end(); E++) {        // Loop over all events
       timerFile << std::setw(stringLength) << std::left         //  Set format
                 << E->first << " " << E->second << std::endl;   //  Print event and timer
     }                                                           // End loop over all events

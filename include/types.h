@@ -42,12 +42,12 @@ typedef std::vector<Body>::iterator  B_iter;                    //!< Iterator of
 //! Structure of cells
 struct Cell {
   int       NCHILD;                                             //!< Number of child cells
-  int       NCLEAF;                                             //!< Number of child leafs
-  int       NDLEAF;                                             //!< Number of descendant leafs
+  int       NCBODY;                                             //!< Number of child bodies
+  int       NDBODY;                                             //!< Number of descendant bodies
   int       PARENT;                                             //!< Index of parent cell
   int       CHILD;                                              //!< Index of child cells
   long long ICELL;                                              //!< Cell index
-  B_iter    LEAF;                                               //!< Iterator of first leaf
+  B_iter    BODY;                                               //!< Iterator of first body
   vec3      X;                                                  //!< Cell center
   real_t    R;                                                  //!< Cell radius
   real_t    RMAX;                                               //!< Max cell radius

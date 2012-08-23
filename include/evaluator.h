@@ -19,7 +19,7 @@ protected:
   real_t NM2L;                                                  //!< Number of M2L kernel calls
 
 public:
-  int NSPAWN;                                                   //!< Threshold of NDLEAF for spawning new threads
+  int NSPAWN;                                                   //!< Threshold of NDBODY for spawning new threads
   int IMAGES;                                                   //!< Number of periodic image sublevels
   float THETA;                                                  //!< Multipole acceptance criteria
 
@@ -36,7 +36,7 @@ private:
 //! Approximate interaction between two cells
   inline void approximate(C_iter Ci, C_iter Cj, bool mutual) {
 #if AUTO
-    if (timeP2P*Ci->NDLEAF*Cj->NDLEAF > timeM2L) {              // If M2L is faster
+    if (timeP2P*Ci->NDBODY*Cj->NDBODY > timeM2L) {              // If M2L is faster
       M2L(Ci,Cj,mutual);                                        //  M2L kernel
       count(NM2L);                                              //  Increment M2L counter
     } else {                                                    // Else if P2P is faster
@@ -89,7 +89,7 @@ private:
       for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {
         traverse(Ci,cj,mutual);
       }
-    } else if (Ci->NDLEAF + Cj->NDLEAF >= NSPAWN || (mutual && Ci == Cj)) {
+    } else if (Ci->NDBODY + Cj->NDBODY >= NSPAWN || (mutual && Ci == Cj)) {
       traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
                Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
     } else if (Ci->RCRIT >= Cj->RCRIT) {
@@ -108,10 +108,10 @@ protected:
   void setCenter(C_iter C) const {
     real_t m = 0;                                               // Initialize mass
     vec3 X = 0;                                                 // Initialize coordinates
-    for (B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; B++) {         // Loop over leafs
+    for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {         // Loop over bodies
       m += B->SRC;                                              //  Accumulate mass
       X += B->X * B->SRC;                                       //  Accumulate dipole
-    }                                                           // End loop over leafs
+    }                                                           // End loop over bodies
     for (C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; c++) {// Loop over child cells
       m += std::abs(c->M[0]);                                   //  Accumulate mass
       X += c->X * std::abs(c->M[0]);                            //  Accumulate dipole
@@ -138,18 +138,18 @@ protected:
 #endif
       if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {   //  If distance is far enough
         approximate(Ci,Cj,mutual);                              //   Use approximate kernels
-      } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          //  Else if both cells are leafs
-        if (Cj->NCLEAF == 0) {                                  //   If the leafs weren't sent from remote node
+      } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          //  Else if both cells are bodies
+        if (Cj->NCBODY == 0) {                                  //   If the bodies weren't sent from remote node
           approximate(Ci,Cj,mutual);                            //    Use approximate kernels
-        } else {                                                //   Else if the leafs were sent
+        } else {                                                //   Else if the bodies were sent
           if (Ci == Cj) {                                       //    If source and target are same
             P2P(Ci);                                            //     P2P kernel for single cell
           } else {                                              //    Else if source and target are different
             P2P(Ci,Cj,mutual);                                  //     P2P kernel for pair of cells
           }                                                     //    End if for same source and target
           count(NP2P);                                          //    Increment P2P counter
-        }                                                       //   End if for leafs
-      } else {                                                  //  Else if cells are close but not leafs
+        }                                                       //   End if for bodies
+      } else {                                                  //  Else if cells are close but not bodies
         splitCell(Ci,Cj,mutual);                                //   Split cell and call function recursively for child
       }                                                         //  End if for multipole acceptance
     }                                                           // End if for same level cells
@@ -221,13 +221,13 @@ public:
     cells.resize(2);
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;
     Ci->X = 0;
-    Ci->NDLEAF = 10;
-    Ci->LEAF = ibodies.begin();
+    Ci->NDBODY = 10;
+    Ci->BODY = ibodies.begin();
     Ci->M = 0;
     Ci->L = 0;
     Cj->X = 1;
-    Cj->NDLEAF = 1000;
-    Cj->LEAF = jbodies.begin();
+    Cj->NDBODY = 1000;
+    Cj->BODY = jbodies.begin();
     Cj->M = 0;
     startTimer("P2P kernel");
     P2P(Ci,Cj,false);

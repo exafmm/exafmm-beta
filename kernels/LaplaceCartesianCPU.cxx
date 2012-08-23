@@ -802,10 +802,10 @@ inline float hadd8(__m256 x) {
 #endif
 
 void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
-  B_iter Bi = Ci->LEAF;
-  B_iter Bj = Cj->LEAF;
-  int ni = Ci->NDLEAF;
-  int nj = Cj->NDLEAF;
+  B_iter Bi = Ci->BODY;
+  B_iter Bj = Cj->BODY;
+  int ni = Ci->NDBODY;
+  int nj = Cj->NDBODY;
   int i = 0;
 #if __AVX__
   for ( ; i<=ni-8; i+=8) {
@@ -918,8 +918,8 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
 }
 
 void Kernel::P2P(C_iter C) const {
-  B_iter B = C->LEAF;
-  int n = C->NDLEAF;
+  B_iter B = C->BODY;
+  int n = C->NDBODY;
   int i = 0;
 #if __AVX__
   for ( ; i<=n-8; i+=8) {
@@ -1029,7 +1029,7 @@ void Kernel::P2P(C_iter C) const {
 }
 
 void Kernel::P2M(C_iter C, real_t &Rmax) const {
-  for (B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; B++) {
+  for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {
     vec3 dX = C->X - B->X;
     real_t R = std::sqrt(norm(dX));
     if (R > Rmax) Rmax = R;
@@ -1107,7 +1107,7 @@ void Kernel::L2L(C_iter Ci) const {
 }
 
 void Kernel::L2P(C_iter Ci) const {
-  for (B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; B++) {
+  for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; B++) {
     vec3 dX = B->X - Ci->X;
     vecL C, L;
     C[0] = 1;

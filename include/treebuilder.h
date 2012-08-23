@@ -6,7 +6,7 @@ class TreeBuilder : public Evaluator {
 private:
 //! Binary tree is used for counting number of bodies with a recursive approach
   struct BinaryTreeNode {
-    ivec8            NLEAF;                                     //!< Number of descendant leafs
+    ivec8            NBODY;                                     //!< Number of descendant bodies
     BinaryTreeNode * LEFT;                                      //!< Pointer to left child
     BinaryTreeNode * RIGHT;                                     //!< Pointer to right child
     BinaryTreeNode * BEGIN;                                     //!< Pointer to begining of memory space
@@ -15,8 +15,8 @@ private:
 
 //! Octree is used for building the FMM tree structure as "nodes", then transformed to "cells" data structure
   struct OctreeNode {
-    int          LEAF;                                          //!< Index offset for first leaf in node
-    int          NLEAF;                                         //!< Number of descendant leafs
+    int          BODY;                                          //!< Index offset for first body in node
+    int          NBODY;                                         //!< Number of descendant bodies
     int          NNODE;                                         //!< Number of descendant nodes
     OctreeNode * CHILD[8];                                      //!< Pointer to child node
     vec3         X;                                             //!< Coordinate at center
@@ -33,7 +33,7 @@ protected:
   fvec3  localXmax;                                             //!< Local Xmax for a given rank
 
 public:
-  int NCRIT;                                                    //!< Number of bodies per leaf cell
+  int NCRIT;                                                    //!< Number of bodies per body cell
 
 private:
 //! Get number of binary tree nodes for a given number of bodies
@@ -60,8 +60,8 @@ private:
 //! Create an octree node
   OctreeNode * makeOctNode(int begin, int end, vec3 X, bool nochild) const {
     OctreeNode * octNode = new OctreeNode();                    // Allocate memory for single node
-    octNode->LEAF = begin;                                      // Index of first body in node
-    octNode->NLEAF = end - begin;                               // Number of bodies in node
+    octNode->BODY = begin;                                      // Index of first body in node
+    octNode->NBODY = end - begin;                               // Number of bodies in node
     octNode->NNODE = 1;                                         // Initialize counter for decendant nodes
     octNode->X = X;                                             // Center position of node
     if (nochild) {                                              // If node has no children
@@ -74,12 +74,12 @@ private:
   void countBodies(Bodies& bodies, int begin, int end, vec3 X, BinaryTreeNode * binNode) {
     assert(getNumBinNode(end - begin) <= binNode->END - binNode->BEGIN + 1);
     if (end - begin <= NSPAWN) {                                // If number of bodies is less than threshold
-      for (int i=0; i<8; i++) binNode->NLEAF[i] = 0;            //  Initialize number of bodies in octant
+      for (int i=0; i<8; i++) binNode->NBODY[i] = 0;            //  Initialize number of bodies in octant
       binNode->LEFT = binNode->RIGHT = NULL;                    //  Initialize pointers to left and right child node
       for (int i=begin; i<end; i++) {                           //  Loop over bodies in node
         vec3 x = bodies[i].X;                                   //   Position of body
         int octant = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);// Which octant body belongs to
-        binNode->NLEAF[octant]++;                               //   Increment body count in octant
+        binNode->NBODY[octant]++;                               //   Increment body count in octant
       }                                                         //  End loop over bodies in node
     } else {                                                    // Else if number of bodies is larger than threshold
       int mid = (begin + end) / 2;                              //  Split range of bodies in half
@@ -98,7 +98,7 @@ private:
       });                                                       //  Close lambda expression
       countBodies(bodies, mid, end, X, binNode->RIGHT);         //  Recursive call for right branch
       __sync_tasks__;                                           //  Synchronize tasks
-      binNode->NLEAF = binNode->LEFT->NLEAF + binNode->RIGHT->NLEAF;// Sum contribution from both branches
+      binNode->NBODY = binNode->LEFT->NBODY + binNode->RIGHT->NBODY;// Sum contribution from both branches
     }                                                           // End if for number of bodies
   }
 
@@ -118,7 +118,7 @@ private:
       spawn_task2(bodies, buffer, {                             //  Spawn new task using Intel TBB or MTHREAD
         moveBodies(bodies, buffer, begin, mid, binNode->LEFT, octantOffset, X);// Recursive call for left branch
       });                                                       //  Close lambda expression
-      octantOffset += binNode->LEFT->NLEAF;                     //  Increment the octant offset for right branch
+      octantOffset += binNode->LEFT->NBODY;                     //  Increment the octant offset for right branch
       moveBodies(bodies, buffer, mid, end, binNode->RIGHT, octantOffset, X);// Recursive call for right branch
       __sync_tasks__;                                           //  Synchronize tasks
     }                                                           // End if for child existance
@@ -136,12 +136,12 @@ private:
     }                                                           // End if for number of bodies
     OctreeNode * octNode = makeOctNode(begin, end, X, false);   // Create an octree node with child nodes
     countBodies(bodies, begin, end, X, binNode);                // Count bodies in each octant using binary recursion
-    ivec8 octantOffset = exclusiveScan(binNode->NLEAF, begin);  // Exclusive scan to obtain offset from octant count
+    ivec8 octantOffset = exclusiveScan(binNode->NBODY, begin);  // Exclusive scan to obtain offset from octant count
     moveBodies(bodies, buffer, begin, end, binNode, octantOffset, X);// Sort bodies according to octant
     BinaryTreeNode * binNodeOffset = binNode->BEGIN;            // Initialize pointer offset for binary tree nodes
     __init_tasks__;                                             // Initialize tasks
     for (int i=0; i<8; i++) {                                   // Loop over children
-      int maxBinNode = getMaxBinNode(binNode->NLEAF[i]);        //  Get maximum number of binary tree nodes
+      int maxBinNode = getMaxBinNode(binNode->NBODY[i]);        //  Get maximum number of binary tree nodes
       assert(binNodeOffset + maxBinNode <= binNode->END);
       spawn_task2(buffer, bodies, {                             //  Spawn new task using Intel TBB or MTHREAD
         vec3 Xchild = X;                                        //   Initialize center position of child node
@@ -153,7 +153,7 @@ private:
         binNodeChild->BEGIN = binNodeOffset;                    //   Assign first memory address from offset
         binNodeChild->END = binNodeOffset + maxBinNode;         //   Keep track of last memory address
         octNode->CHILD[i] = buildNodes(buffer, bodies,          //   Recursive call for each child
-          octantOffset[i], octantOffset[i] + binNode->NLEAF[i], //   Range of bodies is calcuated from octant offset
+          octantOffset[i], octantOffset[i] + binNode->NBODY[i], //   Range of bodies is calcuated from octant offset
           binNodeChild, Xchild, level+1, !direction);           //   Alternate copy direction bodies <-> buffer
       });                                                       //  Close lambda expression
       binNodeOffset += maxBinNode;                              //  Increment offset for binNode memory address
@@ -170,16 +170,16 @@ private:
     C->PARENT = iparent;                                        // Index of parent cell
     C->R      = localRadius / (1 << level);                     // Cell radius
     C->X      = octNode->X;                                     // Cell center
-    C->NDLEAF = octNode->NLEAF;                                 // Number of decendant leafs
-    C->LEAF   = B0 + octNode->LEAF;                             // Iterator of first body in cell
+    C->NDBODY = octNode->NBODY;                                 // Number of decendant bodies
+    C->BODY   = B0 + octNode->BODY;                             // Iterator of first body in cell
     if (octNode->NNODE == 1) {                                  // If node has no children
       C->CHILD  = 0;                                            //  Set index of first child cell to zero
       C->NCHILD = 0;                                            //  Number of child cells
-      C->NCLEAF = octNode->NLEAF;                               //  Number of bodies in cell
-      assert(C->NCLEAF > 0);
+      C->NCBODY = octNode->NBODY;                               //  Number of bodies in cell
+      assert(C->NCBODY > 0);
       MAXLEVEL = std::max(MAXLEVEL,level);                      //  Update maximum level of tree
     } else {                                                    // Else if node has children
-      C->NCLEAF = 0;                                            //  Set number of bodies in cell to zero
+      C->NCBODY = 0;                                            //  Set number of bodies in cell to zero
       int nchild = 0;                                           //  Initialize number of child cells
       int octants[8];                                           //  Map of child index to octants (for when nchild < 8)
       for (int i=0; i<8; i++) {                                 //  Loop over octants
@@ -235,7 +235,7 @@ protected:
 
   void printTreeData(Cells &cells) {
     std::cout << "----------------------------------" << std::endl;
-    std::cout << "Bodies               : " << cells.front().NDLEAF << std::endl;
+    std::cout << "Bodies               : " << cells.front().NDBODY << std::endl;
     std::cout << "Cells                : " << cells.size() << std::endl;
     std::cout << "Tree depth           : " << MAXLEVEL << std::endl;
 #if COUNT

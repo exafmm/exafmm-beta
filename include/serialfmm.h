@@ -171,10 +171,10 @@ public:
   void direct(Bodies &ibodies, Bodies &jbodies) {
     Cells cells(2);                                             // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
-    Ci->LEAF = ibodies.begin();                                 // Iterator of first target leaf
-    Ci->NDLEAF = ibodies.size();                                // Number of target leafs
-    Cj->LEAF = jbodies.begin();                                 // Iterator of first source leaf
-    Cj->NDLEAF = jbodies.size();                                // Number of source leafs
+    Ci->BODY = ibodies.begin();                                 // Iterator of first target body
+    Ci->NDBODY = ibodies.size();                                // Number of target bodies
+    Cj->BODY = jbodies.begin();                                 // Iterator of first source body
+    Cj->NDBODY = jbodies.size();                                // Number of source bodies
     int prange = 0;                                             // Range of periodic images
     for (int i=0; i<IMAGES; i++) {                              // Loop over periodic image sublevels
       prange += int(powf(3,i));                                 //  Accumulate range of periodic images

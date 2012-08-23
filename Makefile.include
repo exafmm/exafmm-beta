@@ -61,7 +61,7 @@ LFLAGS += -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -std=c++0x -DTBB -ltbb
 
 ### MassiveThreads flags (doesn't work with OpenMP) : MassiveThreads is available from http://code.google.com/p/massivethreads/
-#LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
+LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi

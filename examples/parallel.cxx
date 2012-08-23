@@ -68,15 +68,15 @@ int main(int argc, char ** argv) {
           std::cout << FMM.MPIRANK << " NCHILD : " << Ci->NCHILD << " " << Cj->NCHILD << std::endl;
           break;
         }
-        if( Ci->NCLEAF != Cj->NCLEAF ) {
-          std::cout << FMM.MPIRANK << " NCLEAF : " << Ci->NCLEAF << " " << Cj->NCLEAF << std::endl;
+        if( Ci->NCBODY != Cj->NCBODY ) {
+          std::cout << FMM.MPIRANK << " NCBODY : " << Ci->NCBODY << " " << Cj->NCBODY << std::endl;
           break;
         }
         real_t sumi = 0, sumj = 0;
-        if( Ci->NCLEAF != 0 ) {
-          for( int i=0; i<Ci->NCLEAF; i++ ) {
-            B_iter Bi = Ci->LEAF+i;
-            B_iter Bj = Cj->LEAF+i;
+        if( Ci->NCBODY != 0 ) {
+          for( int i=0; i<Ci->NCBODY; i++ ) {
+            B_iter Bi = Ci->BODY+i;
+            B_iter Bj = Cj->BODY+i;
             sumi += Bi->X[0];
             sumj += Bj->X[0];
           }
