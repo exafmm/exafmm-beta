@@ -4,14 +4,6 @@
 EXAFMM_INCLUDE_PATH = ../include
 EXAFMM_LIBRARY_PATH = ../lib
 
-### CUDA path
-CUDA_INSTALL_PATH = /usr/local/cuda
-CUDA_SDK_PATH = /usr/local/cuda_sdk/C
-
-### VTK path
-VTK_INCLUDE_PATH = /usr/include/vtk-5.8
-VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
-
 ### choose kernel
 EQUATION = Laplace
 #EQUATION = Yukawa
@@ -34,13 +26,6 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -msse4.2 -ffast-m
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias
 ### BG/P compiler
 #CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3
-### TAU compiler
-#CXX	= tau_cxx.sh -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -msse4.2 -ffast-math -funroll-loops -fforce-addr -fbounds-check
-
-### CUDA compiler
-NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v\
-	-O3 -use_fast_math -arch=sm_21\
-	-I$(EXAFMM_INCLUDE_PATH) -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
 
 ### Base flags
 CXX	+= -I$(EXAFMM_INCLUDE_PATH)
@@ -61,16 +46,26 @@ LFLAGS += -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -std=c++0x -DTBB -ltbb
 
 ### MassiveThreads flags (doesn't work with OpenMP) : MassiveThreads is available from http://code.google.com/p/massivethreads/
-#LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
+LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi
 
 ### VTK flags : VTK is available from http://www.vtk.org/VTK/resources/software.html
+### VTK path
+#VTK_INCLUDE_PATH = /usr/include/vtk-5.8
+#VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 #CXX	+= -I$(VTK_INCLUDE_PATH)
-#VFLAGS	= -L$(VTK_LIBRARY_PATH) -DVTK -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
+#LFLAGS	= -L$(VTK_LIBRARY_PATH) -DVTK -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
 
 ifeq ($(DEVICE),GPU)
+### CUDA path
+CUDA_INSTALL_PATH = /usr/local/cuda
+CUDA_SDK_PATH = /usr/local/cuda_sdk/C
+### CUDA compiler
+NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v\
+	-O3 -use_fast_math -arch=sm_21\
+	-I$(EXAFMM_INCLUDE_PATH) -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
 ### CUDA flags
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif

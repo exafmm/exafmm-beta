@@ -3,11 +3,11 @@ include ../Makefile.include
 #LFLAGS	+= -DMANY
 
 serial	: serial.cxx $(KERNELS)
-	$(CXX) $? $(LFLAGS) $(VFLAGS)
+	$(CXX) $? $(LFLAGS)
 	./a.out
 
 parallel: parallel.cxx $(KERNELS)
-	$(CXX) $? $(LFLAGS) $(VFLAGS)
+	$(CXX) $? $(LFLAGS)
 	mpirun -np 32 ./a.out
 
 wrapper: wrapper.cxx $(KERNELS)

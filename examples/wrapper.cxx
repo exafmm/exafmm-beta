@@ -29,14 +29,14 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
   const int N = 1000000;
   const double size = 2 * M_PI;
-  double *xi     = new double [3*N];
-  double *qi     = new double [N];
-  double *pi     = new double [N];
-  double *fi     = new double [3*N];
-  double *pd     = new double [N];
-  double *fd     = new double [3*N];
-  double *xj     = new double [3*N];
-  double *qj     = new double [N];
+  double *xi = new double [3*N];
+  double *qi = new double [N];
+  double *pi = new double [N];
+  double *fi = new double [3*N];
+  double *pd = new double [N];
+  double *fd = new double [3*N];
+  double *xj = new double [3*N];
+  double *qj = new double [N];
 
   srand48(mpirank);
   for( int i=0; i!=N; ++i ) {

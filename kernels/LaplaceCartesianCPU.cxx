@@ -1,7 +1,4 @@
-#include <immintrin.h>
-#define KERNEL
 #include "kernel.h"
-#undef KERNEL
 
 template<typename T, int nx, int ny, int nz>
 struct Index {
