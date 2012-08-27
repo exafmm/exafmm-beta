@@ -785,16 +785,18 @@ inline void flipCoef(vecL &C) {
 }
 
 #if __SSE__
-inline float hadd4(__m128 x) {
-  float * r = (float*)&x;
-  return r[0] + r[1] + r[2] + r[3];
+inline float vecSum(__m128 reg) {
+  float mem[4];
+  _mm_store_ps(mem, reg);
+  return mem[0] + mem[1] + mem[2] + mem[3];
 }
 #endif
 
 #if __AVX__
-inline float hadd8(__m256 x) {
-  float * r = (float*)&x;
-  return r[0] + r[1] + r[2] + r[3] + r[4] + r[5] + r[6] + r[7];
+inline float vecSum(__m256 reg) {
+  float mem[8];
+  _mm256_store_ps(mem, reg);
+  return mem[0] + mem[1] + mem[2] + mem[3] + mem[4] + mem[5] + mem[6] + mem[7];
 }
 #endif
 
@@ -831,10 +833,10 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       acc[1] += dX[1];
       acc[2] += dX[2];
       if (mutual) {
-        Bj[j].TRG[0] += hadd8(invR);
-        Bj[j].TRG[1] += hadd8(dX[0]);
-        Bj[j].TRG[2] += hadd8(dX[1]);
-        Bj[j].TRG[3] += hadd8(dX[2]);
+        Bj[j].TRG[0] += vecSum(invR);
+        Bj[j].TRG[1] += vecSum(dX[0]);
+        Bj[j].TRG[2] += vecSum(dX[1]);
+        Bj[j].TRG[3] += vecSum(dX[2]);
       }
     }
     for (int k=0; k<8; k++) {
@@ -853,9 +855,9 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     __m128 ay = _mm_setzero_ps();
     __m128 az = _mm_setzero_ps();
 
-    __m128 xi = _mm_setr_ps(Bi[i].X[0], Bi[i+1].X[0], Bi[i+2].X[0], Bi[i+3].X[0]) - _mm_set1_ps(Xperiodic[0]);
-    __m128 yi = _mm_setr_ps(Bi[i].X[1], Bi[i+1].X[1], Bi[i+2].X[1], Bi[i+3].X[1]) - _mm_set1_ps(Xperiodic[1]);
-    __m128 zi = _mm_setr_ps(Bi[i].X[2], Bi[i+1].X[2], Bi[i+2].X[2], Bi[i+3].X[2]) - _mm_set1_ps(Xperiodic[2]);
+    __m128 xi = _mm_setr_ps(Bi[i].X[0], Bi[i+1].X[0], Bi[i+2].X[0], Bi[i+3].X[0]) - _mm_load1_ps(&Xperiodic[0]);
+    __m128 yi = _mm_setr_ps(Bi[i].X[1], Bi[i+1].X[1], Bi[i+2].X[1], Bi[i+3].X[1]) - _mm_load1_ps(&Xperiodic[1]);
+    __m128 zi = _mm_setr_ps(Bi[i].X[2], Bi[i+1].X[2], Bi[i+2].X[2], Bi[i+3].X[2]) - _mm_load1_ps(&Xperiodic[2]);
     __m128 mi = _mm_setr_ps(Bi[i].SRC,  Bi[i+1].SRC,  Bi[i+2].SRC,  Bi[i+3].SRC);
     __m128 R2 = _mm_set1_ps(EPS2);
 
@@ -894,7 +896,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
 
       mj = _mm_mul_ps(mj, invR);
       mj = _mm_mul_ps(mj, mi);
-      if (mutual) Bj[j].TRG[0] += hadd4(mj);
+      if (mutual) Bj[j].TRG[0] += vecSum(mj);
       invR = _mm_mul_ps(invR, invR);
       pot = _mm_add_ps(pot, mj);
       invR = _mm_mul_ps(invR, mj);
@@ -903,7 +905,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
 
       xj = _mm_mul_ps(xj, invR);
       ax = _mm_add_ps(ax, xj);
-      if (mutual) Bj[j].TRG[1] -= hadd4(xj);
+      if (mutual) Bj[j].TRG[1] -= vecSum(xj);
       xj = x2;
       x2 = _mm_mul_ps(x2, x2);
       R2 = _mm_add_ps(R2, x2);
@@ -911,7 +913,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
 
       yj = _mm_mul_ps(yj, invR);
       ay = _mm_add_ps(ay, yj);
-      if (mutual) Bj[j].TRG[2] -= hadd4(yj);
+      if (mutual) Bj[j].TRG[2] -= vecSum(yj);
       yj = y2;
       y2 = _mm_mul_ps(y2, y2);
       R2 = _mm_add_ps(R2, y2);
@@ -919,7 +921,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
 
       zj = _mm_mul_ps(zj, invR);
       az = _mm_add_ps(az, zj);
-      if (mutual) Bj[j].TRG[3] -= hadd4(zj);
+      if (mutual) Bj[j].TRG[3] -= vecSum(zj);
       zj = z2;
       z2 = _mm_mul_ps(z2, z2);
       R2 = _mm_add_ps(R2, z2);
@@ -994,10 +996,10 @@ void Kernel::P2P(C_iter C) const {
       acc[0] += dX[0];
       acc[1] += dX[1];
       acc[2] += dX[2];
-      B[j].TRG[0] += hadd8(invR);
-      B[j].TRG[1] += hadd8(dX[0]);
-      B[j].TRG[2] += hadd8(dX[1]);
-      B[j].TRG[3] += hadd8(dX[2]);
+      B[j].TRG[0] += vecSum(invR);
+      B[j].TRG[1] += vecSum(dX[0]);
+      B[j].TRG[2] += vecSum(dX[1]);
+      B[j].TRG[3] += vecSum(dX[2]);
     }
     for (int k=0; k<8; k++) {
       B[i+k].TRG[0] += ((float*)&pot)[k];
@@ -1015,9 +1017,9 @@ void Kernel::P2P(C_iter C) const {
     __m128 ay = _mm_setzero_ps();
     __m128 az = _mm_setzero_ps();
 
-    __m128 xi = _mm_setr_ps(B[i].X[0], B[i+1].X[0], B[i+2].X[0], B[i+3].X[0]) - _mm_set1_ps(Xperiodic[0]);
-    __m128 yi = _mm_setr_ps(B[i].X[1], B[i+1].X[1], B[i+2].X[1], B[i+3].X[1]) - _mm_set1_ps(Xperiodic[1]);
-    __m128 zi = _mm_setr_ps(B[i].X[2], B[i+1].X[2], B[i+2].X[2], B[i+3].X[2]) - _mm_set1_ps(Xperiodic[2]);
+    __m128 xi = _mm_setr_ps(B[i].X[0], B[i+1].X[0], B[i+2].X[0], B[i+3].X[0]) - _mm_load1_ps(&Xperiodic[0]);
+    __m128 yi = _mm_setr_ps(B[i].X[1], B[i+1].X[1], B[i+2].X[1], B[i+3].X[1]) - _mm_load1_ps(&Xperiodic[1]);
+    __m128 zi = _mm_setr_ps(B[i].X[2], B[i+1].X[2], B[i+2].X[2], B[i+3].X[2]) - _mm_load1_ps(&Xperiodic[2]);
     __m128 mi = _mm_setr_ps(B[i].SRC,  B[i+1].SRC,  B[i+2].SRC,  B[i+3].SRC);
     __m128 R2 = _mm_set1_ps(EPS2);
 
@@ -1057,7 +1059,7 @@ void Kernel::P2P(C_iter C) const {
 
       mj = _mm_mul_ps(mj, invR);
       mj = _mm_mul_ps(mj, mi);
-      B[j].TRG[0] += hadd4(mj);
+      B[j].TRG[0] += vecSum(mj);
       invR = _mm_mul_ps(invR, invR);
       pot = _mm_add_ps(pot, mj);
       invR = _mm_mul_ps(invR, mj);
@@ -1066,7 +1068,7 @@ void Kernel::P2P(C_iter C) const {
 
       xj = _mm_mul_ps(xj, invR);
       ax = _mm_add_ps(ax, xj);
-      B[j].TRG[1] -= hadd4(xj);
+      B[j].TRG[1] -= vecSum(xj);
       xj = x2;
       x2 = _mm_mul_ps(x2, x2);
       R2 = _mm_add_ps(R2, x2);
@@ -1074,7 +1076,7 @@ void Kernel::P2P(C_iter C) const {
 
       yj = _mm_mul_ps(yj, invR);
       ay = _mm_add_ps(ay, yj);
-      B[j].TRG[2] -= hadd4(yj);
+      B[j].TRG[2] -= vecSum(yj);
       yj = y2;
       y2 = _mm_mul_ps(y2, y2);
       R2 = _mm_add_ps(R2, y2);
@@ -1082,7 +1084,7 @@ void Kernel::P2P(C_iter C) const {
 
       zj = _mm_mul_ps(zj, invR);
       az = _mm_add_ps(az, zj);
-      B[j].TRG[3] -= hadd4(zj);
+      B[j].TRG[3] -= vecSum(zj);
       zj = z2;
       z2 = _mm_mul_ps(z2, z2);
       R2 = _mm_add_ps(R2, z2);
