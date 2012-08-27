@@ -784,7 +784,7 @@ inline void flipCoef(vecL &C) {
   for (int i=10; i<20; i++) C[i] = -C[i];
 }
 
-#if __SSE3__
+#if __SSE__
 inline float hadd4(__m128 x) {
   float * r = (float*)&x;
   return r[0] + r[1] + r[2] + r[3];
@@ -806,8 +806,8 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   int i = 0;
 #if __AVX__
   for ( ; i<=ni-8; i+=8) {
-    __m256 P0 = _mm256_setzero_ps();
-    __m256 F0[3] = { _mm256_setzero_ps(), _mm256_setzero_ps(), _mm256_setzero_ps() };
+    __m256 pot = _mm256_setzero_ps();
+    __m256 acc[3] = { _mm256_setzero_ps(), _mm256_setzero_ps(), _mm256_setzero_ps() };
     for (int j=0; j<nj; j++) {
       __m256 dX[3];
       for (int d=0; d<3; d++) {
@@ -826,10 +826,10 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       dX[0] *= invR3;
       dX[1] *= invR3;
       dX[2] *= invR3;
-      P0 += invR;
-      F0[0] += dX[0];
-      F0[1] += dX[1];
-      F0[2] += dX[2];
+      pot += invR;
+      acc[0] += dX[0];
+      acc[1] += dX[1];
+      acc[2] += dX[2];
       if (mutual) {
         Bj[j].TRG[0] += hadd8(invR);
         Bj[j].TRG[1] += hadd8(dX[0]);
@@ -838,58 +838,105 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       }
     }
     for (int k=0; k<8; k++) {
-      Bi[i+k].TRG[0] += ((float*)&P0)[k];
-      Bi[i+k].TRG[1] -= ((float*)&F0[0])[k];
-      Bi[i+k].TRG[2] -= ((float*)&F0[1])[k];
-      Bi[i+k].TRG[3] -= ((float*)&F0[2])[k];
+      Bi[i+k].TRG[0] += ((float*)&pot)[k];
+      Bi[i+k].TRG[1] -= ((float*)&acc[0])[k];
+      Bi[i+k].TRG[2] -= ((float*)&acc[1])[k];
+      Bi[i+k].TRG[3] -= ((float*)&acc[2])[k];
     }
   }
 #endif // __AVX__
 
-#if __SSE3__
+#if __SSE__
   for ( ; i<=ni-4; i+=4) {
-    __m128 P0 = _mm_setzero_ps();
-    __m128 F0[3] = { _mm_setzero_ps(), _mm_setzero_ps(), _mm_setzero_ps() };
+    __m128 pot = _mm_setzero_ps();
+    __m128 ax = _mm_setzero_ps();
+    __m128 ay = _mm_setzero_ps();
+    __m128 az = _mm_setzero_ps();
+
+    __m128 xi = _mm_setr_ps(Bi[i].X[0], Bi[i+1].X[0], Bi[i+2].X[0], Bi[i+3].X[0]) - _mm_set1_ps(Xperiodic[0]);
+    __m128 yi = _mm_setr_ps(Bi[i].X[1], Bi[i+1].X[1], Bi[i+2].X[1], Bi[i+3].X[1]) - _mm_set1_ps(Xperiodic[1]);
+    __m128 zi = _mm_setr_ps(Bi[i].X[2], Bi[i+1].X[2], Bi[i+2].X[2], Bi[i+3].X[2]) - _mm_set1_ps(Xperiodic[2]);
+    __m128 mi = _mm_setr_ps(Bi[i].SRC,  Bi[i+1].SRC,  Bi[i+2].SRC,  Bi[i+3].SRC);
+    __m128 R2 = _mm_set1_ps(EPS2);
+
+    __m128 x2 = _mm_load1_ps(&Bj[0].X[0]);
+    x2 = _mm_sub_ps(x2, xi);
+    __m128 y2 = _mm_load1_ps(&Bj[0].X[1]);
+    y2 = _mm_sub_ps(y2, yi);
+    __m128 z2 = _mm_load1_ps(&Bj[0].X[2]);
+    z2 = _mm_sub_ps(z2, zi);
+    __m128 mj = _mm_load1_ps(&Bj[0].SRC);
+
+    __m128 xj = x2;
+    x2 = _mm_mul_ps(x2, x2);
+    R2 = _mm_add_ps(R2, x2);
+    __m128 yj = y2;
+    y2 = _mm_mul_ps(y2, y2);
+    R2 = _mm_add_ps(R2, y2);
+    __m128 zj = z2;
+    z2 = _mm_mul_ps(z2, z2);
+    R2 = _mm_add_ps(R2, z2);
+
+    x2 = _mm_load_ps(&Bj[1].X[0]);
+    y2 = x2;
+    z2 = x2;
     for (int j=0; j<nj; j++) {
-      __m128 dX[3];
-      for (int d=0; d<3; d++) {
-        dX[d] = _mm_setr_ps(Bi[i].X[d], Bi[i+1].X[d], Bi[i+2].X[d], Bi[i+3].X[d])
-          - _mm_set1_ps(Bj[j].X[d] + Xperiodic[d]);
-      }
-      __m128 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm_set1_ps(EPS2);
+      __m128 invR = _mm_rsqrt_ps(R2);
       __m128 mask = _mm_cmpgt_ps(R2, _mm_setzero_ps());
-      __m128 invR2 = _mm_and_ps(_mm_set1_ps(1.0) / R2, mask);
-      __m128 invR = _mm_and_ps(_mm_rsqrt_ps(R2), mask);
-      
-      invR *= _mm_setr_ps(Bi[i].SRC, Bi[i+1].SRC, Bi[i+2].SRC, Bi[i+3].SRC) 
-        * _mm_set1_ps(Bj[j].SRC);
-      __m128 invR3 = invR2 * invR;
-      dX[0] *= invR3;
-      dX[1] *= invR3;
-      dX[2] *= invR3;
-      P0 += invR;
-      F0[0] += dX[0];
-      F0[1] += dX[1];
-      F0[2] += dX[2];
-      if (mutual) {
-        Bj[j].TRG[0] += hadd4(invR);
-        Bj[j].TRG[1] += hadd4(dX[0]);
-        Bj[j].TRG[2] += hadd4(dX[1]);
-        Bj[j].TRG[3] += hadd4(dX[2]);
-      }
+      invR = _mm_and_ps(invR, mask);
+      R2 = _mm_set1_ps(EPS2);
+      x2 = _mm_shuffle_ps(x2, x2, 0x00);
+      x2 = _mm_sub_ps(x2, xi);
+      y2 = _mm_shuffle_ps(y2, y2, 0x55);
+      y2 = _mm_sub_ps(y2, yi);
+      z2 = _mm_shuffle_ps(z2, z2, 0xaa);
+      z2 = _mm_sub_ps(z2, zi);
+
+      mj = _mm_mul_ps(mj, invR);
+      mj = _mm_mul_ps(mj, mi);
+      if (mutual) Bj[j].TRG[0] += hadd4(mj);
+      invR = _mm_mul_ps(invR, invR);
+      pot = _mm_add_ps(pot, mj);
+      invR = _mm_mul_ps(invR, mj);
+      mj = _mm_load_ps(&Bj[j+1].X[0]);
+      mj = _mm_shuffle_ps(mj, mj, 0xff);
+
+      xj = _mm_mul_ps(xj, invR);
+      ax = _mm_add_ps(ax, xj);
+      if (mutual) Bj[j].TRG[1] -= hadd4(xj);
+      xj = x2;
+      x2 = _mm_mul_ps(x2, x2);
+      R2 = _mm_add_ps(R2, x2);
+      x2 = _mm_load_ps(&Bj[j+2].X[0]);
+
+      yj = _mm_mul_ps(yj, invR);
+      ay = _mm_add_ps(ay, yj);
+      if (mutual) Bj[j].TRG[2] -= hadd4(yj);
+      yj = y2;
+      y2 = _mm_mul_ps(y2, y2);
+      R2 = _mm_add_ps(R2, y2);
+      y2 = x2;
+
+      zj = _mm_mul_ps(zj, invR);
+      az = _mm_add_ps(az, zj);
+      if (mutual) Bj[j].TRG[3] -= hadd4(zj);
+      zj = z2;
+      z2 = _mm_mul_ps(z2, z2);
+      R2 = _mm_add_ps(R2, z2);
+      z2 = x2;
     }
     for (int k=0; k<4; k++) {
-      Bi[i+k].TRG[0] += ((float*)&P0)[k];
-      Bi[i+k].TRG[1] -= ((float*)&F0[0])[k];
-      Bi[i+k].TRG[2] -= ((float*)&F0[1])[k];
-      Bi[i+k].TRG[3] -= ((float*)&F0[2])[k];
+      Bi[i+k].TRG[0] += ((float*)&pot)[k];
+      Bi[i+k].TRG[1] += ((float*)&ax)[k];
+      Bi[i+k].TRG[2] += ((float*)&ay)[k];
+      Bi[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
-#endif // __SSE3__
+#endif // __SSE__
 
   for ( ; i<ni; i++) {
-    real_t P0 = 0;
-    vec3 F0 = 0;
+    real_t pot = 0;
+    vec3 acc = 0;
     for (int j=0; j<nj; j++) {
       vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
       real_t R2 = norm(dX) + EPS2;
@@ -897,8 +944,8 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
         real_t invR2 = 1.0f / R2;
         real_t invR = Bi[i].SRC * Bj[j].SRC * sqrtf(invR2);
         dX *= invR2 * invR;
-        P0 += invR;
-        F0 += dX;
+        pot += invR;
+        acc += dX;
         if (mutual) {
           Bj[j].TRG[0] += invR;
           Bj[j].TRG[1] += dX[0];
@@ -907,10 +954,10 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
         }
       }
     }
-    Bi[i].TRG[0] += P0;
-    Bi[i].TRG[1] -= F0[0];
-    Bi[i].TRG[2] -= F0[1];
-    Bi[i].TRG[3] -= F0[2];
+    Bi[i].TRG[0] += pot;
+    Bi[i].TRG[1] -= acc[0];
+    Bi[i].TRG[2] -= acc[1];
+    Bi[i].TRG[3] -= acc[2];
   }
 }
 
@@ -920,8 +967,8 @@ void Kernel::P2P(C_iter C) const {
   int i = 0;
 #if __AVX__
   for ( ; i<=n-8; i+=8) {
-    __m256 P0 = _mm256_setzero_ps();
-    __m256 F0[3] = { _mm256_setzero_ps(), _mm256_setzero_ps(), _mm256_setzero_ps() };
+    __m256 pot = _mm256_setzero_ps();
+    __m256 acc[3] = { _mm256_setzero_ps(), _mm256_setzero_ps(), _mm256_setzero_ps() };
     for (int j=i+1; j<n; j++) {
       __m256 dX[3];
       for (int d=0; d<3; d++) {
@@ -943,66 +990,116 @@ void Kernel::P2P(C_iter C) const {
       dX[0] *= invR3;
       dX[1] *= invR3;
       dX[2] *= invR3;
-      P0 += invR;
-      F0[0] += dX[0];
-      F0[1] += dX[1];
-      F0[2] += dX[2];
+      pot += invR;
+      acc[0] += dX[0];
+      acc[1] += dX[1];
+      acc[2] += dX[2];
       B[j].TRG[0] += hadd8(invR);
       B[j].TRG[1] += hadd8(dX[0]);
       B[j].TRG[2] += hadd8(dX[1]);
       B[j].TRG[3] += hadd8(dX[2]);
     }
     for (int k=0; k<8; k++) {
-      B[i+k].TRG[0] += ((float*)&P0)[k];
-      B[i+k].TRG[1] -= ((float*)&F0[0])[k];
-      B[i+k].TRG[2] -= ((float*)&F0[1])[k];
-      B[i+k].TRG[3] -= ((float*)&F0[2])[k];
+      B[i+k].TRG[0] += ((float*)&pot)[k];
+      B[i+k].TRG[1] -= ((float*)&acc[0])[k];
+      B[i+k].TRG[2] -= ((float*)&acc[1])[k];
+      B[i+k].TRG[3] -= ((float*)&acc[2])[k];
     }
   }
 #endif // __AVX__
 
-#if __SSE3__
+#if __SSE__
   for ( ; i<=n-4; i+=4) {
-    __m128 P0 = _mm_setzero_ps();
-    __m128 F0[3] = { _mm_setzero_ps(), _mm_setzero_ps(), _mm_setzero_ps() };
+    __m128 pot = _mm_setzero_ps();
+    __m128 ax = _mm_setzero_ps();
+    __m128 ay = _mm_setzero_ps();
+    __m128 az = _mm_setzero_ps();
+
+    __m128 xi = _mm_setr_ps(B[i].X[0], B[i+1].X[0], B[i+2].X[0], B[i+3].X[0]) - _mm_set1_ps(Xperiodic[0]);
+    __m128 yi = _mm_setr_ps(B[i].X[1], B[i+1].X[1], B[i+2].X[1], B[i+3].X[1]) - _mm_set1_ps(Xperiodic[1]);
+    __m128 zi = _mm_setr_ps(B[i].X[2], B[i+1].X[2], B[i+2].X[2], B[i+3].X[2]) - _mm_set1_ps(Xperiodic[2]);
+    __m128 mi = _mm_setr_ps(B[i].SRC,  B[i+1].SRC,  B[i+2].SRC,  B[i+3].SRC);
+    __m128 R2 = _mm_set1_ps(EPS2);
+
+    __m128 x2 = _mm_load1_ps(&B[i+1].X[0]);
+    x2 = _mm_sub_ps(x2, xi);
+    __m128 y2 = _mm_load1_ps(&B[i+1].X[1]);
+    y2 = _mm_sub_ps(y2, yi);
+    __m128 z2 = _mm_load1_ps(&B[i+1].X[2]);
+    z2 = _mm_sub_ps(z2, zi);
+    __m128 mj = _mm_load1_ps(&B[i+1].SRC);
+
+    __m128 xj = x2;
+    x2 = _mm_mul_ps(x2, x2);
+    R2 = _mm_add_ps(R2, x2);
+    __m128 yj = y2;
+    y2 = _mm_mul_ps(y2, y2);
+    R2 = _mm_add_ps(R2, y2);
+    __m128 zj = z2;
+    z2 = _mm_mul_ps(z2, z2);
+    R2 = _mm_add_ps(R2, z2);
+
+    x2 = _mm_load_ps(&B[i+2].X[0]);
+    y2 = x2;
+    z2 = x2;
     for (int j=i+1; j<n; j++) {
-      __m128 dX[3];
-      for (int d=0; d<3; d++) {
-        dX[d] = _mm_setr_ps(B[i].X[d], B[i+1].X[d], B[i+2].X[d], B[i+3].X[d])
-          - _mm_set1_ps(B[j].X[d] + Xperiodic[d]);
-      }
-      __m128 R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2] + _mm_set1_ps(EPS2);
-      __m128 mask0 = _mm_cmplt_ps(_mm_setr_ps(i, i+1, i+2, i+3), _mm_set1_ps(j));
-      __m128 mask = _mm_and_ps(mask0, _mm_cmpgt_ps(R2, _mm_setzero_ps()));
-      __m128 invR2 = _mm_and_ps(_mm_set1_ps(1.0) / R2, mask);
-      __m128 invR = _mm_and_ps(_mm_rsqrt_ps(R2), mask);
-      
-      invR *= _mm_setr_ps(B[i].SRC, B[i+1].SRC, B[i+2].SRC, B[i+3].SRC) * _mm_set1_ps(B[j].SRC);
-      __m128 invR3 = invR2 * invR;
-      dX[0] *= invR3;
-      dX[1] *= invR3;
-      dX[2] *= invR3;
-      P0 += invR;
-      F0[0] += dX[0];
-      F0[1] += dX[1];
-      F0[2] += dX[2];
-      B[j].TRG[0] += hadd4(invR);
-      B[j].TRG[1] += hadd4(dX[0]);
-      B[j].TRG[2] += hadd4(dX[1]);
-      B[j].TRG[3] += hadd4(dX[2]);
+      __m128 invR = _mm_rsqrt_ps(R2);
+      __m128 mask = _mm_cmplt_ps(_mm_setr_ps(i, i+1, i+2, i+3), _mm_set1_ps(j));
+      mask = _mm_and_ps(mask, _mm_cmpgt_ps(R2, _mm_setzero_ps()));
+      invR = _mm_and_ps(invR, mask);
+      R2 = _mm_set1_ps(EPS2);
+      x2 = _mm_shuffle_ps(x2, x2, 0x00);
+      x2 = _mm_sub_ps(x2, xi);
+      y2 = _mm_shuffle_ps(y2, y2, 0x55);
+      y2 = _mm_sub_ps(y2, yi);
+      z2 = _mm_shuffle_ps(z2, z2, 0xaa);
+      z2 = _mm_sub_ps(z2, zi);
+
+      mj = _mm_mul_ps(mj, invR);
+      mj = _mm_mul_ps(mj, mi);
+      B[j].TRG[0] += hadd4(mj);
+      invR = _mm_mul_ps(invR, invR);
+      pot = _mm_add_ps(pot, mj);
+      invR = _mm_mul_ps(invR, mj);
+      mj = _mm_load_ps(&B[j+1].X[0]);
+      mj = _mm_shuffle_ps(mj, mj, 0xff);
+
+      xj = _mm_mul_ps(xj, invR);
+      ax = _mm_add_ps(ax, xj);
+      B[j].TRG[1] -= hadd4(xj);
+      xj = x2;
+      x2 = _mm_mul_ps(x2, x2);
+      R2 = _mm_add_ps(R2, x2);
+      x2 = _mm_load_ps(&B[j+2].X[0]);
+
+      yj = _mm_mul_ps(yj, invR);
+      ay = _mm_add_ps(ay, yj);
+      B[j].TRG[2] -= hadd4(yj);
+      yj = y2;
+      y2 = _mm_mul_ps(y2, y2);
+      R2 = _mm_add_ps(R2, y2);
+      y2 = x2;
+
+      zj = _mm_mul_ps(zj, invR);
+      az = _mm_add_ps(az, zj);
+      B[j].TRG[3] -= hadd4(zj);
+      zj = z2;
+      z2 = _mm_mul_ps(z2, z2);
+      R2 = _mm_add_ps(R2, z2);
+      z2 = x2;
     }
     for (int k=0; k<4; k++) {
-      B[i+k].TRG[0] += ((float*)&P0)[k];
-      B[i+k].TRG[1] -= ((float*)&F0[0])[k];
-      B[i+k].TRG[2] -= ((float*)&F0[1])[k];
-      B[i+k].TRG[3] -= ((float*)&F0[2])[k];
+      B[i+k].TRG[0] += ((float*)&pot)[k];
+      B[i+k].TRG[1] += ((float*)&ax)[k];
+      B[i+k].TRG[2] += ((float*)&ay)[k];
+      B[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
-#endif // __SSE3__
+#endif // __SSE__
 
   for ( ; i<n; i++) {
-    real_t P0 = 0;
-    vec3 F0 = 0;
+    real_t pot = 0;
+    vec3 acc = 0;
     for (int j=i+1; j<n; j++) {
       vec3 dX = B[i].X - B[j].X;
       real_t R2 = norm(dX) + EPS2;
@@ -1010,18 +1107,18 @@ void Kernel::P2P(C_iter C) const {
         real_t invR2 = 1.0 / R2;
         real_t invR = B[i].SRC * B[j].SRC * sqrtf(invR2);
         dX *= invR2 * invR;
-        P0 += invR;
-        F0 += dX;
+        pot += invR;
+        acc += dX;
         B[j].TRG[0] += invR;
         B[j].TRG[1] += dX[0];
         B[j].TRG[2] += dX[1];
         B[j].TRG[3] += dX[2];
       }
     }
-    B[i].TRG[0] += P0;
-    B[i].TRG[1] -= F0[0];
-    B[i].TRG[2] -= F0[1];
-    B[i].TRG[3] -= F0[2];
+    B[i].TRG[0] += pot;
+    B[i].TRG[1] -= acc[0];
+    B[i].TRG[2] -= acc[1];
+    B[i].TRG[3] -= acc[2];
   }
 }
 

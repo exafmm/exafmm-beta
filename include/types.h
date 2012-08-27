@@ -27,14 +27,18 @@ const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of C
 typedef vec<MTERM,real_t>  vecM;                                //!< Multipole coefficient type for Cartesian
 typedef vec<LTERM,real_t>  vecL;                                //!< Local coefficient type for Cartesian
 
+//! Structure of aligned source for SIMD
+struct Source {
+  vec3   X;                                                     //!< Position
+  real_t SRC;                                                   //!< Scalar source values
+} __attribute__ ((aligned (16)));
+
 //! Structure of bodies
-struct Body {
+struct Body : public Source {
   int    IBODY;                                                 //!< Initial body numbering for sorting back
   int    IPROC;                                                 //!< Initial process numbering for partitioning back
   int    ICELL;                                                 //!< Cell index
-  vec3   X;                                                     //!< Position
-  real_t SRC;                                                   //!< Scalar source values
-  vec4   TRG;                                                   //!< Scalar+vector target values
+  vec4   TRG;                                                   //!< Scalar+vector3 target values
 };
 typedef std::vector<Body>            Bodies;                    //!< Vector of bodies
 typedef std::vector<Body>::iterator  B_iter;                    //!< Iterator of body vector
