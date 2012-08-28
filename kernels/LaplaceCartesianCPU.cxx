@@ -353,7 +353,6 @@ inline void getCoef<2>(vecL &C, const vec3 &dX, real_t &invR2, const real_t &inv
 }
 template<>
 inline void getCoef<3>(vecL &C, const vec3 &dX, real_t &invR2, const real_t &invR) {
-#if 1
   getCoef<2>(C,dX,invR2,invR);
   real_t x = dX[0], y = dX[1], z = dX[2];
   real_t invR3 = invR * invR2;
@@ -372,54 +371,6 @@ inline void getCoef<3>(vecL &C, const vec3 &dX, real_t &invR2, const real_t &inv
   C[18] = y * (t +     invR5);
   C[19] = z * (t + 3 * invR5);
   C[14] = x * y * z * invR7;
-#else
-  real_t* C_arr = (real_t*) C;
-
-  __m128 result[5];
-  __m128 term0;
-  __m128 term1;
-
-  invR2 = -invR2;
-  real_t x = dX[0], y = dX[1], z = dX[2];
-  real_t invR3 = invR * invR2;
-  real_t invR5 = 3 * invR3 * invR2;
-  real_t t = x * invR5;
-  real_t invR7 = 5 * invR5 * invR2;
-  real_t t1 = y * invR5;
-  real_t t2 = x * x * invR7;
-  real_t t3 = y * y * invR7;
-  real_t t4 = z * z * invR7;
-
-  term0 = _mm_set_ps(z, y, x, invR);
-  term1 = _mm_set_ps(invR3, invR3, invR3, 1);
-  result[0] = _mm_mul_ps(term0, term1);
-
-  term0 = _mm_set_ps(y, z, y, x);
-  term1 = _mm_set_ps(t1, t, t, t);
-  result[1] = _mm_mul_ps(term0, term1);
-  term1 = _mm_set_ps(invR3, 0, 0, invR3);
-  result[1] = _mm_add_ps(result[1], term1);
-
-  term0 = _mm_set_ps(y, x, z, z);
-  term1 = _mm_set_ps(t2 + invR5, t2 + 3 * invR5, z * invR5, t1);
-  result[2] = _mm_mul_ps(term0, term1);
-  term1 = _mm_set_ps(0, 0, invR3, 0);
-  result[2] = _mm_add_ps(result[2], term1);
-
-  term0 = _mm_set_ps(x, x, x, z);
-  term1 = _mm_set_ps(t4 + invR5, y * z * invR7, t3 + invR5, t2 + invR5);
-  result[3] = _mm_mul_ps(term0, term1);
-
-  term0 = _mm_set_ps(z, y, z, y);
-  term1 = _mm_set_ps(t4 + 3 * invR5, t4 + invR5, t3 + invR5, t3 + 3 * invR5);
-  result[4] = _mm_mul_ps(term0, term1);
-
-  _mm_store_ps(C_arr, result[0]);
-  _mm_store_ps(C_arr + 4, result[1]);
-  _mm_store_ps(C_arr + 8, result[2]);
-  _mm_store_ps(C_arr + 12, result[3]);
-  _mm_store_ps(C_arr + 16, result[4]);
-#endif
 }
 
 template<>
@@ -887,11 +838,11 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       __m128 mask = _mm_cmpgt_ps(R2, _mm_setzero_ps());
       invR = _mm_and_ps(invR, mask);
       R2 = _mm_set1_ps(EPS2);
-      x2 = _mm_shuffle_ps(x2, x2, 0x00);
+      x2 = _mm_shuffle_ps(x2, x2, _MM_SHUFFLE(0,0,0,0));
       x2 = _mm_sub_ps(x2, xi);
-      y2 = _mm_shuffle_ps(y2, y2, 0x55);
+      y2 = _mm_shuffle_ps(y2, y2, _MM_SHUFFLE(1,1,1,1));
       y2 = _mm_sub_ps(y2, yi);
-      z2 = _mm_shuffle_ps(z2, z2, 0xaa);
+      z2 = _mm_shuffle_ps(z2, z2, _MM_SHUFFLE(2,2,2,2));
       z2 = _mm_sub_ps(z2, zi);
 
       mj = _mm_mul_ps(mj, invR);
@@ -901,7 +852,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       pot = _mm_add_ps(pot, mj);
       invR = _mm_mul_ps(invR, mj);
       mj = _mm_load_ps(&Bj[j+1].X[0]);
-      mj = _mm_shuffle_ps(mj, mj, 0xff);
+      mj = _mm_shuffle_ps(mj, mj, _MM_SHUFFLE(3,3,3,3));
 
       xj = _mm_mul_ps(xj, invR);
       ax = _mm_add_ps(ax, xj);
@@ -1050,11 +1001,11 @@ void Kernel::P2P(C_iter C) const {
       mask = _mm_and_ps(mask, _mm_cmpgt_ps(R2, _mm_setzero_ps()));
       invR = _mm_and_ps(invR, mask);
       R2 = _mm_set1_ps(EPS2);
-      x2 = _mm_shuffle_ps(x2, x2, 0x00);
+      x2 = _mm_shuffle_ps(x2, x2, _MM_SHUFFLE(0,0,0,0));
       x2 = _mm_sub_ps(x2, xi);
-      y2 = _mm_shuffle_ps(y2, y2, 0x55);
+      y2 = _mm_shuffle_ps(y2, y2, _MM_SHUFFLE(1,1,1,1));
       y2 = _mm_sub_ps(y2, yi);
-      z2 = _mm_shuffle_ps(z2, z2, 0xaa);
+      z2 = _mm_shuffle_ps(z2, z2, _MM_SHUFFLE(2,2,2,2));
       z2 = _mm_sub_ps(z2, zi);
 
       mj = _mm_mul_ps(mj, invR);
@@ -1064,7 +1015,7 @@ void Kernel::P2P(C_iter C) const {
       pot = _mm_add_ps(pot, mj);
       invR = _mm_mul_ps(invR, mj);
       mj = _mm_load_ps(&B[j+1].X[0]);
-      mj = _mm_shuffle_ps(mj, mj, 0xff);
+      mj = _mm_shuffle_ps(mj, mj, _MM_SHUFFLE(3,3,3,3));
 
       xj = _mm_mul_ps(xj, invR);
       ax = _mm_add_ps(ax, xj);

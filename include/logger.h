@@ -21,9 +21,9 @@ struct Trace {
   double    end;                                                //!< End timer of trace
   int       color;                                              //!< Color of trace
 };
+typedef std::queue<Trace>                      Traces;          //!< Queue of traces
 typedef std::map<pthread_t,double>             ThreadTrace;     //!< Map of pthread id to traced value
 typedef std::map<pthread_t,int>                ThreadMap;       //!< Map of pthread id to thread id
-typedef std::queue<Trace>                      Traces;          //!< Queue of traces
 typedef std::map<std::string,double>           Timer;           //!< Map of timer event name to timed value
 typedef std::map<std::string,double>::iterator T_iter;          //!< Iterator of timer event name map
 

@@ -33,7 +33,7 @@ protected:
   fvec3  localXmax;                                             //!< Local Xmax for a given rank
 
 public:
-  int NCRIT;                                                    //!< Number of bodies per body cell
+  int NCRIT;                                                    //!< Number of bodies per leaf cell
 
 private:
 //! Get number of binary tree nodes for a given number of bodies
