@@ -795,7 +795,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     x2 = _mm256_set1_ps(Bj[1].X[0]);                           
     y2 = _mm256_set1_ps(Bj[1].X[1]);
     z2 = _mm256_set1_ps(Bj[1].X[2]);                           
-    for( int j=0; j<nj; j++ ) {
+    for (int j=0; j<nj; j++) {
       __m256 invR = _mm256_rsqrt_ps(R2);
       __m256 mask = _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ);
       invR = _mm256_and_ps(invR, mask);
@@ -836,7 +836,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       R2 = _mm256_add_ps(R2, z2);
       z2 = _mm256_set1_ps(Bj[j+2].X[2]);
     }
-    for( int k=0; k<8; k++ ) {
+    for (int k=0; k<8; k++) {
       Bi[i+k].TRG[0] += ((float*)&pot)[k];
       Bi[i+k].TRG[1] += ((float*)&ax)[k];
       Bi[i+k].TRG[2] += ((float*)&ay)[k];
@@ -1002,7 +1002,7 @@ void Kernel::P2P(C_iter C) const {
     x2 = _mm256_set1_ps(B[i+2].X[0]);
     y2 = _mm256_set1_ps(B[i+2].X[1]);
     z2 = _mm256_set1_ps(B[i+2].X[2]);
-    for( int j=i+1; j<n; j++ ) {
+    for (int j=i+1; j<n; j++) {
       __m256 invR = _mm256_rsqrt_ps(R2);
       __m256 mask = _mm256_cmp_ps(_mm256_setr_ps(i, i+1, i+2, i+3, i+4, i+5, i+6, i+7),
         _mm256_set1_ps(j), _CMP_LT_OQ);
@@ -1045,7 +1045,7 @@ void Kernel::P2P(C_iter C) const {
       R2 = _mm256_add_ps(R2, z2);
       z2 = _mm256_set1_ps(B[j+2].X[2]);
     }
-    for( int k=0; k<8; k++ ) {
+    for (int k=0; k<8; k++) {
       B[i+k].TRG[0] += ((float*)&pot)[k];
       B[i+k].TRG[1] += ((float*)&ax)[k];
       B[i+k].TRG[2] += ((float*)&ay)[k];
