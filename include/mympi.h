@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <typeinfo>
+#include <unistd.h>
 
 //! Custom MPI utilities
 class MyMPI {
