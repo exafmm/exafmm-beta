@@ -40,8 +40,8 @@ struct Body : public Source {
   int    ICELL;                                                 //!< Cell index
   vec4   TRG;                                                   //!< Scalar+vector3 target values
 };
-typedef std::vector<Body>            Bodies;                    //!< Vector of bodies
-typedef std::vector<Body>::iterator  B_iter;                    //!< Iterator of body vector
+typedef std::vector<Body>           Bodies;                     //!< Vector of bodies
+typedef std::vector<Body>::iterator B_iter;                     //!< Iterator of body vector
 
 //! Structure of cells
 struct Cell {
