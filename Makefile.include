@@ -1,76 +1,62 @@
 .SUFFIXES: .cxx .cu .o
 .PHONY: docs
-## ExaFMM path
-EXAFMM_INCLUDE_PATH = ../include
-EXAFMM_LIBRARY_PATH = ../lib
 
-### choose kernel
-EQUATION = Laplace
-#EQUATION = Yukawa
-#EQUATION = Helmholtz
-#EQUATION = Stokes
-
-### choose basis of multipole/local expansion
-BASIS	= Cartesian
-#BASIS	= Spherical
-#BASIS	= Planewave
-
-### choose device to use
-DEVICE	= CPU
-#DEVICE	= GPU
-#DEVICE	= MIC
-
-### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -msse4.2 -ffast-math -funroll-loops -fforce-addr -fbounds-check
-### Intel compiler
-#CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias
-### BG/P compiler
-#CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3
-
-### Base flags
-CXX	+= -I$(EXAFMM_INCLUDE_PATH)
-LFLAGS	= -L$(EXAFMM_LIBRARY_PATH)
-LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
-LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
-LFLAGS	+= -DERROR_OPT # Use error optimized theta
-LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
-LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
-LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
-#LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
-
-### Debugging flags
-LFLAGS += -DASSERT # Turns on asserttions (otherwise define an empty macro function)
-#LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
-
-### Intel TBB flags (doesn't work with OpenMP) : TBB is available from http://threadingbuildingblocks.org/download.php
-LFLAGS	+= -std=c++0x -DTBB -ltbb
-
-### MassiveThreads flags (doesn't work with OpenMP) : MassiveThreads is available from http://code.google.com/p/massivethreads/
-#LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
-
-### PAPI flags
-#LFLAGS	+= -DPAPI -lpapi
-
-### VTK flags : VTK is available from http://www.vtk.org/VTK/resources/software.html
-### VTK path
-#VTK_INCLUDE_PATH = /usr/include/vtk-5.8
-#VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
-#CXX	+= -I$(VTK_INCLUDE_PATH)
-#LFLAGS	= -L$(VTK_LIBRARY_PATH) -DVTK -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
-
-ifeq ($(DEVICE),GPU)
 ### CUDA path
 CUDA_INSTALL_PATH = /usr/local/cuda
 CUDA_SDK_PATH = /usr/local/cuda_sdk/C
+
+### VTK path
+VTK_INCLUDE_PATH = /usr/include/vtk-5.8
+VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
+
+### choose CPU or GPU
+DEVICE  = CPU
+#DEVICE  = GPU
+
+### choose Cartesian or spherical expansion
+#EXPAND  = Cartesian
+EXPAND  = Spherical
+
+### GCC compiler
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fPIC -I../include
+
+### Intel compiler
+#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../include
+
+### BG/P compiler
+#CXX	= mpixlcxx -qarch=450 -qtune=450 -I../include
+
+### K computer
+#CXX	= mpiFCCpx -Kopenmp,fast,ocl,preex,array_private -Ksimd=2,NOFLTLD,mfunc=3,optmsg=2 -Nsrc,sta -I../include -DNDEBUG
+# -Kdalign,ns,mfunc,eval,prefetch_conditional,ilfunc -x-
+
 ### CUDA compiler
-NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v\
-	-O3 -use_fast_math -arch=sm_21\
-	-I$(EXAFMM_INCLUDE_PATH) -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
+NVCC    = nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v -O3\
+	 -use_fast_math -arch=sm_21 -I../include -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
+
+### Base flags
+LFLAGS  = -D$(DEVICE) -D$(EXPAND)
+
+### PAPI flags
+#LFLAGS += -DPAPI -lpapi
+
+### QUARK flags
+#LFLAGS	+= -DQUARK -lquark
+
+### MassiveThreads flags
+#LFLAGS += -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
+
+### VTK flags
+#CXX     += -I$(VTK_INCLUDE_PATH)
+#VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+
+ifeq ($(DEVICE),GPU)
 ### CUDA flags
-LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
+LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
 
-KERNELS	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).o
+OBJECT = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
+	../kernel/CPUP2P.o
 
 .cxx.o  :
 	$(CXX) -c $? -o $@ $(LFLAGS)
