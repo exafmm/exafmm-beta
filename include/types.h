@@ -15,7 +15,7 @@ typedef vec<8,int>    ivec8;                                    //!< Vector of 8
 typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3
 
 // Compile-time parameters
-const int P = 3;                                                //!< Order of expansions
+const int P = 5;                                                //!< Order of expansions
 const float EPS2 = .0;                                          //!< Softening parameter (squared)
 #if COMkernel
 const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms

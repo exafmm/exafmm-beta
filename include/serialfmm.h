@@ -86,9 +86,9 @@ public:
   void setBounds(Bodies &bodies) {
     startTimer("Set bounds");                                   // Start timer
     vec3Pair bounds = getBounds(bodies.begin(), bodies.end());  // Get Xmin (first) and Xmax (second) of domain
-    localXmin = bounds.first;                                   // Set local Xmin
-    localXmax = bounds.second;                                  // Set local Xmax
-    localCenter = (localXmax + localXmin) / 2;                  // Calculate center of domain
+    for (int d=0; d<3; d++) localXmin[d] = bounds.first[d];     // Set local Xmin
+    for (int d=0; d<3; d++) localXmax[d] = bounds.second[d];    // Set local Xmax
+    for (int d=0; d<3; d++) localCenter[d] = (localXmax[d] + localXmin[d]) / 2;// Calculate center of domain
     localRadius = 0;                                            // Initialize localRadius
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
       localRadius = std::max(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
