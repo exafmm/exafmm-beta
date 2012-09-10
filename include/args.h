@@ -10,9 +10,10 @@ struct option long_options[] = {
   {"ncrit",        1, 0, 'c'},
   {"nspawn",       1, 0, 's'},
   {"images",       1, 0, 'i'},
-  {"theta",        1, 0, 'h'},
+  {"theta",        1, 0, 'o'},
   {"mutual",       1, 0, 'm'},
   {"distribution", 1, 0, 'd'},
+  {"help",         0, 0, 'h'},
   {0, 0, 0, 0}
 };
 
@@ -39,7 +40,8 @@ private:
             " --images : Number of periodic image levels (%d)\n"
             " --theta : Multipole acceptance criterion (%f)\n"
             " --mutual [0/1] :  use mutual interaction (%d)\n"
-            " --distribution [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n",
+            " --distribution [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n"
+            " --help : Show this help document\n",
             name,
             numBodies,
             numTarget,
@@ -90,7 +92,7 @@ public:
       case 'i':
         IMAGES = atoi(optarg);
         break;
-      case 'h':
+      case 'o':
         THETA = atof(optarg);
         break;
       case 'm':
@@ -99,6 +101,9 @@ public:
       case 'd':
         distribution = parse(optarg);
         break;
+      case 'h':
+        usage(argv[0]);
+        exit(0);
       default:
         usage(argv[0]);
         exit(0);
