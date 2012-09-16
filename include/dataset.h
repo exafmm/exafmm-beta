@@ -34,7 +34,7 @@ private:
         nx[d] += (index & 1) * (1 << l);                        //   Add deinterleaved bit to 3-D cell index
         index >>= 1;                                            //   Right shift the bits
         d = (d+1) % 3;                                          //   Increment dimension
-        if( d == 0 ) l++;                                       //   If dimension is 0 again, increment level
+        if (d == 0) l++;                                        //   If dimension is 0 again, increment level
       }                                                         //  End while loop for deinterleaving bits
       for (d=0; d<3; d++) {                                     //  Loop over dimensions
         B->X[d] = -1 + (2 * nx[d] + 1.) / (1 << level);         //   Calculate cell center from 3-D cell index

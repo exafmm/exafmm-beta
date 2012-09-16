@@ -21,14 +21,14 @@ struct Index<T,nx,0,0> {
 template<typename T>
 struct Index<T,0,0,0> {
   static const int                I = 0;
-  static const unsigned long long F = 1.;
+  static const unsigned long long F = 1;
 };
 
 #if COMkernel
 template<>
 struct Index<vecM,2,0,0> {
   static const int                I = 1;
-  static const unsigned long long F = 2.;
+  static const unsigned long long F = 2;
 };
 #endif
 
@@ -482,18 +482,18 @@ inline void getCoef<6>(vecL &C, const vec3 &dX, real_t &invR2, const real_t &inv
 
 template<int PP>
 inline void sumM2L(vecL &L, const vecL &C, const vecM &M) {
-  L = C;
+  L += C;
 #if COMkernel
-  for( int i=1; i<MTERM; ++i ) L[0] += M[i] * C[i+3];
+  for (int i=1; i<MTERM; i++) L[0] += M[i] * C[i+3];
 #else
-  for( int i=1; i<MTERM; ++i ) L[0] += M[i] * C[i];
+  for (int i=1; i<MTERM; i++) L[0] += M[i] * C[i];
 #endif
   Kernels<0,0,PP-1>::M2L(L,C,M);
 }
 
 template<>
 inline void sumM2L<1>(vecL &L, const vecL &C, const vecM&) {
-  L = C;
+  L += C;
 }
 
 template<>
@@ -645,16 +645,16 @@ inline void sumM2L<6>(vecL &L, const vecL &C, const vecM &M) {
   L[7] += M[17]*C[59]+M[18]*C[62]+M[19]*C[63]+M[20]*C[66]+M[21]*C[67]+M[22]*C[68]+M[23]*C[71]+M[24]*C[72]+M[25]*C[73]+M[26]*C[74]+M[27]*C[77]+M[28]*C[78]+M[29]*C[79]+M[30]*C[80]+M[31]*C[81];
   L[8] += M[17]*C[60]+M[18]*C[63]+M[19]*C[64]+M[20]*C[67]+M[21]*C[68]+M[22]*C[69]+M[23]*C[72]+M[24]*C[73]+M[25]*C[74]+M[26]*C[75]+M[27]*C[78]+M[28]*C[79]+M[29]*C[80]+M[30]*C[81]+M[31]*C[82];
   L[9] += M[17]*C[61]+M[18]*C[64]+M[19]*C[65]+M[20]*C[68]+M[21]*C[69]+M[22]*C[70]+M[23]*C[73]+M[24]*C[74]+M[25]*C[75]+M[26]*C[76]+M[27]*C[79]+M[28]*C[80]+M[29]*C[81]+M[30]*C[82]+M[31]*C[83];
-  L[7] += M[7]*C[56]+M[8]*C[57]+M[9]*C[58]+M[10]*C[59]+M[11]*C[60]+M[12]*C[61]+M[13]*C[62]+M[14]*C[63]+M[15]*C[64]+M[16]*C[65];
-  L[8] += M[7]*C[57]+M[8]*C[59]+M[9]*C[60]+M[10]*C[62]+M[11]*C[63]+M[12]*C[64]+M[13]*C[66]+M[14]*C[67]+M[15]*C[68]+M[16]*C[69];
-  L[9] += M[7]*C[58]+M[8]*C[60]+M[9]*C[61]+M[10]*C[63]+M[11]*C[64]+M[12]*C[65]+M[13]*C[67]+M[14]*C[68]+M[15]*C[69]+M[16]*C[70];
-  L[10] += M[7]*C[59]+M[8]*C[62]+M[9]*C[63]+M[10]*C[66]+M[11]*C[67]+M[12]*C[68]+M[13]*C[71]+M[14]*C[72]+M[15]*C[73]+M[16]*C[74];
-  L[11] += M[7]*C[60]+M[8]*C[63]+M[9]*C[64]+M[10]*C[67]+M[11]*C[68]+M[12]*C[69]+M[13]*C[72]+M[14]*C[73]+M[15]*C[74]+M[16]*C[75];
-  L[12] += M[7]*C[61]+M[8]*C[64]+M[9]*C[65]+M[10]*C[68]+M[11]*C[69]+M[12]*C[70]+M[13]*C[73]+M[14]*C[74]+M[15]*C[75]+M[16]*C[76];
-  L[13] += M[7]*C[62]+M[8]*C[66]+M[9]*C[67]+M[10]*C[71]+M[11]*C[72]+M[12]*C[73]+M[13]*C[77]+M[14]*C[78]+M[15]*C[79]+M[16]*C[80];
-  L[14] += M[7]*C[63]+M[8]*C[67]+M[9]*C[68]+M[10]*C[72]+M[11]*C[73]+M[12]*C[74]+M[13]*C[78]+M[14]*C[79]+M[15]*C[80]+M[16]*C[81];
-  L[15] += M[7]*C[64]+M[8]*C[68]+M[9]*C[69]+M[10]*C[73]+M[11]*C[74]+M[12]*C[75]+M[13]*C[79]+M[14]*C[80]+M[15]*C[81]+M[16]*C[82];
-  L[16] += M[7]*C[65]+M[8]*C[69]+M[9]*C[70]+M[10]*C[74]+M[11]*C[75]+M[12]*C[76]+M[13]*C[80]+M[14]*C[81]+M[15]*C[82]+M[16]*C[83];
+  L[10] += M[7]*C[56]+M[8]*C[57]+M[9]*C[58]+M[10]*C[59]+M[11]*C[60]+M[12]*C[61]+M[13]*C[62]+M[14]*C[63]+M[15]*C[64]+M[16]*C[65];
+  L[11] += M[7]*C[57]+M[8]*C[59]+M[9]*C[60]+M[10]*C[62]+M[11]*C[63]+M[12]*C[64]+M[13]*C[66]+M[14]*C[67]+M[15]*C[68]+M[16]*C[69];
+  L[12] += M[7]*C[58]+M[8]*C[60]+M[9]*C[61]+M[10]*C[63]+M[11]*C[64]+M[12]*C[65]+M[13]*C[67]+M[14]*C[68]+M[15]*C[69]+M[16]*C[70];
+  L[13] += M[7]*C[59]+M[8]*C[62]+M[9]*C[63]+M[10]*C[66]+M[11]*C[67]+M[12]*C[68]+M[13]*C[71]+M[14]*C[72]+M[15]*C[73]+M[16]*C[74];
+  L[14] += M[7]*C[60]+M[8]*C[63]+M[9]*C[64]+M[10]*C[67]+M[11]*C[68]+M[12]*C[69]+M[13]*C[72]+M[14]*C[73]+M[15]*C[74]+M[16]*C[75];
+  L[15] += M[7]*C[61]+M[8]*C[64]+M[9]*C[65]+M[10]*C[68]+M[11]*C[69]+M[12]*C[70]+M[13]*C[73]+M[14]*C[74]+M[15]*C[75]+M[16]*C[76];
+  L[16] += M[7]*C[62]+M[8]*C[66]+M[9]*C[67]+M[10]*C[71]+M[11]*C[72]+M[12]*C[73]+M[13]*C[77]+M[14]*C[78]+M[15]*C[79]+M[16]*C[80];
+  L[17] += M[7]*C[63]+M[8]*C[67]+M[9]*C[68]+M[10]*C[72]+M[11]*C[73]+M[12]*C[74]+M[13]*C[78]+M[14]*C[79]+M[15]*C[80]+M[16]*C[81];
+  L[18] += M[7]*C[64]+M[8]*C[68]+M[9]*C[69]+M[10]*C[73]+M[11]*C[74]+M[12]*C[75]+M[13]*C[79]+M[14]*C[80]+M[15]*C[81]+M[16]*C[82];
+  L[19] += M[7]*C[65]+M[8]*C[69]+M[9]*C[70]+M[10]*C[74]+M[11]*C[75]+M[12]*C[76]+M[13]*C[80]+M[14]*C[81]+M[15]*C[82]+M[16]*C[83];
   L[20] += M[1]*C[56]+M[2]*C[57]+M[3]*C[58]+M[4]*C[59]+M[5]*C[60]+M[6]*C[61];
   L[21] += M[1]*C[57]+M[2]*C[59]+M[3]*C[60]+M[4]*C[62]+M[5]*C[63]+M[6]*C[64];
   L[22] += M[1]*C[58]+M[2]*C[60]+M[3]*C[61]+M[4]*C[63]+M[5]*C[64]+M[6]*C[65];
@@ -773,7 +773,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     __m256 mi = _mm256_setr_ps(Bi[i].SRC,Bi[i+1].SRC,Bi[i+2].SRC,Bi[i+3].SRC,
       Bi[i+4].SRC,Bi[i+5].SRC,Bi[i+6].SRC,Bi[i+7].SRC);
     __m256 R2 = _mm256_set1_ps(EPS2);
-  
+
     __m256 x2 = _mm256_set1_ps(Bj[0].X[0]);
     x2 = _mm256_sub_ps(x2, xi);
     __m256 y2 = _mm256_set1_ps(Bj[0].X[1]);
@@ -781,7 +781,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     __m256 z2 = _mm256_set1_ps(Bj[0].X[2]);
     z2 = _mm256_sub_ps(z2, zi);
     __m256 mj = _mm256_set1_ps(Bj[0].SRC);
-    
+
     __m256 xj = x2;
     x2 = _mm256_mul_ps(x2, x2);
     R2 = _mm256_add_ps(R2, x2);
@@ -791,10 +791,10 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     __m256 zj = z2;
     z2 = _mm256_mul_ps(z2, z2);
     R2 = _mm256_add_ps(R2, z2);
-    
-    x2 = _mm256_set1_ps(Bj[1].X[0]);                           
+
+    x2 = _mm256_set1_ps(Bj[1].X[0]);
     y2 = _mm256_set1_ps(Bj[1].X[1]);
-    z2 = _mm256_set1_ps(Bj[1].X[2]);                           
+    z2 = _mm256_set1_ps(Bj[1].X[2]);
     for (int j=0; j<nj; j++) {
       __m256 invR = _mm256_rsqrt_ps(R2);
       __m256 mask = _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ);
@@ -803,23 +803,23 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       x2 = _mm256_sub_ps(x2, xi);
       y2 = _mm256_sub_ps(y2, yi);
       z2 = _mm256_sub_ps(z2, zi);
-    
+
       mj = _mm256_mul_ps(mj, invR);
       mj = _mm256_mul_ps(mj, mi);
       pot = _mm256_add_ps(pot, mj);
       if (mutual) Bj[j].TRG[0] += vecSum8(mj);
       invR = _mm256_mul_ps(invR, invR);
       invR = _mm256_mul_ps(invR, mj);
-      mj = _mm256_set1_ps(Bj[j+1].SRC);                       
-    
+      mj = _mm256_set1_ps(Bj[j+1].SRC);
+
       xj = _mm256_mul_ps(xj, invR);
       ax = _mm256_add_ps(ax, xj);
       if (mutual) Bj[j].TRG[1] -= vecSum8(xj);
       xj = x2;
       x2 = _mm256_mul_ps(x2, x2);
       R2 = _mm256_add_ps(R2, x2);
-      x2 = _mm256_set1_ps(Bj[j+2].X[0]);                       
-      
+      x2 = _mm256_set1_ps(Bj[j+2].X[0]);
+
       yj = _mm256_mul_ps(yj, invR);
       ay = _mm256_add_ps(ay, yj);
       if (mutual) Bj[j].TRG[2] -= vecSum8(yj);
@@ -1219,18 +1219,12 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t invR2 = 1 / norm(dX);
   real_t invR  = Ci->M[0] * Cj->M[0] * std::sqrt(invR2);
-  vecL C, L;
+  vecL C;
   getCoef<P>(C,dX,invR2,invR);
-  sumM2L<P>(L,C,Cj->M);
-  for (int i=0; i<LTERM; i++) {
-    Ci->L[i] += L[i];
-  }
+  sumM2L<P>(Ci->L,C,Cj->M);
   if (mutual) {
     flipCoef(C);
-    sumM2L<P>(L,C,Ci->M);
-    for (int i=0; i<LTERM; i++) {
-      Cj->L[i] += L[i];
-    }
+    sumM2L<P>(Cj->L,C,Ci->M);
   }
 }
 
@@ -1258,7 +1252,7 @@ void Kernel::L2P(C_iter Ci) const {
     B->TRG[1] += L[1];
     B->TRG[2] += L[2];
     B->TRG[3] += L[3];
-    for (int i=1; i<LTERM; i++) B->TRG[0] += C[i]*L[i];
+    for (int i=1; i<LTERM; i++) B->TRG[0] += C[i] * L[i];
     Kernels<0,0,1>::L2P(B,C,L);
   }
 }
