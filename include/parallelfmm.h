@@ -61,6 +61,7 @@ public:
   using Partition<equation>::isPowerOfTwo;                      //!< If n is power of two return true
   using Partition<equation>::splitRange;                        //!< Split range and return partial range
   using Partition<equation>::print;                             //!< Print in MPI
+  using Partition<equation>::getType;                           //!< Get MPI data type
   using Partition<equation>::LEVEL;                             //!< Level of the MPI process binary tree
   using Partition<equation>::XMIN;                              //!< Minimum position vector of bodies
   using Partition<equation>::XMAX;                              //!< Maximum position vector of bodies

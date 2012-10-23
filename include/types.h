@@ -40,6 +40,7 @@ THE SOFTWARE.
 #include <queue>
 #include <stack>
 #include <string>
+#include <unistd.h>
 #include <utility>
 #include <vector>
 #include "vec.h"                                                //!< My vector type with operator overloading
