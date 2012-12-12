@@ -941,7 +941,11 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       real_t R2 = norm(dX) + EPS2;
       if (R2 != 0) {
         real_t invR2 = 1.0f / R2;
+#if REAL_IS_DOUBLE
+        real_t invR = Bi[i].SRC * Bj[j].SRC * sqrt(invR2);
+#else
         real_t invR = Bi[i].SRC * Bj[j].SRC * sqrtf(invR2);
+#endif
         dX *= invR2 * invR;
         pot += invR;
         acc += dX;
@@ -1151,7 +1155,11 @@ void Kernel::P2P(C_iter C) const {
       real_t R2 = norm(dX) + EPS2;
       if (R2 != 0) {
         real_t invR2 = 1.0 / R2;
+#if REAL_IS_DOUBLE
+        real_t invR = B[i].SRC * B[j].SRC * sqrt(invR2);
+#else
         real_t invR = B[i].SRC * B[j].SRC * sqrtf(invR2);
+#endif
         dX *= invR2 * invR;
         pot += invR;
         acc += dX;

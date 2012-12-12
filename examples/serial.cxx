@@ -45,7 +45,11 @@ int main(int argc, char ** argv) {
     FMM.writeTime();
     FMM.resetTimer();
     jbodies = bodies;
+#if EVAL_ERROR_SAMPLE
+    if (int(bodies.size()) > ARGS.numTarget) DATA.sampleBodies(bodies, ARGS.numTarget);
+#else
     if (int(bodies.size()) > ARGS.numTarget) bodies.resize(ARGS.numTarget);
+#endif
     Bodies bodies2 = bodies;
     DATA.initTarget(bodies2);
     FMM.startTimer("Direct sum");
