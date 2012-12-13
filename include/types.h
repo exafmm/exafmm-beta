@@ -7,14 +7,9 @@
 #include "vec.h"
 
 // Basic type definitions
-#if REAL_IS_DOUBLE
-typedef double         real_t;                                   //!< Floating point type
-typedef vec<3,double>  fvec3;                                    //!< Vector of 3 single precision types
-#else
 typedef float         real_t;                                   //!< Floating point type
-typedef vec<3,float>  fvec3;                                    //!< Vector of 3 single precision types
-#endif
 typedef vec<3,real_t> vec3;                                     //!< Vector of 3 floating point types
+typedef vec<3,float>  fvec3;                                    //!< Vector of 3 single precision types
 typedef vec<4,real_t> vec4;                                     //!< Vector of 4 floating point types
 typedef vec<8,int>    ivec8;                                    //!< Vector of 8 integer types
 typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3

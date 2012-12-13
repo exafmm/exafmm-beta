@@ -211,26 +211,28 @@ private:
   }
 
 protected:
+//! Grow tree structure top down
   void growTree(Bodies &bodies) {
-    Bodies buffer = bodies;
-    startTimer("Grow tree");
-    B0 = bodies.begin();
-    BinaryTreeNode binNode[1]; 
-    int maxBinNode = getMaxBinNode(bodies.size());
-    binNode->BEGIN = new BinaryTreeNode[maxBinNode];
-    binNode->END = binNode->BEGIN + maxBinNode;
-    N0 = buildNodes(bodies, buffer, 0, bodies.size(), binNode, localCenter);
-    delete[] binNode->BEGIN;
-    stopTimer("Grow tree",printNow);
+    Bodies buffer = bodies;                                     // Copy bodies to buffer
+    startTimer("Grow tree");                                    // Start timer
+    B0 = bodies.begin();                                        // Bodies iterator
+    BinaryTreeNode binNode[1];                                  // Allocate root node of binary tree
+    int maxBinNode = getMaxBinNode(bodies.size());              // Get maximum size of binary tree
+    binNode->BEGIN = new BinaryTreeNode[maxBinNode];            // Allocate array for binary tree nodes
+    binNode->END = binNode->BEGIN + maxBinNode;                 // Set end pointer
+    N0 = buildNodes(bodies, buffer, 0, bodies.size(), binNode, localCenter);// Build tree recursively
+    delete[] binNode->BEGIN;                                    // Deallocate binary tree array
+    stopTimer("Grow tree",printNow);                            // Stop timer
   }
 
+//! Link tree structure
   void linkTree(Cells &cells) {
-    startTimer("Link tree");
-    cells.resize(N0->NNODE);
-    Ci0 = cells.begin();
-    nodes2cells(N0, Ci0, Ci0+1);
-    delete N0;
-    stopTimer("Link tree",printNow);
+    startTimer("Link tree");                                    // Start timer
+    cells.resize(N0->NNODE);                                    // Allocate cells array
+    Ci0 = cells.begin();                                        // Cell begin iterator
+    nodes2cells(N0, Ci0, Ci0+1);                                // Convert nodes to cells recursively
+    delete N0;                                                  // Deallocate nodes
+    stopTimer("Link tree",printNow);                            // Stop timer
   }
 
   void printTreeData(Cells &cells) {

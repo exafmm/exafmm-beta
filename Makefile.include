@@ -21,8 +21,8 @@ DEVICE	= CPU
 #DEVICE	= MIC
 
 ### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops -fforce-addr -fbounds-check
-#CXX	= tau_cxx.sh -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops -fforce-addr -fbounds-check
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops
+#CXX	= tau_cxx.sh -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias
 ### BG/P compiler
@@ -40,11 +40,11 @@ LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before t
 #LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
 
 ### Debugging flags
-LFLAGS += -DASSERT # Turns on asserttions (otherwise define an empty macro function)
+LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
 ### Intel TBB flags (doesn't work with OpenMP) : TBB is available from http://threadingbuildingblocks.org/download.php
-LFLAGS	+= -std=c++0x -DTBB -ltbb
+#LFLAGS	+= -std=c++0x -DTBB -ltbb
 
 ### MassiveThreads flags (doesn't work with OpenMP) : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -std=c++0x -DMTHREAD -lmyth

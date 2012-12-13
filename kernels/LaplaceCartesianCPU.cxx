@@ -730,10 +730,29 @@ inline void sumM2L<6>(vecL &L, const vecL &C, const vecM &M) {
 #endif
 }
 
-inline void flipCoef(vecL &C) {
-  for (int i=1; i<4; i++) C[i] = -C[i];
-  for (int i=10; i<20; i++) C[i] = -C[i];
-}
+
+template<int PP, bool odd>
+struct Coefs {
+  static const int begin = PP*(PP+1)*(PP+2)/6;
+  static const int end = (PP+1)*(PP+2)*(PP+3)/6;
+  static inline void negate(vecL &C) {
+    for (int i=begin; i<end; i++) C[i] = -C[i];
+    Coefs<PP-1,1-odd>::negate(C);
+  }
+};
+
+template<int PP>
+struct Coefs<PP,0> {
+  static inline void negate(vecL &C) {
+    Coefs<PP-1,1>::negate(C);
+  }
+};
+
+template<>
+struct Coefs<0,0> {
+  static inline void negate(vecL){}
+};
+
 
 #if __SSE__
 inline float vecSum4(__m128 reg) {
@@ -941,11 +960,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       real_t R2 = norm(dX) + EPS2;
       if (R2 != 0) {
         real_t invR2 = 1.0f / R2;
-#if REAL_IS_DOUBLE
         real_t invR = Bi[i].SRC * Bj[j].SRC * sqrt(invR2);
-#else
-        real_t invR = Bi[i].SRC * Bj[j].SRC * sqrtf(invR2);
-#endif
         dX *= invR2 * invR;
         pot += invR;
         acc += dX;
@@ -1155,11 +1170,7 @@ void Kernel::P2P(C_iter C) const {
       real_t R2 = norm(dX) + EPS2;
       if (R2 != 0) {
         real_t invR2 = 1.0 / R2;
-#if REAL_IS_DOUBLE
         real_t invR = B[i].SRC * B[j].SRC * sqrt(invR2);
-#else
-        real_t invR = B[i].SRC * B[j].SRC * sqrtf(invR2);
-#endif
         dX *= invR2 * invR;
         pot += invR;
         acc += dX;
@@ -1231,7 +1242,7 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
   getCoef<P>(C,dX,invR2,invR);
   sumM2L<P>(Ci->L,C,Cj->M);
   if (mutual) {
-    flipCoef(C);
+    Coefs<P,P&1>::negate(C);
     sumM2L<P>(Cj->L,C,Ci->M);
   }
 }

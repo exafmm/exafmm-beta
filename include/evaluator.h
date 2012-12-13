@@ -49,58 +49,60 @@ private:
 #endif
   }
 
+//! Dual tree traversal for a range of Ci and Cj
   void traverse(C_iter CiBegin, C_iter CiEnd, C_iter CjBegin, C_iter CjEnd, bool mutual) {
-    if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {
-      if (CiBegin == CjBegin) {
+    if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {         // If only one cell in range
+      if (CiBegin == CjBegin) {                                 //  If Ci == Cj
         assert(CiEnd == CjEnd);
-        traverse(CiBegin, CjBegin, mutual);
-      } else {
-        for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {
-          for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {
-            traverse(Ci, Cj, mutual);
-          }
-        }
-      }
-    } else {
-      C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;
-      C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;
-      __init_tasks__;
-      spawn_task0(traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));
-      traverse(CiMid, CiEnd, CjMid, CjEnd, mutual);
-      __sync_tasks__;
-      spawn_task0(traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));
-      if (!mutual || CiBegin != CjBegin) {
-        traverse(CiMid, CiEnd, CjBegin, CjMid, mutual);
-      } else {
-        assert(CiEnd == CjEnd);
-      }
-      __sync_tasks__;
-    }
+        traverse(CiBegin, CjBegin, mutual);                     //   Call traverse for single pair
+      } else {                                                  //  If Ci != Cj
+        for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {              //   Loop over all Ci cells
+          for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {            //    Loop over all Cj cells
+            traverse(Ci, Cj, mutual);                           //     Call traverse for single pair
+          }                                                     //    End loop over all Cj cells
+        }                                                       //   End loop over all Ci cells
+      }                                                         //  End if for Ci == Cj
+    } else {                                                    // If many cells are in the range
+      C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;           //  Split range of Ci cells in half
+      C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;           //  Split range of Cj cells in half
+      __init_tasks__;                                           //  Initialize task group
+      spawn_task0(traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));// Spawn Ci:former Cj:former
+      traverse(CiMid, CiEnd, CjMid, CjEnd, mutual);             //  No spawn Ci:latter Cj:latter
+      __sync_tasks__;                                           //  Synchronize task group
+      spawn_task0(traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));// Spawn Ci:former Cj:latter
+      if (!mutual || CiBegin != CjBegin) {                      //  Exclude mutual & self interaction
+        traverse(CiMid, CiEnd, CjBegin, CjMid, mutual);         //   No spawn Ci:latter Cj:former
+      } else {                                                  //  If mutual or self interaction
+        assert(CiEnd == CjEnd);                                 //   Check if mutual & self interaction
+      }                                                         //  End if for mutual & self interaction
+      __sync_tasks__;                                           //  Synchronize task group
+    }                                                           // End if for many cells in range
   }
 
+//! Split cell and call traverse() recursively for child
   void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
-    if (Cj->NCHILD == 0) {
-      assert(Ci->NCHILD > 0);
-      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {
-        traverse(ci, Cj, mutual);
-      }
-    } else if (Ci->NCHILD == 0) {
-      assert(Cj->NCHILD > 0);
-      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {
-        traverse(Ci, cj, mutual);
-      }
-    } else if (Ci->NDBODY + Cj->NDBODY >= NSPAWN || (mutual && Ci == Cj)) {
-      traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,
+    if (Cj->NCHILD == 0) {                                      // If Cj is leaf
+      assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
+      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+        traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
+      }                                                         //  End loop over Ci's children
+    } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
+      assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
+      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+        traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
+      }                                                         //  End loop over Cj's children
+    } else if (Ci->NDBODY + Cj->NDBODY >= NSPAWN || (mutual && Ci == Cj)) {// Else if cells are still large
+      traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,         //  Traverse for range of cell pairs
                Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
-    } else if (Ci->RCRIT >= Cj->RCRIT) {
-      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {
-        traverse(ci, Cj, mutual);
-      } 
-    } else {
-      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {
-        traverse(Ci, cj, mutual);
-      }
-    }
+    } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
+      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+        traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
+      }                                                         //  End loop over Ci's children
+    } else {                                                    // Else if Cj is larger than Ci
+      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+        traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
+      }                                                         //  End loop over Cj's children
+    }                                                           // End if for leafs and Ci Cj size
   }
 
 protected:
@@ -125,7 +127,7 @@ protected:
 #endif
   }
 
-//! Dual tree traversal
+//! Dual tree traversal for a single pair of cells
   void traverse(C_iter Ci, C_iter Cj, bool mutual) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared

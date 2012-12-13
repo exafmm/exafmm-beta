@@ -32,7 +32,7 @@ private:
     C->RCRIT *= x;                                              // Multiply Rcrit by error optimized parameter x
   }
 
-  //! Get Xmin and Xmax of domain
+//! Get Xmin and Xmax of domain
   vec3Pair getBounds(B_iter BiBegin, B_iter BiEnd) {
     assert(BiEnd - BiBegin > 0);
     if (BiEnd - BiBegin < NSPAWN) {                             // If number of elements is small enough
@@ -59,15 +59,15 @@ private:
   void upwardRecursion(C_iter C, C_iter C0) {
     __init_tasks__;                                             // Initialize tasks
     for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-      spawn_task0(upwardRecursion(CC, C0));                      //  Recursive call with new task
+      spawn_task0(upwardRecursion(CC, C0));                     //  Recursive call with new task
     }                                                           // End loop over child cells
     __sync_tasks__;                                             // Synchronize tasks
-    real_t Rmax = 0;                                            //  Initialize Rmax
-    setCenter(C);                                               //  Set center of cell to center of mass
-    C->M = 0;                                                   //  Initialize multipole expansion coefficients
-    C->L = 0;                                                   //  Initialize local expansion coefficients
-    P2M(C,Rmax);                                                //  P2M kernel
-    M2M(C,Rmax);                                                //  M2M kernel
+    real_t Rmax = 0;                                            // Initialize Rmax
+    setCenter(C);                                               // Set center of cell to center of mass
+    C->M = 0;                                                   // Initialize multipole expansion coefficients
+    C->L = 0;                                                   // Initialize local expansion coefficients
+    P2M(C,Rmax);                                                // P2M kernel
+    M2M(C,Rmax);                                                // M2M kernel
   }
 
 //! Recursive call for downward pass
@@ -76,7 +76,7 @@ private:
     L2P(C);                                                     // L2P kernel
     __init_tasks__;                                             // Initialize tasks
     for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-      spawn_task0(downwardRecursion(CC, C0));                    //  Recursive call with new task
+      spawn_task0(downwardRecursion(CC, C0));                   //  Recursive call with new task
     }                                                           // End loop over chlid cells
     __sync_tasks__;                                             // Synchronize tasks
   }
