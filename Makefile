@@ -16,7 +16,7 @@ commit  :
 	hg pull -u
 save    :
 	make cleanall
-	cd .. && tar zcvf exafmm.tgz exafmm
+	cd .. && tar zcvf exafmm-dev.tgz exafmm-dev
 revert	:
 	hg revert --all
 	rm -rf `find . -name "*.orig"`
