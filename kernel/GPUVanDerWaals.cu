@@ -31,8 +31,7 @@ void Kernel<VanDerWaals>::initialize() {
   cudaThreadExit();                                             // Exit GPU thread
   cudaSetDevice(DEVICE);                                        // Set GPU device
   cudaThreadSynchronize();                                      // Sync GPU threads
-  stopTimer("Init GPU",MPIRANK==0);                             // Stop timer & print
-  eraseTimer("Init GPU");                                       // Erase timer
+  stopTimer("Init GPU");                                        // Stop timer
 }
 
 template<>

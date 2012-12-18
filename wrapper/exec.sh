@@ -1,9 +1,8 @@
-make libfmmcoulomb.a
-cd ../../../../..
-cd tool/gpu
-cp fmm/exafmm/wrapper/libfmmcoulomb.a gcc
+make libserial_coulombVdW.a
+cd ../../../../../tool/gpu
+cp fmm/exafmm/wrapper/libserial_coulombVdW.a gcc/libgpufmmcoulomb.a
 cd ../..
-rm exec/gpu/charmm
-./install.com gpu xxlarge
-cd test/cbenchtest/mbco
-../../../exec/gpu/charmm -i fmm.inp | tee fmm.out
+rm exec/gpu_M/charmm
+./install.com gpu xxlarge M mpif90
+cd ala3
+../exec/gpu_M/charmm -i fmm.inp | tee fmm.out
