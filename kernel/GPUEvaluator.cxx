@@ -335,6 +335,7 @@ void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all 
 
 template<Equation equation>
 void Evaluator<equation>::evalM2L(C_iter Ci, C_iter Cj) {       // Queue single M2L kernel
+  if( Ci-Ci0 == 579 && Cj-Cj0 == 512 ) std::cout << listM2L[579].size() << std::endl;
   listM2L[Ci-Ci0].push_back(Cj);                                // Push source cell into M2L interaction list
   flagM2L[Ci-Ci0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
   NM2L++;                                                       // Count M2L kernel execution

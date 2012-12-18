@@ -129,7 +129,6 @@ void Kernel<Laplace>::EwaldReal() {
   if( numBlocks != 0 ) {\
     LaplaceEwaldReal_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);\
   }\
-  CUT_CHECK_ERROR("Kernel execution failed");\
   cudaThreadSynchronize();\
   stopTimer("EwaldReal GPU");\
 }

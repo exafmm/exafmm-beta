@@ -22,7 +22,6 @@ THE SOFTWARE.
 #define KERNEL
 #include "kernel.h"
 #undef KERNEL
-#include <cutil.h>
 
 __device__ __constant__ gpureal constDevc[514];                 // Constants on device
 
@@ -145,23 +144,23 @@ void Kernel<Laplace>::allocate() {
   cudaThreadSynchronize();
   startTimer("cudaMalloc");
   if( keysHost.size() > keysDevcSize ) {
-    if( keysDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(keysDevc));
-    CUDA_SAFE_CALL(cudaMalloc( (void**) &keysDevc, keysHost.size()*sizeof(int) ));
+    if( keysDevcSize != 0 ) cudaFree(keysDevc);
+    cudaMalloc( (void**) &keysDevc, keysHost.size()*sizeof(int) );
     keysDevcSize = keysHost.size();
   }
   if( rangeHost.size() > rangeDevcSize ) {
-    if( rangeDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(rangeDevc));
-    CUDA_SAFE_CALL(cudaMalloc( (void**) &rangeDevc, rangeHost.size()*sizeof(int) ));
+    if( rangeDevcSize != 0 ) cudaFree(rangeDevc);
+    cudaMalloc( (void**) &rangeDevc, rangeHost.size()*sizeof(int) );
     rangeDevcSize = rangeHost.size();
   }
   if( sourceHost.size() > sourceDevcSize ) {
-    if( sourceDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(sourceDevc));
-    CUDA_SAFE_CALL(cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(gpureal) ));
+    if( sourceDevcSize != 0 ) cudaFree(sourceDevc);
+    cudaMalloc( (void**) &sourceDevc, sourceHost.size()*sizeof(gpureal) );
     sourceDevcSize = sourceHost.size();
   }
   if( targetHost.size() > targetDevcSize ) {
-    if( targetDevcSize != 0 ) CUDA_SAFE_CALL(cudaFree(targetDevc));
-    CUDA_SAFE_CALL(cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(gpureal) ));
+    if( targetDevcSize != 0 ) cudaFree(targetDevc);
+    cudaMalloc( (void**) &targetDevc, targetHost.size()*sizeof(gpureal) );
     targetDevcSize = targetHost.size();
   }
   cudaThreadSynchronize();
@@ -172,11 +171,11 @@ template<>
 void Kernel<Laplace>::hostToDevice() {
   cudaThreadSynchronize();
   startTimer("cudaMemcpy");
-  CUDA_SAFE_CALL(cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),cudaMemcpyHostToDevice));
-  CUDA_SAFE_CALL(cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),cudaMemcpyHostToDevice));
-  CUDA_SAFE_CALL(cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
-  CUDA_SAFE_CALL(cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice));
-  CUDA_SAFE_CALL(cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(gpureal)));
+  cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),cudaMemcpyHostToDevice);
+  cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),cudaMemcpyHostToDevice);
+  cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice);
+  cudaMemcpy(targetDevc,&targetHost[0],targetHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice);
+  cudaMemcpyToSymbol(constDevc,&constHost[0],constHost.size()*sizeof(gpureal));
   cudaThreadSynchronize();
   stopTimer("cudaMemcpy");
 }
@@ -185,7 +184,7 @@ template<>
 void Kernel<Laplace>::deviceToHost() {
   cudaThreadSynchronize();
   startTimer("cudaMemcpy");
-  CUDA_SAFE_CALL(cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(gpureal),cudaMemcpyDeviceToHost));
+  cudaMemcpy(&targetHost[0],targetDevc,targetHost.size()*sizeof(gpureal),cudaMemcpyDeviceToHost);
   cudaThreadSynchronize();
   stopTimer("cudaMemcpy");
 }
@@ -300,7 +299,6 @@ void Kernel<Laplace>::P2M() {
   if( numBlocks != 0 ) {
     LaplaceP2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
   }
-  CUT_CHECK_ERROR("Kernel execution failed");
   cudaThreadSynchronize();
   stopTimer("P2M GPUkernel");
 }
@@ -394,7 +392,6 @@ void Kernel<Laplace>::M2M() {
   if( numBlocks != 0 ) {
     LaplaceM2M_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
   }
-  CUT_CHECK_ERROR("Kernel execution failed");
   cudaThreadSynchronize();
   stopTimer("M2M GPUkernel");
 }
@@ -497,7 +494,6 @@ void Kernel<Laplace>::M2L() {
   if( numBlocks != 0 ) {
     LaplaceM2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
   }
-  CUT_CHECK_ERROR("Kernel execution failed");
   cudaThreadSynchronize();
   stopTimer("M2L GPUkernel");
 }
@@ -617,7 +613,6 @@ void Kernel<Laplace>::M2P() {
   if( numBlocks != 0 ) {
     LaplaceM2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
   }
-  CUT_CHECK_ERROR("Kernel execution failed");
   cudaThreadSynchronize();
   stopTimer("M2P GPUkernel");
 }
@@ -723,7 +718,6 @@ void Kernel<Laplace>::P2P() {
   if( numBlocks != 0 ) {
     LaplaceP2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
   }
-  CUT_CHECK_ERROR("Kernel execution failed");
   cudaThreadSynchronize();
   stopTimer("P2P GPUkernel");
 }
@@ -814,7 +808,6 @@ void Kernel<Laplace>::L2L() {
   if( numBlocks != 0 ) {
     LaplaceL2L_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
   }
-  CUT_CHECK_ERROR("Kernel execution failed");
   cudaThreadSynchronize();
   stopTimer("L2L GPUkernel");
 }
@@ -920,7 +913,6 @@ void Kernel<Laplace>::L2P() {
   if( numBlocks != 0 ) {
     LaplaceL2P_GPU<<< numBlocks, THREADS >>>(keysDevc,rangeDevc,targetDevc,sourceDevc);
   }
-  CUT_CHECK_ERROR("Kernel execution failed");
   cudaThreadSynchronize();
   stopTimer("L2P GPUkernel");
 }

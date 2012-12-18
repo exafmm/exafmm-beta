@@ -9,8 +9,8 @@ VTK_INCLUDE_PATH = /usr/include/vtk-5.8
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
 ### choose CPU or GPU
-DEVICE  = CPU
-#DEVICE  = GPU
+#DEVICE  = CPU
+DEVICE  = GPU
 
 ### choose Cartesian or spherical expansion
 #EXPAND  = Cartesian
@@ -29,8 +29,8 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -ffast-math -funroll-loops -fforce-addr -f
 # -Kdalign,ns,mfunc,eval,prefetch_conditional,ilfunc -x-
 
 ### CUDA compiler
-NVCC    = nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v -O3\
-	 -use_fast_math -arch=sm_21 -I../include -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
+NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3\
+	 -use_fast_math -arch=sm_21 -I../include -I$(CUDA_INSTALL_PATH)/include
 
 ### Base flags
 LFLAGS  = -D$(DEVICE) -D$(EXPAND)
@@ -50,7 +50,7 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 
 #ifeq ($(DEVICE),GPU)
 ### CUDA flags
-LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart -lstdc++ -ldl -lm
+LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart -lstdc++ -ldl -lm
 #endif
 
 OBJECT = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
