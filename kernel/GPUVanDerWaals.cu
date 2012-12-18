@@ -110,7 +110,7 @@ __device__ inline void VanDerWaalsP2P_core(gpureal *target, gpureal *targetX, gp
   gpureal rscale = constDevc[2*(atypei*atoms+atypej)+2];
   gpureal gscale = constDevc[2*(atypei*atoms+atypej)+3];
   gpureal R2s = R2 * rscale;
-  if( R2MIN > R2s || R2s >= R2MAX ) return;
+  if( R2MIN > R2 || R2 >= R2MAX ) return;
   gpureal invR = rsqrtf(R2s);
   gpureal invR2 = invR * invR;
   gpureal invR6 = invR2 * invR2 * invR2;

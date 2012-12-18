@@ -283,24 +283,14 @@ public:
     XMAX[0] = X;                                                // Get data from buffer
     MPI_Allreduce(XMIN[0],X,3,MPI_TYPE,MPI_MIN,MPI_COMM_WORLD); // Reduce global minimum
     XMIN[0] = X;                                                // Get data from buffer
-    if( IMAGES != 0 ) {                                         // If periodic boundary condition
-      if( XMIN[0][0] < x0[0]-r0 || x0[0]+r0 < XMAX[0][0]        //  Check for outliers in x direction
-       || XMIN[0][1] < x0[1]-r0 || x0[1]+r0 < XMAX[0][1]        //  Check for outliers in y direction
-       || XMIN[0][2] < x0[2]-r0 || x0[2]+r0 < XMAX[0][2] ) {    //  Check for outliers in z direction
-        std::cout << "Error: Particles located outside periodic domain @ rank "
-                  << MPIRANK << std::endl;                      //   Print error message
-      }                                                         //  End if for outlier checking
-      X0 = x0;                                                  //  Center is [0, 0, 0]
-      R0 = r0;                                                  //  Radius is M_PI
-    } else {                                                    // If not periodic boundary condition
-      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
-        X0[d] = (XMAX[0][d] + XMIN[0][d]) / 2;                  //   Calculate center of domain
-        X0[d] = int(X0[d]+.5);                                  //   Shift center to nearest integer
-        R0 = std::max(XMAX[0][d] - X0[d], R0);                  //   Calculate max distance from center
-        R0 = std::max(X0[d] - XMIN[0][d], R0);                  //   Calculate max distance from center
-      }                                                         //  End loop over each dimension
-      R0 *= 1.000001;                                           //  Add some leeway to root radius
-    }                                                           // Endif for periodic boundary condition
+    if( XMIN[0][0] < x0[0]-r0 || x0[0]+r0 < XMAX[0][0]          //  Check for outliers in x direction
+     || XMIN[0][1] < x0[1]-r0 || x0[1]+r0 < XMAX[0][1]          //  Check for outliers in y direction
+     || XMIN[0][2] < x0[2]-r0 || x0[2]+r0 < XMAX[0][2] ) {      //  Check for outliers in z direction
+      std::cout << "Error: Particles located outside periodic domain @ rank "
+                << MPIRANK << std::endl;                        //   Print error message
+    }                                                           //  End if for outlier checking
+    X0 = x0;                                                    //  Center is [0, 0, 0]
+    R0 = r0;                                                    //  Radius is M_PI
     XMAX[0] = X0 + R0;                                          // Reposition global maximum
     XMIN[0] = X0 - R0;                                          // Reposition global minimum
   }

@@ -2,8 +2,7 @@
 .PHONY: docs
 
 ### CUDA path
-CUDA_INSTALL_PATH = /usr/local/cuda
-CUDA_SDK_PATH = /usr/local/cuda_sdk/C
+CUDA_INSTALL_PATH = /usr/local/cuda4.1/cuda
 
 ### VTK path
 VTK_INCLUDE_PATH = /usr/include/vtk-5.8
@@ -18,8 +17,7 @@ DEVICE  = CPU
 EXPAND  = Spherical
 
 ### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -Wuninitialized -O3 -ffast-math -fopenmp -funroll-loops -fforce-addr -fPIC -I../include
-
+CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../include
 
@@ -50,10 +48,10 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 #CXX     += -I$(VTK_INCLUDE_PATH)
 #VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
-ifeq ($(DEVICE),GPU)
+#ifeq ($(DEVICE),GPU)
 ### CUDA flags
-LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
-endif
+LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart -lstdc++ -ldl -lm
+#endif
 
 OBJECT = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
 	../kernel/CPUP2P.o

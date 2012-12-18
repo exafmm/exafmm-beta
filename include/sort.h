@@ -63,16 +63,10 @@ private:
     stopTimer("Empty bucket");                                  // Stop timer
     startTimer("Copy value");                                   // Start timer
     if( ascend ) {                                              // If sorting in ascending order
-#if MTHREADS
-#else
-#pragma omp parallel for
-#endif
+//#pragma omp parallel for
       for( int i=begin; i<end; ++i ) values[i] = buffer[i];     //  Copy back bodiess in order
     } else {                                                    // If sorting in descending order
-#if MTHREADS
-#else
-#pragma omp parallel for
-#endif
+//#pragma omp parallel for
       for( int i=begin; i<end; ++i ) values[end-i+begin-1] = buffer[i];// Copy back bodiess in reverse order
     }                                                           // Endif for sorting order
     stopTimer("Copy value");                                    // Stop timer

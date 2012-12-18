@@ -7,8 +7,8 @@
 
 #define MD_REAL_R2MIN 0.0001f
 #define MD_REAL_R2MAX 10.0f
-#define MD_LJ_R2MIN   0.25
-#define MD_LJ_R2MAX   64.0
+#define MD_LJ_R2MIN   0.0001f
+#define MD_LJ_R2MAX   100.0f
 
 typedef union {
   float q;
@@ -43,17 +43,31 @@ typedef union {
   double d;
 } DI2;
 
-void MR3calccoulomb_ij(int ni, double xi[], double qi[], double force[],
+extern "C" void MR3calccoulomb_ij(int ni, double xi[], double qi[], double force[],
                        int nj, double xj[], double qj[],
                        double rscale,
                        int tblno, double xmax, int periodicflag);
 
-void MR3calcvdw_ij(int ni, double xi[], int atypei[], double force[],
+extern "C" void MR3calccoulomb_ij_host(int ni, double xi[], double qi[], double force[],
+                       int nj, double xj[], double qj[],
+                       double rscale,
+                       int tblno, double xmax, int periodicflag);
+
+extern "C" void MR3calcvdw_ij(int ni, double xi[], int atypei[], double force[],
                    int nj, double xj[], int atypej[],
                    int nat, double gscale[], double rscale[],
                    int tblno, double xmax, int periodicflag);
 
-void MR3calcewald(int *k, int knum_org, double *x, int n, double *q,
+extern "C" void MR3calcvdw_ij_host(int ni, double xi[], int atypei[], double force[],
+                   int nj, double xj[], int atypej[],
+                   int nat, double gscale[], double rscale[],
+                   int tblno, double xmax, int periodicflag);
+
+extern "C" void MR3calcewald(int *k, int knum_org, double *x, int n, double *q,
+                  double alpha, double epsilon, double cell[3][3],
+                  double *force, double *tpot, double stress[3][3]);
+
+extern "C" void MR3calcewald_host(int *k, int knum_org, double *x, int n, double *q,
                   double alpha, double epsilon, double cell[3][3],
                   double *force, double *tpot, double stress[3][3]);
 

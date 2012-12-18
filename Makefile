@@ -9,7 +9,6 @@ cleanlib:
 cleanall:
 	make clean
 	make cleandat
-	make cleanlib
 commit  :
 	hg commit
 	hg push

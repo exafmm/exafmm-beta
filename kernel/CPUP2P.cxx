@@ -82,7 +82,7 @@ void Kernel<VanDerWaals>::P2P(C_iter Ci, C_iter Cj) const {     // Van der Waals
         real rs = RSCALE[atypei*ATOMS+atypej];                  //    r scale
         real gs = GSCALE[atypei*ATOMS+atypej];                  //    g scale
         real R2s = R2 * rs;                                     //    R^2 * r scale
-        if( R2MIN <= R2s && R2s < R2MAX ) {                     //    Exclude outlier values
+        if( R2MIN <= R2 && R2 < R2MAX ) {                       //    Exclude outlier values
           real invR2 = 1.0 / R2s;                               //     1 / R^2
           real invR6 = invR2 * invR2 * invR2;                   //     1 / R^6
           real dtmp = gs * invR6 * invR2 * (2.0 * invR6 - 1.0); //     g scale / R^2 * (2 / R^12 + 1 / R^6)
