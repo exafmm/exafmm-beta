@@ -22,7 +22,8 @@ THE SOFTWARE.
 #define KERNEL
 #include "kernel.h"
 #undef KERNEL
-__device__ __constant__ gpureal constDevc[514];                 // Constants on device
+const int maxConst = 2 + 2 * 32 * 32;
+__device__ __constant__ gpureal constDevc[maxConst];            // Constants on device
 
 template<>
 void Kernel<VanDerWaals>::initialize() {
@@ -75,7 +76,7 @@ void Kernel<VanDerWaals>::hostToDevice() {
     constHost.push_back(RSCALE[i]);
     constHost.push_back(GSCALE[i]);
   }
-  assert( constHost.size() == 514 );
+  assert( constHost.size() < maxConst );
   cudaMemcpy(keysDevc,  &keysHost[0],  keysHost.size()*sizeof(int),cudaMemcpyHostToDevice);
   cudaMemcpy(rangeDevc, &rangeHost[0], rangeHost.size()*sizeof(int),cudaMemcpyHostToDevice);
   cudaMemcpy(sourceDevc,&sourceHost[0],sourceHost.size()*sizeof(gpureal),cudaMemcpyHostToDevice);

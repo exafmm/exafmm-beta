@@ -6,6 +6,7 @@ extern "C" {
 #include "md.h"
 #include "vtgrapeproto.h"
 }
+//#define DATAFILE
 
 extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   int nj, double* xj, double* qj, double rscale, int tblno, double size, int periodicflag);
@@ -15,12 +16,15 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
   int tblno, double size, int periodicflag);
 
 int main() {
-//  const int N = 78537;
-//  const int nat = 22;
-//  const double size = 90;
+#ifdef DATAFILE
+  const int N = 78537;
+  const int nat = 22;
+  const double size = 90;
+#else
   const int N = 10000;
   const int nat = 16;
   const double size = 2;
+#endif
   double *xi     = new double [3*N];
   double *qi     = new double [N];
   double *pi     = new double [3*N];
@@ -39,7 +43,25 @@ int main() {
   int *natex  = new int [N];
   MR3init();
 
-#if 1
+#ifdef DATAFILE
+  std::ifstream fid("datafile",std::ios::in);
+  for( int i=0; i<nat*nat; i++ ) {
+    fid >> rscale[i] >> gscale[i] >> frscale[i] >> fgscale[i];
+  }
+  int ic;
+  for( int i=0; i<N; i++ ) {
+    fid >> ic >> atypei[i] >> xi[3*i+0] >> xi[3*i+1] >> xi[3*i+2] >> qi[i];
+  }
+  fid.close();
+  for( int i=0; i<N; i++ ) {
+    xj[3*i+0] = xi[3*i+0];
+    xj[3*i+1] = xi[3*i+1];
+    xj[3*i+2] = xi[3*i+2];
+    qj[i] = qi[i];
+    atypei[i]--;
+    atypej[i] = atypei[i];
+  }
+#else
   srand48(0);
   float average = 0;
   for( int i=0; i<N; i++ ) {
@@ -87,24 +109,6 @@ int main() {
       frscale[i*nat+j] = rscale[i*nat+j];
       fgscale[i*nat+j] = gscale[i*nat+j];
     }
-  }
-#else
-  std::ifstream fid("datafile",std::ios::in);
-  for( int i=0; i<nat*nat; i++ ) {
-    fid >> rscale[i] >> gscale[i] >> frscale[i] >> fgscale[i];
-  }
-  int ic;
-  for( int i=0; i<N; i++ ) {
-    fid >> ic >> atypei[i] >> xi[3*i+0] >> xi[3*i+1] >> xi[3*i+2] >> qi[i];
-  }
-  fid.close();
-  for( int i=0; i<N; i++ ) {
-    xj[3*i+0] = xi[3*i+0];
-    xj[3*i+1] = xi[3*i+1];
-    xj[3*i+2] = xi[3*i+2];
-    qj[i] = qi[i];
-    atypei[i]--;
-    atypej[i] = atypei[i];
   }
 #endif
   for( int i=0; i<N; i++ ) {
@@ -164,8 +168,8 @@ int main() {
   FMMcalcvdw_ij(N,xi,atypei,pi,N,xj,atypej,nat,gscale,rscale,3,size,0);
   FMMcalcvdw_ij(N,xi,atypei,fi,N,xj,atypej,nat,fgscale,frscale,2,size,0);
 #if 1
-  MR3calcvdw_ij_host(N,xi,atypei,pd,N,xj,atypej,nat,gscale,rscale,3,size,0);
-  MR3calcvdw_ij_host(N,xi,atypei,fd,N,xj,atypej,nat,fgscale,frscale,2,size,0);
+  MR3calcvdw_ij(N,xi,atypei,pd,N,xj,atypej,nat,gscale,rscale,3,size,0);
+  MR3calcvdw_ij(N,xi,atypei,fd,N,xj,atypej,nat,fgscale,frscale,2,size,0);
 #else
   for( int i=0; i<N; i++ ) {
     double P = 0, Fx = 0, Fy = 0, Fz = 0;

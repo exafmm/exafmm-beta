@@ -187,6 +187,7 @@ void Evaluator<equation>::clearBuffers() {                      // Clear GPU buf
 
 template<Equation equation>
 void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate all P2P kernels
+  startTimer("evalP2P");                                        // Start timer
   int numIcall = int(ibodies.size()-1)/MAXBODY+1;               // Number of icall loops
   int numJcall = int(jbodies.size()-1)/MAXBODY+1;               // Number of jcall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
@@ -256,10 +257,12 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
     }                                                           // End loop over jcall
     ioffset += MAXBODY;                                         // Increment icall offset
   }                                                             // End loop over icall
+  stopTimer("evalP2P");                                         // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate all P2M kernels
+  startTimer("evalP2M");                                        // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator for target
   const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -290,10 +293,12 @@ void Evaluator<equation>::evalP2M(Cells &cells) {               // Evaluate all 
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
   }                                                             // End loop over icall
+  stopTimer("evalP2M");                                         // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all M2M kernels
+  startTimer("evalM2M");                                        // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator for target
   Cj0 = jcells.begin();                                         // Set begin iterator for source
   const int numCell = MAXCELL / NTERM / 2;                      // Number of cells per icall
@@ -331,11 +336,11 @@ void Evaluator<equation>::evalM2M(Cells &cells, Cells &jcells) {// Evaluate all 
     }                                                           //  End loop over icall
     level--;                                                    //  Decrement level
   }                                                             // End while loop over levels
+  stopTimer("evalM2M");                                         // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalM2L(C_iter Ci, C_iter Cj) {       // Queue single M2L kernel
-  if( Ci-Ci0 == 579 && Cj-Cj0 == 512 ) std::cout << listM2L[579].size() << std::endl;
   listM2L[Ci-Ci0].push_back(Cj);                                // Push source cell into M2L interaction list
   flagM2L[Ci-Ci0][Cj] |= Iperiodic;                             // Flip bit of periodic image flag
   NM2L++;                                                       // Count M2L kernel execution
@@ -343,6 +348,7 @@ void Evaluator<equation>::evalM2L(C_iter Ci, C_iter Cj) {       // Queue single 
 
 template<Equation equation>
 void Evaluator<equation>::evalM2L(Cells &cells) {               // Evaluate queued M2L kernels
+  startTimer("evalM2L");                                        // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL / NTERM / 2;                      // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -371,6 +377,7 @@ void Evaluator<equation>::evalM2L(Cells &cells) {               // Evaluate queu
   }                                                             // End loop over icall
   listM2L.clear();                                              // Clear interaction lists
   flagM2L.clear();                                              // Clear periodic image flags
+  stopTimer("evalM2L");                                         // Stop timer
 }
 
 template<Equation equation>
@@ -382,6 +389,7 @@ void Evaluator<equation>::evalM2P(C_iter Ci, C_iter Cj) {       // Queue single 
 
 template<Equation equation>
 void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queued M2P kernels
+  startTimer("evalM2P");                                        // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator for target
   const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -410,6 +418,7 @@ void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queu
   }                                                             // End loop over icall
   listM2P.clear();                                              // Clear interaction lists
   flagM2P.clear();                                              // Clear periodic image flags
+  stopTimer("evalM2P");                                         // Stop timer
 }
 
 template<Equation equation>
@@ -421,6 +430,7 @@ void Evaluator<equation>::evalP2P(C_iter Ci, C_iter Cj) {       // Queue single 
 
 template<Equation equation>
 void Evaluator<equation>::evalP2P(Cells &cells) {               // Evaluate queued P2P kernels
+  startTimer("evalP2P");                                        // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -449,10 +459,12 @@ void Evaluator<equation>::evalP2P(Cells &cells) {               // Evaluate queu
   }                                                             // End loop over icall
   listP2P.clear();                                              // Clear interaction lists
   flagP2P.clear();                                              // Clear periodic image flags
+  stopTimer("evalP2P");                                         // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate all L2L kenrels
+  startTimer("evalL2L");                                        // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL / NTERM / 2;                      // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -490,10 +502,12 @@ void Evaluator<equation>::evalL2L(Cells &cells) {               // Evaluate all 
     }                                                           //  End loop over icall
     level++;                                                    //  Increment level
   }                                                             // End while loop over levels
+  stopTimer("evalL2L");                                         // Stop timer
 }
 
 template<Equation equation>
 void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate all L2P kernels
+  startTimer("evalL2P");                                        // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -523,6 +537,7 @@ void Evaluator<equation>::evalL2P(Cells &cells) {               // Evaluate all 
     clearBuffers();                                             //  Clear GPU buffers
     ioffset += numCell;                                         //  Increment ioffset
   }                                                             // End loop over icall
+  stopTimer("evalL2P");                                         // Stop timer
 }
 
 template<Equation equation>
@@ -533,6 +548,7 @@ void Evaluator<equation>::evalEwaldReal(C_iter Ci, C_iter Cj) { // Queue single 
 
 template<Equation equation>
 void Evaluator<equation>::evalEwaldReal(Cells &cells) {         // Evaluate queued Ewald real kernels
+  startTimer("evalEwaldReal");                                  // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
   const int numCell = MAXCELL/NCRIT/4;                          // Number of cells per icall
   int numIcall = int(cells.size()-1)/numCell+1;                 // Number of icall loops
@@ -562,6 +578,7 @@ void Evaluator<equation>::evalEwaldReal(Cells &cells) {         // Evaluate queu
   }                                                             // End loop over icall
   listP2P.clear();                                              // Clear interaction lists
   flagP2P.clear();                                              // Clear periodic image flags
+  stopTimer("evalEwaldReal");                                   // Stop timer
 }
 
 template<Equation equation>
