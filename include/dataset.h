@@ -177,7 +177,6 @@ public:
       double dp = (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);
       double p = B2->TRG[0] * B2->TRG[0];                         //  Value of potential
       std::cout << "[" << std::setw(5) << i << "] (pot): " << sqrt(dp / p) << std::endl;
-
       diff1 += dp;
       norm1 += p;
     }                                                           //  End loop over bodies & bodies2
@@ -193,9 +192,7 @@ public:
       f += B2->TRG[1] * B2->TRG[1];                         //  Value of x acceleration
       f += B2->TRG[2] * B2->TRG[2];                         //  Value of y acceleration
       f += B2->TRG[3] * B2->TRG[3];                         //  Value of z acceleration
-
       std::cout << "[" << std::setw(5) << i << "] (acc): " << sqrt(df / f) << std::endl;
-
       diff2 += df;
       norm2 += f;
     }                                                           //  End loop over bodies & bodies2
@@ -208,15 +205,27 @@ public:
                  double &diff1, double &norm1, double &diff2, double &norm2) {
     B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, B2++) { // Loop over bodies & bodies2
-      diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
-      norm1 += B2->TRG[0] * B2->TRG[0];                         //  Value of potential
-      diff2 += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);// Difference of x acceleration
-      diff2 += (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2]);// Difference of y acceleration
-      diff2 += (B->TRG[3] - B2->TRG[3]) * (B->TRG[3] - B2->TRG[3]);// Difference of z acceleration
-      norm2 += B2->TRG[1] * B2->TRG[1];                         //  Value of x acceleration
-      norm2 += B2->TRG[2] * B2->TRG[2];                         //  Value of y acceleration
-      norm2 += B2->TRG[3] * B2->TRG[3];                         //  Value of z acceleration
-    }                                                           //  End loop over bodies & bodies2
+      double dp = (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
+      double  p = B2->TRG[0] * B2->TRG[0];                      //  Value of potential
+      double df = 0, f = 0;                                     //  Initialize difference and value
+      df += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);//  Difference of x acceleration
+      df += (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2]);//  Difference of y acceleration
+      df += (B->TRG[3] - B2->TRG[3]) * (B->TRG[3] - B2->TRG[3]);//  Difference of z acceleration
+      f += B2->TRG[1] * B2->TRG[1];                             //  Value of x acceleration
+      f += B2->TRG[2] * B2->TRG[2];                             //  Value of y acceleration
+      f += B2->TRG[3] * B2->TRG[3];                             //  Value of z acceleration
+#if 1
+      diff1 += dp;                                              //  Accumulate difference of potential
+      norm1 += p;                                               //  Accumulate value of potential
+      diff2 += df;                                              //  Accumulate difference of force
+      norm2 += f;                                               //  Accumulate value of force
+#else
+      diff1 += dp / p;                                          //  Accumulate normalized difference of potential
+      norm1 += 1;                                               //  Accumulate count of potential
+      diff2 += df / f;                                          //  Accumulate normalized difference of force
+      norm2 += 1;                                               //  Accumulate count of force
+#endif
+    }                                                           // End loop over bodies & bodies2
   }
 #endif	/* EVAL_ERROR_DATAIL */
 
