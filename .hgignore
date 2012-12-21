@@ -1,12 +1,13 @@
 syntax: glob
 
 *.a
-*.so
 *.dat
+*.dot
+*.g80emu
 *.o
 *.out
-*.dot
+*.plist
+*.so
 *.svg
 *.swp
-*.plist
 .Apple*
