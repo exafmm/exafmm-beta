@@ -23,7 +23,7 @@ int main() {
 #else
   const int N = 10000;
   const int nat = 16;
-  const double size = 2;
+  const double size = 20;
 #endif
   double *xi     = new double [3*N];
   double *qi     = new double [N];
@@ -44,7 +44,7 @@ int main() {
   MR3init();
 
 #ifdef DATAFILE
-  std::ifstream fid("datafile",std::ios::in);
+  std::fstream fid("datafile",std::ios::in);
   for( int i=0; i<nat*nat; i++ ) {
     fid >> rscale[i] >> gscale[i] >> frscale[i] >> fgscale[i];
   }
@@ -54,6 +54,9 @@ int main() {
   }
   fid.close();
   for( int i=0; i<N; i++ ) {
+//    xi[3*i+0] = drand48() * size - size/2;
+//    xi[3*i+1] = drand48() * size - size/2;
+//    xi[3*i+2] = drand48() * size - size/2;
     xj[3*i+0] = xi[3*i+0];
     xj[3*i+1] = xi[3*i+1];
     xj[3*i+2] = xi[3*i+2];
@@ -120,6 +123,7 @@ int main() {
     natex[i] = 0;
   }
 
+/*
   FMMcalccoulomb_ij(N, xi, qi, pi, N, xj, qj, 0.0, 1, size, 0);
   FMMcalccoulomb_ij(N, xi, qi, fi, N, xj, qj, 0.0, 0, size, 0);
 #if 1
@@ -163,6 +167,7 @@ int main() {
   }
   std::cout << "Coulomb       potential : " << sqrtf(Pd/Pn) << std::endl;
   std::cout << "Coulomb       force     : " << sqrtf(Fd/Fn) << std::endl;
+*/
 
 
   FMMcalcvdw_ij(N,xi,atypei,pi,N,xj,atypej,nat,gscale,rscale,3,size,0);
@@ -199,17 +204,31 @@ int main() {
     fd[3*i+2] += Fz;
   }
 #endif
+  double Pd = 0, Pn = 0, Fd = 0, Fn = 0;
   Pd = Pn = Fd = Fn = 0;
   for( int i=0; i<N; i++ ) {
+#if 1
+    Pd += (pi[3*i+0] - pd[3*i+0]) * (pi[3*i+0] - pd[3*i+0])
+        / (pd[3*i+0] * pd[3*i+0]);
+    Pn += 1;
+    Fd += (fi[3*i+0] - fd[3*i+0]) * (fi[3*i+0] - fd[3*i+0])
+       / (fd[3*i+0] * fd[3*i+0]);
+    Fd += (fi[3*i+1] - fd[3*i+1]) * (fi[3*i+1] - fd[3*i+1])
+       / (fd[3*i+1] * fd[3*i+1]);
+    Fd += (fi[3*i+2] - fd[3*i+2]) * (fi[3*i+2] - fd[3*i+2])
+       / (fd[3*i+2] * fd[3*i+2]);
+    Fn += 3;
+#else
     Pd += (pi[3*i+0] - pd[3*i+0]) * (pi[3*i+0] - pd[3*i+0]);
     Pn += pd[3*i+0] * pd[3*i+0];
     Fd += (fi[3*i+0] - fd[3*i+0]) * (fi[3*i+0] - fd[3*i+0])
         + (fi[3*i+1] - fd[3*i+1]) * (fi[3*i+1] - fd[3*i+1])
         + (fi[3*i+2] - fd[3*i+2]) * (fi[3*i+2] - fd[3*i+2]);
     Fn += fd[3*i+0] * fd[3*i+0] + fd[3*i+1] * fd[3*i+1] + fd[3*i+2] * fd[3*i+2];
+#endif
   }
-  std::cout << "Van der Waals potential : " << sqrtf(Pd/Pn) << std::endl;
-  std::cout << "Van der Waals force     : " << sqrtf(Fd/Fn) << std::endl;
+  std::cout << "Van der Waals potential : " << sqrt(Pd/Pn) << std::endl;
+  std::cout << "Van der Waals force     : " << sqrt(Fd/Fn) << std::endl;
 
   delete[] xi;
   delete[] qi;

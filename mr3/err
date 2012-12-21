@@ -1,0 +1,1218 @@
+/usr/local/cuda/bin/nvcc  -cuda --host-compilation C  -use_fast_math --ptxas-options=-v -arch sm_11 -DCUDA_SDK_2 -O -I. -I/usr/local/cuda/include md_mother.cu -o md_mother.c
+nvcc warning : option 'host-compilation' has been deprecated and is ignored
+md_kernel.cu(2351): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2351): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2351): warning: variable "al2" was set but never used
+
+md_kernel.cu(2351): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2351): warning: variable "Qjs" was set but never used
+
+md_kernel.cu(2352): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2352): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2352): warning: variable "al2" was set but never used
+
+md_kernel.cu(2352): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2352): warning: variable "Qjs" was set but never used
+
+md_kernel.cu(2353): warning: variable "itype" was set but never used
+
+md_kernel.cu(2353): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2353): warning: variable "al2" was set but never used
+
+md_kernel.cu(2353): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2354): warning: variable "itype" was set but never used
+
+md_kernel.cu(2354): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2354): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2354): warning: variable "al2" was set but never used
+
+md_kernel.cu(2354): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2355): warning: variable "itype" was set but never used
+
+md_kernel.cu(2355): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2355): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2355): warning: variable "al2" was set but never used
+
+md_kernel.cu(2355): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2356): warning: variable "itype" was set but never used
+
+md_kernel.cu(2356): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2356): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2356): warning: variable "al2" was set but never used
+
+md_kernel.cu(2356): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2357): warning: variable "itype" was set but never used
+
+md_kernel.cu(2357): warning: variable "dn2" was set but never used
+
+md_kernel.cu(2357): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2357): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2357): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2357): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2357): warning: variable "al2" was set but never used
+
+md_kernel.cu(2357): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2357): warning: variable "Qjs" was set but never used
+
+md_kernel.cu(2358): warning: variable "itype" was set but never used
+
+md_kernel.cu(2358): warning: variable "dn2" was set but never used
+
+md_kernel.cu(2358): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2358): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2358): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2358): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2358): warning: variable "al2" was set but never used
+
+md_kernel.cu(2358): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2358): warning: variable "Qjs" was set but never used
+
+md_kernel.cu(2359): warning: variable "itype" was set but never used
+
+md_kernel.cu(2359): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2359): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2359): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2359): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2359): warning: variable "al2" was set but never used
+
+md_kernel.cu(2359): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2360): warning: variable "itype" was set but never used
+
+md_kernel.cu(2360): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2360): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2360): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2360): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2360): warning: variable "al2" was set but never used
+
+md_kernel.cu(2360): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2361): warning: variable "itype" was set but never used
+
+md_kernel.cu(2361): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2361): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2361): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2361): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2361): warning: variable "al2" was set but never used
+
+md_kernel.cu(2361): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2368): warning: variable "dn2" was declared but never referenced
+
+md_kernel.cu(2368): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2370): warning: variable "dn2" was declared but never referenced
+
+md_kernel.cu(2370): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "jj4" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "dx" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "dy" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "dz" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "rij" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "tmp2" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "tmp3" was declared but never referenced
+
+md_kernel.cu(2377): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "jj4" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "dx" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "dy" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "dz" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "rij" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "tmp2" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "tmp3" was declared but never referenced
+
+md_kernel.cu(2378): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2383): warning: variable "dn2" was declared but never referenced
+
+md_kernel.cu(2383): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2385): warning: variable "dn2" was declared but never referenced
+
+md_kernel.cu(2385): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "jj4" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "dx" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "dy" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "dz" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "rij" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "tmp2" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "tmp3" was declared but never referenced
+
+md_kernel.cu(2392): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "jj4" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "dx" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "dy" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "dz" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "rij" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "tmp2" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "tmp3" was declared but never referenced
+
+md_kernel.cu(2393): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "atypei" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "Csubd" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2397): warning: variable "As" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "atypei" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "Csubd" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2398): warning: variable "As" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "atypei" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "Csubd" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2401): warning: variable "As" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "atypei" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "alpha2" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "Csubd" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2402): warning: variable "As" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "atypei" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "rcut21" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "Csubd" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2405): warning: variable "As" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "atypei" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "rcut21" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "Csubd" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2406): warning: variable "As" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "atypei" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "rcut21" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "Csubd" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2409): warning: variable "As" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "atypei" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "rcut21" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "Csubd" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2410): warning: variable "As" was declared but never referenced
+
+md_kernel.cu(2416): warning: variable "dn2" was declared but never referenced
+
+md_kernel.cu(2416): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2418): warning: variable "dn2" was declared but never referenced
+
+md_kernel.cu(2418): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "jj4" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "dx" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "dy" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "dz" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "rij" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "tmp2" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "tmp3" was declared but never referenced
+
+md_kernel.cu(2419): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "jj4" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "dx" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "dy" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "dz" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "rij" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "tmp2" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "tmp3" was declared but never referenced
+
+md_kernel.cu(2420): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2426): error: identifier "VDW_SHIFT" is undefined
+
+md_kernel.cu(2426): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2426): error: identifier "VDW_SHIFT" is undefined
+
+md_kernel.cu(2426): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2426): error: identifier "VDW_SHIFT" is undefined
+
+md_kernel.cu(2426): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2426): error: identifier "VDW_SHIFT" is undefined
+
+md_kernel.cu(2426): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2426): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2426): warning: variable "jty4" was set but never used
+
+md_kernel.cu(2426): warning: variable "ii" was declared but never referenced
+
+md_kernel.cu(2426): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2426): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2426): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "atypei" is used before its value is set
+
+md_kernel.cu(2427): warning: variable "jEnd" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "jj4" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "dx" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "dy" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "dz" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "rij" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "tmp2" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "tmp3" was declared but never referenced
+
+md_kernel.cu(2427): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2436): error: identifier "VDW_SHIFT" is undefined
+
+md_kernel.cu(2436): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2436): error: identifier "VDW_SHIFT" is undefined
+
+md_kernel.cu(2436): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2436): error: identifier "VDW_SHIFT" is undefined
+
+md_kernel.cu(2436): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2436): error: identifier "VDW_SHIFT" is undefined
+
+md_kernel.cu(2436): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2436): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2436): warning: variable "jty4" was set but never used
+
+md_kernel.cu(2436): warning: variable "ii" was declared but never referenced
+
+md_kernel.cu(2436): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2436): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2436): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "atypei" is used before its value is set
+
+md_kernel.cu(2437): warning: variable "jEnd" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "jj4" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "dx" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "dy" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "dz" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "rij" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "tmp2" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "tmp3" was declared but never referenced
+
+md_kernel.cu(2437): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2439): error: identifier "VDW_SHIFT" is undefined
+
+md_kernel.cu(2439): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2439): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2439): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2439): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2439): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2439): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2439): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2439): error: no instance of function template "vdw_shift" matches the argument list
+            argument types are: (float, float, float, float, float, float)
+
+md_kernel.cu(2439): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2439): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "jj4" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "jj" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "dx" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "dy" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "dz" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "rij" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "cutoff" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "tmp" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "tmp2" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "tmp3" was declared but never referenced
+
+md_kernel.cu(2440): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2443): warning: variable "itype" was set but never used
+
+md_kernel.cu(2443): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2443): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2443): warning: variable "al2" was set but never used
+
+md_kernel.cu(2443): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2444): warning: variable "itype" was set but never used
+
+md_kernel.cu(2444): warning: variable "dn6" was declared but never referenced
+
+md_kernel.cu(2444): warning: variable "eps2" was declared but never referenced
+
+md_kernel.cu(2444): warning: variable "al2" was set but never used
+
+md_kernel.cu(2444): warning: variable "Qis" was set but never used
+
+md_kernel.cu(2445): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "atypei" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "rcut21" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "Csubd" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2445): warning: variable "As" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "jty" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "jty8" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "ty8" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "atypei" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "itype" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "eps" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "sij" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "pi4" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "pi14" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "l" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "al" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "tmp4" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "rcut21" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "Csubd" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "kk1" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "pi" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "halfsigmai" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "halfsigmaj" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "sqrtepsiloni" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "sqrtepsilonj" was declared but never referenced
+
+md_kernel.cu(2446): warning: variable "As" was declared but never referenced
+
+25 errors detected in the compilation of "/tmp/tmpxft_00004f4e_00000000-4_md_mother.cpp1.ii".
+make: *** [md_mother.c] Error 2
