@@ -2,7 +2,7 @@
 .PHONY: docs
 
 ### CUDA path
-CUDA_INSTALL_PATH = /usr/local/cuda4.1/cuda
+CUDA_INSTALL_PATH = /usr/local/cuda
 
 ### VTK path
 VTK_INCLUDE_PATH = /usr/include/vtk-5.8

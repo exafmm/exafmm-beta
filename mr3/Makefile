@@ -20,13 +20,16 @@
 
 .SUFFIXES: .cu .c .o
 
-C++ = g++
-CC = gcc
+#C++ = g++
+#CC = gcc
 #CC = icc -xW -tpp7
-F90 = gfortran
-F77 = gfortran
+#F90 = gfortran
+#F77 = gfortran
+F90 = ifort
+F77 = ifort
 
-#CC = icc -openmp -xW -tpp7
+CC = icc -openmp -xW -tpp7
+C++ = icpc -openmp -xW -tpp7
 #F90 = ifort -xW -tpp7
 #F77 = $(F90)
 
@@ -67,16 +70,6 @@ GPUCOREOBJ = gpuvdwforce_mother.o gpuvdwpot_mother.o gpucoulombforce_mother.o \
 	gpucoulombpot_mother.o gpuewreforce_mother.o gpuewrepot_mother.o \
 	gpuewwvforce_mother.o gpuewwvpot_mother.o 
 
-# for CUDA
-CUDATK           ?= /usr/local/cuda4.1/cuda
-CUDA_INSTALL_PATH = $(CUDATK)
-#CUDA_INSTALL_PATH = /usr/local/cuda_2.3
-#CUDA_INSTALL_PATH = /nfs/home/narumi/VirtualGRAPE/GPU/cuda_1.1
-#CUDA_INSTALL_PATH = /nfs/home/narumi/VirtualGRAPE/GPU/cuda_2.0b
-# sdk is not needed anymore...
-CUDA_SDK_PATH     = /usr/local/cuda4.1/NVIDIA_GPU_Computing_SDK/C
-#CUDA_SDK_PATH     = /usr/local/cuda/sdk/C
-#CUDA_SDK_PATH     = /nfs/home/narumi/VirtualGRAPE/GPU/NVIDIA_CUDA_SDK_1.1
 NVCC       = $(CUDA_INSTALL_PATH)/bin/nvcc 
 NVCC_FLAGS = -cuda --host-compilation C 
 #NVCC_FLAGS = --compile
