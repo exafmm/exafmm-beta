@@ -23,7 +23,7 @@ int main() {
 #else
   const int N = 10000;
   const int nat = 16;
-  const double size = 20;
+  const double size = 2;
 #endif
   double *xi     = new double [3*N];
   double *qi     = new double [N];
@@ -123,7 +123,6 @@ int main() {
     natex[i] = 0;
   }
 
-/*
   FMMcalccoulomb_ij(N, xi, qi, pi, N, xj, qj, 0.0, 1, size, 0);
   FMMcalccoulomb_ij(N, xi, qi, fi, N, xj, qj, 0.0, 0, size, 0);
 #if 1
@@ -151,6 +150,22 @@ int main() {
     fd[3*i+2] += qi[i] * Fz;
   }
 #endif
+  double fc[3];
+  for( int d=0; d<3; ++d ) fc[d]=0;
+  for( int i=0; i<N; ++i ) {
+    for( int d=0; d<3; ++d ) {
+      fc[d] += qi[i] * xi[3*i+d];
+    }
+  }
+  for( int i=0; i<N; ++i ) {
+    pd[3*i+0] += 2.0 * M_PI / (3.0 * size * size * size)
+              * (fc[0] * fc[0] + fc[1] * fc[1] + fc[2] * fc[2]) / N;
+  }
+  for( int i=0; i<N; ++i ) {
+    for( int d=0; d<3; ++d ) {
+      fd[3*i+d] -= 4.0 * M_PI * qi[i] * fc[d] / (3.0 * size * size * size);
+    }
+  }
   double Pd = 0, Pn = 0, Fd = 0, Fn = 0;
   for( int i=0; i<N; i++ ) {
     pd[3*i+0] *= 0.5;
@@ -167,8 +182,6 @@ int main() {
   }
   std::cout << "Coulomb       potential : " << sqrtf(Pd/Pn) << std::endl;
   std::cout << "Coulomb       force     : " << sqrtf(Fd/Fn) << std::endl;
-*/
-
 
   FMMcalcvdw_ij(N,xi,atypei,pi,N,xj,atypej,nat,gscale,rscale,3,size,0);
   FMMcalcvdw_ij(N,xi,atypei,fi,N,xj,atypej,nat,fgscale,frscale,2,size,0);
@@ -204,7 +217,6 @@ int main() {
     fd[3*i+2] += Fz;
   }
 #endif
-  double Pd = 0, Pn = 0, Fd = 0, Fn = 0;
   Pd = Pn = Fd = Fn = 0;
   for( int i=0; i<N; i++ ) {
 #if 1

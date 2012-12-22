@@ -26,8 +26,12 @@ THE SOFTWARE.
 namespace{
 //! Get r,theta,phi from x,y,z
 void cart2sph(real& r, real& theta, real& phi, vect dist) {
-  r = sqrt(norm(dist))+EPS;                                   // r = sqrt(x^2 + y^2 + z^2) + eps
-  theta = acos(dist[2] / r);                                  // theta = acos(z / r)
+  r = sqrt(norm(dist)) * (1 + EPS);                           // r = sqrt(x^2 + y^2 + z^2)
+  if( r < EPS ) {                                             // If r == 0
+    theta = 0;                                                //  theta can be anything so we set it to 0
+  } else {                                                    // If r != 0
+    theta = acos(dist[2] / r);                                //  theta = acos(z / r)
+  }                                                           // End if for r == 0
   if( fabs(dist[0]) + fabs(dist[1]) < EPS ) {                 // If |x| < eps & |y| < eps
     phi = 0;                                                  //  phi can be anything so we set it to 0
   } else if( fabs(dist[0]) < EPS ) {                          // If |x| < eps

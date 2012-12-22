@@ -28,8 +28,12 @@ __device__ __constant__ gpureal constDevc[514];                 // Constants on 
 namespace {                                                     // Prevent overlap of definitions among equations
 __device__ void cart2sph(gpureal& r, gpureal& theta, gpureal& phi,// Get r,theta,phi from x,y,z on GPU
                          gpureal dx, gpureal dy, gpureal dz) {
-  r = sqrtf(dx * dx + dy * dy + dz * dz)+EPS;                   // r = sqrt(x^2 + y^2 + z^2) + eps
-  theta = acosf(dz / r);                                        // theta = acos(z / r)
+  r = sqrtf(dx * dx + dy * dy + dz * dz) * (1 + EPS);           // r = sqrt(x^2 + y^2 + z^2)
+  if( r < EPS ) {                                               // If r == 0
+    theta = 0;                                                  //  theta can be anything so we set it to 0
+  } else {                                                      // If r != 0
+    theta = acosf(dz / r);                                      //  theta = acos(z / r)
+  }                                                             // End if for r == 0
   if( fabs(dx) + fabs(dy) < EPS ) {                             // If |x| < eps & |y| < eps
     phi = 0;                                                    //  phi can be anything so we set it to 0
   } else if( fabs(dx) < EPS ) {                                 // If |x| < eps
@@ -120,7 +124,7 @@ __device__ void evalLocal(gpureal *YnmShrd, gpureal rho,        // Evaluate sing
     }                                                           //  End loop up to n
     if( n <= nn ) Ynm = rhon * p * factShrd[n-m];               //  rho^(-n-1) * Ynm
     YnmShrd[l] = Ynm;                                           //  Put Ynm in shared memory
-  }                                                             // End loop over coefficients in Ynm
+  }                                                             // Enttd loop over coefficients in Ynm
   __syncthreads();                                              // Syncronize threads
 }
 }                                                               // End anonymous namespace
@@ -377,6 +381,7 @@ __global__ void LaplaceM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
     evalMultipole(YnmShrd,rho,alpha,factShrd);
     LaplaceM2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
+    if(d.x*d.x+d.y*d.y+d.z*d.z<EPS&&threadIdx.x==0) printf("#FMM output: %f\n",target[0]);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[2*itarget+0] = target[0];

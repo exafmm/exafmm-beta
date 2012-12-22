@@ -192,6 +192,22 @@ int main(int argc, char **argv) {
     }
 #endif
   }
+  double fc[3];
+  for( int d=0; d<3; ++d ) fc[d]=0;
+  for( int i=0; i<N; ++i ) {
+    for( int d=0; d<3; ++d ) {
+      fc[d] += qi[i] * xi[3*i+d];
+    }
+  }
+  for( int i=0; i<N; ++i ) {
+    pd[3*i+0] += 2.0 * M_PI / (3.0 * size * size * size)
+              * (fc[0] * fc[0] + fc[1] * fc[1] + fc[2] * fc[2]) / N;
+  }
+  for( int i=0; i<N; ++i ) {
+    for( int d=0; d<3; ++d ) {
+      fd[3*i+d] -= 4.0 * M_PI * qi[i] * fc[d] / (3.0 * size * size * size);
+    }
+  }
   double Pd = 0, Pn = 0, Fd = 0, Fn = 0;
   for( int i=0; i<N; i++ ) {
     pd[3*i+0] *= 0.5;

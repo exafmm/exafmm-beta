@@ -20,16 +20,12 @@
 
 .SUFFIXES: .cu .c .o
 
-#C++ = g++
-#CC = gcc
-#CC = icc -xW -tpp7
-#F90 = gfortran
-#F77 = gfortran
-F90 = ifort
-F77 = ifort
-
-CC = icc -openmp -xW -tpp7
-C++ = icpc -openmp -xW -tpp7
+CC = gcc
+C++ = g++
+#CC = icc -openmp -xW -tpp7
+#C++ = icpc -openmp -xW -tpp7
+F90 = gfortran
+F77 = gfortran
 #F90 = ifort -xW -tpp7
 #F77 = $(F90)
 
