@@ -120,6 +120,25 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
     break;
   }
 #endif
+  double fc[3];
+  for( int d=0; d!=3; ++d ) fc[d]=0;
+  for( int i=0; i!=ni; ++i ) { 
+    for( int d=0; d!=3; ++d ) { 
+      fc[d] += qi[i] * xi[3*i+d];
+    }   
+  }
+  if( tblno == 0 ) { 
+    for( int i=0; i!=ni; ++i ) { 
+      for( int d=0; d!=3; ++d ) {
+        fi[3*i+d] -= 4.0 * M_PI * qi[i] * fc[d] / (3.0 * size * size * size);
+      }
+    }   
+  } else {
+    for( int i=0; i!=ni; ++i ) { 
+      fi[3*i+0] += M_PI / (3.0 * size * size * size)
+                * (fc[0] * fc[0] + fc[1] * fc[1] + fc[2] * fc[2]) / ni;
+    }   
+  }
 }
 
 extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
