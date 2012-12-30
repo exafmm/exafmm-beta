@@ -124,24 +124,14 @@ public:
   }
   operator       T* ()       {return a;}                           // Type-casting (lvalue)
   operator const T* () const {return a;}                           // Type-casting (rvalue)
-  friend std::ostream &operator<<(std::ostream &s, const vec &b) { // Component-wise output stream
-    for_i s<<b[i]<<' ';
+  friend std::ostream &operator<<(std::ostream &s, const vec &a) { // Component-wise output stream
+    for_i s<<a[i]<<' ';
     return s;
   }
   friend T norm(const vec &b) {                                    // L2 norm squared
     T c=0;
     for_i c+=b[i]*b[i];
     return c;
-  }
-  friend vec min(const vec &b, const vec &c) {                     // Element-wise minimum
-    vec d;
-    for (int i=0; i<N; i++) d[i] = b[i] < c[i] ? b[i] : c[i];
-    return d;
-  }
-  friend vec max(const vec &b, const vec &c) {                     // Element-wise maximum
-    vec d;
-    for (int i=0; i<N; i++) d[i] = b[i] > c[i] ? b[i] : c[i];
-    return d;
   }
 };
 

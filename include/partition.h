@@ -32,8 +32,8 @@ private:
 
 protected:
   int LEVEL;                                                    //!< Level of the MPI process binary tree
-  std::vector<vec3> XMIN;                                       //!< Minimum position vector of bodies
-  std::vector<vec3> XMAX;                                       //!< Maximum position vector of bodies
+  std::vector<vect> XMIN;                                       //!< Minimum position vector of bodies
+  std::vector<vect> XMAX;                                       //!< Maximum position vector of bodies
   int nprocs[64][2];                                            //!< Number of processes in the two split groups
   int offset[64][2];                                            //!< Offset of body in the two split groups
   int  color[64][3];                                            //!< Color of hypercube communicators
@@ -267,7 +267,7 @@ public:
   ~Partition() {}
 
 //! Set bounds of domain to be partitioned
-  void setGlobDomain(Bodies &bodies, vec3 x0=0, real r0=M_PI) {
+  void setGlobDomain(Bodies &bodies, vect x0=0, real r0=M_PI) {
     numCells1D = 1 << getMaxLevel(bodies);                      // Set initial number of bodies
     B_iter B = bodies.begin();                                  // Reset body iterator
     XMIN[0] = XMAX[0] = B->X;                                   // Initialize xmin,xmax
@@ -278,7 +278,7 @@ public:
         else if(B->X[d] > XMAX[0][d]) XMAX[0][d] = B->X[d];     //   Determine xmax
       }                                                         //  End loop over each dimension
     }                                                           // End loop over bodies
-    vec3 X;                                                     // Recv buffer
+    vect X;                                                     // Recv buffer
     MPI_Allreduce(XMAX[0],X,3,MPI_TYPE,MPI_MAX,MPI_COMM_WORLD); // Reduce global maximum
     XMAX[0] = X;                                                // Get data from buffer
     MPI_Allreduce(XMIN[0],X,3,MPI_TYPE,MPI_MIN,MPI_COMM_WORLD); // Reduce global minimum

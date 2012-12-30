@@ -38,8 +38,8 @@ private:
   std::vector<int>    sendCellDsp;                              //!< Vector of cell send displacements
   std::vector<int>    recvCellCnt;                              //!< Vector of cell recv counts
   std::vector<int>    recvCellDsp;                              //!< Vector of cell recv displacements
-  std::vector<vec3>   xminAll;                                  //!< Buffer for gathering XMIN
-  std::vector<vec3>   xmaxAll;                                  //!< Buffer for gathering XMAX
+  std::vector<vect>   xminAll;                                  //!< Buffer for gathering XMIN
+  std::vector<vect>   xmaxAll;                                  //!< Buffer for gathering XMAX
 
   JBodies sendBodies;                                           //!< Send buffer for bodies
   JBodies recvBodies;                                           //!< Recv buffer for bodies
@@ -147,7 +147,7 @@ private:
       int irank = sendBodyRanks[i];                             //  Rank to send to & recv from
       for( int c=0; c!=sendBodyCellCnt[i]; ++c,++ic ) {         //  Loop over cells to send to that rank
         C_iter C = sendBodyCells[ic];                           //   Set cell iterator
-        for( B_iter B=C->BODY; B!=C->BODY+C->NDBODY; ++B ) {    //   Loop over bodies in that cell
+        for( B_iter B=C->LEAF; B!=C->LEAF+C->NDLEAF; ++B ) {    //   Loop over bodies in that cell
           JBody body;                                           //    Set compact body type for sending
           body.ICELL = B->ICELL;                                //    Set cell index of compact body type
           body.X     = B->X;                                    //    Set position of compact body type
@@ -240,10 +240,10 @@ private:
   }
 
 //! Get boundries of domains on other processes
-  void getOtherDomain(vec3 &xmin, vec3 &xmax, int l) {
+  void getOtherDomain(vect &xmin, vect &xmax, int l) {
     startTimer("Get domain");                                   // Start timer
     MPI_Datatype MPI_TYPE = getType(XMIN[l][0]);                // Get MPI data type
-    vec3 send[2],recv[2];                                       // Send and recv buffer
+    vect send[2],recv[2];                                       // Send and recv buffer
     MPI_Request req;                                            // MPI requests
     send[0] = send[1] = XMIN[l];                                // Set XMIN into send buffer
     recv[0] = recv[1] = 0;                                      // Initialize recv buffer
@@ -275,8 +275,8 @@ private:
   }
 
 //! Get disatnce to other domain
-  real getDistance(C_iter C, vec3 xmin, vec3 xmax) {
-    vec3 dist;                                                  // Distance vector
+  real getDistance(C_iter C, vect xmin, vect xmax) {
+    vect dist;                                                  // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       dist[d] = (C->X[d] + Xperiodic[d] > xmax[d])*             //  Calculate the distance between cell C and
                 (C->X[d] + Xperiodic[d] - xmax[d])+             //  the nearest point in domain [xmin,xmax]^3
@@ -288,7 +288,7 @@ private:
   }
 
 //! Determine which cells to send
-  void getLET(C_iter C0, C_iter C, vec3 xmin, vec3 xmax) {
+  void getLET(C_iter C0, C_iter C, vect xmin, vect xmax) {
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
     if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     for( int i=0; i!=C->NCHILD; i++ ) {                         // Loop over child cells
@@ -402,8 +402,8 @@ private:
   void cells2twigs(Cells &cells, Cells &twigs, bool last) {
     while( !cells.empty() ) {                                   // While cell vector is not empty
       if( cells.back().NCHILD == 0 ) {                          //  If cell has no child
-        if( cells.back().NDBODY == 0 || !last ) {               //   If cell has no leaf or is not last iteration
-          cells.back().NDBODY = 0;                              //    Set number of leafs to 0
+        if( cells.back().NDLEAF == 0 || !last ) {               //   If cell has no leaf or is not last iteration
+          cells.back().NDLEAF = 0;                              //    Set number of leafs to 0
           twigs.push_back(cells.back());                        //    Push cell into twig vector
         }                                                       //   Endif for no leaf
       }                                                         //  Endif for no child
@@ -417,8 +417,8 @@ private:
       Cell cell;                                                //  Cell structure
       cell.ICELL = JC->ICELL;                                   //  Set index of cell
       cell.M     = JC->M;                                       //  Set multipole of cell
-      cell.CHILD = cell.NCBODY = cell.NDBODY = cell.NCHILD = 0; //  Set number of leafs and children
-      cell.BODY  = bodies.end();                                //  Set pointer to first leaf
+      cell.CHILD = cell.NCLEAF = cell.NDLEAF = cell.NCHILD = 0; //  Set number of leafs and children
+      cell.LEAF  = bodies.end();                                //  Set pointer to first leaf
       getCenter(cell);                                          //  Set center and radius
       twigs.push_back(cell);                                    //  Push cell into twig vector
     }                                                           // End loop over send buffer
@@ -431,8 +431,8 @@ private:
       Cell cell;                                                //  Cell structure
       cell.ICELL = JC->ICELL;                                   //  Set index of cell
       cell.M     = JC->M;                                       //  Set multipole of cell
-      cell.CHILD = cell.NCBODY = cell.NDBODY = cell.NCHILD = 0; //  Set number of leafs and children
-      cell.BODY  = bodies.end();                                //  Set pointer to first leaf
+      cell.CHILD = cell.NCLEAF = cell.NDLEAF = cell.NCHILD = 0; //  Set number of leafs and children
+      cell.LEAF  = bodies.end();                                //  Set pointer to first leaf
       getCenter(cell);                                          //  Set center and radius
       twigs.push_back(cell);                                    //  Push cell into twig vector
     }                                                           // End loop over recv buffer
@@ -450,9 +450,9 @@ private:
       if( twigs.back().ICELL != index ) {                       //  If twig's index is different from previous
         cells.push_back(twigs.back());                          //   Push twig into cell vector
         index = twigs.back().ICELL;                             //   Update index counter
-      } else if ( twigs.back().NDBODY == 0 || !last ) {         //  Elseif twig-twig collision
+      } else if ( twigs.back().NDLEAF == 0 || !last ) {         //  Elseif twig-twig collision
         cells.back().M += twigs.back().M;                       //   Accumulate the multipole
-      } else if ( cells.back().NDBODY == 0 ) {                  //  Elseif twig-body collision
+      } else if ( cells.back().NDLEAF == 0 ) {                  //  Elseif twig-body collision
         Mset M;                                                 //   Multipole for temporary storage
         M = cells.back().M;                                     //   Save multipoles from cells
         cells.back() = twigs.back();                            //   Copy twigs to cells
@@ -477,7 +477,7 @@ private:
   void reindexBodies(Bodies &bodies, Cells &twigs, Cells &cells ,Cells &sticks) {
     startTimer("Reindex");                                      // Start timer
     while( !twigs.empty() ) {                                   // While twig vector is not empty
-      if( twigs.back().NDBODY == 0 ) {                          //  If twig has no leafs
+      if( twigs.back().NDLEAF == 0 ) {                          //  If twig has no leafs
         cells.push_back(twigs.back());                          //   Push twig into cell vector
       }                                                         //  Endif for no leafs
       twigs.pop_back();                                         //  Pop last element from twig vector
@@ -614,7 +614,7 @@ public:
 
 //! Communicate cells in the local essential tree
   void commCells(Bodies &bodies, Cells &cells) {
-    vec3 xmin = 0, xmax = 0;                                    // Initialize domain boundaries
+    vect xmin = 0, xmax = 0;                                    // Initialize domain boundaries
     Cells twigs,sticks;                                         // Twigs and sticks are special types of cells
 
 #if 1
@@ -708,7 +708,7 @@ public:
       if( l == LEVEL - 1 ) {                                    //  If at last level
         complex SUM = 0;                                        //   Initialize accumulator
         for(C_iter C=twigs.begin(); C!=twigs.end(); ++C) {      //   Loop over twigs
-          if( C->NDBODY == 0 ) SUM += C->M[0];                  //    Add multipoles of empty twigs
+          if( C->NDLEAF == 0 ) SUM += C->M[0];                  //    Add multipoles of empty twigs
         }                                                       //   End loop over twigs
         print("Before recv   : ",0);                            //   Print identifier
         print(SUM);                                             //   Print sum of multipoles

@@ -51,8 +51,8 @@ int main() {
     FMM.initTarget(ibodies,IeqJ);                               //  Initialize target values
 
     Cell cell;                                                  //  Define cell
-    cell.NDBODY    = numBodies;                                 //  Number of leafs
-    cell.BODY     = jbodies.begin();                            //  Iterator of first leaf
+    cell.NDLEAF    = numBodies;                                 //  Number of leafs
+    cell.LEAF     = jbodies.begin();                            //  Iterator of first leaf
     cell.X        = 0.5;                                        //  Position
     cell.M        = 0;                                          //  Initialize multipole coefficients
     cell.ICELL    = 8;                                          //  Cell index
@@ -75,8 +75,8 @@ int main() {
     icells.push_back(cell);                                     //  Push cell into target cell vector
     FMM.addM2L(jcells.begin());                                 //  Add source cell to M2L list
     FMM.evalM2L(icells);                                        //  Evaluate M2L kernel
-    cell.NDBODY    = numBodies;                                 //  Number of leafs
-    cell.BODY     = ibodies.begin();                            //  Iterator of first leaf
+    cell.NDLEAF    = numBodies;                                 //  Number of leafs
+    cell.LEAF     = ibodies.begin();                            //  Iterator of first leaf
     cell.X        = -0.5 - dist;                                //  Position
     cell.L        = 0;                                          //  Initialize local coefficients
     cell.ICELL    = 1;                                          //  Cell index

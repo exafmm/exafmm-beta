@@ -55,9 +55,9 @@ void idft(Ewalds &ewalds, Bodies &bodies, real R0) {
 
 template<>
 void Kernel<Laplace>::EwaldReal(C_iter Ci, C_iter Cj) const {   // Ewald real part on CPU
-  for( B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NDBODY; ++Bi ) {    // Loop over target bodies
-    for( B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NDBODY; ++Bj ) {  //  Loop over source bodies
-      vec3 dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+  for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
+    for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
+      vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
       for( int d=0; d<3; d++ ) {                                //   Loop over dimensions
         if( dist[d] < -R0 ) dist[d] += 2 * R0;                  //    Wrap domain so that target is always at
         if( dist[d] >= R0 ) dist[d] -= 2 * R0;                  //    the center of a [-R0,R0]^3 source cube
@@ -121,7 +121,7 @@ void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {         // Ewald wave pa
     for( int d=0; d<3; d++ ) B->TRG[d+1] *= scale;
   }
 
-  vec3 dipole = 0;
+  vect dipole = 0;
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     dipole += (B->X - R0) * B->SRC;
   }

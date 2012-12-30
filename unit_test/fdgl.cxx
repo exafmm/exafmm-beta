@@ -36,7 +36,7 @@ THE SOFTWARE.
 struct JVertex {
   int       Ista;                                               //!< Start index of connection list
   int       Iend;                                               //!< End index of connection list
-  vec3      X;                                                  //!< Position vector
+  vect      X;                                                  //!< Position vector
 };
 
 //! Structure of vertices
@@ -44,7 +44,7 @@ struct Vertex : public JVertex {
 #if VTK
   vtkIdType Id;                                                 //!< VTK vertex ID
 #endif
-  vec3      F;                                                  //!< Force vector
+  vect      F;                                                  //!< Force vector
 };
 
 const std::string  INPUT_PATH = "";                             //!< Input file name
@@ -240,8 +240,8 @@ void repulsion(ParallelFMM<Laplace> &FMM) {
   Bodies jbodies;                                               // Define vector of source bodies
   Cells cells, jcells;                                          // Define vector of cells
   B_iter B = bodies.begin();                                    // Iterator of first body
-  vec3 Xmin = B->X;                                             // Initialize minimum of X
-  vec3 Xmax = B->X;                                             // Initialize maximum of X
+  vect Xmin = B->X;                                             // Initialize minimum of X
+  vect Xmax = B->X;                                             // Initialize maximum of X
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V, ++B ) {// Loop over vertices
     B->X = V->X;                                                //  Copy vertex position to body position
     B->SRC = -100;                                              //  Set source value
@@ -290,7 +290,7 @@ void spring() {
   for( V_iter VI=vertices.begin(); VI!=vertices.end(); ++VI ) { // Loop over target vertices
     for( int i=VI->Ista; i<VI->Iend; ++i ) {                    //  Loop over edges
       JV_iter VJ = jvertices.begin()+i;                         //   Get source vertex
-      vec3 dist = VI->X - VJ->X;                                //   Distance vector from source to target
+      vect dist = VI->X - VJ->X;                                //   Distance vector from source to target
       float R = sqrtf(norm(dist) + EPS2);                       //   Scalar distance from source to target
       float weight = (VI->Iend-VI->Ista) * (VJ->Iend-VJ->Ista); //   Weight based on number of edges
       VI->F -= dist / R * (R - l / weight);                     //   Spring force vector
@@ -301,7 +301,7 @@ void spring() {
 //! Move vertices
 void moveVertices() {
   for( V_iter V=vertices.begin(); V!=vertices.end(); ++V ) {    // Loop over vertices
-    vec3 dX;                                                    //  Position increment
+    vect dX;                                                    //  Position increment
     if( norm(V->F) < EPS ) dX = 0;                              //  Filter noisy movement
     else dX = V->F / std::sqrt(norm(V->F));                     //  Always move at constant speed
     V->X += dX;                                                 //  Update position

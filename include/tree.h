@@ -35,8 +35,6 @@ public:
   using Kernel<equation>::sortCells;                            //!< Sort cells according to cell index
   using Kernel<equation>::X0;                                   //!< Center of root cell
   using Kernel<equation>::R0;                                   //!< Radius of root cell
-  using Kernel<equation>::Ci0;                                  //!< Begin iterator for target cells
-  using Kernel<equation>::Cj0;                                  //!< Begin iterator for source cells
   using Evaluator<equation>::NP2P;                              //!< Number of P2P kernel calls
   using Evaluator<equation>::NM2P;                              //!< Number of M2P kernel calls
   using Evaluator<equation>::NM2L;                              //!< Number of M2L kernel calls
@@ -46,10 +44,6 @@ public:
   using Evaluator<equation>::traverse;                          //!< Traverse tree to get interaction list
   using Evaluator<equation>::traversePeriodic;                  //!< Traverse tree for periodic images
   using Evaluator<equation>::neighbor;                          //!< Traverse source tree to get neighbor list
-  using Evaluator<equation>::P2M;                               //!< Evaluate P2M kernel
-  using Evaluator<equation>::M2M;                               //!< Evaluate M2M kernel
-  using Evaluator<equation>::L2L;                               //!< Evaluate L2L kernel
-  using Evaluator<equation>::L2P;                               //!< Evaluate L2P kernel
   using Evaluator<equation>::evalP2M;                           //!< Evaluate P2M kernel
   using Evaluator<equation>::evalM2M;                           //!< Evaluate M2M kernel
   using Evaluator<equation>::evalM2L;                           //!< Evaluate M2L kernel
@@ -79,11 +73,11 @@ private:
       } else if( c != c_old ) {                                 //  If cell index is repeated
         if( cells[c].NCHILD != 0 ) {                            //   Stick-cell collision
           cells[c_old].NCHILD = cells[c].NCHILD;                //    Copy number of children
-          cells[c_old].NCBODY = cells[c].NCBODY;                //    Copy number of leafs
-          cells[c_old].NDBODY = cells[c].NDBODY;                //    Copy number of leafs
+          cells[c_old].NCLEAF = cells[c].NCLEAF;                //    Copy number of leafs
+          cells[c_old].NDLEAF = cells[c].NDLEAF;                //    Copy number of leafs
           cells[c_old].PARENT = cells[c].PARENT;                //    Copy parent link
           cells[c_old].CHILD = cells[c].CHILD;                  //    Copy child link
-          cells[c_old].BODY = cells[c].BODY;                    //    Copy iterator of first leaf
+          cells[c_old].LEAF = cells[c].LEAF;                    //    Copy iterator of first leaf
           sticks.push_back(cells[c_old]);                       //    Push stick into vector
         }                                                       //   Endif for collision type
         cells[c_old].M += cells[c].M;                           //   Accumulate multipole
@@ -102,8 +96,8 @@ private:
     parent.ICELL = getParent(cells[begin].ICELL);               // Set cell index
     parent.M = 0;                                               // Initialize multipole coefficients
     parent.L = 0;                                               // Initlalize local coefficients
-    parent.NCBODY = parent.NDBODY = parent.NCHILD = 0;          // Initialize NCBODY, NDBODY, & NCHILD
-    parent.BODY = cells[begin].BODY;                            // Set pointer to first leaf
+    parent.NCLEAF = parent.NDLEAF = parent.NCHILD = 0;          // Initialize NCLEAF, NDLEAF, & NCHILD
+    parent.LEAF = cells[begin].LEAF;                            // Set pointer to first leaf
     parent.CHILD = begin;                                       // Link to child
     getCenter(parent);                                          // Set cell center and radius
     for( int i=begin; i!=oldend; ++i ) {                        // Loop over cells at this level
@@ -113,8 +107,8 @@ private:
         parent.ICELL = getParent(cells[i].ICELL);               //   Set cell index
         parent.M = 0;                                           //   Initialize multipole coefficients
         parent.L = 0;                                           //   Initialize local coefficients
-        parent.NCBODY = parent.NDBODY = parent.NCHILD = 0;      //   Initialize NCBODY, NDBODY, & NCHILD
-        parent.BODY = cells[i].BODY;                            //   Set pointer to first leaf
+        parent.NCLEAF = parent.NDLEAF = parent.NCHILD = 0;      //   Initialize NCLEAF, NDLEAF, & NCHILD
+        parent.LEAF = cells[i].LEAF;                            //   Set pointer to first leaf
         parent.CHILD = i;                                       //   Link to child
         getCenter(parent);                                      //   Set cell center and radius
       }                                                         //  Endif for new parent cell
@@ -122,7 +116,7 @@ private:
         (cells.begin()+cells[i].CHILD+c)->PARENT = i;           //   Link child to current
       }                                                         //  End loop over child cells
       cells[i].PARENT = end;                                    //  Link to current to parent
-      parent.NDBODY += cells[i].NDBODY;                         //  Add nleaf of child to parent
+      parent.NDLEAF += cells[i].NDLEAF;                         //  Add nleaf of child to parent
       parents.push_back(parent);                                //  Push parent cell into vector
       parent = parents.back();                                  //  Copy information from vector
       parents.pop_back();                                       //  Pop parent cell from vector
@@ -131,44 +125,6 @@ private:
     cells.push_back(parent);                                    // Push cells into vector
     end++;                                                      // Increment cell counter
     begin = oldend;                                             // Set new begin index to old end index
-  }
-
-//! Recursive call for upward pass
-  void upwardRecursion(C_iter C, C_iter C0) {
-    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-      upwardRecursion(CC, C0);                                  //  Recursive call with new task
-    }                                                           // End loop over child cells
-    C->M = 0;                                                   // Initialize multipole expansion coefficients
-    C->L = 0;                                                   // Initialize local expansion coefficients
-    P2M(C);                                                     // P2M kernel
-    M2M(C);                                                     // M2M kernel
-  }
-
-//! Recursive call for downward pass
-  void downwardRecursion(C_iter C, C_iter C0) const {
-    L2L(C);                                                     // L2L kernel
-    L2P(C);                                                     // L2P kernel
-    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-      downwardRecursion(CC, C0);                                //  Recursive call with new task
-    }                                                           // End loop over chlid cells
-  }
-
-//! Error optimization of Rcrit
-  void setRcrit(C_iter C, C_iter C0, real c) {
-    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-      setRcrit(CC, C0, c);                                      //  Recursive call with new task
-    }                                                           // End loop over child cells
-    for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];            // Normalize multipole expansion coefficients
-    real x = 1.0 / THETA;                                       // Inverse of theta
-#if ERROR_OPT
-    real a = c * powf(std::abs(C->M[0]),1.0/3);                 // Cell coefficient
-    for (int i=0; i<5; i++) {                                   // Newton-Rhapson iteration
-      real f = x * x - 2 * x + 1 - a * pow(x,-P);               //  Function value
-      real df = (P + 2) * x - 2 * (P + 1) + P / x;              //  Function derivative value
-      x -= f / df;                                              //  Increment x
-    }                                                           // End Newton-Rhapson iteration
-#endif
-    C->RCRIT *= x;                                              // Multiply Rcrit by error optimized parameter x
   }
 
 protected:
@@ -190,31 +146,6 @@ protected:
     }                                                           // End loop over dimensions
   }
 
-//! Upward pass (P2M, M2M)
-  void upwardPass(Cells &cells) {
-    startTimer("Upward pass");                                  // Start timer
-    Ci0 = cells.begin();                                        // Set iterator of target root cell
-    Cj0 = cells.begin();                                        // Set iterator of source root cell
-    upwardRecursion(Ci0, Ci0);                                  // Recursive call for upward pass
-    real c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / powf(std::abs(Ci0->M[0]),1.0/3); // Root coefficient
-    setRcrit(Ci0, Ci0, c);                                      // Error optimization of Rcrit
-    for (C_iter C=cells.begin(); C!=cells.begin()+9; C++) {     // Loop over top 2 levels of cells
-      C->RCRIT *= 10;                                           //  Prevent approximation
-    }                                                           // End loop over top 2 levels of cells
-    stopTimer("Upward pass",printNow);                          // Stop timer
-  }
-
-//! Downward pass (L2L, L2P)
-  void downwardPass(Cells &cells) {
-    startTimer("Downward pass");                                // Start timer
-    C_iter C0 = cells.begin();                                  // Root cell
-    L2P(C0);                                                    // If root is the only cell do L2P
-    for (C_iter CC=C0+C0->CHILD; CC!=C0+C0->CHILD+C0->NCHILD; CC++) {// Loop over child cells
-      downwardRecursion(CC, C0);                                //  Recursive call for downward pass
-    }                                                           // End loop over child cells
-    stopTimer("Downward pass",printNow);                        // Stop timer
-  }
-
 public:
 //! Group bodies into twig cells
   void bodies2twigs(Bodies &bodies, Cells &twigs) {
@@ -225,12 +156,12 @@ public:
     Cell cell;                                                  // Cell structure
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       if( B->ICELL != index ) {                                 //  If it belongs to a new cell
-        cell.NCBODY = nleaf;                                    //   Set number of child leafs
-        cell.NDBODY = nleaf;                                    //   Set number of decendant leafs
+        cell.NCLEAF = nleaf;                                    //   Set number of child leafs
+        cell.NDLEAF = nleaf;                                    //   Set number of decendant leafs
         cell.CHILD  = 0;                                        //   Set pointer offset to first child
         cell.NCHILD = 0;                                        //   Set number of child cells
         cell.ICELL  = index;                                    //   Set cell index
-        cell.BODY   = firstLeaf;                                //   Set pointer to first leaf
+        cell.LEAF   = firstLeaf;                                //   Set pointer to first leaf
         getCenter(cell);                                        //   Set cell center and radius
         twigs.push_back(cell);                                  //   Push cells into vector
         firstLeaf = B;                                          //   Set new first leaf
@@ -239,12 +170,12 @@ public:
       }                                                         //  Endif for new cell
       nleaf++;                                                  //  Increment body counter
     }                                                           // End loop over bodies
-    cell.NCBODY = nleaf;                                        // Set number of child leafs
-    cell.NDBODY = nleaf;                                        // Set number of decendant leafs
+    cell.NCLEAF = nleaf;                                        // Set number of child leafs
+    cell.NDLEAF = nleaf;                                        // Set number of decendant leafs
     cell.CHILD  = 0;                                            //   Set pointer offset to first child
     cell.NCHILD = 0;                                            // Set number of child cells
     cell.ICELL  = index;                                        // Set cell index
-    cell.BODY   = firstLeaf;                                    // Set pointer to first leaf
+    cell.LEAF   = firstLeaf;                                    // Set pointer to first leaf
     getCenter(cell);                                            // Set cell center and radius
     twigs.push_back(cell);                                      // Push cells into vector
     stopTimer("Bodies2twigs",printNow);                         // Stop timer & print
@@ -311,12 +242,8 @@ public:
     evalM2P(cells);                                             // Evaluate queued M2P kernels (only GPU)
     evalP2P(cells);                                             // Evaluate queued P2P kernels (only GPU)
 #endif
-#if COMPARE
-    downwardPass(cells);
-#else
     evalL2L(cells);                                             // Evaluate all L2L kernels
     evalL2P(cells);                                             // Evaluate all L2P kernels
-#endif
     if(printNow) std::cout << "P2P: "  << NP2P
                            << " M2P: " << NM2P
                            << " M2L: " << NM2L << std::endl;

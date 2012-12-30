@@ -25,10 +25,10 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Ev
   Xperiodic = 0;                                                // Set periodic coordinate offset
   Cells cells;                                                  // Cells to put target and source bodies
   cells.resize(2);                                              // Resize cells to put target and source bodies
-  cells[0].BODY = ibodies.begin();                              // Iterator of first target leaf
-  cells[0].NDBODY = ibodies.size();                             // Number of target leafs
-  cells[1].BODY = jbodies.begin();                              // Iterator of first source leaf
-  cells[1].NDBODY = jbodies.size();                             // Number of source leafs
+  cells[0].LEAF = ibodies.begin();                              // Iterator of first target leaf
+  cells[0].NDLEAF = ibodies.size();                             // Number of target leafs
+  cells[1].LEAF = jbodies.begin();                              // Iterator of first source leaf
+  cells[1].NDLEAF = jbodies.size();                             // Number of source leafs
   C_iter Ci = cells.begin(), Cj = cells.begin()+1;              // Iterator of target and source cells
   P2P(Ci,Cj);                                                   // Perform P2P kernel
 }
@@ -172,7 +172,7 @@ void Evaluator<equation>::evalP2P(Cells &cells) {               // Evaluate queu
               Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
               Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
               Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
-              evalP2P(Ci,Cj);                                   //       Perform P2P kernel
+              P2P(Ci,Cj);                                       //       Perform P2P kernel
             }                                                   //      Endif for periodic flag
           }                                                     //     End loop over x periodic direction
         }                                                       //    End loop over y periodic direction
@@ -241,11 +241,11 @@ void Evaluator<equation>::timeKernels() {                       // Time all kern
   cells.resize(2);                                              // Two artificial cells
   C_iter Ci = cells.begin(), Cj = cells.begin()+1;              // Artificial target & source cell
   Ci->X = 0;                                                    // Set coordinates of target cell
-  Ci->NDBODY = 10;                                              // Number of leafs in target cell
-  Ci->BODY = ibodies.begin();                                   // Leaf iterator in target cell
+  Ci->NDLEAF = 10;                                              // Number of leafs in target cell
+  Ci->LEAF = ibodies.begin();                                   // Leaf iterator in target cell
   Cj->X = 1;                                                    // Set coordinates of source cell
-  Cj->NDBODY = 1000;                                            // Number of leafs in source cell
-  Cj->BODY = jbodies.begin();                                   // Leaf iterator in source cell
+  Cj->NDLEAF = 1000;                                            // Number of leafs in source cell
+  Cj->LEAF = jbodies.begin();                                   // Leaf iterator in source cell
   startTimer("P2P kernel");                                     // Start timer
   for( int i=0; i!=1; ++i ) P2P(Ci,Cj);                         // Perform P2P kernel
   timeP2P = stopTimer("P2P kernel") / 10000;                    // Stop timer

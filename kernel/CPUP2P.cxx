@@ -24,72 +24,17 @@ THE SOFTWARE.
 #undef KERNEL
 
 template<>
-void Kernel<Laplace>::P2P(C_iter C) const {
-  B_iter B = C->BODY;
-  int n = C->NDBODY;
-  int i = 0;
-  for ( ; i<n; i++) {
-    real pot = 0;
-    vec3 acc = 0;
-    for (int j=i+1; j<n; j++) {
-      vec3 dX = B[i].X - B[j].X;
-      real R2 = norm(dX) + EPS2;
-      if (R2 != 0) {
-        real invR2 = 1.0 / R2;
-        real invR = B[i].SRC * B[j].SRC * sqrtf(invR2);
-        dX *= invR2 * invR;
-        pot += invR;
-        acc += dX;
-        B[j].TRG[0] += invR;
-        B[j].TRG[1] += dX[0];
-        B[j].TRG[2] += dX[1];
-        B[j].TRG[3] += dX[2];
-      }
-    }
-    B[i].TRG[0] += pot;
-    B[i].TRG[1] -= acc[0];
-    B[i].TRG[2] -= acc[1];
-    B[i].TRG[3] -= acc[2];
-  }
-}
-
-template<>
 void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P kernel on CPU
-#if 1
-  B_iter Bi = Ci->BODY;
-  B_iter Bj = Cj->BODY;
-  int ni = Ci->NDBODY;
-  int nj = Cj->NDBODY;
-  int i = 0;
-  for ( ; i<ni; i++) {
-    real pot = 0;
-    vec3 acc = 0;
-    for (int j=0; j<nj; j++) {
-      vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
-      real R2 = norm(dX) + EPS2;
-      if (R2 != 0) {
-        real invR2 = 1.0f / R2;
-        real invR = Bi[i].SRC * Bj[j].SRC * sqrtf(invR2);
-        dX *= invR2 * invR;
-        pot += invR;
-        acc += dX;
-      }
-    }
-    Bi[i].TRG[0] += pot;
-    Bi[i].TRG[1] -= acc[0];
-    Bi[i].TRG[2] -= acc[1];
-    Bi[i].TRG[3] -= acc[2];
-  }
-#else
-  for( B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NDBODY; ++Bi ) {    // Loop over target bodies
+#ifndef SPARC_SIMD
+  for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
     real P0 = 0;                                                //  Initialize potential
-    vec3 F0 = 0;                                                //  Initialize force
-    for( B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NDBODY; ++Bj ) {  //  Loop over source bodies
-      vec3 dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+    vect F0 = 0;                                                //  Initialize force
+    for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
+      vect dist = Bi->X - Bj->X -Xperiodic;                     //   Distance vector from source to target
       real R2 = norm(dist) + EPS2;                              //   R^2
       real invR2 = 1.0 / R2;                                    //   1 / R^2
       if( R2 == 0 ) invR2 = 0;                                  //   Exclude self interaction
-      real invR = Bi->SRC * Bj->SRC * std::sqrt(invR2);         //   potential
+      real invR = Bj->SRC * std::sqrt(invR2);                   //   potential
       dist *= invR2 * invR;                                     //   force
       P0 += invR;                                               //   accumulate potential
       F0 += dist;                                               //   accumulate force
@@ -99,16 +44,39 @@ void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P k
     Bi->TRG[2] -= F0[1];                                        //  y component of force
     Bi->TRG[3] -= F0[2];                                        //  z component of force
   }                                                             // End loop over target bodies
+#else
+  real (* cbi)[10] =  (real (*)[10])(&(Ci->LEAF->IBODY));
+  real (* cbj)[10] =  (real (*)[10])(&(Cj->LEAF->IBODY));
+  real xp[3] = {Xperiodic[0],Xperiodic[1],Xperiodic[2]};
+  int ni = Ci->NDLEAF;
+  int nj = Cj->NDLEAF;
+  int i,j;
+#pragma loop norecurrence
+  for(i=0;i<ni;i++){
+    for(j=0;j<nj;j++){
+      real dist_x = cbi[i][2] - cbj[j][2] - xp[0];
+      real dist_y = cbi[i][3] - cbj[j][3] - xp[1];
+      real dist_z = cbi[i][4] - cbj[j][4] - xp[2];
+      real R2 = EPS2+dist_x*dist_x+dist_y*dist_y+dist_z*dist_z;
+      real invR = 1.0/sqrt(R2);
+      if( R2 == 0 ) invR = 0;
+      real invR3 = cbj[j][5] * invR * invR * invR;
+      cbi[i][6] += cbj[j][5] * invR;
+      cbi[i][7] -= dist_x * invR3;
+      cbi[i][8] -= dist_y * invR3;
+      cbi[i][9] -= dist_z * invR3;
+    }
+  }
 #endif
 }
 
 template<>
 void Kernel<VanDerWaals>::P2P(C_iter Ci, C_iter Cj) const {     // Van der Waals P2P kernel on CPU
-  for( B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NDBODY; ++Bi ) {    // Loop over target bodies
+  for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
     int atypei = int(Bi->SRC);                                  //  Atom type of target
-    for( B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NDBODY; ++Bj ) {  //  Loop over source bodies
+    for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
       int atypej = int(Bj->SRC);                                //   Atom type of source
-      vec3 dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+      vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
       real R2 = norm(dist);                                     //   R squared
       if( R2 != 0 ) {                                           //   Exclude self interaction
         real rs = RSCALE[atypei*ATOMS+atypej];                  //    r scale
