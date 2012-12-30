@@ -23,32 +23,28 @@ THE SOFTWARE.
 #include "kernel.h"
 #undef KERNEL
 
-#ifndef __GXX_EXPERIMENTAL_CXX0X__
-#define constexpr const
-#endif
-
 template<int nx, int ny, int nz>
 struct Index {
-  static const int      I = Index<nx,ny+1,nz-1>::I + 1;
-  static constexpr real F = Index<nx,ny,nz-1>::F * nz;
+  static const int                I = Index<nx,ny+1,nz-1>::I + 1;
+  static const unsigned long long F = Index<nx,ny,nz-1>::F * nz;
 };
 
 template<int nx, int ny>
 struct Index<nx,ny,0> {
-  static const int      I = Index<nx+1,0,ny-1>::I + 1;
-  static constexpr real F = Index<nx,ny-1,0>::F * ny;
+  static const int                I = Index<nx+1,0,ny-1>::I + 1;
+  static const unsigned long long F = Index<nx,ny-1,0>::F * ny;
 };
 
 template<int nx>
 struct Index<nx,0,0> {
-  static const int      I = Index<0,0,nx-1>::I + 1;
-  static constexpr real F = Index<nx-1,0,0>::F * nx;
+  static const int                I = Index<0,0,nx-1>::I + 1;
+  static const unsigned long long F = Index<nx-1,0,0>::F * nx;
 };
 
 template<>
 struct Index<0,0,0> {
-  static const int      I = 0;
-  static constexpr real F = 1;
+  static const int                I = 0;
+  static const unsigned long long F = 1;
 };
 
 
@@ -720,7 +716,7 @@ template<>
 void Kernel<Laplace>::P2M(C_iter Ci) {
   real Rmax = 0;
 //  setCenter(Ci);
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
+  for( B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; ++B ) {
     vect dist = Ci->X - B->X;
     real R = std::sqrt(norm(dist));
     if( R > Rmax ) Rmax = R;
@@ -756,7 +752,7 @@ template<>
 void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
   vect dist = Ci->X - Cj->X - Xperiodic;
   real invR2 = 1 / norm(dist);
-  real invR  = Cj->M[0] * std::sqrt(invR2);
+  real invR  = Ci->M[0] * Cj->M[0] * std::sqrt(invR2);
   Lset C;
   getCoef<P>(C,dist,invR2,invR);
   sumM2L<P>(Ci->L,C,Cj->M);
@@ -764,7 +760,7 @@ void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
 
 template<>
 void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+  for( B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NDBODY; ++B ) {
     vect dist = B->X - Cj->X - Xperiodic;
     real invR2 = 1 / norm(dist);
     real invR  = Cj->M[0] * std::sqrt(invR2);
@@ -781,7 +777,7 @@ void Kernel<Laplace>::L2L(C_iter Ci) const {
   Lset C;
   C[0] = 1;
   Terms<0,0,P>::power(C,dist);
-
+  Ci->L /= Ci->M[0];
   Ci->L += Cj->L;
   for( int i=1; i<LTERM; ++i ) Ci->L[0] += C[i] * Cj->L[i];
   Downward<0,0,P-1>::L2L(Ci->L,C,Cj->L);
@@ -789,13 +785,14 @@ void Kernel<Laplace>::L2L(C_iter Ci) const {
 
 template<>
 void Kernel<Laplace>::L2P(C_iter Ci) const {
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
+  for( B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; ++B ) {
     vect dist = B->X - Ci->X;
     Lset C, L;
     C[0] = 1;
     Terms<0,0,P>::power(C,dist);
 
     L = Ci->L;
+    B->TRG /= B->SRC;
     B->TRG[0] += L[0];
     B->TRG[1] += L[1];
     B->TRG[2] += L[2];

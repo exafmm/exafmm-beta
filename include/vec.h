@@ -124,8 +124,8 @@ public:
   }
   operator       T* ()       {return a;}                           // Type-casting (lvalue)
   operator const T* () const {return a;}                           // Type-casting (rvalue)
-  friend std::ostream &operator<<(std::ostream &s, const vec &a) { // Component-wise output stream
-    for_i s<<a[i]<<' ';
+  friend std::ostream &operator<<(std::ostream &s, const vec &b) { // Component-wise output stream
+    for_i s<<b[i]<<' ';
     return s;
   }
   friend T norm(const vec &b) {                                    // L2 norm squared

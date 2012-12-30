@@ -38,10 +38,10 @@ private:
   struct Node {
     int LEVEL;                                                  //!< Level of node
     int ICHILD;                                                 //!< Flag of empty child nodes
-    int NLEAF;                                                  //!< Number of leafs in node
+    int NBODY;                                                  //!< Number of leafs in node
     bigint I;                                                   //!< Cell index
     bigint CHILD[8];                                            //!< Iterator offset of child nodes
-    B_iter LEAF[NCRIT];                                         //!< Iterator for leafs
+    B_iter BODY[NCRIT];                                         //!< Iterator for leafs
     vect X;                                                     //!< Node center
     real R;                                                     //!< Node radius
   };
@@ -66,7 +66,7 @@ private:
       x[d] += r * (((octant & 1 << d) >> d) * 2 - 1);           //  Calculate new center position
     }                                                           // End loop over dimensions
     Node node;                                                  // Node structure
-    node.NLEAF = node.ICHILD = 0;                               // Initialize child node counters
+    node.NBODY = node.ICHILD = 0;                               // Initialize child node counters
     node.X = x;                                                 // Initialize child node center
     node.R = r;                                                 // Initialize child node radius
     node.LEVEL = nodes[i].LEVEL + 1;                            // Level of child node
@@ -78,20 +78,20 @@ private:
 
 //! Add leaf to node
   void addLeaf(B_iter b, int i) {
-    nodes[i].LEAF[nodes[i].NLEAF] = b;                          // Assign body iterator to leaf
-    nodes[i].NLEAF++;                                           // Increment leaf counter
+    nodes[i].BODY[nodes[i].NBODY] = b;                          // Assign body iterator to leaf
+    nodes[i].NBODY++;                                           // Increment leaf counter
   }
 
 //! Split node and reassign leafs to child nodes
   void splitNode(int i) {
     for( int l=0; l!=NCRIT; ++l ) {                             // Loop over leafs in parent node
-      int octant = getOctant(nodes[i].LEAF[l]->X,i);            //  Find the octant where the body belongs
+      int octant = getOctant(nodes[i].BODY[l]->X,i);            //  Find the octant where the body belongs
       if( !(nodes[i].ICHILD & (1 << octant)) ) {                //  If child doesn't exist in this octant
         addChild(octant,i);                                     //   Add new child to list
       }                                                         //  Endif for octant
       int c = nodes[i].CHILD[octant];                           //  Set counter for child node
-      addLeaf(nodes[i].LEAF[l],c);                              //  Add leaf to child
-      if( nodes[c].NLEAF >= NCRIT ) {                           //  If there are still too many leafs
+      addLeaf(nodes[i].BODY[l],c);                              //  Add leaf to child
+      if( nodes[c].NBODY >= NCRIT ) {                           //  If there are still too many leafs
         splitNode(c);                                           //   Split the node into smaller ones
       }                                                         //  Endif for too many leafs
     }                                                           // End loop over leafs
@@ -99,15 +99,15 @@ private:
 
 //! Traverse tree
   void traverse(typename std::vector<Node>::iterator N) {
-    if( N->NLEAF >= NCRIT ) {                                   // If node has children
+    if( N->NBODY >= NCRIT ) {                                   // If node has children
       for( int i=0; i!=8; ++i ) {                               // Loop over children
         if( N->ICHILD & (1 << i) ) {                            //  If child exists in this octant
           traverse(nodes.begin()+N->CHILD[i]);                  //   Recursively search child node
         }                                                       //  Endif for octant
       }                                                         // End loop over children
     } else {                                                    //  If child doesn't exist
-      for( int i=0; i!=N->NLEAF; ++i ) {                        //   Loop over leafs
-        N->LEAF[i]->ICELL = N->I;                               //    Store cell index in bodies
+      for( int i=0; i!=N->NBODY; ++i ) {                        //   Loop over leafs
+        N->BODY[i]->ICELL = N->I;                               //    Store cell index in bodies
       }                                                         //   End loop over leafs
     }                                                           //  Endif for child existence
   }
@@ -118,14 +118,14 @@ public:
     startTimer("Grow tree");                                    // Start timer
     int octant;                                                 // In which octant is the body located?
     Node node;                                                  // Node structure
-    node.LEVEL = node.NLEAF = node.ICHILD = node.I = 0;         // Initialize root node counters
+    node.LEVEL = node.NBODY = node.ICHILD = node.I = 0;         // Initialize root node counters
     node.X = X0;                                                // Initialize root node center
     node.R = R0;                                                // Initialize root node radius
     nodes.push_back(node);                                      // Push child node into vector
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
       int i = 0;                                                //  Reset node counter
-      while( nodes[i].NLEAF >= NCRIT ) {                        //  While the nodes have children
-        nodes[i].NLEAF++;                                       //   Increment the cumulative leaf counter
+      while( nodes[i].NBODY >= NCRIT ) {                        //  While the nodes have children
+        nodes[i].NBODY++;                                       //   Increment the cumulative leaf counter
         octant = getOctant(B->X,i);                             //   Find the octant where the body belongs
         if( !(nodes[i].ICHILD & (1 << octant)) ) {              //   If child doesn't exist in this octant
           addChild(octant,i);                                   //    Add new child to list
@@ -133,7 +133,7 @@ public:
         i = nodes[i].CHILD[octant];                             //    Update node iterator to child
       }                                                         //  End while loop
       addLeaf(B,i);                                             //  Add body to node as leaf
-      if( nodes[i].NLEAF >= NCRIT ) {                           //  If there are too many leafs
+      if( nodes[i].NBODY >= NCRIT ) {                           //  If there are too many leafs
         splitNode(i);                                           //   Split the node into smaller ones
       }                                                         //  Endif for splitting
     }                                                           // End loop over bodies

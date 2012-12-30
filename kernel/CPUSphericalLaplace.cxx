@@ -65,7 +65,7 @@ template<>
 void Kernel<Laplace>::P2M(C_iter Cj) {
   real Rmax = 0;
   complex Ynm[4*P*P], YnmTheta[4*P*P];
-  for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NCLEAF; ++B ) {
+  for( B_iter B=Cj->BODY; B!=Cj->BODY+Cj->NCBODY; ++B ) {
     vect dist = B->X - Cj->X;
     real R = std::sqrt(norm(dist));
     if( R > Rmax ) Rmax = R;
@@ -166,7 +166,7 @@ template<>
 void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
   complex Ynm[4*P*P], YnmTheta[4*P*P];
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
+  for( B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NDBODY; ++B ) {
     vect dist = B->X - Cj->X - Xperiodic;
     vect spherical = 0;
     vect cartesian = 0;
@@ -236,7 +236,7 @@ template<>
 void Kernel<Laplace>::L2P(C_iter Ci) const {
   const complex I(0.,1.);                                       // Imaginary unit
   complex Ynm[4*P*P], YnmTheta[4*P*P];
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
+  for( B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; ++B ) {
     vect dist = B->X - Ci->X;
     vect spherical = 0;
     vect cartesian = 0;

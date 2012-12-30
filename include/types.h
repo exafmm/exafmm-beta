@@ -58,8 +58,8 @@ int omp_get_thread_num() {
 }
 #define OMP_NUM_THREADS 1
 #else
-#include <omp.h>
-#define OMP_NUM_THREADS 12
+//#include <omp.h>
+//#define OMP_NUM_THREADS 12
 #endif
 
 typedef unsigned           bigint;                              //!< Big integer type
@@ -169,10 +169,10 @@ typedef std::vector<Leaf>::iterator    L_iter;                  //!< Iterator fo
 struct Node {
   bool NOCHILD;                                                 //!< Flag for twig nodes
   int  LEVEL;                                                   //!< Level in the tree structure
-  int  NLEAF;                                                   //!< Number of descendant leafs
+  int  NBODY;                                                   //!< Number of descendant leafs
   int  CHILD[8];                                                //!< Index of child node
   vect X;                                                       //!< Coordinate at center
-  Leaf *LEAF;                                                   //!< Pointer to first leaf
+  Leaf *BODY;                                                   //!< Pointer to first leaf
 };
 typedef std::vector<Node>              Nodes;                   //!< Vector of nodes
 typedef std::vector<Node>::iterator    N_iter;                  //!< Iterator for node vector
@@ -189,11 +189,11 @@ typedef std::vector<JCell>::iterator   JC_iter;                 //!< Iterator fo
 struct Cell {
   bigint   ICELL;                                               //!< Cell index
   int      NCHILD;                                              //!< Number of child cells
-  int      NCLEAF;                                              //!< Number of child leafs
-  int      NDLEAF;                                              //!< Number of descendant leafs
+  int      NCBODY;                                              //!< Number of child leafs
+  int      NDBODY;                                              //!< Number of descendant leafs
   int      PARENT;                                              //!< Iterator offset of parent cell
   int      CHILD;                                               //!< Iterator offset of child cells
-  B_iter   LEAF;                                                //!< Iterator of first leaf
+  B_iter   BODY;                                                //!< Iterator of first leaf
   vect     X;                                                   //!< Cell center
   real     R;                                                   //!< Cell radius
   real     RMAX;                                                //!< Max cell radius

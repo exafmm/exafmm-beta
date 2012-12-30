@@ -75,7 +75,7 @@ protected:
   void setCenter(C_iter C) const {
     real m = 0;
     vect X = 0;
-    for( B_iter B=C->LEAF; B!=C->LEAF+C->NCLEAF; ++B ) {
+    for( B_iter B=C->BODY; B!=C->BODY+C->NCBODY; ++B ) {
       m += std::abs(B->SRC);
       X += B->X * std::abs(B->SRC);
     }
@@ -299,6 +299,7 @@ public:
   void M2M(C_iter Ci);                                          //!< Evaluate M2M kernel on CPU
   void M2L(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2L kernel on CPU
   void M2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate M2P kernel on CPU
+  void P2P(C_iter C) const;                                     //!< Evaluate P2P kernel on CPU
   void P2P(C_iter Ci, C_iter Cj) const;                         //!< Evaluate P2P kernel on CPU
   void L2L(C_iter Ci) const;                                    //!< Evaluate L2L kernel on CPU
   void L2P(C_iter Ci) const;                                    //!< Evaluate L2P kernel on CPU

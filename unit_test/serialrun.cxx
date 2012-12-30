@@ -71,6 +71,9 @@ int main() {
   FMM.buffer = bodies;                                          // Define new bodies vector for direct sum
   FMM.initTarget(FMM.buffer);                                   // Reinitialize target values
   FMM.evalP2P(FMM.buffer,jbodies);                              // Direct summation between buffer and jbodies
+  for (B_iter B=FMM.buffer.begin(); B!=FMM.buffer.end(); B++) { // Loop over bodies
+    B->TRG /= B->SRC;                                           //  Normalize by target charge
+  }                                                             // End loop over bodies
   FMM.stopTimer("Direct sum",FMM.printNow);                     // Stop timer
   FMM.eraseTimer("Direct sum");                                 // Erase entry from timer to avoid timer overlap
   FMM.writeTime();                                              // Write timings of all events to file

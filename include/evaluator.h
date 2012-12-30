@@ -83,9 +83,9 @@ private:
 //! Approximate interaction between two cells
   inline void approximate(C_iter Ci, C_iter Cj) {
 #if HYBRID
-    if( timeP2P*Cj->NDLEAF < timeM2P && timeP2P*Ci->NDLEAF*Cj->NDLEAF < timeM2L) {// If P2P is fastest
+    if( timeP2P*Cj->NDBODY < timeM2P && timeP2P*Ci->NDBODY*Cj->NDBODY < timeM2L) {// If P2P is fastest
       evalP2P(Ci,Cj);                                           //  Evaluate on CPU, queue on GPU
-    } else if ( timeM2P < timeP2P*Cj->NDLEAF && timeM2P*Ci->NDLEAF < timeM2L ) {// If M2P is fastest
+    } else if ( timeM2P < timeP2P*Cj->NDBODY && timeM2P*Ci->NDBODY < timeM2L ) {// If M2P is fastest
       evalM2P(Ci,Cj);                                           //  Evaluate on CPU, queue on GPU
     } else {                                                    // If M2L is fastest
       evalM2L(Ci,Cj);                                           //  Evaluate on CPU, queue on GPU
@@ -143,7 +143,7 @@ private:
         }                                                       //   End loop over second cell's children
       }                                                         //  End if for which cell to split
 #if QUARK
-      if( int(pairQueue.size()) > root->NDLEAF / 100 ) {        //  When queue size reaches threshold
+      if( int(pairQueue.size()) > root->NDBODY / 100 ) {        //  When queue size reaches threshold
         while( !pairQueue.empty() ) {                           //   While dual traversal queue is not empty
           pair = pairQueue.front();                             //    Get interaction pair from front of queue
           pairQueue.pop_front();                                //    Pop dual traversal queue
@@ -158,6 +158,60 @@ private:
 #endif
   }
 
+//! Split cell and call traverse() recursively for child
+  void splitCell(C_iter Ci, C_iter Cj) {
+    if (Cj->NCHILD == 0) {                                      // If Cj is leaf
+      assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
+      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+        traverse(ci, Cj);                                       //   Traverse a single pair of cells
+      }                                                         //  End loop over Ci's children
+    } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
+      assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
+      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+        traverse(Ci, cj);                                       //   Traverse a single pair of cells
+      }                                                         //  End loop over Cj's children
+    } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
+      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+        traverse(ci, Cj);                                       //   Traverse a single pair of cells
+      }                                                         //  End loop over Ci's children
+    } else {                                                    // Else if Cj is larger than Ci
+      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+        traverse(Ci, cj);                                       //   Traverse a single pair of cells
+      }                                                         //  End loop over Cj's children
+    }                                                           // End if for leafs and Ci Cj size
+  }
+
+protected:
+//! Dual tree traversal for a single pair of cells
+  void traverse(C_iter Ci, C_iter Cj) {
+    vect dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
+    real R2 = norm(dX);                                         // Scalar distance squared
+#if DUAL
+    {                                                           // Dummy bracket
+#else
+    if (Ci->RCRIT != Cj->RCRIT) {                               // If cell is not at the same level
+      splitCell(Ci, Cj);                                        //  Split cell and call function recursively for child
+    } else {                                                    // If we don't care if cell is not at the same level
+#endif
+//      if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {   //  If distance is far enough
+      if (R2 * THETA * THETA > (Ci->R+Cj->R)*(Ci->R+Cj->R)) {   //  If distance is far enough
+        approximate(Ci, Cj);                                    //   Use approximate kernels
+      } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          //  Else if both cells are bodies
+        if (Cj->NCBODY == 0) {                                  //   If the bodies weren't sent from remote node
+          approximate(Ci, Cj);                                  //    Use approximate kernels
+        } else {                                                //   Else if the bodies were sent
+          if (Ci == Cj) {                                       //    If source and target are same
+            P2P(Ci);                                            //     P2P kernel for single cell
+          } else {                                              //    Else if source and target are different
+            P2P(Ci, Cj);                                        //     P2P kernel for pair of cells
+          }                                                     //    End if for same source and target
+        }                                                       //   End if for bodies
+      } else {                                                  //  Else if cells are close but not bodies
+        splitCell(Ci, Cj);                                      //   Split cell and call function recursively for child
+      }                                                         //  End if for multipole acceptance
+    }                                                           // End if for same level cells
+  }
+
 //! Get range of periodic images
   int getPeriodicRange() {
     int prange = 0;                                             //  Range of periodic images
@@ -167,7 +221,6 @@ private:
     return prange;                                              // Return range of periodic images
   }
 
-protected:
 //! Get level from cell index
   int getLevel(bigint index) {
     int i = index;                                              // Copy to dummy index
@@ -199,7 +252,7 @@ protected:
                     cell.X[1]  = C->X[1] + (iy * 6 + cy * 2) * C->R;//     Set new y cooridnate for periodic image
                     cell.X[2]  = C->X[2] + (iz * 6 + cz * 2) * C->R;//     Set new z coordinate for periodic image
                     cell.M     = C->M;                          //         Copy multipoles to new periodic image
-                    cell.NCLEAF = cell.NDLEAF = cell.NCHILD = 0;//         Initialize NCLEAF, NDLEAF, & NCHILD
+                    cell.NCBODY = cell.NDBODY = cell.NCHILD = 0;//         Initialize NCBODY, NDBODY, & NCHILD
                     jcells.push_back(cell);                     //         Push cell into periodic jcell vector
                   }                                             //        End loop over z periodic direction (child)
                 }                                               //       End loop over y periodic direction (child)
@@ -388,8 +441,8 @@ public:
     if( IMAGES == 0 ) {                                         // If free boundary condition
       Iperiodic = Icenter;                                      //  Set periodic image flag to center
       Xperiodic = 0;                                            //  Set periodic coordinate offset
-      Pair pair(root,jroot);                                    //  Form pair of root cells
-      traverseQueue(pair);                                      //  Traverse a pair of trees
+      Pair pair(root,jroot);                                    //     Form pair of root cells
+      traverse(root,jroot);                                     //  Traverse a pair of trees
     } else {                                                    // If periodic boundary condition
       int I = 0;                                                //  Initialize index of periodic image
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
@@ -437,7 +490,7 @@ public:
             }                                                   //     End loop over z periodic direction
           }                                                     //    End loop over y periodic direction
         }                                                       //   End loop over x periodic direction
-        for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B) {  //   Loop over all leafs in cell
+        for( B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; ++B) {  //   Loop over all leafs in cell
           B->TRG[0] -= M_2_SQRTPI * B->SRC * ALPHA;             //    Self term of Ewald real part
         }                                                       //   End loop over all leafs in cell
       }                                                         //  End if for twig cells
