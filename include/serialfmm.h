@@ -22,6 +22,7 @@ private:
 #endif
     real_t x = 1.0 / THETA;                                     // Inverse of theta
 #if ERROR_OPT
+    assert(THETA != 1.0);
     real_t a = c * powf(std::abs(C->M[0]),1.0/3);               // Cell coefficient
     for (int i=0; i<5; i++) {                                   // Newton-Rhapson iteration
       real_t f = x * x - 2 * x + 1 - a * pow(x,-P);             //  Function value
@@ -123,9 +124,11 @@ public:
     upwardRecursion(Ci0, Ci0);                                  // Recursive call for upward pass
     real_t c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / powf(std::abs(Ci0->M[0]),1.0/3); // Root coefficient
     setRcrit(Ci0, Ci0, c);                                      // Error optimization of Rcrit
-    for (C_iter C=cells.begin(); C!=cells.begin()+9; C++) {     // Loop over top 2 levels of cells
-      C->RCRIT *= 10;                                           //  Prevent approximation
-    }                                                           // End loop over top 2 levels of cells
+    if( cells.size() > 9 ) {                                    // If tree has more than 2 levels
+      for (C_iter C=cells.begin(); C!=cells.begin()+9; C++) {   //  Loop over top 2 levels of cells
+        C->RCRIT *= 10;                                         //   Prevent approximation
+      }                                                         //  End loop over top 2 levels of cells
+    }                                                           // End if for tree levels
     stopTimer("Upward pass",printNow);                          // Stop timer
   }
 
