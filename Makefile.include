@@ -30,7 +30,7 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loo
 
 ### Base flags
 CXX	+= -I$(EXAFMM_INCLUDE_PATH)
-LFLAGS	= -L$(EXAFMM_LIBRARY_PATH)
+LFLAGS	= -L$(EXAFMM_LIBRARY_PATH) -D$(BASIS)
 LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
 LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
 LFLAGS	+= -DERROR_OPT # Use error optimized theta
