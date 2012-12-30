@@ -38,8 +38,8 @@ private:
   std::vector<int>    sendCellDsp;                              //!< Vector of cell send displacements
   std::vector<int>    recvCellCnt;                              //!< Vector of cell recv counts
   std::vector<int>    recvCellDsp;                              //!< Vector of cell recv displacements
-  std::vector<vect>   xminAll;                                  //!< Buffer for gathering XMIN
-  std::vector<vect>   xmaxAll;                                  //!< Buffer for gathering XMAX
+  std::vector<vec3>   xminAll;                                  //!< Buffer for gathering XMIN
+  std::vector<vec3>   xmaxAll;                                  //!< Buffer for gathering XMAX
 
   JBodies sendBodies;                                           //!< Send buffer for bodies
   JBodies recvBodies;                                           //!< Recv buffer for bodies
@@ -240,10 +240,10 @@ private:
   }
 
 //! Get boundries of domains on other processes
-  void getOtherDomain(vect &xmin, vect &xmax, int l) {
+  void getOtherDomain(vec3 &xmin, vec3 &xmax, int l) {
     startTimer("Get domain");                                   // Start timer
     MPI_Datatype MPI_TYPE = getType(XMIN[l][0]);                // Get MPI data type
-    vect send[2],recv[2];                                       // Send and recv buffer
+    vec3 send[2],recv[2];                                       // Send and recv buffer
     MPI_Request req;                                            // MPI requests
     send[0] = send[1] = XMIN[l];                                // Set XMIN into send buffer
     recv[0] = recv[1] = 0;                                      // Initialize recv buffer
@@ -275,8 +275,8 @@ private:
   }
 
 //! Get disatnce to other domain
-  real getDistance(C_iter C, vect xmin, vect xmax) {
-    vect dist;                                                  // Distance vector
+  real getDistance(C_iter C, vec3 xmin, vec3 xmax) {
+    vec3 dist;                                                  // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       dist[d] = (C->X[d] + Xperiodic[d] > xmax[d])*             //  Calculate the distance between cell C and
                 (C->X[d] + Xperiodic[d] - xmax[d])+             //  the nearest point in domain [xmin,xmax]^3
@@ -288,7 +288,7 @@ private:
   }
 
 //! Determine which cells to send
-  void getLET(C_iter C0, C_iter C, vect xmin, vect xmax) {
+  void getLET(C_iter C0, C_iter C, vec3 xmin, vec3 xmax) {
     int level = int(log(MPISIZE-1) / M_LN2 / 3) + 1;            // Level of local root cell
     if( MPISIZE == 1 ) level = 0;                               // Account for serial case
     for( int i=0; i!=C->NCHILD; i++ ) {                         // Loop over child cells
@@ -614,7 +614,7 @@ public:
 
 //! Communicate cells in the local essential tree
   void commCells(Bodies &bodies, Cells &cells) {
-    vect xmin = 0, xmax = 0;                                    // Initialize domain boundaries
+    vec3 xmin = 0, xmax = 0;                                    // Initialize domain boundaries
     Cells twigs,sticks;                                         // Twigs and sticks are special types of cells
 
 #if 1

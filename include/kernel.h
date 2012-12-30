@@ -59,11 +59,11 @@ protected:
   real *Anm;                                                    //!< \f$ (-1)^n / \sqrt{ \frac{(n + m)!}{(n - m)!} } \f$
   complex *Cnm;                                                 //!< M2L translation matrix \f$ C_{jn}^{km} \f$
 public:
-  vect X0;                                                      //!< Center of root cell
+  vec3 X0;                                                      //!< Center of root cell
   real R0;                                                      //!< Radius of root cell
 
 private:
-  real getBmax(vect const&X, C_iter C) const {
+  real getBmax(vec3 const&X, C_iter C) const {
     real rad = C->R;
     real dx = rad+std::abs(X[0]-C->X[0]);
     real dy = rad+std::abs(X[1]-C->X[1]);
@@ -74,7 +74,7 @@ private:
 protected:
   void setCenter(C_iter C) const {
     real m = 0;
-    vect X = 0;
+    vec3 X = 0;
     for( B_iter B=C->BODY; B!=C->BODY+C->NCBODY; ++B ) {
       m += std::abs(B->SRC);
       X += B->X * std::abs(B->SRC);
@@ -185,18 +185,18 @@ public:
   KernelBase &operator=(const KernelBase) {return *this;}
 
 //! Set center of root cell
-  void setX0(vect x0) {X0 = x0;}
+  void setX0(vec3 x0) {X0 = x0;}
 //! Set radius of root cell
   void setR0(real r0) {R0 = r0;}
 
 //! Get center of root cell
-  vect getX0() const {return X0;}
+  vec3 getX0() const {return X0;}
 //! Get radius of root cell
   real getR0() const {return R0;}
 
 //! Set center and size of root cell
-  void setDomain(Bodies &bodies, vect x0=0, real r0=M_PI) {
-    vect xmin,xmax;                                             // Min,Max of domain
+  void setDomain(Bodies &bodies, vec3 x0=0, real r0=M_PI) {
+    vec3 xmin,xmax;                                             // Min,Max of domain
     B_iter B = bodies.begin();                                  // Reset body iterator
     xmin = xmax = B->X;                                         // Initialize xmin,xmax
     for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
@@ -205,6 +205,13 @@ public:
         else if(B->X[d] > xmax[d]) xmax[d] = B->X[d];           //   Determine xmax
       }                                                         //  End loop over each dimension
     }                                                           // End loop over bodies
+    for (int d=0; d<3; d++) x0[d] = (xmax[d] + xmin[d]) / 2;    // Calculate center of domain
+    r0 = 0;                                                     // Initialize localRadius
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
+      r0 = std::max(x0[d] - xmin[d], r0);                       // Calculate min distance from center
+      r0 = std::max(xmax[d] - x0[d], r0);                       // Calculate max distance from center 
+    }                                                           // End loop over dimensions
+    r0 *= 1.00001;                                              // Add some leeway to radius
 /*
     if( xmin[0] < x0[0]-r0 || x0[0]+r0 < xmax[0]                //  Check for outliers in x direction
      || xmin[1] < x0[1]-r0 || x0[1]+r0 < xmax[1]                //  Check for outliers in y direction

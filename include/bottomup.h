@@ -21,7 +21,11 @@ THE SOFTWARE.
 */
 #ifndef bottomup_h
 #define bottomup_h
+#if COMPARE
 #include "topdown.h"
+#else
+#include "topdown2.h"
+#endif
 
 //! Bottomup tree constructor
 template<Equation equation>

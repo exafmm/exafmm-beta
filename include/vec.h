@@ -133,6 +133,16 @@ public:
     for_i c+=b[i]*b[i];
     return c;
   }
+  friend vec min(const vec &b, const vec &c) {                     // Element-wise minimum
+    vec d;
+    for (int i=0; i<N; i++) d[i] = b[i] < c[i] ? b[i] : c[i];
+    return d;
+  }
+  friend vec max(const vec &b, const vec &c) {                     // Element-wise maximum
+    vec d;
+    for (int i=0; i<N; i++) d[i] = b[i] > c[i] ? b[i] : c[i];
+    return d;
+  }
 };
 
 #undef for_i

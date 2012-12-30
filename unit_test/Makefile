@@ -24,7 +24,7 @@ ewald_fmm: ewald_fmm.cxx $(OBJECT)
 	$(SERIALRUN)
 
 serialrun: serialrun.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS) $(VFLAGS)
+	$(CXX) $? $(LFLAGS) $(VFLAGS) -DTOPDOWN -DCOMPARE
 	$(SERIALRUN)
 
 unsort: unsort.cxx $(OBJECT)

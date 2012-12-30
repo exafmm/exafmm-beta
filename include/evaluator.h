@@ -109,7 +109,7 @@ private:
       C = cellStack.top();                                      //  Get cell from top of stack
       cellStack.pop();                                          //  Pop traversal stack
       for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {// Loop over cell's children
-        vect dX = Ci->X - Cj->X - Xperiodic;                    //   Distance vector from source to target
+        vec3 dX = Ci->X - Cj->X - Xperiodic;                    //   Distance vector from source to target
         real Rq = std::sqrt(norm(dX));                          //   Scalar distance
         if( Rq * THETA < Ci->R + Cj->R && Cj->NCHILD == 0 ) {   //   If twigs are close
           evalEwaldReal(Ci,Cj);                                 //    Ewald real part
@@ -184,33 +184,24 @@ private:
 protected:
 //! Dual tree traversal for a single pair of cells
   void traverse(C_iter Ci, C_iter Cj) {
-    vect dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
+    vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real R2 = norm(dX);                                         // Scalar distance squared
-#if DUAL
-    {                                                           // Dummy bracket
-#else
-    if (Ci->RCRIT != Cj->RCRIT) {                               // If cell is not at the same level
-      splitCell(Ci, Cj);                                        //  Split cell and call function recursively for child
-    } else {                                                    // If we don't care if cell is not at the same level
-#endif
-//      if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {   //  If distance is far enough
-      if (R2 * THETA * THETA > (Ci->R+Cj->R)*(Ci->R+Cj->R)) {   //  If distance is far enough
-        approximate(Ci, Cj);                                    //   Use approximate kernels
-      } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          //  Else if both cells are bodies
-        if (Cj->NCBODY == 0) {                                  //   If the bodies weren't sent from remote node
-          approximate(Ci, Cj);                                  //    Use approximate kernels
-        } else {                                                //   Else if the bodies were sent
-          if (Ci == Cj) {                                       //    If source and target are same
-            P2P(Ci);                                            //     P2P kernel for single cell
-          } else {                                              //    Else if source and target are different
-            P2P(Ci, Cj);                                        //     P2P kernel for pair of cells
-          }                                                     //    End if for same source and target
-          NP2P++;                                               //    Increment P2P counter
-        }                                                       //   End if for bodies
-      } else {                                                  //  Else if cells are close but not bodies
-        splitCell(Ci, Cj);                                      //   Split cell and call function recursively for child
-      }                                                         //  End if for multipole acceptance
-    }                                                           // End if for same level cells
+    if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {   //  If distance is far enough
+      approximate(Ci, Cj);                                      //   Use approximate kernels
+    } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            //  Else if both cells are bodies
+      if (Cj->NCBODY == 0) {                                    //   If the bodies weren't sent from remote node
+        approximate(Ci, Cj);                                    //    Use approximate kernels
+      } else {                                                  //   Else if the bodies were sent
+        if (Ci == Cj) {                                         //    If source and target are same
+          P2P(Ci);                                              //     P2P kernel for single cell
+        } else {                                                //    Else if source and target are different
+          P2P(Ci, Cj);                                          //     P2P kernel for pair of cells
+        }                                                       //    End if for same source and target
+        NP2P++;                                                 //    Increment P2P counter
+      }                                                         //   End if for bodies
+    } else {                                                    //  Else if cells are close but not bodies
+      splitCell(Ci, Cj);                                        //   Split cell and call function recursively for child
+    }                                                           //  End if for multipole acceptance
   }
 
 //! Get range of periodic images
@@ -410,7 +401,7 @@ public:
 
 //! Use multipole acceptance criteria to determine whether to approximate, do P2P, or subdivide
   void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue) {
-    vect dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
+    vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real Rq = std::sqrt(norm(dX));                              // Scalar distance
     if( Rq * THETA > Ci->R + Cj->R ) {                          // If distance if far enough
       approximate(Ci,Cj);                                       //  Use approximate kernels, e.g. M2L, M2P
@@ -424,8 +415,13 @@ public:
 
 //! Dual tree traversal
   void traverse(Cells &cells, Cells &jcells) {
+#if COMPARE
+    C_iter root = cells.begin();                                // Iterator for root target cell
+    C_iter jroot = jcells.begin();                              // Iterator for root source cell
+#else
     C_iter root = cells.end() - 1;                              // Iterator for root target cell
     C_iter jroot = jcells.end() - 1;                            // Iterator for root source cell
+#endif
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
       jroot = jcells.end() - 1 - 26 * 27 * (IMAGES - 1);        //  The root is not at the end
     }                                                           // Endif for periodic boundary condition

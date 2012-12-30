@@ -54,7 +54,7 @@ int main() {
     B->SRC = -(4 * L * L * norm(B->X) - 6 * L) * exp(-L * norm(B->X)) * dV * .25 / M_PI;// Gaussian source
     B->TRG = 0;                                                 //  Initialize target values
   }                                                             // End loop over bodies
-  vect X0 = 0;                                                  // Center of root cell
+  vec3 X0 = 0;                                                  // Center of root cell
   FMM.setX0(X0);                                                // Set center of root cell
   FMM.setR0(1);                                                 // Set radius of root cell
   FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer

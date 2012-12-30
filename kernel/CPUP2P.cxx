@@ -30,9 +30,9 @@ void Kernel<Laplace>::P2P(C_iter C) const {
   int i = 0;
   for ( ; i<n; i++) {
     real pot = 0;
-    vect acc = 0;
+    vec3 acc = 0;
     for (int j=i+1; j<n; j++) {
-      vect dX = B[i].X - B[j].X;
+      vec3 dX = B[i].X - B[j].X;
       real R2 = norm(dX) + EPS2;
       if (R2 != 0) {
         real invR2 = 1.0 / R2;
@@ -63,9 +63,9 @@ void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P k
   int i = 0;
   for ( ; i<ni; i++) {
     real pot = 0;
-    vect acc = 0;
+    vec3 acc = 0;
     for (int j=0; j<nj; j++) {
-      vect dX = Bi[i].X - Bj[j].X - Xperiodic;
+      vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
       real R2 = norm(dX) + EPS2;
       if (R2 != 0) {
         real invR2 = 1.0f / R2;
@@ -83,9 +83,9 @@ void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P k
 #else
   for( B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NDBODY; ++Bi ) {    // Loop over target bodies
     real P0 = 0;                                                //  Initialize potential
-    vect F0 = 0;                                                //  Initialize force
+    vec3 F0 = 0;                                                //  Initialize force
     for( B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NDBODY; ++Bj ) {  //  Loop over source bodies
-      vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+      vec3 dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
       real R2 = norm(dist) + EPS2;                              //   R^2
       real invR2 = 1.0 / R2;                                    //   1 / R^2
       if( R2 == 0 ) invR2 = 0;                                  //   Exclude self interaction
@@ -108,7 +108,7 @@ void Kernel<VanDerWaals>::P2P(C_iter Ci, C_iter Cj) const {     // Van der Waals
     int atypei = int(Bi->SRC);                                  //  Atom type of target
     for( B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NDBODY; ++Bj ) {  //  Loop over source bodies
       int atypej = int(Bj->SRC);                                //   Atom type of source
-      vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+      vec3 dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
       real R2 = norm(dist);                                     //   R squared
       if( R2 != 0 ) {                                           //   Exclude self interaction
         real rs = RSCALE[atypei*ATOMS+atypej];                  //    r scale

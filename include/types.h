@@ -66,8 +66,10 @@ typedef unsigned           bigint;                              //!< Big integer
 typedef float              real;                                //!< Real number type on CPU
 typedef float              gpureal;                             //!< Real number type on GPU
 typedef std::complex<real> complex;                             //!< Complex number type
-typedef vec<3,real>        vect;                                //!< 3-D vector type
-
+typedef vec<3,real>        vec3;                                //!< 3-D vector type
+typedef vec<3,float>       fvec3;                               //!< Vector of 3 single precision types
+typedef vec<8,int>         ivec8;                               //!< Vector of 8 integer types
+typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3
 
 #ifndef KERNEL
 int MPIRANK    = 0;                                             //!< MPI comm rank
@@ -75,7 +77,7 @@ int MPISIZE    = 1;                                             //!< MPI comm si
 int DEVICE     = 0;                                             //!< GPU device ID
 int IMAGES     = 0;                                             //!< Number of periodic image sublevels
 real THETA     = .5;                                            //!< Multipole acceptance criteria
-vect Xperiodic = 0;                                             //!< Coordinate offset of periodic image
+vec3 Xperiodic = 0;                                             //!< Coordinate offset of periodic image
 #if PAPI
 int PAPIEVENT  = PAPI_NULL;                                     //!< PAPI event handle
 #endif
@@ -85,7 +87,7 @@ extern int MPISIZE;                                             //!< MPI comm si
 extern int DEVICE;                                              //!< GPU device ID
 extern int IMAGES;                                              //!< Number of periodic image sublevels
 extern real THETA;                                              //!< Multipole acceptance criteria
-extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
+extern vec3 Xperiodic;                                          //!< Coordinate offset of periodic image
 #if PAPI
 extern int PAPIEVENT;                                           //!< PAPI event handle
 #endif
@@ -93,6 +95,7 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 
 const int  P        = 10;                                       //!< Order of expansions
 const int  NCRIT    = 100;                                      //!< Number of bodies per cell
+const int  NSPAWN   = 1000;                                     //!< Threshold of NDBODY for spawning new threads
 const int  MAXBODY  = 200000;                                   //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET     = 2;                                        //!< LET opening critetia
@@ -140,7 +143,7 @@ struct JBody {
   int         IBODY;                                            //!< Initial body numbering for sorting back
   int         IPROC;                                            //!< Initial process numbering for partitioning back
   bigint      ICELL;                                            //!< Cell index
-  vect        X;                                                //!< Position
+  vec3        X;                                                //!< Position
   real        SRC;                                              //!< Scalar source values
 };
 typedef std::vector<JBody>             JBodies;                 //!< Vector of source bodies
@@ -159,7 +162,7 @@ typedef std::vector<Body>::iterator    B_iter;                  //!< Iterator fo
 //! Linked list of leafs (only used in fast/topdown.h)
 struct Leaf {
   int I;                                                        //!< Unique index for every leaf
-  vect X;                                                       //!< Coordinate of leaf
+  vec3 X;                                                       //!< Coordinate of leaf
   Leaf *NEXT;                                                   //!< Pointer to next leaf
 };
 typedef std::vector<Leaf>              Leafs;                   //!< Vector of leafs
@@ -171,7 +174,7 @@ struct Node {
   int  LEVEL;                                                   //!< Level in the tree structure
   int  NBODY;                                                   //!< Number of descendant leafs
   int  CHILD[8];                                                //!< Index of child node
-  vect X;                                                       //!< Coordinate at center
+  vec3 X;                                                       //!< Coordinate at center
   Leaf *BODY;                                                   //!< Pointer to first leaf
 };
 typedef std::vector<Node>              Nodes;                   //!< Vector of nodes
@@ -194,7 +197,7 @@ struct Cell {
   int      PARENT;                                              //!< Iterator offset of parent cell
   int      CHILD;                                               //!< Iterator offset of child cells
   B_iter   BODY;                                                //!< Iterator of first leaf
-  vect     X;                                                   //!< Cell center
+  vec3     X;                                                   //!< Cell center
   real     R;                                                   //!< Cell radius
   real     RMAX;                                                //!< Max cell radius
   real     RCRIT;                                               //!< Critical cell radius
@@ -217,7 +220,7 @@ typedef std::vector<Map>               Maps;                    //!< Vector of m
 
 //! Structure for Ewald summation
 struct Ewald {
-  vect K;                                                       //!< 3-D wave number vector
+  vec3 K;                                                       //!< 3-D wave number vector
   real REAL;                                                    //!< real part of wave
   real IMAG;                                                    //!< imaginary part of wave
 };

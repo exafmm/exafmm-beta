@@ -46,6 +46,11 @@ public:
 
 //! Topdown tree constructor interface. Input: bodies, Output: cells
   void topdown(Bodies &bodies, Cells &cells) {
+#if COMPARE
+    TopDown<equation>::growTree(bodies);
+    TopDown<equation>::linkTree(cells);
+    TopDown<equation>::upwardPass(cells);
+#else
     TopDown<equation>::grow(bodies);                            // Grow tree structure topdown
 
     TopDown<equation>::setIndex();                              // Set index of cells
@@ -62,6 +67,7 @@ public:
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];
     }
+#endif
 #endif
   }
 
