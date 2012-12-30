@@ -9,8 +9,8 @@ VTK_INCLUDE_PATH = /usr/include/vtk-5.8
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
 ### choose CPU or GPU
-#DEVICE  = CPU
-DEVICE  = GPU
+DEVICE  = CPU
+#DEVICE  = GPU
 
 ### choose Cartesian or spherical expansion
 EXPAND  = Cartesian
@@ -48,10 +48,10 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 #CXX     += -I$(VTK_INCLUDE_PATH)
 #VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
-#ifeq ($(DEVICE),GPU)
 ### CUDA flags
+ifeq ($(DEVICE),GPU)
 LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart -lstdc++ -ldl -lm
-#endif
+endif
 
 OBJECT = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
 	../kernel/CPUP2P.o

@@ -205,6 +205,7 @@ protected:
           } else {                                              //    Else if source and target are different
             P2P(Ci, Cj);                                        //     P2P kernel for pair of cells
           }                                                     //    End if for same source and target
+          NP2P++;                                               //    Increment P2P counter
         }                                                       //   End if for bodies
       } else {                                                  //  Else if cells are close but not bodies
         splitCell(Ci, Cj);                                      //   Split cell and call function recursively for child

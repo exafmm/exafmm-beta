@@ -172,7 +172,7 @@ void Evaluator<equation>::evalP2P(Cells &cells) {               // Evaluate queu
               Xperiodic[0] = ix * 2 * R0;                       //       Coordinate offset for x periodic direction
               Xperiodic[1] = iy * 2 * R0;                       //       Coordinate offset for y periodic direction
               Xperiodic[2] = iz * 2 * R0;                       //       Coordinate offset for z periodic direction
-              P2P(Ci,Cj);                                       //       Perform P2P kernel
+              evalP2P(Ci,Cj);                                   //       Perform P2P kernel
             }                                                   //      Endif for periodic flag
           }                                                     //     End loop over x periodic direction
         }                                                       //    End loop over y periodic direction
