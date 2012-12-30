@@ -154,51 +154,16 @@ public:
     file.close();                                               // Close file
   }
 
-#if EVAL_ERROR_SAMPLE
   void sampleBodies(Bodies &bodies, int numTargets) {
     int n = bodies.size();
-    int p = (n < numTargets ? n : n / numTargets);
+    int p = n / numTargets;
     assert(p > 0);
-    int i;
-    for (i = 0; i < numTargets; i++) {
+    for (int i=0; i<numTargets; i++) {
       assert(i * p < n);
-      bodies[i] = bodies[i * p];
+      bodies[i] = bodies[i*p];
     }
-    if (n > numTargets) bodies.resize(numTargets);
+    bodies.resize(numTargets);
   }
-#endif
-
-#if EVAL_ERROR_DETAIL
-  void evalError(Bodies &bodies, Bodies &bodies2,
-		 double &diff1, double &norm1, double &diff2, double &norm2) {
-    for (unsigned int i = 0; i != bodies.size(); i++) { // Loop over bodies & bodies2
-      B_iter B = bodies.begin() + i;
-      B_iter B2 = bodies2.begin() + i;                                // Set iterator for bodies2
-      double dp = (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);
-      double p = B2->TRG[0] * B2->TRG[0];                         //  Value of potential
-      std::cout << "[" << std::setw(5) << i << "] (pot): " << sqrt(dp / p) << std::endl;
-      diff1 += dp;
-      norm1 += p;
-    }                                                           //  End loop over bodies & bodies2
-
-    for (unsigned int i = 0; i != bodies.size(); i++) { // Loop over bodies & bodies2
-      B_iter B = bodies.begin() + i;
-      B_iter B2 = bodies2.begin() + i;                                // Set iterator for bodies2
-      double df = 0.0;
-      df += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);// Difference of x acceleration
-      df += (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2]);// Difference of y acceleration
-      df += (B->TRG[3] - B2->TRG[3]) * (B->TRG[3] - B2->TRG[3]);// Difference of z acceleration
-      double f = 0.0;
-      f += B2->TRG[1] * B2->TRG[1];                         //  Value of x acceleration
-      f += B2->TRG[2] * B2->TRG[2];                         //  Value of y acceleration
-      f += B2->TRG[3] * B2->TRG[3];                         //  Value of z acceleration
-      std::cout << "[" << std::setw(5) << i << "] (acc): " << sqrt(df / f) << std::endl;
-      diff2 += df;
-      norm2 += f;
-    }                                                           //  End loop over bodies & bodies2
-  }
-
-#else
 
 //! Evaluate relaitve L2 norm error
   void evalError(Bodies &bodies, Bodies &bodies2,
@@ -227,7 +192,6 @@ public:
 #endif
     }                                                           // End loop over bodies & bodies2
   }
-#endif	/* EVAL_ERROR_DATAIL */
 
 //! Print relative L2 norm error
   void printError(double diff1, double norm1, double diff2, double norm2) {

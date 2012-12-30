@@ -112,7 +112,7 @@ int main(int argc, char ** argv) {
     FMM.resetTimer();
 
     jbodies = bodies;
-    if (bodies.size() > 100) bodies.resize(100);
+    if (int(bodies.size()) > ARGS.numTarget) DATA.sampleBodies(bodies, ARGS.numTarget);
     Bodies bodies2 = bodies;
     DATA.initTarget(bodies2);
     FMM.startTimer("Direct sum");

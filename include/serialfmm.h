@@ -172,7 +172,6 @@ public:
 
 //! Direct summation
 #if EVAL_ERROR_PARTIAL_ACCUMULATE
-
   void direct(Bodies &ibodies, Bodies &jbodies) {
     Cells cells(2);                                             // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
@@ -188,12 +187,11 @@ public:
           Xperiodic[0] = ix * 2 * globalRadius;                 //    Coordinate shift for x periodic direction
           Xperiodic[1] = iy * 2 * globalRadius;                 //    Coordinate shift for y periodic direction
           Xperiodic[2] = iz * 2 * globalRadius;                 //    Coordinate shift for z periodic direction
-
 	  B_iter Ej = jbodies.end();
 	  for (B_iter Bj = jbodies.begin(); Bj < Ej; Bj += NCRIT) {
 	    Cj->BODY = Bj;
 	    Cj->NDBODY = NCRIT < Ej - Bj ? NCRIT : Ej - Bj;
-	    P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
+	    P2P(Ci,Cj,false);                                   //    Evaluate P2P kernel
 	  }
         }                                                       //   End loop over z periodic direction
       }                                                         //  End loop over y periodic direction
