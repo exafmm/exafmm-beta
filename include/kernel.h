@@ -132,7 +132,7 @@ protected:
     real fact = 1;                                              // Initialize 2 * m + 1
     real pn = 1;                                                // Initialize Legendre polynomial Pn
     real rhom = 1.0 / rho;                                      // Initialize rho^(-m-1)
-    for( int m=0; m!=2*P; ++m ) {                               // Loop over m in Ynm
+    for( int m=0; m!=P; ++m ) {                                 // Loop over m in Ynm
       complex eim = std::exp(I * real(m * beta));               //  exp(i * m * beta)
       real p = pn;                                              //  Associated Legendre polynomial Pnm
       int npn = m * m + 2 * m;                                  //  Index of Ynm for m > 0
@@ -144,7 +144,7 @@ protected:
       YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
       rhom /= rho;                                              //  rho^(-m-1)
       real rhon = rhom;                                         //  rho^(-n-1)
-      for( int n=m+1; n!=2*P; ++n ) {                           //  Loop over n in Ynm
+      for( int n=m+1; n!=P; ++n ) {                             //  Loop over n in Ynm
         int npm = n * n + n + m;                                //   Index of Ynm for m > 0
         int nmm = n * n + n - m;                                //   Index of Ynm for m < 0
         Ynm[npm] = rhon * p * prefactor[npm] * eim;             //   rho^n * Ynm for m > 0
@@ -222,8 +222,8 @@ public:
   void preCalculation() {
     const complex I(0.,1.);                                     // Imaginary unit
     factorial = new real  [P];                                  // Factorial
-    prefactor = new real  [4*P*P];                              // sqrt( (n - |m|)! / (n + |m|)! )
-    Anm       = new real  [4*P*P];                              // (-1)^n / sqrt( (n + m)! / (n - m)! )
+    prefactor = new real  [P*P];                                // sqrt( (n - |m|)! / (n + |m|)! )
+    Anm       = new real  [P*P];                                // (-1)^n / sqrt( (n + m)! / (n - m)! )
     Cnm       = new complex [P*P*P*P];                          // M2L translation matrix Cjknm
 
     factorial[0] = 1;                                           // Initialize factorial
@@ -231,7 +231,7 @@ public:
       factorial[n] = factorial[n-1] * n;                        //  n!
     }                                                           // End loop to P
 
-    for( int n=0; n!=2*P; ++n ) {                               // Loop over n in Anm
+    for( int n=0; n!=P; ++n ) {                                 // Loop over n in Anm
       for( int m=-n; m<=n; ++m ) {                              //  Loop over m in Anm
         int nm = n*n+n+m;                                       //   Index of Anm
         int nabsm = abs(m);                                     //   |m|

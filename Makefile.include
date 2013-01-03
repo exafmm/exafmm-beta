@@ -2,7 +2,7 @@
 .PHONY: docs
 
 ### CUDA path
-CUDA_INSTALL_PATH = /usr/local/cuda4.1/cuda
+CUDA_INSTALL_PATH = /usr/local/cuda
 
 ### VTK path
 VTK_INCLUDE_PATH = /usr/include/vtk-5.8
@@ -29,7 +29,7 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -ffast-math -funroll-loops -fforce-addr -f
 # -Kdalign,ns,mfunc,eval,prefetch_conditional,ilfunc -x-
 
 ### CUDA compiler
-NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3\
+NVCC    = nvcc --compiler-bindir=/usr/bin/gcc-4.4 -Xcompiler -fopenmp --ptxas-options=-v -O3\
 	 -use_fast_math -arch=sm_21 -I../include -I$(CUDA_INSTALL_PATH)/include
 
 ### Base flags
