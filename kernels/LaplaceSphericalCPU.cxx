@@ -2,26 +2,15 @@
 
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
-const real_t EPS = 1e-6;
-const real_t SCALING = 1e-6;
+const real_t EPS = 1e-6;                                        // Machine epsilon
+const real_t SCALING = 1e-6;                                    // Scaling to optimize dynamic range
+const complex_t I(0.,1.);                                       // Imaginary unit
 
 //! Get r,theta,phi from x,y,z
 void cart2sph(real_t& r, real_t& theta, real_t& phi, vec3 dX) {
   r = sqrt(norm(dX)) * (1 + EPS);                               // r = sqrt(x^2 + y^2 + z^2)
-  if( r < EPS ) {                                               // If r == 0
-    theta = 0;                                                  //  theta can be anything so we set it to 0
-  } else {                                                      // If r != 0
-    theta = acos(dX[2] / r);                                    //  theta = acos(z / r)
-  }                                                             // End if for r == 0
-  if( fabs(dX[0]) + fabs(dX[1]) < EPS ) {                       // If |x| < eps & |y| < eps
-    phi = 0;                                                    //  phi can be anything so we set it to 0
-  } else if( fabs(dX[0]) < EPS ) {                              // If |x| < eps
-    phi = dX[1] / fabs(dX[1]) * M_PI * 0.5;                     //  phi = sign(y) * pi / 2
-  } else if( dX[0] > 0 ) {                                      // If x > 0
-    phi = atan(dX[1] / dX[0]);                                  //  phi = atan(y / x)
-  } else {                                                      // If x < 0
-    phi = atan(dX[1] / dX[0]) + M_PI;                           //  phi = atan(y / x) + pi
-  }                                                             // End if for x,y cases
+  theta = acos(dX[2] / r);                                      // theta = acos(z / r)
+  phi = atan2(dX[1],dX[0]);                                     // phi = atan(y / x)
 }
 
 //! Spherical to cartesian coordinates
@@ -39,14 +28,14 @@ void sph2cart(real_t r, real_t theta, real_t phi, T spherical, T &cartesian) {
 
 //! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
 void evalMultipole(real_t rho, real_t alpha, real_t beta, real_t *prefactor, complex_t *Ynm, complex_t *YnmTheta) {
-  const complex_t I(0.,1.);                                     // Imaginary unit
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
   real_t fact = 1;                                              // Initialize 2 * m + 1
   real_t pn = 1;                                                // Initialize Legendre polynomial Pn
   real_t rhom = 1;                                              // Initialize rho^m
-  for( int m=0; m!=P; ++m ) {                                   // Loop over m in Ynm
-    complex_t eim = std::exp(I * real_t(m * beta));             //  exp(i * m * beta)
+  complex_t ei = std::exp(I * beta);                            // exp(i * beta)
+  complex_t eim = 1.0;                                          // Initialize exp(i * m * beta)
+  for (int m=0; m<P; m++) {                                     // Loop over m in Ynm
     real_t p = pn;                                              //  Associated Legendre polynomial Pnm
     int npn = m * m + 2 * m;                                    //  Index of Ynm for m > 0
     int nmn = m * m;                                            //  Index of Ynm for m < 0
@@ -57,7 +46,7 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, real_t *prefactor, com
     YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
     rhom *= rho;                                                //  rho^m
     real_t rhon = rhom;                                         //  rho^n
-    for( int n=m+1; n!=P; ++n ) {                               //  Loop over n in Ynm
+    for (int n=m+1; n<P; n++) {                                 //  Loop over n in Ynm
       int npm = n * n + n + m;                                  //   Index of Ynm for m > 0
       int nmm = n * n + n - m;                                  //   Index of Ynm for m < 0
       Ynm[npm] = rhon * p * prefactor[npm] * eim;               //   rho^n * Ynm
@@ -70,19 +59,20 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, real_t *prefactor, com
     }                                                           //  End loop over n in Ynm
     pn = -pn * fact * y;                                        //  Pn
     fact += 2;                                                  //  2 * m + 1
+    eim *= ei;                                                  //  Update exp(i * m * beta)
   }                                                             // End loop over m in Ynm
 }
 
 //! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
 void evalLocal(real_t rho, real_t alpha, real_t beta, real_t *prefactor, complex_t *Ynm, complex_t *YnmTheta) {
-  const complex_t I(0.,1.);                                     // Imaginary unit
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
   real_t fact = 1;                                              // Initialize 2 * m + 1
   real_t pn = 1;                                                // Initialize Legendre polynomial Pn
   real_t rhom = 1.0 / rho;                                      // Initialize rho^(-m-1)
-  for( int m=0; m!=P; ++m ) {                                   // Loop over m in Ynm
-    complex_t eim = std::exp(I * real_t(m * beta));             //  exp(i * m * beta)
+  complex_t ei = std::exp(I * beta);                            // exp(i * beta)
+  complex_t eim = 1.0;                                          // Initialize exp(i * m * beta)
+  for (int m=0; m<P; m++) {                                     // Loop over m in Ynm
     real_t p = pn;                                              //  Associated Legendre polynomial Pnm
     int npn = m * m + 2 * m;                                    //  Index of Ynm for m > 0
     int nmn = m * m;                                            //  Index of Ynm for m < 0
@@ -93,7 +83,7 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, real_t *prefactor, complex
     YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
     rhom /= rho;                                                //  rho^(-m-1)
     real_t rhon = rhom;                                         //  rho^(-n-1)
-    for( int n=m+1; n!=P; ++n ) {                               //  Loop over n in Ynm
+    for (int n=m+1; n<P; n++) {                                 //  Loop over n in Ynm
       int npm = n * n + n + m;                                  //   Index of Ynm for m > 0
       int nmm = n * n + n - m;                                  //   Index of Ynm for m < 0
       Ynm[npm] = rhon * p * prefactor[npm] * eim;               //   rho^n * Ynm for m > 0
@@ -106,6 +96,7 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, real_t *prefactor, complex
     }                                                           //  End loop over n in Ynm
     pn = -pn * fact * y;                                        //  Pn
     fact += 2;                                                  //  2 * m + 1
+    eim *= ei;                                                  //  Update exp(i * m * beta)
   }                                                             // End loop over m in Ynm
 }
 
@@ -550,10 +541,10 @@ void Kernel::P2M(C_iter C, real_t &Rmax) const {
     if (R > Rmax) Rmax = R;
     real_t rho, alpha, beta;
     cart2sph(rho,alpha,beta,dX);
-    evalMultipole(rho,alpha,-beta,prefactor,Ynm,YnmTheta);
-    for( int n=0; n!=P; ++n ) {
-      for( int m=0; m<=n; ++m ) {
-        int nm  = n * n + n + m;
+    evalMultipole(rho,alpha,beta,prefactor,Ynm,YnmTheta);
+    for (int n=0; n<P; n++) {
+      for (int m=0; m<=n; m++) {
+        int nm  = n * n + n - m;
         int nms = n * (n + 1) / 2 + m;
         C->M[nms] += B->SRC * Ynm[nm];
       }
@@ -567,7 +558,6 @@ void Kernel::P2M(C_iter C, real_t &Rmax) const {
 }
 
 void Kernel::M2M(C_iter Ci, real_t &Rmax) const {
-  const complex_t I(0.,1.);
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
@@ -575,27 +565,27 @@ void Kernel::M2M(C_iter Ci, real_t &Rmax) const {
     if (R > Rmax) Rmax = R;
     real_t rho, alpha, beta;
     cart2sph(rho,alpha,beta,dX);
-    evalMultipole(rho,alpha,-beta,prefactor,Ynm,YnmTheta);
-    for( int j=0; j!=P; ++j ) {
-      for( int k=0; k<=j; ++k ) {
+    evalMultipole(rho,alpha,beta,prefactor,Ynm,YnmTheta);
+    for (int j=0; j<P; j++) {
+      for (int k=0; k<=j; k++) {
         int jk = j * j + j + k;
         int jks = j * (j + 1) / 2 + k;
         complex_t M = 0;
-        for( int n=0; n<=j; ++n ) {
-          for( int m=-n; m<=std::min(k-1,n); ++m ) {
+        for (int n=0; n<=j; n++) {
+          for (int m=-n; m<=std::min(k-1,n); m++) {
             if( j-n >= k-m ) {
               int jnkm  = (j - n) * (j - n) + j - n + k - m;
               int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
-              int nm    = n * n + n + m;
+              int nm    = n * n + n - m;
               M += Cj->M[jnkms] * std::pow(I,real_t(m-abs(m))) * Ynm[nm]
                  * real_t(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
           }
-          for( int m=k; m<=n; ++m ) {
+          for (int m=k; m<=n; m++) {
             if( j-n >= m-k ) {
               int jnkm  = (j - n) * (j - n) + j - n + k - m;
               int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-              int nm    = n * n + n + m;
+              int nm    = n * n + n - m;
               M += std::conj(Cj->M[jnkms]) * Ynm[nm]
                  * real_t(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
             }
@@ -613,59 +603,63 @@ void Kernel::M2M(C_iter Ci, real_t &Rmax) const {
 }
 
 void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
-  complex_t Ynm[P*P], YnmTheta[P*P];
+  complex_t Ynmi[P*P], YnmThetai[P*P];
+  complex_t Ynmj[P*P], YnmThetaj[P*P];
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t rho, alpha, beta;
   cart2sph(rho,alpha,beta,dX);
-  evalLocal(rho,alpha,beta,prefactor,Ynm,YnmTheta);
-  for( int j=0; j!=P; ++j ) {
-    for( int k=0; k<=j; ++k ) {
+  evalLocal(rho,alpha,beta,prefactor,Ynmi,YnmThetai);
+  if (mutual) evalLocal(rho,alpha+M_PI,beta,prefactor,Ynmj,YnmThetaj);
+  for (int j=0; j<P; j++) {
+    for (int k=0; k<=j; k++) {
       int jk = j * j + j + k;
       int jks = j * (j + 1) / 2 + k;
-      complex_t L = 0;
-      for( int n=0; n!=P-j; ++n ) {
-        for( int m=-n; m<0; ++m ) {
+      complex_t Li = 0, Lj = 0;
+      for (int n=0; n<P-j; n++) {
+        for (int m=-n; m<0; m++) {
           int nm   = n * n + n + m;
           int nms  = n * (n + 1) / 2 - m;
           int jknm = jk * P * P + nm;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
-          L += std::conj(Cj->M[nms]) * Cnm[jknm] * Ynm[jnkm];
+          Li += std::conj(Cj->M[nms]) * Cnm[jknm] * Ynmi[jnkm];
+          if (mutual) Lj += std::conj(Ci->M[nms]) * Cnm[jknm] * Ynmj[jnkm];
         }
-        for( int m=0; m<=n; ++m ) {
+        for (int m=0; m<=n; m++) {
           int nm   = n * n + n + m;
           int nms  = n * (n + 1) / 2 + m;
           int jknm = jk * P * P + nm;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
-          L += Cj->M[nms] * Cnm[jknm] * Ynm[jnkm];
+          Li += Cj->M[nms] * Cnm[jknm] * Ynmi[jnkm];
+          if (mutual) Lj += Ci->M[nms] * Cnm[jknm] * Ynmj[jnkm];
         }
       }
-      Ci->L[jks] += L;
+      Ci->L[jks] += Li;
+      if (mutual) Cj->L[jks] += Lj;
     }
   }
 }
 
 void Kernel::L2L(C_iter Ci) const {
-  const complex_t I(0.,1.);
   complex_t Ynm[P*P], YnmTheta[P*P];
   C_iter Cj = Ci0 + Ci->PARENT;
   vec3 dX = Ci->X - Cj->X;
   real_t rho, alpha, beta;
   cart2sph(rho,alpha,beta,dX);
   evalMultipole(rho,alpha,beta,prefactor,Ynm,YnmTheta);
-  for( int j=0; j!=P; ++j ) {
-    for( int k=0; k<=j; ++k ) {
+  for (int j=0; j<P; j++) {
+    for (int k=0; k<=j; k++) {
       int jk = j * j + j + k;
       int jks = j * (j + 1) / 2 + k;
       complex_t L = 0;
-      for( int n=j; n!=P; ++n ) {
-        for( int m=j+k-n; m<0; ++m ) {
+      for (int n=j; n<P; n++) {
+        for (int m=j+k-n; m<0; m++) {
           int jnkm = (n - j) * (n - j) + n - j + m - k;
           int nm   = n * n + n - m;
           int nms  = n * (n + 1) / 2 - m;
           L += std::conj(Cj->L[nms]) * Ynm[jnkm]
              * real_t(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
         }
-        for( int m=0; m<=n; ++m ) {
+        for (int m=0; m<=n; m++) {
           if( n-j >= abs(m-k) ) {
             int jnkm = (n - j) * (n - j) + n - j + m - k;
             int nm   = n * n + n + m;
@@ -681,7 +675,6 @@ void Kernel::L2L(C_iter Ci) const {
 }
 
 void Kernel::L2P(C_iter Ci) const {
-  const complex_t I(0.,1.);
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; B++) {
     vec3 dX = B->X - Ci->X;
@@ -691,13 +684,13 @@ void Kernel::L2P(C_iter Ci) const {
     cart2sph(r,theta,phi,dX);
     evalMultipole(r,theta,phi,prefactor,Ynm,YnmTheta);
     B->TRG /= B->SRC;
-    for( int n=0; n!=P; ++n ) {
+    for (int n=0; n<P; n++) {
       int nm  = n * n + n;
       int nms = n * (n + 1) / 2;
       B->TRG[0] += std::real(Ci->L[nms] * Ynm[nm]);
       spherical[0] += std::real(Ci->L[nms] * Ynm[nm]) / r * n;
       spherical[1] += std::real(Ci->L[nms] * YnmTheta[nm]);
-      for( int m=1; m<=n; ++m ) {
+      for( int m=1; m<=n; m++) {
         nm  = n * n + n + m;
         nms = n * (n + 1) / 2 + m;
         B->TRG[0] += 2 * std::real(Ci->L[nms] * Ynm[nm]);
@@ -714,7 +707,6 @@ void Kernel::L2P(C_iter Ci) const {
 }
 
 void Kernel::preCalculation() {
-  const complex_t I(0.,1.);                                   // Imaginary unit
   factorial = new real_t    [P];                              // Factorial
   prefactor = new real_t    [P*P];                            // sqrt( (n - |m|)! / (n + |m|)! )
   Anm       = new real_t    [P*P];                            // (-1)^n / sqrt( (n + m)! / (n - m)! )
@@ -725,27 +717,27 @@ void Kernel::preCalculation() {
     factorial[n] = factorial[n-1] * n;                        //  n!
   }                                                           // End loop to P
 
-  for( int n=0; n!=P; ++n ) {                                 // Loop over n in Anm
-    for( int m=-n; m<=n; ++m ) {                              //  Loop over m in Anm
+  for (int n=0; n<P; n++) {                                   // Loop over n in Anm
+    for (int m=-n; m<=n; m++) {                               //  Loop over m in Anm
       int nm = n*n+n+m;                                       //   Index of Anm
       int nabsm = abs(m);                                     //   |m|
       real_t fnmm = SCALING;                                  //   Initialize (n - m)!
-      for( int i=1; i<=n-m; ++i ) fnmm *= i;                  //   (n - m)!
+      for (int i=1; i<=n-m; i++) fnmm *= i;                   //   (n - m)!
       real_t fnpm = SCALING;                                  //   Initialize (n + m)!
-      for( int i=1; i<=n+m; ++i ) fnpm *= i;                  //   (n + m)!
+      for (int i=1; i<=n+m; i++) fnpm *= i;                   //   (n + m)!
       real_t fnma = 1.0;                                      //   Initialize (n - |m|)!
-      for( int i=1; i<=n-nabsm; ++i ) fnma *= i;              //   (n - |m|)!
+      for (int i=1; i<=n-nabsm; i++) fnma *= i;               //   (n - |m|)!
       real_t fnpa = 1.0;                                      //   Initialize (n + |m|)!
-      for( int i=1; i<=n+nabsm; ++i ) fnpa *= i;              //   (n + |m|)!
+      for (int i=1; i<=n+nabsm; i++) fnpa *= i;               //   (n + |m|)!
       prefactor[nm] = std::sqrt(fnma/fnpa);                   //   sqrt( (n - |m|)! / (n + |m|)! )
       Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);              //   (-1)^n / sqrt( (n + m)! / (n - m)! )
     }                                                         //  End loop over m in Anm
   }                                                           // End loop over n in Anm
 
-  for( int j=0, jk=0, jknm=0; j!=P; ++j ) {                   // Loop over j in Cjknm
-    for( int k=-j; k<=j; ++k, ++jk ){                         //  Loop over k in Cjknm
-      for( int n=0, nm=0; n!=P; ++n ) {                       //   Loop over n in Cjknm
-        for( int m=-n; m<=n; ++m, ++nm, ++jknm ) {            //    Loop over m in Cjknm
+  for (int j=0, jk=0, jknm=0; j<P; j++) {                     // Loop over j in Cjknm
+    for (int k=-j; k<=j; k++, jk++) {                         //  Loop over k in Cjknm
+      for (int n=0, nm=0; n<P; n++) {                         //   Loop over n in Cjknm
+        for (int m=-n; m<=n; m++, nm++, jknm++) {             //    Loop over m in Cjknm
           const int jnkm = (j+n)*(j+n)+j+n+m-k;               //     Index C_{j+n}^{m-k}
           Cnm[jknm] = std::pow(I,real_t(abs(k-m)-abs(k)-abs(m)))//     Cjknm
                     * real_t(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]) * SCALING;

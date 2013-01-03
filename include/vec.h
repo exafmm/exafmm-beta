@@ -95,6 +95,11 @@ public:
     for (int i=0; i<N; i++) c[i] = a[i] / b[i];
     return c;
   }
+  vec operator-() const {                                          // Vector arithmetic (negation)
+    vec c;
+    for (int i=0; i<N; i++) c[i] = -a[i];
+    return c;
+  }
   T &operator[](int i) {                                           // Indexing (lvalue)
     return a[i];
   }
