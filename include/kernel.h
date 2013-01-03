@@ -30,6 +30,9 @@ public:
   }
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const;
   void P2P(C_iter C) const;
+#if EVAL_ERROR_KAHAN
+  void P2PKahan(C_iter Ci, C_iter Cj) const;
+#endif
   void P2M(C_iter C, real_t &Rmax) const;
   void M2M(C_iter Ci, real_t &Rmax) const;
   void M2L(C_iter Ci, C_iter Cj, bool mutual) const;

@@ -8,7 +8,11 @@
 #include "vec.h"
 
 // Basic type definitions
+#if defined(REAL_TYPE) && REAL_TYPE == REAL_TYPE_DOUBLE
+typedef double               real_t;                            //!< Floating point type
+#else
 typedef float                real_t;                            //!< Floating point type
+#endif
 typedef std::complex<real_t> complex_t;                         //!< Complex type
 typedef vec<3,real_t>        vec3;                              //!< Vector of 3 floating point types
 typedef vec<3,float>         fvec3;                             //!< Vector of 3 single precision types
@@ -17,7 +21,11 @@ typedef vec<8,int>           ivec8;                             //!< Vector of 8
 typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3
 
 // Compile-time parameters
+#ifdef MULTIPOLE_EXPANSION_ORDER
+const int P = MULTIPOLE_EXPANSION_ORDER;                        //!< Order of expansions
+#else
 const int P = 3;                                                //!< Order of expansions
+#endif
 const float EPS2 = .0;                                          //!< Softening parameter (squared)
 #if COMkernel
 const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms

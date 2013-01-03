@@ -776,7 +776,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   int ni = Ci->NDBODY;
   int nj = Cj->NDBODY;
   int i = 0;
-#if __AVX__
+#if __AVX__ && (!defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT)
   for ( ; i<=ni-8; i+=8) {
     __m256 pot = _mm256_setzero_ps();
     __m256 ax = _mm256_setzero_ps();
@@ -864,7 +864,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   }
 #endif // __AVX__
 
-#if __SSE__
+#if __SSE__ && (!defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT)
   for ( ; i<=ni-4; i+=4) {
     __m128 pot = _mm_setzero_ps();
     __m128 ax = _mm_setzero_ps();
@@ -983,7 +983,7 @@ void Kernel::P2P(C_iter C) const {
   B_iter B = C->BODY;
   int n = C->NDBODY;
   int i = 0;
-#if __AVX__
+#if __AVX__ && (!defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT)
   for ( ; i<=n-8; i+=8) {
     __m256 pot = _mm256_setzero_ps();
     __m256 ax = _mm256_setzero_ps();
@@ -1073,7 +1073,7 @@ void Kernel::P2P(C_iter C) const {
   }
 #endif // __AVX__
 
-#if __SSE__
+#if __SSE__ && (!defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT)
   for ( ; i<=n-4; i+=4) {
     __m128 pot = _mm_setzero_ps();
     __m128 ax = _mm_setzero_ps();
@@ -1186,6 +1186,42 @@ void Kernel::P2P(C_iter C) const {
     B[i].TRG[3] -= acc[2];
   }
 }
+
+#if EVAL_ERROR_KAHAN
+void Kernel::P2PKahan(C_iter Ci, C_iter Cj) const {
+  B_iter Bi = Ci->BODY;
+  B_iter Bj = Cj->BODY;
+  int ni = Ci->NDBODY;
+  int nj = Cj->NDBODY;
+  int i;
+  for (i=0 ; i<ni; i++) {
+    real_t pot = 0;
+    real_t pot_c = 0;
+    vec3 acc = 0;
+    vec3 acc_c = 0;
+    for (int j=0; j<nj; j++) {
+      vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
+      real_t R2 = norm(dX) + EPS2;
+      if (R2 != 0) {
+        real_t invR2 = 1.0f / R2;
+        real_t invR = Bi[i].SRC * Bj[j].SRC * sqrt(invR2);
+        dX *= invR2 * invR;
+        // pot += invR;
+	real_t pot_t = pot + (invR - pot_c);
+	pot_c = (pot_t - pot) - (invR - pot_c);
+	pot = pot_t;
+	vec3 acc_t = acc + (dX - acc_c);
+	acc_c = (acc_t - acc) - (dX - acc_c);
+        acc = acc_t;
+      }
+    }
+    Bi[i].TRG[0] += pot;
+    Bi[i].TRG[1] -= acc[0];
+    Bi[i].TRG[2] -= acc[1];
+    Bi[i].TRG[3] -= acc[2];
+  }
+}
+#endif
 
 void Kernel::P2M(C_iter C, real_t &Rmax) const {
   for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {

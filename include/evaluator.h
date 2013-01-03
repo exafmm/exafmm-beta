@@ -2,7 +2,11 @@
 #define evaluator_h
 #include "kernel.h"
 #include "logger.h"
+#if COMMON_CILKH
+#include <common.cilkh>
+#else
 #include "thread.h"
+#endif
 #if COUNT
 #define count(N) N++
 #else
