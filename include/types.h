@@ -1,5 +1,6 @@
 #ifndef types_h
 #define types_h
+#include <complex>
 #include "macros.h"
 #include <queue>
 #include <utility>
@@ -7,15 +8,16 @@
 #include "vec.h"
 
 // Basic type definitions
-typedef float         real_t;                                   //!< Floating point type
-typedef vec<3,real_t> vec3;                                     //!< Vector of 3 floating point types
-typedef vec<3,float>  fvec3;                                    //!< Vector of 3 single precision types
-typedef vec<4,real_t> vec4;                                     //!< Vector of 4 floating point types
-typedef vec<8,int>    ivec8;                                    //!< Vector of 8 integer types
+typedef float                real_t;                            //!< Floating point type
+typedef std::complex<real_t> complex_t;                         //!< Complex type
+typedef vec<3,real_t>        vec3;                              //!< Vector of 3 floating point types
+typedef vec<3,float>         fvec3;                             //!< Vector of 3 single precision types
+typedef vec<4,real_t>        vec4;                              //!< Vector of 4 floating point types
+typedef vec<8,int>           ivec8;                             //!< Vector of 8 integer types
 typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3
 
 // Compile-time parameters
-const int P = 3;                                                //!< Order of expansions
+const int P = 10;                                               //!< Order of expansions
 const float EPS2 = .0;                                          //!< Softening parameter (squared)
 #if COMkernel
 const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms
@@ -23,9 +25,15 @@ const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of C
 const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms
 #endif
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
+const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
 
-typedef vec<MTERM,real_t>  vecM;                                //!< Multipole coefficient type for Cartesian
-typedef vec<LTERM,real_t>  vecL;                                //!< Local coefficient type for Cartesian
+#if Cartesian
+typedef vec<MTERM,real_t> vecM;                                 //!< Multipole coefficient type for Cartesian
+typedef vec<LTERM,real_t> vecL;                                 //!< Local coefficient type for Cartesian
+#elif Spherical
+typedef vec<NTERM,complex_t> vecM;                              //!< Multipole coefficient type for spherical
+typedef vec<NTERM,complex_t> vecL;                              //!< Local coefficient type for spherical
+#endif
 
 //! Structure of aligned source for SIMD
 struct Source {

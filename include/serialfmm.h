@@ -188,9 +188,9 @@ public:
           Xperiodic[1] = iy * 2 * globalRadius;                 //    Coordinate shift for y periodic direction
           Xperiodic[2] = iz * 2 * globalRadius;                 //    Coordinate shift for z periodic direction
 	  B_iter Ej = jbodies.end();
-	  for (B_iter Bj = jbodies.begin(); Bj < Ej; Bj += NCRIT) {
+	  for (B_iter Bj = jbodies.begin(); Bj < Ej; Bj += 10000) {
 	    Cj->BODY = Bj;
-	    Cj->NDBODY = NCRIT < Ej - Bj ? NCRIT : Ej - Bj;
+	    Cj->NDBODY = 10000 < Ej - Bj ? 10000 : Ej - Bj;
 	    P2P(Ci,Cj,false);                                   //    Evaluate P2P kernel
 	  }
         }                                                       //   End loop over z periodic direction

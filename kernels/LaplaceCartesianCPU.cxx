@@ -1275,3 +1275,6 @@ void Kernel::L2P(C_iter Ci) const {
     Kernels<0,0,1>::L2P(B,C,L);
   }
 }
+
+void Kernel::preCalculation() {}
+void Kernel::postCalculation() {}
