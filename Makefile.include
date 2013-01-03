@@ -11,8 +11,8 @@ EQUATION = Laplace
 #EQUATION = Stokes
 
 ### choose basis of multipole/local expansion
-BASIS	= Cartesian
-#BASIS	= Spherical
+#BASIS	= Cartesian
+BASIS	= Spherical
 #BASIS	= Planewave
 
 ### choose device to use
@@ -31,11 +31,11 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loo
 ### Base flags
 CXX	+= -I$(EXAFMM_INCLUDE_PATH)
 LFLAGS	= -L$(EXAFMM_LIBRARY_PATH) -D$(BASIS)
-LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
-LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
-LFLAGS	+= -DERROR_OPT # Use error optimized theta
-LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
-LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
+#LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
+#LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
+#LFLAGS	+= -DERROR_OPT # Use error optimized theta
+#LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
+#LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
 #LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
 
@@ -71,7 +71,7 @@ NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-optio
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
 endif
 
-KERNELS	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).o
+KERNELS	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).o ../kernels/$(EQUATION)P2P$(DEVICE).o
 
 .cxx.o  :
 	$(CXX) -c $? -o $@ $(LFLAGS)

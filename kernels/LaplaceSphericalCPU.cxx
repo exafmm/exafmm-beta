@@ -1,14 +1,13 @@
 #include "kernel.h"
 
+#define SIGN(n) ((n >= 0) - (n < 0))
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
-const real_t EPS = 1e-6;                                        // Machine epsilon
-const real_t SCALING = 1e-6;                                    // Scaling to optimize dynamic range
 const complex_t I(0.,1.);                                       // Imaginary unit
 
 //! Get r,theta,phi from x,y,z
 void cart2sph(real_t& r, real_t& theta, real_t& phi, vec3 dX) {
-  r = sqrt(norm(dX)) * (1 + EPS);                               // r = sqrt(x^2 + y^2 + z^2)
+  r = sqrt(norm(dX)) * 1.000001;                                // r = sqrt(x^2 + y^2 + z^2)
   theta = acos(dX[2] / r);                                      // theta = acos(z / r)
   phi = atan2(dX[1],dX[0]);                                     // phi = atan(y / x)
 }
@@ -27,7 +26,7 @@ void sph2cart(real_t r, real_t theta, real_t phi, T spherical, T &cartesian) {
 }
 
 //! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
-void evalMultipole(real_t rho, real_t alpha, real_t beta, real_t *prefactor, complex_t *Ynm, complex_t *YnmTheta) {
+void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, complex_t *YnmTheta) {
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
   real_t fact = 1;                                              // Initialize 2 * m + 1
@@ -39,24 +38,26 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, real_t *prefactor, com
     real_t p = pn;                                              //  Associated Legendre polynomial Pnm
     int npn = m * m + 2 * m;                                    //  Index of Ynm for m > 0
     int nmn = m * m;                                            //  Index of Ynm for m < 0
-    Ynm[npn] = rhom * p * prefactor[npn] * eim;                 //  rho^m * Ynm for m > 0
+    Ynm[npn] = rhom * p * eim;                                  //  rho^m * Ynm for m > 0
     Ynm[nmn] = std::conj(Ynm[npn]);                             //  Use conjugate relation for m < 0
     real_t p1 = p;                                              //  Pnm-1
     p = x * (2 * m + 1) * p1;                                   //  Pnm using recurrence relation
-    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
+    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * eim;    // theta derivative of r^n * Ynm
     rhom *= rho;                                                //  rho^m
     real_t rhon = rhom;                                         //  rho^n
     for (int n=m+1; n<P; n++) {                                 //  Loop over n in Ynm
       int npm = n * n + n + m;                                  //   Index of Ynm for m > 0
       int nmm = n * n + n - m;                                  //   Index of Ynm for m < 0
-      Ynm[npm] = rhon * p * prefactor[npm] * eim;               //   rho^n * Ynm
+      rhon /= -(n + m);                                         //   Update factorial
+      Ynm[npm] = rhon * p * eim;                                //   rho^n * Ynm
       Ynm[nmm] = std::conj(Ynm[npm]);                           //   Use conjugate relation for m < 0
       real_t p2 = p1;                                           //   Pnm-2
       p1 = p;                                                   //   Pnm-1
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);  //   Pnm using recurrence relation
-      YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;// theta derivative
+      YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * eim;// theta derivative
       rhon *= rho;                                              //   Update rho^n
     }                                                           //  End loop over n in Ynm
+    rhom /= -(2 * m + 2) * (2 * m + 1);                         //  Update factorial
     pn = -pn * fact * y;                                        //  Pn
     fact += 2;                                                  //  2 * m + 1
     eim *= ei;                                                  //  Update exp(i * m * beta)
@@ -64,473 +65,39 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, real_t *prefactor, com
 }
 
 //! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
-void evalLocal(real_t rho, real_t alpha, real_t beta, real_t *prefactor, complex_t *Ynm, complex_t *YnmTheta) {
+void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t *Ynm) {
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
   real_t fact = 1;                                              // Initialize 2 * m + 1
   real_t pn = 1;                                                // Initialize Legendre polynomial Pn
-  real_t rhom = 1.0 / rho;                                      // Initialize rho^(-m-1)
+  real_t invR = -1.0 / rho;                                     // - 1 / rho
+  real_t rhom = -invR;                                          // Initialize rho^(-m-1)
   complex_t ei = std::exp(I * beta);                            // exp(i * beta)
   complex_t eim = 1.0;                                          // Initialize exp(i * m * beta)
   for (int m=0; m<P; m++) {                                     // Loop over m in Ynm
     real_t p = pn;                                              //  Associated Legendre polynomial Pnm
     int npn = m * m + 2 * m;                                    //  Index of Ynm for m > 0
     int nmn = m * m;                                            //  Index of Ynm for m < 0
-    Ynm[npn] = rhom * p * prefactor[npn] * eim;                 //  rho^(-m-1) * Ynm for m > 0
+    Ynm[npn] = rhom * p * eim;                                  //  rho^(-m-1) * Ynm for m > 0
     Ynm[nmn] = std::conj(Ynm[npn]);                             //  Use conjugate relation for m < 0
     real_t p1 = p;                                              //  Pnm-1
     p = x * (2 * m + 1) * p1;                                   //  Pnm using recurrence relation
-    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * prefactor[npn] * eim;// theta derivative of r^n * Ynm
-    rhom /= rho;                                                //  rho^(-m-1)
+    rhom *= invR;                                               //  rho^(-m-1)
     real_t rhon = rhom;                                         //  rho^(-n-1)
     for (int n=m+1; n<P; n++) {                                 //  Loop over n in Ynm
       int npm = n * n + n + m;                                  //   Index of Ynm for m > 0
       int nmm = n * n + n - m;                                  //   Index of Ynm for m < 0
-      Ynm[npm] = rhon * p * prefactor[npm] * eim;               //   rho^n * Ynm for m > 0
+      Ynm[npm] = rhon * p * eim;                                //   rho^n * Ynm for m > 0
       Ynm[nmm] = std::conj(Ynm[npm]);                           //   Use conjugate relation for m < 0
       real_t p2 = p1;                                           //   Pnm-2
       p1 = p;                                                   //   Pnm-1
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);  //   Pnm using recurrence relation
-      YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * prefactor[npm] * eim;// theta derivative
-      rhon /= rho;                                              //   rho^(-n-1)
+      rhon *= invR * (n - m + 1);                               //   rho^(-n-1)
     }                                                           //  End loop over n in Ynm
     pn = -pn * fact * y;                                        //  Pn
     fact += 2;                                                  //  2 * m + 1
     eim *= ei;                                                  //  Update exp(i * m * beta)
   }                                                             // End loop over m in Ynm
-}
-
-#if __SSE__
-inline float vecSum4(__m128 reg) {
-  float mem[4];
-  _mm_store_ps(mem, reg);
-  return mem[0] + mem[1] + mem[2] + mem[3];
-}
-#endif
-
-#if __AVX__
-inline float vecSum8(__m256 reg) {
-  float mem[8];
-  _mm256_store_ps(mem, reg);
-  return mem[0] + mem[1] + mem[2] + mem[3] + mem[4] + mem[5] + mem[6] + mem[7];
-}
-#endif
-
-void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
-  B_iter Bi = Ci->BODY;
-  B_iter Bj = Cj->BODY;
-  int ni = Ci->NDBODY;
-  int nj = Cj->NDBODY;
-  int i = 0;
-#if __AVX__
-  for ( ; i<=ni-8; i+=8) {
-    __m256 pot = _mm256_setzero_ps();
-    __m256 ax = _mm256_setzero_ps();
-    __m256 ay = _mm256_setzero_ps();
-    __m256 az = _mm256_setzero_ps();
-
-    __m256 xi = _mm256_setr_ps(Bi[i].X[0],Bi[i+1].X[0],Bi[i+2].X[0],Bi[i+3].X[0],
-      Bi[i+4].X[0],Bi[i+5].X[0],Bi[i+6].X[0],Bi[i+7].X[0]) - _mm256_set1_ps(Xperiodic[0]);
-    __m256 yi = _mm256_setr_ps(Bi[i].X[1],Bi[i+1].X[1],Bi[i+2].X[1],Bi[i+3].X[1],
-      Bi[i+4].X[1],Bi[i+5].X[1],Bi[i+6].X[1],Bi[i+7].X[1]) - _mm256_set1_ps(Xperiodic[1]);
-    __m256 zi = _mm256_setr_ps(Bi[i].X[2],Bi[i+1].X[2],Bi[i+2].X[2],Bi[i+3].X[2],
-      Bi[i+4].X[2],Bi[i+5].X[2],Bi[i+6].X[2],Bi[i+7].X[2]) - _mm256_set1_ps(Xperiodic[2]);
-    __m256 mi = _mm256_setr_ps(Bi[i].SRC,Bi[i+1].SRC,Bi[i+2].SRC,Bi[i+3].SRC,
-      Bi[i+4].SRC,Bi[i+5].SRC,Bi[i+6].SRC,Bi[i+7].SRC);
-    __m256 R2 = _mm256_set1_ps(EPS2);
-
-    __m256 x2 = _mm256_set1_ps(Bj[0].X[0]);
-    x2 = _mm256_sub_ps(x2, xi);
-    __m256 y2 = _mm256_set1_ps(Bj[0].X[1]);
-    y2 = _mm256_sub_ps(y2, yi);
-    __m256 z2 = _mm256_set1_ps(Bj[0].X[2]);
-    z2 = _mm256_sub_ps(z2, zi);
-    __m256 mj = _mm256_set1_ps(Bj[0].SRC);
-
-    __m256 xj = x2;
-    x2 = _mm256_mul_ps(x2, x2);
-    R2 = _mm256_add_ps(R2, x2);
-    __m256 yj = y2;
-    y2 = _mm256_mul_ps(y2, y2);
-    R2 = _mm256_add_ps(R2, y2);
-    __m256 zj = z2;
-    z2 = _mm256_mul_ps(z2, z2);
-    R2 = _mm256_add_ps(R2, z2);
-
-    x2 = _mm256_set1_ps(Bj[1].X[0]);
-    y2 = _mm256_set1_ps(Bj[1].X[1]);
-    z2 = _mm256_set1_ps(Bj[1].X[2]);
-    for (int j=0; j<nj; j++) {
-      __m256 invR = _mm256_rsqrt_ps(R2);
-      __m256 mask = _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ);
-      invR = _mm256_and_ps(invR, mask);
-      R2 = _mm256_set1_ps(EPS2);
-      x2 = _mm256_sub_ps(x2, xi);
-      y2 = _mm256_sub_ps(y2, yi);
-      z2 = _mm256_sub_ps(z2, zi);
-
-      mj = _mm256_mul_ps(mj, invR);
-      mj = _mm256_mul_ps(mj, mi);
-      pot = _mm256_add_ps(pot, mj);
-      if (mutual) Bj[j].TRG[0] += vecSum8(mj);
-      invR = _mm256_mul_ps(invR, invR);
-      invR = _mm256_mul_ps(invR, mj);
-      mj = _mm256_set1_ps(Bj[j+1].SRC);
-
-      xj = _mm256_mul_ps(xj, invR);
-      ax = _mm256_add_ps(ax, xj);
-      if (mutual) Bj[j].TRG[1] -= vecSum8(xj);
-      xj = x2;
-      x2 = _mm256_mul_ps(x2, x2);
-      R2 = _mm256_add_ps(R2, x2);
-      x2 = _mm256_set1_ps(Bj[j+2].X[0]);
-
-      yj = _mm256_mul_ps(yj, invR);
-      ay = _mm256_add_ps(ay, yj);
-      if (mutual) Bj[j].TRG[2] -= vecSum8(yj);
-      yj = y2;
-      y2 = _mm256_mul_ps(y2, y2);
-      R2 = _mm256_add_ps(R2, y2);
-      y2 = _mm256_set1_ps(Bj[j+2].X[1]);
-
-      zj = _mm256_mul_ps(zj, invR);
-      az = _mm256_add_ps(az, zj);
-      if (mutual) Bj[j].TRG[3] -= vecSum8(zj);
-      zj = z2;
-      z2 = _mm256_mul_ps(z2, z2);
-      R2 = _mm256_add_ps(R2, z2);
-      z2 = _mm256_set1_ps(Bj[j+2].X[2]);
-    }
-    for (int k=0; k<8; k++) {
-      Bi[i+k].TRG[0] += ((float*)&pot)[k];
-      Bi[i+k].TRG[1] += ((float*)&ax)[k];
-      Bi[i+k].TRG[2] += ((float*)&ay)[k];
-      Bi[i+k].TRG[3] += ((float*)&az)[k];
-    }
-  }
-#endif // __AVX__
-
-#if __SSE__
-  for ( ; i<=ni-4; i+=4) {
-    __m128 pot = _mm_setzero_ps();
-    __m128 ax = _mm_setzero_ps();
-    __m128 ay = _mm_setzero_ps();
-    __m128 az = _mm_setzero_ps();
-
-    __m128 xi = _mm_setr_ps(Bi[i].X[0], Bi[i+1].X[0], Bi[i+2].X[0], Bi[i+3].X[0]) - _mm_load1_ps(&Xperiodic[0]);
-    __m128 yi = _mm_setr_ps(Bi[i].X[1], Bi[i+1].X[1], Bi[i+2].X[1], Bi[i+3].X[1]) - _mm_load1_ps(&Xperiodic[1]);
-    __m128 zi = _mm_setr_ps(Bi[i].X[2], Bi[i+1].X[2], Bi[i+2].X[2], Bi[i+3].X[2]) - _mm_load1_ps(&Xperiodic[2]);
-    __m128 mi = _mm_setr_ps(Bi[i].SRC,  Bi[i+1].SRC,  Bi[i+2].SRC,  Bi[i+3].SRC);
-    __m128 R2 = _mm_set1_ps(EPS2);
-
-    __m128 x2 = _mm_load1_ps(&Bj[0].X[0]);
-    x2 = _mm_sub_ps(x2, xi);
-    __m128 y2 = _mm_load1_ps(&Bj[0].X[1]);
-    y2 = _mm_sub_ps(y2, yi);
-    __m128 z2 = _mm_load1_ps(&Bj[0].X[2]);
-    z2 = _mm_sub_ps(z2, zi);
-    __m128 mj = _mm_load1_ps(&Bj[0].SRC);
-
-    __m128 xj = x2;
-    x2 = _mm_mul_ps(x2, x2);
-    R2 = _mm_add_ps(R2, x2);
-    __m128 yj = y2;
-    y2 = _mm_mul_ps(y2, y2);
-    R2 = _mm_add_ps(R2, y2);
-    __m128 zj = z2;
-    z2 = _mm_mul_ps(z2, z2);
-    R2 = _mm_add_ps(R2, z2);
-
-    x2 = _mm_load_ps(&Bj[1].X[0]);
-    y2 = x2;
-    z2 = x2;
-    for (int j=0; j<nj; j++) {
-      __m128 invR = _mm_rsqrt_ps(R2);
-      __m128 mask = _mm_cmpgt_ps(R2, _mm_setzero_ps());
-      invR = _mm_and_ps(invR, mask);
-      R2 = _mm_set1_ps(EPS2);
-      x2 = _mm_shuffle_ps(x2, x2, _MM_SHUFFLE(0,0,0,0));
-      x2 = _mm_sub_ps(x2, xi);
-      y2 = _mm_shuffle_ps(y2, y2, _MM_SHUFFLE(1,1,1,1));
-      y2 = _mm_sub_ps(y2, yi);
-      z2 = _mm_shuffle_ps(z2, z2, _MM_SHUFFLE(2,2,2,2));
-      z2 = _mm_sub_ps(z2, zi);
-
-      mj = _mm_mul_ps(mj, invR);
-      mj = _mm_mul_ps(mj, mi);
-      pot = _mm_add_ps(pot, mj);
-      if (mutual) Bj[j].TRG[0] += vecSum4(mj);
-      invR = _mm_mul_ps(invR, invR);
-      invR = _mm_mul_ps(invR, mj);
-      mj = _mm_load_ps(&Bj[j+1].X[0]);
-      mj = _mm_shuffle_ps(mj, mj, _MM_SHUFFLE(3,3,3,3));
-
-      xj = _mm_mul_ps(xj, invR);
-      ax = _mm_add_ps(ax, xj);
-      if (mutual) Bj[j].TRG[1] -= vecSum4(xj);
-      xj = x2;
-      x2 = _mm_mul_ps(x2, x2);
-      R2 = _mm_add_ps(R2, x2);
-      x2 = _mm_load_ps(&Bj[j+2].X[0]);
-
-      yj = _mm_mul_ps(yj, invR);
-      ay = _mm_add_ps(ay, yj);
-      if (mutual) Bj[j].TRG[2] -= vecSum4(yj);
-      yj = y2;
-      y2 = _mm_mul_ps(y2, y2);
-      R2 = _mm_add_ps(R2, y2);
-      y2 = x2;
-
-      zj = _mm_mul_ps(zj, invR);
-      az = _mm_add_ps(az, zj);
-      if (mutual) Bj[j].TRG[3] -= vecSum4(zj);
-      zj = z2;
-      z2 = _mm_mul_ps(z2, z2);
-      R2 = _mm_add_ps(R2, z2);
-      z2 = x2;
-    }
-    for (int k=0; k<4; k++) {
-      Bi[i+k].TRG[0] += ((float*)&pot)[k];
-      Bi[i+k].TRG[1] += ((float*)&ax)[k];
-      Bi[i+k].TRG[2] += ((float*)&ay)[k];
-      Bi[i+k].TRG[3] += ((float*)&az)[k];
-    }
-  }
-#endif // __SSE__
-
-  for ( ; i<ni; i++) {
-    real_t pot = 0;
-    vec3 acc = 0;
-    for (int j=0; j<nj; j++) {
-      vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
-      real_t R2 = norm(dX) + EPS2;
-      if (R2 != 0) {
-        real_t invR2 = 1.0f / R2;
-        real_t invR = Bi[i].SRC * Bj[j].SRC * sqrt(invR2);
-        dX *= invR2 * invR;
-        pot += invR;
-        acc += dX;
-        if (mutual) {
-          Bj[j].TRG[0] += invR;
-          Bj[j].TRG[1] += dX[0];
-          Bj[j].TRG[2] += dX[1];
-          Bj[j].TRG[3] += dX[2];
-        }
-      }
-    }
-    Bi[i].TRG[0] += pot;
-    Bi[i].TRG[1] -= acc[0];
-    Bi[i].TRG[2] -= acc[1];
-    Bi[i].TRG[3] -= acc[2];
-  }
-}
-
-void Kernel::P2P(C_iter C) const {
-  B_iter B = C->BODY;
-  int n = C->NDBODY;
-  int i = 0;
-#if __AVX__
-  for ( ; i<=n-8; i+=8) {
-    __m256 pot = _mm256_setzero_ps();
-    __m256 ax = _mm256_setzero_ps();
-    __m256 ay = _mm256_setzero_ps();
-    __m256 az = _mm256_setzero_ps();
-
-    __m256 xi = _mm256_setr_ps(B[i].X[0],B[i+1].X[0],B[i+2].X[0],B[i+3].X[0],
-      B[i+4].X[0],B[i+5].X[0],B[i+6].X[0],B[i+7].X[0]) - _mm256_set1_ps(Xperiodic[0]);
-    __m256 yi = _mm256_setr_ps(B[i].X[1],B[i+1].X[1],B[i+2].X[1],B[i+3].X[1],
-      B[i+4].X[1],B[i+5].X[1],B[i+6].X[1],B[i+7].X[1]) - _mm256_set1_ps(Xperiodic[1]);
-    __m256 zi = _mm256_setr_ps(B[i].X[2],B[i+1].X[2],B[i+2].X[2],B[i+3].X[2],
-      B[i+4].X[2],B[i+5].X[2],B[i+6].X[2],B[i+7].X[2]) - _mm256_set1_ps(Xperiodic[2]);
-    __m256 mi = _mm256_setr_ps(B[i].SRC,B[i+1].SRC,B[i+2].SRC,B[i+3].SRC,
-      B[i+4].SRC,B[i+5].SRC,B[i+6].SRC,B[i+7].SRC);
-    __m256 R2 = _mm256_set1_ps(EPS2);
-
-    __m256 x2 = _mm256_set1_ps(B[i+1].X[0]);
-    x2 = _mm256_sub_ps(x2, xi);
-    __m256 y2 = _mm256_set1_ps(B[i+1].X[1]);
-    y2 = _mm256_sub_ps(y2, yi);
-    __m256 z2 = _mm256_set1_ps(B[i+1].X[2]);
-    z2 = _mm256_sub_ps(z2, zi);
-    __m256 mj = _mm256_set1_ps(B[i+1].SRC);
-
-    __m256 xj = x2;
-    x2 = _mm256_mul_ps(x2, x2);
-    R2 = _mm256_add_ps(R2, x2);
-    __m256 yj = y2;
-    y2 = _mm256_mul_ps(y2, y2);
-    R2 = _mm256_add_ps(R2, y2);
-    __m256 zj = z2;
-    z2 = _mm256_mul_ps(z2, z2);
-    R2 = _mm256_add_ps(R2, z2);
-
-    x2 = _mm256_set1_ps(B[i+2].X[0]);
-    y2 = _mm256_set1_ps(B[i+2].X[1]);
-    z2 = _mm256_set1_ps(B[i+2].X[2]);
-    for (int j=i+1; j<n; j++) {
-      __m256 invR = _mm256_rsqrt_ps(R2);
-      __m256 mask = _mm256_cmp_ps(_mm256_setr_ps(i, i+1, i+2, i+3, i+4, i+5, i+6, i+7),
-        _mm256_set1_ps(j), _CMP_LT_OQ);
-      mask = _mm256_and_ps(mask, _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ));
-      invR = _mm256_and_ps(invR, mask);
-      R2 = _mm256_set1_ps(EPS2);
-      x2 = _mm256_sub_ps(x2, xi);
-      y2 = _mm256_sub_ps(y2, yi);
-      z2 = _mm256_sub_ps(z2, zi);
-
-      mj = _mm256_mul_ps(mj, invR);
-      mj = _mm256_mul_ps(mj, mi);
-      pot = _mm256_add_ps(pot, mj);
-      B[j].TRG[0] += vecSum8(mj);
-      invR = _mm256_mul_ps(invR, invR);
-      invR = _mm256_mul_ps(invR, mj);
-      mj = _mm256_set1_ps(B[j+1].SRC);
-
-      xj = _mm256_mul_ps(xj, invR);
-      ax = _mm256_add_ps(ax, xj);
-      B[j].TRG[1] -= vecSum8(xj);
-      xj = x2;
-      x2 = _mm256_mul_ps(x2, x2);
-      R2 = _mm256_add_ps(R2, x2);
-      x2 = _mm256_set1_ps(B[j+2].X[0]);
-
-      yj = _mm256_mul_ps(yj, invR);
-      ay = _mm256_add_ps(ay, yj);
-      B[j].TRG[2] -= vecSum8(yj);
-      yj = y2;
-      y2 = _mm256_mul_ps(y2, y2);
-      R2 = _mm256_add_ps(R2, y2);
-      y2 = _mm256_set1_ps(B[j+2].X[1]);
-
-      zj = _mm256_mul_ps(zj, invR);
-      az = _mm256_add_ps(az, zj);
-      B[j].TRG[3] -= vecSum8(zj);
-      zj = z2;
-      z2 = _mm256_mul_ps(z2, z2);
-      R2 = _mm256_add_ps(R2, z2);
-      z2 = _mm256_set1_ps(B[j+2].X[2]);
-    }
-    for (int k=0; k<8; k++) {
-      B[i+k].TRG[0] += ((float*)&pot)[k];
-      B[i+k].TRG[1] += ((float*)&ax)[k];
-      B[i+k].TRG[2] += ((float*)&ay)[k];
-      B[i+k].TRG[3] += ((float*)&az)[k];
-    }
-  }
-#endif // __AVX__
-
-#if __SSE__
-  for ( ; i<=n-4; i+=4) {
-    __m128 pot = _mm_setzero_ps();
-    __m128 ax = _mm_setzero_ps();
-    __m128 ay = _mm_setzero_ps();
-    __m128 az = _mm_setzero_ps();
-
-    __m128 xi = _mm_setr_ps(B[i].X[0], B[i+1].X[0], B[i+2].X[0], B[i+3].X[0]) - _mm_load1_ps(&Xperiodic[0]);
-    __m128 yi = _mm_setr_ps(B[i].X[1], B[i+1].X[1], B[i+2].X[1], B[i+3].X[1]) - _mm_load1_ps(&Xperiodic[1]);
-    __m128 zi = _mm_setr_ps(B[i].X[2], B[i+1].X[2], B[i+2].X[2], B[i+3].X[2]) - _mm_load1_ps(&Xperiodic[2]);
-    __m128 mi = _mm_setr_ps(B[i].SRC,  B[i+1].SRC,  B[i+2].SRC,  B[i+3].SRC);
-    __m128 R2 = _mm_set1_ps(EPS2);
-
-    __m128 x2 = _mm_load1_ps(&B[i+1].X[0]);
-    x2 = _mm_sub_ps(x2, xi);
-    __m128 y2 = _mm_load1_ps(&B[i+1].X[1]);
-    y2 = _mm_sub_ps(y2, yi);
-    __m128 z2 = _mm_load1_ps(&B[i+1].X[2]);
-    z2 = _mm_sub_ps(z2, zi);
-    __m128 mj = _mm_load1_ps(&B[i+1].SRC);
-
-    __m128 xj = x2;
-    x2 = _mm_mul_ps(x2, x2);
-    R2 = _mm_add_ps(R2, x2);
-    __m128 yj = y2;
-    y2 = _mm_mul_ps(y2, y2);
-    R2 = _mm_add_ps(R2, y2);
-    __m128 zj = z2;
-    z2 = _mm_mul_ps(z2, z2);
-    R2 = _mm_add_ps(R2, z2);
-
-    x2 = _mm_load_ps(&B[i+2].X[0]);
-    y2 = x2;
-    z2 = x2;
-    for (int j=i+1; j<n; j++) {
-      __m128 invR = _mm_rsqrt_ps(R2);
-      __m128 mask = _mm_cmplt_ps(_mm_setr_ps(i, i+1, i+2, i+3), _mm_set1_ps(j));
-      mask = _mm_and_ps(mask, _mm_cmpgt_ps(R2, _mm_setzero_ps()));
-      invR = _mm_and_ps(invR, mask);
-      R2 = _mm_set1_ps(EPS2);
-      x2 = _mm_shuffle_ps(x2, x2, _MM_SHUFFLE(0,0,0,0));
-      x2 = _mm_sub_ps(x2, xi);
-      y2 = _mm_shuffle_ps(y2, y2, _MM_SHUFFLE(1,1,1,1));
-      y2 = _mm_sub_ps(y2, yi);
-      z2 = _mm_shuffle_ps(z2, z2, _MM_SHUFFLE(2,2,2,2));
-      z2 = _mm_sub_ps(z2, zi);
-
-      mj = _mm_mul_ps(mj, invR);
-      mj = _mm_mul_ps(mj, mi);
-      pot = _mm_add_ps(pot, mj);
-      B[j].TRG[0] += vecSum4(mj);
-      invR = _mm_mul_ps(invR, invR);
-      invR = _mm_mul_ps(invR, mj);
-      mj = _mm_load_ps(&B[j+1].X[0]);
-      mj = _mm_shuffle_ps(mj, mj, _MM_SHUFFLE(3,3,3,3));
-
-      xj = _mm_mul_ps(xj, invR);
-      ax = _mm_add_ps(ax, xj);
-      B[j].TRG[1] -= vecSum4(xj);
-      xj = x2;
-      x2 = _mm_mul_ps(x2, x2);
-      R2 = _mm_add_ps(R2, x2);
-      x2 = _mm_load_ps(&B[j+2].X[0]);
-
-      yj = _mm_mul_ps(yj, invR);
-      ay = _mm_add_ps(ay, yj);
-      B[j].TRG[2] -= vecSum4(yj);
-      yj = y2;
-      y2 = _mm_mul_ps(y2, y2);
-      R2 = _mm_add_ps(R2, y2);
-      y2 = x2;
-
-      zj = _mm_mul_ps(zj, invR);
-      az = _mm_add_ps(az, zj);
-      B[j].TRG[3] -= vecSum4(zj);
-      zj = z2;
-      z2 = _mm_mul_ps(z2, z2);
-      R2 = _mm_add_ps(R2, z2);
-      z2 = x2;
-    }
-    for (int k=0; k<4; k++) {
-      B[i+k].TRG[0] += ((float*)&pot)[k];
-      B[i+k].TRG[1] += ((float*)&ax)[k];
-      B[i+k].TRG[2] += ((float*)&ay)[k];
-      B[i+k].TRG[3] += ((float*)&az)[k];
-    }
-  }
-#endif // __SSE__
-
-  for ( ; i<n; i++) {
-    real_t pot = 0;
-    vec3 acc = 0;
-    for (int j=i+1; j<n; j++) {
-      vec3 dX = B[i].X - B[j].X;
-      real_t R2 = norm(dX) + EPS2;
-      if (R2 != 0) {
-        real_t invR2 = 1.0 / R2;
-        real_t invR = B[i].SRC * B[j].SRC * sqrt(invR2);
-        dX *= invR2 * invR;
-        pot += invR;
-        acc += dX;
-        B[j].TRG[0] += invR;
-        B[j].TRG[1] += dX[0];
-        B[j].TRG[2] += dX[1];
-        B[j].TRG[3] += dX[2];
-      }
-    }
-    B[i].TRG[0] += pot;
-    B[i].TRG[1] -= acc[0];
-    B[i].TRG[2] -= acc[1];
-    B[i].TRG[3] -= acc[2];
-  }
 }
 
 void Kernel::P2M(C_iter C, real_t &Rmax) const {
@@ -541,7 +108,7 @@ void Kernel::P2M(C_iter C, real_t &Rmax) const {
     if (R > Rmax) Rmax = R;
     real_t rho, alpha, beta;
     cart2sph(rho,alpha,beta,dX);
-    evalMultipole(rho,alpha,beta,prefactor,Ynm,YnmTheta);
+    evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
     for (int n=0; n<P; n++) {
       for (int m=0; m<=n; m++) {
         int nm  = n * n + n - m;
@@ -565,33 +132,24 @@ void Kernel::M2M(C_iter Ci, real_t &Rmax) const {
     if (R > Rmax) Rmax = R;
     real_t rho, alpha, beta;
     cart2sph(rho,alpha,beta,dX);
-    evalMultipole(rho,alpha,beta,prefactor,Ynm,YnmTheta);
+    evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
     for (int j=0; j<P; j++) {
       for (int k=0; k<=j; k++) {
-        int jk = j * j + j + k;
         int jks = j * (j + 1) / 2 + k;
         complex_t M = 0;
         for (int n=0; n<=j; n++) {
-          for (int m=-n; m<=std::min(k-1,n); m++) {
-            if( j-n >= k-m ) {
-              int jnkm  = (j - n) * (j - n) + j - n + k - m;
-              int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
-              int nm    = n * n + n - m;
-              M += Cj->M[jnkms] * std::pow(I,real_t(m-abs(m))) * Ynm[nm]
-                 * real_t(ODDEVEN(n) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-            }
+          for (int m=std::max(-n,-j+k+n); m<=std::min(k-1,n); m++) {
+            int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
+            int nm    = n * n + n - m;
+            M += Cj->M[jnkms] * Ynm[nm] * real_t(SIGN(m) * ODDEVEN(n));
           }
-          for (int m=k; m<=n; m++) {
-            if( j-n >= m-k ) {
-              int jnkm  = (j - n) * (j - n) + j - n + k - m;
-              int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
-              int nm    = n * n + n - m;
-              M += std::conj(Cj->M[jnkms]) * Ynm[nm]
-                 * real_t(ODDEVEN(k+n+m) * Anm[nm] * Anm[jnkm] / Anm[jk]);
-            }
+          for (int m=k; m<=std::min(n,j+k-n); m++) {
+            int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
+            int nm    = n * n + n - m;
+            M += std::conj(Cj->M[jnkms]) * Ynm[nm] * real_t(ODDEVEN(k+n+m));
           }
         }
-        Ci->M[jks] += M * SCALING;
+        Ci->M[jks] += M;
       }
     }
   }
@@ -603,34 +161,30 @@ void Kernel::M2M(C_iter Ci, real_t &Rmax) const {
 }
 
 void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
-  complex_t Ynmi[P*P], YnmThetai[P*P];
-  complex_t Ynmj[P*P], YnmThetaj[P*P];
+  complex_t Ynmi[P*P], Ynmj[P*P];
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t rho, alpha, beta;
   cart2sph(rho,alpha,beta,dX);
-  evalLocal(rho,alpha,beta,prefactor,Ynmi,YnmThetai);
-  if (mutual) evalLocal(rho,alpha+M_PI,beta,prefactor,Ynmj,YnmThetaj);
+  evalLocal(rho,alpha,beta,Ynmi);
+  if (mutual) evalLocal(rho,alpha+M_PI,beta,Ynmj);
   for (int j=0; j<P; j++) {
+    real_t Cnm = ODDEVEN(j);
     for (int k=0; k<=j; k++) {
-      int jk = j * j + j + k;
       int jks = j * (j + 1) / 2 + k;
       complex_t Li = 0, Lj = 0;
       for (int n=0; n<P-j; n++) {
         for (int m=-n; m<0; m++) {
-          int nm   = n * n + n + m;
           int nms  = n * (n + 1) / 2 - m;
-          int jknm = jk * P * P + nm;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
-          Li += std::conj(Cj->M[nms]) * Cnm[jknm] * Ynmi[jnkm];
-          if (mutual) Lj += std::conj(Ci->M[nms]) * Cnm[jknm] * Ynmj[jnkm];
+          Li += std::conj(Cj->M[nms]) * Cnm * Ynmi[jnkm];
+          if (mutual) Lj += std::conj(Ci->M[nms]) * Cnm * Ynmj[jnkm];
         }
         for (int m=0; m<=n; m++) {
-          int nm   = n * n + n + m;
           int nms  = n * (n + 1) / 2 + m;
-          int jknm = jk * P * P + nm;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
-          Li += Cj->M[nms] * Cnm[jknm] * Ynmi[jnkm];
-          if (mutual) Lj += Ci->M[nms] * Cnm[jknm] * Ynmj[jnkm];
+          real_t Cnm2 = Cnm * ODDEVEN((k-m)*(k<m)+m);
+          Li += Cj->M[nms] * Cnm2 * Ynmi[jnkm];
+          if (mutual) Lj += Ci->M[nms] * Cnm2 * Ynmj[jnkm];
         }
       }
       Ci->L[jks] += Li;
@@ -645,31 +199,26 @@ void Kernel::L2L(C_iter Ci) const {
   vec3 dX = Ci->X - Cj->X;
   real_t rho, alpha, beta;
   cart2sph(rho,alpha,beta,dX);
-  evalMultipole(rho,alpha,beta,prefactor,Ynm,YnmTheta);
+  evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
   for (int j=0; j<P; j++) {
     for (int k=0; k<=j; k++) {
-      int jk = j * j + j + k;
       int jks = j * (j + 1) / 2 + k;
       complex_t L = 0;
       for (int n=j; n<P; n++) {
         for (int m=j+k-n; m<0; m++) {
           int jnkm = (n - j) * (n - j) + n - j + m - k;
-          int nm   = n * n + n - m;
           int nms  = n * (n + 1) / 2 - m;
-          L += std::conj(Cj->L[nms]) * Ynm[jnkm]
-             * real_t(ODDEVEN(k) * Anm[jnkm] * Anm[jk] / Anm[nm]);
+          L += std::conj(Cj->L[nms]) * Ynm[jnkm] * real_t(ODDEVEN(k));
         }
         for (int m=0; m<=n; m++) {
           if( n-j >= abs(m-k) ) {
             int jnkm = (n - j) * (n - j) + n - j + m - k;
-            int nm   = n * n + n + m;
             int nms  = n * (n + 1) / 2 + m;
-            L += Cj->L[nms] * std::pow(I,real_t(m-k-abs(m-k)))
-               * Ynm[jnkm] * Anm[jnkm] * Anm[jk] / Anm[nm];
+            L += Cj->L[nms] * Ynm[jnkm] * real_t(ODDEVEN((m-k)*(m<k)));
           }
         }
       }
-      Ci->L[jks] += L * SCALING;
+      Ci->L[jks] += L;
     }
   }
 }
@@ -682,7 +231,7 @@ void Kernel::L2P(C_iter Ci) const {
     vec3 cartesian = 0;
     real_t r, theta, phi;
     cart2sph(r,theta,phi,dX);
-    evalMultipole(r,theta,phi,prefactor,Ynm,YnmTheta);
+    evalMultipole(r,theta,phi,Ynm,YnmTheta);
     B->TRG /= B->SRC;
     for (int n=0; n<P; n++) {
       int nm  = n * n + n;
@@ -704,52 +253,4 @@ void Kernel::L2P(C_iter Ci) const {
     B->TRG[2] += cartesian[1];
     B->TRG[3] += cartesian[2];
   }
-}
-
-void Kernel::preCalculation() {
-  factorial = new real_t    [P];                              // Factorial
-  prefactor = new real_t    [P*P];                            // sqrt( (n - |m|)! / (n + |m|)! )
-  Anm       = new real_t    [P*P];                            // (-1)^n / sqrt( (n + m)! / (n - m)! )
-  Cnm       = new complex_t [P*P*P*P];                        // M2L translation matrix Cjknm
-
-  factorial[0] = 1;                                           // Initialize factorial
-  for (int n=1; n<P; n++) {                                   // Loop to P
-    factorial[n] = factorial[n-1] * n;                        //  n!
-  }                                                           // End loop to P
-
-  for (int n=0; n<P; n++) {                                   // Loop over n in Anm
-    for (int m=-n; m<=n; m++) {                               //  Loop over m in Anm
-      int nm = n*n+n+m;                                       //   Index of Anm
-      int nabsm = abs(m);                                     //   |m|
-      real_t fnmm = SCALING;                                  //   Initialize (n - m)!
-      for (int i=1; i<=n-m; i++) fnmm *= i;                   //   (n - m)!
-      real_t fnpm = SCALING;                                  //   Initialize (n + m)!
-      for (int i=1; i<=n+m; i++) fnpm *= i;                   //   (n + m)!
-      real_t fnma = 1.0;                                      //   Initialize (n - |m|)!
-      for (int i=1; i<=n-nabsm; i++) fnma *= i;               //   (n - |m|)!
-      real_t fnpa = 1.0;                                      //   Initialize (n + |m|)!
-      for (int i=1; i<=n+nabsm; i++) fnpa *= i;               //   (n + |m|)!
-      prefactor[nm] = std::sqrt(fnma/fnpa);                   //   sqrt( (n - |m|)! / (n + |m|)! )
-      Anm[nm] = ODDEVEN(n)/std::sqrt(fnmm*fnpm);              //   (-1)^n / sqrt( (n + m)! / (n - m)! )
-    }                                                         //  End loop over m in Anm
-  }                                                           // End loop over n in Anm
-
-  for (int j=0, jk=0, jknm=0; j<P; j++) {                     // Loop over j in Cjknm
-    for (int k=-j; k<=j; k++, jk++) {                         //  Loop over k in Cjknm
-      for (int n=0, nm=0; n<P; n++) {                         //   Loop over n in Cjknm
-        for (int m=-n; m<=n; m++, nm++, jknm++) {             //    Loop over m in Cjknm
-          const int jnkm = (j+n)*(j+n)+j+n+m-k;               //     Index C_{j+n}^{m-k}
-          Cnm[jknm] = std::pow(I,real_t(abs(k-m)-abs(k)-abs(m)))//     Cjknm
-                    * real_t(ODDEVEN(j)*Anm[nm]*Anm[jk]/Anm[jnkm]) * SCALING;
-        }                                                     //    End loop over m in Cjknm
-      }                                                       //   End loop over n in Cjknm
-    }                                                         //  End loop over in k in Cjknm
-  }                                                           // End loop over in j in Cjknm
-}
-
-void Kernel::postCalculation() {
-  delete[] factorial;                                         // Free factorial
-  delete[] prefactor;                                         // Free sqrt( (n - |m|)! / (n + |m|)! )
-  delete[] Anm;                                               // Free (-1)^n / sqrt( (n + m)! / (n - m)! )
-  delete[] Cnm;                                               // Free M2L translation matrix Cjknm
 }
