@@ -770,6 +770,65 @@ inline float vecSum8(__m256 reg) {
 }
 #endif
 
+#if KAHAN
+
+inline void accum(real_t & s, real_t ds, real_t & c) {
+  // s += ds;
+  real_t y = ds - c;
+  real_t t = s + y;
+  c = (t - s) - y;
+  s = t;
+}
+
+inline void accum3(vec3 & s, vec3 ds, vec3 & c) {
+  // s += ds;
+  vec3 y = ds - c;
+  vec3 t = s + y;
+  c = (t - s) - y;
+  s = t;
+}
+
+void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
+  B_iter Bi = Ci->BODY;
+  B_iter Bj = Cj->BODY;
+  int ni = Ci->NDBODY;
+  int nj = Cj->NDBODY;
+  int i = 0;
+  for ( ; i<ni; i++) {
+    real_t pot = 0;
+    real_t pot_c = 0;
+    vec3 acc = 0;
+    vec3 acc_c = 0;
+    for (int j=0; j<nj; j++) {
+      vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
+      real_t R2 = norm(dX) + EPS2;
+      if (R2 != 0) {
+        real_t invR2 = 1.0f / R2;
+        real_t invR = Bi[i].SRC * Bj[j].SRC * sqrt(invR2);
+        dX *= invR2 * invR;
+	accum(pot, invR, pot_c);
+	accum3(acc, dX, acc_c);
+        if (mutual) {
+	  accum(Bj[j].TRG[0], invR,  Bj[j].TRGc[0]);
+          accum(Bj[j].TRG[1], dX[0], Bj[j].TRGc[1]);
+          accum(Bj[j].TRG[2], dX[1], Bj[j].TRGc[2]);
+          accum(Bj[j].TRG[3], dX[2], Bj[j].TRGc[3]);
+        }
+      }
+    }
+    accum(Bi[i].TRG[0], pot,       Bi[i].TRGc[0]);
+    accum(Bi[i].TRG[0], pot_c,     Bi[i].TRGc[0]);
+    accum(Bi[i].TRG[1], -acc[0],   Bi[i].TRGc[1]);
+    accum(Bi[i].TRG[1], -acc_c[0], Bi[i].TRGc[1]);
+    accum(Bi[i].TRG[2], -acc[1],   Bi[i].TRGc[2]);
+    accum(Bi[i].TRG[2], -acc_c[1], Bi[i].TRGc[2]);
+    accum(Bi[i].TRG[3], -acc[2],   Bi[i].TRGc[3]);
+    accum(Bi[i].TRG[3], -acc_c[2], Bi[i].TRGc[3]);
+  }
+}
+
+#else
+
 void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
@@ -978,7 +1037,47 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     Bi[i].TRG[3] -= acc[2];
   }
 }
+#endif
 
+#if KAHAN
+
+void Kernel::P2P(C_iter C) const {
+  B_iter B = C->BODY;
+  int n = C->NDBODY;
+  int i = 0;
+  for ( ; i<n; i++) {
+    real_t pot = 0;
+    real_t pot_c = 0;
+    vec3 acc = 0;
+    vec3 acc_c = 0;
+    for (int j=i+1; j<n; j++) {
+      vec3 dX = B[i].X - B[j].X;
+      real_t R2 = norm(dX) + EPS2;
+      if (R2 != 0) {
+        real_t invR2 = 1.0 / R2;
+        real_t invR = B[i].SRC * B[j].SRC * sqrt(invR2);
+        dX *= invR2 * invR;
+        accum(pot, invR, pot_c);
+        accum3(acc, dX, acc_c);
+        accum(B[j].TRG[0], invR,  B[j].TRGc[0]);
+        accum(B[j].TRG[1], dX[0], B[j].TRGc[1]);
+        accum(B[j].TRG[2], dX[1], B[j].TRGc[2]);
+        accum(B[j].TRG[3], dX[2], B[j].TRGc[3]);
+      }
+    }
+    accum(B[i].TRG[0], pot,       B[i].TRGc[0]);
+    accum(B[i].TRG[0], pot_c,     B[i].TRGc[0]);
+    accum(B[i].TRG[1], -acc[0],   B[i].TRGc[1]);
+    accum(B[i].TRG[1], -acc_c[0], B[i].TRGc[1]);
+    accum(B[i].TRG[2], -acc[1],   B[i].TRGc[2]);
+    accum(B[i].TRG[2], -acc_c[1], B[i].TRGc[2]);
+    accum(B[i].TRG[3], -acc[2],   B[i].TRGc[3]);
+    accum(B[i].TRG[3], -acc_c[2], B[i].TRGc[3]);
+  }
+}
+
+
+#else
 void Kernel::P2P(C_iter C) const {
   B_iter B = C->BODY;
   int n = C->NDBODY;
@@ -1186,6 +1285,7 @@ void Kernel::P2P(C_iter C) const {
     B[i].TRG[3] -= acc[2];
   }
 }
+#endif
 
 #if EVAL_ERROR_KAHAN
 void Kernel::P2PKahan(C_iter Ci, C_iter Cj) const {

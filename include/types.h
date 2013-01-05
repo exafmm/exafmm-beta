@@ -55,6 +55,9 @@ struct Body : public Source {
   int    IPROC;                                                 //!< Initial process numbering for partitioning back
   int    ICELL;                                                 //!< Cell index
   vec4   TRG;                                                   //!< Scalar+vector3 target values
+#if KAHAN
+  vec4   TRGc;                                                   //!< Scalar+vector3 target values
+#endif
 };
 typedef std::vector<Body>           Bodies;                     //!< Vector of bodies
 typedef std::vector<Body>::iterator B_iter;                     //!< Iterator of body vector
