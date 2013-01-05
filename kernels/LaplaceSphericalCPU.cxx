@@ -6,124 +6,100 @@
 
 const complex_t I(0.,1.);
 
-template<int m, int n>
-struct Harmonics {
-  static const int c0 = - n - 2 * m;
-  static const int c1 = 2 * n + 2 * m - 1;
-  static const int c2 = - n - 2 * m + 1;
-  static const int c3 = n + 1;
-  static const int c4 =  - n - m - 1;
-  static const int npm = (n + m) * (n + m) + n + 2 * m;
-  static const int nmm = (n + m) * (n + m) + n;
-  static inline real_t Rn(const real_t &R) {
-    return Harmonics<m,n-1>::Rn(R) * R / c0;
+template<int j, int k, int n, int m>
+struct M2LTemplate {
+  static const int nms = n * (n + 1) / 2 + abs(m);
+  static const int jnkm = (j + n) * (j + n) + j + n + m - k;
+  static const int Cnm = ODDEVEN(j);
+  static const int Cnm2 = Cnm * ODDEVEN((k-m)*(k<m)+m);
+  static const int mm1 = (m-1) < -n ? 0 : m-1;
+  static inline void negative(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
+                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
+    M2LTemplate<j,k,n,mm1>::negative(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
+    if (m >= -n) {
+      Li2 += std::conj(Mj[nms]) * Ynmi[jnkm] * real_t(Cnm);
+      if (mutual) Lj2 += std::conj(Mi[nms]) * Ynmj[jnkm] * real_t(Cnm);
+    }
   }
-  static inline real_t invRn(const real_t &invR) {
-    return Harmonics<m,n-1>::invRn(invR) * invR * n;
-  }
-  static inline real_t Pnm(const real_t &x, const real_t &y) {
-    return (x * c1 * Harmonics<m,n-1>::Pnm(x,y) + c2 * Harmonics<m,n-2>::Pnm(x,y)) / n;
-  }
-  static inline complex_t Em(const complex_t &ei) {
-    return Harmonics<m,0>::Em(ei);
-  }
-  static inline void Multipole(complex_t *Ynm, complex_t *YnmTheta, const real_t &R, const real_t &x, const real_t &y, const complex_t &ei) {
-    Harmonics<m,n-1>::Multipole(Ynm,YnmTheta,R,x,y,ei);
-    Ynm[npm] = Rn(R) * Pnm(x,y) * Em(ei);
-    Ynm[nmm] = std::conj(Ynm[npm]);
-    YnmTheta[npm] = Rn(R) * (c3 * Harmonics<m,n+1>::Pnm(x,y) + c4 * x * Pnm(x,y)) / y * Em(ei);
-  }
-  static inline void Local(complex_t *Ynm, const real_t &invR, const real_t &x, const real_t &y, const complex_t &ei) {
-    Harmonics<m,n-1>::Local(Ynm,invR,x,y,ei);
-    Ynm[npm] = invRn(invR) * Pnm(x,y) * Em(ei);
-    Ynm[nmm] = std::conj(Ynm[npm]);
+  static inline void positive(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
+                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
+    M2LTemplate<j,k,n,m-1>::positive(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
+    Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm2);
+    if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm2);
   }
 };
 
-template<int m>
-struct Harmonics<m,1> {
-  static const int c0 = 2 * m + 1;
-  static const int c1 = - c0;
-  static const int c2 =  - m - 2;
-  static const int npm = (m + 1) * (m + 1) + 2 * m + 1;
-  static const int nmm = (m + 1) * (m + 1) + 1;
-  static inline real_t Rn(const real_t &R) {
-    return Harmonics<m,0>::Rn(R) * R / c1;
+template<int j, int k, int n>
+struct M2LTemplate<j,k,n,0> {
+  static const int nms = n * (n + 1) / 2;
+  static const int jnkm = (j + n) * (j + n) + j + n - k;
+  static const int Cnm = ODDEVEN(j);
+  static const int Cnm2 = Cnm * ODDEVEN(k*(k<0));
+  static inline void negative(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
+                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
+    M2LTemplate<j,k,n-1,n-1>::positive(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
   }
-  static inline real_t invRn(const real_t &invR) {
-    return Harmonics<m,0>::invRn(invR) * invR;
-  }
-  static inline real_t Pnm(const real_t &x, const real_t &y) {
-    return x * c0 * Harmonics<m,0>::Pnm(x,y);
-  }
-  static inline complex_t Em(const complex_t &ei) {
-    return Harmonics<m,0>::Em(ei);
-  }
-  static inline void Multipole(complex_t *Ynm, complex_t *YnmTheta, const real_t &R, const real_t &x, const real_t &y, const complex_t &ei) {
-    Harmonics<m,0>::Multipole(Ynm,YnmTheta,R,x,y,ei);
-    Ynm[npm] = Rn(R) * Pnm(x,y) * Em(ei);
-    Ynm[nmm] = std::conj(Ynm[npm]);
-    YnmTheta[npm] = Rn(R) * (2 * Harmonics<m,2>::Pnm(x,y) + c2 * x * Pnm(x,y)) / y * Em(ei);
-  }
-  static inline void Local(complex_t *Ynm, const real_t &invR, const real_t &x, const real_t &y, const complex_t &ei) {
-    Harmonics<m,0>::Local(Ynm,invR,x,y,ei);
-    Ynm[npm] = invRn(invR) * Pnm(x,y) * Em(ei);
-    Ynm[nmm] = std::conj(Ynm[npm]);
+  static inline void positive(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
+                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
+    M2LTemplate<j,k,n,-1>::negative(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
+    Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm2);
+    if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm2);
   }
 };
 
-template<int m>
-struct Harmonics<m,0> {
-  static const int c0 = 2 * m - 1;
-  static const int c1 = - 2 * m * c0;
-  static const int c2 =  - m - 1;
-  static const int npm = m * m + 2 * m;
-  static const int nmm = m * m;
-  static inline real_t Rn(const real_t &R) {
-    return Harmonics<m-1,0>::Rn(R) * R / c1;
+template<int j, int k>
+struct M2LTemplate<j,k,0,0> {
+  static const int nms = 0;
+  static const int jks = j * (j + 1) / 2 + k - 1;
+  static const int jnkm = j * j + j - k;
+  static const int Cnm = ODDEVEN(j);
+  static const int Cnm2 = Cnm * ODDEVEN(k*(k<0));
+  static inline void negative(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
+                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
+    M2LTemplate<j,k-1,P-j-1,P-j-1>::positive(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
+    Li[jks] = Li2;
+    Lj[jks] = Lj2;
+    Li2 = Lj2 = 0;
   }
-  static inline real_t invRn(const real_t &invR) {
-    return Harmonics<m-1,0>::invRn(invR) * invR;
+  static inline void positive(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
+                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
+    M2LTemplate<j,k,0,-1>::negative(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
+    Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm2);
+    if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm2);
   }
-  static inline real_t Pnm(const real_t &x, const real_t &y) {
-    return - c0 * y * Harmonics<m-1,0>::Pnm(x,y);
+};
+
+template<int j>
+struct M2LTemplate<j,0,0,0> {
+  static const int nms = 0;
+  static const int jks = j * (j - 1) / 2 + j - 1;
+  static const int jnkm = j * j + j;
+  static const int Cnm = ODDEVEN(j);
+  static inline void negative(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
+                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
+    M2LTemplate<j-1,j-1,P-j,P-j>::positive(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
+    Li[jks] = Li2;
+    Lj[jks] = Lj2;
+    Li2 = Lj2 = 0;
   }
-  static inline complex_t Em(const complex_t &ei) {
-    return Harmonics<m-1,0>::Em(ei) * ei;
-  }
-  static inline void Multipole(complex_t *Ynm, complex_t *YnmTheta, const real_t &R, const real_t &x, const real_t &y, const complex_t &ei) {
-    Harmonics<m-1,P-m>::Multipole(Ynm,YnmTheta,R,x,y,ei);
-    Ynm[npm] = Rn(R) * Pnm(x,y) * Em(ei);
-    Ynm[nmm] = std::conj(Ynm[npm]);
-    YnmTheta[npm] = Rn(R) * (Harmonics<m,1>::Pnm(x,y) + c2 * x * Pnm(x,y)) / y * Em(ei);
-  }
-  static inline void Local(complex_t *Ynm, const real_t &invR, const real_t &x, const real_t &y, const complex_t &ei) {
-    Harmonics<m-1,P-m>::Local(Ynm,invR,x,y,ei);
-    Ynm[npm] = invRn(invR) * Pnm(x,y) * Em(ei);
-    Ynm[nmm] = std::conj(Ynm[npm]);
+  static inline void positive(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
+                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
+    M2LTemplate<j,0,0,-1>::negative(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
+    Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm);
+    if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm);
   }
 };
 
 template<>
-struct Harmonics<0,0> {
-  static inline real_t Rn(const real_t &) {
-    return 1.0;
-  }
-  static inline real_t invRn(const real_t &invR) {
-    return -invR;
-  }
-  static inline real_t Pnm(const real_t &, const real_t &) {
-    return 1.0;
-  }
-  static inline complex_t Em(const complex_t &) {
-    return 1.0;
-  }
-  static inline void Multipole(complex_t *Ynm, complex_t *YnmTheta, const real_t&, const real_t&, const real_t&, const complex_t&) {
-    Ynm[0] = 1.0;
-    YnmTheta[0] = 0.0;
-  }
-  static inline void Local(complex_t *Ynm, const real_t &invR, const real_t&, const real_t&, const complex_t&) {
-    Ynm[0] = -invR;
+struct M2LTemplate<0,0,0,0> {
+  static const int nms = 0;
+  static const int jnkm = 0;
+  static const int Cnm = 1;
+  static inline void negative(const vecM&, const vecM&, vecL&, vecL&, complex_t, complex_t, complex_t*, complex_t*, bool) {}
+  static inline void positive(const vecM &Mi, const vecM &Mj, vecL&, vecL&, complex_t &Li2, complex_t &Lj2,
+                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
+    Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm);
+    if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm);
   }
 };
 
@@ -152,9 +128,6 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, comple
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
   complex_t ei = std::exp(I * beta);                            // exp(i * beta)
-#if 1
-  Harmonics<P-1,0>::Multipole(Ynm,YnmTheta,rho,x,y,ei);
-#else
   real_t fact = 1;                                              // Initialize 2 * m + 1
   real_t pn = 1;                                                // Initialize Legendre polynomial Pn
   real_t rhom = 1;                                              // Initialize rho^m
@@ -187,7 +160,6 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, comple
     fact += 2;                                                  //  2 * m + 1
     eim *= ei;                                                  //  Update exp(i * m * beta)
   }                                                             // End loop over m in Ynm
-#endif
 }
 
 //! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
@@ -196,9 +168,6 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t *Ynm) {
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
   real_t invR = -1.0 / rho;                                     // - 1 / rho
   complex_t ei = std::exp(I * beta);                            // exp(i * beta)
-#if 1
-  Harmonics<P-1,0>::Local(Ynm,invR,x,y,ei);
-#else
   real_t fact = 1;                                              // Initialize 2 * m + 1
   real_t pn = 1;                                                // Initialize Legendre polynomial Pn
   real_t rhom = -invR;                                          // Initialize rho^(-m-1)
@@ -227,7 +196,6 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t *Ynm) {
     fact += 2;                                                  //  2 * m + 1
     eim *= ei;                                                  //  Update exp(i * m * beta)
   }                                                             // End loop over m in Ynm
-#endif
 }
 
 void Kernel::P2M(C_iter C, real_t &Rmax) const {
@@ -297,30 +265,43 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
   cart2sph(rho,alpha,beta,dX);
   evalLocal(rho,alpha,beta,Ynmi);
   if (mutual) evalLocal(rho,alpha+M_PI,beta,Ynmj);
+  vecM Mi = Ci->M;
+  vecM Mj = Cj->M;
+  complex_t Li2 = 0, Lj2 = 0;
+#if 1
+  vecL Li = I * real_t(0), Lj = I * real_t(0);
+  M2LTemplate<P-1,P-1,0,0>::positive(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
+  int jks = (P + 2) * (P - 1) / 2;
+  Li[jks] = Li2;
+  Lj[jks] = Lj2;
+  Ci->L += Li;
+  Cj->L += Lj;
+#else
   for (int j=0; j<P; j++) {
-    real_t Cnm = ODDEVEN(j);
+    int Cnm = ODDEVEN(j);
     for (int k=0; k<=j; k++) {
       int jks = j * (j + 1) / 2 + k;
-      complex_t Li = 0, Lj = 0;
+      Li2 = Lj2 = 0;
       for (int n=0; n<P-j; n++) {
         for (int m=-n; m<0; m++) {
           int nms  = n * (n + 1) / 2 - m;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
-          Li += std::conj(Cj->M[nms]) * Cnm * Ynmi[jnkm];
-          if (mutual) Lj += std::conj(Ci->M[nms]) * Cnm * Ynmj[jnkm];
+          Li2 += std::conj(Mj[nms]) * Ynmi[jnkm] * real_t(Cnm);
+          if (mutual) Lj2 += std::conj(Mi[nms]) * Ynmj[jnkm] * real_t(Cnm);
         }
         for (int m=0; m<=n; m++) {
           int nms  = n * (n + 1) / 2 + m;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
-          real_t Cnm2 = Cnm * ODDEVEN((k-m)*(k<m)+m);
-          Li += Cj->M[nms] * Cnm2 * Ynmi[jnkm];
-          if (mutual) Lj += Ci->M[nms] * Cnm2 * Ynmj[jnkm];
+          int Cnm2 = Cnm * ODDEVEN((k-m)*(k<m)+m);
+          Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm2);
+          if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm2);
         }
       }
-      Ci->L[jks] += Li;
-      if (mutual) Cj->L[jks] += Lj;
+      Ci->L[jks] += Li2;
+      if (mutual) Cj->L[jks] += Lj2;
     }
   }
+#endif
 }
 
 void Kernel::L2L(C_iter Ci) const {
