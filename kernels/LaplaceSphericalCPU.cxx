@@ -1,9 +1,131 @@
 #include "kernel.h"
+#include <iostream>
 
 #define SIGN(n) ((n >= 0) - (n < 0))
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
-const complex_t I(0.,1.);                                       // Imaginary unit
+const complex_t I(0.,1.);
+
+template<int m, int n>
+struct Harmonics {
+  static const int c0 = - n - 2 * m;
+  static const int c1 = 2 * n + 2 * m - 1;
+  static const int c2 = - n - 2 * m + 1;
+  static const int c3 = n + 1;
+  static const int c4 =  - n - m - 1;
+  static const int npm = (n + m) * (n + m) + n + 2 * m;
+  static const int nmm = (n + m) * (n + m) + n;
+  static inline real_t Rn(const real_t &R) {
+    return Harmonics<m,n-1>::Rn(R) * R / c0;
+  }
+  static inline real_t invRn(const real_t &invR) {
+    return Harmonics<m,n-1>::invRn(invR) * invR * n;
+  }
+  static inline real_t Pnm(const real_t &x, const real_t &y) {
+    return (x * c1 * Harmonics<m,n-1>::Pnm(x,y) + c2 * Harmonics<m,n-2>::Pnm(x,y)) / n;
+  }
+  static inline complex_t Em(const complex_t &ei) {
+    return Harmonics<m,0>::Em(ei);
+  }
+  static inline void Multipole(complex_t *Ynm, complex_t *YnmTheta, const real_t &R, const real_t &x, const real_t &y, const complex_t &ei) {
+    Harmonics<m,n-1>::Multipole(Ynm,YnmTheta,R,x,y,ei);
+    Ynm[npm] = Rn(R) * Pnm(x,y) * Em(ei);
+    Ynm[nmm] = std::conj(Ynm[npm]);
+    YnmTheta[npm] = Rn(R) * (c3 * Harmonics<m,n+1>::Pnm(x,y) + c4 * x * Pnm(x,y)) / y * Em(ei);
+  }
+  static inline void Local(complex_t *Ynm, const real_t &invR, const real_t &x, const real_t &y, const complex_t &ei) {
+    Harmonics<m,n-1>::Local(Ynm,invR,x,y,ei);
+    Ynm[npm] = invRn(invR) * Pnm(x,y) * Em(ei);
+    Ynm[nmm] = std::conj(Ynm[npm]);
+  }
+};
+
+template<int m>
+struct Harmonics<m,1> {
+  static const int c0 = 2 * m + 1;
+  static const int c1 = - c0;
+  static const int c2 =  - m - 2;
+  static const int npm = (m + 1) * (m + 1) + 2 * m + 1;
+  static const int nmm = (m + 1) * (m + 1) + 1;
+  static inline real_t Rn(const real_t &R) {
+    return Harmonics<m,0>::Rn(R) * R / c1;
+  }
+  static inline real_t invRn(const real_t &invR) {
+    return Harmonics<m,0>::invRn(invR) * invR;
+  }
+  static inline real_t Pnm(const real_t &x, const real_t &y) {
+    return x * c0 * Harmonics<m,0>::Pnm(x,y);
+  }
+  static inline complex_t Em(const complex_t &ei) {
+    return Harmonics<m,0>::Em(ei);
+  }
+  static inline void Multipole(complex_t *Ynm, complex_t *YnmTheta, const real_t &R, const real_t &x, const real_t &y, const complex_t &ei) {
+    Harmonics<m,0>::Multipole(Ynm,YnmTheta,R,x,y,ei);
+    Ynm[npm] = Rn(R) * Pnm(x,y) * Em(ei);
+    Ynm[nmm] = std::conj(Ynm[npm]);
+    YnmTheta[npm] = Rn(R) * (2 * Harmonics<m,2>::Pnm(x,y) + c2 * x * Pnm(x,y)) / y * Em(ei);
+  }
+  static inline void Local(complex_t *Ynm, const real_t &invR, const real_t &x, const real_t &y, const complex_t &ei) {
+    Harmonics<m,0>::Local(Ynm,invR,x,y,ei);
+    Ynm[npm] = invRn(invR) * Pnm(x,y) * Em(ei);
+    Ynm[nmm] = std::conj(Ynm[npm]);
+  }
+};
+
+template<int m>
+struct Harmonics<m,0> {
+  static const int c0 = 2 * m - 1;
+  static const int c1 = - 2 * m * c0;
+  static const int c2 =  - m - 1;
+  static const int npm = m * m + 2 * m;
+  static const int nmm = m * m;
+  static inline real_t Rn(const real_t &R) {
+    return Harmonics<m-1,0>::Rn(R) * R / c1;
+  }
+  static inline real_t invRn(const real_t &invR) {
+    return Harmonics<m-1,0>::invRn(invR) * invR;
+  }
+  static inline real_t Pnm(const real_t &x, const real_t &y) {
+    return - c0 * y * Harmonics<m-1,0>::Pnm(x,y);
+  }
+  static inline complex_t Em(const complex_t &ei) {
+    return Harmonics<m-1,0>::Em(ei) * ei;
+  }
+  static inline void Multipole(complex_t *Ynm, complex_t *YnmTheta, const real_t &R, const real_t &x, const real_t &y, const complex_t &ei) {
+    Harmonics<m-1,P-m>::Multipole(Ynm,YnmTheta,R,x,y,ei);
+    Ynm[npm] = Rn(R) * Pnm(x,y) * Em(ei);
+    Ynm[nmm] = std::conj(Ynm[npm]);
+    YnmTheta[npm] = Rn(R) * (Harmonics<m,1>::Pnm(x,y) + c2 * x * Pnm(x,y)) / y * Em(ei);
+  }
+  static inline void Local(complex_t *Ynm, const real_t &invR, const real_t &x, const real_t &y, const complex_t &ei) {
+    Harmonics<m-1,P-m>::Local(Ynm,invR,x,y,ei);
+    Ynm[npm] = invRn(invR) * Pnm(x,y) * Em(ei);
+    Ynm[nmm] = std::conj(Ynm[npm]);
+  }
+};
+
+template<>
+struct Harmonics<0,0> {
+  static inline real_t Rn(const real_t &) {
+    return 1.0;
+  }
+  static inline real_t invRn(const real_t &invR) {
+    return -invR;
+  }
+  static inline real_t Pnm(const real_t &, const real_t &) {
+    return 1.0;
+  }
+  static inline complex_t Em(const complex_t &) {
+    return 1.0;
+  }
+  static inline void Multipole(complex_t *Ynm, complex_t *YnmTheta, const real_t&, const real_t&, const real_t&, const complex_t&) {
+    Ynm[0] = 1.0;
+    YnmTheta[0] = 0.0;
+  }
+  static inline void Local(complex_t *Ynm, const real_t &invR, const real_t&, const real_t&, const complex_t&) {
+    Ynm[0] = -invR;
+  }
+};
 
 //! Get r,theta,phi from x,y,z
 void cart2sph(real_t& r, real_t& theta, real_t& phi, vec3 dX) {
@@ -29,10 +151,13 @@ void sph2cart(real_t r, real_t theta, real_t phi, T spherical, T &cartesian) {
 void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, complex_t *YnmTheta) {
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
+  complex_t ei = std::exp(I * beta);                            // exp(i * beta)
+#if 1
+  Harmonics<P-1,0>::Multipole(Ynm,YnmTheta,rho,x,y,ei);
+#else
   real_t fact = 1;                                              // Initialize 2 * m + 1
   real_t pn = 1;                                                // Initialize Legendre polynomial Pn
   real_t rhom = 1;                                              // Initialize rho^m
-  complex_t ei = std::exp(I * beta);                            // exp(i * beta)
   complex_t eim = 1.0;                                          // Initialize exp(i * m * beta)
   for (int m=0; m<P; m++) {                                     // Loop over m in Ynm
     real_t p = pn;                                              //  Associated Legendre polynomial Pnm
@@ -42,7 +167,7 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, comple
     Ynm[nmn] = std::conj(Ynm[npn]);                             //  Use conjugate relation for m < 0
     real_t p1 = p;                                              //  Pnm-1
     p = x * (2 * m + 1) * p1;                                   //  Pnm using recurrence relation
-    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * eim;    // theta derivative of r^n * Ynm
+    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * eim;    //  Theta derivative of r^n * Ynm
     rhom *= rho;                                                //  rho^m
     real_t rhon = rhom;                                         //  rho^n
     for (int n=m+1; n<P; n++) {                                 //  Loop over n in Ynm
@@ -62,17 +187,21 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, comple
     fact += 2;                                                  //  2 * m + 1
     eim *= ei;                                                  //  Update exp(i * m * beta)
   }                                                             // End loop over m in Ynm
+#endif
 }
 
 //! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
 void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t *Ynm) {
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
+  real_t invR = -1.0 / rho;                                     // - 1 / rho
+  complex_t ei = std::exp(I * beta);                            // exp(i * beta)
+#if 1
+  Harmonics<P-1,0>::Local(Ynm,invR,x,y,ei);
+#else
   real_t fact = 1;                                              // Initialize 2 * m + 1
   real_t pn = 1;                                                // Initialize Legendre polynomial Pn
-  real_t invR = -1.0 / rho;                                     // - 1 / rho
   real_t rhom = -invR;                                          // Initialize rho^(-m-1)
-  complex_t ei = std::exp(I * beta);                            // exp(i * beta)
   complex_t eim = 1.0;                                          // Initialize exp(i * m * beta)
   for (int m=0; m<P; m++) {                                     // Loop over m in Ynm
     real_t p = pn;                                              //  Associated Legendre polynomial Pnm
@@ -98,6 +227,7 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t *Ynm) {
     fact += 2;                                                  //  2 * m + 1
     eim *= ei;                                                  //  Update exp(i * m * beta)
   }                                                             // End loop over m in Ynm
+#endif
 }
 
 void Kernel::P2M(C_iter C, real_t &Rmax) const {
