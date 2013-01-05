@@ -1,107 +1,9 @@
 #include "kernel.h"
-#include <iostream>
 
 #define SIGN(n) ((n >= 0) - (n < 0))
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
-const complex_t I(0.,1.);
-
-template<int j, int k, int n, int m>
-struct M2LTemplate {
-  static const int nms = n * (n + 1) / 2 + abs(m);
-  static const int jnkm = (j + n) * (j + n) + j + n + m - k;
-  static const int Cnm = ODDEVEN(j);
-  static const int Cnm2 = Cnm * ODDEVEN((k-m)*(k<m)+m);
-  static const int mm1 = (m-1) < -n ? 0 : m-1;
-  static inline void negative(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
-                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
-    M2LTemplate<j,k,n,mm1>::negative(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
-    if (m >= -n) {
-      Li2 += std::conj(Mj[nms]) * Ynmi[jnkm] * real_t(Cnm);
-      if (mutual) Lj2 += std::conj(Mi[nms]) * Ynmj[jnkm] * real_t(Cnm);
-    }
-  }
-  static inline void positive(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
-                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
-    M2LTemplate<j,k,n,m-1>::positive(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
-    Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm2);
-    if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm2);
-  }
-};
-
-template<int j, int k, int n>
-struct M2LTemplate<j,k,n,0> {
-  static const int nms = n * (n + 1) / 2;
-  static const int jnkm = (j + n) * (j + n) + j + n - k;
-  static const int Cnm = ODDEVEN(j);
-  static const int Cnm2 = Cnm * ODDEVEN(k*(k<0));
-  static inline void negative(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
-                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
-    M2LTemplate<j,k,n-1,n-1>::positive(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
-  }
-  static inline void positive(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
-                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
-    M2LTemplate<j,k,n,-1>::negative(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
-    Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm2);
-    if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm2);
-  }
-};
-
-template<int j, int k>
-struct M2LTemplate<j,k,0,0> {
-  static const int nms = 0;
-  static const int jks = j * (j + 1) / 2 + k - 1;
-  static const int jnkm = j * j + j - k;
-  static const int Cnm = ODDEVEN(j);
-  static const int Cnm2 = Cnm * ODDEVEN(k*(k<0));
-  static inline void negative(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
-                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
-    M2LTemplate<j,k-1,P-j-1,P-j-1>::positive(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
-    Li[jks] = Li2;
-    Lj[jks] = Lj2;
-    Li2 = Lj2 = 0;
-  }
-  static inline void positive(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
-                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
-    M2LTemplate<j,k,0,-1>::negative(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
-    Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm2);
-    if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm2);
-  }
-};
-
-template<int j>
-struct M2LTemplate<j,0,0,0> {
-  static const int nms = 0;
-  static const int jks = j * (j - 1) / 2 + j - 1;
-  static const int jnkm = j * j + j;
-  static const int Cnm = ODDEVEN(j);
-  static inline void negative(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
-                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
-    M2LTemplate<j-1,j-1,P-j,P-j>::positive(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
-    Li[jks] = Li2;
-    Lj[jks] = Lj2;
-    Li2 = Lj2 = 0;
-  }
-  static inline void positive(const vecM &Mi, const vecM &Mj, vecL &Li, vecL &Lj, complex_t &Li2, complex_t &Lj2,
-                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
-    M2LTemplate<j,0,0,-1>::negative(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
-    Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm);
-    if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm);
-  }
-};
-
-template<>
-struct M2LTemplate<0,0,0,0> {
-  static const int nms = 0;
-  static const int jnkm = 0;
-  static const int Cnm = 1;
-  static inline void negative(const vecM&, const vecM&, vecL&, vecL&, complex_t, complex_t, complex_t*, complex_t*, bool) {}
-  static inline void positive(const vecM &Mi, const vecM &Mj, vecL&, vecL&, complex_t &Li2, complex_t &Lj2,
-                              complex_t *Ynmi, complex_t *Ynmj, bool mutual) {
-    Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm);
-    if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm);
-  }
-};
+const complex_t I(0.,1.);                                       // Imaginary unit
 
 //! Get r,theta,phi from x,y,z
 void cart2sph(real_t& r, real_t& theta, real_t& phi, vec3 dX) {
@@ -127,10 +29,10 @@ void sph2cart(real_t r, real_t theta, real_t phi, T spherical, T &cartesian) {
 void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, complex_t *YnmTheta) {
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
-  complex_t ei = std::exp(I * beta);                            // exp(i * beta)
   real_t fact = 1;                                              // Initialize 2 * m + 1
   real_t pn = 1;                                                // Initialize Legendre polynomial Pn
   real_t rhom = 1;                                              // Initialize rho^m
+  complex_t ei = std::exp(I * beta);                            // exp(i * beta)
   complex_t eim = 1.0;                                          // Initialize exp(i * m * beta)
   for (int m=0; m<P; m++) {                                     // Loop over m in Ynm
     real_t p = pn;                                              //  Associated Legendre polynomial Pnm
@@ -140,7 +42,7 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, comple
     Ynm[nmn] = std::conj(Ynm[npn]);                             //  Use conjugate relation for m < 0
     real_t p1 = p;                                              //  Pnm-1
     p = x * (2 * m + 1) * p1;                                   //  Pnm using recurrence relation
-    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * eim;    //  Theta derivative of r^n * Ynm
+    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * eim;    // theta derivative of r^n * Ynm
     rhom *= rho;                                                //  rho^m
     real_t rhon = rhom;                                         //  rho^n
     for (int n=m+1; n<P; n++) {                                 //  Loop over n in Ynm
@@ -166,11 +68,11 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, comple
 void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t *Ynm) {
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
-  real_t invR = -1.0 / rho;                                     // - 1 / rho
-  complex_t ei = std::exp(I * beta);                            // exp(i * beta)
   real_t fact = 1;                                              // Initialize 2 * m + 1
   real_t pn = 1;                                                // Initialize Legendre polynomial Pn
+  real_t invR = -1.0 / rho;                                     // - 1 / rho
   real_t rhom = -invR;                                          // Initialize rho^(-m-1)
+  complex_t ei = std::exp(I * beta);                            // exp(i * beta)
   complex_t eim = 1.0;                                          // Initialize exp(i * m * beta)
   for (int m=0; m<P; m++) {                                     // Loop over m in Ynm
     real_t p = pn;                                              //  Associated Legendre polynomial Pnm
@@ -265,43 +167,30 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
   cart2sph(rho,alpha,beta,dX);
   evalLocal(rho,alpha,beta,Ynmi);
   if (mutual) evalLocal(rho,alpha+M_PI,beta,Ynmj);
-  vecM Mi = Ci->M;
-  vecM Mj = Cj->M;
-  complex_t Li2 = 0, Lj2 = 0;
-#if 1
-  vecL Li = I * real_t(0), Lj = I * real_t(0);
-  M2LTemplate<P-1,P-1,0,0>::positive(Mi,Mj,Li,Lj,Li2,Lj2,Ynmi,Ynmj,mutual);
-  int jks = (P + 2) * (P - 1) / 2;
-  Li[jks] = Li2;
-  Lj[jks] = Lj2;
-  Ci->L += Li;
-  Cj->L += Lj;
-#else
   for (int j=0; j<P; j++) {
-    int Cnm = ODDEVEN(j);
+    real_t Cnm = ODDEVEN(j);
     for (int k=0; k<=j; k++) {
       int jks = j * (j + 1) / 2 + k;
-      Li2 = Lj2 = 0;
+      complex_t Li = 0, Lj = 0;
       for (int n=0; n<P-j; n++) {
         for (int m=-n; m<0; m++) {
           int nms  = n * (n + 1) / 2 - m;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
-          Li2 += std::conj(Mj[nms]) * Ynmi[jnkm] * real_t(Cnm);
-          if (mutual) Lj2 += std::conj(Mi[nms]) * Ynmj[jnkm] * real_t(Cnm);
+          Li += std::conj(Cj->M[nms]) * Cnm * Ynmi[jnkm];
+          if (mutual) Lj += std::conj(Ci->M[nms]) * Cnm * Ynmj[jnkm];
         }
         for (int m=0; m<=n; m++) {
           int nms  = n * (n + 1) / 2 + m;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
-          int Cnm2 = Cnm * ODDEVEN((k-m)*(k<m)+m);
-          Li2 += Mj[nms] * Ynmi[jnkm] * real_t(Cnm2);
-          if (mutual) Lj2 += Mi[nms] * Ynmj[jnkm] * real_t(Cnm2);
+          real_t Cnm2 = Cnm * ODDEVEN((k-m)*(k<m)+m);
+          Li += Cj->M[nms] * Cnm2 * Ynmi[jnkm];
+          if (mutual) Lj += Ci->M[nms] * Cnm2 * Ynmj[jnkm];
         }
       }
-      Ci->L[jks] += Li2;
-      if (mutual) Cj->L[jks] += Lj2;
+      Ci->L[jks] += Li;
+      if (mutual) Cj->L[jks] += Lj;
     }
   }
-#endif
 }
 
 void Kernel::L2L(C_iter Ci) const {
