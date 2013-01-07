@@ -55,7 +55,7 @@ struct Body : public Source {
   int    IPROC;                                                 //!< Initial process numbering for partitioning back
   int    ICELL;                                                 //!< Cell index
   vec4   TRG;                                                   //!< Scalar+vector3 target values
-#if KAHAN
+#if KAHAN >= 1
   vec4   TRGc;                                                   //!< Scalar+vector3 target values
 #endif
 };

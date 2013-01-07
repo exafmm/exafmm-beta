@@ -760,6 +760,11 @@ inline float vecSum4(__m128 reg) {
   _mm_store_ps(mem, reg);
   return mem[0] + mem[1] + mem[2] + mem[3];
 }
+inline double vecSum2d(__m128d reg) {
+  double mem[2];
+  _mm_store_pd(mem, reg);
+  return mem[0] + mem[1];
+}
 #endif
 
 #if __AVX__
@@ -768,9 +773,14 @@ inline float vecSum8(__m256 reg) {
   _mm256_store_ps(mem, reg);
   return mem[0] + mem[1] + mem[2] + mem[3] + mem[4] + mem[5] + mem[6] + mem[7];
 }
+inline double vecSum4d(__m256d reg) {
+  double mem[4];
+  _mm256_store_pd(mem, reg);
+  return mem[0] + mem[1] + mem[2] + mem[3];
+}
 #endif
 
-#if KAHAN
+#if KAHAN >= 1
 
 inline void accum(real_t & s, real_t ds, real_t & c) {
   // s += ds;
@@ -788,7 +798,7 @@ inline void accum3(vec3 & s, vec3 ds, vec3 & c) {
   s = t;
 }
 
-void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
+void Kernel::P2PKahan(C_iter Ci, C_iter Cj, bool mutual) const {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
   int ni = Ci->NDBODY;
@@ -827,6 +837,14 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   }
 }
 
+#endif
+
+#if KAHAN >= 2
+
+void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
+  P2PKahan(Ci, Cj, mutual);
+}
+
 #else
 
 void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
@@ -835,7 +853,9 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   int ni = Ci->NDBODY;
   int nj = Cj->NDBODY;
   int i = 0;
-#if __AVX__ && (!defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT)
+#if __AVX__ 
+
+#if !defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT // float
   for ( ; i<=ni-8; i+=8) {
     __m256 pot = _mm256_setzero_ps();
     __m256 ax = _mm256_setzero_ps();
@@ -921,9 +941,95 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       Bi[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
+#else  // double
+
+  for ( ; i<=ni-4; i+=4) {
+    __m256d pot = _mm256_setzero_pd();
+    __m256d ax = _mm256_setzero_pd();
+    __m256d ay = _mm256_setzero_pd();
+    __m256d az = _mm256_setzero_pd();
+
+    __m256d xi = _mm256_setr_pd(Bi[i].X[0],Bi[i+1].X[0],Bi[i+2].X[0],Bi[i+3].X[0]) - _mm256_set1_pd(Xperiodic[0]);
+    __m256d yi = _mm256_setr_pd(Bi[i].X[1],Bi[i+1].X[1],Bi[i+2].X[1],Bi[i+3].X[1]) - _mm256_set1_pd(Xperiodic[1]);
+    __m256d zi = _mm256_setr_pd(Bi[i].X[2],Bi[i+1].X[2],Bi[i+2].X[2],Bi[i+3].X[2]) - _mm256_set1_pd(Xperiodic[2]);
+    __m256d mi = _mm256_setr_pd(Bi[i].SRC,Bi[i+1].SRC,Bi[i+2].SRC,Bi[i+3].SRC);
+    __m256d R2 = _mm256_set1_pd(EPS2);
+
+    __m256d x2 = _mm256_set1_pd(Bj[0].X[0]);
+    x2 = _mm256_sub_pd(x2, xi);
+    __m256d y2 = _mm256_set1_pd(Bj[0].X[1]);
+    y2 = _mm256_sub_pd(y2, yi);
+    __m256d z2 = _mm256_set1_pd(Bj[0].X[2]);
+    z2 = _mm256_sub_pd(z2, zi);
+    __m256d mj = _mm256_set1_pd(Bj[0].SRC);
+
+    __m256d xj = x2;
+    x2 = _mm256_mul_pd(x2, x2);
+    R2 = _mm256_add_pd(R2, x2);
+    __m256d yj = y2;
+    y2 = _mm256_mul_pd(y2, y2);
+    R2 = _mm256_add_pd(R2, y2);
+    __m256d zj = z2;
+    z2 = _mm256_mul_pd(z2, z2);
+    R2 = _mm256_add_pd(R2, z2);
+
+    x2 = _mm256_set1_pd(Bj[1].X[0]);
+    y2 = _mm256_set1_pd(Bj[1].X[1]);
+    z2 = _mm256_set1_pd(Bj[1].X[2]);
+    for (int j=0; j<nj; j++) {
+      __m256d invR = _mm256_div_pd(_mm256_set1_pd(1.0), _mm256_sqrt_pd(R2));
+      __m256d mask = _mm256_cmp_pd(R2, _mm256_setzero_pd(), _CMP_GT_OQ);
+      invR = _mm256_and_pd(invR, mask);
+      R2 = _mm256_set1_pd(EPS2);
+      x2 = _mm256_sub_pd(x2, xi);
+      y2 = _mm256_sub_pd(y2, yi);
+      z2 = _mm256_sub_pd(z2, zi);
+
+      mj = _mm256_mul_pd(mj, invR);
+      mj = _mm256_mul_pd(mj, mi);
+      pot = _mm256_add_pd(pot, mj);
+      if (mutual) Bj[j].TRG[0] += vecSum4d(mj);
+      invR = _mm256_mul_pd(invR, invR);
+      invR = _mm256_mul_pd(invR, mj);
+      mj = _mm256_set1_pd(Bj[j+1].SRC);
+
+      xj = _mm256_mul_pd(xj, invR);
+      ax = _mm256_add_pd(ax, xj);
+      if (mutual) Bj[j].TRG[1] -= vecSum4d(xj);
+      xj = x2;
+      x2 = _mm256_mul_pd(x2, x2);
+      R2 = _mm256_add_pd(R2, x2);
+      x2 = _mm256_set1_pd(Bj[j+2].X[0]);
+
+      yj = _mm256_mul_pd(yj, invR);
+      ay = _mm256_add_pd(ay, yj);
+      if (mutual) Bj[j].TRG[2] -= vecSum4d(yj);
+      yj = y2;
+      y2 = _mm256_mul_pd(y2, y2);
+      R2 = _mm256_add_pd(R2, y2);
+      y2 = _mm256_set1_pd(Bj[j+2].X[1]);
+
+      zj = _mm256_mul_pd(zj, invR);
+      az = _mm256_add_pd(az, zj);
+      if (mutual) Bj[j].TRG[3] -= vecSum4d(zj);
+      zj = z2;
+      z2 = _mm256_mul_pd(z2, z2);
+      R2 = _mm256_add_pd(R2, z2);
+      z2 = _mm256_set1_pd(Bj[j+2].X[2]);
+    }
+    for (int k=0; k<4; k++) {
+      Bi[i+k].TRG[0] += ((float*)&pot)[k];
+      Bi[i+k].TRG[1] += ((float*)&ax)[k];
+      Bi[i+k].TRG[2] += ((float*)&ay)[k];
+      Bi[i+k].TRG[3] += ((float*)&az)[k];
+    }
+  }
+#endif
+
 #endif // __AVX__
 
-#if __SSE__ && (!defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT)
+#if __SSE__ 
+#if !defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT
   for ( ; i<=ni-4; i+=4) {
     __m128 pot = _mm_setzero_ps();
     __m128 ax = _mm_setzero_ps();
@@ -1009,6 +1115,95 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       Bi[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
+#else  // double
+
+  for ( ; i<=ni-2; i+=2) {
+    __m128d pot = _mm_setzero_pd();
+    __m128d ax = _mm_setzero_pd();
+    __m128d ay = _mm_setzero_pd();
+    __m128d az = _mm_setzero_pd();
+
+    __m128d xi = _mm_setr_pd(Bi[i].X[0], Bi[i+1].X[0]) - _mm_load1_pd(&Xperiodic[0]);
+    __m128d yi = _mm_setr_pd(Bi[i].X[1], Bi[i+1].X[1]) - _mm_load1_pd(&Xperiodic[1]);
+    __m128d zi = _mm_setr_pd(Bi[i].X[2], Bi[i+1].X[2]) - _mm_load1_pd(&Xperiodic[2]);
+    __m128d mi = _mm_setr_pd(Bi[i].SRC,  Bi[i+1].SRC);
+    __m128d R2 = _mm_set1_pd(EPS2);
+
+    __m128d x2 = _mm_load1_pd(&Bj[0].X[0]);
+    x2 = _mm_sub_pd(x2, xi);
+    __m128d y2 = _mm_load1_pd(&Bj[0].X[1]);
+    y2 = _mm_sub_pd(y2, yi);
+    __m128d z2 = _mm_load1_pd(&Bj[0].X[2]);
+    z2 = _mm_sub_pd(z2, zi);
+    __m128d mj = _mm_load1_pd(&Bj[0].SRC);
+
+    __m128d xj = x2;
+    x2 = _mm_mul_pd(x2, x2);
+    R2 = _mm_add_pd(R2, x2);
+    __m128d yj = y2;
+    y2 = _mm_mul_pd(y2, y2);
+    R2 = _mm_add_pd(R2, y2);
+    __m128d zj = z2;
+    z2 = _mm_mul_pd(z2, z2);
+    R2 = _mm_add_pd(R2, z2);
+
+    x2 = _mm_load_pd(&Bj[1].X[0]);
+    y2 = x2;
+    z2 = x2;
+    for (int j=0; j<nj; j++) {
+      __m128d invR = _mm_div_pd(_mm_set1_pd(1.0), _mm_sqrt_pd(R2));
+      __m128d mask = _mm_cmpgt_pd(R2, _mm_setzero_pd());
+      invR = _mm_and_pd(invR, mask);
+      R2 = _mm_set1_pd(EPS2);
+      x2 = _mm_shuffle_pd(x2, x2, _MM_SHUFFLE(0,0,0,0)); // ????
+      x2 = _mm_sub_pd(x2, xi);
+      y2 = _mm_shuffle_pd(y2, y2, _MM_SHUFFLE(1,1,1,1)); // ????
+      y2 = _mm_sub_pd(y2, yi);
+      z2 = _mm_shuffle_pd(z2, z2, _MM_SHUFFLE(2,2,2,2)); // ????
+      z2 = _mm_sub_pd(z2, zi);
+
+      mj = _mm_mul_pd(mj, invR);
+      mj = _mm_mul_pd(mj, mi);
+      pot = _mm_add_pd(pot, mj);
+      if (mutual) Bj[j].TRG[0] += vecSum2d(mj);
+      invR = _mm_mul_pd(invR, invR);
+      invR = _mm_mul_pd(invR, mj);
+      mj = _mm_load_pd(&Bj[j+1].X[0]);
+      mj = _mm_shuffle_pd(mj, mj, _MM_SHUFFLE(3,3,3,3)); // ????
+
+      xj = _mm_mul_pd(xj, invR);
+      ax = _mm_add_pd(ax, xj);
+      if (mutual) Bj[j].TRG[1] -= vecSum2d(xj);
+      xj = x2;
+      x2 = _mm_mul_pd(x2, x2);
+      R2 = _mm_add_pd(R2, x2);
+      x2 = _mm_load_pd(&Bj[j+2].X[0]);
+
+      yj = _mm_mul_pd(yj, invR);
+      ay = _mm_add_pd(ay, yj);
+      if (mutual) Bj[j].TRG[2] -= vecSum2d(yj);
+      yj = y2;
+      y2 = _mm_mul_pd(y2, y2);
+      R2 = _mm_add_pd(R2, y2);
+      y2 = x2;
+
+      zj = _mm_mul_pd(zj, invR);
+      az = _mm_add_pd(az, zj);
+      if (mutual) Bj[j].TRG[3] -= vecSum2d(zj);
+      zj = z2;
+      z2 = _mm_mul_pd(z2, z2);
+      R2 = _mm_add_pd(R2, z2);
+      z2 = x2;
+    }
+    for (int k=0; k<2; k++) {
+      Bi[i+k].TRG[0] += ((float*)&pot)[k];
+      Bi[i+k].TRG[1] += ((float*)&ax)[k];
+      Bi[i+k].TRG[2] += ((float*)&ay)[k];
+      Bi[i+k].TRG[3] += ((float*)&az)[k];
+    }
+  }
+#endif
+
 #endif // __SSE__
 
   for ( ; i<ni; i++) {
@@ -1018,7 +1213,11 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
       real_t R2 = norm(dX) + EPS2;
       if (R2 != 0) {
+#if !defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT
         real_t invR2 = 1.0f / R2;
+#else
+        real_t invR2 = 1.0 / R2;
+#endif
         real_t invR = Bi[i].SRC * Bj[j].SRC * sqrt(invR2);
         dX *= invR2 * invR;
         pot += invR;
@@ -1039,7 +1238,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
 }
 #endif
 
-#if KAHAN
+#if KAHAN >= 2
 
 void Kernel::P2P(C_iter C) const {
   B_iter B = C->BODY;
@@ -1082,7 +1281,9 @@ void Kernel::P2P(C_iter C) const {
   B_iter B = C->BODY;
   int n = C->NDBODY;
   int i = 0;
-#if __AVX__ && (!defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT)
+#if __AVX__ 
+
+#if !defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT
   for ( ; i<=n-8; i+=8) {
     __m256 pot = _mm256_setzero_ps();
     __m256 ax = _mm256_setzero_ps();
@@ -1170,9 +1371,97 @@ void Kernel::P2P(C_iter C) const {
       B[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
+#else  // double
+
+  for ( ; i<=n-4; i+=4) {
+    __m256d pot = _mm256_setzero_pd();
+    __m256d ax = _mm256_setzero_pd();
+    __m256d ay = _mm256_setzero_pd();
+    __m256d az = _mm256_setzero_pd();
+
+    __m256d xi = _mm256_setr_pd(B[i].X[0],B[i+1].X[0],B[i+2].X[0],B[i+3].X[0]) - _mm256_set1_pd(Xperiodic[0]);
+    __m256d yi = _mm256_setr_pd(B[i].X[1],B[i+1].X[1],B[i+2].X[1],B[i+3].X[1]) - _mm256_set1_pd(Xperiodic[1]);
+    __m256d zi = _mm256_setr_pd(B[i].X[2],B[i+1].X[2],B[i+2].X[2],B[i+3].X[2]) - _mm256_set1_pd(Xperiodic[2]);
+    __m256d mi = _mm256_setr_pd(B[i].SRC,B[i+1].SRC,B[i+2].SRC,B[i+3].SRC);
+    __m256d R2 = _mm256_set1_pd(EPS2);
+
+    __m256d x2 = _mm256_set1_pd(B[i+1].X[0]);
+    x2 = _mm256_sub_pd(x2, xi);
+    __m256d y2 = _mm256_set1_pd(B[i+1].X[1]);
+    y2 = _mm256_sub_pd(y2, yi);
+    __m256d z2 = _mm256_set1_pd(B[i+1].X[2]);
+    z2 = _mm256_sub_pd(z2, zi);
+    __m256d mj = _mm256_set1_pd(B[i+1].SRC);
+
+    __m256d xj = x2;
+    x2 = _mm256_mul_pd(x2, x2);
+    R2 = _mm256_add_pd(R2, x2);
+    __m256d yj = y2;
+    y2 = _mm256_mul_pd(y2, y2);
+    R2 = _mm256_add_pd(R2, y2);
+    __m256d zj = z2;
+    z2 = _mm256_mul_pd(z2, z2);
+    R2 = _mm256_add_pd(R2, z2);
+
+    x2 = _mm256_set1_pd(B[i+2].X[0]);
+    y2 = _mm256_set1_pd(B[i+2].X[1]);
+    z2 = _mm256_set1_pd(B[i+2].X[2]);
+    for (int j=i+1; j<n; j++) {
+      __m256d invR = _mm256_div_pd(_mm256_set1_pd(1.0), _mm256_sqrt_pd(R2));
+      __m256d mask = _mm256_cmp_pd(_mm256_setr_pd(i, i+1, i+2, i+3),
+				   _mm256_set1_pd(j), _CMP_LT_OQ);
+      mask = _mm256_and_pd(mask, _mm256_cmp_pd(R2, _mm256_setzero_pd(), _CMP_GT_OQ));
+      invR = _mm256_and_pd(invR, mask);
+      R2 = _mm256_set1_pd(EPS2);
+      x2 = _mm256_sub_pd(x2, xi);
+      y2 = _mm256_sub_pd(y2, yi);
+      z2 = _mm256_sub_pd(z2, zi);
+
+      mj = _mm256_mul_pd(mj, invR);
+      mj = _mm256_mul_pd(mj, mi);
+      pot = _mm256_add_pd(pot, mj);
+      B[j].TRG[0] += vecSum4d(mj);
+      invR = _mm256_mul_pd(invR, invR);
+      invR = _mm256_mul_pd(invR, mj);
+      mj = _mm256_set1_pd(B[j+1].SRC);
+
+      xj = _mm256_mul_pd(xj, invR);
+      ax = _mm256_add_pd(ax, xj);
+      B[j].TRG[1] -= vecSum4d(xj);
+      xj = x2;
+      x2 = _mm256_mul_pd(x2, x2);
+      R2 = _mm256_add_pd(R2, x2);
+      x2 = _mm256_set1_pd(B[j+2].X[0]);
+
+      yj = _mm256_mul_pd(yj, invR);
+      ay = _mm256_add_pd(ay, yj);
+      B[j].TRG[2] -= vecSum4d(yj);
+      yj = y2;
+      y2 = _mm256_mul_pd(y2, y2);
+      R2 = _mm256_add_pd(R2, y2);
+      y2 = _mm256_set1_pd(B[j+2].X[1]);
+
+      zj = _mm256_mul_pd(zj, invR);
+      az = _mm256_add_pd(az, zj);
+      B[j].TRG[3] -= vecSum4d(zj);
+      zj = z2;
+      z2 = _mm256_mul_pd(z2, z2);
+      R2 = _mm256_add_pd(R2, z2);
+      z2 = _mm256_set1_pd(B[j+2].X[2]);
+    }
+    for (int k=0; k<4; k++) {
+      B[i+k].TRG[0] += ((float*)&pot)[k];
+      B[i+k].TRG[1] += ((float*)&ax)[k];
+      B[i+k].TRG[2] += ((float*)&ay)[k];
+      B[i+k].TRG[3] += ((float*)&az)[k];
+    }
+  }
+#endif
+
 #endif // __AVX__
 
-#if __SSE__ && (!defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT)
+#if __SSE__ 
+#if !defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT
   for ( ; i<=n-4; i+=4) {
     __m128 pot = _mm_setzero_ps();
     __m128 ax = _mm_setzero_ps();
@@ -1259,6 +1548,98 @@ void Kernel::P2P(C_iter C) const {
       B[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
+
+#else  // double
+
+  for ( ; i<=n-2; i+=2) {
+    __m128d pot = _mm_setzero_pd();
+    __m128d ax = _mm_setzero_pd();
+    __m128d ay = _mm_setzero_pd();
+    __m128d az = _mm_setzero_pd();
+
+    __m128d xi = _mm_setr_pd(B[i].X[0], B[i+1].X[0]) - _mm_load1_pd(&Xperiodic[0]);
+    __m128d yi = _mm_setr_pd(B[i].X[1], B[i+1].X[1]) - _mm_load1_pd(&Xperiodic[1]);
+    __m128d zi = _mm_setr_pd(B[i].X[2], B[i+1].X[2]) - _mm_load1_pd(&Xperiodic[2]);
+    __m128d mi = _mm_setr_pd(B[i].SRC,  B[i+1].SRC);
+    __m128d R2 = _mm_set1_pd(EPS2);
+
+    __m128d x2 = _mm_load1_pd(&B[i+1].X[0]);
+    x2 = _mm_sub_pd(x2, xi);
+    __m128d y2 = _mm_load1_pd(&B[i+1].X[1]);
+    y2 = _mm_sub_pd(y2, yi);
+    __m128d z2 = _mm_load1_pd(&B[i+1].X[2]);
+    z2 = _mm_sub_pd(z2, zi);
+    __m128d mj = _mm_load1_pd(&B[i+1].SRC);
+
+    __m128d xj = x2;
+    x2 = _mm_mul_pd(x2, x2);
+    R2 = _mm_add_pd(R2, x2);
+    __m128d yj = y2;
+    y2 = _mm_mul_pd(y2, y2);
+    R2 = _mm_add_pd(R2, y2);
+    __m128d zj = z2;
+    z2 = _mm_mul_pd(z2, z2);
+    R2 = _mm_add_pd(R2, z2);
+
+    x2 = _mm_load_pd(&B[i+2].X[0]);
+    y2 = x2;
+    z2 = x2;
+    for (int j=i+1; j<n; j++) {
+      __m128d invR = _mm_div_pd(_mm_set1_pd(1.0), _mm_sqrt_pd(R2));
+      __m128d mask = _mm_cmplt_pd(_mm_setr_pd(i, i+1), _mm_set1_pd(j));
+      mask = _mm_and_pd(mask, _mm_cmpgt_pd(R2, _mm_setzero_pd()));
+      invR = _mm_and_pd(invR, mask);
+      R2 = _mm_set1_pd(EPS2);
+      x2 = _mm_shuffle_pd(x2, x2, _MM_SHUFFLE(0,0,0,0)); // ????
+      x2 = _mm_sub_pd(x2, xi);
+      y2 = _mm_shuffle_pd(y2, y2, _MM_SHUFFLE(1,1,1,1)); // ????
+      y2 = _mm_sub_pd(y2, yi);
+      z2 = _mm_shuffle_pd(z2, z2, _MM_SHUFFLE(2,2,2,2)); // ????
+      z2 = _mm_sub_pd(z2, zi);
+
+      mj = _mm_mul_pd(mj, invR);
+      mj = _mm_mul_pd(mj, mi);
+      pot = _mm_add_pd(pot, mj);
+      B[j].TRG[0] += vecSum2d(mj);
+      invR = _mm_mul_pd(invR, invR);
+      invR = _mm_mul_pd(invR, mj);
+      mj = _mm_load_pd(&B[j+1].X[0]);
+      mj = _mm_shuffle_pd(mj, mj, _MM_SHUFFLE(3,3,3,3)); // ????
+
+      xj = _mm_mul_pd(xj, invR);
+      ax = _mm_add_pd(ax, xj);
+      B[j].TRG[1] -= vecSum2d(xj);
+      xj = x2;
+      x2 = _mm_mul_pd(x2, x2);
+      R2 = _mm_add_pd(R2, x2);
+      x2 = _mm_load_pd(&B[j+2].X[0]);
+
+      yj = _mm_mul_pd(yj, invR);
+      ay = _mm_add_pd(ay, yj);
+      B[j].TRG[2] -= vecSum2d(yj);
+      yj = y2;
+      y2 = _mm_mul_pd(y2, y2);
+      R2 = _mm_add_pd(R2, y2);
+      y2 = x2;
+
+      zj = _mm_mul_pd(zj, invR);
+      az = _mm_add_pd(az, zj);
+      B[j].TRG[3] -= vecSum2d(zj);
+      zj = z2;
+      z2 = _mm_mul_pd(z2, z2);
+      R2 = _mm_add_pd(R2, z2);
+      z2 = x2;
+    }
+    for (int k=0; k<2; k++) {
+      B[i+k].TRG[0] += ((float*)&pot)[k];
+      B[i+k].TRG[1] += ((float*)&ax)[k];
+      B[i+k].TRG[2] += ((float*)&ay)[k];
+      B[i+k].TRG[3] += ((float*)&az)[k];
+    }
+  }
+#endif
+
+
 #endif // __SSE__
 
   for ( ; i<n; i++) {
@@ -1283,42 +1664,6 @@ void Kernel::P2P(C_iter C) const {
     B[i].TRG[1] -= acc[0];
     B[i].TRG[2] -= acc[1];
     B[i].TRG[3] -= acc[2];
-  }
-}
-#endif
-
-#if EVAL_ERROR_KAHAN
-void Kernel::P2PKahan(C_iter Ci, C_iter Cj) const {
-  B_iter Bi = Ci->BODY;
-  B_iter Bj = Cj->BODY;
-  int ni = Ci->NDBODY;
-  int nj = Cj->NDBODY;
-  int i;
-  for (i=0 ; i<ni; i++) {
-    real_t pot = 0;
-    real_t pot_c = 0;
-    vec3 acc = 0;
-    vec3 acc_c = 0;
-    for (int j=0; j<nj; j++) {
-      vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
-      real_t R2 = norm(dX) + EPS2;
-      if (R2 != 0) {
-        real_t invR2 = 1.0f / R2;
-        real_t invR = Bi[i].SRC * Bj[j].SRC * sqrt(invR2);
-        dX *= invR2 * invR;
-        // pot += invR;
-	real_t pot_t = pot + (invR - pot_c);
-	pot_c = (pot_t - pot) - (invR - pot_c);
-	pot = pot_t;
-	vec3 acc_t = acc + (dX - acc_c);
-	acc_c = (acc_t - acc) - (dX - acc_c);
-        acc = acc_t;
-      }
-    }
-    Bi[i].TRG[0] += pot;
-    Bi[i].TRG[1] -= acc[0];
-    Bi[i].TRG[2] -= acc[1];
-    Bi[i].TRG[3] -= acc[2];
   }
 }
 #endif

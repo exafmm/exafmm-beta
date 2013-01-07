@@ -171,32 +171,7 @@ public:
   }
 
 //! Direct summation
-#if EVAL_ERROR_KAHAN
-
-  void direct(Bodies &ibodies, Bodies &jbodies) {
-    Cells cells(2);                                             // Define a pair of cells to pass to P2P kernel
-    C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
-    Ci->BODY = ibodies.begin();                                 // Iterator of first target body
-    Ci->NDBODY = ibodies.size();                                // Number of target bodies
-    Cj->BODY = jbodies.begin();                                 // Iterator of first source body
-    Cj->NDBODY = jbodies.size();                                // Number of source bodies
-    int prange = 0;                                             // Range of periodic images
-    for (int i=0; i<IMAGES; i++) {                              // Loop over periodic image sublevels
-      prange += int(powf(3,i));                                 //  Accumulate range of periodic images
-    }                                                           // End loop over perioidc image sublevels
-    for (int ix=-prange; ix<=prange; ix++) {                    // Loop over x periodic direction
-      for (int iy=-prange; iy<=prange; iy++) {                  //  Loop over y periodic direction
-        for (int iz=-prange; iz<=prange; iz++) {                //   Loop over z periodic direction
-          Xperiodic[0] = ix * 2 * globalRadius;                 //    Coordinate shift for x periodic direction
-          Xperiodic[1] = iy * 2 * globalRadius;                 //    Coordinate shift for y periodic direction
-          Xperiodic[2] = iz * 2 * globalRadius;                 //    Coordinate shift for z periodic direction
-          P2PKahan(Ci,Cj);                                      //    Evaluate P2P kernel
-        }                                                       //   End loop over z periodic direction
-      }                                                         //  End loop over y periodic direction
-    }                                                           // End loop over x periodic direction
-  }
-
-#elif EVAL_ERROR_PARTIAL_ACCUMULATE
+#if EVAL_ERROR_PARTIAL_ACCUMULATE
   void direct(Bodies &ibodies, Bodies &jbodies) {
     Cells cells(2);                                             // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
@@ -241,7 +216,11 @@ public:
           Xperiodic[0] = ix * 2 * globalRadius;                 //    Coordinate shift for x periodic direction
           Xperiodic[1] = iy * 2 * globalRadius;                 //    Coordinate shift for y periodic direction
           Xperiodic[2] = iz * 2 * globalRadius;                 //    Coordinate shift for z periodic direction
+#if KAHAN >= 1
+          P2PKahan(Ci,Cj,false);                                      //    Evaluate P2P kernel
+#else
           P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
+#endif
         }                                                       //   End loop over z periodic direction
       }                                                         //  End loop over y periodic direction
     }                                                           // End loop over x periodic direction
