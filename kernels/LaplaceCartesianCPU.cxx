@@ -756,25 +756,37 @@ struct Coefs<0,0> {
 
 #if __SSE__
 inline float vecSum4(__m128 reg) {
-  float mem[4];
+  float mem[4] __attribute__ ((aligned(16)));
   _mm_store_ps(mem, reg);
   return mem[0] + mem[1] + mem[2] + mem[3];
 }
 inline double vecSum2d(__m128d reg) {
-  double mem[2];
+  double mem[2] __attribute__ ((aligned(16)));
   _mm_store_pd(mem, reg);
   return mem[0] + mem[1];
 }
+
+#include <stdio.h>
+int check_nan(__m128d reg) {
+  double mem[2];
+  _mm_store_pd(mem, reg);
+  if (isnan(mem[0]) || isnan(mem[1])) {
+    fprintf(stderr, "nan!\n");
+  }
+  
+  return 0;
+}
+
 #endif
 
 #if __AVX__
 inline float vecSum8(__m256 reg) {
-  float mem[8];
+  float mem[8] __attribute__ ((aligned(32)));
   _mm256_store_ps(mem, reg);
   return mem[0] + mem[1] + mem[2] + mem[3] + mem[4] + mem[5] + mem[6] + mem[7];
 }
 inline double vecSum4d(__m256d reg) {
-  double mem[4];
+  double mem[4] __attribute__ ((aligned(32)));
   _mm256_store_pd(mem, reg);
   return mem[0] + mem[1] + mem[2] + mem[3];
 }
@@ -941,7 +953,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       Bi[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
-#else  // double
+#elif 1  // P2P(C1,C2), AVX, double
 
   for ( ; i<=ni-4; i+=4) {
     __m256d pot = _mm256_setzero_pd();
@@ -1018,10 +1030,10 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       z2 = _mm256_set1_pd(Bj[j+2].X[2]);
     }
     for (int k=0; k<4; k++) {
-      Bi[i+k].TRG[0] += ((float*)&pot)[k];
-      Bi[i+k].TRG[1] += ((float*)&ax)[k];
-      Bi[i+k].TRG[2] += ((float*)&ay)[k];
-      Bi[i+k].TRG[3] += ((float*)&az)[k];
+      Bi[i+k].TRG[0] += ((double*)&pot)[k];
+      Bi[i+k].TRG[1] += ((double*)&ax)[k];
+      Bi[i+k].TRG[2] += ((double*)&ay)[k];
+      Bi[i+k].TRG[3] += ((double*)&az)[k];
     }
   }
 #endif
@@ -1115,7 +1127,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       Bi[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
-#else  // double
+#elif 1  // P2P(C1,C2), SSE, double
 
   for ( ; i<=ni-2; i+=2) {
     __m128d pot = _mm_setzero_pd();
@@ -1147,19 +1159,22 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     z2 = _mm_mul_pd(z2, z2);
     R2 = _mm_add_pd(R2, z2);
 
-    x2 = _mm_load_pd(&Bj[1].X[0]);
+    x2 = _mm_load_pd(&Bj[1].X[0]); // load X[0] and X[1]
     y2 = x2;
-    z2 = x2;
+    z2 = _mm_load_pd(&Bj[1].X[2]); // load X[2] and SRC
     for (int j=0; j<nj; j++) {
       __m128d invR = _mm_div_pd(_mm_set1_pd(1.0), _mm_sqrt_pd(R2));
       __m128d mask = _mm_cmpgt_pd(R2, _mm_setzero_pd());
       invR = _mm_and_pd(invR, mask);
+
+      check_nan(invR);
+
       R2 = _mm_set1_pd(EPS2);
-      x2 = _mm_shuffle_pd(x2, x2, _MM_SHUFFLE(0,0,0,0)); // ????
+      x2 = _mm_shuffle_pd(x2, x2, 0x0); // ????
       x2 = _mm_sub_pd(x2, xi);
-      y2 = _mm_shuffle_pd(y2, y2, _MM_SHUFFLE(1,1,1,1)); // ????
+      y2 = _mm_shuffle_pd(y2, y2, 0x3); // ????
       y2 = _mm_sub_pd(y2, yi);
-      z2 = _mm_shuffle_pd(z2, z2, _MM_SHUFFLE(2,2,2,2)); // ????
+      z2 = _mm_shuffle_pd(z2, z2, 0x0); // ????
       z2 = _mm_sub_pd(z2, zi);
 
       mj = _mm_mul_pd(mj, invR);
@@ -1168,8 +1183,8 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       if (mutual) Bj[j].TRG[0] += vecSum2d(mj);
       invR = _mm_mul_pd(invR, invR);
       invR = _mm_mul_pd(invR, mj);
-      mj = _mm_load_pd(&Bj[j+1].X[0]);
-      mj = _mm_shuffle_pd(mj, mj, _MM_SHUFFLE(3,3,3,3)); // ????
+      mj = _mm_load_pd(&Bj[j+1].X[2]);			 // ????
+      mj = _mm_shuffle_pd(mj, mj, 0x3); // ????
 
       xj = _mm_mul_pd(xj, invR);
       ax = _mm_add_pd(ax, xj);
@@ -1193,13 +1208,13 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       zj = z2;
       z2 = _mm_mul_pd(z2, z2);
       R2 = _mm_add_pd(R2, z2);
-      z2 = x2;
+      z2 = _mm_load_pd(&Bj[j+2].X[2]);
     }
     for (int k=0; k<2; k++) {
-      Bi[i+k].TRG[0] += ((float*)&pot)[k];
-      Bi[i+k].TRG[1] += ((float*)&ax)[k];
-      Bi[i+k].TRG[2] += ((float*)&ay)[k];
-      Bi[i+k].TRG[3] += ((float*)&az)[k];
+      Bi[i+k].TRG[0] += ((double*)&pot)[k];
+      Bi[i+k].TRG[1] += ((double*)&ax)[k];
+      Bi[i+k].TRG[2] += ((double*)&ay)[k];
+      Bi[i+k].TRG[3] += ((double*)&az)[k];
     }
   }
 #endif
@@ -1371,7 +1386,7 @@ void Kernel::P2P(C_iter C) const {
       B[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
-#else  // double
+#elif 1  // P2P(C), AVX, double
 
   for ( ; i<=n-4; i+=4) {
     __m256d pot = _mm256_setzero_pd();
@@ -1450,10 +1465,10 @@ void Kernel::P2P(C_iter C) const {
       z2 = _mm256_set1_pd(B[j+2].X[2]);
     }
     for (int k=0; k<4; k++) {
-      B[i+k].TRG[0] += ((float*)&pot)[k];
-      B[i+k].TRG[1] += ((float*)&ax)[k];
-      B[i+k].TRG[2] += ((float*)&ay)[k];
-      B[i+k].TRG[3] += ((float*)&az)[k];
+      B[i+k].TRG[0] += ((double*)&pot)[k];
+      B[i+k].TRG[1] += ((double*)&ax)[k];
+      B[i+k].TRG[2] += ((double*)&ay)[k];
+      B[i+k].TRG[3] += ((double*)&az)[k];
     }
   }
 #endif
@@ -1549,7 +1564,7 @@ void Kernel::P2P(C_iter C) const {
     }
   }
 
-#else  // double
+#elif 1  // P2P(C), SSE, double
 
   for ( ; i<=n-2; i+=2) {
     __m128d pot = _mm_setzero_pd();
@@ -1581,20 +1596,23 @@ void Kernel::P2P(C_iter C) const {
     z2 = _mm_mul_pd(z2, z2);
     R2 = _mm_add_pd(R2, z2);
 
-    x2 = _mm_load_pd(&B[i+2].X[0]);
+    x2 = _mm_load_pd(&B[i+2].X[0]); // load X[0] and X[1]
     y2 = x2;
-    z2 = x2;
+    z2 = _mm_load_pd(&B[i+2].X[2]); // load X[2] and SRC
     for (int j=i+1; j<n; j++) {
       __m128d invR = _mm_div_pd(_mm_set1_pd(1.0), _mm_sqrt_pd(R2));
       __m128d mask = _mm_cmplt_pd(_mm_setr_pd(i, i+1), _mm_set1_pd(j));
       mask = _mm_and_pd(mask, _mm_cmpgt_pd(R2, _mm_setzero_pd()));
       invR = _mm_and_pd(invR, mask);
+
+      check_nan(invR);
+
       R2 = _mm_set1_pd(EPS2);
-      x2 = _mm_shuffle_pd(x2, x2, _MM_SHUFFLE(0,0,0,0)); // ????
+      x2 = _mm_shuffle_pd(x2, x2, 0x0); // ????
       x2 = _mm_sub_pd(x2, xi);
-      y2 = _mm_shuffle_pd(y2, y2, _MM_SHUFFLE(1,1,1,1)); // ????
+      y2 = _mm_shuffle_pd(y2, y2, 0x3); // ????
       y2 = _mm_sub_pd(y2, yi);
-      z2 = _mm_shuffle_pd(z2, z2, _MM_SHUFFLE(2,2,2,2)); // ????
+      z2 = _mm_shuffle_pd(z2, z2, 0x0); // ????
       z2 = _mm_sub_pd(z2, zi);
 
       mj = _mm_mul_pd(mj, invR);
@@ -1603,8 +1621,8 @@ void Kernel::P2P(C_iter C) const {
       B[j].TRG[0] += vecSum2d(mj);
       invR = _mm_mul_pd(invR, invR);
       invR = _mm_mul_pd(invR, mj);
-      mj = _mm_load_pd(&B[j+1].X[0]);
-      mj = _mm_shuffle_pd(mj, mj, _MM_SHUFFLE(3,3,3,3)); // ????
+      mj = _mm_load_pd(&B[j+1].X[2]);			 // 
+      mj = _mm_shuffle_pd(mj, mj, 0x3); // ????
 
       xj = _mm_mul_pd(xj, invR);
       ax = _mm_add_pd(ax, xj);
@@ -1628,13 +1646,13 @@ void Kernel::P2P(C_iter C) const {
       zj = z2;
       z2 = _mm_mul_pd(z2, z2);
       R2 = _mm_add_pd(R2, z2);
-      z2 = x2;
+      z2 = _mm_load_pd(&B[j+2].X[2]);
     }
     for (int k=0; k<2; k++) {
-      B[i+k].TRG[0] += ((float*)&pot)[k];
-      B[i+k].TRG[1] += ((float*)&ax)[k];
-      B[i+k].TRG[2] += ((float*)&ay)[k];
-      B[i+k].TRG[3] += ((float*)&az)[k];
+      B[i+k].TRG[0] += ((double*)&pot)[k];
+      B[i+k].TRG[1] += ((double*)&ax)[k];
+      B[i+k].TRG[2] += ((double*)&ay)[k];
+      B[i+k].TRG[3] += ((double*)&az)[k];
     }
   }
 #endif
