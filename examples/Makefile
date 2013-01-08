@@ -4,7 +4,7 @@ include ../Makefile.include
 
 serial	: serial.cxx $(KERNELS)
 	$(CXX) $? $(LFLAGS) -DEVAL_ERROR_PARTIAL_ACCUMULATE
-	./a.out
+	mpirun -np 1 ./a.out --numBodies 10000
 #	numactl --interleave=all ./a.out
 
 parallel: parallel.cxx $(KERNELS)

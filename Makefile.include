@@ -21,8 +21,8 @@ DEVICE	= CPU
 #DEVICE	= MIC
 
 ### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops
-#CXX	= tau_cxx.sh -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops
+CXX	= tau_cxx.sh -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias
 ### BG/P compiler
@@ -44,7 +44,7 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
 ### Intel TBB flags (doesn't work with OpenMP) : TBB is available from http://threadingbuildingblocks.org/download.php
-LFLAGS	+= -std=c++0x -DTBB -ltbb
+#LFLAGS	+= -std=c++0x -DTBB -ltbb
 
 ### MassiveThreads flags (doesn't work with OpenMP) : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
@@ -64,7 +64,7 @@ ifeq ($(DEVICE),GPU)
 CUDA_INSTALL_PATH = /usr/local/cuda
 CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 ### CUDA compiler
-NVCC	= nvcc --compiler-bindir=/usr/bin/g++-4.4 -Xcompiler -fopenmp --ptxas-options=-v\
+NVCC	= nvcc -Xcompiler -fopenmp --ptxas-options=-v\
 	-O3 -use_fast_math -arch=sm_21\
 	-I$(EXAFMM_INCLUDE_PATH) -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
 ### CUDA flags
