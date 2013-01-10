@@ -3,7 +3,7 @@ include ../Makefile.include
 #LFLAGS	+= -DMANY
 
 serial	: serial.cxx $(KERNELS)
-	$(CXX) $? $(LFLAGS) -DEVAL_ERROR_PARTIAL_ACCUMULATE
+	$(CXX) $? $(LFLAGS)
 	./a.out
 #	numactl --interleave=all ./a.out
 

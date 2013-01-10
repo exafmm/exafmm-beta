@@ -765,18 +765,6 @@ inline double vecSum2d(__m128d reg) {
   _mm_store_pd(mem, reg);
   return mem[0] + mem[1];
 }
-
-#include <stdio.h>
-int check_nan(__m128d reg) {
-  double mem[2];
-  _mm_store_pd(mem, reg);
-  if (isnan(mem[0]) || isnan(mem[1])) {
-    fprintf(stderr, "nan!\n");
-  }
-  
-  return 0;
-}
-
 #endif
 
 #if __AVX__
@@ -792,7 +780,7 @@ inline double vecSum4d(__m256d reg) {
 }
 #endif
 
-#if KAHAN >= 1
+#if KAHAN >= KAHAN_IN_DIRECT
 
 inline void accum(real_t & s, real_t ds, real_t & c) {
   // s += ds;
@@ -802,7 +790,7 @@ inline void accum(real_t & s, real_t ds, real_t & c) {
   s = t;
 }
 
-inline void accum3(vec3 & s, vec3 ds, vec3 & c) {
+inline void accumVec(vec3 & s, vec3 ds, vec3 & c) {
   // s += ds;
   vec3 y = ds - c;
   vec3 t = s + y;
@@ -829,7 +817,7 @@ void Kernel::P2PKahan(C_iter Ci, C_iter Cj, bool mutual) const {
         real_t invR = Bi[i].SRC * Bj[j].SRC * sqrt(invR2);
         dX *= invR2 * invR;
 	accum(pot, invR, pot_c);
-	accum3(acc, dX, acc_c);
+	accumVec(acc, dX, acc_c);
         if (mutual) {
 	  accum(Bj[j].TRG[0], invR,  Bj[j].TRGc[0]);
           accum(Bj[j].TRG[1], dX[0], Bj[j].TRGc[1]);
@@ -851,7 +839,7 @@ void Kernel::P2PKahan(C_iter Ci, C_iter Cj, bool mutual) const {
 
 #endif
 
-#if KAHAN >= 2
+#if KAHAN >= KAHAN_ALWAYS
 
 void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   P2PKahan(Ci, Cj, mutual);
@@ -953,7 +941,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       Bi[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
-#elif 1  // P2P(C1,C2), AVX, double
+#else  // P2P(C1,C2), AVX, double
 
   for ( ; i<=ni-4; i+=4) {
     __m256d pot = _mm256_setzero_pd();
@@ -1127,7 +1115,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       Bi[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
-#elif 1  // P2P(C1,C2), SSE, double
+#else  // P2P(C1,C2), SSE, double
 
   for ( ; i<=ni-2; i+=2) {
     __m128d pot = _mm_setzero_pd();
@@ -1166,9 +1154,6 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       __m128d invR = _mm_div_pd(_mm_set1_pd(1.0), _mm_sqrt_pd(R2));
       __m128d mask = _mm_cmpgt_pd(R2, _mm_setzero_pd());
       invR = _mm_and_pd(invR, mask);
-
-      check_nan(invR);
-
       R2 = _mm_set1_pd(EPS2);
       x2 = _mm_shuffle_pd(x2, x2, 0x0); // ????
       x2 = _mm_sub_pd(x2, xi);
@@ -1253,9 +1238,9 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
 }
 #endif
 
-#if KAHAN >= 2
+#if KAHAN >= KAHAN_IN_DIRECT
 
-void Kernel::P2P(C_iter C) const {
+void Kernel::P2PKahan(C_iter C) const {
   B_iter B = C->BODY;
   int n = C->NDBODY;
   int i = 0;
@@ -1272,7 +1257,7 @@ void Kernel::P2P(C_iter C) const {
         real_t invR = B[i].SRC * B[j].SRC * sqrt(invR2);
         dX *= invR2 * invR;
         accum(pot, invR, pot_c);
-        accum3(acc, dX, acc_c);
+        accumVec(acc, dX, acc_c);
         accum(B[j].TRG[0], invR,  B[j].TRGc[0]);
         accum(B[j].TRG[1], dX[0], B[j].TRGc[1]);
         accum(B[j].TRG[2], dX[1], B[j].TRGc[2]);
@@ -1290,6 +1275,13 @@ void Kernel::P2P(C_iter C) const {
   }
 }
 
+#endif
+
+#if KAHAN >= KAHAN_ALWAYS
+
+void Kernel::P2P(C_iter Ci) const {
+  P2PKahan(Ci);
+}
 
 #else
 void Kernel::P2P(C_iter C) const {
@@ -1386,7 +1378,7 @@ void Kernel::P2P(C_iter C) const {
       B[i+k].TRG[3] += ((float*)&az)[k];
     }
   }
-#elif 1  // P2P(C), AVX, double
+#else  // P2P(C), AVX, double
 
   for ( ; i<=n-4; i+=4) {
     __m256d pot = _mm256_setzero_pd();
@@ -1564,7 +1556,7 @@ void Kernel::P2P(C_iter C) const {
     }
   }
 
-#elif 1  // P2P(C), SSE, double
+#else  // P2P(C), SSE, double
 
   for ( ; i<=n-2; i+=2) {
     __m128d pot = _mm_setzero_pd();
@@ -1604,9 +1596,6 @@ void Kernel::P2P(C_iter C) const {
       __m128d mask = _mm_cmplt_pd(_mm_setr_pd(i, i+1), _mm_set1_pd(j));
       mask = _mm_and_pd(mask, _mm_cmpgt_pd(R2, _mm_setzero_pd()));
       invR = _mm_and_pd(invR, mask);
-
-      check_nan(invR);
-
       R2 = _mm_set1_pd(EPS2);
       x2 = _mm_shuffle_pd(x2, x2, 0x0); // ????
       x2 = _mm_sub_pd(x2, xi);

@@ -7,6 +7,18 @@
 #include <vector>
 #include "vec.h"
 
+#if defined(REAL_TYPE) 
+#define REAL_TYPE_FLOAT 0
+#define REAL_TYPE_DOUBLE 1
+#endif
+
+#if defined(KAHAN) 
+#define KAHAN_NEVER 0 		/* never use Kahan's accumulation */
+#define KAHAN_IN_DIRECT 1	/* use it only in the direct evaluation */
+#define KAHAN_ALWAYS 2 /* use it both in main computation and direct evaluation */
+#endif
+
+
 // Basic type definitions
 #if defined(REAL_TYPE) && REAL_TYPE == REAL_TYPE_DOUBLE
 typedef double               real_t;                            //!< Floating point type
@@ -55,7 +67,7 @@ struct Body : public Source {
   int    IPROC;                                                 //!< Initial process numbering for partitioning back
   int    ICELL;                                                 //!< Cell index
   vec4   TRG;                                                   //!< Scalar+vector3 target values
-#if KAHAN >= 1
+#if KAHAN >= KAHAN_IN_DIRECT
   vec4   TRGc;                                                   //!< Scalar+vector3 target values
 #endif
 };

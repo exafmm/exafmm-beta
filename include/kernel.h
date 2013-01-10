@@ -30,8 +30,9 @@ public:
   }
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const;
   void P2P(C_iter C) const;
-#if KAHAN >= 1
+#if KAHAN >= KAHAN_IN_DIRECT
   void P2PKahan(C_iter Ci, C_iter Cj, bool mutual) const;
+  void P2PKahan(C_iter Ci) const;
 #endif
   void P2M(C_iter C, real_t &Rmax) const;
   void M2M(C_iter Ci, real_t &Rmax) const;
