@@ -39,6 +39,15 @@ LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
 #LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
 
+### Additional flags for controlling accuracy
+LFLAGS  += -DMULTIPOLE_EXPANSION_ORDER=6 # specifcy multipole expansion order (3 if unspecified)
+LFLAGS  += -DREAL_TYPE=1 # =1 means use double. otherwise float
+# -DKAHAN=1 means use Kahan's algorithm in direct P2P. 
+# -DKAHAN=2 means use it for main computation too. 
+# overall, -DKAHAN=1 is necessary when you use float and N is large
+#          -DKAHAN=2 is perhaps never necessary (included for experiments)
+LFLAGS  += -DKAHAN=0     
+
 ### Debugging flags
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
@@ -47,7 +56,7 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -std=c++0x -DTBB -ltbb
 
 ### MassiveThreads flags (doesn't work with OpenMP) : MassiveThreads is available from http://code.google.com/p/massivethreads/
-#LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
+LFLAGS	+= -std=c++0x -DMTHREAD -lmyth 
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi
@@ -74,9 +83,9 @@ endif
 KERNELS	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).o ../kernels/$(EQUATION)P2P$(DEVICE).o
 
 .cxx.o  :
-	$(CXX) -c $? -o $@ $(LFLAGS)
+	$(CXX) -c $^ -o $@ $(LFLAGS)
 .cu.o   :
-	$(NVCC) -c $? -o $@ $(LFLAGS)
+	$(NVCC) -c $^ -o $@ $(LFLAGS)
 
 help:
 	@make -C .. help

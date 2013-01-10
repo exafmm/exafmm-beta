@@ -3,8 +3,8 @@ include ../Makefile.include
 #LFLAGS	+= -DMANY
 
 serial	: serial.cxx $(KERNELS)
-	$(CXX) $? $(LFLAGS) -DEVAL_ERROR_PARTIAL_ACCUMULATE
-	mpirun -np 1 ./a.out --numBodies 10000
+	$(CXX) $? $(LFLAGS)
+	./a.out
 #	numactl --interleave=all ./a.out
 
 parallel: parallel.cxx $(KERNELS)
