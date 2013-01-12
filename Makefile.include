@@ -21,8 +21,8 @@ DEVICE	= CPU
 #DEVICE	= MIC
 
 ### GCC compiler
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops
-CXX	= tau_cxx.sh -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops
+#CXX	= tau_cxx.sh -ggdb3 -Wall -Wextra -Wshadow -O3 -msse4.2 -ffast-math -funroll-loops
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias
 ### BG/P compiler
@@ -52,11 +52,14 @@ LFLAGS  += -DKAHAN=0
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
-### Intel TBB flags (doesn't work with OpenMP) : TBB is available from http://threadingbuildingblocks.org/download.php
-#LFLAGS	+= -std=c++0x -DTBB -ltbb
+### Intel TBB flags : TBB is available from http://threadingbuildingblocks.org/download.php
+LFLAGS	+= -std=c++0x -DTBB -ltbb
 
-### MassiveThreads flags (doesn't work with OpenMP) : MassiveThreads is available from http://code.google.com/p/massivethreads/
+### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -std=c++0x -DMTHREAD -lmyth 
+
+### OpenMP flags (not recommended) : OpenMP3.0 is available in gcc>=4.3.1, icc>=11.0
+#LFLAGS += -DOPENMP -fopenmp
 
 ### PAPI flags
 #LFLAGS	+= -DPAPI -lpapi
