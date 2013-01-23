@@ -3,10 +3,10 @@
 int main() {
   const int numBodies = 1000;                                   // Number of bodies
   const real xmax = 100.0;                                      // Size of domain
-  const real ksize = 11.0;                                      // Ewald wave number
-  const real alpha = 0.1;                                       // Ewald alpha value
+  const real ksize = 44.0;                                      // Ewald wave number
+  const real alpha = 0.2;                                       // Ewald alpha value
   const real sigma = .25 / M_PI;                                // Ewald sigma value
-  IMAGES = 3;                                                   // Level of periodic image tree (0 for non-periodic)
+  IMAGES = 8;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrt(4);                                          // Multipole acceptance criteria
   Bodies bodies(numBodies);                                     // Define vector of bodies
   Bodies jbodies;                                               // Define vector of source bodies
