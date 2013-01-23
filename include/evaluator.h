@@ -211,11 +211,13 @@ protected:
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
-            cell.X[0] = C->X[0] + ix * 2 * C->R;                //     Set new x coordinate for periodic image
-            cell.X[1] = C->X[1] + iy * 2 * C->R;                //     Set new y cooridnate for periodic image
-            cell.X[2] = C->X[2] + iz * 2 * C->R;                //     Set new z coordinate for periodic image
-            cell.M = C->M;                                      //     Copy multipoles to new periodic image
-            pjcells.push_back(cell);                            //     Push cell into periodic jcell vector
+            if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
+              cell.X[0] = C->X[0] + ix * 2 * C->R;              //      Set new x coordinate for periodic image
+              cell.X[1] = C->X[1] + iy * 2 * C->R;              //      Set new y cooridnate for periodic image
+              cell.X[2] = C->X[2] + iz * 2 * C->R;              //      Set new z coordinate for periodic image
+              cell.M = C->M;                                    //      Copy multipoles to new periodic image
+              pjcells.push_back(cell);                          //      Push cell into periodic jcell vector
+            }                                                   //     Endif for periodic center cell
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
@@ -225,7 +227,7 @@ protected:
       pccells.push_back(cell);                                  //  Push cell into periodic cell vector
       C_iter Ci = pccells.end() - 1;                            //  Set current cell as target for M2M
       Ci->CHILD = 0;                                            //  Set child cells for periodic M2M
-      Ci->NCHILD = 27;                                          //  Set number of child cells for periodic M2M
+      Ci->NCHILD = 26;                                          //  Set number of child cells for periodic M2M
       evalM2M(pccells,pjcells);                                 // Evaluate periodic M2M kernels for this sublevel
       pjcells.clear();                                          // Clear periodic jcell vector
     }                                                           // End loop over sublevels of tree
@@ -334,26 +336,6 @@ public:
     flagM2P[0][Cj] |= Icenter;                                  // Flip bit of periodic image flag
   }
 
-//! Create periodic images of bodies
-  Bodies periodicBodies(Bodies &bodies) {
-    Bodies jbodies;                                             // Vector for periodic images of bodies
-    int prange = getPeriodicRange();                            // Get range of periodic images
-    for( int ix=-prange; ix<=prange; ++ix ) {                   // Loop over x periodic direction
-      for( int iy=-prange; iy<=prange; ++iy ) {                 //  Loop over y periodic direction
-        for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
-          for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {//    Loop over bodies
-            Body body = *B;                                     //     Copy current body
-            body.X[0] += ix * 2 * R0;                           //     Shift x position
-            body.X[1] += iy * 2 * R0;                           //     Shift y position
-            body.X[2] += iz * 2 * R0;                           //     Shift z position
-            jbodies.push_back(body);                            //     Push shifted body into jbodies
-          }                                                     //    End loop over bodies
-        }                                                       //   End loop over z periodic direction
-      }                                                         //  End loop over y periodic direction
-    }                                                           // End loop over x periodic direction
-    return jbodies;                                             // Return vector for periodic images of bodies
-  }
-
 //! Use multipole acceptance criteria to determine whether to approximate, do P2P, or subdivide
   void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue) {
     vect dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
@@ -404,6 +386,7 @@ public:
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
+#if QUEUE
       for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {   //  Loop over target cells
         listM2L[Ci-Ci0].sort();                                 //  Sort interaction list
         listM2L[Ci-Ci0].unique();                               //  Eliminate duplicate periodic entries
@@ -412,12 +395,12 @@ public:
         listP2P[Ci-Ci0].sort();                                 //  Sort interaction list
         listP2P[Ci-Ci0].unique();                               //  Eliminate duplicate periodic entries
       }                                                         //  End loop over target cells
+#endif
     }                                                           // Endif for periodic boundary condition
   }
 
 //! Traverse neighbor cells only (for cutoff based methods)
   void neighbor(Cells &cells, Cells &jcells) {
-    C_iter root = cells.end() - 1;                              // Iterator for root target cell
     C_iter jroot = jcells.end() - 1;                            // Iterator for root source cell
     Ci0 = cells.begin();                                        // Set begin iterator for target cells
     Cj0 = jcells.begin();                                       // Set begin iterator for source cells
@@ -455,6 +438,7 @@ public:
   void clearBuffers();                                          //!< Clear GPU buffers
 
   void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);//!< Evaluate all P2P kernels (all pairs)
+  void periodicP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);//!< Evaluate all P2P kernels (all pairs) for periodic
   void evalP2M(Cells &cells);                                   //!< Evaluate all P2M kernels
   void evalM2M(Cells &cells, Cells &jcells);                    //!< Evaluate all M2M kernels
   void evalM2L(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU

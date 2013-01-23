@@ -253,6 +253,10 @@ public:
     if(MPISIZE == 1) LEVEL = 0;                                 // Level is 0 for a serial execution
     XMIN.resize(LEVEL+1);                                       // Minimum position vector at each level
     XMAX.resize(LEVEL+1);                                       // Maximum position vector at each level
+    for( int d=0; d!=3; ++d ) {                                 // Loop over each dimension
+      XMIN[0][d] = 1 / EPS;                                     //  Initialize XMIN[0]
+      XMAX[0][d] = - 1 / EPS;                                   //  Initialize XMAX[0]
+    }                                                           // End loop over each dimension
     startTimer("Split comm");                                   // Start timer
     nprocs[0][0] = nprocs[0][1] = MPISIZE;                      // Initialize number of processes in groups
     offset[0][0] = offset[0][1] = 0;                            // Initialize offset of body in groups
@@ -268,9 +272,8 @@ public:
 
 //! Set bounds of domain to be partitioned
   void setGlobDomain(Bodies &bodies, vect x0=0, real r0=M_PI) {
-    numCells1D = 1 << getMaxLevel(bodies);                      // Set initial number of bodies
+    numCells1D = 1 << getMaxLevel(bodies);                      // Number of leaf cells in each dimensions
     B_iter B = bodies.begin();                                  // Reset body iterator
-    XMIN[0] = XMAX[0] = B->X;                                   // Initialize xmin,xmax
     MPI_Datatype MPI_TYPE = getType(XMIN[0][0]);                // Get MPI data type
     for( B=bodies.begin(); B!=bodies.end(); ++B ) {             // Loop over bodies
       for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
@@ -283,14 +286,23 @@ public:
     XMAX[0] = X;                                                // Get data from buffer
     MPI_Allreduce(XMIN[0],X,3,MPI_TYPE,MPI_MIN,MPI_COMM_WORLD); // Reduce global minimum
     XMIN[0] = X;                                                // Get data from buffer
-    if( XMIN[0][0] < x0[0]-r0 || x0[0]+r0 < XMAX[0][0]          //  Check for outliers in x direction
-     || XMIN[0][1] < x0[1]-r0 || x0[1]+r0 < XMAX[0][1]          //  Check for outliers in y direction
-     || XMIN[0][2] < x0[2]-r0 || x0[2]+r0 < XMAX[0][2] ) {      //  Check for outliers in z direction
-      std::cout << "Error: Particles located outside periodic domain @ rank "
+    if( IMAGES != 0 ) {                                         // If periodic boundary
+      if( XMIN[0][0] < x0[0]-r0 || x0[0]+r0 < XMAX[0][0]        //  Check for outliers in x direction
+       || XMIN[0][1] < x0[1]-r0 || x0[1]+r0 < XMAX[0][1]        //  Check for outliers in y direction
+       || XMIN[0][2] < x0[2]-r0 || x0[2]+r0 < XMAX[0][2] ) {    //  Check for outliers in z direction
+        std::cout << "Error: Particles located outside periodic domain @ rank "
                 << MPIRANK << std::endl;                        //   Print error message
-    }                                                           //  End if for outlier checking
-    X0 = x0;                                                    //  Center is [0, 0, 0]
-    R0 = r0;                                                    //  Radius is M_PI
+      }                                                         //  End if for outlier checking
+      X0 = x0;                                                  //  Center is x0
+      R0 = r0;                                                  //  Radius is r0
+    } else {                                                    // If free boundary
+      for( int d=0; d!=3; ++d ) {                               //  Loop over each dimension
+        X0[d] = (XMIN[0][d] + XMAX[0][d]) * .5;                 //   Center of domain
+        R0 = std::max(X0[d]-XMIN[0][d],R0);                     //   Radius of domain
+        R0 = std::max(XMAX[0][d]-X0[d],R0);                     //   Radius of domain
+      }                                                         //  End loop over each dimension
+      R0 *= (1 + EPS);                                          //  Add some leeway to domain size
+    }                                                           // End if for periodic boundary
     XMAX[0] = X0 + R0;                                          // Reposition global maximum
     XMIN[0] = X0 - R0;                                          // Reposition global minimum
   }
@@ -427,7 +439,7 @@ public:
         usleep(WAIT);                                           //   Wait for "WAIT" milliseconds
         if( MPIRANK == j ) {                                    //   If it's my turn to print
           std::cout << "MPIRANK : " << j << std::endl;          //    Print rank
-          for(int i=0; i!=9; ++i) std::cout << bodies[numLocal/10*i].I << " ";// Print sampled body indices
+          for(int i=0; i!=9; ++i) std::cout << bodies[numLocal/10*i].ICELL << " ";// Print sampled body indices
           std::cout << std::endl;                               //    New line
         }                                                       //   Endif for my turn
       }                                                         //  End loop over ranks

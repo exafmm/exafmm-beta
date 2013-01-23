@@ -720,7 +720,7 @@ template<>
 void Kernel<Laplace>::P2M(C_iter Ci) {
   real Rmax = 0;
 //  setCenter(Ci);
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = Ci->X - B->X;
     real R = std::sqrt(norm(dist));
     if( R > Rmax ) Rmax = R;
@@ -789,7 +789,7 @@ void Kernel<Laplace>::L2L(C_iter Ci) const {
 
 template<>
 void Kernel<Laplace>::L2P(C_iter Ci) const {
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;
     Lset C, L;
     C[0] = 1;

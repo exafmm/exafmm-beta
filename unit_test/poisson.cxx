@@ -73,7 +73,7 @@ int main() {
     diff1 += (B->TRG[0] - exact) * (B->TRG[0] - exact);         //  Difference between analytical solution
     norm1 += exact * exact;                                     //  L2 norm of analytical solution
   }                                                             // End loop over bodies
-  std::cout << std::setw(stringLength) << std::left             // Set format
+  std::cout << std::setw(FMM.stringLength) << std::left         // Set format
             << "Error" << " : " << std::sqrt(diff1/norm1) << std::endl;// Print L2 norm error
 
   FMM.finalize();                                               // Finalize FMM

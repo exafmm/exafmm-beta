@@ -27,7 +27,7 @@ THE SOFTWARE.
 int main() {
   const int numBodies = 10000;                                  // Number of bodies
   const int numTarget = 100;                                    // Number of target points to be used for error eval
-  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  IMAGES = 1;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
   Bodies bodies(numTarget);                                     // Define vector of target bodies
   Bodies jbodies(numBodies);                                    // Define vector of source bodies
@@ -44,7 +44,8 @@ int main() {
   FMM.eraseTimer("Set bodies");                                 // Erase entry from timer to avoid timer overlap
 
   FMM.startTimer("Set domain");                                 // Start timer
-  FMM.setDomain(bodies,0,M_PI);                                 // Set domain size of FMM
+  FMM.setDomain(bodies);                                        // Set domain size of FMM
+  FMM.setDomain(jbodies);                                       // Set domain size of FMM
   FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
   FMM.eraseTimer("Set domain");                                 // Erase entry from timer to avoid timer overlap
 
@@ -61,16 +62,9 @@ int main() {
   FMM.eraseTimer("Downward");                                   // Erase entry from timer to avoid timer overlap
 
 #ifndef VTK
-  if( IMAGES != 0 ) {                                           // For periodic boundary condition
-    FMM.startTimer("Set periodic");                             //  Start timer
-    jbodies2 = FMM.periodicBodies(jbodies);                     //  Copy source bodies for all periodic images
-    FMM.stopTimer("Set periodic",FMM.printNow);                 //  Stop timer
-    FMM.eraseTimer("Set periodic");                             //  Erase entry from timer to avoid timer overlap
-  } else {                                                      // For free field boundary condition
-    jbodies2 = jbodies;                                         //  Copy source bodies
-  }                                                             // End if for periodic boundary condition
   FMM.startTimer("Direct sum");                                 // Start timer
-  bodies.resize(numTarget);                                     // Shrink target bodies vector to save time
+  jbodies2 = jbodies;                                           // Copy source bodies
+  FMM.sampleBodies(bodies,numTarget);                           // Shrink target bodies vector to save time
   FMM.buffer = bodies;                                          // Define new bodies vector for direct sum
   FMM.initTarget(FMM.buffer);                                   // Reinitialize target values
   FMM.evalP2P(FMM.buffer,jbodies2);                             // Direct summation between buffer and jbodies2

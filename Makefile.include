@@ -29,7 +29,7 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -ffast-math -funroll-loops -fforce-addr -f
 # -Kdalign,ns,mfunc,eval,prefetch_conditional,ilfunc -x-
 
 ### CUDA compiler
-NVCC    = nvcc --compiler-bindir=/usr/bin/gcc-4.4 -Xcompiler -fopenmp --ptxas-options=-v -O3\
+NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3\
 	 -use_fast_math -arch=sm_21 -I../include -I$(CUDA_INSTALL_PATH)/include
 
 ### Base flags
@@ -45,12 +45,12 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 #LFLAGS += -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
 
 ### VTK flags
-#CXX     += -I$(VTK_INCLUDE_PATH)
-#VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+CXX     += -I$(VTK_INCLUDE_PATH)
+VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags
-LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart -lstdc++ -ldl -lm
+LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart
 endif
 
 OBJECT = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\

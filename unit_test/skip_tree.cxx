@@ -27,7 +27,7 @@ THE SOFTWARE.
 int main() {
   const int numBodies = 10000;                                  // Number of bodies
   const int numTarget = 100;                                    // Number of target points to be used for error eval
-  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  IMAGES = 1;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
   Bodies bodies(numBodies);                                     // Define vector of target bodies
   Bodies jbodies;                                               // Define vector of source bodies
@@ -64,17 +64,10 @@ int main() {
   FMM.eraseTimer("Downward");                                   // Erase entry from timer to avoid timer overlap
 
 #ifndef VTK
- if( IMAGES != 0 ) {                                            // For periodic boundary condition
-    FMM.startTimer("Set periodic");                             //  Start timer
-    jbodies = FMM.periodicBodies(bodies);                       //  Copy source bodies for all periodic images
-    FMM.stopTimer("Set periodic",FMM.printNow);                 //  Stop timer
-    FMM.eraseTimer("Set periodic");                             //  Erase entry from timer to avoid timer overlap
-  } else {                                                      // For free field boundary condition
-    jbodies = bodies;                                           //  Copy source bodies
-  }                                                             // End if for periodic boundary condition
   FMM.startTimer("Direct sum");                                 // Start timer
+  jbodies = bodies;                                             // Copy source bodies
   Bodies bodies2 = bodies;                                      // Define new bodies vector for direct sum
-  bodies2.resize(numTarget);                                    // Shrink target bodies vector to save time
+  FMM.sampleBodies(bodies2,numTarget);                          // Shrink target bodies vector to save time
   FMM.initTarget(bodies2);                                      // Reinitialize target values
   for( int i=0; i!=MPISIZE; ++i ) {                             // Loop over all MPI processes
     FMM.shiftBodies(jbodies);                                   //  Communicate bodies round-robin

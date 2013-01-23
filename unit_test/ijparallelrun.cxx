@@ -27,7 +27,7 @@ THE SOFTWARE.
 int main() {
   const int numBodies = 10000;                                  // Number of bodies
   const int numTarget = 100;                                    // Number of target points to be used for error eval
-  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  IMAGES = 1;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
   Bodies bodies(numTarget);                                     // Define vector of target bodies
   Bodies jbodies(numBodies);                                    // Define vector of source bodies
@@ -44,18 +44,11 @@ int main() {
   FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
 
   FMM.startTimer("Set domain");                                 // Start timer
-  FMM.setGlobDomain(bodies,0,M_PI);                             // Set global domain size of FMM
+  FMM.setGlobDomain(bodies);                                    // Set global domain size of FMM
+  FMM.setGlobDomain(jbodies);                                   // Set global domain size of FMM
   FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
 
-  if( IMAGES != 0 ) {                                           // For periodic boundary condition
-    FMM.startTimer("Set periodic");                             //  Start timer
-    jbodies2 = FMM.periodicBodies(jbodies);                     //  Copy source bodies for all periodic images
-    FMM.stopTimer("Set periodic",FMM.printNow);                 //  Stop timer
-    FMM.eraseTimer("Set periodic");                             //  Erase entry from timer to avoid timer overlap
-  } else {                                                      // For free field boundary condition
-    jbodies2 = jbodies;                                         //  Copy source bodies
-  }                                                             // End if for periodic boundary condition
-
+  jbodies2 = jbodies;                                           // Copy source bodies
   FMM.startTimer("Direct sum");                                 // Start timer
   for( int i=0; i!=MPISIZE; ++i ) {                             // Loop over all MPI processes
     FMM.shiftBodies(jbodies2);                                  //  Communicate bodies round-robin

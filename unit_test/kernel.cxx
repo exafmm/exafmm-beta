@@ -34,7 +34,7 @@ int main() {
   FMM.initialize();                                             // Initialize FMM
   FMM.preCalculation();                                         // Kernel pre-processing
 
-  for( int it=0; it!=10; ++it ) {                               // Loop over kernel iterations
+  for( int it=0; it!=5; ++it ) {                                // Loop over kernel iterations
     real dist = (1 << it) / 2;                                  //  Distance between source and target
     for( B_iter B=ibodies.begin(); B!=ibodies.end(); ++B ) {    //  Loop over target bodies
       for( int d=0; d!=3; ++d ) {                               //   Loop over dimensions
@@ -51,7 +51,7 @@ int main() {
     FMM.initTarget(ibodies,IeqJ);                               //  Initialize target values
 
     Cell cell;                                                  //  Define cell
-    cell.NDLEAF    = numBodies;                                 //  Number of leafs
+    cell.NDLEAF   = numBodies;                                  //  Number of leafs
     cell.LEAF     = jbodies.begin();                            //  Iterator of first leaf
     cell.X        = 0.5;                                        //  Position
     cell.M        = 0;                                          //  Initialize multipole coefficients

@@ -25,7 +25,7 @@ THE SOFTWARE.
 int main() {
   char hostname[256];                                           // Define hostname
   const int numBodies = 1000;                                   // Number of bodies
-  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  IMAGES = 1;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
   Bodies bodies(numBodies);                                     // Define vector of bodies
   Evaluator<Laplace> FMM;                                       // Instantiate Evaluator class
