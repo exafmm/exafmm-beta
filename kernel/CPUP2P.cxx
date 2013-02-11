@@ -26,7 +26,7 @@ THE SOFTWARE.
 template<>
 void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P kernel on CPU
 #ifndef SPARC_SIMD
-#pragma omp parallel for
+//#pragma omp parallel for
   for( int i=0; i<Ci->NDLEAF; ++i ) {                           // Loop over target bodies
     B_iter Bi = Ci->LEAF+i;                                     //  Target body iterator
     real P0 = 0;                                                //  Initialize potential

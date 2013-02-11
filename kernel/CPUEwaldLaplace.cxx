@@ -26,7 +26,7 @@ THE SOFTWARE.
 namespace {
 void dft(Ewalds &ewalds, Bodies &bodies, real R0) {
   real scale = M_PI / R0;
-#pragma omp parallel for
+//#pragma omp parallel for
   for( int i=0; i<int(ewalds.size()); ++i ) {
     E_iter E = ewalds.begin() + i;
     E->REAL = E->IMAG = 0;
@@ -41,7 +41,7 @@ void dft(Ewalds &ewalds, Bodies &bodies, real R0) {
 
 void idft(Ewalds &ewalds, Bodies &bodies, real R0) {
   real scale = M_PI / R0;
-#pragma omp parallel for
+//#pragma omp parallel for
   for( int i=0; i<int(bodies.size()); ++i ) {
     B_iter B = bodies.begin() + i;
     vec<4,real> TRG = 0;

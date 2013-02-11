@@ -63,7 +63,7 @@ int omp_get_thread_num() {
 #endif
 
 typedef unsigned           bigint;                              //!< Big integer type
-typedef double             real;                                //!< Real number type on CPU
+typedef float              real;                                //!< Real number type on CPU
 typedef float              gpureal;                             //!< Real number type on GPU
 typedef std::complex<real> complex;                             //!< Complex number type
 typedef vec<3,real>        vect;                                //!< 3-D vector type
@@ -91,7 +91,7 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 #endif
 #endif
 
-const int  P        = 25;                                       //!< Order of expansions
+const int  P        = 6;                                        //!< Order of expansions
 const int  NCRIT    = 64;                                       //!< Number of bodies per cell
 const int  MAXBODY  = 50000;                                    //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
@@ -102,7 +102,6 @@ const real R2MIN    = 0.0001;                                   //!< Minimum val
 const real R2MAX    = 100.0;                                    //!< Maximum value for L-J R^2
 const int  GPUS     = 3;                                        //!< Number of GPUs per node
 const int  THREADS  = 128;                                      //!< Number of threads per thread-block
-const int  PTHREADS = 4;                                        //!< Number of pthreads in quark
 
 const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
