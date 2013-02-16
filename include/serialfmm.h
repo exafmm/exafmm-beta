@@ -12,11 +12,12 @@ protected:
 private:
 //! Error optimization of Rcrit
   void setRcrit(C_iter C, C_iter C0, real_t c) {
-    __init_tasks__;                                             // Initialize tasks
-    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-      spawn_task0(setRcrit(CC, C0, c));                         //  Recursive call with new task
-    }                                                           // End loop over child cells
-    __sync_tasks__;                                             // Synchronize tasks
+    spawn_tasks {                                             // Initialize tasks
+      for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+	spawn_task0(setRcrit(CC, C0, c));                         //  Recursive call with new task
+      }                                                           // End loop over child cells
+      sync_tasks;                                             // Synchronize tasks
+    }
 #if Cartesian
     for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];            // Normalize multipole expansion coefficients
 #endif
@@ -45,24 +46,26 @@ private:
       return vec3Pair(Xmin, Xmax);                              //  Return Xmin and Xmax as pair
     } else {                                                    // Else if number of elements are large
       B_iter BiMid = BiBegin + (BiEnd - BiBegin) / 2;           //  Middle iterator
-      __init_tasks__;                                           //  Initialize tasks
       vec3Pair bounds0, bounds1;                                //  Pair : first Xmin : second Xmax
-      spawn_task1(bounds0, bounds0 = getBounds(BiBegin, BiMid));//  Recursive call with new task
-      bounds1 = getBounds(BiMid, BiEnd);                        //  Recursive call with old task
-      __sync_tasks__;                                           //  Synchronize tasks
-      bounds0.first = min(bounds0.first, bounds1.first);        //  Minimum of the two Xmins
-      bounds0.second = max(bounds0.second, bounds1.second);     //  Maximum of the two Xmaxs
+      spawn_tasks {                                           //  Initialize tasks
+	spawn_task1(bounds0, bounds0 = getBounds(BiBegin, BiMid));//  Recursive call with new task
+	bounds1 = getBounds(BiMid, BiEnd);                        //  Recursive call with old task
+	sync_tasks;                                           //  Synchronize tasks
+	bounds0.first = min(bounds0.first, bounds1.first);        //  Minimum of the two Xmins
+	bounds0.second = max(bounds0.second, bounds1.second);     //  Maximum of the two Xmaxs
+      }
       return bounds0;                                           //  Return Xmin and Xmax
     }                                                           // End if for number fo elements
   }
 
 //! Recursive call for upward pass
   void upwardRecursion(C_iter C, C_iter C0) {
-    __init_tasks__;                                             // Initialize tasks
-    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-      spawn_task0(upwardRecursion(CC, C0));                     //  Recursive call with new task
-    }                                                           // End loop over child cells
-    __sync_tasks__;                                             // Synchronize tasks
+    spawn_tasks {                                             // Initialize tasks
+      for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+	spawn_task0(upwardRecursion(CC, C0));                     //  Recursive call with new task
+      }                                                           // End loop over child cells
+      sync_tasks;                                             // Synchronize tasks
+    }
     real_t Rmax = 0;                                            // Initialize Rmax
     setCenter(C);                                               // Set center of cell to center of mass
     C->M = 0;                                                   // Initialize multipole expansion coefficients
@@ -75,11 +78,12 @@ private:
   void downwardRecursion(C_iter C, C_iter C0) const {
     L2L(C);                                                     // L2L kernel
     L2P(C);                                                     // L2P kernel
-    __init_tasks__;                                             // Initialize tasks
-    for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-      spawn_task0(downwardRecursion(CC, C0));                   //  Recursive call with new task
-    }                                                           // End loop over chlid cells
-    __sync_tasks__;                                             // Synchronize tasks
+    spawn_tasks {                                             // Initialize tasks
+      for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+	spawn_task0(downwardRecursion(CC, C0));                   //  Recursive call with new task
+      }                                                           // End loop over chlid cells
+      sync_tasks;                                             // Synchronize tasks
+    }
   }
 
 public:
@@ -161,11 +165,12 @@ public:
     startTimer("Downward pass");                                // Start timer
     C_iter C0 = cells.begin();                                  // Root cell
     L2P(C0);                                                    // If root is the only cell do L2P
-    __init_tasks__;                                             // Initialize tasks
-    for (C_iter CC=C0+C0->CHILD; CC!=C0+C0->CHILD+C0->NCHILD; CC++) {// Loop over child cells
-      spawn_task0(downwardRecursion(CC, C0));                   //  Recursive call for downward pass
-    }                                                           // End loop over child cells
-    __sync_tasks__;                                             // Synchronize tasks
+    spawn_tasks {                                             // Initialize tasks
+      for (C_iter CC=C0+C0->CHILD; CC!=C0+C0->CHILD+C0->NCHILD; CC++) {// Loop over child cells
+	spawn_task0(downwardRecursion(CC, C0));                   //  Recursive call for downward pass
+      }                                                           // End loop over child cells
+      sync_tasks;                                             // Synchronize tasks
+    }
     stopTimer("Downward pass",printNow);                        // Stop timer
     if(printNow) printTreeData(cells);                          // Print tree data
   }

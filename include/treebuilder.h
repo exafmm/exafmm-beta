@@ -92,13 +92,14 @@ private:
       binNode->RIGHT = binNode->LEFT->END;                      //  Assign that same address to right node pointer
       binNode->RIGHT->BEGIN = binNode->RIGHT + 1;               //  Assign next memory address to right begin pointer
       binNode->RIGHT->END = binNode->RIGHT + numRightNode;      //  Keep track of last memory address used by right
-      __init_tasks__;                                           //  Initialize tasks
-      spawn_task1(bodies, {                                     //  Spawn new task using Intel TBB or MTHREAD
-        countBodies(bodies, begin, mid, X, binNode->LEFT);      //   Recursive call for left branch
-      });                                                       //  Close lambda expression
-      countBodies(bodies, mid, end, X, binNode->RIGHT);         //  Recursive call for right branch
-      __sync_tasks__;                                           //  Synchronize tasks
-      binNode->NBODY = binNode->LEFT->NBODY + binNode->RIGHT->NBODY;// Sum contribution from both branches
+      spawn_tasks {                                           //  Initialize tasks
+	spawn_task1(bodies, {                                     //  Spawn new task using Intel TBB or MTHREAD
+	    countBodies(bodies, begin, mid, X, binNode->LEFT);      //   Recursive call for left branch
+	  });                                                       //  Close lambda expression
+	countBodies(bodies, mid, end, X, binNode->RIGHT);         //  Recursive call for right branch
+	sync_tasks;                                           //  Synchronize tasks
+	binNode->NBODY = binNode->LEFT->NBODY + binNode->RIGHT->NBODY;// Sum contribution from both branches
+      }
     }                                                           // End if for number of bodies
   }
 
@@ -114,13 +115,14 @@ private:
       }                                                         //  End loop over bodies
     } else {                                                    // Else if there are child nodes
       int mid = (begin + end) / 2;                              //  Split range of bodies in half
-      __init_tasks__;                                           //  Initialize tasks
-      spawn_task2(bodies, buffer, {                             //  Spawn new task using Intel TBB or MTHREAD
-        moveBodies(bodies, buffer, begin, mid, binNode->LEFT, octantOffset, X);// Recursive call for left branch
-      });                                                       //  Close lambda expression
-      octantOffset += binNode->LEFT->NBODY;                     //  Increment the octant offset for right branch
-      moveBodies(bodies, buffer, mid, end, binNode->RIGHT, octantOffset, X);// Recursive call for right branch
-      __sync_tasks__;                                           //  Synchronize tasks
+      spawn_tasks {                                           //  Initialize tasks
+	spawn_task2(bodies, buffer, {                             //  Spawn new task using Intel TBB or MTHREAD
+	    moveBodies(bodies, buffer, begin, mid, binNode->LEFT, octantOffset, X);// Recursive call for left branch
+	  });                                                       //  Close lambda expression
+	octantOffset += binNode->LEFT->NBODY;                     //  Increment the octant offset for right branch
+	moveBodies(bodies, buffer, mid, end, binNode->RIGHT, octantOffset, X);// Recursive call for right branch
+	sync_tasks;                                           //  Synchronize tasks
+      }
     }                                                           // End if for child existance
   }
 
@@ -139,26 +141,27 @@ private:
     ivec8 octantOffset = exclusiveScan(binNode->NBODY, begin);  // Exclusive scan to obtain offset from octant count
     moveBodies(bodies, buffer, begin, end, binNode, octantOffset, X);// Sort bodies according to octant
     BinaryTreeNode * binNodeOffset = binNode->BEGIN;            // Initialize pointer offset for binary tree nodes
-    __init_tasks__;                                             // Initialize tasks
-    for (int i=0; i<8; i++) {                                   // Loop over children
-      int maxBinNode = getMaxBinNode(binNode->NBODY[i]);        //  Get maximum number of binary tree nodes
-      assert(binNodeOffset + maxBinNode <= binNode->END);
-      spawn_task2(buffer, bodies, {                             //  Spawn new task using Intel TBB or MTHREAD
-        vec3 Xchild = X;                                        //   Initialize center position of child node
-        real_t r = localRadius / (1 << (level + 1));            //   Radius of cells for child's level
-        for (int d=0; d<3; d++) {                               //   Loop over dimensions
-          Xchild[d] += r * (((i & 1 << d) >> d) * 2 - 1);       //    Shift center position to that of child node
-        }                                                       //   End loop over dimensions
-        BinaryTreeNode binNodeChild[1];                         //   Allocate new root for this branch
-        binNodeChild->BEGIN = binNodeOffset;                    //   Assign first memory address from offset
-        binNodeChild->END = binNodeOffset + maxBinNode;         //   Keep track of last memory address
-        octNode->CHILD[i] = buildNodes(buffer, bodies,          //   Recursive call for each child
-          octantOffset[i], octantOffset[i] + binNode->NBODY[i], //   Range of bodies is calcuated from octant offset
-          binNodeChild, Xchild, level+1, !direction);           //   Alternate copy direction bodies <-> buffer
-      });                                                       //  Close lambda expression
-      binNodeOffset += maxBinNode;                              //  Increment offset for binNode memory address
-    }                                                           // End loop over children
-    __sync_tasks__;                                             // Synchronize tasks
+    spawn_tasks {                                             // Initialize tasks
+      for (int i=0; i<8; i++) {                                   // Loop over children
+	int maxBinNode = getMaxBinNode(binNode->NBODY[i]);        //  Get maximum number of binary tree nodes
+	assert(binNodeOffset + maxBinNode <= binNode->END);
+	spawn_task2(buffer, bodies, {                             //  Spawn new task using Intel TBB or MTHREAD
+	    vec3 Xchild = X;                                        //   Initialize center position of child node
+	    real_t r = localRadius / (1 << (level + 1));            //   Radius of cells for child's level
+	    for (int d=0; d<3; d++) {                               //   Loop over dimensions
+	      Xchild[d] += r * (((i & 1 << d) >> d) * 2 - 1);       //    Shift center position to that of child node
+	    }                                                       //   End loop over dimensions
+	    BinaryTreeNode binNodeChild[1];                         //   Allocate new root for this branch
+	    binNodeChild->BEGIN = binNodeOffset;                    //   Assign first memory address from offset
+	    binNodeChild->END = binNodeOffset + maxBinNode;         //   Keep track of last memory address
+	    octNode->CHILD[i] = buildNodes(buffer, bodies,          //   Recursive call for each child
+	       octantOffset[i], octantOffset[i] + binNode->NBODY[i], //   Range of bodies is calcuated from octant offset
+	       binNodeChild, Xchild, level+1, !direction);           //   Alternate copy direction bodies <-> buffer
+	  });                                                       //  Close lambda expression
+	binNodeOffset += maxBinNode;                              //  Increment offset for binNode memory address
+      }                                                           // End loop over children
+      sync_tasks;                                             // Synchronize tasks
+    }
     for (int i=0; i<8; i++) {                                   // Loop over children
       if (octNode->CHILD[i]) octNode->NNODE += octNode->CHILD[i]->NNODE;// If child exists increment child node counter
     }                                                           // End loop over chlidren
@@ -193,15 +196,16 @@ private:
       C->NCHILD = nchild;                                       //  Number of child cells
       assert(C->NCHILD > 0);
       CN += nchild;                                             //  Increment next free memory address
-      __init_tasks__;                                           //  Initialize tasks
-      for (int i=0; i<nchild; i++) {                            //  Loop over children
-        int octant = octants[i];                                //   Get octant from child index
-        spawn_task0_if(octNode->NNODE > 1000,                   //   Spawn task if number of sub-nodes is large
-          nodes2cells(octNode->CHILD[octant], Ci, CN, level+1, C-Ci0));// Recursive call for each child
-        Ci++;                                                   //   Increment cell iterator
-        CN += octNode->CHILD[octant]->NNODE - 1;                //   Increment next free memory address
-      }                                                         //  End loop over children
-      __sync_tasks__;                                           //  Synchronize tasks
+      spawn_tasks {                                           //  Initialize tasks
+	for (int i=0; i<nchild; i++) {                            //  Loop over children
+	  int octant = octants[i];                                //   Get octant from child index
+	  spawn_task0_if(octNode->NNODE > 1000,                   //   Spawn task if number of sub-nodes is large
+			 nodes2cells(octNode->CHILD[octant], Ci, CN, level+1, C-Ci0));// Recursive call for each child
+	  Ci++;                                                   //   Increment cell iterator
+	  CN += octNode->CHILD[octant]->NNODE - 1;                //   Increment next free memory address
+	}                                                         //  End loop over children
+	sync_tasks;                                           //  Synchronize tasks
+      }
       for (int i=0; i<nchild; i++) {                            //  Loop over children
         int octant = octants[i];                                //   Get octant from child index
         delete octNode->CHILD[octant];                          //   Free child pointer to avoid memory leak

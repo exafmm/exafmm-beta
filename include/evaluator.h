@@ -69,17 +69,18 @@ private:
     } else {                                                    // If many cells are in the range
       C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;           //  Split range of Ci cells in half
       C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;           //  Split range of Cj cells in half
-      __init_tasks__;                                           //  Initialize task group
-      spawn_task0(traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));// Spawn Ci:former Cj:former
-      traverse(CiMid, CiEnd, CjMid, CjEnd, mutual);             //  No spawn Ci:latter Cj:latter
-      __sync_tasks__;                                           //  Synchronize task group
-      spawn_task0(traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));// Spawn Ci:former Cj:latter
-      if (!mutual || CiBegin != CjBegin) {                      //  Exclude mutual & self interaction
-        traverse(CiMid, CiEnd, CjBegin, CjMid, mutual);         //   No spawn Ci:latter Cj:former
-      } else {                                                  //  If mutual or self interaction
-        assert(CiEnd == CjEnd);                                 //   Check if mutual & self interaction
-      }                                                         //  End if for mutual & self interaction
-      __sync_tasks__;                                           //  Synchronize task group
+      spawn_tasks {                                           //  Initialize task group
+	spawn_task0(traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));// Spawn Ci:former Cj:former
+	traverse(CiMid, CiEnd, CjMid, CjEnd, mutual);             //  No spawn Ci:latter Cj:latter
+	sync_tasks;                                           //  Synchronize task group
+	spawn_task0(traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));// Spawn Ci:former Cj:latter
+	if (!mutual || CiBegin != CjBegin) {                      //  Exclude mutual & self interaction
+	  traverse(CiMid, CiEnd, CjBegin, CjMid, mutual);         //   No spawn Ci:latter Cj:former
+	} else {                                                  //  If mutual or self interaction
+	  assert(CiEnd == CjEnd);                                 //   Check if mutual & self interaction
+	}                                                         //  End if for mutual & self interaction
+	sync_tasks;                                           //  Synchronize task group
+      }
     }                                                           // End if for many cells in range
   }
 
