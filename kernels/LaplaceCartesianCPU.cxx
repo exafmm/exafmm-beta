@@ -862,12 +862,15 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     __m256 ay = _mm256_setzero_ps();
     __m256 az = _mm256_setzero_ps();
 
-    __m256 xi = _mm256_setr_ps(Bi[i].X[0],Bi[i+1].X[0],Bi[i+2].X[0],Bi[i+3].X[0],
-      Bi[i+4].X[0],Bi[i+5].X[0],Bi[i+6].X[0],Bi[i+7].X[0]) - _mm256_set1_ps(Xperiodic[0]);
-    __m256 yi = _mm256_setr_ps(Bi[i].X[1],Bi[i+1].X[1],Bi[i+2].X[1],Bi[i+3].X[1],
-      Bi[i+4].X[1],Bi[i+5].X[1],Bi[i+6].X[1],Bi[i+7].X[1]) - _mm256_set1_ps(Xperiodic[1]);
-    __m256 zi = _mm256_setr_ps(Bi[i].X[2],Bi[i+1].X[2],Bi[i+2].X[2],Bi[i+3].X[2],
-      Bi[i+4].X[2],Bi[i+5].X[2],Bi[i+6].X[2],Bi[i+7].X[2]) - _mm256_set1_ps(Xperiodic[2]);
+    __m256 xi = _mm256_sub_ps(_mm256_setr_ps(Bi[i].X[0],Bi[i+1].X[0],Bi[i+2].X[0],Bi[i+3].X[0],
+					     Bi[i+4].X[0],Bi[i+5].X[0],Bi[i+6].X[0],Bi[i+7].X[0]),
+			      _mm256_set1_ps(Xperiodic[0]));
+    __m256 yi = _mm256_sub_ps(_mm256_setr_ps(Bi[i].X[1],Bi[i+1].X[1],Bi[i+2].X[1],Bi[i+3].X[1],
+					     Bi[i+4].X[1],Bi[i+5].X[1],Bi[i+6].X[1],Bi[i+7].X[1]), 
+			      _mm256_set1_ps(Xperiodic[1]));
+    __m256 zi = _mm256_sub_ps(_mm256_setr_ps(Bi[i].X[2],Bi[i+1].X[2],Bi[i+2].X[2],Bi[i+3].X[2],
+					     Bi[i+4].X[2],Bi[i+5].X[2],Bi[i+6].X[2],Bi[i+7].X[2]), 
+			      _mm256_set1_ps(Xperiodic[2]));
     __m256 mi = _mm256_setr_ps(Bi[i].SRC,Bi[i+1].SRC,Bi[i+2].SRC,Bi[i+3].SRC,
       Bi[i+4].SRC,Bi[i+5].SRC,Bi[i+6].SRC,Bi[i+7].SRC);
     __m256 R2 = _mm256_set1_ps(EPS2);
@@ -949,9 +952,12 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     __m256d ay = _mm256_setzero_pd();
     __m256d az = _mm256_setzero_pd();
 
-    __m256d xi = _mm256_setr_pd(Bi[i].X[0],Bi[i+1].X[0],Bi[i+2].X[0],Bi[i+3].X[0]) - _mm256_set1_pd(Xperiodic[0]);
-    __m256d yi = _mm256_setr_pd(Bi[i].X[1],Bi[i+1].X[1],Bi[i+2].X[1],Bi[i+3].X[1]) - _mm256_set1_pd(Xperiodic[1]);
-    __m256d zi = _mm256_setr_pd(Bi[i].X[2],Bi[i+1].X[2],Bi[i+2].X[2],Bi[i+3].X[2]) - _mm256_set1_pd(Xperiodic[2]);
+    __m256d xi = _mm256_sub_pd(_mm256_setr_pd(Bi[i].X[0],Bi[i+1].X[0],Bi[i+2].X[0],Bi[i+3].X[0]),
+			       _mm256_set1_pd(Xperiodic[0]));
+    __m256d yi = _mm256_sub_pd(_mm256_setr_pd(Bi[i].X[1],Bi[i+1].X[1],Bi[i+2].X[1],Bi[i+3].X[1]),
+			       _mm256_set1_pd(Xperiodic[1]));
+    __m256d zi = _mm256_sub_pd(_mm256_setr_pd(Bi[i].X[2],Bi[i+1].X[2],Bi[i+2].X[2],Bi[i+3].X[2]),
+			       _mm256_set1_pd(Xperiodic[2]));
     __m256d mi = _mm256_setr_pd(Bi[i].SRC,Bi[i+1].SRC,Bi[i+2].SRC,Bi[i+3].SRC);
     __m256d R2 = _mm256_set1_pd(EPS2);
 
@@ -1036,9 +1042,12 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     __m128 ay = _mm_setzero_ps();
     __m128 az = _mm_setzero_ps();
 
-    __m128 xi = _mm_setr_ps(Bi[i].X[0], Bi[i+1].X[0], Bi[i+2].X[0], Bi[i+3].X[0]) - _mm_load1_ps(&Xperiodic[0]);
-    __m128 yi = _mm_setr_ps(Bi[i].X[1], Bi[i+1].X[1], Bi[i+2].X[1], Bi[i+3].X[1]) - _mm_load1_ps(&Xperiodic[1]);
-    __m128 zi = _mm_setr_ps(Bi[i].X[2], Bi[i+1].X[2], Bi[i+2].X[2], Bi[i+3].X[2]) - _mm_load1_ps(&Xperiodic[2]);
+    __m128 xi = _mm_sub_ps(_mm_setr_ps(Bi[i].X[0], Bi[i+1].X[0], Bi[i+2].X[0], Bi[i+3].X[0]), 
+			   _mm_load1_ps(&Xperiodic[0]));
+    __m128 yi = _mm_sub_ps(_mm_setr_ps(Bi[i].X[1], Bi[i+1].X[1], Bi[i+2].X[1], Bi[i+3].X[1]), 
+			   _mm_load1_ps(&Xperiodic[1]));
+    __m128 zi = _mm_sub_ps(_mm_setr_ps(Bi[i].X[2], Bi[i+1].X[2], Bi[i+2].X[2], Bi[i+3].X[2]),
+			   _mm_load1_ps(&Xperiodic[2]));
     __m128 mi = _mm_setr_ps(Bi[i].SRC,  Bi[i+1].SRC,  Bi[i+2].SRC,  Bi[i+3].SRC);
     __m128 R2 = _mm_set1_ps(EPS2);
 
@@ -1123,9 +1132,12 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     __m128d ay = _mm_setzero_pd();
     __m128d az = _mm_setzero_pd();
 
-    __m128d xi = _mm_setr_pd(Bi[i].X[0], Bi[i+1].X[0]) - _mm_load1_pd(&Xperiodic[0]);
-    __m128d yi = _mm_setr_pd(Bi[i].X[1], Bi[i+1].X[1]) - _mm_load1_pd(&Xperiodic[1]);
-    __m128d zi = _mm_setr_pd(Bi[i].X[2], Bi[i+1].X[2]) - _mm_load1_pd(&Xperiodic[2]);
+    __m128d xi = _mm_sub_pd(_mm_setr_pd(Bi[i].X[0], Bi[i+1].X[0]),
+			    _mm_load1_pd(&Xperiodic[0]));
+    __m128d yi = _mm_sub_pd(_mm_setr_pd(Bi[i].X[1], Bi[i+1].X[1]), 
+			    _mm_load1_pd(&Xperiodic[1]));
+    __m128d zi = _mm_sub_pd(_mm_setr_pd(Bi[i].X[2], Bi[i+1].X[2]), 
+			    _mm_load1_pd(&Xperiodic[2]));
     __m128d mi = _mm_setr_pd(Bi[i].SRC,  Bi[i+1].SRC);
     __m128d R2 = _mm_set1_pd(EPS2);
 
@@ -1297,14 +1309,17 @@ void Kernel::P2P(C_iter C) const {
     __m256 ay = _mm256_setzero_ps();
     __m256 az = _mm256_setzero_ps();
 
-    __m256 xi = _mm256_setr_ps(B[i].X[0],B[i+1].X[0],B[i+2].X[0],B[i+3].X[0],
-      B[i+4].X[0],B[i+5].X[0],B[i+6].X[0],B[i+7].X[0]) - _mm256_set1_ps(Xperiodic[0]);
-    __m256 yi = _mm256_setr_ps(B[i].X[1],B[i+1].X[1],B[i+2].X[1],B[i+3].X[1],
-      B[i+4].X[1],B[i+5].X[1],B[i+6].X[1],B[i+7].X[1]) - _mm256_set1_ps(Xperiodic[1]);
-    __m256 zi = _mm256_setr_ps(B[i].X[2],B[i+1].X[2],B[i+2].X[2],B[i+3].X[2],
-      B[i+4].X[2],B[i+5].X[2],B[i+6].X[2],B[i+7].X[2]) - _mm256_set1_ps(Xperiodic[2]);
+    __m256 xi = _mm256_sub_ps(_mm256_setr_ps(B[i].X[0],B[i+1].X[0],B[i+2].X[0],B[i+3].X[0],
+					     B[i+4].X[0],B[i+5].X[0],B[i+6].X[0],B[i+7].X[0]),
+			      _mm256_set1_ps(Xperiodic[0]));
+    __m256 yi = _mm256_sub_ps(_mm256_setr_ps(B[i].X[1],B[i+1].X[1],B[i+2].X[1],B[i+3].X[1],
+					     B[i+4].X[1],B[i+5].X[1],B[i+6].X[1],B[i+7].X[1]),
+			      _mm256_set1_ps(Xperiodic[1]));
+    __m256 zi = _mm256_sub_ps(_mm256_setr_ps(B[i].X[2],B[i+1].X[2],B[i+2].X[2],B[i+3].X[2],
+					     B[i+4].X[2],B[i+5].X[2],B[i+6].X[2],B[i+7].X[2]),
+			      _mm256_set1_ps(Xperiodic[2]));
     __m256 mi = _mm256_setr_ps(B[i].SRC,B[i+1].SRC,B[i+2].SRC,B[i+3].SRC,
-      B[i+4].SRC,B[i+5].SRC,B[i+6].SRC,B[i+7].SRC);
+			       B[i+4].SRC,B[i+5].SRC,B[i+6].SRC,B[i+7].SRC);
     __m256 R2 = _mm256_set1_ps(EPS2);
 
     __m256 x2 = _mm256_set1_ps(B[i+1].X[0]);
@@ -1386,9 +1401,12 @@ void Kernel::P2P(C_iter C) const {
     __m256d ay = _mm256_setzero_pd();
     __m256d az = _mm256_setzero_pd();
 
-    __m256d xi = _mm256_setr_pd(B[i].X[0],B[i+1].X[0],B[i+2].X[0],B[i+3].X[0]) - _mm256_set1_pd(Xperiodic[0]);
-    __m256d yi = _mm256_setr_pd(B[i].X[1],B[i+1].X[1],B[i+2].X[1],B[i+3].X[1]) - _mm256_set1_pd(Xperiodic[1]);
-    __m256d zi = _mm256_setr_pd(B[i].X[2],B[i+1].X[2],B[i+2].X[2],B[i+3].X[2]) - _mm256_set1_pd(Xperiodic[2]);
+    __m256d xi = _mm256_sub_pd(_mm256_setr_pd(B[i].X[0],B[i+1].X[0],B[i+2].X[0],B[i+3].X[0]),
+			       _mm256_set1_pd(Xperiodic[0]));
+    __m256d yi = _mm256_sub_pd(_mm256_setr_pd(B[i].X[1],B[i+1].X[1],B[i+2].X[1],B[i+3].X[1]),
+			       _mm256_set1_pd(Xperiodic[1]));
+    __m256d zi = _mm256_sub_pd(_mm256_setr_pd(B[i].X[2],B[i+1].X[2],B[i+2].X[2],B[i+3].X[2]),
+			       _mm256_set1_pd(Xperiodic[2]));
     __m256d mi = _mm256_setr_pd(B[i].SRC,B[i+1].SRC,B[i+2].SRC,B[i+3].SRC);
     __m256d R2 = _mm256_set1_pd(EPS2);
 
@@ -1475,9 +1493,12 @@ void Kernel::P2P(C_iter C) const {
     __m128 ay = _mm_setzero_ps();
     __m128 az = _mm_setzero_ps();
 
-    __m128 xi = _mm_setr_ps(B[i].X[0], B[i+1].X[0], B[i+2].X[0], B[i+3].X[0]) - _mm_load1_ps(&Xperiodic[0]);
-    __m128 yi = _mm_setr_ps(B[i].X[1], B[i+1].X[1], B[i+2].X[1], B[i+3].X[1]) - _mm_load1_ps(&Xperiodic[1]);
-    __m128 zi = _mm_setr_ps(B[i].X[2], B[i+1].X[2], B[i+2].X[2], B[i+3].X[2]) - _mm_load1_ps(&Xperiodic[2]);
+    __m128 xi = _mm_sub_ps(_mm_setr_ps(B[i].X[0], B[i+1].X[0], B[i+2].X[0], B[i+3].X[0]),
+			   _mm_load1_ps(&Xperiodic[0]));
+    __m128 yi = _mm_sub_ps(_mm_setr_ps(B[i].X[1], B[i+1].X[1], B[i+2].X[1], B[i+3].X[1]),
+			   _mm_load1_ps(&Xperiodic[1]));
+    __m128 zi = _mm_sub_ps(_mm_setr_ps(B[i].X[2], B[i+1].X[2], B[i+2].X[2], B[i+3].X[2]),
+			   _mm_load1_ps(&Xperiodic[2]));
     __m128 mi = _mm_setr_ps(B[i].SRC,  B[i+1].SRC,  B[i+2].SRC,  B[i+3].SRC);
     __m128 R2 = _mm_set1_ps(EPS2);
 
@@ -1564,9 +1585,12 @@ void Kernel::P2P(C_iter C) const {
     __m128d ay = _mm_setzero_pd();
     __m128d az = _mm_setzero_pd();
 
-    __m128d xi = _mm_setr_pd(B[i].X[0], B[i+1].X[0]) - _mm_load1_pd(&Xperiodic[0]);
-    __m128d yi = _mm_setr_pd(B[i].X[1], B[i+1].X[1]) - _mm_load1_pd(&Xperiodic[1]);
-    __m128d zi = _mm_setr_pd(B[i].X[2], B[i+1].X[2]) - _mm_load1_pd(&Xperiodic[2]);
+    __m128d xi = _mm_sub_pd(_mm_setr_pd(B[i].X[0], B[i+1].X[0]),
+			    _mm_load1_pd(&Xperiodic[0]));
+    __m128d yi = _mm_sub_pd(_mm_setr_pd(B[i].X[1], B[i+1].X[1]),
+			    _mm_load1_pd(&Xperiodic[1]));
+    __m128d zi = _mm_sub_pd(_mm_setr_pd(B[i].X[2], B[i+1].X[2]), 
+			    _mm_load1_pd(&Xperiodic[2]));
     __m128d mi = _mm_setr_pd(B[i].SRC,  B[i+1].SRC);
     __m128d R2 = _mm_set1_pd(EPS2);
 
