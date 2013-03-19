@@ -14,10 +14,10 @@ using namespace tbb;
 
 /* pragma_omp macro */
 
-#define do_pragma(x)                  _Pragma( #x )
+#define DO_PRAGMA(x)                  _Pragma( #x )
 
 #if _OPENMP
-#define pragma_omp(x)              do_pragma(omp x)
+#define pragma_omp(x)              DO_PRAGMA(omp x)
 #else
 #define pragma_omp(x)              
 #endif
@@ -43,6 +43,22 @@ using namespace tbb;
 #define spawn_task0_if(x, E)          if(x) { spawn_task0(E); } else { E; }
 #define spawn_task1_if(x, s0, E)      if(x) { spawn_task1(s0,E); } else { E; }
 #define spawn_task2_if(x, s0, s1, E)  if(x) { spawn_task2(s0,s1,E); } else { E; }
+
+// tau: I think the following isn't quite right .
+// I think 
+// #pragma omp parallel {
+// #pragma omp single {
+//   }
+// }
+//  must be done only once in the toplevel
+//
+//#define DO_PRAGMA(x)                  _Pragma( #x )
+//#define __init_tasks__                DO_PRAGMA(omp parallel) DO_PRAGMA(omp single)
+//#define __sync_tasks__                DO_PRAGMA(omp taskwait)
+//#define spawn_task0(E)                DO_PRAGMA(omp task) { E; }
+//#define spawn_task1(s0, E)            DO_PRAGMA(omp task shared (s0)) { E; }  
+//#define spawn_task2(s0, s1, E)        DO_PRAGMA(omp task shared(s0,s1)) { E; }
+//#define spawn_task0_if(x, E)          if(x) { DO_PRAGMA(omp task) { E; } } else { E; }
 
 #elif TBB || MTHREAD
 

@@ -167,11 +167,11 @@ protected:
   void traversePeriodic(real_t R) {
     startTimer("Traverse periodic");                            // Start timer
     Xperiodic = 0;                                              // Periodic coordinate offset
-    Cells pcells(28);                                           // Create cells
+    Cells pcells(27);                                           // Create cells
     C_iter Ci = pcells.end()-1;                                 // Last cell is periodic parent cell
     *Ci = *Cj0;                                                 // Copy values from source root
     Ci->CHILD = 0;                                              // Child cells for periodic center cell
-    Ci->NCHILD = 27;                                            // Number of child cells for periodic center cell
+    Ci->NCHILD = 26;                                            // Number of child cells for periodic center cell
     C_iter C0 = Cj0;                                            // Placeholder for Cj0
     for (int level=0; level<IMAGES-1; level++) {                // Loop over sublevels of tree
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
@@ -197,10 +197,12 @@ protected:
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
         for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
           for (int iz=-1; iz<=1; iz++, Cj++) {                  //    Loop over z periodic direction
-            Cj->X[0] = Ci->X[0] + ix * 2 * R;                   //     Set new x coordinate for periodic image
-            Cj->X[1] = Ci->X[0] + iy * 2 * R;                   //     Set new y cooridnate for periodic image
-            Cj->X[2] = Ci->X[0] + iz * 2 * R;                   //     Set new z coordinate for periodic image
-            Cj->M    = Ci->M;                                   //     Copy multipoles to new periodic image
+            if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
+              Cj->X[0] = Ci->X[0] + ix * 2 * R;                 //      Set new x coordinate for periodic image
+              Cj->X[1] = Ci->X[0] + iy * 2 * R;                 //      Set new y cooridnate for periodic image
+              Cj->X[2] = Ci->X[0] + iz * 2 * R;                 //      Set new z coordinate for periodic image
+              Cj->M    = Ci->M;                                 //      Copy multipoles to new periodic image
+            }                                                   //     Endif for periodic center cell
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
