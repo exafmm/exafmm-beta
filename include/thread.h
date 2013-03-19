@@ -4,34 +4,72 @@
 // Thread model
 #if TBB
 #include <tbb/task_group.h>
-#define TASKS 1
+#include <tbb/task_scheduler_init.h>
 using namespace tbb;
 
 #elif MTHREAD
 #include <mtbb/task_group.h>
-#define TASKS 1
 
 #endif
 
-// Task based threading macros
-#if TASKS
+/* pragma_omp macro */
 
-#define __init_tasks__                task_group tg
-#define __sync_tasks__                tg.wait()
+#define do_pragma(x)                  _Pragma( #x )
+
+#if _OPENMP
+#define pragma_omp(x)              do_pragma(omp x)
+#else
+#define pragma_omp(x)              
+#endif
+
+// Task based threading macros.
+// Usage example
+// spawn_tasks {
+//   spawn_task0(foo());
+//   spawn_task1(x, x = bar());
+//   sync_tasks;
+//   spawn_task0_if(n > 10, baz(n));
+//   spawn_task2(n > 10, a, x, x = bar(a));
+//   sync_tasks;
+// }
+#if _OPENMP
+
+#define spawn_tasks
+#define sync_tasks                    pragma_omp(taskwait)
+
+#define spawn_task0(E)                pragma_omp(task) E
+#define spawn_task1(s0, E)            pragma_omp(task shared(s0)) E
+#define spawn_task2(s0, s1, E)        pragma_omp(task shared(s0,s1)) E
+#define spawn_task0_if(x, E)          if(x) { spawn_task0(E); } else { E; }
+#define spawn_task1_if(x, s0, E)      if(x) { spawn_task1(s0,E); } else { E; }
+#define spawn_task2_if(x, s0, s1, E)  if(x) { spawn_task2(s0,s1,E); } else { E; }
+
+#elif TBB || MTHREAD
+
+#define spawn_tasks                   task_group tg;
+#define sync_tasks                    tg.wait()
+
 #define spawn_task0(E)                tg.run([=] { E; })
 #define spawn_task1(s0, E)            tg.run([=,&s0] { E; })
 #define spawn_task2(s0, s1, E)        tg.run([=,&s0,&s1] { E; })
-#define spawn_task0_if(x, E)          if (x) { tg.run([=] { E; }); } else { E; }
 
-#else
+#define spawn_task0_if(x, E)          if(x) { spawn_task0(E); } else { E; }
+#define spawn_task1_if(x, s0, E)      if(x) { spawn_task1(s0,E); } else { E; }
+#define spawn_task2_if(x, s0, s1, E)  if(x) { spawn_task2(s0,s1,E); } else { E; }
 
-#define __init_tasks__
-#define __sync_tasks__
+#else  /* not _OPENMP, TBB, or MTHREAD */
+
+#define spawn_tasks
+#define sync_tasks
+
 #define spawn_task0(E)                E
 #define spawn_task1(s0, E)            E
 #define spawn_task2(s0, s1, E)        E
+
 #define spawn_task0_if(x, E)          E
+#define spawn_task1_if(x, s0, E)      E
+#define spawn_task2_if(x, s0, s1, E)  E
 
 #endif
 
-#endif
+#endif	/* thread_h */
