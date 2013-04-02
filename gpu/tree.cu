@@ -367,9 +367,10 @@ extern "C" __global__ void P2M(const int numLeafs,
                                uint *cellIndex,
                                uint2 *bodyRange,
                                float4 *bodyPos,
-                               float4 *multipole,
-                               float4 *nodeLowerBounds,
-                               float4 *nodeUpperBounds) {
+                               float4 *cellPos,
+                               float4 *cellXmin,
+                               float4 *cellXmax,
+                               float  *multipole) {
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= numLeafs) return;
   int cellIdx = cellIndex[idx];
@@ -392,9 +393,9 @@ extern "C" __global__ void P2M(const int numLeafs,
   mon.x *= im;
   mon.y *= im;
   mon.z *= im;
-  multipole[cellIdx] = make_float4(mon.x, mon.y, mon.z, mon.w);
-  nodeLowerBounds[cellIdx] = make_float4(xmin.x, xmin.y, xmin.z, 0.0f);
-  nodeUpperBounds[cellIdx] = make_float4(xmax.x, xmax.y, xmax.z, 1.0f);
+  cellPos[cellIdx] = make_float4(mon.x, mon.y, mon.z, mon.w);
+  cellXmin[cellIdx] = make_float4(xmin.x, xmin.y, xmin.z, 0.0f);
+  cellXmax[cellIdx] = make_float4(xmax.x, xmax.y, xmax.z, 1.0f);
   return;
 }
 
@@ -402,9 +403,10 @@ extern "C" __global__ void M2M(const int level,
                                uint *cellIndex,
                                uint *levelOffset,
                                uint *childRange,
-                               float4 *multipole,
-                               float4 *nodeLowerBounds,
-                               float4 *nodeUpperBounds) {
+                               float4 *cellPos,
+                               float4 *cellXmin,
+                               float4 *cellXmax,
+                               float  *multipole) {
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x + levelOffset[level-1];
   if(idx >= levelOffset[level]) return;
   const int cellIdx = cellIndex[idx];
@@ -417,36 +419,36 @@ extern "C" __global__ void M2M(const int level,
   xmin = make_float3(+1e10f, +1e10f, +1e10f);
   xmax = make_float3(-1e10f, -1e10f, -1e10f);
   for( int i=begin; i<end; i++ ) {
-    float4 pos = multipole[i];
+    float4 pos = cellPos[i];
     mon.w += pos.w;
     mon.x += pos.w * pos.x;
     mon.y += pos.w * pos.y;
     mon.z += pos.w * pos.z;
-    pairMinMax(xmin, xmax, nodeLowerBounds[i], nodeUpperBounds[i]);
+    pairMinMax(xmin, xmax, cellXmin[i], cellXmax[i]);
   }
   float im = 1.0 / mon.w;
   if(mon.w == 0) im = 0;
   mon.x *= im;
   mon.y *= im;
   mon.z *= im;
-  multipole[cellIdx] = make_float4(mon.x, mon.y, mon.z, mon.w);
-  nodeLowerBounds[cellIdx] = make_float4(xmin.x, xmin.y, xmin.z, 0.0f);
-  nodeUpperBounds[cellIdx] = make_float4(xmax.x, xmax.y, xmax.z, 0.0f);
+  cellPos[cellIdx] = make_float4(mon.x, mon.y, mon.z, mon.w);
+  cellXmin[cellIdx] = make_float4(xmin.x, xmin.y, xmin.z, 0.0f);
+  cellXmax[cellIdx] = make_float4(xmax.x, xmax.y, xmax.z, 0.0f);
   return;
 }
 
 extern "C" __global__ void rescale(const int node_count,
-                                           float4 *multipole,
-                                           float4 *nodeLowerBounds,
-                                           float4 *nodeUpperBounds,
-                                           uint  *childRange,
-                                           float *openingAngle,
-                                           uint2 *bodyRange){
+                                   float4 *cellPos,
+                                   float4 *cellXmin,
+                                   float4 *cellXmax,
+                                   uint  *childRange,
+                                   float *openingAngle,
+                                   uint2 *bodyRange){
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x;
   if(idx >= node_count) return;
-  float4 mon = multipole[idx];
-  float4 xmin = nodeLowerBounds[idx];
-  float4 xmax = nodeUpperBounds[idx];
+  float4 mon = cellPos[idx];
+  float4 xmin = cellXmin[idx];
+  float4 xmax = cellXmax[idx];
   float3 boxCenter = make_float3(0.5*(xmin.x + xmax.x),
                                  0.5*(xmin.y + xmax.y),
                                  0.5*(xmin.z + xmax.z));
@@ -475,10 +477,10 @@ extern "C" __global__ void rescale(const int node_count,
 }
 
 extern "C" __global__ void setTargets(const int numTargets,
-                                          float4 *bodyPos,
-                                          int2  *targetRange,
-                                          float4 *targetCenterInfo,
-                                          float4 *targetSizeInfo){
+                                      float4 *bodyPos,
+                                      int2   *targetRange,
+                                      float4 *targetCenterInfo,
+                                      float4 *targetSizeInfo){
   if(blockIdx.x >= numTargets) return;
   float3 xmin = make_float3(+1e10f, +1e10f, +1e10f);
   float3 xmax = make_float3(-1e10f, -1e10f, -1e10f);
@@ -598,30 +600,33 @@ void octree::linkTree() {
 
 void octree::allocateTreePropMemory()
 {
-  multipole.alloc(numSources);
+  cellPos.alloc(numSources);
+  multipole.alloc(MTERM*numSources);
   targetSizeInfo.alloc(numSources);
   openingAngle.alloc(numSources);
   targetCenterInfo.alloc(numSources);
 }
 
 void octree::upward() {
-  cudaVec<float4>  nodeLowerBounds;
-  cudaVec<float4>  nodeUpperBounds;
-  nodeLowerBounds.alloc(numSources);
-  nodeUpperBounds.alloc(numSources);
+  cudaVec<float4> cellXmin;
+  cudaVec<float4> cellXmax;
+  cellXmin.alloc(numSources);
+  cellXmax.alloc(numSources);
 
   int threads = 128;
   int blocks = ALIGN(numLeafs,threads);
-  P2M<<<blocks,threads,0,execStream>>>(numLeafs,cellIndex.devc(),bodyRange.devc(),bodyPos.devc(),multipole.devc(),nodeLowerBounds.devc(),nodeUpperBounds.devc());
+  P2M<<<blocks,threads,0,execStream>>>(numLeafs,cellIndex.devc(),bodyRange.devc(),bodyPos.devc(),
+                                       cellPos.devc(),cellXmin.devc(),cellXmax.devc(),multipole.devc());
 
   levelOffset.d2h();
   for( int level=numLevels; level>=1; level-- ) {
     int totalOnThisLevel = levelOffset[level] - levelOffset[level-1];
     blocks = ALIGN(totalOnThisLevel,threads);
-    M2M<<<blocks,threads,0,execStream>>>(level,cellIndex.devc(),levelOffset.devc(),childRange.devc(),multipole.devc(),nodeLowerBounds.devc(),nodeUpperBounds.devc());
+    M2M<<<blocks,threads,0,execStream>>>(level,cellIndex.devc(),levelOffset.devc(),childRange.devc(),
+                                         cellPos.devc(),cellXmin.devc(),cellXmax.devc(),multipole.devc());
   }
 
   blocks = ALIGN(numSources,threads);
-  rescale<<<blocks,threads,0,execStream>>>(numSources,multipole.devc(),nodeLowerBounds.devc(),nodeUpperBounds.devc(),childRange.devc(),openingAngle.devc(),bodyRange.devc());
+  rescale<<<blocks,threads,0,execStream>>>(numSources,cellPos.devc(),cellXmin.devc(),cellXmax.devc(),childRange.devc(),openingAngle.devc(),bodyRange.devc());
   setTargets<<<numTargets,NCRIT>>>(numTargets,bodyPos.devc(),(int2*)targetRange.devc(),targetCenterInfo.devc(),targetSizeInfo.devc());
 }

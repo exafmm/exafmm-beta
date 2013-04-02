@@ -57,7 +57,6 @@ private:
 
   cudaVec<uint>   cellIndex;
   cudaVec<uint2>  targetRange;
-  cudaVec<float4> multipole;      
 
   cudaVec<float>  openingAngle;
   cudaVec<float4> targetSizeInfo;
@@ -75,6 +74,8 @@ public:
   cudaVec<float4> bodyPos;
   cudaVec<float4> bodyAcc;
   cudaVec<float4> bodyAcc2;
+  cudaVec<float4> cellPos;
+  cudaVec<float>  multipole;      
 
 private:
   bool isPowerOfTwo(const int n) {

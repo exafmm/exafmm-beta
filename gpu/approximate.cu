@@ -81,8 +81,9 @@ __device__ __forceinline__ int ACCESS(const int i) {
 
 texture<uint, 1, cudaReadModeElementType> texChildRange;
 texture<float, 1, cudaReadModeElementType> texOpening;
-texture<float4, 1, cudaReadModeElementType> texMultipole;
 texture<float4, 1, cudaReadModeElementType> texBody;
+texture<float4, 1, cudaReadModeElementType> texCell;
+texture<float4, 1, cudaReadModeElementType> texMultipole;
 
 __device__ __forceinline__ void P2P(
     float4 &acc,  const float4 pos,
@@ -151,7 +152,7 @@ __device__ void traverse(
         numSources -= WARP_SIZE;
         float opening = tex1Dfetch(texOpening, node);
         uint childRange = tex1Dfetch(texChildRange, node);
-        float4 sourceCenter = tex1Dfetch(texMultipole, node);
+        float4 sourceCenter = tex1Dfetch(texCell, node);
         sourceCenter.w = opening;
         bool split = applyMAC(sourceCenter, targetCenter, targetSize);
         bool leaf = opening <= 0;
@@ -179,7 +180,7 @@ __device__ void traverse(
         if( warpOffsetApprox >= WARP_SIZE ) {
           warpOffsetApprox -= WARP_SIZE;
           node = approxSources[warpOffsetApprox+laneIdx];
-          pos_j[laneIdx] = tex1Dfetch(texMultipole, node);
+          pos_j[laneIdx] = tex1Dfetch(texCell, node);
           for( int i=0; i<WARP_SIZE; i++ )
             P2P(acc_i, pos_i, pos_j[i]);
         }
@@ -232,7 +233,7 @@ __device__ void traverse(
   if( warpOffsetApprox > 0 ) {
     if( laneIdx < warpOffsetApprox )  {
       const int node = approxSources[laneIdx];
-      pos_j[laneIdx] = tex1Dfetch(texMultipole, node);
+      pos_j[laneIdx] = tex1Dfetch(texCell, node);
     } else {
       pos_j[laneIdx] = make_float4(1.0e10f, 1.0e10f, 1.0e10f, 0.0f);
     }
@@ -302,8 +303,9 @@ extern "C" __global__ void directKernel(float4 *bodyPos, float4 *bodyAcc, const 
 void octree::traverse() {
   childRange.tex("texChildRange");
   openingAngle.tex("texOpening");
-  multipole.tex("texMultipole");
   bodyPos.tex("texBody");
+  cellPos.tex("texCell");
+  multipole.tex("texMultipole");
   workToDo.zeros();
   traverseKernel<<<NBLOCK,NTHREAD,0,execStream>>>(
     numTargets,
