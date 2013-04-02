@@ -157,7 +157,7 @@ __device__ void traverse(
         bool leaf = opening <= 0;
         bool flag = split && !leaf && valid;
         int child = childRange & BODYMASK;
-        int numChild = ((childRange & INVBMASK) >> LEAFBIT) & IF(flag);
+        int numChild = (((childRange & INVBMASK) >> LEAFBIT)+1) & IF(flag);
         int sumChild = inclusiveScanInt(prefix, numChild);
         int laneOffset = prefix[laneIdx];
         laneOffset += warpOffsetSplit - numChild;

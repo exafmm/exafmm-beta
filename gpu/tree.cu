@@ -281,20 +281,20 @@ extern "C" __global__ void linkNodes(int numSources,
   uint end   = bodyRange[idx].y;
 
   uint4 mask = getMask(level-1);
-  key = make_uint4(key.x & mask.x, key.y & mask.y,  key.z & mask.z, 0); 
+  key = make_uint4(key.x & mask.x, key.y & mask.y,  key.z & mask.z, 0);
   if(idx > 0) {
     int ci = findKey(key,levelRange[level-1],cellKeys);
-    atomicAdd(&childRange[ci], (1 << LEAFBIT));
+    atomicAdd(&childRange[ci], (1 << 28));
   }
 
   key = cellKeys[idx];
   mask = getMask(level);
-  key = make_uint4(key.x & mask.x, key.y & mask.y, key.z & mask.z, 0); 
+  key = make_uint4(key.x & mask.x, key.y & mask.y, key.z & mask.z, 0);
   int cj = findKey(key,levelRange[level+1],cellKeys);
   atomicOr(&childRange[idx], cj);
 
-  uint valid = idx; 
-  if( end - begin <= NLEAF )    
+  uint valid = idx;
+  if( end - begin <= NLEAF )
     valid = idx | (uint)(1 << 31);
   validRange[idx] = valid;
 }
@@ -399,17 +399,19 @@ extern "C" __global__ void P2M(const int numLeafs,
 }
 
 extern "C" __global__ void M2M(const int level,
-                                            uint  *cellIndex,
-                                            uint  *levelOffset,
-                                            uint  *childRange,
-                                            float4 *multipole,
-                                            float4 *nodeLowerBounds,
-                                            float4 *nodeUpperBounds) {
+                               uint *cellIndex,
+                               uint *levelOffset,
+                               uint *childRange,
+                               float4 *multipole,
+                               float4 *nodeLowerBounds,
+                               float4 *nodeUpperBounds) {
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x + levelOffset[level-1];
   if(idx >= levelOffset[level]) return;
   const int cellIdx = cellIndex[idx];
-  const uint begin = childRange[cellIdx] & BODYMASK;
-  const uint end = begin + ((childRange[cellIdx] & INVBMASK) >> LEAFBIT);
+  const uint begin = childRange[cellIdx] & 0x0FFFFFFF;
+  const uint nchild = ((childRange[cellIdx] & 0xF0000000) >> 28);
+  const uint end = begin + nchild;
+  childRange[cellIdx] = begin | ((nchild-1) << LEAFBIT);
   float4 mon = {0.0f, 0.0f, 0.0f, 0.0f};
   float3 xmin, xmax;
   xmin = make_float3(+1e10f, +1e10f, +1e10f);
@@ -453,10 +455,10 @@ extern "C" __global__ void rescale(const int node_count,
                                fmaxf(fabs(boxCenter.z-xmin.z), fabs(boxCenter.z-xmax.z)));
   float3 dX = make_float3((boxCenter.x - mon.x), (boxCenter.y - mon.y), (boxCenter.z - mon.z));
   float R = sqrt((dX.x*dX.x) + (dX.y*dX.y) + (dX.z*dX.z));
-  if(fabs(mon.w) < 1e-10) R = 0;
+  if(fabs(mon.w) < EPS) R = 0;
 
   float length = 2 * fmaxf(boxSize.x, fmaxf(boxSize.y, boxSize.z));
-  if(length < 0.000001) length = 0.000001;
+  if(length < EPS) length = EPS;
   float cellOp = length / THETA + R;
   cellOp = cellOp * cellOp;
   uint pfirst = bodyRange[idx].x;

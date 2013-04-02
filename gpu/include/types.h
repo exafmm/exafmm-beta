@@ -22,6 +22,7 @@ typedef vec<3,real> vec3;
 typedef vec<4,real> vec4;
 
 const int  P     = 3;
+const real EPS   = 1e-6;
 const real EPS2  = 0.0001;
 const real THETA = .75;
 
