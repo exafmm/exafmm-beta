@@ -47,15 +47,15 @@ private:
     float4 *float4buffer;
   };
   cudaVec<uint4>  bodyKeys;
-  cudaVec<uint2>  nodeBodies;
-  cudaVec<uint4>  nodeKeys;
-  cudaVec<uint>   nodeChild;
-  cudaVec<uint>   nodeRange;
+  cudaVec<uint2>  bodyRange;
+  cudaVec<uint4>  cellKeys;
+  cudaVec<uint>   childRange;
+  cudaVec<uint>   levelOffset;
   cudaVec<uint2>  levelRange;
   cudaVec<uint>   validRange;
   cudaVec<uint>   compactRange;
 
-  cudaVec<uint>   leafNodes;
+  cudaVec<uint>   leafIndex;
   cudaVec<uint2>  targetRange;
   cudaVec<float4> multipole;      
 
@@ -100,10 +100,10 @@ public:
     bodyKeys.alloc(numBodies+1);
     bodyAcc.alloc(numBodies);
     bodyAcc2.alloc(numBodies);
-    nodeBodies.alloc(numBodies);
-    nodeKeys.alloc(numBodies);
-    nodeChild.alloc(numBodies);
-    nodeRange.alloc(MAXLEVELS*2);
+    bodyRange.alloc(numBodies);
+    cellKeys.alloc(numBodies);
+    childRange.alloc(numBodies);
+    levelOffset.alloc(MAXLEVELS*2);
     levelRange.alloc(MAXLEVELS);
     validRange.alloc(2*numBodies);
     compactRange.alloc(2*numBodies);

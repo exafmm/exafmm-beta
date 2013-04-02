@@ -79,7 +79,7 @@ __device__ __forceinline__ int ACCESS(const int i) {
   return (i & (LMEM_STACK_SIZE - 1)) * blockDim.x + threadIdx.x;
 }
 
-texture<uint, 1, cudaReadModeElementType> texNodeChild;
+texture<uint, 1, cudaReadModeElementType> texChildRange;
 texture<float, 1, cudaReadModeElementType> texOpening;
 texture<float4, 1, cudaReadModeElementType> texMultipole;
 texture<float4, 1, cudaReadModeElementType> texBody;
@@ -150,14 +150,14 @@ __device__ void traverse(
         int node = stackGlob[ACCESS(iStack)] & IF(valid);
         numNodes -= WARP_SIZE;
         float opening = tex1Dfetch(texOpening, node);
-        uint sourceData = tex1Dfetch(texNodeChild, node);
+        uint childRange = tex1Dfetch(texChildRange, node);
         float4 sourceCenter = tex1Dfetch(texMultipole, node);
         sourceCenter.w = opening;
         bool split = applyMAC(sourceCenter, targetCenter, targetSize);
         bool leaf = opening <= 0;
         bool flag = split && !leaf && valid;
-        int child = sourceData & 0x0FFFFFFF;
-        int numChild = ((sourceData & 0xF0000000) >> 28) & IF(flag);
+        int child = childRange & 0x0FFFFFFF;
+        int numChild = ((childRange & 0xF0000000) >> 28) & IF(flag);
         int sumChild = inclusiveScanInt(prefix, numChild);
         int laneOffset = prefix[laneId];
         laneOffset += warpOffsetSplit - numChild;
@@ -186,8 +186,8 @@ __device__ void traverse(
 #endif
 #if 1   // DIRECT
         flag = split && leaf && valid;
-        const int jbody = sourceData & BODYMASK;
-        int numBodies = (((sourceData & INVBMASK) >> LEAFBIT)+1) & IF(flag);
+        const int jbody = childRange & BODYMASK;
+        int numBodies = (((childRange & INVBMASK) >> LEAFBIT)+1) & IF(flag);
         directNodes[laneId] = numDirect[laneId];
 
         int sumBodies = inclusiveScanInt(prefix, numBodies);
@@ -303,7 +303,7 @@ extern "C" __global__ void directKernel(float4 *bodyPos, float4 *bodyAcc, const 
 }
 
 void octree::traverse() {
-  nodeChild.tex("texNodeChild");
+  childRange.tex("texChildRange");
   openingAngle.tex("texOpening");
   multipole.tex("texMultipole");
   bodyPos.tex("texBody");
