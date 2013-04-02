@@ -3,6 +3,7 @@
 int main() {
   for( int it=0; it<25; it++ ) {
     uint numBodies = uint(pow(10,(it+24)/8.0));
+    uint numTarget = numBodies / 100;
     octree *tree = new octree(numBodies);
     printf("N     : %d\n",numBodies);
     for( uint i=0; i<numBodies; i++ ) {
@@ -14,12 +15,12 @@ int main() {
     tree->bodyPos.h2d();
     tree->iterate(); 
     double tic = tree->get_time();
-    tree->direct();
+    tree->direct(numTarget,numBodies);
     double toc = tree->get_time();
     tree->bodyAcc.d2h();
     tree->bodyAcc2.d2h();
     float diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-    for( uint i=0; i<numBodies/100; i++ ) {
+    for( uint i=0; i<numTarget; i++ ) {
       float4 fapprox = tree->bodyAcc[i];
       float4 fdirect = tree->bodyAcc2[i];
       diff1 += (fapprox.w - fdirect.w) * (fapprox.w - fdirect.w);

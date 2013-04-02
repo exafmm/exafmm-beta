@@ -1,16 +1,16 @@
 #include "octree.h"
-#define laneId (threadIdx.x & (WARP_SIZE - 1))
-#define warpId (threadIdx.x >> WARP_SIZE2)
+#define laneIdx (threadIdx.x & (WARP_SIZE - 1))
+#define warpIdx (threadIdx.x >> WARP_SIZE2)
 #define IF(x) (-(int)(x))
 #define ABS(x) ((int(x) < 0 ) ? -(x) : (x))
 
 __device__ __forceinline__ int inclusiveScanInt(int* prefix, int value) 
 {
-  prefix[laneId] = value;
+  prefix[laneIdx] = value;
   for (int i = 0; i < WARP_SIZE2; i++) {
     const int offset = 1 << i;
-    const int laneOffset = ABS(laneId-offset);
-    prefix[laneId] += prefix[laneOffset] & IF(laneId >= offset);
+    const int laneOffset = ABS(laneIdx-offset);
+    prefix[laneIdx] += prefix[laneOffset] & IF(laneIdx >= offset);
   }
   return prefix[WARP_SIZE-1];
 }
@@ -52,12 +52,12 @@ __device__ __forceinline__ int inclusive_segscan_warp(
   nseg += __popc(flags) ;
   dist_block = __clz(__brev(flags));
 
-  const int distance = min(__clz(flags & lanemask_le()) + laneId - 31, laneId);
-  shmem[laneId] = value;
+  const int distance = min(__clz(flags & lanemask_le()) + laneIdx - 31, laneIdx);
+  shmem[laneIdx] = value;
   for( int i=0; i<WARP_SIZE2; i++ ) {
     const int offset = 1 << i;
-    const int laneOffset = ABS(laneId-offset);
-    shmem[laneId] += shmem[laneOffset] & IF(offset <= distance);
+    const int laneOffset = ABS(laneIdx-offset);
+    shmem[laneIdx] += shmem[laneOffset] & IF(offset <= distance);
   }
   return shmem[WARP_SIZE - 1];
 }
@@ -65,11 +65,11 @@ __device__ __forceinline__ int inclusive_segscan_warp(
 __device__ __forceinline__ int inclusive_segscan_array(int *shmem_in, const int N)
 {
   int dist, nseg = 0;
-  int y = inclusive_segscan_warp(shmem_in, shmem_in[laneId], dist, nseg);
+  int y = inclusive_segscan_warp(shmem_in, shmem_in[laneIdx], dist, nseg);
   for( int p=WARP_SIZE; p<N; p+=WARP_SIZE ) {
     int *shmem = shmem_in + p;
-    int y1 = inclusive_segscan_warp(shmem, shmem[laneId], dist, nseg);
-    shmem[laneId] += y & IF(laneId < dist);
+    int y1 = inclusive_segscan_warp(shmem, shmem[laneIdx], dist, nseg);
+    shmem[laneIdx] += y & IF(laneIdx < dist);
     y = y1;
   }
   return nseg;
@@ -90,10 +90,10 @@ __device__ __forceinline__ void P2P(
   const float3 dr = make_float3(posj.x - pos.x, posj.y - pos.y, posj.z - pos.z);
   const float r2     = dr.x*dr.x + dr.y*dr.y + dr.z*dr.z + EPS2;
   const float rinv   = rsqrtf(r2);
-  const float rinv2  = rinv*rinv;
+  const float rinv2  = rinv * rinv;
   const float mrinv  = posj.w * rinv;
   const float mrinv3 = mrinv * rinv2;
-  acc.w -= mrinv;
+  acc.w += mrinv;
   acc.x += mrinv3 * dr.x;
   acc.y += mrinv3 * dr.y;
   acc.z += mrinv3 * dr.z;
@@ -122,11 +122,11 @@ __device__ void traverse(
     int *shmem,
     int *lmem) {
   const int stackSize = LMEM_STACK_SIZE << NTHREAD2;
-  int *approxNodes = lmem + stackSize + 2 * WARP_SIZE * warpId;
+  int *approxSources = lmem + stackSize + 2 * WARP_SIZE * warpIdx;
   int *numDirect = shmem;
   int *stackShrd = numDirect + WARP_SIZE;
-  int *directNodes = stackShrd + WARP_SIZE;
-  float4 *pos_j = (float4*)&directNodes[3*WARP_SIZE];
+  int *directSources = stackShrd + WARP_SIZE;
+  float4 *pos_j = (float4*)&directSources[3*WARP_SIZE];
   int *prefix = (int*)&pos_j[WARP_SIZE];
 
   // stack
@@ -135,20 +135,20 @@ __device__ void traverse(
   int warpOffsetApprox = 0;
   int warpOffsetDirect = 0;
   for( int root=rootRange.x; root<rootRange.y; root+=WARP_SIZE ) {
-    int numNodes = min(rootRange.y-root, WARP_SIZE);
+    int numSources = min(rootRange.y-root, WARP_SIZE);
     int beginStack = 0;
     int endStack = 1;
-    stackGlob[threadIdx.x] = root + laneId;
+    stackGlob[threadIdx.x] = root + laneIdx;
     // walk each level
-    while( numNodes > 0 ) {
-      int numNodesNew = 0;
+    while( numSources > 0 ) {
+      int numSourcesNew = 0;
       int warpOffsetSplit = 0;
       int numStack = endStack;
       // walk a level
       for( int iStack=beginStack; iStack<endStack; iStack++ ) {
-        bool valid = laneId < numNodes;
+        bool valid = laneIdx < numSources;
         int node = stackGlob[ACCESS(iStack)] & IF(valid);
-        numNodes -= WARP_SIZE;
+        numSources -= WARP_SIZE;
         float opening = tex1Dfetch(texOpening, node);
         uint childRange = tex1Dfetch(texChildRange, node);
         float4 sourceCenter = tex1Dfetch(texMultipole, node);
@@ -156,30 +156,30 @@ __device__ void traverse(
         bool split = applyMAC(sourceCenter, targetCenter, targetSize);
         bool leaf = opening <= 0;
         bool flag = split && !leaf && valid;
-        int child = childRange & 0x0FFFFFFF;
-        int numChild = ((childRange & 0xF0000000) >> 28) & IF(flag);
+        int child = childRange & BODYMASK;
+        int numChild = ((childRange & INVBMASK) >> LEAFBIT) & IF(flag);
         int sumChild = inclusiveScanInt(prefix, numChild);
-        int laneOffset = prefix[laneId];
+        int laneOffset = prefix[laneIdx];
         laneOffset += warpOffsetSplit - numChild;
         for( int i=0; i<numChild; i++ )
           stackShrd[laneOffset+i] = child+i;
         warpOffsetSplit += sumChild;
         while( warpOffsetSplit >= WARP_SIZE ) {
           warpOffsetSplit -= WARP_SIZE;
-          stackGlob[ACCESS(numStack)] = stackShrd[warpOffsetSplit+laneId];
+          stackGlob[ACCESS(numStack)] = stackShrd[warpOffsetSplit+laneIdx];
           numStack++;
-          numNodesNew += WARP_SIZE;
+          numSourcesNew += WARP_SIZE;
           if( (numStack - iStack) > LMEM_STACK_SIZE ) return;
         }
 #if 1   // APPROX
         flag = !split && valid;
         laneOffset = exclusiveScanBit(flag);
-        if( flag ) approxNodes[warpOffsetApprox+laneOffset] = node;
+        if( flag ) approxSources[warpOffsetApprox+laneOffset] = node;
         warpOffsetApprox += reduceBit(flag);
         if( warpOffsetApprox >= WARP_SIZE ) {
           warpOffsetApprox -= WARP_SIZE;
-          node = approxNodes[warpOffsetApprox+laneId];
-          pos_j[laneId] = tex1Dfetch(texMultipole, node);
+          node = approxSources[warpOffsetApprox+laneIdx];
+          pos_j[laneIdx] = tex1Dfetch(texMultipole, node);
           for( int i=0; i<WARP_SIZE; i++ )
             P2P(acc_i, pos_i, pos_j[i]);
         }
@@ -188,73 +188,71 @@ __device__ void traverse(
         flag = split && leaf && valid;
         const int jbody = childRange & BODYMASK;
         int numBodies = (((childRange & INVBMASK) >> LEAFBIT)+1) & IF(flag);
-        directNodes[laneId] = numDirect[laneId];
-
+        directSources[laneIdx] = numDirect[laneIdx];
         int sumBodies = inclusiveScanInt(prefix, numBodies);
-        laneOffset = prefix[laneId];
-        if( flag ) prefix[exclusiveScanBit(flag)] = laneId;
-        numDirect[laneId] = laneOffset;
+        laneOffset = prefix[laneIdx];
+        if( flag ) prefix[exclusiveScanBit(flag)] = laneIdx;
+        numDirect[laneIdx] = laneOffset;
         laneOffset -= numBodies;
         int numFinished = 0;
         while( sumBodies > 0 ) {
           numBodies = min(sumBodies, 3*WARP_SIZE-warpOffsetDirect);
           for( int i=warpOffsetDirect; i<warpOffsetDirect+numBodies; i+=WARP_SIZE )
-            directNodes[i+laneId] = 0;
-          if( flag && (numDirect[laneId] <= numBodies) && (laneOffset >= 0) )
-            directNodes[warpOffsetDirect+laneOffset] = -1-jbody;
-          numFinished += inclusive_segscan_array(&directNodes[warpOffsetDirect], numBodies);
+            directSources[i+laneIdx] = 0;
+          if( flag && (numDirect[laneIdx] <= numBodies) && (laneOffset >= 0) )
+            directSources[warpOffsetDirect+laneOffset] = -1-jbody;
+          numFinished += inclusive_segscan_array(&directSources[warpOffsetDirect], numBodies);
           numBodies = numDirect[prefix[numFinished-1]];
           sumBodies -= numBodies;
-          numDirect[laneId] -= numBodies;
+          numDirect[laneIdx] -= numBodies;
           laneOffset -= numBodies;
           warpOffsetDirect += numBodies;
           while( warpOffsetDirect >= WARP_SIZE ) {
             warpOffsetDirect -= WARP_SIZE;
-            pos_j[laneId] = tex1Dfetch(texBody,directNodes[warpOffsetDirect+laneId]);
+            pos_j[laneIdx] = tex1Dfetch(texBody,directSources[warpOffsetDirect+laneIdx]);
             for( int i=0; i<WARP_SIZE; i++ )
               P2P(acc_i, pos_i, pos_j[i]);
           }
         }
-        numDirect[laneId] = directNodes[laneId];
+        numDirect[laneIdx] = directSources[laneIdx];
 #endif
       }
 
       if( warpOffsetSplit > 0 ) { 
-        stackGlob[ACCESS(numStack)] = stackShrd[laneId];
+        stackGlob[ACCESS(numStack)] = stackShrd[laneIdx];
         numStack++; 
-        numNodesNew += warpOffsetSplit;
+        numSourcesNew += warpOffsetSplit;
       }
-      numNodes = numNodesNew;
+      numSources = numSourcesNew;
       beginStack = endStack;
       endStack = numStack;
     }
   }
 
   if( warpOffsetApprox > 0 ) {
-    if( laneId < warpOffsetApprox )  {
-      const int node = approxNodes[laneId];
-      pos_j[laneId] = tex1Dfetch(texMultipole, node);
+    if( laneIdx < warpOffsetApprox )  {
+      const int node = approxSources[laneIdx];
+      pos_j[laneIdx] = tex1Dfetch(texMultipole, node);
     } else {
-      pos_j[laneId] = make_float4(1.0e10f, 1.0e10f, 1.0e10f, 0.0f);
+      pos_j[laneIdx] = make_float4(1.0e10f, 1.0e10f, 1.0e10f, 0.0f);
     }
     for( int i=0; i<WARP_SIZE; i++ )
       P2P(acc_i, pos_i, pos_j[i]);
   }
 
   if( warpOffsetDirect > 0 ) {
-    if( laneId < warpOffsetDirect ) {
-      const float4 posj = tex1Dfetch(texBody,numDirect[laneId]);
-      pos_j[laneId] = posj;
+    if( laneIdx < warpOffsetDirect ) {
+      const float4 posj = tex1Dfetch(texBody,numDirect[laneIdx]);
+      pos_j[laneIdx] = posj;
     } else {
-      pos_j[laneId] = make_float4(1.0e10f, 1.0e10f, 1.0e10f, 0.0f);
+      pos_j[laneIdx] = make_float4(1.0e10f, 1.0e10f, 1.0e10f, 0.0f);
     }
     for( int i=0; i<WARP_SIZE; i++ ) 
       P2P(acc_i, pos_i, pos_j[i]);
   }
 }
 
-extern "C" __global__ void
-  traverseKernel(
+extern "C" __global__ void traverseKernel(
       const int numTargets,
       uint2 *levelRange,
       float4 *acc,
@@ -262,25 +260,24 @@ extern "C" __global__ void
       float4 *targetCenterInfo,
       int    *MEM_BUF,
       uint   *workToDo) {
-  __shared__ int wid[4];
+  __shared__ int wid[NWARP];
   __shared__ int shmem_pool[10*NTHREAD];
-  int *shmem = shmem_pool+10*WARP_SIZE*warpId;
+  int *shmem = shmem_pool+10*WARP_SIZE*warpIdx;
   int *lmem = &MEM_BUF[blockIdx.x*(LMEM_STACK_SIZE*NTHREAD+2*NTHREAD)];
   while(true) {
-    if( laneId == 0 )
-      wid[warpId] = atomicAdd(workToDo,1);
-    if( wid[warpId] >= numTargets ) return;
-    float4 targetSize = targetSizeInfo[wid[warpId]];
+    if( laneIdx == 0 )
+      wid[warpIdx] = atomicAdd(workToDo,1);
+    if( wid[warpIdx] >= numTargets ) return;
+    float4 targetSize = targetSizeInfo[wid[warpIdx]];
     const int targetData = __float_as_int(targetSize.w);
     const uint begin = targetData & CRITMASK;
     const uint numTarget = ((targetData & INVCMASK) >> CRITBIT) + 1;
-    float4 targetCenter = targetCenterInfo[wid[warpId]];
-    uint body_i = begin + laneId % numTarget;
+    float4 targetCenter = targetCenterInfo[wid[warpIdx]];
+    uint body_i = begin + laneIdx % numTarget;
     float4 pos_i = tex1Dfetch(texBody,body_i);
     float4 acc_i = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
-
     traverse(pos_i, acc_i, targetCenter, targetSize, levelRange[2], shmem, lmem);
-    if( laneId < numTarget )
+    if( laneIdx < numTarget )
       acc[body_i] = acc_i;
   }
 }
@@ -290,14 +287,14 @@ extern "C" __global__ void directKernel(float4 *bodyPos, float4 *bodyAcc, const 
   float4 pos_i = bodyPos[idx];
   float4 acc_i = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
   __shared__ float4 shmem[NTHREAD];
-  float4 *pos_j = shmem + WARP_SIZE * warpId;
+  float4 *pos_j = shmem + WARP_SIZE * warpIdx;
   const int numWarp = ALIGN(N, WARP_SIZE);
   for( int jwarp=0; jwarp<numWarp; jwarp++ ) {
-    int jGlob = jwarp*WARP_SIZE+laneId;
-    pos_j[laneId] = bodyPos[min(jGlob,N-1)];
-    pos_j[laneId].w *= jGlob < N;
-    for( int i=0; i<WARP_SIZE; i++ )
-      P2P(acc_i, pos_i, pos_j[i]);
+    int jGlob = jwarp*WARP_SIZE+laneIdx;
+    pos_j[laneIdx] = bodyPos[min(jGlob,N-1)];
+    pos_j[laneIdx].w *= jGlob < N;
+    for( int j=0; j<WARP_SIZE; j++ )
+      P2P(acc_i, pos_i, pos_j[j]);
   }
   bodyAcc[idx] = acc_i;
 }
@@ -359,8 +356,8 @@ void octree::iterate() {
   printf("FMM   : %lf\n",get_time() - t1);;
 }
 
-void octree::direct() {
-  int blocks = ALIGN(numBodies/100, NTHREAD);
+void octree::direct(int numTarget, int numBodies) {
+  int blocks = ALIGN(numTarget, NTHREAD);
   directKernel<<<blocks,NTHREAD,0,execStream>>>(bodyPos.devc(),bodyAcc2.devc(),numBodies);
   CU_SAFE_CALL(cudaStreamSynchronize(execStream));
   CU_SAFE_CALL(cudaStreamDestroy(execStream));

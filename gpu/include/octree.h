@@ -39,7 +39,7 @@ private:
 
   int numBodies;
   int numLeafs;
-  int numNodes;
+  int numSources;
   int numTargets;
   int numLevels;
   union {
@@ -55,7 +55,7 @@ private:
   cudaVec<uint>   validRange;
   cudaVec<uint>   compactRange;
 
-  cudaVec<uint>   leafIndex;
+  cudaVec<uint>   cellIndex;
   cudaVec<uint2>  targetRange;
   cudaVec<float4> multipole;      
 
@@ -132,7 +132,7 @@ public:
   }
 
   void iterate();
-  void direct();
+  void direct(int,int);
 };
 
 #endif
