@@ -40,7 +40,7 @@ private:
   int numBodies;
   int numLeafs;
   int numNodes;
-  int numGroups;
+  int numTargets;
   int numLevels;
   union {
     uint4 *uint4buffer;
@@ -56,12 +56,12 @@ private:
   cudaVec<uint>   compactRange;
 
   cudaVec<uint>   leafNodes;
-  cudaVec<uint2>  groupRange;
+  cudaVec<uint2>  targetRange;
   cudaVec<float4> multipole;      
 
   cudaVec<float>  openingAngle;
-  cudaVec<float4> groupSizeInfo;
-  cudaVec<float4> groupCenterInfo;
+  cudaVec<float4> targetSizeInfo;
+  cudaVec<float4> targetCenterInfo;
 
   cudaVec<uint>   generalBuffer1;
   float4 corner;

@@ -4,6 +4,7 @@ syntax: glob
 *.so
 *.dat
 *.o
+*.th_o
 *.out
 *.dot
 *.svg

@@ -321,7 +321,7 @@ extern "C" __global__ void getLevelRange(const int numNodes,
   validRange[(idx-numLeafs)*2+1] = idx | (level_c != level_p) << 31;
 }
 
-extern "C" __global__ void getGroupRange(int numBodies,
+extern "C" __global__ void getTargetRange(int numBodies,
                                          uint *validRange,
                                          uint *nodeRange,
                                          int treeDepth) {
@@ -345,14 +345,14 @@ extern "C" __global__ void getGroupRange(int numBodies,
   validRange[2*idx + 1] = (idx+1) | (uint)(validEnd   << 31);    
 }
 
-extern "C" __global__ void storeGroupRange(int numGroups,
+extern "C" __global__ void storeTargetRange(int numTargets,
                                             uint *validRange,
-                                            uint2 *groupRange) {
-  if(blockIdx.x >= numGroups) return;
+                                            uint2 *targetRange) {
+  if(blockIdx.x >= numTargets) return;
   if(threadIdx.x == 0) {
     int begin = validRange[2*blockIdx.x];
     int end   = validRange[2*blockIdx.x+1];
-    groupRange[blockIdx.x] = make_uint2(begin,end);
+    targetRange[blockIdx.x] = make_uint2(begin,end);
   }
 }
 
@@ -474,16 +474,16 @@ extern "C" __global__ void rescale(const int node_count,
   return;
 }
 
-extern "C" __global__ void setGroups(const int numGroups,
+extern "C" __global__ void setTargets(const int numTargets,
                                           float4 *bodyPos,
-                                          int2  *groupRange,
-                                          float4 *groupCenterInfo,
-                                          float4 *groupSizeInfo){
-  if(blockIdx.x >= numGroups) return;
+                                          int2  *targetRange,
+                                          float4 *targetCenterInfo,
+                                          float4 *targetSizeInfo){
+  if(blockIdx.x >= numTargets) return;
   float3 xmin = make_float3(+1e10f, +1e10f, +1e10f);
   float3 xmax = make_float3(-1e10f, -1e10f, -1e10f);
-  int begin = groupRange[blockIdx.x].x;
-  int end   = groupRange[blockIdx.x].y;
+  int begin = targetRange[blockIdx.x].x;
+  int end   = targetRange[blockIdx.x].y;
   int idx = begin + threadIdx.x;
   if( idx < end ) {
     float4 pos = bodyPos[idx];
@@ -491,23 +491,23 @@ extern "C" __global__ void setGroups(const int numGroups,
   }
   sharedMinMax(xmin,xmax);
   if( threadIdx.x == 0 ) {
-    float3 groupCenter = make_float3(0.5*(xmin.x + xmax.x),
+    float3 targetCenter = make_float3(0.5*(xmin.x + xmax.x),
                                      0.5*(xmin.y + xmax.y),
                                      0.5*(xmin.z + xmax.z));
-    float3 groupSize = make_float3(fmaxf(fabs(groupCenter.x-xmin.x), fabs(groupCenter.x-xmax.x)),
-                                   fmaxf(fabs(groupCenter.y-xmin.y), fabs(groupCenter.y-xmax.y)),
-                                   fmaxf(fabs(groupCenter.z-xmin.z), fabs(groupCenter.z-xmax.z)));
+    float3 targetSize = make_float3(fmaxf(fabs(targetCenter.x-xmin.x), fabs(targetCenter.x-xmax.x)),
+                                   fmaxf(fabs(targetCenter.y-xmin.y), fabs(targetCenter.y-xmax.y)),
+                                   fmaxf(fabs(targetCenter.z-xmin.z), fabs(targetCenter.z-xmax.z)));
     int nchild = end-begin;
     begin = begin | (nchild-1) << CRITBIT;
-    groupSizeInfo[blockIdx.x].x = groupSize.x;
-    groupSizeInfo[blockIdx.x].y = groupSize.y;
-    groupSizeInfo[blockIdx.x].z = groupSize.z;
-    groupSizeInfo[blockIdx.x].w = __int_as_float(begin);
-    float length = max(groupSize.x, max(groupSize.y, groupSize.z));
-    groupCenterInfo[blockIdx.x].x = groupCenter.x;
-    groupCenterInfo[blockIdx.x].y = groupCenter.y;
-    groupCenterInfo[blockIdx.x].z = groupCenter.z;
-    groupCenterInfo[blockIdx.x].w = length;
+    targetSizeInfo[blockIdx.x].x = targetSize.x;
+    targetSizeInfo[blockIdx.x].y = targetSize.y;
+    targetSizeInfo[blockIdx.x].z = targetSize.z;
+    targetSizeInfo[blockIdx.x].w = __int_as_float(begin);
+    float length = max(targetSize.x, max(targetSize.y, targetSize.z));
+    targetCenterInfo[blockIdx.x].x = targetCenter.x;
+    targetCenterInfo[blockIdx.x].y = targetCenter.y;
+    targetCenterInfo[blockIdx.x].z = targetCenter.z;
+    targetCenterInfo[blockIdx.x].w = length;
   }
 }
 
@@ -585,23 +585,23 @@ void octree::linkTree() {
   blocks = ALIGN(numNodes-numLeafs,threads);
   getLevelRange<<<blocks,threads,0,execStream>>>(numNodes,numLeafs,leafNodes.devc(),nodeKeys.devc(),validRange.devc());
   gpuCompact(validRange, nodeRange, 2*(numNodes-numLeafs));
-  // groupRange
+  // targetRange
   validRange.zeros();
   blocks = ALIGN(numBodies,threads);
-  getGroupRange<<<blocks,threads>>>(numBodies,validRange.devc(),nodeRange.devc(),numLevels+1);
+  getTargetRange<<<blocks,threads>>>(numBodies,validRange.devc(),nodeRange.devc(),numLevels+1);
   gpuCompact(validRange, compactRange, numBodies*2);
   workToDo.d2h();
-  numGroups = workToDo[0] / 2;
-  groupRange.alloc(numGroups);
-  storeGroupRange<<<numGroups,NCRIT,0,execStream>>>(numGroups,compactRange.devc(),groupRange.devc());
+  numTargets = workToDo[0] / 2;
+  targetRange.alloc(numTargets);
+  storeTargetRange<<<numTargets,NCRIT,0,execStream>>>(numTargets,compactRange.devc(),targetRange.devc());
 }
 
 void octree::allocateTreePropMemory()
 {
   multipole.alloc(numNodes);
-  groupSizeInfo.alloc(numNodes);
+  targetSizeInfo.alloc(numNodes);
   openingAngle.alloc(numNodes);
-  groupCenterInfo.alloc(numNodes);
+  targetCenterInfo.alloc(numNodes);
 }
 
 void octree::upward() {
@@ -623,5 +623,5 @@ void octree::upward() {
 
   blocks = ALIGN(numNodes,threads);
   rescale<<<blocks,threads,0,execStream>>>(numNodes,multipole.devc(),nodeLowerBounds.devc(),nodeUpperBounds.devc(),nodeChild.devc(),openingAngle.devc(),nodeBodies.devc());
-  setGroups<<<numGroups,NCRIT>>>(numGroups,bodyPos.devc(),(int2*)groupRange.devc(),groupCenterInfo.devc(),groupSizeInfo.devc());
+  setTargets<<<numTargets,NCRIT>>>(numTargets,bodyPos.devc(),(int2*)targetRange.devc(),targetCenterInfo.devc(),targetSizeInfo.devc());
 }

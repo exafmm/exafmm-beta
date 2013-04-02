@@ -101,11 +101,11 @@ __device__ __forceinline__ void P2P(
 
 __device__ bool applyMAC(
     const float4 sourceCenter, 
-    const float4 groupCenter, 
-    const float4 groupSize) {
-  float3 dr = make_float3(fabsf(groupCenter.x - sourceCenter.x) - (groupSize.x),
-                          fabsf(groupCenter.y - sourceCenter.y) - (groupSize.y),
-                          fabsf(groupCenter.z - sourceCenter.z) - (groupSize.z));
+    const float4 targetCenter, 
+    const float4 targetSize) {
+  float3 dr = make_float3(fabsf(targetCenter.x - sourceCenter.x) - (targetSize.x),
+                          fabsf(targetCenter.y - sourceCenter.y) - (targetSize.y),
+                          fabsf(targetCenter.z - sourceCenter.z) - (targetSize.z));
   dr.x += fabsf(dr.x); dr.x *= 0.5f;
   dr.y += fabsf(dr.y); dr.y *= 0.5f;
   dr.z += fabsf(dr.z); dr.z *= 0.5f;
@@ -255,11 +255,11 @@ __device__ void traverse(
 
 extern "C" __global__ void
   traverseKernel(
-      const int numGroups,
+      const int numTargets,
       uint2 *levelRange,
       float4 *acc,
-      float4 *groupSizeInfo,
-      float4 *groupCenterInfo,
+      float4 *targetSizeInfo,
+      float4 *targetCenterInfo,
       int    *MEM_BUF,
       uint   *workToDo) {
   __shared__ int wid[4];
@@ -269,18 +269,18 @@ extern "C" __global__ void
   while(true) {
     if( laneId == 0 )
       wid[warpId] = atomicAdd(workToDo,1);
-    if( wid[warpId] >= numGroups ) return;
-    float4 groupSize = groupSizeInfo[wid[warpId]];
-    const int groupData = __float_as_int(groupSize.w);
-    const uint begin = groupData & CRITMASK;
-    const uint numGroup = ((groupData & INVCMASK) >> CRITBIT) + 1;
-    float4 groupCenter = groupCenterInfo[wid[warpId]];
-    uint body_i = begin + laneId % numGroup;
+    if( wid[warpId] >= numTargets ) return;
+    float4 targetSize = targetSizeInfo[wid[warpId]];
+    const int targetData = __float_as_int(targetSize.w);
+    const uint begin = targetData & CRITMASK;
+    const uint numTarget = ((targetData & INVCMASK) >> CRITBIT) + 1;
+    float4 targetCenter = targetCenterInfo[wid[warpId]];
+    uint body_i = begin + laneId % numTarget;
     float4 pos_i = tex1Dfetch(texBody,body_i);
     float4 acc_i = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-    traverse(pos_i, acc_i, groupCenter, groupSize, levelRange[2], shmem, lmem);
-    if( laneId < numGroup )
+    traverse(pos_i, acc_i, targetCenter, targetSize, levelRange[2], shmem, lmem);
+    if( laneId < numTarget )
       acc[body_i] = acc_i;
   }
 }
@@ -309,11 +309,11 @@ void octree::traverse() {
   bodyPos.tex("texBody");
   workToDo.zeros();
   traverseKernel<<<NBLOCK,NTHREAD,0,execStream>>>(
-    numGroups,
+    numTargets,
     levelRange.devc(),
     bodyAcc.devc(),
-    groupSizeInfo.devc(),
-    groupCenterInfo.devc(),
+    targetSizeInfo.devc(),
+    targetCenterInfo.devc(),
     (int*)generalBuffer1.devc(),
     workToDo.devc()
   );
