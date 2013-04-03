@@ -1,5 +1,5 @@
-#ifndef options_h
-#define options_h
+#ifndef args_h
+#define args_h
 #include <cstdio>
 #include <cstdlib>
 #include <getopt.h>

@@ -5,7 +5,7 @@
 #include "vtk.h"
 #endif
 
-int real_main(int argc, char ** argv) {
+int main(int argc, char ** argv) {
   Args ARGS(argc, argv);
   Bodies bodies, jbodies;
   Cells cells, jcells;
@@ -18,6 +18,10 @@ int real_main(int argc, char ** argv) {
   FMM.printNow = true;
 #if AUTO
   FMM.timeKernels();
+#endif
+#if _OPENMP
+#pragma omp parallel
+#pragma omp master
 #endif
 #ifdef MANY
   for( int it=0; it<25; it++ ) {
@@ -73,20 +77,4 @@ int real_main(int argc, char ** argv) {
   vtk.plot(Ncell);
 #endif
   return 0;
-}
-
-int main(int argc, char ** argv) {
-#if TBB
-  char * num_workers_s = getenv("TBB_NTHREADS");
-  if (num_workers_s) {
-    new task_scheduler_init(atoi(num_workers_s));
-  }
-#endif
-  int r = 0;
-  pragma_omp(parallel shared(r)) {
-    pragma_omp(master) {
-      r = real_main(argc, argv);
-    }
-  }
-  return r;
 }

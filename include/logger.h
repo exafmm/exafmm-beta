@@ -8,7 +8,6 @@
 #include <queue>
 #include <string>
 #include <sys/time.h>
-#include "types.h"
 
 #if PAPI
 #include <papi.h>

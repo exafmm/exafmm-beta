@@ -19,6 +19,10 @@ int main(int argc, char ** argv) {
 #if AUTO
   FMM.timeKernels();
 #endif
+#if _OPENMP
+#pragma omp parallel
+#pragma omp master
+#endif
 #ifdef MANY
   for ( int it=0; it<25; it++ ) {
     int numBodies = int(pow(10,(it+24)/8.0));
