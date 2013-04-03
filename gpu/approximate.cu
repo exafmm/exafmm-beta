@@ -323,39 +323,39 @@ void octree::iterate() {
   double t1 = get_time();
   getBoundaries();
   CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("BOUND : %lf\n",get_time() - t1);;
+  printf("Set bounds  : %lf s\n",get_time() - t1);;
   t1 = get_time();
   getKeys();
   CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("INDEX : %lf\n",get_time() - t1);;
+  printf("Get keys    : %lf s\n",get_time() - t1);;
   t1 = get_time();
   sortKeys();
   CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("KEYS  : %lf\n",get_time() - t1);;
+  printf("Sort keys   : %lf s\n",get_time() - t1);;
   t1 = get_time();
   sortBodies();
   CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("BODIES: %lf\n",get_time() - t1);;
+  printf("Sort bodies : %lf s\n",get_time() - t1);;
   t1 = get_time();
   buildTree();
   CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("BUILD : %lf\n",get_time() - t1);;
+  printf("Build tree  : %lf s\n",get_time() - t1);;
   t1 = get_time();
   allocateTreePropMemory();
   CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("ALLOC : %lf\n",get_time() - t1);;
+  printf("Allocate    : %lf s\n",get_time() - t1);;
   t1 = get_time();
   linkTree();
   CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("LINK  : %lf\n",get_time() - t1);;
+  printf("Link tree   : %lf s\n",get_time() - t1);;
   t1 = get_time();
   upward();
   CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("UPWARD: %lf\n",get_time() - t1);;
+  printf("Upward pass : %lf s\n",get_time() - t1);;
   t1 = get_time();
   traverse();
   CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("FMM   : %lf\n",get_time() - t1);;
+  printf("Traverse    : %lf s\n",get_time() - t1);;
 }
 
 void octree::direct(int numTarget, int numBodies) {

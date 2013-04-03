@@ -415,9 +415,8 @@ extern "C" __global__ void M2M(const int level,
   const uint end = begin + nchild;
   childRange[cellIdx] = begin | ((nchild-1) << LEAFBIT);
   float4 mon = {0.0f, 0.0f, 0.0f, 0.0f};
-  float3 xmin, xmax;
-  xmin = make_float3(+1e10f, +1e10f, +1e10f);
-  xmax = make_float3(-1e10f, -1e10f, -1e10f);
+  float3 xmin = make_float3(+1e10f, +1e10f, +1e10f);
+  float3 xmax = make_float3(-1e10f, -1e10f, -1e10f);
   for( int i=begin; i<end; i++ ) {
     float4 pos = cellPos[i];
     mon.w += pos.w;
