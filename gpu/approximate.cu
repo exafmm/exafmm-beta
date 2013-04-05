@@ -83,7 +83,7 @@ texture<uint, 1, cudaReadModeElementType> texChildRange;
 texture<float, 1, cudaReadModeElementType> texOpening;
 texture<float4, 1, cudaReadModeElementType> texBody;
 texture<float4, 1, cudaReadModeElementType> texCell;
-texture<float4, 1, cudaReadModeElementType> texMultipole;
+texture<float, 1, cudaReadModeElementType> texMultipole;
 
 __device__ __forceinline__ void P2P(
     float4 &acc,  const float4 pos,
@@ -301,11 +301,11 @@ extern "C" __global__ void directKernel(float4 *bodyPos, float4 *bodyAcc, const 
 }
 
 void octree::traverse() {
-  childRange.tex("texChildRange");
-  openingAngle.tex("texOpening");
-  bodyPos.tex("texBody");
-  cellPos.tex("texCell");
-  multipole.tex("texMultipole");
+  childRange.bindTexture(texChildRange);
+  openingAngle.bindTexture(texOpening);
+  bodyPos.bindTexture(texBody);
+  cellPos.bindTexture(texCell);
+  multipole.bindTexture(texMultipole);
   workToDo.zeros();
   traverseKernel<<<NBLOCK,NTHREAD,0,execStream>>>(
     numTargets,
@@ -316,6 +316,11 @@ void octree::traverse() {
     (int*)generalBuffer1.devc(),
     workToDo.devc()
   );
+  childRange.unbindTexture(texChildRange);
+  openingAngle.unbindTexture(texOpening);
+  bodyPos.unbindTexture(texBody);
+  cellPos.unbindTexture(texCell);
+  multipole.unbindTexture(texMultipole);
 }
 
 void octree::iterate() {

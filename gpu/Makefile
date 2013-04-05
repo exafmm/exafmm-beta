@@ -1,7 +1,7 @@
 CUDA_INSTALL_PATH  = /usr/local/cuda
 
 CXX = g++ -fopenmp -O3
-NVCC = nvcc -arch sm_21 -use_fast_math -Iinclude -Xcompiler "-fopenmp -O3"
+NVCC = nvcc -arch sm_30 -use_fast_math -Iinclude -Xcompiler "-fopenmp -O3"
 
 ORG = approximate.o \
 	main.o \

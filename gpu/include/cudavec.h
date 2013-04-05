@@ -64,11 +64,16 @@ public:
     CU_SAFE_CALL(cudaMemcpy(devcPtr, hostPtr, n*sizeof(T),cudaMemcpyHostToDevice));
   }
 
-  void tex(const char *symbol) {
-    const textureReference *texref;
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<T>();
-    CU_SAFE_CALL(cudaGetTextureReference(&texref,symbol));
-    CU_SAFE_CALL(cudaBindTexture(0,texref,(void*)devcPtr,&channelDesc,sizeof(T)*size));
+  void bindTexture(texture<T,1,cudaReadModeElementType> &tex) {
+    tex.addressMode[0] = cudaAddressModeWrap;
+    tex.addressMode[1] = cudaAddressModeWrap;
+    tex.filterMode     = cudaFilterModePoint;
+    tex.normalized     = false;
+    CU_SAFE_CALL(cudaBindTexture(0,tex,(void*)devcPtr,size*sizeof(T)));
+  }
+
+  void unbindTexture(texture<T,1,cudaReadModeElementType> &tex) {
+    CU_SAFE_CALL(cudaUnbindTexture(tex));
   }
 
   T& operator[] (int i){ return hostPtr[i]; }

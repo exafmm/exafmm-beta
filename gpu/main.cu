@@ -23,7 +23,7 @@ int main() {
     tic = tree->get_time();
     tree->direct(numTarget,numBodies);
     toc = tree->get_time();
-    printf("Total Direct: %lf s\n",toc-tic);
+    printf("Check answer: %lf s\n",toc-tic);
     printf("------------------------\n",numBodies);
     tree->bodyAcc.d2h();
     tree->bodyAcc2.d2h();
