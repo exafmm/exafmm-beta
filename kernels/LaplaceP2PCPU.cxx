@@ -14,10 +14,8 @@ inline double vecSum2d(__m128d reg) {
 #endif
 
 #if __AVX__
-inline float vecSum8s(__m256 reg) {
-  float mem[8] __attribute__ ((aligned(32)));
-  _mm256_store_ps(mem, reg);
-  return mem[0] + mem[1] + mem[2] + mem[3] + mem[4] + mem[5] + mem[6] + mem[7];
+inline float vecSum8s(fvec8 v) {
+  return v[0] + v[1] + v[2] + v[3] + v[4] + v[5] + v[6] + v[7];
 }
 inline double vecSum4d(__m256d reg) {
   double mem[4] __attribute__ ((aligned(32)));
@@ -103,169 +101,139 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
 
 #if !defined(REAL_TYPE) || REAL_TYPE == REAL_TYPE_FLOAT // float
   for ( ; i<=ni-8; i+=8) {
-    __m256 pot = _mm256_setzero_ps();
-    __m256 ax = _mm256_setzero_ps();
-    __m256 ay = _mm256_setzero_ps();
-    __m256 az = _mm256_setzero_ps();
+    fvec8 zero = 0;
+    fvec8 pot = zero;
+    fvec8 ax = zero;
+    fvec8 ay = zero;
+    fvec8 az = zero;
 
-    __m256 xi = _mm256_sub_ps(_mm256_setr_ps(Bi[i].X[0],Bi[i+1].X[0],Bi[i+2].X[0],Bi[i+3].X[0],
-                                             Bi[i+4].X[0],Bi[i+5].X[0],Bi[i+6].X[0],Bi[i+7].X[0]),
-                              _mm256_set1_ps(Xperiodic[0]));
-    __m256 yi = _mm256_sub_ps(_mm256_setr_ps(Bi[i].X[1],Bi[i+1].X[1],Bi[i+2].X[1],Bi[i+3].X[1],
-                                             Bi[i+4].X[1],Bi[i+5].X[1],Bi[i+6].X[1],Bi[i+7].X[1]),
-                              _mm256_set1_ps(Xperiodic[1]));
-    __m256 zi = _mm256_sub_ps(_mm256_setr_ps(Bi[i].X[2],Bi[i+1].X[2],Bi[i+2].X[2],Bi[i+3].X[2],
-                                             Bi[i+4].X[2],Bi[i+5].X[2],Bi[i+6].X[2],Bi[i+7].X[2]),
-                              _mm256_set1_ps(Xperiodic[2]));
-    __m256 mi = _mm256_setr_ps(Bi[i].SRC,Bi[i+1].SRC,Bi[i+2].SRC,Bi[i+3].SRC,
-                               Bi[i+4].SRC,Bi[i+5].SRC,Bi[i+6].SRC,Bi[i+7].SRC);
-    __m256 R2 = _mm256_set1_ps(EPS2);
+    fvec8 xi(Bi[i  ].X[0],Bi[i+1].X[0],Bi[i+2].X[0],Bi[i+3].X[0],
+	     Bi[i+4].X[0],Bi[i+5].X[0],Bi[i+6].X[0],Bi[i+7].X[0]);
+    fvec8 yi(Bi[i  ].X[1],Bi[i+1].X[1],Bi[i+2].X[1],Bi[i+3].X[1],
+	     Bi[i+4].X[1],Bi[i+5].X[1],Bi[i+6].X[1],Bi[i+7].X[1]);
+    fvec8 zi(Bi[i  ].X[2],Bi[i+1].X[2],Bi[i+2].X[2],Bi[i+3].X[2],
+	     Bi[i+4].X[2],Bi[i+5].X[2],Bi[i+6].X[2],Bi[i+7].X[2]);
+    fvec8 mi(Bi[i  ].SRC, Bi[i+1].SRC, Bi[i+2].SRC, Bi[i+3].SRC,
+             Bi[i+4].SRC, Bi[i+5].SRC, Bi[i+6].SRC, Bi[i+7].SRC);
+    fvec8 R2 = EPS2;
 
-    __m256 x2 = _mm256_set1_ps(Bj[0].X[0]);
-    x2 = _mm256_sub_ps(x2, xi);
-    __m256 y2 = _mm256_set1_ps(Bj[0].X[1]);
-    y2 = _mm256_sub_ps(y2, yi);
-    __m256 z2 = _mm256_set1_ps(Bj[0].X[2]);
-    z2 = _mm256_sub_ps(z2, zi);
-    __m256 mj = _mm256_set1_ps(Bj[0].SRC);
+    fvec8 xj = Xperiodic[0];
+    xi -= xj;
+    fvec8 yj = Xperiodic[1];
+    yi -= yj;
+    fvec8 zj = Xperiodic[2];
+    zi -= zj;
 
-    __m256 xj = x2;
-    x2 = _mm256_mul_ps(x2, x2);
-    R2 = _mm256_add_ps(R2, x2);
-    __m256 yj = y2;
-    y2 = _mm256_mul_ps(y2, y2);
-    R2 = _mm256_add_ps(R2, y2);
-    __m256 zj = z2;
-    z2 = _mm256_mul_ps(z2, z2);
-    R2 = _mm256_add_ps(R2, z2);
-    __m256 invR, mask;
+    fvec8 x2 = Bj[0].X[0];
+    x2 -= xi;
+    fvec8 y2 = Bj[0].X[1];
+    y2 -= yi;
+    fvec8 z2 = Bj[0].X[2];
+    z2 -= zi;
+    fvec8 mj = Bj[0].SRC;
+
+    xj = x2;
+    R2 += x2 * x2;
+    yj = y2;
+    R2 += y2 * y2;
+    zj = z2;
+    R2 += z2 * z2;
+    fvec8 invR, mask;
 
     if ( nj > 1 ) {
-      x2 = _mm256_set1_ps(Bj[1].X[0]);
-      y2 = _mm256_set1_ps(Bj[1].X[1]);
-      z2 = _mm256_set1_ps(Bj[1].X[2]);
+      x2 = Bj[1].X[0];
+      y2 = Bj[1].X[1];
+      z2 = Bj[1].X[2];
       for (int j=0; j<nj-2; j++) {
-	invR = _mm256_rsqrt_ps(R2);
-	mask = _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ);
-	invR = _mm256_and_ps(invR, mask);
-	R2 = _mm256_set1_ps(EPS2);
-	x2 = _mm256_sub_ps(x2, xi);
-	y2 = _mm256_sub_ps(y2, yi);
-	z2 = _mm256_sub_ps(z2, zi);
+	invR = rsqrt(R2);
+        mask = R2 > zero;
+        invR &= mask;
+	R2 = EPS2;
+	x2 -= xi;
+	y2 -= yi;
+	z2 -= zi;
 
-	mj = _mm256_mul_ps(mj, invR);
-	mj = _mm256_mul_ps(mj, mi);
-	pot = _mm256_add_ps(pot, mj);
+	mj *= invR * mi;
+	pot += mj;
 	if (mutual) Bj[j].TRG[0] += vecSum8s(mj);
-	invR = _mm256_mul_ps(invR, invR);
-	invR = _mm256_mul_ps(invR, mj);
-	mj = _mm256_set1_ps(Bj[j+1].SRC);
+	invR = invR * invR * mj;
+	mj = Bj[j+1].SRC;
 
-	xj = _mm256_mul_ps(xj, invR);
-	ax = _mm256_add_ps(ax, xj);
+        xj *= invR;
+	ax += xj;
 	if (mutual) Bj[j].TRG[1] -= vecSum8s(xj);
 	xj = x2;
-	x2 = _mm256_mul_ps(x2, x2);
-	R2 = _mm256_add_ps(R2, x2);
-	x2 = _mm256_set1_ps(Bj[j+2].X[0]);
+	R2 += x2 * x2;
+	x2 = Bj[j+2].X[0];
 
-	yj = _mm256_mul_ps(yj, invR);
-	ay = _mm256_add_ps(ay, yj);
+        yj *= invR;
+	ay += yj;
 	if (mutual) Bj[j].TRG[2] -= vecSum8s(yj);
 	yj = y2;
-	y2 = _mm256_mul_ps(y2, y2);
-	R2 = _mm256_add_ps(R2, y2);
-	y2 = _mm256_set1_ps(Bj[j+2].X[1]);
+	R2 += y2 * y2;
+	y2 = Bj[j+2].X[1];
 
-	zj = _mm256_mul_ps(zj, invR);
-	az = _mm256_add_ps(az, zj);
+        zj *= invR;
+	az += zj;
 	if (mutual) Bj[j].TRG[3] -= vecSum8s(zj);
 	zj = z2;
-	z2 = _mm256_mul_ps(z2, z2);
-	R2 = _mm256_add_ps(R2, z2);
-	z2 = _mm256_set1_ps(Bj[j+2].X[2]);
+	R2 += z2 * z2;
+	z2 = Bj[j+2].X[2];
       }
-      invR = _mm256_rsqrt_ps(R2);
-      mask = _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ);
-      invR = _mm256_and_ps(invR, mask);
-      R2 = _mm256_set1_ps(EPS2);
-      x2 = _mm256_sub_ps(x2, xi);
-      y2 = _mm256_sub_ps(y2, yi);
-      z2 = _mm256_sub_ps(z2, zi);
+      invR = rsqrt(R2);
+      mask = R2 > zero;
+      invR &= mask;
+      R2 = EPS2;
+      x2 -= xi;
+      y2 -= yi;
+      z2 -= zi;
 
-      mj = _mm256_mul_ps(mj, invR);
-      mj = _mm256_mul_ps(mj, mi);
-      pot = _mm256_add_ps(pot, mj);
+      mj *= invR * mi;
+      pot += mj;
       if (mutual) Bj[nj-2].TRG[0] += vecSum8s(mj);
-      invR = _mm256_mul_ps(invR, invR);
-      invR = _mm256_mul_ps(invR, mj);
-      mj = _mm256_set1_ps(Bj[nj-1].SRC);
+      invR = invR * invR * mj;
+      mj = Bj[nj-1].SRC;
 
-      xj = _mm256_mul_ps(xj, invR);
-      ax = _mm256_add_ps(ax, xj);
+      xj *= invR;
+      ax += xj;
       if (mutual) Bj[nj-2].TRG[1] -= vecSum8s(xj);
       xj = x2;
-      x2 = _mm256_mul_ps(x2, x2);
-      R2 = _mm256_add_ps(R2, x2);
+      R2 += x2 * x2;
 
-      yj = _mm256_mul_ps(yj, invR);
-      ay = _mm256_add_ps(ay, yj);
+      yj *= invR;
+      ay += yj;
       if (mutual) Bj[nj-2].TRG[2] -= vecSum8s(yj);
       yj = y2;
-      y2 = _mm256_mul_ps(y2, y2);
-      R2 = _mm256_add_ps(R2, y2);
+      R2 += y2 * y2;
 
-      zj = _mm256_mul_ps(zj, invR);
-      az = _mm256_add_ps(az, zj);
+      zj *= invR;
+      az += zj;
       if (mutual) Bj[nj-2].TRG[3] -= vecSum8s(zj);
       zj = z2;
-      z2 = _mm256_mul_ps(z2, z2);
-      R2 = _mm256_add_ps(R2, z2);
-
-      invR = _mm256_rsqrt_ps(R2);
-      mask = _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ);
-      invR = _mm256_and_ps(invR, mask);
-      mj = _mm256_mul_ps(mj, invR);
-      mj = _mm256_mul_ps(mj, mi);
-      pot = _mm256_add_ps(pot, mj);
-      if (mutual) Bj[nj-1].TRG[0] += vecSum8s(mj);
-      invR = _mm256_mul_ps(invR, invR);
-      invR = _mm256_mul_ps(invR, mj);
-
-      xj = _mm256_mul_ps(xj, invR);
-      ax = _mm256_add_ps(ax, xj);
-      if (mutual) Bj[nj-1].TRG[1] -= vecSum8s(xj);
-      yj = _mm256_mul_ps(yj, invR);
-      ay = _mm256_add_ps(ay, yj);
-      if (mutual) Bj[nj-1].TRG[2] -= vecSum8s(yj);
-      zj = _mm256_mul_ps(zj, invR);
-      az = _mm256_add_ps(az, zj);
-      if (mutual) Bj[nj-1].TRG[3] -= vecSum8s(zj);
+      R2 += z2 * z2;
     }
-    invR = _mm256_rsqrt_ps(R2);
-    mask = _mm256_cmp_ps(R2, _mm256_setzero_ps(), _CMP_GT_OQ);
-    invR = _mm256_and_ps(invR, mask);
-    mj = _mm256_mul_ps(mj, invR);
-    mj = _mm256_mul_ps(mj, mi);
-    pot = _mm256_add_ps(pot, mj);
+    invR = rsqrt(R2);
+    mask = R2 > zero;
+    invR &= mask;
+    mj *= invR * mi;
+    pot += mj;
     if (mutual) Bj[nj-1].TRG[0] += vecSum8s(mj);
-    invR = _mm256_mul_ps(invR, invR);
-    invR = _mm256_mul_ps(invR, mj);
+    invR = invR * invR * mj;
 
-    xj = _mm256_mul_ps(xj, invR);
-    ax = _mm256_add_ps(ax, xj);
+    xj *= invR;
+    ax += xj;
     if (mutual) Bj[nj-1].TRG[1] -= vecSum8s(xj);
-    yj = _mm256_mul_ps(yj, invR);
-    ay = _mm256_add_ps(ay, yj);
+    yj *= invR;
+    ay += yj;
     if (mutual) Bj[nj-1].TRG[2] -= vecSum8s(yj);
-    zj = _mm256_mul_ps(zj, invR);
-    az = _mm256_add_ps(az, zj);
+    zj *= invR;
+    az += zj;
     if (mutual) Bj[nj-1].TRG[3] -= vecSum8s(zj);
     for (int k=0; k<8; k++) {
-      Bi[i+k].TRG[0] += ((float*)&pot)[k];
-      Bi[i+k].TRG[1] += ((float*)&ax)[k];
-      Bi[i+k].TRG[2] += ((float*)&ay)[k];
-      Bi[i+k].TRG[3] += ((float*)&az)[k];
+      Bi[i+k].TRG[0] += pot[k];
+      Bi[i+k].TRG[1] += ax[k];
+      Bi[i+k].TRG[2] += ay[k];
+      Bi[i+k].TRG[3] += az[k];
     }
   }
 #else  // P2P(C1,C2), AVX, double

@@ -3,6 +3,7 @@
 #include <complex>
 #include "macros.h"
 #include <queue>
+#include "simd.h"
 #include <utility>
 #include <vector>
 #include "vec.h"

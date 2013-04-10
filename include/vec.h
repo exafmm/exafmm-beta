@@ -35,6 +35,14 @@ public:
     for (int i=0; i<N; i++) a[i] /= b;
     return *this;
   }
+  const vec &operator&=(const T b) {                               // Scalar compound assignment (bitwise and)
+    for (int i=0; i<N; i++) a[i] &= b;
+    return *this;
+  }
+  const vec &operator|=(const T b) {                               // Scalar compound assignment (bitwise or)
+    for (int i=0; i<N; i++) a[i] |= b;
+    return *this;
+  }
   const vec &operator=(const vec &b) {                             // Vector assignment
     for (int i=0; i<N; i++) a[i] = b[i];
     return *this;
@@ -53,6 +61,14 @@ public:
   }
   const vec &operator/=(const vec &b) {                            // Vector compound assignment (divide)
     for (int i=0; i<N; i++) a[i] /= b[i];
+    return *this;
+  }
+  const vec &operator&=(const vec &b) {                            // Vector compound assignment (bitwise and)
+    for (int i=0; i<N; i++) a[i] &= b[i];
+    return *this;
+  }
+  const vec &operator|=(const vec &b) {                            // Vector compound assignment (bitwise or)
+    for (int i=0; i<N; i++) a[i] |= b[i];
     return *this;
   }
   vec operator+(const T b) const {                                 // Scalar arithmetic (add)
@@ -75,6 +91,26 @@ public:
     for (int i=0; i<N; i++) c[i] = a[i] / b;
     return c;
   }
+  vec operator>(const T b) const {                                 // Scalar arithmetic (greater than)
+    vec c;
+    for (int i=0; i<N; i++) c[i] = a[i] > b;
+    return c;
+  }
+  vec operator<(const T b) const {                                 // Scalar arithmetic (less than)
+    vec c;
+    for (int i=0; i<N; i++) c[i] = a[i] < b;
+    return c;
+  }
+  vec operator&(const T b) const {                                 // Scalar arithmetic (bitwise and)
+    vec c;
+    for (int i=0; i<N; i++) c[i] = a[i] & b;
+    return c;
+  }
+  vec operator|(const T b) const {                                 // Scalar arithmetic (bitwise or)
+    vec c;
+    for (int i=0; i<N; i++) c[i] = a[i] | b;
+    return c;
+  }
   vec operator+(const vec &b) const {                              // Vector arithmetic (add)
     vec c;
     for (int i=0; i<N; i++) c[i] = a[i] + b[i];
@@ -93,6 +129,26 @@ public:
   vec operator/(const vec &b) const {                              // Vector arithmetic (divide)
     vec c;
     for (int i=0; i<N; i++) c[i] = a[i] / b[i];
+    return c;
+  }
+  vec operator>(const vec &b) const {                              // Vector arithmetic (greater than)
+    vec c;
+    for (int i=0; i<N; i++) c[i] = a[i] > b[i];
+    return c;
+  }
+  vec operator<(const vec &b) const {                              // Vector arithmetic (less than)
+    vec c;
+    for (int i=0; i<N; i++) c[i] = a[i] < b[i];
+    return c;
+  }
+  vec operator&(const vec &b) const {                              // Vector arithmetic (bitwise and)
+    vec c;
+    for (int i=0; i<N; i++) c[i] = a[i] & b[i];
+    return c;
+  }
+  vec operator|(const vec &b) const {                              // Vector arithmetic (bitwise or)
+    vec c;
+    for (int i=0; i<N; i++) c[i] = a[i] | b[i];
     return c;
   }
   vec operator-() const {                                          // Vector arithmetic (negation)
