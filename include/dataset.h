@@ -100,7 +100,7 @@ public:
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG = 0;                                               //  Clear target values
 #if KAHAN >= KAHAN_IN_DIRECT
-      B->TRGc = 0;                                               //  Clear target values
+      B->TRGc = 0;                                              //  Clear target values
 #endif
     }                                                           // End loop over bodies
   }

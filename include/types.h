@@ -3,7 +3,6 @@
 #include <complex>
 #include "macros.h"
 #include <queue>
-#include "simd.h"
 #include <utility>
 #include <vector>
 #include "vec.h"
@@ -30,6 +29,7 @@ typedef std::complex<real_t> complex_t;                         //!< Complex typ
 typedef vec<3,real_t>        vec3;                              //!< Vector of 3 floating point types
 typedef vec<3,float>         fvec3;                             //!< Vector of 3 single precision types
 typedef vec<4,real_t>        vec4;                              //!< Vector of 4 floating point types
+typedef vec<4,float>         fvec4;                             //!< Vector of 4 single precision types
 typedef vec<8,int>           ivec8;                             //!< Vector of 8 integer types
 typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3
 
@@ -67,7 +67,7 @@ struct Body : public Source {
   int    IBODY;                                                 //!< Initial body numbering for sorting back
   int    IPROC;                                                 //!< Initial process numbering for partitioning back
   int    ICELL;                                                 //!< Cell index
-  vec4   TRG;                                                   //!< Scalar+vector3 target values
+  fvec4  TRG;                                                   //!< Scalar+vector3 target values
 #if KAHAN >= KAHAN_IN_DIRECT
   vec4   TRGc;                                                   //!< Scalar+vector3 target values
 #endif
