@@ -7,24 +7,14 @@
 #include <vector>
 #include "vec.h"
 
-#if defined(REAL_TYPE) 
-#define REAL_TYPE_FLOAT 0
-#define REAL_TYPE_DOUBLE 1
-#endif
-
 #if defined(KAHAN) 
 #define KAHAN_NEVER 0 		/* never use Kahan's accumulation */
 #define KAHAN_IN_DIRECT 1	/* use it only in the direct evaluation */
 #define KAHAN_ALWAYS 2 /* use it both in main computation and direct evaluation */
 #endif
 
-
 // Basic type definitions
-#if defined(REAL_TYPE) && REAL_TYPE == REAL_TYPE_DOUBLE
-typedef double               real_t;                            //!< Floating point type
-#else
 typedef float                real_t;                            //!< Floating point type
-#endif
 typedef std::complex<real_t> complex_t;                         //!< Complex type
 typedef vec<3,real_t>        vec3;                              //!< Vector of 3 floating point types
 typedef vec<3,float>         fvec3;                             //!< Vector of 3 single precision types
@@ -33,12 +23,17 @@ typedef vec<4,float>         fvec4;                             //!< Vector of 4
 typedef vec<8,int>           ivec8;                             //!< Vector of 8 integer types
 typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3
 
-// Compile-time parameters
-#ifdef MULTIPOLE_EXPANSION_ORDER
-const int P = MULTIPOLE_EXPANSION_ORDER;                        //!< Order of expansions
-#else
-const int P = 3;                                                //!< Order of expansions
+// SIMD vector types for MIC, AVX, and SSE
+#if __AVX__
+const int NSIMD = 32 / sizeof(real_t);
+typedef vec<NSIMD,real_t> simdvec;
+#elif __SSE__
+const int NSIMD = 16 / sizeof(real_t);
+typedef vec<NSIMD,real_t> simdvec;
 #endif
+
+// Compile-time parameters
+const int P = EXPANSION;                                        //!< Order of expansions
 const float EPS2 = .0;                                          //!< Softening parameter (squared)
 #if COMkernel
 const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms
@@ -69,7 +64,7 @@ struct Body : public Source {
   int    ICELL;                                                 //!< Cell index
   fvec4  TRG;                                                   //!< Scalar+vector3 target values
 #if KAHAN >= KAHAN_IN_DIRECT
-  vec4   TRGc;                                                   //!< Scalar+vector3 target values
+  fvec4  TRGc;                                                  //!< Scalar+vector3 target values
 #endif
 };
 typedef std::vector<Body>           Bodies;                     //!< Vector of bodies

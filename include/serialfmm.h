@@ -12,11 +12,11 @@ protected:
 private:
 //! Error optimization of Rcrit
   void setRcrit(C_iter C, C_iter C0, real_t c) {
-    spawn_tasks {                                             // Initialize tasks
+    spawn_tasks {                                               // Initialize tasks
       for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-	spawn_task0(setRcrit(CC, C0, c));                         //  Recursive call with new task
-      }                                                           // End loop over child cells
-      sync_tasks;                                             // Synchronize tasks
+	spawn_task0(setRcrit(CC, C0, c));                       //  Recursive call with new task
+      }                                                         // End loop over child cells
+      sync_tasks;                                               // Synchronize tasks
     }
 #if Cartesian
     for( int i=1; i<MTERM; ++i ) C->M[i] /= C->M[0];            // Normalize multipole expansion coefficients
@@ -47,12 +47,12 @@ private:
     } else {                                                    // Else if number of elements are large
       B_iter BiMid = BiBegin + (BiEnd - BiBegin) / 2;           //  Middle iterator
       vec3Pair bounds0, bounds1;                                //  Pair : first Xmin : second Xmax
-      spawn_tasks {                                           //  Initialize tasks
+      spawn_tasks {                                             //  Initialize tasks
 	spawn_task1(bounds0, bounds0 = getBounds(BiBegin, BiMid));//  Recursive call with new task
-	bounds1 = getBounds(BiMid, BiEnd);                        //  Recursive call with old task
-	sync_tasks;                                           //  Synchronize tasks
-	bounds0.first = min(bounds0.first, bounds1.first);        //  Minimum of the two Xmins
-	bounds0.second = max(bounds0.second, bounds1.second);     //  Maximum of the two Xmaxs
+	bounds1 = getBounds(BiMid, BiEnd);                      //  Recursive call with old task
+	sync_tasks;                                             //  Synchronize tasks
+	bounds0.first = min(bounds0.first, bounds1.first);      //  Minimum of the two Xmins
+	bounds0.second = max(bounds0.second, bounds1.second);   //  Maximum of the two Xmaxs
       }
       return bounds0;                                           //  Return Xmin and Xmax
     }                                                           // End if for number fo elements
@@ -60,11 +60,11 @@ private:
 
 //! Recursive call for upward pass
   void upwardRecursion(C_iter C, C_iter C0) {
-    spawn_tasks {                                             // Initialize tasks
+    spawn_tasks {                                               // Initialize tasks
       for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-	spawn_task0(upwardRecursion(CC, C0));                     //  Recursive call with new task
-      }                                                           // End loop over child cells
-      sync_tasks;                                             // Synchronize tasks
+	spawn_task0(upwardRecursion(CC, C0));                   //  Recursive call with new task
+      }                                                         // End loop over child cells
+      sync_tasks;                                               // Synchronize tasks
     }
     real_t Rmax = 0;                                            // Initialize Rmax
     setCenter(C);                                               // Set center of cell to center of mass
@@ -78,11 +78,11 @@ private:
   void downwardRecursion(C_iter C, C_iter C0) const {
     L2L(C);                                                     // L2L kernel
     L2P(C);                                                     // L2P kernel
-    spawn_tasks {                                             // Initialize tasks
+    spawn_tasks {                                               // Initialize tasks
       for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-	spawn_task0(downwardRecursion(CC, C0));                   //  Recursive call with new task
-      }                                                           // End loop over chlid cells
-      sync_tasks;                                             // Synchronize tasks
+	spawn_task0(downwardRecursion(CC, C0));                 //  Recursive call with new task
+      }                                                         // End loop over chlid cells
+      sync_tasks;                                               // Synchronize tasks
     }
   }
 
@@ -165,11 +165,11 @@ public:
     startTimer("Downward pass");                                // Start timer
     C_iter C0 = cells.begin();                                  // Root cell
     L2P(C0);                                                    // If root is the only cell do L2P
-    spawn_tasks {                                             // Initialize tasks
+    spawn_tasks {                                               // Initialize tasks
       for (C_iter CC=C0+C0->CHILD; CC!=C0+C0->CHILD+C0->NCHILD; CC++) {// Loop over child cells
-	spawn_task0(downwardRecursion(CC, C0));                   //  Recursive call for downward pass
-      }                                                           // End loop over child cells
-      sync_tasks;                                             // Synchronize tasks
+	spawn_task0(downwardRecursion(CC, C0));                 //  Recursive call for downward pass
+      }                                                         // End loop over child cells
+      sync_tasks;                                               // Synchronize tasks
     }
     stopTimer("Downward pass",printNow);                        // Stop timer
     if(printNow) printTreeData(cells);                          // Print tree data
@@ -193,7 +193,7 @@ public:
           Xperiodic[1] = iy * 2 * globalRadius;                 //    Coordinate shift for y periodic direction
           Xperiodic[2] = iz * 2 * globalRadius;                 //    Coordinate shift for z periodic direction
 #if KAHAN >= KAHAN_IN_DIRECT
-          P2PKahan(Ci,Cj,false);                                      //    Evaluate P2P kernel
+          P2PKahan(Ci,Cj,false);                                //    Evaluate P2P kernel
 #else
           P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
 #endif

@@ -1,36 +1,32 @@
 .SUFFIXES: .cxx .cu .o
 .PHONY: docs
-## ExaFMM path
-EXAFMM_INCLUDE_PATH = ../include
-EXAFMM_LIBRARY_PATH = ../lib
 
 ### choose kernel
 EQUATION = Laplace
-#EQUATION = Yukawa
-#EQUATION = Helmholtz
-#EQUATION = Stokes
+#EQUATION = Yukawa (not available yet)
+#EQUATION = Helmholtz (not available yet)
+#EQUATION = Stokes (not available yet)
 
 ### choose basis of multipole/local expansion
 BASIS	= Cartesian
 #BASIS	= Spherical
-#BASIS	= Planewave
+#BASIS	= Planewave (not available yet)
 
 ### choose device to use
 DEVICE	= CPU
 #DEVICE	= GPU
 #DEVICE	= MIC
 
-### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -ffast-math -funroll-loops
-#CXX	= tau_cxx.sh
-### Intel compiler
-#CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias
-### BG/P compiler
-#CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3
+### choose compiler
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -ffast-math -funroll-loops # GCC
+#CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias # Intel
+#CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3 # BG/P
+#CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 ### Base flags
-CXX	+= -I$(EXAFMM_INCLUDE_PATH)
-LFLAGS	= -L$(EXAFMM_LIBRARY_PATH) -D$(BASIS)
+CXX	+= -I../include
+LFLAGS	+= -D$(BASIS)
+LFLAGS  += -DEXPANSION=3 # specifcy expansion order
 LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
 LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
 LFLAGS	+= -DERROR_OPT # Use error optimized theta
@@ -40,8 +36,6 @@ LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before t
 #LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
 
 ### Additional flags for controlling accuracy
-LFLAGS  += -DMULTIPOLE_EXPANSION_ORDER=3 # specifcy multipole expansion order (3 if unspecified)
-LFLAGS  += -DREAL_TYPE=0 # =1 means use double. otherwise float
 # -DKAHAN=1 means use Kahan's algorithm in direct P2P. 
 # -DKAHAN=2 means use it for main computation too. 
 # overall, -DKAHAN=1 is necessary when you use float and N is large
@@ -76,11 +70,9 @@ ifeq ($(DEVICE),GPU)
 CUDA_INSTALL_PATH = /usr/local/cuda
 CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 ### CUDA compiler
-NVCC	= nvcc -Xcompiler -fopenmp --ptxas-options=-v\
-	-O3 -use_fast_math -arch=sm_21\
-	-I$(EXAFMM_INCLUDE_PATH) -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/common/inc
+NVCC	= nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_21 -I../include -I$(CUDA_INSTALL_PATH)/include
 ### CUDA flags
-LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -L$(CUDA_SDK_PATH)/lib -lcuda -lcudart -lcutil_x86_64 -lstdc++ -ldl -lm
+LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart -lstdc++ -ldl -lm
 endif
 
 KERNELS	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).o ../kernels/$(EQUATION)P2P$(DEVICE).o

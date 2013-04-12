@@ -1,31 +1,4 @@
 #include "kernel.h"
-
-#if __AVX__
-const int NSIMD = 32 / sizeof(real_t);
-typedef vec<NSIMD,real_t> simdvec;
-inline float vecSum8s(simdvec v) {
-  return v[0] + v[1] + v[2] + v[3] + v[4] + v[5] + v[6] + v[7];
-}
-inline double vecSum4d(__m256d reg) {
-  double mem[4] __attribute__ ((aligned(32)));
-  _mm256_store_pd(mem, reg);
-  return mem[0] + mem[1] + mem[2] + mem[3];
-}
-#elif __SSE__
-const int NSIMD = 16 / sizeof(real_t);
-typedef vec<NSIMD,real_t> simdvec;
-inline float vecSum4s(__m128 reg) {
-  float mem[4] __attribute__ ((aligned(16)));
-  _mm_store_ps(mem, reg);
-  return mem[0] + mem[1] + mem[2] + mem[3];
-}
-inline double vecSum2d(__m128d reg) {
-  double mem[2] __attribute__ ((aligned(16)));
-  _mm_store_pd(mem, reg);
-  return mem[0] + mem[1];
-}
-#endif
-
 template<typename T, int D, int N>
 struct SIMD {
   static inline T setBody(B_iter B, int i) {
