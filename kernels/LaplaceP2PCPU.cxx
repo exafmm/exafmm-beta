@@ -68,7 +68,7 @@ struct SIMD<T,3,2> {
 };
 
 
-#if KAHAN >= KAHAN_IN_DIRECT
+#if KAHAN
 
 inline void accum(real_t & s, real_t ds, real_t & c) {
   // s += ds;
@@ -86,7 +86,7 @@ inline void accumVec(vec3 & s, vec3 ds, vec3 & c) {
   s = t;
 }
 
-void Kernel::P2PKahan(C_iter Ci, C_iter Cj, bool mutual) const {
+void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
   int ni = Ci->NDBODY;
@@ -125,16 +125,42 @@ void Kernel::P2PKahan(C_iter Ci, C_iter Cj, bool mutual) const {
   }
 }
 
-#endif
-
-#if KAHAN >= KAHAN_ALWAYS
-
-void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
-  P2PKahan(Ci, Cj, mutual);
+void Kernel::P2P(C_iter C) const {
+  B_iter B = C->BODY;
+  int n = C->NDBODY;
+  int i = 0;
+  for ( ; i<n; i++) {
+    real_t pot = 0;
+    real_t pot_c = 0;
+    vec3 acc = 0;
+    vec3 acc_c = 0;
+    for (int j=i+1; j<n; j++) {
+      vec3 dX = B[i].X - B[j].X;
+      real_t R2 = norm(dX) + EPS2;
+      if (R2 != 0) {
+        real_t invR2 = 1.0 / R2;
+        real_t invR = B[i].SRC * B[j].SRC * sqrt(invR2);
+        dX *= invR2 * invR;
+        accum(pot, invR, pot_c);
+        accumVec(acc, dX, acc_c);
+	accum(B[j].TRG[0], invR,  B[j].TRGc[0]);
+        accum(B[j].TRG[1], dX[0], B[j].TRGc[1]);
+        accum(B[j].TRG[2], dX[1], B[j].TRGc[2]);
+        accum(B[j].TRG[3], dX[2], B[j].TRGc[3]);
+      }
+    }
+    accum(B[i].TRG[0], pot,       B[i].TRGc[0]);
+    accum(B[i].TRG[0], pot_c,     B[i].TRGc[0]);
+    accum(B[i].TRG[1], -acc[0],   B[i].TRGc[1]);
+    accum(B[i].TRG[1], -acc_c[0], B[i].TRGc[1]);
+    accum(B[i].TRG[2], -acc[1],   B[i].TRGc[2]);
+    accum(B[i].TRG[2], -acc_c[1], B[i].TRGc[2]);
+    accum(B[i].TRG[3], -acc[2],   B[i].TRGc[3]);
+    accum(B[i].TRG[3], -acc_c[2], B[i].TRGc[3]);
+  }
 }
 
 #else
-
 void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
@@ -296,54 +322,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     Bi[i].TRG[3] -= acc[2];
   }
 }
-#endif
 
-#if KAHAN >= KAHAN_IN_DIRECT
-
-void Kernel::P2PKahan(C_iter C) const {
-  B_iter B = C->BODY;
-  int n = C->NDBODY;
-  int i = 0;
-  for ( ; i<n; i++) {
-    real_t pot = 0;
-    real_t pot_c = 0;
-    vec3 acc = 0;
-    vec3 acc_c = 0;
-    for (int j=i+1; j<n; j++) {
-      vec3 dX = B[i].X - B[j].X;
-      real_t R2 = norm(dX) + EPS2;
-      if (R2 != 0) {
-        real_t invR2 = 1.0 / R2;
-        real_t invR = B[i].SRC * B[j].SRC * sqrt(invR2);
-        dX *= invR2 * invR;
-        accum(pot, invR, pot_c);
-        accumVec(acc, dX, acc_c);
-        accum(B[j].TRG[0], invR,  B[j].TRGc[0]);
-        accum(B[j].TRG[1], dX[0], B[j].TRGc[1]);
-        accum(B[j].TRG[2], dX[1], B[j].TRGc[2]);
-        accum(B[j].TRG[3], dX[2], B[j].TRGc[3]);
-      }
-    }
-    accum(B[i].TRG[0], pot,       B[i].TRGc[0]);
-    accum(B[i].TRG[0], pot_c,     B[i].TRGc[0]);
-    accum(B[i].TRG[1], -acc[0],   B[i].TRGc[1]);
-    accum(B[i].TRG[1], -acc_c[0], B[i].TRGc[1]);
-    accum(B[i].TRG[2], -acc[1],   B[i].TRGc[2]);
-    accum(B[i].TRG[2], -acc_c[1], B[i].TRGc[2]);
-    accum(B[i].TRG[3], -acc[2],   B[i].TRGc[3]);
-    accum(B[i].TRG[3], -acc_c[2], B[i].TRGc[3]);
-  }
-}
-
-#endif
-
-#if KAHAN >= KAHAN_ALWAYS
-
-void Kernel::P2P(C_iter Ci) const {
-  P2PKahan(Ci);
-}
-
-#else
 void Kernel::P2P(C_iter C) const {
   B_iter B = C->BODY;
   int n = C->NDBODY;
@@ -424,7 +403,7 @@ void Kernel::P2P(C_iter C) const {
       R2 += z2 * z2;
       z2 = B[j+2].X[2];
     }
-    if ( n > 1 ) {
+    if ( n-2 > i ) {
       invR = rsqrt(R2);
       invR &= index < n-2;
       invR &= R2 > zero;

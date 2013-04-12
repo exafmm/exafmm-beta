@@ -4,7 +4,7 @@ include ../Makefile.include
 
 serial	: serial.cxx $(KERNELS)
 	$(CXX) $? $(LFLAGS)
-	./a.out --ncrit 64
+	./a.out
 #	numactl --interleave=all ./a.out
 
 parallel: parallel.cxx $(KERNELS)

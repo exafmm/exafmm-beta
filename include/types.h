@@ -7,14 +7,12 @@
 #include <vector>
 #include "vec.h"
 
-#if defined(KAHAN) 
-#define KAHAN_NEVER 0 		/* never use Kahan's accumulation */
-#define KAHAN_IN_DIRECT 1	/* use it only in the direct evaluation */
-#define KAHAN_ALWAYS 2 /* use it both in main computation and direct evaluation */
-#endif
-
 // Basic type definitions
+#if DOUBLE
+typedef double               real_t;                            //!< Floating point type
+#else
 typedef float                real_t;                            //!< Floating point type
+#endif
 typedef std::complex<real_t> complex_t;                         //!< Complex type
 typedef vec<3,real_t>        vec3;                              //!< Vector of 3 floating point types
 typedef vec<3,float>         fvec3;                             //!< Vector of 3 single precision types
@@ -24,12 +22,15 @@ typedef vec<8,int>           ivec8;                             //!< Vector of 8
 typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3
 
 // SIMD vector types for MIC, AVX, and SSE
-#if __AVX__
-const int NSIMD = 32 / sizeof(real_t);
-typedef vec<NSIMD,real_t> simdvec;
+#if __MIC__
+const int NSIMD = 64 / sizeof(real_t);                          //!< SIMD vector length of MIC
+typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type for MIC
+#elif __AVX__
+const int NSIMD = 32 / sizeof(real_t);                          //!< SIMD vector length of AVX
+typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type for AVX
 #elif __SSE__
-const int NSIMD = 16 / sizeof(real_t);
-typedef vec<NSIMD,real_t> simdvec;
+const int NSIMD = 16 / sizeof(real_t);                          //!< SIMD vector length of SSE
+typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type for SSE
 #endif
 
 // Compile-time parameters
@@ -62,8 +63,8 @@ struct Body : public Source {
   int    IBODY;                                                 //!< Initial body numbering for sorting back
   int    IPROC;                                                 //!< Initial process numbering for partitioning back
   int    ICELL;                                                 //!< Cell index
-  fvec4  TRG;                                                   //!< Scalar+vector3 target values
-#if KAHAN >= KAHAN_IN_DIRECT
+  vec4   TRG;                                                   //!< Scalar+vector3 target values
+#if KAHAN
   fvec4  TRGc;                                                  //!< Scalar+vector3 target values
 #endif
 };

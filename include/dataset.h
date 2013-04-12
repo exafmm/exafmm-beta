@@ -99,7 +99,7 @@ public:
   void initTarget(Bodies &bodies) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG = 0;                                               //  Clear target values
-#if KAHAN >= KAHAN_IN_DIRECT
+#if KAHAN
       B->TRGc = 0;                                              //  Clear target values
 #endif
     }                                                           // End loop over bodies

@@ -192,11 +192,7 @@ public:
           Xperiodic[0] = ix * 2 * globalRadius;                 //    Coordinate shift for x periodic direction
           Xperiodic[1] = iy * 2 * globalRadius;                 //    Coordinate shift for y periodic direction
           Xperiodic[2] = iz * 2 * globalRadius;                 //    Coordinate shift for z periodic direction
-#if KAHAN >= KAHAN_IN_DIRECT
-          P2PKahan(Ci,Cj,false);                                //    Evaluate P2P kernel
-#else
           P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
-#endif
         }                                                       //   End loop over z periodic direction
       }                                                         //  End loop over y periodic direction
     }                                                           // End loop over x periodic direction

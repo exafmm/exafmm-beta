@@ -638,13 +638,16 @@ public:
     return vec(_mm256_max_pd(v.data,w.data));
   }
   friend vec rsqrt(const vec &v) {                               // Reciprocal square root
-    //vec<8,float> in(v[0],v[1],v[2],v[3],0,0,0,0);
-    //vec<8,float> temp = rsqrt(in);
-    //temp *= (temp * temp * in - 3.0f) * (-0.5f);
-    //vec<4,double> out(temp[0],temp[1],temp[2],temp[3]);
-    //return out;
+#if 1                                                            // Switch on Newton-Raphson correction
+    vec<8,float> in(v[0],v[1],v[2],v[3],0,0,0,0);
+    vec<8,float> temp = rsqrt(in);
+    temp *= (temp * temp * in - 3.0f) * (-0.5f);
+    vec<4,double> out(temp[0],temp[1],temp[2],temp[3]);
+    return out;
+#else
     vec one = 1;
     return vec(_mm256_div_pd(one.data,_mm256_sqrt_pd(v.data)));
+#endif
   }
 };
 #endif
@@ -865,11 +868,16 @@ public:
     return vec(_mm_max_pd(v.data,w.data));
   }
   friend vec rsqrt(const vec &v) {                               // Reciprocal square root
+#if 1                                                            // Switch on Newton-Raphson correction
     vec<4,float> in(v[0],v[1],0,0);
     vec<4,float> temp = rsqrt(in);
     temp *= (temp * temp * in - 3.0f) * (-0.5f);
     vec<2,double> out(temp[0],temp[1]);
     return out;
+#else
+    vec one = 1;
+    return vec(_mm_div_pd(one.data,_mm_sqrt_pd(v.data)));
+#endif
   }
 };
 #endif

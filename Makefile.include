@@ -18,7 +18,7 @@ DEVICE	= CPU
 #DEVICE	= MIC
 
 ### choose compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -ffast-math -funroll-loops # GCC
+CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -mavx -O3 -ffast-math -funroll-loops # GCC
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias # Intel
 #CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3 # BG/P
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
@@ -34,13 +34,8 @@ LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
 LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
 #LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
-
-### Additional flags for controlling accuracy
-# -DKAHAN=1 means use Kahan's algorithm in direct P2P. 
-# -DKAHAN=2 means use it for main computation too. 
-# overall, -DKAHAN=1 is necessary when you use float and N is large
-#          -DKAHAN=2 is perhaps never necessary (included for experiments)
-LFLAGS  += -DKAHAN=0     
+#LFLAGS	+= -DDOUBLE #Use double precision
+#LFLAGS	+= -DKAHAN     
 
 ### Debugging flags
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
