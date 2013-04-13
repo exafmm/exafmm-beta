@@ -1,5 +1,6 @@
 #ifndef types_h
 #define types_h
+#include "align.h"
 #include <complex>
 #include "macros.h"
 #include <queue>
@@ -23,15 +24,14 @@ typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec
 
 // SIMD vector types for MIC, AVX, and SSE
 #if __MIC__
-const int NSIMD = 64 / sizeof(real_t);                          //!< SIMD vector length of MIC
-typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type for MIC
+const int SIMD_BYTES = 64;                                      //!< SIMD byte length of MIC
 #elif __AVX__
-const int NSIMD = 32 / sizeof(real_t);                          //!< SIMD vector length of AVX
-typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type for AVX
+const int SIMD_BYTES = 32;                                      //!< SIMD byte length of AVX
 #elif __SSE__
-const int NSIMD = 16 / sizeof(real_t);                          //!< SIMD vector length of SSE
-typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type for SSE
+const int SIMD_BYTES = 16;                                      //!< SIMD byte length of SSE
 #endif
+const int NSIMD = SIMD_BYTES / sizeof(real_t);                  //!< SIMD vector length
+typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type
 
 // Compile-time parameters
 const int P = EXPANSION;                                        //!< Order of expansions
@@ -68,8 +68,9 @@ struct Body : public Source {
   fvec4  TRGc;                                                  //!< Scalar+vector3 target values
 #endif
 };
-typedef std::vector<Body>           Bodies;                     //!< Vector of bodies
-typedef std::vector<Body>::iterator B_iter;                     //!< Iterator of body vector
+typedef AlignedAllocator<Body,SIMD_BYTES>         BodyAllocator;//!< Body alignment allocator
+typedef std::vector<Body,BodyAllocator>           Bodies;       //!< Vector of bodies
+typedef std::vector<Body,BodyAllocator>::iterator B_iter;       //!< Iterator of body vector
 
 //! Structure of cells
 struct Cell {
