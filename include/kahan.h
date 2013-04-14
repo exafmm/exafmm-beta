@@ -6,7 +6,7 @@ template<typename T>
 struct kahan {
   T s;
   T c;
-  kahan(){}                                                      // Default constructor
+  kahan(){}                                                     // Default constructor
   kahan(const T &v) {                                           // Copy constructor (scalar)
     s = v;
     c = 0;

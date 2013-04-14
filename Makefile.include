@@ -36,7 +36,7 @@ LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
 #LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
 #LFLAGS	+= -DDOUBLE # Use double precision
-#LFLAGS	+= -DKAHAN # Use Kahan summation   
+LFLAGS	+= -DKAHAN # Use Kahan summation   
 
 ### Debugging flags
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
