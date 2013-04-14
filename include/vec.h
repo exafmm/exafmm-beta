@@ -207,7 +207,6 @@ public:
   vec(const vec &v) {                                            // Copy constructor vector
     data = v.data;
   }
-  ~vec(){}                                                       // Destructor
   vec(const float a, const float b, const float c, const float d,
       const float e, const float f, const float g, const float h,
       const float i, const float j, const float k, const float l,
@@ -326,7 +325,6 @@ public:
   vec(const vec &v) {                                            // Copy constructor vector
     data = v.data;
   }
-  ~vec(){}                                                       // Destructor
   vec(const double a, const double b, const double c, const double d,
       const double e, const double f, const double g, const double h) {// Copy constructor (component-wise)
     data = _mm512_setr_pd(a,b,c,d,e,f,g,h);
@@ -449,11 +447,11 @@ public:
   vec(const vec &v) {                                            // Copy constructor vector
     data = v.data;
   }
-  ~vec(){}                                                       // Destructor
   vec(const float a, const float b, const float c, const float d,
       const float e, const float f, const float g, const float h) {// Copy constructor (component-wise)
     data = _mm256_setr_ps(a,b,c,d,e,f,g,h);
   }
+  ~vec(){}                                                       // Destructor
   const vec &operator=(const float v) {                          // Scalar assignment
     data = _mm256_set1_ps(v);
     return *this;
@@ -565,10 +563,10 @@ public:
   vec(const vec &v) {                                            // Copy constructor vector
     data = v.data;
   }
-  ~vec(){}                                                       // Destructor
   vec(const double a, const double b, const double c, const double d) {// Copy constructor (component-wise)
     data = _mm256_setr_pd(a,b,c,d);
   }
+  ~vec(){}                                                       // Destructor
   const vec &operator=(const double v) {                         // Scalar assignment
     data = _mm256_set1_pd(v);
     return *this;

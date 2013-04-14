@@ -20,6 +20,7 @@ DEVICE	= CPU
 ### choose compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -mavx -O3 -ffast-math -funroll-loops # GCC
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias # Intel
+#CXX	= icpc -Wall -mmic -O3 # Intel MIC
 #CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3 # BG/P
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
