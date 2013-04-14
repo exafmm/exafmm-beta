@@ -11,6 +11,20 @@ struct SIMD {
   }
 };
 template<typename T, int D>
+struct SIMD<T,D,16> {
+  static inline T setBody(B_iter B, int i) {
+    T v(B[i   ].X[D],B[i+1 ].X[D],B[i+2 ].X[D],B[i+3 ].X[D],
+        B[i+4 ].X[D],B[i+5 ].X[D],B[i+6 ].X[D],B[i+7 ].X[D],
+        B[i+8 ].X[D],B[i+9 ].X[D],B[i+10].X[D],B[i+11].X[D],
+	B[i+12].X[D],B[i+13].X[D],B[i+14].X[D],B[i+15].X[D]);
+    return v;
+  }
+  static inline T setIndex(int i) {
+    T v(i,i+1,i+2,i+3,i+4,i+5,i+6,i+7,i+8,i+9,i+10,i+11,i+12,i+13,i+14,i+15);
+    return v;
+  }
+};
+template<typename T, int D>
 struct SIMD<T,D,8> {
   static inline T setBody(B_iter B, int i) {
     T v(B[i  ].X[D],B[i+1].X[D],B[i+2].X[D],B[i+3].X[D],
@@ -41,6 +55,16 @@ struct SIMD<T,D,2> {
   }
   static inline T setIndex(int i) {
     T v(i,i+1);
+    return v;
+  }
+};
+template<typename T>
+struct SIMD<T,3,16> {
+  static inline T setBody(B_iter B, int i) {
+    T v(B[i   ].SRC,B[i+1 ].SRC,B[i+2 ].SRC,B[i+3 ].SRC,
+        B[i+4 ].SRC,B[i+5 ].SRC,B[i+6 ].SRC,B[i+7 ].SRC,
+        B[i+8 ].SRC,B[i+9 ].SRC,B[i+10].SRC,B[i+11].SRC,
+        B[i+12].SRC,B[i+13].SRC,B[i+14].SRC,B[i+15].SRC);
     return v;
   }
 };
@@ -84,7 +108,6 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   int ni = Ci->NDBODY;
   int nj = Cj->NDBODY;
   int i = 0;
-#if 1
   for ( ; i<=ni-NSIMD; i+=NSIMD) {
     simdvec zero = 0;
     ksimdvec pot = zero;
@@ -214,7 +237,6 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       Bi[i+k].TRG[3] += transpose(az,k);
     }
   }
-#endif
   for ( ; i<ni; i++) {
     kreal_t pot = 0; 
     kreal_t ax = 0;
@@ -250,7 +272,6 @@ void Kernel::P2P(C_iter C) const {
   B_iter B = C->BODY;
   int n = C->NDBODY;
   int i = 0;
-#if 1
   for ( ; i<=n-NSIMD; i+=NSIMD) {
     simdvec zero = 0;
     ksimdvec pot = zero;
@@ -384,7 +405,6 @@ void Kernel::P2P(C_iter C) const {
       B[i+k].TRG[3] += transpose(az,k);
     }
   }
-#endif
   for ( ; i<n; i++) {
     kreal_t pot = 0;
     kreal_t ax = 0;

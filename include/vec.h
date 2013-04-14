@@ -238,12 +238,8 @@ public:
     data = _mm512_div_ps(data,v.data);
     return *this;
   }
-  const vec &operator&=(const vec &v) {                          // Vector compound assignment (bitwise and)
-    data = _mm512_and_ps(data,v.data);
-    return *this;
-  }
-  const vec &operator|=(const vec &v) {                          // Vector compound assignment (bitwise or)
-    data = _mm512_or_ps(data,v.data);
+  const vec &operator&=(const __mmask16 &v) {                    // Vector compound assignment (and)
+    data = _mm512_mask_mov_ps(_mm512_setzero_ps(),v,data);
     return *this;
   }
   vec operator+(const vec &v) const {                            // Vector arithmetic (add)
@@ -258,20 +254,14 @@ public:
   vec operator/(const vec &v) const {                            // Vector arithmetic (divide)
     return vec(_mm512_div_ps(data,v.data));
   }
-  vec operator>(const vec &v) const {                            // Vector arithmetic (greater than)
-    return vec(_mm512_cmp_ps(data,v.data,_CMP_GT_OQ));
+  __mmask16 operator>(const vec &v) const {                      // Vector arithmetic (greater than)
+    return _mm512_cmp_ps_mask(data,v.data,_MM_CMPINT_GT);
   }
-  vec operator<(const vec &v) const {                            // Vector arithmetic (less than)
-    return vec(_mm512_cmp_ps(data,v.data,_CMP_LT_OQ));
-  }
-  vec operator&(const vec &v) const {                            // Vector arithmetic (bitwise and)
-    return vec(_mm512_and_ps(data,v.data));
-  }
-  vec operator|(const vec &v) const {                            // Vector arithmetic (bitwise or)
-    return vec(_mm512_or_ps(data,v.data));
+  __mmask16 operator<(const vec &v) const {                      // Vector arithmetic (less than)
+    return _mm512_cmp_ps_mask(data,v.data,_MM_CMPINT_LT);
   }
   vec operator-() const {                                        // Vector arithmetic (negation)
-    return _mm512_xor_ps(data,_mm512_castsi512_ps(_mm512_set1_epi32(0x80000000)));
+    return vec(_mm512_sub_ps(_mm512_setzero_ps(),data));
   }
   float &operator[](int i) {                                     // Indexing (lvalue)
     return ((float*)&data)[i];
@@ -354,12 +344,8 @@ public:
     data = _mm512_div_pd(data,v.data);
     return *this;
   }
-  const vec &operator&=(const vec &v) {                          // Vector compound assignment (bitwise and)
-    data = _mm512_and_pd(data,v.data);
-    return *this;
-  }
-  const vec &operator|=(const vec &v) {                          // Vector compound assignment (bitwise or)
-    data = _mm512_or_pd(data,v.data);
+  const vec &operator&=(const __mmask8 &v) {                     // Vector compound assignment (and)
+    data = _mm512_mask_mov_pd(_mm512_setzero_pd(),v,data);
     return *this;
   }
   vec operator+(const vec &v) const {                            // Vector arithmetic (add)
@@ -374,20 +360,14 @@ public:
   vec operator/(const vec &v) const {                            // Vector arithmetic (divide)
     return vec(_mm512_div_pd(data,v.data));
   }
-  vec operator>(const vec &v) const {                            // Vector arithmetic (greater than)
-    return vec(_mm512_cmp_pd(data,v.data,_CMP_GT_OQ));
+  __mmask8 operator>(const vec &v) const {                       // Vector arithmetic (greater than)
+    return _mm512_cmp_pd_mask(data,v.data,_MM_CMPINT_GT);
   }
-  vec operator<(const vec &v) const {                            // Vector arithmetic (less than)
-    return vec(_mm512_cmp_pd(data,v.data,_CMP_LT_OQ));
-  }
-  vec operator&(const vec &v) const {                            // Vector arithmetic (bitwise and)
-    return vec(_mm512_and_pd(data,v.data));
-  }
-  vec operator|(const vec &v) const {                            // Vector arithmetic (bitwise or)
-    return vec(_mm512_or_pd(data,v.data));
+  __mmask8 operator<(const vec &v) const {                       // Vector arithmetic (less than)
+    return _mm512_cmp_pd_mask(data,v.data,_MM_CMPINT_LT);
   }
   vec operator-() const {                                        // Vector arithmetic (negation)
-    return _mm512_xor_pd(data,_mm512_castsi512_pd(_mm512_set1_epi64(0x8000000000000000)));
+    return vec(_mm512_sub_pd(_mm512_setzero_pd(),data));
   }
   double &operator[](int i) {                                    // Indexing (lvalue)
     return ((double*)&data)[i];
@@ -480,10 +460,6 @@ public:
     data = _mm256_and_ps(data,v.data);
     return *this;
   }
-  const vec &operator|=(const vec &v) {                          // Vector compound assignment (bitwise or)
-    data = _mm256_or_ps(data,v.data);
-    return *this;
-  }
   vec operator+(const vec &v) const {                            // Vector arithmetic (add)
     return vec(_mm256_add_ps(data,v.data));
   }
@@ -502,14 +478,8 @@ public:
   vec operator<(const vec &v) const {                            // Vector arithmetic (less than)
     return vec(_mm256_cmp_ps(data,v.data,_CMP_LT_OQ));
   }
-  vec operator&(const vec &v) const {                            // Vector arithmetic (bitwise and)
-    return vec(_mm256_and_ps(data,v.data));
-  }
-  vec operator|(const vec &v) const {                            // Vector arithmetic (bitwise or)
-    return vec(_mm256_or_ps(data,v.data));
-  }
   vec operator-() const {                                        // Vector arithmetic (negation)
-    return _mm256_xor_ps(data,_mm256_castsi256_ps(_mm256_set1_epi32(0x80000000)));
+    return vec(_mm256_sub_ps(_mm256_setzero_ps(),data));
   }
   float &operator[](int i) {                                     // Indexing (lvalue)
     return ((float*)&data)[i];
@@ -595,10 +565,6 @@ public:
     data = _mm256_and_pd(data,v.data);
     return *this;
   }
-  const vec &operator|=(const vec &v) {                          // Vector compound assignment (bitwise or)
-    data = _mm256_or_pd(data,v.data);
-    return *this;
-  }
   vec operator+(const vec &v) const {                            // Vector arithmetic (add)
     return vec(_mm256_add_pd(data,v.data));
   }
@@ -617,14 +583,8 @@ public:
   vec operator<(const vec &v) const {                            // Vector arithmetic (less than)
     return vec(_mm256_cmp_pd(data,v.data,_CMP_LT_OQ));
   }
-  vec operator&(const vec &v) const {                            // Vector arithmetic (bitwise and)
-    return vec(_mm256_and_pd(data,v.data));
-  }
-  vec operator|(const vec &v) const {                            // Vector arithmetic (bitwise or)
-    return vec(_mm256_or_pd(data,v.data));
-  }
   vec operator-() const {                                        // Vector arithmetic (negation)
-    return _mm256_xor_pd(data,_mm256_castsi256_pd(_mm256_set1_epi64x(0x8000000000000000)));
+    return vec(_mm256_sub_pd(_mm256_setzero_pd(),data));
   }
   double &operator[](int i) {                                    // Indexing (lvalue)
     return ((double*)&data)[i];
@@ -716,10 +676,6 @@ public:
     data = _mm_and_ps(data,v.data);
     return *this;
   }
-  const vec &operator|=(const vec &v) {                          // Vector compound assignment (bitwise or)
-    data = _mm_or_ps(data,v.data);
-    return *this;
-  }
   vec operator+(const vec &v) const {                            // Vector arithmetic (add)
     return vec(_mm_add_ps(data,v.data));
   }
@@ -738,14 +694,8 @@ public:
   vec operator<(const vec &v) const {                            // Vector arithmetic (less than)
     return vec(_mm_cmplt_ps(data,v.data));
   }
-  vec operator&(const vec &v) const {                            // Vector arithmetic (bitwise and)
-    return vec(_mm_and_ps(data,v.data));
-  }
-  vec operator|(const vec &v) const {                            // Vector arithmetic (bitwise or)
-    return vec(_mm_or_ps(data,v.data));
-  }
   vec operator-() const {                                        // Vector arithmetic (negation)
-    return _mm_xor_ps(data,_mm_castsi128_ps(_mm_set1_epi32(0x80000000)));
+    return vec(_mm_sub_ps(_mm_setzero_ps(),data));
   }
   float &operator[](int i) {                                     // Indexing (lvalue)
     return ((float*)&data)[i];
@@ -831,10 +781,6 @@ public:
     data = _mm_and_pd(data,v.data);
     return *this;
   }
-  const vec &operator|=(const vec &v) {                          // Vector compound assignment (bitwise or)
-    data = _mm_or_pd(data,v.data);
-    return *this;
-  }
   vec operator+(const vec &v) const {                            // Vector arithmetic (add)
     return vec(_mm_add_pd(data,v.data));
   }
@@ -853,14 +799,8 @@ public:
   vec operator<(const vec &v) const {                            // Vector arithmetic (less than)
     return vec(_mm_cmplt_pd(data,v.data));
   }
-  vec operator&(const vec &v) const {                            // Vector arithmetic (bitwise and)
-    return vec(_mm_and_pd(data,v.data));
-  }
-  vec operator|(const vec &v) const {                            // Vector arithmetic (bitwise or)
-    return vec(_mm_or_pd(data,v.data));
-  }
   vec operator-() const {                                        // Vector arithmetic (negation)
-    return _mm_xor_pd(data,_mm_castsi128_pd(_mm_set1_epi64x(0x8000000000000000)));
+    return vec(_mm_sub_pd(_mm_setzero_pd(),data));
   }
   double &operator[](int i) {                                    // Indexing (lvalue)
     return ((double*)&data)[i];
