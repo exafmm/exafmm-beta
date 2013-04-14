@@ -13,7 +13,7 @@ libparallel_coulombVdW.a: parallel_coulombVdW.o $(OBJECT)
 test_serial_coulombVdW: test_serial_coulombVdW.cxx
 	rm -f libserial_coulombVdW.a
 	make libserial_coulombVdW.a
-	$(CXX) $? -L. -lserial_coulombVdW -lmd3withg80vg $(LFLAGS)
+	$(CXX) $? -L. -lserial_coulombVdW $(LFLAGS)
 	./a.out
 
 test_parallel_coulombVdW: test_parallel_coulombVdW.cxx

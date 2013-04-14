@@ -288,7 +288,7 @@ extern "C" void fmmcalccoulomb_ij_exlist_(int *ni, double* xi, double* qi, doubl
   FMMcalccoulomb_ij(*ni,xi,qi,fi,*nj,xj,qj,*rscale,*tblno-6,*size,*periodicflag);
   switch (*tblno-6) {
   case 0 :
-#if 1
+#if 0
     for( int i=0,ic=0; i<*ni; i++ ) {
       for( int j=0; j<numex[i]; j++,ic++ ) natex[ic]--;
     }
@@ -376,8 +376,8 @@ extern "C" void fmmcalcvdw_ij_exlist_(int *ni, double* xi, int* atypei, double* 
                           *size,(*periodicflag & 3),numex,natex,-1.0);
 #else
   FMMcalcvdw_ij(*ni,xi,atypei,fi,*nj,xj,atypej,*nat,gscale,rscale,*tblno,*size,*periodicflag);
-  MR3calcvdw_nlist_ij_host(*ni,xi,atypei,fi,*nj,xj,atypej,*nat,gscale,rscale,*tblno,
-                          *size,(*periodicflag & 3),numex,natex,-1.0);
+//  MR3calcvdw_nlist_ij_host(*ni,xi,atypei,fi,*nj,xj,atypej,*nat,gscale,rscale,*tblno,
+//                          *size,(*periodicflag & 3),numex,natex,-1.0);
 #endif
   for( int i=0; i<*ni; i++ ) atypei[i]++;
   for( int i=0; i<*nj; i++ ) atypej[i]++;

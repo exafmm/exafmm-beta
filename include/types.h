@@ -63,7 +63,7 @@ int omp_get_thread_num() {
 #endif
 
 typedef unsigned           bigint;                              //!< Big integer type
-typedef float              real;                                //!< Real number type on CPU
+typedef double             real;                                //!< Real number type on CPU
 typedef float              gpureal;                             //!< Real number type on GPU
 typedef std::complex<real> complex;                             //!< Complex number type
 typedef vec<3,real>        vect;                                //!< 3-D vector type
@@ -91,7 +91,7 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 #endif
 #endif
 
-const int  P        = 6;                                        //!< Order of expansions
+const int  P        = 15;                                       //!< Order of expansions
 const int  NCRIT    = 64;                                       //!< Number of bodies per cell
 const int  MAXBODY  = 50000;                                    //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel

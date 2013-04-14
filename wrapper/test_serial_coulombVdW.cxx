@@ -2,9 +2,11 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+const float R2MIN    = 0.0001;                                   //!< Minimum value for L-J R^2
+const float R2MAX    = 100.0;                                    //!< Maximum value for L-J R^2
 extern "C" {
-#include "md.h"
-#include "vtgrapeproto.h"
+//#include "md.h"
+//#include "vtgrapeproto.h"
 }
 //#define DATAFILE
 
@@ -41,7 +43,7 @@ int main() {
   double *fgscale = new double [64*64];
   int *numex  = new int [N];
   int *natex  = new int [N];
-  MR3init();
+//  MR3init();
 
 #ifdef DATAFILE
   std::fstream fid("datafile",std::ios::in);
@@ -125,7 +127,7 @@ int main() {
 
   FMMcalccoulomb_ij(N, xi, qi, pi, N, xj, qj, 0.0, 1, size, 0);
   FMMcalccoulomb_ij(N, xi, qi, fi, N, xj, qj, 0.0, 0, size, 0);
-#if 1
+#if 0
   MR3calccoulomb_ij_host(N, xi, qi, pd, N, xj, qj, 1.0, 1, size, 2);
   MR3calccoulomb_ij_host(N, xi, qi, fd, N, xj, qj, 1.0, 0, size, 2);
 #else
@@ -185,7 +187,7 @@ int main() {
 
   FMMcalcvdw_ij(N,xi,atypei,pi,N,xj,atypej,nat,gscale,rscale,3,size,0);
   FMMcalcvdw_ij(N,xi,atypei,fi,N,xj,atypej,nat,fgscale,frscale,2,size,0);
-#if 1
+#if 0
   MR3calcvdw_ij(N,xi,atypei,pd,N,xj,atypej,nat,gscale,rscale,3,size,0);
   MR3calcvdw_ij(N,xi,atypei,fd,N,xj,atypej,nat,fgscale,frscale,2,size,0);
 #else
