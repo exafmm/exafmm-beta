@@ -91,12 +91,16 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 #endif
 #endif
 
-const int  P        = 15;                                       //!< Order of expansions
+#if CPU
+const int  P        = 15;                                       //!< Order of expansions, 10 is enough in single precision
+# else // #elif GPU
+const int P         = 10;                                       //!< GPU Thread count limits the expansion to 10
+#endif 
 const int  NCRIT    = 64;                                       //!< Number of bodies per cell
 const int  MAXBODY  = 50000;                                    //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET     = 2;                                        //!< LET opening critetia
-const real EPS      = 1e-12;                                    //!< Single/double precision epsilon
+const real EPS      = 1e-12;                                    //!< Single/double precision epsilon 1e-6,1e-12 respectivly
 const real EPS2     = 0;                                        //!< Softening parameter (squared)
 const real R2MIN    = 0.0001;                                   //!< Minimum value for L-J R^2
 const real R2MAX    = 100.0;                                    //!< Maximum value for L-J R^2

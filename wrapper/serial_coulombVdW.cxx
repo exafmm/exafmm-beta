@@ -7,7 +7,7 @@ extern "C" {
 extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   int nj, double* xj, double* qj, double, int tblno, double size, int periodicflag) {
   std::cout << "tblno: " << tblno << std::endl;
-  IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
+  IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 5;
   THETA = .5;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
@@ -120,6 +120,7 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
     break;
   }
 #endif
+  // This is the correction factor from FMM to MD Ewald.
   double fc[3];
   for( int d=0; d!=3; ++d ) fc[d]=0;
   for( int i=0; i!=ni; ++i ) { 
@@ -292,8 +293,8 @@ extern "C" void fmmcalccoulomb_ij_exlist_(int *ni, double* xi, double* qi, doubl
     for( int i=0,ic=0; i<*ni; i++ ) {
       for( int j=0; j<numex[i]; j++,ic++ ) natex[ic]--;
     }
-    MR3calccoulomb_nlist_ij_host(*ni,xi,qi,fi,*nj,xj,qj,
-                                *rscale,*tblno-6,*size,*periodicflag&3,numex,natex,-1.0);
+//    MR3calccoulomb_nlist_ij_host(*ni,xi,qi,fi,*nj,xj,qj,
+//                                *rscale,*tblno-6,*size,*periodicflag&3,numex,natex,-1.0);
 //    MR3calccoulomb_nlist_ij_emu(*ni,xi,qi,fi,*nj,xj,qj,
 //			        *rscale,*tblno-6,*size,*periodicflag&3,numex,natex,-1.0);
     for( int i=0,ic=0; i<*ni; i++ ) {

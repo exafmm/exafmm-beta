@@ -40,7 +40,7 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 #LFLAGS += -DPAPI -lpapi
 
 ### QUARK flags
-LFLAGS	+= -DQUARK -lquark
+# LFLAGS	+= -DQUARK -lquark
 
 ### MassiveThreads flags
 #LFLAGS += -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
@@ -52,6 +52,9 @@ LFLAGS	+= -DQUARK -lquark
 ifeq ($(DEVICE),GPU)
 ### CUDA flags
 LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart
+else
+### TODO: check might have to add for CUDA as well
+LFLAGS += -lstdc++ -ldl -lm
 endif
 
 OBJECT = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
