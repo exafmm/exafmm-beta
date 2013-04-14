@@ -2,6 +2,7 @@
 #define types_h
 #include "align.h"
 #include <complex>
+#include "kahan.h"
 #include "macros.h"
 #include <queue>
 #include <utility>
@@ -10,17 +11,17 @@
 
 // Basic type definitions
 #if DOUBLE
-typedef double               real_t;                            //!< Floating point type
+typedef double               real_t;                            //!< Floating point type is double precision
 #else
-typedef float                real_t;                            //!< Floating point type
+typedef float                real_t;                            //!< Floating point type is single precision
 #endif
-typedef std::complex<real_t> complex_t;                         //!< Complex type
-typedef vec<3,real_t>        vec3;                              //!< Vector of 3 floating point types
-typedef vec<3,float>         fvec3;                             //!< Vector of 3 single precision types
-typedef vec<4,real_t>        vec4;                              //!< Vector of 4 floating point types
-typedef vec<4,float>         fvec4;                             //!< Vector of 4 single precision types
-typedef vec<8,int>           ivec8;                             //!< Vector of 8 integer types
-typedef std::pair<vec3,vec3> vec3Pair;                          //!< Pair of vec3
+typedef std::complex<real_t>  complex_t;                        //!< Complex type
+typedef vec<3,real_t>         vec3;                             //!< Vector of 3 floating point types
+typedef vec<3,float>          fvec3;                            //!< Vector of 3 single precision types
+typedef vec<4,real_t>         vec4;                             //!< Vector of 4 floating point types
+typedef vec<4,float>          fvec4;                            //!< Vector of 4 single precision types
+typedef vec<8,int>            ivec8;                            //!< Vector of 8 integer types
+typedef std::pair<vec3,vec3>  vec3Pair;                         //!< Pair of vec3
 
 // SIMD vector types for MIC, AVX, and SSE
 #if __MIC__
@@ -33,7 +34,18 @@ const int SIMD_BYTES = 16;                                      //!< SIMD byte l
 const int NSIMD = SIMD_BYTES / sizeof(real_t);                  //!< SIMD vector length
 typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type
 
-// Compile-time parameters
+// Kahan summation types
+#if KAHAN
+typedef kahan<real_t>  kreal_t;                                 //!< Floating point type with Kahan summation
+typedef vec<4,kreal_t> kvec4;                                   //!< Vector of 4 floats with Kahan summaiton
+typedef kahan<simdvec> ksimdvec;                                //!< SIMD vector type with Kahan summation
+#else
+typedef real_t  kreal_t;                                        //!< Floating point type
+typedef vec4    kvec4;                                          //!< Vector of 4 floating point types
+typedef simdvec ksimdvec;                                       //!< SIMD vector type
+#endif
+
+// Multipole/local expansion coefficients
 const int P = EXPANSION;                                        //!< Order of expansions
 const float EPS2 = .0;                                          //!< Softening parameter (squared)
 #if COMkernel
@@ -43,7 +55,6 @@ const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of C
 #endif
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
 const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
-
 #if Cartesian
 typedef vec<MTERM,real_t> vecM;                                 //!< Multipole coefficient type for Cartesian
 typedef vec<LTERM,real_t> vecL;                                 //!< Local coefficient type for Cartesian
@@ -63,10 +74,7 @@ struct Body : public Source {
   int    IBODY;                                                 //!< Initial body numbering for sorting back
   int    IPROC;                                                 //!< Initial process numbering for partitioning back
   int    ICELL;                                                 //!< Cell index
-  vec4   TRG;                                                   //!< Scalar+vector3 target values
-#if KAHAN
-  fvec4  TRGc;                                                  //!< Scalar+vector3 target values
-#endif
+  kvec4  TRG;                                                   //!< Scalar+vector3 target values
 };
 typedef AlignedAllocator<Body,SIMD_BYTES>         BodyAllocator;//!< Body alignment allocator
 typedef std::vector<Body,BodyAllocator>           Bodies;       //!< Vector of bodies

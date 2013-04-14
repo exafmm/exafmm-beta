@@ -301,7 +301,13 @@ public:
     return vec(_mm512_max_ps(v.data,w.data));
   }
   friend vec rsqrt(const vec &v) {                               // Reciprocal square root
+#if KAHAN                                                        // Switch on Newton-Raphson correction
+    vec temp = vec(_mm512_rsqrt23_ps(v.data));
+    temp *= (temp * temp * v - 3.0f) * (-0.5f);
+    return temp;
+#else
     return vec(_mm512_rsqrt23_ps(v.data));
+#endif
   }
 };
 
@@ -412,11 +418,16 @@ public:
     return vec(_mm512_max_pd(v.data,w.data));
   }
   friend vec rsqrt(const vec &v) {                               // Reciprocal square root
+#if 1
     vec<16,float> in(v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],0,0,0,0,0,0,0,0);
     vec<16,float> temp = rsqrt(in);
     temp *= (temp * temp * in - 3.0f) * (-0.5f);
     vec<8,double> out(temp[0],temp[1],temp[2],temp[3],temp[4],temp[5],temp[6],temp[7]);
     return out;
+#else
+    vec one = 1;
+    return vec(_mm512_div_pd(one.data,_mm512_sqrt_pd(v.data)));
+#endif
   }
 };
 #endif
@@ -529,7 +540,13 @@ public:
     return vec(_mm256_max_ps(v.data,w.data));
   }
   friend vec rsqrt(const vec &v) {                               // Reciprocal square root
+#if KAHAN                                                        // Switch on Newton-Raphson correction
+    vec temp = vec(_mm256_rsqrt_ps(v.data));
+    temp *= (temp * temp * v - 3.0f) * (-0.5f);
+    return temp;
+#else
     return vec(_mm256_rsqrt_ps(v.data));
+#endif
   }
 };
 
@@ -759,7 +776,13 @@ public:
     return vec(_mm_max_ps(v.data,w.data));
   }
   friend vec rsqrt(const vec &v) {                               // Reciprocal square root
+#if KAHAN                                                        // Switch on Newton-Raphson correction
+    vec temp = vec(_mm_rsqrt_ps(v.data));
+    temp *= (temp * temp * v - 3.0f) * (-0.5f);
+    return temp;
+#else
     return vec(_mm_rsqrt_ps(v.data));
+#endif
   }
 };
 
