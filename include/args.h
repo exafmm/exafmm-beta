@@ -70,8 +70,8 @@ private:
   }
 
 public:
-  Args(int argc, char ** argv) : numBodies(1000000), numTarget(100), NCRIT(64), NSPAWN(1000), IMAGES(0),
-                                 THETA(.5), mutual(1), distribution("cube") {
+  Args(int argc, char ** argv) : numBodies(1000000), numTarget(100), NCRIT(16), NSPAWN(1000), IMAGES(0),
+                                 THETA(.6), mutual(1), distribution("cube") {
     while (1) {
       int option_index;
       int c = getopt_long(argc, argv, "", long_options, &option_index);
