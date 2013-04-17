@@ -100,12 +100,12 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t *Ynm) {
   }                                                             // End loop over m in Ynm
 }
 
-void Kernel::P2M(C_iter C, real_t &Rmax) const {
+void Kernel::P2M(C_iter C) const {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {
     vec3 dX = B->X - C->X;
     real_t R = std::sqrt(norm(dX));
-    if (R > Rmax) Rmax = R;
+    if (R > C->RMAX) C->RMAX = R;
     real_t rho, alpha, beta;
     cart2sph(rho,alpha,beta,dX);
     evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
@@ -118,18 +118,18 @@ void Kernel::P2M(C_iter C, real_t &Rmax) const {
     }
   }
 #if USE_RMAX
-  C->RCRIT = std::min(C->R,Rmax);
+  C->RCRIT = std::min(C->R,C->RMAX);
 #else
   C->RCRIT = C->R;
 #endif
 }
 
-void Kernel::M2M(C_iter Ci, real_t &Rmax) const {
+void Kernel::M2M(C_iter Ci) const {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
     real_t R = std::sqrt(norm(dX)) + Cj->RCRIT;
-    if (R > Rmax) Rmax = R;
+    if (R > Ci->RMAX) Ci->RMAX = R;
     real_t rho, alpha, beta;
     cart2sph(rho,alpha,beta,dX);
     evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
@@ -154,7 +154,7 @@ void Kernel::M2M(C_iter Ci, real_t &Rmax) const {
     }
   }
 #if USE_RMAX
-  Ci->RCRIT = std::min(Ci->R,Rmax);
+  Ci->RCRIT = std::min(Ci->R,Ci->RMAX);
 #else
   Ci->RCRIT = Ci->R;
 #endif

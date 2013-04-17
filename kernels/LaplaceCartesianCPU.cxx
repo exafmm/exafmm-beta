@@ -753,11 +753,11 @@ struct Coefs<0,0> {
   static inline void negate(vecL){}
 };
 
-void Kernel::P2M(C_iter C, real_t &Rmax) const {
+void Kernel::P2M(C_iter C) const {
   for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {
     vec3 dX = C->X - B->X;
     real_t R = std::sqrt(norm(dX));
-    if (R > Rmax) Rmax = R;
+    if (R > C->RMAX) C->RMAX = R;
     vecL M;
     M[0] = B->SRC;
     Kernels<0,0,P-1>::power(M,dX);
@@ -769,17 +769,17 @@ void Kernel::P2M(C_iter C, real_t &Rmax) const {
 #endif
   }
 #if USE_RMAX
-  C->RCRIT = std::min(C->R,Rmax);
+  C->RCRIT = std::min(C->R,C->RMAX);
 #else
   C->RCRIT = C->R;
 #endif
 }
 
-void Kernel::M2M(C_iter Ci, real_t &Rmax) const {
+void Kernel::M2M(C_iter Ci) const {
   for (C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
     real_t R = std::sqrt(norm(dX)) + Cj->RCRIT;
-    if (R > Rmax) Rmax = R;
+    if (R > Ci->RMAX) Ci->RMAX = R;
     vecM M;
     vecL C;
     C[0] = 1;
@@ -794,7 +794,7 @@ void Kernel::M2M(C_iter Ci, real_t &Rmax) const {
     Kernels<0,0,P-1>::M2M(Ci->M,C,M);
   }
 #if USE_RMAX
-  Ci->RCRIT = std::min(Ci->R,Rmax);
+  Ci->RCRIT = std::min(Ci->R,Ci->RMAX);
 #else
   Ci->RCRIT = Ci->R;
 #endif

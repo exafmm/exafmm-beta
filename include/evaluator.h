@@ -130,6 +130,7 @@ protected:
 #if COMcenter
     C->X = X;                                                   // Use center of mass as center of expansion
 #endif
+    C->RMAX = 0;                                                // Initialize Rmax
   }
 
 //! Dual tree traversal for a single pair of cells
@@ -207,9 +208,8 @@ protected:
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
-      real_t Rmax = 0;                                          //  Dummy parameter for calling M2M
       setCenter(Ci);                                            //  Set center of mass for periodic parent
-      M2M(Ci, Rmax);                                            //  Evaluate periodic M2M kernels for this sublevel
+      M2M(Ci);                                                  //  Evaluate periodic M2M kernels for this sublevel
       R *= 3;                                                   //  Increase center cell size three times
       Cj0 = C0;                                                 //  Reset Cj0 back
     }                                                           // End loop over sublevels of tree

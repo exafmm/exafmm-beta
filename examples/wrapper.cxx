@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <iostream>
 
-extern "C" void FMMcalccoulomb(int n, double* x, double* q, double *p, double* f, int periodicflag);
+extern "C" void FMM(int n, double* x, double* q, double *p, double* f, int periodicflag);
 
 extern "C" void MPI_Shift(double *var, int n, int mpisize, int mpirank) {
   double *buf = new double [n];
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     qj[i] = qi[i];
   }
 
-  FMMcalccoulomb(N, xi, qi, pi, fi, 0);
+  FMM(N, xi, qi, pi, fi, 0);
   for( int i=0; i!=N; ++i ) {
     xj[3*i+0] = xi[3*i+0];
     xj[3*i+1] = xi[3*i+1];

@@ -1,6 +1,6 @@
 #include "parallelfmm.h"
 
-extern "C" void FMMcalccoulomb(int n, double* x, double* q, double *p, double* f, int periodicflag) {
+extern "C" void FMM(int n, double* x, double* q, double *p, double* f, int periodicflag) {
   Bodies bodies, jbodies;
   Cells cells, jcells;
   ParallelFMM FMM;

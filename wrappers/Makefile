@@ -1,8 +1,8 @@
 include ../Makefile.include
 
-libcoulomb.a: coulomb.o
-	ar ruv libcoulomb.a $?
-	ranlib libcoulomb.a
+libfmm.a: fmm.o
+	ar ruv libfmm.a $?
+	ranlib libfmm.a
 
-libcoulomb.so: coulomb.o
-	$(CXX) $? -shared -o libcoulomb.so $(LFLAGS)
+libfmm.so: fmm.o
+	$(CXX) $? -shared -o libfmm.so $(LFLAGS)

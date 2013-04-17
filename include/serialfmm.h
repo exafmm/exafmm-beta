@@ -66,12 +66,11 @@ private:
       }                                                         // End loop over child cells
       sync_tasks;                                               // Synchronize tasks
     }
-    real_t Rmax = 0;                                            // Initialize Rmax
     setCenter(C);                                               // Set center of cell to center of mass
     C->M = 0;                                                   // Initialize multipole expansion coefficients
     C->L = 0;                                                   // Initialize local expansion coefficients
-    P2M(C,Rmax);                                                // P2M kernel
-    M2M(C,Rmax);                                                // M2M kernel
+    P2M(C);                                                     // P2M kernel
+    M2M(C);                                                     // M2M kernel
   }
 
 //! Recursive call for downward pass
