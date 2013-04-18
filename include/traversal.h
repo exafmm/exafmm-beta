@@ -17,15 +17,26 @@ class Traversal : public Kernel, public Logger {
 private:
   real_t timeP2P;                                               //!< P2P execution time
   real_t timeM2L;                                               //!< M2L execution time
-
-protected:
   real_t NP2P;                                                  //!< Number of P2P kernel calls
   real_t NM2L;                                                  //!< Number of M2L kernel calls
 
 public:
+  int NCRIT;                                                    //!< Number of bodies per leaf cell
   int NSPAWN;                                                   //!< Threshold of NDBODY for spawning new threads
   int IMAGES;                                                   //!< Number of periodic image sublevels
-  float THETA;                                                  //!< Multipole acceptance criteria
+  float THETA;                                                  //!< Multipole acceptance criteria 
+  C_iter Ci0;                                                   //!< Begin iterator for target cells
+  C_iter Cj0;                                                   //!< Begin iterator for source cells
+
+  real_t localRadius;                                           //!< Radius of local root cell
+  vec3   localCenter;                                           //!< Center of local root cell
+  fvec3  localXmin;                                             //!< Local Xmin for a given rank
+  fvec3  localXmax;                                             //!< Local Xmax for a given rank
+
+  real_t globalRadius;                                          //!< Radius of global root cell
+  vec3   globalCenter;                                          //!< Center of global root cell
+  fvec3  globalXmin;                                            //!< Global Xmin for a given rank
+  fvec3  globalXmax;                                            //!< Global Xmax for a given rank
 
 private:
 //! Calculate Bmax
@@ -69,7 +80,7 @@ private:
     } else {                                                    // If many cells are in the range
       C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;           //  Split range of Ci cells in half
       C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;           //  Split range of Cj cells in half
-      spawn_tasks {                                           //  Initialize task group
+      spawn_tasks {                                             //  Initialize task group
 	spawn_task0(traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));// Spawn Ci:former Cj:former
 	traverse(CiMid, CiEnd, CjMid, CjEnd, mutual);             //  No spawn Ci:latter Cj:latter
 	sync_tasks;                                           //  Synchronize task group
@@ -108,29 +119,6 @@ private:
         traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
       }                                                         //  End loop over Cj's children
     }                                                           // End if for leafs and Ci Cj size
-  }
-
-protected:
-//! Set center of expansion to center of mass
-  void setCenter(C_iter C) const {
-    real_t m = 0;                                               // Initialize mass
-    vec3 X = 0;                                                 // Initialize coordinates
-    for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {         // Loop over bodies
-      m += B->SRC;                                              //  Accumulate mass
-      X += B->X * B->SRC;                                       //  Accumulate dipole
-    }                                                           // End loop over bodies
-    for (C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; c++) {// Loop over child cells
-      m += std::abs(c->M[0]);                                   //  Accumulate mass
-      X += c->X * std::abs(c->M[0]);                            //  Accumulate dipole
-    }                                                           // End loop over child cells
-    X /= m;                                                     // Center of mass
-#if USE_BMAX
-    C->R = getBmax(X,C);                                        // Use Bmax as cell radius
-#endif
-#if COMcenter
-    C->X = X;                                                   // Use center of mass as center of expansion
-#endif
-    C->RMAX = 0;                                                // Initialize Rmax
   }
 
 //! Dual tree traversal for a single pair of cells
@@ -209,17 +197,65 @@ protected:
       }                                                         //  End loop over x periodic direction
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
       setCenter(Ci);                                            //  Set center of mass for periodic parent
-      M2M(Ci);                                                  //  Evaluate periodic M2M kernels for this sublevel
+      M2M(Ci,Cj0);                                              //  Evaluate periodic M2M kernels for this sublevel
       R *= 3;                                                   //  Increase center cell size three times
       Cj0 = C0;                                                 //  Reset Cj0 back
     }                                                           // End loop over sublevels of tree
     stopTimer("Traverse periodic",printNow);                    // Stop timer
   }
 
+protected:
+//! Set center of expansion to center of mass
+  void setCenter(C_iter C) const {
+    real_t m = 0;                                               // Initialize mass
+    vec3 X = 0;                                                 // Initialize coordinates
+    for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {         // Loop over bodies
+      m += B->SRC;                                              //  Accumulate mass
+      X += B->X * B->SRC;                                       //  Accumulate dipole
+    }                                                           // End loop over bodies
+    for (C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; c++) {// Loop over child cells
+      m += std::abs(c->M[0]);                                   //  Accumulate mass
+      X += c->X * std::abs(c->M[0]);                            //  Accumulate dipole
+    }                                                           // End loop over child cells
+    X /= m;                                                     // Center of mass
+#if USE_BMAX
+    C->R = getBmax(X,C);                                        // Use Bmax as cell radius
+#endif
+#if COMcenter
+    C->X = X;                                                   // Use center of mass as center of expansion
+#endif
+    C->RMAX = 0;                                                // Initialize Rmax
+  }
+
 public:
   Traversal() : NP2P(0), NM2L(0) {}
   ~Traversal() {}
 
+//! Evaluate P2P and M2L using dual tree traversal
+  void dualTreeTraversal(Cells &icells, Cells &jcells, bool mutual=false) {
+    Ci0 = icells.begin();                                       // Set iterator of target root cell
+    Cj0 = jcells.begin();                                       // Set iterator of source root cell
+    startTimer("Traverse");                                     // Start timer
+    if (IMAGES == 0) {                                          // If non-periodic boundary condition
+      Xperiodic = 0;                                            //  No periodic shift
+      traverse(Ci0,Cj0,mutual);                                 //  Traverse the tree
+    } else {                                                    // If periodic boundary condition
+      for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
+        for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
+          for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
+            Xperiodic[0] = ix * 2 * globalRadius;               //     Coordinate shift for x periodic direction
+            Xperiodic[1] = iy * 2 * globalRadius;               //     Coordinate shift for y periodic direction
+            Xperiodic[2] = iz * 2 * globalRadius;               //     Coordinate shift for z periodic direction
+            traverse(Ci0,Cj0,false);                            //     Traverse the tree for this periodic image
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+      traversePeriodic(globalRadius);                           //  Traverse tree for periodic images
+    }                                                           // End if for periodic boundary condition
+    stopTimer("Traverse",printNow);                             // Stop timer
+  }
+
+//! Time the kernel runtime for auto-tuning
   void timeKernels() {
     Bodies ibodies(1000), jbodies(1000);
     for (B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); Bi++, Bj++) {
@@ -245,6 +281,17 @@ public:
     for (int i=0; i<1000; i++) M2L(Ci,Cj,false);
     timeM2L = stopTimer("M2L kernel") / 1000;
   }
-};
 
+#if COUNT
+//! Print traversal statistics
+  void printTraversalData() {
+    std::cout << "--- Traversal stats --------------" << std::endl
+	      << std::setw(stringLength) << std::left           // Set format
+	      << "P2P calls"  << " : " << NP2P << std::endl     // Print number of P2P calls
+	      << std::setw(stringLength) << std::left           // Set format
+	      << "M2L calls"  << " : " << NM2L << std::endl;    // Print number of M2l calls
+  }
+#endif
+
+};
 #endif

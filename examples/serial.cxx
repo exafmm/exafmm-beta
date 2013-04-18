@@ -59,7 +59,11 @@ int main(int argc, char ** argv) {
     FMM.eraseTimer("Direct sum");
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     DATA.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
-    if(FMM.printNow) DATA.printError(diff1, norm1, diff2, norm2);
+    if(FMM.printNow) {
+      DATA.printError(diff1, norm1, diff2, norm2);
+      FMM.printTreeData(cells);
+      FMM.printTraversalData();
+    }
   }
 #ifdef VTK
   for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) B->ICELL = 0;

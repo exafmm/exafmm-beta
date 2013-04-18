@@ -5,11 +5,6 @@
 class SerialFMM : public TreeBuilder {
 private:
   typedef std::pair<vec3,vec3> vec3Pair;                        //!< Pair of vec3
-protected:
-  real_t globalRadius;                                          //!< Radius of global root cell
-  vec3   globalCenter;                                          //!< Center of global root cell
-  fvec3  globalXmin;                                            //!< Global Xmin for a given rank
-  fvec3  globalXmax;                                            //!< Global Xmax for a given rank
 
 private:
 //! Error optimization of Rcrit
@@ -72,12 +67,12 @@ private:
     C->M = 0;                                                   // Initialize multipole expansion coefficients
     C->L = 0;                                                   // Initialize local expansion coefficients
     P2M(C);                                                     // P2M kernel
-    M2M(C);                                                     // M2M kernel
+    M2M(C,C0);                                                  // M2M kernel
   }
 
 //! Recursive call for downward pass
   void downwardRecursion(C_iter C, C_iter C0) const {
-    L2L(C);                                                     // L2L kernel
+    L2L(C,C0);                                                  // L2L kernel
     L2P(C);                                                     // L2P kernel
     spawn_tasks {                                               // Initialize tasks
       for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
@@ -115,12 +110,6 @@ public:
     stopTimer("Set bounds",printNow);
   }
 
-//! Build tree structure top down
-  void buildTree(Bodies &bodies, Cells &cells) {
-    growTree(bodies);                                           // Grow tree from root
-    linkTree(cells);                                            // Form parent-child links in tree
-  }
-
 //! Upward pass (P2M, M2M)
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");                                  // Start timer
@@ -137,30 +126,6 @@ public:
     stopTimer("Upward pass",printNow);                          // Stop timer
   }
 
-//! Evaluate P2P and M2L using dual tree traversal
-  void dualTreeTraversal(Cells &icells, Cells &jcells, bool mutual=false) {
-    Ci0 = icells.begin();                                       // Set iterator of target root cell
-    Cj0 = jcells.begin();                                       // Set iterator of source root cell
-    startTimer("Traverse");                                     // Start timer
-    if (IMAGES == 0) {                                          // If non-periodic boundary condition
-      Xperiodic = 0;                                            //  No periodic shift
-      traverse(Ci0,Cj0,mutual);                                 //  Traverse the tree
-    } else {                                                    // If periodic boundary condition
-      for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
-        for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
-          for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
-            Xperiodic[0] = ix * 2 * globalRadius;               //     Coordinate shift for x periodic direction
-            Xperiodic[1] = iy * 2 * globalRadius;               //     Coordinate shift for y periodic direction
-            Xperiodic[2] = iz * 2 * globalRadius;               //     Coordinate shift for z periodic direction
-            traverse(Ci0,Cj0,false);                            //     Traverse the tree for this periodic image
-          }                                                     //    End loop over z periodic direction
-        }                                                       //   End loop over y periodic direction
-      }                                                         //  End loop over x periodic direction
-      traversePeriodic(globalRadius);                           //  Traverse tree for periodic images
-    }                                                           // End if for periodic boundary condition
-    stopTimer("Traverse",printNow);                             // Stop timer
-  }
-
 //! Downward pass (L2L, L2P)
   void downwardPass(Cells &cells) { 
     startTimer("Downward pass");                                // Start timer
@@ -173,7 +138,6 @@ public:
       sync_tasks;                                               // Synchronize tasks
     }
     stopTimer("Downward pass",printNow);                        // Stop timer
-    if(printNow) printTreeData(cells);                          // Print tree data
   }
 
   void direct(Bodies &ibodies, Bodies &jbodies) {

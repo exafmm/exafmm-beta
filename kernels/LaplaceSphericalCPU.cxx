@@ -124,9 +124,9 @@ void Kernel::P2M(C_iter C) const {
 #endif
 }
 
-void Kernel::M2M(C_iter Ci) const {
+void Kernel::M2M(C_iter Ci, C_iter C0) const {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  for (C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; Cj++) {
+  for (C_iter Cj=C0+Ci->CHILD; Cj!=C0+Ci->CHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
     real_t R = std::sqrt(norm(dX)) + Cj->RCRIT;
     if (R > Ci->RMAX) Ci->RMAX = R;
@@ -193,9 +193,9 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
   }
 }
 
-void Kernel::L2L(C_iter Ci) const {
+void Kernel::L2L(C_iter Ci, C_iter C0) const {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  C_iter Cj = Ci0 + Ci->PARENT;
+  C_iter Cj = C0 + Ci->PARENT;
   vec3 dX = Ci->X - Cj->X;
   real_t rho, alpha, beta;
   cart2sph(rho,alpha,beta,dX);

@@ -775,8 +775,8 @@ void Kernel::P2M(C_iter C) const {
 #endif
 }
 
-void Kernel::M2M(C_iter Ci) const {
-  for (C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; Cj++) {
+void Kernel::M2M(C_iter Ci, C_iter C0) const {
+  for (C_iter Cj=C0+Ci->CHILD; Cj!=C0+Ci->CHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
     real_t R = std::sqrt(norm(dX)) + Cj->RCRIT;
     if (R > Ci->RMAX) Ci->RMAX = R;
@@ -813,7 +813,7 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
   }
 }
 
-void Kernel::L2L(C_iter Ci) const {
+void Kernel::L2L(C_iter Ci, C_iter Ci0) const {
   C_iter Cj = Ci0 + Ci->PARENT;
   vec3 dX = Ci->X - Cj->X;
   vecL C;

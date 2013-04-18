@@ -27,15 +27,6 @@ private:
   B_iter       B0;                                              //!< Iterator of first body
   OctreeNode * N0;                                              //!< Octree root node
 
-protected:
-  real_t localRadius;                                           //!< Radius of local root cell
-  vec3   localCenter;                                           //!< Center of local root cell
-  fvec3  localXmin;                                             //!< Local Xmin for a given rank
-  fvec3  localXmax;                                             //!< Local Xmax for a given rank
-
-public:
-  int NCRIT;                                                    //!< Number of bodies per leaf cell
-
 private:
 //! Get number of binary tree nodes for a given number of bodies
   inline int getNumBinNode(int n) const {
@@ -240,25 +231,24 @@ protected:
     stopTimer("Link tree",printNow);                            // Stop timer
   }
 
-  void printTreeData(Cells &cells) {
-    std::cout << "--- FMM stats --------------------" << std::endl
-    << std::setw(stringLength) << std::left                     // Set format
-    << "Bodies"     << " : " << cells.front().NDBODY << std::endl// Print number of bodies
-    << std::setw(stringLength) << std::left                     // Set format
-    << "Cells"      << " : " << cells.size() << std::endl       // Print number of cells
-    << std::setw(stringLength) << std::left                     // Set format
-    << "Tree depth" << " : " << MAXLEVEL << std::endl           // Print number of levels
-#if COUNT
-    << std::setw(stringLength) << std::left                     // Set format
-    << "P2P calls"  << " : " << NP2P << std::endl               // Print number of P2P calls
-    << std::setw(stringLength) << std::left                     // Set format
-    << "M2L calls"  << " : " << NM2L << std::endl               // Print number of M2l calls
-#endif
-    << "--- FMM stats --------------------" << std::endl;
-  }
 public:
   TreeBuilder() : MAXLEVEL(0) {}
 
-};
+//! Build tree structure top down
+  void buildTree(Bodies &bodies, Cells &cells) {
+    growTree(bodies);                                           // Grow tree from root
+    linkTree(cells);                                            // Form parent-child links in tree
+  }
 
+//! Print tree structure statistics
+  void printTreeData(Cells &cells) {
+    std::cout << "--- Tree structure stats ---------" << std::endl
+	      << std::setw(stringLength) << std::left           // Set format
+	      << "Bodies"     << " : " << cells.front().NDBODY << std::endl// Print number of bodies
+	      << std::setw(stringLength) << std::left           // Set format
+	      << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
+	      << std::setw(stringLength) << std::left           // Set format
+	      << "Tree depth" << " : " << MAXLEVEL << std::endl;// Print number of levels
+  }
+};
 #endif
