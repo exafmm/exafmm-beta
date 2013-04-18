@@ -81,16 +81,16 @@ class ParallelFMM : public Partition {
             for (int ix=-1; ix<=1; ix++) {                      //     Loop over x periodic direction
               for (int iy=-1; iy<=1; iy++) {                    //      Loop over y periodic direction
                 for (int iz=-1; iz<=1; iz++) {                  //       Loop over z periodic direction
-                  Xperiodic[0] = ix * 2 * globalRadius;         //        Coordinate offset for x periodic direction
-                  Xperiodic[1] = iy * 2 * globalRadius;         //        Coordinate offset for y periodic direction
-                  Xperiodic[2] = iz * 2 * globalRadius;         //        Coordinate offset for z periodic direction
+                  Xperiodic[0] = ix * periodicCycle;            //        Coordinate offset for x periodic direction
+                  Xperiodic[1] = iy * periodicCycle;            //        Coordinate offset for y periodic direction
+                  Xperiodic[2] = iz * periodicCycle;            //        Coordinate offset for z periodic direction
                   real_t R2 = getDistance(CC);                  //        Get distance to other domain
                   divide |= 4 * CC->RCRIT * CC->RCRIT > R2;     //        Divide if cell seems too close
                 }                                               //       End loop over z periodic direction
               }                                                 //      End loop over y periodic direction
             }                                                   //     End loop over x periodic direction
           }                                                     //    Endif for periodic boundary condition
-          divide |= CC->R > (globalRadius / (1 << level));      //    Divide if cell is larger than local root cell
+          divide |= CC->R > (periodicCycle / (1 << (level+1))); //    Divide if cell is larger than local root cell
           if (!divide) {                                        //    If cell does not have to be divided
             CC->NCHILD = 0;                                     //     Cut off child links
           }                                                     //    Endif for cell division

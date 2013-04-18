@@ -18,18 +18,17 @@ class Partition : public MyMPI, public SerialFMM, public Sort {
 
  private:
 //! Allreduce bounds from all ranks
-  void allreduceBounds() {
+  void allreduceBounds(fvec3 &globalXmin, fvec3 &globalXmax) {
     MPI_Allreduce(localXmin, globalXmin, 3, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
     MPI_Allreduce(localXmax, globalXmax, 3, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
-    globalRadius = 0;                                           // Initialize global radius
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      globalCenter[d] = (globalXmax[d] + globalXmin[d]) / 2;    //  Calculate global center
-    }                                                           // End loop over dimensions
+    real_t globalRadius = 0;                                    // Initialize global radius
+    fvec3 globalCenter = (globalXmax + globalXmin) / 2;         //  Calculate global center
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
       globalRadius = std::max(globalCenter[d] - globalXmin[d], globalRadius);// Calculate min distance from center
       globalRadius = std::max(globalXmax[d] - globalCenter[d], globalRadius);// Calculate max distance from center 
     }                                                           // End loop over dimensions
     globalRadius *= 1.00001;                                    // Add some leeway to radius
+    periodicCycle = 2 * globalRadius;                           // Periodic cycle is the global domain size
   }
 
 //! Allgather bounds of all ranks
@@ -49,10 +48,11 @@ class Partition : public MyMPI, public SerialFMM, public Sort {
       d = (d+1) % 3;                                            //  Increment dimension
       mpisize >>= 1;                                            //  Right shift the bits of counter
     }                                                           // End while loop for domain subdivision
-    if (IMAGES == 0) allreduceBounds();                         // Allreduce bounds from all ranks
+    fvec3 globalXmin, globalXmax;                               // Global Xmin, Xmax
+    if (IMAGES == 0) allreduceBounds(globalXmin,globalXmax);    // Allreduce bounds from all ranks
     vec3 Xpartition;                                            // Size of partitions in each direction
     for (d=0; d<3; d++) {                                       // Loop over dimensions
-      Xpartition[d] = 2 * globalRadius / Npartition[d];         //  Size of partition in each direction
+      Xpartition[d] = periodicCycle / Npartition[d];            //  Size of partition in each direction
     }                                                           // End loop over dimensions
     int ix = MPIRANK % Npartition[0];                           // x index of partition
     int iy = MPIRANK / Npartition[0] % Npartition[1];           // y index

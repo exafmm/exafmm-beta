@@ -97,15 +97,9 @@ class SerialFMM : public TreeBuilder {
     }                                                           // End loop over dimensions
     localRadius *= 1.00001;                                     // Add some leeway to radius
     if (IMAGES == 0) {                                          // If non-periodic boundary condition
-      globalRadius = localRadius;                               //  Set global radius for serial run
-      globalCenter = localCenter;                               //  Set global center for serial run
-      globalXmin = localXmin;                                   //  Set global Xmin for serial run
-      globalXmax = localXmax;                                   //  Set global Xmax for serial run
+      periodicCycle = 2 * localRadius;                          //  Set global radius for serial run
     } else {                                                    // If periodic boundary condition
-      globalRadius = M_PI;                                      //  Set global radius
-      globalCenter = 0;                                         //  Set global radius
-      globalXmin = -M_PI;                                       //  Set global Xmin
-      globalXmax = M_PI;                                        //  Set global Xmax
+      periodicCycle = 2 * M_PI;                                 //  Set global radius
     }                                                           // End if for periodic boundary condition
     stopTimer("Set bounds",printNow);
   }
@@ -153,9 +147,9 @@ class SerialFMM : public TreeBuilder {
     for (int ix=-prange; ix<=prange; ix++) {                    // Loop over x periodic direction
       for (int iy=-prange; iy<=prange; iy++) {                  //  Loop over y periodic direction
         for (int iz=-prange; iz<=prange; iz++) {                //   Loop over z periodic direction
-          Xperiodic[0] = ix * 2 * globalRadius;                 //    Coordinate shift for x periodic direction
-          Xperiodic[1] = iy * 2 * globalRadius;                 //    Coordinate shift for y periodic direction
-          Xperiodic[2] = iz * 2 * globalRadius;                 //    Coordinate shift for z periodic direction
+          Xperiodic[0] = ix * periodicCycle;                    //    Coordinate shift for x periodic direction
+          Xperiodic[1] = iy * periodicCycle;                    //    Coordinate shift for y periodic direction
+          Xperiodic[2] = iz * periodicCycle;                    //    Coordinate shift for z periodic direction
           P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
         }                                                       //   End loop over z periodic direction
       }                                                         //  End loop over y periodic direction
