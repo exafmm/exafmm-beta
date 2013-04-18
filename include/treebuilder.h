@@ -3,7 +3,7 @@
 #include "traversal.h"
 
 class TreeBuilder : public Traversal {
-private:
+ private:
   typedef vec<8,int> ivec8;                                     //!< Vector of 8 integer types
 //! Binary tree is used for counting number of bodies with a recursive approach
   struct BinaryTreeNode {
@@ -27,7 +27,6 @@ private:
   B_iter       B0;                                              //!< Iterator of first body
   OctreeNode * N0;                                              //!< Octree root node
 
-private:
 //! Get number of binary tree nodes for a given number of bodies
   inline int getNumBinNode(int n) const {
     if (n <= NSPAWN) return 1;                                  // If less then threshold, use only one node
@@ -161,7 +160,7 @@ private:
   }
 
 //! Create cell data structure from nodes
-  void nodes2cells(OctreeNode * octNode, C_iter C, C_iter CN, int level=0, int iparent=0) {
+  void nodes2cells(OctreeNode * octNode, C_iter C, C_iter C0, C_iter CN, int level=0, int iparent=0) {
     C->PARENT = iparent;                                        // Index of parent cell
     C->R      = localRadius / (1 << level);                     // Cell radius
     C->X      = octNode->X;                                     // Cell center
@@ -184,7 +183,7 @@ private:
         }                                                       //   End if for child existance
       }                                                         //  End loop over octants
       C_iter Ci = CN;                                           //  CN points to the next free memory address
-      C->CHILD = Ci - Ci0;                                      //  Set Index of first child cell
+      C->CHILD = Ci - C0;                                       //  Set Index of first child cell
       C->NCHILD = nchild;                                       //  Number of child cells
       assert(C->NCHILD > 0);
       CN += nchild;                                             //  Increment next free memory address
@@ -192,7 +191,7 @@ private:
 	for (int i=0; i<nchild; i++) {                          //  Loop over children
 	  int octant = octants[i];                              //   Get octant from child index
 	  spawn_task0_if(octNode->NNODE > 1000,                 //   Spawn task if number of sub-nodes is large
-			 nodes2cells(octNode->CHILD[octant], Ci, CN, level+1, C-Ci0));// Recursive call for each child
+			 nodes2cells(octNode->CHILD[octant], Ci, C0, CN, level+1, C-C0));// Recursive call for each child
 	  Ci++;                                                 //   Increment cell iterator
 	  CN += octNode->CHILD[octant]->NNODE - 1;              //   Increment next free memory address
 	}                                                       //  End loop over children
@@ -206,7 +205,6 @@ private:
     }                                                           // End if for child existance
   }
 
-protected:
 //! Grow tree structure top down
   void growTree(Bodies &bodies) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
@@ -225,14 +223,15 @@ protected:
   void linkTree(Cells &cells) {
     startTimer("Link tree");                                    // Start timer
     cells.resize(N0->NNODE);                                    // Allocate cells array
-    Ci0 = cells.begin();                                        // Cell begin iterator
-    nodes2cells(N0, Ci0, Ci0+1);                                // Convert nodes to cells recursively
+    C_iter C0 = cells.begin();                                  // Cell begin iterator
+    nodes2cells(N0, C0, C0, C0+1);                              // Convert nodes to cells recursively
     delete N0;                                                  // Deallocate nodes
     stopTimer("Link tree",printNow);                            // Stop timer
   }
 
-public:
+ public:
   TreeBuilder() : MAXLEVEL(0) {}
+  ~TreeBuilder() {}
 
 //! Build tree structure top down
   void buildTree(Bodies &bodies, Cells &cells) {

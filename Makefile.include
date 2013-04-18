@@ -27,8 +27,10 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -ffast-math -funroll-loops # GCC
 CXX	+= -I../include
 LFLAGS	+= -D$(BASIS)
 LFLAGS  += -DEXPANSION=3 # specifcy expansion order
+ifeq ($(BASIS),Cartesian)
 LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
 LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
+endif
 LFLAGS	+= -DERROR_OPT # Use error optimized theta
 LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
 LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria

@@ -6,7 +6,7 @@
 
 //! Handles all the partitioning of domains
 class Partition : public MyMPI, public SerialFMM, public Sort {
-protected:
+ protected:
   fvec3 * allLocalXmin;                                         //!< Array for minimum of local domains
   fvec3 * allLocalXmax;                                         //!< Array for maximum of local domains
   Bodies sendBodies;                                            //!< Send buffer for bodies
@@ -16,7 +16,7 @@ protected:
   int * recvBodyCount;                                          //!< Receive count
   int * recvBodyDispl;                                          //!< Receive displacement
 
-private:
+ private:
 //! Allreduce bounds from all ranks
   void allreduceBounds() {
     MPI_Allreduce(localXmin, globalXmin, 3, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
@@ -32,7 +32,7 @@ private:
     globalRadius *= 1.00001;                                    // Add some leeway to radius
   }
 
-//! Allgather bounds of all partitions
+//! Allgather bounds of all ranks
   void allgatherBounds() {
     MPI_Allgather(localXmin, 3, MPI_FLOAT, &allLocalXmin[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
     MPI_Allgather(localXmax, 3, MPI_FLOAT, &allLocalXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
@@ -76,7 +76,7 @@ private:
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order of ICELL
   }
 
-protected:
+ protected:
 //! Exchange send count for bodies
   void alltoall(Bodies &bodies) {
     for (int i=0; i<MPISIZE; i++) {                             // Loop over ranks
@@ -115,7 +115,7 @@ protected:
     }                                                           // End loop over ranks
   }
 
-public:
+ public:
 //! Constructor
   Partition() {
     allLocalXmin = new fvec3 [MPISIZE];                         // Allocate array for minimum of local domains

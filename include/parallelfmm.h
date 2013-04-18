@@ -1,23 +1,26 @@
 #ifndef parallelfmm_h
 #define parallelfmm_h
+#include <queue>
 #include "partition.h"
 
 //! Handles all the communication of local essential trees
 class ParallelFMM : public Partition {
-private:
+ private:
+  typedef std::queue<C_iter> CellQueue;                         //!< Queue of cell iterators
   int IRANK;                                                    //!< MPI rank loop counter
   Cells sendCells;                                              //!< Send buffer for cells
   Cells recvCells;                                              //!< Receive buffer for cells
+  C_iter C0;                                                    //!< Iterator of first cell
   int * sendCellCount;                                          //!< Send count
   int * sendCellDispl;                                          //!< Send displacement
   int * recvCellCount;                                          //!< Receive count
   int * recvCellDispl;                                          //!< Receive displacement
 
-public:
+ public:
   using Partition::alltoall;
   using Partition::alltoallv;
 
-private:
+ private:
 //! Get distance to other domain
   real_t getDistance(C_iter C) {
     vec3 dX;                                                    // Distance vector
@@ -27,8 +30,7 @@ private:
               (C->X[d] + Xperiodic[d] < localXmin[d])*          //  Take the differnece from xmin or xmax
               (C->X[d] + Xperiodic[d] - localXmin[d]);          //  or 0 if between xmin and xmax
     }                                                           // End loop over dimensions
-    real_t R2 = norm(dX);                                       // Distance squared
-    return R2;                                                  // Return distance squared
+    return norm(dX);                                            // Return distance squared
   }
 
 //! Add cells to send buffer
@@ -65,7 +67,7 @@ private:
     while (!cellQueue.empty()) {                                // While traversal queue is not empty
       C_iter C = cellQueue.front();                             //  Get front item in traversal queue
       cellQueue.pop();                                          //  Pop item from traversal queue
-      for (C_iter CC=Cj0+C->CHILD; CC!=Cj0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+      for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
         addSendCell(CC, iparent, icell);                        //   Add cells to send
         if (CC->NCHILD == 0) {                                  //   If cell is twig
           addSendBody(CC, ibody, icell);                        //    Add bodies to send
@@ -129,7 +131,7 @@ private:
     }                                                           // End loop over ranks
   }
 
-public:
+ public:
 //! Constructor
   ParallelFMM() {
     sendCellCount = new int [MPISIZE];                          // Allocate send count
@@ -155,14 +157,14 @@ public:
       if (IRANK != 0) sendCellDispl[IRANK] = sendCellDispl[IRANK-1] + sendCellCount[IRANK-1];// Update displacement
       if (IRANK != MPIRANK) {                                   //  If not current rank
         recvCells = cells;                                      //   Use recvCells as temporary storage
-        Cj0 = recvCells.begin();                                //   Set cells begin iterator
+        C0 = recvCells.begin();                                //   Set cells begin iterator
         localXmin = allLocalXmin[IRANK];                        //   Set local Xmin for IRANK
         localXmax = allLocalXmax[IRANK];                        //   Set local Xmax for IRANK
-        Cell cell(*Cj0);                                        //   Send root cell
+        Cell cell(*C0);                                        //   Send root cell
         cell.NCHILD = cell.NCBODY = cell.NDBODY = 0;            //   Reset link to children and bodies
         sendCells.push_back(cell);                              //   Push it into send buffer
         CellQueue cellQueue;                                    //   Traversal queue
-        cellQueue.push(Cj0);                                    //   Push root to traversal queue
+        cellQueue.push(C0);                                    //   Push root to traversal queue
         traverseLET(cellQueue);                                 //   Traverse tree to get LET
       }                                                         //  Endif for current rank
       sendCellCount[IRANK] = sendCells.size() - sendCellDispl[IRANK];// Send count for IRANK

@@ -4,7 +4,6 @@
 #include <complex>
 #include "kahan.h"
 #include "macros.h"
-#include <queue>
 #include <vector>
 #include "vec.h"
 
@@ -19,13 +18,6 @@ typedef vec<3,real_t>        vec3;                              //!< Vector of 3
 typedef vec<3,float>         fvec3;                             //!< Vector of 3 single precision types
 
 // SIMD vector types for MIC, AVX, and SSE
-#if __MIC__
-const int SIMD_BYTES = 64;                                      //!< SIMD byte length of MIC
-#elif __AVX__
-const int SIMD_BYTES = 32;                                      //!< SIMD byte length of AVX
-#elif __SSE__
-const int SIMD_BYTES = 16;                                      //!< SIMD byte length of SSE
-#endif
 const int NSIMD = SIMD_BYTES / sizeof(real_t);                  //!< SIMD vector length
 typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type
 
@@ -93,6 +85,5 @@ struct Cell {
 };
 typedef std::vector<Cell>           Cells;                      //!< Vector of cells
 typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator of cell vector
-typedef std::queue<C_iter>          CellQueue;                  //!< Queue of cell iterators
 
 #endif

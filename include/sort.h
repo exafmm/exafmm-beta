@@ -4,7 +4,7 @@
 
 //! Custom bucket sort for body and structures
 class Sort {
-private:
+ private:
   std::vector<int> bucket;                                      //!< Bucket for sorting
 
 //! Get bucket size for sorting
@@ -43,7 +43,7 @@ private:
     }                                                           // Endif for sorting order
   }
 
-public:
+ public:
 //! Sort bodies accoring to cell index
   void sortBodies(Bodies &bodies, Bodies &buffer, bool ascend=true, int begin=0, int end=0) {
     if (bodies.size() == 0) return;                             // Don't do anything if vector is empty

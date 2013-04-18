@@ -22,18 +22,18 @@ namespace b40c {
 }
 
 class Sort90 {
-private:
+ private:
   b40c::util::DoubleBuffer<uint, uint> *double_buffer;
   b40c::radix_sort::Enactor *sort_enactor;
 
-public:
+ public:
   Sort90(uint size, uint *generalBuffer);
   ~Sort90();
   void sort(uint4 *input, cudaVec<uint4> &output, int size);
 };
 
 class octree {
-private:
+ private:
   cudaStream_t execStream;
   Sort90 *sorter;
 
@@ -70,14 +70,14 @@ private:
   cudaVec<uint>   offset;
   cudaVec<uint>   workToDo;
   
-public:
+ public:
   cudaVec<float4> bodyPos;
   cudaVec<float4> bodyAcc;
   cudaVec<float4> bodyAcc2;
   cudaVec<float4> cellPos;
   cudaVec<float>  multipole;      
 
-private:
+ private:
   bool isPowerOfTwo(const int n) {
     return ((n != 0) && !(n & (n - 1)));
   }
@@ -93,7 +93,7 @@ private:
   void upward();
   void traverse();
 
-public:
+ public:
   octree(const int _n) : numBodies(_n) {
     assert(isPowerOfTwo(NCRIT));
     cudaSetDevice(2);

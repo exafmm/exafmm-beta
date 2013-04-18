@@ -8,17 +8,17 @@
 
 //! Custom MPI utilities
 class MyMPI {
-private:
+ private:
   int EXTERNAL;                                                 //!< Flag to indicate external MPI_Init/Finalize
 
-protected:
+ protected:
   const int WAIT;                                               //!< Waiting time between output of different ranks
 
-public:
+ public:
   int MPIRANK;                                                  //!< Rank of MPI communicator
   int MPISIZE;                                                  //!< Size of MPI communicator
 
-public:
+ public:
 //! Constructor, initialize WAIT time
   MyMPI() : EXTERNAL(0), WAIT(100) {                            // Constructor, initialize WAIT time
     int argc(0);                                                // Dummy argument count

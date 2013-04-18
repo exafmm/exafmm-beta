@@ -4,9 +4,9 @@
 //! Custom vector type for small vectors
 template<int N, typename T>
 class vec {
-private:
+ private:
   T a[N];
-public:
+ public:
   __host__ __device__
   vec(){}                                                          // Default constructor
   __host__ __device__

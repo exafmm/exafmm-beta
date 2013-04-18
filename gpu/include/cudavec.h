@@ -12,12 +12,12 @@ inline void __checkCudaErrors(cudaError err, const char *file, const int line ) 
 
 template<class T>
 class cudaVec {
-private:
+ private:
   int size;
   T *devcPtr;
   T *hostPtr;
 
-public:
+ public:
   cudaVec() : size(0), devcPtr(NULL), hostPtr(NULL) {}
 
   ~cudaVec() {

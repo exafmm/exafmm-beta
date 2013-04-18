@@ -18,7 +18,7 @@ struct option long_options[] = {
 };
 
 class Args {
-public:
+ public:
   int numBodies;
   int numTarget;
   int NCRIT;
@@ -28,7 +28,7 @@ public:
   int mutual;
   const char * distribution;
 
-private:
+ private:
   void usage(char * name) {
     fprintf(stderr,
             "Usage: %s [options]\n"
@@ -69,7 +69,7 @@ private:
     }
   }
 
-public:
+ public:
   Args(int argc, char ** argv) : numBodies(1000000), numTarget(100), NCRIT(16), NSPAWN(1000), IMAGES(0),
                                  THETA(.6), mutual(1), distribution("cube") {
     while (1) {

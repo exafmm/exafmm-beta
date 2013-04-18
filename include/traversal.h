@@ -2,11 +2,8 @@
 #define traversal_h
 #include "kernel.h"
 #include "logger.h"
-#if COMMON_CILKH
-#include <common.cilkh>
-#else
 #include "thread.h"
-#endif
+
 #if COUNT
 #define count(N) N++
 #else
@@ -14,19 +11,19 @@
 #endif
 
 class Traversal : public Kernel, public Logger {
-private:
+ private:
   real_t timeP2P;                                               //!< P2P execution time
   real_t timeM2L;                                               //!< M2L execution time
   real_t NP2P;                                                  //!< Number of P2P kernel calls
   real_t NM2L;                                                  //!< Number of M2L kernel calls
+  C_iter Ci0;                                                   //!< Begin iterator for target cells
+  C_iter Cj0;                                                   //!< Begin iterator for source cells
 
-public:
+ public:
   int NCRIT;                                                    //!< Number of bodies per leaf cell
   int NSPAWN;                                                   //!< Threshold of NDBODY for spawning new threads
   int IMAGES;                                                   //!< Number of periodic image sublevels
   float THETA;                                                  //!< Multipole acceptance criteria 
-  C_iter Ci0;                                                   //!< Begin iterator for target cells
-  C_iter Cj0;                                                   //!< Begin iterator for source cells
 
   real_t localRadius;                                           //!< Radius of local root cell
   vec3   localCenter;                                           //!< Center of local root cell
@@ -38,13 +35,13 @@ public:
   fvec3  globalXmin;                                            //!< Global Xmin for a given rank
   fvec3  globalXmax;                                            //!< Global Xmax for a given rank
 
-private:
+ private:
 //! Calculate Bmax
   real_t getBmax(vec3 const &X, C_iter C) const {
     real_t rad = C->R;                                          // Radius of cell
-    real_t dx = rad+std::abs(X[0]-C->X[0]);                     // Add x distance from center of mass
-    real_t dy = rad+std::abs(X[1]-C->X[1]);                     // Add y distance from center of mass
-    real_t dz = rad+std::abs(X[2]-C->X[2]);                     // Add z distance from center of mass
+    real_t dx = rad + std::abs(X[0]-C->X[0]);                   // Add x distance from center of mass
+    real_t dy = rad + std::abs(X[1]-C->X[1]);                   // Add y distance from center of mass
+    real_t dz = rad + std::abs(X[2]-C->X[2]);                   // Add z distance from center of mass
     return std::sqrt(dx * dx + dy * dy + dz * dz);              // Return scalar distance
   }
 
@@ -196,7 +193,7 @@ private:
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
-      setCenter(Ci);                                            //  Set center of mass for periodic parent
+      setCenter(Ci,Cj0);                                        //  Set center of mass for periodic parent
       M2M(Ci,Cj0);                                              //  Evaluate periodic M2M kernels for this sublevel
       R *= 3;                                                   //  Increase center cell size three times
       Cj0 = C0;                                                 //  Reset Cj0 back
@@ -204,16 +201,16 @@ private:
     stopTimer("Traverse periodic",printNow);                    // Stop timer
   }
 
-protected:
+ protected:
 //! Set center of expansion to center of mass
-  void setCenter(C_iter C) const {
+  void setCenter(C_iter C, C_iter C0) const {
     real_t m = 0;                                               // Initialize mass
     vec3 X = 0;                                                 // Initialize coordinates
     for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {         // Loop over bodies
       m += B->SRC;                                              //  Accumulate mass
       X += B->X * B->SRC;                                       //  Accumulate dipole
     }                                                           // End loop over bodies
-    for (C_iter c=Cj0+C->CHILD; c!=Cj0+C->CHILD+C->NCHILD; c++) {// Loop over child cells
+    for (C_iter c=C0+C->CHILD; c!=C0+C->CHILD+C->NCHILD; c++) { // Loop over child cells
       m += std::abs(c->M[0]);                                   //  Accumulate mass
       X += c->X * std::abs(c->M[0]);                            //  Accumulate dipole
     }                                                           // End loop over child cells
@@ -227,7 +224,7 @@ protected:
     C->RMAX = 0;                                                // Initialize Rmax
   }
 
-public:
+ public:
   Traversal() : NP2P(0), NM2L(0) {}
   ~Traversal() {}
 

@@ -8,10 +8,10 @@
 #include "types.h"
 
 class Dataset {                                                 // Contains all the different datasets
-private:
+ private:
   long filePosition;                                            // Position of file stream
 
-private:
+ private:
 //! Initialize source values
   void initSource(Bodies &bodies, int mpisize) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
@@ -89,7 +89,7 @@ private:
     }                                                           // End loop over bodies
   }
 
-public:
+ public:
 //! Constructor
   Dataset() : filePosition(0) {}
 //! Destructor

@@ -4,9 +4,9 @@
 //! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics
 template<int N, typename T>
 class vec {
-private:
+ private:
   T data[N];
-public:
+ public:
   vec(){}                                                       // Default constructor
   vec(const T &v) {                                             // Copy constructor (scalar)
     for (int i=0; i<N; i++) data[i] = v;
@@ -194,9 +194,9 @@ public:
 #include <immintrin.h>
 template<>
 class vec<16,float> {
-private:
+ private:
   __m512 data;
-public:
+ public:
   vec(){}                                                       // Default constructor
   vec(const float v) {                                          // Copy constructor scalar
     data = _mm512_set1_ps(v);
@@ -414,9 +414,9 @@ public:
 #include <immintrin.h>
 template<>
 class vec<8,float> {
-private:
+ private:
   __m256 data;
-public:
+ public:
   vec(){}                                                       // Default constructor
   vec(const float v) {                                          // Copy constructor scalar
     data = _mm256_set1_ps(v);
@@ -520,9 +520,9 @@ public:
 
 template<>
 class vec<4,double> {
-private:
+ private:
   __m256d data;
-public:
+ public:
   vec(){}                                                       // Default constructor
   vec(const double v) {                                         // Copy constructor scalar
     data = _mm256_set1_pd(v);
@@ -631,9 +631,9 @@ public:
 #include <xmmintrin.h>
 template<>
 class vec<4,float> {
-private:
+ private:
   __m128 data;
-public:
+ public:
   vec(){}                                                       // Default constructor
   vec(const float v) {                                          // Copy constructor scalar
     data = _mm_set1_ps(v);
@@ -736,9 +736,9 @@ public:
 
 template<>
 class vec<2,double> {
-private:
+ private:
   __m128d data;
-public:
+ public:
   vec(){}                                                       // Default constructor
   vec(const double v) {                                         // Copy constructor scalar
     data = _mm_set1_pd(v);

@@ -19,7 +19,7 @@ const int maxGroups = 100000;
 
 //! Interactive VTK class
 class vtkSliderCallback : public vtkCommand {
-public:
+ public:
   vtkPoints * points[maxGroups];
   vtkPolyData * polydata;
   vtkVertexGlyphFilter * filter;
@@ -41,7 +41,7 @@ class vtkPlot {
   int I[maxGroups];
   vtkPoints * points[maxGroups];
   vtkPoints * hexPoints;
-public:
+ public:
   void setDomain(const real_t r0, const vec3 x0) {
     hexPoints = vtkPoints::New();
     hexPoints->SetNumberOfPoints(8);

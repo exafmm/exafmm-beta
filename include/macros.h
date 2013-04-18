@@ -13,4 +13,13 @@
 #define assert(x)
 #endif
 
+// Detect SIMD Byte length of architecture
+#if __MIC__
+const int SIMD_BYTES = 64;                                      //!< SIMD byte length of MIC
+#elif __AVX__
+const int SIMD_BYTES = 32;                                      //!< SIMD byte length of AVX
+#elif __SSE__
+const int SIMD_BYTES = 16;                                      //!< SIMD byte length of SSE
+#endif
+
 #endif

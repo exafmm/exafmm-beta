@@ -3,10 +3,10 @@
 #include "treebuilder.h"
 
 class SerialFMM : public TreeBuilder {
-private:
+ private:
   typedef std::pair<vec3,vec3> vec3Pair;                        //!< Pair of vec3
 
-private:
+ private:
 //! Error optimization of Rcrit
   void setRcrit(C_iter C, C_iter C0, real_t c) {
     spawn_tasks {                                               // Initialize tasks
@@ -63,7 +63,7 @@ private:
       }                                                         // End loop over child cells
       sync_tasks;                                               // Synchronize tasks
     }
-    setCenter(C);                                               // Set center of cell to center of mass
+    setCenter(C,C0);                                            // Set center of cell to center of mass
     C->M = 0;                                                   // Initialize multipole expansion coefficients
     C->L = 0;                                                   // Initialize local expansion coefficients
     P2M(C);                                                     // P2M kernel
@@ -82,7 +82,7 @@ private:
     }
   }
 
-public:
+ public:
 //! Set center and size of root cell
   void setBounds(Bodies &bodies) {
     startTimer("Set bounds");                                   // Start timer
@@ -113,13 +113,12 @@ public:
 //! Upward pass (P2M, M2M)
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");                                  // Start timer
-    Ci0 = cells.begin();                                        // Set iterator of target root cell
-    Cj0 = cells.begin();                                        // Set iterator of source root cell
-    upwardRecursion(Ci0, Ci0);                                  // Recursive call for upward pass
-    real_t c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / powf(std::abs(Ci0->M[0]),1.0/3); // Root coefficient
-    setRcrit(Ci0, Ci0, c);                                      // Error optimization of Rcrit
+    C_iter C0 = cells.begin();                                  // Set iterator of target root cell
+    upwardRecursion(C0, C0);                                    // Recursive call for upward pass
+    real_t c = (1 - THETA) * (1 - THETA) / pow(THETA,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
+    setRcrit(C0, C0, c);                                        // Error optimization of Rcrit
     if( cells.size() > 9 ) {                                    // If tree has more than 2 levels
-      for (C_iter C=cells.begin(); C!=cells.begin()+9; C++) {   //  Loop over top 2 levels of cells
+      for (C_iter C=C0; C!=C0+9; C++) {                         //  Loop over top 2 levels of cells
         C->RCRIT *= 10;                                         //   Prevent approximation
       }                                                         //  End loop over top 2 levels of cells
     }                                                           // End if for tree levels

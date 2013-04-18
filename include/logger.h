@@ -28,7 +28,7 @@ typedef std::map<std::string,double>::iterator T_iter;          //!< Iterator of
 
 //! Timer and Trace logger
 class Logger {
-private:
+ private:
   std::ofstream   timerFile;                                    //!< File ID to store log
   Timer           beginTimer;                                   //!< Timer base value
   Timer           timer;                                        //!< Stores timings for all events
@@ -38,11 +38,11 @@ private:
   int PAPIEVENT;                                                //!< PAPI event handle
 #endif
 
-public:
+ public:
   int stringLength;                                             //!< Max length of event name
   bool printNow;                                                //!< Switch to print timings
 
-private:
+ private:
 //! Timer function
   double get_time() const {
     struct timeval tv;                                          // Time value
@@ -50,7 +50,7 @@ private:
     return double(tv.tv_sec+tv.tv_usec*1e-6);                   // Combine seconds and microseconds and return
   }
 
-public:
+ public:
 //! Constructor
   Logger() : timerFile("time.dat"),                             // Open timer log file
              beginTimer(), timer(), traces(), mutex(),          // Initializing class variables (empty)
