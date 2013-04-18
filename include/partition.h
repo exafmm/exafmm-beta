@@ -22,7 +22,9 @@ private:
     MPI_Allreduce(localXmin, globalXmin, 3, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
     MPI_Allreduce(localXmax, globalXmax, 3, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
     globalRadius = 0;                                           // Initialize global radius
-    globalCenter = (globalXmax + globalXmin) / 2;               //  Calculate global center
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
+      globalCenter[d] = (globalXmax[d] + globalXmin[d]) / 2;    //  Calculate global center
+    }                                                           // End loop over dimensions
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
       globalRadius = std::max(globalCenter[d] - globalXmin[d], globalRadius);// Calculate min distance from center
       globalRadius = std::max(globalXmax[d] - globalCenter[d], globalRadius);// Calculate max distance from center 
@@ -116,8 +118,8 @@ protected:
 public:
 //! Constructor
   Partition() {
-    allLocalXmin = new vec3 [MPISIZE];                          // Allocate array for minimum of local domains
-    allLocalXmax = new vec3 [MPISIZE];                          // Allocate array for maximum of local domains
+    allLocalXmin = new fvec3 [MPISIZE];                         // Allocate array for minimum of local domains
+    allLocalXmax = new fvec3 [MPISIZE];                         // Allocate array for maximum of local domains
     sendBodyCount = new int [MPISIZE];                          // Allocate send count
     sendBodyDispl = new int [MPISIZE];                          // Allocate send displacement
     recvBodyCount = new int [MPISIZE];                          // Allocate receive count

@@ -1,11 +1,11 @@
 help:
 	@echo "Help documentation will be available soon...\n"
 clean:
-	find . -name "*.o" -o -name "*.out*" | xargs rm
-cleardat:
-	find . -name "*.dat" | xargs rm
+	find . -name "*.o" -o -name "*.out*" | xargs rm -f
+cleandat:
+	find . -name "*.dat" | xargs rm -f
 cleanlib:
-	find . -name "*.a" -o -name "*.so" | xargs rm
+	find . -name "*.a" -o -name "*.so" | xargs rm -f
 cleanall:
 	make clean
 	make cleandat

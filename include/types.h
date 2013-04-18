@@ -9,7 +9,7 @@
 #include "vec.h"
 
 // Basic type definitions
-#if DOUBLE
+#if FP64
 typedef double               real_t;                            //!< Floating point type is double precision
 #else
 typedef float                real_t;                            //!< Floating point type is single precision
