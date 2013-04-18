@@ -156,8 +156,8 @@ public:
       if (IRANK != MPIRANK) {                                   //  If not current rank
         recvCells = cells;                                      //   Use recvCells as temporary storage
         Cj0 = recvCells.begin();                                //   Set cells begin iterator
-        localXmin = rankXmin[IRANK];                            //   Set local Xmin for IRANK
-        localXmax = rankXmax[IRANK];                            //   Set local Xmax for IRANK
+        localXmin = allLocalXmin[IRANK];                        //   Set local Xmin for IRANK
+        localXmax = allLocalXmax[IRANK];                        //   Set local Xmax for IRANK
         Cell cell(*Cj0);                                        //   Send root cell
         cell.NCHILD = cell.NCBODY = cell.NDBODY = 0;            //   Reset link to children and bodies
         sendCells.push_back(cell);                              //   Push it into send buffer

@@ -5,7 +5,6 @@
 #include "kahan.h"
 #include "macros.h"
 #include <queue>
-#include <utility>
 #include <vector>
 #include "vec.h"
 
@@ -15,13 +14,9 @@ typedef double               real_t;                            //!< Floating po
 #else
 typedef float                real_t;                            //!< Floating point type is single precision
 #endif
-typedef std::complex<real_t>  complex_t;                        //!< Complex type
-typedef vec<3,real_t>         vec3;                             //!< Vector of 3 floating point types
-typedef vec<3,float>          fvec3;                            //!< Vector of 3 single precision types
-typedef vec<4,real_t>         vec4;                             //!< Vector of 4 floating point types
-typedef vec<4,float>          fvec4;                            //!< Vector of 4 single precision types
-typedef vec<8,int>            ivec8;                            //!< Vector of 8 integer types
-typedef std::pair<vec3,vec3>  vec3Pair;                         //!< Pair of vec3
+typedef std::complex<real_t> complex_t;                         //!< Complex type
+typedef vec<3,real_t>        vec3;                              //!< Vector of 3 floating point types
+typedef vec<3,float>         fvec3;                             //!< Vector of 3 single precision types
 
 // SIMD vector types for MIC, AVX, and SSE
 #if __MIC__
@@ -40,9 +35,9 @@ typedef kahan<real_t>  kreal_t;                                 //!< Floating po
 typedef vec<4,kreal_t> kvec4;                                   //!< Vector of 4 floats with Kahan summaiton
 typedef kahan<simdvec> ksimdvec;                                //!< SIMD vector type with Kahan summation
 #else
-typedef real_t  kreal_t;                                        //!< Floating point type
-typedef vec4    kvec4;                                          //!< Vector of 4 floating point types
-typedef simdvec ksimdvec;                                       //!< SIMD vector type
+typedef real_t         kreal_t;                                 //!< Floating point type
+typedef vec<4,real_t>  kvec4;                                   //!< Vector of 4 floating point types
+typedef simdvec        ksimdvec;                                //!< SIMD vector type
 #endif
 
 // Multipole/local expansion coefficients

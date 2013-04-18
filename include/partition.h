@@ -7,10 +7,10 @@
 //! Handles all the partitioning of domains
 class Partition : public MyMPI, public SerialFMM, public Sort {
 protected:
+  fvec3 * allLocalXmin;                                         //!< Array for minimum of local domains
+  fvec3 * allLocalXmax;                                         //!< Array for maximum of local domains
   Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
-  fvec3 * rankXmin;                                             //!< Array for minimum of local domains
-  fvec3 * rankXmax;                                             //!< Array for maximum of local domains
   int * sendBodyCount;                                          //!< Send count
   int * sendBodyDispl;                                          //!< Send displacement
   int * recvBodyCount;                                          //!< Receive count
@@ -32,8 +32,8 @@ private:
 
 //! Allgather bounds of all partitions
   void allgatherBounds() {
-    MPI_Allgather(localXmin, 3, MPI_FLOAT, &rankXmin[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
-    MPI_Allgather(localXmax, 3, MPI_FLOAT, &rankXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
+    MPI_Allgather(localXmin, 3, MPI_FLOAT, &allLocalXmin[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
+    MPI_Allgather(localXmax, 3, MPI_FLOAT, &allLocalXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
   }
 
 //! Set partition of global domain
@@ -116,8 +116,8 @@ protected:
 public:
 //! Constructor
   Partition() {
-    rankXmin = new vec3 [MPISIZE];                              // Allocate array for minimum of local domains
-    rankXmax = new vec3 [MPISIZE];                              // Allocate array for maximum of local domains
+    allLocalXmin = new vec3 [MPISIZE];                          // Allocate array for minimum of local domains
+    allLocalXmax = new vec3 [MPISIZE];                          // Allocate array for maximum of local domains
     sendBodyCount = new int [MPISIZE];                          // Allocate send count
     sendBodyDispl = new int [MPISIZE];                          // Allocate send displacement
     recvBodyCount = new int [MPISIZE];                          // Allocate receive count
@@ -125,8 +125,8 @@ public:
   }
 //! Destructor
   ~Partition() {
-    delete[] rankXmin;                                          // Deallocate array for minimum of local domains
-    delete[] rankXmax;                                          // Deallocate array for maximum of local domains
+    delete[] allLocalXmin;                                      // Deallocate array for minimum of local domains
+    delete[] allLocalXmax;                                      // Deallocate array for maximum of local domains
     delete[] sendBodyCount;                                     // Deallocate send count
     delete[] sendBodyDispl;                                     // Deallocate send displacement
     delete[] recvBodyCount;                                     // Deallocate receive count

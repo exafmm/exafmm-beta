@@ -3,6 +3,8 @@
 #include "treebuilder.h"
 
 class SerialFMM : public TreeBuilder {
+private:
+  typedef std::pair<vec3,vec3> vec3Pair;                        //!< Pair of vec3
 protected:
   real_t globalRadius;                                          //!< Radius of global root cell
   vec3   globalCenter;                                          //!< Center of global root cell

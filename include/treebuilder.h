@@ -4,6 +4,7 @@
 
 class TreeBuilder : public Traversal {
 private:
+  typedef vec<8,int> ivec8;                                     //!< Vector of 8 integer types
 //! Binary tree is used for counting number of bodies with a recursive approach
   struct BinaryTreeNode {
     ivec8            NBODY;                                     //!< Number of descendant bodies
