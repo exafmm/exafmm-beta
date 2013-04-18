@@ -34,14 +34,14 @@ int main(int argc, char ** argv) {
       << "Num bodies           : " << numBodies << std::endl;
     bodies.resize(numBodies);
     DATA.initBodies(bodies, ARGS.distribution);
-    FMM.setBounds(bodies);
-    FMM.buildTree(bodies, cells);                               // TODO : make it work without this
+    Box box = FMM.setBounds(bodies);
+    FMM.buildTree(bodies, cells, box);                          //TODO : make it work without this
     FMM.resetTimer();
     FMM.startTimer("Total FMM");
-    FMM.buildTree(bodies, cells);
+    FMM.buildTree(bodies, cells, box);
     FMM.upwardPass(cells);
     FMM.startPAPI();
-    FMM.dualTreeTraversal(cells, cells, ARGS.mutual);
+    FMM.dualTreeTraversal(cells, cells, FMM.periodicCycle, ARGS.mutual);
     FMM.stopPAPI();
     FMM.downwardPass(cells);
     std::cout << "----------------------------------" << std::endl;

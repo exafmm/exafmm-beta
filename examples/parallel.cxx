@@ -37,8 +37,8 @@ int main(int argc, char ** argv) {
     FMM.startTimer("Total FMM");
 
     FMM.partition(bodies);
-    FMM.setBounds(bodies);
-    FMM.buildTree(bodies,cells);
+    Box box = FMM.setBounds(bodies);
+    FMM.buildTree(bodies, cells, box);
     FMM.upwardPass(cells);
     FMM.startPAPI();
 
@@ -46,7 +46,7 @@ int main(int argc, char ** argv) {
     FMM.setLET(cells);
     FMM.commBodies();
     FMM.commCells();
-    FMM.dualTreeTraversal(cells, cells);
+    FMM.dualTreeTraversal(cells, cells, FMM.periodicCycle, ARGS.mutual);
     jbodies = bodies;
     for( int irank=1; irank<FMM.MPISIZE; irank++ ) {
       FMM.getLET(jcells,(FMM.MPIRANK+irank)%FMM.MPISIZE);
@@ -93,7 +93,7 @@ int main(int argc, char ** argv) {
       }
       assert( ic == int(icells.size()) );
 #endif
-      FMM.dualTreeTraversal(cells, jcells);
+      FMM.dualTreeTraversal(cells, jcells, FMM.periodicCycle, ARGS.mutual);
     }
 #else
     jbodies = bodies;
@@ -103,7 +103,7 @@ int main(int argc, char ** argv) {
       FMM.setBounds(jbodies);
       FMM.buildTree(jbodies, jcells);
       FMM.upwardPass(jcells);
-      FMM.dualTreeTraversal(cells, jcells);
+      FMM.dualTreeTraversal(cells, jcells, FMM.periodicCycle, ARGS.mutual);
     }
 #endif
 

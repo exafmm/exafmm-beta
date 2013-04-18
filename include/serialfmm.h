@@ -6,6 +6,13 @@ class SerialFMM : public TreeBuilder {
  private:
   typedef std::pair<vec3,vec3> vec3Pair;                        //!< Pair of vec3
 
+ public:
+  real_t periodicCycle;                                         //!< Length of the global domain
+  real_t localRadius;                                           //!< Radius of local root cell
+  vec3   localCenter;                                           //!< Center of local root cell
+  fvec3  localXmin;                                             //!< Local Xmin for a given rank
+  fvec3  localXmax;                                             //!< Local Xmax for a given rank
+
  private:
 //! Error optimization of Rcrit
   void setRcrit(C_iter C, C_iter C0, real_t c) {
@@ -84,7 +91,7 @@ class SerialFMM : public TreeBuilder {
 
  public:
 //! Set center and size of root cell
-  void setBounds(Bodies &bodies) {
+  Box setBounds(Bodies &bodies) {
     startTimer("Set bounds");                                   // Start timer
     vec3Pair bounds = getBounds(bodies.begin(), bodies.end());  // Get Xmin (first) and Xmax (second) of domain
     for (int d=0; d<3; d++) localXmin[d] = bounds.first[d];     // Set local Xmin
@@ -101,7 +108,11 @@ class SerialFMM : public TreeBuilder {
     } else {                                                    // If periodic boundary condition
       periodicCycle = 2 * M_PI;                                 //  Set global radius
     }                                                           // End if for periodic boundary condition
+    Box box;
+    box.X = localCenter;
+    box.R = localRadius;
     stopTimer("Set bounds",printNow);
+    return box;
   }
 
 //! Upward pass (P2M, M2M)

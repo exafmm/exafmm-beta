@@ -25,13 +25,6 @@ class Traversal : public Kernel, public Logger {
   int IMAGES;                                                   //!< Number of periodic image sublevels
   float THETA;                                                  //!< Multipole acceptance criteria 
 
-  real_t localRadius;                                           //!< Radius of local root cell
-  vec3   localCenter;                                           //!< Center of local root cell
-  fvec3  localXmin;                                             //!< Local Xmin for a given rank
-  fvec3  localXmax;                                             //!< Local Xmax for a given rank
-
-  real_t periodicCycle;                                         //!< Diameter of global root cell
-
  private:
 //! Calculate Bmax
   real_t getBmax(vec3 const &X, C_iter C) const {
@@ -147,7 +140,7 @@ class Traversal : public Kernel, public Logger {
 
 
 //! Tree traversal of periodic cells
-  void traversePeriodic(real_t Length) {
+  void traversePeriodic(real_t length) {
     startTimer("Traverse periodic");                            // Start timer
     Xperiodic = 0;                                              // Periodic coordinate offset
     Cells pcells(27);                                           // Create cells
@@ -164,9 +157,9 @@ class Traversal : public Kernel, public Logger {
               for (int cx=-1; cx<=1; cx++) {                    //      Loop over x periodic direction (child)
                 for (int cy=-1; cy<=1; cy++) {                  //       Loop over y periodic direction (child)
                   for (int cz=-1; cz<=1; cz++) {                //        Loop over z periodic direction (child)
-                    Xperiodic[0] = (ix * 3 + cx) * Length;      //         Coordinate offset for x periodic direction
-                    Xperiodic[1] = (iy * 3 + cy) * Length;      //         Coordinate offset for y periodic direction
-                    Xperiodic[2] = (iz * 3 + cz) * Length;      //         Coordinate offset for z periodic direction
+                    Xperiodic[0] = (ix * 3 + cx) * length;      //         Coordinate offset for x periodic direction
+                    Xperiodic[1] = (iy * 3 + cy) * length;      //         Coordinate offset for y periodic direction
+                    Xperiodic[2] = (iz * 3 + cz) * length;      //         Coordinate offset for z periodic direction
                     M2L(Ci0,Ci,false);                          //         Perform M2L kernel
                   }                                             //        End loop over z periodic direction (child)
                 }                                               //       End loop over y periodic direction (child)
@@ -181,9 +174,9 @@ class Traversal : public Kernel, public Logger {
         for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
           for (int iz=-1; iz<=1; iz++, Cj++) {                  //    Loop over z periodic direction
             if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
-              Cj->X[0] = Ci->X[0] + ix * Length;                //      Set new x coordinate for periodic image
-              Cj->X[1] = Ci->X[0] + iy * Length;                //      Set new y cooridnate for periodic image
-              Cj->X[2] = Ci->X[0] + iz * Length;                //      Set new z coordinate for periodic image
+              Cj->X[0] = Ci->X[0] + ix * length;                //      Set new x coordinate for periodic image
+              Cj->X[1] = Ci->X[0] + iy * length;                //      Set new y cooridnate for periodic image
+              Cj->X[2] = Ci->X[0] + iz * length;                //      Set new z coordinate for periodic image
               Cj->M    = Ci->M;                                 //      Copy multipoles to new periodic image
             }                                                   //     Endif for periodic center cell
           }                                                     //    End loop over z periodic direction
@@ -192,7 +185,7 @@ class Traversal : public Kernel, public Logger {
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
       setCenter(Ci,Cj0);                                        //  Set center of mass for periodic parent
       M2M(Ci,Cj0);                                              //  Evaluate periodic M2M kernels for this sublevel
-      Length *= 3;                                              //  Increase center cell size three times
+      length *= 3;                                              //  Increase center cell size three times
       Cj0 = C0;                                                 //  Reset Cj0 back
     }                                                           // End loop over sublevels of tree
     stopTimer("Traverse periodic",printNow);                    // Stop timer
@@ -226,7 +219,7 @@ class Traversal : public Kernel, public Logger {
   ~Traversal() {}
 
 //! Evaluate P2P and M2L using dual tree traversal
-  void dualTreeTraversal(Cells &icells, Cells &jcells, bool mutual=false) {
+  void dualTreeTraversal(Cells &icells, Cells &jcells, real_t length, bool mutual=false) {
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     startTimer("Traverse");                                     // Start timer
@@ -237,14 +230,14 @@ class Traversal : public Kernel, public Logger {
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
         for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
           for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
-            Xperiodic[0] = ix * periodicCycle;                  //     Coordinate shift for x periodic direction
-            Xperiodic[1] = iy * periodicCycle;                  //     Coordinate shift for y periodic direction
-            Xperiodic[2] = iz * periodicCycle;                  //     Coordinate shift for z periodic direction
+            Xperiodic[0] = ix * length;                         //     Coordinate shift for x periodic direction
+            Xperiodic[1] = iy * length;                         //     Coordinate shift for y periodic direction
+            Xperiodic[2] = iz * length;                         //     Coordinate shift for z periodic direction
             traverse(Ci0,Cj0,false);                            //     Traverse the tree for this periodic image
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
-      traversePeriodic(periodicCycle);                          //  Traverse tree for periodic images
+      traversePeriodic(length);                                 //  Traverse tree for periodic images
     }                                                           // End if for periodic boundary condition
     stopTimer("Traverse",printNow);                             // Stop timer
   }

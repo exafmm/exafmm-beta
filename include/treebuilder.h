@@ -119,7 +119,7 @@ class TreeBuilder : public Traversal {
 
 //! Build nodes of octree adaptively using a top-down approach based on recursion (uses task based thread parallelism)
   OctreeNode * buildNodes(Bodies& bodies, Bodies& buffer, int begin, int end,
-                          BinaryTreeNode * binNode, vec3 X, int level=0, bool direction=false) {
+                          BinaryTreeNode * binNode, vec3 X, real_t R0, int level=0, bool direction=false) {
     assert(getMaxBinNode(end - begin) <= binNode->END - binNode->BEGIN);
     if (begin == end) return NULL;                              // If no bodies left, return null pointer
     if (end - begin <= NCRIT) {                                 // If number of bodies is less than threshold
@@ -138,7 +138,7 @@ class TreeBuilder : public Traversal {
 	assert(binNodeOffset + maxBinNode <= binNode->END);
 	spawn_task2(buffer, bodies, {                           //  Spawn new task using Intel TBB or MTHREAD
 	    vec3 Xchild = X;                                    //   Initialize center position of child node
-	    real_t r = localRadius / (1 << (level + 1));        //   Radius of cells for child's level
+	    real_t r = R0 / (1 << (level + 1));                 //   Radius of cells for child's level
 	    for (int d=0; d<3; d++) {                           //   Loop over dimensions
 	      Xchild[d] += r * (((i & 1 << d) >> d) * 2 - 1);   //    Shift center position to that of child node
 	    }                                                   //   End loop over dimensions
@@ -146,8 +146,8 @@ class TreeBuilder : public Traversal {
 	    binNodeChild->BEGIN = binNodeOffset;                //   Assign first memory address from offset
 	    binNodeChild->END = binNodeOffset + maxBinNode;     //   Keep track of last memory address
 	    octNode->CHILD[i] = buildNodes(buffer, bodies,      //   Recursive call for each child
-	       octantOffset[i], octantOffset[i] + binNode->NBODY[i],//   Range of bodies is calcuated from octant offset
-	       binNodeChild, Xchild, level+1, !direction);      //   Alternate copy direction bodies <-> buffer
+	      octantOffset[i], octantOffset[i] + binNode->NBODY[i],//   Range of bodies is calcuated from octant offset
+	      binNodeChild, Xchild, R0, level+1, !direction);   //   Alternate copy direction bodies <-> buffer
 	  });                                                   //  Close lambda expression
 	binNodeOffset += maxBinNode;                            //  Increment offset for binNode memory address
       }                                                         // End loop over children
@@ -160,9 +160,9 @@ class TreeBuilder : public Traversal {
   }
 
 //! Create cell data structure from nodes
-  void nodes2cells(OctreeNode * octNode, C_iter C, C_iter C0, C_iter CN, int level=0, int iparent=0) {
+  void nodes2cells(OctreeNode * octNode, C_iter C, C_iter C0, C_iter CN, real_t R0, int level=0, int iparent=0) {
     C->PARENT = iparent;                                        // Index of parent cell
-    C->R      = localRadius / (1 << level);                     // Cell radius
+    C->R      = R0 / (1 << level);                              // Cell radius
     C->X      = octNode->X;                                     // Cell center
     C->NDBODY = octNode->NBODY;                                 // Number of decendant bodies
     C->BODY   = B0 + octNode->BODY;                             // Iterator of first body in cell
@@ -191,7 +191,7 @@ class TreeBuilder : public Traversal {
 	for (int i=0; i<nchild; i++) {                          //  Loop over children
 	  int octant = octants[i];                              //   Get octant from child index
 	  spawn_task0_if(octNode->NNODE > 1000,                 //   Spawn task if number of sub-nodes is large
-			 nodes2cells(octNode->CHILD[octant], Ci, C0, CN, level+1, C-C0));// Recursive call for each child
+	    nodes2cells(octNode->CHILD[octant], Ci, C0, CN, R0, level+1, C-C0));// Recursive call for each child
 	  Ci++;                                                 //   Increment cell iterator
 	  CN += octNode->CHILD[octant]->NNODE - 1;              //   Increment next free memory address
 	}                                                       //  End loop over children
@@ -206,7 +206,7 @@ class TreeBuilder : public Traversal {
   }
 
 //! Grow tree structure top down
-  void growTree(Bodies &bodies) {
+  void growTree(Bodies &bodies, vec3 X0, real_t R0) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
     startTimer("Grow tree");                                    // Start timer
     B0 = bodies.begin();                                        // Bodies iterator
@@ -214,17 +214,17 @@ class TreeBuilder : public Traversal {
     int maxBinNode = getMaxBinNode(bodies.size());              // Get maximum size of binary tree
     binNode->BEGIN = new BinaryTreeNode[maxBinNode];            // Allocate array for binary tree nodes
     binNode->END = binNode->BEGIN + maxBinNode;                 // Set end pointer
-    N0 = buildNodes(bodies, buffer, 0, bodies.size(), binNode, localCenter);// Build tree recursively
+    N0 = buildNodes(bodies, buffer, 0, bodies.size(), binNode, X0, R0);// Build tree recursively
     delete[] binNode->BEGIN;                                    // Deallocate binary tree array
     stopTimer("Grow tree",printNow);                            // Stop timer
   }
 
 //! Link tree structure
-  void linkTree(Cells &cells) {
+  void linkTree(Cells &cells, real_t R0) {
     startTimer("Link tree");                                    // Start timer
     cells.resize(N0->NNODE);                                    // Allocate cells array
     C_iter C0 = cells.begin();                                  // Cell begin iterator
-    nodes2cells(N0, C0, C0, C0+1);                              // Convert nodes to cells recursively
+    nodes2cells(N0, C0, C0, C0+1, R0);                          // Convert nodes to cells recursively
     delete N0;                                                  // Deallocate nodes
     stopTimer("Link tree",printNow);                            // Stop timer
   }
@@ -234,9 +234,9 @@ class TreeBuilder : public Traversal {
   ~TreeBuilder() {}
 
 //! Build tree structure top down
-  void buildTree(Bodies &bodies, Cells &cells) {
-    growTree(bodies);                                           // Grow tree from root
-    linkTree(cells);                                            // Form parent-child links in tree
+  void buildTree(Bodies &bodies, Cells &cells, Box box) {
+    growTree(bodies,box.X,box.R);                               // Grow tree from root
+    linkTree(cells,box.R);                                      // Form parent-child links in tree
   }
 
 //! Print tree structure statistics
