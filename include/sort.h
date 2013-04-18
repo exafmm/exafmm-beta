@@ -2,7 +2,7 @@
 #define sort_h
 #include "types.h"
 
-//! Custom bucket sort for body and cell structures
+//! Custom bucket sort for body and structures
 class Sort {
 private:
   std::vector<int> bucket;                                      //!< Bucket for sorting

@@ -41,7 +41,7 @@ int main(int argc, char ** argv) {
     FMM.buildTree(bodies, cells);
     FMM.upwardPass(cells);
     FMM.startPAPI();
-    FMM.evaluate(cells, cells, ARGS.mutual);
+    FMM.dualTreeTraversal(cells, cells, ARGS.mutual);
     FMM.stopPAPI();
     FMM.downwardPass(cells);
     FMM.stopTimer("FMM", FMM.printNow);

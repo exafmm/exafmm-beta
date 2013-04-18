@@ -46,7 +46,7 @@ int main(int argc, char ** argv) {
     FMM.setLET(cells);
     FMM.commBodies();
     FMM.commCells();
-    FMM.evaluate(cells, cells);
+    FMM.dualTreeTraversal(cells, cells);
     jbodies = bodies;
     for( int irank=1; irank<FMM.MPISIZE; irank++ ) {
       FMM.getLET(jcells,(FMM.MPIRANK+irank)%FMM.MPISIZE);
@@ -93,7 +93,7 @@ int main(int argc, char ** argv) {
       }
       assert( ic == int(icells.size()) );
 #endif
-      FMM.evaluate(cells, jcells);
+      FMM.dualTreeTraversal(cells, jcells);
     }
 #else
     jbodies = bodies;
@@ -103,7 +103,7 @@ int main(int argc, char ** argv) {
       FMM.setBounds(jbodies);
       FMM.buildTree(jbodies, jcells);
       FMM.upwardPass(jcells);
-      FMM.evaluate(cells, jcells);
+      FMM.dualTreeTraversal(cells, jcells);
     }
 #endif
 

@@ -135,8 +135,8 @@ public:
     stopTimer("Upward pass",printNow);                          // Stop timer
   }
 
-//! Evaluate P2P and M2L using tree traversal
-  void evaluate(Cells &icells, Cells &jcells, bool mutual=false) {
+//! Evaluate P2P and M2L using dual tree traversal
+  void dualTreeTraversal(Cells &icells, Cells &jcells, bool mutual=false) {
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     startTimer("Traverse");                                     // Start timer

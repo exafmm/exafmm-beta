@@ -1,5 +1,5 @@
-#ifndef evaluator_h
-#define evaluator_h
+#ifndef traversal_h
+#define traversal_h
 #include "kernel.h"
 #include "logger.h"
 #if COMMON_CILKH
@@ -13,7 +13,7 @@
 #define count(N)
 #endif
 
-class Evaluator : public Kernel, public Logger {
+class Traversal : public Kernel, public Logger {
 private:
   real_t timeP2P;                                               //!< P2P execution time
   real_t timeM2L;                                               //!< M2L execution time
@@ -217,8 +217,8 @@ protected:
   }
 
 public:
-  Evaluator() : NP2P(0), NM2L(0) {}
-  ~Evaluator() {}
+  Traversal() : NP2P(0), NM2L(0) {}
+  ~Traversal() {}
 
   void timeKernels() {
     Bodies ibodies(1000), jbodies(1000);

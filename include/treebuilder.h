@@ -1,8 +1,8 @@
 #ifndef treebuilder_h
 #define treebuilder_h
-#include "evaluator.h"
+#include "traversal.h"
 
-class TreeBuilder : public Evaluator {
+class TreeBuilder : public Traversal {
 private:
 //! Binary tree is used for counting number of bodies with a recursive approach
   struct BinaryTreeNode {

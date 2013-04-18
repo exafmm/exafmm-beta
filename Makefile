@@ -1,11 +1,11 @@
 help:
 	@echo "Help documentation will be available soon...\n"
 clean:
-	find . -name "*.o" -o -name "*.out*" | xargs rm -rf
-cleandat:
-	find . -name "*.dat" -o -name "*.dot" -o -name "*.svg" | xargs rm -rf
+	find . -name "*.o" -o -name "*.out*" | xargs rm
+cleardat:
+	find . -name "*.dat" | xargs rm
 cleanlib:
-	find . -name "*.a" -o -name "*.so" | xargs rm -rf
+	find . -name "*.a" -o -name "*.so" | xargs rm
 cleanall:
 	make clean
 	make cleandat
@@ -19,10 +19,4 @@ save    :
 	cd .. && tar zcvf exafmm-dev.tgz exafmm-dev
 revert	:
 	hg revert --all
-	rm -rf `find . -name "*.orig"`
-docs:
-	doxygen Doxyfile
-	cd docs/html; tar zcf ../../docs.tgz *
-	scp docs.tgz pl:
-	ssh pl 'tar -zxf docs.tgz -C /Library/WebServer/Documents/exafmm_docs/html/; rm docs.tgz; chmod -R 775 /Library/WebServer/Documents/exafmm_docs/'
-	rm -rf docs*
+	find . -name "*.orig" | xargs rm

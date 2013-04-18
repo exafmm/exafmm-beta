@@ -30,11 +30,11 @@ extern "C" void FMM(int n, double* x, double* q, double *p, double* f, int perio
   FMM.setLET(cells);
   FMM.commBodies();
   FMM.commCells();
-  FMM.evaluate(cells, cells);
+  FMM.dualTreeTraversal(cells, cells);
   jbodies = bodies;
   for( int irank=1; irank<FMM.MPISIZE; irank++ ) {
     FMM.getLET(jcells, (FMM.MPIRANK + irank) % FMM.MPISIZE);
-    FMM.evaluate(cells, jcells);
+    FMM.dualTreeTraversal(cells, jcells);
   }
   FMM.downwardPass(cells);
   FMM.unpartition(bodies);

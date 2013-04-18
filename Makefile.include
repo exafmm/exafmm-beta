@@ -92,5 +92,3 @@ save:
 	@make -C .. save
 revert:
 	@make -C .. revert
-docs:
-	@make -C .. docs
