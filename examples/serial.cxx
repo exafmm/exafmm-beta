@@ -31,32 +31,35 @@ int main(int argc, char ** argv) {
     int numBodies = ARGS.numBodies;
 #endif // MANY
     if(FMM.printNow) std::cout << std::endl
-      << "N                    : " << numBodies << std::endl;
+      << "Num bodies           : " << numBodies << std::endl;
     bodies.resize(numBodies);
     DATA.initBodies(bodies, ARGS.distribution);
     FMM.setBounds(bodies);
     FMM.buildTree(bodies, cells);                               // TODO : make it work without this
     FMM.resetTimer();
-    FMM.startTimer("FMM");
+    FMM.startTimer("Total FMM");
     FMM.buildTree(bodies, cells);
     FMM.upwardPass(cells);
     FMM.startPAPI();
     FMM.dualTreeTraversal(cells, cells, ARGS.mutual);
     FMM.stopPAPI();
     FMM.downwardPass(cells);
-    FMM.stopTimer("FMM", FMM.printNow);
-    FMM.eraseTimer("FMM");
+    std::cout << "----------------------------------" << std::endl;
+    FMM.stopTimer("Total FMM", FMM.printNow);
+    FMM.eraseTimer("Total FMM");
     FMM.writeTime();
     FMM.resetTimer();
     jbodies = bodies;
     if (int(bodies.size()) > ARGS.numTarget) DATA.sampleBodies(bodies, ARGS.numTarget);
     Bodies bodies2 = bodies;
     DATA.initTarget(bodies2);
-    FMM.startTimer("Direct sum");
+    FMM.startTimer("Total Direct");
     FMM.direct(bodies2, jbodies);
     FMM.normalize(bodies2);
-    FMM.stopTimer("Direct sum", FMM.printNow);
-    FMM.eraseTimer("Direct sum");
+    std::cout << "----------------------------------" << std::endl;
+    FMM.stopTimer("Total Direct", FMM.printNow);
+    FMM.eraseTimer("Total Direct");
+    std::cout << "----------------------------------" << std::endl;
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     DATA.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
     if(FMM.printNow) {

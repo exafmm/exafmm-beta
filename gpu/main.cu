@@ -5,7 +5,7 @@ int main() {
     uint numBodies = uint(pow(10,(it+24)/8.0));
     uint numTarget = numBodies / 100;
     octree *tree = new octree(numBodies);
-    printf("Num bodies  : %d\n",numBodies);
+    printf("Num bodies   : %d\n",numBodies);
     printf("------------------------\n",numBodies);
     for( uint i=0; i<numBodies; i++ ) {
       tree->bodyPos[i].w  = 1. / numBodies;
@@ -18,12 +18,12 @@ int main() {
     tree->iterate();
     double toc = tree->get_time();
     printf("------------------------\n",numBodies);
-    printf("Total FMM   : %lf s\n",toc-tic);
+    printf("Total FMM    : %lf s\n",toc-tic);
     printf("------------------------\n",numBodies);
     tic = tree->get_time();
     tree->direct(numTarget,numBodies);
     toc = tree->get_time();
-    printf("Check answer: %lf s\n",toc-tic);
+    printf("Total Direct : %lf s\n",toc-tic);
     printf("------------------------\n",numBodies);
     tree->bodyAcc.d2h();
     tree->bodyAcc2.d2h();
@@ -40,8 +40,8 @@ int main() {
       norm2 += fdirect.y * fdirect.y;
       norm2 += fdirect.z * fdirect.z;
     }
-    printf("Potential L2: %f\n",sqrtf(diff1/norm1));
-    printf("Force     L2: %f\n",sqrtf(diff2/norm2));
+    printf("Potential L2 : %f\n",sqrtf(diff1/norm1));
+    printf("Force     L2 : %f\n",sqrtf(diff2/norm2));
     printf("------------------------\n\n",numBodies);
     delete tree;
   }

@@ -282,16 +282,15 @@ public:
     timeM2L = stopTimer("M2L kernel") / 1000;
   }
 
-#if COUNT
 //! Print traversal statistics
   void printTraversalData() {
+#if COUNT
     std::cout << "--- Traversal stats --------------" << std::endl
 	      << std::setw(stringLength) << std::left           // Set format
 	      << "P2P calls"  << " : " << NP2P << std::endl     // Print number of P2P calls
 	      << std::setw(stringLength) << std::left           // Set format
 	      << "M2L calls"  << " : " << NM2L << std::endl;    // Print number of M2l calls
-  }
 #endif
-
+  }
 };
 #endif

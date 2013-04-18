@@ -31,10 +31,10 @@ int main(int argc, char ** argv) {
     int numBodies = ARGS.numBodies / FMM.MPISIZE;
 #endif
     if(FMM.printNow) std::cout << std::endl
-      << "N                    : " << numBodies << std::endl;
+      << "Num bodies           : " << numBodies << std::endl;
     bodies.resize(numBodies);
     DATA.initBodies(bodies, ARGS.distribution, FMM.MPIRANK, FMM.MPISIZE);
-    FMM.startTimer("FMM");
+    FMM.startTimer("Total FMM");
 
     FMM.partition(bodies);
     FMM.setBounds(bodies);
@@ -110,24 +110,27 @@ int main(int argc, char ** argv) {
     FMM.downwardPass(cells);
 
     FMM.stopPAPI();
-    FMM.stopTimer("FMM",FMM.printNow);
-    FMM.eraseTimer("FMM");
+    if(FMM.printNow) std::cout << "----------------------------------" << std::endl;
+    FMM.stopTimer("Total FMM",FMM.printNow);
+    FMM.eraseTimer("Total FMM");
+    if(FMM.printNow) std::cout << "----------------------------------" << std::endl;
     FMM.writeTime();
     FMM.resetTimer();
-
     jbodies = bodies;
     if (int(bodies.size()) > ARGS.numTarget) DATA.sampleBodies(bodies, ARGS.numTarget);
     Bodies bodies2 = bodies;
     DATA.initTarget(bodies2);
-    FMM.startTimer("Direct sum");
+    FMM.startTimer("Total Direct");
     for( int i=0; i!=FMM.MPISIZE; ++i ) {
       FMM.shiftBodies(jbodies);
       FMM.direct(bodies2, jbodies);
       if(FMM.printNow) std::cout << "Direct loop          : " << i+1 << "/" << FMM.MPISIZE << std::endl;
     }
     FMM.normalize(bodies2);
-    FMM.stopTimer("Direct sum",FMM.printNow);
-    FMM.eraseTimer("Direct sum");
+    if(FMM.printNow) std::cout << "----------------------------------" << std::endl;
+    FMM.stopTimer("Total Direct",FMM.printNow);
+    FMM.eraseTimer("Total Direct");
+    if(FMM.printNow) std::cout << "----------------------------------" << std::endl;
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
     DATA.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
     MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
