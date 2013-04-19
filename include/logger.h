@@ -9,7 +9,13 @@
 #include <string>
 #include <sys/time.h>
 
-#if PAPI
+#if PAPI_EX
+#include <papi.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>		/* malloc/free */
+#include <string.h>
+#elif PAPI
 #include <papi.h>
 #endif
 
@@ -34,7 +40,13 @@ class Logger {
   Timer           timer;                                        //!< Stores timings for all events
   Traces          traces;                                       //!< Stores traces for all events
   pthread_mutex_t mutex;                                        //!< Pthread communicator
-#if PAPI
+#if PAPI_EX
+  int nPAPIEvents;
+  char ** PAPIEventNames;
+  int * PAPIEventCodes;
+  long long * PAPIEventValues;
+  int PAPIEventSet;
+#elif PAPI
   int PAPIEVENT;                                                //!< PAPI event handle
 #endif
 
@@ -49,6 +61,131 @@ class Logger {
     gettimeofday(&tv, NULL);                                    // Get time of day in seconds and microseconds
     return double(tv.tv_sec+tv.tv_usec*1e-6);                   // Combine seconds and microseconds and return
   }
+
+#if PAPI_EX
+  /* papi related aux functions */
+  void showPAPIError(int retval, const char * msg) {
+    fprintf(stderr, "error in PAPI call %s (retval %d): %s\n", 
+	    msg, retval, PAPI_strerror(retval));
+  }
+
+  /* events : a string like "L1_DCM,L2_DCM,L3_DCM"
+     PAPIEventCodes : an array that can have max_events
+     parse events into an array of event codes.
+     return the number of events successfully parsed */
+  
+#define MAX_PAPI_EVENT_NAME 256
+  int parsePAPIEvents(char * events_string) {
+    char event_name[MAX_PAPI_EVENT_NAME];
+    
+    /* split events_string by ',' and check if each event
+       name is supported. count the number of valid events
+       into nPAPIEvents */
+    char * p = events_string;
+    int ne = 0;
+    while (p) {
+      char * q = strchr(p, ',');
+      int n = (q == NULL ? (int)strlen(p) : q - p);
+      unsigned int to_write = n + 1;
+      if (to_write <= sizeof(event_name)) {
+	int event_code;
+	snprintf(event_name, to_write, "%s", p);
+	int retval = PAPI_event_name_to_code(event_name, &event_code);
+	if (retval == PAPI_OK) {
+	  ne++;		/* OK, this is a vaild event */
+	} else {
+	  fprintf(stderr, 
+		  "warning: could not find event %s; the papi error follows:\n", 
+		  p);
+	  showPAPIError(retval, "PAPI_event_name_to_code");
+	}
+      } else {
+	char * x = strndup(p, n);
+	fprintf(stderr, "warning: event name '%s' too long (ignored)\n", x);
+	free(x);
+      }
+      if (q == NULL) break;
+      else p = q + 1;
+    };
+    
+    if (ne == 0) return 0;
+
+    nPAPIEvents = ne;
+    PAPIEventNames = new char * [nPAPIEvents];
+    PAPIEventCodes = new int [nPAPIEvents];
+    PAPIEventValues = new long long [nPAPIEvents];
+    PAPIEventSet = 0;
+
+    for (int k = 0; k < nPAPIEvents; k++) {
+      PAPIEventNames[k] = NULL;
+      PAPIEventCodes[k] = 0;
+      PAPIEventValues[k] = 0;
+    }
+    
+    p = events_string;
+    int i = 0;
+    while (p) {
+      char * q = strchr(p, ',');
+      int n = (q == NULL ? (int)strlen(p) : q - p);
+      unsigned int to_write = n + 1;
+      if (to_write <= sizeof(event_name)) {
+	int event_code;
+	snprintf(event_name, to_write, "%s", p);
+	int retval = PAPI_event_name_to_code(event_name, &event_code);
+	if (retval == PAPI_OK) {
+	  assert(i < nPAPIEvents);
+	  PAPIEventNames[i] = strdup(event_name);
+	  PAPIEventCodes[i] = event_code;
+	  i++;
+	}
+      }
+      if (q == NULL) break;
+      else p = q + 1;
+    };
+    assert(i == nPAPIEvents);
+    return nPAPIEvents;		/* event_count */
+  }
+
+  int PAPIEventCodesToEventSet() {
+    int es = PAPI_NULL;
+    int retval = PAPI_create_eventset(&es);
+    if (retval != PAPI_OK) {
+      showPAPIError(retval, "PAPI_create_eventset");
+      return PAPI_NULL;
+    }
+    for (int i = 0; i < nPAPIEvents; i++) {
+      int retval0 = PAPI_add_event(es, PAPIEventCodes[i]);
+      if (retval0 != PAPI_OK) {
+	fprintf(stderr, "couldn't add event %s (code=%d)\n", 
+		PAPIEventNames[i], PAPIEventCodes[i]);
+	showPAPIError(retval, "PAPI_add_event");
+	return PAPI_NULL;
+      }
+    }
+    return es; 			/* OK */
+  }
+
+  void showPAPICounts() {
+    for (int i = 0; i < nPAPIEvents; i++) {
+      printf("%s : %lld\n", PAPIEventNames[i], PAPIEventValues[i]);
+    }
+  }
+
+  int initPAPI() {
+    int ver = PAPI_library_init(PAPI_VER_CURRENT);
+    if (ver != PAPI_VER_CURRENT) { 
+      fprintf(stderr, "error: could not init papi\n");
+      return 0;			// NG
+    }
+#if _OPENMP
+    if (PAPI_thread_init(pthread_self) != PAPI_OK) {
+      fprintf(stderr, "error could not init papi\n");
+      return 0;			// NG
+    }
+#endif
+    return 1;
+  }
+#endif
 
  public:
 //! Constructor
@@ -114,7 +251,16 @@ class Logger {
 
 //! Start PAPI event
   inline void startPAPI() {
-#if PAPI
+#if PAPI_EX
+    /* set nPAPIEvents, PAPIEventNames, and PAPIEventCodes  */
+    if (initPAPI()) {
+      nPAPIEvents = parsePAPIEvents(getenv("EXAFMM_PAPI_EVENTS"));
+      if (nPAPIEvents) {
+	PAPIEventSet = PAPIEventCodesToEventSet();
+	PAPI_start(PAPIEventSet);
+      }
+    }
+#elif PAPI
     int events[3] = { PAPI_L2_DCM, PAPI_L2_DCA, PAPI_TLB_DM };  // PAPI event type
     PAPI_library_init(PAPI_VER_CURRENT);                        // PAPI initialize
     PAPI_create_eventset(&PAPIEVENT);                           // PAPI create event set
@@ -125,7 +271,12 @@ class Logger {
 
 //! Stop PAPI event
   inline void stopPAPI() {
-#if PAPI
+#if PAPI_EX
+    if (nPAPIEvents) {
+      PAPI_stop(PAPIEventSet, PAPIEventValues);
+      showPAPICounts();
+    }
+#elif PAPI
     long long values[3] = {0,0,0};                              // Values for each event
     PAPI_stop(PAPIEVENT,values);                                // PAPI stop
     std::cout << "--- PAPI stats -------------------" << std::endl

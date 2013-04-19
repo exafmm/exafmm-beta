@@ -53,7 +53,8 @@ LFLAGS	+= -std=c++0x -DTBB -ltbb
 #LFLAGS += -DOPENMP -fopenmp
 
 ### PAPI flags
-#LFLAGS	+= -DPAPI -lpapi
+LFLAGS	+= -DPAPI -lpapi
+#LFLAGS	+= -DPAPI_EX -lpapi
 
 ### VTK flags : VTK is available from http://www.vtk.org/VTK/resources/software.html
 #VTK_INCLUDE_PATH = /usr/include/vtk-5.8
