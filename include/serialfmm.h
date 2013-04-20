@@ -106,7 +106,7 @@ class SerialFMM : public TreeBuilder {
     if (IMAGES == 0) {                                          // If non-periodic boundary condition
       periodicCycle = 2 * localRadius;                          //  Set global radius for serial run
     } else {                                                    // If periodic boundary condition
-      periodicCycle = 2 * M_PI;                                 //  Set global radius
+      periodicCycle = 2 * M_PI;                                 //  Set global radius to 2 * pi
     }                                                           // End if for periodic boundary condition
     Box box;
     box.X = localCenter;

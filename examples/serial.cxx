@@ -32,6 +32,7 @@ int main(int argc, char ** argv) {
 #endif // MANY
     if(FMM.printNow) std::cout << std::endl
       << "Num bodies           : " << numBodies << std::endl;
+    std::cout << "--- Profiling --------------------" << std::endl;
     bodies.resize(numBodies);
     DATA.initBodies(bodies, ARGS.distribution);
     Box box = FMM.setBounds(bodies);
@@ -44,7 +45,7 @@ int main(int argc, char ** argv) {
     FMM.dualTreeTraversal(cells, cells, FMM.periodicCycle, ARGS.mutual);
     FMM.stopPAPI();
     FMM.downwardPass(cells);
-    std::cout << "----------------------------------" << std::endl;
+    std::cout << "--- Total runtime ----------------" << std::endl;
     FMM.stopTimer("Total FMM", FMM.printNow);
     FMM.eraseTimer("Total FMM");
     FMM.writeTime();
@@ -56,10 +57,8 @@ int main(int argc, char ** argv) {
     FMM.startTimer("Total Direct");
     FMM.direct(bodies2, jbodies);
     FMM.normalize(bodies2);
-    std::cout << "----------------------------------" << std::endl;
     FMM.stopTimer("Total Direct", FMM.printNow);
     FMM.eraseTimer("Total Direct");
-    std::cout << "----------------------------------" << std::endl;
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     DATA.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
     if(FMM.printNow) {

@@ -32,6 +32,7 @@ int main(int argc, char ** argv) {
 #endif
     if(FMM.printNow) std::cout << std::endl
       << "Num bodies           : " << numBodies << std::endl;
+    if(FMM.printNow) std::cout << "--- Profiling --------------------" << std::endl;
     bodies.resize(numBodies);
     DATA.initBodies(bodies, ARGS.distribution, FMM.MPIRANK, FMM.MPISIZE);
     FMM.startTimer("Total FMM");
@@ -110,10 +111,10 @@ int main(int argc, char ** argv) {
     FMM.downwardPass(cells);
 
     FMM.stopPAPI();
-    if(FMM.printNow) std::cout << "----------------------------------" << std::endl;
+    if(FMM.printNow) std::cout << "--- Total runtime ----------------" << std::endl;
     FMM.stopTimer("Total FMM",FMM.printNow);
     FMM.eraseTimer("Total FMM");
-    if(FMM.printNow) std::cout << "----------------------------------" << std::endl;
+    if(FMM.printNow) std::cout << "--- Round-robin MPI direct sum ---" << std::endl;
     FMM.writeTime();
     FMM.resetTimer();
     jbodies = bodies;
@@ -130,7 +131,6 @@ int main(int argc, char ** argv) {
     if(FMM.printNow) std::cout << "----------------------------------" << std::endl;
     FMM.stopTimer("Total Direct",FMM.printNow);
     FMM.eraseTimer("Total Direct");
-    if(FMM.printNow) std::cout << "----------------------------------" << std::endl;
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
     DATA.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
     MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);

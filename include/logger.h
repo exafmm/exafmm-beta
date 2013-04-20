@@ -10,11 +10,11 @@
 #include <sys/time.h>
 
 #if PAPI_EX
+#include <cassert>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 #include <papi.h>
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>		/* malloc/free */
-#include <string.h>
 #elif PAPI
 #include <papi.h>
 #endif
@@ -41,17 +41,18 @@ class Logger {
   Traces          traces;                                       //!< Stores traces for all events
   pthread_mutex_t mutex;                                        //!< Pthread communicator
 #if PAPI_EX
-  int nPAPIEvents;
-  char ** PAPIEventNames;
-  int * PAPIEventCodes;
-  long long * PAPIEventValues;
-  int PAPIEventSet;
+  int             nPAPIEvents;
+  char         ** PAPIEventNames;
+  int           * PAPIEventCodes;
+  long long     * PAPIEventValues;
+  int             PAPIEventSet;
 #elif PAPI
   int PAPIEVENT;                                                //!< PAPI event handle
 #endif
 
  public:
   int stringLength;                                             //!< Max length of event name
+  int decimal;                                                  //!< Decimal precision
   bool printNow;                                                //!< Switch to print timings
 
  private:
@@ -190,12 +191,13 @@ class Logger {
  public:
 //! Constructor
   Logger() : timerFile("time.dat"),                             // Open timer log file
-             beginTimer(), timer(), traces(), mutex(),          // Initializing class variables (empty)
+    beginTimer(), timer(), traces(), mutex(),                   // Initializing class variables (empty)
 #if PAPI
-             PAPIEVENT(PAPI_NULL),                              // PAPI event handle
+    PAPIEVENT(PAPI_NULL),                                       // PAPI event handle
 #endif
-             stringLength(20),                                  // Max length of event name
-             printNow(false) {                                  // Don't print timings by default
+    stringLength(20),                                           // Max length of event name
+    decimal(7),                                                 // Decimal precision
+    printNow(false) {                                           // Don't print timings by default
     pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
   }
 //! Destructor
@@ -212,8 +214,7 @@ class Logger {
   double stopTimer(std::string event, bool print=false) {
     double endTimer = get_time();                               // Get time of day and store in endTimer
     timer[event] += endTimer - beginTimer[event];               // Accumulate event time to timer
-    if (print) std::cout << std::setw(stringLength) << std::left// Set format
-      << event << " : " << timer[event] << std::endl;           // Print event and timer to screen
+    if (print) printTime(event);                                // Print event and timer to screen
     return endTimer - beginTimer[event];                        // Return the event time
   }
 
@@ -230,7 +231,8 @@ class Logger {
 //! Print timings of a specific event
   inline void printTime(std::string event) {
     std::cout << std::setw(stringLength) << std::left           // Set format
-      << event << " : " << timer[event] << std::endl;           // Print event and timer
+      << event << " : " << std::setprecision(decimal) << std::fixed
+      << timer[event] << " s" << std::endl;   // Print event and timer
   }
 
 //! Print timings of all events

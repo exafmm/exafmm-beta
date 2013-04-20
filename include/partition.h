@@ -28,7 +28,11 @@ class Partition : public MyMPI, public SerialFMM, public Sort {
       globalRadius = std::max(globalXmax[d] - globalCenter[d], globalRadius);// Calculate max distance from center 
     }                                                           // End loop over dimensions
     globalRadius *= 1.00001;                                    // Add some leeway to radius
-    periodicCycle = 2 * globalRadius;                           // Periodic cycle is the global domain size
+    if (IMAGES == 0) {                                          // If non-periodic boundary condition
+      periodicCycle = 2 * globalRadius;                         //  Set global radius for parallel run
+    } else {                                                    // If periodic boundary condition
+      periodicCycle = 2 * M_PI;                                 //  Set global radius to 2 * pi
+    }                                                           // End if for periodic boundary condition
   }
 
 //! Allgather bounds of all ranks
