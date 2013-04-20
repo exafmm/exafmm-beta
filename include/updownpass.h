@@ -1,17 +1,13 @@
-#ifndef serialfmm_h
-#define serialfmm_h
-#include "treebuilder.h"
+#ifndef updownpass_h
+#define updownpass_h
+#include "kernel.h"
+#include "logger.h"
+#include "thread.h"
 
-class SerialFMM : public TreeBuilder {
- private:
-  typedef std::pair<vec3,vec3> vec3Pair;                        //!< Pair of vec3
-
+class UpDownPass : public Kernel, public Logger {
  public:
-  real_t periodicCycle;                                         //!< Length of the global domain
-  real_t localRadius;                                           //!< Radius of local root cell
-  vec3   localCenter;                                           //!< Center of local root cell
-  fvec3  localXmin;                                             //!< Local Xmin for a given rank
-  fvec3  localXmax;                                             //!< Local Xmax for a given rank
+  int IMAGES;                                                   //!< Number of periodic image sublevels
+  real_t THETA;                                                 //!< Multipole acceptance criteria
 
  private:
 //! Error optimization of Rcrit
@@ -36,30 +32,6 @@ class SerialFMM : public TreeBuilder {
     }                                                           // End Newton-Rhapson iteration
 #endif
     C->RCRIT *= x;                                              // Multiply Rcrit by error optimized parameter x
-  }
-
-//! Get Xmin and Xmax of domain
-  vec3Pair getBounds(B_iter BiBegin, B_iter BiEnd) {
-    assert(BiEnd - BiBegin > 0);
-    if (BiEnd - BiBegin < NSPAWN) {                             // If number of elements is small enough
-      vec3 Xmin = BiBegin->X, Xmax = BiBegin->X;                //  Initialize Xmin and Xmax with first value
-      for (B_iter B=BiBegin; B!=BiEnd; B++) {                   //  Loop over range of bodies
-        Xmin = min(B->X, Xmin);                                 //   Update Xmin
-        Xmax = max(B->X, Xmax);                                 //   Update Xmax
-      }                                                         //  End loop over range of bodies
-      return vec3Pair(Xmin, Xmax);                              //  Return Xmin and Xmax as pair
-    } else {                                                    // Else if number of elements are large
-      B_iter BiMid = BiBegin + (BiEnd - BiBegin) / 2;           //  Middle iterator
-      vec3Pair bounds0, bounds1;                                //  Pair : first Xmin : second Xmax
-      spawn_tasks {                                             //  Initialize tasks
-	spawn_task1(bounds0, bounds0 = getBounds(BiBegin, BiMid));//  Recursive call with new task
-	bounds1 = getBounds(BiMid, BiEnd);                      //  Recursive call with old task
-	sync_tasks;                                             //  Synchronize tasks
-	bounds0.first = min(bounds0.first, bounds1.first);      //  Minimum of the two Xmins
-	bounds0.second = max(bounds0.second, bounds1.second);   //  Maximum of the two Xmaxs
-      }
-      return bounds0;                                           //  Return Xmin and Xmax
-    }                                                           // End if for number fo elements
   }
 
 //! Recursive call for upward pass
@@ -90,30 +62,8 @@ class SerialFMM : public TreeBuilder {
   }
 
  public:
-//! Set center and size of root cell
-  Box setBounds(Bodies &bodies) {
-    startTimer("Set bounds");                                   // Start timer
-    vec3Pair bounds = getBounds(bodies.begin(), bodies.end());  // Get Xmin (first) and Xmax (second) of domain
-    for (int d=0; d<3; d++) localXmin[d] = bounds.first[d];     // Set local Xmin
-    for (int d=0; d<3; d++) localXmax[d] = bounds.second[d];    // Set local Xmax
-    for (int d=0; d<3; d++) localCenter[d] = (localXmax[d] + localXmin[d]) / 2;// Calculate center of domain
-    localRadius = 0;                                            // Initialize localRadius
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      localRadius = std::max(localCenter[d] - localXmin[d], localRadius);// Calculate min distance from center
-      localRadius = std::max(localXmax[d] - localCenter[d], localRadius);// Calculate max distance from center 
-    }                                                           // End loop over dimensions
-    localRadius *= 1.00001;                                     // Add some leeway to radius
-    if (IMAGES == 0) {                                          // If non-periodic boundary condition
-      periodicCycle = 2 * localRadius;                          //  Set global radius for serial run
-    } else {                                                    // If periodic boundary condition
-      periodicCycle = 2 * M_PI;                                 //  Set global radius to 2 * pi
-    }                                                           // End if for periodic boundary condition
-    Box box;
-    box.X = localCenter;
-    box.R = localRadius;
-    stopTimer("Set bounds",printNow);
-    return box;
-  }
+  UpDownPass(int images, real_t theta) : IMAGES(images), THETA(theta) {}
+  ~UpDownPass() {}
 
 //! Upward pass (P2M, M2M)
   void upwardPass(Cells &cells) {
@@ -144,7 +94,7 @@ class SerialFMM : public TreeBuilder {
     stopTimer("Downward pass",printNow);                        // Stop timer
   }
 
-  void direct(Bodies &ibodies, Bodies &jbodies) {
+  void direct(Bodies &ibodies, Bodies &jbodies, real_t cycle) {
     Cells cells(2);                                             // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
     Ci->BODY = ibodies.begin();                                 // Iterator of first target body
@@ -158,9 +108,9 @@ class SerialFMM : public TreeBuilder {
     for (int ix=-prange; ix<=prange; ix++) {                    // Loop over x periodic direction
       for (int iy=-prange; iy<=prange; iy++) {                  //  Loop over y periodic direction
         for (int iz=-prange; iz<=prange; iz++) {                //   Loop over z periodic direction
-          Xperiodic[0] = ix * periodicCycle;                    //    Coordinate shift for x periodic direction
-          Xperiodic[1] = iy * periodicCycle;                    //    Coordinate shift for y periodic direction
-          Xperiodic[2] = iz * periodicCycle;                    //    Coordinate shift for z periodic direction
+          Xperiodic[0] = ix * cycle;                            //    Coordinate shift for x periodic direction
+          Xperiodic[1] = iy * cycle;                            //    Coordinate shift for y periodic direction
+          Xperiodic[2] = iz * cycle;                            //    Coordinate shift for z periodic direction
           P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
         }                                                       //   End loop over z periodic direction
       }                                                         //  End loop over y periodic direction

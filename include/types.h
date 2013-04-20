@@ -34,7 +34,7 @@ typedef simdvec        ksimdvec;                                //!< SIMD vector
 
 // Multipole/local expansion coefficients
 const int P = EXPANSION;                                        //!< Order of expansions
-const float EPS2 = .0;                                          //!< Softening parameter (squared)
+const real_t EPS2 = 0.0;                                        //!< Softening parameter (squared)
 #if COMkernel
 const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms
 #else

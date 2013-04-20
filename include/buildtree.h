@@ -1,8 +1,10 @@
-#ifndef treebuilder_h
-#define treebuilder_h
-#include "traversal.h"
+#ifndef buildtree_h
+#define buildtree_h
+#include "logger.h"
+#include "thread.h"
+#include "types.h"
 
-class TreeBuilder : public Traversal {
+class BuildTree : public Logger {
  private:
   typedef vec<8,int> ivec8;                                     //!< Vector of 8 integer types
 //! Binary tree is used for counting number of bodies with a recursive approach
@@ -23,10 +25,13 @@ class TreeBuilder : public Traversal {
     vec3         X;                                             //!< Coordinate at center
   };
 
+  int          NCRIT;                                           //!< Number of bodies per leaf cell
+  int          NSPAWN;                                          //!< Threshold of NDBODY for spawning new threads
   int          MAXLEVEL;                                        //!< Maximum level of tree
   B_iter       B0;                                              //!< Iterator of first body
   OctreeNode * N0;                                              //!< Octree root node
 
+ private:
 //! Get number of binary tree nodes for a given number of bodies
   inline int getNumBinNode(int n) const {
     if (n <= NSPAWN) return 1;                                  // If less then threshold, use only one node
@@ -95,7 +100,7 @@ class TreeBuilder : public Traversal {
   }
 
 //! Sort bodies according to octant (Morton order)
-  void moveBodies(Bodies& bodies, Bodies& buffer, int begin, int end, 
+  void moveBodies(Bodies& bodies, Bodies& buffer, int begin, int end,
                   BinaryTreeNode * binNode, ivec8 octantOffset, vec3 X) const {
     if (binNode->LEFT == NULL) {                                // If there are no more child nodes
       for (int i=begin; i<end; i++) {                           //  Loop over bodies
@@ -230,8 +235,8 @@ class TreeBuilder : public Traversal {
   }
 
  public:
-  TreeBuilder() : MAXLEVEL(0) {}
-  ~TreeBuilder() {}
+  BuildTree(int ncrit, int nspawn) : NCRIT(ncrit), NSPAWN(nspawn), MAXLEVEL(0) {}
+  ~BuildTree() {}
 
 //! Build tree structure top down
   void buildTree(Bodies &bodies, Cells &cells, Box box) {

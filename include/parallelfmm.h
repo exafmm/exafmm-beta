@@ -22,7 +22,7 @@ class ParallelFMM : public Partition {
 
  private:
 //! Get distance to other domain
-  real_t getDistance(C_iter C) {
+  real_t getDistance(C_iter C, vec3 Xperiodic) {
     vec3 dX;                                                    // Distance vector
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
       dX[d] = (C->X[d] + Xperiodic[d] > localXmax[d])*          //  Calculate the distance between cell C and
@@ -73,24 +73,24 @@ class ParallelFMM : public Partition {
           addSendBody(CC, ibody, icell);                        //    Add bodies to send
         } else {                                                //   If cell is not twig
           bool divide = false;                                  //    Initialize logical for dividing
+          vec3 Xperiodic = 0;                                   //    Periodic coordinate offset
           if (IMAGES == 0) {                                    //    If free boundary condition
-            Xperiodic = 0;                                      //     Set periodic coordinate offset
-            real_t R2 = getDistance(CC);                        //     Get distance to other domain
+            real_t R2 = getDistance(CC, Xperiodic);             //     Get distance to other domain
             divide |= 4 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
           } else {                                              //    If periodic boundary condition
             for (int ix=-1; ix<=1; ix++) {                      //     Loop over x periodic direction
               for (int iy=-1; iy<=1; iy++) {                    //      Loop over y periodic direction
                 for (int iz=-1; iz<=1; iz++) {                  //       Loop over z periodic direction
-                  Xperiodic[0] = ix * periodicCycle;            //        Coordinate offset for x periodic direction
-                  Xperiodic[1] = iy * periodicCycle;            //        Coordinate offset for y periodic direction
-                  Xperiodic[2] = iz * periodicCycle;            //        Coordinate offset for z periodic direction
-                  real_t R2 = getDistance(CC);                  //        Get distance to other domain
+                  Xperiodic[0] = ix * CYCLE;                    //        Coordinate offset for x periodic direction
+                  Xperiodic[1] = iy * CYCLE;                    //        Coordinate offset for y periodic direction
+                  Xperiodic[2] = iz * CYCLE;                    //        Coordinate offset for z periodic direction
+                  real_t R2 = getDistance(CC, Xperiodic);       //        Get distance to other domain
                   divide |= 4 * CC->RCRIT * CC->RCRIT > R2;     //        Divide if cell seems too close
                 }                                               //       End loop over z periodic direction
               }                                                 //      End loop over y periodic direction
             }                                                   //     End loop over x periodic direction
           }                                                     //    Endif for periodic boundary condition
-          divide |= CC->R > (periodicCycle / (1 << (level+1))); //    Divide if cell is larger than local root cell
+          divide |= CC->R > (CYCLE / (1 << (level+1)));         //    Divide if cell is larger than local root cell
           if (!divide) {                                        //    If cell does not have to be divided
             CC->NCHILD = 0;                                     //     Cut off child links
           }                                                     //    Endif for cell division
@@ -133,7 +133,7 @@ class ParallelFMM : public Partition {
 
  public:
 //! Constructor
-  ParallelFMM() {
+  ParallelFMM(int nspawn, int images) : Partition(nspawn,images) {
     sendCellCount = new int [MPISIZE];                          // Allocate send count
     sendCellDispl = new int [MPISIZE];                          // Allocate send displacement
     recvCellCount = new int [MPISIZE];                          // Allocate receive count

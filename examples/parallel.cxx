@@ -1,5 +1,9 @@
 #include "args.h"
+#include "buildtree.h"
 #include "dataset.h"
+#include "logger.h"
+#include "traversal.h"
+#include "updownpass.h"
 #include "parallelfmm.h"
 #ifdef VTK
 #include "vtk.h"
@@ -9,15 +13,19 @@ int main(int argc, char ** argv) {
   Args ARGS(argc, argv);
   Bodies bodies, jbodies;
   Cells cells, jcells;
-  Dataset DATA;
-  ParallelFMM FMM;
-  FMM.NCRIT = ARGS.NCRIT;
-  FMM.NSPAWN = ARGS.NSPAWN;
-  FMM.IMAGES = ARGS.IMAGES;
-  FMM.THETA = ARGS.THETA;
+  Dataset DAT;
+  Logger LOG;
+  BuildTree BLD(ARGS.NCRIT,ARGS.NSPAWN);
+  UpDownPass UDP(ARGS.IMAGES,ARGS.THETA);
+  Traversal TRV(ARGS.NSPAWN,ARGS.IMAGES);
+  ParallelFMM FMM(ARGS.NSPAWN,ARGS.IMAGES);
+  LOG.printNow = FMM.MPIRANK == 0;
+  BLD.printNow = FMM.MPIRANK == 0;
+  UDP.printNow = FMM.MPIRANK == 0;
+  TRV.printNow = FMM.MPIRANK == 0;
   FMM.printNow = FMM.MPIRANK == 0;
 #if AUTO
-  FMM.timeKernels();
+  TRV.timeKernels();
 #endif
 #if _OPENMP
 #pragma omp parallel
@@ -34,20 +42,20 @@ int main(int argc, char ** argv) {
       << "Num bodies           : " << numBodies << std::endl;
     if(FMM.printNow) std::cout << "--- Profiling --------------------" << std::endl;
     bodies.resize(numBodies);
-    DATA.initBodies(bodies, ARGS.distribution, FMM.MPIRANK, FMM.MPISIZE);
-    FMM.startTimer("Total FMM");
+    DAT.initBodies(bodies, ARGS.distribution, FMM.MPIRANK, FMM.MPISIZE);
+    LOG.startTimer("Total FMM");
 
     FMM.partition(bodies);
-    Box box = FMM.setBounds(bodies);
-    FMM.buildTree(bodies, cells, box);
-    FMM.upwardPass(cells);
-    FMM.startPAPI();
+    FMM.setLocal(bodies);
+    BLD.buildTree(bodies, cells, FMM.localBox);
+    UDP.upwardPass(cells);
+    LOG.startPAPI();
 
 #if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree : Step 1
     FMM.setLET(cells);
     FMM.commBodies();
     FMM.commCells();
-    FMM.dualTreeTraversal(cells, cells, FMM.periodicCycle, ARGS.mutual);
+    TRV.dualTreeTraversal(cells, cells, FMM.CYCLE, ARGS.mutual);
     jbodies = bodies;
     for( int irank=1; irank<FMM.MPISIZE; irank++ ) {
       FMM.getLET(jcells,(FMM.MPIRANK+irank)%FMM.MPISIZE);
@@ -55,8 +63,8 @@ int main(int argc, char ** argv) {
 #if 0 // Set to 1 for debugging full LET communication : Step 2 (LET must be set to full tree)
       FMM.shiftBodies(jbodies); // This will overwrite recvBodies. (define recvBodies2 in partition.h to avoid this)
       Cells icells;
-      FMM.buildTree(jbodies, icells);
-      FMM.upwardPass(icells);
+      BLD.buildTree(jbodies, icells);
+      UDP.upwardPass(icells);
       assert( icells.size() == jcells.size() );
       CellQueue Qi, Qj;
       Qi.push(icells.begin());
@@ -94,50 +102,58 @@ int main(int argc, char ** argv) {
       }
       assert( ic == int(icells.size()) );
 #endif
-      FMM.dualTreeTraversal(cells, jcells, FMM.periodicCycle, ARGS.mutual);
+      TRV.dualTreeTraversal(cells, jcells, FMM.CYCLE, ARGS.mutual);
     }
 #else
     jbodies = bodies;
     for( int irank=0; irank!=FMM.MPISIZE; irank++ ) {
       FMM.shiftBodies(jbodies);
       jcells.clear();
-      FMM.setBounds(jbodies);
-      FMM.buildTree(jbodies, jcells);
-      FMM.upwardPass(jcells);
-      FMM.dualTreeTraversal(cells, jcells, FMM.periodicCycle, ARGS.mutual);
+      FMM.setLocal(jbodies);
+      BLD.buildTree(jbodies, jcells);
+      UDP.upwardPass(jcells);
+      TRV.dualTreeTraversal(cells, jcells, FMM.periodicCycle, ARGS.mutual);
     }
 #endif
 
-    FMM.downwardPass(cells);
+    UDP.downwardPass(cells);
 
-    FMM.stopPAPI();
-    if(FMM.printNow) std::cout << "--- Total runtime ----------------" << std::endl;
-    FMM.stopTimer("Total FMM",FMM.printNow);
-    FMM.eraseTimer("Total FMM");
-    if(FMM.printNow) std::cout << "--- Round-robin MPI direct sum ---" << std::endl;
+    LOG.stopPAPI();
+    if(LOG.printNow) std::cout << "--- Total runtime ----------------" << std::endl;
+    LOG.stopTimer("Total FMM",LOG.printNow);
+    if(LOG.printNow) std::cout << "--- Round-robin MPI direct sum ---" << std::endl;
+    BLD.writeTime();
+    UDP.writeTime();
+    TRV.writeTime();
     FMM.writeTime();
+    BLD.resetTimer();
+    UDP.resetTimer();
+    TRV.resetTimer();
     FMM.resetTimer();
     jbodies = bodies;
-    if (int(bodies.size()) > ARGS.numTarget) DATA.sampleBodies(bodies, ARGS.numTarget);
+    if (int(bodies.size()) > ARGS.numTarget) DAT.sampleBodies(bodies, ARGS.numTarget);
     Bodies bodies2 = bodies;
-    DATA.initTarget(bodies2);
-    FMM.startTimer("Total Direct");
+    DAT.initTarget(bodies2);
+    LOG.startTimer("Total Direct");
     for( int i=0; i!=FMM.MPISIZE; ++i ) {
       FMM.shiftBodies(jbodies);
-      FMM.direct(bodies2, jbodies);
-      if(FMM.printNow) std::cout << "Direct loop          : " << i+1 << "/" << FMM.MPISIZE << std::endl;
+      UDP.direct(bodies2, jbodies, FMM.CYCLE);
+      if(LOG.printNow) std::cout << "Direct loop          : " << i+1 << "/" << FMM.MPISIZE << std::endl;
     }
-    FMM.normalize(bodies2);
-    if(FMM.printNow) std::cout << "----------------------------------" << std::endl;
-    FMM.stopTimer("Total Direct",FMM.printNow);
-    FMM.eraseTimer("Total Direct");
+    UDP.normalize(bodies2);
+    if(LOG.printNow) std::cout << "----------------------------------" << std::endl;
+    LOG.stopTimer("Total Direct",LOG.printNow);
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
-    DATA.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
+    DAT.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
     MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&norm1, &norm3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    if(FMM.printNow) DATA.printError(diff3, norm3, diff4, norm4);
+    if(LOG.printNow) {
+      DAT.printError(diff3, norm3, diff4, norm4);
+      BLD.printTreeData(cells);
+      TRV.printTraversalData();
+    }
   }
 
 #ifdef VTK

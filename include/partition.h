@@ -1,11 +1,11 @@
 #ifndef partition_h
 #define partition_h
 #include "mympi.h"
-#include "serialfmm.h"
+#include "bounds.h"
 #include "sort.h"
 
 //! Handles all the partitioning of domains
-class Partition : public MyMPI, public SerialFMM, public Sort {
+class Partition : public Bounds, public MyMPI, public Sort {
  protected:
   fvec3 * allLocalXmin;                                         //!< Array for minimum of local domains
   fvec3 * allLocalXmax;                                         //!< Array for maximum of local domains
@@ -29,9 +29,9 @@ class Partition : public MyMPI, public SerialFMM, public Sort {
     }                                                           // End loop over dimensions
     globalRadius *= 1.00001;                                    // Add some leeway to radius
     if (IMAGES == 0) {                                          // If non-periodic boundary condition
-      periodicCycle = 2 * globalRadius;                         //  Set global radius for parallel run
+      CYCLE = 2 * globalRadius;                                 //  Set global radius for parallel run
     } else {                                                    // If periodic boundary condition
-      periodicCycle = 2 * M_PI;                                 //  Set global radius to 2 * pi
+      CYCLE = 2 * M_PI;                                         //  Set global radius to 2 * pi
     }                                                           // End if for periodic boundary condition
   }
 
@@ -56,7 +56,7 @@ class Partition : public MyMPI, public SerialFMM, public Sort {
     if (IMAGES == 0) allreduceBounds(globalXmin,globalXmax);    // Allreduce bounds from all ranks
     vec3 Xpartition;                                            // Size of partitions in each direction
     for (d=0; d<3; d++) {                                       // Loop over dimensions
-      Xpartition[d] = periodicCycle / Npartition[d];            //  Size of partition in each direction
+      Xpartition[d] = CYCLE / Npartition[d];                    //  Size of partition in each direction
     }                                                           // End loop over dimensions
     int ix = MPIRANK % Npartition[0];                           // x index of partition
     int iy = MPIRANK / Npartition[0] % Npartition[1];           // y index
@@ -121,7 +121,7 @@ class Partition : public MyMPI, public SerialFMM, public Sort {
 
  public:
 //! Constructor
-  Partition() {
+  Partition(int nspawn, int images) : Bounds(nspawn,images){
     allLocalXmin = new fvec3 [MPISIZE];                         // Allocate array for minimum of local domains
     allLocalXmax = new fvec3 [MPISIZE];                         // Allocate array for maximum of local domains
     sendBodyCount = new int [MPISIZE];                          // Allocate send count
@@ -165,7 +165,7 @@ class Partition : public MyMPI, public SerialFMM, public Sort {
 
 //! Partition bodies
   void partition(Bodies &bodies) {
-    setBounds(bodies);                                          // Set global bounds
+    setLocal(bodies);                                           // Set local bounds
     setPartition(bodies);                                       // Set partitioning strategy
     startTimer("Partition comm");                               // Start timer
     alltoall(bodies);                                           // Alltoall send count
