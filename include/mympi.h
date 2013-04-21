@@ -58,7 +58,7 @@ class MyMPI {
     }                                                           // End loop over ranks
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
     usleep(WAIT);                                               // Wait "WAIT" milliseconds
-    if (MPIRANK == 0) std::cout << std::endl;                   // New line
+    if (MPIRANK == MPISIZE-1) std::cout << std::endl;           // New line
   }
 
 //! Print a scalar value on irank

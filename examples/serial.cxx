@@ -83,8 +83,8 @@ int main(int argc, char ** argv) {
     }
   }
 #ifdef VTK
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); ++B) B->ICELL = 0;
-  for (C_iter C=jcells.begin(); C!=jcells.end(); ++C) {
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->ICELL = 0;
+  for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
     Body body;
     body.ICELL = 1;
     body.X     = C->X;

@@ -39,7 +39,7 @@ int main(int argc, char ** argv) {
 #pragma omp master
 #endif
 #ifdef MANY
-  for ( int it=0; it<25; it++ ) {
+  for (int it=0; it<25; it++) {
     int numBodies = int(pow(10,(it+24)/8.0));
 #else
   {
@@ -128,15 +128,14 @@ int main(int argc, char ** argv) {
 #endif
     pass.downwardPass(cells);
 
-#if 0
+#if 1
     LET.unpartition(bodies);
     bodies = sort.sortBodies(bodies);
     bodies = LET.commBodies(bodies);
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->ICELL = B->IBODY;                                      //  Do this to sort accroding to IPROC
-    }                                                           // End loop over bodies
-    Bodies buffer = bodies;                                     // Resize sort buffer
-    bodies = sort.sortBodies(buffer);                                // Sort bodies in ascending order
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+      B->ICELL = B->IBODY;
+    }
+    bodies = sort.sortBodies(bodies);
 #endif
     logger.stopPAPI();
     if (logger.printNow) std::cout << "--- Total runtime ----------------" << std::endl;
@@ -179,8 +178,8 @@ int main(int argc, char ** argv) {
   }
 
 #ifdef VTK
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); ++B) B->ICELL = 0;
-  for (C_iter C=jcells.begin(); C!=jcells.end(); ++C) {
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->ICELL = 0;
+  for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
     Body body;
     body.ICELL = 1;
     body.X     = C->X;

@@ -20,6 +20,7 @@ class Partition : public MyMPI, public Logger {
       sendBodyCount[i] = 0;                                     //  Initialize send counts
     }                                                           // End loop over ranks
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      assert(0 <= B->IPROC && B->IPROC < MPISIZE);
       sendBodyCount[B->IPROC]++;                                //  Fill send count bucket
       B->IPROC = MPIRANK;                                       //  Tag for sending back to original rank
     }                                                           // End loop over bodies
@@ -103,8 +104,8 @@ class Partition : public MyMPI, public Logger {
     MPI_Allreduce(localXmax, globalXmax, 3, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
     Bounds global;
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      global.Xmin[d] = globalXmin[d];                           //  Convert Xmin to real_t
-      global.Xmax[d] = globalXmax[d];                           //  Convert Xmax to real_t
+      global.Xmin[d] = globalXmin[d] - EPS;                     //  Convert Xmin to real_t
+      global.Xmax[d] = globalXmax[d] + EPS;                     //  Convert Xmax to real_t
     }                                                           // End loop over dimensions
     return global;                                              // Return global bounds
   }
@@ -138,6 +139,7 @@ class Partition : public MyMPI, public Logger {
         ix[d] = int((B->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
       }                                                         //  End loop over dimensions
       B->IPROC = ix[0] + Npartition[0] * (ix[1] + ix[2] * Npartition[1]);//  Set send rank
+      assert(0 <= B->IPROC && B->IPROC < MPISIZE);
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
     stopTimer("Partition",printNow);                            // Stop timer

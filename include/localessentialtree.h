@@ -195,7 +195,7 @@ class LocalEssentialTree : public Partition {
 //! Get local essential tree from rank "irank".
   void getLET(Cells &cells, int irank) {
     startTimer("Get LET");                                      // Start timer
-    for( int i=recvCellCount[irank]-1; i>=0; i-- ) {            // Loop over receive cells
+    for (int i=recvCellCount[irank]-1; i>=0; i--) {            // Loop over receive cells
       C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator of receive cell
       if (C->NCBODY != 0) {                                     //  If cell has bodies
         C->BODY = recvBodies.begin() + recvBodyDispl[irank] + C->NDBODY;// Iterator of first body

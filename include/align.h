@@ -1,5 +1,6 @@
 #ifndef align_h
 #define align_h
+#include <cstdlib>
 #include <malloc.h>
 #include <memory>
 

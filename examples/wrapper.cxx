@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include <cmath>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
 
 extern "C" void FMM(int n, double* x, double* q, double *p, double* f, int periodicflag);
@@ -15,8 +16,7 @@ extern "C" void MPI_Shift(double *var, int n, int mpisize, int mpirank) {
   MPI_Irecv(buf, n, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
   MPI_Wait(&sreq, MPI_STATUS_IGNORE);
   MPI_Wait(&rreq, MPI_STATUS_IGNORE);
-  int i;
-  for( i=0; i!=n; ++i ) {
+  for (int i=0; i<n; i++) {
     var[i] = buf[i];
   }
   delete[] buf;
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
   double *qj = new double [N];
 
   srand48(mpirank);
-  for( int i=0; i!=N; ++i ) {
+  for (int i=0; i<N; i++) {
     xi[3*i+0] = drand48() * size - M_PI;
     xi[3*i+1] = drand48() * size - M_PI;
     xi[3*i+2] = drand48() * size - M_PI;
@@ -55,17 +55,18 @@ int main(int argc, char **argv) {
   }
 
   FMM(N, xi, qi, pi, fi, 0);
-  for( int i=0; i!=N; ++i ) {
+  for (int i=0; i<N; i++) {
     xj[3*i+0] = xi[3*i+0];
     xj[3*i+1] = xi[3*i+1];
     xj[3*i+2] = xi[3*i+2];
   }
-  for( int irank=0; irank!=mpisize; ++irank ) {
+  for (int irank=0; irank<mpisize; irank++) {
+    if (mpirank==0) std::cout << "Direct loop          : " << irank+1 << "/" << mpisize << std::endl;
     MPI_Shift(xj, 3*N, mpisize, mpirank);
     MPI_Shift(qj, N, mpisize, mpirank);
-    for( int i=0; i!=100; ++i ) {
+    for (int i=0; i<100; i++) {
       double P = 0, Fx = 0, Fy = 0, Fz = 0;
-      for( int j=0; j!=N; ++j ) {
+      for (int j=0; j<N; j++) {
         double dx = xi[3*i+0] - xj[3*j+0];
         double dy = xi[3*i+1] - xj[3*j+1];
         double dz = xi[3*i+2] - xj[3*j+2];
@@ -85,7 +86,7 @@ int main(int argc, char **argv) {
     }
   }
   double Pd = 0, Pn = 0, Fd = 0, Fn = 0;
-  for( int i=0; i!=100; ++i ) {
+  for (int i=0; i<100; i++) {
     Pd += (pi[i] - pd[i]) * (pi[i] - pd[i]);
     Pn += pd[i] * pd[i];
     Fd += (fi[3*i+0] - fd[3*i+0]) * (fi[3*i+0] - fd[3*i+0])
@@ -93,8 +94,9 @@ int main(int argc, char **argv) {
         + (fi[3*i+2] - fd[3*i+2]) * (fi[3*i+2] - fd[3*i+2]);
     Fn += fd[3*i+0] * fd[3*i+0] + fd[3*i+1] * fd[3*i+1] + fd[3*i+2] * fd[3*i+2];
   }
-  std::cout << "Coulomb       potential @ rank " << mpirank << " : " << sqrtf(Pd/Pn) << std::endl;
-  std::cout << "Coulomb       force     @ rank " << mpirank << " : " << sqrtf(Fd/Fn) << std::endl;
+  std::cout << std::fixed << std::setprecision(7);
+  std::cout << "Potential @ rank " << mpirank << "   : " << sqrtf(Pd/Pn) << std::endl;
+  std::cout << "Force     @ rank " << mpirank << "   : " << sqrtf(Fd/Fn) << std::endl;
 
   delete[] xi;
   delete[] qi;
