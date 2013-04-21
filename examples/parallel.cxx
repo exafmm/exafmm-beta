@@ -54,6 +54,8 @@ int main(int argc, char ** argv) {
     Bounds localBounds = boundbox.getBounds(bodies);
     Bounds globalBounds = LET.allreduceBounds(localBounds);
     localBounds = LET.partition(bodies,globalBounds);
+    LET.sendBodies = sort.sortBodies(bodies);
+    bodies = LET.commBodies();
     Box box = boundbox.bounds2box(localBounds);
     tree.buildTree(bodies, cells, box);
     pass.upwardPass(cells);
@@ -126,6 +128,16 @@ int main(int argc, char ** argv) {
 #endif
     pass.downwardPass(cells);
 
+#if 0
+    LET.unpartition(bodies);
+    LET.sendBodies = sort.sortBodies(bodies);
+    bodies = LET.commBodies();
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      B->ICELL = B->IBODY;                                      //  Do this to sort accroding to IPROC
+    }                                                           // End loop over bodies
+    Bodies buffer = bodies;                                     // Resize sort buffer
+    bodies = sort.sortBodies(buffer);                                // Sort bodies in ascending order
+#endif
     logger.stopPAPI();
     if (logger.printNow) std::cout << "--- Total runtime ----------------" << std::endl;
     logger.stopTimer("Total FMM",logger.printNow);

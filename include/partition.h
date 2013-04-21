@@ -2,55 +2,18 @@
 #define partition_h
 #include "mympi.h"
 #include "logger.h"
-#include "sort.h"
 
 //! Handles all the partitioning of domains
-class Partition : public MyMPI, public Logger, public Sort {
+class Partition : public MyMPI, public Logger {
  protected:
-  Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
   int * sendBodyCount;                                          //!< Send count
   int * sendBodyDispl;                                          //!< Send displacement
   int * recvBodyCount;                                          //!< Receive count
   int * recvBodyDispl;                                          //!< Receive displacement
 
- private:
-//! Set partition of global domain
-  Bounds setPartition(Bodies &bodies, Bounds global) {
-    startTimer("Partition");                                    // Start timer
-    int mpisize = MPISIZE;                                      // Initialize MPI size counter
-    vec<3,int> Npartition = 1;                                  // Number of partitions in each direction
-    int d = 0;                                                  // Initialize dimension counter
-    while (mpisize != 1) {                                      // Divide domain while counter is not one
-      Npartition[d] <<= 1;                                      //  Divide this dimension
-      d = (d+1) % 3;                                            //  Increment dimension
-      mpisize >>= 1;                                            //  Right shift the bits of counter
-    }                                                           // End while loop for domain subdivision
-    vec3 Xpartition;                                            // Size of partitions in each direction
-    for (d=0; d<3; d++) {                                       // Loop over dimensions
-      Xpartition[d] = (global.Xmax[d] - global.Xmin[d]) / Npartition[d];//  Size of partition in each direction
-    }                                                           // End loop over dimensions
-    int ix[3];                                                  // Index vector
-    ix[0] = MPIRANK % Npartition[0];                            // x index of partition
-    ix[1] = MPIRANK / Npartition[0] % Npartition[1];            // y index
-    ix[2] = MPIRANK / Npartition[0] / Npartition[1];            // z index
-    Bounds local;                                               // Local bounds
-    for (d=0; d<3; d++) {                                       // Loop over dimensions
-      local.Xmin[d] = global.Xmin[d] + ix[d] * Xpartition[d];   // Xmin of local domain at current rank
-      local.Xmax[d] = global.Xmin[d] + (ix[d] + 1) * Xpartition[d];// Xmax of local domain at current rank
-    }                                                           // End loop over dimensions
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      for (d=0; d<3; d++) {                                     //  Loop over dimensions
-        ix[d] = int((B->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
-      }                                                         //  End loop over dimensions
-      B->IPROC = ix[0] + Npartition[0] * (ix[1] + ix[2] * Npartition[1]);//  Set send rank
-      B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
-    }                                                           // End loop over bodies
-    Bodies buffer = bodies;                                     // Sort buffer
-    stopTimer("Partition",printNow);                            // Stop timer
-    sortBodies(bodies,buffer);                                  // Sort bodies in ascending order of ICELL
-    return local;
-  }
+ public:
+  Bodies sendBodies;                                            //!< Send buffer for bodies
 
  protected:
 //! Exchange send count for bodies
@@ -150,12 +113,36 @@ class Partition : public MyMPI, public Logger, public Sort {
 
 //! Partition bodies
   Bounds partition(Bodies &bodies, Bounds global) {
-    Bounds local = setPartition(bodies, global);                // Set partitioning strategy
-    startTimer("Partition comm");                               // Start timer
-    alltoall(bodies);                                           // Alltoall send count
-    alltoallv(bodies);                                          // Alltoallv bodies
-    bodies = recvBodies;                                        // Copy receive buffer to bodies
-    stopTimer("Partition comm",printNow);                       // Stop timer
+    startTimer("Partition");                                    // Start timer
+    int mpisize = MPISIZE;                                      // Initialize MPI size counter
+    vec<3,int> Npartition = 1;                                  // Number of partitions in each direction
+    int d = 0;                                                  // Initialize dimension counter
+    while (mpisize != 1) {                                      // Divide domain while counter is not one
+      Npartition[d] <<= 1;                                      //  Divide this dimension
+      d = (d+1) % 3;                                            //  Increment dimension
+      mpisize >>= 1;                                            //  Right shift the bits of counter
+    }                                                           // End while loop for domain subdivision
+    vec3 Xpartition;                                            // Size of partitions in each direction
+    for (d=0; d<3; d++) {                                       // Loop over dimensions
+      Xpartition[d] = (global.Xmax[d] - global.Xmin[d]) / Npartition[d];//  Size of partition in each direction
+    }                                                           // End loop over dimensions
+    int ix[3];                                                  // Index vector
+    ix[0] = MPIRANK % Npartition[0];                            // x index of partition
+    ix[1] = MPIRANK / Npartition[0] % Npartition[1];            // y index
+    ix[2] = MPIRANK / Npartition[0] / Npartition[1];            // z index
+    Bounds local;                                               // Local bounds
+    for (d=0; d<3; d++) {                                       // Loop over dimensions
+      local.Xmin[d] = global.Xmin[d] + ix[d] * Xpartition[d];   // Xmin of local domain at current rank
+      local.Xmax[d] = global.Xmin[d] + (ix[d] + 1) * Xpartition[d];// Xmax of local domain at current rank
+    }                                                           // End loop over dimensions
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      for (d=0; d<3; d++) {                                     //  Loop over dimensions
+        ix[d] = int((B->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
+      }                                                         //  End loop over dimensions
+      B->IPROC = ix[0] + Npartition[0] * (ix[1] + ix[2] * Npartition[1]);//  Set send rank
+      B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
+    }                                                           // End loop over bodies
+    stopTimer("Partition",printNow);                            // Stop timer
     return local;
   }
 
@@ -163,21 +150,9 @@ class Partition : public MyMPI, public Logger, public Sort {
   void unpartition(Bodies &bodies) {
     startTimer("Unpartition");                                  // Start timer
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
+      B->ICELL = B->IPROC;                                      //  Do this to sortaccroding to IPROC
     }                                                           // End loop over bodies
-    Bodies buffer = bodies;                                     // Resize sort buffer
     stopTimer("Unpartition", printNow);                         // Stop timer
-    sortBodies(bodies, buffer);                                 // Sort bodies in ascending order
-    startTimer("Unpartition comm");                             // Start timer
-    alltoall(bodies);                                           // Alltoall send count
-    alltoallv(bodies);                                          // Alltoallv bodies
-    bodies = recvBodies;                                        // Copy receive buffer to bodies
-    stopTimer("Unpartition comm", printNow);                    // Stop timer
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->ICELL = B->IBODY;                                      //  Do this to sort accroding to IPROC
-    }                                                           // End loop over bodies
-    buffer = bodies;                                            // Resize sort buffer
-    sortBodies(bodies, buffer);                                 // Sort bodies in ascending order
   }
 };
 #endif

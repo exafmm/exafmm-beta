@@ -212,11 +212,12 @@ class LocalEssentialTree : public Partition {
   }
 
 //! Send bodies
-  void commBodies() {
+  Bodies commBodies() {
     startTimer("Comm bodies");                                  // Start timer
     alltoall(sendBodies);                                       // Send body count
     alltoallv(sendBodies);                                      // Send bodies
     stopTimer("Comm bodies",printNow);                          // Stop timer
+    return recvBodies;                                          // Return received bodies
   }
 
 //! Send cells
