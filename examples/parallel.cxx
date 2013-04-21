@@ -54,15 +54,15 @@ int main(int argc, char ** argv) {
     Bounds localBounds = boundbox.getBounds(bodies);
     Bounds globalBounds = LET.allreduceBounds(localBounds);
     localBounds = LET.partition(bodies,globalBounds);
-    LET.sendBodies = sort.sortBodies(bodies);
-    bodies = LET.commBodies();
+    bodies = sort.sortBodies(bodies);
+    bodies = LET.commBodies(bodies);
     Box box = boundbox.bounds2box(localBounds);
     tree.buildTree(bodies, cells, box);
     pass.upwardPass(cells);
     logger.startPAPI();
 
 #if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree : Step 1
-    LET.setLET(cells,globalBounds,cycle);
+    LET.setLET(cells,localBounds,cycle);
     LET.commBodies();
     LET.commCells();
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
@@ -130,8 +130,8 @@ int main(int argc, char ** argv) {
 
 #if 0
     LET.unpartition(bodies);
-    LET.sendBodies = sort.sortBodies(bodies);
-    bodies = LET.commBodies();
+    bodies = sort.sortBodies(bodies);
+    bodies = LET.commBodies(bodies);
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->ICELL = B->IBODY;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies

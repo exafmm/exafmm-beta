@@ -220,6 +220,15 @@ class LocalEssentialTree : public Partition {
     return recvBodies;                                          // Return received bodies
   }
 
+//! Send bodies
+  Bodies commBodies(Bodies bodies) {
+    startTimer("Comm bodies");                                  // Start timer
+    alltoall(bodies);                                           // Send body count
+    alltoallv(bodies);                                          // Send bodies
+    stopTimer("Comm bodies",printNow);                          // Stop timer
+    return recvBodies;                                          // Return received bodies
+  }
+
 //! Send cells
   void commCells() {
     startTimer("Comm cells");                                   // Start timer

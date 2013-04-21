@@ -48,8 +48,8 @@ class BoundBox : public Logger {
 
 //! Transform Xmin & Xmax to X (center) & R (radius)
   Box bounds2box(Bounds bounds) {
-    vec3 Xmin = bounds.Xmin;                                   // Set local Xmin
-    vec3 Xmax = bounds.Xmax;                                  // Set local Xmax
+    vec3 Xmin = bounds.Xmin;                                    // Set local Xmin
+    vec3 Xmax = bounds.Xmax;                                    // Set local Xmax
     Box box;                                                    // Bounding box
     for (int d=0; d<3; d++) box.X[d] = (Xmax[d] + Xmin[d]) / 2; // Calculate center of domain
     box.R = 0;                                                  // Initialize localRadius

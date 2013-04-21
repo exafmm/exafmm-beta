@@ -6,14 +6,12 @@
 //! Handles all the partitioning of domains
 class Partition : public MyMPI, public Logger {
  protected:
+  Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
   int * sendBodyCount;                                          //!< Send count
   int * sendBodyDispl;                                          //!< Send displacement
   int * recvBodyCount;                                          //!< Receive count
   int * recvBodyDispl;                                          //!< Receive displacement
-
- public:
-  Bodies sendBodies;                                            //!< Send buffer for bodies
 
  protected:
 //! Exchange send count for bodies
