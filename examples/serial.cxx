@@ -66,6 +66,7 @@ int main(int argc, char ** argv) {
     tree.resetTimer();
     pass.resetTimer();
     traversal.resetTimer();
+    logger.resetTimer();
     jbodies = bodies;
     if (int(bodies.size()) > args.numTarget) data.sampleBodies(bodies, args.numTarget);
     Bodies bodies2 = bodies;

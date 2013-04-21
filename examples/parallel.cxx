@@ -40,7 +40,7 @@ int main(int argc, char ** argv) {
 #endif
 #ifdef MANY
   for (int it=0; it<25; it++) {
-    int numBodies = int(pow(10,(it+24)/8.0));
+    int numBodies = int(pow(10,(it+24)/8.0)) / LET.MPISIZE;
 #else
   {
     int numBodies = args.numBodies / LET.MPISIZE;
@@ -151,6 +151,7 @@ int main(int argc, char ** argv) {
     pass.resetTimer();
     traversal.resetTimer();
     LET.resetTimer();
+    logger.resetTimer();
     jbodies = bodies;
     if (int(bodies.size()) > args.numTarget) data.sampleBodies(bodies, args.numTarget);
     Bodies bodies2 = bodies;
