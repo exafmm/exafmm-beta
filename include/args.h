@@ -111,5 +111,4 @@ class Args {
     }
   }
 };
-
 #endif

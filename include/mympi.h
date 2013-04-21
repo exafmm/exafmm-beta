@@ -99,5 +99,4 @@ class MyMPI {
     }                                                           // Endif for my rank
   }
 };
-
 #endif

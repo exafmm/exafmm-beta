@@ -25,5 +25,4 @@ struct AlignedAllocator : public std::allocator<T> {
     return free(p);
   }
 };
-
 #endif

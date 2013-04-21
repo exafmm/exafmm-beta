@@ -202,5 +202,4 @@ class Dataset {                                                 // Contains all 
               << "Rel. L2 Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
   }
 };
-
 #endif

@@ -180,5 +180,4 @@ class Partition : public MyMPI, public Logger, public Sort {
     sortBodies(bodies, buffer);                                 // Sort bodies in ascending order
   }
 };
-
 #endif

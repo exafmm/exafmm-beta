@@ -124,5 +124,4 @@ class UpDownPass : public Kernel, public Logger {
     }                                                           // End loop over bodies
   }
 };
-
 #endif

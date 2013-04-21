@@ -220,5 +220,4 @@ struct kahan {
     return s;
   }
 };
-
 #endif

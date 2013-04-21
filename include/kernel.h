@@ -49,5 +49,4 @@ class Kernel {
   void L2L(C_iter Ci, C_iter C0) const;                         //!< L2L kernel for one child cell Ci
   void L2P(C_iter Ci) const;                                    //!< L2P kernel for cell Ci
 };
-
 #endif

@@ -54,5 +54,4 @@ class Sort {
     sortICELL(bodies,buffer,Imin,numBucket,ascend,begin,end);   // Call bucket sort for small indices
   }
 };
-
 #endif

@@ -3,6 +3,7 @@
 #include "buildtree.h"
 #include "dataset.h"
 #include "logger.h"
+#include "sort.h"
 #include "traversal.h"
 #include "updownpass.h"
 #include "localessentialtree.h"
@@ -16,6 +17,7 @@ int main(int argc, char ** argv) {
   Cells cells, jcells;
   Dataset data;
   Logger logger;
+  Sort sort;
 
   const real_t cycle = 2 * M_PI;
   BoundBox boundbox(args.NSPAWN);
@@ -50,7 +52,7 @@ int main(int argc, char ** argv) {
     data.initBodies(bodies, args.distribution, LET.MPIRANK, LET.MPISIZE);
     logger.startTimer("Total FMM");
     Bounds localBounds = boundbox.getBounds(bodies);
-    Bounds globalBounds = LET.allreduceBounds(localBounds); 
+    Bounds globalBounds = LET.allreduceBounds(localBounds);
     localBounds = LET.partition(bodies,globalBounds);
     Box box = boundbox.bounds2box(localBounds);
     tree.buildTree(bodies, cells, box);

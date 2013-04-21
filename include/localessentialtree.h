@@ -227,5 +227,4 @@ class LocalEssentialTree : public Partition {
     stopTimer("Comm cells",printNow);                           // Stop timer
   }
 };
-
 #endif

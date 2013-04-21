@@ -347,5 +347,4 @@ class Logger {
     traceFile.close();                                          // Close trace log file
   }
 };
-
 #endif

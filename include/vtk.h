@@ -185,5 +185,4 @@ class vtkPlot {
     interactor->Start();
   }
 };
-
 #endif
