@@ -1,14 +1,12 @@
 #ifndef partition_h
 #define partition_h
 #include "mympi.h"
-#include "bounds.h"
+#include "logger.h"
 #include "sort.h"
 
 //! Handles all the partitioning of domains
-class Partition : public Bounds, public MyMPI, public Sort {
+class Partition : public MyMPI, public Logger, public Sort {
  protected:
-  fvec3 * allLocalXmin;                                         //!< Array for minimum of local domains
-  fvec3 * allLocalXmax;                                         //!< Array for maximum of local domains
   Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
   int * sendBodyCount;                                          //!< Send count
@@ -17,32 +15,8 @@ class Partition : public Bounds, public MyMPI, public Sort {
   int * recvBodyDispl;                                          //!< Receive displacement
 
  private:
-//! Allreduce bounds from all ranks
-  void allreduceBounds(fvec3 &globalXmin, fvec3 &globalXmax) {
-    MPI_Allreduce(localXmin, globalXmin, 3, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
-    MPI_Allreduce(localXmax, globalXmax, 3, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
-    real_t globalRadius = 0;                                    // Initialize global radius
-    fvec3 globalCenter = (globalXmax + globalXmin) / 2;         //  Calculate global center
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      globalRadius = std::max(globalCenter[d] - globalXmin[d], globalRadius);// Calculate min distance from center
-      globalRadius = std::max(globalXmax[d] - globalCenter[d], globalRadius);// Calculate max distance from center 
-    }                                                           // End loop over dimensions
-    globalRadius *= 1.00001;                                    // Add some leeway to radius
-    if (IMAGES == 0) {                                          // If non-periodic boundary condition
-      CYCLE = 2 * globalRadius;                                 //  Set global radius for parallel run
-    } else {                                                    // If periodic boundary condition
-      CYCLE = 2 * M_PI;                                         //  Set global radius to 2 * pi
-    }                                                           // End if for periodic boundary condition
-  }
-
-//! Allgather bounds of all ranks
-  void allgatherBounds() {
-    MPI_Allgather(localXmin, 3, MPI_FLOAT, &allLocalXmin[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
-    MPI_Allgather(localXmax, 3, MPI_FLOAT, &allLocalXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
-  }
-
 //! Set partition of global domain
-  void setPartition(Bodies &bodies) {
+  Bounds setPartition(Bodies &bodies, Bounds global) {
     startTimer("Partition");                                    // Start timer
     int mpisize = MPISIZE;                                      // Initialize MPI size counter
     vec<3,int> Npartition = 1;                                  // Number of partitions in each direction
@@ -52,32 +26,30 @@ class Partition : public Bounds, public MyMPI, public Sort {
       d = (d+1) % 3;                                            //  Increment dimension
       mpisize >>= 1;                                            //  Right shift the bits of counter
     }                                                           // End while loop for domain subdivision
-    fvec3 globalXmin, globalXmax;                               // Global Xmin, Xmax
-    if (IMAGES == 0) allreduceBounds(globalXmin,globalXmax);    // Allreduce bounds from all ranks
     vec3 Xpartition;                                            // Size of partitions in each direction
     for (d=0; d<3; d++) {                                       // Loop over dimensions
-      Xpartition[d] = CYCLE / Npartition[d];                    //  Size of partition in each direction
+      Xpartition[d] = (global.Xmax[d] - global.Xmin[d]) / Npartition[d];//  Size of partition in each direction
     }                                                           // End loop over dimensions
-    int ix = MPIRANK % Npartition[0];                           // x index of partition
-    int iy = MPIRANK / Npartition[0] % Npartition[1];           // y index
-    int iz = MPIRANK / Npartition[0] / Npartition[1];           // z index
-    localXmin[0] = globalXmin[0] + ix * Xpartition[0];          // xmin of local domain at current rank
-    localXmin[1] = globalXmin[1] + iy * Xpartition[1];          // ymin
-    localXmin[2] = globalXmin[2] + iz * Xpartition[2];          // zmin
-    localXmax[0] = globalXmin[0] + (ix + 1) * Xpartition[0];    // xmax of local domain at current rank
-    localXmax[1] = globalXmin[1] + (iy + 1) * Xpartition[1];    // ymax
-    localXmax[2] = globalXmin[2] + (iz + 1) * Xpartition[2];    // zmax
-    allgatherBounds();                                          // Allgather bounds of partitions
+    int ix[3];                                                  // Index vector
+    ix[0] = MPIRANK % Npartition[0];                            // x index of partition
+    ix[1] = MPIRANK / Npartition[0] % Npartition[1];            // y index
+    ix[2] = MPIRANK / Npartition[0] / Npartition[1];            // z index
+    Bounds local;                                               // Local bounds
+    for (d=0; d<3; d++) {                                       // Loop over dimensions
+      local.Xmin[d] = global.Xmin[d] + ix[d] * Xpartition[d];   // Xmin of local domain at current rank
+      local.Xmax[d] = global.Xmin[d] + (ix[d] + 1) * Xpartition[d];// Xmax of local domain at current rank
+    }                                                           // End loop over dimensions
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      ix = int((B->X[0] - globalXmin[0]) / Xpartition[0]);      //  x contribution to send rank
-      iy = int((B->X[1] - globalXmin[1]) / Xpartition[1]);      //  y contribution
-      iz = int((B->X[2] - globalXmin[2]) / Xpartition[2]);      //  z contribution
-      B->IPROC = ix + Npartition[0] * (iy + iz * Npartition[1]);//  Set send rank
+      for (d=0; d<3; d++) {                                     //  Loop over dimensions
+        ix[d] = int((B->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
+      }                                                         //  End loop over dimensions
+      B->IPROC = ix[0] + Npartition[0] * (ix[1] + ix[2] * Npartition[1]);//  Set send rank
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
     Bodies buffer = bodies;                                     // Sort buffer
-    stopTimer("Partition",printNow);                            // Stop timer 
+    stopTimer("Partition",printNow);                            // Stop timer
     sortBodies(bodies,buffer);                                  // Sort bodies in ascending order of ICELL
+    return local;
   }
 
  protected:
@@ -121,9 +93,7 @@ class Partition : public Bounds, public MyMPI, public Sort {
 
  public:
 //! Constructor
-  Partition(int nspawn, int images) : Bounds(nspawn,images){
-    allLocalXmin = new fvec3 [MPISIZE];                         // Allocate array for minimum of local domains
-    allLocalXmax = new fvec3 [MPISIZE];                         // Allocate array for maximum of local domains
+  Partition() {
     sendBodyCount = new int [MPISIZE];                          // Allocate send count
     sendBodyDispl = new int [MPISIZE];                          // Allocate send displacement
     recvBodyCount = new int [MPISIZE];                          // Allocate receive count
@@ -131,8 +101,6 @@ class Partition : public Bounds, public MyMPI, public Sort {
   }
 //! Destructor
   ~Partition() {
-    delete[] allLocalXmin;                                      // Deallocate array for minimum of local domains
-    delete[] allLocalXmax;                                      // Deallocate array for maximum of local domains
     delete[] sendBodyCount;                                     // Deallocate send count
     delete[] sendBodyDispl;                                     // Deallocate send displacement
     delete[] recvBodyCount;                                     // Deallocate receive count
@@ -163,15 +131,32 @@ class Partition : public Bounds, public MyMPI, public Sort {
     bodies = recvBodies;                                        // Copy bodies from buffer
   }
 
+//! Allreduce bounds from all ranks
+  Bounds allreduceBounds(Bounds local) {
+    fvec3 localXmin, localXmax, globalXmin, globalXmax;
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
+      localXmin[d] = local.Xmin[d];                             //  Convert Xmin to float
+      localXmax[d] = local.Xmax[d];                             //  Convert Xmax to float
+    }                                                           // End loop over dimensions
+    MPI_Allreduce(localXmin, globalXmin, 3, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
+    MPI_Allreduce(localXmax, globalXmax, 3, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
+    Bounds global;
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
+      global.Xmin[d] = globalXmin[d];                           //  Convert Xmin to real_t
+      global.Xmax[d] = globalXmax[d];                           //  Convert Xmax to real_t
+    }                                                           // End loop over dimensions
+    return global;                                              // Return global bounds
+  }
+
 //! Partition bodies
-  void partition(Bodies &bodies) {
-    setLocal(bodies);                                           // Set local bounds
-    setPartition(bodies);                                       // Set partitioning strategy
+  Bounds partition(Bodies &bodies, Bounds global) {
+    Bounds local = setPartition(bodies, global);                // Set partitioning strategy
     startTimer("Partition comm");                               // Start timer
     alltoall(bodies);                                           // Alltoall send count
     alltoallv(bodies);                                          // Alltoallv bodies
     bodies = recvBodies;                                        // Copy receive buffer to bodies
-    stopTimer("Partition comm",printNow);                       // Stop timer 
+    stopTimer("Partition comm",printNow);                       // Stop timer
+    return local;
   }
 
 //! Send bodies back to where they came from
@@ -181,13 +166,13 @@ class Partition : public Bounds, public MyMPI, public Sort {
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
     Bodies buffer = bodies;                                     // Resize sort buffer
-    stopTimer("Unpartition", printNow);                         // Stop timer 
+    stopTimer("Unpartition", printNow);                         // Stop timer
     sortBodies(bodies, buffer);                                 // Sort bodies in ascending order
     startTimer("Unpartition comm");                             // Start timer
     alltoall(bodies);                                           // Alltoall send count
     alltoallv(bodies);                                          // Alltoallv bodies
     bodies = recvBodies;                                        // Copy receive buffer to bodies
-    stopTimer("Unpartition comm", printNow);                    // Stop timer 
+    stopTimer("Unpartition comm", printNow);                    // Stop timer
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->ICELL = B->IBODY;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies

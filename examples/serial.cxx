@@ -1,5 +1,5 @@
 #include "args.h"
-#include "bounds.h"
+#include "boundbox.h"
 #include "buildtree.h"
 #include "dataset.h"
 #include "logger.h"
@@ -10,78 +10,81 @@
 #endif
 
 int main(int argc, char ** argv) {
-  Args ARGS(argc, argv);
+  Args args(argc, argv);
   Bodies bodies, jbodies;
   Cells cells, jcells;
-  Dataset DAT;
-  Logger LOG;
-  Bounds BND(ARGS.NSPAWN,ARGS.IMAGES);
-  BuildTree BLD(ARGS.NCRIT,ARGS.NSPAWN);
-  UpDownPass UDP(ARGS.IMAGES,ARGS.THETA);
-  Traversal TRV(ARGS.NSPAWN,ARGS.IMAGES);
-  LOG.printNow = true;
-  BND.printNow = true;
-  BLD.printNow = true;
-  UDP.printNow = true;
-  TRV.printNow = true;
+  Dataset data;
+  Logger logger;
+
+  const real_t cycle = 2 * M_PI;
+  BoundBox boundbox(args.NSPAWN);
+  BuildTree tree(args.NCRIT,args.NSPAWN);
+  UpDownPass pass(args.IMAGES,args.THETA);
+  Traversal traversal(args.NSPAWN,args.IMAGES);
+  logger.printNow = true;
+  boundbox.printNow = true;
+  tree.printNow = true;
+  pass.printNow = true;
+  traversal.printNow = true;
 #if AUTO
-  TRV.timeKernels();
+  traversal.timeKernels();
 #endif
 #if _OPENMP
 #pragma omp parallel
 #pragma omp master
 #endif
 #ifdef MANY
-  for( int it=0; it<25; it++ ) {
+  for (int it=0; it<25; it++) {
     int numBodies = int(pow(10,(it+24)/8.0));
 #else
   {
-    int numBodies = ARGS.numBodies;
+    int numBodies = args.numBodies;
 #endif // MANY
-    if(LOG.printNow) std::cout << std::endl
+    if (logger.printNow) std::cout << std::endl
       << "Num bodies           : " << numBodies << std::endl;
     std::cout << "--- Profiling --------------------" << std::endl;
     bodies.resize(numBodies);
-    DAT.initBodies(bodies, ARGS.distribution);
-    BND.setLocal(bodies);
-    BLD.buildTree(bodies, cells, BND.localBox);                 //TODO : make it work without this
-    BLD.resetTimer();
-    LOG.startTimer("Total FMM");
-    BLD.buildTree(bodies, cells, BND.localBox);
-    UDP.upwardPass(cells);
-    LOG.startPAPI();
-    TRV.dualTreeTraversal(cells, cells, BND.CYCLE, ARGS.mutual);
-    LOG.stopPAPI();
-    UDP.downwardPass(cells);
+    data.initBodies(bodies, args.distribution);
+    Bounds bounds = boundbox.getBounds(bodies);
+    Box box = boundbox.bounds2box(bounds);
+    tree.buildTree(bodies, cells, box);                         //TODO : make it work without this
+    tree.resetTimer();
+    logger.startTimer("Total FMM");
+    tree.buildTree(bodies, cells, box);
+    pass.upwardPass(cells);
+    logger.startPAPI();
+    traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
+    logger.stopPAPI();
+    pass.downwardPass(cells);
     std::cout << "--- Total runtime ----------------" << std::endl;
-    LOG.stopTimer("Total FMM", LOG.printNow);
-    BND.writeTime();
-    BLD.writeTime();
-    UDP.writeTime();
-    TRV.writeTime();
-    BND.resetTimer();
-    BLD.resetTimer();
-    UDP.resetTimer();
-    TRV.resetTimer();
+    logger.stopTimer("Total FMM", logger.printNow);
+    boundbox.writeTime();
+    tree.writeTime();
+    pass.writeTime();
+    traversal.writeTime();
+    boundbox.resetTimer();
+    tree.resetTimer();
+    pass.resetTimer();
+    traversal.resetTimer();
     jbodies = bodies;
-    if (int(bodies.size()) > ARGS.numTarget) DAT.sampleBodies(bodies, ARGS.numTarget);
+    if (int(bodies.size()) > args.numTarget) data.sampleBodies(bodies, args.numTarget);
     Bodies bodies2 = bodies;
-    DAT.initTarget(bodies2);
-    LOG.startTimer("Total Direct");
-    UDP.direct(bodies2, jbodies, BND.CYCLE);
-    UDP.normalize(bodies2);
-    LOG.stopTimer("Total Direct", LOG.printNow);
+    data.initTarget(bodies2);
+    logger.startTimer("Total Direct");
+    pass.direct(bodies2, jbodies, cycle);
+    pass.normalize(bodies2);
+    logger.stopTimer("Total Direct", logger.printNow);
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-    DAT.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
-    if(LOG.printNow) {
-      DAT.printError(diff1, norm1, diff2, norm2);
-      BLD.printTreeData(cells);
-      TRV.printTraversalData();
+    data.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
+    if (logger.printNow) {
+      data.printError(diff1, norm1, diff2, norm2);
+      tree.printTreeData(cells);
+      traversal.printTraversalData();
     }
   }
 #ifdef VTK
-  for( B_iter B=jbodies.begin(); B!=jbodies.end(); ++B ) B->ICELL = 0;
-  for( C_iter C=jcells.begin(); C!=jcells.end(); ++C ) {
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); ++B) B->ICELL = 0;
+  for (C_iter C=jcells.begin(); C!=jcells.end(); ++C) {
     Body body;
     body.ICELL = 1;
     body.X     = C->X;

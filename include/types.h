@@ -50,10 +50,14 @@ typedef vec<NTERM,complex_t> vecM;                              //!< Multipole c
 typedef vec<NTERM,complex_t> vecL;                              //!< Local coefficient type for spherical
 #endif
 
-//! Structure for defining bounding box
+//! Structures for defining bounding box
 struct Box {
   vec3   X;                                                     //!< Box center
   real_t R;                                                     //!< Box radius
+};
+struct Bounds {
+  vec3 Xmin;                                                    //!< Minimum value of coordinates
+  vec3 Xmax;                                                    //!< Maximum value of coordinates
 };
 
 //! Structure of aligned source for SIMD
