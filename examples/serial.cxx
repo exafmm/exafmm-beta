@@ -5,7 +5,7 @@
 #include "logger.h"
 #include "traversal.h"
 #include "updownpass.h"
-#ifdef VTK
+#if VTK
 #include "vtk.h"
 #endif
 
@@ -83,20 +83,19 @@ int main(int argc, char ** argv) {
       traversal.printTraversalData();
     }
   }
-#ifdef VTK
+#if VTK
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->ICELL = 0;
-  for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
+  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
     Body body;
     body.ICELL = 1;
     body.X     = C->X;
     body.SRC   = 0;
     jbodies.push_back(body);
   }
-  int Ncell = 0;
-  vtkPlot vtk;
-  vtk.setDomain(M_PI,0);
-  vtk.setGroupOfPoints(jbodies, Ncell);
-  vtk.plot(Ncell);
+  vtk3DPlot vtk;
+  vtk.setBounds(M_PI,0);
+  vtk.setGroupOfPoints(jbodies);
+  vtk.plot();
 #endif
   return 0;
 }

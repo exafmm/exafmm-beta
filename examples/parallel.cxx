@@ -7,7 +7,7 @@
 #include "traversal.h"
 #include "updownpass.h"
 #include "localessentialtree.h"
-#ifdef VTK
+#if VTK
 #include "vtk.h"
 #endif
 
@@ -128,7 +128,7 @@ int main(int argc, char ** argv) {
 #endif
     pass.downwardPass(cells);
 
-#if 1
+#if 0
     LET.unpartition(bodies);
     bodies = sort.sortBodies(bodies);
     bodies = LET.commBodies(bodies);
@@ -178,29 +178,27 @@ int main(int argc, char ** argv) {
     }
   }
 
-#ifdef VTK
+#if VTK
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->ICELL = 0;
-  for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
-    Body body;
-    body.ICELL = 1;
-    body.X     = C->X;
-    body.SRC   = 0;
-    jbodies.push_back(body);
-  }
-  int Ncell = 0;
-  vtkPlot vtk;
-  if (LET.MPIRANK == 0) {
-    vtk.setDomain(M_PI,0);
-    vtk.setGroupOfPoints(jbodies,Ncell);
-  }
-  for (int i=1; i<LET.MPISIZE; i++) {
-    LET.shiftBodies(jbodies);
-    if (LET.MPIRANK == 0) {
-      vtk.setGroupOfPoints(jbodies,Ncell);
+  for (int irank=0; irank<LET.MPISIZE; irank++) {
+    LET.getLET(jcells,(LET.MPIRANK+irank)%LET.MPISIZE);
+    for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
+      Body body;
+      body.ICELL = 1;
+      body.X     = C->X;
+      body.SRC   = 0;
+      jbodies.push_back(body);
     }
   }
+  vtk3DPlot vtk;
+  vtk.setBounds(M_PI,0);
+  vtk.setGroupOfPoints(jbodies);
+  for (int i=1; i<LET.MPISIZE; i++) {
+    LET.shiftBodies(jbodies);
+    vtk.setGroupOfPoints(jbodies);
+  }
   if (LET.MPIRANK == 0) {
-    vtk.plot(Ncell);
+    vtk.plot();
   }
 #endif
   return 0;

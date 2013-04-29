@@ -41,6 +41,7 @@ class Kernel {
   }
 
  public:
+  Kernel() : Xperiodic(0) {}                                    //!< Constructor
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const;            //!< P2P kernel between cells Ci and Cj
   void P2P(C_iter C) const;                                     //!< P2P kernel for cell C
   void P2M(C_iter C) const;                                     //!< P2M kernel for cell C

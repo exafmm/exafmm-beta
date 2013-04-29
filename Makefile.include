@@ -3,6 +3,7 @@
 
 ### choose kernel
 EQUATION = Laplace
+#EQUATION = Matern
 #EQUATION = Yukawa (not available yet)
 #EQUATION = Helmholtz (not available yet)
 #EQUATION = Stokes (not available yet)
@@ -28,12 +29,12 @@ CXX	+= -I../include
 LFLAGS	+= -D$(BASIS)
 LFLAGS  += -DEXPANSION=3 # specifcy expansion order
 ifeq ($(BASIS),Cartesian)
-LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
-LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
+#LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
+#LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
 endif
-LFLAGS	+= -DERROR_OPT # Use error optimized theta
-LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
-LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
+#LFLAGS	+= -DERROR_OPT # Use error optimized theta
+#LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
+#LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
 #LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
 #LFLAGS	+= -DFP64 # Use double precision
@@ -57,10 +58,10 @@ LFLAGS	+= -std=c++0x -DTBB -ltbb
 #LFLAGS	+= -DPAPI_EX -lpapi
 
 ### VTK flags : VTK is available from http://www.vtk.org/VTK/resources/software.html
-#VTK_INCLUDE_PATH = /usr/include/vtk-5.8
-#VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
-#CXX	+= -I$(VTK_INCLUDE_PATH)
-#LFLAGS	+= -L$(VTK_LIBRARY_PATH) -DVTK -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
+VTK_INCLUDE_PATH = /usr/include/vtk-5.8
+VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
+CXX	+= -I$(VTK_INCLUDE_PATH)
+LFLAGS	+= -L$(VTK_LIBRARY_PATH) -DVTK -lvtkCharts -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
 
 ifeq ($(DEVICE),GPU)
 ### CUDA path
