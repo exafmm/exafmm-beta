@@ -104,8 +104,9 @@ class Partition : public MyMPI, public Logger {
     MPI_Allreduce(localXmax, globalXmax, 3, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
     Bounds global;
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      global.Xmin[d] = globalXmin[d] - EPS;                     //  Convert Xmin to real_t
-      global.Xmax[d] = globalXmax[d] + EPS;                     //  Convert Xmax to real_t
+      real_t leeway = (globalXmax[d] - globalXmin[d]) * 1e-6;   //  Adding a bit of leeway to global domain
+      global.Xmin[d] = globalXmin[d] - leeway;                  //  Convert Xmin to real_t
+      global.Xmax[d] = globalXmax[d] + leeway;                  //  Convert Xmax to real_t
     }                                                           // End loop over dimensions
     return global;                                              // Return global bounds
   }
