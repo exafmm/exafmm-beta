@@ -40,6 +40,8 @@ class Traversal : public Kernel, public Logger {
 
 //! Dual tree traversal for a range of Ci and Cj
   void traverse(C_iter CiBegin, C_iter CiEnd, C_iter CjBegin, C_iter CjEnd, bool mutual) {
+    Trace trace;
+    startTracer(trace);
     if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {         // If only one cell in range
       if (CiBegin == CjBegin) {                                 //  If Ci == Cj
         assert(CiEnd == CjEnd);
@@ -67,6 +69,7 @@ class Traversal : public Kernel, public Logger {
 	sync_tasks;                                             //  Synchronize task group
       }
     }                                                           // End if for many cells in range
+    stopTracer(trace);
   }
 
 //! Split cell and call traverse() recursively for child
@@ -205,6 +208,7 @@ class Traversal : public Kernel, public Logger {
       traversePeriodic(cycle);                                  //  Traverse tree for periodic images
     }                                                           // End if for periodic boundary condition
     stopTimer("Traverse",printNow);                             // Stop timer
+    writeTrace();
   }
 
 //! Time the kernel runtime for auto-tuning

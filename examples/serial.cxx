@@ -81,6 +81,7 @@ int main(int argc, char ** argv) {
       data.printError(diff1, norm1, diff2, norm2);
       tree.printTreeData(cells);
       traversal.printTraversalData();
+      logger.printPAPI();
     }
   }
 #if VTK

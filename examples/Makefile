@@ -8,7 +8,7 @@ kernel	: kernel.cxx $(KERNELS)
 
 serial	: serial.cxx $(KERNELS)
 	$(CXX) $? $(LFLAGS)
-	./a.out
+	./a.out --numBodies 10000
 #	./a.out --numBodies 100 --mutual 0
 #	numactl --interleave=all ./a.out
 

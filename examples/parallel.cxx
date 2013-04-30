@@ -175,6 +175,7 @@ int main(int argc, char ** argv) {
       data.printError(diff3, norm3, diff4, norm4);
       tree.printTreeData(cells);
       traversal.printTraversalData();
+      logger.printPAPI;
     }
   }
 
