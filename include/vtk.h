@@ -48,7 +48,8 @@ class vtk2DPlot {
     table->AddColumn(array);
   }
 
-  void setData(int begin, int end, real_t *data) {
+  template<typename T>
+  void setData(int begin, int end, T *data) {
     for (int i=begin; i<end; i++) {
       table->SetValue(i-begin,numColumns,data[i]);
     }

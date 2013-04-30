@@ -1,5 +1,4 @@
 .SUFFIXES: .cxx .cu .o
-.PHONY: docs
 
 ### choose kernel
 EQUATION = Laplace
@@ -27,10 +26,10 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -ffast-math -funroll-loops # GCC
 ### Base flags
 CXX	+= -I../include
 LFLAGS	+= -D$(BASIS)
-LFLAGS  += -DEXPANSION=3 # specifcy expansion order
+#LFLAGS  += -DEXPANSION=3 # Specifcy expansion order
 ifeq ($(BASIS),Cartesian)
 LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
-LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
+#LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
 endif
 LFLAGS	+= -DERROR_OPT # Use error optimized theta
 LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
@@ -50,20 +49,20 @@ LFLAGS	+= -std=c++0x -DTBB -ltbb
 ### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -std=c++0x -DMTHREAD -lmyth 
 
-### OpenMP flags (not recommended) : OpenMP3.0 is available in gcc>=4.3.1, icc>=11.0
+### OpenMP flags (not recommended, slow) : OpenMP3.0 is available in gcc>=4.3.1, icc>=11.0
 #LFLAGS += -DOPENMP -fopenmp
 
-### PAPI flags
-#LFLAGS	+= -DPAPI -lpapi
+### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
+LFLAGS	+= -DPAPI -lpapi
 
 ### Trace flags
 #LFLAGS	+= -DTRACE
 
 ### VTK flags : VTK is available from http://www.vtk.org/VTK/resources/software.html
-#VTK_INCLUDE_PATH = /usr/include/vtk-5.8
-#VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
-#CXX	+= -I$(VTK_INCLUDE_PATH)
-#LFLAGS	+= -L$(VTK_LIBRARY_PATH) -DVTK -lvtkCharts -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
+VTK_INCLUDE_PATH = /usr/include/vtk-5.8
+VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
+CXX	+= -I$(VTK_INCLUDE_PATH)
+LFLAGS	+= -L$(VTK_LIBRARY_PATH) -DVTK -lvtkCharts -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
 
 ifeq ($(DEVICE),GPU)
 ### CUDA path
@@ -73,9 +72,12 @@ CUDA_SDK_PATH = /usr/local/cuda_sdk/C
 NVCC	= nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_21 -I../include -I$(CUDA_INSTALL_PATH)/include
 ### CUDA flags
 LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart -lstdc++ -ldl -lm
+SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cu ../kernels/$(EQUATION)P2P$(DEVICE).cu
+OBJECTS	= $(SOURCES:.cu=.o)
+else
+SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx ../kernels/$(EQUATION)P2P$(DEVICE).cxx
+OBJECTS	= $(SOURCES:.cxx=.o)
 endif
-
-KERNELS	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).o ../kernels/$(EQUATION)P2P$(DEVICE).o
 
 .cxx.o  :
 	$(CXX) -c $^ -o $@ $(LFLAGS)
