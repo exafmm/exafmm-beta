@@ -83,10 +83,11 @@ int main() {
   std::vector<double> bound;
   while (std::getline(file,line)) {
     int p;
+    double e;
     std::stringstream stream(line);
-    stream >> p >>  err;
+    stream >> p >>  e;
     order.push_back(p);
-    error.push_back(log10(err));
+    error.push_back(log10(e));
     bound.push_back(log10(std::pow(THETA,p)));
   }
   file.close();

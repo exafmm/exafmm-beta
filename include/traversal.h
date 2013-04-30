@@ -243,9 +243,13 @@ class Traversal : public Kernel, public Logger {
 #if COUNT
     std::cout << "--- Traversal stats --------------" << std::endl
 	      << std::setw(stringLength) << std::left           // Set format
-	      << "P2P calls"  << " : " << NP2P << std::endl     // Print number of P2P calls
+	      << "P2P calls"  << " : "                          // Print title
+	      << std::setprecision(0) << std::fixed             // Set format
+              << NP2P << std::endl                              // Print number of P2P calls
 	      << std::setw(stringLength) << std::left           // Set format
-	      << "M2L calls"  << " : " << NM2L << std::endl;    // Print number of M2l calls
+	      << "M2L calls"  << " : "                          // Print title
+	      << std::setprecision(0) << std::fixed             // Set format
+              << NM2L << std::endl;                             // Print number of M2l calls
 #endif
   }
 };
