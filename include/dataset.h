@@ -192,16 +192,5 @@ class Dataset {                                                 // Contains all 
 #endif
     }                                                           // End loop over bodies & bodies2
   }
-
-//! Print relative L2 norm error
-  void printError(double diff1, double norm1, double diff2, double norm2) {
-    std::cout << "--- Diff between FMM and direct --" << std::endl
-	      << std::setw(20) << std::left
-              << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
-    if( std::abs(diff2) > 0 ) {
-      std::cout << std::setw(20) << std::left
-                << "Rel. L2 Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
-    }
-  }
 };
 #endif

@@ -246,8 +246,8 @@ class BuildTree : public Logger {
 
 //! Print tree structure statistics
   void printTreeData(Cells &cells) {
-    std::cout << "--- Tree structure stats ---------" << std::endl
-	      << std::setw(stringLength) << std::left           // Set format
+    printTitle("Tree stats");                                   // Print title
+    std::cout  << std::setw(stringLength) << std::left          // Set format
 	      << "Bodies"     << " : " << cells.front().NDBODY << std::endl// Print number of bodies
 	      << std::setw(stringLength) << std::left           // Set format
 	      << "Cells"      << " : " << cells.size() << std::endl// Print number of cells

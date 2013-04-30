@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <getopt.h>
+#include <iostream>
+#include <iomanip>
 
 struct option long_options[] = {
   {"numBodies",    1, 0, 'n'},
@@ -109,6 +111,25 @@ class Args {
         exit(0);
       }
     }
+  }
+
+  void print(int stringLength, int P) {
+    std::cout << std::setw(stringLength) << std::left           // Set format
+	      << "numBodies" << " : " << numBodies << std::endl // Print numBodies  
+              << std::setw(stringLength)                        // Set format
+              << "P" << " : " << P << std::endl                 // Print P
+              << std::setw(stringLength)                        // Set format
+              << "THETA" << " : " << THETA << std::endl         // Print THETA
+              << std::setw(stringLength)                        // Set format
+              << "NCRIT" << " : " << NCRIT << std::endl         // Print NCRIT
+              << std::setw(stringLength)                        // Set format
+              << "NSPAWN" << " : " << NSPAWN << std::endl       // Print NSPAWN
+              << std::setw(stringLength)                        // Set format
+              << "IMAGES" << " : " << IMAGES << std::endl       // Print IMAGES
+              << std::setw(stringLength)                        // Set format
+              << "mutual" << " : " << mutual << std::endl       // Print mutual
+              << std::setw(stringLength)                        // Set format
+              << "distribution" << " : " << distribution << std::endl;// Print distribution
   }
 };
 #endif

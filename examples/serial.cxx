@@ -15,6 +15,8 @@ int main(int argc, char ** argv) {
   Cells cells, jcells;
   Dataset data;
   Logger logger;
+  logger.printTitle("Parameters");
+  args.print(logger.stringLength,P);
 
   const real_t cycle = 2 * M_PI;
   BoundBox boundbox(args.NSPAWN);
@@ -40,9 +42,7 @@ int main(int argc, char ** argv) {
   {
     int numBodies = args.numBodies;
 #endif // MANY
-    if (logger.printNow) std::cout << std::endl
-      << "Num bodies           : " << numBodies << std::endl;
-    std::cout << "--- Profiling --------------------" << std::endl;
+    logger.printTitle("Profiling");
     bodies.resize(numBodies);
     data.initBodies(bodies, args.distribution);
     Bounds bounds = boundbox.getBounds(bodies);
@@ -56,7 +56,7 @@ int main(int argc, char ** argv) {
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
     logger.stopPAPI();
     pass.downwardPass(cells);
-    std::cout << "--- Total runtime ----------------" << std::endl;
+    logger.printTitle("Total runtime");
     logger.stopTimer("Total FMM", logger.printNow);
     boundbox.writeTime();
     tree.writeTime();
@@ -78,7 +78,7 @@ int main(int argc, char ** argv) {
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     data.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
     if (logger.printNow) {
-      data.printError(diff1, norm1, diff2, norm2);
+      logger.printError(diff1, norm1, diff2, norm2);
       tree.printTreeData(cells);
       traversal.printTraversalData();
       logger.printPAPI();

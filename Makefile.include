@@ -15,7 +15,7 @@ BASIS	= Cartesian
 
 ### choose device to use
 DEVICE	= CPU
-#DEVICE	= GPU
+#DEVICE	= GPU (not integrated)
 
 ### choose compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -Wshadow -O3 -ffast-math -funroll-loops # GCC
@@ -29,12 +29,12 @@ CXX	+= -I../include
 LFLAGS	+= -D$(BASIS)
 LFLAGS  += -DEXPANSION=3 # specifcy expansion order
 ifeq ($(BASIS),Cartesian)
-#LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
-#LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
+LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
+LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
 endif
-#LFLAGS	+= -DERROR_OPT # Use error optimized theta
-#LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
-#LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
+LFLAGS	+= -DERROR_OPT # Use error optimized theta
+LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
+LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
 #LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
 #LFLAGS	+= -DFP64 # Use double precision
@@ -45,16 +45,16 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
 ### Intel TBB flags : TBB is available from http://threadingbuildingblocks.org/download.php
-#LFLAGS	+= -std=c++0x -DTBB -ltbb
+LFLAGS	+= -std=c++0x -DTBB -ltbb
 
 ### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -std=c++0x -DMTHREAD -lmyth 
 
 ### OpenMP flags (not recommended) : OpenMP3.0 is available in gcc>=4.3.1, icc>=11.0
-LFLAGS += -DOPENMP -fopenmp
+#LFLAGS += -DOPENMP -fopenmp
 
 ### PAPI flags
-LFLAGS	+= -DPAPI -lpapi
+#LFLAGS	+= -DPAPI -lpapi
 
 ### Trace flags
 #LFLAGS	+= -DTRACE

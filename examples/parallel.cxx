@@ -47,7 +47,7 @@ int main(int argc, char ** argv) {
 #endif
     if (LET.printNow) std::cout << std::endl
       << "Num bodies           : " << numBodies << std::endl;
-    if (LET.printNow) std::cout << "--- Profiling --------------------" << std::endl;
+    if (LET.printNow) logger.printTitle("Profiling");
     bodies.resize(numBodies);
     data.initBodies(bodies, args.distribution, LET.MPIRANK, LET.MPISIZE);
     logger.startTimer("Total FMM");
@@ -138,9 +138,8 @@ int main(int argc, char ** argv) {
     bodies = sort.sortBodies(bodies);
 #endif
     logger.stopPAPI();
-    if (logger.printNow) std::cout << "--- Total runtime ----------------" << std::endl;
-    logger.stopTimer("Total FMM",logger.printNow);
-    if (logger.printNow) std::cout << "--- Round-robin MPI direct sum ---" << std::endl;
+    logger.stopTimer("Total FMM");
+    if (logger.printNow) logger.printTitle("MPI direct sum");
     boundbox.writeTime();
     tree.writeTime();
     pass.writeTime();
@@ -163,7 +162,8 @@ int main(int argc, char ** argv) {
       if (logger.printNow) std::cout << "Direct loop          : " << i+1 << "/" << LET.MPISIZE << std::endl;
     }
     pass.normalize(bodies2);
-    if (logger.printNow) std::cout << "----------------------------------" << std::endl;
+    if (logger.printNow) logger.printTitle("Total runtime");
+    if (logger.printNow) logger.printTime("Total FMM");
     logger.stopTimer("Total Direct",logger.printNow);
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
     data.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
@@ -172,10 +172,10 @@ int main(int argc, char ** argv) {
     MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     if(logger.printNow) {
-      data.printError(diff3, norm3, diff4, norm4);
+      logger.printError(diff3, norm3, diff4, norm4);
       tree.printTreeData(cells);
       traversal.printTraversalData();
-      logger.printPAPI;
+      logger.printPAPI();
     }
   }
 

@@ -1,5 +1,6 @@
 #ifndef logger_h
 #define logger_h
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -72,6 +73,16 @@ class Logger {
     timerFile.close();                                          // Close timer log file
   }
 
+//! Print message to standard output
+  inline void printTitle(std::string title) {
+    title += " ";                                               // Append space to end of title
+    std::cout << "--- " << std::setw(stringLength)              // Align string length
+              << std::left                                      // Left shift
+              << std::setfill('-')                              // Set to fill with '-'
+              << title << std::setw(10) << "-"                  // Fill until end of line
+              << std::setfill(' ') << std::endl;                // Set back to fill with ' '
+  }
+
 //! Start timer for given event
   inline void startTimer(std::string event) {
     beginTimer[event] = get_time();                             // Get time of day and store in beginTimer
@@ -85,29 +96,11 @@ class Logger {
     return endTimer - beginTimer[event];                        // Return the event time
   }
 
-//! Erase entry in timer
-  inline void eraseTimer(std::string event) {
-    timer.erase(event);                                         // Erase event from timer
-  }
-
-//! Erase all events in timer
-  inline void resetTimer() {
-    timer.clear();                                              // Clear timer
-  }
-
 //! Print timings of a specific event
   inline void printTime(std::string event) {
     std::cout << std::setw(stringLength) << std::left           // Set format
       << event << " : " << std::setprecision(decimal) << std::fixed
       << timer[event] << " s" << std::endl;                     // Print event and timer
-  }
-
-//! Print timings of all events
-  inline void printAllTime() {
-    for (T_iter E=timer.begin(); E!=timer.end(); E++) {         // Loop over all events
-      std::cout << std::setw(stringLength) << std::left         //  Set format
-        << E->first << " : " << E->second << std::endl;         //  Print event and timer
-    }                                                           // End loop over all events
   }
 
 //! Write timings of all events
@@ -116,6 +109,11 @@ class Logger {
       timerFile << std::setw(stringLength) << std::left         //  Set format
         << E->first << " " << E->second << std::endl;           //  Print event and timer
     }                                                           // End loop over all events
+  }
+
+//! Erase all events in timer
+  inline void resetTimer() {
+    timer.clear();                                              // Clear timer
   }
 
 //! Start PAPI event
@@ -162,7 +160,7 @@ class Logger {
   inline void printPAPI() {
 #if PAPI
     if (!PAPIEventCodes.empty()) {                              // If PAPI events are set
-      std::cout << "--- PAPI stats -------------------" << std::endl;
+      printTitle("PAPI stats ");
       for (int i=0; i<int(PAPIEventCodes.size()); i++) {        //  Loop over PAPI events
         std::cout << std::setw(stringLength) << std::left       //   Set format
 		  << PAPIEventNames[i] << " : " << std::setprecision(decimal) << std::fixed
@@ -231,5 +229,15 @@ class Logger {
   inline void writeTrace(int) {}
 #endif
 
+  //! Print relative L2 norm error
+  void printError(double diff1, double norm1, double diff2, double norm2) {
+    printTitle("FMM vs. direct");                               // Print title
+    std::cout << std::setw(stringLength) << std::left           // Set format
+              << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;// Print potential error
+    if( std::abs(diff2) > 0 ) {                                 // If acceleration was calculated
+      std::cout << std::setw(stringLength) << std::left         //  Set format
+                << "Rel. L2 Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;// Print acceleration error
+    }                                                           // End if for acceleration
+  }
 };
 #endif
