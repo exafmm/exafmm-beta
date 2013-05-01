@@ -5,7 +5,7 @@ include ../Makefile.include
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 #	./a.out
-	./a.out --numBodies 100 --theta 0.5
+	./a.out --theta 0.5 --numBodies 100
 #	numactl --interleave=all ./a.out
 
 parallel: parallel.o $(OBJECTS)

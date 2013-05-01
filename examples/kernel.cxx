@@ -83,6 +83,7 @@ int main() {
   file.open("kernel.dat", std::ios::out | std::ios::app);
   double diff = 0, norm = 0;
   for (B_iter B=bodies.begin(),B2=bodies2.begin(); B!=bodies.end(); ++B,++B2) {
+    std::cout << B->TRG[0] << " " << B2->TRG[0] << std::endl;
     diff += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);
     norm += B2->TRG[0] * B2->TRG[0];
   }
