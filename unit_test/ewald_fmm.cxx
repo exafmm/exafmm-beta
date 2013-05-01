@@ -1,12 +1,12 @@
 #include "serialfmm.h"
 
 int main() {
-  const int numBodies = 2000;                                   // Number of bodies - DEF=1000.
+  const int numBodies = 3000;                                   // Number of bodies - DEF=1000.
   const real delBodies = pow(numBodies, 1.0/3.0)/10.0;         // change in numBodies
-  const real xmax = 100.0;                                      // Size of domain - DEF=100.0
+  const real xmax = 3.10736;                                      // Size of domain - DEF=100.0
   const real delXmax = 100.0/xmax;                             // Change in xmax
   const real ksize = 44.0*delBodies;                           // Ewald wave number
-  const real alpha = 0.2*delXmax*delBodies;                    // Ewald alpha value
+  const real alpha = 1.0/.289108; //0.2*delXmax*delBodies;                    // Ewald alpha value
   const real sigma = .25 / M_PI;                               // Ewald sigma value
   IMAGES = 8;                                                  // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrt(4);                                         // Multipole acceptance criteria
