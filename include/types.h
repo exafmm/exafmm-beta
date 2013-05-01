@@ -15,7 +15,7 @@ typedef float                real_t;                            //!< Floating po
 #endif
 typedef std::complex<real_t> complex_t;                         //!< Complex type
 typedef vec<3,real_t>        vec3;                              //!< Vector of 3 floating point types
-typedef vec<3,float>         fvec3;                             //!< Vector of 3 single precision types
+typedef vec<3,float>         fvec3;                             //!< Force float (Used only for communication)
 
 // SIMD vector types for MIC, AVX, and SSE
 const int NSIMD = SIMD_BYTES / sizeof(real_t);                  //!< SIMD vector length

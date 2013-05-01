@@ -2,22 +2,22 @@ include ../Makefile.include
 
 #LFLAGS	+= -DMANY
 
-serial: serial.cxx $(OBJECTS)
+serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 #	./a.out
-	./a.out --numBodies 100 --mutual 0
+	./a.out --numBodies 100 --theta 0.5
 #	numactl --interleave=all ./a.out
 
-parallel: parallel.cxx $(OBJECTS)
+parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	mpirun -np 8 ./a.out
 
-wrapper: wrapper.cxx $(OBJECTS)
+wrapper: wrapper.o $(OBJECTS)
 	make -C ../wrappers libfmm.a
 	$(CXX) $? -L../wrappers -lfmm $(LFLAGS)
 	mpirun -np 4 ./a.out
 
-kernel: kernel.cxx $(OBJECTS)
+kernel: kernel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	./a.out
 
