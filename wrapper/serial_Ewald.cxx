@@ -1,7 +1,7 @@
 #include "serialfmm.h"
 extern "C" {
-#include "md.h"
-#include "vtgrapeproto.h"
+  //#include "md.h"
+  //#include "vtgrapeproto.h"
 }
 
 extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
@@ -12,6 +12,9 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
   SerialFMM<Laplace> FMM;
+  real ksize = 11;
+  real alpha = 1.0/.289108;
+  real sigma = .25 / M_PI;
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
@@ -57,8 +60,9 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   FMM.setDomain(bodies,0,size/2);
   FMM.bottomup(bodies,cells);
   FMM.bottomup(jbodies,jcells);
+  FMM.setEwald(ksize,alpha,sigma);
+  FMM.Ewald(bodies,cells,jcells);
 
-  FMM.downward(cells,jcells);
   std::sort(bodies.begin(),bodies.end());
   FMM.writeTime();
   FMM.finalize();
@@ -121,6 +125,7 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   }
 #endif
   // This is the correction factor from FMM to MD Ewald.
+  /*
   double fc[3];
   for( int d=0; d!=3; ++d ) fc[d]=0;
   for( int i=0; i!=ni; ++i ) { 
@@ -140,6 +145,7 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
                 * (fc[0] * fc[0] + fc[1] * fc[1] + fc[2] * fc[2]) / ni;
     }   
   }
+  */
 }
 
 /*

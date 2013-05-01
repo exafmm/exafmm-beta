@@ -6,6 +6,11 @@ libserial_coulombVdW.a: serial_coulombVdW.o $(OBJECT)
 	ar ruv libserial_coulombVdW.a $?
 	ranlib libserial_coulombVdW.a
 
+libserial_Ewald.a: serial_Ewald.o $(OBJECT)
+	ar ruv libserial_Ewald.a $?
+	ranlib libserial_Ewald.a
+	mv libserial_Ewald.a libserial_coulombVdW.a
+
 libparallel_coulombVdW.a: parallel_coulombVdW.o $(OBJECT)
 	ar ruv libparallel_coulombVdW.a $?
 	ranlib libparallel_coulombVdW.a

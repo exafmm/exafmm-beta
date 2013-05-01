@@ -5,10 +5,10 @@ int main() {
   const real delBodies = pow(numBodies, 1.0/3.0)/10.0;         // change in numBodies
   const real xmax = 3.10736;                                      // Size of domain - DEF=100.0
   const real delXmax = 100.0/xmax;                             // Change in xmax
-  const real ksize = 44.0*delBodies;                           // Ewald wave number
+  const real ksize = 11.0*delBodies;                           // Ewald wave number
   const real alpha = 1.0/.289108; //0.2*delXmax*delBodies;                    // Ewald alpha value
   const real sigma = .25 / M_PI;                               // Ewald sigma value
-  IMAGES = 8;                                                  // Level of periodic image tree (0 for non-periodic)
+  IMAGES = 4;                                                  // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrt(4);                                         // Multipole acceptance criteria
   
   std::cout << "numBodies: " << numBodies << ", delBodies: " << delBodies << std::endl << "xmax: " << xmax << ", delXmax: " << delXmax << std::endl << "ksize: " << ksize << ", alpha: " << alpha << std::endl << "sigma: " << sigma <<", IMAGES: "  << IMAGES << ", THETA: " << THETA << std::endl;

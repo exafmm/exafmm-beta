@@ -124,7 +124,7 @@ private:
   void traverseQueue(Pair pair) {
     PairQueue pairQueue;                                        // Queue of interacting cell pairs
 #if QUARK
-    Quark *quark = QUARK_New(1);                                // Initialize QUARK object
+    Quark *quark = QUARK_New(12);                                // Initialize QUARK object
 //    C_iter root = pair.first;                                   // Iterator for root target cell
 #endif
     pairQueue.push_back(pair);                                  // Push pair to queue
