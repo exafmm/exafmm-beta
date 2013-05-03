@@ -4,7 +4,7 @@ include ../Makefile.include
 
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out --numBodies 10000
+	./a.out
 #	numactl --interleave=all ./a.out
 
 parallel: parallel.o $(OBJECTS)
