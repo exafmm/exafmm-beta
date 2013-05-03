@@ -32,7 +32,7 @@ void Kernel::P2P(C_iter C) const {
   int n = C->NDBODY;
   for (int i=0; i<n; i++) {
     kreal_t pot = 0;
-    for (int j=i+1; j<n; j++) {
+    for (int j=i; j<n; j++) {
       vec3 dX = (B[i].X - B[j].X) / SIGMA;
       real_t R = std::sqrt(2 * NU * norm(dX));
       if (R != 0) {

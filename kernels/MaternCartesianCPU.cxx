@@ -384,7 +384,7 @@ inline void getCoef(vecL &C, const vec3 &dX) {
 
 template<int PP>
 inline void sumM2L(vecL &L, const vecL &C, const vecM &M) {
-  L += C * M[0];
+  L += C;
 #if COMkernel
   for (int i=1; i<MTERM; i++) L[0] += M[i] * C[i+3];
 #else
@@ -467,6 +467,7 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   vecL C;
   getCoef<P>(C,dX/SIGMA);
+  C *= Ci->M[0] * Cj->M[0];
   sumM2L<P>(Ci->L,C,Cj->M);
   if (mutual) {
     Coefs<P,P&1>::negate(C);
@@ -480,6 +481,7 @@ void Kernel::L2L(C_iter Ci, C_iter Ci0) const {
   vecL C;
   C[0] = 1;
   Kernels<0,0,P>::power(C,dX/SIGMA);
+  Ci->L /= Ci->M[0];
   Ci->L += Cj->L;
   for (int i=1; i<LTERM; i++) Ci->L[0] += C[i] * Cj->L[i];
   Kernels<0,0,P-1>::L2L(Ci->L,C,Cj->L);
