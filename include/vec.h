@@ -274,14 +274,11 @@ class vec<16,float> {
     return s;
   }
   friend float sum(const vec &v) {                              // Sum vector
-    float temp = 0;
-    for (int i=0; i<16; i++) temp += v[i];
-    return temp;
+    return _mm512_reduce_add_ps(v.data);
   }
   friend float norm(const vec &v) {                             // L2 norm squared
-    float temp = 0;
-    for (int i=0; i<16; i++) temp += v[i] * v[i];
-    return temp;
+    __m512 temp = _mm512_mul_ps(v.data,v.data);
+    return _mm512_reduce_add_ps(temp);
   }
   friend vec min(const vec &v, const vec &w) {                  // Element-wise minimum
     return vec(_mm512_min_ps(v.data,w.data));
@@ -380,14 +377,11 @@ public:
     return s;
   }
   friend double sum(const vec &v) {                             // Sum vector
-    double temp = 0;
-    for (int i=0; i<8; i++) temp += v[i];
-    return temp;
+    return _mm512_reduce_add_pd(v.data);
   }
   friend double norm(const vec &v) {                            // L2 norm squared
-    double temp = 0;
-    for (int i=0; i<8; i++) temp += v[i] * v[i];
-    return temp;
+    __m512d temp = _mm512_mul_pd(v.data,v.data);;
+    return _mm512_reduce_add_pd(temp);
   }
   friend vec min(const vec &v, const vec &w) {                  // Element-wise minimum
     return vec(_mm512_min_pd(v.data,w.data));
@@ -492,14 +486,19 @@ class vec<8,float> {
     return s;
   }
   friend float sum(const vec &v) {                              // Sum vector
-    float temp = 0;
-    for (int i=0; i<8; i++) temp += v[i];
-    return temp;
+    __m256 temp = _mm256_permute2f128_ps(v.data,v.data,1);
+    temp = _mm256_add_ps(temp,v.data);
+    temp = _mm256_hadd_ps(temp,temp);
+    temp = _mm256_hadd_ps(temp,temp);
+    return ((float*)&temp)[0];
   }
   friend float norm(const vec &v) {                             // L2 norm squared
-    float temp = 0;
-    for (int i=0; i<8; i++) temp += v[i] * v[i];
-    return temp;
+    __m256 temp = _mm256_mul_ps(v.data,v.data);
+    __m256 perm = _mm256_permute2f128_ps(temp,temp,1);
+    temp = _mm256_add_ps(temp,perm);
+    temp = _mm256_hadd_ps(temp,temp);
+    temp = _mm256_hadd_ps(temp,temp);
+    return ((float*)&temp)[0];
   }
   friend vec min(const vec &v, const vec &w) {                  // Element-wise minimum
     return vec(_mm256_min_ps(v.data,w.data));
@@ -597,14 +596,18 @@ class vec<4,double> {
     return s;
   }
   friend double sum(const vec &v) {                             // Sum vector
-    double temp = 0;
-    for (int i=0; i<4; i++) temp += v[i];
-    return temp;
+    __m256d temp = _mm256_permute2f128_pd(v.data,v.data,1);
+    temp = _mm256_add_pd(temp,v.data);
+    temp = _mm256_hadd_pd(temp,temp);
+    return ((double*)&temp)[0];
   }
   friend double norm(const vec &v) {                            // L2 norm squared
-    double temp = 0;
-    for (int i=0; i<4; i++) temp += v[i] * v[i];
-    return temp;
+    __m256d temp = _mm256_mul_pd(v.data,v.data);
+    __m256d perm = _mm256_permute2f128_pd(temp,temp,1);
+    temp = _mm256_add_pd(temp,perm);
+    temp = _mm256_hadd_pd(temp,temp);
+    temp = _mm256_hadd_pd(temp,temp);
+    return ((double*)&temp)[0];
   }
   friend vec min(const vec &v, const vec &w) {                  // Element-wise minimum
     return vec(_mm256_min_pd(v.data,w.data));
@@ -627,8 +630,8 @@ class vec<4,double> {
 };
 #endif
 
-#if __SSE__
-#include <xmmintrin.h>
+#if __SSE4_2__
+#include <smmintrin.h>
 template<>
 class vec<4,float> {
  private:
@@ -708,14 +711,15 @@ class vec<4,float> {
     return s;
   }
   friend float sum(const vec &v) {                              // Sum vector
-    float temp = 0;
-    for (int i=0; i<4; i++) temp += v[i];
-    return temp;
+    __m128 temp = _mm_hadd_ps(v.data,v.data);
+    temp = _mm_hadd_ps(temp,temp);
+    return ((float*)&temp)[0];
   }
   friend float norm(const vec &v) {                             // L2 norm squared
-    float temp = 0;
-    for (int i=0; i<4; i++) temp += v[i] * v[i];
-    return temp;
+    __m128 temp = _mm_mul_ps(v.data,v.data);
+    temp = _mm_hadd_ps(temp,temp);
+    temp = _mm_hadd_ps(temp,temp);
+    return ((float*)&temp)[0];
   }
   friend vec min(const vec &v, const vec &w) {                  // Element-wise minimum
     return vec(_mm_min_ps(v.data,w.data));
@@ -813,14 +817,13 @@ class vec<2,double> {
     return s;
   }
   friend double sum(const vec &v) {                             // Sum vector
-    double temp = 0;
-    for (int i=0; i<2; i++) temp += v[i];
-    return temp;
+    __m128d temp = _mm_hadd_pd(v.data,v.data);
+    return ((double*)&temp)[0];
   }
   friend double norm(const vec &v) {                            // L2 norm squared
-    double temp = 0;
-    for (int i=0; i<2; i++) temp += v[i] * v[i];
-    return temp;
+    __m128d temp = _mm_mul_pd(v.data,v.data);
+    temp = _mm_hadd_pd(temp,temp);
+    return ((double*)&temp)[0];
   }
   friend vec min(const vec &v, const vec &w) {                  // Element-wise minimum
     return vec(_mm_min_pd(v.data,w.data));

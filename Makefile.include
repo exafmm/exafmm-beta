@@ -17,7 +17,7 @@ DEVICE	= CPU
 #DEVICE	= GPU (not integrated)
 
 ### choose compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -ffast-math -funroll-loops # GCC
+CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4.2 -ffast-math -funroll-loops # GCC
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias # Intel
 #CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
 #CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3 # BG/P
@@ -53,7 +53,7 @@ LFLAGS	+= -std=c++0x -DTBB -ltbb
 #LFLAGS += -DOPENMP -fopenmp
 
 ### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
-LFLAGS	+= -DPAPI -lpapi
+#LFLAGS	+= -DPAPI -lpapi
 
 ### Trace flags
 #LFLAGS	+= -DTRACE
