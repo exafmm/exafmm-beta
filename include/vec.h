@@ -630,12 +630,8 @@ class vec<4,double> {
 };
 #endif
 
-#if __SSE4_2__ || __SSE4A__
-#if __SSE4_2__
-#include <smmintrin.h>
-#elif __SSE4A__
-#include <ammintrin.h>
-#endif
+#if __SSE3__
+#include <pmmintrin.h>
 
 template<>
 class vec<4,float> {
