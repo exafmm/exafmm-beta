@@ -1,8 +1,13 @@
 include ../Makefile.include
 
-libfmm.a: fmm.o
-	ar ruv libfmm.a $?
-	ranlib libfmm.a
+laplace: test_laplace.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
+	make liblaplace.a
+	$(CXX) $? -L. -llaplace $(LFLAGS)
+	mpirun -np 4 ./a.out
 
-libfmm.so: fmm.o
-	$(CXX) $? -shared -o libfmm.so $(LFLAGS)
+liblaplace.a: laplace.o
+	ar ruv liblaplace.a $?
+	ranlib liblaplace.a
+
+liblaplace.so: laplace.o
+	$(CXX) $? -shared -o liblaplace.so $(LFLAGS)

@@ -11,11 +11,6 @@ parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	mpirun -np 8 ./a.out
 
-wrapper: wrapper.o $(OBJECTS)
-	make -C ../wrappers libfmm.a
-	$(CXX) $? -L../wrappers -lfmm $(LFLAGS)
-	mpirun -np 4 ./a.out
-
 kernel: kernel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	./a.out
