@@ -18,7 +18,7 @@ extern "C" void FMM(int n, double* x, double* q, double *p, double* f, int perio
 
   BoundBox boundbox(NSPAWN);
   BuildTree tree(NCRIT,NSPAWN);
-  UpDownPass pass(IMAGES,THETA);
+  UpDownPass pass(THETA);
   Traversal traversal(NSPAWN,IMAGES);
   LocalEssentialTree LET(IMAGES);
   boundbox.printNow = LET.MPIRANK == 0;

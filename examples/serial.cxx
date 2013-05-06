@@ -21,13 +21,14 @@ int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
   BoundBox boundbox(args.NSPAWN);
   BuildTree tree(args.NCRIT,args.NSPAWN);
-  UpDownPass pass(args.IMAGES,args.THETA);
+  UpDownPass pass(args.THETA);
   Traversal traversal(args.NSPAWN,args.IMAGES);
   logger.printNow = true;
   boundbox.printNow = true;
   tree.printNow = true;
   pass.printNow = true;
   traversal.printNow = true;
+  traversal.RHO = pass.RHO = 5;
 #if AUTO
   traversal.timeKernels();
 #endif
@@ -37,7 +38,7 @@ int main(int argc, char ** argv) {
 #endif
 #ifdef MANY
   for (int it=0; it<25; it++) {
-    int numBodies = int(pow(10,(it+24)/8.0));
+    int numBodies = int(std::pow(10,(it+24)/8.0));
 #else
   {
     int numBodies = args.numBodies;
@@ -72,8 +73,8 @@ int main(int argc, char ** argv) {
     Bodies bodies2 = bodies;
     data.initTarget(bodies2);
     logger.startTimer("Total Direct");
-    pass.direct(bodies2, jbodies, cycle);
-    pass.normalize(bodies2);
+    traversal.direct(bodies2, jbodies, cycle);
+    traversal.normalize(bodies2);
     logger.stopTimer("Total Direct", logger.printNow);
     double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     data.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);

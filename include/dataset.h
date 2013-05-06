@@ -83,7 +83,7 @@ class Dataset {                                                 // Contains all 
         srand48(seed);                                          //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
       for (int d=0; d<3; d++) B->X[d] = drand48() * 2 - 1;      //  Generate random number between [-1,1]
-      real_t R2 = powf(drand48()*.999, -2.0/3.0) - 1;           //  Generate distribution radius squared
+      real_t R2 = std::pow(drand48()*.999, -2.0/3.0) - 1;       //  Generate distribution radius squared
       real_t rscale = 0.015 * M_PI / std::sqrt(norm(B->X) * R2);//  Scaling to fit in M_PI box
       for (int d=0; d<3; d++) B->X[d] *= rscale;                //  Rescale particle coordinates
     }                                                           // End loop over bodies

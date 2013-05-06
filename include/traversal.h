@@ -211,6 +211,37 @@ class Traversal : public Kernel, public Logger {
     writeTrace();
   }
 
+  //! Direct summation
+  void direct(Bodies &ibodies, Bodies &jbodies, real_t cycle) {
+    Cells cells(2);                                             // Define a pair of cells to pass to P2P kernel
+    C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
+    Ci->BODY = ibodies.begin();                                 // Iterator of first target body
+    Ci->NDBODY = ibodies.size();                                // Number of target bodies
+    Cj->BODY = jbodies.begin();                                 // Iterator of first source body
+    Cj->NDBODY = jbodies.size();                                // Number of source bodies
+    int prange = 0;                                             // Range of periodic images
+    for (int i=0; i<IMAGES; i++) {                              // Loop over periodic image sublevels
+      prange += int(std::pow(3,i));                             //  Accumulate range of periodic images
+    }                                                           // End loop over perioidc image sublevels
+    for (int ix=-prange; ix<=prange; ix++) {                    // Loop over x periodic direction
+      for (int iy=-prange; iy<=prange; iy++) {                  //  Loop over y periodic direction
+        for (int iz=-prange; iz<=prange; iz++) {                //   Loop over z periodic direction
+          Xperiodic[0] = ix * cycle;                            //    Coordinate shift for x periodic direction
+          Xperiodic[1] = iy * cycle;                            //    Coordinate shift for y periodic direction
+          Xperiodic[2] = iz * cycle;                            //    Coordinate shift for z periodic direction
+          P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
+        }                                                       //   End loop over z periodic direction
+      }                                                         //  End loop over y periodic direction
+    }                                                           // End loop over x periodic direction
+  }
+
+//! Normalize bodies after direct summation
+  void normalize(Bodies &bodies) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      B->TRG /= B->SRC;                                         //  Normalize by target charge
+    }                                                           // End loop over bodies
+  }
+
 //! Time the kernel runtime for auto-tuning
   void timeKernels() {
     Bodies ibodies(1000), jbodies(1000);

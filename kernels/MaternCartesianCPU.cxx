@@ -1,5 +1,8 @@
+#include <boost/math/special_functions/bessel.hpp>
+#include <boost/math/special_functions/gamma.hpp>
 #include "kernel.h"
-#include "matern.h"
+using boost::math::cyl_bessel_k;
+using boost::math::tgamma;
 
 template<typename T, int nx, int ny, int nz>
 struct Index {
@@ -303,39 +306,39 @@ struct Kernels<0,0,0> {
 
 template<int np, int nx, int ny, int nz>
 struct Kernels2 {
-  static inline void derivative(vecL &C, vecL &G, const vec3 &dX, real_t &coef) {
+  static inline void derivative(vecL &C, vecL &G, const vec3 &dX, const real_t &nu, real_t &coef) {
     static const int n = nx + ny + nz;
-    Kernels2<np,nx,ny+1,nz-1>::derivative(C,G,dX,coef);
+    Kernels2<np,nx,ny+1,nz-1>::derivative(C,G,dX,nu,coef);
     C[Index<vecL,nx,ny,nz>::I] = DerivativeSum<nx,ny,nz>::loop(G,dX) / n * coef;
   }
 };
 
 template<int np, int nx, int ny>
 struct Kernels2<np,nx,ny,0> {
-  static inline void derivative(vecL &C, vecL &G, const vec3 &dX, real_t &coef) {
+  static inline void derivative(vecL &C, vecL &G, const vec3 &dX, const real_t &nu, real_t &coef) {
     static const int n = nx + ny;
-    Kernels2<np,nx+1,0,ny-1>::derivative(C,G,dX,coef);
+    Kernels2<np,nx+1,0,ny-1>::derivative(C,G,dX,nu,coef);
     C[Index<vecL,nx,ny,0>::I] = DerivativeSum<nx,ny,0>::loop(G,dX) / n * coef;
   }
 };
 
 template<int np, int nx>
 struct Kernels2<np,nx,0,0> {
-  static inline void derivative(vecL &C, vecL &G, const vec3 &dX, real_t &coef) {
+  static inline void derivative(vecL &C, vecL &G, const vec3 &dX, const real_t &nu, real_t &coef) {
     static const int n = nx;
-    Kernels2<np,0,0,nx-1>::derivative(C,G,dX,coef);
+    Kernels2<np,0,0,nx-1>::derivative(C,G,dX,nu,coef);
     C[Index<vecL,nx,0,0>::I] = DerivativeSum<nx,0,0>::loop(G,dX) / n * coef;
   }
 };
 
 template<int np>
 struct Kernels2<np,0,0,0> {
-  static inline void derivative(vecL &C, vecL &G, const vec3 &dX, real_t &coef) {
-    Kernels2<np-1,0,0,np-1>::derivative(G,C,dX,coef);
-    static const real_t c = std::sqrt(2 * NU);
+  static inline void derivative(vecL &C, vecL &G, const vec3 &dX, const real_t &nu, real_t &coef) {
+    Kernels2<np-1,0,0,np-1>::derivative(G,C,dX,nu,coef);
+    static const real_t c = std::sqrt(2 * nu);
     real_t R = c * std::sqrt(norm(dX));
     real_t zR = (-0.577216-log(R/2)) * (R<0.413) + 1 * (R>=0.413);
-    static const real_t u = NU - P + np;
+    static const real_t u = nu - P + np;
     static const real_t gu = tgamma(1-u) / tgamma(u);
     static const real_t aum = std::abs(u-1);
     static const real_t gaum = 1 / tgamma(aum);
@@ -354,7 +357,7 @@ struct Kernels2<np,0,0,0> {
     real_t hu = 0;
     if (u > 1) {
       hu = 0.5 / (u-1);
-    } else if (NU == 0) {
+    } else if (nu == 0) {
       hu = zR;
     } else if (u > 0 && u < 1) {
       hu = std::pow(R/2,2*u-2) / 2 * gu;
@@ -369,15 +372,15 @@ struct Kernels2<np,0,0,0> {
 
 template<>
 struct Kernels2<0,0,0,0> {
-  static inline void derivative(vecL&, vecL&, const vec3&, const real_t&) {}
+  static inline void derivative(vecL, vecL, const vec3, const real_t, real_t) {}
 };
 
 
 template<int PP>
-inline void getCoef(vecL &C, const vec3 &dX) {
+inline void getCoef(vecL &C, const vec3 &dX, const real_t &nu) {
   real_t coef;
   vecL G;
-  Kernels2<PP,0,0,PP>::derivative(C,G,dX,coef);
+  Kernels2<PP,0,0,PP>::derivative(C,G,dX,nu,coef);
   Kernels<0,0,PP>::scale(C);
 }
 
@@ -423,7 +426,7 @@ void Kernel::P2M(C_iter C) const {
     if (R > C->RMAX) C->RMAX = R;
     vecL M;
     M[0] = B->SRC;
-    Kernels<0,0,P-1>::power(M,dX/SIGMA);
+    Kernels<0,0,P-1>::power(M,dX/RHO);
 #if COMkernel
     C->M[0] += M[0];
     for (int i=1; i<MTERM; i++) C->M[i] += M[i+3];
@@ -446,7 +449,7 @@ void Kernel::M2M(C_iter Ci, C_iter C0) const {
     vecM M;
     vecL C;
     C[0] = 1;
-    Kernels<0,0,P-1>::power(C,dX/SIGMA);
+    Kernels<0,0,P-1>::power(C,dX/RHO);
     M = Cj->M;
 #if COMkernel
     Ci->M[0] += C[0] * M[0];
@@ -466,7 +469,7 @@ void Kernel::M2M(C_iter Ci, C_iter C0) const {
 void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   vecL C;
-  getCoef<P>(C,dX/SIGMA);
+  getCoef<P>(C,dX/RHO,NU);
   C *= Ci->M[0] * Cj->M[0];
   sumM2L<P>(Ci->L,C,Cj->M);
   if (mutual) {
@@ -480,7 +483,7 @@ void Kernel::L2L(C_iter Ci, C_iter Ci0) const {
   vec3 dX = Ci->X - Cj->X;
   vecL C;
   C[0] = 1;
-  Kernels<0,0,P>::power(C,dX/SIGMA);
+  Kernels<0,0,P>::power(C,dX/RHO);
   Ci->L /= Ci->M[0];
   Ci->L += Cj->L;
   for (int i=1; i<LTERM; i++) Ci->L[0] += C[i] * Cj->L[i];
@@ -492,7 +495,7 @@ void Kernel::L2P(C_iter Ci) const {
     vec3 dX = B->X - Ci->X;
     vecL C;
     C[0] = 1;
-    Kernels<0,0,P>::power(C,dX/SIGMA);
+    Kernels<0,0,P>::power(C,dX/RHO);
     vecL L = Ci->L;
     B->TRG /= B->SRC;
     for (int i=0; i<LTERM; i++) B->TRG[0] += C[i] * L[i];

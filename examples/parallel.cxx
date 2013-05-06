@@ -22,7 +22,7 @@ int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
   BoundBox boundbox(args.NSPAWN);
   BuildTree tree(args.NCRIT,args.NSPAWN);
-  UpDownPass pass(args.IMAGES,args.THETA);
+  UpDownPass pass(args.THETA);
   Traversal traversal(args.NSPAWN,args.IMAGES);
   LocalEssentialTree LET(args.IMAGES);
   logger.printNow = LET.MPIRANK == 0;
@@ -40,7 +40,7 @@ int main(int argc, char ** argv) {
 #endif
 #ifdef MANY
   for (int it=0; it<25; it++) {
-    int numBodies = int(pow(10,(it+24)/8.0)) / LET.MPISIZE;
+    int numBodies = int(std::pow(10,(it+24)/8.0)) / LET.MPISIZE;
 #else
   {
     int numBodies = args.numBodies / LET.MPISIZE;
@@ -158,10 +158,10 @@ int main(int argc, char ** argv) {
     logger.startTimer("Total Direct");
     for (int i=0; i<LET.MPISIZE; i++) {
       LET.shiftBodies(jbodies);
-      pass.direct(bodies2, jbodies, cycle);
+      traversal.direct(bodies2, jbodies, cycle);
       if (logger.printNow) std::cout << "Direct loop          : " << i+1 << "/" << LET.MPISIZE << std::endl;
     }
-    pass.normalize(bodies2);
+    traversal.normalize(bodies2);
     if (logger.printNow) logger.printTitle("Total runtime");
     if (logger.printNow) logger.printTime("Total FMM");
     logger.stopTimer("Total Direct",logger.printNow);
