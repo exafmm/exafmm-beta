@@ -27,6 +27,7 @@ int main(int argc, char ** argv) {
   LocalEssentialTree LET(args.IMAGES);
   logger.verbose = LET.MPIRANK == 0;
   args.verbose &= logger.verbose;
+  args.numBodies /= LET.MPISIZE;
   if (args.verbose) {
     boundbox.verbose = true;
     tree.verbose = true;
@@ -43,14 +44,13 @@ int main(int argc, char ** argv) {
 #pragma omp parallel
 #pragma omp master
 #endif
-  int numBodies = args.numBodies / LET.MPISIZE;
   if (args.verbose) logger.printTitle("Profiling");
-  bodies.resize(numBodies);
+  bodies.resize(args.numBodies);
   data.initBodies(bodies, args.distribution, LET.MPIRANK, LET.MPISIZE);
   logger.startTimer("Total FMM");
   Bounds localBounds = boundbox.getBounds(bodies);
 #if IneJ
-  jbodies.resize(numBodies);
+  jbodies.resize(args.numBodies);
   data.initBodies(jbodies, args.distribution, LET.MPIRANK+LET.MPISIZE, LET.MPISIZE);
   localBounds = boundbox.getBounds(jbodies,localBounds);
 #endif

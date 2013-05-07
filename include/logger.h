@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <queue>
 #include <string>
+#include <sstream>
 #include <sys/time.h>
 #include <vector>
 
@@ -189,9 +190,11 @@ class Logger {
 
 //! Write traces of all events
   inline void writeTrace(int mpirank=0) {
-    char fname[256];                                            // File name
-    sprintf(fname,"trace%4.4d.svg",mpirank);                    // Create file name for trace
-    std::ofstream traceFile(fname);                             // Open trace log file
+    startTimer("Write trace");                                  // Start timer
+    std::stringstream name;                                     // File name
+    name << "trace" << std::setfill('0') << std::setw(4)        // Set format
+         << mpirank << ".svg";                                  // Create file name for trace
+    std::ofstream traceFile(name.str());                        // Open trace log file
     traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" // Header statements for trace log file
       << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
       << "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
@@ -221,6 +224,7 @@ class Logger {
     }                                                           // End while loop for queue of traces
     traceFile << "  </g>\n" "</svg>\n";                         // Footer for trace log file
     traceFile.close();                                          // Close trace log file
+    stopTimer("Write trace",verbose);                           // Stop timer
   }
 #else
   inline void startTracer(Trace) {}

@@ -27,8 +27,9 @@ int main(int argc, char **argv) {
   int mpisize, mpirank;
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
-  const int N = 1000000;
+  const int N = 1000000 / mpisize;
   const double size = 2 * M_PI;
+  const int stringLength = 20;
   double *xi = new double [3*N];
   double *qi = new double [N];
   double *pi = new double [N];
@@ -60,6 +61,7 @@ int main(int argc, char **argv) {
     xj[3*i+1] = xi[3*i+1];
     xj[3*i+2] = xi[3*i+2];
   }
+  if (mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
   for (int irank=0; irank<mpisize; irank++) {
     if (mpirank==0) std::cout << "Direct loop          : " << irank+1 << "/" << mpisize << std::endl;
     MPI_Shift(xj, 3*N, mpisize, mpirank);
@@ -85,18 +87,28 @@ int main(int argc, char **argv) {
       fd[3*i+2] += Fz;
     }
   }
-  double Pd = 0, Pn = 0, Fd = 0, Fn = 0;
+  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   for (int i=0; i<100; i++) {
-    Pd += (pi[i] - pd[i]) * (pi[i] - pd[i]);
-    Pn += pd[i] * pd[i];
-    Fd += (fi[3*i+0] - fd[3*i+0]) * (fi[3*i+0] - fd[3*i+0])
-        + (fi[3*i+1] - fd[3*i+1]) * (fi[3*i+1] - fd[3*i+1])
-        + (fi[3*i+2] - fd[3*i+2]) * (fi[3*i+2] - fd[3*i+2]);
-    Fn += fd[3*i+0] * fd[3*i+0] + fd[3*i+1] * fd[3*i+1] + fd[3*i+2] * fd[3*i+2];
+    diff1 += (pi[i] - pd[i]) * (pi[i] - pd[i]);
+    norm1 += pd[i] * pd[i];
+    diff2 += (fi[3*i+0] - fd[3*i+0]) * (fi[3*i+0] - fd[3*i+0])
+          + (fi[3*i+1] - fd[3*i+1]) * (fi[3*i+1] - fd[3*i+1])
+          + (fi[3*i+2] - fd[3*i+2]) * (fi[3*i+2] - fd[3*i+2]);
+    norm2 += fd[3*i+0] * fd[3*i+0] + fd[3*i+1] * fd[3*i+1] + fd[3*i+2] * fd[3*i+2];
   }
-  std::cout << std::fixed << std::setprecision(7);
-  std::cout << "Potential @ rank " << mpirank << "   : " << sqrtf(Pd/Pn) << std::endl;
-  std::cout << "Force     @ rank " << mpirank << "   : " << sqrtf(Fd/Fn) << std::endl;
+  MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm1, &norm3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  if (mpirank == 0) {
+    std::cout << "--- FMM vs. direct ---------------" << std::endl;
+    std::cout << std::setw(stringLength) << std::left
+	      << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff3/norm3) << std::endl;
+    if( std::abs(diff3) > 0 ) {
+      std::cout << std::setw(stringLength) << std::left
+	        << "Rel. L2 Error (acc)" << " : " << std::sqrt(diff4/norm4) << std::endl;
+    }
+  }    
 
   delete[] xi;
   delete[] qi;

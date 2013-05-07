@@ -36,11 +36,11 @@ class Args {
   void usage(char * name) {
     fprintf(stderr,
             "Usage: %s [options]\n"
-            "Options:\n"
+            "Option : Description (Default value):\n"
             " --numBodies : Number of bodies (%d)\n"
             " --numTarget : Number of targets for error checking (%d)\n"
             " --ncrit : Number of bodies per leaf cell (%d)\n"
-            " --nspawn : Threshold for splitting both cells during recursion (%d)\n"
+            " --nspawn : Threshold for stopping thread spawning during recursion (%d)\n"
             " --images : Number of periodic image levels (%d)\n"
             " --theta : Multipole acceptance criterion (%f)\n"
             " --mutual [0/1] : Use mutual interaction (%d)\n"
@@ -76,7 +76,7 @@ class Args {
   }
 
  public:
-  Args(int argc, char ** argv) : numBodies(1000000), numTarget(100), NCRIT(16), NSPAWN(1000), IMAGES(0),
+  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), numTarget(100), NCRIT(16), NSPAWN(1000), IMAGES(0),
     THETA(.6), mutual(1), verbose(1), distribution("cube") {
     while (1) {
       int option_index;

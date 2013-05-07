@@ -194,7 +194,9 @@ class LocalEssentialTree : public Partition {
 
 //! Get local essential tree from rank "irank".
   void getLET(Cells &cells, int irank) {
-    startTimer("Get LET");                                      // Start timer
+    std::stringstream event;                                    // Event name
+    event << "Get LET from rank " << irank;                     // Create event name based on irank
+    startTimer(event.str());                                    // Start timer
     for (int i=recvCellCount[irank]-1; i>=0; i--) {             // Loop over receive cells
       C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator of receive cell
       if (C->NCBODY != 0) {                                     //  If cell has bodies
@@ -208,7 +210,7 @@ class LocalEssentialTree : public Partition {
     }                                                           // End loop over receive cells
     cells.resize(recvCellCount[irank]);                         // Resize cell vector for LET
     cells.assign(recvCells.begin()+recvCellDispl[irank],recvCells.begin()+recvCellDispl[irank]+recvCellCount[irank]);
-    stopTimer("Get LET",verbose);                               // Stop timer
+    stopTimer(event.str(),verbose);                             // Stop timer
   }
 
 //! Send bodies

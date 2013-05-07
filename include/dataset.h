@@ -126,9 +126,10 @@ class Dataset {                                                 // Contains all 
 
 //! Read target values from file
   void readTarget(Bodies &bodies, int mpirank) {
-    char fname[256];                                            // File name for saving direct calculation values
-    sprintf(fname,"direct%4.4d",mpirank);                       // Set file name
-    std::ifstream file(fname,std::ios::in | std::ios::binary);  // Open file
+    std::stringstream name;                                     // File name
+    name << "direct" << std::setfill('0') << std::setw(4)       // Set format
+         << mpirank << ".dat";                                  // Create file name for saving direct calculation values
+    std::ifstream file(name.str(),std::ios::in | std::ios::binary);// Open file
     file.seekg(filePosition);                                   // Set position in file
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       file >> B->TRG[0];                                        //  Read data for potential
@@ -142,9 +143,10 @@ class Dataset {                                                 // Contains all 
 
 //! Write target values to file
   void writeTarget(Bodies &bodies, int mpirank) {
-    char fname[256];                                            // File name for saving direct calculation values
-    sprintf(fname,"direct%4.4d",mpirank);                       // Set file name
-    std::ofstream file(fname,std::ios::out | std::ios::app | std::ios::binary);// Open file
+    std::stringstream name;                                     // File name
+    name << "direct" << std::setfill('0') << std::setw(4)       // Set format
+         << mpirank << ".dat";                                  // Create file name for saving direct calculation values
+    std::ofstream file(name.str(),std::ios::out | std::ios::app | std::ios::binary);// Open file
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       file << B->TRG[0] << std::endl;                           //  Write data for potential
       file << B->TRG[1] << std::endl;                           //  Write data for x acceleration
