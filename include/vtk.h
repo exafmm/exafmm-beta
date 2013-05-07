@@ -117,7 +117,7 @@ class vtk3DPlot {
   void setPoints(B_iter B0, B_iter BN) {
     vtkPoints * group = vtkPoints::New();
     group->SetNumberOfPoints(BN-B0);
-    for (B_iter B=B0; B!=BN; ++B) {
+    for (B_iter B=B0; B!=BN; B++) {
       group->SetPoint(B-B0, B->X[0], B->X[1], B->X[2]);
     }
     groups.push_back(group);

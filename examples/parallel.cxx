@@ -45,9 +45,9 @@ int main(int argc, char ** argv) {
 #pragma omp master
 #endif
   if (args.verbose) logger.printTitle("Profiling");
+  logger.startTimer("Total FMM");
   bodies.resize(args.numBodies);
   data.initBodies(bodies, args.distribution, LET.MPIRANK, LET.MPISIZE);
-  logger.startTimer("Total FMM");
   Bounds localBounds = boundbox.getBounds(bodies);
 #if IneJ
   jbodies.resize(args.numBodies);
@@ -81,7 +81,7 @@ int main(int argc, char ** argv) {
   LET.commBodies();
   LET.commCells();
 #if IneJ
-  traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
+  traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   jbodies = bodies;
@@ -131,7 +131,7 @@ int main(int argc, char ** argv) {
     }
     assert( ic == int(icells.size()) );
 #endif
-    traversal.dualTreeTraversal(cells, jcells, cycle, false);
+    traversal.dualTreeTraversal(cells, jcells, cycle);
   }
 #else
   jbodies = bodies;

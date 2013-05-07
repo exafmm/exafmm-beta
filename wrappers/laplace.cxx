@@ -6,19 +6,19 @@
 #include "updownpass.h"
 #include "localessentialtree.h"
 
-extern "C" void FMM(int n, double* x, double* q, double *p, double* f, int periodicflag) {
+extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double *qj, int periodicflag) {
   Args args;
   Bodies bodies, jbodies;
   Cells cells, jcells;
   Logger logger;
   Sort sort;
 
-  args.numBodies = n;
+  args.numBodies = ni;
   args.THETA = 0.6;
   args.NCRIT = 16;
   args.NSPAWN = 1000;
   args.IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
-  args.mutual = 1;
+  args.mutual = 0;
   args.verbose = 1;
   args.distribution = "external";
 
@@ -47,34 +47,47 @@ extern "C" void FMM(int n, double* x, double* q, double *p, double* f, int perio
 #pragma omp master
 #endif
   if (args.verbose) logger.printTitle("Profiling");
-  bodies.resize(n);
+  logger.startTimer("Total FMM");
+  bodies.resize(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0];
-    B->X[1] = x[3*i+1];
-    B->X[2] = x[3*i+2];
-    B->SRC  = q[i];
-    B->TRG[0] =  p[i];
-    B->TRG[1] = -f[3*i+0];
-    B->TRG[2] = -f[3*i+1];
-    B->TRG[3] = -f[3*i+2];
+    B->X[0] = xi[3*i+0];
+    B->X[1] = xi[3*i+1];
+    B->X[2] = xi[3*i+2];
+    B->SRC  = 1;
+    B->TRG[0] = pi[i];
+    B->TRG[1] = fi[3*i+0];
+    B->TRG[2] = fi[3*i+1];
+    B->TRG[3] = fi[3*i+2];
     B->IBODY  = i;
   }
-  logger.startTimer("Total FMM");
-
   Bounds localBounds = boundbox.getBounds(bodies);
+  jbodies.resize(nj);
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    int i = B-jbodies.begin();
+    B->X[0] = xj[3*i+0];
+    B->X[1] = xj[3*i+1];
+    B->X[2] = xj[3*i+2];
+    B->SRC  = qj[i];
+  }
+  localBounds = boundbox.getBounds(jbodies,localBounds);
   Bounds globalBounds = LET.allreduceBounds(localBounds);
   localBounds = LET.partition(bodies,globalBounds);
   bodies = sort.sortBodies(bodies);
   bodies = LET.commBodies(bodies);
+  LET.partition(jbodies,globalBounds);
+  jbodies = sort.sortBodies(jbodies);
+  jbodies = LET.commBodies(jbodies);
   Box box = boundbox.bounds2box(localBounds);
   logger.startPAPI();
   tree.buildTree(bodies, cells, box);
   pass.upwardPass(cells);
-  LET.setLET(cells,localBounds,cycle);
+  tree.buildTree(jbodies, jcells, box);
+  pass.upwardPass(jcells);
+  LET.setLET(jcells,localBounds,cycle);
   LET.commBodies();
   LET.commCells();
-  traversal.dualTreeTraversal(cells, cells, cycle);
+  traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
   for (int irank=1; irank<LET.MPISIZE; irank++) {
     LET.getLET(jcells,(LET.MPIRANK+irank)%LET.MPISIZE);
     traversal.dualTreeTraversal(cells, jcells, cycle);
@@ -97,13 +110,9 @@ extern "C" void FMM(int n, double* x, double* q, double *p, double* f, int perio
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    x[3*i+0] = B->X[0];
-    x[3*i+1] = B->X[1];
-    x[3*i+2] = B->X[2];
-    q[i]     = B->SRC;
-    p[i]     =  B->TRG[0];
-    f[3*i+0] = -B->TRG[1];
-    f[3*i+1] = -B->TRG[2];
-    f[3*i+2] = -B->TRG[3];
+    pi[i]     = B->TRG[0];
+    fi[3*i+0] = B->TRG[1];
+    fi[3*i+1] = B->TRG[2];
+    fi[3*i+2] = B->TRG[3];
   }
 }

@@ -4,14 +4,13 @@
 #include <iomanip>
 #include <iostream>
 
-extern "C" void FMM(int n, double* x, double* q, double *p, double* f, int periodicflag);
+extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double * qj, int periodicflag);
 
-extern "C" void MPI_Shift(double *var, int n, int mpisize, int mpirank) {
+extern "C" void MPI_Shift(double * var, int n, int mpisize, int mpirank) {
   double *buf = new double [n];
   const int isend = (mpirank + 1          ) % mpisize;
   const int irecv = (mpirank - 1 + mpisize) % mpisize;
   MPI_Request sreq, rreq;
-
   MPI_Isend(var, n, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
   MPI_Irecv(buf, n, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
   MPI_Wait(&sreq, MPI_STATUS_IGNORE);
@@ -31,7 +30,6 @@ int main(int argc, char **argv) {
   const double size = 2 * M_PI;
   const int stringLength = 20;
   double *xi = new double [3*N];
-  double *qi = new double [N];
   double *pi = new double [N];
   double *fi = new double [3*N];
   double *pd = new double [N];
@@ -44,23 +42,17 @@ int main(int argc, char **argv) {
     xi[3*i+0] = drand48() * size - M_PI;
     xi[3*i+1] = drand48() * size - M_PI;
     xi[3*i+2] = drand48() * size - M_PI;
-    qi[i] = 1. / N;
     pi[i] = 0;
     fi[3*i+0] = fi[3*i+1] = fi[3*i+2] = 0;
     pd[i] = 0;
     fd[3*i+0] = fd[3*i+1] = fd[3*i+2] = 0;
-    xj[3*i+0] = xi[3*i+0];
-    xj[3*i+1] = xi[3*i+1];
-    xj[3*i+2] = xi[3*i+2];
-    qj[i] = qi[i];
+    xj[3*i+0] = drand48() * size - M_PI;
+    xj[3*i+1] = drand48() * size - M_PI;
+    xj[3*i+2] = drand48() * size - M_PI;
+    qj[i] = 1. / N;
   }
 
-  FMM(N, xi, qi, pi, fi, 0);
-  for (int i=0; i<N; i++) {
-    xj[3*i+0] = xi[3*i+0];
-    xj[3*i+1] = xi[3*i+1];
-    xj[3*i+2] = xi[3*i+2];
-  }
+  FMM(N, xi, pi, fi, N, xj, qj, 0);
   if (mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
   for (int irank=0; irank<mpisize; irank++) {
     if (mpirank==0) std::cout << "Direct loop          : " << irank+1 << "/" << mpisize << std::endl;
@@ -82,9 +74,9 @@ int main(int argc, char **argv) {
         Fz += dz * invR3;
       }
       pd[i] += P;
-      fd[3*i+0] += Fx;
-      fd[3*i+1] += Fy;
-      fd[3*i+2] += Fz;
+      fd[3*i+0] -= Fx;
+      fd[3*i+1] -= Fy;
+      fd[3*i+2] -= Fz;
     }
   }
   double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
@@ -111,7 +103,6 @@ int main(int argc, char **argv) {
   }    
 
   delete[] xi;
-  delete[] qi;
   delete[] pi;
   delete[] fi;
   delete[] pd;

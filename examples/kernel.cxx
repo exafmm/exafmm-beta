@@ -17,7 +17,7 @@ int main() {
   const real_t THETA = 0.5;
   const real_t R = 2 / THETA;
 
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); ++B) {
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     B->X[0] = 2 * drand48();
     B->X[1] = 2 * drand48();
     B->X[2] = 2 * drand48();
@@ -43,7 +43,7 @@ int main() {
   CI->M = 1;
   CI->L = 0;
 #if Cartesian
-  for( int i=1; i<MTERM; ++i ) CJ->M[i] /= CJ->M[0];
+  for (int i=1; i<MTERM; i++) CJ->M[i] /= CJ->M[0];
 #endif
   kernel.M2L(CI,CJ,false);
 
@@ -59,12 +59,12 @@ int main() {
   Ci->M = 1;
   Ci->L = 0;
 #if Cartesian
-  for( int i=1; i<MTERM; ++i ) Cj->M[i] /= Cj->M[0];
+  for (int i=1; i<MTERM; i++) Cj->M[i] /= Cj->M[0];
 #endif
   kernel.M2L(Ci,Cj,false);
 #endif
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); ++B) {
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X[0] = R + 2 + 2 * drand48();
     B->X[1] = R + 2 + 2 * drand48();
     B->X[2] = R + 2 + 2 * drand48();
@@ -75,7 +75,7 @@ int main() {
   Ci->NCBODY = bodies.size();
   kernel.L2P(Ci);
 
-  for (B_iter B=bodies2.begin(); B!=bodies2.end(); ++B) {
+  for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     *B = bodies[B-bodies2.begin()];
     B->TRG = 0;
   }
@@ -83,14 +83,14 @@ int main() {
   Ci->NDBODY = bodies2.size();
   Ci->BODY = bodies2.begin();
   kernel.P2P(Ci,Cj,false);
-  for (B_iter B=bodies2.begin(); B!=bodies2.end(); ++B) {
+  for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     B->TRG /= B->SRC;
   }
 
   std::fstream file;
   file.open("kernel.dat", std::ios::out | std::ios::app);
   double diff = 0, norm = 0;
-  for (B_iter B=bodies.begin(),B2=bodies2.begin(); B!=bodies.end(); ++B,++B2) {
+  for (B_iter B=bodies.begin(),B2=bodies2.begin(); B!=bodies.end(); B++,B2++) {
     diff += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);
     norm += B2->TRG[0] * B2->TRG[0];
   }
