@@ -221,7 +221,7 @@ class BuildTree : public Logger {
     binNode->END = binNode->BEGIN + maxBinNode;                 // Set end pointer
     N0 = buildNodes(bodies, buffer, 0, bodies.size(), binNode, X0, R0);// Build tree recursively
     delete[] binNode->BEGIN;                                    // Deallocate binary tree array
-    stopTimer("Grow tree",printNow);                            // Stop timer
+    stopTimer("Grow tree",verbose);                             // Stop timer
   }
 
 //! Link tree structure
@@ -231,7 +231,7 @@ class BuildTree : public Logger {
     C_iter C0 = cells.begin();                                  // Cell begin iterator
     nodes2cells(N0, C0, C0, C0+1, R0);                          // Convert nodes to cells recursively
     delete N0;                                                  // Deallocate nodes
-    stopTimer("Link tree",printNow);                            // Stop timer
+    stopTimer("Link tree",verbose);                             // Stop timer
   }
 
  public:

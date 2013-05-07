@@ -76,7 +76,7 @@ class UpDownPass : public Kernel, public Logger {
         C->RCRIT *= 10;                                         //   Prevent approximation
       }                                                         //  End loop over top 2 levels of cells
     }                                                           // End if for tree levels
-    stopTimer("Upward pass",printNow);                          // Stop timer
+    stopTimer("Upward pass",verbose);                           // Stop timer
   }
 
 //! Downward pass (L2L, L2P)
@@ -90,7 +90,7 @@ class UpDownPass : public Kernel, public Logger {
       }                                                         // End loop over child cells
       sync_tasks;                                               // Synchronize tasks
     }
-    stopTimer("Downward pass",printNow);                        // Stop timer
+    stopTimer("Downward pass",verbose);                         // Stop timer
   }
 };
 #endif

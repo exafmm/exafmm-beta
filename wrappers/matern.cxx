@@ -5,8 +5,8 @@
 #include "updownpass.h"
 #include "localessentialtree.h"
 
-extern "C" void FMM(int n, double* x, double* q, double *p, double nu, double rho) {
-  Bodies bodies, jbodies;
+extern "C" void FMM(int ni, double* xi, double *pi, int nj, double *xj, double * qj, double nu, double rho) {
+  Bodies bodies(ni), jbodies(nj);
   Cells cells, jcells;
   Sort sort;
 
@@ -21,22 +21,29 @@ extern "C" void FMM(int n, double* x, double* q, double *p, double nu, double rh
   UpDownPass pass(THETA);
   Traversal traversal(NSPAWN,IMAGES);
   LocalEssentialTree LET(IMAGES);
-  boundbox.printNow = LET.MPIRANK == 0;
-  tree.printNow = LET.MPIRANK == 0;
-  pass.printNow = LET.MPIRANK == 0;
-  traversal.printNow = LET.MPIRANK == 0;
-  LET.printNow = LET.MPIRANK == 0;
+  boundbox.verbose = LET.MPIRANK == 0;
+  tree.verbose = LET.MPIRANK == 0;
+  pass.verbose = LET.MPIRANK == 0;
+  traversal.verbose = LET.MPIRANK == 0;
+  LET.verbose = LET.MPIRANK == 0;
   traversal.NU = pass.NU = nu;
   traversal.RHO = pass.RHO = rho;
 
-  bodies.resize(n);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0];
-    B->X[1] = x[3*i+1];
-    B->X[2] = x[3*i+2];
-    B->SRC  = q[i];
-    B->TRG[0] =  p[i];
+    B->X[0] = xi[3*i+0];
+    B->X[1] = xi[3*i+1];
+    B->X[2] = xi[3*i+2];
+    B->TRG[0] =  pi[i];
+    B->IBODY  = i;
+  }
+
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    int i = B-jbodies.begin();
+    B->X[0] = xj[3*i+0];
+    B->X[1] = xj[3*i+1];
+    B->X[2] = xj[3*i+2];
+    B->SRC =  qj[i];
     B->IBODY  = i;
   }
 

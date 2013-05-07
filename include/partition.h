@@ -143,7 +143,7 @@ class Partition : public MyMPI, public Logger {
       assert(0 <= B->IPROC && B->IPROC < MPISIZE);
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
-    stopTimer("Partition",printNow);                            // Stop timer
+    stopTimer("Partition",verbose);                             // Stop timer
     return local;
   }
 
@@ -153,7 +153,7 @@ class Partition : public MyMPI, public Logger {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->ICELL = B->IPROC;                                      //  Do this to sortaccroding to IPROC
     }                                                           // End loop over bodies
-    stopTimer("Unpartition", printNow);                         // Stop timer
+    stopTimer("Unpartition",verbose);                           // Stop timer
   }
 };
 #endif

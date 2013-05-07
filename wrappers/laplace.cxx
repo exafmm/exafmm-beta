@@ -21,11 +21,11 @@ extern "C" void FMM(int n, double* x, double* q, double *p, double* f, int perio
   UpDownPass pass(THETA);
   Traversal traversal(NSPAWN,IMAGES);
   LocalEssentialTree LET(IMAGES);
-  boundbox.printNow = LET.MPIRANK == 0;
-  tree.printNow = LET.MPIRANK == 0;
-  pass.printNow = LET.MPIRANK == 0;
-  traversal.printNow = LET.MPIRANK == 0;
-  LET.printNow = LET.MPIRANK == 0;
+  boundbox.verbose = LET.MPIRANK == 0;
+  tree.verbose = LET.MPIRANK == 0;
+  pass.verbose = LET.MPIRANK == 0;
+  traversal.verbose = LET.MPIRANK == 0;
+  LET.verbose = LET.MPIRANK == 0;
 
   bodies.resize(n);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {

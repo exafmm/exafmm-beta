@@ -178,7 +178,7 @@ class Traversal : public Kernel, public Logger {
       cycle *= 3;                                               //  Increase center cell size three times
       Cj0 = C0;                                                 //  Reset Cj0 back
     }                                                           // End loop over sublevels of tree
-    stopTimer("Traverse periodic",printNow);                    // Stop timer
+    stopTimer("Traverse periodic",verbose);                     // Stop timer
   }
 
  protected:
@@ -207,7 +207,7 @@ class Traversal : public Kernel, public Logger {
       }                                                         //  End loop over x periodic direction
       traversePeriodic(cycle);                                  //  Traverse tree for periodic images
     }                                                           // End if for periodic boundary condition
-    stopTimer("Traverse",printNow);                             // Stop timer
+    stopTimer("Traverse",verbose);                              // Stop timer
     writeTrace();
   }
 

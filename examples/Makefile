@@ -1,15 +1,20 @@
 include ../Makefile.include
 
-#LFLAGS	+= -DMANY
+#LFLAGS	+= -DIneJ # Different target and source points
 
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out --numBodies 10000
-#	numactl --interleave=all ./a.out
+	./a.out
 
 parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	mpirun -np 8 ./a.out
+
+scalability: serial.o $(OBJECTS)
+	$(CXX) $? $(LFLAGS)
+	for N in 10000 20000 50000 100000 200000 500000 1000000; do \
+        ./a.out --numBodies $$N --verbose 0; echo; \
+	done
 
 kernel: kernel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)

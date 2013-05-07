@@ -14,6 +14,7 @@ struct option long_options[] = {
   {"images",       1, 0, 'i'},
   {"theta",        1, 0, 'o'},
   {"mutual",       1, 0, 'm'},
+  {"verbose",      1, 0, 'v'},
   {"distribution", 1, 0, 'd'},
   {"help",         0, 0, 'h'},
   {0, 0, 0, 0}
@@ -28,6 +29,7 @@ class Args {
   int IMAGES;
   double THETA;
   int mutual;
+  int verbose;
   const char * distribution;
 
  private:
@@ -41,7 +43,8 @@ class Args {
             " --nspawn : Threshold for splitting both cells during recursion (%d)\n"
             " --images : Number of periodic image levels (%d)\n"
             " --theta : Multipole acceptance criterion (%f)\n"
-            " --mutual [0/1] :  use mutual interaction (%d)\n"
+            " --mutual [0/1] : Use mutual interaction (%d)\n"
+	    " --verbose [0/1] : Print information to screen (%d)\n"
             " --distribution [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n"
             " --help : Show this help document\n",
             name,
@@ -52,6 +55,7 @@ class Args {
             IMAGES,
             THETA,
             mutual,
+	    verbose,
             distribution);
   }
 
@@ -73,7 +77,7 @@ class Args {
 
  public:
   Args(int argc, char ** argv) : numBodies(1000000), numTarget(100), NCRIT(16), NSPAWN(1000), IMAGES(0),
-                                 THETA(.6), mutual(1), distribution("cube") {
+    THETA(.6), mutual(1), verbose(1), distribution("cube") {
     while (1) {
       int option_index;
       int c = getopt_long(argc, argv, "", long_options, &option_index);
@@ -100,6 +104,9 @@ class Args {
       case 'm':
         mutual = atoi(optarg);
         break;
+      case 'v':
+	verbose= atoi(optarg);
+	break;
       case 'd':
         distribution = parse(optarg);
         break;
@@ -114,22 +121,29 @@ class Args {
   }
 
   void print(int stringLength, int P) {
-    std::cout << std::setw(stringLength) << std::left           // Set format
-	      << "numBodies" << " : " << numBodies << std::endl // Print numBodies  
-              << std::setw(stringLength)                        // Set format
-              << "P" << " : " << P << std::endl                 // Print P
-              << std::setw(stringLength)                        // Set format
-              << "THETA" << " : " << THETA << std::endl         // Print THETA
-              << std::setw(stringLength)                        // Set format
-              << "NCRIT" << " : " << NCRIT << std::endl         // Print NCRIT
-              << std::setw(stringLength)                        // Set format
-              << "NSPAWN" << " : " << NSPAWN << std::endl       // Print NSPAWN
-              << std::setw(stringLength)                        // Set format
-              << "IMAGES" << " : " << IMAGES << std::endl       // Print IMAGES
-              << std::setw(stringLength)                        // Set format
-              << "mutual" << " : " << mutual << std::endl       // Print mutual
-              << std::setw(stringLength)                        // Set format
-              << "distribution" << " : " << distribution << std::endl;// Print distribution
+    if (verbose) {
+      std::cout << std::setw(stringLength) << std::left         // Set format
+		<< "numBodies" << " : " << numBodies << std::endl // Print numBodies  
+		<< std::setw(stringLength)                      // Set format
+		<< "P" << " : " << P << std::endl               // Print P
+		<< std::setw(stringLength)                      // Set format
+		<< "THETA" << " : " << THETA << std::endl       // Print THETA
+		<< std::setw(stringLength)                      // Set format
+		<< "NCRIT" << " : " << NCRIT << std::endl       // Print NCRIT
+		<< std::setw(stringLength)                      // Set format
+		<< "NSPAWN" << " : " << NSPAWN << std::endl     // Print NSPAWN
+		<< std::setw(stringLength)                      // Set format
+		<< "IMAGES" << " : " << IMAGES << std::endl     // Print IMAGES
+		<< std::setw(stringLength)                      // Set format
+		<< "mutual" << " : " << mutual << std::endl     // Print mutual
+		<< std::setw(stringLength)                      // Set format
+		<< "verbose" << " : " << verbose << std::endl   // Print verbose
+		<< std::setw(stringLength)                      // Set format
+		<< "distribution" << " : " << distribution << std::endl;// Print distribution
+    } else {
+      std::cout << std::setw(stringLength) << std::left         // Set format
+		<< "numBodies" << " : " << numBodies << std::endl; // Print numBodies  
+    }
   }
 };
 #endif

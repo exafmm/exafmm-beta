@@ -3,6 +3,8 @@
 #include <vector>
 #if VTK
 #include "vtk.h"
+#else
+#error Turn on VTK for this test
 #endif
 #if COMkernel
 #error Turn off COMkernel for this test
@@ -89,7 +91,6 @@ int main() {
   file.open("kernel.dat", std::ios::out | std::ios::app);
   double diff = 0, norm = 0;
   for (B_iter B=bodies.begin(),B2=bodies2.begin(); B!=bodies.end(); ++B,++B2) {
-    std::cout << B->TRG[0] << " " << B2->TRG[0] << std::endl;
     diff += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);
     norm += B2->TRG[0] * B2->TRG[0];
   }
@@ -108,7 +109,10 @@ int main() {
     int p;
     double e;
     std::stringstream stream(line);
-    stream >> p >>  e;
+    stream >> p >> e;
+#if Cartesian
+    p++;
+#endif
     order.push_back(p);
     error.push_back(log10(e));
     bound.push_back(log10(std::pow(THETA,p)));

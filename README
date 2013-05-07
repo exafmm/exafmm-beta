@@ -13,6 +13,8 @@ To run the FMM wrapper example:
 cd examples
 make wrapper
 
+To get the list of command line options:
+./a.out --help
 
 2. Where are the important files?
 Most of the source code is in the directory "include" in the form of header files.

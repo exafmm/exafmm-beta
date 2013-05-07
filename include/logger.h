@@ -46,7 +46,7 @@ class Logger {
  public:
   int stringLength;                                             //!< Max length of event name
   int decimal;                                                  //!< Decimal precision
-  bool printNow;                                                //!< Switch to print timings
+  bool verbose;                                                 //!< Print to screen
 
  private:
 //! Timer function
@@ -65,7 +65,7 @@ class Logger {
 #endif
     stringLength(20),                                           // Max length of event name
     decimal(7),                                                 // Decimal precision
-    printNow(false) {                                           // Don't print timings by default
+    verbose(false) {                                            // Don't print timings by default
     pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
   }
 //! Destructor
