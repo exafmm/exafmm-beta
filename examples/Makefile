@@ -10,7 +10,7 @@ parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	mpirun -np 8 ./a.out
 
-scalability: serial.o $(OBJECTS)
+complexity: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	for N in 10000 20000 50000 100000 200000 500000 1000000; do \
         ./a.out --numBodies $$N --verbose 0; echo; \

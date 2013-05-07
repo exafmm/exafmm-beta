@@ -13,8 +13,8 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   for (int i=0; i<ni; i++) {
     kreal_t pot = 0; 
     for (int j=0; j<nj; j++) {
-      vec3 dX = (Bi[i].X - Bj[j].X - Xperiodic) / RHO;
-      real_t R = std::sqrt(2 * NU * norm(dX));
+      vec3 dX = (Bi[i].X - Bj[j].X - Xperiodic);
+      real_t R = std::sqrt(2 * NU * norm(dX)) / RHO;
       if (R != 0) {
         real_t phi = Bi[i].SRC * Bj[j].SRC * std::pow(R,NU) * cyl_bessel_k(NU,R) * coef;
         pot += phi;
@@ -36,8 +36,8 @@ void Kernel::P2P(C_iter C) const {
   for (int i=0; i<n; i++) {
     kreal_t pot = 0;
     for (int j=i; j<n; j++) {
-      vec3 dX = (B[i].X - B[j].X) / RHO;
-      real_t R = std::sqrt(2 * NU * norm(dX));
+      vec3 dX = B[i].X - B[j].X;
+      real_t R = std::sqrt(2 * NU * norm(dX)) / RHO;
       if (R != 0) {
         real_t phi = B[i].SRC * B[j].SRC * std::pow(R,NU) * cyl_bessel_k(NU,R) * coef;
         pot += phi;

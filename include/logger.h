@@ -32,7 +32,6 @@ class Logger {
  typedef std::map<pthread_t,int>                ThreadMap;      //!< Map of pthread id to thread id
 
  private:
-  std::ofstream   timerFile;                                    //!< File ID to store log
   Timer           beginTimer;                                   //!< Timer base value
   Timer           timer;                                        //!< Timings of all events
   Traces          traces;                                       //!< Traces for all events
@@ -59,8 +58,7 @@ class Logger {
 
  public:
 //! Constructor
-  Logger() : timerFile("time.dat"),                             // Open timer log file
-    beginTimer(), timer(), traces(), mutex(),                   // Initializing class variables (empty)
+  Logger() : beginTimer(), timer(), traces(), mutex(),          // Initializing class variables (empty)
 #if PAPI
     PAPIEventSet(PAPI_NULL),                                    // Initializing PAPI event set
 #endif
@@ -68,10 +66,6 @@ class Logger {
     decimal(7),                                                 // Decimal precision
     verbose(false) {                                            // Don't print timings by default
     pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
-  }
-//! Destructor
-  ~Logger() {
-    timerFile.close();                                          // Close timer log file
   }
 
 //! Print message to standard output
@@ -106,10 +100,13 @@ class Logger {
 
 //! Write timings of all events
   inline void writeTime() {
+    std::ofstream timerFile;                                    // Timer log file
+    timerFile.open("time.dat", std::ios::out | std::ios::app);  // Open timer log file
     for (T_iter E=timer.begin(); E!=timer.end(); E++) {         // Loop over all events
       timerFile << std::setw(stringLength) << std::left         //  Set format
         << E->first << " " << E->second << std::endl;           //  Print event and timer
     }                                                           // End loop over all events
+    timerFile.close();                                          // Close timer log file
   }
 
 //! Erase all events in timer

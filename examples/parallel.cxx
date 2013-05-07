@@ -25,9 +25,9 @@ int main(int argc, char ** argv) {
   UpDownPass pass(args.THETA);
   Traversal traversal(args.NSPAWN,args.IMAGES);
   LocalEssentialTree LET(args.IMAGES);
+  args.numBodies /= LET.MPISIZE;
   logger.verbose = LET.MPIRANK == 0;
   args.verbose &= logger.verbose;
-  args.numBodies /= LET.MPISIZE;
   if (args.verbose) {
     boundbox.verbose = true;
     tree.verbose = true;

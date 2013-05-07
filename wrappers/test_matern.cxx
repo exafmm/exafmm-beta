@@ -8,9 +8,9 @@
 using boost::math::cyl_bessel_k;
 using boost::math::tgamma;
 
-extern "C" void FMM(int n, double* x, double* q, double *p, double nu, double rho);
+extern "C" void FMM(int ni, double * xi, double * pi, int nj, double * xj, double * qj, double nu, double rho);
 
-extern "C" void MPI_Shift(double *var, int n, int mpisize, int mpirank) {
+extern "C" void MPI_Shift(double * var, int n, int mpisize, int mpirank) {
   double *buf = new double [n];
   const int isend = (mpirank + 1          ) % mpisize;
   const int irecv = (mpirank - 1 + mpisize) % mpisize;
@@ -30,12 +30,13 @@ int main(int argc, char **argv) {
   int mpisize, mpirank;
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
-  const int N = 10000;
+  const int N = 10000 / mpisize;
   const double size = 2 * M_PI;
+  const int stringLength = 20;
   const double nu = 1.5;
   const double rho = 10;
+  const double coef = 1 / (std::pow(2,nu-1) * tgamma(nu));
   double *xi = new double [3*N];
-  double *qi = new double [N];
   double *pi = new double [N];
   double *pd = new double [N];
   double *xj = new double [3*N];
@@ -46,26 +47,20 @@ int main(int argc, char **argv) {
     xi[3*i+0] = drand48() * size - M_PI;
     xi[3*i+1] = drand48() * size - M_PI;
     xi[3*i+2] = drand48() * size - M_PI;
-    qi[i] = 1. / N;
     pi[i] = 0;
     pd[i] = 0;
-    xj[3*i+0] = xi[3*i+0];
-    xj[3*i+1] = xi[3*i+1];
-    xj[3*i+2] = xi[3*i+2];
-    qj[i] = qi[i];
+    xj[3*i+0] = drand48() * size - M_PI;
+    xj[3*i+1] = drand48() * size - M_PI;
+    xj[3*i+2] = drand48() * size - M_PI;
+    qj[i] = 1. / N;
   }
 
-  FMM(N, xi, qi, pi, nu, rho);
-  for (int i=0; i<N; i++) {
-    xj[3*i+0] = xi[3*i+0];
-    xj[3*i+1] = xi[3*i+1];
-    xj[3*i+2] = xi[3*i+2];
-  }
+  FMM(N, xi, pi, N, xj, qj, nu, rho);
+  if (mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
   for (int irank=0; irank<mpisize; irank++) {
     if (mpirank==0) std::cout << "Direct loop          : " << irank+1 << "/" << mpisize << std::endl;
     MPI_Shift(xj, 3*N, mpisize, mpirank);
     MPI_Shift(qj, N, mpisize, mpirank);
-    double coef = 1 / (std::pow(2,nu-1) * tgamma(nu));
     for (int i=0; i<100; i++) {
       double P = 0;
       for (int j=0; j<N; j++) {
@@ -73,22 +68,27 @@ int main(int argc, char **argv) {
         double dy = xi[3*i+1] - xj[3*j+1];
         double dz = xi[3*i+2] - xj[3*j+2];
         double R = std::sqrt(2 * nu * (dx * dx + dy * dy + dz * dz)) / rho;
-        if( irank == mpisize-1 && i == j ) P += qj[j];
-        else P += qj[j] * std::pow(R,nu) * cyl_bessel_k(nu,R) * coef;
+        double phi = std::pow(R,nu) * cyl_bessel_k(nu,R) * coef;
+        if( irank == mpisize-1 && i == j ) phi = 1;
+        P += qj[j] * phi;
       }
       pd[i] += P;
     }
   }
-  double Pd = 0, Pn = 0;
+  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   for (int i=0; i<100; i++) {
-    Pd += (pi[i] - pd[i]) * (pi[i] - pd[i]);
-    Pn += pd[i] * pd[i];
+    diff1 += (pi[i] - pd[i]) * (pi[i] - pd[i]);
+    norm1 += pd[i] * pd[i];
   }
-  std::cout << std::fixed << std::setprecision(7);
-  std::cout << "Potential @ rank " << mpirank << "   : " << sqrtf(Pd/Pn) << std::endl;
+  MPI_Reduce(&diff1, &diff2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm1, &norm2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  if (mpirank == 0) {
+    std::cout << "--- FMM vs. direct ---------------" << std::endl;
+    std::cout << std::setw(stringLength) << std::left
+	      << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff2/norm2) << std::endl;
+  }    
 
   delete[] xi;
-  delete[] qi;
   delete[] pi;
   delete[] pd;
   delete[] xj;
