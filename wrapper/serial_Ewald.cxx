@@ -5,15 +5,14 @@ extern "C" {
 }
 
 extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
-  int nj, double* xj, double* qj, double, int tblno, double size, int periodicflag) {
+				  int nj, double* xj, double* qj, double, int tblno, double size, int periodicflag,
+                                  int ksize, double alpha) {
   std::cout << "tblno: " << tblno << std::endl;
   IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 5;
   THETA = .5;
   Bodies bodies(ni),jbodies(nj);
   Cells cells,jcells;
   SerialFMM<Laplace> FMM;
-  real ksize = 11;
-  real alpha = 1.0/.289108;
   real sigma = .25 / M_PI;
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
