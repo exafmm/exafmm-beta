@@ -181,10 +181,8 @@ class Traversal : public Kernel, public Logger {
     stopTimer("Traverse periodic",verbose);                     // Stop timer
   }
 
- protected:
  public:
   Traversal(int nspawn, int images) : NSPAWN(nspawn), IMAGES(images), NP2P(0), NM2L(0) {}
-  ~Traversal() {}
 
 //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversal(Cells &icells, Cells &jcells, real_t cycle, bool mutual=false) {

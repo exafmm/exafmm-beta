@@ -1,5 +1,5 @@
 help:
-	@echo "Help documentation will be available soon...\n"
+	@echo "Please read the README file in the root directory."
 clean:
 	find . -name "*.o" -o -name "*.out*" | xargs rm -f
 cleandat:

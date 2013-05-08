@@ -92,8 +92,6 @@ class Dataset {                                                 // Contains all 
  public:
 //! Constructor
   Dataset() : filePosition(0) {}
-//! Destructor
-  ~Dataset() {}
 
 //! Initialize target values
   void initTarget(Bodies &bodies) {

@@ -32,7 +32,6 @@ class BoundBox : public Logger {
 
  public:
   BoundBox(int nspawn) : NSPAWN(nspawn) {}
-  ~BoundBox() {}
 
   // ! Get Xmin and Xmax of domain
   Bounds getBounds(Bodies bodies) {

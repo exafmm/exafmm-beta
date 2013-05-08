@@ -236,7 +236,6 @@ class BuildTree : public Logger {
 
  public:
   BuildTree(int ncrit, int nspawn) : NCRIT(ncrit), NSPAWN(nspawn), MAXLEVEL(0) {}
-  ~BuildTree() {}
 
 //! Build tree structure top down
   void buildTree(Bodies &bodies, Cells &cells, Box box) {

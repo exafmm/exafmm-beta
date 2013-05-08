@@ -190,6 +190,7 @@ int main(int argc, char ** argv) {
   MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   if(args.verbose) {
+    logger.printTitle("FMM vs. direct");
     logger.printError(diff3, norm3, diff4, norm4);
     tree.printTreeData(cells);
     traversal.printTraversalData();

@@ -1,5 +1,7 @@
-1. Quick start guide
-There is no need to configure or CMake. Just do the following.
+--- 1. Quick start guide
+There is no need to configure or CMake.
+You may need to change the CXX command in Makefile.include.
+Then do the following.
 
 To run the serial FMM example:
 cd examples
@@ -16,14 +18,15 @@ make wrapper
 To get the list of command line options:
 ./a.out --help
 
-2. Where are the important files?
+
+--- 2. Where are the important files?
 Most of the source code is in the directory "include" in the form of header files.
 Different versions of P2M,M2M,M2L,L2L,L2P,P2P kernel implementations are in "kernels".
 File names and variable names are self-explanatory, and every line is commented.
 The best documentation is most likely the code itself.
 
 
-3. What's in the directory "gpu"?
+--- 3. What's in the directory "gpu"?
 "gpu" is a completely independent code at the moment.
 It will be integrated into the main code soon.
 To run it:
@@ -31,7 +34,7 @@ cd gpu
 make
 
 
-4. What's in Makefile.include?
+--- 4. What's in Makefile.include?
 This file is included from each Makefile in all subdirectories.
 Most options of exafmm can be controlled from this file.
 
@@ -42,7 +45,7 @@ CXX : Type of compiler and options
 LFLAGS : Linker options and preprocessor options (see comments)
 
 
-5. Why is there a CMakeLists.txt?
+--- 5. Why is there a CMakeLists.txt?
 This project is not yet large enough to justify the use of CMake,
 but we are just testing a few features of CMake.
 You probably don't want to use this feature.

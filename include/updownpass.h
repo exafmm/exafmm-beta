@@ -34,10 +34,10 @@ class UpDownPass : public Kernel, public Logger {
   }
 
 //! Recursive call for upward pass
-  void upwardRecursion(C_iter C, C_iter C0) {
+  void postOrderTraversal(C_iter C, C_iter C0) {
     spawn_tasks {                                               // Initialize tasks
       for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-	spawn_task0(upwardRecursion(CC, C0));                   //  Recursive call with new task
+	spawn_task0(postOrderTraversal(CC, C0));                //  Recursive call with new task
       }                                                         // End loop over child cells
       sync_tasks;                                               // Synchronize tasks
     }
@@ -49,12 +49,12 @@ class UpDownPass : public Kernel, public Logger {
   }
 
 //! Recursive call for downward pass
-  void downwardRecursion(C_iter C, C_iter C0) const {
+  void preOrderTraversal(C_iter C, C_iter C0) const {
     L2L(C,C0);                                                  // L2L kernel
     L2P(C);                                                     // L2P kernel
     spawn_tasks {                                               // Initialize tasks
       for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-	spawn_task0(downwardRecursion(CC, C0));                 //  Recursive call with new task
+	spawn_task0(preOrderTraversal(CC, C0));                 //  Recursive call with new task
       }                                                         // End loop over chlid cells
       sync_tasks;                                               // Synchronize tasks
     }
@@ -62,13 +62,12 @@ class UpDownPass : public Kernel, public Logger {
 
  public:
   UpDownPass(real_t theta) : THETA(theta) {}
-  ~UpDownPass() {}
 
 //! Upward pass (P2M, M2M)
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");                                  // Start timer
     C_iter C0 = cells.begin();                                  // Set iterator of target root cell
-    upwardRecursion(C0, C0);                                    // Recursive call for upward pass
+    postOrderTraversal(C0, C0);                                 // Recursive call for upward pass
     real_t c = (1 - THETA) * (1 - THETA) / std::pow(THETA,P+2) / std::pow(std::abs(C0->M[0]),1.0/3); // Root coefficient
     setRcrit(C0, C0, c);                                        // Error optimization of Rcrit
     if( cells.size() > 9 ) {                                    // If tree has more than 2 levels
@@ -86,7 +85,7 @@ class UpDownPass : public Kernel, public Logger {
     L2P(C0);                                                    // If root is the only cell do L2P
     spawn_tasks {                                               // Initialize tasks
       for (C_iter CC=C0+C0->CHILD; CC!=C0+C0->CHILD+C0->NCHILD; CC++) {// Loop over child cells
-	spawn_task0(downwardRecursion(CC, C0));                 //  Recursive call for downward pass
+	spawn_task0(preOrderTraversal(CC, C0));                 //  Recursive call for downward pass
       }                                                         // End loop over child cells
       sync_tasks;                                               // Synchronize tasks
     }

@@ -79,6 +79,8 @@ SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx ../kernels/$(EQUATION)P2P$
 OBJECTS	= $(SOURCES:.cxx=.o)
 endif
 
+MAKEFLAGS += --no-print-directory
+
 .cxx.o  :
 	$(CXX) -c $^ -o $@ $(LFLAGS)
 .cu.o   :

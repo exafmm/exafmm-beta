@@ -3,8 +3,6 @@
 #include <vector>
 #if VTK
 #include "vtk.h"
-#else
-#error Turn on VTK for this test
 #endif
 #if COMkernel
 #error Turn off COMkernel for this test
