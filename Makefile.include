@@ -1,8 +1,8 @@
 .SUFFIXES: .cxx .cu .o
 
 ### choose kernel
-EQUATION = Laplace
-#EQUATION = Matern
+#EQUATION = Laplace
+EQUATION = Matern
 #EQUATION = Yukawa (not available yet)
 #EQUATION = Helmholtz (not available yet)
 #EQUATION = Stokes (not available yet)
