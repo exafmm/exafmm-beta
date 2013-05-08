@@ -34,4 +34,4 @@ convergence: kernel.cxx $(SOURCES)
 # Ewald vs. periodic FMM
 ewald: ewald.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out --numBodies 10000
+	./a.out --numBodies 1000 --theta .5 --images 3

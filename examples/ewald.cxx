@@ -4,6 +4,7 @@
 #include "dataset.h"
 #include "ewald.h"
 #include "logger.h"
+#include "sort.h"
 #include "traversal.h"
 #include "updownpass.h"
 #if VTK
@@ -16,9 +17,10 @@ int main(int argc, char ** argv) {
   Cells cells;
   Dataset data;
   Logger logger;
+  Sort sort;
 
   const real_t ksize = 11.;
-  const real_t alpha = .2;
+  const real_t alpha = .1;
   const real_t sigma = .25 / M_PI;
   const real_t theta = .5;
   const real_t cycle = 100.;
@@ -68,23 +70,23 @@ int main(int argc, char ** argv) {
   logger.resetTimer();
 #if 1
   Bodies bodies2 = bodies;
-  data.initTarget(bodies2);
+  data.initTarget(bodies);
   logger.startTimer("Total Ewald");
+  ewald.wavePart(bodies);
   ewald.realPart(cells,cells);
-  ewald.wavePart(bodies2);
   logger.stopTimer("Total Ewald", args.verbose);
 #else
   Bodies jbodies = bodies;
   if (int(bodies.size()) > args.numTarget) data.sampleBodies(bodies, args.numTarget);
   Bodies bodies2 = bodies;
-  data.initTarget(bodies2);
+  data.initTarget(bodies);
   logger.startTimer("Total Direct");
-  traversal.direct(bodies2, jbodies, cycle);
-  traversal.normalize(bodies2);
+  traversal.direct(bodies, jbodies, cycle);
+  traversal.normalize(bodies);
   logger.stopTimer("Total Direct", args.verbose);
 #endif
   double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  data.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
+  ewald.evalError(bodies2, bodies, diff1, norm1, diff2, norm2);
   if (args.verbose) {
     logger.printTitle("FMM vs. Ewald");
     logger.printError(diff1, norm1, diff2, norm2);
