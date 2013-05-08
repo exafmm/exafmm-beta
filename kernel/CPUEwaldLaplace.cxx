@@ -126,6 +126,7 @@ void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {         // Ewald wave pa
     for( int d=0; d<3; d++ ) B->TRG[d+1] *= scale;
   }
 
+#if 0
   vect dipole = 0;
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     dipole += (B->X - R0) * B->SRC;
@@ -137,4 +138,5 @@ void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {         // Ewald wave pa
       B->TRG[d+1] += coef * dipole[d];
     }
   }
+#endif
 }
