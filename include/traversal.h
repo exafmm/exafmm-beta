@@ -158,6 +158,9 @@ class Traversal : public Kernel, public Logger {
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
+#if Cartesian
+      for (int i=1; i<MTERM; i++) Ci->M[i] *= Ci->M[0];         //  Normalize multipole expansion coefficients
+#endif
       Cj0 = pcells.begin();                                     //  Redefine Cj0 for M2M
       C_iter Cj = Cj0;                                          //  Iterator of periodic neighbor cells
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
@@ -165,8 +168,8 @@ class Traversal : public Kernel, public Logger {
           for (int iz=-1; iz<=1; iz++, Cj++) {                  //    Loop over z periodic direction
             if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
               Cj->X[0] = Ci->X[0] + ix * cycle;                 //      Set new x coordinate for periodic image
-              Cj->X[1] = Ci->X[0] + iy * cycle;                 //      Set new y cooridnate for periodic image
-              Cj->X[2] = Ci->X[0] + iz * cycle;                 //      Set new z coordinate for periodic image
+              Cj->X[1] = Ci->X[1] + iy * cycle;                 //      Set new y cooridnate for periodic image
+              Cj->X[2] = Ci->X[2] + iz * cycle;                 //      Set new z coordinate for periodic image
               Cj->M    = Ci->M;                                 //      Copy multipoles to new periodic image
             }                                                   //     Endif for periodic center cell
           }                                                     //    End loop over z periodic direction
@@ -175,9 +178,15 @@ class Traversal : public Kernel, public Logger {
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
       setCenter(Ci,Cj0);                                        //  Set center of mass for periodic parent
       M2M(Ci,Cj0);                                              //  Evaluate periodic M2M kernels for this sublevel
+#if Cartesian
+      for (int i=1; i<MTERM; i++) Ci->M[i] /= Ci->M[0];         //  Normalize multipole expansion coefficients
+#endif
       cycle *= 3;                                               //  Increase center cell size three times
       Cj0 = C0;                                                 //  Reset Cj0 back
     }                                                           // End loop over sublevels of tree
+#if Cartesian
+    Ci0->L /= Ci0->M[0];                                        // Normalize local expansion coefficients
+#endif
     stopTimer("Traverse periodic",verbose);                     // Stop timer
   }
 

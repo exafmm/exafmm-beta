@@ -18,7 +18,7 @@ class Dataset {                                                 // Contains all 
 #if 0
       B->SRC = (drand48() - .5) / bodies.size() / mpisize;      //  Initialize mass/charge
 #else
-      B->SRC = 1. / bodies.size() / mpisize;                    //  Initialize mass/charge
+      B->SRC = 2. / bodies.size() / mpisize;                    //  Initialize mass/charge
 #endif
     }                                                           // End loop over bodies
   }
