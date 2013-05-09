@@ -5,8 +5,9 @@ extern "C" {
 }
 
 extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
-  int nj, double* xj, double* qj, double, int tblno, double size, int periodicflag) {
-  std::cout << "tblno: " << tblno << std::endl;
+  int nj, double* xj, double* qj, double, int tblno, double size, int periodicflag,
+  int ksize, double alpha) {
+  std::cout << "NEW tblno: " << tblno << std::endl;
   IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 5;
   THETA = .5;
   Bodies bodies(ni),jbodies(nj);
@@ -64,20 +65,28 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   FMM.finalize();
 
 #if 1
+  // dipole correction.
+  double dipole[3]={0.0,0.0,0.0};
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+    for( int d=0; d!=3; ++d ) {
+      dipole[d] += (B->X[d] - size/2 ) * B->SRC;
+    }
+  }
+  double coef = 4*M_PI / (3 * size  * size  * size );
+  double coefP = coef*(dipole[0] * dipole[0] + dipole[1] * dipole[1] + dipole[2] * dipole[2])/bodies.size();
+  double coefF[3] = {coef*dipole[0], coef*dipole[1], coef*dipole[2]};
+
+  // sending the data back.
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
-//    xi[3*i+0] = B->X[0];
-//    xi[3*i+1] = B->X[1];
-//    xi[3*i+2] = B->X[2];
-//    qi[i]     = B->SRC;
     switch (tblno) {
     case 0 :
-      fi[3*i+0] = -B->SRC * B->TRG[1];
-      fi[3*i+1] = -B->SRC * B->TRG[2];
-      fi[3*i+2] = -B->SRC * B->TRG[3];
+      fi[3*i+0] = -B->SRC * (B->TRG[1] - coefF[0]);
+      fi[3*i+1] = -B->SRC * (B->TRG[2] - coefF[1]);
+      fi[3*i+2] = -B->SRC * (B->TRG[3] - coefF[2]);
       break;
     case 1 :
-      fi[3*i+0] = 0.5 * B->SRC * B->TRG[0];
+      fi[3*i+0] = 0.5 * (B->SRC * B->TRG[0] - coefP);
       break;
     }
   }
@@ -119,7 +128,6 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
     }
     break;
   }
-#endif
   // This is the correction factor from FMM to MD Ewald.
   double fc[3];
   for( int d=0; d!=3; ++d ) fc[d]=0;
@@ -140,6 +148,7 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
                 * (fc[0] * fc[0] + fc[1] * fc[1] + fc[2] * fc[2]) / ni;
     }   
   }
+#endif
 }
 
 /*
