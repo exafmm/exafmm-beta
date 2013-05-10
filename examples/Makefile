@@ -5,7 +5,7 @@ include ../Makefile.include
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out --numBodies 1000
+	./a.out
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
