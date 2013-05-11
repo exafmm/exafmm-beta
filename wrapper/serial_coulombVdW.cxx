@@ -1,12 +1,15 @@
 #include "serialfmm.h"
+typedef real              realTyp; // Real Type per Kerenl setup. real variable overwritten in md.h  
 extern "C" {
 #include "md.h"
 #include "vtgrapeproto.h"
 }
 
-extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
-  int nj, double* xj, double* qj, double, int tblno, double size, int periodicflag,
-  int ksize, double alpha) {
+#define realTyp float
+
+extern "C" void FMMcalccoulomb_ij(int ni, realTyp* xi, realTyp* qi, realTyp* fi,
+  int nj, realTyp* xj, realTyp* qj, realTyp, int tblno, realTyp size, int periodicflag,
+  int ksize, realTyp alpha) {
   std::cout << "NEW tblno: " << tblno << std::endl;
   IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 5;
   THETA = .5;
@@ -66,15 +69,15 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
 
 #if 1
   // dipole correction.
-  double dipole[3]={0.0,0.0,0.0};
+  realTyp dipole[3]={0.0,0.0,0.0};
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     for( int d=0; d!=3; ++d ) {
       dipole[d] += (B->X[d] - size/2 ) * B->SRC;
     }
   }
-  double coef = 4*M_PI / (3 * size  * size  * size );
-  double coefP = coef*(dipole[0] * dipole[0] + dipole[1] * dipole[1] + dipole[2] * dipole[2])/bodies.size();
-  double coefF[3] = {coef*dipole[0], coef*dipole[1], coef*dipole[2]};
+  realTyp coef = 4*M_PI / (3 * size  * size  * size );
+  realTyp coefP = coef*(dipole[0] * dipole[0] + dipole[1] * dipole[1] + dipole[2] * dipole[2])/bodies.size();
+  realTyp coefF[3] = {coef*dipole[0], coef*dipole[1], coef*dipole[2]};
 
   // sending the data back.
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
@@ -94,15 +97,15 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   switch (tblno) {
   case 0 :
     for( int i=0; i!=ni; ++i ) {
-      double Fx = 0, Fy = 0, Fz = 0;
+      realTyp Fx = 0, Fy = 0, Fz = 0;
       for( int j=0; j!=nj; ++j ) {
-        double dx = xi[3*i+0] - xj[3*j+0];
-        double dy = xi[3*i+1] - xj[3*j+1];
-        double dz = xi[3*i+2] - xj[3*j+2];
-        double R2 = dx * dx + dy * dy + dz * dz;
-        double invR = 1 / std::sqrt(R2);
+        realTyp dx = xi[3*i+0] - xj[3*j+0];
+        realTyp dy = xi[3*i+1] - xj[3*j+1];
+        realTyp dz = xi[3*i+2] - xj[3*j+2];
+        realTyp R2 = dx * dx + dy * dy + dz * dz;
+        realTyp invR = 1 / std::sqrt(R2);
         if( R2 == 0 ) invR = 0;
-        double invR3 = qj[j] * invR * invR * invR;
+        realTyp invR3 = qj[j] * invR * invR * invR;
         Fx += dx * invR3;
         Fy += dy * invR3;
         Fz += dz * invR3;
@@ -114,13 +117,13 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
     break;
   case 1:
     for( int i=0; i!=ni; ++i ) {
-      double Po = 0;
+      realTyp Po = 0;
       for( int j=0; j!=nj; ++j ) {
-        double dx = xi[3*i+0] - xj[3*j+0];
-        double dy = xi[3*i+1] - xj[3*j+1];
-        double dz = xi[3*i+2] - xj[3*j+2];
-        double R2 = dx * dx + dy * dy + dz * dz;
-        double invR = 1 / std::sqrt(R2);
+        realTyp dx = xi[3*i+0] - xj[3*j+0];
+        realTyp dy = xi[3*i+1] - xj[3*j+1];
+        realTyp dz = xi[3*i+2] - xj[3*j+2];
+        realTyp R2 = dx * dx + dy * dy + dz * dz;
+        realTyp invR = 1 / std::sqrt(R2);
         if( R2 == 0 ) invR = 0;
         Po += qj[j] * invR;
       }
@@ -129,7 +132,7 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
     break;
   }
   // This is the correction factor from FMM to MD Ewald.
-  double fc[3];
+  realTyp fc[3];
   for( int d=0; d!=3; ++d ) fc[d]=0;
   for( int i=0; i!=ni; ++i ) { 
     for( int d=0; d!=3; ++d ) { 
@@ -152,9 +155,9 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
 }
 
 /*
-extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
-  int nj, double* xj, int* atypej, int nat, double* gscale, double* rscale,
-  int tblno, double size, int periodicflag) {
+extern "C" void FMMcalcvdw_ij(int ni, realTyp* xi, int* atypei, realTyp* fi,
+  int nj, realTyp* xj, int* atypej, int nat, realTyp* gscale, realTyp* rscale,
+  int tblno, realTyp size, int periodicflag) {
   std::cout << "tblno: " << tblno << std::endl;
   IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
   THETA = .5;
@@ -235,20 +238,20 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
   switch (tblno) {
   case 2 :
     for( int i=0; i!=ni; ++i ) {
-      double Fx = 0, Fy = 0, Fz = 0;
+      realTyp Fx = 0, Fy = 0, Fz = 0;
       for( int j=0; j!=nj; ++j ) {
-        double dx = xi[3*i+0] - xj[3*j+0];
-        double dy = xi[3*i+1] - xj[3*j+1];
-        double dz = xi[3*i+2] - xj[3*j+2];
-        double R2 = dx * dx + dy * dy + dz * dz;
+        realTyp dx = xi[3*i+0] - xj[3*j+0];
+        realTyp dy = xi[3*i+1] - xj[3*j+1];
+        realTyp dz = xi[3*i+2] - xj[3*j+2];
+        realTyp R2 = dx * dx + dy * dy + dz * dz;
         if( R2 != 0 ) {
-          double rs = rscale[atypei[i]*nat+atypej[j]];
-          double gs = gscale[atypei[i]*nat+atypej[j]];
-          double R2s = R2 * rs;
+          realTyp rs = rscale[atypei[i]*nat+atypej[j]];
+          realTyp gs = gscale[atypei[i]*nat+atypej[j]];
+          realTyp R2s = R2 * rs;
           if( R2MIN <= R2s && R2s < R2MAX ) {
-            double invR2 = 1.0 / R2s;
-            double invR6 = invR2 * invR2 * invR2;
-            double dtmp = gs * invR6 * invR2 * (2.0 * invR6 - 1.0);
+            realTyp invR2 = 1.0 / R2s;
+            realTyp invR6 = invR2 * invR2 * invR2;
+            realTyp dtmp = gs * invR6 * invR2 * (2.0 * invR6 - 1.0);
             Fx += dx * dtmp;
             Fy += dy * dtmp;
             Fz += dz * dtmp;
@@ -262,19 +265,19 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
     break;
   case 3:
     for( int i=0; i!=ni; ++i ) {
-      double Po = 0;
+      realTyp Po = 0;
       for( int j=0; j!=nj; ++j ) {
-        double dx = xi[3*i+0] - xj[3*j+0];
-        double dy = xi[3*i+1] - xj[3*j+1];
-        double dz = xi[3*i+2] - xj[3*j+2];
-        double R2 = dx * dx + dy * dy + dz * dz;
+        realTyp dx = xi[3*i+0] - xj[3*j+0];
+        realTyp dy = xi[3*i+1] - xj[3*j+1];
+        realTyp dz = xi[3*i+2] - xj[3*j+2];
+        realTyp R2 = dx * dx + dy * dy + dz * dz;
         if( R2 != 0 ) {
-          double rs = rscale[atypei[i]*nat+atypej[j]];
-          double gs = gscale[atypei[i]*nat+atypej[j]];
-          double R2s = R2 * rs;
+          realTyp rs = rscale[atypei[i]*nat+atypej[j]];
+          realTyp gs = gscale[atypei[i]*nat+atypej[j]];
+          realTyp R2s = R2 * rs;
           if( R2MIN <= R2s && R2s < R2MAX ) {
-            double invR2 = 1.0 / R2s;
-            double invR6 = invR2 * invR2 * invR2;
+            realTyp invR2 = 1.0 / R2s;
+            realTyp invR6 = invR2 * invR2 * invR2;
             Po += gs * invR6 * (invR6 - 1.0);
           }
         }
@@ -286,14 +289,14 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
 #endif
 }
 
-extern "C" void fmmcalccoulomb_ij_(int *ni, double* xi, double* qi, double* fi,
-  int *nj, double* xj, double* qj, double *rscale, int *tblno, double *size, int *periodicflag) {
+extern "C" void fmmcalccoulomb_ij_(int *ni, realTyp* xi, realTyp* qi, realTyp* fi,
+  int *nj, realTyp* xj, realTyp* qj, realTyp *rscale, int *tblno, realTyp *size, int *periodicflag) {
   std::cout << "Starting FMM" << std::endl;
   FMMcalccoulomb_ij(*ni,xi,qi,fi,*nj,xj,qj,*rscale,*tblno-6,*size,*periodicflag);
 }
 
-extern "C" void fmmcalccoulomb_ij_exlist_(int *ni, double* xi, double* qi, double* fi,
-  int *nj, double* xj, double* qj, double *rscale, int *tblno, double *size, int *periodicflag,
+extern "C" void fmmcalccoulomb_ij_exlist_(int *ni, realTyp* xi, realTyp* qi, realTyp* fi,
+  int *nj, realTyp* xj, realTyp* qj, realTyp *rscale, int *tblno, realTyp *size, int *periodicflag,
   int *numex, int* natex) {
   std::cout << "Starting FMM" << std::endl;
   FMMcalccoulomb_ij(*ni,xi,qi,fi,*nj,xj,qj,*rscale,*tblno-6,*size,*periodicflag);
@@ -312,16 +315,16 @@ extern "C" void fmmcalccoulomb_ij_exlist_(int *ni, double* xi, double* qi, doubl
     }
 #else
     for( int i=0,ic=0; i!=*ni; ++i ) {
-      double Fx = 0, Fy = 0, Fz = 0;
+      realTyp Fx = 0, Fy = 0, Fz = 0;
       for( int in=0; in!=numex[i]; in++,ic++ ) {
         int j = natex[ic]-1;
-        double dx = xi[3*i+0] - xj[3*j+0];
-        double dy = xi[3*i+1] - xj[3*j+1];
-        double dz = xi[3*i+2] - xj[3*j+2];
-        double R2 = dx * dx + dy * dy + dz * dz;
-        double invR = 1 / std::sqrt(R2);
+        realTyp dx = xi[3*i+0] - xj[3*j+0];
+        realTyp dy = xi[3*i+1] - xj[3*j+1];
+        realTyp dz = xi[3*i+2] - xj[3*j+2];
+        realTyp R2 = dx * dx + dy * dy + dz * dz;
+        realTyp invR = 1 / std::sqrt(R2);
         if( R2 == 0 ) invR = 0;
-        double invR3 = qj[j] * invR * invR * invR;
+        realTyp invR3 = qj[j] * invR * invR * invR;
         Fx += dx * invR3;
         Fy += dy * invR3;
         Fz += dz * invR3;
@@ -336,17 +339,17 @@ extern "C" void fmmcalccoulomb_ij_exlist_(int *ni, double* xi, double* qi, doubl
 #endif
     break;
   case 1:
-    double Total = 0;
+    realTyp Total = 0;
     int ic = 0;
     for( int i=0; i!=*ni; ++i ) {
-      double Po = 0;
+      realTyp Po = 0;
       for( int in=0; in!=numex[i]; in++,ic++ ) {
         int j = natex[ic]-1;
-        double dx = xi[3*i+0] - xj[3*j+0];
-        double dy = xi[3*i+1] - xj[3*j+1];
-        double dz = xi[3*i+2] - xj[3*j+2];
-        double R2 = dx * dx + dy * dy + dz * dz;
-        double invR = 1 / std::sqrt(R2);
+        realTyp dx = xi[3*i+0] - xj[3*j+0];
+        realTyp dy = xi[3*i+1] - xj[3*j+1];
+        realTyp dz = xi[3*i+2] - xj[3*j+2];
+        realTyp R2 = dx * dx + dy * dy + dz * dz;
+        realTyp invR = 1 / std::sqrt(R2);
         assert( i != j );
         if( R2 == 0 ) invR = 0;
         Po += qj[j] * invR;
@@ -361,9 +364,9 @@ extern "C" void fmmcalccoulomb_ij_exlist_(int *ni, double* xi, double* qi, doubl
 }
 
 
-extern "C" void fmmcalcvdw_ij_(int *ni, double* xi, int* atypei, double* fi,
-  int *nj, double* xj, int* atypej, int *nat, double* gscale, double* rscale,
-  int *tblno, double *size, int *periodicflag) {
+extern "C" void fmmcalcvdw_ij_(int *ni, realTyp* xi, int* atypei, realTyp* fi,
+  int *nj, realTyp* xj, int* atypej, int *nat, realTyp* gscale, realTyp* rscale,
+  int *tblno, realTyp *size, int *periodicflag) {
   std::cout << "Starting FMM" << std::endl;
   for( int i=0; i<*ni; i++ ) atypei[i]--;
   for( int i=0; i<*nj; i++ ) atypej[i]--;
@@ -372,9 +375,9 @@ extern "C" void fmmcalcvdw_ij_(int *ni, double* xi, int* atypei, double* fi,
   for( int i=0; i<*nj; i++ ) atypej[i]++;
 }
 
-extern "C" void fmmcalcvdw_ij_exlist_(int *ni, double* xi, int* atypei, double* fi,
-  int *nj, double* xj, int* atypej, int *nat, double* gscale, double* rscale,
-  int *tblno, double *size, int *periodicflag, int* numex, int* natex) {
+extern "C" void fmmcalcvdw_ij_exlist_(int *ni, realTyp* xi, int* atypei, realTyp* fi,
+  int *nj, realTyp* xj, int* atypej, int *nat, realTyp* gscale, realTyp* rscale,
+  int *tblno, realTyp *size, int *periodicflag, int* numex, int* natex) {
   std::cout << "Starting FMM" << std::endl;
   for( int i=0; i<*ni; i++ ) atypei[i]--;
   for( int i=0; i<*nj; i++ ) atypej[i]--;
