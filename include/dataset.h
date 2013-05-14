@@ -127,7 +127,7 @@ class Dataset {                                                 // Contains all 
     std::stringstream name;                                     // File name
     name << "direct" << std::setfill('0') << std::setw(4)       // Set format
          << mpirank << ".dat";                                  // Create file name for saving direct calculation values
-    std::ifstream file(name.str(),std::ios::in | std::ios::binary);// Open file
+    std::ifstream file(name.str().c_str(),std::ios::in | std::ios::binary);// Open file
     file.seekg(filePosition);                                   // Set position in file
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       file >> B->TRG[0];                                        //  Read data for potential
@@ -144,7 +144,7 @@ class Dataset {                                                 // Contains all 
     std::stringstream name;                                     // File name
     name << "direct" << std::setfill('0') << std::setw(4)       // Set format
          << mpirank << ".dat";                                  // Create file name for saving direct calculation values
-    std::ofstream file(name.str(),std::ios::out | std::ios::app | std::ios::binary);// Open file
+    std::ofstream file(name.str().c_str(),std::ios::out | std::ios::app | std::ios::binary);// Open file
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       file << B->TRG[0] << std::endl;                           //  Write data for potential
       file << B->TRG[1] << std::endl;                           //  Write data for x acceleration

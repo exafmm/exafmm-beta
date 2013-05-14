@@ -16,10 +16,17 @@
 // Detect SIMD Byte length of architecture
 #if __MIC__
 const int SIMD_BYTES = 64;                                      //!< SIMD byte length of MIC
-#elif __AVX__
+#elif __AVX__ | __bgq__
 const int SIMD_BYTES = 32;                                      //!< SIMD byte length of AVX
 #elif __SSE__
 const int SIMD_BYTES = 16;                                      //!< SIMD byte length of SSE
+#endif
+
+// Bluegene/Q and K computer don't have single precision arithmetic
+#if __bgq__ | __SPARC__
+#ifndef FP64
+#error Please use FP64 for BG/Q and K computer
+#endif
 #endif
 
 #endif

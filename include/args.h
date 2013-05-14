@@ -73,6 +73,7 @@ class Args {
       fprintf(stderr, "invalid distribution %s\n", arg);
       exit(0);
     }
+    return "";
   }
 
  public:
