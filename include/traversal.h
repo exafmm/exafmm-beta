@@ -228,7 +228,7 @@ class Traversal : public Kernel, public Logger {
     Cj->NDBODY = jbodies.size();                                // Number of source bodies
     int prange = 0;                                             // Range of periodic images
     for (int i=0; i<IMAGES; i++) {                              // Loop over periodic image sublevels
-      prange += int(std::pow(3,i));                             //  Accumulate range of periodic images
+      prange += int(std::pow(3.,i));                             //  Accumulate range of periodic images
     }                                                           // End loop over perioidc image sublevels
     for (int ix=-prange; ix<=prange; ix++) {                    // Loop over x periodic direction
       for (int iy=-prange; iy<=prange; iy++) {                  //  Loop over y periodic direction

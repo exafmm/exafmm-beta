@@ -1,7 +1,7 @@
 #ifndef align_h
 #define align_h
 #include <cstdlib>
-#include <malloc.h>
+#include <sys/malloc.h>
 #include <memory>
 
 template <typename T, size_t NALIGN>
