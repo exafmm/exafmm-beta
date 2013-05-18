@@ -8,8 +8,8 @@ EQUATION = Laplace
 #EQUATION = Stokes (not available yet)
 
 ### choose basis of multipole/local expansion
-BASIS	= Cartesian
-#BASIS	= Spherical
+#BASIS	= Cartesian
+BASIS	= Spherical
 #BASIS	= Planewave (not available yet)
 
 ### choose device to use
@@ -28,7 +28,7 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops # GCC
 ### Base flags
 CXX	+= -I../include
 LFLAGS	+= -D$(BASIS)
-LFLAGS  += -DEXPANSION=3 # Specifcy expansion order
+LFLAGS  += -DEXPANSION=10 # Specifcy expansion order
 ifeq ($(BASIS),Cartesian)
 LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
 LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
