@@ -2,6 +2,10 @@ include ../Makefile.include
 
 MR3 = mr3_host.o mr3.o
 
+libserial_coulomb.a: serial_coulomb.o $(OBJECT)
+	ar ruv libserial_coulomb.a $?
+	ranlib libserial_coulomb.a
+
 libserial_coulombVdW.a: serial_coulombVdW.o $(OBJECT)
 	ar ruv libserial_coulombVdW.a $?
 	ranlib libserial_coulombVdW.a
