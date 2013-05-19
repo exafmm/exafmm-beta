@@ -14,13 +14,21 @@ class Dataset {                                                 // Contains all 
  private:
 //! Initialize source values
   void initSource(Bodies &bodies, int mpisize) {
+#if 1
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-#if 0
-      B->SRC = (drand48() - .5) / bodies.size() / mpisize;      //  Initialize mass/charge
-#else
-      B->SRC = 2. / bodies.size() / mpisize;                    //  Initialize mass/charge
-#endif
+      B->SRC = 1. / bodies.size() / mpisize;                    //  Initialize mass
     }                                                           // End loop over bodies
+#else
+    real_t average = 0;                                         // Initialize average charge
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      B->SRC = drand48() - .5;                                  //  Initialize charge
+      average += B->SRC;                                        //  Accumulate average
+    }                                                           // End loop over bodies
+    average /= bodies.size() * mpisize;
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      B->SRC -= average;                                        //  Subtract average charge
+    }                                                           // End loop over bodies
+#endif
   }
 
 //! Uniform distribution on [-1,1]^3 lattice

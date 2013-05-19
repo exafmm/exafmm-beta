@@ -115,7 +115,7 @@ class Traversal : public Kernel, public Logger {
         if (Cj->NCBODY == 0) {                                  //   If the bodies weren't sent from remote node
           approximate(Ci, Cj, mutual);                          //    Use approximate kernels
         } else {                                                //   Else if the bodies were sent
-          if (Ci == Cj) {                                       //    If source and target are same
+          if (R2 == 0) {                                        //    If source and target are same
             P2P(Ci);                                            //     P2P kernel for single cell
           } else {                                              //    Else if source and target are different
             P2P(Ci, Cj, mutual);                                //     P2P kernel for pair of cells
@@ -150,7 +150,7 @@ class Traversal : public Kernel, public Logger {
                     Xperiodic[0] = (ix * 3 + cx) * cycle;       //         Coordinate offset for x periodic direction
                     Xperiodic[1] = (iy * 3 + cy) * cycle;       //         Coordinate offset for y periodic direction
                     Xperiodic[2] = (iz * 3 + cz) * cycle;       //         Coordinate offset for z periodic direction
-                    M2L(Ci0,Ci,false);                          //         Perform M2L kernel
+                    approximate(Ci0,Ci,false);                  //         Perform M2L kernel
                   }                                             //        End loop over z periodic direction (child)
                 }                                               //       End loop over y periodic direction (child)
               }                                                 //      End loop over x periodic direction (child)
@@ -165,12 +165,13 @@ class Traversal : public Kernel, public Logger {
       C_iter Cj = Cj0;                                          //  Iterator of periodic neighbor cells
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
         for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
-          for (int iz=-1; iz<=1; iz++, Cj++) {                  //    Loop over z periodic direction
+          for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
             if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
               Cj->X[0] = Ci->X[0] + ix * cycle;                 //      Set new x coordinate for periodic image
               Cj->X[1] = Ci->X[1] + iy * cycle;                 //      Set new y cooridnate for periodic image
               Cj->X[2] = Ci->X[2] + iz * cycle;                 //      Set new z coordinate for periodic image
               Cj->M    = Ci->M;                                 //      Copy multipoles to new periodic image
+              Cj++;                                             //      Increment periodic cell iterator
             }                                                   //     Endif for periodic center cell
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
@@ -215,7 +216,7 @@ class Traversal : public Kernel, public Logger {
       traversePeriodic(cycle);                                  //  Traverse tree for periodic images
     }                                                           // End if for periodic boundary condition
     stopTimer("Traverse",verbose);                              // Stop timer
-    writeTrace();
+    writeTrace();                                               // Write trace to file
   }
 
   //! Direct summation

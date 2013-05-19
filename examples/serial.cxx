@@ -9,6 +9,9 @@
 #include "vtk.h"
 #endif
 
+extern void preTraversal();
+extern void postTraversal();
+
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   Bodies bodies, jbodies;
