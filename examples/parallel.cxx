@@ -23,8 +23,8 @@ int main(int argc, char ** argv) {
   UpDownPass pass(args.theta);
   Traversal traversal(args.nspawn,args.images);
   LocalEssentialTree LET(args.images);
-  args.numBodies /= LET.MPISIZE;
-  logger.verbose = LET.MPIRANK == 0;
+  args.numBodies /= LET.mpisize;
+  logger.verbose = LET.mpirank == 0;
   args.verbose &= logger.verbose;
   if (args.verbose) {
     boundbox.verbose = true;
@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
     LET.verbose = true;
     logger.printTitle("Parameters");
   }
-  if(LET.MPIRANK == 0) args.print(logger.stringLength,P);
+  if(LET.mpirank == 0) args.print(logger.stringLength,P);
 #if AUTO
   traversal.timeKernels();
 #endif
@@ -44,10 +44,10 @@ int main(int argc, char ** argv) {
 #endif
   if (args.verbose) logger.printTitle("Profiling");
   logger.startTimer("Total FMM");
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution, args.chargeSign, LET.MPIRANK, LET.MPISIZE);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution, args.chargeSign, LET.mpirank, LET.mpisize);
   Bounds localBounds = boundbox.getBounds(bodies);
 #if IneJ
-  Bodies jbodies = data.initBodies(args.numBodies, args.distribution, LET.MPIRANK+LET.MPISIZE, LET.MPISIZE);
+  Bodies jbodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank+LET.mpisize, LET.mpisize);
   localBounds = boundbox.getBounds(jbodies,localBounds);
 #endif
   Bounds globalBounds = LET.allreduceBounds(localBounds);
@@ -83,8 +83,8 @@ int main(int argc, char ** argv) {
   Bodies jbodies = bodies;
   Cells jcells;
 #endif
-  for (int irank=1; irank<LET.MPISIZE; irank++) {
-    LET.getLET(jcells,(LET.MPIRANK+irank)%LET.MPISIZE);
+  for (int irank=1; irank<LET.mpisize; irank++) {
+    LET.getLET(jcells,(LET.mpirank+irank)%LET.mpisize);
 
 #if 0 // Set to 1 for debugging full LET communication : Step 2 (LET must be set to full tree)
     LET.shiftBodies(jbodies); // This will overwrite recvBodies. (define recvBodies2 in partition.h to avoid this)
@@ -100,15 +100,15 @@ int main(int argc, char ** argv) {
       C_iter Ci=Qi.front(); Qi.pop();
       C_iter Cj=Qj.front(); Qj.pop();
       if (Ci->ICELL != Cj->ICELL) {
-	std::cout << LET.MPIRANK << " ICELL  : " << Ci->ICELL << " " << Cj->ICELL << std::endl;
+	std::cout << LET.mpirank << " ICELL  : " << Ci->ICELL << " " << Cj->ICELL << std::endl;
 	break;
       }
       if (Ci->NCHILD != Cj->NCHILD) {
-	std::cout << LET.MPIRANK << " NCHILD : " << Ci->NCHILD << " " << Cj->NCHILD << std::endl;
+	std::cout << LET.mpirank << " NCHILD : " << Ci->NCHILD << " " << Cj->NCHILD << std::endl;
 	break;
       }
       if (Ci->NCBODY != Cj->NCBODY) {
-	std::cout << LET.MPIRANK << " NCBODY : " << Ci->NCBODY << " " << Cj->NCBODY << std::endl;
+	std::cout << LET.mpirank << " NCBODY : " << Ci->NCBODY << " " << Cj->NCBODY << std::endl;
 	break;
       }
       real_t sumi = 0, sumj = 0;
@@ -120,7 +120,7 @@ int main(int argc, char ** argv) {
 	  sumj += Bj->X[0];
 	}
       }
-      if (fabs(sumi-sumj)/fabs(sumi) > 1e-6) std::cout << LET.MPIRANK << " " << Ci->ICELL << " " << sumi << " " << sumj << std::endl;
+      if (fabs(sumi-sumj)/fabs(sumi) > 1e-6) std::cout << LET.mpirank << " " << Ci->ICELL << " " << sumi << " " << sumj << std::endl;
       assert( fabs(sumi-sumj)/fabs(sumi) < 1e-6 );
       for (int i=0; i<Ci->NCHILD; i++) Qi.push(icells.begin()+Ci->CHILD+i);
       for (int i=0; i<Cj->NCHILD; i++) Qj.push(jcells.begin()+Cj->CHILD+i);
@@ -131,7 +131,7 @@ int main(int argc, char ** argv) {
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
 #else
-  for (int irank=0; irank<LET.MPISIZE; irank++) {
+  for (int irank=0; irank<LET.mpisize; irank++) {
     LET.shiftBodies(jbodies);
     jcells.clear();
     localBounds = boundbox.getBounds(jbodies);
@@ -159,10 +159,10 @@ int main(int argc, char ** argv) {
   Bodies bodies2 = bodies;
   data.initTarget(bodies2);
   logger.startTimer("Total Direct");
-  for (int i=0; i<LET.MPISIZE; i++) {
+  for (int i=0; i<LET.mpisize; i++) {
     LET.shiftBodies(jbodies);
     traversal.direct(bodies2, jbodies, cycle);
-    if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << LET.MPISIZE << std::endl;
+    if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << LET.mpisize << std::endl;
   }
   traversal.normalize(bodies2);
   if (args.verbose) logger.printTitle("Total runtime");
@@ -195,8 +195,8 @@ int main(int argc, char ** argv) {
 
 #if VTK
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->ICELL = 0;
-  for (int irank=0; irank<LET.MPISIZE; irank++) {
-    LET.getLET(jcells,(LET.MPIRANK+irank)%LET.MPISIZE);
+  for (int irank=0; irank<LET.mpisize; irank++) {
+    LET.getLET(jcells,(LET.mpirank+irank)%LET.mpisize);
     for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
       Body body;
       body.ICELL = 1;
@@ -208,11 +208,11 @@ int main(int argc, char ** argv) {
   vtk3DPlot vtk;
   vtk.setBounds(M_PI,0);
   vtk.setGroupOfPoints(jbodies);
-  for (int i=1; i<LET.MPISIZE; i++) {
+  for (int i=1; i<LET.mpisize; i++) {
     LET.shiftBodies(jbodies);
     vtk.setGroupOfPoints(jbodies);
   }
-  if (LET.MPIRANK == 0) {
+  if (LET.mpirank == 0) {
     vtk.plot();
   }
 #endif

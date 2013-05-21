@@ -7,8 +7,8 @@
 class LocalEssentialTree : public Partition {
  private:
   typedef std::queue<C_iter> CellQueue;                         //!< Queue of cell iterators
-  int IRANK;                                                    //!< MPI rank loop counter
-  int IMAGES;                                                   //!< Number of periodic image sublevels
+  int irank;                                                    //!< MPI rank loop counter
+  int images;                                                   //!< Number of periodic image sublevels
   fvec3 localXmin;                                              //!< Local Xmin for a given rank
   fvec3 localXmax;                                              //!< Local Xmax for a given rank
   fvec3 * allLocalXmin;                                         //!< Array for local Xmin for all ranks
@@ -55,19 +55,19 @@ class LocalEssentialTree : public Partition {
     cell.PARENT = iparent;                                      // Index of parent
     sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
-    C_iter Cparent = sendCells.begin() + sendCellDispl[IRANK] + iparent;// Get parent iterator
+    C_iter Cparent = sendCells.begin() + sendCellDispl[irank] + iparent;// Get parent iterator
     if (Cparent->NCHILD == 0) Cparent->CHILD = icell;           // Index of parent's first child
     Cparent->NCHILD++;                                          // Increment parent's child counter
   }
 
 //! Add bodies to send buffer
   void addSendBody(C_iter C, int &ibody, int icell) {
-    C_iter Csend = sendCells.begin() + sendCellDispl[IRANK] + icell;// Get send cell iterator
+    C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell;// Get send cell iterator
     Csend->NCBODY = C->NCBODY;                                  // Set number of bodies
     Csend->NDBODY = ibody;                                      // Set body index per rank
     for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {         // Loop over bodies in cell
       sendBodies.push_back(*B);                                 //  Push to send body vector
-      sendBodies.back().IPROC = IRANK;                          //  Set current rank
+      sendBodies.back().IPROC = irank;                          //  Set current rank
     }                                                           // End loop over bodies in cell
     ibody+=C->NCBODY;                                           // Increment body counter
   }
@@ -77,8 +77,8 @@ class LocalEssentialTree : public Partition {
     int ibody = 0;                                              // Current send body's offset
     int icell = 0;                                              // Current send cell's offset
     int iparent = 0;                                            // Parent send cell's offset
-    int level = int(logf(MPISIZE-1) / M_LN2 / 3) + 1;           // Level of local root cell
-    if (MPISIZE == 1) level = 0;                                // Account for serial case
+    int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;           // Level of local root cell
+    if (mpisize == 1) level = 0;                                // Account for serial case
     while (!cellQueue.empty()) {                                // While traversal queue is not empty
       C_iter C = cellQueue.front();                             //  Get front item in traversal queue
       cellQueue.pop();                                          //  Pop item from traversal queue
@@ -89,7 +89,7 @@ class LocalEssentialTree : public Partition {
         } else {                                                //   If cell is not twig
           bool divide = false;                                  //    Initialize logical for dividing
           vec3 Xperiodic = 0;                                   //    Periodic coordinate offset
-          if (IMAGES == 0) {                                    //    If free boundary condition
+          if (images == 0) {                                    //    If free boundary condition
             real_t R2 = getDistance(CC, Xperiodic);             //     Get distance to other domain
             divide |= 4 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
           } else {                                              //    If periodic boundary condition
@@ -121,7 +121,7 @@ class LocalEssentialTree : public Partition {
     MPI_Alltoall(sendCellCount, 1, MPI_INT,                     // Communicate send count to get receive count
                  recvCellCount, 1, MPI_INT, MPI_COMM_WORLD);
     recvCellDispl[0] = 0;                                       // Initialize receive displacements
-    for (int irank=0; irank<MPISIZE-1; irank++) {               // Loop over ranks
+    for (int irank=0; irank<mpisize-1; irank++) {               // Loop over ranks
       recvCellDispl[irank+1] = recvCellDispl[irank] + recvCellCount[irank];//  Set receive displacement
     }                                                           // End loop over ranks
   }
@@ -129,8 +129,8 @@ class LocalEssentialTree : public Partition {
 //! Exchange cells
   void alltoallv(Cells &cells) {
     int word = sizeof(cells[0]) / 4;                            // Word size of body structure
-    recvCells.resize(recvCellDispl[MPISIZE-1]+recvCellCount[MPISIZE-1]);// Resize receive buffer
-    for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
+    recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
       sendCellCount[irank] *= word;                             //  Multiply send count by word size of data
       sendCellDispl[irank] *= word;                             //  Multiply send displacement by word size of data
       recvCellCount[irank] *= word;                             //  Multiply receive count by word size of data
@@ -138,7 +138,7 @@ class LocalEssentialTree : public Partition {
     }                                                           // End loop over ranks
     MPI_Alltoallv(&cells[0], sendCellCount, sendCellDispl, MPI_INT,// Communicate cells
                   &recvCells[0], recvCellCount, recvCellDispl, MPI_INT, MPI_COMM_WORLD);
-    for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
       sendCellCount[irank] /= word;                             //  Divide send count by word size of data
       sendCellDispl[irank] /= word;                             //  Divide send displacement by word size of data
       recvCellCount[irank] /= word;                             //  Divide receive count by word size of data
@@ -148,13 +148,13 @@ class LocalEssentialTree : public Partition {
 
  public:
 //! Constructor
-  LocalEssentialTree(int images) : IMAGES(images) {
-    allLocalXmin = new fvec3 [MPISIZE];                         // Allocate array for minimum of local domains
-    allLocalXmax = new fvec3 [MPISIZE];                         // Allocate array for maximum of local domains
-    sendCellCount = new int [MPISIZE];                          // Allocate send count
-    sendCellDispl = new int [MPISIZE];                          // Allocate send displacement
-    recvCellCount = new int [MPISIZE];                          // Allocate receive count
-    recvCellDispl = new int [MPISIZE];                          // Allocate receive displacement
+  LocalEssentialTree(int images) : images(images) {
+    allLocalXmin = new fvec3 [mpisize];                         // Allocate array for minimum of local domains
+    allLocalXmax = new fvec3 [mpisize];                         // Allocate array for maximum of local domains
+    sendCellCount = new int [mpisize];                          // Allocate send count
+    sendCellDispl = new int [mpisize];                          // Allocate send displacement
+    recvCellCount = new int [mpisize];                          // Allocate receive count
+    recvCellDispl = new int [mpisize];                          // Allocate receive displacement
   }
 //! Destructor
   ~LocalEssentialTree() {
@@ -173,13 +173,13 @@ class LocalEssentialTree : public Partition {
     sendBodies.clear();                                         // Clear send buffer for bodies
     sendCells.clear();                                          // Clear send buffer for cells
     sendCellDispl[0] = 0;                                       // Initialize displacement vector
-    for (IRANK=0; IRANK<MPISIZE; IRANK++) {                     // Loop over ranks
-      if (IRANK != 0) sendCellDispl[IRANK] = sendCellDispl[IRANK-1] + sendCellCount[IRANK-1];// Update displacement
-      if (IRANK != MPIRANK) {                                   //  If not current rank
+    for (irank=0; irank<mpisize; irank++) {                     // Loop over ranks
+      if (irank != 0) sendCellDispl[irank] = sendCellDispl[irank-1] + sendCellCount[irank-1];// Update displacement
+      if (irank != mpirank) {                                   //  If not current rank
         recvCells = cells;                                      //   Use recvCells as temporary storage
         C0 = recvCells.begin();                                 //   Set cells begin iterator
-        localXmin = allLocalXmin[IRANK];                        //   Set local Xmin for IRANK
-        localXmax = allLocalXmax[IRANK];                        //   Set local Xmax for IRANK
+        localXmin = allLocalXmin[irank];                        //   Set local Xmin for irank
+        localXmax = allLocalXmax[irank];                        //   Set local Xmax for irank
         Cell cell(*C0);                                         //   Send root cell
         cell.NCHILD = cell.NCBODY = cell.NDBODY = 0;            //   Reset link to children and bodies
         sendCells.push_back(cell);                              //   Push it into send buffer
@@ -187,7 +187,7 @@ class LocalEssentialTree : public Partition {
         cellQueue.push(C0);                                     //   Push root to traversal queue
         traverseLET(cellQueue,cycle);                           //   Traverse tree to get LET
       }                                                         //  Endif for current rank
-      sendCellCount[IRANK] = sendCells.size() - sendCellDispl[IRANK];// Send count for IRANK
+      sendCellCount[irank] = sendCells.size() - sendCellDispl[irank];// Send count for irank
     }                                                           // End loop over ranks
     stopTimer("Set LET",verbose);                               // Stop timer
   }

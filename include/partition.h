@@ -16,18 +16,18 @@ class Partition : public MyMPI, public Logger {
  protected:
 //! Exchange send count for bodies
   void alltoall(Bodies &bodies) {
-    for (int i=0; i<MPISIZE; i++) {                             // Loop over ranks
+    for (int i=0; i<mpisize; i++) {                             // Loop over ranks
       sendBodyCount[i] = 0;                                     //  Initialize send counts
     }                                                           // End loop over ranks
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      assert(0 <= B->IPROC && B->IPROC < MPISIZE);
+      assert(0 <= B->IPROC && B->IPROC < mpisize);
       sendBodyCount[B->IPROC]++;                                //  Fill send count bucket
-      B->IPROC = MPIRANK;                                       //  Tag for sending back to original rank
+      B->IPROC = mpirank;                                       //  Tag for sending back to original rank
     }                                                           // End loop over bodies
     MPI_Alltoall(sendBodyCount, 1, MPI_INT,                     // Communicate send count to get receive count
                  recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
     sendBodyDispl[0] = recvBodyDispl[0] = 0;                    // Initialize send/receive displacements
-    for (int irank=0; irank<MPISIZE-1; irank++) {               // Loop over ranks
+    for (int irank=0; irank<mpisize-1; irank++) {               // Loop over ranks
       sendBodyDispl[irank+1] = sendBodyDispl[irank] + sendBodyCount[irank];//  Set send displacement
       recvBodyDispl[irank+1] = recvBodyDispl[irank] + recvBodyCount[irank];//  Set receive displacement
     }                                                           // End loop over ranks
@@ -36,8 +36,8 @@ class Partition : public MyMPI, public Logger {
 //! Exchange bodies
   void alltoallv(Bodies &bodies) {
     int word = sizeof(bodies[0]) / 4;                           // Word size of body structure
-    recvBodies.resize(recvBodyDispl[MPISIZE-1]+recvBodyCount[MPISIZE-1]);// Resize receive buffer
-    for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
+    recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
       sendBodyCount[irank] *= word;                             //  Multiply send count by word size of data
       sendBodyDispl[irank] *= word;                             //  Multiply send displacement by word size of data
       recvBodyCount[irank] *= word;                             //  Multiply receive count by word size of data
@@ -45,7 +45,7 @@ class Partition : public MyMPI, public Logger {
     }                                                           // End loop over ranks
     MPI_Alltoallv(&bodies[0], sendBodyCount, sendBodyDispl, MPI_INT,// Communicate bodies
                   &recvBodies[0], recvBodyCount, recvBodyDispl, MPI_INT, MPI_COMM_WORLD);
-    for (int irank=0; irank<MPISIZE; irank++) {                 // Loop over ranks
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
       sendBodyCount[irank] /= word;                             //  Divide send count by word size of data
       sendBodyDispl[irank] /= word;                             //  Divide send displacement by word size of data
       recvBodyCount[irank] /= word;                             //  Divide receive count by word size of data
@@ -56,10 +56,10 @@ class Partition : public MyMPI, public Logger {
  public:
 //! Constructor
   Partition() {
-    sendBodyCount = new int [MPISIZE];                          // Allocate send count
-    sendBodyDispl = new int [MPISIZE];                          // Allocate send displacement
-    recvBodyCount = new int [MPISIZE];                          // Allocate receive count
-    recvBodyDispl = new int [MPISIZE];                          // Allocate receive displacement
+    sendBodyCount = new int [mpisize];                          // Allocate send count
+    sendBodyDispl = new int [mpisize];                          // Allocate send displacement
+    recvBodyCount = new int [mpisize];                          // Allocate receive count
+    recvBodyDispl = new int [mpisize];                          // Allocate receive displacement
   }
 //! Destructor
   ~Partition() {
@@ -74,8 +74,8 @@ class Partition : public MyMPI, public Logger {
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
     const int word = sizeof(bodies[0]) / 4;                     // Word size of body structure
-    const int isend = (MPIRANK + 1          ) % MPISIZE;        // Send to next rank (wrap around)
-    const int irecv = (MPIRANK - 1 + MPISIZE) % MPISIZE;        // Receive from previous rank (wrap around)
+    const int isend = (mpirank + 1          ) % mpisize;        // Send to next rank (wrap around)
+    const int irecv = (mpirank - 1 + mpisize) % mpisize;        // Receive from previous rank (wrap around)
     MPI_Request sreq,rreq;                                      // Send, receive request handles
 
     MPI_Isend(&oldSize, 1, MPI_INT, irecv, 0, MPI_COMM_WORLD, &sreq);// Send current number of bodies
@@ -114,22 +114,22 @@ class Partition : public MyMPI, public Logger {
 //! Partition bodies
   Bounds partition(Bodies &bodies, Bounds global) {
     startTimer("Partition");                                    // Start timer
-    int mpisize = MPISIZE;                                      // Initialize MPI size counter
+    int size = mpisize;                                         // Initialize MPI size counter
     vec<3,int> Npartition = 1;                                  // Number of partitions in each direction
     int d = 0;                                                  // Initialize dimension counter
-    while (mpisize != 1) {                                      // Divide domain while counter is not one
+    while (size != 1) {                                         // Divide domain while counter is not one
       Npartition[d] <<= 1;                                      //  Divide this dimension
       d = (d+1) % 3;                                            //  Increment dimension
-      mpisize >>= 1;                                            //  Right shift the bits of counter
+      size >>= 1;                                               //  Right shift the bits of counter
     }                                                           // End while loop for domain subdivision
     vec3 Xpartition;                                            // Size of partitions in each direction
     for (d=0; d<3; d++) {                                       // Loop over dimensions
       Xpartition[d] = (global.Xmax[d] - global.Xmin[d]) / Npartition[d];//  Size of partition in each direction
     }                                                           // End loop over dimensions
     int ix[3];                                                  // Index vector
-    ix[0] = MPIRANK % Npartition[0];                            // x index of partition
-    ix[1] = MPIRANK / Npartition[0] % Npartition[1];            // y index
-    ix[2] = MPIRANK / Npartition[0] / Npartition[1];            // z index
+    ix[0] = mpirank % Npartition[0];                            // x index of partition
+    ix[1] = mpirank / Npartition[0] % Npartition[1];            // y index
+    ix[2] = mpirank / Npartition[0] / Npartition[1];            // z index
     Bounds local;                                               // Local bounds
     for (d=0; d<3; d++) {                                       // Loop over dimensions
       local.Xmin[d] = global.Xmin[d] + ix[d] * Xpartition[d];   // Xmin of local domain at current rank
@@ -140,7 +140,7 @@ class Partition : public MyMPI, public Logger {
         ix[d] = int((B->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
       }                                                         //  End loop over dimensions
       B->IPROC = ix[0] + Npartition[0] * (ix[1] + ix[2] * Npartition[1]);//  Set send rank
-      assert(0 <= B->IPROC && B->IPROC < MPISIZE);
+      assert(0 <= B->IPROC && B->IPROC < mpisize);
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
     stopTimer("Partition",verbose);                             // Stop timer

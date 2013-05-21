@@ -6,12 +6,12 @@
 
 class BoundBox : public Logger {
  private:
-  int NSPAWN;                                                   //!< Threshold of NDBODY for spawning new threads
+  int nspawn;                                                   //!< Threshold of NDBODY for spawning new threads
 
 //! Recursively get Xmin and Xmax of domain
   Bounds boundsRecursion(B_iter BiBegin, B_iter BiEnd, Bounds bounds) {
     assert(BiEnd - BiBegin > 0);
-    if (BiEnd - BiBegin < NSPAWN) {                             // If number of elements is small enough
+    if (BiEnd - BiBegin < nspawn) {                             // If number of elements is small enough
       for (B_iter B=BiBegin; B!=BiEnd; B++) {                   //  Loop over range of bodies
         bounds.Xmin = min(B->X, bounds.Xmin);                   //   Update Xmin
         bounds.Xmax = max(B->X, bounds.Xmax);                   //   Update Xmax
@@ -31,7 +31,7 @@ class BoundBox : public Logger {
   }
 
  public:
-  BoundBox(int nspawn) : NSPAWN(nspawn) {}
+  BoundBox(int _nspawn) : nspawn(_nspawn) {}
 
   // ! Get Xmin and Xmax of domain
   Bounds getBounds(Bodies bodies) {

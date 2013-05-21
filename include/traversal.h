@@ -12,10 +12,10 @@
 
 class Traversal : public Kernel, public Logger {
  private:
-  int NSPAWN;                                                   //!< Threshold of NDBODY for spawning new threads
-  int IMAGES;                                                   //!< Number of periodic image sublevels
-  real_t NP2P;                                                  //!< Number of P2P kernel calls
-  real_t NM2L;                                                  //!< Number of M2L kernel calls
+  int nspawn;                                                   //!< Threshold of NDBODY for spawning new threads
+  int images;                                                   //!< Number of periodic image sublevels
+  real_t numP2P;                                                //!< Number of P2P kernel calls
+  real_t numM2L;                                                //!< Number of M2L kernel calls
 
   real_t timeP2P;                                               //!< P2P execution time
   real_t timeM2L;                                               //!< M2L execution time
@@ -27,14 +27,14 @@ class Traversal : public Kernel, public Logger {
 #if AUTO
     if (timeP2P*Ci->NDBODY*Cj->NDBODY > timeM2L) {              // If M2L is faster
       M2L(Ci, Cj, mutual);                                      //  M2L kernel
-      count(NM2L);                                              //  Increment M2L counter
+      count(numM2L);                                            //  Increment M2L counter
     } else {                                                    // Else if P2P is faster
       P2P(Ci, Cj, mutual);                                      //  P2P kernel
-      count(NP2P);                                              //  Increment P2P counter
+      count(numP2P);                                            //  Increment P2P counter
     }                                                           // End if for fastest kernel
 #else
     M2L(Ci,Cj,mutual);                                          // M2L kernel
-    count(NM2L);                                                // Increment M2L counter
+    count(numM2L);                                              // Increment M2L counter
 #endif
   }
 
@@ -84,7 +84,7 @@ class Traversal : public Kernel, public Logger {
       for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
         traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
       }                                                         //  End loop over Cj's children
-    } else if (Ci->NDBODY + Cj->NDBODY >= NSPAWN || (mutual && Ci == Cj)) {// Else if cells are still large
+    } else if (Ci->NDBODY + Cj->NDBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
       traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,         //  Traverse for range of cell pairs
                Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
     } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
@@ -120,7 +120,7 @@ class Traversal : public Kernel, public Logger {
           } else {                                              //    Else if source and target are different
             P2P(Ci, Cj, mutual);                                //     P2P kernel for pair of cells
           }                                                     //    End if for same source and target
-          count(NP2P);                                          //    Increment P2P counter
+          count(numP2P);                                        //    Increment P2P counter
         }                                                       //   End if for bodies
       } else {                                                  //  Else if cells are close but not bodies
         splitCell(Ci, Cj, mutual);                              //   Split cell and call function recursively for child
@@ -139,7 +139,7 @@ class Traversal : public Kernel, public Logger {
     Ci->CHILD = 0;                                              // Child cells for periodic center cell
     Ci->NCHILD = 26;                                            // Number of child cells for periodic center cell
     C_iter C0 = Cj0;                                            // Placeholder for Cj0
-    for (int level=0; level<IMAGES-1; level++) {                // Loop over sublevels of tree
+    for (int level=0; level<images-1; level++) {                // Loop over sublevels of tree
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
         for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
           for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
@@ -192,14 +192,14 @@ class Traversal : public Kernel, public Logger {
   }
 
  public:
-  Traversal(int nspawn, int images) : NSPAWN(nspawn), IMAGES(images), NP2P(0), NM2L(0) {}
+  Traversal(int nspawn, int images) : nspawn(nspawn), images(images), numP2P(0), numM2L(0) {}
 
 //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversal(Cells &icells, Cells &jcells, real_t cycle, bool mutual=false) {
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     startTimer("Traverse");                                     // Start timer
-    if (IMAGES == 0) {                                          // If non-periodic boundary condition
+    if (images == 0) {                                          // If non-periodic boundary condition
       Xperiodic = 0;                                            //  No periodic shift
       traverse(Ci0,Cj0,mutual);                                 //  Traverse the tree
     } else {                                                    // If periodic boundary condition
@@ -228,8 +228,8 @@ class Traversal : public Kernel, public Logger {
     Cj->BODY = jbodies.begin();                                 // Iterator of first source body
     Cj->NDBODY = jbodies.size();                                // Number of source bodies
     int prange = 0;                                             // Range of periodic images
-    for (int i=0; i<IMAGES; i++) {                              // Loop over periodic image sublevels
-      prange += int(std::pow(3.,i));                             //  Accumulate range of periodic images
+    for (int i=0; i<images; i++) {                              // Loop over periodic image sublevels
+      prange += int(std::pow(3.,i));                            //  Accumulate range of periodic images
     }                                                           // End loop over perioidc image sublevels
     for (int ix=-prange; ix<=prange; ix++) {                    // Loop over x periodic direction
       for (int iy=-prange; iy<=prange; iy++) {                  //  Loop over y periodic direction
@@ -284,11 +284,11 @@ class Traversal : public Kernel, public Logger {
 	      << std::setw(stringLength) << std::left           // Set format
 	      << "P2P calls"  << " : "                          // Print title
 	      << std::setprecision(0) << std::fixed             // Set format
-              << NP2P << std::endl                              // Print number of P2P calls
+              << numP2P << std::endl                            // Print number of P2P calls
 	      << std::setw(stringLength) << std::left           // Set format
 	      << "M2L calls"  << " : "                          // Print title
 	      << std::setprecision(0) << std::fixed             // Set format
-              << NM2L << std::endl;                             // Print number of M2l calls
+              << numM2L << std::endl;                           // Print number of M2l calls
 #endif
   }
 };

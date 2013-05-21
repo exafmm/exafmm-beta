@@ -25,22 +25,22 @@ class BuildTree : public Logger {
     vec3         X;                                             //!< Coordinate at center
   };
 
-  int          NCRIT;                                           //!< Number of bodies per leaf cell
-  int          NSPAWN;                                          //!< Threshold of NDBODY for spawning new threads
-  int          MAXLEVEL;                                        //!< Maximum level of tree
+  int          ncrit;                                           //!< Number of bodies per leaf cell
+  int          nspawn;                                          //!< Threshold of NDBODY for spawning new threads
+  int          maxlevel;                                        //!< Maximum level of tree
   B_iter       B0;                                              //!< Iterator of first body
   OctreeNode * N0;                                              //!< Octree root node
 
  private:
 //! Get number of binary tree nodes for a given number of bodies
   inline int getNumBinNode(int n) const {
-    if (n <= NSPAWN) return 1;                                  // If less then threshold, use only one node
-    else return 4 * ((n - 1) / NSPAWN) - 1;                     // Else estimate number of binary tree nodes
+    if (n <= nspawn) return 1;                                  // If less then threshold, use only one node
+    else return 4 * ((n - 1) / nspawn) - 1;                     // Else estimate number of binary tree nodes
   }
 
 //! Get maximum number of binary tree nodes for a given number of bodies
   inline int getMaxBinNode(int n) const {
-    return (4 * n) / NSPAWN;                                    // Conservative estimate of number of binary tree nodes
+    return (4 * n) / nspawn;                                    // Conservative estimate of number of binary tree nodes
   }
 
 //! Exclusive scan with offset
@@ -69,7 +69,7 @@ class BuildTree : public Logger {
 //! Count bodies in each octant using binary tree recursion
   void countBodies(Bodies& bodies, int begin, int end, vec3 X, BinaryTreeNode * binNode) {
     assert(getNumBinNode(end - begin) <= binNode->END - binNode->BEGIN + 1);
-    if (end - begin <= NSPAWN) {                                // If number of bodies is less than threshold
+    if (end - begin <= nspawn) {                                // If number of bodies is less than threshold
       for (int i=0; i<8; i++) binNode->NBODY[i] = 0;            //  Initialize number of bodies in octant
       binNode->LEFT = binNode->RIGHT = NULL;                    //  Initialize pointers to left and right child node
       for (int i=begin; i<end; i++) {                           //  Loop over bodies in node
@@ -127,7 +127,7 @@ class BuildTree : public Logger {
                           BinaryTreeNode * binNode, vec3 X, real_t R0, int level=0, bool direction=false) {
     assert(getMaxBinNode(end - begin) <= binNode->END - binNode->BEGIN);
     if (begin == end) return NULL;                              // If no bodies left, return null pointer
-    if (end - begin <= NCRIT) {                                 // If number of bodies is less than threshold
+    if (end - begin <= ncrit) {                                 // If number of bodies is less than threshold
       if (direction)                                            //  If direction of data is from bodies to buffer
         for (int i=begin; i<end; i++) buffer[i] = bodies[i];    //   Copy bodies to buffer
       return makeOctNode(begin, end, X, true);                  //  Create an octree node and return it's pointer
@@ -176,7 +176,7 @@ class BuildTree : public Logger {
       C->NCHILD = 0;                                            //  Number of child cells
       C->NCBODY = octNode->NBODY;                               //  Number of bodies in cell
       assert(C->NCBODY > 0);
-      MAXLEVEL = std::max(MAXLEVEL, level);                     //  Update maximum level of tree
+      maxlevel = std::max(maxlevel, level);                     //  Update maximum level of tree
     } else {                                                    // Else if node has children
       C->NCBODY = 0;                                            //  Set number of bodies in cell to zero
       int nchild = 0;                                           //  Initialize number of child cells
@@ -206,7 +206,7 @@ class BuildTree : public Logger {
         int octant = octants[i];                                //   Get octant from child index
         delete octNode->CHILD[octant];                          //   Free child pointer to avoid memory leak
       }                                                         //  End loop over children
-      MAXLEVEL = std::max(MAXLEVEL, level+1);                   //  Update maximum level of tree
+      maxlevel = std::max(maxlevel, level+1);                   //  Update maximum level of tree
     }                                                           // End if for child existance
   }
 
@@ -236,7 +236,7 @@ class BuildTree : public Logger {
   }
 
  public:
-  BuildTree(int ncrit, int nspawn) : NCRIT(ncrit), NSPAWN(nspawn), MAXLEVEL(0) {}
+  BuildTree(int _ncrit, int _nspawn) : ncrit(_ncrit), nspawn(_nspawn), maxlevel(0) {}
 
 //! Build tree structure top down
   Cells buildTree(Bodies &bodies, Box box) {
@@ -252,7 +252,7 @@ class BuildTree : public Logger {
 	      << std::setw(stringLength) << std::left           // Set format
 	      << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
 	      << std::setw(stringLength) << std::left           // Set format
-	      << "Tree depth" << " : " << MAXLEVEL << std::endl;// Print number of levels
+	      << "Tree depth" << " : " << maxlevel << std::endl;// Print number of levels
   }
 };
 #endif

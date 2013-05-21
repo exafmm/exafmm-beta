@@ -22,10 +22,10 @@ int main(int argc, char ** argv) {
   const real_t sigma = .25 / M_PI;
   const real_t theta = .5;
   const real_t cycle = 100.;
-  BoundBox boundbox(args.NSPAWN);
-  BuildTree tree(args.NCRIT,args.NSPAWN);
-  UpDownPass pass(args.THETA);
-  Traversal traversal(args.NSPAWN,args.IMAGES);
+  BoundBox boundbox(args.nspawn);
+  BuildTree tree(args.ncrit,args.nspawn);
+  UpDownPass pass(args.theta);
+  Traversal traversal(args.nspawn,args.images);
   Ewald ewald(ksize,alpha,sigma,theta,cycle);
   logger.verbose = true;
   if (args.verbose) {

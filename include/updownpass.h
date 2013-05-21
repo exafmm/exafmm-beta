@@ -61,7 +61,7 @@ class UpDownPass : public Kernel, public Logger {
   }
 
  public:
-  UpDownPass(real_t theta) : theta(theta) {}
+  UpDownPass(real_t _theta) : theta(_theta) {}
 
 //! Upward pass (P2M, M2M)
   void upwardPass(Cells &cells) {

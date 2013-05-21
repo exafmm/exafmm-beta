@@ -26,7 +26,7 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
   UpDownPass pass(args.theta);
   Traversal traversal(args.nspawn,args.images);
   LocalEssentialTree LET(args.images);
-  logger.verbose = LET.MPIRANK == 0;
+  logger.verbose = LET.mpirank == 0;
   args.verbose &= logger.verbose;
   if (args.verbose) {
     boundbox.verbose = true;
@@ -36,7 +36,7 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
     LET.verbose = true;
     logger.printTitle("Parameters");
   }
-  if(LET.MPIRANK == 0) args.print(logger.stringLength,P);
+  if(LET.mpirank == 0) args.print(logger.stringLength,P);
 #if AUTO
   traversal.timeKernels();
 #endif
@@ -86,8 +86,8 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
   LET.commBodies();
   LET.commCells();
   traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
-  for (int irank=1; irank<LET.MPISIZE; irank++) {
-    LET.getLET(jcells,(LET.MPIRANK+irank)%LET.MPISIZE);
+  for (int irank=1; irank<LET.mpisize; irank++) {
+    LET.getLET(jcells,(LET.mpirank+irank)%LET.mpisize);
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
   pass.downwardPass(cells);
