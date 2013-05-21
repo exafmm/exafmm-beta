@@ -7,11 +7,6 @@ class Kernel {
  protected:
   vec3 Xperiodic;                                               //!< Coordinate offset for periodic B.C.
 
- public:
- //! Matern kernel variables
-  real_t NU;                                                    //!< Order of modified Bessel function of the second kind
-  real_t RHO;                                                   //!< Scaling of Matern covariance function
-
  private:
 //! Calculate Bmax
   real_t getBmax(vec3 const &X, C_iter C) const {
@@ -46,7 +41,7 @@ class Kernel {
   }
 
  public:
-  Kernel() : Xperiodic(0), NU(1.5), RHO(10) {}                  //!< Constructor
+  Kernel() : Xperiodic(0) {}                                    //!< Constructor
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const;            //!< P2P kernel between cells Ci and Cj
   void P2P(C_iter C) const;                                     //!< P2P kernel for cell C
   void P2M(C_iter C) const;                                     //!< P2M kernel for cell C
