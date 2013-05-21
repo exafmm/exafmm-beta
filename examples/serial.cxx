@@ -11,7 +11,6 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  Cells cells, jcells;
   Dataset data;
   Logger logger;
 
@@ -44,14 +43,14 @@ int main(int argc, char ** argv) {
   bounds = boundbox.getBounds(jbodies,bounds);
 #endif
   Box box = boundbox.bounds2box(bounds);
-  tree.buildTree(bodies, cells, box);                         // TODO : make it work without this
+  Cells cells = tree.buildTree(bodies, box);                    // TODO : make it work without this
 #if IneJ
-  tree.buildTree(jbodies, jcells, box);                       // TODO : make it work without this
+  Cells jcells = tree.buildTree(jbodies, box);                  // TODO : make it work without this
 #endif
   tree.resetTimer();
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  tree.buildTree(bodies, cells, box);
+  cells = tree.buildTree(bodies, box);
   pass.upwardPass(cells);
 #if IneJ
   tree.buildTree(jbodies, jcells, box);
@@ -60,6 +59,7 @@ int main(int argc, char ** argv) {
 #else
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   Bodies jbodies = bodies;
+  Cells jcells = cells;
 #endif
   pass.downwardPass(cells);
   if (args.verbose) logger.printTitle("Total runtime");

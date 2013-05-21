@@ -225,22 +225,23 @@ class BuildTree : public Logger {
   }
 
 //! Link tree structure
-  void linkTree(Cells &cells, real_t R0) {
+  Cells linkTree(real_t R0) {
     startTimer("Link tree");                                    // Start timer
-    cells.resize(N0->NNODE);                                    // Allocate cells array
+    Cells cells(N0->NNODE);                                     // Allocate cells array
     C_iter C0 = cells.begin();                                  // Cell begin iterator
     nodes2cells(N0, C0, C0, C0+1, R0);                          // Convert nodes to cells recursively
     delete N0;                                                  // Deallocate nodes
     stopTimer("Link tree",verbose);                             // Stop timer
+    return cells;                                               // Return cells array
   }
 
  public:
   BuildTree(int ncrit, int nspawn) : NCRIT(ncrit), NSPAWN(nspawn), MAXLEVEL(0) {}
 
 //! Build tree structure top down
-  void buildTree(Bodies &bodies, Cells &cells, Box box) {
+  Cells buildTree(Bodies &bodies, Box box) {
     growTree(bodies,box.X,box.R);                               // Grow tree from root
-    linkTree(cells,box.R);                                      // Form parent-child links in tree
+    return linkTree(box.R);                                     // Form parent-child links in tree
   }
 
 //! Print tree structure statistics

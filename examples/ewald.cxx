@@ -13,7 +13,6 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  Cells cells;
   Dataset data;
   Logger logger;
   Sort sort;
@@ -50,7 +49,7 @@ int main(int argc, char ** argv) {
   Bodies bodies = data.initBodies(bodies, args.distribution);
   Bounds bounds = ewald.rescale(bodies);
   Box box = boundbox.bounds2box(bounds);
-  tree.buildTree(bodies, cells, box);
+  Cells cells = tree.buildTree(bodies, box);
   pass.upwardPass(cells);
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   pass.downwardPass(cells);

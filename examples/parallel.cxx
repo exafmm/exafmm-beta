@@ -13,7 +13,6 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  Cells cells, jcells;
   Dataset data;
   Logger logger;
   Sort sort;
@@ -62,10 +61,10 @@ int main(int argc, char ** argv) {
 #endif
   Box box = boundbox.bounds2box(localBounds);
   logger.startPAPI();
-  tree.buildTree(bodies, cells, box);
+  Cells cells = tree.buildTree(bodies, box);
   pass.upwardPass(cells);
 #if IneJ
-  tree.buildTree(jbodies, jcells, box);
+  Cells jcells = tree.buildTree(jbodies, box);
   pass.upwardPass(jcells);
 #endif
 
@@ -82,6 +81,7 @@ int main(int argc, char ** argv) {
 #else
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   Bodies jbodies = bodies;
+  Cells jcells;
 #endif
   for (int irank=1; irank<LET.MPISIZE; irank++) {
     LET.getLET(jcells,(LET.MPIRANK+irank)%LET.MPISIZE);

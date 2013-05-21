@@ -8,7 +8,6 @@
 
 extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double *qj, int periodicflag) {
   Args args;
-  Cells cells, jcells;
   Logger logger;
   Sort sort;
 
@@ -79,9 +78,9 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
   jbodies = LET.commBodies(jbodies);
   Box box = boundbox.bounds2box(localBounds);
   logger.startPAPI();
-  tree.buildTree(bodies, cells, box);
+  Cells cells = tree.buildTree(bodies, box);
   pass.upwardPass(cells);
-  tree.buildTree(jbodies, jcells, box);
+  Cells jcells = tree.buildTree(jbodies, box);
   pass.upwardPass(jcells);
   LET.setLET(jcells,localBounds,cycle);
   LET.commBodies();
