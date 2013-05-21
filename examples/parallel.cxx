@@ -13,7 +13,6 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  Bodies bodies, jbodies;
   Cells cells, jcells;
   Dataset data;
   Logger logger;
@@ -46,12 +45,10 @@ int main(int argc, char ** argv) {
 #endif
   if (args.verbose) logger.printTitle("Profiling");
   logger.startTimer("Total FMM");
-  bodies.resize(args.numBodies);
-  data.initBodies(bodies, args.distribution, args.chargeSign, LET.MPIRANK, LET.MPISIZE);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution, args.chargeSign, LET.MPIRANK, LET.MPISIZE);
   Bounds localBounds = boundbox.getBounds(bodies);
 #if IneJ
-  jbodies.resize(args.numBodies);
-  data.initBodies(jbodies, args.distribution, LET.MPIRANK+LET.MPISIZE, LET.MPISIZE);
+  Bodies jbodies = data.initBodies(args.numBodies, args.distribution, LET.MPIRANK+LET.MPISIZE, LET.MPISIZE);
   localBounds = boundbox.getBounds(jbodies,localBounds);
 #endif
   Bounds globalBounds = LET.allreduceBounds(localBounds);
@@ -84,7 +81,7 @@ int main(int argc, char ** argv) {
   traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-  jbodies = bodies;
+  Bodies jbodies = bodies;
 #endif
   for (int irank=1; irank<LET.MPISIZE; irank++) {
     LET.getLET(jcells,(LET.MPIRANK+irank)%LET.MPISIZE);
@@ -134,7 +131,6 @@ int main(int argc, char ** argv) {
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
 #else
-  jbodies = bodies;
   for (int irank=0; irank<LET.MPISIZE; irank++) {
     LET.shiftBodies(jbodies);
     jcells.clear();
@@ -159,7 +155,7 @@ int main(int argc, char ** argv) {
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
   if (args.verbose) logger.printTitle("MPI direct sum");
-  if (int(bodies.size()) > args.numTarget) data.sampleBodies(bodies, args.numTarget);
+  data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
   data.initTarget(bodies2);
   logger.startTimer("Total Direct");

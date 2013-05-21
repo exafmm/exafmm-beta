@@ -8,7 +8,7 @@
 
 struct option long_options[] = {
   {"numBodies",    1, 0, 'n'},
-  {"numTarget",    1, 0, 't'},
+  {"numTargets",    1, 0, 't'},
   {"ncrit",        1, 0, 'c'},
   {"nspawn",       1, 0, 's'},
   {"images",       1, 0, 'i'},
@@ -24,7 +24,7 @@ struct option long_options[] = {
 class Args {
  public:
   int numBodies;
-  int numTarget;
+  int numTargets;
   int ncrit;
   int nspawn;
   int images;
@@ -40,7 +40,7 @@ class Args {
             "Usage: %s [options]\n"
             "Option : Description (Default value):\n"
             " --numBodies : Number of bodies (%d)\n"
-            " --numTarget : Number of targets for error checking (%d)\n"
+            " --numTargets : Number of targets for error checking (%d)\n"
             " --ncrit : Number of bodies per leaf cell (%d)\n"
             " --nspawn : Threshold for stopping thread spawning during recursion (%d)\n"
             " --images : Number of periodic image levels (%d)\n"
@@ -52,7 +52,7 @@ class Args {
             " --help : Show this help document\n",
             name,
             numBodies,
-            numTarget,
+            numTargets,
             ncrit,
             nspawn,
             images,
@@ -81,7 +81,7 @@ class Args {
   }
 
  public:
-  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), numTarget(100), ncrit(16), nspawn(1000), images(0),
+  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), numTargets(100), ncrit(16), nspawn(1000), images(0),
     theta(.6), mutual(1), verbose(1), distribution("cube"), chargeSign(1) {
     while (1) {
       int option_index;
@@ -92,7 +92,7 @@ class Args {
         numBodies = atoi(optarg);
         break;
       case 't':
-        numTarget = atoi(optarg);
+        numTargets = atoi(optarg);
         break;
       case 'c':
         ncrit = atoi(optarg);

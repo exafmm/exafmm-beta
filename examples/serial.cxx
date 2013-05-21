@@ -11,7 +11,6 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  Bodies bodies, jbodies;
   Cells cells, jcells;
   Dataset data;
   Logger logger;
@@ -38,12 +37,10 @@ int main(int argc, char ** argv) {
 #pragma omp master
 #endif
   if(args.verbose) logger.printTitle("Profiling");
-  bodies.resize(args.numBodies);
-  data.initBodies(bodies, args.distribution, args.chargeSign);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution, args.chargeSign);
   Bounds bounds = boundbox.getBounds(bodies);
 #if IneJ
-  jbodies.resize(args.numBodies);
-  data.initBodies(jbodies, args.distribution);
+  Bodies jbodies = data.initBodies(args.numBodies, args.distribution, args.chargeSign);
   bounds = boundbox.getBounds(jbodies,bounds);
 #endif
   Box box = boundbox.bounds2box(bounds);
@@ -62,7 +59,7 @@ int main(int argc, char ** argv) {
   traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
 #else
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-  jbodies = bodies;
+  Bodies jbodies = bodies;
 #endif
   pass.downwardPass(cells);
   if (args.verbose) logger.printTitle("Total runtime");
@@ -77,7 +74,7 @@ int main(int argc, char ** argv) {
   pass.resetTimer();
   traversal.resetTimer();
   logger.resetTimer();
-  if (int(bodies.size()) > args.numTarget) data.sampleBodies(bodies, args.numTarget);
+  data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
   data.initTarget(bodies2);
   logger.startTimer("Total Direct");

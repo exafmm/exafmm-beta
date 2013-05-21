@@ -8,7 +8,6 @@
 
 extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double *qj, int periodicflag) {
   Args args;
-  Bodies bodies, jbodies;
   Cells cells, jcells;
   Logger logger;
   Sort sort;
@@ -48,7 +47,7 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
 #endif
   if (args.verbose) logger.printTitle("Profiling");
   logger.startTimer("Total FMM");
-  bodies.resize(ni);
+  Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     B->X[0] = xi[3*i+0];
@@ -62,7 +61,7 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
     B->IBODY  = i;
   }
   Bounds localBounds = boundbox.getBounds(bodies);
-  jbodies.resize(nj);
+  Bodies jbodies(nj);
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     int i = B-jbodies.begin();
     B->X[0] = xj[3*i+0];

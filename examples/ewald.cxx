@@ -13,7 +13,6 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  Bodies bodies;
   Cells cells;
   Dataset data;
   Logger logger;
@@ -48,8 +47,7 @@ int main(int argc, char ** argv) {
   if(args.verbose) logger.printTitle("Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  bodies.resize(args.numBodies);
-  data.initBodies(bodies, args.distribution);
+  Bodies bodies = data.initBodies(bodies, args.distribution);
   Bounds bounds = ewald.rescale(bodies);
   Box box = boundbox.bounds2box(bounds);
   tree.buildTree(bodies, cells, box);
@@ -77,7 +75,7 @@ int main(int argc, char ** argv) {
   logger.stopTimer("Total Ewald", args.verbose);
 #else
   Bodies jbodies = bodies;
-  if (int(bodies.size()) > args.numTarget) data.sampleBodies(bodies, args.numTarget);
+  data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
   logger.startTimer("Total Direct");
