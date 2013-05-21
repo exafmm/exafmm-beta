@@ -16,6 +16,7 @@ struct option long_options[] = {
   {"mutual",       1, 0, 'm'},
   {"verbose",      1, 0, 'v'},
   {"distribution", 1, 0, 'd'},
+  {"chargeSign",   1, 0, 'q'},
   {"help",         0, 0, 'h'},
   {0, 0, 0, 0}
 };
@@ -24,13 +25,14 @@ class Args {
  public:
   int numBodies;
   int numTarget;
-  int NCRIT;
-  int NSPAWN;
-  int IMAGES;
-  double THETA;
+  int ncrit;
+  int nspawn;
+  int images;
+  double theta;
   int mutual;
   int verbose;
   const char * distribution;
+  int chargeSign;
 
  private:
   void usage(char * name) {
@@ -46,17 +48,19 @@ class Args {
             " --mutual [0/1] : Use mutual interaction (%d)\n"
 	    " --verbose [0/1] : Print information to screen (%d)\n"
             " --distribution [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n"
+	    " --chargeSign [0/1] : All positive or charge neutral (%d)\n"
             " --help : Show this help document\n",
             name,
             numBodies,
             numTarget,
-            NCRIT,
-            NSPAWN,
-            IMAGES,
-            THETA,
+            ncrit,
+            nspawn,
+            images,
+            theta,
             mutual,
 	    verbose,
-            distribution);
+            distribution,
+            chargeSign);
   }
 
   const char * parse(const char * arg) {
@@ -77,8 +81,8 @@ class Args {
   }
 
  public:
-  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), numTarget(100), NCRIT(16), NSPAWN(1000), IMAGES(0),
-    THETA(.6), mutual(1), verbose(1), distribution("cube") {
+  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), numTarget(100), ncrit(16), nspawn(1000), images(0),
+    theta(.6), mutual(1), verbose(1), distribution("cube"), chargeSign(1) {
     while (1) {
       int option_index;
       int c = getopt_long(argc, argv, "", long_options, &option_index);
@@ -91,16 +95,16 @@ class Args {
         numTarget = atoi(optarg);
         break;
       case 'c':
-        NCRIT = atoi(optarg);
+        ncrit = atoi(optarg);
         break;
       case 's':
-        NSPAWN = atoi(optarg);
+        nspawn = atoi(optarg);
         break;
       case 'i':
-        IMAGES = atoi(optarg);
+        images = atoi(optarg);
         break;
       case 'o':
-        THETA = atof(optarg);
+        theta = atof(optarg);
         break;
       case 'm':
         mutual = atoi(optarg);
@@ -110,6 +114,9 @@ class Args {
 	break;
       case 'd':
         distribution = parse(optarg);
+        break;
+      case 'q':
+	chargeSign = atoi(optarg);
         break;
       case 'h':
         usage(argv[0]);
@@ -128,19 +135,21 @@ class Args {
 		<< std::setw(stringLength)                      // Set format
 		<< "P" << " : " << P << std::endl               // Print P
 		<< std::setw(stringLength)                      // Set format
-		<< "THETA" << " : " << THETA << std::endl       // Print THETA
+		<< "theta" << " : " << theta << std::endl       // Print theta
 		<< std::setw(stringLength)                      // Set format
-		<< "NCRIT" << " : " << NCRIT << std::endl       // Print NCRIT
+		<< "ncrit" << " : " << ncrit << std::endl       // Print ncrit
 		<< std::setw(stringLength)                      // Set format
-		<< "NSPAWN" << " : " << NSPAWN << std::endl     // Print NSPAWN
+		<< "nspawn" << " : " << nspawn << std::endl     // Print nspawn
 		<< std::setw(stringLength)                      // Set format
-		<< "IMAGES" << " : " << IMAGES << std::endl     // Print IMAGES
+		<< "images" << " : " << images << std::endl     // Print images
 		<< std::setw(stringLength)                      // Set format
 		<< "mutual" << " : " << mutual << std::endl     // Print mutual
 		<< std::setw(stringLength)                      // Set format
 		<< "verbose" << " : " << verbose << std::endl   // Print verbose
 		<< std::setw(stringLength)                      // Set format
-		<< "distribution" << " : " << distribution << std::endl;// Print distribution
+		<< "distribution" << " : " << distribution << std::endl// Print distribution
+                << std::setw(stringLength)                      // Set format
+                << "chargeSign" << " : " << chargeSign << std::endl;// Print chargeSign
     } else {
       std::cout << std::setw(stringLength) << std::left         // Set format
 		<< "numBodies" << " : " << numBodies << std::endl; // Print numBodies  

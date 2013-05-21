@@ -9,9 +9,6 @@
 #include "vtk.h"
 #endif
 
-extern void preTraversal();
-extern void postTraversal();
-
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   Bodies bodies, jbodies;
@@ -20,10 +17,10 @@ int main(int argc, char ** argv) {
   Logger logger;
 
   const real_t cycle = 2 * M_PI;
-  BoundBox boundbox(args.NSPAWN);
-  BuildTree tree(args.NCRIT,args.NSPAWN);
-  UpDownPass pass(args.THETA);
-  Traversal traversal(args.NSPAWN,args.IMAGES);
+  BoundBox boundbox(args.nspawn);
+  BuildTree tree(args.ncrit,args.nspawn);
+  UpDownPass pass(args.theta);
+  Traversal traversal(args.nspawn,args.images);
   logger.verbose = true;
   if (args.verbose) {
     boundbox.verbose = true;
@@ -42,7 +39,7 @@ int main(int argc, char ** argv) {
 #endif
   if(args.verbose) logger.printTitle("Profiling");
   bodies.resize(args.numBodies);
-  data.initBodies(bodies, args.distribution);
+  data.initBodies(bodies, args.distribution, args.chargeSign);
   Bounds bounds = boundbox.getBounds(bodies);
 #if IneJ
   jbodies.resize(args.numBodies);

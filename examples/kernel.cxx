@@ -12,8 +12,8 @@ int main() {
   Bodies bodies(16), bodies2(16), jbodies(16);
   Cells cells(4);
   Kernel kernel;
-  const real_t THETA = 0.5;
-  const real_t R = 2 / THETA;
+  const real_t theta = 0.5;
+  const real_t R = 2 / theta;
 
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     B->X[0] = 2 * drand48();
@@ -113,7 +113,7 @@ int main() {
 #endif
     order.push_back(p);
     error.push_back(log10(e));
-    bound.push_back(log10(std::pow(THETA,p)));
+    bound.push_back(log10(std::pow(theta,p)));
   }
   file.close();
 

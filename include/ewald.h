@@ -14,17 +14,17 @@ class Ewald {
   typedef std::vector<Wave>::iterator W_iter;                   //!< Iterator for Wave types
 
  private:
-  real_t KSIZE;                                                 //!< Number of waves in Ewald summation
-  real_t ALPHA;                                                 //!< Scaling parameter for Ewald summation
-  real_t SIGMA;                                                 //!< Scaling parameter for Ewald summation
-  real_t THETA;                                                 //!< Neighbor acceptance criteria
-  real_t CYCLE;                                                 //!< Periodic cycle
+  real_t ksize;                                                 //!< Number of waves in Ewald summation
+  real_t alpha;                                                 //!< Scaling parameter for Ewald summation
+  real_t sigma;                                                 //!< Scaling parameter for Ewald summation
+  real_t theta;                                                 //!< Neighbor acceptance criteria
+  real_t cycle;                                                 //!< Periodic cycle
   vec3   Xperiodic;                                             //!< Coordinate offset for periodic B.C.
 
  private:
 //! Forward DFT
   void dft(Waves &waves, Bodies &bodies) {
-    real_t scale = 2 * M_PI / CYCLE;                            // Scale conversion
+    real_t scale = 2 * M_PI / cycle;                            // Scale conversion
     for (W_iter W=waves.begin(); W!=waves.end(); W++) {         // Loop over waves
       W->REAL = W->IMAG = 0;                                    //  Initialize waves
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     //  Loop over bodies
@@ -38,7 +38,7 @@ class Ewald {
 
 //! Inverse DFT
   void idft(Waves &waves, Bodies &bodies) {
-    real_t scale = 2 * M_PI / CYCLE;                            // Scale conversion
+    real_t scale = 2 * M_PI / cycle;                            // Scale conversion
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       kvec4 TRG = 0;                                            //  Initialize target values
       for (W_iter W=waves.begin(); W!=waves.end(); W++) {       //   Loop over waves
@@ -55,8 +55,8 @@ class Ewald {
 //! Initialize wave vector
   Waves initWaves() {
     Waves waves;                                                // Initialzie wave vector
-    real_t kmaxsq = KSIZE * KSIZE;                              // kmax squared
-    int kmax = int(KSIZE);                                      // kmax as integer
+    real_t kmaxsq = ksize * ksize;                              // kmax squared
+    int kmax = int(ksize);                                      // kmax as integer
     for (int l=0; l<=kmax; l++) {                               // Loop over x component
       int mmin = -kmax;                                         //  Determine minimum y component
       if (l==0) mmin = 0;                                       //  Exception for minimum y component
@@ -84,19 +84,19 @@ class Ewald {
       for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NDBODY; Bj++) { //  Loop over source bodies
 	vec3 dist = Bi->X - Bj->X - Xperiodic;                  //   Distance vector from source to target
 	for (int d=0; d<3; d++) {                               //   Loop over dimensions
-	  if (dist[d] < -CYCLE/2) dist[d] += CYCLE;             //    Wrap domain so that target is always at
-	  if (dist[d] >= CYCLE/2) dist[d] -= CYCLE;             //     the center of a [-CYCLE/2,CYCLE/2]^3 source cube
+	  if (dist[d] < -cycle/2) dist[d] += cycle;             //    Wrap domain so that target is always at
+	  if (dist[d] >= cycle/2) dist[d] -= cycle;             //     the center of a [-cycle/2,cycle/2]^3 source cube
 	}                                                       //   End loop over dimensions
 	real_t R2 = norm(dist);                                 //   R^2
 	if (R2 != 0) {                                          //   Exclude self interaction
-	  real_t R2s = R2 * ALPHA * ALPHA;                      //    (R * alpha)^2
+	  real_t R2s = R2 * alpha * alpha;                      //    (R * alpha)^2
 	  real_t Rs = std::sqrt(R2s);                           //    R * alpha
 	  real_t invRs = 1 / Rs;                                //    1 / (R * alpha)
 	  real_t invR2s = invRs * invRs;                        //    1 / (R * alpha)^2
 	  real_t invR3s = invR2s * invRs;                       //    1 / (R * alpha)^3
 	  real_t dtmp = Bj->SRC * (M_2_SQRTPI * exp(-R2s) * invR2s + erfc(Rs) * invR3s);
-	  dtmp *= ALPHA * ALPHA * ALPHA;                        //    Scale temporary value
-	  Bi->TRG[0] += Bj->SRC * erfc(Rs) * invRs * ALPHA;     //    Ewald real potential
+	  dtmp *= alpha * alpha * alpha;                        //    Scale temporary value
+	  Bi->TRG[0] += Bj->SRC * erfc(Rs) * invRs * alpha;     //    Ewald real potential
 	  Bi->TRG[1] -= dist[0] * dtmp;                         //    x component of Ewald real force
 	  Bi->TRG[2] -= dist[1] * dtmp;                         //    y component of Ewald real force
 	  Bi->TRG[3] -= dist[2] * dtmp;                         //    z component of Ewald real force
@@ -115,7 +115,7 @@ class Ewald {
       for (C_iter Cj=C0+C->CHILD; Cj!=C0+C->CHILD+C->NCHILD; Cj++) {// Loop over cell's children
         vec3 dX = Ci->X - Cj->X - Xperiodic;                    //   Distance vector from source to target
         real_t Rq = std::sqrt(norm(dX));                        //   Scalar distance
-        if (Rq * THETA < Ci->R + Cj->R && Cj->NCHILD == 0) {    //   If twigs are close
+        if (Rq * theta < Ci->R + Cj->R && Cj->NCHILD == 0) {    //   If twigs are close
           P2P(Ci,Cj);                                           //    Ewald real part
         } else if (Cj->NCHILD != 0) {                           //   If cells are not twigs
           cellStack.push(Cj);                                   //    Push source cell to stack
@@ -127,15 +127,15 @@ class Ewald {
  public:
 //! Constructor
  Ewald(real_t ksize, real_t alpha, real_t sigma, real_t theta, real_t cycle) :
-  KSIZE(ksize), ALPHA(alpha), SIGMA(sigma), THETA(theta), CYCLE(cycle), Xperiodic(0) {}
+  ksize(ksize), alpha(alpha), sigma(sigma), theta(theta), cycle(cycle), Xperiodic(0) {}
 
 //! Rescale positions and charges
   Bounds rescale(Bodies &bodies) {
     const int numBodies = bodies.size();                        // Number of bodies
     real_t average = 0;                                         // Initialize average charge
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->X *= CYCLE / (2 * M_PI);                               //  Rescale positions
-      B->X += CYCLE / 2;                                        //  Shift positions
+      B->X *= cycle / (2 * M_PI);                               //  Rescale positions
+      B->X += cycle / 2;                                        //  Shift positions
       B->SRC = drand48() / numBodies;                           //  Randomize charges
       B->IBODY = B-bodies.begin();                              //  Initial body numbering for sorting back
       average += B->SRC;                                        //  Accumulate charges
@@ -145,8 +145,8 @@ class Ewald {
       B->SRC -= average;                                        //  Make average charge 0
     }                                                           // End loop over bodies
     Bounds bounds;                                              // Initialize bounds
-    bounds.Xmin = 0;                                            // Force Xmin to be -CYCLE/2
-    bounds.Xmax = CYCLE;                                        // Force Xmax to be CYCLE/2
+    bounds.Xmin = 0;                                            // Force Xmin to be -cycle/2
+    bounds.Xmax = cycle;                                        // Force Xmax to be cycle/2
     return bounds;                                              // Return bounds
   }
 
@@ -158,15 +158,15 @@ class Ewald {
         for (int ix=-1; ix<=1; ix++) {                          //   Loop over x periodic direction
           for (int iy=-1; iy<=1; iy++) {                        //    Loop over y periodic direction
             for (int iz=-1; iz<=1; iz++) {                      //     Loop over z periodic direction
-              Xperiodic[0] = ix * CYCLE;                        //      Coordinate offset for x periodic direction
-              Xperiodic[1] = iy * CYCLE;                        //      Coordinate offset for y periodic direction
-              Xperiodic[2] = iz * CYCLE;                        //      Coordinate offset for z periodic direction
+              Xperiodic[0] = ix * cycle;                        //      Coordinate offset for x periodic direction
+              Xperiodic[1] = iy * cycle;                        //      Coordinate offset for y periodic direction
+              Xperiodic[2] = iz * cycle;                        //      Coordinate offset for z periodic direction
               traverse(Ci,Cj,Cj);                               //      Traverse the source tree
             }                                                   //     End loop over z periodic direction
           }                                                     //    End loop over y periodic direction
         }                                                       //   End loop over x periodic direction
         for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; B++) {  //   Loop over all bodies in cell
-          B->TRG[0] -= M_2_SQRTPI * B->SRC * ALPHA;             //    Self term of Ewald real part
+          B->TRG[0] -= M_2_SQRTPI * B->SRC * alpha;             //    Self term of Ewald real part
         }                                                       //   End loop over all bodies in cell
       }                                                         //  End if for twig cells
     }                                                           // End loop over target cells
@@ -176,9 +176,9 @@ class Ewald {
   void wavePart(Bodies &bodies) {
     Waves waves = initWaves();                                  // Initialize wave vector
     dft(waves,bodies);                                          // Apply DFT to bodies to get waves
-    real_t scale = 2 * M_PI / CYCLE;                            // Scale conversion
-    real_t coef = .5 / M_PI / M_PI / SIGMA / CYCLE;             // First constant
-    real_t coef2 = scale * scale / (4 * ALPHA * ALPHA);         // Second constant
+    real_t scale = 2 * M_PI / cycle;                            // Scale conversion
+    real_t coef = .5 / M_PI / M_PI / sigma / cycle;             // First constant
+    real_t coef2 = scale * scale / (4 * alpha * alpha);         // Second constant
     for (W_iter W=waves.begin(); W!=waves.end(); W++) {         // Loop over waves
       real_t K2 = norm(W->K);                                   //  Wave number squared
       real_t factor = coef * exp(-K2 * coef2) / K2;             //  Wave factor
@@ -192,9 +192,9 @@ class Ewald {
 
     vec3 dipole = 0;                                            // Initialize dipole correction
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      dipole += (B->X - CYCLE/2) * B->SRC;                      //  Calcuate dipole of the whole system
+      dipole += (B->X - cycle/2) * B->SRC;                      //  Calcuate dipole of the whole system
     }                                                           // End loop over bodies
-    coef = 4 * M_PI / (3 * CYCLE * CYCLE * CYCLE);              // Precalcualte constant
+    coef = 4 * M_PI / (3 * cycle * cycle * cycle);              // Precalcualte constant
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG[0] += coef * norm(dipole) / bodies.size() / B->SRC;//  Dipole correction for potential
       for (int d=0; d!=3; d++) {                                //  Loop over dimensions

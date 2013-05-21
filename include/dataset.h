@@ -13,22 +13,22 @@ class Dataset {                                                 // Contains all 
 
  private:
 //! Initialize source values
-  void initSource(Bodies &bodies, int mpisize) {
-#if 1
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->SRC = 1. / bodies.size() / mpisize;                    //  Initialize mass
-    }                                                           // End loop over bodies
-#else
-    real_t average = 0;                                         // Initialize average charge
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->SRC = drand48() - .5;                                  //  Initialize charge
-      average += B->SRC;                                        //  Accumulate average
-    }                                                           // End loop over bodies
-    average /= bodies.size() * mpisize;
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->SRC -= average;                                        //  Subtract average charge
-    }                                                           // End loop over bodies
-#endif
+  void initSource(Bodies &bodies, int chargeSign, int mpisize) {
+    if (chargeSign) {                                           // If charge is all positive
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     //  Loop over bodies
+        B->SRC = 1. / bodies.size() / mpisize;                  //   Initialize charge
+      }                                                         //  End loop over bodies
+    } else {                                                    // If charge is positive and negative
+      real_t average = 0;                                       //  Initialize average charge
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     //  Loop over bodies
+        B->SRC = drand48() - .5;                                //   Initialize charge
+        average += B->SRC;                                      //   Accumulate average
+      }                                                         //  End loop over bodies
+      average /= bodies.size() * mpisize;                       //  Normalize average
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     //  Loop over bodies
+        B->SRC -= average;                                      //   Subtract average charge
+      }                                                         //  End loop over bodies
+    }                                                           // End if for charge sign
   }
 
 //! Uniform distribution on [-1,1]^3 lattice
@@ -109,7 +109,8 @@ class Dataset {                                                 // Contains all 
   }
 
 //! Initialize dsitribution, source & target value of bodies
-  void initBodies(Bodies &bodies, const char * distribution, int mpirank=0, int mpisize=1, int numSplit=1) {
+  void initBodies(Bodies &bodies, const char * distribution, int chargeSign,
+		  int mpirank=0, int mpisize=1, int numSplit=1) {
     switch (distribution[0]) {                                  // Switch between data distribution type
     case 'l':                                                   // Case for lattice
       lattice(bodies,mpirank,mpisize);                          //  Uniform distribution on [-1,1]^3 lattice
@@ -126,7 +127,7 @@ class Dataset {                                                 // Contains all 
     default:                                                    // If none of the above
       fprintf(stderr, "unknown data distribution %s\n", distribution);// Print error message
     }                                                           // End switch between data distribution type
-    initSource(bodies,mpisize);                                 // Initialize source values
+    initSource(bodies,chargeSign,mpisize);                      // Initialize source values
     initTarget(bodies);                                         // Initialize target values
   }
 

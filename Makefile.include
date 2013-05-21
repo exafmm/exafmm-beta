@@ -2,7 +2,6 @@
 
 ### choose kernel
 EQUATION = Laplace
-#EQUATION = Matern
 #EQUATION = Yukawa (not available yet)
 #EQUATION = Helmholtz (not available yet)
 #EQUATION = Stokes (not available yet)
@@ -31,7 +30,7 @@ LFLAGS	+= -D$(BASIS)
 LFLAGS  += -DEXPANSION=3 # Specifcy expansion order
 ifeq ($(BASIS),Cartesian)
 LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
-LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
+#LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
 endif
 LFLAGS	+= -DERROR_OPT # Use error optimized theta
 LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
@@ -46,7 +45,7 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
 ### Intel TBB flags : TBB is available from http://threadingbuildingblocks.org/download.php
-#LFLAGS	+= -std=c++0x -DTBB -ltbb
+LFLAGS	+= -std=c++0x -DTBB -ltbb
 
 ### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -std=c++0x -DMTHREAD -lmyth 

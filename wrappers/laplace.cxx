@@ -14,20 +14,20 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
   Sort sort;
 
   args.numBodies = ni;
-  args.THETA = 0.6;
-  args.NCRIT = 16;
-  args.NSPAWN = 1000;
-  args.IMAGES = ((periodicflag & 0x1) == 0) ? 0 : 3;
+  args.theta = 0.6;
+  args.ncrit = 16;
+  args.nspawn = 1000;
+  args.images = ((periodicflag & 0x1) == 0) ? 0 : 3;
   args.mutual = 0;
   args.verbose = 1;
   args.distribution = "external";
 
   const real_t cycle = 2 * M_PI;
-  BoundBox boundbox(args.NSPAWN);
-  BuildTree tree(args.NCRIT,args.NSPAWN);
-  UpDownPass pass(args.THETA);
-  Traversal traversal(args.NSPAWN,args.IMAGES);
-  LocalEssentialTree LET(args.IMAGES);
+  BoundBox boundbox(args.nspawn);
+  BuildTree tree(args.ncrit,args.nspawn);
+  UpDownPass pass(args.theta);
+  Traversal traversal(args.nspawn,args.images);
+  LocalEssentialTree LET(args.images);
   logger.verbose = LET.MPIRANK == 0;
   args.verbose &= logger.verbose;
   if (args.verbose) {

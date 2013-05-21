@@ -20,11 +20,11 @@ int main(int argc, char ** argv) {
   Sort sort;
 
   const real_t cycle = 2 * M_PI;
-  BoundBox boundbox(args.NSPAWN);
-  BuildTree tree(args.NCRIT,args.NSPAWN);
-  UpDownPass pass(args.THETA);
-  Traversal traversal(args.NSPAWN,args.IMAGES);
-  LocalEssentialTree LET(args.IMAGES);
+  BoundBox boundbox(args.nspawn);
+  BuildTree tree(args.ncrit,args.nspawn);
+  UpDownPass pass(args.theta);
+  Traversal traversal(args.nspawn,args.images);
+  LocalEssentialTree LET(args.images);
   args.numBodies /= LET.MPISIZE;
   logger.verbose = LET.MPIRANK == 0;
   args.verbose &= logger.verbose;
@@ -47,7 +47,7 @@ int main(int argc, char ** argv) {
   if (args.verbose) logger.printTitle("Profiling");
   logger.startTimer("Total FMM");
   bodies.resize(args.numBodies);
-  data.initBodies(bodies, args.distribution, LET.MPIRANK, LET.MPISIZE);
+  data.initBodies(bodies, args.distribution, args.chargeSign, LET.MPIRANK, LET.MPISIZE);
   Bounds localBounds = boundbox.getBounds(bodies);
 #if IneJ
   jbodies.resize(args.numBodies);

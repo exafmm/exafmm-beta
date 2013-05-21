@@ -6,7 +6,7 @@
 
 class UpDownPass : public Kernel, public Logger {
  public:
-  real_t THETA;                                                 //!< Multipole acceptance criteria
+  real_t theta;                                                 //!< Multipole acceptance criteria
 
  private:
 //! Error optimization of Rcrit
@@ -20,9 +20,9 @@ class UpDownPass : public Kernel, public Logger {
 #if Cartesian
     for (int i=1; i<MTERM; i++) C->M[i] /= C->M[0];             // Normalize multipole expansion coefficients
 #endif
-    real_t x = 1.0 / THETA;                                     // Inverse of theta
+    real_t x = 1.0 / theta;                                     // Inverse of theta
 #if ERROR_OPT
-    assert(THETA != 1.0);
+    assert(theta != 1.0);
     real_t a = c * powf(std::abs(C->M[0]),1.0/3);               // Cell coefficient
     for (int i=0; i<5; i++) {                                   // Newton-Rhapson iteration
       real_t f = x * x - 2 * x + 1 - a * std::pow(x,-P);        //  Function value
@@ -61,14 +61,14 @@ class UpDownPass : public Kernel, public Logger {
   }
 
  public:
-  UpDownPass(real_t theta) : THETA(theta) {}
+  UpDownPass(real_t theta) : theta(theta) {}
 
 //! Upward pass (P2M, M2M)
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");                                  // Start timer
     C_iter C0 = cells.begin();                                  // Set iterator of target root cell
     postOrderTraversal(C0, C0);                                 // Recursive call for upward pass
-    real_t c = (1 - THETA) * (1 - THETA) / std::pow(THETA,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
+    real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
     setRcrit(C0, C0, c);                                        // Error optimization of Rcrit
     if( cells.size() > 9 ) {                                    // If tree has more than 2 levels
       for (C_iter C=C0; C!=C0+9; C++) {                         //  Loop over top 2 levels of cells

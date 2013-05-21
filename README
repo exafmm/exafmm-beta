@@ -12,8 +12,8 @@ cd examples
 make parallel
 
 To run the FMM wrapper example:
-cd examples
-make wrapper
+cd wrapper
+make laplace
 
 To get the list of command line options:
 ./a.out --help
