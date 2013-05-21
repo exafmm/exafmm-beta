@@ -44,10 +44,10 @@ int main(int argc, char ** argv) {
 #endif
   if (args.verbose) logger.printTitle("Profiling");
   logger.startTimer("Total FMM");
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution, args.chargeSign, LET.mpirank, LET.mpisize);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize);
   Bounds localBounds = boundbox.getBounds(bodies);
 #if IneJ
-  Bodies jbodies = data.initBodies(args.numBodies, args.distribution, args.chargeSign, LET.mpirank+LET.mpisize, LET.mpisize);
+  Bodies jbodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank+LET.mpisize, LET.mpisize);
   localBounds = boundbox.getBounds(jbodies,localBounds);
 #endif
   Bounds globalBounds = LET.allreduceBounds(localBounds);

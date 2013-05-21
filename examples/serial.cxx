@@ -36,10 +36,10 @@ int main(int argc, char ** argv) {
 #pragma omp master
 #endif
   if(args.verbose) logger.printTitle("Profiling");
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution, args.chargeSign);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution);
   Bounds bounds = boundbox.getBounds(bodies);
 #if IneJ
-  Bodies jbodies = data.initBodies(args.numBodies, args.distribution, args.chargeSign);
+  Bodies jbodies = data.initBodies(args.numBodies, args.distribution);
   bounds = boundbox.getBounds(jbodies,bounds);
 #endif
   Box box = boundbox.bounds2box(bounds);
