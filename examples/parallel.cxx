@@ -44,6 +44,7 @@ int main(int argc, char ** argv) {
 #endif
   if (args.verbose) logger.printTitle("Profiling");
   logger.startTimer("Total FMM");
+  logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize);
   Bounds localBounds = boundbox.getBounds(bodies);
 #if IneJ
@@ -60,7 +61,6 @@ int main(int argc, char ** argv) {
   jbodies = LET.commBodies(jbodies);
 #endif
   Box box = boundbox.bounds2box(localBounds);
-  logger.startPAPI();
   Cells cells = tree.buildTree(bodies, box);
   pass.upwardPass(cells);
 #if IneJ

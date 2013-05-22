@@ -210,6 +210,21 @@ class BuildTree : public Logger {
     }                                                           // End if for child existance
   }
 
+  //! Transform Xmin & Xmax to X (center) & R (radius)
+  Box bounds2box(Bounds bounds) {
+    vec3 Xmin = bounds.Xmin;                                    // Set local Xmin
+    vec3 Xmax = bounds.Xmax;                                    // Set local Xmax
+    Box box;                                                    // Bounding box
+    for (int d=0; d<3; d++) box.X[d] = (Xmax[d] + Xmin[d]) / 2; // Calculate center of domain
+    box.R = 0;                                                  // Initialize localRadius
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
+      box.R = std::max(box.X[d] - Xmin[d], box.R);              //  Calculate min distance from center
+      box.R = std::max(Xmax[d] - box.X[d], box.R);              //  Calculate max distance from center
+    }                                                           // End loop over dimensions
+    box.R *= 1.00001;                                           // Add some leeway to radius
+    return box;                                                 // Return box.X and box.R
+  }
+
 //! Grow tree structure top down
   void growTree(Bodies &bodies, vec3 X0, real_t R0) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
@@ -227,10 +242,13 @@ class BuildTree : public Logger {
 //! Link tree structure
   Cells linkTree(real_t R0) {
     startTimer("Link tree");                                    // Start timer
-    Cells cells(N0->NNODE);                                     // Allocate cells array
-    C_iter C0 = cells.begin();                                  // Cell begin iterator
-    nodes2cells(N0, C0, C0, C0+1, R0);                          // Convert nodes to cells recursively
-    delete N0;                                                  // Deallocate nodes
+    Cells cells;                                                // Initialize cell array
+    if (N0 != NULL) {                                           // If he node tree is empty
+      cells.resize(N0->NNODE);                                  //  Allocate cells array
+      C_iter C0 = cells.begin();                                //  Cell begin iterator
+      nodes2cells(N0, C0, C0, C0+1, R0);                        //  Convert nodes to cells recursively
+      delete N0;                                                //  Deallocate nodes
+    }                                                           // End if for empty node tree
     stopTimer("Link tree",verbose);                             // Stop timer
     return cells;                                               // Return cells array
   }
@@ -239,7 +257,8 @@ class BuildTree : public Logger {
   BuildTree(int _ncrit, int _nspawn) : ncrit(_ncrit), nspawn(_nspawn), maxlevel(0) {}
 
 //! Build tree structure top down
-  Cells buildTree(Bodies &bodies, Box box) {
+  Cells buildTree(Bodies &bodies, Bounds bounds) {
+    Box box = bounds2box(bounds);                               // Get box from bounds
     growTree(bodies,box.X,box.R);                               // Grow tree from root
     return linkTree(box.R);                                     // Form parent-child links in tree
   }

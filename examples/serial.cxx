@@ -36,32 +36,47 @@ int main(int argc, char ** argv) {
 #pragma omp master
 #endif
   if(args.verbose) logger.printTitle("Profiling");
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution);
-  Bounds bounds = boundbox.getBounds(bodies);
-#if IneJ
-  Bodies jbodies = data.initBodies(args.numBodies, args.distribution);
-  bounds = boundbox.getBounds(jbodies,bounds);
-#endif
-  Box box = boundbox.bounds2box(bounds);
-  Cells cells = tree.buildTree(bodies, box);                    // TODO : make it work without this
-#if IneJ
-  Cells jcells = tree.buildTree(jbodies, box);                  // TODO : make it work without this
-#endif
-  tree.resetTimer();
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  cells = tree.buildTree(bodies, box);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution);
+  Bounds bounds = boundbox.getBounds(bodies);
+  Cells cells = tree.buildTree(bodies, bounds);
   pass.upwardPass(cells);
+#if SPLIT
+  Bodies pbodies = data.getPositive(bodies);
+  Bodies nbodies = data.getNegative(bodies);
+  Bounds pbounds = boundbox.getBounds(pbodies);
+  Bounds nbounds = boundbox.getBounds(nbodies);
+  Cells pcells = tree.buildTree(pbodies, pbounds);
+  Cells ncells = tree.buildTree(nbodies, nbounds);
+  pass.upwardPass(pcells);
+  pass.upwardPass(ncells);
+#endif
 #if IneJ
-  jcells = tree.buildTree(jbodies, box);
+  Bodies jbodies = data.initBodies(args.numBodies, args.distribution);
+  bounds = boundbox.getBounds(jbodies);
+  Cells jcells = tree.buildTree(jbodies, bounds);
   pass.upwardPass(jcells);
-  traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
+  traversal.dualTreeTraversal(cells, jcells, cycle);
+#else
+#if SPLIT
+  traversal.dualTreeTraversal(pcells, pcells, cycle, args.mutual);
+  traversal.dualTreeTraversal(pcells, ncells, cycle);
+  traversal.dualTreeTraversal(ncells, pcells, cycle);
+  traversal.dualTreeTraversal(ncells, ncells, cycle, args.mutual);
 #else
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-  Bodies jbodies = bodies;
-  Cells jcells = cells;
 #endif
+#endif
+#if SPLIT
+  pass.downwardPass(pcells);
+  pass.downwardPass(ncells);
+  bodies = pbodies;
+  bodies.insert(bodies.end(),nbodies.begin(),nbodies.end());
+#else
   pass.downwardPass(cells);
+#endif  
+  Bodies jbodies = bodies;
   if (args.verbose) logger.printTitle("Total runtime");
   logger.stopPAPI();
   logger.stopTimer("Total FMM", logger.verbose);
@@ -91,17 +106,17 @@ int main(int argc, char ** argv) {
     logger.printPAPI();
   }
 #if VTK
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->ICELL = 0;
-  for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) B->ICELL = 0;
+  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
     Body body;
     body.ICELL = 1;
     body.X     = C->X;
     body.SRC   = 0;
-    jbodies.push_back(body);
+    bodies.push_back(body);
   }
   vtk3DPlot vtk;
   vtk.setBounds(M_PI,0);
-  vtk.setGroupOfPoints(jbodies);
+  vtk.setGroupOfPoints(bodies);
   vtk.plot();
 #endif
   return 0;

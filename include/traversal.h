@@ -196,25 +196,27 @@ class Traversal : public Kernel, public Logger {
 
 //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversal(Cells &icells, Cells &jcells, real_t cycle, bool mutual=false) {
-    Ci0 = icells.begin();                                       // Set iterator of target root cell
-    Cj0 = jcells.begin();                                       // Set iterator of source root cell
-    startTimer("Traverse");                                     // Start timer
-    if (images == 0) {                                          // If non-periodic boundary condition
-      Xperiodic = 0;                                            //  No periodic shift
-      traverse(Ci0,Cj0,mutual);                                 //  Traverse the tree
-    } else {                                                    // If periodic boundary condition
-      for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
-        for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
-          for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
-            Xperiodic[0] = ix * cycle;                          //     Coordinate shift for x periodic direction
-            Xperiodic[1] = iy * cycle;                          //     Coordinate shift for y periodic direction
-            Xperiodic[2] = iz * cycle;                          //     Coordinate shift for z periodic direction
-            traverse(Ci0,Cj0,false);                            //     Traverse the tree for this periodic image
-          }                                                     //    End loop over z periodic direction
-        }                                                       //   End loop over y periodic direction
-      }                                                         //  End loop over x periodic direction
-      traversePeriodic(cycle);                                  //  Traverse tree for periodic images
-    }                                                           // End if for periodic boundary condition
+    startTimer("Traverse");                                     //  Start timer
+    if (!icells.empty() && !jcells.empty()) {                   // If neither of the cell vectors are empty
+      Ci0 = icells.begin();                                     //  Set iterator of target root cell
+      Cj0 = jcells.begin();                                     //  Set iterator of source root cell
+      if (images == 0) {                                        //  If non-periodic boundary condition
+        Xperiodic = 0;                                          //   No periodic shift
+        traverse(Ci0,Cj0,mutual);                               //   Traverse the tree
+      } else {                                                  //  If periodic boundary condition
+        for (int ix=-1; ix<=1; ix++) {                          //   Loop over x periodic direction
+          for (int iy=-1; iy<=1; iy++) {                        //    Loop over y periodic direction
+            for (int iz=-1; iz<=1; iz++) {                      //     Loop over z periodic direction
+              Xperiodic[0] = ix * cycle;                        //      Coordinate shift for x periodic direction
+              Xperiodic[1] = iy * cycle;                        //      Coordinate shift for y periodic direction
+              Xperiodic[2] = iz * cycle;                        //      Coordinate shift for z periodic direction
+              traverse(Ci0,Cj0,false);                          //      Traverse the tree for this periodic image
+            }                                                   //     End loop over z periodic direction
+          }                                                     //    End loop over y periodic direction
+        }                                                       //   End loop over x periodic direction
+        traversePeriodic(cycle);                                //   Traverse tree for periodic images
+      }                                                         //  End if for periodic boundary condition
+    }                                                           // End if for empty cell vectors
     stopTimer("Traverse",verbose);                              // Stop timer
     writeTrace();                                               // Write trace to file
   }

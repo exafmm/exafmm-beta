@@ -1,6 +1,7 @@
 include ../Makefile.include
 
-LFLAGS	+= -DMASS # Use all positive sources  
+LFLAGS	+= -DMASS # Use all positive sources
+#LFLAGS	+= -DSPLIT # Split positive and negative charges
 #LFLAGS	+= -DIneJ # Different target and source points
 
 # Test for serial FMM

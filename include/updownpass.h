@@ -66,29 +66,33 @@ class UpDownPass : public Kernel, public Logger {
 //! Upward pass (P2M, M2M)
   void upwardPass(Cells &cells) {
     startTimer("Upward pass");                                  // Start timer
-    C_iter C0 = cells.begin();                                  // Set iterator of target root cell
-    postOrderTraversal(C0, C0);                                 // Recursive call for upward pass
-    real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
-    setRcrit(C0, C0, c);                                        // Error optimization of Rcrit
-    if( cells.size() > 9 ) {                                    // If tree has more than 2 levels
-      for (C_iter C=C0; C!=C0+9; C++) {                         //  Loop over top 2 levels of cells
-        C->RCRIT *= 10;                                         //   Prevent approximation
-      }                                                         //  End loop over top 2 levels of cells
-    }                                                           // End if for tree levels
+    if (!cells.empty()) {                                       // If cell vector is not empty
+      C_iter C0 = cells.begin();                                //  Set iterator of target root cell
+      postOrderTraversal(C0, C0);                               //  Recursive call for upward pass
+      real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
+      setRcrit(C0, C0, c);                                      //  Error optimization of Rcrit
+      if( cells.size() > 9 ) {                                  //  If tree has more than 2 levels
+        for (C_iter C=C0; C!=C0+9; C++) {                       //   Loop over top 2 levels of cells
+          C->RCRIT *= 10;                                       //    Prevent approximation
+        }                                                       //   End loop over top 2 levels of cells
+      }                                                         //  End if for tree levels
+    }                                                           // End if for empty cell vector
     stopTimer("Upward pass",verbose);                           // Stop timer
   }
 
 //! Downward pass (L2L, L2P)
   void downwardPass(Cells &cells) { 
     startTimer("Downward pass");                                // Start timer
-    C_iter C0 = cells.begin();                                  // Root cell
-    L2P(C0);                                                    // If root is the only cell do L2P
-    spawn_tasks {                                               // Initialize tasks
-      for (C_iter CC=C0+C0->CHILD; CC!=C0+C0->CHILD+C0->NCHILD; CC++) {// Loop over child cells
-	spawn_task0(preOrderTraversal(CC, C0));                 //  Recursive call for downward pass
-      }                                                         // End loop over child cells
-      sync_tasks;                                               // Synchronize tasks
-    }
+    if (!cells.empty()) {                                       // If cell vector is not empty
+      C_iter C0 = cells.begin();                                //  Root cell
+      L2P(C0);                                                  //  If root is the only cell do L2P
+      spawn_tasks {                                             //  Initialize tasks
+        for (C_iter CC=C0+C0->CHILD; CC!=C0+C0->CHILD+C0->NCHILD; CC++) {// Loop over child cells
+          spawn_task0(preOrderTraversal(CC, C0));               //    Recursive call for downward pass
+        }                                                       //   End loop over child cells
+        sync_tasks;                                             //   Synchronize tasks
+      }                                                         //  Finalize tasks   
+    }                                                           // End if for empty cell vector
     stopTimer("Downward pass",verbose);                         // Stop timer
   }
 };
