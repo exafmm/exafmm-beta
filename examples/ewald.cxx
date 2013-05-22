@@ -24,12 +24,12 @@ int main(int argc, char ** argv) {
   const real_t ksize = 11.;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
-  const real_t theta = .4;
+  const real_t cutoff = 3.;
   BoundBox boundbox(args.nspawn);
   BuildTree tree(args.ncrit,args.nspawn);
   UpDownPass pass(args.theta);
   Traversal traversal(args.nspawn,args.images);
-  Ewald ewald(ksize,alpha,sigma,theta,cycle);
+  Ewald ewald(ksize,alpha,sigma,cutoff,cycle);
   logger.verbose = true;
   if (args.verbose) {
     boundbox.verbose = true;

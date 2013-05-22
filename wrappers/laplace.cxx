@@ -6,7 +6,7 @@
 #include "updownpass.h"
 #include "localessentialtree.h"
 
-extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double *qj, int periodicflag) {
+extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double * qj, int periodicflag) {
   Args args;
   Logger logger;
   Sort sort;
@@ -46,6 +46,7 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
 #endif
   if (args.verbose) logger.printTitle("Profiling");
   logger.startTimer("Total FMM");
+  logger.startPAPI();
   Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
@@ -76,11 +77,9 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
   LET.partition(jbodies,globalBounds);
   jbodies = sort.sortBodies(jbodies);
   jbodies = LET.commBodies(jbodies);
-  Box box = boundbox.bounds2box(localBounds);
-  logger.startPAPI();
-  Cells cells = tree.buildTree(bodies, box);
+  Cells cells = tree.buildTree(bodies, localBounds);
   pass.upwardPass(cells);
-  Cells jcells = tree.buildTree(jbodies, box);
+  Cells jcells = tree.buildTree(jbodies, localBounds);
   pass.upwardPass(jcells);
   LET.setLET(jcells,localBounds,cycle);
   LET.commBodies();
@@ -113,4 +112,9 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
     fi[3*i+1] = B->TRG[2];
     fi[3*i+2] = B->TRG[3];
   }
+}
+
+extern "C" void fmm_(int * ni, double * xi, double * pi, double * fi,
+                     int * nj, double * xj, double * qj, int * periodicflag) {
+  FMM(*ni,xi,pi,fi,*nj,xj,qj,*periodicflag);
 }

@@ -60,11 +60,10 @@ int main(int argc, char ** argv) {
   jbodies = sort.sortBodies(jbodies);
   jbodies = LET.commBodies(jbodies);
 #endif
-  Box box = boundbox.bounds2box(localBounds);
-  Cells cells = tree.buildTree(bodies, box);
+  Cells cells = tree.buildTree(bodies, localBounds);
   pass.upwardPass(cells);
 #if IneJ
-  Cells jcells = tree.buildTree(jbodies, box);
+  Cells jcells = tree.buildTree(jbodies, localBounds);
   pass.upwardPass(jcells);
 #endif
 

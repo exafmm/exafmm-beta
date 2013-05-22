@@ -27,7 +27,6 @@ int main(int argc, char **argv) {
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
   const int N = 1000000 / mpisize;
-  const double size = 2 * M_PI;
   const int stringLength = 20;
   double *xi = new double [3*N];
   double *pi = new double [N];
@@ -39,16 +38,16 @@ int main(int argc, char **argv) {
 
   srand48(mpirank);
   for (int i=0; i<N; i++) {
-    xi[3*i+0] = drand48() * size - M_PI;
-    xi[3*i+1] = drand48() * size - M_PI;
-    xi[3*i+2] = drand48() * size - M_PI;
+    xi[3*i+0] = drand48() * 2 * M_PI - M_PI;
+    xi[3*i+1] = drand48() * 2 * M_PI - M_PI;
+    xi[3*i+2] = drand48() * 2 * M_PI - M_PI;
     pi[i] = 0;
     fi[3*i+0] = fi[3*i+1] = fi[3*i+2] = 0;
     pd[i] = 0;
     fd[3*i+0] = fd[3*i+1] = fd[3*i+2] = 0;
-    xj[3*i+0] = drand48() * size - M_PI;
-    xj[3*i+1] = drand48() * size - M_PI;
-    xj[3*i+2] = drand48() * size - M_PI;
+    xj[3*i+0] = drand48() * 2 * M_PI - M_PI;
+    xj[3*i+1] = drand48() * 2 * M_PI - M_PI;
+    xj[3*i+2] = drand48() * 2 * M_PI - M_PI;
     qj[i] = 1. / N;
   }
 

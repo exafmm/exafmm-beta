@@ -16,7 +16,7 @@ class Ewald : public Logger {
   real_t ksize;                                                 //!< Number of waves in Ewald summation
   real_t alpha;                                                 //!< Scaling parameter for Ewald summation
   real_t sigma;                                                 //!< Scaling parameter for Ewald summation
-  real_t theta;                                                 //!< Neighbor acceptance criteria
+  real_t cutoff;                                                //!< Neighbor acceptance criteria
   real_t cycle;                                                 //!< Periodic cycle
 
  private:
@@ -108,7 +108,7 @@ class Ewald : public Logger {
   void traverse(C_iter Ci, C_iter Cj, C_iter C0, vec3 Xperiodic) const {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R = std::sqrt(norm(dX));                             // Scalar distance
-    if (R * theta < Ci->R + Cj->R && Cj->NCHILD == 0) {         // If cells are close
+    if (R < cutoff && Cj->NCHILD == 0) {                        // If cells are close
       P2P(Ci,Cj,Xperiodic);                                     //  Ewald real part
     } else {                                                    // If cells are far
       for (C_iter CC=C0+Cj->CHILD; CC!=C0+Cj->CHILD+Cj->NCHILD; CC++) {// Loop over cell's children
@@ -137,8 +137,8 @@ class Ewald : public Logger {
 
  public:
 //! Constructor
- Ewald(real_t ksize, real_t alpha, real_t sigma, real_t theta, real_t cycle) :
-  ksize(ksize), alpha(alpha), sigma(sigma), theta(theta), cycle(cycle) {}
+ Ewald(real_t _ksize, real_t _alpha, real_t _sigma, real_t _cutoff, real_t _cycle) :
+  ksize(_ksize), alpha(_alpha), sigma(_sigma), cutoff(_cutoff), cycle(_cycle) {}
 
 //! Ewald real part
   void realPart(Cells &cells, Cells &jcells) {
