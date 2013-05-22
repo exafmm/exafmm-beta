@@ -33,8 +33,8 @@ CXX	+= -I../include
 LFLAGS	+= -D$(BASIS)
 LFLAGS  += -DEXPANSION=3 # Specifcy expansion order
 ifeq ($(BASIS),Cartesian)
-LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
-LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
+#LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
+#LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)
 endif
 LFLAGS	+= -DERROR_OPT # Use error optimized theta
 LFLAGS	+= -DUSE_BMAX # Use Bmax in multipole acceptance criteria
@@ -46,7 +46,7 @@ LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before t
 
 ### Debugging flags
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
-#LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
+LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
 ### Intel TBB flags : TBB is available from http://threadingbuildingblocks.org/download.php
 LFLAGS	+= -std=c++0x -DTBB -ltbb

@@ -38,6 +38,7 @@ int main(int argc, char **argv) {
   double *qj = new double [N];
 
   srand48(mpirank);
+  double average = 0;
   for (int i=0; i<N; i++) {
     xi[3*i+0] = drand48() * size - size / 2;
     xi[3*i+1] = drand48() * size - size / 2;
@@ -50,6 +51,12 @@ int main(int argc, char **argv) {
     xj[3*i+1] = drand48() * size - size / 2;
     xj[3*i+2] = drand48() * size - size / 2;
     qj[i] = 1. / N;
+    //qj[i] = drand48() - .5;
+    //average += qj[i];
+  }
+  //average /= N;
+  for (int i=0; i<N; i++) {
+    //qj[i] -= average;
   }
 
   FMM(N, xi, pi, fi, N, xj, qj, size, 0);

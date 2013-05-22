@@ -12,7 +12,7 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
   Sort sort;
 
   args.numBodies = ni;
-  args.theta = 0.6;
+  args.theta = 0.5;
   args.ncrit = 16;
   args.nspawn = 1000;
   args.images = ((periodicflag & 0x1) == 0) ? 0 : 3;

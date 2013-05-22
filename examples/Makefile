@@ -6,7 +6,6 @@ LFLAGS	+= -DMASS # Use all positive sources
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-#	./a.out --numBodies 1000 --numTargets 100 --theta .5 --ncrit 128 --images 3
 	./a.out
 
 # Test for parallel FMM

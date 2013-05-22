@@ -115,7 +115,7 @@ class Traversal : public Kernel, public Logger {
         if (Cj->NCBODY == 0) {                                  //   If the bodies weren't sent from remote node
           approximate(Ci, Cj, mutual);                          //    Use approximate kernels
         } else {                                                //   Else if the bodies were sent
-          if (R2 == 0) {                                        //    If source and target are same
+          if (R2 == 0 && Ci == Cj) {                            //    If source and target are same
             P2P(Ci);                                            //     P2P kernel for single cell
           } else {                                              //    Else if source and target are different
             P2P(Ci, Cj, mutual);                                //     P2P kernel for pair of cells

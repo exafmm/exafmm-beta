@@ -134,8 +134,7 @@ int main(int argc, char ** argv) {
     LET.shiftBodies(jbodies);
     jcells.clear();
     localBounds = boundbox.getBounds(jbodies);
-    box = boundbox.bounds2box(localBounds);
-    tree.buildTree(jbodies, jcells, box);
+    jcells = tree.buildTree(jbodies, localBounds);
     pass.upwardPass(jcells);
     traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
   }

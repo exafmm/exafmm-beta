@@ -38,21 +38,23 @@ int main(int argc, char ** argv) {
   if(args.verbose) logger.printTitle("Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution, 0);
   Bounds bounds = boundbox.getBounds(bodies);
+#if IneJ
+  Bodies jbodies = data.initBodies(args.numBodies, args.distribution, 1);
+  bounds = boundbox.getBounds(jbodies,bounds);
+#endif
   Cells cells = tree.buildTree(bodies, bounds);
   pass.upwardPass(cells);
 #if IneJ
-  Bodies jbodies = data.initBodies(args.numBodies, args.distribution);
-  bounds = boundbox.getBounds(jbodies);
   Cells jcells = tree.buildTree(jbodies, bounds);
   pass.upwardPass(jcells);
   traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
+  Bodies jbodies = bodies;
 #endif
   pass.downwardPass(cells);
-  Bodies jbodies = bodies;
   if (args.verbose) logger.printTitle("Total runtime");
   logger.stopPAPI();
   logger.stopTimer("Total FMM", logger.verbose);
