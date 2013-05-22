@@ -63,7 +63,7 @@
       call fmm(n, xi, pi, fi, n, xj, qj, 0)
       if(mpirank.eq.0) print"(a)",'--- MPI direct sum ---------------'
       do irank = 0, mpisize-1
-        if (mpirank.eq.0) print"(a,i1.1,a,i1.1)",'Direct loop          : ',irank+1,'/',mpisize
+        if (mpirank.eq.0) print"(a,i1,a,i1)",'Direct loop          : ',irank+1,'/',mpisize
         call mpi_shift(xj, 3*n, mpisize, mpirank)
         call mpi_shift(qj, n,   mpisize, mpirank)
         do i = 1, 100
