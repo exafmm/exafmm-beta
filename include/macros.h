@@ -20,6 +20,8 @@ const int SIMD_BYTES = 64;                                      //!< SIMD byte l
 const int SIMD_BYTES = 32;                                      //!< SIMD byte length of AVX
 #elif __SSE__
 const int SIMD_BYTES = 16;                                      //!< SIMD byte length of SSE
+#else
+#error no SIMD
 #endif
 
 // Bluegene/Q and K computer don't have single precision arithmetic

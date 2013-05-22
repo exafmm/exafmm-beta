@@ -9,8 +9,8 @@
       isend = mod(mpirank + 1,           mpisize)
       irecv = mod(mpirank - 1 + mpisize, mpisize)
 
-      call mpi_isend(var, n, mpi_double, irecv, 1, mpi_comm_world, ireqs, ierr)
-      call mpi_irecv(buf, n, mpi_double, isend, 1, mpi_comm_world, ireqr, ierr)
+      call mpi_isend(var, n, mpi_real8, irecv, 1, mpi_comm_world, ireqs, ierr)
+      call mpi_irecv(buf, n, mpi_real8, isend, 1, mpi_comm_world, ireqr, ierr)
       call mpi_wait(ireqs, istatus, ierr)
       call mpi_wait(ireqr, istatus, ierr)
       do i = 1,n
@@ -106,19 +106,18 @@
               + (fi(3*i-0) - fd(3*i-0)) * (fi(3*i-0) - fd(3*i-0));
         val2 = val2 + fd(3*i-2) * fd(3*i-2) + fd(3*i-1) * fd(3*i-1) + fd(3*i-0) * fd(3*i-0);
       end do
-      call mpi_reduce(dif1, dif3, 1, mpi_double, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(val1, val3, 1, mpi_double, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(dif2, dif4, 1, mpi_double, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(val2, val4, 1, mpi_double, mpi_sum, 0, mpi_comm_world, ierr);
+      call mpi_reduce(dif1, dif3, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      call mpi_reduce(val1, val3, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      call mpi_reduce(dif2, dif4, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      call mpi_reduce(val2, val4, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
       if (mpirank.eq.0) then
         print"(a)",'--- FMM vs. direct ---------------'
-	print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(dif3/val3)
+	print"(a,f10.7)",'Rel. L2 Error (pot)  : ', sqrt(dif3/val3)
       end if
       if (abs(dif3).gt.0) then
-        print"(a,f9.7)",'Rel. L2 Error (acc)" : ', sqrt(dif4/val4)
+        print"(a,f10.7)",'Rel. L2 Error (acc)" : ', sqrt(dif4/val4)
       end if
 
-      deallocate( xi, pi, fi, pd, fd, xj, qj )
+!      deallocate( xi, pi, fi, pd, fd, xj, qj )
       call mpi_finalize(ierr);
-      return
       end

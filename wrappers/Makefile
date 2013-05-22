@@ -1,5 +1,4 @@
 include ../Makefile.include
-FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops
 
 laplace:
 	make liblaplace.a
