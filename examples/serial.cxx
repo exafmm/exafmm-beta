@@ -42,16 +42,6 @@ int main(int argc, char ** argv) {
   Bounds bounds = boundbox.getBounds(bodies);
   Cells cells = tree.buildTree(bodies, bounds);
   pass.upwardPass(cells);
-#if SPLIT
-  Bodies pbodies = data.getPositive(bodies);
-  Bodies nbodies = data.getNegative(bodies);
-  Bounds pbounds = boundbox.getBounds(pbodies);
-  Bounds nbounds = boundbox.getBounds(nbodies);
-  Cells pcells = tree.buildTree(pbodies, pbounds);
-  Cells ncells = tree.buildTree(nbodies, nbounds);
-  pass.upwardPass(pcells);
-  pass.upwardPass(ncells);
-#endif
 #if IneJ
   Bodies jbodies = data.initBodies(args.numBodies, args.distribution);
   bounds = boundbox.getBounds(jbodies);
@@ -59,23 +49,9 @@ int main(int argc, char ** argv) {
   pass.upwardPass(jcells);
   traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
-#if SPLIT
-  traversal.dualTreeTraversal(pcells, pcells, cycle, args.mutual);
-  traversal.dualTreeTraversal(pcells, ncells, cycle);
-  traversal.dualTreeTraversal(ncells, pcells, cycle);
-  traversal.dualTreeTraversal(ncells, ncells, cycle, args.mutual);
-#else
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
 #endif
-#endif
-#if SPLIT
-  pass.downwardPass(pcells);
-  pass.downwardPass(ncells);
-  bodies = pbodies;
-  bodies.insert(bodies.end(),nbodies.begin(),nbodies.end());
-#else
   pass.downwardPass(cells);
-#endif  
   Bodies jbodies = bodies;
   if (args.verbose) logger.printTitle("Total runtime");
   logger.stopPAPI();
