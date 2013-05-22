@@ -114,8 +114,8 @@ class Ewald {
       cellStack.pop();                                          //  Pop traversal stack
       for (C_iter Cj=C0+C->CHILD; Cj!=C0+C->CHILD+C->NCHILD; Cj++) {// Loop over cell's children
         vec3 dX = Ci->X - Cj->X - Xperiodic;                    //   Distance vector from source to target
-        real_t Rq = std::sqrt(norm(dX));                        //   Scalar distance
-        if (Rq * theta < Ci->R + Cj->R && Cj->NCHILD == 0) {    //   If twigs are close
+        real_t R = std::sqrt(norm(dX));                         //   Scalar distance
+        if (R * theta < Ci->R + Cj->R && Cj->NCHILD == 0) {     //   If twigs are close
           P2P(Ci,Cj);                                           //    Ewald real part
         } else if (Cj->NCHILD != 0) {                           //   If cells are not twigs
           cellStack.push(Cj);                                   //    Push source cell to stack

@@ -10,6 +10,9 @@
 #if VTK
 #include "vtk.h"
 #endif
+#if MASS
+#error Turn off MASS for this test
+#endif
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
@@ -17,11 +20,11 @@ int main(int argc, char ** argv) {
   Logger logger;
   Sort sort;
 
+  const real_t cycle = 2 * M_PI;
   const real_t ksize = 11.;
-  const real_t alpha = .1;
+  const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
   const real_t theta = .5;
-  const real_t cycle = 100.;
   BoundBox boundbox(args.nspawn);
   BuildTree tree(args.ncrit,args.nspawn);
   UpDownPass pass(args.theta);
@@ -46,10 +49,9 @@ int main(int argc, char ** argv) {
   if(args.verbose) logger.printTitle("Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  Bodies bodies = data.initBodies(bodies, args.distribution);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution);
   Bounds bounds = ewald.rescale(bodies);
-  Box box = boundbox.bounds2box(bounds);
-  Cells cells = tree.buildTree(bodies, box);
+  Cells cells = tree.buildTree(bodies, bounds);
   pass.upwardPass(cells);
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   pass.downwardPass(cells);
