@@ -23,7 +23,7 @@
       program test_laplace
       implicit real*8(a-h,o-z)
       include 'mpif.h'
-      parameter(nmax = 1000000, pim = 3.14159265358979312d0)
+      parameter(nmax = 1000000)
       dimension nn(8)
       allocatable :: xi(:)
       allocatable :: pi(:)
@@ -37,16 +37,20 @@
       call mpi_comm_size(mpi_comm_world, mpisize, ierr);
       call mpi_comm_rank(mpi_comm_world, mpirank, ierr);
       n = 1000000 / mpisize;
+      size = 2 * 3.14159265358979312d0;
       allocate( xi(3*n), pi(n), fi(3*n), pd(n), fd(3*n) )
       allocate( xj(3*n), qj(n) )
 
+      do i = 1, 8
+        nn(i) = mpirank;
+      end do 
       call random_seed(put=nn(1:8))
       call random_number(xi)
       call random_number(xj)
       do i = 1, n
-        xi(3*i-2) = xi(3*i-2) * 2 * pim - pim
-        xi(3*i-1) = xi(3*i-1) * 2 * pim - pim
-        xi(3*i-0) = xi(3*i-0) * 2 * pim - pim
+        xi(3*i-2) = xi(3*i-2) * size - size / 2
+        xi(3*i-1) = xi(3*i-1) * size - size / 2
+        xi(3*i-0) = xi(3*i-0) * size - size / 2
         pi(i) = 0
         fi(3*i-2) = 0
         fi(3*i-1) = 0
@@ -55,12 +59,12 @@
         fd(3*i-2) = 0
         fd(3*i-1) = 0
         fd(3*i-0) = 0
-        xj(3*i-2) = xj(3*i-2) * 2 * pim - pim
-        xj(3*i-1) = xj(3*i-1) * 2 * pim - pim
-        xj(3*i-0) = xj(3*i-0) * 2 * pim - pim
+        xj(3*i-2) = xj(3*i-2) * size - size / 2
+        xj(3*i-1) = xj(3*i-1) * size - size / 2
+        xj(3*i-0) = xj(3*i-0) * size - size / 2
         qj(i) = 1. / n
       end do
-      call fmm(n, xi, pi, fi, n, xj, qj, 0)
+      call fmm(n, xi, pi, fi, n, xj, qj, size, 0)
       if(mpirank.eq.0) print"(a)",'--- MPI direct sum ---------------'
       do irank = 0, mpisize-1
         if (mpirank.eq.0) print"(a,i1,a,i1)",'Direct loop          : ',irank+1,'/',mpisize
@@ -118,6 +122,6 @@
         print"(a,f10.7)",'Rel. L2 Error (acc)" : ', sqrt(dif4/val4)
       end if
 
-!      deallocate( xi, pi, fi, pd, fd, xj, qj )
+      deallocate( xi, pi, fi, pd, fd, xj, qj )
       call mpi_finalize(ierr);
       end

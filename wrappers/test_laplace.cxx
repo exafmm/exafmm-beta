@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <iostream>
 
-extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double * qj, int periodicflag);
+extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double * qj, double size, int periodicflag);
 
 extern "C" void MPI_Shift(double * var, int n, int mpisize, int mpirank) {
   double *buf = new double [n];
@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
   const int N = 1000000 / mpisize;
+  const int size = 2 * M_PI;
   const int stringLength = 20;
   double *xi = new double [3*N];
   double *pi = new double [N];
@@ -38,20 +39,20 @@ int main(int argc, char **argv) {
 
   srand48(mpirank);
   for (int i=0; i<N; i++) {
-    xi[3*i+0] = drand48() * 2 * M_PI - M_PI;
-    xi[3*i+1] = drand48() * 2 * M_PI - M_PI;
-    xi[3*i+2] = drand48() * 2 * M_PI - M_PI;
+    xi[3*i+0] = drand48() * size - size / 2;
+    xi[3*i+1] = drand48() * size - size / 2;
+    xi[3*i+2] = drand48() * size - size / 2;
     pi[i] = 0;
     fi[3*i+0] = fi[3*i+1] = fi[3*i+2] = 0;
     pd[i] = 0;
     fd[3*i+0] = fd[3*i+1] = fd[3*i+2] = 0;
-    xj[3*i+0] = drand48() * 2 * M_PI - M_PI;
-    xj[3*i+1] = drand48() * 2 * M_PI - M_PI;
-    xj[3*i+2] = drand48() * 2 * M_PI - M_PI;
+    xj[3*i+0] = drand48() * size - size / 2;
+    xj[3*i+1] = drand48() * size - size / 2;
+    xj[3*i+2] = drand48() * size - size / 2;
     qj[i] = 1. / N;
   }
 
-  FMM(N, xi, pi, fi, N, xj, qj, 0);
+  FMM(N, xi, pi, fi, N, xj, qj, size, 0);
   if (mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
   for (int irank=0; irank<mpisize; irank++) {
     if (mpirank==0) std::cout << "Direct loop          : " << irank+1 << "/" << mpisize << std::endl;

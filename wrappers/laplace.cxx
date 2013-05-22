@@ -6,7 +6,7 @@
 #include "updownpass.h"
 #include "localessentialtree.h"
 
-extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double * qj, int periodicflag) {
+extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double * qj, double cycle, int periodicflag) {
   Args args;
   Logger logger;
   Sort sort;
@@ -20,7 +20,6 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
   args.verbose = 1;
   args.distribution = "external";
 
-  const real_t cycle = 2 * M_PI;
   BoundBox boundbox(args.nspawn);
   BuildTree tree(args.ncrit,args.nspawn);
   UpDownPass pass(args.theta);
@@ -115,6 +114,6 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
 }
 
 extern "C" void fmm_(int * ni, double * xi, double * pi, double * fi,
-                     int * nj, double * xj, double * qj, int * periodicflag) {
-  FMM(*ni,xi,pi,fi,*nj,xj,qj,*periodicflag);
+                     int * nj, double * xj, double * qj, double * cycle, int * periodicflag) {
+  FMM(*ni,xi,pi,fi,*nj,xj,qj,*cycle,*periodicflag);
 }
