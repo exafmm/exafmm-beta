@@ -196,7 +196,7 @@ class Traversal : public Kernel, public Logger {
 
 //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversal(Cells &icells, Cells &jcells, real_t cycle, bool mutual=false) {
-    startTimer("Traverse");                                     //  Start timer
+    startTimer("Traverse");                                     // Start timer
     if (!icells.empty() && !jcells.empty()) {                   // If neither of the cell vectors are empty
       Ci0 = icells.begin();                                     //  Set iterator of target root cell
       Cj0 = jcells.begin();                                     //  Set iterator of source root cell

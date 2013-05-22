@@ -37,10 +37,10 @@ class UpDownPass : public Kernel, public Logger {
   void postOrderTraversal(C_iter C, C_iter C0) {
     spawn_tasks {                                               // Initialize tasks
       for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-	spawn_task0(postOrderTraversal(CC, C0));                //  Recursive call with new task
-      }                                                         // End loop over child cells
-      sync_tasks;                                               // Synchronize tasks
-    }
+	spawn_task0(postOrderTraversal(CC, C0));                //   Recursive call with new task
+      }                                                         //  End loop over child cells
+      sync_tasks;                                               //  Synchronize tasks
+    }                                                           // Finalize tasks
     setCenter(C,C0);                                            // Set center of cell to center of mass
     C->M = 0;                                                   // Initialize multipole expansion coefficients
     C->L = 0;                                                   // Initialize local expansion coefficients
@@ -54,10 +54,10 @@ class UpDownPass : public Kernel, public Logger {
     L2P(C);                                                     // L2P kernel
     spawn_tasks {                                               // Initialize tasks
       for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
-	spawn_task0(preOrderTraversal(CC, C0));                 //  Recursive call with new task
-      }                                                         // End loop over chlid cells
-      sync_tasks;                                               // Synchronize tasks
-    }
+	spawn_task0(preOrderTraversal(CC, C0));                 //   Recursive call with new task
+      }                                                         //  End loop over chlid cells
+      sync_tasks;                                               //  Synchronize tasks
+    }                                                           // Finalize tasks
   }
 
  public:

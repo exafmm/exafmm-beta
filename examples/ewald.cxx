@@ -24,7 +24,7 @@ int main(int argc, char ** argv) {
   const real_t ksize = 11.;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
-  const real_t theta = .5;
+  const real_t theta = .4;
   BoundBox boundbox(args.nspawn);
   BuildTree tree(args.ncrit,args.nspawn);
   UpDownPass pass(args.theta);
@@ -36,6 +36,7 @@ int main(int argc, char ** argv) {
     tree.verbose = true;
     pass.verbose = true;
     traversal.verbose = true;
+    ewald.verbose = true;
     logger.printTitle("Parameters");
   }
   args.print(logger.stringLength,P);
@@ -50,29 +51,22 @@ int main(int argc, char ** argv) {
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution);
-  Bounds bounds = ewald.rescale(bodies);
+  Bounds bounds = boundbox.getBounds(bodies);
   Cells cells = tree.buildTree(bodies, bounds);
   pass.upwardPass(cells);
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   pass.downwardPass(cells);
-  if (args.verbose) logger.printTitle("Total runtime");
   logger.stopPAPI();
-  logger.stopTimer("Total FMM", logger.verbose);
-  boundbox.writeTime();
-  tree.writeTime();
-  pass.writeTime();
-  traversal.writeTime();
-  boundbox.resetTimer();
-  tree.resetTimer();
-  pass.resetTimer();
-  traversal.resetTimer();
-  logger.resetTimer();
+  logger.stopTimer("Total FMM");
 #if 1
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
   logger.startTimer("Total Ewald");
   ewald.wavePart(bodies);
   ewald.realPart(cells,cells);
+  ewald.dipoleCorrection(bodies,0,cycle);
+  if (args.verbose) logger.printTitle("Total runtime");
+  if (logger.verbose) logger.printTime("Total FMM");
   logger.stopTimer("Total Ewald", args.verbose);
 #else
   Bodies jbodies = bodies;
@@ -82,6 +76,8 @@ int main(int argc, char ** argv) {
   logger.startTimer("Total Direct");
   traversal.direct(bodies, jbodies, cycle);
   traversal.normalize(bodies);
+  if (args.verbose) logger.printTitle("Total runtime");
+  if (logger.verbose) logger.printTime("Total FMM");
   logger.stopTimer("Total Direct", args.verbose);
 #endif
   double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;

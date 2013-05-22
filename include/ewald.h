@@ -1,9 +1,8 @@
 #ifndef ewald_h
 #define ewald_h
-#include <stack>
 #include "types.h"
 
-class Ewald {
+class Ewald : public Logger {
 //! Wave structure for Ewald summation
   struct Wave {
     vec3   K;                                                   //!< 3-D wave number vector
@@ -19,11 +18,10 @@ class Ewald {
   real_t sigma;                                                 //!< Scaling parameter for Ewald summation
   real_t theta;                                                 //!< Neighbor acceptance criteria
   real_t cycle;                                                 //!< Periodic cycle
-  vec3   Xperiodic;                                             //!< Coordinate offset for periodic B.C.
 
  private:
 //! Forward DFT
-  void dft(Waves &waves, Bodies &bodies) {
+  void dft(Waves &waves, Bodies &bodies) const {
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
     for (W_iter W=waves.begin(); W!=waves.end(); W++) {         // Loop over waves
       W->REAL = W->IMAG = 0;                                    //  Initialize waves
@@ -37,7 +35,7 @@ class Ewald {
   }
 
 //! Inverse DFT
-  void idft(Waves &waves, Bodies &bodies) {
+  void idft(Waves &waves, Bodies &bodies) const {
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       kvec4 TRG = 0;                                            //  Initialize target values
@@ -53,7 +51,7 @@ class Ewald {
   }
 
 //! Initialize wave vector
-  Waves initWaves() {
+  Waves initWaves() const {
     Waves waves;                                                // Initialzie wave vector
     real_t kmaxsq = ksize * ksize;                              // kmax squared
     int kmax = int(ksize);                                      // kmax as integer
@@ -78,8 +76,9 @@ class Ewald {
     }                                                           // End loop over x component
     return waves;                                               // Return wave vector
   }
+
 //! Ewald real part P2P kernel
-  void P2P(C_iter Ci, C_iter Cj) {
+  void P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic) const {
     for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NDBODY; Bi++) {   // Loop over target bodies
       for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NDBODY; Bj++) { //  Loop over source bodies
 	vec3 dist = Bi->X - Bj->X - Xperiodic;                  //   Distance vector from source to target
@@ -106,74 +105,57 @@ class Ewald {
   }
 
 //! Traverse tree to find neighbors
-  void traverse(C_iter Ci, C_iter C, C_iter C0) {
-    std::stack<C_iter> cellStack;                               // Stack of cell iterators
-    cellStack.push(C);                                          // Push pair to queue
-    while (!cellStack.empty()) {                                // While traversal stack is not empty
-      C = cellStack.top();                                      //  Get cell from top of stack
-      cellStack.pop();                                          //  Pop traversal stack
-      for (C_iter Cj=C0+C->CHILD; Cj!=C0+C->CHILD+C->NCHILD; Cj++) {// Loop over cell's children
-        vec3 dX = Ci->X - Cj->X - Xperiodic;                    //   Distance vector from source to target
-        real_t R = std::sqrt(norm(dX));                         //   Scalar distance
-        if (R * theta < Ci->R + Cj->R && Cj->NCHILD == 0) {     //   If twigs are close
-          P2P(Ci,Cj);                                           //    Ewald real part
-        } else if (Cj->NCHILD != 0) {                           //   If cells are not twigs
-          cellStack.push(Cj);                                   //    Push source cell to stack
-        }                                                       //   End if for twig cells
+  void traverse(C_iter Ci, C_iter Cj, C_iter C0, vec3 Xperiodic) const {
+    vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
+    real_t R = std::sqrt(norm(dX));                             // Scalar distance
+    if (R * theta < Ci->R + Cj->R && Cj->NCHILD == 0) {         // If cells are close
+      P2P(Ci,Cj,Xperiodic);                                     //  Ewald real part
+    } else {                                                    // If cells are far
+      for (C_iter CC=C0+Cj->CHILD; CC!=C0+Cj->CHILD+Cj->NCHILD; CC++) {// Loop over cell's children
+        traverse(Ci,CC,C0,Xperiodic);                           //   Recursively call traverse
       }                                                         //  End loop over cell's children
-    }                                                           // End while loop for traversal stack
+    }                                                           // End if for twig cells
+  }
+
+//! Find neighbor cells
+  void neighbor(C_iter Ci, C_iter Cj) const {
+    vec3 Xperiodic;                                             //  Coordinate offset for periodic B.C.
+    for (int ix=-1; ix<=1; ix++) {                              //  Loop over x periodic direction
+      for (int iy=-1; iy<=1; iy++) {                            //   Loop over y periodic direction
+	for (int iz=-1; iz<=1; iz++) {                          //    Loop over z periodic direction
+	  Xperiodic[0] = ix * cycle;                            //     Coordinate offset for x periodic direction
+          Xperiodic[1] = iy * cycle;                            //     Coordinate offset for y periodic direction
+	  Xperiodic[2] = iz * cycle;                            //     Coordinate offset for z periodic direction
+	  traverse(Ci,Cj,Cj,Xperiodic);                         //     Traverse the source tree
+	}                                                       //    End loop over z periodic direction
+      }                                                         //   End loop over y periodic direction
+    }                                                           //  End loop over x periodic direction
+    for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; B++) {      //  Loop over all bodies in cell
+      B->TRG[0] -= M_2_SQRTPI * B->SRC * alpha;                 //   Self term of Ewald real part
+    }                                                           //  End loop over all bodies in cell
   }
 
  public:
 //! Constructor
  Ewald(real_t ksize, real_t alpha, real_t sigma, real_t theta, real_t cycle) :
-  ksize(ksize), alpha(alpha), sigma(sigma), theta(theta), cycle(cycle), Xperiodic(0) {}
-
-//! Rescale positions and charges
-  Bounds rescale(Bodies &bodies) {
-    const int numBodies = bodies.size();                        // Number of bodies
-    real_t average = 0;                                         // Initialize average charge
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->X *= cycle / (2 * M_PI);                               //  Rescale positions
-      B->X += cycle / 2;                                        //  Shift positions
-      B->SRC = drand48() / numBodies;                           //  Randomize charges
-      B->IBODY = B-bodies.begin();                              //  Initial body numbering for sorting back
-      average += B->SRC;                                        //  Accumulate charges
-    }                                                           // End loop over bodies
-    average /= numBodies;                                       // Divide by total to get average
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->SRC -= average;                                        //  Make average charge 0
-    }                                                           // End loop over bodies
-    Bounds bounds;                                              // Initialize bounds
-    bounds.Xmin = 0;                                            // Force Xmin to be -cycle/2
-    bounds.Xmax = cycle;                                        // Force Xmax to be cycle/2
-    return bounds;                                              // Return bounds
-  }
+  ksize(ksize), alpha(alpha), sigma(sigma), theta(theta), cycle(cycle) {}
 
 //! Ewald real part
   void realPart(Cells &cells, Cells &jcells) {
+    startTimer("Ewald real part");                              // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
-    for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
-      if (Ci->NCHILD == 0) {                                    //  If cell is a twig
-        for (int ix=-1; ix<=1; ix++) {                          //   Loop over x periodic direction
-          for (int iy=-1; iy<=1; iy++) {                        //    Loop over y periodic direction
-            for (int iz=-1; iz<=1; iz++) {                      //     Loop over z periodic direction
-              Xperiodic[0] = ix * cycle;                        //      Coordinate offset for x periodic direction
-              Xperiodic[1] = iy * cycle;                        //      Coordinate offset for y periodic direction
-              Xperiodic[2] = iz * cycle;                        //      Coordinate offset for z periodic direction
-              traverse(Ci,Cj,Cj);                               //      Traverse the source tree
-            }                                                   //     End loop over z periodic direction
-          }                                                     //    End loop over y periodic direction
-        }                                                       //   End loop over x periodic direction
-        for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; B++) {  //   Loop over all bodies in cell
-          B->TRG[0] -= M_2_SQRTPI * B->SRC * alpha;             //    Self term of Ewald real part
-        }                                                       //   End loop over all bodies in cell
-      }                                                         //  End if for twig cells
-    }                                                           // End loop over target cells
+    spawn_tasks {                                               // Intitialize tasks
+      for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {    //  Loop over target cells
+        spawn_task0(if (Ci->NCHILD == 0) neighbor(Ci,Cj));      //   Find neighbors of leaf cells
+      }                                                         //  End loop over target cells
+      sync_tasks;                                               //  Synchronize tasks
+    }                                                           // Finalize tasks
+    stopTimer("Ewald real part",verbose);                       // Stop timer
   }
 
 //! Ewald wave part
   void wavePart(Bodies &bodies) {
+    startTimer("Ewald wave part");                              // Start timer
     Waves waves = initWaves();                                  // Initialize wave vector
     dft(waves,bodies);                                          // Apply DFT to bodies to get waves
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
@@ -189,18 +171,22 @@ class Ewald {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       for (int d=0; d<3; d++) B->TRG[d+1] *= scale;             //  Scale forces
     }                                                           // End loop over bodies
+    stopTimer("Ewald wave part",verbose);                       // Stop timer
+  }
 
+//! Dipole correction
+  void dipoleCorrection(Bodies &bodies, vec3 X0, real_t cycle) {
     vec3 dipole = 0;                                            // Initialize dipole correction
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      dipole += (B->X - cycle/2) * B->SRC;                      //  Calcuate dipole of the whole system
+      dipole += (B->X - X0) * B->SRC;                           //  Calcuate dipole of the whole system
     }                                                           // End loop over bodies
-    coef = 4 * M_PI / (3 * cycle * cycle * cycle);              // Precalcualte constant
+    real_t coef = 4 * M_PI / (3 * cycle * cycle * cycle);       // Precalcualte constant
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG[0] += coef * norm(dipole) / bodies.size() / B->SRC;//  Dipole correction for potential
       for (int d=0; d!=3; d++) {                                //  Loop over dimensions
 	B->TRG[d+1] += coef * dipole[d];                        //   Dipole correction for forces
       }                                                         //  End loop over dimensions
-    }                                                           // End loop over bodies
+    }                                                           // End loop over bodies    
   }
 
 //! Evaluate relaitve L2 norm error
