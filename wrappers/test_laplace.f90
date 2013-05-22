@@ -47,6 +47,8 @@
       call random_seed(put=nn(1:8))
       call random_number(xi)
       call random_number(xj)
+      call random_number(qj)
+      average = 0
       do i = 1, n
         xi(3*i-2) = xi(3*i-2) * size - size / 2
         xi(3*i-1) = xi(3*i-1) * size - size / 2
@@ -62,7 +64,11 @@
         xj(3*i-2) = xj(3*i-2) * size - size / 2
         xj(3*i-1) = xj(3*i-1) * size - size / 2
         xj(3*i-0) = xj(3*i-0) * size - size / 2
-        qj(i) = 1. / n
+        average = average + qj(i)
+      end do
+      average = average / n
+      do i = 1, n
+        qj(i) = qj(i) - average
       end do
       call fmm(n, xi, pi, fi, n, xj, qj, size, 0)
       if(mpirank.eq.0) print"(a)",'--- MPI direct sum ---------------'

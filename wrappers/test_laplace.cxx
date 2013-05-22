@@ -50,13 +50,12 @@ int main(int argc, char **argv) {
     xj[3*i+0] = drand48() * size - size / 2;
     xj[3*i+1] = drand48() * size - size / 2;
     xj[3*i+2] = drand48() * size - size / 2;
-    qj[i] = 1. / N;
-    //qj[i] = drand48() - .5;
-    //average += qj[i];
+    qj[i] = drand48() - .5;
+    average += qj[i];
   }
-  //average /= N;
+  average /= N;
   for (int i=0; i<N; i++) {
-    //qj[i] -= average;
+    qj[i] -= average;
   }
 
   FMM(N, xi, pi, fi, N, xj, qj, size, 0);

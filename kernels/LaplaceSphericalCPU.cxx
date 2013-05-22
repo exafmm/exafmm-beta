@@ -4,7 +4,11 @@
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
 
 const complex_t I(0.,1.);                                       // Imaginary unit
-const real_t EPS = 1e-6;                                        // Epsilon
+#if FP64
+const real_t EPS = 1e-12;                                       // Double precision epsilon
+#else
+const real_t EPS = 1e-6;                                        // Single precision epsilon
+#endif
 
 //! Get r,theta,phi from x,y,z
 void cart2sph(real_t& r, real_t& theta, real_t& phi, vec3 dX) {
