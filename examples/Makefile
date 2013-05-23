@@ -1,6 +1,6 @@
 include ../Makefile.include
 
-LFLAGS	+= -DMASS # Use all positive sources
+#LFLAGS	+= -DMASS # Use all positive sources
 #LFLAGS	+= -DIneJ # Different target and source points
 
 # Test for serial FMM

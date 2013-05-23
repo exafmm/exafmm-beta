@@ -43,15 +43,13 @@ int main(int argc, char **argv) {
     xi[3*i+0] = drand48() * size - size / 2;
     xi[3*i+1] = drand48() * size - size / 2;
     xi[3*i+2] = drand48() * size - size / 2;
-    pi[i] = 0;
-    fi[3*i+0] = fi[3*i+1] = fi[3*i+2] = 0;
-    pd[i] = 0;
-    fd[3*i+0] = fd[3*i+1] = fd[3*i+2] = 0;
     xj[3*i+0] = drand48() * size - size / 2;
     xj[3*i+1] = drand48() * size - size / 2;
     xj[3*i+2] = drand48() * size - size / 2;
     qj[i] = drand48() - .5;
     average += qj[i];
+    pi[i] = fi[3*i+0] = fi[3*i+1] = fi[3*i+2] = 0;
+    pd[i] = fd[3*i+0] = fd[3*i+1] = fd[3*i+2] = 0;
   }
   average /= N;
   for (int i=0; i<N; i++) {
