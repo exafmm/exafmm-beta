@@ -78,7 +78,7 @@ class Args {
 
  public:
   Args(int argc=0, char ** argv=NULL) : numBodies(1000000), numTargets(100), ncrit(16), nspawn(1000), images(0),
-    theta(.6), mutual(1), verbose(1), distribution("cube") {
+    theta(.35), mutual(1), verbose(1), distribution("cube") {
     while (1) {
       int option_index;
       int c = getopt_long(argc, argv, "", long_options, &option_index);

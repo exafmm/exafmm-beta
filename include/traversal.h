@@ -176,9 +176,6 @@ class Traversal : public Kernel, public Logger {
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
-#if USE_BMAX
-      setBmax(Ci,Cj0);                                          //  Set box size to Bmax
-#endif
       Ci->RMAX = 0;                                             //  Initialize Rmax of periodic parent
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
       M2M(Ci,Cj0);                                              //  Evaluate periodic M2M kernels for this sublevel

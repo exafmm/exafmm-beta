@@ -41,9 +41,6 @@ class UpDownPass : public Kernel, public Logger {
       }                                                         //  End loop over child cells
       sync_tasks;                                               //  Synchronize tasks
     }                                                           // Finalize tasks
-#if USE_BMAX
-    setBmax(C,C0);                                              // Set box size to Bmax
-#endif
     C->RMAX = 0;                                                // Initialzie Rmax
     C->M = 0;                                                   // Initialize multipole expansion coefficients
     C->L = 0;                                                   // Initialize local expansion coefficients
