@@ -4,9 +4,6 @@
 #if VTK
 #include "vtk.h"
 #endif
-#if COMkernel
-#error Turn off COMkernel for this test
-#endif
 
 int main() {
   Bodies bodies(16), bodies2(16), jbodies(16);

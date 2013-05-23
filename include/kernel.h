@@ -19,7 +19,7 @@ class Kernel {
 
  protected:
 //! Set center of expansion to center of mass
-  void setCenter(C_iter C, C_iter C0) const {
+  void setBmax(C_iter C, C_iter C0) const {
     real_t m = 0;                                               // Initialize mass
     vec3 X = 0;                                                 // Initialize coordinates
     for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {         // Loop over bodies
@@ -31,13 +31,7 @@ class Kernel {
       X += c->X * std::abs(c->M[0]);                            //  Accumulate dipole
     }                                                           // End loop over child cells
     X /= m;                                                     // Center of mass
-#if USE_BMAX
     C->R = getBmax(X,C);                                        // Use Bmax as cell radius
-#endif
-#if COMcenter
-    C->X = X;                                                   // Use center of mass as center of expansion
-#endif
-    C->RMAX = 0;                                                // Initialize Rmax
   }
 
  public:

@@ -41,7 +41,10 @@ class UpDownPass : public Kernel, public Logger {
       }                                                         //  End loop over child cells
       sync_tasks;                                               //  Synchronize tasks
     }                                                           // Finalize tasks
-    setCenter(C,C0);                                            // Set center of cell to center of mass
+#if USE_BMAX
+    setBmax(C,C0);                                              // Set box size to Bmax
+#endif
+    C->RMAX = 0;                                                // Initialzie Rmax
     C->M = 0;                                                   // Initialize multipole expansion coefficients
     C->L = 0;                                                   // Initialize local expansion coefficients
     P2M(C);                                                     // P2M kernel

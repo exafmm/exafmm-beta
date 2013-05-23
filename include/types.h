@@ -34,11 +34,7 @@ typedef simdvec        ksimdvec;                                //!< SIMD vector
 
 // Multipole/local expansion coefficients
 const int P = EXPANSION;                                        //!< Order of expansions
-#if COMkernel
-const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of Cartesian mutlipole terms
-#else
 const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms
-#endif
 const int LTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian local terms
 const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
 #if Cartesian
