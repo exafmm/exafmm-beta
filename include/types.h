@@ -39,7 +39,7 @@ const int MTERM = P*(P+1)*(P+2)/6-3;                            //!< Number of C
 #else
 const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms
 #endif
-const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms
+const int LTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian local terms
 const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
 #if Cartesian
 typedef vec<MTERM,real_t> vecM;                                 //!< Multipole coefficient type for Cartesian

@@ -31,7 +31,7 @@ FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops #GCC
 ### Base flags
 CXX	+= -I../include
 LFLAGS	+= -D$(BASIS)
-LFLAGS  += -DEXPANSION=3 # Specifcy expansion order
+LFLAGS  += -DEXPANSION=4 # Specifcy expansion order
 ifeq ($(BASIS),Cartesian)
 LFLAGS	+= -DCOMcenter # Use center of mass as center of expansion
 LFLAGS	+= -DCOMkernel # Use center of mass kernel that skips dipoles (Use with -DCOMcenter)

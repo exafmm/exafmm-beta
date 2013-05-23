@@ -165,7 +165,7 @@ struct MultipoleSum<nx,ny,nz,1,0,0> {
 };
 #endif
 
-template<int nx, int ny, int nz, typename T, int kx=0, int ky=0, int kz=P-nx-ny-nz>
+template<int nx, int ny, int nz, typename T, int kx=0, int ky=0, int kz=P-1-nx-ny-nz>
 struct LocalSum {
   static inline real_t kernel(const T &M, const vecL &L) {
     return LocalSum<nx,ny,nz,T,kx,ky+1,kz-1>::kernel(M,L)
@@ -812,11 +812,11 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
   real_t invR2 = 1 / norm(dX);
   real_t invR  = Ci->M[0] * Cj->M[0] * std::sqrt(invR2);
   vecL C;
-  getCoef<P>(C,dX,invR2,invR);
-  sumM2L<P>(Ci->L,C,Cj->M);
+  getCoef<P-1>(C,dX,invR2,invR);
+  sumM2L<P-1>(Ci->L,C,Cj->M);
   if (mutual) {
-    Coefs<P,P&1>::negate(C);
-    sumM2L<P>(Cj->L,C,Ci->M);
+    Coefs<P-1,(P-1)&1>::negate(C);
+    sumM2L<P-1>(Cj->L,C,Ci->M);
   }
 }
 
@@ -825,7 +825,7 @@ void Kernel::L2L(C_iter Ci, C_iter Ci0) const {
   vec3 dX = Ci->X - Cj->X;
   vecL C;
   C[0] = 1;
-  Kernels<0,0,P>::power(C,dX);
+  Kernels<0,0,P-1>::power(C,dX);
   Ci->L /= Ci->M[0];
   Ci->L += Cj->L;
   for (int i=1; i<LTERM; i++) Ci->L[0] += C[i] * Cj->L[i];
@@ -837,7 +837,7 @@ void Kernel::L2P(C_iter Ci) const {
     vec3 dX = B->X - Ci->X;
     vecL C, L;
     C[0] = 1;
-    Kernels<0,0,P>::power(C,dX);
+    Kernels<0,0,P-1>::power(C,dX);
     L = Ci->L;
     B->TRG /= B->SRC;
     B->TRG[0] += L[0];
