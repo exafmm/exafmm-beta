@@ -18,7 +18,7 @@ class UpDownPass : public Kernel, public Logger {
       sync_tasks;                                               // Synchronize tasks
     }
 #if Cartesian
-    for (int i=1; i<MTERM; i++) C->M[i] /= C->M[0];             // Normalize multipole expansion coefficients
+    for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];             // Normalize multipole expansion coefficients
 #endif
     real_t x = 1.0 / theta;                                     // Inverse of theta
 #if ERROR_OPT

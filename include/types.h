@@ -34,15 +34,12 @@ typedef simdvec        ksimdvec;                                //!< SIMD vector
 
 // Multipole/local expansion coefficients
 const int P = EXPANSION;                                        //!< Order of expansions
-const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms
-const int LTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian local terms
-const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
 #if Cartesian
-typedef vec<MTERM,real_t> vecM;                                 //!< Multipole coefficient type for Cartesian
-typedef vec<LTERM,real_t> vecL;                                 //!< Local coefficient type for Cartesian
+const int NTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole/local terms
+typedef vec<NTERM,real_t> vecP;                                 //!< Multipole/local coefficient type for Cartesian
 #elif Spherical
-typedef vec<NTERM,complex_t> vecM;                              //!< Multipole coefficient type for spherical
-typedef vec<NTERM,complex_t> vecL;                              //!< Local coefficient type for spherical
+const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
+typedef vec<NTERM,complex_t> vecP;                              //!< Multipole/local coefficient type for spherical
 #endif
 
 //! Structures for defining bounding box
@@ -86,8 +83,8 @@ struct Cell {
   real_t    R;                                                  //!< Cell radius
   real_t    RMAX;                                               //!< Max cell radius
   real_t    RCRIT;                                              //!< Critical cell radius
-  vecM      M;                                                  //!< Multipole coefficients
-  vecL      L;                                                  //!< Local coefficients
+  vecP      M;                                                  //!< Multipole coefficients
+  vecP      L;                                                  //!< Local coefficients
 };
 typedef std::vector<Cell>           Cells;                      //!< Vector of cells
 typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator of cell vector
