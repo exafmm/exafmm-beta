@@ -1,5 +1,3 @@
-CUDA_INSTALL_PATH  = /usr/local/cuda
-
 CXX = g++ -fopenmp -O3
 NVCC = nvcc -arch sm_21 -use_fast_math -Iinclude -Xcompiler "-fopenmp -O3"
 
@@ -12,7 +10,7 @@ TORG = sortKernels.th_o
 .SUFFIXES: .o .cpp .cu
 
 all: $(ORG) $(TORG)
-	$(CXX) $^ -lcudart -L$(CUDA_INSTALL_PATH)/lib64
+	$(CXX) $^ -lcudart
 	./a.out
 
 %.o: %.cu

@@ -773,7 +773,7 @@ void Kernel::P2M(C_iter C) const {
     for (int i=0; i<MTERM; i++) C->M[i] += M[i];
 #endif
   }
-  if (C->M[0] == 0) C->M[0] = EPS;
+  if (C->NCBODY != 0 && C->M[0] == 0) C->M[0] = EPS;
 #if USE_RMAX
   C->RCRIT = std::min(C->R,C->RMAX);
 #else
@@ -799,7 +799,7 @@ void Kernel::M2M(C_iter Ci, C_iter C0) const {
 #endif
     Kernels<0,0,P-1>::M2M(Ci->M,C,M);
   }
-  if (Ci->M[0] == 0) Ci->M[0] = EPS;
+  if (Ci->NCHILD != 0 && Ci->M[0] == 0) Ci->M[0] = EPS;
 #if USE_RMAX
   Ci->RCRIT = std::min(Ci->R,Ci->RMAX);
 #else
