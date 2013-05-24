@@ -14,6 +14,7 @@ extern "C" void FMMcalccoulomb_ij(int ni, double* xi, double* qi, double* fi,
   Cells cells,jcells;
   SerialFMM<Laplace> FMM;
   real sigma = .25 / M_PI;
+  ksize = 2;
 
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
     int i = B-bodies.begin();
@@ -281,13 +282,17 @@ extern "C" void FMMcalcvdw_ij(int ni, double* xi, int* atypei, double* fi,
   }
 #endif
 }
+*/
 
 extern "C" void fmmcalccoulomb_ij_(int *ni, double* xi, double* qi, double* fi,
-  int *nj, double* xj, double* qj, double *rscale, int *tblno, double *size, int *periodicflag) {
+				   int *nj, double* xj, double* qj, double *rscale,
+				   int *tblno, double *size, int *periodicflag,
+				   int *ksize, double *alpha) {
   std::cout << "Starting FMM" << std::endl;
-  FMMcalccoulomb_ij(*ni,xi,qi,fi,*nj,xj,qj,*rscale,*tblno-6,*size,*periodicflag);
+  FMMcalccoulomb_ij(*ni,xi,qi,fi,*nj,xj,qj,*rscale,*tblno-6,*size,*periodicflag,*ksize,*alpha);
 }
 
+/*
 extern "C" void fmmcalccoulomb_ij_exlist_(int *ni, double* xi, double* qi, double* fi,
   int *nj, double* xj, double* qj, double *rscale, int *tblno, double *size, int *periodicflag,
   int *numex, int* natex) {
