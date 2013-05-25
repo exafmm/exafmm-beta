@@ -83,7 +83,10 @@ extern "C" void fmm(int n, double * x, double * q, double * p, double * f, doubl
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
   pass.downwardPass(cells);
-  pass.dipoleCorrection(bodies,0,cycle);
+  vec3 localDipole = pass.getDipole(bodies,0);
+  vec3 globalDipole = LET.allreduce(localDipole);
+  int numBodies = LET.allreduce(bodies.size());
+  pass.dipoleCorrection(bodies,globalDipole,numBodies,cycle);
 
   LET.unpartition(bodies);
   bodies = sort.sortBodies(bodies);

@@ -102,10 +102,10 @@ int main() {
 	}
       }
     }
-    p2[i] += P;
-    f2[3*i+0] -= Fx;
-    f2[3*i+1] -= Fy;
-    f2[3*i+2] -= Fz;
+    p2[i] += P - coef * norm / N / q2[i];
+    f2[3*i+0] -= Fx + coef * dipole[0];
+    f2[3*i+1] -= Fy + coef * dipole[1];
+    f2[3*i+2] -= Fz + coef * dipole[2];
   }
 #endif
   double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;

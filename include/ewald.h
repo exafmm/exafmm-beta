@@ -174,21 +174,6 @@ class Ewald : public Logger {
     stopTimer("Ewald wave part",verbose);                       // Stop timer
   }
 
-//! Dipole correction
-  void dipoleCorrection(Bodies &bodies, vec3 X0, real_t cycle) {
-    vec3 dipole = 0;                                            // Initialize dipole correction
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      dipole += (B->X - X0) * B->SRC;                           //  Calcuate dipole of the whole system
-    }                                                           // End loop over bodies
-    real_t coef = 4 * M_PI / (3 * cycle * cycle * cycle);       // Precalcualte constant
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->TRG[0] += coef * norm(dipole) / bodies.size() / B->SRC;//  Dipole correction for potential
-      for (int d=0; d!=3; d++) {                                //  Loop over dimensions
-	B->TRG[d+1] += coef * dipole[d];                        //   Dipole correction for forces
-      }                                                         //  End loop over dimensions
-    }                                                           // End loop over bodies
-  }
-
 //! Evaluate relaitve L2 norm error
   void evalError(Bodies &bodies, Bodies &bodies2,
                  double &diff1, double &norm1, double &diff2, double &norm2) {

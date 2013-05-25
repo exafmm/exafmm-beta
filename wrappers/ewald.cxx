@@ -73,7 +73,6 @@ extern "C" void ewald(int n, double * x, double * q, double * p, double * f,
   Cells cells = tree.buildTree(bodies, bounds);
   ewald.wavePart(bodies);
   ewald.realPart(cells,cells);
-  ewald.dipoleCorrection(bodies,0,cycle);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->ICELL = B->IBODY;
   }

@@ -48,6 +48,15 @@ class MyMPI {
     if (remainder > iSplit) end++;                              // Adjust the end counter for remainder
   }
 
+  //! Reduce values
+  template<typename T>
+  T allreduce(T send) {
+    int word = sizeof(send) / 4;                                // Word size of value
+    T recv;                                                     // Receive buffer
+    MPI_Allreduce(&send, &recv, word, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
+    return recv;                                                // Return received values
+  }
+
 //! Print a scalar value on all ranks
   template<typename T>
   void print(T data) {
