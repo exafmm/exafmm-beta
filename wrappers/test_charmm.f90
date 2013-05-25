@@ -124,7 +124,7 @@
         print"(a)",'--- FMM vs. direct ---------------'
 	print"(a,f10.7)",'Rel. L2 Error (pot)  : ', sqrt(dif3/val3)
       end if
-      if (abs(dif3).gt.0) then
+      if (abs(dif4).gt.0) then
         print"(a,f10.7)",'Rel. L2 Error (acc)" : ', sqrt(dif4/val4)
       end if
 

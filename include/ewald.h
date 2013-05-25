@@ -13,7 +13,7 @@ class Ewald : public Logger {
   typedef std::vector<Wave>::iterator W_iter;                   //!< Iterator for Wave types
 
  private:
-  real_t ksize;                                                 //!< Number of waves in Ewald summation
+  int ksize;                                                    //!< Number of waves in Ewald summation
   real_t alpha;                                                 //!< Scaling parameter for Ewald summation
   real_t sigma;                                                 //!< Scaling parameter for Ewald summation
   real_t cutoff;                                                //!< Neighbor acceptance criteria
@@ -53,8 +53,8 @@ class Ewald : public Logger {
 //! Initialize wave vector
   Waves initWaves() const {
     Waves waves;                                                // Initialzie wave vector
-    real_t kmaxsq = ksize * ksize;                              // kmax squared
-    int kmax = int(ksize);                                      // kmax as integer
+    int kmaxsq = ksize * ksize;                                 // kmax squared
+    int kmax = ksize;                                           // kmax as integer
     for (int l=0; l<=kmax; l++) {                               // Loop over x component
       int mmin = -kmax;                                         //  Determine minimum y component
       if (l==0) mmin = 0;                                       //  Exception for minimum y component
@@ -137,7 +137,7 @@ class Ewald : public Logger {
 
  public:
 //! Constructor
- Ewald(real_t _ksize, real_t _alpha, real_t _sigma, real_t _cutoff, real_t _cycle) :
+ Ewald(int _ksize, real_t _alpha, real_t _sigma, real_t _cutoff, real_t _cycle) :
   ksize(_ksize), alpha(_alpha), sigma(_sigma), cutoff(_cutoff), cycle(_cycle) {}
 
 //! Ewald real part
@@ -186,7 +186,7 @@ class Ewald : public Logger {
       for (int d=0; d!=3; d++) {                                //  Loop over dimensions
 	B->TRG[d+1] += coef * dipole[d];                        //   Dipole correction for forces
       }                                                         //  End loop over dimensions
-    }                                                           // End loop over bodies    
+    }                                                           // End loop over bodies
   }
 
 //! Evaluate relaitve L2 norm error
@@ -209,6 +209,21 @@ class Ewald : public Logger {
     }                                                           // End loop over bodies & bodies2
     diff1 += (p - p2) * (p - p2);                               // Difference of potential
     norm1 += p2 * p2;                                           // Value of potential
+  }
+
+  void print(int stringLength) {
+    if (verbose) {
+      std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
+                << "ksize" << " : " << ksize << std::endl       // Print ksize
+                << std::setw(stringLength)                      // Set format
+                << "alpha" << " : " << alpha << std::endl       // Print alpha
+                << std::setw(stringLength)                      // Set format
+                << "sigma" << " : " << sigma << std::endl       // Print sigma
+                << std::setw(stringLength)                      // Set format
+                << "cutoff" << " : " << cutoff << std::endl     // Print cutoff
+                << std::setw(stringLength)                      // Set format
+                << "cycle" << " : " << cycle << std::endl;      // Print cycle
+    }
   }
 };
 #endif

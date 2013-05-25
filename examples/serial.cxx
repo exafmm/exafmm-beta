@@ -25,7 +25,7 @@ int main(int argc, char ** argv) {
     tree.verbose = true;
     pass.verbose = true;
     traversal.verbose = true;
-    logger.printTitle("Parameters");
+    logger.printTitle("FMM Parameters");
   }
   args.print(logger.stringLength,P);
 #if AUTO
@@ -35,7 +35,7 @@ int main(int argc, char ** argv) {
 #pragma omp parallel
 #pragma omp master
 #endif
-  if(args.verbose) logger.printTitle("Profiling");
+  if(args.verbose) logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, 0);

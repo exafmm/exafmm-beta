@@ -20,11 +20,11 @@ int main(int argc, char ** argv) {
   Logger logger;
   Sort sort;
 
+  const int ksize = 11.;
   const real_t cycle = 2 * M_PI;
-  const real_t ksize = 11.;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
-  const real_t cutoff = 3.;
+  const real_t cutoff = cycle * alpha / 3;
   BoundBox boundbox(args.nspawn);
   BuildTree tree(args.ncrit,args.nspawn);
   UpDownPass pass(args.theta);
@@ -37,9 +37,11 @@ int main(int argc, char ** argv) {
     pass.verbose = true;
     traversal.verbose = true;
     ewald.verbose = true;
-    logger.printTitle("Parameters");
+    logger.printTitle("FMM Parameters");
   }
   args.print(logger.stringLength,P);
+  if(args.verbose) logger.printTitle("Ewald Parameters");
+  ewald.print(logger.stringLength);
 #if AUTO
   traversal.timeKernels();
 #endif
@@ -47,7 +49,7 @@ int main(int argc, char ** argv) {
 #pragma omp parallel
 #pragma omp master
 #endif
-  if(args.verbose) logger.printTitle("Profiling");
+  if(args.verbose) logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution);
@@ -61,6 +63,7 @@ int main(int argc, char ** argv) {
 #if 1
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
+  if(args.verbose) logger.printTitle("Ewald Profiling");
   logger.startTimer("Total Ewald");
   ewald.wavePart(bodies);
   ewald.realPart(cells,cells);

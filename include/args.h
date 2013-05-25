@@ -6,9 +6,9 @@
 #include <iostream>
 #include <iomanip>
 
-struct option long_options[] = {
+static struct option long_options[] = {
   {"numBodies",    1, 0, 'n'},
-  {"numTargets",    1, 0, 't'},
+  {"numTargets",   1, 0, 't'},
   {"ncrit",        1, 0, 'c'},
   {"nspawn",       1, 0, 's'},
   {"images",       1, 0, 'i'},
@@ -123,7 +123,7 @@ class Args {
 
   void print(int stringLength, int P) {
     if (verbose) {
-      std::cout << std::setw(stringLength) << std::left         // Set format
+      std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
 		<< "numBodies" << " : " << numBodies << std::endl // Print numBodies  
 		<< std::setw(stringLength)                      // Set format
 		<< "P" << " : " << P << std::endl               // Print P

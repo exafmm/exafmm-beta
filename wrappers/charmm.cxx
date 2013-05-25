@@ -6,7 +6,7 @@
 #include "updownpass.h"
 #include "localessentialtree.h"
 
-extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, double * xj, double * qj, double cycle, int periodicflag) {
+extern "C" void fmm(int ni, double * xi, double * qi, double * pi, double * fi, int nj, double * xj, double * qj, double cycle, int periodicflag) {
   Args args;
   Logger logger;
   Sort sort;
@@ -33,7 +33,7 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
     pass.verbose = true;
     traversal.verbose = true;
     LET.verbose = true;
-    logger.printTitle("Parameters");
+    logger.printTitle("FMM Parameters");
   }
   if(LET.mpirank == 0) args.print(logger.stringLength,P);
 #if AUTO
@@ -43,7 +43,7 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
 #pragma omp parallel
 #pragma omp master
 #endif
-  if (args.verbose) logger.printTitle("Profiling");
+  if (args.verbose) logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies(ni);
@@ -52,12 +52,18 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
     B->X[0] = xi[3*i+0];
     B->X[1] = xi[3*i+1];
     B->X[2] = xi[3*i+2];
-    B->SRC  = 1;
+    if( B->X[0] < -cycle/2 ) B->X[0] += cycle;
+    if( B->X[1] < -cycle/2 ) B->X[1] += cycle;
+    if( B->X[2] < -cycle/2 ) B->X[2] += cycle;
+    if( B->X[0] >  cycle/2 ) B->X[0] -= cycle;
+    if( B->X[1] >  cycle/2 ) B->X[1] -= cycle;
+    if( B->X[2] >  cycle/2 ) B->X[2] -= cycle;
+    B->SRC = qi[i];
     B->TRG[0] = pi[i];
     B->TRG[1] = fi[3*i+0];
     B->TRG[2] = fi[3*i+1];
     B->TRG[3] = fi[3*i+2];
-    B->IBODY  = i;
+    B->IBODY = i;
   }
   Bounds localBounds = boundbox.getBounds(bodies);
   Bodies jbodies(nj);
@@ -66,7 +72,13 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
     B->X[0] = xj[3*i+0];
     B->X[1] = xj[3*i+1];
     B->X[2] = xj[3*i+2];
-    B->SRC  = qj[i];
+    if( B->X[0] < -cycle/2 ) B->X[0] += cycle;
+    if( B->X[1] < -cycle/2 ) B->X[1] += cycle;
+    if( B->X[2] < -cycle/2 ) B->X[2] += cycle;
+    if( B->X[0] >  cycle/2 ) B->X[0] -= cycle;
+    if( B->X[1] >  cycle/2 ) B->X[1] -= cycle;
+    if( B->X[2] >  cycle/2 ) B->X[2] -= cycle;
+    B->SRC = qj[i];
   }
   localBounds = boundbox.getBounds(jbodies,localBounds);
   Bounds globalBounds = LET.allreduceBounds(localBounds);
@@ -113,7 +125,7 @@ extern "C" void FMM(int ni, double * xi, double * pi, double * fi, int nj, doubl
   }
 }
 
-extern "C" void fmm_(int * ni, double * xi, double * pi, double * fi,
+extern "C" void fmm_(int * ni, double * xi, double * qi, double * pi, double * fi,
                      int * nj, double * xj, double * qj, double * cycle, int * periodicflag) {
-  FMM(*ni,xi,pi,fi,*nj,xj,qj,*cycle,*periodicflag);
+  fmm(*ni,xi,qi,pi,fi,*nj,xj,qj,*cycle,*periodicflag);
 }
