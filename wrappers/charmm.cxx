@@ -6,16 +6,16 @@
 #include "updownpass.h"
 #include "localessentialtree.h"
 
-extern "C" void fmm(int ni, double * xi, double * qi, double * pi, double * fi, int nj, double * xj, double * qj, double cycle, int periodicflag) {
+extern "C" void fmm(int n, double * x, double * q, double * p, double * f, double cycle, int images) {
   Args args;
   Logger logger;
   Sort sort;
 
-  args.numBodies = ni;
+  args.numBodies = n;
   args.theta = 0.35;
   args.ncrit = 16;
   args.nspawn = 1000;
-  args.images = ((periodicflag & 0x1) == 0) ? 0 : 3;
+  args.images = images;
   args.mutual = 0;
   args.verbose = 1;
   args.distribution = "external";
@@ -46,61 +46,47 @@ extern "C" void fmm(int ni, double * xi, double * qi, double * pi, double * fi, 
   if (args.verbose) logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  Bodies bodies(ni);
+  Bodies bodies(n);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = xi[3*i+0];
-    B->X[1] = xi[3*i+1];
-    B->X[2] = xi[3*i+2];
+    B->X[0] = x[3*i+0];
+    B->X[1] = x[3*i+1];
+    B->X[2] = x[3*i+2];
     if( B->X[0] < -cycle/2 ) B->X[0] += cycle;
     if( B->X[1] < -cycle/2 ) B->X[1] += cycle;
     if( B->X[2] < -cycle/2 ) B->X[2] += cycle;
     if( B->X[0] >  cycle/2 ) B->X[0] -= cycle;
     if( B->X[1] >  cycle/2 ) B->X[1] -= cycle;
     if( B->X[2] >  cycle/2 ) B->X[2] -= cycle;
-    B->SRC = qi[i];
-    B->TRG[0] = pi[i];
-    B->TRG[1] = fi[3*i+0];
-    B->TRG[2] = fi[3*i+1];
-    B->TRG[3] = fi[3*i+2];
+    B->SRC = q[i];
+    B->TRG[0] = p[i];
+    B->TRG[1] = f[3*i+0];
+    B->TRG[2] = f[3*i+1];
+    B->TRG[3] = f[3*i+2];
     B->IBODY = i;
   }
   Bounds localBounds = boundbox.getBounds(bodies);
-  Bodies jbodies(nj);
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    int i = B-jbodies.begin();
-    B->X[0] = xj[3*i+0];
-    B->X[1] = xj[3*i+1];
-    B->X[2] = xj[3*i+2];
-    if( B->X[0] < -cycle/2 ) B->X[0] += cycle;
-    if( B->X[1] < -cycle/2 ) B->X[1] += cycle;
-    if( B->X[2] < -cycle/2 ) B->X[2] += cycle;
-    if( B->X[0] >  cycle/2 ) B->X[0] -= cycle;
-    if( B->X[1] >  cycle/2 ) B->X[1] -= cycle;
-    if( B->X[2] >  cycle/2 ) B->X[2] -= cycle;
-    B->SRC = qj[i];
-  }
-  localBounds = boundbox.getBounds(jbodies,localBounds);
   Bounds globalBounds = LET.allreduceBounds(localBounds);
   localBounds = LET.partition(bodies,globalBounds);
   bodies = sort.sortBodies(bodies);
   bodies = LET.commBodies(bodies);
-  LET.partition(jbodies,globalBounds);
-  jbodies = sort.sortBodies(jbodies);
-  jbodies = LET.commBodies(jbodies);
+
   Cells cells = tree.buildTree(bodies, localBounds);
   pass.upwardPass(cells);
-  Cells jcells = tree.buildTree(jbodies, localBounds);
-  pass.upwardPass(jcells);
-  LET.setLET(jcells,localBounds,cycle);
+  LET.setLET(cells,localBounds,cycle);
   LET.commBodies();
   LET.commCells();
-  traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
+  traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
+  Cells jcells;
   for (int irank=1; irank<LET.mpisize; irank++) {
     LET.getLET(jcells,(LET.mpirank+irank)%LET.mpisize);
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
   pass.downwardPass(cells);
+  vec3 localDipole = pass.getDipole(bodies,0);
+  vec3 globalDipole = LET.allreduce(localDipole);
+  int numBodies = LET.allreduce(bodies.size());
+  pass.dipoleCorrection(bodies,globalDipole,numBodies,cycle);
 
   LET.unpartition(bodies);
   bodies = sort.sortBodies(bodies);
@@ -118,14 +104,13 @@ extern "C" void fmm(int ni, double * xi, double * qi, double * pi, double * fi, 
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    pi[i]     = B->TRG[0];
-    fi[3*i+0] = B->TRG[1];
-    fi[3*i+1] = B->TRG[2];
-    fi[3*i+2] = B->TRG[3];
+    p[i]     = B->TRG[0];
+    f[3*i+0] = B->TRG[1];
+    f[3*i+1] = B->TRG[2];
+    f[3*i+2] = B->TRG[3];
   }
 }
 
-extern "C" void fmm_(int * ni, double * xi, double * qi, double * pi, double * fi,
-                     int * nj, double * xj, double * qj, double * cycle, int * periodicflag) {
-  fmm(*ni,xi,qi,pi,fi,*nj,xj,qj,*cycle,*periodicflag);
+extern "C" void fmm_(int * n, double * x, double * q, double * p, double * f, double * cycle, int * images) {
+  fmm(*n, x, q, p, f, *cycle, *images);
 }

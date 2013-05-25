@@ -23,111 +23,145 @@
       program test_laplace
       implicit real*8(a-h,o-z)
       include 'mpif.h'
-      parameter(nmax = 1000000)
-      dimension nn(8)
-      allocatable :: xi(:)
-      allocatable :: pi(:)
-      allocatable :: fi(:)
-      allocatable :: pd(:)
-      allocatable :: fd(:)
-      allocatable :: xj(:)
-      allocatable :: qj(:)
+      parameter(nmax = 1000000, pi = 3.14159265358979312d0)
+      integer prange
+      real*8 norm, norm1, norm2, norm3, norm4
+      integer, dimension (128) :: iseed
+      real*8, dimension (3) :: dipole = (/0, 0, 0/)
+      real*8, dimension (3) :: xperiodic
+      allocatable :: x(:)
+      allocatable :: q(:)
+      allocatable :: p(:)
+      allocatable :: f(:)
+      allocatable :: x2(:)
+      allocatable :: q2(:)
+      allocatable :: p2(:)
+      allocatable :: f2(:)
 
       call mpi_init(ierr)
       call mpi_comm_size(mpi_comm_world, mpisize, ierr);
       call mpi_comm_rank(mpi_comm_world, mpirank, ierr);
-      n = 1000000 / mpisize;
-      size = 2 * 3.14159265358979312d0;
-      allocate( xi(3*n), pi(n), fi(3*n), pd(n), fd(3*n) )
-      allocate( xj(3*n), qj(n) )
+      n = 1000 / mpisize;
+      images = 3
+      ksize = 11
+      pcycle = 2 * pi
+      alpha = 10 / pcycle
+      allocate( x(3*n),  q(n),  p(n),  f(3*n)  )
+      allocate( x2(3*n), q2(n), p2(n), f2(3*n) )
 
-      do i = 1, 8
-        nn(i) = mpirank;
-      end do 
-      call random_seed(put=nn(1:8))
-      call random_number(xi)
-      call random_number(xj)
-      call random_number(qj)
+      do i = 1, 128
+        iseed(i) = mpirank
+      end do
+      call random_seed(put=iseed)
+      call random_number(x)
+      call random_number(q)
       average = 0
       do i = 1, n
-        xi(3*i-2) = xi(3*i-2) * size - size / 2
-        xi(3*i-1) = xi(3*i-1) * size - size / 2
-        xi(3*i-0) = xi(3*i-0) * size - size / 2
-        pi(i) = 0
-        fi(3*i-2) = 0
-        fi(3*i-1) = 0
-        fi(3*i-0) = 0
-        pd(i) = 0
-        fd(3*i-2) = 0
-        fd(3*i-1) = 0
-        fd(3*i-0) = 0
-        xj(3*i-2) = xj(3*i-2) * size - size / 2
-        xj(3*i-1) = xj(3*i-1) * size - size / 2
-        xj(3*i-0) = xj(3*i-0) * size - size / 2
-        average = average + qj(i)
+        x(3*i-2) = x(3*i-2) * pcycle - pcycle / 2
+        x(3*i-1) = x(3*i-1) * pcycle - pcycle / 2
+        x(3*i-0) = x(3*i-0) * pcycle - pcycle / 2
+        x2(3*i-2) = x(3*i-2)
+        x2(3*i-1) = x(3*i-1)
+        x2(3*i-0) = x(3*i-0)
+        p(i) = 0
+        f(3*i-2) = 0
+        f(3*i-1) = 0
+        f(3*i-0) = 0
+        p2(i) = 0
+        f2(3*i-2) = 0
+        f2(3*i-1) = 0
+        f2(3*i-0) = 0
+        average = average + q(i)
       end do
       average = average / n
       do i = 1, n
-        qj(i) = qj(i) - average
+        q(i) = q(i) - average
+        q2(i) = q(i)
       end do
-      call fmm(n, xi, pi, fi, n, xj, qj, size, 0)
+      call fmm(n, x, q, p, f, pcycle, images)
+#if 1
+      call ewald(n, x2, q2, p2, f2, ksize, alpha, pcycle)
+#else
+      prange = 0
+      do i = 0, images
+        prange = prange + pow(3,i)
+      end do
+      do i = 1, N
+        do d = 1, 3
+          dipole(d) = dipole(d) + x(3*i+d-3) * q(i)
+        end do
+      end do
+      norm = dipole(1) * dipole(1) + dipole(2) * dipole(2) + dipole(3) * dipole(3)
+      coef = 4 * pi / (3 * pcycle * pcycle * pcycle)
       if(mpirank.eq.0) print"(a)",'--- MPI direct sum ---------------'
       do irank = 0, mpisize-1
         if (mpirank.eq.0) print"(a,i1,a,i1)",'Direct loop          : ',irank+1,'/',mpisize
-        call mpi_shift(xj, 3*n, mpisize, mpirank)
-        call mpi_shift(qj, n,   mpisize, mpirank)
-        do i = 1, 100
-          p = 0
+        call mpi_shift(x2, 3*n, mpisize, mpirank)
+        call mpi_shift(q2, n,   mpisize, mpirank)
+        do i = 1, n
+          pp = 0
           fx = 0
           fy = 0
           fz = 0
-          do j = 1, n
-            dx = xi(3*i-2) - xj(3*j-2)
-            dy = xi(3*i-1) - xj(3*j-1)
-            dz = xi(3*i-0) - xj(3*j-0)
-            R2 = dx * dx + dy * dy + dz * dz
-            Rinv = 1 / sqrt(R2)
-            if(irank.eq.mpisize-1.and.i.eq.j) Rinv = 0
-            R3inv = qj(j) * Rinv * Rinv * Rinv
-            p = p + qj(j) * Rinv
-            fx = fx + dx * R3inv
-            fy = fy + dy * R3inv
-            fz = fz + dz * R3inv
+          do ix = -prange, prange
+            do iy = -prange, prange
+              do iz = -prange, prange
+                xperiodic(1) = ix * pcycle
+                xperiodic(2) = iy * pcycle
+                xperiodic(3) = iz * pcycle
+                do j = 1, n
+                  dx = x(3*i-2) - x2(3*j-2) - xperiodic(1)
+                  dy = x(3*i-1) - x2(3*j-1) - xperiodic(2)
+                  dz = x(3*i-0) - x2(3*j-0) - xperiodic(3)
+                  R2 = dx * dx + dy * dy + dz * dz
+                  Rinv = 1 / sqrt(R2)
+                  if(irank.eq.mpisize-1.and.i.eq.j) Rinv = 0
+                  R3inv = q2(j) * Rinv * Rinv * Rinv
+                  pp = pp + q2(j) * Rinv
+                  fx = fx + dx * R3inv
+                  fy = fy + dy * R3inv
+                  fz = fz + dz * R3inv
+                end do
+              end do
+            end do
           end do
-          pd(i) = pd(i) + p
-          fd(3*i-2) = fd(3*i-2) - fx
-          fd(3*i-1) = fd(3*i-1) - fy
-          fd(3*i-0) = fd(3*i-0) - fz
+          p2(i) = p2(i) + pp - coef * norm / n / q2(i)
+          f2(3*i-2) = f2(3*i-2) - fx - coef * dipole(1)
+          f2(3*i-1) = f2(3*i-1) - fy - coef * dipole(2)
+          f2(3*i-0) = f2(3*i-0) - fz - coef * dipole(3)
         end do
       end do
-      dif1 = 0
-      val1 = 0
-      dif2 = 0
-      val2 = 0
-      dif3 = 0
-      val3 = 0
-      dif4 = 0
-      val4 = 0
-      do i = 1, 100
-        dif1 = dif1 + (pi(i) - pd(i)) * (pi(i) - pd(i));
-        val1 = val1 + pd(i) * pd(i);
-        dif2 = dif2 + (fi(3*i-2) - fd(3*i-2)) * (fi(3*i-2) - fd(3*i-2))&
-              + (fi(3*i-1) - fd(3*i-1)) * (fi(3*i-1) - fd(3*i-1))&
-              + (fi(3*i-0) - fd(3*i-0)) * (fi(3*i-0) - fd(3*i-0));
-        val2 = val2 + fd(3*i-2) * fd(3*i-2) + fd(3*i-1) * fd(3*i-1) + fd(3*i-0) * fd(3*i-0);
+#endif
+      diff2 = 0
+      norm2 = 0
+      diff3 = 0
+      norm3 = 0
+      diff4 = 0
+      norm4 = 0
+      v = 0
+      v2 = 0
+      do i = 1, n
+        v = v + p(i) * q(i)
+        v2 = v2 + p2(i) * q2(i)
+        diff2 = diff2 + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
+                      + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
+                      + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))
+        norm2 = norm2 + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
       end do
-      call mpi_reduce(dif1, dif3, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(val1, val3, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(dif2, dif4, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(val2, val4, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      diff1 = (v - v2) * (v - v2)
+      norm1 = v2 * v2
+      call mpi_reduce(diff1, diff3, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      call mpi_reduce(norm1, norm3, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      call mpi_reduce(diff2, diff4, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      call mpi_reduce(norm2, norm4, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
       if (mpirank.eq.0) then
         print"(a)",'--- FMM vs. direct ---------------'
-	print"(a,f10.7)",'Rel. L2 Error (pot)  : ', sqrt(dif3/val3)
+	print"(a,f10.7)",'Rel. L2 Error (pot)  : ', sqrt(diff3/norm3)
       end if
-      if (abs(dif4).gt.0) then
-        print"(a,f10.7)",'Rel. L2 Error (acc)" : ', sqrt(dif4/val4)
+      if (abs(diff4).gt.0) then
+        print"(a,f10.7)",'Rel. L2 Error (acc)" : ', sqrt(diff4/norm4)
       end if
 
-      deallocate( xi, pi, fi, pd, fd, xj, qj )
+      deallocate( x, q, p, f, x2, q2, p2, f2 )
       call mpi_finalize(ierr);
       end

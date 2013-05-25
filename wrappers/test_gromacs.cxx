@@ -25,7 +25,7 @@ extern "C" void MPI_Shift(double * var, int n, int mpisize, int mpirank) {
 int main() {
   const int N = 1000;
   const int stringLength = 20;
-  const int images = 2;
+  const int images = 3;
   const int ksize = 11;
   const double cycle = 2 * M_PI;
   const double alpha = 10 / cycle;
@@ -108,7 +108,7 @@ int main() {
     f2[3*i+2] -= Fz + coef * dipole[2];
   }
 #endif
-  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+  double diff2 = 0, norm2 = 0;
   double v = 0, v2 = 0;
   for (int i=0; i<N; i++) {
     v += p[i] * q[i];
@@ -118,8 +118,8 @@ int main() {
            + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
     norm2 += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
   }
-  diff1 += (v - v2) * (v - v2);
-  norm1 += v2 * v2;
+  double diff1 = (v - v2) * (v - v2);
+  double norm1 = v2 * v2;
   std::cout << "--- FMM vs. Ewald  ---------------" << std::endl;
   std::cout << std::setw(stringLength) << std::left
 	    << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;

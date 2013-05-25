@@ -25,8 +25,8 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops # GCC
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 ### choose fortran compiler
-FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops #GCC
-#FC = mpif90 -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias # Intel
+FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp #GCC
+#FC = mpif90 -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp # Intel
 
 ### Base flags
 CXX	+= -I../include
