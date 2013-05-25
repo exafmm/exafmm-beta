@@ -150,14 +150,14 @@ class Ewald : public Logger {
       }                                                         //  End loop over target cells
       sync_tasks;                                               //  Synchronize tasks
     }                                                           // Finalize tasks
-    stopTimer("Ewald real part",verbose);                       // Stop timer
+    stopTimer("Ewald real part");                               // Stop timer
   }
 
 //! Ewald wave part
-  void wavePart(Bodies &bodies) {
+  void wavePart(Bodies &bodies, Bodies &jbodies) {
     startTimer("Ewald wave part");                              // Start timer
     Waves waves = initWaves();                                  // Initialize wave vector
-    dft(waves,bodies);                                          // Apply DFT to bodies to get waves
+    dft(waves,jbodies);                                         // Apply DFT to bodies to get waves
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
     real_t coef = .5 / M_PI / M_PI / sigma / cycle;             // First constant
     real_t coef2 = scale * scale / (4 * alpha * alpha);         // Second constant
@@ -171,7 +171,7 @@ class Ewald : public Logger {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       for (int d=0; d<3; d++) B->TRG[d+1] *= scale;             //  Scale forces
     }                                                           // End loop over bodies
-    stopTimer("Ewald wave part",verbose);                       // Stop timer
+    stopTimer("Ewald wave part");                               // Stop timer
   }
 
 //! Evaluate relaitve L2 norm error

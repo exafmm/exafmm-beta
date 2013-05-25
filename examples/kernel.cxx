@@ -114,7 +114,7 @@ int main() {
   }
   file.close();
 
-  if (order.size() > 5) {
+  if (order.size() > 9) {
     vtk2DPlot vtk;
     vtk.setName("order");
     vtk.setName("log10(error)");

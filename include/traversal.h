@@ -188,7 +188,7 @@ class Traversal : public Kernel, public Logger {
 #if Cartesian
     Ci0->L /= Ci0->M[0];                                        // Normalize local expansion coefficients
 #endif
-    stopTimer("Traverse periodic",verbose);                     // Stop timer
+    stopTimer("Traverse periodic");                             // Stop timer
   }
 
  public:
@@ -217,7 +217,7 @@ class Traversal : public Kernel, public Logger {
         traversePeriodic(cycle);                                //   Traverse tree for periodic images
       }                                                         //  End if for periodic boundary condition
     }                                                           // End if for empty cell vectors
-    stopTimer("Traverse",verbose);                              // Stop timer
+    stopTimer("Traverse");                                      // Stop timer
     writeTrace();                                               // Write trace to file
   }
 
@@ -271,26 +271,28 @@ class Traversal : public Kernel, public Logger {
     Cj->NDBODY = 1000;
     Cj->BODY = jbodies.begin();
     Cj->M = 0;
-    startTimer("P2P kernel");
+    startTimer("P2P kernel test");
     P2P(Ci,Cj,false);
-    timeP2P = stopTimer("P2P kernel") / 10000;
-    startTimer("M2L kernel");
+    timeP2P = stopTimer("P2P kernel test") / 10000;
+    startTimer("M2L kernel test");
     for (int i=0; i<1000; i++) M2L(Ci,Cj,false);
-    timeM2L = stopTimer("M2L kernel") / 1000;
+    timeM2L = stopTimer("M2L kernel test") / 1000;
   }
 
 //! Print traversal statistics
   void printTraversalData() {
 #if COUNT
-    std::cout << "--- Traversal stats --------------" << std::endl
-	      << std::setw(stringLength) << std::left           // Set format
-	      << "P2P calls"  << " : "                          // Print title
-	      << std::setprecision(0) << std::fixed             // Set format
-              << numP2P << std::endl                            // Print number of P2P calls
-	      << std::setw(stringLength) << std::left           // Set format
-	      << "M2L calls"  << " : "                          // Print title
-	      << std::setprecision(0) << std::fixed             // Set format
-              << numM2L << std::endl;                           // Print number of M2l calls
+    if (verbose) {                                              // If verbose flag is true
+      std::cout << "--- Traversal stats --------------" << std::endl// Print title
+	      << std::setw(stringLength) << std::left           //  Set format
+	      << "P2P calls"  << " : "                          //  Print title
+	      << std::setprecision(0) << std::fixed             //  Set format
+              << numP2P << std::endl                            //  Print number of P2P calls
+	      << std::setw(stringLength) << std::left           //  Set format
+	      << "M2L calls"  << " : "                          //  Print title
+	      << std::setprecision(0) << std::fixed             //  Set format
+              << numM2L << std::endl;                           //  Print number of M2L calls
+    }                                                           // End if for verbose flag
 #endif
   }
 };

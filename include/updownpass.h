@@ -77,7 +77,7 @@ class UpDownPass : public Kernel, public Logger {
         }                                                       //   End loop over top 2 levels of cells
       }                                                         //  End if for tree levels
     }                                                           // End if for empty cell vector
-    stopTimer("Upward pass",verbose);                           // Stop timer
+    stopTimer("Upward pass");                                   // Stop timer
   }
 
 //! Downward pass (L2L, L2P)
@@ -93,7 +93,7 @@ class UpDownPass : public Kernel, public Logger {
         sync_tasks;                                             //   Synchronize tasks
       }                                                         //  Finalize tasks
     }                                                           // End if for empty cell vector
-    stopTimer("Downward pass",verbose);                         // Stop timer
+    stopTimer("Downward pass");                                 // Stop timer
   }
 
 //! Get dipole of entire system 

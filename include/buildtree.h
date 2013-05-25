@@ -236,7 +236,7 @@ class BuildTree : public Logger {
     binNode->END = binNode->BEGIN + maxBinNode;                 // Set end pointer
     N0 = buildNodes(bodies, buffer, 0, bodies.size(), binNode, X0, R0);// Build tree recursively
     delete[] binNode->BEGIN;                                    // Deallocate binary tree array
-    stopTimer("Grow tree",verbose);                             // Stop timer
+    stopTimer("Grow tree");                                     // Stop timer
   }
 
 //! Link tree structure
@@ -249,7 +249,7 @@ class BuildTree : public Logger {
       nodes2cells(N0, C0, C0, C0+1, R0);                        //  Convert nodes to cells recursively
       delete N0;                                                //  Deallocate nodes
     }                                                           // End if for empty node tree
-    stopTimer("Link tree",verbose);                             // Stop timer
+    stopTimer("Link tree");                                     // Stop timer
     return cells;                                               // Return cells array
   }
 
@@ -265,13 +265,15 @@ class BuildTree : public Logger {
 
 //! Print tree structure statistics
   void printTreeData(Cells &cells) {
-    printTitle("Tree stats");                                   // Print title
-    std::cout  << std::setw(stringLength) << std::left          // Set format
-	      << "Bodies"     << " : " << cells.front().NDBODY << std::endl// Print number of bodies
-	      << std::setw(stringLength) << std::left           // Set format
-	      << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
-	      << std::setw(stringLength) << std::left           // Set format
-	      << "Tree depth" << " : " << maxlevel << std::endl;// Print number of levels
+    if (verbose) {                                              // If verbose flag is true
+      printTitle("Tree stats");                                 //  Print title
+      std::cout  << std::setw(stringLength) << std::left        //  Set format
+	        << "Bodies"     << " : " << cells.front().NDBODY << std::endl// Print number of bodies
+	        << std::setw(stringLength) << std::left         //  Set format
+	        << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
+	        << std::setw(stringLength) << std::left         //  Set format
+	        << "Tree depth" << " : " << maxlevel << std::endl;//  Print number of levels
+    }                                                           // End if for verbose flag
   }
 };
 #endif

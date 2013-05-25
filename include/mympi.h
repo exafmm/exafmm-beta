@@ -28,11 +28,6 @@ class MyMPI {
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);                    // Get rank of current MPI process
   }
 
-//! Destructor
-  ~MyMPI() {
-    if (!external) MPI_Finalize();                              // Finalize MPI communicator
-  }
-
 //! If n is power of two return true
   bool isPowerOfTwo(const int n) {
     return ((n != 0) && !(n & (n - 1)));                        // Decrement and compare bits

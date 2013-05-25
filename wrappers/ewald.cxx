@@ -1,3 +1,4 @@
+#include "localessentialtree.h"
 #include "args.h"
 #include "boundbox.h"
 #include "buildtree.h"
@@ -28,16 +29,18 @@ extern "C" void ewald(int n, double * x, double * q, double * p, double * f,
   UpDownPass pass(args.theta);
   Traversal traversal(args.nspawn,args.images);
   Ewald ewald(ksize,alpha,sigma,cutoff,cycle);
-  logger.verbose = true;
-  args.verbose &= logger.verbose;
+  LocalEssentialTree LET(args.images);
+  args.verbose &= LET.mpirank == 0;
   if (args.verbose) {
+    logger.verbose = true;
     boundbox.verbose = true;
     tree.verbose = true;
     pass.verbose = true;
     traversal.verbose = true;
     ewald.verbose = true;
-    logger.printTitle("Ewald Parameters");
+    LET.verbose = true;
   }
+  logger.printTitle("Ewald Parameters");
   args.print(logger.stringLength,P);
   ewald.print(logger.stringLength);
 #if AUTO
@@ -47,7 +50,7 @@ extern "C" void ewald(int n, double * x, double * q, double * p, double * f,
 #pragma omp parallel
 #pragma omp master
 #endif
-  if(args.verbose) logger.printTitle("Ewald Profiling");
+  logger.printTitle("Ewald Profiling");
   logger.startTimer("Total Ewald");
   logger.startPAPI();
   Bodies bodies(n);
@@ -69,10 +72,22 @@ extern "C" void ewald(int n, double * x, double * q, double * p, double * f,
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
   }
-  Bounds bounds = boundbox.getBounds(bodies);
-  Cells cells = tree.buildTree(bodies, bounds);
-  ewald.wavePart(bodies);
-  ewald.realPart(cells,cells);
+  Bounds localBounds = boundbox.getBounds(bodies);
+  Bounds globalBounds = LET.allreduceBounds(localBounds);
+  localBounds = LET.partition(bodies,globalBounds);
+  bodies = sort.sortBodies(bodies);
+  bodies = LET.commBodies(bodies);
+
+  Cells cells = tree.buildTree(bodies, globalBounds);
+  Bodies jbodies = bodies;
+
+  for (int i=0; i<LET.mpisize; i++) {
+    LET.shiftBodies(jbodies);
+    Cells jcells = tree.buildTree(jbodies, globalBounds);
+    ewald.wavePart(bodies, jbodies);
+    ewald.realPart(cells, jcells);
+    if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << LET.mpisize << std::endl;
+  }
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->ICELL = B->IBODY;
   }

@@ -1,3 +1,4 @@
+#include "localessentialtree.h"
 #include "args.h"
 #include "boundbox.h"
 #include "buildtree.h"
@@ -6,7 +7,6 @@
 #include "sort.h"
 #include "traversal.h"
 #include "updownpass.h"
-#include "localessentialtree.h"
 #if VTK
 #include "vtk.h"
 #endif
@@ -24,17 +24,17 @@ int main(int argc, char ** argv) {
   Traversal traversal(args.nspawn,args.images);
   LocalEssentialTree LET(args.images);
   args.numBodies /= LET.mpisize;
-  logger.verbose = LET.mpirank == 0;
-  args.verbose &= logger.verbose;
+  args.verbose &= LET.mpirank == 0;
   if (args.verbose) {
+    logger.verbose = true;
     boundbox.verbose = true;
     tree.verbose = true;
     pass.verbose = true;
     traversal.verbose = true;
     LET.verbose = true;
-    logger.printTitle("FMM Parameters");
   }
-  if(LET.mpirank == 0) args.print(logger.stringLength,P);
+  logger.printTitle("FMM Parameters");
+  args.print(logger.stringLength,P);
 #if AUTO
   traversal.timeKernels();
 #endif
@@ -42,7 +42,7 @@ int main(int argc, char ** argv) {
 #pragma omp parallel
 #pragma omp master
 #endif
-  if (args.verbose) logger.printTitle("FMM Profiling");
+  logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize);
@@ -152,7 +152,7 @@ int main(int argc, char ** argv) {
 #endif
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
-  if (args.verbose) logger.printTitle("MPI direct sum");
+  logger.printTitle("MPI direct sum");
   data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
   data.initTarget(bodies2);
@@ -163,9 +163,9 @@ int main(int argc, char ** argv) {
     if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << LET.mpisize << std::endl;
   }
   traversal.normalize(bodies2);
-  if (args.verbose) logger.printTitle("Total runtime");
-  if (logger.verbose) logger.printTime("Total FMM");
-  logger.stopTimer("Total Direct",logger.verbose);
+  logger.printTitle("Total runtime");
+  logger.printTime("Total FMM");
+  logger.stopTimer("Total Direct");
   boundbox.writeTime();
   tree.writeTime();
   pass.writeTime();
@@ -183,13 +183,11 @@ int main(int argc, char ** argv) {
   MPI_Reduce(&norm1, &norm3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if(args.verbose) {
-    logger.printTitle("FMM vs. direct");
-    logger.printError(diff3, norm3, diff4, norm4);
-    tree.printTreeData(cells);
-    traversal.printTraversalData();
-    logger.printPAPI();
-  }
+  logger.printTitle("FMM vs. direct");
+  logger.printError(diff3, norm3, diff4, norm4);
+  tree.printTreeData(cells);
+  traversal.printTraversalData();
+  logger.printPAPI();
 
 #if VTK
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->ICELL = 0;

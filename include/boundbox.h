@@ -43,7 +43,7 @@ class BoundBox : public Logger {
       bounds.Xmin = bounds.Xmax = bodies.front().X;             //  Initialize Xmin, Xmax
       bounds = boundsRecursion(bodies.begin(),bodies.end(),bounds);// Recursive call for bounds calculation
     }                                                           // End if for empty body vector
-    stopTimer("Get bounds",verbose);                            // Stop timer
+    stopTimer("Get bounds");                                    // Stop timer
     return bounds;                                              // Return Xmin and Xmax
   }
 
@@ -51,7 +51,7 @@ class BoundBox : public Logger {
   Bounds getBounds(Bodies bodies, Bounds bounds) {
     startTimer("Get bounds");                                   // Start timer
     bounds = boundsRecursion(bodies.begin(),bodies.end(),bounds);// Recursive call for bounds calculation
-    stopTimer("Get bounds",verbose);                            // Stop timer
+    stopTimer("Get bounds");                                    // Stop timer
     return bounds;                                              // Return Xmin and Xmax
   }
 };

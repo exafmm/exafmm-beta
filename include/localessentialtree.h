@@ -1,7 +1,7 @@
 #ifndef localessentialtree_h
 #define localessentialtree_h
-#include <queue>
 #include "partition.h"
+#include <queue>
 
 //! Handles all the communication of local essential trees
 class LocalEssentialTree : public Partition {
@@ -189,7 +189,7 @@ class LocalEssentialTree : public Partition {
       }                                                         //  Endif for current rank
       sendCellCount[irank] = sendCells.size() - sendCellDispl[irank];// Send count for irank
     }                                                           // End loop over ranks
-    stopTimer("Set LET",verbose);                               // Stop timer
+    stopTimer("Set LET");                                       // Stop timer
   }
 
 //! Get local essential tree from rank "irank".
@@ -210,7 +210,7 @@ class LocalEssentialTree : public Partition {
     }                                                           // End loop over receive cells
     cells.resize(recvCellCount[irank]);                         // Resize cell vector for LET
     cells.assign(recvCells.begin()+recvCellDispl[irank],recvCells.begin()+recvCellDispl[irank]+recvCellCount[irank]);
-    stopTimer(event.str(),verbose);                             // Stop timer
+    stopTimer(event.str());                                     // Stop timer
   }
 
 //! Send bodies
@@ -218,7 +218,7 @@ class LocalEssentialTree : public Partition {
     startTimer("Comm bodies");                                  // Start timer
     alltoall(sendBodies);                                       // Send body count
     alltoallv(sendBodies);                                      // Send bodies
-    stopTimer("Comm bodies",verbose);                           // Stop timer
+    stopTimer("Comm bodies");                                   // Stop timer
     return recvBodies;                                          // Return received bodies
   }
 
@@ -227,7 +227,7 @@ class LocalEssentialTree : public Partition {
     startTimer("Comm bodies");                                  // Start timer
     alltoall(bodies);                                           // Send body count
     alltoallv(bodies);                                          // Send bodies
-    stopTimer("Comm bodies",verbose);                           // Stop timer
+    stopTimer("Comm bodies");                                   // Stop timer
     return recvBodies;                                          // Return received bodies
   }
 
@@ -236,7 +236,7 @@ class LocalEssentialTree : public Partition {
     startTimer("Comm cells");                                   // Start timer
     alltoall(sendCells);                                        // Send cell count
     alltoallv(sendCells);                                       // Senc cells
-    stopTimer("Comm cells",verbose);                            // Stop timer
+    stopTimer("Comm cells");                                    // Stop timer
   }
 };
 #endif

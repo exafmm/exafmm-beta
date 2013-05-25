@@ -19,14 +19,14 @@ int main(int argc, char ** argv) {
   BuildTree tree(args.ncrit,args.nspawn);
   UpDownPass pass(args.theta);
   Traversal traversal(args.nspawn,args.images);
-  logger.verbose = true;
   if (args.verbose) {
     boundbox.verbose = true;
     tree.verbose = true;
     pass.verbose = true;
     traversal.verbose = true;
-    logger.printTitle("FMM Parameters");
+    logger.verbose = true;
   }
+  logger.printTitle("FMM Parameters");
   args.print(logger.stringLength,P);
 #if AUTO
   traversal.timeKernels();
@@ -35,7 +35,7 @@ int main(int argc, char ** argv) {
 #pragma omp parallel
 #pragma omp master
 #endif
-  if(args.verbose) logger.printTitle("FMM Profiling");
+  logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, 0);
@@ -55,9 +55,9 @@ int main(int argc, char ** argv) {
   Bodies jbodies = bodies;
 #endif
   pass.downwardPass(cells);
-  if (args.verbose) logger.printTitle("Total runtime");
+  logger.printTitle("Total runtime");
   logger.stopPAPI();
-  logger.stopTimer("Total FMM", logger.verbose);
+  logger.stopTimer("Total FMM");
   boundbox.writeTime();
   tree.writeTime();
   pass.writeTime();
@@ -73,16 +73,14 @@ int main(int argc, char ** argv) {
   logger.startTimer("Total Direct");
   traversal.direct(bodies2, jbodies, cycle);
   traversal.normalize(bodies2);
-  logger.stopTimer("Total Direct", args.verbose);
+  logger.stopTimer("Total Direct");
   double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   data.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
-  if (args.verbose) {
-    logger.printTitle("FMM vs. direct");
-    logger.printError(diff1, norm1, diff2, norm2);
-    tree.printTreeData(cells);
-    traversal.printTraversalData();
-    logger.printPAPI();
-  }
+  logger.printTitle("FMM vs. direct");
+  logger.printError(diff1, norm1, diff2, norm2);
+  tree.printTreeData(cells);
+  traversal.printTraversalData();
+  logger.printPAPI();
 #if VTK
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) B->ICELL = 0;
   for (C_iter C=cells.begin(); C!=cells.end(); C++) {

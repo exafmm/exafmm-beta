@@ -71,12 +71,14 @@ class Logger {
 
 //! Print message to standard output
   inline void printTitle(std::string title) {
-    title += " ";                                               // Append space to end of title
-    std::cout << "--- " << std::setw(stringLength)              // Align string length
-              << std::left                                      // Left shift
-              << std::setfill('-')                              // Set to fill with '-'
-              << title << std::setw(10) << "-"                  // Fill until end of line
-              << std::setfill(' ') << std::endl;                // Set back to fill with ' '
+    if (verbose) {                                              // If verbose flag is true
+      title += " ";                                             //  Append space to end of title
+      std::cout << "--- " << std::setw(stringLength)            //  Align string length
+                << std::left                                    //  Left shift
+                << std::setfill('-')                            //  Set to fill with '-'
+                << title << std::setw(10) << "-"                //  Fill until end of line
+                << std::setfill(' ') << std::endl;              //  Set back to fill with ' '
+    }                                                           // End if for verbose flag
   }
 
 //! Start timer for given event
@@ -85,18 +87,20 @@ class Logger {
   }
 
 //! Stop timer for given event
-  double stopTimer(std::string event, bool print=false) {
+  double stopTimer(std::string event) {
     double endTimer = get_time();                               // Get time of day and store in endTimer
     timer[event] += endTimer - beginTimer[event];               // Accumulate event time to timer
-    if (print) printTime(event);                                // Print event and timer to screen
+    if (verbose) printTime(event);                              // Print event and timer to screen
     return endTimer - beginTimer[event];                        // Return the event time
   }
 
 //! Print timings of a specific event
   inline void printTime(std::string event) {
-    std::cout << std::setw(stringLength) << std::left           // Set format
-      << event << " : " << std::setprecision(decimal) << std::fixed
-      << timer[event] << " s" << std::endl;                     // Print event and timer
+    if (verbose) {                                              // If verbose flag is true
+      std::cout << std::setw(stringLength) << std::left         //  Set format
+        << event << " : " << std::setprecision(decimal) << std::fixed
+        << timer[event] << " s" << std::endl;                   //  Print event and timer
+    }                                                           // End if for verbose flag
   }
 
 //! Write timings of all events
@@ -158,7 +162,7 @@ class Logger {
 
   inline void printPAPI() {
 #if PAPI
-    if (!PAPIEventCodes.empty()) {                              // If PAPI events are set
+    if (!PAPIEventCodes.empty() && verbose) {                   // If PAPI events are set and verbose is true
       printTitle("PAPI stats ");
       for (int i=0; i<int(PAPIEventCodes.size()); i++) {        //  Loop over PAPI events
         std::cout << std::setw(stringLength) << std::left       //   Set format
@@ -233,12 +237,14 @@ class Logger {
 
   //! Print relative L2 norm error
   void printError(double diff1, double norm1, double diff2, double norm2) {
-    std::cout << std::setw(stringLength) << std::left           // Set format
-              << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;// Print potential error
-    if( std::abs(diff2) > 0 ) {                                 // If acceleration was calculated
+    if (verbose) {                                              // If verbose flag is true
       std::cout << std::setw(stringLength) << std::left         //  Set format
-                << "Rel. L2 Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;// Print acceleration error
-    }                                                           // End if for acceleration
+                << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;// Print potential error
+      if( std::abs(diff2) > 0 ) {                               //  If acceleration was calculated
+        std::cout << std::setw(stringLength) << std::left       //   Set format
+                  << "Rel. L2 Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;// Print acceleration error
+      }                                                         //  End if for acceleration
+    }                                                           // End if for verbose flag
   }
 };
 #endif

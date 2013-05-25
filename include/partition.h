@@ -2,6 +2,7 @@
 #define partition_h
 #include "mympi.h"
 #include "logger.h"
+#include "types.h"
 
 //! Handles all the partitioning of domains
 class Partition : public MyMPI, public Logger {
@@ -143,7 +144,7 @@ class Partition : public MyMPI, public Logger {
       assert(0 <= B->IPROC && B->IPROC < mpisize);
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
-    stopTimer("Partition",verbose);                             // Stop timer
+    stopTimer("Partition");                                     // Stop timer
     return local;
   }
 
@@ -153,7 +154,7 @@ class Partition : public MyMPI, public Logger {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->ICELL = B->IPROC;                                      //  Do this to sortaccroding to IPROC
     }                                                           // End loop over bodies
-    stopTimer("Unpartition",verbose);                           // Stop timer
+    stopTimer("Unpartition");                                   // Stop timer
   }
 };
 #endif

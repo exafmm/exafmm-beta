@@ -35,7 +35,7 @@ extern "C" void fmm(int n, double * x, double * q, double * p, double * f, doubl
     LET.verbose = true;
     logger.printTitle("FMM Parameters");
   }
-  if(LET.mpirank == 0) args.print(logger.stringLength,P);
+  if (LET.mpirank == 0) args.print(logger.stringLength,P);
 #if AUTO
   traversal.timeKernels();
 #endif

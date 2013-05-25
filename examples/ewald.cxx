@@ -1,3 +1,4 @@
+#include "localessentialtree.h"
 #include "args.h"
 #include "boundbox.h"
 #include "buildtree.h"
@@ -30,17 +31,19 @@ int main(int argc, char ** argv) {
   UpDownPass pass(args.theta);
   Traversal traversal(args.nspawn,args.images);
   Ewald ewald(ksize,alpha,sigma,cutoff,cycle);
-  logger.verbose = true;
+  LocalEssentialTree LET(args.images);
+  args.verbose &= LET.mpirank == 0;
   if (args.verbose) {
+    logger.verbose = true;
     boundbox.verbose = true;
     tree.verbose = true;
     pass.verbose = true;
     traversal.verbose = true;
     ewald.verbose = true;
-    logger.printTitle("FMM Parameters");
+    LET.verbose = true;
   }
+  logger.printTitle("Ewald Parameters");
   args.print(logger.stringLength,P);
-  if(args.verbose) logger.printTitle("Ewald Parameters");
   ewald.print(logger.stringLength);
 #if AUTO
   traversal.timeKernels();
@@ -49,7 +52,7 @@ int main(int argc, char ** argv) {
 #pragma omp parallel
 #pragma omp master
 #endif
-  if(args.verbose) logger.printTitle("FMM Profiling");
+  logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution);
@@ -58,19 +61,20 @@ int main(int argc, char ** argv) {
   pass.upwardPass(cells);
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   pass.downwardPass(cells);
+  vec3 dipole = pass.getDipole(bodies,0);
+  pass.dipoleCorrection(bodies,dipole,bodies.size(),cycle);
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
 #if 1
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
-  if(args.verbose) logger.printTitle("Ewald Profiling");
+  logger.printTitle("Ewald Profiling");
   logger.startTimer("Total Ewald");
-  ewald.wavePart(bodies);
+  ewald.wavePart(bodies,bodies);
   ewald.realPart(cells,cells);
-  ewald.dipoleCorrection(bodies,0,cycle);
-  if (args.verbose) logger.printTitle("Total runtime");
-  if (logger.verbose) logger.printTime("Total FMM");
-  logger.stopTimer("Total Ewald", args.verbose);
+  logger.printTitle("Total runtime");
+  logger.printTime("Total FMM");
+  logger.stopTimer("Total Ewald");
 #else
   Bodies jbodies = bodies;
   data.sampleBodies(bodies, args.numTargets);
@@ -79,19 +83,17 @@ int main(int argc, char ** argv) {
   logger.startTimer("Total Direct");
   traversal.direct(bodies, jbodies, cycle);
   traversal.normalize(bodies);
-  if (args.verbose) logger.printTitle("Total runtime");
-  if (logger.verbose) logger.printTime("Total FMM");
-  logger.stopTimer("Total Direct", args.verbose);
+  logger.printTitle("Total runtime");
+  logger.printTime("Total FMM");
+  logger.stopTimer("Total Direct");
 #endif
   double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   ewald.evalError(bodies2, bodies, diff1, norm1, diff2, norm2);
-  if (args.verbose) {
-    logger.printTitle("FMM vs. Ewald");
-    logger.printError(diff1, norm1, diff2, norm2);
-    tree.printTreeData(cells);
-    traversal.printTraversalData();
-    logger.printPAPI();
-  }
+  logger.printTitle("FMM vs. Ewald");
+  logger.printError(diff1, norm1, diff2, norm2);
+  tree.printTreeData(cells);
+  traversal.printTraversalData();
+  logger.printPAPI();
 #if VTK
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) B->ICELL = 0;
   for (C_iter C=cells.begin(); C!=cells.end(); C++) {
