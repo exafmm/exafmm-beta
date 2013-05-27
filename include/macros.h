@@ -18,14 +18,14 @@
 const int SIMD_BYTES = 64;                                      //!< SIMD byte length of MIC
 #elif __AVX__ | __bgq__
 const int SIMD_BYTES = 32;                                      //!< SIMD byte length of AVX
-#elif __SSE__
+#elif __SSE__ | __sparc_v9__
 const int SIMD_BYTES = 16;                                      //!< SIMD byte length of SSE
 #else
 #error no SIMD
 #endif
 
 // Bluegene/Q and K computer don't have single precision arithmetic
-#if __bgq__ | __SPARC__
+#if __bgq__ | __sparc_v9__
 #ifndef FP64
 #error Please use FP64 for BG/Q and K computer
 #endif

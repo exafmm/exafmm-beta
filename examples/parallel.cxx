@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
   UpDownPass pass(args.theta);
   Traversal traversal(args.nspawn,args.images);
   LocalEssentialTree LET(args.images);
-  args.numBodies /= LET.mpisize;
+  //args.numBodies /= LET.mpisize;
   args.verbose &= LET.mpirank == 0;
   if (args.verbose) {
     logger.verbose = true;
@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
     LET.verbose = true;
   }
   logger.printTitle("FMM Parameters");
-  args.print(logger.stringLength,P);
+  args.print(logger.stringLength, P, LET.mpirank);
 #if AUTO
   traversal.timeKernels();
 #endif
@@ -166,11 +166,11 @@ int main(int argc, char ** argv) {
   logger.printTitle("Total runtime");
   logger.printTime("Total FMM");
   logger.stopTimer("Total Direct");
-  boundbox.writeTime();
-  tree.writeTime();
-  pass.writeTime();
-  traversal.writeTime();
-  LET.writeTime();
+  boundbox.writeTime(LET.mpirank);
+  tree.writeTime(LET.mpirank);
+  pass.writeTime(LET.mpirank);
+  traversal.writeTime(LET.mpirank);
+  LET.writeTime(LET.mpirank);
   boundbox.resetTimer();
   tree.resetTimer();
   pass.resetTimer();

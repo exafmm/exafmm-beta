@@ -108,7 +108,7 @@ extern "C" void ewald(int n, double * x, double * q, double * p, double * f,
   }
 }
 
-extern "C" void ewald_(int * n, double * x, double * q, double * p, double * f,
+extern "C" void fmm_ewald_(int * n, double * x, double * q, double * p, double * f,
                       int * ksize, double * alpha, double * cycle) {
   ewald(*n, x, q, p, f, *ksize, *alpha, *cycle);
 }

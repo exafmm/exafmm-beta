@@ -104,9 +104,11 @@ class Logger {
   }
 
 //! Write timings of all events
-  inline void writeTime() {
-    std::ofstream timerFile;                                    // Timer log file
-    timerFile.open("time.dat", std::ios::out | std::ios::app);  // Open timer log file
+  inline void writeTime(int mpirank=0) {
+    std::stringstream name;                                     // File name
+    name << "time" << std::setfill('0') << std::setw(6)         // Set format
+         << mpirank << ".dat";                                  // Create file name for timer
+    std::ofstream timerFile(name.str().c_str(), std::ios::app); // Open timer log file
     for (T_iter E=timer.begin(); E!=timer.end(); E++) {         // Loop over all events
       timerFile << std::setw(stringLength) << std::left         //  Set format
         << E->first << " " << E->second << std::endl;           //  Print event and timer
@@ -194,9 +196,9 @@ class Logger {
   inline void writeTrace(int mpirank=0) {
     startTimer("Write trace");                                  // Start timer
     std::stringstream name;                                     // File name
-    name << "trace" << std::setfill('0') << std::setw(4)        // Set format
+    name << "trace" << std::setfill('0') << std::setw(6)        // Set format
          << mpirank << ".svg";                                  // Create file name for trace
-    std::ofstream traceFile(name.str());                        // Open trace log file
+    std::ofstream traceFile(name.str().c_str());                // Open trace log file
     traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" // Header statements for trace log file
       << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
       << "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"

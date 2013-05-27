@@ -966,4 +966,109 @@ class vec<2,double> {
 };
 #endif
 
+#if __sparc_v9__
+#include <emmintrin.h>
+
+template<>
+class vec<2,double> {
+ private:
+  __m128d data;
+ public:
+  vec(){}                                                       // Default constructor
+  vec(const double v) {                                         // Copy constructor scalar
+    data = _mm_set_pd(v,v);
+  }
+  vec(const __m128d v) {                                        // Copy constructor SIMD register
+    data = v;
+  }
+  vec(const vec &v) {                                           // Copy constructor vector
+    data = v.data;
+  }
+  vec(const double a, const double b) {                         // Copy constructor (component-wise)
+    data = _mm_set_pd(b,a);
+  }
+  ~vec(){}                                                      // Destructor
+  const vec &operator=(const double v) {                        // Scalar assignment
+    data = _mm_set_pd(v,v);
+    return *this;
+  }
+  const vec &operator=(const vec &v) {                          // Vector assignment
+    data = v.data;
+    return *this;
+  }
+  const vec &operator+=(const vec &v) {                         // Vector compound assignment (add)
+    data = _mm_add_pd(data,v.data);
+    return *this;
+  }
+  const vec &operator-=(const vec &v) {                         // Vector compound assignment (subtract)
+    data = _mm_sub_pd(data,v.data);
+    return *this;
+  }
+  const vec &operator*=(const vec &v) {                         // Vector compound assignment (multiply)
+    data = _mm_mul_pd(data,v.data);
+    return *this;
+  }
+  const vec &operator/=(const vec &v) {                         // Vector compound assignment (divide)
+    data = _mm_mul_pd(data,_fjsp_rcpa_v2r8(v.data));
+    return *this;
+  }
+  const vec &operator&=(const vec &v) {                         // Vector compound assignment (bitwise and)
+    data = _mm_and_pd(data,v.data);
+    return *this;
+  }
+  vec operator+(const vec &v) const {                           // Vector arithmetic (add)
+    return vec(_mm_add_pd(data,v.data));
+  }
+  vec operator-(const vec &v) const {                           // Vector arithmetic (subtract)
+    return vec(_mm_sub_pd(data,v.data));
+  }
+  vec operator*(const vec &v) const {                           // Vector arithmetic (multiply)
+    return vec(_mm_mul_pd(data,v.data));
+  }
+  vec operator/(const vec &v) const {                           // Vector arithmetic (divide)
+    return vec(_mm_mul_pd(data,_fjsp_rcpa_v2r8(v.data)));
+  }
+  vec operator>(const vec &v) const {                           // Vector arithmetic (greater than)
+    return vec(_mm_cmpgt_pd(data,v.data));
+  }
+  vec operator<(const vec &v) const {                           // Vector arithmetic (less than)
+    return vec(_mm_cmplt_pd(data,v.data));
+  }
+  vec operator-() const {                                       // Vector arithmetic (negation)
+    return vec(_mm_sub_pd(_mm_setzero_pd(),data));
+  }
+  double &operator[](int i) {                                   // Indexing (lvalue)
+    return ((double*)&data)[i];
+  }
+  const double &operator[](int i) const {                       // Indexing (rvalue)
+    return ((double*)&data)[i];
+  }
+  friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
+    for (int i=0; i<2; i++) s << v[i] << ' ';
+    return s;
+  }
+  friend double sum(const vec &v) {                             // Sum vector
+    return v[0] + v[1];
+  }
+  friend double norm(const vec &v) {                            // L2 norm squared
+    return v[0] * v[0] + v[1] * v[1];
+  }
+  friend vec min(const vec &v, const vec &w) {                  // Element-wise minimum
+    return vec(_mm_min_pd(v.data,w.data));
+  }
+  friend vec max(const vec &v, const vec &w) {                  // Element-wise maximum
+    return vec(_mm_max_pd(v.data,w.data));
+  }
+  friend vec rsqrt(const vec &v) {                              // Reciprocal square root
+#if 1                                                           // Switch on Newton-Raphson correction
+    vec temp = vec(_fjsp_rsqrta_v2r8(v.data));
+    temp *= (temp * temp * v - 3.0f) * (-0.5f);
+    return temp;
+#else
+    return vec(_fjsp_rsqrta_v2r8(v.data));
+#endif
+  }
+};
+#endif
+
 #endif

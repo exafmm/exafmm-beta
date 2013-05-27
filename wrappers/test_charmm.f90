@@ -92,7 +92,7 @@
         f2(3*i-0) = 0
       end do
 #if 0
-      call ewald(n, x2, q2, p2, f2, ksize, alpha, pcycle)
+      call fmm_ewald(n, x2, q2, p2, f2, ksize, alpha, pcycle)
 #else
       prange = 0
       do i = 0, images-1

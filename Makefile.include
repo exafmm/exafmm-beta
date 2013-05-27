@@ -22,6 +22,7 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops # GCC
 #CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
 #CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -I$(HOME)/tbb/include # BG/Q
 #CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3 # BG/P
+#CXX	= mpiFCCpx -Kfast # K computer
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 ### choose fortran compiler
@@ -31,9 +32,9 @@ FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp #GCC
 ### Base flags
 CXX	+= -I../include
 LFLAGS	+= -D$(BASIS)
-LFLAGS  += -DEXPANSION=10 # Specifcy expansion order
-#LFLAGS	+= -DERROR_OPT # Use error optimized theta
-#LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
+LFLAGS  += -DEXPANSION=3 # Specifcy expansion order
+LFLAGS	+= -DERROR_OPT # Use error optimized theta
+LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DDUAL # Use dual tree traversal (turn off every option above before turning this off)
 #LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
 #LFLAGS	+= -DFP64 # Use double precision

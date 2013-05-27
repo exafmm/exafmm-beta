@@ -121,7 +121,7 @@ class Args {
     }
   }
 
-  void print(int stringLength, int P) {
+  void print(int stringLength, int P, int mpirank=0) {
     if (verbose) {
       std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
 		<< "numBodies" << " : " << numBodies << std::endl // Print numBodies  
@@ -141,7 +141,7 @@ class Args {
 		<< "verbose" << " : " << verbose << std::endl   // Print verbose
 		<< std::setw(stringLength)                      // Set format
 		<< "distribution" << " : " << distribution << std::endl;// Print distribution
-    } else {
+    } else if (mpirank == 0) {
       std::cout << std::setw(stringLength) << std::left         // Set format
 		<< "numBodies" << " : " << numBodies << std::endl; // Print numBodies  
     }
