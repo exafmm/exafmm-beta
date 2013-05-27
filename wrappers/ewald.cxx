@@ -78,16 +78,17 @@ extern "C" void ewald(int n, double * x, double * q, double * p, double * f,
   bodies = sort.sortBodies(bodies);
   bodies = LET.commBodies(bodies);
 
-  Cells cells = tree.buildTree(bodies, globalBounds);
+  Cells cells = tree.buildTree(bodies, localBounds);
   Bodies jbodies = bodies;
 
   for (int i=0; i<LET.mpisize; i++) {
+    if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << LET.mpisize << std::endl;
     LET.shiftBodies(jbodies);
     Cells jcells = tree.buildTree(jbodies, globalBounds);
     ewald.wavePart(bodies, jbodies);
     ewald.realPart(cells, jcells);
-    if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << LET.mpisize << std::endl;
   }
+  ewald.selfTerm(bodies);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->ICELL = B->IBODY;
   }

@@ -20,11 +20,11 @@ int main(int argc, char ** argv) {
   UpDownPass pass(args.theta);
   Traversal traversal(args.nspawn,args.images);
   if (args.verbose) {
+    logger.verbose = true;
     boundbox.verbose = true;
     tree.verbose = true;
     pass.verbose = true;
     traversal.verbose = true;
-    logger.verbose = true;
   }
   logger.printTitle("FMM Parameters");
   args.print(logger.stringLength,P);
@@ -69,13 +69,13 @@ int main(int argc, char ** argv) {
   logger.resetTimer();
   data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
-  data.initTarget(bodies2);
+  data.initTarget(bodies);
   logger.startTimer("Total Direct");
-  traversal.direct(bodies2, jbodies, cycle);
-  traversal.normalize(bodies2);
+  traversal.direct(bodies, jbodies, cycle);
+  traversal.normalize(bodies);
   logger.stopTimer("Total Direct");
   double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  data.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
+  data.evalError(bodies2, bodies, diff1, norm1, diff2, norm2);
   logger.printTitle("FMM vs. direct");
   logger.printError(diff1, norm1, diff2, norm2);
   tree.printTreeData(cells);

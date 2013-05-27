@@ -56,13 +56,29 @@ int main(int argc, char ** argv) {
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution);
-  Bounds bounds = boundbox.getBounds(bodies);
-  Cells cells = tree.buildTree(bodies, bounds);
+  Bounds localBounds = boundbox.getBounds(bodies);
+  Bounds globalBounds = LET.allreduceBounds(localBounds);
+  localBounds = LET.partition(bodies, globalBounds);
+  bodies = sort.sortBodies(bodies);
+  bodies = LET.commBodies(bodies);
+
+  Cells cells = tree.buildTree(bodies, localBounds);
   pass.upwardPass(cells);
+  LET.setLET(cells,localBounds,cycle);
+  LET.commBodies();
+  LET.commCells();
+
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
+  Cells jcells;
+  for (int irank=1; irank<LET.mpisize; irank++) {
+    LET.getLET(jcells,(LET.mpirank+irank)%LET.mpisize);
+    traversal.dualTreeTraversal(cells, jcells, cycle);
+  }
   pass.downwardPass(cells);
-  vec3 dipole = pass.getDipole(bodies,0);
-  pass.dipoleCorrection(bodies,dipole,bodies.size(),cycle);
+  vec3 localDipole = pass.getDipole(bodies,0);
+  vec3 globalDipole = LET.allreduce(localDipole);
+  int numBodies = LET.allreduce(int(bodies.size()));
+  pass.dipoleCorrection(bodies,globalDipole,numBodies,cycle);
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
 #if 1
@@ -70,8 +86,23 @@ int main(int argc, char ** argv) {
   data.initTarget(bodies);
   logger.printTitle("Ewald Profiling");
   logger.startTimer("Total Ewald");
-  ewald.wavePart(bodies,bodies);
-  ewald.realPart(cells,cells);
+#if 1
+  Bodies jbodies = bodies;
+  for (int i=0; i<LET.mpisize; i++) {
+    LET.shiftBodies(jbodies);
+    if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << LET.mpisize << std::endl;
+    localBounds = boundbox.getBounds(jbodies);
+    Cells jcells = tree.buildTree(jbodies, localBounds);
+    ewald.wavePart(bodies, jbodies);
+    ewald.realPart(cells, jcells);
+  }
+#else
+  Bodies jbodies = LET.allgatherBodies(bodies);
+  jcells = tree.buildTree(jbodies, globalBounds);
+  ewald.wavePart(bodies, jbodies);
+  ewald.realPart(cells, jcells);
+#endif
+  ewald.selfTerm(bodies);
   logger.printTitle("Total runtime");
   logger.printTime("Total FMM");
   logger.stopTimer("Total Ewald");
@@ -81,16 +112,25 @@ int main(int argc, char ** argv) {
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
   logger.startTimer("Total Direct");
-  traversal.direct(bodies, jbodies, cycle);
+  for (int i=0; i<LET.mpisize; i++) {
+    LET.shiftBodies(jbodies);
+    traversal.direct(bodies, jbodies, cycle);
+    if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << LET.mpisize << std::endl;
+  }
   traversal.normalize(bodies);
+  pass.dipoleCorrection(bodies,globalDipole,numBodies,cycle);
   logger.printTitle("Total runtime");
   logger.printTime("Total FMM");
   logger.stopTimer("Total Direct");
 #endif
-  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   ewald.evalError(bodies2, bodies, diff1, norm1, diff2, norm2);
+  MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm1, &norm3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   logger.printTitle("FMM vs. Ewald");
-  logger.printError(diff1, norm1, diff2, norm2);
+  logger.printError(diff3, norm3, diff4, norm4);
   tree.printTreeData(cells);
   traversal.printTraversalData();
   logger.printPAPI();
@@ -108,5 +148,6 @@ int main(int argc, char ** argv) {
   vtk.setGroupOfPoints(bodies);
   vtk.plot();
 #endif
+  MPI_Finalize();
   return 0;
 }

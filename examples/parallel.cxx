@@ -155,14 +155,14 @@ int main(int argc, char ** argv) {
   logger.printTitle("MPI direct sum");
   data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
-  data.initTarget(bodies2);
+  data.initTarget(bodies);
   logger.startTimer("Total Direct");
   for (int i=0; i<LET.mpisize; i++) {
-    LET.shiftBodies(jbodies);
-    traversal.direct(bodies2, jbodies, cycle);
     if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << LET.mpisize << std::endl;
+    LET.shiftBodies(jbodies);
+    traversal.direct(bodies, jbodies, cycle);
   }
-  traversal.normalize(bodies2);
+  traversal.normalize(bodies);
   logger.printTitle("Total runtime");
   logger.printTime("Total FMM");
   logger.stopTimer("Total Direct");
@@ -178,7 +178,7 @@ int main(int argc, char ** argv) {
   LET.resetTimer();
   logger.resetTimer();
   double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
-  data.evalError(bodies, bodies2, diff1, norm1, diff2, norm2);
+  data.evalError(bodies2, bodies, diff1, norm1, diff2, norm2);
   MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&norm1, &norm3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -212,5 +212,6 @@ int main(int argc, char ** argv) {
     vtk.plot();
   }
 #endif
+  MPI_Finalize();
   return 0;
 }

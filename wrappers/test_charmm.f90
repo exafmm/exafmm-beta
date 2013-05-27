@@ -1,34 +1,42 @@
-      subroutine mpi_shift(var, n, mpisize, mpirank)
+      subroutine mpi_shift(var, nold, mpisize, mpirank)
       implicit real*8(a-h,o-z)
       include 'mpif.h'
       parameter(nmax = 1000000)
       integer istatus(mpi_status_size)
-      real*8,intent(inout) :: var(nmax)
-      real*8,allocatable :: buf(:)
-      allocate( buf(n) )
+      real(8),intent(inout) :: var(nmax)
+      real(8),allocatable :: buf(:)
       isend = mod(mpirank + 1,           mpisize)
       irecv = mod(mpirank - 1 + mpisize, mpisize)
 
-      call mpi_isend(var, n, mpi_real8, irecv, 1, mpi_comm_world, ireqs, ierr)
-      call mpi_irecv(buf, n, mpi_real8, isend, 1, mpi_comm_world, ireqr, ierr)
+      call mpi_isend(nold, 1, mpi_int, irecv, 0, mpi_comm_world, ireqs, ierr)
+      call mpi_irecv(nnew, 1, mpi_int, isend, 0, mpi_comm_world, ireqr, ierr)
       call mpi_wait(ireqs, istatus, ierr)
       call mpi_wait(ireqr, istatus, ierr)
-      do i = 1,n
+
+      allocate( buf(nnew) )
+      call mpi_isend(var, nold, mpi_real8, irecv, 1, mpi_comm_world, ireqs, ierr)
+      call mpi_irecv(buf, nnew, mpi_real8, isend, 1, mpi_comm_world, ireqr, ierr)
+      call mpi_wait(ireqs, istatus, ierr)
+      call mpi_wait(ireqr, istatus, ierr)
+      do i = 1,nnew
         var(i) = buf(i)
       end do
+      nold = nnew
       deallocate(buf)
       return
       end
 
       program test_laplace
+      use iso_c_binding, only: c_ptr
       implicit real*8(a-h,o-z)
       include 'mpif.h'
       parameter(nmax = 1000000, pi = 3.14159265358979312d0)
-      integer prange
-      real*8 norm, norm1, norm2, norm3, norm4
+      integer prange, d
+      real(8) norm, norm1, norm2, norm3, norm4
+      type(c_ptr) ctx
       integer, dimension (128) :: iseed
-      real*8, dimension (3) :: dipole = (/0, 0, 0/)
-      real*8, dimension (3) :: xperiodic
+      real(8), dimension (3) :: dipole = (/0, 0, 0/)
+      real(8), dimension (3) :: xperiodic
       allocatable :: x(:)
       allocatable :: q(:)
       allocatable :: p(:)
@@ -41,13 +49,13 @@
       call mpi_init(ierr)
       call mpi_comm_size(mpi_comm_world, mpisize, ierr);
       call mpi_comm_rank(mpi_comm_world, mpirank, ierr);
-      n = 1000 / mpisize;
-      images = 3
+      n = 2;
+      images = 0
       ksize = 11
       pcycle = 2 * pi
       alpha = 10 / pcycle
-      allocate( x(3*n),  q(n),  p(n),  f(3*n)  )
-      allocate( x2(3*n), q2(n), p2(n), f2(3*n) )
+      allocate( x(3*nmax),  q(nmax),  p(nmax),  f(3*nmax)  )
+      allocate( x2(3*nmax), q2(nmax), p2(nmax), f2(3*nmax) )
 
       do i = 1, 128
         iseed(i) = mpirank
@@ -60,31 +68,35 @@
         x(3*i-2) = x(3*i-2) * pcycle - pcycle / 2
         x(3*i-1) = x(3*i-1) * pcycle - pcycle / 2
         x(3*i-0) = x(3*i-0) * pcycle - pcycle / 2
-        x2(3*i-2) = x(3*i-2)
-        x2(3*i-1) = x(3*i-1)
-        x2(3*i-0) = x(3*i-0)
         p(i) = 0
         f(3*i-2) = 0
         f(3*i-1) = 0
         f(3*i-0) = 0
-        p2(i) = 0
-        f2(3*i-2) = 0
-        f2(3*i-1) = 0
-        f2(3*i-0) = 0
         average = average + q(i)
       end do
       average = average / n
       do i = 1, n
         q(i) = q(i) - average
-        q2(i) = q(i)
       end do
-      call fmm(n, x, q, p, f, pcycle, images)
-#if 1
+      call fmm_init()
+      call fmm_partition(n, x, q, pcycle)
+      call fmm(n, x, q, p, f, pcycle)
+      do i = 1, n
+        x2(3*i-2) = x(3*i-2)
+        x2(3*i-1) = x(3*i-1)
+        x2(3*i-0) = x(3*i-0)
+        q2(i) = q(i)
+        p2(i) = 0
+        f2(3*i-2) = 0
+        f2(3*i-1) = 0
+        f2(3*i-0) = 0
+      end do
+#if 0
       call ewald(n, x2, q2, p2, f2, ksize, alpha, pcycle)
 #else
       prange = 0
-      do i = 0, images
-        prange = prange + pow(3,i)
+      do i = 0, images-1
+        prange = prange + 3**i
       end do
       do i = 1, N
         do d = 1, 3
@@ -159,7 +171,7 @@
 	print"(a,f10.7)",'Rel. L2 Error (pot)  : ', sqrt(diff3/norm3)
       end if
       if (abs(diff4).gt.0) then
-        print"(a,f10.7)",'Rel. L2 Error (acc)" : ', sqrt(diff4/norm4)
+        print"(a,f10.7)",'Rel. L2 Error (acc)  : ', sqrt(diff4/norm4)
       end if
 
       deallocate( x, q, p, f, x2, q2, p2, f2 )

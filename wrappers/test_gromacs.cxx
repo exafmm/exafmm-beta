@@ -6,37 +6,47 @@
 
 extern "C" void fmm(int n, double * x, double * q, double * p, double * f, double cycle, int images);
 extern "C" void ewald(int n, double * x, double * q, double * p, double * f, int ksize, double alpha, double cycle);
+extern "C" void FMM_Finalize();
 
-extern "C" void MPI_Shift(double * var, int n, int mpisize, int mpirank) {
-  double * buf = new double [n];
+extern "C" void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   const int isend = (mpirank + 1          ) % mpisize;
   const int irecv = (mpirank - 1 + mpisize) % mpisize;
+  int nnew;
   MPI_Request sreq, rreq;
-  MPI_Isend(var, n, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
-  MPI_Irecv(buf, n, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
+
+  MPI_Isend(&nold, 1, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
+  MPI_Irecv(&nnew, 1, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
   MPI_Wait(&sreq, MPI_STATUS_IGNORE);
   MPI_Wait(&rreq, MPI_STATUS_IGNORE);
-  for (int i=0; i<n; i++) {
+
+  double * buf = new double [nnew];
+  MPI_Isend(var, nold, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
+  MPI_Irecv(buf, nnew, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
+  MPI_Wait(&sreq, MPI_STATUS_IGNORE);
+  MPI_Wait(&rreq, MPI_STATUS_IGNORE);
+  for (int i=0; i<nnew; i++) {
     var[i] = buf[i];
   }
+  nold = nnew;
   delete[] buf;
 }
 
 int main() {
-  const int N = 1000;
+  const int Nmax = 1000000;
+  const int N = 2;
   const int stringLength = 20;
   const int images = 3;
   const int ksize = 11;
   const double cycle = 2 * M_PI;
   const double alpha = 10 / cycle;
-  double *x = new double [3*N];
-  double *q = new double [N];
-  double *p = new double [N];
-  double *f = new double [3*N];
-  double *x2 = new double [3*N];
-  double *q2 = new double [N];
-  double *p2 = new double [N];
-  double *f2 = new double [3*N];
+  double *x = new double [3*Nmax];
+  double *q = new double [Nmax];
+  double *p = new double [Nmax];
+  double *f = new double [3*Nmax];
+  double *x2 = new double [3*Nmax];
+  double *q2 = new double [Nmax];
+  double *p2 = new double [Nmax];
+  double *f2 = new double [3*Nmax];
 
   srand48(0);
   double average = 0;
@@ -61,7 +71,7 @@ int main() {
   }
 
   fmm(N, x, q, p, f, cycle, images);
-#if 1
+#if 0
   ewald(N, x2, q2, p2, f2, ksize, alpha, cycle);
 #else
   int prange = 0;
@@ -78,8 +88,9 @@ int main() {
   }
   double coef = 4 * M_PI / (3 * cycle * cycle * cycle);
   double Xperiodic[3];
+  //std::cout << "Direct loop          : " << i+1 << "/" << mpisize << std::endl;
   for (int i=0; i<N; i++) {
-    double P = 0, Fx = 0, Fy = 0, Fz = 0;
+    double pp = 0, fx = 0, fy = 0, fz = 0;
     for (int ix=-prange; ix<=prange; ix++) {
       for (int iy=-prange; iy<=prange; iy++) {
         for (int iz=-prange; iz<=prange; iz++) {
@@ -94,18 +105,18 @@ int main() {
 	    double invR = 1 / std::sqrt(R2);
 	    if (R2 == 0) invR = 0;
 	    double invR3 = q2[j] * invR * invR * invR;
-	    P += q2[j] * invR;
-	    Fx += dx * invR3;
-	    Fy += dy * invR3;
-	    Fz += dz * invR3;
+	    pp += q2[j] * invR;
+	    fx += dx * invR3;
+	    fy += dy * invR3;
+	    fz += dz * invR3;
 	  }
 	}
       }
     }
-    p2[i] += P - coef * norm / N / q2[i];
-    f2[3*i+0] -= Fx + coef * dipole[0];
-    f2[3*i+1] -= Fy + coef * dipole[1];
-    f2[3*i+2] -= Fz + coef * dipole[2];
+    p2[i] += pp - coef * norm / N / q2[i];
+    f2[3*i+0] -= fx + coef * dipole[0];
+    f2[3*i+1] -= fy + coef * dipole[1];
+    f2[3*i+2] -= fz + coef * dipole[2];
   }
 #endif
   double diff2 = 0, norm2 = 0;
@@ -136,4 +147,5 @@ int main() {
   delete[] q2;
   delete[] p2;
   delete[] f2;
+  MPI_Finalize();
 }

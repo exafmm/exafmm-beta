@@ -1,10 +1,10 @@
+#include "localessentialtree.h"
 #include "args.h"
 #include "boundbox.h"
 #include "buildtree.h"
 #include "sort.h"
 #include "traversal.h"
 #include "updownpass.h"
-#include "localessentialtree.h"
 
 extern "C" void fmm(int n, double * x, double * q, double * p, double * f, double cycle, int images) {
   Args args;
@@ -33,9 +33,9 @@ extern "C" void fmm(int n, double * x, double * q, double * p, double * f, doubl
     pass.verbose = true;
     traversal.verbose = true;
     LET.verbose = true;
-    logger.printTitle("FMM Parameters");
   }
-  if (LET.mpirank == 0) args.print(logger.stringLength,P);
+  logger.printTitle("FMM Parameters");
+  args.print(logger.stringLength,P);
 #if AUTO
   traversal.timeKernels();
 #endif
@@ -43,7 +43,7 @@ extern "C" void fmm(int n, double * x, double * q, double * p, double * f, doubl
 #pragma omp parallel
 #pragma omp master
 #endif
-  if (args.verbose) logger.printTitle("FMM Profiling");
+  logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies(n);
@@ -97,10 +97,8 @@ extern "C" void fmm(int n, double * x, double * q, double * p, double * f, doubl
   bodies = sort.sortBodies(bodies);
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
-  if (logger.verbose) {
-    logger.printTitle("Total runtime");
-    logger.printTime("Total FMM");
-  }
+  logger.printTitle("Total runtime");
+  logger.printTime("Total FMM");
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();

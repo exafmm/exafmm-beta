@@ -46,7 +46,8 @@ class Ewald : public Logger {
 	TRG[0]     += W->REAL * cos(th) + W->IMAG * sin(th);    //    Accumulate potential
 	for (int d=0; d<3; d++) TRG[d+1] -= dtmp * W->K[d];     //    Accumulate force
       }                                                         //   End loop over waves
-      B->TRG = TRG;                                             //  Copy results to bodies
+      for (int d=0; d<3; d++) TRG[d+1] *= scale;                //   Scale forces
+      B->TRG += TRG;                                            //  Copy results to bodies
     }                                                           // End loop over bodies
   }
 
@@ -130,9 +131,6 @@ class Ewald : public Logger {
 	}                                                       //    End loop over z periodic direction
       }                                                         //   End loop over y periodic direction
     }                                                           //  End loop over x periodic direction
-    for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; B++) {      //  Loop over all bodies in cell
-      B->TRG[0] -= M_2_SQRTPI * B->SRC * alpha;                 //   Self term of Ewald real part
-    }                                                           //  End loop over all bodies in cell
   }
 
  public:
@@ -153,6 +151,13 @@ class Ewald : public Logger {
     stopTimer("Ewald real part");                               // Stop timer
   }
 
+//! Subtract self term
+  void selfTerm(Bodies &bodies) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over all bodies
+      B->TRG[0] -= M_2_SQRTPI * B->SRC * alpha;                 //   Self term of Ewald real part
+    }                                                           //  End loop over all bodies in cell
+  }
+
 //! Ewald wave part
   void wavePart(Bodies &bodies, Bodies &jbodies) {
     startTimer("Ewald wave part");                              // Start timer
@@ -168,9 +173,6 @@ class Ewald : public Logger {
       W->IMAG *= factor;                                        //  Apply wave factor to imaginary part
     }                                                           // End loop over waves
     idft(waves,bodies);                                         // Inverse DFT
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      for (int d=0; d<3; d++) B->TRG[d+1] *= scale;             //  Scale forces
-    }                                                           // End loop over bodies
     stopTimer("Ewald wave part");                               // Stop timer
   }
 
