@@ -11,9 +11,9 @@ To run the parallel FMM example:
 cd examples
 make parallel
 
-To run the FMM wrapper example:
+To run the GROMACS wrapper example:
 cd wrapper
-make laplace
+make gromacs
 
 To get the list of command line options:
 ./a.out --help
