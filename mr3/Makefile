@@ -20,14 +20,14 @@
 
 .SUFFIXES: .cu .c .o
 
-#CC = gcc
-#C++ = g++
-CC = icc -openmp -xW -tpp7
-C++ = icpc -openmp -xW -tpp7
-#F90 = gfortran
-#F77 = gfortran
-F90 = ifort -xW -tpp7
-F77 = $(F90)
+CC = gcc
+C++ = g++
+#CC = icc -openmp -xW -tpp7
+#C++ = icpc -openmp -xW -tpp7
+F90 = gfortran
+F77 = gfortran
+#F90 = ifort -xW -tpp7
+#F77 = $(F90)
 
 CUDA_SDK2=-DCUDA_SDK_2
 #CUDA_SDK2=
