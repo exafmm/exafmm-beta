@@ -25,18 +25,17 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  int numBodies = 10000;                                        // Number of bodies
   int numTarget = 100;                                          // Number of target points to be used for error eval
-  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  IMAGES = 1;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
   Bodies bodies, jbodies;                                       // Define vector of bodies
   Cells cells, jcells;                                          // Define vector of cells
   ParallelFMM<Laplace> FMM;                                     // Instantiate ParallelFMM class
   FMM.initialize();                                             // Initialize FMM
-  if( MPIRANK == 0 ) bool printNow = true;                      // Print only if MPIRANK == 0
+  bool printNow = MPIRANK == 0;                                 // Print only if MPIRANK == 0
 
   for( int it=0; it!=25; ++it ) {                               // Loop over FMM iterations
-    numBodies = int(pow(10,(it+32)/8.0));                       //  Exponentially increase N
+    int numBodies = int(pow(10,(it+24)/8.0));                   //  Exponentially increase N
     if(printNow) std::cout << "N             : " << numBodies << std::endl;// Print N
     bodies.resize(numBodies);                                   //  Resize bodies vector
     FMM.cube(bodies,MPIRANK+1);                                 //  Initialize bodies in a cube
@@ -59,15 +58,11 @@ int main() {
     FMM.eraseTimer("FMM");                                      //  Erase entry from timer to avoid timer overlap
 
     FMM.startTimer("Direct sum");                               //  Start timer
-    Bodies bodies2 = bodies;                                    //  Define new bodies vector for direct sum
 #if 1
+    jbodies = bodies;                                           //  Source bodies = target bodies
+    FMM.sampleBodies(bodies,numTarget);                         //  Shrink target bodies vector to save time
+    Bodies bodies2 = bodies;                                    //  Define new bodies vector for direct sum
     FMM.initTarget(bodies2);                                    //  Reinitialize target values
-    if( IMAGES != 0 ) {                                         //  For periodic boundary condition
-      jbodies = FMM.periodicBodies(bodies2);                    //   Copy source bodies for all periodic images
-    } else {                                                    //  For free field boundary condition
-      jbodies = bodies2;                                        //   Source bodies = target bodies
-    }                                                           //  End if for periodic boundary condition
-    bodies2.resize(numTarget);                                  //  Shrink target bodies vector to save time
     for( int i=0; i!=MPISIZE; ++i ) {                           //  Loop over all MPI processes
       FMM.shiftBodies(jbodies);                                 //   Communicate bodies round-robin
       FMM.evalP2P(bodies2,jbodies);                             //   Direct summation between bodies2 and jbodies
@@ -75,6 +70,7 @@ int main() {
     }                                                           //  End loop over all MPI processes
     FMM.writeTarget(bodies2);                                   //  Write direct summation results to file
 #else
+    Bodies bodies2 = bodies;                                    //  Define new bodies vector for direct sum
     FMM.readTarget(bodies2);                                    //  Read direct summation results from file
 #endif
     FMM.stopTimer("Direct sum",printNow);                       //  Stop timer
@@ -83,7 +79,6 @@ int main() {
     if(printNow) FMM.resetTimer();                              //  Erase all events in timer
 
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
-    bodies.resize(numTarget);                                   //  Shrink target bodies vector to save time
     FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);      //  Evaluate error on the reduced set of bodies
     MPI_Datatype MPI_TYPE = FMM.getType(diff1);                 //  Get MPI datatype
     MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce difference in potential
