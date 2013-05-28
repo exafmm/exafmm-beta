@@ -21,8 +21,7 @@ THE SOFTWARE.
 */
 
 template<Equation equation>
-void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Evaluate all P2P kernels
-  Xperiodic = 0;                                                // Set periodic coordinate offset
+void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Evaluate all P2P kernels for periodic
   Cells cells;                                                  // Cells to put target and source bodies
   cells.resize(2);                                              // Resize cells to put target and source bodies
   cells[0].LEAF = ibodies.begin();                              // Iterator of first target leaf
@@ -30,7 +29,17 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Ev
   cells[1].LEAF = jbodies.begin();                              // Iterator of first source leaf
   cells[1].NDLEAF = jbodies.size();                             // Number of source leafs
   C_iter Ci = cells.begin(), Cj = cells.begin()+1;              // Iterator of target and source cells
-  P2P(Ci,Cj);                                                   // Perform P2P kernel
+  int prange = getPeriodicRange();                              // Get range of periodic images
+  for( int ix=-prange; ix<=prange; ++ix ) {                     // Loop over x periodic direction
+    for( int iy=-prange; iy<=prange; ++iy ) {                   //  Loop over y periodic direction
+      for( int iz=-prange; iz<=prange; ++iz ) {                 //   Loop over z periodic direction
+        Xperiodic[0] = ix * 2 * R0;                             //    Shift x position
+        Xperiodic[1] = iy * 2 * R0;                             //    Shift y position
+        Xperiodic[2] = iz * 2 * R0;                             //    Shift z position
+        P2P(Ci,Cj);                                             //    Perform P2P kernel
+      }                                                         //   End loop over z periodic direction
+    }                                                           //  End loop over y periodic direction
+  }                                                             // End loop over x periodic direction
 }
 
 template<Equation equation>
@@ -143,17 +152,6 @@ void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queu
   }                                                             // End loop over cells topdown
   listM2P.clear();                                              // Clear interaction lists
   flagM2P.clear();                                              // Clear periodic image flags
-}
-
-template<Equation equation>
-void Evaluator<equation>::evalP2P(C_iter Ci) {                  // Evaluate single P2P kernel
-#if QUEUE
-  listP2P[Ci-Ci0].push_back(Ci);                                // Push source cell into P2P interaction list
-  flagP2P[Ci-Ci0][Ci] |= Iperiodic;                             // Flip bit of periodic image flag
-#else
-  P2P(Ci);                                                      // Perform P2P kernel
-#endif
-  NP2P++;                                                       // Count P2P kernel execution
 }
 
 template<Equation equation>
