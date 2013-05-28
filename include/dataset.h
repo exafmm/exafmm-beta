@@ -88,6 +88,17 @@ public:
     file.close();                                               // Close file
   }
 
+  void sampleBodies(Bodies &bodies, int numTargets) {
+    int n = bodies.size();
+    int p = n / numTargets;
+    assert(p > 0);
+    for (int i=0; i<numTargets; i++) {
+      assert(i * p < n);
+      bodies[i] = bodies[i*p];
+    }
+    bodies.resize(numTargets);
+  }
+
 //! Evaluate relative L2 norm error
   void evalError(Bodies &bodies, Bodies &bodies2,
                  real &diff1, real &norm1, real &diff2, real &norm2, bool ewald=false) {
@@ -201,6 +212,17 @@ public:
       file << B->TRG[3] << std::endl;                           //  Write data for z acceleration
     }                                                           // End loop over bodies
     file.close();                                               // Close file
+  }
+
+  void sampleBodies(Bodies &bodies, int numTargets) {
+    int n = bodies.size();
+    int p = n / numTargets;
+    assert(p > 0);
+    for (int i=0; i<numTargets; i++) {
+      assert(i * p < n);
+      bodies[i] = bodies[i*p];
+    }
+    bodies.resize(numTargets);
   }
 
 //! Evaluate relative L2 norm error
