@@ -28,7 +28,7 @@ serialrun: serialrun.cxx $(OBJECT)
 	$(SERIALRUN)
 
 unsort: unsort.cxx $(OBJECT)
-	$(CXX) $? $(LFLAGS) $(VFLAGS) -DTOPDOWN
+	$(CXX) $? $(LFLAGS) $(VFLAGS)
 	$(SERIALRUN)
 
 ijserialrun: ijserialrun.cxx $(OBJECT)
