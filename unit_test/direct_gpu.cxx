@@ -22,9 +22,9 @@ THE SOFTWARE.
 #include "evaluator.h"
 
 int main() {
-  const int numBodies = 10000;                                  // Number of bodies
+  const int numBodies = 1000;                                   // Number of bodies
   const int numTarget = 100;                                    // Number of target points to be used for error eval
-  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  IMAGES = 2;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
   Bodies bodies(numBodies);                                     // Define vector of bodies
   Bodies jbodies;                                               // Define vector of source bodies
@@ -41,21 +41,14 @@ int main() {
   FMM.setDomain(bodies);                                        // Set domain size of FMM
   FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
 
-  if( IMAGES != 0 ) {                                           // If periodic FMM
-    FMM.startTimer("Set periodic");                             //  Start timer
-    jbodies = FMM.periodicBodies(bodies);                       //  Copy source bodies for all periodic images
-    FMM.stopTimer("Set periodic",FMM.printNow);                 //  Stop timer
-  } else {                                                      // If non-periodic FMM
-    jbodies = bodies;                                           //  Set source bodies
-  }                                                             // Endif for periodic FMM
-
   FMM.startTimer("Direct GPU");                                 // Start timer
+  jbodies = bodies;                                             // Set source bodies
   FMM.evalP2P(bodies,jbodies);                                  // Direct summation on GPU
   FMM.stopTimer("Direct GPU",FMM.printNow);                     // Stop timer
 
   FMM.startTimer("Direct CPU");                                 // Start timer
   bool onCPU = true;                                            // Bool for CPU run
-  bodies.resize(numTarget);                                     // Shrink target bodies vector to save time
+  FMM.sampleBodies(bodies,numTarget);                           // Shrink target bodies vector to save time
   Bodies bodies2 = bodies;                                      // Define new bodies vector for direct sum
   FMM.initTarget(bodies2);                                      // Reinitialize target values
   FMM.evalP2P(bodies2,jbodies,onCPU);                           // Direct summation on CPU
