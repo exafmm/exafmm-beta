@@ -146,6 +146,17 @@ void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queu
 }
 
 template<Equation equation>
+void Evaluator<equation>::evalP2P(C_iter Ci) {                  // Evaluate single P2P kernel
+#if QUEUE
+  listP2P[Ci-Ci0].push_back(Ci);                                // Push source cell into P2P interaction list
+  flagP2P[Ci-Ci0][Ci] |= Iperiodic;                             // Flip bit of periodic image flag
+#else
+  P2P(Ci);                                                      // Perform P2P kernel
+#endif
+  NP2P++;                                                       // Count P2P kernel execution
+}
+
+template<Equation equation>
 void Evaluator<equation>::evalP2P(C_iter Ci, C_iter Cj) {       // Evaluate single P2P kernel
 #if QUEUE
   listP2P[Ci-Ci0].push_back(Cj);                                // Push source cell into P2P interaction list

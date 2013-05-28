@@ -158,6 +158,61 @@ private:
 #endif
   }
 
+//! Split cell and call traverse() recursively for child
+  void splitCell(C_iter Ci, C_iter Cj) {
+    if (Cj->NCHILD == 0) {                                      // If Cj is leaf
+      assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
+      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+        traverse(ci, Cj);                                       //   Traverse a single pair of cells
+      }                                                         //  End loop over Ci's children
+    } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
+      assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
+      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+        traverse(Ci, cj);                                       //   Traverse a single pair of cells
+      }                                                         //  End loop over Cj's children
+    } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
+      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+        traverse(ci, Cj);                                       //   Traverse a single pair of cells
+      }                                                         //  End loop over Ci's children
+    } else {                                                    // Else if Cj is larger than Ci
+      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+        traverse(Ci, cj);                                       //   Traverse a single pair of cells
+      }                                                         //  End loop over Cj's children
+    }                                                           // End if for leafs and Ci Cj size
+  }
+
+protected:
+//! Dual tree traversal for a single pair of cells
+  void traverse(C_iter Ci, C_iter Cj) {
+    vect dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
+    real R2 = norm(dX);                                         // Scalar distance squared
+#if DUAL
+    {                                                           // Dummy bracket
+#else
+    if (Ci->RCRIT != Cj->RCRIT) {                               // If cell is not at the same level
+      splitCell(Ci, Cj);                                        //  Split cell and call function recursively for child
+    } else {                                                    // If we don't care if cell is not at the same level
+#endif
+//      if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {   //  If distance is far enough
+      if (R2 * THETA * THETA > (Ci->R+Cj->R)*(Ci->R+Cj->R)) {   //  If distance is far enough
+        approximate(Ci, Cj);                                    //   Use approximate kernels
+      } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          //  Else if both cells are bodies
+        if (Cj->NCLEAF == 0) {                                  //   If the bodies weren't sent from remote node
+          approximate(Ci, Cj);                                  //    Use approximate kernels
+        } else {                                                //   Else if the bodies were sent
+          if (Ci == Cj) {                                       //    If source and target are same
+	    evalP2P(Ci);                                        //     P2P kernel for single cell
+          } else {                                              //    Else if source and target are different
+            evalP2P(Ci, Cj);                                    //     P2P kernel for pair of cells
+	  }                                                     //    End if for same source and target
+          NP2P++;                                               //    Increment P2P counter
+        }                                                       //   End if for bodies
+      } else {                                                  //  Else if cells are close but not bodies
+        splitCell(Ci, Cj);                                      //   Split cell and call function recursively for child
+      }                                                         //  End if for multipole acceptance
+    }                                                           // End if for same level cells
+  }
+
 //! Get range of periodic images
   int getPeriodicRange() {
     int prange = 0;                                             //  Range of periodic images
@@ -461,6 +516,7 @@ public:
   void evalM2L(Cells &cells);                                   //!< Evaluate queued M2L kernels
   void evalM2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
   void evalM2P(Cells &cells);                                   //!< Evaluate queued M2P kernels
+  void evalP2P(C_iter Ci);                                      //!< Evaluate on CPU, queue on GPU
   void evalP2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
   void evalP2P(Cells &cells);                                   //!< Evaluate queued P2P kernels (near field)
   void evalL2L(Cells &cells);                                   //!< Evaluate all L2L kernels

@@ -2,15 +2,15 @@
 .PHONY: docs
 
 ### CUDA path
-CUDA_INSTALL_PATH = /usr/local/cuda4.1/cuda
+CUDA_INSTALL_PATH = /usr/local/cuda
 
 ### VTK path
 VTK_INCLUDE_PATH = /usr/include/vtk-5.8
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
 ### choose CPU or GPU
-DEVICE  = CPU
-#DEVICE  = GPU
+#DEVICE  = CPU
+DEVICE  = GPU
 
 ### choose Cartesian or spherical expansion
 #EXPAND  = Cartesian

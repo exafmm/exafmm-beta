@@ -66,6 +66,7 @@ GPUCOREOBJ = gpuvdwforce_mother.o gpuvdwpot_mother.o gpucoulombforce_mother.o \
 	gpucoulombpot_mother.o gpuewreforce_mother.o gpuewrepot_mother.o \
 	gpuewwvforce_mother.o gpuewwvpot_mother.o 
 
+CUDA_INSTALL_PATH=/usr/local/cuda
 NVCC       = $(CUDA_INSTALL_PATH)/bin/nvcc 
 NVCC_FLAGS = -cuda --host-compilation C 
 #NVCC_FLAGS = --compile
