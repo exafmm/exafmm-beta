@@ -158,61 +158,6 @@ private:
 #endif
   }
 
-//! Split cell and call traverse() recursively for child
-  void splitCell(C_iter Ci, C_iter Cj) {
-    if (Cj->NCHILD == 0) {                                      // If Cj is leaf
-      assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
-      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
-        traverse(ci, Cj);                                       //   Traverse a single pair of cells
-      }                                                         //  End loop over Ci's children
-    } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
-      assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
-      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
-        traverse(Ci, cj);                                       //   Traverse a single pair of cells
-      }                                                         //  End loop over Cj's children
-    } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
-      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
-        traverse(ci, Cj);                                       //   Traverse a single pair of cells
-      }                                                         //  End loop over Ci's children
-    } else {                                                    // Else if Cj is larger than Ci
-      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
-        traverse(Ci, cj);                                       //   Traverse a single pair of cells
-      }                                                         //  End loop over Cj's children
-    }                                                           // End if for leafs and Ci Cj size
-  }
-
-protected:
-//! Dual tree traversal for a single pair of cells
-  void traverse(C_iter Ci, C_iter Cj) {
-    vect dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
-    real R2 = norm(dX);                                         // Scalar distance squared
-#if DUAL
-    {                                                           // Dummy bracket
-#else
-    if (Ci->RCRIT != Cj->RCRIT) {                               // If cell is not at the same level
-      splitCell(Ci, Cj);                                        //  Split cell and call function recursively for child
-    } else {                                                    // If we don't care if cell is not at the same level
-#endif
-//      if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {   //  If distance is far enough
-      if (R2 * THETA * THETA > (Ci->R+Cj->R)*(Ci->R+Cj->R)) {   //  If distance is far enough
-        approximate(Ci, Cj);                                    //   Use approximate kernels
-      } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          //  Else if both cells are bodies
-        if (Cj->NCLEAF == 0) {                                  //   If the bodies weren't sent from remote node
-          approximate(Ci, Cj);                                  //    Use approximate kernels
-        } else {                                                //   Else if the bodies were sent
-          if (Ci == Cj) {                                       //    If source and target are same
-	    evalP2P(Ci);                                        //     P2P kernel for single cell
-          } else {                                              //    Else if source and target are different
-            evalP2P(Ci, Cj);                                    //     P2P kernel for pair of cells
-	  }                                                     //    End if for same source and target
-          NP2P++;                                               //    Increment P2P counter
-        }                                                       //   End if for bodies
-      } else {                                                  //  Else if cells are close but not bodies
-        splitCell(Ci, Cj);                                      //   Split cell and call function recursively for child
-      }                                                         //  End if for multipole acceptance
-    }                                                           // End if for same level cells
-  }
-
 //! Get range of periodic images
   int getPeriodicRange() {
     int prange = 0;                                             //  Range of periodic images
@@ -266,11 +211,13 @@ protected:
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
         for( int iy=-1; iy<=1; ++iy ) {                         //   Loop over y periodic direction
           for( int iz=-1; iz<=1; ++iz ) {                       //    Loop over z periodic direction
-            cell.X[0] = C->X[0] + ix * 2 * C->R;                //     Set new x coordinate for periodic image
-            cell.X[1] = C->X[1] + iy * 2 * C->R;                //     Set new y cooridnate for periodic image
-            cell.X[2] = C->X[2] + iz * 2 * C->R;                //     Set new z coordinate for periodic image
-            cell.M = C->M;                                      //     Copy multipoles to new periodic image
-            pjcells.push_back(cell);                            //     Push cell into periodic jcell vector
+            if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
+              cell.X[0] = C->X[0] + ix * 2 * C->R;              //      Set new x coordinate for periodic image
+              cell.X[1] = C->X[1] + iy * 2 * C->R;              //      Set new y cooridnate for periodic image
+              cell.X[2] = C->X[2] + iz * 2 * C->R;              //      Set new z coordinate for periodic image
+              cell.M = C->M;                                    //      Copy multipoles to new periodic image
+              pjcells.push_back(cell);                          //      Push cell into periodic jcell vector
+            }                                                   //     Endif for periodic center cell
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
@@ -280,7 +227,7 @@ protected:
       pccells.push_back(cell);                                  //  Push cell into periodic cell vector
       C_iter Ci = pccells.end() - 1;                            //  Set current cell as target for M2M
       Ci->CHILD = 0;                                            //  Set child cells for periodic M2M
-      Ci->NCHILD = 27;                                          //  Set number of child cells for periodic M2M
+      Ci->NCHILD = 26;                                          //  Set number of child cells for periodic M2M
       evalM2M(pccells,pjcells);                                 // Evaluate periodic M2M kernels for this sublevel
       pjcells.clear();                                          // Clear periodic jcell vector
     }                                                           // End loop over sublevels of tree
@@ -389,26 +336,6 @@ public:
     flagM2P[0][Cj] |= Icenter;                                  // Flip bit of periodic image flag
   }
 
-//! Create periodic images of bodies
-  Bodies periodicBodies(Bodies &bodies) {
-    Bodies jbodies;                                             // Vector for periodic images of bodies
-    int prange = getPeriodicRange();                            // Get range of periodic images
-    for( int ix=-prange; ix<=prange; ++ix ) {                   // Loop over x periodic direction
-      for( int iy=-prange; iy<=prange; ++iy ) {                 //  Loop over y periodic direction
-        for( int iz=-prange; iz<=prange; ++iz ) {               //   Loop over z periodic direction
-          for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {//    Loop over bodies
-            Body body = *B;                                     //     Copy current body
-            body.X[0] += ix * 2 * R0;                           //     Shift x position
-            body.X[1] += iy * 2 * R0;                           //     Shift y position
-            body.X[2] += iz * 2 * R0;                           //     Shift z position
-            jbodies.push_back(body);                            //     Push shifted body into jbodies
-          }                                                     //    End loop over bodies
-        }                                                       //   End loop over z periodic direction
-      }                                                         //  End loop over y periodic direction
-    }                                                           // End loop over x periodic direction
-    return jbodies;                                             // Return vector for periodic images of bodies
-  }
-
 //! Use multipole acceptance criteria to determine whether to approximate, do P2P, or subdivide
   void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue) {
     vect dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
@@ -459,6 +386,7 @@ public:
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
+#if QUEUE
       for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {   //  Loop over target cells
         listM2L[Ci-Ci0].sort();                                 //  Sort interaction list
         listM2L[Ci-Ci0].unique();                               //  Eliminate duplicate periodic entries
@@ -467,12 +395,12 @@ public:
         listP2P[Ci-Ci0].sort();                                 //  Sort interaction list
         listP2P[Ci-Ci0].unique();                               //  Eliminate duplicate periodic entries
       }                                                         //  End loop over target cells
+#endif
     }                                                           // Endif for periodic boundary condition
   }
 
 //! Traverse neighbor cells only (for cutoff based methods)
   void neighbor(Cells &cells, Cells &jcells) {
-    C_iter root = cells.end() - 1;                              // Iterator for root target cell
     C_iter jroot = jcells.end() - 1;                            // Iterator for root source cell
     Ci0 = cells.begin();                                        // Set begin iterator for target cells
     Cj0 = jcells.begin();                                       // Set begin iterator for source cells
@@ -510,13 +438,13 @@ public:
   void clearBuffers();                                          //!< Clear GPU buffers
 
   void evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);//!< Evaluate all P2P kernels (all pairs)
+  void periodicP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU=false);//!< Evaluate all P2P kernels (all pairs) for periodic
   void evalP2M(Cells &cells);                                   //!< Evaluate all P2M kernels
   void evalM2M(Cells &cells, Cells &jcells);                    //!< Evaluate all M2M kernels
   void evalM2L(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
   void evalM2L(Cells &cells);                                   //!< Evaluate queued M2L kernels
   void evalM2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
   void evalM2P(Cells &cells);                                   //!< Evaluate queued M2P kernels
-  void evalP2P(C_iter Ci);                                      //!< Evaluate on CPU, queue on GPU
   void evalP2P(C_iter Ci, C_iter Cj);                           //!< Evaluate on CPU, queue on GPU
   void evalP2P(Cells &cells);                                   //!< Evaluate queued P2P kernels (near field)
   void evalL2L(Cells &cells);                                   //!< Evaluate all L2L kernels

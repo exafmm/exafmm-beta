@@ -187,9 +187,10 @@ void Evaluator<equation>::clearBuffers() {                      // Clear GPU buf
 
 template<Equation equation>
 void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate all P2P kernels
-  startTimer("evalP2P");                                        // Start timer
+  int prange = getPeriodicRange();                              // Get range of periodic images
+  int numImages = pow(2 * prange + 1,3);                        // Get number of periodic images
   int numIcall = int(ibodies.size()-1)/MAXBODY+1;               // Number of icall loops
-  int numJcall = int(jbodies.size()-1)/MAXBODY+1;               // Number of jcall loops
+  int numJcall = int(jbodies.size()-1)/(MAXBODY/numImages)+1;   // Number of jcall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops
   Cells cells(2);                                               // Two cells to put target and source bodies
   for( int icall=0; icall!=numIcall; ++icall ) {                // Loop over icall
@@ -200,21 +201,35 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
     int joffset = 0;                                            //  Initialize offset for jcall loops
     for( int jcall=0; jcall!=numJcall; ++jcall ) {              //  Loop over jcall
       B_iter Bj0 = jbodies.begin()+joffset;                     //  Set source bodies begin iterator
-      B_iter BjN = jbodies.begin()+std::min(joffset+MAXBODY,int(jbodies.size()));// Set source bodies end iterator
+      B_iter BjN = jbodies.begin()+std::min(joffset+MAXBODY/numImages,int(jbodies.size()));// Set source bodies end iterator
       cells[1].LEAF = Bj0;                                      //  Iterator of first source leaf
       cells[1].NDLEAF = BjN-Bj0;                                //  Number of source leafs
       C_iter Ci = cells.begin(), Cj = cells.begin()+1;          //  Iterator of target and source cells
       if( onCPU ) {                                             //  If calculation is to be done on CPU
-        Xperiodic = 0;                                          //   Set periodic coordinate offset
-        P2P(Ci,Cj);                                             //   Perform P2P kernel on CPU
+        for( int ix=-prange; ix<=prange; ++ix ) {               //   Loop over x periodic direction
+          for( int iy=-prange; iy<=prange; ++iy ) {             //    Loop over y periodic direction
+            for( int iz=-prange; iz<=prange; ++iz ) {           //     Loop over z periodic direction
+              Xperiodic[0] = ix * 2 * R0;                       //      Shift x position
+              Xperiodic[1] = iy * 2 * R0;                       //      Shift y position
+              Xperiodic[2] = iz * 2 * R0;                       //      Shift z position
+              P2P(Ci,Cj);                                       //      Perform P2P kernel on CPU
+            }                                                   //     End loop over z periodic direction
+          }                                                     //    End loop over y periodic direction
+        }                                                       //   End loop over x periodic direction
       } else {                                                  //  If calculation is to be done on GPU
         constHost.push_back(2*R0);                              //   Copy domain size to GPU buffer
-        for( B_iter B=Bj0; B!=BjN; ++B ) {                      //   Loop over source bodies
-          sourceHost.push_back(B->X[0]);                        //   Copy x position to GPU buffer
-          sourceHost.push_back(B->X[1]);                        //   Copy y position to GPU buffer
-          sourceHost.push_back(B->X[2]);                        //   Copy z position to GPU buffer
-          sourceHost.push_back(B->SRC);                         //   Copy source value to GPU buffer
-        }                                                       //   End loop over source bodies
+        for( int ix=-prange; ix<=prange; ++ix ) {               //   Loop over x periodic direction
+          for( int iy=-prange; iy<=prange; ++iy ) {             //    Loop over y periodic direction
+            for( int iz=-prange; iz<=prange; ++iz ) {           //     Loop over z periodic direction
+              for( B_iter B=Bj0; B!=BjN; ++B ) {                //      Loop over source bodies
+                sourceHost.push_back(B->X[0] + ix * 2 * R0);    //       Copy x position to GPU buffer
+                sourceHost.push_back(B->X[1] + iy * 2 * R0);    //       Copy y position to GPU buffer
+                sourceHost.push_back(B->X[2] + iz * 2 * R0);    //       Copy z position to GPU buffer
+                sourceHost.push_back(B->SRC);                   //       Copy source value to GPU buffer
+              }                                                 //      End loop over source bodies
+            }                                                   //     End loop over z periodic direction
+          }                                                     //    End loop over y periodic direction
+        }                                                       //   End loop over x periodic direction
         int key = 0;                                            //   Initialize key to range of leafs in source cells
         int blocks = (BiN - Bi0 - 1) / THREADS + 1;             //   Number of thread blocks needed for this target cell
         for( int i=0; i!=blocks; ++i ) {                        //   Loop over thread blocks
@@ -222,7 +237,7 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
         }                                                       //   End loop over thread blocks
         rangeHost.push_back(1);                                 //   Save size of interaction list
         rangeHost.push_back(0);                                 //   Set begin index of leafs
-        rangeHost.push_back(BjN-Bj0);                           //   Set number of leafs
+        rangeHost.push_back((BjN-Bj0)*numImages);               //   Set number of leafs
         rangeHost.push_back(Icenter);                           //   Set periodic image flag
         for( B_iter B=Bi0; B!=BiN; ++B ) {                      //   Loop over target bodies
           targetHost.push_back(B->X[0]);                        //    Copy x position to GPU buffer
@@ -253,11 +268,10 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) 
         targetHost.clear();                                     //   Clear target vector
         sourceHost.clear();                                     //   Clear source vector
       }                                                         //  Endif for CPU/GPU switch
-      joffset += MAXBODY;                                       //  Increment jcall offset
+      joffset += MAXBODY/numImages;                             //  Increment jcall offset
     }                                                           // End loop over jcall
     ioffset += MAXBODY;                                         // Increment icall offset
   }                                                             // End loop over icall
-  stopTimer("evalP2P");                                         // Stop timer
 }
 
 template<Equation equation>
@@ -419,13 +433,6 @@ void Evaluator<equation>::evalM2P(Cells &cells) {               // Evaluate queu
   listM2P.clear();                                              // Clear interaction lists
   flagM2P.clear();                                              // Clear periodic image flags
   stopTimer("evalM2P");                                         // Stop timer
-}
-
-template<Equation equation>
-void Evaluator<equation>::evalP2P(C_iter Ci) {                  // Queue single P2P kernel
-  listP2P[Ci-Ci0].push_back(Ci);                                // Push source cell into P2P interaction list
-  flagP2P[Ci-Ci0][Ci] |= Iperiodic;                             // Flip bit of periodic image flag
-  NP2P++;                                                       // Count P2P kernel execution
 }
 
 template<Equation equation>
