@@ -92,13 +92,8 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 #endif
 
 const int  P        = 10;                                       //!< Order of expansions
-<<<<<<< local
 const int  NCRIT    = 64;                                       //!< Number of bodies per cell
 const int  MAXBODY  = 50000;                                    //!< Maximum number of bodies per GPU kernel
-=======
-const int  NCRIT    = 100;                                      //!< Number of bodies per cell
-const int  MAXBODY  = 200000;                                   //!< Maximum number of bodies per GPU kernel
->>>>>>> other
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET     = 2;                                        //!< LET opening critetia
 const real EPS      = 1e-6;                                     //!< Single precision epsilon

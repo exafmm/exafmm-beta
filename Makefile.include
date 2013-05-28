@@ -50,7 +50,7 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags
-LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart -lstdc++ -ldl -lm
+LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart
 endif
 
 OBJECT = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\
