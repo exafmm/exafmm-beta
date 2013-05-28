@@ -582,7 +582,6 @@ public:
       sendBodyDsp[i] *= bytes;                                  //  Multiply by bytes
       recvBodyCnt[i] *= bytes;                                  //  Multiply by bytes
       recvBodyDsp[i] *= bytes;                                  //  Multiply by bytes
-      if(printNow&&i!=0) std::cout << "Rank " << MPIRANK << " sends to rank " << i << " : " << sendBodyCnt[i] << " Bytes for P2P" << std::endl;
     }                                                           // End loop over ranks
     MPI_Alltoallv(&sendBodies[0],&sendBodyCnt[0],&sendBodyDsp[0],MPI_BYTE,
                   &recvBodies[0],&recvBodyCnt[0],&recvBodyDsp[0],MPI_BYTE,MPI_COMM_WORLD);
@@ -627,17 +626,6 @@ public:
       sendCellCnt[irank] = sendCells.size()-ssize;              //  Set cell send count of current rank
       sendCellDsp[irank] = ssize;                               //  Set cell send displacement of current rank
       ssize += sendCellCnt[irank];                              //  Increment offset for vector send cells
-      if( printNow ) {
-        int sendSize[10] = {0,0,0,0,0,0,0,0,0,0};
-        for( JC_iter JC=sendCells.begin(); JC!=sendCells.end(); ++JC ) {
-          int level = getLevel(JC->ICELL);
-          if(sendCellDsp[irank] <= JC-sendCells.begin() && JC-sendCells.begin() < ssize )
-            sendSize[level] += sizeof(sendCells[0]);
-        }
-        for( int l=0; l<10; l++ ) {
-          if(irank!=0) std::cout << "Rank " << MPIRANK << " sends to rank " << irank << " : " << sendSize[l] << " Bytes @ level " << l << std::endl;
-        }
-      }
     }                                                           // End loop over ranks
     stopTimer("Get LET",printNow);                              // Stop timer
     startTimer("Alltoall C");                                   // Start timer
@@ -654,7 +642,6 @@ public:
       sendCellDsp[i] *= bytes;                                  //  Multiply by bytes
       recvCellCnt[i] *= bytes;                                  //  Multiply by bytes
       recvCellDsp[i] *= bytes;                                  //  Multiply by bytes
-      if(printNow&&i!=0) std::cout << "Rank " << MPIRANK << " sends to rank " << i << " : " << sendCellCnt[i] << " Bytes for M2L total" << std::endl;
     }                                                           // End loop over ranks
     MPI_Alltoallv(&sendCells[0],&sendCellCnt[0],&sendCellDsp[0],MPI_BYTE,
                   &recvCells[0],&recvCellCnt[0],&recvCellDsp[0],MPI_BYTE,MPI_COMM_WORLD);
