@@ -49,7 +49,7 @@
       call mpi_init(ierr)
       call mpi_comm_size(mpi_comm_world, mpisize, ierr);
       call mpi_comm_rank(mpi_comm_world, mpirank, ierr);
-      n = 2;
+      n = 1000;
       images = 0
       ksize = 11
       pcycle = 2 * pi
@@ -78,7 +78,7 @@
       do i = 1, n
         q(i) = q(i) - average
       end do
-      call fmm_init()
+      call fmm_init(images)
       call fmm_partition(n, x, q, pcycle)
       call fmm(n, x, q, p, f, pcycle)
       do i = 1, n

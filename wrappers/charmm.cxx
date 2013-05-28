@@ -15,10 +15,9 @@ UpDownPass *pass;
 Traversal *traversal;
 LocalEssentialTree *LET;
 
-extern "C" void fmm_init_() {
+extern "C" void fmm_init_(int * images) {
   const int ncrit = 16;
   const int nspawn = 1000;
-  const int images = 3;
   const real_t theta = 0.35;
   args = new Args;
   logger = new Logger;
@@ -26,13 +25,13 @@ extern "C" void fmm_init_() {
   boundbox = new BoundBox(nspawn);
   tree = new BuildTree(ncrit, nspawn);
   pass = new UpDownPass(theta);
-  traversal = new Traversal(nspawn, images);
-  LET = new LocalEssentialTree(images);
+  traversal = new Traversal(nspawn, *images);
+  LET = new LocalEssentialTree(*images);
 
   args->theta = 0.35;
   args->ncrit = 16;
   args->nspawn = 1000;
-  args->images = images;
+  args->images = *images;
   args->mutual = 0;
   args->verbose = 1;
   args->distribution = "external";
