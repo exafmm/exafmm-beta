@@ -5,8 +5,8 @@
 const float R2MIN    = 0.0001;                                   //!< Minimum value for L-J R^2
 const float R2MAX    = 100.0;                                    //!< Maximum value for L-J R^2
 extern "C" {
-//#include "md.h"
-//#include "vtgrapeproto.h"
+#include "md.h"
+#include "vtgrapeproto.h"
 }
 //#define DATAFILE
 
@@ -25,7 +25,7 @@ int main() {
 #else
   const int N = 10000;
   const int nat = 16;
-  const double size = 2;
+  const double size = 20;
 #endif
   double *xi     = new double [3*N];
   double *qi     = new double [N];
@@ -56,9 +56,6 @@ int main() {
   }
   fid.close();
   for( int i=0; i<N; i++ ) {
-//    xi[3*i+0] = drand48() * size - size/2;
-//    xi[3*i+1] = drand48() * size - size/2;
-//    xi[3*i+2] = drand48() * size - size/2;
     xj[3*i+0] = xi[3*i+0];
     xj[3*i+1] = xi[3*i+1];
     xj[3*i+2] = xi[3*i+2];
@@ -152,22 +149,6 @@ int main() {
     fd[3*i+2] += qi[i] * Fz;
   }
 #endif
-  double fc[3];
-  for( int d=0; d<3; ++d ) fc[d]=0;
-  for( int i=0; i<N; ++i ) {
-    for( int d=0; d<3; ++d ) {
-      fc[d] += qi[i] * xi[3*i+d];
-    }
-  }
-  for( int i=0; i<N; ++i ) {
-    pd[3*i+0] += 2.0 * M_PI / (3.0 * size * size * size)
-              * (fc[0] * fc[0] + fc[1] * fc[1] + fc[2] * fc[2]) / N;
-  }
-  for( int i=0; i<N; ++i ) {
-    for( int d=0; d<3; ++d ) {
-      fd[3*i+d] -= 4.0 * M_PI * qi[i] * fc[d] / (3.0 * size * size * size);
-    }
-  }
   double Pd = 0, Pn = 0, Fd = 0, Fn = 0;
   for( int i=0; i<N; i++ ) {
     pd[3*i+0] *= 0.5;

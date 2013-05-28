@@ -28,7 +28,7 @@ test_serial_coulombVdW: test_serial_coulombVdW.cxx
 test_parallel_coulombVdW: test_parallel_coulombVdW.cxx
 	rm -f libparallel_coulombVdW.a
 	make libparallel_coulombVdW.a
-	$(CXX) $? -L. -lparallel_coulombVdW -lmd3withg80vg $(LFLAGS)
+	$(CXX) $? -L. -lparallel_coulombVdW $(LFLAGS)
 	mpirun -np 2 ./a.out
 
 ewald: ewald.cxx $(MR3)
