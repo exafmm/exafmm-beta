@@ -16,15 +16,16 @@ int main() {
   FMM.printNow = true;                                          // Print timings
 
   FMM.startTimer("Set bodies");                                 // Start timer
-  srand48(2);                                                   // Seed for random number generator
+  srand48(0);                                                   // Seed for random number generator
   real average = 0;                                             // Initialize average charge
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
     for( int d=0; d!=3; ++d ) {                                 //  Loop over dimensions
       B->X[d] = drand48() * xmax;                               //   Initialize positions
     }                                                           //  End loop over dimensions
-    B->SRC = drand48();                                         //  Set charges
+    B->SRC = drand48() / numBodies;                             //  Set charges
     average += B->SRC;                                          //  Accumulate charges
     B->TRG = 0;                                                 //  Initialize target values
+    B->IBODY = B-bodies.begin();
   }                                                             // End loop over bodies
   average /= numBodies;                                         // Divide by total to get average
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
@@ -44,7 +45,7 @@ int main() {
   FMM.Ewald(bodies,cells,jcells);                               // Ewald summation
 
   Bodies bodies2 = bodies;                                      // Define new bodies vector for direct sum
-  FMM.initTarget(bodies);                                       // Reinitialize target values
+  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) B->TRG = 0;
   FMM.startTimer("Downward");                                   // Start timer
   FMM.downward(cells,jcells);                                   // Downward sweep
   FMM.stopTimer("Downward",FMM.printNow);                       // Stop timer
