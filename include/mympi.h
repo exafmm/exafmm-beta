@@ -24,6 +24,7 @@ THE SOFTWARE.
 #include <mpi.h>
 #include <typeinfo>
 #include "types.h"
+#include <unistd.h>
 
 //! Custom MPI utilities
 class MyMPI {
