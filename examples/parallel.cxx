@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
   UpDownPass pass(args.theta);
   Traversal traversal(args.nspawn,args.images);
   LocalEssentialTree LET(args.images);
-  //args.numBodies /= LET.mpisize;
+  args.numBodies /= LET.mpisize;
   args.verbose &= LET.mpirank == 0;
   if (args.verbose) {
     logger.verbose = true;
