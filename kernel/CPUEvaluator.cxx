@@ -227,11 +227,13 @@ template<Equation equation>
 void Evaluator<equation>::evalEwaldReal(Cells &cells) {         // Evaluate queued Ewald real kernels
   startTimer("evalEwaldReal");                                  // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
-  for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over cells
-    while( !listP2P[Ci-Ci0].empty() ) {                         //  While M2P interaction list is not empty
-      C_iter Cj = listP2P[Ci-Ci0].back();                       //   Set source cell iterator
+#pragma omp parallel for
+  for( int i=0; i<int(cells.size()); ++i ) {                    // Loop over cells
+    C_iter Ci = Ci0 + i;                                        //  Target cell iterator
+    while( !listP2P[i].empty() ) {                              //  While M2P interaction list is not empty
+      C_iter Cj = listP2P[i].back();                            //   Set source cell iterator
       EwaldReal(Ci,Cj);                                         //   Perform Ewald real kernel
-      listP2P[Ci-Ci0].pop_back();                               //   Pop last element from M2P interaction list
+      listP2P[i].pop_back();                                    //   Pop last element from M2P interaction list
     }                                                           //  End while for M2P interaction list
   }                                                             // End loop over cells topdown
   listP2P.clear();                                              // Clear interaction lists
