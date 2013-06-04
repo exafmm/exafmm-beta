@@ -33,7 +33,7 @@ extern "C" void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
 
 int main() {
   const int Nmax = 1000000;
-  const int N = 2;
+  const int N = 10000;
   const int stringLength = 20;
   const int images = 3;
   const int ksize = 11;
@@ -71,7 +71,7 @@ int main() {
   }
 
   fmm(N, x, q, p, f, cycle, images);
-#if 0
+#if 1
   ewald(N, x2, q2, p2, f2, ksize, alpha, cycle);
 #else
   int prange = 0;
@@ -88,7 +88,7 @@ int main() {
   }
   double coef = 4 * M_PI / (3 * cycle * cycle * cycle);
   double Xperiodic[3];
-  //std::cout << "Direct loop          : " << i+1 << "/" << mpisize << std::endl;
+  std::cout << "Direct loop          : " << i+1 << "/" << mpisize << std::endl;
   for (int i=0; i<N; i++) {
     double pp = 0, fx = 0, fy = 0, fz = 0;
     for (int ix=-prange; ix<=prange; ix++) {

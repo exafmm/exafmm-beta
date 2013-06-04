@@ -12,7 +12,7 @@ extern "C" void fmm(int n, double * x, double * q, double * p, double * f, doubl
   Sort sort;
 
   args.numBodies = n;
-  args.theta = 0.35;
+  args.theta = 0.25;
   args.ncrit = 16;
   args.nspawn = 1000;
   args.images = images;
