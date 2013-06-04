@@ -50,16 +50,8 @@ THE SOFTWARE.
 #endif
 #if QUARK
 #include "quark.h"
-#endif
-#if MTHREADS
-#include <mtbb/task_group.h>
-int omp_get_thread_num() {
-  return 0;
-}
-#define OMP_NUM_THREADS 1
 #else
 #include <omp.h>
-#define OMP_NUM_THREADS 12
 #endif
 
 typedef unsigned           bigint;                              //!< Big integer type
