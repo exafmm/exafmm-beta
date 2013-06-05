@@ -64,8 +64,8 @@ void Kernel<Laplace>::initialize() {}
 template<>
 void Kernel<Laplace>::P2M(C_iter Cj) {
   real Rmax = 0;
-  complex Ynm[P*P], YnmTheta[P*P];
-  for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NCLEAF; ++B ) {
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
+  for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NDLEAF; ++B ) {
     vect dist = B->X - Cj->X;
     real R = std::sqrt(norm(dist));
     if( R > Rmax ) Rmax = R;
@@ -87,7 +87,7 @@ void Kernel<Laplace>::P2M(C_iter Cj) {
 template<>
 void Kernel<Laplace>::M2M(C_iter Ci) {
   const complex I(0.,1.);
-  complex Ynm[P*P], YnmTheta[P*P];
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
   real Rmax = Ci->RMAX;
   for( C_iter Cj=Cj0+Ci->CHILD; Cj!=Cj0+Ci->CHILD+Ci->NCHILD; ++Cj ) {
     vect dist = Ci->X - Cj->X;
@@ -131,7 +131,7 @@ void Kernel<Laplace>::M2M(C_iter Ci) {
 
 template<>
 void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
-  complex Ynm[P*P], YnmTheta[P*P];
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
   vect dist = Ci->X - Cj->X - Xperiodic;
   real rho, alpha, beta;
   cart2sph(rho,alpha,beta,dist);
@@ -141,7 +141,7 @@ void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
       int jk = j * j + j + k;
       int jks = j * (j + 1) / 2 + k;
       complex L = 0;
-      for( int n=0; n!=P-j; ++n ) {
+      for( int n=0; n!=P; ++n ) {
         for( int m=-n; m<0; ++m ) {
           int nm   = n * n + n + m;
           int nms  = n * (n + 1) / 2 - m;
@@ -165,7 +165,7 @@ void Kernel<Laplace>::M2L(C_iter Ci, C_iter Cj) const {
 template<>
 void Kernel<Laplace>::M2P(C_iter Ci, C_iter Cj) const {
   const complex I(0.,1.);                                       // Imaginary unit
-  complex Ynm[P*P], YnmTheta[P*P];
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
   for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Cj->X - Xperiodic;
     vect spherical = 0;
@@ -235,8 +235,8 @@ void Kernel<Laplace>::L2L(C_iter Ci) const {
 template<>
 void Kernel<Laplace>::L2P(C_iter Ci) const {
   const complex I(0.,1.);                                       // Imaginary unit
-  complex Ynm[P*P], YnmTheta[P*P];
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
+  complex Ynm[4*P*P], YnmTheta[4*P*P];
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;
     vect spherical = 0;
     vect cartesian = 0;
