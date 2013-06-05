@@ -94,7 +94,7 @@ __device__ void evalLocal(gpureal *YnmShrd, gpureal rho,        // Evaluate sing
   gpureal x = cosf(alpha);                                      // x = cos(alpha)
   gpureal y = sinf(alpha);                                      // y = sin(alpha)
   gpureal rho_1 = 1 / rho;                                      // 1 / rho
-  for( int l=threadIdx.x; l<(P+1)*P/2; l+=THREADS ) {           // Loop over coefficients in Ynm
+  for( int l=threadIdx.x; l<(2*P+1)*P; l+=THREADS ) {           // Loop over coefficients in Ynm
     gpureal fact = 1;                                           //  Initialize 2 * m + 1
     gpureal pn = 1;                                             //  Initialize Legendre polynomial Pn
     gpureal rhom = rho_1;                                       //  Initialize rho^(-m-1)
@@ -407,7 +407,7 @@ __device__ void LaplaceM2L_core(gpureal *target, gpureal  beta, gpureal *factShr
   k = threadIdx.x - k;
   if( threadIdx.x >= NTERM ) j = k = 0;
   gpureal ajk = ODDEVEN(j) * rsqrtf(factShrd[j-k] * factShrd[j+k]);
-  for( int n=0; n<P-j; ++n ) {
+  for( int n=0; n<P; ++n ) {
     for( int m=-n; m<0; ++m ) {
       int jnkm = (j + n) * (j + n + 1) / 2 - m + k;
       gpureal ere = cosf((m - k) * beta);
@@ -447,7 +447,7 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
   gpureal target[2] = {0, 0};
   __shared__ gpureal sourceShrd[2*THREADS];
   __shared__ gpureal factShrd[2*P];
-  __shared__ gpureal YnmShrd[NTERM];
+  __shared__ gpureal YnmShrd[4*NTERM];
   gpureal fact = EPS;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;

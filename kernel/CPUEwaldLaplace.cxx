@@ -26,7 +26,9 @@ THE SOFTWARE.
 namespace {
 void dft(Ewalds &ewalds, Bodies &bodies, real R0) {
   real scale = M_PI / R0;
-  for( E_iter E=ewalds.begin(); E!=ewalds.end(); ++E ) {
+#pragma omp parallel for
+  for( int i=0; i<int(ewalds.size()); ++i ) {
+    E_iter E = ewalds.begin() + i;
     E->REAL = E->IMAG = 0;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
       real th = 0;
@@ -39,7 +41,9 @@ void dft(Ewalds &ewalds, Bodies &bodies, real R0) {
 
 void idft(Ewalds &ewalds, Bodies &bodies, real R0) {
   real scale = M_PI / R0;
-  for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
+#pragma omp parallel for
+  for( int i=0; i<int(bodies.size()); ++i ) {
+    B_iter B = bodies.begin() + i;
     vec<4,real> TRG = 0;
     for( E_iter E=ewalds.begin(); E!=ewalds.end(); ++E ) {
       real th = 0;
@@ -55,7 +59,8 @@ void idft(Ewalds &ewalds, Bodies &bodies, real R0) {
 
 template<>
 void Kernel<Laplace>::EwaldReal(C_iter Ci, C_iter Cj) const {   // Ewald real part on CPU
-  for( B_iter Bi=Ci->LEAF; Bi!=Ci->LEAF+Ci->NDLEAF; ++Bi ) {    // Loop over target bodies
+  for( int i=0; i<Ci->NDLEAF; ++i ) {                           // Loop over target bodies
+    B_iter Bi = Ci->LEAF + i;                                   //  Target body iterator
     for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
       vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
       for( int d=0; d<3; d++ ) {                                //   Loop over dimensions

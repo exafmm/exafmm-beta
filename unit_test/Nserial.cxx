@@ -25,7 +25,6 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  int numBodies = 10000;                                        // Number of bodies
   int numTarget = 100;                                          // Number of target points to be used for error eval
   IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
@@ -36,7 +35,7 @@ int main() {
   bool printNow = true;                                         // Print timer
 
   for( int it=0; it!=25; ++it ) {                               // Loop over FMM iterations
-    numBodies = int(pow(10,(it+24)/8.0));                       //  Exponentially increase N
+    int numBodies = int(pow(10,(it+24)/8.0));                   //  Exponentially increase N
     std::cout << "N             : " << numBodies << std::endl;  //  Print N
     bodies.resize(numBodies);                                   //  Resize bodies vector
     FMM.cube(bodies,1,1);                                       //  Initialize bodies in a cube
@@ -54,18 +53,15 @@ int main() {
     FMM.eraseTimer("FMM");                                      //  Erase entry from timer to avoid timer overlap
 
     FMM.startTimer("Direct sum");                               //  Start timer
-    FMM.buffer = bodies;                                        //  Define new bodies vector for direct sum
 #if 1
+    jbodies = bodies;                                           //  Copy source bodies
+    FMM.sampleBodies(bodies,numTarget);                         //  Shrink target bodies vector to save time
+    FMM.buffer = bodies;                                        //  Define new bodies vector for direct sum
     FMM.initTarget(FMM.buffer);                                 //  Reinitialize target values
-    if( IMAGES != 0 ) {                                         //  For periodic boundary condition
-      jbodies = FMM.periodicBodies(FMM.buffer);                 //   Copy source bodies for all periodic images
-    } else {                                                    //  For free field boundary condition
-      jbodies = FMM.buffer;                                     //   Source bodies = target bodies
-    }                                                           //  End if for periodic boundary condition
-    FMM.buffer.resize(numTarget);                               //  Shrink target bodies vector to save time
     FMM.evalP2P(FMM.buffer,jbodies);                            //  Direct summation between buffer and jbodies
     FMM.writeTarget(FMM.buffer);                                //  Write direct summation results to file
 #else
+    FMM.buffer = bodies;                                        //  Define new bodies vector for direct sum
     FMM.readTarget(FMM.buffer);                                 //  Read direct summation results from file
 #endif
     FMM.stopTimer("Direct sum",printNow);                       //  Stop timer

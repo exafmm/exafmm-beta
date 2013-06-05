@@ -21,8 +21,7 @@ THE SOFTWARE.
 */
 
 template<Equation equation>
-void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Evaluate all P2P kernels
-  Xperiodic = 0;                                                // Set periodic coordinate offset
+void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Evaluate all P2P kernels for periodic
   Cells cells;                                                  // Cells to put target and source bodies
   cells.resize(2);                                              // Resize cells to put target and source bodies
   cells[0].LEAF = ibodies.begin();                              // Iterator of first target leaf
@@ -30,7 +29,17 @@ void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool) {// Ev
   cells[1].LEAF = jbodies.begin();                              // Iterator of first source leaf
   cells[1].NDLEAF = jbodies.size();                             // Number of source leafs
   C_iter Ci = cells.begin(), Cj = cells.begin()+1;              // Iterator of target and source cells
-  P2P(Ci,Cj);                                                   // Perform P2P kernel
+  int prange = getPeriodicRange();                              // Get range of periodic images
+  for( int ix=-prange; ix<=prange; ++ix ) {                     // Loop over x periodic direction
+    for( int iy=-prange; iy<=prange; ++iy ) {                   //  Loop over y periodic direction
+      for( int iz=-prange; iz<=prange; ++iz ) {                 //   Loop over z periodic direction
+        Xperiodic[0] = ix * 2 * R0;                             //    Shift x position
+        Xperiodic[1] = iy * 2 * R0;                             //    Shift y position
+        Xperiodic[2] = iz * 2 * R0;                             //    Shift z position
+        P2P(Ci,Cj);                                             //    Perform P2P kernel
+      }                                                         //   End loop over z periodic direction
+    }                                                           //  End loop over y periodic direction
+  }                                                             // End loop over x periodic direction
 }
 
 template<Equation equation>
@@ -218,11 +227,13 @@ template<Equation equation>
 void Evaluator<equation>::evalEwaldReal(Cells &cells) {         // Evaluate queued Ewald real kernels
   startTimer("evalEwaldReal");                                  // Start timer
   Ci0 = cells.begin();                                          // Set begin iterator
-  for( C_iter Ci=cells.begin(); Ci!=cells.end(); ++Ci ) {       // Loop over cells
-    while( !listP2P[Ci-Ci0].empty() ) {                         //  While M2P interaction list is not empty
-      C_iter Cj = listP2P[Ci-Ci0].back();                       //   Set source cell iterator
+#pragma omp parallel for
+  for( int i=0; i<int(cells.size()); ++i ) {                    // Loop over cells
+    C_iter Ci = Ci0 + i;                                        //  Target cell iterator
+    while( !listP2P[i].empty() ) {                              //  While M2P interaction list is not empty
+      C_iter Cj = listP2P[i].back();                            //   Set source cell iterator
       EwaldReal(Ci,Cj);                                         //   Perform Ewald real kernel
-      listP2P[Ci-Ci0].pop_back();                               //   Pop last element from M2P interaction list
+      listP2P[i].pop_back();                                    //   Pop last element from M2P interaction list
     }                                                           //  End while for M2P interaction list
   }                                                             // End loop over cells topdown
   listP2P.clear();                                              // Clear interaction lists

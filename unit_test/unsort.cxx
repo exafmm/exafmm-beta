@@ -42,16 +42,9 @@ int main() {
   FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
   FMM.eraseTimer("Set bodies");                                 // Erase entry from timer to avoid timer overlap
 
-  if( IMAGES != 0 ) {                                           // For periodic boundary condition
-    FMM.startTimer("Set periodic");                             //  Start timer
-    jbodies = FMM.periodicBodies(bodies2);                      //  Copy source bodies for all periodic images
-    FMM.stopTimer("Set periodic",FMM.printNow);                 //  Stop timer
-    FMM.eraseTimer("Set periodic");                             //  Erase entry from timer to avoid timer overlap
-  } else {                                                      // For free field boundary condition
-    jbodies = bodies2;                                          //  Copy source bodies
-  }                                                             // End if for periodic boundary condition
   FMM.startTimer("Direct sum");                                 // Start timer
-  bodies2.resize(numTarget);                                    // Shrink target bodies vector to save time
+  jbodies = bodies2;                                            //  Copy source bodies
+  FMM.sampleBodies(bodies2,numTarget);                          // Shrink target bodies vector to save time
   FMM.evalP2P(bodies2,jbodies);                                 // Direct summation between bodies2 and jbodies
   FMM.stopTimer("Direct sum",FMM.printNow);                     // Stop timer
   FMM.eraseTimer("Direct sum");                                 // Erase entry from timer to avoid timer overlap
@@ -82,7 +75,7 @@ int main() {
 
 #ifndef VTK
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
-  bodies.resize(numTarget);                                     // Shrink target bodies vector to save time
+  FMM.sampleBodies(bodies,numTarget);                           // Shrink target bodies vector to save time
   FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);        // Evaluate error on the reduced set of bodies
   FMM.printError(diff1,norm1,diff2,norm2);                      // Print the L2 norm error
 #else

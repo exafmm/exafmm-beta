@@ -50,16 +50,8 @@ THE SOFTWARE.
 #endif
 #if QUARK
 #include "quark.h"
-#endif
-#if MTHREADS
-#include <mttb/task_group.h>
-int omp_get_thread_num() {
-  return 0;
-}
-#define OMP_NUM_THREADS 1
 #else
 #include <omp.h>
-#define OMP_NUM_THREADS 12
 #endif
 
 typedef unsigned           bigint;                              //!< Big integer type
@@ -91,18 +83,17 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 #endif
 #endif
 
-const int  P        = 10;                                       //!< Order of expansions
-const int  NCRIT    = 100;                                      //!< Number of bodies per cell
-const int  MAXBODY  = 200000;                                   //!< Maximum number of bodies per GPU kernel
+const int  P        = 8;                                        //!< Order of expansions
+const int  NCRIT    = 64;                                       //!< Number of bodies per cell
+const int  MAXBODY  = 50000;                                    //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET     = 2;                                        //!< LET opening critetia
-const real EPS      = 1e-6;                                     //!< Single precision epsilon
+const real EPS      = 1e-6;                                     //!< Single/double precision epsilon
 const real EPS2     = 0;                                        //!< Softening parameter (squared)
 const real R2MIN    = 0.0001;                                   //!< Minimum value for L-J R^2
 const real R2MAX    = 100.0;                                    //!< Maximum value for L-J R^2
 const int  GPUS     = 3;                                        //!< Number of GPUs per node
 const int  THREADS  = 64;                                       //!< Number of threads per thread-block
-const int  PTHREADS = 4;                                        //!< Number of pthreads in quark
 
 const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms
 const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of Cartesian local terms

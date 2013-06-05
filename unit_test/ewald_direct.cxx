@@ -23,11 +23,12 @@ THE SOFTWARE.
 
 int main() {
   const int numBodies = 1000;                                   // Number of bodies
+  const int numTarget = 100;                                    // Number of target points to be used for error eval
   const real xmax = 100.0;                                      // Size of domain
-  const real ksize = 11.0;                                      // Ewald wave number
-  const real alpha = 0.1;                                       // Ewald alpha value
+  const real ksize = 44.0;                                      // Ewald wave number
+  const real alpha = 0.2;                                       // Ewald alpha value
   const real sigma = .25 / M_PI;                                // Ewald sigma value
-  IMAGES = 2;                                                   // Level of periodic image tree (0 for non-periodic)
+  IMAGES = 3;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrt(4);                                          // Multipole acceptance criteria
   Bodies bodies(numBodies);                                     // Define vector of bodies
   Bodies jbodies;                                               // Define vector of source bodies
@@ -64,12 +65,9 @@ int main() {
   jcells = cells;                                               // Copy cells to jcells
   FMM.Ewald(bodies,cells,jcells);                               // Ewald summation
 
-  FMM.startTimer("Set periodic");                               // Start timer
-  jbodies = FMM.periodicBodies(bodies);                         // Copy source bodies for all periodic images
-  FMM.stopTimer("Set periodic",FMM.printNow);                   // Stop timer
-  FMM.eraseTimer("Set periodic");                               // Erase entry from timer to avoid timer overlap
-
   FMM.startTimer("Direct sum");                                 // Start timer
+  jbodies = bodies;                                             // Save jbodies
+  FMM.sampleBodies(bodies,numTarget);                           // Shrink target bodies vector to save time
   FMM.buffer = bodies;                                          // Define new bodies vector for direct sum
   FMM.initTarget(FMM.buffer);                                   // Reinitialize target values
   FMM.evalP2P(FMM.buffer,jbodies);                              // Direct summation between buffer and jbodies

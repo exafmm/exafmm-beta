@@ -24,11 +24,11 @@ THE SOFTWARE.
 #include "vtk.h"
 #endif
 
-int main() {
-  const int numBodies = 10000;                                  // Number of bodies
+int main(int, char ** argv) {
+  const int numBodies = 100000;                                 // Number of bodies
   const int numTarget = 100;                                    // Number of target points to be used for error eval
   IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
-  THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
+  THETA = atof(argv[1]);                                        // Multipole acceptance criteria
   Bodies bodies(numBodies);                                     // Define vector of bodies
   Bodies jbodies;                                               // Define vector of source bodies
   Cells cells, jcells;                                          // Define vector of cells
@@ -58,16 +58,9 @@ int main() {
   FMM.eraseTimer("Downward");                                   // Erase entry from timer to avoid timer overlap
 
 #ifndef VTK
-  if( IMAGES != 0 ) {                                           // For periodic boundary condition
-    FMM.startTimer("Set periodic");                             //  Start timer
-    jbodies = FMM.periodicBodies(bodies);                       //  Copy source bodies for all periodic images
-    FMM.stopTimer("Set periodic",FMM.printNow);                 //  Stop timer
-    FMM.eraseTimer("Set periodic");                             //  Erase entry from timer to avoid timer overlap
-  } else {                                                      // For free field boundary condition
-    jbodies = bodies;                                           //  Copy source bodies
-  }                                                             // End if for periodic boundary condition
   FMM.startTimer("Direct sum");                                 // Start timer
-  bodies.resize(numTarget);                                     // Shrink target bodies vector to save time
+  jbodies = bodies;                                             // Copy source bodies
+  FMM.sampleBodies(bodies,numTarget);                           // Shrink target bodies vector to save time
   FMM.buffer = bodies;                                          // Define new bodies vector for direct sum
   FMM.initTarget(FMM.buffer);                                   // Reinitialize target values
   FMM.evalP2P(FMM.buffer,jbodies);                              // Direct summation between buffer and jbodies

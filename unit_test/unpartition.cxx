@@ -27,7 +27,7 @@ THE SOFTWARE.
 int main() {
   const int numBodies = 10000;                                  // Number of bodies
   const int numTarget = 100;                                    // Number of target points to be used for error eval
-  IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
+  IMAGES = 1;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrtf(4);                                         // Multipole acceptance criteria
   Bodies bodies(numBodies);                                     // Define vector of target bodies
   Bodies jbodies;                                               // Define vector of source bodies
@@ -42,20 +42,13 @@ int main() {
   FMM.stopTimer("Set bodies",FMM.printNow);                     // Stop timer
 
   FMM.startTimer("Set domain");                                 // Start timer
-  FMM.setGlobDomain(bodies2);                                   // Set global domain size of FMM
+  FMM.setGlobDomain(bodies);                                    // Set global domain size of FMM
   FMM.stopTimer("Set domain",FMM.printNow);                     // Stop timer
 
 #ifndef VTK
- if( IMAGES != 0 ) {                                            // For periodic boundary condition
-    FMM.startTimer("Set periodic");                             //  Start timer
-    jbodies = FMM.periodicBodies(bodies2);                      //  Copy source bodies for all periodic images
-    FMM.stopTimer("Set periodic",FMM.printNow);                 //  Stop timer
-    FMM.eraseTimer("Set periodic");                             //  Erase entry from timer to avoid timer overlap
-  } else {                                                      // For free field boundary condition
-    jbodies = bodies2;                                          //  Copy source bodies
-  }                                                             // End if for periodic boundary condition
   FMM.startTimer("Direct sum");                                 // Start timer
-  bodies2.resize(numTarget);                                    // Shrink target bodies vector to save time
+  jbodies = bodies;                                             // Copy source bodies
+  FMM.sampleBodies(bodies2,numTarget);                          // Shrink target bodies vector to save time
   FMM.initTarget(bodies2);                                      // Reinitialize target values
   for( int i=0; i!=MPISIZE; ++i ) {                             // Loop over all MPI processes
     FMM.shiftBodies(jbodies);                                   //  Communicate bodies round-robin
@@ -100,6 +93,7 @@ int main() {
   if(FMM.printNow) FMM.writeTime();                             // Write again to have at least two data sets
 
   real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
+  FMM.sampleBodies(bodies,numTarget);                           // Shrink target bodies vector to save time
   FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);        // Evaluate error on the reduced set of bodies
   MPI_Datatype MPI_TYPE = FMM.getType(diff1);                   // Get MPI datatype
   MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce difference in potential
