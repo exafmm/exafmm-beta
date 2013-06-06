@@ -240,7 +240,7 @@ class Logger {
   //! Print relative L2 norm error
   void printError(double diff1, double norm1, double diff2, double norm2) {
     if (verbose) {                                              // If verbose flag is true
-      std::cout << std::setw(stringLength) << std::left         //  Set format
+      std::cout << std::setw(stringLength) << std::left << std::scientific//  Set format
                 << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;// Print potential error
       if( std::abs(diff2) > 0 ) {                               //  If acceleration was calculated
         std::cout << std::setw(stringLength) << std::left       //   Set format

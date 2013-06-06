@@ -1,9 +1,5 @@
 #include "kernel.h"
-#if FP64
 const real_t EPS = 1e-12;                                       // Double precision epsilon
-#else
-const real_t EPS = 1e-6;                                        // Single precision epsilon
-#endif
 
 template<int nx, int ny, int nz>
 struct Index {

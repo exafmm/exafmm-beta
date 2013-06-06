@@ -8,6 +8,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   int ni = Ci->NDBODY;
   int nj = Cj->NDBODY;
   int i = 0;
+#if USE_SIMD
   for ( ; i<=ni-NSIMD; i+=NSIMD) {
     simdvec zero = 0;
     ksimdvec pot = zero;
@@ -137,6 +138,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
       Bi[i+k].TRG[3] += transpose(az,k);
     }
   }
+#endif
   for ( ; i<ni; i++) {
     kreal_t pot = 0; 
     kreal_t ax = 0;
@@ -172,6 +174,7 @@ void Kernel::P2P(C_iter C) const {
   B_iter B = C->BODY;
   int n = C->NDBODY;
   int i = 0;
+#if USE_SIMD
   for ( ; i<=n-NSIMD; i+=NSIMD) {
     simdvec zero = 0;
     ksimdvec pot = zero;
@@ -305,6 +308,7 @@ void Kernel::P2P(C_iter C) const {
       B[i+k].TRG[3] += transpose(az,k);
     }
   }
+#endif
   for ( ; i<n; i++) {
     kreal_t pot = 0;
     kreal_t ax = 0;

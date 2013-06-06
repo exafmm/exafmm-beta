@@ -1,14 +1,10 @@
 #include "kernel.h"
 
-#define SIGN(n) ((n >= 0) - (n < 0))
 #define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
+#define IPOW2N(n) ((n >= 0) ? 1 : ODDEVEN(n))
 
 const complex_t I(0.,1.);                                       // Imaginary unit
-#if FP64
 const real_t EPS = 1e-12;                                       // Double precision epsilon
-#else
-const real_t EPS = 1e-6;                                        // Single precision epsilon
-#endif
 
 //! Get r,theta,phi from x,y,z
 void cart2sph(real_t& r, real_t& theta, real_t& phi, vec3 dX) {
@@ -146,7 +142,7 @@ void Kernel::M2M(C_iter Ci, C_iter C0) const {
           for (int m=std::max(-n,-j+k+n); m<=std::min(k-1,n); m++) {
             int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             int nm    = n * n + n - m;
-            M += Cj->M[jnkms] * Ynm[nm] * real_t(SIGN(m) * ODDEVEN(n));
+            M += Cj->M[jnkms] * Ynm[nm] * real_t(IPOW2N(m) * ODDEVEN(n));
           }
           for (int m=k; m<=std::min(n,j+k-n); m++) {
             int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
