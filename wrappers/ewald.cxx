@@ -14,7 +14,7 @@ extern "C" void ewald(int n, double * x, double * q, double * p, double * f,
   Sort sort;
 
   args.numBodies = n;
-  args.theta = 0.35;
+  args.theta = 0.4;
   args.ncrit = 32;
   args.nspawn = 1000;
   args.images = 0;

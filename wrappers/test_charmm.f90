@@ -35,8 +35,8 @@
       real(8) norm, norm1, norm2, norm3, norm4
       type(c_ptr) ctx
       integer, dimension (128) :: iseed
-      real(8), dimension (3) :: dipole = (/0, 0, 0/)
-      real(8), dimension (3) :: dipole2
+      real(8), dimension (3) :: localDipole = (/0, 0, 0/)
+      real(8), dimension (3) :: globalDipole
       real(8), dimension (3) :: xperiodic
       allocatable :: x(:)
       allocatable :: q(:)
@@ -50,7 +50,7 @@
       call mpi_init(ierr)
       call mpi_comm_size(mpi_comm_world, mpisize, ierr);
       call mpi_comm_rank(mpi_comm_world, mpirank, ierr);
-      ni = 2;
+      ni = 1000;
       images = 0
       ksize = 11
       pcycle = 2 * pi
@@ -76,7 +76,7 @@
         average = average + q(i)
       end do
       average = average / ni
-      do i = 1, n
+      do i = 1, ni
         q(i) = q(i) - average
       end do
       call fmm_init(images)
@@ -99,14 +99,6 @@
       do i = 0, images-1
         prange = prange + 3**i
       end do
-      do i = 1, ni
-        do d = 1, 3
-          dipole(d) = dipole(d) + x(3*i+d-3) * q(i)
-        end do
-      end do
-      call mpi_allreduce(dipole, dipole2, 3, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-      norm = dipole2(1) * dipole2(1) + dipole2(2) * dipole2(2) + dipole2(3) * dipole2(3)
-      coef = 4 * pi / (3 * pcycle * pcycle * pcycle)
       nj = ni
       if(mpirank.eq.0) print"(a)",'--- MPI direct sum ---------------'
       do irank = 0, mpisize-1
@@ -140,11 +132,26 @@
               end do
             end do
           end do
-          p2(i) = p2(i) + pp - coef * norm / n / q(i)
-          f2(3*i-2) = f2(3*i-2) - fx - coef * dipole2(1)
-          f2(3*i-1) = f2(3*i-1) - fy - coef * dipole2(2)
-          f2(3*i-0) = f2(3*i-0) - fz - coef * dipole2(3)
+          p2(i) = p2(i) + pp
+          f2(3*i-2) = f2(3*i-2) - fx
+          f2(3*i-1) = f2(3*i-1) - fy
+          f2(3*i-0) = f2(3*i-0) - fz
         end do
+      end do
+      do i = 1, ni
+        do d = 1, 3
+          localDipole(d) = localDipole(d) + x(3*i+d-3) * q(i)
+        end do
+      end do
+      call mpi_allreduce(ni, n, 1, mpi_integer, mpi_sum, mpi_comm_world, ierr);
+      call mpi_allreduce(localDipole, globalDipole, 3, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+      norm = globalDipole(1) * globalDipole(1) + globalDipole(2) * globalDipole(2) + globalDipole(3) * globalDipole(3)
+      coef = 4 * pi / (3 * pcycle * pcycle * pcycle)
+      do i = 1, ni
+        p2(i) = p2(i) - coef * norm / n / q(i)
+        f2(3*i-2) = f2(3*i-2) - coef * globalDipole(1)
+        f2(3*i-1) = f2(3*i-1) - coef * globalDipole(2)
+        f2(3*i-0) = f2(3*i-0) - coef * globalDipole(3)
       end do
 #endif
       diff2 = 0

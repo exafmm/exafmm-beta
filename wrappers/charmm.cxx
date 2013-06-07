@@ -9,6 +9,7 @@
 Args *args;
 Logger *logger;
 Sort *sort;
+Bounds localBounds;
 BoundBox *boundbox;
 BuildTree *tree;
 UpDownPass *pass;
@@ -28,7 +29,7 @@ extern "C" void fmm_init_(int * images) {
   traversal = new Traversal(nspawn, *images);
   LET = new LocalEssentialTree(*images);
 
-  args->theta = 0.35;
+  args->theta = 0.4;
   args->ncrit = 16;
   args->nspawn = 1000;
   args->images = *images;
@@ -65,7 +66,7 @@ extern "C" void fmm_partition_(int * n, double * x, double * q, double * cycle) 
     B->SRC = q[i];
     B->IBODY = i;
   }
-  Bounds localBounds = boundbox->getBounds(bodies);
+  localBounds = boundbox->getBounds(bodies);
   Bounds globalBounds = LET->allreduceBounds(localBounds);
   localBounds = LET->partition(bodies,globalBounds);
   bodies = sort->sortBodies(bodies);
@@ -113,7 +114,6 @@ extern "C" void fmm_(int * n, double * x, double * q, double * p, double * f, do
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
   }
-  Bounds localBounds = boundbox->getBounds(bodies);
   Cells cells = tree->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
   LET->setLET(cells, localBounds, *cycle);

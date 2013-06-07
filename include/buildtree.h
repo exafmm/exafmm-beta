@@ -227,6 +227,7 @@ class BuildTree : public Logger {
 
 //! Grow tree structure top down
   void growTree(Bodies &bodies, vec3 X0, real_t R0) {
+    assert(R0 > 0);                                             // Check for bounds validity
     Bodies buffer = bodies;                                     // Copy bodies to buffer
     startTimer("Grow tree");                                    // Start timer
     B0 = bodies.begin();                                        // Bodies iterator
