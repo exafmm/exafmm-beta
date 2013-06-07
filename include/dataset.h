@@ -42,7 +42,7 @@ class Dataset {                                                 // Contains all 
     srand48(seed);                                              // Set seed for random number generator
     Bodies bodies(numBodies);                                   // Initialize bodies
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      if (numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit)) {// Mimic parallel dataset
+      if (numSplit != 1 && B-bodies.begin() == int((seed+1)*bodies.size()/numSplit)) {// Mimic parallel dataset
         seed++;                                                 //   Mimic seed at next rank
         srand48(seed);                                          //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
@@ -58,7 +58,7 @@ class Dataset {                                                 // Contains all 
     srand48(seed);                                              // Set seed for random number generator
     Bodies bodies(numBodies);                                   // Initialize bodies
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      if (numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit)) {// Mimic parallel dataset
+      if (numSplit != 1 && B-bodies.begin() == int((seed+1)*bodies.size()/numSplit)) {// Mimic parallel dataset
         seed++;                                                 //   Mimic seed at next rank
         srand48(seed);                                          //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset
@@ -78,7 +78,7 @@ class Dataset {                                                 // Contains all 
     srand48(seed);                                              // Set seed for random number generator
     Bodies bodies(numBodies);                                   // Initialize bodies
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      if (numSplit != 1 && B-bodies.begin() == int(seed*bodies.size()/numSplit)) { // Mimic parallel dataset
+      if (numSplit != 1 && B-bodies.begin() == int((seed+1)*bodies.size()/numSplit)) { // Mimic parallel dataset
         seed++;                                                 //   Mimic seed at next rank
         srand48(seed);                                          //   Set seed for random number generator
       }                                                         //  Endif for mimicing parallel dataset

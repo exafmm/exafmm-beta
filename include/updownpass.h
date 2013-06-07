@@ -73,7 +73,7 @@ class UpDownPass : public Kernel, public Logger {
       setRcrit(C0, C0, c);                                      //  Error optimization of Rcrit
       if( cells.size() > 9 ) {                                  //  If tree has more than 2 levels
         for (C_iter C=C0; C!=C0+9; C++) {                       //   Loop over top 2 levels of cells
-          C->RCRIT *= 10;                                       //    Prevent approximation
+          C->RCRIT = 1e12;                                      //    Prevent approximation
         }                                                       //   End loop over top 2 levels of cells
       }                                                         //  End if for tree levels
     }                                                           // End if for empty cell vector

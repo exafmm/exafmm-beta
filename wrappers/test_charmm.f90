@@ -8,8 +8,8 @@
       isend = mod(mpirank + 1,           mpisize)
       irecv = mod(mpirank - 1 + mpisize, mpisize)
 
-      call mpi_isend(nold, 1, mpi_int, irecv, 0, mpi_comm_world, ireqs, ierr)
-      call mpi_irecv(nnew, 1, mpi_int, isend, 0, mpi_comm_world, ireqr, ierr)
+      call mpi_isend(nold, 1, mpi_integer, irecv, 0, mpi_comm_world, ireqs, ierr)
+      call mpi_irecv(nnew, 1, mpi_integer, isend, 0, mpi_comm_world, ireqr, ierr)
       call mpi_wait(ireqs, istatus, ierr)
       call mpi_wait(ireqr, istatus, ierr)
 
@@ -36,6 +36,7 @@
       type(c_ptr) ctx
       integer, dimension (128) :: iseed
       real(8), dimension (3) :: dipole = (/0, 0, 0/)
+      real(8), dimension (3) :: dipole2
       real(8), dimension (3) :: xperiodic
       allocatable :: x(:)
       allocatable :: q(:)
@@ -49,7 +50,7 @@
       call mpi_init(ierr)
       call mpi_comm_size(mpi_comm_world, mpisize, ierr);
       call mpi_comm_rank(mpi_comm_world, mpirank, ierr);
-      n = 1000;
+      ni = 2;
       images = 0
       ksize = 11
       pcycle = 2 * pi
@@ -64,7 +65,7 @@
       call random_number(x)
       call random_number(q)
       average = 0
-      do i = 1, n
+      do i = 1, ni
         x(3*i-2) = x(3*i-2) * pcycle - pcycle / 2
         x(3*i-1) = x(3*i-1) * pcycle - pcycle / 2
         x(3*i-0) = x(3*i-0) * pcycle - pcycle / 2
@@ -74,14 +75,14 @@
         f(3*i-0) = 0
         average = average + q(i)
       end do
-      average = average / n
+      average = average / ni
       do i = 1, n
         q(i) = q(i) - average
       end do
       call fmm_init(images)
-      call fmm_partition(n, x, q, pcycle)
-      call fmm(n, x, q, p, f, pcycle)
-      do i = 1, n
+      call fmm_partition(ni, x, q, pcycle)
+      call fmm(ni, x, q, p, f, pcycle)
+      do i = 1, ni
         x2(3*i-2) = x(3*i-2)
         x2(3*i-1) = x(3*i-1)
         x2(3*i-0) = x(3*i-0)
@@ -92,25 +93,27 @@
         f2(3*i-0) = 0
       end do
 #if 0
-      call fmm_ewald(n, x2, q2, p2, f2, ksize, alpha, pcycle)
+      call fmm_ewald(ni, x2, q2, p2, f2, ksize, alpha, pcycle)
 #else
       prange = 0
       do i = 0, images-1
         prange = prange + 3**i
       end do
-      do i = 1, N
+      do i = 1, ni
         do d = 1, 3
           dipole(d) = dipole(d) + x(3*i+d-3) * q(i)
         end do
       end do
-      norm = dipole(1) * dipole(1) + dipole(2) * dipole(2) + dipole(3) * dipole(3)
+      call mpi_allreduce(dipole, dipole2, 3, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+      norm = dipole2(1) * dipole2(1) + dipole2(2) * dipole2(2) + dipole2(3) * dipole2(3)
       coef = 4 * pi / (3 * pcycle * pcycle * pcycle)
+      nj = ni
       if(mpirank.eq.0) print"(a)",'--- MPI direct sum ---------------'
       do irank = 0, mpisize-1
         if (mpirank.eq.0) print"(a,i1,a,i1)",'Direct loop          : ',irank+1,'/',mpisize
-        call mpi_shift(x2, 3*n, mpisize, mpirank)
-        call mpi_shift(q2, n,   mpisize, mpirank)
-        do i = 1, n
+        call mpi_shift(x2, 3*nj, mpisize, mpirank)
+        call mpi_shift(q2, nj,   mpisize, mpirank)
+        do i = 1, ni
           pp = 0
           fx = 0
           fy = 0
@@ -121,7 +124,7 @@
                 xperiodic(1) = ix * pcycle
                 xperiodic(2) = iy * pcycle
                 xperiodic(3) = iz * pcycle
-                do j = 1, n
+                do j = 1, nj
                   dx = x(3*i-2) - x2(3*j-2) - xperiodic(1)
                   dy = x(3*i-1) - x2(3*j-1) - xperiodic(2)
                   dz = x(3*i-0) - x2(3*j-0) - xperiodic(3)
@@ -137,10 +140,10 @@
               end do
             end do
           end do
-          p2(i) = p2(i) + pp - coef * norm / n / q2(i)
-          f2(3*i-2) = f2(3*i-2) - fx - coef * dipole(1)
-          f2(3*i-1) = f2(3*i-1) - fy - coef * dipole(2)
-          f2(3*i-0) = f2(3*i-0) - fz - coef * dipole(3)
+          p2(i) = p2(i) + pp - coef * norm / n / q(i)
+          f2(3*i-2) = f2(3*i-2) - fx - coef * dipole2(1)
+          f2(3*i-1) = f2(3*i-1) - fy - coef * dipole2(2)
+          f2(3*i-0) = f2(3*i-0) - fz - coef * dipole2(3)
         end do
       end do
 #endif
@@ -152,9 +155,9 @@
       norm4 = 0
       v = 0
       v2 = 0
-      do i = 1, n
+      do i = 1, ni
         v = v + p(i) * q(i)
-        v2 = v2 + p2(i) * q2(i)
+        v2 = v2 + p2(i) * q(i)
         diff2 = diff2 + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
                       + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
                       + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))

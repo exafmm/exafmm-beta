@@ -115,6 +115,20 @@ class Partition : public MyMPI, public Logger {
     return recvBodies;                                          // Return bodies
   }
 
+//! Allreduce int from all ranks
+  int allreduceInt(int send) {
+    int recv;                                                   // Receive buffer
+    MPI_Allreduce(&send, &recv, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
+    return recv;                                                // Return received values
+  }
+
+//! Allreduce fvec3 from all ranks
+  fvec3 allreduceVec3(fvec3 send) {
+    fvec3 recv;                                                 // Receive buffer
+    MPI_Allreduce(send, recv, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
+    return recv;                                                // Return received values
+  }
+
 //! Allreduce bounds from all ranks
   Bounds allreduceBounds(Bounds local) {
     fvec3 localXmin, localXmax, globalXmin, globalXmax;

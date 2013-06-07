@@ -86,7 +86,7 @@ extern "C" void fmm_partition_(int * n, double * x, double * q, double * cycle) 
 extern "C" void fmm_(int * n, double * x, double * q, double * p, double * f, double * cycle) {
   args->numBodies = *n;
   logger->printTitle("FMM Parameters");
-  args->print(logger->stringLength,P);
+  args->print(logger->stringLength, P, LET->mpirank);
 #if _OPENMP
 #pragma omp parallel
 #pragma omp master
@@ -127,8 +127,8 @@ extern "C" void fmm_(int * n, double * x, double * q, double * p, double * f, do
   }
   pass->downwardPass(cells);
   vec3 localDipole = pass->getDipole(bodies,0);
-  vec3 globalDipole = LET->allreduce(localDipole);
-  int numBodies = LET->allreduce(bodies.size());
+  vec3 globalDipole = LET->allreduceVec3(localDipole);
+  int numBodies = LET->allreduceInt(bodies.size());
   pass->dipoleCorrection(bodies, globalDipole, numBodies, *cycle);
 
   /*

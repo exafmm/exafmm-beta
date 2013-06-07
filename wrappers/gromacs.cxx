@@ -35,7 +35,7 @@ extern "C" void fmm(int n, double * x, double * q, double * p, double * f, doubl
     LET.verbose = true;
   }
   logger.printTitle("FMM Parameters");
-  args.print(logger.stringLength,P);
+  args.print(logger.stringLength, P, LET.mpirank);
 #if AUTO
   traversal.timeKernels();
 #endif
@@ -84,8 +84,8 @@ extern "C" void fmm(int n, double * x, double * q, double * p, double * f, doubl
   }
   pass.downwardPass(cells);
   vec3 localDipole = pass.getDipole(bodies,0);
-  vec3 globalDipole = LET.allreduce(localDipole);
-  int numBodies = LET.allreduce(bodies.size());
+  vec3 globalDipole = LET.allreduceVec3(localDipole);
+  int numBodies = LET.allreduceInt(bodies.size());
   pass.dipoleCorrection(bodies,globalDipole,numBodies,cycle);
 
   LET.unpartition(bodies);

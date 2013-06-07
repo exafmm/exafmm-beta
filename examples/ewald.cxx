@@ -76,8 +76,8 @@ int main(int argc, char ** argv) {
   }
   pass.downwardPass(cells);
   vec3 localDipole = pass.getDipole(bodies,0);
-  vec3 globalDipole = LET.allreduce(localDipole);
-  int numBodies = LET.allreduce(int(bodies.size()));
+  vec3 globalDipole = LET.allreduceVec3(localDipole);
+  int numBodies = LET.allreduceInt(bodies.size());
   pass.dipoleCorrection(bodies,globalDipole,numBodies,cycle);
   logger.stopPAPI();
   logger.stopTimer("Total FMM");

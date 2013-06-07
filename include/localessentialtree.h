@@ -79,14 +79,17 @@ class LocalEssentialTree : public Partition {
     int iparent = 0;                                            // Parent send cell's offset
     int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;           // Level of local root cell
     if (mpisize == 1) level = 0;                                // Account for serial case
+    if (C0->NCHILD == 0) {                                      // If root cell is leaf
+      addSendBody(C0, ibody, icell);                            //  Add bodies to send
+    }                                                           // End if for root cell leaf
     while (!cellQueue.empty()) {                                // While traversal queue is not empty
       C_iter C = cellQueue.front();                             //  Get front item in traversal queue
       cellQueue.pop();                                          //  Pop item from traversal queue
       for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
         addSendCell(CC, iparent, icell);                        //   Add cells to send
-        if (CC->NCHILD == 0) {                                  //   If cell is twig
+        if (CC->NCHILD == 0) {                                  //   If cell is leaf
           addSendBody(CC, ibody, icell);                        //    Add bodies to send
-        } else {                                                //   If cell is not twig
+        } else {                                                //   If cell is not leaf
           bool divide = false;                                  //    Initialize logical for dividing
           vec3 Xperiodic = 0;                                   //    Periodic coordinate offset
           if (images == 0) {                                    //    If free boundary condition
@@ -109,7 +112,7 @@ class LocalEssentialTree : public Partition {
           if (!divide) {                                        //    If cell does not have to be divided
             CC->NCHILD = 0;                                     //     Cut off child links
           }                                                     //    Endif for cell division
-        }                                                       //   Endif for twig
+        }                                                       //   Endif for leaf
         cellQueue.push(CC);                                     //   Push cell to traveral queue
       }                                                         //  End loop over child cells
       iparent++;                                                //  Increment parent send cell's offset

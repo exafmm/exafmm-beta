@@ -115,7 +115,7 @@ class Ewald : public Logger {
       for (C_iter CC=C0+Cj->CHILD; CC!=C0+Cj->CHILD+Cj->NCHILD; CC++) {// Loop over cell's children
         traverse(Ci,CC,C0,Xperiodic);                           //   Recursively call traverse
       }                                                         //  End loop over cell's children
-    }                                                           // End if for twig cells
+    }                                                           // End if for far cells
   }
 
 //! Find neighbor cells
