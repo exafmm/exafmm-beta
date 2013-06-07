@@ -8,7 +8,7 @@ gromacs:
 	make libgromacs.a
 	make libewald.a
 	$(CXX) test_gromacs.cxx -L. -lfmm -ltbb -lewald
-	./a.out
+	mpirun -np 2 ./a.out
 
 charmm:
 	make libcharmm.a

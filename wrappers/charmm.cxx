@@ -19,7 +19,7 @@ LocalEssentialTree *LET;
 extern "C" void fmm_init_(int * images) {
   const int ncrit = 16;
   const int nspawn = 1000;
-  const real_t theta = 0.35;
+  const real_t theta = 0.4;
   args = new Args;
   logger = new Logger;
   sort = new Sort;
@@ -29,9 +29,9 @@ extern "C" void fmm_init_(int * images) {
   traversal = new Traversal(nspawn, *images);
   LET = new LocalEssentialTree(*images);
 
-  args->theta = 0.4;
-  args->ncrit = 16;
-  args->nspawn = 1000;
+  args->theta = theta;
+  args->ncrit = ncrit;
+  args->nspawn = nspawn;
   args->images = *images;
   args->mutual = 0;
   args->verbose = 1;

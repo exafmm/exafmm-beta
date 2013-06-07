@@ -1,3 +1,15 @@
+      subroutine split_range(begin, end, isplit, nsplit)
+      implicit real*8(a-h,o-z)
+      integer size, remainder
+      size = end - begin + 1
+      increment = size / nsplit
+      remainder = mod(size, nsplit)
+      begin = begin + isplit * increment + min(isplit,remainder)
+      end = begin + increment - 1
+      if(remainder.gt.isplit) end = end + 1
+      return
+      end
+
       subroutine mpi_shift(var, nold, mpisize, mpirank)
       implicit real*8(a-h,o-z)
       include 'mpif.h'
@@ -26,7 +38,7 @@
       return
       end
 
-      program test_laplace
+      program main
       use iso_c_binding, only: c_ptr
       implicit real*8(a-h,o-z)
       include 'mpif.h'
@@ -35,13 +47,14 @@
       real(8) norm, norm1, norm2, norm3, norm4
       type(c_ptr) ctx
       integer, dimension (128) :: iseed
-      real(8), dimension (3) :: localDipole = (/0, 0, 0/)
-      real(8), dimension (3) :: globalDipole
+      real(8), dimension (3) :: local_dipole = (/0, 0, 0/)
+      real(8), dimension (3) :: global_dipole
       real(8), dimension (3) :: xperiodic
       allocatable :: x(:)
       allocatable :: q(:)
       allocatable :: p(:)
       allocatable :: f(:)
+      allocatable :: icpumap(:)
       allocatable :: x2(:)
       allocatable :: q2(:)
       allocatable :: p2(:)
@@ -55,7 +68,7 @@
       ksize = 11
       pcycle = 2 * pi
       alpha = 10 / pcycle
-      allocate( x(3*nmax),  q(nmax),  p(nmax),  f(3*nmax)  )
+      allocate( x(3*nmax),  q(nmax),  p(nmax),  f(3*nmax), icpumap(nmax) )
       allocate( x2(3*nmax), q2(nmax), p2(nmax), f2(3*nmax) )
 
       do i = 1, 128
@@ -104,7 +117,7 @@
       do irank = 0, mpisize-1
         if (mpirank.eq.0) print"(a,i1,a,i1)",'Direct loop          : ',irank+1,'/',mpisize
         call mpi_shift(x2, 3*nj, mpisize, mpirank)
-        call mpi_shift(q2, nj,   mpisize, mpirank)
+        call mpi_shift(q2,   nj, mpisize, mpirank)
         do i = 1, ni
           pp = 0
           fx = 0
@@ -140,18 +153,18 @@
       end do
       do i = 1, ni
         do d = 1, 3
-          localDipole(d) = localDipole(d) + x(3*i+d-3) * q(i)
+          local_dipole(d) = local_dipole(d) + x(3*i+d-3) * q(i)
         end do
       end do
       call mpi_allreduce(ni, n, 1, mpi_integer, mpi_sum, mpi_comm_world, ierr);
-      call mpi_allreduce(localDipole, globalDipole, 3, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-      norm = globalDipole(1) * globalDipole(1) + globalDipole(2) * globalDipole(2) + globalDipole(3) * globalDipole(3)
+      call mpi_allreduce(local_dipole, global_dipole, 3, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+      norm = global_dipole(1) * global_dipole(1) + global_dipole(2) * global_dipole(2) + global_dipole(3) * global_dipole(3)
       coef = 4 * pi / (3 * pcycle * pcycle * pcycle)
       do i = 1, ni
         p2(i) = p2(i) - coef * norm / n / q(i)
-        f2(3*i-2) = f2(3*i-2) - coef * globalDipole(1)
-        f2(3*i-1) = f2(3*i-1) - coef * globalDipole(2)
-        f2(3*i-0) = f2(3*i-0) - coef * globalDipole(3)
+        f2(3*i-2) = f2(3*i-2) - coef * global_dipole(1)
+        f2(3*i-1) = f2(3*i-1) - coef * global_dipole(2)
+        f2(3*i-0) = f2(3*i-0) - coef * global_dipole(3)
       end do
 #endif
       diff2 = 0
@@ -184,6 +197,6 @@
         print"(a,f10.7)",'Rel. L2 Error (acc)  : ', sqrt(diff4/norm4)
       end if
 
-      deallocate( x, q, p, f, x2, q2, p2, f2 )
+      deallocate( x, q, p, f, icpumap, x2, q2, p2, f2 )
       call mpi_finalize(ierr);
       end

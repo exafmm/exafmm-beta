@@ -7,8 +7,8 @@
 #include "traversal.h"
 #include "updownpass.h"
 
-extern "C" void ewald(int n, double * x, double * q, double * p, double * f,
-                      int ksize, double alpha, double cycle) {
+extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
+                          int ksize, double alpha, double cycle) {
   Args args;
   Logger logger;
   Sort sort;
@@ -110,5 +110,5 @@ extern "C" void ewald(int n, double * x, double * q, double * p, double * f,
 
 extern "C" void fmm_ewald_(int * n, double * x, double * q, double * p, double * f,
                       int * ksize, double * alpha, double * cycle) {
-  ewald(*n, x, q, p, f, *ksize, *alpha, *cycle);
+  FMM_Ewald(*n, x, q, p, f, *ksize, *alpha, *cycle);
 }
