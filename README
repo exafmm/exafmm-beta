@@ -38,6 +38,7 @@ make
 This file is included from each Makefile in all subdirectories.
 Most options of exafmm can be controlled from this file.
 
+DIMENSION : 2D or 3D
 EQUATION : Type of equation to solve
 BASIS : Type of multipole/local expansion basis
 DEVICE : CPU or GPU
