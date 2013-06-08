@@ -7,7 +7,6 @@ PROJECT(ExaFMM)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 # All options are set here
-SET(DIMENSION 3D) #{2D, 3D}
 SET(EQUATION Laplace) # {Laplace, Yukawa, Helmholtz, Stokes}
 SET(BASIS Cartesian) # {Cartesian, Spherical, Rotation, Planewave}
 OPTION(USE_MPI "Use MPI" ON)
@@ -46,7 +45,6 @@ ENDIF()
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wshadow -Wuninitialized -O3")
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/include)
-ADD_DEFINITIONS(-D${DIMENSION})
 ADD_DEFINITIONS(-D${EQUATION})
 ADD_DEFINITIONS(-D${BASIS})
 ADD_DEFINITIONS(-D${DEVICE})
