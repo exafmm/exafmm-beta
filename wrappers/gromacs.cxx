@@ -130,16 +130,6 @@ extern "C" void FMM(int n, double * x, double * q, double * p, double * f, doubl
   vec3 globalDipole = LET->allreduceVec3(localDipole);
   int numBodies = LET->allreduceInt(bodies.size());
   pass->dipoleCorrection(bodies, globalDipole, numBodies, cycle);
-
-  /*
-  LET->unpartition(bodies);
-  bodies = sort->sortBodies(bodies);
-  bodies = LET->commBodies(bodies);
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    B->ICELL = B->IBODY;
-  }
-  bodies = sort->sortBodies(bodies);
-  */
   logger->stopPAPI();
   logger->stopTimer("Total FMM");
   logger->printTitle("Total runtime");

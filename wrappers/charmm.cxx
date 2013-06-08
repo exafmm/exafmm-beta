@@ -50,21 +50,30 @@ extern "C" void fmm_init_(int * images) {
 #endif
 }
 
-extern "C" void fmm_partition_(int * n, double * x, double * q, double * cycle) {
-  Bodies bodies(*n);
+extern "C" void fmm_partition_(int * nglobal, int * icpumap, double * x, double * q, double * cycle) {
+  int nlocal = 0;
+  for (int i=0; i<*nglobal; i++) {
+    if (icpumap[i] == 1) nlocal++;
+  }
+  Bodies bodies(nlocal);
+  B_iter B = bodies.begin();
+  for (int i=0; i<*nglobal; i++) {
+    if (icpumap[i] == 1) {
+      B->X[0] = x[3*i+0];
+      B->X[1] = x[3*i+1];
+      B->X[2] = x[3*i+2];
+      B->SRC = q[i];
+      B->IBODY = i;
+      B++;
+    }
+  }
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
-    B->X[0] = x[3*i+0];
-    B->X[1] = x[3*i+1];
-    B->X[2] = x[3*i+2];
     if( B->X[0] < -*cycle/2 ) B->X[0] += *cycle;
     if( B->X[1] < -*cycle/2 ) B->X[1] += *cycle;
     if( B->X[2] < -*cycle/2 ) B->X[2] += *cycle;
     if( B->X[0] >  *cycle/2 ) B->X[0] -= *cycle;
     if( B->X[1] >  *cycle/2 ) B->X[1] -= *cycle;
     if( B->X[2] >  *cycle/2 ) B->X[2] -= *cycle;
-    B->SRC = q[i];
-    B->IBODY = i;
   }
   localBounds = boundbox->getBounds(bodies);
   Bounds globalBounds = LET->allreduceBounds(localBounds);
@@ -74,18 +83,25 @@ extern "C" void fmm_partition_(int * n, double * x, double * q, double * cycle) 
   Cells cells = tree->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
 
+  for (int i=0; i<*nglobal; i++) {
+    icpumap[i] = 0;
+  }
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
+    int i = B->IBODY;
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];
     q[i]     = B->SRC;
+    icpumap[i] = 1;
   }
-  *n = bodies.size();
 }
 
-extern "C" void fmm_(int * n, double * x, double * q, double * p, double * f, double * cycle) {
-  args->numBodies = *n;
+extern "C" void fmm_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f, double * cycle) {
+  int nlocal = 0;
+  for (int i=0; i<*nglobal; i++) {
+    if (icpumap[i] == 1) nlocal++;
+  }
+  args->numBodies = nlocal;
   logger->printTitle("FMM Parameters");
   args->print(logger->stringLength, P, LET->mpirank);
 #if _OPENMP
@@ -95,24 +111,29 @@ extern "C" void fmm_(int * n, double * x, double * q, double * p, double * f, do
   logger->printTitle("FMM Profiling");
   logger->startTimer("Total FMM");
   logger->startPAPI();
-  Bodies bodies(*n);
+  Bodies bodies(nlocal);
+  B_iter B = bodies.begin();
+  for (int i=0; i<*nglobal; i++) {
+    if (icpumap[i] == 1) {
+      B->X[0] = x[3*i+0];
+      B->X[1] = x[3*i+1];
+      B->X[2] = x[3*i+2];
+      B->SRC = q[i];
+      B->TRG[0] = p[i];
+      B->TRG[1] = f[3*i+0];
+      B->TRG[2] = f[3*i+1];
+      B->TRG[3] = f[3*i+2];
+      B->IBODY = i;
+      B++;
+    }
+  }
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
-    B->X[0] = x[3*i+0];
-    B->X[1] = x[3*i+1];
-    B->X[2] = x[3*i+2];
     if( B->X[0] < -*cycle/2 ) B->X[0] += *cycle;
     if( B->X[1] < -*cycle/2 ) B->X[1] += *cycle;
     if( B->X[2] < -*cycle/2 ) B->X[2] += *cycle;
     if( B->X[0] >  *cycle/2 ) B->X[0] -= *cycle;
     if( B->X[1] >  *cycle/2 ) B->X[1] -= *cycle;
     if( B->X[2] >  *cycle/2 ) B->X[2] -= *cycle;
-    B->SRC = q[i];
-    B->TRG[0] = p[i];
-    B->TRG[1] = f[3*i+0];
-    B->TRG[2] = f[3*i+1];
-    B->TRG[3] = f[3*i+2];
-    B->IBODY = i;
   }
   Cells cells = tree->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
@@ -130,23 +151,13 @@ extern "C" void fmm_(int * n, double * x, double * q, double * p, double * f, do
   vec3 globalDipole = LET->allreduceVec3(localDipole);
   int numBodies = LET->allreduceInt(bodies.size());
   pass->dipoleCorrection(bodies, globalDipole, numBodies, *cycle);
-
-  /*
-  LET->unpartition(bodies);
-  bodies = sort->sortBodies(bodies);
-  bodies = LET->commBodies(bodies);
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    B->ICELL = B->IBODY;
-  }
-  bodies = sort->sortBodies(bodies);
-  */
   logger->stopPAPI();
   logger->stopTimer("Total FMM");
   logger->printTitle("Total runtime");
   logger->printTime("Total FMM");
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
+    int i = B->IBODY;
     p[i]     = B->TRG[0];
     f[3*i+0] = B->TRG[1];
     f[3*i+1] = B->TRG[2];
