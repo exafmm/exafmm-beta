@@ -164,9 +164,11 @@ class vec {
     return temp;
   }
   T &operator[](int i) {                                        // Indexing (lvalue)
+    assert(i < N);
     return data[i];
   }
   const T &operator[](int i) const {                            // Indexing (rvalue)
+    assert(i < N);
     return data[i];
   }
   operator       T* ()       {return data;}                     // Type-casting (lvalue)
@@ -276,9 +278,11 @@ class vec<16,float> {
     return vec(_mm512_sub_ps(_mm512_setzero_ps(),data));
   }
   float &operator[](int i) {                                    // Indexing (lvalue)
+    assert(i < 16);
     return ((float*)&data)[i];
   }
   const float &operator[](int i) const {                        // Indexing (rvalue)
+    assert(i < 16);
     return ((float*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -379,9 +383,11 @@ public:
     return vec(_mm512_sub_pd(_mm512_setzero_pd(),data));
   }
   double &operator[](int i) {                                   // Indexing (lvalue)
+    assert(i < 8);
     return ((double*)&data)[i];
   }
   const double &operator[](int i) const {                       // Indexing (rvalue)
+    assert(i < 8);
     return ((double*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -488,9 +494,11 @@ class vec<8,float> {
     return vec(_mm256_sub_ps(_mm256_setzero_ps(),data));
   }
   float &operator[](int i) {                                    // Indexing (lvalue)
+    assert(i < 8);
     return ((float*)&data)[i];
   }
   const float &operator[](int i) const {                        // Indexing (rvalue)
+    assert(i < 8);
     return ((float*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -598,9 +606,11 @@ class vec<4,double> {
     return vec(_mm256_sub_pd(_mm256_setzero_pd(),data));
   }
   double &operator[](int i) {                                   // Indexing (lvalue)
+    assert(i < 4);
     return ((double*)&data)[i];
   }
   const double &operator[](int i) const {                       // Indexing (rvalue)
+    assert(i < 4);
     return ((double*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -715,9 +725,11 @@ class vec<4,double> {
     return vec(vec_sub((vector4double)(0),data));
   }
   double &operator[](int i) {                                   // Indexing (lvalue)
+    assert(i < 4);
     return ((double*)&data)[i];
   }
   const double &operator[](int i) const {                       // Indexing (rvalue)
+    assert(i < 4);
     return ((double*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -828,9 +840,11 @@ class vec<4,float> {
     return vec(_mm_sub_ps(_mm_setzero_ps(),data));
   }
   float &operator[](int i) {                                    // Indexing (lvalue)
+    assert(i < 4);
     return ((float*)&data)[i];
   }
   const float &operator[](int i) const {                        // Indexing (rvalue)
+    assert(i < 4);
     return ((float*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -934,9 +948,11 @@ class vec<2,double> {
     return vec(_mm_sub_pd(_mm_setzero_pd(),data));
   }
   double &operator[](int i) {                                   // Indexing (lvalue)
+    assert(i < 2);
     return ((double*)&data)[i];
   }
   const double &operator[](int i) const {                       // Indexing (rvalue)
+    assert(i < 2);
     return ((double*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -1045,9 +1061,11 @@ class vec<2,double> {
     return vec(_mm_sub_pd(_mm_setzero_pd(),data));
   }
   double &operator[](int i) {                                   // Indexing (lvalue)
+    assert(i < 2);
     return ((double*)&data)[i];
   }
   const double &operator[](int i) const {                       // Indexing (rvalue)
+    assert(i < 2);
     return ((double*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
