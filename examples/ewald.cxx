@@ -8,6 +8,7 @@
 #include "sort.h"
 #include "traversal.h"
 #include "updownpass.h"
+#include "verify.h"
 #if VTK
 #include "vtk.h"
 #endif
@@ -20,6 +21,7 @@ int main(int argc, char ** argv) {
   Dataset data;
   Logger logger;
   Sort sort;
+  Verify verify;
 
   const int ksize = 11.;
   const real_t cycle = 2 * M_PI;
@@ -27,10 +29,10 @@ int main(int argc, char ** argv) {
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = cycle * alpha / 3;
   BoundBox boundbox(args.nspawn);
-  BuildTree tree(args.ncrit,args.nspawn);
+  BuildTree tree(args.ncrit, args.nspawn);
   UpDownPass pass(args.theta);
-  Traversal traversal(args.nspawn,args.images);
-  Ewald ewald(ksize,alpha,sigma,cutoff,cycle);
+  Traversal traversal(args.nspawn, args.images);
+  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   LocalEssentialTree LET(args.images);
   args.verbose &= LET.mpirank == 0;
   if (args.verbose) {
@@ -41,9 +43,10 @@ int main(int argc, char ** argv) {
     traversal.verbose = true;
     ewald.verbose = true;
     LET.verbose = true;
+    verify.verbose = true;
   }
   logger.printTitle("Ewald Parameters");
-  args.print(logger.stringLength,P);
+  args.print(logger.stringLength, P);
   ewald.print(logger.stringLength);
 #if AUTO
   traversal.timeKernels();
@@ -78,15 +81,15 @@ int main(int argc, char ** argv) {
   vec3 localDipole = pass.getDipole(bodies,0);
   vec3 globalDipole = LET.allreduceVec3(localDipole);
   int numBodies = LET.allreduceInt(bodies.size());
-  pass.dipoleCorrection(bodies,globalDipole,numBodies,cycle);
+  pass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
-#if 1
+#if 0
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
   logger.printTitle("Ewald Profiling");
   logger.startTimer("Total Ewald");
-#if 1
+#if 0
   Bodies jbodies = bodies;
   for (int i=0; i<LET.mpisize; i++) {
     LET.shiftBodies(jbodies);
@@ -118,19 +121,25 @@ int main(int argc, char ** argv) {
     if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << LET.mpisize << std::endl;
   }
   traversal.normalize(bodies);
-  pass.dipoleCorrection(bodies,globalDipole,numBodies,cycle);
+  pass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
   logger.printTitle("Total runtime");
   logger.printTime("Total FMM");
   logger.stopTimer("Total Direct");
 #endif
-  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
-  ewald.evalError(bodies2, bodies, diff1, norm1, diff2, norm2);
-  MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&norm1, &norm3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  double potSum = verify.getSumScalar(bodies);
+  double potSum2 = verify.getSumScalar(bodies2);
+  double accDif = verify.getDifVector(bodies, bodies2);
+  double accNrm = verify.getNrmVector(bodies);
+  double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
+  MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   logger.printTitle("FMM vs. Ewald");
-  logger.printError(diff3, norm3, diff4, norm4);
+  double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
+  double potNrmGlob = potSumGlob * potSumGlob;
+  verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
+  verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
   tree.printTreeData(cells);
   traversal.printTraversalData();
   logger.printPAPI();

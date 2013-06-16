@@ -98,13 +98,12 @@ class Partition : public MyMPI, public Logger {
   Bodies allgatherBodies(Bodies &bodies) {
     const int word = sizeof(bodies[0]) / 4;                     // Word size of body structure
     sendBodyCount[0] = bodies.size();                           // Determine send count
-    MPI_Allgather(sendBodyCount, word, MPI_INT,                 // Allgather number of bodies
-                  recvBodyCount, word, MPI_INT, MPI_COMM_WORLD);
+    MPI_Allgather(sendBodyCount, 1, MPI_INT,                    // Allgather number of bodies
+                  recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
     recvBodyDispl[0] = 0;                                       // Initialize receive displacement
     for (int irank=0; irank<mpisize-1; irank++) {               // Loop over ranks
       recvBodyDispl[irank+1] = recvBodyDispl[irank] + recvBodyCount[irank];// Set receive displacement
     }                                                           // End loop over ranks
-    recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
     recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
       recvBodyCount[irank] *= word;                             //  Multiply receive count by word size of data

@@ -5,6 +5,7 @@
 #include "logger.h"
 #include "traversal.h"
 #include "updownpass.h"
+#include "verify.h"
 #if VTK
 #include "vtk.h"
 #endif
@@ -13,6 +14,7 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   Dataset data;
   Logger logger;
+  Verify verify;
 
   const real_t cycle = 2 * M_PI;
   BoundBox boundbox(args.nspawn);
@@ -25,6 +27,7 @@ int main(int argc, char ** argv) {
     tree.verbose = true;
     pass.verbose = true;
     traversal.verbose = true;
+    verify.verbose = true;
   }
   logger.printTitle("FMM Parameters");
   args.print(logger.stringLength,P);
@@ -74,10 +77,13 @@ int main(int argc, char ** argv) {
   traversal.direct(bodies, jbodies, cycle);
   traversal.normalize(bodies);
   logger.stopTimer("Total Direct");
-  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-  data.evalError(bodies2, bodies, diff1, norm1, diff2, norm2);
+  double potDif = verify.getDifScalar(bodies, bodies2);
+  double potNrm = verify.getNrmScalar(bodies);
+  double accDif = verify.getDifVector(bodies, bodies2);
+  double accNrm = verify.getNrmVector(bodies);
   logger.printTitle("FMM vs. direct");
-  logger.printError(diff1, norm1, diff2, norm2);
+  verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
+  verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
   tree.printTreeData(cells);
   traversal.printTraversalData();
   logger.printPAPI();

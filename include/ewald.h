@@ -176,28 +176,6 @@ class Ewald : public Logger {
     stopTimer("Ewald wave part");                               // Stop timer
   }
 
-//! Evaluate relaitve L2 norm error
-  void evalError(Bodies &bodies, Bodies &bodies2,
-                 double &diff1, double &norm1, double &diff2, double &norm2) {
-    double p = 0, p2 = 0;                                       // Initialize total energy
-    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, B2++) { // Loop over bodies & bodies2
-      p += B->TRG[0] * B->SRC;                                  //  Accumulate energy from bodies
-      p2 += B2->TRG[0] * B2->SRC;                               //  Accumulate energy from bodies2
-      double df = 0, f = 0;                                     //  Initialize difference and value
-      df += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);//  Difference of x acceleration
-      df += (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2]);//  Difference of y acceleration
-      df += (B->TRG[3] - B2->TRG[3]) * (B->TRG[3] - B2->TRG[3]);//  Difference of z acceleration
-      f += B2->TRG[1] * B2->TRG[1];                             //  Value of x acceleration
-      f += B2->TRG[2] * B2->TRG[2];                             //  Value of y acceleration
-      f += B2->TRG[3] * B2->TRG[3];                             //  Value of z acceleration
-      diff2 += df;                                              //  Accumulate difference of force
-      norm2 += f;                                               //  Accumulate value of force
-    }                                                           // End loop over bodies & bodies2
-    diff1 += (p - p2) * (p - p2);                               // Difference of potential
-    norm1 += p2 * p2;                                           // Value of potential
-  }
-
   void print(int stringLength) {
     if (verbose) {
       std::cout << std::setw(stringLength) << std::fixed << std::left// Set format

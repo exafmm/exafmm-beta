@@ -1,6 +1,6 @@
 include ../Makefile.include
 
-LFLAGS	+= -DMASS # Use all positive sources
+#LFLAGS	+= -DMASS # Use all positive sources
 #LFLAGS	+= -DIneJ # Different target and source points
 
 # Test for serial FMM
@@ -35,4 +35,4 @@ convergence: kernel.cxx $(SOURCES)
 # Ewald vs. periodic FMM
 ewald: ewald.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	mpirun -np 1 ./a.out --numBodies 1000 --ncrit 32 --images 3
+	mpirun -np 2 ./a.out --numBodies 1000 --ncrit 32 --images 2

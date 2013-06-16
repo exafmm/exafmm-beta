@@ -7,6 +7,7 @@
 #include "sort.h"
 #include "traversal.h"
 #include "updownpass.h"
+#include "verify.h"
 #if VTK
 #include "vtk.h"
 #endif
@@ -16,12 +17,13 @@ int main(int argc, char ** argv) {
   Dataset data;
   Logger logger;
   Sort sort;
+  Verify verify;
 
   const real_t cycle = 2 * M_PI;
   BoundBox boundbox(args.nspawn);
-  BuildTree tree(args.ncrit,args.nspawn);
+  BuildTree tree(args.ncrit, args.nspawn);
   UpDownPass pass(args.theta);
-  Traversal traversal(args.nspawn,args.images);
+  Traversal traversal(args.nspawn, args.images);
   LocalEssentialTree LET(args.images);
   args.numBodies /= LET.mpisize;
   args.verbose &= LET.mpirank == 0;
@@ -32,6 +34,7 @@ int main(int argc, char ** argv) {
     pass.verbose = true;
     traversal.verbose = true;
     LET.verbose = true;
+    verify.verbose = true;
   }
   logger.printTitle("FMM Parameters");
   args.print(logger.stringLength, P, LET.mpirank);
@@ -177,14 +180,18 @@ int main(int argc, char ** argv) {
   traversal.resetTimer();
   LET.resetTimer();
   logger.resetTimer();
-  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
-  data.evalError(bodies2, bodies, diff1, norm1, diff2, norm2);
-  MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&norm1, &norm3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  double potDif = verify.getDifScalar(bodies, bodies2);
+  double potNrm = verify.getNrmScalar(bodies);
+  double accDif = verify.getDifVector(bodies, bodies2);
+  double accNrm = verify.getNrmVector(bodies);
+  double potDifGlob, potNrmGlob, accDifGlob, accNrmGlob;
+  MPI_Reduce(&potDif, &potDifGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&potNrm, &potNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&accDif, &accDifGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&accNrm, &accNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   logger.printTitle("FMM vs. direct");
-  logger.printError(diff3, norm3, diff4, norm4);
+  verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
+  verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
   tree.printTreeData(cells);
   traversal.printTraversalData();
   logger.printPAPI();

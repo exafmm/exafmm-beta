@@ -138,36 +138,34 @@
         f2(3*i-0) = f2(3*i-0) - coef * dipole(3)
       end do
 #endif
-      diff2 = 0
-      norm2 = 0
-      diff3 = 0
-      norm3 = 0
-      diff4 = 0
-      norm4 = 0
-      v = 0
-      v2 = 0
+      potSum = 0
+      potSum2 = 0
+      accDif = 0
+      accNrm = 0
       do i = 1, nglobal
         if (icpumap(i).eq.1) then
-          v = v + p(i) * q(i)
-          v2 = v2 + p2(i) * q(i)
-          diff2 = diff2 + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
-                        + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
-                        + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))
-          norm2 = norm2 + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
+          potSum  = potSum  + p(i) * q(i)
+          potSum2 = potSum2 + p2(i) * q(i)
+          accDif  = accDif  + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
+                            + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
+                            + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))
+          accNrm  = accNrm  + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
         end if
       end do
-      diff1 = (v - v2) * (v - v2)
-      norm1 = v2 * v2
-      call mpi_reduce(diff1, diff3, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(norm1, norm3, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(diff2, diff4, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(norm2, norm4, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      potSumGlob = 0
+      potSumGlob2 = 0
+      accDifGlob = 0
+      accNrmGlob = 0
+      call mpi_reduce(potSum,  potSumGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      call mpi_reduce(potSum2, potSumGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      call mpi_reduce(accDif,  accDifGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      call mpi_reduce(accNrm,  accNrmGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2)
+      potNrmGlob = potSumGlob2 * potSumGlob2
       if (mpirank.eq.0) then
         print"(a)",'--- FMM vs. direct ---------------'
-	print"(a,f10.7)",'Rel. L2 Error (pot)  : ', sqrt(diff3/norm3)
-      end if
-      if (abs(diff4).gt.0) then
-        print"(a,f10.7)",'Rel. L2 Error (acc)  : ', sqrt(diff4/norm4)
+	print"(a,f10.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob)
+        print"(a,f10.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob)
       end if
 
       deallocate( x, q, p, f, icpumap, x2, q2, p2, f2 )

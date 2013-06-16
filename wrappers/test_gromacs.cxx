@@ -145,30 +145,28 @@ int main(int argc, char ** argv) {
       f2[3*i+2] -= coef * globalDipole[2];    
   }
 #endif
-  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
-  double v = 0, v2 = 0;
+  double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
   for (int i=0; i<Ni; i++) {
-    v += p[i] * q[i];
-    v2 += p2[i] * q[i];
-    diff2 += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
-           + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
-           + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
-    norm2 += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
+    potSum  += p[i]  * q[i];
+    potSum2 += p2[i] * q[i];
+    accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
+             + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
+             + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
+    accNrm  += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
   }
-  diff1 = (v - v2) * (v - v2);
-  norm1 = v2 * v2;
-  MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&norm1, &norm3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
+  MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
+  double potNrmGlob = potSumGlob * potSumGlob;
   if (mpirank == 0) {
     std::cout << "--- FMM vs. Ewald  ---------------" << std::endl;
+    std::cout << std::setw(stringLength) << std::left << std::scientific
+  	      << "Rel. L2 Error (pot)" << " : " << std::sqrt(potDifGlob/potNrmGlob) << std::endl;
     std::cout << std::setw(stringLength) << std::left
-  	      << "Rel. L2 Error (pot)" << " : " << std::sqrt(diff3/norm3) << std::endl;
-    if (std::abs(diff4) > 0) {
-      std::cout << std::setw(stringLength) << std::left
-	        << "Rel. L2 Error (acc)" << " : " << std::sqrt(diff4/norm4) << std::endl;
-    }
+	      << "Rel. L2 Error (acc)" << " : " << std::sqrt(accDifGlob/accNrmGlob) << std::endl;
   }
 
   delete[] x;

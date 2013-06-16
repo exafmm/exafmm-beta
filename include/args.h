@@ -121,7 +121,7 @@ class Args {
     }
   }
 
-  void print(int stringLength, int P, int mpirank=0) {
+  void print(int stringLength, int P, int mpirank=-1) {
     if (verbose) {
       std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
 		<< "numBodies" << " : " << numBodies << std::endl // Print numBodies  

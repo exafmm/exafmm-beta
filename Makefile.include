@@ -60,10 +60,7 @@ LFLAGS	+= -std=c++0x -DTBB -ltbb
 #LFLAGS	+= -DTRACE
 
 ### VTK flags : VTK is available from http://www.vtk.org/VTK/resources/software.html
-#VTK_INCLUDE_PATH = /usr/include/vtk-5.8
-#VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
-#CXX	+= -I$(VTK_INCLUDE_PATH)
-#LFLAGS	+= -L$(VTK_LIBRARY_PATH) -DVTK -lvtkCharts -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
+#LFLAGS	+= -DVTK -lvtkCharts -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
 
 ifeq ($(DEVICE),GPU)
 ### CUDA path
