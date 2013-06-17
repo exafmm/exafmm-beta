@@ -13,7 +13,7 @@ gromacs:
 charmm:
 	make libcharmm.a
 	make libewald.a
-	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lewald -lstdc++ -lmpi_cxx
+	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lewald -lstdc++
 	mpirun -np 2 ./a.out
 
 libgromacs.a: gromacs.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
