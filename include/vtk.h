@@ -69,7 +69,7 @@ class vtkPlot {
   vtkPoints *points[maxGroups];
   vtkPoints *hexPoints;
 public:
-  void setDomain(const real r0, const vect x0) {
+  void setDomain(const real_t r0, const vect x0) {
     hexPoints = vtkPoints::New();
     hexPoints->SetNumberOfPoints(8);
     hexPoints->SetPoint(0, x0[0]-r0, x0[1]-r0, x0[2]-r0);

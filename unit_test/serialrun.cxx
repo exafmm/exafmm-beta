@@ -24,11 +24,11 @@ THE SOFTWARE.
 #include "vtk.h"
 #endif
 
-int main(int, char ** argv) {
+int main() {
   const int numBodies = 100000;                                 // Number of bodies
   const int numTarget = 100;                                    // Number of target points to be used for error eval
   IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
-  THETA = atof(argv[1]);                                        // Multipole acceptance criteria
+  THETA = 0.5;                                                  // Multipole acceptance criteria
   Bodies bodies(numBodies);                                     // Define vector of bodies
   Bodies jbodies;                                               // Define vector of source bodies
   Cells cells, jcells;                                          // Define vector of cells
@@ -69,7 +69,7 @@ int main(int, char ** argv) {
   FMM.writeTime();                                              // Write timings of all events to file
   FMM.writeTime();                                              // Write again to have at least two data sets
 
-  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
+  real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;            // Initialize accumulators
   FMM.evalError(bodies,FMM.buffer,diff1,norm1,diff2,norm2);     // Evaluate error on the reduced set of bodies
   FMM.printError(diff1,norm1,diff2,norm2);                      // Print the L2 norm error
 #else

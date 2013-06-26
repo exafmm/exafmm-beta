@@ -43,7 +43,7 @@ private:
     bigint CHILD[8];                                            //!< Iterator offset of child nodes
     B_iter LEAF[NCRIT];                                         //!< Iterator for leafs
     vect X;                                                     //!< Node center
-    real R;                                                     //!< Node radius
+    real_t R;                                                   //!< Node radius
   };
   std::vector<Node> nodes;                                      //!< Nodes in the tree
 
@@ -61,7 +61,7 @@ private:
     bigint pOff = ((1 << 3* nodes[i].LEVEL   ) - 1) / 7;        // Parent cell index offset
     bigint cOff = ((1 << 3*(nodes[i].LEVEL+1)) - 1) / 7;        // Current cell index offset
     vect x = nodes[i].X;                                        // Initialize new center position with old center
-    real r = nodes[i].R/2;                                      // Initialize new size
+    real_t r = nodes[i].R/2;                                    // Initialize new size
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       x[d] += r * (((octant & 1 << d) >> d) * 2 - 1);           //  Calculate new center position
     }                                                           // End loop over dimensions

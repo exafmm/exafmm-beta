@@ -92,7 +92,7 @@ int main() {
   if(FMM.printNow) FMM.writeTime();                             // Write timings of all events to file
   if(FMM.printNow) FMM.writeTime();                             // Write again to have at least two data sets
 
-  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
+  real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
   FMM.sampleBodies(bodies,numTarget);                           // Shrink target bodies vector to save time
   FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);        // Evaluate error on the reduced set of bodies
   MPI_Datatype MPI_TYPE = FMM.getType(diff1);                   // Get MPI datatype

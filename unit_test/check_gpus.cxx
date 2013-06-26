@@ -54,7 +54,7 @@ int main() {
   FMM.evalP2P(bodies2,bodies2,onCPU);                           // Direct summation on CPU
   FMM.stopTimer("Direct CPU",FMM.printNow);                     // Stop timer
 
-  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
+  real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
   FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);        // Evaluate error
 
   for( int irank=0; irank!=MPISIZE; ++irank ) {                 // Loop over MPI ranks

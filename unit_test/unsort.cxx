@@ -74,7 +74,7 @@ int main() {
   FMM.writeTime();                                              // Write again to have at least two data sets
 
 #ifndef VTK
-  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
+  real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
   FMM.sampleBodies(bodies,numTarget);                           // Shrink target bodies vector to save time
   FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);        // Evaluate error on the reduced set of bodies
   FMM.printError(diff1,norm1,diff2,norm2);                      // Print the L2 norm error

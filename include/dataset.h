@@ -101,8 +101,8 @@ public:
 
 //! Evaluate relative L2 norm error
   void evalError(Bodies &bodies, Bodies &bodies2,
-                 real &diff1, real &norm1, real &diff2, real &norm2, bool ewald=false) {
-    real p = 0, p2 = 0;                                         // Total energy
+                 real_t &diff1, real_t &norm1, real_t &diff2, real_t &norm2, bool ewald=false) {
+    real_t p = 0, p2 = 0;                                         // Total energy
     B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
@@ -129,7 +129,7 @@ public:
   }
 
 //! Print relative L2 norm error
-  void printError(real diff1, real norm1, real diff2, real norm2) {
+  void printError(real_t diff1, real_t norm1, real_t diff2, real_t norm2) {
     std::cout << std::setw(stringLength) << std::left
               << "Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
     std::cout << std::setw(stringLength) << std::left
@@ -227,7 +227,7 @@ public:
 
 //! Evaluate relative L2 norm error
   void evalError(Bodies &bodies, Bodies &bodies2,
-                 real &diff1, real &norm1, real &diff2, real &norm2) {
+                 real_t &diff1, real_t &norm1, real_t &diff2, real_t &norm2) {
     B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
 #ifdef DEBUG
@@ -245,7 +245,7 @@ public:
   }
 
 //! Print relative L2 norm error
-  void printError(real diff1, real norm1, real diff2, real norm2) {
+  void printError(real_t diff1, real_t norm1, real_t diff2, real_t norm2) {
     std::cout << std::setw(stringLength) << std::left
               << "Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
     std::cout << std::setw(stringLength) << std::left

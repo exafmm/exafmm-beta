@@ -54,7 +54,7 @@ int main() {
   FMM.evalP2P(bodies2,jbodies,onCPU);                           // Direct summation on CPU
   FMM.stopTimer("Direct CPU",FMM.printNow);                     // Stop timer
 
-  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
+  real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
   FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);        // Evaluate error on the reduced set of bodies
   FMM.printError(diff1,norm1,diff2,norm2);                      // Print the L2 norm error
   FMM.postCalculation();                                        // Kernel post-processing

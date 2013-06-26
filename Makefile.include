@@ -2,15 +2,15 @@
 .PHONY: docs
 
 ### CUDA path
-CUDA_INSTALL_PATH = /usr/local/cuda
+CUDA_INSTALL_PATH = /opt/nvidia/cudatoolkit/5.0.35.102
 
 ### VTK path
 VTK_INCLUDE_PATH = /usr/include/vtk-5.8
 VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
 
 ### choose CPU or GPU
-DEVICE  = CPU
-#DEVICE  = GPU
+#DEVICE  = CPU
+DEVICE  = GPU
 
 ### choose Cartesian or spherical expansion
 #EXPAND  = Cartesian
@@ -18,9 +18,11 @@ EXPAND  = Spherical
 
 ### GCC compiler
 #CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -fopenmp -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
-CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
 ### Intel compiler
 #CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../include
+### PGI compiler
+CXX	= CC -O3 -I../include
 ### BG/P compiler
 #CXX	= mpixlcxx -qarch=450 -qtune=450 -I../include
 ### K computer
@@ -47,7 +49,7 @@ LFLAGS  = -D$(DEVICE) -D$(EXPAND)
 
 ifeq ($(DEVICE),GPU)
 ### CUDA flags
-LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart
+LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -lcudart
 endif
 
 OBJECT = ../kernel/$(DEVICE)$(EXPAND)Laplace.o ../kernel/$(DEVICE)VanDerWaals.o\

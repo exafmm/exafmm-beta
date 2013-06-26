@@ -111,7 +111,7 @@ private:
             bool send = false;                                  //     Initialize logical for sending
             if( IMAGES == 0 ) {                                 //     If free boundary condition
               Xperiodic = 0;                                    //      Set periodic coordinate offset
-              real R = getDistance(C,xminAll[irank],xmaxAll[irank]);//  Get distance to other domain
+              real_t R = getDistance(C,xminAll[irank],xmaxAll[irank]);//  Get distance to other domain
               send |= CLET * C->R > THETA * R - EPS2;           //      If the cell seems close enough for P2P
             } else {                                            //     If periodic boundary condition
               for( int ix=-1; ix<=1; ++ix ) {                   //      Loop over x periodic direction
@@ -120,7 +120,7 @@ private:
                     Xperiodic[0] = ix * 2 * R0;                 //         Coordinate offset for x periodic direction
                     Xperiodic[1] = iy * 2 * R0;                 //         Coordinate offset for y periodic direction
                     Xperiodic[2] = iz * 2 * R0;                 //         Coordinate offset for z periodic direction
-                    real R = getDistance(C,xminAll[irank],xmaxAll[irank]);// Get distance to other domain
+                    real_t R = getDistance(C,xminAll[irank],xmaxAll[irank]);// Get distance to other domain
                     send |= CLET * C->R > THETA * R - EPS2;     //         If the cell seems close enough for P2P
                   }                                             //        End loop over z periodic direction
                 }                                               //       End loop over y periodic direction
@@ -275,7 +275,7 @@ private:
   }
 
 //! Get disatnce to other domain
-  real getDistance(C_iter C, vect xmin, vect xmax) {
+  real_t getDistance(C_iter C, vect xmin, vect xmax) {
     vect dist;                                                  // Distance vector
     for( int d=0; d!=3; ++d ) {                                 // Loop over dimensions
       dist[d] = (C->X[d] + Xperiodic[d] > xmax[d])*             //  Calculate the distance between cell C and
@@ -283,7 +283,7 @@ private:
                 (C->X[d] + Xperiodic[d] < xmin[d])*             //  Take the differnece from xmin or xmax
                 (C->X[d] + Xperiodic[d] - xmin[d]);             //  or 0 if between xmin and xmax
     }                                                           // End loop over dimensions
-    real R = std::sqrt(norm(dist));                             // Scalar distance
+    real_t R = std::sqrt(norm(dist));                           // Scalar distance
     return R;
   }
 
@@ -296,7 +296,7 @@ private:
       bool divide = false;                                      //  Initialize logical for dividing
       if( IMAGES == 0 ) {                                       //  If free boundary condition
         Xperiodic = 0;                                          //   Set periodic coordinate offset
-        real R = getDistance(CC,xmin,xmax);                     //   Get distance to other domain
+        real_t R = getDistance(CC,xmin,xmax);                   //   Get distance to other domain
         divide |= CLET * CC->R > THETA * R - EPS2;              //   If the cell seems too close and not twig
       } else {                                                  //  If periodic boundary condition
         for( int ix=-1; ix<=1; ++ix ) {                         //   Loop over x periodic direction
@@ -305,7 +305,7 @@ private:
               Xperiodic[0] = ix * 2 * R0;                       //      Coordinate offset for x periodic direction
               Xperiodic[1] = iy * 2 * R0;                       //      Coordinate offset for y periodic direction
               Xperiodic[2] = iz * 2 * R0;                       //      Coordinate offset for z periodic direction
-              real R = getDistance(CC,xmin,xmax);               //      Get distance to other domain
+              real_t R = getDistance(CC,xmin,xmax);             //      Get distance to other domain
               divide |= CLET * CC->R > THETA * R - EPS2;        //      If the cell seems too close and not twig
             }                                                   //     End loop over z periodic direction
           }                                                     //    End loop over y periodic direction
@@ -543,13 +543,13 @@ private:
 
 //! Check total charge
   void checkSumMass(Cells &cells) {
-    real localMass = 0;
+    real_t localMass = 0;
     for( C_iter C=cells.begin(); C!=cells.end(); ++C ) {
       if( C->NCHILD == 0 ) {
         localMass += std::abs(C->M[0]);
       }
     }
-    real globalMass;
+    real_t globalMass;
     MPI_Allreduce(&localMass,&globalMass,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
     print("localMass : ",0);
     print(localMass);

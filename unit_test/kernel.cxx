@@ -35,7 +35,7 @@ int main() {
   FMM.preCalculation();                                         // Kernel pre-processing
 
   for( int it=0; it!=5; ++it ) {                                // Loop over kernel iterations
-    real dist = (1 << it) / 2;                                  //  Distance between source and target
+    real_t dist = (1 << it) / 2;                                //  Distance between source and target
     for( B_iter B=ibodies.begin(); B!=ibodies.end(); ++B ) {    //  Loop over target bodies
       for( int d=0; d!=3; ++d ) {                               //   Loop over dimensions
         B->X[d] = -drand48() - dist;                            //    Initialize positions
@@ -91,7 +91,7 @@ int main() {
     FMM.initTarget(ibodies2,IeqJ);                              //  Reinitialize target values
     FMM.evalP2P(ibodies2,jbodies);                              //  Evaluate P2P kernel
 
-    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;            //  Initialize accumulators
+    real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;          //  Initialize accumulators
     FMM.evalError(ibodies,ibodies2,diff1,norm1,diff2,norm2);    //  Evaluate error
     std::cout << "Distance      : " << dist << std::endl;       //  Print distance between target and source
     FMM.printError(diff1,norm1,diff2,norm2);                    //  Print the L2 norm error

@@ -133,7 +133,7 @@ void Kernel<Laplace>::EwaldReal() {
   stopTimer("EwaldReal GPU");\
 }
 
-__global__ void dft(gpureal *ewaldsGlob, gpureal *bodiesGlob, const int numEwalds, const int numBodies, const real R0) {
+__global__ void dft(gpureal *ewaldsGlob, gpureal *bodiesGlob, const int numEwalds, const int numBodies, const real_t R0) {
   int i = blockIdx.x * THREADS + threadIdx.x;
   gpureal scale = M_PI / R0;
   gpureal REAL = 0, IMAG = 0;
@@ -173,7 +173,7 @@ __global__ void dft(gpureal *ewaldsGlob, gpureal *bodiesGlob, const int numEwald
   ewaldsGlob[5*i+4] = IMAG;
 }
 
-__global__ void idft(gpureal *ewaldsGlob, gpureal *bodiesGlob, const int numEwalds, const int numBodies, const real R0) {
+__global__ void idft(gpureal *ewaldsGlob, gpureal *bodiesGlob, const int numEwalds, const int numBodies, const real_t R0) {
   int i = blockIdx.x * THREADS + threadIdx.x;
   gpureal scale = M_PI / R0;
   gpureal TRG[4] = {0,0,0,0};
@@ -218,22 +218,22 @@ __global__ void idft(gpureal *ewaldsGlob, gpureal *bodiesGlob, const int numEwal
 
 __global__ void factor(gpureal *ewaldsGlob, const gpureal coef, const gpureal coef2) {
   int i = blockIdx.x * THREADS + threadIdx.x;
-  real R2 = ewaldsGlob[5*i+0] * ewaldsGlob[5*i+0]
-          + ewaldsGlob[5*i+1] * ewaldsGlob[5*i+1]
-          + ewaldsGlob[5*i+2] * ewaldsGlob[5*i+2];
-  real factor = coef * expf(-R2 * coef2) / R2;
-  ewaldsGlob[5*i+3] *= factor;
+  real_t R2 = ewaldsGlob[5*i+0] * ewaldsGlob[5*i+0]
+            + ewaldsGlob[5*i+1] * ewaldsGlob[5*i+1]
+            + ewaldsGlob[5*i+2] * ewaldsGlob[5*i+2];
+  real_t factor = coef * expf(-R2 * coef2) / R2;
+  ewaldsGlob[4*i+3] *= factor;
   ewaldsGlob[5*i+4] *= factor;
 }
 
 template<>
 void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {     // Ewald wave part on CPU
-  real scale = M_PI / R0;
-  real coef = .25 / M_PI / M_PI / SIGMA / R0;
-  real coef2 = scale * scale / (4 * ALPHA * ALPHA);
+  real_t scale = M_PI / R0;
+  real_t coef = .25 / M_PI / M_PI / SIGMA / R0;
+  real_t coef2 = scale * scale / (4 * ALPHA * ALPHA);
 
   Ewalds ewalds;
-  real kmaxsq = KSIZE * KSIZE;
+  real_t kmaxsq = KSIZE * KSIZE;
   int kmax = KSIZE;
   for( int l=0; l<=kmax; l++ ) {
     int mmin = -kmax;
@@ -242,7 +242,7 @@ void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {     // Ewald wave part o
       int nmin = -kmax;
       if( l==0 && m==0 ) nmin=1;
       for( int n=nmin; n<=kmax; n++ ) {
-        real ksq = l * l + m * m + n * n;
+        real_t ksq = l * l + m * m + n * n;
         if( ksq <= kmaxsq ) {
           Ewald ewald;
           ewald.K[0] = l;

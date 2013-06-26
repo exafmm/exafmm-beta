@@ -28,9 +28,9 @@ THE SOFTWARE.
 template<Equation equation>
 class Evaluator : public Dataset<equation> {
 private:
-  real        timeM2L;                                          //!< M2L execution time
-  real        timeM2P;                                          //!< M2P execution time
-  real        timeP2P;                                          //!< P2P execution time
+  real_t      timeM2L;                                          //!< M2L execution time
+  real_t      timeM2P;                                          //!< M2P execution time
+  real_t      timeP2P;                                          //!< P2P execution time
 
 protected:
   C_iter      CiB;                                              //!< icells begin per call
@@ -45,9 +45,9 @@ protected:
   Maps        flagM2P;                                          //!< Existance of periodic image for M2P
   Maps        flagP2P;                                          //!< Existance of periodic image for P2P
 
-  real        NP2P;                                             //!< Number of P2P kernel calls
-  real        NM2P;                                             //!< Number of M2P kernel calls
-  real        NM2L;                                             //!< Number of M2L kernel calls
+  real_t      NP2P;                                             //!< Number of P2P kernel calls
+  real_t      NM2P;                                             //!< Number of M2P kernel calls
+  real_t      NM2L;                                             //!< Number of M2L kernel calls
 
 public:
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
@@ -110,7 +110,7 @@ private:
       cellStack.pop();                                          //  Pop traversal stack
       for( C_iter Cj=Cj0+C->CHILD; Cj!=Cj0+C->CHILD+C->NCHILD; ++Cj ) {// Loop over cell's children
         vect dX = Ci->X - Cj->X - Xperiodic;                    //   Distance vector from source to target
-        real Rq = std::sqrt(norm(dX));                          //   Scalar distance
+        real_t Rq = std::sqrt(norm(dX));                        //   Scalar distance
         if( Rq * THETA < Ci->R + Cj->R && Cj->NCHILD == 0 ) {   //   If twigs are close
           evalEwaldReal(Ci,Cj);                                 //    Ewald real part
         } else if( Cj->NCHILD != 0 ) {                          //   If cells are not twigs
@@ -161,7 +161,7 @@ private:
   int getPeriodicRange() {
     int prange = 0;                                             //  Range of periodic images
     for( int i=0; i!=IMAGES; ++i ) {                            //  Loop over periodic image sublevels
-      prange += int(pow(3,i));                                  //   Accumulate range of periodic images
+      prange += int(std::pow(real_t(3),i));                     //   Accumulate range of periodic images
     }                                                           //  End loop over perioidc image sublevels
     return prange;                                              // Return range of periodic images
   }
@@ -286,7 +286,7 @@ public:
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->X[d] = drand48() * 2 - 1;                            //   Initialize positions
       }                                                         //  End loop over dimension
-      real r = std::sqrt(norm(B->X));                           //  Distance from center
+      real_t r = std::sqrt(norm(B->X));                         //  Distance from center
       for( int d=0; d!=3; ++d ) {                               //  Loop over dimension
         B->X[d] /= r * 1.1;                                     //   Normalize positions
       }                                                         //  End loop over dimension
@@ -338,7 +338,7 @@ public:
 //! Use multipole acceptance criteria to determine whether to approximate, do P2P, or subdivide
   void interact(C_iter Ci, C_iter Cj, PairQueue &pairQueue) {
     vect dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
-    real Rq = std::sqrt(norm(dX));                              // Scalar distance
+    real_t Rq = std::sqrt(norm(dX));                            // Scalar distance
     if( Rq * THETA > Ci->R + Cj->R ) {                          // If distance if far enough
       approximate(Ci,Cj);                                       //  Use approximate kernels, e.g. M2L, M2P
     } else if(Ci->NCHILD == 0 && Cj->NCHILD == 0) {             // Else if both cells are leafs
