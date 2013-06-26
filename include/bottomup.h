@@ -41,9 +41,9 @@ protected:
   int getMaxLevel(Bodies &bodies) {
     const long N = bodies.size() * MPISIZE;                     // Number of bodies
     int level;                                                  // Max level
-    level = N >= NCRIT ? 1 + int(log(real_t(N / NCRIT)/M_LN2/3)) : 0;// Decide max level from N/Ncrit
+    level = N >= NCRIT ? 1 + int(log(N / NCRIT)/M_LN2/3) : 0;   // Decide max level from N/Ncrit
     if( level < 2 ) level = 2;
-    int MPIlevel = int(log(real_t(MPISIZE-1)) / M_LN2 / 3) + 1; // Level of local root cell
+    int MPIlevel = int(log(MPISIZE-1) / M_LN2 / 3) + 1;         // Level of local root cell
     if( MPISIZE == 1 ) MPIlevel = 0;                            // For serial execution local root cell is root cell
     if( MPIlevel > level ) {                                    // If process hierarchy is deeper than tree
       std::cout << "Process hierarchy is deeper than tree @ rank" << MPIRANK << std::endl;
@@ -59,7 +59,7 @@ public:
     bigint i;                                                   // Levelwise cell index
     if( level == -1 ) level = getMaxLevel(bodies);              // Decide max level
     bigint off = ((1 << 3*level) - 1) / 7;                      // Offset for each level
-    real_t r = R0 / (1 << (level-1));                           // Radius at finest level
+    real r = R0 / (1 << (level-1));                             // Radius at finest level
     vec<3,int> nx;                                              // 3-D cell index
     if( end == 0 ) end = bodies.size();                         // Default size is all bodies
     for( int b=begin; b!=end; ++b ) {                           // Loop over bodies

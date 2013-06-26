@@ -156,11 +156,13 @@ void Evaluator<equation>::getTargetCell(Lists &lists, bool isM) {// Get body val
       int begin = targetBegin[Ci];                              //   Offset of target coefs
       if( isM ) {                                               //   If target is M
         for( int i=0; i!=NTERM; ++i ) {                         //    Loop over coefs in target cell
-          Ci->M[i] += (targetHost[begin+1*i+0],targetHost[begin+2*i+1]);// Copy target values from GPU buffer
+          Ci->M[i].real() += targetHost[begin+2*i+0];           //     Copy real target values from GPU buffer
+          Ci->M[i].imag() += targetHost[begin+2*i+1];           //     Copy imaginary target values from GPU buffer
         }                                                       //    End loop over coefs
       } else {                                                  //   If target is L
         for( int i=0; i!=NTERM; ++i ) {                         //    Loop over coefs in target cell
-          Ci->L[i] += (targetHost[begin+2*i+0],targetHost[begin+2*i+1]);// Copy target values from GPU buffer
+          Ci->L[i].real() += targetHost[begin+2*i+0];           //     Copy real target values from GPU buffer
+          Ci->L[i].imag() += targetHost[begin+2*i+1];           //     Copy imaginary target values from GPU buffer
         }                                                       //    End loop over coefs
       }                                                         //   Endif for target type
       lists[Ci-Ci0].clear();                                    //   Clear interaction list
@@ -186,7 +188,7 @@ void Evaluator<equation>::clearBuffers() {                      // Clear GPU buf
 template<Equation equation>
 void Evaluator<equation>::evalP2P(Bodies &ibodies, Bodies &jbodies, bool onCPU) {// Evaluate all P2P kernels
   int prange = getPeriodicRange();                              // Get range of periodic images
-  int numImages = std::pow(real_t(2 * prange + 1),3);           // Get number of periodic images
+  int numImages = pow(2 * prange + 1,3);                        // Get number of periodic images
   int numIcall = int(ibodies.size()-1)/MAXBODY+1;               // Number of icall loops
   int numJcall = int(jbodies.size()-1)/(MAXBODY/numImages)+1;   // Number of jcall loops
   int ioffset = 0;                                              // Initialzie offset for icall loops

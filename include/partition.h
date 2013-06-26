@@ -54,7 +54,7 @@ public:
 private:
 //! Split domain according to iSplit
   void splitDomain(bigint iSplit, int l, int d) {
-    real_t X = (iSplit + 1) * (XMAX[l][d] - XMIN[l][d]) / numCells1D + XMIN[l][d];// Coordinate corresponding to iSplit
+    real X = (iSplit + 1) * (XMAX[l][d] - XMIN[l][d]) / numCells1D + XMIN[l][d];// Coordinate corresponding to iSplit
     XMAX[l+1] = XMAX[l];                                        // Set XMAX for next subdivision
     XMIN[l+1] = XMIN[l];                                        // Set XMIN for next subdivision
     if( color[l+1][0] % 2 == 0 ) {                              // If on left side
@@ -271,7 +271,7 @@ public:
   ~Partition() {}
 
 //! Set bounds of domain to be partitioned
-  void setGlobDomain(Bodies &bodies, vect x0=0, real_t r0=M_PI) {
+  void setGlobDomain(Bodies &bodies, vect x0=0, real r0=M_PI) {
     numCells1D = 1 << getMaxLevel(bodies);                      // Number of leaf cells in each dimensions
     B_iter B = bodies.begin();                                  // Reset body iterator
     MPI_Datatype MPI_TYPE = getType(XMIN[0][0]);                // Get MPI data type

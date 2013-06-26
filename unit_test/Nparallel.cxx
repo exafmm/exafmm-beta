@@ -78,7 +78,7 @@ int main() {
     if(printNow) FMM.writeTime();                               //  Write timings of all events to file
     if(printNow) FMM.resetTimer();                              //  Erase all events in timer
 
-    real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
+    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0, diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
     FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2);      //  Evaluate error on the reduced set of bodies
     MPI_Datatype MPI_TYPE = FMM.getType(diff1);                 //  Get MPI datatype
     MPI_Reduce(&diff1,&diff3,1,MPI_TYPE,MPI_SUM,0,MPI_COMM_WORLD);// Reduce difference in potential

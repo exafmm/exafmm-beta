@@ -29,7 +29,7 @@ int main() {
   const int level = 4;                                          // Depth of tree
   const int numGrid = k * (1 << level);                         // Number of grid points in one direction
   const int numBodies = numGrid * numGrid * numGrid;            // Number of bodies
-  const real_t L = 10;                                          // Size of Gaussian distribution
+  const real L = 10;                                            // Size of Gaussian distribution
   std::cout << "N             : " << numBodies << std::endl;    // Print number of bodies
   IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrt(4);                                          // Multipole acceptance criteria
@@ -42,7 +42,7 @@ int main() {
   assert( NCRIT == k*k*k );                                     // NCRIT must be set to k^3 for this app.
 
   FMM.startTimer("Set bodies");                                 // Start timer
-  real_t dV = 8. / numBodies;                                   // Volume per body
+  real dV = 8. / numBodies;                                     // Volume per body
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
     int i = B-bodies.begin();                                   //  Loop counter
     int ix = i / numGrid / numGrid;                             //  x index
@@ -67,9 +67,9 @@ int main() {
   FMM.stopTimer("Downward",FMM.printNow);                       // Stop timer
   FMM.eraseTimer("Downward");                                   // Erase entry from timer to avoid timer overlap
 
-  real_t diff1 = 0, norm1 = 0;                                  // Initialize accumulators
+  real diff1 = 0, norm1 = 0;                                    // Initialize accumulators
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
-    real_t exact = exp(-L * norm(B->X));                        //  Analytical solution
+    real exact = exp(-L * norm(B->X));                          //  Analytical solution
     diff1 += (B->TRG[0] - exact) * (B->TRG[0] - exact);         //  Difference between analytical solution
     norm1 += exact * exact;                                     //  L2 norm of analytical solution
   }                                                             // End loop over bodies

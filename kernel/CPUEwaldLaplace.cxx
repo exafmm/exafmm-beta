@@ -24,14 +24,14 @@ THE SOFTWARE.
 #undef KERNEL
 
 namespace {
-void dft(Ewalds &ewalds, Bodies &bodies, real_t R0) {
-  real_t scale = M_PI / R0;
+void dft(Ewalds &ewalds, Bodies &bodies, real R0) {
+  real scale = M_PI / R0;
 #pragma omp parallel for
   for( int i=0; i<int(ewalds.size()); ++i ) {
     E_iter E = ewalds.begin() + i;
     E->REAL = E->IMAG = 0;
     for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {
-      real_t th = 0;
+      real th = 0;
       for( int d=0; d<3; d++ ) th += E->K[d] * B->X[d] * scale;
       E->REAL += B->SRC * cos(th);
       E->IMAG += B->SRC * sin(th);
@@ -39,16 +39,16 @@ void dft(Ewalds &ewalds, Bodies &bodies, real_t R0) {
   }
 }
 
-void idft(Ewalds &ewalds, Bodies &bodies, real_t R0) {
-  real_t scale = M_PI / R0;
+void idft(Ewalds &ewalds, Bodies &bodies, real R0) {
+  real scale = M_PI / R0;
 #pragma omp parallel for
   for( int i=0; i<int(bodies.size()); ++i ) {
     B_iter B = bodies.begin() + i;
-    vec<4,real_t> TRG = 0;
+    vec<4,real> TRG = 0;
     for( E_iter E=ewalds.begin(); E!=ewalds.end(); ++E ) {
-      real_t th = 0;
+      real th = 0;
       for( int d=0; d<3; d++ ) th += E->K[d] * B->X[d] * scale;
-      real_t dtmp = E->REAL * sin(th) - E->IMAG * cos(th);
+      real dtmp = E->REAL * sin(th) - E->IMAG * cos(th);
       TRG[0]   += E->REAL * cos(th) + E->IMAG * sin(th);
       for( int d=0; d<3; d++ ) TRG[d+1] -= dtmp * E->K[d];
     }
@@ -58,7 +58,7 @@ void idft(Ewalds &ewalds, Bodies &bodies, real_t R0) {
 }
 
 template<>
-void Kernel<Laplace>::EwaldReal(C_iter Ci, C_iter Cj) const {   // Ewald real_t part on CPU
+void Kernel<Laplace>::EwaldReal(C_iter Ci, C_iter Cj) const {   // Ewald real part on CPU
   for( int i=0; i<Ci->NDLEAF; ++i ) {                           // Loop over target bodies
     B_iter Bi = Ci->LEAF + i;                                   //  Target body iterator
     for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
@@ -67,19 +67,19 @@ void Kernel<Laplace>::EwaldReal(C_iter Ci, C_iter Cj) const {   // Ewald real_t 
         if( dist[d] < -R0 ) dist[d] += 2 * R0;                  //    Wrap domain so that target is always at
         if( dist[d] >= R0 ) dist[d] -= 2 * R0;                  //    the center of a [-R0,R0]^3 source cube
       }                                                         //   End loop over dimensions
-      real_t R2 = norm(dist);                                   //   R^2
+      real R2 = norm(dist);                                     //   R^2
       if( R2 != 0 ) {                                           //   Exclude self interaction
-        real_t R2s = R2 * ALPHA * ALPHA;                        //    (R * alpha)^2
-        real_t Rs = std::sqrt(R2s);                             //    R * alpha
-        real_t invRs = 1 / Rs;                                  //    1 / (R * alpha)
-        real_t invR2s = invRs * invRs;                          //    1 / (R * alpha)^2
-        real_t invR3s = invR2s * invRs;                         //    1 / (R * alpha)^3
-        real_t dtmp = Bj->SRC * (M_2_SQRTPI * exp(-R2s) * invR2s + erfc(Rs) * invR3s);
+        real R2s = R2 * ALPHA * ALPHA;                          //    (R * alpha)^2
+        real Rs = std::sqrt(R2s);                               //    R * alpha
+        real invRs = 1 / Rs;                                    //    1 / (R * alpha)
+        real invR2s = invRs * invRs;                            //    1 / (R * alpha)^2
+        real invR3s = invR2s * invRs;                           //    1 / (R * alpha)^3
+        real dtmp = Bj->SRC * (M_2_SQRTPI * exp(-R2s) * invR2s + erfc(Rs) * invR3s);
         dtmp *= ALPHA * ALPHA * ALPHA;                          //    Scale temporary value
-        Bi->TRG[0] += Bj->SRC * erfc(Rs) * invRs * ALPHA;       //    Ewald real_t potential
-        Bi->TRG[1] -= dist[0] * dtmp;                           //    x component of Ewald real_t force
-        Bi->TRG[2] -= dist[1] * dtmp;                           //    y component of Ewald real_t force
-        Bi->TRG[3] -= dist[2] * dtmp;                           //    z component of Ewald real_t force
+        Bi->TRG[0] += Bj->SRC * erfc(Rs) * invRs * ALPHA;       //    Ewald real potential
+        Bi->TRG[1] -= dist[0] * dtmp;                           //    x component of Ewald real force
+        Bi->TRG[2] -= dist[1] * dtmp;                           //    y component of Ewald real force
+        Bi->TRG[3] -= dist[2] * dtmp;                           //    z component of Ewald real force
       }                                                         //   End if for self interaction
     }                                                           //  End loop over source bodies
   }                                                             // End loop over target bodies
@@ -87,12 +87,12 @@ void Kernel<Laplace>::EwaldReal(C_iter Ci, C_iter Cj) const {   // Ewald real_t 
 
 template<>
 void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {         // Ewald wave part on CPU
-  real_t scale = M_PI / R0;
-  real_t coef = .25 / M_PI / M_PI / SIGMA / R0;
-  real_t coef2 = scale * scale / (4 * ALPHA * ALPHA);
+  real scale = M_PI / R0;
+  real coef = .25 / M_PI / M_PI / SIGMA / R0;
+  real coef2 = scale * scale / (4 * ALPHA * ALPHA);
 
   Ewalds ewalds;
-  real_t kmaxsq = KSIZE * KSIZE;
+  real kmaxsq = KSIZE * KSIZE;
   int kmax = int(KSIZE);
   for( int l=0; l<=kmax; l++ ) {
     int mmin = -kmax;
@@ -101,7 +101,7 @@ void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {         // Ewald wave pa
       int nmin = -kmax;
       if( l==0 && m==0 ) nmin=1;
       for( int n=nmin; n<=kmax; n++ ) {
-        real_t ksq = l * l + m * m + n * n;
+        real ksq = l * l + m * m + n * n;
         if( ksq <= kmaxsq ) {
           Ewald ewald;
           ewald.K[0] = l;
@@ -116,8 +116,8 @@ void Kernel<Laplace>::EwaldWave(Bodies &bodies) const {         // Ewald wave pa
 
   dft(ewalds,bodies,R0);
   for( E_iter E=ewalds.begin(); E!=ewalds.end(); ++E ) {
-    real_t R2 = norm(E->K);
-    real_t factor = coef * exp(-R2 * coef2) / R2;
+    real R2 = norm(E->K);
+    real factor = coef * exp(-R2 * coef2) / R2;
     E->REAL *= factor;
     E->IMAG *= factor;
   }

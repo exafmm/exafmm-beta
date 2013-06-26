@@ -2,10 +2,10 @@
 
 int main() {
   const int numBodies = 1000;                                   // Number of bodies
-  const real_t xmax = 100.0;                                    // Size of domain
-  const real_t ksize = 44.0;                                    // Ewald wave number
-  const real_t alpha = 0.2;                                     // Ewald alpha value
-  const real_t sigma = .25 / M_PI;                              // Ewald sigma value
+  const real xmax = 100.0;                                      // Size of domain
+  const real ksize = 44.0;                                      // Ewald wave number
+  const real alpha = 0.2;                                       // Ewald alpha value
+  const real sigma = .25 / M_PI;                                // Ewald sigma value
   IMAGES = 8;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 1 / sqrt(4);                                          // Multipole acceptance criteria
   Bodies bodies(numBodies);                                     // Define vector of bodies
@@ -17,7 +17,7 @@ int main() {
 
   FMM.startTimer("Set bodies");                                 // Start timer
   srand48(0);                                                   // Seed for random number generator
-  real_t average = 0;                                           // Initialize average charge
+  real average = 0;                                             // Initialize average charge
   for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {        // Loop over bodies
     for( int d=0; d!=3; ++d ) {                                 //  Loop over dimensions
       B->X[d] = drand48() * xmax;                               //   Initialize positions
@@ -51,7 +51,7 @@ int main() {
   FMM.stopTimer("Downward",FMM.printNow);                       // Stop timer
   FMM.eraseTimer("Downward");                                   // Erase entry from timer to avoid timer overlap
 
-  real_t diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;            // Initialize accumulators
+  real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;              // Initialize accumulators
   FMM.evalError(bodies,bodies2,diff1,norm1,diff2,norm2,true);   // Evaluate error
   FMM.printError(diff1,norm1,diff2,norm2);                      // Print the L2 norm error
   FMM.finalize();                                               // Finalize FMM

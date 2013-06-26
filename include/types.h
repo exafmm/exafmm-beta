@@ -37,7 +37,6 @@ THE SOFTWARE.
 #include <iostream>
 #include <list>
 #include <map>
-#include <pthread.h>
 #include <queue>
 #include <stack>
 #include <string>
@@ -55,11 +54,11 @@ THE SOFTWARE.
 #include <omp.h>
 #endif
 
-typedef unsigned             bigint;                            //!< Big integer type
-typedef float                real_t;                            //!< Real number type on CPU
-typedef float                gpureal;                           //!< Real number type on GPU
-typedef std::complex<real_t> complex_t;                         //!< Complex number type
-typedef vec<3,real_t>        vect;                              //!< 3-D vector type
+typedef unsigned           bigint;                              //!< Big integer type
+typedef float              real;                                //!< Real number type on CPU
+typedef float              gpureal;                             //!< Real number type on GPU
+typedef std::complex<real> complex;                             //!< Complex number type
+typedef vec<3,real>        vect;                                //!< 3-D vector type
 
 
 #ifndef KERNEL
@@ -67,7 +66,7 @@ int MPIRANK    = 0;                                             //!< MPI comm ra
 int MPISIZE    = 1;                                             //!< MPI comm size
 int DEVICE     = 0;                                             //!< GPU device ID
 int IMAGES     = 0;                                             //!< Number of periodic image sublevels
-real_t THETA   = .5;                                            //!< Multipole acceptance criteria
+real THETA     = .5;                                            //!< Multipole acceptance criteria
 vect Xperiodic = 0;                                             //!< Coordinate offset of periodic image
 #if PAPI
 int PAPIEVENT  = PAPI_NULL;                                     //!< PAPI event handle
@@ -77,7 +76,7 @@ extern int MPIRANK;                                             //!< MPI comm ra
 extern int MPISIZE;                                             //!< MPI comm size
 extern int DEVICE;                                              //!< GPU device ID
 extern int IMAGES;                                              //!< Number of periodic image sublevels
-extern real_t THETA;                                            //!< Multipole acceptance criteria
+extern real THETA;                                              //!< Multipole acceptance criteria
 extern vect Xperiodic;                                          //!< Coordinate offset of periodic image
 #if PAPI
 extern int PAPIEVENT;                                           //!< PAPI event handle
@@ -88,11 +87,11 @@ const int  P        = 8;                                        //!< Order of ex
 const int  NCRIT    = 64;                                       //!< Number of bodies per cell
 const int  MAXBODY  = 50000;                                    //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
-const real_t CLET   = 2;                                        //!< LET opening critetia
-const real_t EPS    = 1e-6;                                     //!< Single/double precision epsilon
-const real_t EPS2   = 0;                                        //!< Softening parameter (squared)
-const real_t R2MIN  = 0.0001;                                   //!< Minimum value for L-J R^2
-const real_t R2MAX  = 100.0;                                    //!< Maximum value for L-J R^2
+const real CLET     = 2;                                        //!< LET opening critetia
+const real EPS      = 1e-6;                                     //!< Single/double precision epsilon
+const real EPS2     = 0;                                        //!< Softening parameter (squared)
+const real R2MIN    = 0.0001;                                   //!< Minimum value for L-J R^2
+const real R2MAX    = 100.0;                                    //!< Maximum value for L-J R^2
 const int  GPUS     = 3;                                        //!< Number of GPUs per node
 const int  THREADS  = 64;                                       //!< Number of threads per thread-block
 
@@ -101,11 +100,11 @@ const int LTERM = (P+1)*(P+2)*(P+3)/6;                          //!< Number of C
 const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
 
 #if Cartesian
-typedef vec<MTERM,real_t>                      Mset;            //!< Multipole coefficient type for Cartesian
-typedef vec<LTERM,real_t>                      Lset;            //!< Local coefficient type for Cartesian
+typedef vec<MTERM,real>                        Mset;            //!< Multipole coefficient type for Cartesian
+typedef vec<LTERM,real>                        Lset;            //!< Local coefficient type for Cartesian
 #elif Spherical
-typedef vec<NTERM,complex_t>                   Mset;            //!< Multipole coefficient type for spherical
-typedef vec<NTERM,complex_t>                   Lset;            //!< Local coefficient type for spherical
+typedef vec<NTERM,complex>                     Mset;            //!< Multipole coefficient type for spherical
+typedef vec<NTERM,complex>                     Lset;            //!< Local coefficient type for spherical
 #endif
 typedef std::vector<bigint>                    Bigints;         //!< Vector of big integer types
 
@@ -133,14 +132,14 @@ struct JBody {
   int         IPROC;                                            //!< Initial process numbering for partitioning back
   bigint      ICELL;                                            //!< Cell index
   vect        X;                                                //!< Position
-  real_t      SRC;                                              //!< Scalar source values
+  real        SRC;                                              //!< Scalar source values
 };
 typedef std::vector<JBody>             JBodies;                 //!< Vector of source bodies
 typedef std::vector<JBody>::iterator   JB_iter;                 //!< Iterator for source body vector
 
 //! Structure of bodies
 struct Body : public JBody {
-  vec<4,real_t> TRG;                                            //!< Scalar+vector target values
+  vec<4,real> TRG;                                              //!< Scalar+vector target values
   bool operator<(const Body &rhs) const {                       //!< Overload operator for comparing body index
     return this->IBODY < rhs.IBODY;                             //!< Comparison function for body index
   }
@@ -187,9 +186,9 @@ struct Cell {
   int      CHILD;                                               //!< Iterator offset of child cells
   B_iter   LEAF;                                                //!< Iterator of first leaf
   vect     X;                                                   //!< Cell center
-  real_t   R;                                                   //!< Cell radius
-  real_t   RMAX;                                                //!< Max cell radius
-  real_t   RCRIT;                                               //!< Critical cell radius
+  real     R;                                                   //!< Cell radius
+  real     RMAX;                                                //!< Max cell radius
+  real     RCRIT;                                               //!< Critical cell radius
   Mset     M;                                                   //!< Multipole coefficients
   Lset     L;                                                   //!< Local coefficients
 };
@@ -209,9 +208,9 @@ typedef std::vector<Map>               Maps;                    //!< Vector of m
 
 //! Structure for Ewald summation
 struct Ewald {
-  vect   K;                                                     //!< 3-D wave number vector
-  real_t REAL;                                                  //!< real_t part of wave
-  real_t IMAG;                                                  //!< imaginary part of wave
+  vect K;                                                       //!< 3-D wave number vector
+  real REAL;                                                    //!< real part of wave
+  real IMAG;                                                    //!< imaginary part of wave
 };
 typedef std::vector<Ewald>             Ewalds;                  //!< Vector of Ewald summation types
 typedef std::vector<Ewald>::iterator   E_iter;                  //!< Iterator for Ewald summation types

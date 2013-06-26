@@ -29,14 +29,14 @@ void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P k
 #pragma omp parallel for
   for( int i=0; i<Ci->NDLEAF; ++i ) {                           // Loop over target bodies
     B_iter Bi = Ci->LEAF+i;                                     //  Target body iterator
-    real_t P0 = 0;                                              //  Initialize potential
+    real P0 = 0;                                                //  Initialize potential
     vect F0 = 0;                                                //  Initialize force
     for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
       vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
-      real_t R2 = norm(dist) + EPS2;                            //   R^2
-      real_t invR2 = 1.0 / R2;                                  //   1 / R^2
+      real R2 = norm(dist) + EPS2;                              //   R^2
+      real invR2 = 1.0 / R2;                                    //   1 / R^2
       if( R2 == 0 ) invR2 = 0;                                  //   Exclude self interaction
-      real_t invR = Bj->SRC * std::sqrt(invR2);                 //   potential
+      real invR = Bj->SRC * std::sqrt(invR2);                   //   potential
       dist *= invR2 * invR;                                     //   force
       P0 += invR;                                               //   accumulate potential
       F0 += dist;                                               //   accumulate force
@@ -47,22 +47,22 @@ void Kernel<Laplace>::P2P(C_iter Ci, C_iter Cj) const {         // Laplace P2P k
     Bi->TRG[3] -= F0[2];                                        //  z component of force
   }                                                             // End loop over target bodies
 #else
-  real_t (* cbi)[10] =  (real_t (*)[10])(&(Ci->LEAF->IBODY));
-  real_t (* cbj)[10] =  (real_t (*)[10])(&(Cj->LEAF->IBODY));
-  real_t xp[3] = {Xperiodic[0],Xperiodic[1],Xperiodic[2]};
+  real (* cbi)[10] =  (real (*)[10])(&(Ci->LEAF->IBODY));
+  real (* cbj)[10] =  (real (*)[10])(&(Cj->LEAF->IBODY));
+  real xp[3] = {Xperiodic[0],Xperiodic[1],Xperiodic[2]};
   int ni = Ci->NDLEAF;
   int nj = Cj->NDLEAF;
   int i,j;
 #pragma loop norecurrence
   for(i=0;i<ni;i++){
     for(j=0;j<nj;j++){
-      real_t dist_x = cbi[i][2] - cbj[j][2] - xp[0];
-      real_t dist_y = cbi[i][3] - cbj[j][3] - xp[1];
-      real_t dist_z = cbi[i][4] - cbj[j][4] - xp[2];
-      real_t R2 = EPS2+dist_x*dist_x+dist_y*dist_y+dist_z*dist_z;
-      real_t invR = 1.0/sqrt(R2);
+      real dist_x = cbi[i][2] - cbj[j][2] - xp[0];
+      real dist_y = cbi[i][3] - cbj[j][3] - xp[1];
+      real dist_z = cbi[i][4] - cbj[j][4] - xp[2];
+      real R2 = EPS2+dist_x*dist_x+dist_y*dist_y+dist_z*dist_z;
+      real invR = 1.0/sqrt(R2);
       if( R2 == 0 ) invR = 0;
-      real_t invR3 = cbj[j][5] * invR * invR * invR;
+      real invR3 = cbj[j][5] * invR * invR * invR;
       cbi[i][6] += cbj[j][5] * invR;
       cbi[i][7] -= dist_x * invR3;
       cbi[i][8] -= dist_y * invR3;
@@ -79,15 +79,15 @@ void Kernel<VanDerWaals>::P2P(C_iter Ci, C_iter Cj) const {     // Van der Waals
     for( B_iter Bj=Cj->LEAF; Bj!=Cj->LEAF+Cj->NDLEAF; ++Bj ) {  //  Loop over source bodies
       int atypej = int(Bj->SRC);                                //   Atom type of source
       vect dist = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
-      real_t R2 = norm(dist);                                   //   R squared
+      real R2 = norm(dist);                                     //   R squared
       if( R2 != 0 ) {                                           //   Exclude self interaction
-        real_t rs = RSCALE[atypei*ATOMS+atypej];                //    r scale
-        real_t gs = GSCALE[atypei*ATOMS+atypej];                //    g scale
-        real_t R2s = R2 * rs;                                   //    R^2 * r scale
+        real rs = RSCALE[atypei*ATOMS+atypej];                  //    r scale
+        real gs = GSCALE[atypei*ATOMS+atypej];                  //    g scale
+        real R2s = R2 * rs;                                     //    R^2 * r scale
         if( R2MIN <= R2 && R2 < R2MAX ) {                       //    Exclude outlier values
-          real_t invR2 = 1.0 / R2s;                             //     1 / R^2
-          real_t invR6 = invR2 * invR2 * invR2;                 //     1 / R^6
-          real_t dtmp = gs * invR6 * invR2 * (2.0 * invR6 - 1.0);//     g scale / R^2 * (2 / R^12 + 1 / R^6)
+          real invR2 = 1.0 / R2s;                               //     1 / R^2
+          real invR6 = invR2 * invR2 * invR2;                   //     1 / R^6
+          real dtmp = gs * invR6 * invR2 * (2.0 * invR6 - 1.0); //     g scale / R^2 * (2 / R^12 + 1 / R^6)
           Bi->TRG[0] += gs * invR6 * (invR6 - 1.0);             //     Van der Waals potential
           Bi->TRG[1] -= dist[0] * dtmp;                         //     x component of Van der Waals force
           Bi->TRG[2] -= dist[1] * dtmp;                         //     y component of Van der Waals force
