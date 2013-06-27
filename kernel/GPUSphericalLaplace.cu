@@ -381,7 +381,7 @@ __global__ void LaplaceM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
     evalMultipole(YnmShrd,rho,alpha,factShrd);
     LaplaceM2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
-    if(d.x*d.x+d.y*d.y+d.z*d.z<EPS&&threadIdx.x==0) printf("#FMM output: %f\n",target[0]);
+    //if(d.x*d.x+d.y*d.y+d.z*d.z<EPS&&threadIdx.x==0) printf("#FMM output: %f\n",target[0]);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[2*itarget+0] = target[0];

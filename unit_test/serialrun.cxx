@@ -25,7 +25,7 @@ THE SOFTWARE.
 #endif
 
 int main() {
-  const int numBodies = 100000;                                 // Number of bodies
+  const int numBodies = 1000000;                                // Number of bodies
   const int numTarget = 100;                                    // Number of target points to be used for error eval
   IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
   THETA = 0.5;                                                  // Multipole acceptance criteria
