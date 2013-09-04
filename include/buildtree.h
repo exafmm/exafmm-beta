@@ -164,13 +164,26 @@ class BuildTree : public Logger {
     return octNode;                                             // Return octree node
   }
 
+//! Get Morton key
+  int getMorton(vec3 X, vec3 Xmin, real_t diameter, int level) {
+    vec<3,int> ix = 0;                                          // Initialize 3-D index
+    for (int d=0; d<3; d++) ix[d] = int((X[d] - Xmin[d]) / diameter);// 3-D index
+    int id = ((1 << 3 * level) - 1) / 7;                        // Levelwise offset
+    for (int l=0; l<level; l++) {                               // Loop over levels
+      for (int d=0; d<3; d++) id += ix[d] % 2 << (3 * l + d);   //  Accumulate Morton key
+      for (int d=0; d<3; d++) ix[d] >>= 1;                      //  Bitshift 3-D index
+    }                                                           // End loop over levels
+    return id;                                                  // Return Morton key
+  }
+
 //! Create cell data structure from nodes
-  void nodes2cells(OctreeNode * octNode, C_iter C, C_iter C0, C_iter CN, real_t R0, int level=0, int iparent=0) {
+  void nodes2cells(OctreeNode * octNode, C_iter C, C_iter C0, C_iter CN, vec3 X0, real_t R0, int level=0, int iparent=0) {
     C->PARENT = iparent;                                        // Index of parent cell
     C->R      = R0 / (1 << level);                              // Cell radius
     C->X      = octNode->X;                                     // Cell center
     C->NDBODY = octNode->NBODY;                                 // Number of decendant bodies
     C->BODY   = B0 + octNode->BODY;                             // Iterator of first body in cell
+    C->ICELL  = getMorton(C->X, X0-R0, 2*R0, level);            // Get Morton key
     if (octNode->NNODE == 1) {                                  // If node has no children
       C->CHILD  = 0;                                            //  Set index of first child cell to zero
       C->NCHILD = 0;                                            //  Number of child cells
@@ -196,7 +209,7 @@ class BuildTree : public Logger {
 	for (int i=0; i<nchild; i++) {                          //  Loop over children
 	  int octant = octants[i];                              //   Get octant from child index
 	  spawn_task0_if(octNode->NNODE > 1000,                 //   Spawn task if number of sub-nodes is large
-	    nodes2cells(octNode->CHILD[octant], Ci, C0, CN, R0, level+1, C-C0));// Recursive call for each child
+	    nodes2cells(octNode->CHILD[octant], Ci, C0, CN, X0, R0, level+1, C-C0));// Recursive call for each child
 	  Ci++;                                                 //   Increment cell iterator
 	  CN += octNode->CHILD[octant]->NNODE - 1;              //   Increment next free memory address
 	}                                                       //  End loop over children
@@ -241,13 +254,13 @@ class BuildTree : public Logger {
   }
 
 //! Link tree structure
-  Cells linkTree(real_t R0) {
+  Cells linkTree(vec3 X0, real_t R0) {
     startTimer("Link tree");                                    // Start timer
     Cells cells;                                                // Initialize cell array
     if (N0 != NULL) {                                           // If he node tree is empty
       cells.resize(N0->NNODE);                                  //  Allocate cells array
       C_iter C0 = cells.begin();                                //  Cell begin iterator
-      nodes2cells(N0, C0, C0, C0+1, R0);                        //  Convert nodes to cells recursively
+      nodes2cells(N0, C0, C0, C0+1, X0, R0);                    //  Convert nodes to cells recursively
       delete N0;                                                //  Deallocate nodes
     }                                                           // End if for empty node tree
     stopTimer("Link tree");                                     // Stop timer
@@ -261,7 +274,7 @@ class BuildTree : public Logger {
   Cells buildTree(Bodies &bodies, Bounds bounds) {
     Box box = bounds2box(bounds);                               // Get box from bounds
     growTree(bodies,box.X,box.R);                               // Grow tree from root
-    return linkTree(box.R);                                     // Form parent-child links in tree
+    return linkTree(box.X,box.R);                               // Form parent-child links in tree
   }
 
 //! Print tree structure statistics
