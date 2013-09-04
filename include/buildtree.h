@@ -170,7 +170,7 @@ class BuildTree : public Logger {
     for (int d=0; d<3; d++) ix[d] = int((X[d] - Xmin[d]) / diameter);// 3-D index
     int id = ((1 << 3 * level) - 1) / 7;                        // Levelwise offset
     for (int l=0; l<level; l++) {                               // Loop over levels
-      for (int d=0; d<3; d++) id += ix[d] % 2 << (3 * l + d);   //  Accumulate Morton key
+      for (int d=0; d<3; d++) id += (ix[d] & 1) << (3 * l + d); //  Accumulate Morton key
       for (int d=0; d<3; d++) ix[d] >>= 1;                      //  Bitshift 3-D index
     }                                                           // End loop over levels
     return id;                                                  // Return Morton key
@@ -183,7 +183,7 @@ class BuildTree : public Logger {
     C->X      = octNode->X;                                     // Cell center
     C->NDBODY = octNode->NBODY;                                 // Number of decendant bodies
     C->BODY   = B0 + octNode->BODY;                             // Iterator of first body in cell
-    C->ICELL  = getMorton(C->X, X0-R0, 2*R0, level);            // Get Morton key
+    C->ICELL  = getMorton(C->X, X0-R0, 2*C->R, level);          // Get Morton key
     if (octNode->NNODE == 1) {                                  // If node has no children
       C->CHILD  = 0;                                            //  Set index of first child cell to zero
       C->NCHILD = 0;                                            //  Number of child cells
