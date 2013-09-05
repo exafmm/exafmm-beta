@@ -14,8 +14,8 @@ typedef double               real_t;                            //!< Floating po
 typedef float                real_t;                            //!< Floating point type is single precision
 #endif
 typedef std::complex<real_t> complex_t;                         //!< Complex type
-typedef vec<3,real_t>        vec3;                              //!< Vector of 3 floating point types
-typedef vec<3,float>         fvec3;                             //!< Force float (Used only for communication)
+typedef vec<3,real_t>        vec3;                              //!< Vector of 3 floating point types (Arbitrary precision)
+typedef vec<3,float>         fvec3;                             //!< Always single precision (Used only for communication)
 
 // SIMD vector types for MIC, AVX, and SSE
 const int NSIMD = SIMD_BYTES / sizeof(real_t);                  //!< SIMD vector length
@@ -66,8 +66,8 @@ struct Body : public Source {
   kvec4 TRG;                                                    //!< Scalar+vector3 target values
 };
 typedef AlignedAllocator<Body,SIMD_BYTES> BodyAllocator;        //!< Body alignment allocator
-//typedef std::vector<Body,BodyAllocator>   Bodies;               //!< Vector of bodies
-typedef std::vector<Body>                 Bodies;               //!< Vector of bodies
+typedef std::vector<Body,BodyAllocator>   Bodies;               //!< Vector of bodies
+//typedef std::vector<Body>                 Bodies;               //!< Vector of bodies
 typedef Bodies::iterator                  B_iter;               //!< Iterator of body vector
 
 //! Structure of cells
@@ -76,7 +76,7 @@ struct Cell {
   int       NCBODY;                                             //!< Number of child bodies
   int       NDBODY;                                             //!< Number of descendant bodies
   int       PARENT;                                             //!< Index of parent cell
-  int       CHILD;                                              //!< Index of child cells
+  int       CHILD;                                              //!< Index of first child cell
   long long ICELL;                                              //!< Cell index
   B_iter    BODY;                                               //!< Iterator of first body
   vec3      X;                                                  //!< Cell center
@@ -88,4 +88,5 @@ struct Cell {
 };
 typedef std::vector<Cell>           Cells;                      //!< Vector of cells
 typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator of cell vector
+
 #endif

@@ -31,9 +31,6 @@ int main(int argc, char ** argv) {
   }
   logger.printTitle("FMM Parameters");
   args.print(logger.stringLength,P);
-#if AUTO
-  traversal.timeKernels();
-#endif
 #if _OPENMP
 #pragma omp parallel
 #pragma omp master

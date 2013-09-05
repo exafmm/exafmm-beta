@@ -161,20 +161,20 @@ class Partition : public MyMPI, public Logger {
     for (d=0; d<3; d++) {                                       // Loop over dimensions
       Xpartition[d] = (global.Xmax[d] - global.Xmin[d]) / Npartition[d];//  Size of partition in each direction
     }                                                           // End loop over dimensions
-    int ix[3];                                                  // Index vector
-    ix[0] = mpirank % Npartition[0];                            // x index of partition
-    ix[1] = mpirank / Npartition[0] % Npartition[1];            // y index
-    ix[2] = mpirank / Npartition[0] / Npartition[1];            // z index
+    int iX[3];                                                  // Index vector
+    iX[0] = mpirank % Npartition[0];                            // x index of partition
+    iX[1] = mpirank / Npartition[0] % Npartition[1];            // y index
+    iX[2] = mpirank / Npartition[0] / Npartition[1];            // z index
     Bounds local;                                               // Local bounds
     for (d=0; d<3; d++) {                                       // Loop over dimensions
-      local.Xmin[d] = global.Xmin[d] + ix[d] * Xpartition[d];   // Xmin of local domain at current rank
-      local.Xmax[d] = global.Xmin[d] + (ix[d] + 1) * Xpartition[d];// Xmax of local domain at current rank
+      local.Xmin[d] = global.Xmin[d] + iX[d] * Xpartition[d];   // Xmin of local domain at current rank
+      local.Xmax[d] = global.Xmin[d] + (iX[d] + 1) * Xpartition[d];// Xmax of local domain at current rank
     }                                                           // End loop over dimensions
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       for (d=0; d<3; d++) {                                     //  Loop over dimensions
-        ix[d] = int((B->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
+        iX[d] = int((B->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
       }                                                         //  End loop over dimensions
-      B->IPROC = ix[0] + Npartition[0] * (ix[1] + ix[2] * Npartition[1]);//  Set send rank
+      B->IPROC = iX[0] + Npartition[0] * (iX[1] + iX[2] * Npartition[1]);//  Set send rank
       assert(0 <= B->IPROC && B->IPROC < mpisize);
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies

@@ -45,9 +45,6 @@ extern "C" void fmm_init_(int * images) {
     traversal->verbose = true;
     LET->verbose = true;
   }
-#if AUTO
-  traversal->timeKernels();
-#endif
 }
 
 extern "C" void fmm_partition_(int * nglobal, int * icpumap, double * x, double * q, double * cycle) {

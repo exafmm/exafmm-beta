@@ -43,9 +43,6 @@ extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
   logger.printTitle("Ewald Parameters");
   args.print(logger.stringLength,P);
   ewald.print(logger.stringLength);
-#if AUTO
-  traversal.timeKernels();
-#endif
 #if _OPENMP
 #pragma omp parallel
 #pragma omp master

@@ -48,9 +48,6 @@ int main(int argc, char ** argv) {
   logger.printTitle("Ewald Parameters");
   args.print(logger.stringLength, P);
   ewald.print(logger.stringLength);
-#if AUTO
-  traversal.timeKernels();
-#endif
 #if _OPENMP
 #pragma omp parallel
 #pragma omp master

@@ -164,16 +164,16 @@ class BuildTree : public Logger {
     return octNode;                                             // Return octree node
   }
 
-//! Get Morton key
-  int getMorton(vec3 X, vec3 Xmin, real_t diameter, int level) {
-    vec<3,int> ix = 0;                                          // Initialize 3-D index
-    for (int d=0; d<3; d++) ix[d] = int((X[d] - Xmin[d]) / diameter);// 3-D index
-    int id = ((1 << 3 * level) - 1) / 7;                        // Levelwise offset
+//! Get cell index
+  long long getKey(vec3 X, vec3 Xmin, real_t diameter, int level) {
+    int iX[3] = {0, 0, 0};                                      // Initialize 3-D index
+    for (int d=0; d<3; d++) iX[d] = int((X[d] - Xmin[d]) / diameter);// 3-D index
+    long long index = ((1 << 3 * level) - 1) / 7;               // Levelwise offset
     for (int l=0; l<level; l++) {                               // Loop over levels
-      for (int d=0; d<3; d++) id += (ix[d] & 1) << (3 * l + d); //  Accumulate Morton key
-      for (int d=0; d<3; d++) ix[d] >>= 1;                      //  Bitshift 3-D index
+      for (int d=0; d<3; d++) index += (iX[d] & 1) << (3 * l + d); //  Interleave bits into Morton key
+      for (int d=0; d<3; d++) iX[d] >>= 1;                      //  Bitshift 3-D index
     }                                                           // End loop over levels
-    return id;                                                  // Return Morton key
+    return index;                                               // Return Morton key
   }
 
 //! Create cell data structure from nodes
@@ -183,7 +183,7 @@ class BuildTree : public Logger {
     C->X      = octNode->X;                                     // Cell center
     C->NDBODY = octNode->NBODY;                                 // Number of decendant bodies
     C->BODY   = B0 + octNode->BODY;                             // Iterator of first body in cell
-    C->ICELL  = getMorton(C->X, X0-R0, 2*C->R, level);          // Get Morton key
+    C->ICELL  = getKey(C->X, X0-R0, 2*C->R, level);             // Get Morton key
     if (octNode->NNODE == 1) {                                  // If node has no children
       C->CHILD  = 0;                                            //  Set index of first child cell to zero
       C->NCHILD = 0;                                            //  Number of child cells

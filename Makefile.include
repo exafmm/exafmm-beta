@@ -35,7 +35,6 @@ LFLAGS	+= -D$(BASIS)
 LFLAGS  += -DEXPANSION=4 # Specifcy expansion order
 #LFLAGS	+= -DERROR_OPT # Use error optimized theta
 #LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
-#LFLAGS	+= -DAUTO # Use autotuned selection between P2P or M2L (needs improvement)
 #LFLAGS	+= -DFP64 # Use double precision
 #LFLAGS	+= -DKAHAN # Use Kahan summation   
 
@@ -50,7 +49,7 @@ LFLAGS	+= -std=c++0x -DTBB -ltbb
 #LFLAGS	+= -std=c++0x -DMTHREAD -lmyth 
 
 ### OpenMP flags (not recommended, slow) : OpenMP3.0 is available in gcc>=4.3.1, icc>=11.0
-#LFLAGS += -DOPENMP -fopenmp
+#LFLAGS += -std=c++0x -DOPENMP -fopenmp
 
 ### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
 #LFLAGS	+= -DPAPI -lpapi

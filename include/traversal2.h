@@ -2,6 +2,7 @@
 #define traversal_h
 #include "kernel.h"
 #include "logger.h"
+#include <unordered_map>
 #include "thread.h"
 
 #if COUNT
@@ -12,6 +13,10 @@
 
 class Traversal : public Kernel, public Logger {
  private:
+  typedef vec<3,int> ivec3;                                     //!< Vector of 3 integer types
+  typedef std::unordered_map<long long,C_iter> CellMap;         //!< Map of cell index to cell iterator
+  typedef std::unordered_map<long long,C_iter>::const_iterator M_iter;//!< Iterator for CellMap
+
   int nspawn;                                                   //!< Threshold of NDBODY for spawning new threads
   int images;                                                   //!< Number of periodic image sublevels
   real_t numP2P;                                                //!< Number of P2P kernel calls
@@ -21,62 +26,10 @@ class Traversal : public Kernel, public Logger {
   C_iter Ci0;                                                   //!< Begin iterator for target cells
   C_iter Cj0;                                                   //!< Begin iterator for source cells
 
-//! Dual tree traversal for a single pair of cells
-  void traverse(C_iter Ci, C_iter Cj, bool mutual) {
-    vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
-    real_t R2 = norm(dX);                                       // Scalar distance squared
-    if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {     // If distance is far enough
-      M2L(Ci, Cj, mutual);                                      //  M2L kernel
-      count(numM2L);                                            //  Increment M2L counter
-    } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
-      if (Cj->NCBODY == 0) {                                    //  If the bodies weren't sent from remote node
-	M2L(Ci, Cj, mutual);                                    //   M2L kernel
-        count(numM2L);                                          //   Increment M2L counter
-      } else {                                                  //  Else if the bodies were sent
-	if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
-	  P2P(Ci);                                              //    P2P kernel for single cell
-	} else {                                                //   Else if source and target are different
-	  P2P(Ci, Cj, mutual);                                  //    P2P kernel for pair of cells
-	}                                                       //   End if for same source and target
-	count(numP2P);                                          //   Increment P2P counter
-      }                                                         //  End if for bodies
-    } else {                                                    // Else if cells are close but not bodies
-      splitCell(Ci, Cj, mutual);                                //  Split cell and call function recursively for child
-    }                                                           // End if for multipole acceptance
-  }
-
-//! Dual tree traversal for a range of Ci and Cj
-  void traverse(C_iter CiBegin, C_iter CiEnd, C_iter CjBegin, C_iter CjEnd, bool mutual) {
-    Trace trace;
-    startTracer(trace);
-    if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {         // If only one cell in range
-      if (CiBegin == CjBegin) {                                 //  If Ci == Cj
-        assert(CiEnd == CjEnd);                                 //   Check if mutual & self interaction
-        traverse(CiBegin, CjBegin, mutual);                     //   Call traverse for single pair
-      } else {                                                  //  If Ci != Cj
-        for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {              //   Loop over all Ci cells
-          for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {            //    Loop over all Cj cells
-            traverse(Ci, Cj, mutual);                           //     Call traverse for single pair
-          }                                                     //    End loop over all Cj cells
-        }                                                       //   End loop over all Ci cells
-      }                                                         //  End if for Ci == Cj
-    } else {                                                    // If many cells are in the range
-      C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;           //  Split range of Ci cells in half
-      C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;           //  Split range of Cj cells in half
-      spawn_tasks {                                             //  Initialize task group
-	spawn_task0(traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));// Spawn Ci:former Cj:former
-	traverse(CiMid, CiEnd, CjMid, CjEnd, mutual);           //   No spawn Ci:latter Cj:latter
-	sync_tasks;                                             //   Synchronize task group
-	spawn_task0(traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));// Spawn Ci:former Cj:latter
-	if (!mutual || CiBegin != CjBegin) {                    //   Exclude mutual & self interaction
-	  traverse(CiMid, CiEnd, CjBegin, CjMid, mutual);       //    No spawn Ci:latter Cj:former
-	} else {                                                //   If mutual or self interaction
-	  assert(CiEnd == CjEnd);                               //    Check if mutual & self interaction
-	}                                                       //   End if for mutual & self interaction
-	sync_tasks;                                             //   Synchronize task group
-      }                                                         //  Finalize task group
-    }                                                           // End if for many cells in range
-    stopTracer(trace);
+//! Approximate interaction between two cells
+  inline void approximate(C_iter Ci, C_iter Cj, bool mutual) {
+    M2L(Ci,Cj,mutual);                                          // M2L kernel
+    count(numM2L);                                              // Increment M2L counter
   }
 
 //! Tree traversal of periodic cells
@@ -100,7 +53,7 @@ class Traversal : public Kernel, public Logger {
                     Xperiodic[0] = (ix * 3 + cx) * cycle;       //         Coordinate offset for x periodic direction
                     Xperiodic[1] = (iy * 3 + cy) * cycle;       //         Coordinate offset for y periodic direction
                     Xperiodic[2] = (iz * 3 + cz) * cycle;       //         Coordinate offset for z periodic direction
-                    M2L(Ci0,Ci,false);                          //         M2L kernel
+                    approximate(Ci0,Ci,false);                  //         Perform M2L kernel
                   }                                             //        End loop over z periodic direction (child)
                 }                                               //       End loop over y periodic direction (child)
               }                                                 //      End loop over x periodic direction (child)
@@ -141,57 +94,115 @@ class Traversal : public Kernel, public Logger {
     stopTimer("Traverse periodic");                             // Stop timer
   }
 
-//! Split cell and call traverse() recursively for child
-  void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
-    if (Cj->NCHILD == 0) {                                      // If Cj is leaf
-      assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
-      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
-        traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
-      }                                                         //  End loop over Ci's children
-    } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
-      assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
-      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
-        traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
-      }                                                         //  End loop over Cj's children
-    } else if (Ci->NDBODY + Cj->NDBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
-      traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,         //  Traverse for range of cell pairs
-               Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
-    } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
-      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
-        traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
-      }                                                         //  End loop over Ci's children
-    } else {                                                    // Else if Cj is larger than Ci
-      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
-        traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
-      }                                                         //  End loop over Cj's children
-    }                                                           // End if for leafs and Ci Cj size
+//! Get level from Morton key
+  int getLevel(long long key) {
+    int level = 0;                                              // Initialize level counter
+    while (key > 0) {                                           // While cell index is positive
+      level++;                                                  //  Increment level
+      key -= 1 << 3*level;                                      //  Subtract number of cells in that level
+    }                                                           // End while loop for cell index
+    return level;                                               // Return the level
+  }
+
+//! Get 3-D index from Morton key
+  ivec3 getIndex(long long key) {
+    ivec3 iX = 0;                                               // Initialize 3-D index
+    int d = 0, level = 0;                                       // Initialize dimension and level
+    while (key > 0) {                                           // While key is positive
+      iX[d] += (key & 1) * (1 << level);                        //  De-interleave bits into 3-D index
+      key >>= 1;                                                //  Bitshift key
+      d++;                                                      //  Increment dimension
+      d = d > 2 ? 0 : d;                                        //  Wrap around dimension
+      if (d == 0) level++;                                      //  Increment if dimension was wrapped around
+    }                                                           // End while loop for key
+    return iX;                                                  // Return 3-D index
+  }
+
+//! Get Morton key from 3-D index
+  long long getKey(ivec3 iX, int level) {
+    long long id = 0;                                           // Levelwise offset
+    for (int l=0; l<level; l++) {                               // Loop over levels
+      for (int d=0; d<3; d++) id += (iX[d] & 1) << (3 * l + d); //  Interleave bits into Morton key
+      for (int d=0; d<3; d++) iX[d] >>= 1;                      //  Bitshift 3-D index
+    }                                                           // End loop over levels
+    return id;                                                  // Return Morton key
   }
 
  public:
   Traversal(int nspawn, int images) : nspawn(nspawn), images(images), numP2P(0), numM2L(0) {}
 
-//! Evaluate P2P and M2L using dual tree traversal
+//! Evaluate P2P and M2L using list based traversal
   void dualTreeTraversal(Cells &icells, Cells &jcells, real_t cycle, bool mutual=false) {
-    if (icells.empty() || jcells.empty()) return;               // Quit if either of the cell vectors are empty
     startTimer("Traverse");                                     // Start timer
-    Ci0 = icells.begin();                                       // Set iterator of target root cell
-    Cj0 = jcells.begin();                                       // Set iterator of source root cell
-    if (images == 0) {                                          // If non-periodic boundary condition
-      Xperiodic = 0;                                            //  No periodic shift
-      traverse(Ci0,Cj0,mutual);                                 //  Traverse the tree
-    } else {                                                    // If periodic boundary condition
-      for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
-	for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
-	  for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
-	    Xperiodic[0] = ix * cycle;                          //     Coordinate shift for x periodic direction
-	    Xperiodic[1] = iy * cycle;                          //     Coordinate shift for y periodic direction
-	    Xperiodic[2] = iz * cycle;                          //     Coordinate shift for z periodic direction
-	    traverse(Ci0,Cj0,false);                            //     Traverse the tree for this periodic image
-	  }                                                     //    End loop over z periodic direction
-	}                                                       //   End loop over y periodic direction
-      }                                                         //  End loop over x periodic direction
-      traversePeriodic(cycle);                                  //  Traverse tree for periodic images
-    }                                                           // End if for periodic boundary condition
+    CellMap jcellMap;                                           // Map of cell index to cell iterator
+    for (C_iter Cj=jcells.begin(); Cj!=jcells.end(); Cj++) {    // Loop over source cells
+      jcellMap[Cj->ICELL] = Cj;                                 //  Assign cell iterator to cell index
+    }                                                           // End loop over target cells
+#pragma omp parallel for
+    for (int ci=1; ci<icells.size(); ci++) {                   // Loop over target cells
+      C_iter Ci=icells.begin()+ci;                              //  Target cell iterator
+      int level = getLevel(Ci->ICELL);                          //  Get level from cell index
+      long long targetOffset = ((1 << 3 * level) - 1) / 7;      //  Levelwise offset of target
+      long long parentOffset = ((1 << 3 * (level - 1)) - 1) / 7;//  Levelwise offset of parent
+      long long targetKey = Ci->ICELL - targetOffset;           //  Morton key from cell index
+      long long parentKey = targetKey >> 3;                     //  Parent cell's Morton key
+      ivec3 iX = getIndex(targetKey);                           //  3-D index of target cell
+      ivec3 pX = getIndex(parentKey);                           //  3-D index of parent cell
+      int ixmax = (1 << level) - 1;                             //  Maximum value of iX
+      int pxmax = (1 << (level - 1)) - 1;                       //  Maximum value of iP
+      ivec3 iXmin, iXmax, pXmin, pXmax;                         //  Declare loop bounds for M2L list
+      for (int d=0; d<3; d++) {                                 //  Loop over dimensions
+        iXmin[d] = std::max(iX[d]-1, 0);                        //   Minimum of target's neighbor loop
+        iXmax[d] = std::min(iX[d]+1, ixmax);                    //   Maximum of target's neighbor loop
+        pXmin[d] = std::max(pX[d]-1, 0);                        //   Minimum of parent's neighbor loop
+        pXmax[d] = std::min(pX[d]+1, pxmax);                    //   Maximum of parent's neighbor loop
+      }                                                         //  End loop over dimensions
+      for (pX[0]=pXmin[0]; pX[0]<=pXmax[0]; pX[0]++) {          //  Loop over parent's neighbors x direction
+        for (pX[1]=pXmin[1]; pX[1]<=pXmax[1]; pX[1]++) {        //   Loop over parent's neighbors y direction
+          for (pX[2]=pXmin[2]; pX[2]<=pXmax[2]; pX[2]++) {      //    Loop over parent's neighbors z direction
+            parentKey = getKey(pX, level-1);                    //     Parent's neighbor's Morton key
+            M_iter M = jcellMap.find(parentKey+parentOffset);   //     Parent's neighbor's cell map iterator
+            if (M != jcellMap.end()) {                          //     If the parent's neighbor exists
+              C_iter Cj = M->second;                            //      Parent's neighbor's iterator
+              if (Cj->NCHILD == 0) {                            //      If parent's neighbor has no children
+                P2P(Ci,Cj,false);                               //       P2P kernel
+                count(numP2P);                                  //       Increment P2P counter
+              } else {                                          //      Else if parent's neighbor has children
+                long long childKey = parentKey << 3;            //       Parent's neighbor's child's Morton key
+                for (int i=0; i<8; i++) {                       //       Loop over parent's neighbor's children
+                  iX = getIndex(childKey+i);                    //        Parent's neighbor's child's 3-D index
+                  if (iX[0]<iXmin[0] || iXmax[0]<iX[0] ||       //        If parent's neighbor's child's 3-D index
+                      iX[1]<iXmin[1] || iXmax[1]<iX[1] ||       //        is outside of the target's neighbor reigon
+	              iX[2]<iXmin[2] || iXmax[2]<iX[2]) {       //        this cell belongs to the M2L interaction list
+                    M = jcellMap.find(childKey+i+targetOffset); //         Cell map iterator
+                    if (M != jcellMap.end()) {                  //         If the source cell exists
+                      Cj = M->second;                           //          Source cell iterator
+                      M2L(Ci,Cj,false);                         //          M2L kernel
+                      count(numM2L);                            //          Increment M2L counter
+                    }                                           //         End if for source cell existance
+                  }                                             //        End if for M2L interaction list
+                }                                               //       End loop over parent's neighbor's children
+              }                                                 //      End if for parent's neighbor's child's existence
+            }                                                   //     End if for parent's neighbor's existence
+          }                                                     //    End loop over parent's neighbors z direction
+        }                                                       //   End loop over parent's neighbors y direction
+      }                                                         //  End loop over parent's neighbors x direction
+      if (Ci->NCHILD == 0) {                                    //  If target cell is leaf cell
+        for (iX[0]=iXmin[0]; iX[0]<=iXmax[0]; iX[0]++) {        //   Loop over target's neighbors x direction
+          for (iX[1]=iXmin[1]; iX[1]<=iXmax[1]; iX[1]++) {      //    Loop over target's neighbors y direction
+            for (iX[2]=iXmin[2]; iX[2]<=iXmax[2]; iX[2]++) {    //     Loop over target's neighbors z direction
+              long long sourceKey = getKey(iX, level);          //      Target's neighbor's Morton key
+              M_iter M = jcellMap.find(sourceKey+targetOffset); //      Cell map iterator
+              if (M != jcellMap.end()) {                        //      If the source cell exists
+                C_iter Cj = M->second;                          //       Source cell iterator
+                P2P(Ci,Cj,false);                               //       P2P kernel
+                count(numP2P);                                  //       Increment P2P counter
+              }                                                 //      End if for source cell existance
+            }                                                   //     End loop over target's neighbors z direction
+          }                                                     //    End loop over target's neighbors y direction
+        }                                                       //   End loop over target's neighbors x direction
+      }                                                         //  End if for target leaf cell 
+    }                                                           // End loop over target cells
     stopTimer("Traverse");                                      // Stop timer
     writeTrace();                                               // Write trace to file
   }
