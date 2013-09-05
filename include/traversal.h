@@ -38,6 +38,28 @@ class Traversal : public Kernel, public Logger {
 #endif
   }
 
+//! Dual tree traversal for a single pair of cells
+  void traverse(C_iter Ci, C_iter Cj, bool mutual) {
+    vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
+    real_t R2 = norm(dX);                                       // Scalar distance squared
+    if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {     // If distance is far enough
+      approximate(Ci, Cj, mutual);                              //  Use approximate kernels
+    } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
+      if (Cj->NCBODY == 0) {                                    //  If the bodies weren't sent from remote node
+	approximate(Ci, Cj, mutual);                            //   Use approximate kernels
+      } else {                                                  //  Else if the bodies were sent
+	if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
+	  P2P(Ci);                                              //    P2P kernel for single cell
+	} else {                                                //   Else if source and target are different
+	  P2P(Ci, Cj, mutual);                                  //    P2P kernel for pair of cells
+	}                                                       //   End if for same source and target
+	count(numP2P);                                          //   Increment P2P counter
+      }                                                         //  End if for bodies
+    } else {                                                    // Else if cells are close but not bodies
+      splitCell(Ci, Cj, mutual);                                //  Split cell and call function recursively for child
+    }                                                           // End if for multipole acceptance
+  }
+
 //! Dual tree traversal for a range of Ci and Cj
   void traverse(C_iter CiBegin, C_iter CiEnd, C_iter CjBegin, C_iter CjEnd, bool mutual) {
     Trace trace;
@@ -71,63 +93,6 @@ class Traversal : public Kernel, public Logger {
     }                                                           // End if for many cells in range
     stopTracer(trace);
   }
-
-//! Split cell and call traverse() recursively for child
-  void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
-    if (Cj->NCHILD == 0) {                                      // If Cj is leaf
-      assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
-      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
-        traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
-      }                                                         //  End loop over Ci's children
-    } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
-      assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
-      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
-        traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
-      }                                                         //  End loop over Cj's children
-    } else if (Ci->NDBODY + Cj->NDBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
-      traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,         //  Traverse for range of cell pairs
-               Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
-    } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
-      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
-        traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
-      }                                                         //  End loop over Ci's children
-    } else {                                                    // Else if Cj is larger than Ci
-      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
-        traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
-      }                                                         //  End loop over Cj's children
-    }                                                           // End if for leafs and Ci Cj size
-  }
-
-//! Dual tree traversal for a single pair of cells
-  void traverse(C_iter Ci, C_iter Cj, bool mutual) {
-    vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
-    real_t R2 = norm(dX);                                       // Scalar distance squared
-#if DUAL
-    {                                                           // Dummy bracket
-#else
-    if (Ci->RCRIT != Cj->RCRIT) {                               // If cell is not at the same level
-      splitCell(Ci, Cj, mutual);                                //  Split cell and call function recursively for child
-    } else {                                                    // If we don't care if cell is not at the same level
-#endif
-      if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {   //  If distance is far enough
-        approximate(Ci, Cj, mutual);                            //   Use approximate kernels
-      } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          //  Else if both cells are bodies
-        if (Cj->NCBODY == 0) {                                  //   If the bodies weren't sent from remote node
-          approximate(Ci, Cj, mutual);                          //    Use approximate kernels
-        } else {                                                //   Else if the bodies were sent
-          if (R2 == 0 && Ci == Cj) {                            //    If source and target are same
-            P2P(Ci);                                            //     P2P kernel for single cell
-          } else {                                              //    Else if source and target are different
-            P2P(Ci, Cj, mutual);                                //     P2P kernel for pair of cells
-          }                                                     //    End if for same source and target
-          count(numP2P);                                        //    Increment P2P counter
-        }                                                       //   End if for bodies
-      } else {                                                  //  Else if cells are close but not bodies
-        splitCell(Ci, Cj, mutual);                              //   Split cell and call function recursively for child
-      }                                                         //  End if for multipole acceptance
-    }                                                           // End if for same level cells
-  }
-
 
 //! Tree traversal of periodic cells
   void traversePeriodic(real_t cycle) {
@@ -189,6 +154,32 @@ class Traversal : public Kernel, public Logger {
     Ci0->L /= Ci0->M[0];                                        // Normalize local expansion coefficients
 #endif
     stopTimer("Traverse periodic");                             // Stop timer
+  }
+
+//! Split cell and call traverse() recursively for child
+  void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
+    if (Cj->NCHILD == 0) {                                      // If Cj is leaf
+      assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
+      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+        traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
+      }                                                         //  End loop over Ci's children
+    } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
+      assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
+      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+        traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
+      }                                                         //  End loop over Cj's children
+    } else if (Ci->NDBODY + Cj->NDBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
+      traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,         //  Traverse for range of cell pairs
+               Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
+    } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
+      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+        traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
+      }                                                         //  End loop over Ci's children
+    } else {                                                    // Else if Cj is larger than Ci
+      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+        traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
+      }                                                         //  End loop over Cj's children
+    }                                                           // End if for leafs and Ci Cj size
   }
 
  public:
