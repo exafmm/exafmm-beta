@@ -51,7 +51,7 @@ class LocalEssentialTree : public Partition {
 //! Add cells to send buffer
   void addSendCell(C_iter C, int &iparent, int &icell) {
     Cell cell(*C);                                              // Initialize send cell
-    cell.NCHILD = cell.NCBODY = cell.NDBODY = 0;                // Reset counters
+    cell.NCHILD = cell.NBODY = 0;                               // Reset counters
     cell.PARENT = iparent;                                      // Index of parent
     sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
@@ -63,13 +63,13 @@ class LocalEssentialTree : public Partition {
 //! Add bodies to send buffer
   void addSendBody(C_iter C, int &ibody, int icell) {
     C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell;// Get send cell iterator
-    Csend->NCBODY = C->NCBODY;                                  // Set number of bodies
-    Csend->NDBODY = ibody;                                      // Set body index per rank
-    for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {         // Loop over bodies in cell
+    Csend->NBODY = C->NBODY;                                    // Set number of bodies
+    Csend->IBODY = ibody;                                       // Set body index per rank
+    for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {          // Loop over bodies in cell
       sendBodies.push_back(*B);                                 //  Push to send body vector
       sendBodies.back().IPROC = irank;                          //  Set current rank
     }                                                           // End loop over bodies in cell
-    ibody+=C->NCBODY;                                           // Increment body counter
+    ibody+=C->NBODY;                                            // Increment body counter
   }
 
 //! Determine which cells to send
@@ -184,7 +184,7 @@ class LocalEssentialTree : public Partition {
         localXmin = allLocalXmin[irank];                        //   Set local Xmin for irank
         localXmax = allLocalXmax[irank];                        //   Set local Xmax for irank
         Cell cell(*C0);                                         //   Send root cell
-        cell.NCHILD = cell.NCBODY = cell.NDBODY = 0;            //   Reset link to children and bodies
+        cell.NCHILD = cell.NBODY = 0;                           //   Reset link to children and bodies
         sendCells.push_back(cell);                              //   Push it into send buffer
         CellQueue cellQueue;                                    //   Traversal queue
         cellQueue.push(C0);                                     //   Push root to traversal queue
@@ -202,13 +202,12 @@ class LocalEssentialTree : public Partition {
     startTimer(event.str());                                    // Start timer
     for (int i=recvCellCount[irank]-1; i>=0; i--) {             // Loop over receive cells
       C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator of receive cell
-      if (C->NCBODY != 0) {                                     //  If cell has bodies
-        C->BODY = recvBodies.begin() + recvBodyDispl[irank] + C->NDBODY;// Iterator of first body
-        C->NDBODY = C->NCBODY;                                  //   Initialize number of bodies
+      if (C->NBODY != 0) {                                      //  If cell has bodies
+        C->BODY = recvBodies.begin() + recvBodyDispl[irank] + C->IBODY;// Iterator of first body
       }                                                         //  End if for bodies
       if (i != 0) {                                             //  If cell is not root
         C_iter Cparent = recvCells.begin() + recvCellDispl[irank] + C->PARENT;// Iterator of parent cell
-        Cparent->NDBODY += C->NDBODY;                           //   Accululate number of bodies
+        Cparent->NBODY += C->NBODY;                             //   Accululate number of bodies
       }                                                         //  End if for root cell
     }                                                           // End loop over receive cells
     cells.resize(recvCellCount[irank]);                         // Resize cell vector for LET

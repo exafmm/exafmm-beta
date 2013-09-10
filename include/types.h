@@ -72,13 +72,13 @@ typedef Bodies::iterator                  B_iter;               //!< Iterator of
 
 //! Structure of cells
 struct Cell {
-  int       NCHILD;                                             //!< Number of child cells
-  int       NCBODY;                                             //!< Number of child bodies
-  int       NDBODY;                                             //!< Number of descendant bodies
   int       PARENT;                                             //!< Index of parent cell
   int       CHILD;                                              //!< Index of first child cell
-  long long ICELL;                                              //!< Cell index
+  int       NCHILD;                                             //!< Number of child cells
+  int       IBODY;                                              //!< Index of first body
+  int       NBODY;                                              //!< Number of descendant bodies
   B_iter    BODY;                                               //!< Iterator of first body
+  long long ICELL;                                              //!< Cell index
   vec3      X;                                                  //!< Cell center
   real_t    R;                                                  //!< Cell radius
   real_t    RMAX;                                               //!< Max cell radius

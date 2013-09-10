@@ -26,7 +26,7 @@ class BuildTree : public Logger {
   };
 
   int          ncrit;                                           //!< Number of bodies per leaf cell
-  int          nspawn;                                          //!< Threshold of NDBODY for spawning new threads
+  int          nspawn;                                          //!< Threshold of NBODY for spawning new threads
   int          maxlevel;                                        //!< Maximum level of tree
   B_iter       B0;                                              //!< Iterator of first body
   OctreeNode * N0;                                              //!< Octree root node
@@ -181,17 +181,15 @@ class BuildTree : public Logger {
     C->PARENT = iparent;                                        // Index of parent cell
     C->R      = R0 / (1 << level);                              // Cell radius
     C->X      = octNode->X;                                     // Cell center
-    C->NDBODY = octNode->NBODY;                                 // Number of decendant bodies
+    C->NBODY  = octNode->NBODY;                                 // Number of decendant bodies
     C->BODY   = B0 + octNode->BODY;                             // Iterator of first body in cell
     C->ICELL  = getKey(C->X, X0-R0, 2*C->R, level);             // Get Morton key
     if (octNode->NNODE == 1) {                                  // If node has no children
       C->CHILD  = 0;                                            //  Set index of first child cell to zero
       C->NCHILD = 0;                                            //  Number of child cells
-      C->NCBODY = octNode->NBODY;                               //  Number of bodies in cell
-      assert(C->NCBODY > 0);
+      assert(C->NBODY > 0);                                     //  Check for empty leaf cells
       maxlevel = std::max(maxlevel, level);                     //  Update maximum level of tree
     } else {                                                    // Else if node has children
-      C->NCBODY = 0;                                            //  Set number of bodies in cell to zero
       int nchild = 0;                                           //  Initialize number of child cells
       int octants[8];                                           //  Map of child index to octants (for when nchild < 8)
       for (int i=0; i<8; i++) {                                 //  Loop over octants
@@ -203,7 +201,7 @@ class BuildTree : public Logger {
       C_iter Ci = CN;                                           //  CN points to the next free memory address
       C->CHILD = Ci - C0;                                       //  Set Index of first child cell
       C->NCHILD = nchild;                                       //  Number of child cells
-      assert(C->NCHILD > 0);
+      assert(C->NCHILD > 0);                                    //  Check for childless non-leaf cells
       CN += nchild;                                             //  Increment next free memory address
       spawn_tasks {                                             //  Initialize tasks
 	for (int i=0; i<nchild; i++) {                          //  Loop over children
@@ -282,7 +280,7 @@ class BuildTree : public Logger {
     if (verbose) {                                              // If verbose flag is true
       printTitle("Tree stats");                                 //  Print title
       std::cout  << std::setw(stringLength) << std::left        //  Set format
-	        << "Bodies"     << " : " << cells.front().NDBODY << std::endl// Print number of bodies
+	        << "Bodies"     << " : " << cells.front().NBODY << std::endl// Print number of bodies
 	        << std::setw(stringLength) << std::left         //  Set format
 	        << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
 	        << std::setw(stringLength) << std::left         //  Set format

@@ -103,7 +103,7 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t *Ynm) {
 
 void Kernel::P2M(C_iter C) const {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  for (B_iter B=C->BODY; B!=C->BODY+C->NDBODY; B++) {
+  for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     vec3 dX = B->X - C->X;
     real_t R = std::sqrt(norm(dX));
     if (R > C->RMAX) C->RMAX = R;
@@ -226,7 +226,7 @@ void Kernel::L2L(C_iter Ci, C_iter C0) const {
 
 void Kernel::L2P(C_iter Ci) const {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NDBODY; B++) {
+  for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NBODY; B++) {
     vec3 dX = B->X - Ci->X;
     vec3 spherical = 0;
     vec3 cartesian = 0;

@@ -106,13 +106,13 @@ int main(int argc, char ** argv) {
 	std::cout << LET.mpirank << " NCHILD : " << Ci->NCHILD << " " << Cj->NCHILD << std::endl;
 	break;
       }
-      if (Ci->NCBODY != Cj->NCBODY) {
-	std::cout << LET.mpirank << " NCBODY : " << Ci->NCBODY << " " << Cj->NCBODY << std::endl;
+      if (Ci->NCHILD == 0 && Cj->NCHILD == 0 && Ci->NBODY != Cj->NBODY) {
+	std::cout << LET.mpirank << " NBODY  : " << Ci->NBODY << " " << Cj->NBODY << std::endl;
 	break;
       }
       real_t sumi = 0, sumj = 0;
-      if (Ci->NCBODY != 0) {
-	for (int i=0; i<Ci->NCBODY; i++) {
+      if (Ci->NCHILD == 0) {
+	for (int i=0; i<Ci->NBODY; i++) {
 	  B_iter Bi = Ci->BODY+i;
 	  B_iter Bj = Cj->BODY+i;
 	  sumi += Bi->X[0];

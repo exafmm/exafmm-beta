@@ -12,7 +12,7 @@
 
 class Traversal : public Kernel, public Logger {
  private:
-  int nspawn;                                                   //!< Threshold of NDBODY for spawning new threads
+  int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
   int images;                                                   //!< Number of periodic image sublevels
   real_t numP2P;                                                //!< Number of P2P kernel calls
   real_t numM2L;                                                //!< Number of M2L kernel calls
@@ -29,7 +29,7 @@ class Traversal : public Kernel, public Logger {
       M2L(Ci, Cj, mutual);                                      //  M2L kernel
       count(numM2L);                                            //  Increment M2L counter
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
-      if (Cj->NCBODY == 0) {                                    //  If the bodies weren't sent from remote node
+      if (Cj->NBODY == 0) {                                    //  If the bodies weren't sent from remote node
 	M2L(Ci, Cj, mutual);                                    //   M2L kernel
         count(numM2L);                                          //   Increment M2L counter
       } else {                                                  //  Else if the bodies were sent
@@ -153,7 +153,7 @@ class Traversal : public Kernel, public Logger {
       for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
         traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
       }                                                         //  End loop over Cj's children
-    } else if (Ci->NDBODY + Cj->NDBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
+    } else if (Ci->NBODY + Cj->NBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
       traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,         //  Traverse for range of cell pairs
                Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
     } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
@@ -201,9 +201,9 @@ class Traversal : public Kernel, public Logger {
     Cells cells(2);                                             // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
     Ci->BODY = ibodies.begin();                                 // Iterator of first target body
-    Ci->NDBODY = ibodies.size();                                // Number of target bodies
+    Ci->NBODY = ibodies.size();                                 // Number of target bodies
     Cj->BODY = jbodies.begin();                                 // Iterator of first source body
-    Cj->NDBODY = jbodies.size();                                // Number of source bodies
+    Cj->NBODY = jbodies.size();                                 // Number of source bodies
     int prange = 0;                                             // Range of periodic images
     for (int i=0; i<images; i++) {                              // Loop over periodic image sublevels
       prange += int(std::pow(3.,i));                            //  Accumulate range of periodic images
@@ -238,12 +238,12 @@ class Traversal : public Kernel, public Logger {
     cells.resize(2);
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;
     Ci->X = 0;
-    Ci->NDBODY = 10;
+    Ci->NBODY = 10;
     Ci->BODY = ibodies.begin();
     Ci->M = 0;
     Ci->L = 0;
     Cj->X = 1;
-    Cj->NDBODY = 1000;
+    Cj->NBODY = 1000;
     Cj->BODY = jbodies.begin();
     Cj->M = 0;
     startTimer("P2P kernel test");

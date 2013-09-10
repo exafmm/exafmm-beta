@@ -6,7 +6,7 @@
 
 class BoundBox : public Logger {
  private:
-  int nspawn;                                                   //!< Threshold of NDBODY for spawning new threads
+  int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
 
 //! Recursively get Xmin and Xmax of domain
   Bounds boundsRecursion(B_iter BiBegin, B_iter BiEnd, Bounds bounds) {

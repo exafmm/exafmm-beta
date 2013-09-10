@@ -80,8 +80,8 @@ class Ewald : public Logger {
 
 //! Ewald real part P2P kernel
   void P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic) const {
-    for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NDBODY; Bi++) {   // Loop over target bodies
-      for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NDBODY; Bj++) { //  Loop over source bodies
+    for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {   // Loop over target bodies
+      for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) { //  Loop over source bodies
 	vec3 dist = Bi->X - Bj->X - Xperiodic;                  //   Distance vector from source to target
 	for (int d=0; d<3; d++) {                               //   Loop over dimensions
 	  if (dist[d] < -cycle/2) dist[d] += cycle;             //    Wrap domain so that target is always at

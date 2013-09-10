@@ -5,8 +5,8 @@ const real_t EPS2 = 0.0;                                        //!< Softening p
 void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
-  int ni = Ci->NDBODY;
-  int nj = Cj->NDBODY;
+  int ni = Ci->NBODY;
+  int nj = Cj->NBODY;
   int i = 0;
 #if USE_SIMD
   for ( ; i<=ni-NSIMD; i+=NSIMD) {
@@ -172,7 +172,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
 
 void Kernel::P2P(C_iter C) const {
   B_iter B = C->BODY;
-  int n = C->NDBODY;
+  int n = C->NBODY;
   int i = 0;
 #if USE_SIMD
   for ( ; i<=n-NSIMD; i+=NSIMD) {
