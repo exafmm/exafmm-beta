@@ -626,7 +626,7 @@ struct Coefs<0,0> {
 };
 
 void Kernel::P2M(C_iter C) const {
-  for (B_iter B=C->BODY; B!=C->BODY+C->NCBODY; B++) {
+  for (B_iter B=C->BODY; B!=C->BODY+C->NDBODY; B++) {
     vec3 dX = C->X - B->X;
     real_t R = std::sqrt(norm(dX));
     if (R > C->RMAX) C->RMAX = R;
@@ -635,7 +635,7 @@ void Kernel::P2M(C_iter C) const {
     Kernels<0,0,P-1>::power(M,dX);
     for (int i=0; i<NTERM; i++) C->M[i] += M[i];
   }
-  if (C->NCBODY != 0 && C->M[0] == 0) C->M[0] = EPS;
+  if (C->NCHILD == 0 && C->M[0] == 0) C->M[0] = EPS;
 #if USE_RMAX
   C->RCRIT = std::min(C->R,C->RMAX);
 #else
@@ -690,7 +690,7 @@ void Kernel::L2L(C_iter Ci, C_iter Ci0) const {
 }
 
 void Kernel::L2P(C_iter Ci) const {
-  for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NCBODY; B++) {
+  for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NDBODY; B++) {
     vec3 dX = B->X - Ci->X;
     vecP C, L;
     C[0] = 1;

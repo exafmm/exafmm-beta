@@ -21,7 +21,7 @@ int main() {
   C_iter Cj = cells.begin();
   Cj->X = 1;
   Cj->BODY = jbodies.begin();
-  Cj->NCBODY = jbodies.size();
+  Cj->NDBODY = jbodies.size();
   Cj->M = 0;
   kernel.P2M(Cj);
 
@@ -67,7 +67,7 @@ int main() {
     B->TRG  = 0;
   }
   Ci->BODY = bodies.begin();
-  Ci->NCBODY = bodies.size();
+  Ci->NDBODY = bodies.size();
   kernel.L2P(Ci);
 
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
