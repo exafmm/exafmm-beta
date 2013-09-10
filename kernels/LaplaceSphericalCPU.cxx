@@ -127,7 +127,7 @@ void Kernel::P2M(C_iter C) const {
 
 void Kernel::M2M(C_iter Ci, C_iter C0) const {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  for (C_iter Cj=C0+Ci->CHILD; Cj!=C0+Ci->CHILD+Ci->NCHILD; Cj++) {
+  for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
     real_t R = std::sqrt(norm(dX)) + Cj->RCRIT;
     if (R > Ci->RMAX) Ci->RMAX = R;

@@ -182,10 +182,11 @@ class BuildTree : public Logger {
     C->R      = R0 / (1 << level);                              // Cell radius
     C->X      = octNode->X;                                     // Cell center
     C->NBODY  = octNode->NBODY;                                 // Number of decendant bodies
-    C->BODY   = B0 + octNode->BODY;                             // Iterator of first body in cell
+    C->IBODY  = octNode->BODY;                                  // Index of first body in cell
+    C->BODY   = B0 + C->IBODY;                                  // Iterator of first body in cell
     C->ICELL  = getKey(C->X, X0-R0, 2*C->R, level);             // Get Morton key
     if (octNode->NNODE == 1) {                                  // If node has no children
-      C->CHILD  = 0;                                            //  Set index of first child cell to zero
+      C->ICHILD  = 0;                                           //  Set index of first child cell to zero
       C->NCHILD = 0;                                            //  Number of child cells
       assert(C->NBODY > 0);                                     //  Check for empty leaf cells
       maxlevel = std::max(maxlevel, level);                     //  Update maximum level of tree
@@ -199,7 +200,7 @@ class BuildTree : public Logger {
         }                                                       //   End if for child existance
       }                                                         //  End loop over octants
       C_iter Ci = CN;                                           //  CN points to the next free memory address
-      C->CHILD = Ci - C0;                                       //  Set Index of first child cell
+      C->ICHILD = Ci - C0;                                      //  Set Index of first child cell
       C->NCHILD = nchild;                                       //  Number of child cells
       assert(C->NCHILD > 0);                                    //  Check for childless non-leaf cells
       CN += nchild;                                             //  Increment next free memory address

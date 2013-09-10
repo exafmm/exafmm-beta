@@ -121,8 +121,8 @@ int main(int argc, char ** argv) {
       }
       if (fabs(sumi-sumj)/fabs(sumi) > 1e-6) std::cout << LET.mpirank << " " << Ci->ICELL << " " << sumi << " " << sumj << std::endl;
       assert( fabs(sumi-sumj)/fabs(sumi) < 1e-6 );
-      for (int i=0; i<Ci->NCHILD; i++) Qi.push(icells.begin()+Ci->CHILD+i);
-      for (int i=0; i<Cj->NCHILD; i++) Qj.push(jcells.begin()+Cj->CHILD+i);
+      for (int i=0; i<Ci->NCHILD; i++) Qi.push(icells.begin()+Ci->ICHILD+i);
+      for (int i=0; i<Cj->NCHILD; i++) Qj.push(jcells.begin()+Cj->ICHILD+i);
       ic++;
     }
     assert( ic == int(icells.size()) );

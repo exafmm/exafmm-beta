@@ -56,7 +56,7 @@ class LocalEssentialTree : public Partition {
     sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
     C_iter Cparent = sendCells.begin() + sendCellDispl[irank] + iparent;// Get parent iterator
-    if (Cparent->NCHILD == 0) Cparent->CHILD = icell;           // Index of parent's first child
+    if (Cparent->NCHILD == 0) Cparent->ICHILD = icell;          // Index of parent's first child
     Cparent->NCHILD++;                                          // Increment parent's child counter
   }
 
@@ -85,7 +85,7 @@ class LocalEssentialTree : public Partition {
     while (!cellQueue.empty()) {                                // While traversal queue is not empty
       C_iter C = cellQueue.front();                             //  Get front item in traversal queue
       cellQueue.pop();                                          //  Pop item from traversal queue
-      for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+      for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
         addSendCell(CC, iparent, icell);                        //   Add cells to send
         if (CC->NCHILD == 0) {                                  //   If cell is leaf
           addSendBody(CC, ibody, icell);                        //    Add bodies to send

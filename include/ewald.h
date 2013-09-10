@@ -80,8 +80,8 @@ class Ewald : public Logger {
 
 //! Ewald real part P2P kernel
   void P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic) const {
-    for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {   // Loop over target bodies
-      for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) { //  Loop over source bodies
+    for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {    // Loop over target bodies
+      for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) {  //  Loop over source bodies
 	vec3 dist = Bi->X - Bj->X - Xperiodic;                  //   Distance vector from source to target
 	for (int d=0; d<3; d++) {                               //   Loop over dimensions
 	  if (dist[d] < -cycle/2) dist[d] += cycle;             //    Wrap domain so that target is always at
@@ -112,7 +112,7 @@ class Ewald : public Logger {
     if (R < cutoff && Cj->NCHILD == 0) {                        // If cells are close
       P2P(Ci,Cj,Xperiodic);                                     //  Ewald real part
     } else {                                                    // If cells are far
-      for (C_iter CC=C0+Cj->CHILD; CC!=C0+Cj->CHILD+Cj->NCHILD; CC++) {// Loop over cell's children
+      for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
         traverse(Ci,CC,C0,Xperiodic);                           //   Recursively call traverse
       }                                                         //  End loop over cell's children
     }                                                           // End if for far cells

@@ -86,7 +86,7 @@ class Traversal : public Kernel, public Logger {
     Cells pcells(27);                                           // Create cells
     C_iter Ci = pcells.end()-1;                                 // Last cell is periodic parent cell
     *Ci = *Cj0;                                                 // Copy values from source root
-    Ci->CHILD = 0;                                              // Child cells for periodic center cell
+    Ci->ICHILD = 0;                                             // Child cells for periodic center cell
     Ci->NCHILD = 26;                                            // Number of child cells for periodic center cell
     C_iter C0 = Cj0;                                            // Placeholder for Cj0
     for (int level=0; level<images-1; level++) {                // Loop over sublevels of tree
@@ -145,23 +145,23 @@ class Traversal : public Kernel, public Logger {
   void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
     if (Cj->NCHILD == 0) {                                      // If Cj is leaf
       assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
-      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+      for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
         traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
       }                                                         //  End loop over Ci's children
     } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
       assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
-      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+      for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
         traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
       }                                                         //  End loop over Cj's children
     } else if (Ci->NBODY + Cj->NBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
-      traverse(Ci0+Ci->CHILD, Ci0+Ci->CHILD+Ci->NCHILD,         //  Traverse for range of cell pairs
-               Cj0+Cj->CHILD, Cj0+Cj->CHILD+Cj->NCHILD, mutual);
+      traverse(Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,       //  Traverse for range of cell pairs
+               Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, mutual);
     } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
-      for (C_iter ci=Ci0+Ci->CHILD; ci!=Ci0+Ci->CHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+      for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
         traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
       }                                                         //  End loop over Ci's children
     } else {                                                    // Else if Cj is larger than Ci
-      for (C_iter cj=Cj0+Cj->CHILD; cj!=Cj0+Cj->CHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+      for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
         traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
       }                                                         //  End loop over Cj's children
     }                                                           // End if for leafs and Ci Cj size

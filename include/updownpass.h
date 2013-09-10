@@ -12,7 +12,7 @@ class UpDownPass : public Kernel, public Logger {
 //! Error optimization of Rcrit
   void setRcrit(C_iter C, C_iter C0, real_t c) {
     spawn_tasks {                                               // Initialize tasks
-      for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+      for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	spawn_task0(setRcrit(CC, C0, c));                       //  Recursive call with new task
       }                                                         // End loop over child cells
       sync_tasks;                                               // Synchronize tasks
@@ -36,7 +36,7 @@ class UpDownPass : public Kernel, public Logger {
 //! Recursive call for upward pass
   void postOrderTraversal(C_iter C, C_iter C0) {
     spawn_tasks {                                               // Initialize tasks
-      for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+      for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	spawn_task0(postOrderTraversal(CC, C0));                //   Recursive call with new task
       }                                                         //  End loop over child cells
       sync_tasks;                                               //  Synchronize tasks
@@ -53,7 +53,7 @@ class UpDownPass : public Kernel, public Logger {
     L2L(C,C0);                                                  // L2L kernel
     if (C->NCHILD==0) L2P(C);                                   // L2P kernel
     spawn_tasks {                                               // Initialize tasks
-      for (C_iter CC=C0+C->CHILD; CC!=C0+C->CHILD+C->NCHILD; CC++) {// Loop over child cells
+      for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	spawn_task0(preOrderTraversal(CC, C0));                 //   Recursive call with new task
       }                                                         //  End loop over chlid cells
       sync_tasks;                                               //  Synchronize tasks
@@ -87,7 +87,7 @@ class UpDownPass : public Kernel, public Logger {
       C_iter C0 = cells.begin();                                //  Root cell
       if (C0->NCHILD == 0) L2P(C0);                             //  If root is the only cell do L2P
       spawn_tasks {                                             //  Initialize tasks
-        for (C_iter CC=C0+C0->CHILD; CC!=C0+C0->CHILD+C0->NCHILD; CC++) {// Loop over child cells
+        for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells
           spawn_task0(preOrderTraversal(CC, C0));               //    Recursive call for downward pass
         }                                                       //   End loop over child cells
         sync_tasks;                                             //   Synchronize tasks

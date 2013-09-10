@@ -73,7 +73,7 @@ typedef Bodies::iterator                  B_iter;               //!< Iterator of
 //! Structure of cells
 struct Cell {
   int       PARENT;                                             //!< Index of parent cell
-  int       CHILD;                                              //!< Index of first child cell
+  int       ICHILD;                                             //!< Index of first child cell
   int       NCHILD;                                             //!< Number of child cells
   int       IBODY;                                              //!< Index of first body
   int       NBODY;                                              //!< Number of descendant bodies

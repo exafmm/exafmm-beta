@@ -27,7 +27,7 @@ int main() {
 
 #if 1
   C_iter CJ = cells.begin()+1;
-  CJ->CHILD = Cj-cells.begin();
+  CJ->ICHILD = Cj-cells.begin();
   CJ->NCHILD = 1;
   CJ->X = 0;
   CJ->M = 0;
