@@ -87,6 +87,6 @@ struct Cell {
   vecP      L;                                                  //!< Local coefficients
 };
 typedef std::vector<Cell>           Cells;                      //!< Vector of cells
-typedef std::vector<Cell>::iterator C_iter;                     //!< Iterator of cell vector
+typedef Cells::iterator C_iter;                                 //!< Iterator of cell vector
 
 #endif

@@ -27,10 +27,10 @@ struct Trace {
 
 //! Timer and Trace logger
 class Logger {
- typedef std::map<std::string,double>           Timer;          //!< Map of timer event name to timed value
- typedef std::map<std::string,double>::iterator T_iter;         //!< Iterator of timer event name map
- typedef std::queue<Trace>                      Traces;         //!< Queue of traces
- typedef std::map<pthread_t,int>                ThreadMap;      //!< Map of pthread id to thread id
+ typedef std::map<std::string,double> Timer;                    //!< Map of timer event name to timed value
+ typedef Timer::iterator              T_iter;                   //!< Iterator of timer event name map
+ typedef std::queue<Trace>            Traces;                   //!< Queue of traces
+ typedef std::map<pthread_t,int>      ThreadMap;                //!< Map of pthread id to thread id
 
  private:
   Timer           beginTimer;                                   //!< Timer base value
