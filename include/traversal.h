@@ -227,33 +227,6 @@ class Traversal : public Kernel, public Logger {
     }                                                           // End loop over bodies
   }
 
-//! Time the kernel runtime for auto-tuning
-  void timeKernels() {
-    Bodies ibodies(1000), jbodies(1000);
-    for (B_iter Bi=ibodies.begin(),Bj=jbodies.begin(); Bi!=ibodies.end(); Bi++, Bj++) {
-      Bi->X = 0;
-      Bj->X = 1;
-    }
-    Cells cells;
-    cells.resize(2);
-    C_iter Ci = cells.begin(), Cj = cells.begin()+1;
-    Ci->X = 0;
-    Ci->NBODY = 10;
-    Ci->BODY = ibodies.begin();
-    Ci->M = 0;
-    Ci->L = 0;
-    Cj->X = 1;
-    Cj->NBODY = 1000;
-    Cj->BODY = jbodies.begin();
-    Cj->M = 0;
-    startTimer("P2P kernel test");
-    P2P(Ci,Cj,false);
-    timeP2P = stopTimer("P2P kernel test") / 10000;
-    startTimer("M2L kernel test");
-    for (int i=0; i<1000; i++) M2L(Ci,Cj,false);
-    timeM2L = stopTimer("M2L kernel test") / 1000;
-  }
-
 //! Print traversal statistics
   void printTraversalData() {
 #if COUNT
