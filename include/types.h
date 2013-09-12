@@ -42,11 +42,13 @@ const int NTERM = P*(P+1)/2;                                    //!< Number of S
 typedef vec<NTERM,complex_t> vecP;                              //!< Multipole/local coefficient type for spherical
 #endif
 
-//! Structures for defining bounding box
+//! Center and radius of bounding box
 struct Box {
   vec3   X;                                                     //!< Box center
   real_t R;                                                     //!< Box radius
 };
+
+//! Min & max bounds of bounding box
 struct Bounds {
   vec3 Xmin;                                                    //!< Minimum value of coordinates
   vec3 Xmax;                                                    //!< Maximum value of coordinates
