@@ -18,10 +18,10 @@ typedef vec<3,real_t>        vec3;                              //!< Vector of 3
 typedef vec<3,float>         fvec3;                             //!< Always single precision (Used only for communication)
 
 // SIMD vector types for MIC, AVX, and SSE
-const int NSIMD = SIMD_BYTES / sizeof(real_t);                  //!< SIMD vector length
+const int NSIMD = SIMD_BYTES / sizeof(real_t);                  //!< SIMD vector length (SIMD_BYTES defined in macros.h)
 typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type
 
-// Kahan summation types
+// Kahan summation types (Achieves quasi-double precision using single precision types)
 #if KAHAN
 typedef kahan<real_t>  kreal_t;                                 //!< Floating point type with Kahan summation
 typedef vec<4,kreal_t> kvec4;                                   //!< Vector of 4 floats with Kahan summaiton
@@ -88,7 +88,7 @@ struct Cell {
   vecP      M;                                                  //!< Multipole coefficients
   vecP      L;                                                  //!< Local coefficients
 };
-typedef std::vector<Cell>           Cells;                      //!< Vector of cells
-typedef Cells::iterator C_iter;                                 //!< Iterator of cell vector
+typedef std::vector<Cell> Cells;                                //!< Vector of cells
+typedef Cells::iterator   C_iter;                               //!< Iterator of cell vector
 
 #endif
