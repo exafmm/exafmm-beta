@@ -16,8 +16,6 @@ class Traversal : public Kernel, public Logger {
   int images;                                                   //!< Number of periodic image sublevels
   real_t numP2P;                                                //!< Number of P2P kernel calls
   real_t numM2L;                                                //!< Number of M2L kernel calls
-  real_t timeP2P;                                               //!< P2P execution time
-  real_t timeM2L;                                               //!< M2L execution time
   C_iter Ci0;                                                   //!< Begin iterator for target cells
   C_iter Cj0;                                                   //!< Begin iterator for source cells
 
@@ -168,7 +166,7 @@ class Traversal : public Kernel, public Logger {
   }
 
  public:
-  Traversal(int nspawn, int images) : nspawn(nspawn), images(images), numP2P(0), numM2L(0) {}
+  Traversal(int _nspawn, int _images) : nspawn(_nspawn), images(_images), numP2P(0), numM2L(0) {}
 
 //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversal(Cells &icells, Cells &jcells, real_t cycle, bool mutual=false) {
