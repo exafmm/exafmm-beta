@@ -30,7 +30,7 @@ int main(int argc, char ** argv) {
     verify.verbose = true;
   }
   logger.printTitle("FMM Parameters");
-  args.print(logger.stringLength,P);
+  args.print(logger.stringLength, P, 0);
 #if _OPENMP
 #pragma omp parallel
 #pragma omp master

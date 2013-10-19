@@ -24,11 +24,11 @@ class UpDownPass : public Kernel, public Logger {
 #if ERROR_OPT
     assert(theta != 1.0);
     real_t a = c * powf(std::abs(C->M[0]),1.0/3);               // Cell coefficient
-    for (int i=0; i<5; i++) {                                   // Newton-Rhapson iteration
+    for (int i=0; i<5; i++) {                                   // Newton-Raphson iteration
       real_t f = x * x - 2 * x + 1 - a * std::pow(x,-P);        //  Function value
       real_t df = (P + 2) * x - 2 * (P + 1) + P / x;            //  Function derivative value
       x -= f / df;                                              //  Increment x
-    }                                                           // End Newton-Rhapson iteration
+    }                                                           // End Newton-Raphson iteration
 #endif
     C->RCRIT *= x;                                              // Multiply Rcrit by error optimized parameter x
   }

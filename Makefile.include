@@ -43,13 +43,13 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
 ### Intel TBB flags : TBB is available from http://threadingbuildingblocks.org/download.php
-LFLAGS	+= -std=c++0x -DTBB -ltbb
+LFLAGS	+= -std=c++11 -DTBB -ltbb
 
 ### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
-#LFLAGS	+= -std=c++0x -DMTHREAD -lmyth 
+#LFLAGS	+= -std=c++11 -DMTHREAD -lmyth 
 
 ### OpenMP flags (not recommended, slow) : OpenMP3.0 is available in gcc>=4.3.1, icc>=11.0
-#LFLAGS += -std=c++0x -DOPENMP -fopenmp
+#LFLAGS += -std=c++11 -DOPENMP -fopenmp
 
 ### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
 #LFLAGS	+= -DPAPI -lpapi

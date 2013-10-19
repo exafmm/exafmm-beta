@@ -17,7 +17,7 @@ parallel: parallel.o $(OBJECTS)
 complexity: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	for N in 10000 20000 50000 100000 200000 500000 1000000; do \
-        ./a.out --numBodies $$N --verbose 0; echo; \
+        ./a.out --numBodies $$N; echo; \
 	done
 
 # Test for kernels only
