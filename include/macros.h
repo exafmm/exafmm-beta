@@ -6,6 +6,15 @@
 #pragma warning(disable:193 383 444 981 1572 2259)
 #endif
 
+// NVCC compiler macros
+#ifdef __CUDACC__
+#define UNROLL 1
+#else
+#define __host__
+#define __device__
+#define __forceinline__ inline
+#endif
+
 // Override assertion
 #if ASSERT
 #include <cassert>

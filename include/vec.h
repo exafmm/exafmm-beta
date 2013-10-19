@@ -1,6 +1,7 @@
 #ifndef vec_h
 #define vec_h
 #include <ostream>
+#include "unroll.h"
 #define NEWTON 1
 //! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics
 template<int N, typename T>
@@ -10,88 +11,162 @@ class vec {
  public:
   vec(){}                                                       // Default constructor
   vec(const T &v) {                                             // Copy constructor (scalar)
+#if UNROLL
+    Unroll<Ops::Assign<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] = v;
+#endif
   }
   vec(const vec &v) {                                           // Copy constructor (vector)
+#if UNROLL
+    Unroll<Ops::Assign<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] = v[i];
+#endif
   }
   ~vec(){}                                                      // Destructor
   const vec &operator=(const T v) {                             // Scalar assignment
+#if UNROLL
+    Unroll<Ops::Assign<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] = v;
+#endif
     return *this;
   }
   const vec &operator+=(const T v) {                            // Scalar compound assignment (add)
+#if UNROLL
+    Unroll<Ops::Add<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] += v;
+#endif
     return *this;
   }
   const vec &operator-=(const T v) {                            // Scalar compound assignment (subtract)
+#if UNROLL
+    Unroll<Ops::Sub<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] -= v;
+#endif
     return *this;
   }
   const vec &operator*=(const T v) {                            // Scalar compound assignment (multiply)
+#if UNROLL
+    Unroll<Ops::Mul<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] *= v;
+#endif
     return *this;
   }
   const vec &operator/=(const T v) {                            // Scalar compound assignment (divide)
+#if UNROLL
+    Unroll<Ops::Div<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] /= v;
+#endif
     return *this;
   }
   const vec &operator>=(const T v) {                            // Scalar compound assignment (greater than)
+#if UNROLL
+    Unroll<Ops::Gt<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] >= v;
+#endif
     return *this;
   }
   const vec &operator<=(const T v) {                            // Scalar compound assignment (less than)
+#if UNROLL
+    Unroll<Ops::Lt<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] <= v;
+#endif
     return *this;
   }
   const vec &operator&=(const T v) {                            // Scalar compound assignment (bitwise and)
+#if UNROLL
+    Unroll<Ops::And<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] &= v;
+#endif
     return *this;
   }
   const vec &operator|=(const T v) {                            // Scalar compound assignment (bitwise or)
+#if UNROLL
+    Unroll<Ops::Or<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] |= v;
+#endif
     return *this;
   }
   const vec &operator=(const vec &v) {                          // Vector assignment
+#if UNROLL
+    Unroll<Ops::Assign<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] = v[i];
+#endif
     return *this;
   }
   const vec &operator+=(const vec &v) {                         // Vector compound assignment (add)
+#if UNROLL
+    Unroll<Ops::Add<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] += v[i];
+#endif
     return *this;
   }
   const vec &operator-=(const vec &v) {                         // Vector compound assignment (subtract)
+#if UNROLL
+    Unroll<Ops::Sub<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] -= v[i];
+#endif
     return *this;
   }
   const vec &operator*=(const vec &v) {                         // Vector compound assignment (multiply)
+#if UNROLL
+    Unroll<Ops::Mul<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] *= v[i];
+#endif
     return *this;
   }
   const vec &operator/=(const vec &v) {                         // Vector compound assignment (divide)
+#if UNROLL
+    Unroll<Ops::Div<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] /= v[i];
+#endif
     return *this;
   }
   const vec &operator>=(const vec &v) {                         // Vector compound assignment (greater than)
+#if UNROLL
+    Unroll<Ops::Gt<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] >= v[i];
+#endif
     return *this;
   }
   const vec &operator<=(const vec &v) {                         // Vector compound assignment (less than)
+#if UNROLL
+    Unroll<Ops::Lt<T>,T,N>::loop(data,v);
+#else
     for (int i=0; i<N; i++) data[i] <= v[i];
+#endif
     return *this;
   }
   const vec &operator&=(const vec &v) {                         // Vector compound assignment (bitwise and)
-    for (int i=0; i<N; i++) {
-      int temp = int(data[i]) & int(v[i]);
-      data[i] = temp;
-    }
+#if UNROLL
+    Unroll<Ops::And<T>,T,N>::loop(data,v);
+#else
+    for (int i=0; i<N; i++) data[i] &= v[i];
+#endif
     return *this;
   }
   const vec &operator|=(const vec &v) {                         // Vector compound assignment (bitwise or)
-    for (int i=0; i<N; i++) {
-      int temp = int(data[i]) | int(v[i]);
-      data[i] = temp;
-    }
+#if UNROLL
+    Unroll<Ops::Or<T>,T,N>::loop(data,v);
+#else
+    for (int i=0; i<N; i++) data[i] |= v[i];
+#endif
     return *this;
   }
   vec operator+(const T v) const {                              // Scalar arithmetic (add)
