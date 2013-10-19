@@ -36,6 +36,14 @@ class vec {
     for (int i=0; i<N; i++) data[i] /= v;
     return *this;
   }
+  const vec &operator>=(const T v) {                            // Scalar compound assignment (greater than)
+    for (int i=0; i<N; i++) data[i] >= v;
+    return *this;
+  }
+  const vec &operator<=(const T v) {                            // Scalar compound assignment (less than)
+    for (int i=0; i<N; i++) data[i] <= v;
+    return *this;
+  }
   const vec &operator&=(const T v) {                            // Scalar compound assignment (bitwise and)
     for (int i=0; i<N; i++) data[i] &= v;
     return *this;
@@ -64,6 +72,14 @@ class vec {
     for (int i=0; i<N; i++) data[i] /= v[i];
     return *this;
   }
+  const vec &operator>=(const vec &v) {                         // Vector compound assignment (greater than)
+    for (int i=0; i<N; i++) data[i] >= v[i];
+    return *this;
+  }
+  const vec &operator<=(const vec &v) {                         // Vector compound assignment (less than)
+    for (int i=0; i<N; i++) data[i] <= v[i];
+    return *this;
+  }
   const vec &operator&=(const vec &v) {                         // Vector compound assignment (bitwise and)
     for (int i=0; i<N; i++) {
       int temp = int(data[i]) & int(v[i]);
@@ -79,84 +95,52 @@ class vec {
     return *this;
   }
   vec operator+(const T v) const {                              // Scalar arithmetic (add)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] + v;
-    return temp;
+    return vec(*this) += v;
   }
   vec operator-(const T v) const {                              // Scalar arithmetic (subtract)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] - v;
-    return temp;
+    return vec(*this) -= v;
   }
   vec operator*(const T v) const {                              // Scalar arithmetic (multiply)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] * v;
-    return temp;
+    return vec(*this) *= v;
   }
   vec operator/(const T v) const {                              // Scalar arithmetic (divide)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] / v;
-    return temp;
+    return vec(*this) /= v;
   }
   vec operator>(const T v) const {                              // Scalar arithmetic (greater than)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] > v;
-    return temp;
+    return vec(*this) >= v;
   }
   vec operator<(const T v) const {                              // Scalar arithmetic (less than)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] < v;
-    return temp;
+    return vec(*this) <= v;
   }
   vec operator&(const T v) const {                              // Scalar arithmetic (bitwise and)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] & v;
-    return temp;
+    return vec(*this) &= v;
   }
   vec operator|(const T v) const {                              // Scalar arithmetic (bitwise or)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] | v;
-    return temp;
+    return vec(*this) |= v;
   }
   vec operator+(const vec &v) const {                           // Vector arithmetic (add)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] + v[i];
-    return temp;
+    return vec(*this) += v;
   }
   vec operator-(const vec &v) const {                           // Vector arithmetic (subtract)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] - v[i];
-    return temp;
+    return vec(*this) -= v;
   }
   vec operator*(const vec &v) const {                           // Vector arithmetic (multiply)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] * v[i];
-    return temp;
+    return vec(*this) *= v;
   }
   vec operator/(const vec &v) const {                           // Vector arithmetic (divide)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] / v[i];
-    return temp;
+    return vec(*this) /= v;
   }
   vec operator>(const vec &v) const {                           // Vector arithmetic (greater than)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] > v[i];
-    return temp;
+    return vec(*this) >= v;
   }
   vec operator<(const vec &v) const {                           // Vector arithmetic (less than)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] < v[i];
-    return temp;
+    return vec(*this) <= v;
   }
   vec operator&(const vec &v) const {                           // Vector arithmetic (bitwise and)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] & v[i];
-    return temp;
+    return vec(*this) &= v;
   }
   vec operator|(const vec &v) const {                           // Vector arithmetic (bitwise or)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] | v[i];
-    return temp;
+    return vec(*this) |= v;
   }
   vec operator-() const {                                       // Vector arithmetic (negation)
     vec temp;
