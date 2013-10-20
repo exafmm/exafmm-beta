@@ -45,6 +45,16 @@ struct kahan {
     c /= v;
     return *this;
   }
+  const kahan &operator>=(const T v) {                          // Scalar compound assignment (greater than)
+    s >= v;
+    c >= v;
+    return *this;
+  }
+  const kahan &operator<=(const T v) {                          // Scalar compound assignment (less than)
+    s <= v;
+    c <= v;
+    return *this;
+  }
   const kahan &operator&=(const T v) {                          // Scalar compound assignment (bitwise and)
     s &= v;
     c &= v;
@@ -92,6 +102,16 @@ struct kahan {
     c /= (v.s + v.c);
     return *this;
   }
+  const kahan &operator>=(const kahan &v) {                     // Vector compound assignment (greater than)
+    s >= v.s;
+    c >= v.c;
+    return *this;
+  }
+  const kahan &operator<=(const kahan &v) {                     // Vector compound assignment (less than)
+    s <= (v.s + v.c);
+    c <= (v.s + v.c);
+    return *this;
+  }
   const kahan &operator&=(const kahan &v) {                     // Vector compound assignment (bitwise and)
     s &= v.s;
     c &= v.c;
@@ -102,105 +122,53 @@ struct kahan {
     c |= v.c;
     return *this;
   }
-  kahan operator+(const T v) const {                            // Scalar arithmetic (add)
-    kahan temp;
-    T y = v - c;
-    T t = s + y;
-    temp.c = (t - s) - y;
-    temp.s = t;
-    return temp;
+  kahan operator+(const T v) const {                            // Scalar arithmetic (add) 
+    return kahan(*this) += v;
   }
   kahan operator-(const T v) const {                            // Scalar arithmetic (subtract)
-    kahan temp;
-    T y = - v - c;
-    T t = s + y;
-    temp.c = (t - s) - y;
-    temp.s = t;
-    return temp;
+    return kahan(*this) -= v;
   }
   kahan operator*(const T v) const {                            // Scalar arithmetic (multiply)
-    kahan temp; 
-    temp.s = s * v;
-    temp.c = c * v;
-    return temp;
+    return kahan(*this) *= v;
   }
   kahan operator/(const T v) const {                            // Scalar arithmetic (divide)
-    kahan temp;
-    temp.s = s / v;
-    temp.c = c / v;
-    return temp;
+    return kahan(*this) /= v;
   }
   kahan operator>(const T v) const {                            // Scalar arithmetic (greater than)
-    kahan temp;
-    temp.s = s > v;
-    temp.c = c > v;
-    return temp;
+    return kahan(*this) >= v;
   }
   kahan operator<(const T v) const {                            // Scalar arithmetic (less than)
-    kahan temp;
-    temp.s = s < v;
-    temp.c = c < v;
-    return temp;
+    return kahan(*this) <= v;
   }
   kahan operator&(const T v) const {                            // Scalar arithmetic (bitwise and)
-    kahan temp;
-    temp.s = s & v;
-    temp.c = c & v;
-    return temp;
+    return kahan(*this) &= v;
   }
   kahan operator|(const T v) const {                            // Scalar arithmetic (bitwise or)
-    kahan temp;
-    temp.s = s | v;
-    temp.c = c | v;
-    return temp;
+    return kahan(*this) |= v;
   }
   kahan operator+(const kahan &v) const {                       // Vector arithmetic (add)
-    kahan temp;
-    temp.s = s + v.s;
-    temp.c = c + v.c;
-    return temp;
+    return kahan(*this) += v;
   }
   kahan operator-(const kahan &v) const {                       // Vector arithmetic (subtract)
-    kahan temp;
-    temp.s = s - v.s;
-    temp.c = c - v.c;
-    return temp;
+    return kahan(*this) -= v;
   }
   kahan operator*(const kahan &v) const {                       // Vector arithmetic (multiply)
-    kahan temp;
-    temp.s = s * (v.s + v.c);
-    temp.c = c * (v.s + v.c);
-    return temp;
+    return kahan(*this) *= v;
   }
   kahan operator/(const kahan &v) const {                       // Vector arithmetic (divide)
-    kahan temp;
-    temp.s = s / (v.s + v.c);
-    temp.c = c / (v.s + v.c);
-    return temp;
+    return kahan(*this) /= v;
   }
   kahan operator>(const kahan &v) const {                       // Vector arithmetic (greater than)
-    kahan temp;
-    temp.s = s > v.s;
-    temp.c = c > v.c;
-    return temp;
+    return kahan(*this) >= v;
   }
   kahan operator<(const kahan &v) const {                       // Vector arithmetic (less than)
-    kahan temp;
-    temp.s = s < v.s;
-    temp.c = c < v.c;
-    return temp;
+    return kahan(*this) <= v;
   }
   kahan operator&(const kahan &v) const {                       // Vector arithmetic (bitwise and)
-    kahan temp;
-    temp.s = s & v.s;
-    temp.c = c & v.c;
-    return temp;
+    return kahan(*this) &= v;
   }
   kahan operator|(const kahan &v) const {                       // Vector arithmetic (bitwise or)
-    kahan temp;
-    temp.s = s | v.s;
-    temp.c = c | v.c;
-    return temp;
+    return kahan(*this) |= v;
   }
   kahan operator-() const {                                     // Vector arithmetic (negation)
     kahan temp;
