@@ -3,6 +3,8 @@
 #include <ostream>
 #define NEWTON 1
 //! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics
+
+#ifndef __CUDACC__
 template<int N, typename T>
 class vec {
  private:
@@ -36,6 +38,14 @@ class vec {
     for (int i=0; i<N; i++) data[i] /= v;
     return *this;
   }
+  const vec &operator>=(const T v) {                            // Scalar compound assignment (greater than)
+    for (int i=0; i<N; i++) data[i] >= v;
+    return *this;
+  }
+  const vec &operator<=(const T v) {                            // Scalar compound assignment (less than)
+    for (int i=0; i<N; i++) data[i] <= v;
+    return *this;
+  }
   const vec &operator&=(const T v) {                            // Scalar compound assignment (bitwise and)
     for (int i=0; i<N; i++) data[i] &= v;
     return *this;
@@ -64,99 +74,69 @@ class vec {
     for (int i=0; i<N; i++) data[i] /= v[i];
     return *this;
   }
+  const vec &operator>=(const vec &v) {                         // Vector compound assignment (greater than)
+    for (int i=0; i<N; i++) data[i] >= v[i];
+    return *this;
+  }
+  const vec &operator<=(const vec &v) {                         // Vector compound assignment (less than)
+    for (int i=0; i<N; i++) data[i] <= v[i];
+    return *this;
+  }
   const vec &operator&=(const vec &v) {                         // Vector compound assignment (bitwise and)
-    for (int i=0; i<N; i++) {
-      int temp = int(data[i]) & int(v[i]);
-      data[i] = temp;
-    }
+    for (int i=0; i<N; i++) data[i] &= v[i];
     return *this;
   }
   const vec &operator|=(const vec &v) {                         // Vector compound assignment (bitwise or)
-    for (int i=0; i<N; i++) {
-      int temp = int(data[i]) | int(v[i]);
-      data[i] = temp;
-    }
+    for (int i=0; i<N; i++) data[i] |= v[i];
     return *this;
   }
   vec operator+(const T v) const {                              // Scalar arithmetic (add)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] + v;
-    return temp;
+    return vec(*this) += v;
   }
   vec operator-(const T v) const {                              // Scalar arithmetic (subtract)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] - v;
-    return temp;
+    return vec(*this) -= v;
   }
   vec operator*(const T v) const {                              // Scalar arithmetic (multiply)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] * v;
-    return temp;
+    return vec(*this) *= v;
   }
   vec operator/(const T v) const {                              // Scalar arithmetic (divide)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] / v;
-    return temp;
+    return vec(*this) /= v;
   }
   vec operator>(const T v) const {                              // Scalar arithmetic (greater than)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] > v;
-    return temp;
+    return vec(*this) >= v;
   }
   vec operator<(const T v) const {                              // Scalar arithmetic (less than)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] < v;
-    return temp;
+    return vec(*this) <= v;
   }
   vec operator&(const T v) const {                              // Scalar arithmetic (bitwise and)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] & v;
-    return temp;
+    return vec(*this) &= v;
   }
   vec operator|(const T v) const {                              // Scalar arithmetic (bitwise or)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] | v;
-    return temp;
+    return vec(*this) |= v;
   }
   vec operator+(const vec &v) const {                           // Vector arithmetic (add)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] + v[i];
-    return temp;
+    return vec(*this) += v;
   }
   vec operator-(const vec &v) const {                           // Vector arithmetic (subtract)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] - v[i];
-    return temp;
+    return vec(*this) -= v;
   }
   vec operator*(const vec &v) const {                           // Vector arithmetic (multiply)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] * v[i];
-    return temp;
+    return vec(*this) *= v;
   }
   vec operator/(const vec &v) const {                           // Vector arithmetic (divide)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] / v[i];
-    return temp;
+    return vec(*this) /= v;
   }
   vec operator>(const vec &v) const {                           // Vector arithmetic (greater than)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] > v[i];
-    return temp;
+    return vec(*this) >= v;
   }
   vec operator<(const vec &v) const {                           // Vector arithmetic (less than)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] < v[i];
-    return temp;
+    return vec(*this) <= v;
   }
   vec operator&(const vec &v) const {                           // Vector arithmetic (bitwise and)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] & v[i];
-    return temp;
+    return vec(*this) &= v;
   }
   vec operator|(const vec &v) const {                           // Vector arithmetic (bitwise or)
-    vec temp;
-    for (int i=0; i<N; i++) temp[i] = data[i] | v[i];
-    return temp;
+    return vec(*this) |= v;
   }
   vec operator-() const {                                       // Vector arithmetic (negation)
     vec temp;
@@ -164,11 +144,9 @@ class vec {
     return temp;
   }
   T &operator[](int i) {                                        // Indexing (lvalue)
-    assert(i < N);
     return data[i];
   }
   const T &operator[](int i) const {                            // Indexing (rvalue)
-    assert(i < N);
     return data[i];
   }
   operator       T* ()       {return data;}                     // Type-casting (lvalue)
@@ -203,6 +181,268 @@ class vec {
     return temp;
   }
 };
+#else
+#include "unroll.h"
+template<int N, typename T>
+class vec {
+ private:
+  T data[N];
+ public:
+  __host__ __device__ __forceinline__
+  vec(){}                                                       // Default constructor
+  __host__ __device__ __forceinline__
+  vec(const T &v) {                                             // Copy constructor (scalar)
+    Unroll<Ops::Assign<T>,T,N>::loop(data,v);
+  }
+  __host__ __device__ __forceinline__
+  vec(const vec &v) {                                           // Copy constructor (vector)
+    Unroll<Ops::Assign<T>,T,N>::loop(data,v);
+  }
+  __host__ __device__ __forceinline__
+  vec(const float4 &v) {                                        // Copy constructor (float4)
+    data[0] = v.x;
+    data[1] = v.y;
+    data[2] = v.z;
+    data[3] = v.w;
+  }
+  __host__ __device__ __forceinline__
+  vec(const float x, const float y, const float z, const float w) {// Copy constructor (4 floats)
+    data[0] = x;
+    data[1] = y;
+    data[2] = z;
+    data[3] = w;
+  }
+  __host__ __device__ __forceinline__
+  vec(const float x, const float y, const float z) {            // Copy constructor (3 floats)
+    data[0] = x;
+    data[1] = y;
+    data[2] = z;
+  }
+  __host__ __device__ __forceinline__
+  ~vec(){}                                                      // Destructor
+  __host__ __device__ __forceinline__
+  const vec &operator=(const T v) {                             // Scalar assignment
+    Unroll<Ops::Assign<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator+=(const T v) {                            // Scalar compound assignment (add)
+    Unroll<Ops::Add<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator-=(const T v) {                            // Scalar compound assignment (subtract)
+    Unroll<Ops::Sub<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator*=(const T v) {                            // Scalar compound assignment (multiply)
+    Unroll<Ops::Mul<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator/=(const T v) {                            // Scalar compound assignment (divide)
+    Unroll<Ops::Div<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator>=(const T v) {                            // Scalar compound assignment (greater than)
+    Unroll<Ops::Gt<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator<=(const T v) {                            // Scalar compound assignment (less than)
+    Unroll<Ops::Lt<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator&=(const T v) {                            // Scalar compound assignment (bitwise and)
+    Unroll<Ops::And<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator|=(const T v) {                            // Scalar compound assignment (bitwise or)
+    Unroll<Ops::Or<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator=(const vec &v) {                          // Vector assignment
+    Unroll<Ops::Assign<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator+=(const vec &v) {                         // Vector compound assignment (add)
+    Unroll<Ops::Add<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator-=(const vec &v) {                         // Vector compound assignment (subtract)
+    Unroll<Ops::Sub<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator*=(const vec &v) {                         // Vector compound assignment (multiply)
+    Unroll<Ops::Mul<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator/=(const vec &v) {                         // Vector compound assignment (divide)
+    Unroll<Ops::Div<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator>=(const vec &v) {                         // Vector compound assignment (greater than)
+    Unroll<Ops::Gt<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator<=(const vec &v) {                         // Vector compound assignment (less than)
+    Unroll<Ops::Lt<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator&=(const vec &v) {                         // Vector compound assignment (bitwise and)
+    Unroll<Ops::And<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  const vec &operator|=(const vec &v) {                         // Vector compound assignment (bitwise or)
+    Unroll<Ops::Or<T>,T,N>::loop(data,v);
+    return *this;
+  }
+  __host__ __device__ __forceinline__
+  vec operator+(const T v) const {                              // Scalar arithmetic (add)
+    return vec(*this) += v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator-(const T v) const {                              // Scalar arithmetic (subtract)
+    return vec(*this) -= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator*(const T v) const {                              // Scalar arithmetic (multiply)
+    return vec(*this) *= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator/(const T v) const {                              // Scalar arithmetic (divide)
+    return vec(*this) /= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator>(const T v) const {                              // Scalar arithmetic (greater than)
+    return vec(*this) >= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator<(const T v) const {                              // Scalar arithmetic (less than)
+    return vec(*this) <= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator&(const T v) const {                              // Scalar arithmetic (bitwise and)
+    return vec(*this) &= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator|(const T v) const {                              // Scalar arithmetic (bitwise or)
+    return vec(*this) |= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator+(const vec &v) const {                           // Vector arithmetic (add)
+    return vec(*this) += v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator-(const vec &v) const {                           // Vector arithmetic (subtract)
+    return vec(*this) -= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator*(const vec &v) const {                           // Vector arithmetic (multiply)
+    return vec(*this) *= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator/(const vec &v) const {                           // Vector arithmetic (divide)
+    return vec(*this) /= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator>(const vec &v) const {                           // Vector arithmetic (greater than)
+    return vec(*this) >= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator<(const vec &v) const {                           // Vector arithmetic (less than)
+    return vec(*this) <= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator&(const vec &v) const {                           // Vector arithmetic (bitwise and)
+    return vec(*this) &= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator|(const vec &v) const {                           // Vector arithmetic (bitwise or)
+    return vec(*this) |= v;
+  }
+  __host__ __device__ __forceinline__
+  vec operator-() const {                                       // Vector arithmetic (negation)
+    vec temp;
+    Unroll<Ops::Negate<T>,T,N>::loop(temp,data);
+    return temp;
+  }
+  __host__ __device__ __forceinline__
+  T &operator[](int i) {                                        // Indexing (lvalue)
+    return data[i];
+  }
+  __host__ __device__ __forceinline__
+  const T &operator[](int i) const {                            // Indexing (rvalue)
+    return data[i];
+  }
+  __host__ __device__ __forceinline__
+  operator       T* ()       {return data;}                     // Type-casting (lvalue)
+  __host__ __device__ __forceinline__
+  operator const T* () const {return data;}                     // Type-casting (rvalue)
+  __host__ __device__ __forceinline__
+  friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
+    for (int i=0; i<N; i++) s << v[i] << ' ';
+    return s;
+  }
+  __host__ __device__ __forceinline__
+  friend T sum(const vec &v) {                                  // Sum vector
+    return Unroll<Ops::Add<T>,T,N>::reduce(v);
+  }
+  __host__ __device__ __forceinline__
+  friend T norm(const vec &v) {                                 // L2 norm squared
+    return sum(v * v);
+  }
+  __host__ __device__ __forceinline__
+  friend vec min(const vec &v, const vec &w) {                  // Element-wise minimum
+    vec temp;
+    for (int i=0; i<N; i++) temp[i] = v[i] < w[i] ? v[i] : w[i];
+    return temp;
+  }
+  __host__ __device__ __forceinline__
+  friend vec max(const vec &v, const vec &w) {                  // Element-wise maximum
+    vec temp;
+    for (int i=0; i<N; i++) temp[i] = v[i] > w[i] ? v[i] : w[i];
+    return temp;
+  }
+  __host__ __device__ __forceinline__
+  friend T min(const vec &v) {                                  // Reduce minimum
+    T temp;
+    for (int i=0; i<N; i++) temp = temp < v[i] ? temp : v[i];
+    return temp;
+  }
+  __host__ __device__ __forceinline__
+    friend T max(const vec &v) {                                // Reduce maximum
+    T temp;
+    for (int i=0; i<N; i++) temp = temp > v[i] ? temp : v[i];
+    return temp;
+  }
+  __device__ __forceinline__
+  friend vec abs(const vec &v) {                                // Absolute value
+    vec temp;
+    Unroll<Ops::Abs<T>,T,N>::loop(temp,v);
+    return temp;
+  }
+  __device__ __forceinline__
+  friend vec rsqrt(const vec &v) {                              // Reciprocal square root
+    vec temp;
+    Unroll<Ops::Rsqrt<T>,T,N>::loop(temp,v);
+    return temp;
+  }
+};
+#endif
 
 #if __MIC__
 #include <immintrin.h>
@@ -278,11 +518,9 @@ class vec<16,float> {
     return vec(_mm512_sub_ps(_mm512_setzero_ps(),data));
   }
   float &operator[](int i) {                                    // Indexing (lvalue)
-    assert(i < 16);
     return ((float*)&data)[i];
   }
   const float &operator[](int i) const {                        // Indexing (rvalue)
-    assert(i < 16);
     return ((float*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -383,11 +621,9 @@ public:
     return vec(_mm512_sub_pd(_mm512_setzero_pd(),data));
   }
   double &operator[](int i) {                                   // Indexing (lvalue)
-    assert(i < 8);
     return ((double*)&data)[i];
   }
   const double &operator[](int i) const {                       // Indexing (rvalue)
-    assert(i < 8);
     return ((double*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -494,11 +730,9 @@ class vec<8,float> {
     return vec(_mm256_sub_ps(_mm256_setzero_ps(),data));
   }
   float &operator[](int i) {                                    // Indexing (lvalue)
-    assert(i < 8);
     return ((float*)&data)[i];
   }
   const float &operator[](int i) const {                        // Indexing (rvalue)
-    assert(i < 8);
     return ((float*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -606,11 +840,9 @@ class vec<4,double> {
     return vec(_mm256_sub_pd(_mm256_setzero_pd(),data));
   }
   double &operator[](int i) {                                   // Indexing (lvalue)
-    assert(i < 4);
     return ((double*)&data)[i];
   }
   const double &operator[](int i) const {                       // Indexing (rvalue)
-    assert(i < 4);
     return ((double*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -725,11 +957,9 @@ class vec<4,double> {
     return vec(vec_sub((vector4double)(0),data));
   }
   double &operator[](int i) {                                   // Indexing (lvalue)
-    assert(i < 4);
     return ((double*)&data)[i];
   }
   const double &operator[](int i) const {                       // Indexing (rvalue)
-    assert(i < 4);
     return ((double*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -840,11 +1070,9 @@ class vec<4,float> {
     return vec(_mm_sub_ps(_mm_setzero_ps(),data));
   }
   float &operator[](int i) {                                    // Indexing (lvalue)
-    assert(i < 4);
     return ((float*)&data)[i];
   }
   const float &operator[](int i) const {                        // Indexing (rvalue)
-    assert(i < 4);
     return ((float*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -948,11 +1176,9 @@ class vec<2,double> {
     return vec(_mm_sub_pd(_mm_setzero_pd(),data));
   }
   double &operator[](int i) {                                   // Indexing (lvalue)
-    assert(i < 2);
     return ((double*)&data)[i];
   }
   const double &operator[](int i) const {                       // Indexing (rvalue)
-    assert(i < 2);
     return ((double*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
@@ -1061,11 +1287,9 @@ class vec<2,double> {
     return vec(_mm_sub_pd(_mm_setzero_pd(),data));
   }
   double &operator[](int i) {                                   // Indexing (lvalue)
-    assert(i < 2);
     return ((double*)&data)[i];
   }
   const double &operator[](int i) const {                       // Indexing (rvalue)
-    assert(i < 2);
     return ((double*)&data)[i];
   }
   friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
