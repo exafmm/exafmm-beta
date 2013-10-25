@@ -7,8 +7,8 @@ EQUATION = Laplace
 #EQUATION = Stokes (not available yet)
 
 ### choose basis of multipole/local expansion
-BASIS	= Cartesian
-#BASIS	= Spherical
+#BASIS	= Cartesian
+BASIS	= Spherical
 #BASIS	= Planewave (not available yet)
 
 ### choose device to use
@@ -32,7 +32,7 @@ FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp #GCC
 ### Base flags
 CXX	+= -I../include
 LFLAGS	+= -D$(BASIS)
-LFLAGS  += -DEXPANSION=4 # Specifcy expansion order
+LFLAGS  += -DEXPANSION=10 # Specifcy expansion order
 #LFLAGS	+= -DERROR_OPT # Use error optimized theta
 #LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 #LFLAGS	+= -DFP64 # Use double precision
@@ -43,7 +43,7 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
 ### Intel TBB flags : TBB is available from http://threadingbuildingblocks.org/download.php
-LFLAGS	+= -std=c++11 -DTBB -ltbb
+LFLAGS	+= -std=c++0x -DTBB -ltbb
 
 ### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -std=c++11 -DMTHREAD -lmyth 

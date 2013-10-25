@@ -35,7 +35,7 @@
       call mpi_comm_size(mpi_comm_world, mpisize, ierr);
       call mpi_comm_rank(mpi_comm_world, mpirank, ierr);
       nglobal = 1000;
-      images = 0
+      images = 2
       ksize = 11
       pcycle = 2 * pi
       alpha = 10 / pcycle
@@ -108,7 +108,7 @@
                   dz = x(3*i-0) - x2(3*j-0) - xperiodic(3)
                   R2 = dx * dx + dy * dy + dz * dz
                   Rinv = 1 / sqrt(R2)
-                  if(i.eq.j) Rinv = 0
+                  if(R2.eq.0) Rinv = 0
                   R3inv = q2(j) * Rinv * Rinv * Rinv
                   pp = pp + q2(j) * Rinv
                   fx = fx + dx * R3inv
@@ -164,8 +164,8 @@
       potNrmGlob = potSumGlob2 * potSumGlob2
       if (mpirank.eq.0) then
         print"(a)",'--- FMM vs. direct ---------------'
-	print"(a,f10.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob)
-        print"(a,f10.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob)
+	print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob)
+        print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob)
       end if
 
       deallocate( x, q, p, f, icpumap, x2, q2, p2, f2 )
