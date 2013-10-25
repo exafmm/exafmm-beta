@@ -55,7 +55,7 @@ int main(int argc, char ** argv) {
   logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize, 3-LET.mpisize);
   Bounds localBounds = boundbox.getBounds(bodies);
   Bounds globalBounds = LET.allreduceBounds(localBounds);
   localBounds = LET.partition(bodies, globalBounds);
@@ -81,7 +81,7 @@ int main(int argc, char ** argv) {
   pass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
-#if 1
+#if 0
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
   logger.printTitle("Ewald Profiling");
@@ -134,10 +134,11 @@ int main(int argc, char ** argv) {
   MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   logger.printTitle("FMM vs. Ewald");
   if (LET.mpirank==0) {
+    std::cout << bodies.size() << " " << bodies2.size() << std::endl;
     for (int i=0; i<10; i++) {
       B_iter B = bodies.begin()+i;
       B_iter B2 = bodies2.begin()+i;
-      std::cout << B->TRG[1] << " " << B2->TRG[1] << std::endl;
+      std::cout << B->TRG[0] << " " << B2->TRG[0] << std::endl;
     }
   }
   double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);

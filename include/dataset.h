@@ -33,7 +33,7 @@ class Dataset {                                                 // Contains all 
           B->X[2] = (iz / real_t(nx-1)) * 2 - 1;                //    z coordinate
         }                                                       //   End loop over z direction
       }                                                         //  End loop over y direction
-    }                                                           // End loop over x direction 
+    }                                                           // End loop over x direction
     return bodies;                                              // Return bodies
   }
 
@@ -95,14 +95,19 @@ class Dataset {                                                 // Contains all 
   Dataset() : filePosition(0) {}
 
 //! Initialize source values
-  void initSource(Bodies &bodies, int mpisize) {
+  void initSource(Bodies &bodies, int seed, int mpisize, int numSplit) {
 #if MASS
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over bodies
       B->SRC = 1. / bodies.size() / mpisize;                    //   Initialize mass
     }                                                           //  End loop over bodies
 #else
+    srand48(seed);                                              // Set seed for random number generator
     real_t average = 0;                                         //  Initialize average charge
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over bodies
+      if (numSplit != 1 && B-bodies.begin() == int((seed+1)*bodies.size()/numSplit)) {// Mimic parallel dataset
+        seed++;                                                 //    Mimic seed at next rank
+        srand48(seed);                                          //    Set seed for random number generator
+      }                                                         //   Endif for mimicing parallel dataset
       B->SRC = drand48() - .5;                                  //   Initialize charge
       average += B->SRC;                                        //   Accumulate average
     }                                                           //  End loop over bodies
@@ -140,7 +145,7 @@ class Dataset {                                                 // Contains all 
     default:                                                    // If none of the above
       fprintf(stderr, "Unknown data distribution %s\n", distribution);// Print error message
     }                                                           // End switch between data distribution type
-    initSource(bodies,mpisize);                                 // Initialize source values
+    initSource(bodies,mpirank,mpisize,numSplit);                // Initialize source values
     initTarget(bodies);                                         // Initialize target values
     return bodies;                                              // Return bodies
   }
@@ -177,7 +182,7 @@ class Dataset {                                                 // Contains all 
     file.close();                                               // Close file
   }
 
-//! Downsize target bodies by even sampling 
+//! Downsize target bodies by even sampling
   void sampleBodies(Bodies &bodies, int numTargets) {
     if (numTargets < int(bodies.size())) {                      // If target size is smaller than current
       int stride = bodies.size() / numTargets;                  //  Stride of sampling
