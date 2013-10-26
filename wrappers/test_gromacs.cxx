@@ -1,25 +1,26 @@
 #include <mpi.h>
 #include <cmath>
 #include <cstdlib>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 extern "C" void FMM_Init(int images);
 extern "C" void FMM_Partition(int & n, double * x, double * q, double cycle);
 extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double cycle);
-extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f, int ksize, double alpha, double cycle);
+extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
+			  int ksize, double alpha, double sigma, double cutoff, double cycle);
 
 extern "C" void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   const int isend = (mpirank + 1          ) % mpisize;
   const int irecv = (mpirank - 1 + mpisize) % mpisize;
   int nnew;
   MPI_Request sreq, rreq;
-
   MPI_Isend(&nold, 1, MPI_DOUBLE, irecv, 0, MPI_COMM_WORLD, &sreq);
   MPI_Irecv(&nnew, 1, MPI_DOUBLE, isend, 0, MPI_COMM_WORLD, &rreq);
   MPI_Wait(&sreq, MPI_STATUS_IGNORE);
   MPI_Wait(&rreq, MPI_STATUS_IGNORE);
-
   double * buf = new double [nnew];
   MPI_Isend(var, nold, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
   MPI_Irecv(buf, nnew, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
@@ -34,26 +35,29 @@ extern "C" void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
-  int Ni = 1000;
+  int Ni = 500;
   int stringLength = 20;
-  int images = 0;
+  int images = 3;
   int ksize = 11;
   double cycle = 2 * M_PI;
   double alpha = 10 / cycle;
-  double *x = new double [3*Nmax];
-  double *q = new double [Nmax];
-  double *p = new double [Nmax];
-  double *f = new double [3*Nmax];
-  double *x2 = new double [3*Nmax];
-  double *q2 = new double [Nmax];
-  double *p2 = new double [Nmax];
-  double *f2 = new double [3*Nmax];
+  double sigma = .25 / M_PI;
+  double cutoff = cycle * alpha / 3;
+  double * x = new double [3*Nmax];
+  double * q = new double [Nmax];
+  double * p = new double [Nmax];
+  double * f = new double [3*Nmax];
+  double * x2 = new double [3*Nmax];
+  double * q2 = new double [Nmax];
+  double * p2 = new double [Nmax];
+  double * f2 = new double [3*Nmax];
 
   int mpisize, mpirank;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
 
+#if 1
   srand48(mpirank);
   double average = 0;
   for (int i=0; i<Ni; i++) {
@@ -70,6 +74,19 @@ int main(int argc, char ** argv) {
   for (int i=0; i<Ni; i++) {
     q[i] -= average;
   }
+#else
+  std::stringstream name;
+  name << "source" << std::setfill('0') << std::setw(4)
+       << mpirank << ".dat";
+  std::ifstream file(name.str().c_str(),std::ios::in);
+  for (int i=0; i<Ni; i++) {
+    file >> x[3*i+0];
+    file >> x[3*i+1];
+    file >> x[3*i+2];
+    file >> q[i];
+  }
+  file.close();
+#endif
 
   FMM_Init(images);
   FMM_Partition(Ni, x, q, cycle);
@@ -81,8 +98,8 @@ int main(int argc, char ** argv) {
     q2[i] = q[i];
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }
-#if 0
-  FMM_Ewald(Ni, x2, q2, p2, f2, ksize, alpha, cycle);
+#if 1
+  FMM_Ewald(Ni, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, cycle);
 #else
   int prange = 0;
   for (int i=0; i<images; i++) {
@@ -142,7 +159,7 @@ int main(int argc, char ** argv) {
       p2[i] -= coef * norm / N / q[i];
       f2[3*i+0] -= coef * globalDipole[0];
       f2[3*i+1] -= coef * globalDipole[1];
-      f2[3*i+2] -= coef * globalDipole[2];    
+      f2[3*i+2] -= coef * globalDipole[2];
   }
 #endif
   double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;

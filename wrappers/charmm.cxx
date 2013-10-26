@@ -46,9 +46,12 @@ extern "C" void fmm_init_(int * images) {
     traversal->verbose = true;
     LET->verbose = true;
   }
+  logger->printTitle("Initial Parameters");
+  args->print(logger->stringLength, P, LET->mpirank);
 }
 
 extern "C" void fmm_partition_(int * nglobal, int * icpumap, double * x, double * q, double * cycle) {
+  logger->printTitle("Partition Profiling");
   int nlocal = 0;
   for (int i=0; i<*nglobal; i++) {
     if (icpumap[i] == 1) nlocal++;
@@ -228,4 +231,5 @@ extern "C" void ewald_(int * nglobal, int * icpumap, double * x, double * q, dou
     f[3*i+1] = B->TRG[2];
     f[3*i+2] = B->TRG[3];
   }
+  delete ewald;
 }

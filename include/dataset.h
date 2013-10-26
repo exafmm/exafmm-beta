@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 #include "types.h"
 
 class Dataset {                                                 // Contains all the different datasets

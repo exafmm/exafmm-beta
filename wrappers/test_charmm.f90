@@ -44,7 +44,7 @@
       cutoff = pcycle * alpha / 3;
       allocate( x(3*nmax),  q(nmax),  p(nmax),  f(3*nmax), icpumap(nmax) )
       allocate( x2(3*nmax), q2(nmax), p2(nmax), f2(3*nmax) )
-#if 0
+#if 1
       do i = 1, 128
         iseed(i) = 0
       end do
