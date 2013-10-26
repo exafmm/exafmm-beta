@@ -21,7 +21,7 @@ class Partition : public MyMPI, public Logger {
       sendBodyCount[i] = 0;                                     //  Initialize send counts
     }                                                           // End loop over ranks
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      assert(0 <= B->IPROC && B->IPROC < mpisize);
+      assert(0 <= B->IPROC && B->IPROC < mpisize);              //  Check bounds for process ID
       sendBodyCount[B->IPROC]++;                                //  Fill send count bucket
       B->IPROC = mpirank;                                       //  Tag for sending back to original rank
     }                                                           // End loop over bodies

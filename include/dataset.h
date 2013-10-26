@@ -12,17 +12,26 @@ class Dataset {                                                 // Contains all 
   long filePosition;                                            // Position of file stream
 
  private:
+  //! Split range and return partial range
+  void splitRange(int &begin, int &end, int iSplit, int numSplit) {
+    assert(end > begin);                                        // Check that size > 0
+    int size = end - begin;                                     // Size of range
+    int increment = size / numSplit;                            // Increment of splitting
+    int remainder = size % numSplit;                            // Remainder of splitting
+    begin += iSplit * increment + std::min(iSplit,remainder);   // Increment the begin counter
+    end = begin + increment;                                    // Increment the end counter
+    if (remainder > iSplit) end++;                              // Adjust the end counter for remainder
+  }
+
 //! Uniform distribution on [-1,1]^3 lattice
   Bodies lattice(int numBodies, int mpirank, int mpisize) {
     int nx = int(std::pow(numBodies*mpisize, 1./3));            // Number of points in x direction
     int ny = nx;                                                // Number of points in y direction
-    int nz = nx / mpisize;                                      // Number of points in z direction
-    int remainder = nx % mpisize;                               // Account for uneven partition sizes
-    int begin = mpirank * nz + std::min(mpirank,remainder);     // Begin index for z direction
-    int end = begin + nz;                                       // End index for z direction
-    if (remainder > mpirank) end++;                             // Adjust the end index for uneven partition sizez
-    assert(end > begin);                                        // Check that nz > 0
-    int numLattice = nx * ny * nz;                              // Total number of lattice points
+    int nz = nx;                                                // Number of points in z direction
+    int begin = 0;                                              // Begin index in z direction
+    int end = nz;                                               // End index in z direction
+    splitRange(begin, end, mpirank, mpisize);                   // Split range in z direction
+    int numLattice = nx * ny * (end - begin);                   // Total number of lattice points
     Bodies bodies(numLattice);                                  // Initialize bodies
     B_iter B = bodies.begin();                                  // Initialize body iterator
     for (int ix=0; ix<nx; ix++) {                               // Loop over x direction
@@ -39,54 +48,57 @@ class Dataset {                                                 // Contains all 
 
 //! Random distribution in [-1,1]^3 cube
   Bodies cube(int numBodies, int seed, int numSplit) {
-    srand48(seed);                                              // Set seed for random number generator
     Bodies bodies(numBodies);                                   // Initialize bodies
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      if (numSplit != 1 && B-bodies.begin() == int((seed+1)*bodies.size()/numSplit)) {// Mimic parallel dataset
-        seed++;                                                 //   Mimic seed at next rank
-        srand48(seed);                                          //   Set seed for random number generator
-      }                                                         //  Endif for mimicing parallel dataset
-      for (int d=0; d<3; d++) {                                 //  Loop over dimension
-        B->X[d] = drand48() * 2 * M_PI - M_PI;                  //   Initialize positions
-      }                                                         //  End loop over dimension
-    }                                                           // End loop over bodies
+    for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
+      int begin = 0;                                            //  Begin index of bodies
+      int end = bodies.size();                                  //  End index of bodies
+      splitRange(begin, end, i, numSplit);                      //  Split range of bodies
+      srand48(seed);                                            //  Set seed for random number generator
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	for (int d=0; d<3; d++) {                               //   Loop over dimension
+	  B->X[d] = drand48() * 2 * M_PI - M_PI;                //    Initialize positions
+	}                                                       //   End loop over dimension
+      }                                                         //  End loop over bodies
+    }                                                           // End loop over partitions
     return bodies;                                              // Return bodies
   }
 
 //! Random distribution on r = 1 sphere
   Bodies sphere(int numBodies, int seed, int numSplit) {
-    srand48(seed);                                              // Set seed for random number generator
     Bodies bodies(numBodies);                                   // Initialize bodies
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      if (numSplit != 1 && B-bodies.begin() == int((seed+1)*bodies.size()/numSplit)) {// Mimic parallel dataset
-        seed++;                                                 //   Mimic seed at next rank
-        srand48(seed);                                          //   Set seed for random number generator
-      }                                                         //  Endif for mimicing parallel dataset
-      for (int d=0; d<3; d++) {                                 //  Loop over dimension
-        B->X[d] = drand48() * 2 - 1;                            //   Initialize positions
-      }                                                         //  End loop over dimension
-      real_t r = std::sqrt(norm(B->X));                         //  Distance from center
-      for (int d=0; d<3; d++) {                                 //  Loop over dimension
-        B->X[d] /= r * 1.1;                                     //   Normalize positions
-      }                                                         //  End loop over dimension
-    }                                                           // End loop over bodies
+    for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
+      int begin = 0;                                            //  Begin index of bodies
+      int end = bodies.size();                                  //  End index of bodies
+      splitRange(begin, end, i, numSplit);                      //  Split range of bodies
+      srand48(seed);                                            //  Set seed for random number generator
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	for (int d=0; d<3; d++) {                               //   Loop over dimension
+	  B->X[d] = drand48() * 2 - 1;                          //    Initialize positions
+	}                                                       //   End loop over dimension
+	real_t r = std::sqrt(norm(B->X));                       //   Distance from center
+	for (int d=0; d<3; d++) {                               //   Loop over dimension
+	  B->X[d] /= r * 1.1;                                   //    Normalize positions
+	}                                                       //   End loop over dimension
+      }                                                         //  End loop over bodies
+    }                                                           // End loop over partitions
     return bodies;                                              // Return bodies
   }
 
 //! Plummer distribution in a r = M_PI/2 sphere
   Bodies plummer(int numBodies, int seed, int numSplit) {
-    srand48(seed);                                              // Set seed for random number generator
     Bodies bodies(numBodies);                                   // Initialize bodies
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      if (numSplit != 1 && B-bodies.begin() == int((seed+1)*bodies.size()/numSplit)) { // Mimic parallel dataset
-        seed++;                                                 //   Mimic seed at next rank
-        srand48(seed);                                          //   Set seed for random number generator
-      }                                                         //  Endif for mimicing parallel dataset
-      for (int d=0; d<3; d++) B->X[d] = drand48() * 2 - 1;      //  Generate random number between [-1,1]
-      real_t R2 = std::pow(drand48()*.999, -2.0/3.0) - 1;       //  Generate distribution radius squared
-      real_t rscale = 0.015 * M_PI / std::sqrt(norm(B->X) * R2);//  Scaling to fit in M_PI box
-      for (int d=0; d<3; d++) B->X[d] *= rscale;                //  Rescale particle coordinates
-    }                                                           // End loop over bodies
+    for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
+      int begin = 0;                                            //  Begin index of bodies
+      int end = bodies.size();                                  //  End index of bodies
+      splitRange(begin, end, i, numSplit);                      //  Split range of bodies
+      srand48(seed);                                            //  Set seed for random number generator
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	for (int d=0; d<3; d++) B->X[d] = drand48() * 2 - 1;    //   Generate random number between [-1,1]
+	real_t R2 = std::pow(drand48()*.999, -2.0/3.0) - 1;     //   Generate distribution radius squared
+	real_t rscale = 0.015 * M_PI / std::sqrt(norm(B->X) * R2);// Scaling to fit in 0.015 * M_PI sphere
+	for (int d=0; d<3; d++) B->X[d] *= rscale;              //   Rescale particle coordinates
+      }                                                         //  End loop over bodies
+    }                                                           // End loop over partitions
     return bodies;                                              // Return bodies
   }
 
@@ -95,33 +107,35 @@ class Dataset {                                                 // Contains all 
   Dataset() : filePosition(0) {}
 
 //! Initialize source values
-  void initSource(Bodies &bodies, int seed, int mpisize, int numSplit) {
+  void initSource(Bodies &bodies, int seed, int numSplit) {
+    for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
+      int begin = 0;                                            //  Begin index of bodies
+      int end = bodies.size();                                  //  End index of bodies
+      splitRange(begin, end, i, numSplit);                      //  Split range of bodies
+      srand48(seed);                                            //  Set seed for random number generator
 #if MASS
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over bodies
-      B->SRC = 1. / bodies.size() / mpisize;                    //   Initialize mass
-    }                                                           //  End loop over bodies
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	B->SRC = 1. / bodies.size();                            //   Initialize mass
+      }                                                         //  End loop over bodies
 #else
-    srand48(seed);                                              // Set seed for random number generator
-    real_t average = 0;                                         //  Initialize average charge
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over bodies
-      if (numSplit != 1 && B-bodies.begin() == int((seed+1)*bodies.size()/numSplit)) {// Mimic parallel dataset
-        seed++;                                                 //    Mimic seed at next rank
-        srand48(seed);                                          //    Set seed for random number generator
-      }                                                         //   Endif for mimicing parallel dataset
-      B->SRC = drand48() - .5;                                  //   Initialize charge
-      average += B->SRC;                                        //   Accumulate average
-    }                                                           //  End loop over bodies
-    average /= bodies.size() * mpisize;                         //  Normalize average
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over bodies
-      B->SRC -= average;                                        //   Subtract average charge
-    }                                                           //  End loop over bodies
+      real_t average = 0;                                       //  Initialize average charge
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	B->SRC = drand48() - .5;                                //   Initialize charge
+	average += B->SRC;                                      //   Accumulate average
+      }                                                         //  End loop over bodies
+      average /= (end - begin);                                 //  Normalize average
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	B->SRC -= average;                                      //   Subtract average charge
+      }                                                         //  End loop over bodies
 #endif
+    }                                                           // End loop over partitions
   }
 
 //! Initialize target values
   void initTarget(Bodies &bodies) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG = 0;                                               //  Clear target values
+      B->IBODY = B-bodies.begin();                              //  Set initial body numbering
     }                                                           // End loop over bodies
   }
 
@@ -145,7 +159,7 @@ class Dataset {                                                 // Contains all 
     default:                                                    // If none of the above
       fprintf(stderr, "Unknown data distribution %s\n", distribution);// Print error message
     }                                                           // End switch between data distribution type
-    initSource(bodies,mpirank,mpisize,numSplit);                // Initialize source values
+    initSource(bodies,mpirank,numSplit);                        // Initialize source values
     initTarget(bodies);                                         // Initialize target values
     return bodies;                                              // Return bodies
   }

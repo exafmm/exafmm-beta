@@ -33,16 +33,6 @@ class MyMPI {
     return ((n != 0) && !(n & (n - 1)));                        // Decrement and compare bits
   }
 
-//! Split range and return partial range
-  void splitRange(int &begin, int &end, int iSplit, int numSplit) {
-    int size = end - begin;                                     // Size of range
-    int increment = size / numSplit;                            // Increment of splitting
-    int remainder = size % numSplit;                            // Remainder of splitting
-    begin += iSplit * increment + std::min(iSplit,remainder);   // Increment the begin counter
-    end = begin + increment;                                    // Increment the end counter
-    if (remainder > iSplit) end++;                              // Adjust the end counter for remainder
-  }
-
 //! Print a scalar value on all ranks
   template<typename T>
   void print(T data) {

@@ -145,10 +145,7 @@ int main(int argc, char ** argv) {
   LET.unpartition(bodies);
   bodies = sort.sortBodies(bodies);
   bodies = LET.commBodies(bodies);
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    B->ICELL = B->IBODY;
-  }
-  bodies = sort.sortBodies(bodies);
+  bodies = sort.unsort(bodies);
 #endif
   logger.stopPAPI();
   logger.stopTimer("Total FMM");

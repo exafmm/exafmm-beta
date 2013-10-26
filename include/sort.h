@@ -36,5 +36,14 @@ class Sort {
     }                                                           // End loop over data
     return output;                                              // Return output
   }
+
+//! Sort bodies back to original order
+  Bodies unsort(Bodies &bodies) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      B->ICELL = B->IBODY;                                      //  Do this to sortaccroding to IPROC
+    }                                                           // End loop over bodies
+    bodies = sortBodies(bodies);                                // Sort bodies
+    return bodies;
+  }
 };
 #endif
