@@ -15,6 +15,7 @@
       implicit real*8(a-h,o-z)
       include 'mpif.h'
       parameter(nmax = 1000000, pi = 3.14159265358979312d0)
+      character(128) filename
       integer prange, d
       real(8) norm, norm1, norm2, norm3, norm4
       type(c_ptr) ctx
@@ -35,13 +36,15 @@
       call mpi_comm_size(mpi_comm_world, mpisize, ierr);
       call mpi_comm_rank(mpi_comm_world, mpirank, ierr);
       nglobal = 1000;
-      images = 2
+      images = 3
       ksize = 11
       pcycle = 2 * pi
       alpha = 10 / pcycle
+      sigma = .25 / pi;
+      cutoff = pcycle * alpha / 3;
       allocate( x(3*nmax),  q(nmax),  p(nmax),  f(3*nmax), icpumap(nmax) )
       allocate( x2(3*nmax), q2(nmax), p2(nmax), f2(3*nmax) )
-
+#if 0
       do i = 1, 128
         iseed(i) = 0
       end do
@@ -64,6 +67,18 @@
       do i = 1, nglobal
         q(i) = q(i) - average
       end do
+#else
+      write (filename, '("source", i4.4, ".dat")') 0
+      open(10, file=filename)
+      do i = 1, nglobal
+        read(10,*) x(3*i-2), x(3*i-1), x(3*i-0), q(i)
+        p(i) = 0
+        f(3*i-2) = 0
+        f(3*i-1) = 0
+        f(3*i-0) = 0
+        icpumap(i) = 0
+      end do
+#endif
       ista = 1
       iend = nglobal
       call split_range(ista,iend,mpirank,mpisize)
@@ -83,8 +98,8 @@
         f2(3*i-1) = 0
         f2(3*i-0) = 0
       end do
-#if 0
-      call fmm_ewald(nglobal, x2, q2, p2, f2, ksize, alpha, pcycle)
+#if 1
+      call ewald(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
 #else
       prange = 0
       do i = 0, images-1
@@ -108,7 +123,7 @@
                   dz = x(3*i-0) - x2(3*j-0) - xperiodic(3)
                   R2 = dx * dx + dy * dy + dz * dz
                   Rinv = 1 / sqrt(R2)
-                  if(R2.eq.0) Rinv = 0
+                  if (R2.eq.0) Rinv = 0
                   R3inv = q2(j) * Rinv * Rinv * Rinv
                   pp = pp + q2(j) * Rinv
                   fx = fx + dx * R3inv

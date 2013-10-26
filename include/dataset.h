@@ -164,12 +164,44 @@ class Dataset {                                                 // Contains all 
     return bodies;                                              // Return bodies
   }
 
-//! Read target values from file
-  void readTarget(Bodies &bodies, int mpirank) {
+//! Read source values from file
+  void readSources(Bodies &bodies, int mpirank) {
     std::stringstream name;                                     // File name
-    name << "direct" << std::setfill('0') << std::setw(4)       // Set format
-         << mpirank << ".dat";                                  // Create file name for saving direct calculation values
-    std::ifstream file(name.str().c_str(),std::ios::in | std::ios::binary);// Open file
+    name << "source" << std::setfill('0') << std::setw(4)       // Set format
+         << mpirank << ".dat";                                  // Create file name
+    std::ifstream file(name.str().c_str(),std::ios::in);        // Open file
+    file.seekg(filePosition);                                   // Set position in file
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      file >> B->X[0];                                          //  Read data for x coordinates
+      file >> B->X[1];                                          //  Read data for y coordinates
+      file >> B->X[2];                                          //  Read data for z coordinates
+      file >> B->SRC;                                           //  Read data for charge
+    }                                                           // End loop over bodies
+    filePosition = file.tellg();                                // Get position in file
+    file.close();                                               // Close file
+  }
+
+//! Write source values to file
+  void writeSources(Bodies &bodies, int mpirank) {
+    std::stringstream name;                                     // File name
+    name << "source" << std::setfill('0') << std::setw(4)       // Set format
+         << mpirank << ".dat";                                  // Create file name
+    std::ofstream file(name.str().c_str(),std::ios::out);       // Open file
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      file << B->X[0] << std::endl;                             //  Write data for x coordinates
+      file << B->X[1] << std::endl;                             //  Write data for y coordinates
+      file << B->X[2] << std::endl;                             //  Write data for z coordinates
+      file << B->SRC  << std::endl;                             //  Write data for charge
+    }                                                           // End loop over bodies
+    file.close();                                               // Close file
+  }
+
+//! Read target values from file
+  void readTargets(Bodies &bodies, int mpirank) {
+    std::stringstream name;                                     // File name
+    name << "target" << std::setfill('0') << std::setw(4)       // Set format
+         << mpirank << ".dat";                                  // Create file name
+    std::ifstream file(name.str().c_str(),std::ios::in);        // Open file
     file.seekg(filePosition);                                   // Set position in file
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       file >> B->TRG[0];                                        //  Read data for potential
@@ -182,11 +214,11 @@ class Dataset {                                                 // Contains all 
   }
 
 //! Write target values to file
-  void writeTarget(Bodies &bodies, int mpirank) {
+  void writeTargets(Bodies &bodies, int mpirank) {
     std::stringstream name;                                     // File name
-    name << "direct" << std::setfill('0') << std::setw(4)       // Set format
-         << mpirank << ".dat";                                  // Create file name for saving direct calculation values
-    std::ofstream file(name.str().c_str(),std::ios::out | std::ios::app | std::ios::binary);// Open file
+    name << "target" << std::setfill('0') << std::setw(4)       // Set format
+         << mpirank << ".dat";                                  // Create file name
+    std::ofstream file(name.str().c_str(),std::ios::out);       // Open file
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       file << B->TRG[0] << std::endl;                           //  Write data for potential
       file << B->TRG[1] << std::endl;                           //  Write data for x acceleration

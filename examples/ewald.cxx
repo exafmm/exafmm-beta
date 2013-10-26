@@ -56,6 +56,7 @@ int main(int argc, char ** argv) {
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize, 3-LET.mpisize);
+  //data.writeSources(bodies, LET.mpirank);
   Bounds localBounds = boundbox.getBounds(bodies);
   Bounds globalBounds = LET.allreduceBounds(localBounds);
   localBounds = LET.partition(bodies, globalBounds);
@@ -95,8 +96,8 @@ int main(int argc, char ** argv) {
 #if 1
   Bodies jbodies = bodies;
   for (int i=0; i<LET.mpisize; i++) {
-    LET.shiftBodies(jbodies);
     if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << LET.mpisize << std::endl;
+    LET.shiftBodies(jbodies);
     localBounds = boundbox.getBounds(jbodies);
     Cells jcells = tree.buildTree(jbodies, localBounds);
     ewald.wavePart(bodies, jbodies);

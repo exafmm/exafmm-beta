@@ -2,6 +2,7 @@
 #include "args.h"
 #include "boundbox.h"
 #include "buildtree.h"
+#include "ewald.h"
 #include "sort.h"
 #include "traversal.h"
 #include "updownpass.h"
@@ -17,7 +18,7 @@ Traversal *traversal;
 LocalEssentialTree *LET;
 
 extern "C" void fmm_init_(int * images) {
-  const int ncrit = 16;
+  const int ncrit = 32;
   const int nspawn = 1000;
   const real_t theta = 0.4;
   args = new Args;
@@ -79,7 +80,6 @@ extern "C" void fmm_partition_(int * nglobal, int * icpumap, double * x, double 
   bodies = LET->commBodies(bodies);
   Cells cells = tree->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
-
   for (int i=0; i<*nglobal; i++) {
     icpumap[i] = 0;
   }
@@ -152,6 +152,74 @@ extern "C" void fmm_(int * nglobal, int * icpumap, double * x, double * q, doubl
   logger->stopTimer("Total FMM");
   logger->printTitle("Total runtime");
   logger->printTime("Total FMM");
+
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B->IBODY;
+    p[i]     = B->TRG[0];
+    f[3*i+0] = B->TRG[1];
+    f[3*i+1] = B->TRG[2];
+    f[3*i+2] = B->TRG[3];
+  }
+}
+
+extern "C" void ewald_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f,
+                       int * ksize, double * alpha, double * sigma, double * cutoff, double * cycle) {
+  Ewald * ewald = new Ewald(*ksize, *alpha, *sigma, *cutoff, *cycle);
+  if (args->verbose) ewald->verbose = true;
+  int nlocal = 0;
+  for (int i=0; i<*nglobal; i++) {
+    if (icpumap[i] == 1) nlocal++;
+  }
+  args->numBodies = nlocal;
+  logger->printTitle("Ewald Parameters");
+  args->print(logger->stringLength, P, LET->mpirank);
+  ewald->print(logger->stringLength);
+#if _OPENMP
+#pragma omp parallel
+#pragma omp master
+#endif
+  logger->printTitle("Ewald Profiling");
+  logger->startTimer("Total Ewald");
+  logger->startPAPI();
+  Bodies bodies(nlocal);
+  B_iter B = bodies.begin();
+  for (int i=0; i<*nglobal; i++) {
+    if (icpumap[i] == 1) {
+      B->X[0] = x[3*i+0];
+      B->X[1] = x[3*i+1];
+      B->X[2] = x[3*i+2];
+      B->SRC = q[i];
+      B->TRG[0] = p[i];
+      B->TRG[1] = f[3*i+0];
+      B->TRG[2] = f[3*i+1];
+      B->TRG[3] = f[3*i+2];
+      B->IBODY = i;
+      B++;
+    }
+  }
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    if( B->X[0] < -*cycle/2 ) B->X[0] += *cycle;
+    if( B->X[1] < -*cycle/2 ) B->X[1] += *cycle;
+    if( B->X[2] < -*cycle/2 ) B->X[2] += *cycle;
+    if( B->X[0] >  *cycle/2 ) B->X[0] -= *cycle;
+    if( B->X[1] >  *cycle/2 ) B->X[1] -= *cycle;
+    if( B->X[2] >  *cycle/2 ) B->X[2] -= *cycle;
+  }
+  Cells cells = tree->buildTree(bodies, localBounds);
+  Bodies jbodies = bodies;
+  for (int i=0; i<LET->mpisize; i++) {
+    if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << LET->mpisize << std::endl;
+    LET->shiftBodies(jbodies);
+    localBounds = boundbox->getBounds(jbodies);
+    Cells jcells = tree->buildTree(jbodies, localBounds);
+    ewald->wavePart(bodies, jbodies);
+    ewald->realPart(cells, jcells);
+  }
+  ewald->selfTerm(bodies);
+  logger->stopPAPI();
+  logger->stopTimer("Total Ewald");
+  logger->printTitle("Total runtime");
+  logger->printTime("Total Ewald");
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY;
