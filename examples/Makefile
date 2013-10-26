@@ -35,5 +35,4 @@ convergence: kernel.cxx $(SOURCES)
 # Ewald vs. periodic FMM
 ewald: ewald.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	mpirun -np 1 ./a.out --numBodies 400 --ncrit 32 --images 0 --verbose 0
-	mpirun -np 2 ./a.out --numBodies 200 --ncrit 32 --images 0 --verbose 0
+	mpirun -np 2 ./a.out --numBodies 1000 --ncrit 32 --images 3

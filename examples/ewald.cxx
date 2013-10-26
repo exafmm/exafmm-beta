@@ -56,13 +56,6 @@ int main(int argc, char ** argv) {
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize, 3-LET.mpisize);
-  if (LET.mpirank==0) {
-    std::cout << bodies.size() << std::endl;
-    for (int i=0; i<10; i++) {
-      B_iter B = bodies.begin()+i;
-      std::cout << B->SRC << std::endl;
-    }
-  }
   Bounds localBounds = boundbox.getBounds(bodies);
   Bounds globalBounds = LET.allreduceBounds(localBounds);
   localBounds = LET.partition(bodies, globalBounds);
@@ -82,17 +75,19 @@ int main(int argc, char ** argv) {
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
   pass.downwardPass(cells);
+#if 0
   LET.unpartition(bodies);
   bodies = sort.sortBodies(bodies);
   bodies = LET.commBodies(bodies);
   bodies = sort.unsort(bodies);
+#endif
   vec3 localDipole = pass.getDipole(bodies,0);
   vec3 globalDipole = LET.allreduceVec3(localDipole);
   int numBodies = LET.allreduceInt(bodies.size());
   pass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
-#if 0
+#if 1
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
   logger.printTitle("Ewald Profiling");
@@ -119,7 +114,7 @@ int main(int argc, char ** argv) {
   logger.stopTimer("Total Ewald");
 #else
   Bodies jbodies = bodies;
-  //data.sampleBodies(bodies, args.numTargets);
+  data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
   logger.startTimer("Total Direct");
@@ -144,14 +139,6 @@ int main(int argc, char ** argv) {
   MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   logger.printTitle("FMM vs. Ewald");
-  if (LET.mpirank==0) {
-    std::cout << bodies.size() << " " << bodies2.size() << std::endl;
-    for (int i=0; i<10; i++) {
-      B_iter B = bodies.begin()+i;
-      B_iter B2 = bodies2.begin()+i;
-      std::cout << B->SRC << " " << B2->SRC << std::endl;
-    }
-  }
   double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
   double potNrmGlob = potSumGlob * potSumGlob;
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));

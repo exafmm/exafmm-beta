@@ -38,8 +38,8 @@ class Dataset {                                                 // Contains all 
       for (int iy=0; iy<ny; iy++) {                             //  Loop over y direction
         for (int iz=begin; iz<end; iz++, B++) {                 //   Loop over z direction
           B->X[0] = (ix / real_t(nx-1)) * 2 - 1;                //    x coordinate
-          B->X[1] = (iy / real_t(nx-1)) * 2 - 1;                //    y coordinate
-          B->X[2] = (iz / real_t(nx-1)) * 2 - 1;                //    z coordinate
+          B->X[1] = (iy / real_t(ny-1)) * 2 - 1;                //    y coordinate
+          B->X[2] = (iz / real_t(nz-1)) * 2 - 1;                //    z coordinate
         }                                                       //   End loop over z direction
       }                                                         //  End loop over y direction
     }                                                           // End loop over x direction
