@@ -9,8 +9,8 @@ class Ewald : public Logger {
     real_t REAL;                                                //!< real part of wave
     real_t IMAG;                                                //!< imaginary part of wave
   };
-  typedef std::vector<Wave>           Waves;                    //!< Vector of Wave types
-  typedef std::vector<Wave>::iterator W_iter;                   //!< Iterator for Wave types
+  typedef std::vector<Wave> Waves;                              //!< Vector of Wave types
+  typedef Waves::iterator   W_iter;                             //!< Iterator for Wave types
 
  private:
   int ksize;                                                    //!< Number of waves in Ewald summation

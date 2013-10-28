@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
   Sort sort;
   Verify verify;
 
-  const int ksize = 11.;
+  const int ksize = 11;
   const real_t cycle = 2 * M_PI;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
@@ -55,7 +55,7 @@ int main(int argc, char ** argv) {
   logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize, 3-LET.mpisize);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize);
   //data.writeSources(bodies, LET.mpirank);
   Bounds localBounds = boundbox.getBounds(bodies);
   Bounds globalBounds = LET.allreduceBounds(localBounds);
@@ -76,12 +76,6 @@ int main(int argc, char ** argv) {
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
   pass.downwardPass(cells);
-#if 0
-  LET.unpartition(bodies);
-  bodies = sort.sortBodies(bodies);
-  bodies = LET.commBodies(bodies);
-  bodies = sort.unsort(bodies);
-#endif
   vec3 localDipole = pass.getDipole(bodies,0);
   vec3 globalDipole = LET.allreduceVec3(localDipole);
   int numBodies = LET.allreduceInt(bodies.size());
