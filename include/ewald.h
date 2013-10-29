@@ -83,12 +83,8 @@ class Ewald : public Logger {
     for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {    // Loop over target bodies
       for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) {  //  Loop over source bodies
 	vec3 dist = Bi->X - Bj->X - Xperiodic;                  //   Distance vector from source to target
-	for (int d=0; d<3; d++) {                               //   Loop over dimensions
-	  if (dist[d] < -cycle/2) dist[d] += cycle;             //    Wrap domain so that target is always at
-	  if (dist[d] >= cycle/2) dist[d] -= cycle;             //     the center of a [-cycle/2,cycle/2]^3 source cube
-	}                                                       //   End loop over dimensions
 	real_t R2 = norm(dist);                                 //   R^2
-	if (R2 != 0) {                                          //   Exclude self interaction
+	if (0 < R2 && R2 < cutoff * cutoff) {                   //   Exclude self interaction
 	  real_t R2s = R2 * alpha * alpha;                      //    (R * alpha)^2
 	  real_t Rs = std::sqrt(R2s);                           //    R * alpha
 	  real_t invRs = 1 / Rs;                                //    1 / (R * alpha)
@@ -109,9 +105,8 @@ class Ewald : public Logger {
   void traverse(C_iter Ci, C_iter Cj, C_iter C0, vec3 Xperiodic) const {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R = std::sqrt(norm(dX));                             // Scalar distance
-    if (R < cutoff && Cj->NCHILD == 0) {                        // If cells are close
-      P2P(Ci,Cj,Xperiodic);                                     //  Ewald real part
-    } else {                                                    // If cells are far
+    if (R < 3 * cutoff) {                                       // If cells are close
+      if(Cj->NCHILD == 0) P2P(Ci,Cj,Xperiodic);                 //  Ewald real part
       for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
         traverse(Ci,CC,C0,Xperiodic);                           //   Recursively call traverse
       }                                                         //  End loop over cell's children
