@@ -1,3 +1,34 @@
+      subroutine charmm_cor_read(n,x,q,size,nam)
+      implicit none
+      integer n, i, in,im
+      real*8 x(3*n),  q(n), size
+      character(len=100) lin
+      character(len=*) nam
+      logical qext
+
+      open(unit=1,file=nam,status='old')
+      read(1,'(8x,f10.5)')size
+      read(1,*)
+      read(1,*)
+      read(1,'(a100)')lin
+      qext=index(lin,'EXT') > 0
+      if(qext)then
+         read(lin,'(i10)')n
+      else
+         read(lin,'(i5)')n
+      endif
+      do i=1,n
+         if(qext)then
+            read(1,'(2i10,20x,3f20.10,20x,f20.10)') &
+                 in,im,x(i*3-2),x(i*3-1),x(i*3),q(i)
+         else
+            read(1,'(2i5,10x,3f10.5,10x,f10.5)') &
+                 in,im,x(i*3-2),x(i*3-1),x(i*3),q(i)
+         endif
+      enddo
+      return
+      end subroutine charmm_cor_read
+
       subroutine split_range(ista, iend, isplit, nsplit)
       implicit real*8(a-h,o-z)
       integer size, remainder
@@ -14,10 +45,10 @@
       use iso_c_binding, only: c_ptr
       implicit real*8(a-h,o-z)
       include 'mpif.h'
-      parameter(nmax = 1000000, pi = 3.14159265358979312d0)
+      parameter(nmax = 1000000, pi = 3.14159265358979312d0, ccelec=332.0716d0)
       character(128) filename
       integer prange, d
-      real(8) norm, norm1, norm2, norm3, norm4
+      real(8) norm
       type(c_ptr) ctx
       integer, dimension (128) :: iseed
       real(8), dimension (3) :: dipole = (/0, 0, 0/)
@@ -33,17 +64,22 @@
       allocatable :: f2(:)
 
       call mpi_init(ierr)
-      call mpi_comm_size(mpi_comm_world, mpisize, ierr);
-      call mpi_comm_rank(mpi_comm_world, mpirank, ierr);
-      nglobal = 1000;
+      call mpi_comm_size(mpi_comm_world, mpisize, ierr)
+      call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
+      nglobal = 1000
       images = 3
       ksize = 11
       pcycle = 2 * pi
+      sigma = .25 / pi
+      cutoff = 10.
       alpha = 10 / pcycle
-      sigma = .25 / pi;
-      cutoff = pcycle * alpha / 3;
       allocate( x(3*nmax),  q(nmax),  p(nmax),  f(3*nmax), icpumap(nmax) )
       allocate( x2(3*nmax), q2(nmax), p2(nmax), f2(3*nmax) )
+      if (command_argument_count() > 0) then
+        call get_command_argument(1,filename,lnam,istat)
+        call charmm_cor_read(nglobal,x,q,pcycle,filename)
+        alpha = 10 / pcycle
+      else
 #if 1
       do i = 1, 128
         iseed(i) = 0
@@ -79,6 +115,7 @@
         icpumap(i) = 0
       end do
 #endif
+      end if
       ista = 1
       iend = nglobal
       call split_range(ista,iend,mpirank,mpisize)
@@ -157,6 +194,7 @@
       potSum2 = 0
       accDif = 0
       accNrm = 0
+      accNrm2 = 0
       do i = 1, nglobal
         if (icpumap(i).eq.1) then
           potSum  = potSum  + p(i) * q(i)
@@ -164,25 +202,32 @@
           accDif  = accDif  + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
                             + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
                             + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))
-          accNrm  = accNrm  + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
+          accNrm  = accNrm  + f(3*i-2) * f(3*i-2) + f(3*i-1) * f(3*i-1) + f(3*i-0) * f(3*i-0)
+          accNrm2  = accNrm2  + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
         end if
       end do
       potSumGlob = 0
       potSumGlob2 = 0
       accDifGlob = 0
       accNrmGlob = 0
-      call mpi_reduce(potSum,  potSumGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(potSum2, potSumGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(accDif,  accDifGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
-      call mpi_reduce(accNrm,  accNrmGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr);
+      accNrmGlob2 = 0
+      call mpi_reduce(potSum,  potSumGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+      call mpi_reduce(potSum2, potSumGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+      call mpi_reduce(accDif,  accDifGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+      call mpi_reduce(accNrm,  accNrmGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+      call mpi_reduce(accNrm2, accNrmGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
       potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2)
-      potNrmGlob = potSumGlob2 * potSumGlob2
+      potNrmGlob2 = potSumGlob2 * potSumGlob2
       if (mpirank.eq.0) then
         print"(a)",'--- FMM vs. direct ---------------'
-	print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob)
-        print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob)
+	print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
+        print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
+        print"(a,f12.4)",'Energy (FMM)         : ', ccelec*potSumGlob/2.0
+        print"(a,f12.4)",'Energy (Ewald)       : ', ccelec*potSumGlob2/2.0
+        print"(a,f10.6)",'GRMS (FMM)           : ', ccelec*sqrt(accNrmGlob/3.0/nglobal)/2.0
+        print"(a,f10.6)",'GRMS (Ewald)         : ', ccelec*sqrt(accNrmGlob2/3.0/nglobal)/2.0
       end if
 
       deallocate( x, q, p, f, icpumap, x2, q2, p2, f2 )
-      call mpi_finalize(ierr);
+      call mpi_finalize(ierr)
       end
