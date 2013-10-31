@@ -165,6 +165,39 @@ extern "C" void fmm_(int * nglobal, int * icpumap, double * x, double * q, doubl
   }
 }
 
+extern "C" void exclusion_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f, double * cycle, int * numex, int * natex) {
+  logger->printTitle("Exclusion Profiling");
+  logger->startTimer("Total Exclusion");
+  int ic = 0;
+  for (int i=0; i<*nglobal; i++) {
+    if (icpumap[i] == 1) {
+      double pp = 0, fx = 0, fy = 0, fz = 0;
+      for (int jc=0; jc<numex[i]; jc++, ic++) {
+	int j = natex[ic]-1;
+	float dx = x[3*i+0] - x[3*j+0];
+	float dy = x[3*i+1] - x[3*j+1];
+	float dz = x[3*i+2] - x[3*j+2];
+	float R2 = dx * dx + dy * dy + dz * dz;
+	float invR = 1 / std::sqrt(R2);
+	if (R2 == 0) invR = 0;
+	float invR3 = q[j] * invR * invR * invR;
+	pp -= q[j] * invR;
+	fx += dx * invR3;
+	fy += dy * invR3;
+	fz += dz * invR3;
+      }
+      p[i] -= pp;
+      f[3*i+0] -= fx;
+      f[3*i+1] -= fy;
+      f[3*i+2] -= fz;
+    } else {
+      ic += numex[i];
+    }
+  }
+  logger->stopTimer("Total Exclusion");
+  logger->printTime("Total Exclusion");
+}
+
 extern "C" void ewald_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f,
                        int * ksize, double * alpha, double * sigma, double * cutoff, double * cycle) {
   Ewald * ewald = new Ewald(*ksize, *alpha, *sigma, *cutoff, *cycle);

@@ -1,19 +1,16 @@
 module charmm_io
-
 contains
-
-  subroutine charmm_cor_read(n,x,q,size,nam,numex,natex,idist,rscale,gscale,fgscale)
+  subroutine charmm_cor_read(n,x,q,size,filename,numex,natex,idist,rscale,gscale,fgscale)
     implicit none
-    integer i, idist, im, in, n
+    logical qext
+    integer i, idist, im, in, n, natex_size, vdw_size
     real(8) size, sizex, sizey, sizez
     integer, allocatable, dimension(:) :: numex, natex
     real(8), allocatable, dimension(:) :: x, q, rscale, gscale, fgscale
     character(len=100) lin
-    character(len=*) nam
-    logical qext
-    integer vdw_size,natex_size
+    character(len=*) filename
 
-    open(unit=1,file=nam,status='old')
+    open(unit=1,file=filename,status='old')
     read(1,'(a100)')lin
     read(lin(9:100),*)sizex,sizey,sizez
     size=sizex
@@ -44,7 +41,7 @@ contains
     read(lin(6:100),*)natex_size
     if(natex_size /= sum(numex(1:n))) then
        write(*,*)'Something is wrong with the input file'
-       write(*,*)nam
+       write(*,*)filename
        stop
     endif
     allocate(natex(natex_size))
@@ -64,8 +61,9 @@ contains
 end module charmm_io
 
 subroutine split_range(ista, iend, isplit, nsplit)
-  implicit real*8(a-h,o-z)
-  integer size, remainder
+  implicit none
+  integer ista, iend, isplit, nsplit
+  integer increment, remainder, size
   size = iend - ista + 1
   increment = size / nsplit
   remainder = mod(size, nsplit)
@@ -81,8 +79,9 @@ program main
   include 'mpif.h'
   character(128) filename
   integer d, i, idist, ierr, images, ista, iend, istat, ksize, lnam, mpirank, mpisize
-  integer nglobal, prange
+  integer nglobal, prange, ix, iy, iz, j
   real(8) alpha, sigma, cutoff, average, norm, pcycle, pi, ccelec
+  real(8) coef, dx, dy, dz, fx, fy ,fz, pp, R2, R3inv, Rinv
   real(8) accDif, accDifGlob
   real(8) accNrm, accNrmGlob
   real(8) accNrm2, accNrmGlob2
@@ -102,7 +101,7 @@ program main
   call mpi_comm_size(mpi_comm_world, mpisize, ierr)
   call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
   nglobal = 1000
-  images = 3
+  images = 1
   ksize = 11
   pcycle = 2 * pi
   sigma = .25 / pi
@@ -161,7 +160,7 @@ program main
   end do
   call fmm_init(images)
   call fmm_partition(nglobal, icpumap, x, q, pcycle)
-  call fmm(nglobal, icpumap, x, q, p, f, pcycle)
+  call fmm(nglobal, icpumap, x, q, p, f, pcycle, natex, numex)
   do i = 1, nglobal
      x2(3*i-2) = x(3*i-2)
      x2(3*i-1) = x(3*i-1)
@@ -172,7 +171,7 @@ program main
      f2(3*i-1) = 0
      f2(3*i-0) = 0
   end do
-#if 1
+#if 0
   call ewald(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
 #else
   prange = 0
@@ -185,13 +184,13 @@ program main
         fx = 0
         fy = 0
         fz = 0
-        do ix = -prange, prange
-           do iy = -prange, prange
-              do iz = -prange, prange
-                 xperiodic(1) = ix * pcycle
-                 xperiodic(2) = iy * pcycle
-                 xperiodic(3) = iz * pcycle
-                 do j = 1, nglobal
+        do j = 1, nglobal
+           do ix = -prange, prange
+              do iy = -prange, prange
+                 do iz = -prange, prange
+                    xperiodic(1) = ix * pcycle
+                    xperiodic(2) = iy * pcycle
+                    xperiodic(3) = iz * pcycle
                     dx = x(3*i-2) - x2(3*j-2) - xperiodic(1)
                     dy = x(3*i-1) - x2(3*j-1) - xperiodic(2)
                     dz = x(3*i-0) - x2(3*j-0) - xperiodic(3)

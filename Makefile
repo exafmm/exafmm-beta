@@ -1,7 +1,7 @@
 help:
 	@echo "Please read the README file in the root directory."
 clean:
-	find . -name "*.o" -o -name "*.out*" | xargs rm -f
+	find . -name "*.o" -o -name "*.out*" -o -name "*.mod" | xargs rm -f
 cleandat:
 	find . -name "*.dat" | xargs rm -f
 cleanlib:

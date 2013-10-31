@@ -127,6 +127,10 @@ extern "C" void FMM(int n, double * x, double * q, double * p, double * f, doubl
     traversal->dualTreeTraversal(cells, jcells, cycle);
   }
   pass->downwardPass(cells);
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    B->ICELL = B->IBODY;
+  }
+  bodies = sort->sortBodies(bodies);
   vec3 localDipole = pass->getDipole(bodies,0);
   vec3 globalDipole = LET->allreduceVec3(localDipole);
   int numBodies = LET->allreduceInt(bodies.size());
