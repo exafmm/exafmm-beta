@@ -1,16 +1,13 @@
 module charmm_io
 
-  real(8), allocatable, dimension(:) :: rscale,gscale,fgscale
-  integer idist
-
 contains
 
-  subroutine charmm_cor_read(n,x,q,size,nam,numex,natex)
+  subroutine charmm_cor_read(n,x,q,size,nam,numex,natex,idist,rscale,gscale,fgscale)
     implicit none
-    integer i, im, in, n
-    integer, allocatable, dimension(:) :: numex, natex
+    integer i, idist, im, in, n
     real(8) size, sizex, sizey, sizez
-    real(8), allocatable, dimension(:) :: x, q
+    integer, allocatable, dimension(:) :: numex, natex
+    real(8), allocatable, dimension(:) :: x, q, rscale, gscale, fgscale
     character(len=100) lin
     character(len=*) nam
     logical qext
@@ -83,17 +80,23 @@ program main
   implicit none
   include 'mpif.h'
   character(128) filename
-  integer d, i, iend, ierr, images, ista, istat, ksize, lnam, mpirank, mpisize
+  integer d, i, idist, ierr, images, ista, iend, istat, ksize, lnam, mpirank, mpisize
   integer nglobal, prange
-  real(8) accDif, accDifGlob, accNrm, accNrm2, accNrmGlob, accNrmGlob2
-  real(8) alpha, average, ccelec, cutoff, norm, pcycle, pi
-  real(8) potDif, potDifGlob, potNrmGlob2, potSum, potSum2, potSumGlob, potSumGlob2, sigma
+  real(8) alpha, sigma, cutoff, average, norm, pcycle, pi, ccelec
+  real(8) accDif, accDifGlob
+  real(8) accNrm, accNrmGlob
+  real(8) accNrm2, accNrmGlob2
+  real(8) potDif, potDifGlob
+  real(8) potNrmGlob2
+  real(8) potSum, potSumGlob
+  real(8) potSum2, potSumGlob2
   integer, dimension (128) :: iseed
   real(8), dimension (3) :: dipole = (/0, 0, 0/)
   real(8), dimension (3) :: xperiodic
   integer, allocatable, dimension(:) :: icpumap, numex, natex
   real(8), allocatable, dimension(:) :: x, q, p, f, x2, q2, p2, f2
-  parameter(pi = 3.14159265358979312d0, ccelec=332.0716d0)
+  real(8), allocatable, dimension(:) :: rscale, gscale, fgscale
+  parameter(pi=3.14159265358979312d0, ccelec=332.0716d0)
 
   call mpi_init(ierr)
   call mpi_comm_size(mpi_comm_world, mpisize, ierr)
@@ -107,7 +110,7 @@ program main
   alpha = 10 / pcycle
   if (command_argument_count() > 0) then
      call get_command_argument(1,filename,lnam,istat)
-     call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex)
+     call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,idist,rscale,gscale,fgscale)
      allocate( p(nglobal),  f(3*nglobal), icpumap(nglobal) )
      allocate( x2(3*nglobal), q2(nglobal), p2(nglobal), f2(3*nglobal) )
      alpha = 10 / pcycle
