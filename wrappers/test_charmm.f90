@@ -9,7 +9,8 @@ contains
     implicit none
     integer i, im, in, n
     integer, allocatable, dimension(:) :: numex, natex
-    real(8) size, sizex, sizey, sizez, x(3*n), q(n)
+    real(8) size, sizex, sizey, sizez
+    real(8), allocatable, dimension(:) :: x, q
     character(len=100) lin
     character(len=*) nam
     logical qext
@@ -29,6 +30,7 @@ contains
     else
        read(lin,'(i5)')n
     endif
+    allocate( x(3*n), q(n) )
     do i=1,n
        if(qext)then
           read(1,'(2i10,20x,3f20.10,20x,f20.10)') &
@@ -82,7 +84,7 @@ program main
   include 'mpif.h'
   character(128) filename
   integer d, i, iend, ierr, images, ista, istat, ksize, lnam, mpirank, mpisize
-  integer nglobal, nmax, prange
+  integer nglobal, prange
   real(8) accDif, accDifGlob, accNrm, accNrm2, accNrmGlob, accNrmGlob2
   real(8) alpha, average, ccelec, cutoff, norm, pcycle, pi
   real(8) potDif, potDifGlob, potNrmGlob2, potSum, potSum2, potSumGlob, potSumGlob2, sigma
@@ -90,8 +92,8 @@ program main
   real(8), dimension (3) :: dipole = (/0, 0, 0/)
   real(8), dimension (3) :: xperiodic
   integer, allocatable, dimension(:) :: icpumap, numex, natex
-  real(8), allocatable, dimension(:) :: x,q,p,f,x2,q2,p2,f2
-  parameter(nmax = 1000000, pi = 3.14159265358979312d0, ccelec=332.0716d0)
+  real(8), allocatable, dimension(:) :: x, q, p, f, x2, q2, p2, f2
+  parameter(pi = 3.14159265358979312d0, ccelec=332.0716d0)
 
   call mpi_init(ierr)
   call mpi_comm_size(mpi_comm_world, mpisize, ierr)
@@ -103,13 +105,15 @@ program main
   sigma = .25 / pi
   cutoff = 10.
   alpha = 10 / pcycle
-  allocate( x(3*nmax),  q(nmax),  p(nmax),  f(3*nmax), icpumap(nmax) )
-  allocate( x2(3*nmax), q2(nmax), p2(nmax), f2(3*nmax) )
   if (command_argument_count() > 0) then
      call get_command_argument(1,filename,lnam,istat)
      call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex)
+     allocate( p(nglobal),  f(3*nglobal), icpumap(nglobal) )
+     allocate( x2(3*nglobal), q2(nglobal), p2(nglobal), f2(3*nglobal) )
      alpha = 10 / pcycle
   else
+     allocate( x(3*nglobal),  q(nglobal),  p(nglobal),  f(3*nglobal), icpumap(nglobal) )
+     allocate( x2(3*nglobal), q2(nglobal), p2(nglobal), f2(3*nglobal) )
 #if 1
      do i = 1, 128
         iseed(i) = 0
