@@ -1,15 +1,15 @@
 module charmm_io
 
   real(8), allocatable, dimension(:) :: rscale,gscale,fgscale
-  integer, allocatable, dimension(:) :: numex,natex
   integer idist
 
 contains
 
-  subroutine charmm_cor_read(n,x,q,size,nam)
+  subroutine charmm_cor_read(n,x,q,size,nam,numex,natex)
     implicit none
-    integer n, i, in,im
-    real*8 x(3*n),  q(n), size,sizex,sizey,sizez
+    integer i, im, in, n
+    integer, allocatable, dimension(:) :: numex, natex
+    real(8) size, sizex, sizey, sizez, x(3*n), q(n)
     character(len=100) lin
     character(len=*) nam
     logical qext
@@ -38,7 +38,6 @@ contains
                in,im,x(i*3-2),x(i*3-1),x(i*3),q(i)
        endif
     enddo
-    ! read numex
     read(1,'(a100)')lin
     allocate(numex(n))
     read(1,'(10i10)')numex(1:n)
@@ -79,26 +78,20 @@ end subroutine split_range
 
 program main
   use charmm_io
-  use iso_c_binding, only: c_ptr
-  implicit real*8(a-h,o-z)
+  implicit none
   include 'mpif.h'
-  parameter(nmax = 1000000, pi = 3.14159265358979312d0, ccelec=332.0716d0)
   character(128) filename
-  integer prange, d
-  real(8) norm
-  type(c_ptr) ctx
+  integer d, i, iend, ierr, images, ista, istat, ksize, lnam, mpirank, mpisize
+  integer nglobal, nmax, prange
+  real(8) accDif, accDifGlob, accNrm, accNrm2, accNrmGlob, accNrmGlob2
+  real(8) alpha, average, ccelec, cutoff, norm, pcycle, pi
+  real(8) potDif, potDifGlob, potNrmGlob2, potSum, potSum2, potSumGlob, potSumGlob2, sigma
   integer, dimension (128) :: iseed
   real(8), dimension (3) :: dipole = (/0, 0, 0/)
   real(8), dimension (3) :: xperiodic
-  allocatable :: x(:)
-  allocatable :: q(:)
-  allocatable :: p(:)
-  allocatable :: f(:)
-  allocatable :: icpumap(:)
-  allocatable :: x2(:)
-  allocatable :: q2(:)
-  allocatable :: p2(:)
-  allocatable :: f2(:)
+  integer, allocatable, dimension(:) :: icpumap, numex, natex
+  real(8), allocatable, dimension(:) :: x,q,p,f,x2,q2,p2,f2
+  parameter(nmax = 1000000, pi = 3.14159265358979312d0, ccelec=332.0716d0)
 
   call mpi_init(ierr)
   call mpi_comm_size(mpi_comm_world, mpisize, ierr)
@@ -114,7 +107,7 @@ program main
   allocate( x2(3*nmax), q2(nmax), p2(nmax), f2(3*nmax) )
   if (command_argument_count() > 0) then
      call get_command_argument(1,filename,lnam,istat)
-     call charmm_cor_read(nglobal,x,q,pcycle,filename)
+     call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex)
      alpha = 10 / pcycle
   else
 #if 1
