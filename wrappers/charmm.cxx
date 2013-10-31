@@ -171,25 +171,32 @@ extern "C" void exclusion_(int * nglobal, int * icpumap, double * x, double * q,
   int ic = 0;
   for (int i=0; i<*nglobal; i++) {
     if (icpumap[i] == 1) {
-      double pp = 0, fx = 0, fy = 0, fz = 0;
       for (int jc=0; jc<numex[i]; jc++, ic++) {
 	int j = natex[ic]-1;
 	float dx = x[3*i+0] - x[3*j+0];
 	float dy = x[3*i+1] - x[3*j+1];
 	float dz = x[3*i+2] - x[3*j+2];
+	if (dx < -*cycle/2) dx += *cycle;
+	if (dy < -*cycle/2) dy += *cycle;
+	if (dz < -*cycle/2) dz += *cycle;
+	if (dx >  *cycle/2) dx -= *cycle;
+	if (dy >  *cycle/2) dy -= *cycle;
+	if (dz >  *cycle/2) dz -= *cycle;
 	float R2 = dx * dx + dy * dy + dz * dz;
 	float invR = 1 / std::sqrt(R2);
 	if (R2 == 0) invR = 0;
-	float invR3 = q[j] * invR * invR * invR;
-	pp -= q[j] * invR;
-	fx += dx * invR3;
-	fy += dy * invR3;
-	fz += dz * invR3;
+	float invR3 = invR * invR * invR;
+        float qinvR3 = q[j] * invR3;
+	p[i] -= q[j] * invR;
+	f[3*i+0] += dx * qinvR3;
+	f[3*i+1] += dy * qinvR3;
+	f[3*i+2] += dz * qinvR3;
+	p[j] -= q[i] * invR;
+	qinvR3 = q[i] * invR3;
+	f[3*j+0] -= dx * qinvR3;
+	f[3*j+1] -= dy * qinvR3;
+	f[3*j+2] -= dz * qinvR3;
       }
-      p[i] -= pp;
-      f[3*i+0] -= fx;
-      f[3*i+1] -= fy;
-      f[3*i+2] -= fz;
     } else {
       ic += numex[i];
     }

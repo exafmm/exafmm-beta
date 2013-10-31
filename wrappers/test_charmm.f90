@@ -101,7 +101,7 @@ program main
   call mpi_comm_size(mpi_comm_world, mpisize, ierr)
   call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
   nglobal = 1000
-  images = 1
+  images = 3
   ksize = 11
   pcycle = 2 * pi
   sigma = .25 / pi
@@ -160,7 +160,8 @@ program main
   end do
   call fmm_init(images)
   call fmm_partition(nglobal, icpumap, x, q, pcycle)
-  call fmm(nglobal, icpumap, x, q, p, f, pcycle, natex, numex)
+  call fmm(nglobal, icpumap, x, q, p, f, pcycle)
+  call exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
   do i = 1, nglobal
      x2(3*i-2) = x(3*i-2)
      x2(3*i-1) = x(3*i-1)
@@ -171,7 +172,7 @@ program main
      f2(3*i-1) = 0
      f2(3*i-0) = 0
   end do
-#if 0
+#if 1
   call ewald(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
 #else
   prange = 0
@@ -226,6 +227,7 @@ program main
      f2(3*i-0) = f2(3*i-0) - coef * dipole(3)
   end do
 #endif
+  call exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
   potSum = 0
   potSum2 = 0
   accDif = 0
