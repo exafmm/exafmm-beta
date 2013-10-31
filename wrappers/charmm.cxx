@@ -166,10 +166,8 @@ extern "C" void fmm_(int * nglobal, int * icpumap, double * x, double * q, doubl
 }
 
 extern "C" void exclusion_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f, double * cycle, int * numex, int * natex) {
-  logger->printTitle("Exclusion Profiling");
   logger->startTimer("Total Exclusion");
-  int ic = 0;
-  for (int i=0; i<*nglobal; i++) {
+  for (int i=0, ic=0; i<*nglobal; i++) {
     if (icpumap[i] == 1) {
       for (int jc=0; jc<numex[i]; jc++, ic++) {
 	int j = natex[ic]-1;
@@ -185,24 +183,17 @@ extern "C" void exclusion_(int * nglobal, int * icpumap, double * x, double * q,
 	float R2 = dx * dx + dy * dy + dz * dz;
 	float invR = 1 / std::sqrt(R2);
 	if (R2 == 0) invR = 0;
-	float invR3 = invR * invR * invR;
-        float qinvR3 = q[j] * invR3;
+	float invR3 = q[j] * invR * invR * invR;
 	p[i] -= q[j] * invR;
-	f[3*i+0] += dx * qinvR3;
-	f[3*i+1] += dy * qinvR3;
-	f[3*i+2] += dz * qinvR3;
-	p[j] -= q[i] * invR;
-	qinvR3 = q[i] * invR3;
-	f[3*j+0] -= dx * qinvR3;
-	f[3*j+1] -= dy * qinvR3;
-	f[3*j+2] -= dz * qinvR3;
+	f[3*i+0] += dx * invR3;
+	f[3*i+1] += dy * invR3;
+	f[3*i+2] += dz * invR3;
       }
     } else {
       ic += numex[i];
     }
   }
   logger->stopTimer("Total Exclusion");
-  logger->printTime("Total Exclusion");
 }
 
 extern "C" void ewald_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f,
