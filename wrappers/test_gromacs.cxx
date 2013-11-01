@@ -9,29 +9,9 @@
 extern "C" void FMM_Init(int images);
 extern "C" void FMM_Partition(int & n, double * x, double * q, double cycle);
 extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle);
-extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
-			  int ksize, double alpha, double sigma, double cutoff, double cycle);
-
-extern "C" void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
-  const int isend = (mpirank + 1          ) % mpisize;
-  const int irecv = (mpirank - 1 + mpisize) % mpisize;
-  int nnew;
-  MPI_Request sreq, rreq;
-  MPI_Isend(&nold, 1, MPI_DOUBLE, irecv, 0, MPI_COMM_WORLD, &sreq);
-  MPI_Irecv(&nnew, 1, MPI_DOUBLE, isend, 0, MPI_COMM_WORLD, &rreq);
-  MPI_Wait(&sreq, MPI_STATUS_IGNORE);
-  MPI_Wait(&rreq, MPI_STATUS_IGNORE);
-  double * buf = new double [nnew];
-  MPI_Isend(var, nold, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
-  MPI_Irecv(buf, nnew, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
-  MPI_Wait(&sreq, MPI_STATUS_IGNORE);
-  MPI_Wait(&rreq, MPI_STATUS_IGNORE);
-  for (int i=0; i<nnew; i++) {
-    var[i] = buf[i];
-  }
-  nold = nnew;
-  delete[] buf;
-}
+extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double * f,
+			      int ksize, double alpha, double sigma, double cutoff, double cycle);
+extern "C" void Direct_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle);
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
@@ -99,68 +79,9 @@ int main(int argc, char ** argv) {
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }
 #if 1
-  FMM_Ewald(Ni, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, cycle);
+  Ewald_Coulomb(Ni, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, cycle);
 #else
-  int prange = 0;
-  for (int i=0; i<images; i++) {
-    prange += int(std::pow(3.,i));
-  }
-  double Xperiodic[3];
-  int Nj = Ni, Nj3 = 3 * Ni;
-  if (mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
-  for (int irank=0; irank<mpisize; irank++) {
-    if (mpirank == 0) std::cout << "Direct loop          : " << irank+1 << "/" << mpisize << std::endl;
-    MPI_Shift(x2, Nj3, mpisize, mpirank);
-    MPI_Shift(q2, Nj,  mpisize, mpirank);
-    for (int i=0; i<Ni; i++) {
-      double pp = 0, fx = 0, fy = 0, fz = 0;
-      for (int ix=-prange; ix<=prange; ix++) {
-	for (int iy=-prange; iy<=prange; iy++) {
-	  for (int iz=-prange; iz<=prange; iz++) {
-	    Xperiodic[0] = ix * cycle;
-	    Xperiodic[1] = iy * cycle;
-	    Xperiodic[2] = iz * cycle;
-	    for (int j=0; j<Nj; j++) {
-	      double dx = x[3*i+0] - x2[3*j+0] - Xperiodic[0];
-	      double dy = x[3*i+1] - x2[3*j+1] - Xperiodic[1];
-	      double dz = x[3*i+2] - x2[3*j+2] - Xperiodic[2];
-	      double R2 = dx * dx + dy * dy + dz * dz;
-	      double invR = 1 / std::sqrt(R2);
-	      if (irank == mpisize-1 && i == j) invR = 0;
-	      double invR3 = q2[j] * invR * invR * invR;
-	      pp += q2[j] * invR;
-	      fx += dx * invR3;
-	      fy += dy * invR3;
-	      fz += dz * invR3;
-	    }
-	  }
-	}
-      }
-      p2[i] += pp;
-      f2[3*i+0] -= fx;
-      f2[3*i+1] -= fy;
-      f2[3*i+2] -= fz;
-    }
-  }
-  double localDipole[3] = {0, 0, 0};
-  for (int i=0; i<Ni; i++) {
-    for (int d=0; d<3; d++) localDipole[d] += x[3*i+d] * q[i];
-  }
-  int N;
-  MPI_Allreduce(&Ni, &N, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  double globalDipole[3];
-  MPI_Allreduce(localDipole, globalDipole, 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  double norm = 0;
-  for (int d=0; d<3; d++) {
-    norm += globalDipole[d] * globalDipole[d];
-  }
-  double coef = 4 * M_PI / (3 * cycle * cycle * cycle);
-  for (int i=0; i<Ni; i++) {
-      p2[i] -= coef * norm / N / q[i];
-      f2[3*i+0] -= coef * globalDipole[0];
-      f2[3*i+1] -= coef * globalDipole[1];
-      f2[3*i+2] -= coef * globalDipole[2];
-  }
+  Direct_Coulomb(Ni, x2, q2, p2, f2, cycle);
 #endif
   double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
   for (int i=0; i<Ni; i++) {
