@@ -117,10 +117,6 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
     traversal->dualTreeTraversal(cells, jcells, cycle);
   }
   pass->downwardPass(cells);
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    B->ICELL = B->IBODY;
-  }
-  bodies = sort->sortBodies(bodies);
   vec3 localDipole = pass->getDipole(bodies,0);
   vec3 globalDipole = LET->allreduceVec3(localDipole);
   int numBodies = LET->allreduceInt(bodies.size());
@@ -130,7 +126,7 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
   logger->printTitle("Total runtime");
   logger->printTime("Total FMM");
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
+    int i = B->IBODY;
     p[i]     = B->TRG[0];
     f[3*i+0] = B->TRG[1];
     f[3*i+1] = B->TRG[2];
@@ -178,16 +174,12 @@ extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double 
     ewald->realPart(cells, jcells);
   }
   ewald->selfTerm(bodies);
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    B->ICELL = B->IBODY;
-  }
-  bodies = sort->sortBodies(bodies);
   logger->stopPAPI();
   logger->stopTimer("Total Ewald");
   logger->printTitle("Total runtime");
   logger->printTime("Total Ewald");
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
+    int i = B->IBODY;
     p[i]     = B->TRG[0];
     f[3*i+0] = B->TRG[1];
     f[3*i+1] = B->TRG[2];
