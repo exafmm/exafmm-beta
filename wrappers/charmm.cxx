@@ -157,7 +157,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 extern "C" void fmm_coulomb_exclusion_(int & nglobal, int * icpumap,
 				       double * x, double * q, double * p, double * f,
 				       double & cycle, int * numex, int * natex) {
-  logger->startTimer("Total Exclusion");
+  logger->startTimer("Coulomb Exclusion");
   for (int i=0, ic=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       for (int jc=0; jc<numex[i]; jc++, ic++) {
@@ -178,7 +178,95 @@ extern "C" void fmm_coulomb_exclusion_(int & nglobal, int * icpumap,
       ic += numex[i];
     }
   }
-  logger->stopTimer("Total Exclusion");
+  logger->stopTimer("Coulomb Exclusion");
+}
+
+extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap,
+				 double * x, double * q, double * p, double * f,
+				 double & cuton, double & cutoff, double & cycle) {
+  VanDerWaals * VDW = new VanDerWaals(cuton, cutoff, cycle);
+  int nlocal = 0;
+  for (int i=0; i<nglobal; i++) {
+    if (icpumap[i] == 1) nlocal++;
+  }
+  args->numBodies = nlocal;
+  logger->printTitle("Van Der Waals Parameters");
+  args->print(logger->stringLength, P, LET->mpirank);
+#if _OPENMP
+#pragma omp parallel
+#pragma omp master
+#endif
+  logger->printTitle("Van Der Waals Profiling");
+  logger->startTimer("Van Der Waals");
+  logger->startPAPI();
+  Bodies bodies(nlocal);
+  B_iter B = bodies.begin();
+  for (int i=0; i<nglobal; i++) {
+    if (icpumap[i] == 1) {
+      B->X[0] = x[3*i+0];
+      B->X[1] = x[3*i+1];
+      B->X[2] = x[3*i+2];
+      boundbox->restrictToCycle(B->X, cycle);
+      B->SRC = q[i];
+      B->TRG[0] = p[i];
+      B->TRG[1] = f[3*i+0];
+      B->TRG[2] = f[3*i+1];
+      B->TRG[3] = f[3*i+2];
+      B->IBODY = i;
+      B++;
+    }
+  }
+  Cells cells = tree->buildTree(bodies, localBounds);
+  pass->upwardPass(cells);
+  LET->setLET(cells, localBounds, cycle);
+  LET->commBodies();
+  LET->commCells();
+  VDW->evaluate(cells, cells);
+  Cells jcells;
+  for (int irank=1; irank<LET->mpisize; irank++) {
+    LET->getLET(jcells,(LET->mpirank+irank)%LET->mpisize);
+    VDW->evaluate(cells, jcells);
+  }
+  logger->stopPAPI();
+  logger->stopTimer("Van Der Waals");
+  logger->printTitle("Total runtime");
+  logger->printTime("Van Der Waals");
+
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B->IBODY;
+    p[i]     = B->TRG[0];
+    f[3*i+0] = B->TRG[1];
+    f[3*i+1] = B->TRG[2];
+    f[3*i+2] = B->TRG[3];
+  }
+  delete VDW;
+}
+
+extern "C" void fmm_vanderwaals_exclusion_(int & nglobal, int * icpumap,
+					   double * x, double * q, double * p, double * f,
+					   double & cycle, int * numex, int * natex) {
+  logger->startTimer("Van Der Waals Exclusion");
+  for (int i=0, ic=0; i<nglobal; i++) {
+    if (icpumap[i] == 1) {
+      for (int jc=0; jc<numex[i]; jc++, ic++) {
+	int j = natex[ic]-1;
+	vec3 dX;
+	for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
+        boundbox->restrictToCycle(dX, cycle);
+	float R2 = norm(dX);
+	float invR = 1 / std::sqrt(R2);
+	if (R2 == 0) invR = 0;
+	float invR3 = q[j] * invR * invR * invR;
+	p[i] -= q[j] * invR;
+	f[3*i+0] += dX[0] * invR3;
+	f[3*i+1] += dX[1] * invR3;
+	f[3*i+2] += dX[2] * invR3;
+      }
+    } else {
+      ic += numex[i];
+    }
+  }
+  logger->stopTimer("Van Der Waals Exclusion");
 }
 
 extern "C" void fmm_ewald_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f,

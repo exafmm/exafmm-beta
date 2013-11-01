@@ -2,6 +2,8 @@ syntax: glob
 
 *.a
 *.dat
+*.fmm
+*.mod
 *.o
 *.th_o
 *.out

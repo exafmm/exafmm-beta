@@ -58,12 +58,7 @@ extern "C" void FMM_Partition(int & n, double * x, double * q, double cycle) {
     B->X[0] = x[3*i+0];
     B->X[1] = x[3*i+1];
     B->X[2] = x[3*i+2];
-    if( B->X[0] < -cycle/2 ) B->X[0] += cycle;
-    if( B->X[1] < -cycle/2 ) B->X[1] += cycle;
-    if( B->X[2] < -cycle/2 ) B->X[2] += cycle;
-    if( B->X[0] >  cycle/2 ) B->X[0] -= cycle;
-    if( B->X[1] >  cycle/2 ) B->X[1] -= cycle;
-    if( B->X[2] >  cycle/2 ) B->X[2] -= cycle;
+    boundbox->restrictToCycle(B->X, cycle);
     B->SRC = q[i];
     B->IBODY = i;
   }
@@ -102,12 +97,7 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
     B->X[0] = x[3*i+0];
     B->X[1] = x[3*i+1];
     B->X[2] = x[3*i+2];
-    if( B->X[0] < -cycle/2 ) B->X[0] += cycle;
-    if( B->X[1] < -cycle/2 ) B->X[1] += cycle;
-    if( B->X[2] < -cycle/2 ) B->X[2] += cycle;
-    if( B->X[0] >  cycle/2 ) B->X[0] -= cycle;
-    if( B->X[1] >  cycle/2 ) B->X[1] -= cycle;
-    if( B->X[2] >  cycle/2 ) B->X[2] -= cycle;
+    boundbox->restrictToCycle(B->X, cycle);
     B->SRC = q[i];
     B->TRG[0] = p[i];
     B->TRG[1] = f[3*i+0];
@@ -170,12 +160,7 @@ extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
     B->X[0] = x[3*i+0];
     B->X[1] = x[3*i+1];
     B->X[2] = x[3*i+2];
-    if( B->X[0] < -cycle/2 ) B->X[0] += cycle;
-    if( B->X[1] < -cycle/2 ) B->X[1] += cycle;
-    if( B->X[2] < -cycle/2 ) B->X[2] += cycle;
-    if( B->X[0] >  cycle/2 ) B->X[0] -= cycle;
-    if( B->X[1] >  cycle/2 ) B->X[1] -= cycle;
-    if( B->X[2] >  cycle/2 ) B->X[2] -= cycle;
+    boundbox->restrictToCycle(B->X, cycle);
     B->SRC = q[i];
     B->TRG[0] = p[i];
     B->TRG[1] = f[3*i+0];

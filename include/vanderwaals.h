@@ -15,7 +15,7 @@ class VanDerWaals : public Logger {
       for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) {  //  Loop over source bodies
 	vec3 dist = Bi->X - Bj->X - Xperiodic;                  //   Distance vector from source to target
 	real_t R2 = norm(dist);                                 //   R^2
-	if (0 < R2 && R2 < cutoff * cutoff) {                   //   Exclude self interaction
+	if (0 < R2 && R2 < cutoff * cutoff) {                   //   Exclude self interaction and cutoff
 	}                                                       //   End if for self interaction
       }                                                         //  End loop over source bodies
     }                                                           // End loop over target bodies
