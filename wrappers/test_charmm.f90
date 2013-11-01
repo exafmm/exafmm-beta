@@ -204,59 +204,9 @@ program main
      f2(3*i-0) = 0
   end do
 #if 1
-  call fmm_ewald(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
+  call ewald_coulomb(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
 #else
-  prange = 0
-  do i = 0, images-1
-     prange = prange + 3**i
-  end do
-  do i = 1, nglobal
-     if (icpumap(i).eq.1) then
-        pp = 0
-        fx = 0
-        fy = 0
-        fz = 0
-        do j = 1, nglobal
-           do ix = -prange, prange
-              do iy = -prange, prange
-                 do iz = -prange, prange
-                    xperiodic(1) = ix * pcycle
-                    xperiodic(2) = iy * pcycle
-                    xperiodic(3) = iz * pcycle
-                    dx = x(3*i-2) - x2(3*j-2) - xperiodic(1)
-                    dy = x(3*i-1) - x2(3*j-1) - xperiodic(2)
-                    dz = x(3*i-0) - x2(3*j-0) - xperiodic(3)
-                    R2 = dx * dx + dy * dy + dz * dz
-                    Rinv = 1 / sqrt(R2)
-                    if (R2.eq.0) Rinv = 0
-                    R3inv = q2(j) * Rinv * Rinv * Rinv
-                    pp = pp + q2(j) * Rinv
-                    fx = fx + dx * R3inv
-                    fy = fy + dy * R3inv
-                    fz = fz + dz * R3inv
-                 end do
-              end do
-           end do
-        end do
-        p2(i) = p2(i) + pp
-        f2(3*i-2) = f2(3*i-2) - fx
-        f2(3*i-1) = f2(3*i-1) - fy
-        f2(3*i-0) = f2(3*i-0) - fz
-s     end if
-  end do
-  do i = 1, nglobal
-     do d = 1, 3
-        dipole(d) = dipole(d) + x(3*i+d-3) * q(i)
-     end do
-  end do
-  norm = dipole(1) * dipole(1) + dipole(2) * dipole(2) + dipole(3) * dipole(3)
-  coef = 4 * pi / (3 * pcycle * pcycle * pcycle)
-  do i = 1, nglobal
-     p2(i) = p2(i) - coef * norm / nglobal / q(i)
-     f2(3*i-2) = f2(3*i-2) - coef * dipole(1)
-     f2(3*i-1) = f2(3*i-1) - coef * dipole(2)
-     f2(3*i-0) = f2(3*i-0) - coef * dipole(3)
-  end do
+  call direct_coulomb(nglobal, icpumap, x2, q2, p2, f2, pcycle)
 #endif
   call fmm_coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
   call fmm_coulomb_exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)

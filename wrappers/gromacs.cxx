@@ -17,27 +17,6 @@ UpDownPass *pass;
 Traversal *traversal;
 LocalEssentialTree *LET;
 
-extern "C" void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
-  const int isend = (mpirank + 1          ) % mpisize;
-  const int irecv = (mpirank - 1 + mpisize) % mpisize;
-  int nnew;
-  MPI_Request sreq, rreq;
-  MPI_Isend(&nold, 1, MPI_DOUBLE, irecv, 0, MPI_COMM_WORLD, &sreq);
-  MPI_Irecv(&nnew, 1, MPI_DOUBLE, isend, 0, MPI_COMM_WORLD, &rreq);
-  MPI_Wait(&sreq, MPI_STATUS_IGNORE);
-  MPI_Wait(&rreq, MPI_STATUS_IGNORE);
-  double * buf = new double [nnew];
-  MPI_Isend(var, nold, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
-  MPI_Irecv(buf, nnew, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
-  MPI_Wait(&sreq, MPI_STATUS_IGNORE);
-  MPI_Wait(&rreq, MPI_STATUS_IGNORE);
-  for (int i=0; i<nnew; i++) {
-    var[i] = buf[i];
-  }
-  nold = nnew;
-  delete[] buf;
-}
-
 extern "C" void FMM_Init(int images) {
   const int ncrit = 32;
   const int nspawn = 1000;
@@ -213,6 +192,27 @@ extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double 
     f[3*i+2] = B->TRG[3];
   }
   delete ewald;
+}
+
+void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
+  const int isend = (mpirank + 1          ) % mpisize;
+  const int irecv = (mpirank - 1 + mpisize) % mpisize;
+  int nnew;
+  MPI_Request sreq, rreq;
+  MPI_Isend(&nold, 1, MPI_DOUBLE, irecv, 0, MPI_COMM_WORLD, &sreq);
+  MPI_Irecv(&nnew, 1, MPI_DOUBLE, isend, 0, MPI_COMM_WORLD, &rreq);
+  MPI_Wait(&sreq, MPI_STATUS_IGNORE);
+  MPI_Wait(&rreq, MPI_STATUS_IGNORE);
+  double * buf = new double [nnew];
+  MPI_Isend(var, nold, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
+  MPI_Irecv(buf, nnew, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
+  MPI_Wait(&sreq, MPI_STATUS_IGNORE);
+  MPI_Wait(&rreq, MPI_STATUS_IGNORE);
+  for (int i=0; i<nnew; i++) {
+    var[i] = buf[i];
+  }
+  nold = nnew;
+  delete[] buf;
 }
 
 extern "C" void Direct_Coulomb(int Ni, double * x, double * q, double * p, double * f, double cycle) {

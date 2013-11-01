@@ -271,8 +271,8 @@ extern "C" void fmm_vanderwaals_exclusion_(int & nglobal, int * icpumap,
   logger->stopTimer("Van Der Waals Exclusion");
 }
 
-extern "C" void fmm_ewald_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f,
-			   int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
+extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f,
+			       int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
   Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
   if (args->verbose) ewald->verbose = true;
   int nlocal = 0;
@@ -331,4 +331,61 @@ extern "C" void fmm_ewald_(int & nglobal, int * icpumap, double * x, double * q,
     f[3*i+2] = B->TRG[3];
   }
   delete ewald;
+}
+
+extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f, double & cycle) {
+  int images = args->images;
+  int prange = 0;
+  for (int i=0; i<images; i++) {
+    prange += int(std::pow(3.,i));
+  }
+  double Xperiodic[3];
+  for (int i=0; i<nglobal; i++) {
+    if (icpumap[i] == 1) {
+      double pp = 0, fx = 0, fy = 0, fz = 0;
+      for (int ix=-prange; ix<=prange; ix++) {
+	for (int iy=-prange; iy<=prange; iy++) {
+	  for (int iz=-prange; iz<=prange; iz++) {
+	    Xperiodic[0] = ix * cycle;
+	    Xperiodic[1] = iy * cycle;
+	    Xperiodic[2] = iz * cycle;
+	    for (int j=0; j<nglobal; j++) {
+	      double dx = x[3*i+0] - x[3*j+0] - Xperiodic[0];
+	      double dy = x[3*i+1] - x[3*j+1] - Xperiodic[1];
+	      double dz = x[3*i+2] - x[3*j+2] - Xperiodic[2];
+	      double R2 = dx * dx + dy * dy + dz * dz;
+	      double invR = 1 / std::sqrt(R2);
+	      if (R2 == 0) invR = 0;
+	      double invR3 = q[j] * invR * invR * invR;
+	      pp += q[j] * invR;
+	      fx += dx * invR3;
+	      fy += dy * invR3;
+	      fz += dz * invR3;
+	    }
+	  }
+	}
+      }
+      p[i] += pp;
+      f[3*i+0] -= fx;
+      f[3*i+1] -= fy;
+      f[3*i+2] -= fz;
+    }
+  }
+  double dipole[3] = {0, 0, 0};
+  for (int i=0; i<nglobal; i++) {
+    for (int d=0; d<3; d++) dipole[d] += x[3*i+d] * q[i];
+  }
+  double norm = 0;
+  for (int d=0; d<3; d++) {
+    norm += dipole[d] * dipole[d];
+  }
+  double coef = 4 * M_PI / (3 * cycle * cycle * cycle);
+  for (int i=0; i<nglobal; i++) {
+    if (icpumap[i] == 1) {
+      p[i] -= coef * norm / nglobal / q[i];
+      f[3*i+0] -= coef * dipole[0];
+      f[3*i+1] -= coef * dipole[1];
+      f[3*i+2] -= coef * dipole[2];
+    }
+  }
 }
