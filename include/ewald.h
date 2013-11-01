@@ -16,7 +16,7 @@ class Ewald : public Logger {
   int ksize;                                                    //!< Number of waves in Ewald summation
   real_t alpha;                                                 //!< Scaling parameter for Ewald summation
   real_t sigma;                                                 //!< Scaling parameter for Ewald summation
-  real_t cutoff;                                                //!< Neighbor acceptance criteria
+  real_t cutoff;                                                //!< Cutoff distance
   real_t cycle;                                                 //!< Periodic cycle
 
  private:

@@ -96,7 +96,7 @@ extern "C" void fmm_partition_(int * nglobal, int * icpumap, double * x, double 
   }
 }
 
-extern "C" void fmm_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f, double * cycle) {
+extern "C" void fmm_coulomb_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f, double * cycle) {
   int nlocal = 0;
   for (int i=0; i<*nglobal; i++) {
     if (icpumap[i] == 1) nlocal++;

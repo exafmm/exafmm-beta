@@ -85,7 +85,7 @@ extern "C" void FMM_Partition(int & n, double * x, double * q, double cycle) {
   n = bodies.size();
 }
 
-extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double cycle) {
+extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle) {
   args->numBodies = n;
   logger->printTitle("FMM Parameters");
   args->print(logger->stringLength, P, LET->mpirank);

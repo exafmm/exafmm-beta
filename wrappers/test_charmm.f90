@@ -17,7 +17,6 @@ contains
     do while (lin(1:1) == '*')
        read(1,'(a100)')lin
     enddo
-    write(*,*)'lin=',lin(1:30)
     qext=index(lin,'EXT') > 0
     if(qext)then
        read(lin,'(i10)')n
@@ -40,8 +39,8 @@ contains
     read(1,'(a100)')lin
     read(lin(6:100),*)natex_size
     if(natex_size /= sum(numex(1:n))) then
-       write(*,*)'Something is wrong with the input file'
-       write(*,*)filename
+       print*,'Something is wrong with the input file'
+       print*,filename
        stop
     endif
     allocate(natex(natex_size))
@@ -192,7 +191,7 @@ program main
   end do
   call fmm_init(images)
   call fmm_partition(nglobal, icpumap, x, q, pcycle)
-  call fmm(nglobal, icpumap, x, q, p, f, pcycle)
+  call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
   call exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
   do i = 1, nglobal
      x2(3*i-2) = x(3*i-2)

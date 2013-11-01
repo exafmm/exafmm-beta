@@ -8,7 +8,7 @@
 
 extern "C" void FMM_Init(int images);
 extern "C" void FMM_Partition(int & n, double * x, double * q, double cycle);
-extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double cycle);
+extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle);
 extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
 			  int ksize, double alpha, double sigma, double cutoff, double cycle);
 
@@ -90,7 +90,7 @@ int main(int argc, char ** argv) {
 
   FMM_Init(images);
   FMM_Partition(Ni, x, q, cycle);
-  FMM(Ni, x, q, p, f, cycle);
+  FMM_Coulomb(Ni, x, q, p, f, cycle);
   for (int i=0; i<Ni; i++) {
     x2[3*i+0] = x[3*i+0];
     x2[3*i+1] = x[3*i+1];
