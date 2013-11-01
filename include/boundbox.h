@@ -8,7 +8,7 @@ class BoundBox : public Logger {
  private:
   int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
 
-//! Recursively get Xmin and Xmax of domain
+  //! Recursively get Xmin and Xmax of domain
   Bounds boundsRecursion(B_iter BiBegin, B_iter BiEnd, Bounds bounds) {
     assert(BiEnd - BiBegin > 0);
     if (BiEnd - BiBegin < nspawn) {                             // If number of elements is small enough
@@ -33,7 +33,7 @@ class BoundBox : public Logger {
  public:
   BoundBox(int _nspawn) : nspawn(_nspawn) {}
 
-  // ! Get Xmin and Xmax of domain
+  //! Get Xmin and Xmax of domain
   Bounds getBounds(Bodies bodies) {
     startTimer("Get bounds");                                   // Start timer
     Bounds bounds;                                              // Bounds : Contains Xmin, Xmax
@@ -47,12 +47,22 @@ class BoundBox : public Logger {
     return bounds;                                              // Return Xmin and Xmax
   }
 
-  // ! Update Xmin and Xmax of domain
+  //! Update Xmin and Xmax of domain
   Bounds getBounds(Bodies bodies, Bounds bounds) {
     startTimer("Get bounds");                                   // Start timer
     bounds = boundsRecursion(bodies.begin(),bodies.end(),bounds);// Recursive call for bounds calculation
     stopTimer("Get bounds");                                    // Stop timer
     return bounds;                                              // Return Xmin and Xmax
+  }
+
+  //! Restrict coordinates to fit in cycle
+  inline void restrictToCycle(vec3 & X, const real_t & cycle) {
+    if( X[0] < -cycle/2 ) X[0] += cycle;
+    if( X[1] < -cycle/2 ) X[1] += cycle;
+    if( X[2] < -cycle/2 ) X[2] += cycle;
+    if( X[0] >  cycle/2 ) X[0] -= cycle;
+    if( X[1] >  cycle/2 ) X[1] -= cycle;
+    if( X[2] >  cycle/2 ) X[2] -= cycle;
   }
 };
 #endif

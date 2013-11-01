@@ -6,6 +6,7 @@
 #include "sort.h"
 #include "traversal.h"
 #include "updownpass.h"
+#include "vanderwaals.h"
 
 Args *args;
 Logger *logger;
@@ -17,7 +18,7 @@ UpDownPass *pass;
 Traversal *traversal;
 LocalEssentialTree *LET;
 
-extern "C" void fmm_init_(int * images) {
+extern "C" void fmm_init_(int & images) {
   const int ncrit = 32;
   const int nspawn = 1000;
   const real_t theta = 0.4;
@@ -27,13 +28,13 @@ extern "C" void fmm_init_(int * images) {
   boundbox = new BoundBox(nspawn);
   tree = new BuildTree(ncrit, nspawn);
   pass = new UpDownPass(theta);
-  traversal = new Traversal(nspawn, *images);
-  LET = new LocalEssentialTree(*images);
+  traversal = new Traversal(nspawn, images);
+  LET = new LocalEssentialTree(images);
 
   args->theta = theta;
   args->ncrit = ncrit;
   args->nspawn = nspawn;
-  args->images = *images;
+  args->images = images;
   args->mutual = 0;
   args->verbose = 1;
   args->distribution = "external";
@@ -50,31 +51,24 @@ extern "C" void fmm_init_(int * images) {
   args->print(logger->stringLength, P, LET->mpirank);
 }
 
-extern "C" void fmm_partition_(int * nglobal, int * icpumap, double * x, double * q, double * cycle) {
+extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q, double & cycle) {
   logger->printTitle("Partition Profiling");
   int nlocal = 0;
-  for (int i=0; i<*nglobal; i++) {
+  for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) nlocal++;
   }
   Bodies bodies(nlocal);
   B_iter B = bodies.begin();
-  for (int i=0; i<*nglobal; i++) {
+  for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
+      boundbox->restrictToCycle(B->X, cycle);
       B->SRC = q[i];
       B->IBODY = i;
       B++;
     }
-  }
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    if( B->X[0] < -*cycle/2 ) B->X[0] += *cycle;
-    if( B->X[1] < -*cycle/2 ) B->X[1] += *cycle;
-    if( B->X[2] < -*cycle/2 ) B->X[2] += *cycle;
-    if( B->X[0] >  *cycle/2 ) B->X[0] -= *cycle;
-    if( B->X[1] >  *cycle/2 ) B->X[1] -= *cycle;
-    if( B->X[2] >  *cycle/2 ) B->X[2] -= *cycle;
   }
   localBounds = boundbox->getBounds(bodies);
   Bounds globalBounds = LET->allreduceBounds(localBounds);
@@ -83,7 +77,7 @@ extern "C" void fmm_partition_(int * nglobal, int * icpumap, double * x, double 
   bodies = LET->commBodies(bodies);
   Cells cells = tree->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
-  for (int i=0; i<*nglobal; i++) {
+  for (int i=0; i<nglobal; i++) {
     icpumap[i] = 0;
   }
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -96,9 +90,11 @@ extern "C" void fmm_partition_(int * nglobal, int * icpumap, double * x, double 
   }
 }
 
-extern "C" void fmm_coulomb_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f, double * cycle) {
+extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
+			     double * x, double * q, double * p, double * f,
+			     double & cycle) {
   int nlocal = 0;
-  for (int i=0; i<*nglobal; i++) {
+  for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) nlocal++;
   }
   args->numBodies = nlocal;
@@ -113,11 +109,12 @@ extern "C" void fmm_coulomb_(int * nglobal, int * icpumap, double * x, double * 
   logger->startPAPI();
   Bodies bodies(nlocal);
   B_iter B = bodies.begin();
-  for (int i=0; i<*nglobal; i++) {
+  for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
+      boundbox->restrictToCycle(B->X, cycle);
       B->SRC = q[i];
       B->TRG[0] = p[i];
       B->TRG[1] = f[3*i+0];
@@ -127,30 +124,22 @@ extern "C" void fmm_coulomb_(int * nglobal, int * icpumap, double * x, double * 
       B++;
     }
   }
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    if( B->X[0] < -*cycle/2 ) B->X[0] += *cycle;
-    if( B->X[1] < -*cycle/2 ) B->X[1] += *cycle;
-    if( B->X[2] < -*cycle/2 ) B->X[2] += *cycle;
-    if( B->X[0] >  *cycle/2 ) B->X[0] -= *cycle;
-    if( B->X[1] >  *cycle/2 ) B->X[1] -= *cycle;
-    if( B->X[2] >  *cycle/2 ) B->X[2] -= *cycle;
-  }
   Cells cells = tree->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
-  LET->setLET(cells, localBounds, *cycle);
+  LET->setLET(cells, localBounds, cycle);
   LET->commBodies();
   LET->commCells();
-  traversal->dualTreeTraversal(cells, cells, *cycle, args->mutual);
+  traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
   Cells jcells;
   for (int irank=1; irank<LET->mpisize; irank++) {
     LET->getLET(jcells,(LET->mpirank+irank)%LET->mpisize);
-    traversal->dualTreeTraversal(cells, jcells, *cycle);
+    traversal->dualTreeTraversal(cells, jcells, cycle);
   }
   pass->downwardPass(cells);
   vec3 localDipole = pass->getDipole(bodies,0);
   vec3 globalDipole = LET->allreduceVec3(localDipole);
   int numBodies = LET->allreduceInt(bodies.size());
-  pass->dipoleCorrection(bodies, globalDipole, numBodies, *cycle);
+  pass->dipoleCorrection(bodies, globalDipole, numBodies, cycle);
   logger->stopPAPI();
   logger->stopTimer("Total FMM");
   logger->printTitle("Total runtime");
@@ -165,29 +154,25 @@ extern "C" void fmm_coulomb_(int * nglobal, int * icpumap, double * x, double * 
   }
 }
 
-extern "C" void exclusion_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f, double * cycle, int * numex, int * natex) {
+extern "C" void fmm_coulomb_exclusion_(int & nglobal, int * icpumap,
+				       double * x, double * q, double * p, double * f,
+				       double & cycle, int * numex, int * natex) {
   logger->startTimer("Total Exclusion");
-  for (int i=0, ic=0; i<*nglobal; i++) {
+  for (int i=0, ic=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       for (int jc=0; jc<numex[i]; jc++, ic++) {
 	int j = natex[ic]-1;
-	float dx = x[3*i+0] - x[3*j+0];
-	float dy = x[3*i+1] - x[3*j+1];
-	float dz = x[3*i+2] - x[3*j+2];
-	if (dx < -*cycle/2) dx += *cycle;
-	if (dy < -*cycle/2) dy += *cycle;
-	if (dz < -*cycle/2) dz += *cycle;
-	if (dx >  *cycle/2) dx -= *cycle;
-	if (dy >  *cycle/2) dy -= *cycle;
-	if (dz >  *cycle/2) dz -= *cycle;
-	float R2 = dx * dx + dy * dy + dz * dz;
+	vec3 dX;
+	for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
+        boundbox->restrictToCycle(dX, cycle);
+	float R2 = norm(dX);
 	float invR = 1 / std::sqrt(R2);
 	if (R2 == 0) invR = 0;
 	float invR3 = q[j] * invR * invR * invR;
 	p[i] -= q[j] * invR;
-	f[3*i+0] += dx * invR3;
-	f[3*i+1] += dy * invR3;
-	f[3*i+2] += dz * invR3;
+	f[3*i+0] += dX[0] * invR3;
+	f[3*i+1] += dX[1] * invR3;
+	f[3*i+2] += dX[2] * invR3;
       }
     } else {
       ic += numex[i];
@@ -196,12 +181,12 @@ extern "C" void exclusion_(int * nglobal, int * icpumap, double * x, double * q,
   logger->stopTimer("Total Exclusion");
 }
 
-extern "C" void fmm_ewald_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f,
-			   int * ksize, double * alpha, double * sigma, double * cutoff, double * cycle) {
-  Ewald * ewald = new Ewald(*ksize, *alpha, *sigma, *cutoff, *cycle);
+extern "C" void fmm_ewald_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f,
+			   int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
+  Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
   if (args->verbose) ewald->verbose = true;
   int nlocal = 0;
-  for (int i=0; i<*nglobal; i++) {
+  for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) nlocal++;
   }
   args->numBodies = nlocal;
@@ -217,11 +202,12 @@ extern "C" void fmm_ewald_(int * nglobal, int * icpumap, double * x, double * q,
   logger->startPAPI();
   Bodies bodies(nlocal);
   B_iter B = bodies.begin();
-  for (int i=0; i<*nglobal; i++) {
+  for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
+      boundbox->restrictToCycle(B->X, cycle);
       B->SRC = q[i];
       B->TRG[0] = p[i];
       B->TRG[1] = f[3*i+0];
@@ -230,14 +216,6 @@ extern "C" void fmm_ewald_(int * nglobal, int * icpumap, double * x, double * q,
       B->IBODY = i;
       B++;
     }
-  }
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    if( B->X[0] < -*cycle/2 ) B->X[0] += *cycle;
-    if( B->X[1] < -*cycle/2 ) B->X[1] += *cycle;
-    if( B->X[2] < -*cycle/2 ) B->X[2] += *cycle;
-    if( B->X[0] >  *cycle/2 ) B->X[0] -= *cycle;
-    if( B->X[1] >  *cycle/2 ) B->X[1] -= *cycle;
-    if( B->X[2] >  *cycle/2 ) B->X[2] -= *cycle;
   }
   Cells cells = tree->buildTree(bodies, localBounds);
   Bodies jbodies = bodies;

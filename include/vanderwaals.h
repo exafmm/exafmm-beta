@@ -2,7 +2,7 @@
 #define vanderwaals_h
 #include "types.h"
 
-class Ewald : public Logger {
+class VanDerWaals : public Logger {
  private:
   real_t cuton;                                                 //!< Cuton distance
   real_t cutoff;                                                //!< Cutoff distance
@@ -16,17 +16,6 @@ class Ewald : public Logger {
 	vec3 dist = Bi->X - Bj->X - Xperiodic;                  //   Distance vector from source to target
 	real_t R2 = norm(dist);                                 //   R^2
 	if (0 < R2 && R2 < cutoff * cutoff) {                   //   Exclude self interaction
-	  real_t R2s = R2 * alpha * alpha;                      //    (R * alpha)^2
-	  real_t Rs = std::sqrt(R2s);                           //    R * alpha
-	  real_t invRs = 1 / Rs;                                //    1 / (R * alpha)
-	  real_t invR2s = invRs * invRs;                        //    1 / (R * alpha)^2
-	  real_t invR3s = invR2s * invRs;                       //    1 / (R * alpha)^3
-	  real_t dtmp = Bj->SRC * (M_2_SQRTPI * exp(-R2s) * invR2s + erfc(Rs) * invR3s);
-	  dtmp *= alpha * alpha * alpha;                        //    Scale temporary value
-	  Bi->TRG[0] += Bj->SRC * erfc(Rs) * invRs * alpha;     //    Ewald real potential
-	  Bi->TRG[1] -= dist[0] * dtmp;                         //    x component of Ewald real force
-	  Bi->TRG[2] -= dist[1] * dtmp;                         //    y component of Ewald real force
-	  Bi->TRG[3] -= dist[2] * dtmp;                         //    z component of Ewald real force
 	}                                                       //   End if for self interaction
       }                                                         //  End loop over source bodies
     }                                                           // End loop over target bodies
@@ -64,7 +53,7 @@ class Ewald : public Logger {
   VanDerWaals(int _cuton, real_t _cutoff, real_t _cycle) :
     cuton(_cuton), cutoff(_cutoff), cycle(_cycle) {}
 
-//! Ewald real part
+//! Evaluate Van Der Waals potential and force
   void evaluate(Cells &cells, Cells &jcells) {
     startTimer("Van Der Waals");                                // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells

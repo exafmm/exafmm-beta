@@ -192,7 +192,7 @@ program main
   call fmm_init(images)
   call fmm_partition(nglobal, icpumap, x, q, pcycle)
   call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
-  call exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
+  call fmm_coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
   do i = 1, nglobal
      x2(3*i-2) = x(3*i-2)
      x2(3*i-1) = x(3*i-1)
@@ -258,7 +258,7 @@ program main
      f2(3*i-0) = f2(3*i-0) - coef * dipole(3)
   end do
 #endif
-  call exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
+  call fmm_coulomb_exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
   potSum = 0
   potSum2 = 0
   accDif = 0
