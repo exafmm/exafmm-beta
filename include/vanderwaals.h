@@ -23,7 +23,8 @@ class VanDerWaals : public Logger {
 	if (R2 != 0) {                                          //   Exclude self interaction
 	  int atypej = int(Bj->SRC);                            //    Atom type of source
 	  real_t rs = rscale[atypei*numTypes+atypej];           //    Distance scaling parameter
-	  real_t gs = gscale[atypei*numTypes+atypej];           //    Value scaling parameter
+	  real_t gs = gscale[atypei*numTypes+atypej];           //    Value scaling parameter for potential
+	  real_t fgs = fgscale[atypei*numTypes+atypej];         //    Value scaling parameter for force
 	  real_t shift = cuton * cuton;                         //    Cuton squared
 	  real_t R2s = R2 * rs;                                 //    Scale distance squared
 	  real_t invR2 = 1.0 / R2s;                             //    1 / R^2
@@ -40,7 +41,7 @@ class VanDerWaals : public Logger {
 	    tmp = invR6 * (invR6 - 1);
 	    dtmp = invR2 * invR6 * (2 * invR6 - 1);
           }
-	  dtmp *= gs;
+	  dtmp *= fgs;                                          //    Scale force term
           Bi->TRG[0] += gs * tmp;                               //    VdW potential
           Bi->TRG[1] -= dX[0] * dtmp;                           //    x component of VdW force
           Bi->TRG[2] -= dX[1] * dtmp;                           //    y component of VdW force

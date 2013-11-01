@@ -188,7 +188,9 @@ program main
   end do
   call fmm_init(images)
   call fmm_partition(nglobal, icpumap, x, q, pcycle)
-  call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
+  !call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
+  call fmm_vanderwaals(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
+       pcycle, nat, rscale, gscale, fgscale)
   do i = 1, nglobal
      x2(3*i-2) = x(3*i-2)
      x2(3*i-1) = x(3*i-1)
@@ -200,12 +202,18 @@ program main
      f2(3*i-0) = 0
   end do
 #if 1
-  call ewald_coulomb(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
+  !call ewald_coulomb(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
 #else
   call direct_coulomb(nglobal, icpumap, x2, q2, p2, f2, pcycle)
 #endif
-  call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
-  call coulomb_exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
+  call direct_vanderwaals(nglobal, icpumap, atype, x2, p2, f2, cuton, cutoff,&
+       pcycle, nat, rscale, gscale, fgscale)
+  !call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
+  !call coulomb_exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
+  !call vanderwaals_exclusion(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
+  !     pcycle, nat, rscale, gscale, fgscale, numex, natex)
+  !call vanderwaals_exclusion(nglobal, icpumap, atype, x2, p2, f2, cuton, cutoff,&
+  !     pcycle, nat, rscale, gscale, fgscale, numex, natex)
   potSum = 0
   potSum2 = 0
   accDif = 0
