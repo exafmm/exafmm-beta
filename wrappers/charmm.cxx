@@ -196,8 +196,8 @@ extern "C" void exclusion_(int * nglobal, int * icpumap, double * x, double * q,
   logger->stopTimer("Total Exclusion");
 }
 
-extern "C" void ewald_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f,
-                       int * ksize, double * alpha, double * sigma, double * cutoff, double * cycle) {
+extern "C" void fmm_ewald_(int * nglobal, int * icpumap, double * x, double * q, double * p, double * f,
+			   int * ksize, double * alpha, double * sigma, double * cutoff, double * cycle) {
   Ewald * ewald = new Ewald(*ksize, *alpha, *sigma, *cutoff, *cycle);
   if (args->verbose) ewald->verbose = true;
   int nlocal = 0;

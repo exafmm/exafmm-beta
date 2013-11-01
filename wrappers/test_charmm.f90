@@ -1,12 +1,12 @@
 module charmm_io
 contains
-  subroutine charmm_cor_read(n,x,q,size,filename,numex,natex,idist,rscale,gscale,fgscale)
+  subroutine charmm_cor_read(n,x,q,size,filename,numex,natex,nat,atype,rscale,gscale,frscale,fgscale)
     implicit none
     logical qext
-    integer i, idist, im, in, n, natex_size, vdw_size
+    integer i, nat, im, in, n, natex_size, vdw_size
     real(8) size, sizex, sizey, sizez
-    integer, allocatable, dimension(:) :: numex, natex
-    real(8), allocatable, dimension(:) :: x, q, rscale, gscale, fgscale
+    integer, allocatable, dimension(:) :: numex, natex, atype
+    real(8), allocatable, dimension(:) :: x, q, rscale, gscale, frscale, fgscale
     character(len=100) lin
     character(len=*) filename
 
@@ -47,15 +47,20 @@ contains
     allocate(natex(natex_size))
     read(1,'(10i10)')natex(1:natex_size)
     read(1,'(a100)')lin
-    read(lin(16:100),*)idist
-    vdw_size=idist**2
-    allocate(rscale(vdw_size),gscale(vdw_size),fgscale(vdw_size))
+    read(lin(16:100),*)nat
+    vdw_size=nat**2
+    allocate(rscale(vdw_size),gscale(vdw_size),frscale(vdw_size),fgscale(vdw_size))
     read(1,'(5f20.10)')rscale(1:vdw_size)
     read(1,'(a100)')lin
     read(1,'(5f20.10)')gscale(1:vdw_size)
     read(1,'(a100)')lin
     read(1,'(5f20.10)')fgscale(1:vdw_size)
-
+    do i=1,vdw_size
+       frscale(i) = rscale(i)
+    enddo
+    allocate(atype(n))
+    read(1,'(a100)')lin
+    read(1,'(20i5)')atype(1:n)
     return
   end subroutine charmm_cor_read
 end module charmm_io
@@ -78,8 +83,8 @@ program main
   implicit none
   include 'mpif.h'
   character(128) filename
-  integer d, i, idist, ierr, images, ista, iend, istat, ksize, lnam, mpirank, mpisize
-  integer nglobal, prange, ix, iy, iz, j
+  integer d, i, ierr, images, ista, iend, istat, ksize, lnam, mpirank, mpisize
+  integer nat, nglobal, prange, ix, iy, iz, j
   real(8) alpha, sigma, cutoff, average, norm, pcycle, pi, ccelec
   real(8) coef, dx, dy, dz, fx, fy ,fz, pp, R2, R3inv, Rinv
   real(8) accDif, accDifGlob
@@ -92,9 +97,9 @@ program main
   integer, dimension (128) :: iseed
   real(8), dimension (3) :: dipole = (/0, 0, 0/)
   real(8), dimension (3) :: xperiodic
-  integer, allocatable, dimension(:) :: icpumap, numex, natex
+  integer, allocatable, dimension(:) :: icpumap, numex, natex, atype
   real(8), allocatable, dimension(:) :: x, q, p, f, x2, q2, p2, f2
-  real(8), allocatable, dimension(:) :: rscale, gscale, fgscale
+  real(8), allocatable, dimension(:) :: rscale, gscale, frscale, fgscale
   parameter(pi=3.14159265358979312d0, ccelec=332.0716d0)
 
   call mpi_init(ierr)
@@ -103,19 +108,22 @@ program main
   nglobal = 1000
   images = 3
   ksize = 11
-  pcycle = 2 * pi
+  pcycle = 20 * pi
   sigma = .25 / pi
-  cutoff = 10.
+  cutoff = 10.;
   alpha = 10 / pcycle
+  nat = 16
   if (command_argument_count() > 0) then
      call get_command_argument(1,filename,lnam,istat)
-     call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,idist,rscale,gscale,fgscale)
+     call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,nat,atype,rscale,gscale,frscale,fgscale)
      allocate( p(nglobal),  f(3*nglobal), icpumap(nglobal) )
      allocate( x2(3*nglobal), q2(nglobal), p2(nglobal), f2(3*nglobal) )
      alpha = 10 / pcycle
   else
      allocate( x(3*nglobal),  q(nglobal),  p(nglobal),  f(3*nglobal), icpumap(nglobal) )
      allocate( x2(3*nglobal), q2(nglobal), p2(nglobal), f2(3*nglobal) )
+     allocate( numex(nglobal), natex(nglobal), atype(nglobal) )
+     allocate( rscale(nat*nat), gscale(nat*nat), frscale(nat*nat), fgscale(nat*nat) )
 #if 1
      do i = 1, 128
         iseed(i) = 0
@@ -151,6 +159,30 @@ program main
         icpumap(i) = 0
      end do
 #endif
+     call random_number(rscale)
+     call random_number(gscale)
+     do i = 1, nglobal
+        numex(i) = 1
+        if(mod(i,2).eq.1)then
+           natex(i) = i+1
+        else
+           natex(i) = i-1
+        endif
+        atype(i) = rand() * nat
+     enddo
+     do i = 1, nat
+        do j = 1, nat
+           if( i.ne.j ) then
+              gscale((i-1)*nat+j) = sqrt(gscale((i-1)*nat+i)*gscale((j-1)*nat+j))
+              rscale((i-1)*nat+j) = (sqrt(rscale((i-1)*nat+i)) + sqrt(rscale((j-1)*nat+j))) * 0.5;
+              rscale((i-1)*nat+j) = rscale((i-1)*nat+j) * rscale((i-1)*nat+j);
+           endif
+        enddo
+     enddo
+     do i = 1, nat*nat
+        frscale(i) = rscale(i)
+        fgscale(i) = gscale(i)
+     enddo
   end if
   ista = 1
   iend = nglobal
@@ -173,7 +205,7 @@ program main
      f2(3*i-0) = 0
   end do
 #if 1
-  call ewald(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
+  call fmm_ewald(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
 #else
   prange = 0
   do i = 0, images-1
@@ -262,8 +294,8 @@ program main
      print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
      print"(a,f12.4)",'Energy (FMM)         : ', ccelec*potSumGlob/2.0
      print"(a,f12.4)",'Energy (Ewald)       : ', ccelec*potSumGlob2/2.0
-     print"(a,f10.6)",'GRMS (FMM)           : ', ccelec*sqrt(accNrmGlob/3.0/nglobal)/2.0
-     print"(a,f10.6)",'GRMS (Ewald)         : ', ccelec*sqrt(accNrmGlob2/3.0/nglobal)/2.0
+     print"(a,f12.4)",'GRMS (FMM)           : ', ccelec*sqrt(accNrmGlob/3.0/nglobal)/2.0
+     print"(a,f12.4)",'GRMS (Ewald)         : ', ccelec*sqrt(accNrmGlob2/3.0/nglobal)/2.0
   end if
 
   deallocate( x, q, p, f, icpumap, x2, q2, p2, f2 )
