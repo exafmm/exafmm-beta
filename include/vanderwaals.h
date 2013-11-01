@@ -7,15 +7,45 @@ class VanDerWaals : public Logger {
   real_t cuton;                                                 //!< Cuton distance
   real_t cutoff;                                                //!< Cutoff distance
   real_t cycle;                                                 //!< Periodic cycle
+  int numTypes;                                                 //!< Number of atom types
+  std::vector<real_t> rscale;                                   //!< Distance scaling parameter for VdW potential
+  std::vector<real_t> gscale;                                   //!< Value scaling parameter for VdW potential
+  std::vector<real_t> frscale;                                  //!< Distance scaling parameter for VdW force
+  std::vector<real_t> fgscale;                                  //!< Value scaling parameter for VdW force
 
  private:
 //! Leonard-Jones P2P kernel
   void P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic) const {
     for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {    // Loop over target bodies
+      int atypei = int(Bi->SRC);                                //  Atom type of target
       for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) {  //  Loop over source bodies
-	vec3 dist = Bi->X - Bj->X - Xperiodic;                  //   Distance vector from source to target
-	real_t R2 = norm(dist);                                 //   R^2
-	if (0 < R2 && R2 < cutoff * cutoff) {                   //   Exclude self interaction and cutoff
+	vec3 dX = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+	real_t R2 = norm(dX);                                   //   R^2
+	if (R2 != 0) {                                          //   Exclude self interaction
+	  int atypej = int(Bj->SRC);                            //    Atom type of source
+	  real_t rs = rscale[atypei*numTypes+atypej];           //    Distance scaling parameter
+	  real_t gs = gscale[atypei*numTypes+atypej];           //    Value scaling parameter
+	  real_t shift = cuton * cuton;
+	  real_t R2s = R2 * rs;
+	  real_t invR2 = 1.0 / R2s;
+	  real_t invR6 = invR2 * invR2 * invR2;
+	  real_t tmp, dtmp;
+          if (R2 > shift) {
+	    real_t r2max = cutoff * cutoff;
+	    real_t tmp1 = (r2max - R2) / (r2max-shift)*(r2max-shift)*(r2max-shift);
+	    real_t tmp2 = tmp1 * (r2max - R2) * (r2max - 3 * shift + 2 * R2);
+	    tmp = invR6 * (invR6 - 1) * tmp2;
+	    dtmp = invR6 * (invR6 - 1) * 12 * (shift - R2) * tmp1
+	      - 6 * invR6 * tmp * tmp2 / R2;
+          } else {
+	    tmp = invR6 * (invR6 - 1);
+	    dtmp = invR2 * invR6 * (2 * invR6 - 1);
+          }
+	  dtmp *= gs;
+          Bi->TRG[0] += gs * tmp;
+          Bi->TRG[1] += dX[0] * dtmp;
+          Bi->TRG[2] += dX[1] * dtmp;
+          Bi->TRG[3] += dX[2] * dtmp;
 	}                                                       //   End if for self interaction
       }                                                         //  End loop over source bodies
     }                                                           // End loop over target bodies
@@ -50,8 +80,21 @@ class VanDerWaals : public Logger {
 
  public:
 //! Constructor
-  VanDerWaals(int _cuton, real_t _cutoff, real_t _cycle) :
-    cuton(_cuton), cutoff(_cutoff), cycle(_cycle) {}
+  VanDerWaals(int _cuton, real_t _cutoff, real_t _cycle, int _numTypes,
+	      double * _rscale, double * _gscale,
+	      double * _frscale, double * _fgscale) :
+    cuton(_cuton), cutoff(_cutoff), cycle(_cycle), numTypes(_numTypes) {
+    rscale.resize(numTypes*numTypes);
+    gscale.resize(numTypes*numTypes);
+    frscale.resize(numTypes*numTypes);
+    fgscale.resize(numTypes*numTypes);
+    for (int i=0; i<numTypes*numTypes; i++) {
+      rscale[i] = _rscale[i];
+      gscale[i] = _gscale[i];
+      frscale[i] = _frscale[i];
+      fgscale[i] = _fgscale[i];
+    }
+  }
 
 //! Evaluate Van Der Waals potential and force
   void evaluate(Cells &cells, Cells &jcells) {

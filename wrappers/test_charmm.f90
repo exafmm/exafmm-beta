@@ -84,7 +84,7 @@ program main
   character(128) filename
   integer d, i, ierr, images, ista, iend, istat, ksize, lnam, mpirank, mpisize
   integer nat, nglobal, prange, ix, iy, iz, j
-  real(8) alpha, sigma, cutoff, average, norm, pcycle, pi, ccelec
+  real(8) alpha, sigma, cuton, cutoff, average, norm, pcycle, pi, ccelec
   real(8) coef, dx, dy, dz, fx, fy ,fz, pp, R2, R3inv, Rinv
   real(8) accDif, accDifGlob
   real(8) accNrm, accNrmGlob
@@ -109,7 +109,8 @@ program main
   ksize = 11
   pcycle = 20 * pi
   sigma = .25 / pi
-  cutoff = 10.;
+  cuton = 9.5;
+  cutoff = 10.0;
   alpha = 10 / pcycle
   nat = 16
   if (command_argument_count() > 0) then
@@ -192,7 +193,6 @@ program main
   call fmm_init(images)
   call fmm_partition(nglobal, icpumap, x, q, pcycle)
   call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
-  call fmm_coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
   do i = 1, nglobal
      x2(3*i-2) = x(3*i-2)
      x2(3*i-1) = x(3*i-1)
@@ -242,7 +242,7 @@ program main
         f2(3*i-2) = f2(3*i-2) - fx
         f2(3*i-1) = f2(3*i-1) - fy
         f2(3*i-0) = f2(3*i-0) - fz
-     end if
+s     end if
   end do
   do i = 1, nglobal
      do d = 1, 3
@@ -258,6 +258,7 @@ program main
      f2(3*i-0) = f2(3*i-0) - coef * dipole(3)
   end do
 #endif
+  call fmm_coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
   call fmm_coulomb_exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
   potSum = 0
   potSum2 = 0

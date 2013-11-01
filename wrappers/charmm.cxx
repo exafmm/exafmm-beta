@@ -181,10 +181,12 @@ extern "C" void fmm_coulomb_exclusion_(int & nglobal, int * icpumap,
   logger->stopTimer("Coulomb Exclusion");
 }
 
-extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap,
+extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
 				 double * x, double * q, double * p, double * f,
-				 double & cuton, double & cutoff, double & cycle) {
-  VanDerWaals * VDW = new VanDerWaals(cuton, cutoff, cycle);
+				 double & cuton, double & cutoff, double & cycle,
+				 int & nat, double * rscale, double * gscale,
+				 double * frscale, double * fgscale) {
+  VanDerWaals * VDW = new VanDerWaals(cuton, cutoff, cycle, nat, rscale, gscale, frscale, fgscale);
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) nlocal++;
@@ -207,7 +209,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap,
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
       boundbox->restrictToCycle(B->X, cycle);
-      B->SRC = q[i];
+      B->SRC = atype[i]+ .5;
       B->TRG[0] = p[i];
       B->TRG[1] = f[3*i+0];
       B->TRG[2] = f[3*i+1];

@@ -21,7 +21,7 @@ class Ewald : public Logger {
 
  private:
 //! Forward DFT
-  void dft(Waves &waves, Bodies &bodies) const {
+  void dft(Waves & waves, Bodies & bodies) const {
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
     for (W_iter W=waves.begin(); W!=waves.end(); W++) {         // Loop over waves
       W->REAL = W->IMAG = 0;                                    //  Initialize waves
@@ -35,7 +35,7 @@ class Ewald : public Logger {
   }
 
 //! Inverse DFT
-  void idft(Waves &waves, Bodies &bodies) const {
+  void idft(Waves & waves, Bodies & bodies) const {
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       kvec4 TRG = 0;                                            //  Initialize target values
@@ -82,8 +82,8 @@ class Ewald : public Logger {
   void P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic) const {
     for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {    // Loop over target bodies
       for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) {  //  Loop over source bodies
-	vec3 dist = Bi->X - Bj->X - Xperiodic;                  //   Distance vector from source to target
-	real_t R2 = norm(dist);                                 //   R^2
+	vec3 dX = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
+	real_t R2 = norm(dX);                                   //   R^2
 	if (0 < R2 && R2 < cutoff * cutoff) {                   //   Exclude self interaction and cutoff
 	  real_t R2s = R2 * alpha * alpha;                      //    (R * alpha)^2
 	  real_t Rs = std::sqrt(R2s);                           //    R * alpha
@@ -93,9 +93,9 @@ class Ewald : public Logger {
 	  real_t dtmp = Bj->SRC * (M_2_SQRTPI * exp(-R2s) * invR2s + erfc(Rs) * invR3s);
 	  dtmp *= alpha * alpha * alpha;                        //    Scale temporary value
 	  Bi->TRG[0] += Bj->SRC * erfc(Rs) * invRs * alpha;     //    Ewald real potential
-	  Bi->TRG[1] -= dist[0] * dtmp;                         //    x component of Ewald real force
-	  Bi->TRG[2] -= dist[1] * dtmp;                         //    y component of Ewald real force
-	  Bi->TRG[3] -= dist[2] * dtmp;                         //    z component of Ewald real force
+	  Bi->TRG[1] -= dX[0] * dtmp;                           //    x component of Ewald real force
+	  Bi->TRG[2] -= dX[1] * dtmp;                           //    y component of Ewald real force
+	  Bi->TRG[3] -= dX[2] * dtmp;                           //    z component of Ewald real force
 	}                                                       //   End if for self interaction
       }                                                         //  End loop over source bodies
     }                                                           // End loop over target bodies
@@ -134,7 +134,7 @@ class Ewald : public Logger {
   ksize(_ksize), alpha(_alpha), sigma(_sigma), cutoff(_cutoff), cycle(_cycle) {}
 
 //! Ewald real part
-  void realPart(Cells &cells, Cells &jcells) {
+  void realPart(Cells & cells, Cells & jcells) {
     startTimer("Ewald real part");                              // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
     spawn_tasks {                                               // Intitialize tasks
@@ -147,14 +147,14 @@ class Ewald : public Logger {
   }
 
 //! Subtract self term
-  void selfTerm(Bodies &bodies) {
+  void selfTerm(Bodies & bodies) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over all bodies
       B->TRG[0] -= M_2_SQRTPI * B->SRC * alpha;                 //   Self term of Ewald real part
     }                                                           //  End loop over all bodies in cell
   }
 
 //! Ewald wave part
-  void wavePart(Bodies &bodies, Bodies &jbodies) {
+  void wavePart(Bodies & bodies, Bodies & jbodies) {
     startTimer("Ewald wave part");                              // Start timer
     Waves waves = initWaves();                                  // Initialize wave vector
     dft(waves,jbodies);                                         // Apply DFT to bodies to get waves
