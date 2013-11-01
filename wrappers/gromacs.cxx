@@ -129,7 +129,6 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
   logger->stopTimer("Total FMM");
   logger->printTitle("Total runtime");
   logger->printTime("Total FMM");
-
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     p[i]     = B->TRG[0];
@@ -179,11 +178,14 @@ extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double 
     ewald->realPart(cells, jcells);
   }
   ewald->selfTerm(bodies);
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    B->ICELL = B->IBODY;
+  }
+  bodies = sort->sortBodies(bodies);
   logger->stopPAPI();
   logger->stopTimer("Total Ewald");
   logger->printTitle("Total runtime");
   logger->printTime("Total Ewald");
-
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     p[i]     = B->TRG[0];

@@ -1,12 +1,12 @@
 module charmm_io
 contains
-  subroutine charmm_cor_read(n,x,q,size,filename,numex,natex,nat,atype,rscale,gscale,frscale,fgscale)
+  subroutine charmm_cor_read(n,x,q,size,filename,numex,natex,nat,atype,rscale,gscale,fgscale)
     implicit none
     logical qext
     integer i, nat, im, in, n, natex_size, vdw_size
     real(8) size, sizex, sizey, sizez
     integer, allocatable, dimension(:) :: numex, natex, atype
-    real(8), allocatable, dimension(:) :: x, q, rscale, gscale, frscale, fgscale
+    real(8), allocatable, dimension(:) :: x, q, rscale, gscale, fgscale
     character(len=100) lin
     character(len=*) filename
 
@@ -48,15 +48,12 @@ contains
     read(1,'(a100)')lin
     read(lin(16:100),*)nat
     vdw_size=nat**2
-    allocate(rscale(vdw_size),gscale(vdw_size),frscale(vdw_size),fgscale(vdw_size))
+    allocate(rscale(vdw_size),gscale(vdw_size),fgscale(vdw_size))
     read(1,'(5f20.10)')rscale(1:vdw_size)
     read(1,'(a100)')lin
     read(1,'(5f20.10)')gscale(1:vdw_size)
     read(1,'(a100)')lin
     read(1,'(5f20.10)')fgscale(1:vdw_size)
-    do i=1,vdw_size
-       frscale(i) = rscale(i)
-    enddo
     allocate(atype(n))
     read(1,'(a100)')lin
     read(1,'(20i5)')atype(1:n)
@@ -98,7 +95,7 @@ program main
   real(8), dimension (3) :: xperiodic
   integer, allocatable, dimension(:) :: icpumap, numex, natex, atype
   real(8), allocatable, dimension(:) :: x, q, p, f, x2, q2, p2, f2
-  real(8), allocatable, dimension(:) :: rscale, gscale, frscale, fgscale
+  real(8), allocatable, dimension(:) :: rscale, gscale, fgscale
   parameter(pi=3.14159265358979312d0, ccelec=332.0716d0)
 
   call mpi_init(ierr)
@@ -115,7 +112,7 @@ program main
   nat = 16
   if (command_argument_count() > 0) then
      call get_command_argument(1,filename,lnam,istat)
-     call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,nat,atype,rscale,gscale,frscale,fgscale)
+     call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,nat,atype,rscale,gscale,fgscale)
      allocate( p(nglobal),  f(3*nglobal), icpumap(nglobal) )
      allocate( x2(3*nglobal), q2(nglobal), p2(nglobal), f2(3*nglobal) )
      alpha = 10 / pcycle
@@ -123,7 +120,7 @@ program main
      allocate( x(3*nglobal),  q(nglobal),  p(nglobal),  f(3*nglobal), icpumap(nglobal) )
      allocate( x2(3*nglobal), q2(nglobal), p2(nglobal), f2(3*nglobal) )
      allocate( numex(nglobal), natex(nglobal), atype(nglobal) )
-     allocate( rscale(nat*nat), gscale(nat*nat), frscale(nat*nat), fgscale(nat*nat) )
+     allocate( rscale(nat*nat), gscale(nat*nat), fgscale(nat*nat) )
 #if 1
      do i = 1, 128
         iseed(i) = 0
@@ -180,7 +177,6 @@ program main
         enddo
      enddo
      do i = 1, nat*nat
-        frscale(i) = rscale(i)
         fgscale(i) = gscale(i)
      enddo
   end if
@@ -208,8 +204,8 @@ program main
 #else
   call direct_coulomb(nglobal, icpumap, x2, q2, p2, f2, pcycle)
 #endif
-  call fmm_coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
-  call fmm_coulomb_exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
+  call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
+  call coulomb_exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
   potSum = 0
   potSum2 = 0
   accDif = 0
