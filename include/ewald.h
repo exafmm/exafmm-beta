@@ -103,30 +103,17 @@ class Ewald : public Logger {
   }
 
 //! Traverse tree to find neighbors
-  void traverse(C_iter Ci, C_iter Cj, C_iter C0, vec3 Xperiodic) const {
-    vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
+  void neighbor(C_iter Ci, C_iter Cj, C_iter C0) const {
+    vec3 dX = Ci->X - Cj->X;                                    // Distance vector from source to target
+    wrap(dX, cycle);                                            // Wrap around periodic domain
+    vec3 Xperiodic = Ci->X - Cj->X - dX;                        // Coordinate offset for periodic B.C.
     real_t R = std::sqrt(norm(dX));                             // Scalar distance
     if (R < 3 * cutoff) {                                       // If cells are close
       if(Cj->NCHILD == 0) P2P(Ci,Cj,Xperiodic);                 //  Ewald real part
       for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
-        traverse(Ci,CC,C0,Xperiodic);                           //   Recursively call traverse
+        neighbor(Ci,CC,C0);                                     //   Recursively call neighbor
       }                                                         //  End loop over cell's children
     }                                                           // End if for far cells
-  }
-
-//! Find neighbor cells
-  void neighbor(C_iter Ci, C_iter Cj) const {
-    vec3 Xperiodic;                                             //  Coordinate offset for periodic B.C.
-    for (int ix=-1; ix<=1; ix++) {                              //  Loop over x periodic direction
-      for (int iy=-1; iy<=1; iy++) {                            //   Loop over y periodic direction
-	for (int iz=-1; iz<=1; iz++) {                          //    Loop over z periodic direction
-	  Xperiodic[0] = ix * cycle;                            //     Coordinate offset for x periodic direction
-          Xperiodic[1] = iy * cycle;                            //     Coordinate offset for y periodic direction
-	  Xperiodic[2] = iz * cycle;                            //     Coordinate offset for z periodic direction
-	  traverse(Ci,Cj,Cj,Xperiodic);                         //     Traverse the source tree
-	}                                                       //    End loop over z periodic direction
-      }                                                         //   End loop over y periodic direction
-    }                                                           //  End loop over x periodic direction
   }
 
  public:
@@ -140,7 +127,7 @@ class Ewald : public Logger {
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
     spawn_tasks {                                               // Intitialize tasks
       for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {    //  Loop over target cells
-        spawn_task0(if (Ci->NCHILD == 0) neighbor(Ci,Cj));      //   Find neighbors of leaf cells
+        spawn_task0(if (Ci->NCHILD == 0) neighbor(Ci,Cj,Cj));   //   Find neighbors of leaf cells
       }                                                         //  End loop over target cells
       sync_tasks;                                               //  Synchronize tasks
     }                                                           // Finalize tasks
