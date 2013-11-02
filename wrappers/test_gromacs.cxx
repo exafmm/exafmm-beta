@@ -27,8 +27,6 @@ int main(int argc, char ** argv) {
   double * q = new double [Nmax];
   double * p = new double [Nmax];
   double * f = new double [3*Nmax];
-  double * x2 = new double [3*Nmax];
-  double * q2 = new double [Nmax];
   double * p2 = new double [Nmax];
   double * f2 = new double [3*Nmax];
 
@@ -72,16 +70,12 @@ int main(int argc, char ** argv) {
   FMM_Partition(Ni, x, q, cycle);
   FMM_Coulomb(Ni, x, q, p, f, cycle);
   for (int i=0; i<Ni; i++) {
-    x2[3*i+0] = x[3*i+0];
-    x2[3*i+1] = x[3*i+1];
-    x2[3*i+2] = x[3*i+2];
-    q2[i] = q[i];
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }
 #if 1
-  Ewald_Coulomb(Ni, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, cycle);
+  Ewald_Coulomb(Ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
 #else
-  Direct_Coulomb(Ni, x2, q2, p2, f2, cycle);
+  Direct_Coulomb(Ni, x, q, p2, f2, cycle);
 #endif
   double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
   for (int i=0; i<Ni; i++) {
@@ -111,8 +105,6 @@ int main(int argc, char ** argv) {
   delete[] q;
   delete[] p;
   delete[] f;
-  delete[] x2;
-  delete[] q2;
   delete[] p2;
   delete[] f2;
   MPI_Finalize();

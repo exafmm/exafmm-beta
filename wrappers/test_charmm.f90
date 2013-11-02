@@ -94,7 +94,7 @@ program main
   real(8), dimension (3) :: dipole = (/0, 0, 0/)
   real(8), dimension (3) :: xperiodic
   integer, allocatable, dimension(:) :: icpumap, numex, natex, atype
-  real(8), allocatable, dimension(:) :: x, q, p, f, x2, q2, p2, f2
+  real(8), allocatable, dimension(:) :: x, q, p, f, p2, f2
   real(8), allocatable, dimension(:) :: rscale, gscale, fgscale
   parameter(pi=3.14159265358979312d0, ccelec=332.0716d0)
 
@@ -114,11 +114,11 @@ program main
      call get_command_argument(1,filename,lnam,istat)
      call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,nat,atype,rscale,gscale,fgscale)
      allocate( p(nglobal),  f(3*nglobal), icpumap(nglobal) )
-     allocate( x2(3*nglobal), q2(nglobal), p2(nglobal), f2(3*nglobal) )
+     allocate( p2(nglobal), f2(3*nglobal) )
      alpha = 10 / pcycle
   else
      allocate( x(3*nglobal),  q(nglobal),  p(nglobal),  f(3*nglobal), icpumap(nglobal) )
-     allocate( x2(3*nglobal), q2(nglobal), p2(nglobal), f2(3*nglobal) )
+     allocate( p2(nglobal), f2(3*nglobal) )
      allocate( numex(nglobal), natex(nglobal), atype(nglobal) )
      allocate( rscale(nat*nat), gscale(nat*nat), fgscale(nat*nat) )
 #if 1
@@ -190,22 +190,18 @@ program main
   call fmm_partition(nglobal, icpumap, x, q, pcycle)
   call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
   do i = 1, nglobal
-     x2(3*i-2) = x(3*i-2)
-     x2(3*i-1) = x(3*i-1)
-     x2(3*i-0) = x(3*i-0)
-     q2(i) = q(i)
      p2(i) = 0
      f2(3*i-2) = 0
      f2(3*i-1) = 0
      f2(3*i-0) = 0
   end do
 #if 1
-  call ewald_coulomb(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
+  call ewald_coulomb(nglobal, icpumap, x, q, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
 #else
-  call direct_coulomb(nglobal, icpumap, x2, q2, p2, f2, pcycle)
+  call direct_coulomb(nglobal, icpumap, x, q, p2, f2, pcycle)
 #endif
   call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
-  call coulomb_exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
+  call coulomb_exclusion(nglobal, icpumap, x, q, p2, f2, pcycle, numex, natex)
   potSum = 0
   potSum2 = 0
   accDif = 0
@@ -266,11 +262,11 @@ program main
      f2(3*i-1) = 0
      f2(3*i-0) = 0
   end do
-  call direct_vanderwaals(nglobal, icpumap, atype, x2, p2, f2, cuton, cutoff,&
+  call direct_vanderwaals(nglobal, icpumap, atype, x, p2, f2, cuton, cutoff,&
        pcycle, nat, rscale, gscale, fgscale)
   call vanderwaals_exclusion(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
        pcycle, nat, rscale, gscale, fgscale, numex, natex)
-  call vanderwaals_exclusion(nglobal, icpumap, atype, x2, p2, f2, cuton, cutoff,&
+  call vanderwaals_exclusion(nglobal, icpumap, atype, x, p2, f2, cuton, cutoff,&
        pcycle, nat, rscale, gscale, fgscale, numex, natex)
   potSum = 0
   potSum2 = 0
@@ -310,6 +306,6 @@ program main
      print"(a,f14.2)",'GRMS (Direct)        : ', sqrt(accNrmGlob2/3.0/nglobal)
   end if
 
-  deallocate( x, q, p, f, icpumap, x2, q2, p2, f2 )
+  deallocate( x, q, p, f, icpumap, p2, f2 )
   call mpi_finalize(ierr)
 end program main
