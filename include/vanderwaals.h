@@ -15,47 +15,42 @@ class VanDerWaals : public Logger {
  private:
 //! Van der Waals P2P kernel
   void P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic) const {
-    for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {    // Loop over target bodies
-      int atypei = int(Bi->SRC);                                //  Atom type of target
-      for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) {  //  Loop over source bodies
-	vec3 dX = Bi->X - Bj->X - Xperiodic;                    //   Distance vector from source to target
-	real_t R2 = norm(dX);                                   //   R^2
-	if (R2 != 0) {                                          //   Exclude self interaction
-	  int atypej = int(Bj->SRC);                            //    Atom type of source
-	  real_t rs = rscale[atypei*numTypes+atypej];           //    Distance scaling parameter
-	  real_t gs = gscale[atypei*numTypes+atypej];           //    Value scaling parameter for potential
-	  real_t fgs = fgscale[atypei*numTypes+atypej];         //    Value scaling parameter for force
-	  real_t R2s = R2 * rs;                                 //    Scale distance squared
-	  real_t invR2 = 1.0 / R2s;                             //    1 / R^2
-	  real_t invR6 = invR2 * invR2 * invR2;                 //    1 / R^6
-	  real_t tmp = 0, dtmp = 0;                             //    Temporary variables
-#if 1
-	  real_t shift = cuton * cuton;                         //    Cuton squared
-	  real_t r2max = cutoff * cutoff;                       //    Cutoff squared
-          if (shift < R2 && R2 < r2max) {                       //    If distance is larger than cuton
-	    real_t tmp1 = (r2max - R2) / (r2max-shift)*(r2max-shift)*(r2max-shift);
-	    real_t tmp2 = tmp1 * (r2max - R2) * (r2max - 3 * shift + 2 * R2);
-	    tmp = invR6 * (invR6 - 1) * tmp2;
-	    dtmp = invR6 * (invR6 - 1) * 12 * (shift - R2) * tmp1
-	      - 6 * invR6 * tmp * tmp2 / R2;
-          } else {                                              //    Else without shift
-	    tmp = invR6 * (invR6 - 1);
-	    dtmp = invR2 * invR6 * (2 * invR6 - 1);
+    for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {
+      int atypei = int(Bi->SRC);
+      for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) {
+	vec3 dX = Bi->X - Bj->X - Xperiodic;
+	real_t R2 = norm(dX);
+	if (R2 != 0) {
+	  int atypej = int(Bj->SRC);
+	  real_t rs = rscale[atypei*numTypes+atypej];
+	  real_t gs = gscale[atypei*numTypes+atypej];
+	  real_t fgs = fgscale[atypei*numTypes+atypej];
+	  real_t R2s = R2 * rs;
+	  real_t invR2 = 1.0 / R2s;
+	  real_t invR6 = invR2 * invR2 * invR2;
+	  real_t cuton2 = cuton * cuton;
+	  real_t cutoff2 = cutoff * cutoff;
+          if (R2 < cutoff2) {         
+	    real_t tmp = 0, dtmp = 0;
+            if (cuton2 < R2) {
+	      real_t tmp1 = (cutoff2 - R2) / (cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2);
+	      real_t tmp2 = tmp1 * (cutoff2 - R2) * (cutoff2 - 3 * cuton2 + 2 * R2);
+	      tmp = invR6 * (invR6 - 1) * tmp2;
+	      dtmp = invR6 * (invR6 - 1) * 12 * (cuton2 - R2) * tmp1
+	        - 6 * invR6 * (invR6 + (invR6 - 1) * tmp2) * tmp2 / R2;
+            } else {
+	      tmp = invR6 * (invR6 - 1);
+	      dtmp = invR2 * invR6 * (2 * invR6 - 1);
+	    }
+	    dtmp *= fgs;
+	    Bi->TRG[0] += gs * tmp;
+	    Bi->TRG[1] += dX[0] * dtmp;
+	    Bi->TRG[2] += dX[1] * dtmp;
+	    Bi->TRG[3] += dX[2] * dtmp;
           }
-#else
-	  if (1e-4 < R2s && R2s < 100) {
-	    tmp = invR6 * (invR6 - 1);
-            dtmp = invR2 * invR6 * (2 * invR6 - 1);
-          }
-#endif
-	  dtmp *= fgs;                                          //    Scale force term
-          Bi->TRG[0] += gs * tmp;                               //    VdW potential
-          Bi->TRG[1] -= dX[0] * dtmp;                           //    x component of VdW force
-          Bi->TRG[2] -= dX[1] * dtmp;                           //    y component of VdW force
-          Bi->TRG[3] -= dX[2] * dtmp;                           //    z component of VdW force
-	}                                                       //   End if for self interaction
-      }                                                         //  End loop over source bodies
-    }                                                           // End loop over target bodies
+	}
+      }
+    }
   }
 
 //! Traverse tree to find neighbors

@@ -385,37 +385,32 @@ extern "C" void direct_vanderwaals_(int & nglobal, int * icpumap, int * atype,
 	  real_t R2s = R2 * rs;
 	  real_t invR2 = 1.0 / R2s;
 	  real_t invR6 = invR2 * invR2 * invR2;
-	  real_t tmp = 0, dtmp = 0;
-#if 1
-	  real_t shift = cuton * cuton;
-	  real_t r2max = cutoff * cutoff;
-	  if (shift < R2 && R2 < r2max) {
-	    real_t tmp1 = (r2max - R2) / (r2max-shift)*(r2max-shift)*(r2max-shift);
-	    real_t tmp2 = tmp1 * (r2max - R2) * (r2max - 3 * shift + 2 * R2);
-	    tmp = invR6 * (invR6 - 1) * tmp2;
-	    dtmp = invR6 * (invR6 - 1) * 12 * (shift - R2) * tmp1
-	      - 6 * invR6 * tmp * tmp2 / R2;
-	  } else {
-	    tmp = invR6 * (invR6 - 1);
-	    dtmp = invR2 * invR6 * (2 * invR6 - 1);
-	  }
-#else
-          if (1e-4 < R2s && R2s < 100) {
-            tmp = invR6 * (invR6 - 1);
-            dtmp = invR2 * invR6 * (2 * invR6 - 1);
+	  real_t cuton2 = cuton * cuton;
+	  real_t cutoff2 = cutoff * cutoff;
+          if (R2 < cutoff2) {
+            real_t tmp = 0, dtmp = 0;
+            if (cuton2 < R2) {
+              real_t tmp1 = (cutoff2 - R2) / (cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2);
+              real_t tmp2 = tmp1 * (cutoff2 - R2) * (cutoff2 - 3 * cuton2 + 2 * R2);
+              tmp = invR6 * (invR6 - 1) * tmp2;
+              dtmp = invR6 * (invR6 - 1) * 12 * (cuton2 - R2) * tmp1
+                - 6 * invR6 * (invR6 + (invR6 - 1) * tmp2) * tmp2 / R2;
+            } else {
+              tmp = invR6 * (invR6 - 1);
+              dtmp = invR2 * invR6 * (2 * invR6 - 1);
+            }
+            dtmp *= fgs;
+            pp += gs * tmp;
+            fx += dX[0] * dtmp;
+            fy += dX[1] * dtmp;
+            fz += dX[2] * dtmp;
           }
-#endif
-	  dtmp *= fgs;
-	  pp += gs * tmp;
-	  fx += dX[0] * dtmp;
-	  fy += dX[1] * dtmp;
-	  fz += dX[2] * dtmp;
 	}
       }
       p[i] += pp;
-      f[3*i+0] -= fx;
-      f[3*i+1] -= fy;
-      f[3*i+2] -= fz;
+      f[3*i+0] += fx;
+      f[3*i+1] += fy;
+      f[3*i+2] += fz;
     }
   }
   logger->stopTimer("Direct VdW");
@@ -444,31 +439,26 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
           real_t R2s = R2 * rs;
           real_t invR2 = 1.0 / R2s;
           real_t invR6 = invR2 * invR2 * invR2;
-          real_t tmp = 0, dtmp = 0;
-#if 1
-          real_t shift = cuton * cuton;
-          real_t r2max = cutoff * cutoff;
-          if (shift < R2 && R2 < r2max) {
-            real_t tmp1 = (r2max - R2) / (r2max-shift)*(r2max-shift)*(r2max-shift);
-            real_t tmp2 = tmp1 * (r2max - R2) * (r2max - 3 * shift + 2 * R2);
-            tmp = invR6 * (invR6 - 1) * tmp2;
-            dtmp = invR6 * (invR6 - 1) * 12 * (shift - R2) * tmp1
-              - 6 * invR6 * tmp * tmp2 / R2;
-          } else {
-            tmp = invR6 * (invR6 - 1);
-            dtmp = invR2 * invR6 * (2 * invR6 - 1);
+          real_t cuton2 = cuton * cuton;
+          real_t cutoff2 = cutoff * cutoff;
+          if (R2 < cutoff2) {
+            real_t tmp = 0, dtmp = 0;
+            if (cuton2 < R2) {
+              real_t tmp1 = (cutoff2 - R2) / (cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2);
+              real_t tmp2 = tmp1 * (cutoff2 - R2) * (cutoff2 - 3 * cuton2 + 2 * R2);
+              tmp = invR6 * (invR6 - 1) * tmp2;
+              dtmp = invR6 * (invR6 - 1) * 12 * (cuton2 - R2) * tmp1
+                - 6 * invR6 * (invR6 + (invR6 - 1) * tmp2) * tmp2 / R2;
+            } else {
+              tmp = invR6 * (invR6 - 1);
+              dtmp = invR2 * invR6 * (2 * invR6 - 1);
+            }
+            dtmp *= fgs;
+            p[i] -= gs * tmp;
+            f[3*i+0] -= dX[0] * dtmp;
+            f[3*i+1] -= dX[1] * dtmp;
+            f[3*i+2] -= dX[2] * dtmp;
           }
-#else
-          if (1e-4 < R2s && R2s < 100) {
-            tmp = invR6 * (invR6 - 1);
-            dtmp = invR2 * invR6 * (2 * invR6 - 1);
-          }
-#endif
-          dtmp *= fgs;
-          p[i] -= gs * tmp;
-          f[3*i+0] += dX[0] * dtmp;
-          f[3*i+1] += dX[1] * dtmp;
-          f[3*i+2] += dX[2] * dtmp;
         }
       }
     } else {
