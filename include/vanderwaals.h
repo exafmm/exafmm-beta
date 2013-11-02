@@ -13,7 +13,7 @@ class VanDerWaals : public Logger {
   std::vector<real_t> fgscale;                                  //!< Value scaling parameter for VdW force
 
  private:
-//! Leonard-Jones P2P kernel
+//! Van der Waals P2P kernel
   void P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic) const {
     for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {    // Loop over target bodies
       int atypei = int(Bi->SRC);                                //  Atom type of target
@@ -25,13 +25,14 @@ class VanDerWaals : public Logger {
 	  real_t rs = rscale[atypei*numTypes+atypej];           //    Distance scaling parameter
 	  real_t gs = gscale[atypei*numTypes+atypej];           //    Value scaling parameter for potential
 	  real_t fgs = fgscale[atypei*numTypes+atypej];         //    Value scaling parameter for force
-	  real_t shift = cuton * cuton;                         //    Cuton squared
 	  real_t R2s = R2 * rs;                                 //    Scale distance squared
 	  real_t invR2 = 1.0 / R2s;                             //    1 / R^2
 	  real_t invR6 = invR2 * invR2 * invR2;                 //    1 / R^6
-	  real_t tmp, dtmp;                                     //    Temporary variables
-          if (R2 > shift) {                                     //    If distance is larger than cuton
-	    real_t r2max = cutoff * cutoff;                     //     Cutoff squared
+	  real_t tmp = 0, dtmp = 0;                             //    Temporary variables
+#if 1
+	  real_t shift = cuton * cuton;                         //    Cuton squared
+	  real_t r2max = cutoff * cutoff;                       //    Cutoff squared
+          if (shift < R2 && R2 < r2max) {                       //    If distance is larger than cuton
 	    real_t tmp1 = (r2max - R2) / (r2max-shift)*(r2max-shift)*(r2max-shift);
 	    real_t tmp2 = tmp1 * (r2max - R2) * (r2max - 3 * shift + 2 * R2);
 	    tmp = invR6 * (invR6 - 1) * tmp2;
@@ -41,6 +42,12 @@ class VanDerWaals : public Logger {
 	    tmp = invR6 * (invR6 - 1);
 	    dtmp = invR2 * invR6 * (2 * invR6 - 1);
           }
+#else
+	  if (1e-4 < R2s && R2s < 100) {
+	    tmp = invR6 * (invR6 - 1);
+            dtmp = invR2 * invR6 * (2 * invR6 - 1);
+          }
+#endif
 	  dtmp *= fgs;                                          //    Scale force term
           Bi->TRG[0] += gs * tmp;                               //    VdW potential
           Bi->TRG[1] -= dX[0] * dtmp;                           //    x component of VdW force
@@ -80,7 +87,7 @@ class VanDerWaals : public Logger {
 
  public:
 //! Constructor
-  VanDerWaals(int _cuton, real_t _cutoff, real_t _cycle, int _numTypes,
+  VanDerWaals(double _cuton, double _cutoff, double _cycle, int _numTypes,
 	      double * _rscale, double * _gscale, double * _fgscale) :
     cuton(_cuton), cutoff(_cutoff), cycle(_cycle), numTypes(_numTypes) {
     rscale.resize(numTypes*numTypes);
@@ -95,7 +102,7 @@ class VanDerWaals : public Logger {
 
 //! Evaluate Van Der Waals potential and force
   void evaluate(Cells &cells, Cells &jcells) {
-    startTimer("Van Der Waals");                                // Start timer
+    startTimer("Van der Waals");                                // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
     spawn_tasks {                                               // Intitialize tasks
       for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {    //  Loop over target cells
@@ -103,7 +110,7 @@ class VanDerWaals : public Logger {
       }                                                         //  End loop over target cells
       sync_tasks;                                               //  Synchronize tasks
     }                                                           // Finalize tasks
-    stopTimer("Van Der Waals");                                 // Stop timer
+    stopTimer("Van der Waals");                                 // Stop timer
   }
 
   void print(int stringLength) {
