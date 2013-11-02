@@ -300,10 +300,10 @@ program main
      print"(a)",'--- VdW FMM vs. Direct ----------'
      print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
      print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
-     print"(a,f14.2)",'Energy (FMM)         : ', potSumGlob/2.0
-     print"(a,f14.2)",'Energy (Direct)      : ', potSumGlob2/2.0
-     print"(a,f14.2)",'GRMS (FMM)           : ', sqrt(accNrmGlob/3.0/nglobal)
-     print"(a,f14.2)",'GRMS (Direct)        : ', sqrt(accNrmGlob2/3.0/nglobal)
+     print"(a,f12.4)",'Energy (FMM)         : ', potSumGlob/2.0
+     print"(a,f12.4)",'Energy (Direct)      : ', potSumGlob2/2.0
+     print"(a,f12.4)",'GRMS (FMM)           : ', sqrt(accNrmGlob/3.0/nglobal)
+     print"(a,f12.4)",'GRMS (Direct)        : ', sqrt(accNrmGlob2/3.0/nglobal)
   end if
 
   deallocate( x, q, p, f, icpumap, p2, f2 )

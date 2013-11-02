@@ -180,6 +180,12 @@ class vec {
     for (int i=0; i<N; i++) temp[i] = 1. / std::sqrt(v[i]);
     return temp;
   }
+  friend vec wrap(vec &v, const T &w) {                         // Wrap around periodic boundary
+    for (int i=0; i<N; i++) {
+      if(v[i] < -w / 2) v[i] += w;
+      if(v[i] >  w / 2) v[i] -= w;
+    }
+  }
 };
 #else
 #include "unroll.h"
@@ -440,6 +446,13 @@ class vec {
     vec temp;
     Unroll<Ops::Rsqrt<T>,T,N>::loop(temp,v);
     return temp;
+  }
+  __host__ __device__ __forceinline__
+  friend vec wrap(vec &v, const T &w) {                         // Wrap around periodic boundary
+    for (int i=0; i<N; i++) {
+      if(v[i] < -w / 2) v[i] += w;
+      if(v[i] >  w / 2) v[i] -= w;
+    }
   }
 };
 #endif

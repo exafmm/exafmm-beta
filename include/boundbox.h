@@ -54,15 +54,5 @@ class BoundBox : public Logger {
     stopTimer("Get bounds");                                    // Stop timer
     return bounds;                                              // Return Xmin and Xmax
   }
-
-  //! Restrict coordinates to fit in cycle
-  inline void restrictToCycle(vec3 & X, const real_t & cycle) {
-    if( X[0] < -cycle/2 ) X[0] += cycle;
-    if( X[1] < -cycle/2 ) X[1] += cycle;
-    if( X[2] < -cycle/2 ) X[2] += cycle;
-    if( X[0] >  cycle/2 ) X[0] -= cycle;
-    if( X[1] >  cycle/2 ) X[1] -= cycle;
-    if( X[2] >  cycle/2 ) X[2] -= cycle;
-  }
 };
 #endif

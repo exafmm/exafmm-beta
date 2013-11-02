@@ -1,5 +1,6 @@
 #ifndef ewald_h
 #define ewald_h
+#include "logger.h"
 #include "types.h"
 
 class Ewald : public Logger {

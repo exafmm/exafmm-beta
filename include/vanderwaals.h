@@ -1,5 +1,6 @@
 #ifndef vanderwaals_h
 #define vanderwaals_h
+#include "logger.h"
 #include "types.h"
 
 class VanDerWaals : public Logger {

@@ -64,7 +64,7 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      boundbox->restrictToCycle(B->X, cycle);
+      wrap(B->X, cycle);
       B->SRC = q[i];
       B->IBODY = i;
       B++;
@@ -114,7 +114,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      boundbox->restrictToCycle(B->X, cycle);
+      wrap(B->X, cycle);
       B->SRC = q[i];
       B->TRG[0] = p[i];
       B->TRG[1] = f[3*i+0];
@@ -180,7 +180,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      boundbox->restrictToCycle(B->X, cycle);
+      wrap(B->X, cycle);
       B->SRC = q[i];
       B->TRG[0] = p[i];
       B->TRG[1] = f[3*i+0];
@@ -284,7 +284,7 @@ extern "C" void coulomb_exclusion_(int & nglobal, int * icpumap,
 	int j = natex[ic]-1;
 	vec3 dX;
 	for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
-        boundbox->restrictToCycle(dX, cycle);
+        wrap(dX, cycle);
 	real_t R2 = norm(dX);
 	real_t invR = 1 / std::sqrt(R2);
 	if (R2 == 0) invR = 0;
@@ -327,7 +327,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      boundbox->restrictToCycle(B->X, cycle);
+      wrap(B->X, cycle);
       B->SRC = atype[i] - .5;
       B->TRG[0] = p[i];
       B->TRG[1] = f[3*i+0];
@@ -375,7 +375,7 @@ extern "C" void direct_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       for (int j=0; j<nglobal; j++) {
 	vec3 dX;
 	for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
-	boundbox->restrictToCycle(dX, cycle);
+	wrap(dX, cycle);
 	real_t R2 = norm(dX);
 	if (R2 != 0) {
 	  int atypej = atype[j]-1;
@@ -429,7 +429,7 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
 	int j = natex[ic]-1;
 	vec3 dX;
 	for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
-        boundbox->restrictToCycle(dX, cycle);
+        wrap(dX, cycle);
 	real_t R2 = norm(dX);
         if (R2 != 0) {
           int atypej = atype[j]-1;
