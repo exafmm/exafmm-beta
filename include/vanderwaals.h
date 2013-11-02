@@ -34,7 +34,7 @@ class VanDerWaals : public Logger {
           if (R2 < cutoff2) {
 	    real_t tmp = 0, dtmp = 0;
             if (cuton2 < R2) {
-	      real_t tmp1 = (cutoff2 - R2) / (cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2);
+	      real_t tmp1 = (cutoff2 - R2) / ((cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2));
 	      real_t tmp2 = tmp1 * (cutoff2 - R2) * (cutoff2 - 3 * cuton2 + 2 * R2);
 	      tmp = invR6 * (invR6 - 1) * tmp2;
 	      dtmp = invR6 * (invR6 - 1) * 12 * (cuton2 - R2) * tmp1

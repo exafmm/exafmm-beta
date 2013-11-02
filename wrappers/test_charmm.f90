@@ -106,7 +106,7 @@ program main
   ksize = 11
   pcycle = 20 * pi
   sigma = .25 / pi
-  cuton = 10.0;
+  cuton = 9.5;
   cutoff = 10.0;
   alpha = 10 / pcycle
   nat = 16
