@@ -221,8 +221,16 @@ program main
   accNrm2 = 0
   do i = 1, nglobal
      if (icpumap(i).eq.1) then
-        potSum  = potSum  + p(i) * q(i)
-        potSum2 = potSum2 + p2(i) * q(i)
+        p(i) = p(i) * q(i)
+        f(3*i-2) = f(3*i-2) * q(i)
+        f(3*i-1) = f(3*i-1) * q(i)
+        f(3*i-0) = f(3*i-0) * q(i)
+        p2(i) = p2(i) * q(i)
+        f2(3*i-2) = f2(3*i-2) * q(i)
+        f2(3*i-1) = f2(3*i-1) * q(i)
+        f2(3*i-0) = f2(3*i-0) * q(i)
+        potSum  = potSum  + p(i)
+        potSum2 = potSum2 + p2(i)
         accDif  = accDif  + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
              + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
              + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))
@@ -248,8 +256,8 @@ program main
      print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
      print"(a,f12.4)",'Energy (FMM)         : ', ccelec*potSumGlob/2.0
      print"(a,f12.4)",'Energy (Ewald)       : ', ccelec*potSumGlob2/2.0
-     print"(a,f12.4)",'GRMS (FMM)           : ', ccelec*sqrt(accNrmGlob/3.0/nglobal)/2.0
-     print"(a,f12.4)",'GRMS (Ewald)         : ', ccelec*sqrt(accNrmGlob2/3.0/nglobal)/2.0
+     print"(a,f12.4)",'GRMS (FMM)           : ', ccelec*sqrt(accNrmGlob/3.0/nglobal)
+     print"(a,f12.4)",'GRMS (Ewald)         : ', ccelec*sqrt(accNrmGlob2/3.0/nglobal)
   end if
 
   deallocate( x, q, p, f, icpumap, x2, q2, p2, f2 )
