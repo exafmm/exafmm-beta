@@ -188,9 +188,7 @@ program main
   end do
   call fmm_init(images)
   call fmm_partition(nglobal, icpumap, x, q, pcycle)
-  !call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
-  call fmm_vanderwaals(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
-       pcycle, nat, rscale, gscale, fgscale)
+  call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
   do i = 1, nglobal
      x2(3*i-2) = x(3*i-2)
      x2(3*i-1) = x(3*i-1)
@@ -202,18 +200,12 @@ program main
      f2(3*i-0) = 0
   end do
 #if 1
-  !call ewald_coulomb(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
+  call ewald_coulomb(nglobal, icpumap, x2, q2, p2, f2, ksize, alpha, sigma, cutoff, pcycle)
 #else
   call direct_coulomb(nglobal, icpumap, x2, q2, p2, f2, pcycle)
 #endif
-  call direct_vanderwaals(nglobal, icpumap, atype, x2, p2, f2, cuton, cutoff,&
-       pcycle, nat, rscale, gscale, fgscale)
-  !call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
-  !call coulomb_exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
-  !call vanderwaals_exclusion(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
-  !     pcycle, nat, rscale, gscale, fgscale, numex, natex)
-  !call vanderwaals_exclusion(nglobal, icpumap, atype, x2, p2, f2, cuton, cutoff,&
-  !     pcycle, nat, rscale, gscale, fgscale, numex, natex)
+  call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
+  call coulomb_exclusion(nglobal, icpumap, x2, q2, p2, f2, pcycle, numex, natex)
   potSum = 0
   potSum2 = 0
   accDif = 0
@@ -251,13 +243,71 @@ program main
   potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2)
   potNrmGlob2 = potSumGlob2 * potSumGlob2
   if (mpirank.eq.0) then
-     print"(a)",'--- FMM vs. direct ---------------'
+     print"(a)",'--- Coulomb FMM vs. Ewald -------'
      print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
      print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
-     print"(a,e12.4)",'Energy (FMM)         : ', ccelec*potSumGlob/2.0
-     print"(a,e12.4)",'Energy (Ewald)       : ', ccelec*potSumGlob2/2.0
-     print"(a,e12.4)",'GRMS (FMM)           : ', ccelec*sqrt(accNrmGlob/3.0/nglobal)
-     print"(a,e12.4)",'GRMS (Ewald)         : ', ccelec*sqrt(accNrmGlob2/3.0/nglobal)
+     print"(a,f12.4)",'Energy (FMM)         : ', ccelec*potSumGlob/2.0
+     print"(a,f12.4)",'Energy (Ewald)       : ', ccelec*potSumGlob2/2.0
+     print"(a,f12.4)",'GRMS (FMM)           : ', ccelec*sqrt(accNrmGlob/3.0/nglobal)
+     print"(a,f12.4)",'GRMS (Ewald)         : ', ccelec*sqrt(accNrmGlob2/3.0/nglobal)
+  end if
+
+  do i = 1, nglobal
+    p(i) = 0
+    f(3*i-2) = 0
+    f(3*i-1) = 0
+    f(3*i-0) = 0
+  end do
+  call fmm_vanderwaals(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
+       pcycle, nat, rscale, gscale, fgscale)
+  do i = 1, nglobal
+     p2(i) = 0
+     f2(3*i-2) = 0
+     f2(3*i-1) = 0
+     f2(3*i-0) = 0
+  end do
+  call direct_vanderwaals(nglobal, icpumap, atype, x2, p2, f2, cuton, cutoff,&
+       pcycle, nat, rscale, gscale, fgscale)
+  call vanderwaals_exclusion(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
+       pcycle, nat, rscale, gscale, fgscale, numex, natex)
+  call vanderwaals_exclusion(nglobal, icpumap, atype, x2, p2, f2, cuton, cutoff,&
+       pcycle, nat, rscale, gscale, fgscale, numex, natex)
+  potSum = 0
+  potSum2 = 0
+  accDif = 0
+  accNrm = 0
+  accNrm2 = 0
+  do i = 1, nglobal
+     if (icpumap(i).eq.1) then
+        potSum  = potSum  + p(i)
+        potSum2 = potSum2 + p2(i)
+        accDif  = accDif  + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
+             + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
+             + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))
+        accNrm  = accNrm  + f(3*i-2) * f(3*i-2) + f(3*i-1) * f(3*i-1) + f(3*i-0) * f(3*i-0)
+        accNrm2  = accNrm2  + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
+     end if
+  end do
+  potSumGlob = 0
+  potSumGlob2 = 0
+  accDifGlob = 0
+  accNrmGlob = 0
+  accNrmGlob2 = 0
+  call mpi_reduce(potSum,  potSumGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+  call mpi_reduce(potSum2, potSumGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+  call mpi_reduce(accDif,  accDifGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+  call mpi_reduce(accNrm,  accNrmGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+  call mpi_reduce(accNrm2, accNrmGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+  potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2)
+  potNrmGlob2 = potSumGlob2 * potSumGlob2
+  if (mpirank.eq.0) then
+     print"(a)",'--- VdW FMM vs. Direct ----------'
+     print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
+     print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
+     print"(a,f14.2)",'Energy (FMM)         : ', ccelec*potSumGlob/2.0
+     print"(a,f14.2)",'Energy (Direct)      : ', ccelec*potSumGlob2/2.0
+     print"(a,f14.2)",'GRMS (FMM)           : ', ccelec*sqrt(accNrmGlob/3.0/nglobal)
+     print"(a,f14.2)",'GRMS (Direct)        : ', ccelec*sqrt(accNrmGlob2/3.0/nglobal)
   end if
 
   deallocate( x, q, p, f, icpumap, x2, q2, p2, f2 )
