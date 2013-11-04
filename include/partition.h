@@ -122,9 +122,12 @@ class Partition : public MyMPI, public Logger {
   }
 
 //! Allreduce fvec3 from all ranks
-  fvec3 allreduceVec3(fvec3 send) {
-    fvec3 recv;                                                 // Receive buffer
-    MPI_Allreduce(send, recv, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
+  vec3 allreduceVec3(vec3 send) {
+    fvec3 fsend, frecv;                                         // Single precision buffers
+    for (int d=0; d<3; d++) fsend[d] = send[d];                 // Copy to send buffer
+    MPI_Allreduce(fsend, frecv, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
+    vec3 recv;                                                  // Receive buffer
+    for (int d=0; d<3; d++) recv[d] = frecv[d];                 // Copy from recv buffer
     return recv;                                                // Return received values
   }
 
