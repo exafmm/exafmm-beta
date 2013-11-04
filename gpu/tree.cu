@@ -1,5 +1,7 @@
 #include "octree.h"
 
+extern void sort(const int size, int * key, int * value);
+
 static __device__ void pairMinMax(float3 &xmin, float3 &xmax,
                                   float4 reg_min, float4 reg_max) {
   xmin.x = fminf(xmin.x, reg_min.x);
@@ -147,7 +149,9 @@ extern "C" __global__ void boundaryReduction(const int numBodies,
 extern "C" __global__ void getKeyKernel(int numBodies,
                                         float4 corner,
                                         float4 *bodyPos,
-                                        uint4 *bodyKeys) {
+                                        uint4 *bodyKeys,
+					int *bodyKeys2,
+					int *bodyIndex) {
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= numBodies) return;
   float4 pos = bodyPos[idx];
@@ -158,6 +162,8 @@ extern "C" __global__ void getKeyKernel(int numBodies,
   uint4 key = getKey(index3);
   key.w = idx;
   bodyKeys[idx] = key;
+  bodyKeys2[idx] = key.z;
+  bodyIndex[idx] = idx;
 }
 
 extern "C" __global__ void getValidRange(int numBodies,
@@ -328,10 +334,10 @@ extern "C" __global__ void storeTargetRange(int numTargets,
   }
 }
 
-extern "C" __global__ void reorder(const int size, uint4 *index, float4 *input, float4* output) {
+extern "C" __global__ void reorder(const int size, int *index, float4 *input, float4* output) {
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= size) return;
-  int newIndex = index[idx].w;
+  int newIndex = index[idx];
   output[idx] = input[newIndex];
 }
 
@@ -509,17 +515,18 @@ void octree::getBoundaries() {
 void octree::getKeys() {
   int threads = 128;
   int blocks = ALIGN(numBodies,threads);
-  getKeyKernel<<<blocks,threads>>>(numBodies,corner,bodyPos.devc(),uint4buffer);
+  getKeyKernel<<<blocks,threads>>>(numBodies,corner,bodyPos.devc(),uint4buffer,bodyKeys2.devc(),bodyIndex.devc());
 }
 
 void octree::sortKeys() {
-  sorter->sort(uint4buffer,bodyKeys,numBodies);
+  sorter->sort(uint4buffer,bodyKeys.devc(),numBodies);
+  sort(numBodies,bodyKeys2.devc(),bodyIndex.devc());
 }
 
 void octree::sortBodies() {
   int threads = 512;
   int blocks = ALIGN(numBodies,threads);
-  reorder<<<blocks,threads>>>(numBodies,bodyKeys.devc(),bodyPos.devc(),float4buffer);
+  reorder<<<blocks,threads>>>(numBodies,bodyIndex.devc(),bodyPos.devc(),float4buffer);
   CU_SAFE_CALL(cudaMemcpy(bodyPos.devc(),float4buffer,numBodies*sizeof(float4),cudaMemcpyDeviceToDevice));
 }
 

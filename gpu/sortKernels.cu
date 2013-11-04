@@ -40,19 +40,16 @@ void apply_permutation(KeyPtr& thrust_in,
 
 
 // Extract 32-bit word from uint4
-template<int keyIdx>
 struct ExtractBits: public thrust::unary_function<uint4, uint>
 {
   __host__ __device__ __forceinline__ uint operator()(uint4 key) const
   {
-    if      (keyIdx == 0) return key.x;
-    else if (keyIdx == 1) return key.y;
-    else                  return key.z;
+    return key.z;
   }
 };
 
 
-template<int keyIdx, typename KeyPtr>
+template<typename KeyPtr>
 void update_permutation(KeyPtr& thrustInput, 
                         int size,
                         b40c::util::DoubleBuffer<uint, uint> &double_buffer,
@@ -62,14 +59,14 @@ void update_permutation(KeyPtr& thrustInput,
     thrust::device_pointer_cast(double_buffer.d_values[double_buffer.selector]);
 
   // thrust ptr to temporary 32-bit keys
-  thrust::device_ptr<uint> thust_32bit_temp = 
+  thrust::device_ptr<uint> thrust_32bit_temp = 
     thrust::device_pointer_cast(double_buffer.d_keys[double_buffer.selector]);
 
   // gather into temporary keys with the current reordering
   thrust::gather(thrustPermutation,
                  thrustPermutation + size,
-                 thrust::make_transform_iterator(thrustInput, ExtractBits<keyIdx>()),
-                 thust_32bit_temp);
+                 thrust::make_transform_iterator(thrustInput, ExtractBits()),
+                 thrust_32bit_temp);
 
   // Stable-sort the top 30 bits of the temp keys (and
   // associated thrustPermutation values)
@@ -79,7 +76,7 @@ void update_permutation(KeyPtr& thrustInput,
 
   // Back40 90-bit sorting: sorts the lower 30 bits in uint4's key
 void Sort90::sort(uint4 *input,
-                  cudaVec<uint4> &output,
+                  uint4 *output,
                   int size)
 {
   // thrust ptr to input
@@ -88,7 +85,7 @@ void Sort90::sort(uint4 *input,
 
   // thrust ptr to output
   thrust::device_ptr<uint4> thrustOutput = 
-    thrust::device_pointer_cast(output.devc());
+    thrust::device_pointer_cast(output);
 
   // thrust ptr to permutation buffer
   thrust::device_ptr<uint> thrustPermutation = 
@@ -99,9 +96,7 @@ void Sort90::sort(uint4 *input,
 
   // sort z, y, x
   // careful: note 2, 1, 0 key word order, NOT 0, 1, 2.
-  update_permutation<2>(thrustInput, size, *double_buffer, *sort_enactor);
-  update_permutation<1>(thrustInput, size, *double_buffer, *sort_enactor);
-  update_permutation<0>(thrustInput, size, *double_buffer, *sort_enactor);
+  update_permutation(thrustInput, size, *double_buffer, *sort_enactor);
 
   // refresh thrust ptr to permutation buffer (may have changed inside ping-pong)
   thrustPermutation = 
@@ -109,4 +104,11 @@ void Sort90::sort(uint4 *input,
 
   // Note: thrustPermutation now maps unsorted keys to sorted order
   apply_permutation(thrustInput, thrustPermutation, thrustOutput, size);
+}
+
+void sort(const int size, int * key, int * value) {
+  thrust::device_ptr<int> keyBegin(key);
+  thrust::device_ptr<int> keyEnd(key+size);
+  thrust::device_ptr<int> valueBegin(value);
+  thrust::sort_by_key(keyBegin, keyEnd, valueBegin);
 }

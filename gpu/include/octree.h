@@ -29,7 +29,7 @@ class Sort90 {
  public:
   Sort90(uint size, uint *generalBuffer);
   ~Sort90();
-  void sort(uint4 *input, cudaVec<uint4> &output, int size);
+  void sort(uint4 *input, uint4 *output, int size);
 };
 
 class octree {
@@ -46,6 +46,8 @@ class octree {
     float4 *float4buffer;
   };
   cudaVec<uint4>  bodyKeys;
+  cudaVec<int>    bodyKeys2;
+  cudaVec<int>    bodyIndex;
   cudaVec<uint2>  bodyRange;
   cudaVec<uint4>  cellKeys;
   cudaVec<int>    cellLevel;
@@ -99,6 +101,8 @@ class octree {
     cudaSetDevice(2);
     bodyPos.alloc(numBodies+1);
     bodyKeys.alloc(numBodies+1);
+    bodyKeys2.alloc(numBodies+1);
+    bodyIndex.alloc(numBodies+1);
     bodyAcc.alloc(numBodies);
     bodyAcc2.alloc(numBodies);
     bodyRange.alloc(numBodies);
