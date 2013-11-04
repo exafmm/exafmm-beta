@@ -4,12 +4,12 @@ NVCC = nvcc -g -arch=sm_35 -use_fast_math -Iinclude -Xcompiler "-fopenmp -O3"
 ORG = approximate.o \
 	main.o \
 	scanKernels.o \
-	tree.o
-TORG = sortKernels.th_o
+	tree.o \
+	thrust.o
 
 .SUFFIXES: .o .cpp .cu
 
-all: $(ORG) $(TORG)
+all: $(ORG)
 	$(CXX) $^ -lcudart
 	./a.out
 
@@ -22,10 +22,9 @@ all: $(ORG) $(TORG)
 $(ORG): include/*.h
 
 clean:
-	find . -name "*.o" -o -name "*.out*" | xargs rm -rf
+	rm -f approximate.o main.o scanKernels.o tree.o
 cleanall:
-	make clean
-	rm *.th_o
+	find . -name "*.o" -o -name "*.out*" | xargs rm -rf
 commit:
 	@make -C .. commit
 save:

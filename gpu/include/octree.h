@@ -5,62 +5,29 @@
 
 typedef unsigned int uint;
 
-struct setupParams {
-  int jobs;
-  int blocksWithExtraJobs;
-  int extraElements;
-  int extraOffset;
-};
-
-namespace b40c {
-  namespace util {
-    template <typename T1, typename T2> class DoubleBuffer;
-  }
-  namespace radix_sort {
-    class Enactor;
-  }
-}
-
-class Sort90 {
- private:
-  b40c::util::DoubleBuffer<uint, uint> *double_buffer;
-  b40c::radix_sort::Enactor *sort_enactor;
-
- public:
-  Sort90(uint size, uint *generalBuffer);
-  ~Sort90();
-  void sort(uint4 *input, uint4 *output, int size);
-};
-
 class octree {
  private:
-  Sort90 *sorter;
-
   int numBodies;
   int numLeafs;
   int numSources;
   int numTargets;
   int numLevels;
-  union {
-    uint4 *uint4buffer;
-    float4 *float4buffer;
-  };
-  cudaVec<uint4>  bodyKeys;
-  cudaVec<int>    bodyKeys2;
-  cudaVec<int>    bodyIndex;
-  cudaVec<uint2>  bodyRange;
-  cudaVec<int>    cellKeys;
-  cudaVec<int>    cellLevel;
-  cudaVec<uint>   childRange;
-  cudaVec<uint>   levelOffset;
-  cudaVec<uint2>  levelRange;
-  cudaVec<uint>   validRange;
-  cudaVec<uint>   compactRange;
+  float4 *float4buffer;
+  cudaVec<uint32_t> bodyKeys;
+  cudaVec<int> bodyIndex;
+  cudaVec<uint2> bodyRange;
+  cudaVec<uint32_t> cellKeys;
+  cudaVec<int> cellLevel;
+  cudaVec<uint> childRange;
+  cudaVec<uint> levelOffset;
+  cudaVec<uint2> levelRange;
+  cudaVec<uint> validRange;
+  cudaVec<uint> compactRange;
 
-  cudaVec<uint>   cellIndex;
-  cudaVec<uint2>  targetRange;
+  cudaVec<uint> cellIndex;
+  cudaVec<uint2> targetRange;
 
-  cudaVec<float>  openingAngle;
+  cudaVec<float> openingAngle;
   cudaVec<float4> targetSizeInfo;
   cudaVec<float4> targetCenterInfo;
 
@@ -101,7 +68,6 @@ class octree {
     cudaSetDevice(2);
     bodyPos.alloc(numBodies+1);
     bodyKeys.alloc(numBodies+1);
-    bodyKeys2.alloc(numBodies+1);
     bodyIndex.alloc(numBodies+1);
     bodyAcc.alloc(numBodies);
     bodyAcc2.alloc(numBodies);
@@ -114,21 +80,17 @@ class octree {
     validRange.alloc(2*numBodies);
     compactRange.alloc(2*numBodies);
     bodyAcc.zeros();
-    CU_SAFE_CALL(cudaMalloc((uint4**)&uint4buffer, numBodies*sizeof(uint4)));
+    CU_SAFE_CALL(cudaMalloc((float4**)&float4buffer, numBodies*sizeof(float4)));
 
     int treeWalkStackSize = (LMEM_STACK_SIZE * NTHREAD + 2 * NTHREAD) * NBLOCK;
     int sortBufferSize = 4 * ALIGN(numBodies,128) * 128;
     generalBuffer1.alloc(max(treeWalkStackSize,sortBufferSize));
-    sorter = new Sort90(numBodies, generalBuffer1.devc());
 
     XMIN.alloc(64);
     XMAX.alloc(64);
     offset.alloc(NBLOCK);
     workToDo.alloc(1);
 
-  }
-  ~octree() {
-    delete sorter;
   }
 
   double get_time() {

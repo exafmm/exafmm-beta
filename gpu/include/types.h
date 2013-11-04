@@ -10,6 +10,7 @@
 #include <cuda_runtime.h>
 #include <fstream>
 #include <iostream>
+#include <stdint.h>
 #include <string>
 #include <sys/time.h>
 #include <vector>

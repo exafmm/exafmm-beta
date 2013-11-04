@@ -1,6 +1,6 @@
 #include "octree.h"
 
-extern void sort(const int size, int * key, int * value);
+extern void sort(const int size, uint32_t * key, int * value);
 
 static __device__ void pairMinMax(float3 &xmin, float3 &xmax,
                                   float4 reg_min, float4 reg_max) {
@@ -54,11 +54,11 @@ static __device__ void sharedMinMax(float3 &xmin, float3 &xmax) {
   }
 }
 
-static __device__ int getKey(int4 index3) {
+static __device__ uint32_t getKey(int4 index3) {
   const int bits = 30;
   const int C[8] = {0, 1, 7, 6, 3, 2, 4, 5};
-  int mask = 1 << (bits - 1);
-  int key = 0;
+  uint32_t mask = 1 << (bits - 1);
+  uint32_t key = 0;
   for( int i=0; i<bits; i++, mask >>= 1) {
     int xi = (index3.x & mask) ? 1 : 0;
     int yi = (index3.y & mask) ? 1 : 0;
@@ -89,21 +89,21 @@ static __device__ int getKey(int4 index3) {
   return key;
 }
 
-static __device__ int getMask(int level) {
+static __device__ uint32_t getMask(int level) {
   int mask_levels = 3 * (MAXLEVELS - level);
-  int mask = 0xFFFFFFFF;
+  uint32_t mask = 0xFFFFFFFFFFFFFFFF;
   mask = (mask >> mask_levels) << mask_levels;
   return mask;
 }
 
-static __device__ int compareKey(int a, int b) {
+static __device__ int compareKey(uint32_t a, uint32_t b) {
   if       (a < b) return -1;
   else  if (a > b) return +1;
   return 0;
 }
 
 //Binary search of the key within certain bounds (cij.x, cij.y)
-static __device__ int findKey(int key, uint2 cij, int *keys) {
+static __device__ int findKey(uint32_t key, uint2 cij, uint32_t *keys) {
   int l = cij.x;
   int r = cij.y - 1;
   while (r - l > 1) {
@@ -147,7 +147,7 @@ extern "C" __global__ void boundaryReduction(const int numBodies,
 extern "C" __global__ void getKeyKernel(int numBodies,
                                         float4 corner,
                                         float4 *bodyPos,
-					int *bodyKeys2,
+					uint32_t *bodyKeys,
 					int *bodyIndex) {
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= numBodies) return;
@@ -156,34 +156,34 @@ extern "C" __global__ void getKeyKernel(int numBodies,
   index3.x = (int)roundf(__fdividef(pos.x - corner.x, corner.w));
   index3.y = (int)roundf(__fdividef(pos.y - corner.y, corner.w));
   index3.z = (int)roundf(__fdividef(pos.z - corner.z, corner.w));
-  int key = getKey(index3);
-  bodyKeys2[idx] = key;
+  uint32_t key = getKey(index3);
+  bodyKeys[idx] = key;
   bodyIndex[idx] = idx;
 }
 
 extern "C" __global__ void getValidRange(int numBodies,
                                          int level,
-                                         int *bodyKeys2,
+                                         uint32_t *bodyKeys,
 					 int *bodyIndex,
                                          uint *validRange,
                                          const uint *workToDo) {
   if (*workToDo == 0) return;
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= numBodies) return;
-  const int key_F = 0xFFFFFFFF;
-  int mask = getMask(level);
-  int key_c = bodyKeys2[idx];
-  int key_m;
+  const uint32_t key_F = 0xFFFFFFFFFFFFFFFF;
+  uint32_t mask = getMask(level);
+  uint32_t key_c = bodyKeys[idx];
+  uint32_t key_m;
   if( idx == 0 )
     key_m = key_F;
   else
-    key_m = bodyKeys2[idx-1];
+    key_m = bodyKeys[idx-1];
 
-  int key_p;
+  uint32_t key_p;
   if( idx == numBodies-1 )
     key_p = key_F;
   else
-    key_p = bodyKeys2[idx+1];
+    key_p = bodyKeys[idx+1];
 
   int valid0 = 0;
   int valid1 = 0;
@@ -204,8 +204,8 @@ extern "C" __global__ void buildNodes(
                              uint *maxLevel,
                              uint2 *levelRange,
                              uint *bodyOffset,
-                             int *bodyKeys2,
-                             int *cellKeys,
+                             uint32_t *bodyKeys,
+                             uint32_t *cellKeys,
 			     int *cellLevel,
                              uint2 *bodyRange) {
   if( *workToDo == 0 ) return;
@@ -221,15 +221,15 @@ extern "C" __global__ void buildNodes(
   while( idx < n ) {
     uint begin = bodyOffset[idx*2];
     uint end = bodyOffset[idx*2+1]+1;
-    int key  = bodyKeys2[begin];
-    int mask = getMask(level);
+    uint32_t key  = bodyKeys[begin];
+    uint32_t mask = getMask(level);
     key = key & mask; 
     bodyRange[offset+idx] = make_uint2(begin, end);
     cellKeys[offset+idx] = key;
     cellLevel[offset+idx] = level;
     if( end - begin <= NLEAF ) {
       for( int i=begin; i<end; i++ ) {
-        bodyKeys2[i] = 0xFFFFFFFF;
+        bodyKeys[i] = 0xFFFFFFFF;
       }
     }
     idx += stride;
@@ -244,19 +244,19 @@ extern "C" __global__ void buildNodes(
 extern "C" __global__ void linkNodes(int numSources,
                                      float4 corner,
                                      uint2 *bodyRange,
-                                     int *cellKeys,
+                                     uint32_t *cellKeys,
 				     int *cellLevel,
                                      uint *childRange,
                                      uint2 *levelRange,
                                      uint* validRange) {
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= numSources) return;
-  int key = cellKeys[idx];
+  uint32_t key = cellKeys[idx];
   uint level = cellLevel[idx];
   uint begin = bodyRange[idx].x;
   uint end   = bodyRange[idx].y;
 
-  int mask = getMask(level-1);
+  uint32_t mask = getMask(level-1);
   key = key & mask;
   if(idx > 0) {
     int ci = findKey(key,levelRange[level-1],cellKeys);
@@ -513,11 +513,11 @@ void octree::getBoundaries() {
 void octree::getKeys() {
   int threads = 128;
   int blocks = ALIGN(numBodies,threads);
-  getKeyKernel<<<blocks,threads>>>(numBodies,corner,bodyPos.devc(),bodyKeys2.devc(),bodyIndex.devc());
+  getKeyKernel<<<blocks,threads>>>(numBodies,corner,bodyPos.devc(),bodyKeys.devc(),bodyIndex.devc());
 }
 
 void octree::sortKeys() {
-  sort(numBodies,bodyKeys2.devc(),bodyIndex.devc());
+  sort(numBodies,bodyKeys.devc(),bodyIndex.devc());
 }
 
 void octree::sortBodies() {
@@ -536,9 +536,9 @@ void octree::buildTree() {
   int threads = 128;
   int blocks = ALIGN(numBodies,threads);
   for( int level=0; level<MAXLEVELS; level++ ) {
-    getValidRange<<<blocks,threads>>>(numBodies,level,bodyKeys2.devc(),bodyIndex.devc(),validRange.devc(),workToDo.devc());
+    getValidRange<<<blocks,threads>>>(numBodies,level,bodyKeys.devc(),bodyIndex.devc(),validRange.devc(),workToDo.devc());
     gpuCompact(validRange,compactRange,2*numBodies);
-    buildNodes<<<64,threads>>>(level,workToDo.devc(),maxLevel.devc(),levelRange.devc(),compactRange.devc(),bodyKeys2.devc(),cellKeys.devc(),cellLevel.devc(),bodyRange.devc());
+    buildNodes<<<64,threads>>>(level,workToDo.devc(),maxLevel.devc(),levelRange.devc(),compactRange.devc(),bodyKeys.devc(),cellKeys.devc(),cellLevel.devc(),bodyRange.devc());
   }
   maxLevel.d2h();
   numLevels = maxLevel[0];
