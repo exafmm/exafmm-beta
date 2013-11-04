@@ -49,7 +49,7 @@ class octree {
   cudaVec<int>    bodyKeys2;
   cudaVec<int>    bodyIndex;
   cudaVec<uint2>  bodyRange;
-  cudaVec<uint4>  cellKeys;
+  cudaVec<int>    cellKeys;
   cudaVec<int>    cellLevel;
   cudaVec<uint>   childRange;
   cudaVec<uint>   levelOffset;
