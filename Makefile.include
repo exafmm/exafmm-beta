@@ -36,8 +36,8 @@ LFLAGS  += -DEXPANSION=10 # Specifcy expansion order
 LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #LFLAGS	+= -DERROR_OPT # Use error optimized theta
 #LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
-LFLAGS	+= -DFP64 # Use double precision
-#LFLAGS	+= -DKAHAN # Use Kahan summation   
+#LFLAGS	+= -DFP64 # Use double precision
+LFLAGS	+= -DKAHAN # Use Kahan summation   
 
 ### Debugging flags
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)

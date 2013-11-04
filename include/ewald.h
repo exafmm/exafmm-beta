@@ -39,7 +39,7 @@ class Ewald : public Logger {
   void idft(Waves & waves, Bodies & bodies) const {
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      kvec4 TRG = 0;                                            //  Initialize target values
+      kvec4 TRG = kreal_t(0);                                   //  Initialize target values
       for (W_iter W=waves.begin(); W!=waves.end(); W++) {       //   Loop over waves
 	real_t th = 0;                                          //    Initialzie phase
 	for (int d=0; d<3; d++) th += W->K[d] * B->X[d] * scale;//    Determine phase

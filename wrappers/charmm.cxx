@@ -371,7 +371,7 @@ extern "C" void direct_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       int atypei = atype[i]-1;
-      real_t pp = 0, fx = 0, fy = 0, fz = 0;
+      kreal_t pp = 0, fx = 0, fy = 0, fz = 0;
       for (int j=0; j<nglobal; j++) {
 	vec3 dX;
 	for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];

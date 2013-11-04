@@ -49,38 +49,14 @@ struct kahan {
   }
   __host__ __device__ __forceinline__
   const kahan &operator*=(const T v) {                          // Scalar compound assignment (multiply)
-    s *= v;
     c *= v;
+    s *= v; 
     return *this;
   }
   __host__ __device__ __forceinline__
   const kahan &operator/=(const T v) {                          // Scalar compound assignment (divide)
-    s /= v;
     c /= v;
-    return *this;
-  }
-  __host__ __device__ __forceinline__
-  const kahan &operator>=(const T v) {                          // Scalar compound assignment (greater than)
-    s >= v;
-    c >= v;
-    return *this;
-  }
-  __host__ __device__ __forceinline__
-  const kahan &operator<=(const T v) {                          // Scalar compound assignment (less than)
-    s <= v;
-    c <= v;
-    return *this;
-  }
-  __host__ __device__ __forceinline__
-  const kahan &operator&=(const T v) {                          // Scalar compound assignment (bitwise and)
-    s &= v;
-    c &= v;
-    return *this;
-  }
-  __host__ __device__ __forceinline__
-  const kahan &operator|=(const T v) {                          // Scalar compound assignment (bitwise or)
-    s |= v;
-    c |= v;
+    s /= v; 
     return *this;
   }
   __host__ __device__ __forceinline__
@@ -115,103 +91,15 @@ struct kahan {
   }
   __host__ __device__ __forceinline__
   const kahan &operator*=(const kahan &v) {                     // Vector compound assignment (multiply)
-    s *= (v.s + v.c);
-    c *= (v.s + v.c);
+    c *= (v.c + v.s);
+    s *= (v.c + v.s); 
     return *this;
   }
   __host__ __device__ __forceinline__
   const kahan &operator/=(const kahan &v) {                     // Vector compound assignment (divide)
-    s /= (v.s + v.c);
-    c /= (v.s + v.c);
+    c /= (v.c + v.s);
+    s /= (v.c + v.s); 
     return *this;
-  }
-  __host__ __device__ __forceinline__
-  const kahan &operator>=(const kahan &v) {                     // Vector compound assignment (greater than)
-    s >= v.s;
-    c >= v.c;
-    return *this;
-  }
-  __host__ __device__ __forceinline__
-  const kahan &operator<=(const kahan &v) {                     // Vector compound assignment (less than)
-    s <= (v.s + v.c);
-    c <= (v.s + v.c);
-    return *this;
-  }
-  __host__ __device__ __forceinline__
-  const kahan &operator&=(const kahan &v) {                     // Vector compound assignment (bitwise and)
-    s &= v.s;
-    c &= v.c;
-    return *this;
-  }
-  __host__ __device__ __forceinline__
-  const kahan &operator|=(const kahan &v) {                     // Vector compound assignment (bitwise or)
-    s |= v.s;
-    c |= v.c;
-    return *this;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator+(const T v) const {                            // Scalar arithmetic (add) 
-    return kahan(*this) += v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator-(const T v) const {                            // Scalar arithmetic (subtract)
-    return kahan(*this) -= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator*(const T v) const {                            // Scalar arithmetic (multiply)
-    return kahan(*this) *= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator/(const T v) const {                            // Scalar arithmetic (divide)
-    return kahan(*this) /= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator>(const T v) const {                            // Scalar arithmetic (greater than)
-    return kahan(*this) >= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator<(const T v) const {                            // Scalar arithmetic (less than)
-    return kahan(*this) <= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator&(const T v) const {                            // Scalar arithmetic (bitwise and)
-    return kahan(*this) &= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator|(const T v) const {                            // Scalar arithmetic (bitwise or)
-    return kahan(*this) |= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator+(const kahan &v) const {                       // Vector arithmetic (add)
-    return kahan(*this) += v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator-(const kahan &v) const {                       // Vector arithmetic (subtract)
-    return kahan(*this) -= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator*(const kahan &v) const {                       // Vector arithmetic (multiply)
-    return kahan(*this) *= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator/(const kahan &v) const {                       // Vector arithmetic (divide)
-    return kahan(*this) /= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator>(const kahan &v) const {                       // Vector arithmetic (greater than)
-    return kahan(*this) >= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator<(const kahan &v) const {                       // Vector arithmetic (less than)
-    return kahan(*this) <= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator&(const kahan &v) const {                       // Vector arithmetic (bitwise and)
-    return kahan(*this) &= v;
-  }
-  __host__ __device__ __forceinline__
-  kahan operator|(const kahan &v) const {                       // Vector arithmetic (bitwise or)
-    return kahan(*this) |= v;
   }
   __host__ __device__ __forceinline__
   kahan operator-() const {                                     // Vector arithmetic (negation)
