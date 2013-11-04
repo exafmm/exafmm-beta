@@ -84,14 +84,6 @@ static __device__ uint4 getKey(int4 index3) {
       index3.y = index3.w;          
     }   
     key = (key << 3) + C[index];
-    if(i == 19) {
-      key4.y = key;
-      key = 0;
-    }
-    if(i == 9) {
-      key4.x = key;
-      key = 0;
-    }
   }
   key4.z = key;
   return key4;
@@ -100,31 +92,14 @@ static __device__ uint4 getKey(int4 index3) {
 static __device__ uint4 getMask(int level) {
   int mask_levels = 3 * (MAXLEVELS - level);
   uint4 mask = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
-  if (mask_levels > 60) {
-    mask.z = 0;
-    mask.y = 0;
-    mask.x = (mask.x >> (mask_levels - 60)) << (mask_levels - 60);
-  } else if (mask_levels > 30) {
-    mask.z = 0;
-    mask.y = (mask.y >> (mask_levels - 30)) << (mask_levels - 30);
-  } else {
-    mask.z = (mask.z >> mask_levels) << mask_levels;
-  }
+  mask.z = (mask.z >> mask_levels) << mask_levels;
   return mask;
 }
 
 static __device__ int compareKey(uint4 a, uint4 b) {
-  if      (a.x < b.x) return -1;
-  else if (a.x > b.x) return +1;
-  else {
-    if       (a.y < b.y) return -1;
-    else  if (a.y > b.y) return +1;
-    else {
-      if       (a.z < b.z) return -1;
-      else  if (a.z > b.z) return +1;
-      return 0;
-    }
-  }
+  if       (a.z < b.z) return -1;
+  else  if (a.z > b.z) return +1;
+  return 0;
 }
 
 //Binary search of the key within certain bounds (cij.x, cij.y)
@@ -211,14 +186,8 @@ extern "C" __global__ void getValidRange(int numBodies,
   int valid0 = 0;
   int valid1 = 0;
   if (compareKey(key_c, key_F) != 0) {
-    key_c.x = key_c.x & mask.x;
-    key_c.y = key_c.y & mask.y;
     key_c.z = key_c.z & mask.z;
-    key_p.x = key_p.x & mask.x;
-    key_p.y = key_p.y & mask.y;
     key_p.z = key_p.z & mask.z;
-    key_m.x = key_m.x & mask.x;
-    key_m.y = key_m.y & mask.y;
     key_m.z = key_m.z & mask.z;
     valid0 = abs(compareKey(key_c, key_m));
     valid1 = abs(compareKey(key_c, key_p));
@@ -235,6 +204,7 @@ extern "C" __global__ void buildNodes(
                              uint *bodyOffset,
                              uint4 *bodyKeys,
                              uint4 *cellKeys,
+			     int *cellLevel,
                              uint2 *bodyRange) {
   if( *workToDo == 0 ) return;
   uint idx  = blockIdx.x * blockDim.x + threadIdx.x;
@@ -254,6 +224,7 @@ extern "C" __global__ void buildNodes(
     key = make_uint4(key.x & mask.x, key.y & mask.y, key.z & mask.z, level); 
     bodyRange[offset+idx] = make_uint2(begin, end);
     cellKeys  [offset+idx] = key;
+    cellLevel [offset+idx] = level;
     if( end - begin <= NLEAF )
       for( int i=begin; i<end; i++ )
         bodyKeys[i] = make_uint4(0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF);
@@ -270,13 +241,14 @@ extern "C" __global__ void linkNodes(int numSources,
                                      float4 corner,
                                      uint2 *bodyRange,
                                      uint4 *cellKeys,
+				     int *cellLevel,
                                      uint *childRange,
                                      uint2 *levelRange,
                                      uint* validRange) {
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= numSources) return;
   uint4 key = cellKeys[idx];
-  uint level = key.w;
+  uint level = cellLevel[idx];
   uint begin = bodyRange[idx].x;
   uint end   = bodyRange[idx].y;
 
@@ -302,21 +274,21 @@ extern "C" __global__ void linkNodes(int numSources,
 extern "C" __global__ void getLevelRange(const int numSources,
                                          const int numLeafs,
                                          uint *cellIndex,
-                                         uint4 *cellKeys,
+                                         int *cellLevel,
                                          uint* validRange) {
   uint idx = blockIdx.x * blockDim.x + threadIdx.x + numLeafs;
   if (idx >= numSources) return;
   const int cellIdx = cellIndex[idx];
   int level_c, level_m, level_p;
-  level_c = cellKeys[cellIndex[idx]].w;
+  level_c = cellLevel[cellIndex[idx]];
   if( idx+1 < numSources )
-    level_p = cellKeys[cellIndex[idx+1]].w;
+    level_p = cellLevel[cellIndex[idx+1]];
   else
     level_p = MAXLEVELS+5;
   if(cellIdx == 0)
     level_m = -1;    
   else
-    level_m = cellKeys[cellIndex[idx-1]].w;
+    level_m = cellLevel[cellIndex[idx-1]];
   validRange[(idx-numLeafs)*2]   = idx | (level_c != level_m) << 31;
   validRange[(idx-numLeafs)*2+1] = idx | (level_c != level_p) << 31;
 }
@@ -562,7 +534,7 @@ void octree::buildTree() {
   for( int level=0; level<MAXLEVELS; level++ ) {
     getValidRange<<<blocks,threads>>>(numBodies,level,bodyKeys.devc(),validRange.devc(),workToDo.devc());
     gpuCompact(validRange,compactRange,2*numBodies);
-    buildNodes<<<64,threads>>>(level,workToDo.devc(),maxLevel.devc(),levelRange.devc(),compactRange.devc(),bodyKeys.devc(),cellKeys.devc(),bodyRange.devc());
+    buildNodes<<<64,threads>>>(level,workToDo.devc(),maxLevel.devc(),levelRange.devc(),compactRange.devc(),bodyKeys.devc(),cellKeys.devc(),cellLevel.devc(),bodyRange.devc());
   }
   maxLevel.d2h();
   numLevels = maxLevel[0];
@@ -575,7 +547,7 @@ void octree::linkTree() {
   childRange.zeros();
   int threads = 128;
   int blocks = ALIGN(numSources,threads);
-  linkNodes<<<blocks,threads>>>(numSources,corner,bodyRange.devc(),cellKeys.devc(),childRange.devc(),levelRange.devc(),validRange.devc());
+  linkNodes<<<blocks,threads>>>(numSources,corner,bodyRange.devc(),cellKeys.devc(),cellLevel.devc(),childRange.devc(),levelRange.devc(),validRange.devc());
   cellIndex.alloc(numSources);
   workToDo.ones();
   gpuSplit(validRange, cellIndex, numSources);
@@ -584,7 +556,7 @@ void octree::linkTree() {
   // levelOffset
   validRange.zeros();
   blocks = ALIGN(numSources-numLeafs,threads);
-  getLevelRange<<<blocks,threads>>>(numSources,numLeafs,cellIndex.devc(),cellKeys.devc(),validRange.devc());
+  getLevelRange<<<blocks,threads>>>(numSources,numLeafs,cellIndex.devc(),cellLevel.devc(),validRange.devc());
   gpuCompact(validRange, levelOffset, 2*(numSources-numLeafs));
   // targetRange
   validRange.zeros();

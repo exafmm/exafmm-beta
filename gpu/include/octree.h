@@ -48,6 +48,7 @@ class octree {
   cudaVec<uint4>  bodyKeys;
   cudaVec<uint2>  bodyRange;
   cudaVec<uint4>  cellKeys;
+  cudaVec<int>    cellLevel;
   cudaVec<uint>   childRange;
   cudaVec<uint>   levelOffset;
   cudaVec<uint2>  levelRange;
@@ -102,6 +103,7 @@ class octree {
     bodyAcc2.alloc(numBodies);
     bodyRange.alloc(numBodies);
     cellKeys.alloc(numBodies);
+    cellLevel.alloc(numBodies);
     childRange.alloc(numBodies);
     levelOffset.alloc(MAXLEVELS*2);
     levelRange.alloc(MAXLEVELS);
