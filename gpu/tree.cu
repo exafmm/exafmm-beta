@@ -98,9 +98,9 @@ static __device__ uint4 getMask(int level) {
   return mask;
 }
 
-static __device__ int compareKey(uint4 a, uint4 b) {
-  if       (a.z < b.z) return -1;
-  else  if (a.z > b.z) return +1;
+static __device__ int compareKey(int a, int b) {
+  if       (a < b) return -1;
+  else  if (a > b) return +1;
   return 0;
 }
 
@@ -110,13 +110,13 @@ static __device__ int findKey(uint4 key, uint2 cij, uint4 *keys) {
   int r = cij.y - 1;
   while (r - l > 1) {
     int m = (r + l) >> 1;
-    int cmp = compareKey(keys[m], key);
+    int cmp = compareKey(keys[m].z, key.z);
     if (cmp == -1)
       l = m;
     else 
       r = m;
   }
-  if (compareKey(keys[l], key) >= 0) return l;
+  if (compareKey(keys[l].z, key.z) >= 0) return l;
   return r;
 }
 
@@ -169,32 +169,34 @@ extern "C" __global__ void getKeyKernel(int numBodies,
 extern "C" __global__ void getValidRange(int numBodies,
                                          int level,
                                          uint4 *bodyKeys,
+                                         int *bodyKeys2,
+					 int *bodyIndex,
                                          uint *validRange,
                                          const uint *workToDo) {
   if (*workToDo == 0) return;
   const uint idx = blockIdx.x * blockDim.x + threadIdx.x;
   if (idx >= numBodies) return;
-  const uint4 key_F = {0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF};
+  const int key_F = 0xFFFFFFFF;
   uint4 mask = getMask(level);
-  uint4 key_c = bodyKeys[idx];
-  uint4 key_m;
+  int key_c = bodyKeys2[idx];
+  int key_m;
   if( idx == 0 )
     key_m = key_F;
   else
-    key_m = bodyKeys[idx-1];
+    key_m = bodyKeys2[idx-1];
 
-  uint4 key_p;
+  int key_p;
   if( idx == numBodies-1 )
     key_p = key_F;
   else
-    key_p = bodyKeys[idx+1];
+    key_p = bodyKeys2[idx+1];
 
   int valid0 = 0;
   int valid1 = 0;
   if (compareKey(key_c, key_F) != 0) {
-    key_c.z = key_c.z & mask.z;
-    key_p.z = key_p.z & mask.z;
-    key_m.z = key_m.z & mask.z;
+    key_c = key_c & mask.z;
+    key_p = key_p & mask.z;
+    key_m = key_m & mask.z;
     valid0 = abs(compareKey(key_c, key_m));
     valid1 = abs(compareKey(key_c, key_p));
   }
@@ -209,6 +211,7 @@ extern "C" __global__ void buildNodes(
                              uint2 *levelRange,
                              uint *bodyOffset,
                              uint4 *bodyKeys,
+                             int *bodyKeys2,
                              uint4 *cellKeys,
 			     int *cellLevel,
                              uint2 *bodyRange) {
@@ -229,11 +232,14 @@ extern "C" __global__ void buildNodes(
     uint4 mask = getMask(level);
     key = make_uint4(key.x & mask.x, key.y & mask.y, key.z & mask.z, level); 
     bodyRange[offset+idx] = make_uint2(begin, end);
-    cellKeys  [offset+idx] = key;
-    cellLevel [offset+idx] = level;
-    if( end - begin <= NLEAF )
-      for( int i=begin; i<end; i++ )
+    cellKeys[offset+idx] = key;
+    cellLevel[offset+idx] = level;
+    if( end - begin <= NLEAF ) {
+      for( int i=begin; i<end; i++ ) {
         bodyKeys[i] = make_uint4(0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF);
+        bodyKeys2[i] = 0xFFFFFFFF;
+      }
+    }
     idx += stride;
   }
 
@@ -539,9 +545,9 @@ void octree::buildTree() {
   int threads = 128;
   int blocks = ALIGN(numBodies,threads);
   for( int level=0; level<MAXLEVELS; level++ ) {
-    getValidRange<<<blocks,threads>>>(numBodies,level,bodyKeys.devc(),validRange.devc(),workToDo.devc());
+    getValidRange<<<blocks,threads>>>(numBodies,level,bodyKeys.devc(),bodyKeys2.devc(),bodyIndex.devc(),validRange.devc(),workToDo.devc());
     gpuCompact(validRange,compactRange,2*numBodies);
-    buildNodes<<<64,threads>>>(level,workToDo.devc(),maxLevel.devc(),levelRange.devc(),compactRange.devc(),bodyKeys.devc(),cellKeys.devc(),cellLevel.devc(),bodyRange.devc());
+    buildNodes<<<64,threads>>>(level,workToDo.devc(),maxLevel.devc(),levelRange.devc(),compactRange.devc(),bodyKeys.devc(),bodyKeys2.devc(),cellKeys.devc(),cellLevel.devc(),bodyRange.devc());
   }
   maxLevel.d2h();
   numLevels = maxLevel[0];
