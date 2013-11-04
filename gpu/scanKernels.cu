@@ -309,14 +309,14 @@ extern "C" __global__ void split_move(uint *valid,
 
 void octree::gpuCompact(cudaVec<uint> &input, cudaVec<uint> &output, int size) {
   int blocks = NBLOCK-2;
-  compact_count<<<blocks,32,0,execStream>>>(input.devc(),offset.devc(),size,workToDo.devc());
-  exclusive_scan_block<<<1,NBLOCK,0,execStream>>>(offset.devc(),blocks,workToDo.devc());
-  compact_move<<<blocks,32,0,execStream>>>(input.devc(),output.devc(),offset.devc(),size,workToDo.devc());
+  compact_count<<<blocks,32>>>(input.devc(),offset.devc(),size,workToDo.devc());
+  exclusive_scan_block<<<1,NBLOCK>>>(offset.devc(),blocks,workToDo.devc());
+  compact_move<<<blocks,32>>>(input.devc(),output.devc(),offset.devc(),size,workToDo.devc());
 }
 
 void octree::gpuSplit(cudaVec<uint> &input, cudaVec<uint> &output, int size) {
   int blocks = NBLOCK-2;
-  compact_count<<<blocks,32,0,execStream>>>(input.devc(),offset.devc(),size,workToDo.devc());
-  exclusive_scan_block<<<1,NBLOCK,0,execStream>>>(offset.devc(),blocks,workToDo.devc());
-  split_move<<<blocks,32,0,execStream>>>(input.devc(),output.devc(),offset.devc(),size);
+  compact_count<<<blocks,32>>>(input.devc(),offset.devc(),size,workToDo.devc());
+  exclusive_scan_block<<<1,NBLOCK>>>(offset.devc(),blocks,workToDo.devc());
+  split_move<<<blocks,32>>>(input.devc(),output.devc(),offset.devc(),size);
 }

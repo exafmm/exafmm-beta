@@ -307,7 +307,7 @@ void octree::traverse() {
   cellPos.bindTexture(texCell);
   multipole.bindTexture(texMultipole);
   workToDo.zeros();
-  traverseKernel<<<NBLOCK,NTHREAD,0,execStream>>>(
+  traverseKernel<<<NBLOCK,NTHREAD>>>(
     numTargets,
     levelRange.devc(),
     bodyAcc.devc(),
@@ -324,48 +324,47 @@ void octree::traverse() {
 }
 
 void octree::iterate() {
-  CU_SAFE_CALL(cudaStreamCreate(&execStream));
+  cudaDeviceSynchronize();
   double t0 = get_time();
   getBoundaries();
-  CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("Get bounds   : %lf s\n",get_time() - t0);;
+  cudaDeviceSynchronize();
+  printf("Get bounds   : %lf s\n",get_time() - t0);
   t0 = get_time();
   getKeys();
-  CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("Get keys     : %lf s\n",get_time() - t0);;
+  cudaDeviceSynchronize();
+  printf("Get keys     : %lf s\n",get_time() - t0);
   t0 = get_time();
+  cudaDeviceSynchronize();
   sortKeys();
-  CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("Sort keys    : %lf s\n",get_time() - t0);;
+  printf("Sort keys    : %lf s\n",get_time() - t0);
   t0 = get_time();
   sortBodies();
-  CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("Sort bodies  : %lf s\n",get_time() - t0);;
+  cudaDeviceSynchronize();
+  printf("Sort bodies  : %lf s\n",get_time() - t0);
   t0 = get_time();
   buildTree();
-  CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("Build tree   : %lf s\n",get_time() - t0);;
+  cudaDeviceSynchronize();
+  printf("Build tree   : %lf s\n",get_time() - t0);
   t0 = get_time();
   allocateTreePropMemory();
-  CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("Allocate     : %lf s\n",get_time() - t0);;
+  cudaDeviceSynchronize();
+  printf("Allocate     : %lf s\n",get_time() - t0);
   t0 = get_time();
   linkTree();
-  CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("Link tree    : %lf s\n",get_time() - t0);;
+  cudaDeviceSynchronize();
+  printf("Link tree    : %lf s\n",get_time() - t0);
   t0 = get_time();
   upward();
-  CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("Upward pass  : %lf s\n",get_time() - t0);;
+  cudaDeviceSynchronize();
+  printf("Upward pass  : %lf s\n",get_time() - t0);
   t0 = get_time();
   traverse();
-  CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  printf("Traverse     : %lf s\n",get_time() - t0);;
+  cudaDeviceSynchronize();
+  printf("Traverse     : %lf s\n",get_time() - t0);
 }
 
 void octree::direct(int numTarget, int numBodies) {
   int blocks = ALIGN(numTarget, NTHREAD);
-  directKernel<<<blocks,NTHREAD,0,execStream>>>(bodyPos.devc(),bodyAcc2.devc(),numBodies);
-  CU_SAFE_CALL(cudaStreamSynchronize(execStream));
-  CU_SAFE_CALL(cudaStreamDestroy(execStream));
+  directKernel<<<blocks,NTHREAD>>>(bodyPos.devc(),bodyAcc2.devc(),numBodies);
+  cudaDeviceSynchronize();
 }

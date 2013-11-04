@@ -34,7 +34,6 @@ class Sort90 {
 
 class octree {
  private:
-  cudaStream_t execStream;
   Sort90 *sorter;
 
   int numBodies;

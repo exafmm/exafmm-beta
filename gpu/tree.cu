@@ -513,7 +513,7 @@ extern "C" __global__ void setTargets(const int numTargets,
 }
 
 void octree::getBoundaries() {
-  boundaryReduction<<<64,NCRIT,0,execStream>>>(numBodies,bodyPos.devc(),XMIN.devc(),XMAX.devc());
+  boundaryReduction<<<64,NCRIT>>>(numBodies,bodyPos.devc(),XMIN.devc(),XMAX.devc());
   XMIN.d2h();
   XMAX.d2h();
   float4 xmin = make_float4(+1e10, +1e10, +1e10, +1e10);
@@ -537,7 +537,7 @@ void octree::getBoundaries() {
 void octree::getKeys() {
   int threads = 128;
   int blocks = ALIGN(numBodies,threads);
-  getKeyKernel<<<blocks,threads,0,execStream>>>(numBodies,corner,bodyPos.devc(),uint4buffer);
+  getKeyKernel<<<blocks,threads>>>(numBodies,corner,bodyPos.devc(),uint4buffer);
 }
 
 void octree::sortKeys() {
@@ -547,7 +547,7 @@ void octree::sortKeys() {
 void octree::sortBodies() {
   int threads = 512;
   int blocks = ALIGN(numBodies,threads);
-  reorder<<<blocks,threads,0,execStream>>>(numBodies,bodyKeys.devc(),bodyPos.devc(),float4buffer);
+  reorder<<<blocks,threads>>>(numBodies,bodyKeys.devc(),bodyPos.devc(),float4buffer);
   CU_SAFE_CALL(cudaMemcpy(bodyPos.devc(),float4buffer,numBodies*sizeof(float4),cudaMemcpyDeviceToDevice));
 }
 
@@ -560,9 +560,9 @@ void octree::buildTree() {
   int threads = 128;
   int blocks = ALIGN(numBodies,threads);
   for( int level=0; level<MAXLEVELS; level++ ) {
-    getValidRange<<<blocks,threads,0,execStream>>>(numBodies,level,bodyKeys.devc(),validRange.devc(),workToDo.devc());
+    getValidRange<<<blocks,threads>>>(numBodies,level,bodyKeys.devc(),validRange.devc(),workToDo.devc());
     gpuCompact(validRange,compactRange,2*numBodies);
-    buildNodes<<<64,threads,0,execStream>>>(level,workToDo.devc(),maxLevel.devc(),levelRange.devc(),compactRange.devc(),bodyKeys.devc(),cellKeys.devc(),bodyRange.devc());
+    buildNodes<<<64,threads>>>(level,workToDo.devc(),maxLevel.devc(),levelRange.devc(),compactRange.devc(),bodyKeys.devc(),cellKeys.devc(),bodyRange.devc());
   }
   maxLevel.d2h();
   numLevels = maxLevel[0];
@@ -575,7 +575,7 @@ void octree::linkTree() {
   childRange.zeros();
   int threads = 128;
   int blocks = ALIGN(numSources,threads);
-  linkNodes<<<blocks,threads,0,execStream>>>(numSources,corner,bodyRange.devc(),cellKeys.devc(),childRange.devc(),levelRange.devc(),validRange.devc());
+  linkNodes<<<blocks,threads>>>(numSources,corner,bodyRange.devc(),cellKeys.devc(),childRange.devc(),levelRange.devc(),validRange.devc());
   cellIndex.alloc(numSources);
   workToDo.ones();
   gpuSplit(validRange, cellIndex, numSources);
@@ -584,7 +584,7 @@ void octree::linkTree() {
   // levelOffset
   validRange.zeros();
   blocks = ALIGN(numSources-numLeafs,threads);
-  getLevelRange<<<blocks,threads,0,execStream>>>(numSources,numLeafs,cellIndex.devc(),cellKeys.devc(),validRange.devc());
+  getLevelRange<<<blocks,threads>>>(numSources,numLeafs,cellIndex.devc(),cellKeys.devc(),validRange.devc());
   gpuCompact(validRange, levelOffset, 2*(numSources-numLeafs));
   // targetRange
   validRange.zeros();
@@ -594,7 +594,7 @@ void octree::linkTree() {
   workToDo.d2h();
   numTargets = workToDo[0] / 2;
   targetRange.alloc(numTargets);
-  storeTargetRange<<<numTargets,NCRIT,0,execStream>>>(numTargets,compactRange.devc(),targetRange.devc());
+  storeTargetRange<<<numTargets,NCRIT>>>(numTargets,compactRange.devc(),targetRange.devc());
 }
 
 void octree::allocateTreePropMemory()
@@ -614,18 +614,18 @@ void octree::upward() {
 
   int threads = 128;
   int blocks = ALIGN(numLeafs,threads);
-  P2M<<<blocks,threads,0,execStream>>>(numLeafs,cellIndex.devc(),bodyRange.devc(),bodyPos.devc(),
+  P2M<<<blocks,threads>>>(numLeafs,cellIndex.devc(),bodyRange.devc(),bodyPos.devc(),
                                        cellPos.devc(),cellXmin.devc(),cellXmax.devc(),multipole.devc());
 
   levelOffset.d2h();
   for( int level=numLevels; level>=1; level-- ) {
     int totalOnThisLevel = levelOffset[level] - levelOffset[level-1];
     blocks = ALIGN(totalOnThisLevel,threads);
-    M2M<<<blocks,threads,0,execStream>>>(level,cellIndex.devc(),levelOffset.devc(),childRange.devc(),
+    M2M<<<blocks,threads>>>(level,cellIndex.devc(),levelOffset.devc(),childRange.devc(),
                                          cellPos.devc(),cellXmin.devc(),cellXmax.devc(),multipole.devc());
   }
 
   blocks = ALIGN(numSources,threads);
-  rescale<<<blocks,threads,0,execStream>>>(numSources,cellPos.devc(),cellXmin.devc(),cellXmax.devc(),childRange.devc(),openingAngle.devc(),bodyRange.devc());
+  rescale<<<blocks,threads>>>(numSources,cellPos.devc(),cellXmin.devc(),cellXmax.devc(),childRange.devc(),openingAngle.devc(),bodyRange.devc());
   setTargets<<<numTargets,NCRIT>>>(numTargets,bodyPos.devc(),(int2*)targetRange.devc(),targetCenterInfo.devc(),targetSizeInfo.devc());
 }
