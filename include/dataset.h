@@ -93,12 +93,24 @@ class Dataset {                                                 // Contains all 
       int end = bodies.size();                                  //  End index of bodies
       splitRange(begin, end, i, numSplit);                      //  Split range of bodies
       srand48(seed);                                            //  Set seed for random number generator
-      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	for (int d=0; d<3; d++) B->X[d] = drand48() * 2 - 1;    //   Generate random number between [-1,1]
-	real_t R2 = std::pow(drand48()*.999, -2.0/3.0) - 1;     //   Generate distribution radius squared
-	real_t rscale = 0.015 * M_PI / std::sqrt(norm(B->X) * R2);// Scaling to fit in 0.015 * M_PI sphere
-	for (int d=0; d<3; d++) B->X[d] *= rscale;              //   Rescale particle coordinates
-      }                                                         //  End loop over bodies
+      B_iter B=bodies.begin()+begin;                            //  Body begin iterator
+      while (B != bodies.begin()+end) {                         //  While body iterator is within range
+	real_t X1 = drand48();                                  //   First random number
+	real_t X2 = drand48();                                  //   Second random number
+	real_t X3 = drand48();                                  //   Third random number
+	real_t R = 1.0 / sqrt( (pow(X1, -2.0 / 3.0) - 1.0) );   //   Radius
+	if (R < 100.0) {                                        //   If radius is less than 100
+	  real_t Z = (1.0 - 2.0 * X2) * R;                      //    z component
+	  real_t X = sqrt(R * R - Z * Z) * cos(2.0 * M_PI * X3);//    x component
+	  real_t Y = sqrt(R * R - Z * Z) * sin(2.0 * M_PI * X3);//    y component
+	  real_t scale = 3.0 * M_PI / 16.0;                     //    Scaling factor
+	  X *= scale; Y *= scale; Z *= scale;                   //    Scale coordinates
+	  B->X[0] = X;                                          //    Assign x coordinate to body
+	  B->X[1] = Y;                                          //    Assign y coordinate to body
+	  B->X[2] = Z;                                          //    Assign z coordinate to body
+	  B++;                                                  //    Increment body iterator
+	}                                                       //   End if for bodies within range
+      }                                                         //  End while loop over bodies
     }                                                           // End loop over partitions
     return bodies;                                              // Return bodies
   }
