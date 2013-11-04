@@ -1,5 +1,5 @@
 CXX = g++ -fopenmp -O3
-NVCC = nvcc -arch sm_21 -use_fast_math -Iinclude -Xcompiler "-fopenmp -O3"
+NVCC = nvcc -g -arch=sm_35 -use_fast_math -Iinclude -Xcompiler "-fopenmp -O3"
 
 ORG = approximate.o \
 	main.o \
