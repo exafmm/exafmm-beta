@@ -32,7 +32,7 @@ FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp #gfortran
 ### Base flags
 CXX	+= -I../include
 LFLAGS	+= -D$(BASIS)
-LFLAGS  += -DEXPANSION=12 # Specifcy expansion order
+LFLAGS  += -DEXPANSION=10 # Specifcy expansion order
 LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #LFLAGS	+= -DERROR_OPT # Use error optimized theta
 #LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria

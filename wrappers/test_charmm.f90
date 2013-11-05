@@ -104,7 +104,7 @@ program main
   nglobal = 1000
   images = 3
   theta = 0.4
-  verbose = 0
+  verbose = 1
   ksize = 11
   pcycle = 10 * pi
   sigma = .25 / pi
