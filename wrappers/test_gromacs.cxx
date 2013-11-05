@@ -7,7 +7,7 @@
 #include <sstream>
 
 extern "C" void FMM_Init(int images);
-extern "C" void FMM_Partition(int & n, double * x, double * q, double cycle);
+extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, double cycle);
 extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle);
 extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double * f,
 			      int ksize, double alpha, double sigma, double cutoff, double cycle);
@@ -23,6 +23,7 @@ int main(int argc, char ** argv) {
   double alpha = 10 / cycle;
   double sigma = .25 / M_PI;
   double cutoff = cycle * alpha / 3;
+  int * index = new int [Nmax];
   double * x = new double [3*Nmax];
   double * q = new double [Nmax];
   double * p = new double [Nmax];
@@ -62,12 +63,13 @@ int main(int argc, char ** argv) {
     file >> x[3*i+1];
     file >> x[3*i+2];
     file >> q[i];
+    index[i] = i + mpirank*Ni;
   }
   file.close();
 #endif
 
   FMM_Init(images);
-  FMM_Partition(Ni, x, q, cycle);
+  FMM_Partition(Ni, index, x, q, cycle);
   FMM_Coulomb(Ni, x, q, p, f, cycle);
   for (int i=0; i<Ni; i++) {
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
