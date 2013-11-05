@@ -1,5 +1,5 @@
 CXX = g++ -fopenmp -O3
-NVCC = nvcc -g -arch=sm_35 -use_fast_math -Iinclude -Xcompiler "-fopenmp -O3"
+NVCC = nvcc -g -arch=sm_35 -use_fast_math -Xcompiler "-fopenmp -O3"
 
 ORG = approximate.o \
 	main.o \
@@ -18,8 +18,6 @@ all: $(ORG)
 
 %.th_o: %.cu
 	$(NVCC) -c $< -o $@
-
-$(ORG): include/*.h
 
 clean:
 	rm -f approximate.o main.o scanKernels.o tree.o
