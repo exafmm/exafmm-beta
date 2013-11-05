@@ -83,16 +83,36 @@ class VanDerWaals : public Logger {
     }
   }
 
+#if CXX_LAMBDA == 0
+  struct neighborCallable {
+    VanDerWaals * vanderwaals; 
+    C_iter Ci; C_iter Cj; C_iter C0;
+  neighborCallable(VanDerWaals * vanderwaals_, C_iter Ci_, C_iter Cj_, C_iter C0_) :
+    vanderwaals(vanderwaals_), Ci(Ci_), Cj(Cj_), C0(C0_) {}
+    void operator() () { vanderwaals->neighbor(Ci, Cj, C0); }
+  };
+
+  neighborCallable 
+    neighbor_(C_iter Ci_, C_iter Cj_, C_iter C0_) {
+    return neighborCallable(this, Ci_, Cj_, C0_);
+  }
+#endif
+
 //! Evaluate Van Der Waals potential and force
   void evaluate(Cells &cells, Cells &jcells) {
     startTimer("Van der Waals");                                // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
-    spawn_tasks {                                               // Intitialize tasks
-      for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {    //  Loop over target cells
-        spawn_task0(if (Ci->NCHILD == 0) neighbor(Ci,Cj,Cj));   //   Find neighbors of leaf cells
+    task_group;                                                 // Intitialize tasks
+    for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      //  Loop over target cells
+      if (Ci->NCHILD == 0) {
+#if CXX_LAMBDA
+	create_task0(neighbor(Ci,Cj,Cj));   //   Find neighbors of leaf cells
+#else
+	create_taskc(neighbor_(Ci,Cj,Cj));
+#endif
       }                                                         //  End loop over target cells
-      sync_tasks;                                               //  Synchronize tasks
-    }                                                           // Finalize tasks
+    }
+    wait_tasks;                                                 //  Synchronize tasks
     stopTimer("Van der Waals");                                 // Stop timer
   }
 

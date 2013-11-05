@@ -8,6 +8,21 @@ class BoundBox : public Logger {
  private:
   int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
 
+#if CXX_LAMBDA == 0
+  struct boundsRecursionCallable {
+    BoundBox * boundbox;
+    B_iter BiBegin; B_iter BiEnd; Bounds & bounds;
+  boundsRecursionCallable(BoundBox * boundbox_, B_iter BiBegin_, B_iter BiEnd_, Bounds & bounds_) :
+    boundbox(boundbox_), BiBegin(BiBegin_), BiEnd(BiEnd_), bounds(bounds_) {}
+    void operator() () { bounds = boundbox->boundsRecursion(BiBegin, BiEnd, bounds); }
+  };
+
+  boundsRecursionCallable
+    boundsRecursion_(B_iter BiBegin_, B_iter BiEnd_, Bounds & bounds_) {
+    return boundsRecursionCallable(this, BiBegin_, BiEnd_, bounds_);
+  }
+#endif
+
   //! Recursively get Xmin and Xmax of domain
   Bounds boundsRecursion(B_iter BiBegin, B_iter BiEnd, Bounds bounds) {
     assert(BiEnd - BiBegin > 0);
@@ -19,13 +34,17 @@ class BoundBox : public Logger {
       return bounds;                                            //  Return Xmin and Xmax as pair
     } else {                                                    // Else if number of elements are large
       B_iter BiMid = BiBegin + (BiEnd - BiBegin) / 2;           //  Middle iterator
-      spawn_tasks {                                             //  Initialize tasks
-	spawn_task1(bounds, bounds = boundsRecursion(BiBegin, BiMid, bounds));// Recursive call with new task
-	Bounds bounds2 = boundsRecursion(BiMid, BiEnd, bounds); //  Recursive call with old task
-	sync_tasks;                                             //  Synchronize tasks
-	bounds.Xmin = min(bounds.Xmin, bounds2.Xmin);           //  Minimum of the two Xmins
-	bounds.Xmax = max(bounds.Xmax, bounds2.Xmax);           //  Maximum of the two Xmaxs
-      }
+      task_group;                                               //  Initialize tasks
+#if CXX_LAMBDA
+      create_task1(bounds, 
+		   bounds = boundsRecursion(BiBegin, BiMid, bounds));// Recursive call with new task
+#else
+      create_taskc(boundsRecursion_(BiBegin, BiMid, bounds));
+#endif
+      Bounds bounds2 = boundsRecursion(BiMid, BiEnd, bounds); //  Recursive call with old task
+      wait_tasks;                                             //  Synchronize tasks
+      bounds.Xmin = min(bounds.Xmin, bounds2.Xmin);           //  Minimum of the two Xmins
+      bounds.Xmax = max(bounds.Xmax, bounds2.Xmax);           //  Maximum of the two Xmaxs
       return bounds;                                            //  Return Xmin and Xmax
     }                                                           // End if for number fo elements
   }

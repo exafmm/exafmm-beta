@@ -43,6 +43,22 @@ class Traversal : public Kernel, public Logger {
     }                                                           // End if for multipole acceptance
   }
 
+#if CXX_LAMBDA == 0
+  struct traverseCallable {
+    Traversal * traversal;
+    C_iter CiBegin; C_iter CiEnd; C_iter CjBegin; C_iter CjEnd; bool mutual;
+  traverseCallable(Traversal * traversal_, C_iter CiBegin_, C_iter CiEnd_, C_iter CjBegin_, C_iter CjEnd_, bool mutual_) :
+    traversal(traversal_), CiBegin(CiBegin_), CiEnd(CiEnd_), CjBegin(CjBegin_), CjEnd(CjEnd_), mutual(mutual_) {}
+    void operator() () { traversal->traverse(CiBegin, CiEnd, CjBegin, CjEnd, mutual); }
+  };
+
+  traverseCallable
+    traverse_(C_iter CiBegin_, C_iter CiEnd_, C_iter CjBegin_, C_iter CjEnd_, bool mutual_) {
+    return traverseCallable(this, CiBegin_, CiEnd_, CjBegin_, CjEnd_, mutual_);
+  }
+
+#endif
+
 //! Dual tree traversal for a range of Ci and Cj
   void traverse(C_iter CiBegin, C_iter CiEnd, C_iter CjBegin, C_iter CjEnd, bool mutual) {
     Trace trace;
@@ -61,18 +77,33 @@ class Traversal : public Kernel, public Logger {
     } else {                                                    // If many cells are in the range
       C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;           //  Split range of Ci cells in half
       C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;           //  Split range of Cj cells in half
-      spawn_tasks {                                             //  Initialize task group
-	spawn_task0(traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));// Spawn Ci:former Cj:former
+      /* FIXME: 
+	 here we need to have two task_group statements
+	 so that dag recorder to work */
+      {
+	task_group;                                               //  Initialize task group
+#if CXX_LAMBDA
+	create_task0(traverse(CiBegin, CiMid, CjBegin, CjMid, mutual));// Spawn Ci:former Cj:former
+#else
+	create_taskc(traverse_(CiBegin, CiMid, CjBegin, CjMid, mutual));
+#endif
 	traverse(CiMid, CiEnd, CjMid, CjEnd, mutual);           //   No spawn Ci:latter Cj:latter
-	sync_tasks;                                             //   Synchronize task group
-	spawn_task0(traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));// Spawn Ci:former Cj:latter
+	wait_tasks;                                             //   Synchronize task group
+      }
+      {
+	task_group;                                               //  Initialize task group
+#if CXX_LAMBDA
+	create_task0(traverse(CiBegin, CiMid, CjMid, CjEnd, mutual));// Spawn Ci:former Cj:latter
+#else
+	create_taskc(traverse_(CiBegin, CiMid, CjMid, CjEnd, mutual));
+#endif
 	if (!mutual || CiBegin != CjBegin) {                    //   Exclude mutual & self interaction
 	  traverse(CiMid, CiEnd, CjBegin, CjMid, mutual);       //    No spawn Ci:latter Cj:former
 	} else {                                                //   If mutual or self interaction
 	  assert(CiEnd == CjEnd);                               //    Check if mutual & self interaction
 	}                                                       //   End if for mutual & self interaction
-	sync_tasks;                                             //   Synchronize task group
-      }                                                         //  Finalize task group
+	wait_tasks;                                             //   Synchronize task group
+      }
     }                                                           // End if for many cells in range
     stopTracer(trace);
   }

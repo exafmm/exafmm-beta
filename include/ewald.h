@@ -116,6 +116,21 @@ class Ewald : public Logger {
     }                                                           // End if for far cells
   }
 
+#if CXX_LAMBDA == 0
+  struct neighborCallable {
+    Ewald * ewald;
+    C_iter Ci; C_iter Cj; C_iter C0;
+  neighborCallable(Ewald * ewald_, C_iter Ci_, C_iter Cj_, C_iter C0_) : 
+    ewald(ewald_), Ci(Ci_), Cj(Cj_), C0(C0_) {}
+    void operator() () { ewald->neighbor(Ci, Cj, C0); }
+  };
+
+  neighborCallable
+    neighbor_(C_iter Ci_, C_iter Cj_, C_iter C0_) {
+    return neighborCallable(this, Ci_, Cj_, C0_);
+  }
+#endif
+
  public:
 //! Constructor
  Ewald(int _ksize, real_t _alpha, real_t _sigma, real_t _cutoff, real_t _cycle) :
@@ -125,12 +140,17 @@ class Ewald : public Logger {
   void realPart(Cells & cells, Cells & jcells) {
     startTimer("Ewald real part");                              // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
-    spawn_tasks {                                               // Intitialize tasks
-      for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {    //  Loop over target cells
-        spawn_task0(if (Ci->NCHILD == 0) neighbor(Ci,Cj,Cj));   //   Find neighbors of leaf cells
-      }                                                         //  End loop over target cells
-      sync_tasks;                                               //  Synchronize tasks
-    }                                                           // Finalize tasks
+    task_group;                                                 // Intitialize tasks
+    for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      //  Loop over target cells
+      if (Ci->NCHILD == 0) {
+#if CXX_LAMBDA
+	create_task0(neighbor(Ci,Cj,Cj));                       //   Find neighbors of leaf cells
+#else
+	create_taskc(neighbor_(Ci,Cj,Cj));                      //   Find neighbors of leaf cells
+      }
+#endif
+    }                                                         //  End loop over target cells
+    wait_tasks;                                               //  Synchronize tasks
     stopTimer("Ewald real part");                               // Stop timer
   }
 
