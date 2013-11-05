@@ -13,7 +13,7 @@
 #include "logger.h"
 #include "vec.h"
 
-const int P = 1;
+const int P = 3;
 const int NTERM = P*(P+1)*(P+2)/6;
 const int NVEC4 = (NTERM-1)/4+1;
 typedef vec<3,float> fvec3;

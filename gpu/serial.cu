@@ -6,8 +6,7 @@
 #include "upwardpass.h"
 
 int main(int argc, char ** argv) {
-  //const int numBodies = (1 << 24);
-  const int numBodies = 1 << 20;
+  const int numBodies = (1 << 24) - 1;
   const float eps = 0.05;
   const float theta = 0.75;
   const int ncrit = 64;

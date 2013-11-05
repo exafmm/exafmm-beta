@@ -526,7 +526,6 @@ namespace {
     const float invR2 = -invR * invR;
     const float invR1 = M[0] * invR;
     const float invR3 = invR2 * invR1;
-    /*
     const float invR5 = 3 * invR2 * invR3;
     const float invR7 = 5 * invR2 * invR5;
     const float q11 = M[4];
@@ -546,11 +545,6 @@ namespace {
     acc[1] += C * dX[0] + 2 * invR5 * qR[0];
     acc[2] += C * dX[1] + 2 * invR5 * qR[1];
     acc[3] += C * dX[2] + 2 * invR5 * qR[2];
-    */
-    acc[0] -= invR1;
-    acc[1] += invR3 * dX[0];
-    acc[2] += invR3 * dX[1];
-    acc[3] += invR3 * dX[2];
 #else
     const float invR1 = M[0] * invR;
     float invR2 = invR * invR;
