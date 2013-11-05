@@ -13,10 +13,10 @@ class octree {
   int numTargets;
   int numLevels;
   float4 *float4buffer;
-  cudaVec<uint32_t> bodyKeys;
+  cudaVec<uint64_t> bodyKeys;
   cudaVec<int> bodyIndex;
   cudaVec<uint2> bodyRange;
-  cudaVec<uint32_t> cellKeys;
+  cudaVec<uint64_t> cellKeys;
   cudaVec<int> cellLevel;
   cudaVec<uint> childRange;
   cudaVec<uint> levelOffset;
