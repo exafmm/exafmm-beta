@@ -106,10 +106,10 @@ program main
   theta = 0.4
   verbose = 0
   ksize = 11
-  pcycle = 20 * pi
+  pcycle = 10 * pi
   sigma = .25 / pi
-  cuton = 9.5;
-  cutoff = 10.0;
+  cuton = 9.5
+  cutoff = 10.0
   alpha = 10 / pcycle
   nat = 16
   if (command_argument_count() > 0) then
@@ -123,7 +123,6 @@ program main
      allocate( p2(nglobal), f2(3*nglobal) )
      allocate( numex(nglobal), natex(nglobal), atype(nglobal) )
      allocate( rscale(nat*nat), gscale(nat*nat), fgscale(nat*nat) )
-#if 1
      do i = 1, 128
         iseed(i) = 0
      end do
@@ -146,18 +145,6 @@ program main
      do i = 1, nglobal
         q(i) = q(i) - average
      end do
-#else
-     write (filename, '("source", i4.4, ".dat")') 0
-     open(10, file=filename)
-     do i = 1, nglobal
-        read(10,*) x(3*i-2), x(3*i-1), x(3*i-0), q(i)
-        p(i) = 0
-        f(3*i-2) = 0
-        f(3*i-1) = 0
-        f(3*i-0) = 0
-        icpumap(i) = 0
-     end do
-#endif
      call random_number(rscale)
      call random_number(gscale)
      do i = 1, nglobal
@@ -167,18 +154,11 @@ program main
         else
            natex(i) = i-1
         endif
-        atype(i) = rand() * nat
-     enddo
-     do i = 1, nat
-        do j = 1, nat
-           if( i.ne.j ) then
-              gscale((i-1)*nat+j) = sqrt(gscale((i-1)*nat+i)*gscale((j-1)*nat+j))
-              rscale((i-1)*nat+j) = (sqrt(rscale((i-1)*nat+i)) + sqrt(rscale((j-1)*nat+j))) * 0.5;
-              rscale((i-1)*nat+j) = rscale((i-1)*nat+j) * rscale((i-1)*nat+j);
-           endif
-        enddo
+        atype(i) = rand() * nat + 1
      enddo
      do i = 1, nat*nat
+        rscale(i) = 1
+        gscale(i) = 0.0001
         fgscale(i) = gscale(i)
      enddo
   end if
