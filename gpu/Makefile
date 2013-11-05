@@ -1,31 +1,21 @@
-CXX = g++ -fopenmp -O3
-NVCC = nvcc -g -arch=sm_35 -use_fast_math -Xcompiler "-fopenmp -O3"
+.SUFFIXES: .cu
 
-ORG = approximate.o \
-	serial.o \
-	scanKernels.o \
-	tree.o \
-	thrust.o
+NVCC = nvcc -g -use_fast_math -arch=sm_35 -rdc=true
+LFLAGS = -lcudadevrt
 
-.SUFFIXES: .o .cpp .cu
+SRC = thrust.cu serial.cu
 
-serial: $(ORG)
-	$(CXX) $^ -lcudart
+OBJ = $(SRC:%.cu=%.o)
+
+serial: $(OBJ)
+	$(NVCC) $^ $(LFLAGS)
 	./a.out
 
 %.o: %.cu
-	$(NVCC) -c $< -o $@
-
-%.th_o: %.cu
-	$(NVCC) -c $< -o $@
+	$(NVCC) -c $<
 
 clean:
-	rm -f approximate.o serial.o scanKernels.o tree.o
+	rm -f serial.o
+
 cleanall:
-	find . -name "*.o" -o -name "*.out*" | xargs rm -rf
-commit:
-	@make -C .. commit
-save:
-	@make -C .. save
-revert:
-	@make -C .. revert
+	rm -f *.o *.out

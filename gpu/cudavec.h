@@ -1,83 +1,87 @@
-#ifndef _CUDAVEC_H_
-#define _CUDAVEC_H_
-#include <cstdio>
+#pragma once
 
-#define CU_SAFE_CALL(err)  __checkCudaErrors (err, __FILE__, __LINE__)
-inline void __checkCudaErrors(cudaError err, const char *file, const int line ) {
-  if(cudaSuccess != err) {
-    fprintf(stderr, "%s(%i) : CUDA Runtime API error %d: %s.\n",file, line, (int)err, cudaGetErrorString( err ) );
-    exit(-1);
-  }
-}
-
-template<class T>
+template<typename T>
 class cudaVec {
- private:
-  int size;
-  T *devcPtr;
-  T *hostPtr;
+private:
+  bool PIN;
+  int SIZE;
+  T * HOST;
+  T * DEVC;
 
- public:
-  cudaVec() : size(0), devcPtr(NULL), hostPtr(NULL) {}
-
-  ~cudaVec() {
-    cudaFree(devcPtr);
-#if PINNED
-    cudaFreeHost(hostPtr);
-#else
-    free(hostPtr);
-#endif
+  void dealloc() {
+    if( SIZE != 0 ) {
+      SIZE = 0;
+      if (PIN) CUDA_SAFE_CALL(cudaFreeHost(HOST));
+      CUDA_SAFE_CALL(cudaFree(DEVC));
+    }
   }
 
-  void alloc(int n) {
-    assert(size == 0);
-    size = n;
-#if PINNED
-    CU_SAFE_CALL(cudaMallocHost(&hostPtr, size*sizeof(T)));
-#else
-    hostPtr = (T*)malloc(size*sizeof(T));
-#endif
-    CU_SAFE_CALL(cudaMalloc(&devcPtr, size*sizeof(T)));
+public:
+  cudaVec() : PIN(false), SIZE(0), HOST(NULL), DEVC(NULL) {}
+  cudaVec(int size, bool pin=false) : PIN(pin), SIZE(size) {
+    if (PIN) CUDA_SAFE_CALL(cudaMallocHost(&HOST, SIZE*sizeof(T), cudaHostAllocMapped || cudaHostAllocWriteCombined));
+    CUDA_SAFE_CALL(cudaMalloc(&DEVC, SIZE*sizeof(T)));
+  }
+  ~cudaVec() {
+    dealloc();
+  }
+
+  void alloc(int size, bool pin=false) {
+    dealloc();
+    PIN = pin;
+    SIZE = size;
+    if (PIN) CUDA_SAFE_CALL(cudaMallocHost(&HOST, SIZE*sizeof(T), cudaHostAllocMapped || cudaHostAllocWriteCombined));
+    CUDA_SAFE_CALL(cudaMalloc(&DEVC, SIZE*sizeof(T)));
+  }
+
+  void resize(int size) {
+    SIZE = size;
   }
 
   void zeros() {
-    CU_SAFE_CALL(cudaMemset(devcPtr, 0, size*sizeof(T)));
+    CUDA_SAFE_CALL(cudaMemset(DEVC, 0, SIZE*sizeof(T)));
   }
 
   void ones() {
-    CU_SAFE_CALL(cudaMemset(devcPtr, 1, size*sizeof(T)));
+    CUDA_SAFE_CALL(cudaMemset(DEVC, 1, SIZE*sizeof(T)));
   }
 
   void d2h() {
-    CU_SAFE_CALL(cudaMemcpy(hostPtr, devcPtr, size*sizeof(T), cudaMemcpyDeviceToHost));
+    assert(PIN);
+    CUDA_SAFE_CALL(cudaMemcpy(HOST, DEVC, SIZE*sizeof(T), cudaMemcpyDeviceToHost));
   }
 
-  void d2h(int n) {
-    CU_SAFE_CALL(cudaMemcpy(hostPtr, devcPtr, n*sizeof(T),cudaMemcpyDeviceToHost));
+  void d2h(int size) {
+    assert(PIN);
+    CUDA_SAFE_CALL(cudaMemcpy(HOST, DEVC, size*sizeof(T), cudaMemcpyDeviceToHost));
   }
 
   void h2d() {
-    CU_SAFE_CALL(cudaMemcpy(devcPtr, hostPtr, size*sizeof(T),cudaMemcpyHostToDevice ));
+    assert(PIN);
+    CUDA_SAFE_CALL(cudaMemcpy(DEVC, HOST, SIZE*sizeof(T), cudaMemcpyHostToDevice));
   }
 
-  void h2d(int n) {
-    CU_SAFE_CALL(cudaMemcpy(devcPtr, hostPtr, n*sizeof(T),cudaMemcpyHostToDevice));
+  void h2d(int size) {
+    assert(PIN);
+    CUDA_SAFE_CALL(cudaMemcpy(DEVC, HOST, size*sizeof(T), cudaMemcpyHostToDevice));
   }
 
-  void bindTexture(texture<T,1,cudaReadModeElementType> &tex) {
+  template<typename S>
+  void bind(texture<S,1,cudaReadModeElementType> &tex) {
     tex.addressMode[0] = cudaAddressModeWrap;
     tex.addressMode[1] = cudaAddressModeWrap;
     tex.filterMode     = cudaFilterModePoint;
     tex.normalized     = false;
-    CU_SAFE_CALL(cudaBindTexture(0,tex,(void*)devcPtr,size*sizeof(T)));
+    CUDA_SAFE_CALL(cudaBindTexture(0, tex, (S*)DEVC, SIZE*sizeof(T)));
   }
 
-  void unbindTexture(texture<T,1,cudaReadModeElementType> &tex) {
-    CU_SAFE_CALL(cudaUnbindTexture(tex));
+  template<typename S>
+  void unbind(texture<S,1,cudaReadModeElementType> &tex) {
+    CUDA_SAFE_CALL(cudaUnbindTexture(tex));
   }
 
-  T& operator[] (int i){ return hostPtr[i]; }
-  T* devc() {return devcPtr;}
+  T& operator[] (int i) const { return HOST[i]; }
+  T* h() const { return HOST; }
+  T* d() const { return DEVC; }
+  int size() const { return SIZE; }
 };
-
-#endif
