@@ -23,7 +23,7 @@ class cudaVec {
   ~cudaVec() {
     cudaFree(devcPtr);
 #if PINNED
-    cudaFreeHost((void*)hostPtr);
+    cudaFreeHost(hostPtr);
 #else
     free(hostPtr);
 #endif
@@ -33,19 +33,19 @@ class cudaVec {
     assert(size == 0);
     size = n;
 #if PINNED
-    CU_SAFE_CALL(cudaMallocHost((T**)&hostPtr, size*sizeof(T)));
+    CU_SAFE_CALL(cudaMallocHost(&hostPtr, size*sizeof(T)));
 #else
     hostPtr = (T*)malloc(size*sizeof(T));
 #endif
-    CU_SAFE_CALL(cudaMalloc((T**)&devcPtr, size*sizeof(T)));
+    CU_SAFE_CALL(cudaMalloc(&devcPtr, size*sizeof(T)));
   }
 
   void zeros() {
-    CU_SAFE_CALL(cudaMemset((void*)devcPtr, 0, size*sizeof(T)));
+    CU_SAFE_CALL(cudaMemset(devcPtr, 0, size*sizeof(T)));
   }
 
   void ones() {
-    CU_SAFE_CALL(cudaMemset((void*)devcPtr, 1, size*sizeof(T)));
+    CU_SAFE_CALL(cudaMemset(devcPtr, 1, size*sizeof(T)));
   }
 
   void d2h() {

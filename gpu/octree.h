@@ -13,10 +13,10 @@ class octree {
   int numTargets;
   int numLevels;
   float4 *float4buffer;
-  cudaVec<uint32_t> bodyKeys;
+  cudaVec<uint64_t> bodyKeys;
   cudaVec<int> bodyIndex;
   cudaVec<uint2> bodyRange;
-  cudaVec<uint32_t> cellKeys;
+  cudaVec<uint64_t> cellKeys;
   cudaVec<int> cellLevel;
   cudaVec<uint> childRange;
   cudaVec<uint> levelOffset;
@@ -80,7 +80,7 @@ class octree {
     validRange.alloc(2*numBodies);
     compactRange.alloc(2*numBodies);
     bodyAcc.zeros();
-    CU_SAFE_CALL(cudaMalloc((float4**)&float4buffer, numBodies*sizeof(float4)));
+    CU_SAFE_CALL(cudaMalloc(&float4buffer, numBodies*sizeof(float4)));
 
     int treeWalkStackSize = (LMEM_STACK_SIZE * NTHREAD + 2 * NTHREAD) * NBLOCK;
     int sortBufferSize = 4 * ALIGN(numBodies,128) * 128;

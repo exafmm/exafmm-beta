@@ -6,7 +6,7 @@
 #define NTHREAD 128
 #define NBLOCK 512
 #define WARP_SIZE 32
-#define MAXLEVELS 10
+#define MAXLEVELS 21
 #define LMEM_STACK_SIZE 2048
 #define NWARP (NTHREAD / WARP_SIZE)
 
