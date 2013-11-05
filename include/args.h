@@ -16,6 +16,7 @@ static struct option long_options[] = {
   {"mutual",       1, 0, 'm'},
   {"verbose",      1, 0, 'v'},
   {"distribution", 1, 0, 'd'},
+  {"repeat",       1, 0, 'r'},
   {"help",         0, 0, 'h'},
   {0, 0, 0, 0}
 };
@@ -31,6 +32,7 @@ class Args {
   int mutual;
   int verbose;
   const char * distribution;
+  int repeat;
 
  private:
   void usage(char * name) {
@@ -46,6 +48,7 @@ class Args {
             " --mutual [0/1] : Use mutual interaction (%d)\n"
 	    " --verbose [0/1] : Print information to screen (%d)\n"
             " --distribution [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n"
+            " --repeat R : repeat R times\n"
             " --help : Show this help document\n",
             name,
             numBodies,
@@ -78,7 +81,7 @@ class Args {
 
  public:
   Args(int argc=0, char ** argv=NULL) : numBodies(1000000), numTargets(100), ncrit(16), nspawn(1000), images(0),
-    theta(.4), mutual(1), verbose(1), distribution("cube") {
+    theta(.4), mutual(1), verbose(1), distribution("cube"), repeat(1) {
     while (1) {
       int option_index;
       int c = getopt_long(argc, argv, "", long_options, &option_index);
@@ -111,6 +114,9 @@ class Args {
       case 'd':
         distribution = parse(optarg);
         break;
+      case 'r':
+        repeat = atoi(optarg);
+        break;
       case 'h':
         usage(argv[0]);
         exit(0);
@@ -140,7 +146,9 @@ class Args {
 		<< std::setw(stringLength)                      // Set format
 		<< "verbose" << " : " << verbose << std::endl   // Print verbose
 		<< std::setw(stringLength)                      // Set format
-		<< "distribution" << " : " << distribution << std::endl;// Print distribution
+		<< "distribution" << " : " << distribution << std::endl// Print distribution
+		<< std::setw(stringLength)                      // Set format
+		<< "repeat" << " : " << repeat << std::endl;// Print distribution
     } else if (mpirank == 0) {
       std::cout << std::setw(stringLength) << std::left         // Set format
 		<< "numBodies" << " : " << numBodies << std::endl; // Print numBodies  
