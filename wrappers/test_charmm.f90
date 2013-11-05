@@ -80,9 +80,9 @@ program main
   include 'mpif.h'
   character(128) filename
   integer d, i, ierr, images, ista, iend, istat, ksize, lnam, mpirank, mpisize
-  integer nat, nglobal, prange, ix, iy, iz, j
+  integer nat, nglobal, prange, ix, iy, iz, j, verbose
   real(8) alpha, sigma, cuton, cutoff, average, norm, pcycle, pi, ccelec
-  real(8) coef, dx, dy, dz, fx, fy ,fz, pp, R2, R3inv, Rinv
+  real(8) coef, dx, dy, dz, fx, fy ,fz, pp, R2, R3inv, Rinv, theta
   real(8) accDif, accDifGlob
   real(8) accNrm, accNrmGlob
   real(8) accNrm2, accNrmGlob2
@@ -103,6 +103,8 @@ program main
   call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
   nglobal = 1000
   images = 3
+  theta = 0.4
+  verbose = 0
   ksize = 11
   pcycle = 20 * pi
   sigma = .25 / pi
@@ -186,7 +188,7 @@ program main
   do i = ista, iend
      icpumap(i) = 1
   end do
-  call fmm_init(images)
+  call fmm_init(images,theta,verbose)
   call fmm_partition(nglobal, icpumap, x, q, pcycle)
   call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
   do i = 1, nglobal
