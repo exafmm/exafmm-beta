@@ -18,10 +18,9 @@ UpDownPass *pass;
 Traversal *traversal;
 LocalEssentialTree *LET;
 
-extern "C" void fmm_init_(int & images) {
+extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   const int ncrit = 32;
   const int nspawn = 1000;
-  const real_t theta = 0.4;
   args = new Args;
   logger = new Logger;
   sort = new Sort;
@@ -36,7 +35,7 @@ extern "C" void fmm_init_(int & images) {
   args->nspawn = nspawn;
   args->images = images;
   args->mutual = 0;
-  args->verbose = 1;
+  args->verbose = verbose;
   args->distribution = "external";
   args->verbose &= LET->mpirank == 0;
   if (args->verbose) {
@@ -48,7 +47,7 @@ extern "C" void fmm_init_(int & images) {
     LET->verbose = true;
   }
   logger->printTitle("Initial Parameters");
-  args->print(logger->stringLength, P, LET->mpirank);
+  args->print(logger->stringLength, P);
 }
 
 extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q, double & cycle) {
@@ -99,7 +98,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   }
   args->numBodies = nlocal;
   logger->printTitle("FMM Parameters");
-  args->print(logger->stringLength, P, LET->mpirank);
+  args->print(logger->stringLength, P);
 #if _OPENMP
 #pragma omp parallel
 #pragma omp master
@@ -164,7 +163,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
   }
   args->numBodies = nlocal;
   logger->printTitle("Ewald Parameters");
-  args->print(logger->stringLength, P, LET->mpirank);
+  args->print(logger->stringLength, P);
   ewald->print(logger->stringLength);
 #if _OPENMP
 #pragma omp parallel
@@ -312,7 +311,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   }
   args->numBodies = nlocal;
   logger->printTitle("VdW Parameters");
-  args->print(logger->stringLength, P, LET->mpirank);
+  args->print(logger->stringLength, P);
 #if _OPENMP
 #pragma omp parallel
 #pragma omp master

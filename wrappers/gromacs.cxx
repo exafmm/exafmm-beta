@@ -50,17 +50,17 @@ extern "C" void FMM_Init(int images) {
   args->print(logger->stringLength, P, LET->mpirank);
 }
 
-extern "C" void FMM_Partition(int & n, double * x, double * q, double cycle) {
+extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, double cycle) {
   logger->printTitle("Partition Profiling");
   Bodies bodies(n);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
+    B->IBODY = index[i];
     B->X[0] = x[3*i+0];
     B->X[1] = x[3*i+1];
     B->X[2] = x[3*i+2];
     wrap(B->X, cycle);
     B->SRC = q[i];
-    B->IBODY = i;
   }
   localBounds = boundbox->getBounds(bodies);
   Bounds globalBounds = LET->allreduceBounds(localBounds);
@@ -72,6 +72,7 @@ extern "C" void FMM_Partition(int & n, double * x, double * q, double cycle) {
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
+    index[i] = B->IBODY;
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];
