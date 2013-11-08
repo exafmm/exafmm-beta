@@ -6,7 +6,6 @@
 #else
 
 #if _OPENMP
-
 #elif TBB
 #include <tbb/task_group.h>
 typedef tbb::task_group task_group_t;
@@ -44,11 +43,10 @@ typedef mtbb::task_group task_group_t;
 #define create_taskc(E)               __tg__.run(E)
 #define create_taskc_if(x, E)         if (x) { create_taskc(E); } else { E(); }
 #endif
-#else  /* not _OPENMP, TBB, or MTHREAD */
+
+#else  /* not _OPENMP, TBB, MTHREAD, QTHREAD, or NANOX */
 #define task_group
 #define wait_tasks
-#define create_tasks
-#define sync_tasks
 #if CXX_LAMBDA
 #define create_task0(E)                E
 #define create_task1(s0, E)            E
@@ -63,10 +61,6 @@ typedef mtbb::task_group task_group_t;
 #define create_taskc_if(x, E)          E
 #endif
 #endif
-
-#define create_task_and_wait(E)        do { create_taskA(E); wait_tasks; } while(0)
-
-
 #endif	/* COMMON_CLIKH */
 
 #endif
