@@ -41,29 +41,15 @@ typedef mtbb::task_group task_group_t;
 #define create_task2_if(x, s0, s1, E) if (x) { create_task2(s0, s1, E); } else { E; }
 #define create_taskA_if(x, E)         if (x) { create_taskA(E); } else { E; }
 #else
-
-/* task with no lambda expressions;
-   in this case, E must be an expression that is evaluated to
-   an object having operator() as a method. typically, when we
-   want to make a function call z += f(x,y) a task, we 
-   define a struct f_ whose constructor takes z,x,y as arguments
-   (make them references as necessary) and whose method operator()
-   perform z = f(x,y). e.g.,
-   struct f_ {
-     int & z; int x; int y; 
-     f_(int & z, int x_, int y) : x(x_), y(y_), z(z_) {}
-     void operator() { z = f(x, y); }
-   };
-   and tg.run(f_(z,x,y));
- */
 #define create_taskc(E)               __tg__.run(E)
 #define create_taskc_if(x, E)         if (x) { create_taskc(E); } else { E(); }
-
 #endif
-
 #else  /* not _OPENMP, TBB, or MTHREAD */
+#define task_group
+#define wait_tasks
 #define create_tasks
 #define sync_tasks
+#if CXX_LAMBDA
 #define create_task0(E)                E
 #define create_task1(s0, E)            E
 #define create_task2(s0, s1, E)        E
@@ -72,7 +58,10 @@ typedef mtbb::task_group task_group_t;
 #define create_task1_if(x, s0, E)      E
 #define create_task2_if(x, s0, s1, E)  E
 #define create_taskA_if(x, E)          E
-
+#else
+#define create_taskc(E)                E
+#define create_taskc_if(x, E)          E
+#endif
 #endif
 
 #define create_task_and_wait(E)        do { create_taskA(E); wait_tasks; } while(0)

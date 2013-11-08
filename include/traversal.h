@@ -112,7 +112,7 @@ class Traversal : public Kernel, public Logger {
   void traversePeriodic(real_t cycle) {
     startTimer("Traverse periodic");                            // Start timer
     Xperiodic = 0;                                              // Periodic coordinate offset
-    Cells pcells(27);                                           // Create cells
+    Cells pcells; pcells.resize(27);                            // Create cells
     C_iter Ci = pcells.end()-1;                                 // Last cell is periodic parent cell
     *Ci = *Cj0;                                                 // Copy values from source root
     Ci->ICHILD = 0;                                             // Child cells for periodic center cell
@@ -227,7 +227,7 @@ class Traversal : public Kernel, public Logger {
 
 //! Direct summation
   void direct(Bodies &ibodies, Bodies &jbodies, real_t cycle) {
-    Cells cells(2);                                             // Define a pair of cells to pass to P2P kernel
+    Cells cells; cells.resize(2);                               // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
     Ci->BODY = ibodies.begin();                                 // Iterator of first target body
     Ci->NBODY = ibodies.size();                                 // Number of target bodies
