@@ -19,4 +19,4 @@ save    :
 	cd .. && tar zcvf exafmm-dev.tgz exafmm-dev
 revert	:
 	hg revert --all
-	find . -name "*.orig" | xargs rm
+	find . -name "*.orig" | xargs rm -f
