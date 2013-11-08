@@ -134,11 +134,6 @@ program main
         x(3*i-2) = x(3*i-2) * pcycle - pcycle / 2
         x(3*i-1) = x(3*i-1) * pcycle - pcycle / 2
         x(3*i-0) = x(3*i-0) * pcycle - pcycle / 2
-        p(i) = 0
-        f(3*i-2) = 0
-        f(3*i-1) = 0
-        f(3*i-0) = 0
-        icpumap(i) = 0
         average = average + q(i)
      end do
      average = average / nglobal
@@ -162,6 +157,13 @@ program main
         fgscale(i) = gscale(i)
      enddo
   end if
+  do i = 1, nglobal
+     p(i) = 0
+     f(3*i-2) = 0
+     f(3*i-1) = 0
+     f(3*i-0) = 0
+     icpumap(i) = 0
+  end do
   ista = 1
   iend = nglobal
   call split_range(ista,iend,mpirank,mpisize)
