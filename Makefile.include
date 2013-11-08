@@ -44,8 +44,7 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
 ### Intel TBB flags : TBB is available from http://threadingbuildingblocks.org/download.php
-# with or without lambda expression
-#LFLAGS	+= -DTBB -ltbb
+LFLAGS	+= -DTBB -ltbb
 
 ### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -DMTHREAD -lmyth-native
