@@ -32,12 +32,6 @@ class BuildTree : public Logger {
   OctreeNode * N0;                                              //!< Octree root node
 
  private:
-//! Get number of binary tree nodes for a given number of bodies
-  inline int getNumBinNode(int n) const {
-    if (n <= nspawn) return 1;                                  // If less then threshold, use only one node
-    else return 4 * ((n - 1) / nspawn) - 1;                     // Else estimate number of binary tree nodes
-  }
-
 //! Get maximum number of binary tree nodes for a given number of bodies
   inline int getMaxBinNode(int n) const {
     return (4 * n) / nspawn;                                    // Conservative estimate of number of binary tree nodes
@@ -66,48 +60,54 @@ class BuildTree : public Logger {
     return octNode;                                             // Return node
   }
 
-  struct countBodiesCallable {
-    BuildTree * buildtree;
-    Bodies & bodies; int begin; int end; vec3 X; BinaryTreeNode * binNode;
-  countBodiesCallable(BuildTree * buildtree_, Bodies& bodies_, int begin_, int end_, vec3 X_, BinaryTreeNode * binNode_) :
-    buildtree(buildtree_), bodies(bodies_), begin(begin_), end(end_), X(X_), binNode(binNode_) {}
-    void operator() () { buildtree->countBodies(bodies, begin, end, X, binNode); }
+  //! Recursive functor for counting bodies in each octant using binary tree
+  struct CountBodies {
+    Bodies & bodies;                                            // Vector of bodies
+    int begin;                                                  // Body begin index
+    int end;                                                    // Body end index
+    vec3 X;                                                     // Position of node center
+    BinaryTreeNode * binNode;                                   // Node of binary tree
+    int nspawn;                                                 // Threshold of NBODY for spawning new threads
+    CountBodies(Bodies & _bodies, int _begin, int _end, vec3 _X, BinaryTreeNode * _binNode, int _nspawn) : // Constructor
+      bodies(_bodies), begin(_begin), end(_end), X(_X), binNode(_binNode), nspawn(_nspawn) {} // Initialize variables
+
+    //! Get number of binary tree nodes for a given number of bodies
+    inline int getNumBinNode(int n) const {
+      if (n <= nspawn) return 1;                                // If less then threshold, use only one node
+      else return 4 * ((n - 1) / nspawn) - 1;                   // Else estimate number of binary tree nodes
+    }
+
+    void operator() () {                                        // Overload operator()
+      assert(getNumBinNode(end - begin) <= binNode->END - binNode->BEGIN + 1);
+      if (end - begin <= nspawn) {                              // If number of bodies is less than threshold
+	for (int i=0; i<8; i++) binNode->NBODY[i] = 0;          //  Initialize number of bodies in octant
+	binNode->LEFT = binNode->RIGHT = NULL;                  //  Initialize pointers to left and right child node
+	for (int i=begin; i<end; i++) {                         //  Loop over bodies in node
+	  vec3 x = bodies[i].X;                                 //   Position of body
+	  int octant = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);// Which octant body belongs to
+	  binNode->NBODY[octant]++;                             //   Increment body count in octant
+	}                                                       //  End loop over bodies in node
+      } else {                                                  // Else if number of bodies is larger than threshold
+	int mid = (begin + end) / 2;                            //  Split range of bodies in half
+	int numLeftNode = getNumBinNode(mid - begin);           //  Number of binary tree nodes on left branch
+	int numRightNode = getNumBinNode(end - mid);            //  Number of binary tree nodes on right branch
+	assert(numLeftNode + numRightNode <= binNode->END - binNode->BEGIN);
+	binNode->LEFT = binNode->BEGIN;                         //  Assign first memory address to left node pointer
+	binNode->LEFT->BEGIN = binNode->LEFT + 1;               //  Assign next memory address to left begin pointer
+	binNode->LEFT->END = binNode->LEFT + numLeftNode;       //  Keep track of last memory address used by left
+	binNode->RIGHT = binNode->LEFT->END;                    //  Assign that same address to right node pointer
+	binNode->RIGHT->BEGIN = binNode->RIGHT + 1;             //  Assign next memory address to right begin pointer
+	binNode->RIGHT->END = binNode->RIGHT + numRightNode;    //  Keep track of last memory address used by right
+	task_group;                                             //  Initialize tasks
+        CountBodies leftBranch(bodies, begin, mid, X, binNode->LEFT, nspawn);// Recursion for left branch
+	create_taskc(leftBranch);                               //  Create new task for left branch
+	CountBodies rightBranch(bodies, mid, end, X, binNode->RIGHT, nspawn);// Recursion for right branch
+	rightBranch();                                          //  Use same task for right branch
+	wait_tasks;                                             //  Synchronize tasks
+	binNode->NBODY = binNode->LEFT->NBODY + binNode->RIGHT->NBODY;// Sum contribution from both branches
+      }                                                         // End if for number of bodies
+    }
   };
-
-  countBodiesCallable 
-    countBodies_(Bodies& bodies_, int begin_, int end_, vec3 X_, BinaryTreeNode * binNode_) {
-    return countBodiesCallable(this, bodies_, begin_, end_, X_, binNode_);
-  }
-
-//! Count bodies in each octant using binary tree recursion
-  void countBodies(Bodies& bodies, int begin, int end, vec3 X, BinaryTreeNode * binNode) {
-    assert(getNumBinNode(end - begin) <= binNode->END - binNode->BEGIN + 1);
-    if (end - begin <= nspawn) {                                // If number of bodies is less than threshold
-      for (int i=0; i<8; i++) binNode->NBODY[i] = 0;            //  Initialize number of bodies in octant
-      binNode->LEFT = binNode->RIGHT = NULL;                    //  Initialize pointers to left and right child node
-      for (int i=begin; i<end; i++) {                           //  Loop over bodies in node
-        vec3 x = bodies[i].X;                                   //   Position of body
-        int octant = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);// Which octant body belongs to
-        binNode->NBODY[octant]++;                               //   Increment body count in octant
-      }                                                         //  End loop over bodies in node
-    } else {                                                    // Else if number of bodies is larger than threshold
-      int mid = (begin + end) / 2;                              //  Split range of bodies in half
-      int numLeftNode = getNumBinNode(mid - begin);             //  Number of binary tree nodes on left branch
-      int numRightNode = getNumBinNode(end - mid);              //  Number of binary tree nodes on right branch
-      assert(numLeftNode + numRightNode <= binNode->END - binNode->BEGIN);
-      binNode->LEFT = binNode->BEGIN;                           //  Assign first memory address to left node pointer
-      binNode->LEFT->BEGIN = binNode->LEFT + 1;                 //  Assign next memory address to left begin pointer
-      binNode->LEFT->END = binNode->LEFT + numLeftNode;         //  Keep track of last memory address used by left
-      binNode->RIGHT = binNode->LEFT->END;                      //  Assign that same address to right node pointer
-      binNode->RIGHT->BEGIN = binNode->RIGHT + 1;               //  Assign next memory address to right begin pointer
-      binNode->RIGHT->END = binNode->RIGHT + numRightNode;      //  Keep track of last memory address used by right
-      task_group;                                               //  Initialize tasks
-      create_taskc(countBodies_(bodies, begin, mid, X, binNode->LEFT));// Recursive call for left branch
-      countBodies(bodies, mid, end, X, binNode->RIGHT);         //  Recursive call for right branch
-      wait_tasks;                                               //  Synchronize tasks
-      binNode->NBODY = binNode->LEFT->NBODY + binNode->RIGHT->NBODY;// Sum contribution from both branches
-    }                                                           // End if for number of bodies
-  }
 
   struct moveBodiesCallable {
     const BuildTree * buildtree;
@@ -189,7 +189,8 @@ class BuildTree : public Logger {
       return makeOctNode(begin, end, X, true);                  //  Create an octree node and return it's pointer
     }                                                           // End if for number of bodies
     OctreeNode * octNode = makeOctNode(begin, end, X, false);   // Create an octree node with child nodes
-    countBodies(bodies, begin, end, X, binNode);                // Count bodies in each octant using binary recursion
+    CountBodies countBodies(bodies, begin, end, X, binNode, nspawn);// Initialize recursive functor
+    countBodies();                                              // Count bodies in each octant using binary recursion
     ivec8 octantOffset = exclusiveScan(binNode->NBODY, begin);  // Exclusive scan to obtain offset from octant count
     moveBodies(bodies, buffer, begin, end, binNode, octantOffset, X);// Sort bodies according to octant
     BinaryTreeNode * binNodeOffset = binNode->BEGIN;            // Initialize pointer offset for binary tree nodes
