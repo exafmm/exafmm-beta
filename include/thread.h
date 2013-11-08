@@ -45,9 +45,9 @@ typedef mtbb::task_group task_group_t;
 #endif
 
 #else  /* not _OPENMP, TBB, MTHREAD, QTHREAD, or NANOX */
+#define CXX_LAMBDA 1
 #define task_group
 #define wait_tasks
-#if CXX_LAMBDA
 #define create_task0(E)                E
 #define create_task1(s0, E)            E
 #define create_task2(s0, s1, E)        E
@@ -56,10 +56,6 @@ typedef mtbb::task_group task_group_t;
 #define create_task1_if(x, s0, E)      E
 #define create_task2_if(x, s0, s1, E)  E
 #define create_taskA_if(x, E)          E
-#else
-#define create_taskc(E)                E
-#define create_taskc_if(x, E)          E
-#endif
 #endif
 #endif	/* COMMON_CLIKH */
 

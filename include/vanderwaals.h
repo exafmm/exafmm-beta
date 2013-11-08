@@ -106,7 +106,7 @@ class VanDerWaals : public Logger {
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      //  Loop over target cells
       if (Ci->NCHILD == 0) {
 #if CXX_LAMBDA
-	create_task0(neighbor(Ci,Cj,Cj));   //   Find neighbors of leaf cells
+	create_task0(neighbor(Ci,Cj,Cj));                       //   Find neighbors of leaf cells
 #else
 	create_taskc(neighbor_(Ci,Cj,Cj));
 #endif

@@ -41,10 +41,10 @@ class BoundBox : public Logger {
 #else
       create_taskc(boundsRecursion_(BiBegin, BiMid, bounds));
 #endif
-      Bounds bounds2 = boundsRecursion(BiMid, BiEnd, bounds); //  Recursive call with old task
-      wait_tasks;                                             //  Synchronize tasks
-      bounds.Xmin = min(bounds.Xmin, bounds2.Xmin);           //  Minimum of the two Xmins
-      bounds.Xmax = max(bounds.Xmax, bounds2.Xmax);           //  Maximum of the two Xmaxs
+      Bounds bounds2 = boundsRecursion(BiMid, BiEnd, bounds);   //  Recursive call with old task
+      wait_tasks;                                               //  Synchronize tasks
+      bounds.Xmin = min(bounds.Xmin, bounds2.Xmin);             //  Minimum of the two Xmins
+      bounds.Xmax = max(bounds.Xmax, bounds2.Xmax);             //  Maximum of the two Xmaxs
       return bounds;                                            //  Return Xmin and Xmax
     }                                                           // End if for number fo elements
   }

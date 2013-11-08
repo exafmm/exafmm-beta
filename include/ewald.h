@@ -149,8 +149,8 @@ class Ewald : public Logger {
 	create_taskc(neighbor_(Ci,Cj,Cj));                      //   Find neighbors of leaf cells
       }
 #endif
-    }                                                         //  End loop over target cells
-    wait_tasks;                                               //  Synchronize tasks
+    }                                                           //  End loop over target cells
+    wait_tasks;                                                 //  Synchronize tasks
     stopTimer("Ewald real part");                               // Stop timer
   }
 
