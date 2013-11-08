@@ -99,10 +99,6 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   args->numBodies = nlocal;
   logger->printTitle("FMM Parameters");
   args->print(logger->stringLength, P);
-#if _OPENMP
-#pragma omp parallel
-#pragma omp master
-#endif
   logger->printTitle("FMM Profiling");
   logger->startTimer("Total FMM");
   logger->startPAPI();
@@ -165,10 +161,6 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
   logger->printTitle("Ewald Parameters");
   args->print(logger->stringLength, P);
   ewald->print(logger->stringLength);
-#if _OPENMP
-#pragma omp parallel
-#pragma omp master
-#endif
   logger->printTitle("Ewald Profiling");
   logger->startTimer("Total Ewald");
   logger->startPAPI();
@@ -312,10 +304,6 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   args->numBodies = nlocal;
   logger->printTitle("VdW Parameters");
   args->print(logger->stringLength, P);
-#if _OPENMP
-#pragma omp parallel
-#pragma omp master
-#endif
   logger->printTitle("VdW Profiling");
   logger->startTimer("Total VdW");
   logger->startPAPI();

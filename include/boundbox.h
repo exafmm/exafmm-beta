@@ -8,7 +8,6 @@ class BoundBox : public Logger {
  private:
   int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
 
-#if CXX_LAMBDA == 0
   struct boundsRecursionCallable {
     BoundBox * boundbox;
     B_iter BiBegin; B_iter BiEnd; Bounds & bounds;
@@ -21,7 +20,6 @@ class BoundBox : public Logger {
     boundsRecursion_(B_iter BiBegin_, B_iter BiEnd_, Bounds & bounds_) {
     return boundsRecursionCallable(this, BiBegin_, BiEnd_, bounds_);
   }
-#endif
 
   //! Recursively get Xmin and Xmax of domain
   Bounds boundsRecursion(B_iter BiBegin, B_iter BiEnd, Bounds bounds) {
@@ -35,12 +33,7 @@ class BoundBox : public Logger {
     } else {                                                    // Else if number of elements are large
       B_iter BiMid = BiBegin + (BiEnd - BiBegin) / 2;           //  Middle iterator
       task_group;                                               //  Initialize tasks
-#if CXX_LAMBDA
-      create_task1(bounds, 
-		   bounds = boundsRecursion(BiBegin, BiMid, bounds));// Recursive call with new task
-#else
       create_taskc(boundsRecursion_(BiBegin, BiMid, bounds));
-#endif
       Bounds bounds2 = boundsRecursion(BiMid, BiEnd, bounds);   //  Recursive call with old task
       wait_tasks;                                               //  Synchronize tasks
       bounds.Xmin = min(bounds.Xmin, bounds2.Xmin);             //  Minimum of the two Xmins

@@ -83,7 +83,6 @@ class VanDerWaals : public Logger {
     }
   }
 
-#if CXX_LAMBDA == 0
   struct neighborCallable {
     VanDerWaals * vanderwaals; 
     C_iter Ci; C_iter Cj; C_iter C0;
@@ -96,7 +95,6 @@ class VanDerWaals : public Logger {
     neighbor_(C_iter Ci_, C_iter Cj_, C_iter C0_) {
     return neighborCallable(this, Ci_, Cj_, C0_);
   }
-#endif
 
 //! Evaluate Van Der Waals potential and force
   void evaluate(Cells &cells, Cells &jcells) {
@@ -105,11 +103,7 @@ class VanDerWaals : public Logger {
     task_group;                                                 // Intitialize tasks
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      //  Loop over target cells
       if (Ci->NCHILD == 0) {
-#if CXX_LAMBDA
-	create_task0(neighbor(Ci,Cj,Cj));                       //   Find neighbors of leaf cells
-#else
 	create_taskc(neighbor_(Ci,Cj,Cj));
-#endif
       }                                                         //  End loop over target cells
     }
     wait_tasks;                                                 //  Synchronize tasks

@@ -116,7 +116,6 @@ class Ewald : public Logger {
     }                                                           // End if for far cells
   }
 
-#if CXX_LAMBDA == 0
   struct neighborCallable {
     Ewald * ewald;
     C_iter Ci; C_iter Cj; C_iter C0;
@@ -129,7 +128,6 @@ class Ewald : public Logger {
     neighbor_(C_iter Ci_, C_iter Cj_, C_iter C0_) {
     return neighborCallable(this, Ci_, Cj_, C0_);
   }
-#endif
 
  public:
 //! Constructor
@@ -143,12 +141,8 @@ class Ewald : public Logger {
     task_group;                                                 // Intitialize tasks
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      //  Loop over target cells
       if (Ci->NCHILD == 0) {
-#if CXX_LAMBDA
-	create_task0(neighbor(Ci,Cj,Cj));                       //   Find neighbors of leaf cells
-#else
 	create_taskc(neighbor_(Ci,Cj,Cj));                      //   Find neighbors of leaf cells
       }
-#endif
     }                                                           //  End loop over target cells
     wait_tasks;                                                 //  Synchronize tasks
     stopTimer("Ewald real part");                               // Stop timer

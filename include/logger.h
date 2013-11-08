@@ -125,9 +125,6 @@ class Logger {
   inline void startPAPI() {
 #if PAPI
     PAPI_library_init(PAPI_VER_CURRENT);                        // Initialize PAPI library
-#if _OPENMP
-    PAPI_thread_init(pthread_self);                             // Initialize PAPI thread
-#endif
     char * allEvents = getenv("EXAFMM_PAPI_EVENTS");            // Get all PAPI event strings
     char eventName[256];                                        // PAPI event name
     while (allEvents) {                                         // While event string is not empty

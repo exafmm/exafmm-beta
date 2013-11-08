@@ -10,7 +10,6 @@ class UpDownPass : public Kernel, public Logger {
 
  private:
 
-#if CXX_LAMBDA == 0
   struct setRcritCallable {
     UpDownPass * updownpass;
     C_iter C; C_iter C0; real_t c;
@@ -25,19 +24,13 @@ class UpDownPass : public Kernel, public Logger {
     return setRcritCallable(this, C_, C0_, c_);
   }
 
-#endif
-
 //! Error optimization of Rcrit
   void setRcrit(C_iter C, C_iter C0, real_t c) {
     task_group;                                                 // Initialize tasks
     for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-#if CXX_LAMBDA
-      create_task0(setRcrit(CC, C0, c));                       //  Recursive call with new task
-#else
-      create_taskc(setRcrit_(CC, C0, c));                //  Recursive call with new task
-#endif
-    }                                                         // End loop over child cells
-    wait_tasks;                                               // Synchronize tasks
+      create_taskc(setRcrit_(CC, C0, c));                       //  Recursive call with new task
+    }                                                           // End loop over child cells
+    wait_tasks;                                                 // Synchronize tasks
 #if Cartesian
     for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];             // Normalize multipole expansion coefficients
 #endif
@@ -54,7 +47,6 @@ class UpDownPass : public Kernel, public Logger {
     C->RCRIT *= x;                                              // Multiply Rcrit by error optimized parameter x
   }
 
-#if CXX_LAMBDA == 0
   struct postOrderTraversalCallable {
     UpDownPass * updownpass;
     C_iter C; C_iter C0;
@@ -68,19 +60,13 @@ class UpDownPass : public Kernel, public Logger {
     return postOrderTraversalCallable(this, C_, C0_);
   }
 
-#endif
-
 //! Recursive call for upward pass
   void postOrderTraversal(C_iter C, C_iter C0) {
     task_group;                                                 // Initialize tasks
     for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-#if CXX_LAMBDA
-      create_task0(postOrderTraversal(CC, C0));               //   Recursive call with new task
-#else
-      create_taskc(postOrderTraversal_(CC, C0));               //   Recursive call with new task
-#endif
-    }                                                         //  End loop over child cells
-    wait_tasks;                                               //  Synchronize tasks
+      create_taskc(postOrderTraversal_(CC, C0));                //   Recursive call with new task
+    }                                                           //  End loop over child cells
+    wait_tasks;                                                 //  Synchronize tasks
     C->RMAX = 0;                                                // Initialzie Rmax
     C->M = 0;                                                   // Initialize multipole expansion coefficients
     C->L = 0;                                                   // Initialize local expansion coefficients
@@ -88,7 +74,6 @@ class UpDownPass : public Kernel, public Logger {
     else M2M(C,C0);                                             // M2M kernel
   }
 
-#if CXX_LAMBDA == 0
   struct preOrderTraversalCallable {
     const UpDownPass * updownpass;
     C_iter C; C_iter C0;
@@ -101,7 +86,6 @@ class UpDownPass : public Kernel, public Logger {
     preOrderTraversal_(C_iter C_, C_iter C0_) const {
     return preOrderTraversalCallable(this, C_, C0_);
   }
-#endif
 
 //! Recursive call for downward pass
   void preOrderTraversal(C_iter C, C_iter C0) const {
@@ -109,13 +93,9 @@ class UpDownPass : public Kernel, public Logger {
     if (C->NCHILD==0) L2P(C);                                   // L2P kernel
     task_group;                                                 // Initialize tasks
     for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-#if CXX_LAMBDA
-      create_task0(preOrderTraversal(CC, C0));                  //   Recursive call with new task
-#else
-      create_taskc(preOrderTraversal_(CC, C0));           //   Recursive call with new task
-#endif
-    }                                                         //  End loop over chlid cells
-    wait_tasks;                                               //  Synchronize tasks
+      create_taskc(preOrderTraversal_(CC, C0));                 //   Recursive call with new task
+    }                                                           //  End loop over chlid cells
+    wait_tasks;                                                 //  Synchronize tasks
   }
 
  public:
@@ -146,11 +126,7 @@ class UpDownPass : public Kernel, public Logger {
       if (C0->NCHILD == 0) L2P(C0);                             //  If root is the only cell do L2P
       task_group;                                               //  Initialize tasks
       for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells
-#if CXX_LAMBDA
-	create_task0(preOrderTraversal(CC, C0));                //    Recursive call for downward pass
-#else
-	create_taskc(preOrderTraversal_(CC, C0));         //    Recursive call for downward pass
-#endif
+	create_taskc(preOrderTraversal_(CC, C0));               //    Recursive call for downward pass
       }                                                         //   End loop over child cells
       wait_tasks;                                               //   Synchronize tasks
     }                                                           // End if for empty cell vector

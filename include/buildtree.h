@@ -66,7 +66,6 @@ class BuildTree : public Logger {
     return octNode;                                             // Return node
   }
 
-#if CXX_LAMBDA == 0
   struct countBodiesCallable {
     BuildTree * buildtree;
     Bodies & bodies; int begin; int end; vec3 X; BinaryTreeNode * binNode;
@@ -79,8 +78,6 @@ class BuildTree : public Logger {
     countBodies_(Bodies& bodies_, int begin_, int end_, vec3 X_, BinaryTreeNode * binNode_) {
     return countBodiesCallable(this, bodies_, begin_, end_, X_, binNode_);
   }
-
-#endif
 
 //! Count bodies in each octant using binary tree recursion
   void countBodies(Bodies& bodies, int begin, int end, vec3 X, BinaryTreeNode * binNode) {
@@ -105,18 +102,13 @@ class BuildTree : public Logger {
       binNode->RIGHT->BEGIN = binNode->RIGHT + 1;               //  Assign next memory address to right begin pointer
       binNode->RIGHT->END = binNode->RIGHT + numRightNode;      //  Keep track of last memory address used by right
       task_group;                                               //  Initialize tasks
-#if CXX_LAMBDA
-      create_task1(bodies, countBodies(bodies, begin, mid, X, binNode->LEFT)); //  Spawn new task using Intel TBB or MTHREAD
-#else
-      create_taskc(countBodies_(bodies, begin, mid, X, binNode->LEFT));
-#endif
-      countBodies(bodies, mid, end, X, binNode->RIGHT);       //  Recursive call for right branch
-      wait_tasks;                                             //  Synchronize tasks
+      create_taskc(countBodies_(bodies, begin, mid, X, binNode->LEFT));// Recursive call for left branch
+      countBodies(bodies, mid, end, X, binNode->RIGHT);         //  Recursive call for right branch
+      wait_tasks;                                               //  Synchronize tasks
       binNode->NBODY = binNode->LEFT->NBODY + binNode->RIGHT->NBODY;// Sum contribution from both branches
     }                                                           // End if for number of bodies
   }
 
-#if CXX_LAMBDA == 0
   struct moveBodiesCallable {
     const BuildTree * buildtree;
     Bodies& bodies; Bodies& buffer; int begin; int end;
@@ -139,7 +131,6 @@ class BuildTree : public Logger {
     return moveBodiesCallable(this, bodies_, buffer_, begin_, end_,
 			      binNode_, octantOffset_, X_);
   }
-#endif
 
 //! Sort bodies according to octant (Morton order)
   void moveBodies(Bodies& bodies, Bodies& buffer, int begin, int end,
@@ -154,18 +145,13 @@ class BuildTree : public Logger {
     } else {                                                    // Else if there are child nodes
       int mid = (begin + end) / 2;                              //  Split range of bodies in half
       task_group;                                               //  Initialize tasks
-#if CXX_LAMBDA
-      create_task2(bodies, buffer, moveBodies(bodies, buffer, begin, mid, binNode->LEFT, octantOffset, X));                                          //  Spawn new task using Intel TBB or MTHREAD
-#else
-      create_taskc(moveBodies_(bodies, buffer, begin, mid, binNode->LEFT, octantOffset, X));
-#endif
+      create_taskc(moveBodies_(bodies, buffer, begin, mid, binNode->LEFT, octantOffset, X));// Spawn new task
       octantOffset += binNode->LEFT->NBODY;                     //  Increment the octant offset for right branch
       moveBodies(bodies, buffer, mid, end, binNode->RIGHT, octantOffset, X);// Recursive call for right branch
       wait_tasks;                                               //  Synchronize tasks
     }                                                           // End if for child existance
   }
 
-#if CXX_LAMBDA == 0
   struct buildNodesCallable {
     BuildTree * buildtree; OctreeNode ** child; 
     Bodies& bodies; Bodies& buffer; int begin; int end;
@@ -191,7 +177,6 @@ class BuildTree : public Logger {
     return buildNodesCallable(this, child_, bodies_, buffer_, begin_, end_,
 			      binNode_, X_, R0_, level_, direction_);
   }
-#endif
 
 //! Build nodes of octree adaptively using a top-down approach based on recursion (uses task based thread parallelism)
   OctreeNode * buildNodes(Bodies& bodies, Bodies& buffer, int begin, int end,
@@ -209,43 +194,24 @@ class BuildTree : public Logger {
     moveBodies(bodies, buffer, begin, end, binNode, octantOffset, X);// Sort bodies according to octant
     BinaryTreeNode * binNodeOffset = binNode->BEGIN;            // Initialize pointer offset for binary tree nodes
     task_group;                                                 // Initialize tasks
-#if CXX_LAMBDA
-#else
-    BinaryTreeNode binNodeChild[8];                     //   Allocate new root for this branch
-#endif
-    for (int i=0; i<8; i++) {                                 // Loop over children
-      int maxBinNode = getMaxBinNode(binNode->NBODY[i]);      //  Get maximum number of binary tree nodes
+    BinaryTreeNode binNodeChild[8];                             //   Allocate new root for this branch
+    for (int i=0; i<8; i++) {                                   // Loop over children
+      int maxBinNode = getMaxBinNode(binNode->NBODY[i]);        //  Get maximum number of binary tree nodes
       assert(binNodeOffset + maxBinNode <= binNode->END);
-#if CXX_LAMBDA
-      create_task2(buffer, bodies, {                           //  Spawn new task using Intel TBB or MTHREAD
-	  vec3 Xchild = X;                                    //   Initialize center position of child node
-	  real_t r = R0 / (1 << (level + 1));                 //   Radius of cells for child's level
-	  for (int d=0; d<3; d++) {                           //   Loop over dimensions
-	    Xchild[d] += r * (((i & 1 << d) >> d) * 2 - 1);   //    Shift center position to that of child node
-	  }                                                   //   End loop over dimensions
-	  BinaryTreeNode binNodeChild[1];                     //   Allocate new root for this branch
-	  binNodeChild->BEGIN = binNodeOffset;                //   Assign first memory address from offset
-	  binNodeChild->END = binNodeOffset + maxBinNode;     //   Keep track of last memory address
-	  octNode->CHILD[i] = buildNodes(buffer, bodies,      //   Recursive call for each child
-		 octantOffset[i], octantOffset[i] + binNode->NBODY[i],//   Range of bodies is calcuated from octant offset
-		 binNodeChild, Xchild, R0, level+1, !direction);   //   Alternate copy direction bodies <-> buffer
-	});                                                   //  Close lambda expression
-#else
-      vec3 Xchild = X;                                    //   Initialize center position of child node
-      real_t r = R0 / (1 << (level + 1));                 //   Radius of cells for child's level
-      for (int d=0; d<3; d++) {                           //   Loop over dimensions
-	Xchild[d] += r * (((i & 1 << d) >> d) * 2 - 1);   //    Shift center position to that of child node
-      }                                                   //   End loop over dimensions
-      binNodeChild[i].BEGIN = binNodeOffset;                //   Assign first memory address from offset
-      binNodeChild[i].END = binNodeOffset + maxBinNode;     //   Keep track of last memory address
+      vec3 Xchild = X;                                          //   Initialize center position of child node
+      real_t r = R0 / (1 << (level + 1));                       //   Radius of cells for child's level
+      for (int d=0; d<3; d++) {                                 //   Loop over dimensions
+	Xchild[d] += r * (((i & 1 << d) >> d) * 2 - 1);         //    Shift center position to that of child node
+      }                                                         //   End loop over dimensions
+      binNodeChild[i].BEGIN = binNodeOffset;                    //   Assign first memory address from offset
+      binNodeChild[i].END = binNodeOffset + maxBinNode;         //   Keep track of last memory address
       create_taskc(buildNodes_(&octNode->CHILD[i],
 			       buffer, bodies,
 			       octantOffset[i], octantOffset[i] + binNode->NBODY[i],
 			       &binNodeChild[i], Xchild, R0, level+1, !direction));
-#endif
-      binNodeOffset += maxBinNode;                            //  Increment offset for binNode memory address
-    }                                                         // End loop over children
-    wait_tasks;                                               // Synchronize tasks
+      binNodeOffset += maxBinNode;                              //  Increment offset for binNode memory address
+    }                                                           // End loop over children
+    wait_tasks;                                                 // Synchronize tasks
     for (int i=0; i<8; i++) {                                   // Loop over children
       if (octNode->CHILD[i]) octNode->NNODE += octNode->CHILD[i]->NNODE;// If child exists increment child node counter
     }                                                           // End loop over chlidren
@@ -264,7 +230,6 @@ class BuildTree : public Logger {
     return index;                                               // Return Morton key
   }
 
-#if CXX_LAMBDA == 0
   struct nodes2cellsCallable {
     BuildTree * buildtree; 
     OctreeNode * octNode; C_iter C; C_iter C0; C_iter CN;
@@ -286,8 +251,6 @@ class BuildTree : public Logger {
    return nodes2cellsCallable(this, octNode_, C_, C0_, CN_, 
 			      X0_, R0_, level_, iparent_);
  }
-
-#endif
 
 //! Create cell data structure from nodes
   void nodes2cells(OctreeNode * octNode, C_iter C, C_iter C0, C_iter CN, vec3 X0, real_t R0, int level=0, int iparent=0) {
@@ -320,17 +283,12 @@ class BuildTree : public Logger {
       task_group;                                               //  Initialize tasks
       for (int i=0; i<nchild; i++) {                            //  Loop over children
 	int octant = octants[i];                                //   Get octant from child index
-#if CXX_LAMBDA
-	create_task0_if(octNode->NNODE > 1000,                 //   Spawn task if number of sub-nodes is large
-		       nodes2cells(octNode->CHILD[octant], Ci, C0, CN, X0, R0, level+1, C-C0));// Recursive call for each child
-#else
-	create_taskc_if(octNode->NNODE > 1000,
-			nodes2cells_(octNode->CHILD[octant], Ci, C0, CN, X0, R0, level+1, C-C0));
-#endif
-	Ci++;                                                 //   Increment cell iterator
-	CN += octNode->CHILD[octant]->NNODE - 1;              //   Increment next free memory address
-      }                                                       //  End loop over children
-      wait_tasks;                                             //  Synchronize tasks
+	create_taskc_if(octNode->NNODE > nspawn,                //   Spawn task if number of sub-nodes is large
+			nodes2cells_(octNode->CHILD[octant], Ci, C0, CN, X0, R0, level+1, C-C0));// Recursive call for each child
+	Ci++;                                                   //   Increment cell iterator
+	CN += octNode->CHILD[octant]->NNODE - 1;                //   Increment next free memory address
+      }                                                         //  End loop over children
+      wait_tasks;                                               //  Synchronize tasks
       for (int i=0; i<nchild; i++) {                            //  Loop over children
         int octant = octants[i];                                //   Get octant from child index
         delete octNode->CHILD[octant];                          //   Free child pointer to avoid memory leak

@@ -85,10 +85,6 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
   args->numBodies = n;
   logger->printTitle("FMM Parameters");
   args->print(logger->stringLength, P, LET->mpirank);
-#if _OPENMP
-#pragma omp parallel
-#pragma omp master
-#endif
   logger->printTitle("FMM Profiling");
   logger->startTimer("Total FMM");
   logger->startPAPI();
@@ -143,10 +139,6 @@ extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double 
   logger->printTitle("Ewald Parameters");
   args->print(logger->stringLength, P, LET->mpirank);
   ewald->print(logger->stringLength);
-#if _OPENMP
-#pragma omp parallel
-#pragma omp master
-#endif
   logger->printTitle("Ewald Profiling");
   logger->startTimer("Total Ewald");
   logger->startPAPI();

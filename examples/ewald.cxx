@@ -48,10 +48,6 @@ int main(int argc, char ** argv) {
   logger.printTitle("Ewald Parameters");
   args.print(logger.stringLength, P);
   ewald.print(logger.stringLength);
-#if _OPENMP
-#pragma omp parallel
-#pragma omp master
-#endif
   logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();

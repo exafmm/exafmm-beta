@@ -31,10 +31,6 @@ int main(int argc, char ** argv) {
   }
   logger.printTitle("FMM Parameters");
   args.print(logger.stringLength, P, 0);
-#if _OPENMP
-#pragma omp parallel
-#pragma omp master
-#endif
   for (int t = 0; t < args.repeat; t++) {
     logger.printTitle("FMM Profiling");
     logger.startTimer("Total FMM");
