@@ -18,14 +18,19 @@ typedef mtbb::task_group task_group_t;
 #define PRAGMA_OMP(x)                 _Pragma( #x )
 #define task_group
 #define wait_tasks                    PRAGMA_OMP(omp taskwait)
-#define create_task0(E)               PRAGMA_OMP(omp task) E
-#define create_task1(s0, E)           PRAGMA_OMP(omp task shared(s0)) E
-#define create_task2(s0, s1, E)       PRAGMA_OMP(omp task shared(s0,s1)) E
-#define create_taskA(E)               PRAGMA_OMP(omp task default(shared)) E
-#define create_task0_if(x, E)         PRAGMA_OMP(omp task if (x)) E
-#define create_task1_if(x, s0, E)     PRAGMA_OMP(omp task shared(s0) if (x)) E
-#define create_task2_if(x, s0, s1, E) PRAGMA_OMP(omp task shared(s0,s1) if (x)) E
-#define create_taskA_if(x, E)         PRAGMA_OMP(omp task default(shared) if (x)) E
+#if CXX_LAMBDA
+#define create_task0(E)               PRAGMA_OMP(omp task) E;
+#define create_task1(s0, E)           PRAGMA_OMP(omp task shared(s0)) E;
+#define create_task2(s0, s1, E)       PRAGMA_OMP(omp task shared(s0,s1)) E;
+#define create_taskA(E)               PRAGMA_OMP(omp task default(shared)) E;
+#define create_task0_if(x, E)         PRAGMA_OMP(omp task if (x)) E;
+#define create_task1_if(x, s0, E)     PRAGMA_OMP(omp task shared(s0) if (x)) E;
+#define create_task2_if(x, s0, s1, E) PRAGMA_OMP(omp task shared(s0,s1) if (x)) E;
+#define create_taskA_if(x, E)         PRAGMA_OMP(omp task default(shared) if (x)) E;
+#else
+#define create_taskc(E)               PRAGMA_OMP(omp task) E();
+#define create_taskc_if(x, E)         PRAGMA_OMP(omp task if (x)) E();
+#endif
 
 #elif TBB || MTHREAD || QTHREAD || NANOX
 #define task_group                    task_group_t __tg__
@@ -45,17 +50,21 @@ typedef mtbb::task_group task_group_t;
 #endif
 
 #else  /* not _OPENMP, TBB, MTHREAD, QTHREAD, or NANOX */
-#define CXX_LAMBDA 1
 #define task_group
 #define wait_tasks
-#define create_task0(E)                E
-#define create_task1(s0, E)            E
-#define create_task2(s0, s1, E)        E
-#define create_taskA(E)                E
-#define create_task0_if(x, E)          E
-#define create_task1_if(x, s0, E)      E
-#define create_task2_if(x, s0, s1, E)  E
-#define create_taskA_if(x, E)          E
+#if CXX_LAMBDA
+#define create_task0(E)                E;
+#define create_task1(s0, E)            E;
+#define create_task2(s0, s1, E)        E;
+#define create_taskA(E)                E;
+#define create_task0_if(x, E)          E;
+#define create_task1_if(x, s0, E)      E;
+#define create_task2_if(x, s0, s1, E)  E;
+#define create_taskA_if(x, E)          E;
+#else
+#define create_taskc(E)                E();
+#define create_taskc_if(x, E)          E();
+#endif
 #endif
 #endif	/* COMMON_CLIKH */
 
