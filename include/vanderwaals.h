@@ -55,18 +55,29 @@ class VanDerWaals : public Logger {
   }
 
   //! Traverse tree to find neighbors
-  void neighbor(C_iter Ci, C_iter Cj, C_iter C0) const {
-    vec3 dX = Ci->X - Cj->X;                                    // Distance vector from source to target
-    wrap(dX, cycle);                                            // Wrap around periodic domain
-    vec3 Xperiodic = Ci->X - Cj->X - dX;                        // Coordinate offset for periodic B.C.
-    real_t R = std::sqrt(norm(dX));                             // Scalar distance
-    if (R < 3 * cutoff) {                                       // If cells are close
-      if(Cj->NCHILD == 0) P2P(Ci,Cj,Xperiodic);                 //  Ewald real part
-      for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
-        neighbor(Ci,CC,C0);                                     //   Recursively call neighbor
-      }                                                         //  End loop over cell's children
-    }                                                           // End if for far cells
-  }
+  struct Neighbor {
+    VanDerWaals * VdW;                                          // VanDerWaals object
+    C_iter Ci;                                                  // Iterator of current target cell
+    C_iter Cj;                                                  // Iterator of current source cell
+    C_iter C0;                                                  // Iterator of first source cell
+    Neighbor(VanDerWaals * _VdW, C_iter _Ci, C_iter _Cj, C_iter _C0) :// Constructor
+      VdW(_VdW), Ci(_Ci), Cj(_Cj), C0(_C0) {}                   // Initialize variables
+    void operator() () {                                        // Overload operator()
+      vec3 dX = Ci->X - Cj->X;                                  //  Distance vector from source to target
+      wrap(dX, VdW->cycle);                                     //  Wrap around periodic domain
+      vec3 Xperiodic = Ci->X - Cj->X - dX;                      //  Coordinate offset for periodic B.C.
+      real_t R = std::sqrt(norm(dX));                           //  Scalar distance
+      if (R < 3 * VdW->cutoff) {                                //  If cells are close
+        if(Cj->NCHILD == 0) VdW->P2P(Ci,Cj,Xperiodic);          //   Van der Waals kernel
+        task_group;                                             //   Intitialize tasks
+        for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
+          Neighbor neighbor(VdW, Ci, CC, C0);                   //    Initialize recursive functor
+          create_taskc(neighbor);                               //    Create task for recursive call
+        }                                                       //   End loop over cell's children
+        wait_tasks;                                             //   Synchronize tasks
+      }                                                         //  End if for far cells
+    }                                                           // End overload operator()
+  };
 
  public:
 //! Constructor
@@ -83,30 +94,16 @@ class VanDerWaals : public Logger {
     }
   }
 
-  struct neighborCallable {
-    VanDerWaals * vanderwaals; 
-    C_iter Ci; C_iter Cj; C_iter C0;
-  neighborCallable(VanDerWaals * vanderwaals_, C_iter Ci_, C_iter Cj_, C_iter C0_) :
-    vanderwaals(vanderwaals_), Ci(Ci_), Cj(Cj_), C0(C0_) {}
-    void operator() () { vanderwaals->neighbor(Ci, Cj, C0); }
-  };
-
-  neighborCallable 
-    neighbor_(C_iter Ci_, C_iter Cj_, C_iter C0_) {
-    return neighborCallable(this, Ci_, Cj_, C0_);
-  }
-
 //! Evaluate Van Der Waals potential and force
   void evaluate(Cells &cells, Cells &jcells) {
     startTimer("Van der Waals");                                // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
-    task_group;                                                 // Intitialize tasks
-    for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      //  Loop over target cells
-      if (Ci->NCHILD == 0) {
-	create_taskc(neighbor_(Ci,Cj,Cj));
-      }                                                         //  End loop over target cells
-    }
-    wait_tasks;                                                 //  Synchronize tasks
+    for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
+      if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
+	Neighbor neighbor(this, Ci, Cj, Cj);                    //   Initialize recursive functor
+	neighbor();                                             //   Find neighbors recursively
+      }                                                         //  End if for leaf target cell
+    }                                                           // End loop over target cells
     stopTimer("Van der Waals");                                 // Stop timer
   }
 

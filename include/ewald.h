@@ -4,7 +4,7 @@
 #include "types.h"
 
 class Ewald : public Logger {
-//! Wave structure for Ewald summation
+  //! Wave structure for Ewald summation
   struct Wave {
     vec3   K;                                                   //!< 3-D wave number vector
     real_t REAL;                                                //!< real part of wave
@@ -13,15 +13,15 @@ class Ewald : public Logger {
   typedef std::vector<Wave> Waves;                              //!< Vector of Wave types
   typedef Waves::iterator   W_iter;                             //!< Iterator for Wave types
 
- private:
+private:
   int ksize;                                                    //!< Number of waves in Ewald summation
   real_t alpha;                                                 //!< Scaling parameter for Ewald summation
   real_t sigma;                                                 //!< Scaling parameter for Ewald summation
   real_t cutoff;                                                //!< Cutoff distance
   real_t cycle;                                                 //!< Periodic cycle
 
- private:
-//! Forward DFT
+private:
+  //! Forward DFT
   void dft(Waves & waves, Bodies & bodies) const {
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
     for (W_iter W=waves.begin(); W!=waves.end(); W++) {         // Loop over waves
@@ -35,7 +35,7 @@ class Ewald : public Logger {
     }                                                           // End loop over waves
   }
 
-//! Inverse DFT
+  //! Inverse DFT
   void idft(Waves & waves, Bodies & bodies) const {
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
@@ -52,7 +52,7 @@ class Ewald : public Logger {
     }                                                           // End loop over bodies
   }
 
-//! Initialize wave vector
+  //! Initialize wave vector
   Waves initWaves() const {
     Waves waves;                                                // Initialzie wave vector
     int kmaxsq = ksize * ksize;                                 // kmax squared
@@ -79,7 +79,7 @@ class Ewald : public Logger {
     return waves;                                               // Return wave vector
   }
 
-//! Ewald real part P2P kernel
+  //! Ewald real part P2P kernel
   void P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic) const {
     for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {    // Loop over target bodies
       for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) {  //  Loop over source bodies
@@ -102,90 +102,87 @@ class Ewald : public Logger {
     }                                                           // End loop over target bodies
   }
 
-//! Traverse tree to find neighbors
-  void neighbor(C_iter Ci, C_iter Cj, C_iter C0) const {
-    vec3 dX = Ci->X - Cj->X;                                    // Distance vector from source to target
-    wrap(dX, cycle);                                            // Wrap around periodic domain
-    vec3 Xperiodic = Ci->X - Cj->X - dX;                        // Coordinate offset for periodic B.C.
-    real_t R = std::sqrt(norm(dX));                             // Scalar distance
-    if (R < 3 * cutoff) {                                       // If cells are close
-      if(Cj->NCHILD == 0) P2P(Ci,Cj,Xperiodic);                 //  Ewald real part
-      for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
-        neighbor(Ci,CC,C0);                                     //   Recursively call neighbor
-      }                                                         //  End loop over cell's children
-    }                                                           // End if for far cells
-  }
-
-  struct neighborCallable {
-    Ewald * ewald;
-    C_iter Ci; C_iter Cj; C_iter C0;
-  neighborCallable(Ewald * ewald_, C_iter Ci_, C_iter Cj_, C_iter C0_) : 
-    ewald(ewald_), Ci(Ci_), Cj(Cj_), C0(C0_) {}
-    void operator() () { ewald->neighbor(Ci, Cj, C0); }
+  //! Traverse tree to find neighbors
+  struct Neighbor {
+    Ewald * ewald;                                              // Ewald object
+    C_iter Ci;                                                  // Iterator of current target cell
+    C_iter Cj;                                                  // Iterator of current source cell
+    C_iter C0;                                                  // Iterator of first source cell
+    Neighbor(Ewald * _ewald, C_iter _Ci, C_iter _Cj, C_iter _C0) :// Constructor
+      ewald(_ewald), Ci(_Ci), Cj(_Cj), C0(_C0) {}               // Initialize variables
+    void operator() () {                                        // Overload operator()
+      vec3 dX = Ci->X - Cj->X;                                  //  Distance vector from source to target
+      wrap(dX, ewald->cycle);                                   //  Wrap around periodic domain
+      vec3 Xperiodic = Ci->X - Cj->X - dX;                      //  Coordinate offset for periodic B.C.
+      real_t R = std::sqrt(norm(dX));                           //  Scalar distance
+      if (R < 3 * ewald->cutoff) {                              //  If cells are close
+	if(Cj->NCHILD == 0) ewald->P2P(Ci,Cj,Xperiodic);        //   Ewald real part
+        task_group;                                             //   Intitialize tasks
+	for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
+          Neighbor neighbor(ewald, Ci, CC, C0);                 //    Initialize recursive functor
+	  create_taskc(neighbor);                               //    Create task for recursive call
+	}                                                       //   End loop over cell's children
+        wait_tasks;                                             //   Synchronize tasks
+      }                                                         //  End if for far cells
+    }                                                           // End overload operator()
   };
 
-  neighborCallable
-    neighbor_(C_iter Ci_, C_iter Cj_, C_iter C0_) {
-    return neighborCallable(this, Ci_, Cj_, C0_);
-  }
+  public:
+    //! Constructor
+    Ewald(int _ksize, real_t _alpha, real_t _sigma, real_t _cutoff, real_t _cycle) :
+      ksize(_ksize), alpha(_alpha), sigma(_sigma), cutoff(_cutoff), cycle(_cycle) {}
 
- public:
-//! Constructor
- Ewald(int _ksize, real_t _alpha, real_t _sigma, real_t _cutoff, real_t _cycle) :
-  ksize(_ksize), alpha(_alpha), sigma(_sigma), cutoff(_cutoff), cycle(_cycle) {}
-
-//! Ewald real part
-  void realPart(Cells & cells, Cells & jcells) {
-    startTimer("Ewald real part");                              // Start timer
-    C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
-    task_group;                                                 // Intitialize tasks
-    for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      //  Loop over target cells
-      if (Ci->NCHILD == 0) {
-	create_taskc(neighbor_(Ci,Cj,Cj));                      //   Find neighbors of leaf cells
-      }
-    }                                                           //  End loop over target cells
-    wait_tasks;                                                 //  Synchronize tasks
-    stopTimer("Ewald real part");                               // Stop timer
-  }
-
-//! Subtract self term
-  void selfTerm(Bodies & bodies) {
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over all bodies
-      B->TRG[0] -= M_2_SQRTPI * B->SRC * alpha;                 //   Self term of Ewald real part
-    }                                                           //  End loop over all bodies in cell
-  }
-
-//! Ewald wave part
-  void wavePart(Bodies & bodies, Bodies & jbodies) {
-    startTimer("Ewald wave part");                              // Start timer
-    Waves waves = initWaves();                                  // Initialize wave vector
-    dft(waves,jbodies);                                         // Apply DFT to bodies to get waves
-    real_t scale = 2 * M_PI / cycle;                            // Scale conversion
-    real_t coef = .5 / M_PI / M_PI / sigma / cycle;             // First constant
-    real_t coef2 = scale * scale / (4 * alpha * alpha);         // Second constant
-    for (W_iter W=waves.begin(); W!=waves.end(); W++) {         // Loop over waves
-      real_t K2 = norm(W->K);                                   //  Wave number squared
-      real_t factor = coef * exp(-K2 * coef2) / K2;             //  Wave factor
-      W->REAL *= factor;                                        //  Apply wave factor to real part
-      W->IMAG *= factor;                                        //  Apply wave factor to imaginary part
-    }                                                           // End loop over waves
-    idft(waves,bodies);                                         // Inverse DFT
-    stopTimer("Ewald wave part");                               // Stop timer
-  }
-
-  void print(int stringLength) {
-    if (verbose) {
-      std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
-                << "ksize" << " : " << ksize << std::endl       // Print ksize
-                << std::setw(stringLength)                      // Set format
-                << "alpha" << " : " << alpha << std::endl       // Print alpha
-                << std::setw(stringLength)                      // Set format
-                << "sigma" << " : " << sigma << std::endl       // Print sigma
-                << std::setw(stringLength)                      // Set format
-                << "cutoff" << " : " << cutoff << std::endl     // Print cutoff
-                << std::setw(stringLength)                      // Set format
-                << "cycle" << " : " << cycle << std::endl;      // Print cycle
+    //! Ewald real part
+    void realPart(Cells & cells, Cells & jcells) {
+      startTimer("Ewald real part");                              // Start timer
+      C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
+      for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
+	if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
+	  Neighbor neighbor(this, Ci, Cj, Cj);                    //   Initialize recursive functor
+	  neighbor();                                             //   Find neighbors recursively
+	}                                                         //  End if for leaf target cell
+      }                                                           // End loop over target cells
+      stopTimer("Ewald real part");                               // Stop timer
     }
-  }
-};
+
+    //! Subtract self term
+    void selfTerm(Bodies & bodies) {
+      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over all bodies
+	B->TRG[0] -= M_2_SQRTPI * B->SRC * alpha;                 //   Self term of Ewald real part
+      }                                                           //  End loop over all bodies in cell
+    }
+
+    //! Ewald wave part
+    void wavePart(Bodies & bodies, Bodies & jbodies) {
+      startTimer("Ewald wave part");                              // Start timer
+      Waves waves = initWaves();                                  // Initialize wave vector
+      dft(waves,jbodies);                                         // Apply DFT to bodies to get waves
+      real_t scale = 2 * M_PI / cycle;                            // Scale conversion
+      real_t coef = .5 / M_PI / M_PI / sigma / cycle;             // First constant
+      real_t coef2 = scale * scale / (4 * alpha * alpha);         // Second constant
+      for (W_iter W=waves.begin(); W!=waves.end(); W++) {         // Loop over waves
+	real_t K2 = norm(W->K);                                   //  Wave number squared
+	real_t factor = coef * exp(-K2 * coef2) / K2;             //  Wave factor
+	W->REAL *= factor;                                        //  Apply wave factor to real part
+	W->IMAG *= factor;                                        //  Apply wave factor to imaginary part
+      }                                                           // End loop over waves
+      idft(waves,bodies);                                         // Inverse DFT
+      stopTimer("Ewald wave part");                               // Stop timer
+    }
+
+    void print(int stringLength) {
+      if (verbose) {
+	std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
+		  << "ksize" << " : " << ksize << std::endl       // Print ksize
+		  << std::setw(stringLength)                      // Set format
+		  << "alpha" << " : " << alpha << std::endl       // Print alpha
+		  << std::setw(stringLength)                      // Set format
+		  << "sigma" << " : " << sigma << std::endl       // Print sigma
+		  << std::setw(stringLength)                      // Set format
+		  << "cutoff" << " : " << cutoff << std::endl     // Print cutoff
+		  << std::setw(stringLength)                      // Set format
+		  << "cycle" << " : " << cycle << std::endl;      // Print cycle
+      }
+    }
+  };
 #endif
