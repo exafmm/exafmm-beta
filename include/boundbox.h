@@ -28,7 +28,7 @@ class BoundBox : public Logger {
 	Bounds bounds2 = bounds;                                //   Copy bounds
 	task_group;                                             //   Initialize tasks
         BoundsRecursion leftBranch(BiBegin, BiMid, bounds, nspawn);// Recursion for left branch
-	create_taskc(leftBranch);                               //   Create new task for left branch
+	create_task(leftBranch);                                //   Create new task for left branch
         BoundsRecursion rightBranch(BiMid, BiEnd, bounds2, nspawn);// Recursion for right branch
 	rightBranch();                                          //   Use same task for right branch
 	wait_tasks;                                             //   Synchronize tasks
@@ -49,7 +49,7 @@ class BoundBox : public Logger {
       bounds.Xmin = bounds.Xmax = 0;                            //  Set bounds to 0
     } else {                                                    // If body vector is not empty
       bounds.Xmin = bounds.Xmax = bodies.front().X;             //  Initialize Xmin, Xmax
-      BoundsRecursion boundsRecursion(bodies.begin(),bodies.end(),bounds,nspawn);// Initialize recursive functor
+      BoundsRecursion boundsRecursion(bodies.begin(),bodies.end(),bounds,nspawn);// Instantiate recursive functor
       boundsRecursion();                                        // Recursive call for bounds calculation
     }                                                           // End if for empty body vector
     stopTimer("Get bounds");                                    // Stop timer
@@ -59,7 +59,7 @@ class BoundBox : public Logger {
   //! Update Xmin and Xmax of domain
   Bounds getBounds(Bodies bodies, Bounds bounds) {
     startTimer("Get bounds");                                   // Start timer
-    BoundsRecursion boundsRecursion(bodies.begin(),bodies.end(),bounds,nspawn);// Initialize recursive functor
+    BoundsRecursion boundsRecursion(bodies.begin(),bodies.end(),bounds,nspawn);// Instantiate recursive functor
     boundsRecursion();                                          // Recursive call for bounds calculation
     stopTimer("Get bounds");                                    // Stop timer
     return bounds;                                              // Return Xmin and Xmax

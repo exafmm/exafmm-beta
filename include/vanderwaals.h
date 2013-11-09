@@ -54,7 +54,7 @@ class VanDerWaals : public Logger {
     }
   }
 
-  //! Traverse tree to find neighbors
+  //! Recursive functor for traversing tree to find neighbors
   struct Neighbor {
     VanDerWaals * VdW;                                          // VanDerWaals object
     C_iter Ci;                                                  // Iterator of current target cell
@@ -71,8 +71,8 @@ class VanDerWaals : public Logger {
         if(Cj->NCHILD == 0) VdW->P2P(Ci,Cj,Xperiodic);          //   Van der Waals kernel
         task_group;                                             //   Intitialize tasks
         for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
-          Neighbor neighbor(VdW, Ci, CC, C0);                   //    Initialize recursive functor
-          create_taskc(neighbor);                               //    Create task for recursive call
+          Neighbor neighbor(VdW, Ci, CC, C0);                   //    Instantiate recursive functor
+          create_task(neighbor);                                //    Create task for recursive call
         }                                                       //   End loop over cell's children
         wait_tasks;                                             //   Synchronize tasks
       }                                                         //  End if for far cells
@@ -100,7 +100,7 @@ class VanDerWaals : public Logger {
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
-	Neighbor neighbor(this, Ci, Cj, Cj);                    //   Initialize recursive functor
+	Neighbor neighbor(this, Ci, Cj, Cj);                    //   Instantiate recursive functor
 	neighbor();                                             //   Find neighbors recursively
       }                                                         //  End if for leaf target cell
     }                                                           // End loop over target cells

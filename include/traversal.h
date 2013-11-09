@@ -43,7 +43,7 @@ class Traversal : public Kernel, public Logger {
     }                                                           // End if for multipole acceptance
   }
 
-//! Dual tree traversal for a range of Ci and Cj
+//! Recursive functor for dual tree traversal of a range of Ci and Cj
   struct TraverseRange {
     Traversal * traversal;                                      // Traversal object
     C_iter CiBegin;                                             // Begin iterator for target cells
@@ -75,18 +75,18 @@ class Traversal : public Kernel, public Logger {
 	/* FIXME: Here we need to have two task_group statements for the DAG recorder to work */
 	{
 	  task_group;                                           //   Initialize task group
-	  TraverseRange leftBranch(traversal, CiBegin, CiMid, CjBegin, CjMid, mutual);// Initialize recursive functor
-	  create_taskc(leftBranch);                             //    Ci:former Cj:former
-	  TraverseRange rightBranch(traversal, CiMid, CiEnd, CjMid, CjEnd, mutual);// Initialize recursive functor
+	  TraverseRange leftBranch(traversal, CiBegin, CiMid, CjBegin, CjMid, mutual);// Instantiate recursive functor
+	  create_task(leftBranch);                              //    Ci:former Cj:former
+	  TraverseRange rightBranch(traversal, CiMid, CiEnd, CjMid, CjEnd, mutual);// Instantiate recursive functor
 	  rightBranch();                                        //    Ci:latter Cj:latter
 	  wait_tasks;                                           //    Synchronize task group
 	}
 	{
 	  task_group;                                           //   Initialize task group
-	  TraverseRange leftBranch(traversal, CiBegin, CiMid, CjMid, CjEnd, mutual);// Initialize recursive functor
-	  create_taskc(leftBranch);                             //    Ci:former Cj:latter
+	  TraverseRange leftBranch(traversal, CiBegin, CiMid, CjMid, CjEnd, mutual);// Instantiate recursive functor
+	  create_task(leftBranch);                              //    Ci:former Cj:latter
 	  if (!mutual || CiBegin != CjBegin) {                  //    Exclude mutual & self interaction
-            TraverseRange rightBranch(traversal, CiMid, CiEnd, CjBegin, CjMid, mutual);// Initialize recursive functor
+            TraverseRange rightBranch(traversal, CiMid, CiEnd, CjBegin, CjMid, mutual);// Instantiate recursive functor
 	    rightBranch();                                      //    Ci:latter Cj:former
 	  } else {                                              //    If mutual or self interaction
 	    assert(CiEnd == CjEnd);                             //     Check if mutual & self interaction
@@ -173,7 +173,7 @@ class Traversal : public Kernel, public Logger {
         traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
       }                                                         //  End loop over Cj's children
     } else if (Ci->NBODY + Cj->NBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
-      TraverseRange traverseRange(this, Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,// Initialize recursive functor
+      TraverseRange traverseRange(this, Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,// Instantiate recursive functor
                Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, mutual);
       traverseRange();                                          //  Traverse for range of cell pairs
     } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj

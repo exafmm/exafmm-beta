@@ -72,7 +72,7 @@ class BuildTree : public Logger {
 	binNode->RIGHT->END = binNode->RIGHT + numRightNode;    //   Keep track of last memory address used by right
 	task_group;                                             //   Initialize tasks
         CountBodies leftBranch(bodies, begin, mid, X, binNode->LEFT, nspawn);// Recursion for left branch
-	create_taskc(leftBranch);                               //   Create new task for left branch
+	create_task(leftBranch);                                //   Create new task for left branch
 	CountBodies rightBranch(bodies, mid, end, X, binNode->RIGHT, nspawn);// Recursion for right branch
 	rightBranch();                                          //   Use same task for right branch
 	wait_tasks;                                             //   Synchronize tasks
@@ -106,7 +106,7 @@ class BuildTree : public Logger {
 	int mid = (begin + end) / 2;                            //   Split range of bodies in half
 	task_group;                                             //   Initialize tasks
 	MoveBodies leftBranch(bodies, buffer, begin, mid, binNode->LEFT, octantOffset, X);// Recursion for left branch
-	create_taskc(leftBranch);                               //   Create new task for left branch
+	create_task(leftBranch);                                //   Create new task for left branch
 	octantOffset += binNode->LEFT->NBODY;                   //   Increment the octant offset for right branch
 	MoveBodies rightBranch(bodies, buffer, mid, end, binNode->RIGHT, octantOffset, X);// Recursion for right branch
 	rightBranch();                                          //   Use same task for right branch
@@ -173,10 +173,10 @@ class BuildTree : public Logger {
 	return;                                                 //   End buildNodes()
       }                                                         //  End if for number of bodies
       octNode = makeOctNode(begin, end, X, false);              //  Create an octree node with child nodes
-      CountBodies countBodies(bodies, begin, end, X, binNode, nspawn);// Initialize recursive functor
+      CountBodies countBodies(bodies, begin, end, X, binNode, nspawn);// Instantiate recursive functor
       countBodies();                                            //  Count bodies in each octant using binary recursion
       ivec8 octantOffset = exclusiveScan(binNode->NBODY, begin);//  Exclusive scan to obtain offset from octant count
-      MoveBodies moveBodies(bodies, buffer, begin, end, binNode, octantOffset, X);// Initialize recursive functor
+      MoveBodies moveBodies(bodies, buffer, begin, end, binNode, octantOffset, X);// Instantiate recursive functor
       moveBodies();                                             //  Sort bodies according to octant
       BinaryTreeNode * binNodeOffset = binNode->BEGIN;          //  Initialize pointer offset for binary tree nodes
       task_group;                                               //  Initialize tasks
@@ -191,10 +191,10 @@ class BuildTree : public Logger {
 	}                                                       //    End loop over dimensions
 	binNodeChild[i].BEGIN = binNodeOffset;                  //    Assign first memory address from offset
 	binNodeChild[i].END = binNodeOffset + maxBinNode;       //    Keep track of last memory address
-	BuildNodes buildNodes(octNode->CHILD[i], buffer, bodies,//    Initialize recursive functor
+	BuildNodes buildNodes(octNode->CHILD[i], buffer, bodies,//    Instantiate recursive functor
 			      octantOffset[i], octantOffset[i] + binNode->NBODY[i],
 			      &binNodeChild[i], Xchild, R0, ncrit, nspawn, level+1, !direction);
-	create_taskc(buildNodes);                               //    Create new task for recursive call
+	create_task(buildNodes);                                //    Create new task for recursive call
 	binNodeOffset += maxBinNode;                            //   Increment offset for binNode memory address
       }                                                         //  End loop over children
       wait_tasks;                                               //  Synchronize tasks
@@ -204,7 +204,7 @@ class BuildTree : public Logger {
     }                                                           // End overload operator()
   };
 
-//! Create cell data structure from nodes
+//! Recursive functor for creating cell data structure from nodes
   struct Nodes2cells {
     OctreeNode * octNode;                                       // Pointer to octree node
     B_iter B0;                                                  // Iterator of first body
@@ -263,10 +263,10 @@ class BuildTree : public Logger {
 	task_group;                                             //   Initialize tasks
 	for (int i=0; i<nchild; i++) {                          //   Loop over children
 	  int octant = octants[i];                              //    Get octant from child index
-          Nodes2cells nodes2cells(octNode->CHILD[octant],       //    Initialize recursive functor
+          Nodes2cells nodes2cells(octNode->CHILD[octant],       //    Instantiate recursive functor
 				  B0, Ci, C0, CN, X0, R0, nspawn, maxlevel, level+1, C-C0);
-	  create_taskc_if(octNode->NNODE > nspawn,              //    Spawn task if number of sub-nodes is large
-			  nodes2cells);                         //    Recursive call for each child
+	  create_task_if(octNode->NNODE > nspawn,               //    Spawn task if number of sub-nodes is large
+			 nodes2cells);                          //    Recursive call for each child
 	  Ci++;                                                 //    Increment cell iterator
 	  CN += octNode->CHILD[octant]->NNODE - 1;              //    Increment next free memory address
 	}                                                       //   End loop over children
@@ -306,7 +306,7 @@ class BuildTree : public Logger {
     binNode->BEGIN = new BinaryTreeNode[maxBinNode];            // Allocate array for binary tree nodes
     binNode->END = binNode->BEGIN + maxBinNode;                 // Set end pointer
     BuildNodes buildNodes(N0, bodies, buffer, 0, bodies.size(),
-			  binNode, X0, R0, ncrit, nspawn);      // Initialize recursive functor
+			  binNode, X0, R0, ncrit, nspawn);      // Instantiate recursive functor
     buildNodes();                                               // Recursively build octree nodes
     delete[] binNode->BEGIN;                                    // Deallocate binary tree array
     stopTimer("Grow tree");                                     // Stop timer
@@ -319,7 +319,7 @@ class BuildTree : public Logger {
     if (N0 != NULL) {                                           // If the node tree is not empty
       cells.resize(N0->NNODE);                                  //  Allocate cells array
       C_iter C0 = cells.begin();                                //  Cell begin iterator
-      Nodes2cells nodes2cells(N0, B0, C0, C0, C0+1, X0, R0, nspawn, maxlevel);// Initialize recursive functor       
+      Nodes2cells nodes2cells(N0, B0, C0, C0, C0+1, X0, R0, nspawn, maxlevel);// Instantiate recursive functor       
       nodes2cells();                                            //  Convert nodes to cells recursively
       delete N0;                                                //  Deallocate nodes
     }                                                           // End if for empty node tree

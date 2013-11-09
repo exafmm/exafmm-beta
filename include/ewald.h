@@ -102,7 +102,7 @@ private:
     }                                                           // End loop over target bodies
   }
 
-  //! Traverse tree to find neighbors
+  //! Recursive functor for traversing tree to find neighbors
   struct Neighbor {
     Ewald * ewald;                                              // Ewald object
     C_iter Ci;                                                  // Iterator of current target cell
@@ -119,8 +119,8 @@ private:
 	if(Cj->NCHILD == 0) ewald->P2P(Ci,Cj,Xperiodic);        //   Ewald real part
         task_group;                                             //   Intitialize tasks
 	for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
-          Neighbor neighbor(ewald, Ci, CC, C0);                 //    Initialize recursive functor
-	  create_taskc(neighbor);                               //    Create task for recursive call
+          Neighbor neighbor(ewald, Ci, CC, C0);                 //    Instantiate recursive functor
+	  create_task(neighbor);                                //    Create task for recursive call
 	}                                                       //   End loop over cell's children
         wait_tasks;                                             //   Synchronize tasks
       }                                                         //  End if for far cells
@@ -138,7 +138,7 @@ private:
       C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
       for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
 	if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
-	  Neighbor neighbor(this, Ci, Cj, Cj);                    //   Initialize recursive functor
+	  Neighbor neighbor(this, Ci, Cj, Cj);                    //   Instantiate recursive functor
 	  neighbor();                                             //   Find neighbors recursively
 	}                                                         //  End if for leaf target cell
       }                                                           // End loop over target cells

@@ -21,7 +21,7 @@ private:
       task_group;                                               //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	SetRcrit setRcrit(CC, C0, c, theta);                    //   Initialize recusive functor
-	create_taskc(setRcrit);                                 //   Create new task for recursive call
+	create_task(setRcrit);                                  //   Create new task for recursive call
       }                                                         //  End loop over child cells
       wait_tasks;                                               //  Synchronize tasks
 #if Cartesian
@@ -41,7 +41,7 @@ private:
     }                                                           // End overload operator()
   };
 
-  //! Recursive call for upward pass
+  //! Recursive functor for the post-order traversal during upward pass
   struct PostOrderTraversal : public Kernel {
     C_iter C;                                                   // Iterator of current cell
     C_iter C0;                                                  // Iterator of first cell
@@ -50,8 +50,8 @@ private:
     void operator() () {                                        // Overload operator()
       task_group;                                               //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-	PostOrderTraversal postOrderTraversal(CC, C0);          //    Initialize recursive functor
-	create_taskc(postOrderTraversal);                       //    Create new task for recursive call
+	PostOrderTraversal postOrderTraversal(CC, C0);          //    Instantiate recursive functor
+	create_task(postOrderTraversal);                        //    Create new task for recursive call
       }                                                         //   End loop over child cells
       wait_tasks;                                               //   Synchronize tasks
       C->RMAX = 0;                                              //  Initialzie Rmax
@@ -62,7 +62,7 @@ private:
     }                                                           // End overload operator()
   };
 
-  //! Recursive call for downward pass
+  //! Recursive functor for the pre-order traversal during downward pass
   struct PreOrderTraversal : public Kernel {
     C_iter C;                                                   // Iterator of current cell
     C_iter C0;                                                  // Iterator of first cell
@@ -73,8 +73,8 @@ private:
       if (C->NCHILD==0) L2P(C);                                 //  L2P kernel
       task_group;                                               //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-	PreOrderTraversal preOrderTraversal(CC, C0);            //   Initialize recursive functor
-	create_taskc(preOrderTraversal);                        //   Create new task for recursive call
+	PreOrderTraversal preOrderTraversal(CC, C0);            //   Instantiate recursive functor
+	create_task(preOrderTraversal);                         //   Create new task for recursive call
       }                                                         //  End loop over chlid cells
       wait_tasks;                                               //  Synchronize tasks
     }                                                           // End overload operator()
@@ -88,10 +88,10 @@ public:
     startTimer("Upward pass");                                  // Start timer
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Set iterator of target root cell
-      PostOrderTraversal postOrderTraversal(C0, C0);            //  Initialize recursive functor
+      PostOrderTraversal postOrderTraversal(C0, C0);            //  Instantiate recursive functor
       postOrderTraversal();                                     //  Recursive call for upward pass
       real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
-      SetRcrit setRcrit(C0, C0, c, theta);                      //  Initialize recursive functor
+      SetRcrit setRcrit(C0, C0, c, theta);                      //  Instantiate recursive functor
       setRcrit();                                               //  Error optimization of Rcrit
       if( cells.size() > 9 ) {                                  //  If tree has more than 2 levels
         for (C_iter C=C0; C!=C0+9; C++) {                       //   Loop over top 2 levels of cells
@@ -110,8 +110,8 @@ public:
       if (C0->NCHILD == 0) L2P(C0);                             //  If root is the only cell do L2P
       task_group;                                               //  Initialize tasks
       for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells
-	PreOrderTraversal preOrderTraversal(CC, C0);            //    Initialize recursive functor
-	create_taskc(preOrderTraversal);                        //    Recursive call for downward pass
+	PreOrderTraversal preOrderTraversal(CC, C0);            //    Instantiate recursive functor
+	create_task(preOrderTraversal);                         //    Recursive call for downward pass
       }                                                         //   End loop over child cells
       wait_tasks;                                               //   Synchronize tasks
     }                                                           // End if for empty cell vector
