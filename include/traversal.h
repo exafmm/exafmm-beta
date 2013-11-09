@@ -16,8 +16,8 @@ class Traversal : public Kernel, public Logger {
   int images;                                                   //!< Number of periodic image sublevels
   real_t numP2P;                                                //!< Number of P2P kernel calls
   real_t numM2L;                                                //!< Number of M2L kernel calls
-  C_iter Ci0;                                                   //!< Begin iterator for target cells
-  C_iter Cj0;                                                   //!< Begin iterator for source cells
+  C_iter Ci0;                                                   //!< Iterator of first target cell
+  C_iter Cj0;                                                   //!< Iterator of first source cell
 
 //! Dual tree traversal for a single pair of cells
   void traverse(C_iter Ci, C_iter Cj, bool mutual) {
@@ -27,7 +27,7 @@ class Traversal : public Kernel, public Logger {
       M2L(Ci, Cj, mutual);                                      //  M2L kernel
       count(numM2L);                                            //  Increment M2L counter
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
-      if (Cj->NBODY == 0) {                                    //  If the bodies weren't sent from remote node
+      if (Cj->NBODY == 0) {                                     //  If the bodies weren't sent from remote node
 	M2L(Ci, Cj, mutual);                                    //   M2L kernel
         count(numM2L);                                          //   Increment M2L counter
       } else {                                                  //  Else if the bodies were sent
@@ -43,59 +43,60 @@ class Traversal : public Kernel, public Logger {
     }                                                           // End if for multipole acceptance
   }
 
-  struct traverseCallable {
-    Traversal * traversal;
-    C_iter CiBegin; C_iter CiEnd; C_iter CjBegin; C_iter CjEnd; bool mutual;
-  traverseCallable(Traversal * traversal_, C_iter CiBegin_, C_iter CiEnd_, C_iter CjBegin_, C_iter CjEnd_, bool mutual_) :
-    traversal(traversal_), CiBegin(CiBegin_), CiEnd(CiEnd_), CjBegin(CjBegin_), CjEnd(CjEnd_), mutual(mutual_) {}
-    void operator() () { traversal->traverse(CiBegin, CiEnd, CjBegin, CjEnd, mutual); }
-  };
-
-  traverseCallable
-    traverse_(C_iter CiBegin_, C_iter CiEnd_, C_iter CjBegin_, C_iter CjEnd_, bool mutual_) {
-    return traverseCallable(this, CiBegin_, CiEnd_, CjBegin_, CjEnd_, mutual_);
-  }
-
 //! Dual tree traversal for a range of Ci and Cj
-  void traverse(C_iter CiBegin, C_iter CiEnd, C_iter CjBegin, C_iter CjEnd, bool mutual) {
-    Trace trace;
-    startTracer(trace);
-    if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {         // If only one cell in range
-      if (CiBegin == CjBegin) {                                 //  If Ci == Cj
-        assert(CiEnd == CjEnd);                                 //   Check if mutual & self interaction
-        traverse(CiBegin, CjBegin, mutual);                     //   Call traverse for single pair
-      } else {                                                  //  If Ci != Cj
-        for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {              //   Loop over all Ci cells
-          for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {            //    Loop over all Cj cells
-            traverse(Ci, Cj, mutual);                           //     Call traverse for single pair
-          }                                                     //    End loop over all Cj cells
-        }                                                       //   End loop over all Ci cells
-      }                                                         //  End if for Ci == Cj
-    } else {                                                    // If many cells are in the range
-      C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;           //  Split range of Ci cells in half
-      C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;           //  Split range of Cj cells in half
-      /* FIXME: 
-	 here we need to have two task_group statements
-	 so that dag recorder to work */
-      {
-	task_group;                                               //  Initialize task group
-	create_taskc(traverse_(CiBegin, CiMid, CjBegin, CjMid, mutual));// Spawn Ci:former Cj:former
-	traverse(CiMid, CiEnd, CjMid, CjEnd, mutual);           //   No spawn Ci:latter Cj:latter
-	wait_tasks;                                             //   Synchronize task group
-      }
-      {
-	task_group;                                               //  Initialize task group
-	create_taskc(traverse_(CiBegin, CiMid, CjMid, CjEnd, mutual));// Spawn Ci:former Cj:latter
-	if (!mutual || CiBegin != CjBegin) {                    //   Exclude mutual & self interaction
-	  traverse(CiMid, CiEnd, CjBegin, CjMid, mutual);       //    No spawn Ci:latter Cj:former
-	} else {                                                //   If mutual or self interaction
+  struct TraverseRange {
+    Traversal * traversal;                                      // Traversal object
+    C_iter CiBegin;                                             // Begin iterator for target cells
+    C_iter CiEnd;                                               // End iterator for target cells
+    C_iter CjBegin;                                             // Begin Iterator for source cells
+    C_iter CjEnd;                                               // End iterator for source cells
+    bool mutual;                                                // Flag for mutual interaction
+    TraverseRange(Traversal * _traversal, C_iter _CiBegin, C_iter _CiEnd,// Constructor
+		  C_iter _CjBegin, C_iter _CjEnd, bool _mutual) :
+      traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),  // Initialize variables
+      CjBegin(_CjBegin), CjEnd(_CjEnd), mutual(_mutual) {}
+    void operator() () {                                        // Overload operator()
+      Trace trace;                                              //  Instantiate tracer
+      traversal->startTracer(trace);                            //  Start tracer
+      if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {       //  If only one cell in range
+	if (CiBegin == CjBegin) {                               //   If Ci == Cj
 	  assert(CiEnd == CjEnd);                               //    Check if mutual & self interaction
-	}                                                       //   End if for mutual & self interaction
-	wait_tasks;                                             //   Synchronize task group
-      }
-    }                                                           // End if for many cells in range
-    stopTracer(trace);
-  }
+	  traversal->traverse(CiBegin, CjBegin, mutual);        //    Call traverse for single pair
+	} else {                                                //   If Ci != Cj
+	  for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {            //    Loop over all Ci cells
+	    for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {          //     Loop over all Cj cells
+	      traversal->traverse(Ci, Cj, mutual);              //      Call traverse for single pair
+	    }                                                   //     End loop over all Cj cells
+	  }                                                     //    End loop over all Ci cells
+	}                                                       //   End if for Ci == Cj
+      } else {                                                  //  If many cells are in the range
+	C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;         //   Split range of Ci cells in half
+	C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;         //   Split range of Cj cells in half
+	/* FIXME: Here we need to have two task_group statements for the DAG recorder to work */
+	{
+	  task_group;                                           //   Initialize task group
+	  TraverseRange leftBranch(traversal, CiBegin, CiMid, CjBegin, CjMid, mutual);// Initialize recursive functor
+	  create_taskc(leftBranch);                             //    Ci:former Cj:former
+	  TraverseRange rightBranch(traversal, CiMid, CiEnd, CjMid, CjEnd, mutual);// Initialize recursive functor
+	  rightBranch();                                        //    Ci:latter Cj:latter
+	  wait_tasks;                                           //    Synchronize task group
+	}
+	{
+	  task_group;                                           //   Initialize task group
+	  TraverseRange leftBranch(traversal, CiBegin, CiMid, CjMid, CjEnd, mutual);// Initialize recursive functor
+	  create_taskc(leftBranch);                             //    Ci:former Cj:latter
+	  if (!mutual || CiBegin != CjBegin) {                  //    Exclude mutual & self interaction
+            TraverseRange rightBranch(traversal, CiMid, CiEnd, CjBegin, CjMid, mutual);// Initialize recursive functor
+	    rightBranch();                                      //    Ci:latter Cj:former
+	  } else {                                              //    If mutual or self interaction
+	    assert(CiEnd == CjEnd);                             //     Check if mutual & self interaction
+	  }                                                     //    End if for mutual & self interaction
+	  wait_tasks;                                           //    Synchronize task group
+	}
+      }                                                         //  End if for many cells in range
+      traversal->stopTracer(trace);                             //  Stop tracer
+    }                                                           // End overload operator()
+  };
 
 //! Tree traversal of periodic cells
   void traversePeriodic(real_t cycle) {
@@ -172,8 +173,9 @@ class Traversal : public Kernel, public Logger {
         traverse(Ci, cj, mutual);                               //   Traverse a single pair of cells
       }                                                         //  End loop over Cj's children
     } else if (Ci->NBODY + Cj->NBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
-      traverse(Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,       //  Traverse for range of cell pairs
+      TraverseRange traverseRange(this, Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,// Initialize recursive functor
                Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, mutual);
+      traverseRange();                                          //  Traverse for range of cell pairs
     } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
       for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
         traverse(ci, Cj, mutual);                               //   Traverse a single pair of cells
