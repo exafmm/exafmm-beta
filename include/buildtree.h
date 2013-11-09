@@ -32,40 +32,12 @@ class BuildTree : public Logger {
   OctreeNode * N0;                                              //!< Octree root node
 
  private:
-//! Get maximum number of binary tree nodes for a given number of bodies
-  inline int getMaxBinNode(int n) const {
-    return (4 * n) / nspawn;                                    // Conservative estimate of number of binary tree nodes
-  }
-
-//! Exclusive scan with offset
-  inline ivec8 exclusiveScan(ivec8 input, int offset) const {
-    ivec8 output;                                               // Output vector
-    for (int i=0; i<8; i++) {                                   // Loop over elements
-      output[i] = offset;                                       //  Set value
-      offset += input[i];                                       //  Increment offset
-    }                                                           // End loop over elements
-    return output;                                              // Return output vector
-  }
-
-//! Create an octree node
-  OctreeNode * makeOctNode(int begin, int end, vec3 X, bool nochild) const {
-    OctreeNode * octNode = new OctreeNode();                    // Allocate memory for single node
-    octNode->BODY = begin;                                      // Index of first body in node
-    octNode->NBODY = end - begin;                               // Number of bodies in node
-    octNode->NNODE = 1;                                         // Initialize counter for decendant nodes
-    octNode->X = X;                                             // Center position of node
-    if (nochild) {                                              // If node has no children
-      for (int i=0; i<8; i++) octNode->CHILD[i] = NULL;         //  Initialize pointers to children
-    }                                                           // End if for node children
-    return octNode;                                             // Return node
-  }
-
   //! Recursive functor for counting bodies in each octant using binary tree
   struct CountBodies {
     Bodies & bodies;                                            // Vector of bodies
     int begin;                                                  // Body begin index
     int end;                                                    // Body end index
-    vec3 X;                                                     // Position of node center
+    vec3 X;                                                     // Coordinate of node center
     BinaryTreeNode * binNode;                                   // Node of binary tree
     int nspawn;                                                 // Threshold of NBODY for spawning new threads
     CountBodies(Bodies & _bodies, int _begin, int _end, vec3 _X, BinaryTreeNode * _binNode, int _nspawn) : // Constructor
@@ -143,76 +115,94 @@ class BuildTree : public Logger {
     }                                                           // End overload operator()
   };
 
-  struct buildNodesCallable {
-    BuildTree * buildtree; OctreeNode *& octNode;
-    Bodies& bodies; Bodies& buffer; int begin; int end;
-    BinaryTreeNode * binNode; vec3 X; real_t R0; int level; bool direction;
-  buildNodesCallable(BuildTree * buildtree_, OctreeNode *& octNode_,
-		     Bodies& bodies_, Bodies& buffer_, int begin_, int end_,
-		     BinaryTreeNode * binNode_, vec3 X_, real_t R0_, int level_, bool direction_) :
-    buildtree(buildtree_), octNode(octNode_),
-      bodies(bodies_), buffer(buffer_), begin(begin_), end(end_),
-      binNode(binNode_), X(X_), R0(R0_), level(level_), direction(direction_) {}
-
-    void operator() () {
-      buildtree->buildNodes(octNode, bodies, buffer, begin, end,
-			    binNode, X, R0, level, direction);
-    }
-  };
-
-  buildNodesCallable
-    buildNodes_(OctreeNode *& octNode_,
-		Bodies& bodies_, Bodies& buffer_, int begin_, int end_,
-		BinaryTreeNode * binNode_, vec3 X_, real_t R0_,
-		int level_=0, bool direction_=false) {
-    return buildNodesCallable(this, octNode_, bodies_, buffer_, begin_, end_,
-			      binNode_, X_, R0_, level_, direction_);
-  }
-
 //! Build nodes of octree adaptively using a top-down approach based on recursion (uses task based thread parallelism)
-  void buildNodes(OctreeNode *& octNode, Bodies& bodies, Bodies& buffer, int begin, int end,
-		  BinaryTreeNode * binNode, vec3 X, real_t R0, int level=0, bool direction=false) {
-    assert(getMaxBinNode(end - begin) <= binNode->END - binNode->BEGIN);
-    if (begin == end) {                                         // If no bodies are left
-      octNode = NULL;                                           //  Assign null pointer
-      return;                                                   //  End buildNodes()
-    }                                                           // End if for no bodies
-    if (end - begin <= ncrit) {                                 // If number of bodies is less than threshold
-      if (direction)                                            //  If direction of data is from bodies to buffer
-        for (int i=begin; i<end; i++) buffer[i] = bodies[i];    //   Copy bodies to buffer
-      octNode = makeOctNode(begin, end, X, true);               //  Create an octree node and assign it's pointer
-      return;                                                   //  End buildNodes()
-    }                                                           // End if for number of bodies
-    octNode = makeOctNode(begin, end, X, false);                // Create an octree node with child nodes
-    CountBodies countBodies(bodies, begin, end, X, binNode, nspawn);// Initialize recursive functor
-    countBodies();                                              // Count bodies in each octant using binary recursion
-    ivec8 octantOffset = exclusiveScan(binNode->NBODY, begin);  // Exclusive scan to obtain offset from octant count
-    MoveBodies moveBodies(bodies, buffer, begin, end, binNode, octantOffset, X);// Initialize recursive functor
-    moveBodies();                                               // Sort bodies according to octant
-    BinaryTreeNode * binNodeOffset = binNode->BEGIN;            // Initialize pointer offset for binary tree nodes
-    task_group;                                                 // Initialize tasks
-    BinaryTreeNode binNodeChild[8];                             //   Allocate new root for this branch
-    for (int i=0; i<8; i++) {                                   // Loop over children
-      int maxBinNode = getMaxBinNode(binNode->NBODY[i]);        //  Get maximum number of binary tree nodes
-      assert(binNodeOffset + maxBinNode <= binNode->END);
-      vec3 Xchild = X;                                          //   Initialize center position of child node
-      real_t r = R0 / (1 << (level + 1));                       //   Radius of cells for child's level
-      for (int d=0; d<3; d++) {                                 //   Loop over dimensions
-	Xchild[d] += r * (((i & 1 << d) >> d) * 2 - 1);         //    Shift center position to that of child node
-      }                                                         //   End loop over dimensions
-      binNodeChild[i].BEGIN = binNodeOffset;                    //   Assign first memory address from offset
-      binNodeChild[i].END = binNodeOffset + maxBinNode;         //   Keep track of last memory address
-      create_taskc(buildNodes_(octNode->CHILD[i],
-			       buffer, bodies,
-			       octantOffset[i], octantOffset[i] + binNode->NBODY[i],
-			       &binNodeChild[i], Xchild, R0, level+1, !direction));
-      binNodeOffset += maxBinNode;                              //  Increment offset for binNode memory address
-    }                                                           // End loop over children
-    wait_tasks;                                                 // Synchronize tasks
-    for (int i=0; i<8; i++) {                                   // Loop over children
-      if (octNode->CHILD[i]) octNode->NNODE += octNode->CHILD[i]->NNODE;// If child exists increment child node counter
-    }                                                           // End loop over chlidren
-  }
+  struct BuildNodes {
+    OctreeNode *& octNode;                                      // Reference to a double pointer of an octree node
+    Bodies & bodies;                                            // Vector of bodies
+    Bodies & buffer;                                            // Buffer for bodies
+    int begin;                                                  // Body begin index
+    int end;                                                    // Body end index
+    BinaryTreeNode * binNode;                                   // Node of a binary tree
+    vec3 X;                                                     // Coordinate of node center
+    real_t R0;                                                  // Radius of root cell
+    int ncrit;                                                  // Number of bodies per leaf cell
+    int nspawn;                                                 // Threshold of NBODY for spawning new threads
+    int level;                                                  // Current tree level
+    bool direction;                                             // Direction of buffer copying
+    BuildNodes(OctreeNode *& _octNode, Bodies& _bodies, Bodies& _buffer, int _begin, int _end,
+	       BinaryTreeNode * _binNode, vec3 _X, real_t _R0, int _ncrit, int _nspawn,
+	       int _level=0, bool _direction=false) :           // Constructor
+      octNode(_octNode), bodies(_bodies), buffer(_buffer), begin(_begin), end(_end),
+      binNode(_binNode), X(_X), R0(_R0), ncrit(_ncrit), nspawn(_nspawn),
+      level(_level), direction(_direction) {}                   // Initialize variables
+    //! Create an octree node
+    OctreeNode * makeOctNode(int begin, int end, vec3 X, bool nochild) const {
+      OctreeNode * octNode = new OctreeNode();                  // Allocate memory for single node
+      octNode->BODY = begin;                                    // Index of first body in node
+      octNode->NBODY = end - begin;                             // Number of bodies in node
+      octNode->NNODE = 1;                                       // Initialize counter for decendant nodes
+      octNode->X = X;                                           // Center position of node
+      if (nochild) {                                            // If node has no children
+	for (int i=0; i<8; i++) octNode->CHILD[i] = NULL;       //  Initialize pointers to children
+      }                                                         // End if for node children
+      return octNode;                                           // Return node
+    }
+    //! Exclusive scan with offset
+    inline ivec8 exclusiveScan(ivec8 input, int offset) const {
+      ivec8 output;                                             // Output vector
+      for (int i=0; i<8; i++) {                                 // Loop over elements
+	output[i] = offset;                                     //  Set value
+	offset += input[i];                                     //  Increment offset
+      }                                                         // End loop over elements
+      return output;                                            // Return output vector
+    }
+    //! Get maximum number of binary tree nodes for a given number of bodies
+    inline int getMaxBinNode(int n) const {
+      return (4 * n) / nspawn;                                  // Conservative estimate of number of binary tree nodes
+    }
+    void operator() () {                                        // Overload operator()
+      assert(getMaxBinNode(end - begin) <= binNode->END - binNode->BEGIN);// Bounds checking for node range
+      if (begin == end) {                                       //  If no bodies are left
+	octNode = NULL;                                         //   Assign null pointer
+	return;                                                 //   End buildNodes()
+      }                                                         //  End if for no bodies
+      if (end - begin <= ncrit) {                               //  If number of bodies is less than threshold
+	if (direction)                                          //   If direction of data is from bodies to buffer
+	  for (int i=begin; i<end; i++) buffer[i] = bodies[i];  //    Copy bodies to buffer
+	octNode = makeOctNode(begin, end, X, true);             //   Create an octree node and assign it's pointer
+	return;                                                 //   End buildNodes()
+      }                                                         //  End if for number of bodies
+      octNode = makeOctNode(begin, end, X, false);              //  Create an octree node with child nodes
+      CountBodies countBodies(bodies, begin, end, X, binNode, nspawn);// Initialize recursive functor
+      countBodies();                                            //  Count bodies in each octant using binary recursion
+      ivec8 octantOffset = exclusiveScan(binNode->NBODY, begin);//  Exclusive scan to obtain offset from octant count
+      MoveBodies moveBodies(bodies, buffer, begin, end, binNode, octantOffset, X);// Initialize recursive functor
+      moveBodies();                                             //  Sort bodies according to octant
+      BinaryTreeNode * binNodeOffset = binNode->BEGIN;          //  Initialize pointer offset for binary tree nodes
+      task_group;                                               //  Initialize tasks
+      BinaryTreeNode binNodeChild[8];                           //  Allocate new root for this branch
+      for (int i=0; i<8; i++) {                                 //  Loop over children
+	int maxBinNode = getMaxBinNode(binNode->NBODY[i]);      //   Get maximum number of binary tree nodes
+	assert(binNodeOffset + maxBinNode <= binNode->END);     //    Bounds checking for node count
+	vec3 Xchild = X;                                        //    Initialize center position of child node
+	real_t r = R0 / (1 << (level + 1));                     //    Radius of cells for child's level
+	for (int d=0; d<3; d++) {                               //    Loop over dimensions
+	  Xchild[d] += r * (((i & 1 << d) >> d) * 2 - 1);       //     Shift center position to that of child node
+	}                                                       //    End loop over dimensions
+	binNodeChild[i].BEGIN = binNodeOffset;                  //    Assign first memory address from offset
+	binNodeChild[i].END = binNodeOffset + maxBinNode;       //    Keep track of last memory address
+	BuildNodes buildNodes(octNode->CHILD[i], buffer, bodies,//    Initialize recursive functor
+			      octantOffset[i], octantOffset[i] + binNode->NBODY[i],
+			      &binNodeChild[i], Xchild, R0, ncrit, nspawn, level+1, !direction);
+	create_taskc(buildNodes);                               //    Create new task for recursive call
+	binNodeOffset += maxBinNode;                            //   Increment offset for binNode memory address
+      }                                                         //  End loop over children
+      wait_tasks;                                               //  Synchronize tasks
+      for (int i=0; i<8; i++) {                                 //  Loop over children
+	if (octNode->CHILD[i]) octNode->NNODE += octNode->CHILD[i]->NNODE;// If child exists increment child node count
+      }                                                         //  End loop over chlidren
+    }                                                           // End overload operator()
+  };
 
 //! Get cell index
   long long getKey(vec3 X, vec3 Xmin, real_t diameter, int level) {
@@ -315,10 +305,12 @@ class BuildTree : public Logger {
     startTimer("Grow tree");                                    // Start timer
     B0 = bodies.begin();                                        // Bodies iterator
     BinaryTreeNode binNode[1];                                  // Allocate root node of binary tree
-    int maxBinNode = getMaxBinNode(bodies.size());              // Get maximum size of binary tree
+    int maxBinNode = (4 * bodies.size()) / nspawn;              // Get maximum size of binary tree
     binNode->BEGIN = new BinaryTreeNode[maxBinNode];            // Allocate array for binary tree nodes
     binNode->END = binNode->BEGIN + maxBinNode;                 // Set end pointer
-    buildNodes(N0, bodies, buffer, 0, bodies.size(), binNode, X0, R0);// Build tree recursively
+    BuildNodes buildNodes(N0, bodies, buffer, 0, bodies.size(),
+			  binNode, X0, R0, ncrit, nspawn);      // Initialize recursive functor
+    buildNodes();                                               // Recursively build octree nodes
     delete[] binNode->BEGIN;                                    // Deallocate binary tree array
     stopTimer("Grow tree");                                     // Stop timer
   }
@@ -327,7 +319,7 @@ class BuildTree : public Logger {
   Cells linkTree(vec3 X0, real_t R0) {
     startTimer("Link tree");                                    // Start timer
     Cells cells;                                                // Initialize cell array
-    if (N0 != NULL) {                                           // If he node tree is empty
+    if (N0 != NULL) {                                           // If the node tree is not empty
       cells.resize(N0->NNODE);                                  //  Allocate cells array
       C_iter C0 = cells.begin();                                //  Cell begin iterator
       nodes2cells(N0, C0, C0, C0+1, X0, R0);                    //  Convert nodes to cells recursively
