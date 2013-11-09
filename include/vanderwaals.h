@@ -69,12 +69,10 @@ private:
       real_t R = std::sqrt(norm(dX));                           //  Scalar distance
       if (R < 3 * VdW->cutoff) {                                //  If cells are close
         if(Cj->NCHILD == 0) VdW->P2P(Ci,Cj,Xperiodic);          //   Van der Waals kernel
-        task_group;                                             //   Intitialize tasks
         for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
           Neighbor neighbor(VdW, Ci, CC, C0);                   //    Instantiate recursive functor
-          create_task(neighbor);                                //    Create task for recursive call
+  	  neighbor();                                           //    Find neighbors recursively
         }                                                       //   End loop over cell's children
-        wait_tasks;                                             //   Synchronize tasks
       }                                                         //  End if for far cells
     }                                                           // End overload operator()
   };
@@ -98,12 +96,14 @@ public:
   void evaluate(Cells &cells, Cells &jcells) {
     startTimer("Van der Waals");                                // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
+    task_group;                                                 // Intitialize tasks
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
 	Neighbor neighbor(this, Ci, Cj, Cj);                    //   Instantiate recursive functor
-	neighbor();                                             //   Find neighbors recursively
+        create_task(neighbor);                                  //   Create task for recursive call
       }                                                         //  End if for leaf target cell
     }                                                           // End loop over target cells
+    wait_tasks;                                                 // Synchronize tasks
     stopTimer("Van der Waals");                                 // Stop timer
   }
 

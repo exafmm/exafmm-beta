@@ -117,12 +117,10 @@ private:
       real_t R = std::sqrt(norm(dX));                           //  Scalar distance
       if (R < 3 * ewald->cutoff) {                              //  If cells are close
 	if(Cj->NCHILD == 0) ewald->P2P(Ci,Cj,Xperiodic);        //   Ewald real part
-        task_group;                                             //   Intitialize tasks
 	for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
           Neighbor neighbor(ewald, Ci, CC, C0);                 //    Instantiate recursive functor
-	  create_task(neighbor);                                //    Create task for recursive call
+	  neighbor();                                           //    Recursive call
 	}                                                       //   End loop over cell's children
-        wait_tasks;                                             //   Synchronize tasks
       }                                                         //  End if for far cells
     }                                                           // End overload operator()
   };
@@ -136,12 +134,14 @@ public:
   void realPart(Cells & cells, Cells & jcells) {
     startTimer("Ewald real part");                              // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
+    task_group;                                                 // Intitialize tasks
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
 	Neighbor neighbor(this, Ci, Cj, Cj);                    //   Instantiate recursive functor
-	neighbor();                                             //   Find neighbors recursively
+	create_task(neighbor);                                  //   Create task for recursive call
       }                                                         //  End if for leaf target cell
     }                                                           // End loop over target cells
+    wait_tasks;                                                 // Synchronize tasks
     stopTimer("Ewald real part");                               // Stop timer
   }
 
