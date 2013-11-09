@@ -9,43 +9,37 @@ class UpDownPass : public Kernel, public Logger {
   real_t theta;                                                 //!< Multipole acceptance criteria
 
  private:
-
-  struct setRcritCallable {
-    UpDownPass * updownpass;
-    C_iter C; C_iter C0; real_t c;
-    setRcritCallable(UpDownPass * updownpass_, 
-		     C_iter C_, C_iter C0_, real_t c_) :
-    updownpass(updownpass_), C(C_), C0(C0_), c(c_) {}
-    void operator() () { updownpass->setRcrit(C, C0, c); }
-  };
-  
-  setRcritCallable
-    setRcrit_(C_iter C_, C_iter C0_, real_t c_) {
-    return setRcritCallable(this, C_, C0_, c_);
-  }
-
 //! Error optimization of Rcrit
-  void setRcrit(C_iter C, C_iter C0, real_t c) {
-    task_group;                                                 // Initialize tasks
-    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-      create_taskc(setRcrit_(CC, C0, c));                       //  Recursive call with new task
-    }                                                           // End loop over child cells
-    wait_tasks;                                                 // Synchronize tasks
+  struct SetRcrit {
+    C_iter C;                                                   // Iterator of current cell
+    C_iter C0;                                                  // Iterator of first cell
+    real_t c;                                                   // Root coefficient
+    real_t theta;                                               // Multipole acceptance criteria
+    SetRcrit(C_iter _C, C_iter _C0, real_t _c, real_t _theta) : // Constructor
+      C(_C), C0(_C0), c(_c), theta(_theta) {}                   // Initialize variables
+    void operator() () {                                        // Overload operator()
+      task_group;                                               //  Initialize tasks
+      for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
+	SetRcrit setRcrit(CC, C0, c, theta);                    //   Initialize recusive functor
+	create_taskc(setRcrit);                                 //   Create new task for recursive call
+      }                                                         //  End loop over child cells
+      wait_tasks;                                               //  Synchronize tasks
 #if Cartesian
-    for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];             // Normalize multipole expansion coefficients
+      for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];           //  Normalize multipole expansion coefficients
 #endif
-    real_t x = 1.0 / theta;                                     // Inverse of theta
+      real_t x = 1.0 / theta;                                   //  Inverse of theta
 #if ERROR_OPT
-    assert(theta != 1.0);
-    real_t a = c * powf(std::abs(C->M[0]),1.0/3);               // Cell coefficient
-    for (int i=0; i<5; i++) {                                   // Newton-Raphson iteration
-      real_t f = x * x - 2 * x + 1 - a * std::pow(x,-P);        //  Function value
-      real_t df = (P + 2) * x - 2 * (P + 1) + P / x;            //  Function derivative value
-      x -= f / df;                                              //  Increment x
-    }                                                           // End Newton-Raphson iteration
+      assert(theta != 1.0);                                     //  Newton-Raphson won't work for theta==1
+      real_t a = c * powf(std::abs(C->M[0]),1.0/3);             //  Cell coefficient
+      for (int i=0; i<5; i++) {                                 //  Newton-Raphson iteration
+	real_t f = x * x - 2 * x + 1 - a * std::pow(x,-P);      //   Function value
+	real_t df = (P + 2) * x - 2 * (P + 1) + P / x;          //   Function derivative value
+	x -= f / df;                                            //   Increment x
+      }                                                         //  End Newton-Raphson iteration
 #endif
-    C->RCRIT *= x;                                              // Multiply Rcrit by error optimized parameter x
-  }
+      C->RCRIT *= x;                                            //  Multiply Rcrit by error optimized parameter x
+    }                                                           // End overload operator()
+  };
 
   struct postOrderTraversalCallable {
     UpDownPass * updownpass;
@@ -108,7 +102,8 @@ class UpDownPass : public Kernel, public Logger {
       C_iter C0 = cells.begin();                                //  Set iterator of target root cell
       postOrderTraversal(C0, C0);                               //  Recursive call for upward pass
       real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
-      setRcrit(C0, C0, c);                                      //  Error optimization of Rcrit
+      SetRcrit setRcrit(C0, C0, c, theta);                      //  Initialize recursive functor
+      setRcrit();                                               //  Error optimization of Rcrit
       if( cells.size() > 9 ) {                                  //  If tree has more than 2 levels
         for (C_iter C=C0; C!=C0+9; C++) {                       //   Loop over top 2 levels of cells
           C->RCRIT = 1e12;                                      //    Prevent approximation

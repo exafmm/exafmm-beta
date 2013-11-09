@@ -248,7 +248,7 @@ class BuildTree : public Logger {
 	maxlevel = std::max(maxlevel, level);                   //   Update maximum level of tree
       } else {                                                  //  Else if node has children
 	int nchild = 0;                                         //   Initialize number of child cells
-	int octants[8];                                         //   Map of child index to octants (for when nchild < 8)
+	int octants[8];                                         //   Map of child index to octants
 	for (int i=0; i<8; i++) {                               //   Loop over octants
 	  if (octNode->CHILD[i]) {                              //    If child exists for that octant
 	    octants[nchild] = i;                                //     Map octant to child index
