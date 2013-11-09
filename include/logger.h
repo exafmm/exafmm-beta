@@ -7,6 +7,7 @@
 #include <map>
 #include <pthread.h>
 #include <queue>
+#include <stdint.h>
 #include <string>
 #include <sstream>
 #include <sys/time.h>
@@ -55,6 +56,21 @@ private:
     struct timeval tv;                                          // Time value
     gettimeofday(&tv, NULL);                                    // Get time of day in seconds and microseconds
     return double(tv.tv_sec+tv.tv_usec*1e-6);                   // Combine seconds and microseconds and return
+  }
+
+  //! Cycle counter
+  inline uint64_t get_cycle() const {
+    uint32_t low = 0, high = 0;
+    asm volatile ("rdtsc" : "=a" (low), "=d" (high));
+    return (uint64_t(high) << 32) | uint64_t(low);
+  }
+
+  //! Cycle counter with thread ID
+  inline uint64_t get_cycle(uint32_t * id) const {
+    uint32_t low = 0, high = 0;
+    if (!id) return 0;
+    asm volatile ("rdtscp" : "=a" (low), "=d" (high), "=c" (*id)); 
+    return (uint64_t(high) << 32) | uint64_t(low);
   }
 
 public:
