@@ -9,10 +9,10 @@
 #include "types.h"
 
 class Dataset {                                                 // Contains all the different datasets
- private:
+private:
   long filePosition;                                            // Position of file stream
 
- private:
+private:
   //! Split range and return partial range
   void splitRange(int &begin, int &end, int iSplit, int numSplit) {
     assert(end > begin);                                        // Check that size > 0
@@ -24,7 +24,7 @@ class Dataset {                                                 // Contains all 
     if (remainder > iSplit) end++;                              // Adjust the end counter for remainder
   }
 
-//! Uniform distribution on [-1,1]^3 lattice
+  //! Uniform distribution on [-1,1]^3 lattice
   Bodies lattice(int numBodies, int mpirank, int mpisize) {
     int nx = int(std::pow(numBodies*mpisize, 1./3));            // Number of points in x direction
     int ny = nx;                                                // Number of points in y direction
@@ -47,7 +47,7 @@ class Dataset {                                                 // Contains all 
     return bodies;                                              // Return bodies
   }
 
-//! Random distribution in [-1,1]^3 cube
+  //! Random distribution in [-1,1]^3 cube
   Bodies cube(int numBodies, int seed, int numSplit) {
     Bodies bodies(numBodies);                                   // Initialize bodies
     for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
@@ -64,7 +64,7 @@ class Dataset {                                                 // Contains all 
     return bodies;                                              // Return bodies
   }
 
-//! Random distribution on r = 1 sphere
+  //! Random distribution on r = 1 sphere
   Bodies sphere(int numBodies, int seed, int numSplit) {
     Bodies bodies(numBodies);                                   // Initialize bodies
     for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
@@ -85,7 +85,7 @@ class Dataset {                                                 // Contains all 
     return bodies;                                              // Return bodies
   }
 
-//! Plummer distribution in a r = M_PI/2 sphere
+  //! Plummer distribution in a r = M_PI/2 sphere
   Bodies plummer(int numBodies, int seed, int numSplit) {
     Bodies bodies(numBodies);                                   // Initialize bodies
     for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
@@ -115,11 +115,11 @@ class Dataset {                                                 // Contains all 
     return bodies;                                              // Return bodies
   }
 
- public:
-//! Constructor
+public:
+  //! Constructor
   Dataset() : filePosition(0) {}
 
-//! Initialize source values
+  //! Initialize source values
   void initSource(Bodies &bodies, int seed, int numSplit) {
     for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
       int begin = 0;                                            //  Begin index of bodies
@@ -144,7 +144,7 @@ class Dataset {                                                 // Contains all 
     }                                                           // End loop over partitions
   }
 
-//! Initialize target values
+  //! Initialize target values
   void initTarget(Bodies &bodies) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG = 0;                                               //  Clear target values
@@ -152,9 +152,9 @@ class Dataset {                                                 // Contains all 
     }                                                           // End loop over bodies
   }
 
-//! Initialize dsitribution, source & target value of bodies
+  //! Initialize dsitribution, source & target value of bodies
   Bodies initBodies(int numBodies, const char * distribution,
-		  int mpirank=0, int mpisize=1, int numSplit=1) {
+		    int mpirank=0, int mpisize=1, int numSplit=1) {
     Bodies bodies;                                              // Initialize bodies
     switch (distribution[0]) {                                  // Switch between data distribution type
     case 'l':                                                   // Case for lattice
@@ -177,7 +177,7 @@ class Dataset {                                                 // Contains all 
     return bodies;                                              // Return bodies
   }
 
-//! Read source values from file
+  //! Read source values from file
   void readSources(Bodies &bodies, int mpirank) {
     std::stringstream name;                                     // File name
     name << "source" << std::setfill('0') << std::setw(4)       // Set format
@@ -194,7 +194,7 @@ class Dataset {                                                 // Contains all 
     file.close();                                               // Close file
   }
 
-//! Write source values to file
+  //! Write source values to file
   void writeSources(Bodies &bodies, int mpirank) {
     std::stringstream name;                                     // File name
     name << "source" << std::setfill('0') << std::setw(4)       // Set format
@@ -209,7 +209,7 @@ class Dataset {                                                 // Contains all 
     file.close();                                               // Close file
   }
 
-//! Read target values from file
+  //! Read target values from file
   void readTargets(Bodies &bodies, int mpirank) {
     std::stringstream name;                                     // File name
     name << "target" << std::setfill('0') << std::setw(4)       // Set format
@@ -226,7 +226,7 @@ class Dataset {                                                 // Contains all 
     file.close();                                               // Close file
   }
 
-//! Write target values to file
+  //! Write target values to file
   void writeTargets(Bodies &bodies, int mpirank) {
     std::stringstream name;                                     // File name
     name << "target" << std::setfill('0') << std::setw(4)       // Set format
@@ -241,7 +241,7 @@ class Dataset {                                                 // Contains all 
     file.close();                                               // Close file
   }
 
-//! Downsize target bodies by even sampling
+  //! Downsize target bodies by even sampling
   void sampleBodies(Bodies &bodies, int numTargets) {
     if (numTargets < int(bodies.size())) {                      // If target size is smaller than current
       int stride = bodies.size() / numTargets;                  //  Stride of sampling
@@ -252,7 +252,7 @@ class Dataset {                                                 // Contains all 
     }                                                           // End if for target size
   }
 
-//! Get bodies with positive charges
+  //! Get bodies with positive charges
   Bodies getPositive(Bodies &bodies) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
     B_iter B2 = buffer.begin();                                 // Initialize iterator for buffer
@@ -267,7 +267,7 @@ class Dataset {                                                 // Contains all 
   }
 
 
-//! Get bodies with negative charges
+  //! Get bodies with negative charges
   Bodies getNegative(Bodies &bodies) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
     B_iter B2 = buffer.begin();                                 // Initialize iterator for buffer

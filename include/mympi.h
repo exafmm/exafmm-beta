@@ -7,18 +7,18 @@
 
 //! Custom MPI utilities
 class MyMPI {
- private:
+private:
   int external;                                                 //!< Flag to indicate external MPI_Init/Finalize
 
- protected:
+protected:
   const int wait;                                               //!< Waiting time between output of different ranks
 
- public:
+public:
   int mpirank;                                                  //!< Rank of MPI communicator
   int mpisize;                                                  //!< Size of MPI communicator
 
- public:
-//! Constructor, initialize wait time
+public:
+  //! Constructor, initialize wait time
   MyMPI() : external(0), wait(100) {                            // Constructor, initialize wait time
     int argc(0);                                                // Dummy argument count
     char **argv;                                                // Dummy argument value
@@ -28,12 +28,12 @@ class MyMPI {
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);                    // Get rank of current MPI process
   }
 
-//! If n is power of two return true
+  //! If n is power of two return true
   bool isPowerOfTwo(const int n) {
     return ((n != 0) && !(n & (n - 1)));                        // Decrement and compare bits
   }
 
-//! Print a scalar value on all ranks
+  //! Print a scalar value on all ranks
   template<typename T>
   void print(T data) {
     for (int irank=0; irank<mpisize; irank++ ) {                // Loop over ranks
@@ -46,7 +46,7 @@ class MyMPI {
     if (mpirank == mpisize-1) std::cout << std::endl;           // New line
   }
 
-//! Print a scalar value on irank
+  //! Print a scalar value on irank
   template<typename T>
   void print(T data, const int irank) {
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
@@ -54,7 +54,7 @@ class MyMPI {
     if( mpirank == irank ) std::cout << data;                   // If it's my rank print "data"
   }
 
-//! Print a vector value on all ranks
+  //! Print a vector value on all ranks
   template<typename T>
   void print(T * data, const int begin, const int end) {
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
@@ -70,7 +70,7 @@ class MyMPI {
     }                                                           // End loop over ranks
   }
 
-//! Print a vector value on irank
+  //! Print a vector value on irank
   template<typename T>
   void print(T * data, const int begin, const int end, const int irank) {
     MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes

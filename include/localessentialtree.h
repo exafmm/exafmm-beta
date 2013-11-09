@@ -5,7 +5,7 @@
 
 //! Handles all the communication of local essential trees
 class LocalEssentialTree : public Partition {
- private:
+private:
   typedef std::queue<C_iter> CellQueue;                         //!< Queue of cell iterators
   int irank;                                                    //!< MPI rank loop counter
   int images;                                                   //!< Number of periodic image sublevels
@@ -21,11 +21,11 @@ class LocalEssentialTree : public Partition {
   int * recvCellCount;                                          //!< Receive count
   int * recvCellDispl;                                          //!< Receive displacement
 
- public:
+public:
   using Partition::alltoall;
   using Partition::alltoallv;
 
- private:
+private:
   void allgatherBounds(Bounds local) {
     fvec3 Xmin, Xmax;
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
@@ -36,19 +36,19 @@ class LocalEssentialTree : public Partition {
     MPI_Allgather(Xmax, 3, MPI_FLOAT, &allLocalXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
   }
 
-//! Get distance to other domain
+  //! Get distance to other domain
   real_t getDistance(C_iter C, vec3 Xperiodic) {
     vec3 dX;                                                    // Distance vector
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
       dX[d] = (C->X[d] + Xperiodic[d] > localXmax[d])*          //  Calculate the distance between cell C and
-              (C->X[d] + Xperiodic[d] - localXmax[d])+          //  the nearest point in domain [xmin,xmax]^3
-              (C->X[d] + Xperiodic[d] < localXmin[d])*          //  Take the differnece from xmin or xmax
-              (C->X[d] + Xperiodic[d] - localXmin[d]);          //  or 0 if between xmin and xmax
+	(C->X[d] + Xperiodic[d] - localXmax[d])+          //  the nearest point in domain [xmin,xmax]^3
+	(C->X[d] + Xperiodic[d] < localXmin[d])*          //  Take the differnece from xmin or xmax
+	(C->X[d] + Xperiodic[d] - localXmin[d]);          //  or 0 if between xmin and xmax
     }                                                           // End loop over dimensions
     return norm(dX);                                            // Return distance squared
   }
 
-//! Add cells to send buffer
+  //! Add cells to send buffer
   void addSendCell(C_iter C, int &iparent, int &icell) {
     Cell cell(*C);                                              // Initialize send cell
     cell.NCHILD = cell.NBODY = 0;                               // Reset counters
@@ -60,7 +60,7 @@ class LocalEssentialTree : public Partition {
     Cparent->NCHILD++;                                          // Increment parent's child counter
   }
 
-//! Add bodies to send buffer
+  //! Add bodies to send buffer
   void addSendBody(C_iter C, int &ibody, int icell) {
     C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell;// Get send cell iterator
     Csend->NBODY = C->NBODY;                                    // Set number of bodies
@@ -72,7 +72,7 @@ class LocalEssentialTree : public Partition {
     ibody+=C->NBODY;                                            // Increment body counter
   }
 
-//! Determine which cells to send
+  //! Determine which cells to send
   void traverseLET(CellQueue cellQueue, real_t cycle) {
     int ibody = 0;                                              // Current send body's offset
     int icell = 0;                                              // Current send cell's offset
@@ -119,7 +119,7 @@ class LocalEssentialTree : public Partition {
     }                                                           // End while loop for traversal queue
   }
 
-//! Exchange send count for cells
+  //! Exchange send count for cells
   void alltoall(Cells) {
     MPI_Alltoall(sendCellCount, 1, MPI_INT,                     // Communicate send count to get receive count
                  recvCellCount, 1, MPI_INT, MPI_COMM_WORLD);
@@ -129,7 +129,7 @@ class LocalEssentialTree : public Partition {
     }                                                           // End loop over ranks
   }
 
-//! Exchange cells
+  //! Exchange cells
   void alltoallv(Cells &cells) {
     int word = sizeof(cells[0]) / 4;                            // Word size of body structure
     recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer
@@ -149,8 +149,8 @@ class LocalEssentialTree : public Partition {
     }                                                           // End loop over ranks
   }
 
- public:
-//! Constructor
+public:
+  //! Constructor
   LocalEssentialTree(int images) : images(images) {
     allLocalXmin = new fvec3 [mpisize];                         // Allocate array for minimum of local domains
     allLocalXmax = new fvec3 [mpisize];                         // Allocate array for maximum of local domains
@@ -159,7 +159,7 @@ class LocalEssentialTree : public Partition {
     recvCellCount = new int [mpisize];                          // Allocate receive count
     recvCellDispl = new int [mpisize];                          // Allocate receive displacement
   }
-//! Destructor
+  //! Destructor
   ~LocalEssentialTree() {
     delete[] allLocalXmin;                                      // Deallocate array for minimum of local domains
     delete[] allLocalXmax;                                      // Deallocate array for maximum of local domains
@@ -169,7 +169,7 @@ class LocalEssentialTree : public Partition {
     delete[] recvCellDispl;                                     // Deallocate receive displacement
   }
 
-//! Set local essential tree to send to each process
+  //! Set local essential tree to send to each process
   void setLET(Cells &cells, Bounds bounds, real_t cycle) {
     startTimer("Set LET");                                      // Start timer
     allgatherBounds(bounds);                                    // Gather local bounds from all ranks
@@ -195,7 +195,7 @@ class LocalEssentialTree : public Partition {
     stopTimer("Set LET");                                       // Stop timer
   }
 
-//! Get local essential tree from rank "irank".
+  //! Get local essential tree from rank "irank".
   void getLET(Cells &cells, int irank) {
     std::stringstream event;                                    // Event name
     event << "Get LET from rank " << irank;                     // Create event name based on irank
@@ -215,7 +215,7 @@ class LocalEssentialTree : public Partition {
     stopTimer(event.str());                                     // Stop timer
   }
 
-//! Send bodies
+  //! Send bodies
   Bodies commBodies() {
     startTimer("Comm bodies");                                  // Start timer
     alltoall(sendBodies);                                       // Send body count
@@ -224,7 +224,7 @@ class LocalEssentialTree : public Partition {
     return recvBodies;                                          // Return received bodies
   }
 
-//! Send bodies
+  //! Send bodies
   Bodies commBodies(Bodies bodies) {
     startTimer("Comm bodies");                                  // Start timer
     alltoall(bodies);                                           // Send body count
@@ -233,7 +233,7 @@ class LocalEssentialTree : public Partition {
     return recvBodies;                                          // Return received bodies
   }
 
-//! Send cells
+  //! Send cells
   void commCells() {
     startTimer("Comm cells");                                   // Start timer
     alltoall(sendCells);                                        // Send cell count

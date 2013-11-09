@@ -4,13 +4,13 @@
 
 //! Custom bucket sort for body and structures
 class Sort {
- private:
+private:
   typedef Bodies::reverse_iterator B_ritr;                      //!< Reverse iterator for Bodies
   std::vector<int> bucket;                                      //!< Bucket for sorting
   Bodies output;                                                //!< Output buffer
 
- public:
-//! Sort input accoring to cell index
+public:
+  //! Sort input accoring to cell index
   Bodies sortBodies(Bodies &input) {
     int Imin = input[0].ICELL;                                  // Initialize minimum index
     int Imax = input[0].ICELL;                                  // Initialize maximum index
@@ -37,7 +37,7 @@ class Sort {
     return output;                                              // Return output
   }
 
-//! Sort bodies back to original order
+  //! Sort bodies back to original order
   Bodies unsort(Bodies &bodies) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->ICELL = B->IBODY;                                      //  Do this to sortaccroding to IPROC

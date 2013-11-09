@@ -27,13 +27,13 @@
 
 //! 2D plot VTK class
 class vtk2DPlot {
- private:
+private:
   int numColumns;
 
- public:
+public:
   vtkTable * table;
 
- public:
+public:
   vtk2DPlot() : numColumns(0) {
     table = vtkTable::New();
   }
@@ -79,7 +79,7 @@ class vtk2DPlot {
 
 //! 3D plot VTK class
 class vtk3DPlot {
- private:
+private:
   std::vector<vtkPoints*> groups;
   vtkPoints * hexPoints;
 
@@ -100,7 +100,7 @@ class vtk3DPlot {
     }
   };
 
- public:
+public:
   void setBounds(const real_t r0, const vec3 x0) {
     hexPoints = vtkPoints::New();
     hexPoints->SetNumberOfPoints(8);

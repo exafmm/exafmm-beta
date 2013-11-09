@@ -27,12 +27,12 @@ struct Trace {
 
 //! Timer and Trace logger
 class Logger {
- typedef std::map<std::string,double> Timer;                    //!< Map of timer event name to timed value
- typedef Timer::iterator              T_iter;                   //!< Iterator of timer event name map
- typedef std::queue<Trace>            Traces;                   //!< Queue of traces
- typedef std::map<pthread_t,int>      ThreadMap;                //!< Map of pthread id to thread id
+  typedef std::map<std::string,double> Timer;                    //!< Map of timer event name to timed value
+  typedef Timer::iterator              T_iter;                   //!< Iterator of timer event name map
+  typedef std::queue<Trace>            Traces;                   //!< Queue of traces
+  typedef std::map<pthread_t,int>      ThreadMap;                //!< Map of pthread id to thread id
 
- private:
+private:
   Timer           beginTimer;                                   //!< Timer base value
   Timer           timer;                                        //!< Timings of all events
   Traces          traces;                                       //!< Traces for all events
@@ -41,35 +41,35 @@ class Logger {
   int                    PAPIEventSet;                          //!< PAPI event set
   std::vector<char*>     PAPIEventNames;                        //!< Vector of PAPI event names
   std::vector<int>       PAPIEventCodes;                        //!< Vector of PAPI event codes
-  std::vector<long long> PAPIEventValues;                       //!< Vector of PAPI event values
+  std::vector<uint64_t>  PAPIEventValues;                       //!< Vector of PAPI event values
 #endif
 
- public:
+public:
   int stringLength;                                             //!< Max length of event name
   int decimal;                                                  //!< Decimal precision
   bool verbose;                                                 //!< Print to screen
 
- private:
-//! Timer function
+private:
+  //! Timer function
   double get_time() const {
     struct timeval tv;                                          // Time value
     gettimeofday(&tv, NULL);                                    // Get time of day in seconds and microseconds
     return double(tv.tv_sec+tv.tv_usec*1e-6);                   // Combine seconds and microseconds and return
   }
 
- public:
-//! Constructor
+public:
+  //! Constructor
   Logger() : beginTimer(), timer(), traces(), mutex(),          // Initializing class variables (empty)
 #if PAPI
-    PAPIEventSet(PAPI_NULL),                                    // Initializing PAPI event set
+	     PAPIEventSet(PAPI_NULL),                                    // Initializing PAPI event set
 #endif
-    stringLength(20),                                           // Max length of event name
-    decimal(7),                                                 // Decimal precision
-    verbose(false) {                                            // Don't print timings by default
+	     stringLength(20),                                           // Max length of event name
+	     decimal(7),                                                 // Decimal precision
+	     verbose(false) {                                            // Don't print timings by default
     pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
   }
 
-//! Print message to standard output
+  //! Print message to standard output
   inline void printTitle(std::string title) {
     if (verbose) {                                              // If verbose flag is true
       title += " ";                                             //  Append space to end of title
@@ -81,12 +81,12 @@ class Logger {
     }                                                           // End if for verbose flag
   }
 
-//! Start timer for given event
+  //! Start timer for given event
   inline void startTimer(std::string event) {
     beginTimer[event] = get_time();                             // Get time of day and store in beginTimer
   }
 
-//! Stop timer for given event
+  //! Stop timer for given event
   double stopTimer(std::string event) {
     double endTimer = get_time();                               // Get time of day and store in endTimer
     timer[event] += endTimer - beginTimer[event];               // Accumulate event time to timer
@@ -94,16 +94,16 @@ class Logger {
     return endTimer - beginTimer[event];                        // Return the event time
   }
 
-//! Print timings of a specific event
+  //! Print timings of a specific event
   inline void printTime(std::string event) {
     if (verbose) {                                              // If verbose flag is true
       std::cout << std::setw(stringLength) << std::left         //  Set format
-        << event << " : " << std::setprecision(decimal) << std::fixed
-        << timer[event] << " s" << std::endl;                   //  Print event and timer
+		<< event << " : " << std::setprecision(decimal) << std::fixed
+		<< timer[event] << " s" << std::endl;                   //  Print event and timer
     }                                                           // End if for verbose flag
   }
 
-//! Write timings of all events
+  //! Write timings of all events
   inline void writeTime(int mpirank=0) {
     std::stringstream name;                                     // File name
     name << "time" << std::setfill('0') << std::setw(6)         // Set format
@@ -111,17 +111,17 @@ class Logger {
     std::ofstream timerFile(name.str().c_str(), std::ios::app); // Open timer log file
     for (T_iter E=timer.begin(); E!=timer.end(); E++) {         // Loop over all events
       timerFile << std::setw(stringLength) << std::left         //  Set format
-        << E->first << " " << E->second << std::endl;           //  Print event and timer
+		<< E->first << " " << E->second << std::endl;           //  Print event and timer
     }                                                           // End loop over all events
     timerFile.close();                                          // Close timer log file
   }
 
-//! Erase all events in timer
+  //! Erase all events in timer
   inline void resetTimer() {
     timer.clear();                                              // Clear timer
   }
 
-//! Start PAPI event
+  //! Start PAPI event
   inline void startPAPI() {
 #if PAPI
     PAPI_library_init(PAPI_VER_CURRENT);                        // Initialize PAPI library
@@ -149,7 +149,7 @@ class Logger {
 #endif
   }
 
-//! Stop PAPI event
+  //! Stop PAPI event
   inline void stopPAPI() {
 #if PAPI
     if (!PAPIEventCodes.empty()) {                              // If PAPI events are set
@@ -173,7 +173,7 @@ class Logger {
   }
 
 #if TRACE
-//! Start tracer for given event
+  //! Start tracer for given event
   inline void startTracer(Trace &trace) {
     pthread_mutex_lock(&mutex);                                 // Lock shared variable access
     trace.thread = pthread_self();                              // Store pthread id
@@ -181,7 +181,7 @@ class Logger {
     pthread_mutex_unlock(&mutex);                               // Unlock shared variable access
   }
 
-//! Stop tracer for given event
+  //! Stop tracer for given event
   inline void stopTracer(Trace &trace) {
     pthread_mutex_lock(&mutex);                                 // Lock shared variable access
     trace.end    = get_time();                                  // Stop timer
@@ -189,7 +189,7 @@ class Logger {
     pthread_mutex_unlock(&mutex);                               // Unlock shared variable access
   }
 
-//! Write traces of all events
+  //! Write traces of all events
   inline void writeTrace(int mpirank=0) {
     startTimer("Write trace");                                  // Start timer
     std::stringstream name;                                     // File name
@@ -197,10 +197,10 @@ class Logger {
          << mpirank << ".svg";                                  // Create file name for trace
     std::ofstream traceFile(name.str().c_str());                // Open trace log file
     traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" // Header statements for trace log file
-      << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
-      << "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
-      << "  width=\"200mm\" height=\"40mm\" viewBox=\"0 0 20000 4000\">\n"
-      << "  <g>\n";
+	      << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
+	      << "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
+	      << "  width=\"200mm\" height=\"40mm\" viewBox=\"0 0 20000 4000\">\n"
+	      << "  <g>\n";
     int num_thread = 0;                                         // Counter for number of threads to trace
     ThreadMap threadMap;                                        // Map pthread ID to thread ID
     double base = traces.front().begin;                         // Base time
@@ -218,10 +218,10 @@ class Logger {
       begin -= base;                                            //  Subtract base time from begin time
       end   -= base;                                            //  Subtract base time from end time
       traceFile << "    <rect x=\"" << begin * scale            //  x position of bar plot
-        << "\" y=\"" << threadMap[thread] * 100.0               //  y position of bar plot
-        << "\" width=\"" << (end - begin) * scale               //  width of bar
-        << "\" height=\"90.0\" fill=\"#"<< std::setfill('0') << std::setw(6) << std::hex << color// height of bar
-        << "\" stroke=\"#000000\" stroke-width=\"1\"/>\n";      //  stroke color and width
+		<< "\" y=\"" << threadMap[thread] * 100.0               //  y position of bar plot
+		<< "\" width=\"" << (end - begin) * scale               //  width of bar
+		<< "\" height=\"90.0\" fill=\"#"<< std::setfill('0') << std::setw(6) << std::hex << color// height of bar
+		<< "\" stroke=\"#000000\" stroke-width=\"1\"/>\n";      //  stroke color and width
     }                                                           // End while loop for queue of traces
     traceFile << "  </g>\n" "</svg>\n";                         // Footer for trace log file
     traceFile.close();                                          // Close trace log file

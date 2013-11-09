@@ -11,7 +11,7 @@
 #endif
 
 class Traversal : public Kernel, public Logger {
- private:
+private:
   int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
   int images;                                                   //!< Number of periodic image sublevels
   real_t numP2P;                                                //!< Number of P2P kernel calls
@@ -19,7 +19,7 @@ class Traversal : public Kernel, public Logger {
   C_iter Ci0;                                                   //!< Iterator of first target cell
   C_iter Cj0;                                                   //!< Iterator of first source cell
 
-//! Dual tree traversal for a single pair of cells
+  //! Dual tree traversal for a single pair of cells
   void traverse(C_iter Ci, C_iter Cj, bool mutual) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
@@ -43,7 +43,7 @@ class Traversal : public Kernel, public Logger {
     }                                                           // End if for multipole acceptance
   }
 
-//! Recursive functor for dual tree traversal of a range of Ci and Cj
+  //! Recursive functor for dual tree traversal of a range of Ci and Cj
   struct TraverseRange {
     Traversal * traversal;                                      // Traversal object
     C_iter CiBegin;                                             // Begin iterator for target cells
@@ -98,7 +98,7 @@ class Traversal : public Kernel, public Logger {
     }                                                           // End overload operator()
   };
 
-//! Tree traversal of periodic cells
+  //! Tree traversal of periodic cells
   void traversePeriodic(real_t cycle) {
     startTimer("Traverse periodic");                            // Start timer
     Xperiodic = 0;                                              // Periodic coordinate offset
@@ -160,7 +160,7 @@ class Traversal : public Kernel, public Logger {
     stopTimer("Traverse periodic");                             // Stop timer
   }
 
-//! Split cell and call traverse() recursively for child
+  //! Split cell and call traverse() recursively for child
   void splitCell(C_iter Ci, C_iter Cj, bool mutual) {
     if (Cj->NCHILD == 0) {                                      // If Cj is leaf
       assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
@@ -174,7 +174,7 @@ class Traversal : public Kernel, public Logger {
       }                                                         //  End loop over Cj's children
     } else if (Ci->NBODY + Cj->NBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
       TraverseRange traverseRange(this, Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,// Instantiate recursive functor
-               Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, mutual);
+				  Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, mutual);
       traverseRange();                                          //  Traverse for range of cell pairs
     } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
       for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
@@ -187,10 +187,10 @@ class Traversal : public Kernel, public Logger {
     }                                                           // End if for leafs and Ci Cj size
   }
 
- public:
+public:
   Traversal(int _nspawn, int _images) : nspawn(_nspawn), images(_images), numP2P(0), numM2L(0) {}
 
-//! Evaluate P2P and M2L using dual tree traversal
+  //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversal(Cells &icells, Cells &jcells, real_t cycle, bool mutual=false) {
     if (icells.empty() || jcells.empty()) return;               // Quit if either of the cell vectors are empty
     startTimer("Traverse");                                     // Start timer
@@ -216,7 +216,7 @@ class Traversal : public Kernel, public Logger {
     writeTrace();                                               // Write trace to file
   }
 
-//! Direct summation
+  //! Direct summation
   void direct(Bodies &ibodies, Bodies &jbodies, real_t cycle) {
     Cells cells; cells.resize(2);                               // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
@@ -240,26 +240,26 @@ class Traversal : public Kernel, public Logger {
     }                                                           // End loop over x periodic direction
   }
 
-//! Normalize bodies after direct summation
+  //! Normalize bodies after direct summation
   void normalize(Bodies &bodies) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG /= B->SRC;                                         //  Normalize by target charge
     }                                                           // End loop over bodies
   }
 
-//! Print traversal statistics
+  //! Print traversal statistics
   void printTraversalData() {
 #if COUNT
     if (verbose) {                                              // If verbose flag is true
       std::cout << "--- Traversal stats --------------" << std::endl// Print title
-	      << std::setw(stringLength) << std::left           //  Set format
-	      << "P2P calls"  << " : "                          //  Print title
-	      << std::setprecision(0) << std::fixed             //  Set format
-              << numP2P << std::endl                            //  Print number of P2P calls
-	      << std::setw(stringLength) << std::left           //  Set format
-	      << "M2L calls"  << " : "                          //  Print title
-	      << std::setprecision(0) << std::fixed             //  Set format
-              << numM2L << std::endl;                           //  Print number of M2L calls
+		<< std::setw(stringLength) << std::left           //  Set format
+		<< "P2P calls"  << " : "                          //  Print title
+		<< std::setprecision(0) << std::fixed             //  Set format
+		<< numP2P << std::endl                            //  Print number of P2P calls
+		<< std::setw(stringLength) << std::left           //  Set format
+		<< "M2L calls"  << " : "                          //  Print title
+		<< std::setprecision(0) << std::fixed             //  Set format
+		<< numM2L << std::endl;                           //  Print number of M2L calls
     }                                                           // End if for verbose flag
 #endif
   }

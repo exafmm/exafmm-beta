@@ -3,26 +3,26 @@ const real_t EPS = 1e-12;                                       // Double precis
 
 template<int nx, int ny, int nz>
 struct Index {
-  static const int                I = Index<nx,ny+1,nz-1>::I + 1;
-  static const unsigned long long F = Index<nx,ny,nz-1>::F * nz;
+  static const int      I = Index<nx,ny+1,nz-1>::I + 1;
+  static const uint64_t F = Index<nx,ny,nz-1>::F * nz;
 };
 
 template<int nx, int ny>
 struct Index<nx,ny,0> {
-  static const int                I = Index<nx+1,0,ny-1>::I + 1;
-  static const unsigned long long F = Index<nx,ny-1,0>::F * ny;
+  static const int      I = Index<nx+1,0,ny-1>::I + 1;
+  static const uint64_t F = Index<nx,ny-1,0>::F * ny;
 };
 
 template<int nx>
 struct Index<nx,0,0> {
-  static const int                I = Index<0,0,nx-1>::I + 1;
-  static const unsigned long long F = Index<nx-1,0,0>::F * nx;
+  static const int      I = Index<0,0,nx-1>::I + 1;
+  static const uint64_t F = Index<nx-1,0,0>::F * nx;
 };
 
 template<>
 struct Index<0,0,0> {
-  static const int                I = 0;
-  static const unsigned long long F = 1;
+  static const int      I = 0;
+  static const uint64_t F = 1;
 };
 
 
@@ -50,7 +50,7 @@ struct DerivativeSum {
   static const int n = nx + ny + nz;
   static inline real_t loop(const vecP &C, const vec3 &dX) {
     return DerivativeSum<nx,ny,nz,nx,ny,kz-1,nextflag>::loop(C,dX)
-         + DerivativeTerm<n,nx,ny,kz-1,dim>::kernel(C,dX);
+      + DerivativeTerm<n,nx,ny,kz-1,dim>::kernel(C,dX);
   }
 };
 
@@ -69,7 +69,7 @@ struct DerivativeSum<nx,ny,nz,kx,ky,kz,3> {
   static const int n = nx + ny + nz;
   static inline real_t loop(const vecP &C, const vec3 &dX) {
     return DerivativeSum<nx,ny,nz,nx,ky-1,nz,nextflag>::loop(C,dX)
-         + DerivativeTerm<n,nx,ky-1,nz,dim>::kernel(C,dX);
+      + DerivativeTerm<n,nx,ky-1,nz,dim>::kernel(C,dX);
   }
 };
 
@@ -88,7 +88,7 @@ struct DerivativeSum<nx,ny,nz,kx,ky,kz,1> {
   static const int n = nx + ny + nz;
   static inline real_t loop(const vecP &C, const vec3 &dX) {
     return DerivativeSum<nx,ny,nz,kx-1,ny,nz,nextflag>::loop(C,dX)
-         + DerivativeTerm<n,kx-1,ny,nz,dim>::kernel(C,dX);
+      + DerivativeTerm<n,kx-1,ny,nz,dim>::kernel(C,dX);
   }
 };
 
@@ -111,7 +111,7 @@ template<int nx, int ny, int nz, int kx=nx, int ky=ny, int kz=nz>
 struct MultipoleSum {
   static inline real_t kernel(const vecP &C, const vecP &M) {
     return MultipoleSum<nx,ny,nz,kx,ky,kz-1>::kernel(C,M)
-         + C[Index<nx-kx,ny-ky,nz-kz>::I]*M[Index<kx,ky,kz>::I];
+      + C[Index<nx-kx,ny-ky,nz-kz>::I]*M[Index<kx,ky,kz>::I];
   }
 };
 
@@ -119,7 +119,7 @@ template<int nx, int ny, int nz, int kx, int ky>
 struct MultipoleSum<nx,ny,nz,kx,ky,0> {
   static inline real_t kernel(const vecP &C, const vecP &M) {
     return MultipoleSum<nx,ny,nz,kx,ky-1,nz>::kernel(C,M)
-         + C[Index<nx-kx,ny-ky,nz>::I]*M[Index<kx,ky,0>::I];
+      + C[Index<nx-kx,ny-ky,nz>::I]*M[Index<kx,ky,0>::I];
   }
 };
 
@@ -127,7 +127,7 @@ template<int nx, int ny, int nz, int kx>
 struct MultipoleSum<nx,ny,nz,kx,0,0> {
   static inline real_t kernel(const vecP &C, const vecP &M) {
     return MultipoleSum<nx,ny,nz,kx-1,ny,nz>::kernel(C,M)
-         + C[Index<nx-kx,ny,nz>::I]*M[Index<kx,0,0>::I];
+      + C[Index<nx-kx,ny,nz>::I]*M[Index<kx,0,0>::I];
   }
 };
 
@@ -141,7 +141,7 @@ template<int nx, int ny, int nz, int kx=0, int ky=0, int kz=P-1-nx-ny-nz>
 struct LocalSum {
   static inline real_t kernel(const vecP &M, const vecP &L) {
     return LocalSum<nx,ny,nz,kx,ky+1,kz-1>::kernel(M,L)
-         + M[Index<kx,ky,kz>::I] * L[Index<nx+kx,ny+ky,nz+kz>::I];
+      + M[Index<kx,ky,kz>::I] * L[Index<nx+kx,ny+ky,nz+kz>::I];
   }
 };
 
@@ -149,7 +149,7 @@ template<int nx, int ny, int nz, int kx, int ky>
 struct LocalSum<nx,ny,nz,kx,ky,0> {
   static inline real_t kernel(const vecP &M, const vecP &L) {
     return LocalSum<nx,ny,nz,kx+1,0,ky-1>::kernel(M,L)
-         + M[Index<kx,ky,0>::I] * L[Index<nx+kx,ny+ky,nz>::I];
+      + M[Index<kx,ky,0>::I] * L[Index<nx+kx,ny+ky,nz>::I];
   }
 };
 
@@ -157,7 +157,7 @@ template<int nx, int ny, int nz, int kx>
 struct LocalSum<nx,ny,nz,kx,0,0> {
   static inline real_t kernel(const vecP &M, const vecP &L) {
     return LocalSum<nx,ny,nz,0,0,kx-1>::kernel(M,L)
-         + M[Index<kx,0,0>::I] * L[Index<nx+kx,ny,nz>::I];
+      + M[Index<kx,0,0>::I] * L[Index<nx+kx,ny,nz>::I];
   }
 };
 

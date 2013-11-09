@@ -6,7 +6,7 @@
 
 //! Handles all the partitioning of domains
 class Partition : public MyMPI, public Logger {
- protected:
+protected:
   Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
   int * sendBodyCount;                                          //!< Send count
@@ -14,8 +14,8 @@ class Partition : public MyMPI, public Logger {
   int * recvBodyCount;                                          //!< Receive count
   int * recvBodyDispl;                                          //!< Receive displacement
 
- protected:
-//! Exchange send count for bodies
+protected:
+  //! Exchange send count for bodies
   void alltoall(Bodies &bodies) {
     for (int i=0; i<mpisize; i++) {                             // Loop over ranks
       sendBodyCount[i] = 0;                                     //  Initialize send counts
@@ -34,7 +34,7 @@ class Partition : public MyMPI, public Logger {
     }                                                           // End loop over ranks
   }
 
-//! Exchange bodies
+  //! Exchange bodies
   void alltoallv(Bodies &bodies) {
     int word = sizeof(bodies[0]) / 4;                           // Word size of body structure
     recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
@@ -54,15 +54,15 @@ class Partition : public MyMPI, public Logger {
     }                                                           // End loop over ranks
   }
 
- public:
-//! Constructor
+public:
+  //! Constructor
   Partition() {
     sendBodyCount = new int [mpisize];                          // Allocate send count
     sendBodyDispl = new int [mpisize];                          // Allocate send displacement
     recvBodyCount = new int [mpisize];                          // Allocate receive count
     recvBodyDispl = new int [mpisize];                          // Allocate receive displacement
   }
-//! Destructor
+  //! Destructor
   ~Partition() {
     delete[] sendBodyCount;                                     // Deallocate send count
     delete[] sendBodyDispl;                                     // Deallocate send displacement
@@ -70,7 +70,7 @@ class Partition : public MyMPI, public Logger {
     delete[] recvBodyDispl;                                     // Deallocate receive displacement
   }
 
-//! Send bodies to next rank (round robin)
+  //! Send bodies to next rank (round robin)
   void shiftBodies(Bodies &bodies) {
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
@@ -94,7 +94,7 @@ class Partition : public MyMPI, public Logger {
     bodies = recvBodies;                                        // Copy bodies from buffer
   }
 
-//! Allgather bodies
+  //! Allgather bodies
   Bodies allgatherBodies(Bodies &bodies) {
     const int word = sizeof(bodies[0]) / 4;                     // Word size of body structure
     sendBodyCount[0] = bodies.size();                           // Determine send count
@@ -114,14 +114,14 @@ class Partition : public MyMPI, public Logger {
     return recvBodies;                                          // Return bodies
   }
 
-//! Allreduce int from all ranks
+  //! Allreduce int from all ranks
   int allreduceInt(int send) {
     int recv;                                                   // Receive buffer
     MPI_Allreduce(&send, &recv, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
     return recv;                                                // Return received values
   }
 
-//! Allreduce fvec3 from all ranks
+  //! Allreduce fvec3 from all ranks
   vec3 allreduceVec3(vec3 send) {
     fvec3 fsend, frecv;                                         // Single precision buffers
     for (int d=0; d<3; d++) fsend[d] = send[d];                 // Copy to send buffer
@@ -131,7 +131,7 @@ class Partition : public MyMPI, public Logger {
     return recv;                                                // Return received values
   }
 
-//! Allreduce bounds from all ranks
+  //! Allreduce bounds from all ranks
   Bounds allreduceBounds(Bounds local) {
     fvec3 localXmin, localXmax, globalXmin, globalXmax;
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
@@ -149,7 +149,7 @@ class Partition : public MyMPI, public Logger {
     return global;                                              // Return global bounds
   }
 
-//! Partition bodies
+  //! Partition bodies
   Bounds partition(Bodies &bodies, Bounds global) {
     startTimer("Partition");                                    // Start timer
     int size = mpisize;                                         // Initialize MPI size counter
@@ -185,7 +185,7 @@ class Partition : public MyMPI, public Logger {
     return local;
   }
 
-//! Send bodies back to where they came from
+  //! Send bodies back to where they came from
   void unpartition(Bodies &bodies) {
     startTimer("Unpartition");                                  // Start timer
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies

@@ -4,6 +4,7 @@
 #include <complex>
 #include "kahan.h"
 #include "macros.h"
+#include <stdint.h>
 #include <vector>
 #include "vec.h"
 
@@ -80,7 +81,7 @@ struct Cell {
   int       IBODY;                                              //!< Index of first body
   int       NBODY;                                              //!< Number of descendant bodies
   B_iter    BODY;                                               //!< Iterator of first body
-  long long ICELL;                                              //!< Cell index
+  uint64_t  ICELL;                                              //!< Cell index
   vec3      X;                                                  //!< Cell center
   real_t    R;                                                  //!< Cell radius
   real_t    RMAX;                                               //!< Max cell radius

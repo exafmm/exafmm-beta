@@ -5,9 +5,9 @@
 #include "types.h"
 
 class BuildTree : public Logger {
- private:
+private:
   typedef vec<8,int> ivec8;                                     //!< Vector of 8 integer types
-//! Binary tree is used for counting number of bodies with a recursive approach
+  //! Binary tree is used for counting number of bodies with a recursive approach
   struct BinaryTreeNode {
     ivec8            NBODY;                                     //!< Number of descendant bodies
     BinaryTreeNode * LEFT;                                      //!< Pointer to left child
@@ -16,7 +16,7 @@ class BuildTree : public Logger {
     BinaryTreeNode * END;                                       //!< Pointer to end of memory space
   };
 
-//! Octree is used for building the FMM tree structure as "nodes", then transformed to "cells" data structure
+  //! Octree is used for building the FMM tree structure as "nodes", then transformed to "cells" data structure
   struct OctreeNode {
     int          BODY;                                          //!< Index offset for first body in node
     int          NBODY;                                         //!< Number of descendant bodies
@@ -31,7 +31,7 @@ class BuildTree : public Logger {
   B_iter       B0;                                              //!< Iterator of first body
   OctreeNode * N0;                                              //!< Pointer to octree root node
 
- private:
+private:
   //! Recursive functor for counting bodies in each octant using binary tree
   struct CountBodies {
     Bodies & bodies;                                            // Vector of bodies
@@ -81,7 +81,7 @@ class BuildTree : public Logger {
     }                                                           // End overload operator()
   };
 
-//! Recursive functor for sorting bodies according to octant (Morton order)
+  //! Recursive functor for sorting bodies according to octant (Morton order)
   struct MoveBodies {
     Bodies & bodies;                                            // Vector of bodies
     Bodies & buffer;                                            // Buffer for bodies
@@ -115,7 +115,7 @@ class BuildTree : public Logger {
     }                                                           // End overload operator()
   };
 
-//! Recursive functor for building nodes of an octree adaptively using a top-down approach
+  //! Recursive functor for building nodes of an octree adaptively using a top-down approach
   struct BuildNodes {
     OctreeNode *& octNode;                                      // Reference to a double pointer of an octree node
     Bodies & bodies;                                            // Vector of bodies
@@ -204,7 +204,7 @@ class BuildTree : public Logger {
     }                                                           // End overload operator()
   };
 
-//! Recursive functor for creating cell data structure from nodes
+  //! Recursive functor for creating cell data structure from nodes
   struct Nodes2cells {
     OctreeNode * octNode;                                       // Pointer to octree node
     B_iter B0;                                                  // Iterator of first body
@@ -223,10 +223,10 @@ class BuildTree : public Logger {
       octNode(_octNode), B0(_B0), C(_C), C0(_C0), CN(_CN),      // Initialize variables
       X0(_X0), R0(_R0), nspawn(_nspawn), maxlevel(_maxlevel), level(_level), iparent(_iparent) {}
     //! Get cell index
-    long long getKey(vec3 X, vec3 Xmin, real_t diameter, int level) {
+    uint64_t getKey(vec3 X, vec3 Xmin, real_t diameter, int level) {
       int iX[3] = {0, 0, 0};                                    // Initialize 3-D index
       for (int d=0; d<3; d++) iX[d] = int((X[d] - Xmin[d]) / diameter);// 3-D index
-      long long index = ((1 << 3 * level) - 1) / 7;             // Levelwise offset
+      uint64_t index = ((1 << 3 * level) - 1) / 7;              // Levelwise offset
       for (int l=0; l<level; l++) {                             // Loop over levels
 	for (int d=0; d<3; d++) index += (iX[d] & 1) << (3 * l + d); // Interleave bits into Morton key
 	for (int d=0; d<3; d++) iX[d] >>= 1;                    //  Bitshift 3-D index
@@ -295,7 +295,7 @@ class BuildTree : public Logger {
     return box;                                                 // Return box.X and box.R
   }
 
-//! Grow tree structure top down
+  //! Grow tree structure top down
   void growTree(Bodies &bodies, vec3 X0, real_t R0) {
     assert(R0 > 0);                                             // Check for bounds validity
     Bodies buffer = bodies;                                     // Copy bodies to buffer
@@ -312,7 +312,7 @@ class BuildTree : public Logger {
     stopTimer("Grow tree");                                     // Stop timer
   }
 
-//! Link tree structure
+  //! Link tree structure
   Cells linkTree(vec3 X0, real_t R0) {
     startTimer("Link tree");                                    // Start timer
     Cells cells;                                                // Initialize cell array
@@ -327,26 +327,26 @@ class BuildTree : public Logger {
     return cells;                                               // Return cells array
   }
 
- public:
+public:
   BuildTree(int _ncrit, int _nspawn) : ncrit(_ncrit), nspawn(_nspawn), maxlevel(0) {}
 
-//! Build tree structure top down
+  //! Build tree structure top down
   Cells buildTree(Bodies &bodies, Bounds bounds) {
     Box box = bounds2box(bounds);                               // Get box from bounds
     growTree(bodies,box.X,box.R);                               // Grow tree from root
     return linkTree(box.X,box.R);                               // Form parent-child links in tree
   }
 
-//! Print tree structure statistics
+  //! Print tree structure statistics
   void printTreeData(Cells &cells) {
     if (verbose) {                                              // If verbose flag is true
       printTitle("Tree stats");                                 //  Print title
       std::cout  << std::setw(stringLength) << std::left        //  Set format
-	        << "Bodies"     << " : " << cells.front().NBODY << std::endl// Print number of bodies
-	        << std::setw(stringLength) << std::left         //  Set format
-	        << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
-	        << std::setw(stringLength) << std::left         //  Set format
-	        << "Tree depth" << " : " << maxlevel << std::endl;//  Print number of levels
+		 << "Bodies"     << " : " << cells.front().NBODY << std::endl// Print number of bodies
+		 << std::setw(stringLength) << std::left         //  Set format
+		 << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
+		 << std::setw(stringLength) << std::left         //  Set format
+		 << "Tree depth" << " : " << maxlevel << std::endl;//  Print number of levels
     }                                                           // End if for verbose flag
   }
 };

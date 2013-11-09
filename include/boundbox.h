@@ -5,7 +5,7 @@
 #include "types.h"
 
 class BoundBox : public Logger {
- private:
+private:
   int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
 
   //! Recursive functor for calculating bounds
@@ -38,7 +38,7 @@ class BoundBox : public Logger {
     }                                                           // End overload operator()
   };
 
- public:
+public:
   BoundBox(int _nspawn) : nspawn(_nspawn) {}
 
   //! Get Xmin and Xmax of domain

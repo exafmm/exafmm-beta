@@ -22,7 +22,7 @@ static struct option long_options[] = {
 };
 
 class Args {
- public:
+public:
   int numBodies;
   int numTargets;
   int ncrit;
@@ -34,7 +34,7 @@ class Args {
   const char * distribution;
   int repeat;
 
- private:
+private:
   void usage(char * name) {
     fprintf(stderr,
             "Usage: %s [options]\n"
@@ -79,9 +79,9 @@ class Args {
     return "";
   }
 
- public:
+public:
   Args(int argc=0, char ** argv=NULL) : numBodies(1000000), numTargets(100), ncrit(16), nspawn(1000), images(0),
-    theta(.4), mutual(1), verbose(1), distribution("cube"), repeat(1) {
+					theta(.4), mutual(1), verbose(1), distribution("cube"), repeat(1) {
     while (1) {
       int option_index;
       int c = getopt_long(argc, argv, "", long_options, &option_index);

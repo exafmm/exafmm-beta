@@ -17,13 +17,13 @@ void cart2sph(real_t& r, real_t& theta, real_t& phi, vec3 dX) {
 template<typename T>
 void sph2cart(real_t r, real_t theta, real_t phi, T spherical, T &cartesian) {
   cartesian[0] = sin(theta) * cos(phi) * spherical[0]           // x component (not x itself)
-               + cos(theta) * cos(phi) / r * spherical[1]
-               - sin(phi) / r / sin(theta) * spherical[2];
+    + cos(theta) * cos(phi) / r * spherical[1]
+    - sin(phi) / r / sin(theta) * spherical[2];
   cartesian[1] = sin(theta) * sin(phi) * spherical[0]           // y component (not y itself)
-               + cos(theta) * sin(phi) / r * spherical[1]
-               + cos(phi) / r / sin(theta) * spherical[2];
+    + cos(theta) * sin(phi) / r * spherical[1]
+    + cos(phi) / r / sin(theta) * spherical[2];
   cartesian[2] = cos(theta) * spherical[0]                      // z component (not z itself)
-               - sin(theta) / r * spherical[1];
+    - sin(theta) / r * spherical[1];
 }
 
 //! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$

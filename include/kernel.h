@@ -4,10 +4,10 @@
 #include "types.h"
 
 class Kernel {
- protected:
+protected:
   vec3 Xperiodic;                                               //!< Coordinate offset for periodic B.C.
 
- public:
+public:
   Kernel() : Xperiodic(0) {}                                    //!< Constructor
   void P2P(C_iter Ci, C_iter Cj, bool mutual) const;            //!< P2P kernel between cells Ci and Cj
   void P2P(C_iter C) const;                                     //!< P2P kernel for cell C

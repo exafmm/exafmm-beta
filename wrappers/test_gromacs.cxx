@@ -84,8 +84,8 @@ int main(int argc, char ** argv) {
     potSum  += p[i]  * q[i];
     potSum2 += p2[i] * q[i];
     accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
-             + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
-             + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
+      + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
+      + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
     accNrm  += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
   }
   double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;

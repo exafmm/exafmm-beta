@@ -233,10 +233,10 @@ program main
   end if
 
   do i = 1, nglobal
-    p(i) = 0
-    f(3*i-2) = 0
-    f(3*i-1) = 0
-    f(3*i-0) = 0
+     p(i) = 0
+     f(3*i-2) = 0
+     f(3*i-1) = 0
+     f(3*i-0) = 0
   end do
   call fmm_vanderwaals(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
        pcycle, nat, rscale, gscale, fgscale)

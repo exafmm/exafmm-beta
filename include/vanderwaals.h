@@ -4,7 +4,7 @@
 #include "types.h"
 
 class VanDerWaals : public Logger {
- private:
+private:
   real_t cuton;                                                 //!< Cuton distance
   real_t cutoff;                                                //!< Cutoff distance
   real_t cycle;                                                 //!< Periodic cycle
@@ -13,8 +13,8 @@ class VanDerWaals : public Logger {
   std::vector<real_t> gscale;                                   //!< Value scaling parameter for VdW potential
   std::vector<real_t> fgscale;                                  //!< Value scaling parameter for VdW force
 
- private:
-//! Van der Waals P2P kernel
+private:
+  //! Van der Waals P2P kernel
   void P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic) const {
     for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {
       int atypei = int(Bi->SRC);
@@ -79,8 +79,8 @@ class VanDerWaals : public Logger {
     }                                                           // End overload operator()
   };
 
- public:
-//! Constructor
+public:
+  //! Constructor
   VanDerWaals(double _cuton, double _cutoff, double _cycle, int _numTypes,
 	      double * _rscale, double * _gscale, double * _fgscale) :
     cuton(_cuton), cutoff(_cutoff), cycle(_cycle), numTypes(_numTypes) {
@@ -94,7 +94,7 @@ class VanDerWaals : public Logger {
     }
   }
 
-//! Evaluate Van Der Waals potential and force
+  //! Evaluate Van Der Waals potential and force
   void evaluate(Cells &cells, Cells &jcells) {
     startTimer("Van der Waals");                                // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells

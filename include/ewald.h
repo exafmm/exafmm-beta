@@ -127,62 +127,62 @@ private:
     }                                                           // End overload operator()
   };
 
-  public:
-    //! Constructor
-    Ewald(int _ksize, real_t _alpha, real_t _sigma, real_t _cutoff, real_t _cycle) :
-      ksize(_ksize), alpha(_alpha), sigma(_sigma), cutoff(_cutoff), cycle(_cycle) {}
+public:
+  //! Constructor
+  Ewald(int _ksize, real_t _alpha, real_t _sigma, real_t _cutoff, real_t _cycle) :
+    ksize(_ksize), alpha(_alpha), sigma(_sigma), cutoff(_cutoff), cycle(_cycle) {}
 
-    //! Ewald real part
-    void realPart(Cells & cells, Cells & jcells) {
-      startTimer("Ewald real part");                              // Start timer
-      C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
-      for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
-	if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
-	  Neighbor neighbor(this, Ci, Cj, Cj);                    //   Instantiate recursive functor
-	  neighbor();                                             //   Find neighbors recursively
-	}                                                         //  End if for leaf target cell
-      }                                                           // End loop over target cells
-      stopTimer("Ewald real part");                               // Stop timer
-    }
+  //! Ewald real part
+  void realPart(Cells & cells, Cells & jcells) {
+    startTimer("Ewald real part");                              // Start timer
+    C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
+    for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
+      if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
+	Neighbor neighbor(this, Ci, Cj, Cj);                    //   Instantiate recursive functor
+	neighbor();                                             //   Find neighbors recursively
+      }                                                         //  End if for leaf target cell
+    }                                                           // End loop over target cells
+    stopTimer("Ewald real part");                               // Stop timer
+  }
 
-    //! Subtract self term
-    void selfTerm(Bodies & bodies) {
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over all bodies
-	B->TRG[0] -= M_2_SQRTPI * B->SRC * alpha;                 //   Self term of Ewald real part
-      }                                                           //  End loop over all bodies in cell
-    }
+  //! Subtract self term
+  void selfTerm(Bodies & bodies) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       //  Loop over all bodies
+      B->TRG[0] -= M_2_SQRTPI * B->SRC * alpha;                 //   Self term of Ewald real part
+    }                                                           //  End loop over all bodies in cell
+  }
 
-    //! Ewald wave part
-    void wavePart(Bodies & bodies, Bodies & jbodies) {
-      startTimer("Ewald wave part");                              // Start timer
-      Waves waves = initWaves();                                  // Initialize wave vector
-      dft(waves,jbodies);                                         // Apply DFT to bodies to get waves
-      real_t scale = 2 * M_PI / cycle;                            // Scale conversion
-      real_t coef = .5 / M_PI / M_PI / sigma / cycle;             // First constant
-      real_t coef2 = scale * scale / (4 * alpha * alpha);         // Second constant
-      for (W_iter W=waves.begin(); W!=waves.end(); W++) {         // Loop over waves
-	real_t K2 = norm(W->K);                                   //  Wave number squared
-	real_t factor = coef * exp(-K2 * coef2) / K2;             //  Wave factor
-	W->REAL *= factor;                                        //  Apply wave factor to real part
-	W->IMAG *= factor;                                        //  Apply wave factor to imaginary part
-      }                                                           // End loop over waves
-      idft(waves,bodies);                                         // Inverse DFT
-      stopTimer("Ewald wave part");                               // Stop timer
-    }
+  //! Ewald wave part
+  void wavePart(Bodies & bodies, Bodies & jbodies) {
+    startTimer("Ewald wave part");                              // Start timer
+    Waves waves = initWaves();                                  // Initialize wave vector
+    dft(waves,jbodies);                                         // Apply DFT to bodies to get waves
+    real_t scale = 2 * M_PI / cycle;                            // Scale conversion
+    real_t coef = .5 / M_PI / M_PI / sigma / cycle;             // First constant
+    real_t coef2 = scale * scale / (4 * alpha * alpha);         // Second constant
+    for (W_iter W=waves.begin(); W!=waves.end(); W++) {         // Loop over waves
+      real_t K2 = norm(W->K);                                   //  Wave number squared
+      real_t factor = coef * exp(-K2 * coef2) / K2;             //  Wave factor
+      W->REAL *= factor;                                        //  Apply wave factor to real part
+      W->IMAG *= factor;                                        //  Apply wave factor to imaginary part
+    }                                                           // End loop over waves
+    idft(waves,bodies);                                         // Inverse DFT
+    stopTimer("Ewald wave part");                               // Stop timer
+  }
 
-    void print(int stringLength) {
-      if (verbose) {
-	std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
-		  << "ksize" << " : " << ksize << std::endl       // Print ksize
-		  << std::setw(stringLength)                      // Set format
-		  << "alpha" << " : " << alpha << std::endl       // Print alpha
-		  << std::setw(stringLength)                      // Set format
-		  << "sigma" << " : " << sigma << std::endl       // Print sigma
-		  << std::setw(stringLength)                      // Set format
-		  << "cutoff" << " : " << cutoff << std::endl     // Print cutoff
-		  << std::setw(stringLength)                      // Set format
-		  << "cycle" << " : " << cycle << std::endl;      // Print cycle
-      }
+  void print(int stringLength) {
+    if (verbose) {
+      std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
+		<< "ksize" << " : " << ksize << std::endl       // Print ksize
+		<< std::setw(stringLength)                      // Set format
+		<< "alpha" << " : " << alpha << std::endl       // Print alpha
+		<< std::setw(stringLength)                      // Set format
+		<< "sigma" << " : " << sigma << std::endl       // Print sigma
+		<< std::setw(stringLength)                      // Set format
+		<< "cutoff" << " : " << cutoff << std::endl     // Print cutoff
+		<< std::setw(stringLength)                      // Set format
+		<< "cycle" << " : " << cycle << std::endl;      // Print cycle
     }
-  };
+  }
+};
 #endif
