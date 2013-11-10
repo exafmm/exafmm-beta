@@ -10,6 +10,7 @@ int main(int argc, char ** argv) {
   const float eps = 0.05;
   const float theta = 0.75;
   const int ncrit = 64;
+  const float cycle = 2 * M_PI;
 
   fprintf(stdout,"--- FMM Parameters ---------------\n");
   fprintf(stdout,"numBodies            : %d\n",numBodies);
@@ -49,7 +50,7 @@ int main(int argc, char ** argv) {
   Pass pass;
   pass.upward(numLeafs, numLevels, theta, levelRange, bodyPos, sourceCells, sourceCenter, Multipole);
   Traversal traversal;
-  const fvec4 interactions = traversal.approx(numTargets, eps,
+  const fvec4 interactions = traversal.approx(numTargets, eps, cycle,
 					      bodyPos, bodyPos2, bodyAcc,
 					      targetRange, sourceCells, sourceCenter,
 					      Multipole, levelRange);

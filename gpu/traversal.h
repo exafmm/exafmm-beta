@@ -212,14 +212,15 @@ namespace {
     return counters;                                            // Return M2P & P2P counters
   }
 
-  __device__ unsigned long long sumP2PGlob = 0;
-  __device__ unsigned int       maxP2PGlob = 0;
-  __device__ unsigned long long sumM2PGlob = 0;
-  __device__ unsigned int       maxM2PGlob = 0;
+  __device__ uint64_t     sumP2PGlob = 0;
+  __device__ unsigned int maxP2PGlob = 0;
+  __device__ uint64_t     sumM2PGlob = 0;
+  __device__ unsigned int maxM2PGlob = 0;
 
   __global__ __launch_bounds__(NTHREAD, 4)
     void traverse(const int numTargets,
 		  const float EPS2,
+		  const float cycle,
 		  const int2 * levelRange,
 		  const fvec4 * bodyPos,
 		  fvec4 * bodyAcc,
@@ -299,10 +300,10 @@ namespace {
 	sumM2P += __shfl_xor(sumM2P, 1<<i);
       }
       if (laneIdx == 0) {
-	atomicMax(&maxP2PGlob,                     maxP2P);
-	atomicAdd(&sumP2PGlob, (unsigned long long)sumP2P);
-	atomicMax(&maxM2PGlob,                     maxM2P);
-	atomicAdd(&sumM2PGlob, (unsigned long long)sumM2P);
+	atomicMax(&maxP2PGlob, maxP2P);
+	atomicAdd((unsigned long long*)&sumP2PGlob, (unsigned long long)sumP2P);
+	atomicMax(&maxM2PGlob, maxM2P);
+	atomicAdd((unsigned long long*)&sumM2PGlob, (unsigned long long)sumM2P);
       }
       for (int i=0; i<2; i++) {
 	if (bodyIdx + i * WARP_SIZE < bodyEnd)
@@ -350,6 +351,7 @@ class Traversal {
 public:
   fvec4 approx(const int numTargets,
 	       const float eps,
+	       const float cycle,
 	       cudaVec<fvec4> & bodyPos,
 	       cudaVec<fvec4> & bodyPos2,
 	       cudaVec<fvec4> & bodyAcc,
@@ -371,17 +373,17 @@ public:
     cudaDeviceSynchronize();
     const double t0 = get_time();
     CUDA_SAFE_CALL(cudaFuncSetCacheConfig(&traverse, cudaFuncCachePreferL1));
-    traverse<<<NBLOCK,NTHREAD>>>(numTargets, eps*eps, levelRange.d(),
+    traverse<<<NBLOCK,NTHREAD>>>(numTargets, eps*eps, cycle, levelRange.d(),
 				 bodyPos2.d(), bodyAcc.d(),
 				 targetRange.d(), globalPool.d());
     kernelSuccess("traverse");
     const double dt = get_time() - t0;
 
-    unsigned long long sumP2P, sumM2P;
+    uint64_t sumP2P, sumM2P;
     unsigned int maxP2P, maxM2P;
-    CUDA_SAFE_CALL(cudaMemcpyFromSymbol(&sumP2P, sumP2PGlob, sizeof(unsigned long long)));
+    CUDA_SAFE_CALL(cudaMemcpyFromSymbol(&sumP2P, sumP2PGlob, sizeof(uint64_t)));
     CUDA_SAFE_CALL(cudaMemcpyFromSymbol(&maxP2P, maxP2PGlob, sizeof(unsigned int)));
-    CUDA_SAFE_CALL(cudaMemcpyFromSymbol(&sumM2P, sumM2PGlob, sizeof(unsigned long long)));
+    CUDA_SAFE_CALL(cudaMemcpyFromSymbol(&sumM2P, sumM2PGlob, sizeof(uint64_t)));
     CUDA_SAFE_CALL(cudaMemcpyFromSymbol(&maxM2P, maxM2PGlob, sizeof(unsigned int)));
     fvec4 interactions;
     interactions[0] = sumP2P * 1.0 / numBodies;

@@ -7,6 +7,7 @@
 #define CUDA_SAFE_CALL(err) cudaSafeCall(err, __FILE__, __LINE__)
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include "cudavec.h"
 #include "kahan.h"

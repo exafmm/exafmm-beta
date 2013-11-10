@@ -3,26 +3,26 @@
 namespace {
   template<int nx, int ny, int nz>
   struct Index {
-    static const int                I = Index<nx,ny+1,nz-1>::I + 1;
-    static const unsigned long long F = Index<nx,ny,nz-1>::F * nz;
+    static const int      I = Index<nx,ny+1,nz-1>::I + 1;
+    static const uint64_t F = Index<nx,ny,nz-1>::F * nz;
   };
 
   template<int nx, int ny>
   struct Index<nx,ny,0> {
-    static const int                I = Index<nx+1,0,ny-1>::I + 1;
-    static const unsigned long long F = Index<nx,ny-1,0>::F * ny;
+    static const int      I = Index<nx+1,0,ny-1>::I + 1;
+    static const uint64_t F = Index<nx,ny-1,0>::F * ny;
   };
 
   template<int nx>
   struct Index<nx,0,0> {
-    static const int                I = Index<0,0,nx-1>::I + 1;
-    static const unsigned long long F = Index<nx-1,0,0>::F * nx;
+    static const int      I = Index<0,0,nx-1>::I + 1;
+    static const uint64_t F = Index<nx-1,0,0>::F * nx;
   };
 
   template<>
   struct Index<0,0,0> {
-    static const int                I = 0;
-    static const unsigned long long F = 1;
+    static const int      I = 0;
+    static const uint64_t F = 1;
   };
 
 

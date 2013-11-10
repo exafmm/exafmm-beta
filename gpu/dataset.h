@@ -5,6 +5,15 @@
 #include <fstream>
 
 class Dataset {
+private:
+  void printDots(int i, int n) {
+    ldiv_t tmp_i = ldiv(i, n/33);
+    if(tmp_i.rem == 0) {
+      printf(".");
+      fflush(stdout);
+    }
+  }
+
 public:
   std::vector<kvec4> pos;
   Dataset(unsigned long n,
@@ -35,11 +44,7 @@ public:
 	pos[i][1] = Y;
 	pos[i][2] = Z;
 	pos[i][3] = drand48() / n;
-	ldiv_t tmp_i = ldiv(i, n/33);
-	if(tmp_i.rem == 0) {
-	  printf(".");
-	  fflush(stdout);
-	}
+	printDots(i,n);
 	i++;
       }
     }
@@ -64,6 +69,7 @@ public:
       pos[i][1] = drand48() * 2 * M_PI - M_PI;
       pos[i][2] = drand48() * 2 * M_PI - M_PI;
       pos[i][3] = drand48() / n;
+      printDots(i,n);
     }
 #endif
     printf("\n");

@@ -2,17 +2,17 @@
 
 #define NBITS 21
 
-extern void sort(const int size, unsigned long long * key, int * value);
-extern void scan(const int size, unsigned long long * key, int * value);
+extern void sort(const int size, uint64_t * key, int * value);
+extern void scan(const int size, uint64_t * key, int * value);
 
 namespace {
   __device__ unsigned int numTargetGlob= 0;
 
   __device__
-  unsigned long long getHilbert(int3 iX) {
+  uint64_t getHilbert(int3 iX) {
     const int octantMap[8] = {0, 1, 7, 6, 3, 2, 4, 5};
     int mask = 1 << (NBITS - 1);
-    unsigned long long key = 0;
+    uint64_t key = 0;
 #pragma unroll
     for (int i=0; i<NBITS; i++) {
       const int ix = (iX.x & mask) ? 1 : 0;
@@ -49,7 +49,7 @@ namespace {
   void getKeys(const int numBodies,
 	       const Box box,
 	       const fvec4 * bodyPos,
-	       unsigned long long * keys,
+	       uint64_t * keys,
 	       int * values) {
     const int bodyIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (bodyIdx >= numBodies) return;
@@ -73,9 +73,9 @@ namespace {
 
   __global__
   void maskKeys(const int numBodies,
-		const unsigned long long mask,
-		unsigned long long * keys,
-		unsigned long long * keys2,
+		const uint64_t mask,
+		uint64_t * keys,
+		uint64_t * keys2,
 		int * bodyBegin,
 		int * bodyEnd) {
     const int bodyIdx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -83,9 +83,9 @@ namespace {
     keys2[numBodies-bodyIdx-1] = keys[bodyIdx] & mask;
     const int nextIdx = min(bodyIdx+1, numBodies-1);
     const int prevIdx = max(bodyIdx-1, 0);
-    const unsigned long long currKey = keys[bodyIdx] & mask;
-    const unsigned long long nextKey = keys[nextIdx] & mask;
-    const unsigned long long prevKey = keys[prevIdx] & mask;
+    const uint64_t currKey = keys[bodyIdx] & mask;
+    const uint64_t nextKey = keys[nextIdx] & mask;
+    const uint64_t prevKey = keys[prevIdx] & mask;
     if (prevKey < currKey || bodyIdx == 0)
       bodyBegin[bodyIdx] = bodyIdx;
     else
@@ -125,7 +125,7 @@ public:
 	      int levelSplit) {
     const int numBodies = bodyPos.size();
     const int NBLOCK = (numBodies-1) / NTHREAD + 1;
-    cudaVec<unsigned long long> key(numBodies);
+    cudaVec<uint64_t> key(numBodies);
     cudaVec<int> value(numBodies);
     cudaDeviceSynchronize();
 
@@ -136,8 +136,8 @@ public:
 
     cudaVec<int> bodyBegin(numBodies);
     cudaVec<int> bodyEnd(numBodies);
-    cudaVec<unsigned long long> key2(numBodies);
-    unsigned long long mask = 0;
+    cudaVec<uint64_t> key2(numBodies);
+    uint64_t mask = 0;
     for (int i=0; i<NBITS; i++) {
       mask <<= 3;
       if (i < levelSplit)
