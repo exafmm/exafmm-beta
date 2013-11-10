@@ -11,10 +11,10 @@ public:
 private:
   //! Error optimization of Rcrit
   struct SetRcrit {
-    C_iter C;                                                   // Iterator of current cell
-    C_iter C0;                                                  // Iterator of first cell
-    real_t c;                                                   // Root coefficient
-    real_t theta;                                               // Multipole acceptance criteria
+    C_iter C;                                                   //!< Iterator of current cell
+    C_iter C0;                                                  //!< Iterator of first cell
+    real_t c;                                                   //!< Root coefficient
+    real_t theta;                                               //!< Multipole acceptance criteria
     SetRcrit(C_iter _C, C_iter _C0, real_t _c, real_t _theta) : // Constructor
       C(_C), C0(_C0), c(_c), theta(_theta) {}                   // Initialize variables
     void operator() () {                                        // Overload operator()
@@ -43,8 +43,8 @@ private:
 
   //! Recursive functor for the post-order traversal during upward pass
   struct PostOrderTraversal : public Kernel {
-    C_iter C;                                                   // Iterator of current cell
-    C_iter C0;                                                  // Iterator of first cell
+    C_iter C;                                                   //!< Iterator of current cell
+    C_iter C0;                                                  //!< Iterator of first cell
     PostOrderTraversal(C_iter _C, C_iter _C0) :                 // Constructor
       C(_C), C0(_C0) {}                                         // Initialize variables
     void operator() () {                                        // Overload operator()
@@ -64,8 +64,8 @@ private:
 
   //! Recursive functor for the pre-order traversal during downward pass
   struct PreOrderTraversal : public Kernel {
-    C_iter C;                                                   // Iterator of current cell
-    C_iter C0;                                                  // Iterator of first cell
+    C_iter C;                                                   //!< Iterator of current cell
+    C_iter C0;                                                  //!< Iterator of first cell
     PreOrderTraversal(C_iter _C, C_iter _C0) :                  // Constructor
       C(_C), C0(_C0) {}                                         // Initialize variables
     void operator() () {                                        // Overload operator()

@@ -255,7 +255,7 @@ public:
   //! Get bodies with positive charges
   Bodies getPositive(Bodies &bodies) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
-    B_iter B2 = buffer.begin();                                 // Initialize iterator for buffer
+    B_iter B2 = buffer.begin();                                 // Initialize iterator of buffer
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       if (B->SRC >= 0) {                                        //  If source is positive
         *B2 = *B;                                               //   Copy data to buffer
@@ -270,7 +270,7 @@ public:
   //! Get bodies with negative charges
   Bodies getNegative(Bodies &bodies) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
-    B_iter B2 = buffer.begin();                                 // Initialize iterator for buffer
+    B_iter B2 = buffer.begin();                                 // Initialize iterator of buffer
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       if (B->SRC < 0) {                                         //  If source is negative
         *B2 = *B;                                               //   Copy data to buffer

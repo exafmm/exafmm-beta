@@ -78,7 +78,7 @@ int main(int argc, char ** argv) {
   pass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
-#if 1
+#if 0
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
   logger.printTitle("Ewald Profiling");

@@ -62,7 +62,7 @@ public:
       usleep(wait);                                             //  Wait "wait" milliseconds
       if (mpirank == irank) {                                   //  If it's my turn to print
         std::cout << mpirank << " : ";                          //   Print rank
-        for (int i=begin; i<end; i++) {                        //   Loop over data
+        for (int i=begin; i<end; i++) {                         //   Loop over data
           std::cout << data[i] << " ";                          //    Print data[i]
         }                                                       //   End loop over data
         std::cout << std::endl;                                 //   New line
@@ -77,7 +77,7 @@ public:
     usleep(wait);                                               // Wait "wait" milliseconds
     if (mpirank == irank) {                                     // If it's my rank
       std::cout << mpirank << " : ";                            //  Print rank
-      for (int i=begin; i<end; i++) {                          //  Loop over data
+      for (int i=begin; i<end; i++) {                           //  Loop over data
         std::cout << data[i] << " ";                            //   Print data[i]
       }                                                         //  End loop over data
       std::cout << std::endl;                                   //  New line

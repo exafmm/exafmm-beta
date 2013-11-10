@@ -11,7 +11,7 @@ class Ewald : public Logger {
     real_t IMAG;                                                //!< imaginary part of wave
   };
   typedef std::vector<Wave> Waves;                              //!< Vector of Wave types
-  typedef Waves::iterator   W_iter;                             //!< Iterator for Wave types
+  typedef Waves::iterator   W_iter;                             //!< Iterator of Wave types
 
 private:
   int ksize;                                                    //!< Number of waves in Ewald summation
@@ -104,10 +104,10 @@ private:
 
   //! Recursive functor for traversing tree to find neighbors
   struct Neighbor {
-    Ewald * ewald;                                              // Ewald object
-    C_iter Ci;                                                  // Iterator of current target cell
-    C_iter Cj;                                                  // Iterator of current source cell
-    C_iter C0;                                                  // Iterator of first source cell
+    Ewald * ewald;                                              //!< Ewald object
+    C_iter Ci;                                                  //!< Iterator of current target cell
+    C_iter Cj;                                                  //!< Iterator of current source cell
+    C_iter C0;                                                  //!< Iterator of first source cell
     Neighbor(Ewald * _ewald, C_iter _Ci, C_iter _Cj, C_iter _C0) :// Constructor
       ewald(_ewald), Ci(_Ci), Cj(_Cj), C0(_C0) {}               // Initialize variables
     void operator() () {                                        // Overload operator()
@@ -133,7 +133,7 @@ public:
   //! Ewald real part
   void realPart(Cells & cells, Cells & jcells) {
     startTimer("Ewald real part");                              // Start timer
-    C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
+    C_iter Cj = jcells.begin();                                 // Set begin iterator of source cells
     task_group;                                                 // Intitialize tasks
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf

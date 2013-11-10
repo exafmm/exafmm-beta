@@ -56,10 +56,10 @@ private:
 
   //! Recursive functor for traversing tree to find neighbors
   struct Neighbor {
-    VanDerWaals * VdW;                                          // VanDerWaals object
-    C_iter Ci;                                                  // Iterator of current target cell
-    C_iter Cj;                                                  // Iterator of current source cell
-    C_iter C0;                                                  // Iterator of first source cell
+    VanDerWaals * VdW;                                          //!< VanDerWaals object
+    C_iter Ci;                                                  //!< Iterator of current target cell
+    C_iter Cj;                                                  //!< Iterator of current source cell
+    C_iter C0;                                                  //!< Iterator of first source cell
     Neighbor(VanDerWaals * _VdW, C_iter _Ci, C_iter _Cj, C_iter _C0) :// Constructor
       VdW(_VdW), Ci(_Ci), Cj(_Cj), C0(_C0) {}                   // Initialize variables
     void operator() () {                                        // Overload operator()
@@ -95,7 +95,7 @@ public:
   //! Evaluate Van Der Waals potential and force
   void evaluate(Cells &cells, Cells &jcells) {
     startTimer("Van der Waals");                                // Start timer
-    C_iter Cj = jcells.begin();                                 // Set begin iterator for source cells
+    C_iter Cj = jcells.begin();                                 // Set begin iterator of source cells
     task_group;                                                 // Intitialize tasks
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf

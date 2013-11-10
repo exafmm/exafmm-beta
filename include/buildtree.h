@@ -34,12 +34,12 @@ private:
 private:
   //! Recursive functor for counting bodies in each octant using binary tree
   struct CountBodies {
-    Bodies & bodies;                                            // Vector of bodies
-    int begin;                                                  // Body begin index
-    int end;                                                    // Body end index
-    vec3 X;                                                     // Coordinate of node center
-    BinaryTreeNode * binNode;                                   // Pointer to binary tree node
-    int nspawn;                                                 // Threshold of NBODY for spawning new threads
+    Bodies & bodies;                                            //!< Vector of bodies
+    int begin;                                                  //!< Body begin index
+    int end;                                                    //!< Body end index
+    vec3 X;                                                     //!< Coordinate of node center
+    BinaryTreeNode * binNode;                                   //!< Pointer to binary tree node
+    int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
     CountBodies(Bodies & _bodies, int _begin, int _end, vec3 _X,// Constructor
 		BinaryTreeNode * _binNode, int _nspawn) :
       bodies(_bodies), begin(_begin), end(_end), X(_X),         // Initialize variables
@@ -74,7 +74,7 @@ private:
         CountBodies leftBranch(bodies, begin, mid, X, binNode->LEFT, nspawn);// Recursion for left branch
 	create_task(leftBranch);                                //   Create new task for left branch
 	CountBodies rightBranch(bodies, mid, end, X, binNode->RIGHT, nspawn);// Recursion for right branch
-	rightBranch();                                          //   Use same task for right branch
+	rightBranch();                                          //   Use old task for right branch
 	wait_tasks;                                             //   Synchronize tasks
 	binNode->NBODY = binNode->LEFT->NBODY + binNode->RIGHT->NBODY;// Sum contribution from both branches
       }                                                         //  End if for number of bodies
@@ -83,13 +83,13 @@ private:
 
   //! Recursive functor for sorting bodies according to octant (Morton order)
   struct MoveBodies {
-    Bodies & bodies;                                            // Vector of bodies
-    Bodies & buffer;                                            // Buffer for bodies
-    int begin;                                                  // Body begin index
-    int end;                                                    // Body end index
-    BinaryTreeNode * binNode;                                   // Pointer to binary tree node
-    ivec8 octantOffset;                                         // Offset of octant
-    vec3 X;                                                     // Position of node center
+    Bodies & bodies;                                            //!< Vector of bodies
+    Bodies & buffer;                                            //!< Buffer for bodies
+    int begin;                                                  //!< Body begin index
+    int end;                                                    //!< Body end index
+    BinaryTreeNode * binNode;                                   //!< Pointer to binary tree node
+    ivec8 octantOffset;                                         //!< Offset of octant
+    vec3 X;                                                     //!< Position of node center
     MoveBodies(Bodies & _bodies, Bodies & _buffer, int _begin, int _end,// Constructor
 	       BinaryTreeNode * _binNode, ivec8 _octantOffset, vec3 _X) :
       bodies(_bodies), buffer(_buffer), begin(_begin), end(_end),// Initialize variables
@@ -109,7 +109,7 @@ private:
 	create_task(leftBranch);                                //   Create new task for left branch
 	octantOffset += binNode->LEFT->NBODY;                   //   Increment the octant offset for right branch
 	MoveBodies rightBranch(bodies, buffer, mid, end, binNode->RIGHT, octantOffset, X);// Recursion for right branch
-	rightBranch();                                          //   Use same task for right branch
+	rightBranch();                                          //   Use old task for right branch
 	wait_tasks;                                             //   Synchronize tasks
       }                                                         //  End if for child existance
     }                                                           // End overload operator()
@@ -117,19 +117,19 @@ private:
 
   //! Recursive functor for building nodes of an octree adaptively using a top-down approach
   struct BuildNodes {
-    OctreeNode *& octNode;                                      // Reference to a double pointer of an octree node
-    Bodies & bodies;                                            // Vector of bodies
-    Bodies & buffer;                                            // Buffer for bodies
-    int begin;                                                  // Body begin index
-    int end;                                                    // Body end index
-    BinaryTreeNode * binNode;                                   // Pointer to binary tree node
-    vec3 X;                                                     // Coordinate of node center
-    real_t R0;                                                  // Radius of root cell
-    int ncrit;                                                  // Number of bodies per leaf cell
-    int nspawn;                                                 // Threshold of NBODY for spawning new threads
-    int level;                                                  // Current tree level
-    bool direction;                                             // Direction of buffer copying
-    BuildNodes(OctreeNode *& _octNode, Bodies& _bodies,         // Constructor
+    OctreeNode *& octNode;                                      //!< Reference to a double pointer of an octree node
+    Bodies & bodies;                                            //!< Vector of bodies
+    Bodies & buffer;                                            //!< Buffer for bodies
+    int begin;                                                  //!< Body begin index
+    int end;                                                    //!< Body end index
+    BinaryTreeNode * binNode;                                   //!< Pointer to binary tree node
+    vec3 X;                                                     //!< Coordinate of node center
+    real_t R0;                                                  //!< Radius of root cell
+    int ncrit;                                                  //!< Number of bodies per leaf cell
+    int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
+    int level;                                                  //!< Current tree level
+    bool direction;                                             //!< Direction of buffer copying
+    BuildNodes(OctreeNode *& _octNode, Bodies& _bodies,         //!< Constructor
 	       Bodies& _buffer, int _begin, int _end, BinaryTreeNode * _binNode,
 	       vec3 _X, real_t _R0, int _ncrit, int _nspawn, int _level=0, bool _direction=false) :
       octNode(_octNode), bodies(_bodies), buffer(_buffer),      // Initialize variables
@@ -206,17 +206,17 @@ private:
 
   //! Recursive functor for creating cell data structure from nodes
   struct Nodes2cells {
-    OctreeNode * octNode;                                       // Pointer to octree node
-    B_iter B0;                                                  // Iterator of first body
-    C_iter C;                                                   // Iterator of current cell
-    C_iter C0;                                                  // Iterator of first cell
-    C_iter CN;                                                  // Iterator of cell counter
-    vec3 X0;                                                    // Coordinate of root cell center
-    real_t R0;                                                  // Radius of root cell
-    int nspawn;                                                 // Threshold of NNODE for spawning new threads
-    int & maxlevel;                                             // Maximum tree level
-    int level;                                                  // Current tree level
-    int iparent;                                                // Index of parent cell
+    OctreeNode * octNode;                                       //!< Pointer to octree node
+    B_iter B0;                                                  //!< Iterator of first body
+    C_iter C;                                                   //!< Iterator of current cell
+    C_iter C0;                                                  //!< Iterator of first cell
+    C_iter CN;                                                  //!< Iterator of cell counter
+    vec3 X0;                                                    //!< Coordinate of root cell center
+    real_t R0;                                                  //!< Radius of root cell
+    int nspawn;                                                 //!< Threshold of NNODE for spawning new threads
+    int & maxlevel;                                             //!< Maximum tree level
+    int level;                                                  //!< Current tree level
+    int iparent;                                                //!< Index of parent cell
     Nodes2cells(OctreeNode * _octNode, B_iter _B0, C_iter _C,   // Constructor
 		C_iter _C0, C_iter _CN, vec3 _X0, real_t _R0,
 		int _nspawn, int & _maxlevel, int _level=0, int _iparent=0) :
@@ -343,9 +343,9 @@ public:
       printTitle("Tree stats");                                 //  Print title
       std::cout  << std::setw(stringLength) << std::left        //  Set format
 		 << "Bodies"     << " : " << cells.front().NBODY << std::endl// Print number of bodies
-		 << std::setw(stringLength) << std::left         //  Set format
+		 << std::setw(stringLength) << std::left        //  Set format
 		 << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
-		 << std::setw(stringLength) << std::left         //  Set format
+		 << std::setw(stringLength) << std::left        //  Set format
 		 << "Tree depth" << " : " << maxlevel << std::endl;//  Print number of levels
     }                                                           // End if for verbose flag
   }

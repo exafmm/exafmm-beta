@@ -45,12 +45,12 @@ private:
 
   //! Recursive functor for dual tree traversal of a range of Ci and Cj
   struct TraverseRange {
-    Traversal * traversal;                                      // Traversal object
-    C_iter CiBegin;                                             // Begin iterator for target cells
-    C_iter CiEnd;                                               // End iterator for target cells
-    C_iter CjBegin;                                             // Begin Iterator for source cells
-    C_iter CjEnd;                                               // End iterator for source cells
-    bool mutual;                                                // Flag for mutual interaction
+    Traversal * traversal;                                      //!< Traversal object
+    C_iter CiBegin;                                             //!< Begin iterator of target cells
+    C_iter CiEnd;                                               //!< End iterator of target cells
+    C_iter CjBegin;                                             //!< Begin Iterator of source cells
+    C_iter CjEnd;                                               //!< End iterator of source cells
+    bool mutual;                                                //!< Flag for mutual interaction
     TraverseRange(Traversal * _traversal, C_iter _CiBegin, C_iter _CiEnd,// Constructor
 		  C_iter _CjBegin, C_iter _CjEnd, bool _mutual) :
       traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),  // Initialize variables
@@ -216,11 +216,46 @@ public:
     writeTrace();                                               // Write trace to file
   }
 
+  struct DirectRecursion : public Kernel {
+    C_iter Ci;                                                  //!< Iterator of target cell
+    C_iter Cj;                                                  //!< Iterator of source cell
+    int prange;                                                 //!< Range of periodic images
+    real_t cycle;                                               //!< Periodic cycle
+    DirectRecursion(C_iter _Ci, C_iter _Cj, int _prange, real_t _cycle) :// Constructor
+      Ci(_Ci), Cj(_Cj), prange(_prange), cycle(_cycle) {}       // Initialize variables
+    void operator() () {                                        // Overload operator
+      if (Ci->NBODY < 25) {                                     // If number of target bodies is less than threshold
+	for (int ix=-prange; ix<=prange; ix++) {                //   Loop over x periodic direction
+	  for (int iy=-prange; iy<=prange; iy++) {              //    Loop over y periodic direction
+	    for (int iz=-prange; iz<=prange; iz++) {            //     Loop over z periodic direction
+	      Xperiodic[0] = ix * cycle;                        //      Coordinate shift for x periodic direction
+	      Xperiodic[1] = iy * cycle;                        //      Coordinate shift for y periodic direction
+	      Xperiodic[2] = iz * cycle;                        //      Coordinate shift for z periodic direction
+	      P2P(Ci,Cj,false);                                 //      Evaluate P2P kernel
+	    }                                                   //     End loop over z periodic direction
+	  }                                                     //    End loop over y periodic direction
+	}                                                       //   End loop over x periodic direction
+      } else {                                                  // If number of target bodies is more than threshold
+        Cells cells; cells.resize(1);                           //  Initialize new cell vector
+	C_iter Ci2 = cells.begin();                             //  New cell iterator for right branch
+	Ci2->BODY = Ci->BODY + Ci->NBODY / 2;                   //  Set begin iterator to handle latter half
+	Ci2->NBODY = Ci->NBODY - Ci->NBODY / 2;                 //  Set range to handle latter half
+	Ci->NBODY = Ci->NBODY / 2;                              //  Set range to handle first half
+	task_group;                                             //  Initialize task group
+        DirectRecursion leftBranch(Ci, Cj, prange, cycle);      //  Instantiate recursive functor
+	create_task(leftBranch);                                //  Create new task for left branch
+	DirectRecursion rightBranch(Ci2, Cj, prange, cycle);    //  Instantiate recursive functor
+	rightBranch();                                          //  Use old task for right branch
+	wait_tasks;                                             //  Synchronize task group
+      }                                                         // End if for NBODY threshold
+    }                                                           // End operator
+  };
+
   //! Direct summation
   void direct(Bodies &ibodies, Bodies &jbodies, real_t cycle) {
     Cells cells; cells.resize(2);                               // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
-    Ci->BODY = ibodies.begin();                                 // Iterator of first target body
+    Ci->BODY = ibodies.begin();                                 // Iterator of first target body     
     Ci->NBODY = ibodies.size();                                 // Number of target bodies
     Cj->BODY = jbodies.begin();                                 // Iterator of first source body
     Cj->NBODY = jbodies.size();                                 // Number of source bodies
@@ -228,16 +263,21 @@ public:
     for (int i=0; i<images; i++) {                              // Loop over periodic image sublevels
       prange += int(std::pow(3.,i));                            //  Accumulate range of periodic images
     }                                                           // End loop over perioidc image sublevels
+#if 1
+    DirectRecursion directRecursion(Ci, Cj, prange, cycle);     // Instantiate recursive functor
+    directRecursion();                                          // Recursive call for direct summation
+#else
     for (int ix=-prange; ix<=prange; ix++) {                    // Loop over x periodic direction
       for (int iy=-prange; iy<=prange; iy++) {                  //  Loop over y periodic direction
-        for (int iz=-prange; iz<=prange; iz++) {                //   Loop over z periodic direction
-          Xperiodic[0] = ix * cycle;                            //    Coordinate shift for x periodic direction
-          Xperiodic[1] = iy * cycle;                            //    Coordinate shift for y periodic direction
-          Xperiodic[2] = iz * cycle;                            //    Coordinate shift for z periodic direction
-          P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
-        }                                                       //   End loop over z periodic direction
+	for (int iz=-prange; iz<=prange; iz++) {                //   Loop over z periodic direction
+	  Xperiodic[0] = ix * cycle;                            //    Coordinate shift for x periodic direction
+	  Xperiodic[1] = iy * cycle;                            //    Coordinate shift for y periodic direction
+	  Xperiodic[2] = iz * cycle;                            //    Coordinate shift for z periodic direction
+	  P2P(Ci,Cj,false);                                     //    Evaluate P2P kernel
+	}                                                       //   End loop over z periodic direction
       }                                                         //  End loop over y periodic direction
     }                                                           // End loop over x periodic direction
+#endif
   }
 
   //! Normalize bodies after direct summation
@@ -252,14 +292,14 @@ public:
 #if COUNT
     if (verbose) {                                              // If verbose flag is true
       std::cout << "--- Traversal stats --------------" << std::endl// Print title
-		<< std::setw(stringLength) << std::left           //  Set format
-		<< "P2P calls"  << " : "                          //  Print title
-		<< std::setprecision(0) << std::fixed             //  Set format
-		<< numP2P << std::endl                            //  Print number of P2P calls
-		<< std::setw(stringLength) << std::left           //  Set format
-		<< "M2L calls"  << " : "                          //  Print title
-		<< std::setprecision(0) << std::fixed             //  Set format
-		<< numM2L << std::endl;                           //  Print number of M2L calls
+		<< std::setw(stringLength) << std::left         //  Set format
+		<< "P2P calls"  << " : "                        //  Print title
+		<< std::setprecision(0) << std::fixed           //  Set format
+		<< numP2P << std::endl                          //  Print number of P2P calls
+		<< std::setw(stringLength) << std::left         //  Set format
+		<< "M2L calls"  << " : "                        //  Print title
+		<< std::setprecision(0) << std::fixed           //  Set format
+		<< numM2L << std::endl;                         //  Print number of M2L calls
     }                                                           // End if for verbose flag
 #endif
   }

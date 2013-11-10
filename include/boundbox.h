@@ -10,8 +10,8 @@ private:
 
   //! Recursive functor for calculating bounds
   struct BoundsRecursion {
-    B_iter BiBegin;                                             //!< Body begin iterator
-    B_iter BiEnd;                                               //!< Body end iterator
+    B_iter BiBegin;                                             //!< Begin iterator of bodies
+    B_iter BiEnd;                                               //!< End iterator of bodies
     Bounds & bounds;                                            //!< Bounds : Contains Xmin, Xmax
     int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
     BoundsRecursion(B_iter _BiBegin, B_iter _BiEnd, Bounds & _bounds, int _nspawn) : // Constructor
@@ -27,10 +27,10 @@ private:
 	B_iter BiMid = BiBegin + (BiEnd - BiBegin) / 2;         //   Middle iterator
 	Bounds bounds2 = bounds;                                //   Copy bounds
 	task_group;                                             //   Initialize tasks
-        BoundsRecursion leftBranch(BiBegin, BiMid, bounds, nspawn);// Recursion for left branch
+        BoundsRecursion leftBranch(BiBegin, BiMid, bounds, nspawn);// Instantiate recursive functor
 	create_task(leftBranch);                                //   Create new task for left branch
-        BoundsRecursion rightBranch(BiMid, BiEnd, bounds2, nspawn);// Recursion for right branch
-	rightBranch();                                          //   Use same task for right branch
+        BoundsRecursion rightBranch(BiMid, BiEnd, bounds2, nspawn);// Instantiate recursive functor
+	rightBranch();                                          //   Use old task for right branch
 	wait_tasks;                                             //   Synchronize tasks
 	bounds.Xmin = min(bounds.Xmin, bounds2.Xmin);           //   Minimum of the two Xmins
 	bounds.Xmax = max(bounds.Xmax, bounds2.Xmax);           //   Maximum of the two Xmaxs

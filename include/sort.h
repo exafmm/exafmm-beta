@@ -5,7 +5,7 @@
 //! Custom bucket sort for body and structures
 class Sort {
 private:
-  typedef Bodies::reverse_iterator B_ritr;                      //!< Reverse iterator for Bodies
+  typedef Bodies::reverse_iterator B_ritr;                      //!< Reverse iterator of Bodies
   std::vector<int> bucket;                                      //!< Bucket for sorting
   Bodies output;                                                //!< Output buffer
 

@@ -28,10 +28,10 @@ struct Trace {
 
 //! Timer and Trace logger
 class Logger {
-  typedef std::map<std::string,double> Timer;                    //!< Map of timer event name to timed value
-  typedef Timer::iterator              T_iter;                   //!< Iterator of timer event name map
-  typedef std::queue<Trace>            Traces;                   //!< Queue of traces
-  typedef std::map<pthread_t,int>      ThreadMap;                //!< Map of pthread id to thread id
+  typedef std::map<std::string,double> Timer;                   //!< Map of timer event name to timed value
+  typedef Timer::iterator              T_iter;                  //!< Iterator of timer event name map
+  typedef std::queue<Trace>            Traces;                  //!< Queue of traces
+  typedef std::map<pthread_t,int>      ThreadMap;               //!< Map of pthread id to thread id
 
 private:
   Timer           beginTimer;                                   //!< Timer base value
@@ -77,11 +77,11 @@ public:
   //! Constructor
   Logger() : beginTimer(), timer(), traces(), mutex(),          // Initializing class variables (empty)
 #if PAPI
-	     PAPIEventSet(PAPI_NULL),                                    // Initializing PAPI event set
+	     PAPIEventSet(PAPI_NULL),                           // Initializing PAPI event set
 #endif
-	     stringLength(20),                                           // Max length of event name
-	     decimal(7),                                                 // Decimal precision
-	     verbose(false) {                                            // Don't print timings by default
+	     stringLength(20),                                  // Max length of event name
+	     decimal(7),                                        // Decimal precision
+	     verbose(false) {                                   // Don't print timings by default
     pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
   }
 
@@ -115,7 +115,7 @@ public:
     if (verbose) {                                              // If verbose flag is true
       std::cout << std::setw(stringLength) << std::left         //  Set format
 		<< event << " : " << std::setprecision(decimal) << std::fixed
-		<< timer[event] << " s" << std::endl;                   //  Print event and timer
+		<< timer[event] << " s" << std::endl;           //  Print event and timer
     }                                                           // End if for verbose flag
   }
 
@@ -127,7 +127,7 @@ public:
     std::ofstream timerFile(name.str().c_str(), std::ios::app); // Open timer log file
     for (T_iter E=timer.begin(); E!=timer.end(); E++) {         // Loop over all events
       timerFile << std::setw(stringLength) << std::left         //  Set format
-		<< E->first << " " << E->second << std::endl;           //  Print event and timer
+		<< E->first << " " << E->second << std::endl;   //  Print event and timer
     }                                                           // End loop over all events
     timerFile.close();                                          // Close timer log file
   }
@@ -234,10 +234,11 @@ public:
       begin -= base;                                            //  Subtract base time from begin time
       end   -= base;                                            //  Subtract base time from end time
       traceFile << "    <rect x=\"" << begin * scale            //  x position of bar plot
-		<< "\" y=\"" << threadMap[thread] * 100.0               //  y position of bar plot
-		<< "\" width=\"" << (end - begin) * scale               //  width of bar
-		<< "\" height=\"90.0\" fill=\"#"<< std::setfill('0') << std::setw(6) << std::hex << color// height of bar
-		<< "\" stroke=\"#000000\" stroke-width=\"1\"/>\n";      //  stroke color and width
+		<< "\" y=\"" << threadMap[thread] * 100.0       //  y position of bar plot
+		<< "\" width=\"" << (end - begin) * scale       //  width of bar
+		<< "\" height=\"90.0\" fill=\"#"<< std::setfill('0')
+		<< std::setw(6) << std::hex << color            // height of bar
+		<< "\" stroke=\"#000000\" stroke-width=\"1\"/>\n";//  stroke color and width
     }                                                           // End while loop for queue of traces
     traceFile << "  </g>\n" "</svg>\n";                         // Footer for trace log file
     traceFile.close();                                          // Close trace log file
