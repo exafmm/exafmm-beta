@@ -59,7 +59,6 @@ namespace {
 		     const fvec3 pos_i[2],
 		     const fvec3 targetCenter,
 		     const fvec3 targetSize,
-		     const fvec3 Xperiodic,
 		     const float EPS2,
 		     const int2 rootRange,
 		     volatile int * tempQueue,
@@ -219,6 +218,7 @@ namespace {
 
   __global__ __launch_bounds__(NTHREAD, 4)
     void traverse(const int numTargets,
+		  const int images,
 		  const float EPS2,
 		  const float cycle,
 		  const int2 * levelRange,
@@ -242,7 +242,7 @@ namespace {
       const int2 target = targetRange[targetIdx];
       const int bodyBegin = target.x;
       const int bodyEnd   = target.x+target.y;
-      fvec3 pos_i[2];
+      fvec3 pos_i[2], pos_p[2];
       for (int i=0; i<2; i++) {
         const int bodyIdx = min(bodyBegin+i*WARP_SIZE+laneIdx, bodyEnd-1);
 	pos_i[i] = make_fvec3(fvec4(bodyPos[bodyIdx]));
@@ -262,25 +262,23 @@ namespace {
       fvec4 acc_i[2] = {0.0f, 0.0f};
       fvec3 Xperiodic = 0.0f;
       int numP2P = 0, numM2P = 0;
-      /*
-      for (int ix=-1; ix<=1; ix++) {
-	for (int iy=-1; iy<=1; iy++) {
-	  for (int iz=-1; iz<=1; iz++) {
+      for (int ix=-images; ix<=images; ix++) {
+	for (int iy=-images; iy<=images; iy++) {
+	  for (int iz=-images; iz<=images; iz++) {
 	    Xperiodic[0] = ix * cycle;
 	    Xperiodic[1] = iy * cycle;
 	    Xperiodic[2] = iz * cycle;
-      */
-	    const uint2 counters = traverseWarp(acc_i, pos_i, targetCenter, targetSize,
-						Xperiodic, EPS2,
-						levelRange[1], tempQueue, cellQueue);
+	    const fvec3 targetPeriodic = targetCenter - Xperiodic;
+	    for (int i=0; i<2; i++)
+	      pos_p[i] = pos_i[i] - Xperiodic;
+	    const uint2 counters = traverseWarp(acc_i, pos_p, targetPeriodic, targetSize,
+						EPS2, levelRange[1], tempQueue, cellQueue);
 	    assert(!(counters.x == 0xFFFFFFFF && counters.y == 0xFFFFFFFF));
 	    numM2P += counters.x;
 	    numP2P += counters.y;
-	    /*
 	  }
 	}
       }
-	    */
       int maxP2P = numP2P;
       int sumP2P = 0;
       int maxM2P = numM2P;
@@ -314,7 +312,9 @@ namespace {
 
   __global__
   void directKernel(const int numSource,
+		    const int images,
 		    const float EPS2,
+		    const float cycle,
 		    fvec4 * bodyAcc) {
     const int laneIdx = threadIdx.x & (WARP_SIZE-1);
     const int numChunk = (numSource - 1) / gridDim.x + 1;
@@ -323,6 +323,7 @@ namespace {
     fvec4 pos = tex1Dfetch(texBody, threadIdx.x);
     const fvec3 pos_i(pos[0],pos[1],pos[2]);
     kvec4 acc;
+    fvec3 Xperiodic = 0.0f;
     for (int jb=0; jb<numWarpChunk; jb++) {
       const int sourceIdx = min(blockOffset+jb*WARP_SIZE+laneIdx, numSource-1);
       pos = tex1Dfetch(texBody, sourceIdx);
@@ -330,16 +331,25 @@ namespace {
       for (int j=0; j<WARP_SIZE; j++) {
         const fvec3 pos_j(__shfl(pos[0],j),__shfl(pos[1],j),__shfl(pos[2],j));
 	const float q_j = __shfl(pos[3],j);
-	fvec3 dX = pos_j - pos_i;
-	const float R2 = norm(dX) + EPS2;
-	const float invR = rsqrtf(R2);
-	const float invR2 = invR * invR;
-	const float invR1 = q_j * invR;
-	dX *= invR1 * invR2;
-        acc[0] -= invR1;
-        acc[1] += dX[0];
-        acc[2] += dX[1];
-        acc[3] += dX[2];
+	for (int ix=-images; ix<=images; ix++) {
+	  for (int iy=-images; iy<=images; iy++) {
+	    for (int iz=-images; iz<=images; iz++) {
+	      Xperiodic[0] = ix * cycle;
+	      Xperiodic[1] = iy * cycle;
+	      Xperiodic[2] = iz * cycle;
+	      fvec3 dX = pos_j - pos_i - Xperiodic;
+	      const float R2 = norm(dX) + EPS2;
+	      const float invR = rsqrtf(R2);
+	      const float invR2 = invR * invR;
+	      const float invR1 = q_j * invR;
+	      dX *= invR1 * invR2;
+	      acc[0] -= invR1;
+	      acc[1] += dX[0];
+	      acc[2] += dX[1];
+	      acc[3] += dX[2];
+	    }
+	  }
+	}
       }
     }
     const int targetIdx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -350,6 +360,7 @@ namespace {
 class Traversal {
 public:
   fvec4 approx(const int numTargets,
+	       const int images,
 	       const float eps,
 	       const float cycle,
 	       cudaVec<fvec4> & bodyPos,
@@ -373,7 +384,7 @@ public:
     cudaDeviceSynchronize();
     const double t0 = get_time();
     CUDA_SAFE_CALL(cudaFuncSetCacheConfig(&traverse, cudaFuncCachePreferL1));
-    traverse<<<NBLOCK,NTHREAD>>>(numTargets, eps*eps, cycle, levelRange.d(),
+    traverse<<<NBLOCK,NTHREAD>>>(numTargets, images, eps*eps, cycle, levelRange.d(),
 				 bodyPos2.d(), bodyAcc.d(),
 				 targetRange.d(), globalPool.d());
     kernelSuccess("traverse");
@@ -402,12 +413,14 @@ public:
 
   void direct(const int numTarget,
 	      const int numBlock,
+	      const int images,
 	      const float eps,
+	      const float cycle,
 	      cudaVec<fvec4> & bodyPos2,
 	      cudaVec<fvec4> & bodyAcc2) {
     const int numBodies = bodyPos2.size();
     bodyPos2.bind(texBody);
-    directKernel<<<numBlock,numTarget>>>(numBodies, eps*eps, bodyAcc2.d());
+    directKernel<<<numBlock,numTarget>>>(numBodies, images, eps*eps, cycle, bodyAcc2.d());
     bodyPos2.unbind(texBody);
     cudaDeviceSynchronize();
   }

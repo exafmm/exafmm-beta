@@ -6,9 +6,16 @@
 #include "upwardpass.h"
 
 int main(int argc, char ** argv) {
+#if MASS
   const int numBodies = (1 << 24) - 1;
-  const float eps = 0.05;
+  const int images = 0;
   const float theta = 0.75;
+#else
+  const int numBodies = (1 << 20) - 1;
+  const int images = 1;
+  const float theta = 0.5;
+#endif
+  const float eps = 0.05;
   const int ncrit = 64;
   const float cycle = 2 * M_PI;
 
@@ -50,7 +57,7 @@ int main(int argc, char ** argv) {
   Pass pass;
   pass.upward(numLeafs, numLevels, theta, levelRange, bodyPos, sourceCells, sourceCenter, Multipole);
   Traversal traversal;
-  const fvec4 interactions = traversal.approx(numTargets, eps, cycle,
+  const fvec4 interactions = traversal.approx(numTargets, images, eps, cycle,
 					      bodyPos, bodyPos2, bodyAcc,
 					      targetRange, sourceCells, sourceCenter,
 					      Multipole, levelRange);
@@ -61,9 +68,9 @@ int main(int argc, char ** argv) {
   const int numTarget = min(512,numBodies); // Number of threads per block will be set to this value
   const int numBlock = min(128,(numBodies-1)/numTarget+1);
   t0 = get_time();
-  traversal.direct(numTarget, numBlock, eps, bodyPos2, bodyAcc2);
+  traversal.direct(numTarget, numBlock, images, eps, cycle, bodyPos2, bodyAcc2);
   dt = get_time() - t0;
-  flops = 35. * numTarget * numBodies / dt / 1e12;
+  flops = 35. * numTarget * numBodies * powf(2*images+1,3) / dt / 1e12;
   fprintf(stdout,"Total Direct         : %.7f s (%.7f TFlops)\n",dt,flops);
   bodyAcc.d2h();
   bodyAcc2.d2h();

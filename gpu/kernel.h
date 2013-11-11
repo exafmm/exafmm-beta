@@ -522,7 +522,7 @@ namespace {
     const fvec3 dX = pos_i - pos_j;
     const float R2 = norm(dX) + EPS2;
     const float invR = rsqrtf(R2);
-#if 1
+#if MASS
     const float invR2 = -invR * invR;
     const float invR1 = M[0] * invR;
     const float invR3 = invR2 * invR1;

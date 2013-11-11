@@ -7,10 +7,15 @@ namespace {
     fvec4 center;
     for (int i=begin; i<end; i++) {
       const fvec4 pos = tex1Dfetch(texBody,i);
-      center[0] += pos[3] * pos[0];
-      center[1] += pos[3] * pos[1];
-      center[2] += pos[3] * pos[2];
-      center[3] += pos[3];
+#if MASS
+      float weight = pos[3];
+#else
+      float weight = 1;
+#endif
+      center[0] += weight * pos[0];
+      center[1] += weight * pos[1];
+      center[2] += weight * pos[2];
+      center[3] += weight;
     }
     const float invM = 1.0f / center[3];
     center[0] *= invM;
@@ -24,10 +29,15 @@ namespace {
     fvec4 center;
     for (int i=begin; i<end; i++) {
       const fvec4 pos = posGlob[i];
-      center[0] += pos[3] * pos[0];
-      center[1] += pos[3] * pos[1];
-      center[2] += pos[3] * pos[2];
-      center[3] += pos[3];
+#if MASS
+      float weight = pos[3];
+#else
+      float weight = 1;
+#endif
+      center[0] += weight * pos[0];
+      center[1] += weight * pos[1];
+      center[2] += weight * pos[2];
+      center[3] += weight;
     }
     const float invM = 1.0f / center[3];
     center[0] *= invM;

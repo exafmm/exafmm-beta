@@ -2,17 +2,19 @@
 
 NVCC = nvcc -g -use_fast_math -arch=sm_35 -rdc=true
 LFLAGS = -lcudadevrt
+#LFLAGS += -DMASS # Use all positive sources
 
 SRC = thrust.cu serial.cu
 
 OBJ = $(SRC:%.cu=%.o)
 
+# Test for serial FMM
 serial: $(OBJ)
 	$(NVCC) $^ $(LFLAGS)
 	./a.out
 
 %.o: %.cu
-	$(NVCC) -c $<
+	$(NVCC) -c $< $(LFLAGS)
 
 clean:
 	rm -f serial.o
