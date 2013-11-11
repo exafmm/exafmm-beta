@@ -14,8 +14,8 @@ typedef mtbb::task_group task_group_t;
 #endif
 
 #if TBB || MTHREAD || QTHREAD || NANOX
-#define task_group            task_group_t __tg__
-#define wait_tasks            __tg__.wait()
+#define task_group           task_group_t __tg__
+#define wait_tasks           __tg__.wait()
 #define create_task(E)       __tg__.run(E)
 #define create_task_if(x, E) if (x) { create_task(E); } else { E(); }
 #else /* not TBB || MTHREAD || QTHREAD || NANOX */
