@@ -7,5 +7,6 @@ syntax: glob
 *.o
 *.th_o
 *.out
+*.pdb
 *.so
 *.svg

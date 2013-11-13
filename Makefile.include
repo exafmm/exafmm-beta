@@ -59,13 +59,9 @@ LFLAGS	+= -DTBB -ltbb
 #LFLAGS	+= -DVTK -lvtkCharts -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
 
 ifeq ($(DEVICE),GPU)
-### CUDA path
-CUDA_INSTALL_PATH = /usr/local/cuda
-CUDA_SDK_PATH = /usr/local/cuda_sdk/C
-### CUDA compiler
-NVCC	= nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3 -use_fast_math -arch=sm_21 -I../include -I$(CUDA_INSTALL_PATH)/include
+NVCC	= nvcc -use_fast_math -arch=sm_35 -I../include
 ### CUDA flags
-LFLAGS  += -L$(CUDA_INSTALL_PATH)/lib64 -lcuda -lcudart -lstdc++ -ldl -lm
+LFLAGS  += -lcudadevrt
 SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cu ../kernels/$(EQUATION)P2P$(DEVICE).cu
 OBJECTS	= $(SOURCES:.cu=.o)
 else

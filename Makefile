@@ -3,7 +3,7 @@ help:
 clean:
 	find . -name "*.o" -o -name "*.out*" -o -name "*.mod" | xargs rm -f
 cleandat:
-	find . -name "*.dat" | xargs rm -f
+	find . -name "*.dat" -o -name "*.pdb" | xargs rm -f
 cleanlib:
 	find . -name "*.a" -o -name "*.so" | xargs rm -f
 cleanall:
