@@ -147,6 +147,14 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
     f[3*i+1] = B->TRG[2];
     f[3*i+2] = B->TRG[3];
   }
+  bodies = LET->getRecvBodies();
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B->IBODY;
+    x[3*i+0] = B->X[0];
+    x[3*i+1] = B->X[1];
+    x[3*i+2] = B->X[2];
+    q[i] = B->SRC;
+  }
 }
 
 extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f,
@@ -203,6 +211,14 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
     f[3*i+0] = B->TRG[1];
     f[3*i+1] = B->TRG[2];
     f[3*i+2] = B->TRG[3];
+  }
+  bodies = LET->getRecvBodies();
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B->IBODY;
+    x[3*i+0] = B->X[0];
+    x[3*i+1] = B->X[1];
+    x[3*i+2] = B->X[2];
+    q[i] = B->SRC;
   }
   delete ewald;
 }

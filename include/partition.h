@@ -193,5 +193,10 @@ public:
     }                                                           // End loop over bodies
     stopTimer("Unpartition");                                   // Stop timer
   }
+
+  //! Copy recvBodies to bodies
+  Bodies getRecvBodies() {
+    return recvBodies;                                          // Return recvBodies
+  }
 };
 #endif
