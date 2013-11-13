@@ -328,15 +328,15 @@ namespace {
       const int sourceIdx = min(blockOffset+jb*WARP_SIZE+laneIdx, numSource-1);
       pos = tex1Dfetch(texBody, sourceIdx);
       if (sourceIdx >= numSource) pos[3] = 0;
-      for (int j=0; j<WARP_SIZE; j++) {
-        const fvec3 pos_j(__shfl(pos[0],j),__shfl(pos[1],j),__shfl(pos[2],j));
-	const float q_j = __shfl(pos[3],j);
-	for (int ix=-images; ix<=images; ix++) {
-	  for (int iy=-images; iy<=images; iy++) {
-	    for (int iz=-images; iz<=images; iz++) {
-	      Xperiodic[0] = ix * cycle;
-	      Xperiodic[1] = iy * cycle;
-	      Xperiodic[2] = iz * cycle;
+      for (int ix=-images; ix<=images; ix++) {
+	for (int iy=-images; iy<=images; iy++) {
+	  for (int iz=-images; iz<=images; iz++) {
+	    Xperiodic[0] = ix * cycle;
+	    Xperiodic[1] = iy * cycle;
+	    Xperiodic[2] = iz * cycle;
+	    for (int j=0; j<WARP_SIZE; j++) {
+	      const fvec3 pos_j(__shfl(pos[0],j),__shfl(pos[1],j),__shfl(pos[2],j));
+	      const float q_j = __shfl(pos[3],j);
 	      fvec3 dX = pos_j - pos_i - Xperiodic;
 	      const float R2 = norm(dX) + EPS2;
 	      const float invR = rsqrtf(R2);
