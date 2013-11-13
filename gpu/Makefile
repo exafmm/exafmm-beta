@@ -2,7 +2,7 @@
 
 NVCC = nvcc -g -use_fast_math -arch=sm_35 -rdc=true
 LFLAGS = -lcudadevrt
-#LFLAGS += -DMASS # Use all positive sources
+LFLAGS += -DMASS # Use all positive sources
 
 SRC = thrust.cu serial.cu
 

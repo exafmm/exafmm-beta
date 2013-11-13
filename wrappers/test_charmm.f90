@@ -90,6 +90,7 @@ program main
   real(8) potNrmGlob2
   real(8) potSum, potSumGlob
   real(8) potSum2, potSumGlob2
+  real(8) rand
   integer, dimension (128) :: iseed
   real(8), dimension (3) :: dipole = (/0, 0, 0/)
   real(8), dimension (3) :: xperiodic
