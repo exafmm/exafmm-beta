@@ -13,7 +13,7 @@ charmm:
 	make libcharmm.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++
 #	mpirun -np 2 ./a.out ala3.fmm
-	mpirun -np 1 ./a.out water.fmm 100
+	mpirun -np 2 ./a.out water.fmm 1
 
 libgromacs.a: gromacs.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
 	ar ruv libgromacs.a $?

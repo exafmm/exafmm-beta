@@ -214,14 +214,14 @@ contains
 
   subroutine energy(nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-       xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+       xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
        ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
 
     implicit none
     integer nglobal,nat,nbonds,ntheta,ksize
     real(8),optional :: eb,et,efmm,evdw
     real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle
-    real(8), allocatable, dimension(:) :: x,xc,p,f,fl,q,gscale,fgscale,rscale
+    real(8), allocatable, dimension(:) :: x,xc,p,f,fl,q,v,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
@@ -236,7 +236,7 @@ contains
     ! And they must be by residue, which they are not
 
     x(1:3*nglobal) = xc(1:3*nglobal) !copy coordinates
-    call fmm_partition(nglobal, icpumap, x, q, pcycle)
+    call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
 
     if (present(eb).and.present(et)) then
        call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
@@ -297,14 +297,14 @@ contains
 
   subroutine force_testing(nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-       xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+       xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
        ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
 
     implicit none
     integer nglobal,nat,nbonds,ntheta,ksize
     real(8) eb,et,efmm,evdw
     real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle
-    real(8), allocatable, dimension(:) :: x,xc,p,f,q,gscale,fgscale,rscale
+    real(8), allocatable, dimension(:) :: x,xc,p,f,q,v,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
@@ -314,7 +314,7 @@ contains
 
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-         xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+         xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
          ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
 
 !!!
@@ -336,14 +336,14 @@ contains
 
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-               xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+               xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
                ib,jb,it,jt,kt,atype,icpumap,numex,natex,eminus,eb,et,efmm,evdw)
 
           xc(3*(i-1)+j)=xc(3*(i-1)+j)+2.0*step
 
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-               xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+               xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
                ib,jb,it,jt,kt,atype,icpumap,numex,natex,eplus,eb,et,efmm,evdw)
 
           nforce=step2*(eplus-eminus)
@@ -380,7 +380,7 @@ contains
 
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-         xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+         xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
          ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
 
     ! calculate kinetic energy, temperature:
@@ -451,7 +451,7 @@ contains
 
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-         xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+         xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
          ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
 
     do istep = 1, dynsteps
@@ -459,7 +459,7 @@ contains
        if (leapfrog_maybe) then
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-               xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+               xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
                ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
@@ -480,7 +480,7 @@ contains
 
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-               xnew,p,fnew,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+               xnew,p,fnew,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
                ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
 
           vnew(1:3*nglobal) = 0.0   ! to use mpi_allreduce()
@@ -766,7 +766,7 @@ program main
      icpumap(i) = 1
   end do
   call fmm_init(images,theta,verbose)
-  call fmm_partition(nglobal, icpumap, x, q, pcycle)
+  call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
   call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
   do i = 1, nglobal
      p2(i) = 0
@@ -906,7 +906,7 @@ program main
 
      if (test_first) call force_testing(nglobal,nat,nbonds,ntheta,ksize,&
           alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-          xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+          xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
           ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
 
      call print_energy(timstart,nglobal,nat,nbonds,ntheta,ksize,&
