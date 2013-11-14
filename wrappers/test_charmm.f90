@@ -118,7 +118,22 @@ contains
     return
   end subroutine charmm_cor_read
 
-  subroutine sync(nglobal,icpumap,recv)
+  subroutine bcast1(nglobal,icpumap,recv)
+    use mpi
+    implicit none
+    integer i,nglobal,ierr
+    integer, allocatable, dimension(:) :: icpumap
+    real(8), allocatable, dimension(:) :: send, recv
+    allocate(send(nglobal))
+    send(1:nglobal)=0.0
+    do i=1,nglobal
+       if(icpumap(i)==1) send(i) = recv(i)
+    enddo
+    call mpi_allreduce(send, recv, nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+    deallocate(send)
+  end subroutine bcast1
+
+  subroutine bcast3(nglobal,icpumap,recv)
     use mpi
     implicit none
     integer i,nglobal,ierr
@@ -131,7 +146,7 @@ contains
     enddo
     call mpi_allreduce(send, recv, 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
     deallocate(send)
-  end subroutine sync
+  end subroutine bcast3
 
   subroutine bonded_terms(nglobal,icpumap,nat,atype,x,f,nbonds,ntheta,&
        ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
@@ -356,19 +371,6 @@ contains
     x(1:3*nglobal) = xc(1:3*nglobal) !copy coordinates
     if(istep.eq.0) call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
 
-    if (present(eb).and.present(et)) then ! FIXME: .or.
-       call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
-    elseif (present(eb)) then
-       call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb=eb)
-    elseif (present(et)) then
-       call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,et=et)
-    endif
-
-    call sync(nglobal, icpumap, f)
-
     if(present(efmm)) then
        allocate(fl(3*nglobal))
        fl(1:3*nglobal)=0.0
@@ -406,6 +408,18 @@ contains
        evdw=evdw*0.5
        deallocate(fl)
     endif
+
+    if (present(eb).and.present(et)) then
+       call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
+    elseif (present(eb)) then
+       call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb=eb)
+    elseif (present(et)) then
+       call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,et=et)
+    endif
+
     etot=0.0
     if(present(eb)) etot=etot+eb
     if(present(et)) etot=etot+et
@@ -595,17 +609,17 @@ contains
        else
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
-             xnew(3*j-2) = xc(3*j-2) + v(3*j-2)*tstep - f(3*j-2)*fac1(j)
-             xnew(3*j-1) = xc(3*j-1) + v(3*j-1)*tstep - f(3*j-1)*fac1(j)
-             xnew(3*j)   = xc(3*j)   + v(3*j)*tstep   - f(3*j)*fac1(j)
+             xc(3*j-2) = xc(3*j-2) + v(3*j-2)*tstep - f(3*j-2)*fac1(j)
+             xc(3*j-1) = xc(3*j-1) + v(3*j-1)*tstep - f(3*j-1)*fac1(j)
+             xc(3*j)   = xc(3*j)   + v(3*j)*tstep   - f(3*j)*fac1(j)
           enddo
 
-          call sync(nglobal, icpumap, xnew) ! FIXME : call bonds after coulomb to remove this
+          call bcast3(nglobal, icpumap, xc) ! FIXME : call bonds after coulomb to remove this
 
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-               xnew,p,fnew,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,1)
+               xc,p,fnew,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+               ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
 
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
@@ -625,9 +639,6 @@ contains
 !!! These copies are not really neded :-(
        do j = 1, nglobal
           if(icpumap(j)==1) then
-             xc(3*j-2)= xnew(3*j-2)
-             xc(3*j-1)= xnew(3*j-1)
-             xc(3*j)  = xnew(3*j)
              v(3*j-2) = vnew(3*j-2)
              v(3*j-1) = vnew(3*j-1)
              v(3*j)   = vnew(3*j)
@@ -658,7 +669,7 @@ contains
     real(8),allocatable,dimension(:) :: xc,xl
     real(8) time
 
-    call sync(nglobal, icpumap, xc);
+    call bcast3(nglobal, icpumap, xc);
 
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     if (mpirank /= 0) return
