@@ -890,7 +890,7 @@ program main
      print"(a,f12.4)",'GRMS (FMM)           : ', sqrt(accNrmGlob/3.0/nglobal)
      print"(a,f12.4)",'GRMS (Direct)        : ', sqrt(accNrmGlob2/3.0/nglobal)
   end if
-
+ 
   ! run dynamics if second command line argument specified
   if (command_argument_count() > 1) then
      call get_command_argument(2,filename,lnam,istat)
@@ -900,7 +900,7 @@ program main
 
      test_first=.false.
      integrate=.true.
-     printfrq=1000
+     printfrq=1
      imcentfrq=10
      timstart=100.0 ! time of restart file (later: get it from there)
 
