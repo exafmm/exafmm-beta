@@ -118,6 +118,21 @@ contains
     return
   end subroutine charmm_cor_read
 
+  subroutine sync(nglobal,icpumap,recv)
+    use mpi
+    implicit none
+    integer i,nglobal,ierr
+    integer, allocatable, dimension(:) :: icpumap
+    real(8), allocatable, dimension(:) :: send, recv
+    allocate(send(3*nglobal))
+    send(1:3*nglobal)=0.0
+    do i=1,nglobal
+       if(icpumap(i)==1) send(3*i-2:3*i) = recv(3*i-2:3*i)
+    enddo
+    call mpi_allreduce(send, recv, 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+    deallocate(send)
+  end subroutine sync
+
   subroutine bonded_terms(nglobal,icpumap,nat,atype,x,f,nbonds,ntheta,&
        ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     implicit none
@@ -338,17 +353,8 @@ contains
     ! not only from icpumap atoms to perform the bond calculations.
     ! And they must be by residue, which they are not
 
-    ! Broadcast the coordinates for parallel
-    allocate(xl(3*nglobal))
-    xl(1:3*nglobal)=0.0
-    do i=1,nglobal
-       if(icpumap(i)==1) xl(3*i-2:3*i) = xc(3*i-2:3*i)
-    enddo
-    call mpi_allreduce(xl, xc, 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-    deallocate(xl)
-
     x(1:3*nglobal) = xc(1:3*nglobal) !copy coordinates
-    call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
+    if(istep.eq.0) call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
 
     if (present(eb).and.present(et)) then ! FIXME: .or.
        call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
@@ -361,13 +367,7 @@ contains
             ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,et=et)
     endif
 
-    allocate(xl(3*nglobal))
-    xl(1:3*nglobal)=0.0
-    do i=1,nglobal
-       if(icpumap(i)==1) xl(3*i-2:3*i) = f(3*i-2:3*i)
-    enddo
-    call mpi_allreduce(xl, f, 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-    deallocate(xl)
+    call sync(nglobal, icpumap, f)
 
     if(present(efmm)) then
        allocate(fl(3*nglobal))
@@ -599,19 +599,17 @@ contains
              xnew(3*j-1) = xc(3*j-1) + v(3*j-1)*tstep - f(3*j-1)*fac1(j)
              xnew(3*j)   = xc(3*j)   + v(3*j)*tstep   - f(3*j)*fac1(j)
           enddo
-          allocate(xl(3*nglobal))
-          xl(1:3*nglobal)=0.0
-          do i=1,nglobal
-             if(icpumap(i)==1) xl(3*i-2:3*i) = f(3*i-2:3*i)
-          enddo
-          call mpi_allreduce(xl, f, 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-          deallocate(xl)
+
+          call sync(nglobal, icpumap, xnew)
 
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                xnew,p,fnew,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
                ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,1)
 
+          call sync(nglobal, icpumap, xnew)
+          call sync(nglobal, icpumap, v)
+          call sync(nglobal, icpumap, fnew)
           !vnew(1:3*nglobal) = 0.0   ! to use mpi_allreduce()
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
@@ -619,12 +617,14 @@ contains
              vnew(3*j-1) = v(3*j-1)  - fac2(j)*(f(3*j-1) + fnew(3*j-1))
              vnew(3*j)   = v(3*j)    - fac2(j)*(f(3*j)   + fnew(3*j))
           enddo
+          call sync(nglobal, icpumap, vnew)
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
              f(3*j-2)=fnew(3*j-2)
              f(3*j-1)=fnew(3*j-1)
              f(3*j)  =fnew(3*j)
           enddo
+          call sync(nglobal, icpumap, f)
        endif
 
 !!! These copies are not really neded :-(
@@ -668,14 +668,7 @@ contains
     real(8),allocatable,dimension(:) :: xc,xl
     real(8) time
 
-    ! Broadcast the coordinates for parallel
-    allocate(xl(3*nglobal))
-    xl(1:3*nglobal)=0.0
-    do i=1,nglobal
-       if(icpumap(i)==1) xl(3*i-2:3*i) = xc(3*i-2:3*i)
-    enddo
-    call mpi_allreduce(xl, xc, 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-    deallocate(xl)
+    call sync(nglobal, icpumap, xc);
 
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     if (mpirank /= 0) return
