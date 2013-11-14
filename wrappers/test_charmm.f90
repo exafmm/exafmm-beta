@@ -351,15 +351,16 @@ contains
        ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
     use mpi
     implicit none
-    integer nglobal,nat,nbonds,ntheta,ksize,istep,mpirank,ierr
+    integer nglobal,nat,nbonds,ntheta,ksize,istep,mpirank,mpisize,ierr,ista,iend
     real(8),optional :: eb,et,efmm,evdw
-    real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle
+    real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle,efmml,evdwl
     real(8), allocatable, dimension(:) :: x,xc,xl,p,f,fl,q,v,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
     integer i,j
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
+    call mpi_comm_size(mpi_comm_world, mpisize, ierr)
     ! zero the force
     f(1:3*nglobal) = 0.0
     allocate(x(3*nglobal))
@@ -367,26 +368,36 @@ contains
     ! there is a prblem here: I need coordinates from surrounding region,
     ! not only from icpumap atoms to perform the bond calculations.
     ! And they must be by residue, which they are not
-
     x(1:3*nglobal) = xc(1:3*nglobal) !copy coordinates
-    if(istep.eq.0) call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
+
+    do i = 1, nglobal
+       icpumap(i) = 0
+    end do
+
+    ista = 1
+    iend = nglobal
+    call split_range(ista,iend,mpirank,mpisize)
+    do i = ista, iend
+       icpumap(i) = 1
+    end do
+    call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
 
     if(present(efmm)) then
        allocate(fl(3*nglobal))
        fl(1:3*nglobal)=0.0
        p(1:nglobal)=0.0
        call fmm_coulomb(nglobal, icpumap, x, q, p, fl, pcycle)
-       !call ewald_coulomb(nglobal, icpumap, xc, q, p, fl, ksize, alpha, sigma, cutoff, pcycle)
+       !call ewald_coulomb(nglobal, icpumap, x, q, p, fl, ksize, alpha, sigma, cutoff, pcycle)
        call coulomb_exclusion(nglobal, icpumap, x, q, p, fl, pcycle, numex, natex)
-       efmm=0.0
+       efmml=0.0
        do i=1, nglobal
           if (icpumap(i) == 0) cycle
-          efmm=efmm+p(i)*q(i)
+          efmml=efmml+p(i)*q(i)
           f(3*i-2)=f(3*i-2)+fl(3*i-2)*q(i)*ccelec
           f(3*i-1)=f(3*i-1)+fl(3*i-1)*q(i)*ccelec
           f(3*i)=f(3*i)+fl(3*i)*q(i)*ccelec
        enddo
-       efmm=efmm*ccelec*0.5
+       efmml=efmml*ccelec*0.5
        deallocate(fl)
     endif
     if (present(evdw)) then
@@ -397,17 +408,28 @@ contains
             pcycle, nat, rscale, gscale, fgscale)
        call vanderwaals_exclusion(nglobal, icpumap, atype, x, p, fl, cuton, cutoff,&
             pcycle, nat, rscale, gscale, fgscale, numex, natex)
-       evdw=0.0
+       evdwl=0.0
        do i = 1, nglobal
           if (icpumap(i) == 0) cycle
-          evdw=evdw+p(i)
+          evdwl=evdwl+p(i)
           f(3*i-2)=f(3*i-2)-fl(3*i-2)
           f(3*i-1)=f(3*i-1)-fl(3*i-1)
           f(3*i)=f(3*i)-fl(3*i)
        enddo
-       evdw=evdw*0.5
+       evdwl=evdwl*0.5
        deallocate(fl)
     endif
+    call mpi_reduce(efmml, efmm,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    call mpi_reduce(evdwl, evdw,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    call bcast3(nglobal, icpumap, x)
+    call bcast1(nglobal, icpumap, q)
+    call bcast3(nglobal, icpumap, v)
+    call bcast1(nglobal, icpumap, p)
+    call bcast3(nglobal, icpumap, f)
+    xc(1:3*nglobal) = x(1:3*nglobal) !copy coordinates
+    do i = 1, nglobal
+       icpumap(i) = 1
+    enddo
 
     if (present(eb).and.present(et)) then
        call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
@@ -528,9 +550,12 @@ contains
        grms=grms+f(3*i-2)**2+f(3*i-1)**2+f(3*i)**2
     enddo
     ! Summ up the terms in parallel
-    call mpi_reduce(etot, etotGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-    call mpi_reduce(ekinetic, ekineticGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-    call mpi_reduce(grms, grmsGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    !call mpi_reduce(etot, etotGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    etotGlob = etot
+    !call mpi_reduce(ekinetic, ekineticGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    ekineticGlob = ekinetic
+    !call mpi_reduce(grms, grmsGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    grmsGlob = grms
     grmsglob=sqrt(grmsglob/3.0/real(nglobal))
     temp=ekineticglob/3.0/nglobal/kboltz
     ekineticglob=ekineticglob/2.0
@@ -614,8 +639,6 @@ contains
              xc(3*j)   = xc(3*j)   + v(3*j)*tstep   - f(3*j)*fac1(j)
           enddo
 
-          call bcast3(nglobal, icpumap, xc) ! FIXME : call bonds after coulomb to remove this
-
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                xc,p,fnew,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
@@ -668,8 +691,6 @@ contains
     integer,allocatable,dimension(:) :: ires,icpumap
     real(8),allocatable,dimension(:) :: xc,xl
     real(8) time
-
-    call bcast3(nglobal, icpumap, xc);
 
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     if (mpirank /= 0) return
@@ -1017,6 +1038,10 @@ program main
      print"(a,f12.4)",'GRMS (Direct)        : ', sqrt(accNrmGlob2/3.0/nglobal)
   end if
  
+  do i = 1, nglobal
+     icpumap(i) = 1
+  enddo
+
   ! run dynamics if second command line argument specified
   if (command_argument_count() > 1) then
      call get_command_argument(2,filename,lnam,istat)
