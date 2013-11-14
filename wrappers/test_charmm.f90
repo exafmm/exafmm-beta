@@ -235,8 +235,8 @@ contains
     ! not only from icpumap atoms to perform the bond calculations.
     ! And they must be by residue, which they are not
 
-    x(1:3*nglobal) = xc(1:3*nglobal) !copy coordinates
-    call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
+    !x(1:3*nglobal) = xc(1:3*nglobal) !copy coordinates
+    call fmm_partition(nglobal, icpumap, xc, q, v, pcycle)
 
     if (present(eb).and.present(et)) then
        call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
@@ -253,9 +253,9 @@ contains
        allocate(fl(3*nglobal))
        fl(1:3*nglobal)=0.0
        p(1:nglobal)=0.0
-       call fmm_coulomb(nglobal, icpumap, x, q, p, fl, pcycle)
-       !call ewald_coulomb(nglobal, icpumap, x, q, p, fl, ksize, alpha, sigma, cutoff, pcycle)
-       call coulomb_exclusion(nglobal, icpumap, x, q, p, fl, pcycle, numex, natex)
+       call fmm_coulomb(nglobal, icpumap, xc, q, p, fl, pcycle)
+       !call ewald_coulomb(nglobal, icpumap, xc, q, p, fl, ksize, alpha, sigma, cutoff, pcycle)
+       call coulomb_exclusion(nglobal, icpumap, xc, q, p, fl, pcycle, numex, natex)
        efmm=0.0
        do i=1, nglobal
           if (icpumap(i) == 0) cycle
@@ -271,9 +271,9 @@ contains
        allocate(fl(3*nglobal))
        p(1:nglobal)=0.0
        fl(1:3*nglobal)=0.0
-       call fmm_vanderwaals(nglobal, icpumap, atype, x, p, fl, cuton, cutoff,&
+       call fmm_vanderwaals(nglobal, icpumap, atype, xc, p, fl, cuton, cutoff,&
             pcycle, nat, rscale, gscale, fgscale)
-       call vanderwaals_exclusion(nglobal, icpumap, atype, x, p, fl, cuton, cutoff,&
+       call vanderwaals_exclusion(nglobal, icpumap, atype, xc, p, fl, cuton, cutoff,&
             pcycle, nat, rscale, gscale, fgscale, numex, natex)
        evdw=0.0
        do i = 1, nglobal
@@ -319,6 +319,8 @@ contains
 
 !!!
 !!! this routine is not parallelized ??
+!!!
+!!! And also it doesn't test forces but derivatives!!!
 !!!
     e0=etot
     allocate(f_analytic(3*nglobal))
@@ -483,7 +485,7 @@ contains
                xnew,p,fnew,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
                ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
 
-          vnew(1:3*nglobal) = 0.0   ! to use mpi_allreduce()
+ !!!         vnew(1:3*nglobal) = 0.0   ! to use mpi_allreduce()
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
              vnew(3*j-2) = v(3*j-2)  - fac2(j)*(f(3*j-2) + fnew(3*j-2))
@@ -504,13 +506,16 @@ contains
              xc(3*j-2)= xnew(3*j-2)
              xc(3*j-1)= xnew(3*j-1)
              xc(3*j)  = xnew(3*j)
+             v(3*j-2) = vnew(3*j-2)
+             v(3*j-1) = vnew(3*j-1)
+             v(3*j)   = vnew(3*j)
           endif
        enddo
 
        ! FIXME: WE MUST GET RID OF THIS MPI_ALLREDUCE()!!!!!
        ! velocities communication for parallel: It must be done in FMM library ???
        ! broadcast/globalsum would be OK for small number of processes for testing purposes:
-       call mpi_allreduce(vnew, v , 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+!!!       call mpi_allreduce(vnew, v , 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
 
        if (mod(istep,imcentfrq) == 0) call image_center(nglobal,xc,nres,ires,pcycle,icpumap)
 

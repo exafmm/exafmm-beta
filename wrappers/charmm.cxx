@@ -63,7 +63,7 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      wrap(B->X, cycle);
+      //      wrap(B->X, cycle);
       B->SRC = q[i];
       B->TRG[0] = v[3*i+0];
       B->TRG[1] = v[3*i+1];
