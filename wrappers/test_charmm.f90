@@ -239,7 +239,7 @@ contains
     ! And they must be by residue, which they are not
 
     !x(1:3*nglobal) = xc(1:3*nglobal) !copy coordinates
-    call fmm_partition(nglobal, icpumap, xc, q, v)
+    call fmm_partition(nglobal, icpumap, xc, q, v, pcycle)
 
     if (present(eb).and.present(et)) then
        call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
@@ -774,7 +774,7 @@ program main
      icpumap(i) = 1
   end do
   call fmm_init(images,theta,verbose)
-  call fmm_partition(nglobal, icpumap, x, q, v)
+  call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
   call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
   do i = 1, nglobal
      p2(i) = 0
