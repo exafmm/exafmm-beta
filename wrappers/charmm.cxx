@@ -50,7 +50,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   args->print(logger->stringLength, P);
 }
 
-extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q, double *v, double & cycle) {
+extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q, double *v) {
   logger->printTitle("Partition Profiling");
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
@@ -63,7 +63,6 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      //      wrap(B->X, cycle);
       B->SRC = q[i];
       B->TRG[0] = v[3*i+0];
       B->TRG[1] = v[3*i+1];

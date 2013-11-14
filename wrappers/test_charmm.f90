@@ -29,7 +29,7 @@ contains
     else
        read(lin,'(i5)')n
     endif
-    allocate( x(3*n), q(n), ires(n)) ! too much for ires!!
+    allocate( x(3*n), q(n), v(3*n), ires(n)) ! too much for ires!!
     ! read also the residue info from cor file
     ! residue info is enough for pure water system
     ! for protein + water the segments are needed, too!!!
@@ -43,6 +43,9 @@ contains
           read(1,'(2i5,10x,3f10.5,10x,f10.5)') &
                in,im,x(i*3-2),x(i*3-1),x(i*3),q(i)
        endif
+       v(3*i-2) = 0
+       v(3*i-1) = 0
+       v(3*i-0) = 0
        if(im/=resn)then
           resn=resn+1
           ires(resn)=i
@@ -106,7 +109,7 @@ contains
     ! dual coordinates are nedeed anyway for image centering problem!
     ! equilibrated velocities from CHARMM restart
     ! and the coordinate corrections /xnew/ ??? Are they useful ???
-    allocate(xc(3*n),v(3*n),xnew(3*n))
+    allocate(xc(3*n), xnew(3*n))
     read(1,'(3d28.18)')(xc(3*i-2),xc(3*i-1),xc(3*i),i=1,n)
     read(1,'(3d28.18)')(v(3*i-2),v(3*i-1),v(3*i),i=1,n)
     read(1,'(3d28.18)')(xnew(3*i-2),xnew(3*i-1),xnew(3*i),i=1,n)
@@ -236,7 +239,7 @@ contains
     ! And they must be by residue, which they are not
 
     !x(1:3*nglobal) = xc(1:3*nglobal) !copy coordinates
-    call fmm_partition(nglobal, icpumap, xc, q, v, pcycle)
+    call fmm_partition(nglobal, icpumap, xc, q, v)
 
     if (present(eb).and.present(et)) then
        call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
@@ -771,7 +774,7 @@ program main
      icpumap(i) = 1
   end do
   call fmm_init(images,theta,verbose)
-  call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
+  call fmm_partition(nglobal, icpumap, x, q, v)
   call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
   do i = 1, nglobal
      p2(i) = 0
