@@ -144,7 +144,7 @@ contains
           r=sqrt(dx*dx+dy*dy+dz*dz)
           db=r-rbond(atype(ii),atype(jj))
           df=cbond(atype(ii),atype(jj))*db
-          eb=eb+df*db
+          eb=eb+df*db/2
           df=2.0*df/r
           dxi=dx*df
           dyi=dy*df
@@ -152,6 +152,22 @@ contains
           f(3*ii-2)=f(3*ii-2)+dxi
           f(3*ii-1)=f(3*ii-1)+dyi
           f(3*ii)=f(3*ii)+dzi
+       enddo
+       do i = 1, nbonds
+          ii=ib(i)
+          jj=jb(i)
+          if (icpumap(jj) == 0) cycle
+          dx=x(3*ii-2)-x(3*jj-2)
+          dy=x(3*ii-1)-x(3*jj-1)
+          dz=x(3*ii)-x(3*jj)
+          r=sqrt(dx*dx+dy*dy+dz*dz)
+          db=r-rbond(atype(ii),atype(jj))
+          df=cbond(atype(ii),atype(jj))*db
+          eb=eb+df*db/2
+          df=2.0*df/r
+          dxi=dx*df
+          dyi=dy*df
+          dzi=dz*df
           f(3*jj-2)=f(3*jj-2)-dxi
           f(3*jj-1)=f(3*jj-1)-dyi
           f(3*jj)=f(3*jj)-dzi
@@ -162,9 +178,9 @@ contains
        et = 0.0
        do i = 1, ntheta
           ii=it(i)
-          if (icpumap(ii) == 0) cycle
           jj=jt(i)
           kk=kt(i)
+          if (icpumap(ii) == 0) cycle
           dx1=x(3*ii-2)-x(3*jj-2)
           dy1=x(3*ii-1)-x(3*jj-1)
           dz1=x(3*ii)-x(3*jj)
@@ -185,7 +201,7 @@ contains
           at=acos(cst)
           da=at-aangle(atype(ii),atype(jj),atype(kk))
           df=da*cangle(atype(ii),atype(jj),atype(kk))
-          et=et+df*da
+          et=et+df*da/3
           st2r=1.0/(1.0-cst*cst)
           str=sqrt(st2r)
           df=-2.0*df*str
@@ -198,18 +214,102 @@ contains
           dt1=df*dtx1
           dt2=df*dtx2
           f(3*ii-2)=f(3*ii-2)+dt1
-          f(3*kk-2)=f(3*kk-2)+dt2
-          f(3*jj-2)=f(3*jj-2)-dt1-dt2
           dt1=df*dty1
           dt2=df*dty2
           f(3*ii-1)=f(3*ii-1)+dt1
-          f(3*kk-1)=f(3*kk-1)+dt2
-          f(3*jj-1)=f(3*jj-1)-dt1-dt2
           dt1=df*dtz1
           dt2=df*dtz2
           f(3*ii)=f(3*ii)+dt1
-          f(3*kk)=f(3*kk)+dt2
+       enddo
+       do i = 1, ntheta
+          ii=it(i)
+          jj=jt(i)
+          kk=kt(i)
+          if (icpumap(jj) == 0) cycle
+          dx1=x(3*ii-2)-x(3*jj-2)
+          dy1=x(3*ii-1)-x(3*jj-1)
+          dz1=x(3*ii)-x(3*jj)
+          dx2=x(3*kk-2)-x(3*jj-2)
+          dy2=x(3*kk-1)-x(3*jj-1)
+          dz2=x(3*kk)-x(3*jj)
+          r1=sqrt(dx1*dx1+dy1*dy1+dz1*dz1)
+          r2=sqrt(dx2*dx2+dy2*dy2+dz2*dz2)
+          r1r=1.0/r1
+          r2r=1.0/r2
+          dx1r=dx1*r1r
+          dy1r=dy1*r1r
+          dz1r=dz1*r1r
+          dx2r=dx2*r2r
+          dy2r=dy2*r2r
+          dz2r=dz2*r2r
+          cst=dx1r*dx2r+dy1r*dy2r+dz1r*dz2r
+          at=acos(cst)
+          da=at-aangle(atype(ii),atype(jj),atype(kk))
+          df=da*cangle(atype(ii),atype(jj),atype(kk))
+          et=et+df*da/3
+          st2r=1.0/(1.0-cst*cst)
+          str=sqrt(st2r)
+          df=-2.0*df*str
+          dtx1=r1r*(dx2r-cst*dx1r)
+          dtx2=r2r*(dx1r-cst*dx2r)
+          dty1=r1r*(dy2r-cst*dy1r)
+          dty2=r2r*(dy1r-cst*dy2r)
+          dtz1=r1r*(dz2r-cst*dz1r)
+          dtz2=r2r*(dz1r-cst*dz2r)
+          dt1=df*dtx1
+          dt2=df*dtx2
+          f(3*jj-2)=f(3*jj-2)-dt1-dt2
+          dt1=df*dty1
+          dt2=df*dty2
+          f(3*jj-1)=f(3*jj-1)-dt1-dt2
+          dt1=df*dtz1
+          dt2=df*dtz2
           f(3*jj)=f(3*jj)-dt1-dt2
+       enddo
+       do i = 1, ntheta
+          ii=it(i)
+          jj=jt(i)
+          kk=kt(i)
+          if (icpumap(kk) == 0) cycle
+          dx1=x(3*ii-2)-x(3*jj-2)
+          dy1=x(3*ii-1)-x(3*jj-1)
+          dz1=x(3*ii)-x(3*jj)
+          dx2=x(3*kk-2)-x(3*jj-2)
+          dy2=x(3*kk-1)-x(3*jj-1)
+          dz2=x(3*kk)-x(3*jj)
+          r1=sqrt(dx1*dx1+dy1*dy1+dz1*dz1)
+          r2=sqrt(dx2*dx2+dy2*dy2+dz2*dz2)
+          r1r=1.0/r1
+          r2r=1.0/r2
+          dx1r=dx1*r1r
+          dy1r=dy1*r1r
+          dz1r=dz1*r1r
+          dx2r=dx2*r2r
+          dy2r=dy2*r2r
+          dz2r=dz2*r2r
+          cst=dx1r*dx2r+dy1r*dy2r+dz1r*dz2r
+          at=acos(cst)
+          da=at-aangle(atype(ii),atype(jj),atype(kk))
+          df=da*cangle(atype(ii),atype(jj),atype(kk))
+          et=et+df*da/3
+          st2r=1.0/(1.0-cst*cst)
+          str=sqrt(st2r)
+          df=-2.0*df*str
+          dtx1=r1r*(dx2r-cst*dx1r)
+          dtx2=r2r*(dx1r-cst*dx2r)
+          dty1=r1r*(dy2r-cst*dy1r)
+          dty2=r2r*(dy1r-cst*dy2r)
+          dtz1=r1r*(dz2r-cst*dz1r)
+          dtz2=r2r*(dz1r-cst*dz2r)
+          dt1=df*dtx1
+          dt2=df*dtx2
+          f(3*kk-2)=f(3*kk-2)+dt2
+          dt1=df*dty1
+          dt2=df*dty2
+          f(3*kk-1)=f(3*kk-1)+dt2
+          dt1=df*dtz1
+          dt2=df*dtz2
+          f(3*kk)=f(3*kk)+dt2
        enddo
     endif
 
@@ -218,18 +318,18 @@ contains
   subroutine energy(nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,ccelec,pcycle,&
        xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-       ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
-
+       ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
+    use mpi
     implicit none
-    integer nglobal,nat,nbonds,ntheta,ksize
+    integer nglobal,nat,nbonds,ntheta,ksize,istep,mpirank,ierr
     real(8),optional :: eb,et,efmm,evdw
     real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle
-    real(8), allocatable, dimension(:) :: x,xc,p,f,fl,q,v,gscale,fgscale,rscale
+    real(8), allocatable, dimension(:) :: x,xc,xl,p,f,fl,q,v,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
     integer i,j
-
+    call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     ! zero the force
     f(1:3*nglobal) = 0.0
     allocate(x(3*nglobal))
@@ -238,10 +338,19 @@ contains
     ! not only from icpumap atoms to perform the bond calculations.
     ! And they must be by residue, which they are not
 
-    !x(1:3*nglobal) = xc(1:3*nglobal) !copy coordinates
-    call fmm_partition(nglobal, icpumap, xc, q, v, pcycle)
+    ! Broadcast the coordinates for parallel
+    allocate(xl(3*nglobal))
+    xl(1:3*nglobal)=0.0
+    do i=1,nglobal
+       if(icpumap(i)==1) xl(3*i-2:3*i) = xc(3*i-2:3*i)
+    enddo
+    call mpi_allreduce(xl, xc, 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+    deallocate(xl)
 
-    if (present(eb).and.present(et)) then
+    x(1:3*nglobal) = xc(1:3*nglobal) !copy coordinates
+    call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
+
+    if (present(eb).and.present(et)) then ! FIXME: .or.
        call bonded_terms(nglobal,icpumap,nat,atype,xc,f,nbonds,ntheta,&
             ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     elseif (present(eb)) then
@@ -252,13 +361,21 @@ contains
             ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,et=et)
     endif
 
+    allocate(xl(3*nglobal))
+    xl(1:3*nglobal)=0.0
+    do i=1,nglobal
+       if(icpumap(i)==1) xl(3*i-2:3*i) = f(3*i-2:3*i)
+    enddo
+    call mpi_allreduce(xl, f, 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+    deallocate(xl)
+
     if(present(efmm)) then
        allocate(fl(3*nglobal))
        fl(1:3*nglobal)=0.0
        p(1:nglobal)=0.0
-       call fmm_coulomb(nglobal, icpumap, xc, q, p, fl, pcycle)
+       call fmm_coulomb(nglobal, icpumap, x, q, p, fl, pcycle)
        !call ewald_coulomb(nglobal, icpumap, xc, q, p, fl, ksize, alpha, sigma, cutoff, pcycle)
-       call coulomb_exclusion(nglobal, icpumap, xc, q, p, fl, pcycle, numex, natex)
+       call coulomb_exclusion(nglobal, icpumap, x, q, p, fl, pcycle, numex, natex)
        efmm=0.0
        do i=1, nglobal
           if (icpumap(i) == 0) cycle
@@ -274,9 +391,9 @@ contains
        allocate(fl(3*nglobal))
        p(1:nglobal)=0.0
        fl(1:3*nglobal)=0.0
-       call fmm_vanderwaals(nglobal, icpumap, atype, xc, p, fl, cuton, cutoff,&
+       call fmm_vanderwaals(nglobal, icpumap, atype, x, p, fl, cuton, cutoff,&
             pcycle, nat, rscale, gscale, fgscale)
-       call vanderwaals_exclusion(nglobal, icpumap, atype, xc, p, fl, cuton, cutoff,&
+       call vanderwaals_exclusion(nglobal, icpumap, atype, x, p, fl, cuton, cutoff,&
             pcycle, nat, rscale, gscale, fgscale, numex, natex)
        evdw=0.0
        do i = 1, nglobal
@@ -318,7 +435,7 @@ contains
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
          xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
+         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,0)
 
 !!!
 !!! this routine is not parallelized ??
@@ -342,14 +459,14 @@ contains
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,numex,natex,eminus,eb,et,efmm,evdw)
+               ib,jb,it,jt,kt,atype,icpumap,numex,natex,eminus,eb,et,efmm,evdw,0)
 
           xc(3*(i-1)+j)=xc(3*(i-1)+j)+2.0*step
 
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,numex,natex,eplus,eb,et,efmm,evdw)
+               ib,jb,it,jt,kt,atype,icpumap,numex,natex,eplus,eb,et,efmm,evdw,0)
 
           nforce=step2*(eplus-eminus)
           xc(3*(i-1)+j)=xsave  ! restore
@@ -386,7 +503,7 @@ contains
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
          xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
+         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,0)
 
     ! calculate kinetic energy, temperature:
     ekinetic=0.0
@@ -421,7 +538,7 @@ contains
     integer dynsteps,nglobal,nat,nbonds,ntheta,ksize,imcentfrq,printfrq,nres
     real(8) eb,et,efmm,evdw
     real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle
-    real(8), allocatable, dimension(:) :: x,v,mass,xc,p,f,q,gscale,fgscale,rscale
+    real(8), allocatable, dimension(:) :: x,xl,v,mass,xc,p,f,q,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex,ires
@@ -457,7 +574,7 @@ contains
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
          xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
+         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,0)
 
     do istep = 1, dynsteps
 
@@ -465,7 +582,7 @@ contains
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
+               ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,1)
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
              vnew(3*j-2) = v(3*j-2)  - f(3*j-2)*tstep/mass(atype(j))
@@ -482,13 +599,20 @@ contains
              xnew(3*j-1) = xc(3*j-1) + v(3*j-1)*tstep - f(3*j-1)*fac1(j)
              xnew(3*j)   = xc(3*j)   + v(3*j)*tstep   - f(3*j)*fac1(j)
           enddo
+          allocate(xl(3*nglobal))
+          xl(1:3*nglobal)=0.0
+          do i=1,nglobal
+             if(icpumap(i)==1) xl(3*i-2:3*i) = f(3*i-2:3*i)
+          enddo
+          call mpi_allreduce(xl, f, 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+          deallocate(xl)
 
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                xnew,p,fnew,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
+               ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,1)
 
- !!!         vnew(1:3*nglobal) = 0.0   ! to use mpi_allreduce()
+          !vnew(1:3*nglobal) = 0.0   ! to use mpi_allreduce()
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
              vnew(3*j-2) = v(3*j-2)  - fac2(j)*(f(3*j-2) + fnew(3*j-2))
@@ -518,7 +642,7 @@ contains
        ! FIXME: WE MUST GET RID OF THIS MPI_ALLREDUCE()!!!!!
        ! velocities communication for parallel: It must be done in FMM library ???
        ! broadcast/globalsum would be OK for small number of processes for testing purposes:
-!!!       call mpi_allreduce(vnew, v , 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+       !call mpi_allreduce(vnew, v , 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
 
        if (mod(istep,imcentfrq) == 0) call image_center(nglobal,xc,nres,ires,pcycle,icpumap)
 
