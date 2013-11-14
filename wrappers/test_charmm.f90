@@ -600,31 +600,26 @@ contains
              xnew(3*j)   = xc(3*j)   + v(3*j)*tstep   - f(3*j)*fac1(j)
           enddo
 
-          call sync(nglobal, icpumap, xnew)
+          call sync(nglobal, icpumap, xnew) ! FIXME : call bonds after coulomb to remove this
 
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                xnew,p,fnew,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
                ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,1)
 
-          call sync(nglobal, icpumap, xnew)
-          call sync(nglobal, icpumap, v)
-          call sync(nglobal, icpumap, fnew)
-          !vnew(1:3*nglobal) = 0.0   ! to use mpi_allreduce()
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
              vnew(3*j-2) = v(3*j-2)  - fac2(j)*(f(3*j-2) + fnew(3*j-2))
              vnew(3*j-1) = v(3*j-1)  - fac2(j)*(f(3*j-1) + fnew(3*j-1))
              vnew(3*j)   = v(3*j)    - fac2(j)*(f(3*j)   + fnew(3*j))
           enddo
-          call sync(nglobal, icpumap, vnew)
+
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
              f(3*j-2)=fnew(3*j-2)
              f(3*j-1)=fnew(3*j-1)
              f(3*j)  =fnew(3*j)
           enddo
-          call sync(nglobal, icpumap, f)
        endif
 
 !!! These copies are not really neded :-(
@@ -638,11 +633,6 @@ contains
              v(3*j)   = vnew(3*j)
           endif
        enddo
-
-       ! FIXME: WE MUST GET RID OF THIS MPI_ALLREDUCE()!!!!!
-       ! velocities communication for parallel: It must be done in FMM library ???
-       ! broadcast/globalsum would be OK for small number of processes for testing purposes:
-       !call mpi_allreduce(vnew, v , 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
 
        if (mod(istep,imcentfrq) == 0) call image_center(nglobal,xc,nres,ires,pcycle,icpumap)
 
