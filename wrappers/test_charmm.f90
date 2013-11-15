@@ -503,18 +503,18 @@ contains
        grms=grms+f(3*i-2)**2+f(3*i-1)**2+f(3*i-0)**2
     enddo
     ! Summ up the terms in parallel
-    call mpi_reduce(etot, etotGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-    !call mpi_reduce(ekinetic, ekineticGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    call mpi_reduce(etot, etotGlob, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    !call mpi_reduce(ekinetic, ekineticGlob, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
     ekineticGlob = ekinetic
-    !call mpi_reduce(grms, grmsGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    !call mpi_reduce(grms, grmsGlob, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
     grmsGlob = grms
     grmsglob=sqrt(grmsglob/3.0/real(nglobal))
     temp=ekineticglob/3.0/nglobal/kboltz
     ekineticglob=ekineticglob/2.0
-    if(mpirank==0) &
-         write(*,'(''time:'',f9.3,'' Etotal:'',f14.5,'' Ekin:'',f14.5,'' Epot:'',f14.5,'' T:'',f12.3,'' Grms:'',f12.5)')&
-         timstart,etotglob+ekineticglob,ekineticglob,etotglob,temp,grmsglob
-
+    if(mpirank==0) then
+       write(*,'(''time:'',f9.3,'' Etotal:'',f14.5,'' Ekin:'',f14.5,'' Epot:'',f14.5,'' T:'',f12.3,'' Grms:'',f12.5)')&
+            timstart,etotglob+ekineticglob,ekineticglob,etotglob,temp,grmsglob
+    endif
     return
   end subroutine print_energy
 
@@ -532,7 +532,7 @@ contains
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,ires
-    real(8), allocatable, dimension(:) :: xnew,fnew,fac1,fac2
+    real(8), allocatable, dimension(:) :: xnew,fac1,fac2
     real(8) tstep, timstart, time, tstep2
     integer i,unit,istep,ierr,mpirank,mpisize,ista,iend
     real(8),parameter :: TIMFAC=4.88882129D-02
@@ -547,7 +547,7 @@ contains
     timstart = 100.0 ! first 100ps was equilibration with standard CHARMM
     time = timstart
 
-    allocate(xnew(3*nglobal),fnew(3*nglobal)) ! do we need first two ??
+    allocate(xnew(3*nglobal)) ! do we need first two ??
     allocate(fac1(nglobal),fac2(nglobal))
 
     ! precompute some constants and recalculate xold
@@ -608,15 +608,6 @@ contains
             x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
             ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
 
-       call bcast3(nglobal, icpumap, x)
-       call bcast1(nglobal, icpumap, q)
-       call bcast3(nglobal, icpumap, xold)
-       call bcast1(nglobal, icpumap, p)
-       call bcast3(nglobal, icpumap, f)
-       do i = 1, nglobal
-          icpumap(i) = 1
-       enddo
-
        do i = 1, nglobal
           if(icpumap(i)==0)cycle
           xnew(3*i-2) = xold(3*i-2) - fac1(i)*f(3*i-2)
@@ -638,31 +629,21 @@ contains
           xold(3*i-0) = xnew(3*i-0)
        enddo
 
+       call bcast3(nglobal, icpumap, x)
+       call bcast1(nglobal, icpumap, q)
+       call bcast3(nglobal, icpumap, xnew)
+       call bcast3(nglobal, icpumap, xold)
+       call bcast3(nglobal, icpumap, v)
+       call bcast1(nglobal, icpumap, p)
+       call bcast3(nglobal, icpumap, f)
+       do i = 1, nglobal
+          icpumap(i) = 1
+       enddo
+
        if (mod(istep,imcentfrq) == 0) call image_center(nglobal,x,nres,ires,pcycle,icpumap)
 
        time=time+tstep*timfac  ! for printing only
        if (mod(istep,printfrq) == 0) then
-          do i = 1, nglobal
-             icpumap(i) = 0
-          end do
-          ista = 1
-          iend = nglobal
-          call split_range(ista, iend, mpirank, mpisize)
-          do i = ista, iend
-             icpumap(i) = 1
-          end do
-          call energy(nglobal,nat,nbonds,ntheta,ksize,&
-               alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
-               x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
-          call bcast3(nglobal, icpumap, x)
-          call bcast1(nglobal, icpumap, q)
-          call bcast3(nglobal, icpumap, xold)
-          call bcast1(nglobal, icpumap, p)
-          call bcast3(nglobal, icpumap, f)
-          do i = 1, nglobal
-             icpumap(i) = 1
-          enddo
           call print_energy(time,nglobal,nat,nbonds,ntheta,ksize,&
             alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
             x,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
@@ -673,7 +654,7 @@ contains
 
     enddo mainloop
 
-    deallocate(xold,xnew,fnew)
+    deallocate(xold,xnew)
 
   end subroutine run_dynamics
 
