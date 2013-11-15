@@ -60,7 +60,6 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   }
   Bodies bodies(nlocal);
   B_iter B = bodies.begin();
-  int b = 0;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       B->X[0] = x[3*i+0];
@@ -73,7 +72,6 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
       int iwrap = wrap(B->X, cycle);
       B->IBODY = i | (iwrap << shift);
       B++;
-      b++;
     }
   }
   localBounds = boundbox->getBounds(bodies);
@@ -104,6 +102,8 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
 extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,
 			     double * x, double * q, double * p, double * f,
 			     double & cycle) {
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
     jcpumap[i] = 0;
@@ -125,13 +125,13 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      wrap(B->X, cycle);
       B->SRC = q[i];
       B->TRG[0] = p[i];
       B->TRG[1] = f[3*i+0];
       B->TRG[2] = f[3*i+1];
       B->TRG[3] = f[3*i+2];
-      B->IBODY = i;
+      int iwrap = wrap(B->X, cycle);
+      B->IBODY = i | (iwrap << shift);
       B++;
     }
   }
@@ -157,7 +157,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,
   logger->printTime("Total FMM");
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B->IBODY;
+    int i = B->IBODY & mask;
     p[i]     = B->TRG[0];
     f[3*i+0] = B->TRG[1];
     f[3*i+1] = B->TRG[2];
@@ -165,7 +165,9 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,
   }
   bodies = LET->getRecvBodies();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B->IBODY;
+    int i = B->IBODY & mask;
+    int iwrap = unsigned(B->IBODY) >> shift;
+    unwrap(B->X, cycle, iwrap);
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];
@@ -178,6 +180,8 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
 			       int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
   Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
   if (args->verbose) ewald->verbose = true;
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) nlocal++;
@@ -196,13 +200,13 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      wrap(B->X, cycle);
       B->SRC = q[i];
       B->TRG[0] = p[i];
       B->TRG[1] = f[3*i+0];
       B->TRG[2] = f[3*i+1];
       B->TRG[3] = f[3*i+2];
-      B->IBODY = i;
+      int iwrap = wrap(B->X, cycle);
+      B->IBODY = i | (iwrap << shift);
       B++;
     }
   }
@@ -223,7 +227,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
   logger->printTime("Total Ewald");
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B->IBODY;
+    int i = B->IBODY & mask;
     p[i]     = B->TRG[0];
     f[3*i+0] = B->TRG[1];
     f[3*i+1] = B->TRG[2];
@@ -231,7 +235,9 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
   }
   bodies = LET->getRecvBodies();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B->IBODY;
+    int i = B->IBODY & mask;
+    int iwrap = unsigned(B->IBODY) >> shift;
+    unwrap(B->X, cycle, iwrap);
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];
@@ -330,6 +336,8 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
 				 double & cuton, double & cutoff, double & cycle,
 				 int & numTypes, double * rscale, double * gscale, double * fgscale) {
   VanDerWaals * VDW = new VanDerWaals(cuton, cutoff, cycle, numTypes, rscale, gscale, fgscale);
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) nlocal++;
@@ -347,13 +355,13 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      wrap(B->X, cycle);
       B->SRC = atype[i] - .5;
       B->TRG[0] = p[i];
       B->TRG[1] = f[3*i+0];
       B->TRG[2] = f[3*i+1];
       B->TRG[3] = f[3*i+2];
-      B->IBODY = i;
+      int iwrap = wrap(B->X, cycle);
+      B->IBODY = i | (iwrap << shift);
       B++;
     }
   }
@@ -374,11 +382,20 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   logger->printTime("Total VdW");
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B->IBODY;
+    int i = B->IBODY & mask;
     p[i]     = B->TRG[0];
     f[3*i+0] = B->TRG[1];
     f[3*i+1] = B->TRG[2];
     f[3*i+2] = B->TRG[3];
+  }
+  bodies = LET->getRecvBodies();
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B->IBODY & mask;
+    int iwrap = unsigned(B->IBODY) >> shift;
+    unwrap(B->X, cycle, iwrap);
+    x[3*i+0] = B->X[0];
+    x[3*i+1] = B->X[1];
+    x[3*i+2] = B->X[2];
   }
   delete VDW;
 }
