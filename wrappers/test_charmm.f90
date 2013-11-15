@@ -478,9 +478,7 @@ contains
        alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
        x,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
        ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
-
     use mpi
-
     implicit none
     integer nglobal,nat,nbonds,ntheta,ksize
     real(8),optional :: eb,et,efmm,evdw,timstart
@@ -505,7 +503,6 @@ contains
     do i = ista, iend
        icpumap(i) = 1
     end do
-
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
@@ -668,10 +665,34 @@ contains
        if (mod(istep,imcentfrq) == 0) call image_center(nglobal,x,nres,ires,pcycle,icpumap)
 
        time=time+tstep*timfac  ! for printing only
-       if (mod(istep,printfrq) == 0) call print_energy(time,nglobal,nat,nbonds,ntheta,ksize,&
+       if (mod(istep,printfrq) == 0) then
+          do i = 1, nglobal
+             icpumap(i) = 0
+          end do
+          ista = 1
+          iend = nglobal
+          call split_range(ista, iend, mpirank, mpisize)
+          do i = ista, iend
+             icpumap(i) = 1
+          end do
+          call energy(nglobal,nat,nbonds,ntheta,ksize,&
+               alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
+               x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
+          
+          call bcast3(nglobal, icpumap, x)
+          call bcast1(nglobal, icpumap, q)
+          call bcast3(nglobal, icpumap, xold)
+          call bcast1(nglobal, icpumap, p)
+          call bcast3(nglobal, icpumap, f)
+          do i = 1, nglobal
+             icpumap(i) = 1
+          enddo
+          call print_energy(time,nglobal,nat,nbonds,ntheta,ksize,&
             alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
             x,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
             ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
+       endif
 
        if (mod(istep,printfrq) == 0) call pdb_frame(unit,time,nglobal,x,nres,ires,icpumap)
 
@@ -1051,6 +1072,27 @@ program main
           xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
           ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
 
+     do i = 1, nglobal
+        icpumap(i) = 0
+     end do
+     ista = 1
+     iend = nglobal
+     call split_range(ista, iend, mpirank, mpisize)
+     do i = ista, iend
+        icpumap(i) = 1
+     end do
+     call energy(nglobal,nat,nbonds,ntheta,ksize,&
+          alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
+          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
+     call bcast3(nglobal, icpumap, x)
+     call bcast1(nglobal, icpumap, q)
+     call bcast3(nglobal, icpumap, xold)
+     call bcast1(nglobal, icpumap, p)
+     call bcast3(nglobal, icpumap, f)
+     do i = 1, nglobal
+        icpumap(i) = 1
+     enddo
      call print_energy(timstart,nglobal,nat,nbonds,ntheta,ksize,&
           alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
           xc,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
