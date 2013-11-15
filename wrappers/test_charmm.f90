@@ -383,8 +383,6 @@ contains
 
     f(1:3*nglobal)=0.0
     if(present(efmm)) then
-       allocate(fl(3*nglobal))
-       fl(1:3*nglobal)=0.0
        p(1:nglobal)=0.0
        call fmm_coulomb(nglobal, icpumap, jcpumap, x, q, p, f, pcycle)
        !call ewald_coulomb(nglobal, icpumap, x, q, p, fl, ksize, alpha, sigma, cutoff, pcycle)
@@ -393,12 +391,8 @@ contains
        do i=1, nglobal
           if (icpumap(i) == 0) cycle
           efmml=efmml+p(i)
-          f(3*i-2)=f(3*i-2)
-          f(3*i-1)=f(3*i-1)
-          f(3*i-0)=f(3*i-0)
        enddo
-       efmml=efmml*ccelec*0.5
-       deallocate(fl)
+       efmml=efmml*0.5
     endif
     if (present(evdw)) then
        allocate(fl(3*nglobal))
@@ -412,9 +406,9 @@ contains
        do i = 1, nglobal
           if (icpumap(i) == 0) cycle
           evdwl=evdwl+p(i)
-          f(3*i-2)=f(3*i-2)-fl(3*i-2)
-          f(3*i-1)=f(3*i-1)-fl(3*i-1)
-          f(3*i-0)=f(3*i-0)-fl(3*i-0)
+          f(3*i-2)=f(3*i-2)+fl(3*i-2)
+          f(3*i-1)=f(3*i-1)+fl(3*i-1)
+          f(3*i-0)=f(3*i-0)+fl(3*i-0)
        enddo
        evdwl=evdwl*0.5
        deallocate(fl)
@@ -922,13 +916,13 @@ program main
         f2(3*i-2) = f2(3*i-2)
         f2(3*i-1) = f2(3*i-1)
         f2(3*i-0) = f2(3*i-0)
-        potSum  = potSum  + p(i)
+        potSum = potSum + p(i)
         potSum2 = potSum2 + p2(i)
-        accDif  = accDif  + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
+        accDif = accDif  + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
              + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
              + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))
-        accNrm  = accNrm  + f(3*i-2) * f(3*i-2) + f(3*i-1) * f(3*i-1) + f(3*i-0) * f(3*i-0)
-        accNrm2  = accNrm2  + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
+        accNrm = accNrm + f(3*i-2) * f(3*i-2) + f(3*i-1) * f(3*i-1) + f(3*i-0) * f(3*i-0)
+        accNrm2 = accNrm2 + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
      end if
   end do
   potSumGlob = 0
@@ -947,8 +941,8 @@ program main
      print"(a)",'--- Coulomb FMM vs. Ewald -------'
      print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
      print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
-     print"(a,f12.4)",'Energy (FMM)         : ', ccelec*potSumGlob/2.0
-     print"(a,f12.4)",'Energy (Ewald)       : ', ccelec*potSumGlob2/2.0
+     print"(a,f12.4)",'Energy (FMM)         : ', potSumGlob*0.5
+     print"(a,f12.4)",'Energy (Ewald)       : ', potSumGlob2*0.5
      print"(a,f12.4)",'GRMS (FMM)           : ', sqrt(accNrmGlob/3.0/nglobal)
      print"(a,f12.4)",'GRMS (Ewald)         : ', sqrt(accNrmGlob2/3.0/nglobal)
   end if

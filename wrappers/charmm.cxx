@@ -158,7 +158,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
-    p[i]     += B->TRG[0] * B->SRC;
+    p[i]     += B->TRG[0] * B->SRC * Celec;
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;
     f[3*i+1] += B->TRG[2] * B->SRC * Celec;
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
@@ -225,7 +225,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
-    p[i]     += B->TRG[0] * B->SRC;
+    p[i]     += B->TRG[0] * B->SRC * Celec;
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;
     f[3*i+1] += B->TRG[2] * B->SRC * Celec;
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
@@ -275,7 +275,7 @@ extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double
 	  }
 	}
       }
-      p[i] += pp * q[i];
+      p[i] += pp * q[i] * Celec;
       f[3*i+0] -= fx * q[i] * Celec;
       f[3*i+1] -= fy * q[i] * Celec;
       f[3*i+2] -= fz * q[i] * Celec;
@@ -289,13 +289,13 @@ extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double
   for (int d=0; d<3; d++) {
     norm += dipole[d] * dipole[d];
   }
-  real_t coef = 4 * M_PI / (3 * cycle * cycle * cycle);
+  real_t coef = 4 * M_PI / (3 * cycle * cycle * cycle) * Celec;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       p[i] -= coef * norm / nglobal;
-      f[3*i+0] -= coef * dipole[0] * q[i] * Celec;
-      f[3*i+1] -= coef * dipole[1] * q[i] * Celec;
-      f[3*i+2] -= coef * dipole[2] * q[i] * Celec;
+      f[3*i+0] -= coef * dipole[0] * q[i];
+      f[3*i+1] -= coef * dipole[1] * q[i];
+      f[3*i+2] -= coef * dipole[2] * q[i];
     }
   }
   logger->stopTimer("Direct Coulomb");
@@ -322,7 +322,7 @@ extern "C" void coulomb_exclusion_(int & nglobal, int * icpumap,
 	fy += dX[1] * invR3;
 	fz += dX[2] * invR3;
       }
-      p[i] -= pp * q[i];
+      p[i] -= pp * q[i] * Celec;
       f[3*i+0] += fx * q[i] * Celec; 
       f[3*i+1] += fy * q[i] * Celec;
       f[3*i+2] += fz * q[i] * Celec;
@@ -447,9 +447,9 @@ extern "C" void direct_vanderwaals_(int & nglobal, int * icpumap, int * atype,
 	}
       }
       p[i] += pp;
-      f[3*i+0] += fx;
-      f[3*i+1] += fy;
-      f[3*i+2] += fz;
+      f[3*i+0] -= fx;
+      f[3*i+1] -= fy;
+      f[3*i+2] -= fz;
     }
   }
   logger->stopTimer("Direct VdW");
@@ -494,9 +494,9 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
             }
             dtmp *= fgs;
             p[i] -= gs * tmp;
-            f[3*i+0] -= dX[0] * dtmp;
-            f[3*i+1] -= dX[1] * dtmp;
-            f[3*i+2] -= dX[2] * dtmp;
+            f[3*i+0] += dX[0] * dtmp;
+            f[3*i+1] += dX[1] * dtmp;
+            f[3*i+2] += dX[2] * dtmp;
           }
         }
       }

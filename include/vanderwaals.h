@@ -45,9 +45,9 @@ private:
 	    }
 	    dtmp *= fgs;
 	    Bi->TRG[0] += gs * tmp;
-	    Bi->TRG[1] += dX[0] * dtmp;
-	    Bi->TRG[2] += dX[1] * dtmp;
-	    Bi->TRG[3] += dX[2] * dtmp;
+	    Bi->TRG[1] -= dX[0] * dtmp;
+	    Bi->TRG[2] -= dX[1] * dtmp;
+	    Bi->TRG[3] -= dX[2] * dtmp;
           }
 	}
       }
