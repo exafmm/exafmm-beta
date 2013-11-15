@@ -578,7 +578,7 @@ contains
     integer dynsteps,nglobal,nat,nbonds,ntheta,ksize,imcentfrq,printfrq,nres
     real(8) eb,et,efmm,evdw
     real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle
-    real(8), allocatable, dimension(:) :: x,v,mass,p,f,q,gscale,fgscale,rscale
+    real(8), allocatable, dimension(:) :: x,v,mass,p,f,q,gscale,fgscale,rscale,xold
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,ires
@@ -586,39 +586,53 @@ contains
     real(8) xsave, e0, step, step2, eplus, eminus, nforce,tstep,timstart,time,tstep2
     integer i,j,istart,iend,unit,istep,ierr,mpirank
     real(8),parameter :: TIMFAC=4.88882129D-02
-    logical leapfrog_maybe
+    logical leapfrog_maybe,charmm
 
     unit=1
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     if(mpirank==0)open(unit=unit,file='water.pdb',status='new')
 
     leapfrog_maybe=.false.
-!!!
-!!! this synchronized seems to be working:
-!!! http://en.wikipedia.org/wiki/Leapfrog_integration
-!!! also do Bernie's algorithm from CHARMM
-!!!
+
+    ! xold here is basically xnew from the restart file,
+    ! which changes the name in this routine
+    ! so it is the same as in CHARMM: there changes the name, too!
+    charmm=.true.
+
     tstep=0.001/timfac !ps -> akma
     tstep2=tstep**2
     timstart = 100.0 ! first 100ps was equilibration with standard CHARMM
     time = timstart
 
     allocate(xnew(3*nglobal),vnew(3*nglobal),fnew(3*nglobal)) ! do we need first two ??
-    allocate(fac1(nglobal),fac2(nglobal))
-    do i=1,nglobal
-       if(icpumap(i)==0)cycle
-       fac1(i) = tstep2/mass(atype(i))/2.0
-       fac2(i) = tstep/mass(atype(i))/2.0
-    enddo
+    allocate(fac1(nglobal),fac2(nglobal),xold(3*nglobal))
+
+    ! precompute some constants and recalculate xold
+    if(charmm) then
+       do i=1,nglobal
+          if(icpumap(i)==0)cycle
+          fac1(i) = tstep2/mass(atype(i))
+          fac2(i) = 0.5/tstep
+          xold(3*i-2)=v(3*i-2)*tstep-f(3*i-2)*fac1(i)*0.5
+          xold(3*i-1)=v(3*i-1)*tstep-f(3*i-1)*fac1(i)*0.5
+          xold(3*i)  =v(3*i)  *tstep-f(3*i)  *fac1(i)*0.5
+       enddo
+    else
+       do i=1,nglobal
+          if(icpumap(i)==0)cycle
+          fac1(i) = tstep2/mass(atype(i))/2.0
+          fac2(i) = tstep/mass(atype(i))/2.0
+       enddo
+    endif
 
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
          x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
 
-    do istep = 1, dynsteps
+    mainloop: do istep = 1, dynsteps
 
-       if (leapfrog_maybe) then
+       integrators: if (leapfrog_maybe) then ! not really working :-(
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
@@ -632,7 +646,11 @@ contains
              xnew(3*j-1) = x(3*j-1) + vnew(3*j-1)*tstep
              xnew(3*j)   = x(3*j)   + vnew(3*j)*tstep
           enddo
-       else
+       elseif (.not.charmm) then ! synchronized leapfrog from wikipedia
+!!!
+!!! this synchronized seems to be working:
+!!! http://en.wikipedia.org/wiki/Leapfrog_integration
+!!!
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
              x(3*j-2) = x(3*j-2) + v(3*j-2)*tstep - f(3*j-2)*fac1(j)
@@ -658,16 +676,63 @@ contains
              f(3*j-1)=fnew(3*j-1)
              f(3*j)  =fnew(3*j)
           enddo
-       endif
+
+       else ! CHARMM integrator
+
+          do j = 1, nglobal
+             if(icpumap(j)==0)cycle
+             x(3*j-2) = x(3*j-2) + xold(3*j-2)
+             x(3*j-1) = x(3*j-1) + xold(3*j-1)
+             x(3*j)   = x(3*j)   + xold(3*j)
+          enddo
+
+          call energy(nglobal,nat,nbonds,ntheta,ksize,&
+               alpha,sigma,cutoff,cuton,ccelec,pcycle,&
+               x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
+
+          do j = 1, nglobal
+             if(icpumap(j)==0)cycle
+             xnew(3*j-2) = xold(3*j-2)  - fac1(j)*f(3*j-2)
+             xnew(3*j-1) = xold(3*j-1)  - fac1(j)*f(3*j-1)
+             xnew(3*j)   = xold(3*j)    - fac1(j)*f(3*j)
+          enddo
+
+          do j = 1, nglobal
+             if(icpumap(j)==0)cycle
+             v(3*j-2)=(xnew(3*j-2) + xold(3*j-2))*fac2(j)
+             v(3*j-1)=(xnew(3*j-1) + xold(3*j-1))*fac2(j)
+             v(3*j)  =(xnew(3*j)   + xold(3*j)  )*fac2(j)
+          enddo
+
+          ! swap xold,xnew (maybe just copy would do, too??)
+          ! xold & xc are the ones needed for the next step
+
+          do j = 1, nglobal
+             if(icpumap(j)==0)cycle
+             xsave=xnew(3*j-2)
+             xnew(3*j-2) = xold(3*j-2)
+             xold(3*j-2) = xsave
+             xsave=xnew(3*j-1)
+             xnew(3*j-1) = xold(3*j-1)
+             xold(3*j-1) = xsave
+             xsave=xnew(3*j)
+             xnew(3*j) = xold(3*j)
+             xold(3*j) = xsave
+          enddo
+
+       endif integrators
 
 !!! These copies are not really neded :-(
-       do j = 1, nglobal
-          if(icpumap(j)==1) then
-             v(3*j-2) = vnew(3*j-2)
-             v(3*j-1) = vnew(3*j-1)
-             v(3*j)   = vnew(3*j)
-          endif
-       enddo
+       if(.not.charmm) then          
+          do j = 1, nglobal
+             if(icpumap(j)==1) then
+                v(3*j-2) = vnew(3*j-2)
+                v(3*j-1) = vnew(3*j-1)
+                v(3*j)   = vnew(3*j)
+             endif
+          enddo
+       endif
 
        if (mod(istep,imcentfrq) == 0) call image_center(nglobal,x,nres,ires,pcycle,icpumap)
 
@@ -679,9 +744,9 @@ contains
 
        if (mod(istep,printfrq) == 0) call pdb_frame(unit,time,nglobal,x,nres,ires,icpumap)
 
-    enddo
+    enddo mainloop
 
-    deallocate(xnew,vnew,fnew)
+    deallocate(xold,xnew,vnew,fnew)
 
   end subroutine run_dynamics
 
