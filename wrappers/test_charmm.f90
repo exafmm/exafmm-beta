@@ -359,40 +359,27 @@ contains
     implicit none
     integer nglobal,nat,nbonds,ntheta,ksize,istep,mpirank,mpisize,ierr,ista,iend,i
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
-    real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle,ebl,etl,efmml,evdwl
+    real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle
     real(8), optional :: eb,et,efmm,evdw
-    real(8), allocatable, dimension(:) :: xold,x,p,f,fl,q,gscale,fgscale,rscale
+    real(8), allocatable, dimension(:) :: xold,x,p,f,q,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     call mpi_comm_size(mpi_comm_world, mpisize, ierr)
-    ! zero the force
-    f(1:3*nglobal) = 0.0
-
-    do i = 1, nglobal
-       icpumap(i) = 0
-    end do
-
-    ista = 1
-    iend = nglobal
-    call split_range(ista, iend, mpirank, mpisize)
-    do i = ista, iend
-       icpumap(i) = 1
-    end do
-    call fmm_partition(nglobal, icpumap, x, q, xold, pcycle)
 
     f(1:3*nglobal)=0.0
+    call fmm_partition(nglobal, icpumap, x, q, xold, pcycle)
     if(present(efmm)) then
        p(1:nglobal)=0.0
        call fmm_coulomb(nglobal, icpumap, jcpumap, x, q, p, f, pcycle)
        !call ewald_coulomb(nglobal, icpumap, x, q, p, f, ksize, alpha, sigma, cutoff, pcycle)
        call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
-       efmml=0.0
+       efmm=0.0
        do i=1, nglobal
           if (icpumap(i) == 0) cycle
-          efmml=efmml+p(i)
+          efmm=efmm+p(i)
        enddo
-       efmml=efmml*0.5
+       efmm=efmm*0.5
     endif
     if (present(evdw)) then
        p(1:nglobal)=0.0
@@ -400,42 +387,25 @@ contains
             pcycle, nat, rscale, gscale, fgscale)
        call vanderwaals_exclusion(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
             pcycle, nat, rscale, gscale, fgscale, numex, natex)
-       evdwl=0.0
+       evdw=0.0
        do i = 1, nglobal
           if (icpumap(i) == 0) cycle
-          evdwl=evdwl+p(i)
+          evdw=evdw+p(i)
        enddo
-       evdwl=evdwl*0.5
+       evdw=evdw*0.5
     endif
     if (present(eb).and.present(et)) then
        call bonded_terms(icpumap,jcpumap,atype,x,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,ebl,etl)
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     elseif (present(eb)) then
        call bonded_terms(icpumap,jcpumap,atype,x,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,ebl)
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb)
     elseif (present(et)) then
        call bonded_terms(icpumap,jcpumap,atype,x,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,etl)
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,et)
     endif
 
-    call mpi_allreduce(ebl, eb,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-    call mpi_allreduce(etl, et,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-    call mpi_allreduce(efmml, efmm,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-    call mpi_allreduce(evdwl, evdw,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-    call bcast3(nglobal, icpumap, x)
-    call bcast1(nglobal, icpumap, q)
-    call bcast3(nglobal, icpumap, xold)
-    call bcast1(nglobal, icpumap, p)
-    call bcast3(nglobal, icpumap, f)
-    do i = 1, nglobal
-       icpumap(i) = 1
-    enddo
-
-    etot=0.0
-    if(present(eb)) etot=etot+eb
-    if(present(et)) etot=etot+et
-    if(present(efmm)) etot=etot+efmm
-    if(present(evdw)) etot=etot+evdw
+    etot=eb+et+efmm+evdw
     return
   end subroutine energy
 
@@ -519,15 +489,36 @@ contains
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
-    integer i,ierr,mpirank
+    integer i,ierr,mpirank,mpisize,ista,iend
     real(8) temp,kboltz,ekinetic,grms,ekineticglob,grmsglob,etotglob
 
     kboltz=1.987191d-03 !from CHARMM
+
+    call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
+    call mpi_comm_size(mpi_comm_world, mpisize, ierr)
+    do i = 1, nglobal
+       icpumap(i) = 0
+    end do
+    ista = 1
+    iend = nglobal
+    call split_range(ista, iend, mpirank, mpisize)
+    do i = ista, iend
+       icpumap(i) = 1
+    end do
 
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
+
+    call bcast3(nglobal, icpumap, x)
+    call bcast1(nglobal, icpumap, q)
+    call bcast3(nglobal, icpumap, xold)
+    call bcast1(nglobal, icpumap, p)
+    call bcast3(nglobal, icpumap, f)
+    do i = 1, nglobal
+       icpumap(i) = 1
+    enddo
 
     ! calculate kinetic energy, temperature:
     ekinetic=0.0
@@ -538,8 +529,7 @@ contains
        grms=grms+f(3*i-2)**2+f(3*i-1)**2+f(3*i-0)**2
     enddo
     ! Summ up the terms in parallel
-    !call mpi_reduce(etot, etotGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-    etotGlob = etot
+    call mpi_reduce(etot, etotGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
     !call mpi_reduce(ekinetic, ekineticGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
     ekineticGlob = ekinetic
     !call mpi_reduce(grms, grmsGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
@@ -571,11 +561,12 @@ contains
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,ires
     real(8), allocatable, dimension(:) :: xnew,fnew,fac1,fac2
     real(8) tstep, timstart, time, tstep2
-    integer i,unit,istep,ierr,mpirank
+    integer i,unit,istep,ierr,mpirank,mpisize,ista,iend
     real(8),parameter :: TIMFAC=4.88882129D-02
 
     unit=1
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
+    call mpi_comm_size(mpi_comm_world, mpisize, ierr)
     if(mpirank==0)open(unit=unit,file='water.pdb',status='new')
 
     tstep = 0.001/timfac !ps -> akma
@@ -596,10 +587,29 @@ contains
        xold(3*i-0) = v(3*i-0)*tstep-f(3*i-0)*fac1(i)*0.5
     enddo
 
+    do i = 1, nglobal
+       icpumap(i) = 0
+    end do
+    ista = 1
+    iend = nglobal
+    call split_range(ista, iend, mpirank, mpisize)
+    do i = ista, iend
+       icpumap(i) = 1
+    end do
+
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
+
+    call bcast3(nglobal, icpumap, x)
+    call bcast1(nglobal, icpumap, q)
+    call bcast3(nglobal, icpumap, xold)
+    call bcast1(nglobal, icpumap, p)
+    call bcast3(nglobal, icpumap, f)
+    do i = 1, nglobal
+       icpumap(i) = 1
+    enddo
 
     mainloop: do istep = 1, dynsteps
 
@@ -610,10 +620,29 @@ contains
           x(3*i-0) = x(3*i-0) + xold(3*i-0)
        enddo
 
+       do i = 1, nglobal
+          icpumap(i) = 0
+       end do
+       ista = 1
+       iend = nglobal
+       call split_range(ista, iend, mpirank, mpisize)
+       do i = ista, iend
+          icpumap(i) = 1
+       end do
+
        call energy(nglobal,nat,nbonds,ntheta,ksize,&
             alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
             x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
             ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
+
+       call bcast3(nglobal, icpumap, x)
+       call bcast1(nglobal, icpumap, q)
+       call bcast3(nglobal, icpumap, xold)
+       call bcast1(nglobal, icpumap, p)
+       call bcast3(nglobal, icpumap, f)
+       do i = 1, nglobal
+          icpumap(i) = 1
+       enddo
 
        do i = 1, nglobal
           if(icpumap(i)==0)cycle
@@ -801,7 +830,7 @@ program main
   real(8), allocatable, dimension(:,:) :: rbond,cbond
   real(8), allocatable, dimension(:,:,:) :: aangle,cangle
   integer nbonds,ntheta,imcentfrq,printfrq,nres
-  real(8) efmm, evdw, etot, eb,et,timstart
+  real(8) efmm, evdw, etot, eb, et, timstart
   logical test_first,integrate
   parameter(pi=3.14159265358979312d0, ccelec=332.0716d0)
 
@@ -993,8 +1022,8 @@ program main
      print"(a)",'--- VdW FMM vs. Direct ----------'
      print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
      print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
-     print"(a,f12.4)",'Energy (FMM)         : ', potSumGlob/2.0
-     print"(a,f12.4)",'Energy (Direct)      : ', potSumGlob2/2.0
+     print"(a,f12.4)",'Energy (FMM)         : ', potSumGlob*0.5
+     print"(a,f12.4)",'Energy (Direct)      : ', potSumGlob2*0.5
      print"(a,f12.4)",'GRMS (FMM)           : ', sqrt(accNrmGlob/3.0/nglobal)
      print"(a,f12.4)",'GRMS (Direct)        : ', sqrt(accNrmGlob2/3.0/nglobal)
   end if
