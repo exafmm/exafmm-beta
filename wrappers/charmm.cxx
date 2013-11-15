@@ -56,6 +56,7 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) nlocal++;
   }
+  int * warpFlags = new int [nlocal];
   Bodies bodies(nlocal);
   B_iter B = bodies.begin();
   for (int i=0; i<nglobal; i++) {
@@ -102,6 +103,7 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
     v[3*i+2] = B->TRG[2];
     icpumap[i] = 1;
   }
+  delete[] warpFlags;
 }
 
 extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,

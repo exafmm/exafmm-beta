@@ -180,10 +180,26 @@ public:
     for (int i=0; i<N; i++) temp[i] = 1. / std::sqrt(v[i]);
     return temp;
   }
-  friend void wrap(vec &v, const T &w) {                        // Wrap around periodic boundary
+  friend int wrap(vec &v, const T &w) {                         // Wrap around periodic boundary
+    assert( N <= 16 );
+    int iw = 0;
     for (int i=0; i<N; i++) {
-      if(v[i] < -w / 2) v[i] += w;
-      if(v[i] >  w / 2) v[i] -= w;
+      if(v[i] < -w / 2) {
+	v[i] += w;
+	iw = 1 << (2*i);
+      }
+      if(v[i] >  w / 2) {
+	v[i] -= w;
+	iw = 1 << (2*i+1);
+      }
+    }
+    return iw;
+  }
+  friend void unwrap(vec &v, const T &w, const int &iw) {       // Undo wrap around periodic boundary
+    assert( N <=16 );
+    for (int i=0; i<N; i++) {
+      if(iw & (1 << (2*i  ))) v[i] -= w;
+      if(iw & (1 << (2*i+1))) v[i] += w;
     }
   }
 };
@@ -448,10 +464,27 @@ public:
     return temp;
   }
   __host__ __device__ __forceinline__
-  friend void wrap(vec &v, const T &w) {                        // Wrap around periodic boundary
+  friend int wrap(vec &v, const T &w) {                         // Wrap around periodic boundary
+    assert( N <= 16 );
+    int iw = 0;
     for (int i=0; i<N; i++) {
-      if(v[i] < -w / 2) v[i] += w;
-      if(v[i] >  w / 2) v[i] -= w;
+      if(v[i] < -w / 2) {
+	v[i] += w;
+	iw = 1 << (2*i);
+      }
+      if(v[i] >  w / 2) {
+	v[i] -= w;
+	iw = 1 << (2*i+1);
+      }
+    }
+    return iw;
+  }
+  __host__ __device__ __forceinline__
+  friend void unwrap(vec &v, const T &w, const int &iw) {       // Undo wrap around periodic boundary
+    assert( N <=16 );
+    for (int i=0; i<N; i++) {
+      if(iw & (1 << (2*i  ))) v[i] -= w;
+      if(iw & (1 << (2*i+1))) v[i] += w;
     }
   }
 };

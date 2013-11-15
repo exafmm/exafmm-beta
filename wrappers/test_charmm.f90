@@ -167,6 +167,7 @@ contains
           ii=ib(i)
           jj=jb(i)
           if (icpumap(ii) == 0) cycle
+          if (jcpumap(jj) == 0) print*,"missing j = ",jj
           dx=x(3*ii-2)-x(3*jj-2)
           dy=x(3*ii-1)-x(3*jj-1)
           dz=x(3*ii)-x(3*jj)
@@ -186,6 +187,7 @@ contains
           ii=ib(i)
           jj=jb(i)
           if (icpumap(jj) == 0) cycle
+          if (jcpumap(ii) == 0) print*,"missing i = ",ii
           dx=x(3*ii-2)-x(3*jj-2)
           dy=x(3*ii-1)-x(3*jj-1)
           dz=x(3*ii)-x(3*jj)
@@ -210,6 +212,8 @@ contains
           jj=jt(i)
           kk=kt(i)
           if (icpumap(ii) == 0) cycle
+          if (jcpumap(jj) == 0) print*,"missing j = ",jj
+          if (jcpumap(kk) == 0) print*,"missing k = ",kk
           dx1=x(3*ii-2)-x(3*jj-2)
           dy1=x(3*ii-1)-x(3*jj-1)
           dz1=x(3*ii)-x(3*jj)
@@ -255,6 +259,8 @@ contains
           jj=jt(i)
           kk=kt(i)
           if (icpumap(jj) == 0) cycle
+          if (jcpumap(ii) == 0) print*,"missing i = ",ii
+          if (jcpumap(kk) == 0) print*,"missing k = ",kk
           dx1=x(3*ii-2)-x(3*jj-2)
           dy1=x(3*ii-1)-x(3*jj-1)
           dz1=x(3*ii)-x(3*jj)
@@ -300,6 +306,8 @@ contains
           jj=jt(i)
           kk=kt(i)
           if (icpumap(kk) == 0) cycle
+          if (jcpumap(ii) == 0) print*,"missing i = ",ii
+          if (jcpumap(jj) == 0) print*,"missing j = ",jj
           dx1=x(3*ii-2)-x(3*jj-2)
           dy1=x(3*ii-1)-x(3*jj-1)
           dz1=x(3*ii)-x(3*jj)
@@ -412,8 +420,10 @@ contains
        evdwl=evdwl*0.5
        deallocate(fl)
     endif
-    call mpi_reduce(efmml, efmm,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-    call mpi_reduce(evdwl, evdw,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    !call mpi_allreduce(ebl, eb,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+    !call mpi_allreduce(etl, et,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+    call mpi_allreduce(efmml, efmm,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+    call mpi_allreduce(evdwl, evdw,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
     call bcast3(nglobal, icpumap, x)
     call bcast1(nglobal, icpumap, q)
     call bcast3(nglobal, icpumap, v)
@@ -422,17 +432,17 @@ contains
     do i = 1, nglobal
        icpumap(i) = 1
     enddo
-
     if (present(eb).and.present(et)) then
        call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
             ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     elseif (present(eb)) then
        call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb=eb)
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb)
     elseif (present(et)) then
        call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,et=et)
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,et)
     endif
+
 
     etot=0.0
     if(present(eb)) etot=etot+eb
