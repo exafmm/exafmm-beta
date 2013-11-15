@@ -489,12 +489,9 @@ contains
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
     integer i,ierr,mpirank,mpisize,ista,iend
     real(8) temp,kboltz,ekinetic,grms,ekineticglob,grmsglob,etotglob
-
     kboltz=1.987191d-03 !from CHARMM
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     call mpi_comm_size(mpi_comm_world, mpisize, ierr)
-
-    ! calculate kinetic energy, temperature:
     ekinetic=0.0
     grms=0.0
     do i=1, nglobal
@@ -502,12 +499,9 @@ contains
        ekinetic=ekinetic+mass(atype(i))*(v(3*i-2)**2+v(3*i-1)**2+v(3*i-0)**2)
        grms=grms+f(3*i-2)**2+f(3*i-1)**2+f(3*i-0)**2
     enddo
-    ! Summ up the terms in parallel
     call mpi_reduce(etot, etotGlob, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-    !call mpi_reduce(ekinetic, ekineticGlob, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-    ekineticGlob = ekinetic
-    !call mpi_reduce(grms, grmsGlob, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-    grmsGlob = grms
+    call mpi_reduce(ekinetic, ekineticGlob, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    call mpi_reduce(grms, grmsGlob, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
     grmsglob=sqrt(grmsglob/3.0/real(nglobal))
     temp=ekineticglob/3.0/nglobal/kboltz
     ekineticglob=ekineticglob/2.0
@@ -587,13 +581,6 @@ contains
     mainloop: do istep = 1, dynsteps
 
        do i = 1, nglobal
-          if(icpumap(i)==0)cycle
-          x(3*i-2) = x(3*i-2) + xold(3*i-2)
-          x(3*i-1) = x(3*i-1) + xold(3*i-1)
-          x(3*i-0) = x(3*i-0) + xold(3*i-0)
-       enddo
-
-       do i = 1, nglobal
           icpumap(i) = 0
        end do
        ista = 1
@@ -602,6 +589,13 @@ contains
        do i = ista, iend
           icpumap(i) = 1
        end do
+
+       do i = 1, nglobal
+          if(icpumap(i)==0)cycle
+          x(3*i-2) = x(3*i-2) + xold(3*i-2)
+          x(3*i-1) = x(3*i-1) + xold(3*i-1)
+          x(3*i-0) = x(3*i-0) + xold(3*i-0)
+       enddo
 
        call energy(nglobal,nat,nbonds,ntheta,ksize,&
             alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
@@ -629,6 +623,16 @@ contains
           xold(3*i-0) = xnew(3*i-0)
        enddo
 
+       if (mod(istep,imcentfrq) == 0) call image_center(nglobal,x,nres,ires,pcycle,icpumap)
+
+       time=time+tstep*timfac  ! for printing only
+       if (mod(istep,printfrq) == 0) then
+          call print_energy(time,nglobal,nat,nbonds,ntheta,ksize,&
+            alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
+            x,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+            ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
+       endif
+
        call bcast3(nglobal, icpumap, x)
        call bcast1(nglobal, icpumap, q)
        call bcast3(nglobal, icpumap, xnew)
@@ -639,16 +643,6 @@ contains
        do i = 1, nglobal
           icpumap(i) = 1
        enddo
-
-       if (mod(istep,imcentfrq) == 0) call image_center(nglobal,x,nres,ires,pcycle,icpumap)
-
-       time=time+tstep*timfac  ! for printing only
-       if (mod(istep,printfrq) == 0) then
-          call print_energy(time,nglobal,nat,nbonds,ntheta,ksize,&
-            alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
-            x,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-            ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
-       endif
 
        if (mod(istep,printfrq) == 0) call pdb_frame(unit,time,nglobal,x,nres,ires,icpumap)
 
@@ -1041,19 +1035,19 @@ program main
           alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
           xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
           ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
-     call bcast3(nglobal, icpumap, xc)
-     call bcast1(nglobal, icpumap, q)
-     call bcast3(nglobal, icpumap, xold)
-     call bcast1(nglobal, icpumap, p)
-     call bcast3(nglobal, icpumap, f)
-     do i = 1, nglobal
-        icpumap(i) = 1
-     enddo
+
      call print_energy(timstart,nglobal,nat,nbonds,ntheta,ksize,&
           alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
           xc,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
           ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
 
+     call bcast3(nglobal, icpumap, xc)
+     call bcast1(nglobal, icpumap, q)
+     call bcast1(nglobal, icpumap, p)
+     call bcast3(nglobal, icpumap, f)
+     do i = 1, nglobal
+        icpumap(i) = 1
+     enddo
      if (integrate) call run_dynamics(dynsteps,imcentfrq,printfrq,&
           nglobal,nat,nbonds,ntheta,ksize,&
           alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
