@@ -147,7 +147,7 @@ contains
     deallocate(send)
   end subroutine bcast3
 
-  subroutine bonded_terms(nglobal,icpumap,nat,atype,x,f,nbonds,ntheta,&
+  subroutine bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
        ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     implicit none
     integer nglobal,nat
@@ -155,7 +155,7 @@ contains
     integer i,ii,jj,kk,nbonds,ntheta
     real(8), optional :: eb,et
     real(8) dx,dy,dz,r,db,df
-    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,icpumap,atype
+    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,icpumap,jcpumap,atype
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     real(8) dx1,dy1,dz1,dx2,dy2,dz2,r1,r2,r1r,r2r
@@ -347,16 +347,16 @@ contains
   subroutine energy(nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,ccelec,pcycle,&
        x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-       ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
+       ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
     use mpi
     implicit none
     integer nglobal,nat,nbonds,ntheta,ksize,istep,mpirank,mpisize,ierr,ista,iend
     real(8),optional :: eb,et,efmm,evdw
-    real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle,efmml,evdwl
+    real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle,ebl,etl,efmml,evdwl
     real(8), allocatable, dimension(:) :: x,p,f,fl,q,v,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
-    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
+    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
     integer i,j
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     call mpi_comm_size(mpi_comm_world, mpisize, ierr)
@@ -379,7 +379,7 @@ contains
        allocate(fl(3*nglobal))
        fl(1:3*nglobal)=0.0
        p(1:nglobal)=0.0
-       call fmm_coulomb(nglobal, icpumap, x, q, p, fl, pcycle)
+       call fmm_coulomb(nglobal, icpumap, jcpumap, x, q, p, fl, pcycle)
        !call ewald_coulomb(nglobal, icpumap, x, q, p, fl, ksize, alpha, sigma, cutoff, pcycle)
        call coulomb_exclusion(nglobal, icpumap, x, q, p, fl, pcycle, numex, natex)
        efmml=0.0
@@ -424,13 +424,13 @@ contains
     enddo
 
     if (present(eb).and.present(et)) then
-       call bonded_terms(nglobal,icpumap,nat,atype,x,f,nbonds,ntheta,&
+       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
             ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     elseif (present(eb)) then
-       call bonded_terms(nglobal,icpumap,nat,atype,x,f,nbonds,ntheta,&
+       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
             ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb=eb)
     elseif (present(et)) then
-       call bonded_terms(nglobal,icpumap,nat,atype,x,f,nbonds,ntheta,&
+       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
             ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,et=et)
     endif
 
@@ -445,7 +445,7 @@ contains
   subroutine force_testing(nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,ccelec,pcycle,&
        x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-       ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
+       ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
 
     implicit none
     integer nglobal,nat,nbonds,ntheta,ksize
@@ -454,7 +454,7 @@ contains
     real(8), allocatable, dimension(:) :: x,p,f,q,v,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
-    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
+    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
     real(8), allocatable, dimension(:) :: f_analytic
     real(8) xsave, e0, step, step2, eplus, eminus, nforce
     integer i,j,istart,iend
@@ -462,7 +462,7 @@ contains
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
          x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,0)
+         ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
 
 !!!
 !!! this routine is not parallelized ??
@@ -486,14 +486,14 @@ contains
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,numex,natex,eminus,eb,et,efmm,evdw,0)
+               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,eminus,eb,et,efmm,evdw,0)
 
           x(3*(i-1)+j)=x(3*(i-1)+j)+2.0*step
 
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,numex,natex,eplus,eb,et,efmm,evdw,0)
+               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,eplus,eb,et,efmm,evdw,0)
 
           nforce=step2*(eplus-eminus)
           x(3*(i-1)+j)=xsave  ! restore
@@ -510,7 +510,7 @@ contains
   subroutine print_energy(timstart,nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,ccelec,pcycle,&
        x,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-       ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
+       ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
 
     use mpi
 
@@ -521,7 +521,7 @@ contains
     real(8), allocatable, dimension(:) :: x,p,f,fl,q,v,mass,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
-    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
+    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
     integer i,j, ierr, mpirank
     real(8) temp,kboltz,ekinetic,grms,ekineticglob,grmsglob,etotglob
 
@@ -530,7 +530,7 @@ contains
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
          x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,0)
+         ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
 
     ! calculate kinetic energy, temperature:
     ekinetic=0.0
@@ -562,7 +562,7 @@ contains
        nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,ccelec,pcycle,&
        x,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-       ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,nres,ires)
+       ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,nres,ires)
     use mpi
     implicit none
     integer dynsteps,nglobal,nat,nbonds,ntheta,ksize,imcentfrq,printfrq,nres
@@ -571,7 +571,7 @@ contains
     real(8), allocatable, dimension(:) :: x,v,mass,p,f,q,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
-    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex,ires
+    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,ires
     real(8), allocatable, dimension(:) :: xnew,vnew,fnew,fac1,fac2
     real(8) xsave, e0, step, step2, eplus, eminus, nforce,tstep,timstart,time,tstep2
     integer i,j,istart,iend,unit,istep,ierr,mpirank
@@ -604,7 +604,7 @@ contains
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
          x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,0)
+         ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
 
     do istep = 1, dynsteps
 
@@ -612,7 +612,7 @@ contains
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,1)
+               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,1)
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
              vnew(3*j-2) = v(3*j-2) - f(3*j-2)*tstep/mass(atype(j))
@@ -633,7 +633,7 @@ contains
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,ccelec,pcycle,&
                x,p,fnew,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
+               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
 
           do j = 1, nglobal
              if(icpumap(j)==0)cycle
@@ -665,7 +665,7 @@ contains
        if (mod(istep,printfrq) == 0) call print_energy(time,nglobal,nat,nbonds,ntheta,ksize,&
             alpha,sigma,cutoff,cuton,ccelec,pcycle,&
             x,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-            ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
+            ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
 
        if (mod(istep,printfrq) == 0) call pdb_frame(unit,time,nglobal,x,nres,ires,icpumap)
 
@@ -820,7 +820,7 @@ program main
   integer, dimension (128) :: iseed
   real(8), dimension (3) :: dipole = (/0, 0, 0/)
   real(8), dimension (3) :: xperiodic
-  integer, allocatable, dimension(:) :: icpumap,numex,natex,atype,ib,jb,it,jt,kt,ires
+  integer, allocatable, dimension(:) :: icpumap,jcpumap,numex,natex,atype,ib,jb,it,jt,kt,ires
   real(8), allocatable, dimension(:) :: x, q, p, f, p2, f2, xc, v, mass,xnew
   real(8), allocatable, dimension(:) :: rscale, gscale, fgscale
   real(8), allocatable, dimension(:,:) :: rbond,cbond
@@ -849,7 +849,7 @@ program main
      call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,nat,atype,&
           rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
           aangle,cangle,mass,xc,v,xnew,nres,ires)
-     allocate( p(nglobal),  f(3*nglobal), icpumap(nglobal) )
+     allocate( p(nglobal),  f(3*nglobal), icpumap(nglobal), jcpumap(nglobal) )
      allocate( p2(nglobal), f2(3*nglobal) )
      alpha = 10 / pcycle
 
@@ -905,7 +905,7 @@ program main
   end do
   call fmm_init(images,theta,verbose)
   call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
-  call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
+  call fmm_coulomb(nglobal, icpumap, jcpumap, x, q, p, f, pcycle)
   do i = 1, nglobal
      p2(i) = 0
      f2(3*i-2) = 0
@@ -1044,18 +1044,18 @@ program main
      if (test_first) call force_testing(nglobal,nat,nbonds,ntheta,ksize,&
           alpha,sigma,cutoff,cuton,ccelec,pcycle,&
           xc,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-          ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
+          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
 
      call print_energy(timstart,nglobal,nat,nbonds,ntheta,ksize,&
           alpha,sigma,cutoff,cuton,ccelec,pcycle,&
           xc,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-          ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw)
+          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
 
      if (integrate) call run_dynamics(dynsteps,imcentfrq,printfrq,&
           nglobal,nat,nbonds,ntheta,ksize,&
           alpha,sigma,cutoff,cuton,ccelec,pcycle,&
           xc,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-          ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,eb,et,efmm,evdw,nres,ires)
+          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,nres,ires)
 
   endif
 
