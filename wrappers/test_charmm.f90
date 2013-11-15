@@ -5,7 +5,7 @@ contains
        aangle,cangle,mass,xc,v,xnew,nres,ires)
     implicit none
     logical qext
-    integer i, nat, im, in, n, natex_size, vdw_size, idist, resn, nres
+    integer i, nat, im, in, n, natex_size, vdw_size, resn, nres
     real(8) size, sizex, sizey, sizez
     integer, allocatable, dimension(:) :: numex,natex,atype,ib,jb,it,jt,kt,ires
     real(8), allocatable, dimension(:) :: x, q, rscale, gscale, fgscale
@@ -147,10 +147,9 @@ contains
     deallocate(send)
   end subroutine bcast3
 
-  subroutine bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
+  subroutine bonded_terms(icpumap,jcpumap,atype,x,f,nbonds,ntheta,&
        ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     implicit none
-    integer nglobal,nat
     real(8), allocatable, dimension(:) :: x, f
     integer i,ii,jj,kk,nbonds,ntheta
     real(8), optional :: eb,et
@@ -358,14 +357,13 @@ contains
        ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
     use mpi
     implicit none
-    integer nglobal,nat,nbonds,ntheta,ksize,istep,mpirank,mpisize,ierr,ista,iend
-    real(8),optional :: eb,et,efmm,evdw
+    integer nglobal,nat,nbonds,ntheta,ksize,istep,mpirank,mpisize,ierr,ista,iend,i
+    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
     real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle,ebl,etl,efmml,evdwl
+    real(8), optional :: eb,et,efmm,evdw
     real(8), allocatable, dimension(:) :: xold,x,p,f,fl,q,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
-    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
-    integer i,j
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     call mpi_comm_size(mpi_comm_world, mpisize, ierr)
     ! zero the force
@@ -421,13 +419,13 @@ contains
        deallocate(fl)
     endif
     if (present(eb).and.present(et)) then
-       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
+       call bonded_terms(icpumap,jcpumap,atype,x,f,nbonds,ntheta,&
             ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,ebl,etl)
     elseif (present(eb)) then
-       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
+       call bonded_terms(icpumap,jcpumap,atype,x,f,nbonds,ntheta,&
             ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,ebl)
     elseif (present(et)) then
-       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
+       call bonded_terms(icpumap,jcpumap,atype,x,f,nbonds,ntheta,&
             ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,etl)
     endif
 
@@ -461,7 +459,7 @@ contains
     integer nglobal,nat,nbonds,ntheta,ksize
     real(8) eb,et,efmm,evdw
     real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle
-    real(8), allocatable, dimension(:) :: xold,x,p,f,q,v,gscale,fgscale,rscale
+    real(8), allocatable, dimension(:) :: xold,x,p,f,q,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
@@ -528,11 +526,11 @@ contains
     integer nglobal,nat,nbonds,ntheta,ksize
     real(8),optional :: eb,et,efmm,evdw,timstart
     real(8) alpha,sigma,cutoff,cuton,ccelec,etot,pcycle
-    real(8), allocatable, dimension(:) :: xold,x,p,f,fl,q,v,mass,gscale,fgscale,rscale
+    real(8), allocatable, dimension(:) :: xold,x,p,f,q,v,mass,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
-    integer i,j, ierr, mpirank
+    integer i,ierr,mpirank
     real(8) temp,kboltz,ekinetic,grms,ekineticglob,grmsglob,etotglob
 
     kboltz=1.987191d-03 !from CHARMM
@@ -583,8 +581,8 @@ contains
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,ires
     real(8), allocatable, dimension(:) :: xnew,fnew,fac1,fac2
-    real(8) xsave, e0, step, step2, eplus, eminus, nforce,tstep,timstart,time,tstep2
-    integer i,j,istart,iend,unit,istep,ierr,mpirank
+    real(8) tstep, timstart, time, tstep2
+    integer i,unit,istep,ierr,mpirank
     real(8),parameter :: TIMFAC=4.88882129D-02
 
     unit=1
@@ -796,20 +794,18 @@ program main
   include 'mpif.h'
   character(len=128) filename
   integer dynsteps
-  integer d, i, ierr, images, ista, iend, istat, ksize, lnam, mpirank, mpisize
-  integer nat, nglobal, prange, ix, iy, iz, j, verbose
-  real(8) alpha, sigma, cuton, cutoff, average, norm, pcycle, pi, ccelec
-  real(8) coef, dx, dy, dz, fx, fy ,fz, pp, R2, R3inv, Rinv, theta
+  integer i, ierr, images, ista, iend, istat, ksize, lnam, mpirank, mpisize
+  integer nat, nglobal, verbose
+  real(8) alpha, sigma, cuton, cutoff, average, pcycle, pi, ccelec
+  real(8) theta
   real(8) accDif, accDifGlob
   real(8) accNrm, accNrmGlob
   real(8) accNrm2, accNrmGlob2
-  real(8) potDif, potDifGlob
+  real(8) potDifGlob
   real(8) potNrmGlob2
   real(8) potSum, potSumGlob
   real(8) potSum2, potSumGlob2
   integer, dimension (128) :: iseed
-  real(8), dimension (3) :: dipole = (/0, 0, 0/)
-  real(8), dimension (3) :: xperiodic
   integer, allocatable, dimension(:) :: icpumap,jcpumap,numex,natex,atype,ib,jb,it,jt,kt,ires
   real(8), allocatable, dimension(:) :: x, q, p, f, p2, f2, xc, v, mass, xnew, xold
   real(8), allocatable, dimension(:) :: rscale, gscale, fgscale

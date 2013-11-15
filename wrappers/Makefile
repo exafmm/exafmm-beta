@@ -11,7 +11,7 @@ gromacs:
 
 charmm:
 	make libcharmm.a
-	$(FC) test_charmm.f90 -ggdb3 -Wall -fbounds-check -L. -lfmm -ltbb -lmpi_cxx -lstdc++
+	$(FC) test_charmm.f90 -ggdb3 -fbounds-check -L. -lfmm -ltbb -lmpi_cxx -lstdc++
 #	mpirun -np 2 ./a.out ala3.fmm
 	mpirun -np 2 ./a.out water.fmm 2
 	make cleandat
