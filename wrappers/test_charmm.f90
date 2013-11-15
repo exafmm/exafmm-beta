@@ -109,9 +109,9 @@ contains
     ! equilibrated velocities from CHARMM restart
     ! and the coordinate corrections /xnew/ ??? Are they useful ???
     allocate(xc(3*n), xnew(3*n))
-    read(1,'(3d28.18)')(xc(3*i-2),xc(3*i-1),xc(3*i),i=1,n)
-    read(1,'(3d28.18)')(v(3*i-2),v(3*i-1),v(3*i),i=1,n)
-    read(1,'(3d28.18)')(xnew(3*i-2),xnew(3*i-1),xnew(3*i),i=1,n)
+    read(1,'(3d28.18)')(xc(3*i-2),xc(3*i-1),xc(3*i-0),i=1,n)
+    read(1,'(3d28.18)')(v(3*i-2),v(3*i-1),v(3*i-0),i=1,n)
+    read(1,'(3d28.18)')(xnew(3*i-2),xnew(3*i-1),xnew(3*i-0),i=1,n)
 !!!    
 99  continue
     return
@@ -170,7 +170,7 @@ contains
           if (jcpumap(jj) == 0) print*,"missing j = ",jj
           dx=x(3*ii-2)-x(3*jj-2)
           dy=x(3*ii-1)-x(3*jj-1)
-          dz=x(3*ii)-x(3*jj)
+          dz=x(3*ii-0)-x(3*jj-0)
           r=sqrt(dx*dx+dy*dy+dz*dz)
           db=r-rbond(atype(ii),atype(jj))
           df=cbond(atype(ii),atype(jj))*db
@@ -181,7 +181,7 @@ contains
           dzi=dz*df
           f(3*ii-2)=f(3*ii-2)+dxi
           f(3*ii-1)=f(3*ii-1)+dyi
-          f(3*ii)=f(3*ii)+dzi
+          f(3*ii-0)=f(3*ii-0)+dzi
        enddo
        do i = 1, nbonds
           ii=ib(i)
@@ -190,7 +190,7 @@ contains
           if (jcpumap(ii) == 0) print*,"missing i = ",ii
           dx=x(3*ii-2)-x(3*jj-2)
           dy=x(3*ii-1)-x(3*jj-1)
-          dz=x(3*ii)-x(3*jj)
+          dz=x(3*ii-0)-x(3*jj-0)
           r=sqrt(dx*dx+dy*dy+dz*dz)
           db=r-rbond(atype(ii),atype(jj))
           df=cbond(atype(ii),atype(jj))*db
@@ -201,7 +201,7 @@ contains
           dzi=dz*df
           f(3*jj-2)=f(3*jj-2)-dxi
           f(3*jj-1)=f(3*jj-1)-dyi
-          f(3*jj)=f(3*jj)-dzi
+          f(3*jj-0)=f(3*jj-0)-dzi
        enddo
     endif
 
@@ -216,10 +216,10 @@ contains
           if (jcpumap(kk) == 0) print*,"missing k = ",kk
           dx1=x(3*ii-2)-x(3*jj-2)
           dy1=x(3*ii-1)-x(3*jj-1)
-          dz1=x(3*ii)-x(3*jj)
+          dz1=x(3*ii-0)-x(3*jj-0)
           dx2=x(3*kk-2)-x(3*jj-2)
           dy2=x(3*kk-1)-x(3*jj-1)
-          dz2=x(3*kk)-x(3*jj)
+          dz2=x(3*kk-0)-x(3*jj-0)
           r1=sqrt(dx1*dx1+dy1*dy1+dz1*dz1)
           r2=sqrt(dx2*dx2+dy2*dy2+dz2*dz2)
           r1r=1.0/r1
@@ -252,7 +252,7 @@ contains
           f(3*ii-1)=f(3*ii-1)+dt1
           dt1=df*dtz1
           dt2=df*dtz2
-          f(3*ii)=f(3*ii)+dt1
+          f(3*ii-0)=f(3*ii-0)+dt1
        enddo
        do i = 1, ntheta
           ii=it(i)
@@ -263,10 +263,10 @@ contains
           if (jcpumap(kk) == 0) print*,"missing k = ",kk
           dx1=x(3*ii-2)-x(3*jj-2)
           dy1=x(3*ii-1)-x(3*jj-1)
-          dz1=x(3*ii)-x(3*jj)
+          dz1=x(3*ii-0)-x(3*jj-0)
           dx2=x(3*kk-2)-x(3*jj-2)
           dy2=x(3*kk-1)-x(3*jj-1)
-          dz2=x(3*kk)-x(3*jj)
+          dz2=x(3*kk-0)-x(3*jj-0)
           r1=sqrt(dx1*dx1+dy1*dy1+dz1*dz1)
           r2=sqrt(dx2*dx2+dy2*dy2+dz2*dz2)
           r1r=1.0/r1
@@ -299,7 +299,7 @@ contains
           f(3*jj-1)=f(3*jj-1)-dt1-dt2
           dt1=df*dtz1
           dt2=df*dtz2
-          f(3*jj)=f(3*jj)-dt1-dt2
+          f(3*jj-0)=f(3*jj-0)-dt1-dt2
        enddo
        do i = 1, ntheta
           ii=it(i)
@@ -310,10 +310,10 @@ contains
           if (jcpumap(jj) == 0) print*,"missing j = ",jj
           dx1=x(3*ii-2)-x(3*jj-2)
           dy1=x(3*ii-1)-x(3*jj-1)
-          dz1=x(3*ii)-x(3*jj)
+          dz1=x(3*ii-0)-x(3*jj-0)
           dx2=x(3*kk-2)-x(3*jj-2)
           dy2=x(3*kk-1)-x(3*jj-1)
-          dz2=x(3*kk)-x(3*jj)
+          dz2=x(3*kk-0)-x(3*jj-0)
           r1=sqrt(dx1*dx1+dy1*dy1+dz1*dz1)
           r2=sqrt(dx2*dx2+dy2*dy2+dz2*dz2)
           r1r=1.0/r1
@@ -346,7 +346,7 @@ contains
           f(3*kk-1)=f(3*kk-1)+dt2
           dt1=df*dtz1
           dt2=df*dtz2
-          f(3*kk)=f(3*kk)+dt2
+          f(3*kk-0)=f(3*kk-0)+dt2
        enddo
     endif
 
@@ -377,7 +377,7 @@ contains
 
     ista = 1
     iend = nglobal
-    call split_range(ista,iend,mpirank,mpisize)
+    call split_range(ista, iend, mpirank, mpisize)
     do i = ista, iend
        icpumap(i) = 1
     end do
@@ -396,7 +396,7 @@ contains
           efmml=efmml+p(i)*q(i)
           f(3*i-2)=f(3*i-2)+fl(3*i-2)*q(i)*ccelec
           f(3*i-1)=f(3*i-1)+fl(3*i-1)*q(i)*ccelec
-          f(3*i)=f(3*i)+fl(3*i)*q(i)*ccelec
+          f(3*i-0)=f(3*i-0)+fl(3*i-0)*q(i)*ccelec
        enddo
        efmml=efmml*ccelec*0.5
        deallocate(fl)
@@ -415,13 +415,24 @@ contains
           evdwl=evdwl+p(i)
           f(3*i-2)=f(3*i-2)-fl(3*i-2)
           f(3*i-1)=f(3*i-1)-fl(3*i-1)
-          f(3*i)=f(3*i)-fl(3*i)
+          f(3*i-0)=f(3*i-0)-fl(3*i-0)
        enddo
        evdwl=evdwl*0.5
        deallocate(fl)
     endif
-    !call mpi_allreduce(ebl, eb,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
-    !call mpi_allreduce(etl, et,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+    if (present(eb).and.present(et)) then
+       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,ebl,etl)
+    elseif (present(eb)) then
+       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,ebl)
+    elseif (present(et)) then
+       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
+            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,etl)
+    endif
+
+    call mpi_allreduce(ebl, eb,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
+    call mpi_allreduce(etl, et,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
     call mpi_allreduce(efmml, efmm,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
     call mpi_allreduce(evdwl, evdw,  1, mpi_real8, mpi_sum, mpi_comm_world, ierr)
     call bcast3(nglobal, icpumap, x)
@@ -432,17 +443,6 @@ contains
     do i = 1, nglobal
        icpumap(i) = 1
     enddo
-    if (present(eb).and.present(et)) then
-       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
-    elseif (present(eb)) then
-       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb)
-    elseif (present(et)) then
-       call bonded_terms(nglobal,icpumap,jcpumap,nat,atype,x,f,nbonds,ntheta,&
-            ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,et)
-    endif
-
 
     etot=0.0
     if(present(eb)) etot=etot+eb
@@ -547,8 +547,8 @@ contains
     grms=0.0
     do i=1, nglobal
        if(icpumap(i) == 0) cycle
-       ekinetic=ekinetic+mass(atype(i))*(v(3*i-2)**2+v(3*i-1)**2+v(3*i)**2)
-       grms=grms+f(3*i-2)**2+f(3*i-1)**2+f(3*i)**2
+       ekinetic=ekinetic+mass(atype(i))*(v(3*i-2)**2+v(3*i-1)**2+v(3*i-0)**2)
+       grms=grms+f(3*i-2)**2+f(3*i-1)**2+f(3*i-0)**2
     enddo
     ! Summ up the terms in parallel
     !call mpi_reduce(etot, etotGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
@@ -586,21 +586,13 @@ contains
     real(8) xsave, e0, step, step2, eplus, eminus, nforce,tstep,timstart,time,tstep2
     integer i,j,istart,iend,unit,istep,ierr,mpirank
     real(8),parameter :: TIMFAC=4.88882129D-02
-    logical leapfrog_maybe,charmm
 
     unit=1
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     if(mpirank==0)open(unit=unit,file='water.pdb',status='new')
 
-    leapfrog_maybe=.false.
-
-    ! xold here is basically xnew from the restart file,
-    ! which changes the name in this routine
-    ! so it is the same as in CHARMM: there changes the name, too!
-    charmm=.true.
-
-    tstep=0.001/timfac !ps -> akma
-    tstep2=tstep**2
+    tstep = 0.001/timfac !ps -> akma
+    tstep2 = tstep**2
     timstart = 100.0 ! first 100ps was equilibration with standard CHARMM
     time = timstart
 
@@ -608,22 +600,14 @@ contains
     allocate(fac1(nglobal),fac2(nglobal),xold(3*nglobal))
 
     ! precompute some constants and recalculate xold
-    if(charmm) then
-       do i=1,nglobal
-          if(icpumap(i)==0)cycle
-          fac1(i) = tstep2/mass(atype(i))
-          fac2(i) = 0.5/tstep
-          xold(3*i-2)=v(3*i-2)*tstep-f(3*i-2)*fac1(i)*0.5
-          xold(3*i-1)=v(3*i-1)*tstep-f(3*i-1)*fac1(i)*0.5
-          xold(3*i)  =v(3*i)  *tstep-f(3*i)  *fac1(i)*0.5
-       enddo
-    else
-       do i=1,nglobal
-          if(icpumap(i)==0)cycle
-          fac1(i) = tstep2/mass(atype(i))/2.0
-          fac2(i) = tstep/mass(atype(i))/2.0
-       enddo
-    endif
+    do i=1,nglobal
+       if(icpumap(i)==0)cycle
+       fac1(i) = tstep2/mass(atype(i))
+       fac2(i) = 0.5/tstep
+       xold(3*i-2) = v(3*i-2)*tstep-f(3*i-2)*fac1(i)*0.5
+       xold(3*i-1) = v(3*i-1)*tstep-f(3*i-1)*fac1(i)*0.5
+       xold(3*i-0) = v(3*i-0)*tstep-f(3*i-0)*fac1(i)*0.5
+    enddo
 
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,&
@@ -632,107 +616,38 @@ contains
 
     mainloop: do istep = 1, dynsteps
 
-       integrators: if (leapfrog_maybe) then ! not really working :-(
-          call energy(nglobal,nat,nbonds,ntheta,ksize,&
-               alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-               x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,1)
-          do j = 1, nglobal
-             if(icpumap(j)==0)cycle
-             vnew(3*j-2) = v(3*j-2) - f(3*j-2)*tstep/mass(atype(j))
-             vnew(3*j-1) = v(3*j-1) - f(3*j-1)*tstep/mass(atype(j))
-             vnew(3*j)   = v(3*j)   - f(3*j)*tstep/mass(atype(j))
-             xnew(3*j-2) = x(3*j-2) + vnew(3*j-2)*tstep
-             xnew(3*j-1) = x(3*j-1) + vnew(3*j-1)*tstep
-             xnew(3*j)   = x(3*j)   + vnew(3*j)*tstep
-          enddo
-       elseif (.not.charmm) then ! synchronized leapfrog from wikipedia
-!!!
-!!! this synchronized seems to be working:
-!!! http://en.wikipedia.org/wiki/Leapfrog_integration
-!!!
-          do j = 1, nglobal
-             if(icpumap(j)==0)cycle
-             x(3*j-2) = x(3*j-2) + v(3*j-2)*tstep - f(3*j-2)*fac1(j)
-             x(3*j-1) = x(3*j-1) + v(3*j-1)*tstep - f(3*j-1)*fac1(j)
-             x(3*j)   = x(3*j)   + v(3*j)*tstep   - f(3*j)*fac1(j)
-          enddo
+       do j = 1, nglobal
+          if(icpumap(j)==0)cycle
+          x(3*j-2) = x(3*j-2) + xold(3*j-2)
+          x(3*j-1) = x(3*j-1) + xold(3*j-1)
+          x(3*j-0) = x(3*j-0) + xold(3*j-0)
+       enddo
 
-          call energy(nglobal,nat,nbonds,ntheta,ksize,&
-               alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-               x,p,fnew,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
+       call energy(nglobal,nat,nbonds,ntheta,ksize,&
+            alpha,sigma,cutoff,cuton,ccelec,pcycle,&
+            x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+            ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
 
-          do j = 1, nglobal
-             if(icpumap(j)==0)cycle
-             vnew(3*j-2) = v(3*j-2)  - fac2(j)*(f(3*j-2) + fnew(3*j-2))
-             vnew(3*j-1) = v(3*j-1)  - fac2(j)*(f(3*j-1) + fnew(3*j-1))
-             vnew(3*j)   = v(3*j)    - fac2(j)*(f(3*j)   + fnew(3*j))
-          enddo
+       do j = 1, nglobal
+          if(icpumap(j)==0)cycle
+          xnew(3*j-2) = xold(3*j-2) - fac1(j)*f(3*j-2)
+          xnew(3*j-1) = xold(3*j-1) - fac1(j)*f(3*j-1)
+          xnew(3*j-0) = xold(3*j-0) - fac1(j)*f(3*j-0)
+       enddo
 
-          do j = 1, nglobal
-             if(icpumap(j)==0)cycle
-             f(3*j-2)=fnew(3*j-2)
-             f(3*j-1)=fnew(3*j-1)
-             f(3*j)  =fnew(3*j)
-          enddo
+       do j = 1, nglobal
+          if(icpumap(j)==0)cycle
+          v(3*j-2) = (xnew(3*j-2) + xold(3*j-2))*fac2(j)
+          v(3*j-1) = (xnew(3*j-1) + xold(3*j-1))*fac2(j)
+          v(3*j-0) = (xnew(3*j-0) + xold(3*j-0))*fac2(j)
+       enddo
 
-       else ! CHARMM integrator
-
-          do j = 1, nglobal
-             if(icpumap(j)==0)cycle
-             x(3*j-2) = x(3*j-2) + xold(3*j-2)
-             x(3*j-1) = x(3*j-1) + xold(3*j-1)
-             x(3*j)   = x(3*j)   + xold(3*j)
-          enddo
-
-          call energy(nglobal,nat,nbonds,ntheta,ksize,&
-               alpha,sigma,cutoff,cuton,ccelec,pcycle,&
-               x,p,f,q,v,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
-
-          do j = 1, nglobal
-             if(icpumap(j)==0)cycle
-             xnew(3*j-2) = xold(3*j-2)  - fac1(j)*f(3*j-2)
-             xnew(3*j-1) = xold(3*j-1)  - fac1(j)*f(3*j-1)
-             xnew(3*j)   = xold(3*j)    - fac1(j)*f(3*j)
-          enddo
-
-          do j = 1, nglobal
-             if(icpumap(j)==0)cycle
-             v(3*j-2)=(xnew(3*j-2) + xold(3*j-2))*fac2(j)
-             v(3*j-1)=(xnew(3*j-1) + xold(3*j-1))*fac2(j)
-             v(3*j)  =(xnew(3*j)   + xold(3*j)  )*fac2(j)
-          enddo
-
-          ! swap xold,xnew (maybe just copy would do, too??)
-          ! xold & xc are the ones needed for the next step
-
-          do j = 1, nglobal
-             if(icpumap(j)==0)cycle
-             xsave=xnew(3*j-2)
-             xnew(3*j-2) = xold(3*j-2)
-             xold(3*j-2) = xsave
-             xsave=xnew(3*j-1)
-             xnew(3*j-1) = xold(3*j-1)
-             xold(3*j-1) = xsave
-             xsave=xnew(3*j)
-             xnew(3*j) = xold(3*j)
-             xold(3*j) = xsave
-          enddo
-
-       endif integrators
-
-!!! These copies are not really neded :-(
-       if(.not.charmm) then          
-          do j = 1, nglobal
-             if(icpumap(j)==1) then
-                v(3*j-2) = vnew(3*j-2)
-                v(3*j-1) = vnew(3*j-1)
-                v(3*j)   = vnew(3*j)
-             endif
-          enddo
-       endif
+       do j = 1, nglobal
+          if(icpumap(j)==0)cycle
+          xold(3*j-2) = xnew(3*j-2)
+          xold(3*j-1) = xnew(3*j-1)
+          xold(3*j-0) = xnew(3*j-0)
+       enddo
 
        if (mod(istep,imcentfrq) == 0) call image_center(nglobal,x,nres,ires,pcycle,icpumap)
 
@@ -821,7 +736,7 @@ contains
        do j = istart, iend
           xcen=xcen+x(3*j-2)
           ycen=ycen+x(3*j-1)
-          zcen=zcen+x(3*j)
+          zcen=zcen+x(3*j-0)
        enddo
        xcen=xcen/real(nsel)
        ycen=ycen/real(nsel)
@@ -848,12 +763,12 @@ contains
        endif
        if(zcen<zmin)then
           do j = istart,iend
-             x(3*j)=x(3*j)+pcycle
+             x(3*j-0)=x(3*j-0)+pcycle
           enddo
        endif
        if(zcen>zmax)then
           do j = istart,iend
-             x(3*j)=x(3*j)-pcycle
+             x(3*j-0)=x(3*j-0)-pcycle
           enddo
        endif
     enddo residues
@@ -1098,7 +1013,7 @@ program main
      print"(a,f12.4)",'GRMS (FMM)           : ', sqrt(accNrmGlob/3.0/nglobal)
      print"(a,f12.4)",'GRMS (Direct)        : ', sqrt(accNrmGlob2/3.0/nglobal)
   end if
- 
+
   do i = 1, nglobal
      icpumap(i) = 1
   enddo
