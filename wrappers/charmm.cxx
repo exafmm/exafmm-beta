@@ -52,39 +52,33 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
 
 extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q, double *v, double & cycle) {
   logger->printTitle("Partition Profiling");
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) nlocal++;
   }
-  int * warpFlags = new int [nlocal];
   Bodies bodies(nlocal);
   B_iter B = bodies.begin();
+  int b = 0;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      wrap(B->X, cycle);
       B->SRC = q[i];
       B->TRG[0] = v[3*i+0];
       B->TRG[1] = v[3*i+1];
       B->TRG[2] = v[3*i+2];
-      B->IBODY = i;
+      int iwrap = wrap(B->X, cycle);
+      B->IBODY = i | (iwrap << shift);
       B++;
+      b++;
     }
   }
   localBounds = boundbox->getBounds(bodies);
   Bounds globalBounds = LET->allreduceBounds(localBounds);
   localBounds = LET->partition(bodies,globalBounds);
-  B = bodies.begin();
-  for (int i=0; i<nglobal; i++) {
-    if (icpumap[i] == 1) {
-      B->X[0] = x[3*i+0];
-      B->X[1] = x[3*i+1];
-      B->X[2] = x[3*i+2];
-      B++;
-    }
-  }
   bodies = sort->sortBodies(bodies);
   bodies = LET->commBodies(bodies);
   Cells cells = tree->buildTree(bodies, localBounds);
@@ -93,7 +87,9 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
     icpumap[i] = 0;
   }
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B->IBODY;
+    int i = B->IBODY & mask;
+    int iwrap = unsigned(B->IBODY) >> shift;
+    unwrap(B->X, cycle, iwrap);
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];
@@ -103,7 +99,6 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
     v[3*i+2] = B->TRG[2];
     icpumap[i] = 1;
   }
-  delete[] warpFlags;
 }
 
 extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,

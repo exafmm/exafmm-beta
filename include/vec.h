@@ -186,11 +186,11 @@ public:
     for (int i=0; i<N; i++) {
       if(v[i] < -w / 2) {
 	v[i] += w;
-	iw = 1 << (2*i);
+	iw |= 1 << i;
       }
       if(v[i] >  w / 2) {
 	v[i] -= w;
-	iw = 1 << (2*i+1);
+	iw |= 1 << i;
       }
     }
     return iw;
@@ -198,8 +198,7 @@ public:
   friend void unwrap(vec &v, const T &w, const int &iw) {       // Undo wrap around periodic boundary
     assert( N <=16 );
     for (int i=0; i<N; i++) {
-      if(iw & (1 << (2*i  ))) v[i] -= w;
-      if(iw & (1 << (2*i+1))) v[i] += w;
+      if((iw >> i) & 1) v[i] += (v[i] > 0 ? -w : w);
     }
   }
 };
@@ -470,11 +469,11 @@ public:
     for (int i=0; i<N; i++) {
       if(v[i] < -w / 2) {
 	v[i] += w;
-	iw = 1 << (2*i);
+	iw |= 1 << i;
       }
       if(v[i] >  w / 2) {
 	v[i] -= w;
-	iw = 1 << (2*i+1);
+	iw |= 1 << i;
       }
     }
     return iw;
@@ -483,8 +482,7 @@ public:
   friend void unwrap(vec &v, const T &w, const int &iw) {       // Undo wrap around periodic boundary
     assert( N <=16 );
     for (int i=0; i<N; i++) {
-      if(iw & (1 << (2*i  ))) v[i] -= w;
-      if(iw & (1 << (2*i+1))) v[i] += w;
+      if((iw >> i) & 1) v[i] += (v[i] > 0 ? -w : w);
     }
   }
 };
