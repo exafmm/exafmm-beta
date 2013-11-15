@@ -546,30 +546,13 @@ contains
 
     ! precompute some constants and recalculate xold
     do i=1,nglobal
-       if(icpumap(i)==0)cycle
        fac1(i) = tstep2/mass(atype(i))
        fac2(i) = 0.5/tstep
+       if(icpumap(i)==0)cycle
        xold(3*i-2) = v(3*i-2)*tstep-f(3*i-2)*fac1(i)*0.5
        xold(3*i-1) = v(3*i-1)*tstep-f(3*i-1)*fac1(i)*0.5
        xold(3*i-0) = v(3*i-0)*tstep-f(3*i-0)*fac1(i)*0.5
     enddo
-
-    do i = 1, nglobal
-       icpumap(i) = 0
-    end do
-    ista = 1
-    iend = nglobal
-    call split_range(ista, iend, mpirank, mpisize)
-    do i = ista, iend
-       icpumap(i) = 1
-    end do
-
-#if 0
-    call energy(nglobal,nat,nbonds,ntheta,ksize,&
-         alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
-         x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-         ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
-#endif
 
     mainloop: do istep = 1, dynsteps
 
@@ -1012,13 +995,6 @@ program main
           xc,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
           ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
 
-     call bcast3(nglobal, icpumap, xc)
-     call bcast1(nglobal, icpumap, q)
-     call bcast1(nglobal, icpumap, p)
-     call bcast3(nglobal, icpumap, f)
-     do i = 1, nglobal
-        icpumap(i) = 1
-     enddo
      if (integrate) call run_dynamics(dynsteps,imcentfrq,printfrq,&
           nglobal,nat,nbonds,ntheta,ksize,&
           alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
