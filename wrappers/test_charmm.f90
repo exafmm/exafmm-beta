@@ -491,31 +491,8 @@ contains
     real(8) temp,kboltz,ekinetic,grms,ekineticglob,grmsglob,etotglob
 
     kboltz=1.987191d-03 !from CHARMM
-
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     call mpi_comm_size(mpi_comm_world, mpisize, ierr)
-    do i = 1, nglobal
-       icpumap(i) = 0
-    end do
-    ista = 1
-    iend = nglobal
-    call split_range(ista, iend, mpirank, mpisize)
-    do i = ista, iend
-       icpumap(i) = 1
-    end do
-    call energy(nglobal,nat,nbonds,ntheta,ksize,&
-         alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
-         x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-         ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
-
-    call bcast3(nglobal, icpumap, x)
-    call bcast1(nglobal, icpumap, q)
-    call bcast3(nglobal, icpumap, xold)
-    call bcast1(nglobal, icpumap, p)
-    call bcast3(nglobal, icpumap, f)
-    do i = 1, nglobal
-       icpumap(i) = 1
-    enddo
 
     ! calculate kinetic energy, temperature:
     ekinetic=0.0
@@ -534,7 +511,6 @@ contains
     grmsglob=sqrt(grmsglob/3.0/real(nglobal))
     temp=ekineticglob/3.0/nglobal/kboltz
     ekineticglob=ekineticglob/2.0
-    call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     if(mpirank==0) &
          write(*,'(''time:'',f9.3,'' Etotal:'',f14.5,'' Ekin:'',f14.5,'' Epot:'',f14.5,'' T:'',f12.3,'' Grms:'',f12.5)')&
          timstart,etotglob+ekineticglob,ekineticglob,etotglob,temp,grmsglob
@@ -679,7 +655,6 @@ contains
                alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
                x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
                ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
-          
           call bcast3(nglobal, icpumap, x)
           call bcast1(nglobal, icpumap, q)
           call bcast3(nglobal, icpumap, xold)
@@ -1083,9 +1058,9 @@ program main
      end do
      call energy(nglobal,nat,nbonds,ntheta,ksize,&
           alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
-          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+          xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
           ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
-     call bcast3(nglobal, icpumap, x)
+     call bcast3(nglobal, icpumap, xc)
      call bcast1(nglobal, icpumap, q)
      call bcast3(nglobal, icpumap, xold)
      call bcast1(nglobal, icpumap, p)
