@@ -564,31 +564,14 @@ contains
        icpumap(i) = 1
     end do
 
+#if 0
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,ccelec,pcycle,xold,&
          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,0)
-
-    call bcast3(nglobal, icpumap, x)
-    call bcast1(nglobal, icpumap, q)
-    call bcast3(nglobal, icpumap, xold)
-    call bcast1(nglobal, icpumap, p)
-    call bcast3(nglobal, icpumap, f)
-    do i = 1, nglobal
-       icpumap(i) = 1
-    enddo
+#endif
 
     mainloop: do istep = 1, dynsteps
-
-       do i = 1, nglobal
-          icpumap(i) = 0
-       end do
-       ista = 1
-       iend = nglobal
-       call split_range(ista, iend, mpirank, mpisize)
-       do i = ista, iend
-          icpumap(i) = 1
-       end do
 
        do i = 1, nglobal
           if(icpumap(i)==0)cycle
@@ -633,17 +616,6 @@ contains
             ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
        endif
 
-       call bcast3(nglobal, icpumap, x)
-       call bcast1(nglobal, icpumap, q)
-       call bcast3(nglobal, icpumap, xnew)
-       call bcast3(nglobal, icpumap, xold)
-       call bcast3(nglobal, icpumap, v)
-       call bcast1(nglobal, icpumap, p)
-       call bcast3(nglobal, icpumap, f)
-       do i = 1, nglobal
-          icpumap(i) = 1
-       enddo
-
        if (mod(istep,printfrq) == 0) call pdb_frame(unit,time,nglobal,x,nres,ires,icpumap)
 
     enddo mainloop
@@ -659,10 +631,9 @@ contains
     integer,allocatable,dimension(:) :: ires,icpumap
     real(8),allocatable,dimension(:) :: x
     real(8) time
-
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
+    call bcast3(nglobal, icpumap, x)
     if (mpirank /= 0) return
-
     write(unit,'(''REMARK frame at time:'',f14.4,'' ps'')')time
     ipt=0
     do i = 1, nres
