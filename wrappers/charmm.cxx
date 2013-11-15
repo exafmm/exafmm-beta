@@ -358,10 +358,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
       B->SRC = atype[i] - .5;
-      B->TRG[0] = p[i];
-      B->TRG[1] = f[3*i+0];
-      B->TRG[2] = f[3*i+1];
-      B->TRG[3] = f[3*i+2];
+      B->TRG = 0;
       int iwrap = wrap(B->X, cycle);
       B->IBODY = i | (iwrap << shift);
       B++;
@@ -385,10 +382,10 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
-    p[i]     = B->TRG[0];
-    f[3*i+0] = B->TRG[1];
-    f[3*i+1] = B->TRG[2];
-    f[3*i+2] = B->TRG[3];
+    p[i]     += B->TRG[0];
+    f[3*i+0] += B->TRG[1];
+    f[3*i+1] += B->TRG[2];
+    f[3*i+2] += B->TRG[3];
   }
   bodies = LET->getRecvBodies();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {

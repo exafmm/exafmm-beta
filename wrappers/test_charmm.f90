@@ -385,7 +385,7 @@ contains
     if(present(efmm)) then
        p(1:nglobal)=0.0
        call fmm_coulomb(nglobal, icpumap, jcpumap, x, q, p, f, pcycle)
-       !call ewald_coulomb(nglobal, icpumap, x, q, p, fl, ksize, alpha, sigma, cutoff, pcycle)
+       !call ewald_coulomb(nglobal, icpumap, x, q, p, f, ksize, alpha, sigma, cutoff, pcycle)
        call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
        efmml=0.0
        do i=1, nglobal
@@ -395,23 +395,17 @@ contains
        efmml=efmml*0.5
     endif
     if (present(evdw)) then
-       allocate(fl(3*nglobal))
        p(1:nglobal)=0.0
-       fl(1:3*nglobal)=0.0
-       call fmm_vanderwaals(nglobal, icpumap, atype, x, p, fl, cuton, cutoff,&
+       call fmm_vanderwaals(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
             pcycle, nat, rscale, gscale, fgscale)
-       call vanderwaals_exclusion(nglobal, icpumap, atype, x, p, fl, cuton, cutoff,&
+       call vanderwaals_exclusion(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
             pcycle, nat, rscale, gscale, fgscale, numex, natex)
        evdwl=0.0
        do i = 1, nglobal
           if (icpumap(i) == 0) cycle
           evdwl=evdwl+p(i)
-          f(3*i-2)=f(3*i-2)+fl(3*i-2)
-          f(3*i-1)=f(3*i-1)+fl(3*i-1)
-          f(3*i-0)=f(3*i-0)+fl(3*i-0)
        enddo
        evdwl=evdwl*0.5
-       deallocate(fl)
     endif
     if (present(eb).and.present(et)) then
        call bonded_terms(icpumap,jcpumap,atype,x,f,nbonds,ntheta,&
