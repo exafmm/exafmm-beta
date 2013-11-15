@@ -8,6 +8,8 @@
 #include "updownpass.h"
 #include "vanderwaals.h"
 
+static const double Celec = 332.0716;
+
 Args *args;
 Logger *logger;
 Sort *sort;
@@ -50,7 +52,8 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   args->print(logger->stringLength, P);
 }
 
-extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q, double *v, double & cycle) {
+extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q,
+			       double * xold, double & cycle) {
   logger->printTitle("Partition Profiling");
   const int shift = 29;
   const int mask = ~(0x7U << shift);
@@ -66,9 +69,9 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
       B->SRC = q[i];
-      B->TRG[0] = v[3*i+0];
-      B->TRG[1] = v[3*i+1];
-      B->TRG[2] = v[3*i+2];
+      B->TRG[0] = xold[3*i+0];
+      B->TRG[1] = xold[3*i+1];
+      B->TRG[2] = xold[3*i+2];
       int iwrap = wrap(B->X, cycle);
       B->IBODY = i | (iwrap << shift);
       B++;
@@ -91,10 +94,10 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];
-    q[i]     = B->SRC;
-    v[3*i+0] = B->TRG[0];
-    v[3*i+1] = B->TRG[1];
-    v[3*i+2] = B->TRG[2];
+    q[i] = B->SRC;
+    xold[3*i+0] = B->TRG[0];
+    xold[3*i+1] = B->TRG[1];
+    xold[3*i+2] = B->TRG[2];
     icpumap[i] = 1;
   }
 }
@@ -126,10 +129,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
       B->SRC = q[i];
-      B->TRG[0] = p[i];
-      B->TRG[1] = f[3*i+0];
-      B->TRG[2] = f[3*i+1];
-      B->TRG[3] = f[3*i+2];
+      B->TRG = 0;
       int iwrap = wrap(B->X, cycle);
       B->IBODY = i | (iwrap << shift);
       B++;
@@ -158,10 +158,10 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
-    p[i]     = B->TRG[0];
-    f[3*i+0] = B->TRG[1];
-    f[3*i+1] = B->TRG[2];
-    f[3*i+2] = B->TRG[3];
+    p[i]     += B->TRG[0] * B->SRC;
+    f[3*i+0] += B->TRG[1] * B->SRC * Celec;
+    f[3*i+1] += B->TRG[2] * B->SRC * Celec;
+    f[3*i+2] += B->TRG[3] * B->SRC * Celec;
   }
   bodies = LET->getRecvBodies();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -201,10 +201,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
       B->SRC = q[i];
-      B->TRG[0] = p[i];
-      B->TRG[1] = f[3*i+0];
-      B->TRG[2] = f[3*i+1];
-      B->TRG[3] = f[3*i+2];
+      B->TRG = 0;
       int iwrap = wrap(B->X, cycle);
       B->IBODY = i | (iwrap << shift);
       B++;
@@ -228,10 +225,10 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
-    p[i]     = B->TRG[0];
-    f[3*i+0] = B->TRG[1];
-    f[3*i+1] = B->TRG[2];
-    f[3*i+2] = B->TRG[3];
+    p[i]     += B->TRG[0] * B->SRC;
+    f[3*i+0] += B->TRG[1] * B->SRC * Celec;
+    f[3*i+1] += B->TRG[2] * B->SRC * Celec;
+    f[3*i+2] += B->TRG[3] * B->SRC * Celec;
   }
   bodies = LET->getRecvBodies();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -278,10 +275,10 @@ extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double
 	  }
 	}
       }
-      p[i] += pp;
-      f[3*i+0] -= fx;
-      f[3*i+1] -= fy;
-      f[3*i+2] -= fz;
+      p[i] += pp * q[i];
+      f[3*i+0] -= fx * q[i] * Celec;
+      f[3*i+1] -= fy * q[i] * Celec;
+      f[3*i+2] -= fz * q[i] * Celec;
     }
   }
   real_t dipole[3] = {0, 0, 0};
@@ -295,10 +292,10 @@ extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double
   real_t coef = 4 * M_PI / (3 * cycle * cycle * cycle);
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
-      p[i] -= coef * norm / nglobal / q[i];
-      f[3*i+0] -= coef * dipole[0];
-      f[3*i+1] -= coef * dipole[1];
-      f[3*i+2] -= coef * dipole[2];
+      p[i] -= coef * norm / nglobal;
+      f[3*i+0] -= coef * dipole[0] * q[i] * Celec;
+      f[3*i+1] -= coef * dipole[1] * q[i] * Celec;
+      f[3*i+2] -= coef * dipole[2] * q[i] * Celec;
     }
   }
   logger->stopTimer("Direct Coulomb");
@@ -310,6 +307,7 @@ extern "C" void coulomb_exclusion_(int & nglobal, int * icpumap,
   logger->startTimer("Coulomb Exclusion");
   for (int i=0, ic=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
+      real_t pp = 0, fx = 0, fy = 0, fz = 0;
       for (int jc=0; jc<numex[i]; jc++, ic++) {
 	int j = natex[ic]-1;
 	vec3 dX;
@@ -319,11 +317,15 @@ extern "C" void coulomb_exclusion_(int & nglobal, int * icpumap,
 	real_t invR = 1 / std::sqrt(R2);
 	if (R2 == 0) invR = 0;
 	real_t invR3 = q[j] * invR * invR * invR;
-	p[i] -= q[j] * invR;
-	f[3*i+0] += dX[0] * invR3;
-	f[3*i+1] += dX[1] * invR3;
-	f[3*i+2] += dX[2] * invR3;
+	pp += q[j] * invR;
+	fx += dX[0] * invR3;
+	fy += dX[1] * invR3;
+	fz += dX[2] * invR3;
       }
+      p[i] -= pp * q[i];
+      f[3*i+0] += fx * q[i] * Celec; 
+      f[3*i+1] += fy * q[i] * Celec;
+      f[3*i+2] += fz * q[i] * Celec;
     } else {
       ic += numex[i];
     }
