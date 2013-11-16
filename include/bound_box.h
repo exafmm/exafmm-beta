@@ -1,5 +1,5 @@
-#ifndef boundbox_h
-#define boundbox_h
+#ifndef bound_box_h
+#define bound_box_h
 #include "logger.h"
 #include "thread.h"
 #include "types.h"

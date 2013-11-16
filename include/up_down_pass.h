@@ -1,5 +1,5 @@
-#ifndef updownpass_h
-#define updownpass_h
+#ifndef up_down_pass_h
+#define up_down_pass_h
 #include "kernel.h"
 #include "logger.h"
 #include "thread.h"
@@ -9,7 +9,7 @@ public:
   real_t theta;                                                 //!< Multipole acceptance criteria
 
 private:
-  //! Error optimization of Rcrit
+  //! Recursive functor for error optimization of Rcrit
   struct SetRcrit {
     C_iter C;                                                   //!< Iterator of current cell
     C_iter C0;                                                  //!< Iterator of first cell

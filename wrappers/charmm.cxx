@@ -1,12 +1,12 @@
-#include "localessentialtree.h"
+#include "tree_mpi.h"
 #include "args.h"
-#include "boundbox.h"
-#include "buildtree.h"
+#include "bound_box.h"
+#include "build_tree.h"
 #include "ewald.h"
 #include "sort.h"
 #include "traversal.h"
-#include "updownpass.h"
-#include "vanderwaals.h"
+#include "up_down_pass.h"
+#include "van_der_waals.h"
 
 static const double Celec = 332.0716;
 
@@ -15,10 +15,10 @@ Logger *logger;
 Sort *sort;
 Bounds localBounds;
 BoundBox *boundbox;
-BuildTree *tree;
+BuildTree *build;
 UpDownPass *pass;
 Traversal *traversal;
-LocalEssentialTree *LET;
+TreeMPI *treeMPI;
 
 extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   const int ncrit = 32;
@@ -27,10 +27,10 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   logger = new Logger;
   sort = new Sort;
   boundbox = new BoundBox(nspawn);
-  tree = new BuildTree(ncrit, nspawn);
+  build = new BuildTree(ncrit, nspawn);
   pass = new UpDownPass(theta);
   traversal = new Traversal(nspawn, images);
-  LET = new LocalEssentialTree(images);
+  treeMPI = new TreeMPI(images);
 
   args->theta = theta;
   args->ncrit = ncrit;
@@ -39,14 +39,14 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   args->mutual = 0;
   args->verbose = verbose;
   args->distribution = "external";
-  args->verbose &= LET->mpirank == 0;
+  args->verbose &= treeMPI->mpirank == 0;
   if (args->verbose) {
     logger->verbose = true;
     boundbox->verbose = true;
-    tree->verbose = true;
+    build->verbose = true;
     pass->verbose = true;
     traversal->verbose = true;
-    LET->verbose = true;
+    treeMPI->verbose = true;
   }
   logger->printTitle("Initial Parameters");
   args->print(logger->stringLength, P);
@@ -78,10 +78,10 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
     }
   }
   localBounds = boundbox->getBounds(bodies);
-  Bounds globalBounds = LET->allreduceBounds(localBounds);
-  localBounds = LET->partition(bodies,globalBounds);
+  Bounds globalBounds = treeMPI->allreduceBounds(localBounds);
+  localBounds = treeMPI->partition(bodies,globalBounds);
   bodies = sort->sortBodies(bodies);
-  bodies = LET->commBodies(bodies);
+  bodies = treeMPI->commBodies(bodies);
   for (int i=0; i<nglobal; i++) {
     icpumap[i] = 0;
   }
@@ -133,21 +133,21 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
       B++;
     }
   }
-  Cells cells = tree->buildTree(bodies, localBounds);
+  Cells cells = build->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
-  LET->setLET(cells, localBounds, cycle);
-  LET->commBodies();
-  LET->commCells();
+  treeMPI->setLET(cells, localBounds, cycle);
+  treeMPI->commBodies();
+  treeMPI->commCells();
   traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
   Cells jcells;
-  for (int irank=1; irank<LET->mpisize; irank++) {
-    LET->getLET(jcells,(LET->mpirank+irank)%LET->mpisize);
+  for (int irank=1; irank<treeMPI->mpisize; irank++) {
+    treeMPI->getLET(jcells,(treeMPI->mpirank+irank)%treeMPI->mpisize);
     traversal->dualTreeTraversal(cells, jcells, cycle);
   }
   pass->downwardPass(cells);
   vec3 localDipole = pass->getDipole(bodies,0);
-  vec3 globalDipole = LET->allreduceVec3(localDipole);
-  int numBodies = LET->allreduceInt(bodies.size());
+  vec3 globalDipole = treeMPI->allreduceVec3(localDipole);
+  int numBodies = treeMPI->allreduceInt(bodies.size());
   pass->dipoleCorrection(bodies, globalDipole, numBodies, cycle);
   logger->stopPAPI();
   logger->stopTimer("Total FMM");
@@ -161,7 +161,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
     f[3*i+1] += B->TRG[2] * B->SRC * Celec;
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
   }
-  bodies = LET->getRecvBodies();
+  bodies = treeMPI->getRecvBodies();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     int iwrap = unsigned(B->IBODY) >> shift;
@@ -210,13 +210,13 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
       B++;
     }
   }
-  Cells cells = tree->buildTree(bodies, localBounds);
+  Cells cells = build->buildTree(bodies, localBounds);
   Bodies jbodies = bodies;
-  for (int i=0; i<LET->mpisize; i++) {
-    if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << LET->mpisize << std::endl;
-    LET->shiftBodies(jbodies);
+  for (int i=0; i<treeMPI->mpisize; i++) {
+    if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << treeMPI->mpisize << std::endl;
+    treeMPI->shiftBodies(jbodies);
     localBounds = boundbox->getBounds(jbodies);
-    Cells jcells = tree->buildTree(jbodies, localBounds);
+    Cells jcells = build->buildTree(jbodies, localBounds);
     ewald->wavePart(bodies, jbodies);
     ewald->realPart(cells, jcells);
   }
@@ -233,9 +233,9 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
     f[3*i+1] += B->TRG[2] * B->SRC * Celec;
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
   }
-  LET->setLET(cells, localBounds, cycle);
-  LET->commBodies();
-  bodies = LET->getRecvBodies();
+  treeMPI->setLET(cells, localBounds, cycle);
+  treeMPI->commBodies();
+  bodies = treeMPI->getRecvBodies();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
     int iwrap = unsigned(B->IBODY) >> shift;
@@ -371,15 +371,15 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B++;
     }
   }
-  Cells cells = tree->buildTree(bodies, localBounds);
+  Cells cells = build->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
-  LET->setLET(cells, localBounds, cycle);
-  LET->commBodies();
-  LET->commCells();
+  treeMPI->setLET(cells, localBounds, cycle);
+  treeMPI->commBodies();
+  treeMPI->commCells();
   VDW->evaluate(cells, cells);
   Cells jcells;
-  for (int irank=1; irank<LET->mpisize; irank++) {
-    LET->getLET(jcells,(LET->mpirank+irank)%LET->mpisize);
+  for (int irank=1; irank<treeMPI->mpisize; irank++) {
+    treeMPI->getLET(jcells,(treeMPI->mpirank+irank)%treeMPI->mpisize);
     VDW->evaluate(cells, jcells);
   }
   logger->stopPAPI();

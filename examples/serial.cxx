@@ -1,10 +1,10 @@
 #include "args.h"
-#include "boundbox.h"
-#include "buildtree.h"
+#include "bound_box.h"
+#include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
 #include "traversal.h"
-#include "updownpass.h"
+#include "up_down_pass.h"
 #include "verify.h"
 #if VTK
 #include "vtk.h"
@@ -18,13 +18,13 @@ int main(int argc, char ** argv) {
 
   const real_t cycle = 2 * M_PI;
   BoundBox boundbox(args.nspawn);
-  BuildTree tree(args.ncrit,args.nspawn);
+  BuildTree build(args.ncrit,args.nspawn);
   UpDownPass pass(args.theta);
   Traversal traversal(args.nspawn,args.images);
   if (args.verbose) {
     logger.verbose = true;
     boundbox.verbose = true;
-    tree.verbose = true;
+    build.verbose = true;
     pass.verbose = true;
     traversal.verbose = true;
     verify.verbose = true;
@@ -41,10 +41,10 @@ int main(int argc, char ** argv) {
     Bodies jbodies = data.initBodies(args.numBodies, args.distribution, 1);
     bounds = boundbox.getBounds(jbodies,bounds);
 #endif
-    Cells cells = tree.buildTree(bodies, bounds);
+    Cells cells = build.buildTree(bodies, bounds);
     pass.upwardPass(cells);
 #if IneJ
-    Cells jcells = tree.buildTree(jbodies, bounds);
+    Cells jcells = build.buildTree(jbodies, bounds);
     pass.upwardPass(jcells);
     traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
@@ -56,11 +56,11 @@ int main(int argc, char ** argv) {
     logger.stopPAPI();
     logger.stopTimer("Total FMM");
     boundbox.writeTime();
-    tree.writeTime();
+    build.writeTime();
     pass.writeTime();
     traversal.writeTime();
     boundbox.resetTimer();
-    tree.resetTimer();
+    build.resetTimer();
     pass.resetTimer();
     traversal.resetTimer();
     logger.resetTimer();
@@ -78,7 +78,7 @@ int main(int argc, char ** argv) {
     logger.printTitle("FMM vs. direct");
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
-    tree.printTreeData(cells);
+    build.printTreeData(cells);
     traversal.printTraversalData();
     logger.printPAPI();
   }

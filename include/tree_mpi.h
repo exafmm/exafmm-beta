@@ -1,10 +1,10 @@
-#ifndef localessentialtree_h
-#define localessentialtree_h
-#include "partition.h"
+#ifndef tree_mpi_h
+#define tree_mpi_h
+#include "body_mpi.h"
 #include <queue>
 
 //! Handles all the communication of local essential trees
-class LocalEssentialTree : public Partition {
+class TreeMPI : public BodyMPI {
 private:
   typedef std::queue<C_iter> CellQueue;                         //!< Queue of cell iterators
   int irank;                                                    //!< MPI rank loop counter
@@ -21,11 +21,8 @@ private:
   int * recvCellCount;                                          //!< Receive count
   int * recvCellDispl;                                          //!< Receive displacement
 
-public:
-  using Partition::alltoall;
-  using Partition::alltoallv;
-
 private:
+  //! Allgather bounds from all ranks
   void allgatherBounds(Bounds local) {
     fvec3 Xmin, Xmax;
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
@@ -151,7 +148,7 @@ private:
 
 public:
   //! Constructor
-  LocalEssentialTree(int images) : images(images) {
+  TreeMPI(int images) : images(images) {
     allLocalXmin = new fvec3 [mpisize];                         // Allocate array for minimum of local domains
     allLocalXmax = new fvec3 [mpisize];                         // Allocate array for maximum of local domains
     sendCellCount = new int [mpisize];                          // Allocate send count
@@ -160,7 +157,7 @@ public:
     recvCellDispl = new int [mpisize];                          // Allocate receive displacement
   }
   //! Destructor
-  ~LocalEssentialTree() {
+  ~TreeMPI() {
     delete[] allLocalXmin;                                      // Deallocate array for minimum of local domains
     delete[] allLocalXmax;                                      // Deallocate array for maximum of local domains
     delete[] sendCellCount;                                     // Deallocate send count
@@ -213,24 +210,6 @@ public:
     cells.resize(recvCellCount[irank]);                         // Resize cell vector for LET
     cells.assign(recvCells.begin()+recvCellDispl[irank],recvCells.begin()+recvCellDispl[irank]+recvCellCount[irank]);
     stopTimer(event.str());                                     // Stop timer
-  }
-
-  //! Send bodies
-  Bodies commBodies() {
-    startTimer("Comm bodies");                                  // Start timer
-    alltoall(sendBodies);                                       // Send body count
-    alltoallv(sendBodies);                                      // Send bodies
-    stopTimer("Comm bodies");                                   // Stop timer
-    return recvBodies;                                          // Return received bodies
-  }
-
-  //! Send bodies
-  Bodies commBodies(Bodies sendBodies) {
-    startTimer("Comm bodies");                                  // Start timer
-    alltoall(sendBodies);                                       // Send body count
-    alltoallv(sendBodies);                                      // Send bodies
-    stopTimer("Comm bodies");                                   // Stop timer
-    return recvBodies;                                          // Return received bodies
   }
 
   //! Send cells

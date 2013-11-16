@@ -1,11 +1,10 @@
-#ifndef partition_h
-#define partition_h
-#include "mympi.h"
+#ifndef body_mpi_h
+#define body_mpi_h
+#include "base_mpi.h"
 #include "logger.h"
-#include "types.h"
 
 //! Handles all the partitioning of domains
-class Partition : public MyMPI, public Logger {
+class BodyMPI : public BaseMPI, public Logger {
 protected:
   Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
@@ -56,14 +55,14 @@ protected:
 
 public:
   //! Constructor
-  Partition() {
+  BodyMPI() {
     sendBodyCount = new int [mpisize];                          // Allocate send count
     sendBodyDispl = new int [mpisize];                          // Allocate send displacement
     recvBodyCount = new int [mpisize];                          // Allocate receive count
     recvBodyDispl = new int [mpisize];                          // Allocate receive displacement
   }
   //! Destructor
-  ~Partition() {
+  ~BodyMPI() {
     delete[] sendBodyCount;                                     // Deallocate send count
     delete[] sendBodyDispl;                                     // Deallocate send displacement
     delete[] recvBodyCount;                                     // Deallocate receive count
@@ -114,41 +113,6 @@ public:
     return recvBodies;                                          // Return bodies
   }
 
-  //! Allreduce int from all ranks
-  int allreduceInt(int send) {
-    int recv;                                                   // Receive buffer
-    MPI_Allreduce(&send, &recv, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
-    return recv;                                                // Return received values
-  }
-
-  //! Allreduce fvec3 from all ranks
-  vec3 allreduceVec3(vec3 send) {
-    fvec3 fsend, frecv;                                         // Single precision buffers
-    for (int d=0; d<3; d++) fsend[d] = send[d];                 // Copy to send buffer
-    MPI_Allreduce(fsend, frecv, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
-    vec3 recv;                                                  // Receive buffer
-    for (int d=0; d<3; d++) recv[d] = frecv[d];                 // Copy from recv buffer
-    return recv;                                                // Return received values
-  }
-
-  //! Allreduce bounds from all ranks
-  Bounds allreduceBounds(Bounds local) {
-    fvec3 localXmin, localXmax, globalXmin, globalXmax;
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      localXmin[d] = local.Xmin[d];                             //  Convert Xmin to float
-      localXmax[d] = local.Xmax[d];                             //  Convert Xmax to float
-    }                                                           // End loop over dimensions
-    MPI_Allreduce(localXmin, globalXmin, 3, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
-    MPI_Allreduce(localXmax, globalXmax, 3, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
-    Bounds global;
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      real_t leeway = (globalXmax[d] - globalXmin[d]) * 1e-6;   //  Adding a bit of leeway to global domain
-      global.Xmin[d] = globalXmin[d] - leeway;                  //  Convert Xmin to real_t
-      global.Xmax[d] = globalXmax[d] + leeway;                  //  Convert Xmax to real_t
-    }                                                           // End loop over dimensions
-    return global;                                              // Return global bounds
-  }
-
   //! Partition bodies
   Bounds partition(Bodies &bodies, Bounds global) {
     startTimer("Partition");                                    // Start timer
@@ -192,6 +156,24 @@ public:
       B->ICELL = B->IPROC;                                      //  Do this to sortaccroding to IPROC
     }                                                           // End loop over bodies
     stopTimer("Unpartition");                                   // Stop timer
+  }
+
+  //! Send bodies
+  Bodies commBodies() {
+    startTimer("Comm bodies");                                  // Start timer
+    alltoall(sendBodies);                                       // Send body count
+    alltoallv(sendBodies);                                      // Send bodies
+    stopTimer("Comm bodies");                                   // Stop timer
+    return recvBodies;                                          // Return received bodies
+  }
+
+  //! Send bodies
+  Bodies commBodies(Bodies sendBodies) {
+    startTimer("Comm bodies");                                  // Start timer
+    alltoall(sendBodies);                                       // Send body count
+    alltoallv(sendBodies);                                      // Send bodies
+    stopTimer("Comm bodies");                                   // Stop timer
+    return recvBodies;                                          // Return received bodies
   }
 
   //! Copy recvBodies to bodies

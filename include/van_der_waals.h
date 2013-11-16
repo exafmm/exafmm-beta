@@ -1,5 +1,5 @@
-#ifndef vanderwaals_h
-#define vanderwaals_h
+#ifndef van_der_waals_h
+#define van_der_waals_h
 #include "logger.h"
 #include "types.h"
 

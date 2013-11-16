@@ -1,21 +1,21 @@
-#include "localessentialtree.h"
+#include "tree_mpi.h"
 #include "args.h"
-#include "boundbox.h"
-#include "buildtree.h"
+#include "bound_box.h"
+#include "build_tree.h"
 #include "ewald.h"
 #include "sort.h"
 #include "traversal.h"
-#include "updownpass.h"
+#include "up_down_pass.h"
 
 Args *args;
 Logger *logger;
 Sort *sort;
 Bounds localBounds;
 BoundBox *boundbox;
-BuildTree *tree;
+BuildTree *build;
 UpDownPass *pass;
 Traversal *traversal;
-LocalEssentialTree *LET;
+TreeMPI *treeMPI;
 
 extern "C" void FMM_Init(int images) {
   const int ncrit = 32;
@@ -25,10 +25,10 @@ extern "C" void FMM_Init(int images) {
   logger = new Logger;
   sort = new Sort;
   boundbox = new BoundBox(nspawn);
-  tree = new BuildTree(ncrit, nspawn);
+  build = new BuildTree(ncrit, nspawn);
   pass = new UpDownPass(theta);
   traversal = new Traversal(nspawn, images);
-  LET = new LocalEssentialTree(images);
+  treeMPI = new TreeMPI(images);
 
   args->theta = theta;
   args->ncrit = ncrit;
@@ -37,17 +37,17 @@ extern "C" void FMM_Init(int images) {
   args->mutual = 0;
   args->verbose = 1;
   args->distribution = "external";
-  args->verbose &= LET->mpirank == 0;
+  args->verbose &= treeMPI->mpirank == 0;
   if (args->verbose) {
     logger->verbose = true;
     boundbox->verbose = true;
-    tree->verbose = true;
+    build->verbose = true;
     pass->verbose = true;
     traversal->verbose = true;
-    LET->verbose = true;
+    treeMPI->verbose = true;
   }
   logger->printTitle("Initial Parameters");
-  args->print(logger->stringLength, P, LET->mpirank);
+  args->print(logger->stringLength, P, treeMPI->mpirank);
 }
 
 extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, double cycle) {
@@ -63,8 +63,8 @@ extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, doub
     B->SRC = q[i];
   }
   localBounds = boundbox->getBounds(bodies);
-  Bounds globalBounds = LET->allreduceBounds(localBounds);
-  localBounds = LET->partition(bodies,globalBounds);
+  Bounds globalBounds = treeMPI->allreduceBounds(localBounds);
+  localBounds = treeMPI->partition(bodies,globalBounds);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     B->X[0] = x[3*i+0];
@@ -72,8 +72,8 @@ extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, doub
     B->X[2] = x[3*i+2];
   }
   bodies = sort->sortBodies(bodies);
-  bodies = LET->commBodies(bodies);
-  Cells cells = tree->buildTree(bodies, localBounds);
+  bodies = treeMPI->commBodies(bodies);
+  Cells cells = build->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -90,7 +90,7 @@ extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, doub
 extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle) {
   args->numBodies = n;
   logger->printTitle("FMM Parameters");
-  args->print(logger->stringLength, P, LET->mpirank);
+  args->print(logger->stringLength, P, treeMPI->mpirank);
   logger->printTitle("FMM Profiling");
   logger->startTimer("Total FMM");
   logger->startPAPI();
@@ -108,21 +108,21 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
   }
-  Cells cells = tree->buildTree(bodies, localBounds);
+  Cells cells = build->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
-  LET->setLET(cells, localBounds, cycle);
-  LET->commBodies();
-  LET->commCells();
+  treeMPI->setLET(cells, localBounds, cycle);
+  treeMPI->commBodies();
+  treeMPI->commCells();
   traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
   Cells jcells;
-  for (int irank=1; irank<LET->mpisize; irank++) {
-    LET->getLET(jcells,(LET->mpirank+irank)%LET->mpisize);
+  for (int irank=1; irank<treeMPI->mpisize; irank++) {
+    treeMPI->getLET(jcells,(treeMPI->mpirank+irank)%treeMPI->mpisize);
     traversal->dualTreeTraversal(cells, jcells, cycle);
   }
   pass->downwardPass(cells);
   vec3 localDipole = pass->getDipole(bodies,0);
-  vec3 globalDipole = LET->allreduceVec3(localDipole);
-  int numBodies = LET->allreduceInt(bodies.size());
+  vec3 globalDipole = treeMPI->allreduceVec3(localDipole);
+  int numBodies = treeMPI->allreduceInt(bodies.size());
   pass->dipoleCorrection(bodies, globalDipole, numBodies, cycle);
   logger->stopPAPI();
   logger->stopTimer("Total FMM");
@@ -143,7 +143,7 @@ extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double 
   if (args->verbose) ewald->verbose = true;
   args->numBodies = n;
   logger->printTitle("Ewald Parameters");
-  args->print(logger->stringLength, P, LET->mpirank);
+  args->print(logger->stringLength, P, treeMPI->mpirank);
   ewald->print(logger->stringLength);
   logger->printTitle("Ewald Profiling");
   logger->startTimer("Total Ewald");
@@ -162,13 +162,13 @@ extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double 
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
   }
-  Cells cells = tree->buildTree(bodies, localBounds);
+  Cells cells = build->buildTree(bodies, localBounds);
   Bodies jbodies = bodies;
-  for (int i=0; i<LET->mpisize; i++) {
-    if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << LET->mpisize << std::endl;
-    LET->shiftBodies(jbodies);
+  for (int i=0; i<treeMPI->mpisize; i++) {
+    if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << treeMPI->mpisize << std::endl;
+    treeMPI->shiftBodies(jbodies);
     localBounds = boundbox->getBounds(jbodies);
-    Cells jcells = tree->buildTree(jbodies, localBounds);
+    Cells jcells = build->buildTree(jbodies, localBounds);
     ewald->wavePart(bodies, jbodies);
     ewald->realPart(cells, jcells);
   }
@@ -225,11 +225,11 @@ extern "C" void Direct_Coulomb(int Ni, double * x, double * q, double * p, doubl
   }
   double Xperiodic[3];
   int Nj = Ni, Nj3 = 3 * Ni;
-  if (LET->mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
-  for (int irank=0; irank<LET->mpisize; irank++) {
-    if (LET->mpirank == 0) std::cout << "Direct loop          : " << irank+1 << "/" << LET->mpisize << std::endl;
-    MPI_Shift(x2, Nj3, LET->mpisize, LET->mpirank);
-    MPI_Shift(q2, Nj,  LET->mpisize, LET->mpirank);
+  if (treeMPI->mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
+  for (int irank=0; irank<treeMPI->mpisize; irank++) {
+    if (treeMPI->mpirank == 0) std::cout << "Direct loop          : " << irank+1 << "/" << treeMPI->mpisize << std::endl;
+    MPI_Shift(x2, Nj3, treeMPI->mpisize, treeMPI->mpirank);
+    MPI_Shift(q2, Nj,  treeMPI->mpisize, treeMPI->mpirank);
     for (int i=0; i<Ni; i++) {
       double pp = 0, fx = 0, fy = 0, fz = 0;
       for (int ix=-prange; ix<=prange; ix++) {
