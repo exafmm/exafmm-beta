@@ -392,7 +392,7 @@ contains
     use mpi
     implicit none
     integer dynsteps,nglobal,nat,nbonds,ntheta,ksize,imcentfrq,printfrq,nres
-    real(8) alpha,sigma,cutoff,cuton,etot,fxtot,fytot,fztot,pcycle
+    real(8) alpha,sigma,cutoff,cuton,etot,pcycle
     real(8), allocatable, dimension(:) :: x,v,mass,p,f,q,gscale,fgscale,rscale,xold
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
