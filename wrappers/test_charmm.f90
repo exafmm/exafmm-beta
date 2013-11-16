@@ -504,7 +504,7 @@ contains
 
   subroutine run_dynamics(dynsteps,imcentfrq,printfrq,&
        nglobal,nat,nbonds,ntheta,ksize,&
-       alpha,sigma,cutoff,cuton,pcycle,xold,&
+       alpha,sigma,cutoff,cuton,pcycle,&
        x,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
        ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,nres,ires)
     use mpi
@@ -530,13 +530,13 @@ contains
     timstart = 100.0 ! first 100ps was equilibration with standard CHARMM
     time = timstart
 
-    allocate(xnew(3*nglobal),fac1(nglobal),fac2(nglobal))
+    allocate(xnew(3*nglobal),xold(3*nglobal),fac1(nglobal),fac2(nglobal))
 
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,pcycle,xold,&
          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
-    
+
     call print_energy(timstart,nglobal,f,v,mass,atype,icpumap,etot)
 
     ! precompute some constants and recalculate xold
@@ -593,7 +593,8 @@ contains
 
     enddo mainloop
 
-    deallocate(xnew,fac1,fac2)
+    deallocate(xnew,xold,fac1,fac2)
+    deallocate(ib,jb,it,jt,kt,rbond,cbond,mass,aangle,cangle,x)
 
   end subroutine run_dynamics
 
@@ -740,13 +741,13 @@ program main
   real(8) potSum2, potSumGlob2
   integer, dimension (128) :: iseed
   integer, allocatable, dimension(:) :: icpumap,jcpumap,numex,natex,atype,ib,jb,it,jt,kt,ires
-  real(8), allocatable, dimension(:) :: x, q, p, f, p2, f2, xc, v, mass, xold
+  real(8), allocatable, dimension(:) :: x, q, p, f, p2, f2, xc, v, mass
   real(8), allocatable, dimension(:) :: rscale, gscale, fgscale
   real(8), allocatable, dimension(:,:) :: rbond,cbond
   real(8), allocatable, dimension(:,:,:) :: aangle,cangle
   integer nbonds,ntheta,imcentfrq,printfrq,nres
   real(8) efmm, evdw, etot, eb, et, timstart
-  logical test_first
+  logical test_force
   parameter(pi=3.14159265358979312d0)
 
   call mpi_init(ierr)
@@ -773,7 +774,8 @@ program main
      alpha = 10 / pcycle
 
   else
-     allocate( x(3*nglobal),  q(nglobal),  p(nglobal),  f(3*nglobal), icpumap(nglobal) )
+     allocate( x(3*nglobal),  q(nglobal),  v(3*nglobal), p(nglobal),  f(3*nglobal) )
+     allocate( ires(nglobal), icpumap(nglobal), jcpumap(nglobal) )
      allocate( p2(nglobal), f2(3*nglobal) )
      allocate( numex(nglobal), natex(nglobal), atype(nglobal) )
      allocate( rscale(nat*nat), gscale(nat*nat), fgscale(nat*nat) )
@@ -946,33 +948,31 @@ program main
   do i = 1, nglobal
      icpumap(i) = 1
   enddo
-  allocate(xold(3*nglobal))
-
   ! run dynamics if second command line argument specified
   if (command_argument_count() > 1) then
      call get_command_argument(2,filename,lnam,istat)
      read(filename,*)dynsteps
-     write(*,*)'will run dynamics for ',dynsteps,' steps'
+     if(mpirank.eq.0) write(*,*)'will run dynamics for ',dynsteps,' steps'
      ! for pure water systems there is no need for nbadd14() :-)
-
-     test_first=.false.
+     test_force=.false.
      printfrq=1
      imcentfrq=10
      timstart=100.0 ! time of restart file (later: get it from there)
-
-     if (test_first) call force_testing(nglobal,nat,nbonds,ntheta,ksize,&
-          alpha,sigma,cutoff,cuton,pcycle,xold,&
-          xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
-
-     call run_dynamics(dynsteps,imcentfrq,printfrq,&
-          nglobal,nat,nbonds,ntheta,ksize,&
-          alpha,sigma,cutoff,cuton,pcycle,xold,&
-          xc,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,nres,ires)
-
+     if (test_force) then
+        call force_testing(nglobal,nat,nbonds,ntheta,ksize,&
+             alpha,sigma,cutoff,cuton,pcycle,v,&
+             xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+             ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
+     else
+        call run_dynamics(dynsteps,imcentfrq,printfrq,&
+             nglobal,nat,nbonds,ntheta,ksize,&
+             alpha,sigma,cutoff,cuton,pcycle,&
+             xc,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+             ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,nres,ires)
+     endif
   endif
 
-  deallocate( x, q, p, f, icpumap, p2, f2 )
+  deallocate( x, q, v, p, f, p2, f2, icpumap, jcpumap )
+  deallocate( ires, numex, natex, rscale, gscale, fgscale, atype)
   call mpi_finalize(ierr)
 end program main
