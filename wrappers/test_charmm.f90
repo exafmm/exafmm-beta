@@ -2,14 +2,14 @@ module charmm_io
 contains
   subroutine charmm_cor_read(n,x,q,size,filename,numex,natex,nat,atype,&
        rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
-       aangle,cangle,mass,xc,v,xnew,nres,ires)
+       aangle,cangle,mass,xc,v,nres,ires)
     implicit none
     logical qext
     integer i, nat, im, in, n, natex_size, vdw_size, resn, nres
     real(8) size, sizex, sizey, sizez
     integer, allocatable, dimension(:) :: numex,natex,atype,ib,jb,it,jt,kt,ires
     real(8), allocatable, dimension(:) :: x, q, rscale, gscale, fgscale
-    real(8), allocatable, dimension(:) :: mass,xc,v,xnew
+    real(8), allocatable, dimension(:) :: mass,xc,v
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer nbonds,ntheta
@@ -76,9 +76,7 @@ contains
     allocate(atype(n))
     read(1,'(a100)')lin
     read(1,'(20i5)')atype(1:n)
-    read(1,'(a100)',end=99)lin
-    ! we maybe able to read the bonding info here
-    ! it is used for dynamics only
+    read(1,'(a100)',end=99)lin ! variables from here are only used only for dynamics
     if(lin(1:5)=='BONDS')then
        read(lin(6:100),*)nbonds
        allocate(ib(nbonds),jb(nbonds))
@@ -107,12 +105,9 @@ contains
     ! coordinates from restart are needed for proper continuation!
     ! dual coordinates are nedeed anyway for image centering problem!
     ! equilibrated velocities from CHARMM restart
-    ! and the coordinate corrections /xnew/ ??? Are they useful ???
-    allocate(xc(3*n), xnew(3*n))
+    allocate(xc(3*n))
     read(1,'(3d28.18)')(xc(3*i-2),xc(3*i-1),xc(3*i-0),i=1,n)
     read(1,'(3d28.18)')(v(3*i-2),v(3*i-1),v(3*i-0),i=1,n)
-    read(1,'(3d28.18)')(xnew(3*i-2),xnew(3*i-1),xnew(3*i-0),i=1,n)
-!!!    
 99  continue
     return
   end subroutine charmm_cor_read
@@ -355,7 +350,6 @@ contains
        alpha,sigma,cutoff,cuton,pcycle,xold,&
        x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
        ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw,istep)
-    use mpi
     implicit none
     logical use_fmm
     integer nglobal,nat,nbonds,ntheta,ksize,i
@@ -536,8 +530,14 @@ contains
     timstart = 100.0 ! first 100ps was equilibration with standard CHARMM
     time = timstart
 
-    allocate(xnew(3*nglobal)) ! do we need first two ??
-    allocate(fac1(nglobal),fac2(nglobal))
+    allocate(xnew(3*nglobal),fac1(nglobal),fac2(nglobal))
+
+    call energy(nglobal,nat,nbonds,ntheta,ksize,&
+         alpha,sigma,cutoff,cuton,pcycle,xold,&
+         x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
+         ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
+    
+    call print_energy(timstart,nglobal,f,v,mass,atype,icpumap,etot)
 
     ! precompute some constants and recalculate xold
     do i=1,nglobal
@@ -586,16 +586,14 @@ contains
 
        if (mod(istep,imcentfrq) == 0) call image_center(nglobal,x,nres,ires,pcycle,icpumap)
 
-       time=time+tstep*timfac  ! for printing only
-       if (mod(istep,printfrq) == 0) then
-          call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot)
-       endif
+       time=time+tstep*timfac ! for printing only
+       if (mod(istep,printfrq) == 0) call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot)
 
        if (mod(istep,printfrq) == 0) call pdb_frame(unit,time,nglobal,x,nres,icpumap)
 
     enddo mainloop
 
-    deallocate(xold,xnew)
+    deallocate(xnew,fac1,fac2)
 
   end subroutine run_dynamics
 
@@ -742,13 +740,13 @@ program main
   real(8) potSum2, potSumGlob2
   integer, dimension (128) :: iseed
   integer, allocatable, dimension(:) :: icpumap,jcpumap,numex,natex,atype,ib,jb,it,jt,kt,ires
-  real(8), allocatable, dimension(:) :: x, q, p, f, p2, f2, xc, v, mass, xnew, xold
+  real(8), allocatable, dimension(:) :: x, q, p, f, p2, f2, xc, v, mass, xold
   real(8), allocatable, dimension(:) :: rscale, gscale, fgscale
   real(8), allocatable, dimension(:,:) :: rbond,cbond
   real(8), allocatable, dimension(:,:,:) :: aangle,cangle
   integer nbonds,ntheta,imcentfrq,printfrq,nres
   real(8) efmm, evdw, etot, eb, et, timstart
-  logical test_first,integrate
+  logical test_first
   parameter(pi=3.14159265358979312d0)
 
   call mpi_init(ierr)
@@ -765,11 +763,11 @@ program main
   cutoff = 10.0
   alpha = 10 / pcycle
   nat = 16
-  CHARMMIO: if (command_argument_count() > 0) then
+  charmmio: if (command_argument_count() > 0) then
      call get_command_argument(1,filename,lnam,istat)
      call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,nat,atype,&
           rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
-          aangle,cangle,mass,xc,v,xnew,nres,ires)
+          aangle,cangle,mass,xc,v,nres,ires)
      allocate( p(nglobal),  f(3*nglobal), icpumap(nglobal), jcpumap(nglobal) )
      allocate( p2(nglobal), f2(3*nglobal) )
      alpha = 10 / pcycle
@@ -817,7 +815,7 @@ program main
         gscale(i) = 0.0001
         fgscale(i) = gscale(i)
      enddo
-  endif CHARMMIO
+  endif charmmio
   ista = 1
   iend = nglobal
   call split_range(ista,iend,mpirank,mpisize)
@@ -958,7 +956,6 @@ program main
      ! for pure water systems there is no need for nbadd14() :-)
 
      test_first=.false.
-     integrate=.true.
      printfrq=1
      imcentfrq=10
      timstart=100.0 ! time of restart file (later: get it from there)
@@ -968,14 +965,7 @@ program main
           xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
           ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
 
-     call energy(nglobal,nat,nbonds,ntheta,ksize,&
-          alpha,sigma,cutoff,cuton,pcycle,xold,&
-          xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,eb,et,efmm,evdw)
-     
-     call print_energy(timstart,nglobal,f,v,mass,atype,icpumap,etot)
-
-     if (integrate) call run_dynamics(dynsteps,imcentfrq,printfrq,&
+     call run_dynamics(dynsteps,imcentfrq,printfrq,&
           nglobal,nat,nbonds,ntheta,ksize,&
           alpha,sigma,cutoff,cuton,pcycle,xold,&
           xc,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
