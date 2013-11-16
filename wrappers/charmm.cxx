@@ -102,17 +102,17 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   }
 }
 
-extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,
+extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 			     double * x, double * q, double * p, double * f,
 			     double & cycle) {
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
-    jcpumap[i] = 0;
     if (icpumap[i] == 1) {
-      jcpumap[i] = 1;
       nlocal++;
+    } else {
+      icpumap[i] = 0;
     }
   }
   args->numBodies = nlocal;
@@ -172,7 +172,8 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap, int * jcpumap,
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];
     q[i] = B->SRC;
-    jcpumap[i] = 1;
+    assert(icpumap[i] == 0);
+    icpumap[i] = 2;
   }
 }
 
@@ -184,7 +185,11 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
   const int mask = ~(0x7U << shift);
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
-    if (icpumap[i] == 1) nlocal++;
+    if (icpumap[i] == 1) {
+      nlocal++;
+    } else {
+      icpumap[i] = 0;
+    } 
   }
   args->numBodies = nlocal;
   logger->printTitle("Ewald Parameters");
@@ -230,6 +235,8 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
     f[3*i+1] += B->TRG[2] * B->SRC * Celec;
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
   }
+  LET->setLET(cells, localBounds, cycle);
+  LET->commBodies();
   bodies = LET->getRecvBodies();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
@@ -239,6 +246,8 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];
     q[i] = B->SRC;
+    assert(icpumap[i] == 0);
+    icpumap[i] = 2;
   }
   delete ewald;
 }
@@ -386,15 +395,6 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
     f[3*i+0] += B->TRG[1];
     f[3*i+1] += B->TRG[2];
     f[3*i+2] += B->TRG[3];
-  }
-  bodies = LET->getRecvBodies();
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B->IBODY & mask;
-    int iwrap = unsigned(B->IBODY) >> shift;
-    unwrap(B->X, cycle, iwrap);
-    x[3*i+0] = B->X[0];
-    x[3*i+1] = B->X[1];
-    x[3*i+2] = B->X[2];
   }
   delete VDW;
 }

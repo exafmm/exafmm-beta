@@ -46,7 +46,7 @@ contains
        v(3*i-2) = 0
        v(3*i-1) = 0
        v(3*i-0) = 0
-       if(im/=resn)then
+       if(im /= resn)then
           resn=resn+1
           ires(resn)=i
        endif
@@ -77,13 +77,13 @@ contains
     read(1,'(a100)')lin
     read(1,'(20i5)')atype(1:n)
     read(1,'(a100)',end=99)lin ! variables from here are only used only for dynamics
-    if(lin(1:5)=='BONDS')then
+    if(lin(1:5) == 'BONDS')then
        read(lin(6:100),*)nbonds
        allocate(ib(nbonds),jb(nbonds))
        read(1,'(10i10)')(ib(i),jb(i),i=1,nbonds)
     endif
     read(1,'(a100)',end=99)lin
-    if(lin(1:6)=='ANGLES')then
+    if(lin(1:6) == 'ANGLES')then
        read(lin(7:100),*)ntheta
        allocate(it(ntheta),jt(ntheta),kt(ntheta))
        read(1,'(9i10)')(it(i),jt(i),kt(i),i=1,ntheta)
@@ -121,7 +121,7 @@ contains
     allocate(send(nglobal))
     send(1:nglobal)=0.0
     do i=1,nglobal
-       if(icpumap(i)==1) send(i) = recv(i)
+       if(icpumap(i) == 1) send(i) = recv(i)
     enddo
     call mpi_allreduce(send, recv, nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
     deallocate(send)
@@ -136,17 +136,17 @@ contains
     allocate(send(3*nglobal))
     send(1:3*nglobal)=0.0
     do i=1,nglobal
-       if(icpumap(i)==1) send(3*i-2:3*i) = recv(3*i-2:3*i)
+       if(icpumap(i) == 1) send(3*i-2:3*i) = recv(3*i-2:3*i)
     enddo
     call mpi_allreduce(send, recv, 3*nglobal, mpi_real8, mpi_sum, mpi_comm_world, ierr)
     deallocate(send)
   end subroutine bcast3
 
-  subroutine bonded_terms(icpumap,jcpumap,atype,x,f,nbonds,ntheta,&
+  subroutine bonded_terms(icpumap,atype,x,f,nbonds,ntheta,&
        ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     implicit none
     integer i,ii,jj,kk,nbonds,ntheta
-    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,icpumap,jcpumap,atype
+    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,icpumap,atype
     real(8) dx,dy,dz,r,db,df,dfr,eb,et
     real(8) dx1,dy1,dz1,dx2,dy2,dz2,r1,r2,r1r,r2r
     real(8) dx1r,dy1r,dz1r,dx2r,dy2r,dz2r,cst,at,da
@@ -158,9 +158,9 @@ contains
     do i = 1, nbonds
        ii=ib(i)
        jj=jb(i)
-       if (icpumap(ii) == 0 .and. icpumap(jj) == 0) cycle
-       if (jcpumap(ii) == 0) print*,"missing i = ",ii
-       if (jcpumap(jj) == 0) print*,"missing j = ",jj
+       if (icpumap(ii) /= 1 .and. icpumap(jj) /= 1) cycle
+       if (icpumap(ii) == 0) print*,"missing i = ",ii
+       if (icpumap(jj) == 0) print*,"missing j = ",jj
        dx=x(3*ii-2)-x(3*jj-2)
        dy=x(3*ii-1)-x(3*jj-1)
        dz=x(3*ii-0)-x(3*jj-0)
@@ -189,10 +189,10 @@ contains
        ii=it(i)
        jj=jt(i)
        kk=kt(i)
-       if (icpumap(ii) == 0 .and. icpumap(jj) == 0 .and. icpumap(kk) == 0) cycle
-       if (jcpumap(ii) == 0) print*,"missing i = ",ii
-       if (jcpumap(jj) == 0) print*,"missing j = ",jj
-       if (jcpumap(kk) == 0) print*,"missing k = ",kk
+       if (icpumap(ii) /= 1 .and. icpumap(jj) /= 1 .and. icpumap(kk) /= 1) cycle
+       if (icpumap(ii) == 0) print*,"missing i = ",ii
+       if (icpumap(jj) == 0) print*,"missing j = ",jj
+       if (icpumap(kk) == 0) print*,"missing k = ",kk
        dx1=x(3*ii-2)-x(3*jj-2)
        dy1=x(3*ii-1)-x(3*jj-1)
        dz1=x(3*ii-0)-x(3*jj-0)
@@ -246,12 +246,12 @@ contains
   subroutine energy(nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,pcycle,xold,&
        x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-       ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,istep)
+       ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,istep)
     implicit none
     logical use_fmm
     integer nglobal,nat,nbonds,ntheta,ksize,i
     integer, optional :: istep
-    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
+    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
     real(8) alpha,sigma,cutoff,cuton,etot,eb,et,efmm,evdw,pcycle
     real(8), allocatable, dimension(:) :: xold,x,p,f,q,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
@@ -262,14 +262,14 @@ contains
     p(1:nglobal)=0.0
     f(1:3*nglobal)=0.0 * istep ! suppress unused warning for istep
     if(use_fmm) then
-       call fmm_coulomb(nglobal, icpumap, jcpumap, x, q, p, f, pcycle)
+       call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
     else
        call ewald_coulomb(nglobal, icpumap, x, q, p, f, ksize, alpha, sigma, cutoff, pcycle)
     endif
     call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
     efmm=0.0
     do i=1, nglobal
-       if (icpumap(i) == 0) cycle
+       if (icpumap(i) /= 1) cycle
        efmm=efmm+p(i)
     enddo
     efmm=efmm*0.5
@@ -280,11 +280,11 @@ contains
          pcycle, nat, rscale, gscale, fgscale, numex, natex)
     evdw=0.0
     do i = 1, nglobal
-       if (icpumap(i) == 0) cycle
+       if (icpumap(i) /= 1) cycle
        evdw=evdw+p(i)
     enddo
     evdw=evdw*0.5
-    call bonded_terms(icpumap,jcpumap,atype,x,f,nbonds,ntheta,&
+    call bonded_terms(icpumap,atype,x,f,nbonds,ntheta,&
          ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     etot=eb+et+efmm+evdw
     return
@@ -293,7 +293,7 @@ contains
   subroutine force_testing(nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,pcycle,xold,&
        x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-       ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex)
+       ib,jb,it,jt,kt,atype,icpumap,numex,natex)
 
     implicit none
     integer nglobal,nat,nbonds,ntheta,ksize
@@ -301,14 +301,14 @@ contains
     real(8), allocatable, dimension(:) :: xold,x,p,f,q,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
-    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex
+    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
     real(8), allocatable, dimension(:) :: f_analytic
     real(8) xsave, e0, step, step2, eplus, eminus, nforce
     integer i,j,istart,iend
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,pcycle,xold,&
          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-         ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot)
+         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot)
     e0=etot
     allocate(f_analytic(3*nglobal))
     f_analytic(1:3*nglobal)=f(1:3*nglobal)
@@ -324,12 +324,12 @@ contains
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,pcycle,xold,&
                x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,eminus)
+               ib,jb,it,jt,kt,atype,icpumap,numex,natex,eminus)
           x(3*(i-1)+j)=x(3*(i-1)+j)+2.0*step
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,pcycle,xold,&
                x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-               ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,eplus)
+               ib,jb,it,jt,kt,atype,icpumap,numex,natex,eplus)
           nforce=step2*(eplus-eminus)
           x(3*(i-1)+j)=xsave  ! restore
           write(*,'(2i7,3f20.9)')i,j,nforce,f_analytic(3*(i-1)+j),nforce-f_analytic(3*(i-1)+j)
@@ -351,7 +351,7 @@ contains
     ekinetic=0.0
     grms=0.0
     do i=1, nglobal
-       if(icpumap(i) == 0) cycle
+       if(icpumap(i) /= 1) cycle
        ekinetic=ekinetic+mass(atype(i))*(v(3*i-2)**2+v(3*i-1)**2+v(3*i-0)**2)
        grms=grms+f(3*i-2)**2+f(3*i-1)**2+f(3*i-0)**2
     enddo
@@ -362,7 +362,7 @@ contains
     temp=ekineticglob/3.0/nglobal/kboltz
     ekineticglob=ekineticglob/2.0
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
-    if(mpirank==0) then
+    if(mpirank == 0) then
        write(*,'(''time:'',f9.3,'' Etotal:'',f14.5,'' Ekin:'',f14.5,'' Epot:'',f14.5,'' T:'',f12.3,'' Grms:'',f12.5)')&
             time,etotglob+ekineticglob,ekineticglob,etotglob,temp,grmsglob
     endif
@@ -373,7 +373,7 @@ contains
        nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,pcycle,&
        x,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-       ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,nres,ires)
+       ib,jb,it,jt,kt,atype,icpumap,numex,natex,nres,ires)
     use mpi
     implicit none
     integer dynsteps,nglobal,nat,nbonds,ntheta,ksize,imcentfrq,printfrq,nres
@@ -381,7 +381,7 @@ contains
     real(8), allocatable, dimension(:) :: x,v,mass,p,f,q,gscale,fgscale,rscale,xold
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
-    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,ires
+    integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex,ires
     real(8), allocatable, dimension(:) :: xnew,fac1,fac2
     real(8) tstep, tstep2, time
     integer i,unit,istep,ierr,mpirank
@@ -389,7 +389,7 @@ contains
 
     unit=1
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
-    if(mpirank==0) open(unit=unit,file='water.pdb',status='new')
+    if(mpirank == 0) open(unit=unit,file='water.pdb',status='new')
 
     tstep = 0.001/timfac !ps -> akma
     tstep2 = tstep**2
@@ -400,7 +400,7 @@ contains
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,pcycle,xold,&
          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-         ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot)
+         ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot)
 
     call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot)
 
@@ -408,7 +408,7 @@ contains
     do i=1,nglobal
        fac1(i) = tstep2/mass(atype(i))
        fac2(i) = 0.5/tstep
-       if(icpumap(i)==0)cycle
+       if(icpumap(i) /= 1)cycle
        xold(3*i-2) = v(3*i-2)*tstep-f(3*i-2)*fac1(i)*0.5
        xold(3*i-1) = v(3*i-1)*tstep-f(3*i-1)*fac1(i)*0.5
        xold(3*i-0) = v(3*i-0)*tstep-f(3*i-0)*fac1(i)*0.5
@@ -417,7 +417,7 @@ contains
     mainloop: do istep = 1, dynsteps
 
        do i = 1, nglobal
-          if(icpumap(i)==0)cycle
+          if(icpumap(i) /= 1)cycle
           x(3*i-2) = x(3*i-2) + xold(3*i-2)
           x(3*i-1) = x(3*i-1) + xold(3*i-1)
           x(3*i-0) = x(3*i-0) + xold(3*i-0)
@@ -426,24 +426,24 @@ contains
        call energy(nglobal,nat,nbonds,ntheta,ksize,&
             alpha,sigma,cutoff,cuton,pcycle,xold,&
             x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-            ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot,istep)
+            ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,istep)
 
        do i = 1, nglobal
-          if(icpumap(i)==0)cycle
+          if(icpumap(i) /= 1)cycle
           xnew(3*i-2) = xold(3*i-2) - fac1(i)*f(3*i-2)
           xnew(3*i-1) = xold(3*i-1) - fac1(i)*f(3*i-1)
           xnew(3*i-0) = xold(3*i-0) - fac1(i)*f(3*i-0)
        enddo
 
        do i = 1, nglobal
-          if(icpumap(i)==0)cycle
+          if(icpumap(i) /= 1)cycle
           v(3*i-2) = (xnew(3*i-2) + xold(3*i-2))*fac2(i)
           v(3*i-1) = (xnew(3*i-1) + xold(3*i-1))*fac2(i)
           v(3*i-0) = (xnew(3*i-0) + xold(3*i-0))*fac2(i)
        enddo
 
        do i = 1, nglobal
-          if(icpumap(i)==0)cycle
+          if(icpumap(i) /= 1)cycle
           xold(3*i-2) = xnew(3*i-2)
           xold(3*i-1) = xnew(3*i-1)
           xold(3*i-0) = xnew(3*i-0)
@@ -510,7 +510,7 @@ contains
 
     residues: do i = 1, nres
        istart=ires(i)
-       if(i==nres) then
+       if(i == nres) then
           iend=nglobal
        else
           iend=ires(i+1)-1
@@ -522,9 +522,9 @@ contains
 !!!
        flag=0
        do j = istart, iend
-          if(icpumap(j)==1)flag=1
+          if(icpumap(j) == 1)flag=1
        enddo
-       if (flag==0) cycle residues
+       if (flag == 0) cycle residues
 !!!
        xcen=0.0
        ycen=0.0
@@ -538,32 +538,32 @@ contains
        xcen=xcen/real(nsel)
        ycen=ycen/real(nsel)
        zcen=zcen/real(nsel)
-       if(xcen<xmin)then
+       if(xcen < xmin)then
           do j = istart,iend
              x(3*j-2)=x(3*j-2)+pcycle
           enddo
        endif
-       if(xcen>xmax)then
+       if(xcen > xmax)then
           do j = istart,iend
              x(3*j-2)=x(3*j-2)-pcycle
           enddo
        endif
-       if(ycen<ymin)then
+       if(ycen < ymin)then
           do j = istart,iend
              x(3*j-1)=x(3*j-1)+pcycle
           enddo
        endif
-       if(ycen>ymax)then
+       if(ycen > ymax)then
           do j = istart,iend
              x(3*j-1)=x(3*j-1)-pcycle
           enddo
        endif
-       if(zcen<zmin)then
+       if(zcen < zmin)then
           do j = istart,iend
              x(3*j-0)=x(3*j-0)+pcycle
           enddo
        endif
-       if(zcen>zmax)then
+       if(zcen > zmax)then
           do j = istart,iend
              x(3*j-0)=x(3*j-0)-pcycle
           enddo
@@ -583,7 +583,7 @@ subroutine split_range(ista, iend, isplit, nsplit)
   remainder = mod(size, nsplit)
   ista = ista + isplit * increment + min(isplit,remainder)
   iend = ista + increment - 1
-  if(remainder.gt.isplit) iend = iend + 1
+  if(remainder > isplit) iend = iend + 1
   return
 end subroutine split_range
 
@@ -597,7 +597,7 @@ program main
   integer i, ierr, images, ista, iend, istat, ksize, lnam, mpirank, mpisize
   integer nat, nglobal, verbose, nbonds, ntheta, imcentfrq, printfrq, nres
   integer, dimension (128) :: iseed
-  integer, allocatable, dimension(:) :: icpumap, jcpumap, numex, natex, atype, ib, jb, it, jt, kt, ires
+  integer, allocatable, dimension(:) :: icpumap, numex, natex, atype, ib, jb, it, jt, kt, ires
   real(8) alpha, sigma, cuton, cutoff, average, pcycle, pi, theta
   real(8) accDif, accDifGlob, accNrm, accNrmGlob, accNrm2, accNrmGlob2
   real(8) potDifGlob, potNrmGlob2, potSum, potSumGlob, potSum2, potSumGlob2
@@ -626,13 +626,13 @@ program main
      call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,nat,atype,&
           rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
           aangle,cangle,mass,xc,v,nres,ires)
-     allocate( p(nglobal),  f(3*nglobal), icpumap(nglobal), jcpumap(nglobal) )
+     allocate( p(nglobal),  f(3*nglobal), icpumap(nglobal) )
      allocate( p2(nglobal), f2(3*nglobal) )
      alpha = 10 / pcycle
 
   else
      allocate( x(3*nglobal),  q(nglobal),  v(3*nglobal), p(nglobal),  f(3*nglobal) )
-     allocate( ires(nglobal), icpumap(nglobal), jcpumap(nglobal) )
+     allocate( ires(nglobal), icpumap(nglobal) )
      allocate( p2(nglobal), f2(3*nglobal) )
      allocate( numex(nglobal), natex(nglobal), atype(nglobal) )
      allocate( rscale(nat*nat), gscale(nat*nat), fgscale(nat*nat) )
@@ -662,7 +662,7 @@ program main
      call random_number(gscale)
      do i = 1, nglobal
         numex(i) = 1
-        if(mod(i,2).eq.1)then
+        if(mod(i,2) == 1)then
            natex(i) = i+1
         else
            natex(i) = i-1
@@ -683,7 +683,7 @@ program main
   enddo
   call fmm_init(images,theta,verbose)
   call fmm_partition(nglobal, icpumap, x, q, v, pcycle)
-  call fmm_coulomb(nglobal, icpumap, jcpumap, x, q, p, f, pcycle)
+  call fmm_coulomb(nglobal, icpumap, x, q, p, f, pcycle)
   do i = 1, nglobal
      p2(i) = 0
      f2(3*i-2) = 0
@@ -704,7 +704,7 @@ program main
   accNrm = 0
   accNrm2 = 0
   do i = 1, nglobal
-     if (icpumap(i).eq.1) then
+     if (icpumap(i) == 1) then
         p(i) = p(i)
         f(3*i-2) = f(3*i-2)
         f(3*i-1) = f(3*i-1)
@@ -734,7 +734,7 @@ program main
   call mpi_reduce(accNrm2, accNrmGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
   potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2)
   potNrmGlob2 = potSumGlob2 * potSumGlob2
-  if (mpirank.eq.0) then
+  if (mpirank == 0) then
      print"(a)",'--- Coulomb FMM vs. Ewald -------'
      print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
      print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
@@ -770,7 +770,7 @@ program main
   accNrm = 0
   accNrm2 = 0
   do i = 1, nglobal
-     if (icpumap(i).eq.1) then
+     if (icpumap(i) == 1) then
         potSum  = potSum  + p(i)
         potSum2 = potSum2 + p2(i)
         accDif  = accDif  + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
@@ -792,7 +792,7 @@ program main
   call mpi_reduce(accNrm2, accNrmGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
   potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2)
   potNrmGlob2 = potSumGlob2 * potSumGlob2
-  if (mpirank.eq.0) then
+  if (mpirank == 0) then
      print"(a)",'--- VdW FMM vs. Direct ----------'
      print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
      print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
@@ -806,7 +806,7 @@ program main
   if (command_argument_count() > 1) then
      call get_command_argument(2,filename,lnam,istat)
      read(filename,*)dynsteps
-     if(mpirank.eq.0) write(*,*)'will run dynamics for ',dynsteps,' steps'
+     if(mpirank == 0) write(*,*)'will run dynamics for ',dynsteps,' steps'
      ! for pure water systems there is no need for nbadd14() :-)
      test_force=.false.
      printfrq=1
@@ -815,17 +815,17 @@ program main
         call force_testing(nglobal,nat,nbonds,ntheta,ksize,&
              alpha,sigma,cutoff,cuton,pcycle,v,&
              xc,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-             ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex)
+             ib,jb,it,jt,kt,atype,icpumap,numex,natex)
      else
         call run_dynamics(dynsteps,imcentfrq,printfrq,&
              nglobal,nat,nbonds,ntheta,ksize,&
              alpha,sigma,cutoff,cuton,pcycle,&
              xc,p,f,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-             ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,nres,ires)
+             ib,jb,it,jt,kt,atype,icpumap,numex,natex,nres,ires)
      endif
   endif
 
-  deallocate( x, q, v, p, f, p2, f2, icpumap, jcpumap )
+  deallocate( x, q, v, p, f, p2, f2, icpumap )
   deallocate( ires, numex, natex, rscale, gscale, fgscale, atype)
   call mpi_finalize(ierr)
 end program main
