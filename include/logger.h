@@ -130,6 +130,7 @@ public:
 		<< E->first << " " << E->second << std::endl;   //  Print event and timer
     }                                                           // End loop over all events
     timerFile.close();                                          // Close timer log file
+    timer.clear();                                              // Clear timer
   }
 
   //! Erase all events in timer

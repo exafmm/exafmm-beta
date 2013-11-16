@@ -59,11 +59,6 @@ int main(int argc, char ** argv) {
     build.writeTime();
     pass.writeTime();
     traversal.writeTime();
-    boundbox.resetTimer();
-    build.resetTimer();
-    pass.resetTimer();
-    traversal.resetTimer();
-    logger.resetTimer();
     data.sampleBodies(bodies, args.numTargets);
     Bodies bodies2 = bodies;
     data.initTarget(bodies);

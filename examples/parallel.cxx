@@ -166,12 +166,6 @@ int main(int argc, char ** argv) {
   pass.writeTime(treeMPI.mpirank);
   traversal.writeTime(treeMPI.mpirank);
   treeMPI.writeTime(treeMPI.mpirank);
-  boundbox.resetTimer();
-  build.resetTimer();
-  pass.resetTimer();
-  traversal.resetTimer();
-  treeMPI.resetTimer();
-  logger.resetTimer();
   double potDif = verify.getDifScalar(bodies, bodies2);
   double potNrm = verify.getNrmScalar(bodies);
   double accDif = verify.getDifVector(bodies, bodies2);
