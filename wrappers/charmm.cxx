@@ -52,6 +52,17 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   args->print(logger->stringLength, P);
 }
 
+extern "C" void fmm_finalize_() {
+  delete args;
+  delete logger;
+  delete sort;
+  delete boundbox;
+  delete build;
+  delete pass;
+  delete traversal;
+  delete treeMPI;
+}
+
 extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q,
 			       double * xold, double & cycle) {
   logger->printTitle("Partition Profiling");

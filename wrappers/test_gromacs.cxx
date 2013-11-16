@@ -7,6 +7,7 @@
 #include <sstream>
 
 extern "C" void FMM_Init(int images);
+extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, double cycle);
 extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle);
 extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double * f,
@@ -109,5 +110,6 @@ int main(int argc, char ** argv) {
   delete[] f;
   delete[] p2;
   delete[] f2;
+  FMM_Finalize();
   MPI_Finalize();
 }

@@ -50,6 +50,17 @@ extern "C" void FMM_Init(int images) {
   args->print(logger->stringLength, P, treeMPI->mpirank);
 }
 
+extern "C" void FMM_Finalize() {
+  delete args;
+  delete logger;
+  delete sort;
+  delete boundbox;
+  delete build;
+  delete pass;
+  delete traversal;
+  delete treeMPI;
+}
+
 extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, double cycle) {
   logger->printTitle("Partition Profiling");
   Bodies bodies(n);

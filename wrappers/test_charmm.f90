@@ -842,5 +842,6 @@ program main
 
   deallocate( x, q, v, p, f, p2, f2, icpumap )
   deallocate( ires, numex, natex, rscale, gscale, fgscale, atype)
+  call fmm_finalize()
   call mpi_finalize(ierr)
 end program main
