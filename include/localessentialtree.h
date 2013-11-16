@@ -225,10 +225,10 @@ public:
   }
 
   //! Send bodies
-  Bodies commBodies(Bodies bodies) {
+  Bodies commBodies(Bodies sendBodies) {
     startTimer("Comm bodies");                                  // Start timer
-    alltoall(bodies);                                           // Send body count
-    alltoallv(bodies);                                          // Send bodies
+    alltoall(sendBodies);                                       // Send body count
+    alltoallv(sendBodies);                                      // Send bodies
     stopTimer("Comm bodies");                                   // Stop timer
     return recvBodies;                                          // Return received bodies
   }

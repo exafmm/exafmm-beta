@@ -24,13 +24,8 @@ public:
     char **argv;                                                // Dummy argument value
     MPI_Initialized(&external);                                 // Check if MPI_Init has been called
     if (!external) MPI_Init(&argc, &argv);                      // Initialize MPI communicator
-    MPI_Comm_size(MPI_COMM_WORLD, &mpisize);                    // Get number of MPI processes
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);                    // Get rank of current MPI process
-  }
-
-  //! If n is power of two return true
-  bool isPowerOfTwo(const int n) {
-    return ((n != 0) && !(n & (n - 1)));                        // Decrement and compare bits
+    MPI_Comm_size(MPI_COMM_WORLD, &mpisize);                    // Get number of MPI processes
   }
 
   //! Print a scalar value on all ranks
