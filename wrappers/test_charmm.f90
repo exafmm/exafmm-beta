@@ -147,203 +147,100 @@ contains
     implicit none
     integer i,ii,jj,kk,nbonds,ntheta
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,icpumap,jcpumap,atype
-    real(8) dx,dy,dz,r,db,df
+    real(8) dx,dy,dz,r,db,df,dfr,eb,et
     real(8) dx1,dy1,dz1,dx2,dy2,dz2,r1,r2,r1r,r2r
     real(8) dx1r,dy1r,dz1r,dx2r,dy2r,dz2r,cst,at,da
-    real(8) dxi,dyi,dzi,st2r,str,dtx1,dtx2,dty1,dty2,dtz1,dtz2,dt1,dt2
-    real(8), optional :: eb,et
+    real(8) dxi,dyi,dzi,st2r,str,dtx1,dtx2,dty1,dty2,dtz1,dtz2
     real(8), allocatable, dimension(:) :: x, f
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
-    if (present(eb)) then
-       eb = 0.0
-       do i = 1, nbonds
-          ii=ib(i)
-          jj=jb(i)
-          if (icpumap(ii) == 0) cycle
-          if (jcpumap(jj) == 0) print*,"missing j = ",jj
-          dx=x(3*ii-2)-x(3*jj-2)
-          dy=x(3*ii-1)-x(3*jj-1)
-          dz=x(3*ii-0)-x(3*jj-0)
-          r=sqrt(dx*dx+dy*dy+dz*dz)
-          db=r-rbond(atype(ii),atype(jj))
-          df=cbond(atype(ii),atype(jj))*db
+    eb = 0.0
+    do i = 1, nbonds
+       ii=ib(i)
+       jj=jb(i)
+       if (icpumap(ii) == 0 .and. icpumap(jj) == 0) cycle
+       if (jcpumap(ii) == 0) print*,"missing i = ",ii
+       if (jcpumap(jj) == 0) print*,"missing j = ",jj
+       dx=x(3*ii-2)-x(3*jj-2)
+       dy=x(3*ii-1)-x(3*jj-1)
+       dz=x(3*ii-0)-x(3*jj-0)
+       r=sqrt(dx*dx+dy*dy+dz*dz)
+       db=r-rbond(atype(ii),atype(jj))
+       df=cbond(atype(ii),atype(jj))*db
+       dfr=2.0*df/r
+       dxi=dx*dfr
+       dyi=dy*dfr
+       dzi=dz*dfr
+       if (icpumap(ii) == 1) then
           eb=eb+df*db/2
-          df=2.0*df/r
-          dxi=dx*df
-          dyi=dy*df
-          dzi=dz*df
           f(3*ii-2)=f(3*ii-2)+dxi
           f(3*ii-1)=f(3*ii-1)+dyi
           f(3*ii-0)=f(3*ii-0)+dzi
-       enddo
-       do i = 1, nbonds
-          ii=ib(i)
-          jj=jb(i)
-          if (icpumap(jj) == 0) cycle
-          if (jcpumap(ii) == 0) print*,"missing i = ",ii
-          dx=x(3*ii-2)-x(3*jj-2)
-          dy=x(3*ii-1)-x(3*jj-1)
-          dz=x(3*ii-0)-x(3*jj-0)
-          r=sqrt(dx*dx+dy*dy+dz*dz)
-          db=r-rbond(atype(ii),atype(jj))
-          df=cbond(atype(ii),atype(jj))*db
+       endif
+       if (icpumap(jj) == 1) then
           eb=eb+df*db/2
-          df=2.0*df/r
-          dxi=dx*df
-          dyi=dy*df
-          dzi=dz*df
           f(3*jj-2)=f(3*jj-2)-dxi
           f(3*jj-1)=f(3*jj-1)-dyi
           f(3*jj-0)=f(3*jj-0)-dzi
-       enddo
-    endif
-
-    if (present(et)) then
-       et = 0.0
-       do i = 1, ntheta
-          ii=it(i)
-          jj=jt(i)
-          kk=kt(i)
-          if (icpumap(ii) == 0) cycle
-          if (jcpumap(jj) == 0) print*,"missing j = ",jj
-          if (jcpumap(kk) == 0) print*,"missing k = ",kk
-          dx1=x(3*ii-2)-x(3*jj-2)
-          dy1=x(3*ii-1)-x(3*jj-1)
-          dz1=x(3*ii-0)-x(3*jj-0)
-          dx2=x(3*kk-2)-x(3*jj-2)
-          dy2=x(3*kk-1)-x(3*jj-1)
-          dz2=x(3*kk-0)-x(3*jj-0)
-          r1=sqrt(dx1*dx1+dy1*dy1+dz1*dz1)
-          r2=sqrt(dx2*dx2+dy2*dy2+dz2*dz2)
-          r1r=1.0/r1
-          r2r=1.0/r2
-          dx1r=dx1*r1r
-          dy1r=dy1*r1r
-          dz1r=dz1*r1r
-          dx2r=dx2*r2r
-          dy2r=dy2*r2r
-          dz2r=dz2*r2r
-          cst=dx1r*dx2r+dy1r*dy2r+dz1r*dz2r
-          at=acos(cst)
-          da=at-aangle(atype(ii),atype(jj),atype(kk))
-          df=da*cangle(atype(ii),atype(jj),atype(kk))
+       endif
+    enddo
+    et = 0.0
+    do i = 1, ntheta
+       ii=it(i)
+       jj=jt(i)
+       kk=kt(i)
+       if (icpumap(ii) == 0 .and. icpumap(jj) == 0 .and. icpumap(kk) == 0) cycle
+       if (jcpumap(ii) == 0) print*,"missing i = ",ii
+       if (jcpumap(jj) == 0) print*,"missing j = ",jj
+       if (jcpumap(kk) == 0) print*,"missing k = ",kk
+       dx1=x(3*ii-2)-x(3*jj-2)
+       dy1=x(3*ii-1)-x(3*jj-1)
+       dz1=x(3*ii-0)-x(3*jj-0)
+       dx2=x(3*kk-2)-x(3*jj-2)
+       dy2=x(3*kk-1)-x(3*jj-1)
+       dz2=x(3*kk-0)-x(3*jj-0)
+       r1=sqrt(dx1*dx1+dy1*dy1+dz1*dz1)
+       r2=sqrt(dx2*dx2+dy2*dy2+dz2*dz2)
+       r1r=1.0/r1
+       r2r=1.0/r2
+       dx1r=dx1*r1r
+       dy1r=dy1*r1r
+       dz1r=dz1*r1r
+       dx2r=dx2*r2r
+       dy2r=dy2*r2r
+       dz2r=dz2*r2r
+       cst=dx1r*dx2r+dy1r*dy2r+dz1r*dz2r
+       at=acos(cst)
+       da=at-aangle(atype(ii),atype(jj),atype(kk))
+       df=da*cangle(atype(ii),atype(jj),atype(kk))
+       st2r=1.0/(1.0-cst*cst)
+       str=sqrt(st2r)
+       dfr=-2.0*df*str
+       dtx1=dfr*r1r*(dx2r-cst*dx1r)
+       dtx2=dfr*r2r*(dx1r-cst*dx2r)
+       dty1=dfr*r1r*(dy2r-cst*dy1r)
+       dty2=dfr*r2r*(dy1r-cst*dy2r)
+       dtz1=dfr*r1r*(dz2r-cst*dz1r)
+       dtz2=dfr*r2r*(dz1r-cst*dz2r)
+       if (icpumap(ii) == 1) then
           et=et+df*da/3
-          st2r=1.0/(1.0-cst*cst)
-          str=sqrt(st2r)
-          df=-2.0*df*str
-          dtx1=r1r*(dx2r-cst*dx1r)
-          dtx2=r2r*(dx1r-cst*dx2r)
-          dty1=r1r*(dy2r-cst*dy1r)
-          dty2=r2r*(dy1r-cst*dy2r)
-          dtz1=r1r*(dz2r-cst*dz1r)
-          dtz2=r2r*(dz1r-cst*dz2r)
-          dt1=df*dtx1
-          dt2=df*dtx2
-          f(3*ii-2)=f(3*ii-2)+dt1
-          dt1=df*dty1
-          dt2=df*dty2
-          f(3*ii-1)=f(3*ii-1)+dt1
-          dt1=df*dtz1
-          dt2=df*dtz2
-          f(3*ii-0)=f(3*ii-0)+dt1
-       enddo
-       do i = 1, ntheta
-          ii=it(i)
-          jj=jt(i)
-          kk=kt(i)
-          if (icpumap(jj) == 0) cycle
-          if (jcpumap(ii) == 0) print*,"missing i = ",ii
-          if (jcpumap(kk) == 0) print*,"missing k = ",kk
-          dx1=x(3*ii-2)-x(3*jj-2)
-          dy1=x(3*ii-1)-x(3*jj-1)
-          dz1=x(3*ii-0)-x(3*jj-0)
-          dx2=x(3*kk-2)-x(3*jj-2)
-          dy2=x(3*kk-1)-x(3*jj-1)
-          dz2=x(3*kk-0)-x(3*jj-0)
-          r1=sqrt(dx1*dx1+dy1*dy1+dz1*dz1)
-          r2=sqrt(dx2*dx2+dy2*dy2+dz2*dz2)
-          r1r=1.0/r1
-          r2r=1.0/r2
-          dx1r=dx1*r1r
-          dy1r=dy1*r1r
-          dz1r=dz1*r1r
-          dx2r=dx2*r2r
-          dy2r=dy2*r2r
-          dz2r=dz2*r2r
-          cst=dx1r*dx2r+dy1r*dy2r+dz1r*dz2r
-          at=acos(cst)
-          da=at-aangle(atype(ii),atype(jj),atype(kk))
-          df=da*cangle(atype(ii),atype(jj),atype(kk))
+          f(3*ii-2)=f(3*ii-2)+dtx1
+          f(3*ii-1)=f(3*ii-1)+dty1
+          f(3*ii-0)=f(3*ii-0)+dtz1
+       endif
+       if (icpumap(jj) == 1) then
           et=et+df*da/3
-          st2r=1.0/(1.0-cst*cst)
-          str=sqrt(st2r)
-          df=-2.0*df*str
-          dtx1=r1r*(dx2r-cst*dx1r)
-          dtx2=r2r*(dx1r-cst*dx2r)
-          dty1=r1r*(dy2r-cst*dy1r)
-          dty2=r2r*(dy1r-cst*dy2r)
-          dtz1=r1r*(dz2r-cst*dz1r)
-          dtz2=r2r*(dz1r-cst*dz2r)
-          dt1=df*dtx1
-          dt2=df*dtx2
-          f(3*jj-2)=f(3*jj-2)-dt1-dt2
-          dt1=df*dty1
-          dt2=df*dty2
-          f(3*jj-1)=f(3*jj-1)-dt1-dt2
-          dt1=df*dtz1
-          dt2=df*dtz2
-          f(3*jj-0)=f(3*jj-0)-dt1-dt2
-       enddo
-       do i = 1, ntheta
-          ii=it(i)
-          jj=jt(i)
-          kk=kt(i)
-          if (icpumap(kk) == 0) cycle
-          if (jcpumap(ii) == 0) print*,"missing i = ",ii
-          if (jcpumap(jj) == 0) print*,"missing j = ",jj
-          dx1=x(3*ii-2)-x(3*jj-2)
-          dy1=x(3*ii-1)-x(3*jj-1)
-          dz1=x(3*ii-0)-x(3*jj-0)
-          dx2=x(3*kk-2)-x(3*jj-2)
-          dy2=x(3*kk-1)-x(3*jj-1)
-          dz2=x(3*kk-0)-x(3*jj-0)
-          r1=sqrt(dx1*dx1+dy1*dy1+dz1*dz1)
-          r2=sqrt(dx2*dx2+dy2*dy2+dz2*dz2)
-          r1r=1.0/r1
-          r2r=1.0/r2
-          dx1r=dx1*r1r
-          dy1r=dy1*r1r
-          dz1r=dz1*r1r
-          dx2r=dx2*r2r
-          dy2r=dy2*r2r
-          dz2r=dz2*r2r
-          cst=dx1r*dx2r+dy1r*dy2r+dz1r*dz2r
-          at=acos(cst)
-          da=at-aangle(atype(ii),atype(jj),atype(kk))
-          df=da*cangle(atype(ii),atype(jj),atype(kk))
+          f(3*jj-2)=f(3*jj-2)-dtx1-dtx2
+          f(3*jj-1)=f(3*jj-1)-dty1-dty2
+          f(3*jj-0)=f(3*jj-0)-dtz1-dtz2
+       endif
+       if (icpumap(kk) == 1) then
           et=et+df*da/3
-          st2r=1.0/(1.0-cst*cst)
-          str=sqrt(st2r)
-          df=-2.0*df*str
-          dtx1=r1r*(dx2r-cst*dx1r)
-          dtx2=r2r*(dx1r-cst*dx2r)
-          dty1=r1r*(dy2r-cst*dy1r)
-          dty2=r2r*(dy1r-cst*dy2r)
-          dtz1=r1r*(dz2r-cst*dz1r)
-          dtz2=r2r*(dz1r-cst*dz2r)
-          dt1=df*dtx1
-          dt2=df*dtx2
-          f(3*kk-2)=f(3*kk-2)+dt2
-          dt1=df*dty1
-          dt2=df*dty2
-          f(3*kk-1)=f(3*kk-1)+dt2
-          dt1=df*dtz1
-          dt2=df*dtz2
-          f(3*kk-0)=f(3*kk-0)+dt2
-       enddo
-    endif
-
+          f(3*kk-2)=f(3*kk-2)+dtx2
+          f(3*kk-1)=f(3*kk-1)+dty2
+          f(3*kk-0)=f(3*kk-0)+dtz2
+       endif
+    enddo
   end subroutine bonded_terms
 
   subroutine energy(nglobal,nat,nbonds,ntheta,ksize,&
@@ -361,9 +258,9 @@ contains
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     use_fmm = .true.
 
-    f(1:3*nglobal)=0.0 * istep ! suppress unused warning for istep
     call fmm_partition(nglobal, icpumap, x, q, xold, pcycle)
     p(1:nglobal)=0.0
+    f(1:3*nglobal)=0.0 * istep ! suppress unused warning for istep
     if(use_fmm) then
        call fmm_coulomb(nglobal, icpumap, jcpumap, x, q, p, f, pcycle)
     else
@@ -408,17 +305,10 @@ contains
     real(8), allocatable, dimension(:) :: f_analytic
     real(8) xsave, e0, step, step2, eplus, eminus, nforce
     integer i,j,istart,iend
-
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,pcycle,xold,&
          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot)
-
-!!!
-!!! this routine is not parallelized ??
-!!!
-!!! And also it doesn't test forces but derivatives!!!
-!!!
     e0=etot
     allocate(f_analytic(3*nglobal))
     f_analytic(1:3*nglobal)=f(1:3*nglobal)
@@ -426,42 +316,34 @@ contains
     iend=10
     step=0.0001
     step2=1.0/(2.0*step)
-
     write(*,*)'   I      J             Numeric           Analytic             Difference'
     do i = istart, iend
        do j = 1, 3
           xsave=x(3*(i-1)+j) ! save it
           x(3*(i-1)+j)=x(3*(i-1)+j)-step
-
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,pcycle,xold,&
                x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
                ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,eminus)
-
           x(3*(i-1)+j)=x(3*(i-1)+j)+2.0*step
-
           call energy(nglobal,nat,nbonds,ntheta,ksize,&
                alpha,sigma,cutoff,cuton,pcycle,xold,&
                x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
                ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,eplus)
-
           nforce=step2*(eplus-eminus)
           x(3*(i-1)+j)=xsave  ! restore
           write(*,'(2i7,3f20.9)')i,j,nforce,f_analytic(3*(i-1)+j),nforce-f_analytic(3*(i-1)+j)
        enddo
     enddo
-
     deallocate(f_analytic)
-
     return
   end subroutine force_testing
 
-
-  subroutine print_energy(timstart,nglobal,f,v,mass,atype,icpumap,etot)
+  subroutine print_energy(time,nglobal,f,v,mass,atype,icpumap,etot)
     use mpi
     implicit none
     integer nglobal,i,ierr,mpirank
-    real(8) etot,timstart
+    real(8) etot,time
     real(8) temp,kboltz,ekinetic,grms,ekineticglob,grmsglob,etotglob
     real(8), allocatable, dimension(:) :: f,v,mass
     integer, allocatable, dimension(:) :: atype,icpumap
@@ -482,7 +364,7 @@ contains
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
     if(mpirank==0) then
        write(*,'(''time:'',f9.3,'' Etotal:'',f14.5,'' Ekin:'',f14.5,'' Epot:'',f14.5,'' T:'',f12.3,'' Grms:'',f12.5)')&
-            timstart,etotglob+ekineticglob,ekineticglob,etotglob,temp,grmsglob
+            time,etotglob+ekineticglob,ekineticglob,etotglob,temp,grmsglob
     endif
     return
   end subroutine print_energy
@@ -501,7 +383,7 @@ contains
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,ires
     real(8), allocatable, dimension(:) :: xnew,fac1,fac2
-    real(8) tstep, timstart, time, tstep2
+    real(8) tstep, tstep2, time
     integer i,unit,istep,ierr,mpirank
     real(8),parameter :: TIMFAC=4.88882129D-02
 
@@ -511,8 +393,7 @@ contains
 
     tstep = 0.001/timfac !ps -> akma
     tstep2 = tstep**2
-    timstart = 100.0 ! first 100ps was equilibration with standard CHARMM
-    time = timstart
+    time = 100.0 ! first 100ps was equilibration with standard CHARMM
 
     allocate(xnew(3*nglobal),xold(3*nglobal),fac1(nglobal),fac2(nglobal))
 
@@ -521,7 +402,7 @@ contains
          x,p,f,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
          ib,jb,it,jt,kt,atype,icpumap,jcpumap,numex,natex,etot)
 
-    call print_energy(timstart,nglobal,f,v,mass,atype,icpumap,etot)
+    call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot)
 
     ! precompute some constants and recalculate xold
     do i=1,nglobal
@@ -720,7 +601,6 @@ program main
   real(8) alpha, sigma, cuton, cutoff, average, pcycle, pi, theta
   real(8) accDif, accDifGlob, accNrm, accNrmGlob, accNrm2, accNrmGlob2
   real(8) potDifGlob, potNrmGlob2, potSum, potSumGlob, potSum2, potSumGlob2
-  real(8) timstart
   real(8), allocatable, dimension(:) :: x, q, p, f, p2, f2, xc, v, mass
   real(8), allocatable, dimension(:) :: rscale, gscale, fgscale
   real(8), allocatable, dimension(:,:) :: rbond, cbond
@@ -931,7 +811,6 @@ program main
      test_force=.false.
      printfrq=1
      imcentfrq=10
-     timstart=100.0 ! time of restart file (later: get it from there)
      if (test_force) then
         call force_testing(nglobal,nat,nbonds,ntheta,ksize,&
              alpha,sigma,cutoff,cuton,pcycle,v,&
