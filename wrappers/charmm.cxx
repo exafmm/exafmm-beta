@@ -82,8 +82,6 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   localBounds = LET->partition(bodies,globalBounds);
   bodies = sort->sortBodies(bodies);
   bodies = LET->commBodies(bodies);
-  Cells cells = tree->buildTree(bodies, localBounds);
-  pass->upwardPass(cells);
   for (int i=0; i<nglobal; i++) {
     icpumap[i] = 0;
   }
