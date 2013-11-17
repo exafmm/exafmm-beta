@@ -253,12 +253,11 @@ contains
     integer, optional :: istep
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
     real(8) alpha,sigma,cutoff,cuton,etot,eb,et,efmm,evdw,pcycle
-    real(8), allocatable, dimension(:) :: xold,x,p,f,q,gscale,fgscale,rscale,ftot
+    real(8), allocatable, dimension(:) :: xold,x,p,f,q,gscale,fgscale,rscale
     real(8), allocatable, dimension(:,:) :: rbond,cbond
     real(8), allocatable, dimension(:,:,:) :: aangle,cangle
     use_fmm = .true.
 
-    allocate(ftot(3))
     call fmm_partition(nglobal, icpumap, x, q, xold, pcycle)
     p(1:nglobal)=0.0
     f(1:3*nglobal)=0.0 * istep ! suppress unused warning for istep
@@ -269,24 +268,11 @@ contains
     endif
     call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
     efmm=0.0
-    ftot(1)=0.0
-    ftot(2)=0.0
-    ftot(3)=0.0
     do i=1, nglobal
        if (icpumap(i) /= 1) cycle
-       ftot(1) = ftot(1) + f(3*i-2)
-       ftot(2) = ftot(2) + f(3*i-2)
-       ftot(3) = ftot(3) + f(3*i-2)
        efmm=efmm+p(i)
     enddo
     efmm=efmm*0.5
-    call bcast3(1,icpumap,ftot)
-    do i=1, nglobal
-       if (icpumap(i) /= 1) cycle
-       f(3*i-2) = f(3*i-2) - ftot(1)/nglobal
-       f(3*i-1) = f(3*i-1) - ftot(2)/nglobal
-       f(3*i-0) = f(3*i-0) - ftot(3)/nglobal
-    enddo
     p(1:nglobal)=0.0
     call fmm_vanderwaals(nglobal, icpumap, atype, x, p, f, cuton, cutoff,&
          pcycle, nat, rscale, gscale, fgscale)
@@ -301,7 +287,6 @@ contains
     call bonded_terms(icpumap,atype,x,f,nbonds,ntheta,&
          ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     etot=eb+et+efmm+evdw
-    deallocate(ftot)
     return
   end subroutine energy
 
