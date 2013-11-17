@@ -7,6 +7,7 @@ class Sort {
 private:
   Bodies output;                                                //!< Output buffer
 
+#if 0
   //! Radixsorts the values using the keys
   void radixsort(int *key, int *value, int size) {
     const int bitStride = 8;                                    // Number of bits in one stride
@@ -76,39 +77,28 @@ private:
     delete[] permutation;                                       // Deallocate permutation index
   }
  
- 
-  int main()
-  {
-    const int N = 10000000;
-    Body *bodies = new Body [N];
-    Body *buffer = new Body [N];
-    int *key = new int [N];
-    int *index = new int [N];
-    for( int i=0; i<N; i++ ) {
-      bodies[i].ISORT = N / 10. * drand48();
-      buffer[i] = bodies[i];
-      key[i] = bodies[i].ISORT;
-      index[i] = i;
-    }
-    printf("N       : %d\n",N);
-    double tic = get_time();
-    radixsort(key,index,N);
-    double toc = get_time();
-    printf("Sort    : %lf s\n",toc-tic);
-    tic = get_time();
-#pragma omp parallel for
-    for( int i=0; i<N; i++ ) {
-      bodies[i] = buffer[index[i]];
-    }
-    toc = get_time();
-    printf("Permute : %lf s\n",toc-tic);
-    for( int i=1; i<N; i++ )
-      assert( bodies[i].ISORT >= bodies[i-1].ISORT );
-    delete[] bodies;
-    delete[] buffer;
-    delete[] key;
-    delete[] index;
+public:
+  //! Sort input accoring to cell index
+  Bodies sortBodies(Bodies &input) {
+    const int size = input.size();                              // Size of bodies vector
+    int * key = new int [size];                                 // Allocate key array
+    int * index = new int [size];                               // Allocate index array
+    for (B_iter B=input.begin(); B!=input.end(); B++) {         // Loop over input bodies
+      int i = B-input.begin();                                  //  Body index
+      key[i] = B->ICELL;                                        //  Copy ICELL to key array
+      index[i] = i;                                             //  Initialize index array
+    }                                                           // End loop over input bodies
+    radixsort(key,index,size);                                  // Radix sort index according to key
+    output.resize(size);                                        // Resize output buffer
+    for (B_iter B=output.begin(); B!=output.end(); B++) {       // Loop over output boides
+      int i = B-output.begin();                                 //  Body index
+      *B = input[index[i]];                                     //  Permute according to index
+    }                                                           // End loop over output bodies
+    delete[] key;                                               // Deallocate key array
+    delete[] index;                                             // Deallocate index array
+    return output;                                              // Return output
   }
+#endif
 
 public:
   //! Sort input accoring to cell index
