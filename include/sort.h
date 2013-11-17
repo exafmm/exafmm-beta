@@ -5,6 +5,8 @@
 //! Custom bucket sort for body and structures
 class Sort {
 private:
+  typedef Bodies::reverse_iterator B_ritr;                      //!< Reverse iterator of Bodies
+  std::vector<int> bucket;                                      //!< Bucket for sorting
   Bodies output;                                                //!< Output buffer
 
 #if 0
@@ -76,7 +78,7 @@ private:
     delete[] buffer;                                            // Deallocate buffer
     delete[] permutation;                                       // Deallocate permutation index
   }
- 
+
 public:
   //! Sort input accoring to cell index
   Bodies sortBodies(Bodies &input) {
