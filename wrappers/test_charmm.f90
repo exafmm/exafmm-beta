@@ -658,8 +658,6 @@ program main
      do i = 1, nglobal
         q(i) = q(i) - average
      enddo
-     call random_number(rscale)
-     call random_number(gscale)
      do i = 1, nglobal
         numex(i) = 1
         if(mod(i,2) == 1)then
@@ -667,7 +665,7 @@ program main
         else
            natex(i) = i-1
         endif
-        atype(i) = rand() * nat + 1
+        atype(i) = 1
      enddo
      do i = 1, nat*nat
         rscale(i) = 1
