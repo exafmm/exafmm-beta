@@ -1,6 +1,12 @@
 #ifndef sort_h
 #define sort_h
+#include <omp.h>
 #include "types.h"
+
+#ifndef _OPENMP
+int omp_get_num_threads() {return 1;}
+int omp_get_thread_num() {return 0;}
+#endif
 
 //! Custom bucket sort for body and structures
 class Sort {
@@ -9,7 +15,7 @@ private:
   std::vector<int> bucket;                                      //!< Bucket for sorting
   Bodies output;                                                //!< Output buffer
 
-#if 0
+#if 1
   //! Radixsorts the values using the keys
   void radixsort(int *key, int *value, int size) {
     const int bitStride = 8;                                    // Number of bits in one stride
@@ -100,7 +106,7 @@ public:
     delete[] index;                                             // Deallocate index array
     return output;                                              // Return output
   }
-#endif
+#else
 
 public:
   //! Sort input accoring to cell index
@@ -129,6 +135,7 @@ public:
     }                                                           // End loop over data
     return output;                                              // Return output
   }
+#endif
 
   //! Sort bodies back to original order
   Bodies unsort(Bodies &bodies) {
