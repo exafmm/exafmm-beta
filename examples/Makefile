@@ -6,12 +6,12 @@ include ../Makefile.include
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out
+	./a.out --numBodies 10000
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	mpirun -np 8 ./a.out
+	mpirun -np 8 ./a.out --numBodies 10000
 
 # Checking O(N) complexity
 complexity: serial.o $(OBJECTS)

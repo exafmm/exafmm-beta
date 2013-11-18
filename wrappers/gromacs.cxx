@@ -3,13 +3,11 @@
 #include "bound_box.h"
 #include "build_tree.h"
 #include "ewald.h"
-#include "sort.h"
 #include "traversal.h"
 #include "up_down_pass.h"
 
 Args *args;
 Logger *logger;
-Sort *sort;
 Bounds localBounds;
 BoundBox *boundbox;
 BuildTree *build;
@@ -23,7 +21,6 @@ extern "C" void FMM_Init(int images) {
   const real_t theta = 0.4;
   args = new Args;
   logger = new Logger;
-  sort = new Sort;
   boundbox = new BoundBox(nspawn);
   build = new BuildTree(ncrit, nspawn);
   pass = new UpDownPass(theta);
@@ -53,7 +50,6 @@ extern "C" void FMM_Init(int images) {
 extern "C" void FMM_Finalize() {
   delete args;
   delete logger;
-  delete sort;
   delete boundbox;
   delete build;
   delete pass;
@@ -63,33 +59,30 @@ extern "C" void FMM_Finalize() {
 
 extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, double cycle) {
   logger->printTitle("Partition Profiling");
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
   Bodies bodies(n);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->IBODY = index[i];
     B->X[0] = x[3*i+0];
     B->X[1] = x[3*i+1];
     B->X[2] = x[3*i+2];
-    wrap(B->X, cycle);
     B->SRC = q[i];
+    int iwrap = wrap(B->X, cycle);
+    B->IBODY = index[i] | (iwrap << shift);
   }
   localBounds = boundbox->getBounds(bodies);
   Bounds globalBounds = treeMPI->allreduceBounds(localBounds);
   localBounds = treeMPI->partition(bodies,globalBounds);
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
-    B->X[0] = x[3*i+0];
-    B->X[1] = x[3*i+1];
-    B->X[2] = x[3*i+2];
-  }
-  bodies = sort->sortBodies(bodies);
   bodies = treeMPI->commBodies(bodies);
   Cells cells = build->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    index[i] = B->IBODY;
+    index[i] = B->IBODY & mask;
+    int iwrap = unsigned(B->IBODY) >> shift;
+    unwrap(B->X, cycle, iwrap);
     x[3*i+0] = B->X[0];
     x[3*i+1] = B->X[1];
     x[3*i+2] = B->X[2];

@@ -3,7 +3,6 @@
 #include "bound_box.h"
 #include "build_tree.h"
 #include "ewald.h"
-#include "sort.h"
 #include "traversal.h"
 #include "up_down_pass.h"
 #include "van_der_waals.h"
@@ -12,7 +11,6 @@ static const double Celec = 332.0716;
 
 Args *args;
 Logger *logger;
-Sort *sort;
 Bounds localBounds;
 BoundBox *boundbox;
 BuildTree *build;
@@ -25,7 +23,6 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   const int nspawn = 1000;
   args = new Args;
   logger = new Logger;
-  sort = new Sort;
   boundbox = new BoundBox(nspawn);
   build = new BuildTree(ncrit, nspawn);
   pass = new UpDownPass(theta);
@@ -55,7 +52,6 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
 extern "C" void fmm_finalize_() {
   delete args;
   delete logger;
-  delete sort;
   delete boundbox;
   delete build;
   delete pass;
@@ -91,7 +87,6 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   localBounds = boundbox->getBounds(bodies);
   Bounds globalBounds = treeMPI->allreduceBounds(localBounds);
   localBounds = treeMPI->partition(bodies,globalBounds);
-  bodies = sort->sortBodies(bodies);
   bodies = treeMPI->commBodies(bodies);
   for (int i=0; i<nglobal; i++) {
     icpumap[i] = 0;

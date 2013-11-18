@@ -5,7 +5,6 @@
 #include "dataset.h"
 #include "ewald.h"
 #include "logger.h"
-#include "sort.h"
 #include "traversal.h"
 #include "up_down_pass.h"
 #include "verify.h"
@@ -20,7 +19,6 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   Dataset data;
   Logger logger;
-  Sort sort;
   Verify verify;
 
   const int ksize = 11;
@@ -56,7 +54,6 @@ int main(int argc, char ** argv) {
   Bounds localBounds = boundbox.getBounds(bodies);
   Bounds globalBounds = treeMPI.allreduceBounds(localBounds);
   localBounds = treeMPI.partition(bodies, globalBounds);
-  bodies = sort.sortBodies(bodies);
   bodies = treeMPI.commBodies(bodies);
 
   Cells cells = build.buildTree(bodies, localBounds);

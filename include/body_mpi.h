@@ -2,6 +2,7 @@
 #define body_mpi_h
 #include "base_mpi.h"
 #include "logger.h"
+#include "sort.h"
 
 //! Handles all the partitioning of domains
 class BodyMPI : public BaseMPI, public Logger {
@@ -146,6 +147,10 @@ public:
       B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
     stopTimer("Partition");                                     // Stop timer
+    startTimer("Sort");                                         // Start timer
+    Sort sort;                                                  // Instantiate sort class
+    bodies = sort.sortBodies(bodies);                           // Sort bodies according to ICELL
+    stopTimer("Sort");                                          // Stop timer
     return local;
   }
 
@@ -156,6 +161,10 @@ public:
       B->ICELL = B->IPROC;                                      //  Do this to sortaccroding to IPROC
     }                                                           // End loop over bodies
     stopTimer("Unpartition");                                   // Stop timer
+    startTimer("Sort");                                         // Start timer
+    Sort sort;                                                  // Instantiate sort class
+    bodies = sort.sortBodies(bodies);                           // Sort bodies according to ICELL
+    stopTimer("Sort");                                          // Stop timer
   }
 
   //! Send bodies

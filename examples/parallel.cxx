@@ -4,7 +4,6 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
-#include "sort.h"
 #include "traversal.h"
 #include "up_down_pass.h"
 #include "verify.h"
@@ -16,7 +15,6 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   Dataset data;
   Logger logger;
-  Sort sort;
   Verify verify;
 
   const real_t cycle = 2 * M_PI;
@@ -49,11 +47,9 @@ int main(int argc, char ** argv) {
 #endif
   Bounds globalBounds = treeMPI.allreduceBounds(localBounds);
   localBounds = treeMPI.partition(bodies,globalBounds);
-  bodies = sort.sortBodies(bodies);
   bodies = treeMPI.commBodies(bodies);
 #if IneJ
   treeMPI.partition(jbodies,globalBounds);
-  jbodies = sort.sortBodies(jbodies);
   jbodies = treeMPI.commBodies(jbodies);
 #endif
   Cells cells = build.buildTree(bodies, localBounds);
@@ -139,12 +135,6 @@ int main(int argc, char ** argv) {
 #endif
   pass.downwardPass(cells);
 
-#if 0
-  treeMPI.unpartition(bodies);
-  bodies = sort.sortBodies(bodies);
-  bodies = treeMPI.commBodies(bodies);
-  bodies = sort.unsort(bodies);
-#endif
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
   logger.printTitle("MPI direct sum");
