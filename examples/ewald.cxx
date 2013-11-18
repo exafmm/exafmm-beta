@@ -135,10 +135,10 @@ int main(int argc, char ** argv) {
   traversal.printTraversalData();
   logger.printPAPI();
 #if VTK
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) B->ICELL = 0;
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) B->IBODY = 0;
   for (C_iter C=cells.begin(); C!=cells.end(); C++) {
     Body body;
-    body.ICELL = 1;
+    body.IBODY = 1;
     body.X     = C->X;
     body.SRC   = 0;
     bodies.push_back(body);

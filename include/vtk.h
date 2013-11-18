@@ -126,12 +126,12 @@ public:
   void setGroupOfPoints(Bodies &bodies) {
     B_iter B0 = bodies.begin(); 
     B_iter BN = B0; 
-    int index = B0->ICELL;
+    int index = B0->IBODY;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, BN++) {
-      if (B->ICELL != index) {
+      if (B->IBODY != index) {
         setPoints(B0, BN);
         B0 = BN = B;
-        index = B->ICELL;
+        index = B->IBODY;
       }
     }
     setPoints(B0, BN);

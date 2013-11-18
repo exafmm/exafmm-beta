@@ -11,11 +11,8 @@ int omp_get_thread_num() {return 0;}
 //! Custom bucket sort for body and structures
 class Sort {
 private:
-  typedef Bodies::reverse_iterator B_ritr;                      //!< Reverse iterator of Bodies
-  std::vector<int> bucket;                                      //!< Bucket for sorting
   Bodies output;                                                //!< Output buffer
 
-#if 1
   //! Radixsorts the values using the keys
   void radixsort(int *key, int *value, int size) {
     const int bitStride = 8;                                    // Number of bits in one stride
@@ -86,14 +83,14 @@ private:
   }
 
 public:
-  //! Sort input accoring to cell index
-  Bodies sortBodies(Bodies &input) {
+  //! Sort input accoring to ibody
+  Bodies ibody(Bodies &input) {
     const int size = input.size();                              // Size of bodies vector
     int * key = new int [size];                                 // Allocate key array
     int * index = new int [size];                               // Allocate index array
     for (B_iter B=input.begin(); B!=input.end(); B++) {         // Loop over input bodies
       int i = B-input.begin();                                  //  Body index
-      key[i] = B->ICELL;                                        //  Copy ICELL to key array
+      key[i] = B->IBODY;                                        //  Copy IBODY to key array
       index[i] = i;                                             //  Initialize index array
     }                                                           // End loop over input bodies
     radixsort(key,index,size);                                  // Radix sort index according to key
@@ -106,43 +103,31 @@ public:
     delete[] index;                                             // Deallocate index array
     return output;                                              // Return output
   }
-#else
 
-public:
-  //! Sort input accoring to cell index
-  Bodies sortBodies(Bodies &input) {
-    int Imin = input[0].ICELL;                                  // Initialize minimum index
-    int Imax = input[0].ICELL;                                  // Initialize maximum index
-    for (B_iter B=input.begin(); B!=input.end(); B++) {         // Loop over vector
-      if      (B->ICELL < Imin) Imin = B->ICELL;                //  Set minimum index
-      else if (B->ICELL > Imax) Imax = B->ICELL;                //  Set maximum index
-    }                                                           // End loop over vector
-    int numBucket = Imax - Imin + 1;                            // Use range of indices as bucket size
-    if( numBucket > int(bucket.size()) ) {                      // If bucket size needs to be enlarged
-      bucket.resize(numBucket);                                 //  Resize bucket vector
-    }                                                           // End if for resize
-    if( input.size() > output.capacity() ) {                    // If buffer size need to be enlarged
-      output.reserve(input.size());                             //  Resize output buffer
-    }                                                           // End if for resize
-    output = input;                                             // Resize output
-    for (int i=0; i<numBucket; i++) bucket[i] = 0;              // Initialize bucket
-    for (B_iter B=input.begin(); B!=input.end(); B++) bucket[B->ICELL-Imin]++;// Fill bucket
-    for (int i=1; i<numBucket; i++) bucket[i] += bucket[i-1];   // Scan bucket
-    for (B_ritr B=input.rbegin(); B!=input.rend(); B++) {       // Loop over data backwards
-      bucket[B->ICELL-Imin]--;                                  //  Empty bucket
-      int inew = bucket[B->ICELL-Imin];                         //  Permutation index
-      output[inew] = *B;                                        //  Fill output
-    }                                                           // End loop over data
+  //! Sort input accoring to iproc
+  Bodies iproc(Bodies &input) {
+    const int size = input.size();                              // Size of bodies vector
+    int * key = new int [size];                                 // Allocate key array
+    int * index = new int [size];                               // Allocate index array
+    for (B_iter B=input.begin(); B!=input.end(); B++) {         // Loop over input bodies
+      int i = B-input.begin();                                  //  Body index
+      key[i] = B->IPROC;                                        //  Copy IPROC to key array
+      index[i] = i;                                             //  Initialize index array
+    }                                                           // End loop over input bodies
+    radixsort(key,index,size);                                  // Radix sort index according to key
+    output.resize(size);                                        // Resize output buffer
+    for (B_iter B=output.begin(); B!=output.end(); B++) {       // Loop over output boides
+      int i = B-output.begin();                                 //  Body index
+      *B = input[index[i]];                                     //  Permute according to index
+    }                                                           // End loop over output bodies
+    delete[] key;                                               // Deallocate key array
+    delete[] index;                                             // Deallocate index array
     return output;                                              // Return output
   }
-#endif
 
   //! Sort bodies back to original order
   Bodies unsort(Bodies &bodies) {
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->ICELL = B->IBODY;                                      //  Do this to sortaccroding to IPROC
-    }                                                           // End loop over bodies
-    bodies = sortBodies(bodies);                                // Sort bodies
+    bodies = ibody(bodies);                                     // Sort bodies
     return bodies;
   }
 };

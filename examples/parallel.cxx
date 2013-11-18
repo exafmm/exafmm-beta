@@ -173,12 +173,12 @@ int main(int argc, char ** argv) {
   logger.printPAPI();
 
 #if VTK
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->ICELL = 0;
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->IBODY = 0;
   for (int irank=0; irank<treeMPI.mpisize; irank++) {
     treeMPI.gettreeMPI(jcells,(treeMPI.mpirank+irank)%treeMPI.mpisize);
     for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
       Body body;
-      body.ICELL = 1;
+      body.IBODY = 1;
       body.X     = C->X;
       body.SRC   = 0;
       jbodies.push_back(body);

@@ -144,26 +144,20 @@ public:
       }                                                         //  End loop over dimensions
       B->IPROC = iX[0] + Npartition[0] * (iX[1] + iX[2] * Npartition[1]);//  Set send rank
       assert(0 <= B->IPROC && B->IPROC < mpisize);
-      B->ICELL = B->IPROC;                                      //  Do this to sort accroding to IPROC
     }                                                           // End loop over bodies
     stopTimer("Partition");                                     // Stop timer
     startTimer("Sort");                                         // Start timer
     Sort sort;                                                  // Instantiate sort class
-    bodies = sort.sortBodies(bodies);                           // Sort bodies according to ICELL
+    bodies = sort.iproc(bodies);                                // Sort bodies according to IPROC
     stopTimer("Sort");                                          // Stop timer
     return local;
   }
 
   //! Send bodies back to where they came from
   void unpartition(Bodies &bodies) {
-    startTimer("Unpartition");                                  // Start timer
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      B->ICELL = B->IPROC;                                      //  Do this to sortaccroding to IPROC
-    }                                                           // End loop over bodies
-    stopTimer("Unpartition");                                   // Stop timer
     startTimer("Sort");                                         // Start timer
     Sort sort;                                                  // Instantiate sort class
-    bodies = sort.sortBodies(bodies);                           // Sort bodies according to ICELL
+    bodies = sort.iproc(bodies);                                // Sort bodies according to IPROC
     stopTimer("Sort");                                          // Stop timer
   }
 

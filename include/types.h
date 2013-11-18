@@ -65,7 +65,6 @@ struct Source {
 struct Body : public Source {
   int   IBODY;                                                  //!< Initial body numbering for sorting back
   int   IPROC;                                                  //!< Initial process numbering for partitioning back
-  int   ICELL;                                                  //!< Cell index
   kvec4 TRG;                                                    //!< Scalar+vector3 target values
 };
 typedef AlignedAllocator<Body,SIMD_BYTES> BodyAllocator;        //!< Body alignment allocator
