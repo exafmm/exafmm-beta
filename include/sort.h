@@ -8,7 +8,7 @@ int omp_get_num_threads() {return 1;}
 int omp_get_thread_num() {return 0;}
 #endif
 
-//! Custom bucket sort for body and structures
+//! Custom radix sort for body and structures
 class Sort {
 private:
   Bodies output;                                                //!< Output buffer
