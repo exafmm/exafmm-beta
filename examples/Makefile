@@ -1,17 +1,17 @@
 include ../Makefile.include
 
-#LFLAGS	+= -DMASS # Use all positive sources
+LFLAGS	+= -DMASS # Use all positive sources
 #LFLAGS	+= -DIneJ # Different target and source points
 
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out --numBodies 10000
+	./a.out
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	mpirun -np 8 ./a.out --numBodies 10000
+	mpirun -np 8 ./a.out
 
 # Checking O(N) complexity
 complexity: serial.o $(OBJECTS)
