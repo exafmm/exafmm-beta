@@ -1364,4 +1364,121 @@ public:
 };
 #endif
 
+#if __bgp__
+#include <builtins.h>
+
+template<>
+class vec<2,double> {
+private:
+  double _Complex data;
+public:
+  vec(){}                                                       // Default constructor
+  vec(const double v) {                                         // Copy constructor scalar
+    data = __cmplx(v,v);
+  }
+  vec(const double _Complex v) {                                // Copy constructor SIMD register
+    data = v;
+  }
+  vec(const vec &v) {                                           // Copy constructor vector
+    data = v.data;
+  }
+  vec(const double a, const double b) {                         // Copy constructor (component-wise)
+    data = __cmplx(a,b);
+  }
+  ~vec(){}                                                      // Destructor
+  const vec &operator=(const double v) {                        // Scalar assignment
+    data = __cmplx(v,v);
+    return *this;
+  }
+  const vec &operator=(const vec &v) {                          // Vector assignment
+    data = v.data;
+    return *this;
+  }
+  const vec &operator+=(const vec &v) {                         // Vector compound assignment (add)
+    data = __fpadd(data,v.data);
+    return *this;
+  }
+  const vec &operator-=(const vec &v) {                         // Vector compound assignment (subtract)
+    data = __fpsub(data,v.data);
+    return *this;
+  }
+  const vec &operator*=(const vec &v) {                         // Vector compound assignment (multiply)
+    data = __fpmul(data,v.data);
+    return *this;
+  }
+  const vec &operator/=(const vec &v) {                         // Vector compound assignment (divide)
+    data = __fpmul(data,__fpre(v.data));
+    return *this;
+  }
+  const vec &operator&=(const vec &v) {                         // Vector compound assignment (bitwise and)
+    double _Complex zero = __cmplx(0.0,0.0);
+    double _Complex eps = __cmplx(1e-100,1e-100);
+    data = __fpsel(v.data-eps,zero,data);
+    return *this;
+  }
+  vec operator+(const vec &v) const {                           // Vector arithmetic (add)
+    return vec(__fpadd(data,v.data));
+  }
+  vec operator-(const vec &v) const {                           // Vector arithmetic (subtract)
+    return vec(__fpsub(data,v.data));
+  }
+  vec operator*(const vec &v) const {                           // Vector arithmetic (multiply)
+    return vec(__fpmul(data,v.data));
+  }
+  vec operator/(const vec &v) const {                           // Vector arithmetic (divide)
+    return vec(__fpmul(data,__fpre(v.data)));
+  }
+  vec operator>(const vec &v) const {                           // Vector arithmetic (greater than)
+    double _Complex zero = __cmplx(0.0,0.0);
+    double _Complex one = __cmplx(1.0,1.0);
+    double _Complex eps = __cmplx(1e-100,1e-100);
+    return vec(__fpsel(data-v.data-eps,zero,one));
+  }
+  vec operator<(const vec &v) const {                           // Vector arithmetic (less than)
+    double _Complex zero = __cmplx(0.0,0.0);
+    double _Complex one = __cmplx(1.0,1.0);
+    double _Complex eps = __cmplx(1e-100,1e-100);
+    return vec(__fpsel(data-v.data-eps,one,zero));
+  }
+  vec operator-() const {                                       // Vector arithmetic (negation)
+    return vec(__fpneg(data));
+  }
+  double &operator[](int i) {                                   // Indexing (lvalue)
+    double temp[2];
+    __stfpd(temp,data);
+    return temp[i];
+  }
+  const double &operator[](int i) const {                       // Indexing (rvalue)
+    double temp[2];
+    __stfpd(temp,data);
+    return temp[i];
+  }
+  friend std::ostream &operator<<(std::ostream &s, const vec &v) {// Component-wise output stream
+    for (int i=0; i<2; i++) s << v[i] << ' ';
+    return s;
+  }
+  friend double sum(const vec &v) {                             // Sum vector
+    return v[0] + v[1];
+  }
+  friend double norm(const vec &v) {                            // L2 norm squared
+    return v[0] * v[0] + v[1] * v[1];
+  }
+  friend vec min(const vec &v, const vec &w) {                  // Element-wise minimum
+    return vec(__fpsel(v.data-w.data,w.data,v.data));
+  }
+  friend vec max(const vec &v, const vec &w) {                  // Element-wise maximum
+    return vec(__fpsel(v.data-w.data,v.data,w.data));
+  }
+  friend vec rsqrt(const vec &v) {                              // Reciprocal square root
+#if NEWTON                                                      // Switch on Newton-Raphson correction
+    vec temp = vec(__fprsqrte(v.data));
+    temp *= (temp * temp * v - 3.0) * (-0.5);
+    return temp;
+#else
+    return vec(__fprsqrte(v.data));
+#endif
+  }
+};
+#endif
+
 #endif

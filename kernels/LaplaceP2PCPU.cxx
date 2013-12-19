@@ -10,7 +10,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
   int i = 0;
 #if USE_SIMD
   for ( ; i<=ni-NSIMD; i+=NSIMD) {
-    simdvec zero = 0;
+    simdvec zero = 0.0;
     ksimdvec pot = zero;
     ksimdvec ax = zero;
     ksimdvec ay = zero;
@@ -49,7 +49,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
     y2 = Bj[1].X[1];
     z2 = Bj[1].X[2];
     for (int j=0; j<nj-2; j++) {
-      invR = rsqrt(R2);
+      invR = rsqrt(R2); 
       invR &= R2 > zero;
       R2 = EPS2;
       x2 -= xi;
