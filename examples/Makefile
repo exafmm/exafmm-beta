@@ -6,7 +6,7 @@ LFLAGS	+= -DMASS # Use all positive sources
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-#	mpirun -np 1 ./a.out
+	mpirun -np 1 ./a.out
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
