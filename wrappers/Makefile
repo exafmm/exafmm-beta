@@ -13,6 +13,7 @@ charmm:
 	make libcharmm.a
 	$(FC) test_charmm.f90 -ggdb3 -Wall -fbounds-check -L. -lfmm -ltbb -lmpi_cxx -lstdc++ -lgomp
 #	mpirun -np 2 ./a.out ala3.fmm
+	make cleandat
 	mpirun -np 2 ./a.out water.fmm 10
 	make cleandat
 	mpirun -np 1 ./a.out water.fmm 10
