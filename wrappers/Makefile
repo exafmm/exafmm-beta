@@ -4,6 +4,11 @@ all:
 	make gromacs
 	make charmm
 
+petiga:
+	make libpetiga.a
+	$(CXX) test_petiga.cxx -L. -lfmm -ltbb
+	mpirun -np 2 ./a.out
+
 gromacs:
 	make libgromacs.a
 	$(CXX) test_gromacs.cxx -L. -lfmm -ltbb
@@ -17,6 +22,11 @@ charmm:
 	mpirun -np 2 ./a.out water.fmm 10
 	make cleandat
 	mpirun -np 1 ./a.out water.fmm 10
+
+libpetiga.a: petiga.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
+	ar ruv libpetiga.a $?
+	ranlib libpetiga.a
+	mv libpetiga.a libfmm.a
 
 libgromacs.a: gromacs.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
 	ar ruv libgromacs.a $?
