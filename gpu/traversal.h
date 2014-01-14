@@ -1,6 +1,6 @@
 #pragma once
 #include <algorithm>
-#include "kernel.h"
+#include "kernel2.h"
 #include "warpscan.h"
 
 #define MEM_PER_WARP (4096 * WARP_SIZE)

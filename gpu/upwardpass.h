@@ -1,5 +1,5 @@
 #pragma once
-#include "kernel.h"
+#include "kernel2.h"
 
 namespace {
   __device__ __forceinline__

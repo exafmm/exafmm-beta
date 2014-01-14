@@ -7,7 +7,7 @@ namespace {
     static const uint64_t F = Index<nx,ny,nz-1>::F * nz;
     static __host__ __device__ __forceinline__
     float power(const fvec3 &dX) {
-      return Index<nx,ny,nz-1>::power(dX) * dX[2] / nz;
+      return Index<nx,ny,nz-1>::power(dX) * dX[2];
     }
   };
 
@@ -17,7 +17,7 @@ namespace {
     static const uint64_t F = Index<nx,ny-1,0>::F * ny;
     static __host__ __device__ __forceinline__
     float power(const fvec3 &dX) {
-      return Index<nx,ny-1,0>::power(dX) * dX[1] / ny;
+      return Index<nx,ny-1,0>::power(dX) * dX[1];
     }
   };
 
@@ -27,7 +27,7 @@ namespace {
     static const uint64_t F = Index<nx-1,0,0>::F * nx;
     static __host__ __device__ __forceinline__
     float power(const fvec3 &dX) {
-      return Index<nx-1,0,0>::power(dX) * dX[0] / nx;
+      return Index<nx-1,0,0>::power(dX) * dX[0];
     }
   };
 
@@ -40,92 +40,124 @@ namespace {
   };
 
 
-  template<int n, int kx, int ky , int kz, int d>
+  template<int n>
   struct DerivativeTerm {
-    static const int coef = 1 - 2 * n;
+    static const int c = 1 - 2 * n;
     static __host__ __device__ __forceinline__
-    float kernel(const fvecP &C, const fvec3 &dX) {
-      return coef * dX[d] * C[Index<kx,ky,kz>::I];
+    void invR(float *invRN, const float &invR2) {
+      DerivativeTerm<n-1>::invR(invRN,invR2);
+      invRN[n] = c * invRN[n-1] * invR2;
     }
   };
 
-  template<int n, int kx, int ky , int kz>
-  struct DerivativeTerm<n,kx,ky,kz,-1> {
-    static const int coef = 1 - n;
+  template<>
+  struct DerivativeTerm<0> {
     static __host__ __device__ __forceinline__
-      float kernel(const fvecP &C, const fvec3&) {
-      return coef * C[Index<kx,ky,kz>::I];
-    }
+    void invR(float*, const float&) {}
   };
 
 
-  template<int nx, int ny, int nz, int kx=nx, int ky=ny, int kz=nz, int flag=5>
+  template<int depth, int nx, int ny, int nz, int flag>
   struct DerivativeSum {
-    static const int nextflag = 5 - (kz < nz || kz == 1);
-    static const int dim = kz == (nz-1) ? -1 : 2;
+    static const int cx = nx * (nx - 1) / 2;
+    static const int cy = ny * (ny - 1) / 2;
+    static const int cz = nz * (nz - 1) / 2;
     static const int n = nx + ny + nz;
+    static const int d = depth > 0 ? depth : 1;
     static __host__ __device__ __forceinline__
-    float loop(const fvecP &C, const fvec3 &dX) {
-      return DerivativeSum<nx,ny,nz,nx,ny,kz-1,nextflag>::loop(C,dX)
-	+ DerivativeTerm<n,nx,ny,kz-1,dim>::kernel(C,dX);
+    float loop(float *invRN, const fvec3 &dX) {
+      return Index<nx,ny,nz>::power(dX) * invRN[n+depth] / d
+	+ cx*DerivativeSum<depth+1,nx-2,ny,nz,(nx>3)*4+3>::loop(invRN,dX)
+	+ cy*DerivativeSum<depth+1,nx,ny-2,nz,(ny>3)*2+5>::loop(invRN,dX)
+	+ cz*DerivativeSum<depth+1,nx,ny,nz-2,(nz>3)  +6>::loop(invRN,dX);
     }
   };
 
-  template<int nx, int ny, int nz, int kx, int ky, int kz>
-  struct DerivativeSum<nx,ny,nz,kx,ky,kz,4> {
-    static const int nextflag = 3 - (ny == 0);
-    static __host__ __device__ __forceinline__
-    float loop(const fvecP &C, const fvec3 &dX) {
-      return DerivativeSum<nx,ny,nz,nx,ny,nz,nextflag>::loop(C,dX);
-    }
-  };
-
-  template<int nx, int ny, int nz, int kx, int ky, int kz>
-  struct DerivativeSum<nx,ny,nz,kx,ky,kz,3> {
-    static const int nextflag = 3 - (ky < ny || ky == 1);
-    static const int dim = ky == (ny-1) ? -1 : 1;
+  template<int depth, int nx, int ny, int nz>
+  struct DerivativeSum<depth,nx,ny,nz,6> {
+    static const int cx = nx * (nx - 1) / 2;
+    static const int cy = ny * (ny - 1) / 2;
     static const int n = nx + ny + nz;
+    static const int d = depth > 0 ? depth : 1;
     static __host__ __device__ __forceinline__
-    float loop(const fvecP &C, const fvec3 &dX) {
-      return DerivativeSum<nx,ny,nz,nx,ky-1,nz,nextflag>::loop(C,dX)
-	+ DerivativeTerm<n,nx,ky-1,nz,dim>::kernel(C,dX);
+    float loop(float *invRN, const fvec3 &dX) {
+      return Index<nx,ny,nz>::power(dX) * invRN[n+depth] / d
+	+ cx*DerivativeSum<depth+1,nx-2,ny,nz,(nx>3)*4+2>::loop(invRN,dX)
+	+ cy*DerivativeSum<depth+1,nx,ny-2,nz,(ny>3)*2+4>::loop(invRN,dX);
     }
   };
 
-  template<int nx, int ny, int nz, int kx, int ky, int kz>
-  struct DerivativeSum<nx,ny,nz,kx,ky,kz,2> {
-    static const int nextflag = 1 - (nx == 0);
-    static __host__ __device__ __forceinline__
-    float loop(const fvecP &C, const fvec3 &dX) {
-      return DerivativeSum<nx,ny,nz,nx,ny,nz,nextflag>::loop(C,dX);
-    }
-  };
-
-  template<int nx, int ny, int nz, int kx, int ky, int kz>
-  struct DerivativeSum<nx,ny,nz,kx,ky,kz,1> {
-    static const int nextflag = 1 - (kx < nx || kx == 1);
-    static const int dim = kx == (nx-1) ? -1 : 0;
+  template<int depth, int nx, int ny, int nz>
+  struct DerivativeSum<depth,nx,ny,nz,5> {
+    static const int cx = nx * (nx - 1) / 2;
+    static const int cz = nz * (nz - 1) / 2;
     static const int n = nx + ny + nz;
+    static const int d = depth > 0 ? depth : 1;
     static __host__ __device__ __forceinline__
-    float loop(const fvecP &C, const fvec3 &dX) {
-      return DerivativeSum<nx,ny,nz,kx-1,ny,nz,nextflag>::loop(C,dX)
-	+ DerivativeTerm<n,kx-1,ny,nz,dim>::kernel(C,dX);
+    float loop(float *invRN, const fvec3 &dX) {
+      return Index<nx,ny,nz>::power(dX) * invRN[n+depth] / d
+	+ cx*DerivativeSum<depth+1,nx-2,ny,nz,(nx>3)*4+1>::loop(invRN,dX)
+	+ cz*DerivativeSum<depth+1,nx,ny,nz-2,(nz>3)  +4>::loop(invRN,dX);
     }
   };
 
-  template<int nx, int ny, int nz, int kx, int ky, int kz>
-  struct DerivativeSum<nx,ny,nz,kx,ky,kz,0> {
+  template<int depth, int nx, int ny, int nz>
+  struct DerivativeSum<depth,nx,ny,nz,4> {
+    static const int cx = nx * (nx - 1) / 2;
+    static const int n = nx + ny + nz;
+    static const int d = depth > 0 ? depth : 1;
     static __host__ __device__ __forceinline__
-    float loop(const fvecP&, const fvec3&) {
-      return 0;
+    float loop(float *invRN, const fvec3 &dX) {
+      return Index<nx,ny,nz>::power(dX) * invRN[n+depth] / d
+	+ cx*DerivativeSum<depth+1,nx-2,ny,nz,(nx>3)*4>::loop(invRN,dX);
     }
   };
 
-  template<int nx, int ny, int nz, int kx, int ky>
-  struct DerivativeSum<nx,ny,nz,kx,ky,0,5> {
+  template<int depth, int nx, int ny, int nz>
+  struct DerivativeSum<depth,nx,ny,nz,3> {
+    static const int cy = ny * (ny - 1) / 2;
+    static const int cz = nz * (nz - 1) / 2;
+    static const int n = nx + ny + nz;
+    static const int d = depth > 0 ? depth : 1;
     static __host__ __device__ __forceinline__
-    float loop(const fvecP &C, const fvec3 &dX) {
-      return DerivativeSum<nx,ny,nz,nx,ny,0,4>::loop(C,dX);
+    float loop(float *invRN, const fvec3 &dX) {
+      return Index<nx,ny,nz>::power(dX) * invRN[n+depth] / d
+	+ cy*DerivativeSum<depth+1,nx,ny-2,nz,(ny>3)*2+1>::loop(invRN,dX)
+	+ cz*DerivativeSum<depth+1,nx,ny,nz-2,(nz>3)  +2>::loop(invRN,dX);
+    }
+  };
+
+  template<int depth, int nx, int ny, int nz>
+  struct DerivativeSum<depth,nx,ny,nz,2> {
+    static const int cy = ny * (ny - 1) / 2;
+    static const int n = nx + ny + nz;
+    static const int d = depth > 0 ? depth : 1;
+    static __host__ __device__ __forceinline__
+    float loop(float *invRN, const fvec3 &dX) {
+      return Index<nx,ny,nz>::power(dX) * invRN[n+depth] / d
+	+ cy*DerivativeSum<depth+1,nx,ny-2,nz,(ny>3)*2>::loop(invRN,dX);
+    }
+  };
+
+  template<int depth, int nx, int ny, int nz>
+  struct DerivativeSum<depth,nx,ny,nz,1> {
+    static const int cz = nz * (nz - 1) / 2;
+    static const int n = nx + ny + nz;
+    static const int d = depth > 0 ? depth : 1;
+    static __host__ __device__ __forceinline__
+    float loop(float *invRN, const fvec3 &dX) {
+      return Index<nx,ny,nz>::power(dX) * invRN[n+depth] / d
+	+ cz*DerivativeSum<depth+1,nx,ny,nz-2,(nz>3)>::loop(invRN,dX);
+    }
+  };
+
+  template<int depth, int nx, int ny, int nz>
+  struct DerivativeSum<depth,nx,ny,nz,0> {
+    static const int n = nx + ny + nz;
+    static const int d = depth > 0 ? depth : 1;
+    static __host__ __device__ __forceinline__
+    float loop(float *invRN, const fvec3 &dX) {
+      return Index<nx,ny,nz>::power(dX) * invRN[n+depth] / d;
     }
   };
 
@@ -135,7 +167,9 @@ namespace {
     static __host__ __device__ __forceinline__
     float kernel(const fvec3 &dX, const fvecP &M) {
       return MultipoleSum<nx,ny,nz,kx,ky,kz-1>::kernel(dX,M)
-	+ Index<nx-kx,ny-ky,nz-kz>::power(dX)*M[Index<kx,ky,kz>::I];
+	+ Index<nx-kx,ny-ky,nz-kz>::power(dX)
+	/ Index<nx-kx,ny-ky,nz-kz>::F
+	* M[Index<kx,ky,kz>::I];
     }
   };
 
@@ -144,7 +178,9 @@ namespace {
     static __host__ __device__ __forceinline__
     float kernel(const fvec3 &dX, const fvecP &M) {
       return MultipoleSum<nx,ny,nz,kx,ky-1,nz>::kernel(dX,M)
-	+ Index<nx-kx,ny-ky,nz>::power(dX)*M[Index<kx,ky,0>::I];
+	+ Index<nx-kx,ny-ky,nz>::power(dX)
+	/ Index<nx-kx,ny-ky,nz>::F
+	* M[Index<kx,ky,0>::I];
     }
   };
 
@@ -153,7 +189,9 @@ namespace {
     static __host__ __device__ __forceinline__
     float kernel(const fvec3 &dX, const fvecP &M) {
       return MultipoleSum<nx,ny,nz,kx-1,ny,nz>::kernel(dX,M)
-	+ Index<nx-kx,ny,nz>::power(dX)*M[Index<kx,0,0>::I];
+	+ Index<nx-kx,ny,nz>::power(dX)
+	/ Index<nx-kx,ny,nz>::F
+	* M[Index<kx,0,0>::I];
     }
   };
 
@@ -161,7 +199,9 @@ namespace {
   struct MultipoleSum<nx,ny,nz,0,0,0> {
     static __host__ __device__ __forceinline__
     float kernel(const fvec3 &dX, const fvecP &M) {
-      return Index<nx,ny,nz>::power(dX)*M[Index<0,0,0>::I];
+      return Index<nx,ny,nz>::power(dX)
+	/ Index<nx,ny,nz>::F
+	* M[Index<0,0,0>::I];
     }
   };
 
@@ -172,10 +212,11 @@ namespace {
     static const int x = nx > 0;
     static const int y = ny > 0;
     static const int z = nz > 0;
+    static const int flag = (nx>1)*4+(ny>1)*2+(nz>1);
     static __host__ __device__ __forceinline__
     void P2M(fvecP &M, const fvec3 &dX) {
       Kernels<nx,ny+1,nz-1>::P2M(M,dX);
-      M[Index<nx,ny,nz>::I] = Index<nx,ny,nz>::power(dX) * M[0];
+      M[Index<nx,ny,nz>::I] = Index<nx,ny,nz>::power(dX) / Index<nx,ny,nz>::F * M[0];
     }
     static __host__ __device__ __forceinline__
     void M2M(fvecP &MI, const fvec3 &dX, const fvecP &MJ) {
@@ -183,13 +224,13 @@ namespace {
       MI[Index<nx,ny,nz>::I] += MultipoleSum<nx,ny,nz>::kernel(dX,MJ);
     }
     static __host__ __device__ __forceinline__
-    void M2P(fvec4 &TRG, fvecP &C, const fvec3 &dX, const float &invR2, const fvecP &M) {
-      Kernels<nx,ny+1,nz-1>::M2P(TRG,C,dX,invR2,M);
-      C[Index<nx,ny,nz>::I] = DerivativeSum<nx,ny,nz>::loop(C,dX) / n * invR2;
-      TRG[0] -= M[Index<nx,ny,nz>::I] * C[Index<nx,ny,nz>::I] * Index<nx,ny,nz>::F;
-      TRG[1] += M[Index<(nx-1)*x,ny,nz>::I] * C[Index<nx,ny,nz>::I] * Index<nx,ny,nz>::F * x;
-      TRG[2] += M[Index<nx,(ny-1)*y,nz>::I] * C[Index<nx,ny,nz>::I] * Index<nx,ny,nz>::F * y;
-      TRG[3] += M[Index<nx,ny,(nz-1)*z>::I] * C[Index<nx,ny,nz>::I] * Index<nx,ny,nz>::F * z;
+    void M2P(fvec4 &TRG, float *invRN, const fvec3 &dX, const fvecP &M) {
+      Kernels<nx,ny+1,nz-1>::M2P(TRG,invRN,dX,M);
+      const float C = DerivativeSum<0,nx,ny,nz,flag>::loop(invRN,dX);
+      TRG[0] -= M[Index<nx,ny,nz>::I] * C;
+      TRG[1] += M[Index<(nx-1)*x,ny,nz>::I] * C * x;
+      TRG[2] += M[Index<nx,(ny-1)*y,nz>::I] * C * y;
+      TRG[3] += M[Index<nx,ny,(nz-1)*z>::I] * C * z;
     }
   };
 
@@ -198,10 +239,11 @@ namespace {
     static const int n = nx + ny;
     static const int x = nx > 0;
     static const int y = ny > 0;
+    static const int flag = (nx>1)*4+(ny>1)*2;
     static __host__ __device__ __forceinline__
     void P2M(fvecP &M, const fvec3 &dX) {
       Kernels<nx+1,0,ny-1>::P2M(M,dX);
-      M[Index<nx,ny,0>::I] = Index<nx,ny,0>::power(dX) * M[0];
+      M[Index<nx,ny,0>::I] = Index<nx,ny,0>::power(dX) / Index<nx,ny,0>::F * M[0];
     }
     static __host__ __device__ __forceinline__
     void M2M(fvecP &MI, const fvec3 &dX, const fvecP &MJ) {
@@ -209,22 +251,23 @@ namespace {
       MI[Index<nx,ny,0>::I] += MultipoleSum<nx,ny,0>::kernel(dX,MJ);
     }
     static __host__ __device__ __forceinline__
-    void M2P(fvec4 &TRG, fvecP &C, const fvec3 &dX, const float &invR2, const fvecP &M) {
-      Kernels<nx+1,0,ny-1>::M2P(TRG,C,dX,invR2,M);
-      C[Index<nx,ny,0>::I] = DerivativeSum<nx,ny,0>::loop(C,dX) / n * invR2;
-      TRG[0] -= M[Index<nx,ny,0>::I] * C[Index<nx,ny,0>::I] * Index<nx,ny,0>::F;
-      TRG[1] += M[Index<(nx-1)*x,ny,0>::I] * C[Index<nx,ny,0>::I] * Index<nx,ny,0>::F * x;
-      TRG[2] += M[Index<nx,(ny-1)*y,0>::I] * C[Index<nx,ny,0>::I] * Index<nx,ny,0>::F * y;
+    void M2P(fvec4 &TRG, float *invRN, const fvec3 &dX, const fvecP &M) {
+      Kernels<nx+1,0,ny-1>::M2P(TRG,invRN,dX,M);
+      const float C = DerivativeSum<0,nx,ny,0,flag>::loop(invRN,dX);
+      TRG[0] -= M[Index<nx,ny,0>::I] * C;
+      TRG[1] += M[Index<(nx-1)*x,ny,0>::I] * C * x;
+      TRG[2] += M[Index<nx,(ny-1)*y,0>::I] * C * y;
     }
   };
 
   template<int nx>
   struct Kernels<nx,0,0> {
     static const int n = nx;
+    static const int flag = (nx>1)*4;
     static __host__ __device__ __forceinline__
     void P2M(fvecP &M, const fvec3 &dX) {
       Kernels<0,0,nx-1>::P2M(M,dX);
-      M[Index<nx,0,0>::I] = Index<nx,0,0>::power(dX) * M[0];
+      M[Index<nx,0,0>::I] = Index<nx,0,0>::power(dX) / Index<nx,0,0>::F * M[0];
     }
     static __host__ __device__ __forceinline__
     void M2M(fvecP &MI, const fvec3 &dX, const fvecP &MJ) {
@@ -232,11 +275,11 @@ namespace {
       MI[Index<nx,0,0>::I] += MultipoleSum<nx,0,0>::kernel(dX,MJ);
     }
     static __host__ __device__ __forceinline__
-    void M2P(fvec4 &TRG, fvecP &C, const fvec3 &dX, const float &invR2, const fvecP &M) {
-      Kernels<0,0,nx-1>::M2P(TRG,C,dX,invR2,M);
-      C[Index<nx,0,0>::I] = DerivativeSum<nx,0,0>::loop(C,dX) / n * invR2;
-      TRG[0] -= M[Index<nx,0,0>::I] * C[Index<nx,0,0>::I] * Index<nx,0,0>::F;
-      TRG[1] += M[Index<nx-1,0,0>::I] * C[Index<nx,0,0>::I] * Index<nx,0,0>::F;
+    void M2P(fvec4 &TRG, float *invRN, const fvec3 &dX, const fvecP &M) {
+      Kernels<0,0,nx-1>::M2P(TRG,invRN,dX,M);
+      const float C = DerivativeSum<0,nx,0,0,flag>::loop(invRN,dX);
+      TRG[0] -= M[Index<nx,0,0>::I] * C;
+      TRG[1] += M[Index<nx-1,0,0>::I] * C;
     }
   };
 
@@ -249,8 +292,8 @@ namespace {
       MI[Index<0,0,0>::I] += MultipoleSum<0,0,0>::kernel(dX,MJ);
     }
     static __host__ __device__ __forceinline__
-    void M2P(fvec4 &TRG, fvecP &C, const fvec3&, const float&, const fvecP&) {
-      TRG[0] -= C[0];
+    void M2P(fvec4 &TRG, float *invRN, const fvec3&, const fvecP&) {
+      TRG[0] -= invRN[0];
     }
   };
 
@@ -331,19 +374,21 @@ namespace {
     qR[1] = q12 * dX[0] + q22 * dX[1] + q23 * dX[2];
     qR[2] = q13 * dX[0] + q23 * dX[1] + q33 * dX[2];
     const float qRR = qR[0] * dX[0] + qR[1] * dX[1] + qR[2] * dX[2];
+    float temp = acc[0];
     acc[0] -= invR1 + invR3 * q + invR5 * qRR;
     const float C = invR3 + invR5 * q + invR7 * qRR;
     acc[1] += C * dX[0] + 2 * invR5 * qR[0];
     acc[2] += C * dX[1] + 2 * invR5 * qR[1];
     acc[3] += C * dX[2] + 2 * invR5 * qR[2];
 #else
+    const float invR2 = invR * invR;
     const float M0 = M[0];
-    const float invR1 = M0 * invR;
-    float invR2 = invR * invR;
-    fvecP C;
-    C[0] = invR1;
+    float invRN[P];
+    invRN[0] = M0 * invR;
+    DerivativeTerm<P-1>::invR(invRN,invR2);
     M[0] = 1;
-    Kernels<0,0,P-1>::M2P(acc,C,dX,invR2,M);
+    float temp = acc[0];
+    Kernels<0,0,P-1>::M2P(acc,invRN,dX,M);
     M[0] = M0;
 #endif
     return acc;
