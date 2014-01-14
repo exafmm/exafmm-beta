@@ -72,19 +72,17 @@ private:
       } else {                                                  //  If many cells are in the range
 	C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;         //   Split range of Ci cells in half
 	C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;         //   Split range of Cj cells in half
-	/* FIXME: Here we need to have two task_group statements for the DAG recorder to work */
+	mk_task_group;                                           //   Initialize task group
 	{
-	  task_group;                                           //   Initialize task group
 	  TraverseRange leftBranch(traversal, CiBegin, CiMid, CjBegin, CjMid, mutual);// Instantiate recursive functor
-	  create_task(leftBranch);                              //    Ci:former Cj:former
+	  create_taskc(leftBranch);                              //    Ci:former Cj:former
 	  TraverseRange rightBranch(traversal, CiMid, CiEnd, CjMid, CjEnd, mutual);// Instantiate recursive functor
 	  rightBranch();                                        //    Ci:latter Cj:latter
 	  wait_tasks;                                           //    Synchronize task group
 	}
 	{
-	  task_group;                                           //   Initialize task group
 	  TraverseRange leftBranch(traversal, CiBegin, CiMid, CjMid, CjEnd, mutual);// Instantiate recursive functor
-	  create_task(leftBranch);                              //    Ci:former Cj:latter
+	  create_taskc(leftBranch);                              //    Ci:former Cj:latter
 	  if (!mutual || CiBegin != CjBegin) {                  //    Exclude mutual & self interaction
             TraverseRange rightBranch(traversal, CiMid, CiEnd, CjBegin, CjMid, mutual);// Instantiate recursive functor
 	    rightBranch();                                      //    Ci:latter Cj:former
@@ -241,9 +239,9 @@ public:
 	Ci2->BODY = Ci->BODY + Ci->NBODY / 2;                   //  Set begin iterator to handle latter half
 	Ci2->NBODY = Ci->NBODY - Ci->NBODY / 2;                 //  Set range to handle latter half
 	Ci->NBODY = Ci->NBODY / 2;                              //  Set range to handle first half
-	task_group;                                             //  Initialize task group
+	mk_task_group;                                             //  Initialize task group
         DirectRecursion leftBranch(Ci, Cj, prange, cycle);      //  Instantiate recursive functor
-	create_task(leftBranch);                                //  Create new task for left branch
+	create_taskc(leftBranch);                                //  Create new task for left branch
 	DirectRecursion rightBranch(Ci2, Cj, prange, cycle);    //  Instantiate recursive functor
 	rightBranch();                                          //  Use old task for right branch
 	wait_tasks;                                             //  Synchronize task group

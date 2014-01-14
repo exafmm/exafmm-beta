@@ -96,7 +96,7 @@ public:
   void evaluate(Cells &cells, Cells &jcells) {
     startTimer("Van der Waals");                                // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator of source cells
-    task_group;                                                 // Intitialize tasks
+    mk_task_group;                                                 // Intitialize tasks
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
 	Neighbor neighbor(this, Ci, Cj, Cj);                    //   Instantiate recursive functor

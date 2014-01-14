@@ -26,9 +26,9 @@ private:
       } else {                                                  //  Else if number of elements are large
 	B_iter BiMid = BiBegin + (BiEnd - BiBegin) / 2;         //   Middle iterator
 	Bounds bounds2 = bounds;                                //   Copy bounds
-	task_group;                                             //   Initialize tasks
+	mk_task_group;                                             //   Initialize tasks
         BoundsRecursion leftBranch(BiBegin, BiMid, bounds, nspawn);// Instantiate recursive functor
-	create_task(leftBranch);                                //   Create new task for left branch
+	create_taskc(leftBranch);                                //   Create new task for left branch
         BoundsRecursion rightBranch(BiMid, BiEnd, bounds2, nspawn);// Instantiate recursive functor
 	rightBranch();                                          //   Use old task for right branch
 	wait_tasks;                                             //   Synchronize tasks

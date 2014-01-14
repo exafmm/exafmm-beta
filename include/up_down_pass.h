@@ -18,10 +18,10 @@ private:
     SetRcrit(C_iter _C, C_iter _C0, real_t _c, real_t _theta) : // Constructor
       C(_C), C0(_C0), c(_c), theta(_theta) {}                   // Initialize variables
     void operator() () {                                        // Overload operator()
-      task_group;                                               //  Initialize tasks
+      mk_task_group;                                               //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	SetRcrit setRcrit(CC, C0, c, theta);                    //   Initialize recusive functor
-	create_task(setRcrit);                                  //   Create new task for recursive call
+	create_taskc(setRcrit);                                  //   Create new task for recursive call
       }                                                         //  End loop over child cells
       wait_tasks;                                               //  Synchronize tasks
 #if Cartesian
@@ -48,10 +48,10 @@ private:
     PostOrderTraversal(C_iter _C, C_iter _C0) :                 // Constructor
       C(_C), C0(_C0) {}                                         // Initialize variables
     void operator() () {                                        // Overload operator()
-      task_group;                                               //  Initialize tasks
+      mk_task_group;                                               //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	PostOrderTraversal postOrderTraversal(CC, C0);          //    Instantiate recursive functor
-	create_task(postOrderTraversal);                        //    Create new task for recursive call
+	create_taskc(postOrderTraversal);                        //    Create new task for recursive call
       }                                                         //   End loop over child cells
       wait_tasks;                                               //   Synchronize tasks
       C->RMAX = 0;                                              //  Initialzie Rmax
@@ -71,10 +71,10 @@ private:
     void operator() () {                                        // Overload operator()
       L2L(C,C0);                                                //  L2L kernel
       if (C->NCHILD==0) L2P(C);                                 //  L2P kernel
-      task_group;                                               //  Initialize tasks
+      mk_task_group;                                               //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	PreOrderTraversal preOrderTraversal(CC, C0);            //   Instantiate recursive functor
-	create_task(preOrderTraversal);                         //   Create new task for recursive call
+	create_taskc(preOrderTraversal);                         //   Create new task for recursive call
       }                                                         //  End loop over chlid cells
       wait_tasks;                                               //  Synchronize tasks
     }                                                           // End overload operator()
@@ -108,10 +108,10 @@ public:
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Root cell
       if (C0->NCHILD == 0) L2P(C0);                             //  If root is the only cell do L2P
-      task_group;                                               //  Initialize tasks
+      mk_task_group;                                               //  Initialize tasks
       for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells
 	PreOrderTraversal preOrderTraversal(CC, C0);            //    Instantiate recursive functor
-	create_task(preOrderTraversal);                         //    Recursive call for downward pass
+	create_taskc(preOrderTraversal);                         //    Recursive call for downward pass
       }                                                         //   End loop over child cells
       wait_tasks;                                               //   Synchronize tasks
     }                                                           // End if for empty cell vector

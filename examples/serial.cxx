@@ -32,6 +32,9 @@ int main(int argc, char ** argv) {
   logger.printTitle("FMM Parameters");
   args.print(logger.stringLength, P, 0);
   for (int t = 0; t < args.repeat; t++) {
+#if DAG_RECORDER == 2
+    dr_start(0);
+#endif
     logger.printTitle("FMM Profiling");
     logger.startTimer("Total FMM");
     logger.startPAPI();
@@ -76,7 +79,13 @@ int main(int argc, char ** argv) {
     build.printTreeData(cells);
     traversal.printTraversalData();
     logger.printPAPI();
+#if DAG_RECORDER == 2
+    dr_stop();
+#endif
   }
+#if DAG_RECORDER == 2
+  dr_dump();
+#endif
 #if VTK
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) B->IBODY = 0;
   for (C_iter C=cells.begin(); C!=cells.end(); C++) {

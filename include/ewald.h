@@ -134,7 +134,7 @@ public:
   void realPart(Cells & cells, Cells & jcells) {
     startTimer("Ewald real part");                              // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator of source cells
-    task_group;                                                 // Intitialize tasks
+    mk_task_group;                                                 // Intitialize tasks
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
 	Neighbor neighbor(this, Ci, Cj, Cj);                    //   Instantiate recursive functor
