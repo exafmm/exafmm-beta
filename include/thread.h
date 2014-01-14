@@ -1,29 +1,32 @@
 #ifndef thread_h
 #define thread_h
 
-/* 
+#if TBB
 
-   With new MassiveThreads, we can just include
-   <mtbb/task_group.h> instead of
-   <tbb/task_group.h> and you can use the same
-   task_group class for BOTH TBB and
-   MassiveThreads (and Qthreads and Nanos++, for
-   that matter).  Switch them by defining one of
-   TO_TBB, TO_MTHREAD, TO_QTHREAD, and TO_NANOX in
-   the command line.
+/* if you want to use TBB and do not want to
+   install MassiveThreads */
 
-   tpswitch/tpswitch.h provides create_taskc, 
-   create_taskc_if, etc.
- */
+#include <tbb/task_group.h>
+#define mk_task_group        tbb::task_group __tg__
+#define wait_tasks           __tg__.wait()
+#define create_taskc(E)      __tg__.run(E)
+#define create_taskc_if(x, E) if (x) { create_taskc(E); } else { E(); }
 
+#else
 
-#if 1
-// These two lines are all we need
+/* this works for TBB, MassiveThreads, Nanos++, Qthreads,
+   and OpenMP, provided you have installed MassiveThreads.
+   switch between them by giving one of 
+   -DTO_TBB, -DTO_MTHREAD, -DTO_QTHREAD, -DTO_NANOX, or
+   -DTO_OMP */
+
 #include <mtbb/task_group.h>
 #include <tpswitch/tpswitch.h>
 
+#endif
 
-#else
+
+#if 0
 
 // You can erase everything below
 
@@ -55,6 +58,6 @@ typedef mtbb::task_group task_group_t;
 
 #endif /* COMMON_CLIKH */
 
-#endif
+#endif	/* the end of #if 0 */
 
 #endif

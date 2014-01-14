@@ -47,13 +47,20 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
 ### Intel TBB flags : TBB is available from http://threadingbuildingblocks.org/download.php
-LFLAGS	+= -DTO_TBB -ltbb
+LFLAGS	+= -DTBB -ltbb
 
 ### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
-#LFLAGS	+= -DTO_MTHREAD -lmyth-native
+#LFLAGS	+= -DTO_SERIAL
+#LFLAGS	+= -DTO_MTHREAD_NATIVE -lmyth-native
+#LFLAGS	+= -DTO_MTHREAD -lmyth
+#LFLAGS	+= -DTO_TBB -ltbb
+#LFLAGS	+= -DTO_QTHREAD -lqthread
+#LFLAGS	+= -DTO_OMP -fopenmp
 
 ### DAG Recorder (available in MassiveThreads; add respective directories
 ### in MassiveThreads installation directory to -I and -L)
+### if you use this option, do NOT define TBB and DO define
+### one of TO_XXX (e.g., TO_TBB)
 #LFLAGS  += -DDAG_RECORDER=2 -ldr
 
 ### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
