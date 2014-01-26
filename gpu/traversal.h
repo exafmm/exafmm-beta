@@ -401,7 +401,7 @@ public:
     interactions[1] = maxP2P;
     interactions[2] = sumM2P * 1.0 / numBodies;
     interactions[3] = maxM2P;
-    float flops = (interactions[0] * 20 + interactions[2] * 64) * numBodies / dt / 1e12;
+    float flops = (interactions[0] * 20 + interactions[2] * 2 * pow(P,3)) * numBodies / dt / 1e12;
     fprintf(stdout,"Traverse             : %.7f s (%.7f TFlops)\n",dt,flops);
 
     sourceCells.unbind(texCell);

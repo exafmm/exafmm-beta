@@ -62,7 +62,7 @@ int main(int argc, char ** argv) {
 					      targetRange, sourceCells, sourceCenter,
 					      Multipole, levelRange);
   double dt = get_time() - t0;
-  float flops = (interactions[0] * 20 + interactions[2] * 64) * numBodies / dt / 1e12;
+  float flops = (interactions[0] * 20 + interactions[2] * 2 * pow(P,3)) * numBodies / dt / 1e12;
   fprintf(stdout,"--- Total runtime ----------------\n");
   fprintf(stdout,"Total FMM            : %.7f s (%.7f TFlops)\n",dt,flops);
   const int numTarget = min(512,numBodies); // Number of threads per block will be set to this value

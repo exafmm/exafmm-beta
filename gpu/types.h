@@ -15,7 +15,7 @@
 #include "vec.h"
 
 #if MASS
-const int P = 3;
+const int P = 4;
 #else
 const int P = 4;
 #endif

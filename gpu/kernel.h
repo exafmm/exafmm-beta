@@ -283,6 +283,31 @@ namespace {
     }
   };
 
+#if MASS
+  template<>
+  struct Kernels<0,0,2> {
+    static __host__ __device__ __forceinline__
+    void P2M(fvecP &M, const fvec3 &dX) {
+      Kernels<0,1,1>::P2M(M,dX);
+      M[Index<0,0,2>::I] = Index<0,0,2>::power(dX) / Index<0,0,2>::F * M[0];
+    }
+    static __host__ __device__ __forceinline__
+    void M2M(fvecP &MI, const fvec3 &dX, const fvecP &MJ) {
+      Kernels<0,1,1>::M2M(MI,dX,MJ);
+      MI[Index<0,0,2>::I] += MultipoleSum<0,0,2>::kernel(dX,MJ);
+    }
+    static __host__ __device__ __forceinline__
+    void M2P(fvec4 &TRG, float *invRN, const fvec3 &dX, const fvecP &M) {
+      TRG[0] -= invRN[0] + invRN[1] * (M[4] + M[7] + M[9])
+	+ invRN[2] * (M[4] * dX[0] * dX[0] + M[5] * dX[0] * dX[1] + M[6] * dX[0] * dX[2]
+		    + M[7] * dX[1] * dX[1] + M[8] * dX[1] * dX[2] + M[9] * dX[2] * dX[2]);
+      TRG[1] += dX[0] * invRN[1];
+      TRG[2] += dX[1] * invRN[1];
+      TRG[3] += dX[2] * invRN[1];
+    }
+  };
+#endif
+
   template<>
   struct Kernels<0,0,0> {
     static __host__ __device__ __forceinline__
@@ -356,41 +381,14 @@ namespace {
     const fvec3 dX = pos_i - pos_j;
     const float R2 = norm(dX) + EPS2;
     const float invR = rsqrtf(R2);
-#if 0
-    const float invR2 = -invR * invR;
-    const float invR1 = M[0] * invR;
-    const float invR3 = invR2 * invR1;
-    const float invR5 = 3 * invR2 * invR3;
-    const float invR7 = 5 * invR2 * invR5;
-    const float q11 = M[4];
-    const float q12 = 0.5f * M[5];
-    const float q13 = 0.5f * M[6];
-    const float q22 = M[7];
-    const float q23 = 0.5f * M[8];
-    const float q33 = M[9];
-    const float q = q11 + q22 + q33;
-    fvec3 qR;
-    qR[0] = q11 * dX[0] + q12 * dX[1] + q13 * dX[2];
-    qR[1] = q12 * dX[0] + q22 * dX[1] + q23 * dX[2];
-    qR[2] = q13 * dX[0] + q23 * dX[1] + q33 * dX[2];
-    const float qRR = qR[0] * dX[0] + qR[1] * dX[1] + qR[2] * dX[2];
-    float temp = acc[0];
-    acc[0] -= invR1 + invR3 * q + invR5 * qRR;
-    const float C = invR3 + invR5 * q + invR7 * qRR;
-    acc[1] += C * dX[0] + 2 * invR5 * qR[0];
-    acc[2] += C * dX[1] + 2 * invR5 * qR[1];
-    acc[3] += C * dX[2] + 2 * invR5 * qR[2];
-#else
     const float invR2 = invR * invR;
-    const float M0 = M[0];
     float invRN[P];
-    invRN[0] = M0 * invR;
+    invRN[0] = M[0] * invR;
     DerivativeTerm<P-1>::invR(invRN,invR2);
+    const float M0 = M[0];
     M[0] = 1;
-    float temp = acc[0];
     Kernels<0,0,P-1>::M2P(acc,invRN,dX,M);
     M[0] = M0;
-#endif
     return acc;
   }
 }
