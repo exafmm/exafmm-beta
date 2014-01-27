@@ -1,5 +1,7 @@
 include ../Makefile.include
 
+LFLAGS += -DMASS -DIneJ
+
 all:
 	make gromacs
 	make charmm
@@ -8,6 +10,10 @@ petiga:
 	make libpetiga.a
 	$(CXX) test_petiga.cxx -L. -lfmm -ltbb
 	mpirun -np 2 ./a.out
+
+petiga2: petiga2.o $(OBJECTS)
+	$(CXX) $? $(LFLAGS)
+	mpirun -np 8 ./a.out
 
 gromacs:
 	make libgromacs.a
