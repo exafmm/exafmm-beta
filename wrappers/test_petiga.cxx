@@ -46,7 +46,7 @@ int main(int argc, char ** argv) {
     xj[i] = drand48() - .5;
     yj[i] = drand48() - .5;
     zj[i] = drand48() - .5;
-    vj[i] = drand48() - .5;
+    vj[i] = 1. / nj;
   }
 
   FMM_Init();

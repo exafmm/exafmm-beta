@@ -87,10 +87,10 @@ extern "C" void Direct_Laplace(int ni, double * xi, double * yi, double * zi, do
     z2[i] = zj[i];
     v2[i] = vj[i];
   }
-  int n2 = nj;
   if (treeMPI->mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
   for (int irank=0; irank<treeMPI->mpisize; irank++) {
     if (treeMPI->mpirank == 0) std::cout << "Direct loop          : " << irank+1 << "/" << treeMPI->mpisize << std::endl;
+    int n2 = nj;
     MPI_Shift(x2, nj, treeMPI->mpisize, treeMPI->mpirank);
     nj = n2;
     MPI_Shift(y2, nj, treeMPI->mpisize, treeMPI->mpirank);
@@ -154,15 +154,60 @@ int main(int argc, char ** argv) {
     vj[i] = drand48() - .5;
   }
 
-  const real_t cycle = 2 * M_PI;
   FMM_Init();
   verify.verbose = treeMPI->mpirank == 0;
+  Bodies bodies(ni);
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B-bodies.begin();
+    B->X[0] = xi[i];
+    B->X[1] = yi[i];
+    B->X[2] = zi[i];
+    B->SRC  = vi[i];
+  }
+  Bodies jbodies(nj);
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    int i = B-jbodies.begin();
+    B->X[0] = xj[i];
+    B->X[1] = yj[i];
+    B->X[2] = zj[i];
+    B->SRC  = vj[i];
+  }
+  localBounds = boundbox->getBounds(bodies);
+  localBounds = boundbox->getBounds(jbodies,localBounds);
+  Bounds globalBounds = treeMPI->allreduceBounds(localBounds);
+  localBounds = treeMPI->partition(bodies,globalBounds);
+  bodies = treeMPI->commBodies(bodies);
+  treeMPI->partition(jbodies,globalBounds);
+  jbodies = treeMPI->commBodies(jbodies);
+  Cells cells = build->buildTree(bodies, localBounds);
+  pass->upwardPass(cells);
+  Cells jcells = build->buildTree(jbodies, localBounds);
+  pass->upwardPass(jcells);
+
+  ni = bodies.size();
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B-bodies.begin();
+    xi[i] = B->X[0];
+    yi[i] = B->X[1];
+    zi[i] = B->X[2];
+    vi[i] = B->SRC;
+  }
+  nj = jbodies.size();
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    int i = B-jbodies.begin();
+    xj[i] = B->X[0];
+    yj[i] = B->X[1];
+    zj[i] = B->X[2];
+    vj[i] = B->SRC;
+  }
+
   logger->printTitle("FMM Parameters");
   args->print(logger->stringLength, P, treeMPI->mpirank);
   logger->printTitle("FMM Profiling");
   logger->startTimer("Total FMM");
   logger->startPAPI();
-  Bodies bodies(ni);
+  const real_t cycle = 2 * M_PI;
+  bodies.resize(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     B->X[0]   = xi[i];
@@ -175,7 +220,7 @@ int main(int argc, char ** argv) {
     B->TRG[3] = 0;
     B->IBODY = i;
   }
-  Bodies jbodies(nj);
+  jbodies.resize(nj);
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     int i = B-jbodies.begin();
     B->X[0]   = xj[i];
@@ -185,18 +230,10 @@ int main(int argc, char ** argv) {
     B->TRG    = 0;
     B->IBODY = i;
   }
-  Bounds localBounds = boundbox->getBounds(bodies);
-  localBounds = boundbox->getBounds(jbodies,localBounds);
-  Bounds globalBounds = treeMPI->allreduceBounds(localBounds);
-  localBounds = treeMPI->partition(bodies,globalBounds);
-  bodies = treeMPI->commBodies(bodies);
-  treeMPI->partition(jbodies,globalBounds);
-  jbodies = treeMPI->commBodies(jbodies);
-  Cells cells = build->buildTree(bodies, localBounds);
+  cells = build->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
-  Cells jcells = build->buildTree(jbodies, localBounds);
+  jcells = build->buildTree(jbodies, localBounds);
   pass->upwardPass(jcells);
-
   treeMPI->setLET(jcells,localBounds,cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
@@ -244,16 +281,14 @@ int main(int argc, char ** argv) {
   traversal->printTraversalData();
   logger->printPAPI();
 
-  B_iter B2=bodies2.begin();
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++,B2++) {
-    int i = B->IBODY;
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B-bodies.begin();
     xi[i] = B->X[0];
     yi[i] = B->X[1];
     zi[i] = B->X[2];
     vi[i] = B->TRG[0];
-    std::cout << B-bodies.begin() << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;
   }
-  ni = 100;
+  ni = bodies.size();
   for (int i=0; i<ni; i++) {
     v2[i] = 0;
   }

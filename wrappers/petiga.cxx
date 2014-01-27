@@ -195,10 +195,10 @@ extern "C" void Direct_Laplace(int ni, double * xi, double * yi, double * zi, do
     z2[i] = zj[i];
     v2[i] = vj[i];
   }
-  int n2 = nj;
   if (treeMPI->mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
   for (int irank=0; irank<treeMPI->mpisize; irank++) {
     if (treeMPI->mpirank == 0) std::cout << "Direct loop          : " << irank+1 << "/" << treeMPI->mpisize << std::endl;
+    int n2 = nj;
     MPI_Shift(x2, nj, treeMPI->mpisize, treeMPI->mpirank);
     nj = n2;
     MPI_Shift(y2, nj, treeMPI->mpisize, treeMPI->mpirank);
