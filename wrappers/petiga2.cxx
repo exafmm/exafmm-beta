@@ -17,17 +17,13 @@ UpDownPass *pass;
 Traversal *traversal;
 TreeMPI *treeMPI;
 
-int main() {
+extern "C" void FMM_Init() {
   const int ncrit = 16;
   const int nspawn = 1000;
   const int images = 0;
   const real_t theta = 0.4;
   args = new Args;
   logger = new Logger;
-  Dataset data;
-  Verify verify;
-
-  const real_t cycle = 2 * M_PI;
   boundbox = new BoundBox(nspawn);
   build = new BuildTree(ncrit, nspawn);
   pass = new UpDownPass(theta);
@@ -42,8 +38,17 @@ int main() {
     pass->verbose = true;
     traversal->verbose = true;
     treeMPI->verbose = true;
-    verify.verbose = true;
   }
+  logger->printTitle("Initial Parameters");
+  args->print(logger->stringLength, P, treeMPI->mpirank);
+}
+
+int main() {
+  Dataset data;
+  Verify verify;
+  const real_t cycle = 2 * M_PI;
+  FMM_Init();
+  verify.verbose = treeMPI->mpirank == 0;
   logger->printTitle("FMM Parameters");
   args->print(logger->stringLength, P, treeMPI->mpirank);
   logger->printTitle("FMM Profiling");
