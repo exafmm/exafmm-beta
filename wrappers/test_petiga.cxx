@@ -8,96 +8,77 @@
 
 extern "C" void FMM_Init();
 extern "C" void FMM_Finalize();
-extern "C" void FMM_Partition(int & n, int * index, double * x, double * q);
-extern "C" void FMM_Laplace(int n, double * x, double * q, double * p, double * f);
-extern "C" void Direct_Laplace(int n, double * x, double * q, double * p, double * f);
+extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, double * vi,
+			      int & nj, double * xj, double * yj, double * zj, double * vj);
+extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
+			    int nj, double * xj, double * yj, double * zj, double * vj);
+extern "C" void Direct_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
+			       int nj, double * xj, double * yj, double * zj, double * vj);
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
-  int Ni = 500;
+  int ni = 500;
+  int nj = 1000;
   int stringLength = 20;
-  int * index = new int [Nmax];
-  double * x = new double [3*Nmax];
-  double * q = new double [Nmax];
-  double * p = new double [Nmax];
-  double * f = new double [3*Nmax];
-  double * p2 = new double [Nmax];
-  double * f2 = new double [3*Nmax];
+  double * xi = new double [Nmax];
+  double * yi = new double [Nmax];
+  double * zi = new double [Nmax];
+  double * vi = new double [Nmax];
+  double * xj = new double [Nmax];
+  double * yj = new double [Nmax];
+  double * zj = new double [Nmax];
+  double * vj = new double [Nmax];
+  double * v2 = new double [Nmax];
 
   int mpisize, mpirank;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
 
-#if 1
   srand48(mpirank);
-  double average = 0;
-  for (int i=0; i<Ni; i++) {
-    x[3*i+0] = drand48() - .5;
-    x[3*i+1] = drand48() - .5;
-    x[3*i+2] = drand48() - .5;
-    p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+  for (int i=0; i<ni; i++) {
+    xi[i] = drand48() - .5;
+    yi[i] = drand48() - .5;
+    zi[i] = drand48() - .5;
+    vi[i] = 0;
   }
-  for (int i=0; i<Ni; i++) {
-    q[i] = drand48() - .5;
-    average += q[i];
+  for (int i=0; i<nj; i++) {
+    xj[i] = drand48() - .5;
+    yj[i] = drand48() - .5;
+    zj[i] = drand48() - .5;
+    vj[i] = drand48() - .5;
   }
-  average /= Ni;
-  for (int i=0; i<Ni; i++) {
-    q[i] -= average;
-  }
-#else
-  std::stringstream name;
-  name << "source" << std::setfill('0') << std::setw(4)
-       << mpirank << ".dat";
-  std::ifstream file(name.str().c_str(),std::ios::in);
-  for (int i=0; i<Ni; i++) {
-    file >> x[3*i+0];
-    file >> x[3*i+1];
-    file >> x[3*i+2];
-    file >> q[i];
-    index[i] = i + mpirank*Ni;
-  }
-  file.close();
-#endif
 
   FMM_Init();
-  FMM_Partition(Ni, index, x, q);
-  FMM_Laplace(Ni, x, q, p, f);
-  for (int i=0; i<Ni; i++) {
-    p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
+  FMM_Partition(ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
+  FMM_Laplace(ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
+  for (int i=0; i<ni; i++) {
+    v2[i] = 0;
   }
-  Direct_Laplace(Ni, x, q, p2, f2);
-  double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
-  for (int i=0; i<Ni; i++) {
-    potSum  += p[i]  * q[i];
-    potSum2 += p2[i] * q[i];
-    accDif  += (f[3*i+0] - f2[3*i+0]) * (f[3*i+0] - f2[3*i+0])
-      + (f[3*i+1] - f2[3*i+1]) * (f[3*i+1] - f2[3*i+1])
-      + (f[3*i+2] - f2[3*i+2]) * (f[3*i+2] - f2[3*i+2]);
-    accNrm  += f2[3*i+0] * f2[3*i+0] + f2[3*i+1] * f2[3*i+1] + f2[3*i+2] * f2[3*i+2];
+  Direct_Laplace(ni, xi, yi, zi, v2, nj, xj, yj, zj, vj);
+  double potDif = 0, potNrm = 0;
+  for (int i=0; i<ni; i++) {
+    potDif += (vi[i] - v2[i]) * (vi[i] - v2[i]);
+    potNrm += v2[i] * v2[i];
   }
-  double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
-  MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
-  double potNrmGlob = potSumGlob * potSumGlob;
+  double potDifGlob, potNrmGlob;
+  MPI_Reduce(&potDif,  &potDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&potNrm,  &potNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   if (mpirank == 0) {
     std::cout << "--- FMM vs. Direct ---------------" << std::endl;
     std::cout << std::setw(stringLength) << std::left << std::scientific
   	      << "Rel. L2 Error (pot)" << " : " << std::sqrt(potDifGlob/potNrmGlob) << std::endl;
-    std::cout << std::setw(stringLength) << std::left
-	      << "Rel. L2 Error (acc)" << " : " << std::sqrt(accDifGlob/accNrmGlob) << std::endl;
   }
 
-  delete[] x;
-  delete[] q;
-  delete[] p;
-  delete[] f;
-  delete[] p2;
-  delete[] f2;
+  delete[] xi;
+  delete[] yi;
+  delete[] zi;
+  delete[] vi;
+  delete[] xj;
+  delete[] yj;
+  delete[] zj;
+  delete[] vj;
+  delete[] v2;
   FMM_Finalize();
   MPI_Finalize();
 }

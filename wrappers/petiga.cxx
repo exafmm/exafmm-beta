@@ -2,7 +2,6 @@
 #include "args.h"
 #include "bound_box.h"
 #include "build_tree.h"
-#include "ewald.h"
 #include "traversal.h"
 #include "up_down_pass.h"
 
@@ -58,63 +57,95 @@ extern "C" void FMM_Finalize() {
   delete treeMPI;
 }
 
-extern "C" void FMM_Partition(int & n, int * index, double * x, double * q) {
+extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, double * vi,
+			      int & nj, double * xj, double * yj, double * zj, double * vj) {
   logger->printTitle("Partition Profiling");
-  Bodies bodies(n);
+  Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0];
-    B->X[1] = x[3*i+1];
-    B->X[2] = x[3*i+2];
-    B->SRC = q[i];
-    B->IBODY = index[i];
+    B->X[0] = xi[i];
+    B->X[1] = yi[i];
+    B->X[2] = zi[i];
+    B->SRC  = vi[i];
+  }
+  Bodies jbodies(nj);
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    int i = B-jbodies.begin();
+    B->X[0] = xj[i];
+    B->X[1] = yj[i];
+    B->X[2] = zj[i];
+    B->SRC  = vj[i];
   }
   localBounds = boundbox->getBounds(bodies);
+  localBounds = boundbox->getBounds(jbodies,localBounds);
   Bounds globalBounds = treeMPI->allreduceBounds(localBounds);
   localBounds = treeMPI->partition(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
+  treeMPI->partition(jbodies,globalBounds);
+  jbodies = treeMPI->commBodies(jbodies);
   Cells cells = build->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
+  Cells jcells = build->buildTree(jbodies, localBounds);
+  pass->upwardPass(jcells);
 
+  ni = bodies.size();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    index[i] = B->IBODY;
-    x[3*i+0] = B->X[0];
-    x[3*i+1] = B->X[1];
-    x[3*i+2] = B->X[2];
-    q[i]     = B->SRC;
+    xi[i] = B->X[0];
+    yi[i] = B->X[1];
+    zi[i] = B->X[2];
+    vi[i] = B->SRC;
   }
-  n = bodies.size();
+  nj = jbodies.size();
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    int i = B-jbodies.begin();
+    xj[i] = B->X[0];
+    yj[i] = B->X[1];
+    zj[i] = B->X[2];
+    vj[i] = B->SRC;
+  }
 }
 
-extern "C" void FMM_Laplace(int n, double * x, double * q, double * p, double * f) {
-  args->numBodies = n;
+extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
+			    int nj, double * xj, double * yj, double * zj, double * vj) {
+  args->numBodies = ni;
   logger->printTitle("FMM Parameters");
   args->print(logger->stringLength, P, treeMPI->mpirank);
   logger->printTitle("FMM Profiling");
   logger->startTimer("Total FMM");
   logger->startPAPI();
   const real_t cycle = 0.0;
-  Bodies bodies(n);
+  Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0];
-    B->X[1] = x[3*i+1];
-    B->X[2] = x[3*i+2];
-    B->SRC = q[i];
-    B->TRG[0] = p[i];
-    B->TRG[1] = f[3*i+0];
-    B->TRG[2] = f[3*i+1];
-    B->TRG[3] = f[3*i+2];
+    B->X[0]   = xi[i];
+    B->X[1]   = yi[i];
+    B->X[2]   = zi[i];
+    B->SRC    = 1;
+    B->TRG[0] = vi[i];
+    B->TRG[1] = 0;
+    B->TRG[2] = 0;
+    B->TRG[3] = 0;
+    B->IBODY = i;
+  }
+  Bodies jbodies(nj);
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    int i = B-jbodies.begin();
+    B->X[0]   = xj[i];
+    B->X[1]   = yj[i];
+    B->X[2]   = zj[i];
+    B->SRC    = vj[i];
+    B->TRG    = 0;
     B->IBODY = i;
   }
   Cells cells = build->buildTree(bodies, localBounds);
   pass->upwardPass(cells);
+  Cells jcells = build->buildTree(jbodies, localBounds);
+  pass->upwardPass(jcells);
   treeMPI->setLET(cells, localBounds, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
-  traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
-  Cells jcells;
+  traversal->dualTreeTraversal(cells, jcells, cycle, args->mutual);
   for (int irank=1; irank<treeMPI->mpisize; irank++) {
     treeMPI->getLET(jcells,(treeMPI->mpirank+irank)%treeMPI->mpisize);
     traversal->dualTreeTraversal(cells, jcells, cycle);
@@ -126,10 +157,7 @@ extern "C" void FMM_Laplace(int n, double * x, double * q, double * p, double * 
   logger->printTime("Total FMM");
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY;
-    p[i]     = B->TRG[0];
-    f[3*i+0] = B->TRG[1];
-    f[3*i+1] = B->TRG[2];
-    f[3*i+2] = B->TRG[3];
+    vi[i] = B->TRG[0];
   }
 }
 
@@ -154,43 +182,46 @@ void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   delete[] buf;
 }
 
-extern "C" void Direct_Laplace(int Ni, double * x, double * q, double * p, double * f) {
+extern "C" void Direct_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
+			       int nj, double * xj, double * yj, double * zj, double * vj) {
   const int Nmax = 1000000;
-  double * x2 = new double [3*Nmax];
-  double * q2 = new double [Nmax];
-  for (int i=0; i<Ni; i++) {
-    x2[3*i+0] = x[3*i+0];
-    x2[3*i+1] = x[3*i+1];
-    x2[3*i+2] = x[3*i+2];
-    q2[i] = q[i];
+  double * x2 = new double [Nmax];
+  double * y2 = new double [Nmax];
+  double * z2 = new double [Nmax];
+  double * v2 = new double [Nmax];
+  for (int i=0; i<nj; i++) {
+    x2[i] = xj[i];
+    y2[i] = yj[i];
+    z2[i] = zj[i];
+    v2[i] = vj[i];
   }
-  int Nj = Ni, Nj3 = 3 * Ni;
+  int n2 = nj;
   if (treeMPI->mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
   for (int irank=0; irank<treeMPI->mpisize; irank++) {
     if (treeMPI->mpirank == 0) std::cout << "Direct loop          : " << irank+1 << "/" << treeMPI->mpisize << std::endl;
-    MPI_Shift(x2, Nj3, treeMPI->mpisize, treeMPI->mpirank);
-    MPI_Shift(q2, Nj,  treeMPI->mpisize, treeMPI->mpirank);
-    for (int i=0; i<Ni; i++) {
-      double pp = 0, fx = 0, fy = 0, fz = 0;
-      for (int j=0; j<Nj; j++) {
-	double dx = x[3*i+0] - x2[3*j+0];
-	double dy = x[3*i+1] - x2[3*j+1];
-	double dz = x[3*i+2] - x2[3*j+2];
+    MPI_Shift(x2, nj, treeMPI->mpisize, treeMPI->mpirank);
+    nj = n2;
+    MPI_Shift(y2, nj, treeMPI->mpisize, treeMPI->mpirank);
+    nj = n2;
+    MPI_Shift(z2, nj, treeMPI->mpisize, treeMPI->mpirank);
+    nj = n2;
+    MPI_Shift(v2, nj, treeMPI->mpisize, treeMPI->mpirank);
+    for (int i=0; i<ni; i++) {
+      double pp = 0;
+      for (int j=0; j<nj; j++) {
+	double dx = xi[i] - x2[j];
+	double dy = yi[i] - y2[j];
+	double dz = zi[i] - z2[j];
 	double R2 = dx * dx + dy * dy + dz * dz;
 	double invR = 1 / std::sqrt(R2);
 	if (R2 == 0) invR = 0;
-	double invR3 = q2[j] * invR * invR * invR;
-	pp += q2[j] * invR;
-	fx += dx * invR3;
-	fy += dy * invR3;
-	fz += dz * invR3;
+	pp += v2[j] * invR;
       }
-      p[i] += pp;
-      f[3*i+0] -= fx;
-      f[3*i+1] -= fy;
-      f[3*i+2] -= fz;
+      vi[i] += pp;
     }
   }
   delete[] x2;
-  delete[] q2;
+  delete[] y2;
+  delete[] z2;
+  delete[] v2;
 }
