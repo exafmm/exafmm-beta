@@ -41,98 +41,26 @@ int main(int argc, char ** argv) {
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, treeMPI.mpirank, treeMPI.mpisize);
   Bounds localBounds = boundbox.getBounds(bodies);
-#if IneJ
   Bodies jbodies = data.initBodies(args.numBodies, args.distribution, treeMPI.mpirank+treeMPI.mpisize, treeMPI.mpisize);
   localBounds = boundbox.getBounds(jbodies,localBounds);
-#endif
   Bounds globalBounds = treeMPI.allreduceBounds(localBounds);
   localBounds = treeMPI.partition(bodies,globalBounds);
   bodies = treeMPI.commBodies(bodies);
-#if IneJ
   treeMPI.partition(jbodies,globalBounds);
   jbodies = treeMPI.commBodies(jbodies);
-#endif
   Cells cells = build.buildTree(bodies, localBounds);
   pass.upwardPass(cells);
-#if IneJ
   Cells jcells = build.buildTree(jbodies, localBounds);
   pass.upwardPass(jcells);
-#endif
 
-#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree : Step 1
-#if IneJ
   treeMPI.setLET(jcells,localBounds,cycle);
-#else
-  treeMPI.setLET(cells,localBounds,cycle);
-#endif
   treeMPI.commBodies();
   treeMPI.commCells();
-#if IneJ
   traversal.dualTreeTraversal(cells, jcells, cycle);
-#else
-  traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-  Bodies jbodies = bodies;
-  Cells jcells;
-#endif
   for (int irank=1; irank<treeMPI.mpisize; irank++) {
     treeMPI.getLET(jcells,(treeMPI.mpirank+irank)%treeMPI.mpisize);
-
-#if 0 // Set to 1 for debugging full treeMPI communication : Step 2 (treeMPI must be set to full tree)
-    treeMPI.shiftBodies(jbodies); // This will overwrite recvBodies. (define recvBodies2 in body_mpi.h to avoid this)
-    Cells icells;
-    build.buildTree(jbodies, icells);
-    pass.upwardPass(icells);
-    assert( icells.size() == jcells.size() );
-    CellQueue Qi, Qj;
-    Qi.push(icells.begin());
-    Qj.push(jcells.begin());
-    int ic=0;
-    while (!Qi.empty()) {
-      C_iter Ci=Qi.front(); Qi.pop();
-      C_iter Cj=Qj.front(); Qj.pop();
-      if (Ci->ICELL != Cj->ICELL) {
-	std::cout << treeMPI.mpirank << " ICELL  : " << Ci->ICELL << " " << Cj->ICELL << std::endl;
-	break;
-      }
-      if (Ci->NCHILD != Cj->NCHILD) {
-	std::cout << treeMPI.mpirank << " NCHILD : " << Ci->NCHILD << " " << Cj->NCHILD << std::endl;
-	break;
-      }
-      if (Ci->NCHILD == 0 && Cj->NCHILD == 0 && Ci->NBODY != Cj->NBODY) {
-	std::cout << treeMPI.mpirank << " NBODY  : " << Ci->NBODY << " " << Cj->NBODY << std::endl;
-	break;
-      }
-      real_t sumi = 0, sumj = 0;
-      if (Ci->NCHILD == 0) {
-	for (int i=0; i<Ci->NBODY; i++) {
-	  B_iter Bi = Ci->BODY+i;
-	  B_iter Bj = Cj->BODY+i;
-	  sumi += Bi->X[0];
-	  sumj += Bj->X[0];
-	}
-      }
-      if (fabs(sumi-sumj)/fabs(sumi) > 1e-6) {
-	std::cout << treeMPI.mpirank << " " << Ci->ICELL << " " << sumi << " " << sumj << std::endl;
-      }
-      assert( fabs(sumi-sumj)/fabs(sumi) < 1e-6 );
-      for (int i=0; i<Ci->NCHILD; i++) Qi.push(icells.begin()+Ci->ICHILD+i);
-      for (int i=0; i<Cj->NCHILD; i++) Qj.push(jcells.begin()+Cj->ICHILD+i);
-      ic++;
-    }
-    assert( ic == int(icells.size()) );
-#endif
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
-#else
-  for (int irank=0; irank<treeMPI.mpisize; irank++) {
-    treeMPI.shiftBodies(jbodies);
-    jcells.clear();
-    localBounds = boundbox.getBounds(jbodies);
-    jcells = build.buildTree(jbodies, localBounds);
-    pass.upwardPass(jcells);
-    traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
-  }
-#endif
   pass.downwardPass(cells);
 
   logger.stopPAPI();
