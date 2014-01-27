@@ -43,6 +43,16 @@ extern "C" void FMM_Init() {
   args->print(logger->stringLength, P, treeMPI->mpirank);
 }
 
+extern "C" void FMM_Finalize() {
+  delete args;
+  delete logger;
+  delete boundbox;
+  delete build;
+  delete pass;
+  delete traversal;
+  delete treeMPI;
+}
+
 int main() {
   Dataset data;
   Verify verify;
@@ -114,12 +124,6 @@ int main() {
   build->printTreeData(cells);
   traversal->printTraversalData();
   logger->printPAPI();
-  delete args;
-  delete logger;
-  delete boundbox;
-  delete build;
-  delete pass;
-  delete traversal;
-  delete treeMPI;
+  FMM_Finalize();
   return 0;
 }
