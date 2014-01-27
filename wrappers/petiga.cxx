@@ -15,7 +15,7 @@ Traversal *traversal;
 TreeMPI *treeMPI;
 
 extern "C" void FMM_Init() {
-  const int ncrit = 32;
+  const int ncrit = 16;
   const int nspawn = 1000;
   const int images = 0;
   const real_t theta = 0.4;

@@ -11,10 +11,6 @@ petiga:
 	$(CXX) test_petiga.cxx -L. -lfmm -ltbb
 	mpirun -np 2 ./a.out
 
-petiga2: petiga2.o $(OBJECTS)
-	$(CXX) $? $(LFLAGS)
-	mpirun -np 8 ./a.out
-
 gromacs:
 	make libgromacs.a
 	$(CXX) test_gromacs.cxx -L. -lfmm -ltbb
