@@ -53,9 +53,42 @@ extern "C" void FMM_Finalize() {
   delete treeMPI;
 }
 
-int main() {
+int main(int argc, char ** argv) {
   Dataset data;
   Verify verify;
+  const int Nmax = 2000000;
+  int ni = 125000;
+  int nj = 125000;
+  int stringLength = 20;
+  double * xi = new double [Nmax];
+  double * yi = new double [Nmax];
+  double * zi = new double [Nmax];
+  double * vi = new double [Nmax];
+  double * xj = new double [Nmax];
+  double * yj = new double [Nmax];
+  double * zj = new double [Nmax];
+  double * vj = new double [Nmax];
+  double * v2 = new double [Nmax];
+
+  int mpisize, mpirank;
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+
+  srand48(mpirank);
+  for (int i=0; i<ni; i++) {
+    xi[i] = drand48() - .5;
+    yi[i] = drand48() - .5;
+    zi[i] = drand48() - .5;
+    vi[i] = 0;
+  }
+  for (int i=0; i<nj; i++) {
+    xj[i] = drand48() - .5;
+    yj[i] = drand48() - .5;
+    zj[i] = drand48() - .5;
+    vj[i] = drand48() - .5;
+  }
+
   const real_t cycle = 2 * M_PI;
   FMM_Init();
   verify.verbose = treeMPI->mpirank == 0;
@@ -124,6 +157,16 @@ int main() {
   build->printTreeData(cells);
   traversal->printTraversalData();
   logger->printPAPI();
+  delete[] xi;
+  delete[] yi;
+  delete[] zi;
+  delete[] vi;
+  delete[] xj;
+  delete[] yj;
+  delete[] zj;
+  delete[] vj;
+  delete[] v2;
   FMM_Finalize();
+  MPI_Finalize();
   return 0;
 }
