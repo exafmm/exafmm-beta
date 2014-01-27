@@ -7,9 +7,6 @@
 #include "traversal.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#if VTK
-#include "vtk.h"
-#endif
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
@@ -99,29 +96,5 @@ int main(int argc, char ** argv) {
   build.printTreeData(cells);
   traversal.printTraversalData();
   logger.printPAPI();
-
-#if VTK
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->IBODY = 0;
-  for (int irank=0; irank<treeMPI.mpisize; irank++) {
-    treeMPI.gettreeMPI(jcells,(treeMPI.mpirank+irank)%treeMPI.mpisize);
-    for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
-      Body body;
-      body.IBODY = 1;
-      body.X     = C->X;
-      body.SRC   = 0;
-      jbodies.push_back(body);
-    }
-  }
-  vtk3DPlot vtk;
-  vtk.setBounds(M_PI,0);
-  vtk.setGroupOfPoints(jbodies);
-  for (int i=1; i<treeMPI.mpisize; i++) {
-    treeMPI.shiftBodies(jbodies);
-    vtk.setGroupOfPoints(jbodies);
-  }
-  if (treeMPI.mpirank == 0) {
-    vtk.plot();
-  }
-#endif
   return 0;
 }
