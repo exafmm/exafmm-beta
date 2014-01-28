@@ -44,26 +44,23 @@ LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 
 ### Debugging flags
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
-#LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
+#LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L (slows down execution)
 
-### Thread model flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
-#LFLAGS	+= -DTO_SERIAL
-LFLAGS	+= -DTO_TBB -ltbb
-#LFLAGS	+= -DTO_MTHREAD_NATIVE -lmyth-native
-#LFLAGS	+= -DTO_MTHREAD -lmyth
-#LFLAGS	+= -DTO_QTHREAD -lqthread
-#LFLAGS	+= -DTO_OMP
+### Thread model flags
+#LFLAGS	+= -DTO_SERIAL # This will cause ExaFMM to execute on a single core per MPI process
+LFLAGS	+= -DTO_TBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
+#LFLAGS	+= -DTO_MTHREAD_NATIVE -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -DTO_MTHREAD -lmyth # MassiveThreads is available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -DTO_QTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
+#LFLAGS	+= -DTO_OMP # OpenMP is included in most modern compilers
 
-### DAG Recorder (available in MassiveThreads; add respective directories
-### in MassiveThreads installation directory to -I and -L)
-### if you use this option, do NOT define TBB and DO define
-### one of TO_XXX (e.g., TO_TBB)
+### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/
 #LFLAGS  += -DDAG_RECORDER=2 -ldr
 
 ### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
 #LFLAGS	+= -DPAPI -lpapi
 
-### Trace flags
+### Trace flags : This tracing tool is part of ExaFMM
 #LFLAGS	+= -DTRACE
 
 ### VTK flags : VTK is available from http://www.vtk.org/VTK/resources/software.html
