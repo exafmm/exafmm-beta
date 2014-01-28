@@ -60,17 +60,17 @@ private:
 
   //! Cycle counter
   inline uint64_t get_cycle() const {
-    uint32_t low = 0, high = 0;
-    asm volatile ("rdtsc" : "=a" (low), "=d" (high));
-    return (uint64_t(high) << 32) | uint64_t(low);
+    uint32_t low = 0, high = 0;                                 // Define low and high 32 bits of cycle counter
+    asm volatile ("rdtsc" : "=a" (low), "=d" (high));           // Call rdtsc
+    return (uint64_t(high) << 32) | uint64_t(low);              // Return 64 bit cycle counter
   }
 
   //! Cycle counter with thread ID
   inline uint64_t get_cycle(uint32_t * id) const {
-    uint32_t low = 0, high = 0;
-    if (!id) return 0;
-    asm volatile ("rdtscp" : "=a" (low), "=d" (high), "=c" (*id)); 
-    return (uint64_t(high) << 32) | uint64_t(low);
+    uint32_t low = 0, high = 0;                                 // Define low and high 32 bits of cycle counter
+    if (!id) return 0;                                          // Count only for valid thread ID
+    asm volatile ("rdtscp" : "=a" (low), "=d" (high), "=c" (*id));// Call rdtscp
+    return (uint64_t(high) << 32) | uint64_t(low);              // Return 64 bit cycle counter
   }
 
 public:
