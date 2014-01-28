@@ -46,16 +46,13 @@ LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
 
-### Intel TBB flags : TBB is available from http://threadingbuildingblocks.org/download.php
-LFLAGS	+= -DTBB -ltbb
-
-### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
+### Thread model flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -DTO_SERIAL
+LFLAGS	+= -DTO_TBB -ltbb
 #LFLAGS	+= -DTO_MTHREAD_NATIVE -lmyth-native
 #LFLAGS	+= -DTO_MTHREAD -lmyth
-#LFLAGS	+= -DTO_TBB -ltbb
 #LFLAGS	+= -DTO_QTHREAD -lqthread
-#LFLAGS	+= -DTO_OMP -fopenmp
+#LFLAGS	+= -DTO_OMP
 
 ### DAG Recorder (available in MassiveThreads; add respective directories
 ### in MassiveThreads installation directory to -I and -L)

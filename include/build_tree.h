@@ -1,7 +1,7 @@
 #ifndef build_tree_h
 #define build_tree_h
 #include "logger.h"
-#include "thread.h"
+#include <tpswitch/tpswitch.h>
 #include "types.h"
 
 class BuildTree : public Logger {
