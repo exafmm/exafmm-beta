@@ -25,7 +25,7 @@ namespace {
     return R2 < fabsf(MAC) || sourceData.nbody() < 3;
   }
 
-  template<bool FULL> __device__
+  __device__
   void approxAcc(fvec4 acc_i[2],
 		 const fvec3 pos_i[2],
 		 const int cellIdx,
@@ -33,7 +33,7 @@ namespace {
     fvec4 M4[NVEC4];
     float M[4*NVEC4];
     const fvec4 Xj = tex1Dfetch(texCellCenter, cellIdx);
-    if (FULL || cellIdx >= 0) {
+    if (cellIdx >= 0) {
 #pragma unroll
       for (int i=0; i<NVEC4; i++) M4[i] = tex1Dfetch(texMultipole, NVEC4*cellIdx+i);
     } else {
@@ -55,7 +55,39 @@ namespace {
   }
 
   __device__
+  void approxAcc(fvec4 acc_i[2],
+		 fvec4 M4[NVEC4],
+		 float M[4*NVEC4],
+                 const fvec3 pos_i[2],
+                 const int cellIdx,
+                 const float EPS2) {
+    const fvec4 Xj = tex1Dfetch(texCellCenter, cellIdx);
+    for (int j=0; j<WARP_SIZE; j++) {
+      const fvec3 pos_j(__shfl(Xj[0],j), __shfl(Xj[1],j), __shfl(Xj[2],j));
+      const int cellIdxWarp = __shfl(cellIdx,j);
+      if (cellIdxWarp >= 0) {
+#pragma unroll
+	for (int i=0; i<NVEC4; i++) M4[i] = tex1Dfetch(texMultipole, NVEC4*cellIdxWarp+i);
+      } else {
+#pragma unroll
+	for (int i=0; i<NVEC4; i++) M4[i] = 0.0f;
+      }
+#pragma unroll
+      for (int i=0; i<NVEC4; i++) {
+        M[4*i+0] = M4[i][0];
+        M[4*i+1] = M4[i][1];
+        M[4*i+2] = M4[i][2];
+        M[4*i+3] = M4[i][3];
+      }
+      for (int k=0; k<2; k++)
+        acc_i[k] = M2P(acc_i[k], pos_i[k], pos_j, *(fvecP*)M, EPS2);
+    }
+  }
+
+  __device__
   uint2 traverseWarp(fvec4 * acc_i,
+		     fvec4 * M4,
+		     float * M,
 		     const fvec3 pos_i[2],
 		     const fvec3 targetCenter,
 		     const fvec3 targetSize,
@@ -113,7 +145,11 @@ namespace {
       if (isApprox && approxIdx < WARP_SIZE)                    //  If approx flag is true and index is within bounds
 	tempQueue[approxIdx] = sourceQueue;                     //   Fill approx queue with current sources
       if (approxOffset + numApproxWarp >= WARP_SIZE) {          //  If approx queue is larger than the warp size
-	approxAcc<true>(acc_i, pos_i, tempQueue[laneIdx], EPS2);//  Call M2P kernel
+#if WARP_PER_CELL
+	approxAcc(acc_i, M4, M, pos_i, tempQueue[laneIdx], EPS2);//  Call M2P kernel
+#else
+	approxAcc(acc_i, pos_i, tempQueue[laneIdx], EPS2);      //   Call M2P kernel
+#endif
 	approxOffset -= WARP_SIZE;                              //   Decrement approx queue size
 	approxIdx = approxOffset + numApproxLane;               //   Update approx index using new queue size
 	if (isApprox && approxIdx >= 0)                         //   If approx flag is true and index is within bounds
@@ -188,7 +224,11 @@ namespace {
       }                                                         //  End if for level finalization
     }                                                           // End while for source cells to traverse
     if (approxOffset > 0) {                                     // If there are leftover approx cells
-      approxAcc<false>(acc_i, pos_i, laneIdx < approxOffset ? approxQueue : -1, EPS2);// Call M2P kernel
+#if WARP_PER_CELL
+      approxAcc(acc_i, M4, M, pos_i, laneIdx < approxOffset ? approxQueue : -1, EPS2);// Call M2P kernel
+#else
+      approxAcc(acc_i, pos_i, laneIdx < approxOffset ? approxQueue : -1, EPS2);// Call M2P kernel
+#endif
       counters.x += approxOffset;                               //  Increment M2P counter
       approxOffset = 0;                                         //  Reset offset for approx
     }                                                           // End if for leftover approx cells
@@ -230,8 +270,12 @@ namespace {
     const int warpIdx = threadIdx.x >> WARP_SIZE2;
     const int NWARP2 = NTHREAD2 - WARP_SIZE2;
     __shared__ int sharedPool[NTHREAD];
+    __shared__ float4 sharedM4[NVEC4 << NWARP2];
+    __shared__ float sharedM[NVEC4 << (NWARP2 + 2)];
     int * tempQueue = sharedPool + WARP_SIZE * warpIdx;
     int * cellQueue = globalPool + MEM_PER_WARP * ((blockIdx.x<<NWARP2) + warpIdx);
+    fvec4 * M4 = reinterpret_cast<fvec4*>(sharedM4 + NVEC4 * warpIdx);
+    float * M = sharedM + 4 * NVEC4 * warpIdx;
     while (1) {
       int targetIdx = 0;
       if (laneIdx == 0)
@@ -271,7 +315,7 @@ namespace {
 	    const fvec3 targetPeriodic = targetCenter - Xperiodic;
 	    for (int i=0; i<2; i++)
 	      pos_p[i] = pos_i[i] - Xperiodic;
-	    const uint2 counters = traverseWarp(acc_i, pos_p, targetPeriodic, targetSize,
+	    const uint2 counters = traverseWarp(acc_i, M4, M, pos_p, targetPeriodic, targetSize,
 						EPS2, levelRange[1], tempQueue, cellQueue);
 	    assert(!(counters.x == 0xFFFFFFFF && counters.y == 0xFFFFFFFF));
 	    numM2P += counters.x;
