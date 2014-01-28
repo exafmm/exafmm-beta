@@ -151,11 +151,13 @@ int main(int argc, char ** argv) {
   logger.printTitle("Total runtime");
   logger.printTime("Total FMM");
   logger.stopTimer("Total Direct");
+#if WRITE_TIME
   boundbox.writeTime(treeMPI.mpirank);
   build.writeTime(treeMPI.mpirank);
   pass.writeTime(treeMPI.mpirank);
   traversal.writeTime(treeMPI.mpirank);
   treeMPI.writeTime(treeMPI.mpirank);
+#endif
   double potDif = verify.getDifScalar(bodies, bodies2);
   double potNrm = verify.getNrmScalar(bodies);
   double accDif = verify.getDifVector(bodies, bodies2);

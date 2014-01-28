@@ -58,10 +58,12 @@ int main(int argc, char ** argv) {
     logger.printTitle("Total runtime");
     logger.stopPAPI();
     logger.stopTimer("Total FMM");
+#if WRITE_TIME
     boundbox.writeTime();
     build.writeTime();
     pass.writeTime();
     traversal.writeTime();
+#endif
     data.sampleBodies(bodies, args.numTargets);
     Bodies bodies2 = bodies;
     data.initTarget(bodies);
