@@ -14,6 +14,9 @@
 #if MASS
 #error Turn off MASS for this test
 #endif
+#if EXPANSION < 10
+#error Use P >=10 for this test
+#endif
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
