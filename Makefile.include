@@ -32,8 +32,8 @@ FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp # gfortran
 
 ### Base flags
 CXX	+= -I../include
-CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
-LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
+#CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
+#LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
 LFLAGS  += -DEXPANSION=4 # Specify expansion order
 LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
