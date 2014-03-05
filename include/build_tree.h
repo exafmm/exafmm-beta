@@ -339,7 +339,7 @@ public:
 
   //! Print tree structure statistics
   void printTreeData(Cells &cells) {
-    if (verbose) {                                              // If verbose flag is true
+    if (verbose && !cells.empty()) {                            // If verbose flag is true
       printTitle("Tree stats");                                 //  Print title
       std::cout  << std::setw(stringLength) << std::left        //  Set format
 		 << "Bodies"     << " : " << cells.front().NBODY << std::endl// Print number of bodies
