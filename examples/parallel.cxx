@@ -40,9 +40,17 @@ int main(int argc, char ** argv) {
   logger.startTimer("Total FMM");
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, treeMPI.mpirank, treeMPI.mpisize);
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    B->X[0] += M_PI;
+    B->X[0] *= 0.5;
+  }
   Bounds localBounds = boundbox.getBounds(bodies);
 #if IneJ
   Bodies jbodies = data.initBodies(args.numBodies, args.distribution, treeMPI.mpirank+treeMPI.mpisize, treeMPI.mpisize);
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    B->X[0] -= M_PI;
+    B->X[0] *= 0.5;
+  }
   localBounds = boundbox.getBounds(jbodies,localBounds);
 #endif
   Bounds globalBounds = treeMPI.allreduceBounds(localBounds);
@@ -52,9 +60,11 @@ int main(int argc, char ** argv) {
   treeMPI.partition(jbodies,globalBounds);
   jbodies = treeMPI.commBodies(jbodies);
 #endif
+  localBounds = boundbox.getBounds(bodies);
   Cells cells = build.buildTree(bodies, localBounds);
   pass.upwardPass(cells);
 #if IneJ
+  localBounds = boundbox.getBounds(jbodies);
   Cells jcells = build.buildTree(jbodies, localBounds);
   pass.upwardPass(jcells);
 #endif

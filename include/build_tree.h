@@ -319,7 +319,7 @@ private:
     if (N0 != NULL) {                                           // If the node tree is not empty
       cells.resize(N0->NNODE);                                  //  Allocate cells array
       C_iter C0 = cells.begin();                                //  Cell begin iterator
-      Nodes2cells nodes2cells(N0, B0, C0, C0, C0+1, X0, R0, nspawn, maxlevel);// Instantiate recursive functor       
+      Nodes2cells nodes2cells(N0, B0, C0, C0, C0+1, X0, R0, nspawn, maxlevel);// Instantiate recursive functor
       nodes2cells();                                            //  Convert nodes to cells recursively
       delete N0;                                                //  Deallocate nodes
     }                                                           // End if for empty node tree
@@ -333,8 +333,12 @@ public:
   //! Build tree structure top down
   Cells buildTree(Bodies &bodies, Bounds bounds) {
     Box box = bounds2box(bounds);                               // Get box from bounds
-    growTree(bodies,box.X,box.R);                               // Grow tree from root
-    return linkTree(box.X,box.R);                               // Form parent-child links in tree
+    if (bodies.empty()) {                                       // If bodies vector is empty
+      N0 = NULL;                                                //  Reinitialize N0 with NULL
+    } else {                                                    // If bodies vector is not empty
+      growTree(bodies, box.X, box.R);                           //  Grow tree from root
+    }                                                           // End if for empty root
+    return linkTree(box.X, box.R);                              // Form parent-child links in tree
   }
 
   //! Print tree structure statistics
