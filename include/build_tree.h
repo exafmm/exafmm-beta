@@ -70,9 +70,9 @@ private:
 	binNode->RIGHT = binNode->LEFT->END;                    //   Assign that same address to right node pointer
 	binNode->RIGHT->BEGIN = binNode->RIGHT + 1;             //   Assign next memory address to right begin pointer
 	binNode->RIGHT->END = binNode->RIGHT + numRightNode;    //   Keep track of last memory address used by right
-	mk_task_group;                                             //   Initialize tasks
+	mk_task_group;                                          //   Initialize tasks
         CountBodies leftBranch(bodies, begin, mid, X, binNode->LEFT, nspawn);// Recursion for left branch
-	create_taskc(leftBranch);                                //   Create new task for left branch
+	create_taskc(leftBranch);                               //   Create new task for left branch
 	CountBodies rightBranch(bodies, mid, end, X, binNode->RIGHT, nspawn);// Recursion for right branch
 	rightBranch();                                          //   Use old task for right branch
 	wait_tasks;                                             //   Synchronize tasks
@@ -104,9 +104,9 @@ private:
 	}                                                       //   End loop over bodies
       } else {                                                  //  Else if there are child nodes
 	int mid = (begin + end) / 2;                            //   Split range of bodies in half
-	mk_task_group;                                             //   Initialize tasks
+	mk_task_group;                                          //   Initialize tasks
 	MoveBodies leftBranch(bodies, buffer, begin, mid, binNode->LEFT, octantOffset, X);// Recursion for left branch
-	create_taskc(leftBranch);                                //   Create new task for left branch
+	create_taskc(leftBranch);                               //   Create new task for left branch
 	octantOffset += binNode->LEFT->NBODY;                   //   Increment the octant offset for right branch
 	MoveBodies rightBranch(bodies, buffer, mid, end, binNode->RIGHT, octantOffset, X);// Recursion for right branch
 	rightBranch();                                          //   Use old task for right branch
@@ -179,7 +179,7 @@ private:
       MoveBodies moveBodies(bodies, buffer, begin, end, binNode, octantOffset, X);// Instantiate recursive functor
       moveBodies();                                             //  Sort bodies according to octant
       BinaryTreeNode * binNodeOffset = binNode->BEGIN;          //  Initialize pointer offset for binary tree nodes
-      mk_task_group;                                               //  Initialize tasks
+      mk_task_group;                                            //  Initialize tasks
       BinaryTreeNode binNodeChild[8];                           //  Allocate new root for this branch
       for (int i=0; i<8; i++) {                                 //  Loop over children
 	int maxBinNode = getMaxBinNode(binNode->NBODY[i]);      //   Get maximum number of binary tree nodes
@@ -194,7 +194,7 @@ private:
 	BuildNodes buildNodes(octNode->CHILD[i], buffer, bodies,//    Instantiate recursive functor
 			      octantOffset[i], octantOffset[i] + binNode->NBODY[i],
 			      &binNodeChild[i], Xchild, R0, ncrit, nspawn, level+1, !direction);
-	create_taskc(buildNodes);                                //    Create new task for recursive call
+	create_taskc(buildNodes);                               //    Create new task for recursive call
 	binNodeOffset += maxBinNode;                            //   Increment offset for binNode memory address
       }                                                         //  End loop over children
       wait_tasks;                                               //  Synchronize tasks
@@ -260,13 +260,13 @@ private:
 	C->NCHILD = nchild;                                     //   Number of child cells
 	assert(C->NCHILD > 0);                                  //   Check for childless non-leaf cells
 	CN += nchild;                                           //   Increment next free memory address
-	mk_task_group;                                             //   Initialize tasks
+	mk_task_group;                                          //   Initialize tasks
 	for (int i=0; i<nchild; i++) {                          //   Loop over children
 	  int octant = octants[i];                              //    Get octant from child index
           Nodes2cells nodes2cells(octNode->CHILD[octant],       //    Instantiate recursive functor
 				  B0, Ci, C0, CN, X0, R0, nspawn, maxlevel, level+1, C-C0);
-	  create_taskc_if(octNode->NNODE > nspawn,               //    Spawn task if number of sub-nodes is large
-			  nodes2cells);                          //    Recursive call for each child
+	  create_taskc_if(octNode->NNODE > nspawn,              //    Spawn task if number of sub-nodes is large
+			  nodes2cells);                         //    Recursive call for each child
 	  Ci++;                                                 //    Increment cell iterator
 	  CN += octNode->CHILD[octant]->NNODE - 1;              //    Increment next free memory address
 	}                                                       //   End loop over children

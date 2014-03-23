@@ -74,17 +74,17 @@ private:
       } else {                                                  //  If many cells are in the range
 	C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;         //   Split range of Ci cells in half
 	C_iter CjMid = CjBegin + (CjEnd - CjBegin) / 2;         //   Split range of Cj cells in half
-	mk_task_group;                                           //   Initialize task group
+	mk_task_group;                                          //   Initialize task group
 	{
 	  TraverseRange leftBranch(traversal, CiBegin, CiMid, CjBegin, CjMid, mutual);// Instantiate recursive functor
-	  create_taskc(leftBranch);                              //    Ci:former Cj:former
+	  create_taskc(leftBranch);                             //    Ci:former Cj:former
 	  TraverseRange rightBranch(traversal, CiMid, CiEnd, CjMid, CjEnd, mutual);// Instantiate recursive functor
 	  rightBranch();                                        //    Ci:latter Cj:latter
 	  wait_tasks;                                           //    Synchronize task group
 	}
 	{
 	  TraverseRange leftBranch(traversal, CiBegin, CiMid, CjMid, CjEnd, mutual);// Instantiate recursive functor
-	  create_taskc(leftBranch);                              //    Ci:former Cj:latter
+	  create_taskc(leftBranch);                             //    Ci:former Cj:latter
 	  if (!mutual || CiBegin != CjBegin) {                  //    Exclude mutual & self interaction
             TraverseRange rightBranch(traversal, CiMid, CiEnd, CjBegin, CjMid, mutual);// Instantiate recursive functor
 	    rightBranch();                                      //    Ci:latter Cj:former
