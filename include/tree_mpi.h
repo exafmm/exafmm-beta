@@ -68,7 +68,7 @@ private:
   }
 
   //! Determine which cells to send
-  void traverseLET(C_iter C, real_t cycle, int & ibody, int & icell) {
+  void traverseLET(C_iter C, real_t cycle, int &ibody, int &icell) {
     int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;           // Level of local root cell
     if (mpisize == 1) level = 0;                                // Account for serial case
     for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {  //Loop over child cells
