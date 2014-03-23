@@ -7,8 +7,6 @@ class TreeMPI : public BodyMPI {
 private:
   int irank;                                                    //!< MPI rank loop counter
   int images;                                                   //!< Number of periodic image sublevels
-  fvec3 localXmin;                                              //!< Local Xmin for a given rank
-  fvec3 localXmax;                                              //!< Local Xmax for a given rank
   fvec3 * allLocalXmin;                                         //!< Array for local Xmin for all ranks
   fvec3 * allLocalXmax;                                         //!< Array for local Xmax for all ranks
   Cells sendCells;                                              //!< Send buffer for cells
@@ -31,80 +29,107 @@ private:
     MPI_Allgather(Xmax, 3, MPI_FLOAT, &allLocalXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
   }
 
-  //! Get distance to other domain
-  real_t getDistance(C_iter C, vec3 Xperiodic) {
-    vec3 dX;                                                    // Distance vector
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      dX[d] = (C->X[d] + Xperiodic[d] > localXmax[d])*          //  Calculate the distance between cell C and
-	(C->X[d] + Xperiodic[d] - localXmax[d])+                //  the nearest point in domain [xmin,xmax]^3
-	(C->X[d] + Xperiodic[d] < localXmin[d])*                //  Take the differnece from xmin or xmax
-	(C->X[d] + Xperiodic[d] - localXmin[d]);                //  or 0 if between xmin and xmax
-    }                                                           // End loop over dimensions
-    return norm(dX);                                            // Return distance squared
-  }
-
-  //! Add cells to send buffer
-  void addSendCell(C_iter C, uint64_t &iparent, int &icell) {
-    Cell cell(*C);                                              // Initialize send cell
-    cell.NCHILD = cell.NBODY = 0;                               // Reset counters
-    cell.PARENT = iparent;                                      // Index of parent
-    sendCells.push_back(cell);                                  // Push to send cell vector
-    icell++;                                                    // Increment cell counter
-    C_iter Cparent = sendCells.begin() + sendCellDispl[irank] + iparent;// Get parent iterator
-    if (Cparent->NCHILD == 0) Cparent->ICHILD = icell;          // Index of parent's first child
-    Cparent->NCHILD++;                                          // Increment parent's child counter
-  }
-
-  //! Add bodies to send buffer
-  void addSendBody(C_iter C, int &ibody, int icell) {
-    C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell;// Get send cell iterator
-    Csend->NBODY = C->NBODY;                                    // Set number of bodies
-    Csend->IBODY = ibody;                                       // Set body index per rank
-    for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {          // Loop over bodies in cell
-      sendBodies.push_back(*B);                                 //  Push to send body vector
-      sendBodies.back().IPROC = irank;                          //  Set current rank
-    }                                                           // End loop over bodies in cell
-    ibody+=C->NBODY;                                            // Increment body counter
-  }
-
-  //! Determine which cells to send
-  void traverseLET(C_iter C, real_t cycle, int & ibody, int & icell) {
-    int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;           // Level of local root cell
-    if (mpisize == 1) level = 0;                                // Account for serial case
-    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {  //Loop over child cells
-      addSendCell(CC, C->ICELL, icell);                         //  Add cells to send
-      CC->ICELL = icell;                                        //  Store cell index
-      if (CC->NCHILD == 0) {                                    //  If cell is leaf
-	addSendBody(CC, ibody, icell);                          //   Add bodies to send
-      } else {                                                  //  If cell is not leaf
-	bool divide = false;                                    //   Initialize logical for dividing
-	vec3 Xperiodic = 0;                                     //   Periodic coordinate offset
-	if (images == 0) {                                      //   If free boundary condition
-	  real_t R2 = getDistance(CC, Xperiodic);               //    Get distance to other domain
-	  divide |= 4 * CC->RCRIT * CC->RCRIT > R2;             //    Divide if the cell seems too close
-	} else {                                                //   If periodic boundary condition
-	  for (int ix=-1; ix<=1; ix++) {                        //    Loop over x periodic direction
-	    for (int iy=-1; iy<=1; iy++) {                      //     Loop over y periodic direction
-	      for (int iz=-1; iz<=1; iz++) {                    //      Loop over z periodic direction
-		Xperiodic[0] = ix * cycle;                      //       Coordinate offset for x periodic direction
-		Xperiodic[1] = iy * cycle;                      //       Coordinate offset for y periodic direction
-		Xperiodic[2] = iz * cycle;                      //       Coordinate offset for z periodic direction
-		real_t R2 = getDistance(CC, Xperiodic);         //       Get distance to other domain
-		divide |= 4 * CC->RCRIT * CC->RCRIT > R2;       //       Divide if cell seems too close
-	      }                                                 //      End loop over z periodic direction
-	    }                                                   //     End loop over y periodic direction
-	  }                                                     //    End loop over x periodic direction
-	}                                                       //   Endif for periodic boundary condition
-	divide |= CC->R > (cycle / (1 << (level+1)));           //   Divide if cell is larger than local root cell
-	if (!divide) {                                          //   If cell does not have to be divided
-	  CC->NCHILD = 0;                                       //    Cut off child links
-	}                                                       //   Endif for cell division
-      }                                                         //  Endif for leaf
-    }                                                           // End loop over child cells
-    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-      traverseLET(CC, cycle, ibody, icell);                     //  Recursively traverse tree to get LET
-    }                                                           // End loop over child cells
-  }
+  //! Recursive functor for determining which cells to send
+  struct TraverseLET {
+    int mpisize;                                                //!< Size of MPI communicator
+    int irank;                                                  //!< MPI rank loop counter
+    int images;                                                 //!< Number of periodic image sublevels
+    int sendCellDispl;                                          //!< Send displacement
+    int & ibody;                                                //!< Index offset for send bodies
+    int & icell;                                                //!< Index offset for send cells
+    real_t cycle;                                               //!< Periodic cycle
+    fvec3 localXmin;                                            //!< Local Xmin for a given rank
+    fvec3 localXmax;                                            //!< Local Xmax for a given rank
+    Bodies & sendBodies;                                        //!< Send buffer for bodies
+    Cells & sendCells;                                          //!< Send buffer for cells
+    C_iter C;                                                   //!< Iterator of current cell
+    C_iter C0;                                                  //!< Iterator of first cell
+    TraverseLET(int _mpisize, int _irank, int _images,          // Constructor
+		int _sendCellDispl, int & _ibody, int & _icell, real_t _cycle,
+		fvec3 _localXmin, fvec3 _localXmax, Bodies & _sendBodies,
+		Cells & _sendCells, C_iter _C, C_iter _C0) :
+      mpisize(_mpisize), irank(_irank), images(_images), sendCellDispl(_sendCellDispl),
+      ibody(_ibody), icell(_icell), cycle(_cycle),              // Initialize variables
+      localXmin(_localXmin), localXmax(_localXmax), sendBodies(_sendBodies),
+      sendCells(_sendCells), C(_C), C0(_C0) {}
+    //! Get distance to other domain
+    real_t getDistance(C_iter C, vec3 Xperiodic) {
+      vec3 dX;                                                  // Distance vector
+      for (int d=0; d<3; d++) {                                 // Loop over dimensions
+	dX[d] = (C->X[d] + Xperiodic[d] > localXmax[d])*        //  Calculate the distance between cell C and
+	  (C->X[d] + Xperiodic[d] - localXmax[d])+              //  the nearest point in domain [xmin,xmax]^3
+	  (C->X[d] + Xperiodic[d] < localXmin[d])*              //  Take the differnece from xmin or xmax
+	  (C->X[d] + Xperiodic[d] - localXmin[d]);              //  or 0 if between xmin and xmax
+      }                                                         // End loop over dimensions
+      return norm(dX);                                          // Return distance squared
+    }
+    //! Add cells to send buffer
+    void addSendCell(C_iter C, uint64_t & iparent, int & icell) {
+      Cell cell(*C);                                            // Initialize send cell
+      cell.NCHILD = cell.NBODY = 0;                             // Reset counters
+      cell.PARENT = iparent;                                    // Index of parent
+      sendCells.push_back(cell);                                // Push to send cell vector
+      icell++;                                                  // Increment cell counter
+      C_iter Cparent = sendCells.begin() + sendCellDispl + iparent;// Get parent iterator
+      if (Cparent->NCHILD == 0) Cparent->ICHILD = icell;        // Index of parent's first child
+      Cparent->NCHILD++;                                        // Increment parent's child counter
+    }
+    //! Add bodies to send buffer
+    void addSendBody(C_iter C, int & ibody, int icell) {
+      C_iter Csend = sendCells.begin() + sendCellDispl + icell; // Get send cell iterator
+      Csend->NBODY = C->NBODY;                                  // Set number of bodies
+      Csend->IBODY = ibody;                                     // Set body index per rank
+      for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {        // Loop over bodies in cell
+	sendBodies.push_back(*B);                               //  Push to send body vector
+	sendBodies.back().IPROC = irank;                        //  Set current rank
+      }                                                         // End loop over bodies in cell
+      ibody += C->NBODY;                                        // Increment body counter
+    }
+    void operator() () {                                        // Overload operator()
+      int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;         // Level of local root cell
+      if (mpisize == 1) level = 0;                              // Account for serial case
+      if (C0->NCHILD == 0) {                                    // If root cell is leaf
+	addSendBody(C0, ibody, icell);                          //  Add bodies to send
+      }                                                         // End if for root cell leaf
+      for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {  //Loop over child cells
+	addSendCell(CC, C->ICELL, icell);                       //  Add cells to send
+	CC->ICELL = icell;                                      //  Store cell index
+	if (CC->NCHILD == 0) {                                  //  If cell is leaf
+	  addSendBody(CC, ibody, icell);                        //   Add bodies to send
+	} else {                                                //  If cell is not leaf
+	  bool divide = false;                                  //   Initialize logical for dividing
+	  vec3 Xperiodic = 0;                                   //   Periodic coordinate offset
+	  if (images == 0) {                                    //   If free boundary condition
+	    real_t R2 = getDistance(CC, Xperiodic);             //    Get distance to other domain
+	    divide |= 4 * CC->RCRIT * CC->RCRIT > R2;           //    Divide if the cell seems too close
+	  } else {                                              //   If periodic boundary condition
+	    for (int ix=-1; ix<=1; ix++) {                      //    Loop over x periodic direction
+	      for (int iy=-1; iy<=1; iy++) {                    //     Loop over y periodic direction
+		for (int iz=-1; iz<=1; iz++) {                  //      Loop over z periodic direction
+		  Xperiodic[0] = ix * cycle;                    //       Coordinate offset for x periodic direction
+		  Xperiodic[1] = iy * cycle;                    //       Coordinate offset for y periodic direction
+		  Xperiodic[2] = iz * cycle;                    //       Coordinate offset for z periodic direction
+		  real_t R2 = getDistance(CC, Xperiodic);       //       Get distance to other domain
+		  divide |= 4 * CC->RCRIT * CC->RCRIT > R2;     //       Divide if cell seems too close
+		}                                               //      End loop over z periodic direction
+	      }                                                 //     End loop over y periodic direction
+	    }                                                   //    End loop over x periodic direction
+	  }                                                     //   Endif for periodic boundary condition
+	  divide |= CC->R > (cycle / (1 << (level+1)));         //   Divide if cell is larger than local root cell
+	  if (!divide) {                                        //   If cell does not have to be divided
+	    CC->NCHILD = 0;                                     //    Cut off child links
+	  }                                                     //   Endif for cell division
+	}                                                       //  Endif for leaf
+      }                                                         // End loop over child cells
+      for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
+	TraverseLET traverseLET(mpisize, irank, images,         // Instantiate recursive functor
+				sendCellDispl, ibody, icell, cycle,
+				localXmin, localXmax, sendBodies,
+			        sendCells, CC, C0);
+	traverseLET();                                          //  Recursively traverse tree to get LET
+      }                                                         // End loop over child cells
+    }
+  };
 
   //! Exchange send count for cells
   void alltoall(Cells) {
@@ -168,17 +193,16 @@ public:
       if (irank != mpirank) {                                   //  If not current rank
         recvCells = cells;                                      //   Use recvCells as temporary storage
         C0 = recvCells.begin();                                 //   Set cells begin iterator
-        localXmin = allLocalXmin[irank];                        //   Set local Xmin for irank
-        localXmax = allLocalXmax[irank];                        //   Set local Xmax for irank
         Cell cell(*C0);                                         //   Send root cell
         cell.NCHILD = cell.NBODY = 0;                           //   Reset link to children and bodies
         sendCells.push_back(cell);                              //   Push it into send buffer
 	int ibody = 0;                                          //   Current send body's offset
 	int icell = 0;                                          //   Current send cell's offset
-	if (C0->NCHILD == 0) {                                  //   If root cell is leaf
-	  addSendBody(C0, ibody, icell);                        //    Add bodies to send
-	}                                                       //   End if for root cell leaf
-        traverseLET(C0, cycle, ibody, icell);                   //   Traverse tree to get LET
+        TraverseLET traverseLET(mpisize, irank, images,         // Instantiate recursive functor
+                                sendCellDispl[irank], ibody, icell, cycle,
+                                allLocalXmin[irank], allLocalXmax[irank], sendBodies,
+                                sendCells, C0, C0);
+	traverseLET();                                          //   Traverse tree to get LET
       }                                                         //  Endif for current rank
       sendCellCount[irank] = sendCells.size() - sendCellDispl[irank];// Send count for irank
     }                                                           // End loop over ranks
