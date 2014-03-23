@@ -50,6 +50,7 @@ private:
     Cell cell(*C);                                              // Initialize send cell
     cell.NCHILD = cell.NBODY = 0;                               // Reset counters
     cell.PARENT = iparent;                                      // Index of parent
+    cell.ICELL = icell;                                         // Index of current cell
     sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
     C_iter Cparent = sendCells.begin() + sendCellDispl[irank] + iparent;// Get parent iterator
@@ -83,6 +84,7 @@ private:
       C_iter C = cellQueue.front();                             //  Get front item in traversal queue
       cellQueue.pop();                                          //  Pop item from traversal queue
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
+        if(mpirank==0&&irank==1&&iparent<100) std::cout << iparent << " " << icell << std::endl;
         addSendCell(CC, iparent, icell);                        //   Add cells to send
         if (CC->NCHILD == 0) {                                  //   If cell is leaf
           addSendBody(CC, ibody, icell);                        //    Add bodies to send
