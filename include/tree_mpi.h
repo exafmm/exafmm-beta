@@ -1,12 +1,12 @@
 #ifndef tree_mpi_h
 #define tree_mpi_h
 #include "body_mpi.h"
-#include <queue>
+#include <stack>
 
 //! Handles all the communication of local essential trees
 class TreeMPI : public BodyMPI {
 private:
-  typedef std::queue<C_iter> CellQueue;                         //!< Queue of cell iterators
+  typedef std::stack<C_iter> CellStack;                         //!< Stack of cell iterators
   int irank;                                                    //!< MPI rank loop counter
   int images;                                                   //!< Number of periodic image sublevels
   fvec3 localXmin;                                              //!< Local Xmin for a given rank
@@ -46,11 +46,10 @@ private:
   }
 
   //! Add cells to send buffer
-  void addSendCell(C_iter C, int &iparent, int &icell) {
+  void addSendCell(C_iter C, uint64_t &iparent, int &icell) {
     Cell cell(*C);                                              // Initialize send cell
     cell.NCHILD = cell.NBODY = 0;                               // Reset counters
     cell.PARENT = iparent;                                      // Index of parent
-    cell.ICELL = icell;                                         // Index of current cell
     sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
     C_iter Cparent = sendCells.begin() + sendCellDispl[irank] + iparent;// Get parent iterator
@@ -71,21 +70,20 @@ private:
   }
 
   //! Determine which cells to send
-  void traverseLET(CellQueue cellQueue, real_t cycle) {
+  void traverseLET(CellStack cellStack, real_t cycle) {
     int ibody = 0;                                              // Current send body's offset
     int icell = 0;                                              // Current send cell's offset
-    int iparent = 0;                                            // Parent send cell's offset
     int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;           // Level of local root cell
     if (mpisize == 1) level = 0;                                // Account for serial case
     if (C0->NCHILD == 0) {                                      // If root cell is leaf
       addSendBody(C0, ibody, icell);                            //  Add bodies to send
     }                                                           // End if for root cell leaf
-    while (!cellQueue.empty()) {                                // While traversal queue is not empty
-      C_iter C = cellQueue.front();                             //  Get front item in traversal queue
-      cellQueue.pop();                                          //  Pop item from traversal queue
+    while (!cellStack.empty()) {                                // While traversal stack is not empty
+      C_iter C = cellStack.top();                               //  Get top item in traversal stack
+      cellStack.pop();                                          //  Pop item from traversal stack
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-        if(mpirank==0&&irank==1&&iparent<100) std::cout << iparent << " " << icell << std::endl;
-        addSendCell(CC, iparent, icell);                        //   Add cells to send
+        addSendCell(CC, C->ICELL, icell);                       //   Add cells to send
+	CC->ICELL = icell;                                      //   Store cell index
         if (CC->NCHILD == 0) {                                  //   If cell is leaf
           addSendBody(CC, ibody, icell);                        //    Add bodies to send
         } else {                                                //   If cell is not leaf
@@ -112,10 +110,9 @@ private:
             CC->NCHILD = 0;                                     //     Cut off child links
           }                                                     //    Endif for cell division
         }                                                       //   Endif for leaf
-        cellQueue.push(CC);                                     //   Push cell to traveral queue
+        cellStack.push(CC);                                     //   Push cell to traveral stack
       }                                                         //  End loop over child cells
-      iparent++;                                                //  Increment parent send cell's offset
-    }                                                           // End while loop for traversal queue
+    }                                                           // End while loop for traversal stack
   }
 
   //! Exchange send count for cells
@@ -185,9 +182,9 @@ public:
         Cell cell(*C0);                                         //   Send root cell
         cell.NCHILD = cell.NBODY = 0;                           //   Reset link to children and bodies
         sendCells.push_back(cell);                              //   Push it into send buffer
-        CellQueue cellQueue;                                    //   Traversal queue
-        cellQueue.push(C0);                                     //   Push root to traversal queue
-        traverseLET(cellQueue,cycle);                           //   Traverse tree to get LET
+        CellStack cellStack;                                    //   Traversal stack
+        cellStack.push(C0);                                     //   Push root to traversal stack
+        traverseLET(cellStack,cycle);                           //   Traverse tree to get LET
       }                                                         //  Endif for current rank
       sendCellCount[irank] = sendCells.size() - sendCellDispl[irank];// Send count for irank
     }                                                           // End loop over ranks
