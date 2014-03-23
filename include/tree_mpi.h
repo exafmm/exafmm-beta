@@ -1,12 +1,10 @@
 #ifndef tree_mpi_h
 #define tree_mpi_h
 #include "body_mpi.h"
-#include <stack>
 
 //! Handles all the communication of local essential trees
 class TreeMPI : public BodyMPI {
 private:
-  typedef std::stack<C_iter> CellStack;                         //!< Stack of cell iterators
   int irank;                                                    //!< MPI rank loop counter
   int images;                                                   //!< Number of periodic image sublevels
   fvec3 localXmin;                                              //!< Local Xmin for a given rank
@@ -70,49 +68,42 @@ private:
   }
 
   //! Determine which cells to send
-  void traverseLET(CellStack cellStack, real_t cycle) {
-    int ibody = 0;                                              // Current send body's offset
-    int icell = 0;                                              // Current send cell's offset
+  void traverseLET(C_iter C, real_t cycle, int & ibody, int & icell) {
     int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;           // Level of local root cell
     if (mpisize == 1) level = 0;                                // Account for serial case
-    if (C0->NCHILD == 0) {                                      // If root cell is leaf
-      addSendBody(C0, ibody, icell);                            //  Add bodies to send
-    }                                                           // End if for root cell leaf
-    while (!cellStack.empty()) {                                // While traversal stack is not empty
-      C_iter C = cellStack.top();                               //  Get top item in traversal stack
-      cellStack.pop();                                          //  Pop item from traversal stack
-      for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-        addSendCell(CC, C->ICELL, icell);                       //   Add cells to send
-	CC->ICELL = icell;                                      //   Store cell index
-        if (CC->NCHILD == 0) {                                  //   If cell is leaf
-          addSendBody(CC, ibody, icell);                        //    Add bodies to send
-        } else {                                                //   If cell is not leaf
-          bool divide = false;                                  //    Initialize logical for dividing
-          vec3 Xperiodic = 0;                                   //    Periodic coordinate offset
-          if (images == 0) {                                    //    If free boundary condition
-            real_t R2 = getDistance(CC, Xperiodic);             //     Get distance to other domain
-            divide |= 4 * CC->RCRIT * CC->RCRIT > R2;           //     Divide if the cell seems too close
-          } else {                                              //    If periodic boundary condition
-            for (int ix=-1; ix<=1; ix++) {                      //     Loop over x periodic direction
-              for (int iy=-1; iy<=1; iy++) {                    //      Loop over y periodic direction
-                for (int iz=-1; iz<=1; iz++) {                  //       Loop over z periodic direction
-                  Xperiodic[0] = ix * cycle;                    //        Coordinate offset for x periodic direction
-                  Xperiodic[1] = iy * cycle;                    //        Coordinate offset for y periodic direction
-                  Xperiodic[2] = iz * cycle;                    //        Coordinate offset for z periodic direction
-                  real_t R2 = getDistance(CC, Xperiodic);       //        Get distance to other domain
-                  divide |= 4 * CC->RCRIT * CC->RCRIT > R2;     //        Divide if cell seems too close
-                }                                               //       End loop over z periodic direction
-              }                                                 //      End loop over y periodic direction
-            }                                                   //     End loop over x periodic direction
-          }                                                     //    Endif for periodic boundary condition
-          divide |= CC->R > (cycle / (1 << (level+1)));         //    Divide if cell is larger than local root cell
-          if (!divide) {                                        //    If cell does not have to be divided
-            CC->NCHILD = 0;                                     //     Cut off child links
-          }                                                     //    Endif for cell division
-        }                                                       //   Endif for leaf
-        cellStack.push(CC);                                     //   Push cell to traveral stack
-      }                                                         //  End loop over child cells
-    }                                                           // End while loop for traversal stack
+    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {  //Loop over child cells
+      addSendCell(CC, C->ICELL, icell);                         //  Add cells to send
+      CC->ICELL = icell;                                        //  Store cell index
+      if (CC->NCHILD == 0) {                                    //  If cell is leaf
+	addSendBody(CC, ibody, icell);                          //   Add bodies to send
+      } else {                                                  //  If cell is not leaf
+	bool divide = false;                                    //   Initialize logical for dividing
+	vec3 Xperiodic = 0;                                     //   Periodic coordinate offset
+	if (images == 0) {                                      //   If free boundary condition
+	  real_t R2 = getDistance(CC, Xperiodic);               //    Get distance to other domain
+	  divide |= 4 * CC->RCRIT * CC->RCRIT > R2;             //    Divide if the cell seems too close
+	} else {                                                //   If periodic boundary condition
+	  for (int ix=-1; ix<=1; ix++) {                        //    Loop over x periodic direction
+	    for (int iy=-1; iy<=1; iy++) {                      //     Loop over y periodic direction
+	      for (int iz=-1; iz<=1; iz++) {                    //      Loop over z periodic direction
+		Xperiodic[0] = ix * cycle;                      //       Coordinate offset for x periodic direction
+		Xperiodic[1] = iy * cycle;                      //       Coordinate offset for y periodic direction
+		Xperiodic[2] = iz * cycle;                      //       Coordinate offset for z periodic direction
+		real_t R2 = getDistance(CC, Xperiodic);         //       Get distance to other domain
+		divide |= 4 * CC->RCRIT * CC->RCRIT > R2;       //       Divide if cell seems too close
+	      }                                                 //      End loop over z periodic direction
+	    }                                                   //     End loop over y periodic direction
+	  }                                                     //    End loop over x periodic direction
+	}                                                       //   Endif for periodic boundary condition
+	divide |= CC->R > (cycle / (1 << (level+1)));           //   Divide if cell is larger than local root cell
+	if (!divide) {                                          //   If cell does not have to be divided
+	  CC->NCHILD = 0;                                       //    Cut off child links
+	}                                                       //   Endif for cell division
+      }                                                         //  Endif for leaf
+    }                                                           // End loop over child cells
+    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
+      traverseLET(CC, cycle, ibody, icell);                     //  Recursively traverse tree to get LET
+    }                                                           // End loop over child cells
   }
 
   //! Exchange send count for cells
@@ -182,9 +173,12 @@ public:
         Cell cell(*C0);                                         //   Send root cell
         cell.NCHILD = cell.NBODY = 0;                           //   Reset link to children and bodies
         sendCells.push_back(cell);                              //   Push it into send buffer
-        CellStack cellStack;                                    //   Traversal stack
-        cellStack.push(C0);                                     //   Push root to traversal stack
-        traverseLET(cellStack,cycle);                           //   Traverse tree to get LET
+	int ibody = 0;                                          //   Current send body's offset
+	int icell = 0;                                          //   Current send cell's offset
+	if (C0->NCHILD == 0) {                                  //   If root cell is leaf
+	  addSendBody(C0, ibody, icell);                        //    Add bodies to send
+	}                                                       //   End if for root cell leaf
+        traverseLET(C0, cycle, ibody, icell);                   //   Traverse tree to get LET
       }                                                         //  Endif for current rank
       sendCellCount[irank] = sendCells.size() - sendCellDispl[irank];// Send count for irank
     }                                                           // End loop over ranks
