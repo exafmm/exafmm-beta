@@ -1,11 +1,11 @@
 #ifndef sort_h
 #define sort_h
-#include <omp.h>
 #include "types.h"
-
 #ifndef _OPENMP
 int omp_get_num_threads() {return 1;}
 int omp_get_thread_num() {return 0;}
+#else
+#include <omp.h>
 #endif
 
 //! Custom radix sort for body and structures
