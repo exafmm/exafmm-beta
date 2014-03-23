@@ -3,11 +3,11 @@
 
 template<typename T, int D, int N>
 struct SIMD {
-  static inline T setBody(B_iter B, int i) {
+  static inline T setBody(B_iter, int) {
     T v;
     return v;
   }
-  static inline T setIndex(int i) {
+  static inline T setIndex(int) {
     T v;
     return v;
   }
