@@ -75,7 +75,7 @@ private:
 
 public:
   //! Constructor
-  Logger() : beginTimer(), timer(), traces(), mutex(),          // Initializing class variables (empty)
+  Logger() : beginTimer(), timer(), traces(), mutex(),          // Initialize variables
 #if PAPI
 	     PAPIEventSet(PAPI_NULL),                           // Initializing PAPI event set
 #endif
@@ -199,7 +199,7 @@ public:
   }
 
   //! Stop tracer for given event
-  inline void stopTracer(Trace &trace) {
+  inline void stopTracer(Trace & trace) {
     pthread_mutex_lock(&mutex);                                 // Lock shared variable access
     trace.end    = get_time();                                  // Stop timer
     traces.push(trace);                                         // Push trace to queue of traces

@@ -81,7 +81,7 @@ public:
   //! Constructor
   VanDerWaals(double _cuton, double _cutoff, double _cycle, int _numTypes,
 	      double * _rscale, double * _gscale, double * _fgscale) :
-    cuton(_cuton), cutoff(_cutoff), cycle(_cycle), numTypes(_numTypes) {
+    cuton(_cuton), cutoff(_cutoff), cycle(_cycle), numTypes(_numTypes) { // Initialize variables
     rscale.resize(numTypes*numTypes);
     gscale.resize(numTypes*numTypes);
     fgscale.resize(numTypes*numTypes);
@@ -93,7 +93,7 @@ public:
   }
 
   //! Evaluate Van Der Waals potential and force
-  void evaluate(Cells &cells, Cells &jcells) {
+  void evaluate(Cells & cells, Cells & jcells) {
     startTimer("Van der Waals");                                // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator of source cells
     mk_task_group;                                                 // Intitialize tasks

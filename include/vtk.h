@@ -49,7 +49,7 @@ public:
   }
 
   template<typename T>
-  void setData(int begin, int end, T *data) {
+  void setData(int begin, int end, T * data) {
     for (int i=begin; i<end; i++) {
       table->SetValue(i-begin,numColumns,data[i]);
     }
@@ -123,7 +123,7 @@ public:
     groups.push_back(group);
   }
 
-  void setGroupOfPoints(Bodies &bodies) {
+  void setGroupOfPoints(Bodies & bodies) {
     B_iter B0 = bodies.begin(); 
     B_iter BN = B0; 
     int index = B0->IBODY;

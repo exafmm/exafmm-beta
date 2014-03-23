@@ -188,14 +188,15 @@ private:
   }
 
 public:
-  Traversal(int _nspawn, int _images) : nspawn(_nspawn), images(_images)
+  //! Constructor
+  Traversal(int _nspawn, int _images) : nspawn(_nspawn), images(_images) // Initialize variables
 #if COUNT
 				      , numP2P(0), numM2L(0)
 #endif
   {}
 
   //! Evaluate P2P and M2L using dual tree traversal
-  void dualTreeTraversal(Cells &icells, Cells &jcells, real_t cycle, bool mutual=false) {
+  void dualTreeTraversal(Cells & icells, Cells & jcells, real_t cycle, bool mutual=false) {
     if (icells.empty() || jcells.empty()) return;               // Quit if either of the cell vectors are empty
     startTimer("Traverse");                                     // Start timer
     Ci0 = icells.begin();                                       // Set iterator of target root cell
@@ -256,7 +257,7 @@ public:
   };
 
   //! Direct summation
-  void direct(Bodies &ibodies, Bodies &jbodies, real_t cycle) {
+  void direct(Bodies & ibodies, Bodies & jbodies, real_t cycle) {
     Cells cells; cells.resize(2);                               // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
     Ci->BODY = ibodies.begin();                                 // Iterator of first target body     
@@ -285,7 +286,7 @@ public:
   }
 
   //! Normalize bodies after direct summation
-  void normalize(Bodies &bodies) {
+  void normalize(Bodies & bodies) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG /= B->SRC;                                         //  Normalize by target charge
     }                                                           // End loop over bodies

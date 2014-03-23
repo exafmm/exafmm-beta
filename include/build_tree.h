@@ -129,8 +129,9 @@ private:
     int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
     int level;                                                  //!< Current tree level
     bool direction;                                             //!< Direction of buffer copying
-    BuildNodes(OctreeNode *& _octNode, Bodies& _bodies,         //!< Constructor
-	       Bodies& _buffer, int _begin, int _end, BinaryTreeNode * _binNode,
+    //! Constructor
+    BuildNodes(OctreeNode *& _octNode, Bodies & _bodies,
+	       Bodies & _buffer, int _begin, int _end, BinaryTreeNode * _binNode,
 	       vec3 _X, real_t _R0, int _ncrit, int _nspawn, int _level=0, bool _direction=false) :
       octNode(_octNode), bodies(_bodies), buffer(_buffer),      // Initialize variables
       begin(_begin), end(_end), binNode(_binNode), X(_X), R0(_R0),
@@ -296,7 +297,7 @@ private:
   }
 
   //! Grow tree structure top down
-  void growTree(Bodies &bodies, vec3 X0, real_t R0) {
+  void growTree(Bodies & bodies, vec3 X0, real_t R0) {
     assert(R0 > 0);                                             // Check for bounds validity
     Bodies buffer = bodies;                                     // Copy bodies to buffer
     startTimer("Grow tree");                                    // Start timer
@@ -331,7 +332,7 @@ public:
   BuildTree(int _ncrit, int _nspawn) : ncrit(_ncrit), nspawn(_nspawn), maxlevel(0) {}
 
   //! Build tree structure top down
-  Cells buildTree(Bodies &bodies, Bounds bounds) {
+  Cells buildTree(Bodies & bodies, Bounds bounds) {
     Box box = bounds2box(bounds);                               // Get box from bounds
     if (bodies.empty()) {                                       // If bodies vector is empty
       N0 = NULL;                                                //  Reinitialize N0 with NULL
@@ -342,7 +343,7 @@ public:
   }
 
   //! Print tree structure statistics
-  void printTreeData(Cells &cells) {
+  void printTreeData(Cells & cells) {
     if (verbose && !cells.empty()) {                            // If verbose flag is true
       printTitle("Tree stats");                                 //  Print title
       std::cout  << std::setw(stringLength) << std::left        //  Set format

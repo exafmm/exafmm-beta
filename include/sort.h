@@ -14,7 +14,7 @@ private:
   Bodies output;                                                //!< Output buffer
 
   //! Radixsorts the values using the keys
-  void radixsort(int *key, int *value, int size) {
+  void radixsort(int * key, int * value, int size) {
     const int bitStride = 8;                                    // Number of bits in one stride
     const int stride = 1 << bitStride;                          // Size of stride in decimal
     const int mask = stride - 1;                                // Mask the bits in one stride
@@ -84,7 +84,7 @@ private:
 
 public:
   //! Sort input accoring to ibody
-  Bodies ibody(Bodies &input) {
+  Bodies ibody(Bodies & input) {
     const int size = input.size();                              // Size of bodies vector
     int * key = new int [size];                                 // Allocate key array
     int * index = new int [size];                               // Allocate index array
@@ -105,7 +105,7 @@ public:
   }
 
   //! Sort input accoring to iproc
-  Bodies iproc(Bodies &input) {
+  Bodies iproc(Bodies & input) {
     const int size = input.size();                              // Size of bodies vector
     int * key = new int [size];                                 // Allocate key array
     int * index = new int [size];                               // Allocate index array
@@ -126,7 +126,7 @@ public:
   }
 
   //! Sort bodies back to original order
-  Bodies unsort(Bodies &bodies) {
+  Bodies unsort(Bodies & bodies) {
     bodies = ibody(bodies);                                     // Sort bodies
     return bodies;
   }

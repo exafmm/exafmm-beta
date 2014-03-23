@@ -18,8 +18,8 @@ public:
   int mpisize;                                                  //!< Size of MPI communicator
 
 public:
-  //! Constructor, initialize wait time
-  BaseMPI() : external(0), wait(100) {                          // Constructor, initialize wait time
+  //! Constructor
+  BaseMPI() : external(0), wait(100) {                          // Initialize variables
     int argc(0);                                                // Dummy argument count
     char **argv;                                                // Dummy argument value
     MPI_Initialized(&external);                                 // Check if MPI_Init has been called

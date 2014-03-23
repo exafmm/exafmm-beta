@@ -60,13 +60,13 @@ struct kahan {
     return *this;
   }
   __host__ __device__ __forceinline__
-  const kahan &operator=(const kahan &v) {                      // Vector assignment
+  const kahan &operator=(const kahan & v) {                     // Vector assignment
     s = v.s;
     c = v.c;
     return *this;
   }
   __host__ __device__ __forceinline__
-  const kahan &operator+=(const kahan &v) {                     // Vector compound assignment (add)
+  const kahan &operator+=(const kahan & v) {                    // Vector compound assignment (add)
     T y = v.s - c;
     T t = s + y;
     c = (t - s) - y;
@@ -78,7 +78,7 @@ struct kahan {
     return *this;
   }
   __host__ __device__ __forceinline__
-  const kahan &operator-=(const kahan &v) {                     // Vector compound assignment (subtract)
+  const kahan &operator-=(const kahan & v) {                    // Vector compound assignment (subtract)
     T y = - v.s - c;
     T t = s + y;
     c = (t - s) - y;
@@ -90,13 +90,13 @@ struct kahan {
     return *this;
   }
   __host__ __device__ __forceinline__
-  const kahan &operator*=(const kahan &v) {                     // Vector compound assignment (multiply)
+  const kahan &operator*=(const kahan & v) {                    // Vector compound assignment (multiply)
     c *= (v.c + v.s);
     s *= (v.c + v.s); 
     return *this;
   }
   __host__ __device__ __forceinline__
-  const kahan &operator/=(const kahan &v) {                     // Vector compound assignment (divide)
+  const kahan &operator/=(const kahan & v) {                    // Vector compound assignment (divide)
     c /= (v.c + v.s);
     s /= (v.c + v.s); 
     return *this;
@@ -112,11 +112,11 @@ struct kahan {
   operator       T ()       {return s+c;}                       // Type-casting (lvalue)
   __host__ __device__ __forceinline__
   operator const T () const {return s+c;}                       // Type-casting (rvalue) 
-  friend std::ostream &operator<<(std::ostream &s, const kahan &v) {// Output stream
+  friend std::ostream &operator<<(std::ostream & s, const kahan & v) { // Output stream
     s << (v.s + v.c);
     return s;
   }
-  friend std::istream &operator>>(std::istream &s, kahan &v) {  // Input stream
+  friend std::istream &operator>>(std::istream & s, kahan & v) { // Input stream
     s >> v.s;
     v.c = 0;
     return s;

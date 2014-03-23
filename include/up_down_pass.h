@@ -81,10 +81,11 @@ private:
   };
 
 public:
-  UpDownPass(real_t _theta) : theta(_theta) {}
+  //! Constructor
+  UpDownPass(real_t _theta) : theta(_theta) {}                  // Initialize variables
 
   //! Upward pass (P2M, M2M)
-  void upwardPass(Cells &cells) {
+  void upwardPass(Cells & cells) {
     startTimer("Upward pass");                                  // Start timer
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Set iterator of target root cell
@@ -103,7 +104,7 @@ public:
   }
 
   //! Downward pass (L2L, L2P)
-  void downwardPass(Cells &cells) {
+  void downwardPass(Cells & cells) {
     startTimer("Downward pass");                                // Start timer
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Root cell
@@ -119,7 +120,7 @@ public:
   }
 
   //! Get dipole of entire system
-  vec3 getDipole(Bodies &bodies, vec3 X0) {
+  vec3 getDipole(Bodies & bodies, vec3 X0) {
     vec3 dipole = 0;                                            // Initialize dipole correction
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       dipole += (B->X - X0) * B->SRC;                           //  Calcuate dipole of the whole system
@@ -128,7 +129,7 @@ public:
   }
 
   //! Dipole correction
-  void dipoleCorrection(Bodies &bodies, vec3 dipole, int numBodies, real_t cycle) {
+  void dipoleCorrection(Bodies & bodies, vec3 dipole, int numBodies, real_t cycle) {
     real_t coef = 4 * M_PI / (3 * cycle * cycle * cycle);       // Precalcualte constant
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG[0] -= coef * norm(dipole) / numBodies / B->SRC;    //  Dipole correction for potential

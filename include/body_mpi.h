@@ -16,7 +16,7 @@ protected:
 
 protected:
   //! Exchange send count for bodies
-  void alltoall(Bodies &bodies) {
+  void alltoall(Bodies & bodies) {
     for (int i=0; i<mpisize; i++) {                             // Loop over ranks
       sendBodyCount[i] = 0;                                     //  Initialize send counts
     }                                                           // End loop over ranks
@@ -35,7 +35,7 @@ protected:
   }
 
   //! Exchange bodies
-  void alltoallv(Bodies &bodies) {
+  void alltoallv(Bodies & bodies) {
     int word = sizeof(bodies[0]) / 4;                           // Word size of body structure
     recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
@@ -71,7 +71,7 @@ public:
   }
 
   //! Send bodies to next rank (round robin)
-  void shiftBodies(Bodies &bodies) {
+  void shiftBodies(Bodies & bodies) {
     int newSize;                                                // New number of bodies
     int oldSize = bodies.size();                                // Current number of bodies
     const int word = sizeof(bodies[0]) / 4;                     // Word size of body structure
@@ -95,7 +95,7 @@ public:
   }
 
   //! Allgather bodies
-  Bodies allgatherBodies(Bodies &bodies) {
+  Bodies allgatherBodies(Bodies & bodies) {
     const int word = sizeof(bodies[0]) / 4;                     // Word size of body structure
     sendBodyCount[0] = bodies.size();                           // Determine send count
     MPI_Allgather(sendBodyCount, 1, MPI_INT,                    // Allgather number of bodies
@@ -115,7 +115,7 @@ public:
   }
 
   //! Partition bodies
-  Bounds partition(Bodies &bodies, Bounds global) {
+  Bounds partition(Bodies & bodies, Bounds global) {
     startTimer("Partition");                                    // Start timer
     int size = mpisize;                                         // Initialize MPI size counter
     vec<3,int> Npartition = 1;                                  // Number of partitions in each direction
@@ -154,7 +154,7 @@ public:
   }
 
   //! Send bodies back to where they came from
-  void unpartition(Bodies &bodies) {
+  void unpartition(Bodies & bodies) {
     startTimer("Sort");                                         // Start timer
     Sort sort;                                                  // Instantiate sort class
     bodies = sort.iproc(bodies);                                // Sort bodies according to IPROC

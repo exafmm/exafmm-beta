@@ -39,7 +39,8 @@ private:
   };
 
 public:
-  BoundBox(int _nspawn) : nspawn(_nspawn) {}
+  //! Constructor
+  BoundBox(int _nspawn) : nspawn(_nspawn) {}                    // Initialize variables
 
   //! Get Xmin and Xmax of domain
   Bounds getBounds(Bodies bodies) {

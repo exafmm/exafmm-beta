@@ -128,7 +128,7 @@ private:
 public:
   //! Constructor
   Ewald(int _ksize, real_t _alpha, real_t _sigma, real_t _cutoff, real_t _cycle) :
-    ksize(_ksize), alpha(_alpha), sigma(_sigma), cutoff(_cutoff), cycle(_cycle) {}
+    ksize(_ksize), alpha(_alpha), sigma(_sigma), cutoff(_cutoff), cycle(_cycle) {} // Initialize variables
 
   //! Ewald real part
   void realPart(Cells & cells, Cells & jcells) {

@@ -14,7 +14,7 @@ private:
 
 private:
   //! Split range and return partial range
-  void splitRange(int &begin, int &end, int iSplit, int numSplit) {
+  void splitRange(int & begin, int & end, int iSplit, int numSplit) {
     assert(end > begin);                                        // Check that size > 0
     int size = end - begin;                                     // Size of range
     int increment = size / numSplit;                            // Increment of splitting
@@ -117,10 +117,10 @@ private:
 
 public:
   //! Constructor
-  Dataset() : filePosition(0) {}
+  Dataset() : filePosition(0) {}                                // Initialize variables
 
   //! Initialize source values
-  void initSource(Bodies &bodies, int seed, int numSplit) {
+  void initSource(Bodies & bodies, int seed, int numSplit) {
     for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
       int begin = 0;                                            //  Begin index of bodies
       int end = bodies.size();                                  //  End index of bodies
@@ -145,7 +145,7 @@ public:
   }
 
   //! Initialize target values
-  void initTarget(Bodies &bodies) {
+  void initTarget(Bodies & bodies) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG = 0;                                               //  Clear target values
       B->IBODY = B-bodies.begin();                              //  Set initial body numbering
@@ -178,7 +178,7 @@ public:
   }
 
   //! Read source values from file
-  void readSources(Bodies &bodies, int mpirank) {
+  void readSources(Bodies & bodies, int mpirank) {
     std::stringstream name;                                     // File name
     name << "source" << std::setfill('0') << std::setw(4)       // Set format
          << mpirank << ".dat";                                  // Create file name
@@ -195,7 +195,7 @@ public:
   }
 
   //! Write source values to file
-  void writeSources(Bodies &bodies, int mpirank) {
+  void writeSources(Bodies & bodies, int mpirank) {
     std::stringstream name;                                     // File name
     name << "source" << std::setfill('0') << std::setw(4)       // Set format
          << mpirank << ".dat";                                  // Create file name
@@ -210,7 +210,7 @@ public:
   }
 
   //! Read target values from file
-  void readTargets(Bodies &bodies, int mpirank) {
+  void readTargets(Bodies & bodies, int mpirank) {
     std::stringstream name;                                     // File name
     name << "target" << std::setfill('0') << std::setw(4)       // Set format
          << mpirank << ".dat";                                  // Create file name
@@ -227,7 +227,7 @@ public:
   }
 
   //! Write target values to file
-  void writeTargets(Bodies &bodies, int mpirank) {
+  void writeTargets(Bodies & bodies, int mpirank) {
     std::stringstream name;                                     // File name
     name << "target" << std::setfill('0') << std::setw(4)       // Set format
          << mpirank << ".dat";                                  // Create file name
@@ -242,7 +242,7 @@ public:
   }
 
   //! Downsize target bodies by even sampling
-  void sampleBodies(Bodies &bodies, int numTargets) {
+  void sampleBodies(Bodies & bodies, int numTargets) {
     if (numTargets < int(bodies.size())) {                      // If target size is smaller than current
       int stride = bodies.size() / numTargets;                  //  Stride of sampling
       for (int i=0; i<numTargets; i++) {                        //  Loop over target samples
@@ -253,7 +253,7 @@ public:
   }
 
   //! Get bodies with positive charges
-  Bodies getPositive(Bodies &bodies) {
+  Bodies getPositive(Bodies & bodies) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
     B_iter B2 = buffer.begin();                                 // Initialize iterator of buffer
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
@@ -268,7 +268,7 @@ public:
 
 
   //! Get bodies with negative charges
-  Bodies getNegative(Bodies &bodies) {
+  Bodies getNegative(Bodies & bodies) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
     B_iter B2 = buffer.begin();                                 // Initialize iterator of buffer
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies

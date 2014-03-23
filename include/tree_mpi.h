@@ -44,7 +44,7 @@ private:
   }
 
   //! Add cells to send buffer
-  void addSendCell(C_iter C, uint64_t &iparent, int &icell) {
+  void addSendCell(C_iter C, uint64_t & iparent, int & icell) {
     Cell cell(*C);                                              // Initialize send cell
     cell.NCHILD = cell.NBODY = 0;                               // Reset counters
     cell.PARENT = iparent;                                      // Index of parent
@@ -56,7 +56,7 @@ private:
   }
 
   //! Add bodies to send buffer
-  void addSendBody(C_iter C, int &ibody, int icell) {
+  void addSendBody(C_iter C, int & ibody, int icell) {
     C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell;// Get send cell iterator
     Csend->NBODY = C->NBODY;                                    // Set number of bodies
     Csend->IBODY = ibody;                                       // Set body index per rank
@@ -68,7 +68,7 @@ private:
   }
 
   //! Determine which cells to send
-  void traverseLET(C_iter C, real_t cycle, int &ibody, int &icell) {
+  void traverseLET(C_iter C, real_t cycle, int & ibody, int & icell) {
     int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;           // Level of local root cell
     if (mpisize == 1) level = 0;                                // Account for serial case
     for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {  //Loop over child cells
@@ -117,7 +117,7 @@ private:
   }
 
   //! Exchange cells
-  void alltoallv(Cells &cells) {
+  void alltoallv(Cells & cells) {
     int word = sizeof(cells[0]) / 4;                            // Word size of body structure
     recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
@@ -138,7 +138,7 @@ private:
 
 public:
   //! Constructor
-  TreeMPI(int images) : images(images) {
+  TreeMPI(int images) : images(images) {                        // Initialize variables
     allLocalXmin = new fvec3 [mpisize];                         // Allocate array for minimum of local domains
     allLocalXmax = new fvec3 [mpisize];                         // Allocate array for maximum of local domains
     sendCellCount = new int [mpisize];                          // Allocate send count
@@ -157,7 +157,7 @@ public:
   }
 
   //! Set local essential tree to send to each process
-  void setLET(Cells &cells, Bounds bounds, real_t cycle) {
+  void setLET(Cells & cells, Bounds bounds, real_t cycle) {
     startTimer("Set LET");                                      // Start timer
     allgatherBounds(bounds);                                    // Gather local bounds from all ranks
     sendBodies.clear();                                         // Clear send buffer for bodies
@@ -186,7 +186,7 @@ public:
   }
 
   //! Get local essential tree from rank "irank".
-  void getLET(Cells &cells, int irank) {
+  void getLET(Cells & cells, int irank) {
     std::stringstream event;                                    // Event name
     event << "Get LET from rank " << irank;                     // Create event name based on irank
     startTimer(event.str());                                    // Start timer
