@@ -1,11 +1,14 @@
 #ifndef body_mpi_h
 #define body_mpi_h
-#include "base_mpi.h"
 #include "logger.h"
 #include "sort.h"
 
 //! Handles all the partitioning of domains
-class BodyMPI : public BaseMPI, public Logger {
+class BodyMPI : public Logger {
+private:
+  int mpirank;                                                  //!< Rank of MPI communicator
+  int mpisize;                                                  //!< Size of MPI communicator
+
 protected:
   Bodies sendBodies;                                            //!< Send buffer for bodies
   Bodies recvBodies;                                            //!< Receive buffer for bodies
@@ -57,6 +60,8 @@ protected:
 public:
   //! Constructor
   BodyMPI() {
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);                    // Get rank of current MPI process
+    MPI_Comm_size(MPI_COMM_WORLD, &mpisize);                    // Get number of MPI processes
     sendBodyCount = new int [mpisize];                          // Allocate send count
     sendBodyDispl = new int [mpisize];                          // Allocate send displacement
     recvBodyCount = new int [mpisize];                          // Allocate receive count
