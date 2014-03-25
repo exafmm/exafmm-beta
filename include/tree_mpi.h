@@ -1,9 +1,9 @@
 #ifndef tree_mpi_h
 #define tree_mpi_h
-#include "body_mpi.h"
+#include "logger.h"
 
 //! Handles all the communication of local essential trees
-class TreeMPI : public BodyMPI {
+class TreeMPI : public Logger {
 private:
   int mpirank;                                                  //!< Rank of MPI communicator
   int mpisize;                                                  //!< Size of MPI communicator
@@ -13,9 +13,15 @@ private:
   fvec3 localXmax;                                              //!< Local Xmax for a given rank
   fvec3 * allLocalXmin;                                         //!< Array for local Xmin for all ranks
   fvec3 * allLocalXmax;                                         //!< Array for local Xmax for all ranks
+  Bodies sendBodies;                                            //!< Send buffer for bodies
+  Bodies recvBodies;                                            //!< Receive buffer for bodies
   Cells sendCells;                                              //!< Send buffer for cells
   Cells recvCells;                                              //!< Receive buffer for cells
   C_iter C0;                                                    //!< Iterator of first cell
+  int * sendBodyCount;                                          //!< Send count
+  int * sendBodyDispl;                                          //!< Send displacement
+  int * recvBodyCount;                                          //!< Receive count
+  int * recvBodyDispl;                                          //!< Receive displacement
   int * sendCellCount;                                          //!< Send count
   int * sendCellDispl;                                          //!< Send displacement
   int * recvCellCount;                                          //!< Receive count
@@ -108,6 +114,45 @@ private:
     }                                                           // End loop over child cells
   }
 
+  //! Exchange send count for bodies
+  void alltoall(Bodies & bodies) {
+    for (int i=0; i<mpisize; i++) {                             // Loop over ranks
+      sendBodyCount[i] = 0;                                     //  Initialize send counts
+    }                                                           // End loop over ranks
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      assert(0 <= B->IPROC && B->IPROC < mpisize);              //  Check bounds for process ID
+      sendBodyCount[B->IPROC]++;                                //  Fill send count bucket
+      B->IPROC = mpirank;                                       //  Tag for sending back to original rank
+    }                                                           // End loop over bodies
+    MPI_Alltoall(sendBodyCount, 1, MPI_INT,                     // Communicate send count to get receive count
+                 recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
+    sendBodyDispl[0] = recvBodyDispl[0] = 0;                    // Initialize send/receive displacements
+    for (int irank=0; irank<mpisize-1; irank++) {               // Loop over ranks
+      sendBodyDispl[irank+1] = sendBodyDispl[irank] + sendBodyCount[irank];//  Set send displacement
+      recvBodyDispl[irank+1] = recvBodyDispl[irank] + recvBodyCount[irank];//  Set receive displacement
+    }                                                           // End loop over ranks
+  }
+
+  //! Exchange bodies
+  void alltoallv(Bodies & bodies) {
+    int word = sizeof(bodies[0]) / 4;                           // Word size of body structure
+    recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
+      sendBodyCount[irank] *= word;                             //  Multiply send count by word size of data
+      sendBodyDispl[irank] *= word;                             //  Multiply send displacement by word size of data
+      recvBodyCount[irank] *= word;                             //  Multiply receive count by word size of data
+      recvBodyDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
+    }                                                           // End loop over ranks
+    MPI_Alltoallv(&bodies[0], sendBodyCount, sendBodyDispl, MPI_INT,// Communicate bodies
+                  &recvBodies[0], recvBodyCount, recvBodyDispl, MPI_INT, MPI_COMM_WORLD);
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
+      sendBodyCount[irank] /= word;                             //  Divide send count by word size of data
+      sendBodyDispl[irank] /= word;                             //  Divide send displacement by word size of data
+      recvBodyCount[irank] /= word;                             //  Divide receive count by word size of data
+      recvBodyDispl[irank] /= word;                             //  Divide receive displacement by word size of data
+    }                                                           // End loop over ranks
+  }
+
   //! Exchange send count for cells
   void alltoall(Cells) {
     MPI_Alltoall(sendCellCount, 1, MPI_INT,                     // Communicate send count to get receive count
@@ -140,11 +185,15 @@ private:
 
 public:
   //! Constructor
-  TreeMPI(int images) : images(images) {                        // Initialize variables
+  TreeMPI(int _images) : images(_images) {                      // Initialize variables
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);                    // Get rank of current MPI process
     MPI_Comm_size(MPI_COMM_WORLD, &mpisize);                    // Get number of MPI processes
     allLocalXmin = new fvec3 [mpisize];                         // Allocate array for minimum of local domains
     allLocalXmax = new fvec3 [mpisize];                         // Allocate array for maximum of local domains
+    sendBodyCount = new int [mpisize];                          // Allocate send count
+    sendBodyDispl = new int [mpisize];                          // Allocate send displacement
+    recvBodyCount = new int [mpisize];                          // Allocate receive count
+    recvBodyDispl = new int [mpisize];                          // Allocate receive displacement
     sendCellCount = new int [mpisize];                          // Allocate send count
     sendCellDispl = new int [mpisize];                          // Allocate send displacement
     recvCellCount = new int [mpisize];                          // Allocate receive count
@@ -154,6 +203,10 @@ public:
   ~TreeMPI() {
     delete[] allLocalXmin;                                      // Deallocate array for minimum of local domains
     delete[] allLocalXmax;                                      // Deallocate array for maximum of local domains
+    delete[] sendBodyCount;                                     // Deallocate send count
+    delete[] sendBodyDispl;                                     // Deallocate send displacement
+    delete[] recvBodyCount;                                     // Deallocate receive count
+    delete[] recvBodyDispl;                                     // Deallocate receive displacement
     delete[] sendCellCount;                                     // Deallocate send count
     delete[] sendCellDispl;                                     // Deallocate send displacement
     delete[] recvCellCount;                                     // Deallocate receive count
@@ -210,12 +263,74 @@ public:
     stopTimer(event.str());                                     // Stop timer
   }
 
+  //! Send bodies
+  Bodies commBodies() {
+    startTimer("Comm bodies");                                  // Start timer
+    alltoall(sendBodies);                                       // Send body count
+    alltoallv(sendBodies);                                      // Send bodies
+    stopTimer("Comm bodies");                                   // Stop timer
+    return recvBodies;                                          // Return received bodies
+  }
+
+  //! Send bodies
+  Bodies commBodies(Bodies sendBodies) {
+    startTimer("Comm bodies");                                  // Start timer
+    alltoall(sendBodies);                                       // Send body count
+    alltoallv(sendBodies);                                      // Send bodies
+    stopTimer("Comm bodies");                                   // Stop timer
+    return recvBodies;                                          // Return received bodies
+  }
+
   //! Send cells
   void commCells() {
     startTimer("Comm cells");                                   // Start timer
     alltoall(sendCells);                                        // Send cell count
     alltoallv(sendCells);                                       // Senc cells
     stopTimer("Comm cells");                                    // Stop timer
+  }
+
+  //! Send bodies to next rank (round robin)
+  void shiftBodies(Bodies & bodies) {
+    int newSize;                                                // New number of bodies
+    int oldSize = bodies.size();                                // Current number of bodies
+    const int word = sizeof(bodies[0]) / 4;                     // Word size of body structure
+    const int isend = (mpirank + 1          ) % mpisize;        // Send to next rank (wrap around)
+    const int irecv = (mpirank - 1 + mpisize) % mpisize;        // Receive from previous rank (wrap around)
+    MPI_Request sreq,rreq;                                      // Send, receive request handles
+
+    MPI_Isend(&oldSize, 1, MPI_INT, irecv, 0, MPI_COMM_WORLD, &sreq);// Send current number of bodies
+    MPI_Irecv(&newSize, 1, MPI_INT, isend, 0, MPI_COMM_WORLD, &rreq);// Receive new number of bodies
+    MPI_Wait(&sreq, MPI_STATUS_IGNORE);                         // Wait for send to complete
+    MPI_Wait(&rreq, MPI_STATUS_IGNORE);                         // Wait for receive to complete
+
+    recvBodies.resize(newSize);                                 // Resize buffer to new number of bodies
+    MPI_Isend(&bodies[0], oldSize*word, MPI_INT, irecv,         // Send bodies to next rank
+              1, MPI_COMM_WORLD, &sreq);
+    MPI_Irecv(&recvBodies[0], newSize*word, MPI_INT, isend,     // Receive bodies from previous rank
+              1, MPI_COMM_WORLD, &rreq);
+    MPI_Wait(&sreq, MPI_STATUS_IGNORE);                         // Wait for send to complete
+    MPI_Wait(&rreq, MPI_STATUS_IGNORE);                         // Wait for receive to complete
+    bodies = recvBodies;                                        // Copy bodies from buffer
+  }
+
+  //! Allgather bodies
+  Bodies allgatherBodies(Bodies & bodies) {
+    const int word = sizeof(bodies[0]) / 4;                     // Word size of body structure
+    sendBodyCount[0] = bodies.size();                           // Determine send count
+    MPI_Allgather(sendBodyCount, 1, MPI_INT,                    // Allgather number of bodies
+                  recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
+    recvBodyDispl[0] = 0;                                       // Initialize receive displacement
+    for (int irank=0; irank<mpisize-1; irank++) {               // Loop over ranks
+      recvBodyDispl[irank+1] = recvBodyDispl[irank] + recvBodyCount[irank];// Set receive displacement
+    }                                                           // End loop over ranks
+    recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
+      recvBodyCount[irank] *= word;                             //  Multiply receive count by word size of data
+      recvBodyDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
+    }                                                           // End loop over ranks
+    MPI_Allgatherv(&bodies[0], sendBodyCount[0]*word, MPI_FLOAT,// Allgather bodies
+                   &recvBodies[0], recvBodyCount, recvBodyDispl, MPI_FLOAT, MPI_COMM_WORLD);
+    return recvBodies;                                          // Return bodies
   }
 };
 #endif

@@ -4,6 +4,7 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
+#include "partition.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
@@ -14,17 +15,19 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  Dataset data;
-  Logger logger;
-  Verify verify;
-
-  const real_t cycle = 2 * M_PI;
   BaseMPI baseMPI;
   BoundBox boundbox(args.nspawn);
   BuildTree build(args.ncrit, args.nspawn);
-  UpDownPass pass(args.theta);
+  Dataset data;
+  Logger logger;
+  Partition partition;
   Traversal traversal(args.nspawn, args.images);
   TreeMPI treeMPI(args.images);
+  UpDownPass pass(args.theta);
+  Verify verify;
+
+  const real_t cycle = 2 * M_PI;
+
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   if (args.verbose) {
@@ -56,10 +59,10 @@ int main(int argc, char ** argv) {
   localBounds = boundbox.getBounds(jbodies,localBounds);
 #endif
   Bounds globalBounds = baseMPI.allreduceBounds(localBounds);
-  localBounds = treeMPI.partition(bodies,globalBounds);
+  localBounds = partition.partition(bodies,globalBounds);
   bodies = treeMPI.commBodies(bodies);
 #if IneJ
-  treeMPI.partition(jbodies,globalBounds);
+  partition.partition(jbodies,globalBounds);
   jbodies = treeMPI.commBodies(jbodies);
 #endif
   localBounds = boundbox.getBounds(bodies);
