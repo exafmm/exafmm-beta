@@ -9,8 +9,8 @@
 
 Args *args;
 BaseMPI *baseMPI;
-BoundBox *boundbox;
-BuildTree *build;
+BoundBox *boundBox;
+BuildTree *buildTree;
 Logger *logger;
 Partition *partition;
 Traversal *traversal;
@@ -26,8 +26,8 @@ extern "C" void FMM_Init() {
   const real_t theta = 0.4;
   args = new Args;
   baseMPI = new BaseMPI;
-  boundbox = new BoundBox(nspawn);
-  build = new BuildTree(ncrit, nspawn);
+  boundBox = new BoundBox(nspawn);
+  buildTree = new BuildTree(ncrit, nspawn);
   logger = new Logger;
   partition = new Partition;
   traversal = new Traversal(nspawn, images);
@@ -44,8 +44,8 @@ extern "C" void FMM_Init() {
   args->verbose &= baseMPI->mpirank == 0;
   if (args->verbose) {
     logger->verbose = true;
-    boundbox->verbose = true;
-    build->verbose = true;
+    boundBox->verbose = true;
+    buildTree->verbose = true;
     upDownPass->verbose = true;
     traversal->verbose = true;
     treeMPI->verbose = true;
@@ -57,8 +57,8 @@ extern "C" void FMM_Init() {
 extern "C" void FMM_Finalize() {
   delete args;
   delete baseMPI;
-  delete boundbox;
-  delete build;
+  delete boundBox;
+  delete buildTree;
   delete logger;
   delete partition;
   delete traversal;
@@ -85,16 +85,16 @@ extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, d
     B->X[2] = zj[i];
     B->SRC  = vj[i];
   }
-  localBounds = boundbox->getBounds(bodies);
-  localBounds = boundbox->getBounds(jbodies,localBounds);
+  localBounds = boundBox->getBounds(bodies);
+  localBounds = boundBox->getBounds(jbodies,localBounds);
   Bounds globalBounds = baseMPI->allreduceBounds(localBounds);
-  localBounds = partition->partition(bodies,globalBounds);
+  localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
-  partition->partition(jbodies,globalBounds);
+  partition->octsection(jbodies,globalBounds);
   jbodies = treeMPI->commBodies(jbodies);
-  Cells cells = build->buildTree(bodies, localBounds);
+  Cells cells = buildTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
-  Cells jcells = build->buildTree(jbodies, localBounds);
+  Cells jcells = buildTree->buildTree(jbodies, localBounds);
   upDownPass->upwardPass(jcells);
 
   ni = bodies.size();
@@ -147,9 +147,9 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
     B->TRG    = 0;
     B->IBODY = i;
   }
-  Cells cells = build->buildTree(bodies, localBounds);
+  Cells cells = buildTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
-  Cells jcells = build->buildTree(jbodies, localBounds);
+  Cells jcells = buildTree->buildTree(jbodies, localBounds);
   upDownPass->upwardPass(jcells);
   treeMPI->setLET(jcells, localBounds, cycle);
   treeMPI->commBodies();

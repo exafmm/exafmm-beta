@@ -23,8 +23,8 @@
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   BaseMPI baseMPI;
-  BoundBox boundbox(args.nspawn);
-  BuildTree build(args.ncrit, args.nspawn);
+  BoundBox boundBox(args.nspawn);
+  BuildTree buildTree(args.ncrit, args.nspawn);
   Dataset data;
   Logger logger;
   Partition partition;
@@ -32,6 +32,7 @@ int main(int argc, char ** argv) {
   TreeMPI treeMPI(args.images);
   UpDownPass upDownPass(args.theta);
   Verify verify;
+
   const int ksize = 11;
   const real_t cycle = 2 * M_PI;
   const real_t alpha = 10 / cycle;
@@ -42,8 +43,8 @@ int main(int argc, char ** argv) {
   args.verbose &= baseMPI.mpirank == 0;
   if (args.verbose) {
     logger.verbose = true;
-    boundbox.verbose = true;
-    build.verbose = true;
+    boundBox.verbose = true;
+    buildTree.verbose = true;
     upDownPass.verbose = true;
     traversal.verbose = true;
     ewald.verbose = true;
@@ -58,12 +59,12 @@ int main(int argc, char ** argv) {
   logger.startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   //data.writeSources(bodies, baseMPI.mpirank);
-  Bounds localBounds = boundbox.getBounds(bodies);
+  Bounds localBounds = boundBox.getBounds(bodies);
   Bounds globalBounds = baseMPI.allreduceBounds(localBounds);
-  localBounds = partition.partition(bodies, globalBounds);
+  localBounds = partition.octsection(bodies, globalBounds);
   bodies = treeMPI.commBodies(bodies);
 
-  Cells cells = build.buildTree(bodies, localBounds);
+  Cells cells = buildTree.buildTree(bodies, localBounds);
   upDownPass.upwardPass(cells);
   treeMPI.setLET(cells,localBounds,cycle);
   treeMPI.commBodies();
@@ -92,14 +93,14 @@ int main(int argc, char ** argv) {
   for (int i=0; i<baseMPI.mpisize; i++) {
     if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI.mpisize << std::endl;
     treeMPI.shiftBodies(jbodies);
-    localBounds = boundbox.getBounds(jbodies);
-    Cells jcells = build.buildTree(jbodies, localBounds);
+    localBounds = boundBox.getBounds(jbodies);
+    Cells jcells = buildTree.buildTree(jbodies, localBounds);
     ewald.wavePart(bodies, jbodies);
     ewald.realPart(cells, jcells);
   }
 #else
   Bodies jbodies = treeMPI.allgatherBodies(bodies);
-  jcells = build.buildTree(jbodies, globalBounds);
+  jcells = buildTree.buildTree(jbodies, globalBounds);
   ewald.wavePart(bodies, jbodies);
   ewald.realPart(cells, jcells);
 #endif
@@ -138,7 +139,7 @@ int main(int argc, char ** argv) {
   double potNrmGlob = potSumGlob * potSumGlob;
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
-  build.printTreeData(cells);
+  buildTree.printTreeData(cells);
   traversal.printTraversalData();
   logger.printPAPI();
 #if VTK

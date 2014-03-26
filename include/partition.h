@@ -16,8 +16,8 @@ public:
     MPI_Comm_size(MPI_COMM_WORLD, &mpisize);                    // Get number of MPI processes
   }
 
-  //! Partition bodies
-  Bounds partition(Bodies & bodies, Bounds global) {
+  //! Partition bodies with geometric octsection
+  Bounds octsection(Bodies & bodies, Bounds global) {
     startTimer("Partition");                                    // Start timer
     int size = mpisize;                                         // Initialize MPI size counter
     vec<3,int> Npartition = 1;                                  // Number of partitions in each direction

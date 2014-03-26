@@ -10,8 +10,8 @@
 
 Args *args;
 BaseMPI *baseMPI;
-BoundBox *boundbox;
-BuildTree *build;
+BoundBox *boundBox;
+BuildTree *buildTree;
 Logger *logger;
 Partition *partition;
 Traversal *traversal;
@@ -26,8 +26,8 @@ extern "C" void FMM_Init(int images) {
   const real_t theta = 0.4;
   args = new Args;
   baseMPI = new BaseMPI;
-  boundbox = new BoundBox(nspawn);
-  build = new BuildTree(ncrit, nspawn);
+  boundBox = new BoundBox(nspawn);
+  buildTree = new BuildTree(ncrit, nspawn);
   logger = new Logger;
   partition = new Partition;
   traversal = new Traversal(nspawn, images);
@@ -44,8 +44,8 @@ extern "C" void FMM_Init(int images) {
   args->verbose &= baseMPI->mpirank == 0;
   if (args->verbose) {
     logger->verbose = true;
-    boundbox->verbose = true;
-    build->verbose = true;
+    boundBox->verbose = true;
+    buildTree->verbose = true;
     upDownPass->verbose = true;
     traversal->verbose = true;
     treeMPI->verbose = true;
@@ -57,8 +57,8 @@ extern "C" void FMM_Init(int images) {
 extern "C" void FMM_Finalize() {
   delete args;
   delete baseMPI;
-  delete boundbox;
-  delete build;
+  delete boundBox;
+  delete buildTree;
   delete logger;
   delete partition;
   delete traversal;
@@ -80,11 +80,11 @@ extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, doub
     int iwrap = wrap(B->X, cycle);
     B->IBODY = index[i] | (iwrap << shift);
   }
-  localBounds = boundbox->getBounds(bodies);
+  localBounds = boundBox->getBounds(bodies);
   Bounds globalBounds = baseMPI->allreduceBounds(localBounds);
-  localBounds = partition->partition(bodies,globalBounds);
+  localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
-  Cells cells = build->buildTree(bodies, localBounds);
+  Cells cells = buildTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -121,7 +121,7 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
   }
-  Cells cells = build->buildTree(bodies, localBounds);
+  Cells cells = buildTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->setLET(cells, localBounds, cycle);
   treeMPI->commBodies();
@@ -175,13 +175,13 @@ extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double 
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
   }
-  Cells cells = build->buildTree(bodies, localBounds);
+  Cells cells = buildTree->buildTree(bodies, localBounds);
   Bodies jbodies = bodies;
   for (int i=0; i<baseMPI->mpisize; i++) {
     if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI->mpisize << std::endl;
     treeMPI->shiftBodies(jbodies);
-    localBounds = boundbox->getBounds(jbodies);
-    Cells jcells = build->buildTree(jbodies, localBounds);
+    localBounds = boundBox->getBounds(jbodies);
+    Cells jcells = buildTree->buildTree(jbodies, localBounds);
     ewald->wavePart(bodies, jbodies);
     ewald->realPart(cells, jcells);
   }

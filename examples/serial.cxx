@@ -12,8 +12,8 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  BoundBox boundbox(args.nspawn);
-  BuildTree build(args.ncrit,args.nspawn);
+  BoundBox boundBox(args.nspawn);
+  BuildTree buildTree(args.ncrit,args.nspawn);
   Dataset data;
   Logger logger;
   UpDownPass upDownPass(args.theta);
@@ -23,8 +23,8 @@ int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
   if (args.verbose) {
     logger.verbose = true;
-    boundbox.verbose = true;
-    build.verbose = true;
+    boundBox.verbose = true;
+    buildTree.verbose = true;
     upDownPass.verbose = true;
     traversal.verbose = true;
     verify.verbose = true;
@@ -43,19 +43,19 @@ int main(int argc, char ** argv) {
       B->X[0] += M_PI;
       B->X[0] *= 0.5;
     }
-    Bounds bounds = boundbox.getBounds(bodies);
+    Bounds bounds = boundBox.getBounds(bodies);
 #if IneJ
     Bodies jbodies = data.initBodies(args.numBodies, args.distribution, 1);
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       B->X[0] -= M_PI;
       B->X[0] *= 0.5;
     }
-    bounds = boundbox.getBounds(jbodies,bounds);
+    bounds = boundBox.getBounds(jbodies,bounds);
 #endif
-    Cells cells = build.buildTree(bodies, bounds);
+    Cells cells = buildTree.buildTree(bodies, bounds);
     upDownPass.upwardPass(cells);
 #if IneJ
-    Cells jcells = build.buildTree(jbodies, bounds);
+    Cells jcells = buildTree.buildTree(jbodies, bounds);
     upDownPass.upwardPass(jcells);
     traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
@@ -67,8 +67,8 @@ int main(int argc, char ** argv) {
     logger.stopPAPI();
     logger.stopTimer("Total FMM");
 #if WRITE_TIME
-    boundbox.writeTime();
-    build.writeTime();
+    boundBox.writeTime();
+    buildTree.writeTime();
     upDownPass.writeTime();
     traversal.writeTime();
 #endif
@@ -86,7 +86,7 @@ int main(int argc, char ** argv) {
     logger.printTitle("FMM vs. direct");
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
-    build.printTreeData(cells);
+    buildTree.printTreeData(cells);
     traversal.printTraversalData();
     logger.printPAPI();
 #if DAG_RECORDER == 2

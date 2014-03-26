@@ -16,8 +16,8 @@
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   BaseMPI baseMPI;
-  BoundBox boundbox(args.nspawn);
-  BuildTree build(args.ncrit, args.nspawn);
+  BoundBox boundBox(args.nspawn);
+  BuildTree buildTree(args.ncrit, args.nspawn);
   Dataset data;
   Logger logger;
   Partition partition;
@@ -32,8 +32,8 @@ int main(int argc, char ** argv) {
   args.verbose &= baseMPI.mpirank == 0;
   if (args.verbose) {
     logger.verbose = true;
-    boundbox.verbose = true;
-    build.verbose = true;
+    boundBox.verbose = true;
+    buildTree.verbose = true;
     upDownPass.verbose = true;
     traversal.verbose = true;
     treeMPI.verbose = true;
@@ -49,28 +49,28 @@ int main(int argc, char ** argv) {
     B->X[0] += M_PI;
     B->X[0] *= 0.5;
   }
-  Bounds localBounds = boundbox.getBounds(bodies);
+  Bounds localBounds = boundBox.getBounds(bodies);
 #if IneJ
   Bodies jbodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank+baseMPI.mpisize, baseMPI.mpisize);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X[0] -= M_PI;
     B->X[0] *= 0.5;
   }
-  localBounds = boundbox.getBounds(jbodies,localBounds);
+  localBounds = boundBox.getBounds(jbodies,localBounds);
 #endif
   Bounds globalBounds = baseMPI.allreduceBounds(localBounds);
-  localBounds = partition.partition(bodies,globalBounds);
+  localBounds = partition.octsection(bodies,globalBounds);
   bodies = treeMPI.commBodies(bodies);
 #if IneJ
-  partition.partition(jbodies,globalBounds);
+  partition.octsection(jbodies,globalBounds);
   jbodies = treeMPI.commBodies(jbodies);
 #endif
-  localBounds = boundbox.getBounds(bodies);
-  Cells cells = build.buildTree(bodies, localBounds);
+  localBounds = boundBox.getBounds(bodies);
+  Cells cells = buildTree.buildTree(bodies, localBounds);
   upDownPass.upwardPass(cells);
 #if IneJ
-  localBounds = boundbox.getBounds(jbodies);
-  Cells jcells = build.buildTree(jbodies, localBounds);
+  localBounds = boundBox.getBounds(jbodies);
+  Cells jcells = buildTree.buildTree(jbodies, localBounds);
   upDownPass.upwardPass(jcells);
 #endif
 
@@ -95,7 +95,7 @@ int main(int argc, char ** argv) {
 #if 0 // Set to 1 for debugging full treeMPI communication : Step 2 (treeMPI must be set to full tree)
     treeMPI.shiftBodies(jbodies); // This will overwrite recvBodies. (define recvBodies2 in body_mpi.h to avoid this)
     Cells icells;
-    build.buildTree(jbodies, icells);
+    buildTree.buildTree(jbodies, icells);
     upDownPass.upwardPass(icells);
     assert( icells.size() == jcells.size() );
     CellQueue Qi, Qj;
@@ -142,8 +142,8 @@ int main(int argc, char ** argv) {
   for (int irank=0; irank<baseMPI.mpisize; irank++) {
     treeMPI.shiftBodies(jbodies);
     jcells.clear();
-    localBounds = boundbox.getBounds(jbodies);
-    jcells = build.buildTree(jbodies, localBounds);
+    localBounds = boundBox.getBounds(jbodies);
+    jcells = buildTree.buildTree(jbodies, localBounds);
     upDownPass.upwardPass(jcells);
     traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
   }
@@ -167,8 +167,8 @@ int main(int argc, char ** argv) {
   logger.printTime("Total FMM");
   logger.stopTimer("Total Direct");
 #if WRITE_TIME
-  boundbox.writeTime(baseMPI.mpirank);
-  build.writeTime(baseMPI.mpirank);
+  boundBox.writeTime(baseMPI.mpirank);
+  buildTree.writeTime(baseMPI.mpirank);
   upDownPass.writeTime(baseMPI.mpirank);
   traversal.writeTime(baseMPI.mpirank);
   treeMPI.writeTime(baseMPI.mpirank);
@@ -185,7 +185,7 @@ int main(int argc, char ** argv) {
   logger.printTitle("FMM vs. direct");
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
-  build.printTreeData(cells);
+  buildTree.printTreeData(cells);
   traversal.printTraversalData();
   logger.printPAPI();
 

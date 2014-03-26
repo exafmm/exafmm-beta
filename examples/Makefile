@@ -1,7 +1,7 @@
 include ../Makefile.include
 
-LFLAGS	+= -DMASS # Use all positive sources
-LFLAGS	+= -DIneJ # Different target and source points
+#LFLAGS	+= -DMASS # Use all positive sources
+#LFLAGS	+= -DIneJ # Different target and source points
 #LFLAGS += -DWRITE_TIME # Write timings to file
 
 # Test for serial FMM

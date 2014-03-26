@@ -13,8 +13,8 @@ static const double Celec = 332.0716;
 
 Args *args;
 BaseMPI *baseMPI;
-BoundBox *boundbox;
-BuildTree *build;
+BoundBox *boundBox;
+BuildTree *buildTree;
 Logger *logger;
 Partition *partition;
 Traversal *traversal;
@@ -28,8 +28,8 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   const int nspawn = 1000;
   args = new Args;
   baseMPI = new BaseMPI;
-  boundbox = new BoundBox(nspawn);
-  build = new BuildTree(ncrit, nspawn);
+  boundBox = new BoundBox(nspawn);
+  buildTree = new BuildTree(ncrit, nspawn);
   logger = new Logger;
   partition = new Partition;
   traversal = new Traversal(nspawn, images);
@@ -46,8 +46,8 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   args->verbose &= baseMPI->mpirank == 0;
   if (args->verbose) {
     logger->verbose = true;
-    boundbox->verbose = true;
-    build->verbose = true;
+    boundBox->verbose = true;
+    buildTree->verbose = true;
     upDownPass->verbose = true;
     traversal->verbose = true;
     treeMPI->verbose = true;
@@ -59,8 +59,8 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
 extern "C" void fmm_finalize_() {
   delete args;
   delete baseMPI;
-  delete boundbox;
-  delete build;
+  delete boundBox;
+  delete buildTree;
   delete logger;
   delete partition;
   delete traversal;
@@ -93,9 +93,9 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
       B++;
     }
   }
-  localBounds = boundbox->getBounds(bodies);
+  localBounds = boundBox->getBounds(bodies);
   Bounds globalBounds = baseMPI->allreduceBounds(localBounds);
-  localBounds = partition->partition(bodies,globalBounds);
+  localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
   for (int i=0; i<nglobal; i++) {
     icpumap[i] = 0;
@@ -148,7 +148,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
       B++;
     }
   }
-  Cells cells = build->buildTree(bodies, localBounds);
+  Cells cells = buildTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->setLET(cells, localBounds, cycle);
   treeMPI->commBodies();
@@ -225,13 +225,13 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
       B++;
     }
   }
-  Cells cells = build->buildTree(bodies, localBounds);
+  Cells cells = buildTree->buildTree(bodies, localBounds);
   Bodies jbodies = bodies;
   for (int i=0; i<baseMPI->mpisize; i++) {
     if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI->mpisize << std::endl;
     treeMPI->shiftBodies(jbodies);
-    localBounds = boundbox->getBounds(jbodies);
-    Cells jcells = build->buildTree(jbodies, localBounds);
+    localBounds = boundBox->getBounds(jbodies);
+    Cells jcells = buildTree->buildTree(jbodies, localBounds);
     ewald->wavePart(bodies, jbodies);
     ewald->realPart(cells, jcells);
   }
@@ -386,7 +386,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B++;
     }
   }
-  Cells cells = build->buildTree(bodies, localBounds);
+  Cells cells = buildTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->setLET(cells, localBounds, cycle);
   treeMPI->commBodies();
