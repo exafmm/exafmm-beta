@@ -100,7 +100,7 @@ public:
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
 	Neighbor neighbor(this, Ci, Cj, Cj);                    //   Instantiate recursive functor
-        create_task(neighbor);                                  //   Create task for recursive call
+        create_taskc(neighbor);                                  //   Create task for recursive call
       }                                                         //  End if for leaf target cell
     }                                                           // End loop over target cells
     wait_tasks;                                                 // Synchronize tasks

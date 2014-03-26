@@ -12,20 +12,20 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
+  BoundBox boundbox(args.nspawn);
+  BuildTree build(args.ncrit,args.nspawn);
   Dataset data;
   Logger logger;
+  UpDownPass upDownPass(args.theta);
+  Traversal traversal(args.nspawn,args.images);
   Verify verify;
 
   const real_t cycle = 2 * M_PI;
-  BoundBox boundbox(args.nspawn);
-  BuildTree build(args.ncrit,args.nspawn);
-  UpDownPass pass(args.theta);
-  Traversal traversal(args.nspawn,args.images);
   if (args.verbose) {
     logger.verbose = true;
     boundbox.verbose = true;
     build.verbose = true;
-    pass.verbose = true;
+    upDownPass.verbose = true;
     traversal.verbose = true;
     verify.verbose = true;
   }
@@ -53,23 +53,23 @@ int main(int argc, char ** argv) {
     bounds = boundbox.getBounds(jbodies,bounds);
 #endif
     Cells cells = build.buildTree(bodies, bounds);
-    pass.upwardPass(cells);
+    upDownPass.upwardPass(cells);
 #if IneJ
     Cells jcells = build.buildTree(jbodies, bounds);
-    pass.upwardPass(jcells);
+    upDownPass.upwardPass(jcells);
     traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
     Bodies jbodies = bodies;
 #endif
-    pass.downwardPass(cells);
+    upDownPass.downwardPass(cells);
     logger.printTitle("Total runtime");
     logger.stopPAPI();
     logger.stopTimer("Total FMM");
 #if WRITE_TIME
     boundbox.writeTime();
     build.writeTime();
-    pass.writeTime();
+    upDownPass.writeTime();
     traversal.writeTime();
 #endif
     data.sampleBodies(bodies, args.numTargets);

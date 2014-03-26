@@ -1,11 +1,13 @@
-#include "tree_mpi.h"
+#include "base_mpi.h"
 #include "args.h"
 #include "bound_box.h"
 #include "build_tree.h"
 #include "dataset.h"
 #include "ewald.h"
 #include "logger.h"
+#include "partition.h"
 #include "traversal.h"
+#include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
 #if VTK
@@ -20,27 +22,29 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
+  BaseMPI baseMPI;
+  BoundBox boundbox(args.nspawn);
+  BuildTree build(args.ncrit, args.nspawn);
   Dataset data;
   Logger logger;
+  Partition partition;
+  Traversal traversal(args.nspawn, args.images);
+  TreeMPI treeMPI(args.images);
+  UpDownPass upDownPass(args.theta);
   Verify verify;
-
   const int ksize = 11;
   const real_t cycle = 2 * M_PI;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = cycle * alpha / 3;
-  BoundBox boundbox(args.nspawn);
-  BuildTree build(args.ncrit, args.nspawn);
-  UpDownPass pass(args.theta);
-  Traversal traversal(args.nspawn, args.images);
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
-  TreeMPI treeMPI(args.images);
-  args.verbose &= treeMPI.mpirank == 0;
+
+  args.verbose &= baseMPI.mpirank == 0;
   if (args.verbose) {
     logger.verbose = true;
     boundbox.verbose = true;
     build.verbose = true;
-    pass.verbose = true;
+    upDownPass.verbose = true;
     traversal.verbose = true;
     ewald.verbose = true;
     treeMPI.verbose = true;
@@ -52,30 +56,30 @@ int main(int argc, char ** argv) {
   logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution, treeMPI.mpirank, treeMPI.mpisize);
-  //data.writeSources(bodies, treeMPI.mpirank);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
+  //data.writeSources(bodies, baseMPI.mpirank);
   Bounds localBounds = boundbox.getBounds(bodies);
-  Bounds globalBounds = treeMPI.allreduceBounds(localBounds);
-  localBounds = treeMPI.partition(bodies, globalBounds);
+  Bounds globalBounds = baseMPI.allreduceBounds(localBounds);
+  localBounds = partition.partition(bodies, globalBounds);
   bodies = treeMPI.commBodies(bodies);
 
   Cells cells = build.buildTree(bodies, localBounds);
-  pass.upwardPass(cells);
+  upDownPass.upwardPass(cells);
   treeMPI.setLET(cells,localBounds,cycle);
   treeMPI.commBodies();
   treeMPI.commCells();
 
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   Cells jcells;
-  for (int irank=1; irank<treeMPI.mpisize; irank++) {
-    treeMPI.getLET(jcells,(treeMPI.mpirank+irank)%treeMPI.mpisize);
+  for (int irank=1; irank<baseMPI.mpisize; irank++) {
+    treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
-  pass.downwardPass(cells);
-  vec3 localDipole = pass.getDipole(bodies,0);
-  vec3 globalDipole = treeMPI.allreduceVec3(localDipole);
-  int numBodies = treeMPI.allreduceInt(bodies.size());
-  pass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
+  upDownPass.downwardPass(cells);
+  vec3 localDipole = upDownPass.getDipole(bodies,0);
+  vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
+  int numBodies = baseMPI.allreduceInt(bodies.size());
+  upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
 #if 1
@@ -85,8 +89,8 @@ int main(int argc, char ** argv) {
   logger.startTimer("Total Ewald");
 #if 1
   Bodies jbodies = bodies;
-  for (int i=0; i<treeMPI.mpisize; i++) {
-    if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << treeMPI.mpisize << std::endl;
+  for (int i=0; i<baseMPI.mpisize; i++) {
+    if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI.mpisize << std::endl;
     treeMPI.shiftBodies(jbodies);
     localBounds = boundbox.getBounds(jbodies);
     Cells jcells = build.buildTree(jbodies, localBounds);
@@ -109,13 +113,13 @@ int main(int argc, char ** argv) {
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
   logger.startTimer("Total Direct");
-  for (int i=0; i<treeMPI.mpisize; i++) {
+  for (int i=0; i<baseMPI.mpisize; i++) {
     treeMPI.shiftBodies(jbodies);
     traversal.direct(bodies, jbodies, cycle);
-    if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << treeMPI.mpisize << std::endl;
+    if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
   }
   traversal.normalize(bodies);
-  pass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
+  upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
   logger.printTitle("Total runtime");
   logger.printTime("Total FMM");
   logger.stopTimer("Total Direct");

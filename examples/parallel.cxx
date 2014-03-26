@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
   Partition partition;
   Traversal traversal(args.nspawn, args.images);
   TreeMPI treeMPI(args.images);
-  UpDownPass pass(args.theta);
+  UpDownPass upDownPass(args.theta);
   Verify verify;
 
   const real_t cycle = 2 * M_PI;
@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
     logger.verbose = true;
     boundbox.verbose = true;
     build.verbose = true;
-    pass.verbose = true;
+    upDownPass.verbose = true;
     traversal.verbose = true;
     treeMPI.verbose = true;
     verify.verbose = true;
@@ -67,11 +67,11 @@ int main(int argc, char ** argv) {
 #endif
   localBounds = boundbox.getBounds(bodies);
   Cells cells = build.buildTree(bodies, localBounds);
-  pass.upwardPass(cells);
+  upDownPass.upwardPass(cells);
 #if IneJ
   localBounds = boundbox.getBounds(jbodies);
   Cells jcells = build.buildTree(jbodies, localBounds);
-  pass.upwardPass(jcells);
+  upDownPass.upwardPass(jcells);
 #endif
 
 #if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree : Step 1
@@ -96,7 +96,7 @@ int main(int argc, char ** argv) {
     treeMPI.shiftBodies(jbodies); // This will overwrite recvBodies. (define recvBodies2 in body_mpi.h to avoid this)
     Cells icells;
     build.buildTree(jbodies, icells);
-    pass.upwardPass(icells);
+    upDownPass.upwardPass(icells);
     assert( icells.size() == jcells.size() );
     CellQueue Qi, Qj;
     Qi.push(icells.begin());
@@ -144,11 +144,11 @@ int main(int argc, char ** argv) {
     jcells.clear();
     localBounds = boundbox.getBounds(jbodies);
     jcells = build.buildTree(jbodies, localBounds);
-    pass.upwardPass(jcells);
+    upDownPass.upwardPass(jcells);
     traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
   }
 #endif
-  pass.downwardPass(cells);
+  upDownPass.downwardPass(cells);
 
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
@@ -169,7 +169,7 @@ int main(int argc, char ** argv) {
 #if WRITE_TIME
   boundbox.writeTime(baseMPI.mpirank);
   build.writeTime(baseMPI.mpirank);
-  pass.writeTime(baseMPI.mpirank);
+  upDownPass.writeTime(baseMPI.mpirank);
   traversal.writeTime(baseMPI.mpirank);
   treeMPI.writeTime(baseMPI.mpirank);
 #endif

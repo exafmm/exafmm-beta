@@ -289,6 +289,11 @@ public:
     stopTimer("Comm cells");                                    // Stop timer
   }
 
+  //! Copy recvBodies to bodies
+  Bodies getRecvBodies() {
+    return recvBodies;                                          // Return recvBodies
+  }
+
   //! Send bodies to next rank (round robin)
   void shiftBodies(Bodies & bodies) {
     int newSize;                                                // New number of bodies
