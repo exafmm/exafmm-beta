@@ -10,7 +10,7 @@
 #define count(N)
 #endif
 
-class Traversal : public Kernel {
+class Traversal {
 private:
   int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
   int images;                                                   //!< Number of periodic image sublevels
@@ -26,17 +26,17 @@ private:
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
     if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {     // If distance is far enough
-      M2L(Ci, Cj, Xperiodic, mutual);                           //  M2L kernel
+      kernel::M2L(Ci, Cj, Xperiodic, mutual);                   //  M2L kernel
       count(numM2L);                                            //  Increment M2L counter
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
       if (Cj->NBODY == 0) {                                     //  If the bodies weren't sent from remote node
-	M2L(Ci, Cj, Xperiodic, mutual);                         //   M2L kernel
+	kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
         count(numM2L);                                          //   Increment M2L counter
       } else {                                                  //  Else if the bodies were sent
 	if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
-	  P2P(Ci);                                              //    P2P kernel for single cell
+	  kernel::P2P(Ci);                                      //    P2P kernel for single cell
 	} else {                                                //   Else if source and target are different
-	  P2P(Ci, Cj, Xperiodic, mutual);                       //    P2P kernel for pair of cells
+	  kernel::P2P(Ci, Cj, Xperiodic, mutual);               //    P2P kernel for pair of cells
 	}                                                       //   End if for same source and target
 	count(numP2P);                                          //   Increment P2P counter
       }                                                         //  End if for bodies
@@ -124,7 +124,7 @@ private:
                     Xperiodic[0] = (ix * 3 + cx) * cycle;       //         Coordinate offset for x periodic direction
                     Xperiodic[1] = (iy * 3 + cy) * cycle;       //         Coordinate offset for y periodic direction
                     Xperiodic[2] = (iz * 3 + cz) * cycle;       //         Coordinate offset for z periodic direction
-                    M2L(Ci0, Ci, Xperiodic, false);             //         M2L kernel
+		    kernel::M2L(Ci0, Ci, Xperiodic, false);     //         M2L kernel
                   }                                             //        End loop over z periodic direction (child)
                 }                                               //       End loop over y periodic direction (child)
               }                                                 //      End loop over x periodic direction (child)
@@ -152,7 +152,7 @@ private:
       }                                                         //  End loop over x periodic direction
       Ci->RMAX = 0;                                             //  Initialize Rmax of periodic parent
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
-      M2M(Ci,Cj0);                                              //  Evaluate periodic M2M kernels for this sublevel
+      kernel::M2M(Ci,Cj0);                                      //  Evaluate periodic M2M kernels for this sublevel
 #if Cartesian
       for (int i=1; i<NTERM; i++) Ci->M[i] /= Ci->M[0];         //  Normalize multipole expansion coefficients
 #endif
@@ -227,7 +227,7 @@ public:
     logger::writeTrace();                                       // Write trace to file
   }
 
-  struct DirectRecursion : public Kernel {
+  struct DirectRecursion {
     C_iter Ci;                                                  //!< Iterator of target cell
     C_iter Cj;                                                  //!< Iterator of source cell
     int prange;                                                 //!< Range of periodic images
@@ -243,7 +243,7 @@ public:
 	      Xperiodic[0] = ix * cycle;                        //      Coordinate shift for x periodic direction
 	      Xperiodic[1] = iy * cycle;                        //      Coordinate shift for y periodic direction
 	      Xperiodic[2] = iz * cycle;                        //      Coordinate shift for z periodic direction
-	      P2P(Ci, Cj, Xperiodic, false);                    //      Evaluate P2P kernel
+	      kernel::P2P(Ci, Cj, Xperiodic, false);            //      Evaluate P2P kernel
 	    }                                                   //     End loop over z periodic direction
 	  }                                                     //    End loop over y periodic direction
 	}                                                       //   End loop over x periodic direction
@@ -285,7 +285,7 @@ public:
 	  Xperiodic[0] = ix * cycle;                            //    Coordinate shift for x periodic direction
 	  Xperiodic[1] = iy * cycle;                            //    Coordinate shift for y periodic direction
 	  Xperiodic[2] = iz * cycle;                            //    Coordinate shift for z periodic direction
-	  P2P(Ci, Cj, Xperiodic, false);                        //    Evaluate P2P kernel
+	  kernel::P2P(Ci, Cj, Xperiodic, false);                //    Evaluate P2P kernel
 	}                                                       //   End loop over z periodic direction
       }                                                         //  End loop over y periodic direction
     }                                                           // End loop over x periodic direction

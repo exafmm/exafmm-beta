@@ -4,7 +4,7 @@
 #include "logger.h"
 #include <tpswitch/tpswitch.h>
 
-class UpDownPass : public Kernel {
+class UpDownPass {
 public:
   real_t theta;                                                 //!< Multipole acceptance criteria
 
@@ -42,7 +42,7 @@ private:
   };
 
   //! Recursive functor for the post-order traversal during upward pass
-  struct PostOrderTraversal : public Kernel {
+  struct PostOrderTraversal {
     C_iter C;                                                   //!< Iterator of current cell
     C_iter C0;                                                  //!< Iterator of first cell
     PostOrderTraversal(C_iter _C, C_iter _C0) :                 // Constructor
@@ -57,20 +57,20 @@ private:
       C->RMAX = 0;                                              //  Initialzie Rmax
       C->M = 0;                                                 //  Initialize multipole expansion coefficients
       C->L = 0;                                                 //  Initialize local expansion coefficients
-      if(C->NCHILD==0) P2M(C);                                  //  P2M kernel
-      else M2M(C,C0);                                           //  M2M kernel
+      if(C->NCHILD==0) kernel::P2M(C);                          //  P2M kernel
+      else kernel::M2M(C,C0);                                   //  M2M kernel
     }                                                           // End overload operator()
   };
 
   //! Recursive functor for the pre-order traversal during downward pass
-  struct PreOrderTraversal : public Kernel {
+  struct PreOrderTraversal {
     C_iter C;                                                   //!< Iterator of current cell
     C_iter C0;                                                  //!< Iterator of first cell
     PreOrderTraversal(C_iter _C, C_iter _C0) :                  // Constructor
       C(_C), C0(_C0) {}                                         // Initialize variables
     void operator() () {                                        // Overload operator()
-      L2L(C,C0);                                                //  L2L kernel
-      if (C->NCHILD==0) L2P(C);                                 //  L2P kernel
+      kernel::L2L(C,C0);                                        //  L2L kernel
+      if (C->NCHILD==0) kernel::L2P(C);                         //  L2P kernel
       mk_task_group;                                            //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	PreOrderTraversal preOrderTraversal(CC, C0);            //   Instantiate recursive functor
@@ -108,7 +108,7 @@ public:
     logger::startTimer("Downward pass");                        // Start timer
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Root cell
-      if (C0->NCHILD == 0) L2P(C0);                             //  If root is the only cell do L2P
+      if (C0->NCHILD == 0) kernel::L2P(C0);                     //  If root is the only cell do L2P
       mk_task_group;                                            //  Initialize tasks
       for (C_iter CC=C0+C0->ICHILD; CC!=C0+C0->ICHILD+C0->NCHILD; CC++) {// Loop over child cells
 	PreOrderTraversal preOrderTraversal(CC, C0);            //    Instantiate recursive functor

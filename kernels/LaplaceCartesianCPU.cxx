@@ -625,7 +625,7 @@ struct Coefs<0,0> {
   static inline void negate(vecP){}
 };
 
-void Kernel::P2M(C_iter C) const {
+void kernel::P2M(C_iter C) {
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     vec3 dX = C->X - B->X;
     real_t R = std::sqrt(norm(dX));
@@ -643,7 +643,7 @@ void Kernel::P2M(C_iter C) const {
 #endif
 }
 
-void Kernel::M2M(C_iter Ci, C_iter C0) const {
+void kernel::M2M(C_iter Ci, C_iter C0) {
   for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
     real_t R = std::sqrt(norm(dX)) + Cj->RCRIT;
@@ -664,7 +664,7 @@ void Kernel::M2M(C_iter Ci, C_iter C0) const {
 #endif
 }
 
-void Kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) const {
+void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t invR2 = 1 / norm(dX);
   real_t invR  = Ci->M[0] * Cj->M[0] * std::sqrt(invR2);
@@ -677,7 +677,7 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) const {
   }
 }
 
-void Kernel::L2L(C_iter Ci, C_iter Ci0) const {
+void kernel::L2L(C_iter Ci, C_iter Ci0) {
   C_iter Cj = Ci0 + Ci->PARENT;
   vec3 dX = Ci->X - Cj->X;
   vecP C;
@@ -689,7 +689,7 @@ void Kernel::L2L(C_iter Ci, C_iter Ci0) const {
   Kernels<0,0,P-1>::L2L(Ci->L,C,Cj->L);
 }
 
-void Kernel::L2P(C_iter Ci) const {
+void kernel::L2P(C_iter Ci) {
   for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NBODY; B++) {
     vec3 dX = B->X - Ci->X;
     vecP C, L;

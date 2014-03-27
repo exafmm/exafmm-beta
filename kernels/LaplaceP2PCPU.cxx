@@ -2,7 +2,7 @@
 #include "simd.h"
 const real_t EPS2 = 0.0;                                        //!< Softening parameter (squared)
 
-void Kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) const {
+void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
   int ni = Ci->NBODY;
@@ -170,7 +170,7 @@ void Kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) const {
   }
 }
 
-void Kernel::P2P(C_iter C) const {
+void kernel::P2P(C_iter C) {
   B_iter B = C->BODY;
   int n = C->NBODY;
   int i = 0;

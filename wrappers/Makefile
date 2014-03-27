@@ -3,8 +3,9 @@ include ../Makefile.include
 LFLAGS += -DMASS -DIneJ
 
 all:
-	make gromacs
 	make charmm
+	make gromacs
+	make petiga
 
 petiga:
 	make libpetiga.a

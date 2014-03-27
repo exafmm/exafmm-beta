@@ -101,7 +101,7 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t * Ynm) {
   }                                                             // End loop over m in Ynm
 }
 
-void Kernel::P2M(C_iter C) const {
+void kernel::P2M(C_iter C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     vec3 dX = B->X - C->X;
@@ -125,7 +125,7 @@ void Kernel::P2M(C_iter C) const {
 #endif
 }
 
-void Kernel::M2M(C_iter Ci, C_iter C0) const {
+void kernel::M2M(C_iter Ci, C_iter C0) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
@@ -161,7 +161,7 @@ void Kernel::M2M(C_iter Ci, C_iter C0) const {
 #endif
 }
 
-void Kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) const {
+void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
   complex_t Ynmi[P*P], Ynmj[P*P];
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t rho, alpha, beta;
@@ -194,7 +194,7 @@ void Kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) const {
   }
 }
 
-void Kernel::L2L(C_iter Ci, C_iter C0) const {
+void kernel::L2L(C_iter Ci, C_iter C0) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   C_iter Cj = C0 + Ci->PARENT;
   vec3 dX = Ci->X - Cj->X;
@@ -224,7 +224,7 @@ void Kernel::L2L(C_iter Ci, C_iter C0) const {
   }
 }
 
-void Kernel::L2P(C_iter Ci) const {
+void kernel::L2P(C_iter Ci) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NBODY; B++) {
     vec3 dX = B->X - Ci->X;
