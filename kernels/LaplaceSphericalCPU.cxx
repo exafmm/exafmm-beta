@@ -7,7 +7,7 @@ const complex_t I(0.,1.);                                       // Imaginary uni
 const real_t EPS = 1e-12;                                       // Double precision epsilon
 
 //! Get r,theta,phi from x,y,z
-void cart2sph(real_t& r, real_t& theta, real_t& phi, vec3 dX) {
+void cart2sph(real_t & r, real_t & theta, real_t & phi, vec3 dX) {
   r = sqrt(norm(dX)) * 1.000001;                                // r = sqrt(x^2 + y^2 + z^2)
   theta = acos(dX[2] / r);                                      // theta = acos(z / r)
   phi = atan2(dX[1],dX[0]);                                     // phi = atan(y / x)
@@ -15,7 +15,7 @@ void cart2sph(real_t& r, real_t& theta, real_t& phi, vec3 dX) {
 
 //! Spherical to cartesian coordinates
 template<typename T>
-void sph2cart(real_t r, real_t theta, real_t phi, T spherical, T &cartesian) {
+void sph2cart(real_t r, real_t theta, real_t phi, T spherical, T & cartesian) {
   cartesian[0] = sin(theta) * cos(phi) * spherical[0]           // x component (not x itself)
     + cos(theta) * cos(phi) / r * spherical[1]
     - sin(phi) / r / sin(theta) * spherical[2];
@@ -27,7 +27,7 @@ void sph2cart(real_t r, real_t theta, real_t phi, T spherical, T &cartesian) {
 }
 
 //! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
-void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, complex_t *YnmTheta) {
+void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t * Ynm, complex_t * YnmTheta) {
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
   real_t fact = 1;                                              // Initialize 2 * m + 1
@@ -66,7 +66,7 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t *Ynm, comple
 }
 
 //! Evaluate singular harmonics \f$ r^{-n-1} Y_n^m \f$
-void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t *Ynm) {
+void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t * Ynm) {
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
   real_t fact = 1;                                              // Initialize 2 * m + 1
@@ -161,7 +161,7 @@ void Kernel::M2M(C_iter Ci, C_iter C0) const {
 #endif
 }
 
-void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
+void Kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) const {
   complex_t Ynmi[P*P], Ynmj[P*P];
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t rho, alpha, beta;

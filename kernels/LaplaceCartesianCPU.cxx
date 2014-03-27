@@ -664,7 +664,7 @@ void Kernel::M2M(C_iter Ci, C_iter C0) const {
 #endif
 }
 
-void Kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) const {
+void Kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) const {
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t invR2 = 1 / norm(dX);
   real_t invR  = Ci->M[0] * Cj->M[0] * std::sqrt(invR2);

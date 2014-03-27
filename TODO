@@ -1,0 +1,3 @@
+remove tpswitch
+detatch kernel
+class -> namespace

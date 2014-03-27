@@ -215,10 +215,10 @@ namespace logger {
     while (!traces.empty()) {                                   // While queue of traces is not empty
       Trace trace = traces.front();                             //  Get trace at front of the queue
       traces.pop();                                             //  Pop trace at front
-      pthread_t thread = trace.thread;                          //  Get pthread ID of trace
-      double begin  = trace.begin;                              //  Get begin time of trace
-      double end    = trace.end;                                //  Get end time of trace
-      int    color  = 0x0000ff;                                 //  Get color of trace
+      pthread_t thread = trace.thread;                          //  Set pthread ID of trace
+      double begin  = trace.begin;                              //  Set begin time of trace
+      double end    = trace.end;                                //  Set end time of trace
+      int    color  = 0x0000ff;                                 //  Set color of trace
       if (threadMap[thread] == 0) {                             //  If it's a new pthread ID
         threadMap[thread] = num_thread++;                       //   Map it to an incremented thread ID
       }                                                         //  End if for new pthread ID

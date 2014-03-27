@@ -131,26 +131,26 @@ public:
     if (verbose) {                                              // If verbose flag is true
       std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
 		<< "numBodies" << " : " << numBodies << std::endl // Print numBodies  
-		<< std::setw(stringLength)                      // Set format
-		<< "P" << " : " << P << std::endl               // Print P
-		<< std::setw(stringLength)                      // Set format
-		<< "theta" << " : " << theta << std::endl       // Print theta
-		<< std::setw(stringLength)                      // Set format
-		<< "ncrit" << " : " << ncrit << std::endl       // Print ncrit
-		<< std::setw(stringLength)                      // Set format
-		<< "nspawn" << " : " << nspawn << std::endl     // Print nspawn
-		<< std::setw(stringLength)                      // Set format
-		<< "images" << " : " << images << std::endl     // Print images
-		<< std::setw(stringLength)                      // Set format
-		<< "mutual" << " : " << mutual << std::endl     // Print mutual
-		<< std::setw(stringLength)                      // Set format
-		<< "verbose" << " : " << verbose << std::endl   // Print verbose
-		<< std::setw(stringLength)                      // Set format
+		<< std::setw(stringLength)                      //  Set format
+		<< "P" << " : " << P << std::endl               //  Print P
+		<< std::setw(stringLength)                      //  Set format
+		<< "theta" << " : " << theta << std::endl       //  Print theta
+		<< std::setw(stringLength)                      //  Set format
+		<< "ncrit" << " : " << ncrit << std::endl       //  Print ncrit
+		<< std::setw(stringLength)                      //  Set format
+		<< "nspawn" << " : " << nspawn << std::endl     //  Print nspawn
+		<< std::setw(stringLength)                      //  Set format
+		<< "images" << " : " << images << std::endl     //  Print images
+		<< std::setw(stringLength)                      //  Set format
+		<< "mutual" << " : " << mutual << std::endl     //  Print mutual
+		<< std::setw(stringLength)                      //  Set format
+		<< "verbose" << " : " << verbose << std::endl   //  Print verbose
+		<< std::setw(stringLength)                      //  Set format
 		<< "distribution" << " : " << distribution << std::endl// Print distribution
-		<< std::setw(stringLength)                      // Set format
-		<< "repeat" << " : " << repeat << std::endl;    // Print distribution
-    } else if (mpirank == 0) {                                  // Special case for complexity test
-      std::cout << std::setw(stringLength) << std::left         // Set format
+		<< std::setw(stringLength)                      //  Set format
+		<< "repeat" << " : " << repeat << std::endl;    //  Print distribution
+    } else if (mpirank == 0) {                                  //  Special case for complexity test
+      std::cout << std::setw(stringLength) << std::left         //  Set format
 		<< "numBodies" << " : " << numBodies << std::endl; // Print numBodies  
     }                                                           // End if for verbose flag
   }

@@ -1,7 +1,7 @@
 #ifndef macros_h
 #define macros_h
 
-// Intel compiler warning disable
+// Disable a few Intel compiler warnings
 #ifdef __INTEL_COMPILER
 #pragma warning(disable:193 383 444 981 1572 2259)
 #endif

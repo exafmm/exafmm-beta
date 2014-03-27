@@ -2,7 +2,7 @@
 #include "simd.h"
 const real_t EPS2 = 0.0;                                        //!< Softening parameter (squared)
 
-void Kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) const {
+void Kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) const {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
   int ni = Ci->NBODY;
@@ -189,13 +189,6 @@ void Kernel::P2P(C_iter C) const {
     simdvec mi = SIMD<simdvec,3,NSIMD>::setBody(B,i);
     simdvec R2 = EPS2;
 
-    simdvec xj = Xperiodic[0];
-    xi -= xj;
-    simdvec yj = Xperiodic[1];
-    yi -= yj;
-    simdvec zj = Xperiodic[2];
-    zi -= zj;
-
     simdvec x2 = B[i+1].X[0];
     x2 -= xi;
     simdvec y2 = B[i+1].X[1];
@@ -204,11 +197,11 @@ void Kernel::P2P(C_iter C) const {
     z2 -= zi;
     simdvec mj = B[i+1].SRC;
 
-    xj = x2;
+    simdvec xj = x2;
     R2 += x2 * x2;
-    yj = y2;
+    simdvec yj = y2;
     R2 += y2 * y2;
-    zj = z2;
+    simdvec zj = z2;
     R2 += z2 * z2;
     simdvec invR;
 
