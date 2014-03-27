@@ -18,14 +18,6 @@
 #include <papi.h>
 #endif
 
-//! Structure for pthread based trace
-struct Trace {
-  pthread_t thread;                                             //!< pthread id
-  double    begin;                                              //!< Begin timer of trace
-  double    end;                                                //!< End timer of trace
-  Trace() {}                                                    //!< Constructor
-};
-
 //! Timer and Trace logger
 class Logger {
   typedef std::map<std::string,double> Timer;                   //!< Map of timer event name to timed value

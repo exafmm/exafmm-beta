@@ -148,7 +148,7 @@ public:
 		<< std::setw(stringLength)                      // Set format
 		<< "distribution" << " : " << distribution << std::endl// Print distribution
 		<< std::setw(stringLength)                      // Set format
-		<< "repeat" << " : " << repeat << std::endl;// Print distribution
+		<< "repeat" << " : " << repeat << std::endl;    // Print distribution
     } else if (mpirank == 0) {
       std::cout << std::setw(stringLength) << std::left         // Set format
 		<< "numBodies" << " : " << numBodies << std::endl; // Print numBodies  

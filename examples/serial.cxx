@@ -16,8 +16,8 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit,args.nspawn);
   Dataset data;
   Logger logger;
-  UpDownPass upDownPass(args.theta);
   Traversal traversal(args.nspawn,args.images);
+  UpDownPass upDownPass(args.theta);
   Verify verify;
 
   const real_t cycle = 2 * M_PI;
@@ -25,8 +25,8 @@ int main(int argc, char ** argv) {
     logger.verbose = true;
     boundBox.verbose = true;
     buildTree.verbose = true;
-    upDownPass.verbose = true;
     traversal.verbose = true;
+    upDownPass.verbose = true;
     verify.verbose = true;
   }
   logger.printTitle("FMM Parameters");

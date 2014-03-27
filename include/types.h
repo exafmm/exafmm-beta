@@ -91,4 +91,12 @@ struct Cell {
 typedef std::vector<Cell> Cells;                                //!< Vector of cells
 typedef Cells::iterator   C_iter;                               //!< Iterator of cell vector
 
+//! Structure for pthread based trace
+struct Trace {
+  pthread_t thread;                                             //!< pthread id
+  double    begin;                                              //!< Begin timer of trace
+  double    end;                                                //!< End timer of trace
+  Trace() {}                                                    //!< Constructor
+};
+
 #endif
