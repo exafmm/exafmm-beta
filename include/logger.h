@@ -18,63 +18,56 @@
 #include <papi.h>
 #endif
 
+//! Structure for pthread based trace
+struct Trace {
+  pthread_t thread;                                             //!< pthread id
+  double    begin;                                              //!< Begin timer of trace
+  double    end;                                                //!< End timer of trace
+  Trace() {}                                                    //!< Constructor
+};
+
 //! Timer and Trace logger
-class Logger {
+namespace logger {
   typedef std::map<std::string,double> Timer;                   //!< Map of timer event name to timed value
   typedef Timer::iterator              T_iter;                  //!< Iterator of timer event name map
   typedef std::queue<Trace>            Traces;                  //!< Queue of traces
   typedef std::map<pthread_t,int>      ThreadMap;               //!< Map of pthread id to thread id
 
-private:
   Timer           beginTimer;                                   //!< Timer base value
   Timer           timer;                                        //!< Timings of all events
   Traces          traces;                                       //!< Traces for all events
   pthread_mutex_t mutex;                                        //!< Pthread communicator
 #if PAPI
-  int                    PAPIEventSet;                          //!< PAPI event set
+  int                    PAPIEventSet = PAPI_NULL;              //!< PAPI event set
   std::vector<char*>     PAPIEventNames;                        //!< Vector of PAPI event names
   std::vector<int>       PAPIEventCodes;                        //!< Vector of PAPI event codes
   std::vector<uint64_t>  PAPIEventValues;                       //!< Vector of PAPI event values
 #endif
 
-public:
-  int stringLength;                                             //!< Max length of event name
-  int decimal;                                                  //!< Decimal precision
-  bool verbose;                                                 //!< Print to screen
+  int stringLength = 20;                                        //!< Max length of event name
+  int decimal = 7;                                              //!< Decimal precision
+  bool verbose = false;                                         //!< Print to screen
 
-private:
   //! Timer function
-  double get_time() const {
+  double get_time() {
     struct timeval tv;                                          // Time value
     gettimeofday(&tv, NULL);                                    // Get time of day in seconds and microseconds
     return double(tv.tv_sec+tv.tv_usec*1e-6);                   // Combine seconds and microseconds and return
   }
 
   //! Cycle counter
-  inline uint64_t get_cycle() const {
+  inline uint64_t get_cycle() {
     uint32_t low = 0, high = 0;                                 // Define low and high 32 bits of cycle counter
     asm volatile ("rdtsc" : "=a" (low), "=d" (high));           // Call rdtsc
     return (uint64_t(high) << 32) | uint64_t(low);              // Return 64 bit cycle counter
   }
 
   //! Cycle counter with thread ID
-  inline uint64_t get_cycle(uint32_t * id) const {
+  inline uint64_t get_cycle(uint32_t * id) {
     uint32_t low = 0, high = 0;                                 // Define low and high 32 bits of cycle counter
     if (!id) return 0;                                          // Count only for valid thread ID
     asm volatile ("rdtscp" : "=a" (low), "=d" (high), "=c" (*id));// Call rdtscp
     return (uint64_t(high) << 32) | uint64_t(low);              // Return 64 bit cycle counter
-  }
-
-public:
-  //! Constructor
-  Logger() : beginTimer(), timer(), traces(), mutex(),          // Initialize variables
-#if PAPI
-	     PAPIEventSet(PAPI_NULL),                           // Initializing PAPI event set
-#endif
-	     stringLength(20),                                  // Max length of event name
-	     decimal(7),                                        // Decimal precision
-	     verbose(false) {                                   // Don't print timings by default
-    pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
   }
 
   //! Print message to standard output
@@ -94,14 +87,6 @@ public:
     beginTimer[event] = get_time();                             // Get time of day and store in beginTimer
   }
 
-  //! Stop timer for given event
-  double stopTimer(std::string event) {
-    double endTimer = get_time();                               // Get time of day and store in endTimer
-    timer[event] += endTimer - beginTimer[event];               // Accumulate event time to timer
-    if (verbose) printTime(event);                              // Print event and timer to screen
-    return endTimer - beginTimer[event];                        // Return the event time
-  }
-
   //! Print timings of a specific event
   inline void printTime(std::string event) {
     if (verbose) {                                              // If verbose flag is true
@@ -109,6 +94,14 @@ public:
 		<< event << " : " << std::setprecision(decimal) << std::fixed
 		<< timer[event] << " s" << std::endl;           //  Print event and timer
     }                                                           // End if for verbose flag
+  }
+
+  //! Stop timer for given event
+  double stopTimer(std::string event) {
+    double endTimer = get_time();                               // Get time of day and store in endTimer
+    timer[event] += endTimer - beginTimer[event];               // Accumulate event time to timer
+    if (verbose) printTime(event);                              // Print event and timer to screen
+    return endTimer - beginTimer[event];                        // Return the event time
   }
 
   //! Write timings of all events
@@ -182,6 +175,11 @@ public:
   }
 
 #if TRACE
+  //! Initialize tracer
+  inline void initTracer() {
+    pthread_mutex_init(&mutex,NULL);                            // Initialize pthread communicator
+  }
+
   //! Start tracer for given event
   inline void startTracer(Trace &trace) {
     pthread_mutex_lock(&mutex);                                 // Lock shared variable access
@@ -238,6 +236,7 @@ public:
     stopTimer("Write trace",verbose);                           // Stop timer
   }
 #else
+  inline void initTracer() {}
   inline void startTracer(Trace) {}
   inline void stopTracer(Trace) {}
   inline void writeTrace() {}

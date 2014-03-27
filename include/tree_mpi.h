@@ -3,7 +3,7 @@
 #include "logger.h"
 
 //! Handles all the communication of local essential trees
-class TreeMPI : public Logger {
+class TreeMPI {
 private:
   int mpirank;                                                  //!< Rank of MPI communicator
   int mpisize;                                                  //!< Size of MPI communicator
@@ -215,7 +215,7 @@ public:
 
   //! Set local essential tree to send to each process
   void setLET(Cells & cells, Bounds bounds, real_t cycle) {
-    startTimer("Set LET");                                      // Start timer
+    logger::startTimer("Set LET");                              // Start timer
     allgatherBounds(bounds);                                    // Gather local bounds from all ranks
     sendBodies.clear();                                         // Clear send buffer for bodies
     sendCells.clear();                                          // Clear send buffer for cells
@@ -239,14 +239,14 @@ public:
       }                                                         //  Endif for current rank
       sendCellCount[irank] = sendCells.size() - sendCellDispl[irank];// Send count for irank
     }                                                           // End loop over ranks
-    stopTimer("Set LET");                                       // Stop timer
+    logger::stopTimer("Set LET");                               // Stop timer
   }
 
   //! Get local essential tree from rank "irank".
   void getLET(Cells & cells, int irank) {
     std::stringstream event;                                    // Event name
     event << "Get LET from rank " << irank;                     // Create event name based on irank
-    startTimer(event.str());                                    // Start timer
+    logger::startTimer(event.str());                            // Start timer
     for (int i=recvCellCount[irank]-1; i>=0; i--) {             // Loop over receive cells
       C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator of receive cell
       if (C->NBODY != 0) {                                      //  If cell has bodies
@@ -260,33 +260,33 @@ public:
     cells.resize(recvCellCount[irank]);                         // Resize cell vector for LET
     cells.assign(recvCells.begin()+recvCellDispl[irank],
 		 recvCells.begin()+recvCellDispl[irank]+recvCellCount[irank]);
-    stopTimer(event.str());                                     // Stop timer
+    logger::stopTimer(event.str());                             // Stop timer
   }
 
   //! Send bodies
   Bodies commBodies() {
-    startTimer("Comm bodies");                                  // Start timer
+    logger::startTimer("Comm bodies");                          // Start timer
     alltoall(sendBodies);                                       // Send body count
     alltoallv(sendBodies);                                      // Send bodies
-    stopTimer("Comm bodies");                                   // Stop timer
+    logger::stopTimer("Comm bodies");                           // Stop timer
     return recvBodies;                                          // Return received bodies
   }
 
   //! Send bodies
   Bodies commBodies(Bodies sendBodies) {
-    startTimer("Comm bodies");                                  // Start timer
+    logger::startTimer("Comm bodies");                          // Start timer
     alltoall(sendBodies);                                       // Send body count
     alltoallv(sendBodies);                                      // Send bodies
-    stopTimer("Comm bodies");                                   // Stop timer
+    logger::stopTimer("Comm bodies");                           // Stop timer
     return recvBodies;                                          // Return received bodies
   }
 
   //! Send cells
   void commCells() {
-    startTimer("Comm cells");                                   // Start timer
+    logger::startTimer("Comm cells");                           // Start timer
     alltoall(sendCells);                                        // Send cell count
     alltoallv(sendCells);                                       // Senc cells
-    stopTimer("Comm cells");                                    // Stop timer
+    logger::stopTimer("Comm cells");                            // Stop timer
   }
 
   //! Copy recvBodies to bodies

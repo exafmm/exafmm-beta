@@ -13,6 +13,7 @@ class Sort {
 private:
   Bodies output;                                                //!< Output buffer
 
+private:
   //! Radixsorts the values using the keys
   void radixsort(int * key, int * value, int size) {
     const int bitStride = 8;                                    // Number of bits in one stride

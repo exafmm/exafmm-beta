@@ -3,7 +3,7 @@
 #include "logger.h"
 
 //! Verify results
-class Verify : public Logger {
+class Verify {
 public:
   //! Get sum of scalar component of a vector of target bodies
   double getSumScalar(Bodies & bodies) {
@@ -84,10 +84,10 @@ public:
 
   //! Print relative L2 norm scalar error
   void print(std::string title, double v) {
-    if (verbose) {                                              // If verbose flag is true
-      std::cout << std::setw(stringLength) << std::left         //  Set format
-		<< title << " : " << std::setprecision(decimal) << std::scientific // Set title
-                << v << std::endl;                              // Print potential error
+    if (logger::verbose) {                                      // If verbose flag is true
+      std::cout << std::setw(logger::stringLength) << std::left //  Set format
+		<< title << " : " << std::setprecision(logger::decimal) << std::scientific // Set title
+                << v << std::endl;                              //  Print potential error
     }                                                           // End if for verbose flag
   }
 };

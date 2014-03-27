@@ -128,7 +128,7 @@ public:
   }
 
   void print(int stringLength, int P, int mpirank=-1) {
-    if (verbose) {
+    if (verbose) {                                              // If verbose flag is true
       std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
 		<< "numBodies" << " : " << numBodies << std::endl // Print numBodies  
 		<< std::setw(stringLength)                      // Set format
@@ -149,10 +149,10 @@ public:
 		<< "distribution" << " : " << distribution << std::endl// Print distribution
 		<< std::setw(stringLength)                      // Set format
 		<< "repeat" << " : " << repeat << std::endl;    // Print distribution
-    } else if (mpirank == 0) {
+    } else if (mpirank == 0) {                                  // Special case for complexity test
       std::cout << std::setw(stringLength) << std::left         // Set format
 		<< "numBodies" << " : " << numBodies << std::endl; // Print numBodies  
-    }
+    }                                                           // End if for verbose flag
   }
 };
 #endif

@@ -2,6 +2,7 @@
 #include "args.h"
 #include "bound_box.h"
 #include "build_tree.h"
+#include "logger.h"
 #include "partition.h"
 #include "traversal.h"
 #include "tree_mpi.h"
@@ -11,7 +12,6 @@ Args *args;
 BaseMPI *baseMPI;
 BoundBox *boundBox;
 BuildTree *buildTree;
-Logger *logger;
 Partition *partition;
 Traversal *traversal;
 TreeMPI *treeMPI;
@@ -28,7 +28,6 @@ extern "C" void FMM_Init() {
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
   buildTree = new BuildTree(ncrit, nspawn);
-  logger = new Logger;
   partition = new Partition;
   traversal = new Traversal(nspawn, images);
   treeMPI = new TreeMPI(images);
@@ -42,16 +41,9 @@ extern "C" void FMM_Init() {
   args->verbose = 1;
   args->distribution = "external";
   args->verbose &= baseMPI->mpirank == 0;
-  if (args->verbose) {
-    logger->verbose = true;
-    boundBox->verbose = true;
-    buildTree->verbose = true;
-    upDownPass->verbose = true;
-    traversal->verbose = true;
-    treeMPI->verbose = true;
-  }
-  logger->printTitle("Initial Parameters");
-  args->print(logger->stringLength, P, baseMPI->mpirank);
+  logger::verbose = args->verbose;
+  logger::printTitle("Initial Parameters");
+  args->print(logger::stringLength, P, baseMPI->mpirank);
 }
 
 extern "C" void FMM_Finalize() {
@@ -59,7 +51,6 @@ extern "C" void FMM_Finalize() {
   delete baseMPI;
   delete boundBox;
   delete buildTree;
-  delete logger;
   delete partition;
   delete traversal;
   delete treeMPI;
@@ -68,7 +59,7 @@ extern "C" void FMM_Finalize() {
 
 extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, double * vi,
 			      int & nj, double * xj, double * yj, double * zj, double * vj) {
-  logger->printTitle("Partition Profiling");
+  logger::printTitle("Partition Profiling");
   Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
@@ -118,11 +109,11 @@ extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, d
 extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
 			    int nj, double * xj, double * yj, double * zj, double * vj) {
   args->numBodies = ni;
-  logger->printTitle("FMM Parameters");
-  args->print(logger->stringLength, P, baseMPI->mpirank);
-  logger->printTitle("FMM Profiling");
-  logger->startTimer("Total FMM");
-  logger->startPAPI();
+  logger::printTitle("FMM Parameters");
+  args->print(logger::stringLength, P, baseMPI->mpirank);
+  logger::printTitle("FMM Profiling");
+  logger::startTimer("Total FMM");
+  logger::startPAPI();
   const real_t cycle = 0.0;
   Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -160,10 +151,10 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
     traversal->dualTreeTraversal(cells, jcells, cycle);
   }
   upDownPass->downwardPass(cells);
-  logger->stopPAPI();
-  logger->stopTimer("Total FMM");
-  logger->printTitle("Total runtime");
-  logger->printTime("Total FMM");
+  logger::stopPAPI();
+  logger::stopTimer("Total FMM");
+  logger::printTitle("Total runtime");
+  logger::printTime("Total FMM");
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY;
     vi[i] = B->TRG[0];

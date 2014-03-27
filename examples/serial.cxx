@@ -15,29 +15,21 @@ int main(int argc, char ** argv) {
   BoundBox boundBox(args.nspawn);
   BuildTree buildTree(args.ncrit,args.nspawn);
   Dataset data;
-  Logger logger;
   Traversal traversal(args.nspawn,args.images);
   UpDownPass upDownPass(args.theta);
   Verify verify;
 
   const real_t cycle = 2 * M_PI;
-  if (args.verbose) {
-    logger.verbose = true;
-    boundBox.verbose = true;
-    buildTree.verbose = true;
-    traversal.verbose = true;
-    upDownPass.verbose = true;
-    verify.verbose = true;
-  }
-  logger.printTitle("FMM Parameters");
-  args.print(logger.stringLength, P, 0);
+  logger::verbose = args.verbose;
+  logger::printTitle("FMM Parameters");
+  args.print(logger::stringLength, P, 0);
   for (int t = 0; t < args.repeat; t++) {
 #if DAG_RECORDER == 2
     dr_start(0);
 #endif
-    logger.printTitle("FMM Profiling");
-    logger.startTimer("Total FMM");
-    logger.startPAPI();
+    logger::printTitle("FMM Profiling");
+    logger::startTimer("Total FMM");
+    logger::startPAPI();
     Bodies bodies = data.initBodies(args.numBodies, args.distribution, 0);
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       B->X[0] += M_PI;
@@ -63,9 +55,9 @@ int main(int argc, char ** argv) {
     Bodies jbodies = bodies;
 #endif
     upDownPass.downwardPass(cells);
-    logger.printTitle("Total runtime");
-    logger.stopPAPI();
-    logger.stopTimer("Total FMM");
+    logger::printTitle("Total runtime");
+    logger::stopPAPI();
+    logger::stopTimer("Total FMM");
 #if WRITE_TIME
     boundBox.writeTime();
     buildTree.writeTime();
@@ -75,20 +67,20 @@ int main(int argc, char ** argv) {
     data.sampleBodies(bodies, args.numTargets);
     Bodies bodies2 = bodies;
     data.initTarget(bodies);
-    logger.startTimer("Total Direct");
+    logger::startTimer("Total Direct");
     traversal.direct(bodies, jbodies, cycle);
     traversal.normalize(bodies);
-    logger.stopTimer("Total Direct");
+    logger::stopTimer("Total Direct");
     double potDif = verify.getDifScalar(bodies, bodies2);
     double potNrm = verify.getNrmScalar(bodies);
     double accDif = verify.getDifVector(bodies, bodies2);
     double accNrm = verify.getNrmVector(bodies);
-    logger.printTitle("FMM vs. direct");
+    logger::printTitle("FMM vs. direct");
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
     buildTree.printTreeData(cells);
     traversal.printTraversalData();
-    logger.printPAPI();
+    logger::printPAPI();
 #if DAG_RECORDER == 2
     dr_stop();
 #endif

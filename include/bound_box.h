@@ -4,7 +4,7 @@
 #include <tpswitch/tpswitch.h>
 #include "types.h"
 
-class BoundBox : public Logger {
+class BoundBox {
 private:
   int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
 
@@ -44,7 +44,7 @@ public:
 
   //! Get Xmin and Xmax of domain
   Bounds getBounds(Bodies bodies) {
-    startTimer("Get bounds");                                   // Start timer
+    logger::startTimer("Get bounds");                           // Start timer
     Bounds bounds;                                              // Bounds : Contains Xmin, Xmax
     if (bodies.empty()) {                                       // If body vector is empty
       bounds.Xmin = bounds.Xmax = 0;                            //  Set bounds to 0
@@ -53,16 +53,16 @@ public:
       BoundsRecursion boundsRecursion(bodies.begin(),bodies.end(),bounds,nspawn);// Instantiate recursive functor
       boundsRecursion();                                        // Recursive call for bounds calculation
     }                                                           // End if for empty body vector
-    stopTimer("Get bounds");                                    // Stop timer
+    logger::stopTimer("Get bounds");                            // Stop timer
     return bounds;                                              // Return Xmin and Xmax
   }
 
   //! Update Xmin and Xmax of domain
   Bounds getBounds(Bodies bodies, Bounds bounds) {
-    startTimer("Get bounds");                                   // Start timer
+    logger::startTimer("Get bounds");                           // Start timer
     BoundsRecursion boundsRecursion(bodies.begin(),bodies.end(),bounds,nspawn);// Instantiate recursive functor
     boundsRecursion();                                          // Recursive call for bounds calculation
-    stopTimer("Get bounds");                                    // Stop timer
+    logger::stopTimer("Get bounds");                            // Stop timer
     return bounds;                                              // Return Xmin and Xmax
   }
 };

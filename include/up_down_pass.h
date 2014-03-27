@@ -4,7 +4,7 @@
 #include "logger.h"
 #include <tpswitch/tpswitch.h>
 
-class UpDownPass : public Kernel, public Logger {
+class UpDownPass : public Kernel {
 public:
   real_t theta;                                                 //!< Multipole acceptance criteria
 
@@ -86,7 +86,7 @@ public:
 
   //! Upward pass (P2M, M2M)
   void upwardPass(Cells & cells) {
-    startTimer("Upward pass");                                  // Start timer
+    logger::startTimer("Upward pass");                          // Start timer
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Set iterator of target root cell
       PostOrderTraversal postOrderTraversal(C0, C0);            //  Instantiate recursive functor
@@ -100,12 +100,12 @@ public:
         }                                                       //   End loop over top 2 levels of cells
       }                                                         //  End if for tree levels
     }                                                           // End if for empty cell vector
-    stopTimer("Upward pass");                                   // Stop timer
+    logger::stopTimer("Upward pass");                           // Stop timer
   }
 
   //! Downward pass (L2L, L2P)
   void downwardPass(Cells & cells) {
-    startTimer("Downward pass");                                // Start timer
+    logger::startTimer("Downward pass");                        // Start timer
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Root cell
       if (C0->NCHILD == 0) L2P(C0);                             //  If root is the only cell do L2P
@@ -116,7 +116,7 @@ public:
       }                                                         //   End loop over child cells
       wait_tasks;                                               //   Synchronize tasks
     }                                                           // End if for empty cell vector
-    stopTimer("Downward pass");                                 // Stop timer
+    logger::stopTimer("Downward pass");                         // Stop timer
   }
 
   //! Get dipole of entire system

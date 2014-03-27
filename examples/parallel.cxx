@@ -19,7 +19,6 @@ int main(int argc, char ** argv) {
   BoundBox boundBox(args.nspawn);
   BuildTree buildTree(args.ncrit, args.nspawn);
   Dataset data;
-  Logger logger;
   Partition partition;
   Traversal traversal(args.nspawn, args.images);
   TreeMPI treeMPI(args.images);
@@ -30,20 +29,12 @@ int main(int argc, char ** argv) {
 
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
-  if (args.verbose) {
-    logger.verbose = true;
-    boundBox.verbose = true;
-    buildTree.verbose = true;
-    upDownPass.verbose = true;
-    traversal.verbose = true;
-    treeMPI.verbose = true;
-    verify.verbose = true;
-  }
-  logger.printTitle("FMM Parameters");
-  args.print(logger.stringLength, P, baseMPI.mpirank);
-  logger.printTitle("FMM Profiling");
-  logger.startTimer("Total FMM");
-  logger.startPAPI();
+  logger::verbose = args.verbose;
+  logger::printTitle("FMM Parameters");
+  args.print(logger::stringLength, P, baseMPI.mpirank);
+  logger::printTitle("FMM Profiling");
+  logger::startTimer("Total FMM");
+  logger::startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X[0] += M_PI;
@@ -150,22 +141,22 @@ int main(int argc, char ** argv) {
 #endif
   upDownPass.downwardPass(cells);
 
-  logger.stopPAPI();
-  logger.stopTimer("Total FMM");
-  logger.printTitle("MPI direct sum");
+  logger::stopPAPI();
+  logger::stopTimer("Total FMM");
+  logger::printTitle("MPI direct sum");
   data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
-  logger.startTimer("Total Direct");
+  logger::startTimer("Total Direct");
   for (int i=0; i<baseMPI.mpisize; i++) {
     if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
     treeMPI.shiftBodies(jbodies);
     traversal.direct(bodies, jbodies, cycle);
   }
   traversal.normalize(bodies);
-  logger.printTitle("Total runtime");
-  logger.printTime("Total FMM");
-  logger.stopTimer("Total Direct");
+  logger::printTitle("Total runtime");
+  logger::printTime("Total FMM");
+  logger::stopTimer("Total Direct");
 #if WRITE_TIME
   boundBox.writeTime(baseMPI.mpirank);
   buildTree.writeTime(baseMPI.mpirank);
@@ -182,12 +173,12 @@ int main(int argc, char ** argv) {
   MPI_Reduce(&potNrm, &potNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&accDif, &accDifGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&accNrm, &accNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  logger.printTitle("FMM vs. direct");
+  logger::printTitle("FMM vs. direct");
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
   buildTree.printTreeData(cells);
   traversal.printTraversalData();
-  logger.printPAPI();
+  logger::printPAPI();
 
 #if VTK
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->IBODY = 0;

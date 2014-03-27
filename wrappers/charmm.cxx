@@ -3,6 +3,7 @@
 #include "bound_box.h"
 #include "build_tree.h"
 #include "ewald.h"
+#include "logger.h"
 #include "partition.h"
 #include "traversal.h"
 #include "tree_mpi.h"
@@ -15,7 +16,6 @@ Args *args;
 BaseMPI *baseMPI;
 BoundBox *boundBox;
 BuildTree *buildTree;
-Logger *logger;
 Partition *partition;
 Traversal *traversal;
 TreeMPI *treeMPI;
@@ -30,7 +30,6 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
   buildTree = new BuildTree(ncrit, nspawn);
-  logger = new Logger;
   partition = new Partition;
   traversal = new Traversal(nspawn, images);
   treeMPI = new TreeMPI(images);
@@ -44,16 +43,9 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   args->verbose = verbose;
   args->distribution = "external";
   args->verbose &= baseMPI->mpirank == 0;
-  if (args->verbose) {
-    logger->verbose = true;
-    boundBox->verbose = true;
-    buildTree->verbose = true;
-    upDownPass->verbose = true;
-    traversal->verbose = true;
-    treeMPI->verbose = true;
-  }
-  logger->printTitle("Initial Parameters");
-  args->print(logger->stringLength, P);
+  logger::verbose = args->verbose;
+  logger::printTitle("Initial Parameters");
+  args->print(logger::stringLength, P);
 }
 
 extern "C" void fmm_finalize_() {
@@ -61,7 +53,6 @@ extern "C" void fmm_finalize_() {
   delete baseMPI;
   delete boundBox;
   delete buildTree;
-  delete logger;
   delete partition;
   delete traversal;
   delete treeMPI;
@@ -70,7 +61,7 @@ extern "C" void fmm_finalize_() {
 
 extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q,
 			       double * xold, double & cycle) {
-  logger->printTitle("Partition Profiling");
+  logger::printTitle("Partition Profiling");
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   int nlocal = 0;
@@ -129,11 +120,11 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
     }
   }
   args->numBodies = nlocal;
-  logger->printTitle("FMM Parameters");
-  args->print(logger->stringLength, P);
-  logger->printTitle("FMM Profiling");
-  logger->startTimer("Total FMM");
-  logger->startPAPI();
+  logger::printTitle("FMM Parameters");
+  args->print(logger::stringLength, P);
+  logger::printTitle("FMM Profiling");
+  logger::startTimer("Total FMM");
+  logger::startPAPI();
   Bodies bodies(nlocal);
   B_iter B = bodies.begin();
   for (int i=0; i<nglobal; i++) {
@@ -164,10 +155,10 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   vec3 globalDipole = baseMPI->allreduceVec3(localDipole);
   int numBodies = baseMPI->allreduceInt(bodies.size());
   upDownPass->dipoleCorrection(bodies, globalDipole, numBodies, cycle);
-  logger->stopPAPI();
-  logger->stopTimer("Total FMM");
-  logger->printTitle("Total runtime");
-  logger->printTime("Total FMM");
+  logger::stopPAPI();
+  logger::stopTimer("Total FMM");
+  logger::printTitle("Total runtime");
+  logger::printTime("Total FMM");
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
@@ -193,7 +184,6 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f,
 			       int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
   Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
-  if (args->verbose) ewald->verbose = true;
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   int nlocal = 0;
@@ -205,12 +195,12 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
     } 
   }
   args->numBodies = nlocal;
-  logger->printTitle("Ewald Parameters");
-  args->print(logger->stringLength, P);
-  ewald->print(logger->stringLength);
-  logger->printTitle("Ewald Profiling");
-  logger->startTimer("Total Ewald");
-  logger->startPAPI();
+  logger::printTitle("Ewald Parameters");
+  args->print(logger::stringLength, P);
+  ewald->print(logger::stringLength);
+  logger::printTitle("Ewald Profiling");
+  logger::startTimer("Total Ewald");
+  logger::startPAPI();
   Bodies bodies(nlocal);
   B_iter B = bodies.begin();
   for (int i=0; i<nglobal; i++) {
@@ -236,10 +226,10 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
     ewald->realPart(cells, jcells);
   }
   ewald->selfTerm(bodies);
-  logger->stopPAPI();
-  logger->stopTimer("Total Ewald");
-  logger->printTitle("Total runtime");
-  logger->printTime("Total Ewald");
+  logger::stopPAPI();
+  logger::stopTimer("Total Ewald");
+  logger::printTitle("Total runtime");
+  logger::printTime("Total Ewald");
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
@@ -266,7 +256,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
 }
 
 extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f, double & cycle) {
-  logger->startTimer("Direct Coulomb");
+  logger::startTimer("Direct Coulomb");
   int images = args->images;
   int prange = 0;
   for (int i=0; i<images; i++) {
@@ -320,13 +310,13 @@ extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double
       f[3*i+2] -= coef * dipole[2] * q[i];
     }
   }
-  logger->stopTimer("Direct Coulomb");
+  logger::stopTimer("Direct Coulomb");
 }
 
 extern "C" void coulomb_exclusion_(int & nglobal, int * icpumap,
 				   double * x, double * q, double * p, double * f,
 				   double & cycle, int * numex, int * natex) {
-  logger->startTimer("Coulomb Exclusion");
+  logger::startTimer("Coulomb Exclusion");
   for (int i=0, ic=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       real_t pp = 0, fx = 0, fy = 0, fz = 0;
@@ -352,7 +342,7 @@ extern "C" void coulomb_exclusion_(int & nglobal, int * icpumap,
       ic += numex[i];
     }
   }
-  logger->stopTimer("Coulomb Exclusion");
+  logger::stopTimer("Coulomb Exclusion");
 }
 
 extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
@@ -367,11 +357,11 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
     if (icpumap[i] == 1) nlocal++;
   }
   args->numBodies = nlocal;
-  logger->printTitle("VdW Parameters");
-  args->print(logger->stringLength, P);
-  logger->printTitle("VdW Profiling");
-  logger->startTimer("Total VdW");
-  logger->startPAPI();
+  logger::printTitle("VdW Parameters");
+  args->print(logger::stringLength, P);
+  logger::printTitle("VdW Profiling");
+  logger::startTimer("Total VdW");
+  logger::startPAPI();
   Bodies bodies(nlocal);
   B_iter B = bodies.begin();
   for (int i=0; i<nglobal; i++) {
@@ -397,10 +387,10 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
     treeMPI->getLET(jcells,(baseMPI->mpirank+irank)%baseMPI->mpisize);
     VDW->evaluate(cells, jcells);
   }
-  logger->stopPAPI();
-  logger->stopTimer("Total VdW");
-  logger->printTitle("Total runtime");
-  logger->printTime("Total VdW");
+  logger::stopPAPI();
+  logger::stopTimer("Total VdW");
+  logger::printTitle("Total runtime");
+  logger::printTime("Total VdW");
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY & mask;
@@ -416,7 +406,7 @@ extern "C" void direct_vanderwaals_(int & nglobal, int * icpumap, int * atype,
 				    double * x, double * p, double * f,
 				    double & cuton, double & cutoff, double & cycle,
 				    int & numTypes, double * rscale, double * gscale, double * fgscale) {
-  logger->startTimer("Direct VdW");
+  logger::startTimer("Direct VdW");
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       int atypei = atype[i]-1;
@@ -462,7 +452,7 @@ extern "C" void direct_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       f[3*i+2] -= fz;
     }
   }
-  logger->stopTimer("Direct VdW");
+  logger::stopTimer("Direct VdW");
 }
 
 extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype,
@@ -470,7 +460,7 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
 				       double & cuton, double & cutoff, double & cycle,
 				       int & numTypes, double * rscale, double * gscale,
 				       double * fgscale, int * numex, int * natex) {
-  logger->startTimer("VdW Exclusion");
+  logger::startTimer("VdW Exclusion");
   for (int i=0, ic=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       int atypei = atype[i]-1;
@@ -514,5 +504,5 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
       ic += numex[i];
     }
   }
-  logger->stopTimer("VdW Exclusion");
+  logger::stopTimer("VdW Exclusion");
 }

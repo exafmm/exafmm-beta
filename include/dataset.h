@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include "logger.h"
 #include <sstream>
 #include "types.h"
 
@@ -155,6 +156,7 @@ public:
   //! Initialize dsitribution, source & target value of bodies
   Bodies initBodies(int numBodies, const char * distribution,
 		    int mpirank=0, int mpisize=1, int numSplit=1) {
+    logger::startTimer("Init bodies");                          // Start timer
     Bodies bodies;                                              // Initialize bodies
     switch (distribution[0]) {                                  // Switch between data distribution type
     case 'l':                                                   // Case for lattice
@@ -174,6 +176,7 @@ public:
     }                                                           // End switch between data distribution type
     initSource(bodies,mpirank,numSplit);                        // Initialize source values
     initTarget(bodies);                                         // Initialize target values
+    logger::stopTimer("Init bodies");                           // Stop timer
     return bodies;                                              // Return bodies
   }
 

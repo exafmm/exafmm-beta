@@ -3,7 +3,7 @@
 #include "logger.h"
 #include "types.h"
 
-class Ewald : public Logger {
+class Ewald {
   //! Wave structure for Ewald summation
   struct Wave {
     vec3   K;                                                   //!< 3-D wave number vector
@@ -132,7 +132,7 @@ public:
 
   //! Ewald real part
   void realPart(Cells & cells, Cells & jcells) {
-    startTimer("Ewald real part");                              // Start timer
+    logger::startTimer("Ewald real part");                      // Start timer
     C_iter Cj = jcells.begin();                                 // Set begin iterator of source cells
     mk_task_group;                                              // Intitialize tasks
     for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {      // Loop over target cells
@@ -142,7 +142,7 @@ public:
       }                                                         //  End if for leaf target cell
     }                                                           // End loop over target cells
     wait_tasks;                                                 // Synchronize tasks
-    stopTimer("Ewald real part");                               // Stop timer
+    logger::stopTimer("Ewald real part");                       // Stop timer
   }
 
   //! Subtract self term
@@ -154,7 +154,7 @@ public:
 
   //! Ewald wave part
   void wavePart(Bodies & bodies, Bodies & jbodies) {
-    startTimer("Ewald wave part");                              // Start timer
+    logger::startTimer("Ewald wave part");                      // Start timer
     Waves waves = initWaves();                                  // Initialize wave vector
     dft(waves,jbodies);                                         // Apply DFT to bodies to get waves
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
@@ -167,22 +167,22 @@ public:
       W->IMAG *= factor;                                        //  Apply wave factor to imaginary part
     }                                                           // End loop over waves
     idft(waves,bodies);                                         // Inverse DFT
-    stopTimer("Ewald wave part");                               // Stop timer
+    logger::stopTimer("Ewald wave part");                       // Stop timer
   }
 
   void print(int stringLength) {
-    if (verbose) {
+    if (logger::verbose) {                                      // If verbose flag is true
       std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
-		<< "ksize" << " : " << ksize << std::endl       // Print ksize
-		<< std::setw(stringLength)                      // Set format
-		<< "alpha" << " : " << alpha << std::endl       // Print alpha
-		<< std::setw(stringLength)                      // Set format
-		<< "sigma" << " : " << sigma << std::endl       // Print sigma
-		<< std::setw(stringLength)                      // Set format
-		<< "cutoff" << " : " << cutoff << std::endl     // Print cutoff
-		<< std::setw(stringLength)                      // Set format
-		<< "cycle" << " : " << cycle << std::endl;      // Print cycle
-    }
+		<< "ksize" << " : " << ksize << std::endl       //  Print ksize
+		<< std::setw(stringLength)                      //  Set format
+		<< "alpha" << " : " << alpha << std::endl       //  Print alpha
+		<< std::setw(stringLength)                      //  Set format
+		<< "sigma" << " : " << sigma << std::endl       //  Print sigma
+		<< std::setw(stringLength)                      //  Set format
+		<< "cutoff" << " : " << cutoff << std::endl     //  Print cutoff
+		<< std::setw(stringLength)                      //  Set format
+		<< "cycle" << " : " << cycle << std::endl;      //  Print cycle
+    }                                                           // End if for verbose flag
   }
 };
 #endif

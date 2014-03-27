@@ -10,7 +10,7 @@
 #define count(N)
 #endif
 
-class Traversal : public Kernel, public Logger {
+class Traversal : public Kernel {
 private:
   int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
   int images;                                                   //!< Number of periodic image sublevels
@@ -59,7 +59,7 @@ private:
       CjBegin(_CjBegin), CjEnd(_CjEnd), mutual(_mutual) {}
     void operator() () {                                        // Overload operator()
       Trace trace;                                              //  Instantiate tracer
-      traversal->startTracer(trace);                            //  Start tracer
+      logger::startTracer(trace);                               //  Start tracer
       if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {       //  If only one cell in range
 	if (CiBegin == CjBegin) {                               //   If Ci == Cj
 	  assert(CiEnd == CjEnd);                               //    Check if mutual & self interaction
@@ -94,13 +94,13 @@ private:
 	  wait_tasks;                                           //    Synchronize task group
 	}
       }                                                         //  End if for many cells in range
-      traversal->stopTracer(trace);                             //  Stop tracer
+      logger::stopTracer(trace);                                //  Stop tracer
     }                                                           // End overload operator()
   };
 
   //! Tree traversal of periodic cells
   void traversePeriodic(real_t cycle) {
-    startTimer("Traverse periodic");                            // Start timer
+    logger::startTimer("Traverse periodic");                    // Start timer
     Xperiodic = 0;                                              // Periodic coordinate offset
     Cells pcells; pcells.resize(27);                            // Create cells
     C_iter Ci = pcells.end()-1;                                 // Last cell is periodic parent cell
@@ -157,7 +157,7 @@ private:
 #if Cartesian
     Ci0->L /= Ci0->M[0];                                        // Normalize local expansion coefficients
 #endif
-    stopTimer("Traverse periodic");                             // Stop timer
+    logger::stopTimer("Traverse periodic");                     // Stop timer
   }
 
   //! Split cell and call traverse() recursively for child
@@ -198,7 +198,8 @@ public:
   //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversal(Cells & icells, Cells & jcells, real_t cycle, bool mutual=false) {
     if (icells.empty() || jcells.empty()) return;               // Quit if either of the cell vectors are empty
-    startTimer("Traverse");                                     // Start timer
+    logger::startTimer("Traverse");                             // Start timer
+    logger::initTracer();                                       // Initialize tracer
     Ci0 = icells.begin();                                       // Set iterator of target root cell
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     if (images == 0) {                                          // If non-periodic boundary condition
@@ -217,8 +218,8 @@ public:
       }                                                         //  End loop over x periodic direction
       traversePeriodic(cycle);                                  //  Traverse tree for periodic images
     }                                                           // End if for periodic boundary condition
-    stopTimer("Traverse");                                      // Stop timer
-    writeTrace();                                               // Write trace to file
+    logger::stopTimer("Traverse");                              // Stop timer
+    logger::writeTrace();                                       // Write trace to file
   }
 
   struct DirectRecursion : public Kernel {
@@ -246,9 +247,9 @@ public:
 	Ci2->BODY = Ci->BODY + Ci->NBODY / 2;                   //  Set begin iterator to handle latter half
 	Ci2->NBODY = Ci->NBODY - Ci->NBODY / 2;                 //  Set range to handle latter half
 	Ci->NBODY = Ci->NBODY / 2;                              //  Set range to handle first half
-	mk_task_group;                                             //  Initialize task group
+	mk_task_group;                                          //  Initialize task group
         DirectRecursion leftBranch(Ci, Cj, prange, cycle);      //  Instantiate recursive functor
-	create_taskc(leftBranch);                                //  Create new task for left branch
+	create_taskc(leftBranch);                               //  Create new task for left branch
 	DirectRecursion rightBranch(Ci2, Cj, prange, cycle);    //  Instantiate recursive functor
 	rightBranch();                                          //  Use old task for right branch
 	wait_tasks;                                             //  Synchronize task group
@@ -295,7 +296,7 @@ public:
   //! Print traversal statistics
   void printTraversalData() {
 #if COUNT
-    if (verbose) {                                              // If verbose flag is true
+    if (logger::verbose) {                                      // If verbose flag is true
       std::cout << "--- Traversal stats --------------" << std::endl// Print title
 		<< std::setw(stringLength) << std::left         //  Set format
 		<< "P2P calls"  << " : "                        //  Print title

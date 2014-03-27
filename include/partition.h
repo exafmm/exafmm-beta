@@ -4,7 +4,7 @@
 #include "sort.h"
 
 //! Handles all the partitioning of domains
-class Partition : public Logger {
+class Partition {
 private:
   int mpirank;                                                  //!< Rank of MPI communicator
   int mpisize;                                                  //!< Size of MPI communicator
@@ -18,7 +18,7 @@ public:
 
   //! Partition bodies with geometric octsection
   Bounds octsection(Bodies & bodies, Bounds global) {
-    startTimer("Partition");                                    // Start timer
+    logger::startTimer("Partition");                            // Start timer
     int size = mpisize;                                         // Initialize MPI size counter
     vec<3,int> Npartition = 1;                                  // Number of partitions in each direction
     int d = 0;                                                  // Initialize dimension counter
@@ -47,20 +47,20 @@ public:
       B->IPROC = iX[0] + Npartition[0] * (iX[1] + iX[2] * Npartition[1]);//  Set send rank
       assert(0 <= B->IPROC && B->IPROC < mpisize);
     }                                                           // End loop over bodies
-    stopTimer("Partition");                                     // Stop timer
-    startTimer("Sort");                                         // Start timer
+    logger::stopTimer("Partition");                             // Stop timer
+    logger::startTimer("Sort");                                 // Start timer
     Sort sort;                                                  // Instantiate sort class
     bodies = sort.iproc(bodies);                                // Sort bodies according to IPROC
-    stopTimer("Sort");                                          // Stop timer
+    logger::stopTimer("Sort");                                  // Stop timer
     return local;
   }
 
   //! Send bodies back to where they came from
   void unpartition(Bodies & bodies) {
-    startTimer("Sort");                                         // Start timer
+    logger::startTimer("Sort");                                 // Start timer
     Sort sort;                                                  // Instantiate sort class
     bodies = sort.iproc(bodies);                                // Sort bodies according to IPROC
-    stopTimer("Sort");                                          // Stop timer
+    logger::stopTimer("Sort");                                  // Stop timer
   }
 };
 #endif

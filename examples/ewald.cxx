@@ -26,7 +26,6 @@ int main(int argc, char ** argv) {
   BoundBox boundBox(args.nspawn);
   BuildTree buildTree(args.ncrit, args.nspawn);
   Dataset data;
-  Logger logger;
   Partition partition;
   Traversal traversal(args.nspawn, args.images);
   TreeMPI treeMPI(args.images);
@@ -41,22 +40,13 @@ int main(int argc, char ** argv) {
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
 
   args.verbose &= baseMPI.mpirank == 0;
-  if (args.verbose) {
-    logger.verbose = true;
-    boundBox.verbose = true;
-    buildTree.verbose = true;
-    upDownPass.verbose = true;
-    traversal.verbose = true;
-    ewald.verbose = true;
-    treeMPI.verbose = true;
-    verify.verbose = true;
-  }
-  logger.printTitle("Ewald Parameters");
-  args.print(logger.stringLength, P);
-  ewald.print(logger.stringLength);
-  logger.printTitle("FMM Profiling");
-  logger.startTimer("Total FMM");
-  logger.startPAPI();
+  logger::verbose = args.verbose;
+  logger::printTitle("Ewald Parameters");
+  args.print(logger::stringLength, P);
+  ewald.print(logger::stringLength);
+  logger::printTitle("FMM Profiling");
+  logger::startTimer("Total FMM");
+  logger::startPAPI();
   Bodies bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   //data.writeSources(bodies, baseMPI.mpirank);
   Bounds localBounds = boundBox.getBounds(bodies);
@@ -81,13 +71,13 @@ int main(int argc, char ** argv) {
   vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
   int numBodies = baseMPI.allreduceInt(bodies.size());
   upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
-  logger.stopPAPI();
-  logger.stopTimer("Total FMM");
+  logger::stopPAPI();
+  logger::stopTimer("Total FMM");
 #if 1
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
-  logger.printTitle("Ewald Profiling");
-  logger.startTimer("Total Ewald");
+  logger::printTitle("Ewald Profiling");
+  logger::startTimer("Total Ewald");
 #if 1
   Bodies jbodies = bodies;
   for (int i=0; i<baseMPI.mpisize; i++) {
@@ -105,15 +95,15 @@ int main(int argc, char ** argv) {
   ewald.realPart(cells, jcells);
 #endif
   ewald.selfTerm(bodies);
-  logger.printTitle("Total runtime");
-  logger.printTime("Total FMM");
-  logger.stopTimer("Total Ewald");
+  logger::printTitle("Total runtime");
+  logger::printTime("Total FMM");
+  logger::stopTimer("Total Ewald");
 #else
   Bodies jbodies = bodies;
   data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
-  logger.startTimer("Total Direct");
+  logger::startTimer("Total Direct");
   for (int i=0; i<baseMPI.mpisize; i++) {
     treeMPI.shiftBodies(jbodies);
     traversal.direct(bodies, jbodies, cycle);
@@ -121,9 +111,9 @@ int main(int argc, char ** argv) {
   }
   traversal.normalize(bodies);
   upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
-  logger.printTitle("Total runtime");
-  logger.printTime("Total FMM");
-  logger.stopTimer("Total Direct");
+  logger::printTitle("Total runtime");
+  logger::printTime("Total FMM");
+  logger::stopTimer("Total Direct");
 #endif
   double potSum = verify.getSumScalar(bodies);
   double potSum2 = verify.getSumScalar(bodies2);
@@ -134,14 +124,14 @@ int main(int argc, char ** argv) {
   MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  logger.printTitle("FMM vs. Ewald");
+  logger::printTitle("FMM vs. Ewald");
   double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
   double potNrmGlob = potSumGlob * potSumGlob;
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
   buildTree.printTreeData(cells);
   traversal.printTraversalData();
-  logger.printPAPI();
+  logger::printPAPI();
 #if VTK
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) B->IBODY = 0;
   for (C_iter C=cells.begin(); C!=cells.end(); C++) {

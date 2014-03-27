@@ -4,7 +4,7 @@
 #include <tpswitch/tpswitch.h>
 #include "types.h"
 
-class BuildTree : public Logger {
+class BuildTree {
 private:
   typedef vec<8,int> ivec8;                                     //!< Vector of 8 integer types
   //! Binary tree is used for counting number of bodies with a recursive approach
@@ -300,7 +300,7 @@ private:
   void growTree(Bodies & bodies, vec3 X0, real_t R0) {
     assert(R0 > 0);                                             // Check for bounds validity
     Bodies buffer = bodies;                                     // Copy bodies to buffer
-    startTimer("Grow tree");                                    // Start timer
+    logger::startTimer("Grow tree");                            // Start timer
     B0 = bodies.begin();                                        // Bodies iterator
     BinaryTreeNode binNode[1];                                  // Allocate root node of binary tree
     int maxBinNode = (4 * bodies.size()) / nspawn;              // Get maximum size of binary tree
@@ -310,12 +310,12 @@ private:
 			  binNode, X0, R0, ncrit, nspawn);      // Instantiate recursive functor
     buildNodes();                                               // Recursively build octree nodes
     delete[] binNode->BEGIN;                                    // Deallocate binary tree array
-    stopTimer("Grow tree");                                     // Stop timer
+    logger::stopTimer("Grow tree");                             // Stop timer
   }
 
   //! Link tree structure
   Cells linkTree(vec3 X0, real_t R0) {
-    startTimer("Link tree");                                    // Start timer
+    logger::startTimer("Link tree");                            // Start timer
     Cells cells;                                                // Initialize cell array
     if (N0 != NULL) {                                           // If the node tree is not empty
       cells.resize(N0->NNODE);                                  //  Allocate cells array
@@ -324,7 +324,7 @@ private:
       nodes2cells();                                            //  Convert nodes to cells recursively
       delete N0;                                                //  Deallocate nodes
     }                                                           // End if for empty node tree
-    stopTimer("Link tree");                                     // Stop timer
+    logger::stopTimer("Link tree");                             // Stop timer
     return cells;                                               // Return cells array
   }
 
@@ -344,13 +344,13 @@ public:
 
   //! Print tree structure statistics
   void printTreeData(Cells & cells) {
-    if (verbose && !cells.empty()) {                            // If verbose flag is true
-      printTitle("Tree stats");                                 //  Print title
-      std::cout  << std::setw(stringLength) << std::left        //  Set format
+    if (logger::verbose && !cells.empty()) {                    // If verbose flag is true
+      logger::printTitle("Tree stats");                         //  Print title
+      std::cout  << std::setw(logger::stringLength) << std::left//  Set format
 		 << "Bodies"     << " : " << cells.front().NBODY << std::endl// Print number of bodies
-		 << std::setw(stringLength) << std::left        //  Set format
+		 << std::setw(logger::stringLength) << std::left//  Set format
 		 << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
-		 << std::setw(stringLength) << std::left        //  Set format
+		 << std::setw(logger::stringLength) << std::left//  Set format
 		 << "Tree depth" << " : " << maxlevel << std::endl;//  Print number of levels
     }                                                           // End if for verbose flag
   }
