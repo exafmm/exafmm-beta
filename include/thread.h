@@ -5,10 +5,10 @@
 #include <tbb/task_group.h>
 using namespace tbb;
 #elif MTHREAD
-#define TO_MTHREAD_NATIVE
-#include <tpswtich/tpswitch.h>
+#define TO_MTHREAD_NATIVE 1
+#include <tpswitch/tpswitch.h>
 #elif QTHREAD
-#define TO_QTHREAD
+#define TO_QTHREAD 1
 #include <tpswitch/tpswitch.h>
 #endif
 
@@ -24,6 +24,8 @@ using namespace tbb;
 #define wait_tasks                    PRAGMA_OMP(omp taskwait)
 #define create_taskc(E)               PRAGMA_OMP(omp task) E()
 #define create_taskc_if(x, E)         if(x) { create_taskc(E); } else { E(); }
+
+#elif MTHREAD || QTHREAD
 
 #else
 #define mk_task_group
