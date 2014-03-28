@@ -2,7 +2,7 @@
 #define up_down_pass_h
 #include "kernel.h"
 #include "logger.h"
-#include <tpswitch/tpswitch.h>
+#include "thread.h"
 
 class UpDownPass {
 public:

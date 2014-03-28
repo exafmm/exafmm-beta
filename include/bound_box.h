@@ -1,7 +1,7 @@
 #ifndef bound_box_h
 #define bound_box_h
 #include "logger.h"
-#include <tpswitch/tpswitch.h>
+#include "thread.h"
 #include "types.h"
 
 class BoundBox {

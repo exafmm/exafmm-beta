@@ -2,7 +2,7 @@
 #define traversal_h
 #include "kernel.h"
 #include "logger.h"
-#include <tpswitch/tpswitch.h>
+#include "thread.h"
 
 #if COUNT
 #define count(N) N++
