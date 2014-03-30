@@ -24,12 +24,10 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P, 0);
   for (int t = 0; t < args.repeat; t++) {
-#if DAG_RECORDER == 2
-    dr_start(0);
-#endif
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
+    logger::startDAG();
     Bodies bodies = data.initBodies(args.numBodies, args.distribution, 0);
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       B->X[0] += M_PI;
@@ -58,11 +56,9 @@ int main(int argc, char ** argv) {
     logger::printTitle("Total runtime");
     logger::stopPAPI();
     logger::stopTimer("Total FMM");
+    logger::resetTimer("Total FMM");
 #if WRITE_TIME
-    boundBox.writeTime();
-    buildTree.writeTime();
-    upDownPass.writeTime();
-    traversal.writeTime();
+    logger::writeTime();
 #endif
     data.sampleBodies(bodies, args.numTargets);
     Bodies bodies2 = bodies;
@@ -81,13 +77,9 @@ int main(int argc, char ** argv) {
     buildTree.printTreeData(cells);
     traversal.printTraversalData();
     logger::printPAPI();
-#if DAG_RECORDER == 2
-    dr_stop();
-#endif
+    logger::stopDAG();
   }
-#if DAG_RECORDER == 2
-  dr_dump();
-#endif
+  logger::writeDAG();
 #if VTK
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) B->IBODY = 0;
   for (C_iter C=cells.begin(); C!=cells.end(); C++) {

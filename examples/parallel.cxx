@@ -143,6 +143,10 @@ int main(int argc, char ** argv) {
 
   logger::stopPAPI();
   logger::stopTimer("Total FMM");
+  logger::resetTimer("Total FMM");
+#if WRITE_TIME
+  logger::writeTime(baseMPI.mpirank);
+#endif
   logger::printTitle("MPI direct sum");
   data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
@@ -157,13 +161,6 @@ int main(int argc, char ** argv) {
   logger::printTitle("Total runtime");
   logger::printTime("Total FMM");
   logger::stopTimer("Total Direct");
-#if WRITE_TIME
-  boundBox.writeTime(baseMPI.mpirank);
-  buildTree.writeTime(baseMPI.mpirank);
-  upDownPass.writeTime(baseMPI.mpirank);
-  traversal.writeTime(baseMPI.mpirank);
-  treeMPI.writeTime(baseMPI.mpirank);
-#endif
   double potDif = verify.getDifScalar(bodies, bodies2);
   double potNrm = verify.getNrmScalar(bodies);
   double accDif = verify.getDifVector(bodies, bodies2);

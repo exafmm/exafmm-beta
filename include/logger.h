@@ -11,6 +11,7 @@
 #include <string>
 #include <sstream>
 #include <sys/time.h>
+#include "thread.h"
 #include <vector>
 
 #if PAPI
@@ -118,6 +119,11 @@ namespace logger {
     timer.clear();                                              // Clear timer
   }
 
+  //! Erase single event in timer
+  inline void resetTimer(std::string event) {
+    timer.erase(event);                                         // Erase event from timer
+  }
+
   //! Erase all events in timer
   inline void resetTimer() {
     timer.clear();                                              // Clear timer
@@ -161,6 +167,7 @@ namespace logger {
 #endif
   }
 
+  //! Print PAPI event
   inline void printPAPI() {
 #if PAPI
     if (!PAPIEventCodes.empty() && verbose) {                   // If PAPI events are set and verbose is true
@@ -241,6 +248,27 @@ namespace logger {
   inline void stopTracer(Trace) {}
   inline void writeTrace() {}
   inline void writeTrace(int) {}
+#endif
+
+#if DAG_RECORDER == 2
+  //! Start DAG recorder
+  inline void startDAG() {
+    dr_start(0);                                                // Start DAG recorder
+  }
+
+  //! Stop DAG recorder
+  inline void stopDAG() {
+    dr_stop();                                                  // Stop DAG recorder
+  }
+
+  //! Write DAG to file
+  inline void writeDAG() {
+    dr_dump();                                                  // Write DAG to file
+  }
+#else
+  inline void startDAG() {}
+  inline void stopDAG() {}
+  inline void writeDAG() {}
 #endif
 };
 #endif
