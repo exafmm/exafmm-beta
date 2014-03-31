@@ -98,10 +98,10 @@ namespace logger {
   }
 
   //! Stop timer for given event
-  double stopTimer(std::string event) {
+  double stopTimer(std::string event, int print=1) {
     double endTimer = get_time();                               // Get time of day and store in endTimer
     timer[event] += endTimer - beginTimer[event];               // Accumulate event time to timer
-    if (verbose) printTime(event);                              // Print event and timer to screen
+    if (verbose && print) printTime(event);                     // Print event and timer to screen
     return endTimer - beginTimer[event];                        // Return the event time
   }
 

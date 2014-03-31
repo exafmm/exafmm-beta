@@ -142,11 +142,7 @@ int main(int argc, char ** argv) {
   upDownPass.downwardPass(cells);
 
   logger::stopPAPI();
-  logger::stopTimer("Total FMM");
-  logger::resetTimer("Total FMM");
-#if WRITE_TIME
-  logger::writeTime(baseMPI.mpirank);
-#endif
+  logger::stopTimer("Total FMM", 0);
   logger::printTitle("MPI direct sum");
   data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
@@ -161,6 +157,10 @@ int main(int argc, char ** argv) {
   logger::printTitle("Total runtime");
   logger::printTime("Total FMM");
   logger::stopTimer("Total Direct");
+  logger::resetTimer("Total FMM");
+#if WRITE_TIME
+  logger::writeTime(baseMPI.mpirank);
+#endif
   double potDif = verify.getDifScalar(bodies, bodies2);
   double potNrm = verify.getNrmScalar(bodies);
   double accDif = verify.getDifVector(bodies, bodies2);

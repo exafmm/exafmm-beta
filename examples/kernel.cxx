@@ -105,9 +105,6 @@ int main() {
     double e;
     std::stringstream stream(line);
     stream >> p >> e;
-#if Cartesian
-    p++;
-#endif
     order.push_back(p);
     error.push_back(log10(e));
     bound.push_back(log10(std::pow(theta,p)));

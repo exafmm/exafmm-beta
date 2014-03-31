@@ -8,12 +8,12 @@ Kahan + fixed precision
 autotools + regression -> ExaFMM 1.0 release
 
 -- CPU --
+Detatch M, L from Cell struct
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 
 -- GPU --
 Ewald, VdW
 Zero softening
-
 
 -- Comparisons --
 DTT vs. UVWX-list
