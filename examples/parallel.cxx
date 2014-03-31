@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
-  args.print(logger::stringLength, P, baseMPI.mpirank);
+  args.print(logger::stringLength, P);
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();

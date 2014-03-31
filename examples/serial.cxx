@@ -22,7 +22,7 @@ int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
-  args.print(logger::stringLength, P, 0);
+  args.print(logger::stringLength, P);
   for (int t = 0; t < args.repeat; t++) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");

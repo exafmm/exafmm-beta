@@ -38,18 +38,18 @@ private:
   void usage(char * name) {
     fprintf(stderr,
             "Usage: %s [options]\n"
-            "Option : Description (Default value):\n"
-            " --numBodies : Number of bodies (%d)\n"
-            " --numTargets : Number of targets for error checking (%d)\n"
-            " --ncrit : Number of bodies per leaf cell (%d)\n"
-            " --nspawn : Threshold for stopping thread spawning during recursion (%d)\n"
-            " --images : Number of periodic image levels (%d)\n"
-            " --theta : Multipole acceptance criterion (%f)\n"
-            " --mutual [0/1] : Use mutual interaction (%d)\n"
-	    " --verbose [0/1] : Print information to screen (%d)\n"
-            " --distribution [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n"
-            " --repeat R : repeat R times\n"
-            " --help : Show this help document\n",
+            "Long option (short option)     : Description (Default value)\n"
+            " --numBodies (-n)              : Number of bodies (%d)\n"
+            " --numTargets (-t)             : Number of targets for error checking (%d)\n"
+            " --ncrit (-c)                  : Number of bodies per leaf cell (%d)\n"
+            " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
+            " --images (-i)                 : Number of periodic image levels (%d)\n"
+            " --theta (-o)                  : Multipole acceptance criterion (%f)\n"
+            " --mutual (-m) [0/1]           : Use mutual interaction (%d)\n"
+	    " --verbose (-v) [0/1]          : Print information to screen (%d)\n"
+            " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n"
+            " --repeat (-r)                 : Number of iteration loops (%d)\n"
+            " --help (-h)                   : Show this help document\n",
             name,
             numBodies,
             numTargets,
@@ -59,7 +59,8 @@ private:
             theta,
             mutual,
 	    verbose,
-            distribution);
+            distribution,
+	    repeat);
   }
 
   const char * parse(const char * arg) {
@@ -84,10 +85,11 @@ public:
 					theta(.4), mutual(1), verbose(1), distribution("cube"), repeat(1) {
     while (1) {
       int option_index;
-      int c = getopt_long(argc, argv, "", long_options, &option_index);
+      int c = getopt_long(argc, argv, "n:t:c:s:i:o:m:v:d:r:h", long_options, &option_index);
       if (c == -1) break;
       switch (c) {
       case 'n':
+	std::cout << optarg << std::endl;
         numBodies = atoi(optarg);
         break;
       case 't':
@@ -127,7 +129,7 @@ public:
     }
   }
 
-  void print(int stringLength, int P, int mpirank=-1) {
+  void print(int stringLength, int P) {
     if (verbose) {                                              // If verbose flag is true
       std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
 		<< "numBodies" << " : " << numBodies << std::endl // Print numBodies  
@@ -149,9 +151,6 @@ public:
 		<< "distribution" << " : " << distribution << std::endl// Print distribution
 		<< std::setw(stringLength)                      //  Set format
 		<< "repeat" << " : " << repeat << std::endl;    //  Print distribution
-    } else if (mpirank == 0) {                                  //  Special case for complexity test
-      std::cout << std::setw(stringLength) << std::left         //  Set format
-		<< "numBodies" << " : " << numBodies << std::endl; // Print numBodies  
     }                                                           // End if for verbose flag
   }
 };

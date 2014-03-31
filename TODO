@@ -1,4 +1,20 @@
+-- CPU/GPU --
 .h -> .cxx/.cu
-fix omp task model
-bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 unify dataset
+PMAX at compile time, P at runtime
+Partitioning with Hilbert
+New Spherical kernel
+Kahan + fixed precision
+autotools + regression -> ExaFMM 1.0 release
+
+-- CPU --
+bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
+
+-- GPU --
+Ewald, VdW
+Zero softening
+
+
+-- Comparisons --
+DTT vs. UVWX-list
+Cartesian vs. Spherical (optimized)

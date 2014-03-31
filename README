@@ -49,3 +49,15 @@ LFLAGS : Linker options and preprocessor options (see comments)
 This project is not yet large enough to justify the use of CMake,
 but we are just testing a few features of CMake.
 You probably don't want to use this feature.
+
+--- 6. Available features
+Contorl both P and theta
+Error optimization of theta
+Mutual interaction for both P2P and M2L kernels
+Laplace kernel
+Cartesian, Spherical expansions
+Dual tree traversal
+Periodic boundary condition
+Kahan summation
+Task based threading with TBB, MTHREADS, and OpenMP
+SIMD intrinsics for SSE, AVX, MIC, BG/Q, and SPARC
