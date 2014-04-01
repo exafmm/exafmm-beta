@@ -172,7 +172,7 @@ void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
     real_t Cnm = std::real(Ci->M[0] * Cj->M[0]) * ODDEVEN(j);
     for (int k=0; k<=j; k++) {
       int jks = j * (j + 1) / 2 + k;
-      int jk = j * (j + 1) - k;
+      int jk = j * j + j - k;
       complex_t Li = 0, Lj = 0;
       Li += Cnm * Ynmi[jk];
       if (mutual) Lj += Cnm * Ynmj[jk];

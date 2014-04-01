@@ -4,6 +4,7 @@ unify dataset
 Partitioning with Hilbert
 Kahan + fixed precision
 autotools + regression -> ExaFMM 1.0 release
+Solid harmonics kernel
 
 -- CPU --
 1. Remove macro for Cartesian
