@@ -24,9 +24,7 @@ private:
 	create_taskc(setRcrit);                                 //   Create new task for recursive call
       }                                                         //  End loop over child cells
       wait_tasks;                                               //  Synchronize tasks
-#if Cartesian
       for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];           //  Normalize multipole expansion coefficients
-#endif
       real_t x = 1.0 / theta;                                   //  Inverse of theta
 #if ERROR_OPT
       assert(theta != 1.0);                                     //  Newton-Raphson won't work for theta==1

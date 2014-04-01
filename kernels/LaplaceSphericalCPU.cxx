@@ -169,11 +169,14 @@ void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
   evalLocal(rho,alpha,beta,Ynmi);
   if (mutual) evalLocal(rho,alpha+M_PI,beta,Ynmj);
   for (int j=0; j<P; j++) {
-    real_t Cnm = ODDEVEN(j);
+    real_t Cnm = std::real(Ci->M[0] * Cj->M[0]) * ODDEVEN(j);
     for (int k=0; k<=j; k++) {
       int jks = j * (j + 1) / 2 + k;
+      int jk = j * (j + 1) - k;
       complex_t Li = 0, Lj = 0;
-      for (int n=0; n<P-j; n++) {
+      Li += Cnm * Ynmi[jk];
+      if (mutual) Lj += Cnm * Ynmj[jk];
+      for (int n=1; n<P-j; n++) {
         for (int m=-n; m<0; m++) {
           int nms  = n * (n + 1) / 2 - m;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
@@ -201,6 +204,7 @@ void kernel::L2L(C_iter Ci, C_iter C0) {
   real_t rho, alpha, beta;
   cart2sph(rho,alpha,beta,dX);
   evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
+  Ci->L /= Ci->M[0];
   for (int j=0; j<P; j++) {
     for (int k=0; k<=j; k++) {
       int jks = j * (j + 1) / 2 + k;

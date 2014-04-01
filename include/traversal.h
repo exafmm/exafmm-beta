@@ -132,9 +132,7 @@ private:
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
-#if Cartesian
       for (int i=1; i<NTERM; i++) Ci->M[i] *= Ci->M[0];         //  Normalize multipole expansion coefficients
-#endif
       Cj0 = pcells.begin();                                     //  Redefine Cj0 for M2M
       C_iter Cj = Cj0;                                          //  Iterator of periodic neighbor cells
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
@@ -153,15 +151,11 @@ private:
       Ci->RMAX = 0;                                             //  Initialize Rmax of periodic parent
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
       kernel::M2M(Ci,Cj0);                                      //  Evaluate periodic M2M kernels for this sublevel
-#if Cartesian
       for (int i=1; i<NTERM; i++) Ci->M[i] /= Ci->M[0];         //  Normalize multipole expansion coefficients
-#endif
       cycle *= 3;                                               //  Increase center cell size three times
       Cj0 = C0;                                                 //  Reset Cj0 back
     }                                                           // End loop over sublevels of tree
-#if Cartesian
     Ci0->L /= Ci0->M[0];                                        // Normalize local expansion coefficients
-#endif
     logger::stopTimer("Traverse periodic");                     // Stop timer
   }
 
