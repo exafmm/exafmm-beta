@@ -1,17 +1,17 @@
 -- CPU/GPU --
 .h -> .cxx/.cu
 unify dataset
-PMAX at compile time, P at runtime
 Partitioning with Hilbert
 New Spherical kernel
 Kahan + fixed precision
 autotools + regression -> ExaFMM 1.0 release
 
 -- CPU --
-Detatch M, L from Cell struct
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
+SIMD P2P performance
 
 -- GPU --
+MPI Bonsai
 Ewald, VdW
 Zero softening
 

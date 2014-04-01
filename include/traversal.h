@@ -5,9 +5,9 @@
 #include "thread.h"
 
 #if COUNT
-#define count(N) N++
+#define countKernel(N) N++
 #else
-#define count(N)
+#define countKernel(N)
 #endif
 
 class Traversal {
@@ -27,18 +27,18 @@ private:
     real_t R2 = norm(dX);                                       // Scalar distance squared
     if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {     // If distance is far enough
       kernel::M2L(Ci, Cj, Xperiodic, mutual);                   //  M2L kernel
-      count(numM2L);                                            //  Increment M2L counter
+      countKernel(numM2L);                                      //  Increment M2L counter
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
       if (Cj->NBODY == 0) {                                     //  If the bodies weren't sent from remote node
 	kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
-        count(numM2L);                                          //   Increment M2L counter
+        countKernel(numM2L);                                    //   Increment M2L counter
       } else {                                                  //  Else if the bodies were sent
 	if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
 	  kernel::P2P(Ci);                                      //    P2P kernel for single cell
 	} else {                                                //   Else if source and target are different
 	  kernel::P2P(Ci, Cj, Xperiodic, mutual);               //    P2P kernel for pair of cells
 	}                                                       //   End if for same source and target
-	count(numP2P);                                          //   Increment P2P counter
+	countKernel(numP2P);                                    //   Increment P2P counter
       }                                                         //  End if for bodies
     } else {                                                    // Else if cells are close but not bodies
       splitCell(Ci, Cj, Xperiodic, mutual);                     //  Split cell and call function recursively for child

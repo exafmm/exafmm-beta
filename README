@@ -61,3 +61,6 @@ Periodic boundary condition
 Kahan summation
 Task based threading with TBB, MTHREADS, and OpenMP
 SIMD intrinsics for SSE, AVX, MIC, BG/Q, and SPARC
+
+-- 7. Features that were removed
+Skipping dipoles
