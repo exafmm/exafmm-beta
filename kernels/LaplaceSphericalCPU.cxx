@@ -8,8 +8,8 @@ const real_t EPS = 1e-12;                                       // Double precis
 
 //! Get r,theta,phi from x,y,z
 void cart2sph(real_t & r, real_t & theta, real_t & phi, vec3 dX) {
-  r = sqrt(norm(dX)) * 1.000001;                                // r = sqrt(x^2 + y^2 + z^2)
-  theta = acos(dX[2] / r);                                      // theta = acos(z / r)
+  r = sqrt(norm(dX));                                           // r = sqrt(x^2 + y^2 + z^2)
+  theta = r == 0 ? 0 : acos(dX[2] / r);                         // theta = acos(z / r)
   phi = atan2(dX[1],dX[0]);                                     // phi = atan(y / x)
 }
 

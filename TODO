@@ -2,11 +2,15 @@
 .h -> .cxx/.cu
 unify dataset
 Partitioning with Hilbert
-New Spherical kernel
 Kahan + fixed precision
 autotools + regression -> ExaFMM 1.0 release
 
 -- CPU --
+1. New Spherical kernel
+2. Normalize Multipoles with M[0] for Spherical
+3. Remove macro for Cartesian
+4. Detatch RMAX and RCRIT calculation
+5. Remove RMAX and RCRIT from Cell struct
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance
 

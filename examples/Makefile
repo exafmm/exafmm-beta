@@ -29,7 +29,7 @@ kernel: kernel.o $(OBJECTS)
 # Checking O(theta^p) convergence (Turn on VTK to see a graph at the end)
 convergence: kernel.cxx $(SOURCES)
 	rm -f kernel.dat
-	for P in 3 4 5 6 7 8 9 10; do echo P = $$P compiling && \
+	for P in 3 4 5 6 7 8 9 10 11 12 13 14 15; do echo P = $$P compiling && \
 	$(CXX) $? $(LFLAGS) -DEXPANSION=$$P && \
 	echo P = $$P executing && ./a.out; done
 

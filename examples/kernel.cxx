@@ -8,7 +8,7 @@
 int main() {
   Bodies bodies(16), bodies2(16), jbodies(16);
   Cells cells(4);
-  Kernel kernel;
+  vec3 Xperiodic = 0;
   const real_t theta = 0.5;
   const real_t R = 2 / theta;
 
@@ -23,7 +23,7 @@ int main() {
   Cj->BODY = jbodies.begin();
   Cj->NBODY = jbodies.size();
   Cj->M = 0;
-  kernel.P2M(Cj);
+  kernel::P2M(Cj);
 
 #if 1
   C_iter CJ = cells.begin()+1;
@@ -31,7 +31,7 @@ int main() {
   CJ->NCHILD = 1;
   CJ->X = 0;
   CJ->M = 0;
-  kernel.M2M(CJ,cells.begin());
+  kernel::M2M(CJ, cells.begin());
 
   C_iter CI = cells.begin()+2;
   CI->X = R + 4;
@@ -40,14 +40,14 @@ int main() {
 #if Cartesian
   for (int i=1; i<NTERM; i++) CJ->M[i] /= CJ->M[0];
 #endif
-  kernel.M2L(CI,CJ,false);
+  kernel::M2L(CI, CJ, Xperiodic, false);
 
   C_iter Ci = cells.begin()+3;
   Ci->X = R + 3;
   Ci->PARENT = 2;
   Ci->M = 1;
   Ci->L = 0;
-  kernel.L2L(Ci,cells.begin());
+  kernel::L2L(Ci, cells.begin());
 #else
   C_iter Ci = cells.begin()+3;
   Ci->X = R + 3;
@@ -56,7 +56,7 @@ int main() {
 #if Cartesian
   for (int i=1; i<NTERM; i++) Cj->M[i] /= Cj->M[0];
 #endif
-  kernel.M2L(Ci,Cj,false);
+  kernel::M2L(Ci, Cj, Xperiodic, false);
 #endif
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -68,7 +68,7 @@ int main() {
   }
   Ci->BODY = bodies.begin();
   Ci->NBODY = bodies.size();
-  kernel.L2P(Ci);
+  kernel::L2P(Ci);
 
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     *B = bodies[B-bodies2.begin()];
@@ -77,7 +77,7 @@ int main() {
   Cj->NBODY = jbodies.size();
   Ci->NBODY = bodies2.size();
   Ci->BODY = bodies2.begin();
-  kernel.P2P(Ci,Cj,false);
+  kernel::P2P(Ci, Cj, Xperiodic, false);
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     B->TRG /= B->SRC;
   }
@@ -111,7 +111,7 @@ int main() {
   }
   file.close();
 
-  if (order.size() > 9) {
+  if (order.size() > 12) {
     vtk2DPlot vtk;
     vtk.setName("order");
     vtk.setName("log10(error)");
