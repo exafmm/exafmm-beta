@@ -160,6 +160,7 @@ int main(int argc, char ** argv) {
   logger::printTime("Total FMM");
   logger::stopTimer("Total Direct");
   logger::resetTimer("Total FMM");
+  logger::resetTimer("Total Direct");
 #if WRITE_TIME
   logger::writeTime(baseMPI.mpirank);
 #endif

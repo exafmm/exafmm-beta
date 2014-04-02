@@ -2,7 +2,7 @@ include ../Makefile.include
 
 LFLAGS	+= -DMASS # Use all positive sources
 #LFLAGS	+= -DIneJ # Different target and source points
-#LFLAGS	+= -DWRITE_TIME # Write timings to file
+LFLAGS	+= -DWRITE_TIME # Write timings to file
 
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
@@ -11,7 +11,7 @@ serial: serial.o $(OBJECTS)
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
-	$(CXX) $? $(LFLAGS) -lmpi
+	$(CXX) $? $(LFLAGS)
 	mpirun -np 8 ./a.out
 
 # Checking O(N) complexity
