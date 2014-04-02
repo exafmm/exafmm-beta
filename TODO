@@ -1,15 +1,18 @@
 -- CPU/GPU --
 .h -> .cxx/.cu
 unify dataset
-Partitioning with Hilbert
 Kahan + fixed precision
 autotools + regression -> ExaFMM 1.0 release
 Solid harmonics kernel
 
 -- CPU --
-1. Remove macro for Cartesian
-2. Detatch RMAX and RCRIT calculation
-3. Remove RMAX and RCRIT from Cell struct
+0. Baseline scalability test
+1. Partitioning with Hilbert
+2. Merge LET before dualTreeTraversal
+3. Fix parallel ewald
+4. Remove macro for Cartesian
+5. Detatch RMAX and RCRIT calculation
+6. Remove RMAX and RCRIT from Cell struct
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance
 

@@ -89,7 +89,6 @@ public:
       if (c == -1) break;
       switch (c) {
       case 'n':
-	std::cout << optarg << std::endl;
         numBodies = atoi(optarg);
         break;
       case 't':

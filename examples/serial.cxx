@@ -12,8 +12,11 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
+  Bodies bodies, bodies2, jbodies;
   BoundBox boundBox(args.nspawn);
+  Bounds bounds;
   BuildTree buildTree(args.ncrit,args.nspawn);
+  Cells cells, jcells;
   Dataset data;
   Traversal traversal(args.nspawn,args.images);
   UpDownPass upDownPass(args.theta);
@@ -23,34 +26,36 @@ int main(int argc, char ** argv) {
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
-  for (int t = 0; t < args.repeat; t++) {
+  bodies = data.initBodies(args.numBodies, args.distribution, 0);
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    B->X[0] += M_PI;
+    B->X[0] *= 0.5;
+  }
+#if IneJ
+  jbodies = data.initBodies(args.numBodies, args.distribution, 1);
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    B->X[0] -= M_PI;
+    B->X[0] *= 0.5;
+  }
+#endif
+  for (int t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
     logger::startDAG();
-    Bodies bodies = data.initBodies(args.numBodies, args.distribution, 0);
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      B->X[0] += M_PI;
-      B->X[0] *= 0.5;
-    }
-    Bounds bounds = boundBox.getBounds(bodies);
+    bounds = boundBox.getBounds(bodies);
 #if IneJ
-    Bodies jbodies = data.initBodies(args.numBodies, args.distribution, 1);
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      B->X[0] -= M_PI;
-      B->X[0] *= 0.5;
-    }
     bounds = boundBox.getBounds(jbodies,bounds);
 #endif
-    Cells cells = buildTree.buildTree(bodies, bounds);
+    cells = buildTree.buildTree(bodies, bounds);
     upDownPass.upwardPass(cells);
 #if IneJ
-    Cells jcells = buildTree.buildTree(jbodies, bounds);
+    jcells = buildTree.buildTree(jbodies, bounds);
     upDownPass.upwardPass(jcells);
     traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-    Bodies jbodies = bodies;
+    jbodies = bodies;
 #endif
     upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");
@@ -61,7 +66,7 @@ int main(int argc, char ** argv) {
     logger::writeTime();
 #endif
     data.sampleBodies(bodies, args.numTargets);
-    Bodies bodies2 = bodies;
+    bodies2 = bodies;
     data.initTarget(bodies);
     logger::startTimer("Total Direct");
     traversal.direct(bodies, jbodies, cycle);
@@ -81,17 +86,17 @@ int main(int argc, char ** argv) {
   }
   logger::writeDAG();
 #if VTK
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) B->IBODY = 0;
-  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->IBODY = 0;
+  for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
     Body body;
     body.IBODY = 1;
     body.X     = C->X;
     body.SRC   = 0;
-    bodies.push_back(body);
+    jbodies.push_back(body);
   }
   vtk3DPlot vtk;
   vtk.setBounds(M_PI,0);
-  vtk.setGroupOfPoints(bodies);
+  vtk.setGroupOfPoints(jbodies);
   vtk.plot();
 #endif
   return 0;

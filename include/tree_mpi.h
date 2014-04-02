@@ -222,7 +222,7 @@ public:
     sendCellDispl[0] = 0;                                       // Initialize displacement vector
     for (irank=0; irank<mpisize; irank++) {                     // Loop over ranks
       if (irank != 0) sendCellDispl[irank] = sendCellDispl[irank-1] + sendCellCount[irank-1];// Update displacement
-      if (irank != mpirank) {                                   //  If not current rank
+      if (irank != mpirank && !cells.empty()) {                 //  If not current rank and cell vector is not empty
         recvCells = cells;                                      //   Use recvCells as temporary storage
         C0 = recvCells.begin();                                 //   Set cells begin iterator
         localXmin = allLocalXmin[irank];                        //   Set local Xmin for irank

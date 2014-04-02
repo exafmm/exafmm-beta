@@ -23,8 +23,11 @@
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   BaseMPI baseMPI;
+  Bodies bodies, bodies2, jbodies;
   BoundBox boundBox(args.nspawn);
+  Bounds localBounds, globalBounds;
   BuildTree buildTree(args.ncrit, args.nspawn);
+  Cells cells, jcells;
   Dataset data;
   Partition partition;
   Traversal traversal(args.nspawn, args.images);
@@ -47,21 +50,20 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
+  bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   //data.writeSources(bodies, baseMPI.mpirank);
-  Bounds localBounds = boundBox.getBounds(bodies);
-  Bounds globalBounds = baseMPI.allreduceBounds(localBounds);
+  localBounds = boundBox.getBounds(bodies);
+  globalBounds = baseMPI.allreduceBounds(localBounds);
   localBounds = partition.octsection(bodies, globalBounds);
   bodies = treeMPI.commBodies(bodies);
 
-  Cells cells = buildTree.buildTree(bodies, localBounds);
+  cells = buildTree.buildTree(bodies, localBounds);
   upDownPass.upwardPass(cells);
   treeMPI.setLET(cells,localBounds,cycle);
   treeMPI.commBodies();
   treeMPI.commCells();
 
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-  Cells jcells;
   for (int irank=1; irank<baseMPI.mpisize; irank++) {
     treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
     traversal.dualTreeTraversal(cells, jcells, cycle);
@@ -74,22 +76,22 @@ int main(int argc, char ** argv) {
   logger::stopPAPI();
   logger::stopTimer("Total FMM");
 #if 1
-  Bodies bodies2 = bodies;
+  bodies2 = bodies;
   data.initTarget(bodies);
   logger::printTitle("Ewald Profiling");
   logger::startTimer("Total Ewald");
 #if 1
-  Bodies jbodies = bodies;
+  jbodies = bodies;
   for (int i=0; i<baseMPI.mpisize; i++) {
     if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI.mpisize << std::endl;
     treeMPI.shiftBodies(jbodies);
     localBounds = boundBox.getBounds(jbodies);
-    Cells jcells = buildTree.buildTree(jbodies, localBounds);
+    jcells = buildTree.buildTree(jbodies, localBounds);
     ewald.wavePart(bodies, jbodies);
     ewald.realPart(cells, jcells);
   }
 #else
-  Bodies jbodies = treeMPI.allgatherBodies(bodies);
+  jbodies = treeMPI.allgatherBodies(bodies);
   jcells = buildTree.buildTree(jbodies, globalBounds);
   ewald.wavePart(bodies, jbodies);
   ewald.realPart(cells, jcells);
@@ -99,9 +101,9 @@ int main(int argc, char ** argv) {
   logger::printTime("Total FMM");
   logger::stopTimer("Total Ewald");
 #else
-  Bodies jbodies = bodies;
+  jbodies = bodies;
   data.sampleBodies(bodies, args.numTargets);
-  Bodies bodies2 = bodies;
+  bodies2 = bodies;
   data.initTarget(bodies);
   logger::startTimer("Total Direct");
   for (int i=0; i<baseMPI.mpisize; i++) {
@@ -133,18 +135,27 @@ int main(int argc, char ** argv) {
   traversal.printTraversalData();
   logger::printPAPI();
 #if VTK
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) B->IBODY = 0;
-  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
-    Body body;
-    body.IBODY = 1;
-    body.X     = C->X;
-    body.SRC   = 0;
-    bodies.push_back(body);
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->IBODY = 0;
+  for (int irank=0; irank<baseMPI.mpisize; irank++) {
+    treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
+    for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
+      Body body;
+      body.IBODY = 1;
+      body.X     = C->X;
+      body.SRC   = 0;
+      jbodies.push_back(body);
+    }
   }
   vtk3DPlot vtk;
   vtk.setBounds(M_PI,0);
-  vtk.setGroupOfPoints(bodies);
-  vtk.plot();
+  vtk.setGroupOfPoints(jbodies);
+  for (int i=1; i<baseMPI.mpisize; i++) {
+    treeMPI.shiftBodies(jbodies);
+    vtk.setGroupOfPoints(jbodies);
+  }
+  if (baseMPI.mpirank == 0) {
+    vtk.plot();
+  }
 #endif
   return 0;
 }

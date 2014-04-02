@@ -16,8 +16,11 @@
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   BaseMPI baseMPI;
+  Bodies bodies, bodies2, jbodies;
   BoundBox boundBox(args.nspawn);
+  Bounds localBounds, globalBounds;
   BuildTree buildTree(args.ncrit, args.nspawn);
+  Cells cells, jcells;
   Dataset data;
   Partition partition;
   Traversal traversal(args.nspawn, args.images);
@@ -26,7 +29,6 @@ int main(int argc, char ** argv) {
   Verify verify;
 
   const real_t cycle = 2 * M_PI;
-
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
@@ -35,21 +37,21 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
+  bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X[0] += M_PI;
     B->X[0] *= 0.5;
   }
-  Bounds localBounds = boundBox.getBounds(bodies);
+  localBounds = boundBox.getBounds(bodies);
 #if IneJ
-  Bodies jbodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank+baseMPI.mpisize, baseMPI.mpisize);
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  jbodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank+baseMPI.mpisize, baseMPI.mpisize);
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     B->X[0] -= M_PI;
     B->X[0] *= 0.5;
   }
   localBounds = boundBox.getBounds(jbodies,localBounds);
 #endif
-  Bounds globalBounds = baseMPI.allreduceBounds(localBounds);
+  globalBounds = baseMPI.allreduceBounds(localBounds);
   localBounds = partition.octsection(bodies,globalBounds);
   bodies = treeMPI.commBodies(bodies);
 #if IneJ
@@ -57,11 +59,11 @@ int main(int argc, char ** argv) {
   jbodies = treeMPI.commBodies(jbodies);
 #endif
   localBounds = boundBox.getBounds(bodies);
-  Cells cells = buildTree.buildTree(bodies, localBounds);
+  cells = buildTree.buildTree(bodies, localBounds);
   upDownPass.upwardPass(cells);
 #if IneJ
   localBounds = boundBox.getBounds(jbodies);
-  Cells jcells = buildTree.buildTree(jbodies, localBounds);
+  jcells = buildTree.buildTree(jbodies, localBounds);
   upDownPass.upwardPass(jcells);
 #endif
 
@@ -77,8 +79,7 @@ int main(int argc, char ** argv) {
   traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-  Bodies jbodies = bodies;
-  Cells jcells;
+  jbodies = bodies;
 #endif
   for (int irank=1; irank<baseMPI.mpisize; irank++) {
     treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
@@ -145,7 +146,7 @@ int main(int argc, char ** argv) {
   logger::stopTimer("Total FMM", 0);
   logger::printTitle("MPI direct sum");
   data.sampleBodies(bodies, args.numTargets);
-  Bodies bodies2 = bodies;
+  bodies2 = bodies;
   data.initTarget(bodies);
   logger::startTimer("Total Direct");
   for (int i=0; i<baseMPI.mpisize; i++) {
@@ -180,7 +181,7 @@ int main(int argc, char ** argv) {
 #if VTK
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->IBODY = 0;
   for (int irank=0; irank<baseMPI.mpisize; irank++) {
-    treeMPI.gettreeMPI(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
+    treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
     for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
       Body body;
       body.IBODY = 1;

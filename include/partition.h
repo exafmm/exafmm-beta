@@ -20,14 +20,14 @@ public:
   Bounds octsection(Bodies & bodies, Bounds global) {
     logger::startTimer("Partition");                            // Start timer
     int size = mpisize;                                         // Initialize MPI size counter
-    vec<3,int> Npartition = 1;                                  // Number of partitions in each direction
+    int Npartition[3] = {1, 1, 1};                              // Number of partitions in each direction
     int d = 0;                                                  // Initialize dimension counter
     while (size != 1) {                                         // Divide domain while counter is not one
       Npartition[d] <<= 1;                                      //  Divide this dimension
       d = (d+1) % 3;                                            //  Increment dimension
       size >>= 1;                                               //  Right shift the bits of counter
     }                                                           // End while loop for domain subdivision
-    vec3 Xpartition;                                            // Size of partitions in each direction
+    real_t Xpartition[3];                                       // Size of partitions in each direction
     for (d=0; d<3; d++) {                                       // Loop over dimensions
       Xpartition[d] = (global.Xmax[d] - global.Xmin[d]) / Npartition[d];//  Size of partition in each direction
     }                                                           // End loop over dimensions

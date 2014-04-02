@@ -7,8 +7,8 @@ EQUATION = Laplace
 #EQUATION = Stokes (not available yet)
 
 ### choose basis of multipole/local expansion
-BASIS	= Cartesian
-#BASIS	= Spherical
+#BASIS	= Cartesian
+BASIS	= Spherical
 #BASIS	= Planewave (not available yet)
 
 ### choose device to use
@@ -62,7 +62,7 @@ LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org
 #LFLAGS	+= -DTRACE
 
 ### VTK flags : VTK is available from http://www.vtk.org/VTK/resources/software.html
-#LFLAGS	+= -DVTK -lvtkCharts -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
+LFLAGS	+= -DVTK -lvtkCharts -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO
 
 ifeq ($(DEVICE),GPU)
 NVCC	= nvcc -use_fast_math -arch=sm_35 -I../include

@@ -11,7 +11,7 @@ serial: serial.o $(OBJECTS)
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
-	$(CXX) $? $(LFLAGS)
+	$(CXX) $? $(LFLAGS) -lmpi
 	mpirun -np 8 ./a.out
 
 # Checking O(N) complexity
