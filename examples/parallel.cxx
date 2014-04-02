@@ -38,12 +38,13 @@ int main(int argc, char ** argv) {
   logger::startTimer("Total FMM");
   logger::startPAPI();
   bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
+  localBounds = boundBox.getBounds(bodies);
+#if IneJ
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X[0] += M_PI;
     B->X[0] *= 0.5;
   }
   localBounds = boundBox.getBounds(bodies);
-#if IneJ
   jbodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank+baseMPI.mpisize, baseMPI.mpisize);
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     B->X[0] -= M_PI;

@@ -18,7 +18,7 @@ private:
 
   //! Octree is used for building the FMM tree structure as "nodes", then transformed to "cells" data structure
   struct OctreeNode {
-    int          BODY;                                          //!< Index offset for first body in node
+    int          IBODY;                                         //!< Index offset for first body in node
     int          NBODY;                                         //!< Number of descendant bodies
     int          NNODE;                                         //!< Number of descendant nodes
     OctreeNode * CHILD[8];                                      //!< Pointer to child node
@@ -139,7 +139,7 @@ private:
     //! Create an octree node
     OctreeNode * makeOctNode(int begin, int end, vec3 X, bool nochild) const {
       OctreeNode * octNode = new OctreeNode();                  // Allocate memory for single node
-      octNode->BODY = begin;                                    // Index of first body in node
+      octNode->IBODY = begin;                                   // Index of first body in node
       octNode->NBODY = end - begin;                             // Number of bodies in node
       octNode->NNODE = 1;                                       // Initialize counter for decendant nodes
       octNode->X = X;                                           // Center position of node
@@ -239,7 +239,7 @@ private:
       C->R      = R0 / (1 << level);                            //  Cell radius
       C->X      = octNode->X;                                   //  Cell center
       C->NBODY  = octNode->NBODY;                               //  Number of decendant bodies
-      C->IBODY  = octNode->BODY;                                //  Index of first body in cell
+      C->IBODY  = octNode->IBODY;                               //  Index of first body in cell
       C->BODY   = B0 + C->IBODY;                                //  Iterator of first body in cell
       C->ICELL  = getKey(C->X, X0-R0, 2*C->R, level);           //  Get Morton key
       if (octNode->NNODE == 1) {                                //  If node has no children
