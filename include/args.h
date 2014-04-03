@@ -12,6 +12,8 @@ static struct option long_options[] = {
   {"nspawn",       1, 0, 's'},
   {"images",       1, 0, 'i'},
   {"theta",        1, 0, 't'},
+  {"useRmax",      1, 0, 'x'},
+  {"useRopt",      1, 0, 'o'},
   {"mutual",       1, 0, 'm'},
   {"verbose",      1, 0, 'v'},
   {"distribution", 1, 0, 'd'},
@@ -28,6 +30,8 @@ public:
   int nspawn;
   int images;
   double theta;
+  int useRmax;
+  int useRopt;
   int mutual;
   int verbose;
   const char * distribution;
@@ -43,6 +47,8 @@ private:
             " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
             " --images (-i)                 : Number of periodic image levels (%d)\n"
             " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
+	    " --useRmax (-x)                : Use maximum distance for MAC (%d)\n"
+	    " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
             " --mutual (-m) [0/1]           : Use mutual interaction (%d)\n"
 	    " --verbose (-v) [0/1]          : Print information to screen (%d)\n"
             " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n"
@@ -54,6 +60,8 @@ private:
             nspawn,
             images,
             theta,
+	    useRmax,
+	    useRopt,
             mutual,
 	    verbose,
             distribution,
@@ -79,7 +87,8 @@ private:
 
 public:
   Args(int argc=0, char ** argv=NULL) : numBodies(1000000), numTargets(100), ncrit(16), nspawn(1000), images(0),
-					theta(.4), mutual(1), verbose(1), distribution("cube"), repeat(1) {
+					theta(.4), useRmax(1), useRopt(1), mutual(1), verbose(1),
+					distribution("cube"), repeat(1) {
     while (1) {
       int option_index;
       int c = getopt_long(argc, argv, "n:t:c:s:i:o:m:v:d:r:h", long_options, &option_index);
@@ -99,6 +108,12 @@ public:
         break;
       case 't':
         theta = atof(optarg);
+        break;
+      case 'x':
+        useRmax = atof(optarg);
+        break;
+      case 'o':
+        useRopt = atof(optarg);
         break;
       case 'm':
         mutual = atoi(optarg);
@@ -136,6 +151,10 @@ public:
 		<< "nspawn" << " : " << nspawn << std::endl     //  Print nspawn
 		<< std::setw(stringLength)                      //  Set format
 		<< "images" << " : " << images << std::endl     //  Print images
+		<< std::setw(stringLength)                      //  Set format
+		<< "useRmax" << " : " << useRmax << std::endl   //  Print useRmax
+		<< std::setw(stringLength)                      //  Set format
+		<< "useRopt" << " : " << useRopt << std::endl   //  Print useRopt
 		<< std::setw(stringLength)                      //  Set format
 		<< "mutual" << " : " << mutual << std::endl     //  Print mutual
 		<< std::setw(stringLength)                      //  Set format

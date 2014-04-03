@@ -15,11 +15,11 @@ int main(int argc, char ** argv) {
   Bodies bodies, bodies2, jbodies;
   BoundBox boundBox(args.nspawn);
   Bounds bounds;
-  BuildTree buildTree(args.ncrit,args.nspawn);
+  BuildTree buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
   Dataset data;
-  Traversal traversal(args.nspawn,args.images);
-  UpDownPass upDownPass(args.theta, true, true);
+  Traversal traversal(args.nspawn, args.images);
+  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 
   const real_t cycle = 2 * M_PI;

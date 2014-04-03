@@ -24,6 +24,8 @@ extern "C" void FMM_Init(int images) {
   const int ncrit = 32;
   const int nspawn = 1000;
   const real_t theta = 0.4;
+  const bool useRmax = true;
+  const bool useRopt = true;
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
@@ -31,7 +33,7 @@ extern "C" void FMM_Init(int images) {
   partition = new Partition;
   traversal = new Traversal(nspawn, images);
   treeMPI = new TreeMPI(images);
-  upDownPass = new UpDownPass(theta);
+  upDownPass = new UpDownPass(theta, useRmax, useRopt);
 
   args->theta = theta;
   args->ncrit = ncrit;
@@ -43,7 +45,7 @@ extern "C" void FMM_Init(int images) {
   args->verbose &= baseMPI->mpirank == 0;
   logger::verbose = args->verbose;
   logger::printTitle("Initial Parameters");
-  args->print(logger::stringLength, P, baseMPI->mpirank);
+  args->print(logger::stringLength, P);
 }
 
 extern "C" void FMM_Finalize() {
@@ -94,7 +96,7 @@ extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, doub
 extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle) {
   args->numBodies = n;
   logger::printTitle("FMM Parameters");
-  args->print(logger::stringLength, P, baseMPI->mpirank);
+  args->print(logger::stringLength, P);
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
@@ -146,7 +148,7 @@ extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double 
   Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
   args->numBodies = n;
   logger::printTitle("Ewald Parameters");
-  args->print(logger::stringLength, P, baseMPI->mpirank);
+  args->print(logger::stringLength, P);
   ewald->print(logger::stringLength);
   logger::printTitle("Ewald Profiling");
   logger::startTimer("Total Ewald");

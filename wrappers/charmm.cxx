@@ -26,6 +26,8 @@ Bounds localBounds;
 extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   const int ncrit = 32;
   const int nspawn = 1000;
+  const bool useRmax = true;
+  const bool useRopt = true;
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
@@ -33,7 +35,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   partition = new Partition;
   traversal = new Traversal(nspawn, images);
   treeMPI = new TreeMPI(images);
-  upDownPass = new UpDownPass(theta);
+  upDownPass = new UpDownPass(theta, useRmax, useRopt);
 
   args->theta = theta;
   args->ncrit = ncrit;

@@ -32,7 +32,7 @@ int main(int argc, char ** argv) {
   Partition partition;
   Traversal traversal(args.nspawn, args.images);
   TreeMPI treeMPI(args.images);
-  UpDownPass upDownPass(args.theta);
+  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 
   const int ksize = 11;

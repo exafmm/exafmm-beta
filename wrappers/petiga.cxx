@@ -24,6 +24,8 @@ extern "C" void FMM_Init() {
   const int nspawn = 1000;
   const int images = 0;
   const real_t theta = 0.4;
+  const bool useRmax = true;
+  const bool useRopt = true;
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
@@ -31,7 +33,7 @@ extern "C" void FMM_Init() {
   partition = new Partition;
   traversal = new Traversal(nspawn, images);
   treeMPI = new TreeMPI(images);
-  upDownPass = new UpDownPass(theta);
+  upDownPass = new UpDownPass(theta, useRmax, useRopt);
 
   args->theta = theta;
   args->ncrit = ncrit;
@@ -43,7 +45,7 @@ extern "C" void FMM_Init() {
   args->verbose &= baseMPI->mpirank == 0;
   logger::verbose = args->verbose;
   logger::printTitle("Initial Parameters");
-  args->print(logger::stringLength, P, baseMPI->mpirank);
+  args->print(logger::stringLength, P);
 }
 
 extern "C" void FMM_Finalize() {
@@ -110,7 +112,7 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
 			    int nj, double * xj, double * yj, double * zj, double * vj) {
   args->numBodies = ni;
   logger::printTitle("FMM Parameters");
-  args->print(logger::stringLength, P, baseMPI->mpirank);
+  args->print(logger::stringLength, P);
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
