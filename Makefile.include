@@ -7,8 +7,8 @@ EQUATION = Laplace
 #EQUATION = Stokes (not available yet)
 
 ### choose basis of multipole/local expansion
-#BASIS	= Cartesian
-BASIS	= Spherical
+BASIS	= Cartesian
+#BASIS	= Spherical
 #BASIS	= Planewave (not available yet)
 
 ### choose device to use

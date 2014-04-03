@@ -25,7 +25,7 @@ private:
   void traverse(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
-    if (R2 > (Ci->RCRIT+Cj->RCRIT)*(Ci->RCRIT+Cj->RCRIT)) {     // If distance is far enough
+    if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R)) {                   // If distance is far enough
       kernel::M2L(Ci, Cj, Xperiodic, mutual);                   //  M2L kernel
       countKernel(numM2L);                                      //  Increment M2L counter
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
@@ -150,6 +150,7 @@ private:
       }                                                         //  End loop over x periodic direction
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
       kernel::M2M(Ci,Cj0);                                      //  Evaluate periodic M2M kernels for this sublevel
+      if (std::abs(Ci->M[0]) == 0) Ci->M[0] = EPS;              //  Account for zero monopole case
       for (int i=1; i<NTERM; i++) Ci->M[i] /= Ci->M[0];         //  Normalize multipole expansion coefficients
       cycle *= 3;                                               //  Increase center cell size three times
       Cj0 = C0;                                                 //  Reset Cj0 back
@@ -174,7 +175,7 @@ private:
       TraverseRange traverseRange(this, Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,// Instantiate recursive functor
 				  Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, Xperiodic, mutual);
       traverseRange();                                          //  Traverse for range of cell pairs
-    } else if (Ci->RCRIT >= Cj->RCRIT) {                        // Else if Ci is larger than Cj
+    } else if (Ci->R >= Cj->R) {                                // Else if Ci is larger than Cj
       for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
         traverse(ci, Cj, Xperiodic, mutual);                    //   Traverse a single pair of cells
       }                                                         //  End loop over Ci's children

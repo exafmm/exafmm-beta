@@ -24,6 +24,7 @@ private:
 	create_taskc(setR);                                     //   Create new task for recursive call
       }                                                         //  End loop over child cells
       wait_tasks;                                               //  Synchronize tasks
+      if (std::abs(C->M[0]) == 0) C->M[0] = EPS;                //  Account for zero monopole case
       for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];           //  Normalize multipole expansion coefficients
       real_t x = 1.0 / theta;                                   //  Inverse of theta
 #if ERROR_OPT
@@ -35,7 +36,7 @@ private:
 	x -= f / df;                                            //   Increment x
       }                                                         //  End Newton-Raphson iteration
 #endif
-      C->RCRIT *= x;                                            //  Multiply R by error optimized parameter x
+      C->R *= x;                                                //  Multiply R by error optimized parameter x
     }                                                           // End overload operator()
   };
 

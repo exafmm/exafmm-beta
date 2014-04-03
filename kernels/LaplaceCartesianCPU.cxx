@@ -636,9 +636,7 @@ void kernel::P2M(C_iter C) {
     for (int i=0; i<NTERM; i++) C->M[i] += M[i];
   }
 #if USE_RMAX
-  C->RCRIT = std::min(C->R,RMAX);
-#else
-  C->RCRIT = C->R;
+  C->R = std::min(C->R,RMAX);
 #endif
 }
 
@@ -646,7 +644,7 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
   real_t RMAX = 0;
   for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
-    real_t R = std::sqrt(norm(dX)) + Cj->RCRIT;
+    real_t R = std::sqrt(norm(dX)) + Cj->R;
     if (R > RMAX) RMAX = R;
     vecP M;
     vecP C;
@@ -657,9 +655,7 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
     Kernels<0,0,P-1>::M2M(Ci->M, C, M);
   }
 #if USE_RMAX
-  Ci->RCRIT = std::min(Ci->R,RMAX);
-#else
-  Ci->RCRIT = Ci->R;
+  Ci->R = std::min(Ci->R,RMAX);
 #endif
 }
 

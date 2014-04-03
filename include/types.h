@@ -11,8 +11,10 @@
 // Basic type definitions
 #if FP64
 typedef double               real_t;                            //!< Floating point type is double precision
+const real_t EPS = 1e-16;                                       //!< Double precision epsilon
 #else
 typedef float                real_t;                            //!< Floating point type is single precision
+const real_t EPS = 1e-8;                                        //!< Single precision epsilon
 #endif
 typedef std::complex<real_t> complex_t;                         //!< Complex type
 typedef vec<3,real_t>        vec3;                              //!< Vector of 3 real_t types
@@ -83,7 +85,6 @@ struct Cell {
   uint64_t  ICELL;                                              //!< Cell index
   vec3      X;                                                  //!< Cell center
   real_t    R;                                                  //!< Cell radius
-  real_t    RCRIT;                                              //!< Critical cell radius
   vecP      M;                                                  //!< Multipole coefficients
   vecP      L;                                                  //!< Local coefficients
 };
