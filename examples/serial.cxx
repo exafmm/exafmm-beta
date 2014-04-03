@@ -19,7 +19,7 @@ int main(int argc, char ** argv) {
   Cells cells, jcells;
   Dataset data;
   Traversal traversal(args.nspawn,args.images);
-  UpDownPass upDownPass(args.theta);
+  UpDownPass upDownPass(args.theta, true, true);
   Verify verify;
 
   const real_t cycle = 2 * M_PI;

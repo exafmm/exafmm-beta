@@ -5,8 +5,10 @@
 #include "thread.h"
 
 class UpDownPass {
-public:
+private:
   real_t theta;                                                 //!< Multipole acceptance criteria
+  bool useRmax;                                                 //!< Use maximum distance for MAC
+  bool useRopt;                                                 //!< Use error optimized theta for MAC
 
 private:
   //! Recursive functor for error optimization of R
@@ -27,16 +29,14 @@ private:
       if (std::abs(C->M[0]) == 0) C->M[0] = EPS;                //  Account for zero monopole case
       for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];           //  Normalize multipole expansion coefficients
       real_t x = 1.0 / theta;                                   //  Inverse of theta
-#if ERROR_OPT
       assert(theta != 1.0);                                     //  Newton-Raphson won't work for theta==1
       real_t a = c * powf(std::abs(C->M[0]),1.0/3);             //  Cell coefficient
-      for (int i=0; i<5; i++) {                                 //  Newton-Raphson iteration
+      for (int i=0; i<5; i++) {                                 //  Loop for Newton-Raphson iteration
 	real_t f = x * x - 2 * x + 1 - a * std::pow(x,-P);      //   Function value
 	real_t df = (P + 2) * x - 2 * (P + 1) + P / x;          //   Function derivative value
 	x -= f / df;                                            //   Increment x
-      }                                                         //  End Newton-Raphson iteration
-#endif
-      C->R *= x;                                                //  Multiply R by error optimized parameter x
+      }                                                         //  End loop for Newton-Raphson iteration
+      C->R *= x * theta;                                        //  Multiply R by error optimized parameter x
     }                                                           // End overload operator()
   };
 
@@ -44,6 +44,8 @@ private:
   struct PostOrderTraversal {
     C_iter C;                                                   //!< Iterator of current cell
     C_iter C0;                                                  //!< Iterator of first cell
+    real_t theta;                                               //!< Multipole acceptance criteria
+    bool useRmax;                                               //!< Use maximum distance for MAC
     //! Redefine cell radius R based on maximum distance
     void setRmax() {
       real_t Rmax = 0;                                          // Initialize Rmax
@@ -60,16 +62,14 @@ private:
 	  if (R > Rmax) Rmax = R;                               //   Maximum distance
 	}                                                       //  End loop over child cells
       }                                                         // End if for leaf cell
-#if USE_RMAX
       C->R = std::min(C->R,Rmax);                               // Redefine R based on maximum distance
-#endif
     }
-    PostOrderTraversal(C_iter _C, C_iter _C0) :                 // Constructor
-      C(_C), C0(_C0) {}                                         // Initialize variables
+    PostOrderTraversal(C_iter _C, C_iter _C0, real_t _theta, bool _useRmax) : // Constructor
+      C(_C), C0(_C0), theta(_theta), useRmax(_useRmax) {}       // Initialize variables
     void operator() () {                                        // Overload operator()
       mk_task_group;                                            //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-	PostOrderTraversal postOrderTraversal(CC, C0);          //    Instantiate recursive functor
+	PostOrderTraversal postOrderTraversal(CC, C0, theta, useRmax); // Instantiate recursive functor
 	create_taskc(postOrderTraversal);                       //    Create new task for recursive call
       }                                                         //   End loop over child cells
       wait_tasks;                                               //   Synchronize tasks
@@ -77,7 +77,8 @@ private:
       C->L = 0;                                                 //  Initialize local expansion coefficients
       if(C->NCHILD==0) kernel::P2M(C);                          //  P2M kernel
       else kernel::M2M(C, C0);                                  //  M2M kernel
-      setRmax();                                                //  Redefine cell radius R based on maximum distance
+      if (useRmax) setRmax();                                   //  Redefine cell radius R based on maximum distance
+      C->R /= theta;                                            //  Divide R by theta
     }                                                           // End overload operator()
   };
 
@@ -101,18 +102,21 @@ private:
 
 public:
   //! Constructor
-  UpDownPass(real_t _theta) : theta(_theta) {}                  // Initialize variables
+  UpDownPass(real_t _theta, bool _useRmax, bool _useRopt) :
+    theta(_theta), useRmax(_useRmax), useRopt(_useRopt) {}      // Initialize variables
 
   //! Upward pass (P2M, M2M)
   void upwardPass(Cells & cells) {
     logger::startTimer("Upward pass");                          // Start timer
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Set iterator of target root cell
-      PostOrderTraversal postOrderTraversal(C0, C0);            //  Instantiate recursive functor
+      PostOrderTraversal postOrderTraversal(C0, C0, theta, useRmax); // Instantiate recursive functor
       postOrderTraversal();                                     //  Recursive call for upward pass
       real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
-      SetRopt setRopt(C0, C0, c, theta);                        //  Instantiate recursive functor
-      setRopt();                                                //  Error optimization of R
+      if (useRopt) {                                            //  If using error optimized theta
+	SetRopt setRopt(C0, C0, c, theta);                      //   Instantiate recursive functor
+	setRopt();                                              //   Error optimization of R
+      }                                                         //  End if for using error optimized theta
     }                                                           // End if for empty cell vector
     logger::stopTimer("Upward pass");                           // Stop timer
   }

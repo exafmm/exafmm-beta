@@ -1,4 +1,5 @@
 -- CPU --
+0. RMAX, ROPT as argument
 1. Partitioning with Hilbert
 2. Merge LET before dualTreeTraversal
 3. Fix parallel ewald
