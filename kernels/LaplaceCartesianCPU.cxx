@@ -625,27 +625,18 @@ struct Coefs<0,0> {
 };
 
 void kernel::P2M(C_iter C) {
-  real_t RMAX = 0;
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     vec3 dX = C->X - B->X;
-    real_t R = std::sqrt(norm(dX));
-    if (R > RMAX) RMAX = R;
     vecP M;
     M[0] = B->SRC;
     Kernels<0,0,P-1>::power(M, dX);
     for (int i=0; i<NTERM; i++) C->M[i] += M[i];
   }
-#if USE_RMAX
-  C->R = std::min(C->R,RMAX);
-#endif
 }
 
 void kernel::M2M(C_iter Ci, C_iter C0) {
-  real_t RMAX = 0;
   for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
-    real_t R = std::sqrt(norm(dX)) + Cj->R;
-    if (R > RMAX) RMAX = R;
     vecP M;
     vecP C;
     C[0] = 1;
@@ -654,9 +645,6 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
     for (int i=0; i<NTERM; i++) Ci->M[i] += C[i] * M[0];
     Kernels<0,0,P-1>::M2M(Ci->M, C, M);
   }
-#if USE_RMAX
-  Ci->R = std::min(Ci->R,RMAX);
-#endif
 }
 
 void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {

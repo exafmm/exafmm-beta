@@ -102,11 +102,8 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t * Ynm) {
 
 void kernel::P2M(C_iter C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  real_t RMAX = 0;
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     vec3 dX = B->X - C->X;
-    real_t R = std::sqrt(norm(dX));
-    if (R > RMAX) RMAX = R;
     real_t rho, alpha, beta;
     cart2sph(rho, alpha, beta, dX);
     evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
@@ -118,20 +115,12 @@ void kernel::P2M(C_iter C) {
       }
     }
   }
-#if USE_RMAX
-  C->R = std::min(C->R,RMAX);
-#else
-  C->R = C->R;
-#endif
 }
 
 void kernel::M2M(C_iter Ci, C_iter C0) {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  real_t RMAX = 0;
   for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
-    real_t R = std::sqrt(norm(dX)) + Cj->R;
-    if (R > RMAX) RMAX = R;
     real_t rho, alpha, beta;
     cart2sph(rho, alpha, beta, dX);
     evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
@@ -155,11 +144,6 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
       }
     }
   }
-#if USE_RMAX
-  Ci->R = std::min(Ci->R,RMAX);
-#else
-  Ci->R = Ci->R;
-#endif
 }
 
 void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {

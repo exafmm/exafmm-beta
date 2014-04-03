@@ -10,18 +10,18 @@ public:
 
 private:
   //! Recursive functor for error optimization of R
-  struct SetR {
+  struct SetRopt {
     C_iter C;                                                   //!< Iterator of current cell
     C_iter C0;                                                  //!< Iterator of first cell
     real_t c;                                                   //!< Root coefficient
     real_t theta;                                               //!< Multipole acceptance criteria
-    SetR(C_iter _C, C_iter _C0, real_t _c, real_t _theta) :     // Constructor
+    SetRopt(C_iter _C, C_iter _C0, real_t _c, real_t _theta) :  // Constructor
       C(_C), C0(_C0), c(_c), theta(_theta) {}                   // Initialize variables
     void operator() () {                                        // Overload operator()
       mk_task_group;                                            //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-	SetR setR(CC, C0, c, theta);                            //   Initialize recusive functor
-	create_taskc(setR);                                     //   Create new task for recursive call
+	SetRopt setRopt(CC, C0, c, theta);                      //   Initialize recusive functor
+	create_taskc(setRopt);                                  //   Create new task for recursive call
       }                                                         //  End loop over child cells
       wait_tasks;                                               //  Synchronize tasks
       if (std::abs(C->M[0]) == 0) C->M[0] = EPS;                //  Account for zero monopole case
@@ -44,6 +44,26 @@ private:
   struct PostOrderTraversal {
     C_iter C;                                                   //!< Iterator of current cell
     C_iter C0;                                                  //!< Iterator of first cell
+    //! Redefine cell radius R based on maximum distance
+    void setRmax() {
+      real_t Rmax = 0;                                          // Initialize Rmax
+      if (C->NCHILD == 0) {                                     // If leaf cell
+	for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {      //  Loop over bodies in cell
+	  vec3 dX = C->X - B->X;                                //   Distance vector from particles to center of expansion
+	  real_t R = std::sqrt(norm(dX));                       //   Scalar distance
+	  if (R > Rmax) Rmax = R;                               //   Maximum distance
+	}                                                       //  End loop over bodies in cell
+      } else {                                                  // If not leaf cell
+	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
+	  vec3 dX = C->X - CC->X;                               //   Distance vector from particles to center of expansion
+	  real_t R = std::sqrt(norm(dX)) + CC->R;               //   Scalar distance
+	  if (R > Rmax) Rmax = R;                               //   Maximum distance
+	}                                                       //  End loop over child cells
+      }                                                         // End if for leaf cell
+#if USE_RMAX
+      C->R = std::min(C->R,Rmax);                               // Redefine R based on maximum distance
+#endif
+    }
     PostOrderTraversal(C_iter _C, C_iter _C0) :                 // Constructor
       C(_C), C0(_C0) {}                                         // Initialize variables
     void operator() () {                                        // Overload operator()
@@ -56,7 +76,8 @@ private:
       C->M = 0;                                                 //  Initialize multipole expansion coefficients
       C->L = 0;                                                 //  Initialize local expansion coefficients
       if(C->NCHILD==0) kernel::P2M(C);                          //  P2M kernel
-      else kernel::M2M(C,C0);                                   //  M2M kernel
+      else kernel::M2M(C, C0);                                  //  M2M kernel
+      setRmax();                                                //  Redefine cell radius R based on maximum distance
     }                                                           // End overload operator()
   };
 
@@ -90,8 +111,8 @@ public:
       PostOrderTraversal postOrderTraversal(C0, C0);            //  Instantiate recursive functor
       postOrderTraversal();                                     //  Recursive call for upward pass
       real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
-      SetR setR(C0, C0, c, theta);                              //  Instantiate recursive functor
-      setR();                                                   //  Error optimization of R
+      SetRopt setRopt(C0, C0, c, theta);                        //  Instantiate recursive functor
+      setRopt();                                                //  Error optimization of R
     }                                                           // End if for empty cell vector
     logger::stopTimer("Upward pass");                           // Stop timer
   }
