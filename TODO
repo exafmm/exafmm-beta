@@ -1,24 +1,26 @@
--- CPU/GPU --
-.h -> .cxx/.cu
-unify dataset
-Kahan + fixed precision
-autotools + regression -> ExaFMM 1.0 release
-Solid harmonics kernel
-
 -- CPU --
-1. Separately time the partitioning
-2. Partitioning with Hilbert
-3. Merge LET before dualTreeTraversal
-4. Fix parallel ewald
-5. setLET multithread
-6. traverseLET don't double R
+1. Partitioning with Hilbert
+2. Merge LET before dualTreeTraversal
+3. Fix parallel ewald
+4. setLET multithread
+5. traverseLET don't double R
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance
+Kahan + fixed precision
+Solid harmonics kernel
 
--- GPU --
+-- GPU integration --
+Unify dataset
+.h -> .cxx/.cu
 MPI Bonsai
 Ewald, VdW
 Zero softening
+
+-- Software infrastructure --
+Autotools
+CMake (update)
+Regression
+Buildbot
 
 -- Comparisons --
 DTT vs. UVWX-list

@@ -27,11 +27,11 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
+#if IneJ
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X[0] += M_PI;
     B->X[0] *= 0.5;
   }
-#if IneJ
   jbodies = data.initBodies(args.numBodies, args.distribution, 1);
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     B->X[0] -= M_PI;

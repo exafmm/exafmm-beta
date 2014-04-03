@@ -37,9 +37,7 @@ int main() {
   CI->X = R + 4;
   CI->M = 1;
   CI->L = 0;
-#if Cartesian
   for (int i=1; i<NTERM; i++) CJ->M[i] /= CJ->M[0];
-#endif
   kernel::M2L(CI, CJ, Xperiodic, false);
 
   C_iter Ci = cells.begin()+3;
@@ -53,9 +51,7 @@ int main() {
   Ci->X = R + 3;
   Ci->M = 1;
   Ci->L = 0;
-#if Cartesian
   for (int i=1; i<NTERM; i++) Cj->M[i] /= Cj->M[0];
-#endif
   kernel::M2L(Ci, Cj, Xperiodic, false);
 #endif
 

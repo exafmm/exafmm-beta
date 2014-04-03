@@ -264,29 +264,29 @@ public:
   }
 
   //! Send bodies
-  Bodies commBodies() {
-    logger::startTimer("Comm bodies");                          // Start timer
+  Bodies commBodies(Bodies sendBodies) {
+    logger::startTimer("Comm partition");                       // Start timer
     alltoall(sendBodies);                                       // Send body count
     alltoallv(sendBodies);                                      // Send bodies
-    logger::stopTimer("Comm bodies");                           // Stop timer
+    logger::stopTimer("Comm partition");                        // Stop timer
     return recvBodies;                                          // Return received bodies
   }
 
   //! Send bodies
-  Bodies commBodies(Bodies sendBodies) {
-    logger::startTimer("Comm bodies");                          // Start timer
+  Bodies commBodies() {
+    logger::startTimer("Comm LET bodies");                      // Start timer
     alltoall(sendBodies);                                       // Send body count
     alltoallv(sendBodies);                                      // Send bodies
-    logger::stopTimer("Comm bodies");                           // Stop timer
+    logger::stopTimer("Comm LET bodies");                       // Stop timer
     return recvBodies;                                          // Return received bodies
   }
 
   //! Send cells
   void commCells() {
-    logger::startTimer("Comm cells");                           // Start timer
+    logger::startTimer("Comm LET cells");                       // Start timer
     alltoall(sendCells);                                        // Send cell count
     alltoallv(sendCells);                                       // Senc cells
-    logger::stopTimer("Comm cells");                            // Stop timer
+    logger::stopTimer("Comm LET cells");                        // Stop timer
   }
 
   //! Copy recvBodies to bodies
