@@ -83,7 +83,6 @@ struct Cell {
   uint64_t  ICELL;                                              //!< Cell index
   vec3      X;                                                  //!< Cell center
   real_t    R;                                                  //!< Cell radius
-  real_t    RMAX;                                               //!< Max cell radius
   real_t    RCRIT;                                              //!< Critical cell radius
   vecP      M;                                                  //!< Multipole coefficients
   vecP      L;                                                  //!< Local coefficients

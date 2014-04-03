@@ -9,19 +9,19 @@ public:
   real_t theta;                                                 //!< Multipole acceptance criteria
 
 private:
-  //! Recursive functor for error optimization of Rcrit
-  struct SetRcrit {
+  //! Recursive functor for error optimization of R
+  struct SetR {
     C_iter C;                                                   //!< Iterator of current cell
     C_iter C0;                                                  //!< Iterator of first cell
     real_t c;                                                   //!< Root coefficient
     real_t theta;                                               //!< Multipole acceptance criteria
-    SetRcrit(C_iter _C, C_iter _C0, real_t _c, real_t _theta) : // Constructor
+    SetR(C_iter _C, C_iter _C0, real_t _c, real_t _theta) :     // Constructor
       C(_C), C0(_C0), c(_c), theta(_theta) {}                   // Initialize variables
     void operator() () {                                        // Overload operator()
       mk_task_group;                                            //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-	SetRcrit setRcrit(CC, C0, c, theta);                    //   Initialize recusive functor
-	create_taskc(setRcrit);                                 //   Create new task for recursive call
+	SetR setR(CC, C0, c, theta);                            //   Initialize recusive functor
+	create_taskc(setR);                                     //   Create new task for recursive call
       }                                                         //  End loop over child cells
       wait_tasks;                                               //  Synchronize tasks
       for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];           //  Normalize multipole expansion coefficients
@@ -35,7 +35,7 @@ private:
 	x -= f / df;                                            //   Increment x
       }                                                         //  End Newton-Raphson iteration
 #endif
-      C->RCRIT *= x;                                            //  Multiply Rcrit by error optimized parameter x
+      C->RCRIT *= x;                                            //  Multiply R by error optimized parameter x
     }                                                           // End overload operator()
   };
 
@@ -52,7 +52,6 @@ private:
 	create_taskc(postOrderTraversal);                       //    Create new task for recursive call
       }                                                         //   End loop over child cells
       wait_tasks;                                               //   Synchronize tasks
-      C->RMAX = 0;                                              //  Initialzie Rmax
       C->M = 0;                                                 //  Initialize multipole expansion coefficients
       C->L = 0;                                                 //  Initialize local expansion coefficients
       if(C->NCHILD==0) kernel::P2M(C);                          //  P2M kernel
@@ -90,13 +89,8 @@ public:
       PostOrderTraversal postOrderTraversal(C0, C0);            //  Instantiate recursive functor
       postOrderTraversal();                                     //  Recursive call for upward pass
       real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
-      SetRcrit setRcrit(C0, C0, c, theta);                      //  Instantiate recursive functor
-      setRcrit();                                               //  Error optimization of Rcrit
-      if( cells.size() > 9 ) {                                  //  If tree has more than 2 levels
-        for (C_iter C=C0; C!=C0+9; C++) {                       //   Loop over top 2 levels of cells
-          C->RCRIT = 1e12;                                      //    Prevent approximation
-        }                                                       //   End loop over top 2 levels of cells
-      }                                                         //  End if for tree levels
+      SetR setR(C0, C0, c, theta);                              //  Instantiate recursive functor
+      setR();                                                   //  Error optimization of R
     }                                                           // End if for empty cell vector
     logger::stopTimer("Upward pass");                           // Stop timer
   }

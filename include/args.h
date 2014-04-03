@@ -8,11 +8,10 @@
 
 static struct option long_options[] = {
   {"numBodies",    1, 0, 'n'},
-  {"numTargets",   1, 0, 't'},
   {"ncrit",        1, 0, 'c'},
   {"nspawn",       1, 0, 's'},
   {"images",       1, 0, 'i'},
-  {"theta",        1, 0, 'o'},
+  {"theta",        1, 0, 't'},
   {"mutual",       1, 0, 'm'},
   {"verbose",      1, 0, 'v'},
   {"distribution", 1, 0, 'd'},
@@ -40,11 +39,10 @@ private:
             "Usage: %s [options]\n"
             "Long option (short option)     : Description (Default value)\n"
             " --numBodies (-n)              : Number of bodies (%d)\n"
-            " --numTargets (-t)             : Number of targets for error checking (%d)\n"
             " --ncrit (-c)                  : Number of bodies per leaf cell (%d)\n"
             " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
             " --images (-i)                 : Number of periodic image levels (%d)\n"
-            " --theta (-o)                  : Multipole acceptance criterion (%f)\n"
+            " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
             " --mutual (-m) [0/1]           : Use mutual interaction (%d)\n"
 	    " --verbose (-v) [0/1]          : Print information to screen (%d)\n"
             " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n"
@@ -52,7 +50,6 @@ private:
             " --help (-h)                   : Show this help document\n",
             name,
             numBodies,
-            numTargets,
             ncrit,
             nspawn,
             images,
@@ -91,9 +88,6 @@ public:
       case 'n':
         numBodies = atoi(optarg);
         break;
-      case 't':
-        numTargets = atoi(optarg);
-        break;
       case 'c':
         ncrit = atoi(optarg);
         break;
@@ -103,7 +97,7 @@ public:
       case 'i':
         images = atoi(optarg);
         break;
-      case 'o':
+      case 't':
         theta = atof(optarg);
         break;
       case 'm':

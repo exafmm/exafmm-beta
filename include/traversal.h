@@ -148,7 +148,6 @@ private:
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
-      Ci->RMAX = 0;                                             //  Initialize Rmax of periodic parent
       Ci->M = 0;                                                //  Reset multipoles of periodic parent
       kernel::M2M(Ci,Cj0);                                      //  Evaluate periodic M2M kernels for this sublevel
       for (int i=1; i<NTERM; i++) Ci->M[i] /= Ci->M[0];         //  Normalize multipole expansion coefficients

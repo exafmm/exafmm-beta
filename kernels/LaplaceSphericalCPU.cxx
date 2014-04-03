@@ -10,7 +10,7 @@ const real_t EPS = 1e-12;                                       // Double precis
 void cart2sph(real_t & r, real_t & theta, real_t & phi, vec3 dX) {
   r = sqrt(norm(dX));                                           // r = sqrt(x^2 + y^2 + z^2)
   theta = r == 0 ? 0 : acos(dX[2] / r);                         // theta = acos(z / r)
-  phi = atan2(dX[1],dX[0]);                                     // phi = atan(y / x)
+  phi = atan2(dX[1], dX[0]);                                    // phi = atan(y / x)
 }
 
 //! Spherical to cartesian coordinates
@@ -103,13 +103,14 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t * Ynm) {
 
 void kernel::P2M(C_iter C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
+  real_t RMAX = 0;
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     vec3 dX = B->X - C->X;
     real_t R = std::sqrt(norm(dX));
-    if (R > C->RMAX) C->RMAX = R;
+    if (R > RMAX) RMAX = R;
     real_t rho, alpha, beta;
-    cart2sph(rho,alpha,beta,dX);
-    evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
+    cart2sph(rho, alpha, beta, dX);
+    evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
     for (int n=0; n<P; n++) {
       for (int m=0; m<=n; m++) {
         int nm  = n * n + n - m;
@@ -119,7 +120,7 @@ void kernel::P2M(C_iter C) {
     }
   }
 #if USE_RMAX
-  C->RCRIT = std::min(C->R,C->RMAX);
+  C->RCRIT = std::min(C->R,RMAX);
 #else
   C->RCRIT = C->R;
 #endif
@@ -127,13 +128,14 @@ void kernel::P2M(C_iter C) {
 
 void kernel::M2M(C_iter Ci, C_iter C0) {
   complex_t Ynm[P*P], YnmTheta[P*P];
+  real_t RMAX = 0;
   for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
     vec3 dX = Ci->X - Cj->X;
     real_t R = std::sqrt(norm(dX)) + Cj->RCRIT;
-    if (R > Ci->RMAX) Ci->RMAX = R;
+    if (R > RMAX) RMAX = R;
     real_t rho, alpha, beta;
-    cart2sph(rho,alpha,beta,dX);
-    evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
+    cart2sph(rho, alpha, beta, dX);
+    evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
     for (int j=0; j<P; j++) {
       for (int k=0; k<=j; k++) {
         int jks = j * (j + 1) / 2 + k;
@@ -155,7 +157,7 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
     }
   }
 #if USE_RMAX
-  Ci->RCRIT = std::min(Ci->R,Ci->RMAX);
+  Ci->RCRIT = std::min(Ci->R,RMAX);
 #else
   Ci->RCRIT = Ci->R;
 #endif
@@ -165,9 +167,9 @@ void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
   complex_t Ynmi[P*P], Ynmj[P*P];
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t rho, alpha, beta;
-  cart2sph(rho,alpha,beta,dX);
-  evalLocal(rho,alpha,beta,Ynmi);
-  if (mutual) evalLocal(rho,alpha+M_PI,beta,Ynmj);
+  cart2sph(rho, alpha, beta, dX);
+  evalLocal(rho, alpha, beta, Ynmi);
+  if (mutual) evalLocal(rho, alpha+M_PI, beta, Ynmj);
   for (int j=0; j<P; j++) {
     real_t Cnm = std::real(Ci->M[0] * Cj->M[0]) * ODDEVEN(j);
     for (int k=0; k<=j; k++) {
@@ -202,8 +204,8 @@ void kernel::L2L(C_iter Ci, C_iter C0) {
   C_iter Cj = C0 + Ci->PARENT;
   vec3 dX = Ci->X - Cj->X;
   real_t rho, alpha, beta;
-  cart2sph(rho,alpha,beta,dX);
-  evalMultipole(rho,alpha,beta,Ynm,YnmTheta);
+  cart2sph(rho, alpha, beta, dX);
+  evalMultipole(rho, alpha, beta, Ynm, YnmTheta);
   Ci->L /= Ci->M[0];
   for (int j=0; j<P; j++) {
     for (int k=0; k<=j; k++) {
@@ -235,8 +237,8 @@ void kernel::L2P(C_iter Ci) {
     vec3 spherical = 0;
     vec3 cartesian = 0;
     real_t r, theta, phi;
-    cart2sph(r,theta,phi,dX);
-    evalMultipole(r,theta,phi,Ynm,YnmTheta);
+    cart2sph(r, theta, phi, dX);
+    evalMultipole(r, theta, phi, Ynm, YnmTheta);
     B->TRG /= B->SRC;
     for (int n=0; n<P; n++) {
       int nm  = n * n + n;
@@ -253,7 +255,7 @@ void kernel::L2P(C_iter Ci) {
         spherical[2] += 2 * std::real(Ci->L[nms] * Ynm[nm] * I) * m;
       }
     }
-    sph2cart(r,theta,phi,spherical,cartesian);
+    sph2cart(r, theta, phi, spherical, cartesian);
     B->TRG[1] += cartesian[0];
     B->TRG[2] += cartesian[1];
     B->TRG[3] += cartesian[2];
