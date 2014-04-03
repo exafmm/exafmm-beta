@@ -37,8 +37,6 @@ CXX	+= -I../include
 LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
 LFLAGS  += -DEXPANSION=4 # Specify expansion order
 LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
-LFLAGS	+= -DERROR_OPT # Use error optimized theta
-LFLAGS	+= -DUSE_RMAX # Use Rmax in multipole acceptance criteria
 #LFLAGS	+= -DFP64 # Use double precision
 #LFLAGS	+= -DKAHAN # Use Kahan summation
 

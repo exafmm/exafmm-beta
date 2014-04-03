@@ -42,7 +42,7 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t * Ynm, compl
     Ynm[nmn] = std::conj(Ynm[npn]);                             //  Use conjugate relation for m < 0
     real_t p1 = p;                                              //  Pnm-1
     p = x * (2 * m + 1) * p1;                                   //  Pnm using recurrence relation
-    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * eim;    // theta derivative of r^n * Ynm
+    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * eim;    //  theta derivative of r^n * Ynm
     rhom *= rho;                                                //  rho^m
     real_t rhon = rhom;                                         //  rho^n
     for (int n=m+1; n<P; n++) {                                 //  Loop over n in Ynm

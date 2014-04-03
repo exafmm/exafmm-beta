@@ -243,7 +243,7 @@ private:
       C->BODY   = B0 + C->IBODY;                                //  Iterator of first body in cell
       C->ICELL  = getKey(C->X, X0-R0, 2*C->R, level);           //  Get Morton key
       if (octNode->NNODE == 1) {                                //  If node has no children
-	C->ICHILD  = 0;                                         //   Set index of first child cell to zero
+	C->ICHILD = 0;                                          //   Set index of first child cell to zero
 	C->NCHILD = 0;                                          //   Number of child cells
 	assert(C->NBODY > 0);                                   //   Check for empty leaf cells
 	maxlevel = std::max(maxlevel, level);                   //   Update maximum level of tree
