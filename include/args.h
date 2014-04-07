@@ -25,7 +25,6 @@ static struct option long_options[] = {
 class Args {
 public:
   int numBodies;
-  int numTargets;
   int ncrit;
   int nspawn;
   int images;
@@ -86,7 +85,7 @@ private:
   }
 
 public:
-  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), numTargets(100), ncrit(16), nspawn(1000), images(0),
+  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), ncrit(16), nspawn(1000), images(0),
 					theta(.4), useRmax(1), useRopt(1), mutual(1), verbose(1),
 					distribution("cube"), repeat(1) {
     while (1) {

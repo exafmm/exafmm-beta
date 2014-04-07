@@ -109,7 +109,8 @@ int main(int argc, char ** argv) {
   logger::stopPAPI();
   logger::stopTimer("Total FMM", 0);
   logger::printTitle("MPI direct sum");
-  data.sampleBodies(bodies, args.numTargets);
+  const int numTargets = 100;
+  data.sampleBodies(bodies, numTargets);
   bodies2 = bodies;
   data.initTarget(bodies);
   logger::startTimer("Total Direct");

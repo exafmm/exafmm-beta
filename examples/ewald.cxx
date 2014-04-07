@@ -103,7 +103,8 @@ int main(int argc, char ** argv) {
   logger::stopTimer("Total Ewald");
 #else
   jbodies = bodies;
-  data.sampleBodies(bodies, args.numTargets);
+  const int numTargets = 100;
+  data.sampleBodies(bodies, numTargets);
   bodies2 = bodies;
   data.initTarget(bodies);
   logger::startTimer("Total Direct");

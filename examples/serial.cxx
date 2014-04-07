@@ -65,7 +65,8 @@ int main(int argc, char ** argv) {
 #if WRITE_TIME
     logger::writeTime();
 #endif
-    data.sampleBodies(bodies, args.numTargets);
+    const int numTargets = 100;
+    data.sampleBodies(bodies, numTargets);
     bodies2 = bodies;
     data.initTarget(bodies);
     logger::startTimer("Total Direct");
