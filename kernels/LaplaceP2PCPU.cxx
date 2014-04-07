@@ -1,5 +1,5 @@
 #include "kernel.h"
-#include "simd.h"
+#include "simdvec.h"
 const real_t EPS2 = 0.0;                                        //!< Softening parameter (squared)
 
 void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {

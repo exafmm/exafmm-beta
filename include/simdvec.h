@@ -1,5 +1,5 @@
-#ifndef simd_h
-#define simd_h
+#ifndef simdvec_h
+#define simdvec_h
 
 template<typename T, int D, int N>
 struct SIMD {
