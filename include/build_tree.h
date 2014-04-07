@@ -55,7 +55,7 @@ private:
 	for (int i=0; i<8; i++) binNode->NBODY[i] = 0;          //   Initialize number of bodies in octant
 	binNode->LEFT = binNode->RIGHT = NULL;                  //   Initialize pointers to left and right child node
 	for (int i=begin; i<end; i++) {                         //   Loop over bodies in node
-	  vec3 x = bodies[i].X;                                 //    Position of body
+	  vec3 x = bodies[i].X;                                 //    Coordinates of body
 	  int octant = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);// Which octant body belongs to
 	  binNode->NBODY[octant]++;                             //    Increment body count in octant
 	}                                                       //   End loop over bodies in node
@@ -89,7 +89,7 @@ private:
     int end;                                                    //!< Body end index
     BinaryTreeNode * binNode;                                   //!< Pointer to binary tree node
     ivec8 octantOffset;                                         //!< Offset of octant
-    vec3 X;                                                     //!< Position of node center
+    vec3 X;                                                     //!< Coordinates of node center
     MoveBodies(Bodies & _bodies, Bodies & _buffer, int _begin, int _end,// Constructor
 	       BinaryTreeNode * _binNode, ivec8 _octantOffset, vec3 _X) :
       bodies(_bodies), buffer(_buffer), begin(_begin), end(_end),// Initialize variables
@@ -97,7 +97,7 @@ private:
     void operator() () {                                        // Overload operator()
       if (binNode->LEFT == NULL) {                              //  If there are no more child nodes
 	for (int i=begin; i<end; i++) {                         //   Loop over bodies
-	  vec3 x = bodies[i].X;                                 //    Position of body
+	  vec3 x = bodies[i].X;                                 //    Coordinates of body
 	  int octant = (x[0] > X[0]) + ((x[1] > X[1]) << 1) + ((x[2] > X[2]) << 2);// Which octant body belongs to`
 	  buffer[octantOffset[octant]] = bodies[i];             //    Permute bodies out-of-place according to octant
 	  octantOffset[octant]++;                               //    Increment body count in octant
@@ -142,7 +142,7 @@ private:
       octNode->IBODY = begin;                                   // Index of first body in node
       octNode->NBODY = end - begin;                             // Number of bodies in node
       octNode->NNODE = 1;                                       // Initialize counter for decendant nodes
-      octNode->X = X;                                           // Center position of node
+      octNode->X = X;                                           // Center coordinates of node
       if (nochild) {                                            // If node has no children
 	for (int i=0; i<8; i++) octNode->CHILD[i] = NULL;       //  Initialize pointers to children
       }                                                         // End if for node children
@@ -185,10 +185,10 @@ private:
       for (int i=0; i<8; i++) {                                 //  Loop over children
 	int maxBinNode = getMaxBinNode(binNode->NBODY[i]);      //   Get maximum number of binary tree nodes
 	assert(binNodeOffset + maxBinNode <= binNode->END);     //    Bounds checking for node count
-	vec3 Xchild = X;                                        //    Initialize center position of child node
+	vec3 Xchild = X;                                        //    Initialize center coordinates of child node
 	real_t r = R0 / (1 << (level + 1));                     //    Radius of cells for child's level
 	for (int d=0; d<3; d++) {                               //    Loop over dimensions
-	  Xchild[d] += r * (((i & 1 << d) >> d) * 2 - 1);       //     Shift center position to that of child node
+	  Xchild[d] += r * (((i & 1 << d) >> d) * 2 - 1);       //     Shift center coordinates to that of child node
 	}                                                       //    End loop over dimensions
 	binNodeChild[i].BEGIN = binNodeOffset;                  //    Assign first memory address from offset
 	binNodeChild[i].END = binNodeOffset + maxBinNode;       //    Keep track of last memory address

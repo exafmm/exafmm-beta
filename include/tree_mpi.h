@@ -242,12 +242,12 @@ public:
     logger::stopTimer("Set LET");                               // Stop timer
   }
 
-  //! Get local essential tree from rank "irank".
+  //! Get local essential tree from irank
   void getLET(Cells & cells, int irank) {
     std::stringstream event;                                    // Event name
     event << "Get LET from rank " << irank;                     // Create event name based on irank
     logger::startTimer(event.str());                            // Start timer
-    for (int i=recvCellCount[irank]-1; i>=0; i--) {             // Loop over receive cells
+    for (int i=recvCellCount[irank]-1; i>=0; i--) {             // Loop over receive cells bottom up
       C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator of receive cell
       if (C->NBODY != 0) {                                      //  If cell has bodies
         C->BODY = recvBodies.begin() + recvBodyDispl[irank] + C->IBODY;// Iterator of first body
@@ -262,6 +262,56 @@ public:
 		 recvCells.begin()+recvCellDispl[irank]+recvCellCount[irank]);
     logger::stopTimer(event.str());                             // Stop timer
   }
+
+#if 0
+  //! Link LET with received bodies and calcualte NBODY
+  void linkLET() {
+    logger::startTimer("Link LET");                             // Start timer
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
+      for (int i=recvCellCount[irank]-1; i>=0; i--) {           //  Loop over receive cells bottom up
+        C_iter C = recvCells.begin() + recvCellDispl[irank] + i;//   Iterator of receive cell
+        if (C->NBODY != 0) {                                    //   If cell has bodies
+          C->BODY = recvBodies.begin() + recvBodyDispl[irank] + C->IBODY;// Iterator of first body
+        }                                                       //   End if for bodies
+        if (i != 0) {                                           //   If cell is not root
+          C_iter Cparent = recvCells.begin() + recvCellDispl[irank] + C->PARENT;// Iterator of parent cell
+          Cparent->NBODY += C->NBODY;                           //    Accululate number of bodies
+        }                                                       //   End if for root cell
+      }                                                         //  End loop over receive cells
+    }                                                           // End loop over ranks
+    logger::stopTimer("Link LET");                              // End timer
+  }
+
+  //! Copy remote root cells to body structs (for building global tree)
+  Bodies root2body() {
+    logger::startTimer("Root to body");                         // Start timer
+    Bodies bodies;                                              // Bodies to contain remote root coordinates
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
+      if (irank != mpirank) {                                   //  If not current rank
+	C0 = recvCells.begin() + recvCellDispl[irank];          //   Root cell iterator for irank
+	Body body;                                              //   Body to contain remote root coordinates
+	body.X = C0->X;                                         //   Copy remote root coordinates
+	body.IBODY = recvCellDispl[irank];                      //   Copy remote root displacement in vector
+	bodies.push_back(body);                                 //   Push this root cell to body vector
+      }                                                         //  End if for not current rank
+    }                                                           // End loop over ranks
+    logger::stopTimer("Root to body");                          // Stop timer
+    return bodies;                                              // Return body vector
+  }
+
+  //! Graft remote trees to global tree
+  void attachRoot(Cells & cells) {
+    logger::startTimer("Attach root");                          // Start timer
+    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over global cells
+      if (C->NCHILD==0) {                                       // If leaf cell
+	C0 = recvCells.begin() + C->BODY->IBODY;                //  Root cell iterator
+	C0->PARENT = C->PARENT;                                 //  Link remote root to global leaf
+	*C = *C0;                                               //  Copy remote root to global leaf
+      }                                                         // End if for leaf cell
+    }                                                           // End loop over global cells
+    logger::stopTimer("Attach root");                           // Stop timer
+  }
+#endif
 
   //! Send bodies
   Bodies commBodies(Bodies sendBodies) {

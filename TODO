@@ -1,9 +1,9 @@
 -- CPU --
-1. Partitioning with Morton
-2. Merge LET before dualTreeTraversal
-3. Fix parallel ewald
-4. setLET multithread
-5. traverseLET don't double R
+1. Merge LET before dualTreeTraversal
+2. Fix parallel periodic potential
+3. setLET multithread
+4. traverseLET don't double R
+5. Partitioning with Morton
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance
 Kahan + fixed precision

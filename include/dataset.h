@@ -57,7 +57,7 @@ private:
       srand48(seed);                                            //  Set seed for random number generator
       for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	for (int d=0; d<3; d++) {                               //   Loop over dimension
-	  B->X[d] = drand48() * 2 * M_PI - M_PI;                //    Initialize positions
+	  B->X[d] = drand48() * 2 * M_PI - M_PI;                //    Initialize coordinates
 	}                                                       //   End loop over dimension
       }                                                         //  End loop over bodies
     }                                                           // End loop over partitions
@@ -74,11 +74,11 @@ private:
       srand48(seed);                                            //  Set seed for random number generator
       for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	for (int d=0; d<3; d++) {                               //   Loop over dimension
-	  B->X[d] = drand48() * 2 - 1;                          //    Initialize positions
+	  B->X[d] = drand48() * 2 - 1;                          //    Initialize coordinates
 	}                                                       //   End loop over dimension
 	real_t r = std::sqrt(norm(B->X));                       //   Distance from center
 	for (int d=0; d<3; d++) {                               //   Loop over dimension
-	  B->X[d] /= r * 1.1;                                   //    Normalize positions
+	  B->X[d] /= r * 1.1;                                   //    Normalize coordinates
 	}                                                       //   End loop over dimension
       }                                                         //  End loop over bodies
     }                                                           // End loop over partitions
