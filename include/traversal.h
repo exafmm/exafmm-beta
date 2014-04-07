@@ -59,8 +59,8 @@ private:
       traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),  // Initialize variables
       CjBegin(_CjBegin), CjEnd(_CjEnd), Xperiodic(_Xperiodic), mutual(_mutual) {}
     void operator() () {                                        // Overload operator()
-      Trace trace;                                              //  Instantiate tracer
-      logger::startTracer(trace);                               //  Start tracer
+      Tracer tracer;                                            //  Instantiate tracer
+      logger::startTracer(tracer);                              //  Start tracer
       if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {       //  If only one cell in range
 	if (CiBegin == CjBegin) {                               //   If Ci == Cj
 	  assert(CiEnd == CjEnd);                               //    Check if mutual & self interaction
@@ -99,7 +99,7 @@ private:
 	  wait_tasks;                                           //    Synchronize task group
 	}
       }                                                         //  End if for many cells in range
-      logger::stopTracer(trace);                                //  Stop tracer
+      logger::stopTracer(tracer);                               //  Stop tracer
     }                                                           // End overload operator()
   };
 
@@ -218,7 +218,7 @@ public:
       traversePeriodic(cycle);                                  //  Traverse tree for periodic images
     }                                                           // End if for periodic boundary condition
     logger::stopTimer("Traverse");                              // Stop timer
-    logger::writeTrace();                                       // Write trace to file
+    logger::writeTracer();                                      // Write tracer to file
   }
 
   struct DirectRecursion {

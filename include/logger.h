@@ -19,24 +19,24 @@
 #include <papi.h>
 #endif
 
-//! Structure for pthread based trace
-struct Trace {
+//! Structure for pthread based tracer
+struct Tracer {
   pthread_t thread;                                             //!< pthread id
-  double    begin;                                              //!< Begin timer of trace
-  double    end;                                                //!< End timer of trace
-  Trace() {}                                                    //!< Constructor
+  double    begin;                                              //!< Begin timer of tracer
+  double    end;                                                //!< End timer of tracer
+  Tracer() {}                                                   //!< Constructor
 };
 
-//! Timer and Trace logger
+//! Timer and Tracer logger
 namespace logger {
   typedef std::map<std::string,double> Timer;                   //!< Map of timer event name to timed value
   typedef Timer::iterator              T_iter;                  //!< Iterator of timer event name map
-  typedef std::queue<Trace>            Traces;                  //!< Queue of traces
+  typedef std::queue<Tracer>           Tracers;                 //!< Queue of tracers
   typedef std::map<pthread_t,int>      ThreadMap;               //!< Map of pthread id to thread id
 
   Timer           beginTimer;                                   //!< Timer base value
   Timer           timer;                                        //!< Timings of all events
-  Traces          traces;                                       //!< Traces for all events
+  Tracers         tracers;                                      //!< Tracers for all events
   pthread_mutex_t mutex;                                        //!< Pthread communicator
 #if PAPI
   int                    PAPIEventSet = PAPI_NULL;              //!< PAPI event set
@@ -188,44 +188,44 @@ namespace logger {
   }
 
   //! Start tracer for given event
-  inline void startTracer(Trace &trace) {
+  inline void startTracer(Tracer &tracer) {
     pthread_mutex_lock(&mutex);                                 // Lock shared variable access
-    trace.thread = pthread_self();                              // Store pthread id
-    trace.begin  = get_time();                                  // Start timer
+    tracer.thread = pthread_self();                             // Store pthread id
+    tracer.begin  = get_time();                                 // Start timer
     pthread_mutex_unlock(&mutex);                               // Unlock shared variable access
   }
 
   //! Stop tracer for given event
-  inline void stopTracer(Trace & trace) {
+  inline void stopTracer(Tracer & tracer) {
     pthread_mutex_lock(&mutex);                                 // Lock shared variable access
-    trace.end    = get_time();                                  // Stop timer
-    traces.push(trace);                                         // Push trace to queue of traces
+    tracer.end = get_time();                                    // Stop timer
+    tracers.push(tracer);                                       // Push tracer to queue of tracers
     pthread_mutex_unlock(&mutex);                               // Unlock shared variable access
   }
 
-  //! Write traces of all events
-  inline void writeTrace(int mpirank=0) {
-    startTimer("Write trace");                                  // Start timer
+  //! Write tracers of all events
+  inline void writeTracer(int mpirank=0) {
+    startTimer("Write tracer");                                 // Start timer
     std::stringstream name;                                     // File name
     name << "trace" << std::setfill('0') << std::setw(6)        // Set format
-         << mpirank << ".svg";                                  // Create file name for trace
-    std::ofstream traceFile(name.str().c_str());                // Open trace log file
-    traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" // Header statements for trace log file
+         << mpirank << ".svg";                                  // Create file name for tracer
+    std::ofstream traceFile(name.str().c_str());                // Open tracer log file
+    traceFile << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" // Header statements for tracer log file
 	      << "<!DOCTYPE svg PUBLIC \"-_W3C_DTD SVG 1.0_EN\" \"http://www.w3.org/TR/SVG/DTD/svg10.dtd\">\n"
 	      << "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
 	      << "  width=\"200mm\" height=\"40mm\" viewBox=\"0 0 20000 4000\">\n"
 	      << "  <g>\n";
     int num_thread = 0;                                         // Counter for number of threads to trace
     ThreadMap threadMap;                                        // Map pthread ID to thread ID
-    double base = traces.front().begin;                         // Base time
+    double base = tracers.front().begin;                        // Base time
     double scale = 30000.0;                                     // Scale the length of bar plots
-    while (!traces.empty()) {                                   // While queue of traces is not empty
-      Trace trace = traces.front();                             //  Get trace at front of the queue
-      traces.pop();                                             //  Pop trace at front
-      pthread_t thread = trace.thread;                          //  Set pthread ID of trace
-      double begin  = trace.begin;                              //  Set begin time of trace
-      double end    = trace.end;                                //  Set end time of trace
-      int    color  = 0x0000ff;                                 //  Set color of trace
+    while (!tracers.empty()) {                                  // While queue of traces is not empty
+      Tracer tracer = tracers.front();                          //  Get tracer at front of the queue
+      tracers.pop();                                            //  Pop tracer at front
+      pthread_t thread = tracer.thread;                         //  Set pthread ID of tracer
+      double begin  = tracer.begin;                             //  Set begin time of tracer
+      double end    = tracer.end;                               //  Set end time of tracer
+      int    color  = 0x0000ff;                                 //  Set color of tracer
       if (threadMap[thread] == 0) {                             //  If it's a new pthread ID
         threadMap[thread] = num_thread++;                       //   Map it to an incremented thread ID
       }                                                         //  End if for new pthread ID
@@ -237,17 +237,17 @@ namespace logger {
 		<< "\" height=\"90.0\" fill=\"#"<< std::setfill('0')
 		<< std::setw(6) << std::hex << color            // height of bar
 		<< "\" stroke=\"#000000\" stroke-width=\"1\"/>\n";//  stroke color and width
-    }                                                           // End while loop for queue of traces
-    traceFile << "  </g>\n" "</svg>\n";                         // Footer for trace log file
-    traceFile.close();                                          // Close trace log file
-    stopTimer("Write trace",verbose);                           // Stop timer
+    }                                                           // End while loop for queue of tracers
+    traceFile << "  </g>\n" "</svg>\n";                         // Footer for tracer log file
+    traceFile.close();                                          // Close tracer log file
+    stopTimer("Write tracer",verbose);                          // Stop timer
   }
 #else
   inline void initTracer() {}
-  inline void startTracer(Trace) {}
-  inline void stopTracer(Trace) {}
-  inline void writeTrace() {}
-  inline void writeTrace(int) {}
+  inline void startTracer(Tracer) {}
+  inline void stopTracer(Tracer) {}
+  inline void writeTracer() {}
+  inline void writeTracer(int) {}
 #endif
 
 #if DAG_RECORDER == 2
