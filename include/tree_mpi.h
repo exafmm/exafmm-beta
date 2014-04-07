@@ -28,17 +28,6 @@ private:
   int * recvCellDispl;                                          //!< Receive displacement
 
 private:
-  //! Allgather bounds from all ranks
-  void allgatherBounds(Bounds local) {
-    fvec3 Xmin, Xmax;
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      Xmin[d] = local.Xmin[d];                                  //  Convert Xmin to float
-      Xmax[d] = local.Xmax[d];                                  //  Convert Xmax to float
-    }                                                           // End loop over dimensions
-    MPI_Allgather(Xmin, 3, MPI_FLOAT, &allLocalXmin[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
-    MPI_Allgather(Xmax, 3, MPI_FLOAT, &allLocalXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
-  }
-
   //! Get distance to other domain
   real_t getDistance(C_iter C, vec3 Xperiodic) {
     vec3 dX;                                                    // Distance vector
@@ -213,10 +202,20 @@ public:
     delete[] recvCellDispl;                                     // Deallocate receive displacement
   }
 
+  //! Allgather bounds from all ranks
+  void allgatherBounds(Bounds bounds) {
+    fvec3 Xmin, Xmax;
+    for (int d=0; d<3; d++) {                                   // Loop over dimensions
+      Xmin[d] = bounds.Xmin[d];                                 //  Convert Xmin to float
+      Xmax[d] = bounds.Xmax[d];                                 //  Convert Xmax to float
+    }                                                           // End loop over dimensions
+    MPI_Allgather(Xmin, 3, MPI_FLOAT, &allLocalXmin[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
+    MPI_Allgather(Xmax, 3, MPI_FLOAT, &allLocalXmax[0], 3, MPI_FLOAT, MPI_COMM_WORLD);// Gather all domain bounds
+  }
+
   //! Set local essential tree to send to each process
-  void setLET(Cells & cells, Bounds bounds, real_t cycle) {
+  void setLET(Cells & cells, real_t cycle) {
     logger::startTimer("Set LET");                              // Start timer
-    allgatherBounds(bounds);                                    // Gather local bounds from all ranks
     sendBodies.clear();                                         // Clear send buffer for bodies
     sendCells.clear();                                          // Clear send buffer for cells
     sendCellDispl[0] = 0;                                       // Initialize displacement vector

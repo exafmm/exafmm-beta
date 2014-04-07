@@ -69,11 +69,12 @@ int main(int argc, char ** argv) {
   upDownPass.upwardPass(jcells);
 #endif
 
-#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree : Step 1
+#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
+  treeMPI.allgatherBounds(localBounds);
 #if IneJ
-  treeMPI.setLET(jcells,localBounds,cycle);
+  treeMPI.setLET(jcells, cycle);
 #else
-  treeMPI.setLET(cells,localBounds,cycle);
+  treeMPI.setLET(cells, cycle);
 #endif
   treeMPI.commBodies();
   treeMPI.commCells();

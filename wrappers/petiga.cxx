@@ -144,7 +144,8 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
   upDownPass->upwardPass(cells);
   Cells jcells = buildTree->buildTree(jbodies, localBounds);
   upDownPass->upwardPass(jcells);
-  treeMPI->setLET(jcells, localBounds, cycle);
+  treeMPI->allgatherBounds(localBounds);
+  treeMPI->setLET(jcells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->dualTreeTraversal(cells, jcells, cycle, args->mutual);

@@ -59,7 +59,8 @@ int main(int argc, char ** argv) {
 
   cells = buildTree.buildTree(bodies, localBounds);
   upDownPass.upwardPass(cells);
-  treeMPI.setLET(cells,localBounds,cycle);
+  treeMPI.allgatherBounds(localBounds);
+  treeMPI.setLET(cells, cycle);
   treeMPI.commBodies();
   treeMPI.commCells();
 

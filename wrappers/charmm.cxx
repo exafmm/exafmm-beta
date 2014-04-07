@@ -143,7 +143,8 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   }
   Cells cells = buildTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
-  treeMPI->setLET(cells, localBounds, cycle);
+  treeMPI->allgatherBounds(localBounds);
+  treeMPI->setLET(cells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
@@ -240,7 +241,8 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
     f[3*i+1] += B->TRG[2] * B->SRC * Celec;
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
   }
-  treeMPI->setLET(cells, localBounds, cycle);
+  treeMPI->allgatherBounds(localBounds);
+  treeMPI->setLET(cells, cycle);
   treeMPI->commBodies();
   bodies = treeMPI->getRecvBodies();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -380,7 +382,8 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
   }
   Cells cells = buildTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
-  treeMPI->setLET(cells, localBounds, cycle);
+  treeMPI->allgatherBounds(localBounds);
+  treeMPI->setLET(cells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
   VDW->evaluate(cells, cells);
