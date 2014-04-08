@@ -2,7 +2,7 @@
 #define tree_mpi_h
 #include "logger.h"
 
-//! Handles all the communication of local essential trees
+//! Handles all the communication of local essential trees 
 class TreeMPI {
 protected:
   int mpirank;                                                  //!< Rank of MPI communicator
