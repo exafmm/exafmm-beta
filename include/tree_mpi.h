@@ -1,18 +1,12 @@
 #ifndef tree_mpi_h
 #define tree_mpi_h
-#include <mpi.h>
-#include <iostream>
-#include "types.h"
 #include "logger.h"
-#include <unistd.h>
 
 //! Handles all the communication of local essential trees
 class TreeMPI {
-private:
-  int external;                                                 //!< Flag to indicate external MPI_Init/Finalize
-  const int wait;                                               //!< Waiting time between output of different ranks
-
 protected:
+  int mpirank;                                                  //!< Rank of MPI communicator
+  int mpisize;                                                  //!< Size of MPI communicator
   int irank;                                                    //!< MPI rank loop counter
   int images;                                                   //!< Number of periodic image sublevels
   fvec3 localXmin;                                              //!< Local Xmin for a given rank
@@ -33,81 +27,7 @@ protected:
   int * recvCellCount;                                          //!< Receive count
   int * recvCellDispl;                                          //!< Receive displacement
 
-public:
-  int mpirank;                                                  //!< Rank of MPI communicator
-  int mpisize;                                                  //!< Size of MPI communicator
-
 private:
-  //! Exchange send count for bodies
-  void alltoall(Bodies & bodies) {
-    for (int i=0; i<mpisize; i++) {                             // Loop over ranks
-      sendBodyCount[i] = 0;                                     //  Initialize send counts
-    }                                                           // End loop over ranks
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      assert(0 <= B->IPROC && B->IPROC < mpisize);              //  Check bounds for process ID
-      sendBodyCount[B->IPROC]++;                                //  Fill send count bucket
-      B->IPROC = mpirank;                                       //  Tag for sending back to original rank
-    }                                                           // End loop over bodies
-    MPI_Alltoall(sendBodyCount, 1, MPI_INT,                     // Communicate send count to get receive count
-                 recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
-    sendBodyDispl[0] = recvBodyDispl[0] = 0;                    // Initialize send/receive displacements
-    for (int irank=0; irank<mpisize-1; irank++) {               // Loop over ranks
-      sendBodyDispl[irank+1] = sendBodyDispl[irank] + sendBodyCount[irank];//  Set send displacement
-      recvBodyDispl[irank+1] = recvBodyDispl[irank] + recvBodyCount[irank];//  Set receive displacement
-    }                                                           // End loop over ranks
-  }
-
-  //! Exchange bodies
-  void alltoallv(Bodies & bodies) {
-    int word = sizeof(bodies[0]) / 4;                           // Word size of body structure
-    recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
-    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
-      sendBodyCount[irank] *= word;                             //  Multiply send count by word size of data
-      sendBodyDispl[irank] *= word;                             //  Multiply send displacement by word size of data
-      recvBodyCount[irank] *= word;                             //  Multiply receive count by word size of data
-      recvBodyDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
-    }                                                           // End loop over ranks
-    MPI_Alltoallv(&bodies[0], sendBodyCount, sendBodyDispl, MPI_INT,// Communicate bodies
-                  &recvBodies[0], recvBodyCount, recvBodyDispl, MPI_INT, MPI_COMM_WORLD);
-    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
-      sendBodyCount[irank] /= word;                             //  Divide send count by word size of data
-      sendBodyDispl[irank] /= word;                             //  Divide send displacement by word size of data
-      recvBodyCount[irank] /= word;                             //  Divide receive count by word size of data
-      recvBodyDispl[irank] /= word;                             //  Divide receive displacement by word size of data
-    }                                                           // End loop over ranks
-  }
-
-  //! Exchange send count for cells
-  void alltoall(Cells) {
-    MPI_Alltoall(sendCellCount, 1, MPI_INT,                     // Communicate send count to get receive count
-                 recvCellCount, 1, MPI_INT, MPI_COMM_WORLD);
-    recvCellDispl[0] = 0;                                       // Initialize receive displacements
-    for (int irank=0; irank<mpisize-1; irank++) {               // Loop over ranks
-      recvCellDispl[irank+1] = recvCellDispl[irank] + recvCellCount[irank];//  Set receive displacement
-    }                                                           // End loop over ranks
-  }
-
-  //! Exchange cells
-  void alltoallv(Cells & cells) {
-    int word = sizeof(cells[0]) / 4;                            // Word size of body structure
-    recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer
-    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
-      sendCellCount[irank] *= word;                             //  Multiply send count by word size of data
-      sendCellDispl[irank] *= word;                             //  Multiply send displacement by word size of data
-      recvCellCount[irank] *= word;                             //  Multiply receive count by word size of data
-      recvCellDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
-    }                                                           // End loop over ranks
-    MPI_Alltoallv(&cells[0], sendCellCount, sendCellDispl, MPI_INT,// Communicate cells
-                  &recvCells[0], recvCellCount, recvCellDispl, MPI_INT, MPI_COMM_WORLD);
-    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
-      sendCellCount[irank] /= word;                             //  Divide send count by word size of data
-      sendCellDispl[irank] /= word;                             //  Divide send displacement by word size of data
-      recvCellCount[irank] /= word;                             //  Divide receive count by word size of data
-      recvCellDispl[irank] /= word;                             //  Divide receive displacement by word size of data
-    }                                                           // End loop over ranks
-  }
-
-protected:
   //! Get distance to other domain
   real_t getDistance(C_iter C, vec3 Xperiodic) {
     vec3 dX;                                                    // Distance vector
@@ -183,13 +103,78 @@ protected:
     }                                                           // End loop over child cells
   }
 
+  //! Exchange send count for bodies
+  void alltoall(Bodies & bodies) {
+    for (int i=0; i<mpisize; i++) {                             // Loop over ranks
+      sendBodyCount[i] = 0;                                     //  Initialize send counts
+    }                                                           // End loop over ranks
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      assert(0 <= B->IPROC && B->IPROC < mpisize);              //  Check bounds for process ID
+      sendBodyCount[B->IPROC]++;                                //  Fill send count bucket
+      B->IPROC = mpirank;                                       //  Tag for sending back to original rank
+    }                                                           // End loop over bodies
+    MPI_Alltoall(sendBodyCount, 1, MPI_INT,                     // Communicate send count to get receive count
+                 recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
+    sendBodyDispl[0] = recvBodyDispl[0] = 0;                    // Initialize send/receive displacements
+    for (int irank=0; irank<mpisize-1; irank++) {               // Loop over ranks
+      sendBodyDispl[irank+1] = sendBodyDispl[irank] + sendBodyCount[irank];//  Set send displacement
+      recvBodyDispl[irank+1] = recvBodyDispl[irank] + recvBodyCount[irank];//  Set receive displacement
+    }                                                           // End loop over ranks
+  }
+
+  //! Exchange bodies
+  void alltoallv(Bodies & bodies) {
+    int word = sizeof(bodies[0]) / 4;                           // Word size of body structure
+    recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
+      sendBodyCount[irank] *= word;                             //  Multiply send count by word size of data
+      sendBodyDispl[irank] *= word;                             //  Multiply send displacement by word size of data
+      recvBodyCount[irank] *= word;                             //  Multiply receive count by word size of data
+      recvBodyDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
+    }                                                           // End loop over ranks
+    MPI_Alltoallv(&bodies[0], sendBodyCount, sendBodyDispl, MPI_INT,// Communicate bodies
+                  &recvBodies[0], recvBodyCount, recvBodyDispl, MPI_INT, MPI_COMM_WORLD);
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
+      sendBodyCount[irank] /= word;                             //  Divide send count by word size of data
+      sendBodyDispl[irank] /= word;                             //  Divide send displacement by word size of data
+      recvBodyCount[irank] /= word;                             //  Divide receive count by word size of data
+      recvBodyDispl[irank] /= word;                             //  Divide receive displacement by word size of data
+    }                                                           // End loop over ranks
+  }
+
+  //! Exchange send count for cells
+  void alltoall(Cells) {
+    MPI_Alltoall(sendCellCount, 1, MPI_INT,                     // Communicate send count to get receive count
+                 recvCellCount, 1, MPI_INT, MPI_COMM_WORLD);
+    recvCellDispl[0] = 0;                                       // Initialize receive displacements
+    for (int irank=0; irank<mpisize-1; irank++) {               // Loop over ranks
+      recvCellDispl[irank+1] = recvCellDispl[irank] + recvCellCount[irank];//  Set receive displacement
+    }                                                           // End loop over ranks
+  }
+
+  //! Exchange cells
+  void alltoallv(Cells & cells) {
+    int word = sizeof(cells[0]) / 4;                            // Word size of body structure
+    recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
+      sendCellCount[irank] *= word;                             //  Multiply send count by word size of data
+      sendCellDispl[irank] *= word;                             //  Multiply send displacement by word size of data
+      recvCellCount[irank] *= word;                             //  Multiply receive count by word size of data
+      recvCellDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
+    }                                                           // End loop over ranks
+    MPI_Alltoallv(&cells[0], sendCellCount, sendCellDispl, MPI_INT,// Communicate cells
+                  &recvCells[0], recvCellCount, recvCellDispl, MPI_INT, MPI_COMM_WORLD);
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
+      sendCellCount[irank] /= word;                             //  Divide send count by word size of data
+      sendCellDispl[irank] /= word;                             //  Divide send displacement by word size of data
+      recvCellCount[irank] /= word;                             //  Divide receive count by word size of data
+      recvCellDispl[irank] /= word;                             //  Divide receive displacement by word size of data
+    }                                                           // End loop over ranks
+  }
+
 public:
   //! Constructor
-  TreeMPI(int _images) : external(0), wait(100), images(_images) { // Initialize variables
-    int argc(0);                                                // Dummy argument count
-    char **argv;                                                // Dummy argument value
-    MPI_Initialized(&external);                                 // Check if MPI_Init has been called
-    if (!external) MPI_Init(&argc, &argv);                      // Initialize MPI communicator
+  TreeMPI(int _images) : images(_images) {                      // Initialize variables
     MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);                    // Get rank of current MPI process
     MPI_Comm_size(MPI_COMM_WORLD, &mpisize);                    // Get number of MPI processes
     allLocalXmin = new fvec3 [mpisize];                         // Allocate array for minimum of local domains
@@ -215,42 +200,6 @@ public:
     delete[] sendCellDispl;                                     // Deallocate send displacement
     delete[] recvCellCount;                                     // Deallocate receive count
     delete[] recvCellDispl;                                     // Deallocate receive displacement
-    if (!external) MPI_Finalize();                              // Finalize MPI communicator
-  }
-
-  //! Allreduce int from all ranks
-  int allreduceInt(int send) {
-    int recv;                                                   // Receive buffer
-    MPI_Allreduce(&send, &recv, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
-    return recv;                                                // Return received values
-  }
-
-  //! Allreduce fvec3 from all ranks
-  vec3 allreduceVec3(vec3 send) {
-    fvec3 fsend, frecv;                                         // Single precision buffers
-    for (int d=0; d<3; d++) fsend[d] = send[d];                 // Copy to send buffer
-    MPI_Allreduce(fsend, frecv, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
-    vec3 recv;                                                  // Receive buffer
-    for (int d=0; d<3; d++) recv[d] = frecv[d];                 // Copy from recv buffer
-    return recv;                                                // Return received values
-  }
-
-  //! Allreduce bounds from all ranks
-  Bounds allreduceBounds(Bounds local) {
-    fvec3 localXmin, localXmax, globalXmin, globalXmax;
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      localXmin[d] = local.Xmin[d];                             //  Convert Xmin to float
-      localXmax[d] = local.Xmax[d];                             //  Convert Xmax to float
-    }                                                           // End loop over dimensions
-    MPI_Allreduce(localXmin, globalXmin, 3, MPI_FLOAT, MPI_MIN, MPI_COMM_WORLD);// Reduce domain Xmin
-    MPI_Allreduce(localXmax, globalXmax, 3, MPI_FLOAT, MPI_MAX, MPI_COMM_WORLD);// Reduce domain Xmax
-    Bounds global;
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      real_t leeway = (globalXmax[d] - globalXmin[d]) * 1e-6;   //  Adding a bit of leeway to global domain
-      global.Xmin[d] = globalXmin[d] - leeway;                  //  Convert Xmin to real_t
-      global.Xmax[d] = globalXmax[d] + leeway;                  //  Convert Xmax to real_t
-    }                                                           // End loop over dimensions
-    return global;                                              // Return global bounds
   }
 
   //! Allgather bounds from all ranks
@@ -436,57 +385,6 @@ public:
     MPI_Allgatherv(&bodies[0], sendBodyCount[0]*word, MPI_FLOAT,// Allgather bodies
                    &recvBodies[0], recvBodyCount, recvBodyDispl, MPI_FLOAT, MPI_COMM_WORLD);
     return recvBodies;                                          // Return bodies
-  }
-
-  //! Print a scalar value on all ranks
-  template<typename T>
-  void print(T data) {
-    for (int irank=0; irank<mpisize; irank++ ) {                // Loop over ranks
-      MPI_Barrier(MPI_COMM_WORLD);                              //  Sync processes
-      usleep(wait);                                             //  Wait "wait" milliseconds
-      if (mpirank == irank) std::cout << data << " ";           //  If it's my turn print "data"
-    }                                                           // End loop over ranks
-    MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
-    usleep(wait);                                               // Wait "wait" milliseconds
-    if (mpirank == mpisize-1) std::cout << std::endl;           // New line
-  }
-
-  //! Print a scalar value on irank
-  template<typename T>
-  void print(T data, const int irank) {
-    MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
-    usleep(wait);                                               // Wait "wait" milliseconds
-    if( mpirank == irank ) std::cout << data;                   // If it's my rank print "data"
-  }
-
-  //! Print a vector value on all ranks
-  template<typename T>
-  void print(T * data, const int begin, const int end) {
-    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
-      MPI_Barrier(MPI_COMM_WORLD);                              //  Sync processes
-      usleep(wait);                                             //  Wait "wait" milliseconds
-      if (mpirank == irank) {                                   //  If it's my turn to print
-        std::cout << mpirank << " : ";                          //   Print rank
-        for (int i=begin; i<end; i++) {                         //   Loop over data
-          std::cout << data[i] << " ";                          //    Print data[i]
-        }                                                       //   End loop over data
-        std::cout << std::endl;                                 //   New line
-      }                                                         //  Endif for my turn
-    }                                                           // End loop over ranks
-  }
-
-  //! Print a vector value on irank
-  template<typename T>
-  void print(T * data, const int begin, const int end, const int irank) {
-    MPI_Barrier(MPI_COMM_WORLD);                                // Sync processes
-    usleep(wait);                                               // Wait "wait" milliseconds
-    if (mpirank == irank) {                                     // If it's my rank
-      std::cout << mpirank << " : ";                            //  Print rank
-      for (int i=begin; i<end; i++) {                           //  Loop over data
-        std::cout << data[i] << " ";                            //   Print data[i]
-      }                                                         //  End loop over data
-      std::cout << std::endl;                                   //  New line
-    }                                                           // Endif for my rank
   }
 };
 #endif
