@@ -4,7 +4,7 @@
 
 //! Handles all the communication of local essential trees
 class TreeMPI {
-private:
+protected:
   int mpirank;                                                  //!< Rank of MPI communicator
   int mpisize;                                                  //!< Size of MPI communicator
   int irank;                                                    //!< MPI rank loop counter
