@@ -5,8 +5,8 @@
 //! Handles all the communication of local essential trees
 class TreeMPI {
 protected:
-  int mpirank;                                                  //!< Rank of MPI communicator
-  int mpisize;                                                  //!< Size of MPI communicator
+  const int mpirank;                                            //!< Rank of MPI communicator
+  const int mpisize;                                            //!< Size of MPI communicator
   int irank;                                                    //!< MPI rank loop counter
   int images;                                                   //!< Number of periodic image sublevels
   fvec3 localXmin;                                              //!< Local Xmin for a given rank
@@ -174,9 +174,8 @@ private:
 
 public:
   //! Constructor
-  TreeMPI(int _images) : images(_images) {                      // Initialize variables
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);                    // Get rank of current MPI process
-    MPI_Comm_size(MPI_COMM_WORLD, &mpisize);                    // Get number of MPI processes
+  TreeMPI(int _mpirank, int _mpisize, int _images) :
+    mpirank(_mpirank), mpisize(_mpisize), images(_images) {     // Initialize variables
     allLocalXmin = new fvec3 [mpisize];                         // Allocate array for minimum of local domains
     allLocalXmax = new fvec3 [mpisize];                         // Allocate array for maximum of local domains
     sendBodyCount = new int [mpisize];                          // Allocate send count

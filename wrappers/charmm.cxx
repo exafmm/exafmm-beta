@@ -12,14 +12,14 @@
 
 static const double Celec = 332.0716;
 
-Args *args;
-BaseMPI *baseMPI;
-BoundBox *boundBox;
-BuildTree *buildTree;
-Partition *partition;
-Traversal *traversal;
-TreeMPI *treeMPI;
-UpDownPass *upDownPass;
+Args * args;
+BaseMPI * baseMPI;
+BoundBox * boundBox;
+BuildTree * buildTree;
+Partition * partition;
+Traversal * traversal;
+TreeMPI * treeMPI;
+UpDownPass * upDownPass;
 
 Bounds localBounds;
 
@@ -32,9 +32,9 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
   buildTree = new BuildTree(ncrit, nspawn);
-  partition = new Partition;
+  partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
   traversal = new Traversal(nspawn, images);
-  treeMPI = new TreeMPI(images);
+  treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
 
   args->theta = theta;

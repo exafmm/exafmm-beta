@@ -23,9 +23,9 @@ int main(int argc, char ** argv) {
   BuildTree globalTree(1, args.nspawn);
   Cells cells, jcells, gcells;
   Dataset data;
-  Partition partition;
+  Partition partition(baseMPI.mpirank, baseMPI.mpisize);
   Traversal traversal(args.nspawn, args.images);
-  TreeMPI treeMPI(args.images);
+  TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 

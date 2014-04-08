@@ -6,15 +6,12 @@
 //! Handles all the partitioning of domains
 class Partition {
 private:
-  int mpirank;                                                  //!< Rank of MPI communicator
-  int mpisize;                                                  //!< Size of MPI communicator
+  const int mpirank;                                             //!< Rank of MPI communicator
+  const int mpisize;                                             //!< Size of MPI communicator
 
 public:
   //! Constructor
-  Partition() {
-    MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);                    // Get rank of current MPI process
-    MPI_Comm_size(MPI_COMM_WORLD, &mpisize);                    // Get number of MPI processes
-  }
+  Partition(int _mpirank, int _mpisize) : mpirank(_mpirank), mpisize(_mpisize) {}
 
   //! Partition bodies with geometric octsection
   Bounds octsection(Bodies & bodies, Bounds global) {
