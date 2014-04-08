@@ -1,15 +1,13 @@
-#include "base_mpi.h"
+#include "tree_mpi.h"
 #include "args.h"
 #include "bound_box.h"
 #include "build_tree.h"
 #include "logger.h"
 #include "partition.h"
 #include "traversal.h"
-#include "tree_mpi.h"
 #include "up_down_pass.h"
 
 Args *args;
-BaseMPI *baseMPI;
 BoundBox *boundBox;
 BuildTree *buildTree;
 Partition *partition;
@@ -27,7 +25,6 @@ extern "C" void FMM_Init() {
   const bool useRmax = true;
   const bool useRopt = true;
   args = new Args;
-  baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
   buildTree = new BuildTree(ncrit, nspawn);
   partition = new Partition;
@@ -42,7 +39,7 @@ extern "C" void FMM_Init() {
   args->mutual = 0;
   args->verbose = 1;
   args->distribution = "external";
-  args->verbose &= baseMPI->mpirank == 0;
+  args->verbose &= treeMPI->mpirank == 0;
   logger::verbose = args->verbose;
   logger::printTitle("Initial Parameters");
   args->print(logger::stringLength, P);
@@ -50,7 +47,6 @@ extern "C" void FMM_Init() {
 
 extern "C" void FMM_Finalize() {
   delete args;
-  delete baseMPI;
   delete boundBox;
   delete buildTree;
   delete partition;
@@ -80,7 +76,7 @@ extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, d
   }
   localBounds = boundBox->getBounds(bodies);
   localBounds = boundBox->getBounds(jbodies,localBounds);
-  Bounds globalBounds = baseMPI->allreduceBounds(localBounds);
+  Bounds globalBounds = treeMPI->allreduceBounds(localBounds);
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
   partition->octsection(jbodies,globalBounds);
@@ -149,8 +145,8 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->dualTreeTraversal(cells, jcells, cycle, args->mutual);
-  for (int irank=1; irank<baseMPI->mpisize; irank++) {
-    treeMPI->getLET(jcells,(baseMPI->mpirank+irank)%baseMPI->mpisize);
+  for (int irank=1; irank<treeMPI->mpisize; irank++) {
+    treeMPI->getLET(jcells,(treeMPI->mpirank+irank)%treeMPI->mpisize);
     traversal->dualTreeTraversal(cells, jcells, cycle);
   }
   upDownPass->downwardPass(cells);
@@ -198,17 +194,17 @@ extern "C" void Direct_Laplace(int ni, double * xi, double * yi, double * zi, do
     z2[i] = zj[i];
     v2[i] = vj[i];
   }
-  if (baseMPI->mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
-  for (int irank=0; irank<baseMPI->mpisize; irank++) {
-    if (baseMPI->mpirank == 0) std::cout << "Direct loop          : " << irank+1 << "/" << baseMPI->mpisize << std::endl;
+  if (treeMPI->mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
+  for (int irank=0; irank<treeMPI->mpisize; irank++) {
+    if (treeMPI->mpirank == 0) std::cout << "Direct loop          : " << irank+1 << "/" << treeMPI->mpisize << std::endl;
     int n2 = nj;
-    MPI_Shift(x2, nj, baseMPI->mpisize, baseMPI->mpirank);
+    MPI_Shift(x2, nj, treeMPI->mpisize, treeMPI->mpirank);
     nj = n2;
-    MPI_Shift(y2, nj, baseMPI->mpisize, baseMPI->mpirank);
+    MPI_Shift(y2, nj, treeMPI->mpisize, treeMPI->mpirank);
     nj = n2;
-    MPI_Shift(z2, nj, baseMPI->mpisize, baseMPI->mpirank);
+    MPI_Shift(z2, nj, treeMPI->mpisize, treeMPI->mpirank);
     nj = n2;
-    MPI_Shift(v2, nj, baseMPI->mpisize, baseMPI->mpirank);
+    MPI_Shift(v2, nj, treeMPI->mpisize, treeMPI->mpirank);
     for (int i=0; i<ni; i++) {
       double pp = 0;
       for (int j=0; j<nj; j++) {

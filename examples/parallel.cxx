@@ -1,4 +1,4 @@
-#include "base_mpi.h"
+#include "tree_mpi.h"
 #include "args.h"
 #include "bound_box.h"
 #include "build_tree.h"
@@ -6,7 +6,6 @@
 #include "logger.h"
 #include "partition.h"
 #include "traversal.h"
-#include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
 #if VTK
@@ -15,7 +14,6 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies;
   BoundBox boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
@@ -30,15 +28,15 @@ int main(int argc, char ** argv) {
   Verify verify;
 
   const real_t cycle = 2 * M_PI;
-  args.numBodies /= baseMPI.mpisize;
-  args.verbose &= baseMPI.mpirank == 0;
+  args.numBodies /= treeMPI.mpisize;
+  args.verbose &= treeMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
-  bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
+  bodies = data.initBodies(args.numBodies, args.distribution, treeMPI.mpirank, treeMPI.mpisize);
   localBounds = boundBox.getBounds(bodies);
 #if IneJ
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -46,14 +44,14 @@ int main(int argc, char ** argv) {
     B->X[0] *= 0.5;
   }
   localBounds = boundBox.getBounds(bodies);
-  jbodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank+baseMPI.mpisize, baseMPI.mpisize);
+  jbodies = data.initBodies(args.numBodies, args.distribution, treeMPI.mpirank+treeMPI.mpisize, treeMPI.mpisize);
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     B->X[0] -= M_PI;
     B->X[0] *= 0.5;
   }
   localBounds = boundBox.getBounds(jbodies,localBounds);
 #endif
-  globalBounds = baseMPI.allreduceBounds(localBounds);
+  globalBounds = treeMPI.allreduceBounds(localBounds);
   localBounds = partition.octsection(bodies,globalBounds);
   bodies = treeMPI.commBodies(bodies);
 #if IneJ
@@ -84,8 +82,8 @@ int main(int argc, char ** argv) {
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   jbodies = bodies;
 #endif
-  for (int irank=0; irank<baseMPI.mpisize; irank++) {
-    treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
+  for (int irank=0; irank<treeMPI.mpisize; irank++) {
+    treeMPI.getLET(jcells,(treeMPI.mpirank+irank)%treeMPI.mpisize);
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
 #if 0
@@ -95,7 +93,7 @@ int main(int argc, char ** argv) {
   treeMPI.attachRoot(gcells);
 #endif
 #else
-  for (int irank=0; irank<baseMPI.mpisize; irank++) {
+  for (int irank=0; irank<treeMPI.mpisize; irank++) {
     treeMPI.shiftBodies(jbodies);
     jcells.clear();
     localBounds = boundBox.getBounds(jbodies);
@@ -114,8 +112,8 @@ int main(int argc, char ** argv) {
   bodies2 = bodies;
   data.initTarget(bodies);
   logger::startTimer("Total Direct");
-  for (int i=0; i<baseMPI.mpisize; i++) {
-    if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
+  for (int i=0; i<treeMPI.mpisize; i++) {
+    if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << treeMPI.mpisize << std::endl;
     treeMPI.shiftBodies(jbodies);
     traversal.direct(bodies, jbodies, cycle);
   }
@@ -126,7 +124,7 @@ int main(int argc, char ** argv) {
   logger::resetTimer("Total FMM");
   logger::resetTimer("Total Direct");
 #if WRITE_TIME
-  logger::writeTime(baseMPI.mpirank);
+  logger::writeTime(treeMPI.mpirank);
 #endif
   double potDif = verify.getDifScalar(bodies, bodies2);
   double potNrm = verify.getNrmScalar(bodies);
@@ -146,8 +144,8 @@ int main(int argc, char ** argv) {
 
 #if VTK
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->IBODY = 0;
-  for (int irank=0; irank<baseMPI.mpisize; irank++) {
-    treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
+  for (int irank=0; irank<treeMPI.mpisize; irank++) {
+    treeMPI.getLET(jcells,(treeMPI.mpirank+irank)%treeMPI.mpisize);
     for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
       Body body;
       body.IBODY = 1;
@@ -159,11 +157,11 @@ int main(int argc, char ** argv) {
   vtk3DPlot vtk;
   vtk.setBounds(M_PI,0);
   vtk.setGroupOfPoints(jbodies);
-  for (int i=1; i<baseMPI.mpisize; i++) {
+  for (int i=1; i<treeMPI.mpisize; i++) {
     treeMPI.shiftBodies(jbodies);
     vtk.setGroupOfPoints(jbodies);
   }
-  if (baseMPI.mpirank == 0) {
+  if (treeMPI.mpirank == 0) {
     vtk.plot();
   }
 #endif
