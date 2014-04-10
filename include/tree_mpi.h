@@ -1,5 +1,6 @@
 #ifndef tree_mpi_h
 #define tree_mpi_h
+#include "kernel.h"
 #include "logger.h"
 
 //! Handles all the communication of local essential trees
@@ -246,18 +247,14 @@ public:
     std::stringstream event;                                    // Event name
     event << "Get LET from rank " << irank;                     // Create event name based on irank
     logger::startTimer(event.str());                            // Start timer
-    for (int i=recvCellCount[irank]-1; i>=0; i--) {             // Loop over receive cells bottom up
+    for (int i=0; i<recvCellCount[irank]; i++) {                // Loop over receive cells
       C_iter C = recvCells.begin() + recvCellDispl[irank] + i;  //  Iterator of receive cell
       if (C->NBODY != 0) {                                      //  If cell has bodies
         C->BODY = recvBodies.begin() + recvBodyDispl[irank] + C->IBODY;// Iterator of first body
       }                                                         //  End if for bodies
-      if (i != 0) {                                             //  If cell is not root
-        C_iter Cparent = recvCells.begin() + recvCellDispl[irank] + C->PARENT;// Iterator of parent cell
-        Cparent->NBODY += C->NBODY;                             //   Accululate number of bodies
-      }                                                         //  End if for root cell
     }                                                           // End loop over receive cells
     cells.resize(recvCellCount[irank]);                         // Resize cell vector for LET
-    cells.assign(recvCells.begin()+recvCellDispl[irank],
+    cells.assign(recvCells.begin()+recvCellDispl[irank],        // Assign receive cells to vector
 		 recvCells.begin()+recvCellDispl[irank]+recvCellCount[irank]);
     logger::stopTimer(event.str());                             // Stop timer
   }
@@ -266,15 +263,11 @@ public:
   void linkLET() {
     logger::startTimer("Link LET");                             // Start timer
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
-      for (int i=recvCellCount[irank]-1; i>=0; i--) {           //  Loop over receive cells bottom up
+      for (int i=0; i<recvCellCount[irank]; i++) {              //  Loop over receive cells
         C_iter C = recvCells.begin() + recvCellDispl[irank] + i;//   Iterator of receive cell
         if (C->NBODY != 0) {                                    //   If cell has bodies
           C->BODY = recvBodies.begin() + recvBodyDispl[irank] + C->IBODY;// Iterator of first body
         }                                                       //   End if for bodies
-        if (i != 0) {                                           //   If cell is not root
-          C_iter Cparent = recvCells.begin() + recvCellDispl[irank] + C->PARENT;// Iterator of parent cell
-          Cparent->NBODY += C->NBODY;                           //    Accululate number of bodies
-        }                                                       //   End if for root cell
       }                                                         //  End loop over receive cells
     }                                                           // End loop over ranks
     logger::stopTimer("Link LET");                              // End timer
@@ -309,6 +302,8 @@ public:
 	C0->PARENT = C->PARENT;                                 //  Link remote root to global leaf
 	*C = *C0;                                               //  Copy remote root to global leaf
 	C->ICHILD += offset;                                    //  Add offset to child index
+      } else {                                                  // If not leaf cell
+	C->BODY = recvBodies.end();                             //  Use BODY as flag to indicate non-leaf global cell
       }                                                         // End if for leaf cell
     }                                                           // End loop over global cells
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
@@ -321,6 +316,14 @@ public:
 	}                                                       //    End loop over cells received from irank
       }                                                         //  End if for not current rank
     }                                                           // End loop over ranks
+    C0 = cells.begin();                                         // Root cell iterator of entire LET
+    for (int i=globalCells-1; i>=0; i--) {                      // Loop over global cells bottom up
+      C_iter C = cells.begin() + i;                             //  Iterator of current cell
+      if (C->BODY == recvBodies.end()) {                        //  If non-leaf global cell
+	C->M = 0;                                               //   Reset multipoles
+	kernel::M2M(C, C0);                                     //   M2M kernel
+      }                                                         //  End if for non-leaf global cell
+    }                                                           // End loop over global cells bottom up
     logger::stopTimer("Attach root");                           // Stop timer
   }
 
