@@ -84,15 +84,17 @@ int main(int argc, char ** argv) {
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   jbodies = bodies;
 #endif
+#if 0
   for (int irank=0; irank<baseMPI.mpisize; irank++) {
     treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
     traversal.dualTreeTraversal(cells, jcells, cycle);
   }
-#if 0
+#else
   treeMPI.linkLET();
   gbodies = treeMPI.root2body();
-  gcells = globalTree.buildTree(gbodies, globalBounds);
-  treeMPI.attachRoot(gcells);
+  jcells = globalTree.buildTree(gbodies, globalBounds);
+  treeMPI.attachRoot(jcells);
+  traversal.dualTreeTraversal(cells, jcells, cycle);
 #endif
 #else
   for (int irank=0; irank<baseMPI.mpisize; irank++) {

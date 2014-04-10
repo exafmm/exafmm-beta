@@ -262,7 +262,6 @@ public:
     logger::stopTimer(event.str());                             // Stop timer
   }
 
-#if 0
   //! Link LET with received bodies and calcualte NBODY
   void linkLET() {
     logger::startTimer("Link LET");                             // Start timer
@@ -301,16 +300,29 @@ public:
   //! Graft remote trees to global tree
   void attachRoot(Cells & cells) {
     logger::startTimer("Attach root");                          // Start timer
-    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over global cells
+    int globalCells = cells.size();                             // Number of global cells
+    cells.insert(cells.end(), recvCells.begin(), recvCells.end()); // Join LET cell vectors
+    for (C_iter C=cells.begin(); C!=cells.begin()+globalCells; C++) { // Loop over global cells
       if (C->NCHILD==0) {                                       // If leaf cell
-	C0 = recvCells.begin() + C->BODY->IBODY;                //  Root cell iterator
+	int offset = globalCells + C->BODY->IBODY;              //  Offset of received root cell index
+	C0 = cells.begin() + offset;                            //  Root cell iterator
 	C0->PARENT = C->PARENT;                                 //  Link remote root to global leaf
 	*C = *C0;                                               //  Copy remote root to global leaf
+	C->ICHILD += offset;                                    //  Add offset to child index
       }                                                         // End if for leaf cell
     }                                                           // End loop over global cells
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
+      if (irank != mpirank && recvCellCount[irank] > 0) {       //  If not current rank
+	C0 = cells.begin() + globalCells + recvCellDispl[irank];//   Root cell iterator for irank
+	for (C_iter C=C0+1; C!=C0+recvCellCount[irank]; C++) {  //    Loop over cells received from irank
+	  int offset = globalCells + recvCellDispl[irank];      //     Offset of received root cell index
+	  C->PARENT += offset;                                  //     Add offset to parent index
+	  C->ICHILD += offset;                                  //     Add offset to child index
+	}                                                       //    End loop over cells received from irank
+      }                                                         //  End if for not current rank
+    }                                                           // End loop over ranks
     logger::stopTimer("Attach root");                           // Stop timer
   }
-#endif
 
   //! Send bodies
   Bodies commBodies(Bodies sendBodies) {
