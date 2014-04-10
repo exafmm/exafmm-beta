@@ -23,10 +23,11 @@
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   BaseMPI baseMPI;
-  Bodies bodies, bodies2, jbodies;
+  Bodies bodies, bodies2, jbodies, gbodies;
   BoundBox boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
-  BuildTree buildTree(args.ncrit, args.nspawn);
+  BuildTree localTree(args.ncrit, args.nspawn);
+  BuildTree globalTree(1, args.nspawn);
   Cells cells, jcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
@@ -57,7 +58,7 @@ int main(int argc, char ** argv) {
   localBounds = partition.octsection(bodies, globalBounds);
   bodies = treeMPI.commBodies(bodies);
 
-  cells = buildTree.buildTree(bodies, localBounds);
+  cells = localTree.buildTree(bodies, localBounds);
   upDownPass.upwardPass(cells);
   treeMPI.allgatherBounds(localBounds);
   treeMPI.setLET(cells, cycle);
@@ -65,9 +66,17 @@ int main(int argc, char ** argv) {
   treeMPI.commCells();
 
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-  for (int irank=1; irank<baseMPI.mpisize; irank++) {
-    treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
+  if (args.graft) {
+    treeMPI.linkLET();
+    gbodies = treeMPI.root2body();
+    jcells = globalTree.buildTree(gbodies, globalBounds);
+    treeMPI.attachRoot(jcells);
     traversal.dualTreeTraversal(cells, jcells, cycle);
+  } else {
+    for (int irank=0; irank<baseMPI.mpisize; irank++) {
+      treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
+      traversal.dualTreeTraversal(cells, jcells, cycle);
+    }
   }
   upDownPass.downwardPass(cells);
   vec3 localDipole = upDownPass.getDipole(bodies,0);
@@ -87,13 +96,13 @@ int main(int argc, char ** argv) {
     if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI.mpisize << std::endl;
     treeMPI.shiftBodies(jbodies);
     localBounds = boundBox.getBounds(jbodies);
-    jcells = buildTree.buildTree(jbodies, localBounds);
+    jcells = localTree.buildTree(jbodies, localBounds);
     ewald.wavePart(bodies, jbodies);
     ewald.realPart(cells, jcells);
   }
 #else
   jbodies = treeMPI.allgatherBodies(bodies);
-  jcells = buildTree.buildTree(jbodies, globalBounds);
+  jcells = localTree.buildTree(jbodies, globalBounds);
   ewald.wavePart(bodies, jbodies);
   ewald.realPart(cells, jcells);
 #endif
@@ -133,7 +142,7 @@ int main(int argc, char ** argv) {
   double potNrmGlob = potSumGlob * potSumGlob;
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
-  buildTree.printTreeData(cells);
+  localTree.printTreeData(cells);
   traversal.printTraversalData();
   logger::printPAPI();
 #if VTK

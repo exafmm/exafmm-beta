@@ -11,13 +11,14 @@
 Args * args;
 BaseMPI * baseMPI;
 BoundBox * boundBox;
-BuildTree * buildTree;
+BuildTree * localTree, * globalTree;
 Partition * partition;
 Traversal * traversal;
 TreeMPI * treeMPI;
 UpDownPass * upDownPass;
 
 Bounds localBounds;
+Bounds globalBounds;
 
 extern "C" void FMM_Init() {
   const int ncrit = 16;
@@ -29,7 +30,8 @@ extern "C" void FMM_Init() {
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
-  buildTree = new BuildTree(ncrit, nspawn);
+  localTree = new BuildTree(ncrit, nspawn);
+  globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
   traversal = new Traversal(nspawn, images);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
@@ -52,7 +54,8 @@ extern "C" void FMM_Finalize() {
   delete args;
   delete baseMPI;
   delete boundBox;
-  delete buildTree;
+  delete localTree;
+  delete globalTree;
   delete partition;
   delete traversal;
   delete treeMPI;
@@ -80,14 +83,14 @@ extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, d
   }
   localBounds = boundBox->getBounds(bodies);
   localBounds = boundBox->getBounds(jbodies,localBounds);
-  Bounds globalBounds = baseMPI->allreduceBounds(localBounds);
+  globalBounds = baseMPI->allreduceBounds(localBounds);
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
   partition->octsection(jbodies,globalBounds);
   jbodies = treeMPI->commBodies(jbodies);
-  Cells cells = buildTree->buildTree(bodies, localBounds);
+  Cells cells = localTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
-  Cells jcells = buildTree->buildTree(jbodies, localBounds);
+  Cells jcells = localTree->buildTree(jbodies, localBounds);
   upDownPass->upwardPass(jcells);
 
   ni = bodies.size();
@@ -140,18 +143,26 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
     B->TRG    = 0;
     B->IBODY = i;
   }
-  Cells cells = buildTree->buildTree(bodies, localBounds);
+  Cells cells = localTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
-  Cells jcells = buildTree->buildTree(jbodies, localBounds);
+  Cells jcells = localTree->buildTree(jbodies, localBounds);
   upDownPass->upwardPass(jcells);
   treeMPI->allgatherBounds(localBounds);
   treeMPI->setLET(jcells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->dualTreeTraversal(cells, jcells, cycle, args->mutual);
-  for (int irank=1; irank<baseMPI->mpisize; irank++) {
-    treeMPI->getLET(jcells,(baseMPI->mpirank+irank)%baseMPI->mpisize);
+  if (args->graft) {
+    treeMPI->linkLET();
+    Bodies gbodies = treeMPI->root2body();
+    jcells = globalTree->buildTree(gbodies, globalBounds);
+    treeMPI->attachRoot(jcells);
     traversal->dualTreeTraversal(cells, jcells, cycle);
+  } else {
+    for (int irank=0; irank<baseMPI->mpisize; irank++) {
+      treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+      traversal->dualTreeTraversal(cells, jcells, cycle);
+    }
   }
   upDownPass->downwardPass(cells);
   logger::stopPAPI();

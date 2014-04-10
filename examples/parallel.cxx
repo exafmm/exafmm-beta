@@ -51,10 +51,10 @@ int main(int argc, char ** argv) {
     B->X[0] -= M_PI;
     B->X[0] *= 0.5;
   }
-  localBounds = boundBox.getBounds(jbodies,localBounds);
+  localBounds = boundBox.getBounds(jbodies, localBounds);
 #endif
   globalBounds = baseMPI.allreduceBounds(localBounds);
-  localBounds = partition.octsection(bodies,globalBounds);
+  localBounds = partition.octsection(bodies, globalBounds);
   bodies = treeMPI.commBodies(bodies);
 #if IneJ
   partition.octsection(jbodies,globalBounds);
@@ -84,18 +84,18 @@ int main(int argc, char ** argv) {
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   jbodies = bodies;
 #endif
-#if 0
-  for (int irank=0; irank<baseMPI.mpisize; irank++) {
-    treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
+  if (args.graft) {
+    treeMPI.linkLET();
+    gbodies = treeMPI.root2body();
+    jcells = globalTree.buildTree(gbodies, globalBounds);
+    treeMPI.attachRoot(jcells);
     traversal.dualTreeTraversal(cells, jcells, cycle);
+  } else {
+    for (int irank=0; irank<baseMPI.mpisize; irank++) {
+      treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
+      traversal.dualTreeTraversal(cells, jcells, cycle);
+    }
   }
-#else
-  treeMPI.linkLET();
-  gbodies = treeMPI.root2body();
-  jcells = globalTree.buildTree(gbodies, globalBounds);
-  treeMPI.attachRoot(jcells);
-  traversal.dualTreeTraversal(cells, jcells, cycle);
-#endif
 #else
   for (int irank=0; irank<baseMPI.mpisize; irank++) {
     treeMPI.shiftBodies(jbodies);

@@ -15,6 +15,7 @@ static struct option long_options[] = {
   {"useRmax",      1, 0, 'x'},
   {"useRopt",      1, 0, 'o'},
   {"mutual",       1, 0, 'm'},
+  {"graft",        1, 0, 'g'},
   {"verbose",      1, 0, 'v'},
   {"distribution", 1, 0, 'd'},
   {"repeat",       1, 0, 'r'},
@@ -32,6 +33,7 @@ public:
   int useRmax;
   int useRopt;
   int mutual;
+  int graft;
   int verbose;
   const char * distribution;
   int repeat;
@@ -46,9 +48,10 @@ private:
             " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
             " --images (-i)                 : Number of periodic image levels (%d)\n"
             " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
-	    " --useRmax (-x)                : Use maximum distance for MAC (%d)\n"
-	    " --useRopt (-o)                : Use error optimized theta for MAC (%d)\n"
+	    " --useRmax (-x) [0/1]          : Use maximum distance for MAC (%d)\n"
+	    " --useRopt (-o) [0/1]          : Use error optimized theta for MAC (%d)\n"
             " --mutual (-m) [0/1]           : Use mutual interaction (%d)\n"
+	    " --graft (-g) [0/1]            : Graft remote trees to global tree (%d)\n"
 	    " --verbose (-v) [0/1]          : Print information to screen (%d)\n"
             " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n"
             " --repeat (-r)                 : Number of iteration loops (%d)\n"
@@ -62,6 +65,7 @@ private:
 	    useRmax,
 	    useRopt,
             mutual,
+	    graft,
 	    verbose,
             distribution,
 	    repeat);
@@ -86,11 +90,11 @@ private:
 
 public:
   Args(int argc=0, char ** argv=NULL) : numBodies(1000000), ncrit(16), nspawn(1000), images(0),
-					theta(.4), useRmax(1), useRopt(1), mutual(1), verbose(1),
-					distribution("cube"), repeat(1) {
+					theta(.4), useRmax(1), useRopt(1), mutual(1), graft(1),
+					verbose(1), distribution("cube"), repeat(1) {
     while (1) {
       int option_index;
-      int c = getopt_long(argc, argv, "n:t:c:s:i:o:m:v:d:r:h", long_options, &option_index);
+      int c = getopt_long(argc, argv, "n:t:c:s:i:o:m:g:v:d:r:h", long_options, &option_index);
       if (c == -1) break;
       switch (c) {
       case 'n':
@@ -117,6 +121,9 @@ public:
       case 'm':
         mutual = atoi(optarg);
         break;
+      case 'g':
+	graft = atoi(optarg);
+	break;
       case 'v':
 	verbose= atoi(optarg);
 	break;
@@ -156,6 +163,8 @@ public:
 		<< "useRopt" << " : " << useRopt << std::endl   //  Print useRopt
 		<< std::setw(stringLength)                      //  Set format
 		<< "mutual" << " : " << mutual << std::endl     //  Print mutual
+		<< std::setw(stringLength)                      //  Set format
+		<< "graft" << " : " << graft << std::endl       //  Print graft
 		<< std::setw(stringLength)                      //  Set format
 		<< "verbose" << " : " << verbose << std::endl   //  Print verbose
 		<< std::setw(stringLength)                      //  Set format
