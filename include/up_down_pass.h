@@ -26,8 +26,9 @@ private:
 	create_taskc(setRopt);                                  //   Create new task for recursive call
       }                                                         //  End loop over child cells
       wait_tasks;                                               //  Synchronize tasks
-      if (std::abs(C->M[0]) == 0) C->M[0] = EPS;                //  Account for zero monopole case
+#if MASS
       for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];           //  Normalize multipole expansion coefficients
+#endif
       real_t x = 1.0 / theta;                                   //  Inverse of theta
       assert(theta != 1.0);                                     //  Newton-Raphson won't work for theta==1
       real_t a = c * powf(std::abs(C->M[0]),1.0/3);             //  Cell coefficient
