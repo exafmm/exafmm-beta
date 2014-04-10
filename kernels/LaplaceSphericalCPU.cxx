@@ -192,7 +192,7 @@ void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
 
 void kernel::L2L(C_iter Ci, C_iter C0) {
   complex_t Ynm[P*P], YnmTheta[P*P];
-  C_iter Cj = C0 + Ci->PARENT;
+  C_iter Cj = C0 + Ci->IPARENT;
   vec3 dX = Ci->X - Cj->X;
   real_t rho, alpha, beta;
   cart2sph(rho, alpha, beta, dX);

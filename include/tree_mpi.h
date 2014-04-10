@@ -115,7 +115,7 @@ protected:
   void addSendCell(C_iter C, uint64_t & iparent, int & icell) {
     Cell cell(*C);                                              // Initialize send cell
     cell.NCHILD = cell.NBODY = 0;                               // Reset counters
-    cell.PARENT = iparent;                                      // Index of parent
+    cell.IPARENT = iparent;                                     // Index of parent
     sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
     C_iter Cparent = sendCells.begin() + sendCellDispl[irank] + iparent;// Get parent iterator
@@ -299,7 +299,7 @@ public:
       if (C->NCHILD==0) {                                       // If leaf cell
 	int offset = globalCells + C->BODY->IBODY;              //  Offset of received root cell index
 	C0 = cells.begin() + offset;                            //  Root cell iterator
-	C0->PARENT = C->PARENT;                                 //  Link remote root to global leaf
+	C0->IPARENT = C->IPARENT;                               //  Link remote root to global leaf
 	*C = *C0;                                               //  Copy remote root to global leaf
 	C->ICHILD += offset;                                    //  Add offset to child index
       } else {                                                  // If not leaf cell
@@ -311,7 +311,7 @@ public:
 	C0 = cells.begin() + globalCells + recvCellDispl[irank];//   Root cell iterator for irank
 	for (C_iter C=C0+1; C!=C0+recvCellCount[irank]; C++) {  //    Loop over cells received from irank
 	  int offset = globalCells + recvCellDispl[irank];      //     Offset of received root cell index
-	  C->PARENT += offset;                                  //     Add offset to parent index
+	  C->IPARENT += offset;                                 //     Add offset to parent index
 	  C->ICHILD += offset;                                  //     Add offset to child index
 	}                                                       //    End loop over cells received from irank
       }                                                         //  End if for not current rank

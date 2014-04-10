@@ -44,7 +44,7 @@ int main() {
 
   C_iter Ci = cells.begin()+3;
   Ci->X = R + 3;
-  Ci->PARENT = 2;
+  Ci->IPARENT = 2;
   Ci->M = 1;
   Ci->L = 0;
   kernel::L2L(Ci, cells.begin());

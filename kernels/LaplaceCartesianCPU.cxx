@@ -673,7 +673,7 @@ void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
 }
 
 void kernel::L2L(C_iter Ci, C_iter Ci0) {
-  C_iter Cj = Ci0 + Ci->PARENT;
+  C_iter Cj = Ci0 + Ci->IPARENT;
   vec3 dX = Ci->X - Cj->X;
   vecP C;
   C[0] = 1;

@@ -9,6 +9,9 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "van_der_waals.h"
+#if MASS
+#error Turn off MASS for this wrapper
+#endif
 
 static const double Celec = 332.0716;
 

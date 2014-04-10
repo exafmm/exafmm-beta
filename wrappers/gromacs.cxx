@@ -8,6 +8,9 @@
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
+#if MASS
+#error Turn off MASS for this wrapper
+#endif
 
 Args * args;
 BaseMPI * baseMPI;

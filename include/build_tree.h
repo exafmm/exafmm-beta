@@ -235,13 +235,13 @@ private:
       return index;                                             // Return Morton key
     }
     void operator() () {                                        // Overload operator()
-      C->PARENT = iparent;                                      //  Index of parent cell
-      C->R      = R0 / (1 << level);                            //  Cell radius
-      C->X      = octNode->X;                                   //  Cell center
-      C->NBODY  = octNode->NBODY;                               //  Number of decendant bodies
-      C->IBODY  = octNode->IBODY;                               //  Index of first body in cell
-      C->BODY   = B0 + C->IBODY;                                //  Iterator of first body in cell
-      C->ICELL  = getKey(C->X, X0-R0, 2*C->R, level);           //  Get Morton key
+      C->IPARENT = iparent;                                     //  Index of parent cell
+      C->R       = R0 / (1 << level);                           //  Cell radius
+      C->X       = octNode->X;                                  //  Cell center
+      C->NBODY   = octNode->NBODY;                              //  Number of decendant bodies
+      C->IBODY   = octNode->IBODY;                              //  Index of first body in cell
+      C->BODY    = B0 + C->IBODY;                               //  Iterator of first body in cell
+      C->ICELL   = getKey(C->X, X0-R0, 2*C->R, level);          //  Get Morton key
       if (octNode->NNODE == 1) {                                //  If node has no children
 	C->ICHILD = 0;                                          //   Set index of first child cell to zero
 	C->NCHILD = 0;                                          //   Number of child cells
