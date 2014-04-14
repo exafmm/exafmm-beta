@@ -141,18 +141,19 @@ protected:
   void traverseLET(C_iter C, real_t cycle, int & ibody, int & icell, uint64_t iparent) {
     int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;           // Level of local root cell
     if (mpisize == 1) level = 0;                                // Account for serial case
+    bool divide[8] = {0, 0, 0, 0, 0, 0, 0, 0};                  // Initialize divide flag
     int icells[8] = {0, 0, 0, 0, 0, 0, 0, 0};                   // Initialize icell array
-    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
-      icells[CC-C0-C->ICHILD] = icell;                          //  Store cell index
+    int cc = 0;                                                 // initialize child index
+    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++,cc++) { // Loop over child cells
+      icells[cc] = icell;                                       //  Store cell index
       addSendCell(CC, icell, iparent);                          //  Add cells to send
       if (CC->NCHILD == 0) {                                    //  If cell is leaf
 	addSendBody(CC, ibody, icell-1);                        //   Add bodies to send
       } else {                                                  //  If cell is not leaf
-	bool divide = false;                                    //   Initialize logical for dividing
 	vec3 Xperiodic = 0;                                     //   Periodic coordinate offset
 	if (images == 0) {                                      //   If free boundary condition
 	  real_t R2 = getDistance(CC, Xperiodic);               //    Get distance to other domain
-	  divide |= CC->R * CC->R > R2;                         //    Divide if the cell seems too close (double the R)
+	  divide[cc] |= CC->R * CC->R > R2;                     //    Divide if the cell seems too close (double the R)
 	} else {                                                //   If periodic boundary condition
 	  for (int ix=-1; ix<=1; ix++) {                        //    Loop over x periodic direction
 	    for (int iy=-1; iy<=1; iy++) {                      //     Loop over y periodic direction
@@ -161,19 +162,20 @@ protected:
 		Xperiodic[1] = iy * cycle;                      //       Coordinate offset for y periodic direction
 		Xperiodic[2] = iz * cycle;                      //       Coordinate offset for z periodic direction
 		real_t R2 = getDistance(CC, Xperiodic);         //       Get distance to other domain
-		divide |= CC->R * CC->R > R2;                   //       Divide if cell seems too close (double the R)
+		divide[cc] |= CC->R * CC->R > R2;               //       Divide if cell seems too close (double the R)
 	      }                                                 //      End loop over z periodic direction
 	    }                                                   //     End loop over y periodic direction
 	  }                                                     //    End loop over x periodic direction
 	}                                                       //   Endif for periodic boundary condition
-	divide |= CC->R > (cycle / (1 << (level+1)));           //   Divide if cell is larger than local root cell
-	if (!divide) {                                          //   If cell does not have to be divided
-	  CC->NCHILD = 0;                                       //    Cut off child links
-	}                                                       //   Endif for cell division
+	divide[cc] |= CC->R > (cycle / (1 << (level+1)));       //   Divide if cell is larger than local root cell
       }                                                         //  Endif for leaf
     }                                                           // End loop over child cells
-    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
-      traverseLET(CC, cycle, ibody, icell, icells[CC-C0-C->ICHILD]); //  Recursively traverse tree to get LET
+    cc = 0;                                                     // Initialize child index
+    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++,cc++) { // Loop over child cells
+      if (divide[cc]) {                                         //  If cell must be divided further
+	iparent = icells[cc];                                   //   Parent cell index
+	traverseLET(CC, cycle, ibody, icell, iparent);          //   Recursively traverse tree to get LET
+      }                                                         //  End if for cell division
     }                                                           // End loop over child cells
   }
 
@@ -230,8 +232,7 @@ public:
       if (irank != 0) sendBodyDispl[irank] = sendBodyDispl[irank-1] + sendBodyCount[irank-1];// Update body displacement
       if (irank != 0) sendCellDispl[irank] = sendCellDispl[irank-1] + sendCellCount[irank-1];// Update cell displacement
       if (irank != mpirank && !cells.empty()) {                 //  If not current rank and cell vector is not empty
-        recvCells = cells;                                      //   Use recvCells as temporary storage
-        C0 = recvCells.begin();                                 //   Set cells begin iterator
+        C0 = cells.begin();                                     //   Set cells begin iterator
         localXmin = allLocalXmin[irank];                        //   Set local Xmin for irank
         localXmax = allLocalXmax[irank];                        //   Set local Xmax for irank
         Cell cell(*C0);                                         //   Send root cell
