@@ -132,7 +132,7 @@ protected:
       sendBodies.push_back(*B);                                 //  Push to send body vector
       sendBodies.back().IPROC = irank;                          //  Set current rank
     }                                                           // End loop over bodies in cell
-    ibody+=C->NBODY;                                            // Increment body counter
+    ibody += C->NBODY;                                          // Increment body counter
   }
 
   //! Determine which cells to send
@@ -238,7 +238,7 @@ public:
 	}                                                       //   End if for root cell leaf
         traverseLET(C0, cycle, ibody, icell);                   //   Traverse tree to get LET
       }                                                         //  Endif for current rank
-      sendCellCount[irank] = sendCells.size() - sendCellDispl[irank];// Send count for irank
+      sendCellCount[irank] = icell;                             // Send count for irank
     }                                                           // End loop over ranks
     logger::stopTimer("Set LET");                               // Stop timer
   }
