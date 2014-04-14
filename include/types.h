@@ -18,7 +18,6 @@ const real_t EPS = 1e-8;                                        //!< Single prec
 #endif
 typedef std::complex<real_t> complex_t;                         //!< Complex type
 typedef vec<3,real_t>        vec3;                              //!< Vector of 3 real_t types
-typedef vec<3,float>         fvec3;                             //!< Vector of 3 floats (Used only for communication)
 
 // SIMD vector types for MIC, AVX, and SSE
 const int NSIMD = SIMD_BYTES / sizeof(real_t);                  //!< SIMD vector length (SIMD_BYTES defined in macros.h)

@@ -33,16 +33,16 @@ public:
     if (!external) MPI_Finalize();                              // Finalize MPI communicator
   }
 
-  //! Allreduce int from all ranks
+  //! Allreduce int type from all ranks
   int allreduceInt(int send) {
     int recv;                                                   // Receive buffer
     MPI_Allreduce(&send, &recv, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
     return recv;                                                // Return received values
   }
 
-  //! Allreduce fvec3 from all ranks
+  //! Allreduce vec3 type from all ranks
   vec3 allreduceVec3(vec3 send) {
-    fvec3 fsend, frecv;                                         // Single precision buffers
+    float fsend[3], frecv[3];                                   // Single precision buffers
     for (int d=0; d<3; d++) fsend[d] = send[d];                 // Copy to send buffer
     MPI_Allreduce(fsend, frecv, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Communicate values
     vec3 recv;                                                  // Receive buffer
@@ -50,9 +50,9 @@ public:
     return recv;                                                // Return received values
   }
 
-  //! Allreduce bounds from all ranks
+  //! Allreduce bounds type from all ranks
   Bounds allreduceBounds(Bounds local) {
-    fvec3 localXmin, localXmax, globalXmin, globalXmax;
+    float localXmin[3], localXmax[3], globalXmin[3], globalXmax[3];
     for (int d=0; d<3; d++) {                                   // Loop over dimensions
       localXmin[d] = local.Xmin[d];                             //  Convert Xmin to float
       localXmax[d] = local.Xmax[d];                             //  Convert Xmax to float
