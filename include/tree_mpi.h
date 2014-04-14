@@ -50,6 +50,7 @@ private:
 
   //! Exchange bodies
   void alltoallv(Bodies & bodies) {
+    assert( (sizeof(bodies[0]) & 3) == 0 );                     // Body structure must be 4 Byte aligned
     int word = sizeof(bodies[0]) / 4;                           // Word size of body structure
     recvBodies.resize(recvBodyDispl[mpisize-1]+recvBodyCount[mpisize-1]);// Resize receive buffer
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
@@ -80,6 +81,7 @@ private:
 
   //! Exchange cells
   void alltoallv(Cells & cells) {
+    assert( (sizeof(cells[0]) & 3) == 0 );                      // Cell structure must be 4 Byte aligned
     int word = sizeof(cells[0]) / 4;                            // Word size of body structure
     recvCells.resize(recvCellDispl[mpisize-1]+recvCellCount[mpisize-1]);// Resize receive buffer
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
@@ -112,7 +114,7 @@ protected:
   }
 
   //! Add cells to send buffer
-  void addSendCell(C_iter C, uint64_t & iparent, int & icell) {
+  void addSendCell(C_iter C, int & icell, uint64_t & iparent) {
     Cell cell(*C);                                              // Initialize send cell
     cell.NCHILD = cell.NBODY = 0;                               // Reset counters
     cell.IPARENT = iparent;                                     // Index of parent
@@ -136,12 +138,13 @@ protected:
   }
 
   //! Determine which cells to send
-  void traverseLET(C_iter C, real_t cycle, int & ibody, int & icell) {
+  void traverseLET(C_iter C, real_t cycle, int & ibody, int & icell, uint64_t iparent) {
     int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;           // Level of local root cell
     if (mpisize == 1) level = 0;                                // Account for serial case
+    int icells[8] = {0, 0, 0, 0, 0, 0, 0, 0};                   // Initialize icell array
     for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
-      CC->ICELL = icell;                                        //  Store cell index
-      addSendCell(CC, C->ICELL, icell);                         //  Add cells to send
+      icells[CC-C0-C->ICHILD] = icell;                          //  Store cell index
+      addSendCell(CC, icell, iparent);                          //  Add cells to send
       if (CC->NCHILD == 0) {                                    //  If cell is leaf
 	addSendBody(CC, ibody, icell-1);                        //   Add bodies to send
       } else {                                                  //  If cell is not leaf
@@ -170,7 +173,7 @@ protected:
       }                                                         //  Endif for leaf
     }                                                           // End loop over child cells
     for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
-      traverseLET(CC, cycle, ibody, icell);                     //  Recursively traverse tree to get LET
+      traverseLET(CC, cycle, ibody, icell, icells[CC-C0-C->ICHILD]); //  Recursively traverse tree to get LET
     }                                                           // End loop over child cells
   }
 
@@ -219,11 +222,13 @@ public:
     logger::startTimer("Set LET");                              // Start timer
     sendBodies.clear();                                         // Clear send buffer for bodies
     sendCells.clear();                                          // Clear send buffer for cells
-    sendCellDispl[0] = 0;                                       // Initialize displacement vector
+    sendBodyDispl[0] = 0;                                       // Initialize body displacement vector
+    sendCellDispl[0] = 0;                                       // Initialize cell displacement vector
     for (irank=0; irank<mpisize; irank++) {                     // Loop over ranks
       int ibody = 0;                                            //  Current send body's offset
       int icell = 0;                                            //  Current send cell's offset
-      if (irank != 0) sendCellDispl[irank] = sendCellDispl[irank-1] + sendCellCount[irank-1];// Update displacement
+      if (irank != 0) sendBodyDispl[irank] = sendBodyDispl[irank-1] + sendBodyCount[irank-1];// Update body displacement
+      if (irank != 0) sendCellDispl[irank] = sendCellDispl[irank-1] + sendCellCount[irank-1];// Update cell displacement
       if (irank != mpirank && !cells.empty()) {                 //  If not current rank and cell vector is not empty
         recvCells = cells;                                      //   Use recvCells as temporary storage
         C0 = recvCells.begin();                                 //   Set cells begin iterator
@@ -236,7 +241,7 @@ public:
 	if (C0->NCHILD == 0) {                                  //   If root cell is leaf
 	  addSendBody(C0, ibody, icell-1);                      //    Add bodies to send
 	}                                                       //   End if for root cell leaf
-        traverseLET(C0, cycle, ibody, icell);                   //   Traverse tree to get LET
+        traverseLET(C0, cycle, ibody, icell, uint64_t(0));      //   Traverse tree to get LET
       }                                                         //  Endif for current rank
       sendCellCount[irank] = icell;                             // Send count for irank
     }                                                           // End loop over ranks
