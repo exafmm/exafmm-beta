@@ -31,9 +31,9 @@ private:
       sendBodyCount[i] = 0;                                     //  Initialize send counts
     }                                                           // End loop over ranks
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      assert(0 <= B->IPROC && B->IPROC < mpisize);              //  Check bounds for process ID
-      sendBodyCount[B->IPROC]++;                                //  Fill send count bucket
-      B->IPROC = mpirank;                                       //  Tag for sending back to original rank
+      assert(0 <= B->IRANK && B->IRANK < mpisize);              //  Check bounds for process ID
+      sendBodyCount[B->IRANK]++;                                //  Fill send count bucket
+      B->IRANK = mpirank;                                       //  Tag for sending back to original rank
     }                                                           // End loop over bodies
     MPI_Alltoall(sendBodyCount, 1, MPI_INT,                     // Communicate send count to get receive count
                  recvBodyCount, 1, MPI_INT, MPI_COMM_WORLD);
@@ -132,7 +132,7 @@ protected:
       B_iter Bsend = sendBodies.begin() + sendBodyDispl[irank] + ibody; // Send body iterator
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++,Bsend++) {//  Loop over bodies in cell
 	*Bsend = *B;                                            //   Copy body to send buffer
-	Bsend->IPROC = irank;                                   //   Assign destination rank
+	Bsend->IRANK = irank;                                   //   Assign destination rank
       }                                                         //  End loop over bodies in cell
     }                                                           // End if for copying data to send bodies
     ibody += C->NBODY;                                          // Increment body counter
@@ -251,7 +251,7 @@ public:
     int numSendCells = sendCellDispl[mpisize-1] + sendCellCount[mpisize-1];// Total number of send cells
     sendBodies.resize(numSendBodies);                           // Clear send buffer for bodies
     sendCells.resize(numSendCells);                             // Clear send buffer for cells
-    //#pragma omp parallel for private(bounds)
+#pragma omp parallel for private(bounds)
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks 
       if (irank != mpirank && !cells.empty()) {                 //  If not current rank and cell vector is not empty
 	int ibody = 0;                                          //   Reinitialize send body's offset

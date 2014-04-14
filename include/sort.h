@@ -105,14 +105,14 @@ public:
     return output;                                              // Return output
   }
 
-  //! Sort input accoring to iproc
-  Bodies iproc(Bodies & input) {
+  //! Sort input accoring to irank
+  Bodies irank(Bodies & input) {
     const int size = input.size();                              // Size of bodies vector
     int * key = new int [size];                                 // Allocate key array
     int * index = new int [size];                               // Allocate index array
     for (B_iter B=input.begin(); B!=input.end(); B++) {         // Loop over input bodies
       int i = B-input.begin();                                  //  Body index
-      key[i] = B->IPROC;                                        //  Copy IPROC to key array
+      key[i] = B->IRANK;                                        //  Copy IRANK to key array
       index[i] = i;                                             //  Initialize index array
     }                                                           // End loop over input bodies
     radixsort(key,index,size);                                  // Radix sort index according to key

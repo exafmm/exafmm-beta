@@ -41,13 +41,13 @@ public:
       for (d=0; d<3; d++) {                                     //  Loop over dimensions
         iX[d] = int((B->X[d] - global.Xmin[d]) / Xpartition[d]);//   Index vector of partition
       }                                                         //  End loop over dimensions
-      B->IPROC = iX[0] + Npartition[0] * (iX[1] + iX[2] * Npartition[1]);//  Set send rank
-      assert(0 <= B->IPROC && B->IPROC < mpisize);
+      B->IRANK = iX[0] + Npartition[0] * (iX[1] + iX[2] * Npartition[1]);//  Set send rank
+      assert(0 <= B->IRANK && B->IRANK < mpisize);
     }                                                           // End loop over bodies
     logger::stopTimer("Partition");                             // Stop timer
     logger::startTimer("Sort");                                 // Start timer
     Sort sort;                                                  // Instantiate sort class
-    bodies = sort.iproc(bodies);                                // Sort bodies according to IPROC
+    bodies = sort.irank(bodies);                                // Sort bodies according to IRANK
     logger::stopTimer("Sort");                                  // Stop timer
     return local;
   }
@@ -56,7 +56,7 @@ public:
   void unpartition(Bodies & bodies) {
     logger::startTimer("Sort");                                 // Start timer
     Sort sort;                                                  // Instantiate sort class
-    bodies = sort.iproc(bodies);                                // Sort bodies according to IPROC
+    bodies = sort.irank(bodies);                                // Sort bodies according to IRANK
     logger::stopTimer("Sort");                                  // Stop timer
   }
 };
