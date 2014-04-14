@@ -251,6 +251,7 @@ public:
     int numSendCells = sendCellDispl[mpisize-1] + sendCellCount[mpisize-1];// Total number of send cells
     sendBodies.resize(numSendBodies);                           // Clear send buffer for bodies
     sendCells.resize(numSendCells);                             // Clear send buffer for cells
+    //#pragma omp parallel for private(bounds)
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks 
       if (irank != mpirank && !cells.empty()) {                 //  If not current rank and cell vector is not empty
 	int ibody = 0;                                          //   Reinitialize send body's offset

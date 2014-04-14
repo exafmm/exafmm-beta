@@ -37,7 +37,7 @@ CXX	+= -I../include
 LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
 LFLAGS  += -DEXPANSION=4 # Specify expansion order
 LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
-LFLAGS	+= -DFP64 # Use double precision
+#LFLAGS	+= -DFP64 # Use double precision
 #LFLAGS	+= -DKAHAN # Use Kahan summation
 
 ### Debugging flags
