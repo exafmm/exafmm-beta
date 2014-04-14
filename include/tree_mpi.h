@@ -113,11 +113,11 @@ protected:
 
   //! Add cells to send buffer
   void addSendCell(C_iter C, uint64_t & iparent, int & icell) {
-    Cell cell(*C);                                              // Initialize send cell
-    cell.NCHILD = cell.NBODY = 0;                               // Reset counters
-    cell.IPARENT = iparent;                                     // Index of parent
-    sendCells.push_back(cell);                                  // Push to send cell vector
     icell++;                                                    // Increment cell counter
+    C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell;// Get send cell iterator
+    *Csend = *C;                                                // Copy cell to send cell
+    Csend->NCHILD = Csend->NBODY = 0;                           // Reset counters
+    Csend->IPARENT = iparent;                                   // Index of parent
     C_iter Cparent = sendCells.begin() + sendCellDispl[irank] + iparent;// Get parent iterator
     if (Cparent->NCHILD == 0) Cparent->ICHILD = icell;          // Index of parent's first child
     Cparent->NCHILD++;                                          // Increment parent's child counter
@@ -125,31 +125,40 @@ protected:
 
   //! Add bodies to send buffer
   void addSendBody(C_iter C, int & ibody, int icell) {
-    C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell;// Get send cell iterator
+    C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell; // Get send cell iterator
     Csend->NBODY = C->NBODY;                                    // Set number of bodies
     Csend->IBODY = ibody;                                       // Set body index per rank
-    for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {          // Loop over bodies in cell
-      sendBodies.push_back(*B);                                 //  Push to send body vector
-      sendBodies.back().IPROC = irank;                          //  Set current rank
+    B_iter Bsend = sendBodies.begin() + sendBodyDispl[irank] + ibody; // Get send body iterator
+    for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++,Bsend++) {  // Loop over bodies in cell
+      *Bsend = *B;                                              //  Copy body to send body
+      Bsend->IPROC = irank;                                     //  Set current rank
     }                                                           // End loop over bodies in cell
     ibody+=C->NBODY;                                            // Increment body counter
   }
 
   //! Determine which cells to send
-  void traverseLET(C_iter C, real_t cycle, int & ibody, int & icell) {
+  void traverseLET(C_iter C, real_t cycle, int & ibody, int & icell, bool dryrun) {
     int level = int(logf(mpisize-1) / M_LN2 / 3) + 1;           // Level of local root cell
     if (mpisize == 1) level = 0;                                // Account for serial case
-    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {  //Loop over child cells
-      addSendCell(CC, C->ICELL, icell);                         //  Add cells to send
+    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
+      if (dryrun) {                                             //  If it's a dry run
+	icell++;                                                //   Increment send cell counter
+      } else {                                                  //  If it's not a dry run
+	addSendCell(CC, C->ICELL, icell);                       //   Add cells to send
+      }                                                         //  End if for dryrun
       CC->ICELL = icell;                                        //  Store cell index
       if (CC->NCHILD == 0) {                                    //  If cell is leaf
-	addSendBody(CC, ibody, icell);                          //   Add bodies to send
+	if (dryrun) {                                           //   If it's a dry run
+	  ibody += CC->NBODY;                                   //    Increment send body counter
+	} else {                                                //   If it's not a dry run
+	  addSendBody(CC, ibody, icell);                        //    Add bodies to send
+	}                                                       //   End if for dry run
       } else {                                                  //  If cell is not leaf
 	bool divide = false;                                    //   Initialize logical for dividing
 	vec3 Xperiodic = 0;                                     //   Periodic coordinate offset
 	if (images == 0) {                                      //   If free boundary condition
 	  real_t R2 = getDistance(CC, Xperiodic);               //    Get distance to other domain
-	  divide |= 4 * CC->R * CC->R > R2;                     //    Divide if the cell seems too close (double the R)
+	  divide |= CC->R * CC->R > R2;                         //    Divide if the cell seems too close (double the R)
 	} else {                                                //   If periodic boundary condition
 	  for (int ix=-1; ix<=1; ix++) {                        //    Loop over x periodic direction
 	    for (int iy=-1; iy<=1; iy++) {                      //     Loop over y periodic direction
@@ -158,7 +167,7 @@ protected:
 		Xperiodic[1] = iy * cycle;                      //       Coordinate offset for y periodic direction
 		Xperiodic[2] = iz * cycle;                      //       Coordinate offset for z periodic direction
 		real_t R2 = getDistance(CC, Xperiodic);         //       Get distance to other domain
-		divide |= 4 * CC->R * CC->R > R2;               //       Divide if cell seems too close (double the R)
+		divide |= CC->R * CC->R > R2;                   //       Divide if cell seems too close (double the R)
 	      }                                                 //      End loop over z periodic direction
 	    }                                                   //     End loop over y periodic direction
 	  }                                                     //    End loop over x periodic direction
@@ -219,14 +228,17 @@ public:
     logger::startTimer("Set LET");                              // Start timer
     sendBodies.clear();                                         // Clear send buffer for bodies
     sendCells.clear();                                          // Clear send buffer for cells
-    sendCellDispl[0] = 0;                                       // Initialize displacement vector
-    for (irank=0; irank<mpisize; irank++) {                     // Loop over ranks
-      if (irank != 0) sendCellDispl[irank] = sendCellDispl[irank-1] + sendCellCount[irank-1];// Update displacement
+    sendBodyDispl[0] = 0;                                       // Initialize send body displacement vector
+    sendCellDispl[0] = 0;                                       // Initialize send cell displacement vector
+    for (irank=0; irank<mpisize; irank++) {                     // Loop over ranks 
+      if (irank != 0) sendBodyDispl[irank] = sendBodyDispl[irank-1] + sendBodyCount[irank-1];// Update body displacement
+      if (irank != 0) sendCellDispl[irank] = sendCellDispl[irank-1] + sendCellCount[irank-1];// Update cell displacement
       if (irank != mpirank && !cells.empty()) {                 //  If not current rank and cell vector is not empty
         recvCells = cells;                                      //   Use recvCells as temporary storage
         C0 = recvCells.begin();                                 //   Set cells begin iterator
         localXmin = allLocalXmin[irank];                        //   Set local Xmin for irank
         localXmax = allLocalXmax[irank];                        //   Set local Xmax for irank
+	traverseLET(C0, cycle, ibody, cell, 1);                 //   Perform dry traversal to get send counts
         Cell cell(*C0);                                         //   Send root cell
         cell.NCHILD = cell.NBODY = 0;                           //   Reset link to children and bodies
         sendCells.push_back(cell);                              //   Push it into send buffer
