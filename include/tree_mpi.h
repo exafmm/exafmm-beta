@@ -119,7 +119,7 @@ protected:
       Cell cell(*C);                                            //  Initialize send cell
       cell.NCHILD = cell.NBODY = 0;                             //  Reset counters
       cell.IPARENT = iparent;                                   //  Index of parent
-      sendCells.push_back(cell);                                //  Push to send cell vector
+      sendCells[sendCellDispl[irank]+icell] = cell;             //  Copy cell to send buffer
       C_iter Cparent = sendCells.begin() + sendCellDispl[irank] + iparent;// Get parent iterator
       if (Cparent->NCHILD == 0) Cparent->ICHILD = icell;        //  Index of parent's first child
       Cparent->NCHILD++;                                        //  Increment parent's child counter
@@ -130,12 +130,12 @@ protected:
   //! Add bodies to send buffer
   void addSendBody(C_iter C, int & ibody, int icell, bool copyData) {
     if (copyData) {                                             // If copying data to send bodies
-      C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell;// Get send cell iterator
-      Csend->NBODY = C->NBODY;                                  //  Set number of bodies
-      Csend->IBODY = ibody;                                     //  Set body index per rank
+      C_iter Csend = sendCells.begin() + sendCellDispl[irank] + icell;// Send cell iterator
+      Csend->NBODY = C->NBODY;                                  //  Number of bodies
+      Csend->IBODY = ibody;                                     //  Body index per rank
       for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {        //  Loop over bodies in cell
 	sendBodies.push_back(*B);                               //   Push to send body vector
-	sendBodies.back().IPROC = irank;                        //   Set current rank
+	sendBodies.back().IPROC = irank;                        //   Assign destination rank
       }                                                         //  End loop over bodies in cell
     }                                                           // End if for copying data to send bodies
     ibody += C->NBODY;                                          // Increment body counter
@@ -227,8 +227,6 @@ public:
   void setLET(Cells & cells, real_t cycle) {
     logger::startTimer("Set LET");                              // Start timer
     C0 = cells.begin();                                         // Set cells begin iterator
-    sendBodies.clear();                                         // Clear send buffer for bodies
-    sendCells.clear();                                          // Clear send buffer for cells
     sendBodyDispl[0] = 0;                                       // Initialize body displacement vector
     sendCellDispl[0] = 0;                                       // Initialize cell displacement vector 
     for (irank=0; irank<mpisize; irank++) {                     // Loop over ranks
@@ -237,34 +235,32 @@ public:
       sendBodyCount[irank] = 0;                                 //  Initialize send body count for current rank
       sendCellCount[irank] = 0;                                 //  Initialize send cell count for current rank
       if (irank != mpirank && !cells.empty()) {                 //  If not current rank and cell vector is not empty
-	bool copyData = false;                                  //   For dry run without copying data
 	int ibody = 0;                                          //   Initialize send body's offset
 	int icell = 1;                                          //   Initialize send cell's offset
-	int iparent = 0;                                        //   Initialzie send cell's parent's offset
         localXmin = allLocalXmin[irank];                        //   Set local Xmin for irank
         localXmax = allLocalXmax[irank];                        //   Set local Xmax for irank
-	traverseLET(C0, cycle, ibody, icell, iparent, copyData);//   Traverse tree to get LET
+	traverseLET(C0, cycle, ibody, icell, 0, false);         //   Traverse tree to get LET
 	sendCellCount[irank] = icell;                           //   Send count for current rank
       }                                                         //  Endif for current rank
     }                                                           // End loop over ranks
+    int numSendBodies = sendBodyDispl[mpisize-1] + sendBodyCount[mpisize-1];// Total number of send bodies
+    int numSendCells = sendCellDispl[mpisize-1] + sendCellCount[mpisize-1];// Total number of send cells
+    sendBodies.clear(); sendBodies.reserve(numSendBodies);      // Clear send buffer for bodies
+    sendCells.clear(); sendCells.resize(numSendCells);          // Clear send buffer for cells
     for (irank=0; irank<mpisize; irank++) {                     // Loop over ranks 
-      if (irank != 0) sendBodyDispl[irank] = sendBodyDispl[irank-1] + sendBodyCount[irank-1];// Update body displacement
-      if (irank != 0) sendCellDispl[irank] = sendCellDispl[irank-1] + sendCellCount[irank-1];// Update cell displacement
       if (irank != mpirank && !cells.empty()) {                 //  If not current rank and cell vector is not empty
-	bool copyData = true;                                   //   For copying data to send buffers
 	int ibody = 0;                                          //   Reinitialize send body's offset
 	int icell = 0;                                          //   Reinitialize send cell's offset
-	int iparent = 0;                                        //   Initialzie send cell's parent's offset
         localXmin = allLocalXmin[irank];                        //   Set local Xmin for irank
         localXmax = allLocalXmax[irank];                        //   Set local Xmax for irank
         Cell cell(*C0);                                         //   Send root cell
         cell.NCHILD = cell.NBODY = 0;                           //   Reset link to children and bodies
-        sendCells.push_back(cell);                              //   Push it into send buffer
+	sendCells[sendCellDispl[irank]] = cell;                 //   Copy cell to send buffer
 	icell++;                                                //   Increment send cell counter
 	if (C0->NCHILD == 0) {                                  //   If root cell is leaf
-	  addSendBody(C0, ibody, icell-1, copyData);            //    Add bodies to send
+	  addSendBody(C0, ibody, icell-1, true);                //    Add bodies to send
 	}                                                       //   End if for root cell leaf
-        traverseLET(C0, cycle, ibody, icell, iparent, copyData);//   Traverse tree to get LET
+        traverseLET(C0, cycle, ibody, icell, 0, true);          //   Traverse tree to get LET
       }                                                         //  Endif for current rank
     }                                                           // End loop over ranks
     logger::stopTimer("Set LET");                               // Stop timer

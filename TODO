@@ -1,6 +1,5 @@
 -- CPU --
-- concatenate send vectors
-- setLET dryrun
+- Remove push_back body
 - setLET multithread
 - Comm overlap
 - Partitioning with ORB
