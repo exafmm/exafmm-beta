@@ -1,9 +1,9 @@
 -- CPU --
-1. Merge LET before dualTreeTraversal
-2. Fix parallel periodic potential
-3. setLET multithread
-4. traverseLET don't double R
-5. Partitioning with Morton
+0. Comm overlap
+1. setLET multithread
+2. traverseLET don't double R
+3. Partitioning with ORB
+OpenMP with atomics
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance
 Kahan + fixed precision
