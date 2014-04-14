@@ -117,7 +117,7 @@ int main(int argc, char ** argv) {
   data.initTarget(bodies);
   logger::startTimer("Total Direct");
   for (int i=0; i<baseMPI.mpisize; i++) {
-    //if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
+    if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
     treeMPI.shiftBodies(jbodies);
     traversal.direct(bodies, jbodies, cycle);
   }

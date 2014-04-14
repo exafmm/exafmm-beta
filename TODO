@@ -1,7 +1,7 @@
 -- CPU --
-0. setLET don't use recvCells as buffer
+0. Comm overlap
 1. setLET multithread
-2. Comm overlap
+2. traverseLET don't double R
 3. Partitioning with ORB
 OpenMP with atomics
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
@@ -18,7 +18,6 @@ Ewald, VdW
 Zero softening
 
 -- Software infrastructure --
-Header dependency in Makefile for all compilers
 Autotools
 CMake (update)
 Regression
