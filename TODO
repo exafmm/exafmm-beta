@@ -1,8 +1,11 @@
 -- CPU --
-0. Comm overlap
-1. setLET multithread
-2. traverseLET don't double R
-3. Partitioning with ORB
+- calculate sendBodyDispl in setLET
+- setLET don't use ICELL
+- setLET don't buffer in recvCells
+- setLET dryrun
+- setLET multithread
+- Comm overlap
+- Partitioning with ORB
 OpenMP with atomics
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance
