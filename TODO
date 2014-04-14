@@ -1,6 +1,4 @@
 -- CPU --
-- IPROC -> IRANK
-- Comm overlap
 - Partitioning with ORB
 OpenMP with atomics
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields

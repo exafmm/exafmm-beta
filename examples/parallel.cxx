@@ -76,14 +76,23 @@ int main(int argc, char ** argv) {
 #else
   treeMPI.setLET(cells, cycle);
 #endif
-  treeMPI.commBodies();
-  treeMPI.commCells();
+#pragma omp parallel sections
+  {
+#pragma omp section
+    {
+      treeMPI.commBodies();
+      treeMPI.commCells();
+    }
+#pragma omp section
+    {
 #if IneJ
   traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   jbodies = bodies;
 #endif
+    }
+  }
   if (args.graft) {
     treeMPI.linkLET();
     gbodies = treeMPI.root2body();
