@@ -123,13 +123,13 @@ private:
     int maxBucket = 1000;                                       // Maximum number of buckets
     int numBucket;                                              // Number of buckets
     int lOffset = 0;                                            // Local offset of region being considered
-    int * rcnt = new int [mpisizeSplit];                        // MPI recv count
-    Ints send(maxBucket);                                       // MPI send buffer for data
-    Ints recv(maxBucket);                                       // MPI recv buffer for data
     int gOffset = 0;                                            // Global offset of region being considered
+    int * rcnt = new int [mpisizeSplit];                        // MPI recv count
     int * isend = new int [maxBucket];                          // MPI send buffer for index
     int * irecv = new int [maxBucket];                          // MPI recv buffer for index
     int * iredu = new int [maxBucket];                          // Local scan of index buffer
+    Ints send(maxBucket);                                       // MPI send buffer for data
+    Ints recv(maxBucket);                                       // MPI recv buffer for data
     numBucket = getBucket(data,numData,lOffset,send,recv,MPI_COMM);// Get global bucket data
 
     while (numBucket > 1) {                                     // While there are multipole candidates
@@ -141,7 +141,7 @@ private:
       }                                                         //  End loop over data
       MPI_Reduce(isend,irecv,numBucket,MPI_INT,                 //  Reduce bucket counter
                  MPI_SUM,0,MPI_COMM);
-      if (mpirankSplit == 0) {                                      //  Only rank 0 operates on reduced data
+      if (mpirankSplit == 0) {                                  //  Only rank 0 operates on reduced data
         iredu[0] = 0;                                           //   Initialize global scan index
         for (int i=0; i<numBucket-1; i++) {                     //   Loop over buckets
           iredu[i+1] = iredu[i] + irecv[i];                     //    Increment global scan index
@@ -230,7 +230,7 @@ private:
     buffer.resize(bodies.size());                               // Resize sort buffer
     logger::stopTimer("Bi Alltoall");                           // Stop timer
     Sort sort;                                                  // Instantiate sort class
-    sort.irank(bodies);                                         // Sort bodies in ascending order
+    bodies = sort.irank(bodies);                                // Sort bodies in ascending order
   }
 
 //! Scattering from leftover processes
@@ -271,7 +271,7 @@ private:
     bodies = buffer;                                            // Copy recv buffer to bodies
     if (rankKey[l+1][1] != numScatter) {                        // If it's one the receiving procs
       Sort sort;                                                //  Instantiate sort class
-      sort.irank(bodies);                                       //  Sort bodies in ascending order
+      bodies = sort.irank(bodies);                              //  Sort bodies in ascending order
     }                                                           // End if for receiving procs
     delete[] scnt;                                              // Delete send count
     delete[] sdsp;                                              // Delete send displacement
@@ -317,7 +317,7 @@ private:
     delete[] rdsp;                                              // Delete send count
     if (rankKey[l+1][0] == 0) {                                 // If this is the leftover proc
       Sort sort;                                                //  Instantiate sort class
-      sort.irank(bodies);                                       //  Sort bodies in ascending order
+      bodies = sort.irank(bodies);                              //  Sort bodies in ascending order
     }                                                           // End if for leftover proc
     logger::stopTimer("Bi Gather");                             // Stop timer
   }
@@ -345,7 +345,7 @@ public:
   }
 
 //! Partitioning by recursive bisection
-  void bisection(Bodies & bodies, Bounds globalBounds) {
+  Bounds bisection(Bodies & bodies, Bounds global) {
     logger::startTimer("Bin bodies");                           // Start timer
     int newSize;                                                // New size of recv buffer
     int numLocal = bodies.size();                               // Local data size
@@ -353,13 +353,12 @@ public:
     MPI_Allreduce(&numLocal,&numGlobal,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);// Reduce Global data size
     int nthGlobal = (numGlobal * (rankCount[0][0] / 2)) / rankCount[0][0];// Split at nth global element
     numBins = 1 << getMaxLevel(bodies);                         // Get number of cells in 1D
-    bounds[0].Xmin = globalBounds.Xmin;                         // Copy global bounds Xmin
-    bounds[0].Xmax = globalBounds.Xmax;                         // Copy global bounds Xmax
+    bounds[0].Xmin = global.Xmin;                               // Copy global bounds Xmin
+    bounds[0].Xmax = global.Xmax;                               // Copy global bounds Xmax
     binBodies(bodies, bounds[0], 2);                            // Bin bodies into leaf level cells
-    buffer.resize(numLocal);                                    // Resize sort buffer
     logger::stopTimer("Bin bodies");                            // Stop timer
     Sort sort;                                                  // Instantiate sort class
-    sort.irank(bodies);                                         // Sort bodies in ascending order
+    bodies = sort.irank(bodies);                                // Sort bodies in ascending order
     logger::startTimer("Split bodies");                         // Start timer
     int iSplit = nth_element(bodies,nthGlobal);                 // Get cell index of nth global element
     int nthLocal = splitBodies(bodies,iSplit);                  // Split bodies based on iSplit
@@ -387,14 +386,14 @@ public:
       MPI_Allreduce(&numLocal,&numGlobal,1,MPI_INT,MPI_SUM,MPI_COMM_SPLIT[l+1][0]);// Reduce global data size
       nthGlobal = (numGlobal * (rankCount[l+1][0] / 2)) / rankCount[l+1][0];//  Split at nth global element
       binBodies(bodies, bounds[0], 2-(l+1)%3);                  //  Bin bodies into leaf level cells
-      buffer.resize(numLocal);                                  //  Resize sort buffer
       logger::stopTimer("Bin bodies");                          //  Stop timer
-      sort.irank(bodies);                                       //  Sort bodies in ascending order
+      bodies = sort.irank(bodies);                              //  Sort bodies in ascending order
       logger::startTimer("Split bodies");                       //  Start timer
       iSplit = nth_element(bodies,nthGlobal,MPI_COMM_SPLIT[l+1][0]);  //  Get cell index of nth global element
       nthLocal = splitBodies(bodies,iSplit);                    //  Split bodies based on iSplit
       logger::stopTimer("Split bodies");                        //  Stop timer
     }                                                           // End loop over levels of N-D hypercube communication
+    return bounds[numLevels-1];                                 // Return local bounds
   }
 
   //! Partition bodies with geometric octsection

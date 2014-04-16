@@ -54,11 +54,12 @@ int main(int argc, char ** argv) {
   localBounds = boundBox.getBounds(jbodies, localBounds);
 #endif
   globalBounds = baseMPI.allreduceBounds(localBounds);
-  localBounds = partition.octsection(bodies, globalBounds);
-  bodies = treeMPI.commBodies(bodies);
+  localBounds = partition.bisection(bodies, globalBounds);
+  localBounds = boundBox.getBounds(bodies);
+  //bodies = treeMPI.commBodies(bodies);
 #if IneJ
-  partition.octsection(jbodies,globalBounds);
-  jbodies = treeMPI.commBodies(jbodies);
+  partition.bisection(jbodies, globalBounds);
+  //jbodies = treeMPI.commBodies(jbodies);
 #endif
   localBounds = boundBox.getBounds(bodies);
   cells = localTree.buildTree(bodies, localBounds);
