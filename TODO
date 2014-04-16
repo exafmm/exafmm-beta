@@ -1,11 +1,13 @@
 -- CPU --
 - Partitioning with ORB
+- Weighted ORB
 OpenMP with atomics
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance
 Kahan + fixed precision
 Solid harmonics kernel
 Morton -> Hilbert
+splitRange defined in both dataset.h and partition.h
 
 -- GPU integration --
 Unify dataset

@@ -86,10 +86,10 @@ int main(int argc, char ** argv) {
 #pragma omp section
     {
 #if IneJ
-  traversal.dualTreeTraversal(cells, jcells, cycle);
+      traversal.dualTreeTraversal(cells, jcells, cycle);
 #else
-  traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-  jbodies = bodies;
+      traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
+      jbodies = bodies;
 #endif
     }
   }
