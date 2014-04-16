@@ -75,18 +75,18 @@ private:
     }                                                           // End if for sides
   }
 
-//! Get global bucket data for parallel nth_element
-  int getBucket(Bodies & data, int numData, int lOffset, Ints & send, Ints & recv, MPI_Comm MPI_COMM) {
+//! Get global bucket bodies for parallel nth_element
+  int getBucket(Bodies & bodies, int numBodies, int lOffset, Ints & send, Ints & recv, MPI_Comm MPI_COMM) {
     int maxBucket = send.size();                                // Maximum number of buckets
     int numBucket;                                              // Number of buckets
-    int numSample = std::min(maxBucket/mpisizeSplit, numData);  // Number of local samples
+    int numSample = std::min(maxBucket/mpisizeSplit, numBodies);// Number of local samples
     int * recvCount = new int [mpisizeSplit];                   // MPI recv count
     int * recvDispl = new int [mpisizeSplit];                   // MPI recv displacement
     for (int i=0; i<numSample; i++) {                           // Loop over local samples
-      int stride = numData / numSample;                         //  Sampling stride
-      send[i] = data[lOffset+i*stride].IRANK;                   //  Put sampled data in send buffer
+      int stride = numBodies / numSample;                       //  Sampling stride
+      send[i] = bodies[lOffset+i*stride].IRANK;                 //  Put sampled bodies in send buffer
     }                                                           // End loop over samples
-    MPI_Gather(&numSample, 1, MPI_INT, recvCount, 1, MPI_INT, 0, MPI_COMM); // Gather size of sample data to rank 0
+    MPI_Gather(&numSample, 1, MPI_INT, recvCount, 1, MPI_INT, 0, MPI_COMM); // Gather size of sample bodies to rank 0
     if (mpirankSplit == 0) {                                    // Only rank 0 operates on gathered info
       numBucket = 0;                                            //  Initialize number of buckets
       for (int irank=0; irank<mpisizeSplit; irank++) {          //  Loop over processes
@@ -95,28 +95,28 @@ private:
       }                                                         //  End loop over processes
       recv.resize(numBucket);                                   //  Resize recv so that end() is valid
     }                                                           // End if for rank 0
-    MPI_Gatherv(&send[0], numSample, MPI_INT,                   // Gather sample data to rank 0
+    MPI_Gatherv(&send[0], numSample, MPI_INT,                   // Gather sample bodies to rank 0
                 &recv[0], recvCount, recvDispl, MPI_INT, 0, MPI_COMM);
     if (mpirankSplit == 0) {                                    // Only rank 0 operates on gathered info
-      std::sort(recv.begin(), recv.end());                      //  Sort the bucket data
-      numBucket = std::unique(recv.begin(), recv.end())-recv.begin();// Remove duplicate bucket data
+      std::sort(recv.begin(), recv.end());                      //  Sort the bucket bodies
+      numBucket = std::unique(recv.begin(), recv.end())-recv.begin();// Remove duplicate bucket bodies
       recv.resize(numBucket);                                   //  Resize recv again
     }                                                           // End if for rank 0
     MPI_Bcast(&numBucket, 1, MPI_INT, 0, MPI_COMM);             // Broadcast number of buckets
-    MPI_Bcast(&recv[0], numBucket, MPI_INT, 0, MPI_COMM);       // Broadcast bucket data
+    MPI_Bcast(&recv[0], numBucket, MPI_INT, 0, MPI_COMM);       // Broadcast bucket bodies
     delete[] recvCount;                                         // Delete recv count
     delete[] recvDispl;                                         // Delete recv displacement
     return numBucket;                                           // Return number of buckets
   }
 
 //! Parallel global nth_element on distributed memory
-  int nth_element(Bodies & data, int n, MPI_Comm MPI_COMM=0) {
+  int nth_element(Bodies & bodies, int n, MPI_Comm MPI_COMM=0) {
     if( MPI_COMM == 0 ) {                                       // If MPI_COMM is not specified
       MPI_Comm_split(MPI_COMM_WORLD, 0, mpirank, &MPI_COMM);    //  Create an artificial MPI_COMM
     }
     MPI_Comm_size(MPI_COMM, &mpisizeSplit);                     // Get number of MPI processes for split comm
     MPI_Comm_rank(MPI_COMM, &mpirankSplit);                     // Get index of current MPI process for split comm
-    int numData = data.size();                                  // Total size of data to perform nth_element
+    int numBodies = bodies.size();                              // Total size of bodies to perform nth_element
     int maxBucket = 1000;                                       // Maximum number of buckets
     int numBucket;                                              // Number of buckets
     int lOffset = 0;                                            // Local offset of region being considered
@@ -125,19 +125,19 @@ private:
     int * isend = new int [maxBucket];                          // MPI send buffer for index
     int * irecv = new int [maxBucket];                          // MPI recv buffer for index
     int * iredu = new int [maxBucket];                          // Local scan of index buffer
-    Ints send(maxBucket);                                       // MPI send buffer for data
-    Ints recv(maxBucket);                                       // MPI recv buffer for data
-    numBucket = getBucket(data, numData, lOffset, send, recv, MPI_COMM);// Get global bucket data
+    Ints send(maxBucket);                                       // MPI send buffer for bodies
+    Ints recv(maxBucket);                                       // MPI recv buffer for bodies
+    numBucket = getBucket(bodies, numBodies, lOffset, send, recv, MPI_COMM);// Get global bucket bodies
 
     while (numBucket > 1) {                                     // While there are multipole candidates
       int ic=0, nth=0;                                          //  Initialize counters
       for (int i=0; i<maxBucket; i++) isend[i] = 0;             //  Initialize bucket counter
-      for (int i=0; i<numData; i++) {                           //  Loop over range of data
-        while (int(data[lOffset + i].IRANK) > recv[ic] && ic < numBucket-1) ic++;// Set counter to current bucket
+      for (int i=0; i<numBodies; i++) {                         //  Loop over range of bodies
+        while (int(bodies[lOffset + i].IRANK) > recv[ic] && ic < numBucket-1) ic++;// Set counter to current bucket
         isend[ic]++;                                            //   Increment bucket counter
-      }                                                         //  End loop over data
+      }                                                         //  End loop over bodies
       MPI_Reduce(isend, irecv, numBucket, MPI_INT, MPI_SUM, 0, MPI_COMM); // Reduce bucket counter
-      if (mpirankSplit == 0) {                                  //  Only rank 0 operates on reduced data
+      if (mpirankSplit == 0) {                                  //  Only rank 0 operates on reduced bodies
         iredu[0] = 0;                                           //   Initialize global scan index
         for (int i=0; i<numBucket-1; i++) {                     //   Loop over buckets
           iredu[i+1] = iredu[i] + irecv[i];                     //    Increment global scan index
@@ -155,12 +155,12 @@ private:
         iredu[i+1] = iredu[i] + isend[i];                       //   Increment local scan index
       }                                                         //  End loop over buckets
       if (nth == numBucket-1) {                                 //  If nth is last bucket
-        numData = numData-iredu[nth];                           //   Region of interest is that bucket
+        numBodies = numBodies-iredu[nth];                       //   Region of interest is that bucket
       } else {                                                  //  If nth is not the last bucket
-        numData = iredu[nth+1]-iredu[nth];                      //   Region of interest is that bucket
+        numBodies = iredu[nth+1]-iredu[nth];                    //   Region of interest is that bucket
       }                                                         //  End if for last bucket
       lOffset += iredu[nth];                                    //  Increment local offset to that bucket
-      numBucket = getBucket(data, numData, lOffset, send, recv, MPI_COMM);// Get global bucket data
+      numBucket = getBucket(bodies, numBodies, lOffset, send, recv, MPI_COMM);// Get global bucket bodies
     }                                                           // End while loop
     delete[] recvCount;                                         // Delete recv count
     delete[] isend;                                             // Delete send buffer for index
@@ -247,8 +247,8 @@ private:
         sendDispl[i+1] = sendDispl[i] + sendCount[i];           //  Set send displacement based on send count
       }                                                         // End loop over processes to send to
       sendCount[numScatter] = 0;                                // Send count to self should be 0
-      oldSize = 0;                                              // Reset oldSize to account for sent data
-      newSize -= sendDispl[numScatter];                         // Set newSize to account for sent data
+      oldSize = 0;                                              // Reset oldSize to account for sent bodies
+      newSize -= sendDispl[numScatter];                         // Set newSize to account for sent bodies
       buffer.erase(buffer.begin(), buffer.begin()+sendDispl[numScatter]);// Erase from recv buffer the part that was sent
     }                                                           // End if for leftover proc
     MPI_Scatter(sendCount,  1, MPI_INT,                         // Scatter the send count to get recv count
@@ -344,9 +344,9 @@ public:
   Bounds bisection(Bodies & bodies, Bounds global) {
     logger::startTimer("Partition");                            // Start timer
     int newSize;                                                // New size of recv buffer
-    int numLocal = bodies.size();                               // Local data size
-    int numGlobal;                                              // Global data size
-    MPI_Allreduce(&numLocal, &numGlobal, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Reduce Global data size
+    int numLocal = bodies.size();                               // Local bodies size
+    int numGlobal;                                              // Global bodies size
+    MPI_Allreduce(&numLocal, &numGlobal, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Reduce Global bodies size
     int nthGlobal = (numGlobal * (rankCount[0][0] / 2)) / rankCount[0][0];// Split at nth global element
     numBins = 1 << getMaxLevel(bodies);                         // Get number of cells in 1D
     bounds[0].Xmin = global.Xmin;                               // Copy global bounds Xmin
@@ -363,8 +363,8 @@ public:
         bisectionScatter(bodies, nthLocal, newSize, l);         //  Communicate bodies by scattering from leftover proc
       if ((rankCount[l][0] & 1) == 1 && rankCount[l][0] != 1 && rankCount[l+1][0] >= rankCount[l+1][1])// If gather is necessary
         bisectionGather(bodies, nthLocal, numLocal, newSize, l);//  Communicate bodies by gathering to leftover proc
-      numLocal = newSize;                                       //  Update local data size
-      MPI_Allreduce(&numLocal, &numGlobal, 1, MPI_INT, MPI_SUM, MPI_COMM_SPLIT[l+1][0]);// Reduce global data size
+      numLocal = newSize;                                       //  Update local bodies size
+      MPI_Allreduce(&numLocal, &numGlobal, 1, MPI_INT, MPI_SUM, MPI_COMM_SPLIT[l+1][0]);// Reduce global bodies size
       nthGlobal = (numGlobal * (rankCount[l+1][0] / 2)) / rankCount[l+1][0];//  Split at nth global element
       binBodies(bodies, bounds[0], 2-(l+1)%3);                  //  Bin bodies into leaf level cells
       bodies = sort.irank(bodies);                              //  Sort bodies in ascending order
