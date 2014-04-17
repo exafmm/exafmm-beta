@@ -1,5 +1,6 @@
 #ifndef vec_h
 #define vec_h
+#include <cassert>
 #include <ostream>
 #define NEWTON 1
 //! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics

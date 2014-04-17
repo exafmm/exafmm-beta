@@ -198,8 +198,8 @@ public:
   }
   //! Destructor
   ~TreeMPI() {
-    delete[] allBoundsXmin;                                      // Deallocate array for minimum of local domains
-    delete[] allBoundsXmax;                                      // Deallocate array for maximum of local domains
+    delete[] allBoundsXmin;                                     // Deallocate array for minimum of local domains
+    delete[] allBoundsXmax;                                     // Deallocate array for maximum of local domains
     delete[] sendBodyCount;                                     // Deallocate send count
     delete[] sendBodyDispl;                                     // Deallocate send displacement
     delete[] recvBodyCount;                                     // Deallocate receive count
