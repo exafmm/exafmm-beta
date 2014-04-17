@@ -14,7 +14,7 @@ private:
   int * rankCount;                                              //!< Size of MPI rank group
   int * rankColor;                                              //!< Color of MPI rank group
   int * rankKey;                                                //!< Key of MPI rank group
-  int * rankMap;                                                //!< Map to MPI rank group
+  int * rankMap;                                                //!< Map partition to MPI rank group
   int * sendDispl;                                              //!< Displacement of bodies to send per rank
   int * sendCount;                                              //!< Count of bodies to send per rank
   int * scanHist;                                               //!< Scan of histogram
@@ -32,7 +32,7 @@ public:
     rankCount  = new int [mpisize];                             // Allocate size of MPI rank group
     rankColor  = new int [mpisize];                             // Allocate color of MPI rank group
     rankKey    = new int [mpisize];                             // Allocate key of MPI rank group
-    rankMap    = new int [mpisize];                             // Allocate map to MPI rank group
+    rankMap    = new int [mpisize];                             // Allocate map for partition to MPI rank group
     sendDispl  = new int [mpisize];                             // Allocate displacement of bodies to send per rank
     sendCount  = new int [mpisize];                             // Allocate count of bodies to send per rank
     scanHist   = new int [numBins];                             // Allocate scan of histogram
@@ -53,7 +53,7 @@ public:
     delete[] rankCount;                                         // Deallocate size of MPI rank group
     delete[] rankColor;                                         // Deallocate color of MPI rank group
     delete[] rankKey;                                           // Deallocate key of MPI rank group
-    delete[] rankMap;                                           // Deallocate ,ap to MPI rank group
+    delete[] rankMap;                                           // Deallocate map for partition to MPI rank group
     delete[] sendDispl;                                         // Deallocate displacement of bodies to send per rank
     delete[] sendCount;                                         // Deallocate count of bodies to send per rank
     delete[] scanHist;                                          // Deallocate scan of histogram
@@ -62,7 +62,7 @@ public:
     delete[] rankBounds;                                        // Deallocate bounds of each rank
   }
 
-  //! Partitioning by recursive bisection
+  //! Partitioning by orthogonal recursive bisection
   Bounds bisection(Bodies & bodies, Bounds globalBounds) {
     logger::startTimer("Partition");                            // Start timer
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over MPI ranks
@@ -76,112 +76,112 @@ public:
       rankBounds[irank] = globalBounds;                         //  Initialize bounds of each rank
     }                                                           // End loop over MPI ranks
     buffer = bodies;                                            // Resize sort buffer
-    for (int level=0; level<numLevels; level++) {
-      int numPartitions = rankColor[mpisize-1] + 1;
-      for (int ipart=0; ipart<numPartitions; ipart++) {
-	int irank = rankMap[ipart];
-	Bounds bounds = rankBounds[irank];
-	int direction = 0;
-	real_t length = 0;
-	for (int d=0; d<3; d++) {
-	  if (length < (bounds.Xmax[d] - bounds.Xmin[d])) {
-	    direction = d;
-	    length = (bounds.Xmax[d] - bounds.Xmin[d]);
-	  }
-	}
-	int rankSplit = rankCount[irank] / 2;
-	int oldRankCount = rankCount[irank];
-	int numLocalBodies = sendCount[irank];
-	int bodyBegin = 0;
-	int bodyEnd = numLocalBodies;
-	int numGlobalBodies;
-	MPI_Allreduce(&numLocalBodies, &numGlobalBodies, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-	int globalSplit = numGlobalBodies * rankSplit / oldRankCount;
-	int globalOffset = 0;
-	real_t xmax = bounds.Xmax[direction];
-	real_t xmin = bounds.Xmin[direction];
-	real_t dx = (xmax - xmin) / numBins;
-	B_iter B = bodies.begin() + sendDispl[irank];
-	if (globalSplit > 0) {
-	  for (int binRefine=0; binRefine<3; binRefine++) {
-	    for (int ibin=0; ibin<numBins; ibin++) {
-	      localHist[ibin] = 0;
-	    }
-	    for (int b=bodyBegin; b<bodyEnd; b++) {
-	      real_t x = B[b].X[direction];
-	      int ibin = (x - xmin + EPS) / (dx + EPS);
-	      localHist[ibin]++;
-	    }
-	    scanHist[0] = localHist[0];
-	    for (int ibin=1; ibin<numBins; ibin++) {
-	      scanHist[ibin] = scanHist[ibin-1] + localHist[ibin];
-	    }
-	    for (int b=bodyEnd-1; b>=bodyBegin; b--) {
-	      real_t x = B[b].X[direction];
-	      int ibin = (x - xmin + EPS) / (dx + EPS);
-	      scanHist[ibin]--;
-	      int bnew = scanHist[ibin] + bodyBegin;
-	      buffer[bnew] = B[b];
-	    }
-	    for (int b=bodyBegin; b<bodyEnd; b++) {
-	      B[b] = buffer[b];
-	    }
-	    MPI_Allreduce(localHist, globalHist, numBins, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-	    int splitBin = 0;
-	    while (globalOffset < globalSplit) {
-	      globalOffset += globalHist[splitBin];
-	      splitBin++;
-	    }
-	    splitBin--;
-	    globalOffset -= globalHist[splitBin];
-	    xmax = xmin + (splitBin + 1) * dx;
-	    xmin = xmin + splitBin * dx;
-	    dx = (xmax - xmin) / numBins;
-	    scanHist[0] = 0;
-	    for (int ibin=1; ibin<numBins; ibin++) {
-	      scanHist[ibin] = scanHist[ibin-1] + localHist[ibin-1];
-	    }
-	    bodyBegin += scanHist[splitBin];
-	    bodyEnd = bodyBegin + localHist[splitBin];
-	  }
-	}
-	int rankBegin = rankDispl[irank];
-	int rankEnd = rankBegin + rankCount[irank];
-	for (irank=rankBegin; irank<rankEnd; irank++) {
-	  rankSplit = rankCount[irank] / 2;
-	  if (irank - rankDispl[irank] < rankSplit) {
-	    rankCount[irank] = rankSplit;
-	    rankColor[irank] = rankColor[irank] * 2;
-	    rankBounds[irank].Xmax[direction] = xmin;
-	    sendCount[irank] = bodyBegin;
-	  } else {
-	    rankDispl[irank] += rankSplit;
-	    rankCount[irank] -= rankSplit;
-	    rankColor[irank] = rankColor[irank] * 2 + 1;
-	    rankBounds[irank].Xmin[direction] = xmin;
-	    sendDispl[irank] += bodyBegin;
-	    sendCount[irank] -= bodyBegin;
-	  }
-	  if (level == numLevels-1) rankColor[irank] = rankDispl[irank];
-	  rankKey[irank] = irank - rankDispl[irank];
-	}
-      }
-      int ipart = 0;
-      for (int irank=0; irank<mpisize; irank++) {
-	if (rankKey[irank] == 0) {
-	  rankMap[ipart] = rankDispl[irank];
-	  ipart++;
-	}
-      }
-    }
-    B_iter B = bodies.begin();
-    for (int irank=0; irank<mpisize; irank++) {
-      int bodyBegin = sendDispl[irank];
-      int bodyEnd = bodyBegin + sendCount[irank];
-      for (int b=bodyBegin; b<bodyEnd; b++, B++) {
-	B->IRANK = irank;
-      }
-    }
+    for (int level=0; level<numLevels; level++) {               // Loop over levels of MPI rank binary tree
+      int numPartitions = rankColor[mpisize-1] + 1;             //  Number of partitions in current level
+      for (int ipart=0; ipart<numPartitions; ipart++) {         //  Loop over partitions
+	int irank = rankMap[ipart];                             //   Map partition to MPI rank
+	Bounds bounds = rankBounds[irank];                      //   Bounds of current rank
+	int direction = 0;                                      //   Initialize direction of partitioning
+	real_t length = 0;                                      //   Initialize length of partition
+	for (int d=0; d<3; d++) {                               //   Loop over dimensions
+	  if (length < (bounds.Xmax[d] - bounds.Xmin[d])) {     //    If present dimension is longer
+	    direction = d;                                      //     Update direction to current dimension
+	    length = (bounds.Xmax[d] - bounds.Xmin[d]);         //     Update length to current dimension
+	  }                                                     //    End if for longer dimension
+	}                                                       //   End loop over dimensions
+	int rankSplit = rankCount[irank] / 2;                   //   MPI rank splitter
+	int oldRankCount = rankCount[irank];                    //   Old MPI rank count
+	int numLocalBodies = sendCount[irank];                  //   Local body count in current partition
+	int bodyBegin = 0;                                      //   Initialize body begin index
+	int bodyEnd = numLocalBodies;                           //   Initialize body end index
+	int numGlobalBodies;                                    //   Declare global body count in current partition
+	MPI_Allreduce(&numLocalBodies, &numGlobalBodies, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Reduce body count
+	int globalSplit = numGlobalBodies * rankSplit / oldRankCount;// Global body splitter index
+	int globalOffset = 0;                                   //   Initialize global body offset
+	real_t xmax = bounds.Xmax[direction];                   //   Upper bound of partition
+	real_t xmin = bounds.Xmin[direction];                   //   Lower bound of partition
+	real_t dx = (xmax - xmin) / numBins;                    //   Length of bins
+	B_iter B = bodies.begin() + sendDispl[irank];           //   Body begin iterator of current partition
+	if (globalSplit > 0) {                                  //   If the partition requires splitting
+	  for (int binRefine=0; binRefine<3; binRefine++) {     //    Loop for bin refinement
+	    for (int ibin=0; ibin<numBins; ibin++) {            //     Loop over bins
+	      localHist[ibin] = 0;                              //      Initialize local histogram
+	    }                                                   //     End loop over bins
+	    for (int b=bodyBegin; b<bodyEnd; b++) {             //     Loop over bodies
+	      real_t x = B[b].X[direction];                     //      Coordinate of body in current direction
+	      int ibin = (x - xmin + EPS) / (dx + EPS);         //      Assign bin index to body
+	      localHist[ibin]++;                                //      Increment bin counter
+	    }                                                   //     End loop over bodies
+	    scanHist[0] = localHist[0];                         //     Initialize scan array
+	    for (int ibin=1; ibin<numBins; ibin++) {            //     Loop over bins
+	      scanHist[ibin] = scanHist[ibin-1] + localHist[ibin]; //   Inclusive scan for local histogram
+	    }                                                   //     End loop over bins
+	    for (int b=bodyEnd-1; b>=bodyBegin; b--) {          //     Loop over bodies backwards
+	      real_t x = B[b].X[direction];                     //      Coordinate of body in current direction
+	      int ibin = (x - xmin + EPS) / (dx + EPS);         //      Assign bin index to body
+	      scanHist[ibin]--;                                 //      Decrement scanned histogram
+	      int bnew = scanHist[ibin] + bodyBegin;            //      New index of sorted body
+	      buffer[bnew] = B[b];                              //      Copy body to sort buffer
+	    }                                                   //     End loop over bodies backwards
+	    for (int b=bodyBegin; b<bodyEnd; b++) {             //     Loop over bodies
+	      B[b] = buffer[b];                                 //      Copy back bodies from buffer
+	    }                                                   //     End loop over bodies
+	    MPI_Allreduce(localHist, globalHist, numBins, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Reduce histogram
+	    int splitBin = 0;                                   //     Initialize bin splitter
+	    while (globalOffset < globalSplit) {                //     While scan of global histogram is less than splitter
+	      globalOffset += globalHist[splitBin];             //      Scan global histogram
+	      splitBin++;                                       //      Increment bin count
+	    }                                                   //     End while for global histogram scan
+	    splitBin--;                                         //     Move back one bin
+	    globalOffset -= globalHist[splitBin];               //     Decrement offset accordingly
+	    xmax = xmin + (splitBin + 1) * dx;                  //     Zoom in to current bin by redefining upper
+	    xmin = xmin + splitBin * dx;                        //     and lower bounds of partition
+	    dx = (xmax - xmin) / numBins;                       //     Update length of partition accordingly
+	    scanHist[0] = 0;                                    //     Initialize scan array
+	    for (int ibin=1; ibin<numBins; ibin++) {            //     Loop over bins
+	      scanHist[ibin] = scanHist[ibin-1] + localHist[ibin-1]; // Exclusive scan of local histogram
+	    }                                                   //     End loop over bins
+	    bodyBegin += scanHist[splitBin];                    //     Update body begin index
+	    bodyEnd = bodyBegin + localHist[splitBin];          //     Update body end index
+	  }                                                     //    End loop for bin refinement
+	}                                                       //   End if for splitting partition
+	int rankBegin = rankDispl[irank];                       //   Save current range of MPI ranks 
+	int rankEnd = rankBegin + rankCount[irank];             //   so that they don't get overwritten
+	for (irank=rankBegin; irank<rankEnd; irank++) {         //   Loop over current range of MPI ranks
+	  rankSplit = rankCount[irank] / 2;                     //    MPI rank splitter
+	  if (irank - rankDispl[irank] < rankSplit) {           //    If on left side of splitter
+	    rankCount[irank] = rankSplit;                       //     Count is the splitter index
+	    rankColor[irank] = rankColor[irank] * 2;            //     Color is doubled
+	    rankBounds[irank].Xmax[direction] = xmin;           //     Update right bound with splitter
+	    sendCount[irank] = bodyBegin;                       //     Send body count is the begin index
+	  } else {                                              //    If on right side of splitter
+	    rankDispl[irank] += rankSplit;                      //     Update displacement with splitter index
+	    rankCount[irank] -= rankSplit;                      //     Count is remainder of splitter index
+	    rankColor[irank] = rankColor[irank] * 2 + 1;        //     Color is doubled plus one
+	    rankBounds[irank].Xmin[direction] = xmin;           //     Update left bound
+	    sendDispl[irank] += bodyBegin;                      //     Increment send body displacement
+	    sendCount[irank] -= bodyBegin;                      //     Decrement send body count
+	  }                                                     //    End if for side of splitter
+	  if (level == numLevels-1) rankColor[irank] = rankDispl[irank]; // Special case for final rank color
+	  rankKey[irank] = irank - rankDispl[irank];            //    Rank key is determined from rank displacement
+	}                                                       //   End loop over current range of MPI ranks
+      }                                                         //  End loop over partitions
+      int ipart = 0;                                            //  Initialize partition index
+      for (int irank=0; irank<mpisize; irank++) {               //  Loop over MPI ranks
+	if (rankKey[irank] == 0) {                              //   If rank key is zero it's a new group
+	  rankMap[ipart] = rankDispl[irank];                    //    Update rank map with rank displacement
+	  ipart++;                                              //    Increment partition index
+	}                                                       //   End if for new group
+      }                                                         //  End loop over MPI ranks
+    }                                                           // End loop over levels of MPI rank binary tree
+    B_iter B = bodies.begin();                                  // Body begin iterator
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over MPI ranks
+      int bodyBegin = sendDispl[irank];                         //  Body begin index for current rank
+      int bodyEnd = bodyBegin + sendCount[irank];               //  Body end index for current rank
+      for (int b=bodyBegin; b<bodyEnd; b++, B++) {              //  Loop over bodies in current rank
+	B->IRANK = irank;                                       //   Copy MPI rank to body
+      }                                                         //  End loop over bodies in current rank
+    }                                                           // End loop over MPI ranks
     logger::stopTimer("Partition");                             // Stop timer
     return rankBounds[mpirank];                                 // Return local bounds
   }

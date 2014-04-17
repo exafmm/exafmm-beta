@@ -58,7 +58,7 @@ private:
 	      bucket[i] += bucketPerThread[t][i];               //      Update bucket from all threads
 	  for( int i=1; i<stride; i++ )                         //    Loop over strides
 	    bucket[i] += bucket[i-1];                           //     Scan bucket over strides
-	  for( int i=size-1; i>=0; i-- )                        //    Loop backwards over keys
+	  for( int i=size-1; i>=0; i-- )                        //    Loop over keys backwards
 	    permutation[i] = --bucket[key[i] & mask];           //     Reverse scan bucket to get permutation
 	}                                                       //   End serial clause
 #pragma omp for
