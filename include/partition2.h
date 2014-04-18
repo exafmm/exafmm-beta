@@ -82,8 +82,8 @@ public:
     for (int level=0; level<numLevels; level++) {
       int numPartitions = rankColor[mpisize-1] + 1;
       for (int ipart=0; ipart<numPartitions; ipart++) {
-	int irank = rankMap[ipart];
-	Bounds bounds = rankBounds[irank];
+	int rank = rankMap[ipart];
+	Bounds bounds = rankBounds[rank];
 	int direction = 0;
 	real_t length = 0;
 	for (int d=0; d<3; d++) {
@@ -92,11 +92,11 @@ public:
 	    length = (bounds.Xmax[d] - bounds.Xmin[d]);
 	  }
 	}
-	int rankSplit = rankCount[irank] / 2;
-	int oldRankCount = rankCount[irank];
+	int rankSplit = rankCount[rank] / 2;
+	int oldRankCount = rankCount[rank];
 	int bodyBegin = 0;
-	int bodyEnd = sendCount[irank];
-	B_iter B = bodies.begin() + sendDispl[irank];
+	int bodyEnd = sendCount[rank];
+	B_iter B = bodies.begin() + sendDispl[rank];
 	float localWeightSum = 0;
 	for (int b=bodyBegin; b<bodyEnd; b++) {
 	  localWeightSum += B[b].WEIGHT;
@@ -153,25 +153,25 @@ public:
 	    bodyEnd = bodyBegin + countHist[splitBin];
 	  }
 	}
-	int rankBegin = rankDispl[irank];
-	int rankEnd = rankBegin + rankCount[irank];
-	for (irank=rankBegin; irank<rankEnd; irank++) {
-	  rankSplit = rankCount[irank] / 2;
-	  if (irank - rankDispl[irank] < rankSplit) {
-	    rankCount[irank] = rankSplit;
-	    rankColor[irank] = rankColor[irank] * 2;
-	    rankBounds[irank].Xmax[direction] = xmin;
-	    sendCount[irank] = bodyBegin;
+	int rankBegin = rankDispl[rank];
+	int rankEnd = rankBegin + rankCount[rank];
+	for (rank=rankBegin; rank<rankEnd; rank++) {
+	  rankSplit = rankCount[rank] / 2;
+	  if (rank - rankDispl[rank] < rankSplit) {
+	    rankCount[rank] = rankSplit;
+	    rankColor[rank] = rankColor[rank] * 2;
+	    rankBounds[rank].Xmax[direction] = xmin;
+	    sendCount[rank] = bodyBegin;
 	  } else {
-	    rankDispl[irank] += rankSplit;
-	    rankCount[irank] -= rankSplit;
-	    rankColor[irank] = rankColor[irank] * 2 + 1;
-	    rankBounds[irank].Xmin[direction] = xmin;
-	    sendDispl[irank] += bodyBegin;
-	    sendCount[irank] -= bodyBegin;
+	    rankDispl[rank] += rankSplit;
+	    rankCount[rank] -= rankSplit;
+	    rankColor[rank] = rankColor[rank] * 2 + 1;
+	    rankBounds[rank].Xmin[direction] = xmin;
+	    sendDispl[rank] += bodyBegin;
+	    sendCount[rank] -= bodyBegin;
 	  }
-	  if (level == numLevels-1) rankColor[irank] = rankDispl[irank];
-	  rankKey[irank] = irank - rankDispl[irank];
+	  if (level == numLevels-1) rankColor[rank] = rankDispl[rank];
+	  rankKey[rank] = rank - rankDispl[rank];
 	}
       }
       int ipart = 0;
