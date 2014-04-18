@@ -65,6 +65,7 @@ int main(int argc, char ** argv) {
   treeMPI.commBodies();
   treeMPI.commCells();
 
+  traversal.initWeight(cells);
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   if (args.graft) {
     treeMPI.linkLET();

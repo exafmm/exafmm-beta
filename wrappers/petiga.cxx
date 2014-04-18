@@ -151,6 +151,7 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
   treeMPI->setLET(jcells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
+  traversal->initWeight(cells);
   traversal->dualTreeTraversal(cells, jcells, cycle, args->mutual);
   if (args->graft) {
     treeMPI->linkLET();

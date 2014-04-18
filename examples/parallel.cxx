@@ -86,6 +86,7 @@ int main(int argc, char ** argv) {
     }
 #pragma omp section
     {
+      traversal.initWeight(cells);
 #if IneJ
       traversal.dualTreeTraversal(cells, jcells, cycle, false);
 #else
