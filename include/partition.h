@@ -19,8 +19,8 @@ private:
   int * sendCount;                                              //!< Count of bodies to send per rank
   int * scanHist;                                               //!< Scan of histogram
   int * countHist;                                              //!< Body count histogram
-  float * weightHist;                                             //!< Body weight histogram
-  float * globalHist;                                             //!< Global body weight histogram
+  float * weightHist;                                           //!< Body weight histogram
+  float * globalHist;                                           //!< Global body weight histogram
   Bounds * rankBounds;                                          //!< Bounds of each rank
   Bodies buffer;                                                //!< MPI communication buffer for bodies
 

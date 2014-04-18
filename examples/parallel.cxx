@@ -4,7 +4,7 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
-#include "partition.h"
+#include "partition2.h"
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
