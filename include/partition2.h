@@ -99,21 +99,13 @@ public:
       rankBounds[irank] = globalBounds;
     }
     buffer = bodies;
+    level = 0;
     loopLevels();
-    B_iter B = bodies.begin();
-    for (int irank=0; irank<mpisize; irank++) {
-      int bodyBegin = sendDispl[irank];
-      int bodyEnd = bodyBegin + sendCount[irank];
-      for (int b=bodyBegin; b<bodyEnd; b++, B++) {
-	B->IRANK = irank;
-      }
-    }
-    logger::stopTimer("Partition");
     return rankBounds[mpirank];
   }
 
   void loopLevels() {
-    for (level=0; level<numLevels; level++) {
+    if (level<numLevels) {
       numPartitions = rankColor[mpisize-1] + 1;
       for (ipart=0; ipart<numPartitions; ipart++) {
 	rank = rankMap[ipart];
@@ -214,7 +206,18 @@ public:
 	  ipart++;
 	}
       }
+      level++;
+      loopLevels();
     }
+    B_iter B = B00;
+    for (int irank=0; irank<mpisize; irank++) {
+      int bodyBegin = sendDispl[irank];
+      int bodyEnd = bodyBegin + sendCount[irank];
+      for (int b=bodyBegin; b<bodyEnd; b++, B++) {
+	B->IRANK = irank;
+      }
+    }
+    logger::stopTimer("Partition");
   }
 };
 #endif
