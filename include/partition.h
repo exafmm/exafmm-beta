@@ -102,7 +102,7 @@ public:
 	real_t xmin = bounds.Xmin[direction];                   //   Lower bound of partition
 	real_t dx = (xmax - xmin) / numBins;                    //   Length of bins
 	B_iter B = bodies.begin() + sendDispl[irank];           //   Body begin iterator of current partition
-	if (globalSplit > 0) {                                  //   If the partition requires splitting
+	if (rankSplit > 0) {                                    //   If the partition requires splitting
 	  for (int binRefine=0; binRefine<3; binRefine++) {     //    Loop for bin refinement
 	    for (int ibin=0; ibin<numBins; ibin++) {            //     Loop over bins
 	      localHist[ibin] = 0;                              //      Initialize local histogram

@@ -148,7 +148,8 @@ public:
   void initTarget(Bodies & bodies) {
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       B->TRG = 0;                                               //  Clear target values
-      B->IBODY = B-bodies.begin();                              //  Set initial body numbering
+      B->IBODY = B-bodies.begin();                              //  Initial body numbering
+      B->WEIGHT = 1;                                            //  Initial weight
     }                                                           // End loop over bodies
   }
 

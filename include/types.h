@@ -64,9 +64,10 @@ struct Source {
 
 //! Structure of bodies
 struct Body : public Source {
-  int   IBODY;                                                  //!< Initial body numbering for sorting back
-  int   IRANK;                                                  //!< Initial rank numbering for partitioning back
-  kvec4 TRG;                                                    //!< Scalar+vector3 target values
+  int    IBODY;                                                 //!< Initial body numbering for sorting back
+  int    IRANK;                                                 //!< Initial rank numbering for partitioning back
+  real_t WEIGHT;                                                //!< Weight for partitioning
+  kvec4  TRG;                                                   //!< Scalar+vector3 target values
 };
 typedef AlignedAllocator<Body,SIMD_BYTES> BodyAllocator;        //!< Body alignment allocator
 typedef std::vector<Body,BodyAllocator>   Bodies;               //!< Vector of bodies
