@@ -133,11 +133,11 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
     Bodies gbodies = treeMPI->root2body();
     jcells = globalTree->buildTree(gbodies, globalBounds);
     treeMPI->attachRoot(jcells);
-    traversal->dualTreeTraversal(cells, jcells, cycle);
+    traversal->dualTreeTraversal(cells, jcells, cycle, false);
   } else {
     for (int irank=0; irank<baseMPI->mpisize; irank++) {
       treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-      traversal->dualTreeTraversal(cells, jcells, cycle);
+      traversal->dualTreeTraversal(cells, jcells, cycle, false);
     }
   }
   upDownPass->downwardPass(cells);

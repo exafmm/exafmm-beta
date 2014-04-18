@@ -83,6 +83,7 @@ struct Cell {
   int       NBODY;                                              //!< Number of descendant bodies
   B_iter    BODY;                                               //!< Iterator of first body
   uint64_t  ICELL;                                              //!< Cell index
+  real_t    WEIGHT;                                             //!< Weight for partitioning
   vec3      X;                                                  //!< Cell center
   real_t    R;                                                  //!< Cell radius
   vecP      M;                                                  //!< Multipole coefficients

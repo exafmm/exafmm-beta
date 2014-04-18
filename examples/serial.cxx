@@ -52,7 +52,7 @@ int main(int argc, char ** argv) {
 #if IneJ
     jcells = buildTree.buildTree(jbodies, bounds);
     upDownPass.upwardPass(jcells);
-    traversal.dualTreeTraversal(cells, jcells, cycle);
+    traversal.dualTreeTraversal(cells, jcells, cycle, false);
 #else
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
     jbodies = bodies;
