@@ -1,6 +1,6 @@
 -- CPU --
-- Partitioning with ORB
-- Weighted ORB
+- Intel OpenMP error
+- Large error for parallel runs
 OpenMP with atomics
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance
