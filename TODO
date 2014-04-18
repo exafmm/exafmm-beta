@@ -2,6 +2,7 @@
 - Intel OpenMP error
 - Large error for parallel runs
 - examples/Makefile options to args
+- cycle counter based weights
 OpenMP with atomics
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance
