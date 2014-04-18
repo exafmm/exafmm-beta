@@ -12,7 +12,8 @@ serial: serial.o $(OBJECTS)
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	mpirun -np 2 ./a.out --repeat 2
+	make cleandat
+	mpirun -np 7 ./a.out --ncrit 256 --distribution plummer
 
 # Checking O(N) complexity
 complexity: serial.o $(OBJECTS)
