@@ -21,6 +21,29 @@ private:
   C_iter Ci0;                                                   //!< Iterator of first target cell
   C_iter Cj0;                                                   //!< Iterator of first source cell
 
+private:
+#if USE_WEIGHT
+  //! Initialize interaction weights of bodies and cells
+  void initWeight(Cells & cells) {
+    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over cells
+      C->WEIGHT = 0;                                            //  Initialize cell weights
+      if (C->NCHILD==0) {                                       //  If leaf cell
+	for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {      //   Loop over bodies in cell
+	  B->WEIGHT = 0;                                        //    Initialize body weights
+	}                                                       //   End loop over bodies in cell
+      }                                                         //  End if for leaf cell
+    }                                                           // End loop over cells
+  }
+  //! Accumulate interaction weights of cells
+  void countWeight(C_iter Ci, C_iter Cj, bool mutual, real_t weight) {
+    Ci->WEIGHT += weight;                                       // Increment weight of target cell
+    if (mutual) Cj->WEIGHT += weight;                           // Increment weight of source cell
+  }
+#else
+  void initWeight(Cells) {}
+  void countWeight(C_iter, C_iter, bool, real_t) {}
+#endif
+
   //! Dual tree traversal for a single pair of cells
   void traverse(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual, real_t remote) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
@@ -28,10 +51,12 @@ private:
     if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R)) {                   // If distance is far enough
       kernel::M2L(Ci, Cj, Xperiodic, mutual);                   //  M2L kernel
       countKernel(numM2L);                                      //  Increment M2L counter
+      countWeight(Ci, Cj, mutual, remote);                      //  Increment M2L weight
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
       if (Cj->NBODY == 0) {                                     //  If the bodies weren't sent from remote node
 	kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
         countKernel(numM2L);                                    //   Increment M2L counter
+	countWeight(Ci, Cj, mutual, remote);                    //   Increment M2L weight
       } else {                                                  //  Else if the bodies were sent
 	if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
 	  kernel::P2P(Ci);                                      //    P2P kernel for single cell
@@ -39,6 +64,7 @@ private:
 	  kernel::P2P(Ci, Cj, Xperiodic, mutual);               //    P2P kernel for pair of cells
 	}                                                       //   End if for same source and target
 	countKernel(numP2P);                                    //   Increment P2P counter
+	countWeight(Ci, Cj, mutual, remote);                    //   Increment P2P weight
       }                                                         //  End if for bodies
     } else {                                                    // Else if cells are close but not bodies
       splitCell(Ci, Cj, Xperiodic, mutual, remote);             //  Split cell and call function recursively for child
@@ -142,7 +168,7 @@ private:
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
         for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
           for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
-            if( ix != 0 || iy != 0 || iz != 0 ) {               //     If periodic cell is not at center
+            if (ix != 0 || iy != 0 || iz != 0) {                //     If periodic cell is not at center
               Cj->X[0] = Ci->X[0] + ix * cycle;                 //      Set new x coordinate for periodic image
               Cj->X[1] = Ci->X[1] + iy * cycle;                 //      Set new y cooridnate for periodic image
               Cj->X[2] = Ci->X[2] + iz * cycle;                 //      Set new z coordinate for periodic image
@@ -170,12 +196,12 @@ private:
   void splitCell(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual, real_t remote) {
     if (Cj->NCHILD == 0) {                                      // If Cj is leaf
       assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
-      for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+      for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++) {// Loop over Ci's children
         traverse(ci, Cj, Xperiodic, mutual, remote);            //   Traverse a single pair of cells
       }                                                         //  End loop over Ci's children
     } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
       assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
-      for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+      for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++) {// Loop over Cj's children
         traverse(Ci, cj, Xperiodic, mutual, remote);            //   Traverse a single pair of cells
       }                                                         //  End loop over Cj's children
     } else if (Ci->NBODY + Cj->NBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
@@ -183,11 +209,11 @@ private:
 				  Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, Xperiodic, mutual, remote);
       traverseRange();                                          //  Traverse for range of cell pairs
     } else if (Ci->R >= Cj->R) {                                // Else if Ci is larger than Cj
-      for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
+      for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++) {// Loop over Ci's children
         traverse(ci, Cj, Xperiodic, mutual, remote);            //   Traverse a single pair of cells
       }                                                         //  End loop over Ci's children
     } else {                                                    // Else if Cj is larger than Ci
-      for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++ ) {// Loop over Cj's children
+      for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++) {// Loop over Cj's children
         traverse(Ci, cj, Xperiodic, mutual, remote);            //   Traverse a single pair of cells
       }                                                         //  End loop over Cj's children
     }                                                           // End if for leafs and Ci Cj size
@@ -268,7 +294,7 @@ public:
   void direct(Bodies & ibodies, Bodies & jbodies, real_t cycle) {
     Cells cells; cells.resize(2);                               // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
-    Ci->BODY = ibodies.begin();                                 // Iterator of first target body     
+    Ci->BODY = ibodies.begin();                                 // Iterator of first target body
     Ci->NBODY = ibodies.size();                                 // Number of target bodies
     Cj->BODY = jbodies.begin();                                 // Iterator of first source body
     Cj->NBODY = jbodies.size();                                 // Number of source bodies

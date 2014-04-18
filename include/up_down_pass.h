@@ -90,8 +90,17 @@ private:
     PreOrderTraversal(C_iter _C, C_iter _C0) :                  // Constructor
       C(_C), C0(_C0) {}                                         // Initialize variables
     void operator() () {                                        // Overload operator()
-      kernel::L2L(C,C0);                                        //  L2L kernel
+      kernel::L2L(C, C0);                                       //  L2L kernel
       if (C->NCHILD==0) kernel::L2P(C);                         //  L2P kernel
+#if USE_WEIGHT
+      C_iter CP = C0 + C->IPARENT;                              // Parent cell
+      C->WEIGHT += CP->WEIGHT;                                  // Add parent's weight
+      if (C->NCHILD==0) {                                       // If leaf cell
+	for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {      //  Loop over bodies in cell
+	  B->WEIGHT += C->WEIGHT;                               //   Add cell weights to bodies
+	}                                                       //  End loop over bodies in cell
+      }                                                         // End if for leaf cell
+#endif
       mk_task_group;                                            //  Initialize tasks
       for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	PreOrderTraversal preOrderTraversal(CC, C0);            //   Instantiate recursive functor
