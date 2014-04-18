@@ -40,8 +40,8 @@ private:
   float * globalHist;
   Bounds bounds;
   Bounds * rankBounds;
-  Bodies bodies, buffer;
-  B_iter B0;
+  Bodies buffer;
+  B_iter B00, B0;
 
 private:
 
@@ -85,8 +85,8 @@ public:
   }
 
   //! Partitioning by orthogonal recursive bisection
-  Bounds bisection(Bodies & _bodies, Bounds globalBounds) {
-    bodies = _bodies;
+  Bounds bisection(Bodies & bodies, Bounds globalBounds) {
+    B00 = bodies.begin();
     logger::startTimer("Partition");
     for (int irank=0; irank<mpisize; irank++) {
       rankDispl[irank] = 0;
@@ -109,7 +109,6 @@ public:
       }
     }
     logger::stopTimer("Partition");
-    _bodies = bodies;
     return rankBounds[mpirank];
   }
 
@@ -131,7 +130,7 @@ public:
 	oldRankCount = rankCount[rank];
 	bodyBegin = 0;
 	bodyEnd = sendCount[rank];
-	B0 = bodies.begin() + sendDispl[rank];
+	B0 = B00 + sendDispl[rank];
 	localWeightSum = 0;
 	for (int b=bodyBegin; b<bodyEnd; b++) {
 	  localWeightSum += B0[b].WEIGHT;
