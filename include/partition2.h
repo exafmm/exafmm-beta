@@ -10,6 +10,23 @@ private:
   const int mpisize;
   const int numBins;
   int numLevels;
+  int level;
+  int numPartitions;
+  int ipart;
+  int rank;
+  int binRefine;
+  int direction;
+  int rankSplit;
+  int oldRankCount;
+  int bodyBegin;
+  int bodyEnd;
+  float localWeightSum;
+  float globalWeightSum;
+  float globalSplit;
+  float globalOffset;
+  real_t xmax;
+  real_t xmin;
+  real_t dx;
   int * rankDispl;
   int * rankCount;
   int * rankColor;
@@ -21,8 +38,10 @@ private:
   int * countHist;
   float * weightHist;
   float * globalHist;
+  Bounds bounds;
   Bounds * rankBounds;
   Bodies buffer;
+  B_iter B0;
 
 private:
 
@@ -79,12 +98,12 @@ public:
       rankBounds[irank] = globalBounds;
     }
     buffer = bodies;
-    for (int level=0; level<numLevels; level++) {
-      int numPartitions = rankColor[mpisize-1] + 1;
-      for (int ipart=0; ipart<numPartitions; ipart++) {
-	int rank = rankMap[ipart];
-	Bounds bounds = rankBounds[rank];
-	int direction = 0;
+    for (level=0; level<numLevels; level++) {
+      numPartitions = rankColor[mpisize-1] + 1;
+      for (ipart=0; ipart<numPartitions; ipart++) {
+	rank = rankMap[ipart];
+	bounds = rankBounds[rank];
+	direction = 0;
 	real_t length = 0;
 	for (int d=0; d<3; d++) {
 	  if (length < (bounds.Xmax[d] - bounds.Xmin[d])) {
@@ -92,47 +111,46 @@ public:
 	    length = (bounds.Xmax[d] - bounds.Xmin[d]);
 	  }
 	}
-	int rankSplit = rankCount[rank] / 2;
-	int oldRankCount = rankCount[rank];
-	int bodyBegin = 0;
-	int bodyEnd = sendCount[rank];
-	B_iter B = bodies.begin() + sendDispl[rank];
-	float localWeightSum = 0;
+	rankSplit = rankCount[rank] / 2;
+	oldRankCount = rankCount[rank];
+	bodyBegin = 0;
+	bodyEnd = sendCount[rank];
+	B0 = bodies.begin() + sendDispl[rank];
+	localWeightSum = 0;
 	for (int b=bodyBegin; b<bodyEnd; b++) {
-	  localWeightSum += B[b].WEIGHT;
+	  localWeightSum += B0[b].WEIGHT;
 	}
-	float globalWeightSum;
 	MPI_Allreduce(&localWeightSum, &globalWeightSum, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-	float globalSplit = globalWeightSum * rankSplit / oldRankCount;
-	float globalOffset = 0;
-	real_t xmax = bounds.Xmax[direction];
-	real_t xmin = bounds.Xmin[direction];
-	real_t dx = (xmax - xmin) / numBins;
+	globalSplit = globalWeightSum * rankSplit / oldRankCount;
+	globalOffset = 0;
+	xmax = bounds.Xmax[direction];
+	xmin = bounds.Xmin[direction];
+	dx = (xmax - xmin) / numBins;
 	if (rankSplit > 0) {
-	  for (int binRefine=0; binRefine<3; binRefine++) {
+	  for (binRefine=0; binRefine<3; binRefine++) {
 	    for (int ibin=0; ibin<numBins; ibin++) {
 	      countHist[ibin] = 0;
 	      weightHist[ibin] = 0;
 	    }
 	    for (int b=bodyBegin; b<bodyEnd; b++) {
-	      real_t x = B[b].X[direction];
+	      real_t x = B0[b].X[direction];
 	      int ibin = (x - xmin + EPS) / (dx + EPS);
 	      countHist[ibin]++;
-	      weightHist[ibin] += B[b].WEIGHT;
+	      weightHist[ibin] += B0[b].WEIGHT;
 	    }
 	    scanHist[0] = countHist[0];
 	    for (int ibin=1; ibin<numBins; ibin++) {
 	      scanHist[ibin] = scanHist[ibin-1] + countHist[ibin];
 	    }
 	    for (int b=bodyEnd-1; b>=bodyBegin; b--) {
-	      real_t x = B[b].X[direction];
+	      real_t x = B0[b].X[direction];
 	      int ibin = (x - xmin + EPS) / (dx + EPS);
 	      scanHist[ibin]--;
 	      int bnew = scanHist[ibin] + bodyBegin;
-	      buffer[bnew] = B[b];
+	      buffer[bnew] = B0[b];
 	    }
 	    for (int b=bodyBegin; b<bodyEnd; b++) {
-	      B[b] = buffer[b];
+	      B0[b] = buffer[b];
 	    }
 	    MPI_Allreduce(weightHist, globalHist, numBins, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 	    int splitBin = 0;
@@ -174,7 +192,7 @@ public:
 	  rankKey[rank] = rank - rankDispl[rank];
 	}
       }
-      int ipart = 0;
+      ipart = 0;
       for (int irank=0; irank<mpisize; irank++) {
 	if (rankKey[irank] == 0) {
 	  rankMap[ipart] = rankDispl[irank];
