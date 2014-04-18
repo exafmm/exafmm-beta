@@ -22,7 +22,7 @@ private:
   C_iter Cj0;                                                   //!< Iterator of first source cell
 
   //! Dual tree traversal for a single pair of cells
-  void traverse(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual, bool remote) {
+  void traverse(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual, real_t remote) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
     if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R)) {                   // If distance is far enough
@@ -56,7 +56,7 @@ private:
     bool mutual;                                                //!< Flag for mutual interaction
     real_t remote;                                              //!< Weight for remote work load
     TraverseRange(Traversal * _traversal, C_iter _CiBegin, C_iter _CiEnd,// Constructor
-		  C_iter _CjBegin, C_iter _CjEnd, vec3 _Xperiodic, bool _mutual, bool _remote) :
+		  C_iter _CjBegin, C_iter _CjEnd, vec3 _Xperiodic, bool _mutual, real_t _remote) :
       traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),  // Initialize variables
       CjBegin(_CjBegin), CjEnd(_CjEnd), Xperiodic(_Xperiodic),
       mutual(_mutual), remote(_remote) {}
@@ -167,7 +167,7 @@ private:
   }
 
   //! Split cell and call traverse() recursively for child
-  void splitCell(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual, bool remote) {
+  void splitCell(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual, real_t remote) {
     if (Cj->NCHILD == 0) {                                      // If Cj is leaf
       assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
       for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++ ) {// Loop over Ci's children
@@ -202,7 +202,7 @@ public:
   {}
 
   //! Evaluate P2P and M2L using dual tree traversal
-  void dualTreeTraversal(Cells & icells, Cells & jcells, real_t cycle, bool mutual, bool remote=false) {
+  void dualTreeTraversal(Cells & icells, Cells & jcells, real_t cycle, bool mutual, real_t remote=1) {
     if (icells.empty() || jcells.empty()) return;               // Quit if either of the cell vectors are empty
     logger::startTimer("Traverse");                             // Start timer
     logger::initTracer();                                       // Initialize tracer
