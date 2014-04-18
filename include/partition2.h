@@ -167,13 +167,15 @@ public:
     xmin = bounds.Xmin[direction];
     dx = (xmax - xmin) / numBins;
     if (rankSplit > 0) {
+      binRefine = 0;
       loopBinRefine();
+    } else {
+      finishedBinRefine();
     }
-    finishedBinRefine();
   }
 
   void loopBinRefine() {
-    for (binRefine=0; binRefine<3; binRefine++) {
+    if (binRefine<3) {
       for (int ibin=0; ibin<numBins; ibin++) {
 	countHist[ibin] = 0;
 	weightHist[ibin] = 0;
@@ -215,6 +217,10 @@ public:
       }
       bodyBegin += scanHist[splitBin];
       bodyEnd = bodyBegin + countHist[splitBin];
+      binRefine++;
+      loopBinRefine();
+    } else {
+      finishedBinRefine();
     }
   }
 
