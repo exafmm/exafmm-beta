@@ -68,7 +68,7 @@ public:
     }
   }
 
-//! Destructor
+  //! Destructor
   ~Partition() {
     delete[] rankDispl;
     delete[] rankCount;
@@ -167,50 +167,58 @@ public:
     xmin = bounds.Xmin[direction];
     dx = (xmax - xmin) / numBins;
     if (rankSplit > 0) {
-      for (binRefine=0; binRefine<3; binRefine++) {
-	for (int ibin=0; ibin<numBins; ibin++) {
-	  countHist[ibin] = 0;
-	  weightHist[ibin] = 0;
-	}
-	for (int b=bodyBegin; b<bodyEnd; b++) {
-	  real_t x = B0[b].X[direction];
-	  int ibin = (x - xmin + EPS) / (dx + EPS);
-	  countHist[ibin]++;
-	  weightHist[ibin] += B0[b].WEIGHT;
-	}
-	scanHist[0] = countHist[0];
-	for (int ibin=1; ibin<numBins; ibin++) {
-	  scanHist[ibin] = scanHist[ibin-1] + countHist[ibin];
-	}
-	for (int b=bodyEnd-1; b>=bodyBegin; b--) {
-	  real_t x = B0[b].X[direction];
-	  int ibin = (x - xmin + EPS) / (dx + EPS);
-	  scanHist[ibin]--;
-	  int bnew = scanHist[ibin] + bodyBegin;
-	  buffer[bnew] = B0[b];
-	}
-	for (int b=bodyBegin; b<bodyEnd; b++) {
-	  B0[b] = buffer[b];
-	}
-	MPI_Allreduce(weightHist, globalHist, numBins, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-	int splitBin = 0;
-	while (globalOffset < globalSplit) {
-	  globalOffset += globalHist[splitBin];
-	  splitBin++;
-	}
-	splitBin--;
-	globalOffset -= globalHist[splitBin];
-	xmax = xmin + (splitBin + 1) * dx;
-	xmin = xmin + splitBin * dx;
-	dx = (xmax - xmin) / numBins;
-	scanHist[0] = 0;
-	for (int ibin=1; ibin<numBins; ibin++) {
-	  scanHist[ibin] = scanHist[ibin-1] + countHist[ibin-1];
-	}
-	bodyBegin += scanHist[splitBin];
-	bodyEnd = bodyBegin + countHist[splitBin];
-      }
+      loopBinRefine();
     }
+    finishedBinRefine();
+  }
+
+  void loopBinRefine() {
+    for (binRefine=0; binRefine<3; binRefine++) {
+      for (int ibin=0; ibin<numBins; ibin++) {
+	countHist[ibin] = 0;
+	weightHist[ibin] = 0;
+      }
+      for (int b=bodyBegin; b<bodyEnd; b++) {
+	real_t x = B0[b].X[direction];
+	int ibin = (x - xmin + EPS) / (dx + EPS);
+	countHist[ibin]++;
+	weightHist[ibin] += B0[b].WEIGHT;
+      }
+      scanHist[0] = countHist[0];
+      for (int ibin=1; ibin<numBins; ibin++) {
+	scanHist[ibin] = scanHist[ibin-1] + countHist[ibin];
+      }
+      for (int b=bodyEnd-1; b>=bodyBegin; b--) {
+	real_t x = B0[b].X[direction];
+	int ibin = (x - xmin + EPS) / (dx + EPS);
+	scanHist[ibin]--;
+	int bnew = scanHist[ibin] + bodyBegin;
+	buffer[bnew] = B0[b];
+      }
+      for (int b=bodyBegin; b<bodyEnd; b++) {
+	B0[b] = buffer[b];
+      }
+      MPI_Allreduce(weightHist, globalHist, numBins, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+      int splitBin = 0;
+      while (globalOffset < globalSplit) {
+	globalOffset += globalHist[splitBin];
+	splitBin++;
+      }
+      splitBin--;
+      globalOffset -= globalHist[splitBin];
+      xmax = xmin + (splitBin + 1) * dx;
+      xmin = xmin + splitBin * dx;
+      dx = (xmax - xmin) / numBins;
+      scanHist[0] = 0;
+      for (int ibin=1; ibin<numBins; ibin++) {
+	scanHist[ibin] = scanHist[ibin-1] + countHist[ibin-1];
+      }
+      bodyBegin += scanHist[splitBin];
+      bodyEnd = bodyBegin + countHist[splitBin];
+    }
+  }
+
+  void finishedBinRefine() {
     int rankBegin = rankDispl[rank];
     int rankEnd = rankBegin + rankCount[rank];
     for (rank=rankBegin; rank<rankEnd; rank++) {
