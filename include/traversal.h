@@ -23,24 +23,12 @@ private:
 
 private:
 #if USE_WEIGHT
-  //! Initialize interaction weights of bodies and cells
-  void initWeight(Cells & cells) {
-    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over cells
-      C->WEIGHT = 0;                                            //  Initialize cell weights
-      if (C->NCHILD==0) {                                       //  If leaf cell
-	for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {      //   Loop over bodies in cell
-	  B->WEIGHT = 0;                                        //    Initialize body weights
-	}                                                       //   End loop over bodies in cell
-      }                                                         //  End if for leaf cell
-    }                                                           // End loop over cells
-  }
   //! Accumulate interaction weights of cells
   void countWeight(C_iter Ci, C_iter Cj, bool mutual, real_t weight) {
     Ci->WEIGHT += weight;                                       // Increment weight of target cell
     if (mutual) Cj->WEIGHT += weight;                           // Increment weight of source cell
   }
 #else
-  void initWeight(Cells) {}
   void countWeight(C_iter, C_iter, bool, real_t) {}
 #endif
 
@@ -226,6 +214,22 @@ public:
 				      , numP2P(0), numM2L(0)
 #endif
   {}
+
+#if USE_WEIGHT
+  //! Initialize interaction weights of bodies and cells
+  void initWeight(Cells & cells) {
+    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over cells
+      C->WEIGHT = 0;                                            //  Initialize cell weights
+      if (C->NCHILD==0) {                                       //  If leaf cell
+	for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {      //   Loop over bodies in cell
+	  B->WEIGHT = 0;                                        //    Initialize body weights
+	}                                                       //   End loop over bodies in cell
+      }                                                         //  End if for leaf cell
+    }                                                           // End loop over cells
+  }
+#else
+  void initWeight(Cells) {}
+#endif
 
   //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversal(Cells & icells, Cells & jcells, real_t cycle, bool mutual, real_t remote=1) {

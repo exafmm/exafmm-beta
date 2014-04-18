@@ -12,7 +12,7 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  Bodies bodies, bodies2, jbodies;
+  Bodies bodies, bodies2, bodies3, jbodies;
   BoundBox boundBox(args.nspawn);
   Bounds bounds;
   BuildTree buildTree(args.ncrit, args.nspawn);
@@ -66,6 +66,7 @@ int main(int argc, char ** argv) {
     logger::writeTime();
 #endif
     const int numTargets = 100;
+    bodies3 = bodies;
     data.sampleBodies(bodies, numTargets);
     bodies2 = bodies;
     data.initTarget(bodies);
@@ -84,6 +85,8 @@ int main(int argc, char ** argv) {
     traversal.printTraversalData();
     logger::printPAPI();
     logger::stopDAG();
+    bodies = bodies3;
+    data.initTarget(bodies);
   }
   logger::writeDAG();
 #if VTK
