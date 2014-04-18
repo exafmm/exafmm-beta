@@ -40,7 +40,7 @@ private:
   float * globalHist;
   Bounds bounds;
   Bounds * rankBounds;
-  Bodies buffer;
+  Bodies bodies, buffer;
   B_iter B0;
 
 private:
@@ -85,7 +85,8 @@ public:
   }
 
   //! Partitioning by orthogonal recursive bisection
-  Bounds bisection(Bodies & bodies, Bounds globalBounds) {
+  Bounds bisection(Bodies & _bodies, Bounds globalBounds) {
+    bodies = _bodies;
     logger::startTimer("Partition");
     for (int irank=0; irank<mpisize; irank++) {
       rankDispl[irank] = 0;
@@ -98,6 +99,21 @@ public:
       rankBounds[irank] = globalBounds;
     }
     buffer = bodies;
+    loopLevels();
+    B_iter B = bodies.begin();
+    for (int irank=0; irank<mpisize; irank++) {
+      int bodyBegin = sendDispl[irank];
+      int bodyEnd = bodyBegin + sendCount[irank];
+      for (int b=bodyBegin; b<bodyEnd; b++, B++) {
+	B->IRANK = irank;
+      }
+    }
+    logger::stopTimer("Partition");
+    _bodies = bodies;
+    return rankBounds[mpirank];
+  }
+
+  void loopLevels() {
     for (level=0; level<numLevels; level++) {
       numPartitions = rankColor[mpisize-1] + 1;
       for (ipart=0; ipart<numPartitions; ipart++) {
@@ -200,16 +216,6 @@ public:
 	}
       }
     }
-    B_iter B = bodies.begin();
-    for (int irank=0; irank<mpisize; irank++) {
-      int bodyBegin = sendDispl[irank];
-      int bodyEnd = bodyBegin + sendCount[irank];
-      for (int b=bodyBegin; b<bodyEnd; b++, B++) {
-	B->IRANK = irank;
-      }
-    }
-    logger::stopTimer("Partition");
-    return rankBounds[mpirank];
   }
 };
 #endif
