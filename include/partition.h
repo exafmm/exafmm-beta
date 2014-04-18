@@ -18,8 +18,9 @@ private:
   int * sendDispl;                                              //!< Displacement of bodies to send per rank
   int * sendCount;                                              //!< Count of bodies to send per rank
   int * scanHist;                                               //!< Scan of histogram
-  int * localHist;                                              //!< Local histogram
-  int * globalHist;                                             //!< Global histogram
+  int * countHist;                                              //!< Body count histogram
+  float * weightHist;                                             //!< Body weight histogram
+  float * globalHist;                                             //!< Global body weight histogram
   Bounds * rankBounds;                                          //!< Bounds of each rank
   Bodies buffer;                                                //!< MPI communication buffer for bodies
 
@@ -36,8 +37,9 @@ public:
     sendDispl  = new int [mpisize];                             // Allocate displacement of bodies to send per rank
     sendCount  = new int [mpisize];                             // Allocate count of bodies to send per rank
     scanHist   = new int [numBins];                             // Allocate scan of histogram
-    localHist  = new int [numBins];                             // Allocate local histogram
-    globalHist = new int [numBins];                             // Allocate global histogram
+    countHist  = new int [numBins];                             // Allocate body count histogram
+    weightHist = new float [numBins];                           // Allocate body weight histogram
+    globalHist = new float [numBins];                           // Allocate global body weight histogram
     rankBounds = new Bounds [mpisize];                          // Allocate bounds of each rank
     numLevels = 0;                                              // Initialize levels of MPI rank binary tree
     int size = mpisize - 1;                                     // Initialize size of MPI rank binary tree
@@ -57,8 +59,9 @@ public:
     delete[] sendDispl;                                         // Deallocate displacement of bodies to send per rank
     delete[] sendCount;                                         // Deallocate count of bodies to send per rank
     delete[] scanHist;                                          // Deallocate scan of histogram
-    delete[] localHist;                                         // Deallocate local histogram
-    delete[] globalHist;                                        // Deallocate global histogram
+    delete[] countHist;                                         // Deallocate body count histogram
+    delete[] weightHist;                                        // Deallocate body weight histogram
+    delete[] globalHist;                                        // Deallocate global body weight histogram
     delete[] rankBounds;                                        // Deallocate bounds of each rank
   }
 
@@ -91,30 +94,35 @@ public:
 	}                                                       //   End loop over dimensions
 	int rankSplit = rankCount[irank] / 2;                   //   MPI rank splitter
 	int oldRankCount = rankCount[irank];                    //   Old MPI rank count
-	int numLocalBodies = sendCount[irank];                  //   Local body count in current partition
 	int bodyBegin = 0;                                      //   Initialize body begin index
-	int bodyEnd = numLocalBodies;                           //   Initialize body end index
-	int numGlobalBodies;                                    //   Declare global body count in current partition
-	MPI_Allreduce(&numLocalBodies, &numGlobalBodies, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Reduce body count
-	int globalSplit = numGlobalBodies * rankSplit / oldRankCount;// Global body splitter index
-	int globalOffset = 0;                                   //   Initialize global body offset
+	int bodyEnd = sendCount[irank];                         //   Initialize body end index
+	B_iter B = bodies.begin() + sendDispl[irank];           //   Body begin iterator of current partition
+	float localWeightSum = 0;                               //   Initialize local sum of weights in current partition
+	for (int b=bodyBegin; b<bodyEnd; b++) {                 //    Loop over bodies in current partition
+	  localWeightSum += B[b].WEIGHT;                        //     Add weights of body to local sum
+	}                                                       //    End loop over bodies in current partition
+	float globalWeightSum;                                  //   Declare global sum of weights in current partition
+	MPI_Allreduce(&localWeightSum, &globalWeightSum, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Reduce sum of weights
+	float globalSplit = globalWeightSum * rankSplit / oldRankCount;// Global weight splitter index
+	float globalOffset = 0;                                 //   Initialize global weight offset
 	real_t xmax = bounds.Xmax[direction];                   //   Upper bound of partition
 	real_t xmin = bounds.Xmin[direction];                   //   Lower bound of partition
 	real_t dx = (xmax - xmin) / numBins;                    //   Length of bins
-	B_iter B = bodies.begin() + sendDispl[irank];           //   Body begin iterator of current partition
 	if (rankSplit > 0) {                                    //   If the partition requires splitting
 	  for (int binRefine=0; binRefine<3; binRefine++) {     //    Loop for bin refinement
 	    for (int ibin=0; ibin<numBins; ibin++) {            //     Loop over bins
-	      localHist[ibin] = 0;                              //      Initialize local histogram
+	      countHist[ibin] = 0;                              //      Initialize body count histogram
+	      weightHist[ibin] = 0;                             //      Initialize body weight histogram
 	    }                                                   //     End loop over bins
 	    for (int b=bodyBegin; b<bodyEnd; b++) {             //     Loop over bodies
 	      real_t x = B[b].X[direction];                     //      Coordinate of body in current direction
 	      int ibin = (x - xmin + EPS) / (dx + EPS);         //      Assign bin index to body
-	      localHist[ibin]++;                                //      Increment bin counter
+	      countHist[ibin]++;                                //      Increment body count histogram
+	      weightHist[ibin] += B[b].WEIGHT;                  //      Increment body weight histogram
 	    }                                                   //     End loop over bodies
-	    scanHist[0] = localHist[0];                         //     Initialize scan array
+	    scanHist[0] = countHist[0];                         //     Initialize scan array
 	    for (int ibin=1; ibin<numBins; ibin++) {            //     Loop over bins
-	      scanHist[ibin] = scanHist[ibin-1] + localHist[ibin]; //   Inclusive scan for local histogram
+	      scanHist[ibin] = scanHist[ibin-1] + countHist[ibin]; //   Inclusive scan for body count histogram
 	    }                                                   //     End loop over bins
 	    for (int b=bodyEnd-1; b>=bodyBegin; b--) {          //     Loop over bodies backwards
 	      real_t x = B[b].X[direction];                     //      Coordinate of body in current direction
@@ -126,7 +134,7 @@ public:
 	    for (int b=bodyBegin; b<bodyEnd; b++) {             //     Loop over bodies
 	      B[b] = buffer[b];                                 //      Copy back bodies from buffer
 	    }                                                   //     End loop over bodies
-	    MPI_Allreduce(localHist, globalHist, numBins, MPI_INT, MPI_SUM, MPI_COMM_WORLD);// Reduce histogram
+	    MPI_Allreduce(weightHist, globalHist, numBins, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);// Reduce weight histogram
 	    int splitBin = 0;                                   //     Initialize bin splitter
 	    while (globalOffset < globalSplit) {                //     While scan of global histogram is less than splitter
 	      globalOffset += globalHist[splitBin];             //      Scan global histogram
@@ -139,10 +147,10 @@ public:
 	    dx = (xmax - xmin) / numBins;                       //     Update length of partition accordingly
 	    scanHist[0] = 0;                                    //     Initialize scan array
 	    for (int ibin=1; ibin<numBins; ibin++) {            //     Loop over bins
-	      scanHist[ibin] = scanHist[ibin-1] + localHist[ibin-1]; // Exclusive scan of local histogram
+	      scanHist[ibin] = scanHist[ibin-1] + countHist[ibin-1]; // Exclusive scan of body count histogram
 	    }                                                   //     End loop over bins
 	    bodyBegin += scanHist[splitBin];                    //     Update body begin index
-	    bodyEnd = bodyBegin + localHist[splitBin];          //     Update body end index
+	    bodyEnd = bodyBegin + countHist[splitBin];          //     Update body end index
 	  }                                                     //    End loop for bin refinement
 	}                                                       //   End if for splitting partition
 	int rankBegin = rankDispl[irank];                       //   Save current range of MPI ranks 
