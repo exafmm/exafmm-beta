@@ -28,6 +28,7 @@ int main(int argc, char ** argv) {
   TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
+  num_threads(args.threads);
 
   const real_t cycle = 2 * M_PI;
   args.numBodies /= baseMPI.mpisize;

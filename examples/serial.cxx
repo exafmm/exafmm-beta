@@ -21,6 +21,7 @@ int main(int argc, char ** argv) {
   Traversal traversal(args.nspawn, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
+  num_threads(args.threads);
 
   const real_t cycle = 2 * M_PI;
   logger::verbose = args.verbose;

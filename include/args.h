@@ -10,6 +10,7 @@ static struct option long_options[] = {
   {"numBodies",    1, 0, 'n'},
   {"ncrit",        1, 0, 'c'},
   {"nspawn",       1, 0, 's'},
+  {"threads",      1, 0, 'a'},
   {"images",       1, 0, 'i'},
   {"theta",        1, 0, 't'},
   {"useRmax",      1, 0, 'x'},
@@ -28,6 +29,7 @@ public:
   int numBodies;
   int ncrit;
   int nspawn;
+  int threads;
   int images;
   double theta;
   int useRmax;
@@ -46,6 +48,7 @@ private:
             " --numBodies (-n)              : Number of bodies (%d)\n"
             " --ncrit (-c)                  : Number of bodies per leaf cell (%d)\n"
             " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
+            " --threads (-a)                : Number of threads (%d)\n"
             " --images (-i)                 : Number of periodic image levels (%d)\n"
             " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
 	    " --useRmax (-x) [0/1]          : Use maximum distance for MAC (%d)\n"
@@ -60,6 +63,7 @@ private:
             numBodies,
             ncrit,
             nspawn,
+	    threads,
             images,
             theta,
 	    useRmax,
@@ -89,12 +93,12 @@ private:
   }
 
 public:
-  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), ncrit(16), nspawn(1000), images(0),
+  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), ncrit(16), nspawn(1000), threads(16), images(0),
 					theta(.4), useRmax(1), useRopt(1), mutual(1), graft(1),
 					verbose(1), distribution("cube"), repeat(1) {
     while (1) {
       int option_index;
-      int c = getopt_long(argc, argv, "n:t:c:s:i:o:m:g:v:d:r:h", long_options, &option_index);
+      int c = getopt_long(argc, argv, "n:t:c:s:a:i:o:m:g:v:d:r:h", long_options, &option_index);
       if (c == -1) break;
       switch (c) {
       case 'n':
@@ -105,6 +109,9 @@ public:
         break;
       case 's':
         nspawn = atoi(optarg);
+        break;
+      case 'a':
+        threads = atoi(optarg);
         break;
       case 'i':
         images = atoi(optarg);
@@ -155,6 +162,8 @@ public:
 		<< "ncrit" << " : " << ncrit << std::endl       //  Print ncrit
 		<< std::setw(stringLength)                      //  Set format
 		<< "nspawn" << " : " << nspawn << std::endl     //  Print nspawn
+		<< std::setw(stringLength)                      //  Set format
+		<< "threads" << " : " << threads << std::endl   //  Print threads
 		<< std::setw(stringLength)                      //  Set format
 		<< "images" << " : " << images << std::endl     //  Print images
 		<< std::setw(stringLength)                      //  Set format
