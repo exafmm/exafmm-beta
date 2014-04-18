@@ -3,7 +3,7 @@
 
 // Disable a few Intel compiler warnings
 #ifdef __INTEL_COMPILER
-#pragma warning(disable:193 383 444 981 1572 2259)
+#pragma warning(disable:161 193 383 444 981 1572 2259)
 #endif
 
 // Override assertion

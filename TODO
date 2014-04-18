@@ -1,6 +1,7 @@
 -- CPU --
 - Intel OpenMP error
 - Large error for parallel runs
+- examples/Makefile options to args
 OpenMP with atomics
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance

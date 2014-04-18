@@ -124,6 +124,7 @@ int main(int argc, char ** argv) {
 
     logger::stopPAPI();
     logger::stopTimer("Total FMM", 0);
+#if DIRECT
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     bodies3 = bodies;
@@ -140,11 +141,7 @@ int main(int argc, char ** argv) {
     logger::printTitle("Total runtime");
     logger::printTime("Total FMM");
     logger::stopTimer("Total Direct");
-    logger::resetTimer("Total FMM");
     logger::resetTimer("Total Direct");
-#if WRITE_TIME
-    logger::writeTime(baseMPI.mpirank);
-#endif
     double potDif = verify.getDifScalar(bodies, bodies2);
     double potNrm = verify.getNrmScalar(bodies);
     double accDif = verify.getDifVector(bodies, bodies2);
@@ -162,6 +159,11 @@ int main(int argc, char ** argv) {
     logger::printPAPI();
     bodies = bodies3;
     data.initTarget(bodies);
+#endif
+    logger::resetTimer("Total FMM");
+#if WRITE_TIME
+    logger::writeTime(baseMPI.mpirank);
+#endif
   }
 #if VTK
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->IBODY = 0;
