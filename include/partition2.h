@@ -200,25 +200,7 @@ public:
       for (int b=bodyBegin; b<bodyEnd; b++) {
 	B0[b] = buffer[b];
       }
-      MPI_Allreduce(weightHist, globalHist, numBins, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-      int splitBin = 0;
-      while (globalOffset < globalSplit) {
-	globalOffset += globalHist[splitBin];
-	splitBin++;
-      }
-      splitBin--;
-      globalOffset -= globalHist[splitBin];
-      xmax = xmin + (splitBin + 1) * dx;
-      xmin = xmin + splitBin * dx;
-      dx = (xmax - xmin) / numBins;
-      scanHist[0] = 0;
-      for (int ibin=1; ibin<numBins; ibin++) {
-	scanHist[ibin] = scanHist[ibin-1] + countHist[ibin-1];
-      }
-      bodyBegin += scanHist[splitBin];
-      bodyEnd = bodyBegin + countHist[splitBin];
-      binRefine++;
-      loopBinRefine();
+      allReduceHistogram();
     } else {
       finishedBinRefine();
     }
@@ -247,6 +229,32 @@ public:
     }
     ipart++;
     loopPartitions();
+  }
+
+  void allReduceHistogram() {
+    MPI_Allreduce(weightHist, globalHist, numBins, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+    reducedHistogram();
+  }
+
+  void reducedHistogram() {
+    int splitBin = 0;
+    while (globalOffset < globalSplit) {
+      globalOffset += globalHist[splitBin];
+      splitBin++;
+    }
+    splitBin--;
+    globalOffset -= globalHist[splitBin];
+    xmax = xmin + (splitBin + 1) * dx;
+    xmin = xmin + splitBin * dx;
+    dx = (xmax - xmin) / numBins;
+    scanHist[0] = 0;
+    for (int ibin=1; ibin<numBins; ibin++) {
+      scanHist[ibin] = scanHist[ibin-1] + countHist[ibin-1];
+    }
+    bodyBegin += scanHist[splitBin];
+    bodyEnd = bodyBegin + countHist[splitBin];
+    binRefine++;
+    loopBinRefine();
   }
 };
 #endif
