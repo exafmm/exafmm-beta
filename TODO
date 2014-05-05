@@ -3,13 +3,16 @@
 - Large error for parallel runs
 - examples/Makefile options to args
 - cycle counter based weights
-OpenMP with atomics
+OpenMP with atomics -> flush
+MPI-3.0 lock all
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 SIMD P2P performance
 Kahan + fixed precision
 Solid harmonics kernel
 Morton -> Hilbert
 splitRange defined in both dataset.h and partition.h
+UVWX-list with precomputation
+2:1 refinement for precomputation
 
 -- GPU integration --
 Unify dataset
