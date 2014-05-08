@@ -7,8 +7,8 @@ EQUATION = Laplace
 #EQUATION = Stokes (not available yet)
 
 ### choose basis of multipole/local expansion
-BASIS	= Cartesian
-#BASIS	= Spherical
+#BASIS	= Cartesian
+BASIS	= Spherical
 #BASIS	= Planewave (not available yet)
 
 ### choose device to use
@@ -16,12 +16,12 @@ DEVICE	= CPU
 #DEVICE	= GPU (not integrated)
 
 ### choose C++ compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops -fopenmp # GCC
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops -fopenmp # GCC
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias # Intel
 #CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
 #CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
 #CXX	= CC -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # Cray
-#CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/Q
+CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/Q
 #CXX	= mpixlcxx_r -qarch=450d -qtune=450 -O3 -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/P
 #CXX	= mpiFCCpx -Kfast # K computer
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
@@ -32,13 +32,13 @@ FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp # gfortran
 
 ### Base flags
 CXX	+= -I../include
-#CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
-#LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
+CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
+LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
-LFLAGS  += -DEXPANSION=4 # Specify expansion order
+LFLAGS  += -DEXPANSION=10 # Specify expansion order
 LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #LFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
-#LFLAGS	+= -DFP64 # Use double precision
+LFLAGS	+= -DFP64 # Use double precision
 #LFLAGS	+= -DKAHAN # Use Kahan summation
 
 ### Debugging flags
