@@ -10,7 +10,7 @@ static struct option long_options[] = {
   {"numBodies",    1, 0, 'n'},
   {"ncrit",        1, 0, 'c'},
   {"nspawn",       1, 0, 's'},
-  {"threads",      1, 0, 'a'},
+  {"threads",      1, 0, 'T'},
   {"images",       1, 0, 'i'},
   {"theta",        1, 0, 't'},
   {"useRmax",      1, 0, 'x'},
@@ -48,7 +48,7 @@ private:
             " --numBodies (-n)              : Number of bodies (%d)\n"
             " --ncrit (-c)                  : Number of bodies per leaf cell (%d)\n"
             " --nspawn (-s)                 : Threshold for stopping task creation during recursion (%d)\n"
-            " --threads (-a)                : Number of threads (%d)\n"
+            " --threads (-T)                : Number of threads (%d)\n"
             " --images (-i)                 : Number of periodic image levels (%d)\n"
             " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
 	    " --useRmax (-x) [0/1]          : Use maximum distance for MAC (%d)\n"
@@ -98,7 +98,7 @@ public:
 					verbose(1), distribution("cube"), repeat(1) {
     while (1) {
       int option_index;
-      int c = getopt_long(argc, argv, "n:t:c:s:a:i:o:m:g:v:d:r:h", long_options, &option_index);
+      int c = getopt_long(argc, argv, "n:c:s:T:i:t:x:o:m:g:v:d:r:h", long_options, &option_index);
       if (c == -1) break;
       switch (c) {
       case 'n':
@@ -110,7 +110,7 @@ public:
       case 's':
         nspawn = atoi(optarg);
         break;
-      case 'a':
+      case 'T':
         threads = atoi(optarg);
         break;
       case 'i':
