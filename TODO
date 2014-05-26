@@ -13,6 +13,8 @@ Morton -> Hilbert
 splitRange defined in both dataset.h and partition.h
 UVWX-list with precomputation
 2:1 refinement for precomputation
+Periodic B.C. by one precomputed translation matrix
+Teng's BH MAC with M2P option during DTT
 
 -- GPU integration --
 Unify dataset
