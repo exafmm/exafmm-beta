@@ -111,6 +111,7 @@ int main(int argc, char ** argv) {
       }
     }
 #else
+    jbodies = bodies;
     for (int irank=0; irank<baseMPI.mpisize; irank++) {
       treeMPI.shiftBodies(jbodies);
       jcells.clear();
