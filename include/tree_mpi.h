@@ -155,7 +155,7 @@ protected:
 	vec3 Xperiodic = 0;                                     //   Periodic coordinate offset
 	if (images == 0) {                                      //   If free boundary condition
 	  real_t R2 = getDistance(CC, bounds, Xperiodic);       //    Get distance to other domain
-	  divide[cc] |= 9 * CC->R * CC->R > R2;                 //    Divide if the cell seems too close (triple the R)
+	  divide[cc] |= 4 * CC->R * CC->R > R2;                 //    Divide if the cell seems too close
 	} else {                                                //   If periodic boundary condition
 	  for (int ix=-1; ix<=1; ix++) {                        //    Loop over x periodic direction
 	    for (int iy=-1; iy<=1; iy++) {                      //     Loop over y periodic direction
@@ -164,7 +164,7 @@ protected:
 		Xperiodic[1] = iy * cycle;                      //       Coordinate offset for y periodic direction
 		Xperiodic[2] = iz * cycle;                      //       Coordinate offset for z periodic direction
 		real_t R2 = getDistance(CC, bounds, Xperiodic); //       Get distance to other domain
-		divide[cc] |= 9 * CC->R * CC->R > R2;           //       Divide if cell seems too close (triple the R)
+		divide[cc] |= 4 * CC->R * CC->R > R2;           //       Divide if cell seems too close
 	      }                                                 //      End loop over z periodic direction
 	    }                                                   //     End loop over y periodic direction
 	  }                                                     //    End loop over x periodic direction

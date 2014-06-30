@@ -8,13 +8,13 @@ class BoundBox {
 private:
   int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
 
-  //! Recursive functor for calculating bounds
-  struct BoundsRecursion {
+  //! Recursive functor for calculating bounds of bodies
+  struct BodiesRecursion {
     B_iter BiBegin;                                             //!< Begin iterator of bodies
     B_iter BiEnd;                                               //!< End iterator of bodies
     Bounds & bounds;                                            //!< Bounds : Contains Xmin, Xmax
     int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
-    BoundsRecursion(B_iter _BiBegin, B_iter _BiEnd, Bounds & _bounds, int _nspawn) : // Constructor
+    BodiesRecursion(B_iter _BiBegin, B_iter _BiEnd, Bounds & _bounds, int _nspawn) : // Constructor
       BiBegin(_BiBegin), BiEnd(_BiEnd), bounds(_bounds), nspawn(_nspawn) {}// Initialize variables
     void operator() () {                                        // Overload operator()
       assert(BiEnd - BiBegin > 0);                              //  Validate range
@@ -27,9 +27,9 @@ private:
 	B_iter BiMid = BiBegin + (BiEnd - BiBegin) / 2;         //   Middle iterator
 	Bounds bounds2 = bounds;                                //   Copy bounds
 	mk_task_group;                                          //   Initialize tasks
-        BoundsRecursion leftBranch(BiBegin, BiMid, bounds, nspawn);// Instantiate recursive functor
+        BodiesRecursion leftBranch(BiBegin, BiMid, bounds, nspawn);// Instantiate recursive functor
 	create_taskc(leftBranch);                               //   Create new task for left branch
-        BoundsRecursion rightBranch(BiMid, BiEnd, bounds2, nspawn);// Instantiate recursive functor
+        BodiesRecursion rightBranch(BiMid, BiEnd, bounds2, nspawn);// Instantiate recursive functor
 	rightBranch();                                          //   Use old task for right branch
 	wait_tasks;                                             //   Synchronize tasks
 	bounds.Xmin = min(bounds.Xmin, bounds2.Xmin);           //   Minimum of the two Xmins
@@ -38,11 +38,41 @@ private:
     }                                                           // End overload operator()
   };
 
+  //! Recursive functor for calculating bounds of cells
+  struct CellsRecursion {
+    C_iter CiBegin;                                             //!< Begin iterator of cells
+    C_iter CiEnd;                                               //!< End iterator of cells
+    Bounds & bounds;                                            //!< Bounds : Contains Xmin, Xmax
+    int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
+    CellsRecursion(C_iter _CiBegin, C_iter _CiEnd, Bounds & _bounds, int _nspawn) : // Constructor
+      CiBegin(_CiBegin), CiEnd(_CiEnd), bounds(_bounds), nspawn(_nspawn) {}// Initialize variables
+    void operator() () {                                        // Overload operator()
+      assert(CiEnd - CiBegin > 0);                              //  Validate range
+      if (CiEnd - CiBegin < nspawn) {                           //  If number of elements is small enough
+        for (C_iter C=CiBegin; C!=CiEnd; C++) {                 //   Loop over range of cells
+          bounds.Xmin = min(C->X, bounds.Xmin);                 //    Update Xmin
+          bounds.Xmax = max(C->X, bounds.Xmax);                 //    Update Xmax
+        }                                                       //   End loop over range of bodies
+      } else {                                                  //  Else if number of elements are large
+        C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;         //   Middle iterator
+        Bounds bounds2 = bounds;                                //   Copy bounds
+        mk_task_group;                                          //   Initialize tasks
+        CellsRecursion leftBranch(CiBegin, CiMid, bounds, nspawn);// Instantiate recursive functor
+        create_taskc(leftBranch);                               //   Create new task for left branch
+        CellsRecursion rightBranch(CiMid, CiEnd, bounds2, nspawn);// Instantiate recursive functor
+        rightBranch();                                          //   Use old task for right branch
+        wait_tasks;                                             //   Synchronize tasks
+        bounds.Xmin = min(bounds.Xmin, bounds2.Xmin);           //   Minimum of the two Xmins
+        bounds.Xmax = max(bounds.Xmax, bounds2.Xmax);           //   Maximum of the two Xmaxs
+      }                                                         //  End if for number fo elements
+    }                                                           // End overload operator()
+  };
+
 public:
   //! Constructor
   BoundBox(int _nspawn) : nspawn(_nspawn) {}                    // Initialize variables
 
-  //! Get Xmin and Xmax of domain
+  //! Get Xmin and Xmax of bodies
   Bounds getBounds(Bodies bodies) {
     logger::startTimer("Get bounds");                           // Start timer
     Bounds bounds;                                              // Bounds : Contains Xmin, Xmax
@@ -50,18 +80,42 @@ public:
       bounds.Xmin = bounds.Xmax = 0;                            //  Set bounds to 0
     } else {                                                    // If body vector is not empty
       bounds.Xmin = bounds.Xmax = bodies.front().X;             //  Initialize Xmin, Xmax
-      BoundsRecursion boundsRecursion(bodies.begin(),bodies.end(),bounds,nspawn);// Instantiate recursive functor
-      boundsRecursion();                                        // Recursive call for bounds calculation
+      BodiesRecursion bodiesRecursion(bodies.begin(),bodies.end(),bounds,nspawn);// Instantiate recursive functor
+      bodiesRecursion();                                        //  Recursive call for bounds calculation
     }                                                           // End if for empty body vector
     logger::stopTimer("Get bounds");                            // Stop timer
     return bounds;                                              // Return Xmin and Xmax
   }
 
-  //! Update Xmin and Xmax of domain
+  //! Update Xmin and Xmax of bodies
   Bounds getBounds(Bodies bodies, Bounds bounds) {
     logger::startTimer("Get bounds");                           // Start timer
-    BoundsRecursion boundsRecursion(bodies.begin(),bodies.end(),bounds,nspawn);// Instantiate recursive functor
-    boundsRecursion();                                          // Recursive call for bounds calculation
+    BodiesRecursion bodiesRecursion(bodies.begin(),bodies.end(),bounds,nspawn);// Instantiate recursive functor
+    bodiesRecursion();                                          // Recursive call for bounds calculation
+    logger::stopTimer("Get bounds");                            // Stop timer
+    return bounds;                                              // Return Xmin and Xmax
+  }
+
+  //! Get Xmin and Xmax of cells
+  Bounds getBounds(Cells cells) {
+    logger::startTimer("Get bounds");                           // Start timer
+    Bounds bounds;                                              // Bounds : Contains Xmin, Xmax
+    if (cells.empty()) {                                        // If cell vector is empty
+      bounds.Xmin = bounds.Xmax = 0;                            //  Set bounds to 0
+    } else {                                                    // If cell vector is not empty
+      bounds.Xmin = bounds.Xmax = cells.front().X;              //  Initialize Xmin, Xmax
+      CellsRecursion cellsRecursion(cells.begin(),cells.end(),bounds,nspawn);// Instantiate recursive functor
+      cellsRecursion();                                         //  Recursive call for bounds calculation
+    }                                                           // End if for empty body vector
+    logger::stopTimer("Get bounds");                            // Stop timer
+    return bounds;                                              // Return Xmin and Xmax
+  }
+
+  //! Update Xmin and Xmax of cells
+  Bounds getBounds(Cells cells, Bounds bounds) {
+    logger::startTimer("Get bounds");                           // Start timer
+    CellsRecursion cellsRecursion(cells.begin(),cells.end(),bounds,nspawn);// Instantiate recursive functor
+    cellsRecursion();                                           // Recursive call for bounds calculation
     logger::stopTimer("Get bounds");                            // Stop timer
     return bounds;                                              // Return Xmin and Xmax
   }

@@ -57,8 +57,7 @@ int main(int argc, char ** argv) {
     localBounds = boundBox.getBounds(jbodies, localBounds);
 #endif
     globalBounds = baseMPI.allreduceBounds(localBounds);
-    localBounds = partition.bisection(bodies, globalBounds);
-    localBounds = boundBox.getBounds(bodies);
+    partition.bisection(bodies, globalBounds);
     bodies = treeMPI.commBodies(bodies);
 #if IneJ
     partition.bisection(jbodies, globalBounds);
@@ -66,10 +65,12 @@ int main(int argc, char ** argv) {
 #endif
     localBounds = boundBox.getBounds(bodies);
     cells = localTree.buildTree(bodies, localBounds);
+    localBounds = boundBox.getBounds(cells, localBounds);
     upDownPass.upwardPass(cells);
 #if IneJ
     localBounds = boundBox.getBounds(jbodies);
     jcells = localTree.buildTree(jbodies, localBounds);
+    localBounds = boundBox.getBounds(jcells, localBounds);
     upDownPass.upwardPass(jcells);
 #endif
 
