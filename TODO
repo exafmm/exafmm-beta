@@ -1,6 +1,6 @@
 -- CPU --
+- Wrapper error
 - Intel OpenMP error
-- Large error for parallel runs
 - examples/Makefile options to args
 - cycle counter based weights
 OpenMP with atomics -> flush
