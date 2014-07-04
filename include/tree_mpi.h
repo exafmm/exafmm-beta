@@ -227,7 +227,7 @@ public:
     C_iter C0 = cells.begin();                                  // Set cells begin iterator
     Bounds bounds;                                              // Bounds of local subdomain
     sendBodyDispl[0] = 0;                                       // Initialize body displacement vector
-    sendCellDispl[0] = 0;                                       // Initialize cell displacement vector 
+    sendCellDispl[0] = 0;                                       // Initialize cell displacement vector
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
       if (irank != 0) sendBodyDispl[irank] = sendBodyDispl[irank-1] + sendBodyCount[irank-1];// Update body displacement
       if (irank != 0) sendCellDispl[irank] = sendCellDispl[irank-1] + sendCellCount[irank-1];// Update cell displacement
@@ -252,7 +252,7 @@ public:
     sendBodies.resize(numSendBodies);                           // Clear send buffer for bodies
     sendCells.resize(numSendCells);                             // Clear send buffer for cells
 #pragma omp parallel for private(bounds)
-    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks 
+    for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
       if (irank != mpirank && !cells.empty()) {                 //  If not current rank and cell vector is not empty
 	int ibody = 0;                                          //   Reinitialize send body's offset
 	int icell = 0;                                          //   Reinitialize send cell's offset
@@ -352,6 +352,16 @@ public:
     for (int i=globalCells-1; i>=0; i--) {                      // Loop over global cells bottom up
       C_iter C = cells.begin() + i;                             //  Iterator of current cell
       if (C->BODY == recvBodies.end()) {                        //  If non-leaf global cell
+	vec3 Xmin = C->X, Xmax = C->X;                          //   Initialize Xmin, Xmax
+	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) { // Loop over child cells
+	  Xmin = min(CC->X-CC->R, Xmin);                        //    Update Xmin
+          Xmax = max(CC->X+CC->R, Xmax);                        //    Update Xmax
+	}                                                       //   End loop over child cells
+	C->X = (Xmax + Xmin) / 2;                               //   Calculate center of domain
+	for (int d=0; d<3; d++) {                               //   Loop over dimensions
+	  C->R = std::max(C->X[d] - Xmin[d], C->R);             //    Calculate min distance from center
+	  C->R = std::max(Xmax[d] - C->X[d], C->R);             //    Calculate max distance from center
+	}                                                       //   End loop over dimensions
 	C->M = 0;                                               //   Reset multipoles
 	kernel::M2M(C, C0);                                     //   M2M kernel
       }                                                         //  End if for non-leaf global cell
