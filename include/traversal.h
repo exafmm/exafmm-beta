@@ -42,6 +42,7 @@ private:
       countWeight(Ci, Cj, mutual, remote);                      //  Increment M2L weight
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
       if (Cj->NBODY == 0) {                                     //  If the bodies weren't sent from remote node
+	std::cout << Ci->ICELL << " " << Cj->ICELL << std::endl;
 	kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
         countKernel(numM2L);                                    //   Increment M2L counter
 	countWeight(Ci, Cj, mutual, remote);                    //   Increment M2L weight

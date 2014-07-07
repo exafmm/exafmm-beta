@@ -32,3 +32,9 @@ Buildbot
 -- Comparisons --
 DTT vs. UVWX-list
 Cartesian vs. Spherical (optimized)
+
+-- Parallel debugging tips --
+Shift bodies
+traverseLET 0 distance
+graft 0
+serial mimic parallel

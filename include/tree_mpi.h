@@ -155,7 +155,7 @@ protected:
 	vec3 Xperiodic = 0;                                     //   Periodic coordinate offset
 	if (images == 0) {                                      //   If free boundary condition
 	  real_t R2 = getDistance(CC, bounds, Xperiodic);       //    Get distance to other domain
-	  divide[cc] |= 4 * CC->R * CC->R > R2;                 //    Divide if the cell seems too close
+	  divide[cc] |= 4 * CC->R * CC->R > R2*0;                 //    Divide if the cell seems too close
 	} else {                                                //   If periodic boundary condition
 	  for (int ix=-1; ix<=1; ix++) {                        //    Loop over x periodic direction
 	    for (int iy=-1; iy<=1; iy++) {                      //     Loop over y periodic direction

@@ -14,7 +14,8 @@ serial: serial.o $(OBJECTS)
 parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	make cleandat
-	mpirun -np 9 ./a.out --ncrit 256 --distribution plummer
+	mpirun -np 64 ./a.out --ncrit 256 --thread 1 --distribution plummer --numBodies 100000 --graft 0
+#	mpirun -np 9 ./a.out --ncrit 256 --distribution plummer
 
 # Checking O(N) complexity
 complexity: serial.o $(OBJECTS)
