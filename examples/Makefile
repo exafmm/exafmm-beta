@@ -6,9 +6,9 @@ LFLAGS	+= -DDIRECT # Compare with direct summation
 #LFLAGS	+= -DWRITE_TIME # Write timings to file
 
 # Test for serial FMM
-serial: serial2.o quantization.o build_tree_cilk.o data_rearrange.o $(OBJECTS)
-	$(CXX) $? $(LFLAGS) -lcilkrts
-	./a.out --numBodies 1000
+serial: serial.o $(OBJECTS)
+	$(CXX) $? $(LFLAGS)
+	./a.out
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
