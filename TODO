@@ -1,4 +1,5 @@
 -- CPU --
+- Tree build scalability
 - Wrapper error
 - Intel OpenMP error
 - examples/Makefile options to args
