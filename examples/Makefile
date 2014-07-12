@@ -5,6 +5,11 @@ LFLAGS	+= -DMASS # Use all positive sources
 LFLAGS	+= -DDIRECT # Compare with direct summation
 #LFLAGS	+= -DWRITE_TIME # Write timings to file
 
+# Test for tree construction
+tree: tree.o $(OBJECTS)
+	$(CXX) $? $(LFLAGS)
+	./a.out
+
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
@@ -13,8 +18,6 @@ serial: serial.o $(OBJECTS)
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	make cleandat
-	mpirun -np 64 ./a.out --ncrit 256 --thread 1 --distribution plummer --numBodies 100000 --graft 0
 #	mpirun -np 9 ./a.out --ncrit 256 --distribution plummer
 
 # Checking O(N) complexity
