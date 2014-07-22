@@ -14,7 +14,10 @@ int omp_get_thread_num() {return 0;}
 #include <omp.h>
 #endif
 
-#define NP 128
+#define NP 512
+#define NP2 128
+#define NCRIT 16
+#define MAXBINS64 64
 
 class BuildTree {
 private:
@@ -60,6 +63,153 @@ private:
     }                                                           // End loop over bodies
   }
 
+  void relocate_data_radix6(uint* pointIds, uint* index, uint long* zcodes, uint long* codes, int* str, int P, int M, int N, int sft) {
+#pragma ivdep
+    for(int j=0; j<M; j++){
+      if(P+j<N){
+	uint ii = (zcodes[j]>>sft) & 0x3F;
+	int jj = str[ii];
+	codes[jj] = zcodes[j];
+	pointIds[jj] = index[j];
+	str[ii]=jj+1;
+      }
+    }
+  }
+
+  void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv) {
+
+    int BinSizes[MAXBINS64];
+    int str[MAXBINS64];
+    uint acm_sizes[MAXBINS64];
+    uint* tmp_ptr;
+    uint long* tmp_code;
+
+    if(N<=NCRIT || sft<0){
+      pointIds[0:N] = index[0:N];
+      bins[0:N] = tid;                                  
+      level[0:N] = lv-1;
+      return;
+    }
+
+    BinSizes[:] = 0;
+    str[:] = 0;
+    acm_sizes[:] = 0;
+
+#pragma ivdep
+    for(int j=0; j<N; j++){
+      uint ii = (zcodes[j]>>sft) & 0x3F;
+      BinSizes[ii]++;
+    }
+
+    str[0] = 0;
+    acm_sizes[0] = 0;
+#pragma ivdep
+    for(int i=1; i<MAXBINS64; i++){
+      uint tmp = str[i-1] + BinSizes[i-1];
+      str[i] = tmp;
+      acm_sizes[i] = tmp;
+    }
+
+#pragma ivdep
+    for(int j=0; j<N; j++){
+      uint ii = (zcodes[j]>>sft) & 0x3F;
+      int jj = str[ii];
+      pointIds[jj] = index[j];
+      codes[jj] = zcodes[j];
+      str[ii] = jj+1;
+    }
+
+    tmp_ptr = index;
+    index = pointIds;
+    pointIds = tmp_ptr;
+
+    tmp_code = zcodes;
+    zcodes = codes;
+    codes = tmp_code;
+
+    if (lv<2) {
+      for(int i=0; i<MAXBINS64; i++){
+	cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1);
+      }
+      cilk_sync;
+    } else {
+      for(int i=0; i<MAXBINS64; i++){
+	bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1);
+      }
+    }
+  }
+
+  void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv) {
+
+    int BinSizes[NP*MAXBINS64];
+    int str[NP*MAXBINS64];
+    uint Sizes[MAXBINS64];
+    uint acm_sizes[MAXBINS64];
+    uint* tmp_ptr;
+    uint long* tmp_code;  
+
+    BinSizes[:] = 0;
+    str[:] = 0;
+    Sizes[:] = 0;
+    acm_sizes[:] = 0;
+
+    if(N<=NCRIT || sft<0){
+      pointIds[0:N] = index[0:N];
+      level[0] = lv-1;
+      bins[0] = tid;
+      return;
+    }
+
+    int M = (int)ceil((float)N / (float)NP);
+
+    cilk_for(int i=0; i<NP; i++){
+#pragma ivdep
+      for(int j=0; j<M; j++){
+	if(i*M+j<N){
+	  uint ii = (zcodes[i*M + j]>>sft) & 0x3F;
+	  BinSizes[i*MAXBINS64 + ii]++;
+	}
+      }
+    }
+
+    int dd = 0;
+    for(int i=0; i<MAXBINS64; i++){
+      str[i] = dd;
+      acm_sizes[i] = dd;
+#pragma ivdep
+      for(int j=1; j<NP; j++){
+	str[j*MAXBINS64+i] = str[(j-1)*MAXBINS64+i] + BinSizes[(j-1)*MAXBINS64+i];
+	Sizes[i] += BinSizes[(j-1)*MAXBINS64+i];
+      }
+      dd = str[(NP-1)*MAXBINS64+i] + BinSizes[(NP-1)*MAXBINS64 + i];
+      Sizes[i] += BinSizes[(NP-1)*MAXBINS64 + i];
+    }
+    
+    for(int i=0; i<NP; i++){
+      cilk_spawn relocate_data_radix6(pointIds, &index[i*M], &zcodes[i*M], codes, &str[i*MAXBINS64], i*M, M, N, sft);
+    }
+    cilk_sync;
+
+    tmp_ptr = index;
+    index = pointIds;
+    pointIds = tmp_ptr;
+
+    tmp_code = zcodes;
+    zcodes = codes;
+    codes = tmp_code;
+
+    if (lv<2) {    
+      for(int i=0; i<MAXBINS64; i++) {
+	cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, 64*tid + i, lv+1);
+      }
+    } else {
+      for(int i=0; i<MAXBINS64; i++) {
+	bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, 64*tid + i, lv+1);
+      }
+    }
+    cilk_sync;    
+  }
+
   void permuteBlock(Body * bodies, Bodies & buffer, uint * index, int N){
     for(int i=0; i<N; i++){
       bodies[i] = buffer[index[i]];
@@ -67,11 +217,11 @@ private:
   }
 
   void permute(Bodies & bodies, Bodies & buffer, uint * index, int N){
-    int M = N / NP;
-    for(int i=0; i<NP-1; i++){
+    int M = N / NP2;
+    for(int i=0; i<NP2-1; i++){
       cilk_spawn permuteBlock(&bodies[i*M], buffer, &index[i*M], M);
     }
-    permuteBlock(&bodies[(NP-1)*M], buffer, &index[(NP-1)*M], N-(NP-1)*M);
+    permuteBlock(&bodies[(NP2-1)*M], buffer, &index[(NP2-1)*M], N-(NP2-1)*M);
   }
 
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
@@ -163,7 +313,7 @@ public:
   Cells buildTree(Bodies & bodies, Bounds bounds) {
     const int numBodies = bodies.size();
     const int N = numBodies; // TODO: Change to numBodies
-    const int level = 5;
+    const int level = 6;
     maxlevel = level;
 
     float *X = (float*)malloc(3*N*sizeof(float));
@@ -200,6 +350,7 @@ public:
 
     logger::startTimer("Radix sort");
     for (int b=0; b<int(bodies.size()); b++) {
+      //if(mcodes[b]!=key[b]) std::cout << b << " " << mcodes[b] << " " << key[b] << std::endl;
       mcodes[b] = key[b];
     }
     bin_sort_radix6(mcodes, scodes, index2, index, bins, levels, N, 3*(maxlev-2), 0, 0);
