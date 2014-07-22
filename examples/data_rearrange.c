@@ -104,8 +104,9 @@ void rearrange_dataTL(float *Y, float *X, uint *Ids, int N){
 
   int M = N / NP;
 
-  for(int i=0; i<NP; i++){
+  for(int i=0; i<NP-1; i++){
     cilk_spawn relocateTL(&Y[i*M*LDIM], X, &Ids[i*M], M);
   }
+  relocateTL(&Y[(NP-1)*M*LDIM], X, &Ids[(NP-1)*M], N-(NP-1)*M);
 }
 
