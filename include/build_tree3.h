@@ -63,18 +63,18 @@ private:
     }                                                           // End loop over bodies
   }
 
-  void permuteBlock(Body *Y, Body *X, uint *index, int N){
+  void permuteBlock(Body *Y, Bodies & buffer, uint *index, int N){
     for(int i=0; i<N; i++){
-      Y[i] = X[index[i]];
+      Y[i] = buffer[index[i]];
     }
   }
 
-  void permute(Body *Y, Body *X, uint *index, int N){
+  void permute(Body *Y, Bodies & buffer, uint *index, int N){
     int M = N / NP;
     for(int i=0; i<NP-1; i++){
-      cilk_spawn permuteBlock(&Y[i*M], X, &index[i*M], M);
+      cilk_spawn permuteBlock(&Y[i*M], buffer, &index[i*M], M);
     }
-    permuteBlock(&Y[(NP-1)*M], X, &index[(NP-1)*M], N-(NP-1)*M);
+    permuteBlock(&Y[(NP-1)*M], buffer, &index[(NP-1)*M], N-(NP-1)*M);
   }
 
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
@@ -209,13 +209,10 @@ public:
     bin_sort_radix6(mcodes, scodes, index2, index, bins, levels, N, 3*(maxlev-2), 0, 0, 3*(maxlev-maxheight));
     logger::stopTimer("Radix sort");
 
+    Bodies input = bodies;
     logger::startTimer("Permutation");
-    Body *input = (Body*)malloc(N*sizeof(Body));
     Body *output = (Body*)malloc(N*sizeof(Body));
     b = 0;
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
-      input[b] = *B;
-    }
     permute(output, input, index2, N); // TODO: Use Body type directly
     b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
