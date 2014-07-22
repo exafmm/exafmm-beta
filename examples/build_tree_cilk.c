@@ -192,94 +192,68 @@ void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds,
   uint* tmp_ptr;
   uint long* tmp_code;
 
-  //printf("sifting: %d\n", sft);
-
-  //printf("worker num:%d\n",__cilkrts_get_nworkers());
-
   if(sft<stop){
     pointIds[0:N] = index[0:N];
     bins[0:N] = tid;
     level[0:N] = lv-1;
-    //bins[0] = tid;
-    //level[0] = lv-1;
     return;
   }
 
   if(N<=th){
 
-    pointIds[0:N] = index[0:N];
     bins[0:N] = tid;                                  
-    //bins[0] = tid;
     level[0:N] = lv-1;
-    //level[0] = lv-1;
     return;
   }
-  else{
 
-    BinSizes[:] = 0;
-    str[:] = 0;
-    acm_sizes[:] = 0;
+  BinSizes[:] = 0;
+  str[:] = 0;
+  acm_sizes[:] = 0;
 
-    // Find which child each point belongs to 
-
-    #pragma ivdep
-    for(int j=0; j<N; j++){
-      uint ii = (zcodes[j]>>sft) & 0x3F;
-      //printf("%d: %d %d\n", j, ii, 0x3F);
-      BinSizes[ii]++;
-    }
-    // scan prefix (must change this code)  
-
-    str[0] = 0;
-    acm_sizes[0] = 0;
-    #pragma ivdep
-    for(int i=1; i<MAXBINS64; i++){
-      uint tmp = str[i-1] + BinSizes[i-1];
-      str[i] = tmp;
-      acm_sizes[i] = tmp;
-    }
-
-    #pragma ivdep
-    for(int j=0; j<N; j++){
-      uint ii = (zcodes[j]>>sft) & 0x3F;
-      pointIds[str[ii]] = index[j];
-      codes[str[ii]] = zcodes[j];
-      str[ii]++;
-    }
-
-    //swap the index pointers  
-
-    tmp_ptr = index;
-    index = pointIds;
-    pointIds = tmp_ptr;
-    //index[0:N] = pointIds[0:N]; 
-
-    //swap the code pointers 
-    tmp_code = zcodes;
-    zcodes = codes;
-    codes = tmp_code;
-
-    //zcodes[0:N] = codes[0:N];
-    if(lv<2){
-
-      for(int i=0; i<MAXBINS64; i++){
-        cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1, stop);
-      }
-      cilk_sync;
-    }
-    else{
-      for(int i=0; i<MAXBINS64; i++){
-        bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1, stop);
-      }
-
-    }
-
-
+#pragma ivdep
+  for(int j=0; j<N; j++){
+    uint ii = (zcodes[j]>>sft) & 0x3F;
+    BinSizes[ii]++;
   }
 
+  str[0] = 0;
+  acm_sizes[0] = 0;
+#pragma ivdep
+  for(int i=1; i<MAXBINS64; i++){
+    uint tmp = str[i-1] + BinSizes[i-1];
+    str[i] = tmp;
+    acm_sizes[i] = tmp;
+  }
+
+#pragma ivdep
+  for(int j=0; j<N; j++){
+    uint ii = (zcodes[j]>>sft) & 0x3F;
+    pointIds[str[ii]] = index[j];
+    codes[str[ii]] = zcodes[j];
+    str[ii]++;
+  }
+
+  tmp_ptr = index;
+  index = pointIds;
+  pointIds = tmp_ptr;
+
+  tmp_code = zcodes;
+  zcodes = codes;
+  codes = tmp_code;
+
+  if (lv<2) {
+    for(int i=0; i<MAXBINS64; i++){
+      cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1, stop);
+    }
+    cilk_sync;
+  } else {
+    for(int i=0; i<MAXBINS64; i++){
+      bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1, stop);
+    }
+  }
 }
 
-void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv, int stop){
+void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv, int stop) {
 
   int BinSizes[NP*MAXBINS64];
   int str[NP*MAXBINS64];
@@ -294,106 +268,67 @@ void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* 
   acm_sizes[:] = 0;
 
   if(sft<stop){
-
-    //bins[0:N] = tid;
-    //level[0:N] = lv-1;
     bins[0] = tid;
     level[0] = lv-1;
     return;
   }
-
 
   if(N<th){
-
     pointIds[0:N] = index[0:N];
-    //bins[0:N] = tid;
-    //level[0:N] = lv-1;
     level[0] = lv-1;
     bins[0] = tid;
     return;
-
   }
-  else{
 
-    int M = (int)ceil((float)N / (float)NP);
+  int M = (int)ceil((float)N / (float)NP);
 
-    // Find which child each point belongs to
-    //#pragma cilk grainsize = 64
-    cilk_for(int i=0; i<NP; i++){
+  cilk_for(int i=0; i<NP; i++){
 #pragma ivdep
-      for(int j=0; j<M; j++){
-        if(i*M+j<N){
-          uint ii = (zcodes[i*M + j]>>sft) & 0x3F;
-          BinSizes[i*MAXBINS64 + ii]++;
-        }
+    for(int j=0; j<M; j++){
+      if(i*M+j<N){
+	uint ii = (zcodes[i*M + j]>>sft) & 0x3F;
+	BinSizes[i*MAXBINS64 + ii]++;
       }
     }
+  }
 
-    int dd = 0;
-    for(int i=0; i<MAXBINS64; i++){
-      str[i] = dd;
-      acm_sizes[i] = dd;
+  int dd = 0;
+  for(int i=0; i<MAXBINS64; i++){
+    str[i] = dd;
+    acm_sizes[i] = dd;
 #pragma ivdep
-      for(int j=1; j<NP; j++){
-        str[j*MAXBINS64+i] = str[(j-1)*MAXBINS64+i] + BinSizes[(j-1)*MAXBINS64+i];
-        Sizes[i] += BinSizes[(j-1)*MAXBINS64+i];
-      }
-      dd = str[(NP-1)*MAXBINS64+i] + BinSizes[(NP-1)*MAXBINS64 + i];
-      Sizes[i] += BinSizes[(NP-1)*MAXBINS64 + i];
+    for(int j=1; j<NP; j++){
+      str[j*MAXBINS64+i] = str[(j-1)*MAXBINS64+i] + BinSizes[(j-1)*MAXBINS64+i];
+      Sizes[i] += BinSizes[(j-1)*MAXBINS64+i];
     }
-    
-    
-    for(int i=0; i<NP; i++){
-      cilk_spawn relocate_data_radix6(pointIds, &index[i*M], &zcodes[i*M], codes, &str[i*MAXBINS64], i*M, M, N, sft);
-    }
-    cilk_sync;
-
-    //swap the index pointers  
-
-    tmp_ptr = index;
-    index = pointIds;
-    pointIds = tmp_ptr;
-
-    //swap the code pointers
-    tmp_code = zcodes;
-    zcodes = codes;
-    codes = tmp_code;
-
-    
-    for(int i=0; i<MAXBINS64; i++){
-      cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, 64*tid + i, lv+1, stop);
-
-    }
-    cilk_sync;
-    
+    dd = str[(NP-1)*MAXBINS64+i] + BinSizes[(NP-1)*MAXBINS64 + i];
+    Sizes[i] += BinSizes[(NP-1)*MAXBINS64 + i];
   }
-
-}
-
-
-
-void morton_encoding(unsigned long int* mcodes, uint *codes, int N){
-
-  cilk_for(int i=0; i<N; i++){
-    mcodes[i] = mortonEncode_LUT(codes[i], codes[N+i], codes[2*N+i]);
+    
+  for(int i=0; i<NP; i++){
+    cilk_spawn relocate_data_radix6(pointIds, &index[i*M], &zcodes[i*M], codes, &str[i*MAXBINS64], i*M, M, N, sft);
   }
+  cilk_sync;
 
+  tmp_ptr = index;
+  index = pointIds;
+  pointIds = tmp_ptr;
+
+  tmp_code = zcodes;
+  zcodes = codes;
+  codes = tmp_code;
+
+    
+  for(int i=0; i<MAXBINS64; i++){
+    cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, 64*tid + i, lv+1, stop);
+
+  }
+  cilk_sync;    
 }
 
 
 void morton_encoding_T(unsigned long int* mcodes, uint *codes, int N){
-
   cilk_for(int i=0; i<N; i++){
     mcodes[i] = mortonEncode_LUT(codes[i*DIM], codes[i*DIM + 1], codes[i*DIM + 2]);
   }
-
-}
-
-
-void morton_encoding_TL(unsigned long int* mcodes, uint *codes, int N){
-
-  cilk_for(int i=0; i<N; i++){
-    mcodes[i] = mortonEncode_LUT(codes[i*LDIM], codes[i*LDIM + 1], codes[i*LDIM + 2]);
-  }
-
 }
