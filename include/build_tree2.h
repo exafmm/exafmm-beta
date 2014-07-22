@@ -215,7 +215,7 @@ public:
 
   Cells buildTree(Bodies & bodies, Bounds bounds) {
     const int numBodies = bodies.size();
-    const int level = 5;
+    const int level = 6;
     maxlevel = level;
     uint64_t * key = new uint64_t [numBodies];
     uint64_t * buffer = new uint64_t [numBodies];

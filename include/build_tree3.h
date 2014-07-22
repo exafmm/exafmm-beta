@@ -182,7 +182,6 @@ public:
       index[b] = b;
     }
     int maxlev = 6;
-    int maxheight = 6;
     int nbins = (1 << maxlev);
     compute_quantization_codes_T(codes, X, N, nbins);
     morton_encoding_T(mcodes, codes, N);
@@ -203,7 +202,7 @@ public:
     for (int b=0; b<int(bodies.size()); b++) {
       mcodes[b] = key[b];
     }
-    bin_sort_radix6(mcodes, scodes, index2, index, bins, levels, N, 3*(maxlev-2), 0, 0, 3*(maxlev-maxheight));
+    bin_sort_radix6(mcodes, scodes, index2, index, bins, levels, N, 3*(maxlev-2), 0, 0);
     logger::stopTimer("Radix sort");
 
     Bodies bodies2 = bodies;

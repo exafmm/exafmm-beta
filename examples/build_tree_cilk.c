@@ -161,7 +161,7 @@ void relocate_data_radix6(uint* pointIds, uint* index, uint long* zcodes, uint l
   }
 }
 
-void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv, int stop){
+void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv) {
 
   int BinSizes[MAXBINS64];
   int str[MAXBINS64];
@@ -213,17 +213,17 @@ void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds,
 
   if (lv<2) {
     for(int i=0; i<MAXBINS64; i++){
-      cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1, stop);
+      cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1);
     }
     cilk_sync;
   } else {
     for(int i=0; i<MAXBINS64; i++){
-      bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1, stop);
+      bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1);
     }
   }
 }
 
-void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv, int stop) {
+void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv) {
 
   int BinSizes[NP*MAXBINS64];
   int str[NP*MAXBINS64];
@@ -283,7 +283,7 @@ void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* 
   codes = tmp_code;
     
   for(int i=0; i<MAXBINS64; i++){
-    cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, 64*tid + i, lv+1, stop);
+    cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, 64*tid + i, lv+1);
 
   }
   cilk_sync;    

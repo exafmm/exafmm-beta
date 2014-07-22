@@ -23,9 +23,8 @@ void morton_encoding(unsigned long int* mcode, uint *codes, int N);
 void morton_encoding_T(unsigned long int* mcodes, uint *codes, int N);
 void morton_encoding_TL(unsigned long int* mcodes, uint *codes, int N);
 void bin_sort2(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv);
-void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv, int stop);
-void bin_sort_radix6_hr(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv, int stop, uint* permut);
-void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv, int stop);
+void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv);
+void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv);
 
 
 /* data_rearrange.c file*/
