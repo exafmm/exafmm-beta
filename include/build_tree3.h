@@ -1,6 +1,8 @@
 #ifndef build_tree_h
 #define build_tree_h
 #include <algorithm>
+#include <cilk/cilk.h>
+#include <cilk/cilk_api.h> // TODO: Is this needed?
 #include "logger.h"
 #include "thread.h"
 #include "types.h"
@@ -11,6 +13,9 @@ int omp_get_thread_num() {return 0;}
 #else
 #include <omp.h>
 #endif
+
+#define LDIM 12
+#define NP 128
 
 class BuildTree {
 private:
@@ -56,6 +61,20 @@ private:
       key[b] = id;                                              //  Store Morton key in array
       B->ICELL = id;                                            //  Store Morton key in body struct
     }                                                           // End loop over bodies
+  }
+
+  void permuteBlock(float *Y, float *X, uint *index, int N){
+    for(int i=0; i<N; i++){
+      Y[i*LDIM:LDIM] = X[index[i]*LDIM:LDIM];
+    }
+  }
+
+  void permute(float *Y, float *X, uint *index, int N){
+    int M = N / NP;
+    for(int i=0; i<NP-1; i++){
+      cilk_spawn permuteBlock(&Y[i*M*LDIM], X, &index[i*M], M);
+    }
+    permuteBlock(&Y[(NP-1)*M*LDIM], X, &index[(NP-1)*M], N-(NP-1)*M);
   }
 
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
