@@ -206,8 +206,8 @@ public:
     bin_sort_radix6(mcodes, scodes, index2, index, bins, levels, N, 3*(maxlev-2), 0, 0, 3*(maxlev-maxheight));
     logger::stopTimer("Radix sort");
 
-    logger::startTimer("Permutation");
     Bodies bodies2 = bodies;
+    logger::startTimer("Permutation");
     permute(bodies, bodies2, index2, N);
     logger::stopTimer("Permutation");
 

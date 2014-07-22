@@ -152,24 +152,7 @@ static const uint morton256_z[256] = {
     return answer;
 }
 
-void relocate_data(uint* pointIds, uint* index, uint long* zcodes, uint long* codes, int* str, int P, int M, int N, int sft){
-
-#pragma ivdep
-  for(int j=0; j<M; j++){
-    if(P+j<N){
-      uint ii = (zcodes[j]>>sft) & 0x07;
-      int jj = str[ii];
-      codes[jj] = zcodes[j];
-      pointIds[jj] = index[j];
-      jj++;
-      str[ii]=jj;
-    }
-  }
-  
-}
-
-void relocate_data_radix6(uint* pointIds, uint* index, uint long* zcodes, uint long* codes, int* str, int P, int M, int N, int sft){
-
+void relocate_data_radix6(uint* pointIds, uint* index, uint long* zcodes, uint long* codes, int* str, int P, int M, int N, int sft) {
 #pragma ivdep
   for(int j=0; j<M; j++){
     if(P+j<N){
@@ -181,7 +164,6 @@ void relocate_data_radix6(uint* pointIds, uint* index, uint long* zcodes, uint l
       str[ii]=jj;
     }
   }
-
 }
 
 void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv, int stop){
@@ -200,7 +182,6 @@ void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds,
   }
 
   if(N<=th){
-
     bins[0:N] = tid;                                  
     level[0:N] = lv-1;
     return;
