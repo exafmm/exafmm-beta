@@ -14,14 +14,9 @@ date: Jul 2014
 #include "math.h"
 #include "sys/time.h"
 
-#define MAXBINS 8
 #define MAXBINS64 64
 #define NP 512
-#define NP3 32
-#define th 16
-#define DIM 3
-#define LDIM 12
-#define MASK64 0x3F
+#define NCRIT 16
 
 // Set up the look-up tables for morton codes
 static const uint morton256_x[256] =
@@ -181,7 +176,7 @@ void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds,
     return;
   }
 
-  if(N<=th){
+  if(N<=NCRIT){
     bins[0:N] = tid;                                  
     level[0:N] = lv-1;
     return;
@@ -248,13 +243,7 @@ void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* 
   Sizes[:] = 0;
   acm_sizes[:] = 0;
 
-  if(sft<stop){
-    bins[0] = tid;
-    level[0] = lv-1;
-    return;
-  }
-
-  if(N<th){
+  if(N<NCRIT){
     pointIds[0:N] = index[0:N];
     level[0] = lv-1;
     bins[0] = tid;
@@ -310,6 +299,6 @@ void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* 
 
 void morton_encoding_T(unsigned long int* mcodes, uint *codes, int N){
   cilk_for(int i=0; i<N; i++){
-    mcodes[i] = mortonEncode_LUT(codes[i*DIM], codes[i*DIM + 1], codes[i*DIM + 2]);
+    mcodes[i] = mortonEncode_LUT(codes[3*i], codes[3*i+1], codes[3*i+2]);
   }
 }
