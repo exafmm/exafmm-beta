@@ -169,14 +169,8 @@ void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds,
   uint* tmp_ptr;
   uint long* tmp_code;
 
-  if(sft<stop){
+  if(N<=NCRIT || sft<0){
     pointIds[0:N] = index[0:N];
-    bins[0:N] = tid;
-    level[0:N] = lv-1;
-    return;
-  }
-
-  if(N<=NCRIT){
     bins[0:N] = tid;                                  
     level[0:N] = lv-1;
     return;
@@ -243,7 +237,7 @@ void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* 
   Sizes[:] = 0;
   acm_sizes[:] = 0;
 
-  if(N<NCRIT){
+  if(N<=NCRIT || sft<0){
     pointIds[0:N] = index[0:N];
     level[0] = lv-1;
     bins[0] = tid;
@@ -287,7 +281,6 @@ void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* 
   tmp_code = zcodes;
   zcodes = codes;
   codes = tmp_code;
-
     
   for(int i=0; i<MAXBINS64; i++){
     cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &pointIds[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, 64*tid + i, lv+1, stop);
