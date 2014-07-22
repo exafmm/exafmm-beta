@@ -14,7 +14,6 @@ int omp_get_thread_num() {return 0;}
 #include <omp.h>
 #endif
 
-#define LDIM 12
 #define NP 128
 
 class BuildTree {
@@ -22,59 +21,57 @@ private:
   int maxlevel;
 
 private:
-  //! Transform Xmin & Xmax to X (center) & R (radius)
   Box bounds2box(Bounds bounds) {
-    vec3 Xmin = bounds.Xmin;                                    // Set local Xmin
-    vec3 Xmax = bounds.Xmax;                                    // Set local Xmax
-    Box box;                                                    // Bounding box
-    for (int d=0; d<3; d++) box.X[d] = (Xmax[d] + Xmin[d]) / 2; // Calculate center of domain
-    box.R = 0;                                                  // Initialize localRadius
-    for (int d=0; d<3; d++) {                                   // Loop over dimensions
-      box.R = std::max(box.X[d] - Xmin[d], box.R);              //  Calculate min distance from center
-      box.R = std::max(Xmax[d] - box.X[d], box.R);              //  Calculate max distance from center
-    }                                                           // End loop over dimensions
-    box.R *= 1.00001;                                           // Add some leeway to radius
+    vec3 Xmin = bounds.Xmin;
+    vec3 Xmax = bounds.Xmax;
+    Box box;
+    for (int d=0; d<3; d++) box.X[d] = (Xmax[d] + Xmin[d]) / 2;
+    box.R = 0;
+    for (int d=0; d<3; d++) {
+      box.R = std::max(box.X[d] - Xmin[d], box.R);
+      box.R = std::max(Xmax[d] - box.X[d], box.R);
+    }
+    box.R *= 1.00001;
     bounds.Xmin = box.X - box.R;
     bounds.Xmax = box.X + box.R;
-    return box;                                                 // Return box.X and box.R
+    return box;
   }
 
-  //! Calculate the Morton key
   inline void getKey(Bodies &bodies, uint64_t * key, Bounds bounds, int level) {
     Box box = bounds2box(bounds);
-    float d = 2 * box.R / (1 << level);                         // Cell size at current level
+    float d = 2 * box.R / (1 << level);
 #pragma omp parallel for
-    for (int b=0; b<int(bodies.size()); b++) {                  // Loop over bodies
-      B_iter B=bodies.begin()+b;                                //  Body iterator
-      int ix = (B->X[0] - bounds.Xmin[0]) / d;                  //  Index in x dimension
-      int iy = (B->X[1] - bounds.Xmin[1]) / d;                  //  Index in y dimension
-      int iz = (B->X[2] - bounds.Xmin[2]) / d;                  //  Index in z dimension
-      int id = 0;                                               //  Initialize Morton key
-      for( int l=0; l!=level; ++l ) {                           //  Loop over levels
-	id += (ix & 1) << (3 * l);                              //   Interleave x bit
-	id += (iy & 1) << (3 * l + 1);                          //   Interleave y bit
-	id += (iz & 1) << (3 * l + 2);                          //   Interleave z bit
-	ix >>= 1;                                               //   Shift x index
-	iy >>= 1;                                               //   Shift y index
-	iz >>= 1;                                               //   Shift z index
-      }                                                         //  End loop over levels
-      key[b] = id;                                              //  Store Morton key in array
-      B->ICELL = id;                                            //  Store Morton key in body struct
+    for (int b=0; b<int(bodies.size()); b++) {
+      B_iter B=bodies.begin()+b;
+      int ix = (B->X[0] - bounds.Xmin[0]) / d;
+      int iy = (B->X[1] - bounds.Xmin[1]) / d;
+      int iz = (B->X[2] - bounds.Xmin[2]) / d;
+      int id = 0;
+      for( int l=0; l!=level; ++l ) {
+	id += (ix & 1) << (3 * l);
+	id += (iy & 1) << (3 * l + 1);
+	id += (iz & 1) << (3 * l + 2);
+	ix >>= 1;
+	iy >>= 1;
+	iz >>= 1;
+      }
+      key[b] = id;
+      B->ICELL = id;
     }                                                           // End loop over bodies
   }
 
-  void permuteBlock(Body *Y, Bodies & buffer, uint *index, int N){
+  void permuteBlock(Body * bodies, Bodies & buffer, uint * index, int N){
     for(int i=0; i<N; i++){
-      Y[i] = buffer[index[i]];
+      bodies[i] = buffer[index[i]];
     }
   }
 
-  void permute(Body *Y, Bodies & buffer, uint *index, int N){
+  void permute(Bodies & bodies, Bodies & buffer, uint * index, int N){
     int M = N / NP;
     for(int i=0; i<NP-1; i++){
-      cilk_spawn permuteBlock(&Y[i*M], buffer, &index[i*M], M);
+      cilk_spawn permuteBlock(&bodies[i*M], buffer, &index[i*M], M);
     }
-    permuteBlock(&Y[(NP-1)*M], buffer, &index[(NP-1)*M], N-(NP-1)*M);
+    permuteBlock(&bodies[(NP-1)*M], buffer, &index[(NP-1)*M], N-(NP-1)*M);
   }
 
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
@@ -209,15 +206,9 @@ public:
     bin_sort_radix6(mcodes, scodes, index2, index, bins, levels, N, 3*(maxlev-2), 0, 0, 3*(maxlev-maxheight));
     logger::stopTimer("Radix sort");
 
-    Bodies input = bodies;
     logger::startTimer("Permutation");
-    Body *output = (Body*)malloc(N*sizeof(Body));
-    b = 0;
-    permute(output, input, index2, N); // TODO: Use Body type directly
-    b = 0;
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
-      *B = output[b];
-    }
+    Bodies bodies2 = bodies;
+    permute(bodies, bodies2, index2, N);
     logger::stopTimer("Permutation");
 
     logger::startTimer("Bodies to leafs");
