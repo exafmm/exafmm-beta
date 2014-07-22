@@ -31,7 +31,7 @@ void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds,
 /* data_rearrange.c file*/
 void relocate_par(float *Y, float *X, uint *index, int N);
 void rearrange_dataT(float *Y, float *X, uint *Ids, int N);
-void rearrange_dataTL(float *Y, float *X, uint *Ids, int N);
+void permute(float *Y, float *X, uint *Ids, int N);
 void rearrange_dataT_nlev(float *Y, float *X, uint *Ids, int N, int nbins, uint *bsizes, uint *baccum_sizes);
 void rearrange_data(float *Y, float *X, uint *Ids, int N);
 

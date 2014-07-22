@@ -58,78 +58,6 @@ private:
     }                                                           // End loop over bodies
   }
 
-  void radixSort(uint64_t * key, uint * value, uint64_t * buffer, int * permutation, int size) {
-    const int bitStride = 8;
-    const int stride = 1 << bitStride;
-    const int mask = stride - 1;
-    int numThreads;
-    int (*bucketPerThread)[stride];
-    uint64_t maxKey = 0;
-    uint64_t * maxKeyPerThread;
-#pragma omp parallel
-    {
-      numThreads = omp_get_num_threads();
-#pragma omp single
-      {
-	bucketPerThread = new int [numThreads][stride]();
-	maxKeyPerThread = new uint64_t [numThreads];
-	for (int i=0; i<numThreads; i++)
-	  maxKeyPerThread[i] = 0;
-      }
-#pragma omp for
-      for (int i=0; i<size; i++)
-	if (key[i] > maxKeyPerThread[omp_get_thread_num()])
-	  maxKeyPerThread[omp_get_thread_num()] = key[i];
-#pragma omp single
-      for (int i=0; i<numThreads; i++)
-	if (maxKeyPerThread[i] > maxKey) maxKey = maxKeyPerThread[i];
-      while (maxKey > 0) {
-	int bucket[stride] = {0};
-#pragma omp single
-	for (int t=0; t<numThreads; t++)
-	  for (int i=0; i<stride; i++)
-	    bucketPerThread[t][i] = 0;
-#pragma omp for
-	for (int i=0; i<size; i++)
-	  bucketPerThread[omp_get_thread_num()][key[i] & mask]++;
-#pragma omp single
-	{
-	  for (int t=0; t<numThreads; t++)
-	    for (int i=0; i<stride; i++)
-	      bucket[i] += bucketPerThread[t][i];
-	  for (int i=1; i<stride; i++)
-	    bucket[i] += bucket[i-1];
-	  for (int i=size-1; i>=0; i--)
-	    permutation[i] = --bucket[key[i] & mask];
-	}
-#pragma omp for
-	for (int i=0; i<size; i++)
-	  buffer[permutation[i]] = value[i];
-#pragma omp for
-	for (int i=0; i<size; i++)
-	  value[i] = buffer[i];
-#pragma omp for
-	for (int i=0; i<size; i++)
-	  buffer[permutation[i]] = key[i];
-#pragma omp for
-	for (int i=0; i<size; i++)
-	  key[i] = buffer[i] >> bitStride;
-#pragma omp single
-	maxKey >>= bitStride;
-      }
-    }
-    delete[] bucketPerThread;
-    delete[] maxKeyPerThread;
-  }
-
-  void permute(Bodies & bodies, uint * index) {
-    const int n = bodies.size();
-    Bodies buffer = bodies;
-#pragma omp parallel for
-    for (int b=0; b<n; b++)
-      bodies[b] = buffer[index[b]];
-  }
-
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
     int I = -1;
     C_iter C;
@@ -256,20 +184,13 @@ public:
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-#if 0
-    radixSort(key, index2, buffer, permutation, numBodies);
-#else
     for (int b=0; b<int(bodies.size()); b++) {
       mcodes[b] = key[b];
     }
     bin_sort_radix6(mcodes, scodes, index2, index, bins, levels, N, 3*(maxlev-2), 0, 0, 3*(maxlev-maxheight));
-#endif    
     logger::stopTimer("Radix sort");
 
     logger::startTimer("Permutation");
-#if 0
-    permute(bodies, index2);
-#else
     float *input = (float*)malloc(12*N*sizeof(float));
     float *output = (float*)malloc(12*N*sizeof(float));
     b = 0;
@@ -287,7 +208,7 @@ public:
       input[12*b+10] = B->TRG[2];
       input[12*b+11] = B->TRG[3];
     }
-    rearrange_dataTL(output, input, index2, N); // TODO: Use Body type directly
+    permute(output, input, index2, N); // TODO: Use Body type directly
     b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
       B->X[0]   = output[12*b+0];
@@ -303,7 +224,6 @@ public:
       B->TRG[2] = output[12*b+10];
       B->TRG[3] = output[12*b+11];
     }
-#endif
     logger::stopTimer("Permutation");
 
     logger::startTimer("Bodies to leafs");
