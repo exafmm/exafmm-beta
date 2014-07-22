@@ -12,8 +12,8 @@ tree: tree.o $(OBJECTS)
 
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
-	$(CXX) $? $(LFLAGS)
-	./a.out
+	$(CXX) $? $(LFLAGS) quantization.c build_tree_cilk.c data_rearrange.c -lcilkrts
+	./a.out --numBodies 1048576
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
