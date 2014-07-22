@@ -63,18 +63,18 @@ private:
     }                                                           // End loop over bodies
   }
 
-  void permuteBlock(float *Y, float *X, uint *index, int N){
+  void permuteBlock(Body *Y, Body *X, uint *index, int N){
     for(int i=0; i<N; i++){
-      Y[i*LDIM:LDIM] = X[index[i]*LDIM:LDIM];
+      Y[i] = X[index[i]];
     }
   }
 
-  void permute(float *Y, float *X, uint *index, int N){
+  void permute(Body *Y, Body *X, uint *index, int N){
     int M = N / NP;
     for(int i=0; i<NP-1; i++){
-      cilk_spawn permuteBlock(&Y[i*M*LDIM], X, &index[i*M], M);
+      cilk_spawn permuteBlock(&Y[i*M], X, &index[i*M], M);
     }
-    permuteBlock(&Y[(NP-1)*M*LDIM], X, &index[(NP-1)*M], N-(NP-1)*M);
+    permuteBlock(&Y[(NP-1)*M], X, &index[(NP-1)*M], N-(NP-1)*M);
   }
 
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
@@ -210,38 +210,16 @@ public:
     logger::stopTimer("Radix sort");
 
     logger::startTimer("Permutation");
-    float *input = (float*)malloc(12*N*sizeof(float));
-    float *output = (float*)malloc(12*N*sizeof(float));
+    Body *input = (Body*)malloc(N*sizeof(Body));
+    Body *output = (Body*)malloc(N*sizeof(Body));
     b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
-      input[12*b+0] = B->X[0];
-      input[12*b+1] = B->X[1];
-      input[12*b+2] = B->X[2];
-      input[12*b+3] = B->SRC;
-      input[12*b+4] = B->IBODY;
-      input[12*b+5] = B->IRANK;
-      input[12*b+6] = B->ICELL;
-      input[12*b+7] = B->WEIGHT;
-      input[12*b+8] = B->TRG[0];
-      input[12*b+9] = B->TRG[1];
-      input[12*b+10] = B->TRG[2];
-      input[12*b+11] = B->TRG[3];
+      input[b] = *B;
     }
     permute(output, input, index2, N); // TODO: Use Body type directly
     b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
-      B->X[0]   = output[12*b+0];
-      B->X[1]   = output[12*b+1];
-      B->X[2]   = output[12*b+2];
-      B->SRC    = output[12*b+3];
-      B->IBODY  = output[12*b+4];
-      B->IRANK  = output[12*b+5];
-      B->ICELL  = output[12*b+6];
-      B->WEIGHT = output[12*b+7];
-      B->TRG[0] = output[12*b+8];
-      B->TRG[1] = output[12*b+9];
-      B->TRG[2] = output[12*b+10];
-      B->TRG[3] = output[12*b+11];
+      *B = output[b];
     }
     logger::stopTimer("Permutation");
 
