@@ -12,7 +12,7 @@ tree: tree.o $(OBJECTS)
 
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
-	$(CXX) $? $(LFLAGS) quantization.c build_tree_cilk.c -lcilkrts
+	$(CXX) $? $(LFLAGS) build_tree_cilk.c -lcilkrts
 	./a.out
 
 # Test for parallel FMM
