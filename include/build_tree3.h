@@ -350,7 +350,7 @@ public:
 
     logger::startTimer("Radix sort");
     for (int b=0; b<int(bodies.size()); b++) {
-      //if(mcodes[b]!=key[b]) std::cout << b << " " << mcodes[b] << " " << key[b] << std::endl;
+      if(mcodes[b]/8!=key[b]&&b<1e4) std::cout << b << " " << mcodes[b]/8 << " " << key[b] << std::endl;
       mcodes[b] = key[b];
     }
     bin_sort_radix6(mcodes, scodes, index2, index, bins, levels, N, 3*(maxlev-2), 0, 0);
