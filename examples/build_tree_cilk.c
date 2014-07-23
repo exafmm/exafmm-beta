@@ -130,16 +130,15 @@ static const uint morton256_z[256] = {
 
  unsigned long int mortonEncode_LUT(unsigned int x, unsigned int y, unsigned int z){
     unsigned long int answer = 0;
-    answer =    morton256_z[(z >> 16) & 0xFF ] | // we start by shifting the third byte, since we only look at the first 21 bits
-                morton256_y[(y >> 16) & 0xFF ] |
-                morton256_x[(x >> 16) & 0xFF ];
-    answer = answer << 48 | morton256_z[(z >> 8) & 0xFF ] | // shifting second byte
-                morton256_y[(y >> 8) & 0xFF ] |
-                morton256_x[(x >> 8) & 0xFF ];
-    answer = answer << 24 |
-                morton256_z[(z) & 0xFF ] | // first byte
-                morton256_y[(y) & 0xFF ] |
-                morton256_x[(x) & 0xFF ];
+    answer =  morton256_z[(z >> 16) & 0xFF ] |
+      morton256_y[(y >> 16) & 0xFF ] |
+      morton256_x[(x >> 16) & 0xFF ];
+    answer = answer << 48 | morton256_z[(z >> 8) & 0xFF ] |
+      morton256_y[(y >> 8) & 0xFF ] |
+      morton256_x[(x >> 8) & 0xFF ];
+    answer = answer << 24 | morton256_z[(z) & 0xFF ] |
+      morton256_y[(y) & 0xFF ] |
+      morton256_x[(x) & 0xFF ];
     return answer;
 }
 
