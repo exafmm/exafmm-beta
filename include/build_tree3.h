@@ -143,7 +143,7 @@ private:
     return box;
   }
 
-  void getKey(int * codes, float * X, int N, int nbins) {
+  void getKey(uint64_t * keys, float * X, int N, int nbins) {
     float Xmin[3] = {0};
     float Xmax[3] = {0};
     float X0[3];
@@ -166,32 +166,23 @@ private:
     }
     float d = range / nbins;
     cilk_for(int i=0; i<N; i++){
-      codes[i*3:3] = floor((X[i*3:3] - Xmin[0:3]) / d);
+      int ix = floor((X[3*i+0] - Xmin[0]) / d);
+      int iy = floor((X[3*i+1] - Xmin[1]) / d);
+      int iz = floor((X[3*i+2] - Xmin[2]) / d);
+      uint64_t key = morton256_x[(ix >> 16) & 0xFF] |
+	morton256_y[(iy >> 16) & 0xFF] |
+	morton256_z[(iz >> 16) & 0xFF];
+      key <<= 48;
+      key |= morton256_x[(ix >> 8) & 0xFF] |
+	morton256_y[(iy >> 8) & 0xFF] |
+	morton256_z[(iz >> 8) & 0xFF];
+      key <<= 24;
+      key |= morton256_x[ix & 0xFF] |
+	morton256_y[iy & 0xFF] |
+	morton256_z[iz & 0xFF];
+      keys[i] = key;
     }
   }
-
-  uint64_t getMorton(int x, int y, int z){
-    uint64_t answer = 
-      morton256_z[(z >> 16) & 0xFF] |
-      morton256_y[(y >> 16) & 0xFF] |
-      morton256_x[(x >> 16) & 0xFF];
-    answer = answer << 48 |
-      morton256_z[(z >> 8) & 0xFF] |
-      morton256_y[(y >> 8) & 0xFF] |
-      morton256_x[(x >> 8) & 0xFF];
-    answer = answer << 24 |
-      morton256_z[(z) & 0xFF] |
-      morton256_y[(y) & 0xFF] |
-      morton256_x[(x) & 0xFF];
-    return answer;
-  }
-
-  void morton_encoding_T(uint64_t * keys, int * codes, int N){
-    cilk_for(int i=0; i<N; i++) {
-      keys[i] = getMorton(codes[3*i], codes[3*i+1], codes[3*i+2]);
-    }
-  }
-
 
   void relocate_data_radix6(int * permutation, int * index, uint64_t * zcodes,
 			    uint64_t * codes, int * str, int P, int M, int N, int sft) {
@@ -450,7 +441,6 @@ public:
     maxlevel = level;
 
     float * X = (float*)malloc(3*N*sizeof(float));
-    int * codes = (int*)malloc(3*N*sizeof(int)); // TODO: Use new
     uint64_t * keys = new uint64_t [numBodies];
     uint64_t * buffer = new uint64_t [numBodies];
     int * index = new int [numBodies];
@@ -469,8 +459,7 @@ public:
     Cells cells;
 
     logger::startTimer("Morton key");
-    getKey(codes, X, N, nbins);
-    morton_encoding_T(keys, codes, N);
+    getKey(keys, X, N, nbins);
     b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
       keys[b] /= 8;
