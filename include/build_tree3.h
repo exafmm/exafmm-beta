@@ -2,7 +2,6 @@
 #define build_tree_h
 #include <algorithm>
 #include <cilk/cilk.h>
-//#include <cilk/cilk_api.h> // TODO: Is this needed?
 #include "logger.h"
 #include "thread.h"
 #include "types.h"
@@ -144,7 +143,7 @@ private:
     return box;
   }
 
-  void compute_quantization_codes_T(uint* codes, float *X, int N, int nbins) {
+  void compute_quantization_codes_T(uint * codes, float * X, int N, int nbins) {
     float Xmin[3] = {0};
     float Xmax[3] = {0};
     float X0[3];
@@ -171,8 +170,8 @@ private:
     }
   }
 
-  uint getKey(uint x, uint y, uint z){
-    uint answer = 
+  uint64_t getMorton(uint x, uint y, uint z){
+    uint64_t answer = 
       morton256_z[(z >> 16) & 0xFF] |
       morton256_y[(y >> 16) & 0xFF] |
       morton256_x[(x >> 16) & 0xFF];
@@ -187,14 +186,15 @@ private:
     return answer;
   }
 
-  void morton_encoding_T(uint * mcodes, uint * codes, int N){
+  void morton_encoding_T(uint64_t * mcodes, uint * codes, int N){
     cilk_for(int i=0; i<N; i++) {
-      mcodes[i] = getKey(codes[3*i], codes[3*i+1], codes[3*i+2]);
+      mcodes[i] = getMorton(codes[3*i], codes[3*i+1], codes[3*i+2]);
     }
   }
 
 
-  void relocate_data_radix6(uint* pointIds, uint* index, uint long* zcodes, uint long* codes, int* str, int P, int M, int N, int sft) {
+  void relocate_data_radix6(uint * pointIds, uint * index, uint64_t * zcodes,
+			    uint64_t * codes, int * str, int P, int M, int N, int sft) {
 #pragma ivdep
     for(int j=0; j<M; j++){
       if(P+j<N){
@@ -207,7 +207,8 @@ private:
     }
   }
 
-  void bin_sort_serial_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv) {
+  void bin_sort_serial_radix6(uint64_t * zcodes, uint64_t * codes, uint * pointIds,
+			      uint * index, uint * bins, int * level, int N, int sft, int tid, int lv) {
 
     int BinSizes[MAXBINS64];
     int str[MAXBINS64];
@@ -270,14 +271,15 @@ private:
     }
   }
 
-  void bin_sort_radix6(uint long *zcodes, uint long* codes, uint *pointIds, uint* index, uint long* bins, int *level, int N, int sft, int tid, int lv) {
+  void bin_sort_radix6(uint64_t * zcodes, uint64_t * codes, uint * pointIds,
+		       uint * index, uint * bins, int * level, int N, int sft, int tid, int lv) {
 
     int BinSizes[NP*MAXBINS64];
     int str[NP*MAXBINS64];
     uint Sizes[MAXBINS64];
     uint acm_sizes[MAXBINS64];
-    uint* tmp_ptr;
-    uint long* tmp_code;  
+    uint * tmp_ptr;
+    uint64_t * tmp_code;  
 
     BinSizes[:] = 0;
     str[:] = 0;
@@ -447,13 +449,13 @@ public:
     const int level = 6;
     maxlevel = level;
 
-    float *X = (float*)malloc(3*N*sizeof(float));
-    uint* codes = (uint*)malloc(3*N*sizeof(uint)); // TODO: Use new
-    unsigned long int* mcodes = (unsigned long int*)malloc(N*sizeof(unsigned long int));
-    uint long* scodes = (uint long*)malloc(N*sizeof(uint long)); // TODO: Use standard types
-    uint* pointIds = (uint*)malloc(N*sizeof(uint));
-    uint* index = (uint*)malloc(N*sizeof(uint));
-    uint long* bins = (uint long*)malloc(N*sizeof(uint long*));
+    float * X = (float*)malloc(3*N*sizeof(float));
+    uint * codes = (uint*)malloc(3*N*sizeof(uint)); // TODO: Use new
+    uint64_t * mcodes = (uint64_t*)malloc(N*sizeof(uint64_t));
+    uint64_t * scodes = (uint64_t*)malloc(N*sizeof(uint64_t));
+    uint * pointIds = (uint*)malloc(N*sizeof(uint));
+    uint * index = (uint*)malloc(N*sizeof(uint));
+    uint * bins = (uint*)malloc(N*sizeof(uint));
     int* levels = (int*)malloc(N*sizeof(int));
     int b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
