@@ -149,8 +149,8 @@ private:
     float X0[3];
     for (int b=0; b<N; b++) {
       for (int d=0; d<3; d++) {
-	Xmin[d] = fmin(X[3*b+d],Xmin[d]);
-	Xmax[d] = fmax(X[3*b+d],Xmax[d]);
+	Xmin[d] = fmin(X[3*b+d], Xmin[d]);
+	Xmax[d] = fmax(X[3*b+d], Xmax[d]);
       }
     }
     for (int d=0; d<3; d++) X0[d] = (Xmax[d] + Xmin[d]) / 2;
@@ -169,15 +169,16 @@ private:
       int ix = floor((X[3*i+0] - Xmin[0]) / d);
       int iy = floor((X[3*i+1] - Xmin[1]) / d);
       int iz = floor((X[3*i+2] - Xmin[2]) / d);
-      uint64_t key = morton256_x[(ix >> 16) & 0xFF] |
+      uint64_t key =
+	morton256_x[(ix >> 16) & 0xFF] |
 	morton256_y[(iy >> 16) & 0xFF] |
 	morton256_z[(iz >> 16) & 0xFF];
-      key <<= 48;
-      key |= morton256_x[(ix >> 8) & 0xFF] |
+      key = key << 48 |
+	morton256_x[(ix >> 8) & 0xFF] |
 	morton256_y[(iy >> 8) & 0xFF] |
 	morton256_z[(iz >> 8) & 0xFF];
-      key <<= 24;
-      key |= morton256_x[ix & 0xFF] |
+      key = key << 24 |
+	morton256_x[ix & 0xFF] |
 	morton256_y[iy & 0xFF] |
 	morton256_z[iz & 0xFF];
       keys[i] = key;
