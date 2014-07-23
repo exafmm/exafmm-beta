@@ -17,7 +17,7 @@ int omp_get_thread_num() {return 0;}
 #define NCRIT 16
 #define MAXBINS64 64
 
-static const uint morton256_x[256] = {
+static const int morton256_x[256] = {
     0x00000000, 0x00000001, 0x00000008, 0x00000009, 0x00000040, 0x00000041, 0x00000048, 0x00000049,
     0x00000200, 0x00000201, 0x00000208, 0x00000209, 0x00000240, 0x00000241, 0x00000248, 0x00000249,
     0x00001000, 0x00001001, 0x00001008, 0x00001009, 0x00001040, 0x00001041, 0x00001048, 0x00001049,
@@ -52,7 +52,7 @@ static const uint morton256_x[256] = {
     0x00249200, 0x00249201, 0x00249208, 0x00249209, 0x00249240, 0x00249241, 0x00249248, 0x00249249
 };
 
-static const uint morton256_y[256] = {
+static const int morton256_y[256] = {
     0x00000000, 0x00000002, 0x00000010, 0x00000012, 0x00000080, 0x00000082, 0x00000090, 0x00000092,
     0x00000400, 0x00000402, 0x00000410, 0x00000412, 0x00000480, 0x00000482, 0x00000490, 0x00000492,
     0x00002000, 0x00002002, 0x00002010, 0x00002012, 0x00002080, 0x00002082, 0x00002090, 0x00002092,
@@ -87,7 +87,7 @@ static const uint morton256_y[256] = {
     0x00492400, 0x00492402, 0x00492410, 0x00492412, 0x00492480, 0x00492482, 0x00492490, 0x00492492
 };
  
-static const uint morton256_z[256] = {
+static const int morton256_z[256] = {
     0x00000000, 0x00000004, 0x00000020, 0x00000024, 0x00000100, 0x00000104, 0x00000120, 0x00000124,
     0x00000800, 0x00000804, 0x00000820, 0x00000824, 0x00000900, 0x00000904, 0x00000920, 0x00000924,
     0x00004000, 0x00004004, 0x00004020, 0x00004024, 0x00004100, 0x00004104, 0x00004120, 0x00004124,
@@ -143,7 +143,7 @@ private:
     return box;
   }
 
-  void compute_quantization_codes_T(uint * codes, float * X, int N, int nbins) {
+  void getKey(int * codes, float * X, int N, int nbins) {
     float Xmin[3] = {0};
     float Xmax[3] = {0};
     float X0[3];
@@ -170,7 +170,7 @@ private:
     }
   }
 
-  uint64_t getMorton(uint x, uint y, uint z){
+  uint64_t getMorton(int x, int y, int z){
     uint64_t answer = 
       morton256_z[(z >> 16) & 0xFF] |
       morton256_y[(y >> 16) & 0xFF] |
@@ -186,19 +186,19 @@ private:
     return answer;
   }
 
-  void morton_encoding_T(uint64_t * mcodes, uint * codes, int N){
+  void morton_encoding_T(uint64_t * mcodes, int * codes, int N){
     cilk_for(int i=0; i<N; i++) {
       mcodes[i] = getMorton(codes[3*i], codes[3*i+1], codes[3*i+2]);
     }
   }
 
 
-  void relocate_data_radix6(uint * pointIds, uint * index, uint64_t * zcodes,
+  void relocate_data_radix6(int * pointIds, int * index, uint64_t * zcodes,
 			    uint64_t * codes, int * str, int P, int M, int N, int sft) {
 #pragma ivdep
     for(int j=0; j<M; j++){
       if(P+j<N){
-	uint ii = (zcodes[j]>>sft) & 0x3F;
+	int ii = (zcodes[j]>>sft) & 0x3F;
 	int jj = str[ii];
 	codes[jj] = zcodes[j];
 	pointIds[jj] = index[j];
@@ -207,14 +207,14 @@ private:
     }
   }
 
-  void bin_sort_serial_radix6(uint64_t * zcodes, uint64_t * codes, uint * pointIds,
-			      uint * index, uint * bins, int * level, int N, int sft, int tid, int lv) {
+  void bin_sort_serial_radix6(uint64_t * zcodes, uint64_t * codes, int * pointIds,
+			      int * index, int * bins, int * level, int N, int sft, int tid, int lv) {
 
     int BinSizes[MAXBINS64];
     int str[MAXBINS64];
-    uint acm_sizes[MAXBINS64];
-    uint* tmp_ptr;
-    uint long* tmp_code;
+    int acm_sizes[MAXBINS64];
+    int * tmp_ptr;
+    uint64_t * tmp_code;
 
     if(N<=NCRIT || sft<0){
       pointIds[0:N] = index[0:N];
@@ -229,7 +229,7 @@ private:
 
 #pragma ivdep
     for(int j=0; j<N; j++){
-      uint ii = (zcodes[j]>>sft) & 0x3F;
+      int ii = (zcodes[j]>>sft) & 0x3F;
       BinSizes[ii]++;
     }
 
@@ -237,14 +237,14 @@ private:
     acm_sizes[0] = 0;
 #pragma ivdep
     for(int i=1; i<MAXBINS64; i++){
-      uint tmp = str[i-1] + BinSizes[i-1];
+      int tmp = str[i-1] + BinSizes[i-1];
       str[i] = tmp;
       acm_sizes[i] = tmp;
     }
 
 #pragma ivdep
     for(int j=0; j<N; j++){
-      uint ii = (zcodes[j]>>sft) & 0x3F;
+      int ii = (zcodes[j]>>sft) & 0x3F;
       int jj = str[ii];
       pointIds[jj] = index[j];
       codes[jj] = zcodes[j];
@@ -271,14 +271,14 @@ private:
     }
   }
 
-  void bin_sort_radix6(uint64_t * zcodes, uint64_t * codes, uint * pointIds,
-		       uint * index, uint * bins, int * level, int N, int sft, int tid, int lv) {
+  void bin_sort_radix6(uint64_t * zcodes, uint64_t * codes, int * pointIds,
+		       int * index, int * bins, int * level, int N, int sft, int tid, int lv) {
 
     int BinSizes[NP*MAXBINS64];
     int str[NP*MAXBINS64];
-    uint Sizes[MAXBINS64];
-    uint acm_sizes[MAXBINS64];
-    uint * tmp_ptr;
+    int Sizes[MAXBINS64];
+    int acm_sizes[MAXBINS64];
+    int * tmp_ptr;
     uint64_t * tmp_code;  
 
     BinSizes[:] = 0;
@@ -299,7 +299,7 @@ private:
 #pragma ivdep
       for(int j=0; j<M; j++){
 	if(i*M+j<N){
-	  uint ii = (zcodes[i*M + j]>>sft) & 0x3F;
+	  int ii = (zcodes[i*M + j]>>sft) & 0x3F;
 	  BinSizes[i*MAXBINS64 + ii]++;
 	}
       }
@@ -343,13 +343,13 @@ private:
     cilk_sync;    
   }
 
-  void permuteBlock(Body * bodies, Bodies & buffer, uint * index, int N){
+  void permuteBlock(Body * bodies, Bodies & buffer, int * index, int N){
     for(int i=0; i<N; i++){
       bodies[i] = buffer[index[i]];
     }
   }
 
-  void permute(Bodies & bodies, Bodies & buffer, uint * index, int N){
+  void permute(Bodies & bodies, Bodies & buffer, int * index, int N){
     int M = N / NP2;
     for(int i=0; i<NP2-1; i++){
       cilk_spawn permuteBlock(&bodies[i*M], buffer, &index[i*M], M);
@@ -450,12 +450,12 @@ public:
     maxlevel = level;
 
     float * X = (float*)malloc(3*N*sizeof(float));
-    uint * codes = (uint*)malloc(3*N*sizeof(uint)); // TODO: Use new
+    int * codes = (int*)malloc(3*N*sizeof(int)); // TODO: Use new
     uint64_t * mcodes = (uint64_t*)malloc(N*sizeof(uint64_t));
     uint64_t * scodes = (uint64_t*)malloc(N*sizeof(uint64_t));
-    uint * pointIds = (uint*)malloc(N*sizeof(uint));
-    uint * index = (uint*)malloc(N*sizeof(uint));
-    uint * bins = (uint*)malloc(N*sizeof(uint));
+    int * pointIds = (int*)malloc(N*sizeof(int));
+    int * index = (int*)malloc(N*sizeof(int));
+    int * bins = (int*)malloc(N*sizeof(int));
     int* levels = (int*)malloc(N*sizeof(int));
     int b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
@@ -466,17 +466,11 @@ public:
     }
     int maxlev = 6;
     int nbins = (1 << maxlev);
-    uint64_t * key = new uint64_t [numBodies];
-    uint64_t * buffer = new uint64_t [numBodies];
-    uint * index2 = new uint [numBodies];
     int * permutation = new int [numBodies];
     Cells cells;
-    for (int b=0; b<int(bodies.size()); b++) {
-      index2[b] = b;
-    }
 
     logger::startTimer("Morton key");
-    compute_quantization_codes_T(codes, X, N, nbins);
+    getKey(codes, X, N, nbins);
     morton_encoding_T(mcodes, codes, N);
     b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
@@ -486,12 +480,12 @@ public:
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-    bin_sort_radix6(mcodes, scodes, index2, index, bins, levels, N, 3*(maxlev-2), 0, 0);
+    bin_sort_radix6(mcodes, scodes, permutation, index, bins, levels, N, 3*(maxlev-2), 0, 0);
     logger::stopTimer("Radix sort");
 
     Bodies bodies2 = bodies;
     logger::startTimer("Permutation");
-    permute(bodies, bodies2, index2, N);
+    permute(bodies, bodies2, permutation, N);
     logger::stopTimer("Permutation");
 
     logger::startTimer("Bodies to leafs");
@@ -506,9 +500,6 @@ public:
     reverseOrder(cells, permutation);
     logger::stopTimer("Reverse order");
 
-    delete[] key;
-    delete[] buffer;
-    delete[] index2;
     delete[] permutation;
     return cells;
   }
