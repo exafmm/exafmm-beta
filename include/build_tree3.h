@@ -40,26 +40,30 @@ private:
     return box;
   }
 
-  inline void getKey(Bodies &bodies, uint64_t * key, Bounds bounds, int level) {
-    Box box = bounds2box(bounds);
-    float d = 2 * box.R / (1 << level);
-#pragma omp parallel for
-    for (int b=0; b<int(bodies.size()); b++) {
-      B_iter B=bodies.begin()+b;
-      int ix = (B->X[0] - bounds.Xmin[0]) / d;
-      int iy = (B->X[1] - bounds.Xmin[1]) / d;
-      int iz = (B->X[2] - bounds.Xmin[2]) / d;
-      int id = 0;
-      for( int l=0; l!=level; ++l ) {
-	id += (ix & 1) << (3 * l);
-	id += (iy & 1) << (3 * l + 1);
-	id += (iz & 1) << (3 * l + 2);
-	ix >>= 1;
-	iy >>= 1;
-	iz >>= 1;
+  void compute_quantization_codes_T(uint* codes, float *X, int N, int nbins) {
+    float Xmin[3] = {0};
+    float Xmax[3] = {0};
+    float X0[3];
+    for (int b=0; b<N; b++) {
+      for (int d=0; d<3; d++) {
+	Xmin[d] = fmin(X[3*b+d],Xmin[d]);
+	Xmax[d] = fmax(X[3*b+d],Xmax[d]);
       }
-      key[b] = id;
-      B->ICELL = id;
+    }
+    for (int d=0; d<3; d++) X0[d] = (Xmax[d] + Xmin[d]) / 2;
+    float range = 0;
+    for(int d=0; d<3; d++) {
+      range = fmax(X0[d] - Xmin[d], range);
+      range = fmax(Xmax[d] - X0[d], range);
+    }
+    range *= 1.00001;
+    for(int d=0; d<3; d++) {
+      Xmin[d] = X0[d] - range;
+      Xmax[d] = X0[d] + range;
+    }
+    float d = range / nbins;
+    cilk_for(int i=0; i<N; i++){
+      codes[i*3:3] = floor((X[i*3:3] - Xmin[0:3]) / d);
     }
   }
 

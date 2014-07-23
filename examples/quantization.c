@@ -9,37 +9,13 @@ date: Jul 2014
 #include "stdio.h"
 #include "stdlib.h"
 #include "cilk/cilk.h"
-#include <cilk/reducer_opadd.h>
-#include <cilk/reducer_max.h>
-#include <cilk/reducer_min.h>
 #include "cilk/cilk_api.h"
-#include <iostream>
 #include "math.h"
-#include "sys/time.h"
-
-#define DIM 3
-
-#ifndef LDIM
-#define LDIM 12 // Apparent dimension
-#endif
-
-#define NP 128
-
-uint compute_code(float X, float Xmin, float d){
-  return floor((X - Xmin) / d);
-
-}
-
-void quantizeT(uint * codes, float * X, float * Xmin, float d, int N){
-  cilk_for(int i=0; i<N; i++){
-    codes[i*DIM:DIM] = compute_code(X[i*DIM:DIM], Xmin[0:DIM], d);
-  }
-}
 
 void compute_quantization_codes_T(uint* codes, float *X, int N, int nbins) {
-  float Xmin[DIM] = {0};
-  float Xmax[DIM] = {0};
-  float X0[DIM];
+  float Xmin[3] = {0};
+  float Xmax[3] = {0};
+  float X0[3];
   for (int b=0; b<N; b++) {
     for (int d=0; d<3; d++) {
       Xmin[d] = fmin(X[3*b+d],Xmin[d]);
@@ -48,17 +24,18 @@ void compute_quantization_codes_T(uint* codes, float *X, int N, int nbins) {
   }
   for (int d=0; d<3; d++) X0[d] = (Xmax[d] + Xmin[d]) / 2;
   float range = 0;
-  for(int d=0; d<DIM; d++) {
+  for(int d=0; d<3; d++) {
     range = fmax(X0[d] - Xmin[d], range);
     range = fmax(Xmax[d] - X0[d], range);
   }
   range *= 1.00001;
-  for(int d=0; d<DIM; d++) {
+  for(int d=0; d<3; d++) {
     Xmin[d] = X0[d] - range;
     Xmax[d] = X0[d] + range;
   }
   float d = range / nbins;
-  quantizeT(codes, X, Xmin, d, N);
-  cilk_sync;
+  cilk_for(int i=0; i<N; i++){
+    codes[i*3:3] = floor((X[i*3:3] - Xmin[0:3]) / d);
+  }
 }
 
