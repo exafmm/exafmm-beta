@@ -24,7 +24,7 @@ private:
   int maxlevel;
 
 private:
-  Box bounds2box(Bounds bounds) {
+  Box bounds2box(Bounds & bounds) {
     vec3 Xmin = bounds.Xmin;
     vec3 Xmax = bounds.Xmax;
     Box box;
@@ -60,7 +60,7 @@ private:
       }
       key[b] = id;
       B->ICELL = id;
-    }                                                           // End loop over bodies
+    }
   }
 
   void relocate_data_radix6(uint* pointIds, uint* index, uint long* zcodes, uint long* codes, int* str, int P, int M, int N, int sft) {
@@ -333,8 +333,6 @@ public:
     }
     int maxlev = 6;
     int nbins = (1 << maxlev);
-    compute_quantization_codes_T(codes, X, N, nbins);
-    morton_encoding_T(mcodes, codes, N);
     uint64_t * key = new uint64_t [numBodies];
     uint64_t * buffer = new uint64_t [numBodies];
     uint * index2 = new uint [numBodies];
@@ -345,14 +343,16 @@ public:
     }
 
     logger::startTimer("Morton key");
-    getKey(bodies, key, bounds, level);
+    compute_quantization_codes_T(codes, X, N, nbins);
+    morton_encoding_T(mcodes, codes, N);
+    b = 0;
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+      mcodes[b] /= 8;
+      B->ICELL = mcodes[b];
+    }
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-    for (int b=0; b<int(bodies.size()); b++) {
-      if(mcodes[b]/8!=key[b]&&b<1e4) std::cout << b << " " << mcodes[b]/8 << " " << key[b] << std::endl;
-      mcodes[b] = key[b];
-    }
     bin_sort_radix6(mcodes, scodes, index2, index, bins, levels, N, 3*(maxlev-2), 0, 0);
     logger::stopTimer("Radix sort");
 
