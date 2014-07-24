@@ -62,7 +62,7 @@ static const int morton256_y[256] = {
     0x00012400, 0x00012402, 0x00012410, 0x00012412, 0x00012480, 0x00012482, 0x00012490, 0x00012492,
     0x00080000, 0x00080002, 0x00080010, 0x00080012, 0x00080080, 0x00080082, 0x00080090, 0x00080092,
     0x00080400, 0x00080402, 0x00080410, 0x00080412, 0x00080480, 0x00080482, 0x00080490, 0x00080492,
-    0x00082000, 0x00082002, 0x00082010, 0x00082012, 0x00082080, 0x00082082, 0x00082090, 0x00082092, 
+    0x00082000, 0x00082002, 0x00082010, 0x00082012, 0x00082080, 0x00082082, 0x00082090, 0x00082092,
     0x00082400, 0x00082402, 0x00082410, 0x00082412, 0x00082480, 0x00082482, 0x00082490, 0x00082492,
     0x00090000, 0x00090002, 0x00090010, 0x00090012, 0x00090080, 0x00090082, 0x00090090, 0x00090092,
     0x00090400, 0x00090402, 0x00090410, 0x00090412, 0x00090480, 0x00090482, 0x00090490, 0x00090492,
@@ -85,7 +85,7 @@ static const int morton256_y[256] = {
     0x00492000, 0x00492002, 0x00492010, 0x00492012, 0x00492080, 0x00492082, 0x00492090, 0x00492092,
     0x00492400, 0x00492402, 0x00492410, 0x00492412, 0x00492480, 0x00492482, 0x00492490, 0x00492492
 };
- 
+
 static const int morton256_z[256] = {
     0x00000000, 0x00000004, 0x00000020, 0x00000024, 0x00000100, 0x00000104, 0x00000120, 0x00000124,
     0x00000800, 0x00000804, 0x00000820, 0x00000824, 0x00000900, 0x00000904, 0x00000920, 0x00000924,
@@ -185,15 +185,15 @@ private:
   }
 
   void relocate(uint64_t * keys, uint64_t * buffer, int * index, int * permutation,
-		int * str, int P, int M, int N, int sft) {
+		int * counter, int P, int M, int N, int sft) {
 #pragma ivdep
-    for(int j=0; j<M; j++){
-      if(P+j<N){
-	int ii = (keys[j]>>sft) & 0x3F;
-	int jj = str[ii];
-	buffer[jj] = keys[j];
-	permutation[jj] = index[j];
-	str[ii]=jj+1;
+    for (int i=0; i<M; i++) {
+      if(P+i<N){
+	int ii = (keys[i] >> sft) & 0x3F;
+	int jj = counter[ii];
+	buffer[jj] = keys[i];
+	permutation[jj] = index[i];
+	counter[ii]++;
       }
     }
   }
@@ -202,10 +202,7 @@ private:
 		 int * index, int N, int sft) {
 
     int counter[NBINS];
-    int str[NBINS];
-    int offset[NBINS];
-    int * tmp_ptr;
-    uint64_t * tmp_code;
+    int offset[NBINS+1];
 
     if(N<=NCRIT || sft<0){
       permutation[0:N] = index[0:N];
@@ -213,43 +210,37 @@ private:
     }
 
     counter[:] = 0;
-    offset[:] = 0;
-
 #pragma ivdep
-    for(int j=0; j<N; j++){
-      int ii = (keys[j]>>sft) & 0x3F;
-      counter[ii]++;
+    for (int i=0; i<N; i++) {
+      int b = (keys[i] >> sft) & 0x3F;
+      counter[b]++;
     }
 
     offset[0] = 0;
 #pragma ivdep
-    for (int i=1; i<NBINS; i++) {
-      offset[i] = offset[i-1] + counter[i-1];
+    for (int b=1; b<NBINS+1; b++) {
+      offset[b] = offset[b-1] + counter[b-1];
     }
 #pragma ivdep
-    for (int i=0; i<NBINS; i++) {
-      str[i] = offset[i];      
+    for (int b=0; b<NBINS; b++) {
+      counter[b] = offset[b];
     }
 #pragma ivdep
-    for(int j=0; j<N; j++){
-      int ii = (keys[j]>>sft) & 0x3F;
-      int jj = str[ii];
-      permutation[jj] = index[j];
-      buffer[jj] = keys[j];
-      str[ii] = jj+1;
+    for (int i=0; i<N; i++) {
+      int b = (keys[i] >> sft) & 0x3F;
+      int ic = counter[b];
+      permutation[ic] = index[i];
+      buffer[ic] = keys[i];
+      counter[b]++;
     }
 
-    tmp_ptr = index;
-    index = permutation;
-    permutation = tmp_ptr;
+    std::swap(index,permutation);
+    std::swap(keys,buffer);
 
-    tmp_code = keys;
-    keys = buffer;
-    buffer = tmp_code;
-
-    for (int i=0; i<NBINS; i++) {
-      int ii = offset[i];
-      recursion(&keys[ii], &buffer[ii], &permutation[ii], &index[ii], counter[i], sft-6);
+    for (int b=0; b<NBINS; b++) {
+      int ic = offset[b];
+      int size = offset[b+1] - offset[b];
+      recursion(&keys[ic], &buffer[ic], &permutation[ic], &index[ic], size, sft-6);
     }
   }
 
@@ -261,7 +252,7 @@ private:
     int Sizes[NBINS];
     int offset[NBINS];
     int * tmp_ptr;
-    uint64_t * tmp_code;  
+    uint64_t * tmp_code;
 
     counter[:] = 0;
     str[:] = 0;
@@ -297,7 +288,7 @@ private:
       dd = str[(BLOCK_SIZE-1)*NBINS+i] + counter[(BLOCK_SIZE-1)*NBINS + i];
       Sizes[i] += counter[(BLOCK_SIZE-1)*NBINS + i];
     }
-    
+
     for(int i=0; i<BLOCK_SIZE; i++){
       cilk_spawn relocate(&keys[i*M], buffer, &index[i*M], permutation, &str[i*NBINS], i*M, M, N, sft);
     }
@@ -314,7 +305,7 @@ private:
     for(int i=0; i<NBINS; i++) {
       cilk_spawn recursion(&keys[offset[i]], &buffer[offset[i]], &permutation[offset[i]], &index[offset[i]], Sizes[i], sft-6);
     }
-    cilk_sync;    
+    cilk_sync;
   }
 
   void permuteBlock(Body * bodies, Bodies & buffer, int * index, int N){
