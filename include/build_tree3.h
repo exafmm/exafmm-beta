@@ -201,7 +201,7 @@ private:
   void recursion(uint64_t * keys, uint64_t * buffer, int * permutation,
 		 int * index, int numBodies, int bitShift) {
     int counter[NBINS];
-    int offset[NBINS+1];
+    int inclusiveScan[NBINS];
 
     if (numBodies<=NCRIT || bitShift<0) {
       permutation[0:numBodies] = index[0:numBodies];
@@ -215,24 +215,28 @@ private:
       counter[b]++;
     }
 
-    offset[0] = 0;
-#pragma ivdep
-    for (int b=1; b<NBINS+1; b++) {
-      offset[b] = offset[b-1] + counter[b-1];
-    }
+    int offset = 0;
 #pragma ivdep
     for (int b=0; b<NBINS; b++) {
-      counter[b] = offset[b];
+      inclusiveScan[b] = offset + counter[b];
+      offset = inclusiveScan[b];
+    }
+    counter[0] = 0;
+#pragma ivdep
+    for (int b=1; b<NBINS; b++) {
+      counter[b] = inclusiveScan[b-1];
     }
 
     relocate(keys, buffer, index, permutation, counter, 0, numBodies, numBodies, bitShift);
     std::swap(index, permutation);
     std::swap(keys, buffer);
 
+    offset = 0;
     for (int b=0; b<NBINS; b++) {
-      int o = offset[b];
-      int size = offset[b+1] - offset[b];
-      recursion(&keys[o], &buffer[o], &permutation[o], &index[o], size, bitShift-6);
+      int size = inclusiveScan[b] - offset;
+      recursion(&keys[offset], &buffer[offset], &permutation[offset], &index[offset],
+		size, bitShift-6);
+      offset = inclusiveScan[b];
     }
   }
 
@@ -275,7 +279,7 @@ private:
 	str[i*NBINS+b] = str[(i-1)*NBINS+b] + counter[(i-1)*NBINS+b];
 	Sizes[b] += counter[(i-1)*NBINS+b];
       }
-      dd = str[(BLOCK_SIZE-1)*NBINS+b] + counter[(BLOCK_SIZE-1)*NBINS+b];
+      dd = str[BLOCK_SIZE*NBINS+b];
     }
 
     for (int i=0; i<BLOCK_SIZE; i++) {
