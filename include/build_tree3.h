@@ -200,7 +200,6 @@ private:
 
   void recursion(uint64_t * keys, uint64_t * buffer, int * permutation,
 		 int * index, int numBodies, int bitShift) {
-
     int counter[NBINS];
     int offset[NBINS+1];
 
@@ -227,8 +226,8 @@ private:
     }
 
     relocate(keys, buffer, index, permutation, counter, 0, numBodies, numBodies, bitShift);
-    std::swap(index,permutation);
-    std::swap(keys,buffer);
+    std::swap(index, permutation);
+    std::swap(keys, buffer);
 
     for (int b=0; b<NBINS; b++) {
       int o = offset[b];
@@ -238,33 +237,31 @@ private:
   }
 
   void radixSort(uint64_t * keys, uint64_t * buffer, int * permutation,
-		 int * index, int N, int bitShift) {
+		 int * index, int numBodies, int bitShift) {
 
     int counter[BLOCK_SIZE*NBINS];
     int str[BLOCK_SIZE*NBINS];
     int Sizes[NBINS];
     int offset[NBINS];
-    int * tmp_ptr;
-    uint64_t * tmp_code;
 
     counter[:] = 0;
     str[:] = 0;
     Sizes[:] = 0;
     offset[:] = 0;
 
-    if(N<=NCRIT || bitShift<0){
-      permutation[0:N] = index[0:N];
+    if(numBodies<=NCRIT || bitShift<0){
+      permutation[0:numBodies] = index[0:numBodies];
       return;
     }
 
-    int M = (N - 1) / BLOCK_SIZE + 1;
+    int numBlock = (numBodies - 1) / BLOCK_SIZE + 1;
 
-    cilk_for(int i=0; i<BLOCK_SIZE; i++){
+    cilk_for (int i=0; i<BLOCK_SIZE; i++) {
 #pragma ivdep
-      for(int j=0; j<M; j++){
-	if(i*M+j<N){
-	  int ii = (keys[i*M + j]>>bitShift) & 0x3F;
-	  counter[i*NBINS + ii]++;
+      for (int j=0; j<numBlock; j++) {
+	if (i*numBlock+j < numBodies) {
+	  int b = (keys[i*numBlock+j]>>bitShift) & 0x3F;
+	  counter[i*NBINS+b]++;
 	}
       }
     }
@@ -283,20 +280,18 @@ private:
     }
 
     for(int i=0; i<BLOCK_SIZE; i++){
-      cilk_spawn relocate(&keys[i*M], buffer, &index[i*M], permutation, &str[i*NBINS], i*M, M, N, bitShift);
+      int o = i * numBlock;
+      cilk_spawn relocate(&keys[o], buffer, &index[o], permutation,
+			  &str[i*NBINS], o, numBlock, numBodies, bitShift);
     }
     cilk_sync;
 
-    tmp_ptr = index;
-    index = permutation;
-    permutation = tmp_ptr;
+    std::swap(index, permutation);
+    std::swap(keys, buffer);
 
-    tmp_code = keys;
-    keys = buffer;
-    buffer = tmp_code;
-
-    for(int i=0; i<NBINS; i++) {
-      cilk_spawn recursion(&keys[offset[i]], &buffer[offset[i]], &permutation[offset[i]], &index[offset[i]], Sizes[i], bitShift-6);
+    for (int b=0; b<NBINS; b++) {
+      int o = offset[b];
+      cilk_spawn recursion(&keys[o], &buffer[o], &permutation[o], &index[o], Sizes[b], bitShift-6);
     }
     cilk_sync;
   }
