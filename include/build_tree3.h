@@ -185,10 +185,10 @@ private:
   }
 
   void relocate(uint64_t * keys, uint64_t * buffer, int * index, int * permutation,
-		int * counter, int P, int M, int N, int bitShift) {
+		int * counter, int offset, int numBlock, int numBodies, int bitShift) {
 #pragma ivdep
-    for (int i=0; i<M; i++) {
-      if (P+i<N) {
+    for (int i=0; i<numBlock; i++) {
+      if (offset+i<numBodies) {
 	int b = (keys[i] >> bitShift) & 0x3F;
 	int c = counter[b];
 	buffer[c] = keys[i];
@@ -199,19 +199,19 @@ private:
   }
 
   void recursion(uint64_t * keys, uint64_t * buffer, int * permutation,
-		 int * index, int N, int bitShift) {
+		 int * index, int numBodies, int bitShift) {
 
     int counter[NBINS];
     int offset[NBINS+1];
 
-    if(N<=NCRIT || bitShift<0){
-      permutation[0:N] = index[0:N];
+    if(numBodies<=NCRIT || bitShift<0){
+      permutation[0:numBodies] = index[0:numBodies];
       return;
     }
 
     counter[:] = 0;
 #pragma ivdep
-    for (int i=0; i<N; i++) {
+    for (int i=0; i<numBodies; i++) {
       int b = (keys[i] >> bitShift) & 0x3F;
       counter[b]++;
     }
@@ -226,18 +226,7 @@ private:
       counter[b] = offset[b];
     }
 
-    relocate(keys, buffer, index, permutation, counter, 0, N, N, bitShift);
-    /*
-#pragma ivdep
-    for (int i=0; i<N; i++) {
-      int b = (keys[i] >> bitShift) & 0x3F;
-      int c = counter[b];
-      permutation[c] = index[i];
-      buffer[c] = keys[i];
-      counter[b]++;
-    }
-    */
-
+    relocate(keys, buffer, index, permutation, counter, 0, numBodies, numBodies, bitShift);
     std::swap(index,permutation);
     std::swap(keys,buffer);
 
