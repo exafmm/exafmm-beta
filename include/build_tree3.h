@@ -188,12 +188,12 @@ private:
 		int * counter, int P, int M, int N, int sft) {
 #pragma ivdep
     for (int i=0; i<M; i++) {
-      if(P+i<N){
-	int ii = (keys[i] >> sft) & 0x3F;
-	int jj = counter[ii];
-	buffer[jj] = keys[i];
-	permutation[jj] = index[i];
-	counter[ii]++;
+      if (P+i<N) {
+	int b = (keys[i] >> sft) & 0x3F;
+	int c = counter[b];
+	buffer[c] = keys[i];
+	permutation[c] = index[i];
+	counter[b]++;
       }
     }
   }
@@ -228,9 +228,9 @@ private:
 #pragma ivdep
     for (int i=0; i<N; i++) {
       int b = (keys[i] >> sft) & 0x3F;
-      int ic = counter[b];
-      permutation[ic] = index[i];
-      buffer[ic] = keys[i];
+      int c = counter[b];
+      permutation[c] = index[i];
+      buffer[c] = keys[i];
       counter[b]++;
     }
 
@@ -238,9 +238,9 @@ private:
     std::swap(keys,buffer);
 
     for (int b=0; b<NBINS; b++) {
-      int ic = offset[b];
+      int o = offset[b];
       int size = offset[b+1] - offset[b];
-      recursion(&keys[ic], &buffer[ic], &permutation[ic], &index[ic], size, sft-6);
+      recursion(&keys[o], &buffer[o], &permutation[o], &index[o], size, sft-6);
     }
   }
 
