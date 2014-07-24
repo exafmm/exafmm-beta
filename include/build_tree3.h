@@ -185,11 +185,11 @@ private:
   }
 
   void relocate(uint64_t * keys, uint64_t * buffer, int * index, int * permutation,
-		int * counter, int P, int M, int N, int sft) {
+		int * counter, int P, int M, int N, int bitShift) {
 #pragma ivdep
     for (int i=0; i<M; i++) {
       if (P+i<N) {
-	int b = (keys[i] >> sft) & 0x3F;
+	int b = (keys[i] >> bitShift) & 0x3F;
 	int c = counter[b];
 	buffer[c] = keys[i];
 	permutation[c] = index[i];
@@ -199,12 +199,12 @@ private:
   }
 
   void recursion(uint64_t * keys, uint64_t * buffer, int * permutation,
-		 int * index, int N, int sft) {
+		 int * index, int N, int bitShift) {
 
     int counter[NBINS];
     int offset[NBINS+1];
 
-    if(N<=NCRIT || sft<0){
+    if(N<=NCRIT || bitShift<0){
       permutation[0:N] = index[0:N];
       return;
     }
@@ -212,7 +212,7 @@ private:
     counter[:] = 0;
 #pragma ivdep
     for (int i=0; i<N; i++) {
-      int b = (keys[i] >> sft) & 0x3F;
+      int b = (keys[i] >> bitShift) & 0x3F;
       counter[b]++;
     }
 
@@ -225,14 +225,18 @@ private:
     for (int b=0; b<NBINS; b++) {
       counter[b] = offset[b];
     }
+
+    relocate(keys, buffer, index, permutation, counter, 0, N, N, bitShift);
+    /*
 #pragma ivdep
     for (int i=0; i<N; i++) {
-      int b = (keys[i] >> sft) & 0x3F;
+      int b = (keys[i] >> bitShift) & 0x3F;
       int c = counter[b];
       permutation[c] = index[i];
       buffer[c] = keys[i];
       counter[b]++;
     }
+    */
 
     std::swap(index,permutation);
     std::swap(keys,buffer);
@@ -240,12 +244,12 @@ private:
     for (int b=0; b<NBINS; b++) {
       int o = offset[b];
       int size = offset[b+1] - offset[b];
-      recursion(&keys[o], &buffer[o], &permutation[o], &index[o], size, sft-6);
+      recursion(&keys[o], &buffer[o], &permutation[o], &index[o], size, bitShift-6);
     }
   }
 
   void radixSort(uint64_t * keys, uint64_t * buffer, int * permutation,
-		 int * index, int N, int sft) {
+		 int * index, int N, int bitShift) {
 
     int counter[BLOCK_SIZE*NBINS];
     int str[BLOCK_SIZE*NBINS];
@@ -259,18 +263,18 @@ private:
     Sizes[:] = 0;
     offset[:] = 0;
 
-    if(N<=NCRIT || sft<0){
+    if(N<=NCRIT || bitShift<0){
       permutation[0:N] = index[0:N];
       return;
     }
 
-    int M = (int)ceil((float)N / (float)BLOCK_SIZE);
+    int M = (N - 1) / BLOCK_SIZE + 1;
 
     cilk_for(int i=0; i<BLOCK_SIZE; i++){
 #pragma ivdep
       for(int j=0; j<M; j++){
 	if(i*M+j<N){
-	  int ii = (keys[i*M + j]>>sft) & 0x3F;
+	  int ii = (keys[i*M + j]>>bitShift) & 0x3F;
 	  counter[i*NBINS + ii]++;
 	}
       }
@@ -290,7 +294,7 @@ private:
     }
 
     for(int i=0; i<BLOCK_SIZE; i++){
-      cilk_spawn relocate(&keys[i*M], buffer, &index[i*M], permutation, &str[i*NBINS], i*M, M, N, sft);
+      cilk_spawn relocate(&keys[i*M], buffer, &index[i*M], permutation, &str[i*NBINS], i*M, M, N, bitShift);
     }
     cilk_sync;
 
@@ -303,7 +307,7 @@ private:
     buffer = tmp_code;
 
     for(int i=0; i<NBINS; i++) {
-      cilk_spawn recursion(&keys[offset[i]], &buffer[offset[i]], &permutation[offset[i]], &index[offset[i]], Sizes[i], sft-6);
+      cilk_spawn recursion(&keys[offset[i]], &buffer[offset[i]], &permutation[offset[i]], &index[offset[i]], Sizes[i], bitShift-6);
     }
     cilk_sync;
   }
