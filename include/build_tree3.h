@@ -154,12 +154,12 @@ private:
     }
     for (int d=0; d<3; d++) X0[d] = (Xmax[d] + Xmin[d]) / 2;
     float range = 0;
-    for(int d=0; d<3; d++) {
+    for (int d=0; d<3; d++) {
       range = fmax(X0[d] - Xmin[d], range);
       range = fmax(Xmax[d] - X0[d], range);
     }
     range *= 1.00001;
-    for(int d=0; d<3; d++) {
+    for (int d=0; d<3; d++) {
       Xmin[d] = X0[d] - range;
       Xmax[d] = X0[d] + range;
     }
@@ -203,7 +203,7 @@ private:
     int counter[NBINS];
     int offset[NBINS+1];
 
-    if(numBodies<=NCRIT || bitShift<0){
+    if (numBodies<=NCRIT || bitShift<0) {
       permutation[0:numBodies] = index[0:numBodies];
       return;
     }
@@ -249,7 +249,7 @@ private:
     Sizes[:] = 0;
     offset[:] = 0;
 
-    if(numBodies<=NCRIT || bitShift<0){
+    if (numBodies<=NCRIT || bitShift<0) {
       permutation[0:numBodies] = index[0:numBodies];
       return;
     }
@@ -260,26 +260,26 @@ private:
 #pragma ivdep
       for (int j=0; j<numBlock; j++) {
 	if (i*numBlock+j < numBodies) {
-	  int b = (keys[i*numBlock+j]>>bitShift) & 0x3F;
+	  int b = (keys[i*numBlock+j] >> bitShift) & 0x3F;
 	  counter[i*NBINS+b]++;
 	}
       }
     }
 
     int dd = 0;
-    for(int i=0; i<NBINS; i++){
-      str[i] = dd;
-      offset[i] = dd;
+    for (int b=0; b<NBINS; b++) {
+      str[b] = dd;
+      offset[b] = dd;
 #pragma ivdep
-      for(int j=1; j<BLOCK_SIZE; j++){
-	str[j*NBINS+i] = str[(j-1)*NBINS+i] + counter[(j-1)*NBINS+i];
-	Sizes[i] += counter[(j-1)*NBINS+i];
+      for (int i=1; i<BLOCK_SIZE; i++) {
+	str[i*NBINS+b] = str[(i-1)*NBINS+b] + counter[(i-1)*NBINS+b];
+	Sizes[b] += counter[(i-1)*NBINS+b];
       }
-      dd = str[(BLOCK_SIZE-1)*NBINS+i] + counter[(BLOCK_SIZE-1)*NBINS + i];
-      Sizes[i] += counter[(BLOCK_SIZE-1)*NBINS + i];
+      dd = str[(BLOCK_SIZE-1)*NBINS+b] + counter[(BLOCK_SIZE-1)*NBINS+b];
+      Sizes[b] += counter[(BLOCK_SIZE-1)*NBINS+b];
     }
 
-    for(int i=0; i<BLOCK_SIZE; i++){
+    for (int i=0; i<BLOCK_SIZE; i++) {
       int o = i * numBlock;
       cilk_spawn relocate(&keys[o], buffer, &index[o], permutation,
 			  &str[i*NBINS], o, numBlock, numBodies, bitShift);
