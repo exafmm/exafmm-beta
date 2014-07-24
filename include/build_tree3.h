@@ -233,10 +233,10 @@ private:
 
     offset = 0;
     for (int b=0; b<NBINS; b++) {
-      int size = inclusiveScan[b] - offset;
+      int size = counter[b] - offset;
       recursion(&keys[offset], &buffer[offset], &permutation[offset], &index[offset],
 		size, bitShift-6);
-      offset = inclusiveScan[b];
+      offset = counter[b];
     }
   }
 
