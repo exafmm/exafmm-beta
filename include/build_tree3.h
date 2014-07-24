@@ -12,8 +12,7 @@ int omp_get_thread_num() {return 0;}
 #include <omp.h>
 #endif
 
-#define NP 512
-#define NP2 128
+#define BLOCK_SIZE 512
 #define NCRIT 16
 #define NBINS 64
 
@@ -200,7 +199,7 @@ private:
   }
 
   void recursion(uint64_t * keys, uint64_t * buffer, int * permutation,
-		 int * index, int * level, int N, int sft, int tid, int lv) {
+		 int * index, int N, int sft) {
 
     int BinSizes[NBINS];
     int str[NBINS];
@@ -210,7 +209,6 @@ private:
 
     if(N<=NCRIT || sft<0){
       permutation[0:N] = index[0:N];
-      level[0:N] = lv-1;
       return;
     }
 
@@ -250,23 +248,17 @@ private:
     keys = buffer;
     buffer = tmp_code;
 
-    if (lv<2) {
-      for(int i=0; i<NBINS; i++){
-	cilk_spawn recursion(&keys[acm_sizes[i]], &buffer[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1);
-      }
-      cilk_sync;
-    } else {
-      for(int i=0; i<NBINS; i++){
-	recursion(&keys[acm_sizes[i]], &buffer[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1);
+    for(int i=0; i<NBINS; i++){
+	recursion(&keys[acm_sizes[i]], &buffer[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], BinSizes[i], sft-6);
       }
     }
   }
 
   void radixSort(uint64_t * keys, uint64_t * buffer, int * permutation,
-		 int * index, int * level, int N, int sft) {
+		 int * index, int N, int sft) {
 
-    int BinSizes[NP*NBINS];
-    int str[NP*NBINS];
+    int BinSizes[BLOCK_SIZE*NBINS];
+    int str[BLOCK_SIZE*NBINS];
     int Sizes[NBINS];
     int acm_sizes[NBINS];
     int * tmp_ptr;
@@ -279,13 +271,12 @@ private:
 
     if(N<=NCRIT || sft<0){
       permutation[0:N] = index[0:N];
-      level[0] = 0;
       return;
     }
 
-    int M = (int)ceil((float)N / (float)NP);
+    int M = (int)ceil((float)N / (float)BLOCK_SIZE);
 
-    cilk_for(int i=0; i<NP; i++){
+    cilk_for(int i=0; i<BLOCK_SIZE; i++){
 #pragma ivdep
       for(int j=0; j<M; j++){
 	if(i*M+j<N){
@@ -300,15 +291,15 @@ private:
       str[i] = dd;
       acm_sizes[i] = dd;
 #pragma ivdep
-      for(int j=1; j<NP; j++){
+      for(int j=1; j<BLOCK_SIZE; j++){
 	str[j*NBINS+i] = str[(j-1)*NBINS+i] + BinSizes[(j-1)*NBINS+i];
 	Sizes[i] += BinSizes[(j-1)*NBINS+i];
       }
-      dd = str[(NP-1)*NBINS+i] + BinSizes[(NP-1)*NBINS + i];
-      Sizes[i] += BinSizes[(NP-1)*NBINS + i];
+      dd = str[(BLOCK_SIZE-1)*NBINS+i] + BinSizes[(BLOCK_SIZE-1)*NBINS + i];
+      Sizes[i] += BinSizes[(BLOCK_SIZE-1)*NBINS + i];
     }
     
-    for(int i=0; i<NP; i++){
+    for(int i=0; i<BLOCK_SIZE; i++){
       cilk_spawn relocate(&keys[i*M], buffer, &index[i*M], permutation, &str[i*NBINS], i*M, M, N, sft);
     }
     cilk_sync;
@@ -322,7 +313,7 @@ private:
     buffer = tmp_code;
 
     for(int i=0; i<NBINS; i++) {
-      cilk_spawn recursion(&keys[acm_sizes[i]], &buffer[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, i, 1);
+      cilk_spawn recursion(&keys[acm_sizes[i]], &buffer[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], Sizes[i], sft-6);
     }
     cilk_sync;    
   }
@@ -334,11 +325,11 @@ private:
   }
 
   void permute(Bodies & bodies, Bodies & buffer, int * index, int N){
-    int M = N / NP2;
-    for(int i=0; i<NP2-1; i++){
+    int M = N / BLOCK_SIZE;
+    for(int i=0; i<BLOCK_SIZE-1; i++){
       cilk_spawn permuteBlock(&bodies[i*M], buffer, &index[i*M], M);
     }
-    permuteBlock(&bodies[(NP2-1)*M], buffer, &index[(NP2-1)*M], N-(NP2-1)*M);
+    permuteBlock(&bodies[(BLOCK_SIZE-1)*M], buffer, &index[(BLOCK_SIZE-1)*M], N-(BLOCK_SIZE-1)*M);
   }
 
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
@@ -438,7 +429,6 @@ public:
     uint64_t * buffer = new uint64_t [numBodies];
     int * index = new int [numBodies];
     int * permutation = new int [numBodies];
-    int* levels = (int*)malloc(N*sizeof(int));
     int b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
       X[3*b+0] = B->X[0];
@@ -460,7 +450,7 @@ public:
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-    radixSort(keys, buffer, permutation, index, levels, N, 3*(maxlev-2));
+    radixSort(keys, buffer, permutation, index, N, 3*(maxlev-2));
     logger::stopTimer("Radix sort");
 
     Bodies bodies2 = bodies;
