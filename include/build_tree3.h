@@ -201,9 +201,9 @@ private:
   void recursion(uint64_t * keys, uint64_t * buffer, int * permutation,
 		 int * index, int N, int sft) {
 
-    int BinSizes[NBINS];
+    int counter[NBINS];
     int str[NBINS];
-    int acm_sizes[NBINS];
+    int offset[NBINS];
     int * tmp_ptr;
     uint64_t * tmp_code;
 
@@ -212,25 +212,24 @@ private:
       return;
     }
 
-    BinSizes[:] = 0;
-    str[:] = 0;
-    acm_sizes[:] = 0;
+    counter[:] = 0;
+    offset[:] = 0;
 
 #pragma ivdep
     for(int j=0; j<N; j++){
       int ii = (keys[j]>>sft) & 0x3F;
-      BinSizes[ii]++;
+      counter[ii]++;
     }
 
-    str[0] = 0;
-    acm_sizes[0] = 0;
+    offset[0] = 0;
 #pragma ivdep
-    for(int i=1; i<NBINS; i++){
-      int tmp = str[i-1] + BinSizes[i-1];
-      str[i] = tmp;
-      acm_sizes[i] = tmp;
+    for (int i=1; i<NBINS; i++) {
+      offset[i] = offset[i-1] + counter[i-1];
     }
-
+#pragma ivdep
+    for (int i=0; i<NBINS; i++) {
+      str[i] = offset[i];      
+    }
 #pragma ivdep
     for(int j=0; j<N; j++){
       int ii = (keys[j]>>sft) & 0x3F;
@@ -248,26 +247,26 @@ private:
     keys = buffer;
     buffer = tmp_code;
 
-    for(int i=0; i<NBINS; i++){
-	recursion(&keys[acm_sizes[i]], &buffer[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], BinSizes[i], sft-6);
-      }
+    for (int i=0; i<NBINS; i++) {
+      int ii = offset[i];
+      recursion(&keys[ii], &buffer[ii], &permutation[ii], &index[ii], counter[i], sft-6);
     }
   }
 
   void radixSort(uint64_t * keys, uint64_t * buffer, int * permutation,
 		 int * index, int N, int sft) {
 
-    int BinSizes[BLOCK_SIZE*NBINS];
+    int counter[BLOCK_SIZE*NBINS];
     int str[BLOCK_SIZE*NBINS];
     int Sizes[NBINS];
-    int acm_sizes[NBINS];
+    int offset[NBINS];
     int * tmp_ptr;
     uint64_t * tmp_code;  
 
-    BinSizes[:] = 0;
+    counter[:] = 0;
     str[:] = 0;
     Sizes[:] = 0;
-    acm_sizes[:] = 0;
+    offset[:] = 0;
 
     if(N<=NCRIT || sft<0){
       permutation[0:N] = index[0:N];
@@ -281,7 +280,7 @@ private:
       for(int j=0; j<M; j++){
 	if(i*M+j<N){
 	  int ii = (keys[i*M + j]>>sft) & 0x3F;
-	  BinSizes[i*NBINS + ii]++;
+	  counter[i*NBINS + ii]++;
 	}
       }
     }
@@ -289,14 +288,14 @@ private:
     int dd = 0;
     for(int i=0; i<NBINS; i++){
       str[i] = dd;
-      acm_sizes[i] = dd;
+      offset[i] = dd;
 #pragma ivdep
       for(int j=1; j<BLOCK_SIZE; j++){
-	str[j*NBINS+i] = str[(j-1)*NBINS+i] + BinSizes[(j-1)*NBINS+i];
-	Sizes[i] += BinSizes[(j-1)*NBINS+i];
+	str[j*NBINS+i] = str[(j-1)*NBINS+i] + counter[(j-1)*NBINS+i];
+	Sizes[i] += counter[(j-1)*NBINS+i];
       }
-      dd = str[(BLOCK_SIZE-1)*NBINS+i] + BinSizes[(BLOCK_SIZE-1)*NBINS + i];
-      Sizes[i] += BinSizes[(BLOCK_SIZE-1)*NBINS + i];
+      dd = str[(BLOCK_SIZE-1)*NBINS+i] + counter[(BLOCK_SIZE-1)*NBINS + i];
+      Sizes[i] += counter[(BLOCK_SIZE-1)*NBINS + i];
     }
     
     for(int i=0; i<BLOCK_SIZE; i++){
@@ -313,7 +312,7 @@ private:
     buffer = tmp_code;
 
     for(int i=0; i<NBINS; i++) {
-      cilk_spawn recursion(&keys[acm_sizes[i]], &buffer[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], Sizes[i], sft-6);
+      cilk_spawn recursion(&keys[offset[i]], &buffer[offset[i]], &permutation[offset[i]], &index[offset[i]], Sizes[i], sft-6);
     }
     cilk_sync;    
   }
