@@ -240,7 +240,7 @@ private:
 		 int * index, int numBodies, int bitShift) {
 
     int counter[BLOCK_SIZE*NBINS];
-    int str[BLOCK_SIZE*NBINS];
+    int str[(BLOCK_SIZE+1)*NBINS];
     int Sizes[NBINS];
     int offset[NBINS];
 
@@ -271,12 +271,11 @@ private:
       str[b] = dd;
       offset[b] = dd;
 #pragma ivdep
-      for (int i=1; i<BLOCK_SIZE; i++) {
+      for (int i=1; i<BLOCK_SIZE+1; i++) {
 	str[i*NBINS+b] = str[(i-1)*NBINS+b] + counter[(i-1)*NBINS+b];
 	Sizes[b] += counter[(i-1)*NBINS+b];
       }
       dd = str[(BLOCK_SIZE-1)*NBINS+b] + counter[(BLOCK_SIZE-1)*NBINS+b];
-      Sizes[b] += counter[(BLOCK_SIZE-1)*NBINS+b];
     }
 
     for (int i=0; i<BLOCK_SIZE; i++) {
