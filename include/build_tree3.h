@@ -15,7 +15,7 @@ int omp_get_thread_num() {return 0;}
 #define NP 512
 #define NP2 128
 #define NCRIT 16
-#define MAXBINS64 64
+#define NBINS 64
 
 static const int morton256_x[256] = {
     0x00000000, 0x00000001, 0x00000008, 0x00000009, 0x00000040, 0x00000041, 0x00000048, 0x00000049,
@@ -185,32 +185,31 @@ private:
     }
   }
 
-  void relocate_data_radix6(int * permutation, int * index, uint64_t * zcodes,
-			    uint64_t * codes, int * str, int P, int M, int N, int sft) {
+  void relocate(uint64_t * keys, uint64_t * buffer, int * index, int * permutation,
+		int * str, int P, int M, int N, int sft) {
 #pragma ivdep
     for(int j=0; j<M; j++){
       if(P+j<N){
-	int ii = (zcodes[j]>>sft) & 0x3F;
+	int ii = (keys[j]>>sft) & 0x3F;
 	int jj = str[ii];
-	codes[jj] = zcodes[j];
+	buffer[jj] = keys[j];
 	permutation[jj] = index[j];
 	str[ii]=jj+1;
       }
     }
   }
 
-  void bin_sort_serial_radix6(uint64_t * zcodes, uint64_t * codes, int * permutation,
-			      int * index, int * bins, int * level, int N, int sft, int tid, int lv) {
+  void recursion(uint64_t * keys, uint64_t * buffer, int * permutation,
+		 int * index, int * level, int N, int sft, int tid, int lv) {
 
-    int BinSizes[MAXBINS64];
-    int str[MAXBINS64];
-    int acm_sizes[MAXBINS64];
+    int BinSizes[NBINS];
+    int str[NBINS];
+    int acm_sizes[NBINS];
     int * tmp_ptr;
     uint64_t * tmp_code;
 
     if(N<=NCRIT || sft<0){
       permutation[0:N] = index[0:N];
-      bins[0:N] = tid;                                  
       level[0:N] = lv-1;
       return;
     }
@@ -221,14 +220,14 @@ private:
 
 #pragma ivdep
     for(int j=0; j<N; j++){
-      int ii = (zcodes[j]>>sft) & 0x3F;
+      int ii = (keys[j]>>sft) & 0x3F;
       BinSizes[ii]++;
     }
 
     str[0] = 0;
     acm_sizes[0] = 0;
 #pragma ivdep
-    for(int i=1; i<MAXBINS64; i++){
+    for(int i=1; i<NBINS; i++){
       int tmp = str[i-1] + BinSizes[i-1];
       str[i] = tmp;
       acm_sizes[i] = tmp;
@@ -236,10 +235,10 @@ private:
 
 #pragma ivdep
     for(int j=0; j<N; j++){
-      int ii = (zcodes[j]>>sft) & 0x3F;
+      int ii = (keys[j]>>sft) & 0x3F;
       int jj = str[ii];
       permutation[jj] = index[j];
-      codes[jj] = zcodes[j];
+      buffer[jj] = keys[j];
       str[ii] = jj+1;
     }
 
@@ -247,29 +246,29 @@ private:
     index = permutation;
     permutation = tmp_ptr;
 
-    tmp_code = zcodes;
-    zcodes = codes;
-    codes = tmp_code;
+    tmp_code = keys;
+    keys = buffer;
+    buffer = tmp_code;
 
     if (lv<2) {
-      for(int i=0; i<MAXBINS64; i++){
-	cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1);
+      for(int i=0; i<NBINS; i++){
+	cilk_spawn recursion(&keys[acm_sizes[i]], &buffer[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1);
       }
       cilk_sync;
     } else {
-      for(int i=0; i<MAXBINS64; i++){
-	bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1);
+      for(int i=0; i<NBINS; i++){
+	recursion(&keys[acm_sizes[i]], &buffer[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], &level[acm_sizes[i]], BinSizes[i], sft-6, 64*tid + i, lv+1);
       }
     }
   }
 
-  void bin_sort_radix6(uint64_t * zcodes, uint64_t * codes, int * permutation,
-		       int * index, int * bins, int * level, int N, int sft, int tid, int lv) {
+  void radixSort(uint64_t * keys, uint64_t * buffer, int * permutation,
+		 int * index, int * level, int N, int sft) {
 
-    int BinSizes[NP*MAXBINS64];
-    int str[NP*MAXBINS64];
-    int Sizes[MAXBINS64];
-    int acm_sizes[MAXBINS64];
+    int BinSizes[NP*NBINS];
+    int str[NP*NBINS];
+    int Sizes[NBINS];
+    int acm_sizes[NBINS];
     int * tmp_ptr;
     uint64_t * tmp_code;  
 
@@ -280,8 +279,7 @@ private:
 
     if(N<=NCRIT || sft<0){
       permutation[0:N] = index[0:N];
-      level[0] = lv-1;
-      bins[0] = tid;
+      level[0] = 0;
       return;
     }
 
@@ -291,27 +289,27 @@ private:
 #pragma ivdep
       for(int j=0; j<M; j++){
 	if(i*M+j<N){
-	  int ii = (zcodes[i*M + j]>>sft) & 0x3F;
-	  BinSizes[i*MAXBINS64 + ii]++;
+	  int ii = (keys[i*M + j]>>sft) & 0x3F;
+	  BinSizes[i*NBINS + ii]++;
 	}
       }
     }
 
     int dd = 0;
-    for(int i=0; i<MAXBINS64; i++){
+    for(int i=0; i<NBINS; i++){
       str[i] = dd;
       acm_sizes[i] = dd;
 #pragma ivdep
       for(int j=1; j<NP; j++){
-	str[j*MAXBINS64+i] = str[(j-1)*MAXBINS64+i] + BinSizes[(j-1)*MAXBINS64+i];
-	Sizes[i] += BinSizes[(j-1)*MAXBINS64+i];
+	str[j*NBINS+i] = str[(j-1)*NBINS+i] + BinSizes[(j-1)*NBINS+i];
+	Sizes[i] += BinSizes[(j-1)*NBINS+i];
       }
-      dd = str[(NP-1)*MAXBINS64+i] + BinSizes[(NP-1)*MAXBINS64 + i];
-      Sizes[i] += BinSizes[(NP-1)*MAXBINS64 + i];
+      dd = str[(NP-1)*NBINS+i] + BinSizes[(NP-1)*NBINS + i];
+      Sizes[i] += BinSizes[(NP-1)*NBINS + i];
     }
     
     for(int i=0; i<NP; i++){
-      cilk_spawn relocate_data_radix6(permutation, &index[i*M], &zcodes[i*M], codes, &str[i*MAXBINS64], i*M, M, N, sft);
+      cilk_spawn relocate(&keys[i*M], buffer, &index[i*M], permutation, &str[i*NBINS], i*M, M, N, sft);
     }
     cilk_sync;
 
@@ -319,18 +317,12 @@ private:
     index = permutation;
     permutation = tmp_ptr;
 
-    tmp_code = zcodes;
-    zcodes = codes;
-    codes = tmp_code;
+    tmp_code = keys;
+    keys = buffer;
+    buffer = tmp_code;
 
-    if (lv<2) {    
-      for(int i=0; i<MAXBINS64; i++) {
-	cilk_spawn bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, 64*tid + i, lv+1);
-      }
-    } else {
-      for(int i=0; i<MAXBINS64; i++) {
-	bin_sort_serial_radix6(&zcodes[acm_sizes[i]], &codes[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], &bins[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, 64*tid + i, lv+1);
-      }
+    for(int i=0; i<NBINS; i++) {
+      cilk_spawn recursion(&keys[acm_sizes[i]], &buffer[acm_sizes[i]], &permutation[acm_sizes[i]], &index[acm_sizes[i]], &level[acm_sizes[i]], Sizes[i], sft-6, i, 1);
     }
     cilk_sync;    
   }
@@ -446,7 +438,6 @@ public:
     uint64_t * buffer = new uint64_t [numBodies];
     int * index = new int [numBodies];
     int * permutation = new int [numBodies];
-    int * bins = (int*)malloc(N*sizeof(int));
     int* levels = (int*)malloc(N*sizeof(int));
     int b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
@@ -469,7 +460,7 @@ public:
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-    bin_sort_radix6(keys, buffer, permutation, index, bins, levels, N, 3*(maxlev-2), 0, 0);
+    radixSort(keys, buffer, permutation, index, levels, N, 3*(maxlev-2));
     logger::stopTimer("Radix sort");
 
     Bodies bodies2 = bodies;
