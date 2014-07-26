@@ -142,11 +142,12 @@ private:
     return box;
   }
 
-  void getKey(uint64_t * keys, float * X, int N, int nbins) {
+  void getKey(uint64_t * keys, float * X, int numBodies) {
+    const int nbins = 1 << maxlevel;
     float Xmin[3] = {0};
     float Xmax[3] = {0};
     float X0[3];
-    for (int b=0; b<N; b++) {
+    for (int b=0; b<numBodies; b++) {
       for (int d=0; d<3; d++) {
 	Xmin[d] = fmin(X[3*b+d], Xmin[d]);
 	Xmax[d] = fmax(X[3*b+d], Xmax[d]);
@@ -163,8 +164,8 @@ private:
       Xmin[d] = X0[d] - range;
       Xmax[d] = X0[d] + range;
     }
-    float d = range / nbins;
-    cilk_for(int i=0; i<N; i++){
+    float d = 2 * range / nbins;
+    cilk_for(int i=0; i<numBodies; i++){
       int ix = floor((X[3*i+0] - Xmin[0]) / d);
       int iy = floor((X[3*i+1] - Xmin[1]) / d);
       int iz = floor((X[3*i+2] - Xmin[2]) / d);
@@ -200,14 +201,12 @@ private:
 
   void recursion(uint64_t * keys, uint64_t * buffer, int * permutation,
 		 int * index, int numBodies, int bitShift) {
-    int counter[NBINS];
-
     if (numBodies<=NCRIT || bitShift<0) {
       permutation[0:numBodies] = index[0:numBodies];
       return;
     }
 
-    counter[:] = 0;
+    int counter[NBINS] = {0};
 #pragma ivdep
     for (int i=0; i<numBodies; i++) {
       int b = (keys[i] >> bitShift) & 0x3F;
@@ -231,24 +230,20 @@ private:
       int size = counter[b] - offset;
       recursion(&keys[offset], &buffer[offset], &permutation[offset], &index[offset],
 		size, bitShift-6);
-      offset = counter[b];
+      offset += size;
     }
   }
 
   void radixSort(uint64_t * keys, uint64_t * buffer, int * permutation,
-		 int * index, int numBodies, int bitShift) {
-
-    int counter[BLOCK_SIZE*NBINS];
-
-    counter[:] = 0;
-
+		 int * index, int numBodies) {
+    const int bitShift = 3 * (maxlevel - 2);
     if (numBodies<=NCRIT || bitShift<0) {
       permutation[0:numBodies] = index[0:numBodies];
       return;
     }
 
     int numBlock = (numBodies - 1) / BLOCK_SIZE + 1;
-
+    int counter[BLOCK_SIZE*NBINS] = {0};
     cilk_for (int i=0; i<BLOCK_SIZE; i++) {
 #pragma ivdep
       for (int j=0; j<numBlock; j++) {
@@ -289,18 +284,20 @@ private:
     cilk_sync;
   }
 
-  void permuteBlock(Body * bodies, Bodies & buffer, int * index, int N){
-    for(int i=0; i<N; i++){
+  void permuteBlock(Body * bodies, Bodies & buffer, int * index, int numBlock) {
+    for(int i=0; i<numBlock; i++){
       bodies[i] = buffer[index[i]];
     }
   }
 
-  void permute(Bodies & bodies, Bodies & buffer, int * index, int N){
-    int M = N / BLOCK_SIZE;
-    for(int i=0; i<BLOCK_SIZE-1; i++){
-      cilk_spawn permuteBlock(&bodies[i*M], buffer, &index[i*M], M);
+  void permute(Bodies & bodies, Bodies & buffer, int * index) {
+    int numBlock = bodies.size() / BLOCK_SIZE;
+    int offset = 0;
+    for (int i=0; i<BLOCK_SIZE-1; i++) {
+      cilk_spawn permuteBlock(&bodies[offset], buffer, &index[offset], numBlock);
+      offset += numBlock;
     }
-    permuteBlock(&bodies[(BLOCK_SIZE-1)*M], buffer, &index[(BLOCK_SIZE-1)*M], N-(BLOCK_SIZE-1)*M);
+    permuteBlock(&bodies[offset], buffer, &index[offset], bodies.size()-offset);
   }
 
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
@@ -342,7 +339,7 @@ private:
       d *= 2;
       int I = -1;
       int p = end - 1;
-      for (int c=begin; c!=end; c++) {
+      for (int c=begin; c<end; c++) {
 	B_iter B = cells[c].BODY;
 	int IC = B->ICELL / div;
 	int ix = (B->X[0] - bounds.Xmin[0]) / d;
@@ -391,44 +388,40 @@ public:
 
   Cells buildTree(Bodies & bodies, Bounds bounds) {
     const int numBodies = bodies.size();
-    const int N = numBodies; // TODO: Change to numBodies
     const int level = 6;
     maxlevel = level;
 
-    float * X = (float*)malloc(3*N*sizeof(float));
+    float * X = new float [3*numBodies];
     uint64_t * keys = new uint64_t [numBodies];
     uint64_t * buffer = new uint64_t [numBodies];
     int * index = new int [numBodies];
     int * permutation = new int [numBodies];
+
+    logger::startTimer("Morton key");
     int b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
       X[3*b+0] = B->X[0];
       X[3*b+1] = B->X[1];
       X[3*b+2] = B->X[2];
-      index[b] = b;
     }
-    int maxlev = 6;
-    int nbins = (1 << maxlev);
-    Cells cells;
-
-    logger::startTimer("Morton key");
-    getKey(keys, X, N, nbins);
+    getKey(keys, X, numBodies);
     b = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
-      keys[b] /= 8;
+      index[b] = b;
       B->ICELL = keys[b];
     }
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-    radixSort(keys, buffer, permutation, index, N, 3*(maxlev-2));
+    radixSort(keys, buffer, permutation, index, numBodies);
     logger::stopTimer("Radix sort");
 
     Bodies bodies2 = bodies;
     logger::startTimer("Permutation");
-    permute(bodies, bodies2, permutation, N);
+    permute(bodies, bodies2, permutation);
     logger::stopTimer("Permutation");
 
+    Cells cells;
     logger::startTimer("Bodies to leafs");
     bodies2leafs(bodies, cells, bounds, level);
     logger::stopTimer("Bodies to leafs");
