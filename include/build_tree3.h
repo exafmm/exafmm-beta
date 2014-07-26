@@ -239,7 +239,7 @@ private:
 		 int * index, int numBodies, int bitShift) {
 
     int counter[BLOCK_SIZE*NBINS];
-    int str[(BLOCK_SIZE+1)*NBINS];
+    int str[BLOCK_SIZE*NBINS];
 
     counter[:] = 0;
     str[:] = 0;
@@ -261,29 +261,29 @@ private:
       }
     }
 
-    int dd = 0;
+    int offset = 0;
     for (int b=0; b<NBINS; b++) {
-      str[b] = dd;
+      str[b] = offset;
 #pragma ivdep
-      for (int i=1; i<BLOCK_SIZE+1; i++) {
+      for (int i=1; i<BLOCK_SIZE; i++) {
 	str[i*NBINS+b] = str[(i-1)*NBINS+b] + counter[(i-1)*NBINS+b];
       }
-      dd = str[BLOCK_SIZE*NBINS+b];
+      offset = str[(BLOCK_SIZE-1)*NBINS+b] + counter[(BLOCK_SIZE-1)*NBINS+b];
     }
 
     for (int i=0; i<BLOCK_SIZE; i++) {
-      int o = i * numBlock;
-      cilk_spawn relocate(&keys[o], buffer, &index[o], permutation,
-			  &str[i*NBINS], o, numBlock, numBodies, bitShift);
+      offset = i * numBlock;
+      cilk_spawn relocate(&keys[offset], buffer, &index[offset], permutation,
+			  &str[i*NBINS], offset, numBlock, numBodies, bitShift);
     }
     cilk_sync;
 
     std::swap(index, permutation);
     std::swap(keys, buffer);
 
-    int offset = 0;
+    offset = 0;
     for (int b=0; b<NBINS; b++) {
-      int size = str[BLOCK_SIZE*NBINS+b] - offset;
+      int size = str[(BLOCK_SIZE-1)*NBINS+b] - offset;
       cilk_spawn recursion(&keys[offset], &buffer[offset],
 			   &permutation[offset], &index[offset], size, bitShift-6);
       offset += size;
