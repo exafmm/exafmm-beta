@@ -5,12 +5,6 @@
 #include "logger.h"
 #include "thread.h"
 #include "types.h"
-#ifndef _OPENMP
-int omp_get_num_threads() {return 1;}
-int omp_get_thread_num() {return 0;}
-#else
-#include <omp.h>
-#endif
 
 #define BLOCK_SIZE 512
 #define NCRIT 16
@@ -142,46 +136,31 @@ private:
     return box;
   }
 
-  void getKey(uint64_t * keys, float * X, int numBodies) {
+  void getKey(Bodies & bodies, Bounds & bounds, uint64_t * keys, int * index) {
     const int nbins = 1 << maxlevel;
-    float Xmin[3] = {0};
-    float Xmax[3] = {0};
-    float X0[3];
-    for (int b=0; b<numBodies; b++) {
-      for (int d=0; d<3; d++) {
-	Xmin[d] = fmin(X[3*b+d], Xmin[d]);
-	Xmax[d] = fmax(X[3*b+d], Xmax[d]);
-      }
-    }
-    for (int d=0; d<3; d++) X0[d] = (Xmax[d] + Xmin[d]) / 2;
-    float range = 0;
-    for (int d=0; d<3; d++) {
-      range = fmax(X0[d] - Xmin[d], range);
-      range = fmax(Xmax[d] - X0[d], range);
-    }
-    range *= 1.00001;
-    for (int d=0; d<3; d++) {
-      Xmin[d] = X0[d] - range;
-      Xmax[d] = X0[d] + range;
-    }
-    float d = 2 * range / nbins;
-    cilk_for(int i=0; i<numBodies; i++){
-      int ix = floor((X[3*i+0] - Xmin[0]) / d);
-      int iy = floor((X[3*i+1] - Xmin[1]) / d);
-      int iz = floor((X[3*i+2] - Xmin[2]) / d);
+    Box box = bounds2box(bounds);
+    float d = 2 * box.R / nbins;
+    int b = 0;
+    cilk_for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+      vec3 X = B->X;
+      int ix = floor((X[0] - bounds.Xmin[0]) / d);
+      int iy = floor((X[1] - bounds.Xmin[1]) / d);
+      int iz = floor((X[2] - bounds.Xmin[2]) / d);
       uint64_t key =
-	morton256_x[(ix >> 16) & 0xFF] |
-	morton256_y[(iy >> 16) & 0xFF] |
-	morton256_z[(iz >> 16) & 0xFF];
+        morton256_x[(ix >> 16) & 0xFF] |
+        morton256_y[(iy >> 16) & 0xFF] |
+        morton256_z[(iz >> 16) & 0xFF];
       key = key << 48 |
-	morton256_x[(ix >> 8) & 0xFF] |
-	morton256_y[(iy >> 8) & 0xFF] |
-	morton256_z[(iz >> 8) & 0xFF];
+        morton256_x[(ix >> 8) & 0xFF] |
+        morton256_y[(iy >> 8) & 0xFF] |
+        morton256_z[(iz >> 8) & 0xFF];
       key = key << 24 |
-	morton256_x[ix & 0xFF] |
-	morton256_y[iy & 0xFF] |
-	morton256_z[iz & 0xFF];
-      keys[i] = key;
+        morton256_x[ix & 0xFF] |
+        morton256_y[iy & 0xFF] |
+        morton256_z[iz & 0xFF];
+      B->ICELL = key;
+      keys[b] = key;
+      index[b] = b;
     }
   }
 
@@ -285,7 +264,8 @@ private:
   }
 
   void permuteBlock(Body * bodies, Bodies & buffer, int * index, int numBlock) {
-    for(int i=0; i<numBlock; i++){
+#pragma ivdep
+    for (int i=0; i<numBlock; i++) {
       bodies[i] = buffer[index[i]];
     }
   }
@@ -391,25 +371,13 @@ public:
     const int level = 6;
     maxlevel = level;
 
-    float * X = new float [3*numBodies];
     uint64_t * keys = new uint64_t [numBodies];
     uint64_t * buffer = new uint64_t [numBodies];
     int * index = new int [numBodies];
     int * permutation = new int [numBodies];
 
     logger::startTimer("Morton key");
-    int b = 0;
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
-      X[3*b+0] = B->X[0];
-      X[3*b+1] = B->X[1];
-      X[3*b+2] = B->X[2];
-    }
-    getKey(keys, X, numBodies);
-    b = 0;
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
-      index[b] = b;
-      B->ICELL = keys[b];
-    }
+    getKey(bodies, bounds, keys, index);
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
@@ -434,6 +402,9 @@ public:
     reverseOrder(cells, permutation);
     logger::stopTimer("Reverse order");
 
+    delete[] keys;
+    delete[] buffer;
+    delete[] index;
     delete[] permutation;
     return cells;
   }
