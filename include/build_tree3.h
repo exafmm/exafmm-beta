@@ -239,10 +239,8 @@ private:
 		 int * index, int numBodies, int bitShift) {
 
     int counter[BLOCK_SIZE*NBINS];
-    int str[BLOCK_SIZE*NBINS];
 
     counter[:] = 0;
-    str[:] = 0;
 
     if (numBodies<=NCRIT || bitShift<0) {
       permutation[0:numBodies] = index[0:numBodies];
@@ -263,18 +261,18 @@ private:
 
     int offset = 0;
     for (int b=0; b<NBINS; b++) {
-      str[b] = offset;
 #pragma ivdep
-      for (int i=1; i<BLOCK_SIZE; i++) {
-	str[i*NBINS+b] = str[(i-1)*NBINS+b] + counter[(i-1)*NBINS+b];
+      for (int i=0; i<BLOCK_SIZE; i++) {
+	int size = counter[i*NBINS+b];
+	counter[i*NBINS+b] = offset;
+	offset += size;
       }
-      offset = str[(BLOCK_SIZE-1)*NBINS+b] + counter[(BLOCK_SIZE-1)*NBINS+b];
     }
 
     for (int i=0; i<BLOCK_SIZE; i++) {
       offset = i * numBlock;
       cilk_spawn relocate(&keys[offset], buffer, &index[offset], permutation,
-			  &str[i*NBINS], offset, numBlock, numBodies, bitShift);
+			  &counter[i*NBINS], offset, numBlock, numBodies, bitShift);
     }
     cilk_sync;
 
@@ -283,7 +281,7 @@ private:
 
     offset = 0;
     for (int b=0; b<NBINS; b++) {
-      int size = str[(BLOCK_SIZE-1)*NBINS+b] - offset;
+      int size = counter[(BLOCK_SIZE-1)*NBINS+b] - offset;
       cilk_spawn recursion(&keys[offset], &buffer[offset],
 			   &permutation[offset], &index[offset], size, bitShift-6);
       offset += size;
