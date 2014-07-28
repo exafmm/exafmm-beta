@@ -141,7 +141,7 @@ private:
     Box box = bounds2box(bounds);
     float d = 2 * box.R / nbins;
     int b = 0;
-    cilk_for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
       vec3 X = B->X;
       int ix = floor((X[0] - bounds.Xmin[0]) / d);
       int iy = floor((X[1] - bounds.Xmin[1]) / d);
