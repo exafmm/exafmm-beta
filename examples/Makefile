@@ -12,7 +12,7 @@ tree: tree.o $(OBJECTS)
 
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
-	$(CXX) $? $(LFLAGS) -lcilkrts
+	$(CXX) $? $(LFLAGS)
 	./a.out
 
 # Test for parallel FMM
