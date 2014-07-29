@@ -13,12 +13,14 @@ int main() {
   ParallelFMM FMM;
 #endif
   char fname[256];
-  sprintf(fname,"time%5.5d.dat",FMM.MPIRANK);
+  sprintf(fname,"oldtime%5.5d.dat",FMM.MPIRANK);
   std::ofstream fid(fname);
   srand48(FMM.MPIRANK);
   int numBodies = N;
   FMM.allocate(numBodies,4,0);
   FMM.numBodies = numBodies;
+  //logger::verbose = true;
+  //FMM.printNow = false;
   if( FMM.printNow ) {
     printf("N       : %d\n",FMM.numBodies);
     printf("Levels  : %d\n",FMM.maxLevel);
@@ -37,10 +39,12 @@ int main() {
     dim = (dim + 1) % 3;
   }
 
+  logger::startTimer("Partition");
   tic = FMM.getTime();
   FMM.partitioner(maxPartition,1);
   toc = FMM.getTime();
   if( FMM.printNow ) printf("Part    : %lf\n",toc-tic);
+  logger::stopTimer("Partition");
 
   for( int it=0; it<1; it++ ) {
     int ix[3] = {0, 0, 0};
@@ -64,6 +68,7 @@ int main() {
       FMM.Jbodies[i][3] -= average;
     }
   
+    logger::startTimer("Grow tree");
     tic = FMM.getTime();
     FMM.sortBodies();
     toc = FMM.getTime();
@@ -75,14 +80,18 @@ int main() {
     toc = FMM.getTime();
     //if( FMM.printNow ) fid << std::setw(20) << std::left << "Tree " << toc-tic << std::endl;
     if( FMM.printNow ) printf("Tree    : %lf\n",toc-tic);
+    logger::stopTimer("Grow tree");
   
+    logger::startTimer("Upward pass");
     tic = FMM.getTime();
     FMM.upwardPass();
     toc = FMM.getTime();
     //if( FMM.printNow ) fid << std::setw(20) << std::left << "Upward " << toc-tic << std::endl;
+    logger::stopTimer("Upward pass");
   
 #if Serial
 #else
+    logger::startTimer("Comm LET bodies");
     tic = FMM.getTime();
     FMM.P2PSend();
     toc = FMM.getTime();
@@ -94,7 +103,9 @@ int main() {
     toc = FMM.getTime();
     //if( FMM.printNow ) fid << std::setw(20) << std::left << "P2P Recv " << toc-tic << std::endl;
     if( FMM.printNow ) printf("P2P Recv: %lf @ lev: %d\n",toc-tic,FMM.maxLevel);
+    logger::stopTimer("Comm LET bodies");
 
+    logger::startTimer("Comm LET cells");
     for( int lev=FMM.maxLevel; lev>0; lev-- ) {
       MPI_Barrier(MPI_COMM_WORLD);
       tic = FMM.getTime();
@@ -116,6 +127,7 @@ int main() {
     toc = FMM.getTime();
     //if( FMM.printNow ) fid << std::setw(20) << std::left << "Gather " << toc-tic << std::endl;
     if( FMM.printNow ) printf("Gather  : %lf\n",toc-tic);
+    logger::stopTimer("Comm LET cells");
   
     FMM.globM2M();
   
@@ -130,11 +142,13 @@ int main() {
   
 #if Serial
 #else
+    logger::startTimer("Downward pass");
     tic = FMM.getTime();
     FMM.globL2L();
     toc = FMM.getTime();
     //if( FMM.printNow ) fid << std::setw(20) << std::left << "L2L Glob " << toc-tic << std::endl;
     if( FMM.printNow ) printf("L2L Glob: %lf\n",toc-tic);
+    logger::stopTimer("Downward pass");
 #endif
   
     tic = FMM.getTime();
@@ -153,5 +167,23 @@ int main() {
     if( FMM.printNow ) printf("Direct  : %lf\n",toc-tic);
   }
   FMM.deallocate();
+
+  logger::startTimer("Attach root");
+  logger::stopTimer("Attach root");
+  logger::startTimer("Comm partition");
+  logger::stopTimer("Comm partition");
+  logger::startTimer("Get bounds");
+  logger::stopTimer("Get bounds");
+  logger::startTimer("Link LET");
+  logger::stopTimer("Link LET");
+  logger::startTimer("Link tree");
+  logger::stopTimer("Link tree");
+  logger::startTimer("Root to body");
+  logger::stopTimer("Root to body");
+  logger::startTimer("Set LET");
+  logger::stopTimer("Set LET");
+  logger::startTimer("Set LET size");
+  logger::stopTimer("Set LET size");
+  logger::writeTime(FMM.MPIRANK);
 
 }

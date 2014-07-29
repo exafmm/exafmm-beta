@@ -127,7 +127,7 @@ protected:
 public:
   void allocate(int N, int L, int I) {
     maxLevel = L;
-    maxBodies = N;
+    maxBodies = 2 * N;
     numImages = I;
     numCells = ((1 << 3 * (L + 1)) - 1) / 7;
     numLeafs = 1 << 3 * L;

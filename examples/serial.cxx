@@ -1,16 +1,10 @@
 #include "args.h"
 #include "bound_box.h"
-<<<<<<< local
-=======
 #ifdef CILK
 #include "build_tree3.h"
 #else
->>>>>>> other
 #include "build_tree.h"
-<<<<<<< local
-=======
 #endif
->>>>>>> other
 #include "dataset.h"
 #include "logger.h"
 #include "traversal.h"

@@ -37,11 +37,14 @@ public:
   void downwardPass() {
     double tic, toc;
 
+    logger::startTimer("Traverse");
     tic = getTime();
     M2L();
     toc = getTime();
     if( printNow ) printf("M2L     : %lf : %f GFlops\n",toc-tic,2417*numCells*189/(toc-tic)*1e-9);
+    logger::stopTimer("Traverse");
 
+    logger::startTimer("Downward pass");
     tic = getTime();
     L2L();
     toc = getTime();
@@ -51,12 +54,15 @@ public:
     L2P();
     toc = getTime();
     if( printNow ) printf("L2P     : %lf : %f GFlops\n",toc-tic,558*numBodies/(toc-tic)*1e-9);
+    logger::stopTimer("Downward pass");
 
-#if DO_P2P
+#if DO_P2P 
+    logger::startTimer("Traverse");
     tic = getTime();
     P2P();
     toc = getTime();
     if( printNow ) printf("P2P     : %lf : %f GFlops\n",toc-tic,22.*numBodies*numBodies*27/(toc-tic)/numLeafs*1e-9);
+    logger::stopTimer("Traverse");
 #endif
   }
 };

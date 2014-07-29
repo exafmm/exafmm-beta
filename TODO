@@ -1,9 +1,10 @@
 -- CPU --
-- Tree build scalability
-- Wrapper error
-- Intel OpenMP error
-- examples/Makefile options to args
-- cycle counter based weights
+Time each kernel separately using cycle counters
+Tree build scalability
+Wrapper error
+Intel OpenMP error
+examples/Makefile options to args
+cycle counter based weights
 OpenMP with atomics -> flush
 MPI-3.0 lock all
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
