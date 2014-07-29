@@ -1,4 +1,3 @@
-
 .SUFFIXES: .cxx .cu .o
 
 ### choose kernel
@@ -35,7 +34,7 @@ CXX	+= -I../include
 #CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
-LFLAGS  += -DEXPANSION=4 # Specify expansion order
+LFLAGS  += -DEXPANSION=6 # Specify expansion order
 LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #LFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
 #LFLAGS	+= -DFP64 # Use double precision

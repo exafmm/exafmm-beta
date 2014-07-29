@@ -1,4 +1,5 @@
 -- CPU --
+Debug non-MASS case
 Time each kernel separately using cycle counters
 Tree build scalability
 Wrapper error
