@@ -46,7 +46,7 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 
 ### Thread model flags
 #LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
-LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
+#LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
 #LFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
 #LFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers

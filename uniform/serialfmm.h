@@ -149,7 +149,7 @@ public:
     memory += numSendCells * MTERM * sizeof(float);
     memory += numSendLeafs * 2 * sizeof(int);
     memory += numSendLeafs * 2 * sizeof(int);
-    std::cout << "Memory: " << memory/1e6 << " MB" << std::endl;
+    //std::cout << "Memory: " << memory/1e6 << " MB" << std::endl;
     Ibodies = new real [maxBodies][4]();
     Jbodies = new real [maxBodies+numSendBodies][4]();
     Multipole = new real [27*numCells][MTERM]();

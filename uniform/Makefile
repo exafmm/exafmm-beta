@@ -1,5 +1,5 @@
-CXX	= mpicxx -ggdb3 -Wall -O3 -fopenmp
-#CXX	= CC -xHOST -O3 -openmp -funroll-loops
+#CXX	= mpicxx -ggdb3 -Wall -O3 -fopenmp
+CXX	= CC -xHOST -O3 -openmp -funroll-loops
 #CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3
 #CXX	= mpiFCCpx -Kfast,openmp
 
@@ -13,7 +13,6 @@ serial	: main.cxx
 
 parallel: main.cxx
 	$(CXX) $? $(LFLAGS) -DDO_P2P #-DPRINT_COMM
-	mpirun -np 2 ./a.out
 
 cleanjob:
 	find . -name "job.sh*" | xargs rm -rf	

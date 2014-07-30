@@ -4,7 +4,7 @@
 #include "parallelfmm.h"
 #endif
 
-const int N = 10000000;
+const int N = 1000000;
 int main() {
   double tic, toc;
 #if Serial
@@ -17,7 +17,7 @@ int main() {
   std::ofstream fid(fname);
   srand48(FMM.MPIRANK);
   int numBodies = N;
-  FMM.allocate(numBodies,6,0);
+  FMM.allocate(numBodies,5,0);
   FMM.numBodies = numBodies;
   //logger::verbose = true;
   //FMM.printNow = false;
@@ -157,7 +157,7 @@ int main() {
     //if( FMM.printNow ) fid << std::setw(20) << std::left << "Downward " << toc-tic << std::endl;
     if( FMM.printNow ) printf("Downward: %lf\n",toc-tic);
 
-    /*
+#if 0
     tic = FMM.getTime();
 #if Serial
     FMM.direct();
@@ -166,7 +166,7 @@ int main() {
 #endif
     toc = FMM.getTime();
     if( FMM.printNow ) printf("Direct  : %lf\n",toc-tic);
-    */
+#endif
   }
   FMM.deallocate();
 
