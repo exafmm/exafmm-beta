@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
   num_threads(args.threads);
 
   const real_t cycle = 2 * M_PI;
-  args.numBodies /= baseMPI.mpisize;
+  //args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
