@@ -4,7 +4,7 @@
 #include "parallelfmm.h"
 #endif
 
-const int N = 62500;
+const int N = 100000;
 int main() {
   double tic, toc;
 #if Serial
