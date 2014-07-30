@@ -26,12 +26,12 @@ public:
     tic = getTime();
     P2M();
     toc = getTime();
-    if( printNow ) printf("P2M     : %lf : %f GFlops\n",toc-tic,148*numBodies/(toc-tic)*1e-9);
+    if( printNow ) printf("P2M     : %lf : %f GFlops\n",toc-tic,148.*numBodies/(toc-tic)*1e-9);
 
     tic = getTime();
     M2M();
     toc = getTime();
-    if( printNow ) printf("M2M     : %lf : %f GFlops\n",toc-tic,955*numCells/(toc-tic)*1e-9);
+    if( printNow ) printf("M2M     : %lf : %f GFlops\n",toc-tic,955.*numCells/(toc-tic)*1e-9);
   }
 
   void downwardPass() {
@@ -41,19 +41,19 @@ public:
     tic = getTime();
     M2L();
     toc = getTime();
-    if( printNow ) printf("M2L     : %lf : %f GFlops\n",toc-tic,2417*numCells*189/(toc-tic)*1e-9);
+    if( printNow ) printf("M2L     : %lf : %f GFlops\n",toc-tic,2417.*numCells*189/(toc-tic)*1e-9);
     logger::stopTimer("Traverse");
 
     logger::startTimer("Downward pass");
     tic = getTime();
     L2L();
     toc = getTime();
-    if( printNow ) printf("L2L     : %lf : %f GFlops\n",toc-tic,1902*numCells/(toc-tic)*1e-9);
+    if( printNow ) printf("L2L     : %lf : %f GFlops\n",toc-tic,1902.*numCells/(toc-tic)*1e-9);
 
     tic = getTime();
     L2P();
     toc = getTime();
-    if( printNow ) printf("L2P     : %lf : %f GFlops\n",toc-tic,558*numBodies/(toc-tic)*1e-9);
+    if( printNow ) printf("L2P     : %lf : %f GFlops\n",toc-tic,558.*numBodies/(toc-tic)*1e-9);
     logger::stopTimer("Downward pass");
 
 #if DO_P2P 

@@ -47,7 +47,7 @@ private:
   void setSendCounts() {
     int leafsType[3] = {1, (1 << maxLevel), (1 << (2 * maxLevel))};
     int bodiesType[3];
-    for_3d bodiesType[d] = leafsType[d] * maxBodies / numLeafs * 2;
+    for_3d bodiesType[d] = leafsType[d] * float(maxBodies) / numLeafs * 2;
     int i = 0;
     int ix[3];
     bodiesDispl[0] = leafsDispl[0] = 0;
@@ -69,6 +69,7 @@ private:
       }
     }
     assert( numSendBodies >= bodiesDispl[25] + bodiesCount[25] );
+    assert( bodiesDispl[25] + bodiesCount[25] > 0 );
     assert( numSendLeafs == leafsDispl[25] + leafsCount[25] );
     int sumSendCells = 0;
     for( int lev=1; lev<=maxLevel; lev++ ) {
@@ -127,13 +128,28 @@ protected:
 public:
   void allocate(int N, int L, int I) {
     maxLevel = L;
-    maxBodies = 2 * N;
+    maxBodies = N;
     numImages = I;
     numCells = ((1 << 3 * (L + 1)) - 1) / 7;
     numLeafs = 1 << 3 * L;
     numSendCells = 64 * L + 48 * ((1 << (L + 1)) - 2) + 12 * (((1 << (2 * L + 2)) - 1) / 3 - 1);
     numSendLeafs = 8 + 12 * (1 << L) + 6 * (1 << (2 * L));
-    numSendBodies = numSendLeafs * maxBodies / numLeafs * 2;
+    numSendBodies = numSendLeafs * float(maxBodies) / numLeafs * 2;
+    float memory = 0;
+    memory += maxBodies * 4 * sizeof(real);
+    memory += (maxBodies + numSendBodies) * 4 * sizeof(real);
+    memory += 27 * numCells * MTERM * sizeof(real);
+    memory += numCells * LTERM * sizeof(real);
+    memory += 27 * numLeafs * 2 * sizeof(int);
+    memory += 2 * MPISIZE * MTERM * sizeof(real);
+    memory += 10 * LTERM * sizeof(real);
+    memory += numSendBodies * 4 * sizeof(float);
+    memory += numSendBodies * 4 * sizeof(float);
+    memory += numSendCells * MTERM * sizeof(float);
+    memory += numSendCells * MTERM * sizeof(float);
+    memory += numSendLeafs * 2 * sizeof(int);
+    memory += numSendLeafs * 2 * sizeof(int);
+    std::cout << "Memory: " << memory/1e6 << " MB" << std::endl;
     Ibodies = new real [maxBodies][4]();
     Jbodies = new real [maxBodies+numSendBodies][4]();
     Multipole = new real [27*numCells][MTERM]();
