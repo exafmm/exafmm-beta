@@ -9,6 +9,11 @@ namespace {
   __device__ unsigned int numTargetGlob= 0;
 
   __device__
+  void swap(int & a, int & b) {
+    int c(a); a=b; b=c;
+  };
+
+  __device__
   uint64_t getHilbert(int3 iX) {
     const int octantMap[8] = {0, 1, 7, 6, 3, 2, 4, 5};
     int mask = 1 << (NBITS - 1);
@@ -20,24 +25,20 @@ namespace {
       const int iz = (iX.z & mask) ? 1 : 0;
       const int octant = (ix << 2) + (iy << 1) + iz;
       if(octant == 0) {
-	const int temp = iX.z;
-	iX.z = iX.y;
-	iX.y = temp;
+	swap(iX.y, iX.z);
       } else if(octant == 1 || octant == 5) {
-	const int temp = iX.x;
-	iX.x = iX.y;
-	iX.y = temp;
-      } else if(octant == 4 || octant == 6){
+	swap(iX.x, iX.y);
+      } else if(octant == 4 || octant == 6) {
 	iX.x = (iX.x) ^ (-1);
 	iX.z = (iX.z) ^ (-1);
       } else if(octant == 3 || octant == 7) {
-	const int temp = (iX.x) ^ (-1);
-	iX.x = (iX.y) ^ (-1);
-	iX.y = temp;
+	iX.x = (iX.x) ^ (-1);
+	iX.y = (iX.y) ^ (-1);
+	swap(iX.x, iX.y);
       } else {
-	const int temp = (iX.z) ^ (-1);
-	iX.z = (iX.y) ^ (-1);
-	iX.y = temp;
+	iX.y = (iX.y) ^ (-1);
+	iX.z = (iX.z) ^ (-1);
+	swap(iX.y, iX.z);
       }
       key = (key<<3) + octantMap[octant];
       mask >>= 1;

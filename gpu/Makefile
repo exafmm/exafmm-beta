@@ -1,6 +1,6 @@
 .SUFFIXES: .cu
 
-NVCC = nvcc -g -use_fast_math -arch=sm_35 -rdc=true
+NVCC = /usr/local/cuda-5.5/bin/nvcc -g -use_fast_math -arch=sm_35 -rdc=true
 LFLAGS = -lcudadevrt
 LFLAGS += -DMASS # Use all positive sources
 
