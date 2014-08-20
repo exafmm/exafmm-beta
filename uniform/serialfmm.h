@@ -157,8 +157,8 @@ public:
     Leafs = new int [27*numLeafs][2]();
     globMultipole = new real [2*MPISIZE][MTERM]();
     globLocal = new real [10][LTERM]();
-    sendJbodies = new float [numSendBodies][4]();
-    recvJbodies = new float [numSendBodies][4]();
+    sendJbodies = new float [maxBodies][4]();
+    recvJbodies = new float [maxBodies][4]();
     sendMultipole = new float [numSendCells][MTERM]();
     recvMultipole = new float [numSendCells][MTERM]();
     sendLeafs = new int [numSendLeafs][2]();
@@ -169,12 +169,12 @@ public:
     delete[] Ibodies;
     delete[] Jbodies;
     delete[] Multipole;
-    //delete[] Local;
-    //delete[] Leafs;
+    delete[] Local;
+    delete[] Leafs;
     delete[] globMultipole;
     delete[] globLocal;
-    //delete[] sendJbodies;
-    //delete[] recvJbodies;
+    delete[] sendJbodies;
+    delete[] recvJbodies;
     delete[] sendMultipole;
     delete[] recvMultipole;
     delete[] sendLeafs;
