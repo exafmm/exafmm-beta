@@ -169,12 +169,12 @@ public:
     delete[] Ibodies;
     delete[] Jbodies;
     delete[] Multipole;
-    delete[] Local;
-    delete[] Leafs;
+    //delete[] Local;
+    //delete[] Leafs;
     delete[] globMultipole;
     delete[] globLocal;
-    delete[] sendJbodies;
-    delete[] recvJbodies;
+    //delete[] sendJbodies;
+    //delete[] recvJbodies;
     delete[] sendMultipole;
     delete[] recvMultipole;
     delete[] sendLeafs;
@@ -307,11 +307,6 @@ public:
       for( jx[2]=-prange; jx[2]<=prange; jx[2]++ ) {
         for( jx[1]=-prange; jx[1]<=prange; jx[1]++ ) {
           for( jx[0]=-prange; jx[0]<=prange; jx[0]++ ) {
-            real periodic[3] = {0, 0, 0};
-            for_3d periodic[d] = jx[d] * 2 * RGlob[d];
-#if 1
-            P2P(0,100,0,numBodies,periodic);
-#else
             for( int j=0; j<numBodies; j++ ) {
               real dist[3];
               for_3d dist[d] = Jbodies[i][d] - Jbodies[j][d] - jx[d] * 2 * RGlob[d];
@@ -325,7 +320,6 @@ public:
               Fy -= dist[1] * invR3;
               Fz -= dist[2] * invR3;
             }
-#endif
           }
         }
       }

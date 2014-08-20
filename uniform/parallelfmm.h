@@ -569,10 +569,12 @@ public:
   void globDirect() {
     const int numTarget = 100;
     MPI_Status stats[2];
-    real (*Ibodies2)[4] = new real [maxBodies][4];
+    real (*Ibodies2)[4] = new real [numTarget][4];
     real (*Jbodies2)[4] = new real [maxBodies][4];
-    for( int i=0; i<numBodies; i++ ) {
+    for( int i=0; i<numTarget; i++ ) {
       for_4d Ibodies2[i][d] = 0;
+    }
+    for( int i=0; i<numBodies; i++ ) {
       for_4d Jbodies2[i][d] = Jbodies[i][d];
     }
     const int sendRank = (MPIRANK + 1          ) % MPISIZE;

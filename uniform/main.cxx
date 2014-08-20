@@ -157,7 +157,7 @@ int main() {
     //if( FMM.printNow ) fid << std::setw(20) << std::left << "Downward " << toc-tic << std::endl;
     if( FMM.printNow ) printf("Downward: %lf\n",toc-tic);
 
-#if 0
+#if 1
     tic = FMM.getTime();
 #if Serial
     FMM.direct();
