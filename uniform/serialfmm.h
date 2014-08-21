@@ -299,10 +299,13 @@ public:
   }
 
   void direct() {
+    const int numTarget = 100;
+    real (*Ibodies2)[4] = new real [numTarget][4];
     int prange = numImages == 0 ? 0 : pow(3,numImages - 1);
     real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-    for( int i=0; i<100; i++ ) {
-      real Po = 0, Fx = 0, Fy = 0, Fz = 0;
+#pragma omp parallel for
+    for( int i=0; i<numTarget; i++ ) {
+      real bodies[4] = {0, 0, 0, 0};
       int jx[3];
       for( jx[2]=-prange; jx[2]<=prange; jx[2]++ ) {
         for( jx[1]=-prange; jx[1]<=prange; jx[1]++ ) {
@@ -315,22 +318,22 @@ public:
               if( R2 == 0 ) invR2 = 0;
               real invR = Jbodies[j][3] * sqrt(invR2);
               real invR3 = invR2 * invR;
-              Po += invR;
-              Fx -= dist[0] * invR3;
-              Fy -= dist[1] * invR3;
-              Fz -= dist[2] * invR3;
+              bodies[0] += invR;
+	      for_3d bodies[d+1] -= dist[d] * invR3;
             }
           }
         }
       }
-      diff1 += (Ibodies[i][0] - Po) * (Ibodies[i][0] - Po);
-      norm1 += Po * Po;
-      diff2 += (Ibodies[i][1] - Fx) * (Ibodies[i][1] - Fx)
-             + (Ibodies[i][2] - Fy) * (Ibodies[i][2] - Fy)
-             + (Ibodies[i][3] - Fz) * (Ibodies[i][3] - Fz);
-      norm2 += Fx * Fx + Fy * Fy + Fz * Fz;
+      for_4d Ibodies2[i][d] = bodies[d];
+    }
+    for( int i=0; i<numTarget; i++ ) {
+      diff1 += (Ibodies[i][0] - Ibodies2[i][0]) * (Ibodies[i][0] - Ibodies2[i][0]);
+      norm1 += Ibodies2[i][0] * Ibodies2[i][0];
+      for_3d diff2 += (Ibodies[i][d+1] - Ibodies2[i][d+1]) * (Ibodies[i][d+1] - Ibodies2[i][d+1]);
+      for_3d norm2 += Ibodies2[i][d+1] * Ibodies2[i][d+1];
     }
     printf("Err Pot : %lf\n",sqrt(diff1/norm1));
     printf("Err Forc: %lf\n",sqrt(diff2/norm2));
+    delete[] Ibodies2;
   }
 };
