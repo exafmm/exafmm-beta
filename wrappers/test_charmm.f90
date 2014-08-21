@@ -608,7 +608,9 @@ program main
   parameter(pi=3.14159265358979312d0)
 
   call mpi_init(ierr)
+  print*,'0'
   call mpi_comm_size(mpi_comm_world, mpisize, ierr)
+  print*,'1'
   call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
   nglobal = 1000
   images = 3
