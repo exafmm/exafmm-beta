@@ -5,7 +5,6 @@ class Kernel {
 public:
   int maxLevel;
   int maxGlobLevel;
-  int maxBodies;
   int numBodies;
   int numImages;
   int numCells;

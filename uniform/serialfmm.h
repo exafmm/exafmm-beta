@@ -47,7 +47,7 @@ private:
   void setSendCounts() {
     int leafsType[3] = {1, (1 << maxLevel), (1 << (2 * maxLevel))};
     int bodiesType[3];
-    for_3d bodiesType[d] = leafsType[d] * float(maxBodies) / numLeafs * 2;
+    for_3d bodiesType[d] = leafsType[d] * float(numBodies) / numLeafs * 2;
     int i = 0;
     int ix[3];
     bodiesDispl[0] = leafsDispl[0] = 0;
@@ -128,16 +128,16 @@ protected:
 public:
   void allocate(int N, int L, int I) {
     maxLevel = L;
-    maxBodies = N;
+    numBodies = N;
     numImages = I;
     numCells = ((1 << 3 * (L + 1)) - 1) / 7;
     numLeafs = 1 << 3 * L;
     numSendCells = 64 * L + 48 * ((1 << (L + 1)) - 2) + 12 * (((1 << (2 * L + 2)) - 1) / 3 - 1);
     numSendLeafs = 8 + 12 * (1 << L) + 6 * (1 << (2 * L));
-    numSendBodies = numSendLeafs * float(maxBodies) / numLeafs * 2;
+    numSendBodies = numSendLeafs * float(numBodies) / numLeafs * 2;
     float memory = 0;
-    memory += maxBodies * 4 * sizeof(real);
-    memory += (maxBodies + numSendBodies) * 4 * sizeof(real);
+    memory += numBodies * 4 * sizeof(real);
+    memory += (numBodies + numSendBodies) * 4 * sizeof(real);
     memory += 27 * numCells * MTERM * sizeof(real);
     memory += numCells * LTERM * sizeof(real);
     memory += 27 * numLeafs * 2 * sizeof(int);
@@ -150,15 +150,15 @@ public:
     memory += numSendLeafs * 2 * sizeof(int);
     memory += numSendLeafs * 2 * sizeof(int);
     //std::cout << "Memory: " << memory/1e6 << " MB" << std::endl;
-    Ibodies = new real [maxBodies][4]();
-    Jbodies = new real [maxBodies+numSendBodies][4]();
+    Ibodies = new real [numBodies][4]();
+    Jbodies = new real [numBodies+numSendBodies][4]();
     Multipole = new real [27*numCells][MTERM]();
     Local = new real [numCells][LTERM]();
     Leafs = new int [27*numLeafs][2]();
     globMultipole = new real [2*MPISIZE][MTERM]();
     globLocal = new real [10][LTERM]();
-    sendJbodies = new float [maxBodies][4]();
-    recvJbodies = new float [maxBodies][4]();
+    sendJbodies = new float [numBodies][4]();
+    recvJbodies = new float [numBodies][4]();
     sendMultipole = new float [numSendCells][MTERM]();
     recvMultipole = new float [numSendCells][MTERM]();
     sendLeafs = new int [numSendLeafs][2]();
@@ -302,7 +302,6 @@ public:
     const int numTarget = 100;
     real (*Ibodies2)[4] = new real [numTarget][4];
     int prange = numImages == 0 ? 0 : pow(3,numImages - 1);
-    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
 #pragma omp parallel for
     for( int i=0; i<numTarget; i++ ) {
       real bodies[4] = {0, 0, 0, 0};
@@ -326,6 +325,7 @@ public:
       }
       for_4d Ibodies2[i][d] = bodies[d];
     }
+    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
     for( int i=0; i<numTarget; i++ ) {
       diff1 += (Ibodies[i][0] - Ibodies2[i][0]) * (Ibodies[i][0] - Ibodies2[i][0]);
       norm1 += Ibodies2[i][0] * Ibodies2[i][0];

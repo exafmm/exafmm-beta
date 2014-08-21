@@ -115,7 +115,7 @@ public:
     }
 #if PRINT_COMM
     int cells = (pow((1 << maxLevel) + 2,3) - (1 << (3 * maxLevel)));
-    float theoBytes = cells * (2 + maxBodies / numLeafs * 8) * 4;
+    float theoBytes = cells * (2 + numBodies / numLeafs * 8) * 4;
     fid << "level : " << maxGlobLevel+maxLevel << " P2P comm (theoretical) : " << std::setw(8) << theoBytes << ",   (actual) : " << std::setw(8) << commBytes << " Bytes" << std::endl;
 #endif
     MPI_Waitall(52,requests,stats);
@@ -570,7 +570,7 @@ public:
     const int numTarget = 100;
     MPI_Status stats[2];
     real (*Ibodies2)[4] = new real [numTarget][4];
-    real (*Jbodies2)[4] = new real [maxBodies][4];
+    real (*Jbodies2)[4] = new real [numBodies][4];
     for( int i=0; i<numTarget; i++ ) {
       for_4d Ibodies2[i][d] = 0;
     }
