@@ -181,7 +181,17 @@ public:
     delete[] recvLeafs;
   }
 
-  void partitioner(int *maxPartition, int level=0) {
+  void partitioner(int level) {
+    int mpisize = MPISIZE;
+    int maxPartition[3] = {1, 1, 1};
+    int dim = 0;
+    while( mpisize != 1 ) {
+      int ndiv = 2;
+      if( (mpisize % 3) == 0 ) ndiv = 3;
+      maxPartition[dim] *= ndiv;
+      mpisize /= ndiv;
+      dim = (dim + 1) % 3;
+    }
     checkPartition(maxPartition);
     numGlobCells = 0;
     for( int lev=0; lev<=maxGlobLevel; lev++ ) {

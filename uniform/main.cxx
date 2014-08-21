@@ -4,7 +4,6 @@
 #include "parallelfmm.h"
 #endif
 
-const int N = 100000;
 int main() {
   double tic, toc;
 #if Serial
@@ -16,9 +15,12 @@ int main() {
   sprintf(fname,"oldtime%5.5d.dat",FMM.MPIRANK);
   std::ofstream fid(fname);
   srand48(FMM.MPIRANK);
-  int numBodies = N;
-  FMM.allocate(numBodies,4,2);
-  FMM.numBodies = numBodies;
+
+  const int numBodies = 100000 / FMM.MPISIZE;
+  const int maxLevel = 4;
+  const int gatherLevel = 1;
+  const int numImages = 2;
+  FMM.allocate(numBodies, maxLevel, numImages);
   //logger::verbose = true;
   //FMM.printNow = false;
   if( FMM.printNow ) {
@@ -28,28 +30,15 @@ int main() {
     printf("------------------\n");
   }
 
-  int mpisize = FMM.MPISIZE;
-  int maxPartition[3] = {1, 1, 1};
-  int dim = 0;
-  while( mpisize != 1 ) {
-    int ndiv = 2;
-    if( (mpisize % 3) == 0 ) ndiv = 3;
-    maxPartition[dim] *= ndiv;
-    mpisize /= ndiv;
-    dim = (dim + 1) % 3;
-  }
-
   logger::startTimer("Partition");
   tic = FMM.getTime();
-  FMM.partitioner(maxPartition,1);
+  FMM.partitioner(gatherLevel);
   toc = FMM.getTime();
   if( FMM.printNow ) printf("Part    : %lf\n",toc-tic);
   logger::stopTimer("Partition");
 
   for( int it=0; it<1; it++ ) {
     int ix[3] = {0, 0, 0};
-    srand48(FMM.MPIRANK+it*FMM.MPISIZE);
-    FMM.numBodies = N;
     FMM.R0 = .5;
     for_3d FMM.RGlob[d] = FMM.R0 * FMM.numPartition[FMM.maxGlobLevel][d];
     FMM.getGlobIndex(ix,FMM.MPIRANK,FMM.maxGlobLevel);
