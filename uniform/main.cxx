@@ -14,8 +14,6 @@ int main() {
   char fname[256];
   sprintf(fname,"oldtime%5.5d.dat",FMM.MPIRANK);
   std::ofstream fid(fname);
-  srand48(FMM.MPIRANK);
-
   const int numBodies = 100000 / FMM.MPISIZE;
   const int maxLevel = 4;
   const int gatherLevel = 1;
