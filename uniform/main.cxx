@@ -14,7 +14,7 @@ int main() {
   char fname[256];
   sprintf(fname,"oldtime%5.5d.dat",FMM.MPIRANK);
   std::ofstream fid(fname);
-  const int numBodies = 100000 / FMM.MPISIZE;
+  const int numBodies = 100000;
   const int maxLevel = 4;
   const int gatherLevel = 1;
   const int numImages = 2;
