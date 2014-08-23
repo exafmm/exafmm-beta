@@ -182,6 +182,9 @@ public:
   }
 
   void partitioner(int level) {
+    if (numImages > 0 && int(log2(MPISIZE)) % 3 != 0) {
+      if (MPIRANK==0) printf("Warning: MPISIZE must be a power of 8 for periodic domain to be square\n");
+    }
     int mpisize = MPISIZE;
     int maxPartition[3] = {1, 1, 1};
     int dim = 0;
