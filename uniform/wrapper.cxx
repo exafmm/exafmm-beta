@@ -5,13 +5,16 @@ static const double Celec = 332.0716;
 ParallelFMM * FMM;
 
 extern "C" void fmm_init_(int & images, double, int & verbose) {
+  const int maxBodies = 1000000;
   const int maxLevel = 4;
   const int gatherLevel = 1;
   const int numImages = images;
   FMM = new ParallelFMM;
+  FMM.allocate(maxBodies, maxLevel, numImages);
 }
 
 extern "C" void fmm_finalize_() {
+  FMM.deallocate();
   delete FMM;
 }
 
