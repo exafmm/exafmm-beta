@@ -330,7 +330,7 @@ public:
       logger::startTimer("Comm LET cells");
       globM2MSend(lev);
       globM2MRecv(lev);
-      logger::stopTimer("Comm LET cells");
+      logger::stopTimer("Comm LET cells", 0);
       logger::startTimer("Upward pass");
       int numChild[3];
       for_3d numChild[d] = numPartition[lev][d] / numPartition[lev-1][d];
@@ -360,11 +360,11 @@ public:
           }
         }
       }
-      logger::stopTimer("Upward pass");
+      logger::stopTimer("Upward pass", 0);
     }
     logger::startTimer("Comm LET cells");
     gatherMultipoles();
-    logger::stopTimer("Comm LET cells");
+    logger::stopTimer("Comm LET cells", 0);
     logger::startTimer("Upward pass");
     for( int lev=gatherLevel; lev>0; lev-- ) {
       int numChild[3];
@@ -530,7 +530,7 @@ public:
         }
       }
       for_l globLocal[lev][l] += L[l];
-      logger::stopTimer("Traverse");
+      logger::stopTimer("Traverse", 0);
     }
   }
 

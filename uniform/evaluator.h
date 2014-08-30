@@ -27,7 +27,7 @@ public:
   void downwardPass() {
     logger::startTimer("Traverse");
     M2L();
-    logger::stopTimer("Traverse");
+    logger::stopTimer("Traverse", 0);
 
     logger::startTimer("Downward pass");
     L2L();

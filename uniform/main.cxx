@@ -1,3 +1,4 @@
+#include "args.h"
 #include "ewald.h"
 #if Serial
 #include "serialfmm.h"
@@ -5,26 +6,25 @@
 #include "parallelfmm.h"
 #endif
 
-int main() {
+int main(int argc, char ** argv) {
+  Args args(argc, argv);
 #if Serial
   SerialFMM FMM;
 #else
   ParallelFMM FMM;
 #endif
-  const int numBodies = 100000;
-  const int ncrit = 100;
+  const int numBodies = args.numBodies;
+  const int ncrit = args.ncrit;
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
   const int gatherLevel = 1;
-  const int numImages = 0;
+  const int numImages = args.images;
   FMM.allocate(numBodies, maxLevel, numImages);
-  logger::verbose = FMM.MPIRANK == 0;
-  if( FMM.printNow ) {
-    printf("N       : %d\n",FMM.numBodies);
-    printf("Levels  : %d\n",FMM.maxLevel);
-    printf("Images  : %d\n",FMM.numImages);
-    printf("------------------\n");
-  }
+  args.verbose &= FMM.MPIRANK == 0;
+  logger::verbose = args.verbose;
+  logger::printTitle("FMM Parameters");
+  args.print(logger::stringLength, PP);
 
+  logger::printTitle("FMM Profiling");
   logger::startTimer("Partition");
   FMM.partitioner(gatherLevel);
   logger::stopTimer("Partition");
@@ -72,7 +72,7 @@ int main() {
       FMM.M2LRecv(lev);
     }
     FMM.rootGather();
-    logger::stopTimer("Comm LET cells");
+    logger::stopTimer("Comm LET cells", 0);
     FMM.globM2M();
     FMM.globM2L();
 #endif
@@ -83,7 +83,7 @@ int main() {
 #else
     logger::startTimer("Downward pass");
     FMM.globL2L();
-    logger::stopTimer("Downward pass");
+    logger::stopTimer("Downward pass", 0);
 #endif
   
     FMM.downwardPass();
