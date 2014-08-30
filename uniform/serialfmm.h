@@ -316,43 +316,4 @@ public:
     for_l globLocal[0][l] += L[l];
 #endif
   }
-
-  void direct() {
-    const int numTarget = 100;
-    real (*Ibodies2)[4] = new real [numTarget][4];
-    int prange = numImages == 0 ? 0 : pow(3,numImages - 1);
-#pragma omp parallel for
-    for( int i=0; i<numTarget; i++ ) {
-      real bodies[4] = {0, 0, 0, 0};
-      int jx[3];
-      for( jx[2]=-prange; jx[2]<=prange; jx[2]++ ) {
-        for( jx[1]=-prange; jx[1]<=prange; jx[1]++ ) {
-          for( jx[0]=-prange; jx[0]<=prange; jx[0]++ ) {
-            for( int j=0; j<numBodies; j++ ) {
-              real dist[3];
-              for_3d dist[d] = Jbodies[i][d] - Jbodies[j][d] - jx[d] * 2 * RGlob[d];
-              real R2 = dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2];
-              real invR2 = 1.0 / R2;
-              if( R2 == 0 ) invR2 = 0;
-              real invR = Jbodies[j][3] * sqrt(invR2);
-              real invR3 = invR2 * invR;
-              bodies[0] += invR;
-	      for_3d bodies[d+1] -= dist[d] * invR3;
-            }
-          }
-        }
-      }
-      for_4d Ibodies2[i][d] = bodies[d];
-    }
-    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-    for( int i=0; i<numTarget; i++ ) {
-      diff1 += (Ibodies[i][0] - Ibodies2[i][0]) * (Ibodies[i][0] - Ibodies2[i][0]);
-      norm1 += Ibodies2[i][0] * Ibodies2[i][0];
-      for_3d diff2 += (Ibodies[i][d+1] - Ibodies2[i][d+1]) * (Ibodies[i][d+1] - Ibodies2[i][d+1]);
-      for_3d norm2 += Ibodies2[i][d+1] * Ibodies2[i][d+1];
-    }
-    printf("Err Pot : %lf\n",sqrt(diff1/norm1));
-    printf("Err Forc: %lf\n",sqrt(diff2/norm2));
-    delete[] Ibodies2;
-  }
 };

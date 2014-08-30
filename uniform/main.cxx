@@ -28,7 +28,13 @@ int main(int argc, char ** argv) {
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
   const int gatherLevel = 1;
   const int numImages = args.images;
-  const real cycle = 1;
+
+  const int ksize = 11;
+  const real cycle = 2 * M_PI;
+  const real_t alpha = 10 / cycle;
+  const real_t sigma = .25 / M_PI;
+  const real_t cutoff = cycle * alpha / 3;
+  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   FMM.allocate(numBodies, maxLevel, numImages);
   args.verbose &= FMM.MPIRANK == 0;
   logger::verbose = args.verbose;
@@ -43,7 +49,7 @@ int main(int argc, char ** argv) {
 
   for( int it=0; it<1; it++ ) {
     int ix[3] = {0, 0, 0};
-    FMM.R0 = 0.5 * cycle;
+    FMM.R0 = 0.5 * cycle / FMM.numPartition[FMM.maxGlobLevel][0];
     for_3d FMM.RGlob[d] = FMM.R0 * FMM.numPartition[FMM.maxGlobLevel][d];
     FMM.getGlobIndex(ix,FMM.MPIRANK,FMM.maxGlobLevel);
     for_3d FMM.X0[d] = 2 * FMM.R0 * (ix[d] + .5);

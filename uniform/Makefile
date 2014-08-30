@@ -6,4 +6,4 @@ serial	: main.cxx $(OBJECTS)
 
 parallel: main.cxx $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	mpirun -np 2 ./a.out -n 100000 -c 100 -i 0
+	mpirun -np 8 ./a.out -n 100000 -c 100 -i 0

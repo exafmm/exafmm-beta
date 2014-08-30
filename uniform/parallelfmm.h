@@ -394,7 +394,7 @@ public:
         }
       }
     }
-    logger::stopTimer("Upward pass");
+    logger::stopTimer("Upward pass", 0);
   }
 
   void globM2LSend(int level) {
@@ -548,81 +548,5 @@ public:
       L2LSum(globLocal[lev],C,globLocal[lev-1]);
     }
     for_l Local[0][l] += globLocal[maxGlobLevel][l];
-  }
-
-  void globDirect() {
-    const int numTarget = 100;
-    MPI_Status stats[2];
-    real (*Ibodies2)[4] = new real [numTarget][4];
-    real (*Jbodies2)[4] = new real [numBodies][4];
-    for( int i=0; i<numTarget; i++ ) {
-      for_4d Ibodies2[i][d] = 0;
-    }
-    for( int i=0; i<numBodies; i++ ) {
-      for_4d Jbodies2[i][d] = Jbodies[i][d];
-    }
-    const int sendRank = (MPIRANK + 1          ) % MPISIZE;
-    const int recvRank = (MPIRANK - 1 + MPISIZE) % MPISIZE;
-    for( int irank=0; irank<MPISIZE; irank++ ) {
-      for( int i=0; i<numBodies; i++ ) {
-        for_4d sendJbodies[i][d] = Jbodies2[i][d];
-      }
-      int newBodies = 0;
-      MPI_Isend(&numBodies,1,MPI_INT,sendRank,
-                1,MPI_COMM_WORLD,&requests[0]);
-      MPI_Irecv(&newBodies,1,MPI_INT,recvRank,
-                1,MPI_COMM_WORLD,&requests[1]);
-      MPI_Waitall(2,requests,stats);
-
-      MPI_Isend(sendJbodies[0],numBodies*4,MPI_FLOAT,sendRank,
-                1,MPI_COMM_WORLD,&requests[0]);
-      MPI_Irecv(recvJbodies[0],newBodies*4,MPI_FLOAT,recvRank,
-                1,MPI_COMM_WORLD,&requests[1]);
-      int prange = numImages == 0 ? 0 : pow(3,numImages - 1);
-#pragma omp parallel for
-      for( int i=0; i<numTarget; i++ ) {
-        real bodies[4] = {0, 0, 0, 0};
-        int jx[3];
-        for( jx[2]=-prange; jx[2]<=prange; jx[2]++ ) {
-          for( jx[1]=-prange; jx[1]<=prange; jx[1]++ ) {
-            for( jx[0]=-prange; jx[0]<=prange; jx[0]++ ) {
-              for( int j=0; j<numBodies; j++ ) {
-                real dist[3];
-                for_3d dist[d] = Jbodies[i][d] - Jbodies2[j][d] - jx[d] * 2 * RGlob[d];
-                real R2 = dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2];
-                real invR2 = 1.0 / R2;
-                if( R2 == 0 ) invR2 = 0;
-                real invR = Jbodies2[j][3] * sqrt(invR2);
-                real invR3 = invR2 * invR;
-                bodies[0] += invR;
-                for_3d bodies[d+1] -= dist[d] * invR3;
-              }
-            }
-          }
-        }
-        for_4d Ibodies2[i][d] += bodies[d];
-      }
-      MPI_Waitall(2,requests,stats);
-      numBodies = newBodies;
-      for( int i=0; i<numBodies; i++ ) {
-        for_4d Jbodies2[i][d] = recvJbodies[i][d];
-      }
-    }
-    real diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
-    for( int i=0; i<numTarget; i++ ) {
-      diff1 += (Ibodies[i][0] - Ibodies2[i][0]) * (Ibodies[i][0] - Ibodies2[i][0]);
-      norm1 += Ibodies2[i][0] * Ibodies2[i][0];
-      for_3d diff2 += (Ibodies[i][d+1] - Ibodies2[i][d+1]) * (Ibodies[i][d+1] - Ibodies2[i][d+1]);
-      for_3d norm2 += Ibodies2[i][d+1] * Ibodies2[i][d+1];
-    }
-    real diff3 = 0, norm3 = 0, diff4 = 0, norm4 = 0;
-    MPI_Reduce(&diff1, &diff3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&norm1, &norm3, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&diff2, &diff4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&norm2, &norm4, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    if( MPIRANK == 0 ) printf("Err Pot : %lf\n",sqrt(diff3/norm3));
-    if( MPIRANK == 0 ) printf("Err Forc: %lf\n",sqrt(diff4/norm4));
-    delete[] Ibodies2;
-    delete[] Jbodies2;
   }
 };
