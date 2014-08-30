@@ -40,6 +40,7 @@ public:
   real R0;
   real RGlob[3];
   int *Index;
+  int *Index2;
   int *Rank;
   real (*Ibodies)[4];
   real (*Jbodies)[4];

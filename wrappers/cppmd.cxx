@@ -81,8 +81,9 @@ extern "C" void fmm_finalize_() {
   delete globalTree;
   delete partition;
   delete traversal;
-  delete treeMPI;
+  //delete treeMPI;
   delete upDownPass;
+  delete FMM;
 }
 
 extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q,
@@ -151,7 +152,20 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
-  Bodies bodies(nlocal);
+
+  const int ncrit = 100;
+  const int maxLevel = args->numBodies >= ncrit ? 1 + int(log(args->numBodies / ncrit)/M_LN2/3) : 0;
+  const int gatherLevel = 1;
+  FMM->allocate(args->numBodies, maxLevel, args->images);
+  FMM->partitioner(gatherLevel);
+
+  int ix[3] = {0, 0, 0};
+  FMM->R0 = 0.5 * cycle / FMM->numPartition[FMM->maxGlobLevel][0];
+  for_3d FMM->RGlob[d] = FMM->R0 * FMM->numPartition[FMM->maxGlobLevel][d];
+  FMM->getGlobIndex(ix,FMM->MPIRANK,FMM->maxGlobLevel);
+  for_3d FMM->X0[d] = 2 * FMM->R0 * (ix[d] + .5);
+
+  Bodies bodies(args->numBodies);
   B_iter B = bodies.begin();
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
@@ -165,6 +179,40 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
       B++;
     }
   }
+  int b = 0;
+  for (B=bodies.begin(); B!=bodies.end(); B++, b++) {
+    FMM->Jbodies[b][0] = B->X[0] + FMM->RGlob[0];
+    FMM->Jbodies[b][1] = B->X[1] + FMM->RGlob[1];
+    FMM->Jbodies[b][2] = B->X[2] + FMM->RGlob[2];
+    FMM->Jbodies[b][3] = B->SRC;
+    FMM->Index[b] = B->IBODY;
+    FMM->Ibodies[b][0] = 0;
+    FMM->Ibodies[b][1] = 0;
+    FMM->Ibodies[b][2] = 0;
+    FMM->Ibodies[b][3] = 0;
+  }
+  FMM->sortBodies();
+  FMM->buildTree();
+  FMM->upwardPass();
+#if Serial
+#else
+  FMM->P2PSend();
+  FMM->P2PRecv();
+  for( int lev=FMM->maxLevel; lev>0; lev-- ) {
+    FMM->M2LSend(lev);
+    FMM->M2LRecv(lev);
+  }
+  FMM->rootGather();
+  FMM->globM2M();
+  FMM->globM2L();
+#endif
+  FMM->periodicM2L();
+#if Serial
+#else
+  FMM->globL2L();
+#endif
+  FMM->downwardPass();
+
   Cells cells = localTree->buildTree(bodies, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
@@ -187,6 +235,22 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
     }
   }
   upDownPass->downwardPass(cells);
+
+#if 1
+  b = 0;
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+    B->X[0] = FMM->Jbodies[b][0] - FMM->RGlob[0];
+    B->X[1] = FMM->Jbodies[b][1] - FMM->RGlob[1];
+    B->X[2] = FMM->Jbodies[b][2] - FMM->RGlob[2];
+    B->SRC = FMM->Jbodies[b][3];
+    B->IBODY = FMM->Index[b];
+    B->TRG[0] = FMM->Ibodies[b][0];
+    B->TRG[1] = FMM->Ibodies[b][1];
+    B->TRG[2] = FMM->Ibodies[b][2];
+    B->TRG[3] = FMM->Ibodies[b][3];
+  }
+#endif
+
   vec3 localDipole = upDownPass->getDipole(bodies,0);
   vec3 globalDipole = baseMPI->allreduceVec3(localDipole);
   int numBodies = baseMPI->allreduceInt(bodies.size());
@@ -196,7 +260,8 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   logger::printTitle("Total runtime");
   logger::printTime("Total FMM");
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  b = 0;
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
     int i = B->IBODY & mask;
     p[i]     += B->TRG[0] * B->SRC * Celec;
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;

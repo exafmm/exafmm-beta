@@ -105,7 +105,7 @@ protected:
     for_3d ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
   }
 
-  void sort(real (*bodies)[4], float (*buffer)[4], int *key) const {
+  void sort(real (*bodies)[4], float (*buffer)[4], int *Index, int *Index2, int *key) const {
     int Imax = key[0];
     int Imin = key[0];
     for( int i=0; i<numBodies; i++ ) {
@@ -120,6 +120,7 @@ protected:
     for( int i=numBodies-1; i>=0; --i ) {
       bucket[key[i]-Imin]--;
       int inew = bucket[key[i]-Imin];
+      Index2[inew] = Index[i];
       for_4d buffer[inew][d] = bodies[i][d];
     }
     delete[] bucket;
@@ -151,6 +152,7 @@ public:
     memory += numSendLeafs * 2 * sizeof(int);
     //std::cout << "Memory: " << memory/1e6 << " MB" << std::endl;
     Index = new int [2*numBodies];
+    Index2 = new int [2*numBodies];
     Rank = new int [2*numBodies];
     Ibodies = new real [2*numBodies][4]();
     Jbodies = new real [2*numBodies+numSendBodies][4]();
@@ -169,6 +171,7 @@ public:
 
   void deallocate() {
     delete[] Index;
+    delete[] Index2;
     delete[] Ibodies;
     delete[] Jbodies;
     delete[] Multipole;
@@ -231,8 +234,9 @@ public:
       getIndex(i,ix,diameter);
       key[i] = getKey(ix,maxLevel);
     }
-    sort(Jbodies,sendJbodies,key);
+    sort(Jbodies,sendJbodies,Index,Index2,key);
     for( int i=0; i<numBodies; i++ ) {
+      Index[i] = Index2[i];
       for_4d Jbodies[i][d] = sendJbodies[i][d];
     }
     delete[] key;

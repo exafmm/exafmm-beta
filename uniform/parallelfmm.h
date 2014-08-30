@@ -54,14 +54,14 @@ public:
       recvBodiesDispl[i] = recvBodiesDispl[i-1] + recvBodiesCount[i-1];
     }
     numBodies = recvBodiesDispl[MPISIZE-1] + recvBodiesCount[MPISIZE-1];
-    sort(Jbodies,sendJbodies,Rank);
+    sort(Jbodies,sendJbodies,Index,Index2,Rank);
     MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_FLOAT,
 		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_FLOAT,
 		  MPI_COMM_WORLD);
     for( int i=0; i<numBodies; i++ ) {
       for_4d Jbodies[i][d] = recvJbodies[i][d];
     }
-    sort(Ibodies,sendJbodies,Rank);
+    sort(Ibodies,sendJbodies,Index,Index2,Rank);
     MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_FLOAT,
 		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_FLOAT,
 		  MPI_COMM_WORLD);
