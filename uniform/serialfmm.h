@@ -5,6 +5,10 @@ class SerialFMM : public Evaluator {
 protected:
   int bodiesDispl[26];
   int bodiesCount[26];
+  int sendBodiesDispl[1024];
+  int sendBodiesCount[1024];
+  int recvBodiesDispl[1024];
+  int recvBodiesCount[1024];
   int multipoleDispl[10][26];
   int multipoleCount[10][26];
   int leafsDispl[26];
@@ -101,7 +105,7 @@ protected:
     for_3d ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
   }
 
-  void sort(int *key) const {
+  void sort(real (*bodies)[4], float (*buffer)[4], int *key) const {
     int Imax = key[0];
     int Imin = key[0];
     for( int i=0; i<numBodies; i++ ) {
@@ -116,11 +120,7 @@ protected:
     for( int i=numBodies-1; i>=0; --i ) {
       bucket[key[i]-Imin]--;
       int inew = bucket[key[i]-Imin];
-      for_4d Ibodies[inew][d] = Jbodies[i][d];
-    }
-    for( int i=0; i<numBodies; i++ ) {
-      for_4d Jbodies[i][d] = Ibodies[i][d];
-      for_4d Ibodies[i][d] = 0;
+      for_4d buffer[inew][d] = bodies[i][d];
     }
     delete[] bucket;
   }
@@ -150,15 +150,17 @@ public:
     memory += numSendLeafs * 2 * sizeof(int);
     memory += numSendLeafs * 2 * sizeof(int);
     //std::cout << "Memory: " << memory/1e6 << " MB" << std::endl;
-    Ibodies = new real [numBodies][4]();
-    Jbodies = new real [numBodies+numSendBodies][4]();
+    Index = new int [2*numBodies];
+    Rank = new int [2*numBodies];
+    Ibodies = new real [2*numBodies][4]();
+    Jbodies = new real [2*numBodies+numSendBodies][4]();
     Multipole = new real [27*numCells][MTERM]();
     Local = new real [numCells][LTERM]();
     Leafs = new int [27*numLeafs][2]();
     globMultipole = new real [2*MPISIZE][MTERM]();
     globLocal = new real [10][LTERM]();
-    sendJbodies = new float [numBodies][4]();
-    recvJbodies = new float [numBodies][4]();
+    sendJbodies = new float [2*numBodies][4]();
+    recvJbodies = new float [2*numBodies][4]();
     sendMultipole = new float [numSendCells][MTERM]();
     recvMultipole = new float [numSendCells][MTERM]();
     sendLeafs = new int [numSendLeafs][2]();
@@ -166,6 +168,7 @@ public:
   }
 
   void deallocate() {
+    delete[] Index;
     delete[] Ibodies;
     delete[] Jbodies;
     delete[] Multipole;
@@ -228,7 +231,10 @@ public:
       getIndex(i,ix,diameter);
       key[i] = getKey(ix,maxLevel);
     }
-    sort(key);
+    sort(Jbodies,sendJbodies,key);
+    for( int i=0; i<numBodies; i++ ) {
+      for_4d Jbodies[i][d] = sendJbodies[i][d];
+    }
     delete[] key;
   }
 

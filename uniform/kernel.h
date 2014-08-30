@@ -21,6 +21,8 @@ public:
   real X0[3];
   real R0;
   real RGlob[3];
+  int *Index;
+  int *Rank;
   real (*Ibodies)[4];
   real (*Jbodies)[4];
   real (*Multipole)[MTERM];

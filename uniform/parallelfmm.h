@@ -49,6 +49,38 @@ public:
     if(!EXTERNAL) MPI_Finalize();
   }
 
+  void partitionComm() {
+    int ix[3];
+    real diameter = 2 * R0;
+    for( int i=0; i<numBodies; i++ ) {
+      getIndex(i,ix,diameter);
+      int sendRank = getGlobKey(ix,maxGlobLevel);
+      Rank[i] = sendRank;
+      sendBodiesCount[sendRank]++;
+    }
+    MPI_Alltoall(sendBodiesCount,1,MPI_INT,recvBodiesCount,1,MPI_INT,MPI_COMM_WORLD);
+    sendBodiesDispl[0] = recvBodiesDispl[0] = 0;
+    for( int i=1; i<MPISIZE; i++ ) {
+      sendBodiesDispl[i] = sendBodiesDispl[i-1] + sendBodiesCount[i-1];
+      recvBodiesDispl[i] = recvBodiesDispl[i-1] + recvBodiesCount[i-1];
+    }
+    numBodies = recvBodiesDispl[MPISIZE-1] + recvBodiesCount[MPISIZE-1];
+    sort(Jbodies,sendJbodies,Rank);
+    MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_FLOAT,
+		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_FLOAT,
+		  MPI_COMM_WORLD);
+    for( int i=0; i<numBodies; i++ ) {
+      for_4d Jbodies[i][d] = recvJbodies[i][d];
+    }
+    sort(Ibodies,sendJbodies,Rank);
+    MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_FLOAT,
+		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_FLOAT,
+		  MPI_COMM_WORLD);
+    for( int i=0; i<numBodies; i++ ) {
+      for_4d Ibodies[i][d] = recvJbodies[i][d];
+    }
+  }
+
   void P2PSend() {
     MPI_Status stats[52];
     int rankOffset = 13 * numLeafs;
@@ -486,7 +518,7 @@ public:
     }
   }
 
-  void globM2L(std::ofstream &fid2) {
+  void globM2L() {
     for( int lev=maxGlobLevel; lev>0; lev-- ) {
       MPI_Barrier(MPI_COMM_WORLD);
       logger::startTimer("Comm LET cells");
@@ -496,7 +528,6 @@ public:
         globM2LRecv(lev);
       }
       double toc = getTime();
-      if( lev > 1 ) fid2 << toc-tic << std::endl;
       if( printNow ) printf("M2L Comm: %lf @ lev: %d\n",toc-tic,lev);
       logger::stopTimer("Comm LET cells");
       logger::startTimer("Traverse");

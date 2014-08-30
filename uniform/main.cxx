@@ -15,7 +15,8 @@ int main() {
   sprintf(fname,"oldtime%5.5d.dat",FMM.MPIRANK);
   std::ofstream fid(fname);
   const int numBodies = 100000;
-  const int maxLevel = 4;
+  const int ncrit = 100;
+  const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
   const int gatherLevel = 1;
   const int numImages = 0;
   FMM.allocate(numBodies, maxLevel, numImages);
@@ -118,7 +119,7 @@ int main() {
   
     FMM.globM2M();
   
-    FMM.globM2L(fid);
+    FMM.globM2L();
 #endif
   
     tic = FMM.getTime();
