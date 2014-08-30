@@ -1,5 +1,9 @@
+#include "base_mpi.h"
 #include "args.h"
+#include "dataset.h"
 #include "ewald.h"
+#include "traversal.h"
+#include "tree_mpi.h"
 #if Serial
 #include "serialfmm.h"
 #else
@@ -8,16 +12,21 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
+  Dataset data;
+  Traversal traversal(args.nspawn, args.images);
 #if Serial
   SerialFMM FMM;
 #else
   ParallelFMM FMM;
 #endif
+  TreeMPI treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
+
   const int numBodies = args.numBodies;
   const int ncrit = args.ncrit;
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
   const int gatherLevel = 1;
   const int numImages = args.images;
+  const real cycle = 1;
   FMM.allocate(numBodies, maxLevel, numImages);
   args.verbose &= FMM.MPIRANK == 0;
   logger::verbose = args.verbose;
@@ -25,13 +34,14 @@ int main(int argc, char ** argv) {
   args.print(logger::stringLength, PP);
 
   logger::printTitle("FMM Profiling");
+  logger::startTimer("Total FMM");
   logger::startTimer("Partition");
   FMM.partitioner(gatherLevel);
   logger::stopTimer("Partition");
 
   for( int it=0; it<1; it++ ) {
     int ix[3] = {0, 0, 0};
-    FMM.R0 = 0.5;
+    FMM.R0 = 0.5 * cycle;
     for_3d FMM.RGlob[d] = FMM.R0 * FMM.numPartition[FMM.maxGlobLevel][d];
     FMM.getGlobIndex(ix,FMM.MPIRANK,FMM.maxGlobLevel);
     for_3d FMM.X0[d] = 2 * FMM.R0 * (ix[d] + .5);
@@ -87,21 +97,36 @@ int main(int argc, char ** argv) {
 #endif
   
     FMM.downwardPass();
-    if( FMM.printNow ) printf("------------------\n");
+    logger::stopTimer("Total FMM", 0);
 
     Bodies bodies(FMM.numBodies);
     B_iter B = bodies.begin();
     for (int b=0; b<FMM.numBodies; b++, B++) {
       for_3d B->X[d] = FMM.Jbodies[b][d];
       B->SRC = FMM.Jbodies[b][3];
+      for_4d B->TRG[d] = FMM.Ibodies[b][d];
     }
+    Bodies jbodies = bodies;
+    const int numTargets = 100;
+    data.sampleBodies(bodies, numTargets);
+    Bodies bodies2 = bodies;
+    data.initTarget(bodies);
+    
     logger::startTimer("Total Direct");
+    logger::printTitle("MPI direct sum");
+    for (int i=0; i<FMM.MPISIZE; i++) {
+      if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << FMM.MPISIZE << std::endl;
+      treeMPI.shiftBodies(jbodies);
+      traversal.direct(bodies, jbodies, cycle);
+    }
+    logger::printTitle("FMM vs. direct");
 #if Serial
     FMM.direct();
 #else
     FMM.globDirect();
 #endif
-    if( FMM.printNow ) printf("------------------\n");
+    logger::printTitle("Total runtime");
+    logger::printTime("Total FMM");
     logger::stopTimer("Total Direct");
   }
   FMM.deallocate();
