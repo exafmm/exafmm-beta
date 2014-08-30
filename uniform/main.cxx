@@ -31,7 +31,7 @@ int main(int argc, char ** argv) {
   TreeMPI treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
 
   const int numBodies = args.numBodies;
-  const int ncrit = args.ncrit;
+  const int ncrit = 100;
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
   const int gatherLevel = 1;
   const int numImages = args.images;
@@ -122,7 +122,8 @@ int main(int argc, char ** argv) {
       for_4d B->TRG[d] = FMM.Ibodies[b][d];
     }
     Bodies jbodies = bodies;
-    vec3 localDipole = upDownPass.getDipole(bodies,0);
+    vec3 X0Glob = FMM.RGlob[0];
+    vec3 localDipole = upDownPass.getDipole(bodies, X0Glob);
     vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
     int numBodies = baseMPI.allreduceInt(bodies.size());
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
