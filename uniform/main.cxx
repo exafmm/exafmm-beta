@@ -141,6 +141,7 @@ int main(int argc, char ** argv) {
       ewald.wavePart(bodies, jbodies);
       ewald.realPart(cells, jcells);
     }
+    ewald.selfTerm(bodies);
 #else
     logger::startTimer("Total Direct");
     const int numTargets = 100;

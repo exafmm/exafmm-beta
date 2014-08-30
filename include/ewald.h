@@ -24,7 +24,9 @@ private:
   //! Forward DFT
   void dft(Waves & waves, Bodies & bodies) const {
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
-    for (W_iter W=waves.begin(); W!=waves.end(); W++) {         // Loop over waves
+#pragma omp parallel for
+    for (int w=0; w<int(waves.size()); w++) {                   // Loop over waves
+      W_iter W=waves.begin()+w;                                 //  Wave iterator
       W->REAL = W->IMAG = 0;                                    //  Initialize waves
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     //  Loop over bodies
 	real_t th = 0;                                          //   Initialize phase
@@ -38,7 +40,9 @@ private:
   //! Inverse DFT
   void idft(Waves & waves, Bodies & bodies) const {
     real_t scale = 2 * M_PI / cycle;                            // Scale conversion
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+#pragma omp parallel for
+    for (int b=0; b<int(bodies.size()); b++) {                  // Loop over bodies
+      B_iter B=bodies.begin()+b;                                //  Body iterator
       kvec4 TRG = kreal_t(0);                                   //  Initialize target values
       for (W_iter W=waves.begin(); W!=waves.end(); W++) {       //   Loop over waves
 	real_t th = 0;                                          //    Initialzie phase
