@@ -21,13 +21,6 @@ int main(int argc, char ** argv) {
   Verify verify;
 
   const int numBodies = args.numBodies;
-  const int ncrit = 100;
-  const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
-  const int gatherLevel = 1;
-  const int numImages = args.images;
-  SerialFMM FMM;
-  FMM.allocate(numBodies, maxLevel, numImages);
-
   const int ksize = 11;
   const real cycle = 2 * M_PI;
   const real_t alpha = 10 / cycle;
@@ -41,39 +34,29 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   for( int it=0; it<1; it++ ) {
-    FMM.R0 = 0.5 * cycle;
-    srand48(FMM.MPIRANK);
+    srand48(0);
     real average = 0;
-    for( int i=0; i<FMM.numBodies; i++ ) {
-      FMM.Jbodies[i][0] = 2 * FMM.R0 * drand48() - FMM.R0;
-      FMM.Jbodies[i][1] = 2 * FMM.R0 * drand48() - FMM.R0;
-      FMM.Jbodies[i][2] = 2 * FMM.R0 * drand48() - FMM.R0;
-      FMM.Jbodies[i][3] = (drand48() - .5) / FMM.numBodies;
-      average += FMM.Jbodies[i][3];
+    Bodies bodies(numBodies);
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+      for_3d B->X[d] = 2 * M_PI * drand48() - M_PI;
+      B->SRC = (drand48() - .5) / bodies.size();
+      B->TRG = 0;
+      average += B->SRC;
     }
-    average /= FMM.numBodies;
-    for( int i=0; i<FMM.numBodies; i++ ) {
-      FMM.Jbodies[i][3] -= average;
+    average /= numBodies;
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+      B->SRC -= average;
     }
-  
-    Bodies bodies(FMM.numBodies);
-    B_iter B = bodies.begin();
-    for (int b=0; b<FMM.numBodies; b++, B++) {
-      for_3d B->X[d] = FMM.Jbodies[b][d];
-      B->SRC = FMM.Jbodies[b][3];
-      for_4d B->TRG[d] = FMM.Ibodies[b][d];
-    }
-    FMM.deallocate();
+    
     Bodies jbodies = bodies;
 
     logger::startTimer("Total Direct");
-    const int numTargets = FMM.numBodies;
+    const int numTargets = numBodies;
     data.sampleBodies(bodies, numTargets);
     data.initTarget(bodies);
     traversal.direct(bodies, jbodies, cycle);
     traversal.normalize(bodies);
-    vec3 X0Glob = FMM.R0;
-    vec3 localDipole = upDownPass.getDipole(bodies, X0Glob);
+    vec3 localDipole = upDownPass.getDipole(bodies, M_PI);
     vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
     int numBodies = baseMPI.allreduceInt(bodies.size());
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
