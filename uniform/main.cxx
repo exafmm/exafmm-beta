@@ -122,8 +122,7 @@ int main(int argc, char ** argv) {
       for_4d B->TRG[d] = FMM.Ibodies[b][d];
     }
     Bodies jbodies = bodies;
-    vec3 X0Glob = FMM.RGlob[0];
-    vec3 localDipole = upDownPass.getDipole(bodies, X0Glob);
+    vec3 localDipole = upDownPass.getDipole(bodies, FMM.RGlob[0]);
     vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
     int numBodies = baseMPI.allreduceInt(bodies.size());
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);

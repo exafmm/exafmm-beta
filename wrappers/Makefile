@@ -22,10 +22,15 @@ charmm:
 	make libcharmm.a
 	$(FC) test_charmm.f90 -ggdb3 -Wall -fbounds-check -L. -lfmm -ltbb -lstdc++ -lgomp
 	mpirun -np 1 ./a.out ala3.fmm
-#	make cleandat
-#	mpirun -np 2 ./a.out water.fmm 10
-#	make cleandat
-#	mpirun -np 1 ./a.out water.fmm 10
+	make cleandat
+	mpirun -np 2 ./a.out water.fmm 10
+	make cleandat
+	mpirun -np 1 ./a.out water.fmm 10
+
+cppmd:
+	make libcppmd.a
+	$(FC) test_cppmd.f90 -ggdb3 -Wall -fbounds-check -L. -lfmm -ltbb -lstdc++ -lgomp
+	mpirun -np 1 ./a.out ala3.fmm
 
 libpetiga.a: petiga.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
 	ar ruv libpetiga.a $?
@@ -41,3 +46,8 @@ libcharmm.a: charmm.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2
 	ar ruv libcharmm.a $?
 	ranlib libcharmm.a
 	mv libcharmm.a libfmm.a
+
+libcppmd.a: cppmd.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
+	ar ruv libcppmd.a $?
+	ranlib libcppmd.a
+	mv libcppmd.a libfmm.a
