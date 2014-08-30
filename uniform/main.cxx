@@ -4,6 +4,7 @@
 #include "ewald.h"
 #include "traversal.h"
 #include "tree_mpi.h"
+#include "verify.h"
 #if Serial
 #include "serialfmm.h"
 #else
@@ -14,6 +15,7 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   Dataset data;
   Traversal traversal(args.nspawn, args.images);
+  Verify verify;
 #if Serial
   SerialFMM FMM;
 #else
@@ -113,21 +115,38 @@ int main(int argc, char ** argv) {
     data.initTarget(bodies);
     
     logger::startTimer("Total Direct");
+#if Serial
+    traversal.direct(bodies, jbodies, cycle);
+#else
     logger::printTitle("MPI direct sum");
     for (int i=0; i<FMM.MPISIZE; i++) {
       if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << FMM.MPISIZE << std::endl;
       treeMPI.shiftBodies(jbodies);
       traversal.direct(bodies, jbodies, cycle);
     }
-    logger::printTitle("FMM vs. direct");
-#if Serial
-    FMM.direct();
-#else
-    FMM.globDirect();
 #endif
+    traversal.normalize(bodies);
     logger::printTitle("Total runtime");
     logger::printTime("Total FMM");
     logger::stopTimer("Total Direct");
+    logger::resetTimer("Total Direct");
+    double potDif = verify.getDifScalar(bodies, bodies2);
+    double potNrm = verify.getNrmScalar(bodies);
+    double accDif = verify.getDifVector(bodies, bodies2);
+    double accNrm = verify.getNrmVector(bodies);
+    logger::printTitle("FMM vs. direct");
+#if Serial
+    verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
+    verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
+#else
+    double potDifGlob, potNrmGlob, accDifGlob, accNrmGlob;
+    MPI_Reduce(&potDif, &potDifGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&potNrm, &potNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&accDif, &accDifGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&accNrm, &accNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
+    verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
+#endif
   }
   FMM.deallocate();
 
