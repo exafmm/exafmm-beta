@@ -1,9 +1,12 @@
 #include "base_mpi.h"
 #include "args.h"
+#include "bound_box.h"
+#include "build_tree.h"
 #include "dataset.h"
 #include "ewald.h"
 #include "traversal.h"
 #include "tree_mpi.h"
+#include "up_down_pass.h"
 #include "verify.h"
 #if Serial
 #include "serialfmm.h"
@@ -13,8 +16,12 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
+  BaseMPI baseMPI;
+  BoundBox boundBox(args.nspawn);
   Dataset data;
+  BuildTree buildTree(args.ncrit, args.nspawn);
   Traversal traversal(args.nspawn, args.images);
+  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 #if Serial
   SerialFMM FMM;
@@ -115,41 +122,60 @@ int main(int argc, char ** argv) {
       for_4d B->TRG[d] = FMM.Ibodies[b][d];
     }
     Bodies jbodies = bodies;
+    vec3 localDipole = upDownPass.getDipole(bodies,0);
+    vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
+    int numBodies = baseMPI.allreduceInt(bodies.size());
+    upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
+#if 1
+    logger::startTimer("Total Ewald");
+    Bounds bounds = boundBox.getBounds(bodies);
+    Cells cells = buildTree.buildTree(bodies, bounds);
+    Bodies bodies2 = bodies;
+    data.initTarget(bodies);
+    for (int i=0; i<FMM.MPISIZE; i++) {
+      if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << FMM.MPISIZE << std::endl;
+      if (FMM.MPISIZE > 1) treeMPI.shiftBodies(jbodies);
+      bounds = boundBox.getBounds(jbodies);
+      Cells jcells = buildTree.buildTree(jbodies, bounds);
+      ewald.wavePart(bodies, jbodies);
+      ewald.realPart(cells, jcells);
+    }
+#else
+    logger::startTimer("Total Direct");
     const int numTargets = 100;
     data.sampleBodies(bodies, numTargets);
     Bodies bodies2 = bodies;
     data.initTarget(bodies);
-    
-    logger::startTimer("Total Direct");
-#if Serial
-    traversal.direct(bodies, jbodies, cycle);
-#else
-    logger::printTitle("MPI direct sum");
     for (int i=0; i<FMM.MPISIZE; i++) {
       if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << FMM.MPISIZE << std::endl;
-      treeMPI.shiftBodies(jbodies);
+      if (FMM.MPISIZE > 1) treeMPI.shiftBodies(jbodies);
       traversal.direct(bodies, jbodies, cycle);
     }
-#endif
     traversal.normalize(bodies);
+    upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
     logger::printTitle("Total runtime");
     logger::printTime("Total FMM");
     logger::stopTimer("Total Direct");
     logger::resetTimer("Total Direct");
-    double potDif = verify.getDifScalar(bodies, bodies2);
-    double potNrm = verify.getNrmScalar(bodies);
+#endif
+    double potSum = verify.getSumScalar(bodies);
+    double potSum2 = verify.getSumScalar(bodies2);
     double accDif = verify.getDifVector(bodies, bodies2);
     double accNrm = verify.getNrmVector(bodies);
     logger::printTitle("FMM vs. direct");
 #if Serial
+    double potDif = (potSum - potSum2) * (potSum - potSum2);
+    double potNrm = potSum * potSum;
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
 #else
-    double potDifGlob, potNrmGlob, accDifGlob, accNrmGlob;
-    MPI_Reduce(&potDif, &potDifGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&potNrm, &potNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&accDif, &accDifGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&accNrm, &accNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    double potSumGlob, potSumGlob2, accDifGlob, accNrmGlob;
+    MPI_Reduce(&potSum,  &potSumGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&potSum2, &potSumGlob2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&accDif,  &accDifGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&accNrm,  &accNrmGlob,  1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    double potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2);
+    double potNrmGlob = potSumGlob * potSumGlob;
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
 #endif
