@@ -19,13 +19,6 @@ parallel: main.cxx
 	$(CXX) $? $(LFLAGS) -DDO_P2P #-DPRINT_COMM
 	mpirun -np 2 ./a.out
 
-wrapper:
-	make libfmm.a
-	$(FC) test_wrapper.f90 -ggdb3 -Wall -fbounds-check -L. -lfmm -ltbb -lstdc++ -lgomp
-	mpirun -np 1 ./a.out ../wrappers/ala3.fmm
-	make cleandat
-	mpirun -np 1 ./a.out ../wrappers/water.fmm 10
-
 libfmm.a: wrapper.o
 	ar ruv libfmm.a $?
 	ranlib libfmm.a
