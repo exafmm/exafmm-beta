@@ -35,18 +35,7 @@ int main(int argc, char ** argv) {
   logger::startTimer("Total FMM");
   for( int it=0; it<1; it++ ) {
     srand48(0);
-    real average = 0;
-    Bodies bodies(numBodies);
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      for_3d B->X[d] = 2 * M_PI * drand48() - M_PI;
-      B->SRC = (drand48() - .5) / bodies.size();
-      B->TRG = 0;
-      average += B->SRC;
-    }
-    average /= numBodies;
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      B->SRC -= average;
-    }
+    Bodies bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
     
     Bodies jbodies = bodies;
 
@@ -56,7 +45,7 @@ int main(int argc, char ** argv) {
     data.initTarget(bodies);
     traversal.direct(bodies, jbodies, cycle);
     traversal.normalize(bodies);
-    vec3 localDipole = upDownPass.getDipole(bodies, M_PI);
+    vec3 localDipole = upDownPass.getDipole(bodies, 0);
     vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
     int numBodies = baseMPI.allreduceInt(bodies.size());
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
