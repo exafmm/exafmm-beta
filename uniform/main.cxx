@@ -6,7 +6,6 @@
 #endif
 
 int main() {
-  double tic, toc;
 #if Serial
   SerialFMM FMM;
 #else
@@ -18,8 +17,7 @@ int main() {
   const int gatherLevel = 1;
   const int numImages = 0;
   FMM.allocate(numBodies, maxLevel, numImages);
-  //logger::verbose = true;
-  //FMM.printNow = false;
+  logger::verbose = FMM.MPIRANK == 0;
   if( FMM.printNow ) {
     printf("N       : %d\n",FMM.numBodies);
     printf("Levels  : %d\n",FMM.maxLevel);
@@ -28,10 +26,7 @@ int main() {
   }
 
   logger::startTimer("Partition");
-  tic = FMM.getTime();
   FMM.partitioner(gatherLevel);
-  toc = FMM.getTime();
-  if( FMM.printNow ) printf("Part    : %lf\n",toc-tic);
   logger::stopTimer("Partition");
 
   for( int it=0; it<1; it++ ) {
@@ -55,113 +50,78 @@ int main() {
     }
   
     logger::startTimer("Grow tree");
-    tic = FMM.getTime();
     FMM.sortBodies();
-    toc = FMM.getTime();
-    if( FMM.printNow ) printf("Sort    : %lf\n",toc-tic);
-  
-    tic = FMM.getTime();
     FMM.buildTree();
-    toc = FMM.getTime();
-    if( FMM.printNow ) printf("Tree    : %lf\n",toc-tic);
     logger::stopTimer("Grow tree");
   
     logger::startTimer("Upward pass");
-    tic = FMM.getTime();
     FMM.upwardPass();
-    toc = FMM.getTime();
     logger::stopTimer("Upward pass");
   
 #if Serial
 #else
     logger::startTimer("Comm LET bodies");
-    tic = FMM.getTime();
     FMM.P2PSend();
-    toc = FMM.getTime();
-    if( FMM.printNow ) printf("P2P Send: %lf @ lev: %d\n",toc-tic,FMM.maxLevel);
-
-    tic = FMM.getTime();
     FMM.P2PRecv();
-    toc = FMM.getTime();
-    if( FMM.printNow ) printf("P2P Recv: %lf @ lev: %d\n",toc-tic,FMM.maxLevel);
     logger::stopTimer("Comm LET bodies");
 
     logger::startTimer("Comm LET cells");
     for( int lev=FMM.maxLevel; lev>0; lev-- ) {
       MPI_Barrier(MPI_COMM_WORLD);
-      tic = FMM.getTime();
       FMM.M2LSend(lev);
       FMM.M2LRecv(lev);
-      toc = FMM.getTime();
-      if( FMM.printNow ) printf("M2L Recv: %lf @ lev: %d\n",toc-tic,lev);
     }
-
-    tic = FMM.getTime();
     FMM.rootGather();
-    toc = FMM.getTime();
-    if( FMM.printNow ) printf("Gather  : %lf\n",toc-tic);
     logger::stopTimer("Comm LET cells");
-  
     FMM.globM2M();
-  
     FMM.globM2L();
 #endif
   
-    tic = FMM.getTime();
     FMM.periodicM2L();
-    toc = FMM.getTime();
-    if( FMM.printNow ) printf("M2L Peri: %lf\n",toc-tic);
-  
+
 #if Serial
 #else
     logger::startTimer("Downward pass");
-    tic = FMM.getTime();
     FMM.globL2L();
-    toc = FMM.getTime();
-    if( FMM.printNow ) printf("L2L Glob: %lf\n",toc-tic);
     logger::stopTimer("Downward pass");
 #endif
   
-    tic = FMM.getTime();
     FMM.downwardPass();
-    toc = FMM.getTime();
-    if( FMM.printNow ) {
-      printf("Downward: %lf\n",toc-tic);
-      printf("------------------\n");
-    }
+    if( FMM.printNow ) printf("------------------\n");
 
-#if 1
-    tic = FMM.getTime();
+    Bodies bodies(FMM.numBodies);
+    B_iter B = bodies.begin();
+    for (int b=0; b<FMM.numBodies; b++, B++) {
+      for_3d B->X[d] = FMM.Jbodies[b][d];
+      B->SRC = FMM.Jbodies[b][3];
+    }
+    logger::startTimer("Total Direct");
 #if Serial
     FMM.direct();
 #else
     FMM.globDirect();
 #endif
-    toc = FMM.getTime();
-    if( FMM.printNow ) {
-      printf("------------------\n");
-      printf("Direct  : %lf\n",toc-tic);
-    }
-#endif
+    if( FMM.printNow ) printf("------------------\n");
+    logger::stopTimer("Total Direct");
   }
   FMM.deallocate();
 
   logger::startTimer("Attach root");
-  logger::stopTimer("Attach root");
+  logger::stopTimer("Attach root", 0);
   logger::startTimer("Comm partition");
-  logger::stopTimer("Comm partition");
+  logger::stopTimer("Comm partition", 0);
   logger::startTimer("Get bounds");
-  logger::stopTimer("Get bounds");
+  logger::stopTimer("Get bounds", 0);
   logger::startTimer("Link LET");
-  logger::stopTimer("Link LET");
+  logger::stopTimer("Link LET", 0);
   logger::startTimer("Link tree");
-  logger::stopTimer("Link tree");
+  logger::stopTimer("Link tree", 0);
   logger::startTimer("Root to body");
-  logger::stopTimer("Root to body");
+  logger::stopTimer("Root to body", 0);
   logger::startTimer("Set LET");
-  logger::stopTimer("Set LET");
+  logger::stopTimer("Set LET", 0);
   logger::startTimer("Set LET size");
-  logger::stopTimer("Set LET size");
+  logger::stopTimer("Set LET size", 0);
   logger::writeTime(FMM.MPIRANK);
 
 }

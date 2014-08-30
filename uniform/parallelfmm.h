@@ -328,14 +328,10 @@ public:
     for_m globMultipole[i][m] = Multipole[rankOffset][m];
     for( int lev=maxGlobLevel; lev>gatherLevel; lev-- ) {
       logger::startTimer("Comm LET cells");
-      double tic = getTime();
       globM2MSend(lev);
       globM2MRecv(lev);
-      double toc = getTime();
-      if( printNow ) printf("M2M Comm: %lf @ lev: %d\n",toc-tic,lev);
       logger::stopTimer("Comm LET cells");
       logger::startTimer("Upward pass");
-      tic = getTime();
       int numChild[3];
       for_3d numChild[d] = numPartition[lev][d] / numPartition[lev-1][d];
       int jxoff[3];
@@ -364,19 +360,13 @@ public:
           }
         }
       }
-      toc = getTime();
-      if( printNow ) printf("M2M Glob: %lf @ lev: %d\n",toc-tic,lev);
       logger::stopTimer("Upward pass");
     }
     logger::startTimer("Comm LET cells");
-    double tic = getTime();
     gatherMultipoles();
-    double toc = getTime();
-    if( printNow ) printf("M2M Comm: %lf @ lev: %d\n",toc-tic,gatherLevel);
     logger::stopTimer("Comm LET cells");
     logger::startTimer("Upward pass");
     for( int lev=gatherLevel; lev>0; lev-- ) {
-      tic = getTime();
       int numChild[3];
       for_3d numChild[d] = numPartition[lev][d] / numPartition[lev-1][d];
       int childOffset = globLevelOffset[lev];
@@ -403,8 +393,6 @@ public:
           }
         }
       }
-      toc = getTime();
-      if( printNow ) printf("M2M Glob: %lf @ lev: %d\n",toc-tic,lev);
     }
     logger::stopTimer("Upward pass");
   }
@@ -493,16 +481,12 @@ public:
     for( int lev=maxGlobLevel; lev>0; lev-- ) {
       MPI_Barrier(MPI_COMM_WORLD);
       logger::startTimer("Comm LET cells");
-      double tic = getTime();
       if( lev > gatherLevel ) {
         globM2LSend(lev);
         globM2LRecv(lev);
       }
-      double toc = getTime();
-      if( printNow ) printf("M2L Comm: %lf @ lev: %d\n",toc-tic,lev);
       logger::stopTimer("Comm LET cells");
       logger::startTimer("Traverse");
-      tic = getTime();
       int nxmin[3] = {0, 0, 0};
       int nxmax[3] = {numPartition[lev-1][0]-1,numPartition[lev-1][1]-1,numPartition[lev-1][2]-1};
       int nunit[3] = {numPartition[lev][0],numPartition[lev][1],numPartition[lev][2]};
@@ -546,8 +530,6 @@ public:
         }
       }
       for_l globLocal[lev][l] += L[l];
-      toc = getTime();
-      if( printNow ) printf("M2L Glob: %lf @ lev: %d\n",toc-tic,lev);
       logger::stopTimer("Traverse");
     }
   }
