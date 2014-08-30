@@ -4,9 +4,6 @@ class ParallelFMM : public SerialFMM {
 private:
   int EXTERNAL;
   MPI_Request *requests;
-#if PRINT_COMM
-  std::ofstream fid;
-#endif
 
   void gatherMultipoles() {
     int i = getGlobKey(IX[gatherLevel],gatherLevel) + globLevelOffset[gatherLevel];
@@ -35,16 +32,8 @@ public:
     MPI_Comm_rank(MPI_COMM_WORLD,&MPIRANK);
     printNow = MPIRANK == 0;
     requests = new MPI_Request [104];
-#if PRINT_COMM
-    char fname[256];
-    sprintf(fname,"time%4.4d.dat",MPIRANK);
-    fid.open(fname);
-#endif
   }
   ~ParallelFMM() {
-#if PRINT_COMM
-    fid.close();
-#endif
     delete[] requests;
     if(!EXTERNAL) MPI_Finalize();
   }
@@ -145,11 +134,6 @@ public:
         }
       }
     }
-#if PRINT_COMM
-    int cells = (pow((1 << maxLevel) + 2,3) - (1 << (3 * maxLevel)));
-    float theoBytes = cells * (2 + numBodies / numLeafs * 8) * 4;
-    fid << "level : " << maxGlobLevel+maxLevel << " P2P comm (theoretical) : " << std::setw(8) << theoBytes << ",   (actual) : " << std::setw(8) << commBytes << " Bytes" << std::endl;
-#endif
     MPI_Waitall(52,requests,stats);
   }
 
@@ -236,11 +220,6 @@ public:
         }
       }
     }
-#if PRINT_COMM
-    int cells = (pow((1 << lev) + 4,3) - (1 << (3 * lev)));
-    float theoBytes = cells * MTERM * 4;
-    fid << "level : " << maxGlobLevel+lev << " M2L comm (theoretical) : " << std::setw(8) << theoBytes << ",   (actual) : " << std::setw(8) << commBytes << " Bytes" << std::endl;
-#endif
     MPI_Waitall(26,requests,stats);
   }
 
@@ -315,10 +294,6 @@ public:
         }
       }
     }
-#if PRINT_COMM
-    float theoBytes = numComm * MTERM * 4;
-    fid << "level : " << level << " M2M comm (theoretical) : " << std::setw(8) << theoBytes << ",   (actual) : " << std::setw(8) << commBytes << " Bytes" << std::endl;
-#endif
     MPI_Waitall(numComm,requests,stats);
   }
 
@@ -479,10 +454,6 @@ public:
         }
       }
     }
-#if PRINT_COMM
-    float theoBytes = 26 * numGroup * MTERM * 4;
-    fid << "level : " << level << " M2L comm (theoretical) : " << std::setw(8) << theoBytes << ",   (actual) : " << std::setw(8) << commBytes << " Bytes" << std::endl;
-#endif
     MPI_Waitall(26,requests,stats);
   }
 

@@ -1,3 +1,4 @@
+#include "ewald.h"
 #if Serial
 #include "serialfmm.h"
 #else
@@ -11,9 +12,6 @@ int main() {
 #else
   ParallelFMM FMM;
 #endif
-  char fname[256];
-  sprintf(fname,"oldtime%5.5d.dat",FMM.MPIRANK);
-  std::ofstream fid(fname);
   const int numBodies = 100000;
   const int ncrit = 100;
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
@@ -60,13 +58,11 @@ int main() {
     tic = FMM.getTime();
     FMM.sortBodies();
     toc = FMM.getTime();
-    //if( FMM.printNow ) fid << std::setw(20) << std::left << "Sort " << toc-tic << std::endl;
     if( FMM.printNow ) printf("Sort    : %lf\n",toc-tic);
   
     tic = FMM.getTime();
     FMM.buildTree();
     toc = FMM.getTime();
-    //if( FMM.printNow ) fid << std::setw(20) << std::left << "Tree " << toc-tic << std::endl;
     if( FMM.printNow ) printf("Tree    : %lf\n",toc-tic);
     logger::stopTimer("Grow tree");
   
@@ -74,7 +70,6 @@ int main() {
     tic = FMM.getTime();
     FMM.upwardPass();
     toc = FMM.getTime();
-    //if( FMM.printNow ) fid << std::setw(20) << std::left << "Upward " << toc-tic << std::endl;
     logger::stopTimer("Upward pass");
   
 #if Serial
@@ -83,13 +78,11 @@ int main() {
     tic = FMM.getTime();
     FMM.P2PSend();
     toc = FMM.getTime();
-    //if( FMM.printNow ) fid << std::setw(20) << std::left << "P2P Send " << toc-tic << std::endl;
     if( FMM.printNow ) printf("P2P Send: %lf @ lev: %d\n",toc-tic,FMM.maxLevel);
 
     tic = FMM.getTime();
     FMM.P2PRecv();
     toc = FMM.getTime();
-    //if( FMM.printNow ) fid << std::setw(20) << std::left << "P2P Recv " << toc-tic << std::endl;
     if( FMM.printNow ) printf("P2P Recv: %lf @ lev: %d\n",toc-tic,FMM.maxLevel);
     logger::stopTimer("Comm LET bodies");
 
@@ -98,22 +91,14 @@ int main() {
       MPI_Barrier(MPI_COMM_WORLD);
       tic = FMM.getTime();
       FMM.M2LSend(lev);
-      //toc = FMM.getTime();
-      //if( FMM.printNow ) fid << std::setw(20) << std::left << "M2L Send " << toc-tic << std::endl;
-      //if( FMM.printNow ) printf("M2L Send: %lf @ lev: %d\n",toc-tic,lev);
-
-      //tic = FMM.getTime();
       FMM.M2LRecv(lev);
       toc = FMM.getTime();
-      fid << toc-tic << std::endl;
-      //if( FMM.printNow ) fid << std::setw(20) << std::left << "M2L Recv " << toc-tic << std::endl;
       if( FMM.printNow ) printf("M2L Recv: %lf @ lev: %d\n",toc-tic,lev);
     }
 
     tic = FMM.getTime();
     FMM.rootGather();
     toc = FMM.getTime();
-    //if( FMM.printNow ) fid << std::setw(20) << std::left << "Gather " << toc-tic << std::endl;
     if( FMM.printNow ) printf("Gather  : %lf\n",toc-tic);
     logger::stopTimer("Comm LET cells");
   
@@ -125,7 +110,6 @@ int main() {
     tic = FMM.getTime();
     FMM.periodicM2L();
     toc = FMM.getTime();
-    //if( FMM.printNow ) fid << std::setw(20) << std::left << "M2L Peri " << toc-tic << std::endl;
     if( FMM.printNow ) printf("M2L Peri: %lf\n",toc-tic);
   
 #if Serial
@@ -134,7 +118,6 @@ int main() {
     tic = FMM.getTime();
     FMM.globL2L();
     toc = FMM.getTime();
-    //if( FMM.printNow ) fid << std::setw(20) << std::left << "L2L Glob " << toc-tic << std::endl;
     if( FMM.printNow ) printf("L2L Glob: %lf\n",toc-tic);
     logger::stopTimer("Downward pass");
 #endif
@@ -142,7 +125,6 @@ int main() {
     tic = FMM.getTime();
     FMM.downwardPass();
     toc = FMM.getTime();
-    //if( FMM.printNow ) fid << std::setw(20) << std::left << "Downward " << toc-tic << std::endl;
     if( FMM.printNow ) {
       printf("Downward: %lf\n",toc-tic);
       printf("------------------\n");

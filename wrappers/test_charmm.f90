@@ -611,7 +611,7 @@ program main
   call mpi_comm_size(mpi_comm_world, mpisize, ierr)
   call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
   nglobal = 1000
-  images = 0
+  images = 3
   theta = 0.4
   verbose = 0
   ksize = 11

@@ -13,7 +13,7 @@ tree: tree.o $(OBJECTS)
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out
+	./a.out --ncrit 512 --numBodies 100000
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
