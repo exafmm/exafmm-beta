@@ -161,8 +161,8 @@ public:
     Leafs = new int [27*numLeafs][2]();
     globMultipole = new real [2*MPISIZE][MTERM]();
     globLocal = new real [10][LTERM]();
-    sendJbodies = new float [2*numBodies][4]();
-    recvJbodies = new float [2*numBodies][4]();
+    sendJbodies = new float [2*numBodies+numSendBodies][4]();
+    recvJbodies = new float [2*numBodies+numSendBodies][4]();
     sendMultipole = new float [numSendCells][MTERM]();
     recvMultipole = new float [numSendCells][MTERM]();
     sendLeafs = new int [numSendLeafs][2]();

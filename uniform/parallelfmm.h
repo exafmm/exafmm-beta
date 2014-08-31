@@ -85,7 +85,6 @@ public:
       for( ix[1]=-1; ix[1]<=1; ix[1]++ ) {
         for( ix[0]=-1; ix[0]<=1; ix[0]++ ) {
           if( ix[0] != 0 || ix[1] != 0 || ix[2] != 0 ) {
-            assert( ileaf == leafsDispl[iforward] );
             int ibody = bodiesDispl[iforward];
             int nxmin[3] = {(1 << maxLevel) - 1, 0, 0};
             int nxmax[3] = {1 << maxLevel, 1 << maxLevel, 1};

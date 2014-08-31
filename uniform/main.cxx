@@ -37,10 +37,10 @@ int main(int argc, char ** argv) {
   const int numImages = args.images;
 
   const int ksize = 11;
-  const real cycle = 2 * M_PI;
+  const real cycle = 10 * M_PI;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
-  const real_t cutoff = cycle * alpha / 3;
+  const real_t cutoff = 10;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   FMM.allocate(numBodies, maxLevel, numImages);
   args.verbose &= FMM.MPIRANK == 0;
