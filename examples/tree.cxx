@@ -1,9 +1,11 @@
 #include "args.h"
 #include "bound_box.h"
 #ifdef CILK
-#include "build_tree3.h"
+#include "build_tree_cilk.h"
+#elif defined TBB
+#include "build_tree_tbb.h"
 #else
-#include "build_tree.h"
+#include "build_tree_omp.h"
 #endif
 #include "dataset.h"
 #include "logger.h"
