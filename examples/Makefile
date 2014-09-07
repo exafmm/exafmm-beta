@@ -1,9 +1,9 @@
 include ../Makefile.include
 
-#LFLAGS	+= -DMASS # Use all positive sources
+LFLAGS	+= -DMASS # Use all positive sources
 #LFLAGS	+= -DIneJ # Different target and source points
 LFLAGS	+= -DDIRECT # Compare with direct summation
-LFLAGS	+= -DWRITE_TIME # Write timings to file
+#LFLAGS	+= -DWRITE_TIME # Write timings to file
 
 # Test for tree construction
 tree: tree.o $(OBJECTS)
@@ -13,7 +13,7 @@ tree: tree.o $(OBJECTS)
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out --ncrit 512 --numBodies 100000
+	./a.out
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
