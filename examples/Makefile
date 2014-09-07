@@ -8,7 +8,7 @@ LFLAGS	+= -DDIRECT # Compare with direct summation
 # Test for tree construction
 tree: tree.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out
+	./a.out -n 10000000
 
 # Test for serial FMM
 serial: serial.o $(OBJECTS)

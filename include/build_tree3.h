@@ -140,8 +140,8 @@ private:
     const int nbins = 1 << maxlevel;
     Box box = bounds2box(bounds);
     float d = 2 * box.R / nbins;
-    int b = 0;
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+    cilk_for (int b=0; b<int(bodies.size()); b++) {
+      B_iter B = bodies.begin() + b;
       vec3 X = B->X;
       int ix = floor((X[0] - bounds.Xmin[0]) / d);
       int iy = floor((X[1] - bounds.Xmin[1]) / d);
@@ -376,6 +376,7 @@ public:
     int * index = new int [numBodies];
     int * permutation = new int [numBodies];
 
+    logger::startTimer("Grow tree");
     logger::startTimer("Morton key");
     getKey(bodies, bounds, keys, index);
     logger::stopTimer("Morton key");
@@ -384,11 +385,16 @@ public:
     radixSort(keys, buffer, permutation, index, numBodies);
     logger::stopTimer("Radix sort");
 
+    logger::startTimer("Copy buffer");
     Bodies bodies2 = bodies;
+    logger::stopTimer("Copy buffer");
+
     logger::startTimer("Permutation");
     permute(bodies, bodies2, permutation);
     logger::stopTimer("Permutation");
+    logger::stopTimer("Grow tree",0);
 
+    logger::startTimer("Link tree");
     Cells cells;
     logger::startTimer("Bodies to leafs");
     bodies2leafs(bodies, cells, bounds, level);
@@ -401,6 +407,7 @@ public:
     logger::startTimer("Reverse order");
     reverseOrder(cells, permutation);
     logger::stopTimer("Reverse order");
+    logger::stopTimer("Link tree",0);
 
     delete[] keys;
     delete[] buffer;

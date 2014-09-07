@@ -64,6 +64,7 @@ int main(int argc, char ** argv) {
 #endif
     upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");
+    logger::stopDAG();
     logger::stopPAPI();
     logger::stopTimer("Total FMM");
     logger::resetTimer("Total FMM");
@@ -89,7 +90,6 @@ int main(int argc, char ** argv) {
     buildTree.printTreeData(cells);
     traversal.printTraversalData();
     logger::printPAPI();
-    logger::stopDAG();
     bodies = bodies3;
     data.initTarget(bodies);
   }
