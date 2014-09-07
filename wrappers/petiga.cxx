@@ -23,6 +23,7 @@ Traversal * traversal;
 TreeMPI * treeMPI;
 UpDownPass * upDownPass;
 
+Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
@@ -94,9 +95,9 @@ extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, d
   bodies = treeMPI->commBodies(bodies);
   partition->octsection(jbodies,globalBounds);
   jbodies = treeMPI->commBodies(jbodies);
-  Cells cells = localTree->buildTree(bodies, localBounds);
+  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
-  Cells jcells = localTree->buildTree(jbodies, localBounds);
+  Cells jcells = localTree->buildTree(jbodies, buffer, localBounds);
   upDownPass->upwardPass(jcells);
 
   ni = bodies.size();
@@ -149,9 +150,9 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
     B->TRG    = 0;
     B->IBODY = i;
   }
-  Cells cells = localTree->buildTree(bodies, localBounds);
+  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
-  Cells jcells = localTree->buildTree(jbodies, localBounds);
+  Cells jcells = localTree->buildTree(jbodies, buffer, localBounds);
   upDownPass->upwardPass(jcells);
   treeMPI->allgatherBounds(localBounds);
   treeMPI->setLET(jcells, cycle);
@@ -162,7 +163,7 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
-    jcells = globalTree->buildTree(gbodies, globalBounds);
+    jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
     treeMPI->attachRoot(jcells);
     traversal->dualTreeTraversal(cells, jcells, cycle, false);
   } else {

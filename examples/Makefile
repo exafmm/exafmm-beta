@@ -1,6 +1,6 @@
 include ../Makefile.include
 
-LFLAGS	+= -DMASS # Use all positive sources
+#LFLAGS	+= -DMASS # Use all positive sources
 #LFLAGS	+= -DIneJ # Different target and source points
 LFLAGS	+= -DDIRECT # Compare with direct summation
 #LFLAGS	+= -DWRITE_TIME # Write timings to file
@@ -18,6 +18,7 @@ serial: serial.o $(OBJECTS)
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
+	mpirun -np 2 ./a.out
 #	mpirun -np 9 ./a.out --ncrit 256 --distribution plummer
 
 # Checking O(N) complexity

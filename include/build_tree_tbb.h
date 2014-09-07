@@ -297,10 +297,9 @@ private:
   }
 
   //! Grow tree structure top down
-  void growTree(Bodies & bodies, vec3 X0, real_t R0) {
+  void growTree(Bodies & bodies, Bodies & buffer, vec3 X0, real_t R0) {
     assert(R0 > 0);                                             // Check for bounds validity
     logger::startTimer("Grow tree");                            // Start timer
-    Bodies buffer = bodies;                                     // Copy bodies to buffer
     B0 = bodies.begin();                                        // Bodies iterator
     BinaryTreeNode binNode[1];                                  // Allocate root node of binary tree
     int maxBinNode = (4 * bodies.size()) / nspawn;              // Get maximum size of binary tree
@@ -332,12 +331,13 @@ public:
   BuildTree(int _ncrit, int _nspawn) : ncrit(_ncrit), nspawn(_nspawn), maxlevel(0) {}
 
   //! Build tree structure top down
-  Cells buildTree(Bodies & bodies, Bounds bounds) {
+  Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     Box box = bounds2box(bounds);                               // Get box from bounds
     if (bodies.empty()) {                                       // If bodies vector is empty
       N0 = NULL;                                                //  Reinitialize N0 with NULL
     } else {                                                    // If bodies vector is not empty
-      growTree(bodies, box.X, box.R);                           //  Grow tree from root
+      if (bodies.size() > buffer.size()) buffer.resize(bodies.size());// Enlarge buffer if necessary
+      growTree(bodies, buffer, box.X, box.R);                   //  Grow tree from root
     }                                                           // End if for empty root
     return linkTree(box.X, box.R);                              // Form parent-child links in tree
   }

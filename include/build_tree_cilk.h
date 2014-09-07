@@ -366,13 +366,13 @@ private:
 public:
   BuildTree(int, int) : maxlevel(0) {}
 
-  Cells buildTree(Bodies & bodies, Bounds bounds) {
+  Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     const int numBodies = bodies.size();
     const int level = 6;
     maxlevel = level;
 
     uint64_t * keys = new uint64_t [numBodies];
-    uint64_t * buffer = new uint64_t [numBodies];
+    uint64_t * keys_buffer = new uint64_t [numBodies];
     int * index = new int [numBodies];
     int * permutation = new int [numBodies];
 
@@ -382,15 +382,15 @@ public:
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-    radixSort(keys, buffer, permutation, index, numBodies);
+    radixSort(keys, keys_buffer, permutation, index, numBodies);
     logger::stopTimer("Radix sort");
 
     logger::startTimer("Copy buffer");
-    Bodies bodies2 = bodies;
+    buffer = bodies;
     logger::stopTimer("Copy buffer");
 
     logger::startTimer("Permutation");
-    permute(bodies, bodies2, permutation);
+    permute(bodies, buffer, permutation);
     logger::stopTimer("Permutation");
     logger::stopTimer("Grow tree",0);
 
@@ -410,7 +410,7 @@ public:
     logger::stopTimer("Link tree",0);
 
     delete[] keys;
-    delete[] buffer;
+    delete[] keys_buffer;
     delete[] index;
     delete[] permutation;
     return cells;

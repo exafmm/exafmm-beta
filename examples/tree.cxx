@@ -12,7 +12,7 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  Bodies bodies, bodies2, bodies3, jbodies;
+  Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
   Bounds bounds;
   BuildTree buildTree(args.ncrit, args.nspawn);
@@ -23,16 +23,17 @@ int main(int argc, char ** argv) {
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
+  buffer.reserve(args.numBodies);
   double grow1[args.repeat+1], link1[args.repeat+1], grow2[args.repeat+1], link2[args.repeat+1];
   for (int t=0; t<args.repeat+1; t++) {
     std::cout << t << std::endl;
     bodies = data.initBodies(args.numBodies, args.distribution, 0);
     bounds = boundBox.getBounds(bodies);
-    cells = buildTree.buildTree(bodies, bounds);
+    cells = buildTree.buildTree(bodies, buffer, bounds);
     grow1[t] = logger::timer["Grow tree"];
     link1[t] = logger::timer["Link tree"];
     logger::resetTimer();
-    cells = buildTree.buildTree(bodies, bounds);
+    cells = buildTree.buildTree(bodies, buffer, bounds);
     grow2[t] = logger::timer["Grow tree"];
     link2[t] = logger::timer["Link tree"];
     logger::resetTimer();

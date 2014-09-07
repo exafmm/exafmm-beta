@@ -29,7 +29,7 @@
 int main(int argc, char ** argv) {
   Args args(argc, argv);
   BaseMPI baseMPI;
-  Bodies bodies, bodies2, bodies3, jbodies, gbodies;
+  Bodies bodies, bodies2, jbodies, gbodies, buffer;
   BoundBox boundBox(args.nspawn);
   Bounds localBounds, globalBounds;
   BuildTree localTree(args.ncrit, args.nspawn);
@@ -56,6 +56,7 @@ int main(int argc, char ** argv) {
   args.print(logger::stringLength, P);
   ewald.print(logger::stringLength);
   bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
+  buffer.reserve(bodies.size());
   //data.writeSources(bodies, baseMPI.mpirank);
   for (int t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
@@ -66,7 +67,7 @@ int main(int argc, char ** argv) {
     localBounds = partition.octsection(bodies, globalBounds);
     bodies = treeMPI.commBodies(bodies);
 
-    cells = localTree.buildTree(bodies, localBounds);
+    cells = localTree.buildTree(bodies, buffer, localBounds);
     upDownPass.upwardPass(cells);
     treeMPI.allgatherBounds(localBounds);
     treeMPI.setLET(cells, cycle);
@@ -78,7 +79,7 @@ int main(int argc, char ** argv) {
     if (args.graft) {
       treeMPI.linkLET();
       gbodies = treeMPI.root2body();
-      jcells = globalTree.buildTree(gbodies, globalBounds);
+      jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
       treeMPI.attachRoot(jcells);
       traversal.dualTreeTraversal(cells, jcells, cycle, false);
     } else {
@@ -105,13 +106,13 @@ int main(int argc, char ** argv) {
       if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI.mpisize << std::endl;
       treeMPI.shiftBodies(jbodies);
       localBounds = boundBox.getBounds(jbodies);
-      jcells = localTree.buildTree(jbodies, localBounds);
+      jcells = localTree.buildTree(jbodies, buffer, localBounds);
       ewald.wavePart(bodies, jbodies);
       ewald.realPart(cells, jcells);
     }
 #else
     jbodies = treeMPI.allgatherBodies(bodies);
-    jcells = localTree.buildTree(jbodies, globalBounds);
+    jcells = localTree.buildTree(jbodies, buffer, globalBounds);
     ewald.wavePart(bodies, jbodies);
     ewald.realPart(cells, jcells);
 #endif
@@ -123,7 +124,7 @@ int main(int argc, char ** argv) {
 #else
     jbodies = bodies;
     const int numTargets = 100;
-    bodies3 = bodies;
+    buffer = bodies;
     data.sampleBodies(bodies, numTargets);
     bodies2 = bodies;
     data.initTarget(bodies);
@@ -138,7 +139,7 @@ int main(int argc, char ** argv) {
     logger::printTitle("Total runtime");
     logger::printTime("Total FMM");
     logger::stopTimer("Total Direct");
-    bodies = bodies3;
+    bodies = buffer;
 #endif
     double potSum = verify.getSumScalar(bodies);
     double potSum2 = verify.getSumScalar(bodies2);
