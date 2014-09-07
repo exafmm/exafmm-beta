@@ -384,11 +384,13 @@ public:
     logger::startTimer("Radix sort");
     radixSort(keys, keys_buffer, permutation, index, numBodies);
     logger::stopTimer("Radix sort");
+    logger::stopTimer("Grow tree",0);
 
     logger::startTimer("Copy buffer");
     buffer = bodies;
     logger::stopTimer("Copy buffer");
 
+    logger::startTimer("Grow tree");
     logger::startTimer("Permutation");
     permute(bodies, buffer, permutation);
     logger::stopTimer("Permutation");
