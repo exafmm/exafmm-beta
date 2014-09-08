@@ -14,6 +14,7 @@ int omp_get_thread_num() {return 0;}
 class BuildTree {
 private:
   int maxlevel;
+  int ncrit;
 
 private:
   //! Transform Xmin & Xmax to X (center) & R (radius)
@@ -210,11 +211,11 @@ private:
   }
 
 public:
-  BuildTree(int, int) : maxlevel(0) {}
+  BuildTree(int _ncrit, int) : maxlevel(0), ncrit(_ncrit) {}
 
   Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     const int numBodies = bodies.size();
-    const int level = 6;
+    const int level = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
     maxlevel = level;
     uint64_t * key = new uint64_t [numBodies];
     uint64_t * key_buffer = new uint64_t [numBodies];

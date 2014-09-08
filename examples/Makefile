@@ -8,12 +8,13 @@ LFLAGS	+= -DDIRECT # Compare with direct summation
 # Test for tree construction
 tree: tree.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out -n 10000000
+	for N in 10000 20000 50000 100000 200000 500000 1000000 2000000 5000000 10000000 20000000 50000000 100000000; \
+	do echo N = $$N && ./a.out -n $$N -c 32; done
 
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out
+	./a.out -n 10000
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)

@@ -118,6 +118,7 @@ static const int morton256_z[256] = {
 class BuildTree {
 private:
   int maxlevel;
+  int ncrit;
 
 private:
   Box bounds2box(Bounds & bounds) {
@@ -364,11 +365,11 @@ private:
   }
 
 public:
-  BuildTree(int, int) : maxlevel(0) {}
+  BuildTree(int _ncrit, int) : maxlevel(0), ncrit(_ncrit) {}
 
   Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     const int numBodies = bodies.size();
-    const int level = 6;
+    const int level = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
     maxlevel = level;
 
     uint64_t * keys = new uint64_t [numBodies];
