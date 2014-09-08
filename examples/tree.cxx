@@ -22,7 +22,9 @@ int main(int argc, char ** argv) {
   num_threads(args.threads);
   char nworkers[32];
   sprintf(nworkers,"%d",args.threads);
+#ifdef CILK
   __cilkrts_set_param("nworkers",nworkers);
+#endif
 
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
@@ -69,7 +71,7 @@ int main(int argc, char ** argv) {
   std::cout << "Grow2: " << grow2ave << "+-" << std::sqrt(grow2std)
 	    << " Link2: " << link2ave << "+-" << link2std << std::endl;
   std::ofstream fid("time.dat", std::ios::app);
-  fid << args.numBodies << " " << grow1ave << " " << grow2ave << std::endl;
+  fid << args.numBodies << " " << args.threads << " " << grow1ave << " " << grow2ave << std::endl;
   fid.close();
   return 0;
 }
