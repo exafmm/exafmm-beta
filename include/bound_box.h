@@ -73,7 +73,7 @@ public:
   BoundBox(int _nspawn) : nspawn(_nspawn) {}                    // Initialize variables
 
   //! Get Xmin and Xmax of bodies
-  Bounds getBounds(Bodies bodies) {
+  Bounds getBounds(Bodies & bodies) {
     logger::startTimer("Get bounds");                           // Start timer
     Bounds bounds;                                              // Bounds : Contains Xmin, Xmax
     if (bodies.empty()) {                                       // If body vector is empty

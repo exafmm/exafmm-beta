@@ -2,7 +2,7 @@
 #include "bound_box.h"
 #ifdef CILK
 #include "build_tree_cilk.h"
-#elif defined TBB
+#elif defined TBB || defined MTHREAD || defined QTHREAD || defined SERIAL
 #include "build_tree_tbb.h"
 #else
 #include "build_tree_omp.h"
