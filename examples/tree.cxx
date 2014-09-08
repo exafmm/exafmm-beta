@@ -2,6 +2,7 @@
 #include "bound_box.h"
 #ifdef CILK
 #include "build_tree_cilk.h"
+#include <cilk/cilk_api.h>
 #elif defined TBB
 #include "build_tree_tbb.h"
 #else
@@ -19,6 +20,9 @@ int main(int argc, char ** argv) {
   Cells cells, jcells;
   Dataset data;
   num_threads(args.threads);
+  char nworkers[32];
+  sprintf(nworkers,"%d",args.threads);
+  __cilkrts_set_param("nworkers",nworkers);
 
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
@@ -64,5 +68,8 @@ int main(int argc, char ** argv) {
 	    << " Link1: " << link1ave << "+-" << link1std << std::endl;
   std::cout << "Grow2: " << grow2ave << "+-" << std::sqrt(grow2std)
 	    << " Link2: " << link2ave << "+-" << link2std << std::endl;
+  std::ofstream fid("time.dat", std::ios::app);
+  fid << args.numBodies << " " << grow1ave << " " << grow2ave << std::endl;
+  fid.close();
   return 0;
 }

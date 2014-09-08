@@ -397,8 +397,9 @@ public:
     logger::stopTimer("Permutation");
     logger::stopTimer("Grow tree",0);
 
-    logger::startTimer("Link tree");
     Cells cells;
+#if 0
+    logger::startTimer("Link tree");
     logger::startTimer("Bodies to leafs");
     bodies2leafs(bodies, cells, bounds, level);
     logger::stopTimer("Bodies to leafs");
@@ -411,6 +412,7 @@ public:
     reverseOrder(cells, permutation);
     logger::stopTimer("Reverse order");
     logger::stopTimer("Link tree",0);
+#endif
 
     delete[] keys;
     delete[] keys_buffer;
