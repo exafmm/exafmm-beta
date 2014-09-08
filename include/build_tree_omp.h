@@ -119,9 +119,8 @@ private:
     delete[] maxKeyPerThread;
   }
 
-  void permute(Bodies & bodies, int * index) {
+  void permute(Bodies & bodies, Bodies & buffer, int * index) {
     const int n = bodies.size();
-    Bodies buffer = bodies;
 #pragma omp parallel for
     for (int b=0; b<n; b++)
       bodies[b] = buffer[index[b]];
@@ -213,12 +212,12 @@ private:
 public:
   BuildTree(int, int) : maxlevel(0) {}
 
-  Cells buildTree(Bodies & bodies, Bounds bounds) {
+  Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     const int numBodies = bodies.size();
     const int level = 6;
     maxlevel = level;
     uint64_t * key = new uint64_t [numBodies];
-    uint64_t * buffer = new uint64_t [numBodies];
+    uint64_t * key_buffer = new uint64_t [numBodies];
     int * index = new int [numBodies];
     int * permutation = new int [numBodies];
     Cells cells;
@@ -231,11 +230,15 @@ public:
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-    radixSort(key, index, buffer, permutation, numBodies);
+    radixSort(key, index, key_buffer, permutation, numBodies);
     logger::stopTimer("Radix sort");
 
+    logger::startTimer("Copy buffer");
+    buffer = bodies;
+    logger::stopTimer("Copy buffer");
+
     logger::startTimer("Permutation");
-    permute(bodies, index);
+    permute(bodies, buffer, index);
     logger::stopTimer("Permutation");
 
     logger::startTimer("Bodies to leafs");
@@ -251,7 +254,7 @@ public:
     logger::stopTimer("Reverse order");
 
     delete[] key;
-    delete[] buffer;
+    delete[] key_buffer;
     delete[] index;
     delete[] permutation;
     return cells;

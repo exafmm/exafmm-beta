@@ -1,7 +1,5 @@
 -- CPU --
 Time each kernel separately using cycle counters
-Tree build scalability
-Ewald cycle needs to be 2 * M_PI
 Intel OpenMP error
 examples/Makefile options to args
 cycle counter based weights

@@ -1,9 +1,11 @@
 #include "args.h"
 #include "bound_box.h"
 #ifdef CILK
-#include "build_tree3.h"
+#include "build_tree_cilk.h"
+#elif defined TBB
+#include "build_tree_tbb.h"
 #else
-#include "build_tree.h"
+#include "build_tree_omp.h"
 #endif
 #include "dataset.h"
 #include "logger.h"
@@ -16,7 +18,7 @@
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);
-  Bodies bodies, bodies2, bodies3, jbodies;
+  Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
   Bounds bounds;
   BuildTree buildTree(args.ncrit, args.nspawn);
@@ -32,6 +34,7 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
+  buffer.reserve(bodies.size());
 #if IneJ
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X[0] += M_PI;
@@ -52,10 +55,10 @@ int main(int argc, char ** argv) {
 #if IneJ
     bounds = boundBox.getBounds(jbodies,bounds);
 #endif
-    cells = buildTree.buildTree(bodies, bounds);
+    cells = buildTree.buildTree(bodies, buffer, bounds);
     upDownPass.upwardPass(cells);
 #if IneJ
-    jcells = buildTree.buildTree(jbodies, bounds);
+    jcells = buildTree.buildTree(jbodies, buffer, bounds);
     upDownPass.upwardPass(jcells);
     traversal.dualTreeTraversal(cells, jcells, cycle, false);
 #else
@@ -64,6 +67,7 @@ int main(int argc, char ** argv) {
 #endif
     upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");
+    logger::stopDAG();
     logger::stopPAPI();
     logger::stopTimer("Total FMM");
     logger::resetTimer("Total FMM");
@@ -71,7 +75,7 @@ int main(int argc, char ** argv) {
     logger::writeTime();
 #endif
     const int numTargets = 100;
-    bodies3 = bodies;
+    buffer = bodies;
     data.sampleBodies(bodies, numTargets);
     bodies2 = bodies;
     data.initTarget(bodies);
@@ -89,8 +93,7 @@ int main(int argc, char ** argv) {
     buildTree.printTreeData(cells);
     traversal.printTraversalData();
     logger::printPAPI();
-    logger::stopDAG();
-    bodies = bodies3;
+    bodies = buffer;
     data.initTarget(bodies);
   }
   logger::writeDAG();

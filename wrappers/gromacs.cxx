@@ -1,7 +1,13 @@
 #include "base_mpi.h"
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree.h"
+#ifdef CILK
+#include "build_tree_cilk.h"
+#elif defined TBB
+#include "build_tree_tbb.h"
+#else
+#include "build_tree_omp.h"
+#endif
 #include "ewald.h"
 #include "logger.h"
 #include "partition.h"
@@ -21,6 +27,7 @@ Traversal * traversal;
 TreeMPI * treeMPI;
 UpDownPass * upDownPass;
 
+Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
@@ -83,7 +90,7 @@ extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, doub
   globalBounds = baseMPI->allreduceBounds(localBounds);
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
-  Cells cells = localTree->buildTree(bodies, localBounds);
+  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -120,7 +127,7 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
   }
-  Cells cells = localTree->buildTree(bodies, localBounds);
+  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
   treeMPI->setLET(cells, cycle);
@@ -132,7 +139,7 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
-    jcells = globalTree->buildTree(gbodies, globalBounds);
+    jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
     treeMPI->attachRoot(jcells);
     traversal->dualTreeTraversal(cells, jcells, cycle, false);
   } else {
@@ -183,13 +190,13 @@ extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double 
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
   }
-  Cells cells = localTree->buildTree(bodies, localBounds);
+  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   Bodies jbodies = bodies;
   for (int i=0; i<baseMPI->mpisize; i++) {
     if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI->mpisize << std::endl;
     treeMPI->shiftBodies(jbodies);
     localBounds = boundBox->getBounds(jbodies);
-    Cells jcells = localTree->buildTree(jbodies, localBounds);
+    Cells jcells = localTree->buildTree(jbodies, buffer, localBounds);
     ewald->wavePart(bodies, jbodies);
     ewald->realPart(cells, jcells);
   }

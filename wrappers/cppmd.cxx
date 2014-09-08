@@ -1,7 +1,13 @@
 #include "base_mpi.h"
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree.h"
+#ifdef CILK
+#include "build_tree_cilk.h"
+#elif defined TBB
+#include "build_tree_tbb.h"
+#else
+#include "build_tree_omp.h"
+#endif
 #include "ewald.h"
 #include "logger.h"
 #include "partition.h"
@@ -37,6 +43,7 @@ SerialFMM * FMM;
 ParallelFMM * FMM;
 #endif
 
+Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
@@ -213,7 +220,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 #endif
   FMM->downwardPass();
 
-  Cells cells = localTree->buildTree(bodies, localBounds);
+  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
   treeMPI->setLET(cells, cycle);
@@ -225,7 +232,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
-    jcells = globalTree->buildTree(gbodies, globalBounds);
+    jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
     treeMPI->attachRoot(jcells);
     traversal->dualTreeTraversal(cells, jcells, cycle, false);
   } else {
@@ -316,13 +323,13 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
       B++;
     }
   }
-  Cells cells = localTree->buildTree(bodies, localBounds);
+  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   Bodies jbodies = bodies;
   for (int i=0; i<baseMPI->mpisize; i++) {
     if (args->verbose) std::cout << "Ewald loop           : " << i+1 << "/" << baseMPI->mpisize << std::endl;
     treeMPI->shiftBodies(jbodies);
     localBounds = boundBox->getBounds(jbodies);
-    Cells jcells = localTree->buildTree(jbodies, localBounds);
+    Cells jcells = localTree->buildTree(jbodies, buffer, localBounds);
     ewald->wavePart(bodies, jbodies);
     ewald->realPart(cells, jcells);
   }
@@ -478,7 +485,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B++;
     }
   }
-  Cells cells = localTree->buildTree(bodies, localBounds);
+  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
   treeMPI->setLET(cells, cycle);

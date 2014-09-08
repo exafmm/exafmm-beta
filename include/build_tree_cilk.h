@@ -140,8 +140,8 @@ private:
     const int nbins = 1 << maxlevel;
     Box box = bounds2box(bounds);
     float d = 2 * box.R / nbins;
-    int b = 0;
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+    cilk_for (int b=0; b<int(bodies.size()); b++) {
+      B_iter B = bodies.begin() + b;
       vec3 X = B->X;
       int ix = floor((X[0] - bounds.Xmin[0]) / d);
       int iy = floor((X[1] - bounds.Xmin[1]) / d);
@@ -366,29 +366,37 @@ private:
 public:
   BuildTree(int, int) : maxlevel(0) {}
 
-  Cells buildTree(Bodies & bodies, Bounds bounds) {
+  Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     const int numBodies = bodies.size();
     const int level = 6;
     maxlevel = level;
 
     uint64_t * keys = new uint64_t [numBodies];
-    uint64_t * buffer = new uint64_t [numBodies];
+    uint64_t * keys_buffer = new uint64_t [numBodies];
     int * index = new int [numBodies];
     int * permutation = new int [numBodies];
 
+    logger::startTimer("Grow tree");
     logger::startTimer("Morton key");
     getKey(bodies, bounds, keys, index);
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-    radixSort(keys, buffer, permutation, index, numBodies);
+    radixSort(keys, keys_buffer, permutation, index, numBodies);
     logger::stopTimer("Radix sort");
+    logger::stopTimer("Grow tree",0);
 
-    Bodies bodies2 = bodies;
+    logger::startTimer("Copy buffer");
+    buffer = bodies;
+    logger::stopTimer("Copy buffer");
+
+    logger::startTimer("Grow tree");
     logger::startTimer("Permutation");
-    permute(bodies, bodies2, permutation);
+    permute(bodies, buffer, permutation);
     logger::stopTimer("Permutation");
+    logger::stopTimer("Grow tree",0);
 
+    logger::startTimer("Link tree");
     Cells cells;
     logger::startTimer("Bodies to leafs");
     bodies2leafs(bodies, cells, bounds, level);
@@ -401,9 +409,10 @@ public:
     logger::startTimer("Reverse order");
     reverseOrder(cells, permutation);
     logger::stopTimer("Reverse order");
+    logger::stopTimer("Link tree",0);
 
     delete[] keys;
-    delete[] buffer;
+    delete[] keys_buffer;
     delete[] index;
     delete[] permutation;
     return cells;

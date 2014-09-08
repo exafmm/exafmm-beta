@@ -297,30 +297,29 @@ private:
   }
 
   //! Grow tree structure top down
-  void growTree(Bodies & bodies, vec3 X0, real_t R0) {
-    assert(R0 > 0);                                             // Check for bounds validity
+  void growTree(Bodies & bodies, Bodies & buffer, Box box) {
+    assert(box.R > 0);                                          // Check for bounds validity
     logger::startTimer("Grow tree");                            // Start timer
-    Bodies buffer = bodies;                                     // Copy bodies to buffer
     B0 = bodies.begin();                                        // Bodies iterator
     BinaryTreeNode binNode[1];                                  // Allocate root node of binary tree
     int maxBinNode = (4 * bodies.size()) / nspawn;              // Get maximum size of binary tree
     binNode->BEGIN = new BinaryTreeNode[maxBinNode];            // Allocate array for binary tree nodes
     binNode->END = binNode->BEGIN + maxBinNode;                 // Set end pointer
     BuildNodes buildNodes(N0, bodies, buffer, 0, bodies.size(),
-			  binNode, X0, R0, ncrit, nspawn);      // Instantiate recursive functor
+			  binNode, box.X, box.R, ncrit, nspawn);// Instantiate recursive functor
     buildNodes();                                               // Recursively build octree nodes
     delete[] binNode->BEGIN;                                    // Deallocate binary tree array
     logger::stopTimer("Grow tree");                             // Stop timer
   }
 
   //! Link tree structure
-  Cells linkTree(vec3 X0, real_t R0) {
+  Cells linkTree(Box box) {
     logger::startTimer("Link tree");                            // Start timer
     Cells cells;                                                // Initialize cell array
     if (N0 != NULL) {                                           // If the node tree is not empty
       cells.resize(N0->NNODE);                                  //  Allocate cells array
       C_iter C0 = cells.begin();                                //  Cell begin iterator
-      Nodes2cells nodes2cells(N0, B0, C0, C0, C0+1, X0, R0, nspawn, maxlevel);// Instantiate recursive functor
+      Nodes2cells nodes2cells(N0, B0, C0, C0, C0+1, box.X, box.R, nspawn, maxlevel);// Instantiate recursive functor
       nodes2cells();                                            //  Convert nodes to cells recursively
       delete N0;                                                //  Deallocate nodes
     }                                                           // End if for empty node tree
@@ -332,14 +331,15 @@ public:
   BuildTree(int _ncrit, int _nspawn) : ncrit(_ncrit), nspawn(_nspawn), maxlevel(0) {}
 
   //! Build tree structure top down
-  Cells buildTree(Bodies & bodies, Bounds bounds) {
+  Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     Box box = bounds2box(bounds);                               // Get box from bounds
     if (bodies.empty()) {                                       // If bodies vector is empty
       N0 = NULL;                                                //  Reinitialize N0 with NULL
     } else {                                                    // If bodies vector is not empty
-      growTree(bodies, box.X, box.R);                           //  Grow tree from root
+      if (bodies.size() > buffer.size()) buffer.resize(bodies.size());// Enlarge buffer if necessary
+      growTree(bodies, buffer, box);                            //  Grow tree from root
     }                                                           // End if for empty root
-    return linkTree(box.X, box.R);                              // Form parent-child links in tree
+    return linkTree(box);                                       // Form parent-child links in tree
   }
 
   //! Print tree structure statistics
