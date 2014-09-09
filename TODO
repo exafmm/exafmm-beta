@@ -32,6 +32,7 @@ Buildbot
 
 -- Comparisons --
 DTT vs. UVWX-list
+Separate +- tree vs. Single tree
 Cartesian vs. Spherical (optimized)
 
 -- Parallel debugging tips --
