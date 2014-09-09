@@ -1,8 +1,7 @@
 #include "kernel.h"
 #include "simdvec.h"
-const real_t EPS2 = 0.0;                                        //!< Softening parameter (squared)
 
-void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
+void kernel::P2P(C_iter Ci, C_iter Cj, const real_t eps2, vec3 Xperiodic, bool mutual) {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
   int ni = Ci->NBODY;
@@ -20,7 +19,7 @@ void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
     simdvec yi = SIMD<simdvec,1,NSIMD>::setBody(Bi,i);
     simdvec zi = SIMD<simdvec,2,NSIMD>::setBody(Bi,i);
     simdvec mi = SIMD<simdvec,3,NSIMD>::setBody(Bi,i);
-    simdvec R2 = EPS2;
+    simdvec R2 = eps2;
 
     simdvec xj = Xperiodic[0];
     xi -= xj;
@@ -51,7 +50,7 @@ void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
     for (int j=0; j<nj-2; j++) {
       invR = rsqrt(R2); 
       invR &= R2 > zero;
-      R2 = EPS2;
+      R2 = eps2;
       x2 -= xi;
       y2 -= yi;
       z2 -= zi;
@@ -86,7 +85,7 @@ void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
     if ( nj > 1 ) {
       invR = rsqrt(R2);
       invR &= R2 > zero;
-      R2 = EPS2;
+      R2 = eps2;
       x2 -= xi;
       y2 -= yi;
       z2 -= zi;
@@ -146,7 +145,7 @@ void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
     kreal_t az = 0;
     for (int j=0; j<nj; j++) {
       vec3 dX = Bi[i].X - Bj[j].X - Xperiodic;
-      real_t R2 = norm(dX) + EPS2;
+      real_t R2 = norm(dX) + eps2;
       if (R2 != 0) {
         real_t invR2 = 1.0 / R2;
         real_t invR = Bi[i].SRC * Bj[j].SRC * sqrt(invR2);
@@ -170,7 +169,7 @@ void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
   }
 }
 
-void kernel::P2P(C_iter C) {
+void kernel::P2P(C_iter C, const real_t eps2) {
   B_iter B = C->BODY;
   int n = C->NBODY;
   int i = 0;
@@ -187,7 +186,7 @@ void kernel::P2P(C_iter C) {
     simdvec yi = SIMD<simdvec,1,NSIMD>::setBody(B,i);
     simdvec zi = SIMD<simdvec,2,NSIMD>::setBody(B,i);
     simdvec mi = SIMD<simdvec,3,NSIMD>::setBody(B,i);
-    simdvec R2 = EPS2;
+    simdvec R2 = eps2;
 
     simdvec x2 = B[i+1].X[0];
     x2 -= xi;
@@ -212,7 +211,7 @@ void kernel::P2P(C_iter C) {
       invR = rsqrt(R2);
       invR &= index < j;
       invR &= R2 > zero;
-      R2 = EPS2;
+      R2 = eps2;
       x2 -= xi;
       y2 -= yi;
       z2 -= zi;
@@ -248,7 +247,7 @@ void kernel::P2P(C_iter C) {
       invR = rsqrt(R2);
       invR &= index < n-2;
       invR &= R2 > zero;
-      R2 = EPS2;
+      R2 = eps2;
       x2 -= xi;
       y2 -= yi;
       z2 -= zi;
@@ -309,7 +308,7 @@ void kernel::P2P(C_iter C) {
     kreal_t az = 0;
     for (int j=i+1; j<n; j++) {
       vec3 dX = B[i].X - B[j].X;
-      real_t R2 = norm(dX) + EPS2;
+      real_t R2 = norm(dX) + eps2;
       if (R2 != 0) {
         real_t invR2 = 1.0 / R2;
         real_t invR = B[i].SRC * B[j].SRC * sqrt(invR2);
