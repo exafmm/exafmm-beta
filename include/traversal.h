@@ -33,7 +33,7 @@ private:
 #endif
 
   //! Dual tree traversal for a single pair of cells
-  void traverse(C_iter Ci, C_iter Cj, const real_t eps2, vec3 Xperiodic, bool mutual, real_t remote) {
+  void traverse(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual, real_t remote) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
     if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R)) {                   // If distance is far enough
@@ -72,7 +72,7 @@ private:
     bool mutual;                                                //!< Flag for mutual interaction
     real_t remote;                                              //!< Weight for remote work load
     TraverseRange(Traversal * _traversal, C_iter _CiBegin, C_iter _CiEnd,// Constructor
-		  C_iter _CjBegin, C_iter _CjEnd, const real_t _eps2,
+		  C_iter _CjBegin, C_iter _CjEnd, real_t _eps2,
 		  vec3 _Xperiodic, bool _mutual, real_t _remote) :
       traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),  // Initialize variables
       CjBegin(_CjBegin), CjEnd(_CjEnd), eps2(_eps2), Xperiodic(_Xperiodic),
@@ -184,7 +184,7 @@ private:
   }
 
   //! Split cell and call traverse() recursively for child
-  void splitCell(C_iter Ci, C_iter Cj, const real_t eps2, vec3 Xperiodic, bool mutual, real_t remote) {
+  void splitCell(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual, real_t remote) {
     if (Cj->NCHILD == 0) {                                      // If Cj is leaf
       assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
       for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++) {// Loop over Ci's children
@@ -235,7 +235,7 @@ public:
 #endif
 
   //! Evaluate P2P and M2L using dual tree traversal
-  void dualTreeTraversal(Cells & icells, Cells & jcells, const real_t eps2, real_t cycle, bool mutual, real_t remote=1) {
+  void dualTreeTraversal(Cells & icells, Cells & jcells, real_t eps2, real_t cycle, bool mutual, real_t remote=1) {
     if (icells.empty() || jcells.empty()) return;               // Quit if either of the cell vectors are empty
     logger::startTimer("Traverse");                             // Start timer
     logger::initTracer();                                       // Initialize tracer
@@ -267,7 +267,7 @@ public:
     real_t eps2;                                                //!< Softening parameter (squared)
     int prange;                                                 //!< Range of periodic images
     real_t cycle;                                               //!< Periodic cycle
-    DirectRecursion(C_iter _Ci, C_iter _Cj, const real_t _eps2, int _prange, real_t _cycle) :// Constructor
+    DirectRecursion(C_iter _Ci, C_iter _Cj, real_t _eps2, int _prange, real_t _cycle) :// Constructor
       Ci(_Ci), Cj(_Cj), eps2(_eps2), prange(_prange), cycle(_cycle) {} // Initialize variables
     void operator() () {                                        // Overload operator
       if (Ci->NBODY < 25) {                                     // If number of target bodies is less than threshold
@@ -299,7 +299,7 @@ public:
   };
 
   //! Direct summation
-  void direct(Bodies & ibodies, Bodies & jbodies, const real_t eps2, real_t cycle) {
+  void direct(Bodies & ibodies, Bodies & jbodies, real_t eps2, real_t cycle) {
     Cells cells; cells.resize(2);                               // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
     Ci->BODY = ibodies.begin();                                 // Iterator of first target body
