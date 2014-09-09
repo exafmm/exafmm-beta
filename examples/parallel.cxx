@@ -36,6 +36,7 @@ int main(int argc, char ** argv) {
   Verify verify;
   num_threads(args.threads);
 
+  const real_t eps2 = 0.0;
   const real_t cycle = 2 * M_PI;
   //args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
@@ -99,9 +100,9 @@ int main(int argc, char ** argv) {
       {
 	traversal.initWeight(cells);
 #if IneJ
-	traversal.dualTreeTraversal(cells, jcells, cycle, false);
+	traversal.dualTreeTraversal(cells, jcells, eps2, cycle, false);
 #else
-	traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
+	traversal.dualTreeTraversal(cells, cells, eps2, cycle, args.mutual);
 	jbodies = bodies;
 #endif
       }
@@ -111,11 +112,11 @@ int main(int argc, char ** argv) {
       gbodies = treeMPI.root2body();
       jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
       treeMPI.attachRoot(jcells);
-      traversal.dualTreeTraversal(cells, jcells, cycle, false);
+      traversal.dualTreeTraversal(cells, jcells, eps2, cycle, false);
     } else {
       for (int irank=0; irank<baseMPI.mpisize; irank++) {
 	treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
-	traversal.dualTreeTraversal(cells, jcells, cycle, false);
+	traversal.dualTreeTraversal(cells, jcells, eps2, cycle, false);
       }
     }
 #else
@@ -126,7 +127,7 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies);
       jcells = localTree.buildTree(jbodies, buffer, localBounds);
       upDownPass.upwardPass(jcells);
-      traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
+      traversal.dualTreeTraversal(cells, jcells, eps2, cycle, args.mutual);
     }
 #endif
     upDownPass.downwardPass(cells);
@@ -144,7 +145,7 @@ int main(int argc, char ** argv) {
     for (int i=0; i<baseMPI.mpisize; i++) {
       if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
       treeMPI.shiftBodies(jbodies);
-      traversal.direct(bodies, jbodies, cycle);
+      traversal.direct(bodies, jbodies, eps2, cycle);
     }
     traversal.normalize(bodies);
     logger::printTitle("Total runtime");

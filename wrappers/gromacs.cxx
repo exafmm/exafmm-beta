@@ -107,6 +107,7 @@ extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, doub
 }
 
 extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle) {
+  const real_t eps2 = 0.0;
   args->numBodies = n;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
@@ -134,18 +135,18 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->initWeight(cells);
-  traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
+  traversal->dualTreeTraversal(cells, cells, eps2, cycle, args->mutual);
   Cells jcells;
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
     jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
     treeMPI->attachRoot(jcells);
-    traversal->dualTreeTraversal(cells, jcells, cycle, false);
+    traversal->dualTreeTraversal(cells, jcells, eps2, cycle, false);
   } else {
     for (int irank=0; irank<baseMPI->mpisize; irank++) {
       treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-      traversal->dualTreeTraversal(cells, jcells, cycle, false);
+      traversal->dualTreeTraversal(cells, jcells, eps2, cycle, false);
     }
   }
   upDownPass->downwardPass(cells);

@@ -126,6 +126,7 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
+  const real_t eps2 = 0.0;
   const real_t cycle = 0.0;
   Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -159,17 +160,17 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->initWeight(cells);
-  traversal->dualTreeTraversal(cells, jcells, cycle, args->mutual);
+  traversal->dualTreeTraversal(cells, jcells, eps2, cycle, args->mutual);
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
     jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
     treeMPI->attachRoot(jcells);
-    traversal->dualTreeTraversal(cells, jcells, cycle, false);
+    traversal->dualTreeTraversal(cells, jcells, eps2, cycle, false);
   } else {
     for (int irank=0; irank<baseMPI->mpisize; irank++) {
       treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-      traversal->dualTreeTraversal(cells, jcells, cycle, false);
+      traversal->dualTreeTraversal(cells, jcells, eps2, cycle, false);
     }
   }
   upDownPass->downwardPass(cells);

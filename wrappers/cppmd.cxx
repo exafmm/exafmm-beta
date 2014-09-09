@@ -145,6 +145,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 			     double & cycle) {
   const int shift = 29;
   const int mask = ~(0x7U << shift);
+  const real_t eps2 = 0.0;
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
@@ -227,18 +228,18 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->initWeight(cells);
-  traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
+  traversal->dualTreeTraversal(cells, cells, eps2, cycle, args->mutual);
   Cells jcells;
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
     jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
     treeMPI->attachRoot(jcells);
-    traversal->dualTreeTraversal(cells, jcells, cycle, false);
+    traversal->dualTreeTraversal(cells, jcells, eps2, cycle, false);
   } else {
     for (int irank=0; irank<baseMPI->mpisize; irank++) {
       treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-      traversal->dualTreeTraversal(cells, jcells, cycle, false);
+      traversal->dualTreeTraversal(cells, jcells, eps2, cycle, false);
     }
   }
   upDownPass->downwardPass(cells);
