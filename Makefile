@@ -10,13 +10,9 @@ cleanall:
 	make clean
 	make cleandat
 	make cleanlib
-commit  :
-	hg commit
-	hg push
-	hg pull -u
-save    :
+save:
 	make cleanall
 	cd .. && tar zcvf exafmm-dev.tgz exafmm-dev
-revert	:
+revert:
 	hg revert --all
 	find . -name "*.orig" | xargs rm -f
