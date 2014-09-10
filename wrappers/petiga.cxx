@@ -74,53 +74,53 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
-extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, double * vi,
-			      int & nj, double * xj, double * yj, double * zj, double * vj) {
+extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, double * vb,
+			      int & nv, double * xv, double * yv, double * zv, double * vv) {
   logger::printTitle("Partition Profiling");
-  Bodies bodies(ni);
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
-    B->X[0] = xi[i];
-    B->X[1] = yi[i];
-    B->X[2] = zi[i];
-    B->SRC  = vi[i];
+  Bodies bbodies(nb);
+  for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
+    int i = B-bbodies.begin();
+    B->X[0] = xb[i];
+    B->X[1] = yb[i];
+    B->X[2] = zb[i];
+    B->SRC  = vb[i];
   }
-  Bodies jbodies(nj);
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    int i = B-jbodies.begin();
-    B->X[0] = xj[i];
-    B->X[1] = yj[i];
-    B->X[2] = zj[i];
-    B->SRC  = vj[i];
+  Bodies vbodies(nv);
+  for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
+    int i = B-vbodies.begin();
+    B->X[0] = xv[i];
+    B->X[1] = yv[i];
+    B->X[2] = zv[i];
+    B->SRC  = vv[i];
   }
-  localBounds = boundBox->getBounds(bodies);
-  localBounds = boundBox->getBounds(jbodies,localBounds);
+  localBounds = boundBox->getBounds(bbodies);
+  localBounds = boundBox->getBounds(vbodies,localBounds);
   globalBounds = baseMPI->allreduceBounds(localBounds);
   cycle = max(globalBounds.Xmax - globalBounds.Xmin);
-  localBounds = partition->octsection(bodies,globalBounds);
-  bodies = treeMPI->commBodies(bodies);
-  partition->octsection(jbodies,globalBounds);
-  jbodies = treeMPI->commBodies(jbodies);
-  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
-  upDownPass->upwardPass(cells);
-  Cells jcells = localTree->buildTree(jbodies, buffer, localBounds);
-  upDownPass->upwardPass(jcells);
+  localBounds = partition->octsection(bbodies,globalBounds);
+  bbodies = treeMPI->commBodies(bbodies);
+  partition->octsection(vbodies,globalBounds);
+  vbodies = treeMPI->commBodies(vbodies);
+  Cells bcells = localTree->buildTree(bbodies, buffer, localBounds);
+  upDownPass->upwardPass(bcells);
+  Cells vcells = localTree->buildTree(vbodies, buffer, localBounds);
+  upDownPass->upwardPass(vcells);
 
-  ni = bodies.size();
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
-    xi[i] = B->X[0];
-    yi[i] = B->X[1];
-    zi[i] = B->X[2];
-    vi[i] = B->SRC;
+  nb = bbodies.size();
+  for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
+    int i = B-bbodies.begin();
+    xb[i] = B->X[0];
+    yb[i] = B->X[1];
+    zb[i] = B->X[2];
+    vb[i] = B->SRC;
   }
-  nj = jbodies.size();
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    int i = B-jbodies.begin();
-    xj[i] = B->X[0];
-    yj[i] = B->X[1];
-    zj[i] = B->X[2];
-    vj[i] = B->SRC;
+  nv = vbodies.size();
+  for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
+    int i = B-vbodies.begin();
+    xv[i] = B->X[0];
+    yv[i] = B->X[1];
+    zv[i] = B->X[2];
+    vv[i] = B->SRC;
   }
 }
 
