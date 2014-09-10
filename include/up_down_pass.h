@@ -6,9 +6,9 @@
 
 class UpDownPass {
 private:
-  real_t theta;                                                 //!< Multipole acceptance criteria
-  bool useRmax;                                                 //!< Use maximum distance for MAC
-  bool useRopt;                                                 //!< Use error optimized theta for MAC
+  const real_t theta;                                           //!< Multipole acceptance criteria
+  const bool useRmax;                                           //!< Use maximum distance for MAC
+  const bool useRopt;                                           //!< Use error optimized theta for MAC
 
 private:
   //! Recursive functor for error optimization of R

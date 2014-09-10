@@ -117,8 +117,8 @@ static const int morton256_z[256] = {
 
 class BuildTree {
 private:
+  const int ncrit;
   int maxlevel;
-  int ncrit;
 
 private:
   Box bounds2box(Bounds & bounds) {

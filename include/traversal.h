@@ -12,8 +12,8 @@
 
 class Traversal {
 private:
-  int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
-  int images;                                                   //!< Number of periodic image sublevels
+  const int nspawn;                                             //!< Threshold of NBODY for spawning new threads
+  const int images;                                             //!< Number of periodic image sublevels
 #if COUNT
   real_t numP2P;                                                //!< Number of P2P kernel calls
   real_t numM2L;                                                //!< Number of M2L kernel calls

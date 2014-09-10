@@ -5,10 +5,10 @@
 
 class VanDerWaals {
 private:
-  real_t cuton;                                                 //!< Cuton distance
-  real_t cutoff;                                                //!< Cutoff distance
-  real_t cycle;                                                 //!< Periodic cycle
-  int numTypes;                                                 //!< Number of atom types
+  const real_t cuton;                                           //!< Cuton distance
+  const real_t cutoff;                                          //!< Cutoff distance
+  const real_t cycle;                                           //!< Periodic cycle
+  const int numTypes;                                           //!< Number of atom types
   std::vector<real_t> rscale;                                   //!< Distance scaling parameter for VdW potential
   std::vector<real_t> gscale;                                   //!< Value scaling parameter for VdW potential
   std::vector<real_t> fgscale;                                  //!< Value scaling parameter for VdW force

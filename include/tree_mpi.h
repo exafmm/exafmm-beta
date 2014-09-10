@@ -8,7 +8,7 @@ class TreeMPI {
 protected:
   const int mpirank;                                            //!< Rank of MPI communicator
   const int mpisize;                                            //!< Size of MPI communicator
-  int images;                                                   //!< Number of periodic image sublevels
+  const int images;                                             //!< Number of periodic image sublevels
   float (* allBoundsXmin)[3];                                   //!< Array for local Xmin for all ranks
   float (* allBoundsXmax)[3];                                   //!< Array for local Xmax for all ranks
   Bodies sendBodies;                                            //!< Send buffer for bodies

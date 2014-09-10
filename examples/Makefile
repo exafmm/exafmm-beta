@@ -1,6 +1,6 @@
 include ../Makefile.include
 
-LFLAGS	+= -DMASS # Use all positive sources
+#LFLAGS	+= -DMASS # Use all positive sources
 #LFLAGS	+= -DIneJ # Different target and source points
 LFLAGS	+= -DDIRECT # Compare with direct summation
 #LFLAGS	+= -DWRITE_TIME # Write timings to file

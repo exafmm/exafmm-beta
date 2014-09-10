@@ -25,8 +25,8 @@ private:
     vec3         X;                                             //!< Coordinate at center
   };
 
-  int          ncrit;                                           //!< Number of bodies per leaf cell
-  int          nspawn;                                          //!< Threshold of NBODY for spawning new threads
+  const int    ncrit;                                           //!< Number of bodies per leaf cell
+  const int    nspawn;                                          //!< Threshold of NBODY for spawning new threads
   int          maxlevel;                                        //!< Maximum level of tree
   B_iter       B0;                                              //!< Iterator of first body
   OctreeNode * N0;                                              //!< Pointer to octree root node

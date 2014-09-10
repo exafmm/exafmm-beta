@@ -6,7 +6,7 @@
 
 class BoundBox {
 private:
-  int nspawn;                                                   //!< Threshold of NBODY for spawning new threads
+  const int nspawn;                                             //!< Threshold of NBODY for spawning new threads
 
   //! Recursive functor for calculating bounds of bodies
   struct BodiesRecursion {

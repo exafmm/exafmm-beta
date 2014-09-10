@@ -14,11 +14,11 @@ class Ewald {
   typedef Waves::iterator   W_iter;                             //!< Iterator of Wave types
 
 private:
-  int ksize;                                                    //!< Number of waves in Ewald summation
-  real_t alpha;                                                 //!< Scaling parameter for Ewald summation
-  real_t sigma;                                                 //!< Scaling parameter for Ewald summation
-  real_t cutoff;                                                //!< Cutoff distance
-  real_t cycle;                                                 //!< Periodic cycle
+  const int ksize;                                              //!< Number of waves in Ewald summation
+  const real_t alpha;                                           //!< Scaling parameter for Ewald summation
+  const real_t sigma;                                           //!< Scaling parameter for Ewald summation
+  const real_t cutoff;                                          //!< Cutoff distance
+  const real_t cycle;                                           //!< Periodic cycle
 
 private:
   //! Forward DFT

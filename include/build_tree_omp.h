@@ -13,8 +13,8 @@ int omp_get_thread_num() {return 0;}
 
 class BuildTree {
 private:
+  const int ncrit;
   int maxlevel;
-  int ncrit;
 
 private:
   //! Transform Xmin & Xmax to X (center) & R (radius)
