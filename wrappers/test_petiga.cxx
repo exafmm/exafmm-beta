@@ -6,7 +6,9 @@
 #include <iostream>
 #include <sstream>
 
-extern "C" void FMM_Init();
+extern "C" void FMM_Init(double eps2, int ncrit, int threads,
+                         int nb, double * xb, double * yb, double * zb, double * vb,
+                         int nv, double * xv, double * yv, double * zv, double * vv);
 extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, double * vi,
 			      int & nj, double * xj, double * yj, double * zj, double * vj);
@@ -17,6 +19,9 @@ extern "C" void Direct_Laplace(int ni, double * xi, double * yi, double * zi, do
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
+  const int ncrit = 16;
+  const int threads = 16;
+  const double eps2 = 0.0;
   int ni = 500;
   int nj = 1000;
   int stringLength = 20;
@@ -49,7 +54,7 @@ int main(int argc, char ** argv) {
     vj[i] = 1. / nj;
   }
 
-  FMM_Init();
+  FMM_Init(eps2, ncrit, threads, ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
   FMM_Partition(ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
   FMM_Laplace(ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
   for (int i=0; i<ni; i++) {

@@ -27,11 +27,11 @@ Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void FMM_Init() {
-  const int ncrit = 16;
+extern "C" void FMM_Init(double eps2, int ncrit, int threads,
+			 int nb, double * xb, double * yb, double * zb, double * vb,
+			 int nv, double * xv, double * yv, double * zv, double * vv) {
   const int nspawn = 1000;
   const int images = 0;
-  const real_t eps2 = 0.0;
   const real_t theta = 0.4;
   const bool useRmax = true;
   const bool useRopt = true;
@@ -44,11 +44,13 @@ extern "C" void FMM_Init() {
   traversal = new Traversal(nspawn, images, eps2);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
+  num_threads(threads);
 
-  args->theta = theta;
   args->ncrit = ncrit;
   args->nspawn = nspawn;
+  args->threads = threads;
   args->images = images;
+  args->theta = theta;
   args->mutual = 0;
   args->verbose = 1;
   args->distribution = "external";
