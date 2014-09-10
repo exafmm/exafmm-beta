@@ -31,6 +31,7 @@ extern "C" void FMM_Init() {
   const int ncrit = 16;
   const int nspawn = 1000;
   const int images = 0;
+  const real_t eps2 = 0.0;
   const real_t theta = 0.4;
   const bool useRmax = true;
   const bool useRopt = true;
@@ -40,7 +41,7 @@ extern "C" void FMM_Init() {
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images);
+  traversal = new Traversal(nspawn, images, eps2);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
 
@@ -120,14 +121,13 @@ extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, d
 
 extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
 			    int nj, double * xj, double * yj, double * zj, double * vj) {
+  const real_t cycle = 0.0;
   args->numBodies = ni;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
-  const real_t eps2 = 0.0;
-  const real_t cycle = 0.0;
   Bodies bodies(ni);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
@@ -160,17 +160,17 @@ extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, doubl
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->initWeight(cells);
-  traversal->dualTreeTraversal(cells, jcells, eps2, cycle, args->mutual);
+  traversal->dualTreeTraversal(cells, jcells, cycle, args->mutual);
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
     jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
     treeMPI->attachRoot(jcells);
-    traversal->dualTreeTraversal(cells, jcells, eps2, cycle, false);
+    traversal->dualTreeTraversal(cells, jcells, cycle, false);
   } else {
     for (int irank=0; irank<baseMPI->mpisize; irank++) {
       treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-      traversal->dualTreeTraversal(cells, jcells, eps2, cycle, false);
+      traversal->dualTreeTraversal(cells, jcells, cycle, false);
     }
   }
   upDownPass->downwardPass(cells);

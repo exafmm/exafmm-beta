@@ -20,6 +20,8 @@
 #endif
 
 int main(int argc, char ** argv) {
+  const real_t eps2 = 0.0;
+  const real_t cycle = 2 * M_PI;
   Args args(argc, argv);
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
@@ -30,14 +32,12 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images);
+  Traversal traversal(args.nspawn, args.images, eps2);
   TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
   num_threads(args.threads);
 
-  const real_t eps2 = 0.0;
-  const real_t cycle = 2 * M_PI;
   //args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
@@ -100,9 +100,9 @@ int main(int argc, char ** argv) {
       {
 	traversal.initWeight(cells);
 #if IneJ
-	traversal.dualTreeTraversal(cells, jcells, eps2, cycle, false);
+	traversal.dualTreeTraversal(cells, jcells, cycle, false);
 #else
-	traversal.dualTreeTraversal(cells, cells, eps2, cycle, args.mutual);
+	traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
 	jbodies = bodies;
 #endif
       }
@@ -112,11 +112,11 @@ int main(int argc, char ** argv) {
       gbodies = treeMPI.root2body();
       jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
       treeMPI.attachRoot(jcells);
-      traversal.dualTreeTraversal(cells, jcells, eps2, cycle, false);
+      traversal.dualTreeTraversal(cells, jcells, cycle, false);
     } else {
       for (int irank=0; irank<baseMPI.mpisize; irank++) {
 	treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
-	traversal.dualTreeTraversal(cells, jcells, eps2, cycle, false);
+	traversal.dualTreeTraversal(cells, jcells, cycle, false);
       }
     }
 #else
@@ -127,7 +127,7 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies);
       jcells = localTree.buildTree(jbodies, buffer, localBounds);
       upDownPass.upwardPass(jcells);
-      traversal.dualTreeTraversal(cells, jcells, eps2, cycle, args.mutual);
+      traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
     }
 #endif
     upDownPass.downwardPass(cells);
@@ -145,7 +145,7 @@ int main(int argc, char ** argv) {
     for (int i=0; i<baseMPI.mpisize; i++) {
       if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << baseMPI.mpisize << std::endl;
       treeMPI.shiftBodies(jbodies);
-      traversal.direct(bodies, jbodies, eps2, cycle);
+      traversal.direct(bodies, jbodies, cycle);
     }
     traversal.normalize(bodies);
     logger::printTitle("Total runtime");

@@ -50,6 +50,7 @@ Bounds globalBounds;
 extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   const int ncrit = 32;
   const int nspawn = 1000;
+  const real_t eps2 = 0.0;
   const bool useRmax = true;
   const bool useRopt = true;
   args = new Args;
@@ -58,7 +59,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images);
+  traversal = new Traversal(nspawn, images, eps2);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
 #if Serial
@@ -145,7 +146,6 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 			     double & cycle) {
   const int shift = 29;
   const int mask = ~(0x7U << shift);
-  const real_t eps2 = 0.0;
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
@@ -228,18 +228,18 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   treeMPI->commBodies();
   treeMPI->commCells();
   traversal->initWeight(cells);
-  traversal->dualTreeTraversal(cells, cells, eps2, cycle, args->mutual);
+  traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
   Cells jcells;
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
     jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
     treeMPI->attachRoot(jcells);
-    traversal->dualTreeTraversal(cells, jcells, eps2, cycle, false);
+    traversal->dualTreeTraversal(cells, jcells, cycle, false);
   } else {
     for (int irank=0; irank<baseMPI->mpisize; irank++) {
       treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-      traversal->dualTreeTraversal(cells, jcells, eps2, cycle, false);
+      traversal->dualTreeTraversal(cells, jcells, cycle, false);
     }
   }
   upDownPass->downwardPass(cells);

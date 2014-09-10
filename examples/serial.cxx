@@ -17,6 +17,8 @@
 #endif
 
 int main(int argc, char ** argv) {
+  const real_t eps2 = 0.0;
+  const real_t cycle = 2 * M_PI;
   Args args(argc, argv);
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
@@ -24,13 +26,11 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
   Dataset data;
-  Traversal traversal(args.nspawn, args.images);
+  Traversal traversal(args.nspawn, args.images, eps2);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
   num_threads(args.threads);
 
-  const real_t eps2 = 0.0;
-  const real_t cycle = 2 * M_PI;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
@@ -61,9 +61,9 @@ int main(int argc, char ** argv) {
 #if IneJ
     jcells = buildTree.buildTree(jbodies, buffer, bounds);
     upDownPass.upwardPass(jcells);
-    traversal.dualTreeTraversal(cells, jcells, eps2, cycle, false);
+    traversal.dualTreeTraversal(cells, jcells, cycle, false);
 #else
-    traversal.dualTreeTraversal(cells, cells, eps2, cycle, args.mutual);
+    traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
     jbodies = bodies;
 #endif
     upDownPass.downwardPass(cells);
@@ -81,7 +81,7 @@ int main(int argc, char ** argv) {
     bodies2 = bodies;
     data.initTarget(bodies);
     logger::startTimer("Total Direct");
-    traversal.direct(bodies, jbodies, eps2, cycle);
+    traversal.direct(bodies, jbodies, cycle);
     traversal.normalize(bodies);
     logger::stopTimer("Total Direct");
     double potDif = verify.getDifScalar(bodies, bodies2);
