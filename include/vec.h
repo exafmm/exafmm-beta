@@ -176,6 +176,16 @@ public:
     for (int i=0; i<N; i++) temp[i] = v[i] > w[i] ? v[i] : w[i];
     return temp;
   }
+  friend T min(const vec & v) {                                 // Reduce minimum
+    T temp = v[0];
+    for (int i=1; i<N; i++) temp = temp < v[i] ? temp : v[i];
+    return temp;
+  }
+  friend T max(const vec & v) {                                 // Reduce maximum
+    T temp = v[0];
+    for (int i=1; i<N; i++) temp = temp > v[i] ? temp : v[i];
+    return temp;
+  }
   friend vec rsqrt(const vec & v) {                             // Reciprocal square root
     vec temp;
     for (int i=0; i<N; i++) temp[i] = 1. / std::sqrt(v[i]);
@@ -413,6 +423,17 @@ public:
   __host__ __device__ __forceinline__
   operator       T* ()       {return data;}                     // Type-casting (lvalue)
   __host__ __device__ __forceinline__
+  friend T min(const vec & v) {                                 // Reduce minimum
+    T temp;
+    for (int i=0; i<N; i++) temp = temp < v[i] ? temp : v[i];
+    return temp;
+  }
+  __host__ __device__ __forceinline__
+  friend T max(const vec & v) {                                 // Reduce maximum
+    T temp;
+    for (int i=0; i<N; i++) temp = temp > v[i] ? temp : v[i];
+    return temp;
+  }  __host__ __device__ __forceinline__
   operator const T* () const {return data;}                     // Type-casting (rvalue)
   __host__ __device__ __forceinline__
   friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
@@ -441,14 +462,14 @@ public:
   }
   __host__ __device__ __forceinline__
   friend T min(const vec & v) {                                 // Reduce minimum
-    T temp;
-    for (int i=0; i<N; i++) temp = temp < v[i] ? temp : v[i];
+    T temp = v[0];
+    for (int i=1; i<N; i++) temp = temp < v[i] ? temp : v[i];
     return temp;
   }
   __host__ __device__ __forceinline__
   friend T max(const vec & v) {                                 // Reduce maximum
-    T temp;
-    for (int i=0; i<N; i++) temp = temp > v[i] ? temp : v[i];
+    T temp = v[0];
+    for (int i=1; i<N; i++) temp = temp > v[i] ? temp : v[i];
     return temp;
   }
   __device__ __forceinline__

@@ -14,6 +14,8 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 
+real_t cycle;
+
 Args * args;
 BaseMPI * baseMPI;
 BoundBox * boundBox;
@@ -94,6 +96,7 @@ extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, d
   localBounds = boundBox->getBounds(bodies);
   localBounds = boundBox->getBounds(jbodies,localBounds);
   globalBounds = baseMPI->allreduceBounds(localBounds);
+  cycle = max(globalBounds.Xmax - globalBounds.Xmin);
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
   partition->octsection(jbodies,globalBounds);
@@ -123,7 +126,6 @@ extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, d
 
 extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
 			    int nj, double * xj, double * yj, double * zj, double * vj) {
-  const real_t cycle = 0.0;
   args->numBodies = ni;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
