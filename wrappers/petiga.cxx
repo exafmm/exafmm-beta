@@ -15,6 +15,8 @@
 #include "up_down_pass.h"
 
 real_t cycle;
+Bodies bbodies;
+Bodies vbodies;
 
 Args * args;
 BaseMPI * baseMPI;
@@ -60,6 +62,22 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
   logger::verbose = args->verbose;
   logger::printTitle("Initial Parameters");
   args->print(logger::stringLength, P);
+  bbodies.resize(nb);
+  for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
+    int i = B-bbodies.begin();
+    B->X[0] = xb[i];
+    B->X[1] = yb[i];
+    B->X[2] = zb[i];
+    B->SRC  = vb[i];
+  }
+  vbodies.resize(nv);
+  for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
+    int i = B-vbodies.begin();
+    B->X[0] = xv[i];
+    B->X[1] = yv[i];
+    B->X[2] = zv[i];
+    B->SRC  = vv[i];
+  }
 }
 
 extern "C" void FMM_Finalize() {
@@ -77,22 +95,6 @@ extern "C" void FMM_Finalize() {
 extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, double * vb,
 			      int & nv, double * xv, double * yv, double * zv, double * vv) {
   logger::printTitle("Partition Profiling");
-  Bodies bbodies(nb);
-  for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-    int i = B-bbodies.begin();
-    B->X[0] = xb[i];
-    B->X[1] = yb[i];
-    B->X[2] = zb[i];
-    B->SRC  = vb[i];
-  }
-  Bodies vbodies(nv);
-  for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
-    int i = B-vbodies.begin();
-    B->X[0] = xv[i];
-    B->X[1] = yv[i];
-    B->X[2] = zv[i];
-    B->SRC  = vv[i];
-  }
   localBounds = boundBox->getBounds(bbodies);
   localBounds = boundBox->getBounds(vbodies,localBounds);
   globalBounds = baseMPI->allreduceBounds(localBounds);
@@ -105,7 +107,6 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
   upDownPass->upwardPass(cells);
   Cells jcells = localTree->buildTree(vbodies, buffer, localBounds);
   upDownPass->upwardPass(jcells);
-
   nb = bbodies.size();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B-bbodies.begin();
@@ -132,7 +133,6 @@ extern "C" void FMM_Laplace(int nb, double * xb, double * yb, double * zb, doubl
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
-  Bodies bbodies(nb);
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B-bbodies.begin();
     B->X[0]   = xb[i];
@@ -145,7 +145,6 @@ extern "C" void FMM_Laplace(int nb, double * xb, double * yb, double * zb, doubl
     B->TRG[3] = 0;
     B->IBODY = i;
   }
-  Bodies vbodies(nv);
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
     int i = B-vbodies.begin();
     B->X[0]   = xv[i];
@@ -155,29 +154,29 @@ extern "C" void FMM_Laplace(int nb, double * xb, double * yb, double * zb, doubl
     B->TRG    = 0;
     B->IBODY = i;
   }
-  Cells cells = localTree->buildTree(bbodies, buffer, localBounds);
-  upDownPass->upwardPass(cells);
-  Cells jcells = localTree->buildTree(vbodies, buffer, localBounds);
-  upDownPass->upwardPass(jcells);
+  Cells bcells = localTree->buildTree(bbodies, buffer, localBounds);
+  upDownPass->upwardPass(bcells);
+  Cells vcells = localTree->buildTree(vbodies, buffer, localBounds);
+  upDownPass->upwardPass(vcells);
   treeMPI->allgatherBounds(localBounds);
-  treeMPI->setLET(jcells, cycle);
+  treeMPI->setLET(vcells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
-  traversal->initWeight(cells);
-  traversal->dualTreeTraversal(cells, jcells, cycle, args->mutual);
+  traversal->initWeight(bcells);
+  traversal->dualTreeTraversal(bcells, vcells, cycle, args->mutual);
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
-    jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
-    treeMPI->attachRoot(jcells);
-    traversal->dualTreeTraversal(cells, jcells, cycle, false);
+    vcells = globalTree->buildTree(gbodies, buffer, globalBounds);
+    treeMPI->attachRoot(vcells);
+    traversal->dualTreeTraversal(bcells, vcells, cycle, false);
   } else {
     for (int irank=0; irank<baseMPI->mpisize; irank++) {
-      treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-      traversal->dualTreeTraversal(cells, jcells, cycle, false);
+      treeMPI->getLET(vcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+      traversal->dualTreeTraversal(bcells, vcells, cycle, false);
     }
   }
-  upDownPass->downwardPass(cells);
+  upDownPass->downwardPass(bcells);
   logger::stopPAPI();
   logger::stopTimer("Total FMM");
   logger::printTitle("Total runtime");
