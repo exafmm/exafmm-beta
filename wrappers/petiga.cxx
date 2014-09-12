@@ -74,24 +74,24 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
-extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, double * vi,
-			      int & nj, double * xj, double * yj, double * zj, double * vj) {
+extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, double * vb,
+			      int & nv, double * xv, double * yv, double * zv, double * vv) {
   logger::printTitle("Partition Profiling");
-  Bodies bodies(ni);
+  Bodies bodies(nb);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = xi[i];
-    B->X[1] = yi[i];
-    B->X[2] = zi[i];
-    B->SRC  = vi[i];
+    B->X[0] = xb[i];
+    B->X[1] = yb[i];
+    B->X[2] = zb[i];
+    B->SRC  = vb[i];
   }
-  Bodies jbodies(nj);
+  Bodies jbodies(nv);
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     int i = B-jbodies.begin();
-    B->X[0] = xj[i];
-    B->X[1] = yj[i];
-    B->X[2] = zj[i];
-    B->SRC  = vj[i];
+    B->X[0] = xv[i];
+    B->X[1] = yv[i];
+    B->X[2] = zv[i];
+    B->SRC  = vv[i];
   }
   localBounds = boundBox->getBounds(bodies);
   localBounds = boundBox->getBounds(jbodies,localBounds);
@@ -106,21 +106,21 @@ extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, d
   Cells jcells = localTree->buildTree(jbodies, buffer, localBounds);
   upDownPass->upwardPass(jcells);
 
-  ni = bodies.size();
+  nb = bodies.size();
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    xi[i] = B->X[0];
-    yi[i] = B->X[1];
-    zi[i] = B->X[2];
-    vi[i] = B->SRC;
+    xb[i] = B->X[0];
+    yb[i] = B->X[1];
+    zb[i] = B->X[2];
+    vb[i] = B->SRC;
   }
-  nj = jbodies.size();
+  nv = jbodies.size();
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     int i = B-jbodies.begin();
-    xj[i] = B->X[0];
-    yj[i] = B->X[1];
-    zj[i] = B->X[2];
-    vj[i] = B->SRC;
+    xv[i] = B->X[0];
+    yv[i] = B->X[1];
+    zv[i] = B->X[2];
+    vv[i] = B->SRC;
   }
 }
 
