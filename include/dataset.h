@@ -78,8 +78,27 @@ private:
 	}                                                       //   End loop over dimension
 	real_t r = std::sqrt(norm(B->X));                       //   Distance from center
 	for (int d=0; d<3; d++) {                               //   Loop over dimension
-	  B->X[d] /= r * 1.1;                                   //    Normalize coordinates
+	  B->X[d] *= M_PI / r;                                  //    Normalize coordinates
 	}                                                       //   End loop over dimension
+      }                                                         //  End loop over bodies
+    }                                                           // End loop over partitions
+    return bodies;                                              // Return bodies
+  }
+
+  //! Random distribution on one octant of a r = 1 sphere
+  Bodies octant(int numBodies, int seed, int numSplit) {
+    Bodies bodies(numBodies);                                   // Initialize bodies
+    for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
+      int begin = 0;                                            //  Begin index of bodies
+      int end = bodies.size();                                  //  End index of bodies
+      splitRange(begin, end, i, numSplit);                      //  Split range of bodies
+      srand48(seed);                                            //  Set seed for random number generator
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	real_t theta = drand48() * M_PI * 0.5;                  //   Polar angle [0,pi/2]
+	real_t phi = drand48() * M_PI * 0.5;                    //   Azimuthal angle [0,pi/2]
+	B->X[0] = 2 * M_PI * sin(theta) * cos(phi) - M_PI;      //    x coordinate
+	B->X[1] = 2 * M_PI * sin(theta) * sin(phi) - M_PI;      //    y coordinate
+	B->X[2] = 2 * M_PI * cos(theta) - M_PI;                 //    z coordinate
       }                                                         //  End loop over bodies
     }                                                           // End loop over partitions
     return bodies;                                              // Return bodies
@@ -167,6 +186,9 @@ public:
     case 's':                                                   // Case for sphere
       bodies = sphere(numBodies,mpirank,numSplit);              //  Random distribution on surface of r = 1 sphere
       break;                                                    // End case for sphere
+    case 'o':                                                   // Case for octant
+      bodies = octant(numBodies,mpirank,numSplit);              //  Random distribution on octant of a r = 1 sphere
+      break;                                                    // End case for octant
     case 'p':                                                   // Case plummer
       bodies = plummer(numBodies,mpirank,numSplit);             //  Plummer distribution in a r = M_PI/2 sphere
       break;                                                    // End case for plummer

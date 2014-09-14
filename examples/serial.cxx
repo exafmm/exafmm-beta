@@ -72,6 +72,7 @@ int main(int argc, char ** argv) {
 #if WRITE_TIME
     logger::writeTime();
 #endif
+    data.writeSources(bodies, 0);
     const int numTargets = 100;
     buffer = bodies;
     data.sampleBodies(bodies, numTargets);

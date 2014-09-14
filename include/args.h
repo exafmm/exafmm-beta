@@ -56,7 +56,7 @@ private:
             " --mutual (-m) [0/1]           : Use mutual interaction (%d)\n"
 	    " --graft (-g) [0/1]            : Graft remote trees to global tree (%d)\n"
 	    " --verbose (-v) [0/1]          : Print information to screen (%d)\n"
-            " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, plummer (%s)\n"
+            " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
             " --repeat (-r)                 : Number of iteration loops (%d)\n"
             " --help (-h)                   : Show this help document\n",
             name,
@@ -83,6 +83,8 @@ private:
       return "cube";
     case 's':
       return "sphere";
+    case 'o':
+      return "octant";
     case 'p':
       return "plummer";
     default:

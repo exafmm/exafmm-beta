@@ -18,7 +18,7 @@ tree: tree.o $(OBJECTS)
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out -r 10
+	./a.out
 
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
