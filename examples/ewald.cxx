@@ -16,9 +16,6 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#if VTK
-#include "vtk.h"
-#endif
 #if MASS
 #error Turn off MASS for this test
 #endif
@@ -161,28 +158,5 @@ int main(int argc, char ** argv) {
     logger::printPAPI();
     data.initTarget(bodies);
   }
-#if VTK
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) B->IBODY = 0;
-  for (int irank=0; irank<baseMPI.mpisize; irank++) {
-    treeMPI.getLET(jcells,(baseMPI.mpirank+irank)%baseMPI.mpisize);
-    for (C_iter C=jcells.begin(); C!=jcells.end(); C++) {
-      Body body;
-      body.IBODY = 1;
-      body.X     = C->X;
-      body.SRC   = 0;
-      jbodies.push_back(body);
-    }
-  }
-  vtk3DPlot vtk;
-  vtk.setBounds(M_PI,0);
-  vtk.setGroupOfPoints(jbodies);
-  for (int i=1; i<baseMPI.mpisize; i++) {
-    treeMPI.shiftBodies(jbodies);
-    vtk.setGroupOfPoints(jbodies);
-  }
-  if (baseMPI.mpirank == 0) {
-    vtk.plot();
-  }
-#endif
   return 0;
 }
