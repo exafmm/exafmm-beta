@@ -11,7 +11,7 @@ tree: tree.o $(OBJECTS)
 	rm -f time.dat
 	for N in 10000 20000 50000 100000 200000 500000 1000000 2000000 5000000 10000000 20000000 50000000 100000000; do \
 	  for T in 1 2 4 8 16 32; do \
-	    echo N = $$N && ./a.out -n $$N -T $$T -c 32 -r 10; \
+	    echo N = $$N && ./a.out -n $$N -T $$T -c 32 -r 10 -d plummer; \
 	  done; \
 	done
 
