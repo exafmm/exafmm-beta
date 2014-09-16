@@ -124,67 +124,67 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
   }
 }
 
-extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
-			    int nj, double * xj, double * yj, double * zj, double * vj) {
-  args->numBodies = ni;
+extern "C" void FMM_Laplace(int nb, double * xb, double * yb, double * zb, double * vb,
+			    int nv, double * xv, double * yv, double * zv, double * vv) {
+  args->numBodies = nb;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
-  Bodies bodies(ni);
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B-bodies.begin();
-    B->X[0]   = xi[i];
-    B->X[1]   = yi[i];
-    B->X[2]   = zi[i];
+  Bodies bbodies(nb);
+  for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
+    int i = B-bbodies.begin();
+    B->X[0]   = xb[i];
+    B->X[1]   = yb[i];
+    B->X[2]   = zb[i];
     B->SRC    = 1;
-    B->TRG[0] = vi[i];
+    B->TRG[0] = vb[i];
     B->TRG[1] = 0;
     B->TRG[2] = 0;
     B->TRG[3] = 0;
     B->IBODY = i;
   }
-  Bodies jbodies(nj);
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    int i = B-jbodies.begin();
-    B->X[0]   = xj[i];
-    B->X[1]   = yj[i];
-    B->X[2]   = zj[i];
-    B->SRC    = vj[i];
+  Bodies vbodies(nv);
+  for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
+    int i = B-vbodies.begin();
+    B->X[0]   = xv[i];
+    B->X[1]   = yv[i];
+    B->X[2]   = zv[i];
+    B->SRC    = vv[i];
     B->TRG    = 0;
     B->IBODY = i;
   }
-  Cells cells = localTree->buildTree(bodies, buffer, localBounds);
-  upDownPass->upwardPass(cells);
-  Cells jcells = localTree->buildTree(jbodies, buffer, localBounds);
-  upDownPass->upwardPass(jcells);
+  Cells bcells = localTree->buildTree(bbodies, buffer, localBounds);
+  upDownPass->upwardPass(bcells);
+  Cells vcells = localTree->buildTree(vbodies, buffer, localBounds);
+  upDownPass->upwardPass(vcells);
   treeMPI->allgatherBounds(localBounds);
-  treeMPI->setLET(jcells, cycle);
+  treeMPI->setLET(vcells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
-  traversal->initWeight(cells);
-  traversal->dualTreeTraversal(cells, jcells, cycle, args->mutual);
+  traversal->initWeight(bcells);
+  traversal->dualTreeTraversal(bcells, vcells, cycle, args->mutual);
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
-    jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
-    treeMPI->attachRoot(jcells);
-    traversal->dualTreeTraversal(cells, jcells, cycle, false);
+    vcells = globalTree->buildTree(gbodies, buffer, globalBounds);
+    treeMPI->attachRoot(vcells);
+    traversal->dualTreeTraversal(bcells, vcells, cycle, false);
   } else {
     for (int irank=0; irank<baseMPI->mpisize; irank++) {
-      treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-      traversal->dualTreeTraversal(cells, jcells, cycle, false);
+      treeMPI->getLET(vcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+      traversal->dualTreeTraversal(bcells, vcells, cycle, false);
     }
   }
-  upDownPass->downwardPass(cells);
+  upDownPass->downwardPass(bcells);
   logger::stopPAPI();
   logger::stopTimer("Total FMM");
   logger::printTitle("Total runtime");
   logger::printTime("Total FMM");
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+  for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B->IBODY;
-    vi[i] = B->TRG[0];
+    vb[i] = B->TRG[0];
   }
 }
 
