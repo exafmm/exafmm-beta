@@ -38,6 +38,9 @@ int main(int argc, char ** argv) {
 #endif
   TreeMPI treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
 
+#ifdef IJHPCA
+  //args.numBodies /= FMM.MPISIZE;
+#endif
   const int numBodies = args.numBodies;
   const int ncrit = 100;
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
@@ -128,6 +131,7 @@ int main(int argc, char ** argv) {
     vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
     int numBodies = baseMPI.allreduceInt(bodies.size());
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
+#ifndef IJHPCA
 #if 1
     logger::startTimer("Total Ewald");
     Bounds bounds = boundBox.getBounds(bodies);
@@ -184,6 +188,7 @@ int main(int argc, char ** argv) {
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDifGlob/potNrmGlob));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
 #endif
+#endif
   }
   FMM.deallocate();
 
@@ -204,5 +209,4 @@ int main(int argc, char ** argv) {
   logger::startTimer("Set LET size");
   logger::stopTimer("Set LET size", 0);
   logger::writeTime(FMM.MPIRANK);
-
 }

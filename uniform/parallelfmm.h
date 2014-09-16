@@ -3,6 +3,7 @@
 class ParallelFMM : public SerialFMM {
 private:
   int EXTERNAL;
+  std::ofstream fid;
   MPI_Request *requests;
 
   void gatherMultipoles() {
@@ -32,10 +33,18 @@ public:
     MPI_Comm_rank(MPI_COMM_WORLD,&MPIRANK);
     printNow = MPIRANK == 0;
     requests = new MPI_Request [104];
+#ifdef IJHPCA
+    char fname[256];
+    sprintf(fname,"time%5.5d.dat",MPIRANK);
+    fid.open(fname);
+#endif
   }
   ~ParallelFMM() {
     delete[] requests;
     if(!EXTERNAL) MPI_Finalize();
+#ifdef IJHPCA
+    fid.close();
+#endif
   }
 
   void partitionComm() {
@@ -136,7 +145,7 @@ public:
     MPI_Waitall(52,requests,stats);
   }
 
-  void P2PRecv() const {
+  void P2PRecv() {
     MPI_Status stats[52];
     MPI_Waitall(52,&requests[52],stats);
     int ileaf = 0;
@@ -186,6 +195,10 @@ public:
     int iforward = 0;
     int ix[3];
     float commBytes = 0;
+#ifdef IJHPCA
+    MPI_Barrier(MPI_COMM_WORLD);
+    logger::startTimer("M2L Comm");
+#endif
     for( ix[2]=-1; ix[2]<=1; ix[2]++ ) {
       for( ix[1]=-1; ix[1]<=1; ix[1]++ ) {
         for( ix[0]=-1; ix[0]<=1; ix[0]++ ) {
@@ -222,7 +235,7 @@ public:
     MPI_Waitall(26,requests,stats);
   }
 
-  void M2LRecv(int lev) const {
+  void M2LRecv(int lev) {
     MPI_Status stats[26];
     int nxmin[3] = {(1 << lev) - 2, 0, 0};
     int nxmax[3] = {1 << lev, 1 << lev, 2};
@@ -245,6 +258,11 @@ public:
         }
       }
     }
+#ifdef IJHPCA
+    double time = logger::stopTimer("M2L Comm", 0);
+    fid << time << std::endl;
+    logger::resetTimer("M2L Comm");
+#endif
   }
 
   void rootGather() {
@@ -296,7 +314,7 @@ public:
     MPI_Waitall(numComm,requests,stats);
   }
 
-  void globM2MRecv(int level) const {
+  void globM2MRecv(int level) {
     int numChild[3];
     for_3d numChild[d] = numPartition[level][d] / numPartition[level-1][d];
     int ix[3];
@@ -444,7 +462,7 @@ public:
     MPI_Waitall(26,requests,stats);
   }
 
-  void globM2LRecv(int level) const {
+  void globM2LRecv(int level) {
     MPI_Status stats[26];
     MPI_Waitall(26,&requests[26],stats);
     int numChild[3];
@@ -481,8 +499,14 @@ public:
       MPI_Barrier(MPI_COMM_WORLD);
       logger::startTimer("Comm LET cells");
       if( lev > gatherLevel ) {
+#ifdef IJHPCA
+	logger::startTimer("M2L Comm");
         globM2LSend(lev);
         globM2LRecv(lev);
+	double time = logger::stopTimer("M2L Comm", 0);
+	fid << time << std::endl;
+	logger::resetTimer("M2L Comm");
+#endif
       }
       logger::stopTimer("Comm LET cells");
       logger::startTimer("Traverse");
@@ -533,7 +557,7 @@ public:
     }
   }
 
-  void globL2L() const {
+  void globL2L() {
     for( int lev=1; lev<=maxGlobLevel; lev++ ) {
       real diameter[3];
       for_3d diameter[d] = 2 * RGlob[d] / numPartition[lev][d];
