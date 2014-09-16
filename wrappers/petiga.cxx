@@ -58,8 +58,24 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
   args->distribution = "external";
   args->verbose &= baseMPI->mpirank == 0;
   logger::verbose = args->verbose;
-  logger::printTitle("Initial Parameters");
-  args->print(logger::stringLength, P);
+  Bodies bbodies(nb);
+  for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
+    int i = B-bbodies.begin();
+    B->X[0] = xb[i];
+    B->X[1] = yb[i];
+    B->X[2] = zb[i];
+    B->SRC  = vb[i];
+    B->IBODY = i;
+  }
+  Bodies vbodies(nv);
+  for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
+    int i = B-vbodies.begin();
+    B->X[0] = xv[i];
+    B->X[1] = yv[i];
+    B->X[2] = zv[i];
+    B->SRC  = vv[i];
+    B->IBODY = i;
+  }
 }
 
 extern "C" void FMM_Finalize() {
