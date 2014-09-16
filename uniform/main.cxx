@@ -1,7 +1,7 @@
 #include "base_mpi.h"
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree.h"
+#include "build_tree_tbb.h"
 #include "dataset.h"
 #include "ewald.h"
 #include "traversal.h"
@@ -15,12 +15,20 @@
 #endif
 
 int main(int argc, char ** argv) {
+  const int ksize = 11;
+  const real_t eps2 = 0.0;
+  const real cycle = 10 * M_PI;
+  const real_t alpha = 10 / cycle;
+  const real_t sigma = .25 / M_PI;
+  const real_t cutoff = 10;
+
   Args args(argc, argv);
   BaseMPI baseMPI;
   BoundBox boundBox(args.nspawn);
-  Dataset data;
   BuildTree buildTree(args.ncrit, args.nspawn);
-  Traversal traversal(args.nspawn, args.images);
+  Dataset data;
+  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
+  Traversal traversal(args.nspawn, args.images, eps2);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 #if Serial
@@ -36,12 +44,6 @@ int main(int argc, char ** argv) {
   const int gatherLevel = 1;
   const int numImages = args.images;
 
-  const int ksize = 11;
-  const real cycle = 10 * M_PI;
-  const real_t alpha = 10 / cycle;
-  const real_t sigma = .25 / M_PI;
-  const real_t cutoff = 10;
-  Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   FMM.allocate(numBodies, maxLevel, numImages);
   args.verbose &= FMM.MPIRANK == 0;
   logger::verbose = args.verbose;
@@ -129,14 +131,16 @@ int main(int argc, char ** argv) {
 #if 1
     logger::startTimer("Total Ewald");
     Bounds bounds = boundBox.getBounds(bodies);
-    Cells cells = buildTree.buildTree(bodies, bounds);
+    Bodies buffer = bodies;
+    Cells cells = buildTree.buildTree(bodies, buffer, bounds);
     Bodies bodies2 = bodies;
     data.initTarget(bodies);
     for (int i=0; i<FMM.MPISIZE; i++) {
       if (args.verbose) std::cout << "Ewald loop           : " << i+1 << "/" << FMM.MPISIZE << std::endl;
       if (FMM.MPISIZE > 1) treeMPI.shiftBodies(jbodies);
       bounds = boundBox.getBounds(jbodies);
-      Cells jcells = buildTree.buildTree(jbodies, bounds);
+      buffer = jbodies;
+      Cells jcells = buildTree.buildTree(jbodies, buffer, bounds);
       ewald.wavePart(bodies, jbodies);
       ewald.realPart(cells, jcells);
     }
