@@ -60,7 +60,9 @@ using namespace tbb;
 #define num_threads(E)                char nworkers[32]; sprintf(nworkers,"%d",E); __cilkrts_set_param("nworkers",nworkers)
 #define mk_task_group
 #define wait_tasks                    cilk_sync
-#define create_taskc(E)               cilk_spawn E()
+template<class Call>
+void call(Call C) { C(); }
+#define create_taskc(E)               cilk_spawn call(E)
 #define create_taskc_if(x, E)         if(x) { create_taskc(E); } else { E(); }
 
 #else
