@@ -1,9 +1,6 @@
 #include <fstream>
 #include "kernel.h"
 #include <vector>
-#if VTK
-#include "vtk.h"
-#endif
 
 int main() {
   Bodies bodies(16), bodies2(16), jbodies(16);
@@ -93,35 +90,5 @@ int main() {
   std::cout << P << " " << err << std::endl;
   file << P << " " << err << std::endl;
   file.close();
-
-#if VTK
-  file.open("kernel.dat", std::ios::in);
-  std::string line;
-  std::vector<int> order;
-  std::vector<double> error;
-  std::vector<double> bound;
-  while (std::getline(file,line)) {
-    int p;
-    double e;
-    std::stringstream stream(line);
-    stream >> p >> e;
-    order.push_back(p);
-    error.push_back(log10(e));
-    bound.push_back(log10(std::pow(theta,p)));
-  }
-  file.close();
-
-  if (order.size() > 12) {
-    vtk2DPlot vtk;
-    vtk.setName("order");
-    vtk.setName("log10(error)");
-    vtk.setName("log10(bound)");
-    vtk.setNumRows(order.size());
-    vtk.setData(0,order.size(),&order[0]);
-    vtk.setData(0,error.size(),&error[0]);
-    vtk.setData(0,bound.size(),&bound[0]);
-    vtk.plot();
-  }
-#endif
   return 0;
 }

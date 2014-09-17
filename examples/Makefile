@@ -38,7 +38,7 @@ kernel: kernel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	./a.out
 
-# Checking O(theta^p) convergence (Turn on VTK to see a graph at the end)
+# Checking O(theta^p) convergence
 convergence: kernel.cxx $(SOURCES)
 	rm -f kernel.dat
 	for P in 3 4 5 6 7 8 9 10 11 12 13 14 15; do echo P = $$P compiling && \

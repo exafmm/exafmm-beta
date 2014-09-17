@@ -1,13 +1,6 @@
 #include "args.h"
 #include "bound_box.h"
-#ifdef CILK
-#include "build_tree_cilk.h"
-#include <cilk/cilk_api.h>
-#elif defined TBB
-#include "build_tree_tbb.h"
-#else
-#include "build_tree_omp.h"
-#endif
+#include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
 
@@ -20,11 +13,6 @@ int main(int argc, char ** argv) {
   Cells cells, jcells;
   Dataset data;
   num_threads(args.threads);
-  char nworkers[32];
-  sprintf(nworkers,"%d",args.threads);
-#ifdef CILK
-  __cilkrts_set_param("nworkers",nworkers);
-#endif
 
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");

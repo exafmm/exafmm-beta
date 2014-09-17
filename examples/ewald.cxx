@@ -1,13 +1,7 @@
 #include "base_mpi.h"
 #include "args.h"
 #include "bound_box.h"
-#ifdef CILK
-#include "build_tree_cilk.h"
-#elif defined TBB
-#include "build_tree_tbb.h"
-#else
-#include "build_tree_omp.h"
-#endif
+#include "build_tree.h"
 #include "dataset.h"
 #include "ewald.h"
 #include "logger.h"

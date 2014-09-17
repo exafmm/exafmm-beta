@@ -163,6 +163,7 @@ private:
     }
     void operator() () {                                        // Overload operator()
       assert(getMaxBinNode(end - begin) <= binNode->END - binNode->BEGIN);// Bounds checking for node range
+      std::cout << begin << " " << end << std::endl;
       if (begin == end) {                                       //  If no bodies are left
 	octNode = NULL;                                         //   Assign null pointer
 	return;                                                 //   End buildNodes()

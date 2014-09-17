@@ -1,7 +1,6 @@
 #ifndef build_tree_h
 #define build_tree_h
 #include <algorithm>
-#include <cilk/cilk.h>
 #include "logger.h"
 #include "thread.h"
 #include "types.h"
@@ -398,7 +397,7 @@ public:
     logger::stopTimer("Grow tree",0);
 
     Cells cells;
-#if 0
+#if 1
     logger::startTimer("Link tree");
     logger::startTimer("Bodies to leafs");
     bodies2leafs(bodies, cells, bounds, level);

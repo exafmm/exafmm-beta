@@ -1,12 +1,6 @@
 #include "args.h"
 #include "bound_box.h"
-#ifdef CILK
-#include "build_tree_cilk.h"
-#elif defined TBB || defined MTHREAD || defined QTHREAD || defined SERIAL
-#include "build_tree_tbb.h"
-#else
-#include "build_tree_omp.h"
-#endif
+#include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
 #include "traversal.h"
@@ -72,7 +66,6 @@ int main(int argc, char ** argv) {
 #if WRITE_TIME
     logger::writeTime();
 #endif
-    data.writeSources(bodies, 0);
     const int numTargets = 100;
     buffer = bodies;
     data.sampleBodies(bodies, numTargets);

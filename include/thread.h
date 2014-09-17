@@ -1,6 +1,11 @@
 #ifndef thread_h
 #define thread_h
 
+#if CILK
+#include <cilk/cilk.h>
+#include <cilk/cilk_api.h>
+#endif
+
 #if TBB
 #define num_threads(E)                tbb::task_scheduler_init init(E)
 #if DAG_RECORDER == 2  /* TBB with DAG Recorder */
@@ -50,6 +55,13 @@ using namespace tbb;
 #define num_threads(E)
 #define TO_SERIAL 1
 #include <tpswitch/tpswitch.h>
+
+#elif CILK
+#define num_threads(E)                char nworkers[32]; sprintf(nworkers,"%d",E); __cilkrts_set_param("nworkers",nworkers)
+#define mk_task_group
+#define wait_tasks                    cilk_sync
+#define create_taskc(E)               cilk_spawn E()
+#define create_taskc_if(x, E)         if(x) { create_taskc(E); } else { E(); }
 
 #else
 #define mk_task_group
