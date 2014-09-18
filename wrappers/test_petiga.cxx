@@ -12,7 +12,8 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
 extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, double * vi,
 			      int & nj, double * xj, double * yj, double * zj, double * vj);
-extern "C" void FMM(double * vi, double * vj);
+extern "C" void FMM_BuildTree();
+extern "C" void FMM(double * vi, double * vj, bool verbose);
 extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * vi,
 		       int nj, double * xj, double * yj, double * zj, double * vj);
 
@@ -55,7 +56,8 @@ int main(int argc, char ** argv) {
 
   FMM_Init(eps2, ncrit, threads, ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
   FMM_Partition(ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
-  FMM(vi, vj);
+  FMM_BuildTree();
+  FMM(vi, vj, true);
   for (int i=0; i<ni; i++) {
     v2[i] = 0;
   }

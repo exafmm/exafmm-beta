@@ -9,6 +9,12 @@
 #include "up_down_pass.h"
 
 real_t cycle;
+Bodies buffer;
+Bounds globalBounds;
+Bodies bbodies;
+Bodies vbodies;
+Cells bcells;
+Cells vcells;
 
 Args * args;
 BaseMPI * baseMPI;
@@ -18,12 +24,6 @@ Partition * partition;
 Traversal * traversal;
 TreeMPI * treeMPI;
 UpDownPass * upDownPass;
-
-Bodies buffer;
-Bounds localBounds;
-Bounds globalBounds;
-Bodies bbodies;
-Bodies vbodies;
 
 void log_initialize() {
   args->verbose &= baseMPI->mpirank == 0;
@@ -104,14 +104,15 @@ extern "C" void FMM_Finalize() {
 extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, double * vb,
 			      int & nv, double * xv, double * yv, double * zv, double * vv) {
   logger::printTitle("Partition Profiling");
-  localBounds = boundBox->getBounds(bbodies);
-  localBounds = boundBox->getBounds(vbodies,localBounds);
+  Bounds localBounds = boundBox->getBounds(bbodies);
+  localBounds = boundBox->getBounds(vbodies, localBounds);
   globalBounds = baseMPI->allreduceBounds(localBounds);
   cycle = max(globalBounds.Xmax - globalBounds.Xmin);
-  localBounds = partition->octsection(bbodies,globalBounds);
+  localBounds = partition->octsection(bbodies, globalBounds);
   bbodies = treeMPI->commBodies(bbodies);
-  partition->octsection(vbodies,globalBounds);
+  partition->octsection(vbodies, globalBounds);
   vbodies = treeMPI->commBodies(vbodies);
+  treeMPI->allgatherBounds(localBounds);
 
   nb = bbodies.size();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
@@ -133,7 +134,15 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
   }
 }
 
-extern "C" void FMM(double * vb, double * vv) {
+extern "C" void FMM_BuildTree() {
+  Bounds localBoundsB = boundBox->getBounds(bbodies);
+  bcells = localTree->buildTree(bbodies, buffer, localBoundsB);
+  Bounds localBoundsV = boundBox->getBounds(vbodies);
+  vcells = localTree->buildTree(vbodies, buffer, localBoundsV);
+}
+
+extern "C" void FMM(double * vb, double * vv, bool verbose) {
+  args->verbose = verbose;
   log_initialize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     B->SRC    = 1;
@@ -144,14 +153,8 @@ extern "C" void FMM(double * vb, double * vv) {
     B->SRC    = vv[i];
     B->TRG    = 0;
   }
-  Bounds localBoundsB = boundBox->getBounds(bbodies);
-  Cells bcells = localTree->buildTree(bbodies, buffer, localBoundsB);
   upDownPass->upwardPass(bcells);
-  Bounds localBoundsV = boundBox->getBounds(vbodies);
-  Cells vcells = localTree->buildTree(vbodies, buffer, localBoundsV);
   upDownPass->upwardPass(vcells);
-  Bounds localBounds = boundBox->getBounds(vbodies, localBoundsB);
-  treeMPI->allgatherBounds(localBounds);
   treeMPI->setLET(vcells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
@@ -175,27 +178,6 @@ extern "C" void FMM(double * vb, double * vv) {
     int i = B->IBODY;
     vb[i] += B->TRG[0];
   }
-}
-
-void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
-  const int isend = (mpirank + 1          ) % mpisize;
-  const int irecv = (mpirank - 1 + mpisize) % mpisize;
-  int nnew;
-  MPI_Request sreq, rreq;
-  MPI_Isend(&nold, 1, MPI_DOUBLE, irecv, 0, MPI_COMM_WORLD, &sreq);
-  MPI_Irecv(&nnew, 1, MPI_DOUBLE, isend, 0, MPI_COMM_WORLD, &rreq);
-  MPI_Wait(&sreq, MPI_STATUS_IGNORE);
-  MPI_Wait(&rreq, MPI_STATUS_IGNORE);
-  double * buf = new double [nnew];
-  MPI_Isend(var, nold, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
-  MPI_Irecv(buf, nnew, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
-  MPI_Wait(&sreq, MPI_STATUS_IGNORE);
-  MPI_Wait(&rreq, MPI_STATUS_IGNORE);
-  for (int i=0; i<nnew; i++) {
-    var[i] = buf[i];
-  }
-  nold = nnew;
-  delete[] buf;
 }
 
 extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * vi,
