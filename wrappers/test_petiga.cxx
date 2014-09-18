@@ -13,7 +13,9 @@ extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, double * vb,
 			      int & nv, double * xv, double * yv, double * zv, double * vv);
 extern "C" void FMM_BuildTree();
+extern "C" void FMM_B2B(double * vi, double * vb, bool verbose);
 extern "C" void FMM_V2B(double * vb, double * vv, bool verbose);
+extern "C" void FMM_B2V(double * vv, double * vb, bool verbose);
 extern "C" void Direct(int nb, double * xb, double * yb, double * zb, double * vb,
 		       int nv, double * xv, double * yv, double * zv, double * vv);
 
@@ -60,24 +62,47 @@ int main(int argc, char ** argv) {
     xb[i] = drand48() - .5;
     yb[i] = drand48() - .5;
     zb[i] = drand48() - .5;
-    vb[i] = 0;
   }
   for (int i=0; i<nv; i++) {
     xv[i] = drand48() - .5;
     yv[i] = drand48() - .5;
     zv[i] = drand48() - .5;
-    vv[i] = 1. / nv;
   }
 
   FMM_Init(eps2, ncrit, threads, nb, xb, yb, zb, vb, nv, xv, yv, zv, vv);
   FMM_Partition(nb, xb, yb, zb, vb, nv, xv, yv, zv, vv);
   FMM_BuildTree();
-  FMM_V2B(vb, vv, true);
+
   for (int i=0; i<nb; i++) {
+    vb[i] = 1.0 / nb;
+    vi[i] = 0;
     vd[i] = 0;
   }
-  Direct(nb, xb, yb, zb, vd, nv, xv, yv, zv, vv);
+  FMM_B2B(vi, vb, 1);
+  Direct(100, xb, yb, zb, vd, nb, xb, yb, zb, vb);
+  Validate(100, vi, vd, mpirank == 0);
+
+  for (int i=0; i<nb; i++) {
+    vb[i] = 0;
+    vd[i] = 0;
+  }
+  for (int i=0; i<nv; i++) {
+    vv[i] = 1.0 / nv;
+  }
+  FMM_V2B(vb, vv, true);
+  Direct(100, xb, yb, zb, vd, nv, xv, yv, zv, vv);
   Validate(100, vb, vd, mpirank == 0);
+
+  for (int i=0; i<nb; i++) {
+    vb[i] = 1.0 / nb;
+  }
+  for (int i=0; i<nv; i++) {
+    vv[i] = 0;
+    vd[i] = 0;
+  }
+  FMM_B2V(vv, vb, 1);
+  Direct(100, xv, yv, zv, vd, nb, xb, yb, zb, vb);
+  Validate(100, vv, vd, mpirank == 0);
 
   FMM_Finalize();
   MPI_Finalize();
