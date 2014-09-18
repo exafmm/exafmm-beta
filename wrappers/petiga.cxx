@@ -133,7 +133,7 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
   }
 }
 
-extern "C" void FMM_Laplace(double * vb, double * vv) {
+extern "C" void FMM(double * vb, double * vv) {
   log_initialize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     B->SRC    = 1;
@@ -198,46 +198,32 @@ void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   delete[] buf;
 }
 
-extern "C" void Direct_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
-			       int nj, double * xj, double * yj, double * zj, double * vj) {
-  const int Nmax = 1000000;
-  double * x2 = new double [Nmax];
-  double * y2 = new double [Nmax];
-  double * z2 = new double [Nmax];
-  double * v2 = new double [Nmax];
-  for (int i=0; i<nj; i++) {
-    x2[i] = xj[i];
-    y2[i] = yj[i];
-    z2[i] = zj[i];
-    v2[i] = vj[i];
+extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * vi,
+		       int nj, double * xj, double * yj, double * zj, double * vj) {
+  Bodies bodies(ni);
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B-bodies.begin();
+    B->X[0] = xi[i];
+    B->X[1] = yi[i];
+    B->X[2] = zi[i];
+    B->TRG  = 0;
+    B->SRC  = 1;
   }
-  if (baseMPI->mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
+  Bodies jbodies(nj);
+  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+    int i = B-jbodies.begin();
+    B->X[0] = xj[i];
+    B->X[1] = yj[i];
+    B->X[2] = zj[i];
+    B->SRC  = vj[i];
+  }  
   for (int irank=0; irank<baseMPI->mpisize; irank++) {
-    if (baseMPI->mpirank == 0) std::cout << "Direct loop          : " << irank+1 << "/" << baseMPI->mpisize << std::endl;
-    int n2 = nj;
-    MPI_Shift(x2, nj, baseMPI->mpisize, baseMPI->mpirank);
-    nj = n2;
-    MPI_Shift(y2, nj, baseMPI->mpisize, baseMPI->mpirank);
-    nj = n2;
-    MPI_Shift(z2, nj, baseMPI->mpisize, baseMPI->mpirank);
-    nj = n2;
-    MPI_Shift(v2, nj, baseMPI->mpisize, baseMPI->mpirank);
-    for (int i=0; i<ni; i++) {
-      double pp = 0;
-      for (int j=0; j<nj; j++) {
-	double dx = xi[i] - x2[j];
-	double dy = yi[i] - y2[j];
-	double dz = zi[i] - z2[j];
-	double R2 = dx * dx + dy * dy + dz * dz;
-	double invR = 1 / std::sqrt(R2);
-	if (R2 == 0) invR = 0;
-	pp += v2[j] * invR;
-      }
-      vi[i] += pp;
-    }
+    if (args->verbose) std::cout << "Direct loop          : " << irank+1 << "/" << baseMPI->mpisize << std::endl;
+    treeMPI->shiftBodies(jbodies);
+    traversal->direct(bodies, jbodies, cycle);
   }
-  delete[] x2;
-  delete[] y2;
-  delete[] z2;
-  delete[] v2;
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    int i = B-bodies.begin();
+    vi[i] += B->TRG[0];
+  }
 }
