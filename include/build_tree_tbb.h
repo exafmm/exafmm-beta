@@ -127,15 +127,16 @@ private:
     real_t R0;                                                  //!< Radius of root cell
     int ncrit;                                                  //!< Number of bodies per leaf cell
     int nspawn;                                                 //!< Threshold of NBODY for spawning new threads
+    logger::Timer & timer;
     int level;                                                  //!< Current tree level
     bool direction;                                             //!< Direction of buffer copying
     //! Constructor
     BuildNodes(OctreeNode *& _octNode, Bodies & _bodies,
 	       Bodies & _buffer, int _begin, int _end, BinaryTreeNode * _binNode,
-	       vec3 _X, real_t _R0, int _ncrit, int _nspawn, int _level=0, bool _direction=false) :
+	       vec3 _X, real_t _R0, int _ncrit, int _nspawn, logger::Timer & _timer, int _level=0, bool _direction=false) :
       octNode(_octNode), bodies(_bodies), buffer(_buffer),      // Initialize variables
       begin(_begin), end(_end), binNode(_binNode), X(_X), R0(_R0),
-      ncrit(_ncrit), nspawn(_nspawn), level(_level), direction(_direction) {}
+      ncrit(_ncrit), nspawn(_nspawn), timer(_timer), level(_level), direction(_direction) {}
     //! Create an octree node
     OctreeNode * makeOctNode(int begin, int end, vec3 X, bool nochild) const {
       OctreeNode * octNode = new OctreeNode();                  // Allocate memory for single node
@@ -162,6 +163,7 @@ private:
       return (4 * n) / nspawn;                                  // Conservative estimate of number of binary tree nodes
     }
     void operator() () {                                        // Overload operator()
+      double tic = logger::get_time();
       assert(getMaxBinNode(end - begin) <= binNode->END - binNode->BEGIN);// Bounds checking for node range
       if (begin == end) {                                       //  If no bodies are left
 	octNode = NULL;                                         //   Assign null pointer
@@ -174,15 +176,24 @@ private:
 	return;                                                 //   End buildNodes()
       }                                                         //  End if for number of bodies
       octNode = makeOctNode(begin, end, X, false);              //  Create an octree node with child nodes
+      double toc = logger::get_time();
+      timer["Make node"] += toc - tic;
       CountBodies countBodies(bodies, begin, end, X, binNode, nspawn);// Instantiate recursive functor
       countBodies();                                            //  Count bodies in each octant using binary recursion
+      tic = logger::get_time();
+      timer["Count bodies"] += tic - toc;
       ivec8 octantOffset = exclusiveScan(binNode->NBODY, begin);//  Exclusive scan to obtain offset from octant count
+      toc = logger::get_time();
+      timer["Exclusive scan"] += toc - tic; 
       MoveBodies moveBodies(bodies, buffer, begin, end, binNode, octantOffset, X);// Instantiate recursive functor
       moveBodies();                                             //  Sort bodies according to octant
+      tic = logger::get_time();
+      timer["Move bodies"] += tic - toc;
       BinaryTreeNode * binNodeOffset = binNode->BEGIN;          //  Initialize pointer offset for binary tree nodes
       mk_task_group;                                            //  Initialize tasks
       BinaryTreeNode binNodeChild[8];                           //  Allocate new root for this branch
       for (int i=0; i<8; i++) {                                 //  Loop over children
+	toc = logger::get_time();
 	int maxBinNode = getMaxBinNode(binNode->NBODY[i]);      //   Get maximum number of binary tree nodes
 	assert(binNodeOffset + maxBinNode <= binNode->END);     //    Bounds checking for node count
 	vec3 Xchild = X;                                        //    Initialize center coordinates of child node
@@ -192,9 +203,11 @@ private:
 	}                                                       //    End loop over dimensions
 	binNodeChild[i].BEGIN = binNodeOffset;                  //    Assign first memory address from offset
 	binNodeChild[i].END = binNodeOffset + maxBinNode;       //    Keep track of last memory address
+	tic = logger::get_time();
+	timer["Get node range"] += tic - toc;
 	BuildNodes buildNodes(octNode->CHILD[i], buffer, bodies,//    Instantiate recursive functor
 			      octantOffset[i], octantOffset[i] + binNode->NBODY[i],
-			      &binNodeChild[i], Xchild, R0, ncrit, nspawn, level+1, !direction);
+			      &binNodeChild[i], Xchild, R0, ncrit, nspawn, timer, level+1, !direction);
 	create_taskc(buildNodes);                               //    Create new task for recursive call
 	binNodeOffset += maxBinNode;                            //   Increment offset for binNode memory address
       }                                                         //  End loop over children
@@ -305,10 +318,26 @@ private:
     int maxBinNode = (4 * bodies.size()) / nspawn;              // Get maximum size of binary tree
     binNode->BEGIN = new BinaryTreeNode[maxBinNode];            // Allocate array for binary tree nodes
     binNode->END = binNode->BEGIN + maxBinNode;                 // Set end pointer
+    logger::Timer timer;
     BuildNodes buildNodes(N0, bodies, buffer, 0, bodies.size(),
-			  binNode, box.X, box.R, ncrit, nspawn);// Instantiate recursive functor
+			  binNode, box.X, box.R, ncrit, nspawn, timer);// Instantiate recursive functor
     buildNodes();                                               // Recursively build octree nodes
     delete[] binNode->BEGIN;                                    // Deallocate binary tree array
+    logger::printTitle("Grow tree");
+    std::cout << std::setw(logger::stringLength) << std::left
+	      << "Make node" << " : " << timer["Make node"] << " s\n"
+	      << std::setw(logger::stringLength) << std::left
+	      << "Count bodies" << " : " << timer["Count bodies"] << " s\n"
+	      << std::setw(logger::stringLength) << std::left
+	      << "Exclusive scan" << " : " << timer["Exclusive scan"] << " s\n"
+	      << std::setw(logger::stringLength) << std::left
+	      << "Move bodies" << " : " << timer["Move bodies"] << " s\n"
+	      << std::setw(logger::stringLength) << std::left
+	      << "Get node range" << " : " << timer["Get node range"] << " s\n"
+	      << std::setw(logger::stringLength) << std::left
+	      << "Total grow tree" << " : " << timer["Make node"] +
+      timer["Count bodies"] + timer["Exclusive scan"] +
+      timer["Move bodies"] + timer["Get node range"] << " s" << std::endl;
     logger::stopTimer("Grow tree");                             // Stop timer
   }
 
