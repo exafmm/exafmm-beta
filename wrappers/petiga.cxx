@@ -250,6 +250,39 @@ extern "C" void FMM_B2V(double * vv, double * vb, bool verbose) {
   }
 }
 
+extern "C" void FMM_V2V(double * vi, double * vv, bool verbose) {
+  args->verbose = verbose;
+  log_initialize();
+  for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
+    B->SRC    = vv[B->IBODY];
+    B->TRG    = 0;
+  }
+  upDownPass->upwardPass(vcells);
+  treeMPI->setLET(vcells, cycle);
+  Cells jcells = vcells;
+  treeMPI->commBodies();
+  treeMPI->commCells();
+  traversal->initWeight(vcells);
+  traversal->dualTreeTraversal(vcells, jcells, cycle, args->mutual);
+  if (args->graft) {
+    treeMPI->linkLET();
+    Bodies gbodies = treeMPI->root2body();
+    jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
+    treeMPI->attachRoot(jcells);
+    traversal->dualTreeTraversal(vcells, jcells, cycle, false);
+  } else {
+    for (int irank=0; irank<baseMPI->mpisize; irank++) {
+      treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+      traversal->dualTreeTraversal(vcells, jcells, cycle, false);
+    }
+  }
+  upDownPass->downwardPass(vcells);
+  log_finalize();
+  for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
+    vi[B->IBODY] += B->TRG[0];
+  }
+}
+
 extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * vi,
 		       int nj, double * xj, double * yj, double * zj, double * vj) {
   Bodies bodies(ni);

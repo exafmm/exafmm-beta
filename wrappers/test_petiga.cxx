@@ -16,6 +16,7 @@ extern "C" void FMM_BuildTree();
 extern "C" void FMM_B2B(double * vi, double * vb, bool verbose);
 extern "C" void FMM_V2B(double * vb, double * vv, bool verbose);
 extern "C" void FMM_B2V(double * vv, double * vb, bool verbose);
+extern "C" void FMM_V2V(double * vi, double * vv, bool verbose);
 extern "C" void Direct(int nb, double * xb, double * yb, double * zb, double * vb,
 		       int nv, double * xv, double * yv, double * zv, double * vv);
 
@@ -103,6 +104,15 @@ int main(int argc, char ** argv) {
   FMM_B2V(vv, vb, 1);
   Direct(100, xv, yv, zv, vd, nb, xb, yb, zb, vb);
   Validate(100, vv, vd, mpirank == 0);
+
+  for (int i=0; i<nv; i++) {
+    vv[i] = 1.0 / nv;
+    vi[i] = 0;
+    vd[i] = 0;
+  }
+  FMM_V2V(vi, vv, 1);
+  Direct(100, xv, yv, zv, vd, nv, xv, yv, zv, vv);
+  Validate(100, vi, vd, mpirank == 0);
 
   FMM_Finalize();
   MPI_Finalize();
