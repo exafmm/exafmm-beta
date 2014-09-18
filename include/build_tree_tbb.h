@@ -323,6 +323,7 @@ private:
 			  binNode, box.X, box.R, ncrit, nspawn, timer);// Instantiate recursive functor
     buildNodes();                                               // Recursively build octree nodes
     delete[] binNode->BEGIN;                                    // Deallocate binary tree array
+#if 0
     logger::printTitle("Grow tree");
     std::cout << std::setw(logger::stringLength) << std::left
 	      << "Make node" << " : " << timer["Make node"] << " s\n"
@@ -338,6 +339,7 @@ private:
 	      << "Total grow tree" << " : " << timer["Make node"] +
       timer["Count bodies"] + timer["Exclusive scan"] +
       timer["Move bodies"] + timer["Get node range"] << " s" << std::endl;
+#endif
     logger::stopTimer("Grow tree");                             // Stop timer
   }
 

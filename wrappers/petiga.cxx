@@ -22,6 +22,8 @@ UpDownPass * upDownPass;
 Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
+Bodies bbodies;
+Bodies vbodies;
 
 extern "C" void FMM_Init(double eps2, int ncrit, int threads,
 			 int nb, double * xb, double * yb, double * zb, double * vb,
@@ -52,23 +54,21 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
   args->distribution = "external";
   args->verbose &= baseMPI->mpirank == 0;
   logger::verbose = args->verbose;
-  Bodies bbodies(nb);
+  bbodies.resize(nb);
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B-bbodies.begin();
     B->X[0] = xb[i];
     B->X[1] = yb[i];
     B->X[2] = zb[i];
     B->SRC  = vb[i];
-    B->IBODY = i;
   }
-  Bodies vbodies(nv);
+  vbodies.resize(nv);
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
     int i = B-vbodies.begin();
     B->X[0] = xv[i];
     B->X[1] = yv[i];
     B->X[2] = zv[i];
     B->SRC  = vv[i];
-    B->IBODY = i;
   }
 }
 
@@ -87,22 +87,6 @@ extern "C" void FMM_Finalize() {
 extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, double * vb,
 			      int & nv, double * xv, double * yv, double * zv, double * vv) {
   logger::printTitle("Partition Profiling");
-  Bodies bbodies(nb);
-  for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-    int i = B-bbodies.begin();
-    B->X[0] = xb[i];
-    B->X[1] = yb[i];
-    B->X[2] = zb[i];
-    B->SRC  = vb[i];
-  }
-  Bodies vbodies(nv);
-  for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
-    int i = B-vbodies.begin();
-    B->X[0] = xv[i];
-    B->X[1] = yv[i];
-    B->X[2] = zv[i];
-    B->SRC  = vv[i];
-  }
   localBounds = boundBox->getBounds(bbodies);
   localBounds = boundBox->getBounds(vbodies,localBounds);
   globalBounds = baseMPI->allreduceBounds(localBounds);
@@ -111,10 +95,6 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
   bbodies = treeMPI->commBodies(bbodies);
   partition->octsection(vbodies,globalBounds);
   vbodies = treeMPI->commBodies(vbodies);
-  Cells bcells = localTree->buildTree(bbodies, buffer, localBounds);
-  upDownPass->upwardPass(bcells);
-  Cells vcells = localTree->buildTree(vbodies, buffer, localBounds);
-  upDownPass->upwardPass(vcells);
 
   nb = bbodies.size();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
@@ -123,6 +103,7 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
     yb[i] = B->X[1];
     zb[i] = B->X[2];
     vb[i] = B->SRC;
+    B->IBODY = i;
   }
   nv = vbodies.size();
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
@@ -131,6 +112,7 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
     yv[i] = B->X[1];
     zv[i] = B->X[2];
     vv[i] = B->SRC;
+    B->IBODY = i;
   }
 }
 
@@ -142,28 +124,18 @@ extern "C" void FMM_Laplace(int nb, double * xb, double * yb, double * zb, doubl
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
-  Bodies bbodies(nb);
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B-bbodies.begin();
-    B->X[0]   = xb[i];
-    B->X[1]   = yb[i];
-    B->X[2]   = zb[i];
     B->SRC    = 1;
+    B->TRG    = 0;
     B->TRG[0] = vb[i];
-    B->TRG[1] = 0;
-    B->TRG[2] = 0;
-    B->TRG[3] = 0;
-    B->IBODY = i;
+    B->IBODY  = i;
   }
-  Bodies vbodies(nv);
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
     int i = B-vbodies.begin();
-    B->X[0]   = xv[i];
-    B->X[1]   = yv[i];
-    B->X[2]   = zv[i];
     B->SRC    = vv[i];
     B->TRG    = 0;
-    B->IBODY = i;
+    B->IBODY  = i;
   }
   Cells bcells = localTree->buildTree(bbodies, buffer, localBounds);
   upDownPass->upwardPass(bcells);
