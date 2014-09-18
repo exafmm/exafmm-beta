@@ -10,17 +10,17 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
                          int nb, double * xb, double * yb, double * zb, double * vb,
                          int nv, double * xv, double * yv, double * zv, double * vv);
 extern "C" void FMM_Finalize();
-extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, double * vi,
-			      int & nj, double * xj, double * yj, double * zj, double * vj);
+extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, double * vb,
+			      int & nv, double * xv, double * yv, double * zv, double * vv);
 extern "C" void FMM_BuildTree();
-extern "C" void FMM_V2B(double * vi, double * vj, bool verbose);
-extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * vi,
-		       int nj, double * xj, double * yj, double * zj, double * vj);
+extern "C" void FMM_V2B(double * vb, double * vv, bool verbose);
+extern "C" void Direct(int nb, double * xb, double * yb, double * zb, double * vb,
+		       int nv, double * xv, double * yv, double * zv, double * vv);
 
-void Validate(int n, double * vi, double * vd, int verbose) {
+void Validate(int n, double * vb, double * vd, int verbose) {
   double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   for (int i=0; i<n; i++) {
-    diff1 += (vi[i] - vd[i]) * (vi[i] - vd[i]);
+    diff1 += (vb[i] - vd[i]) * (vb[i] - vd[i]);
     norm1 += vd[i] * vd[i];
   }
   MPI_Reduce(&diff1, &diff2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -33,60 +33,62 @@ void Validate(int n, double * vi, double * vd, int verbose) {
 }
 
 int main(int argc, char ** argv) {
-  const int Nmax = 1000000;
+  const int Nmax = 10000000;
   const int ncrit = 16;
   const int threads = 16;
   const double eps2 = 0.0;
-  int ni = 500;
-  int nj = 1000;
-  double * xi = new double [Nmax];
-  double * yi = new double [Nmax];
-  double * zi = new double [Nmax];
+  double * xb = new double [Nmax];
+  double * yb = new double [Nmax];
+  double * zb = new double [Nmax];
+  double * vb = new double [Nmax];
+  double * xv = new double [Nmax];
+  double * yv = new double [Nmax];
+  double * zv = new double [Nmax];
+  double * vv = new double [Nmax];
+  double * vd = new double [Nmax];
   double * vi = new double [Nmax];
-  double * xj = new double [Nmax];
-  double * yj = new double [Nmax];
-  double * zj = new double [Nmax];
-  double * vj = new double [Nmax];
-  double * v2 = new double [Nmax];
 
   int mpisize, mpirank;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
   MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+  int nb = 50000 / mpisize;
+  int nv = 100000 / mpisize;
 
   srand48(mpirank);
-  for (int i=0; i<ni; i++) {
-    xi[i] = drand48() - .5;
-    yi[i] = drand48() - .5;
-    zi[i] = drand48() - .5;
-    vi[i] = 0;
+  for (int i=0; i<nb; i++) {
+    xb[i] = drand48() - .5;
+    yb[i] = drand48() - .5;
+    zb[i] = drand48() - .5;
+    vb[i] = 0;
   }
-  for (int i=0; i<nj; i++) {
-    xj[i] = drand48() - .5;
-    yj[i] = drand48() - .5;
-    zj[i] = drand48() - .5;
-    vj[i] = 1. / nj;
+  for (int i=0; i<nv; i++) {
+    xv[i] = drand48() - .5;
+    yv[i] = drand48() - .5;
+    zv[i] = drand48() - .5;
+    vv[i] = 1. / nv;
   }
 
-  FMM_Init(eps2, ncrit, threads, ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
-  FMM_Partition(ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
+  FMM_Init(eps2, ncrit, threads, nb, xb, yb, zb, vb, nv, xv, yv, zv, vv);
+  FMM_Partition(nb, xb, yb, zb, vb, nv, xv, yv, zv, vv);
   FMM_BuildTree();
-  FMM_V2B(vi, vj, true);
-  for (int i=0; i<ni; i++) {
-    v2[i] = 0;
+  FMM_V2B(vb, vv, true);
+  for (int i=0; i<nb; i++) {
+    vd[i] = 0;
   }
-  Direct(ni, xi, yi, zi, v2, nj, xj, yj, zj, vj);
-  Validate(100, vi, v2, mpirank == 0);
+  Direct(nb, xb, yb, zb, vd, nv, xv, yv, zv, vv);
+  Validate(100, vb, vd, mpirank == 0);
 
   FMM_Finalize();
   MPI_Finalize();
-  delete[] xi;
-  delete[] yi;
-  delete[] zi;
+  delete[] xb;
+  delete[] yb;
+  delete[] zb;
+  delete[] vb;
+  delete[] xv;
+  delete[] yv;
+  delete[] zv;
+  delete[] vv;
+  delete[] vd;
   delete[] vi;
-  delete[] xj;
-  delete[] yj;
-  delete[] zj;
-  delete[] vj;
-  delete[] v2;
 }
