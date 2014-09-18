@@ -25,6 +25,23 @@ Bounds globalBounds;
 Bodies bbodies;
 Bodies vbodies;
 
+void log_initialize() {
+  args->verbose &= baseMPI->mpirank == 0;
+  logger::verbose = args->verbose;
+  logger::printTitle("FMM Parameters");
+  args->print(logger::stringLength, P);
+  logger::printTitle("FMM Profiling");
+  logger::startTimer("Total FMM");
+  logger::startPAPI();
+}
+
+void log_finalize() {
+  logger::stopPAPI();
+  logger::stopTimer("Total FMM");
+  logger::printTitle("Total runtime");
+  logger::printTime("Total FMM");
+}
+
 extern "C" void FMM_Init(double eps2, int ncrit, int threads,
 			 int nb, double * xb, double * yb, double * zb, double * vb,
 			 int nv, double * xv, double * yv, double * zv, double * vv) {
@@ -116,31 +133,24 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
   }
 }
 
-extern "C" void FMM_Laplace(int nb, double * xb, double * yb, double * zb, double * vb,
-			    int nv, double * xv, double * yv, double * zv, double * vv) {
-  args->numBodies = nb;
-  logger::printTitle("FMM Parameters");
-  args->print(logger::stringLength, P);
-  logger::printTitle("FMM Profiling");
-  logger::startTimer("Total FMM");
-  logger::startPAPI();
+extern "C" void FMM_Laplace(double * vb, double * vv) {
+  log_initialize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-    int i = B-bbodies.begin();
     B->SRC    = 1;
     B->TRG    = 0;
-    B->TRG[0] = vb[i];
-    B->IBODY  = i;
   }
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
     int i = B-vbodies.begin();
     B->SRC    = vv[i];
     B->TRG    = 0;
-    B->IBODY  = i;
   }
-  Cells bcells = localTree->buildTree(bbodies, buffer, localBounds);
+  Bounds localBoundsB = boundBox->getBounds(bbodies);
+  Cells bcells = localTree->buildTree(bbodies, buffer, localBoundsB);
   upDownPass->upwardPass(bcells);
-  Cells vcells = localTree->buildTree(vbodies, buffer, localBounds);
+  Bounds localBoundsV = boundBox->getBounds(vbodies);
+  Cells vcells = localTree->buildTree(vbodies, buffer, localBoundsV);
   upDownPass->upwardPass(vcells);
+  Bounds localBounds = boundBox->getBounds(vbodies, localBoundsB);
   treeMPI->allgatherBounds(localBounds);
   treeMPI->setLET(vcells, cycle);
   treeMPI->commBodies();
@@ -160,13 +170,10 @@ extern "C" void FMM_Laplace(int nb, double * xb, double * yb, double * zb, doubl
     }
   }
   upDownPass->downwardPass(bcells);
-  logger::stopPAPI();
-  logger::stopTimer("Total FMM");
-  logger::printTitle("Total runtime");
-  logger::printTime("Total FMM");
+  log_finalize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
     int i = B->IBODY;
-    vb[i] = B->TRG[0];
+    vb[i] += B->TRG[0];
   }
 }
 

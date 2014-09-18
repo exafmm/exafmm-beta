@@ -12,8 +12,7 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
 extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, double * vi,
 			      int & nj, double * xj, double * yj, double * zj, double * vj);
-extern "C" void FMM_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
-			    int nj, double * xj, double * yj, double * zj, double * vj);
+extern "C" void FMM_Laplace(double * vi, double * vj);
 extern "C" void Direct_Laplace(int ni, double * xi, double * yi, double * zi, double * vi,
 			       int nj, double * xj, double * yj, double * zj, double * vj);
 
@@ -56,7 +55,7 @@ int main(int argc, char ** argv) {
 
   FMM_Init(eps2, ncrit, threads, ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
   FMM_Partition(ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
-  FMM_Laplace(ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
+  FMM_Laplace(vi, vj);
   for (int i=0; i<ni; i++) {
     v2[i] = 0;
   }
