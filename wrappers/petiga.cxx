@@ -141,7 +141,7 @@ extern "C" void FMM_BuildTree() {
   vcells = localTree->buildTree(vbodies, buffer, localBoundsV);
 }
 
-extern "C" void FMM(double * vb, double * vv, bool verbose) {
+extern "C" void FMM_V2B(double * vb, double * vv, bool verbose) {
   args->verbose = verbose;
   log_initialize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {

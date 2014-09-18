@@ -13,9 +13,24 @@ extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & ni, double * xi, double * yi, double * zi, double * vi,
 			      int & nj, double * xj, double * yj, double * zj, double * vj);
 extern "C" void FMM_BuildTree();
-extern "C" void FMM(double * vi, double * vj, bool verbose);
+extern "C" void FMM_V2B(double * vi, double * vj, bool verbose);
 extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * vi,
 		       int nj, double * xj, double * yj, double * zj, double * vj);
+
+void Validate(int n, double * vi, double * vd, int verbose) {
+  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
+  for (int i=0; i<n; i++) {
+    diff1 += (vi[i] - vd[i]) * (vi[i] - vd[i]);
+    norm1 += vd[i] * vd[i];
+  }
+  MPI_Reduce(&diff1, &diff2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm1, &norm2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  if (verbose) {
+    std::cout << "--- FMM vs. direct ---------------" << std::endl;
+    std::cout << std::setw(20) << std::left << std::scientific
+              << "Rel. L2 Error" << " : " << std::sqrt(diff2/norm2) << std::endl;
+  }
+}
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
@@ -24,7 +39,6 @@ int main(int argc, char ** argv) {
   const double eps2 = 0.0;
   int ni = 500;
   int nj = 1000;
-  int stringLength = 20;
   double * xi = new double [Nmax];
   double * yi = new double [Nmax];
   double * zi = new double [Nmax];
@@ -57,25 +71,15 @@ int main(int argc, char ** argv) {
   FMM_Init(eps2, ncrit, threads, ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
   FMM_Partition(ni, xi, yi, zi, vi, nj, xj, yj, zj, vj);
   FMM_BuildTree();
-  FMM(vi, vj, true);
+  FMM_V2B(vi, vj, true);
   for (int i=0; i<ni; i++) {
     v2[i] = 0;
   }
   Direct(ni, xi, yi, zi, v2, nj, xj, yj, zj, vj);
-  double potDif = 0, potNrm = 0;
-  for (int i=0; i<ni; i++) {
-    potDif += (vi[i] - v2[i]) * (vi[i] - v2[i]);
-    potNrm += v2[i] * v2[i];
-  }
-  double potDifGlob, potNrmGlob;
-  MPI_Reduce(&potDif, &potDifGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&potNrm, &potNrmGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  if (mpirank == 0) {
-    std::cout << "--- FMM vs. Direct ---------------" << std::endl;
-    std::cout << std::setw(stringLength) << std::left << std::scientific
-  	      << "Rel. L2 Error (pot)" << " : " << std::sqrt(potDifGlob/potNrmGlob) << std::endl;
-  }
+  Validate(100, vi, v2, mpirank == 0);
 
+  FMM_Finalize();
+  MPI_Finalize();
   delete[] xi;
   delete[] yi;
   delete[] zi;
@@ -85,6 +89,4 @@ int main(int argc, char ** argv) {
   delete[] zj;
   delete[] vj;
   delete[] v2;
-  FMM_Finalize();
-  MPI_Finalize();
 }
