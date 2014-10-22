@@ -102,6 +102,9 @@ private:
 
 protected:
   inline void getIndex(int i, int *ix, real diameter) const {
+#if NOWRAP
+    i = (i / 3) * 3;
+#endif
     for_3d ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
   }
 

@@ -2,6 +2,7 @@ include ../Makefile.include
 
 #LFLAGS += -DMASS
 LFLAGS += -DIneJ
+LFLAGS += -DNOWRAP
 
 all:
 	make charmm

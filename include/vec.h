@@ -1,6 +1,5 @@
 #ifndef vec_h
 #define vec_h
-#include <cassert>
 #include <ostream>
 #define NEWTON 1
 //! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics
@@ -192,7 +191,6 @@ public:
     return temp;
   }
   friend int wrap(vec & v, const T & w) {                       // Wrap around periodic boundary
-    assert( N <= 16 );
     int iw = 0;
     for (int i=0; i<N; i++) {
       if(v[i] < -w / 2) {
@@ -207,7 +205,6 @@ public:
     return iw;
   }
   friend void unwrap(vec & v, const T & w, const int & iw) {    // Undo wrap around periodic boundary
-    assert( N <=16 );
     for (int i=0; i<N; i++) {
       if((iw >> i) & 1) v[i] += (v[i] > 0 ? -w : w);
     }
@@ -486,7 +483,6 @@ public:
   }
   __host__ __device__ __forceinline__
   friend int wrap(vec & v, const T & w) {                       // Wrap around periodic boundary
-    assert( N <= 16 );
     int iw = 0;
     for (int i=0; i<N; i++) {
       if(v[i] < -w / 2) {
@@ -502,7 +498,6 @@ public:
   }
   __host__ __device__ __forceinline__
   friend void unwrap(vec & v, const T & w, const int & iw) {    // Undo wrap around periodic boundary
-    assert( N <=16 );
     for (int i=0; i<N; i++) {
       if((iw >> i) & 1) v[i] += (v[i] > 0 ? -w : w);
     }

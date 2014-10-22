@@ -169,6 +169,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 
   Bodies bodies(args->numBodies);
   B_iter B = bodies.begin();
+  int iwrap = 0;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       B->X[0] = x[3*i+0];
@@ -176,7 +177,12 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
       B->X[2] = x[3*i+2];
       B->SRC = q[i];
       B->TRG = 0;
-      int iwrap = wrap(B->X, cycle);
+#if NOWRAP
+      if(i % 3 == 0) iwrap = wrap(B->X, cycle);
+      else unwrap(B->X, cycle, iwrap);
+#else
+      iwrap = wrap(B->X, cycle);
+#endif
       B->IBODY = i | (iwrap << shift);
       B++;
     }
