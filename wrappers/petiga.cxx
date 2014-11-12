@@ -78,6 +78,7 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
     B->X[1] = yb[i];
     B->X[2] = zb[i];
     B->SRC  = vb[i];
+    B->WEIGHT = 1;
   }
   vbodies.resize(nv);
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
@@ -86,6 +87,7 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
     B->X[1] = yv[i];
     B->X[2] = zv[i];
     B->SRC  = vv[i];
+    B->WEIGHT = 1;
   }
 }
 
@@ -108,9 +110,9 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
   localBounds = boundBox->getBounds(vbodies, localBounds);
   globalBounds = baseMPI->allreduceBounds(localBounds);
   cycle = max(globalBounds.Xmax - globalBounds.Xmin);
-  localBounds = partition->octsection(bbodies, globalBounds);
+  partition->bisection(bbodies, globalBounds);
   bbodies = treeMPI->commBodies(bbodies);
-  partition->octsection(vbodies, globalBounds);
+  partition->bisection(vbodies, globalBounds);
   vbodies = treeMPI->commBodies(vbodies);
   treeMPI->allgatherBounds(localBounds);
 
