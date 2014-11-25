@@ -734,8 +734,8 @@ program main
   potNrmGlob2 = potSumGlob2 * potSumGlob2
   if (mpirank == 0) then
      print"(a)",'--- Coulomb FMM vs. Ewald -------'
-     print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
-     print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
+     print"(a,f9.6)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
+     print"(a,f9.6)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
      print"(a,f12.4)",'Energy (FMM)         : ', potSumGlob*0.5
      print"(a,f12.4)",'Energy (Ewald)       : ', potSumGlob2*0.5
      print"(a,f12.4)",'GRMS (FMM)           : ', sqrt(accNrmGlob/3.0/nglobal)
@@ -792,8 +792,8 @@ program main
   potNrmGlob2 = potSumGlob2 * potSumGlob2
   if (mpirank == 0) then
      print"(a)",'--- VdW FMM vs. Direct ----------'
-     print"(a,f9.7)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
-     print"(a,f9.7)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
+     print"(a,f9.6)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
+     print"(a,f9.6)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
      print"(a,f12.4)",'Energy (FMM)         : ', potSumGlob*0.5
      print"(a,f12.4)",'Energy (Direct)      : ', potSumGlob2*0.5
      print"(a,f12.4)",'GRMS (FMM)           : ', sqrt(accNrmGlob/3.0/nglobal)

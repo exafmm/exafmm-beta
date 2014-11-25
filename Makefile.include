@@ -16,7 +16,8 @@ DEVICE	= CPU
 #DEVICE	= GPU (not integrated)
 
 ### choose C++ compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops -fopenmp # GCC
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops -fopenmp # GCC
+CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel
 #CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
 #CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
 #CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
@@ -26,8 +27,8 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops -fopenm
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 ### choose fortran compiler
-FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp -lmpi_cxx # gfortran
-#FC = mpif90 -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp # Intel
+#FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp -lmpi_cxx # gfortran
+FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
 
 ### Base flags
 CXX	+= -I../include -I../uniform
