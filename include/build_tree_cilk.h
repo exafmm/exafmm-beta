@@ -136,16 +136,19 @@ private:
     return box;
   }
 
-  void getKey(Bodies & bodies, Bounds & bounds, uint64_t * keys, int * index) {
+  void getKey(int numBodies, float * X, vec3 & Xmin, vec3 & Xmax, uint64_t * keys) {
     const int nbins = 1 << maxlevel;
+    Bounds bounds;
+    bounds.Xmin = Xmin;
+    bounds.Xmax = Xmax;
     Box box = bounds2box(bounds);
+    Xmin = bounds.Xmin;
+    Xmax = bounds.Xmax;
     float d = 2 * box.R / nbins;
-    cilk_for (int b=0; b<int(bodies.size()); b++) {
-      B_iter B = bodies.begin() + b;
-      vec3 X = B->X;
-      int ix = floor((X[0] - bounds.Xmin[0]) / d);
-      int iy = floor((X[1] - bounds.Xmin[1]) / d);
-      int iz = floor((X[2] - bounds.Xmin[2]) / d);
+    cilk_for (int b=0; b<numBodies; b++) {
+      int ix = floor((X[12*b+0] - Xmin[0]) / d);
+      int iy = floor((X[12*b+1] - Xmin[1]) / d);
+      int iz = floor((X[12*b+2] - Xmin[2]) / d);
       uint64_t key =
         morton256_x[(ix >> 16) & 0xFF] |
         morton256_y[(iy >> 16) & 0xFF] |
@@ -158,9 +161,7 @@ private:
         morton256_x[ix & 0xFF] |
         morton256_y[iy & 0xFF] |
         morton256_z[iz & 0xFF];
-      B->ICELL = key;
       keys[b] = key;
-      index[b] = b;
     }
   }
 
@@ -213,8 +214,8 @@ private:
     }
   }
 
-  void radixSort(uint64_t * keys, uint64_t * buffer, int * permutation,
-		 int * index, int numBodies) {
+  void radixSort(int numBodies, uint64_t * keys, uint64_t * buffer,
+		 int * permutation, int * index) {
     const int bitShift = 3 * (maxlevel - 2);
     if (numBodies<=NCRIT || bitShift<0) {
       permutation[0:numBodies] = index[0:numBodies];
@@ -263,21 +264,23 @@ private:
     cilk_sync;
   }
 
-  void permuteBlock(Body * bodies, Bodies & buffer, int * index, int numBlock) {
+  void permuteBlock(float * bodies, float * buffer, int * index, int numBlock) {
 #pragma ivdep
     for (int i=0; i<numBlock; i++) {
-      bodies[i] = buffer[index[i]];
+      for (int j=0; j<12; j++) {
+	bodies[12*i+j] = buffer[12*index[i]+j];
+      }
     }
   }
 
-  void permute(Bodies & bodies, Bodies & buffer, int * index) {
-    int numBlock = bodies.size() / BLOCK_SIZE;
+  void permute(int numBodies, float * bodies, float * buffer, int * index) {
+    int numBlock = numBodies / BLOCK_SIZE;
     int offset = 0;
     for (int i=0; i<BLOCK_SIZE-1; i++) {
-      cilk_spawn permuteBlock(&bodies[offset], buffer, &index[offset], numBlock);
+      cilk_spawn permuteBlock(&bodies[12*offset], buffer, &index[offset], numBlock);
       offset += numBlock;
     }
-    permuteBlock(&bodies[offset], buffer, &index[offset], bodies.size()-offset);
+    permuteBlock(&bodies[12*offset], buffer, &index[offset], numBodies-offset);
   }
 
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
@@ -375,26 +378,52 @@ public:
     uint64_t * keys_buffer = new uint64_t [numBodies];
     int * index = new int [numBodies];
     int * permutation = new int [numBodies];
+    float * X = new float [12*numBodies];
+    float * Y = new float [12*numBodies];
+
+    int b=0;
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+      X[12*b+0] = B->X[0];
+      X[12*b+1] = B->X[1];
+      X[12*b+2] = B->X[2];
+      X[12*b+3] = B->SRC;
+      Y[12*b+0] = B->X[0];
+      Y[12*b+1] = B->X[1];
+      Y[12*b+2] = B->X[2];
+      Y[12*b+3] = B->SRC;
+      index[b] = b;
+    }
+    vec3 Xmin = bounds.Xmin;
+    vec3 Xmax = bounds.Xmax;
 
     logger::startTimer("Grow tree");
     logger::startTimer("Morton key");
-    getKey(bodies, bounds, keys, index);
+    getKey(numBodies, X, Xmin, Xmax, keys);
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-    radixSort(keys, keys_buffer, permutation, index, numBodies);
+    radixSort(numBodies, keys, keys_buffer, permutation, index);
     logger::stopTimer("Radix sort");
     logger::stopTimer("Grow tree",0);
 
-    logger::startTimer("Copy buffer");
-    buffer = bodies;
-    logger::stopTimer("Copy buffer");
-
     logger::startTimer("Grow tree");
     logger::startTimer("Permutation");
-    permute(bodies, buffer, permutation);
+    permute(numBodies, X, Y, permutation);
     logger::stopTimer("Permutation");
     logger::stopTimer("Grow tree",0);
+
+    b=0;
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+      B->X[0] = X[12*b+0];
+      B->X[1] = X[12*b+1];
+      B->X[2] = X[12*b+2];
+      B->SRC  = X[12*b+3];
+      B->IBODY = 0;
+      B->IRANK = 0;
+      B->ICELL = keys_buffer[b];
+      B->WEIGHT = 0;
+      B->TRG = 0;
+    }
 
     Cells cells;
 #if 1
@@ -417,6 +446,8 @@ public:
     delete[] keys_buffer;
     delete[] index;
     delete[] permutation;
+    delete[] X;
+    delete[] Y;
     return cells;
   }
 
