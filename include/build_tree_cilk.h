@@ -136,7 +136,7 @@ private:
     return box;
   }
 
-  void getKey(int numBodies, float * X, vec3 & Xmin, vec3 & Xmax, uint64_t * keys) {
+  void getKey(int numBodies, float * X, vec3 & Xmin, vec3 & Xmax, uint64_t * keys, int maxlevel) {
     const int nbins = 1 << maxlevel;
     Bounds bounds;
     bounds.Xmin = Xmin;
@@ -215,7 +215,7 @@ private:
   }
 
   void radixSort(int numBodies, uint64_t * keys, uint64_t * buffer,
-		 int * permutation, int * index) {
+		 int * permutation, int * index, int maxlevel) {
     const int bitShift = 3 * (maxlevel - 2);
     if (numBodies<=NCRIT || bitShift<0) {
       permutation[0:numBodies] = index[0:numBodies];
@@ -398,11 +398,11 @@ public:
 
     logger::startTimer("Grow tree");
     logger::startTimer("Morton key");
-    getKey(numBodies, X, Xmin, Xmax, keys);
+    getKey(numBodies, X, Xmin, Xmax, keys, maxlevel);
     logger::stopTimer("Morton key");
 
     logger::startTimer("Radix sort");
-    radixSort(numBodies, keys, keys_buffer, permutation, index);
+    radixSort(numBodies, keys, keys_buffer, permutation, index, maxlevel);
     logger::stopTimer("Radix sort");
     logger::stopTimer("Grow tree",0);
 
