@@ -55,12 +55,14 @@ LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org
 ### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -DDAG_RECORDER=2 -ldr
 
-
 ### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
 #LFLAGS	+= -DPAPI -lpapi
 
 ### Trace flags : This tracing tool is part of ExaFMM
 #LFLAGS	+= -DTRACE
+
+### Tree building flags
+LFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
 
 ifeq ($(DEVICE),GPU)
 NVCC	= nvcc -use_fast_math -arch=sm_35 -I../include

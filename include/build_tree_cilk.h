@@ -114,175 +114,183 @@ static const int morton256_z[256] = {
     0x00924800, 0x00924804, 0x00924820, 0x00924824, 0x00924900, 0x00924904, 0x00924920, 0x00924924
 };
 
+Box bounds2box(Bounds & bounds) {
+  vec3 Xmin = bounds.Xmin;
+  vec3 Xmax = bounds.Xmax;
+  Box box;
+  for (int d=0; d<3; d++) box.X[d] = (Xmax[d] + Xmin[d]) / 2;
+  box.R = 0;
+  for (int d=0; d<3; d++) {
+    box.R = std::max(box.X[d] - Xmin[d], box.R);
+    box.R = std::max(Xmax[d] - box.X[d], box.R);
+  }
+  box.R *= 1.00001;
+  bounds.Xmin = box.X - box.R;
+  bounds.Xmax = box.X + box.R;
+  return box;
+}
+
+void getKey2(int numBodies, float * X, float * Xmin, float * Xmax, uint64_t * keys, int maxlevel);
+void getKey(int numBodies, float * X, float * Xmin, float * Xmax, uint64_t * keys, int maxlevel) {
+  const int nbins = 1 << maxlevel;
+  Bounds bounds;
+  for (int d=0; d<3; d++) {
+    bounds.Xmin[d] = Xmin[d];
+    bounds.Xmax[d] = Xmax[d];
+  }
+  Box box = bounds2box(bounds);
+  for (int d=0; d<3; d++) {
+    Xmin[d] = bounds.Xmin[d];
+    Xmax[d] = bounds.Xmax[d];
+  }
+  float D = 2 * box.R / nbins;
+  cilk_for (int b=0; b<numBodies; b++) {
+    int ix = floor((X[12*b+0] - Xmin[0]) / D);
+    int iy = floor((X[12*b+1] - Xmin[1]) / D);
+    int iz = floor((X[12*b+2] - Xmin[2]) / D);
+    uint64_t key =
+      morton256_x[(ix >> 16) & 0xFF] |
+      morton256_y[(iy >> 16) & 0xFF] |
+      morton256_z[(iz >> 16) & 0xFF];
+    key = key << 48 |
+      morton256_x[(ix >> 8) & 0xFF] |
+      morton256_y[(iy >> 8) & 0xFF] |
+      morton256_z[(iz >> 8) & 0xFF];
+    key = key << 24 |
+      morton256_x[ix & 0xFF] |
+      morton256_y[iy & 0xFF] |
+      morton256_z[iz & 0xFF];
+    keys[b] = key;
+  }
+}
+
+void relocate(uint64_t * keys, uint64_t * buffer, int * index, int * permutation,
+	      int * counter, int offset, int numBlock, int numBodies, int bitShift) {
+#pragma ivdep
+  for (int i=0; i<numBlock; i++) {
+    if (offset+i<numBodies) {
+      int b = (keys[i] >> bitShift) & 0x3F;
+      int c = counter[b];
+      buffer[c] = keys[i];
+      permutation[c] = index[i];
+      counter[b]++;
+    }
+  }
+}
+
+void recursion(uint64_t * keys, uint64_t * buffer, int * permutation,
+	       int * index, int numBodies, int bitShift) {
+  if (numBodies<=NCRIT || bitShift<0) {
+    permutation[0:numBodies] = index[0:numBodies];
+    return;
+  }
+
+  int counter[NBINS] = {0};
+#pragma ivdep
+  for (int i=0; i<numBodies; i++) {
+    int b = (keys[i] >> bitShift) & 0x3F;
+    counter[b]++;
+  }
+
+  int offset = 0;
+#pragma ivdep
+  for (int b=0; b<NBINS; b++) {
+    int size = counter[b];
+    counter[b] = offset;
+    offset += size;
+  }
+
+  relocate(keys, buffer, index, permutation, counter, 0, numBodies, numBodies, bitShift);
+  std::swap(index, permutation);
+  std::swap(keys, buffer);
+
+  offset = 0;
+  for (int b=0; b<NBINS; b++) {
+    int size = counter[b] - offset;
+    recursion(&keys[offset], &buffer[offset], &permutation[offset], &index[offset],
+	      size, bitShift-6);
+    offset += size;
+  }
+}
+
+void radixSort2(int numBodies, uint64_t * keys, uint64_t * buffer,
+	       int * permutation, int * index, int maxlevel);
+void radixSort(int numBodies, uint64_t * keys, uint64_t * buffer,
+	       int * permutation, int * index, int maxlevel) {
+  const int bitShift = 3 * (maxlevel - 2);
+  if (numBodies<=NCRIT || bitShift<0) {
+    permutation[0:numBodies] = index[0:numBodies];
+    return;
+  }
+  
+  int numBlock = (numBodies - 1) / BLOCK_SIZE + 1;
+  int counter[BLOCK_SIZE*NBINS] = {0};
+  cilk_for (int i=0; i<BLOCK_SIZE; i++) {
+#pragma ivdep
+    for (int j=0; j<numBlock; j++) {
+      if (i*numBlock+j < numBodies) {
+	int b = (keys[i*numBlock+j] >> bitShift) & 0x3F;
+	counter[i*NBINS+b]++;
+      }
+    }
+  }
+  
+  int offset = 0;
+  for (int b=0; b<NBINS; b++) {
+#pragma ivdep
+    for (int i=0; i<BLOCK_SIZE; i++) {
+      int size = counter[i*NBINS+b];
+      counter[i*NBINS+b] = offset;
+      offset += size;
+    }
+  }
+
+  for (int i=0; i<BLOCK_SIZE; i++) {
+    offset = i * numBlock;
+    cilk_spawn relocate(&keys[offset], buffer, &index[offset], permutation,
+			&counter[i*NBINS], offset, numBlock, numBodies, bitShift);
+  }
+  cilk_sync;
+  
+  std::swap(index, permutation);
+  std::swap(keys, buffer);
+  
+  offset = 0;
+  for (int b=0; b<NBINS; b++) {
+    int size = counter[(BLOCK_SIZE-1)*NBINS+b] - offset;
+    cilk_spawn recursion(&keys[offset], &buffer[offset],
+			 &permutation[offset], &index[offset], size, bitShift-6);
+    offset += size;
+  }
+  cilk_sync;
+}
+
+void permuteBlock(float * bodies, float * buffer, int * index, int numBlock) {
+#pragma ivdep
+  for (int i=0; i<numBlock; i++) {
+    for (int j=0; j<12; j++) {
+      bodies[12*i+j] = buffer[12*index[i]+j];
+    }
+  }
+}
+
+void permute2(int numBodies, float * bodies, float * buffer, int * index);
+void permute(int numBodies, float * bodies, float * buffer, int * index) {
+  int numBlock = numBodies / BLOCK_SIZE;
+  int offset = 0;
+  for (int i=0; i<BLOCK_SIZE-1; i++) {
+    cilk_spawn permuteBlock(&bodies[12*offset], buffer, &index[offset], numBlock);
+    offset += numBlock;
+  }
+  permuteBlock(&bodies[12*offset], buffer, &index[offset], numBodies-offset);
+}
+
 class BuildTree {
 private:
   const int ncrit;
   int maxlevel;
 
 private:
-  Box bounds2box(Bounds & bounds) {
-    vec3 Xmin = bounds.Xmin;
-    vec3 Xmax = bounds.Xmax;
-    Box box;
-    for (int d=0; d<3; d++) box.X[d] = (Xmax[d] + Xmin[d]) / 2;
-    box.R = 0;
-    for (int d=0; d<3; d++) {
-      box.R = std::max(box.X[d] - Xmin[d], box.R);
-      box.R = std::max(Xmax[d] - box.X[d], box.R);
-    }
-    box.R *= 1.00001;
-    bounds.Xmin = box.X - box.R;
-    bounds.Xmax = box.X + box.R;
-    return box;
-  }
-
-  void getKey(int numBodies, float * X, vec3 & Xmin, vec3 & Xmax, uint64_t * keys, int maxlevel) {
-    const int nbins = 1 << maxlevel;
-    Bounds bounds;
-    bounds.Xmin = Xmin;
-    bounds.Xmax = Xmax;
-    Box box = bounds2box(bounds);
-    Xmin = bounds.Xmin;
-    Xmax = bounds.Xmax;
-    float d = 2 * box.R / nbins;
-    cilk_for (int b=0; b<numBodies; b++) {
-      int ix = floor((X[12*b+0] - Xmin[0]) / d);
-      int iy = floor((X[12*b+1] - Xmin[1]) / d);
-      int iz = floor((X[12*b+2] - Xmin[2]) / d);
-      uint64_t key =
-        morton256_x[(ix >> 16) & 0xFF] |
-        morton256_y[(iy >> 16) & 0xFF] |
-        morton256_z[(iz >> 16) & 0xFF];
-      key = key << 48 |
-        morton256_x[(ix >> 8) & 0xFF] |
-        morton256_y[(iy >> 8) & 0xFF] |
-        morton256_z[(iz >> 8) & 0xFF];
-      key = key << 24 |
-        morton256_x[ix & 0xFF] |
-        morton256_y[iy & 0xFF] |
-        morton256_z[iz & 0xFF];
-      keys[b] = key;
-    }
-  }
-
-  void relocate(uint64_t * keys, uint64_t * buffer, int * index, int * permutation,
-		int * counter, int offset, int numBlock, int numBodies, int bitShift) {
-#pragma ivdep
-    for (int i=0; i<numBlock; i++) {
-      if (offset+i<numBodies) {
-	int b = (keys[i] >> bitShift) & 0x3F;
-	int c = counter[b];
-	buffer[c] = keys[i];
-	permutation[c] = index[i];
-	counter[b]++;
-      }
-    }
-  }
-
-  void recursion(uint64_t * keys, uint64_t * buffer, int * permutation,
-		 int * index, int numBodies, int bitShift) {
-    if (numBodies<=NCRIT || bitShift<0) {
-      permutation[0:numBodies] = index[0:numBodies];
-      return;
-    }
-
-    int counter[NBINS] = {0};
-#pragma ivdep
-    for (int i=0; i<numBodies; i++) {
-      int b = (keys[i] >> bitShift) & 0x3F;
-      counter[b]++;
-    }
-
-    int offset = 0;
-#pragma ivdep
-    for (int b=0; b<NBINS; b++) {
-      int size = counter[b];
-      counter[b] = offset;
-      offset += size;
-    }
-
-    relocate(keys, buffer, index, permutation, counter, 0, numBodies, numBodies, bitShift);
-    std::swap(index, permutation);
-    std::swap(keys, buffer);
-
-    offset = 0;
-    for (int b=0; b<NBINS; b++) {
-      int size = counter[b] - offset;
-      recursion(&keys[offset], &buffer[offset], &permutation[offset], &index[offset],
-		size, bitShift-6);
-      offset += size;
-    }
-  }
-
-  void radixSort(int numBodies, uint64_t * keys, uint64_t * buffer,
-		 int * permutation, int * index, int maxlevel) {
-    const int bitShift = 3 * (maxlevel - 2);
-    if (numBodies<=NCRIT || bitShift<0) {
-      permutation[0:numBodies] = index[0:numBodies];
-      return;
-    }
-
-    int numBlock = (numBodies - 1) / BLOCK_SIZE + 1;
-    int counter[BLOCK_SIZE*NBINS] = {0};
-    cilk_for (int i=0; i<BLOCK_SIZE; i++) {
-#pragma ivdep
-      for (int j=0; j<numBlock; j++) {
-	if (i*numBlock+j < numBodies) {
-	  int b = (keys[i*numBlock+j] >> bitShift) & 0x3F;
-	  counter[i*NBINS+b]++;
-	}
-      }
-    }
-
-    int offset = 0;
-    for (int b=0; b<NBINS; b++) {
-#pragma ivdep
-      for (int i=0; i<BLOCK_SIZE; i++) {
-	int size = counter[i*NBINS+b];
-	counter[i*NBINS+b] = offset;
-	offset += size;
-      }
-    }
-
-    for (int i=0; i<BLOCK_SIZE; i++) {
-      offset = i * numBlock;
-      cilk_spawn relocate(&keys[offset], buffer, &index[offset], permutation,
-			  &counter[i*NBINS], offset, numBlock, numBodies, bitShift);
-    }
-    cilk_sync;
-
-    std::swap(index, permutation);
-    std::swap(keys, buffer);
-
-    offset = 0;
-    for (int b=0; b<NBINS; b++) {
-      int size = counter[(BLOCK_SIZE-1)*NBINS+b] - offset;
-      cilk_spawn recursion(&keys[offset], &buffer[offset],
-			   &permutation[offset], &index[offset], size, bitShift-6);
-      offset += size;
-    }
-    cilk_sync;
-  }
-
-  void permuteBlock(float * bodies, float * buffer, int * index, int numBlock) {
-#pragma ivdep
-    for (int i=0; i<numBlock; i++) {
-      for (int j=0; j<12; j++) {
-	bodies[12*i+j] = buffer[12*index[i]+j];
-      }
-    }
-  }
-
-  void permute(int numBodies, float * bodies, float * buffer, int * index) {
-    int numBlock = numBodies / BLOCK_SIZE;
-    int offset = 0;
-    for (int i=0; i<BLOCK_SIZE-1; i++) {
-      cilk_spawn permuteBlock(&bodies[12*offset], buffer, &index[offset], numBlock);
-      offset += numBlock;
-    }
-    permuteBlock(&bodies[12*offset], buffer, &index[offset], numBodies-offset);
-  }
-
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
     int I = -1;
     C_iter C;
