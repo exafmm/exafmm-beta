@@ -30,7 +30,6 @@ int main(int argc, char ** argv) {
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   Traversal traversal(args.nspawn, args.images, eps2);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
-  Verify verify;
 #if Serial
   SerialFMM FMM;
 #else
@@ -167,6 +166,7 @@ int main(int argc, char ** argv) {
     logger::stopTimer("Total Direct");
     logger::resetTimer("Total Direct");
 #endif
+    Verify verify;
     double potSum = verify.getSumScalar(bodies);
     double potSum2 = verify.getSumScalar(bodies2);
     double accDif = verify.getDifVector(bodies, bodies2);
@@ -192,6 +192,7 @@ int main(int argc, char ** argv) {
   }
   FMM.deallocate();
 
+#ifndef IJHPCA
   logger::startTimer("Attach root");
   logger::stopTimer("Attach root", 0);
   logger::startTimer("Comm partition");
@@ -209,4 +210,5 @@ int main(int argc, char ** argv) {
   logger::startTimer("Set LET size");
   logger::stopTimer("Set LET size", 0);
   logger::writeTime(FMM.MPIRANK);
+#endif
 }
