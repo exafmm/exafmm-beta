@@ -28,9 +28,9 @@ charmm:
 	make cleandat
 	mpirun -np 1 ./a.out water.fmm 10
 
-cppmd:
-	make libcppmd.a
-	$(FC) test_cppmd.f90 -ggdb3 -L. -lfmm -ltbb -lstdc++ -lgomp
+charmm2:
+	make libcharmm2.a
+	$(FC) test_charmm2.f90 -ggdb3 -L. -lfmm -ltbb -lstdc++ -lgomp
 	mpirun -np 1 ./a.out ala3.fmm
 	make cleandat
 	mpirun -np 1 ./a.out water.fmm 10
@@ -50,7 +50,7 @@ libcharmm.a: charmm.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2
 	ranlib libcharmm.a
 	mv libcharmm.a libfmm.a
 
-libcppmd.a: cppmd.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
-	ar ruv libcppmd.a $?
-	ranlib libcppmd.a
-	mv libcppmd.a libfmm.a
+libcharmm2.a: charmm2.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
+	ar ruv libcharmm2.a $?
+	ranlib libcharmm2.a
+	mv libcharmm2.a libfmm.a
