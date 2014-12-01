@@ -118,15 +118,19 @@ Box bounds2box(Bounds & bounds) {
   vec3 Xmin = bounds.Xmin;
   vec3 Xmax = bounds.Xmax;
   Box box;
-  for (int d=0; d<3; d++) box.X[d] = (Xmax[d] + Xmin[d]) / 2;
+  for (int d=0; d<3; d++){
+    box.X[d] = (Xmax[d] + Xmin[d]) / 2;
+  }
   box.R = 0;
   for (int d=0; d<3; d++) {
     box.R = std::max(box.X[d] - Xmin[d], box.R);
     box.R = std::max(Xmax[d] - box.X[d], box.R);
   }
+  
   box.R *= 1.00001;
   bounds.Xmin = box.X - box.R;
   bounds.Xmax = box.X + box.R;
+  
   return box;
 }
 
@@ -144,6 +148,7 @@ void getKey(int numBodies, float * X, float * Xmin, float * Xmax, uint32_t * key
     Xmax[d] = bounds.Xmax[d];
   }
   float D = 2 * box.R / nbins;
+
   cilk_for (int b=0; b<numBodies; b++) {
     int ix = floor((X[12*b+0] - Xmin[0]) / D);
     int iy = floor((X[12*b+1] - Xmin[1]) / D);
@@ -165,7 +170,7 @@ void getKey(int numBodies, float * X, float * Xmin, float * Xmax, uint32_t * key
 }
 
 void relocate(uint32_t * keys, uint32_t * buffer, uint32_t * index, uint32_t * permutation,
-	      int * counter, int offset, int numBlock, int numBodies, int bitShift) {
+	      int * counter, int offset, int numBlock, int numBodies, int bitShift){
 #pragma ivdep
   for (int i=0; i<numBlock; i++) {
     if (offset+i<numBodies) {
@@ -180,7 +185,8 @@ void relocate(uint32_t * keys, uint32_t * buffer, uint32_t * index, uint32_t * p
 
 void recursion(uint32_t * keys, uint32_t * buffer, uint32_t * permutation,
 	       uint32_t * index, int numBodies, int bitShift) {
-  if (numBodies<=NCRIT || bitShift<0) {
+  //if (numBodies<=NCRIT || bitShift<0) {
+  if (bitShift<0) {
     permutation[0:numBodies] = index[0:numBodies];
     return;
   }
@@ -218,7 +224,8 @@ void radixSort2(int numBodies, uint32_t * keys, uint32_t * buffer,
 void radixSort(int numBodies, uint32_t * keys, uint32_t * buffer,
 	       uint32_t * permutation, uint32_t * index, int maxlevel) {
   const int bitShift = 3 * (maxlevel - 2);
-  if (numBodies<=NCRIT || bitShift<0) {
+  //if (numBodies<=NCRIT || bitShift<0) {
+  if (bitShift<0) {
     permutation[0:numBodies] = index[0:numBodies];
     return;
   }
@@ -379,13 +386,17 @@ public:
 
   Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     const int numBodies = bodies.size();
-    const int level = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
+    //const int level = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
+    const int level = numBodies >= ncrit ? 1 + int(log2(numBodies / ncrit)/3) : 0;
     maxlevel = level;
+
 
     uint32_t * keys = new uint32_t [numBodies];
     uint32_t * keys_buffer = new uint32_t [numBodies];
     uint32_t * index = new uint32_t [numBodies];
+    uint32_t * index2 = new uint32_t [numBodies];
     uint32_t * permutation = new uint32_t [numBodies];
+    uint32_t * permutation2 = new uint32_t [numBodies];
     float * X = new float [12*numBodies];
     float * Y = new float [12*numBodies];
 
@@ -400,13 +411,18 @@ public:
       Y[12*b+2] = B->X[2];
       Y[12*b+3] = B->SRC;
       index[b] = b;
+      index2[b] = b;
     }
     vec3 Xmin = bounds.Xmin;
     vec3 Xmax = bounds.Xmax;
 
     float * X2 = new float [12*numBodies];
-    float Xmin2[3] = {Xmin[0],Xmin[1],Xmin[2]};
-    float Xmax2[3] = {Xmax[0],Xmax[1],Xmax[2]};
+    float Xmin2[3] = {0};
+    Xmin2[0] = (float)Xmin[0]; Xmin2[1] = (float)Xmin[1]; Xmin2[2] = (float)Xmin[2];
+    float Xmax2[3] = {0};
+    Xmax2[0] = (float)Xmax[0]; Xmax2[1] = (float)Xmax[1]; Xmax2[2] = (float)Xmax[2];
+
+
     uint32_t * keys2 = new uint32_t [numBodies];
     for (int i=0; i<numBodies; i++) {
       for (int j=0; j<12; j++) {
@@ -416,23 +432,25 @@ public:
     }
     logger::startTimer("Grow tree");
     logger::startTimer("Morton key");
-    getKey(numBodies, X, Xmin, Xmax, keys, maxlevel);
+    getKey(numBodies, X, Xmin2, Xmax2, keys, maxlevel);
     logger::stopTimer("Morton key");
-    getKey2(numBodies, X2, Xmin, Xmax, keys2, maxlevel);
-    for (int i=0; i<numBodies; i++) {
-      printf("%d %d %d\n",i,keys[i],keys2[i]);
-    }
+    getKey2(numBodies, X2, Xmin2, Xmax2, keys2, maxlevel);
+    printf("Key comparison:\n");
+
+    
     delete[] X2;
     delete[] keys2;
 
     logger::startTimer("Radix sort");
-    radixSort(numBodies, keys, keys_buffer, permutation, index, maxlevel);
+    //radixSort(numBodies, keys, keys_buffer, permutation, index, maxlevel);
+    radixSort2(numBodies, keys, keys_buffer, permutation, index, maxlevel);
     logger::stopTimer("Radix sort");
     logger::stopTimer("Grow tree",0);
 
     logger::startTimer("Grow tree");
     logger::startTimer("Permutation");
     permute2(numBodies, Y, X, permutation);
+    //permute(numBodies, Y, X, permutation);
     logger::stopTimer("Permutation");
     logger::stopTimer("Grow tree",0);
 
