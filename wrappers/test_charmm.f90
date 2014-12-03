@@ -365,6 +365,7 @@ contains
     if(mpirank == 0) then
        write(*,'(''time:'',f9.3,'' Etotal:'',f14.5,'' Ekin:'',f14.5,'' Epot:'',f14.5,'' T:'',f12.3,'' Grms:'',f12.5)')&
             time,etotglob+ekineticglob,ekineticglob,etotglob,temp,grmsglob
+       write(2,'(f9.3,2x,f14.5)') time,etotglob+ekineticglob
     endif
     return
   end subroutine print_energy
@@ -384,12 +385,14 @@ contains
     integer, allocatable, dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex,ires
     real(8), allocatable, dimension(:) :: xnew,fac1,fac2
     real(8) tstep, tstep2, time
-    integer i,unit,istep,ierr,mpirank
+    integer i,istep,ierr,mpirank
     real(8),parameter :: TIMFAC=4.88882129D-02
 
-    unit=1
     call mpi_comm_rank(mpi_comm_world, mpirank, ierr)
-    if(mpirank == 0) open(unit=unit,file='water.pdb',status='new')
+    if(mpirank == 0)then
+       open(unit=1,file='water.pdb',status='new')
+       open(unit=2,file='energy.dat',status='new')
+    endif
 
     tstep = 0.001/timfac !ps -> akma
     tstep2 = tstep**2
@@ -454,7 +457,7 @@ contains
        time=time+tstep*timfac ! for printing only
        if (mod(istep,printfrq) == 0) call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot)
 
-       if (mod(istep,printfrq) == 0) call pdb_frame(unit,time,nglobal,x,nres,icpumap)
+       if (mod(istep,printfrq) == 0) call pdb_frame(1,time,nglobal,x,nres,icpumap)
 
     enddo mainloop
 

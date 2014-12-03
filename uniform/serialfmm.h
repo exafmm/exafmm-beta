@@ -175,6 +175,7 @@ public:
   void deallocate() {
     delete[] Index;
     delete[] Index2;
+    delete[] Rank;
     delete[] Ibodies;
     delete[] Jbodies;
     delete[] Multipole;
