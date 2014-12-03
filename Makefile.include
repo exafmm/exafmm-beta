@@ -27,8 +27,8 @@ CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openm
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 ### choose fortran compiler
-FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp -lmpi_cxx # gfortran
-#FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
+#FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp -lmpi_cxx # gfortran
+FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
 
 ### Base flags
 CXX	+= -I../include -I../uniform
@@ -46,7 +46,7 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L (slows down execution)
 
 ### Thread model flags
-LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
+#LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
 LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
 #LFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
@@ -62,7 +62,7 @@ LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org
 #LFLAGS	+= -DTRACE
 
 ### Tree building flags
-LFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
+#LFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
 
 ifeq ($(DEVICE),GPU)
 NVCC	= nvcc -use_fast_math -arch=sm_35 -I../include
