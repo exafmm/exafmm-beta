@@ -25,6 +25,9 @@ const int LTERM = (PP+1)*(PP+2)*(PP+3)/6;
 
 #define DIM 3
 
+void executeStencilNN(int *nn_codes, int *node_code, int *stencil, int *periodic);
+void executeStencilFN(int *fn_codes, int *node_codes, int *fn_stencil, int *cn_stencil, int *periodic);
+
 class Kernel {
 public:
   int maxLevel;
@@ -211,10 +214,12 @@ protected:
 #else
             int rankOffset = (jxp[0] + 3 * jxp[1] + 9 * jxp[2]) * numLeafs;
 #endif
+	    /*
 	    if(ix[0]==3 && ix[1]==3 && ix[2]==3){
 	      printf("jx: %d, %d, %d\n", jx[0], jx[1], jx[2]);
 	    }
-	    
+	    */
+
 	    j += rankOffset;
             rankOffset = 13 * numLeafs;
             real periodic[3] = {0, 0, 0};
@@ -266,7 +271,7 @@ protected:
       //printf("min: %d, %d, %d\n", nxmin[0], nxmin[1], nxmin[2]);
       //printf("max: %d, %d, %d\n", nxmax[0], nxmax[1], nxmax[2]);          
 
-#if 0
+#if 1
 
       for(int k=0; k<NN; k++){
 	jx[2] = px[2] + nn_stencil[loc*DIM*NN + k*DIM + 0];
@@ -322,7 +327,7 @@ protected:
       P2P(Leafs[i+rankOffset][0],Leafs[i+rankOffset][1],Leafs[j][0],Leafs[j][1],periodic);
 #endif
 
-#if 1
+#if 0
       //printf("%d\n", loc);
       nn_count = 0;
       for( jx[2]=jxmin[2]; jx[2]<jxmax[2]; jx[2]++ ) {
@@ -358,6 +363,81 @@ protected:
     }
   }
 
+
+  void P2P_stencil(int *nn_stencil) const {
+    int ixc[3];
+    getGlobIndex(ixc,MPIRANK,maxGlobLevel);
+    int nunit = 1 << maxLevel;
+    int nunitGlob[3];
+    for_3d nunitGlob[d] = nunit * numPartition[maxGlobLevel][d];
+    int nxmin[3], nxmax[3];
+    for_3d nxmin[d] = -ixc[d] * nunit;
+    for_3d nxmax[d] = nunitGlob[d] + nxmin[d] - 1;
+    if( numImages != 0 ) {
+      for_3d nxmin[d] -= nunitGlob[d];
+      for_3d nxmax[d] += nunitGlob[d];
+    }
+#pragma omp parallel for
+    for( int i=0; i<numLeafs; i++ ) {
+      int ix[3] = {0, 0, 0};
+      getIndex(ix,i);
+      int jxmin[3];
+      for_3d jxmin[d] = FMMMAX(nxmin[d],ix[d] - 1);
+      int jxmax[3];
+      for_3d jxmax[d] = FMMMIN(nxmax[d],ix[d] + 1) + 1;
+      int jx[3];
+
+      int node_code[DIM];
+      node_code[0] = ix[2]; node_code[1] = ix[1]; node_code[2] = ix[0];
+
+      int nn_codes[DIM*NN];
+      executeStencilNN(nn_codes, node_code, nn_stencil, 0);
+
+#if 1
+
+      for(int k=0; k<NN; k++){
+        jx[2] = nn_codes[k*DIM + 0];
+	jx[1] = nn_codes[k*DIM + 1];
+	jx[0] = nn_codes[k*DIM + 2];
+	int jxp[3];
+	for_3d jxp[d] = (jx[d] + nunit) % nunit;
+	int j = getKey(jxp,maxLevel,false);
+	for_3d jxp[d] = (jx[d] + nunit) / nunit;
+#if Serial
+	int rankOffset = 13 * numLeafs;
+#else
+	int rankOffset = (jxp[0] + 3 * jxp[1] + 9 * jxp[2]) * numLeafs;
+#endif
+
+	j += rankOffset;
+	rankOffset = 13 * numLeafs;
+	real periodic[3] = {0, 0, 0};
+	for_3d jxp[d] = (jx[d] + ixc[d] * nunit + nunitGlob[d]) / nunitGlob[d];
+	for_3d periodic[d] = (jxp[d] - 1) * 2 * RGlob[d];
+	P2P(Leafs[i+rankOffset][0],Leafs[i+rankOffset][1],Leafs[j][0],Leafs[j][1],periodic);
+
+      }
+      /* Particle to Particle interactions in the same bin */
+      int jxp[3];
+      jx[0] = ix[0]; jx[1] = ix[1]; jx[2] = ix[2];
+      for_3d jxp[d] = (jx[d] + nunit) % nunit;
+      int j = getKey(jxp,maxLevel,false);
+      for_3d jxp[d] = (jx[d] + nunit) / nunit;
+#if Serial
+      int rankOffset = 13 * numLeafs;
+#else
+      int rankOffset = (jxp[0] + 3 * jxp[1] + 9 * jxp[2]) * numLeafs;
+#endif
+
+      j += rankOffset;
+      rankOffset = 13 * numLeafs;
+      real periodic[3] = {0, 0, 0};
+      for_3d jxp[d] = (jx[d] + ixc[d] * nunit + nunitGlob[d]) / nunitGlob[d];
+      for_3d periodic[d] = (jxp[d] - 1) * 2 * RGlob[d];
+      P2P(Leafs[i+rankOffset][0],Leafs[i+rankOffset][1],Leafs[j][0],Leafs[j][1],periodic);
+#endif
+    }
+  }
 
 
   void P2M() const {
@@ -546,7 +626,7 @@ protected:
 	}
 #endif
 
-#if 0
+#if 1
 	/* loop over the private neighbors */
 	for(int k=0; k<FN; k++){
 	  jx[2] = px[2] + far_stencil[loc*DIM*FN + k*DIM + 0];
@@ -632,6 +712,75 @@ protected:
       }
     }
   }
+
+  void M2L_stencil(int *common_stencil, int *far_stencil) const {
+    int ixc[3];
+    getGlobIndex(ixc,MPIRANK,maxGlobLevel);
+    for( int lev=1; lev<=maxLevel; lev++ ) {
+      int levelOffset = ((1 << 3 * lev) - 1) / 7;
+      int nunit = 1 << lev;
+      int nunitGlob[3];
+      for_3d nunitGlob[d] = nunit * numPartition[maxGlobLevel][d];
+      int nxmin[3], nxmax[3];
+      for_3d nxmin[d] = -ixc[d] * (nunit >> 1);
+      for_3d nxmax[d] = (nunitGlob[d] >> 1) + nxmin[d] - 1;
+      if( numImages != 0 ) {
+        for_3d nxmin[d] -= (nunitGlob[d] >> 1);
+        for_3d nxmax[d] += (nunitGlob[d] >> 1);
+      }
+      real diameter = 2 * R0 / (1 << lev);
+
+#pragma omp parallel for
+      for( int i=0; i<(1 << 3 * lev); i++ ) {
+        real L[LTERM];
+        for_l L[l] = 0;
+        int ix[3] = {0, 0, 0};
+        getIndex(ix,i);
+        int jxmin[3];
+        for_3d jxmin[d] =  FMMMAX(nxmin[d],(ix[d] >> 1) - 1)      << 1;
+        int jxmax[3];
+        for_3d jxmax[d] = (FMMMIN(nxmax[d],(ix[d] >> 1) + 1) + 1) << 1;
+        int jx[3];
+
+	int node_code[DIM];
+	node_code[0] = ix[2]; node_code[1] = ix[1]; node_code[2] = ix[0];
+
+	int fn_codes[DIM*(FN+CN)];
+
+	executeStencilFN(fn_codes, node_code, far_stencil, common_stencil, 0);
+
+        /* loop over the common neighbors */
+        for(int k=0; k<(CN+FN); k++){
+          jx[2] = fn_codes[k*DIM + 0];
+	  jx[1] = fn_codes[k*DIM + 1];
+	  jx[0] = fn_codes[k*DIM + 2];
+
+	  int jxp[3];
+	  for_3d jxp[d] = (jx[d] + nunit) % nunit;
+	  int j = getKey(jxp,lev);
+	  for_3d jxp[d] = (jx[d] + nunit) / nunit;
+#if Serial
+	  int rankOffset = 13 * numCells;
+#else
+	  int rankOffset = (jxp[0] + 3 * jxp[1] + 9 * jxp[2]) * numCells;
+#endif
+
+	  j += rankOffset;
+	  real M[MTERM];
+	  for_m M[m] = Multipole[j][m];
+	  real dist[3];
+	  for_3d dist[d] = (ix[d] - jx[d]) * diameter;
+	  real invR2 = 1. / (dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2]);
+	  real invR  = sqrt(invR2);
+	  real C[LTERM];
+	  getCoef(C,dist,invR2,invR);
+	  M2LSum(L,C,M);
+        }
+        for_l Local[i+levelOffset][l] += L[l];
+      }
+    }
+  }
+
 
   void L2L() const {
     for( int lev=1; lev<=maxLevel; lev++ ) {
