@@ -116,6 +116,8 @@ protected:
       Imin = FMMMIN(Imin,key[i]);
     }
     int numBucket = Imax - Imin + 1;
+    printf("Num Buckets: %d\n", numBucket);
+    printf("Num Bodies: %d\n", numBodies);
     int *bucket = new int [numBucket];
     for( int i=0; i<numBucket; i++ ) bucket[i] = 0;
     for( int i=0; i<numBodies; i++ ) bucket[key[i]-Imin]++;

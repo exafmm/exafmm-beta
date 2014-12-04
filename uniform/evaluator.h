@@ -24,9 +24,11 @@ public:
     M2M();
   }
 
-  void downwardPass() {
+  void downwardPass(int *common_stencil, int *far_stencil,
+                    int *near_stencil) {
     logger::startTimer("Traverse");
-    M2L();
+    //M2L();
+    M2L(common_stencil, far_stencil);
     logger::stopTimer("Traverse", 0);
 
     logger::startTimer("Downward pass");
@@ -35,7 +37,8 @@ public:
     logger::stopTimer("Downward pass");
 
     logger::startTimer("Traverse");
-    P2P();
+    //P2P();
+    P2P(near_stencil);
     logger::stopTimer("Traverse");
   }
 };

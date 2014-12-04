@@ -63,6 +63,7 @@ LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org
 
 ### Tree building flags
 LFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
+LFLAGS += -lstencil
 
 ifeq ($(DEVICE),GPU)
 NVCC	= nvcc -use_fast_math -arch=sm_35 -I../include
