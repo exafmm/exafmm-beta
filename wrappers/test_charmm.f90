@@ -243,6 +243,60 @@ contains
     enddo
   end subroutine bonded_terms
 
+  subroutine verify(nglobal,icpumap,p,p2,f,f2,&
+    pl2err,fl2err,enerf,enere,grmsf,grmse)
+    use mpi
+    implicit none
+    integer nglobal,i,ierr
+    real(8) potSum, potSum2, potDifGlob, potSumGlob, potSumGlob2, potNrmGlob2
+    real(8) accDif, accNrm, accNrm2, accDifGlob, accNrmGlob, accNrmGlob2
+    real(8) pl2err, fl2err, enerf, enere, grmsf, grmse
+    integer, allocatable, dimension(:) :: icpumap
+    real(8), allocatable, dimension(:) :: p, p2, f, f2
+    potSum = 0
+    potSum2 = 0
+    accDif = 0
+    accNrm = 0
+    accNrm2 = 0
+    do i = 1, nglobal
+       if (icpumap(i) == 1) then
+          p(i) = p(i)
+          f(3*i-2) = f(3*i-2)
+          f(3*i-1) = f(3*i-1)
+          f(3*i-0) = f(3*i-0)
+          p2(i) = p2(i)
+          f2(3*i-2) = f2(3*i-2)
+          f2(3*i-1) = f2(3*i-1)
+          f2(3*i-0) = f2(3*i-0)
+          potSum = potSum + p(i)
+          potSum2 = potSum2 + p2(i)
+          accDif = accDif  + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
+               + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
+               + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))
+          accNrm = accNrm + f(3*i-2) * f(3*i-2) + f(3*i-1) * f(3*i-1) + f(3*i-0) * f(3*i-0)
+          accNrm2 = accNrm2 + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
+       endif
+    enddo
+    potSumGlob = 0
+    potSumGlob2 = 0
+    accDifGlob = 0
+    accNrmGlob = 0
+    accNrmGlob2 = 0
+    call mpi_reduce(potSum,  potSumGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    call mpi_reduce(potSum2, potSumGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    call mpi_reduce(accDif,  accDifGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    call mpi_reduce(accNrm,  accNrmGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    call mpi_reduce(accNrm2, accNrmGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
+    potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2)
+    potNrmGlob2 = potSumGlob2 * potSumGlob2
+    pl2err = sqrt(potDifGlob/potNrmGlob2)
+    fl2err = sqrt(accDifGlob/accNrmGlob2)
+    enerf = potSumGlob*0.5
+    enere = potSumGlob2*0.5
+    grmsf = sqrt(accNrmGlob/3.0/nglobal)
+    grmse = sqrt(accNrmGlob2/3.0/nglobal)
+  end subroutine verify
+
   subroutine energy(nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,pcycle,xold,&
        x,p,p2,f,f2,q,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
@@ -599,8 +653,7 @@ program main
   integer, dimension (128) :: iseed
   integer, allocatable, dimension(:) :: icpumap, numex, natex, atype, ib, jb, it, jt, kt, ires
   real(8) alpha, sigma, cuton, cutoff, average, pcycle, pi, theta
-  real(8) accDif, accDifGlob, accNrm, accNrmGlob, accNrm2, accNrmGlob2
-  real(8) potDifGlob, potNrmGlob2, potSum, potSumGlob, potSum2, potSumGlob2
+  real(8) pl2err, fl2err, enerf, enere, grmsf, grmse
   real(8), allocatable, dimension(:) :: x, q, p, p2, f, f2, xc, v, mass
   real(8), allocatable, dimension(:) :: rscale, gscale, fgscale
   real(8), allocatable, dimension(:,:) :: rbond, cbond
@@ -700,50 +753,15 @@ program main
   call coulomb_exclusion(nglobal, icpumap, x, q, p, f, pcycle, numex, natex)
   call coulomb_exclusion(nglobal, icpumap, x, q, p2, f2, pcycle, numex, natex)
 
-  potSum = 0
-  potSum2 = 0
-  accDif = 0
-  accNrm = 0
-  accNrm2 = 0
-  do i = 1, nglobal
-     if (icpumap(i) == 1) then
-        p(i) = p(i)
-        f(3*i-2) = f(3*i-2)
-        f(3*i-1) = f(3*i-1)
-        f(3*i-0) = f(3*i-0)
-        p2(i) = p2(i)
-        f2(3*i-2) = f2(3*i-2)
-        f2(3*i-1) = f2(3*i-1)
-        f2(3*i-0) = f2(3*i-0)
-        potSum = potSum + p(i)
-        potSum2 = potSum2 + p2(i)
-        accDif = accDif  + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
-             + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
-             + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))
-        accNrm = accNrm + f(3*i-2) * f(3*i-2) + f(3*i-1) * f(3*i-1) + f(3*i-0) * f(3*i-0)
-        accNrm2 = accNrm2 + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
-     endif
-  enddo
-  potSumGlob = 0
-  potSumGlob2 = 0
-  accDifGlob = 0
-  accNrmGlob = 0
-  accNrmGlob2 = 0
-  call mpi_reduce(potSum,  potSumGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-  call mpi_reduce(potSum2, potSumGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-  call mpi_reduce(accDif,  accDifGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-  call mpi_reduce(accNrm,  accNrmGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-  call mpi_reduce(accNrm2, accNrmGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-  potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2)
-  potNrmGlob2 = potSumGlob2 * potSumGlob2
+  call verify(nglobal, icpumap, p, p2, f, f2, pl2err, fl2err, enerf, enere, grmsf, grmse)
   if (mpirank == 0) then
      print"(a)",'--- Coulomb FMM vs. Ewald -------'
-     print"(a,f9.6)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
-     print"(a,f9.6)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
-     print"(a,f12.4)",'Energy (FMM)         : ', potSumGlob*0.5
-     print"(a,f12.4)",'Energy (Ewald)       : ', potSumGlob2*0.5
-     print"(a,f12.4)",'GRMS (FMM)           : ', sqrt(accNrmGlob/3.0/nglobal)
-     print"(a,f12.4)",'GRMS (Ewald)         : ', sqrt(accNrmGlob2/3.0/nglobal)
+     print"(a,f9.6)",'Rel. L2 Error (pot)  : ', pl2err
+     print"(a,f9.6)",'Rel. L2 Error (acc)  : ', fl2err
+     print"(a,f12.4)",'Energy (FMM)         : ', enerf
+     print"(a,f12.4)",'Energy (Ewald)       : ', enere
+     print"(a,f12.4)",'GRMS (FMM)           : ', grmsf
+     print"(a,f12.4)",'GRMS (Ewald)         : ', grmse
   endif
 
   do i = 1, nglobal
@@ -764,42 +782,16 @@ program main
        pcycle, nat, rscale, gscale, fgscale)
   call vanderwaals_exclusion(nglobal, icpumap, atype, x, p2, f2, cuton, cutoff,&
        pcycle, nat, rscale, gscale, fgscale, numex, natex)
-  potSum = 0
-  potSum2 = 0
-  accDif = 0
-  accNrm = 0
-  accNrm2 = 0
-  do i = 1, nglobal
-     if (icpumap(i) == 1) then
-        potSum  = potSum  + p(i)
-        potSum2 = potSum2 + p2(i)
-        accDif  = accDif  + (f(3*i-2) - f2(3*i-2)) * (f(3*i-2) - f2(3*i-2))&
-             + (f(3*i-1) - f2(3*i-1)) * (f(3*i-1) - f2(3*i-1))&
-             + (f(3*i-0) - f2(3*i-0)) * (f(3*i-0) - f2(3*i-0))
-        accNrm  = accNrm  + f(3*i-2) * f(3*i-2) + f(3*i-1) * f(3*i-1) + f(3*i-0) * f(3*i-0)
-        accNrm2  = accNrm2  + f2(3*i-2) * f2(3*i-2) + f2(3*i-1) * f2(3*i-1) + f2(3*i-0) * f2(3*i-0)
-     endif
-  enddo
-  potSumGlob = 0
-  potSumGlob2 = 0
-  accDifGlob = 0
-  accNrmGlob = 0
-  accNrmGlob2 = 0
-  call mpi_reduce(potSum,  potSumGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-  call mpi_reduce(potSum2, potSumGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-  call mpi_reduce(accDif,  accDifGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-  call mpi_reduce(accNrm,  accNrmGlob,  1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-  call mpi_reduce(accNrm2, accNrmGlob2, 1, mpi_real8, mpi_sum, 0, mpi_comm_world, ierr)
-  potDifGlob = (potSumGlob - potSumGlob2) * (potSumGlob - potSumGlob2)
-  potNrmGlob2 = potSumGlob2 * potSumGlob2
+
+  call verify(nglobal, icpumap, p, p2, f, f2, pl2err, fl2err, enerf, enere, grmsf, grmse)
   if (mpirank == 0) then
      print"(a)",'--- VdW FMM vs. Direct ----------'
-     print"(a,f9.6)",'Rel. L2 Error (pot)  : ', sqrt(potDifGlob/potNrmGlob2)
-     print"(a,f9.6)",'Rel. L2 Error (acc)  : ', sqrt(accDifGlob/accNrmGlob2)
-     print"(a,f12.4)",'Energy (FMM)         : ', potSumGlob*0.5
-     print"(a,f12.4)",'Energy (Direct)      : ', potSumGlob2*0.5
-     print"(a,f12.4)",'GRMS (FMM)           : ', sqrt(accNrmGlob/3.0/nglobal)
-     print"(a,f12.4)",'GRMS (Direct)        : ', sqrt(accNrmGlob2/3.0/nglobal)
+     print"(a,f9.6)",'Rel. L2 Error (pot)  : ', pl2err
+     print"(a,f9.6)",'Rel. L2 Error (acc)  : ', fl2err
+     print"(a,f12.4)",'Energy (FMM)         : ', enerf
+     print"(a,f12.4)",'Energy (Direct)      : ', enere
+     print"(a,f12.4)",'GRMS (FMM)           : ', grmsf
+     print"(a,f12.4)",'GRMS (Direct)        : ', grmse
   endif
 
   ! run dynamics if second command line argument specified
