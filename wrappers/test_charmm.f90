@@ -145,11 +145,11 @@ contains
        ib,jb,it,jt,kt,rbond,cbond,aangle,cangle,eb,et)
     implicit none
     integer i,ii,jj,kk,nbonds,ntheta
-    integer,allocatable,dimension(:) :: ib,jb,it,jt,kt,icpumap,atype
     real(8) dx,dy,dz,r,db,df,dfr,eb,et
     real(8) dx1,dy1,dz1,dx2,dy2,dz2,r1,r2,r1r,r2r
     real(8) dx1r,dy1r,dz1r,dx2r,dy2r,dz2r,cst,at,da
     real(8) dxi,dyi,dzi,st2r,str,dtx1,dtx2,dty1,dty2,dtz1,dtz2
+    integer,allocatable,dimension(:) :: ib,jb,it,jt,kt,icpumap,atype
     real(8),allocatable,dimension(:) :: x,f
     real(8),allocatable,dimension(:,:) :: rbond,cbond
     real(8),allocatable,dimension(:,:,:) :: aangle,cangle
@@ -302,7 +302,7 @@ contains
        ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,&
        pl2err,fl2err,ftotf,ftote,istep)
     implicit none
-    integer nglobal,nat,nbonds,ntheta,ksize,i
+    integer nglobal,nat,nbonds,ntheta,ksize,i,ierr
     real(8) alpha,sigma,cutoff,cuton,etot,eb,et,efmm,evdw,pcycle
     real(8) pl2err,fl2err,enerf,enere,grmsf,grmse,ftotf,ftote
     integer,optional :: istep
@@ -319,6 +319,13 @@ contains
     call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
     call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
     call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
+    ftotf=0.0
+    ftote=0.0
+    do i = 1,nglobal
+       if (icpumap(i) /= 1) cycle
+       ftotf = ftotf+ f(3*i-2)+ f(3*i-1)+ f(3*i)
+       ftote = ftote+f2(3*i-2)+f2(3*i-1)+f2(3*i)
+    enddo
     call coulomb_exclusion(nglobal,icpumap,x,q,p,f,pcycle,numex,natex)
     efmm=0.0
     do i=1,nglobal
@@ -353,10 +360,10 @@ contains
     real(8) alpha,sigma,cutoff,cuton,etot,pcycle
     real(8) xsave,e0,step,step2,eplus,eminus,nforce
     real(8) pl2err,fl2err,ftotf,ftote
+    integer,allocatable,dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
     real(8),allocatable,dimension(:) :: xold,x,p,p2,f,f2,q,gscale,fgscale,rscale
     real(8),allocatable,dimension(:,:) :: rbond,cbond
     real(8),allocatable,dimension(:,:,:) :: aangle,cangle
-    integer,allocatable,dimension(:) :: ib,jb,it,jt,kt,atype,icpumap,numex,natex
     real(8),allocatable,dimension(:) :: f_analytic
     call energy(nglobal,nat,nbonds,ntheta,ksize,&
          alpha,sigma,cutoff,cuton,pcycle,xold,&
@@ -395,12 +402,13 @@ contains
     return
   end subroutine force_testing
 
-  subroutine print_energy(time,nglobal,f,v,mass,atype,icpumap,etot)
+  subroutine print_energy(time,nglobal,f,v,mass,atype,icpumap,etot,pl2err,fl2err,ftotf,ftote)
     use mpi
     implicit none
     integer nglobal,i,ierr,mpirank
-    real(8) etot,time
-    real(8) temp,kboltz,ekinetic,grms,ekineticglob,grmsglob,etotglob
+    real(8) time,temp,kboltz,ekinetic,ekineticGlob,grms,grmsGlob
+    real(8) etot,etotGlob,ftotf,ftotfGlob,ftote,ftoteGlob
+    real(8) pl2err,fl2err
     integer,allocatable,dimension(:) :: atype,icpumap
     real(8),allocatable,dimension(:) :: f,v,mass
     kboltz=1.987191d-03 !from CHARMM
@@ -411,17 +419,22 @@ contains
        ekinetic=ekinetic+mass(atype(i))*(v(3*i-2)**2+v(3*i-1)**2+v(3*i-0)**2)
        grms=grms+f(3*i-2)**2+f(3*i-1)**2+f(3*i-0)**2
     enddo
-    call mpi_reduce(etot,etotGlob,1,mpi_real8,mpi_sum,0,mpi_comm_world,ierr)
     call mpi_reduce(ekinetic,ekineticGlob,1,mpi_real8,mpi_sum,0,mpi_comm_world,ierr)
     call mpi_reduce(grms,grmsGlob,1,mpi_real8,mpi_sum,0,mpi_comm_world,ierr)
-    grmsglob=sqrt(grmsglob/3.0/real(nglobal))
-    temp=ekineticglob/3.0/nglobal/kboltz
-    ekineticglob=ekineticglob/2.0
+    call mpi_reduce(etot,etotGlob,1,mpi_real8,mpi_sum,0,mpi_comm_world,ierr)
+    call mpi_reduce(ftotf,ftotfGlob,1,mpi_real8,mpi_sum,0,mpi_comm_world,ierr)
+    call mpi_reduce(ftote,ftoteGlob,1,mpi_real8,mpi_sum,0,mpi_comm_world,ierr)
+    grmsGlob=sqrt(grmsGlob/3.0/real(nglobal))
+    temp=ekineticGlob/3.0/nglobal/kboltz
+    ekineticGlob=ekineticGlob/2.0
+    ftotfGlob = ftotfGlob/nglobal
+    ftoteGlob = ftoteGlob/nglobal
     call mpi_comm_rank(mpi_comm_world,mpirank,ierr)
     if(mpirank == 0) then
        write(*,'(''time:'',f9.3,'' Etotal:'',f14.5,'' Ekin:'',f14.5,'' Epot:'',f14.5,'' T:'',f12.3,'' Grms:'',f12.5)')&
-            time,etotglob+ekineticglob,ekineticglob,etotglob,temp,grmsglob
-       write(2,'(f9.3,2x,f14.5)') time,etotglob+ekineticglob
+            time,etotGlob+ekineticGlob,ekineticGlob,etotGlob,temp,grmsGlob
+       write(2,'(f9.3,f14.5,f14.5,g14.5,g14.5,g14.5,g14.5)')&
+            time,etotGlob,ekineticGlob,pl2err,fl2err,ftotfGlob,ftoteGlob
     endif
     return
   end subroutine print_energy
@@ -462,7 +475,7 @@ contains
          ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,&
          pl2err,fl2err,ftotf,ftote)
 
-    call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot)
+    call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot,pl2err,fl2err,ftotf,ftote)
 
     ! precompute some constants and recalculate xold
     do i=1,nglobal
@@ -513,10 +526,11 @@ contains
        if (mod(istep,imcentfrq) == 0) call image_center(nglobal,x,nres,ires,pcycle,icpumap)
 
        time=time+tstep*timfac ! for printing only
-       if (mod(istep,printfrq) == 0) call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot)
-
-       if (mod(istep,printfrq) == 0) call pdb_frame(1,time,nglobal,x,nres,icpumap)
-
+       if (mod(istep,printfrq) == 0) then
+          call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot,&
+               pl2err,fl2err,ftotf,ftote)
+          call pdb_frame(1,time,nglobal,x,nres,icpumap)
+       endif
     enddo mainloop
 
     deallocate(xnew,xold,fac1,fac2)
