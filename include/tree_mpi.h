@@ -55,8 +55,8 @@ private:
       recvBodyCount[irank] *= word;                             //  Multiply receive count by word size of data
       recvBodyDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
     }                                                           // End loop over ranks
-    MPI_Alltoallv(&bodies[0], sendBodyCount, sendBodyDispl, MPI_INT,// Communicate bodies
-                  &recvBodies[0], recvBodyCount, recvBodyDispl, MPI_INT, MPI_COMM_WORLD);
+    MPI_Alltoallv((int*)&bodies[0], sendBodyCount, sendBodyDispl, MPI_INT,// Communicate bodies
+                  (int*)&recvBodies[0], recvBodyCount, recvBodyDispl, MPI_INT, MPI_COMM_WORLD);
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
       sendBodyCount[irank] /= word;                             //  Divide send count by word size of data
       sendBodyDispl[irank] /= word;                             //  Divide send displacement by word size of data
@@ -86,8 +86,8 @@ private:
       recvCellCount[irank] *= word;                             //  Multiply receive count by word size of data
       recvCellDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
     }                                                           // End loop over ranks
-    MPI_Alltoallv(&cells[0], sendCellCount, sendCellDispl, MPI_INT,// Communicate cells
-                  &recvCells[0], recvCellCount, recvCellDispl, MPI_INT, MPI_COMM_WORLD);
+    MPI_Alltoallv((int*)&cells[0], sendCellCount, sendCellDispl, MPI_INT,// Communicate cells
+                  (int*)&recvCells[0], recvCellCount, recvCellDispl, MPI_INT, MPI_COMM_WORLD);
     for (int irank=0; irank<mpisize; irank++) {                 // Loop over ranks
       sendCellCount[irank] /= word;                             //  Divide send count by word size of data
       sendCellDispl[irank] /= word;                             //  Divide send displacement by word size of data
@@ -414,9 +414,9 @@ public:
     MPI_Wait(&rreq, MPI_STATUS_IGNORE);                         // Wait for receive to complete
 
     recvBodies.resize(newSize);                                 // Resize buffer to new number of bodies
-    MPI_Isend(&bodies[0], oldSize*word, MPI_INT, irecv,         // Send bodies to next rank
+    MPI_Isend((int*)&bodies[0], oldSize*word, MPI_INT, irecv,   // Send bodies to next rank
               1, MPI_COMM_WORLD, &sreq);
-    MPI_Irecv(&recvBodies[0], newSize*word, MPI_INT, isend,     // Receive bodies from previous rank
+    MPI_Irecv((int*)&recvBodies[0], newSize*word, MPI_INT, isend,// Receive bodies from previous rank
               1, MPI_COMM_WORLD, &rreq);
     MPI_Wait(&sreq, MPI_STATUS_IGNORE);                         // Wait for send to complete
     MPI_Wait(&rreq, MPI_STATUS_IGNORE);                         // Wait for receive to complete
@@ -438,8 +438,8 @@ public:
       recvBodyCount[irank] *= word;                             //  Multiply receive count by word size of data
       recvBodyDispl[irank] *= word;                             //  Multiply receive displacement by word size of data
     }                                                           // End loop over ranks
-    MPI_Allgatherv(&bodies[0], sendBodyCount[0]*word, MPI_FLOAT,// Allgather bodies
-                   &recvBodies[0], recvBodyCount, recvBodyDispl, MPI_FLOAT, MPI_COMM_WORLD);
+    MPI_Allgatherv((int*)&bodies[0], sendBodyCount[0]*word, MPI_INT,// Allgather bodies
+                   (int*)&recvBodies[0], recvBodyCount, recvBodyDispl, MPI_INT, MPI_COMM_WORLD);
     return recvBodies;                                          // Return bodies
   }
 };
