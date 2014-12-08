@@ -9,12 +9,6 @@
 #define NCRIT 16
 #define NBINS 64
 
-
-int cmpfunc (const void * a, const void * b)
-{
-  return ( *(int*)a - *(int*)b );
-}
-
 static const int morton256_x[256] = {
     0x00000000, 0x00000001, 0x00000008, 0x00000009, 0x00000040, 0x00000041, 0x00000048, 0x00000049,
     0x00000200, 0x00000201, 0x00000208, 0x00000209, 0x00000240, 0x00000241, 0x00000248, 0x00000249,
@@ -140,7 +134,6 @@ Box bounds2box(Bounds & bounds) {
   return box;
 }
 
-void encodeParticles(int numBodies, float * X, float * Xmin, float * Xmax, uint32_t * keys, int maxlevel);
 void getKey(int numBodies, float * X, float * Xmin, float * Xmax, uint32_t * keys, int maxlevel) {
   const int nbins = 1 << maxlevel;
   Bounds bounds;
@@ -190,11 +183,10 @@ void relocate(uint32_t * keys, uint32_t * buffer, uint32_t * index, uint32_t * p
 }
 
 void recursion(uint32_t * keys, uint32_t * buffer, uint32_t * permutation,
-	       uint32_t * index, int numBodies, int bitShift, int stop) {
+	       uint32_t * index, int numBodies, int bitShift) {
   //if (numBodies<=NCRIT || bitShift<0) {
-  if (bitShift<stop) {
-    //permutation[0:numBodies] = index[0:numBodies];
-    //buffer[0:numBodies] = keys[0:numBodies];
+  if (bitShift<0) {
+    permutation[0:numBodies] = index[0:numBodies];
     return;
   }
 
@@ -221,18 +213,14 @@ void recursion(uint32_t * keys, uint32_t * buffer, uint32_t * permutation,
   for (int b=0; b<NBINS; b++) {
     int size = counter[b] - offset;
     recursion(&keys[offset], &buffer[offset], &permutation[offset], &index[offset],
-	      size, bitShift-6, stop);
+	      size, bitShift-6);
     offset += size;
   }
 }
 
-void decomposeSpace(int numBodies, uint32_t ** keys, uint32_t ** buffer,
-		    uint32_t ** permutation, uint32_t ** index, int maxlevel);
 void radixSort(int numBodies, uint32_t * keys, uint32_t * buffer,
 	       uint32_t * permutation, uint32_t * index, int maxlevel) {
   const int bitShift = 3 * (maxlevel - 2);
-  int stop = (maxlevel & 1) ? -3  : 0;
-  printf("stop: %d\n", stop);
   //if (numBodies<=NCRIT || bitShift<0) {
   if (bitShift<0) {
     permutation[0:numBodies] = index[0:numBodies];
@@ -275,8 +263,7 @@ void radixSort(int numBodies, uint32_t * keys, uint32_t * buffer,
   for (int b=0; b<NBINS; b++) {
     int size = counter[(BLOCK_SIZE-1)*NBINS+b] - offset;
     cilk_spawn recursion(&keys[offset], &buffer[offset],
-			 &permutation[offset], &index[offset], size, 
-			 bitShift-6, stop);
+			 &permutation[offset], &index[offset], size, bitShift-6);
     offset += size;
   }
   cilk_sync;
@@ -291,7 +278,6 @@ void permuteBlock(float * buffer, float * bodies, uint32_t * index, int numBlock
   }
 }
 
-void relocateParticles(int numBodies, float * bodies, float * buffer, uint32_t * index);
 void permute(int numBodies, float * bodies, float * buffer, uint32_t * index) {
   int numBlock = numBodies / BLOCK_SIZE;
   int offset = 0;
@@ -299,8 +285,7 @@ void permute(int numBodies, float * bodies, float * buffer, uint32_t * index) {
     cilk_spawn permuteBlock(&buffer[12*offset], bodies, &index[offset], numBlock);
     offset += numBlock;
   }
-  cilk_spawn permuteBlock(&buffer[12*offset], bodies, &index[offset], numBodies-offset);
-  cilk_sync;
+  permuteBlock(&buffer[12*offset], bodies, &index[offset], numBodies-offset);
 }
 
 class BuildTree {
@@ -401,7 +386,6 @@ public:
     const int level = numBodies >= ncrit ? 1 + int(log2(numBodies / ncrit)/3) : 0;
     maxlevel = level;
 
-    printf("Height: %d, ncrit: %d\n", level, ncrit);
 
     uint32_t * keys = new uint32_t [numBodies];
     uint32_t * keys_buffer = new uint32_t [numBodies];
@@ -446,25 +430,22 @@ public:
     logger::startTimer("Morton key");
     getKey(numBodies, X, Xmin2, Xmax2, keys, maxlevel);
     logger::stopTimer("Morton key");
-    encodeParticles(numBodies, X, Xmin2, Xmax2, keys2, maxlevel);
     printf("Key comparison:\n");
+
     
     delete[] X2;
     delete[] keys2;
 
     logger::startTimer("Radix sort");
-    //radixSort(numBodies, keys, keys_buffer, permutation, index, maxlevel);
-    decomposeSpace(numBodies, &keys, &keys_buffer, &permutation, &index, maxlevel);
+    radixSort(numBodies, keys, keys_buffer, permutation, index, maxlevel);
     logger::stopTimer("Radix sort");
     logger::stopTimer("Grow tree",0);
 
     logger::startTimer("Grow tree");
     logger::startTimer("Permutation");
-    relocateParticles(numBodies, Y, X, permutation);
-    //permute(numBodies, Y, X, permutation);
+    permute(numBodies, Y, X, permutation);
     logger::stopTimer("Permutation");
     logger::stopTimer("Grow tree",0);
-
 
     b=0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {

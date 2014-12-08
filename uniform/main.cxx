@@ -14,15 +14,6 @@
 #include "parallelfmm.h"
 #endif
 
-#define DIM 3
-
-#define NN 26
-#define FN 37
-#define CN 152
-
-void formInteractionStencil(int *common_stencil, int *far_stencil, 
-			    int *near_stencil);
-
 int main(int argc, char ** argv) {
   const int ksize = 11;
   const real_t eps2 = 0.0;
@@ -67,21 +58,6 @@ int main(int argc, char ** argv) {
   FMM.partitioner(gatherLevel);
   logger::stopTimer("Partition");
 
-
-  /* Form the interaction list stencils */
-  int common_stencil[DIM*CN] = {0};
-  int far_stencil[8*DIM*FN] = {0};
-  int near_stencil[8*DIM*NN] = {0};
-
-  
-  formInteractionStencil(common_stencil, far_stencil,
-			 near_stencil);
-  /*
-  for(int i=0; i<26; i++){
-    printf("%d, %d, %d\n", near_stencil[i*DIM + 0], near_stencil[i*DIM + 1] , near_stencil[i*DIM + 2]);
-  }
-  */
-
   for( int it=0; it<1; it++ ) {
     int ix[3] = {0, 0, 0};
     FMM.R0 = 0.5 * cycle / FMM.numPartition[FMM.maxGlobLevel][0];
@@ -107,17 +83,11 @@ int main(int argc, char ** argv) {
     FMM.buildTree();
     logger::stopTimer("Grow tree");
   
-    //FMM.buildTree();
-
-
     logger::startTimer("Upward pass");
     FMM.upwardPass();
     logger::stopTimer("Upward pass");
   
 #if Serial
-
-    printf("Serial version\n");
-
 #else
     logger::startTimer("Comm LET bodies");
     FMM.P2PSend();
@@ -135,8 +105,7 @@ int main(int argc, char ** argv) {
     FMM.globM2M();
     FMM.globM2L();
 #endif
-
-    printf("Run periodic FMM\n");  
+  
     FMM.periodicM2L();
 
 #if Serial
@@ -146,10 +115,7 @@ int main(int argc, char ** argv) {
     logger::stopTimer("Downward pass", 0);
 #endif
   
-
-    printf("Donward pass\n");
-    //FMM.downwardPass();
-    FMM.downwardPass(common_stencil, far_stencil, near_stencil);
+    FMM.downwardPass();
     logger::stopTimer("Total FMM", 0);
 
     Bodies bodies(FMM.numBodies);
@@ -166,8 +132,6 @@ int main(int argc, char ** argv) {
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
 #ifndef IJHPCA
 #if 1
-
-    printf("Eward sumation\n");
     logger::startTimer("Total Ewald");
     Bounds bounds = boundBox.getBounds(bodies);
     Bodies buffer = bodies;
