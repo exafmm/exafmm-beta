@@ -706,7 +706,7 @@ program main
   else
      allocate( x(3*nglobal),q(nglobal),v(3*nglobal) )
      allocate( p(nglobal),p2(nglobal),f(3*nglobal),f2(3*nglobal) )
-     allocate( ires(nglobal),icpumap(nglobal) )
+     allocate( xc(3*nglobal),ires(nglobal),icpumap(nglobal) )
      allocate( numex(nglobal),natex(nglobal),atype(nglobal) )
      allocate( rscale(nat*nat),gscale(nat*nat),fgscale(nat*nat) )
      do i = 1,128
@@ -838,7 +838,7 @@ program main
   endif
 
   deallocate( x,q,v,p,f,p2,f2,icpumap )
-  deallocate( ires,numex,natex,rscale,gscale,fgscale,atype)
+  deallocate( ires,numex,natex,rscale,gscale,fgscale,atype )
   call fmm_finalize()
   call mpi_finalize(ierr)
 end program main

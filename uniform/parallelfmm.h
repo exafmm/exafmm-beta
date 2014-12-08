@@ -277,6 +277,7 @@ public:
   }
 
   void globM2MSend(int level) {
+    MPI_Status stats[8];
     int numChild[3];
     for_3d numChild[d] = numPartition[level][d] / numPartition[level-1][d];
     int numStride[3];
@@ -291,7 +292,6 @@ public:
     for_m sendMultipole[0][m] = globMultipole[i][m];
     int iforward = 0;
     int numComm = numChild[0] * numChild[1] * numChild[2] - 1;
-    MPI_Status *stats = new MPI_Status[numComm];
     float commBytes = 0;
     int jx[3];
     for( jx[2]=jxoff[2]; jx[2]<jxoff[2]+numChild[2]; jx[2]++ ) {
@@ -315,6 +315,7 @@ public:
   }
 
   void globM2MRecv(int level) {
+    MPI_Status stats[8];
     int numChild[3];
     for_3d numChild[d] = numPartition[level][d] / numPartition[level-1][d];
     int ix[3];
@@ -323,7 +324,6 @@ public:
     for_3d jxoff[d] = (ix[d] / numChild[d]) * numChild[d];
     int iforward = 0;
     int numComm = numChild[0] * numChild[1] * numChild[2] - 1;
-    MPI_Status *stats = new MPI_Status[numComm];
     MPI_Waitall(numComm,&requests[numComm],stats);
     int jx[3];
     for( jx[2]=jxoff[2]; jx[2]<jxoff[2]+numChild[2]; jx[2]++ ) {

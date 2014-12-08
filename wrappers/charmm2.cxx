@@ -258,6 +258,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
     B->TRG[3] = FMM->Ibodies[b][3];
   }
 #endif
+  FMM->deallocate();
 
   vec3 localDipole = upDownPass->getDipole(bodies,0);
   vec3 globalDipole = baseMPI->allreduceVec3(localDipole);
