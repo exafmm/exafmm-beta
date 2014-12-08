@@ -83,7 +83,7 @@ extern "C" void fmm_finalize_() {
   delete globalTree;
   delete partition;
   delete traversal;
-  //delete treeMPI;
+  delete treeMPI;
   delete upDownPass;
   delete FMM;
 }
