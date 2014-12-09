@@ -9,6 +9,7 @@ private:
   const real_t theta;                                           //!< Multipole acceptance criteria
   const bool useRmax;                                           //!< Use maximum distance for MAC
   const bool useRopt;                                           //!< Use error optimized theta for MAC
+  real_t R0;                                                    //!< Radius of root cell
 
 private:
   //! Recursive functor for error optimization of R
@@ -38,6 +39,25 @@ private:
 	x -= f / df;                                            //   Increment x
       }                                                         //  End loop for Newton-Raphson iteration
       C->R *= x * theta;                                        //  Multiply R by error optimized parameter x
+    }                                                           // End overload operator()
+  };
+
+  //! Recursive functor for resetting cell radius
+  struct ResetCellRadius {
+    C_iter C;                                                   //!< Iterator of current cell
+    C_iter C0;                                                  //!< Iterator of first cell
+    real_t R0;                                                  //!< Radius of root cell
+    int level;                                                  //!< Current tree level
+    ResetCellRadius(C_iter _C, C_iter _C0, real_t _R0, int _level) : // Constructor
+      C(_C), C0(_C0), R0(_R0), level(_level) {}                 // Initialize variables
+    void operator() () {                                        // Overload operator()
+      C->R = R0 / (1 << level);                                 //  Reset cell radius
+      mk_task_group;                                            //  Initialize tasks
+      for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
+        ResetCellRadius resetCellRadius(CC, C0, R0, level+1);   //   Instantiate recursive functor
+        create_taskc(resetCellRadius);                          //   Create new task for recursive call
+      }                                                         //  End loop over chlid cells
+      wait_tasks;                                               //  Synchronize tasks
     }                                                           // End overload operator()
   };
 
@@ -113,13 +133,21 @@ private:
 public:
   //! Constructor
   UpDownPass(real_t _theta, bool _useRmax, bool _useRopt) :
-    theta(_theta), useRmax(_useRmax), useRopt(_useRopt) {}      // Initialize variables
+    theta(_theta), useRmax(_useRmax), useRopt(_useRopt) {       // Initialize variables
+    R0 = 0;                                                     // Initialize radius of root cell
+  }
 
   //! Upward pass (P2M, M2M)
   void upwardPass(Cells & cells) {
     logger::startTimer("Upward pass");                          // Start timer
     if (!cells.empty()) {                                       // If cell vector is not empty
       C_iter C0 = cells.begin();                                //  Set iterator of target root cell
+      if (R0 == 0) {                                            //  If first call to upward pass
+	R0 = C0->R;                                             //   Set radius of root cell
+      } else {                                                  //  Else if resetting cell radius
+        ResetCellRadius resetCellRadius(C0, C0, R0, 0);         //   Instantiate recursive functor
+        resetCellRadius();                                      //   Recursive call for resetting cell radius
+      }                                                         //  End if for resetting cell radius
       PostOrderTraversal postOrderTraversal(C0, C0, theta, useRmax); // Instantiate recursive functor
       postOrderTraversal();                                     //  Recursive call for upward pass
       real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient

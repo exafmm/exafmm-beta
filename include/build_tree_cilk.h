@@ -382,7 +382,6 @@ public:
 
   Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     const int numBodies = bodies.size();
-    //const int level = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
     const int level = numBodies >= ncrit ? 1 + int(log2(numBodies / ncrit)/3) : 0;
     maxlevel = level;
 
