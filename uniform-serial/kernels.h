@@ -128,6 +128,7 @@ protected:
   }
 
 public:
+#ifndef SAKURA
   void P2P() const {
     int nunit = 1 << maxLevel;
     int nmin = 0;
@@ -160,7 +161,7 @@ public:
       }
     }
   }
-
+#else
   void P2P(int *nn_stencil) const {
     int nunit = 1 << maxLevel;
 #pragma omp parallel for
@@ -168,25 +169,14 @@ public:
       int ix[3] = {0, 0, 0};
       getIndex(ix,i);
       int jx[3];
-
       int node_code[DIM];
       node_code[0] = ix[2]; node_code[1] = ix[1]; node_code[2] = ix[0];
-
       int nn_codes[DIM*NN];
       int nn_count = executeStencilNN(nn_codes, node_code, nn_stencil, 1, maxLevel);
-
       for(int k=0; k<nn_count; k++){
-	
         jx[2] = nn_codes[k*DIM + 0];
         jx[1] = nn_codes[k*DIM + 1];
         jx[0] = nn_codes[k*DIM + 2];
-	
-	/*
-	if(ix[0]==7 && ix[1]==7 && ix[2]==7){
-	  printf("%d %d %d\n", nn_codes[k*DIM + 2], nn_codes[k*DIM + 1], nn_codes[k*DIM + 0]);
-	}
-	*/
-
 	int jxp[3];
 	for_3 jxp[d] = (jx[d] + nunit) % nunit;
 	int j = getKey(jxp,maxLevel,false);
@@ -194,10 +184,7 @@ public:
 	for_3 jxp[d] = (jx[d] + nunit) / nunit;
 	for_3 Xperiodic[d] = (jxp[d] - 1) * 2 * R0;
 	P2PSum(Leafs[i][0],Leafs[i][1],Leafs[j][0],Leafs[j][1],Xperiodic);
-
       }
-
-      /* P2P interaction within the same box */
       jx[0] = ix[0]; jx[1] = ix[1]; jx[2] = ix[2];
       int jxp[3];
       for_3 jxp[d] = (jx[d] + nunit) % nunit;
@@ -206,13 +193,9 @@ public:
       for_3 jxp[d] = (jx[d] + nunit) / nunit;
       for_3 Xperiodic[d] = (jxp[d] - 1) * 2 * R0;
       P2PSum(Leafs[i][0],Leafs[i][1],Leafs[j][0],Leafs[j][1],Xperiodic);
-
     }
   }
-
-
-
-
+#endif
 
   void P2M() const {
     int levelOffset = ((1 << 3 * maxLevel) - 1) / 7;
@@ -255,6 +238,7 @@ public:
     }
   }
 
+#ifndef SAKURA
   void M2L() const {
     for (int lev=1; lev<=maxLevel; lev++) {
       int levelOffset = ((1 << 3 * lev) - 1) / 7;
@@ -304,7 +288,7 @@ public:
       M2LPeriodic();
     }
   }
-
+#else
   void M2L(int *common_stencil, int *far_stencil) const {
     for( int lev=1; lev<=maxLevel; lev++ ) {
       int levelOffset = ((1 << 3 * lev) - 1) / 7;
@@ -316,15 +300,11 @@ public:
         for_l L[l] = 0;
         int ix[3] = {0, 0, 0};
         getIndex(ix,i);
-
         int jx[3];
-
         int node_code[DIM];
         node_code[0] = ix[2]; node_code[1] = ix[1]; node_code[2] = ix[0];
-
         int fn_codes[DIM*(FN+CN)];
         int fn_count = executeStencilFN(fn_codes, node_code, far_stencil, common_stencil, 1, lev);
-
         for(int k=0; k<fn_count; k++){
           jx[2] = fn_codes[k*DIM + 0];
           jx[1] = fn_codes[k*DIM + 1];
@@ -347,7 +327,7 @@ public:
       M2LPeriodic();
     }
   }
-
+#endif
 
   void L2L() const {
     for (int lev=1; lev<=maxLevel; lev++) {

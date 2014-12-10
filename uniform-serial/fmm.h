@@ -3,21 +3,19 @@
 #include <cstdio>
 #include "kernels.h"
 
-void decomposeSpacePermute(int N, float * Y, float * X, uint * keys,
-                           int maxlev);
+#ifdef SAKURA
+void decomposeSpacePermute(int N, float * Y, float * X, uint * keys, int maxlev);
+#endif
 
 class Fmm : public Kernel {
 private:
   void sort(real (*bodies)[4], real (*bodies2)[4], int *key) const {
     int Imax = key[0];
     int Imin = key[0];
-    
     for( int i=0; i<numBodies; i++ ) {
       Imax = MAX(Imax,key[i]);
       Imin = MIN(Imin,key[i]);
     }
-
-
     int numBucket = Imax - Imin + 1;
     int *bucket = new int [numBucket];
     for (int i=0; i<numBucket; i++) bucket[i] = 0;
@@ -28,7 +26,6 @@ private:
       int inew = bucket[key[i]-Imin];
       for_4 bodies2[inew][d] = bodies[i][d];
     }
-    
     delete[] bucket;
   }
 
@@ -94,50 +91,42 @@ public:
 
   }
 
+#ifndef SAKURA
   void sortBodies() const {
     int *key = new int [numBodies];
     real diameter = 2 * R0 / (1 << maxLevel);
-    
-    
     int ix[3] = {0, 0, 0};
-    
     for (int i=0; i<numBodies; i++) {
       for_3 ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
       key[i] = getKey(ix,maxLevel);
     }
-    
     sort(Jbodies,Ibodies,key);
-    
     for (int i=0; i<numBodies; i++) {
       for_4 Jbodies[i][d] = Ibodies[i][d];
       for_4 Ibodies[i][d] = 0;
     }
-    
     delete[] key;
   }
-
-  void sortBodies_sakura() const {
+#else
+  void sortBodies() const {
     uint *key = new uint [numBodies];
     float *X = (float*)Jbodies;
     float *Y = (float*)Ibodies;
-
     real diameter = 2 * R0 / (1 << maxLevel);
     int ix[3] = {0, 0, 0};
     for (int i=0; i<numBodies; i++) {
       for_3 ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
       key[i] = getKey(ix,maxLevel);
     }
-
     decomposeSpacePermute(numBodies, Y, X, key,
 			  maxLevel);
-
     for (int i=0; i<numBodies; i++) {
       for_4 Jbodies[i][d] = Ibodies[i][d];
       for_4 Ibodies[i][d] = 0;
     }
     delete[] key;
   }
-
+#endif
 
   void fillLeafs() const {
     real diameter = 2 * R0 / (1 << maxLevel);

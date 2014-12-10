@@ -2,15 +2,13 @@
 #include "fmm.h"
 #include "logger.h"
 
-
+#ifdef SAKURA
 #define DIM 3
-
 #define NN 26
 #define FN 37
 #define CN 152
-
-void formInteractionStencil(int *common_stencil, int *far_stencil,
-                            int *near_stencil);
+void formInteractionStencil(int *common_stencil, int *far_stencil, int *near_stencil);
+#endif
 
 int main() {
   Fmm FMM;
@@ -21,15 +19,14 @@ int main() {
   const int numImages = 3;
   const real cycle = 10 * M_PI;
   real potDif = 0, potNrm = 0, accDif = 0, accNrm = 0;
-
   printf("Height: %d\n", maxLevel);
 
+#ifdef SAKURA
   int common_stencil[DIM*CN] = {0};
   int far_stencil[8*DIM*FN] = {0};
   int near_stencil[8*DIM*NN] = {0};
-
-  formInteractionStencil(common_stencil, far_stencil,
-                         near_stencil);
+  formInteractionStencil(common_stencil, far_stencil, near_stencil);
+#endif
 
   logger::verbose = true;
   logger::printTitle("FMM Profiling");
@@ -43,8 +40,7 @@ int main() {
   logger::stopTimer("Init bodies");
   
   logger::startTimer("Sort bodies");
-  //FMM.sortBodies();
-  FMM.sortBodies_sakura();
+  FMM.sortBodies();
   logger::stopTimer("Sort bodies");
 
 
@@ -61,8 +57,11 @@ int main() {
   logger::stopTimer("M2M");
 
   logger::startTimer("M2L");
-  //FMM.M2L();
+#ifndef SAKURA
+  FMM.M2L();
+#else
   FMM.M2L(common_stencil, far_stencil);
+#endif
   logger::stopTimer("M2L");
 
   logger::startTimer("L2L");
@@ -74,8 +73,11 @@ int main() {
   logger::stopTimer("L2P");
 
   logger::startTimer("P2P");
-  //FMM.P2P();
+#ifndef SAKURA
+  FMM.P2P();
+#else
   FMM.P2P(near_stencil);
+#endif
   logger::stopTimer("P2P");
 
   logger::startTimer("Verify");
