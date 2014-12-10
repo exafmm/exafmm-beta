@@ -2,15 +2,14 @@
 #include "types.h"
 #include "core.h"
 
+#ifdef SAKURA
 #define DIM 3
-
 #define NN 26
 #define FN 37
 #define CN 152
-
-
 int executeStencilNN(int *nn_codes, int *node_code, int *stencil, int periodic, int lv);
 int executeStencilFN(int *fn_codes, int *node_code, int *fn_stencil, int *cn_stencil, int periodic, int lv);
+#endif
 
 class Kernel {
 public:

@@ -2,7 +2,7 @@
 CXX    = icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
 MAKEFLAGS += --no-print-directory
 
-LFLAGS	+= -DSAKURA -lsakura -lstencil
+#LFLAGS	+= -DSAKURA -lsakura -lstencil
 
 all	:
 	make clean
