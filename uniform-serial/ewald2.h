@@ -1,6 +1,6 @@
 #include <cassert>
 #include <cmath>
-#include "types.h"
+#include "types2.h"
 
 class Ewald {
 private:
@@ -118,15 +118,13 @@ private:
   }
   
 public:
-  Ewald(int _numBodies, int _maxLevel, real cycle) {
+  Ewald(int _numBodies, int _maxLevel, real cycle,
+	int _ksize, real _alpha, real _sigma, real _cutoff) :
+    ksize(_ksize), alpha(_alpha), sigma(_sigma), cutoff(_cutoff) {
     numBodies = _numBodies;
     maxLevel = _maxLevel;
     numLeafs = 1 << 3 * maxLevel;
-    ksize = 11;
     numWaves = 4. / 3 * M_PI * ksize * ksize * ksize;
-    alpha = 10 / cycle;
-    sigma = .25 / M_PI;
-    cutoff = 10;
     scale = 2 * M_PI / cycle;
     R0 = cycle * .5;
     for_3 X0[d] = R0;
@@ -141,20 +139,6 @@ public:
     delete[] waveK;
   }
   
-  void dipoleCorrection(real (*Ibodies)[4], real (*Jbodies)[4]) {
-    real dipole[3] = {0, 0, 0};
-    for (int i=0; i<numBodies; i++) {
-      for_3 dipole[d] += (Jbodies[i][d] - X0[d]) * Jbodies[i][3];
-    }
-    real norm = dipole[0] * dipole[0] + dipole[1] * dipole[1] + dipole[2] * dipole[2];
-    real cycle = 2 * R0;
-    real coef = 4 * M_PI / (3 * cycle * cycle * cycle);
-    for (int i=0; i<numBodies; i++) {
-      Ibodies[i][0] -= coef * norm / numBodies / Jbodies[i][3];
-      for_3 Ibodies[i][d+1] -= coef * dipole[d];
-    }
-  }
-
   void wavePart(real (*Ibodies2)[4], real (*Jbodies)[4]) {
     initWaves(waveRe, waveIm, waveK);
     dft(Jbodies);

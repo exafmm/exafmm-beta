@@ -1,7 +1,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstdio>
-#include "kernels.h"
+#include "kernels2.h"
 
 #ifdef SAKURA
 void decomposeSpacePermute(int N, float * Y, float * X, uint * keys, int maxlev);
@@ -9,7 +9,14 @@ void decomposeSpacePermute(int N, float * Y, float * X, uint * keys, int maxlev)
 
 class Fmm : public Kernel {
 private:
-  void sort(real (*bodies)[4], real (*bodies2)[4], int *key) const {
+  inline void getIndex(int i, int *ix, real diameter) {
+#if NOWRAP
+    i = (i / 3) * 3;
+#endif
+    for_3 ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
+  }
+
+  void sort(real (*bodies)[4], real (*bodies2)[4], int *Index, int *Index2, int *key) const {
     int Imax = key[0];
     int Imin = key[0];
     for( int i=0; i<numBodies; i++ ) {
@@ -24,6 +31,7 @@ private:
     for (int i=numBodies-1; i>=0; i--) {
       bucket[key[i]-Imin]--;
       int inew = bucket[key[i]-Imin];
+      Index2[inew] = Index[i];
       for_4 bodies2[inew][d] = bodies[i][d];
     }
     delete[] bucket;
@@ -43,6 +51,8 @@ public:
     Multipole = new real [numCells][MTERM]();
     Local = new real [numCells][LTERM]();
     Leafs = new int [numLeafs][2]();
+    Index = new int [numBodies];
+    Index2 = new int [numBodies];
     for (int i=0; i<numCells; i++) {
       for_m Multipole[i][m] = 0;
       for_l Local[i][l] = 0;
@@ -59,6 +69,8 @@ public:
     delete[] Multipole;
     delete[] Local;
     delete[] Leafs;
+    delete[] Index;
+    delete[] Index2;
   }
 
   void initBodies(real cycle) {
@@ -80,46 +92,43 @@ public:
     }
   }
 
-
   void encode(real (*Jbodies)[4], int *key, int N, int offset, real diameter, real R0, real (X0)[3], int maxLevel){
-
     int ix[3] = {0, 0, 0};
     for(int i=0; i<N; i++){
       for_3 ix[d] = int((Jbodies[i+offset][d] + R0 - X0[d]) / diameter);
       key[i+offset] = getKey(ix,maxLevel);
     }
-
   }
 
 #ifndef SAKURA
-  void sortBodies() const {
+  void sortBodies() {
     int *key = new int [numBodies];
     real diameter = 2 * R0 / (1 << maxLevel);
     int ix[3] = {0, 0, 0};
     for (int i=0; i<numBodies; i++) {
-      for_3 ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
+      getIndex(i,ix,diameter);
       key[i] = getKey(ix,maxLevel);
     }
-    sort(Jbodies,Ibodies,key);
+    sort(Jbodies, Ibodies, Index, Index2, key);
     for (int i=0; i<numBodies; i++) {
+      Index[i] = Index2[i];
       for_4 Jbodies[i][d] = Ibodies[i][d];
       for_4 Ibodies[i][d] = 0;
     }
     delete[] key;
   }
 #else
-  void sortBodies() const {
+  void sortBodies() {
     uint *key = new uint [numBodies];
     float *X = (float*)Jbodies;
     float *Y = (float*)Ibodies;
     real diameter = 2 * R0 / (1 << maxLevel);
     int ix[3] = {0, 0, 0};
     for (int i=0; i<numBodies; i++) {
-      for_3 ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
+      getIndex(i,ix,diameter);
       key[i] = getKey(ix,maxLevel);
     }
-    decomposeSpacePermute(numBodies, Y, X, key,
-			  maxLevel);
+    decomposeSpacePermute(numBodies, Y, X, key, maxLevel);
     for (int i=0; i<numBodies; i++) {
       for_4 Jbodies[i][d] = Ibodies[i][d];
       for_4 Ibodies[i][d] = 0;
@@ -128,15 +137,15 @@ public:
   }
 #endif
 
-  void fillLeafs() const {
+  void fillLeafs() {
     real diameter = 2 * R0 / (1 << maxLevel);
     int ix[3] = {0, 0, 0};
-    for_3 ix[d] = int((Jbodies[0][d] + R0 - X0[d]) / diameter);
-    int ileaf = getKey(ix,maxLevel,false);
+    getIndex(0,ix,diameter);
+    int ileaf = getKey(ix, maxLevel, false);
     Leafs[ileaf][0] = 0;
     for (int i=0; i<numBodies; i++) {
-      for_3 ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
-      int inew = getKey(ix,maxLevel,false);
+      getIndex(i,ix,diameter);
+      int inew = getKey(ix, maxLevel, false);
       if (ileaf != inew) {
         Leafs[ileaf][1] = Leafs[inew][0] = i;
         ileaf = inew;
@@ -145,6 +154,20 @@ public:
     Leafs[ileaf][1] = numBodies;
     for (int i=0; i<numLeafs; i++) {
       if (Leafs[i][1] == Leafs[i][0]) printf("Warning: Cell %d is empty.\n",i);
+    }
+  }
+
+  void dipoleCorrection() {
+    real dipole[3] = {0, 0, 0};
+    for (int i=0; i<numBodies; i++) {
+      for_3 dipole[d] += (Jbodies[i][d] - X0[d]) * Jbodies[i][3];
+    }
+    real norm = dipole[0] * dipole[0] + dipole[1] * dipole[1] + dipole[2] * dipole[2];
+    real cycle = 2 * R0;
+    real coef = 4 * M_PI / (3 * cycle * cycle * cycle);
+    for (int i=0; i<numBodies; i++) {
+      Ibodies[i][0] -= coef * norm / numBodies / Jbodies[i][3];
+      for_3 Ibodies[i][d+1] -= coef * dipole[d];
     }
   }
 

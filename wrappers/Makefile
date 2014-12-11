@@ -31,7 +31,12 @@ charmm:
 charmm2:
 	make libcharmm2.a
 	$(FC) test_charmm.f90 -ggdb3 -L. -lfmm -ltbb -lstdc++ -lgomp
-	mpirun -np 1 ./a.out ala3.fmm
+	make cleandat
+	mpirun -np 1 ./a.out water.fmm 10
+
+charmm3:
+	make libcharmm3.a
+	$(FC) test_charmm.f90 -ggdb3 -L. -lfmm -ltbb -lstdc++ -lgomp
 	make cleandat
 	mpirun -np 1 ./a.out water.fmm 10
 
@@ -54,3 +59,8 @@ libcharmm2.a: charmm2.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/Laplace
 	ar ruv libcharmm2.a $?
 	ranlib libcharmm2.a
 	mv libcharmm2.a libfmm.a
+
+libcharmm3.a: charmm3.o
+	ar ruv libcharmm3.a $?
+	ranlib libcharmm3.a
+	mv libcharmm3.a libfmm.a

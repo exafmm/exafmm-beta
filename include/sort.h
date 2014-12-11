@@ -1,7 +1,7 @@
 #ifndef sort_h
 #define sort_h
 #include "types.h"
-#ifdef _OPENMP
+#ifndef _OPENMP
 int omp_get_num_threads() {return 1;}
 int omp_get_thread_num() {return 0;}
 #else

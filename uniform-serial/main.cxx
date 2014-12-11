@@ -1,6 +1,6 @@
-#include "ewald.h"
+#include "ewald2.h"
 #include "fmm.h"
-#include "logger.h"
+#include "logger2.h"
 
 #ifdef SAKURA
 #define DIM 3
@@ -86,10 +86,14 @@ int main() {
   FMM.direct();
   FMM.verify(100, potDif, potNrm, accDif, accNrm);
 #else
-  Ewald ewald(numBodies, maxLevel, cycle);
-  ewald.dipoleCorrection(FMM.Ibodies, FMM.Jbodies);
+  const int ksize = 11;
+  const real alpha = 10 / cycle;
+  const real sigma = .25 / M_PI;
+  const real cutoff = 10;
+  Ewald ewald(numBodies, maxLevel, cycle, ksize, alpha, sigma, cutoff);
   ewald.wavePart(FMM.Ibodies2, FMM.Jbodies);
   ewald.realPart(FMM.Ibodies2, FMM.Jbodies, FMM.Leafs);
+  FMM.dipoleCorrection();
   FMM.verify(numBodies, potDif, potNrm, accDif, accNrm);
 #endif
 

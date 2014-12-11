@@ -1,5 +1,5 @@
 #include <cmath>
-#include "types.h"
+#include "types2.h"
 #include "core.h"
 
 #ifdef SAKURA
@@ -28,6 +28,8 @@ public:
   real (*Multipole)[MTERM];
   real (*Local)[LTERM];
   int (*Leafs)[2];
+  int *Index;
+  int *Index2;
 
 private:
   inline void getIndex(int *ix, int index) const {
