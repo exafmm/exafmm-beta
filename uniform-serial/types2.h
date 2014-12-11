@@ -1,7 +1,7 @@
 #ifndef types_h
 #define types_h
 
-typedef double real;
+typedef double real_t;
 const int PP = 6;
 const int MTERM = PP*(PP+1)*(PP+2)/6;
 const int LTERM = (PP+1)*(PP+2)*(PP+3)/6;

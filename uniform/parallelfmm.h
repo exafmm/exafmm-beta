@@ -49,7 +49,7 @@ public:
 
   void partitionComm() {
     int ix[3];
-    real diameter = 2 * R0;
+    real_t diameter = 2 * R0;
     for( int i=0; i<numBodies; i++ ) {
       getIndex(i,ix,diameter);
       int sendRank = getGlobKey(ix,maxGlobLevel);
@@ -355,7 +355,7 @@ public:
       for_3d jxoff[d] = (IX[lev][d] / numChild[d]) * numChild[d];
       int childOffset = globLevelOffset[lev];
       int parentOffset = globLevelOffset[lev-1];
-      real diameter[3];
+      real_t diameter[3];
       for_3d diameter[d] = 2 * RGlob[d] / numPartition[lev][d];
       int jx[3];
       for( jx[2]=jxoff[2]; jx[2]<jxoff[2]+numChild[2]; jx[2]++ ) {
@@ -365,12 +365,12 @@ public:
             for_3d ix[d] = jx[d] / numChild[d];
             int c = getGlobKey(jx,lev) + childOffset;
             int p = getGlobKey(ix,lev-1) + parentOffset;
-            real dist[3];
-            for_3d dist[d] = (ix[d] + .5) * numChild[d] * diameter[d] - (jx[d] + .5) * diameter[d];
-            real M[MTERM];
-            real C[LTERM];
+            real_t dX[3];
+            for_3d dX[d] = (ix[d] + .5) * numChild[d] * diameter[d] - (jx[d] + .5) * diameter[d];
+            real_t M[MTERM];
+            real_t C[LTERM];
             C[0] = 1;
-	    powerM(C,dist);
+	    powerM(C,dX);
             for_m M[m] = globMultipole[c][m];
             for_m globMultipole[p][m] += C[m] * M[0];
 	    M2MSum(globMultipole[p],C,M);
@@ -388,7 +388,7 @@ public:
       for_3d numChild[d] = numPartition[lev][d] / numPartition[lev-1][d];
       int childOffset = globLevelOffset[lev];
       int parentOffset = globLevelOffset[lev-1];
-      real diameter[3];
+      real_t diameter[3];
       for_3d diameter[d] = 2 * RGlob[d] / numPartition[lev][d];
       int jx[3];
       for( jx[2]=0; jx[2]<numPartition[lev][2]; jx[2]++ ) {
@@ -398,12 +398,12 @@ public:
             for_3d ix[d] = jx[d] / numChild[d];
             int c = getGlobKey(jx,lev) + childOffset;
             int p = getGlobKey(ix,lev-1) + parentOffset;
-            real dist[3];
-            for_3d dist[d] = (ix[d] + .5) * numChild[d] * diameter[d] - (jx[d] + .5) * diameter[d];
-            real M[MTERM];
-            real C[LTERM];
+            real_t dX[3];
+            for_3d dX[d] = (ix[d] + .5) * numChild[d] * diameter[d] - (jx[d] + .5) * diameter[d];
+            real_t M[MTERM];
+            real_t C[LTERM];
             C[0] = 1;
-            powerM(C,dist);
+            powerM(C,dX);
             for_m M[m] = globMultipole[c][m];
             for_m globMultipole[p][m] += C[m] * M[0];
             M2MSum(globMultipole[p],C,M);
@@ -513,13 +513,13 @@ public:
       int nxmin[3] = {0, 0, 0};
       int nxmax[3] = {numPartition[lev-1][0]-1,numPartition[lev-1][1]-1,numPartition[lev-1][2]-1};
       int nunit[3] = {numPartition[lev][0],numPartition[lev][1],numPartition[lev][2]};
-      real diameter[3];
+      real_t diameter[3];
       for_3d diameter[d] = 2 * RGlob[d] / numPartition[lev][d];
       if( numImages != 0 ) {
         for_3d nxmin[d] = -nxmax[d] - 1;
         for_3d nxmax[d] = 2 * nxmax[d] + 1;
       }
-      real L[LTERM];
+      real_t L[LTERM];
       for_l L[l] = 0;
       int ix[3];
       for_3d ix[d] = IX[lev][d];
@@ -539,14 +539,14 @@ public:
               int jxp[3];
               for_3d jxp[d] = (jx[d] + nunit[d]) % nunit[d];
               int j = getGlobKey(jxp,lev) + globLevelOffset[lev];
-              real M[MTERM];
+              real_t M[MTERM];
               for_m M[m] = globMultipole[j][m];
-              real dist[3];
-              for_3d dist[d] = (ix[d] - jx[d]) * diameter[d];
-              real invR2 = 1. / (dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2]);
-              real invR  = sqrt(invR2);
-              real C[LTERM];
-	      getCoef(C,dist,invR2,invR);
+              real_t dX[3];
+              for_3d dX[d] = (ix[d] - jx[d]) * diameter[d];
+              real_t invR2 = 1. / (dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2]);
+              real_t invR  = sqrt(invR2);
+              real_t C[LTERM];
+	      getCoef(C,dX,invR2,invR);
 	      M2LSum(L,C,M);
             }
           }
@@ -559,13 +559,13 @@ public:
 
   void globL2L() {
     for( int lev=1; lev<=maxGlobLevel; lev++ ) {
-      real diameter[3];
+      real_t diameter[3];
       for_3d diameter[d] = 2 * RGlob[d] / numPartition[lev][d];
-      real dist[3];
-      for_3d dist[d] = (IX[lev][d] + .5) * diameter[d] - (IX[lev-1][d] + .5) * 2 * diameter[d];
-      real C[LTERM];
+      real_t dX[3];
+      for_3d dX[d] = (IX[lev][d] + .5) * diameter[d] - (IX[lev-1][d] + .5) * 2 * diameter[d];
+      real_t C[LTERM];
       C[0] = 1;
-      powerL(C,dist);
+      powerL(C,dX);
       for_l globLocal[lev][l] += globLocal[lev-1][l];
       for( int l=1; l<LTERM; l++ ) globLocal[lev][0] += C[l] * globLocal[lev-1][l];
       L2LSum(globLocal[lev],C,globLocal[lev-1]);

@@ -8,13 +8,13 @@ private:
   int maxLevel;
   int numLeafs;
   int numTypes;
-  real R0;
-  real X0[3];
-  real cuton;
-  real cutoff;
-  real *rscale;
-  real *gscale;
-  real *fgscale;
+  real_t R0;
+  real_t X0[3];
+  real_t cuton;
+  real_t cutoff;
+  real_t *rscale;
+  real_t *gscale;
+  real_t *fgscale;
 
 private:
   inline int getKey(int *ix, int level) const {
@@ -36,30 +36,30 @@ private:
     }
   }
 
-  void P2PVdW(int ibegin, int iend, int jbegin, int jend, real *Xperiodic,
-	      real (*Ibodies)[4], real (*Jbodies)[4]) const {
+  void P2PVdW(int ibegin, int iend, int jbegin, int jend, real_t *Xperiodic,
+	      real_t (*Ibodies)[4], real_t (*Jbodies)[4]) const {
     for (int i=ibegin; i<iend; i++) {
       int atypei = int(Jbodies[i][3]);
-      real Po = 0, Fx = 0, Fy = 0, Fz = 0;
+      real_t Po = 0, Fx = 0, Fy = 0, Fz = 0;
       for (int j=jbegin; j<jend; j++) {
-	real dX[3];
+	real_t dX[3];
 	for_3 dX[d] = Jbodies[i][d] - Jbodies[j][d] - Xperiodic[d];
-	real R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+	real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
 	if (R2 != 0) {
           int atypej = int(Jbodies[j][3]);
-          real rs = rscale[atypei*numTypes+atypej];
-          real gs = gscale[atypei*numTypes+atypej];
-          real fgs = fgscale[atypei*numTypes+atypej];
-          real R2s = R2 * rs;
-          real invR2 = 1.0 / R2s;
-          real invR6 = invR2 * invR2 * invR2;
-          real cuton2 = cuton * cuton;
-          real cutoff2 = cutoff * cutoff;
+          real_t rs = rscale[atypei*numTypes+atypej];
+          real_t gs = gscale[atypei*numTypes+atypej];
+          real_t fgs = fgscale[atypei*numTypes+atypej];
+          real_t R2s = R2 * rs;
+          real_t invR2 = 1.0 / R2s;
+          real_t invR6 = invR2 * invR2 * invR2;
+          real_t cuton2 = cuton * cuton;
+          real_t cutoff2 = cutoff * cutoff;
           if (R2 < cutoff2) {
-            real tmp = 0, dtmp = 0;
+            real_t tmp = 0, dtmp = 0;
             if (cuton2 < R2) {
-              real tmp1 = (cutoff2 - R2) / ((cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2));
-              real tmp2 = tmp1 * (cutoff2 - R2) * (cutoff2 - 3 * cuton2 + 2 * R2);
+              real_t tmp1 = (cutoff2 - R2) / ((cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2));
+              real_t tmp2 = tmp1 * (cutoff2 - R2) * (cutoff2 - 3 * cuton2 + 2 * R2);
               tmp = invR6 * (invR6 - 1) * tmp2;
               dtmp = invR6 * (invR6 - 1) * 12 * (cuton2 - R2) * tmp1
                 - 6 * invR6 * (invR6 + (invR6 - 1) * tmp2) * tmp2 / R2;
@@ -84,17 +84,17 @@ private:
   
 public:
   VdW(int _numBodies, int _maxLevel, int _numTypes,
-      real cycle, real _cuton, real _cutoff,
-      real *_rscale, real *_gscale, real *_fgscale) :
+      real_t cycle, real_t _cuton, real_t _cutoff,
+      real_t *_rscale, real_t *_gscale, real_t *_fgscale) :
     numTypes(_numTypes), cuton(_cuton), cutoff(_cutoff) {
     numBodies = _numBodies;
     maxLevel = _maxLevel;
     numLeafs = 1 << 3 * maxLevel;
     R0 = cycle * .5;
     for_3 X0[d] = R0;
-    rscale = new real [numTypes*numTypes];
-    gscale = new real [numTypes*numTypes];
-    fgscale = new real [numTypes*numTypes];
+    rscale = new real_t [numTypes*numTypes];
+    gscale = new real_t [numTypes*numTypes];
+    fgscale = new real_t [numTypes*numTypes];
     for (int i=0; i<numTypes*numTypes; i++) {
       rscale[i] = _rscale[i];
       gscale[i] = _gscale[i];
@@ -108,7 +108,7 @@ public:
     delete[] fgscale;
   }
   
-  void evaluate(real (*Ibodies)[4], real (*Jbodies)[4], int (*Leafs)[2]) {
+  void evaluate(real_t (*Ibodies)[4], real_t (*Jbodies)[4], int (*Leafs)[2]) {
     int nunit = 1 << maxLevel;
     int nmin = -nunit;
     int nmax = 2 * nunit - 1;
@@ -127,7 +127,7 @@ public:
 	    int jxp[3];
 	    for_3 jxp[d] = (jx[d] + nunit) % nunit;
 	    int j = getKey(jxp,maxLevel);
-	    real Xperiodic[3] = {0, 0, 0};
+	    real_t Xperiodic[3] = {0, 0, 0};
 	    for_3 jxp[d] = (jx[d] + nunit) / nunit;
 	    for_3 Xperiodic[d] = (jxp[d] - 1) * 2 * R0;
 	    P2PVdW(Leafs[i][0],Leafs[i][1],Leafs[j][0],Leafs[j][1],Xperiodic,

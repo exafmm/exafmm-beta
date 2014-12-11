@@ -5,7 +5,6 @@
 #include <iostream>
 #include <omp.h>
 
-typedef double real;
 const int PP = 6;
 const int MTERM = PP*(PP+1)*(PP+2)/6;
 const int LTERM = (PP+1)*(PP+2)*(PP+3)/6;
@@ -36,18 +35,18 @@ public:
   int MPISIZE;
   int MPIRANK;
 
-  real X0[3];
-  real R0;
-  real RGlob[3];
+  real_t X0[3];
+  real_t R0;
+  real_t RGlob[3];
   int *Index;
   int *Index2;
   int *Rank;
-  real (*Ibodies)[4];
-  real (*Jbodies)[4];
-  real (*Multipole)[MTERM];
-  real (*Local)[LTERM];
-  real (*globMultipole)[MTERM];
-  real (*globLocal)[LTERM];
+  real_t (*Ibodies)[4];
+  real_t (*Jbodies)[4];
+  real_t (*Multipole)[MTERM];
+  real_t (*Local)[LTERM];
+  real_t (*globMultipole)[MTERM];
+  real_t (*globLocal)[LTERM];
   int (*Leafs)[2];
   float (*sendJbodies)[4];
   float (*recvJbodies)[4];
@@ -68,11 +67,11 @@ private:
     }
   }
 
-  void getCenter(real *dist, int index, int level) const {
-    real R = R0 / (1 << level);
+  void getCenter(real_t *dX, int index, int level) const {
+    real_t R = R0 / (1 << level);
     int ix[3] = {0, 0, 0};
     getIndex(ix, index);
-    for_3d dist[d] = X0[d] - R0 + (2 * ix[d] + 1) * R;
+    for_3d dX[d] = X0[d] - R0 + (2 * ix[d] + 1) * R;
   }
 
 protected:
@@ -80,24 +79,24 @@ protected:
     return ix[0] + (ix[1] + ix[2] * numPartition[level][1]) * numPartition[level][0];
   }
 
-  void P2P(int ibegin, int iend, int jbegin, int jend, real *periodic) const {
+  void P2P(int ibegin, int iend, int jbegin, int jend, real_t *periodic) const {
     int ii;
     for( ii=ibegin; ii<iend-1; ii+=2 ) {
 #ifndef SPARC_SIMD
       for( int i=ii; i<=ii+1; i++ ) {
-        real Po = 0, Fx = 0, Fy = 0, Fz = 0;
+        real_t Po = 0, Fx = 0, Fy = 0, Fz = 0;
         for( int j=jbegin; j<jend; j++ ) {
-          real dist[3];
-          for_3d dist[d] = Jbodies[i][d] - Jbodies[j][d] - periodic[d];
-          real R2 = dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2];
-          real invR2 = 1.0 / R2;                                  
+          real_t dX[3];
+          for_3d dX[d] = Jbodies[i][d] - Jbodies[j][d] - periodic[d];
+          real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+          real_t invR2 = 1.0 / R2;                                  
           if( R2 == 0 ) invR2 = 0;                                
-          real invR = Jbodies[j][3] * sqrt(invR2);
-          real invR3 = invR2 * invR;
+          real_t invR = Jbodies[j][3] * sqrt(invR2);
+          real_t invR3 = invR2 * invR;
           Po += invR;
-          Fx += dist[0] * invR3;
-          Fy += dist[1] * invR3;
-          Fz += dist[2] * invR3;
+          Fx += dX[0] * invR3;
+          Fy += dX[1] * invR3;
+          Fz += dX[2] * invR3;
         }
         Ibodies[i][0] += Po;
         Ibodies[i][1] -= Fx;
@@ -129,7 +128,7 @@ protected:
         Fy = _fjsp_madd_v2r8(xj[1],R2,Fy);
         Fz = _fjsp_madd_v2r8(xj[2],R2,Fz);
       }
-      real Po2[2], Fx2[2], Fy2[2], Fz2[2];
+      real_t Po2[2], Fx2[2], Fy2[2], Fz2[2];
       _mm_store_pd(Po2,Po);
       _mm_store_pd(Fx2,Fx);
       _mm_store_pd(Fy2,Fy);
@@ -145,19 +144,19 @@ protected:
 #endif
     }
     for( int i=ii; i<iend; i++ ) {
-      real Po = 0, Fx = 0, Fy = 0, Fz = 0;
+      real_t Po = 0, Fx = 0, Fy = 0, Fz = 0;
       for( int j=jbegin; j<jend; j++ ) {
-        real dist[3];
-        for_3d dist[d] = Jbodies[i][d] - Jbodies[j][d] - periodic[d];
-        real R2 = dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2];
-        real invR2 = 1.0 / R2;
+        real_t dX[3];
+        for_3d dX[d] = Jbodies[i][d] - Jbodies[j][d] - periodic[d];
+        real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+        real_t invR2 = 1.0 / R2;
         if( R2 == 0 ) invR2 = 0;
-        real invR = Jbodies[j][3] * sqrt(invR2);
-        real invR3 = invR2 * invR;
+        real_t invR = Jbodies[j][3] * sqrt(invR2);
+        real_t invR3 = invR2 * invR;
         Po += invR;
-        Fx += dist[0] * invR3;
-        Fy += dist[1] * invR3;
-        Fz += dist[2] * invR3;
+        Fx += dX[0] * invR3;
+        Fy += dX[1] * invR3;
+        Fz += dX[2] * invR3;
       }
       Ibodies[i][0] += Po;
       Ibodies[i][1] -= Fx;
@@ -202,7 +201,7 @@ protected:
 #endif
             j += rankOffset;
             rankOffset = 13 * numLeafs;
-            real periodic[3] = {0, 0, 0};
+            real_t periodic[3] = {0, 0, 0};
             for_3d jxp[d] = (jx[d] + ixc[d] * nunit + nunitGlob[d]) / nunitGlob[d];
             for_3d periodic[d] = (jxp[d] - 1) * 2 * RGlob[d];
             P2P(Leafs[i+rankOffset][0],Leafs[i+rankOffset][1],Leafs[j][0],Leafs[j][1],periodic);
@@ -217,14 +216,14 @@ protected:
     int levelOffset = ((1 << 3 * maxLevel) - 1) / 7 + 13 * numCells;
 #pragma omp parallel for
     for( int i=0; i<numLeafs; i++ ) {
-      real center[3];
+      real_t center[3];
       getCenter(center,i,maxLevel);
       for( int j=Leafs[i+rankOffset][0]; j<Leafs[i+rankOffset][1]; j++ ) {
-        real dist[3];
-        for_3d dist[d] = center[d] - Jbodies[j][d];
-        real M[MTERM];
+        real_t dX[3];
+        for_3d dX[d] = center[d] - Jbodies[j][d];
+        real_t M[MTERM];
         M[0] = Jbodies[j][3];
-        powerM(M,dist);
+        powerM(M,dX);
         for_m Multipole[i+levelOffset][m] += M[m];
       }
     }
@@ -235,7 +234,7 @@ protected:
     for( int lev=maxLevel; lev>0; lev-- ) {
       int childOffset = ((1 << 3 * lev) - 1) / 7 + rankOffset;
       int parentOffset = ((1 << 3 * (lev - 1)) - 1) / 7 + rankOffset;
-      real radius = R0 / (1 << lev);
+      real_t radius = R0 / (1 << lev);
 #pragma omp parallel for schedule(static, 8)
       for( int i=0; i<(1 << 3 * lev); i++ ) {
         int c = i + childOffset;
@@ -244,12 +243,12 @@ protected:
         ix[0] = 1 - (i & 1) * 2;
         ix[1] = 1 - ((i / 2) & 1) * 2;
         ix[2] = 1 - ((i / 4) & 1) * 2;
-        real dist[3];
-        for_3d dist[d] = ix[d] * radius;
-        real M[MTERM];
-        real C[LTERM];
+        real_t dX[3];
+        for_3d dX[d] = ix[d] * radius;
+        real_t M[MTERM];
+        real_t C[LTERM];
         C[0] = 1;
-        powerM(C,dist);
+        powerM(C,dX);
         for_m M[m] = Multipole[c][m];
         for_m Multipole[p][m] += C[m] * M[0];
         M2MSum(Multipole[p],C,M);
@@ -272,10 +271,10 @@ protected:
         for_3d nxmin[d] -= (nunitGlob[d] >> 1);
         for_3d nxmax[d] += (nunitGlob[d] >> 1);
       }
-      real diameter = 2 * R0 / (1 << lev);
+      real_t diameter = 2 * R0 / (1 << lev);
 #pragma omp parallel for
       for( int i=0; i<(1 << 3 * lev); i++ ) {
-        real L[LTERM];
+        real_t L[LTERM];
         for_l L[l] = 0;
         int ix[3] = {0, 0, 0};
         getIndex(ix,i);
@@ -300,14 +299,14 @@ protected:
                 int rankOffset = (jxp[0] + 3 * jxp[1] + 9 * jxp[2]) * numCells;
 #endif
                 j += rankOffset;
-                real M[MTERM];
+                real_t M[MTERM];
                 for_m M[m] = Multipole[j][m];
-                real dist[3];
-                for_3d dist[d] = (ix[d] - jx[d]) * diameter;
-                real invR2 = 1. / (dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2]);
-                real invR  = sqrt(invR2);
-                real C[LTERM];
-                getCoef(C,dist,invR2,invR);
+                real_t dX[3];
+                for_3d dX[d] = (ix[d] - jx[d]) * diameter;
+                real_t invR2 = 1. / (dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2]);
+                real_t invR  = sqrt(invR2);
+                real_t C[LTERM];
+                getCoef(C,dX,invR2,invR);
                 M2LSum(L,C,M);
               }
             }
@@ -322,7 +321,7 @@ protected:
     for( int lev=1; lev<=maxLevel; lev++ ) {
       int childOffset = ((1 << 3 * lev) - 1) / 7;
       int parentOffset = ((1 << 3 * (lev - 1)) - 1) / 7;
-      real radius = R0 / (1 << lev);
+      real_t radius = R0 / (1 << lev);
 #pragma omp parallel for
       for( int i=0; i<(1 << 3 * lev); i++ ) {
         int c = i + childOffset;
@@ -331,11 +330,11 @@ protected:
         ix[0] = (i & 1) * 2 - 1;
         ix[1] = ((i / 2) & 1) * 2 - 1;
         ix[2] = ((i / 4) & 1) * 2 - 1;
-        real dist[3];
-        for_3d dist[d] = ix[d] * radius;
-        real C[LTERM];
+        real_t dX[3];
+        for_3d dX[d] = ix[d] * radius;
+        real_t C[LTERM];
         C[0] = 1;
-        powerL(C,dist);
+        powerL(C,dX);
         for_l Local[c][l] += Local[p][l];
         for( int l=1; l<LTERM; l++ ) Local[c][0] += C[l] * Local[p][l];
         L2LSum(Local[c],C,Local[p]);
@@ -348,16 +347,16 @@ protected:
     int levelOffset = ((1 << 3 * maxLevel) - 1) / 7;
 #pragma omp parallel for
     for( int i=0; i<numLeafs; i++ ) {
-      real center[3];
+      real_t center[3];
       getCenter(center,i,maxLevel);
-      real L[LTERM];
+      real_t L[LTERM];
       for_l L[l] = Local[i+levelOffset][l];
       for( int j=Leafs[i+rankOffset][0]; j<Leafs[i+rankOffset][1]; j++ ) {
-        real dist[3];
-        for_3d dist[d] = Jbodies[j][d] - center[d];
-        real C[LTERM];
+        real_t dX[3];
+        for_3d dX[d] = Jbodies[j][d] - center[d];
+        real_t C[LTERM];
         C[0] = 1;
-        powerL(C,dist);
+        powerL(C,dX);
         for_4d Ibodies[j][d] += L[d];
         for( int l=1; l<LTERM; l++ ) Ibodies[j][0] += C[l] * L[l];
         L2PSum(Ibodies[j],C,L);

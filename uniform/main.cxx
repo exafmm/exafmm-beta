@@ -17,7 +17,7 @@
 int main(int argc, char ** argv) {
   const int ksize = 11;
   const real_t eps2 = 0.0;
-  const real cycle = 10 * M_PI;
+  const real_t cycle = 10 * M_PI;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = 10;
@@ -65,7 +65,7 @@ int main(int argc, char ** argv) {
     FMM.getGlobIndex(ix,FMM.MPIRANK,FMM.maxGlobLevel);
     for_3d FMM.X0[d] = 2 * FMM.R0 * (ix[d] + .5);
     srand48(FMM.MPIRANK);
-    real average = 0;
+    real_t average = 0;
     for( int i=0; i<FMM.numBodies; i++ ) {
       FMM.Jbodies[i][0] = 2 * FMM.R0 * (drand48() + ix[0]);
       FMM.Jbodies[i][1] = 2 * FMM.R0 * (drand48() + ix[1]);

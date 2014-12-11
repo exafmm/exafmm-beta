@@ -18,7 +18,7 @@ static const double Celec = 332.0716;
 int numImages;
 Fmm * FMM;
 
-int wrap(real bodies[4], real cycle) {
+int wrap(real_t bodies[4], real_t cycle) {
   int iwrap = 0;
   for (int d=0; d<3; d++) {
     if(bodies[d] < -cycle / 2) {
@@ -33,7 +33,7 @@ int wrap(real bodies[4], real cycle) {
   return iwrap;
 }
 
-void unwrap(real bodies[4], real cycle, int iwrap) {
+void unwrap(real_t bodies[4], real_t cycle, int iwrap) {
   for (int d=0; d<3; d++) {
     if((iwrap >> d) & 1) bodies[d] += (bodies[d] > 0 ? -cycle : cycle);
   }
@@ -157,9 +157,9 @@ extern "C" void direct_coulomb_(int & numBodies, int *, double * x, double * q, 
   for (int i=0; i<numImages; i++) {
     prange += int(std::pow(3.,i));
   }
-  real Xperiodic[3];
+  real_t Xperiodic[3];
   for (int i=0; i<numBodies; i++) {
-    real pp = 0, fx = 0, fy = 0, fz = 0;
+    real_t pp = 0, fx = 0, fy = 0, fz = 0;
     for (int ix=-prange; ix<=prange; ix++) {
       for (int iy=-prange; iy<=prange; iy++) {
 	for (int iz=-prange; iz<=prange; iz++) {
@@ -167,12 +167,12 @@ extern "C" void direct_coulomb_(int & numBodies, int *, double * x, double * q, 
 	  Xperiodic[1] = iy * cycle;
 	  Xperiodic[2] = iz * cycle;
 	  for (int j=0; j<numBodies; j++) {
-	    real dX[4];
+	    real_t dX[4];
 	    for_3 dX[d] = x[3*i+d] - x[3*j+d] - Xperiodic[d];
-	    real R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
-	    real invR = 1 / std::sqrt(R2);
+	    real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+	    real_t invR = 1 / std::sqrt(R2);
 	    if (R2 == 0) invR = 0;
-	    real invR3 = q[j] * invR * invR * invR;
+	    real_t invR3 = q[j] * invR * invR * invR;
 	    pp += q[j] * invR;
 	    fx += dX[0] * invR3;
 	    fy += dX[1] * invR3;
@@ -186,13 +186,13 @@ extern "C" void direct_coulomb_(int & numBodies, int *, double * x, double * q, 
       f[3*i+2] -= fz * q[i] * Celec;
     }
   }
-  real dipole[3] = {0, 0, 0};
+  real_t dipole[3] = {0, 0, 0};
   for (int i=0; i<numBodies; i++) {
     for_3 dipole[d] += x[3*i+d] * q[i];
   }
-  real norm = 0;
+  real_t norm = 0;
   for_3 norm += dipole[d] * dipole[d];
-  real coef = 4 * M_PI / (3 * cycle * cycle * cycle) * Celec;
+  real_t coef = 4 * M_PI / (3 * cycle * cycle * cycle) * Celec;
   for (int i=0; i<numBodies; i++) {
     p[i] -= coef * norm / numBodies;
     f[3*i+0] -= coef * dipole[0] * q[i];
@@ -207,16 +207,16 @@ extern "C" void coulomb_exclusion_(int & numBodies, int *,
 				   double & cycle, int * numex, int * natex) {
   logger::startTimer("Coulomb Exclusion");
   for (int i=0, ic=0; i<numBodies; i++) {
-    real pp = 0, fx = 0, fy = 0, fz = 0;
+    real_t pp = 0, fx = 0, fy = 0, fz = 0;
     for (int jc=0; jc<numex[i]; jc++, ic++) {
       int j = natex[ic]-1;
-      real dX[4];
+      real_t dX[4];
       for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
       wrap(dX, cycle);
-      real R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
-      real invR = 1 / std::sqrt(R2);
+      real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+      real_t invR = 1 / std::sqrt(R2);
       if (R2 == 0) invR = 0;
-      real invR3 = q[j] * invR * invR * invR;
+      real_t invR3 = q[j] * invR * invR * invR;
       pp += q[j] * invR;
       fx += dX[0] * invR3;
       fy += dX[1] * invR3;
@@ -280,27 +280,27 @@ extern "C" void direct_vanderwaals_(int & numBodies, int *, int * atype,
   logger::startTimer("Direct VdW");
   for (int i=0; i<numBodies; i++) {
     int atypei = atype[i]-1;
-    real pp = 0, fx = 0, fy = 0, fz = 0;
+    real_t pp = 0, fx = 0, fy = 0, fz = 0;
     for (int j=0; j<numBodies; j++) {
-      real dX[4];
+      real_t dX[4];
       for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
       wrap(dX, cycle);
-      real R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+      real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
       if (R2 != 0) {
 	int atypej = atype[j]-1;
-	real rs = rscale[atypei*numTypes+atypej];
-	real gs = gscale[atypei*numTypes+atypej];
-	real fgs = fgscale[atypei*numTypes+atypej];
-	real R2s = R2 * rs;
-	real invR2 = 1.0 / R2s;
-	real invR6 = invR2 * invR2 * invR2;
-	real cuton2 = cuton * cuton;
-	real cutoff2 = cutoff * cutoff;
+	real_t rs = rscale[atypei*numTypes+atypej];
+	real_t gs = gscale[atypei*numTypes+atypej];
+	real_t fgs = fgscale[atypei*numTypes+atypej];
+	real_t R2s = R2 * rs;
+	real_t invR2 = 1.0 / R2s;
+	real_t invR6 = invR2 * invR2 * invR2;
+	real_t cuton2 = cuton * cuton;
+	real_t cutoff2 = cutoff * cutoff;
 	if (R2 < cutoff2) {
-	  real tmp = 0, dtmp = 0;
+	  real_t tmp = 0, dtmp = 0;
 	  if (cuton2 < R2) {
-	    real tmp1 = (cutoff2 - R2) / ((cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2));
-	    real tmp2 = tmp1 * (cutoff2 - R2) * (cutoff2 - 3 * cuton2 + 2 * R2);
+	    real_t tmp1 = (cutoff2 - R2) / ((cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2));
+	    real_t tmp2 = tmp1 * (cutoff2 - R2) * (cutoff2 - 3 * cuton2 + 2 * R2);
 	    tmp = invR6 * (invR6 - 1) * tmp2;
 	    dtmp = invR6 * (invR6 - 1) * 12 * (cuton2 - R2) * tmp1
 	      - 6 * invR6 * (invR6 + (invR6 - 1) * tmp2) * tmp2 / R2;
@@ -334,25 +334,25 @@ extern "C" void vanderwaals_exclusion_(int & numBodies, int *, int * atype,
     int atypei = atype[i]-1;
     for (int jc=0; jc<numex[i]; jc++, ic++) {
       int j = natex[ic]-1;
-      real dX[4];
+      real_t dX[4];
       for (int d=0; d<3; d++) dX[d] = x[3*i+d] - x[3*j+d];
       wrap(dX, cycle);
-      real R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+      real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
       if (R2 != 0) {
 	int atypej = atype[j]-1;
-	real rs = rscale[atypei*numTypes+atypej];
-	real gs = gscale[atypei*numTypes+atypej];
-	real fgs = fgscale[atypei*numTypes+atypej];
-	real R2s = R2 * rs;
-	real invR2 = 1.0 / R2s;
-	real invR6 = invR2 * invR2 * invR2;
-	real cuton2 = cuton * cuton;
-	real cutoff2 = cutoff * cutoff;
+	real_t rs = rscale[atypei*numTypes+atypej];
+	real_t gs = gscale[atypei*numTypes+atypej];
+	real_t fgs = fgscale[atypei*numTypes+atypej];
+	real_t R2s = R2 * rs;
+	real_t invR2 = 1.0 / R2s;
+	real_t invR6 = invR2 * invR2 * invR2;
+	real_t cuton2 = cuton * cuton;
+	real_t cutoff2 = cutoff * cutoff;
 	if (R2 < cutoff2) {
-	  real tmp = 0, dtmp = 0;
+	  real_t tmp = 0, dtmp = 0;
 	  if (cuton2 < R2) {
-	    real tmp1 = (cutoff2 - R2) / ((cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2));
-	    real tmp2 = tmp1 * (cutoff2 - R2) * (cutoff2 - 3 * cuton2 + 2 * R2);
+	    real_t tmp1 = (cutoff2 - R2) / ((cutoff2-cuton2)*(cutoff2-cuton2)*(cutoff2-cuton2));
+	    real_t tmp2 = tmp1 * (cutoff2 - R2) * (cutoff2 - 3 * cuton2 + 2 * R2);
 	    tmp = invR6 * (invR6 - 1) * tmp2;
 	    dtmp = invR6 * (invR6 - 1) * 12 * (cuton2 - R2) * tmp1
 	      - 6 * invR6 * (invR6 + (invR6 - 1) * tmp2) * tmp2 / R2;

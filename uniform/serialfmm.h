@@ -101,14 +101,14 @@ private:
   }
 
 protected:
-  inline void getIndex(int i, int *ix, real diameter) const {
+  inline void getIndex(int i, int *ix, real_t diameter) const {
 #if NOWRAP
     i = (i / 3) * 3;
 #endif
     for_3d ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
   }
 
-  void sort(real (*bodies)[4], float (*buffer)[4], int *Index, int *Index2, int *key) const {
+  void sort(real_t (*bodies)[4], float (*buffer)[4], int *Index, int *Index2, int *key) const {
     int Imax = key[0];
     int Imin = key[0];
     for( int i=0; i<numBodies; i++ ) {
@@ -140,13 +140,13 @@ public:
     numSendLeafs = 8 + 12 * (1 << L) + 6 * (1 << (2 * L));
     numSendBodies = numSendLeafs * float(numBodies) / numLeafs * 2;
     float memory = 0;
-    memory += numBodies * 4 * sizeof(real);
-    memory += (numBodies + numSendBodies) * 4 * sizeof(real);
-    memory += 27 * numCells * MTERM * sizeof(real);
-    memory += numCells * LTERM * sizeof(real);
+    memory += numBodies * 4 * sizeof(real_t);
+    memory += (numBodies + numSendBodies) * 4 * sizeof(real_t);
+    memory += 27 * numCells * MTERM * sizeof(real_t);
+    memory += numCells * LTERM * sizeof(real_t);
     memory += 27 * numLeafs * 2 * sizeof(int);
-    memory += 2 * MPISIZE * MTERM * sizeof(real);
-    memory += 10 * LTERM * sizeof(real);
+    memory += 2 * MPISIZE * MTERM * sizeof(real_t);
+    memory += 10 * LTERM * sizeof(real_t);
     memory += numSendBodies * 4 * sizeof(float);
     memory += numSendBodies * 4 * sizeof(float);
     memory += numSendCells * MTERM * sizeof(float);
@@ -157,13 +157,13 @@ public:
     Index = new int [2*numBodies];
     Index2 = new int [2*numBodies];
     Rank = new int [2*numBodies];
-    Ibodies = new real [2*numBodies][4]();
-    Jbodies = new real [2*numBodies+numSendBodies][4]();
-    Multipole = new real [27*numCells][MTERM]();
-    Local = new real [numCells][LTERM]();
+    Ibodies = new real_t [2*numBodies][4]();
+    Jbodies = new real_t [2*numBodies+numSendBodies][4]();
+    Multipole = new real_t [27*numCells][MTERM]();
+    Local = new real_t [numCells][LTERM]();
     Leafs = new int [27*numLeafs][2]();
-    globMultipole = new real [2*MPISIZE][MTERM]();
-    globLocal = new real [10][LTERM]();
+    globMultipole = new real_t [2*MPISIZE][MTERM]();
+    globLocal = new real_t [10][LTERM]();
     sendJbodies = new float [2*numBodies+numSendBodies][4]();
     recvJbodies = new float [2*numBodies+numSendBodies][4]();
     sendMultipole = new float [numSendCells][MTERM]();
@@ -232,7 +232,7 @@ public:
 
   void sortBodies() const {
     int *key = new int [numBodies];
-    real diameter = 2 * R0 / (1 << maxLevel);
+    real_t diameter = 2 * R0 / (1 << maxLevel);
     int ix[3] = {0, 0, 0};
     for( int i=0; i<numBodies; i++ ) {
       getIndex(i,ix,diameter);
@@ -251,7 +251,7 @@ public:
     for( int i=rankOffset; i<numLeafs+rankOffset; i++ ) {
       Leafs[i][0] = Leafs[i][1] = 0;
     }
-    real diameter = 2 * R0 / (1 << maxLevel);
+    real_t diameter = 2 * R0 / (1 << maxLevel);
     int ix[3] = {0, 0, 0};
     getIndex(0,ix,diameter);
     int ileaf = getKey(ix,maxLevel,false) + rankOffset;
@@ -271,16 +271,16 @@ public:
   }
 
   void periodicM2L() {
-    real M[MTERM];
+    real_t M[MTERM];
 #if Serial
     for_m M[m] = Multipole[13*numCells][m];
 #else
     for_m M[m] = globMultipole[0][m];
 #endif
-    real L[LTERM];
+    real_t L[LTERM];
     for_l L[l] = 0;
     for( int lev=1; lev<numImages; lev++ ) {
-      real diameter[3];
+      real_t diameter[3];
       for_3d diameter[d] = 2 * RGlob[d] * pow(3,lev-1);
       int jx[3];
       for( jx[2]=-4; jx[2]<=4; jx[2]++ ) {
@@ -289,28 +289,28 @@ public:
             if(jx[0] < -1 || 1 < jx[0] ||
                jx[1] < -1 || 1 < jx[1] ||
                jx[2] < -1 || 1 < jx[2]) {
-              real dist[3];
-              for_3d dist[d] = jx[d] * diameter[d];
-              real invR2 = 1. / (dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2]);
-              real invR  = sqrt(invR2);
-              real C[LTERM];
-              getCoef(C,dist,invR2,invR);
+              real_t dX[3];
+              for_3d dX[d] = jx[d] * diameter[d];
+              real_t invR2 = 1. / (dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2]);
+              real_t invR  = sqrt(invR2);
+              real_t C[LTERM];
+              getCoef(C,dX,invR2,invR);
               M2LSum(L,C,M);
             }
           }
         }
       }
-      real M3[MTERM];
+      real_t M3[MTERM];
       for_m M3[m] = 0;
       int ix[3];
       for( ix[2]=-1; ix[2]<=1; ix[2]++ ) {
         for( ix[1]=-1; ix[1]<=1; ix[1]++ ) {
           for( ix[0]=-1; ix[0]<=1; ix[0]++ ) {
-            real dist[3];
-            for_3d dist[d] = ix[d] * diameter[d];
-            real C[LTERM];
+            real_t dX[3];
+            for_3d dX[d] = ix[d] * diameter[d];
+            real_t C[LTERM];
             C[0] = 1;
-            powerM(C,dist);
+            powerM(C,dX);
             for_m M3[m] += C[m] * M[0];
             M2MSum(M3,C,M);
           }

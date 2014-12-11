@@ -9,14 +9,14 @@ void decomposeSpacePermute(int N, float * Y, float * X, uint * keys, int maxlev)
 
 class Fmm : public Kernel {
 private:
-  inline void getIndex(int i, int *ix, real diameter) {
+  inline void getIndex(int i, int *ix, real_t diameter) {
 #if NOWRAP
     i = (i / 3) * 3;
 #endif
     for_3 ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
   }
 
-  void sort(real (*bodies)[4], real (*bodies2)[4], int *Index, int *Index2, int *key) const {
+  void sort(real_t (*bodies)[4], real_t (*bodies2)[4], int *Index, int *Index2, int *key) const {
     int Imax = key[0];
     int Imin = key[0];
     for( int i=0; i<numBodies; i++ ) {
@@ -45,11 +45,11 @@ public:
     numImages = NumImages;
     numCells = ((1 << 3 * (maxLevel + 1)) - 1) / 7;
     numLeafs = 1 << 3 * maxLevel;
-    Ibodies = new real [numBodies][4]();
-    Ibodies2 = new real [numBodies][4]();
-    Jbodies = new real [numBodies][4]();
-    Multipole = new real [numCells][MTERM]();
-    Local = new real [numCells][LTERM]();
+    Ibodies = new real_t [numBodies][4]();
+    Ibodies2 = new real_t [numBodies][4]();
+    Jbodies = new real_t [numBodies][4]();
+    Multipole = new real_t [numCells][MTERM]();
+    Local = new real_t [numCells][LTERM]();
     Leafs = new int [numLeafs][2]();
     Index = new int [numBodies];
     Index2 = new int [numBodies];
@@ -73,12 +73,12 @@ public:
     delete[] Index2;
   }
 
-  void initBodies(real cycle) {
+  void initBodies(real_t cycle) {
     int ix[3] = {0, 0, 0};
     R0 = cycle * .5;
     for_3 X0[d] = R0;
     srand48(0);
-    real average = 0;
+    real_t average = 0;
     for (int i=0; i<numBodies; i++) {
       Jbodies[i][0] = 2 * R0 * (drand48() + ix[0]);
       Jbodies[i][1] = 2 * R0 * (drand48() + ix[1]);
@@ -92,7 +92,7 @@ public:
     }
   }
 
-  void encode(real (*Jbodies)[4], int *key, int N, int offset, real diameter, real R0, real (X0)[3], int maxLevel){
+  void encode(real_t (*Jbodies)[4], int *key, int N, int offset, real_t diameter, real_t R0, real_t (X0)[3], int maxLevel){
     int ix[3] = {0, 0, 0};
     for(int i=0; i<N; i++){
       for_3 ix[d] = int((Jbodies[i+offset][d] + R0 - X0[d]) / diameter);
@@ -103,7 +103,7 @@ public:
 #ifndef SAKURA
   void sortBodies() {
     int *key = new int [numBodies];
-    real diameter = 2 * R0 / (1 << maxLevel);
+    real_t diameter = 2 * R0 / (1 << maxLevel);
     int ix[3] = {0, 0, 0};
     for (int i=0; i<numBodies; i++) {
       getIndex(i,ix,diameter);
@@ -122,7 +122,7 @@ public:
     uint *key = new uint [numBodies];
     float *X = (float*)Jbodies;
     float *Y = (float*)Ibodies;
-    real diameter = 2 * R0 / (1 << maxLevel);
+    real_t diameter = 2 * R0 / (1 << maxLevel);
     int ix[3] = {0, 0, 0};
     for (int i=0; i<numBodies; i++) {
       getIndex(i,ix,diameter);
@@ -138,7 +138,7 @@ public:
 #endif
 
   void fillLeafs() {
-    real diameter = 2 * R0 / (1 << maxLevel);
+    real_t diameter = 2 * R0 / (1 << maxLevel);
     int ix[3] = {0, 0, 0};
     getIndex(0,ix,diameter);
     int ileaf = getKey(ix, maxLevel, false);
@@ -158,13 +158,13 @@ public:
   }
 
   void dipoleCorrection() {
-    real dipole[3] = {0, 0, 0};
+    real_t dipole[3] = {0, 0, 0};
     for (int i=0; i<numBodies; i++) {
       for_3 dipole[d] += (Jbodies[i][d] - X0[d]) * Jbodies[i][3];
     }
-    real norm = dipole[0] * dipole[0] + dipole[1] * dipole[1] + dipole[2] * dipole[2];
-    real cycle = 2 * R0;
-    real coef = 4 * M_PI / (3 * cycle * cycle * cycle);
+    real_t norm = dipole[0] * dipole[0] + dipole[1] * dipole[1] + dipole[2] * dipole[2];
+    real_t cycle = 2 * R0;
+    real_t coef = 4 * M_PI / (3 * cycle * cycle * cycle);
     for (int i=0; i<numBodies; i++) {
       Ibodies[i][0] -= coef * norm / numBodies / Jbodies[i][3];
       for_3 Ibodies[i][d+1] -= coef * dipole[d];
@@ -172,7 +172,7 @@ public:
   }
 
   void direct() {
-    real Ibodies3[4], Jbodies2[4], dX[3];
+    real_t Ibodies3[4], Jbodies2[4], dX[3];
     int range = (pow(3,numImages) - 1) / 2;
     for (int i=0; i<100; i++) {
       for_4 Ibodies3[d] = 0;
@@ -183,9 +183,9 @@ public:
 	  for (jx[0]=-range; jx[0]<=range; jx[0]++) {	
 	    for (int j=0; j<numBodies; j++) {
 	      for_3 dX[d] = Jbodies2[d] - Jbodies[j][d] - jx[d] * 2 * R0;
-	      real R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
-	      real invR2 = R2 == 0 ? 0 : 1.0 / R2;
-	      real invR = Jbodies[j][3] * sqrtf(invR2);
+	      real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+	      real_t invR2 = R2 == 0 ? 0 : 1.0 / R2;
+	      real_t invR = Jbodies[j][3] * sqrtf(invR2);
 	      for_3 dX[d] *= invR2 * invR;
 	      Ibodies3[0] += invR;
 	      Ibodies3[1] -= dX[0];
@@ -199,8 +199,8 @@ public:
     }
   }
 
-  void verify(int numTargets, real & potDif, real & potNrm, real & accDif, real & accNrm) {
-    real potSum = 0, potSum2 = 0;
+  void verify(int numTargets, real_t & potDif, real_t & potNrm, real_t & accDif, real_t & accNrm) {
+    real_t potSum = 0, potSum2 = 0;
     for (int i=0; i<numTargets; i++) {
       potSum += Ibodies[i][0] * Jbodies[i][3];
       potSum2 += Ibodies2[i][0] * Jbodies[i][3];

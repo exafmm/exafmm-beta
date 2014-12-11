@@ -20,13 +20,13 @@ public:
   int numNeighbors;
   int numImages;
 
-  real X0[3];
-  real R0;
-  real (*Ibodies)[4];
-  real (*Ibodies2)[4];
-  real (*Jbodies)[4];
-  real (*Multipole)[MTERM];
-  real (*Local)[LTERM];
+  real_t X0[3];
+  real_t R0;
+  real_t (*Ibodies)[4];
+  real_t (*Ibodies2)[4];
+  real_t (*Jbodies)[4];
+  real_t (*Multipole)[MTERM];
+  real_t (*Local)[LTERM];
   int (*Leafs)[2];
   int *Index;
   int *Index2;
@@ -43,27 +43,27 @@ private:
     }
   }
 
-  void getCenter(real *dist, int index, int level) const {
-    real R = R0 / (1 << level);
+  void getCenter(real_t *dX, int index, int level) const {
+    real_t R = R0 / (1 << level);
     int ix[3] = {0, 0, 0};
     getIndex(ix, index);
-    for_3 dist[d] = X0[d] - R0 + (2 * ix[d] + 1) * R;
+    for_3 dX[d] = X0[d] - R0 + (2 * ix[d] + 1) * R;
   }
 
-  void P2PSum(int ibegin, int iend, int jbegin, int jend, real *Xperiodic) const {
+  void P2PSum(int ibegin, int iend, int jbegin, int jend, real_t *Xperiodic) const {
     for (int i=ibegin; i<iend; i++) {
-      real Po = 0, Fx = 0, Fy = 0, Fz = 0;
+      real_t Po = 0, Fx = 0, Fy = 0, Fz = 0;
       for (int j=jbegin; j<jend; j++) {
-	real dist[3];
-	for_3 dist[d] = Jbodies[i][d] - Jbodies[j][d] - Xperiodic[d];
-	real R2 = dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2];
-	real invR2 = R2 == 0 ? 0 : 1.0 / R2;
-	real invR = Jbodies[j][3] * sqrt(invR2);
-	real invR3 = invR2 * invR;
+	real_t dX[3];
+	for_3 dX[d] = Jbodies[i][d] - Jbodies[j][d] - Xperiodic[d];
+	real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+	real_t invR2 = R2 == 0 ? 0 : 1.0 / R2;
+	real_t invR = Jbodies[j][3] * sqrt(invR2);
+	real_t invR3 = invR2 * invR;
 	Po += invR;
-	Fx += dist[0] * invR3;
-	Fy += dist[1] * invR3;
-	Fz += dist[2] * invR3;
+	Fx += dX[0] * invR3;
+	Fy += dX[1] * invR3;
+	Fz += dX[2] * invR3;
       }
       Ibodies[i][0] += Po;
       Ibodies[i][1] -= Fx;
@@ -73,12 +73,12 @@ private:
   }
 
   void M2LPeriodic() const {
-    real M[MTERM];
+    real_t M[MTERM];
     for_m M[m] = Multipole[0][m];
-    real L[LTERM];
+    real_t L[LTERM];
     for_l L[l] = 0;
     for (int lev=1; lev<numImages; lev++) {
-      real diameter = 2 * R0 * pow(3,lev-1);
+      real_t diameter = 2 * R0 * pow(3,lev-1);
       int jx[3];
       for (jx[2]=-4; jx[2]<=4; jx[2]++) {
 	for (jx[1]=-4; jx[1]<=4; jx[1]++) {
@@ -86,28 +86,28 @@ private:
 	    if(jx[0] < -1 || 1 < jx[0] ||
 	       jx[1] < -1 || 1 < jx[1] ||
 	       jx[2] < -1 || 1 < jx[2]) {
-	      real dist[3];
-	      for_3 dist[d] = jx[d] * diameter;
-	      real invR2 = 1. / (dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2]);
-	      real invR  = sqrt(invR2);
-	      real C[LTERM];
-	      getCoef(C,dist,invR2,invR);
+	      real_t dX[3];
+	      for_3 dX[d] = jx[d] * diameter;
+	      real_t invR2 = 1. / (dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2]);
+	      real_t invR  = sqrt(invR2);
+	      real_t C[LTERM];
+	      getCoef(C,dX,invR2,invR);
 	      M2LSum(L,C,M);
 	    }
 	  }
 	}
       }
-      real M3[MTERM];
+      real_t M3[MTERM];
       for_m M3[m] = 0;
       int ix[3];
       for( ix[2]=-1; ix[2]<=1; ix[2]++ ) {
 	for( ix[1]=-1; ix[1]<=1; ix[1]++ ) {
 	  for( ix[0]=-1; ix[0]<=1; ix[0]++ ) {
-	    real dist[3];
-	    for_3 dist[d] = ix[d] * diameter;
-	    real C[LTERM];
+	    real_t dX[3];
+	    for_3 dX[d] = ix[d] * diameter;
+	    real_t C[LTERM];
 	    C[0] = 1;
-	    powerM(C,dist);
+	    powerM(C,dX);
 	    for_m M3[m] += C[m] * M[0];
 	    M2MSum(M3,C,M);
 	  }
@@ -153,7 +153,7 @@ public:
 	    int jxp[3];
 	    for_3 jxp[d] = (jx[d] + nunit) % nunit;
             int j = getKey(jxp,maxLevel,false);
-	    real Xperiodic[3] = {0, 0, 0};
+	    real_t Xperiodic[3] = {0, 0, 0};
 	    for_3 jxp[d] = (jx[d] + nunit) / nunit;
 	    for_3 Xperiodic[d] = (jxp[d] - 1) * 2 * R0;
             P2PSum(Leafs[i][0],Leafs[i][1],Leafs[j][0],Leafs[j][1],Xperiodic);
@@ -181,7 +181,7 @@ public:
 	int jxp[3];
 	for_3 jxp[d] = (jx[d] + nunit) % nunit;
 	int j = getKey(jxp,maxLevel,false);
-	real Xperiodic[3] = {0, 0, 0};
+	real_t Xperiodic[3] = {0, 0, 0};
 	for_3 jxp[d] = (jx[d] + nunit) / nunit;
 	for_3 Xperiodic[d] = (jxp[d] - 1) * 2 * R0;
 	P2PSum(Leafs[i][0],Leafs[i][1],Leafs[j][0],Leafs[j][1],Xperiodic);
@@ -190,7 +190,7 @@ public:
       int jxp[3];
       for_3 jxp[d] = (jx[d] + nunit) % nunit;
       int j = getKey(jxp,maxLevel,false);
-      real Xperiodic[3] = {0, 0, 0};
+      real_t Xperiodic[3] = {0, 0, 0};
       for_3 jxp[d] = (jx[d] + nunit) / nunit;
       for_3 Xperiodic[d] = (jxp[d] - 1) * 2 * R0;
       P2PSum(Leafs[i][0],Leafs[i][1],Leafs[j][0],Leafs[j][1],Xperiodic);
@@ -202,14 +202,14 @@ public:
     int levelOffset = ((1 << 3 * maxLevel) - 1) / 7;
 #pragma omp parallel for
     for (int i=0; i<numLeafs; i++) {
-      real center[3];
+      real_t center[3];
       getCenter(center,i,maxLevel);
       for (int j=Leafs[i][0]; j<Leafs[i][1]; j++) {
-        real dist[3];
-        for_3 dist[d] = center[d] - Jbodies[j][d];
-        real M[MTERM];
+        real_t dX[3];
+        for_3 dX[d] = center[d] - Jbodies[j][d];
+        real_t M[MTERM];
         M[0] = Jbodies[j][3];
-        powerM(M,dist);
+        powerM(M,dX);
         for_m Multipole[i+levelOffset][m] += M[m];
       }
     }
@@ -219,7 +219,7 @@ public:
     for (int lev=maxLevel; lev>0; lev--) {
       int childOffset = ((1 << 3 * lev) - 1) / 7;
       int parentOffset = ((1 << 3 * (lev - 1)) - 1) / 7;
-      real radius = R0 / (1 << lev);
+      real_t radius = R0 / (1 << lev);
 #pragma omp parallel for schedule(static, 8)
       for (int i=0; i<(1 << 3 * lev); i++) {
         int c = i + childOffset;
@@ -228,11 +228,11 @@ public:
         ix[0] = 1 - (i & 1) * 2;
         ix[1] = 1 - ((i / 2) & 1) * 2;
         ix[2] = 1 - ((i / 4) & 1) * 2;
-        real dist[3];
-        for_3 dist[d] = ix[d] * radius;
-        real C[LTERM];
+        real_t dX[3];
+        for_3 dX[d] = ix[d] * radius;
+        real_t C[LTERM];
         C[0] = 1;
-        powerM(C,dist);
+        powerM(C,dX);
         for_m Multipole[p][m] += C[m] * Multipole[c][0];
         M2MSum(Multipole[p],C,Multipole[c]);
       }
@@ -244,7 +244,7 @@ public:
     for (int lev=1; lev<=maxLevel; lev++) {
       int levelOffset = ((1 << 3 * lev) - 1) / 7;
       int nunit = 1 << lev;
-      real diameter = 2 * R0 / (1 << lev);
+      real_t diameter = 2 * R0 / (1 << lev);
       int nmin = 0;
       int nmax = (nunit >> 1) - 1;
       if( numImages != 0 ) {
@@ -253,7 +253,7 @@ public:
       }
 #pragma omp parallel for
       for (int i=0; i<(1 << 3 * lev); i++) {
-        real L[LTERM];
+        real_t L[LTERM];
         for_l L[l] = 0;
         int ix[3] = {0, 0, 0};
         getIndex(ix,i);
@@ -271,12 +271,12 @@ public:
 		int jxp[3];
 		for_3 jxp[d] = (jx[d] + nunit) % nunit;
                 int j = getKey(jxp,lev);
-                real dist[3];
-                for_3 dist[d] = (ix[d] - jx[d]) * diameter;
-                real invR2 = 1. / (dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2]);
-                real invR  = sqrt(invR2);
-                real C[LTERM];
-                getCoef(C,dist,invR2,invR);
+                real_t dX[3];
+                for_3 dX[d] = (ix[d] - jx[d]) * diameter;
+                real_t invR2 = 1. / (dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2]);
+                real_t invR  = sqrt(invR2);
+                real_t C[LTERM];
+                getCoef(C,dX,invR2,invR);
                 M2LSum(L,C,Multipole[j]);
               }
             }
@@ -294,10 +294,10 @@ public:
     for( int lev=1; lev<=maxLevel; lev++ ) {
       int levelOffset = ((1 << 3 * lev) - 1) / 7;
       int nunit = 1 << lev;
-      real diameter = 2 * R0 / (1 << lev);
+      real_t diameter = 2 * R0 / (1 << lev);
 #pragma omp parallel for
       for( int i=0; i<(1 << 3 * lev); i++ ) {
-        real L[LTERM];
+        real_t L[LTERM];
         for_l L[l] = 0;
         int ix[3] = {0, 0, 0};
         getIndex(ix,i);
@@ -313,12 +313,12 @@ public:
 	  int jxp[3];
 	  for_3 jxp[d] = (jx[d] + nunit) % nunit;
 	  int j = getKey(jxp,lev);
-	  real dist[3];
-	  for_3 dist[d] = (ix[d] - jx[d]) * diameter;
-	  real invR2 = 1. / (dist[0] * dist[0] + dist[1] * dist[1] + dist[2] * dist[2]);
-	  real invR  = sqrt(invR2);
-	  real C[LTERM];
-	  getCoef(C,dist,invR2,invR);
+	  real_t dX[3];
+	  for_3 dX[d] = (ix[d] - jx[d]) * diameter;
+	  real_t invR2 = 1. / (dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2]);
+	  real_t invR  = sqrt(invR2);
+	  real_t C[LTERM];
+	  getCoef(C,dX,invR2,invR);
 	  M2LSum(L,C,Multipole[j]);
         }
         for_l Local[i+levelOffset][l] += L[l];
@@ -334,7 +334,7 @@ public:
     for (int lev=1; lev<=maxLevel; lev++) {
       int childOffset = ((1 << 3 * lev) - 1) / 7;
       int parentOffset = ((1 << 3 * (lev - 1)) - 1) / 7;
-      real radius = R0 / (1 << lev);
+      real_t radius = R0 / (1 << lev);
 #pragma omp parallel for
       for (int i=0; i<(1 << 3 * lev); i++) {
         int c = i + childOffset;
@@ -343,11 +343,11 @@ public:
         ix[0] = (i & 1) * 2 - 1;
         ix[1] = ((i / 2) & 1) * 2 - 1;
         ix[2] = ((i / 4) & 1) * 2 - 1;
-        real dist[3];
-        for_3 dist[d] = ix[d] * radius;
-        real C[LTERM];
+        real_t dX[3];
+        for_3 dX[d] = ix[d] * radius;
+        real_t C[LTERM];
         C[0] = 1;
-        powerL(C,dist);
+        powerL(C,dX);
         for_l Local[c][l] += Local[p][l];
         for (int l=1; l<LTERM; l++) Local[c][0] += C[l] * Local[p][l];
         L2LSum(Local[c],C,Local[p]);
@@ -359,16 +359,16 @@ public:
     int levelOffset = ((1 << 3 * maxLevel) - 1) / 7;
 #pragma omp parallel for
     for (int i=0; i<numLeafs; i++) {
-      real center[3];
+      real_t center[3];
       getCenter(center,i,maxLevel);
-      real L[LTERM];
+      real_t L[LTERM];
       for_l L[l] = Local[i+levelOffset][l];
       for (int j=Leafs[i][0]; j<Leafs[i][1]; j++) {
-        real dist[3];
-        for_3 dist[d] = Jbodies[j][d] - center[d];
-        real C[LTERM];
+        real_t dX[3];
+        for_3 dX[d] = Jbodies[j][d] - center[d];
+        real_t C[LTERM];
         C[0] = 1;
-        powerL(C,dist);
+        powerL(C,dX);
         for_4 Ibodies[j][d] += L[d];
         for (int l=1; l<LTERM; l++) Ibodies[j][0] += C[l] * L[l];
         L2PSum(Ibodies[j],C,L);

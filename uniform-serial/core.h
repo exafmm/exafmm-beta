@@ -1,14 +1,14 @@
-void getCoef(real *C, const real *dist, real &invR2, const real &invR) {
+void getCoef(real_t *C, const real_t *dX, real_t &invR2, const real_t &invR) {
   C[0] = invR;
   invR2 = -invR2;
-  real x = dist[0], y = dist[1], z = dist[2];
-  real invR3 = invR * invR2;
+  real_t x = dX[0], y = dX[1], z = dX[2];
+  real_t invR3 = invR * invR2;
   C[1] = x * invR3;
   C[2] = y * invR3;
   C[3] = z * invR3;
 
-  real invR5 = 3 * invR3 * invR2;
-  real t = x * invR5;
+  real_t invR5 = 3 * invR3 * invR2;
+  real_t t = x * invR5;
   C[4] = x * t + invR3;
   C[5] = y * t;
   C[6] = z * t;
@@ -17,7 +17,7 @@ void getCoef(real *C, const real *dist, real &invR2, const real &invR) {
   C[8] = z * t;
   C[9] = z * z * invR5 + invR3;
 
-  real invR7 = 5 * invR5 * invR2;
+  real_t invR7 = 5 * invR5 * invR2;
   t = x * x * invR7;
   C[10] = x * (t + 3 * invR5);
   C[11] = y * (t +     invR5);
@@ -32,7 +32,7 @@ void getCoef(real *C, const real *dist, real &invR2, const real &invR) {
   C[19] = z * (t + 3 * invR5);
   C[14] = x * y * z * invR7;
 
-  real invR9 = 7 * invR7 * invR2;
+  real_t invR9 = 7 * invR7 * invR2;
   t = x * x * invR9;
   C[20] = x * x * (t + 6 * invR7) + 3 * invR5;
   C[21] = x * y * (t + 3 * invR7);
@@ -52,7 +52,7 @@ void getCoef(real *C, const real *dist, real &invR2, const real &invR) {
   C[33] = y * z * (t + 3 * invR7);
   C[34] = z * z * (t + 6 * invR7) + 3 * invR5;
 
-  real invR11 = 9 * invR9 * invR2;
+  real_t invR11 = 9 * invR9 * invR2;
   t = x * x * invR11;
   C[35] = x * x * x * (t + 10 * invR9) + 15 * x * invR7;
   C[36] = x * x * y * (t +  6 * invR9) +  3 * y * invR7;
@@ -78,7 +78,7 @@ void getCoef(real *C, const real *dist, real &invR2, const real &invR) {
   C[54] = y * z * z * (t +  6 * invR9) +  3 * y * invR7;
   C[55] = z * z * z * (t + 10 * invR9) + 15 * z * invR7;
 
-  real invR13 = 11 * invR11 * invR2;
+  real_t invR13 = 11 * invR11 * invR2;
   t = x * x * invR13;
   C[56] = x * x * x * x * (t + 15 * invR11) + 45 * x * x * invR9 + 15 * invR7;
   C[57] = x * x * x * y * (t + 10 * invR11) + 15 * x * y * invR9;
@@ -112,7 +112,7 @@ void getCoef(real *C, const real *dist, real &invR2, const real &invR) {
   C[83] = z * z * z * z * (t + 15 * invR11) + 45 * z * z * invR9 + 15 * invR7;
 }
 
-void M2LSum(real *L, const real *C, const real*M) {
+void M2LSum(real_t *L, const real_t *C, const real_t*M) {
   for (int l=0; l<LTERM; l++) L[l] += M[0] * C[l];
 
   L[0] += M[1]*C[1]+M[2]*C[2]+M[3]*C[3];
@@ -246,160 +246,160 @@ void M2LSum(real *L, const real *C, const real*M) {
   L[55] += M[1]*C[76]+M[2]*C[82]+M[3]*C[83];
 }
 
-void powerM(real *C, const real *dist) {
-  C[1] = C[0] * dist[0];
-  C[2] = C[0] * dist[1];
-  C[3] = C[0] * dist[2];
+void powerM(real_t *C, const real_t *dX) {
+  C[1] = C[0] * dX[0];
+  C[2] = C[0] * dX[1];
+  C[3] = C[0] * dX[2];
 
-  C[4] = C[1] * dist[0] / 2;
-  C[5] = C[2] * dist[0];
-  C[6] = C[3] * dist[0];
-  C[7] = C[2] * dist[1] / 2;
-  C[8] = C[3] * dist[1];
-  C[9] = C[3] * dist[2] / 2;
+  C[4] = C[1] * dX[0] / 2;
+  C[5] = C[2] * dX[0];
+  C[6] = C[3] * dX[0];
+  C[7] = C[2] * dX[1] / 2;
+  C[8] = C[3] * dX[1];
+  C[9] = C[3] * dX[2] / 2;
   
-  C[10] = C[4] * dist[0] / 3;
-  C[11] = C[5] * dist[0] / 2;
-  C[12] = C[6] * dist[0] / 2;
-  C[13] = C[7] * dist[0];
-  C[14] = C[8] * dist[0];
-  C[15] = C[9] * dist[0];
-  C[16] = C[7] * dist[1] / 3;
-  C[17] = C[8] * dist[1] / 2;
-  C[18] = C[9] * dist[1];
-  C[19] = C[9] * dist[2] / 3;
+  C[10] = C[4] * dX[0] / 3;
+  C[11] = C[5] * dX[0] / 2;
+  C[12] = C[6] * dX[0] / 2;
+  C[13] = C[7] * dX[0];
+  C[14] = C[8] * dX[0];
+  C[15] = C[9] * dX[0];
+  C[16] = C[7] * dX[1] / 3;
+  C[17] = C[8] * dX[1] / 2;
+  C[18] = C[9] * dX[1];
+  C[19] = C[9] * dX[2] / 3;
   
-  C[20] = C[10] * dist[0] / 4;
-  C[21] = C[11] * dist[0] / 3;
-  C[22] = C[12] * dist[0] / 3;
-  C[23] = C[13] * dist[0] / 2;
-  C[24] = C[14] * dist[0] / 2;
-  C[25] = C[15] * dist[0] / 2;
-  C[26] = C[16] * dist[0];
-  C[27] = C[17] * dist[0];
-  C[28] = C[18] * dist[0];
-  C[29] = C[19] * dist[0];
-  C[30] = C[16] * dist[1] / 4;
-  C[31] = C[17] * dist[1] / 3;
-  C[32] = C[18] * dist[1] / 2;
-  C[33] = C[19] * dist[1];
-  C[34] = C[19] * dist[2] / 4;
+  C[20] = C[10] * dX[0] / 4;
+  C[21] = C[11] * dX[0] / 3;
+  C[22] = C[12] * dX[0] / 3;
+  C[23] = C[13] * dX[0] / 2;
+  C[24] = C[14] * dX[0] / 2;
+  C[25] = C[15] * dX[0] / 2;
+  C[26] = C[16] * dX[0];
+  C[27] = C[17] * dX[0];
+  C[28] = C[18] * dX[0];
+  C[29] = C[19] * dX[0];
+  C[30] = C[16] * dX[1] / 4;
+  C[31] = C[17] * dX[1] / 3;
+  C[32] = C[18] * dX[1] / 2;
+  C[33] = C[19] * dX[1];
+  C[34] = C[19] * dX[2] / 4;
 
-  C[35] = C[20] * dist[0] / 5;
-  C[36] = C[21] * dist[0] / 4;
-  C[37] = C[22] * dist[0] / 4;
-  C[38] = C[23] * dist[0] / 3;
-  C[39] = C[24] * dist[0] / 3;
-  C[40] = C[25] * dist[0] / 3;
-  C[41] = C[26] * dist[0] / 2;
-  C[42] = C[27] * dist[0] / 2;
-  C[43] = C[28] * dist[0] / 2;
-  C[44] = C[29] * dist[0] / 2;
-  C[45] = C[30] * dist[0];
-  C[46] = C[31] * dist[0];
-  C[47] = C[32] * dist[0];
-  C[48] = C[33] * dist[0];
-  C[49] = C[34] * dist[0];
-  C[50] = C[30] * dist[1] / 5;
-  C[51] = C[31] * dist[1] / 4;
-  C[52] = C[32] * dist[1] / 3;
-  C[53] = C[33] * dist[1] / 2;
-  C[54] = C[34] * dist[1];
-  C[55] = C[34] * dist[2] / 5;
+  C[35] = C[20] * dX[0] / 5;
+  C[36] = C[21] * dX[0] / 4;
+  C[37] = C[22] * dX[0] / 4;
+  C[38] = C[23] * dX[0] / 3;
+  C[39] = C[24] * dX[0] / 3;
+  C[40] = C[25] * dX[0] / 3;
+  C[41] = C[26] * dX[0] / 2;
+  C[42] = C[27] * dX[0] / 2;
+  C[43] = C[28] * dX[0] / 2;
+  C[44] = C[29] * dX[0] / 2;
+  C[45] = C[30] * dX[0];
+  C[46] = C[31] * dX[0];
+  C[47] = C[32] * dX[0];
+  C[48] = C[33] * dX[0];
+  C[49] = C[34] * dX[0];
+  C[50] = C[30] * dX[1] / 5;
+  C[51] = C[31] * dX[1] / 4;
+  C[52] = C[32] * dX[1] / 3;
+  C[53] = C[33] * dX[1] / 2;
+  C[54] = C[34] * dX[1];
+  C[55] = C[34] * dX[2] / 5;
 }
 
-void powerL(real *C, const real *dist) {
-  C[1] = C[0] * dist[0];
-  C[2] = C[0] * dist[1];
-  C[3] = C[0] * dist[2];
+void powerL(real_t *C, const real_t *dX) {
+  C[1] = C[0] * dX[0];
+  C[2] = C[0] * dX[1];
+  C[3] = C[0] * dX[2];
 
-  C[4] = C[1] * dist[0] / 2;
-  C[5] = C[2] * dist[0];
-  C[6] = C[3] * dist[0];
-  C[7] = C[2] * dist[1] / 2;
-  C[8] = C[3] * dist[1];
-  C[9] = C[3] * dist[2] / 2;
+  C[4] = C[1] * dX[0] / 2;
+  C[5] = C[2] * dX[0];
+  C[6] = C[3] * dX[0];
+  C[7] = C[2] * dX[1] / 2;
+  C[8] = C[3] * dX[1];
+  C[9] = C[3] * dX[2] / 2;
   
-  C[10] = C[4] * dist[0] / 3;
-  C[11] = C[5] * dist[0] / 2;
-  C[12] = C[6] * dist[0] / 2;
-  C[13] = C[7] * dist[0];
-  C[14] = C[8] * dist[0];
-  C[15] = C[9] * dist[0];
-  C[16] = C[7] * dist[1] / 3;
-  C[17] = C[8] * dist[1] / 2;
-  C[18] = C[9] * dist[1];
-  C[19] = C[9] * dist[2] / 3;
+  C[10] = C[4] * dX[0] / 3;
+  C[11] = C[5] * dX[0] / 2;
+  C[12] = C[6] * dX[0] / 2;
+  C[13] = C[7] * dX[0];
+  C[14] = C[8] * dX[0];
+  C[15] = C[9] * dX[0];
+  C[16] = C[7] * dX[1] / 3;
+  C[17] = C[8] * dX[1] / 2;
+  C[18] = C[9] * dX[1];
+  C[19] = C[9] * dX[2] / 3;
   
-  C[20] = C[10] * dist[0] / 4;
-  C[21] = C[11] * dist[0] / 3;
-  C[22] = C[12] * dist[0] / 3;
-  C[23] = C[13] * dist[0] / 2;
-  C[24] = C[14] * dist[0] / 2;
-  C[25] = C[15] * dist[0] / 2;
-  C[26] = C[16] * dist[0];
-  C[27] = C[17] * dist[0];
-  C[28] = C[18] * dist[0];
-  C[29] = C[19] * dist[0];
-  C[30] = C[16] * dist[1] / 4;
-  C[31] = C[17] * dist[1] / 3;
-  C[32] = C[18] * dist[1] / 2;
-  C[33] = C[19] * dist[1];
-  C[34] = C[19] * dist[2] / 4;
+  C[20] = C[10] * dX[0] / 4;
+  C[21] = C[11] * dX[0] / 3;
+  C[22] = C[12] * dX[0] / 3;
+  C[23] = C[13] * dX[0] / 2;
+  C[24] = C[14] * dX[0] / 2;
+  C[25] = C[15] * dX[0] / 2;
+  C[26] = C[16] * dX[0];
+  C[27] = C[17] * dX[0];
+  C[28] = C[18] * dX[0];
+  C[29] = C[19] * dX[0];
+  C[30] = C[16] * dX[1] / 4;
+  C[31] = C[17] * dX[1] / 3;
+  C[32] = C[18] * dX[1] / 2;
+  C[33] = C[19] * dX[1];
+  C[34] = C[19] * dX[2] / 4;
 
-  C[35] = C[20] * dist[0] / 5;
-  C[36] = C[21] * dist[0] / 4;
-  C[37] = C[22] * dist[0] / 4;
-  C[38] = C[23] * dist[0] / 3;
-  C[39] = C[24] * dist[0] / 3;
-  C[40] = C[25] * dist[0] / 3;
-  C[41] = C[26] * dist[0] / 2;
-  C[42] = C[27] * dist[0] / 2;
-  C[43] = C[28] * dist[0] / 2;
-  C[44] = C[29] * dist[0] / 2;
-  C[45] = C[30] * dist[0];
-  C[46] = C[31] * dist[0];
-  C[47] = C[32] * dist[0];
-  C[48] = C[33] * dist[0];
-  C[49] = C[34] * dist[0];
-  C[50] = C[30] * dist[1] / 5;
-  C[51] = C[31] * dist[1] / 4;
-  C[52] = C[32] * dist[1] / 3;
-  C[53] = C[33] * dist[1] / 2;
-  C[54] = C[34] * dist[1];
-  C[55] = C[34] * dist[2] / 5;
+  C[35] = C[20] * dX[0] / 5;
+  C[36] = C[21] * dX[0] / 4;
+  C[37] = C[22] * dX[0] / 4;
+  C[38] = C[23] * dX[0] / 3;
+  C[39] = C[24] * dX[0] / 3;
+  C[40] = C[25] * dX[0] / 3;
+  C[41] = C[26] * dX[0] / 2;
+  C[42] = C[27] * dX[0] / 2;
+  C[43] = C[28] * dX[0] / 2;
+  C[44] = C[29] * dX[0] / 2;
+  C[45] = C[30] * dX[0];
+  C[46] = C[31] * dX[0];
+  C[47] = C[32] * dX[0];
+  C[48] = C[33] * dX[0];
+  C[49] = C[34] * dX[0];
+  C[50] = C[30] * dX[1] / 5;
+  C[51] = C[31] * dX[1] / 4;
+  C[52] = C[32] * dX[1] / 3;
+  C[53] = C[33] * dX[1] / 2;
+  C[54] = C[34] * dX[1];
+  C[55] = C[34] * dX[2] / 5;
 
-  C[56] = C[35] * dist[0] / 6;
-  C[57] = C[36] * dist[0] / 5;
-  C[58] = C[37] * dist[0] / 5;
-  C[59] = C[38] * dist[0] / 4;
-  C[60] = C[39] * dist[0] / 4;
-  C[61] = C[40] * dist[0] / 4;
-  C[62] = C[41] * dist[0] / 3;
-  C[63] = C[42] * dist[0] / 3;
-  C[64] = C[43] * dist[0] / 3;
-  C[65] = C[44] * dist[0] / 3;
-  C[66] = C[45] * dist[0] / 2;
-  C[67] = C[46] * dist[0] / 2;
-  C[68] = C[47] * dist[0] / 2;
-  C[69] = C[48] * dist[0] / 2;
-  C[70] = C[49] * dist[0] / 2;
-  C[71] = C[50] * dist[0];
-  C[72] = C[51] * dist[0];
-  C[73] = C[52] * dist[0];
-  C[74] = C[53] * dist[0];
-  C[75] = C[54] * dist[0];
-  C[76] = C[55] * dist[0];
-  C[77] = C[50] * dist[1] / 6;
-  C[78] = C[51] * dist[1] / 5;
-  C[79] = C[52] * dist[1] / 4;
-  C[80] = C[53] * dist[1] / 3;
-  C[81] = C[54] * dist[1] / 2;
-  C[82] = C[55] * dist[1];
-  C[83] = C[55] * dist[2] / 6;
+  C[56] = C[35] * dX[0] / 6;
+  C[57] = C[36] * dX[0] / 5;
+  C[58] = C[37] * dX[0] / 5;
+  C[59] = C[38] * dX[0] / 4;
+  C[60] = C[39] * dX[0] / 4;
+  C[61] = C[40] * dX[0] / 4;
+  C[62] = C[41] * dX[0] / 3;
+  C[63] = C[42] * dX[0] / 3;
+  C[64] = C[43] * dX[0] / 3;
+  C[65] = C[44] * dX[0] / 3;
+  C[66] = C[45] * dX[0] / 2;
+  C[67] = C[46] * dX[0] / 2;
+  C[68] = C[47] * dX[0] / 2;
+  C[69] = C[48] * dX[0] / 2;
+  C[70] = C[49] * dX[0] / 2;
+  C[71] = C[50] * dX[0];
+  C[72] = C[51] * dX[0];
+  C[73] = C[52] * dX[0];
+  C[74] = C[53] * dX[0];
+  C[75] = C[54] * dX[0];
+  C[76] = C[55] * dX[0];
+  C[77] = C[50] * dX[1] / 6;
+  C[78] = C[51] * dX[1] / 5;
+  C[79] = C[52] * dX[1] / 4;
+  C[80] = C[53] * dX[1] / 3;
+  C[81] = C[54] * dX[1] / 2;
+  C[82] = C[55] * dX[1];
+  C[83] = C[55] * dX[2] / 6;
 }
 
-void M2MSum(real *MI, const real *C, const real *MJ) {
+void M2MSum(real_t *MI, const real_t *C, const real_t *MJ) {
   for (int i=1; i<MTERM; i++) MI[i] += MJ[i];
 
   MI[4] += C[1]*MJ[1];
@@ -459,7 +459,7 @@ void M2MSum(real *MI, const real *C, const real *MJ) {
   MI[55] += C[3]*MJ[34]+C[9]*MJ[19]+C[19]*MJ[9]+C[34]*MJ[3];
 }
 
-void L2LSum(real *LI, const real *C, const real *LJ) {
+void L2LSum(real_t *LI, const real_t *C, const real_t *LJ) {
   LI[1] += C[1]*LJ[4]+C[2]*LJ[5]+C[3]*LJ[6];
   LI[2] += C[1]*LJ[5]+C[2]*LJ[7]+C[3]*LJ[8];
   LI[3] += C[1]*LJ[6]+C[2]*LJ[8]+C[3]*LJ[9];
@@ -586,7 +586,7 @@ void L2LSum(real *LI, const real *C, const real *LJ) {
   LI[55] += C[1]*LJ[76]+C[2]*LJ[82]+C[3]*LJ[83];
 }
 
-void L2PSum(real *TRG, const real *C, const real *L) {
+void L2PSum(real_t *TRG, const real_t *C, const real_t *L) {
   TRG[1] += C[1]*L[4]+C[2]*L[5]+C[3]*L[6];
   TRG[2] += C[1]*L[5]+C[2]*L[7]+C[3]*L[8];
   TRG[3] += C[1]*L[6]+C[2]*L[8]+C[3]*L[9];

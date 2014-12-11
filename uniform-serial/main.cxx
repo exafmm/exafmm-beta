@@ -17,8 +17,8 @@ int main() {
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
   const int numNeighbors = 1;
   const int numImages = 3;
-  const real cycle = 10 * M_PI;
-  real potDif = 0, potNrm = 0, accDif = 0, accNrm = 0;
+  const real_t cycle = 10 * M_PI;
+  real_t potDif = 0, potNrm = 0, accDif = 0, accNrm = 0;
   printf("Height: %d\n", maxLevel);
 
 #ifdef SAKURA
@@ -87,9 +87,9 @@ int main() {
   FMM.verify(100, potDif, potNrm, accDif, accNrm);
 #else
   const int ksize = 11;
-  const real alpha = 10 / cycle;
-  const real sigma = .25 / M_PI;
-  const real cutoff = 10;
+  const real_t alpha = 10 / cycle;
+  const real_t sigma = .25 / M_PI;
+  const real_t cutoff = 10;
   Ewald ewald(numBodies, maxLevel, cycle, ksize, alpha, sigma, cutoff);
   ewald.wavePart(FMM.Ibodies2, FMM.Jbodies);
   ewald.realPart(FMM.Ibodies2, FMM.Jbodies, FMM.Leafs);
