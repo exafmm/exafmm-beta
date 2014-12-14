@@ -121,6 +121,7 @@ public:
 #else
   void sortBodies() {
     uint *key = new uint [numBodies];
+    uint *permutation_vector = new uint [numBodies];
     float *X = (float*)Jbodies;
     float *Y = (float*)Ibodies;
     real_t diameter = 2 * R0 / (1 << maxLevel);
@@ -129,12 +130,14 @@ public:
       getIndex(i,ix,diameter);
       key[i] = getKey(ix,maxLevel);
     }
-    decomposeSpacePermute(numBodies, Y, X, key, maxLevel);
+    decomposeSpacePermute(numBodies, Y, X, key, permutation_vector, maxLevel);
     for (int i=0; i<numBodies; i++) {
       for_4 Jbodies[i][d] = Ibodies[i][d];
       for_4 Ibodies[i][d] = 0;
     }
+
     delete[] key;
+    delete[] permutation_vector;
   }
 #endif
 
