@@ -4,7 +4,8 @@
 #include "kernels2.h"
 
 #ifdef SAKURA
-void decomposeSpacePermute(int N, float * Y, float * X, uint * keys, int maxlev);
+void decomposeSpacePermute(int N, float * Y, float * X, uint * keys, 
+			   uint *permutation_vectors, int maxlev);
 #endif
 
 class Fmm : public Kernel {
