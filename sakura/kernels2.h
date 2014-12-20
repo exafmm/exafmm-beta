@@ -1,14 +1,25 @@
 #include <cmath>
+#include <stdint.h>
 #include "types2.h"
 #include "core.h"
 
 #ifdef SAKURA
 #define DIM 3
+#define LDIM 8
 #define NN 26
 #define FN 37
 #define CN 152
+#define NP3 64
 int executeStencilNN(int *nn_codes, int *node_code, int *stencil, int periodic, int lv);
 int executeStencilFN(int *fn_codes, int *node_code, int *fn_stencil, int *cn_stencil, int periodic, int lv);
+void compute_quantization_codes_TL(uint32_t *codes, float *X, int numBodies, int nbins, float *Xmin, float *Xmax);
+void morton_encoding_T(uint64_t *mcodes, uint32_t *codes, int numBodies, int maxLevel);
+void build_tree(float *Y, float *X, uint64_t *mcodes, uint64_t *scodes,
+		uint32_t *permutation_vector, uint32_t *index, uint32_t *bit_map,
+                int numBodies, int maxLevel, int level, int population_threshold, int dist);
+void rearrange_dataTL(float *Y, float *X, uint32_t *index, int numBodies);
+int count_bins_bitmap_wrapper(int *nodes_per_level, int *nodes_block_first,
+                              uint32_t *bit_map, int numBodies, int numLevels);
 #endif
 
 class Kernel {
@@ -31,6 +42,114 @@ public:
   int *Index;
   int *Index2;
 
+#ifdef SAKURA
+  int height;
+  int nodes_per_level[20];
+  int near_stencil[8*DIM*NN];
+  int far_stencil[8*DIM*FN];
+  int common_stencil[DIM*CN];
+  int *nodes_block_first, **node_codes, **node_pointers, **num_children, **children_first;
+  int **nn_link_list, **clgs_link_list, **common_link_list;
+  uint32_t *codes, *bit_map, *permutation_vector, *index;
+  uint32_t **nn_count, **clgs_count, **common_count;
+  uint64_t *mcodes, *scodes;
+  float *X, *Y;
+  
+public:
+  void initialize() {
+    codes = (uint32_t *)malloc(DIM*numBodies*sizeof(uint32_t));
+    mcodes = (uint64_t *)malloc(numBodies*sizeof(uint64_t));
+    scodes = (uint64_t *)malloc(numBodies*sizeof(uint64_t));
+    bit_map = (uint32_t *)malloc(numBodies*sizeof(uint32_t));
+    permutation_vector = (uint32_t *)malloc(numBodies*sizeof(uint32_t));
+    index = (uint32_t *)malloc(numBodies*sizeof(uint32_t));
+    nodes_block_first = (int*)malloc(NP3*maxLevel*sizeof(int));
+    X = (float *)malloc(LDIM*numBodies*sizeof(float));
+    Y = (float *)malloc(LDIM*numBodies*sizeof(float));
+    for(int i=0; i<numBodies; i++){
+      bit_map[i] = 0;
+      index[i] = i;
+      for(int d=0; d<4; d++){
+	X[LDIM*i+d] = Jbodies[i][d];
+      }
+    }
+    int population_threshold = 64;
+    int nbins = (1 << maxLevel);
+    float Xmin[DIM], Xmax[DIM];
+    for(int d=0; d<DIM; d++){
+      Xmin[d] = X[d];
+      Xmax[d] = X[d];
+    }
+    for(int i=1; i<numBodies; i++){
+      for(int d=0; d<DIM; d++){
+	Xmin[d] = MIN(Xmin[d],X[DIM*i+d]);
+	Xmax[d] = MAX(Xmax[d],X[DIM*i+d]);
+      }
+    }
+    compute_quantization_codes_TL(codes, X, numBodies, nbins, Xmin, Xmax);
+    morton_encoding_T(mcodes, codes, numBodies, maxLevel);
+    build_tree(Y, X, mcodes, scodes, permutation_vector,
+               index, bit_map, numBodies, maxLevel+1, maxLevel+1,
+               population_threshold, 1);
+    rearrange_dataTL(Y, X, permutation_vector, numBodies);
+    for(int i=0; i<20; i++) nodes_per_level[i] = 0;
+    height = count_bins_bitmap_wrapper(nodes_per_level,
+				       nodes_block_first,
+				       bit_map, numBodies, maxLevel);
+    node_codes = (int **)malloc(height*sizeof(int *));
+    node_pointers = (int **)malloc(height*sizeof(int *));
+    num_children = (int **)malloc(height*sizeof(int *));
+    children_first = (int **)malloc(height*sizeof(int *));
+    nn_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
+    clgs_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
+    common_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
+    nn_link_list = (int **)malloc(height*sizeof(int *));
+    clgs_link_list = (int **)malloc(height*sizeof(int *));
+    common_link_list = (int **)malloc(height*sizeof(int *));
+    for(int i=0; i<height; i++){
+      node_codes[i] = (int *)malloc(3*nodes_per_level[i]*sizeof(int));
+      node_pointers[i] = (int *)malloc(nodes_per_level[i]*sizeof(int));
+      num_children[i] = (int *)malloc(nodes_per_level[i]*sizeof(int));
+      children_first[i] = (int *)malloc(nodes_per_level[i]*sizeof(int));
+      nn_count[i] = (uint32_t *)calloc(nodes_per_level[i],sizeof(uint32_t));
+      clgs_count[i] = (uint32_t *)calloc(nodes_per_level[i],sizeof(uint32_t));
+      common_count[i] = (uint32_t *)calloc(nodes_per_level[i],sizeof(uint32_t));
+    }
+  }
+
+  void finalize() {
+    for(int i=0; i<height; i++){
+      free(node_codes[i]);
+      free(node_pointers[i]);
+      free(num_children[i]);
+      free(children_first[i]);
+      free(nn_count[i]);
+      free(clgs_count[i]);
+      free(common_count[i]);
+      free(nn_link_list[i]);
+      free(clgs_link_list[i]);
+      free(common_link_list[i]);
+    }
+    free(node_codes);
+    free(node_pointers);
+    free(num_children);
+    free(children_first);
+    free(nn_count);
+    free(clgs_count);
+    free(common_count);
+    free(nn_link_list);
+    free(clgs_link_list);
+    free(common_link_list);
+    free(codes);
+    free(mcodes);
+    free(scodes);
+    free(bit_map);
+    free(permutation_vector);
+    free(index);
+    free(nodes_block_first);
+  }
+#endif
+  
 private:
   inline void getIndex(int *ix, int index) const {
     for_3 ix[d] = 0;

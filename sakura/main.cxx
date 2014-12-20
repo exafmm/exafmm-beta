@@ -37,6 +37,7 @@ int main() {
 
   logger::startTimer("Init bodies");
   FMM.initBodies(cycle);
+  FMM.initialize();
   logger::stopTimer("Init bodies");
   
   logger::startTimer("Sort bodies");
@@ -100,6 +101,7 @@ int main() {
   logger::stopTimer("Verify");
 
   logger::startTimer("Deallocate");
+  FMM.finalize();
   FMM.deallocate();
   logger::stopTimer("Deallocate");
 
