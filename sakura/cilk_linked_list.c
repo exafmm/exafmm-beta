@@ -1175,13 +1175,8 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
 
 #ifndef DENSE
 #ifndef NO_SYMBOLIC 
-
-
- #ifndef INTERLEAVE
    start_timer();
- #endif
    operation = 0; // First part, symbolic pre-processing    
-
    interaction_list_compressed_expanded_driver(clgs_link_list, 
 					       clgs_count,
 					       nn_link_list, 
@@ -1192,12 +1187,7 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
 					       node_codes2, children_first2,
 					       nodes_per_level, 
 					       nodes_per_level2, height, operation);    
-
- #ifndef INTERLEAVE
    stop_timer("Count neighbors");
- #endif
-
-
  #endif 
 #endif
    // Find out how much memory we need for the targets linked list
@@ -1212,11 +1202,7 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
    }
 
 #else
-
-#ifndef INTERLEAVE
   start_timer();
-#endif    
-  
   for(int i=0; i<height; i++){
     cilk_spawn scan_colleagues(&clgs_memory_per_level[i], 
 			       clgs_count[i], 
@@ -1231,12 +1217,7 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
     
   }
   cilk_sync;
-  
-#ifndef INTERLEAVE
   stop_timer("Scan colleagues");
-#endif
-  
-  
 #endif
 #endif
 
@@ -1275,40 +1256,15 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
 
 
 #ifdef DENSE
-  /*
-  interaction_list_compressed_dense(clgs_link_list, 
-				    nn_link_list, 
-				    common_list,
-				    0, height-2, 
-				    height);
-  */
-
-#ifndef INTERLEAVE
   start_timer();
-#endif    
-
   printf("Generate the stencil\n");
-
   int toy_parent[DIM];
   toy_parent[0] = 1; toy_parent[1] = 1; toy_parent[2] = 1;
   interaction_list_stencil(common_stencil, far_stencil, near_stencil, toy_parent);
-
-  
-
-#ifndef INTERLEAVE
   stop_timer("Link list");
-#endif    
-
 #else
-
-
-  // Form the link-list
-#ifndef INTERLEAVE
   start_timer();
-#endif    
-
-  operation = 1; // Second part, formation of the interaction list   
-
+  operation = 1;
   interaction_list_compressed_expanded_driver(clgs_link_list, 
 					      clgs_count,
 					      nn_link_list, 
@@ -1319,16 +1275,9 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
 					      node_codes2, children_first2,
 					      nodes_per_level, 
 					      nodes_per_level2, height, operation);    
-
-#ifndef INTERLEAVE
   stop_timer("Link list");
-#endif    
-  
 #endif
-
-  // free the memory assosiated with the linked list
   free(nn_memory_per_level);
   free(clgs_memory_per_level);
-
 }
 
