@@ -33,63 +33,35 @@ date: Jul 2014
 #define CN 152
 #define ML 1000000
 
-void formInteractionStencil(int *common_stencil, int *far_stencil,
-                            int *near_stencil){
-
+void formInteractionStencil(int *common_stencil, int *far_stencil, int *near_stencil){
   int toy_parent[DIM];
   toy_parent[0] = 1; toy_parent[1] = 1; toy_parent[2] = 1;
   interaction_list_stencil(common_stencil, far_stencil, near_stencil, toy_parent);
-
 }
 
 void memalloc_encoding(void **mcodes, int N){
-  *mcodes = sakura_malloc(N, sizeof(uint64_t), 
-			 "Morton code array");
+  *mcodes = sakura_malloc(N, sizeof(uint64_t), "Morton code array");
   uint64_t physical_memory = N*sizeof(uint64_t);
-#ifndef INTERLEAVE
   printf("%-20s:   %luMB\n", "Encoding Phy mem", physical_memory / ML);
-#endif
 }
 
 void memfree_encoding(void *mcodes){
   free(mcodes);
 }
 
-void encodeParticles(int N, float * X, float * min, 
-		     float *max, void *particle_codes, 
-		     int maxlev) {
+void encodeParticles(int N, float * X, float * min, float *max, void *particle_codes, int maxlev) {
   uint64_t *mcodes = (uint64_t *)particle_codes;
-  uint32_t *codes = (uint32_t *)sakura_malloc(N, DIM * sizeof(uint32_t), 
-					      "Hash code array");
+  uint32_t *codes = (uint32_t *)sakura_malloc(N, DIM * sizeof(uint32_t), "Hash code array");
   uint64_t working_memory = (uint64_t)DIM * N * sizeof(uint32_t);
   int nbins = (1 << maxlev);
-
-#ifndef INTERLEAVE
   start_timer();
-#endif
-
   compute_quantization_codes_TL(codes, X, N, nbins, min, max);
-
-#ifndef INTERLEAVE  
   stop_timer("Quantization");
-#endif
-
-#ifndef INTERLEAVE
   start_timer();
-#endif
-
   morton_encoding_T(mcodes, codes, N, maxlev);
-
-#ifndef INTERLEAVE
   stop_timer("Morton encoding");
-#endif
-
   free(codes);
-
-#ifndef INTERLEAVE
   printf("%-20s:   %luMB\n", "Encoding work mem", working_memory / ML);
-#endif
-
 }
 
 void memalloc_decomposeSpace(uint32_t **permutation_vector, void **bit_map, int N){
@@ -98,19 +70,14 @@ void memalloc_decomposeSpace(uint32_t **permutation_vector, void **bit_map, int 
   *permutation_vector = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), 
 						  "Permutation vector");
   physical_memory += N*sizeof(uint32_t);
-#ifndef INTERLEAVE
   printf("%-20s:   %luMB\n", "Decom. Phy mem", physical_memory / ML);
-#endif
 }
 
 void free_decomposeSpace(uint32_t *permutation_vector, void *bit_map ){
-
   free(permutation_vector);
   free(bit_map);
-
 }
 
-/* internal wrapper funtion to be used with Sakura */
 void decomposeSpace(int N, void **particle_codes, 
 		    uint32_t *permutation_vector, void *bin_rep, float **X,
 		    int maxlev, int population_threshold, int dist) {
@@ -127,22 +94,12 @@ void decomposeSpace(int N, void **particle_codes,
     Y = (float*)sakura_malloc(N, LDIM*sizeof(float), "Particle buffer");
     working_memory = (uint64_t)N*LDIM*sizeof(float);
   }
-
-#ifndef INTERLEAVE 
   start_timer();
-#endif  
-
   build_tree(Y, *X, mcodes, scodes, permutation_vector, 
 	     index, bit_map, N, maxlev, maxlev, 
 	     population_threshold, dist);
-  
-#ifndef INTERLEAVE
   stop_timer("Tree building");
-#endif  
-
-#ifndef INTERLEAVE
   printf("%-20s:   %luMB\n", "Decomp. work mem", working_memory / ML);
-#endif
   *particle_codes = (void*)scodes;
   if(N <= SMALLTH){
     float * tmp;
@@ -171,33 +128,22 @@ int tree_formation(void *binrep, void *particle_codes,
   uint64_t **node_codes = (uint64_t **)codes;
 #endif
 
-  int *nodes_block_first = (int*)sakura_malloc(NP3*maxlevel, sizeof(int), 
-					       "Node block");    
-#ifndef INTERLEAVE
+  int *nodes_block_first = (int*)sakura_malloc(NP3*maxlevel, sizeof(int), "Node block");
     start_timer();
-#endif 
-    
     int height = count_bins_bitmap_wrapper(nodes_per_level, 
 					   nodes_block_first, 
 					   bit_map, N, maxlevel);
-#ifndef INTERLEAVE
     stop_timer("Count nodes");
-#endif 
-
     for(int i=0; i<height; i++){
-
       node_pointers[i] = (int *)sakura_malloc(nodes_per_level[i], sizeof(int), 
 					      "Array of pointers to data");
       physical_mem += nodes_per_level[i]*sizeof(int);
-
       num_children[i] = (int *)sakura_malloc(nodes_per_level[i],sizeof(int), 
 					     "Number of children array");
       physical_mem += nodes_per_level[i]*sizeof(int);
-
       children_first[i] = (int *)sakura_calloc(nodes_per_level[i], sizeof(int), 
 					       "Children first array");
       physical_mem += nodes_per_level[i]*sizeof(int);
-
 #ifndef MORTON_ONLY
       node_codes[i] = (int *)sakura_malloc(3*nodes_per_level[i], sizeof(int), 
 					   "Node hash codes");
@@ -207,14 +153,8 @@ int tree_formation(void *binrep, void *particle_codes,
 						"New code array");
       physical_mem += nodes_per_level[i]*sizeof(int);
 #endif 
-
     }
-      
-#ifndef INTERLEAVE
     start_timer();
-#endif
-    
-      // Parent to children connection
       parent_children_connection_wrapper(node_pointers, 
 					 num_children, 
 					 node_codes,
@@ -222,32 +162,16 @@ int tree_formation(void *binrep, void *particle_codes,
 					 bit_map, scodes,
 					 N, height, maxlevel, maxlevel);
       num_children[height-1][0:nodes_per_level[height-1]] = 0; 
-    // No children on the final lev
-
-#ifndef INTERLEAVE
     stop_timer("Link children");
-#endif    
-
-#ifndef INTERLEAVE
     start_timer();
-#endif
     first_child_position_wrapper(children_first, 
 				 num_children, 
 				 nodes_per_level, 
 				 height);
-
-#ifndef INTERLEAVE
     stop_timer("Find first child");
-#endif
-
-#ifndef INTERLEAVE
     printf("%-20s:   %luMB\n", "Tree phys mem", physical_mem / ML);
-#endif
-
     free(nodes_block_first);
-
     return(height);
-      
 }
 
 #endif
@@ -304,13 +228,6 @@ void form_interaction_lists(int **node_codes, int **children_first,
     common_count[i] = (uint32_t *)sakura_calloc(nodes_per_level[i], sizeof(uint32_t), 
 						"Counters for the common neighbors");
   }
-  
-  
-  {
-    
-#ifdef INTERLEAVE
-    cilk_spawn 
-#endif 
       interaction_list_formation(node_codes, children_first, node_codes2,
 				 children_first2, nn_count,
 				 clgs_count, common_count, 
@@ -320,11 +237,7 @@ void form_interaction_lists(int **node_codes, int **children_first,
 				 height, height2, N, &memory_count, &workspace_memory, 
 				 &physical_memory, &tmp_list_physical, 
 				 &tmp_list_workspace);
-    }
-
-#ifndef INTRLEAVE
   printf("%-20s:   %luMB\n", "Inter. list phys mem", (uint64_t)physical_memory / ML);
-#endif
 
 }
 
@@ -543,33 +456,19 @@ void decomposeSpacePermute(int N, float * Y, float * X, uint32_t * mcodes,
 
 
 void relocateParticles(int N, float **X, uint32_t *permutation_vector){
-
   float *Y  = (float *)sakura_malloc(N, LDIM*sizeof(float), "Particle buffer");
   uint64_t working_memo = (uint64_t)N*LDIM*sizeof(float);
- 
   float *tmp;
-
-#ifndef INTERLEAVE
   start_timer();
-#endif
-
   if(N >= SMALLTH){
     rearrange_dataTL(Y, *X, permutation_vector, N);
   }
-
-#ifndef INTERLEAVE
   stop_timer("Relocate particles");
   printf("%-20s:   %luMB\n", "Relocation work mem", working_memo / ML);
-#endif
-
-  /* swap the pointers */
   tmp = Y;
   Y = *X;
   *X = tmp;
-
-
   free(Y);
-
 }
 
 #ifdef LIBRARY
@@ -663,17 +562,9 @@ int main(int argc, char** argv){
     start_timer();
     //radixSort2(N, mcodes, scodes, permutation_vector, index, maxlev);
     stop_timer("Radix sort");
-
-
     start_timer();
-    //permute2(N, X, Y, permutation_vector);
-    //cilk_spawn rearrange_dataTL(Y, X, permutation_vector, N); // The data permutation function
-#ifndef INTERLEAVE
     cilk_sync;
     stop_timer("Permutation");
-#endif
-
-    /* For the tree data structure */ 
     int nodes_per_level[20]; // Assume a maximum of 20 levels for the tree
     int height =  maxlev;
     for(int i=0; i<height; i++){
@@ -684,38 +575,20 @@ int main(int argc, char** argv){
     int **node_pointers = (int **)malloc(height*sizeof(int *)); // Cell array with pointer to the data
     int **num_children = (int **)malloc(height*sizeof(int *)); // Cell array with the number of children of each node
     int **children_first = (int **)malloc(height*sizeof(int *)); // The position of the first child of each node.     
-
-    // Allocate memory for the neighbor and colleagues counts 
-#ifndef INTERLEAVE
     start_timer();
-#endif
-    
     int **clgs_link_list = (int **)malloc(height*sizeof(int *)); // The link-list of the colleagues
     int **nn_link_list = (int **)malloc(height*sizeof(int *)); // The link-list of the neighbors
     int **common_list = (int **)malloc(height*sizeof(int *));
     uint32_t **nn_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); // Cell array that holds the number of neighbors each nodes has
     uint32_t **clgs_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); // Cell array that holds the number of colleagues each node has
     uint32_t **common_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
-    
-
     int common_stencil[DIM*CN] = {0};
     int far_stencil[8*DIM*FN] = {0};
     int near_stencil[8*DIM*NN] = {0};
-
-#ifndef INTERLEAVE
     stop_timer("Malloc list");
-#endif
-
     double datare_time = 0;
-
     double tmp_list_physical = 0;
     double tmp_list_workspace = 0;
-
-    /* Interaction list formation */    
-    {
-#ifdef INTERLEAVE
-      cilk_spawn 
-#endif
       interaction_list_formation(node_codes, children_first, node_codes,
 				 children_first, nn_count,
 				 clgs_count, common_count,
@@ -725,15 +598,6 @@ int main(int argc, char** argv){
 				 height, height, N, &memory_count, &workspace_memory, 
 				 &physical_memory, &tmp_list_physical, 
 				 &tmp_list_workspace);
-    }
-
-#ifdef INTERLEAVE
-    cilk_sync;
-    stop_timer("Rearrange data");
-#endif 
-
-        
-    /* Verification */
       int **expansions = (int **)malloc(height*sizeof(int *));
       int **interactions = (int **)malloc(height*sizeof(int *));
       
@@ -792,6 +656,4 @@ int main(int argc, char** argv){
   free(index);
 }
 #endif
-
-
 #endif
