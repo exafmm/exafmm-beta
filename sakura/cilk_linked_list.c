@@ -532,36 +532,15 @@ int are_near_neighbors(uint64_t child_mcode,
 
 int are_near_neighbors( int (*restrict child),  
 			int (*restrict parent) ){
-
-  
   int diff_x = 2*parent[0] - child[0];
   int diff_y = 2*parent[1] - child[1];
   int diff_z = 2*parent[2] - child[2];
-  
   int is_common_neighbor = (diff_x == 2 || diff_x == -3) ||
     (diff_y == 2 || diff_y == -3) ||
     (diff_z == 2 || diff_z == -3);
-  
-
-  /*
-  if(is_common_neighbor != is_common_neighbor1){
-    printf("problem %d, %d\n", is_common_neighbor, is_common_neighbor1);
-    int code1[DIM] = {0};
-    int code2[DIM] = {0};
-    decode_morton_code(&code1[0], &code1[1], &code1[2], mask_parent_x);
-    decode_morton_code(&code2[0], &code2[1], &code2[2], mask_child_x);
-    printf("mas_parent_x: %lx, mask_child_x: %lx\n", mask_parent_x | mask_X , mask_child_x | mask_X);
-    printf("parent_x: %d %d, %d %d, child_x %d %d, %d %d - %lx\n", code1[0], 2*parent[0], code1[1], code1[2], code2[0], child[0], code2[1], code2[2], (mask_X));
-
-  }
-  */
-  
   return(is_common_neighbor);
-
 }
 
-
-#ifndef MORTON_ONLY
 void interaction_list_compressed_expanded(int (**restrict clgs_link_list), 
 					  uint32_t (**restrict clgs_count), 
 					  int (**restrict nn_link_list), 
@@ -575,64 +554,28 @@ void interaction_list_compressed_expanded(int (**restrict clgs_link_list),
 					  int target, int source, int level_target, 
 					  int level_source, int maxlev, 
 					  base_function selected_op){
-#else
-void interaction_list_compressed_expanded(int (**restrict clgs_link_list), 
-					  uint32_t (**restrict clgs_count), 
-					  int (**restrict nn_link_list), 
-					  uint32_t (**restrict nn_count),
-					  int (**restrict common_list), 
-					  uint32_t (**restrict common_count),
-					  uint64_t **target_tree_nodes,
-					  int **target_tree_edges,
-					  uint64_t **source_tree_nodes,
-					  int **source_tree_edges,
-					  int target, int source, int level_target, 
-					  int level_source, int maxlev, 
-					  base_function selected_op){
-#endif
-   
-
   int have_neighbors_T[8] = {0};
   int have_neighbors_S[8] = {0};
-
   int target_children_stop = target_tree_edges[level_target][target];
   int target_children_start = (target==0) ? 0 : target_tree_edges[level_target][target-1];
   int source_children_stop = source_tree_edges[level_source][source];
   int source_children_start = (source == 0) ? 0 : source_tree_edges[level_source][source-1];
-
   int nchild_source = source_children_stop - source_children_start;
   int nchild_target = target_children_stop - target_children_start;
-
-#ifndef MORTON_ONLY
   int Target_code_X = target_tree_nodes[level_target][DIM*target];
   int Target_code_Y = target_tree_nodes[level_target][DIM*target+1];
   int Target_code_Z = target_tree_nodes[level_target][DIM*target+2];
   int Source_code_X = source_tree_nodes[level_source][DIM*source];
   int Source_code_Y = source_tree_nodes[level_source][DIM*source+1];
   int Source_code_Z = source_tree_nodes[level_source][DIM*source+2];
-
   int abs_diff_x = abs(Target_code_X - Source_code_X);
   int abs_diff_y = abs(Target_code_Y - Source_code_Y);
   int abs_diff_z = abs(Target_code_Z - Source_code_Z);
-
-
-#else
-
-  uint64_t Target_mcode = target_tree_nodes[level_target][target];
-  uint64_t Source_mcode = source_tree_nodes[level_source][source];
-
-#endif
-  
-#ifndef MORTON_ONLY
   int are_same_bin = (abs_diff_x == 0) && (abs_diff_y == 0) && (abs_diff_z == 0);
-#else
-  int are_same_bin = Target_mcode == Source_mcode;
-#endif
   int src_isnot_leaf = (((source_children_stop - source_children_start) > 0) && 
 			(level_source < maxlev));
   int trg_isnot_leaf = (((target_children_stop - target_children_start) > 0) && 
 			(level_target < maxlev));
-  
   if(are_same_bin && trg_isnot_leaf && src_isnot_leaf){
     cilk_for(int i=target_children_start; i<target_children_stop; i++){
       for(int j=source_children_start; j<source_children_stop; j++){
@@ -648,49 +591,25 @@ void interaction_list_compressed_expanded(int (**restrict clgs_link_list),
 					     level_source+1, maxlev, selected_op);
       }
     }
-    
-  }
-
-  else if((!src_isnot_leaf || !trg_isnot_leaf) ){
+  }else if((!src_isnot_leaf || !trg_isnot_leaf) ){
 #ifdef NO_SYMBOLIC
-
     selected_op(nn_count[level_target], 
 		&nn_link_list[level_target][target*NN], target, source);
 #else
     selected_op(nn_count[level_target], 
 		nn_link_list[level_target], target, source);
 #endif
-  }
-  else{
-
+  }else{
     int offset = target_children_start;
     for(int i=target_children_start; i<target_children_stop; i++){
-      
-#ifndef MORTON_ONLY
       have_neighbors_T[i-offset] = are_near_neighbors(&target_tree_nodes[level_target+1][i*DIM],
 						      &source_tree_nodes[level_source][DIM*source]);
-#else      
-      
-      have_neighbors_T[i-offset] = are_near_neighbors(target_tree_nodes[level_target+1][i],
-						      Source_mcode);
-      
-#endif
-
     }
-
     offset = source_children_start;
     int num_nn_S = 0;
     for(int i=source_children_start; i<source_children_stop; i++){
-      
-#ifndef MORTON_ONLY
       have_neighbors_S[i-offset] = are_near_neighbors(&source_tree_nodes[level_source+1][i*DIM], 
 						      &target_tree_nodes[level_target][target*DIM]);
-#else 
-      
-      have_neighbors_S[i-offset] = are_near_neighbors(source_tree_nodes[level_source+1][i], 
-						      Target_mcode);
-      
-#endif
       if(have_neighbors_S[i-offset]){
 #ifdef NO_SYMBOLIC
 	selected_op(common_count[level_target], 
@@ -796,14 +715,9 @@ void interaction_list_compressed_driver(int **clgs_link_list,
 					int *nodes_per_level_target, 
 					int *nodes_per_level_source, 
 					int maxlev, int operation){
-
-
   int level = 0;
-
   base_function use_function = (operation==0) ? &increase_counter : &store_pointer;
-
   cilk_for(int i=0; i<nodes_per_level_target[level]; i++){
-    
     interaction_list_wrapper_compressed(clgs_link_list, 
 					clgs_count,
 					nn_link_list, 
@@ -816,12 +730,8 @@ void interaction_list_compressed_driver(int **clgs_link_list,
 					source_tree_edges,
 					i, nodes_per_level_source,
 					level, maxlev-1, use_function);
-    
   }
-  //writeTracer();
 }
-
-#ifndef MORTON_ONLY
 
  void interaction_list_compressed_expanded_driver(int (**restrict clgs_link_list), 
 						  uint32_t (**restrict clgs_count),
@@ -836,27 +746,8 @@ void interaction_list_compressed_driver(int **clgs_link_list,
 						  int (*restrict nodes_per_level_target), 
 						  int (*restrict nodes_per_level_source), 
 						  int maxlev, int operation){
-#else
- void interaction_list_compressed_expanded_driver(int (**restrict clgs_link_list), 
-						  uint32_t (**restrict clgs_count),
-						  int (**restrict nn_link_list), 
-						  uint32_t (**restrict nn_count),
-						  int (**restrict common_list), 
-						  uint32_t (**restrict common_count),
-						  uint64_t **target_tree_nodes,
-						  int **target_tree_edges,
-						  uint64_t **source_tree_nodes,
-						  int **source_tree_edges,
-						  int (*restrict nodes_per_level_target), 
-						  int (*restrict nodes_per_level_source), 
-						  int maxlev, int operation){
-#endif
-
-
   int level = 0;
-  
   base_function use_function = (operation==0) ? &increase_counter : &store_pointer;
-  
   cilk_for(int i=0; i<nodes_per_level_target[level]; i++){
     for(int j=0; j<nodes_per_level_source[level]; j++){
 	interaction_list_compressed_expanded(clgs_link_list, 
@@ -869,9 +760,7 @@ void interaction_list_compressed_driver(int **clgs_link_list,
 					     source_tree_nodes, source_tree_edges,
 					     i, j, level, 
 					     level, maxlev-1, use_function);
-
     }    
-    
   }
 }
   
@@ -881,19 +770,6 @@ void interaction_list_dense_wrapper(int (**restrict clgs_link_list),
 				    int (**restrict common_list),
 				    int (*restrict nodes_per_level),
 				    int maxlev){
-  /*
-  for(int level=0; level<maxlev; level++){
-    cilk_for(int i=0; i<nodes_per_level[level]; i++){
-      interaction_list_compressed_dense(clgs_link_list, 
-						   nn_link_list, 
-						   common_list,
-						   i, level, 
-						   maxlev);
-  
-    }
-  }
-  */
-
 }
 
 int cmpfunc2 (const void * a, const void * b)
@@ -904,35 +780,26 @@ int cmpfunc2 (const void * a, const void * b)
 
 int near_neighbor_roule(int (*restrict candidate),  
 			int (*restrict child) ){
-
   int abs_diff_x = abs(candidate[0] - child[0]);
   int abs_diff_y = abs(candidate[1] - child[1]);
   int abs_diff_z = abs(candidate[2] - child[2]);
-
   int are_neighbors = (abs_diff_x<=1) && (abs_diff_y<=1) && (abs_diff_z<=1);
   int are_same_bin = (abs_diff_x==0) && (abs_diff_y==0) && (abs_diff_z==0);
-
   return(are_neighbors && !are_same_bin);
 }
 
 
 int same_bin(int (*restrict candidate),  
 	     int (*restrict child) ){
-
   int abs_diff_x = abs(candidate[0] - child[0]);
   int abs_diff_y = abs(candidate[1] - child[1]);
   int abs_diff_z = abs(candidate[2] - child[2]);
-
   int are_same_bin = (abs_diff_x==0) && (abs_diff_y==0) && (abs_diff_z==0);
-
   return(are_same_bin);
-
 } 
 
 void interaction_list_stencil(int *common_stencil, int *far_stencil, 
 			      int *near_stencil, int *parent_code){ 
-
-
   int mask[DIM] = {0};
   int candidate[DIM] = {0};
   int child[DIM] = {0};
@@ -1107,9 +974,6 @@ void interaction_list_stencil(int *common_stencil, int *far_stencil,
    return(fn_count + cn_count);
  }
 
-
-
-#ifndef MORTON_ONLY
 void interaction_list_formation(int **node_codes, int **children_first,
 				int **node_codes2, int **children_first2, 
 				uint32_t (**restrict nn_count), 
@@ -1129,50 +993,21 @@ void interaction_list_formation(int **node_codes, int **children_first,
 				double *physical_memory, 
 				double *interaction_list_physical, 
 				double *interaction_list_workspace){
-#else
-void interaction_list_formation(uint64_t **node_codes, int **children_first,
-				uint64_t **node_codes2, int **children_first2, 
-				uint32_t (**restrict nn_count), 
-				uint32_t (**restrict clgs_count), 
-				uint32_t (**restrict common_count),
-				int (**restrict nn_link_list), 
-				int (**restrict clgs_link_list),
-				int (**restrict common_list),
-				int (*restrict common_stencil),
-				int (*restrict far_stencil),
-				int (*restrict near_stencil),
-				int (**restrict node_pointers), 
-				int (*restrict nodes_per_level), 
-				int (*restrict nodes_per_level2), 
-				int height, int height2, int N, 
-				double *memory_count, double *workspace_memory,
-				double *physical_memory, 
-				double *interaction_list_physical, 
-				double *interaction_list_workspace){
-
-#endif
-
   struct timeval startwtime, endwtime;
   const bool printNow = true;
-  /* Start the link list formation */
-
-  uint32_t *clgs_memory_per_level = (uint32_t *)malloc(height*sizeof(uint32_t)); // Array that holds the amount of memory per level required by the colleague linked list 
+  uint32_t *clgs_memory_per_level = (uint32_t *)malloc(height*sizeof(uint32_t));
   memory_count[0] += (double)height*sizeof(uint32_t);
   workspace_memory[0] += (double)height*sizeof(uint32_t);
   interaction_list_workspace[0] += (double)height*sizeof(uint32_t);
-
-  uint32_t *nn_memory_per_level = (uint32_t *)malloc(height*sizeof(uint32_t)); // Array that holds the amount of memory per level required for the neighbors linked list
+  uint32_t *nn_memory_per_level = (uint32_t *)malloc(height*sizeof(uint32_t));
   memory_count[0] += (double)height*sizeof(uint32_t);
   workspace_memory[0] += (double)height*sizeof(uint32_t);
   interaction_list_workspace[0] += (double)height*sizeof(uint32_t);
-
   uint32_t *common_memory_per_level = (uint32_t *)malloc(height*sizeof(uint32_t));
   memory_count[0] += (double)height*sizeof(uint32_t);
   workspace_memory[0] += (double)height*sizeof(uint32_t);
   interaction_list_workspace[0] += (double)height*sizeof(uint32_t);
-
-  int operation = 0; // First part, symbolic pre-processing    
-
+  int operation = 0;
 #ifndef DENSE
 #ifndef NO_SYMBOLIC 
    start_timer();

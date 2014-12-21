@@ -62,8 +62,6 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 				  int population_threshold);
 int count_bins_bitmap_wrapper(int *nodes_per_level, int *node_block_first,
 			      uint32_t *bit_map, int N, int L);
-
-#ifndef MORTON_ONLY
 void parent_children_connection_wrapper(int (**restrict node_pointers), 
 					int (**restrict num_children),
 					int (**restrict node_codes), 
@@ -71,15 +69,6 @@ void parent_children_connection_wrapper(int (**restrict node_pointers),
 					uint32_t (*restrict bit_map), 
 					uint64_t (*restrict leaf_morton_codes),
 					int N, int L, int maxL, int maxlev);
-#else
-void parent_children_connection_wrapper(int (**restrict node_pointers), 
-					int (**restrict num_children),
-					uint64_t (**restrict node_codes),
-					int (*restrict nodes_block_first),
-					uint32_t (*restrict bit_map), 
-					uint64_t (*restrict leaf_morton_codes),
-					int N, int L, int maxL, int maxlev);
-#endif
 void first_child_position_wrapper(int **children_first, 
 				  int **num_children, 
 				  int *nodes_per_level, 
@@ -97,7 +86,6 @@ void bin_sort_radix6_bitmap_old(uint long *zcodes, uint long* codes,
 				uint *bit_map,
 				int N, int sft, int lv, int stop, 
 				int population_threshold);
-
 void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X), 
 				  uint64_t (*restrict zcodes), 
 				  uint64_t (*restrict codes), 
@@ -107,21 +95,14 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 				  int N, 
 				  int sft, int lv, int stop, 
 				  int population_threshold);
-
-
 void build_tree(float *Y, float *X, uint64_t (*restrict zcodes), 
 		uint64_t (*restrict codes), 
 		uint32_t (*restrict pointIds), uint32_t (*restrict index),
 		uint32_t (*restrict bit_map),
 		int N, int maxlev, int maxheight, 
 		int population_threshold, int dist);
-
-/* data_rearrange.c file*/
 void rearrange_dataTL(float (*restrict Y), float (*restrict X), 
 		      uint (*restrict Ids), int N);
-
-/* cilk_linked_list.c file */
-#ifndef MORTON_ONLY
 void interaction_list_formation(int **node_codes, int **children_first,
 				int **node_codes2,int **children_first2, 
 				uint32_t (**restrict nn_count), 
@@ -140,31 +121,8 @@ void interaction_list_formation(int **node_codes, int **children_first,
 				double *memory_count, double *workspace_memory, 
 				double *physical_memory, double *interaction_list_physical, 
 				double *interaction_list_workspace);
-#else
-void interaction_list_formation(uint64_t **node_codes, int **children_first,
-				uint64_t **node_codes2,int **children_first2, 
-				uint32_t (**restrict nn_count), 
-				uint32_t (**restrict clgs_count), 
-				uint32_t (**restrict common_count), 
-				int (**restrict nn_link_list), 
-				int (**restrict clgs_link_list), 
-				int (**restrict common_list),
-				int (*restrict common_stencil),
-				int (*restrict far_stencil),
-				int (*restrict near_stencil),
-				int (**restrict node_pointers), 
-				int (*restrict nodes_per_level), 
-				int (*restrict nodes_per_level2), 
-				int height, int height2, int N, 
-				double *memory_count, double *workspace_memory, 
-				double *physical_memory, double *interaction_list_physical, 
-				double *interaction_list_workspace);
-#endif
-
 void interaction_list_stencil(int *common_stencil, int *far_stencil, 
 			      int *near_stencil, int *parent_code);
-
-/* Verification */
 int check_index(unsigned int *index, int N);
 int verify_tree_wrapper(int **expansions, int** edges, 
 			int** node_pointers, int *leaf_populations, 
@@ -224,13 +182,13 @@ int verify_interactions_compressed_so_symbolic_wrapper(int **expansion,
 						       uint32_t **common_count,
 						       int nnodes, int N, 
 						       int tree_height);
- int verify_interactions_wrapper_iterative(int **expansion, int **interactions,
-					   int **edges, 
-					   uint32_t **nn_first, int **nn_list, 
-					   uint32_t **fn_first, int **fn_list, 
-					   int *nodes_per_level, int N, 
-					   int tree_height);
- int verify_interactions_wrapper_iterative_singlearray(int **expansion, int **interactions,
+int verify_interactions_wrapper_iterative(int **expansion, int **interactions,
+					  int **edges, 
+					  uint32_t **nn_first, int **nn_list, 
+					  uint32_t **fn_first, int **fn_list, 
+					  int *nodes_per_level, int N, 
+					  int tree_height);
+int verify_interactions_wrapper_iterative_singlearray(int **expansion, int **interactions,
 						      int **edges, 
 						      uint32_t **nn_first, int **nn_list, 
 						      uint32_t **fn_first, int **fn_list, 
@@ -238,8 +196,6 @@ int verify_interactions_compressed_so_symbolic_wrapper(int **expansion,
 						      int tree_height);
 void generate_interaction_stencil(int *common_stencil, int *far_stencil, 
 				  int *near_stencil);
-
-/* Wrappers */
 void memalloc_encoding(void **mcodes, int N);
 
 void encodeParticles(int N, float * X, float * min, 
@@ -256,23 +212,6 @@ int tree_formation(void *binrep, void *particle_codes,
 		   int *nodes_per_level, int **node_pointers, 
 		   int **num_chuildren, int **children_first, 
 		   void **codes, int maxlevel, int N);
-#ifdef MORTON_ONLY
-void form_interaction_lists(uint64_t **node_codes, int **children_first,
-			    uint64_t **node_codes2, int **children_first2, 
-			    uint32_t (**restrict nn_count), 
-			    uint32_t (**restrict clgs_count), 
-			    uint32_t (**restrict common_count),
-			    int (**restrict nn_link_list), 
-			    int (**restrict clgs_link_list),
-			    int (**restrict common_list),
-			    int (*restrict common_stencil),
-			    int (*restrict far_stencil),
-			    int (*restrict near_stencil),
-			    int (**restrict node_pointers), 
-			    int (*restrict nodes_per_level), 
-			    int (*restrict nodes_per_level2), 
-			    int height, int height2, int N);
-#else
 void form_interaction_lists(int **node_codes, int **children_first,
 			    int **node_codes2, int **children_first2, 
 			    uint32_t (**restrict nn_count), 
@@ -288,7 +227,6 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			    int (*restrict nodes_per_level), 
 			    int (*restrict nodes_per_level2), 
 			    int height, int height2, int N);
-#endif
 void verify_all(int **node_pointers, int **node_pointers2, 
 		int **children_first, 
 		int **children_first2,
@@ -311,4 +249,3 @@ void free_interaction_list_memo(uint32_t **nn_count, uint32_t **clgs_count,
 				int height);
 void free_tree_struct(int **node_pointers, int **num_children,
 		      int **children_first, void **node_codes, int height);
-
