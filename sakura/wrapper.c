@@ -413,8 +413,6 @@ void form_interaction_lists(int **node_codes, int **children_first,
   
   {
     
-#ifdef DUAL_TREE
-    
 #ifdef INTERLEAVE
     cilk_spawn 
 #endif 
@@ -427,22 +425,6 @@ void form_interaction_lists(int **node_codes, int **children_first,
 				 height, height2, N, &memory_count, &workspace_memory, 
 				 &physical_memory, &tmp_list_physical, 
 				 &tmp_list_workspace);
-#else
-
-
-#ifdef INTERLEAVE
-      cilk_spawn 
-#endif
-      interaction_list_formation(node_codes, children_first, node_codes,
-				 children_first, nn_count,
-				 clgs_count, common_count,
-				 nn_link_list, clgs_link_list, 
-				 common_list, common_stencil, far_stencil, near_stencil,
-				 node_pointers, nodes_per_level, nodes_per_level,
-				 height, height, N, &memory_count, &workspace_memory, 
-				 &physical_memory, &tmp_list_physical, 
-				 &tmp_list_workspace);
-#endif    
     }
 
 #ifndef INTRLEAVE
@@ -527,95 +509,29 @@ void verify_all(int **node_pointers,
   uint32_t *bit_map = (uint32_t *)binrep;
 #endif
 
-#ifdef DUAL_TREE
 #ifdef SMALL_DENSE
   uint16_t *bit_map2 = (uint16_t *)binrep2;
 #else
   uint32_t *bit_map2 = (uint32_t *)binrep2;
 #endif
-#endif
 
-#ifdef DUAL_TREE
       int **expansions = (int **)malloc(height2*sizeof(int *));
-
       for(int i=0; i<height2; i++){
 	expansions[i] = (int *)sakura_malloc(nodes_per_level2[i],sizeof(int), 
 					     "Node expansions");
-
       }
-      
       int *leaf_populations = (int *)sakura_malloc(N, sizeof(int), 
 						   "Leaf population array");
       leaf_populations[0:N] = 0;
-      
       uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map2, N);
-      
-      // verify the correctness of the tree 
       int charge = verify_tree_wrapper(expansions, children_first2, 
 				       node_pointers2, leaf_populations, 
 				       nodes_per_level2[0], 0, N);
-
       int ss = 0;
       for(int i=0; i<N; i++){
 	ss += leaf_populations[i];
       }      
-
       printf("Population: %d\n", ss);
-      
-#else
-      
-      int **expansions = (int **)malloc(height*sizeof(int *));
-
-      int **interactions = (int **)malloc(height*sizeof(int *));
-
-      
-      for(int i=0; i<height; i++){
-	expansions[i] = (int *)sakura_malloc(nodes_per_level[i], sizeof(int), 
-					     "Node expansions");
-
-	interactions[i] = (int *)sakura_calloc(nodes_per_level[i], sizeof(int), 
-					       "Node interactions");
-
-      }
-    
-      int *leaf_populations = (int *)sakura_malloc(N, sizeof(int), 
-						   "Leaf population array");
-
-      leaf_populations[0:N] = 0;
-      
-      uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map, N);
-      //find_leaf_populations(Y, leaf_populations, bit_map, N);
-      int ss = 0;
-      for(int i=0; i<N; i++){
-	ss += leaf_populations[i];
-      }      
-
-      printf("Population: %d\n", ss);
-
-      // verify the correctness of the tree 
-#ifdef DENSE 
-
-
-      int charge = verify_tree_dense_wrapper(expansions, 
-					     bit_map, leaf_populations, 
-					     height, N);
-
-
-#elif NO_SYMBOLIC 
-      
-      int charge = verify_tree_wrapper(expansions, children_first, 
-				       node_pointers, leaf_populations, 
-				       nodes_per_level[0], 0, N);
-            
-#else
-      int charge = verify_tree_wrapper(expansions, children_first, 
-				       node_pointers, leaf_populations, 
-				       nodes_per_level[0], 0, N);
-#endif
-
-
-#endif
-      
 
       printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
 
@@ -637,7 +553,6 @@ void verify_all(int **node_pointers,
       
 #else
 
-#ifdef DUAL_TREE    
 #ifdef COMPRESSED
           
       int pass = verify_interactions_compressed_wrapper(expansions, children_first, 
@@ -653,25 +568,6 @@ void verify_all(int **node_pointers,
 					     nn_count, nn_link_list, 
 					     clgs_count, clgs_link_list, 
 					     nodes_per_level[0], N, height);
-#endif
-#else
-#ifdef COMPRESSED
-      
-      int pass = verify_interactions_symetric_wrapper_compressed(expansions, interactions,
-								 children_first, 
-								 nn_count, nn_link_list, 
-								 clgs_count, 
-								 clgs_link_list, 
-								 common_count, common_list,
-								 nodes_per_level[0], N);
-      
-#else
-      int pass = verify_interactions_symetric_wrapper(expansions, interactions,
-						      children_first, 
-						      nn_count, nn_link_list, 
-						      clgs_count, clgs_link_list, 
-						      nodes_per_level[0], N);
-#endif
 #endif
       
 #endif
@@ -699,8 +595,6 @@ void verify_dense(uint32_t *bit_map, int *near_stencil,
 		  int *nodes_per_level,
 		  int N, int height){
 
-
-#ifdef DUAL_TREE
       int **expansions = (int **)malloc(height*sizeof(int *));
 
       for(int i=0; i<height; i++){
@@ -714,23 +608,6 @@ void verify_dense(uint32_t *bit_map, int *near_stencil,
       leaf_populations[0:N] = 0;
       
       find_leaf_populations(leaf_populations, bit_map, N);
-#else
-      int **expansions = (int **)malloc(height*sizeof(int *));
-      
-      for(int i=0; i<height; i++){
-	expansions[i] = (int *)sakura_malloc(nodes_per_level[i],sizeof(int), 
-					     "Node expansions");
-	
-      }
-      
-      int *leaf_populations = (int *)sakura_malloc(N, sizeof(int), 
-						   "Leaf population array");
-      leaf_populations[0:N] = 0;
-      
-      find_leaf_populations(leaf_populations, bit_map, N);
-      
-#endif
-
 
       int charge = verify_tree_dense_wrapper(expansions, 
 					     bit_map, leaf_populations, 

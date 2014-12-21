@@ -2,7 +2,7 @@
 CXX    = icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -std=gnu99 -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
 MAKEFLAGS += --no-print-directory
 
-LFLAGS	+= -D COMPRESSED=1 -D DUAL_TREE
+LFLAGS	+= -D COMPRESSED=1
 
 all	:
 	make clean

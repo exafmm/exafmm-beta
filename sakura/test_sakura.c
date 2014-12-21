@@ -162,9 +162,9 @@ int main(int argc, char** argv){
 
 #ifndef SMALL_DENSE
 #ifdef INTERLEAVE
-cilk_spawn
+    cilk_spawn
 #endif
-    relocateParticles(N, &X, permutation_vector);
+      relocateParticles(N, &X, permutation_vector);
 #endif
 
 #ifdef INTERLEAVE
@@ -182,7 +182,7 @@ cilk_spawn
     cilk_sync;
     cilk_spawn 
 #endif
-    relocateParticles(N, &X2, permutation_vector2);
+      relocateParticles(N, &X2, permutation_vector2);
 #endif
 
     /* Tree data structure. Parent to children connection */
@@ -324,26 +324,18 @@ cilk_spawn
 		     children_first, (void **)node_codes, height);
 
 
- free_tree_struct(node_pointers2, num_children2,
-		  children_first2, (void **)node_codes2, height2);
+    free_tree_struct(node_pointers2, num_children2,
+		     children_first2, (void **)node_codes2, height2);
 #endif
 
 
- free(bit_map);
- free(particle_codes);
- free(permutation_vector);
- free(bit_map2);
- free(particle_codes2);
- free(permutation_vector2);
+    free(bit_map);
+    free(particle_codes);
+    free(permutation_vector);
+    free(bit_map2);
+    free(particle_codes2);
+    free(permutation_vector2);
   }
   free(X);
   free(X2);
 }
-
-
-
-
-
-
-
-
