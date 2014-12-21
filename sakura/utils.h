@@ -13,9 +13,9 @@ struct Body{
 };
 
 struct node{
-  float mpexp; // A variable to hold the multipole expansion                                                                    
+  float mpexp;
   int leaf;
-  struct node *children[64]; // pointers to the children                                                                         
+  struct node *children[64];
 };
 
 struct tree_node{
@@ -33,106 +33,36 @@ struct fmmls{
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(a,b) (((a)>(b)) ? (a) : (b))
 
-/* general functions */
 void* sakura_malloc(size_t items, size_t size, char *message);
 void* sakura_calloc(size_t items, size_t size, char *message);
-
-/* datasets.c file */
 void create_dataset_TL(float *X, int N, int dist);
-
-/* quantization.c file */
-#ifdef SMALL_DENSE
-void quantize_and_encoding(uint16_t (*restrict mcodes),float (*restrict X), int N,
-			   int nbins, float (*restrict min), float (*restrict max));
-#endif
-
-#ifdef SMALL_DENSE
-void compute_quantization_codes_TL(uint16_t (*restrict codes), float (*restrict X), 
-				   int N, int nbins, float (*restrict min), 
-				   float (*restrict max));
-#else
 void compute_quantization_codes_TL(uint32_t (*restrict codes), float (*restrict X), 
 				   int N, int nbins, float (*restrict min), 
 				   float (*restrict max));
-#endif
-
 void space_bounds(float (*restrict min), float (*restrict max), 
 		  float (*restrict X), int N);
-
-/* build_tree_cilk.c file */
-#ifdef SMALL_DENSE
-void morton_encoding_T(uint16_t (*restrict mcodes), 
-		       uint16_t (*restrict codes), 
-		       int N, int max_level);
-#elif DENSE
-void morton_encoding_T(uint32_t (*restrict mcodes), 
-		       uint32_t (*restrict codes), 
-		       int N, int max_level);
-#else
 void morton_encoding_T(uint64_t (*restrict mcodes), 
 		       uint32_t (*restrict codes), 
 		       int N, int max_level);
-#endif
-
-
 void scan_colleagues(uint32_t *C, uint32_t *Y, uint32_t *X, int N);
-
 void bin_sort_dense_singlepass(float *Y, float *X, uint32_t *keys, 
 			       uint32_t *permutation_vector, int N, int maxLevel);
-
 void bin_sort_radix6_bitmap(uint64_t (*restrict zcodes), uint64_t (*restrict codes), 
 			    uint32_t (*restrict pointIds), uint32_t (*restrict index),
 			    uint32_t (*restrict bit_map),
 			    int N, int sft, int lv, int stop, 
 			    int population_threshold);
-
-#ifdef SMALL_DENSE
 void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
-                                  uint16_t (*restrict zcodes), uint16_t (*restrict codes),
-                                  uint32_t (*restrict pointIds), 
+				  uint64_t (*restrict zcodes), 
+				  uint64_t (*restrict codes),
+				  uint32_t (*restrict pointIds), 
 				  uint32_t (*restrict index),
-                                  uint16_t (*restrict bit_map),
-                                  int N, int sft, int lv, int stop,
-                                  int population_threshold);
-#elif DENSE
-  void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
-                                    uint32_t (*restrict zcodes), 
-				    uint32_t (*restrict codes),
-                                    uint32_t (*restrict pointIds), 
-				    uint32_t (*restrict index),
-                                    uint32_t (*restrict bit_map),
-                                    int N, int sft, int lv, int stop,
-                                    int population_threshold);
-#else
-    void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
-				      uint64_t (*restrict zcodes), 
-				      uint64_t (*restrict codes),
-				      uint32_t (*restrict pointIds), 
-				      uint32_t (*restrict index),
-				      uint32_t (*restrict bit_map),
-				      int N, int sft, int lv, int stop,
-				      int population_threshold);
-#endif
-
-
-
-#ifdef SMALL_DENSE
-int count_bins_bitmap_wrapper(int *nodes_per_level, int *node_block_first,
-			       uint16_t *bit_map, int N, int L);
-#else
+				  uint32_t (*restrict bit_map),
+				  int N, int sft, int lv, int stop,
+				  int population_threshold);
 int count_bins_bitmap_wrapper(int *nodes_per_level, int *node_block_first,
 			      uint32_t *bit_map, int N, int L);
-#endif
 
-#ifdef SMALL_DENSE
-void parent_children_connection_wrapper(int (**restrict node_pointers), 
-					int (**restrict num_children),
-					int (**restrict node_codes),
-					int (*restrict nodes_block_first),
-					uint16_t (*restrict bit_map), 
-					uint16_t (*restrict leaf_morton_codes),
-					int N, int L, int maxL, int maxlev);
-#else
 #ifndef MORTON_ONLY
 void parent_children_connection_wrapper(int (**restrict node_pointers), 
 					int (**restrict num_children),
@@ -149,7 +79,6 @@ void parent_children_connection_wrapper(int (**restrict node_pointers),
 					uint32_t (*restrict bit_map), 
 					uint64_t (*restrict leaf_morton_codes),
 					int N, int L, int maxL, int maxlev);
-#endif
 #endif
 void first_child_position_wrapper(int **children_first, 
 				  int **num_children, 
@@ -180,29 +109,12 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 				  int population_threshold);
 
 
-#ifdef SMALL_DENSE
-void build_tree(float *Y, float *X, uint16_t (*restrict zcodes), 
-		uint16_t (*restrict codes), 
-		uint32_t (*restrict pointIds), uint32_t (*restrict index),
-		uint16_t (*restrict bit_map),
-		int N, int maxlev, int maxheight, 
-		int population_threshold, int dist);
-#elif DENSE
-void build_tree(float *Y, float *X, uint32_t (*restrict zcodes), 
-		uint32_t (*restrict codes), 
-		uint32_t (*restrict pointIds), uint32_t (*restrict index),
-		uint32_t (*restrict bit_map),
-		int N, int maxlev, int maxheight, 
-		int population_threshold, int dist);
-#else
 void build_tree(float *Y, float *X, uint64_t (*restrict zcodes), 
 		uint64_t (*restrict codes), 
 		uint32_t (*restrict pointIds), uint32_t (*restrict index),
 		uint32_t (*restrict bit_map),
 		int N, int maxlev, int maxheight, 
 		int population_threshold, int dist);
-#endif
-
 
 /* data_rearrange.c file*/
 void rearrange_dataTL(float (*restrict Y), float (*restrict X), 
@@ -261,19 +173,8 @@ int verify_interactions_wrapper(int **expansion, int **edges,
 				uint **nn_first, int **nn_list, 
 				uint **fn_first, int **fn_list, 
 				int nnodes, int N, int tree_height);
-#ifdef SMALL_DENSE
-uint64_t find_leaf_populations(int *populations, uint16_t* bit_map, int N);
-#else
 uint64_t find_leaf_populations(int *populations, uint32_t* bit_map, int N);
-#endif
-
-#ifdef SMALL_DENSE
-uint64_t find_leaf_populations(float *Y, int *populations, uint16_t* bit_map, int N);
-#else
 uint64_t find_leaf_populations(float *Y, int *populations, uint32_t* bit_map, int N);
-#endif
-
-
 void cumsum(uint* X, int N);
 int verify_interactions_symetric_wrapper(int **expansion, int** interactions, 
 					 int **edges, 

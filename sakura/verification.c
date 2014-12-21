@@ -17,7 +17,6 @@
 #define DIM 3
 
 void decode_morton_code(int *x, int *y, int *z, uint64_t mcode);
-
 uint32_t mortonEncode_magicbits(uint32_t x, uint32_t y, uint32_t z);
 
 int cmpfunc(const void *a, const void *b){
@@ -25,68 +24,43 @@ int cmpfunc(const void *a, const void *b){
 }
 
 int check_index(uint32_t *index, int N){
-
-  /* sort the permutation vector */
   qsort(index, N, sizeof(uint32_t), cmpfunc);
-
-  /* Check if all indexes are present in the input vector */
   int count = 0;
   for(int i=0; i<N; i++){
     count += (index[i] == i);
-
   }
-
   return(count == N);
-
 }
 
-#ifdef SMALL_DENSE
-uint64_t find_leaf_populations(int *populations, uint16_t *bit_map, int N){
-#else
 uint64_t find_leaf_populations(int *populations, uint32_t *bit_map, int N){
-#endif
-
   int pointer = 0;
   uint64_t numleaves = 0;  
-
   for (int i=1; i<N; i++){
-
     if(bit_map[i]>0){
       int pop = i - pointer;
       populations[pointer] = pop;
       pointer = i;
       numleaves++;
     }
-
   }
-
   populations[pointer] = N - pointer;
   return(numleaves);
 }
 
-#ifdef SMALL_DENSE
-uint64_t find_leaf_populations(float *Y, int *populations, uint16_t *bit_map, int N){
-#else
 uint64_t find_leaf_populations(float *Y,int *populations, uint32_t *bit_map, int N){
-#endif
-
   int counter = 1;
   int pointer = 0;
   uint64_t numleaves = 0;
-
   for (int i=1; i<N; i++){
-
     if(bit_map[i]>0){
       int pop = counter;
       populations[pointer] = pop;
-      //counter = Y[i*LDIM + 3];
       counter = 0;
       pointer = i;
       numleaves++;
     }
     counter += Y[i*LDIM+3];
   }
-
   populations[pointer] = counter;
   return(numleaves);
 }
@@ -901,35 +875,25 @@ int verify_interactions_compressed_so_symbolic_wrapper(int **expansion,
 
 }
 
-#ifndef SMALL_DENSE
 int verify_interactions_compressed_dense(int **expansion, 
 					 int *near_stencil, 
 					 int *far_stencil,
 					 int *common_stencil,
 					 int node_id, int level, int parent_charge, 
 					 int N, int leaf_level){
-
   int pass = 1;
   int interactions = parent_charge;
   int bound = 1 << (level+1);
-
   int node[DIM] = {0};
   int parent[DIM] = {0};
   int code[DIM] = {0};
-
   int children_stop = (node_id+1)*8;
   int children_start = (node_id)*8;
-
   decode_morton_code(&node[0], &node[1], &node[2], node_id);
-
   parent[0] = 2 * (node[0] / 2);
   parent[1] = 2 * (node[1] / 2);
   parent[2] = 2 * (node[2] / 2);
-
   uint64_t loc = node_id & 0x07;
-
-  //printf("%d: %d\n", level, bound);
-  
   for(int i=0; i<FN; i++){ // Find the far neighbors
     code[0] = parent[0] + far_stencil[loc*DIM*FN + i*DIM + 0];
     if(code[0] >= 0 && code[0] < bound){
@@ -939,39 +903,27 @@ int verify_interactions_compressed_dense(int **expansion,
 	if(code[2] >= 0 && code[2] < bound){
 	  int neighbor = mortonEncode_magicbits(code[0], code[1], code[2]); 
 	  interactions += expansion[level][neighbor];
-
 	}
       }
     }
   }
-  
-  
   if(level == (leaf_level-1)){ // If leaves add up the near neighbor interactions
-
     for(int i=0; i<NN; i++){
-
       code[0] = parent[0] + near_stencil[loc*DIM*NN + i*DIM + 0];
       if(code[0] >= 0 && code[0] < bound){
 	code[1] = parent[1] + near_stencil[loc*DIM*NN + i*DIM + 1];
 	if(code[1] >= 0 && code[1] < bound){
 	  code[2] = parent[2] + near_stencil[loc*DIM*NN + i*DIM + 2];
 	  if(code[2] >= 0 && code[2] < bound){
-
 	    int neighbor = mortonEncode_magicbits(code[0], code[1], code[2]); 
 	    interactions += expansion[level][neighbor];
-
 	  }
 	}
       }
-
     }
   }
-  
-  
   if(level < (leaf_level-1) ){ // Take into account the common list
-
     for(int i=0; i<CN; i++){
-
       code[0] = 2*node[0] + common_stencil[i*DIM + 0];
       if(code[0] >= 0 && code[0] < 2*bound){
 	code[1] = 2*node[1] + common_stencil[i*DIM + 1];
@@ -980,17 +932,11 @@ int verify_interactions_compressed_dense(int **expansion,
 	  if(code[2] >= 0 && code[2] < 2*bound){
 	    int neighbor = mortonEncode_magicbits(code[0], code[1], code[2]); 
 	    interactions += expansion[level+1][neighbor];
-
 	  }
 	}
       }
-
     }
-
   }
-  
-  //printf("level: %d, node %d, leaf: %d\n", level, node_id, leaf_level);
-
   if(level<leaf_level-1){
     for(int i=children_start; i<children_stop; i++){
       pass &= verify_interactions_compressed_dense(expansion, 
@@ -1000,35 +946,25 @@ int verify_interactions_compressed_dense(int **expansion,
 						   i, level+1, interactions, 
 						   N, leaf_level);
     }
-
   }
   else{
     interactions += expansion[level][node_id];
     if(interactions == N){
       pass = 1;
-      //printf("Passed\n");
     }
     else{
       pass = 0;
-      //printf("inter: %d, %d, %d, %d\n", interactions, node[0], node[1], node[2]);
-      //printf("parent: %d, %d, %d\n", parent[0], parent[1], parent[2]);
-      
     }
   }
-
   return pass;
-
 }
-
 int verify_interactions_compressed_dense_wrapper(int **expansion, 
 						 int *near_stencil, 
 						 int *far_stencil, 
 						 int *common_stencil,
 						 int N, 
 						 int leaf_level){
- 
   int pass = 1;
-
   for(int i=0; i<8; i++){
     pass &= verify_interactions_compressed_dense(expansion,
 						 near_stencil, 
@@ -1036,9 +972,6 @@ int verify_interactions_compressed_dense_wrapper(int **expansion,
 						 common_stencil,
 						 i, 0, 0, N, leaf_level);
   }
-  
   return pass;
-
 }
-#endif
 
