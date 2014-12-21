@@ -108,54 +108,21 @@ int main(int argc, char** argv){
     uint32_t *permutation_vector;
     uint32_t *permutation_vector2;
     memalloc_encoding((void**)&particle_codes, N);
-#ifdef INTERLEAVE
-    start_timer();
-#endif
-
     encodeParticles(N, X, min, 
 		    max, particle_codes, 
 		    maxlev);
-
-#ifdef INTERLEAVE
-    stop_timer("Encoding");
-#endif
-
-    /* Spatial decomposition */
     memalloc_decomposeSpace(&permutation_vector, (void**)&bit_map, N);
-   
-#ifdef INTERLEAVE
-    start_timer();
-#endif
-    
     decomposeSpace(N, (void **)&particle_codes, 
 		   permutation_vector, (void*)bit_map, &X,
 		   maxlev, population_threshold, dist);
-
-#ifdef INTERLEAVE
-    stop_timer("Tree building");
-#endif
-
-#ifdef INTERLEAVE
-    cilk_spawn
-#endif
       relocateParticles(N, &X, permutation_vector);
-
-#ifdef INTERLEAVE
-    start_timer();
-#endif
-
     memalloc_encoding((void**)&particle_codes2, N);
     encodeParticles(N, X2, min, max, particle_codes2, maxlev);
     memalloc_decomposeSpace(&permutation_vector2, (void**)&bit_map2, N);
     decomposeSpace(N, (void**)&particle_codes2, 
 		   permutation_vector2, (void*)bit_map2, &X2,
 		   maxlev, population_threshold, dist);
-#ifdef INTERLEAVE
-    cilk_sync;
-    cilk_spawn 
-#endif
       relocateParticles(N, &X2, permutation_vector2);
-#ifndef DENSE
     int nodes_per_level[20];
     int **node_pointers = (int **)malloc(maxlev*sizeof(int *)); 
     int **num_children = (int **)malloc(maxlev*sizeof(int *)); 
@@ -176,7 +143,6 @@ int main(int argc, char** argv){
     uint64_t **node_codes2 = (uint64_t **)malloc(maxlev*sizeof(uint64_t *)); 
 #endif
 
-#ifndef DESNE
     int height = tree_formation((void *)bit_map, (void *)particle_codes, 
 				nodes_per_level, node_pointers, 
 				num_children, children_first, 
@@ -185,37 +151,12 @@ int main(int argc, char** argv){
 				 nodes_per_level2, node_pointers2, 
 				 num_children2, children_first2, 
 				 (void**)node_codes2, maxlev, N);
-#endif
-
-#endif
-      
-    /* The interaction list structure */
-
-#ifdef DENSE
-    int common_stencil[DIM*CN] = {0};
-    int far_stencil[8*DIM*FN] = {0};
-    int near_stencil[8*DIM*NN] = {0};
-
-    int nodes_per_level[20]; // Assume a maximum of 20 levels for the tree
-    int height =  maxlev;
-    
-    for(int i=0; i<height; i++){
-      nodes_per_level[i] = ( 1 << (3*(i+1)) );
-    }
-
-
-#else
     int **clgs_link_list = (int **)malloc(height*sizeof(int *)); 
     int **nn_link_list = (int **)malloc(height*sizeof(int *)); 
     int **common_list = (int **)malloc(height*sizeof(int *));
     uint32_t **nn_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
     uint32_t **clgs_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
     uint32_t **common_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
-#endif
-
-
-#ifndef DENSE
-
 
     form_interaction_lists(node_codes, children_first,
 			   node_codes2, children_first2, 
@@ -235,28 +176,7 @@ int main(int argc, char** argv){
 			   height2, 
 			   N);
 
-#else
-
-    generate_interaction_stencil(common_stencil, far_stencil, 
-				 near_stencil);
-#endif
-
-
-#ifdef INTERLEAVE
-    cilk_sync;
-    stop_timer("Relocation and formation");
-#endif 
-
-
-#ifdef DENSE 
-    printf("Tree height: %d\n", maxlev);
-#else
     printf("Tree height: %d\n", height);
-#endif
-
-    /* Verification part */
-#ifndef DENSE
-
     verify_all(node_pointers, 
 	       node_pointers2,
 	       children_first, 
@@ -270,32 +190,14 @@ int main(int argc, char** argv){
 	       clgs_count,
 	       common_count,
 	       height, height2, N);
-
-#else 
-    verify_dense(bit_map, near_stencil, 
-		 far_stencil, common_stencil, 
-		 nodes_per_level,
-		 N, maxheight);
-
-#endif
-
-
-#ifndef DENSE
-
-
     free_interaction_list_memo(nn_count, clgs_count, 
 			       common_count, clgs_link_list,
 			       nn_link_list, common_list,
 			       height);
     free_tree_struct(node_pointers, num_children,
 		     children_first, (void **)node_codes, height);
-
-
     free_tree_struct(node_pointers2, num_children2,
 		     children_first2, (void **)node_codes2, height2);
-#endif
-
-
     free(bit_map);
     free(particle_codes);
     free(permutation_vector);
