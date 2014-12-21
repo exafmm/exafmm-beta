@@ -1,19 +1,19 @@
 #CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -ffast-math -funroll-loops -fopenmp
-CXX    = icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
+CXX    = icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -std=gnu99 -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
 MAKEFLAGS += --no-print-directory
 
-LFLAGS	+= -DSAKURA -lsakura -lstencil
+LFLAGS	+= -D PAR_LEV=6 -D COMPRESSED=1 -D DUAL_TREE
 
 all	:
 	make clean
 	make compile
 	make run
 
-compile	: main.cxx
+compile	: test_sakura.c datasets.c quantization.c build_tree_cilk.c data_rearrange.c morton_encoding.c cilk_linked_list.c verification.c general_functions.c wrapper.c
 	$(CXX) $? $(LFLAGS)
 
 run	:
-	./a.out
+	./a.out 10000000 1 64 1 8
 
 clean:
 	find . -name "*.o" -o -name "*.out*" | xargs rm -rf
