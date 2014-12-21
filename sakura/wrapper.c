@@ -404,10 +404,8 @@ void form_interaction_lists(int **node_codes, int **children_first,
     clgs_count[i] = (uint32_t *)sakura_calloc(nodes_per_level[i], sizeof(uint32_t), 
 					      "Counters for far neighbors");
     
-#ifdef COMPRESSED
     common_count[i] = (uint32_t *)sakura_calloc(nodes_per_level[i], sizeof(uint32_t), 
 						"Counters for the common neighbors");
-#endif
   }
   
   
@@ -443,21 +441,15 @@ void free_interaction_list_memo(uint32_t **nn_count, uint32_t **clgs_count,
     free(clgs_count[i]);
     free(clgs_link_list[i]);
     free(nn_link_list[i]);
-#ifdef COMPRESSED
     free(common_count[i]);
     free(common_list[i]);
-#endif
   }
 
   free(nn_count);
   free(clgs_link_list);
   free(nn_link_list);
-
-#ifdef COMPRESSED
   free(common_count);
   free(common_list);
-#endif
-
 }
 
 void free_tree_struct(int **node_pointers, int **num_children,
@@ -553,23 +545,11 @@ void verify_all(int **node_pointers,
       
 #else
 
-#ifdef COMPRESSED
-          
       int pass = verify_interactions_compressed_wrapper(expansions, children_first, 
 							nn_count, nn_link_list, 
 							clgs_count, clgs_link_list,
 							common_count, common_list,
 							nodes_per_level[0], N, height);
-      
-      
-      
-#else
-      int pass = verify_interactions_wrapper(expansions, children_first, 
-					     nn_count, nn_link_list, 
-					     clgs_count, clgs_link_list, 
-					     nodes_per_level[0], N, height);
-#endif
-      
 #endif
 
       printf("List %s\n", (pass) ? "PASS" : "FAIL");

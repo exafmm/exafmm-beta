@@ -1202,8 +1202,6 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
  #endif
    operation = 0; // First part, symbolic pre-processing    
 
- #ifdef COMPRESSED
-
    interaction_list_compressed_expanded_driver(clgs_link_list, 
 					       clgs_count,
 					       nn_link_list, 
@@ -1214,37 +1212,6 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
 					       node_codes2, children_first2,
 					       nodes_per_level, 
 					       nodes_per_level2, height, operation);    
-
-
-   /*
-     interaction_list_compressed_driver(clgs_link_list, 
-     clgs_count,
-     nn_link_list, 
-     nn_count, 
-     common_list, 
-     common_count,
-     node_codes, children_first,
-     node_codes2, children_first2,
-     nodes_per_level, 
-     nodes_per_level2, height, operation);    
-   */
-
-
-
- #else
-
-
-   interaction_list_classical(clgs_link_list,
-			      clgs_count,
-			      nn_link_list, 
-			      nn_count, 
-			      node_codes, children_first,
-			      node_codes2, children_first2,
-			      nodes_per_level, 
-			      nodes_per_level2, height, operation);    
-
- #endif  
-
 
  #ifndef INTERLEAVE
    stop_timer("Count neighbors");
@@ -1271,25 +1238,16 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
 #endif    
   
   for(int i=0; i<height; i++){
-    // run a scan prefix on the colleagues count to find the 
-    // required amount of memory for the colleagues list
     cilk_spawn scan_colleagues(&clgs_memory_per_level[i], 
 			       clgs_count[i], 
 			       nodes_per_level[i]);
-    
-    // run a scan prefix on the neighbors count to find the 
-    // required amount of memory for the neighbors linked list    
     cilk_spawn scan_colleagues(&nn_memory_per_level[i],
 			       nn_count[i],
 			       nodes_per_level[i]);
-    
-    
-#ifdef COMPRESSED
     cilk_spawn scan_colleagues(&common_memory_per_level[i],
 			       common_count[i],
 			       nodes_per_level[i]);
     
-#endif
     
   }
   cilk_sync;
@@ -1321,7 +1279,6 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
     physical_memory[0] += (double)clgs_memory_per_level[i]*sizeof(int);
     interaction_list_physical[0] += (double)clgs_memory_per_level[i]*sizeof(int);
 
-#ifdef COMPRESSED
     common_list[i] = (int *)sakura_calloc(common_memory_per_level[i], sizeof(int), 
 					  "Common neighbors interaction list");
     memory_count[0] += (double)common_memory_per_level[i]*sizeof(int);
@@ -1330,7 +1287,6 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
 
 #ifdef DENSE
     common_list[i][0:common_memory_per_level[i]] = -1;
-#endif
 #endif
   }
   nn_link_list[height-1][0:nn_memory_per_level[height-1]] = -1;
@@ -1373,8 +1329,6 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
 
   operation = 1; // Second part, formation of the interaction list   
 
-#ifdef COMPRESSED
-  
   interaction_list_compressed_expanded_driver(clgs_link_list, 
 					      clgs_count,
 					      nn_link_list, 
@@ -1385,35 +1339,6 @@ void interaction_list_formation(uint64_t **node_codes, int **children_first,
 					      node_codes2, children_first2,
 					      nodes_per_level, 
 					      nodes_per_level2, height, operation);    
-  
-  
-  /*
-  interaction_list_compressed_driver(clgs_link_list, 
-				     clgs_count,
-				     nn_link_list, 
-				     nn_count, 
-				     common_list, 
-				     common_count,
-				     node_codes, children_first,
-				     node_codes2, children_first2,
-				     nodes_per_level, 
-				     nodes_per_level2, height, operation);    
-  */
- 
-
-#else
-  // Form the link-list
-  // This function uses the divide and conquer approach  
-  interaction_list_classical(clgs_link_list,
-			     clgs_count,
-			     nn_link_list, 
-			     nn_count,
-			     node_codes, children_first,
-			     node_codes2, children_first2,
-			     nodes_per_level, 
-			     nodes_per_level2, height, operation);    
-
-#endif
 
 #ifndef INTERLEAVE
   stop_timer("Link list");
