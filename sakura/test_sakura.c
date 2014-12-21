@@ -65,22 +65,9 @@ int main(int argc, char** argv){
   printf("%-20s:   %luMB\n", "Particle mem", particle_memory / ML);
 
   /* Set up the parameters */
-#ifdef SMALL_DENSE
-  int maxlev = 5; // Maximum level of the tree
-  int maxheight = 5; // Maximum height of the tree (extra control for debugin)
-  int nbins = (1 << maxlev); // maximum number of boxes at the leaf level
-#elif DENSE
-  int lv = (int)ceil(log2f((double)ceil( (double) N / (double) population_threshold )) / (double)3);
-
-  int maxlev = lv; // Maximum level of the tree
-  int maxheight = lv; // Maximum height of the tree (extra control for debugin)
-  int nbins = (1 << maxlev); // maximum number of boxes at the leaf level
-#else
   int maxlev = 20; // Maximum level of the tree
   int maxheight = 20; // Maximun height of the tree (extra control for debugin)
   int nbins = (1 << maxlev); // maximum number of boxes at the leaf level
-#endif
-
 
   /* Independant iteractions */
   for (int it=0; it<repeat; it++) {
@@ -114,22 +101,10 @@ int main(int argc, char** argv){
     max[:] = MAX(max[:], max2[:]);
     stop_timer("Box bounds");
     
-#ifdef SMALL_DENSE
-    uint16_t *particle_codes;
-    uint16_t *bit_map;
-    uint16_t *particle_codes2;
-    uint16_t *bit_map2;
-#elif DENSE
-    uint32_t *particle_codes;
-    uint32_t *bit_map;
-    uint32_t *particle_codes2;
-    uint32_t *bit_map2;
-#else
     uint64_t *particle_codes;
     uint32_t *bit_map;
     uint64_t *particle_codes2;
     uint32_t *bit_map2;
-#endif
     uint32_t *permutation_vector;
     uint32_t *permutation_vector2;
     memalloc_encoding((void**)&particle_codes, N);
@@ -160,12 +135,10 @@ int main(int argc, char** argv){
     stop_timer("Tree building");
 #endif
 
-#ifndef SMALL_DENSE
 #ifdef INTERLEAVE
     cilk_spawn
 #endif
       relocateParticles(N, &X, permutation_vector);
-#endif
 
 #ifdef INTERLEAVE
     start_timer();
@@ -177,17 +150,11 @@ int main(int argc, char** argv){
     decomposeSpace(N, (void**)&particle_codes2, 
 		   permutation_vector2, (void*)bit_map2, &X2,
 		   maxlev, population_threshold, dist);
-#ifndef SMALL_DENSE
 #ifdef INTERLEAVE
     cilk_sync;
     cilk_spawn 
 #endif
       relocateParticles(N, &X2, permutation_vector2);
-#endif
-
-    /* Tree data structure. Parent to children connection */
-    /* data structure */
-
 #ifndef DENSE
     int nodes_per_level[20];
     int **node_pointers = (int **)malloc(maxlev*sizeof(int *)); 

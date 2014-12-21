@@ -43,56 +43,26 @@ void formInteractionStencil(int *common_stencil, int *far_stencil,
 }
 
 void memalloc_encoding(void **mcodes, int N){
-
-#ifdef SMALL_DENSE
-  *mcodes = sakura_malloc(N, sizeof(uint16_t), 
-			 "Morton code array");
-  uint64_t physical_memory = N*sizeof(uint16_t);
-#elif DENSE
-  *mcodes = sakura_malloc(N, sizeof(uint32_t), 
-			 "Morton code array");
-  uint64_t physical_memory = N*sizeof(uint32_t);
-#else
   *mcodes = sakura_malloc(N, sizeof(uint64_t), 
 			 "Morton code array");
   uint64_t physical_memory = N*sizeof(uint64_t);
-#endif
-
 #ifndef INTERLEAVE
   printf("%-20s:   %luMB\n", "Encoding Phy mem", physical_memory / ML);
 #endif
-
 }
 
 void memfree_encoding(void *mcodes){
-
   free(mcodes);
-
 }
 
 void encodeParticles(int N, float * X, float * min, 
 		     float *max, void *particle_codes, 
 		     int maxlev) {
-
-#ifdef SMALL_DENSE
-  uint16_t *mcodes = (uint16_t *)particle_codes;
-  uint16_t *codes = (uint16_t *)sakura_malloc(N, DIM * sizeof(uint16_t), 
-					      "Hash code array");
-  uint64_t working_memory = (uint64_t)DIM*N*sizeof(uint16_t);
-#elif DENSE
-  uint32_t *mcodes = (uint32_t *)particle_codes;
-  uint32_t *codes = (uint32_t *)sakura_malloc(N, DIM * sizeof(uint32_t), 
-					      "Hash code array");
-  uint64_t working_memory = (uint64_t)DIM*N*sizeof(uint32_t);
-#else
   uint64_t *mcodes = (uint64_t *)particle_codes;
   uint32_t *codes = (uint32_t *)sakura_malloc(N, DIM * sizeof(uint32_t), 
 					      "Hash code array");
   uint64_t working_memory = (uint64_t)DIM * N * sizeof(uint32_t);
-
-#endif
-  
-  int nbins = (1 << maxlev); // maximum number of boxes at the leaf level
+  int nbins = (1 << maxlev);
 
 #ifndef INTERLEAVE
   start_timer();
@@ -123,20 +93,11 @@ void encodeParticles(int N, float * X, float * min,
 }
 
 void memalloc_decomposeSpace(uint32_t **permutation_vector, void **bit_map, int N){
-
-#ifdef SMALL_DENSE
-  *bit_map = sakura_calloc(N, sizeof(uint16_t), "Bit map");
-  uint64_t physical_memory = N*sizeof(uint16_t);
-  
-#else
   *bit_map = sakura_calloc(N, sizeof(uint32_t), "Bit map");
   uint64_t physical_memory = N*sizeof(uint32_t);
-#endif
-
   *permutation_vector = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), 
 						  "Permutation vector");
   physical_memory += N*sizeof(uint32_t);
-
 #ifndef INTERLEAVE
   printf("%-20s:   %luMB\n", "Decom. Phy mem", physical_memory / ML);
 #endif
@@ -153,52 +114,19 @@ void free_decomposeSpace(uint32_t *permutation_vector, void *bit_map ){
 void decomposeSpace(int N, void **particle_codes, 
 		    uint32_t *permutation_vector, void *bin_rep, float **X,
 		    int maxlev, int population_threshold, int dist) {
-
-
-#if SMALL_DENSE
-
-  uint16_t *mcodes = (uint16_t *)*particle_codes;
-  uint16_t *scodes = (uint16_t *)sakura_malloc(N, sizeof(uint16_t), 
-					       "Code buffer array");
-  uint16_t *bit_map = (uint16_t *)bin_rep;
-
-  uint64_t working_memory = N*sizeof(uint16_t);
-
-#elif DENSE
-
-  uint32_t *mcodes = (uint32_t *)*particle_codes;
-  uint32_t *scodes = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), 
-					       "Code buffer array");
-  uint32_t *bit_map = (uint32_t *)bin_rep;
-
-  uint64_t working_memory = N*sizeof(uint32_t);
-#else
   uint64_t *mcodes = (uint64_t *)*particle_codes;
   uint64_t *scodes = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), 
 					       "Code buffer array");
   uint32_t *bit_map = (uint32_t *)bin_rep;
-
   uint64_t working_memory = N*sizeof(uint64_t);
-#endif
-
   uint32_t *index = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), 
 					      "Index vector");
   working_memory = N*sizeof(uint32_t);
-
-
-#ifdef SMALL_DENSE
-  float *Y  = (float *)sakura_malloc(N, LDIM*sizeof(float), "Particle buffer");
-  working_memory = (uint64_t)N*LDIM*sizeof(float);
-#else
   float *Y;
-
   if(N <= SMALLTH){
     Y = (float*)sakura_malloc(N, LDIM*sizeof(float), "Particle buffer");
     working_memory = (uint64_t)N*LDIM*sizeof(float);
   }
-
-#endif
-
 
 #ifndef INTERLEAVE 
   start_timer();
@@ -215,35 +143,16 @@ void decomposeSpace(int N, void **particle_codes,
 #ifndef INTERLEAVE
   printf("%-20s:   %luMB\n", "Decomp. work mem", working_memory / ML);
 #endif
-
-  /* swap the pointers */
-
   *particle_codes = (void*)scodes;
-
-#ifdef SMALL_DENSE
-  float * tmp;
-  tmp = Y;
-  Y = *X;
-  *X = tmp;
-  
-  free(Y);
-#else
-
   if(N <= SMALLTH){
     float * tmp;
     tmp = Y;
     Y = *X;
     *X = tmp;
-  
     free(Y);
   }
-#endif
-
-  /* clean */
   free(mcodes);
   free(index);
-
-
 }
 
 #ifndef LIBRARY
@@ -252,21 +161,9 @@ int tree_formation(void *binrep, void *particle_codes,
 		   int *nodes_per_level, int **node_pointers, 
 		   int **num_children, int **children_first, 
 		   void **codes, int maxlevel, int N){
-
   uint64_t physical_mem = 0;
-
-#ifdef SMALL_DENSE
-  uint16_t *bit_map = (uint16_t *)binrep;
-#else
   uint32_t *bit_map = (uint32_t *)binrep;
-#endif
-
-#ifdef SMALL_DENSE
-  uint16_t *scodes = (uint16_t *)particle_codes;
-#else
   uint64_t *scodes = (uint64_t *)particle_codes;
-#endif
-
 
 #ifndef MORTON_ONLY
   int **node_codes = (int **)codes;
@@ -493,20 +390,8 @@ void verify_all(int **node_pointers,
 		uint32_t **clgs_count,
 		uint32_t **common_count,
 		int height, int height2, int N){
-
-
-#ifdef SMALL_DENSE
-  uint16_t *bit_map = (uint16_t *)binrep;
-#else
   uint32_t *bit_map = (uint32_t *)binrep;
-#endif
-
-#ifdef SMALL_DENSE
-  uint16_t *bit_map2 = (uint16_t *)binrep2;
-#else
   uint32_t *bit_map2 = (uint32_t *)binrep2;
-#endif
-
       int **expansions = (int **)malloc(height2*sizeof(int *));
       for(int i=0; i<height2; i++){
 	expansions[i] = (int *)sakura_malloc(nodes_per_level2[i],sizeof(int), 
@@ -569,48 +454,35 @@ void verify_all(int **node_pointers,
 
 }
 
-#ifndef SMALL_DENSE
 void verify_dense(uint32_t *bit_map, int *near_stencil, 
 		  int *far_stencil, int *common_stencil, 
 		  int *nodes_per_level,
 		  int N, int height){
-
       int **expansions = (int **)malloc(height*sizeof(int *));
-
       for(int i=0; i<height; i++){
 	expansions[i] = (int *)sakura_malloc(nodes_per_level[i],sizeof(int), 
 					     "Node expansions");
-
       }
-
       int *leaf_populations = (int *)sakura_malloc(N, sizeof(int), 
 						   "Leaf population array");
       leaf_populations[0:N] = 0;
-      
       find_leaf_populations(leaf_populations, bit_map, N);
-
       int charge = verify_tree_dense_wrapper(expansions, 
 					     bit_map, leaf_populations, 
 					     height, N);
-
       printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
-
       int pass = verify_interactions_compressed_dense_wrapper(expansions, 
 							      near_stencil, 
 							      far_stencil, 
 							      common_stencil,
 							      N, height);
-
       printf("List %s\n", (pass) ? "PASS" : "FAIL");
-
       free(leaf_populations);
-
       for(int i=0; i<height; i++){
 	free(expansions[i]);
       }
       free(expansions);
 }
-#endif
 
 /* extenral funtion to be linked with exafmm */
 #ifdef LIBRARY
@@ -622,20 +494,9 @@ void decomposeSpace(int N, void ** particle_codes, void ** particle_codes_buffer
   //uint32_t *bit_map = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map 1");
   uint32_t *bit_map;
 
-#ifdef SMALL_DENSE
-
-
-#elif DENSE
-  uint32_t **mcodes = (uint32_t **)particle_codes;
-  uint32_t **scodes = (uint32_t **)particle_codes_buffer;
-  uint32_t *tmp;
-#else
   uint64_t **mcodes = (uint64_t **)particle_codes;
   uint64_t **scodes = (uint64_t **)particle_codes_buffer;
   uint64_t *tmp;
-#endif
-
-  
     build_tree(Y, X, mcodes[0], scodes[0], permutation_vector[0],
 	       index[0], bit_map, N, maxlev, maxlev, 64, 1);
     
