@@ -57,12 +57,8 @@ int main(int argc, char** argv){
   float *X = (float *)sakura_malloc(N, LDIM*sizeof(float), 
 				    "Particle array");
   uint64_t particle_memory = (uint64_t) N*LDIM*sizeof(float);
-
-#ifdef DUAL_TREE 
-
   float *X2 = (float *)sakura_malloc(N, LDIM*sizeof(float), "Particle array");
   particle_memory += (uint64_t) N*LDIM*sizeof(float);
-#endif
 
   stop_timer("Data mem. alloc.");
 
@@ -94,9 +90,7 @@ int main(int argc, char** argv){
     /* Generate a 3-dimensional data distribution */
     start_timer();
     create_dataset_TL(X, N, dist);
-#ifdef DUAL_TREE
     create_dataset_TL(X2, N, dist);
-#endif
     stop_timer("Create data");
     
     /* Compute the bounds of the computational cube */
@@ -111,59 +105,34 @@ int main(int argc, char** argv){
       max[i] = __sec_reduce_max(X[i:N:LDIM]);
     }
     
-#ifdef DUAL_TREE
     float min2[DIM], max2[DIM];
-    
-    //space_bounds(min2, max2, X2, N);
     for(int i=0; i<DIM; i++){
       min2[i] = __sec_reduce_min(X2[i:N:LDIM]);
       max2[i] = __sec_reduce_max(X2[i:N:LDIM]);
     }
-    
-    
     min[:] = MIN(min[:], min2[:]);
     max[:] = MAX(max[:], max2[:]);
-    
-#endif
-        
     stop_timer("Box bounds");
     
 #ifdef SMALL_DENSE
     uint16_t *particle_codes;
     uint16_t *bit_map;
-#ifdef DUAL_TREE
     uint16_t *particle_codes2;
     uint16_t *bit_map2;
-#endif
 #elif DENSE
     uint32_t *particle_codes;
     uint32_t *bit_map;
-#ifdef DUAL_TREE
     uint32_t *particle_codes2;
     uint32_t *bit_map2;
-#endif
 #else
     uint64_t *particle_codes;
     uint32_t *bit_map;
-#ifdef DUAL_TREE
     uint64_t *particle_codes2;
     uint32_t *bit_map2;
 #endif
-#endif
-
     uint32_t *permutation_vector;
-
-#ifdef DUAL_TREE
-
     uint32_t *permutation_vector2;
-
-#endif
-
-    /* Particle encoding */
-
     memalloc_encoding((void**)&particle_codes, N);
-
-
 #ifdef INTERLEAVE
     start_timer();
 #endif
@@ -202,21 +171,12 @@ cilk_spawn
     start_timer();
 #endif
 
-
-#ifdef DUAL_TREE    
-
     memalloc_encoding((void**)&particle_codes2, N);
-
-    encodeParticles(N, X2, min, 
-		    max, particle_codes2, 
-		    maxlev);
-
+    encodeParticles(N, X2, min, max, particle_codes2, maxlev);
     memalloc_decomposeSpace(&permutation_vector2, (void**)&bit_map2, N);
-    
     decomposeSpace(N, (void**)&particle_codes2, 
 		   permutation_vector2, (void*)bit_map2, &X2,
 		   maxlev, population_threshold, dist);
-    
 #ifndef SMALL_DENSE
 #ifdef INTERLEAVE
     cilk_sync;
@@ -225,62 +185,40 @@ cilk_spawn
     relocateParticles(N, &X2, permutation_vector2);
 #endif
 
-#endif
-
     /* Tree data structure. Parent to children connection */
     /* data structure */
 
 #ifndef DENSE
-
     int nodes_per_level[20];
-
     int **node_pointers = (int **)malloc(maxlev*sizeof(int *)); 
-
     int **num_children = (int **)malloc(maxlev*sizeof(int *)); 
-
     int **children_first = (int **)malloc(maxlev*sizeof(int *)); 
-
 #ifndef MORTON_ONLY
     int **node_codes = (int **)malloc(maxlev*sizeof(int *));
 #else
     uint64_t **node_codes = (uint64_t **)malloc(maxlev*sizeof(uint64_t *)); 
 #endif
 
-#ifdef DUAL_TREE
-
     int nodes_per_level2[20];
-
     int **node_pointers2 = (int **)malloc(maxlev*sizeof(int *)); 
-
     int **num_children2 = (int **)malloc(maxlev*sizeof(int *)); 
-
     int **children_first2 = (int **)malloc(maxlev*sizeof(int *)); 
-
 #ifndef MORTON_ONLY
     int **node_codes2 = (int **)malloc(maxlev*sizeof(int *));
 #else
     uint64_t **node_codes2 = (uint64_t **)malloc(maxlev*sizeof(uint64_t *)); 
 #endif
-#endif
-
-    
 
 #ifndef DESNE
     int height = tree_formation((void *)bit_map, (void *)particle_codes, 
 				nodes_per_level, node_pointers, 
 				num_children, children_first, 
 				(void**)node_codes, maxlev, N);
-
-
-#ifdef DUAL_TREE
-
     int height2 = tree_formation((void *)bit_map2, (void *)particle_codes2, 
 				 nodes_per_level2, node_pointers2, 
 				 num_children2, children_first2, 
 				 (void**)node_codes2, maxlev, N);
 #endif
-#endif
-
 
 #endif
       
@@ -313,11 +251,7 @@ cilk_spawn
 
 
     form_interaction_lists(node_codes, children_first,
-#ifdef DUAL_TREE
 			   node_codes2, children_first2, 
-#else
-			   node_codes, children_first, 
-#endif
 			   nn_count, 
 			   clgs_count, 
 			   common_count,
@@ -329,17 +263,9 @@ cilk_spawn
 			   NULL,
 			   node_pointers, 
 			   nodes_per_level, 
-#ifdef DUAL_TREE
 			   nodes_per_level2, 
-#else
-			   nodes_per_level, 
-#endif
 			   height, 
-#ifdef DUAL_TREE
 			   height2, 
-#else
-			   height,
-#endif
 			   N);
 
 #else
@@ -364,7 +290,6 @@ cilk_spawn
     /* Verification part */
 #ifndef DENSE
 
-#ifdef DUAL_TREE
     verify_all(node_pointers, 
 	       node_pointers2,
 	       children_first, 
@@ -378,37 +303,12 @@ cilk_spawn
 	       clgs_count,
 	       common_count,
 	       height, height2, N);
-#else
-    verify_all(node_pointers, 
-	       node_pointers,
-	       children_first, 
-	       children_first,
-	       nodes_per_level, nodes_per_level,
-	       bit_map, bit_map,
-	       clgs_link_list,
-	       nn_link_list,
-	       common_list,
-	       nn_count,
-	       clgs_count,
-	       common_count,
-	       height, height, N);
-
-#endif
 
 #else 
-
-#ifdef DUAL_TREE
-    //printf("###### dense maxheight:%d\n", maxheight);
     verify_dense(bit_map, near_stencil, 
 		 far_stencil, common_stencil, 
 		 nodes_per_level,
 		 N, maxheight);
-#else
-    verify_dense(bit_map2, near_stencil, 
-		 far_stencil, common_stencil, 
-		 nodes_per_level,
-		 N, maxheight);
-#endif
 
 #endif
 
@@ -424,29 +324,20 @@ cilk_spawn
 		     children_first, (void **)node_codes, height);
 
 
-#ifdef DUAL_TREE
  free_tree_struct(node_pointers2, num_children2,
 		  children_first2, (void **)node_codes2, height2);
-#endif
 #endif
 
 
  free(bit_map);
  free(particle_codes);
  free(permutation_vector);
-
-#ifdef DUAL_TREE
  free(bit_map2);
  free(particle_codes2);
  free(permutation_vector2);
-#endif
   }
-
-  /* clean */
   free(X);
-#ifdef DUAL_TREE
   free(X2);
-#endif
 }
 
 
