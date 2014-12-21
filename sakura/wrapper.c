@@ -26,12 +26,8 @@ date: Jul 2014
 #include <stdint.h>
 
 #define DIM 3
-#ifndef LDIM
 #define LDIM 12
-#endif
 #define NP3 64
-#define MAX_COUNTERS 256
-
 #define NN 26
 #define FN 37
 #define CN 152

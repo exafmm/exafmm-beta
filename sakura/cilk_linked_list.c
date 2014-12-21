@@ -30,11 +30,6 @@ date: Jul 2014
 #define FN 37
 #define CN 152
 
-
-#ifndef PAR_LEV
-#define PAR_LEV 6
-#endif
-
 #define X_3 0x09
 #define Y_3 0x12
 #define Z_3 0x24
@@ -151,26 +146,14 @@ void interaction_list(int **clgs_link_list,
     int abs_diff_z = abs(Target_code_Z - Source_code_Z);
     
     int are_neighbors = (abs_diff_x <= 1) && (abs_diff_y <= 1) && (abs_diff_z <= 1);
-#ifdef DUAL_TREE
     int are_same_bin = (abs_diff_x == 0) && (abs_diff_y == 0) && (abs_diff_z == 0);
-#else
-    int are_same_bin = (target == source);
-#endif
-
     int src_isnot_leaf = (((source_children_stop - source_children_start) > 0) && 
 			  (level_source < maxlev));
     int trg_isnot_leaf = (((target_children_stop - target_children_start) > 0) && 
 			  (level_target < maxlev));
 
-#ifdef DUAL_TREE
     if(are_same_bin && trg_isnot_leaf && src_isnot_leaf){
-#else
-    if(are_same_bin && trg_isnot_leaf){
-#endif
-
 	for(int i=target_children_start; i<target_children_stop; i++){
-	  
-#ifdef DUAL_TREE
 	  cilk_spawn interaction_list(clgs_link_list, 
 				      clgs_count,
 				      nn_link_list, 
@@ -179,18 +162,6 @@ void interaction_list(int **clgs_link_list,
 				      source_tree_nodes, source_tree_edges,
 				      i, source, level_target+1,
 				      level_source, maxlev, selected_op);
-#else
-	  cilk_spawn triangular_co_split_interaction(clgs_link_list, 
-						     clgs_count, 
-						     nn_link_list, 
-						     nn_count,
-						     target_tree_nodes, target_tree_edges,
-						     source_tree_nodes, source_tree_edges,
-						     i, source, level_target+1, 
-						     level_source, maxlev, 
-						     source_children_stop, selected_op);	
-#endif
-	  
 	}
       //cilk_sync;
 
@@ -217,11 +188,7 @@ void interaction_list(int **clgs_link_list,
 	  //cilk_sync;
       }
     }
-#ifdef DUAL_TREE
     else{
-#else
-    else if(!are_neighbors){
-#endif
       selected_op(clgs_count[level_target], 
 		  clgs_link_list[level_target], target, source);
     }
@@ -271,12 +238,7 @@ void interaction_list_wrapper(int **clgs_link_list,
 			      int target, int *nodes_per_level,
 			      int level, int maxlev, base_function selected_op){
 
-#ifdef DUAL_TREE
   for(int i=0; i<nodes_per_level[level]; i++){
-#else
-  for(int i=target; i<nodes_per_level[level]; i++){
-#endif
-
     interaction_list(clgs_link_list, 
 		     clgs_count,
 		     nn_link_list,
@@ -286,7 +248,6 @@ void interaction_list_wrapper(int **clgs_link_list,
 		     target, i, level, 
 		     level, maxlev, selected_op);
   }
-
 }
 
 
@@ -462,26 +423,14 @@ void interaction_list_compressed(int **clgs_link_list,
     int abs_diff_z = abs(Target_code_Z - Source_code_Z);
     
     int are_neighbors = (abs_diff_x <= 1) && (abs_diff_y <= 1) && (abs_diff_z <= 1);
-#ifdef DUAL_TREE
     int are_same_bin = (abs_diff_x == 0) && (abs_diff_y == 0) && (abs_diff_z == 0);
-#else
-    int are_same_bin = (target == source);
-#endif
-
     int src_isnot_leaf = (((source_children_stop - source_children_start) > 0) && 
 			  (level_source < maxlev));
     int trg_isnot_leaf = (((target_children_stop - target_children_start) > 0) && 
 			  (level_target < maxlev));
-#ifdef DUAL_TREE
     if(are_same_bin && trg_isnot_leaf && src_isnot_leaf){
-#else
-      if(are_same_bin && trg_isnot_leaf){
-#endif
-
-	cilk_for(int i=target_children_start; i<target_children_stop; i++){
-
-#ifdef DUAL_TREE	  
-	  interaction_list_compressed(clgs_link_list, 
+      cilk_for(int i=target_children_start; i<target_children_stop; i++){
+	interaction_list_compressed(clgs_link_list, 
 				      clgs_count,
 				      nn_link_list, 
 				      nn_count,
@@ -491,38 +440,12 @@ void interaction_list_compressed(int **clgs_link_list,
 				      source_tree_nodes, source_tree_edges,
 				      i, source, level_target+1,
 				      level_source, maxlev, selected_op);
-#else
-
-
-	  triangular_co_split_interaction_compressed(clgs_link_list, 
-						     clgs_count, 
-						     nn_link_list, 
-						     nn_count,
-						     common_list,
- 						     common_count,
-						     target_tree_nodes, target_tree_edges,
-						     source_tree_nodes, source_tree_edges,
-						     i, source, level_target+1, 
-						     level_source, maxlev, 
-						     source_children_stop, selected_op);	
-	  
-#endif
-	  
 	}
-
-    }
-    else if(are_neighbors && !are_same_bin){
-      
+    } else if(are_neighbors && !are_same_bin){
       if(!src_isnot_leaf || !trg_isnot_leaf){
-	
 	selected_op(nn_count[level_target], 
 		    nn_link_list[level_target], target, source);
-	
-	
-      }
-      else{
-
-	
+      } else {
 	  for(int i=source_children_start; i<source_children_stop; i++){ // recursive call  
 	    interaction_list_compressed(clgs_link_list, 
 					clgs_count, 
@@ -534,29 +457,14 @@ void interaction_list_compressed(int **clgs_link_list,
 					source_tree_nodes, source_tree_edges,
 					target, i, level_target, 
 					level_source+1, maxlev, selected_op);
-	    
 	  }
-	
       }
-    }
-#ifdef DUAL_TREE
-    else{
-#else
-    else if(!are_neighbors){
-#endif
-      
+    } else {
       selected_op(clgs_count[level_target], 
 		  clgs_link_list[level_target], target, source);
-      
-      
     }
-
-  }
-  else{
-
+  } else {
     if(level_source > level_target){ // The target is larger
-
-            
       int Target_code_X = target_tree_nodes[level_target][DIM*target];
       int Target_code_Y = target_tree_nodes[level_target][DIM*target+1];
       int Target_code_Z = target_tree_nodes[level_target][DIM*target+2];
@@ -735,35 +643,19 @@ void interaction_list_compressed_expanded(int (**restrict clgs_link_list),
 
 #endif
   
-  
-#ifdef DUAL_TREE
 #ifndef MORTON_ONLY
   int are_same_bin = (abs_diff_x == 0) && (abs_diff_y == 0) && (abs_diff_z == 0);
 #else
   int are_same_bin = Target_mcode == Source_mcode;
 #endif
-#else
-  int are_same_bin = (target == source);
-#endif
-  
   int src_isnot_leaf = (((source_children_stop - source_children_start) > 0) && 
 			(level_source < maxlev));
   int trg_isnot_leaf = (((target_children_stop - target_children_start) > 0) && 
 			(level_target < maxlev));
   
-#ifdef DUAL_TREE
   if(are_same_bin && trg_isnot_leaf && src_isnot_leaf){
-#else
-    if(are_same_bin && trg_isnot_leaf){
-#endif
-
     cilk_for(int i=target_children_start; i<target_children_stop; i++){
-
-#ifdef DUAL_TREE
       for(int j=source_children_start; j<source_children_stop; j++){
-#else
-	for(int j=i; j<source_children_stop; j++){
-#endif
 	interaction_list_compressed_expanded(clgs_link_list, 
 					     clgs_count,
 					     nn_link_list, 
@@ -779,12 +671,7 @@ void interaction_list_compressed_expanded(int (**restrict clgs_link_list),
     
   }
 
-#ifdef DUAL_TREE
   else if((!src_isnot_leaf || !trg_isnot_leaf) ){
-#else
- else if((!src_isnot_leaf || !trg_isnot_leaf) && !are_same_bin){
-#endif
-
 #ifdef NO_SYMBOLIC
 
     selected_op(nn_count[level_target], 
@@ -901,13 +788,7 @@ void interaction_list_wrapper_compressed(int **clgs_link_list,
 					 int **source_tree_edges,
 					 int target, int *nodes_per_level,
 					 int level, int maxlev, base_function selected_op){
-  
-
-#ifdef DUAL_TREE
   for(int i=0; i<nodes_per_level[level]; i++){
-#else
-    for(int i=target; i<nodes_per_level[level]; i++){
-#endif
     interaction_list_compressed(clgs_link_list, 
 				clgs_count, 
 				nn_link_list, 
@@ -997,13 +878,7 @@ void interaction_list_compressed_driver(int **clgs_link_list,
   base_function use_function = (operation==0) ? &increase_counter : &store_pointer;
   
   cilk_for(int i=0; i<nodes_per_level_target[level]; i++){
-#ifdef DUAL_TREE
     for(int j=0; j<nodes_per_level_source[level]; j++){
-#else
-      for(int j=i; j<nodes_per_level_source[level]; j++){
-#endif
-
-
 	interaction_list_compressed_expanded(clgs_link_list, 
 					     clgs_count, 
 					     nn_link_list, 
