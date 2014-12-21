@@ -40,46 +40,26 @@ date: Jul 2014
 
 #define FMASK 0x0FFFFFFF
 #define mask_X 0x6DB6DB6DB6DB6DB6
-//#define mask_X 0xDB6DB6
 #define mask_Y 0xDB6DB6DB6DB6DB6D
 #define mask_Z 0xB6DB6DB6DB6DB6DB
 
 
 typedef void (*base_function)(uint32_t*, int*, int, int); 
 
-#ifdef SMALL_DENSE
-void decode_morton_code(int*, int*, int*, uint16_t);
-#else
 void decode_morton_code(int*, int*, int*, uint64_t);
-#endif
-
-#ifdef SMALL_DENSE
-uint16_t mortonEncode_magicbits(uint16_t , uint16_t , uint16_t);
-#elif DENSE
-uint32_t mortonEncode_magicbits(uint32_t , uint32_t , uint32_t);
-#else
 uint64_t mortonEncode_magicbits(uint32_t , uint32_t , uint32_t);
-#endif
-
-
-/* Basic functions */
 
 void increase_counter(uint32_t (*restrict count), int (*restrict link_list), int target, int source){
-  
   count[target]++;	
-  
 }
 
 void store_pointer(uint32_t (*restrict count), int (*restrict link_list), int target, int source){
-  
   uint32_t cursor = count[target];
   link_list[cursor] = source;
   cursor++;
   count[target] = cursor;
-  
 }
 
-/* interaction list creation */
 void interaction_list(int **clgs_link_list, 
 		      uint32_t **clgs_count, 
 		      int **nn_link_list, 

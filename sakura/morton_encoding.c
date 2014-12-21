@@ -128,7 +128,6 @@ static const uint32_t morton256_z[256] = {
     0x00924804, 0x00924820, 0x00924824, 0x00924900, 0x00924904, 0x00924920, 0x00924924
 };
 
-
  uint64_t mortonEncode_LUT(uint32_t x, uint32_t y, uint32_t z){
     uint64_t answer = 0;
     answer =    morton256_z[(z >> 16) & 0xFF ] | // we start by shifting the third byte, since we only look at the first 21 bits
@@ -144,29 +143,6 @@ static const uint32_t morton256_z[256] = {
     return answer;
 }
 
-/* Morton encoding with magic bits */
-
-// method to seperate bits from a given integer 3 positions apart
-
-#ifdef SMALL_DENSE
-inline uint16_t splitBy3(uint16_t a){
-    uint64_t x = a & 0x1fffff; // we only look at the first 21 bits
-    x = (x | x << 16) & 0x1f0000ff0000ff;  // shift left 32 bits, OR with self, and 00011111000000000000000011111111000000000000000011111111
-    x = (x | x << 8) & 0x100f00f00f00f00f; // shift left 32 bits, OR with self, and 0001000000001111000000001111000000001111000000001111000000000000
-    x = (x | x << 4) & 0x10c30c30c30c30c3; // shift left 32 bits, OR with self, and 0001000011000011000011000011000011000011000011000011000100000000
-    x = (x | x << 2) & 0x1249249249249249;
-    return x;
-}
-#elif DENSE
-inline uint32_t splitBy3(uint32_t a){
-    uint64_t x = a & 0x1fffff; // we only look at the first 21 bits
-    x = (x | x << 16) & 0x1f0000ff0000ff;  // shift left 32 bits, OR with self, and 00011111000000000000000011111111000000000000000011111111
-    x = (x | x << 8) & 0x100f00f00f00f00f; // shift left 32 bits, OR with self, and 0001000000001111000000001111000000001111000000001111000000000000
-    x = (x | x << 4) & 0x10c30c30c30c30c3; // shift left 32 bits, OR with self, and 0001000011000011000011000011000011000011000011000011000100000000
-    x = (x | x << 2) & 0x1249249249249249;
-    return x;
-}
-#else
 inline uint64_t splitBy3(uint32_t a){
     uint64_t x = a & 0x1fffff; // we only look at the first 21 bits
     x = (x | x << 32) & 0x1f00000000ffff;  // shift left 32 bits, OR with self, and 00011111000000000000000000000000000000001111111111111111
@@ -176,34 +152,13 @@ inline uint64_t splitBy3(uint32_t a){
     x = (x | x << 2) & 0x1249249249249249;
     return x;
 }
-#endif
 
-#ifdef SMALL_DENSE
-uint16_t mortonEncode_magicbits(uint16_t x, uint16_t y, uint16_t z){
-#elif DENSE
-uint32_t mortonEncode_magicbits(uint32_t x, uint32_t y, uint32_t z){
-#else
 uint64_t mortonEncode_magicbits(uint32_t x, uint32_t y, uint32_t z){
-#endif
     uint64_t answer = 0;
     answer |= splitBy3(x) | splitBy3(y) << 1 | splitBy3(z) << 2;
     return answer;
 }
 
-
-/* decode morton codes with magic bits */
-// Inverse of Part1By2 - "delete" all bits not at positions divisible by 3
-#ifdef SMALL_DENSE
- uint64_t Compact1By2(uint16_t x)
-{
-  x &= 0x1249249249249249;                  // x = ---- 9--8 --7- -6-- 5--4 --3- -2-- 1--0
-  x = (x ^ (x >>  2)) & 0x10c30c30c30c30c3; // x = ---- --98 ---- 76-- --54 ---- 32-- --10
-  x = (x ^ (x >>  4)) & 0x100f00f00f00f00f; // x = ---- --98 ---- ---- 7654 ---- ---- 3210
-  x = (x ^ (x >>  8)) & 0x1f0000ff0000ff; // x = ---- --98 ---- ---- ---- ---- 7654 3210
-  x = (x ^ (x >> 16)) & 0x1f00000000ffff; // x = ---- ---- ---- ---- ---- --98 7654 3210
-  return x;
-}
-#else
 uint64_t Compact1By2(uint64_t x)
 {
   x &= 0x1249249249249249;                  // x = ---- 9--8 --7- -6-- 5--4 --3- -2-- 1--0
@@ -214,7 +169,6 @@ uint64_t Compact1By2(uint64_t x)
   x = (x ^ (x >> 32)) & 0x1fffff;
   return x;
 }
-#endif
 
 uint32_t Compact1By2_32(uint64_t x)
 {
@@ -226,75 +180,32 @@ uint32_t Compact1By2_32(uint64_t x)
   return x;
 }
 
-
-//uint long DecodeMorton3Z(uint long code)
-#ifdef SMALL_DENS
-int DecodeMorton3X(uint16_t code)
-#else
 int DecodeMorton3X(uint64_t code)
-#endif
 {
   return Compact1By2(code >> 0);
 }
 
-#ifdef SMALL_DENSE
-int DecodeMorton3Y(uint16_t code)
-#else
 int DecodeMorton3Y(uint64_t code)
-#endif
 {
   return Compact1By2(code >> 1);
 }
 
-//uint long DecodeMorton3X(uint long code)
-#ifdef SMALL_DENSE
-int DecodeMorton3Z(uint16_t code)
-#else
 int DecodeMorton3Z(uint64_t code)
-#endif
 {
   return Compact1By2(code >> 2);
 }
 
-#ifdef SMALL_DENSE
-void decode_morton_code(int *x, int *y, int *z, uint16_t mcode){
-#else
 void decode_morton_code(int *x, int *y, int *z, uint64_t mcode){
-#endif
-
   x[0] = DecodeMorton3X(mcode);
   y[0] = DecodeMorton3Y(mcode);
   z[0] = DecodeMorton3Z(mcode);
-
 }
 
-
-/* The function that transform the morton codes into hash codes */ 
-
-#ifdef SMALL_DENSE
-void morton_encoding_T(uint16_t (*restrict mcodes), uint16_t (*restrict codes), 
-		       int N, int max_level){
-#elif DENSE
-void morton_encoding_T(uint32_t (*restrict mcodes), uint32_t (*restrict codes), 
-		       int N, int max_level){
-#else
 void morton_encoding_T(uint64_t (*restrict mcodes), uint32_t (*restrict codes), 
 		       int N, int max_level){
-#endif
-  /*
-  if(max_level <= 15){
-    cilk_for(int i=0; i<N; i++){
-      mcodes[i] = mortonEncode_LUT(codes[i*DIM], codes[i*DIM + 1], codes[i*DIM + 2]); // Compute the morton codes from the hash codes using the and look-up table
-    }
-  }
-  
-  else{
-  */
     cilk_for(uint64_t i=0; i<N; i++){
-      mcodes[i] = mortonEncode_magicbits(codes[i*DIM], codes[i*DIM + 1], codes[i*DIM + 2]); // Compute the morton codes from the hash codes using the magicbits mathod
+      mcodes[i] = mortonEncode_magicbits(codes[i*DIM], codes[i*DIM + 1], codes[i*DIM + 2]);
     }
-    //}
-
 }
 
 

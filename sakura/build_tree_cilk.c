@@ -29,27 +29,17 @@ date: Jul 2014
 #define th2 64
 #define DIM 3
 #define NPD 32
-
-#ifndef LDIM
 #define LDIM 12
-#endif
-
 #define MASK64 0x3F
 #define MASK32 0x07
 
 typedef cilk::reducer_opadd<int> T_reducer;
 
-#ifdef SMALL_DENSE
-void decode_morton_code(int *x, int *y, int *z, uint16_t mcode);
-#else
 void decode_morton_code(int *x, int *y, int *z, uint64_t mcode);
-#endif
-
 
 void relocate_data_radix6(uint32_t (*restrict pointIds), uint32_t (*restrict index), 
 			  uint16_t (*restrict zcodes), uint16_t (*restrict codes), 
 			  int* str, int P, int M, int N, int sft){
-
 #pragma ivdep
   for(int j=0; j<M; j++){
     if(P+j<N){
@@ -61,13 +51,11 @@ void relocate_data_radix6(uint32_t (*restrict pointIds), uint32_t (*restrict ind
       str[ii]=jj;
     }
   }
-
 }
 
 void relocate_data_radix6(uint32_t (*restrict pointIds), uint32_t (*restrict index), 
 			  uint32_t (*restrict zcodes), uint32_t (*restrict codes), 
 			  int* str, int P, int M, int N, int sft){
-
 #pragma ivdep
   for(int j=0; j<M; j++){
     if(P+j<N){
@@ -79,13 +67,11 @@ void relocate_data_radix6(uint32_t (*restrict pointIds), uint32_t (*restrict ind
       str[ii]=jj;
     }
   }
-
 }
 
 void relocate_data_radix6(uint32_t (*restrict pointIds), uint32_t (*restrict index), 
 			  uint64_t (*restrict zcodes), uint64_t (*restrict codes), 
 			  int* str, int P, int M, int N, int sft){
-
 #pragma ivdep
   for(int j=0; j<M; j++){
     if(P+j<N){
@@ -97,13 +83,11 @@ void relocate_data_radix6(uint32_t (*restrict pointIds), uint32_t (*restrict ind
       str[ii]=jj;
     }
   }
-
 }
-/* versions of relocate data without the index */
+
 void relocate_data_radix6_noindex(uint32_t (*restrict pointIds), 
 			  uint64_t (*restrict zcodes), uint64_t (*restrict codes), 
 			  int* str, int P, int M, int N, int sft){
-
 #pragma ivdep
   for(int j=0; j<M; j++){
     if(P+j<N){
@@ -115,13 +99,11 @@ void relocate_data_radix6_noindex(uint32_t (*restrict pointIds),
       str[ii]=jj;
     }
   }
-
 }
 
 void relocate_data_radix6_noindex(uint32_t (*restrict pointIds),
 				  uint32_t (*restrict zcodes), uint32_t (*restrict codes),
 				  int* str, int P, int M, int N, int sft){
-
 #pragma ivdep
   for(int j=0; j<M; j++){
     if(P+j<N){
@@ -133,13 +115,11 @@ void relocate_data_radix6_noindex(uint32_t (*restrict pointIds),
       str[ii]=jj;
     }
   }
-
 }
 
 void relocate_data_radix6_noindex(uint32_t (*restrict pointIds),
 				  uint16_t (*restrict zcodes), uint16_t (*restrict codes),
 				  int* str, int P, int M, int N, int sft){
-
 #pragma ivdep
   for(int j=0; j<M; j++){
     if(P+j<N){
@@ -151,7 +131,6 @@ void relocate_data_radix6_noindex(uint32_t (*restrict pointIds),
       str[ii]=jj;
     }
   }
-
 }
 
 
@@ -224,7 +203,6 @@ void binning(uint64_t (*restrict morton_codes),
 
 }
 
-/*Function that performs the recursion after the first. In this version the scan prefix is serial*/
 void bin_sort_serial_radix6_bitmap_old(uint64_t *zcodes, uint64_t *codes, 
 				   uint32_t *pointIds, uint32_t *index, 
 				   uint32_t *bit_map,
@@ -1002,29 +980,6 @@ void bin_sort_dense_singlepass(float *Y, float *X, uint32_t *keys,
 
 }
 
-// For small sizes
-#ifdef SMALL_DENSE
-void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X), 
-					 uint16_t (*restrict zcodes), 
-					 uint16_t (*restrict codes), 
-					 uint32_t (*restrict pointIds), 
-					 uint32_t (*restrict index), 
-					 uint16_t (*restrict bit_map),
-					 int N, 
-					 int sft, int lv, int stop, 
-					 int population_threshold){
-#elif DENSE
-  void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
-					   uint32_t (*restrict zcodes),
-					   uint32_t (*restrict codes),
-					   uint32_t (*restrict pointIds),
-					   uint32_t (*restrict index),
-					   uint32_t (*restrict bit_map),
-					   int N,
-					   int sft, int lv, int stop,
-					   int population_threshold){
-
-#else
 void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X), 
 					 uint64_t (*restrict zcodes), 
 					 uint64_t (*restrict codes), 
@@ -1034,7 +989,6 @@ void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X
 					 int N, 
 					 int sft, int lv, int stop, 
 					 int population_threshold){
-#endif
 
   int BinSizes[MAXBINS64] = {0};
   int BinCursor[MAXBINS64] = {0};
@@ -1043,13 +997,7 @@ void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X
 #else
   float *X_tmp;
 #endif
-#ifdef SMALL_DENSE
-  uint16_t *tmp_code;
-#elif DENSE
-  uint32_t *tmp_code;
-#else
   uint64_t *tmp_code;
-#endif
 
 #ifndef LIBRARY
   bit_map[0] |= (1 << (2*lv-1)); // Set the bit of the corresponding level
@@ -1228,28 +1176,6 @@ void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X
 
 }
 
-
-
-/* The function performing the first recursion for the radix 6 sorting mathod 
- In this version the scan prefix is parallel*/
-#ifdef SMALL_DENSE
-void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X), 
-				  uint16_t (*restrict zcodes), uint16_t (*restrict codes), 
-				  uint32_t (*restrict pointIds), 
-				  uint32_t (*restrict index),
-				  uint16_t (*restrict bit_map),
-				  int N, int sft, int lv, int stop, 
-				  int population_threshold){
-#elif DENSE
-  void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
-				    uint32_t (*restrict zcodes), 
-				    uint32_t (*restrict codes),
-				    uint32_t (*restrict pointIds), 
-				    uint32_t (*restrict index),
-				    uint32_t (*restrict bit_map),
-				    int N, int sft, int lv, int stop,
-				    int population_threshold){
-#else
 void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X), 
 				  uint64_t (*restrict zcodes), uint64_t (*restrict codes), 
 				  uint32_t (*restrict pointIds), 
@@ -1257,8 +1183,6 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 				  uint32_t (*restrict bit_map),
 				  int N, int sft, int lv, int stop, 
 				  int population_threshold){
-#endif
-
   int BinSizes[NPS*MAXBINS64];
   int BinCursor[NPS*MAXBINS64];
 #ifndef MSTEPS
@@ -1266,15 +1190,7 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 #else
   float *X_tmp;
 #endif
-
-#ifdef SMALL_DENSE
-  uint16_t *tmp_code;  
-#elif DENSE
-  uint32_t *tmp_code;
-#else
   uint64_t *tmp_code;
-#endif
-
   BinSizes[:] = 0;
 
 #ifndef LIBRARY
@@ -1315,12 +1231,6 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
      for(int i=0; i<NPS; i++){
 
 #ifndef MSTEPS
-       /*
-       cilk_spawn relocate_data_radix6(pointIds, &index[i*M], 
-			    &zcodes[i*M], codes, 
-			    &BinCursor[i*MAXBINS64], i*M, 
-			    M, N, sft);
-       */
        cilk_spawn relocate_data_radix6_noindex(pointIds, 
 			    &zcodes[i*M], codes, 
 			    &BinCursor[i*MAXBINS64], i*M, 
@@ -1333,11 +1243,7 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 		       M, N, sft);
 
 #endif
-       /*
-#ifdef SMALL_DENSE2
-       local_data_perm(&Y[i*M*LDIM], X, &pointIds[i*M], i*M, M, N);
-#endif
-       */
+
      }
      cilk_sync;
 
@@ -1648,53 +1554,27 @@ void bin_sort_radix6_bitmap_plummer(uint64_t (*restrict zcodes),
   cilk_sync;
  }
 
-
-/* A simple parallel function to collect the bin indices and morton codes 
-   of the leaf level in order to construct the tree */
-/* ------ Bit map connection -------- */
-#ifdef SMALL_DENSE
-void count_bins_per_level_bitmap(int (*restrict nodes_per_level), 
-				 uint16_t (*restrict bit_map), uint32_t (*restrict masks), 
-				 int N, int L){
-#else
 void count_bins_per_level_bitmap(int (*restrict nodes_per_level), 
 				 uint32_t (*restrict bit_map), uint32_t (*restrict masks), 
 				 int N, int L){
-#endif
-  
-  nodes_per_level[0:L] = 0; // initialize
-  
+  nodes_per_level[0:L] = 0;
   for(int i=0; i<N; i++){
     for(int j=0; j<L; j++){
       if((bit_map[i] & masks[j]) > 0){
 	nodes_per_level[j]++;
       }
     }
-
   }  
-  
 }
 
-#ifdef SMALL_DENSE
-int count_bins_bitmap_wrapper(int (*restrict nodes_per_level), int (*restrict nodes_block_first),
-			      uint16_t (*restrict bit_map), int N, int L){
-#else
 int count_bins_bitmap_wrapper(int (*restrict nodes_per_level), int (*restrict nodes_block_first),
 			      uint32_t (*restrict bit_map), int N, int L){
-#endif
-  
   uint32_t *masks = (uint32_t *)malloc(L*sizeof(uint32_t));
-  
-  // Create the masks
   cilk_for(int i=0; i<L; i++){
     masks[i] = 1 << i;
   }
-  
-  //int M = N / NP3; 
   int M = (int)ceil((float)N / (float)NP3); 
-  // Allocate memory for buffers
   int *nodes_per_level_buff = (int*)malloc(NP3*L*sizeof(int));
-  // Find the number of nodes
   for(int i=0; i<NP3; i++){
     int size = ((i+1)*M<N) ? M : N - i*M;
     cilk_spawn count_bins_per_level_bitmap(&nodes_per_level_buff[i*L], 
@@ -1702,20 +1582,14 @@ int count_bins_bitmap_wrapper(int (*restrict nodes_per_level), int (*restrict no
 					   size, L);
   }
   cilk_sync;
-  
-  // Merge the results
   nodes_per_level[0:L] = 0;
   nodes_block_first[0:L] = 0;
-
-  /* find the start of each thread for the parent to child connection phase */
   for(int i=1; i<NP3; i++){
     nodes_block_first[i*L:L] = nodes_block_first[(i-1)*L:L] + 
       nodes_per_level_buff[(i-1)*L:L];
   }
   nodes_per_level[0:L] = nodes_block_first[(NP3-1)*L:L] + 
     nodes_per_level_buff[(NP3-1)*L:L];
-  
-   // Find out the height of the tree
   int height = L;
   for(int i=0; i<L; i++){
     if(nodes_per_level[i] == 0){
@@ -1731,19 +1605,6 @@ int count_bins_bitmap_wrapper(int (*restrict nodes_per_level), int (*restrict no
 }
 
 
-#ifdef SMALL_DENSE
-void parent_children_connection_singlepass(int (**restrict node_pointers),
-					   int (**restrict num_children),
-					   int (**restrict node_codes),
-					   int (*restrict child_counter),
-					   int (*restrict remaining_child),
-					   int (*restrict block_first), 
-					   uint32_t (*restrict masks),
-					   uint16_t (*restrict bit_map), 
-					   uint16_t (*restrict leaf_morton_codes),
-					   int N,
-					   int L, int Base, int maxL, int maxlev){
-#else
 #ifndef MORTON_ONLY
 void parent_children_connection_singlepass(int (**restrict node_pointers),
 					   int (**restrict num_children),
@@ -1768,7 +1629,6 @@ void parent_children_connection_singlepass(int (**restrict node_pointers),
 					   uint64_t (*restrict leaf_morton_codes),
 					   int N,
 					   int L, int Base, int maxL, int maxlev){
-#endif
 #endif
   
   int cursor[20];
@@ -1830,15 +1690,6 @@ void parent_children_connection_singlepass(int (**restrict node_pointers),
   
 }
 
-#ifdef SMALL_DENSE
-void parent_children_connection_wrapper(int (**restrict node_pointers), 
-					int (**restrict num_children),
-					int (**restrict node_codes),
-					int (*restrict nodes_block_first),
-					uint16_t (*restrict bit_map), 
-					uint16_t (*restrict leaf_morton_codes),
-					int N, int L, int maxL, int maxlev){
-#else
 #ifndef MORTON_ONLY
 void parent_children_connection_wrapper(int (**restrict node_pointers), 
 					int (**restrict num_children),
@@ -1855,7 +1706,6 @@ void parent_children_connection_wrapper(int (**restrict node_pointers),
 					uint32_t (*restrict bit_map), 
 					uint64_t (*restrict leaf_morton_codes),
 					int N, int L, int maxL, int maxlev){
-#endif
 #endif
   
   int *child_counter = (int *)malloc(L*NP3*sizeof(int));
@@ -1928,58 +1778,17 @@ int cmpfunc_tree (const void * a, const void * b)
 {
    return ( *(uint64_t*)a - *(uint64_t*)b );
 }
-#ifdef SMALL_DENSE
-void build_tree(float *Y, float *X, uint16_t (*restrict mcodes), 
-		uint16_t (*restrict scodes), 
-		uint32_t (*restrict permutation_vector), uint32_t (*restrict index),
-		uint16_t (*restrict bit_map),
-		int N, int maxlev, int maxheight, 
-		int population_threshold, int dist){
-#elif DENSE
-void build_tree(float *Y, float *X, uint32_t (*restrict mcodes), 
-		uint32_t (*restrict scodes), 
-		uint32_t (*restrict permutation_vector), uint32_t (*restrict index),
-		uint32_t (*restrict bit_map),
-		int N, int maxlev, int maxheight, 
-		int population_threshold, int dist){
-#else
 void build_tree(float *Y, float *X, uint64_t (*restrict mcodes), 
 		uint64_t (*restrict scodes), 
 		uint32_t (*restrict permutation_vector), uint32_t (*restrict index),
 		uint32_t (*restrict bit_map),
 		int N, int maxlev, int maxheight, 
 		int population_threshold, int dist){
-#endif
-
-#ifdef SMALL_DENSE
-      bin_sort_radix6_bitmap_small(Y, X, mcodes, scodes, permutation_vector, 
-				   index, bit_map, 
-				   N, 3*(maxlev-2), 
-				   0, 3*(maxlev-maxheight), population_threshold);
-#elif DENSE
-
-
-      int stop = (maxlev & 1) ? -3  : 0;
-      bin_sort_radix6_dense(mcodes, 
-			    scodes, 
-			    permutation_vector, 
-			    index, 
-			    bit_map,
-			    N, 3*(maxlev-2), 
-			    0, stop, 
-			    0, 0);
-
-
-#else
     if(N <= SMALLTH){
-      
       bin_sort_radix6_bitmap_small(Y, X, mcodes, scodes, permutation_vector, 
 				   index, bit_map, 
 				   N, 3*(maxlev-2), 
 				   0, 3*(maxlev-maxheight), population_threshold);
-
-      //qsort(mcodes, N, sizeof(uint64_t), cmpfunc_tree);
-
     }
     else{
       if(dist == 3 || (dist==2 && N > 100000000)){
@@ -1993,9 +1802,6 @@ void build_tree(float *Y, float *X, uint64_t (*restrict mcodes),
 			       N, 3*(maxlev-2), 
 			       0, 3*(maxlev-maxheight), population_threshold);
       }
-      
     }
-#endif
-
 }
 
