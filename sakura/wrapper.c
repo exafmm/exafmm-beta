@@ -1,7 +1,6 @@
 #include "utils.h"
 
-void encodeParticles(int N, float * X, float * min, float *max, void *particle_codes, int maxlev) {
-  uint64_t *mcodes = (uint64_t *)particle_codes;
+void encodeParticles(int N, float * X, float * min, float *max, uint64_t *mcodes, int maxlev) {
   uint32_t *codes = (uint32_t *)sakura_malloc(N, DIM * sizeof(uint32_t), "Hash code array");
   int nbins = (1 << maxlev);
   start_timer();
@@ -13,31 +12,27 @@ void encodeParticles(int N, float * X, float * min, float *max, void *particle_c
   free(codes);
 }
 
-void decomposeSpace(int N, void **particle_codes, 
-		    uint32_t *permutation_vector, void *bin_rep, float **X,
+void decomposeSpace(int N, uint64_t **mcodes, 
+		    uint32_t *permutation_vector, uint32_t *bit_map, float **X,
 		    int maxlev, int population_threshold, int dist) {
-  uint64_t *mcodes = (uint64_t *)*particle_codes;
   uint64_t *scodes = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Code buffer array");
-  uint32_t *bit_map = (uint32_t *)bin_rep;
   uint32_t *index = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), "Index vector");
   float *Y = NULL;
   start_timer();
-  build_tree(Y, *X, mcodes, scodes, permutation_vector, 
+  build_tree(Y, *X, *mcodes, scodes, permutation_vector, 
 	     index, bit_map, N, maxlev, maxlev, 
 	     population_threshold, dist);
   stop_timer("Tree building");
-  *particle_codes = (void*)scodes;
-  free(mcodes);
+  uint64_t *tcodes = *mcodes;
+  *mcodes = scodes;
+  free(tcodes);
   free(index);
 }
 
-int tree_formation(void *binrep, void *particle_codes, 
+int tree_formation(uint32_t *bit_map, uint64_t *scodes, 
 		   int *nodes_per_level, int **node_pointers, 
 		   int **num_children, int **children_first, 
-		   void **codes, int maxlevel, int N){
-  uint32_t *bit_map = (uint32_t *)binrep;
-  uint64_t *scodes = (uint64_t *)particle_codes;
-  int **node_codes = (int **)codes;
+		   int **node_codes, int maxlevel, int N){
   int *nodes_block_first = (int*)sakura_malloc(NP3*maxlevel, sizeof(int), "Node block");
   start_timer();
   int height = count_bins_bitmap_wrapper(nodes_per_level, nodes_block_first, bit_map, N, maxlevel);

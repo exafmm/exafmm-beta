@@ -44,10 +44,10 @@ int main(int argc, char** argv){
     uint32_t *bit_map2 = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map");
     uint32_t *permutation_vector2 = (uint32_t *)sakura_malloc(N, sizeof(uint32_t),"Permutation vector");
     encodeParticles(N, X, min, max, particle_codes, maxlev);
-    decomposeSpace(N, (void **)&particle_codes, permutation_vector, (void*)bit_map, &X,maxlev, population_threshold, dist);
+    decomposeSpace(N, &particle_codes, permutation_vector, bit_map, &X,maxlev, population_threshold, dist);
     relocateParticles(N, &X, permutation_vector);
     encodeParticles(N, X2, min, max, particle_codes2, maxlev);
-    decomposeSpace(N, (void**)&particle_codes2, permutation_vector2, (void*)bit_map2, &X2, maxlev, population_threshold, dist);
+    decomposeSpace(N, &particle_codes2, permutation_vector2, bit_map2, &X2, maxlev, population_threshold, dist);
     relocateParticles(N, &X2, permutation_vector2);
 
     int nodes_per_level[20];
@@ -60,14 +60,14 @@ int main(int argc, char** argv){
     int **num_children2 = (int **)malloc(maxlev*sizeof(int *)); 
     int **children_first2 = (int **)malloc(maxlev*sizeof(int *)); 
     int **node_codes2 = (int **)malloc(maxlev*sizeof(int *));
-    int height = tree_formation((void *)bit_map, (void *)particle_codes, 
+    int height = tree_formation(bit_map, particle_codes, 
 				nodes_per_level, node_pointers, 
 				num_children, children_first, 
-				(void**)node_codes, maxlev, N);
-    int height2 = tree_formation((void *)bit_map2, (void *)particle_codes2, 
+				node_codes, maxlev, N);
+    int height2 = tree_formation(bit_map2, particle_codes2, 
 				 nodes_per_level2, node_pointers2, 
 				 num_children2, children_first2, 
-				 (void**)node_codes2, maxlev, N);
+				 node_codes2, maxlev, N);
     int **clgs_link_list = (int **)malloc(height*sizeof(int *)); 
     int **nn_link_list = (int **)malloc(height*sizeof(int *)); 
     int **common_list = (int **)malloc(height*sizeof(int *));

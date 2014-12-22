@@ -100,15 +100,15 @@ int verify_interactions_compressed_wrapper(int **expansion, int **edges,
 					   uint **common_first, int **common_list,
 					   int nnodes, int N, int tree_height);
 void encodeParticles(int N, float * X, float * min, 
-		     float *max, void *particle_codes, int maxlev);
-void decomposeSpace(int N, void **particle_codes,
-		    uint32_t *permutation_vector, void *bit_map, float **X,
+		     float *max, uint64_t *particle_codes, int maxlev);
+void decomposeSpace(int N, uint64_t **particle_codes,
+		    uint32_t *permutation_vector, uint32_t *bit_map, float **X,
 		    int maxlev, int population_threshold, int dist);
 void relocateParticles(int N, float **X, uint32_t *permutation_vector);
-int tree_formation(void *binrep, void *particle_codes,
+int tree_formation(uint32_t *bit_map, uint64_t *particle_codes,
 		   int *nodes_per_level, int **node_pointers, 
 		   int **num_chuildren, int **children_first, 
-		   void **codes, int maxlevel, int N);
+		   int **codes, int maxlevel, int N);
 void form_interaction_lists(int **node_codes, int **children_first,
 			    int **node_codes2, int **children_first2, 
 			    uint32_t (**restrict nn_count), 
