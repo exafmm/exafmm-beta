@@ -1,61 +1,32 @@
-/*
+#include <math.h>
+#include "utils.h" 
 
-  This file contains the different distributions used for testing the octree construction
-
-  author: Nikos Sismanis
-  date: Jul 2014
-
-*/
-
-#include "stdio.h" 
-#include "stdlib.h"
-#include "math.h"
-#include "time.h"
-#include <stdint.h>
-
-#define DIM 3 // Dimension of the space 
-#define PI 3.1415927 
-
-#ifndef LDIM
-#define LDIM 12 // Leading dimension in memory of the FMM data structure
-#endif
-
-
-void cubeTL(float *X, int N){
-
-  srand(time(NULL));
+void cube(float *X, int N){
+  srand(NULL);
   for(uint64_t i=0; i<N; i++){
     for(uint64_t j=0; j<DIM; j++){
       X[i*LDIM + j] = (float)rand() / (float) RAND_MAX;
-      //X[i*LDIM + j] = ((float)rand() / (float) RAND_MAX) * PI - PI;
     }
     X[i*LDIM + 3] = 1;
     X[i*LDIM + LDIM-1] = i;
   }
-  
 }
 
 void octant_uniform(float *X, int N){
-
   srand48(NULL);
   for(uint64_t i=0; i<N; i++){
-    float th = (PI/2) * drand48();
-    float ph = (PI/2) * drand48();
+    float th = (M_PI/2) * drand48();
+    float ph = (M_PI/2) * drand48();
     X[i*LDIM] = sin(ph);
     X[i*LDIM + 1] = cos(th) * cos(ph);
     X[i*LDIM + 2] = sin(th) * cos(ph);
     X[i*LDIM + 3] = 1;
     X[i*LDIM + LDIM-1] = i;
   }
-
-
 }
 
-
 void plummer(float *X, int N){
-
   srand48(NULL);
-
   for(uint64_t i=0; i<N; i++){
     float X1 = drand48();
     float X2 = drand48();
@@ -74,19 +45,12 @@ void plummer(float *X, int N){
     X[i*LDIM + 3] = 1;
     X[i*LDIM + LDIM-1] = i;
   }
-
 }
 
-/* Function that creates a dataset for testing 0 (spherical octant) 
-   1 (uniform cude) */
 void create_dataset_TL(float *X, int N, int dist){
-
   switch(dist){
-  case 0:
-    octant_uniform(X, N);
-    break;
   case 1:
-    cubeTL(X, N);
+    cube(X, N);
     break;
   case 2:
     octant_uniform(X, N);
@@ -98,5 +62,4 @@ void create_dataset_TL(float *X, int N, int dist){
     octant_uniform(X, N);
     break;
   }
-
 }

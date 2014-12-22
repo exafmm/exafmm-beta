@@ -1,10 +1,8 @@
 #include <cilk/cilk.h>
 #include <math.h>
-#include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
+#include "utils.h"
 
-#define LDIM 12
 #define NP 512
 
 void relocateTL(float (*restrict Y), float (*restrict X), uint32_t (*restrict index), uint32_t N){
