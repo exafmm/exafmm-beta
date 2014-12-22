@@ -75,6 +75,7 @@ int main(int argc, char** argv){
 			 nodes_per_level, nodes_per_level2, 
 			 height);
   int **expansions = (int **)malloc(height2*sizeof(int *));
+  int **interactions = (int **)malloc(height2*sizeof(int *));
   for(int i=0; i<height2; i++){
     expansions[i] = (int *)sakura_malloc(nodes_per_level2[i],sizeof(int),"Node expansions");
   }
@@ -131,6 +132,8 @@ int main(int argc, char** argv){
     free(num_children2[i]);
     free(children_first2[i]);
     free(node_codes2[i]);
+    free(expansions[i]);
+    free(interactions[i]);
   }
   free(node_pointers);
   free(num_children);
@@ -140,6 +143,9 @@ int main(int argc, char** argv){
   free(num_children2);
   free(children_first2);
   free(node_codes2);
+  free(expansions);
+  free(interactions);
+  free(leaf_populations);
   free(bit_map);
   free(particle_codes);
   free(permutation_vector);
