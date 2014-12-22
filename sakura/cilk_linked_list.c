@@ -3,9 +3,6 @@
 #include "cilk/cilk.h"
 #include "cilk/cilk_api.h"
 #include "math.h"
-#include "sys/time.h"
-#include "timer.h"
-//#include "trace.h"
 #include "utils.h"
 #include <string.h>
 #include <stdint.h>

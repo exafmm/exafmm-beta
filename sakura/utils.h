@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 struct Body{
   float x[3];
@@ -15,8 +16,40 @@ struct Body{
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(a,b) (((a)>(b)) ? (a) : (b))
 
-void* sakura_malloc(size_t items, size_t size, char *message);
-void* sakura_calloc(size_t items, size_t size, char* message);
+namespace {
+  double get_time(){
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return double(tv.tv_sec+tv.tv_usec*1e-6);
+  }
+
+  double timer;
+
+  void start_timer(){
+    timer = get_time();
+  }
+
+  void stop_timer(char *event_name){
+    printf("%-20s: %8.4lf s\n",event_name, get_time()-timer);
+  }
+
+  void* sakura_malloc(size_t items, size_t size, char *message){
+    void *ptr = malloc(items*size);
+    if(ptr == 0){
+      printf("Out of memory at %s\n", message);
+    }
+    return ptr;
+  }
+
+  void* sakura_calloc(size_t items, size_t size, char* message){
+    void *ptr = calloc(items, size);
+    if(ptr == 0){
+      printf("Out of memory %s\n", message);
+    }
+    return ptr;
+  }
+}
+
 void create_dataset_TL(float *X, int N, int dist);
 void compute_quantization_codes_TL(uint32_t (*restrict codes), float (*restrict X), 
 				   int N, int nbins, float (*restrict min), 

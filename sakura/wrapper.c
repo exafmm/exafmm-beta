@@ -1,17 +1,6 @@
-/*
-
-  A simple program that demonstrate building of an octree using cilk.
-  This programm test the transpose version
-
-  author: Nikos Sismanis
-  date: Jul 2014
-
-*/
-
 #include "math.h"
 #include "stdio.h"
 #include "stdlib.h"
-#include "timer.h"
 #include "utils.h"
 #include "cilk/cilk.h"
 #include "cilk/cilk_api.h"
