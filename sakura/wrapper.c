@@ -66,11 +66,8 @@ void encodeParticles(int N, float * X, float * min, float *max, void *particle_c
 
 void memalloc_decomposeSpace(uint32_t **permutation_vector, void **bit_map, int N){
   *bit_map = sakura_calloc(N, sizeof(uint32_t), "Bit map");
-  uint64_t physical_memory = N*sizeof(uint32_t);
   *permutation_vector = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), 
 						  "Permutation vector");
-  physical_memory += N*sizeof(uint32_t);
-  printf("%-20s:   %luMB\n", "Decom. Phy mem", physical_memory / ML);
 }
 
 void free_decomposeSpace(uint32_t *permutation_vector, void *bit_map ){
@@ -144,7 +141,6 @@ int tree_formation(void *binrep, void *particle_codes,
 			       nodes_per_level, 
 			       height);
   stop_timer("Find first child");
-  printf("%-20s:   %luMB\n", "Tree phys mem", physical_mem / ML);
   free(nodes_block_first);
   return(height);
 }
@@ -186,57 +182,6 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			     height, height2, N, &memory_count, &workspace_memory, 
 			     &physical_memory, &tmp_list_physical, 
 			     &tmp_list_workspace);
-  printf("%-20s:   %luMB\n", "Inter. list phys mem", (uint64_t)physical_memory / ML);
-
-}
-
-void free_interaction_list_memo(uint32_t **nn_count, uint32_t **clgs_count, 
-				uint32_t **common_count, int **clgs_link_list,
-				int **nn_link_list, int **common_list,
-				int height){
-
-  for(int i=0; i<height; i++){
-    free(nn_count[i]);
-    free(clgs_count[i]);
-    free(clgs_link_list[i]);
-    free(nn_link_list[i]);
-    free(common_count[i]);
-    free(common_list[i]);
-  }
-
-  free(nn_count);
-  free(clgs_link_list);
-  free(nn_link_list);
-  free(common_count);
-  free(common_list);
-}
-
-void free_tree_struct(int **node_pointers, int **num_children,
-		      int **children_first, void **node_codes, int height){
-
-
-  for(int i=0; i<height; i++){
-    free(node_pointers[i]);
-    free(num_children[i]);
-    free(children_first[i]);
-    free(node_codes[i]);
-  }
-
-  free(node_pointers);
-  free(num_children);
-  free(children_first);
-  free(node_codes);
-
-}
-
-
-void generate_interaction_stencil(int *common_stencil, int *far_stencil, 
-				  int *near_stencil){
-
-  int toy_parent[DIM];
-  toy_parent[0] = 1; toy_parent[1] = 1; toy_parent[2] = 1;
-  interaction_list_stencil(common_stencil, far_stencil, near_stencil, toy_parent);
-
 }
 
 void verify_all(int **node_pointers, 
@@ -256,11 +201,9 @@ void verify_all(int **node_pointers,
   uint32_t *bit_map2 = (uint32_t *)binrep2;
   int **expansions = (int **)malloc(height2*sizeof(int *));
   for(int i=0; i<height2; i++){
-    expansions[i] = (int *)sakura_malloc(nodes_per_level2[i],sizeof(int), 
-					 "Node expansions");
+    expansions[i] = (int *)sakura_malloc(nodes_per_level2[i],sizeof(int),"Node expansions");
   }
-  int *leaf_populations = (int *)sakura_malloc(N, sizeof(int), 
-					       "Leaf population array");
+  int *leaf_populations = (int *)sakura_malloc(N, sizeof(int),"Leaf population array");
   leaf_populations[0:N] = 0;
   uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map2, N);
   int charge = verify_tree_wrapper(expansions, children_first2, 
@@ -270,18 +213,13 @@ void verify_all(int **node_pointers,
   for(int i=0; i<N; i++){
     ss += leaf_populations[i];
   }      
-  printf("Population: %d\n", ss);
-
   printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
-
   int pass = verify_interactions_compressed_wrapper(expansions, children_first, 
 						    nn_count, nn_link_list, 
 						    clgs_count, clgs_link_list,
 						    common_count, common_list,
 						    nodes_per_level[0], N, height);
   printf("List %s\n", (pass) ? "PASS" : "FAIL");
-      
-
   uint64_t inter_list_edges = 0;
   uint64_t num_tree_nodes = 0;
   for(int i=0;i<height; i++){
@@ -293,7 +231,6 @@ void verify_all(int **node_pointers,
   printf("%-20s: %lu\n", "Tree nodes", num_tree_nodes);
   printf("%-20s: %lu\n", "Tree leaves", numleaves);
   printf("%-20s: %lu\n", "Edges",inter_list_edges);
-
 }
 
 void relocateParticles(int N, float **X, uint32_t *permutation_vector){

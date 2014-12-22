@@ -78,22 +78,28 @@ int main(int argc, char** argv){
     uint32_t *bit_map2;
     uint32_t *permutation_vector;
     uint32_t *permutation_vector2;
-    memalloc_encoding((void**)&particle_codes, N);
+    particle_codes = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Morton code array");
+    bit_map = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map");
+    permutation_vector = (uint32_t *)sakura_malloc(N, sizeof(uint32_t),
+						    "Permutation vector");
+    particle_codes2 = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Morton code array");
+    bit_map2 = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map");
+    permutation_vector2 = (uint32_t *)sakura_malloc(N, sizeof(uint32_t),
+						    "Permutation vector");
     encodeParticles(N, X, min, 
 		    max, particle_codes, 
 		    maxlev);
-    memalloc_decomposeSpace(&permutation_vector, (void**)&bit_map, N);
     decomposeSpace(N, (void **)&particle_codes, 
 		   permutation_vector, (void*)bit_map, &X,
 		   maxlev, population_threshold, dist);
     relocateParticles(N, &X, permutation_vector);
-    memalloc_encoding((void**)&particle_codes2, N);
+
     encodeParticles(N, X2, min, max, particle_codes2, maxlev);
-    memalloc_decomposeSpace(&permutation_vector2, (void**)&bit_map2, N);
     decomposeSpace(N, (void**)&particle_codes2, 
 		   permutation_vector2, (void*)bit_map2, &X2,
 		   maxlev, population_threshold, dist);
     relocateParticles(N, &X2, permutation_vector2);
+
     int nodes_per_level[20];
     int **node_pointers = (int **)malloc(maxlev*sizeof(int *)); 
     int **num_children = (int **)malloc(maxlev*sizeof(int *)); 
@@ -135,7 +141,6 @@ int main(int argc, char** argv){
 			   height, 
 			   height2, 
 			   N);
-    printf("Tree height: %d\n", height);
     verify_all(node_pointers, 
 	       node_pointers2,
 	       children_first, 
@@ -149,14 +154,40 @@ int main(int argc, char** argv){
 	       clgs_count,
 	       common_count,
 	       height, height2, N);
-    free_interaction_list_memo(nn_count, clgs_count, 
-			       common_count, clgs_link_list,
-			       nn_link_list, common_list,
-			       height);
-    free_tree_struct(node_pointers, num_children,
-		     children_first, (void **)node_codes, height);
-    free_tree_struct(node_pointers2, num_children2,
-		     children_first2, (void **)node_codes2, height2);
+    for(int i=0; i<height; i++){
+      free(nn_count[i]);
+      free(clgs_count[i]);
+      free(clgs_link_list[i]);
+      free(nn_link_list[i]);
+      free(common_count[i]);
+      free(common_list[i]);
+    }
+
+    free(nn_count);
+    free(clgs_link_list);
+    free(nn_link_list);
+    free(common_count);
+    free(common_list);
+    for(int i=0; i<height; i++){
+      free(node_pointers[i]);
+      free(num_children[i]);
+      free(children_first[i]);
+      free(node_codes[i]);
+    }
+    for(int i=0; i<height2; i++){
+      free(node_pointers2[i]);
+      free(num_children2[i]);
+      free(children_first2[i]);
+      free(node_codes2[i]);
+    }
+    free(node_pointers);
+    free(num_children);
+    free(children_first);
+    free(node_codes);
+    free(node_pointers2);
+    free(num_children2);
+    free(children_first2);
+    free(node_codes2);
     free(bit_map);
     free(particle_codes);
     free(permutation_vector);
