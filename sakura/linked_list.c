@@ -54,8 +54,6 @@ void interaction_list_compressed_expanded(int (**restrict clgs_link_list),
   int target_children_start = (target==0) ? 0 : target_tree_edges[level_target][target-1];
   int source_children_stop = source_tree_edges[level_source][source];
   int source_children_start = (source == 0) ? 0 : source_tree_edges[level_source][source-1];
-  int nchild_source = source_children_stop - source_children_start;
-  int nchild_target = target_children_stop - target_children_start;
   int Target_code_X = target_tree_nodes[level_target][DIM*target];
   int Target_code_Y = target_tree_nodes[level_target][DIM*target+1];
   int Target_code_Z = target_tree_nodes[level_target][DIM*target+2];
@@ -174,17 +172,11 @@ void interaction_list_formation(int **node_codes, int **children_first,
 				int (**restrict nn_link_list), 
 				int (**restrict clgs_link_list),
 				int (**restrict common_list),
-				int (*restrict common_stencil),
-				int (*restrict far_stencil),
-				int (*restrict near_stencil),
-				int (**restrict node_pointers), 
 				int (*restrict nodes_per_level), 
 				int (*restrict nodes_per_level2), 
-				int height, int height2, int N, 
+				int height, 
 				double *interaction_list_physical, 
 				double *interaction_list_workspace){
-  struct timeval startwtime, endwtime;
-  const bool printNow = true;
   uint32_t *clgs_memory_per_level = (uint32_t *)malloc(height*sizeof(uint32_t));
   interaction_list_workspace[0] += (double)height*sizeof(uint32_t);
   uint32_t *nn_memory_per_level = (uint32_t *)malloc(height*sizeof(uint32_t));

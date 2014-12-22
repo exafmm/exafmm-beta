@@ -48,9 +48,7 @@ void create_dataset_TL(float *X, int N, int dist);
 void compute_quantization_codes_TL(uint32_t (*restrict codes), float (*restrict X), 
 				   int N, int nbins, float (*restrict min), 
 				   float (*restrict max));
-void morton_encoding_T(uint64_t (*restrict mcodes), 
-		       uint32_t (*restrict codes), 
-		       int N, int max_level);
+void morton_encoding_T(uint64_t (*restrict mcodes), uint32_t (*restrict codes), int N);
 void decode_morton_code(int *x, int *y, int *z, uint64_t mcode);
 int count_bins_bitmap_wrapper(int *nodes_per_level, int *node_block_first,
 			      uint32_t *bit_map, int N, int L);
@@ -65,12 +63,12 @@ void first_child_position_wrapper(int **children_first,
 				  int **num_children, 
 				  int *nodes_per_level, 
 				  int L);
-void build_tree(float *Y, float *X, uint64_t (*restrict zcodes), 
+void build_tree(uint64_t (*restrict zcodes), 
 		uint64_t (*restrict codes), 
 		uint32_t (*restrict pointIds), uint32_t (*restrict index),
 		uint32_t (*restrict bit_map),
 		int N, int maxlev, int maxheight, 
-		int population_threshold, int dist);
+		int population_threshold);
 void rearrange_dataTL(float (*restrict Y), float (*restrict X), 
 		      uint (*restrict Ids), int N);
 void interaction_list_formation(int **node_codes, int **children_first,
@@ -81,19 +79,15 @@ void interaction_list_formation(int **node_codes, int **children_first,
 				int (**restrict nn_link_list), 
 				int (**restrict clgs_link_list), 
 				int (**restrict common_list),
-				int (*restrict common_stencil),
-				int (*restrict far_stencil),
-				int (*restrict near_stencil),
-				int (**restrict node_pointers), 
 				int (*restrict nodes_per_level), 
 				int (*restrict nodes_per_level2), 
-				int height, int height2, int N, 
+				int height,
 			        double *interaction_list_physical, 
 				double *interaction_list_workspace);
 uint64_t find_leaf_populations(int *populations, uint32_t* bit_map, int N);
 int verify_tree_wrapper(int **expansions, int** edges, 
 			int** node_pointers, int *leaf_populations, 
-			int nnodes, int levels, int N);
+			int nnodes, int N);
 int verify_interactions_compressed_wrapper(int **expansion, int **edges, 
 					   uint **nn_first, int **nn_list, 
 					   uint **fn_first, int **fn_list, 
@@ -102,8 +96,8 @@ int verify_interactions_compressed_wrapper(int **expansion, int **edges,
 void encodeParticles(int N, float * X, float * min, 
 		     float *max, uint64_t *particle_codes, int maxlev);
 void decomposeSpace(int N, uint64_t **particle_codes,
-		    uint32_t *permutation_vector, uint32_t *bit_map, float **X,
-		    int maxlev, int population_threshold, int dist);
+		    uint32_t *permutation_vector, uint32_t *bit_map,
+		    int maxlev, int population_threshold);
 void relocateParticles(int N, float **X, uint32_t *permutation_vector);
 int tree_formation(uint32_t *bit_map, uint64_t *particle_codes,
 		   int *nodes_per_level, int **node_pointers, 
@@ -117,18 +111,7 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			    int (**restrict nn_link_list), 
 			    int (**restrict clgs_link_list),
 			    int (**restrict common_list),
-			    int (*restrict common_stencil),
-			    int (*restrict far_stencil),
-			    int (*restrict near_stencil),
-			    int (**restrict node_pointers), 
 			    int (*restrict nodes_per_level), 
 			    int (*restrict nodes_per_level2), 
-			    int height, int height2, int N);
-void verify_all(int **node_pointers, int **node_pointers2, 
-		int **children_first, int **children_first2,
-		int *nodes_per_level, int *nodes_per_level2,
-		uint32_t *bit_map, uint32_t *bit_map2,
-		int **clgs_link_list, int **nn_link_list, int **common_list,
-		uint32_t **nn_count, uint32_t **clgs_count, uint32_t **common_count,
-		int height, int height2, int N);
+			    int height);
 

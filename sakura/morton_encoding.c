@@ -33,7 +33,7 @@ void decode_morton_code(int *x, int *y, int *z, uint64_t mcode){
   z[0] = Compact1By2(mcode >> 2);
 }
 
-void morton_encoding_T(uint64_t (*restrict mcodes), uint32_t (*restrict codes), int N, int max_level){
+void morton_encoding_T(uint64_t (*restrict mcodes), uint32_t (*restrict codes), int N){
   cilk_for(uint64_t i=0; i<N; i++){
     mcodes[i] = mortonEncode_magicbits(codes[i*DIM], codes[i*DIM + 1], codes[i*DIM + 2]);
   }

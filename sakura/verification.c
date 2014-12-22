@@ -18,7 +18,6 @@ uint64_t find_leaf_populations(int *populations, uint32_t *bit_map, int N){
 int verify_tree(int **expansions, int** edges, 
 		int** node_pointers, int *leaf_populations, 
 		int node_id, int level){
-  
   int charge = 0;
   int children_stop = edges[level][node_id];
   int children_start = (node_id==0) ? 0 : edges[level][node_id-1];
@@ -37,7 +36,7 @@ int verify_tree(int **expansions, int** edges,
 
 int verify_tree_wrapper(int **expansions, int **edges, 
 			int **node_pointers, int *leaf_populations, 
-			int nnodes, int levels, int N){
+			int nnodes, int N){
   int charge = 0;
   int pass = 0;
   for(int i=0; i<nnodes; i++){

@@ -7,21 +7,20 @@ void encodeParticles(int N, float * X, float * min, float *max, uint64_t *mcodes
   compute_quantization_codes_TL(codes, X, N, nbins, min, max);
   stop_timer("Quantization");
   start_timer();
-  morton_encoding_T(mcodes, codes, N, maxlev);
+  morton_encoding_T(mcodes, codes, N);
   stop_timer("Morton encoding");
   free(codes);
 }
 
 void decomposeSpace(int N, uint64_t **mcodes, 
-		    uint32_t *permutation_vector, uint32_t *bit_map, float **X,
-		    int maxlev, int population_threshold, int dist) {
+		    uint32_t *permutation_vector, uint32_t *bit_map,
+		    int maxlev, int population_threshold) {
   uint64_t *scodes = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Code buffer array");
   uint32_t *index = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), "Index vector");
-  float *Y = NULL;
   start_timer();
-  build_tree(Y, *X, *mcodes, scodes, permutation_vector, 
+  build_tree(*mcodes, scodes, permutation_vector, 
 	     index, bit_map, N, maxlev, maxlev, 
-	     population_threshold, dist);
+	     population_threshold);
   stop_timer("Tree building");
   uint64_t *tcodes = *mcodes;
   *mcodes = scodes;
@@ -70,13 +69,9 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			    int (**restrict nn_link_list), 
 			    int (**restrict clgs_link_list),
 			    int (**restrict common_list),
-			    int (*restrict common_stencil),
-			    int (*restrict far_stencil),
-			    int (*restrict near_stencil),
-			    int (**restrict node_pointers), 
 			    int (*restrict nodes_per_level), 
 			    int (*restrict nodes_per_level2), 
-			    int height, int height2, int N){
+			    int height){
   double tmp_list_physical = 0;
   double tmp_list_workspace = 0;
   for(int i=0; i<height; i++){
@@ -91,60 +86,8 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			     children_first2, nn_count,
 			     clgs_count, common_count, 
 			     nn_link_list, clgs_link_list, 
-			     common_list, common_stencil, far_stencil, near_stencil,
-			     node_pointers, nodes_per_level, nodes_per_level2, 
-			     height, height2, N, 
-			     &tmp_list_physical, 
-			     &tmp_list_workspace);
-}
-
-void verify_all(int **node_pointers, 
-		int **node_pointers2, 
-		int **children_first,
-		int **children_first2, 
-		int *nodes_per_level,
-		int *nodes_per_level2,
-		uint32_t *bit_map,
-		uint32_t *bit_map2,
-		int **clgs_link_list,
-		int **nn_link_list,
-		int **common_list,
-		uint32_t **nn_count,
-		uint32_t **clgs_count,
-		uint32_t **common_count,
-		int height, int height2, int N){
-  int **expansions = (int **)malloc(height2*sizeof(int *));
-  for(int i=0; i<height2; i++){
-    expansions[i] = (int *)sakura_malloc(nodes_per_level2[i],sizeof(int),"Node expansions");
-  }
-  int *leaf_populations = (int *)sakura_malloc(N, sizeof(int),"Leaf population array");
-  leaf_populations[0:N] = 0;
-  uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map2, N);
-  int charge = verify_tree_wrapper(expansions, children_first2, 
-				   node_pointers2, leaf_populations, 
-				   nodes_per_level2[0], 0, N);
-  int ss = 0;
-  for(int i=0; i<N; i++){
-    ss += leaf_populations[i];
-  }      
-  printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
-  int pass = verify_interactions_compressed_wrapper(expansions, children_first, 
-						    nn_count, nn_link_list, 
-						    clgs_count, clgs_link_list,
-						    common_count, common_list,
-						    nodes_per_level[0], N, height);
-  printf("List %s\n", (pass) ? "PASS" : "FAIL");
-  uint64_t inter_list_edges = 0;
-  uint64_t num_tree_nodes = 0;
-  for(int i=0;i<height; i++){
-    inter_list_edges += nn_count[i][nodes_per_level[i]-1] + 
-      clgs_count[i][nodes_per_level[i]-1];
-    num_tree_nodes += nodes_per_level[i];
-  }
-  printf("%-20s: %d\n", "Tree height", height);
-  printf("%-20s: %lu\n", "Tree nodes", num_tree_nodes);
-  printf("%-20s: %lu\n", "Tree leaves", numleaves);
-  printf("%-20s: %lu\n", "Edges",inter_list_edges);
+			     common_list, nodes_per_level, nodes_per_level2, 
+			     height, &tmp_list_physical, &tmp_list_workspace);
 }
 
 void relocateParticles(int N, float **X, uint32_t *permutation_vector){

@@ -26,10 +26,8 @@ void relocate_data_radix6_noindex(uint32_t (*restrict pointIds),
 
 void parallel_cpy(uint64_t (*restrict codes), uint64_t (*restrict zcodes), 
 		  uint32_t (*restrict pointIds), uint32_t (*restrict index), int N){
-
   codes[0:N] = zcodes[0:N];
   pointIds[0:N] = index[0:N];
-
 }
 
 void find_bin_sizes(uint64_t (*restrict morton_codes), 
@@ -87,9 +85,7 @@ void bin_sort_serial_radix6_bitmap(uint64_t (*restrict zcodes),
     codes = tmp_code;
     int cursor = 0;
     int super_box_start = 0;
-    int super_box_size = 0;
     offset = 0; 
-    int i = 0;
     for(int i=0; i<MAXBINS; i++){
       int super_box_size = BinSizes[(i+1)*MAXBINS-1] - super_box_start;
       super_box_start = BinSizes[(i+1)*MAXBINS-1];
@@ -148,7 +144,6 @@ void bin_sort_radix6_bitmap(uint64_t (*restrict zcodes), uint64_t (*restrict cod
       cilk_spawn find_bin_sizes(&zcodes[i*M], &BinSizes[i*MAXBINS64], sft, size); 
     }
     cilk_sync;
-    int dd = 0;
     int offset = 0;
     for(int i=0; i<MAXBINS64; i++){
 #pragma ivdep
@@ -258,7 +253,7 @@ void parent_children_connection_singlepass(int (**restrict node_pointers),
 					   uint32_t (*restrict bit_map), 
 					   uint64_t (*restrict leaf_morton_codes),
 					   int N,
-					   int L, int Base, int maxL, int maxlev){
+					   int L, int Base, int maxlev){
   int cursor[20];
   cursor[0:L] = block_first[0:L];
   child_counter[0:L] = 0;
@@ -326,7 +321,7 @@ void parent_children_connection_wrapper(int (**restrict node_pointers),
 						     &bit_map[i*M], 
 						     &leaf_morton_codes[i*M],
 						     size,
-						     L, i*M, maxL, maxlev);
+						     L, i*M, maxlev);
   }
   cilk_sync;
   for(int i=0; i<NP3; i++){
@@ -359,12 +354,12 @@ void first_child_position_wrapper(int **children_first,
   }
 }
 
-void build_tree(float *Y, float *X, uint64_t (*restrict mcodes), 
+void build_tree(uint64_t (*restrict mcodes), 
 		uint64_t (*restrict scodes), 
 		uint32_t (*restrict permutation_vector), uint32_t (*restrict index),
 		uint32_t (*restrict bit_map),
 		int N, int maxlev, int maxheight, 
-		int population_threshold, int dist){
+		int population_threshold){
   bin_sort_radix6_bitmap(mcodes, scodes, permutation_vector, 
 			 index, bit_map, 
 			 N, 3*(maxlev-2), 
