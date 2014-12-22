@@ -98,8 +98,7 @@ void interaction_list_formation(int **node_codes, int **children_first,
 				int (*restrict nodes_per_level), 
 				int (*restrict nodes_per_level2), 
 				int height, int height2, int N, 
-				double *memory_count, double *workspace_memory, 
-				double *physical_memory, double *interaction_list_physical, 
+			        double *interaction_list_physical, 
 				double *interaction_list_workspace);
 uint64_t find_leaf_populations(int *populations, uint32_t* bit_map, int N);
 int verify_tree_wrapper(int **expansions, int** edges, 

@@ -181,23 +181,15 @@ void interaction_list_formation(int **node_codes, int **children_first,
 				int (*restrict nodes_per_level), 
 				int (*restrict nodes_per_level2), 
 				int height, int height2, int N, 
-				double *memory_count, double *workspace_memory, 
-				double *physical_memory, 
 				double *interaction_list_physical, 
 				double *interaction_list_workspace){
   struct timeval startwtime, endwtime;
   const bool printNow = true;
   uint32_t *clgs_memory_per_level = (uint32_t *)malloc(height*sizeof(uint32_t));
-  memory_count[0] += (double)height*sizeof(uint32_t);
-  workspace_memory[0] += (double)height*sizeof(uint32_t);
   interaction_list_workspace[0] += (double)height*sizeof(uint32_t);
   uint32_t *nn_memory_per_level = (uint32_t *)malloc(height*sizeof(uint32_t));
-  memory_count[0] += (double)height*sizeof(uint32_t);
-  workspace_memory[0] += (double)height*sizeof(uint32_t);
   interaction_list_workspace[0] += (double)height*sizeof(uint32_t);
   uint32_t *common_memory_per_level = (uint32_t *)malloc(height*sizeof(uint32_t));
-  memory_count[0] += (double)height*sizeof(uint32_t);
-  workspace_memory[0] += (double)height*sizeof(uint32_t);
   interaction_list_workspace[0] += (double)height*sizeof(uint32_t);
   int operation = 0;
   start_timer();
@@ -223,17 +215,11 @@ void interaction_list_formation(int **node_codes, int **children_first,
   stop_timer("Scan colleagues");
   for(int i=0; i<height; i++){
     clgs_link_list[i] = (int *)sakura_calloc(clgs_memory_per_level[i], sizeof(int), "Far neighbors interaction list");
-    memory_count[0] += (double)clgs_memory_per_level[i]*sizeof(int);
-    physical_memory[0] += (double)clgs_memory_per_level[i]*sizeof(int);
     interaction_list_physical[0] += (double)clgs_memory_per_level[i]*sizeof(int);
     int pp = (nn_memory_per_level[i]>0)? nn_memory_per_level[i] : 1000;
     nn_link_list[i] = (int *)sakura_calloc(pp, sizeof(int), "Near neighbors interaction list");
-    memory_count[0] += (double)clgs_memory_per_level[i]*sizeof(int);
-    physical_memory[0] += (double)clgs_memory_per_level[i]*sizeof(int);
     interaction_list_physical[0] += (double)clgs_memory_per_level[i]*sizeof(int);
     common_list[i] = (int *)sakura_calloc(common_memory_per_level[i], sizeof(int), "Common neighbors interaction list");
-    memory_count[0] += (double)common_memory_per_level[i]*sizeof(int);
-    physical_memory[0] += (double)common_memory_per_level[i]*sizeof(int);
     interaction_list_physical[0] += (double)common_memory_per_level[i]*sizeof(int);
   }
   nn_link_list[height-1][0:nn_memory_per_level[height-1]] = -1;
@@ -253,4 +239,5 @@ void interaction_list_formation(int **node_codes, int **children_first,
   stop_timer("Link list");
   free(nn_memory_per_level);
   free(clgs_memory_per_level);
+  free(common_memory_per_level);
 }

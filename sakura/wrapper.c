@@ -101,8 +101,8 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			     nn_link_list, clgs_link_list, 
 			     common_list, common_stencil, far_stencil, near_stencil,
 			     node_pointers, nodes_per_level, nodes_per_level2, 
-			     height, height2, N, &memory_count, &workspace_memory, 
-			     &physical_memory, &tmp_list_physical, 
+			     height, height2, N, 
+			     &tmp_list_physical, 
 			     &tmp_list_workspace);
 }
 
