@@ -863,24 +863,16 @@ void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X
 
   int BinSizes[MAXBINS64] = {0};
   int BinCursor[MAXBINS64] = {0};
-#ifndef MSTEPS
   uint32_t *tmp_ptr;
-#else
-  float *X_tmp;
-#endif
   uint64_t *tmp_code;
 
   bit_map[0] |= (1 << (2*lv-1)); // Set the bit of the corresponding level
   if(N<population_threshold || sft < stop){ // Base case. The node is a leaf
     codes[0:N] = zcodes[0:N]; 
     
-#ifndef MSTEPS
     for(uint32_t i=0; i<N; i++){
       Y[(uint32_t)i*LDIM:LDIM] = X[((uint32_t)index[i]*LDIM):LDIM];
     }
-#else
-    Y[0:N*LDIM] = X[0:N*LDIM];
-#endif
 
     return;
   }
@@ -906,25 +898,15 @@ void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X
     //#pragma ivdep
     for(int j=0; j<N; j++){
       uint32_t ii = (zcodes[j]>>sft) & 0x3F;
-#ifdef MSTEPS
-      Y[(uint32_t)BinCursor[ii]*LDIM:LDIM] = X[(uint32_t)j*LDIM:LDIM]; // data relocation
-#else
       pointIds[BinCursor[ii]] = index[j];
-#endif
       codes[BinCursor[ii]] = zcodes[j];
       BinCursor[ii]++;
     }
 
     //swap the index pointers  
-#ifndef MSTEPS
     tmp_ptr = index;
     index = pointIds;
     pointIds = tmp_ptr;
-#else
-    X_tmp = Y;
-    Y = X;
-    X = X_tmp;
-#endif
 
     //swap the code pointers 
     tmp_code = zcodes;
@@ -955,7 +937,6 @@ void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X
 
 	  if( size>0 ){
 	      
-#ifndef MSTEPS
 	    bin_sort_serial_radix6_bitmap_small(&Y[(uint32_t)offset*LDIM], 
 						X, &zcodes[offset], 
 						&codes[offset], 
@@ -965,40 +946,15 @@ void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X
 						size, sft-6, 
 						lv+1, stop,
 						population_threshold);
-#else
-	    bin_sort_serial_radix6_bitmap_small(&Y[(uint32_t)offset*LDIM], 
-						&X[(uint32_t)offset*LDIM], 
-						&zcodes[offset], 
-						&codes[offset], 
-						&pointIds[offset], 
-						&index[offset], 
-						&bit_map[offset], 
-						size, sft-6, 
-						lv+1, stop,
-						population_threshold);
-#endif
-	      
 	  }
 	  offset += size;
 	}
       }
       else{ // must terminate
 	  
-#ifndef MSTEPS
 	for(int i=0; i<super_box_size; i++){
 	  Y[(uint32_t)(offset+i)*LDIM:LDIM] = X[(uint32_t)index[offset+i]*LDIM:LDIM];
 	}
-#else
-	Y[0:(uint32_t)super_box_size*LDIM] = X[0:(uint32_t)super_box_size*LDIM];
-#endif
-	  
-	/*
-	  parallel_cpy(&codes[offset], 
-	  &zcodes[offset], 
-	  &pointIds[offset], 
-	  &index[offset], super_box_size);	  
-	*/
-	  
 	offset += super_box_size;
       }
 
@@ -1048,11 +1004,7 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 				  int population_threshold){
   int BinSizes[NPS*MAXBINS64];
   int BinCursor[NPS*MAXBINS64];
-#ifndef MSTEPS
   uint32_t *tmp_ptr;
-#else
-  float *X_tmp;
-#endif
   uint64_t *tmp_code;
   BinSizes[:] = 0;
   if(lv>0){
@@ -1089,33 +1041,16 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
     // Relocate the indices
     for(int i=0; i<NPS; i++){
 
-#ifndef MSTEPS
       cilk_spawn relocate_data_radix6_noindex(pointIds, 
 					      &zcodes[i*M], codes, 
 					      &BinCursor[i*MAXBINS64], i*M, 
 					      M, N, sft);
-#else
-
-      cilk_spawn local_data_perm(Y, X,  
-				 &zcodes[i*M], codes, 
-				 &BinCursor[i*MAXBINS64], i*M, 
-				 M, N, sft);
-
-#endif
-
     }
     cilk_sync;
 
-    //swap the index pointers  
-#ifndef MSTEPS
     tmp_ptr = index;
     index = pointIds;
     pointIds = tmp_ptr;
-#else
-    X_tmp = Y;
-    Y = X;
-    X = X_tmp;
-#endif
 
     //swap the code pointers
     tmp_code = zcodes;
@@ -1136,7 +1071,6 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 	int size = BinSizes[(NPS-1)*MAXBINS64 + i*MAXBINS + j] - start; 
 	if( size > 0 ){
 	   
-#ifndef MSTEPS
 	  cilk_spawn bin_sort_serial_radix6_bitmap_small(&Y[(uint32_t)start*LDIM], X, 
 							 &zcodes[start], 
 							 &codes[start], 
@@ -1146,21 +1080,7 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 							 size, sft-6, 
 							 lv+1, stop,
 							 population_threshold);
-#else
-	  cilk_spawn bin_sort_serial_radix6_bitmap_small(&Y[(uint32_t)start*LDIM], 
-							 &X[(uint32_t)start*LDIM], 
-							 &zcodes[start], 
-							 &codes[start], 
-							 &pointIds[start],
-							 &index[start], 
-							 &bit_map[start], 
-							 size, sft-6, 
-							 lv+1, stop,
-							 population_threshold);
-#endif
-
 	}	
-	//start += size;
       }
       bit_map[cursor] |= 1;
       cursor += super_box_size;
