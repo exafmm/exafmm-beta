@@ -107,8 +107,10 @@ void verify_all(int **node_pointers,
 		int **node_pointers2, 
 		int **children_first,
 		int **children_first2, 
-		int *nodes_per_level, int *nodes_per_level2,
-		void *binrep, void *binrep2,
+		int *nodes_per_level,
+		int *nodes_per_level2,
+		uint32_t *bit_map,
+		uint32_t *bit_map2,
 		int **clgs_link_list,
 		int **nn_link_list,
 		int **common_list,
@@ -116,8 +118,6 @@ void verify_all(int **node_pointers,
 		uint32_t **clgs_count,
 		uint32_t **common_count,
 		int height, int height2, int N){
-  uint32_t *bit_map = (uint32_t *)binrep;
-  uint32_t *bit_map2 = (uint32_t *)binrep2;
   int **expansions = (int **)malloc(height2*sizeof(int *));
   for(int i=0; i<height2; i++){
     expansions[i] = (int *)sakura_malloc(nodes_per_level2[i],sizeof(int),"Node expansions");

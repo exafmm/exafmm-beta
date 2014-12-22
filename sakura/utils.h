@@ -100,9 +100,8 @@ int verify_interactions_compressed_wrapper(int **expansion, int **edges,
 					   uint **common_first, int **common_list,
 					   int nnodes, int N, int tree_height);
 void encodeParticles(int N, float * X, float * min, 
-		     float *max, void *particle_codes, 
-		     int maxlev);
-void decomposeSpace(int N, void **particle_codes, 
+		     float *max, void *particle_codes, int maxlev);
+void decomposeSpace(int N, void **particle_codes,
 		    uint32_t *permutation_vector, void *bit_map, float **X,
 		    int maxlev, int population_threshold, int dist);
 void relocateParticles(int N, float **X, uint32_t *permutation_vector);
@@ -126,15 +125,10 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			    int (*restrict nodes_per_level2), 
 			    int height, int height2, int N);
 void verify_all(int **node_pointers, int **node_pointers2, 
-		int **children_first, 
-		int **children_first2,
+		int **children_first, int **children_first2,
 		int *nodes_per_level, int *nodes_per_level2,
-		void *binrep, void *binrep2,
-		int **clgs_link_list,
-		int **nn_link_list,
-		int **common_list,
-		uint32_t **nn_count,
-		uint32_t **clgs_count,
-		uint32_t **common_count,
+		uint32_t *bit_map, uint32_t *bit_map2,
+		int **clgs_link_list, int **nn_link_list, int **common_list,
+		uint32_t **nn_count, uint32_t **clgs_count, uint32_t **common_count,
 		int height, int height2, int N);
 

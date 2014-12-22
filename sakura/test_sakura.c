@@ -74,36 +74,16 @@ int main(int argc, char** argv){
     uint32_t **nn_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
     uint32_t **clgs_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
     uint32_t **common_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
-    form_interaction_lists(node_codes, children_first,
-			   node_codes2, children_first2, 
-			   nn_count, 
-			   clgs_count, 
-			   common_count,
-			   nn_link_list, 
-			   clgs_link_list,
-			   common_list,
-			   NULL,
-			   NULL,
-			   NULL,
-			   node_pointers, 
-			   nodes_per_level, 
-			   nodes_per_level2, 
-			   height, 
-			   height2, 
-			   N);
-    verify_all(node_pointers, 
-	       node_pointers2,
-	       children_first, 
-	       children_first2,
-	       nodes_per_level, nodes_per_level2,
-	       bit_map, bit_map2,
-	       clgs_link_list,
-	       nn_link_list,
-	       common_list,
-	       nn_count,
-	       clgs_count,
-	       common_count,
-	       height, height2, N);
+    form_interaction_lists(node_codes, children_first, node_codes2, children_first2, 
+			   nn_count, clgs_count, common_count,
+			   nn_link_list, clgs_link_list, common_list,
+			   NULL, NULL, NULL,
+			   node_pointers, nodes_per_level, nodes_per_level2, 
+			   height, height2, N);
+    verify_all(node_pointers, node_pointers2, children_first, 
+	       children_first2, nodes_per_level, nodes_per_level2,
+	       bit_map, bit_map2, clgs_link_list, nn_link_list, common_list,
+	       nn_count, clgs_count, common_count, height, height2, N);
     for(int i=0; i<height; i++){
       free(nn_count[i]);
       free(clgs_count[i]);
