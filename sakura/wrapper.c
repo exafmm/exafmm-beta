@@ -296,43 +296,6 @@ void verify_all(int **node_pointers,
 
 }
 
-void verify_dense(uint32_t *bit_map, int *near_stencil, 
-		  int *far_stencil, int *common_stencil, 
-		  int *nodes_per_level,
-		  int N, int height){
-  int **expansions = (int **)malloc(height*sizeof(int *));
-  for(int i=0; i<height; i++){
-    expansions[i] = (int *)sakura_malloc(nodes_per_level[i],sizeof(int), 
-					 "Node expansions");
-  }
-  int *leaf_populations = (int *)sakura_malloc(N, sizeof(int), 
-					       "Leaf population array");
-  leaf_populations[0:N] = 0;
-  find_leaf_populations(leaf_populations, bit_map, N);
-  int charge = verify_tree_dense_wrapper(expansions, 
-					 bit_map, leaf_populations, 
-					 height, N);
-  printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
-  int pass = verify_interactions_compressed_dense_wrapper(expansions, 
-							  near_stencil, 
-							  far_stencil, 
-							  common_stencil,
-							  N, height);
-  printf("List %s\n", (pass) ? "PASS" : "FAIL");
-  free(leaf_populations);
-  for(int i=0; i<height; i++){
-    free(expansions[i]);
-  }
-  free(expansions);
-}
-
-void decomposeSpacePermute(int N, float * Y, float * X, uint32_t * keys,
-                           uint32_t *permutation_vector, int maxlev){
-
-  bin_sort_dense_singlepass(Y, X, keys, permutation_vector, N, maxlev);
-
-}
-
 void relocateParticles(int N, float **X, uint32_t *permutation_vector){
   float *Y  = (float *)sakura_malloc(N, LDIM*sizeof(float), "Particle buffer");
   uint64_t working_memo = (uint64_t)N*LDIM*sizeof(float);
