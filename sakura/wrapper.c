@@ -89,11 +89,7 @@ void decomposeSpace(int N, void **particle_codes,
   uint32_t *index = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), 
 					      "Index vector");
   working_memory = N*sizeof(uint32_t);
-  float *Y;
-  if(N <= SMALLTH){
-    Y = (float*)sakura_malloc(N, LDIM*sizeof(float), "Particle buffer");
-    working_memory = (uint64_t)N*LDIM*sizeof(float);
-  }
+  float *Y = NULL;
   start_timer();
   build_tree(Y, *X, mcodes, scodes, permutation_vector, 
 	     index, bit_map, N, maxlev, maxlev, 
@@ -101,18 +97,9 @@ void decomposeSpace(int N, void **particle_codes,
   stop_timer("Tree building");
   printf("%-20s:   %luMB\n", "Decomp. work mem", working_memory / ML);
   *particle_codes = (void*)scodes;
-  if(N <= SMALLTH){
-    float * tmp;
-    tmp = Y;
-    Y = *X;
-    *X = tmp;
-    free(Y);
-  }
   free(mcodes);
   free(index);
 }
-
-#ifndef LIBRARY
 
 int tree_formation(void *binrep, void *particle_codes, 
 		   int *nodes_per_level, int **node_pointers, 
@@ -161,8 +148,6 @@ int tree_formation(void *binrep, void *particle_codes,
   free(nodes_block_first);
   return(height);
 }
-
-#endif
 
 void form_interaction_lists(int **node_codes, int **children_first,
 			    int **node_codes2, int **children_first2, 
@@ -289,31 +274,11 @@ void verify_all(int **node_pointers,
 
   printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
 
-
-  /* Interaction list verification */
-
-#ifdef NO_SYMBOLIC 
-
-  int pass = verify_interactions_compressed_so_symbolic_wrapper(expansions, 
-								children_first, 
-								nn_link_list, 
-								nn_count,
-								clgs_link_list, 
-								clgs_count,
-								common_list, 
-								common_count,
-								nodes_per_level[0], N, 
-								height);
-      
-#else
-
   int pass = verify_interactions_compressed_wrapper(expansions, children_first, 
 						    nn_count, nn_link_list, 
 						    clgs_count, clgs_link_list,
 						    common_count, common_list,
 						    nodes_per_level[0], N, height);
-#endif
-
   printf("List %s\n", (pass) ? "PASS" : "FAIL");
       
 
@@ -361,40 +326,6 @@ void verify_dense(uint32_t *bit_map, int *near_stencil,
   free(expansions);
 }
 
-/* extenral funtion to be linked with exafmm */
-#ifdef LIBRARY
-void decomposeSpace(int N, void ** particle_codes, void ** particle_codes_buffer, 
-		    uint32_t ** permutation_vector, uint32_t ** index, 
-		    int maxlev) {
-  float *X, *Y;
-  uint32_t *tmp_id;
-  //uint32_t *bit_map = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map 1");
-  uint32_t *bit_map;
-
-  uint64_t **mcodes = (uint64_t **)particle_codes;
-  uint64_t **scodes = (uint64_t **)particle_codes_buffer;
-  uint64_t *tmp;
-  build_tree(Y, X, mcodes[0], scodes[0], permutation_vector[0],
-	     index[0], bit_map, N, maxlev, maxlev, 64, 1);
-    
-    
-#ifdef LIBRARY
-  int st = (int)ceil((float)maxlev / (float)2);
-    
-  if((st & 1) == 0){
-    tmp = mcodes[0];
-    mcodes[0] = scodes[0];
-    scodes[0] = tmp; 
-      
-    tmp_id = index[0];
-    index[0] = permutation_vector[0];
-    permutation_vector[0] = tmp_id;
-  }
-#endif
-  
-}
-#endif
-
 void decomposeSpacePermute(int N, float * Y, float * X, uint32_t * keys,
                            uint32_t *permutation_vector, int maxlev){
 
@@ -402,31 +333,12 @@ void decomposeSpacePermute(int N, float * Y, float * X, uint32_t * keys,
 
 }
 
-
-#ifdef DENSE
-void decomposeSpacePermute(int N, float * Y, float * X, uint32_t * mcodes, 
-			   uint32_t * scodes, uint32_t * permutation_vector, 
-			   uint32_t * index, int maxlev, int population_threshold){
-  uint32_t *bit_map = NULL;
-  bin_sort_radix6_bitmap_small(Y, X, mcodes, scodes, permutation_vector,
-			       index, bit_map,
-			       N, 3*(maxlev-2),
-			       0, 0, population_threshold);
-
-
-}
-
-#endif
-
-
 void relocateParticles(int N, float **X, uint32_t *permutation_vector){
   float *Y  = (float *)sakura_malloc(N, LDIM*sizeof(float), "Particle buffer");
   uint64_t working_memo = (uint64_t)N*LDIM*sizeof(float);
   float *tmp;
   start_timer();
-  if(N >= SMALLTH){
-    rearrange_dataTL(Y, *X, permutation_vector, N);
-  }
+  rearrange_dataTL(Y, *X, permutation_vector, N);
   stop_timer("Relocate particles");
   printf("%-20s:   %luMB\n", "Relocation work mem", working_memo / ML);
   tmp = Y;
@@ -434,15 +346,6 @@ void relocateParticles(int N, float **X, uint32_t *permutation_vector){
   *X = tmp;
   free(Y);
 }
-
-#ifdef LIBRARY
-void relocateParticles(int N, float * X, float * Y, uint32_t * permutation_vector) {
-  cilk_spawn rearrange_dataTL(Y, X, permutation_vector, N);
-}
-#endif
-
-#ifndef LIBRARY
-/* main function */
 
 #if 0
 int main(int argc, char** argv){
@@ -619,5 +522,4 @@ int main(int argc, char** argv){
   free(permutation_vector);
   free(index);
 }
-#endif
 #endif

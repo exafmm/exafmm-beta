@@ -1,6 +1,6 @@
+#include <stdlib.h>
 #include <stdint.h>
-
-#define SMALLTH 500000
+#include <stdio.h>
 
 struct Body{
   float x[3];
@@ -34,7 +34,8 @@ struct fmmls{
 #define MAX(a,b) (((a)>(b)) ? (a) : (b))
 
 void* sakura_malloc(size_t items, size_t size, char *message);
-void* sakura_calloc(size_t items, size_t size, char *message);
+void* sakura_calloc(size_t items, size_t size, char* message);
+
 void create_dataset_TL(float *X, int N, int dist);
 void compute_quantization_codes_TL(uint32_t (*restrict codes), float (*restrict X), 
 				   int N, int nbins, float (*restrict min), 

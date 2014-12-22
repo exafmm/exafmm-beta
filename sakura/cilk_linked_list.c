@@ -1,11 +1,3 @@
-/* 
-This file contain the functions used in for the formation of the FMM linked list
-
-author: Nikos Sismanis
-date: Jul 2014
-
-*/
-
 #include "stdio.h"
 #include "stdlib.h"
 #include "cilk/cilk.h"
@@ -133,16 +125,16 @@ void interaction_list(int **clgs_link_list,
 			  (level_target < maxlev));
 
     if(are_same_bin && trg_isnot_leaf && src_isnot_leaf){
-	for(int i=target_children_start; i<target_children_stop; i++){
-	  cilk_spawn interaction_list(clgs_link_list, 
-				      clgs_count,
-				      nn_link_list, 
-				      nn_count,
-				      target_tree_nodes, target_tree_edges,
-				      source_tree_nodes, source_tree_edges,
-				      i, source, level_target+1,
-				      level_source, maxlev, selected_op);
-	}
+      for(int i=target_children_start; i<target_children_stop; i++){
+	cilk_spawn interaction_list(clgs_link_list, 
+				    clgs_count,
+				    nn_link_list, 
+				    nn_count,
+				    target_tree_nodes, target_tree_edges,
+				    source_tree_nodes, source_tree_edges,
+				    i, source, level_target+1,
+				    level_source, maxlev, selected_op);
+      }
       //cilk_sync;
 
     }
@@ -154,18 +146,18 @@ void interaction_list(int **clgs_link_list,
       }
       else{
 
-	  for(int i=target_children_start; i<target_children_stop; i++){ // recursive call  
-	    cilk_spawn interaction_list(clgs_link_list, 
-					clgs_count, 
-					nn_link_list, 
-					nn_count,
-					target_tree_nodes, target_tree_edges,
-					source_tree_nodes, source_tree_edges,
-					i, source, level_target+1, 
-					level_source, maxlev, selected_op);
+	for(int i=target_children_start; i<target_children_stop; i++){ // recursive call  
+	  cilk_spawn interaction_list(clgs_link_list, 
+				      clgs_count, 
+				      nn_link_list, 
+				      nn_count,
+				      target_tree_nodes, target_tree_edges,
+				      source_tree_nodes, source_tree_edges,
+				      i, source, level_target+1, 
+				      level_source, maxlev, selected_op);
 	    
-	  }
-	  //cilk_sync;
+	}
+	//cilk_sync;
       }
     }
     else{
@@ -177,17 +169,17 @@ void interaction_list(int **clgs_link_list,
   else{ // The nodes are not at the same level
 
     if(level_source > level_target){ // The target is larger
-	for(int i=target_children_start; i<target_children_stop; i++){ // recursive call  
-	  cilk_spawn interaction_list(clgs_link_list, 
-				      clgs_count, 
-				      nn_link_list, 
-				      nn_count,
-				      target_tree_nodes, target_tree_edges,
-				      source_tree_nodes, source_tree_edges,
-				      i, source, level_target+1, 
-				      level_source, maxlev, selected_op);
+      for(int i=target_children_start; i<target_children_stop; i++){ // recursive call  
+	cilk_spawn interaction_list(clgs_link_list, 
+				    clgs_count, 
+				    nn_link_list, 
+				    nn_count,
+				    target_tree_nodes, target_tree_edges,
+				    source_tree_nodes, source_tree_edges,
+				    i, source, level_target+1, 
+				    level_source, maxlev, selected_op);
 	  
-	}
+      }
       //cilk_sync;
     }
     else{ // The source is larger
@@ -270,8 +262,8 @@ void interaction_list_classical(int **clgs_link_list,
    The purpose of this is to compute the required 
    memory for the colleagues list and find the position of 
    the first colleague for each tree node */
- void scan_colleagues(uint32_t (*restrict clgs_memory), uint32_t (*restrict clgs_first), 
-		      int N){
+void scan_colleagues(uint32_t (*restrict clgs_memory), uint32_t (*restrict clgs_first), 
+		     int N){
 
   int offset = 0;
   for(int i=0; i<N; i++){
@@ -411,33 +403,33 @@ void interaction_list_compressed(int **clgs_link_list,
     if(are_same_bin && trg_isnot_leaf && src_isnot_leaf){
       cilk_for(int i=target_children_start; i<target_children_stop; i++){
 	interaction_list_compressed(clgs_link_list, 
-				      clgs_count,
+				    clgs_count,
+				    nn_link_list, 
+				    nn_count,
+				    common_list, 
+				    common_count,
+				    target_tree_nodes, target_tree_edges,
+				    source_tree_nodes, source_tree_edges,
+				    i, source, level_target+1,
+				    level_source, maxlev, selected_op);
+      }
+    } else if(are_neighbors && !are_same_bin){
+      if(!src_isnot_leaf || !trg_isnot_leaf){
+	selected_op(nn_count[level_target], 
+		    nn_link_list[level_target], target, source);
+      } else {
+	for(int i=source_children_start; i<source_children_stop; i++){ // recursive call  
+	  interaction_list_compressed(clgs_link_list, 
+				      clgs_count, 
 				      nn_link_list, 
 				      nn_count,
 				      common_list, 
 				      common_count,
 				      target_tree_nodes, target_tree_edges,
 				      source_tree_nodes, source_tree_edges,
-				      i, source, level_target+1,
-				      level_source, maxlev, selected_op);
+				      target, i, level_target, 
+				      level_source+1, maxlev, selected_op);
 	}
-    } else if(are_neighbors && !are_same_bin){
-      if(!src_isnot_leaf || !trg_isnot_leaf){
-	selected_op(nn_count[level_target], 
-		    nn_link_list[level_target], target, source);
-      } else {
-	  for(int i=source_children_start; i<source_children_stop; i++){ // recursive call  
-	    interaction_list_compressed(clgs_link_list, 
-					clgs_count, 
-					nn_link_list, 
-					nn_count,
-					common_list, 
-					common_count,
-					target_tree_nodes, target_tree_edges,
-					source_tree_nodes, source_tree_edges,
-					target, i, level_target, 
-					level_source+1, maxlev, selected_op);
-	  }
       }
     } else {
       selected_op(clgs_count[level_target], 
@@ -592,13 +584,8 @@ void interaction_list_compressed_expanded(int (**restrict clgs_link_list),
       }
     }
   }else if((!src_isnot_leaf || !trg_isnot_leaf) ){
-#ifdef NO_SYMBOLIC
-    selected_op(nn_count[level_target], 
-		&nn_link_list[level_target][target*NN], target, source);
-#else
     selected_op(nn_count[level_target], 
 		nn_link_list[level_target], target, source);
-#endif
   }else{
     int offset = target_children_start;
     for(int i=target_children_start; i<target_children_stop; i++){
@@ -611,14 +598,8 @@ void interaction_list_compressed_expanded(int (**restrict clgs_link_list),
       have_neighbors_S[i-offset] = are_near_neighbors(&source_tree_nodes[level_source+1][i*DIM], 
 						      &target_tree_nodes[level_target][target*DIM]);
       if(have_neighbors_S[i-offset]){
-#ifdef NO_SYMBOLIC
-	selected_op(common_count[level_target], 
-		    &common_list[level_target][target*CN], target, i);
-#else
 	selected_op(common_count[level_target], 
 		    common_list[level_target], target, i);
-
-#endif
 	num_nn_S++;
       }
       
@@ -651,27 +632,14 @@ void interaction_list_compressed_expanded(int (**restrict clgs_link_list),
       else{
 	for(int j=source_children_start, m=0; j<source_children_stop; j++, m++){
 	  if(!have_neighbors_S[m]){
-#ifdef NO_SYMBOLIC
-	    selected_op(clgs_count[level_target+1], 
-			&clgs_link_list[level_target+1][i*FN], i, j);
-
-#else
 	    selected_op(clgs_count[level_target+1], 
 			clgs_link_list[level_target+1], i, j);
-#endif
 
 	  }
 	}
-
-
       }
-
-      
     }
-    
   }
-
-
 }
 
 
@@ -733,33 +701,33 @@ void interaction_list_compressed_driver(int **clgs_link_list,
   }
 }
 
- void interaction_list_compressed_expanded_driver(int (**restrict clgs_link_list), 
-						  uint32_t (**restrict clgs_count),
-						  int (**restrict nn_link_list), 
-						  uint32_t (**restrict nn_count),
-						  int (**restrict common_list), 
-						  uint32_t (**restrict common_count),
-						  int **target_tree_nodes, 
-						  int **target_tree_edges,
-						  int **source_tree_nodes, 
-						  int **source_tree_edges,
-						  int (*restrict nodes_per_level_target), 
-						  int (*restrict nodes_per_level_source), 
-						  int maxlev, int operation){
+void interaction_list_compressed_expanded_driver(int (**restrict clgs_link_list), 
+						 uint32_t (**restrict clgs_count),
+						 int (**restrict nn_link_list), 
+						 uint32_t (**restrict nn_count),
+						 int (**restrict common_list), 
+						 uint32_t (**restrict common_count),
+						 int **target_tree_nodes, 
+						 int **target_tree_edges,
+						 int **source_tree_nodes, 
+						 int **source_tree_edges,
+						 int (*restrict nodes_per_level_target), 
+						 int (*restrict nodes_per_level_source), 
+						 int maxlev, int operation){
   int level = 0;
   base_function use_function = (operation==0) ? &increase_counter : &store_pointer;
   cilk_for(int i=0; i<nodes_per_level_target[level]; i++){
     for(int j=0; j<nodes_per_level_source[level]; j++){
-	interaction_list_compressed_expanded(clgs_link_list, 
-					     clgs_count, 
-					     nn_link_list, 
-					     nn_count,
-					     common_list, 
-					     common_count,
-					     target_tree_nodes, target_tree_edges,
-					     source_tree_nodes, source_tree_edges,
-					     i, j, level, 
-					     level, maxlev-1, use_function);
+      interaction_list_compressed_expanded(clgs_link_list, 
+					   clgs_count, 
+					   nn_link_list, 
+					   nn_count,
+					   common_list, 
+					   common_count,
+					   target_tree_nodes, target_tree_edges,
+					   source_tree_nodes, source_tree_edges,
+					   i, j, level, 
+					   level, maxlev-1, use_function);
     }    
   }
 }
@@ -774,7 +742,7 @@ void interaction_list_dense_wrapper(int (**restrict clgs_link_list),
 
 int cmpfunc2 (const void * a, const void * b)
 {
-   return ( *(int*)a - *(int*)b );
+  return ( *(int*)a - *(int*)b );
 }
 
 
@@ -863,29 +831,29 @@ void interaction_list_stencil(int *common_stencil, int *far_stencil,
 }
 
 
- int executeStencilNN(int *nn_codes, int *node_code, int *stencil, int periodic, int lv){
+int executeStencilNN(int *nn_codes, int *node_code, int *stencil, int periodic, int lv){
 
-   int parent[DIM];
-   int bound = (1<<lv);
+  int parent[DIM];
+  int bound = (1<<lv);
 
-   int nn_count = 0;
+  int nn_count = 0;
 
-   parent[0] = 2 * (node_code[0] / 2);
-   parent[1] = 2 * (node_code[1] / 2);
-   parent[2] = 2 * (node_code[2] / 2);
+  parent[0] = 2 * (node_code[0] / 2);
+  parent[1] = 2 * (node_code[1] / 2);
+  parent[2] = 2 * (node_code[2] / 2);
 
-   int lc = (node_code[0] & 1) | ( (node_code[1] & 1) << 1 ) | ( (node_code[2] & 1) << 2 );
+  int lc = (node_code[0] & 1) | ( (node_code[1] & 1) << 1 ) | ( (node_code[2] & 1) << 2 );
 
-   if(periodic){
-     for(int i=0; i<NN; i++){
-       nn_codes[i*DIM + 0] = parent[0] + stencil[lc*DIM*NN + i*DIM + 0];
-       nn_codes[i*DIM + 1] = parent[1] + stencil[lc*DIM*NN + i*DIM + 1];
-       nn_codes[i*DIM + 2] = parent[2] + stencil[lc*DIM*NN + i*DIM + 2];
-     }
+  if(periodic){
+    for(int i=0; i<NN; i++){
+      nn_codes[i*DIM + 0] = parent[0] + stencil[lc*DIM*NN + i*DIM + 0];
+      nn_codes[i*DIM + 1] = parent[1] + stencil[lc*DIM*NN + i*DIM + 1];
+      nn_codes[i*DIM + 2] = parent[2] + stencil[lc*DIM*NN + i*DIM + 2];
+    }
 
-     nn_count = NN;
-   }
-   else{
+    nn_count = NN;
+  }
+  else{
     for(int i=0; i<NN; i++){
       nn_codes[nn_count*DIM + 0] = parent[0] + stencil[lc*DIM*NN + i*DIM + 0];
       if(nn_codes[nn_count*DIM + 0] >=0 && nn_codes[nn_count*DIM + 0] < bound){
@@ -906,73 +874,73 @@ void interaction_list_stencil(int *common_stencil, int *far_stencil,
 
   return(nn_count);
 
- }
+}
 
 
- int executeStencilFN(int *fn_codes, int *node_code, int *fn_stencil, int *cn_stencil, int periodic, int lv){
+int executeStencilFN(int *fn_codes, int *node_code, int *fn_stencil, int *cn_stencil, int periodic, int lv){
 
-   int parent[DIM];
-   int bound = (1 << lv);
-   int fn_count = 0;
-   int cn_count = 0;
+  int parent[DIM];
+  int bound = (1 << lv);
+  int fn_count = 0;
+  int cn_count = 0;
 
-   parent[0] = 2 * (node_code[0] / 2);
-   parent[1] = 2 *(node_code[1] / 2);
-   parent[2] = 2 *(node_code[2] / 2);
+  parent[0] = 2 * (node_code[0] / 2);
+  parent[1] = 2 *(node_code[1] / 2);
+  parent[2] = 2 *(node_code[2] / 2);
 
-   int lc = (node_code[0] & 1) | ( (node_code[1] & 1) << 1 ) | ( (node_code[2] & 1) << 2 );
+  int lc = (node_code[0] & 1) | ( (node_code[1] & 1) << 1 ) | ( (node_code[2] & 1) << 2 );
 
-   if(periodic){
+  if(periodic){
 
-     for(int i=0; i<CN; i++){
-       fn_codes[i*DIM + 0] = parent[0] + cn_stencil[i*DIM + 0];
-       fn_codes[i*DIM + 1] = parent[1] + cn_stencil[i*DIM + 1];
-       fn_codes[i*DIM + 2] = parent[2] + cn_stencil[i*DIM + 2];
-     }
+    for(int i=0; i<CN; i++){
+      fn_codes[i*DIM + 0] = parent[0] + cn_stencil[i*DIM + 0];
+      fn_codes[i*DIM + 1] = parent[1] + cn_stencil[i*DIM + 1];
+      fn_codes[i*DIM + 2] = parent[2] + cn_stencil[i*DIM + 2];
+    }
 
-     for(int i=0; i<FN; i++){
-       fn_codes[CN*DIM + i*DIM + 0] = parent[0] + fn_stencil[lc*DIM*FN + i*DIM + 0];
-       fn_codes[CN*DIM + i*DIM + 1] = parent[1] + fn_stencil[lc*DIM*FN + i*DIM + 1];
-       fn_codes[CN*DIM + i*DIM + 2] = parent[2] + fn_stencil[lc*DIM*FN + i*DIM + 2];
-     }
-     fn_count = FN;
-     cn_count = CN;
-   }
-   else{
+    for(int i=0; i<FN; i++){
+      fn_codes[CN*DIM + i*DIM + 0] = parent[0] + fn_stencil[lc*DIM*FN + i*DIM + 0];
+      fn_codes[CN*DIM + i*DIM + 1] = parent[1] + fn_stencil[lc*DIM*FN + i*DIM + 1];
+      fn_codes[CN*DIM + i*DIM + 2] = parent[2] + fn_stencil[lc*DIM*FN + i*DIM + 2];
+    }
+    fn_count = FN;
+    cn_count = CN;
+  }
+  else{
 
-     for(int i=0; i<CN; i++){
-       fn_codes[cn_count*DIM + 0] = parent[0] + cn_stencil[i*DIM + 0];
-       if(fn_codes[cn_count*DIM + 0] >= 0 && fn_codes[cn_count*DIM + 0] < bound){
+    for(int i=0; i<CN; i++){
+      fn_codes[cn_count*DIM + 0] = parent[0] + cn_stencil[i*DIM + 0];
+      if(fn_codes[cn_count*DIM + 0] >= 0 && fn_codes[cn_count*DIM + 0] < bound){
 
-	 fn_codes[cn_count*DIM + 1] = parent[1] + cn_stencil[i*DIM + 1];
-	 if(fn_codes[cn_count*DIM + 1] >= 0 && fn_codes[cn_count*DIM + 1] < bound){
+	fn_codes[cn_count*DIM + 1] = parent[1] + cn_stencil[i*DIM + 1];
+	if(fn_codes[cn_count*DIM + 1] >= 0 && fn_codes[cn_count*DIM + 1] < bound){
 
-	   fn_codes[cn_count*DIM + 2] = parent[2] + cn_stencil[i*DIM + 2];
-	   if(fn_codes[cn_count*DIM + 2] >= 0 && fn_codes[cn_count*DIM + 2] < bound){
-	     cn_count++;
-	   }
-	 }
-       }
-     }
-     for(int i=0; i<FN; i++){
-       fn_codes[cn_count*DIM + fn_count*DIM + 0] = parent[0] + fn_stencil[lc*DIM*FN + i*DIM + 0];
-       if(fn_codes[cn_count*DIM + fn_count*DIM + 0] >= 0 && fn_codes[cn_count*DIM + fn_count*DIM + 0] < bound){
+	  fn_codes[cn_count*DIM + 2] = parent[2] + cn_stencil[i*DIM + 2];
+	  if(fn_codes[cn_count*DIM + 2] >= 0 && fn_codes[cn_count*DIM + 2] < bound){
+	    cn_count++;
+	  }
+	}
+      }
+    }
+    for(int i=0; i<FN; i++){
+      fn_codes[cn_count*DIM + fn_count*DIM + 0] = parent[0] + fn_stencil[lc*DIM*FN + i*DIM + 0];
+      if(fn_codes[cn_count*DIM + fn_count*DIM + 0] >= 0 && fn_codes[cn_count*DIM + fn_count*DIM + 0] < bound){
 
-	 fn_codes[cn_count*DIM + fn_count*DIM + 1] = parent[1] + fn_stencil[lc*DIM*FN + i*DIM + 1];
-	 if(fn_codes[cn_count*DIM + fn_count*DIM + 1] >= 0 && fn_codes[cn_count*DIM + fn_count*DIM + 1] < bound){
+	fn_codes[cn_count*DIM + fn_count*DIM + 1] = parent[1] + fn_stencil[lc*DIM*FN + i*DIM + 1];
+	if(fn_codes[cn_count*DIM + fn_count*DIM + 1] >= 0 && fn_codes[cn_count*DIM + fn_count*DIM + 1] < bound){
 
-	   fn_codes[cn_count*DIM + fn_count*DIM + 2] = parent[2] + fn_stencil[lc*DIM*FN + i*DIM + 2];
-	   if(fn_codes[cn_count*DIM + fn_count*DIM + 2] >= 0 && fn_codes[cn_count*DIM + fn_count*DIM + 2] < bound){
-	     fn_count++;
-	   }
-	 }
-       }
-     }
+	  fn_codes[cn_count*DIM + fn_count*DIM + 2] = parent[2] + fn_stencil[lc*DIM*FN + i*DIM + 2];
+	  if(fn_codes[cn_count*DIM + fn_count*DIM + 2] >= 0 && fn_codes[cn_count*DIM + fn_count*DIM + 2] < bound){
+	    fn_count++;
+	  }
+	}
+      }
+    }
 
-   }
+  }
 
-   return(fn_count + cn_count);
- }
+  return(fn_count + cn_count);
+}
 
 void interaction_list_formation(int **node_codes, int **children_first,
 				int **node_codes2, int **children_first2, 
@@ -1008,35 +976,19 @@ void interaction_list_formation(int **node_codes, int **children_first,
   workspace_memory[0] += (double)height*sizeof(uint32_t);
   interaction_list_workspace[0] += (double)height*sizeof(uint32_t);
   int operation = 0;
-#ifndef DENSE
-#ifndef NO_SYMBOLIC 
-   start_timer();
-   operation = 0; // First part, symbolic pre-processing    
-   interaction_list_compressed_expanded_driver(clgs_link_list, 
-					       clgs_count,
-					       nn_link_list, 
-					       nn_count, 
-					       common_list, 
-					       common_count,
-					       node_codes, children_first,
-					       node_codes2, children_first2,
-					       nodes_per_level, 
-					       nodes_per_level2, height, operation);    
-   stop_timer("Count neighbors");
- #endif 
-#endif
-   // Find out how much memory we need for the targets linked list
-
-#ifndef DENSE
-#ifdef NO_SYMBOLIC
-
-   for(int i=0; i<height; i++){
-     clgs_memory_per_level[i] = FN * nodes_per_level[i];
-     common_memory_per_level[i] = CN * nodes_per_level[i];
-     nn_memory_per_level[i] = NN * nodes_per_level[i];
-   }
-
-#else
+  start_timer();
+  operation = 0; // First part, symbolic pre-processing    
+  interaction_list_compressed_expanded_driver(clgs_link_list, 
+					      clgs_count,
+					      nn_link_list, 
+					      nn_count, 
+					      common_list, 
+					      common_count,
+					      node_codes, children_first,
+					      node_codes2, children_first2,
+					      nodes_per_level, 
+					      nodes_per_level2, height, operation);    
+  stop_timer("Count neighbors");
   start_timer();
   for(int i=0; i<height; i++){
     cilk_spawn scan_colleagues(&clgs_memory_per_level[i], 
@@ -1053,21 +1005,12 @@ void interaction_list_formation(int **node_codes, int **children_first,
   }
   cilk_sync;
   stop_timer("Scan colleagues");
-#endif
-#endif
-
-#ifndef DENSE
-  // Allocate the required memory for the linked list  
   for(int i=0; i<height; i++){
     clgs_link_list[i] = (int *)sakura_calloc(clgs_memory_per_level[i], sizeof(int), 
 					     "Far neighbors interaction list");
     memory_count[0] += (double)clgs_memory_per_level[i]*sizeof(int);
     physical_memory[0] += (double)clgs_memory_per_level[i]*sizeof(int);
     interaction_list_physical[0] += (double)clgs_memory_per_level[i]*sizeof(int);
-
-#ifdef DENSE
-    clgs_link_list[i][0:clgs_memory_per_level[i]] = -1;
-#endif
     int pp = (nn_memory_per_level[i]>0)? nn_memory_per_level[i] : 1000;
     nn_link_list[i] = (int *)sakura_calloc(pp, sizeof(int), 
 					   "Near neighbors interaction list");
@@ -1080,24 +1023,9 @@ void interaction_list_formation(int **node_codes, int **children_first,
     memory_count[0] += (double)common_memory_per_level[i]*sizeof(int);
     physical_memory[0] += (double)common_memory_per_level[i]*sizeof(int);
     interaction_list_physical[0] += (double)common_memory_per_level[i]*sizeof(int);
-
-#ifdef DENSE
-    common_list[i][0:common_memory_per_level[i]] = -1;
-#endif
   }
   nn_link_list[height-1][0:nn_memory_per_level[height-1]] = -1;
 
-#endif
-
-
-#ifdef DENSE
-  start_timer();
-  printf("Generate the stencil\n");
-  int toy_parent[DIM];
-  toy_parent[0] = 1; toy_parent[1] = 1; toy_parent[2] = 1;
-  interaction_list_stencil(common_stencil, far_stencil, near_stencil, toy_parent);
-  stop_timer("Link list");
-#else
   start_timer();
   operation = 1;
   interaction_list_compressed_expanded_driver(clgs_link_list, 
@@ -1111,8 +1039,6 @@ void interaction_list_formation(int **node_codes, int **children_first,
 					      nodes_per_level, 
 					      nodes_per_level2, height, operation);    
   stop_timer("Link list");
-#endif
   free(nn_memory_per_level);
   free(clgs_memory_per_level);
 }
-

@@ -1,23 +1,9 @@
-/*
-  This files contain the functions that are used for building an Octree using 
-  precomputed morton codes
-
-  author: Nikos Sismanis
-  date: Jul 2014
-
-*/
-
-#include "stdio.h"
-#include "stdlib.h"
-#include "cilk/cilk.h"
-#include "cilk/cilk_api.h"
-#include "math.h" 
-#include "sys/time.h"
-#include "utils.h"
-#include <string.h>
-#include <cilk/reducer_opadd.h>
+#include <cilk/cilk.h>
+#include <math.h> 
 #include <stdint.h>
-
+#include <stdlib.h>
+#include <string.h>
+#include "utils.h"
 
 #define MAXBINS 8
 #define MAXBINS64 64
@@ -32,8 +18,6 @@
 #define LDIM 12
 #define MASK64 0x3F
 #define MASK32 0x07
-
-typedef cilk::reducer_opadd<int> T_reducer;
 
 void decode_morton_code(int *x, int *y, int *z, uint64_t mcode);
 
@@ -675,41 +659,26 @@ void bin_sort_serial_radix6_dense(uint32_t (*restrict zcodes),
 				  int N, int sft, int lv, int stop, 
  				  int binId,
 				  int dataoffset){
-  
   int BinSizes[MAXBINS64] = {0};
   int BinCursor[MAXBINS64] = {0};
   uint32_t *tmp_ptr;
   uint32_t *tmp_code;
 
   if(sft < stop){ // Base case. The node is a leaf
-
-#ifndef LIBRARY
     pointer2data[binId] = dataoffset;
     codes[0:N] = zcodes[0:N];
     pointIds[0:N] = index[0:N];
-#endif
-    //pointer2data[binId] = binId;
-    //pointIds[0:N] = index[0:N]; // Exchange the pernutation vector
     return;
   }
   else{
 
     int sftr = MAX(sft, 0);
     int mask = (sft < 0) ? 0x07 : MASK64;
-    /*
-      if(sft<0) {
-      //printf("%d\n", sftr);
-      printf("%d\n", mask);
-      }
-    */
-    // Find which child each point belongs to 
 #pragma ivdep
     for(int j=0; j<N; j++){
       uint32_t ii = (zcodes[j]>>sftr) & mask;
       BinSizes[ii]++;
     }
-
-    // scan prefix (must change this code)  
     int offset = 0;
 #pragma ivdep
     for(int i=0; i<MAXBINS64; i++){
@@ -746,21 +715,12 @@ void bin_sort_serial_radix6_dense(uint32_t (*restrict zcodes),
 
     int BINS = (sft>0) ? MAXBINS64 : 8;
 
-#ifndef LIBRARY
     for(int i=0; i<MAXBINS; i++){
-      
       int super_box_size = BinSizes[(i+1)*MAXBINS-1] - super_box_start;
       super_box_start = BinSizes[(i+1)*MAXBINS-1];
-      
-
-      //if((sft-3) < stop){
-
       for(int j=0; j<MAXBINS; j++){
-	    
 	int size = BinCursor[i*MAXBINS+j] - offset;
-
 	if( size>0 ){
-	      
 	  bin_sort_serial_radix6_dense(&zcodes[offset], 
 				       &codes[offset], 
 				       &pointIds[offset], 
@@ -775,52 +735,9 @@ void bin_sort_serial_radix6_dense(uint32_t (*restrict zcodes),
 	offset += size;
       }
     }
-
-#else
-
-    for(int i=0; i<BINS; i++){
-      int size = BinCursor[i] - offset;
-      if(size>0){
-	bin_sort_serial_radix6_dense(&zcodes[offset],
-				     &codes[offset],
-				     &pointIds[offset],
-				     &index[offset],
-				     pointer2data,
-				     size, sft-6,
-				     lv+1, stop,
-				     binId*MAXBINS64 + i,
-				     dataoffset + offset);
-      }
-      offset += size;
-	    
-    }
-
-#endif
-    //}
-    /*
-      else{ // must terminate
-
-
-      pointer2data[binId*MAXBINS + i] = dataoffset;
-
-
-      cilk_spawn parallel_cpy(&codes[offset], 
-      &zcodes[offset], 
-      &pointIds[offset], 
-      &index[offset], super_box_size);	  
-
-
-      offset += super_box_size;
-      }
-    */
-    //cilk_sync;    
-
   }
-
 }
 
-/* The function performing the first recursion for the radix 6 sorting mathod 
-   In this version the scan prefix is parallel*/
 void bin_sort_radix6_dense(uint32_t (*restrict zcodes), uint32_t (*restrict codes), 
 			   uint32_t (*restrict pointIds), uint32_t (*restrict index),
 			   uint32_t (*restrict pointer2data),
@@ -862,15 +779,7 @@ void bin_sort_radix6_dense(uint32_t (*restrict zcodes), uint32_t (*restrict code
 	BinSizes[j*MAXBINS64 + i] = offset;
       }
     }
-
-    // Relocate the indices
     for(int i=0; i<NPD; i++){
-      /*
-	cilk_spawn relocate_data_radix6(pointIds, &index[i*M], 
-	&zcodes[i*M], codes, 
-	&BinCursor[i*MAXBINS64], i*M, 
-	M, N, sft);
-      */
       cilk_spawn relocate_data_radix6_noindex(pointIds, 
 					      &zcodes[i*M], codes, 
 					      &BinCursor[i*MAXBINS64], i*M, 
@@ -878,33 +787,22 @@ void bin_sort_radix6_dense(uint32_t (*restrict zcodes), uint32_t (*restrict code
 
     }
     cilk_sync;
-
-    //swap the index pointers  
     tmp_ptr = index;
     index = pointIds;
     pointIds = tmp_ptr;
-
-    //swap the code pointers
     tmp_code = zcodes;
     zcodes = codes;
     codes = tmp_code;
-
-    // Spawn the children
     int cursor = 0;
     int super_box_start = 0;
     int start = 0;
-
-#ifndef LIBRARY
-
     for(int i=0; i<MAXBINS; i++){
       int super_box_size = BinSizes[(NPD-1)*MAXBINS64 + (i+1)*MAXBINS-1] - super_box_start;
       super_box_start = BinSizes[(NPD-1)*MAXBINS64 + (i+1)*MAXBINS-1];
-
       for(int j=0; j<MAXBINS; j++){
 	int start = (i==0 && j==0) ? 0 : BinSizes[(NPD-1)*MAXBINS64 + i*MAXBINS + j-1];
 	int size = BinSizes[(NPD-1)*MAXBINS64 + i*MAXBINS + j] - start; 
 	if( size > 0 ){
-
 	  cilk_spawn bin_sort_serial_radix6_dense(&zcodes[start], 
 						  &codes[start], 
 						  &pointIds[start],
@@ -914,38 +812,11 @@ void bin_sort_radix6_dense(uint32_t (*restrict zcodes), uint32_t (*restrict code
 						  lv+1, stop,
 						  binId*MAXBINS64 + i*MAXBINS + j,
 						  dataoffset + start);
-						   
-	 
-						   
-						   
 	}	
 	start += size;
       }
-      //bit_map[cursor] |= 1;
-      //cursor += super_box_size;
-    }
-     
-    cilk_sync;
-
-#else
-      
-    for(int i=0; i<MAXBINS64; i++){
-      int size = BinSizes[(NPD-1)*MAXBINS64 + i] - start;
-      cilk_spawn bin_sort_serial_radix6_dense(&zcodes[start],
-					      &codes[start],
-					      &pointIds[start],
-					      &index[start],
-					      pointer2data,
-					      size, sft-6,
-					      lv+1, stop,
-					      binId*MAXBINS64 + i,
-					      dataoffset + start);
-      start += size;
-	
     }
     cilk_sync;
-      
-#endif
   }
 }
 
@@ -999,13 +870,8 @@ void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X
 #endif
   uint64_t *tmp_code;
 
-#ifndef LIBRARY
   bit_map[0] |= (1 << (2*lv-1)); // Set the bit of the corresponding level
-#endif
-
   if(N<population_threshold || sft < stop){ // Base case. The node is a leaf
-
-    //pointIds[0:N] = index[0:N]; // Exchange the pernutation Vector
     codes[0:N] = zcodes[0:N]; 
     
 #ifndef MSTEPS
@@ -1076,12 +942,9 @@ void bin_sort_serial_radix6_bitmap_small(float (*restrict Y), float (*restrict X
       
       int super_box_size = BinSizes[(i+1)*MAXBINS-1] - super_box_start;
       super_box_start = BinSizes[(i+1)*MAXBINS-1];
-      
-#ifndef LIBRARY
       if(super_box_size>0){
 	bit_map[cursor] |= (1 << (2*lv));
       }
-#endif
       cursor += super_box_size;
 
       if(super_box_size > th){
@@ -1192,13 +1055,9 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 #endif
   uint64_t *tmp_code;
   BinSizes[:] = 0;
-
-#ifndef LIBRARY
   if(lv>0){
     bit_map[0] |= (1 << (2*lv-1)); // Set the bit of the corresponding level
   }
-#endif
-
   if(N<population_threshold || sft<stop){
     pointIds[0:N] = index[0:N];
     return;
@@ -1303,9 +1162,7 @@ void bin_sort_radix6_bitmap_small(float (*restrict Y), float (*restrict X),
 	}	
 	//start += size;
       }
-#ifndef LIBRARY
       bit_map[cursor] |= 1;
-#endif
       cursor += super_box_size;
     }
      
@@ -1726,23 +1583,9 @@ void build_tree(float *Y, float *X, uint64_t (*restrict mcodes),
 		uint32_t (*restrict bit_map),
 		int N, int maxlev, int maxheight, 
 		int population_threshold, int dist){
-  if(N <= SMALLTH){
-    bin_sort_radix6_bitmap_small(Y, X, mcodes, scodes, permutation_vector, 
-				 index, bit_map, 
-				 N, 3*(maxlev-2), 
-				 0, 3*(maxlev-maxheight), population_threshold);
-  }else{
-    if(dist == 3 || (dist==2 && N > 100000000)){
-      bin_sort_radix6_bitmap_plummer(mcodes, scodes, permutation_vector, 
-				     index, bit_map, 
-				     N, 3*(maxlev-2), 
-				     0, 3*(maxlev-maxheight), population_threshold);
-    }else{
-      bin_sort_radix6_bitmap(mcodes, scodes, permutation_vector, 
-			     index, bit_map, 
-			     N, 3*(maxlev-2), 
-			     0, 3*(maxlev-maxheight), population_threshold);
-    }
-  }
+    bin_sort_radix6_bitmap(mcodes, scodes, permutation_vector, 
+			   index, bit_map, 
+			   N, 3*(maxlev-2), 
+			   0, 3*(maxlev-maxheight), population_threshold);
 }
 

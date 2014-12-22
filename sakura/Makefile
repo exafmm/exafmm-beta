@@ -9,7 +9,7 @@ all	:
 	make compile
 	make run
 
-compile	: test_sakura.c datasets.c quantization.c build_tree_cilk.c data_rearrange.c morton_encoding.c cilk_linked_list.c verification.c general_functions.c wrapper.c
+compile	: test_sakura.c datasets.c quantization.c build_tree_cilk.c data_rearrange.c morton_encoding.c cilk_linked_list.c verification.c wrapper.c utils.c
 	$(CXX) $? $(LFLAGS)
 
 run	:
