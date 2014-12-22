@@ -1,26 +1,4 @@
-#include "math.h"
-#include "stdio.h"
-#include "stdlib.h"
 #include "utils.h"
-#include "cilk/cilk.h"
-#include "cilk/cilk_api.h"
-/* additional includes */
-#include <asm-generic/unistd.h>
-#include <linux/perf_event.h>
-#include <asm/unistd.h>
-#include <sys/ioctl.h>
-#include <dirent.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdint.h>
-
-#define DIM 3
-#define LDIM 12
-#define NP3 64
-#define NN 26
-#define FN 37
-#define CN 152
-#define ML 1000000
 
 void encodeParticles(int N, float * X, float * min, float *max, void *particle_codes, int maxlev) {
   uint64_t *mcodes = (uint64_t *)particle_codes;
@@ -179,12 +157,10 @@ void verify_all(int **node_pointers,
 
 void relocateParticles(int N, float **X, uint32_t *permutation_vector){
   float *Y  = (float *)sakura_malloc(N, LDIM*sizeof(float), "Particle buffer");
-  uint64_t working_memo = (uint64_t)N*LDIM*sizeof(float);
   float *tmp;
   start_timer();
   rearrange_dataTL(Y, *X, permutation_vector, N);
   stop_timer("Relocate particles");
-  printf("%-20s:   %luMB\n", "Relocation work mem", working_memo / ML);
   tmp = Y;
   Y = *X;
   *X = tmp;

@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <sys/time.h>
 
+#define DIM 3
+#define LDIM 12
+#define NP3 64
+
 struct Body{
   float x[3];
   float SRC;
