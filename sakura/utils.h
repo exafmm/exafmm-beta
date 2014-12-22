@@ -61,6 +61,7 @@ void compute_quantization_codes_TL(uint32_t (*restrict codes), float (*restrict 
 void morton_encoding_T(uint64_t (*restrict mcodes), 
 		       uint32_t (*restrict codes), 
 		       int N, int max_level);
+void decode_morton_code(int *x, int *y, int *z, uint64_t mcode);
 int count_bins_bitmap_wrapper(int *nodes_per_level, int *node_block_first,
 			      uint32_t *bit_map, int N, int L);
 void parent_children_connection_wrapper(int (**restrict node_pointers), 
