@@ -7,16 +7,6 @@
 #define LDIM 12
 #define NP3 64
 
-struct Body{
-  float x[3];
-  float SRC;
-  int IBODY;
-  int IRANC;
-  float WEIGHT;
-  float T;
-  float TRE[4];
-};
-
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(a,b) (((a)>(b)) ? (a) : (b))
 

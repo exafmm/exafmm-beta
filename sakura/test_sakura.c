@@ -1,57 +1,23 @@
-#include "math.h"
-#include "stdio.h"
-#include "stdlib.h"
+#include <cilk/cilk.h>
+#include <cilk/cilk_api.h>
 #include "utils.h"
-#include "cilk/cilk.h"
-#include "cilk/cilk_api.h"
-/* additional includes */
-#include <asm-generic/unistd.h>
-#include <linux/perf_event.h>
-#include <asm/unistd.h>
-#include <sys/ioctl.h>
-#include <dirent.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdint.h>
-
-#define DIM 3
-#define LDIM 12
-#define NP3 64
-#define NN 26
-#define FN 37
-#define CN 152
-#define ML 1000000
 
 int main(int argc, char** argv){
-  struct Body *data, *permuted_data, *data2, *permuted_data2;
   const bool printNow = true;
-  if (argc != 6) {
-    printf("Usage: %s N dist pop rep P\n"
-	   " where\n"
-	   " N    : number of points\n"
-	   " dist : distribution code (1-3)\n"
-	   " pop  : population threshold\n"
-	   " rep  : repetitions\n"
-	   " P    : number of threads.\n", argv[0]);
-    return (1);
-  }
-  int N = atoi(argv[1]); // Number of points
-  int dist = atoi(argv[2]); // Distribution identifier 
+  int N = atoi(argv[1]);
+  int dist = atoi(argv[2]);
   int population_threshold = atoi(argv[3]);
   int repeat = atoi(argv[4]);
   int nworkers = atoi(argv[5]);
-  __cilkrts_set_param("nworkers",argv[5]); // the number of working threads
+  __cilkrts_set_param("nworkers",argv[5]);
   printf("N = %d, T=%d\n", N, nworkers);
   start_timer();
   float *X = (float *)sakura_malloc(N, LDIM*sizeof(float), "Particle array");
-  uint64_t particle_memory = (uint64_t) N*LDIM*sizeof(float);
   float *X2 = (float *)sakura_malloc(N, LDIM*sizeof(float), "Particle array");
-  particle_memory += (uint64_t) N*LDIM*sizeof(float);
   stop_timer("Data mem. alloc.");
-  printf("%-20s:   %luMB\n", "Particle mem", particle_memory / ML);
-  int maxlev = 20; // Maximum level of the tree
-  int maxheight = 20; // Maximun height of the tree (extra control for debugin)
-  int nbins = (1 << maxlev); // maximum number of boxes at the leaf level
+  int maxlev = 20;
+  int maxheight = 20;
+  int nbins = (1 << maxlev);
   for (int it=0; it<repeat; it++) {
     start_timer();
     create_dataset_TL(X, N, dist);
@@ -77,18 +43,11 @@ int main(int argc, char** argv){
     uint64_t *particle_codes2 = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Morton code array");
     uint32_t *bit_map2 = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map");
     uint32_t *permutation_vector2 = (uint32_t *)sakura_malloc(N, sizeof(uint32_t),"Permutation vector");
-    encodeParticles(N, X, min, 
-		    max, particle_codes, 
-		    maxlev);
-    decomposeSpace(N, (void **)&particle_codes, 
-		   permutation_vector, (void*)bit_map, &X,
-		   maxlev, population_threshold, dist);
+    encodeParticles(N, X, min, max, particle_codes, maxlev);
+    decomposeSpace(N, (void **)&particle_codes, permutation_vector, (void*)bit_map, &X,maxlev, population_threshold, dist);
     relocateParticles(N, &X, permutation_vector);
-
     encodeParticles(N, X2, min, max, particle_codes2, maxlev);
-    decomposeSpace(N, (void**)&particle_codes2, 
-		   permutation_vector2, (void*)bit_map2, &X2,
-		   maxlev, population_threshold, dist);
+    decomposeSpace(N, (void**)&particle_codes2, permutation_vector2, (void*)bit_map2, &X2, maxlev, population_threshold, dist);
     relocateParticles(N, &X2, permutation_vector2);
 
     int nodes_per_level[20];

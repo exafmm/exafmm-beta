@@ -82,9 +82,6 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			    int (*restrict nodes_per_level), 
 			    int (*restrict nodes_per_level2), 
 			    int height, int height2, int N){
-  double memory_count = 0;
-  double workspace_memory = 0;
-  double physical_memory = 0;
   double tmp_list_physical = 0;
   double tmp_list_workspace = 0;
   for(int i=0; i<height; i++){
