@@ -72,20 +72,12 @@ int main(int argc, char** argv){
     min[:] = MIN(min[:], min2[:]);
     max[:] = MAX(max[:], max2[:]);
     stop_timer("Box bounds");
-    uint64_t *particle_codes;
-    uint32_t *bit_map;
-    uint64_t *particle_codes2;
-    uint32_t *bit_map2;
-    uint32_t *permutation_vector;
-    uint32_t *permutation_vector2;
-    particle_codes = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Morton code array");
-    bit_map = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map");
-    permutation_vector = (uint32_t *)sakura_malloc(N, sizeof(uint32_t),
-						    "Permutation vector");
-    particle_codes2 = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Morton code array");
-    bit_map2 = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map");
-    permutation_vector2 = (uint32_t *)sakura_malloc(N, sizeof(uint32_t),
-						    "Permutation vector");
+    uint64_t *particle_codes = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Morton code array");
+    uint32_t *bit_map = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map");
+    uint32_t *permutation_vector = (uint32_t *)sakura_malloc(N, sizeof(uint32_t),"Permutation vector");
+    uint64_t *particle_codes2 = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Morton code array");
+    uint32_t *bit_map2 = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map");
+    uint32_t *permutation_vector2 = (uint32_t *)sakura_malloc(N, sizeof(uint32_t),"Permutation vector");
     encodeParticles(N, X, min, 
 		    max, particle_codes, 
 		    maxlev);

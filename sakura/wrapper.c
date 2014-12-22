@@ -33,26 +33,9 @@
 #define CN 152
 #define ML 1000000
 
-void formInteractionStencil(int *common_stencil, int *far_stencil, int *near_stencil){
-  int toy_parent[DIM];
-  toy_parent[0] = 1; toy_parent[1] = 1; toy_parent[2] = 1;
-  interaction_list_stencil(common_stencil, far_stencil, near_stencil, toy_parent);
-}
-
-void memalloc_encoding(void **mcodes, int N){
-  *mcodes = sakura_malloc(N, sizeof(uint64_t), "Morton code array");
-  uint64_t physical_memory = N*sizeof(uint64_t);
-  printf("%-20s:   %luMB\n", "Encoding Phy mem", physical_memory / ML);
-}
-
-void memfree_encoding(void *mcodes){
-  free(mcodes);
-}
-
 void encodeParticles(int N, float * X, float * min, float *max, void *particle_codes, int maxlev) {
   uint64_t *mcodes = (uint64_t *)particle_codes;
   uint32_t *codes = (uint32_t *)sakura_malloc(N, DIM * sizeof(uint32_t), "Hash code array");
-  uint64_t working_memory = (uint64_t)DIM * N * sizeof(uint32_t);
   int nbins = (1 << maxlev);
   start_timer();
   compute_quantization_codes_TL(codes, X, N, nbins, min, max);
@@ -61,38 +44,21 @@ void encodeParticles(int N, float * X, float * min, float *max, void *particle_c
   morton_encoding_T(mcodes, codes, N, maxlev);
   stop_timer("Morton encoding");
   free(codes);
-  printf("%-20s:   %luMB\n", "Encoding work mem", working_memory / ML);
-}
-
-void memalloc_decomposeSpace(uint32_t **permutation_vector, void **bit_map, int N){
-  *bit_map = sakura_calloc(N, sizeof(uint32_t), "Bit map");
-  *permutation_vector = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), 
-						  "Permutation vector");
-}
-
-void free_decomposeSpace(uint32_t *permutation_vector, void *bit_map ){
-  free(permutation_vector);
-  free(bit_map);
 }
 
 void decomposeSpace(int N, void **particle_codes, 
 		    uint32_t *permutation_vector, void *bin_rep, float **X,
 		    int maxlev, int population_threshold, int dist) {
   uint64_t *mcodes = (uint64_t *)*particle_codes;
-  uint64_t *scodes = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), 
-					       "Code buffer array");
+  uint64_t *scodes = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Code buffer array");
   uint32_t *bit_map = (uint32_t *)bin_rep;
-  uint64_t working_memory = N*sizeof(uint64_t);
-  uint32_t *index = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), 
-					      "Index vector");
-  working_memory = N*sizeof(uint32_t);
+  uint32_t *index = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), "Index vector");
   float *Y = NULL;
   start_timer();
   build_tree(Y, *X, mcodes, scodes, permutation_vector, 
 	     index, bit_map, N, maxlev, maxlev, 
 	     population_threshold, dist);
   stop_timer("Tree building");
-  printf("%-20s:   %luMB\n", "Decomp. work mem", working_memory / ML);
   *particle_codes = (void*)scodes;
   free(mcodes);
   free(index);
@@ -102,29 +68,18 @@ int tree_formation(void *binrep, void *particle_codes,
 		   int *nodes_per_level, int **node_pointers, 
 		   int **num_children, int **children_first, 
 		   void **codes, int maxlevel, int N){
-  uint64_t physical_mem = 0;
   uint32_t *bit_map = (uint32_t *)binrep;
   uint64_t *scodes = (uint64_t *)particle_codes;
   int **node_codes = (int **)codes;
   int *nodes_block_first = (int*)sakura_malloc(NP3*maxlevel, sizeof(int), "Node block");
   start_timer();
-  int height = count_bins_bitmap_wrapper(nodes_per_level, 
-					 nodes_block_first, 
-					 bit_map, N, maxlevel);
+  int height = count_bins_bitmap_wrapper(nodes_per_level, nodes_block_first, bit_map, N, maxlevel);
   stop_timer("Count nodes");
   for(int i=0; i<height; i++){
-    node_pointers[i] = (int *)sakura_malloc(nodes_per_level[i], sizeof(int), 
-					    "Array of pointers to data");
-    physical_mem += nodes_per_level[i]*sizeof(int);
-    num_children[i] = (int *)sakura_malloc(nodes_per_level[i],sizeof(int), 
-					   "Number of children array");
-    physical_mem += nodes_per_level[i]*sizeof(int);
-    children_first[i] = (int *)sakura_calloc(nodes_per_level[i], sizeof(int), 
-					     "Children first array");
-    physical_mem += nodes_per_level[i]*sizeof(int);
-    node_codes[i] = (int *)sakura_malloc(3*nodes_per_level[i], sizeof(int), 
-					 "Node hash codes");
-    physical_mem += 3*nodes_per_level[i]*sizeof(int);
+    node_pointers[i] = (int *)sakura_malloc(nodes_per_level[i], sizeof(int), "Array of pointers to data");
+    num_children[i] = (int *)sakura_malloc(nodes_per_level[i],sizeof(int), "Number of children array");
+    children_first[i] = (int *)sakura_calloc(nodes_per_level[i], sizeof(int), "Children first array");
+    node_codes[i] = (int *)sakura_malloc(3*nodes_per_level[i], sizeof(int), "Node hash codes");
   }
   start_timer();
   parent_children_connection_wrapper(node_pointers, 
