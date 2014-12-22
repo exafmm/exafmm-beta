@@ -20,7 +20,7 @@ void decode_morton_code(int *x, int *y, int *z, uint64_t mcode);
 uint32_t mortonEncode_magicbits(uint32_t x, uint32_t y, uint32_t z);
 
 int cmpfunc(const void *a, const void *b){
-   return ( *(int *)a - *(int *)b );
+  return ( *(int *)a - *(int *)b );
 }
 
 int check_index(uint32_t *index, int N){
@@ -203,7 +203,7 @@ int verify_interaction(int **expansion, int **edges, uint32_t **nn_first,
   uint32_t numfn = fn_stop - fn_start;  
 
 
-    if(numnn>0){
+  if(numnn>0){
 
     for(int i=nn_start; i<nn_stop; i++){
       interactions += expansion[level][nn_list[level][i]];
@@ -224,8 +224,8 @@ int verify_interaction(int **expansion, int **edges, uint32_t **nn_first,
     for(int i=children_start; i<children_stop; i++){
       
       pass &= verify_interaction(expansion, edges, nn_first, 
-				nn_list, fn_first, fn_list, 
-				i, level+1, interactions, N, tree_height);
+				 nn_list, fn_first, fn_list, 
+				 i, level+1, interactions, N, tree_height);
       
     }
   }
@@ -256,8 +256,8 @@ int verify_interactions_wrapper(int **expansion, int **edges,
   /* First pass */
   for(int i=0; i<nnodes; i++){
     pass &= verify_interaction(expansion, edges, nn_first, 
-			      nn_list, fn_first, fn_list, 
-			      i, 0, 0, N, tree_height);
+			       nn_list, fn_first, fn_list, 
+			       i, 0, 0, N, tree_height);
   }
 
   return pass;
@@ -333,18 +333,18 @@ int verify_interaction_iterative(int **expansion, int **interactions,
 
 }
 
- int verify_interactions_wrapper_iterative(int **expansion, int **interactions,
-					   int **edges, 
-					   uint32_t **nn_first, int **nn_list, 
-					   uint32_t **fn_first, int **fn_list, 
-					   int *nodes_per_level, int N, 
-					   int tree_height){
+int verify_interactions_wrapper_iterative(int **expansion, int **interactions,
+					  int **edges, 
+					  uint32_t **nn_first, int **nn_list, 
+					  uint32_t **fn_first, int **fn_list, 
+					  int *nodes_per_level, int N, 
+					  int tree_height){
 
   /* First pass */
   int pass = verify_interaction_iterative(expansion, interactions, 
-				 edges, nn_first, 
-				 nn_list, fn_first, fn_list, 
-				 nodes_per_level, N, tree_height);
+					  edges, nn_first, 
+					  nn_list, fn_first, fn_list, 
+					  nodes_per_level, N, tree_height);
 
   return pass;
 
@@ -420,26 +420,26 @@ int verify_interaction_iterative_singlearray(int **expansion, int *interactions,
 }
 
 
- int verify_interactions_wrapper_iterative_singlearray(int **expansion, int **interactions,
+int verify_interactions_wrapper_iterative_singlearray(int **expansion, int **interactions,
 						      int **edges, 
 						      uint32_t **nn_first, int **nn_list, 
 						      uint32_t **fn_first, int **fn_list, 
 						      int *nodes_per_level, int N, 
 						      int tree_height){
 
-   int *nodes_sum = (int *)malloc(tree_height*sizeof(int));
-   nodes_sum[0] = nodes_per_level[0];
-   for(int i=1; i<tree_height; i++){
-     nodes_sum[i] = nodes_sum[i-1] + nodes_per_level[i]; 
-   }
+  int *nodes_sum = (int *)malloc(tree_height*sizeof(int));
+  nodes_sum[0] = nodes_per_level[0];
+  for(int i=1; i<tree_height; i++){
+    nodes_sum[i] = nodes_sum[i-1] + nodes_per_level[i]; 
+  }
 
-   int *tmp_interactions = (int *)calloc(nodes_sum[tree_height-1],sizeof(int));
+  int *tmp_interactions = (int *)calloc(nodes_sum[tree_height-1],sizeof(int));
 
   /* First pass */
   int pass = verify_interaction_iterative_singlearray(expansion, tmp_interactions, 
-						     edges, nn_first, 
-						     nn_list, fn_first, fn_list, 
-						     nodes_sum, N, tree_height);
+						      edges, nn_first, 
+						      nn_list, fn_first, fn_list, 
+						      nodes_sum, N, tree_height);
 
   return pass;
 
@@ -520,8 +520,8 @@ int verify_interactions_symetric_secondpass(int **interactions,
     for(int i=children_start; i<children_stop; i++){
       
       pass &= verify_interactions_symetric_secondpass(interactions, edges, 
-						     i, level+1, inter, 
-						     N);
+						      i, level+1, inter, 
+						      N);
     }
   }
   else{
@@ -556,7 +556,7 @@ int verify_interactions_symetric_wrapper(int **expansion, int** interactions,
   /* Second Pass */
   for(int i=0; i<nnodes; i++){
     pass &= verify_interactions_symetric_secondpass(interactions, edges, 
-						   i, 0, 0, N);
+						    i, 0, 0, N);
   }
 
   return pass;
@@ -619,9 +619,9 @@ int verify_interactions_compressed(int **expansion, int **edges, uint32_t **nn_f
     for(int i=children_start; i<children_stop; i++){
       
       pass &= verify_interactions_compressed(expansion, edges, nn_first, 
-					    nn_list, fn_first, fn_list,
-					    common_first, common_list,
-					    i, level+1, interactions, N, tree_height);
+					     nn_list, fn_first, fn_list,
+					     common_first, common_list,
+					     i, level+1, interactions, N, tree_height);
       
     }
   }
@@ -651,9 +651,9 @@ int verify_interactions_compressed_wrapper(int **expansion, int **edges,
 
   for(int i=0; i<nnodes; i++){
     pass &= verify_interactions_compressed(expansion, edges, nn_first, 
-					  nn_list, fn_first, fn_list,
-					  common_first, common_list,
-					  i, 0, 0, N, tree_height);
+					   nn_list, fn_first, fn_list,
+					   common_first, common_list,
+					   i, 0, 0, N, tree_height);
   }
   
   return pass;
@@ -754,7 +754,7 @@ int verify_interactions_symetric_wrapper_compressed(int **expansion, int** inter
   /* Second Pass */
   for(int i=0; i<nnodes; i++){
     pass &= verify_interactions_symetric_secondpass(interactions, edges, 
-						   i, 0, 0, N);
+						    i, 0, 0, N);
   }
 
   return pass;

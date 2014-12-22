@@ -1,8 +1,8 @@
 /*
-This file contains the files used for the computation of morton codes 
+  This file contains the files used for the computation of morton codes 
 
-author: Nikos Sismanis
-date: Jul 2014
+  author: Nikos Sismanis
+  date: Jul 2014
 
 */
 
@@ -35,7 +35,7 @@ void quantizeTL(uint32_t (*restrict codes), float (*restrict X),
 }
 
 void quantize_serial(uint32_t (*restrict codes), float (*restrict X), 
-		float (*restrict low), float step, int N){
+		     float (*restrict low), float step, int N){
   for(int i=0; i<N; i++){
     codes[i*DIM:DIM] = compute_code(X[i*LDIM:DIM], low[0:DIM], step); 
   }

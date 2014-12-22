@@ -1,9 +1,9 @@
 /*
 
-This file contains the different distributions used for testing the octree construction
+  This file contains the different distributions used for testing the octree construction
 
-author: Nikos Sismanis
-date: Jul 2014
+  author: Nikos Sismanis
+  date: Jul 2014
 
 */
 
@@ -78,7 +78,7 @@ void plummer(float *X, int N){
 }
 
 /* Function that creates a dataset for testing 0 (spherical octant) 
-1 (uniform cude) */
+   1 (uniform cude) */
 void create_dataset_TL(float *X, int N, int dist){
 
   switch(dist){
@@ -96,7 +96,7 @@ void create_dataset_TL(float *X, int N, int dist){
     break;
   default:
     octant_uniform(X, N);
-  break;
+    break;
   }
 
 }

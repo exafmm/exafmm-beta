@@ -1583,9 +1583,9 @@ void build_tree(float *Y, float *X, uint64_t (*restrict mcodes),
 		uint32_t (*restrict bit_map),
 		int N, int maxlev, int maxheight, 
 		int population_threshold, int dist){
-    bin_sort_radix6_bitmap(mcodes, scodes, permutation_vector, 
-			   index, bit_map, 
-			   N, 3*(maxlev-2), 
-			   0, 3*(maxlev-maxheight), population_threshold);
+  bin_sort_radix6_bitmap(mcodes, scodes, permutation_vector, 
+			 index, bit_map, 
+			 N, 3*(maxlev-2), 
+			 0, 3*(maxlev-maxheight), population_threshold);
 }
 
