@@ -71,37 +71,27 @@ int verify_interactions_wrapper_iterative_singlearray(int **expansions,
     }
     int offset = (level==0) ? 0 : nodes_sum[level-1];
     int node_id = glb_node_id - offset;
-    int children_stop = c_count[level][node_id];
-    int children_start = (node_id==0) ? 0 : c_count[level][node_id-1];
-    int isnotleaf = children_stop - children_start;
-    int nn_start = (node_id==0)? 0 : n_count[level][node_id-1];
-    int nn_stop = n_count[level][node_id];
-    int numnn = nn_stop - nn_start;
-    uint32_t fn_start = (node_id==0) ? 0 : f_count[level][node_id-1];
-    uint32_t fn_stop = f_count[level][node_id];
-    uint32_t numfn = fn_stop - fn_start;
-    uint32_t common_start = (node_id==0) ? 0 : s_count[level][node_id-1];
-    uint32_t common_stop = s_count[level][node_id];
-    uint32_t numcomm = common_stop - common_start;
-    if(numnn>0){
-      for(int i=nn_start; i<nn_stop; i++){
-	interactions[glb_node_id] += expansions[level][n_list[level][i]];
-      }
+    int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
+    int c_end = c_count[level][node_id];
+    int n_begin = (node_id==0)? 0 : n_count[level][node_id-1];
+    int n_end = n_count[level][node_id];
+    int f_begin = (node_id==0) ? 0 : f_count[level][node_id-1];
+    int f_end = f_count[level][node_id];
+    int s_begin = (node_id==0) ? 0 : s_count[level][node_id-1];
+    int s_end = s_count[level][node_id];
+    for(int i=n_begin; i<n_end; i++){
+      interactions[glb_node_id] += expansions[level][n_list[level][i]];
     }
-    if(numfn>0){
-      for(uint32_t i=fn_start; i<fn_stop; i++){
-	interactions[glb_node_id] += expansions[level][(uint32_t)f_list[level][i]];
-      }
+    for(int i=f_begin; i<f_end; i++){
+      interactions[glb_node_id] += expansions[level][f_list[level][i]];
     }
-    if(numcomm>0){
-      for(uint32_t i=common_start; i<common_stop; i++){
-	interactions[glb_node_id] += expansions[level+1][(uint)s_list[level][i]];
-      }
+    for(int i=s_begin; i<s_end; i++){
+      interactions[glb_node_id] += expansions[level+1][s_list[level][i]];
     }
-    if(isnotleaf>0 && level<height){
-      int nl_offset = nodes_sum[level];
-      for(int i=children_start; i<children_stop; i++){
-	interactions[i+nl_offset] += interactions[glb_node_id];
+    if(level<height){
+      int offset = nodes_sum[level];
+      for(int i=c_begin; i<c_end; i++){
+	interactions[i+offset] += interactions[glb_node_id];
       }
     }
     else{
