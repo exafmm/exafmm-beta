@@ -89,12 +89,52 @@ int main(int argc, char** argv){
     ss += leaf_populations[i];
   }
   printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
-  int pass = verify_interactions_wrapper_iterative_singlearray(expansions,
-							       c_count,
-							       n_count, n_list,
-							       f_count, f_list,
-							       s_count, s_list,
-							       nodes_per_level, N, height);
+  int *nodes_sum = (int *)malloc(height*sizeof(int));
+  nodes_sum[0] = nodes_per_level[0];
+  for(int i=1; i<height; i++){
+    nodes_sum[i] = nodes_sum[i-1] + nodes_per_level[i];
+  }
+  int *interactions = (int *)calloc(nodes_sum[height-1],sizeof(int));
+  int pass = 1;
+  int level = 0;
+  for(int glb_node_id=0; glb_node_id<nodes_sum[height-1]; glb_node_id++){
+    if(glb_node_id>=nodes_sum[level]){
+      level++;
+    }
+    int offset = (level==0) ? 0 : nodes_sum[level-1];
+    int node_id = glb_node_id - offset;
+    int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
+    int c_end = c_count[level][node_id];
+    int n_begin = (node_id==0)? 0 : n_count[level][node_id-1];
+    int n_end = n_count[level][node_id];
+    int f_begin = (node_id==0) ? 0 : f_count[level][node_id-1];
+    int f_end = f_count[level][node_id];
+    int s_begin = (node_id==0) ? 0 : s_count[level][node_id-1];
+    int s_end = s_count[level][node_id];
+    for(int i=n_begin; i<n_end; i++){
+      interactions[glb_node_id] += expansions[level][n_list[level][i]];
+    }
+    for(int i=f_begin; i<f_end; i++){
+      interactions[glb_node_id] += expansions[level][f_list[level][i]];
+    }
+    for(int i=s_begin; i<s_end; i++){
+      interactions[glb_node_id] += expansions[level+1][s_list[level][i]];
+    }
+    if(level<height){
+      int offset = nodes_sum[level];
+      for(int i=c_begin; i<c_end; i++){
+	interactions[i+offset] += interactions[glb_node_id];
+      }
+    }else{
+      if(interactions[glb_node_id] == N){
+	pass &= 1;
+      }else{
+	pass &= 0;
+      }
+    }
+  }
+  free(nodes_sum);
+  free(interactions);
   printf("List %s\n", (pass) ? "PASS" : "FAIL");
   uint64_t inter_list_edges = 0;
   uint64_t num_tree_nodes = 0;
