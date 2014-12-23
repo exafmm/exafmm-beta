@@ -84,9 +84,9 @@ void interaction_list_formation(int **node_codes, int **children_first,
 			        double *interaction_list_physical, 
 				double *interaction_list_workspace);
 uint64_t find_leaf_populations(int *populations, uint32_t* bit_map, int N);
-int verify_tree_wrapper(int **expansions, int** edges, 
-			int** node_pointers, int *leaf_populations, 
-			int nnodes, int N);
+int verify_tree(int **expansions, int** c_count2,
+		int** node_pointers2, int *leaf_populations,
+		int node_id, int level);
 void encodeParticles(int N, float * X, float * min, 
 		     float *max, uint64_t *particle_codes, int maxlev);
 void decomposeSpace(int N, uint64_t **particle_codes,

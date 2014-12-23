@@ -82,9 +82,16 @@ int main(int argc, char** argv){
   leaf_populations[0:N] = 0;
   uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map2, N);
   int nnodes = nodes_per_level2[0];
-  int charge = verify_tree_wrapper(expansions, c_count2,
-				   node_pointers2, leaf_populations,
-				   nnodes, N);
+  int charge = 0;
+  int pass = 0;
+  for(int i=0; i<nnodes; i++){
+    charge += verify_tree(expansions, c_count2, node_pointers2, leaf_populations, i, 0);
+  }
+  if(charge == N){
+    pass = 1;
+  }else{
+    printf("charge: %d\n", charge);
+  }
   int ss = 0;
   for(int i=0; i<N; i++){
     ss += leaf_populations[i];
@@ -96,7 +103,7 @@ int main(int argc, char** argv){
     nodes_sum[i] = nodes_sum[i-1] + nodes_per_level[i];
   }
   int *interactions = (int *)calloc(nodes_sum[height-1],sizeof(int));
-  int pass = 1;
+  pass = 1;
   int level = 0;
   for(int glb_node_id=0; glb_node_id<nodes_sum[height-1]; glb_node_id++){
     if(glb_node_id>=nodes_sum[level]){
