@@ -21,3 +21,7 @@ run	:
 
 clean:
 	find . -name "*.o" -o -name "*.out*" | xargs rm -rf
+
+revert:
+	hg revert --all
+	find . -name "*.orig" | xargs rm -f
