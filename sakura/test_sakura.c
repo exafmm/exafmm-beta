@@ -15,8 +15,8 @@ int main(int argc, char** argv){
   stop_timer("Data mem. alloc.");
   int maxlev = 20;
   start_timer();
-  create_dataset_TL(X, N, dist);
-  create_dataset_TL(X2, N, dist);
+  create_dataset(X, N, dist);
+  create_dataset(X2, N, dist);
   stop_timer("Create data");
   start_timer();
   float min[DIM], max[DIM];

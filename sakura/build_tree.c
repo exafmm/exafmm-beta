@@ -2,6 +2,22 @@
 #include <math.h>
 #include "utils.h"
 
+inline uint64_t Compact1By2(uint64_t x){
+  x &= 0x1249249249249249;
+  x = (x ^ (x >>  2)) & 0x10c30c30c30c30c3;
+  x = (x ^ (x >>  4)) & 0x100f00f00f00f00f;
+  x = (x ^ (x >>  8)) & 0x1f0000ff0000ff;
+  x = (x ^ (x >> 16)) & 0x1f00000000ffff;
+  x = (x ^ (x >> 32)) & 0x1fffff;
+  return x;
+}
+
+void decode_morton_code(int *x, int *y, int *z, uint64_t mcode){
+  x[0] = Compact1By2(mcode >> 0);
+  y[0] = Compact1By2(mcode >> 1);
+  z[0] = Compact1By2(mcode >> 2);
+}
+
 void count_bins_per_level_bitmap(int (*restrict nodes_per_level),
 				 uint32_t (*restrict bit_map), uint32_t (*restrict masks),
 				 int N, int L){

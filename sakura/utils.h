@@ -43,7 +43,8 @@ static void* sakura_calloc(size_t items, size_t size, char* message){
   return ptr;
 }
 
-void create_dataset_TL(float *X, int N, int dist);
+void create_dataset(float *X, int N, int dist);
+/*
 void compute_quantization_codes_TL(uint32_t (*restrict codes), float (*restrict X), 
 				   int N, int nbins, float (*restrict min), 
 				   float (*restrict max));
@@ -62,6 +63,7 @@ void first_child_position_wrapper(int **children_first,
 				  int **num_children, 
 				  int *nodes_per_level, 
 				  int L);
+*/
 void build_tree(uint64_t (*restrict zcodes), 
 		uint64_t (*restrict codes), 
 		uint32_t (*restrict pointIds), uint32_t (*restrict index),

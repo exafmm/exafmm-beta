@@ -47,7 +47,7 @@ void plummer(float *X, int N){
   }
 }
 
-void create_dataset_TL(float *X, int N, int dist){
+void create_dataset(float *X, int N, int dist){
   switch(dist){
   case 1:
     cube(X, N);
