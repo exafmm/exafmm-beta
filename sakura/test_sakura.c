@@ -75,9 +75,12 @@ int main(int argc, char** argv){
 			 nodes_per_level, nodes_per_level2, 
 			 height);
   int **expansions = (int **)malloc(height2*sizeof(int *));
-  int **interactions = (int **)malloc(height2*sizeof(int *));
+  int **interactions = (int **)malloc(height*sizeof(int *));
   for(int i=0; i<height2; i++){
     expansions[i] = (int *)sakura_malloc(nodes_per_level2[i],sizeof(int),"Node expansions");
+  }
+  for(int i=0; i<height; i++){
+    interactions[i] = (int *)sakura_calloc(nodes_per_level[i],sizeof(int),"Node interactions");
   }
   int *leaf_populations = (int *)sakura_malloc(N, sizeof(int),"Leaf population array");
   leaf_populations[0:N] = 0;
@@ -90,11 +93,12 @@ int main(int argc, char** argv){
     ss += leaf_populations[i];
   }
   printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
-  int pass = verify_interactions_compressed_wrapper(expansions, children_first,
-						    nn_count, nn_link_list,
-						    clgs_count, clgs_link_list,
-						    common_count, common_list,
-						    nodes_per_level[0], N, height);
+  int pass = verify_interactions_wrapper_iterative_singlearray(expansions, interactions,
+							       children_first,
+							       nn_count, nn_link_list,
+							       clgs_count, clgs_link_list,
+							       common_count, common_list,
+							       nodes_per_level, N, height);
   printf("List %s\n", (pass) ? "PASS" : "FAIL");
   uint64_t inter_list_edges = 0;
   uint64_t num_tree_nodes = 0;

@@ -6,6 +6,7 @@
 #define DIM 3
 #define LDIM 12
 #define NP3 64
+#define uint uint32_t
 
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(a,b) (((a)>(b)) ? (a) : (b))
@@ -88,11 +89,14 @@ uint64_t find_leaf_populations(int *populations, uint32_t* bit_map, int N);
 int verify_tree_wrapper(int **expansions, int** edges, 
 			int** node_pointers, int *leaf_populations, 
 			int nnodes, int N);
-int verify_interactions_compressed_wrapper(int **expansion, int **edges, 
-					   uint **nn_first, int **nn_list, 
-					   uint **fn_first, int **fn_list, 
-					   uint **common_first, int **common_list,
-					   int nnodes, int N, int tree_height);
+int verify_interactions_wrapper_iterative_singlearray(int **expansion, int **interactions,
+						      int **edges,
+						      uint32_t **nn_first, int **nn_list,
+						      uint32_t **fn_first, int **fn_list,
+						      uint32_t **common_first,
+						      int **common_list,
+						      int *nodes_per_level, int N,
+						      int tree_height);
 void encodeParticles(int N, float * X, float * min, 
 		     float *max, uint64_t *particle_codes, int maxlev);
 void decomposeSpace(int N, uint64_t **particle_codes,
