@@ -44,51 +44,6 @@ static void* sakura_calloc(size_t items, size_t size, char* message){
 }
 
 void create_dataset(float *X, int N, int dist);
-/*
-void compute_quantization_codes_TL(uint32_t (*restrict codes), float (*restrict X), 
-				   int N, int nbins, float (*restrict min), 
-				   float (*restrict max));
-void morton_encoding_T(uint64_t (*restrict mcodes), uint32_t (*restrict codes), int N);
-void decode_morton_code(int *x, int *y, int *z, uint64_t mcode);
-int count_bins_bitmap_wrapper(int *nodes_per_level, int *node_block_first,
-			      uint32_t *bit_map, int N, int L);
-void parent_children_connection_wrapper(int (**restrict node_pointers), 
-					int (**restrict num_children),
-					int (**restrict node_codes), 
-					int (*restrict nodes_block_first),
-					uint32_t (*restrict bit_map), 
-					uint64_t (*restrict leaf_morton_codes),
-					int N, int L, int maxL, int maxlev);
-void first_child_position_wrapper(int **children_first, 
-				  int **num_children, 
-				  int *nodes_per_level, 
-				  int L);
-*/
-void build_tree(uint64_t (*restrict zcodes), 
-		uint64_t (*restrict codes), 
-		uint32_t (*restrict pointIds), uint32_t (*restrict index),
-		uint32_t (*restrict bit_map),
-		int N, int maxlev, int maxheight, 
-		int population_threshold);
-void rearrange_dataTL(float (*restrict Y), float (*restrict X), 
-		      uint (*restrict Ids), int N);
-void interaction_list_formation(int **node_codes, int **children_first,
-				int **node_codes2,int **children_first2, 
-				uint32_t (**restrict nn_count), 
-				uint32_t (**restrict clgs_count), 
-				uint32_t (**restrict common_count), 
-				int (**restrict nn_link_list), 
-				int (**restrict clgs_link_list), 
-				int (**restrict common_list),
-				int (*restrict nodes_per_level), 
-				int (*restrict nodes_per_level2), 
-				int height,
-			        double *interaction_list_physical, 
-				double *interaction_list_workspace);
-uint64_t find_leaf_populations(int *populations, uint32_t* bit_map, int N);
-int verify_tree(int **expansions, int** c_count2,
-		int** node_pointers2, int *leaf_populations,
-		int node_id, int level);
 void encodeParticles(int N, float * X, float * min, 
 		     float *max, uint64_t *particle_codes, int maxlev);
 void decomposeSpace(int N, uint64_t **particle_codes,
@@ -99,6 +54,10 @@ int tree_formation(uint32_t *bit_map, uint64_t *particle_codes,
 		   int *nodes_per_level, int **node_pointers, 
 		   int **num_chuildren, int **children_first, 
 		   int **codes, int maxlevel, int N);
+uint64_t find_leaf_populations(int *populations, uint32_t* bit_map, int N);
+int verify_tree(int **expansions, int** c_count2,
+		int** node_pointers2, int *leaf_populations,
+		int node_id, int level);
 void form_interaction_lists(int **node_codes, int **children_first,
 			    int **node_codes2, int **children_first2, 
 			    uint32_t (**restrict nn_count), 
