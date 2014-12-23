@@ -81,9 +81,10 @@ int main(int argc, char** argv){
   int *leaf_populations = (int *)sakura_malloc(N, sizeof(int),"Leaf population array");
   leaf_populations[0:N] = 0;
   uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map2, N);
+  int nnodes = nodes_per_level2[0];
   int charge = verify_tree_wrapper(expansions, c_count2,
 				   node_pointers2, leaf_populations,
-				   nodes_per_level2[0], N);
+				   nnodes, N);
   int ss = 0;
   for(int i=0; i<N; i++){
     ss += leaf_populations[i];

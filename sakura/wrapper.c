@@ -61,6 +61,21 @@ int tree_formation(uint32_t *bit_map, uint64_t *scodes,
   return(height);
 }
 
+uint64_t find_leaf_populations(int *leaf_populations, uint32_t *bit_map2, int N){
+  int pointer = 0;
+  uint64_t numleaves = 0;
+  for (int i=1; i<N; i++){
+    if(bit_map2[i]>0){
+      int pop = i - pointer;
+      leaf_populations[pointer] = pop;
+      pointer = i;
+      numleaves++;
+    }
+  }
+  leaf_populations[pointer] = N - pointer;
+  return(numleaves);
+}
+
 void form_interaction_lists(int **node_codes, int **children_first,
 			    int **node_codes2, int **children_first2, 
 			    uint32_t (**restrict nn_count), 
