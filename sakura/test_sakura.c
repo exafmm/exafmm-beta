@@ -75,12 +75,8 @@ int main(int argc, char** argv){
 			 nodes_per_level, nodes_per_level2, 
 			 height);
   int **expansions = (int **)malloc(height2*sizeof(int *));
-  int **interactions = (int **)malloc(height*sizeof(int *));
   for(int i=0; i<height2; i++){
     expansions[i] = (int *)sakura_malloc(nodes_per_level2[i],sizeof(int),"Node expansions");
-  }
-  for(int i=0; i<height; i++){
-    interactions[i] = (int *)sakura_calloc(nodes_per_level[i],sizeof(int),"Node interactions");
   }
   int *leaf_populations = (int *)sakura_malloc(N, sizeof(int),"Leaf population array");
   leaf_populations[0:N] = 0;
@@ -93,7 +89,7 @@ int main(int argc, char** argv){
     ss += leaf_populations[i];
   }
   printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
-  int pass = verify_interactions_wrapper_iterative_singlearray(expansions, interactions,
+  int pass = verify_interactions_wrapper_iterative_singlearray(expansions,
 							       c_count,
 							       n_count, n_list,
 							       f_count, f_list,
@@ -138,7 +134,6 @@ int main(int argc, char** argv){
     free(c_count2[i]);
     free(node_codes2[i]);
     free(expansions[i]);
-    free(interactions[i]);
   }
   free(node_pointers);
   free(num_children);
@@ -149,7 +144,6 @@ int main(int argc, char** argv){
   free(c_count2);
   free(node_codes2);
   free(expansions);
-  free(interactions);
   free(leaf_populations);
   free(bit_map);
   free(particle_codes);

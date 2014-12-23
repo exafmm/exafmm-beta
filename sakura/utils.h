@@ -87,7 +87,7 @@ uint64_t find_leaf_populations(int *populations, uint32_t* bit_map, int N);
 int verify_tree_wrapper(int **expansions, int** edges, 
 			int** node_pointers, int *leaf_populations, 
 			int nnodes, int N);
-int verify_interactions_wrapper_iterative_singlearray(int **expansion, int **interactions,
+int verify_interactions_wrapper_iterative_singlearray(int **expansion,
 						      int **edges,
 						      uint32_t **nn_first, int **nn_list,
 						      uint32_t **fn_first, int **fn_list,
