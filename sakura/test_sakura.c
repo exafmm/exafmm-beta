@@ -63,15 +63,15 @@ int main(int argc, char** argv){
 			       nodes_per_level2, node_pointers2, 
 			       num_children2, children_first2, 
 			       node_codes2, maxlev, N);
-  int **clgs_link_list = (int **)malloc(height*sizeof(int *)); 
-  int **nn_link_list = (int **)malloc(height*sizeof(int *)); 
-  int **common_list = (int **)malloc(height*sizeof(int *));
-  uint32_t **nn_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
-  uint32_t **clgs_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
-  uint32_t **common_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
+  int **f_list = (int **)malloc(height*sizeof(int *)); 
+  int **n_list = (int **)malloc(height*sizeof(int *)); 
+  int **c_list = (int **)malloc(height*sizeof(int *));
+  uint32_t **n_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
+  uint32_t **f_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
+  uint32_t **c_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
   form_interaction_lists(node_codes, children_first, node_codes2, children_first2, 
-			 nn_count, clgs_count, common_count,
-			 nn_link_list, clgs_link_list, common_list,
+			 n_count, f_count, c_count,
+			 n_list, f_list, c_list,
 			 nodes_per_level, nodes_per_level2, 
 			 height);
   int **expansions = (int **)malloc(height2*sizeof(int *));
@@ -95,16 +95,16 @@ int main(int argc, char** argv){
   printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
   int pass = verify_interactions_wrapper_iterative_singlearray(expansions, interactions,
 							       children_first,
-							       nn_count, nn_link_list,
-							       clgs_count, clgs_link_list,
-							       common_count, common_list,
+							       n_count, n_list,
+							       f_count, f_list,
+							       c_count, c_list,
 							       nodes_per_level, N, height);
   printf("List %s\n", (pass) ? "PASS" : "FAIL");
   uint64_t inter_list_edges = 0;
   uint64_t num_tree_nodes = 0;
   for(int i=0;i<height; i++){
-    inter_list_edges += nn_count[i][nodes_per_level[i]-1] +
-      clgs_count[i][nodes_per_level[i]-1];
+    inter_list_edges += n_count[i][nodes_per_level[i]-1] +
+      f_count[i][nodes_per_level[i]-1];
     num_tree_nodes += nodes_per_level[i];
   }
   printf("%-20s: %d\n", "Tree height", height);
@@ -112,19 +112,20 @@ int main(int argc, char** argv){
   printf("%-20s: %lu\n", "Tree leaves", numleaves);
   printf("%-20s: %lu\n", "Edges",inter_list_edges);
   for(int i=0; i<height; i++){
-    free(nn_count[i]);
-    free(clgs_count[i]);
-    free(clgs_link_list[i]);
-    free(nn_link_list[i]);
-    free(common_count[i]);
-    free(common_list[i]);
+    free(n_count[i]);
+    free(f_count[i]);
+    free(c_count[i]);
+    free(n_list[i]);
+    free(f_list[i]);
+    free(c_list[i]);
   }
 
-  free(nn_count);
-  free(clgs_link_list);
-  free(nn_link_list);
-  free(common_count);
-  free(common_list);
+  free(n_count);
+  free(f_count);
+  free(c_count);
+  free(n_list);
+  free(f_list);
+  free(c_list);
   for(int i=0; i<height; i++){
     free(node_pointers[i]);
     free(num_children[i]);
