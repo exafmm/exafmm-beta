@@ -1,7 +1,169 @@
 #include "cilk/cilk.h"
+#include <math.h>
 #include "utils.h"
 
 typedef void (*base_function)(uint32_t*, int*, int, int); 
+
+void count_bins_per_level_bitmap(int (*restrict nodes_per_level),
+				 uint32_t (*restrict bit_map), uint32_t (*restrict masks),
+				 int N, int L){
+  nodes_per_level[0:L] = 0;
+  for(int i=0; i<N; i++){
+    for(int j=0; j<L; j++){
+      if((bit_map[i] & masks[j]) > 0){
+	nodes_per_level[j]++;
+      }
+    }
+  }
+}
+
+int count_bins_bitmap_wrapper(int (*restrict nodes_per_level), int (*restrict nodes_block_first),
+			      uint32_t (*restrict bit_map), int N, int L){
+  uint32_t *masks = (uint32_t *)malloc(L*sizeof(uint32_t));
+  cilk_for(int i=0; i<L; i++){
+    masks[i] = 1 << i;
+  }
+  int M = (int)ceil((float)N / (float)NP3);
+  int *nodes_per_level_buff = (int*)malloc(NP3*L*sizeof(int));
+  for(int i=0; i<NP3; i++){
+    int size = ((i+1)*M<N) ? M : N - i*M;
+    cilk_spawn count_bins_per_level_bitmap(&nodes_per_level_buff[i*L],
+					   &bit_map[i*M], masks,
+					   size, L);
+  }
+  cilk_sync;
+  nodes_per_level[0:L] = 0;
+  nodes_block_first[0:L] = 0;
+  for(int i=1; i<NP3; i++){
+    nodes_block_first[i*L:L] = nodes_block_first[(i-1)*L:L] +
+      nodes_per_level_buff[(i-1)*L:L];
+  }
+  nodes_per_level[0:L] = nodes_block_first[(NP3-1)*L:L] +
+    nodes_per_level_buff[(NP3-1)*L:L];
+  int height = L;
+  for(int i=0; i<L; i++){
+    if(nodes_per_level[i] == 0){
+      height = i;
+      break;
+    }
+  }
+
+  free(masks);
+  free(nodes_per_level_buff);
+
+  return height;
+}
+
+void parent_children_connection_singlepass(int (**restrict node_pointers),
+					   int (**restrict num_children),
+					   int (**restrict node_codes),
+					   int (*restrict child_counter),
+					   int (*restrict remaining_child),
+					   int (*restrict block_first),
+					   uint32_t (*restrict masks),
+					   uint32_t (*restrict bit_map),
+					   uint64_t (*restrict leaf_morton_codes),
+					   int N,
+					   int L, int Base, int maxlev){
+  int cursor[20];
+  cursor[0:L] = block_first[0:L];
+  child_counter[0:L] = 0;
+  remaining_child[0:L] = 0;
+  for(int i=0; i<N; i++){
+    for(int j=0; j<L-1; j++){
+      if( (bit_map[i] & masks[j]) > 0 ){
+	node_pointers[j][cursor[j]] = Base + i;
+	decode_morton_code(&node_codes[j][3*cursor[j]],
+			   &node_codes[j][3*cursor[j]+1],
+			   &node_codes[j][3*cursor[j]+2],
+			   leaf_morton_codes[i] >> (3*(maxlev - j -1)) );
+	if(cursor[j]>block_first[j]){
+	  num_children[j][cursor[j]-1] = child_counter[j+1];
+	}else{
+	  remaining_child[j] = child_counter[j+1];
+	}
+	child_counter[j+1] = 0;
+	cursor[j]++;
+	child_counter[j]++;
+      }
+    }
+    if( (bit_map[i] & masks[L-1]) > 0 ){
+      node_pointers[L-1][cursor[L-1]] = Base + i;
+      decode_morton_code(&node_codes[L-1][3*cursor[L-1]],
+			 &node_codes[L-1][3*cursor[L-1]+1],
+			 &node_codes[L-1][3*cursor[L-1]+2],
+			 leaf_morton_codes[i] >> (3*(maxlev - L)));
+      cursor[L-1]++;
+      child_counter[L-1]++;
+    }
+  }
+  for(int j=0; j<L-1; j++){
+    if(cursor[j]>block_first[j]){
+      num_children[j][cursor[j]-1] = child_counter[j+1];
+    }else{
+      remaining_child[j] = child_counter[j+1];
+    }
+  }
+}
+
+void parent_children_connection_wrapper(int (**restrict node_pointers), 
+					int (**restrict num_children),
+					int (**restrict node_codes), 
+					int (*restrict nodes_block_first),
+					uint32_t (*restrict bit_map), 
+					uint64_t (*restrict leaf_morton_codes),
+					int N, int L, int maxL, int maxlev){
+  int *child_counter = (int *)malloc(L*NP3*sizeof(int));
+  int *remaining_child = (int *)malloc(L*NP3*sizeof(int));
+  uint32_t *masks = (uint32_t *)malloc(L*sizeof(uint32_t));  
+  int M = (int)ceil((float)N / (float)NP3);
+  cilk_for(int i=0; i<L; i++){
+    masks[i] = 1 << i;
+  }
+  for(int i=0; i<NP3; i++){  
+    int size = ((i+1)*M < N) ? M : N - i*M;
+    cilk_spawn parent_children_connection_singlepass(node_pointers,
+						     num_children,
+						     node_codes, 
+						     &child_counter[i*L],
+						     &remaining_child[i*L],
+						     &nodes_block_first[i*maxL],
+						     masks,
+						     &bit_map[i*M], 
+						     &leaf_morton_codes[i*M],
+						     size,
+						     L, i*M, maxlev);
+  }
+  cilk_sync;
+  for(int i=0; i<NP3; i++){
+    for(int j=0; j<L; j++){ 
+      if(nodes_block_first[i*maxL+j]-1 >= 0){
+	num_children[j][nodes_block_first[i*maxL+j]-1] += remaining_child[i*L + j];
+      }
+    }
+  }
+  free(child_counter);
+  free(remaining_child);
+  free(masks);
+}
+
+void first_child_position(int *children_first, int *num_children, int N){
+  children_first[0] = num_children[0];
+  for(int i=1; i<N; i++){
+    children_first[i] = children_first[i-1] + num_children[i];
+  }
+}
+
+void first_child_position_wrapper(int **children_first,
+				  int **num_children,
+				  int *nodes_per_level,
+				  int L){
+  cilk_for(int i=0; i<L; i++){
+    if(nodes_per_level[i]>0){
+      first_child_position(children_first[i], num_children[i], nodes_per_level[i]);
+    }
+  }
+}
 
 void increase_counter(uint32_t (*restrict count), int (*restrict link_list), int target, int source){
   count[target]++;	

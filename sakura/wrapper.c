@@ -1,33 +1,5 @@
 #include "utils.h"
 
-void encodeParticles(int N, float * X, float * min, float *max, uint64_t *mcodes, int maxlev) {
-  uint32_t *codes = (uint32_t *)sakura_malloc(N, DIM * sizeof(uint32_t), "Hash code array");
-  int nbins = (1 << maxlev);
-  start_timer();
-  compute_quantization_codes_TL(codes, X, N, nbins, min, max);
-  stop_timer("Quantization");
-  start_timer();
-  morton_encoding_T(mcodes, codes, N);
-  stop_timer("Morton encoding");
-  free(codes);
-}
-
-void decomposeSpace(int N, uint64_t **mcodes, 
-		    uint32_t *permutation_vector, uint32_t *bit_map,
-		    int maxlev, int population_threshold) {
-  uint64_t *scodes = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Code buffer array");
-  uint32_t *index = (uint32_t *)sakura_malloc(N, sizeof(uint32_t), "Index vector");
-  start_timer();
-  build_tree(*mcodes, scodes, permutation_vector, 
-	     index, bit_map, N, maxlev, maxlev, 
-	     population_threshold);
-  stop_timer("Tree building");
-  uint64_t *tcodes = *mcodes;
-  *mcodes = scodes;
-  free(tcodes);
-  free(index);
-}
-
 int tree_formation(uint32_t *bit_map, uint64_t *scodes, 
 		   int *nodes_per_level, int **node_pointers, 
 		   int **num_children, int **children_first, 
