@@ -2,10 +2,10 @@
 #include "utils.h" 
 
 void cube(float *X, int N){
-  srand(NULL);
+  srand48(0);
   for(uint64_t i=0; i<N; i++){
     for(uint64_t j=0; j<DIM; j++){
-      X[i*LDIM + j] = (float)rand() / (float) RAND_MAX;
+      X[i*LDIM + j] = drand48();
     }
     X[i*LDIM + 3] = 1;
     X[i*LDIM + LDIM-1] = i;
@@ -13,7 +13,7 @@ void cube(float *X, int N){
 }
 
 void octant_uniform(float *X, int N){
-  srand48(NULL);
+  srand48(0);
   for(uint64_t i=0; i<N; i++){
     float th = (M_PI/2) * drand48();
     float ph = (M_PI/2) * drand48();
@@ -26,7 +26,7 @@ void octant_uniform(float *X, int N){
 }
 
 void plummer(float *X, int N){
-  srand48(NULL);
+  srand48(0);
   for(uint64_t i=0; i<N; i++){
     float X1 = drand48();
     float X2 = drand48();
