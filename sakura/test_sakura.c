@@ -48,30 +48,30 @@ int main(int argc, char** argv){
   int nodes_per_level[20];
   int **node_pointers = (int **)malloc(maxlev*sizeof(int *)); 
   int **num_children = (int **)malloc(maxlev*sizeof(int *)); 
-  int **children_first = (int **)malloc(maxlev*sizeof(int *)); 
+  int **c_count = (int **)malloc(maxlev*sizeof(int *)); 
   int **node_codes = (int **)malloc(maxlev*sizeof(int *));
   int nodes_per_level2[20];
   int **node_pointers2 = (int **)malloc(maxlev*sizeof(int *)); 
   int **num_children2 = (int **)malloc(maxlev*sizeof(int *)); 
-  int **children_first2 = (int **)malloc(maxlev*sizeof(int *)); 
+  int **c_count2 = (int **)malloc(maxlev*sizeof(int *)); 
   int **node_codes2 = (int **)malloc(maxlev*sizeof(int *));
   int height = tree_formation(bit_map, particle_codes, 
 			      nodes_per_level, node_pointers, 
-			      num_children, children_first, 
+			      num_children, c_count, 
 			      node_codes, maxlev, N);
   int height2 = tree_formation(bit_map2, particle_codes2, 
 			       nodes_per_level2, node_pointers2, 
-			       num_children2, children_first2, 
+			       num_children2, c_count2, 
 			       node_codes2, maxlev, N);
   int **f_list = (int **)malloc(height*sizeof(int *)); 
   int **n_list = (int **)malloc(height*sizeof(int *)); 
-  int **c_list = (int **)malloc(height*sizeof(int *));
+  int **s_list = (int **)malloc(height*sizeof(int *));
   uint32_t **n_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
   uint32_t **f_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
-  uint32_t **c_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
-  form_interaction_lists(node_codes, children_first, node_codes2, children_first2, 
-			 n_count, f_count, c_count,
-			 n_list, f_list, c_list,
+  uint32_t **s_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
+  form_interaction_lists(node_codes, c_count, node_codes2, c_count2, 
+			 n_count, f_count, s_count,
+			 n_list, f_list, s_list,
 			 nodes_per_level, nodes_per_level2, 
 			 height);
   int **expansions = (int **)malloc(height2*sizeof(int *));
@@ -85,7 +85,7 @@ int main(int argc, char** argv){
   int *leaf_populations = (int *)sakura_malloc(N, sizeof(int),"Leaf population array");
   leaf_populations[0:N] = 0;
   uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map2, N);
-  int charge = verify_tree_wrapper(expansions, children_first2,
+  int charge = verify_tree_wrapper(expansions, c_count2,
 				   node_pointers2, leaf_populations,
 				   nodes_per_level2[0], N);
   int ss = 0;
@@ -94,10 +94,10 @@ int main(int argc, char** argv){
   }
   printf("Tree %s\n", (charge) ? "PASS" : "FAIL");
   int pass = verify_interactions_wrapper_iterative_singlearray(expansions, interactions,
-							       children_first,
+							       c_count,
 							       n_count, n_list,
 							       f_count, f_list,
-							       c_count, c_list,
+							       s_count, s_list,
 							       nodes_per_level, N, height);
   printf("List %s\n", (pass) ? "PASS" : "FAIL");
   uint64_t inter_list_edges = 0;
@@ -114,39 +114,39 @@ int main(int argc, char** argv){
   for(int i=0; i<height; i++){
     free(n_count[i]);
     free(f_count[i]);
-    free(c_count[i]);
+    free(s_count[i]);
     free(n_list[i]);
     free(f_list[i]);
-    free(c_list[i]);
+    free(s_list[i]);
   }
 
   free(n_count);
   free(f_count);
-  free(c_count);
+  free(s_count);
   free(n_list);
   free(f_list);
-  free(c_list);
+  free(s_list);
   for(int i=0; i<height; i++){
     free(node_pointers[i]);
     free(num_children[i]);
-    free(children_first[i]);
+    free(c_count[i]);
     free(node_codes[i]);
   }
   for(int i=0; i<height2; i++){
     free(node_pointers2[i]);
     free(num_children2[i]);
-    free(children_first2[i]);
+    free(c_count2[i]);
     free(node_codes2[i]);
     free(expansions[i]);
     free(interactions[i]);
   }
   free(node_pointers);
   free(num_children);
-  free(children_first);
+  free(c_count);
   free(node_codes);
   free(node_pointers2);
   free(num_children2);
-  free(children_first2);
+  free(c_count2);
   free(node_codes2);
   free(expansions);
   free(interactions);
