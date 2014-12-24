@@ -55,9 +55,6 @@ int tree_formation(uint32_t *bit_map, uint64_t *particle_codes,
 		   int **num_chuildren, int **children_first, 
 		   int **codes, int maxlevel, int N);
 uint64_t find_leaf_populations(int *populations, uint32_t* bit_map, int N);
-int verify_tree(int **expansions, int** c_count2,
-		int** node_pointers2, int *leaf_populations,
-		int node_id, int level);
 void form_interaction_lists(int **node_codes, int **children_first,
 			    int **node_codes2, int **children_first2, 
 			    uint32_t (**restrict nn_count), 
@@ -69,4 +66,6 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			    int (*restrict nodes_per_level), 
 			    int (*restrict nodes_per_level2), 
 			    int height);
-
+int upward_pass(int **expansions, int** c_count2,
+		int** node_pointers2, int *leaf_populations,
+		int node_id, int level);
