@@ -73,8 +73,12 @@ int main(int argc, char** argv){
 			 n_count, f_count, s_count, n_list, f_list, s_list,
 			 nodes_per_level, nodes_per_level2, height);
   int **expansions = (int **)malloc(height2*sizeof(int *));
+  int **interactions = (int **)malloc(height*sizeof(int *));
   for(int i=0; i<height2; i++){
-    expansions[i] = (int *)sakura_calloc(nodes_per_level2[i],sizeof(int),"Node expansions");
+    expansions[i] = (int *)sakura_calloc(nodes_per_level2[i],sizeof(int),"Multipole expansions");
+  }
+  for(int i=0; i<height; i++){
+    interactions[i] = (int *)sakura_calloc(nodes_per_level[i],sizeof(int),"Local expansions");
   }
   int *leaf_populations = (int *)sakura_calloc(N, sizeof(int),"Leaf population array");
   uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map, N);
@@ -91,7 +95,6 @@ int main(int argc, char** argv){
   for(int i=1; i<height; i++){
     nodes_sum[i] = nodes_sum[i-1] + nodes_per_level[i];
   }
-  int *interactions = (int *)calloc(nodes_sum[height-1],sizeof(int));
   int pass = 1;
   int level = 0;
   for(int glb_node_id=0; glb_node_id<nodes_sum[height-1]; glb_node_id++){
@@ -109,34 +112,32 @@ int main(int argc, char** argv){
     int s_begin = (node_id==0) ? 0 : s_count[level][node_id-1];
     int s_end = s_count[level][node_id];
     for(int i=n_begin; i<n_end; i++){ // P2P
-      interactions[glb_node_id] += expansions[level][n_list[level][i]];
+      interactions[level][node_id] += expansions[level][n_list[level][i]];
     }
     for(int i=f_begin; i<f_end; i++){ // M2L
-      interactions[glb_node_id] += expansions[level][f_list[level][i]];
+      interactions[level][node_id] += expansions[level][f_list[level][i]];
     }
     if(level<height){
       int offset = nodes_sum[level];
       for(int i=c_begin; i<c_end; i++){
 	for(int j=s_begin; j<s_end; j++){ // M2L
-	  interactions[i+offset] += expansions[level+1][s_list[level][j]];
+	  interactions[level+1][i] += expansions[level+1][s_list[level][j]];
 	}
       }
     }
     if(level<height){
       int offset = nodes_sum[level];
       for(int i=c_begin; i<c_end; i++){ // L2L
-	interactions[i+offset] += interactions[glb_node_id];
+	interactions[level+1][i] += interactions[level][node_id];
       }
     }else{
-      if(interactions[glb_node_id] == N){
+      if(interactions[level][node_id] == N){
 	pass &= 1;
       }else{
 	pass &= 0;
       }
     }
   }
-  free(nodes_sum);
-  free(interactions);
   printf("List %s\n", (pass) ? "PASS" : "FAIL");
   uint64_t inter_list_edges = 0;
   uint64_t num_tree_nodes = 0;
@@ -169,6 +170,7 @@ int main(int argc, char** argv){
     free(num_children[i]);
     free(c_count[i]);
     free(node_codes[i]);
+    free(interactions[i]);
   }
   for(int i=0; i<height2; i++){
     free(node_pointers2[i]);
@@ -185,7 +187,9 @@ int main(int argc, char** argv){
   free(num_children2);
   free(c_count2);
   free(node_codes2);
+  free(nodes_sum);
   free(expansions);
+  free(interactions);
   free(leaf_populations);
   free(bit_map);
   free(particle_codes);
