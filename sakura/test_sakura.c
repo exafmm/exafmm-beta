@@ -98,9 +98,7 @@ int main(int argc, char** argv){
   int pass = 1;
   int level = 0;
   for(int glb_node_id=0; glb_node_id<nodes_sum[height-1]; glb_node_id++){
-    if(glb_node_id>=nodes_sum[level]){
-      level++;
-    }
+    if(glb_node_id>=nodes_sum[level]) level++;
     int offset = (level==0) ? 0 : nodes_sum[level-1];
     int node_id = glb_node_id - offset;
     int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
@@ -125,6 +123,14 @@ int main(int argc, char** argv){
 	}
       }
     }
+  }
+  level = 0;
+  for(int glb_node_id=0; glb_node_id<nodes_sum[height-1]; glb_node_id++){
+    if(glb_node_id>=nodes_sum[level]) level++;
+    int offset = (level==0) ? 0 : nodes_sum[level-1];
+    int node_id = glb_node_id - offset;
+    int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
+    int c_end = c_count[level][node_id];
     if(level<height){
       int offset = nodes_sum[level];
       for(int i=c_begin; i<c_end; i++){ // L2L

@@ -13,7 +13,7 @@ void upward_pass(int **expansions, int** c_count2, int** node_pointers2,
   }
 }
 
-void downward_pass(int **expansions, int** c_count, int** node_pointers,
+void downward_pass(int **interactions, int** c_count, int** node_pointers,
 		 int *leaf_populations, int node_id, int level){
   int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
   int c_end = c_count[level][node_id];
@@ -21,8 +21,8 @@ void downward_pass(int **expansions, int** c_count, int** node_pointers,
   if(c_size==0){ // L2P
   }else{ // L2L
     for(int i=c_begin; i<c_end; i++){
-      expansions[level][node_id] += expansions[level+1][i];
-      downward_pass(expansions, c_count, node_pointers, leaf_populations, i, level+1);
+      interactions[level+1][i] += interactions[level][node_id];
+      downward_pass(interactions, c_count, node_pointers, leaf_populations, i, level+1);
     }
   }
 }
