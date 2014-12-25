@@ -136,13 +136,13 @@ int main(int argc, char** argv){
       for(int i=c_begin; i<c_end; i++){ // L2L
 	interactions[level+1][i] += interactions[level][node_id];
       }
-    }else{
-      if(interactions[level][node_id] == N){
-	pass &= 1;
-      }else{
-	pass &= 0;
-      }
     }
+  }
+  int node_id = nodes_per_level[height-1] - 1;
+  if(interactions[height-1][node_id] == N){
+    pass &= 1;
+  }else{
+    pass &= 0;
   }
   printf("List %s\n", (pass) ? "PASS" : "FAIL");
   uint64_t inter_list_edges = 0;
