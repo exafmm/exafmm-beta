@@ -124,8 +124,13 @@ int main(int argc, char** argv){
     for(int i=f_begin; i<f_end; i++){ // M2L
       interactions[glb_node_id] += expansions[level][f_list[level][i]];
     }
-    for(int i=s_begin; i<s_end; i++){ // M2L
-      interactions[glb_node_id] += expansions[level+1][s_list[level][i]];
+    if(level<height){
+      int offset = nodes_sum[level];
+      for(int i=c_begin; i<c_end; i++){
+	for(int j=s_begin; j<s_end; j++){ // M2L
+	  interactions[i+offset] += expansions[level+1][s_list[level][j]];
+	}
+      }
     }
     if(level<height){
       int offset = nodes_sum[level];
