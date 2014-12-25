@@ -118,18 +118,18 @@ int main(int argc, char** argv){
     int f_end = f_count[level][node_id];
     int s_begin = (node_id==0) ? 0 : s_count[level][node_id-1];
     int s_end = s_count[level][node_id];
-    for(int i=n_begin; i<n_end; i++){
+    for(int i=n_begin; i<n_end; i++){ // P2P
       interactions[glb_node_id] += expansions[level][n_list[level][i]];
     }
-    for(int i=f_begin; i<f_end; i++){
+    for(int i=f_begin; i<f_end; i++){ // M2L
       interactions[glb_node_id] += expansions[level][f_list[level][i]];
     }
-    for(int i=s_begin; i<s_end; i++){
+    for(int i=s_begin; i<s_end; i++){ // M2L
       interactions[glb_node_id] += expansions[level+1][s_list[level][i]];
     }
     if(level<height){
       int offset = nodes_sum[level];
-      for(int i=c_begin; i<c_end; i++){
+      for(int i=c_begin; i<c_end; i++){ // L2L
 	interactions[i+offset] += interactions[glb_node_id];
       }
     }else{
