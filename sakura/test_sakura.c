@@ -70,13 +70,11 @@ int main(int argc, char** argv){
   uint32_t **f_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
   uint32_t **s_count = (uint32_t **)malloc(height*sizeof(uint32_t *));
   form_interaction_lists(node_codes, c_count, node_codes2, c_count2, 
-			 n_count, f_count, s_count,
-			 n_list, f_list, s_list,
-			 nodes_per_level, nodes_per_level2, 
-			 height);
+			 n_count, f_count, s_count, n_list, f_list, s_list,
+			 nodes_per_level, nodes_per_level2, height);
   int **expansions = (int **)malloc(height2*sizeof(int *));
   for(int i=0; i<height2; i++){
-    expansions[i] = (int *)sakura_malloc(nodes_per_level2[i],sizeof(int),"Node expansions");
+    expansions[i] = (int *)sakura_calloc(nodes_per_level2[i],sizeof(int),"Node expansions");
   }
   int *leaf_populations = (int *)sakura_malloc(N, sizeof(int),"Leaf population array");
   leaf_populations[0:N] = 0;
@@ -86,11 +84,7 @@ int main(int argc, char** argv){
     upward_pass(expansions, c_count2, node_pointers2, leaf_populations, i, 0);
     charge += expansions[0][i];
   }
-  int ss = 0;
-  for(int i=0; i<N; i++){
-    ss += leaf_populations[i];
-  }
-  printf("Tree %s\n", (charge == N) ? "PASS" : "FAIL");
+  printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
   int *nodes_sum = (int *)malloc(height*sizeof(int));
   nodes_sum[0] = nodes_per_level[0];
   for(int i=1; i<height; i++){
