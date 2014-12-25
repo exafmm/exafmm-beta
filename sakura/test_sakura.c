@@ -95,7 +95,6 @@ int main(int argc, char** argv){
   for(int i=1; i<height; i++){
     nodes_sum[i] = nodes_sum[i-1] + nodes_per_level[i];
   }
-  int pass = 1;
   int level = 0;
   for(int glb_node_id=0; glb_node_id<nodes_sum[height-1]; glb_node_id++){
     if(glb_node_id>=nodes_sum[level]) level++;
@@ -124,27 +123,12 @@ int main(int argc, char** argv){
       }
     }
   }
-  level = 0;
-  for(int glb_node_id=0; glb_node_id<nodes_sum[height-1]; glb_node_id++){
-    if(glb_node_id>=nodes_sum[level]) level++;
-    int offset = (level==0) ? 0 : nodes_sum[level-1];
-    int node_id = glb_node_id - offset;
-    int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
-    int c_end = c_count[level][node_id];
-    if(level<height){
-      int offset = nodes_sum[level];
-      for(int i=c_begin; i<c_end; i++){ // L2L
-	interactions[level+1][i] += interactions[level][node_id];
-      }
-    }
+  for(int i=0; i<nodes_per_level[0]; i++){
+    downward_pass(interactions, c_count, node_pointers,
+		  leaf_populations, i, 0);
   }
   int node_id = nodes_per_level[height-1] - 1;
-  if(interactions[height-1][node_id] == N){
-    pass &= 1;
-  }else{
-    pass &= 0;
-  }
-  printf("List %s\n", (pass) ? "PASS" : "FAIL");
+  printf("List %s\n", (interactions[height-1][node_id] == N ? "PASS" : "FAIL"));
   uint64_t inter_list_edges = 0;
   uint64_t num_tree_nodes = 0;
   for(int i=0;i<height; i++){
