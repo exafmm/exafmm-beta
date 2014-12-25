@@ -90,7 +90,7 @@ void parent_children_connection_singlepass(int (**restrict node_pointers),
 	decode_morton_code(&node_codes[j][3*cursor[j]],
 			   &node_codes[j][3*cursor[j]+1],
 			   &node_codes[j][3*cursor[j]+2],
-			   leaf_morton_codes[i] >> (3*(maxlev - j -1)) );
+			   leaf_morton_codes[i] >> (3*(maxlev - j -1)));
 	if(cursor[j]>block_first[j]){
 	  num_children[j][cursor[j]-1] = child_counter[j+1];
 	}else{

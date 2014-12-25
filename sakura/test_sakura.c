@@ -76,12 +76,13 @@ int main(int argc, char** argv){
   for(int i=0; i<height2; i++){
     expansions[i] = (int *)sakura_calloc(nodes_per_level2[i],sizeof(int),"Node expansions");
   }
-  int *leaf_populations = (int *)sakura_malloc(N, sizeof(int),"Leaf population array");
-  leaf_populations[0:N] = 0;
-  uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map2, N);
+  int *leaf_populations = (int *)sakura_calloc(N, sizeof(int),"Leaf population array");
+  uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map, N);
+  int *leaf_populations2 = (int *)sakura_calloc(N, sizeof(int),"Leaf population array");
+  uint64_t numleaves2 = find_leaf_populations(leaf_populations2, bit_map2, N);
   int charge = 0;
   for(int i=0; i<nodes_per_level2[0]; i++){
-    upward_pass(expansions, c_count2, node_pointers2, leaf_populations, i, 0);
+    upward_pass(expansions, c_count2, node_pointers2, leaf_populations2, i, 0);
     charge += expansions[0][i];
   }
   printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
@@ -189,6 +190,7 @@ int main(int argc, char** argv){
   free(bit_map);
   free(particle_codes);
   free(permutation_vector);
+  free(leaf_populations2);
   free(bit_map2);
   free(particle_codes2);
   free(permutation_vector2);
