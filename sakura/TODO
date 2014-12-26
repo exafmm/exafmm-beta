@@ -1,4 +1,4 @@
-Use downward_pass
 Set center of expansion
 expansions -> multipole
 interactions -> local
+increase array dimensions of M and L

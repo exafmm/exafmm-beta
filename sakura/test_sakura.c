@@ -95,27 +95,22 @@ int main(int argc, char** argv){
   for(int i=1; i<height; i++){
     nodes_sum[i] = nodes_sum[i-1] + nodes_per_level[i];
   }
-  int level = 0;
-  for(int glb_node_id=0; glb_node_id<nodes_sum[height-1]; glb_node_id++){
-    if(glb_node_id>=nodes_sum[level]) level++;
-    int offset = (level==0) ? 0 : nodes_sum[level-1];
-    int node_id = glb_node_id - offset;
-    int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
-    int c_end = c_count[level][node_id];
-    int n_begin = (node_id==0)? 0 : n_count[level][node_id-1];
-    int n_end = n_count[level][node_id];
-    int f_begin = (node_id==0) ? 0 : f_count[level][node_id-1];
-    int f_end = f_count[level][node_id];
-    int s_begin = (node_id==0) ? 0 : s_count[level][node_id-1];
-    int s_end = s_count[level][node_id];
-    for(int i=n_begin; i<n_end; i++){ // P2P
-      interactions[level][node_id] += expansions[level][n_list[level][i]];
-    }
-    for(int i=f_begin; i<f_end; i++){ // M2L
-      interactions[level][node_id] += expansions[level][f_list[level][i]];
-    }
-    if(level<height){
-      int offset = nodes_sum[level];
+  for(int level=0; level<height; level++){
+    for(int node_id=0; node_id<nodes_per_level[level]; node_id++){
+      int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
+      int c_end = c_count[level][node_id];
+      int n_begin = (node_id==0)? 0 : n_count[level][node_id-1];
+      int n_end = n_count[level][node_id];
+      int f_begin = (node_id==0) ? 0 : f_count[level][node_id-1];
+      int f_end = f_count[level][node_id];
+      int s_begin = (node_id==0) ? 0 : s_count[level][node_id-1];
+      int s_end = s_count[level][node_id];
+      for(int i=n_begin; i<n_end; i++){ // P2P
+	interactions[level][node_id] += expansions[level][n_list[level][i]];
+      }
+      for(int i=f_begin; i<f_end; i++){ // M2L
+	interactions[level][node_id] += expansions[level][f_list[level][i]];
+      }
       for(int i=c_begin; i<c_end; i++){
 	for(int j=s_begin; j<s_end; j++){ // M2L
 	  interactions[level+1][i] += expansions[level+1][s_list[level][j]];
