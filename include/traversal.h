@@ -341,11 +341,11 @@ public:
 #if COUNT
     if (logger::verbose) {                                      // If verbose flag is true
       std::cout << "--- Traversal stats --------------" << std::endl// Print title
-		<< std::setw(stringLength) << std::left         //  Set format
+		<< std::setw(logger::stringLength) << std::left         //  Set format
 		<< "P2P calls"  << " : "                        //  Print title
 		<< std::setprecision(0) << std::fixed           //  Set format
 		<< numP2P << std::endl                          //  Print number of P2P calls
-		<< std::setw(stringLength) << std::left         //  Set format
+		<< std::setw(logger::stringLength) << std::left         //  Set format
 		<< "M2L calls"  << " : "                        //  Print title
 		<< std::setprecision(0) << std::fixed           //  Set format
 		<< numM2L << std::endl;                         //  Print number of M2L calls
