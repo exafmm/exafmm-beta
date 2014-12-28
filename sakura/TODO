@@ -1,4 +1,5 @@
 Set center of expansion
+Proximity check for P2M kernels
 expansions -> multipole
 interactions -> local
 increase array dimensions of M and L

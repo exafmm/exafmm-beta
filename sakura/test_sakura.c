@@ -63,8 +63,8 @@ int main(int argc, char** argv){
 			       nodes_per_level2, node_pointers2, 
 			       num_children2, c_count2, 
 			       node_codes2, maxlev, N);
-  int **f_list = (int **)malloc(height*sizeof(int *)); 
   int **n_list = (int **)malloc(height*sizeof(int *)); 
+  int **f_list = (int **)malloc(height*sizeof(int *)); 
   int **s_list = (int **)malloc(height*sizeof(int *));
   uint32_t **n_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
   uint32_t **f_count = (uint32_t **)malloc(height*sizeof(uint32_t *)); 
@@ -86,7 +86,7 @@ int main(int argc, char** argv){
   uint64_t numleaves2 = find_leaf_populations(leaf_populations2, bit_map2, N);
   int charge = 0;
   for(int i=0; i<nodes_per_level2[0]; i++){
-    upward_pass(expansions, c_count2, node_pointers2, leaf_populations2, i, 0);
+    upward_pass(X2, expansions, c_count2, node_pointers2, leaf_populations2, i, 0);
     charge += expansions[0][i];
   }
   printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
@@ -119,7 +119,7 @@ int main(int argc, char** argv){
     }
   }
   for(int i=0; i<nodes_per_level[0]; i++){
-    downward_pass(interactions, c_count, node_pointers,
+    downward_pass(X, interactions, c_count, node_pointers,
 		  leaf_populations, i, 0);
   }
   int node_id = nodes_per_level[height-1] - 1;
