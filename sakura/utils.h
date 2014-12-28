@@ -66,7 +66,7 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			    int (*restrict nodes_per_level), 
 			    int (*restrict nodes_per_level2), 
 			    int height);
-int upward_pass(float *X2, int **expansions, int** c_count2, int** node_pointers2,
-		int *leaf_populations, int node_id, int level);
-void downward_pass(float *X, int **interactions, int** c_count, int** node_pointers,
-		   int *leaf_populations, int node_id, int level);
+void upward_pass(float *X2, int **expansions, int **node_codes2, int** c_count2, int** node_pointers2,
+		 int *leaf_populations, float *Xmin, float *Xmax, int node_id, int level);
+void downward_pass(float *X, int **interactions, int **node_codes, int** c_count, int** node_pointers,
+		   int *leaf_populations, float *Xmin, float *Xmax, int node_id, int level);

@@ -19,18 +19,18 @@ int main(int argc, char** argv){
   create_dataset(X2, N, dist);
   stop_timer("Create data");
   start_timer();
-  float min[DIM], max[DIM];
+  float Xmin[DIM], Xmax[DIM];
   for(int i=0; i<DIM; i++){
-    min[i] = __sec_reduce_min(X[i:N:LDIM]);
-    max[i] = __sec_reduce_max(X[i:N:LDIM]);
+    Xmin[i] = __sec_reduce_min(X[i:N:LDIM]);
+    Xmax[i] = __sec_reduce_max(X[i:N:LDIM]);
   }
-  float min2[DIM], max2[DIM];
+  float Xmin2[DIM], Xmax2[DIM];
   for(int i=0; i<DIM; i++){
-    min2[i] = __sec_reduce_min(X2[i:N:LDIM]);
-    max2[i] = __sec_reduce_max(X2[i:N:LDIM]);
+    Xmin2[i] = __sec_reduce_min(X2[i:N:LDIM]);
+    Xmax2[i] = __sec_reduce_max(X2[i:N:LDIM]);
   }
-  min[:] = MIN(min[:], min2[:]);
-  max[:] = MAX(max[:], max2[:]);
+  Xmin[:] = MIN(Xmin[:], Xmin2[:]);
+  Xmax[:] = MAX(Xmax[:], Xmax2[:]);
   stop_timer("Box bounds");
   uint64_t *particle_codes = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Morton code array");
   uint32_t *bit_map = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map");
@@ -38,10 +38,10 @@ int main(int argc, char** argv){
   uint64_t *particle_codes2 = (uint64_t *)sakura_malloc(N, sizeof(uint64_t), "Morton code array");
   uint32_t *bit_map2 = (uint32_t *)sakura_calloc(N, sizeof(uint32_t), "Bit map");
   uint32_t *permutation_vector2 = (uint32_t *)sakura_malloc(N, sizeof(uint32_t),"Permutation vector");
-  encodeParticles(N, X, min, max, particle_codes, maxlev);
+  encodeParticles(N, X, Xmin, Xmax, particle_codes, maxlev);
   decomposeSpace(N, &particle_codes, permutation_vector, bit_map, maxlev, population_threshold);
   relocateParticles(N, &X, permutation_vector);
-  encodeParticles(N, X2, min, max, particle_codes2, maxlev);
+  encodeParticles(N, X2, Xmin, Xmax, particle_codes2, maxlev);
   decomposeSpace(N, &particle_codes2, permutation_vector2, bit_map2, maxlev, population_threshold);
   relocateParticles(N, &X2, permutation_vector2);
 
@@ -86,7 +86,8 @@ int main(int argc, char** argv){
   uint64_t numleaves2 = find_leaf_populations(leaf_populations2, bit_map2, N);
   int charge = 0;
   for(int i=0; i<nodes_per_level2[0]; i++){
-    upward_pass(X2, expansions, c_count2, node_pointers2, leaf_populations2, i, 0);
+    upward_pass(X2, expansions, node_codes2, c_count2, node_pointers2, leaf_populations2,
+		Xmin, Xmax, i, 0);
     charge += expansions[0][i];
   }
   printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
@@ -119,8 +120,8 @@ int main(int argc, char** argv){
     }
   }
   for(int i=0; i<nodes_per_level[0]; i++){
-    downward_pass(X, interactions, c_count, node_pointers,
-		  leaf_populations, i, 0);
+    downward_pass(X, interactions, node_codes, c_count, node_pointers, leaf_populations,
+		  Xmin, Xmax, i, 0);
   }
   int node_id = nodes_per_level[height-1] - 1;
   printf("List %s\n", (interactions[height-1][node_id] == N ? "PASS" : "FAIL"));

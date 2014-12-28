@@ -12,17 +12,17 @@ void quantize_serial(uint32_t (*restrict codes), float (*restrict X),
 }
 
 void compute_quantization_codes_TL(uint32_t (*restrict codes), float (*restrict X), int N,
-				   int nbins, float (*restrict min),
-				   float (*restrict max)){
+				   int nbins, float (*restrict Xmin),
+				   float (*restrict Xmax)){
   float ranges[DIM];
   float qstep;
-  ranges[:] = fabs(max[0:DIM] - min[0:DIM]);
+  ranges[:] = fabs(Xmax[0:DIM] - Xmin[0:DIM]);
   ranges[:] *= 1.00001;
   qstep = __sec_reduce_max(ranges[:]) / (float) nbins;
   int M = (int)ceil((float)N / (float)NP);
   for(uint64_t i=0; i<NP; i++){
     uint64_t size = ( (i+1)*M < N ) ? M : N - i*M;
-    cilk_spawn quantize_serial(&codes[i*M*DIM], &X[i*M*LDIM], min, qstep, size);
+    cilk_spawn quantize_serial(&codes[i*M*DIM], &X[i*M*LDIM], Xmin, qstep, size);
   }
 }
 
@@ -48,11 +48,11 @@ void morton_encoding_T(uint64_t (*restrict mcodes), uint32_t (*restrict codes), 
   }
 }
 
-void encodeParticles(int N, float * X, float * min, float *max, uint64_t *mcodes, int maxlev) {
+void encodeParticles(int N, float * X, float * Xmin, float *Xmax, uint64_t *mcodes, int maxlev) {
   uint32_t *codes = (uint32_t *)sakura_malloc(N, DIM * sizeof(uint32_t), "Hash code array");
   int nbins = (1 << maxlev);
   start_timer();
-  compute_quantization_codes_TL(codes, X, N, nbins, min, max);
+  compute_quantization_codes_TL(codes, X, N, nbins, Xmin, Xmax);
   stop_timer("Quantization");
   start_timer();
   morton_encoding_T(mcodes, codes, N);
