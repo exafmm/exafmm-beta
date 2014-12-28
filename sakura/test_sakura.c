@@ -86,7 +86,7 @@ int main(int argc, char** argv){
   uint64_t numleaves2 = find_leaf_populations(leaf_populations2, bit_map2, N);
   int charge = 0;
   for(int i=0; i<nodes_per_level2[0]; i++){
-    upward_pass(X2, expansions, particle_codes2, node_codes2, c_count2, node_pointers2, leaf_populations2,
+    upward_pass(X2, expansions, node_codes2, c_count2, node_pointers2, leaf_populations2,
 		Xmin, Xmax, i, 0);
     charge += expansions[0][i];
   }
