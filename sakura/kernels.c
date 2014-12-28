@@ -1,6 +1,7 @@
 #include "utils.h"
 
-void upward_pass(float *X2, int **expansions, int **node_codes2, int** c_count2, int** node_pointers2,
+void upward_pass(float *X2, int **expansions, uint64_t *particle_codes2,
+		 int **node_codes2, int** c_count2, int** node_pointers2,
 		 int *leaf_populations2, float *Xmin, float *Xmax, int node_id, int level){
   int c_begin = (node_id==0) ? 0 : c_count2[level][node_id-1];
   int c_end = c_count2[level][node_id];
@@ -19,13 +20,14 @@ void upward_pass(float *X2, int **expansions, int **node_codes2, int** c_count2,
     for(int i=l_begin; i<l_end; i++){
       for(int d=0; d<3; d++) {
 	dX[d] = X2[LDIM*i+d] - Xnode[d];
-	float radius = (Xmax[d] - Xmin[d]) / nbins / 2;
-	if(dX[d]>radius) printf("%d %d %f: %f\n",i,d,X2[LDIM*i+d],Xnode[d]);
+	float radius = (Xmax[d] - Xmin[d]) / nbins / 2 * 1.1;
+	uint64_t mcode = particle_codes2[i] >> (3*(20 - level -1));
+	if(dX[d]*dX[d]>radius*radius) printf("%d %d %lu %f: %f\n",i,d,mcode,X2[LDIM*i+d],Xnode[d]);
       }
     }
   }else{ // M2M
     for(int i=c_begin; i<c_end; i++){
-      upward_pass(X2, expansions, node_codes2, c_count2, node_pointers2, leaf_populations2,
+      upward_pass(X2, expansions, particle_codes2, node_codes2, c_count2, node_pointers2, leaf_populations2,
 		  Xmin, Xmax, i, level+1);
       expansions[level][node_id] += expansions[level+1][i];
     }
