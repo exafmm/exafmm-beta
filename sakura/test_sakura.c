@@ -72,13 +72,13 @@ int main(int argc, char** argv){
   form_interaction_lists(node_codes, c_count, node_codes2, c_count2, 
 			 n_count, f_count, s_count, n_list, f_list, s_list,
 			 nodes_per_level, nodes_per_level2, height);
-  int **multipoles = (int **)malloc(height2*sizeof(int *));
-  int **locals = (int **)malloc(height*sizeof(int *));
+  int (**multipoles)[MTERM] = (int (**)[MTERM])malloc(height2*sizeof(int (*)[MTERM]));
+  int (**locals)[LTERM] = (int (**)[LTERM])malloc(height*sizeof(int (*)[LTERM]));
   for(int i=0; i<height2; i++){
-    multipoles[i] = (int *)sakura_calloc(nodes_per_level2[i],sizeof(int),"Multipole multipoles");
+    multipoles[i] = (int (*)[MTERM])sakura_calloc(nodes_per_level2[i],sizeof(int[MTERM]),"Multipole multipoles");
   }
   for(int i=0; i<height; i++){
-    locals[i] = (int *)sakura_calloc(nodes_per_level[i],sizeof(int),"Local multipoles");
+    locals[i] = (int (*)[LTERM])sakura_calloc(nodes_per_level[i],sizeof(int[LTERM]),"Local multipoles");
   }
   int *leaf_populations = (int *)sakura_calloc(N, sizeof(int),"Leaf population array");
   uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map, N);
@@ -88,7 +88,7 @@ int main(int argc, char** argv){
   for(int i=0; i<nodes_per_level2[0]; i++){
     upward_pass(X2, multipoles, node_codes2, c_count2, node_pointers2, leaf_populations2,
 		Xmin, Xmax, i, 0);
-    charge += multipoles[0][i];
+    charge += multipoles[0][i][0];
   }
   printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
   int *nodes_sum = (int *)malloc(height*sizeof(int));
@@ -107,14 +107,14 @@ int main(int argc, char** argv){
       int s_begin = (node_id==0) ? 0 : s_count[level][node_id-1];
       int s_end = s_count[level][node_id];
       for(int i=n_begin; i<n_end; i++){ // P2P
-	locals[level][node_id] += multipoles[level][n_list[level][i]];
+	locals[level][node_id][0] += multipoles[level][n_list[level][i]][0];
       }
       for(int i=f_begin; i<f_end; i++){ // M2L
-	locals[level][node_id] += multipoles[level][f_list[level][i]];
+	locals[level][node_id][0] += multipoles[level][f_list[level][i]][0];
       }
       for(int i=c_begin; i<c_end; i++){
 	for(int j=s_begin; j<s_end; j++){ // M2L
-	  locals[level+1][i] += multipoles[level+1][s_list[level][j]];
+	  locals[level+1][i][0] += multipoles[level+1][s_list[level][j]][0];
 	}
       }
     }
@@ -124,7 +124,7 @@ int main(int argc, char** argv){
 		  Xmin, Xmax, i, 0);
   }
   int node_id = nodes_per_level[height-1] - 1;
-  printf("List %s\n", (locals[height-1][node_id] == N ? "PASS" : "FAIL"));
+  printf("List %s\n", (locals[height-1][node_id][0] == N ? "PASS" : "FAIL"));
   uint64_t inter_list_edges = 0;
   uint64_t num_tree_nodes = 0;
   for(int i=0;i<height; i++){
