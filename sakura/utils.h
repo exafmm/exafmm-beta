@@ -8,7 +8,6 @@
 #define NP3 64
 #define PP 6
 #define uint uint32_t
-#define real_t float
 
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(a,b) (((a)>(b)) ? (a) : (b))
@@ -71,9 +70,9 @@ void form_interaction_lists(int **node_codes, int **children_first,
 			    int (*restrict nodes_per_level), 
 			    int (*restrict nodes_per_level2), 
 			    int height);
-void upward_pass(float *X2, int (**multipoles)[MTERM], int **node_codes2, int** c_count2,
+void upward_pass(float *X2, int (**Multipole)[MTERM], int **node_codes2, int** c_count2,
 		 int** node_pointers2, int *leaf_populations,
 		 float *Xmin, float *Xmax, int node_id, int level);
-void downward_pass(float *X, int (**locals)[LTERM], int **node_codes, int** c_count,
+void downward_pass(float *X, int (**Local)[LTERM], int **node_codes, int** c_count,
 		   int** node_pointers, int *leaf_populations,
 		   float *Xmin, float *Xmax, int node_id, int level);
