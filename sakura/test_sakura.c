@@ -72,13 +72,15 @@ int main(int argc, char** argv){
   form_interaction_lists(node_codes, c_count, node_codes2, c_count2, 
 			 n_count, f_count, s_count, n_list, f_list, s_list,
 			 nodes_per_level, nodes_per_level2, height);
-  int (**Multipole)[MTERM] = (int (**)[MTERM])malloc(height2*sizeof(int (*)[MTERM]));
-  int (**Local)[LTERM] = (int (**)[LTERM])malloc(height*sizeof(int (*)[LTERM]));
+  float (**Multipole)[MTERM] = (float (**)[MTERM])malloc(height2*sizeof(float (*)[MTERM]));
+  float (**Local)[LTERM] = (float (**)[LTERM])malloc(height*sizeof(float (*)[LTERM]));
   for(int i=0; i<height2; i++){
-    Multipole[i] = (int (*)[MTERM])sakura_calloc(nodes_per_level2[i],sizeof(int[MTERM]),"Multipole Multipole");
+    Multipole[i] = (float (*)[MTERM])sakura_calloc(nodes_per_level2[i],
+						   sizeof(float[MTERM]),"Multipole Multipole");
   }
   for(int i=0; i<height; i++){
-    Local[i] = (int (*)[LTERM])sakura_calloc(nodes_per_level[i],sizeof(int[LTERM]),"Local Multipole");
+    Local[i] = (float (*)[LTERM])sakura_calloc(nodes_per_level[i],
+					       sizeof(float[LTERM]),"Local Multipole");
   }
   int *leaf_populations = (int *)sakura_calloc(N, sizeof(int),"Leaf population array");
   uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map, N);
@@ -124,7 +126,7 @@ int main(int argc, char** argv){
 		  Xmin, Xmax, i, 0);
   }
   int node_id = nodes_per_level[height-1] - 1;
-  printf("List %s\n", (Local[height-1][node_id][0] == N ? "PASS" : "FAIL"));
+  printf("List %s\n", ((Local[height-1][node_id][0] - N) < 0.1 ? "PASS" : "FAIL"));
   uint64_t inter_list_edges = 0;
   uint64_t num_tree_nodes = 0;
   for(int i=0;i<height; i++){
