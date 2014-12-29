@@ -76,7 +76,8 @@ void upward_pass(float *X2, float (**Multipole)[MTERM], int **node_codes2,
 void evaluation(float (**Multipole)[MTERM], float (**Local)[LTERM],
 		int *nodes_per_level, int **node_codes, int **node_codes2,
 		int **c_count, int **n_list, uint32_t **n_count,
-		int **f_list, uint32_t **f_count, int **s_list, uint32_t **s_count, int height);
+		int **f_list, uint32_t **f_count, int **s_list, uint32_t **s_count,
+		float *Xmin, float *Xmax, int height);
 void downward_pass(float *X, float (**Local)[LTERM], int **node_codes,
 		   int** c_count, int** node_pointers, int *leaf_populations,
 		   float *Xmin, float *Xmax, int node_id, int level);

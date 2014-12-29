@@ -48,7 +48,7 @@ void upward_pass(float *X2, float (**Multipole)[MTERM], int **node_codes2,
       float M[MTERM], C[LTERM];
       C[0] = 1;
       powerM(C,dX);
-      for(int m=0; m<MTERM; m++) {
+      for(int m=0; m<MTERM; m++){
 	M[m] = Multipole[level+1][i][m];
 	Multipole[level][node_id][m] += C[m] * M[0];
       }
@@ -60,9 +60,15 @@ void upward_pass(float *X2, float (**Multipole)[MTERM], int **node_codes2,
 void evaluation(float (**Multipole)[MTERM], float (**Local)[LTERM],
 		int *nodes_per_level, int **node_codes, int **node_codes2,
 		int **c_count, int **n_list, uint32_t **n_count,
-		int **f_list, uint32_t **f_count, int **s_list, uint32_t **s_count, int height){
-  float Xtarget[DIM], Xsource[DIM], dX[3];
+		int **f_list, uint32_t **f_count, int **s_list, uint32_t **s_count,
+		float *Xmin, float *Xmax, int height){
+  float Xtarget[DIM], Xsource[DIM], ranges[DIM], dX[DIM];
+  ranges[:] = fabs(Xmax[0:DIM] - Xmin[0:DIM]);
+  ranges[:] *= 1.00001;
+  float range = __sec_reduce_max(ranges[:]);
   for(int level=0; level<height; level++){
+    int nbins = 1 << (level + 1);
+    float qstep = range / nbins;
     for(int node_id=0; node_id<nodes_per_level[level]; node_id++){
       int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
       int c_end = c_count[level][node_id];
@@ -75,9 +81,27 @@ void evaluation(float (**Multipole)[MTERM], float (**Local)[LTERM],
       for(int i=n_begin; i<n_end; i++){ // P2P
 	Local[level][node_id][0] += Multipole[level][n_list[level][i]][0];
       }
+      float L[LTERM];
+      for(int l=0; l<LTERM; l++) L[l] = 0;
       for(int i=f_begin; i<f_end; i++){ // M2L
-	Local[level][node_id][0] += Multipole[level][f_list[level][i]][0];
+	for(int d=0; d<DIM; d++){
+	  Xtarget[d] = qstep * (node_codes[level][3*node_id+d] + .5) + Xmin[d];
+	  Xsource[d] = qstep * (node_codes2[level][3*f_list[level][i]+d] + .5) + Xmin[d];
+	  dX[d] = Xtarget[d] - Xsource[d];
+	}
+	float invR2 = 1. / (dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2]);
+	float invR  = sqrt(invR2);
+	float C[LTERM], M[MTERM];
+	getCoef(C,dX,invR2,invR);
+	for(int m=0; m<MTERM; m++){
+	  M[m] = Multipole[level][f_list[level][i]][m];
+	  if(m>0) M[m] = 0; // TODO delete this
+	}
+	for(int l=0; l<LTERM; l++) C[l] = 0; // TODO delete this
+	C[0] = 1; // TODO delete this
+	M2LSum(L,C,M);
       }
+      for(int l=0; l<LTERM; l++) Local[level][node_id][l] += L[l];
       for(int i=c_begin; i<c_end; i++){
 	for(int j=s_begin; j<s_end; j++){ // M2L
 	  Local[level+1][i][0] += Multipole[level+1][s_list[level][j]][0];

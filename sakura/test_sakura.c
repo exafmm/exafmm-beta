@@ -94,7 +94,8 @@ int main(int argc, char** argv){
   }
   printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
   evaluation(Multipole, Local, nodes_per_level, node_codes, node_codes2,
-	     c_count, n_list, n_count, f_list, f_count, s_list, s_count, height);
+	     c_count, n_list, n_count, f_list, f_count, s_list, s_count,
+	     Xmin, Xmax, height);
   for(int i=0; i<nodes_per_level[0]; i++){
     downward_pass(X, Local, node_codes, c_count, node_pointers, leaf_populations,
 		  Xmin, Xmax, i, 0);
