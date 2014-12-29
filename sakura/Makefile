@@ -1,6 +1,6 @@
 .SUFFIXES: .c .o
 
-CXX	= icc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -std=gnu99 -I/usr/include/x86_64-linux-gnu/c++/4.8
+CXX	= icc -Wall -xHOST -O1 -funroll-loops -finline-functions -ansi-alias -openmp -std=gnu99 -I/usr/include/x86_64-linux-gnu/c++/4.8
 SOURCES	= test_sakura.c datasets.c encode.c sort.c build_tree.c linked_list.c kernels.c
 OBJECTS = $(SOURCES:.c=.o)
 LFLAGS	+=

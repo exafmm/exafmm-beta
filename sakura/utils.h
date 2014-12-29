@@ -6,10 +6,15 @@
 #define DIM 3
 #define LDIM 12
 #define NP3 64
+#define PP 6
 #define uint uint32_t
+#define real_t float
 
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 #define MAX(a,b) (((a)>(b)) ? (a) : (b))
+
+static const int MTERM = PP*(PP+1)*(PP+2)/6;
+static const int LTERM = (PP+1)*(PP+2)*(PP+3)/6;
 
 static double get_time(){
   struct timeval tv;

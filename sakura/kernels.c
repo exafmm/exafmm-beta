@@ -1,6 +1,7 @@
 #include <cilk/cilk.h>
 #include <math.h>
 #include "utils.h"
+#include "core.h"
 
 void upward_pass(float *X2, int **expansions, int **node_codes2, int** c_count2, int** node_pointers2,
 		 int *leaf_populations2, float *Xmin, float *Xmax, int node_id, int level){
@@ -23,8 +24,6 @@ void upward_pass(float *X2, int **expansions, int **node_codes2, int** c_count2,
     for(int i=l_begin; i<l_end; i++){
       for(int d=0; d<DIM; d++) {
 	dX[d] = X2[LDIM*i+d] - Xnode[d];
-	float radius = __sec_reduce_max(ranges[:]) / nbins / 2 * 1.1;
-	if(dX[d]*dX[d]>radius*radius) printf("%d %d %f: %f\n",i,d,X2[LDIM*i+d],Xnode[d]);
       }
     }
   }else{ // M2M
