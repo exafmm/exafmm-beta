@@ -53,7 +53,36 @@ void upward_pass(float *X2, float (**Multipole)[MTERM], int **node_codes2,
 	Multipole[level][node_id][m] += C[m] * M[0];
       }
       M2MSum(Multipole[level][node_id],C,M);
-      //Multipole[level][node_id][0] += Multipole[level+1][i][0];
+    }
+  }
+}
+
+void evaluation(float (**Multipole)[MTERM], float (**Local)[LTERM],
+		int *nodes_per_level, int **node_codes, int **node_codes2,
+		int **c_count, int **n_list, uint32_t **n_count,
+		int **f_list, uint32_t **f_count, int **s_list, uint32_t **s_count, int height){
+  float Xtarget[DIM], Xsource[DIM], dX[3];
+  for(int level=0; level<height; level++){
+    for(int node_id=0; node_id<nodes_per_level[level]; node_id++){
+      int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
+      int c_end = c_count[level][node_id];
+      int n_begin = (node_id==0)? 0 : n_count[level][node_id-1];
+      int n_end = n_count[level][node_id];
+      int f_begin = (node_id==0) ? 0 : f_count[level][node_id-1];
+      int f_end = f_count[level][node_id];
+      int s_begin = (node_id==0) ? 0 : s_count[level][node_id-1];
+      int s_end = s_count[level][node_id];
+      for(int i=n_begin; i<n_end; i++){ // P2P
+	Local[level][node_id][0] += Multipole[level][n_list[level][i]][0];
+      }
+      for(int i=f_begin; i<f_end; i++){ // M2L
+	Local[level][node_id][0] += Multipole[level][f_list[level][i]][0];
+      }
+      for(int i=c_begin; i<c_end; i++){
+	for(int j=s_begin; j<s_end; j++){ // M2L
+	  Local[level+1][i][0] += Multipole[level+1][s_list[level][j]][0];
+	}
+      }
     }
   }
 }
