@@ -102,9 +102,25 @@ void evaluation(double (**Multipole)[MTERM], double (**Local)[LTERM],
       }
       for(int l=0; l<LTERM; l++) Local[level][node_id][l] += L[l];
       for(int i=c_begin; i<c_end; i++){
+	for(int l=0; l<LTERM; l++) L[l] = 0;
 	for(int j=s_begin; j<s_end; j++){ // M2L
-	  Local[level+1][i][0] += Multipole[level+1][s_list[level][j]][0];
+	  for(int d=0; d<DIM; d++){
+	    Xtarget[d] = .5 * qstep * (node_codes[level+1][3*i+d] + .5) + Xmin[d];
+	    Xsource[d] = .5 * qstep * (node_codes2[level+1][3*s_list[level][j]+d] + .5) + Xmin[d];
+	    dX[d] = Xtarget[d] - Xsource[d];
+	  }
+	  double invR2 = 1. / (dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2]);
+	  double invR  = sqrt(invR2);
+	  double C[LTERM], M[MTERM];
+	  getCoef(C,dX,invR2,invR);
+	  for(int m=0; m<MTERM; m++){
+	    M[m] = Multipole[level+1][s_list[level][j]][m];
+	    if(m>0) M[m] = 0; // TODO delete this
+	  }
+	  C[0] = 1; // TODO delete this
+	  M2LSum(L,C,M);
 	}
+	for(int l=0; l<LTERM; l++) Local[level+1][i][l] += L[l];
       }
     }
   }
@@ -116,10 +132,30 @@ void downward_pass(float *X, double (**Local)[LTERM], int **node_codes,
   int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
   int c_end = c_count[level][node_id];
   int c_size = c_end - c_begin;
+  double ranges[DIM], dX[DIM];
+  ranges[:] = fabs(Xmax[0:DIM] - Xmin[0:DIM]);
+  ranges[:] *= 1.00001;
+  double range = __sec_reduce_max(ranges[:]);
   if(c_size==0){ // L2P
   }else{ // L2L
+    int nbins = 1 << (level + 1);
+    double step_p = range / nbins;
+    double step_c = range / nbins / 2;
+    double Xp[DIM], Xc[DIM];
+    for(int d=0; d<DIM; d++){
+      Xp[d] = step_p * (node_codes[level][3*node_id+d] + .5) + Xmin[d];
+    }
     for(int i=c_begin; i<c_end; i++){
-      Local[level+1][i][0] += Local[level][node_id][0];
+      for(int d=0; d<DIM; d++){
+	Xc[d] = step_c * (node_codes[level+1][3*i+d] + .5) + Xmin[d];
+	dX[d] = Xp[d] - Xc[d];
+      }
+      double C[LTERM];
+      C[0] = 1;
+      powerL(C,dX);
+      for(int l=0; l<LTERM; l++) Local[level+1][i][l] += Local[level][node_id][l];
+      //for(int l=1; l<LTERM; l++) Local[level+1][i][0] += C[l] * Local[level][node_id][l]; TODO uncomment this
+      L2LSum(Local[level+1][i],C,Local[level][node_id]);      
       downward_pass(X, Local, node_codes, c_count, node_pointers, leaf_populations,
 		    Xmin, Xmax, i, level+1);
     }
