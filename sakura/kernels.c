@@ -57,8 +57,9 @@ void upward_pass(float *X2, double (**Multipole)[MTERM], int **node_codes2,
   }
 }
 
-void evaluation(float *TRG, double (**Multipole)[MTERM], double (**Local)[LTERM],
-		int *nodes_per_level, int **node_codes, int **node_codes2,
+void evaluation(float *X, float *X2, float *TRG, double (**Multipole)[MTERM], double (**Local)[LTERM],
+		int *nodes_per_level, int **node_pointers, int **node_codes, int *leaf_populations,
+		int **node_pointers2, int **node_codes2, int *leaf_populations2,
 		int **c_count, int **n_list, uint32_t **n_count,
 		int **f_list, uint32_t **f_count, int **s_list, uint32_t **s_count,
 		float *Xmin, float *Xmax, int height){
@@ -78,8 +79,30 @@ void evaluation(float *TRG, double (**Multipole)[MTERM], double (**Local)[LTERM]
       int f_end = f_count[level][node_id];
       int s_begin = (node_id==0) ? 0 : s_count[level][node_id-1];
       int s_end = s_count[level][node_id];
-      for(int i=n_begin; i<n_end; i++){ // P2P
-	Local[level][node_id][0] += Multipole[level][n_list[level][i]][0];
+      int i_begin = node_pointers[level][node_id];
+      int i_size = leaf_populations[i_begin];
+      int i_end = i_begin + i_size;
+      for(int n=n_begin; n<n_end; n++){ // P2P
+	int j_begin = node_pointers2[level][n_list[level][n]];
+	int j_size = leaf_populations2[j_begin];
+	int j_end = j_begin + j_size;
+	for(int i=i_begin; i<i_end; i++) {
+	  for(int j=j_begin; j<j_end; j++) {
+	    for(int d=0; d<DIM; d++) dX[d] = X[LDIM*i+d] - X2[LDIM*j+d];
+	    double R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+	    double invR2 = 1.0 / R2;
+	    if( R2 == 0 ) invR2 = 0;
+	    double invR = X2[LDIM*j+3] * sqrt(invR2);
+	    double invR3 = invR2 * invR;
+	    TRG[4*i+0] += invR;
+	    TRG[4*i+1] -= dX[0] * invR3;
+	    TRG[4*i+2] -= dX[1] * invR3;
+	    TRG[4*i+3] -= dX[2] * invR3;
+#ifdef TEST
+	    if(i==i_begin) Local[level][node_id][0]++;
+#endif
+	  }
+	}
       }
       double L[LTERM];
       for(int l=0; l<LTERM; l++) L[l] = 0;
@@ -95,9 +118,13 @@ void evaluation(float *TRG, double (**Multipole)[MTERM], double (**Local)[LTERM]
 	getCoef(C,dX,invR2,invR);
 	for(int m=0; m<MTERM; m++){
 	  M[m] = Multipole[level][f_list[level][i]][m];
-	  if(m>0) M[m] = 0; // TODO delete this
+#ifdef TEST
+	  if(m>0) M[m] = 0;
+#endif
 	}
-	C[0] = 1; // TODO delete this
+#ifdef TEST
+	C[0] = 1;
+#endif
 	M2LSum(L,C,M);
       }
       for(int l=0; l<LTERM; l++) Local[level][node_id][l] += L[l];
@@ -115,9 +142,13 @@ void evaluation(float *TRG, double (**Multipole)[MTERM], double (**Local)[LTERM]
 	  getCoef(C,dX,invR2,invR);
 	  for(int m=0; m<MTERM; m++){
 	    M[m] = Multipole[level+1][s_list[level][j]][m];
-	    if(m>0) M[m] = 0; // TODO delete this
+#ifdef TEST
+	    if(m>0) M[m] = 0;
+#endif
 	  }
-	  C[0] = 1; // TODO delete this
+#ifdef TEST
+	  C[0] = 1;
+#endif
 	  M2LSum(L,C,M);
 	}
 	for(int l=0; l<LTERM; l++) Local[level+1][i][l] += L[l];
@@ -174,7 +205,9 @@ void downward_pass(float *X, float *TRG, double (**Local)[LTERM], int **node_cod
       C[0] = 1;
       powerL(C,dX);
       for(int l=0; l<LTERM; l++) Local[level+1][i][l] += Local[level][node_id][l];
-      //for(int l=1; l<LTERM; l++) Local[level+1][i][0] += C[l] * Local[level][node_id][l]; TODO uncomment this
+#ifndef TEST
+      for(int l=1; l<LTERM; l++) Local[level+1][i][0] += C[l] * Local[level][node_id][l];
+#endif
       L2LSum(Local[level+1][i],C,Local[level][node_id]);      
       downward_pass(X, TRG, Local, node_codes, c_count, node_pointers, leaf_populations,
 		    Xmin, Xmax, i, level+1);

@@ -1,5 +1,6 @@
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
+#include <math.h>
 #include "utils.h"
 
 int main(int argc, char** argv){
@@ -19,6 +20,11 @@ int main(int argc, char** argv){
   start_timer();
   create_dataset(X, N, dist);
   create_dataset(X2, N, dist);
+  for(int i=0; i<N; i++){
+    for(int d=0; d<4; d++){
+      TRG[4*i+d] = TRG2[4*i+d] = 0;
+    }
+  }
   stop_timer("Create data");
   start_timer();
   float Xmin[DIM], Xmax[DIM];
@@ -95,7 +101,8 @@ int main(int argc, char** argv){
     charge += Multipole[0][i][0];
   }
   printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
-  evaluation(TRG, Multipole, Local, nodes_per_level, node_codes, node_codes2,
+  evaluation(X, X2, TRG, Multipole, Local, nodes_per_level, node_pointers, node_codes, leaf_populations,
+	     node_pointers2, node_codes2, leaf_populations2,
 	     c_count, n_list, n_count, f_list, f_count, s_list, s_count,
 	     Xmin, Xmax, height);
   for(int i=0; i<nodes_per_level[0]; i++){
@@ -115,6 +122,24 @@ int main(int argc, char** argv){
   printf("%-20s: %lu\n", "Tree nodes", num_tree_nodes);
   printf("%-20s: %lu\n", "Tree leaves", numleaves);
   printf("%-20s: %lu\n", "Edges",inter_list_edges);
+
+  double dX[DIM];
+  for(int i=0; i<N; i++){
+    for(int j=0; j<N; j++){
+      for(int d=0; d<3; d++) dX[d] = X[LDIM*i+d] - X2[LDIM*j+d];
+      double R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+      double invR2 = 1.0 / R2;
+      if( R2 == 0 ) invR2 = 0;
+      double invR = X2[LDIM*j+3] * sqrt(invR2);
+      double invR3 = invR2 * invR;
+      TRG2[4*i+0] += invR;
+      TRG2[4*i+1] -= dX[0] * invR3;
+      TRG2[4*i+2] -= dX[1] * invR3;
+      TRG2[4*i+3] -= dX[2] * invR3;
+    }
+    if(i<100) printf("%d %f %f\n",i,TRG[4*i],TRG2[4*i]);
+  }
+  
   for(int i=0; i<height; i++){
     free(n_count[i]);
     free(f_count[i]);
