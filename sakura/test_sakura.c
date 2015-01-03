@@ -12,6 +12,8 @@ int main(int argc, char** argv){
   start_timer();
   float *X = (float *)sakura_malloc(N, LDIM*sizeof(float), "Particle array");
   float *X2 = (float *)sakura_malloc(N, LDIM*sizeof(float), "Particle array");
+  float *TRG = (float *)sakura_malloc(N, 4*sizeof(float), "Result array");
+  float *TRG2 = (float *)sakura_malloc(N, 4*sizeof(float), "Result array");
   stop_timer("Data mem. alloc.");
   int maxlev = 20;
   start_timer();
@@ -93,11 +95,11 @@ int main(int argc, char** argv){
     charge += Multipole[0][i][0];
   }
   printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
-  evaluation(Multipole, Local, nodes_per_level, node_codes, node_codes2,
+  evaluation(TRG, Multipole, Local, nodes_per_level, node_codes, node_codes2,
 	     c_count, n_list, n_count, f_list, f_count, s_list, s_count,
 	     Xmin, Xmax, height);
   for(int i=0; i<nodes_per_level[0]; i++){
-    downward_pass(X, Local, node_codes, c_count, node_pointers, leaf_populations,
+    downward_pass(X, TRG, Local, node_codes, c_count, node_pointers, leaf_populations,
 		  Xmin, Xmax, i, 0);
   }
   int node_id = nodes_per_level[height-1] - 1;
@@ -162,4 +164,6 @@ int main(int argc, char** argv){
   free(permutation_vector2);
   free(X);
   free(X2);
+  free(TRG);
+  free(TRG2);
 }

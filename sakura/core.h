@@ -587,7 +587,7 @@ void L2LSum(double *LI, const double *C, const double *LJ) {
   LI[55] += C[1]*LJ[76]+C[2]*LJ[82]+C[3]*LJ[83];
 }
 
-void L2PSum(double *TRG, const double *C, const double *L) {
+void L2PSum(float *TRG, const double *C, const double *L) {
   TRG[1] += C[1]*L[4]+C[2]*L[5]+C[3]*L[6];
   TRG[2] += C[1]*L[5]+C[2]*L[7]+C[3]*L[8];
   TRG[3] += C[1]*L[6]+C[2]*L[8]+C[3]*L[9];

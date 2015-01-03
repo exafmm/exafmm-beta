@@ -73,11 +73,11 @@ void form_interaction_lists(int **node_codes, int **children_first,
 void upward_pass(float *X2, double (**Multipole)[MTERM], int **node_codes2,
 		 int** c_count2, int** node_pointers2, int *leaf_populations,
 		 float *Xmin, float *Xmax, int node_id, int level);
-void evaluation(double (**Multipole)[MTERM], double (**Local)[LTERM],
+void evaluation(float *TRG, double (**Multipole)[MTERM], double (**Local)[LTERM],
 		int *nodes_per_level, int **node_codes, int **node_codes2,
 		int **c_count, int **n_list, uint32_t **n_count,
 		int **f_list, uint32_t **f_count, int **s_list, uint32_t **s_count,
 		float *Xmin, float *Xmax, int height);
-void downward_pass(float *X, double (**Local)[LTERM], int **node_codes,
+void downward_pass(float *X, float *TRG, double (**Local)[LTERM], int **node_codes,
 		   int** c_count, int** node_pointers, int *leaf_populations,
 		   float *Xmin, float *Xmax, int node_id, int level);
