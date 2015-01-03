@@ -25,14 +25,7 @@ int main(int argc, char ** argv) {
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
-  bodies.resize(4);
-  for (int i=0; i<4; i++) {
-    bodies[i].X = i;
-    bodies[i].SRC = EPS;
-    bodies[i].TRG = 0;
-  }
-  bodies[0].SRC = bodies[3].SRC = 1;
-  //bodies = data.initBodies(args.numBodies, args.distribution, 0);
+  bodies = data.initBodies(args.numBodies, args.distribution, 0);
   buffer.reserve(bodies.size());
 #if IneJ
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {

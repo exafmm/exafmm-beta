@@ -1,13 +1,16 @@
 #include <fstream>
 #include "kernel.h"
 #include <vector>
+#include "verify.h"
 
 int main() {
   Bodies bodies(16), bodies2(16), jbodies(16);
-  Cells cells(4);
-  vec3 Xperiodic = 0;
+  const real_t eps2 = 0.0;
   const real_t theta = 0.5;
   const real_t R = 2 / theta;
+  Cells cells(4);
+  vec3 Xperiodic = 0;
+  Verify verify;
 
   for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
     B->X[0] = 2 * drand48();
@@ -74,21 +77,21 @@ int main() {
   Cj->NBODY = jbodies.size();
   Ci->NBODY = bodies2.size();
   Ci->BODY = bodies2.begin();
-  kernel::P2P(Ci, Cj, Xperiodic, false);
+  kernel::P2P(Ci, Cj, eps2, Xperiodic, false);
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     B->TRG /= B->SRC;
   }
 
   std::fstream file;
   file.open("kernel.dat", std::ios::out | std::ios::app);
-  double diff = 0, norm = 0;
-  for (B_iter B=bodies.begin(),B2=bodies2.begin(); B!=bodies.end(); B++,B2++) {
-    diff += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);
-    norm += B2->TRG[0] * B2->TRG[0];
-  }
-  double err = std::sqrt(diff/norm);
-  std::cout << P << " " << err << std::endl;
-  file << P << " " << err << std::endl;
+  double potDif = verify.getDifScalar(bodies, bodies2);
+  double potNrm = verify.getNrmScalar(bodies);
+  double accDif = verify.getDifVector(bodies, bodies2);
+  double accNrm = verify.getNrmVector(bodies);
+  std::cout << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
+  verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
+  verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
+  file << P << " " << std::sqrt(potDif/potNrm) << "  " << std::sqrt(accDif/accNrm) << std::endl;
   file.close();
   return 0;
 }
