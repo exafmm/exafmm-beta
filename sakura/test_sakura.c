@@ -21,6 +21,7 @@ int main(int argc, char** argv){
   create_dataset(X, N, dist);
   create_dataset(X2, N, dist);
   for(int i=0; i<N; i++){
+    printf("%d %f %f %f\n",i,X[LDIM*i+0],X[LDIM*i+1],X[LDIM*i+2]);
     for(int d=0; d<4; d++){
       TRG[4*i+d] = TRG2[4*i+d] = 0;
     }
@@ -100,7 +101,9 @@ int main(int argc, char** argv){
 		Xmin, Xmax, i, 0);
     charge += Multipole[0][i][0];
   }
+#ifdef TEST
   printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
+#endif
   evaluation(X, X2, TRG, Multipole, Local, nodes_per_level, node_pointers, node_codes, leaf_populations,
 	     node_pointers2, node_codes2, leaf_populations2,
 	     c_count, n_list, n_count, f_list, f_count, s_list, s_count,
@@ -110,7 +113,9 @@ int main(int argc, char** argv){
 		  Xmin, Xmax, i, 0);
   }
   int node_id = nodes_per_level[height-1] - 1;
+#ifdef TEST
   printf("List %s\n", ((Local[height-1][node_id][0] - N) < 0.1 ? "PASS" : "FAIL"));
+#endif
   uint64_t inter_list_edges = 0;
   uint64_t num_tree_nodes = 0;
   for(int i=0;i<height; i++){
@@ -123,6 +128,7 @@ int main(int argc, char** argv){
   printf("%-20s: %lu\n", "Tree leaves", numleaves);
   printf("%-20s: %lu\n", "Edges",inter_list_edges);
 
+#ifndef TEST
   double dX[DIM];
   for(int i=0; i<N; i++){
     for(int j=0; j<N; j++){
@@ -139,6 +145,7 @@ int main(int argc, char** argv){
     }
     if(i<100) printf("%d %f %f\n",i,TRG[4*i],TRG2[4*i]);
   }
+#endif
   
   for(int i=0; i<height; i++){
     free(n_count[i]);
