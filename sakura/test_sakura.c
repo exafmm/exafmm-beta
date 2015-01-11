@@ -136,7 +136,7 @@ int main(int argc, char** argv){
 
 #ifndef TEST
   double dX[DIM];
-  for(int i=0; i<N; i++){
+  for(int i=0; i<50; i++){
     for(int j=0; j<N; j++){
       for(int d=0; d<3; d++) dX[d] = X[LDIM*i+d] - X2[LDIM*j+d];
       double R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
@@ -149,7 +149,7 @@ int main(int argc, char** argv){
       TRG2[4*i+2] -= dX[1] * invR3;
       TRG2[4*i+3] -= dX[2] * invR3;
     }
-    if(i<100) printf("%d %f %f\n",i,TRG[4*i],TRG2[4*i]);
+    printf("%d %f %f\n",i,TRG[4*i],TRG2[4*i]);
   }
 #endif
   

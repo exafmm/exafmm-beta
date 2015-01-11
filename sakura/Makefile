@@ -17,8 +17,8 @@ compile	: $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 
 run	:
-	./a.out 4 2 1 4
-#	./a.out 1000000 2 64 4
+#	./a.out 4 2 1 4
+	./a.out 1000000 2 64 4
 
 clean:
 	find . -name "*.o" -o -name "*.out*" | xargs rm -rf
