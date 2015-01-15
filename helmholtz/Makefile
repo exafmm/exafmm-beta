@@ -1,5 +1,7 @@
 include ../Makefile.include
 
-all: main.cxx $(OBJECTS)
+LFLAGS	+= -DFP64
+
+serial	: main.cxx
 	$(CXX) $? $(LFLAGS)
-	./a.out
+	./a.out -n 100000
