@@ -3,6 +3,8 @@
 #include "bound_box.h"
 #include "constants.h"
 #include "tree.h"
+#include "translate.h"
+#include "kernel.h"
 #include "fmm.h"
 
 int main(int argc, char ** argv) {
