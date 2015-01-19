@@ -17,14 +17,46 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       }
     }
   }
+
   for (int level=2; level<=numLevels; level++) {
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       if (cells[icell][8] == 0) break;
       if (cells[icell][6] == 0) {
 	int ibegin = cells[icell][7];
 	int isize = cells[icell][8];
-	P2M(wavek,scale[level],&Xj[ibegin],&qj[ibegin],isize,centers[icell],Multipole[icell],Anm1,Anm2);
+	P2M(wavek, scale[level], &Xj[ibegin], &qj[ibegin], isize,
+	    centers[icell], Multipole[icell], Anm1, Anm2);
       }
+    }
+  }
+
+  for (int level=numLevels; level>2; level--) {
+    real_t radius = 2 * R0 / (1 << level) * sqrt(3.0);
+    int nquad = fmax(6, 2 * P);
+    legendre(nquad, xquad, wquad);
+    for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
+      if (cells[icell][8] == 0) break;
+      if (cells[icell][6] != 0) {
+	for (int ilist=0; ilist<cells[icell][6]; ilist++) {
+	  int jcell = cells[icell][5] + ilist;
+	  M2M(wavek, scale[level], centers[jcell], Multipole[jcell],
+	      scale[level-1], centers[icell], Multipole[icell],
+	      radius, xquad, wquad, nquad, Anm1, Anm2);
+	}
+      }
+    }
+  }
+
+  real_t coef1 = P * 1.65 - 15.5;
+  real_t coef2 = P * 0.25 + 3.0;
+  for (int level=2; level<=numLevels; level++) {
+    real_t diameter = 2 * R0 / (1 << level);
+    real_t radius = diameter * sqrt(3.0) * 0.5;
+    int nquad = fmax(6, P);
+    legendre(nquad, xquad, wquad);
+    for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
+      int nlist;
+      getList(1, icell, list, nlist);
     }
   }
 }
