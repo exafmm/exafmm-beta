@@ -57,6 +57,21 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       int nlist;
       getList(1, icell, list, nlist);
+      for (int ilist=0; ilist<nlist; ilist++) {
+	int jcell = list[ilist];
+	if (cells[jcell][8] == 0) break;
+	real_t dx = fabs(cells[jcell][1] - cells[icell][1]);
+	real_t dy = fabs(cells[jcell][2] - cells[icell][2]);
+	real_t dz = fabs(cells[jcell][3] - cells[icell][3]);
+	if (dx > 0) dx -= .5;
+	if (dy > 0) dy -= .5;
+	if (dz > 0) dz -= .5;
+	real_t rr = sqrt(dx * dx + dy * dy + dz * dz);
+	int Popt = coef1 / (rr * rr) + coef2;
+	M2L(wavek, scale[level], centers[jcell], Multipole[jcell],
+	    scale[level], centers[icell], Local[icell],
+	    Popt, radius, xquad, wquad, nquad, Anm1, Anm2);
+      }
     }
   }
 }
