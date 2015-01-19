@@ -1,5 +1,5 @@
 void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi,
-	      complex_t *** Multipole, complex_t *** Local, int numCells,
+	      complex_t (* Multipole)[P+1][2*P+1], complex_t (* Local)[P+1][2*P+1], int numCells,
 	      int numLevels, real_t * scale, real_t R0) {
   int list[189];
   real_t xquad[2*P], wquad[2*P];
@@ -23,7 +23,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       if (cells[icell][6] == 0) {
 	int ibegin = cells[icell][7];
 	int isize = cells[icell][8];
-	//P2M(wavek,scale[level],&Xj[ibegin],&qj[ibegin],isize,centers[icell],Multipole[icell],Anm1,Anm2);
+	P2M(wavek,scale[level],&Xj[ibegin],&qj[ibegin],isize,centers[icell],Multipole[icell],Anm1,Anm2);
       }
     }
   }
@@ -50,16 +50,8 @@ void fmm(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * 
     Xjd[i] = Xj[permutation[i]];
     qjd[i] = qj[permutation[i]];
   }
-  complex_t *** Multipole = new complex_t ** [numCells];
-  complex_t *** Local = new complex_t ** [numCells];
-  for (int icell=0; icell<numCells; icell++) {
-    Multipole[icell] = new complex_t * [P+1];
-    Local[icell] = new complex_t * [P+1];
-    for (int n=0; n<=P; n++) {
-      Multipole[icell][n] = new complex_t [2*P+1];
-      Local[icell][n] = new complex_t [2*P+1];
-    }
-  }
+  complex_t (* Multipole)[P+1][2*P+1] = new complex_t [numCells][P+1][2*P+1]();
+  complex_t (* Local)[P+1][2*P+1] = new complex_t [numCells][P+1][2*P+1]();
   evaluate(wavek, numBodies, Xjd, qjd, pid, Fid, Multipole, Local, numCells, numLevels, scale, R0);
   delete[] permutation;
   delete[] scale;
