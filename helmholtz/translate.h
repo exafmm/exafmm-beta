@@ -280,7 +280,7 @@ void polynomial(real_t x, int n, real_t & pol, real_t & der, real_t & sum) {
 }
 
 void legendre(int nquad, real_t xquad[2*P], real_t wquad[2*P]) {
-  real_t pol, der, sum;
+  real_t pol = 0, der, sum;
   real_t h = M_PI / (2 * nquad);
   for (int i=1; i<=nquad; i++) {
     xquad[nquad-i] = cos((2 * i - 1) * h);

@@ -13,7 +13,6 @@ void P2M(complex_t wavek, real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 
     real_t r, theta, phi;
     cart2sph(dX, r, theta, phi);
     real_t ctheta = cos(theta);
-    real_t stheta = sin(theta);
     ephi[1] = exp(imag * phi);
     for (int n=2; n<=P; n++) {
       ephi[n] = ephi[n-1] * ephi[1];
@@ -356,5 +355,69 @@ void L2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Lj[P+1][2*P+1],
     for (int m=-n; m<=n; m++) {
       Li[n][P+m] += Lnm[n][P+m];
     }
+  }
+}
+
+void L2P(complex_t wavek, real_t scalej, vec3 Xj, complex_t Lj[P+1][2*P+1],
+	 vec3 * Xi, int ni, complex_t * pi, cvec3 * Fi,
+         real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
+  real_t Ynm[P+1][P+1], Ynmd[P+1][P+1];
+  complex_t imag(0.0,1.0);
+  complex_t ephi[P+1], jn[P+2], jnd[P+2];
+  for (int i=0; i<ni; i++) {
+    vec3 dX = Xi[i] - Xj;
+    real_t r, theta, phi;
+    cart2sph(dX, r, theta, phi);
+    real_t ctheta = cos(theta);
+    real_t stheta = sin(theta);
+    real_t cphi = cos(phi);
+    real_t sphi = sin(phi);
+    ephi[1] = exp(imag * phi);
+    for (int n=2; n<=P; n++) {
+      ephi[n] = ephi[n-1] * ephi[1];
+    }
+    real_t rx = stheta * cphi;
+    real_t thetax = ctheta * cphi;
+    real_t phix = -sphi;
+    real_t ry = stheta * sphi;
+    real_t thetay = ctheta * sphi;
+    real_t phiy = cphi;
+    real_t rz = ctheta;
+    real_t thetaz = -stheta;
+    real_t phiz = 0;
+    get_Ynmd(P, ctheta, Ynm, Ynmd, Anm1, Anm2);
+    complex_t z = wavek * r;
+    get_jn(P, z, scalej, jn, 1, jnd);
+    pi[i] += Lj[0][P] * jn[0];
+    for (int n=0; n<=P; n++) {
+      jnd[n] *= wavek;
+    }
+    complex_t ur = Lj[0][P] * jnd[0];
+    complex_t utheta = 0;
+    complex_t uphi = 0;
+    for (int n=1; n<=P; n++) {
+      pi[i] += Lj[n][P] * jn[n] * Ynm[n][0];
+      ur += jnd[n] * Ynm[n][0] * Lj[n][P];
+      complex_t jnuse = jn[n+1] * scalej + jn[n-1] / scalej;
+      jnuse = wavek * jnuse / (2 * n + 1.0);
+      utheta -= Lj[n][P] * jnuse * Ynmd[n][0] * stheta;
+      for (int m=1; m<=n; m++) {
+	complex_t ztmp1 = jn[n] * Ynm[n][m] * stheta;
+	complex_t ztmp2 = Lj[n][P+m] * ephi[m];
+	complex_t ztmp3 = Lj[n][P-m] * conj(ephi[m]);
+	complex_t ztmpsum = ztmp2 + ztmp3;
+	pi[i] += ztmp1 * ztmpsum;
+	ur += jnd[n] * Ynm[n][m] * stheta * ztmpsum;
+	utheta -= ztmpsum * jnuse * Ynmd[n][m];
+	ztmpsum = real_t(m) * imag * (ztmp2 - ztmp3);
+	uphi += jnuse * Ynm[n][m] * ztmpsum;
+      }
+    }
+    complex_t ux = ur * rx + utheta * thetax + uphi * phix;
+    complex_t uy = ur * ry + utheta * thetay + uphi * phiy;
+    complex_t uz = ur * rz + utheta * thetaz + uphi * phiz;
+    Fi[i][0] -= ux;
+    Fi[i][1] -= uy;
+    Fi[i][2] -= uz;
   }
 }

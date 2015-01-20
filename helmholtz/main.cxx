@@ -19,7 +19,7 @@ int main(int argc, char ** argv) {
   cvec3 * Fi2 = new cvec3 [numBodies];
   FILE * fid = fopen("data","r");
   for (int i=0; i<numBodies; i++) {
-    fscanf(fid,"%lf %lf %lf",&Xj[i][0],&Xj[i][1],&Xj[i][2]);
+    if (fscanf(fid,"%lf %lf %lf",&Xj[i][0],&Xj[i][1],&Xj[i][2]) != 2) fprintf(stderr,"Error reading data file.");
     qj[i] = Xj[i][0] + imag * Xj[i][1];
   }
   fclose(fid);

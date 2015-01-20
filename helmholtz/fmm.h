@@ -90,6 +90,18 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       }
     }
   }
+
+  for (int level=2; level<=numLevels; level++) {
+    for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
+      if (cells[icell][8] == 0) break; // TODO : probably unnecessary
+      if (cells[icell][6] == 0) {
+	int ibegin = cells[icell][7];
+        int isize = cells[icell][8];
+        L2P(wavek, scale[level], centers[icell], Local[icell], &Xj[ibegin], isize,
+	    &pi[ibegin], &Fi[ibegin], Anm1, Anm2);
+      }
+    }
+  }
 }
 
 void fmm(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
