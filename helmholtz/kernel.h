@@ -1,3 +1,22 @@
+void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, complex_t * qj, complex_t wavek) {
+  complex_t imag(0.0,1.0);
+  for (int i=icell[7]; i<icell[7]+icell[8]; i++) {
+    for (int j=jcell[7]; j<jcell[7]+jcell[8]; j++) {
+      vec3 dX = Xj[i] - Xj[j];
+      real_t R2 = norm(dX);
+      if (R2 != 0) {
+	real_t R = sqrt(R2);
+	complex_t coef1 = qj[j] * exp(imag * wavek * R) / R;
+	complex_t coef2 = (1.0 - imag * wavek * R) * coef1 / R2;
+	pi[i] += coef1;
+	Fi[i][0] += coef2 * dX[0];
+	Fi[i][1] += coef2 * dX[1];
+	Fi[i][2] += coef2 * dX[2];
+      }
+    }
+  }
+}
+
 void P2M(complex_t wavek, real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[P+1][2*P+1],
 	 real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
   real_t Ynm[P+1][P+1];

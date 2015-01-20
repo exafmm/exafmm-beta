@@ -102,6 +102,20 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       }
     }
   }
+
+#pragma omp parallel for private(list) schedule(dynamic)
+  for (int icell=0; icell<numCells; icell++) {
+    if (cells[icell][6] == 0) {
+      P2P(cells[icell], pi, Fi, cells[icell], Xj, qj, wavek);
+      int nlist;
+      getList(0, icell, list, nlist);
+      for (int ilist=0; ilist<nlist; ilist++) {
+	int jcell = list[ilist];
+	if (cells[jcell][8] == 0) break; // TODO : probably unnecessary
+	P2P(cells[icell], pi, Fi, cells[jcell], Xj, qj, wavek);
+      }
+    }
+  }
 }
 
 void fmm(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
@@ -128,6 +142,10 @@ void fmm(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * 
   complex_t (* Multipole)[P+1][2*P+1] = new complex_t [numCells][P+1][2*P+1]();
   complex_t (* Local)[P+1][2*P+1] = new complex_t [numCells][P+1][2*P+1]();
   evaluate(wavek, numBodies, Xjd, qjd, pid, Fid, Multipole, Local, numCells, numLevels, scale, R0);
+  for (int i=0; i<numBodies; i++) {
+    pi[permutation[i]] = pid[i];
+    Fi[permutation[i]] = Fid[i];
+  }
   delete[] permutation;
   delete[] scale;
   delete[] Xjd;

@@ -3,3 +3,4 @@ Add OpenMP
 Use symmetry in M, L -> 1-D array
 ynm -> Ynm
 imag -> I
+Remove "break" and corresponding cycle in F.
