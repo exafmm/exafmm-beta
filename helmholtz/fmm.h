@@ -20,7 +20,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 
   for (int level=2; level<=numLevels; level++) {
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      if (cells[icell][8] == 0) break;
+      if (cells[icell][8] == 0) break; // TODO : probably unnecessary
       if (cells[icell][6] == 0) {
 	int ibegin = cells[icell][7];
 	int isize = cells[icell][8];
@@ -35,8 +35,8 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
     int nquad = fmax(6, 2 * P);
     legendre(nquad, xquad, wquad);
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
-      if (cells[icell][8] == 0) break;
-      if (cells[icell][6] != 0) {
+      if (cells[icell][8] == 0) break; // TODO : probably unnecessary
+      if (cells[icell][6] != 0) { // TODO : probably unnecessary
 	for (int ilist=0; ilist<cells[icell][6]; ilist++) {
 	  int jcell = cells[icell][5] + ilist;
 	  M2M(wavek, scale[level], centers[jcell], Multipole[jcell],
@@ -54,12 +54,12 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
     real_t radius = diameter * sqrt(3.0) * 0.5;
     int nquad = fmax(6, P);
     legendre(nquad, xquad, wquad);
+#pragma omp parallel for private(list) schedule(dynamic)
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       int nlist;
       getList(1, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
-	if (cells[jcell][8] == 0) break;
 	real_t dx = fabs(cells[jcell][1] - cells[icell][1]);
 	real_t dy = fabs(cells[jcell][2] - cells[icell][2]);
 	real_t dz = fabs(cells[jcell][3] - cells[icell][3]);
@@ -71,6 +71,22 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 	M2L(wavek, scale[level], centers[jcell], Multipole[jcell],
 	    scale[level], centers[icell], Local[icell],
 	    Popt, radius, xquad, wquad, nquad, Anm1, Anm2);
+      }
+    }
+  }
+
+  for (int level=3; level<=numLevels; level++) {
+    real_t radius = 2 * R0 / (1 << level) * sqrt(3.0);
+    int nquad = fmax(6, P);
+    legendre(nquad, xquad, wquad);
+    for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
+      if (cells[icell][6] != 0) { // TODO : probably unnecessary
+	for (int ilist=0; ilist<cells[icell][6]; ilist++) {
+	  int jcell = cells[icell][5]+ilist;
+	  L2L(wavek, scale[level-1], centers[icell], Local[icell],
+	      scale[level], centers[jcell], Local[jcell],
+	      radius, xquad, wquad, nquad, Anm1, Anm2);
+	}
       }
     }
   }

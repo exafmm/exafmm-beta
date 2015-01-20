@@ -232,10 +232,10 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
   }
   real_t scalinv = 1.0 / scale;
   coef = 1;
-  for (int i=0; i<ntop; i++) {
+  for (int i=1; i<=ntop; i++) {
     coef *= scalinv;
-    if(iscale[i] == 1) coef *= eps;
-    jn[i+1] *= coef;
+    if(iscale[i-1] == 1) coef *= eps;
+    jn[i] *= coef;
   }
   complex_t fj0 = sin(z) * zinv;
   complex_t fj1 = fj0 * zinv - cos(z) * zinv;
