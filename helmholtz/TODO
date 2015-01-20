@@ -1,7 +1,3 @@
-0. Add timers
-1. Remove "break" and corresponding cycle in F
-2. Add OpenMP
-
 Use cell structure
 Use symmetry in M, L -> 1-D array
 ynm -> Ynm

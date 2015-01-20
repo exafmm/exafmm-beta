@@ -20,8 +20,8 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 
   logger::startTimer("P2M");
   for (int level=2; level<=numLevels; level++) {
+#pragma omp parallel for
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      if (cells[icell][8] == 0) break; // TODO : probably unnecessary
       if (cells[icell][6] == 0) {
 	int ibegin = cells[icell][7];
 	int isize = cells[icell][8];
@@ -37,15 +37,13 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
     real_t radius = 2 * R0 / (1 << level) * sqrt(3.0);
     int nquad = fmax(6, 2 * P);
     legendre(nquad, xquad, wquad);
+#pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
-      if (cells[icell][8] == 0) break; // TODO : probably unnecessary
-      if (cells[icell][6] != 0) { // TODO : probably unnecessary
-	for (int ilist=0; ilist<cells[icell][6]; ilist++) {
-	  int jcell = cells[icell][5] + ilist;
-	  M2M(wavek, scale[level], centers[jcell], Multipole[jcell],
-	      scale[level-1], centers[icell], Multipole[icell],
-	      radius, xquad, wquad, nquad, Anm1, Anm2);
-	}
+      for (int ilist=0; ilist<cells[icell][6]; ilist++) {
+	int jcell = cells[icell][5] + ilist;
+	M2M(wavek, scale[level], centers[jcell], Multipole[jcell],
+	    scale[level-1], centers[icell], Multipole[icell],
+	    radius, xquad, wquad, nquad, Anm1, Anm2);
       }
     }
   }
@@ -86,14 +84,13 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
     real_t radius = 2 * R0 / (1 << level) * sqrt(3.0);
     int nquad = fmax(6, P);
     legendre(nquad, xquad, wquad);
+#pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
-      if (cells[icell][6] != 0) { // TODO : probably unnecessary
-	for (int ilist=0; ilist<cells[icell][6]; ilist++) {
-	  int jcell = cells[icell][5]+ilist;
-	  L2L(wavek, scale[level-1], centers[icell], Local[icell],
-	      scale[level], centers[jcell], Local[jcell],
-	      radius, xquad, wquad, nquad, Anm1, Anm2);
-	}
+      for (int ilist=0; ilist<cells[icell][6]; ilist++) {
+	int jcell = cells[icell][5]+ilist;
+	L2L(wavek, scale[level-1], centers[icell], Local[icell],
+	    scale[level], centers[jcell], Local[jcell],
+	    radius, xquad, wquad, nquad, Anm1, Anm2);
       }
     }
   }
@@ -101,8 +98,8 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 
   logger::startTimer("L2P");
   for (int level=2; level<=numLevels; level++) {
+#pragma omp parallel for
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      if (cells[icell][8] == 0) break; // TODO : probably unnecessary
       if (cells[icell][6] == 0) {
 	int ibegin = cells[icell][7];
         int isize = cells[icell][8];
@@ -122,7 +119,6 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       getList(0, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
-	if (cells[jcell][8] == 0) break; // TODO : probably unnecessary
 	P2P(cells[icell], pi, Fi, cells[jcell], Xj, qj, wavek);
       }
     }
