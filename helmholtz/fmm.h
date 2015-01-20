@@ -18,6 +18,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
     }
   }
 
+  logger::startTimer("P2M");
   for (int level=2; level<=numLevels; level++) {
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       if (cells[icell][8] == 0) break; // TODO : probably unnecessary
@@ -29,7 +30,9 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       }
     }
   }
+  logger::stopTimer("P2M");
 
+  logger::startTimer("M2M");
   for (int level=numLevels; level>2; level--) {
     real_t radius = 2 * R0 / (1 << level) * sqrt(3.0);
     int nquad = fmax(6, 2 * P);
@@ -46,7 +49,9 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       }
     }
   }
+  logger::stopTimer("M2M");
 
+  logger::startTimer("M2L");
   real_t coef1 = P * 1.65 - 15.5;
   real_t coef2 = P * 0.25 + 3.0;
   for (int level=2; level<=numLevels; level++) {
@@ -74,7 +79,9 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       }
     }
   }
+  logger::stopTimer("M2L");
 
+  logger::startTimer("L2L");
   for (int level=3; level<=numLevels; level++) {
     real_t radius = 2 * R0 / (1 << level) * sqrt(3.0);
     int nquad = fmax(6, P);
@@ -90,7 +97,9 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       }
     }
   }
+  logger::stopTimer("L2L");
 
+  logger::startTimer("L2P");
   for (int level=2; level<=numLevels; level++) {
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       if (cells[icell][8] == 0) break; // TODO : probably unnecessary
@@ -102,7 +111,9 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       }
     }
   }
+  logger::stopTimer("L2P");
 
+  logger::startTimer("P2P");
 #pragma omp parallel for private(list) schedule(dynamic)
   for (int icell=0; icell<numCells; icell++) {
     if (cells[icell][6] == 0) {
@@ -116,6 +127,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       }
     }
   }
+  logger::stopTimer("P2P");
 }
 
 void fmm(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
@@ -128,6 +140,7 @@ void fmm(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * 
   levelOffset = new int [maxLevel];
   vec3 X0;
   real_t R0;
+  logger::startTimer("Tree");
   getBounds(Xj, numBodies, X0, R0);
   int numCells, numLevels;
   buildTree(Xj, numBodies, numCells, permutation, numLevels, X0, R0);
@@ -139,6 +152,7 @@ void fmm(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * 
     Xjd[i] = Xj[permutation[i]];
     qjd[i] = qj[permutation[i]];
   }
+  logger::stopTimer("Tree");
   complex_t (* Multipole)[P+1][2*P+1] = new complex_t [numCells][P+1][2*P+1]();
   complex_t (* Local)[P+1][2*P+1] = new complex_t [numCells][P+1][2*P+1]();
   evaluate(wavek, numBodies, Xjd, qjd, pid, Fid, Multipole, Local, numCells, numLevels, scale, R0);
