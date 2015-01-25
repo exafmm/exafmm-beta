@@ -19,7 +19,7 @@ gromacs:
 	$(CXX) test_gromacs.cxx -L. -lfmm -ltbb
 	mpirun -np 2 ./a.out
 
-charmm:
+charmm: # exafmm-dev
 	make libcharmm.a
 	$(FC) test_charmm.f90 -ggdb3 -L. -lfmm -ltbb -lstdc++ -lgomp
 	mpirun -np 1 ./a.out ala3.fmm
@@ -28,13 +28,13 @@ charmm:
 	make cleandat
 	mpirun -np 2 ./a.out water.fmm 10
 
-charmm2:
+charmm2: # uniform
 	make libcharmm2.a
 	$(FC) test_charmm.f90 -ggdb3 -L. -lfmm -ltbb -lstdc++ -lgomp
 	make cleandat
 	mpirun -np 1 ./a.out water.fmm 10
 
-charmm3:
+charmm3: # uniform-serial (Sakura interface)
 	make libcharmm3.a
 	$(FC) test_charmm.f90 -ggdb3 -L. -lfmm -ltbb -lstdc++ -lgomp
 	make cleandat
