@@ -27,6 +27,7 @@ THE SOFTWARE.
 template<Equation equation>
 class TopDown : public TreeStructure<equation> {
 public:
+  int NCRIT;
   using Kernel<equation>::printNow;                             //!< Switch to print timings
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
   using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
@@ -41,7 +42,7 @@ private:
     int NLEAF;                                                  //!< Number of leafs in node
     bigint I;                                                   //!< Cell index
     bigint CHILD[8];                                            //!< Iterator offset of child nodes
-    B_iter LEAF[NCRIT];                                         //!< Iterator for leafs
+    B_iter LEAF[10000];                                         //!< Iterator for leafs
     vect X;                                                     //!< Node center
     real R;                                                     //!< Node radius
   };

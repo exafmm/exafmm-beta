@@ -25,7 +25,6 @@ ewald_fmm: ewald_fmm.cxx $(OBJECT)
 
 serialrun: serialrun.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
-	$(SERIALRUN)
 
 unsort: unsort.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS) $(VFLAGS)
@@ -37,7 +36,6 @@ ijserialrun: ijserialrun.cxx $(OBJECT)
 
 Nserial: Nserial.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS)
-	$(SERIALRUN)
 
 direct_gpu: direct_gpu.cxx $(OBJECT)
 	$(CXX) $? $(LFLAGS)

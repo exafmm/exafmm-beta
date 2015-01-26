@@ -35,6 +35,7 @@ public:
   using Kernel<equation>::R0;                                   //!< Radius of root cell
   using TreeStructure<equation>::buffer;                        //!< Buffer for MPI communication & sorting
   using TreeStructure<equation>::getLevel;                      //!< Get level from cell index
+  using TopDown<equation>::NCRIT;
 
 protected:
 //! Max level for bottom up tree build

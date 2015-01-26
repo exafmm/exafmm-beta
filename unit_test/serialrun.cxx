@@ -24,16 +24,17 @@ THE SOFTWARE.
 #include "vtk.h"
 #endif
 
-int main() {
+int main(int, char ** argv) {
   const int numBodies = 1000000;                                // Number of bodies
   const int numTarget = 100;                                    // Number of target points to be used for error eval
   IMAGES = 0;                                                   // Level of periodic image tree (0 for non-periodic)
-  THETA = 0.5;                                                  // Multipole acceptance criteria
+  THETA = atof(argv[1]);                                        // Multipole acceptance criteria
   Bodies bodies(numBodies);                                     // Define vector of bodies
   Bodies jbodies;                                               // Define vector of source bodies
   Cells cells, jcells;                                          // Define vector of cells
   SerialFMM<Laplace> FMM;                                       // Instantiate SerialFMM class
   FMM.initialize();                                             // Initialize FMM
+  FMM.NCRIT = atoi(argv[2]);
   FMM.printNow = true;                                          // Print timer
 
   FMM.startTimer("Set bodies");                                 // Start timer
@@ -53,7 +54,7 @@ int main() {
 #endif
   jcells = cells;                                               // Vector of source cells
   FMM.startTimer("Downward");                                   // Start timer
-  FMM.downward(cells,jcells);                                   // Downward sweep
+  FMM.downward(cells,jcells,atoi(argv[3]));                     // Downward sweep
   FMM.stopTimer("Downward",FMM.printNow);                       // Stop timer
   FMM.eraseTimer("Downward");                                   // Erase entry from timer to avoid timer overlap
 

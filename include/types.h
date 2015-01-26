@@ -55,7 +55,7 @@ THE SOFTWARE.
 #endif
 
 typedef unsigned           bigint;                              //!< Big integer type
-typedef float              real;                                //!< Real number type on CPU
+typedef double             real;                                //!< Real number type on CPU
 typedef float              gpureal;                             //!< Real number type on GPU
 typedef std::complex<real> complex;                             //!< Complex number type
 typedef vec<3,real>        vect;                                //!< 3-D vector type
@@ -84,7 +84,6 @@ extern int PAPIEVENT;                                           //!< PAPI event 
 #endif
 
 const int  P        = 10;                                       //!< Order of expansions
-const int  NCRIT    = 1024;                                     //!< Number of bodies per cell
 const int  MAXBODY  = 50000;                                    //!< Maximum number of bodies per GPU kernel
 const int  MAXCELL  = 10000000;                                 //!< Maximum number of bodies/coefs in cell per GPU kernel
 const real CLET     = 2;                                        //!< LET opening critetia
@@ -92,7 +91,7 @@ const real EPS      = 1e-6;                                     //!< Single/doub
 const real EPS2     = 0;                                        //!< Softening parameter (squared)
 const real R2MIN    = 0.0001;                                   //!< Minimum value for L-J R^2
 const real R2MAX    = 100.0;                                    //!< Maximum value for L-J R^2
-const int  GPUS     = 3;                                        //!< Number of GPUs per node
+const int  GPUS     = 1;                                        //!< Number of GPUs per node
 const int  THREADS  = 64;                                       //!< Number of threads per thread-block
 
 const int MTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole terms

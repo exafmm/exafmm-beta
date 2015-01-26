@@ -219,7 +219,7 @@ public:
   }
 
 //! Downward phase (M2L,M2P,P2P,L2L,L2P evaluation)
-  void downward(Cells &cells, Cells &jcells, bool periodic=true) {
+  void downward(Cells &cells, Cells &jcells, int threads, bool periodic=true) {
 #if HYBRID
     timeKernels();                                              // Time all kernels for auto-tuning
 #endif
@@ -230,7 +230,7 @@ public:
       stopTimer("Upward P",printNow);                           //  Stop timer & print
     }                                                           // Endif for periodic boundary condition
     startTimer("Traverse");                                     // Start timer
-    traverse(cells,jcells);                                     // Traverse tree to get interaction list
+    traverse(cells,jcells,threads);                             // Traverse tree to get interaction list
     stopTimer("Traverse",printNow);                             // Stop timer & print
     if( IMAGES != 0 && periodic ) {                             // If periodic boundary condition
       startTimer("Traverse P");                                 // Start timer
