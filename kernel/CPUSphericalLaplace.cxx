@@ -125,7 +125,6 @@ void Kernel<Laplace>::M2M(C_iter Ci) {
       }
     }
   }
-  Ci->RMAX = Rmax;
   Ci->RCRIT = std::min(Ci->R,Rmax);
 }
 
