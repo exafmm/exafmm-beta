@@ -65,7 +65,7 @@ template<>
 void Kernel<Laplace>::P2M(C_iter Cj) {
   real Rmax = 0;
   complex Ynm[P*P], YnmTheta[P*P];
-  for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NCLEAF; ++B ) {
+  for( B_iter B=Cj->LEAF; B!=Cj->LEAF+Cj->NDLEAF; ++B ) {
     vect dist = B->X - Cj->X;
     real R = std::sqrt(norm(dist));
     if( R > Rmax ) Rmax = R;
@@ -236,7 +236,7 @@ template<>
 void Kernel<Laplace>::L2P(C_iter Ci) const {
   const complex I(0.,1.);                                       // Imaginary unit
   complex Ynm[P*P], YnmTheta[P*P];
-  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NCLEAF; ++B ) {
+  for( B_iter B=Ci->LEAF; B!=Ci->LEAF+Ci->NDLEAF; ++B ) {
     vect dist = B->X - Ci->X;
     vect spherical = 0;
     vect cartesian = 0;
