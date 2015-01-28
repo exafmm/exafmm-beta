@@ -27,12 +27,12 @@ THE SOFTWARE.
 template<Equation equation>
 class TopDown : public TreeStructure<equation> {
 public:
-  int NCRIT;
   using Kernel<equation>::printNow;                             //!< Switch to print timings
   using Kernel<equation>::startTimer;                           //!< Start timer for given event
   using Kernel<equation>::stopTimer;                            //!< Stop timer for given event
   using Kernel<equation>::X0;                                   //!< Center of root cell
   using Kernel<equation>::R0;                                   //!< Radius of root cell
+  using Evaluator<equation>::NCRIT;                             //!< Number of particles per leaf
 
 private:
 //! Nodes are primitive cells
