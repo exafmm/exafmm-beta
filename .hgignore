@@ -8,5 +8,6 @@ syntax: glob
 *.th_o
 *.out
 *.pdb
+*restart
 *.so
 *.svg

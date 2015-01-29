@@ -1,14 +1,77 @@
 module charmm_io
 contains
+
+  subroutine charmm_cor_write(n,x,q,size,filename,numex,natex,nat,atype,&
+       rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
+       aangle,cangle,mass,xc,v,time)
+    implicit none
+    character(len=*) filename
+    character(len=3) atom_name(3)
+    integer i,nat,n,natex_size,vdw_size,nbonds,ntheta
+    real(8) size,time
+    integer,allocatable,dimension(:) :: numex,natex,atype,ib,jb,it,jt,kt
+    real(8),allocatable,dimension(:) :: x,q,rscale,gscale,fgscale
+    real(8),allocatable,dimension(:) :: mass,xc,v
+    real(8),allocatable,dimension(:,:) :: rbond,cbond
+    real(8),allocatable,dimension(:,:,:) :: aangle,cangle
+
+    atom_name(1)='OH2'
+    atom_name(2)='H1 '
+    atom_name(3)='H2 '
+
+    natex_size=sum(numex(1:n))
+    vdw_size=nat**2
+
+    open(unit=2,file=filename,status='unknown')
+    write(2,'(a8,3x,3f22.14)')'* SIZE =',size,size,size
+    write(2,'(''* This is test_charmm restart file'')')
+    write(2,'(''*'')')
+    write(2,'(i10,''  EXT'')')n
+    do i=1,n
+       write(2,'(2i10,''  TIP3      '',a3,5x,3f20.10,''  WAT       '',i5,3x,f20.10)') &
+            i,(i-1)/3+1,atom_name(mod(i-1,3)+1),x(i*3-2),x(i*3-1),x(i*3),(i-1)/3+1,q(i)
+    enddo
+    write(2,'(''NUMEX'')')
+    write(2,'(10i10)')numex(1:n)
+    write(2,'(''NATEX'',i6)')natex_size
+    write(2,'(10i10)')natex(1:natex_size)
+    write(2,'(''RSCALE==FRSCALE'',i3)')nat
+    write(2,'(5f20.10)')rscale(1:vdw_size)
+    write(2,'(''GSCALE'',i3)')nat
+    write(2,'(5f20.10)')gscale(1:vdw_size)
+    write(2,'(''FGSCALE'',i3)')nat
+    write(2,'(5f20.10)')fgscale(1:vdw_size)
+    write(2,'(''IACSOR'')')
+    write(2,'(20i5)')atype(1:n)
+    write(2,'(''BONDS'',i6)')nbonds
+    write(2,'(10i10)')(ib(i),jb(i),i=1,nbonds)
+    write(2,'(''ANGLES'',i5)')ntheta
+    write(2,'(9i10)')(it(i),jt(i),kt(i),i=1,ntheta)
+    write(2,'(''RBOND'',i3)')nat
+    write(2,'(5f20.10)')rbond(1:nat,1:nat)
+    write(2,'(''CBOND'',i3)')nat
+    write(2,'(5f20.10)')cbond(1:nat,1:nat)
+    write(2,'(''AANGLE'',i3)')nat
+    write(2,'(5f20.10)')aangle(1:nat,1:nat,1:nat)
+    write(2,'(''CANGLE'',i3)')nat
+    write(2,'(5f20.10)')cangle(1:nat,1:nat,1:nat)
+    write(2,'(''MASS'',i3)')nat
+    write(2,'(5f20.10)')mass(1:nat)
+    write(2,'(3d28.18)')(xc(3*i-2),xc(3*i-1),xc(3*i-0),i=1,n)
+    write(2,'(3d28.18)')(v(3*i-2),v(3*i-1),v(3*i-0),i=1,n)
+    write(2,'(f20.10)')time
+    return
+  end subroutine charmm_cor_write
+
   subroutine charmm_cor_read(n,x,q,size,filename,numex,natex,nat,atype,&
        rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
-       aangle,cangle,mass,xc,v,nres,ires)
+       aangle,cangle,mass,xc,v,nres,ires,time)
     implicit none
     logical qext
     character(len=100) lin
     character(len=*) filename
     integer i,nat,im,in,n,natex_size,vdw_size,resn,nres,nbonds,ntheta
-    real(8) size,sizex,sizey,sizez
+    real(8) size,sizex,sizey,sizez,time
     integer,allocatable,dimension(:) :: numex,natex,atype,ib,jb,it,jt,kt,ires
     real(8),allocatable,dimension(:) :: x,q,rscale,gscale,fgscale
     real(8),allocatable,dimension(:) :: mass,xc,v
@@ -107,6 +170,7 @@ contains
     allocate(xc(3*n))
     read(1,'(3d28.18)')(xc(3*i-2),xc(3*i-1),xc(3*i-0),i=1,n)
     read(1,'(3d28.18)')(v(3*i-2),v(3*i-1),v(3*i-0),i=1,n)
+    read(1,'(f20.10)')time
 99  continue
     return
   end subroutine charmm_cor_read
@@ -302,7 +366,7 @@ contains
        ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,&
        pl2err,fl2err,ftotf,ftote,istep)
     implicit none
-    integer nglobal,nat,nbonds,ntheta,ksize,i,ierr
+    integer nglobal,nat,nbonds,ntheta,ksize,i
     real(8) alpha,sigma,cutoff,cuton,etot,eb,et,efmm,evdw,pcycle
     real(8) pl2err,fl2err,enerf,enere,grmsf,grmse,ftotf,ftote
     integer,optional :: istep
@@ -443,7 +507,7 @@ contains
        nglobal,nat,nbonds,ntheta,ksize,&
        alpha,sigma,cutoff,cuton,pcycle,&
        x,p,p2,f,f2,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-       ib,jb,it,jt,kt,atype,icpumap,numex,natex,nres,ires)
+       ib,jb,it,jt,kt,atype,icpumap,numex,natex,nres,ires,time)
     use mpi
     implicit none
     integer dynsteps,nglobal,nat,nbonds,ntheta,ksize,imcentfrq,printfrq,nres
@@ -465,7 +529,6 @@ contains
 
     tstep = 0.001/timfac !ps -> akma
     tstep2 = tstep**2
-    time = 100.0 ! first 100ps was equilibration with standard CHARMM
 
     allocate(xnew(3*nglobal),xold(3*nglobal),fac1(nglobal),fac2(nglobal))
 
@@ -532,9 +595,6 @@ contains
           call pdb_frame(1,time,nglobal,x,nres,icpumap)
        endif
     enddo mainloop
-
-    deallocate(xnew,xold,fac1,fac2)
-    deallocate(ib,jb,it,jt,kt,rbond,cbond,mass,aangle,cangle,x)
 
   end subroutine run_dynamics
 
@@ -666,11 +726,11 @@ program main
   implicit none
   include 'mpif.h'
   logical test_force
-  character(len=128) filename
+  character(len=128) filename,nstp
   integer dynsteps
   integer i,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
   integer nat,nglobal,verbose,nbonds,ntheta,imcentfrq,printfrq,nres
-  real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta
+  real(8) alpha,sigma,cuton,cutoff,average,pcycle,theta,time
   real(8) pl2err,fl2err,enerf,enere,grmsf,grmse
   integer,dimension (128) :: iseed
   integer,allocatable,dimension(:) :: icpumap,numex,natex,atype,ib,jb,it,jt,kt,ires
@@ -694,11 +754,12 @@ program main
   cutoff = 10.0
   alpha = 10 / pcycle
   nat = 16
+  time = 100. ! first 100ps was equilibration with standard CHARMM
   charmmio: if (command_argument_count() > 0) then
      call get_command_argument(1,filename,lnam,istat)
      call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,nat,atype,&
           rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
-          aangle,cangle,mass,xc,v,nres,ires)
+          aangle,cangle,mass,xc,v,nres,ires,time)
      allocate( p(nglobal),f(3*nglobal),icpumap(nglobal) )
      allocate( p2(nglobal),f2(3*nglobal) )
      alpha = 10 / pcycle
@@ -816,8 +877,8 @@ program main
 
   ! run dynamics if second command line argument specified
   if (command_argument_count() > 1) then
-     call get_command_argument(2,filename,lnam,istat)
-     read(filename,*)dynsteps
+     call get_command_argument(2,nstp,lnam,istat)
+     read(nstp,*)dynsteps
      if(mpirank == 0) write(*,*)'will run dynamics for ',dynsteps,' steps'
      ! for pure water systems there is no need for nbadd14() :-)
      test_force=.false.
@@ -833,12 +894,20 @@ program main
              nglobal,nat,nbonds,ntheta,ksize,&
              alpha,sigma,cutoff,cuton,pcycle,&
              xc,p,p2,f,f2,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
-             ib,jb,it,jt,kt,atype,icpumap,numex,natex,nres,ires)
+             ib,jb,it,jt,kt,atype,icpumap,numex,natex,nres,ires,time)
      endif
+     call charmm_cor_write(nglobal,x,q,pcycle,trim(filename)//'_restart',numex,natex,nat,atype,&
+          rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
+          aangle,cangle,mass,xc,v,time)
   endif
 
   deallocate( x,q,v,p,f,p2,f2,icpumap )
   deallocate( ires,numex,natex,rscale,gscale,fgscale,atype )
+
+! from the end of run_dynamics():
+!    deallocate(xnew,xold,fac1,fac2)
+!    deallocate(ib,jb,it,jt,kt,rbond,cbond,mass,aangle,cangle,x)
+
   call fmm_finalize()
   call mpi_finalize(ierr)
 end program main
