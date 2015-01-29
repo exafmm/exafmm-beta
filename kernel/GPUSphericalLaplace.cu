@@ -22,21 +22,22 @@ THE SOFTWARE.
 #define KERNEL
 #include "kernel.h"
 #undef KERNEL
+#define FEPS 1e-6
 
 __device__ __constant__ gpureal constDevc[514];                 // Constants on device
 
 namespace {                                                     // Prevent overlap of definitions among equations
 __device__ void cart2sph(gpureal& r, gpureal& theta, gpureal& phi,// Get r,theta,phi from x,y,z on GPU
                          gpureal dx, gpureal dy, gpureal dz) {
-  r = sqrtf(dx * dx + dy * dy + dz * dz) * (1 + EPS);           // r = sqrt(x^2 + y^2 + z^2)
-  if( r < EPS ) {                                               // If r == 0
+  r = sqrtf(dx * dx + dy * dy + dz * dz) * (1 + FEPS);          // r = sqrt(x^2 + y^2 + z^2)
+  if( r < FEPS ) {                                              // If r == 0
     theta = 0;                                                  //  theta can be anything so we set it to 0
   } else {                                                      // If r != 0
     theta = acosf(dz / r);                                      //  theta = acos(z / r)
   }                                                             // End if for r == 0
-  if( fabs(dx) + fabs(dy) < EPS ) {                             // If |x| < eps & |y| < eps
+  if( fabs(dx) + fabs(dy) < FEPS ) {                            // If |x| < eps & |y| < eps
     phi = 0;                                                    //  phi can be anything so we set it to 0
-  } else if( fabs(dx) < EPS ) {                                 // If |x| < eps
+  } else if( fabs(dx) < FEPS ) {                                // If |x| < eps
     phi = dy / fabs(dy) * M_PI * 0.5;                           //  phi = sign(y) * pi / 2
   } else if( dx > 0 ) {                                         // If x > 0
     phi = atanf(dy / dx);                                       //  phi = atan(y / x)
@@ -111,9 +112,9 @@ __device__ void evalLocal(gpureal *YnmShrd, gpureal rho,        // Evaluate sing
     }                                                           //  End loop up to m
     int m = mm;                                                 //  Define temporary m
     gpureal p = pn;                                             //  Associated Legendre polynomial Pnm
-    if( mm == nn ) Ynm = rhom * p * EPS;                        //  Ynm for n == m
+    if( mm == nn ) Ynm = rhom * p * FEPS;                       //  Ynm for n == m
     gpureal p1 = p;                                             //  Pnm-1
-    p = x * (2 * m + 1) * p;                                    //  Pnm
+    p = x * (2 * m + 1) * p;                                    //  Pnm 
     rhom *= rho_1;                                              //  rho^(-m-1)
     gpureal rhon = rhom;                                        //  rho^(-n-1)
     for( n=m+1; n<nn; ++n ){                                    //  Loop up to n
@@ -381,7 +382,7 @@ __global__ void LaplaceM2M_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
     cart2sph(rho,alpha,beta,d.x,d.y,d.z);
     evalMultipole(YnmShrd,rho,alpha,factShrd);
     LaplaceM2M_core(target,beta,factShrd,YnmShrd,sourceShrd);
-    //if(d.x*d.x+d.y*d.y+d.z*d.z<EPS&&threadIdx.x==0) printf("#FMM output: %f\n",target[0]);
+    //if(d.x*d.x+d.y*d.y+d.z*d.z<FEPS&&threadIdx.x==0) printf("#FMM output: %f\n",target[0]);
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
   targetGlob[2*itarget+0] = target[0];
@@ -448,7 +449,7 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
   __shared__ gpureal sourceShrd[2*THREADS];
   __shared__ gpureal factShrd[2*P];
   __shared__ gpureal YnmShrd[4*NTERM];
-  gpureal fact = EPS;
+  gpureal fact = FEPS;
   for( int i=0; i<2*P; ++i ) {
     factShrd[i] = fact;
     fact *= i + 1;
@@ -477,17 +478,23 @@ __global__ void LaplaceM2L_GPU(int *keysGlob, int *rangeGlob, gpureal *targetGlo
             d.y += targetGlob[2*itarget+1] - sourceGlob[begin+1];
             d.z += targetGlob[2*itarget+2] - sourceGlob[begin+2];
             gpureal rho,alpha,beta;
-            cart2sph(rho,alpha,beta,d.x,d.y,d.z);
-            evalLocal(YnmShrd,rho,alpha,factShrd);
-            LaplaceM2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
+	    /*
+	    if(ilist==16&&
+	       2.945242<targetGlob[2*itarget+0]&&targetGlob[2*itarget+0]<2.945244&&
+	       2.945242<targetGlob[2*itarget+1]&&targetGlob[2*itarget+1]<2.945244&&
+	       2.945242<targetGlob[2*itarget+2]&&targetGlob[2*itarget+2]<2.945244)
+	    */
+	    cart2sph(rho,alpha,beta,d.x,d.y,d.z);
+	    evalLocal(YnmShrd,rho,alpha,factShrd);
+	    LaplaceM2L_core(target,beta,factShrd,YnmShrd,sourceShrd);
           }
         }
       }
     }
   }
   itarget = blockIdx.x * THREADS + threadIdx.x;
-  targetGlob[2*itarget+0] = target[0] * EPS;
-  targetGlob[2*itarget+1] = target[1] * EPS;
+  targetGlob[2*itarget+0] = target[0] * FEPS;
+  targetGlob[2*itarget+1] = target[1] * FEPS;
 }
 
 template<>
@@ -505,7 +512,7 @@ void Kernel<Laplace>::M2L() {
 __device__ void LaplaceM2P_core(gpureal *target, gpureal r, gpureal theta, gpureal phi, gpureal *factShrd, gpureal *sourceShrd) {
   gpureal x = cosf(theta);
   gpureal y = sinf(theta);
-  if( fabsf(y) < EPS ) y = 1 / EPS;
+  if( fabsf(y) < FEPS ) y = 1 / FEPS;
   gpureal s = sqrtf(1 - x * x);
   gpureal spherical[3] = {0, 0, 0};
   gpureal cartesian[3] = {0, 0, 0};
@@ -819,7 +826,7 @@ void Kernel<Laplace>::L2L() {
 __device__ void LaplaceL2P_core(gpureal *target, gpureal r, gpureal theta, gpureal phi, gpureal *factShrd, gpureal *sourceShrd) {
   gpureal x = cosf(theta);
   gpureal y = sinf(theta);
-  if( fabsf(y) < EPS ) y = 1 / EPS;
+  if( fabsf(y) < FEPS ) y = 1 / FEPS;
   gpureal s = sqrtf(1 - x * x);
   gpureal spherical[3] = {0, 0, 0};
   gpureal cartesian[3] = {0, 0, 0};

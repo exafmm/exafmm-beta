@@ -33,7 +33,7 @@ NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3\
 
 ### Base flags
 LFLAGS  = -D$(DEVICE) -D$(EXPAND)
-LFLAGS  += -DEXPANSION=5
+LFLAGS  += -DEXPANSION=4
 
 ### PAPI flags
 #LFLAGS += -DPAPI -lpapi
