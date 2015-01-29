@@ -1,4 +1,12 @@
-Use cell structure
-Use symmetry in M, L -> 1-D array
-ynm -> Ynm
 imag -> I
+Use symmetry in M, L -> 1-D array
+Use cell structure
+
+[calculate from level]
+scale
+radius
+
+[global]
+wavek
+xquad, wquad
+Anm1, Anm2
