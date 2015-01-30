@@ -33,6 +33,13 @@ serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	./a.out
 
+Nserial: serial.o $(OBJECTS)
+	$(CXX) $? $(LFLAGS)
+	for N in 1000 1333 1778 2371 3162 4216 5623 7498 10000 13335 17782 23713 31622 42169 56234 74989 100000 \
+	133352 177827 237137 316227 421696 562341 749894 1000000 1333521 1778279 2371373 3162277 4216965 7498942 10000000; do \
+	./a.out -n $$N -T 1 -v 0; echo; \
+	done
+
 # Test for parallel FMM
 parallel: parallel.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)

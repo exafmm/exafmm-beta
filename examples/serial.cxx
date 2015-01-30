@@ -61,7 +61,7 @@ int main(int argc, char ** argv) {
     logger::printTitle("Total runtime");
     logger::stopDAG();
     logger::stopPAPI();
-    logger::stopTimer("Total FMM");
+    double time = logger::stopTimer("Total FMM");
     logger::resetTimer("Total FMM");
 #if WRITE_TIME
     logger::writeTime();
@@ -87,6 +87,9 @@ int main(int argc, char ** argv) {
     logger::printPAPI();
     bodies = buffer;
     data.initTarget(bodies);
+    std::cout << std::setw(10) << args.numBodies << " "
+	      << std::setw(10) << time << " "
+	      << std::setw(10) << std::sqrt(accDif/accNrm);
   }
   logger::writeDAG();
   return 0;
