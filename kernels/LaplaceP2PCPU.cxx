@@ -169,7 +169,7 @@ void kernel::P2P(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual)
   }
 }
 
-void kernel::P2PK(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual) {
+void kernel::P2P(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic) {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
   int ni = Ci->NBODY;
@@ -225,27 +225,23 @@ void kernel::P2PK(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual
 
       mj *= invR * mi;
       pot += mj;
-      if (mutual) Bj[j].TRG[0] += sum(mj);
       invR = invR * invR * mj;
       mj = Bj[j+1].SRC;
 
       xj *= invR;
       ax += xj;
-      if (mutual) Bj[j].TRG[1] -= sum(xj);
       xj = x2;
       R2 += x2 * x2;
       x2 = Bj[j+2].X[0];
 
       yj *= invR;
       ay += yj;
-      if (mutual) Bj[j].TRG[2] -= sum(yj);
       yj = y2;
       R2 += y2 * y2;
       y2 = Bj[j+2].X[1];
 
       zj *= invR;
       az += zj;
-      if (mutual) Bj[j].TRG[3] -= sum(zj);
       zj = z2;
       R2 += z2 * z2;
       z2 = Bj[j+2].X[2];
@@ -260,25 +256,21 @@ void kernel::P2PK(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual
 
       mj *= invR * mi;
       pot += mj;
-      if (mutual) Bj[nj-2].TRG[0] += sum(mj);
       invR = invR * invR * mj;
       mj = Bj[nj-1].SRC;
 
       xj *= invR;
       ax += xj;
-      if (mutual) Bj[nj-2].TRG[1] -= sum(xj);
       xj = x2;
       R2 += x2 * x2;
 
       yj *= invR;
       ay += yj;
-      if (mutual) Bj[nj-2].TRG[2] -= sum(yj);
       yj = y2;
       R2 += y2 * y2;
 
       zj *= invR;
       az += zj;
-      if (mutual) Bj[nj-2].TRG[3] -= sum(zj);
       zj = z2;
       R2 += z2 * z2;
     }
@@ -286,18 +278,14 @@ void kernel::P2PK(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual
     invR &= R2 > zero;
     mj *= invR * mi;
     pot += mj;
-    if (mutual) Bj[nj-1].TRG[0] += sum(mj);
     invR = invR * invR * mj;
 
     xj *= invR;
     ax += xj;
-    if (mutual) Bj[nj-1].TRG[1] -= sum(xj);
     yj *= invR;
     ay += yj;
-    if (mutual) Bj[nj-1].TRG[2] -= sum(yj);
     zj *= invR;
     az += zj;
-    if (mutual) Bj[nj-1].TRG[3] -= sum(zj);
     for (int k=0; k<NSIMD; k++) {
       Bi[i+k].TRG[0] += transpose(pot,k);
       Bi[i+k].TRG[1] += transpose(ax,k);
@@ -322,12 +310,6 @@ void kernel::P2PK(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual
         ax += dX[0];
         ay += dX[1];
         az += dX[2];
-        if (mutual) {
-          Bj[j].TRG[0] += invR;
-          Bj[j].TRG[1] += dX[0];
-          Bj[j].TRG[2] += dX[1];
-          Bj[j].TRG[3] += dX[2];
-        }
       }
     }
     Bi[i].TRG[0] += pot;

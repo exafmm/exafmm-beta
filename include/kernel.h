@@ -5,7 +5,7 @@
 
 namespace kernel {
   void P2P(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual); //!< P2P kernel between cells Ci and Cj
-  void P2PK(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual); //!< P2P kernel between cells Ci and Cj (forced Kahan summation)
+  void P2P(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic);  //!< P2P kernel between cells Ci and Cj for direct summation
   void P2P(C_iter C, real_t eps2);                              //!< P2P kernel for cell C
   void P2M(C_iter C);                                           //!< P2M kernel for cell C
   void M2M(C_iter Ci, C_iter C0);                               //!< M2M kernel for one parent cell Ci
