@@ -18,8 +18,10 @@ int main(int argc, char** argv){
   stop_timer("Data mem. alloc.");
   int maxlev = 20;
   start_timer();
-  //create_dataset(X, N, dist);
-  //create_dataset(X2, N, dist);
+#if 1
+  create_dataset(X, N, dist);
+  create_dataset(X2, N, dist);
+#else
   for(int i=0; i<N; i++){
     for(int d=0; d<3; d++){
       X[LDIM*i+d] = X2[LDIM*i+d] = i;
@@ -32,6 +34,7 @@ int main(int argc, char** argv){
   X[LDIM*1+3] = X2[LDIM*1+3] = 0;
   X[LDIM*2+3] = X2[LDIM*2+3] = 0;
   X[LDIM*3+3] = X2[LDIM*3+3] = 1;
+#endif
   stop_timer("Create data");
   start_timer();
   float Xmin[DIM], Xmax[DIM];
