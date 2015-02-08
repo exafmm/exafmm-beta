@@ -1,3 +1,3 @@
-Remove TODO flagged items
-Use the node_codes directly to get dX
+Turn Multipole, Local into 3-D allocated
 parallelize kernels
+Newmark beta time stepping

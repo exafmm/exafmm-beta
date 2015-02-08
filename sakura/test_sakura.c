@@ -18,7 +18,7 @@ int main(int argc, char** argv){
   stop_timer("Data mem. alloc.");
   int maxlev = 20;
   start_timer();
-#if 1
+#if 0
   create_dataset(X, N, dist);
   create_dataset(X2, N, dist);
 #else
@@ -90,21 +90,26 @@ int main(int argc, char** argv){
   form_interaction_lists(node_codes, c_count, node_codes2, c_count2, 
 			 n_count, f_count, s_count, n_list, f_list, s_list,
 			 nodes_per_level, nodes_per_level2, height);
-  double (**Multipole)[MTERM] = (double (**)[MTERM])malloc(height2*sizeof(double (*)[MTERM]));
-  double (**Local)[LTERM] = (double (**)[LTERM])malloc(height*sizeof(double (*)[LTERM]));
-  for(int i=0; i<height2; i++){
-    Multipole[i] = (double (*)[MTERM])sakura_calloc(nodes_per_level2[i],
-						    sizeof(double[MTERM]),"Multipole Multipole");
+  double ***Multipole = (double ***)malloc(height2*sizeof(double**));
+  double ***Local = (double ***)malloc(height*sizeof(double**));
+  for(int l=0; l<height2; l++){
+    Multipole[l] = (double **)malloc(nodes_per_level2[l]*sizeof(double*));
+    for (int i=0; i<nodes_per_level2[l]; i++) {
+      Multipole[l][i] = (double *)sakura_calloc(MTERM,sizeof(double),"Multipole Multipole");
+    }
   }
-  for(int i=0; i<height; i++){
-    Local[i] = (double (*)[LTERM])sakura_calloc(nodes_per_level[i],
-						sizeof(double[LTERM]),"Local Multipole");
+  for(int l=0; l<height; l++){
+    Local[l] = (double **)malloc(nodes_per_level[l]*sizeof(double*));
+    for (int i=0; i<nodes_per_level[l]; i++) {
+      Local[l][i] = (double *)sakura_calloc(LTERM,sizeof(double),"Local Multipole");
+    }
   }
   int *leaf_populations = (int *)sakura_calloc(N, sizeof(int),"Leaf population array");
   uint64_t numleaves = find_leaf_populations(leaf_populations, bit_map, N);
   int *leaf_populations2 = (int *)sakura_calloc(N, sizeof(int),"Leaf population array");
   uint64_t numleaves2 = find_leaf_populations(leaf_populations2, bit_map2, N);
   int charge = 0;
+  start_timer();
   for(int i=0; i<nodes_per_level2[0]; i++){
     upward_pass(X2, Multipole, node_codes2, c_count2, node_pointers2, leaf_populations2,
 		Xmin, Xmax, i, 0);
@@ -113,14 +118,19 @@ int main(int argc, char** argv){
 #ifdef TEST
   printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
 #endif
+  stop_timer("Upward pass");
+  start_timer();
   evaluation(X, X2, TRG, Multipole, Local, nodes_per_level, node_pointers, node_codes, leaf_populations,
 	     node_pointers2, node_codes2, leaf_populations2,
 	     c_count, n_list, n_count, f_list, f_count, s_list, s_count,
 	     Xmin, Xmax, height);
+  stop_timer("Evaluation");
+  start_timer();
   for(int i=0; i<nodes_per_level[0]; i++){
     downward_pass(X, TRG, Local, node_codes, c_count, node_pointers, leaf_populations,
 		  Xmin, Xmax, i, 0);
   }
+  stop_timer("Downward pass");
   int node_id = nodes_per_level[height-1] - 1;
 #ifdef TEST
   printf("List %s\n", ((Local[height-1][node_id][0] - N) < 0.1 ? "PASS" : "FAIL"));
@@ -139,7 +149,7 @@ int main(int argc, char** argv){
 
 #ifndef TEST
   double dX[DIM];
-  for(int i=0; i<50; i++){
+  for(int i=0; i<4; i++){
     for(int j=0; j<N; j++){
       for(int d=0; d<3; d++) dX[d] = X[LDIM*i+d] - X2[LDIM*j+d];
       double R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];

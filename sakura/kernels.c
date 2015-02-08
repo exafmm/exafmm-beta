@@ -3,7 +3,7 @@
 #include "utils.h"
 #include "core.h"
 
-void upward_pass(float *X2, double (**Multipole)[MTERM], int **node_codes2,
+void upward_pass(float *X2, double ***Multipole, int **node_codes2,
 		 int** c_count2, int** node_pointers2, int *leaf_populations2,
 		 float *Xmin, float *Xmax, int node_id, int level){
   int c_begin = (node_id==0) ? 0 : c_count2[level][node_id-1];
@@ -57,7 +57,7 @@ void upward_pass(float *X2, double (**Multipole)[MTERM], int **node_codes2,
   }
 }
 
-void evaluation(float *X, float *X2, float *TRG, double (**Multipole)[MTERM], double (**Local)[LTERM],
+void evaluation(float *X, float *X2, float *TRG, double ***Multipole, double ***Local,
 		int *nodes_per_level, int **node_pointers, int **node_codes, int *leaf_populations,
 		int **node_pointers2, int **node_codes2, int *leaf_populations2,
 		int **c_count, int **n_list, uint32_t **n_count,
@@ -70,7 +70,7 @@ void evaluation(float *X, float *X2, float *TRG, double (**Multipole)[MTERM], do
   for(int level=0; level<height; level++){
     int nbins = 1 << (level + 1);
     double qstep = range / nbins;
-    for(int node_id=0; node_id<nodes_per_level[level]; node_id++){
+    cilk_for(int node_id=0; node_id<nodes_per_level[level]; node_id++){
       int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
       int c_end = c_count[level][node_id];
       int n_begin = (node_id==0)? 0 : n_count[level][node_id-1];
@@ -157,7 +157,7 @@ void evaluation(float *X, float *X2, float *TRG, double (**Multipole)[MTERM], do
   }
 }
 
-void downward_pass(float *X, float *TRG, double (**Local)[LTERM], int **node_codes,
+void downward_pass(float *X, float *TRG, double ***Local, int **node_codes,
 		   int** c_count, int** node_pointers, int *leaf_populations,
 		   float *Xmin, float *Xmax, int node_id, int level){
   int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
