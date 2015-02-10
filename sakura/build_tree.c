@@ -37,9 +37,11 @@ int count_bins_bitmap_wrapper(int (*restrict nodes_per_level), int (*restrict no
   cilk_for(int i=0; i<L; i++){
     masks[i] = 1 << i;
   }
-  int M = (int)ceil((float)N / (float)NP3);
-  int *nodes_per_level_buff = (int*)malloc(NP3*L*sizeof(int));
-  for(int i=0; i<NP3; i++){
+  int nthreads = (N > 10000) ? NP3 : NP3/4;
+  int PP3 = (N > NP3) ? nthreads : 1;
+  int M = (int)ceil((float)N / (float)PP3);
+  int *nodes_per_level_buff = (int*)malloc(PP3*L*sizeof(int));
+  for(int i=0; i<PP3; i++){
     int size = ((i+1)*M<N) ? M : N - i*M;
     cilk_spawn count_bins_per_level_bitmap(&nodes_per_level_buff[i*L],
 					   &bit_map[i*M], masks,
@@ -48,12 +50,12 @@ int count_bins_bitmap_wrapper(int (*restrict nodes_per_level), int (*restrict no
   cilk_sync;
   nodes_per_level[0:L] = 0;
   nodes_block_first[0:L] = 0;
-  for(int i=1; i<NP3; i++){
+  for(int i=1; i<PP3; i++){
     nodes_block_first[i*L:L] = nodes_block_first[(i-1)*L:L] +
       nodes_per_level_buff[(i-1)*L:L];
   }
-  nodes_per_level[0:L] = nodes_block_first[(NP3-1)*L:L] +
-    nodes_per_level_buff[(NP3-1)*L:L];
+  nodes_per_level[0:L] = nodes_block_first[(PP3-1)*L:L] +
+    nodes_per_level_buff[(PP3-1)*L:L];
   int height = L;
   for(int i=0; i<L; i++){
     if(nodes_per_level[i] == 0){
@@ -129,12 +131,14 @@ void parent_children_connection_wrapper(int (**restrict node_pointers),
 					int N, int L, int maxL, int maxlev){
   int *child_counter = (int *)malloc(L*NP3*sizeof(int));
   int *remaining_child = (int *)malloc(L*NP3*sizeof(int));
-  uint32_t *masks = (uint32_t *)malloc(L*sizeof(uint32_t));  
-  int M = (int)ceil((float)N / (float)NP3);
+  uint32_t *masks = (uint32_t *)malloc(L*sizeof(uint32_t));
+  int nthreads = (N > 10000) ? NP3 : NP3/4;
+  int PP3 = (N > NP3) ? nthreads : 1;
+  int M = (int)ceil((float)N / (float)PP3);
   cilk_for(int i=0; i<L; i++){
     masks[i] = 1 << i;
   }
-  for(int i=0; i<NP3; i++){  
+  for(int i=0; i<PP3; i++){  
     int size = ((i+1)*M < N) ? M : N - i*M;
     cilk_spawn parent_children_connection_singlepass(node_pointers,
 						     num_children,
@@ -149,7 +153,7 @@ void parent_children_connection_wrapper(int (**restrict node_pointers),
 						     L, i*M, maxlev);
   }
   cilk_sync;
-  for(int i=0; i<NP3; i++){
+  for(int i=0; i<PP3; i++){
     for(int j=0; j<L; j++){ 
       if(nodes_block_first[i*maxL+j]-1 >= 0){
 	num_children[j][nodes_block_first[i*maxL+j]-1] += remaining_child[i*L + j];

@@ -666,6 +666,7 @@ void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
   vecP C;
   getCoef<P-1>(C, dX, invR2, invR);
   sumM2L<P-1>(Ci->L, C, Cj->M);
+  std::cout << Ci->L << std::endl;
   if (mutual) {
     Coefs<P-1,(P-1)&1>::negate(C);
     sumM2L<P-1>(Cj->L, C, Ci->M);

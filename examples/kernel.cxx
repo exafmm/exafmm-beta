@@ -4,22 +4,17 @@
 #include "verify.h"
 
 int main() {
-  Bodies bodies(16), bodies2(16), jbodies(16);
+  Bodies bodies(1), bodies2(1), jbodies(1);
   const real_t eps2 = 0.0;
   const real_t theta = 0.5;
   const real_t R = 2 / theta;
   Cells cells(4);
   vec3 Xperiodic = 0;
   Verify verify;
-
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    B->X[0] = 2 * drand48();
-    B->X[1] = 2 * drand48();
-    B->X[2] = 2 * drand48();
-    B->SRC  = drand48();
-  }
+  jbodies[0].X = 0;
+  jbodies[0].SRC = 1;
   C_iter Cj = cells.begin();
-  Cj->X = 1;
+  Cj->X = 3. / 16;
   Cj->BODY = jbodies.begin();
   Cj->NBODY = jbodies.size();
   Cj->M = 0;
@@ -29,12 +24,12 @@ int main() {
   C_iter CJ = cells.begin()+1;
   CJ->ICHILD = Cj-cells.begin();
   CJ->NCHILD = 1;
-  CJ->X = 0;
+  CJ->X = 3. / 8;
   CJ->M = 0;
   kernel::M2M(CJ, cells.begin());
 
   C_iter CI = cells.begin()+2;
-  CI->X = R + 4;
+  CI->X = 21. / 8;
   CI->M = 1;
   CI->L = 0;
 #if MASS
@@ -43,14 +38,14 @@ int main() {
   kernel::M2L(CI, CJ, Xperiodic, false);
 
   C_iter Ci = cells.begin()+3;
-  Ci->X = R + 3;
+  Ci->X = 45. / 16;
   Ci->IPARENT = 2;
   Ci->M = 1;
   Ci->L = 0;
   kernel::L2L(Ci, cells.begin());
 #else
   C_iter Ci = cells.begin()+3;
-  Ci->X = R + 3;
+  Ci->X = 45. / 16;
   Ci->M = 1;
   Ci->L = 0;
 #if MASS
@@ -59,13 +54,9 @@ int main() {
   kernel::M2L(Ci, Cj, Xperiodic, false);
 #endif
 
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    B->X[0] = R + 2 + 2 * drand48();
-    B->X[1] = R + 2 + 2 * drand48();
-    B->X[2] = R + 2 + 2 * drand48();
-    B->SRC  = drand48();
-    B->TRG  = 0;
-  }
+  bodies[0].X = 3;
+  bodies[0].SRC = 1;
+  bodies[0].TRG = 0;
   Ci->BODY = bodies.begin();
   Ci->NBODY = bodies.size();
   kernel::L2P(Ci);
@@ -81,6 +72,7 @@ int main() {
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     B->TRG /= B->SRC;
   }
+  std::cout << bodies[0].TRG[0] << " " << bodies2[0].TRG[0] << std::endl;
 
   std::fstream file;
   file.open("kernel.dat", std::ios::out | std::ios::app);

@@ -18,22 +18,22 @@ int main(int argc, char** argv){
   stop_timer("Data mem. alloc.");
   int maxlev = 20;
   start_timer();
-#if 0
+#if 1
   create_dataset(X, N, dist);
   create_dataset(X2, N, dist);
+  for(int i=0; i<N; i++){
+    printf("%d %f %f %f, %f %f %f\n",i,X[LDIM*i+0],X[LDIM*i+1],X[LDIM*i+2],X2[LDIM*i+0],X2[LDIM*i+1],X2[LDIM*i+2]);
+  }
 #else
   for(int i=0; i<N; i++){
     for(int d=0; d<3; d++){
       X[LDIM*i+d] = X2[LDIM*i+d] = i;
     }
+    X[LDIM*i+3] = X2[LDIM*i+3] = 1;
     for(int d=0; d<4; d++){
       TRG[4*i+d] = TRG2[4*i+d] = 0;
     }
   }
-  X[LDIM*0+3] = X2[LDIM*0+3] = 1;
-  X[LDIM*1+3] = X2[LDIM*1+3] = 0;
-  X[LDIM*2+3] = X2[LDIM*2+3] = 0;
-  X[LDIM*3+3] = X2[LDIM*3+3] = 1;
 #endif
   stop_timer("Create data");
   start_timer();
@@ -116,7 +116,11 @@ int main(int argc, char** argv){
     charge += Multipole[0][i][0];
   }
 #ifdef TEST
-  printf("Tree %s\n", (charge == N ? "PASS" : "FAIL"));
+  if (charge != N) {
+    printf("Tree FAIL: charge=%d, N=%d\n",charge,N);
+  } else {
+    printf("Tree PASS\n");
+  }
 #endif
   stop_timer("Upward pass");
   start_timer();
@@ -131,9 +135,23 @@ int main(int argc, char** argv){
 		  Xmin, Xmax, i, 0);
   }
   stop_timer("Downward pass");
-  int node_id = nodes_per_level[height-1] - 1;
 #ifdef TEST
-  printf("List %s\n", ((Local[height-1][node_id][0] - N) < 0.1 ? "PASS" : "FAIL"));
+  int list = 0;
+  for(int level=0; level<height; level++){
+    for(int node_id=0; node_id<nodes_per_level[level]; node_id++){
+      int c_begin = (node_id==0) ? 0 : c_count[level][node_id-1];
+      int c_end = c_count[level][node_id];
+      int c_size = c_end - c_begin;
+      printf("%d %d %d\n",level,node_id,c_size);
+      if (c_size == 0) {
+	if (fabs(Local[level][node_id][0] - N) > 0.1) {
+	  list++;
+	  printf("List FAIL @ node_id: %d, L = %lf, N = %d\n",node_id,Local[level][node_id][0],N);
+	}
+      }
+    }
+  }
+  if (list==0) printf("List PASS\n");
 #endif
   uint64_t inter_list_edges = 0;
   uint64_t num_tree_nodes = 0;
@@ -149,7 +167,7 @@ int main(int argc, char** argv){
 
 #ifndef TEST
   double dX[DIM];
-  for(int i=0; i<4; i++){
+  for(int i=0; i<fmin(100,N); i++){
     for(int j=0; j<N; j++){
       for(int d=0; d<3; d++) dX[d] = X[LDIM*i+d] - X2[LDIM*j+d];
       double R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];

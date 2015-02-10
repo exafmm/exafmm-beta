@@ -53,7 +53,7 @@ void bin_sort_serial_radix6_bitmap(uint64_t (*restrict zcodes),
   uint32_t *tmp_ptr;
   uint64_t *tmp_code;
   bit_map[0] |= (1 << (2*lv-1));
-  if(N<population_threshold || sft < stop){
+  if(N<=population_threshold || sft < stop){
     pointIds[0:N] = index[0:N];
     codes[0:N] = zcodes[0:N]; 
     return;
@@ -135,7 +135,7 @@ void bin_sort_radix6_bitmap(uint64_t (*restrict zcodes), uint64_t (*restrict cod
   if(lv>0){
     bit_map[0] |= (1 << (2*lv-1));
   }
-  if(N<population_threshold || sft<stop){
+  if(N<=population_threshold || sft<stop){
     pointIds[0:N] = index[0:N];
     return;
   }else{

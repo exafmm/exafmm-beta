@@ -28,7 +28,9 @@ void upward_pass(float *X2, double ***Multipole, int **node_codes2,
       double M[MTERM];
       M[0] = X2[LDIM*i+3];
       powerM(M,dX);
-      for(int m=0; m<MTERM; m++) Multipole[level][node_id][m] += M[m];
+      for(int m=0; m<MTERM; m++) {
+	Multipole[level][node_id][m] += M[m];
+      }
     }
   }else{ // M2M
     int nbins = 1 << (level + 1);
