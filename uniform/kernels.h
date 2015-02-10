@@ -6,6 +6,8 @@
 #include <omp.h>
 
 const int PP = 6;
+const int DP2P = 1;
+const int DM2L = 1;
 const int MTERM = PP*(PP+1)*(PP+2)/6;
 const int LTERM = (PP+1)*(PP+2)*(PP+3)/6;
 
@@ -183,13 +185,13 @@ protected:
       int ix[3] = {0, 0, 0};
       getIndex(ix,i);
       int jxmin[3];
-      for_3d jxmin[d] = FMMMAX(nxmin[d],ix[d] - 1);
+      for_3d jxmin[d] = FMMMAX(nxmin[d],ix[d] - DP2P);
       int jxmax[3];
-      for_3d jxmax[d] = FMMMIN(nxmax[d],ix[d] + 1) + 1;
+      for_3d jxmax[d] = FMMMIN(nxmax[d],ix[d] + DP2P);
       int jx[3];
-      for( jx[2]=jxmin[2]; jx[2]<jxmax[2]; jx[2]++ ) {
-        for( jx[1]=jxmin[1]; jx[1]<jxmax[1]; jx[1]++ ) {
-          for( jx[0]=jxmin[0]; jx[0]<jxmax[0]; jx[0]++ ) {
+      for( jx[2]=jxmin[2]; jx[2]<=jxmax[2]; jx[2]++ ) {
+        for( jx[1]=jxmin[1]; jx[1]<=jxmax[1]; jx[1]++ ) {
+          for( jx[0]=jxmin[0]; jx[0]<=jxmax[0]; jx[0]++ ) {
             int jxp[3];
             for_3d jxp[d] = (jx[d] + nunit) % nunit;
             int j = getKey(jxp,maxLevel,false);
@@ -258,8 +260,10 @@ protected:
 
   void M2L() const {
     int ixc[3];
+    int DM2LC = DM2L;
     getGlobIndex(ixc,MPIRANK,maxGlobLevel);
     for( int lev=1; lev<=maxLevel; lev++ ) {
+      if (lev==maxLevel) DM2LC = DP2P;
       int levelOffset = ((1 << 3 * lev) - 1) / 7;
       int nunit = 1 << lev;
       int nunitGlob[3];
@@ -279,16 +283,16 @@ protected:
         int ix[3] = {0, 0, 0};
         getIndex(ix,i);
         int jxmin[3];
-        for_3d jxmin[d] =  FMMMAX(nxmin[d],(ix[d] >> 1) - 1)      << 1;
+        for_3d jxmin[d] = (FMMMAX(nxmin[d],(ix[d] >> 1) - DM2L) << 1);
         int jxmax[3];
-        for_3d jxmax[d] = (FMMMIN(nxmax[d],(ix[d] >> 1) + 1) + 1) << 1;
+        for_3d jxmax[d] = (FMMMIN(nxmax[d],(ix[d] >> 1) + DM2L) << 1) + 1;
         int jx[3];
-        for( jx[2]=jxmin[2]; jx[2]<jxmax[2]; jx[2]++ ) {
-          for( jx[1]=jxmin[1]; jx[1]<jxmax[1]; jx[1]++ ) {
-            for( jx[0]=jxmin[0]; jx[0]<jxmax[0]; jx[0]++ ) {
-              if(jx[0] < ix[0]-1 || ix[0]+1 < jx[0] ||
-                 jx[1] < ix[1]-1 || ix[1]+1 < jx[1] ||
-                 jx[2] < ix[2]-1 || ix[2]+1 < jx[2]) {
+        for( jx[2]=jxmin[2]; jx[2]<=jxmax[2]; jx[2]++ ) {
+          for( jx[1]=jxmin[1]; jx[1]<=jxmax[1]; jx[1]++ ) {
+            for( jx[0]=jxmin[0]; jx[0]<=jxmax[0]; jx[0]++ ) {
+              if(jx[0] < ix[0]-DM2LC || ix[0]+DM2LC < jx[0] ||
+                 jx[1] < ix[1]-DM2LC || ix[1]+DM2LC < jx[1] ||
+                 jx[2] < ix[2]-DM2LC || ix[2]+DM2LC < jx[2]) {
                 int jxp[3];
                 for_3d jxp[d] = (jx[d] + nunit) % nunit;
                 int j = getKey(jxp,lev);
