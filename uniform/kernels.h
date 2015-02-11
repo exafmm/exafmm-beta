@@ -5,8 +5,8 @@
 #include <iostream>
 #include <omp.h>
 
-const int PP = 6;
-const int DP2P = 1;
+#define PP 6
+const int DP2P = 2;
 const int DM2L = 1;
 const int MTERM = PP*(PP+1)*(PP+2)/6;
 const int LTERM = (PP+1)*(PP+2)*(PP+3)/6;

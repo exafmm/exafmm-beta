@@ -6,7 +6,7 @@ void getCoef(real_t *C, const real_t *dX, real_t &invR2, const real_t &invR) {
   C[1] = x * invR3;
   C[2] = y * invR3;
   C[3] = z * invR3;
-
+#if PP > 1
   real_t invR5 = 3 * invR3 * invR2;
   real_t t = x * invR5;
   C[4] = x * t + invR3;
@@ -16,7 +16,8 @@ void getCoef(real_t *C, const real_t *dX, real_t &invR2, const real_t &invR) {
   C[7] = y * t + invR3;
   C[8] = z * t;
   C[9] = z * z * invR5 + invR3;
-
+#endif
+#if PP > 2
   real_t invR7 = 5 * invR5 * invR2;
   t = x * x * invR7;
   C[10] = x * (t + 3 * invR5);
@@ -31,7 +32,8 @@ void getCoef(real_t *C, const real_t *dX, real_t &invR2, const real_t &invR) {
   C[18] = y * (t +     invR5);
   C[19] = z * (t + 3 * invR5);
   C[14] = x * y * z * invR7;
-
+#endif
+#if PP > 3
   real_t invR9 = 7 * invR7 * invR2;
   t = x * x * invR9;
   C[20] = x * x * (t + 6 * invR7) + 3 * invR5;
@@ -51,7 +53,8 @@ void getCoef(real_t *C, const real_t *dX, real_t &invR2, const real_t &invR) {
   C[29] = x * z * (t + 3 * invR7);
   C[33] = y * z * (t + 3 * invR7);
   C[34] = z * z * (t + 6 * invR7) + 3 * invR5;
-
+#endif
+#if PP > 4
   real_t invR11 = 9 * invR9 * invR2;
   t = x * x * invR11;
   C[35] = x * x * x * (t + 10 * invR9) + 15 * x * invR7;
@@ -77,7 +80,8 @@ void getCoef(real_t *C, const real_t *dX, real_t &invR2, const real_t &invR) {
   C[49] = x * z * z * (t +  6 * invR9) +  3 * x * invR7;
   C[54] = y * z * z * (t +  6 * invR9) +  3 * y * invR7;
   C[55] = z * z * z * (t + 10 * invR9) + 15 * z * invR7;
-
+#endif
+#if PP > 5
   real_t invR13 = 11 * invR11 * invR2;
   t = x * x * invR13;
   C[56] = x * x * x * x * (t + 15 * invR11) + 45 * x * x * invR9 + 15 * invR7;
@@ -110,16 +114,18 @@ void getCoef(real_t *C, const real_t *dX, real_t &invR2, const real_t &invR) {
   C[76] = x * z * z * z * (t + 10 * invR11) + 15 * x * z * invR9;
   C[82] = y * z * z * z * (t + 10 * invR11) + 15 * y * z * invR9;
   C[83] = z * z * z * z * (t + 15 * invR11) + 45 * z * z * invR9 + 15 * invR7;
+#endif
 }
 
 void M2LSum(real_t *L, const real_t *C, const real_t*M) {
   for (int l=0; l<LTERM; l++) L[l] += M[0] * C[l];
-
+#if PP > 1
   L[0] += M[1]*C[1]+M[2]*C[2]+M[3]*C[3];
   L[1] += M[1]*C[4]+M[2]*C[5]+M[3]*C[6];
   L[2] += M[1]*C[5]+M[2]*C[7]+M[3]*C[8];
   L[3] += M[1]*C[6]+M[2]*C[8]+M[3]*C[9];
-
+#endif
+#if PP > 2
   for (int l=4; l<10; l++) L[0] += M[l] * C[l];
   L[1] += M[4]*C[10]+M[5]*C[11]+M[6]*C[12]+M[7]*C[13]+M[8]*C[14]+M[9]*C[15];
   L[2] += M[4]*C[11]+M[5]*C[13]+M[6]*C[14]+M[7]*C[16]+M[8]*C[17]+M[9]*C[18];
@@ -130,7 +136,8 @@ void M2LSum(real_t *L, const real_t *C, const real_t*M) {
   L[7] += M[1]*C[13]+M[2]*C[16]+M[3]*C[17];
   L[8] += M[1]*C[14]+M[2]*C[17]+M[3]*C[18];
   L[9] += M[1]*C[15]+M[2]*C[18]+M[3]*C[19];
-
+#endif
+#if PP > 3
   for (int l=10; l<20; l++) L[0] += M[l] * C[l];
   L[1] += M[10]*C[20]+M[11]*C[21]+M[12]*C[22]+M[13]*C[23]+M[14]*C[24]+M[15]*C[25]+M[16]*C[26]+M[17]*C[27]+M[18]*C[28]+M[19]*C[29];
   L[2] += M[10]*C[21]+M[11]*C[23]+M[12]*C[24]+M[13]*C[26]+M[14]*C[27]+M[15]*C[28]+M[16]*C[30]+M[17]*C[31]+M[18]*C[32]+M[19]*C[33];
@@ -151,7 +158,8 @@ void M2LSum(real_t *L, const real_t *C, const real_t*M) {
   L[17] += M[1]*C[27]+M[2]*C[31]+M[3]*C[32];
   L[18] += M[1]*C[28]+M[2]*C[32]+M[3]*C[33];
   L[19] += M[1]*C[29]+M[2]*C[33]+M[3]*C[34];
-
+#endif
+#if PP > 4
  for (int l=20; l<35; l++) L[0] += M[l] * C[l];
   L[1] += M[20]*C[35]+M[21]*C[36]+M[22]*C[37]+M[23]*C[38]+M[24]*C[39]+M[25]*C[40]+M[26]*C[41]+M[27]*C[42]+M[28]*C[43]+M[29]*C[44]+M[30]*C[45]+M[31]*C[46]+M[32]*C[47]+M[33]*C[48]+M[34]*C[49];
   L[2] += M[20]*C[36]+M[21]*C[38]+M[22]*C[39]+M[23]*C[41]+M[24]*C[42]+M[25]*C[43]+M[26]*C[45]+M[27]*C[46]+M[28]*C[47]+M[29]*C[48]+M[30]*C[50]+M[31]*C[51]+M[32]*C[52]+M[33]*C[53]+M[34]*C[54];
@@ -187,7 +195,8 @@ void M2LSum(real_t *L, const real_t *C, const real_t*M) {
   L[32] += M[1]*C[47]+M[2]*C[52]+M[3]*C[53];
   L[33] += M[1]*C[48]+M[2]*C[53]+M[3]*C[54];
   L[34] += M[1]*C[49]+M[2]*C[54]+M[3]*C[55];
-
+#endif
+#if PP > 5
   for (int l=35; l<56; l++) L[0] += M[l] * C[l];
   L[1] += M[35]*C[56]+M[36]*C[57]+M[37]*C[58]+M[38]*C[59]+M[39]*C[60]+M[40]*C[61]+M[41]*C[62]+M[42]*C[63]+M[43]*C[64]+M[44]*C[65]+M[45]*C[66]+M[46]*C[67]+M[47]*C[68]+M[48]*C[69]+M[49]*C[70]+M[50]*C[71]+M[51]*C[72]+M[52]*C[73]+M[53]*C[74]+M[54]*C[75]+M[55]*C[76];
   L[2] += M[35]*C[57]+M[36]*C[59]+M[37]*C[60]+M[38]*C[62]+M[39]*C[63]+M[40]*C[64]+M[41]*C[66]+M[42]*C[67]+M[43]*C[68]+M[44]*C[69]+M[45]*C[71]+M[46]*C[72]+M[47]*C[73]+M[48]*C[74]+M[49]*C[75]+M[50]*C[77]+M[51]*C[78]+M[52]*C[79]+M[53]*C[80]+M[54]*C[81]+M[55]*C[82];
@@ -244,20 +253,24 @@ void M2LSum(real_t *L, const real_t *C, const real_t*M) {
   L[53] += M[1]*C[74]+M[2]*C[80]+M[3]*C[81];
   L[54] += M[1]*C[75]+M[2]*C[81]+M[3]*C[82];
   L[55] += M[1]*C[76]+M[2]*C[82]+M[3]*C[83];
+#endif
 }
 
 void powerM(real_t *C, const real_t *dX) {
+#if PP > 1
   C[1] = C[0] * dX[0];
   C[2] = C[0] * dX[1];
   C[3] = C[0] * dX[2];
-
+#endif
+#if PP > 2
   C[4] = C[1] * dX[0] / 2;
   C[5] = C[2] * dX[0];
   C[6] = C[3] * dX[0];
   C[7] = C[2] * dX[1] / 2;
   C[8] = C[3] * dX[1];
   C[9] = C[3] * dX[2] / 2;
-  
+#endif  
+#if PP > 3
   C[10] = C[4] * dX[0] / 3;
   C[11] = C[5] * dX[0] / 2;
   C[12] = C[6] * dX[0] / 2;
@@ -268,7 +281,8 @@ void powerM(real_t *C, const real_t *dX) {
   C[17] = C[8] * dX[1] / 2;
   C[18] = C[9] * dX[1];
   C[19] = C[9] * dX[2] / 3;
-  
+#endif
+#if PP > 4
   C[20] = C[10] * dX[0] / 4;
   C[21] = C[11] * dX[0] / 3;
   C[22] = C[12] * dX[0] / 3;
@@ -284,7 +298,8 @@ void powerM(real_t *C, const real_t *dX) {
   C[32] = C[18] * dX[1] / 2;
   C[33] = C[19] * dX[1];
   C[34] = C[19] * dX[2] / 4;
-
+#endif
+#if PP > 5
   C[35] = C[20] * dX[0] / 5;
   C[36] = C[21] * dX[0] / 4;
   C[37] = C[22] * dX[0] / 4;
@@ -306,20 +321,22 @@ void powerM(real_t *C, const real_t *dX) {
   C[53] = C[33] * dX[1] / 2;
   C[54] = C[34] * dX[1];
   C[55] = C[34] * dX[2] / 5;
+#endif
 }
 
 void powerL(real_t *C, const real_t *dX) {
   C[1] = C[0] * dX[0];
   C[2] = C[0] * dX[1];
   C[3] = C[0] * dX[2];
-
+#if PP > 1
   C[4] = C[1] * dX[0] / 2;
   C[5] = C[2] * dX[0];
   C[6] = C[3] * dX[0];
   C[7] = C[2] * dX[1] / 2;
   C[8] = C[3] * dX[1];
   C[9] = C[3] * dX[2] / 2;
-  
+#endif
+#if PP > 2
   C[10] = C[4] * dX[0] / 3;
   C[11] = C[5] * dX[0] / 2;
   C[12] = C[6] * dX[0] / 2;
@@ -330,7 +347,8 @@ void powerL(real_t *C, const real_t *dX) {
   C[17] = C[8] * dX[1] / 2;
   C[18] = C[9] * dX[1];
   C[19] = C[9] * dX[2] / 3;
-  
+#endif
+#if PP > 3
   C[20] = C[10] * dX[0] / 4;
   C[21] = C[11] * dX[0] / 3;
   C[22] = C[12] * dX[0] / 3;
@@ -346,7 +364,8 @@ void powerL(real_t *C, const real_t *dX) {
   C[32] = C[18] * dX[1] / 2;
   C[33] = C[19] * dX[1];
   C[34] = C[19] * dX[2] / 4;
-
+#endif
+#if PP > 4
   C[35] = C[20] * dX[0] / 5;
   C[36] = C[21] * dX[0] / 4;
   C[37] = C[22] * dX[0] / 4;
@@ -368,7 +387,8 @@ void powerL(real_t *C, const real_t *dX) {
   C[53] = C[33] * dX[1] / 2;
   C[54] = C[34] * dX[1];
   C[55] = C[34] * dX[2] / 5;
-
+#endif
+#if PP > 5
   C[56] = C[35] * dX[0] / 6;
   C[57] = C[36] * dX[0] / 5;
   C[58] = C[37] * dX[0] / 5;
@@ -397,18 +417,20 @@ void powerL(real_t *C, const real_t *dX) {
   C[81] = C[54] * dX[1] / 2;
   C[82] = C[55] * dX[1];
   C[83] = C[55] * dX[2] / 6;
+#endif
 }
 
 void M2MSum(real_t *MI, const real_t *C, const real_t *MJ) {
   for (int i=1; i<MTERM; i++) MI[i] += MJ[i];
-
+#if PP > 2
   MI[4] += C[1]*MJ[1];
   MI[5] += C[1]*MJ[2]+C[2]*MJ[1];
   MI[6] += C[1]*MJ[3]+C[3]*MJ[1];
   MI[7] += C[2]*MJ[2];
   MI[8] += C[2]*MJ[3]+C[3]*MJ[2];
   MI[9] += C[3]*MJ[3];
-
+#endif
+#if PP > 3
   MI[10] += C[1]*MJ[4]+C[4]*MJ[1];
   MI[11] += C[1]*MJ[5]+C[2]*MJ[4]+C[4]*MJ[2]+C[5]*MJ[1];
   MI[12] += C[1]*MJ[6]+C[3]*MJ[4]+C[4]*MJ[3]+C[6]*MJ[1];
@@ -419,7 +441,8 @@ void M2MSum(real_t *MI, const real_t *C, const real_t *MJ) {
   MI[17] += C[2]*MJ[8]+C[3]*MJ[7]+C[7]*MJ[3]+C[8]*MJ[2];
   MI[18] += C[2]*MJ[9]+C[3]*MJ[8]+C[8]*MJ[3]+C[9]*MJ[2];
   MI[19] += C[3]*MJ[9]+C[9]*MJ[3];
-
+#endif
+#if PP > 4
   MI[20] += C[1]*MJ[10]+C[4]*MJ[4]+C[10]*MJ[1];
   MI[21] += C[1]*MJ[11]+C[2]*MJ[10]+C[4]*MJ[5]+C[5]*MJ[4]+C[10]*MJ[2]+C[11]*MJ[1];
   MI[22] += C[1]*MJ[12]+C[3]*MJ[10]+C[4]*MJ[6]+C[6]*MJ[4]+C[10]*MJ[3]+C[12]*MJ[1];
@@ -435,7 +458,8 @@ void M2MSum(real_t *MI, const real_t *C, const real_t *MJ) {
   MI[32] += C[2]*MJ[18]+C[3]*MJ[17]+C[7]*MJ[9]+C[8]*MJ[8]+C[9]*MJ[7]+C[17]*MJ[3]+C[18]*MJ[2];
   MI[33] += C[2]*MJ[19]+C[3]*MJ[18]+C[8]*MJ[9]+C[9]*MJ[8]+C[18]*MJ[3]+C[19]*MJ[2];
   MI[34] += C[3]*MJ[19]+C[9]*MJ[9]+C[19]*MJ[3];
-
+#endif
+#if PP > 5
   MI[35] += C[1]*MJ[20]+C[4]*MJ[10]+C[10]*MJ[4]+C[20]*MJ[1];
   MI[36] += C[1]*MJ[21]+C[2]*MJ[20]+C[4]*MJ[11]+C[5]*MJ[10]+C[10]*MJ[5]+C[11]*MJ[4]+C[20]*MJ[2]+C[21]*MJ[1];
   MI[37] += C[1]*MJ[22]+C[3]*MJ[20]+C[4]*MJ[12]+C[6]*MJ[10]+C[10]*MJ[6]+C[12]*MJ[4]+C[20]*MJ[3]+C[22]*MJ[1];
@@ -457,13 +481,16 @@ void M2MSum(real_t *MI, const real_t *C, const real_t *MJ) {
   MI[53] += C[2]*MJ[33]+C[3]*MJ[32]+C[7]*MJ[19]+C[8]*MJ[18]+C[9]*MJ[17]+C[17]*MJ[9]+C[18]*MJ[8]+C[19]*MJ[7]+C[32]*MJ[3]+C[33]*MJ[2];
   MI[54] += C[2]*MJ[34]+C[3]*MJ[33]+C[8]*MJ[19]+C[9]*MJ[18]+C[18]*MJ[9]+C[19]*MJ[8]+C[33]*MJ[3]+C[34]*MJ[2];
   MI[55] += C[3]*MJ[34]+C[9]*MJ[19]+C[19]*MJ[9]+C[34]*MJ[3];
+#endif
 }
 
 void L2LSum(real_t *LI, const real_t *C, const real_t *LJ) {
+#if PP > 1
   LI[1] += C[1]*LJ[4]+C[2]*LJ[5]+C[3]*LJ[6];
   LI[2] += C[1]*LJ[5]+C[2]*LJ[7]+C[3]*LJ[8];
   LI[3] += C[1]*LJ[6]+C[2]*LJ[8]+C[3]*LJ[9];
-
+#endif
+#if PP > 2
   LI[1] += C[4]*LJ[10]+C[5]*LJ[11]+C[6]*LJ[12]+C[7]*LJ[13]+C[8]*LJ[14]+C[9]*LJ[15];
   LI[2] += C[4]*LJ[11]+C[5]*LJ[13]+C[6]*LJ[14]+C[7]*LJ[16]+C[8]*LJ[17]+C[9]*LJ[18];
   LI[3] += C[4]*LJ[12]+C[5]*LJ[14]+C[6]*LJ[15]+C[7]*LJ[17]+C[8]*LJ[18]+C[9]*LJ[19];
@@ -473,7 +500,8 @@ void L2LSum(real_t *LI, const real_t *C, const real_t *LJ) {
   LI[7] += C[1]*LJ[13]+C[2]*LJ[16]+C[3]*LJ[17];
   LI[8] += C[1]*LJ[14]+C[2]*LJ[17]+C[3]*LJ[18];
   LI[9] += C[1]*LJ[15]+C[2]*LJ[18]+C[3]*LJ[19];
-
+#endif
+#if PP > 3
   LI[1] += C[10]*LJ[20]+C[11]*LJ[21]+C[12]*LJ[22]+C[13]*LJ[23]+C[14]*LJ[24]+C[15]*LJ[25]+C[16]*LJ[26]+C[17]*LJ[27]+C[18]*LJ[28]+C[19]*LJ[29];
   LI[2] += C[10]*LJ[21]+C[11]*LJ[23]+C[12]*LJ[24]+C[13]*LJ[26]+C[14]*LJ[27]+C[15]*LJ[28]+C[16]*LJ[30]+C[17]*LJ[31]+C[18]*LJ[32]+C[19]*LJ[33];
   LI[3] += C[10]*LJ[22]+C[11]*LJ[24]+C[12]*LJ[25]+C[13]*LJ[27]+C[14]*LJ[28]+C[15]*LJ[29]+C[16]*LJ[31]+C[17]*LJ[32]+C[18]*LJ[33]+C[19]*LJ[34];
@@ -493,7 +521,8 @@ void L2LSum(real_t *LI, const real_t *C, const real_t *LJ) {
   LI[17] += C[1]*LJ[27]+C[2]*LJ[31]+C[3]*LJ[32];
   LI[18] += C[1]*LJ[28]+C[2]*LJ[32]+C[3]*LJ[33];
   LI[19] += C[1]*LJ[29]+C[2]*LJ[33]+C[3]*LJ[34];
-
+#endif
+#if PP > 4
   LI[1] += C[20]*LJ[35]+C[21]*LJ[36]+C[22]*LJ[37]+C[23]*LJ[38]+C[24]*LJ[39]+C[25]*LJ[40]+C[26]*LJ[41]+C[27]*LJ[42]+C[28]*LJ[43]+C[29]*LJ[44]+C[30]*LJ[45]+C[31]*LJ[46]+C[32]*LJ[47]+C[33]*LJ[48]+C[34]*LJ[49];
   LI[2] += C[20]*LJ[36]+C[21]*LJ[38]+C[22]*LJ[39]+C[23]*LJ[41]+C[24]*LJ[42]+C[25]*LJ[43]+C[26]*LJ[45]+C[27]*LJ[46]+C[28]*LJ[47]+C[29]*LJ[48]+C[30]*LJ[50]+C[31]*LJ[51]+C[32]*LJ[52]+C[33]*LJ[53]+C[34]*LJ[54];
   LI[3] += C[20]*LJ[37]+C[21]*LJ[39]+C[22]*LJ[40]+C[23]*LJ[42]+C[24]*LJ[43]+C[25]*LJ[44]+C[26]*LJ[46]+C[27]*LJ[47]+C[28]*LJ[48]+C[29]*LJ[49]+C[30]*LJ[51]+C[31]*LJ[52]+C[32]*LJ[53]+C[33]*LJ[54]+C[34]*LJ[55];
@@ -528,7 +557,8 @@ void L2LSum(real_t *LI, const real_t *C, const real_t *LJ) {
   LI[32] += C[1]*LJ[47]+C[2]*LJ[52]+C[3]*LJ[53];
   LI[33] += C[1]*LJ[48]+C[2]*LJ[53]+C[3]*LJ[54];
   LI[34] += C[1]*LJ[49]+C[2]*LJ[54]+C[3]*LJ[55];
-
+#endif
+#if PP > 5
   LI[1] += C[35]*LJ[56]+C[36]*LJ[57]+C[37]*LJ[58]+C[38]*LJ[59]+C[39]*LJ[60]+C[40]*LJ[61]+C[41]*LJ[62]+C[42]*LJ[63]+C[43]*LJ[64]+C[44]*LJ[65]+C[45]*LJ[66]+C[46]*LJ[67]+C[47]*LJ[68]+C[48]*LJ[69]+C[49]*LJ[70]+C[50]*LJ[71]+C[51]*LJ[72]+C[52]*LJ[73]+C[53]*LJ[74]+C[54]*LJ[75]+C[55]*LJ[76];
   LI[2] += C[35]*LJ[57]+C[36]*LJ[59]+C[37]*LJ[60]+C[38]*LJ[62]+C[39]*LJ[63]+C[40]*LJ[64]+C[41]*LJ[66]+C[42]*LJ[67]+C[43]*LJ[68]+C[44]*LJ[69]+C[45]*LJ[71]+C[46]*LJ[72]+C[47]*LJ[73]+C[48]*LJ[74]+C[49]*LJ[75]+C[50]*LJ[77]+C[51]*LJ[78]+C[52]*LJ[79]+C[53]*LJ[80]+C[54]*LJ[81]+C[55]*LJ[82];
   LI[3] += C[35]*LJ[58]+C[36]*LJ[60]+C[37]*LJ[61]+C[38]*LJ[63]+C[39]*LJ[64]+C[40]*LJ[65]+C[41]*LJ[67]+C[42]*LJ[68]+C[43]*LJ[69]+C[44]*LJ[70]+C[45]*LJ[72]+C[46]*LJ[73]+C[47]*LJ[74]+C[48]*LJ[75]+C[49]*LJ[76]+C[50]*LJ[78]+C[51]*LJ[79]+C[52]*LJ[80]+C[53]*LJ[81]+C[54]*LJ[82]+C[55]*LJ[83];
@@ -584,26 +614,33 @@ void L2LSum(real_t *LI, const real_t *C, const real_t *LJ) {
   LI[53] += C[1]*LJ[74]+C[2]*LJ[80]+C[3]*LJ[81];
   LI[54] += C[1]*LJ[75]+C[2]*LJ[81]+C[3]*LJ[82];
   LI[55] += C[1]*LJ[76]+C[2]*LJ[82]+C[3]*LJ[83];
+#endif
 }
 
 void L2PSum(real_t *TRG, const real_t *C, const real_t *L) {
+#if PP > 1
   TRG[1] += C[1]*L[4]+C[2]*L[5]+C[3]*L[6];
   TRG[2] += C[1]*L[5]+C[2]*L[7]+C[3]*L[8];
   TRG[3] += C[1]*L[6]+C[2]*L[8]+C[3]*L[9];
-
+#endif
+#if PP > 2
   TRG[1] += C[4]*L[10]+C[5]*L[11]+C[6]*L[12]+C[7]*L[13]+C[8]*L[14]+C[9]*L[15];
   TRG[2] += C[4]*L[11]+C[5]*L[13]+C[6]*L[14]+C[7]*L[16]+C[8]*L[17]+C[9]*L[18];
   TRG[3] += C[4]*L[12]+C[5]*L[14]+C[6]*L[15]+C[7]*L[17]+C[8]*L[18]+C[9]*L[19];
-
+#endif
+#if PP > 3
   TRG[1] += C[10]*L[20]+C[11]*L[21]+C[12]*L[22]+C[13]*L[23]+C[14]*L[24]+C[15]*L[25]+C[16]*L[26]+C[17]*L[27]+C[18]*L[28]+C[19]*L[29];
   TRG[2] += C[10]*L[21]+C[11]*L[23]+C[12]*L[24]+C[13]*L[26]+C[14]*L[27]+C[15]*L[28]+C[16]*L[30]+C[17]*L[31]+C[18]*L[32]+C[19]*L[33];
   TRG[3] += C[10]*L[22]+C[11]*L[24]+C[12]*L[25]+C[13]*L[27]+C[14]*L[28]+C[15]*L[29]+C[16]*L[31]+C[17]*L[32]+C[18]*L[33]+C[19]*L[34];
-
+#endif
+#if PP > 4
   TRG[1] += C[20]*L[35]+C[21]*L[36]+C[22]*L[37]+C[23]*L[38]+C[24]*L[39]+C[25]*L[40]+C[26]*L[41]+C[27]*L[42]+C[28]*L[43]+C[29]*L[44]+C[30]*L[45]+C[31]*L[46]+C[32]*L[47]+C[33]*L[48]+C[34]*L[49];
   TRG[2] += C[20]*L[36]+C[21]*L[38]+C[22]*L[39]+C[23]*L[41]+C[24]*L[42]+C[25]*L[43]+C[26]*L[45]+C[27]*L[46]+C[28]*L[47]+C[29]*L[48]+C[30]*L[50]+C[31]*L[51]+C[32]*L[52]+C[33]*L[53]+C[34]*L[54];
   TRG[3] += C[20]*L[37]+C[21]*L[39]+C[22]*L[40]+C[23]*L[42]+C[24]*L[43]+C[25]*L[44]+C[26]*L[46]+C[27]*L[47]+C[28]*L[48]+C[29]*L[49]+C[30]*L[51]+C[31]*L[52]+C[32]*L[53]+C[33]*L[54]+C[34]*L[55];
-
+#endif
+#if PP > 5
   TRG[1] += C[35]*L[56]+C[36]*L[57]+C[37]*L[58]+C[38]*L[59]+C[39]*L[60]+C[40]*L[61]+C[41]*L[62]+C[42]*L[63]+C[43]*L[64]+C[44]*L[65]+C[45]*L[66]+C[46]*L[67]+C[47]*L[68]+C[48]*L[69]+C[49]*L[70]+C[50]*L[71]+C[51]*L[72]+C[52]*L[73]+C[53]*L[74]+C[54]*L[75]+C[55]*L[76];
   TRG[2] += C[35]*L[57]+C[36]*L[59]+C[37]*L[60]+C[38]*L[62]+C[39]*L[63]+C[40]*L[64]+C[41]*L[66]+C[42]*L[67]+C[43]*L[68]+C[44]*L[69]+C[45]*L[71]+C[46]*L[72]+C[47]*L[73]+C[48]*L[74]+C[49]*L[75]+C[50]*L[77]+C[51]*L[78]+C[52]*L[79]+C[53]*L[80]+C[54]*L[81]+C[55]*L[82];
   TRG[3] += C[35]*L[58]+C[36]*L[60]+C[37]*L[61]+C[38]*L[63]+C[39]*L[64]+C[40]*L[65]+C[41]*L[67]+C[42]*L[68]+C[43]*L[69]+C[44]*L[70]+C[45]*L[72]+C[46]*L[73]+C[47]*L[74]+C[48]*L[75]+C[49]*L[76]+C[50]*L[78]+C[51]*L[79]+C[52]*L[80]+C[53]*L[81]+C[54]*L[82]+C[55]*L[83];
+#endif
 }
