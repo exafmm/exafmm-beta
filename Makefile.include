@@ -1,65 +1,88 @@
 .SUFFIXES: .cxx .cu .o
-.PHONY: docs
 
-### CUDA path
-CUDA_INSTALL_PATH = /usr/local/cuda
+### choose kernel
+EQUATION = Laplace
+#EQUATION = Yukawa (not available yet)
+#EQUATION = Helmholtz (not available yet)
+#EQUATION = Stokes (not available yet)
 
-### VTK path
-VTK_INCLUDE_PATH = /usr/include/vtk-5.8
-VTK_LIBRARY_PATH = /usr/lib/vtk-5.8
+### choose basis of multipole/local expansion
+BASIS	= Cartesian
+#BASIS	= Spherical
+#BASIS	= Planewave (not available yet)
 
-### choose CPU or GPU
-#DEVICE  = CPU
-DEVICE  = GPU
+### choose device to use
+DEVICE	= CPU
+#DEVICE	= GPU (not integrated)
 
-### choose Cartesian or spherical expansion
-#EXPAND  = Cartesian
-EXPAND  = Spherical
+### choose C++ compiler
+CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -msse4a -ffast-math -funroll-loops -fopenmp # GCC
+#CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
+#CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
+#CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
+#CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
+#CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/Q
+#CXX	= mpixlcxx_r -qarch=450d -qtune=450 -O3 -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/P
+#CXX	= mpiFCCpx -Kfast # K computer
+#CXX	= tau_cxx.sh # TAU compiler instrumentation
 
-### GCC compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -ffast-math -funroll-loops -fforce-addr -fPIC -I../include
-### Intel compiler
-#CXX	= mpicxx -Wall -xHOST -O3 -openmp -funroll-loops -finline-functions -fPIC -ansi-alias -I../include
-### PGI compiler
-#CXX	= CC -O3 -I../include
-### BG/P compiler
-#CXX	= mpixlcxx -qarch=450 -qtune=450 -I../include
-### K computer
-#CXX	= mpiFCCpx -Kfast,openmp
-### CUDA compiler
-NVCC    = nvcc -Xcompiler -fopenmp --ptxas-options=-v -O3\
-	 -use_fast_math -arch=sm_35 -I../include -I$(CUDA_INSTALL_PATH)/include
+### choose fortran compiler
+FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
+#FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
 
 ### Base flags
-LFLAGS  = -D$(DEVICE) -D$(EXPAND)
-LFLAGS  += -DEXPANSION=4
+CXX	+= -I../include -I../uniform -I../sakura-uniform
+#CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
+#LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
+LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
+LFLAGS  += -DEXPANSION=5 # Specify expansion order
+LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
+#LFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
+LFLAGS	+= -DFP64 # Use double precision
+#LFLAGS	+= -DKAHAN # Use Kahan summation
 
-### PAPI flags
-#LFLAGS += -DPAPI -lpapi
+### Debugging flags
+LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
+#LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L (slows down execution)
 
-### QUARK flags
-#LFLAGS	+= -DQUARK -lquark
+### Thread model flags
+#LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
+LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
+#LFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
+#LFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
 
-### MassiveThreads flags
-#LFLAGS += -std=c++0x -DMTHREADS -lmyth -lpthread -ldl
+### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -DDAG_RECORDER=2 -ldr
 
-### VTK flags
-#CXX     += -I$(VTK_INCLUDE_PATH)
-#VFLAGS  = -L$(VTK_LIBRARY_PATH) -lvtkRendering -lvtkGraphics -lvtkFiltering -lvtkViews -lvtkCommon -lvtkWidgets -lvtkIO -DVTK
+### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
+#LFLAGS	+= -DPAPI -lpapi
+
+### Trace flags : This tracing tool is part of ExaFMM
+#LFLAGS	+= -DTRACE
+
+### Tree building flags
+#LFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
 
 ifeq ($(DEVICE),GPU)
+NVCC	= nvcc -use_fast_math -arch=sm_35 -I../include
 ### CUDA flags
-LFLAGS  += -DQUEUE -L$(CUDA_INSTALL_PATH)/lib64 -lcudart
+LFLAGS  += -lcudadevrt
+SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cu ../kernels/$(EQUATION)P2P$(DEVICE).cu
+OBJECTS	= $(SOURCES:.cu=.o)
+else
+SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx ../kernels/$(EQUATION)P2P$(DEVICE).cxx
+OBJECTS	= $(SOURCES:.cxx=.o)
 endif
 
-SOURCE = ../kernel/$(DEVICE)$(EXPAND)Laplace.cxx ../kernel/$(DEVICE)VanDerWaals.cxx\
-	../kernel/CPUP2P.cxx
-OBJECT = $(SOURCE:.cxx=.o)
+MAKEFLAGS += --no-print-directory
 
+.c.o	:
+	$(CXX) -c $^ -o $@ $(LFLAGS)
 .cxx.o  :
-	$(CXX) -c $? -o $@ $(LFLAGS)
+	$(CXX) -c $^ -o $@ $(LFLAGS)
 .cu.o   :
-	$(NVCC) -c $? -o $@ $(LFLAGS)
+	$(NVCC) -c $^ -o $@ $(LFLAGS)
 
 help:
 	@make -C .. help
@@ -71,11 +94,7 @@ cleanlib:
 	@make -C .. cleanlib
 cleanall:
 	@make -C .. cleanall
-commit:
-	@make -C .. commit
 save:
 	@make -C .. save
 revert:
 	@make -C .. revert
-docs:
-	@make -C .. docs

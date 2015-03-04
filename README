@@ -1,0 +1,66 @@
+--- 1. Quick start guide
+There is no need to configure or CMake.
+You may need to change the CXX command in Makefile.include.
+Then do the following.
+
+To run the serial FMM example:
+cd examples
+make serial
+
+To run the parallel FMM example:
+cd examples
+make parallel
+
+To run the GROMACS wrapper example:
+cd wrapper
+make gromacs
+
+To get the list of command line options:
+./a.out --help
+
+
+--- 2. Where are the important files?
+Most of the source code is in the directory "include" in the form of header files.
+Different versions of P2M,M2M,M2L,L2L,L2P,P2P kernel implementations are in "kernels".
+File names and variable names are self-explanatory, and every line is commented.
+The best documentation is most likely the code itself.
+
+
+--- 3. What's in the directory "gpu"?
+"gpu" is a completely independent code at the moment.
+It will be integrated into the main code soon.
+To run it:
+cd gpu
+make
+
+
+--- 4. What's in Makefile.include?
+This file is included from each Makefile in all subdirectories.
+Most options of exafmm can be controlled from this file.
+
+EQUATION : Type of equation to solve
+BASIS : Type of multipole/local expansion basis
+DEVICE : CPU or GPU
+CXX : Type of compiler and options
+LFLAGS : Linker options and preprocessor options (see comments)
+
+
+--- 5. Why is there a CMakeLists.txt?
+This project is not yet large enough to justify the use of CMake,
+but we are just testing a few features of CMake.
+You probably don't want to use this feature.
+
+--- 6. Available features
+Contorl both P and theta
+Error optimization of theta
+Mutual interaction for both P2P and M2L kernels
+Laplace kernel
+Cartesian, Spherical expansions
+Dual tree traversal
+Periodic boundary condition
+Kahan summation
+Task based threading with TBB, MTHREADS, and OpenMP
+SIMD intrinsics for SSE, AVX, MIC, BG/Q, and SPARC
+
+-- 7. Features that were removed
+Skipping dipoles

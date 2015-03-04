@@ -1,0 +1,44 @@
+-- CPU --
+kernel: eps2, Xperiodic, wavek -> global variables
+bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
+Time each kernel separately using cycle counters
+Intel OpenMP error
+examples/Makefile options to args
+cycle counter based weights
+OpenMP with atomics -> flush
+MPI-3.0 lock all
+SIMD P2P performance
+Kahan + fixed precision
+Solid harmonics kernel
+Morton -> Hilbert
+splitRange defined in both dataset.h and partition.h
+UVWX-list with precomputation
+2:1 refinement for precomputation
+Periodic B.C. by one precomputed translation matrix
+Teng's BH MAC with M2P option during DTT
+non-orthogonal recursive bisection
+
+-- GPU integration --
+CUDA 6.0 debug
+Unify dataset
+.h -> .cxx/.cu
+MPI Bonsai
+Ewald, VdW
+Zero softening
+
+-- Software infrastructure --
+Autotools
+CMake (update)
+Regression
+Buildbot
+
+-- Comparisons --
+DTT vs. UVWX-list
+Separate +- tree vs. Single tree
+Cartesian vs. Spherical (optimized)
+
+-- Parallel debugging tips --
+Shift bodies
+traverseLET 0 distance
+graft 0
+serial mimic parallel

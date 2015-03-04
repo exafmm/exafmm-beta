@@ -1,0 +1,3 @@
+Turn Multipole, Local into 3-D allocated
+parallelize kernels
+Newmark beta time stepping

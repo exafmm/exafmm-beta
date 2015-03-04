@@ -1,70 +1,245 @@
-/*
-Copyright (C) 2011 by Rio Yokota, Simon Layton, Lorena Barba
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
 #ifndef dataset_h
 #define dataset_h
-#include "kernel.h"
+#include <cmath>
+#include <cstdlib>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include "types.h"
 
-//! Contains all the different datasets
-template<Equation equation>
-class Dataset : public Kernel<equation> {
+class Dataset {                                                 // Contains all the different datasets
 private:
-  long filePosition;                                            //!< Position of file stream
+  long filePosition;                                            // Position of file stream
+
+private:
+  //! Split range and return partial range
+  void splitRange(int & begin, int & end, int iSplit, int numSplit) {
+    assert(end > begin);                                        // Check that size > 0
+    int size = end - begin;                                     // Size of range
+    int increment = size / numSplit;                            // Increment of splitting
+    int remainder = size % numSplit;                            // Remainder of splitting
+    begin += iSplit * increment + std::min(iSplit,remainder);   // Increment the begin counter
+    end = begin + increment;                                    // Increment the end counter
+    if (remainder > iSplit) end++;                              // Adjust the end counter for remainder
+  }
+
+  //! Uniform distribution on [-1,1]^3 lattice
+  Bodies lattice(int numBodies, int mpirank, int mpisize) {
+    int nx = int(std::pow(numBodies*mpisize, 1./3));            // Number of points in x direction
+    int ny = nx;                                                // Number of points in y direction
+    int nz = nx;                                                // Number of points in z direction
+    int begin = 0;                                              // Begin index in z direction
+    int end = nz;                                               // End index in z direction
+    splitRange(begin, end, mpirank, mpisize);                   // Split range in z direction
+    int numLattice = nx * ny * (end - begin);                   // Total number of lattice points
+    Bodies bodies(numLattice);                                  // Initialize bodies
+    B_iter B = bodies.begin();                                  // Initialize body iterator
+    for (int ix=0; ix<nx; ix++) {                               // Loop over x direction
+      for (int iy=0; iy<ny; iy++) {                             //  Loop over y direction
+        for (int iz=begin; iz<end; iz++, B++) {                 //   Loop over z direction
+          B->X[0] = (ix / real_t(nx-1)) * 2 - 1;                //    x coordinate
+          B->X[1] = (iy / real_t(ny-1)) * 2 - 1;                //    y coordinate
+          B->X[2] = (iz / real_t(nz-1)) * 2 - 1;                //    z coordinate
+        }                                                       //   End loop over z direction
+      }                                                         //  End loop over y direction
+    }                                                           // End loop over x direction
+    return bodies;                                              // Return bodies
+  }
+
+  //! Random distribution in [-1,1]^3 cube
+  Bodies cube(int numBodies, int seed, int numSplit) {
+    Bodies bodies(numBodies);                                   // Initialize bodies
+    for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
+      int begin = 0;                                            //  Begin index of bodies
+      int end = bodies.size();                                  //  End index of bodies
+      splitRange(begin, end, i, numSplit);                      //  Split range of bodies
+      srand48(seed);                                            //  Set seed for random number generator
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	for (int d=0; d<3; d++) {                               //   Loop over dimension
+	  B->X[d] = drand48() * 2 * M_PI - M_PI;                //    Initialize coordinates
+	}                                                       //   End loop over dimension
+      }                                                         //  End loop over bodies
+    }                                                           // End loop over partitions
+    return bodies;                                              // Return bodies
+  }
+
+  //! Random distribution on r = 1 sphere
+  Bodies sphere(int numBodies, int seed, int numSplit) {
+    Bodies bodies(numBodies);                                   // Initialize bodies
+    for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
+      int begin = 0;                                            //  Begin index of bodies
+      int end = bodies.size();                                  //  End index of bodies
+      splitRange(begin, end, i, numSplit);                      //  Split range of bodies
+      srand48(seed);                                            //  Set seed for random number generator
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	for (int d=0; d<3; d++) {                               //   Loop over dimension
+	  B->X[d] = drand48() * 2 - 1;                          //    Initialize coordinates
+	}                                                       //   End loop over dimension
+	real_t r = std::sqrt(norm(B->X));                       //   Distance from center
+	for (int d=0; d<3; d++) {                               //   Loop over dimension
+	  B->X[d] *= M_PI / r;                                  //    Normalize coordinates
+	}                                                       //   End loop over dimension
+      }                                                         //  End loop over bodies
+    }                                                           // End loop over partitions
+    return bodies;                                              // Return bodies
+  }
+
+  //! Random distribution on one octant of a r = 1 sphere
+  Bodies octant(int numBodies, int seed, int numSplit) {
+    Bodies bodies(numBodies);                                   // Initialize bodies
+    for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
+      int begin = 0;                                            //  Begin index of bodies
+      int end = bodies.size();                                  //  End index of bodies
+      splitRange(begin, end, i, numSplit);                      //  Split range of bodies
+      srand48(seed);                                            //  Set seed for random number generator
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	real_t theta = drand48() * M_PI * 0.5;                  //   Polar angle [0,pi/2]
+	real_t phi = drand48() * M_PI * 0.5;                    //   Azimuthal angle [0,pi/2]
+	B->X[0] = 2 * M_PI * sin(theta) * cos(phi) - M_PI;      //    x coordinate
+	B->X[1] = 2 * M_PI * sin(theta) * sin(phi) - M_PI;      //    y coordinate
+	B->X[2] = 2 * M_PI * cos(theta) - M_PI;                 //    z coordinate
+      }                                                         //  End loop over bodies
+    }                                                           // End loop over partitions
+    return bodies;                                              // Return bodies
+  }
+
+  //! Plummer distribution in a r = M_PI/2 sphere
+  Bodies plummer(int numBodies, int seed, int numSplit) {
+    Bodies bodies(numBodies);                                   // Initialize bodies
+    for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
+      int begin = 0;                                            //  Begin index of bodies
+      int end = bodies.size();                                  //  End index of bodies
+      splitRange(begin, end, i, numSplit);                      //  Split range of bodies
+      srand48(seed);                                            //  Set seed for random number generator
+      B_iter B=bodies.begin()+begin;                            //  Body begin iterator
+      while (B != bodies.begin()+end) {                         //  While body iterator is within range
+	real_t X1 = drand48();                                  //   First random number
+	real_t X2 = drand48();                                  //   Second random number
+	real_t X3 = drand48();                                  //   Third random number
+	real_t R = 1.0 / sqrt( (pow(X1, -2.0 / 3.0) - 1.0) );   //   Radius
+	if (R < 100.0) {                                        //   If radius is less than 100
+	  real_t Z = (1.0 - 2.0 * X2) * R;                      //    z component
+	  real_t X = sqrt(R * R - Z * Z) * cos(2.0 * M_PI * X3);//    x component
+	  real_t Y = sqrt(R * R - Z * Z) * sin(2.0 * M_PI * X3);//    y component
+	  real_t scale = 3.0 * M_PI / 16.0;                     //    Scaling factor
+	  X *= scale; Y *= scale; Z *= scale;                   //    Scale coordinates
+	  B->X[0] = X;                                          //    Assign x coordinate to body
+	  B->X[1] = Y;                                          //    Assign y coordinate to body
+	  B->X[2] = Z;                                          //    Assign z coordinate to body
+	  B++;                                                  //    Increment body iterator
+	}                                                       //   End if for bodies within range
+      }                                                         //  End while loop over bodies
+    }                                                           // End loop over partitions
+    return bodies;                                              // Return bodies
+  }
 
 public:
-  using Kernel<equation>::stringLength;                         //!< Max length of event name
+  //! Constructor
+  Dataset() : filePosition(0) {}                                // Initialize variables
 
-//! Constructor
-  Dataset() : filePosition(0) {}
-//! Destructor
-  ~Dataset() {}
+  //! Initialize source values
+  void initSource(Bodies & bodies, int seed, int numSplit) {
+    for (int i=0; i<numSplit; i++, seed++) {                    // Loop over partitions (if there are any)
+      int begin = 0;                                            //  Begin index of bodies
+      int end = bodies.size();                                  //  End index of bodies
+      splitRange(begin, end, i, numSplit);                      //  Split range of bodies
+      srand48(seed);                                            //  Set seed for random number generator
+#if MASS
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	B->SRC = 1. / bodies.size();                            //   Initialize mass
+      }                                                         //  End loop over bodies
+#else
+      real_t average = 0;                                       //  Initialize average charge
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	B->SRC = drand48() - .5;                                //   Initialize charge
+	average += B->SRC;                                      //   Accumulate average
+      }                                                         //  End loop over bodies
+      average /= (end - begin);                                 //  Normalize average
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	B->SRC -= average;                                      //   Subtract average charge
+      }                                                         //  End loop over bodies
+#endif
+    }                                                           // End loop over partitions
+  }
 
-//! Initialize source values
-  void initSource(Bodies &bodies) {
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
-      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-//      B->SRC = (drand48() - .5) / bodies.size() / MPISIZE;      //  Initialize mass/charge
-      B->SRC = 1. / bodies.size() / MPISIZE;                    //  Initialize mass/charge
+  //! Initialize target values
+  void initTarget(Bodies & bodies) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      B->TRG = 0;                                               //  Clear target values
+      B->IBODY = B-bodies.begin();                              //  Initial body numbering
+      B->WEIGHT = 1;                                            //  Initial weight
     }                                                           // End loop over bodies
   }
 
-//! Initialize target values
-  void initTarget(Bodies &bodies, bool IeqJ=true) {
-    srand48(0);                                                 // Set seed for random number generator
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
-      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->TRG = 0;                                               //  Clear previous target values (IeqJ is dummy)
-      if( EPS2 != 0 ) B->TRG[0] = -B->SRC / std::sqrt(EPS2) * IeqJ;//  Initialize potential (0 if I != J)
-    }                                                           // End loop over bodies
+  //! Initialize dsitribution, source & target value of bodies
+  Bodies initBodies(int numBodies, const char * distribution,
+		    int mpirank=0, int mpisize=1, int numSplit=1) {
+    Bodies bodies;                                              // Initialize bodies
+    switch (distribution[0]) {                                  // Switch between data distribution type
+    case 'l':                                                   // Case for lattice
+      bodies = lattice(numBodies,mpirank,mpisize);              //  Uniform distribution on [-1,1]^3 lattice
+      break;                                                    // End case for lattice
+    case 'c':                                                   // Case for cube
+      bodies = cube(numBodies,mpirank,numSplit);                //  Random distribution in [-1,1]^3 cube
+      break;                                                    // End case for cube
+    case 's':                                                   // Case for sphere
+      bodies = sphere(numBodies,mpirank,numSplit);              //  Random distribution on surface of r = 1 sphere
+      break;                                                    // End case for sphere
+    case 'o':                                                   // Case for octant
+      bodies = octant(numBodies,mpirank,numSplit);              //  Random distribution on octant of a r = 1 sphere
+      break;                                                    // End case for octant
+    case 'p':                                                   // Case plummer
+      bodies = plummer(numBodies,mpirank,numSplit);             //  Plummer distribution in a r = M_PI/2 sphere
+      break;                                                    // End case for plummer
+    default:                                                    // If none of the above
+      fprintf(stderr, "Unknown data distribution %s\n", distribution);// Print error message
+    }                                                           // End switch between data distribution type
+    initSource(bodies,mpirank,numSplit);                        // Initialize source values
+    initTarget(bodies);                                         // Initialize target values
+    return bodies;                                              // Return bodies
   }
 
-//! Read target values from file
-  void readTarget(Bodies &bodies) {
-    char fname[256];                                            // File name for saving direct calculation values
-    sprintf(fname,"direct%4.4d",MPIRANK);                       // Set file name
-    std::ifstream file(fname,std::ios::in | std::ios::binary);  // Open file
+  //! Read source values from file
+  void readSources(Bodies & bodies, int mpirank) {
+    std::stringstream name;                                     // File name
+    name << "source" << std::setfill('0') << std::setw(4)       // Set format
+         << mpirank << ".dat";                                  // Create file name
+    std::ifstream file(name.str().c_str(),std::ios::in);        // Open file
     file.seekg(filePosition);                                   // Set position in file
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      file >> B->X[0];                                          //  Read data for x coordinates
+      file >> B->X[1];                                          //  Read data for y coordinates
+      file >> B->X[2];                                          //  Read data for z coordinates
+      file >> B->SRC;                                           //  Read data for charge
+    }                                                           // End loop over bodies
+    filePosition = file.tellg();                                // Get position in file
+    file.close();                                               // Close file
+  }
+
+  //! Write source values to file
+  void writeSources(Bodies & bodies, int mpirank) {
+    std::stringstream name;                                     // File name
+    name << "source" << std::setfill('0') << std::setw(4)       // Set format
+         << mpirank << ".dat";                                  // Create file name
+    std::ofstream file(name.str().c_str(),std::ios::out);       // Open file
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      file << B->X[0] << std::endl;                             //  Write data for x coordinates
+      file << B->X[1] << std::endl;                             //  Write data for y coordinates
+      file << B->X[2] << std::endl;                             //  Write data for z coordinates
+      file << B->SRC  << std::endl;                             //  Write data for charge
+    }                                                           // End loop over bodies
+    file.close();                                               // Close file
+  }
+
+  //! Read target values from file
+  void readTargets(Bodies & bodies, int mpirank) {
+    std::stringstream name;                                     // File name
+    name << "target" << std::setfill('0') << std::setw(4)       // Set format
+         << mpirank << ".dat";                                  // Create file name
+    std::ifstream file(name.str().c_str(),std::ios::in);        // Open file
+    file.seekg(filePosition);                                   // Set position in file
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       file >> B->TRG[0];                                        //  Read data for potential
       file >> B->TRG[1];                                        //  Read data for x acceleration
       file >> B->TRG[2];                                        //  Read data for y acceleration
@@ -74,12 +249,13 @@ public:
     file.close();                                               // Close file
   }
 
-//! Write target values to file
-  void writeTarget(Bodies &bodies) {
-    char fname[256];                                            // File name for saving direct calculation values
-    sprintf(fname,"direct%4.4d",MPIRANK);                       // Set file name
-    std::ofstream file(fname,std::ios::out | std::ios::app | std::ios::binary);// Open file
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
+  //! Write target values to file
+  void writeTargets(Bodies & bodies, int mpirank) {
+    std::stringstream name;                                     // File name
+    name << "target" << std::setfill('0') << std::setw(4)       // Set format
+         << mpirank << ".dat";                                  // Create file name
+    std::ofstream file(name.str().c_str(),std::ios::out);       // Open file
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       file << B->TRG[0] << std::endl;                           //  Write data for potential
       file << B->TRG[1] << std::endl;                           //  Write data for x acceleration
       file << B->TRG[2] << std::endl;                           //  Write data for y acceleration
@@ -88,169 +264,44 @@ public:
     file.close();                                               // Close file
   }
 
-  void sampleBodies(Bodies &bodies, int numTargets) {
-    int n = bodies.size();
-    int p = n / numTargets;
-    assert(p > 0);
-    for (int i=0; i<numTargets; i++) {
-      assert(i * p < n);
-      bodies[i] = bodies[i*p];
-    }
-    bodies.resize(numTargets);
+  //! Downsize target bodies by even sampling
+  void sampleBodies(Bodies & bodies, int numTargets) {
+    if (numTargets < int(bodies.size())) {                      // If target size is smaller than current
+      int stride = bodies.size() / numTargets;                  //  Stride of sampling
+      for (int i=0; i<numTargets; i++) {                        //  Loop over target samples
+        bodies[i] = bodies[i*stride];                           //   Sample targets
+      }                                                         //  End loop over target samples
+      bodies.resize(numTargets);                                //  Resize bodies to target size
+    }                                                           // End if for target size
   }
 
-//! Evaluate relative L2 norm error
-  void evalError(Bodies &bodies, Bodies &bodies2,
-                 real &diff1, real &norm1, real &diff2, real &norm2, bool ewald=false) {
-    real p = 0, p2 = 0;                                         // Total energy
-    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
-#ifdef DEBUG
-      std::cout << B->ICELL << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;// Compare every element
-#endif
-      if( ewald ) {                                             // If ewald method is used
-        p += B->TRG[0] * B->SRC;                                //  total energy
-        p2 += B2->TRG[0] * B2->SRC;                             //  total energy
-      } else {                                                  // If normal Laplace kernel is used
-        diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
-        norm1 += B2->TRG[0] * B2->TRG[0];                       //  Value of potential
-      }                                                         // End if for Ewald method
-      diff2 += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);// Difference of x acceleration
-      diff2 += (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2]);// Difference of y acceleration
-      diff2 += (B->TRG[3] - B2->TRG[3]) * (B->TRG[3] - B2->TRG[3]);// Difference of z acceleration
-      norm2 += B2->TRG[1] * B2->TRG[1];                         //  Value of x acceleration
-      norm2 += B2->TRG[2] * B2->TRG[2];                         //  Value of y acceleration
-      norm2 += B2->TRG[3] * B2->TRG[3];                         //  Value of z acceleration
-    }                                                           //  End loop over bodies & bodies2
-    if( ewald ) {                                               // If ewald method is used
-      diff1 = (p - p2) * (p - p2);                              //  Difference of total energy
-      norm1 = p2 * p2;                                          //  Value of total energy
-    }                                                           // End if for Ewald method
+  //! Get bodies with positive charges
+  Bodies getPositive(Bodies & bodies) {
+    Bodies buffer = bodies;                                     // Copy bodies to buffer
+    B_iter B2 = buffer.begin();                                 // Initialize iterator of buffer
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      if (B->SRC >= 0) {                                        //  If source is positive
+        *B2 = *B;                                               //   Copy data to buffer
+        B2++;                                                   //   Increment iterator
+      }                                                         //  End if for positive source
+    }                                                           // End loop over bodies
+    buffer.resize(B2-buffer.begin());                           // Resize buffer
+    return buffer;                                              // Return buffer
   }
 
-//! Print relative L2 norm error
-  void printError(real diff1, real norm1, real diff2, real norm2) {
-    std::cout << std::setw(stringLength) << std::left
-              << "Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
-    std::cout << std::setw(stringLength) << std::left
-              << "Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
+
+  //! Get bodies with negative charges
+  Bodies getNegative(Bodies & bodies) {
+    Bodies buffer = bodies;                                     // Copy bodies to buffer
+    B_iter B2 = buffer.begin();                                 // Initialize iterator of buffer
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+      if (B->SRC < 0) {                                         //  If source is negative
+        *B2 = *B;                                               //   Copy data to buffer
+        B2++;                                                   //   Increment iterator
+      }                                                         //  End if for negative source
+    }                                                           // End loop over bodies
+    buffer.resize(B2-buffer.begin());                           // Resize buffer
+    return buffer;                                              // Return buffer
   }
 };
-
-template<>
-class Dataset<VanDerWaals> : public Kernel<VanDerWaals> {
-private:
-  long filePosition;                                            //!< Position of file stream
-
-public:
-//! Constructor
-  Dataset() : filePosition(0) {}
-//! Destructor
-  ~Dataset() {}
-
-//! Initialize source values
-  void initSource(Bodies &bodies) {
-    THETA = .1;                                                 // Force opening angle to be small
-    ATOMS = 16;                                                 // Set number of atoms
-    RSCALE.resize(ATOMS*ATOMS);                                 // Resize rscale vector
-    GSCALE.resize(ATOMS*ATOMS);                                 // Resize gscale vector
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
-      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->SRC = drand48() * ATOMS;                               //  Initialize mass/charge
-    }                                                           // End loop over bodies
-    for( int i=0; i!=ATOMS; ++i ) {                             // Loop over atoms
-      GSCALE[i*ATOMS+i] = drand48();                            //  Set VanDerWaals post scaling factor
-      RSCALE[i*ATOMS+i] = drand48();                            //  Set VanDerWaals pre scaling factor
-    }                                                           // End loop over atoms
-    for( int i=0; i!=ATOMS; ++i ) {                             // Loop over target atoms
-      for( int j=0; j!=ATOMS; ++j ) {                           //  Loop over source atoms
-        if( i != j ) {                                          //   If target and source are different
-          GSCALE[i*ATOMS+j] = std::sqrt(GSCALE[i*ATOMS+i] * GSCALE[j*ATOMS+j]);// Set post scaling factor
-          RSCALE[i*ATOMS+j] = (std::sqrt(RSCALE[i*ATOMS+i]) + std::sqrt(RSCALE[j*ATOMS+j])) * 0.5;
-          RSCALE[i*ATOMS+j] *= RSCALE[i*ATOMS+j];               //    Set pre scaling factor
-        }                                                       //   End if for different target and source
-      }                                                         //  End loop over source atoms
-    }                                                           // End loop over target atoms
-  }
-
-//! Initialize target values
-  void initTarget(Bodies &bodies, bool IeqJ=true) {
-    srand48(0);                                                 // Set seed for random number generator
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      B->IBODY = B-bodies.begin();                              //  Tag body with initial index
-      B->IPROC = MPIRANK;                                       //  Tag body with initial MPI rank
-      B->TRG = 0 * IeqJ;                                        //  Clear previous target values
-    }                                                           // End loop over bodies
-  }
-
-//! Read target values from file
-  void readTarget(Bodies &bodies) {
-    char fname[256];                                            // File name for saving direct calculation values
-    sprintf(fname,"direct%4.4d",MPIRANK);                       // Set file name
-    std::ifstream file(fname,std::ios::in | std::ios::binary);  // Open file
-    file.seekg(filePosition);                                   // Set position in file
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      file >> B->TRG[0];                                        //  Read data for potential
-      file >> B->TRG[1];                                        //  Read data for x acceleration
-      file >> B->TRG[2];                                        //  Read data for y acceleration
-      file >> B->TRG[3];                                        //  Read data for z acceleration
-    }                                                           // End loop over bodies
-    filePosition = file.tellg();                                // Get position in file
-    file.close();                                               // Close file
-  }
-
-//! Write target values to file
-  void writeTarget(Bodies &bodies) {
-    char fname[256];                                            // File name for saving direct calculation values
-    sprintf(fname,"direct%4.4d",MPIRANK);                       // Set file name
-    std::ofstream file(fname,std::ios::out | std::ios::app | std::ios::binary);// Open file
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B ) {      // Loop over bodies
-      file << B->TRG[0] << std::endl;                           //  Write data for potential
-      file << B->TRG[1] << std::endl;                           //  Write data for x acceleration
-      file << B->TRG[2] << std::endl;                           //  Write data for y acceleration
-      file << B->TRG[3] << std::endl;                           //  Write data for z acceleration
-    }                                                           // End loop over bodies
-    file.close();                                               // Close file
-  }
-
-  void sampleBodies(Bodies &bodies, int numTargets) {
-    int n = bodies.size();
-    int p = n / numTargets;
-    assert(p > 0);
-    for (int i=0; i<numTargets; i++) {
-      assert(i * p < n);
-      bodies[i] = bodies[i*p];
-    }
-    bodies.resize(numTargets);
-  }
-
-//! Evaluate relative L2 norm error
-  void evalError(Bodies &bodies, Bodies &bodies2,
-                 real &diff1, real &norm1, real &diff2, real &norm2) {
-    B_iter B2 = bodies2.begin();                                // Set iterator for bodies2
-    for( B_iter B=bodies.begin(); B!=bodies.end(); ++B, ++B2 ) {// Loop over bodies & bodies2
-#ifdef DEBUG
-      std::cout << B->ICELL << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;// Compare every element
-#endif
-      diff1 += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);// Difference of potential
-      norm1 += B2->TRG[0] * B2->TRG[0];                         //  Value of potential
-      diff2 += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]);// Difference of x acceleration
-      diff2 += (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2]);// Difference of y acceleration
-      diff2 += (B->TRG[3] - B2->TRG[3]) * (B->TRG[3] - B2->TRG[3]);// Difference of z acceleration
-      norm2 += B2->TRG[1] * B2->TRG[1];                         //  Value of x acceleration
-      norm2 += B2->TRG[2] * B2->TRG[2];                         //  Value of y acceleration
-      norm2 += B2->TRG[3] * B2->TRG[3];                         //  Value of z acceleration
-    }                                                           // End loop over bodies & bodies2
-  }
-
-//! Print relative L2 norm error
-  void printError(real diff1, real norm1, real diff2, real norm2) {
-    std::cout << std::setw(stringLength) << std::left
-              << "Error (pot)" << " : " << std::sqrt(diff1/norm1) << std::endl;
-    std::cout << std::setw(stringLength) << std::left
-              << "Error (acc)" << " : " << std::sqrt(diff2/norm2) << std::endl;
-  }
-};
-
 #endif
