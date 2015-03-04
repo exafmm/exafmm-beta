@@ -2,7 +2,12 @@ syntax: glob
 
 *.a
 *.dat
-*.g80emu
+*.fmm
+*.mod
 *.o
+*.th_o
 *.out
+*.pdb
+*restart
 *.so
+*.svg
