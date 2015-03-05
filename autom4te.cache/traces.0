@@ -886,45 +886,92 @@ m4trace:configure.ac:4: -1- _AM_SUBST_NOTMAKE([AM_DEFAULT_V])
 m4trace:configure.ac:4: -1- m4_pattern_allow([^AM_DEFAULT_VERBOSITY$])
 m4trace:configure.ac:4: -1- m4_pattern_allow([^AM_BACKSLASH$])
 m4trace:configure.ac:4: -1- _AM_SUBST_NOTMAKE([AM_BACKSLASH])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^CC$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^CFLAGS$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^LDFLAGS$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^LIBS$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^CPPFLAGS$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^CC$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^CC$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^CC$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^CC$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^ac_ct_CC$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^EXEEXT$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^OBJEXT$])
-m4trace:configure.ac:5: -1- _AM_PROG_CC_C_O
-m4trace:configure.ac:5: -1- AM_RUN_LOG([$CC -c conftest.$ac_ext -o conftest2.$ac_objext])
-m4trace:configure.ac:5: -1- _AM_DEPENDENCIES([CC])
-m4trace:configure.ac:5: -1- AM_SET_DEPDIR
-m4trace:configure.ac:5: -1- m4_pattern_allow([^DEPDIR$])
-m4trace:configure.ac:5: -1- AM_OUTPUT_DEPENDENCY_COMMANDS
-m4trace:configure.ac:5: -1- AM_MAKE_INCLUDE
-m4trace:configure.ac:5: -1- m4_pattern_allow([^am__include$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^am__quote$])
-m4trace:configure.ac:5: -1- AM_DEP_TRACK
-m4trace:configure.ac:5: -1- AM_CONDITIONAL([AMDEP], [test "x$enable_dependency_tracking" != xno])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^AMDEP_TRUE$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^AMDEP_FALSE$])
-m4trace:configure.ac:5: -1- _AM_SUBST_NOTMAKE([AMDEP_TRUE])
-m4trace:configure.ac:5: -1- _AM_SUBST_NOTMAKE([AMDEP_FALSE])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^AMDEPBACKSLASH$])
-m4trace:configure.ac:5: -1- _AM_SUBST_NOTMAKE([AMDEPBACKSLASH])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^am__nodep$])
-m4trace:configure.ac:5: -1- _AM_SUBST_NOTMAKE([am__nodep])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^CCDEPMODE$])
-m4trace:configure.ac:5: -1- AM_CONDITIONAL([am__fastdepCC], [
-  test "x$enable_dependency_tracking" != xno \
-  && test "$am_cv_CC_dependencies_compiler_type" = gcc3])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^am__fastdepCC_TRUE$])
-m4trace:configure.ac:5: -1- m4_pattern_allow([^am__fastdepCC_FALSE$])
-m4trace:configure.ac:5: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_TRUE])
-m4trace:configure.ac:5: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_FALSE])
+m4trace:configure.ac:5: -1- m4_include([m4/ax_prog_cxx_mpi.m4])
+m4trace:m4/ax_prog_cxx_mpi.m4:77: -1- AC_DEFUN([AX_PROG_CXX_MPI], [
+AC_PREREQ(2.50)
+
+# Check for compiler
+# Needs to be split off into an extra macro to ensure right expansion
+# order.
+AC_REQUIRE([_AX_PROG_CXX_MPI],[_AX_PROG_CXX_MPI([$1])])
+
+AS_IF([test x"$_ax_prog_cxx_mpi_mpi_wanted" = xno],
+  [ _ax_prog_cxx_mpi_mpi_found=no ],
+  [
+    AC_LANG_PUSH([C++])
+
+    # test whether MPI_Init() is available
+    # We do not use AC_SEARCH_LIBS here, as it caches its outcome and
+    # thus disallows corresponding calls in the other AX_PROG_*_MPI
+    # macros.
+    for lib in NONE mpi mpich; do
+      save_LIBS=$LIBS
+      if test x"$lib" = xNONE; then
+        AC_MSG_CHECKING([for function MPI_Init])
+      else
+        AC_MSG_CHECKING([for function MPI_Init in -l$lib])
+        LIBS="-l$lib $LIBS"
+      fi
+      AC_LINK_IFELSE([
+        AC_LANG_PROGRAM([
+extern "C" { void MPI_Init(); }
+],[MPI_Init();])],
+        [ _ax_prog_cxx_mpi_mpi_found=yes ],
+        [ _ax_prog_cxx_mpi_mpi_found=no ])
+      AC_MSG_RESULT($_ax_prog_cxx_mpi_mpi_found)
+      if test "x$_ax_prog_cxx_mpi_mpi_found" = "xyes"; then
+        break;
+      fi
+      LIBS=$save_LIBS
+    done
+
+    # Check for header
+    AS_IF([test x"$_ax_prog_cxx_mpi_mpi_found" = xyes], [
+      AC_MSG_CHECKING([for mpi.h])
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <mpi.h>])],
+        [ AC_MSG_RESULT(yes)],
+        [ AC_MSG_RESULT(no)
+         _ax_prog_cxx_mpi_mpi_found=no
+      ])
+    ])
+    AC_LANG_POP([C++])
+])
+
+# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+AS_IF([test x"$_ax_prog_cxx_mpi_mpi_found" = xyes], [
+        ifelse([$2],,[AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])],[$2])
+        :
+],[
+        $3
+        :
+])
+
+])
+m4trace:m4/ax_prog_cxx_mpi.m4:159: -1- AC_DEFUN([_AX_PROG_CXX_MPI], [
+  AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
+  ifelse([$1],,[_ax_prog_cxx_mpi_mpi_wanted=yes],[
+    AC_MSG_CHECKING([whether to compile using MPI])
+    if $1; then
+      _ax_prog_cxx_mpi_mpi_wanted=yes
+    else
+      _ax_prog_cxx_mpi_mpi_wanted=no
+    fi
+    AC_MSG_RESULT($_ax_prog_cxx_mpi_mpi_wanted)
+  ])
+  if test x"$_ax_prog_cxx_mpi_mpi_wanted" = xyes; then
+    if test -z "$CXX" && test -n "$MPICXX"; then
+      CXX="$MPICXX"
+    else
+      AC_CHECK_TOOLS([CXX], [mpic++ mpicxx mpiCC sxmpic++ hcp mpxlC_r mpxlC mpixlcxx_r mpixlcxx mpg++ mpc++ mpCC cmpic++ mpiFCC CCicpc pgCC pathCC sxc++ xlC_r xlC bgxlC_r bgxlC openCC sunCC crayCC g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC])
+    fi
+  fi
+  AC_PROG_CXX
+])
+m4trace:configure.ac:6: -1- AX_PROG_CXX_MPI
+m4trace:configure.ac:6: -1- _AX_PROG_CXX_MPI([])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^MPICXX$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^CXX$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^ac_ct_CXX$])
 m4trace:configure.ac:6: -1- m4_pattern_allow([^CXX$])
 m4trace:configure.ac:6: -1- m4_pattern_allow([^CXXFLAGS$])
 m4trace:configure.ac:6: -1- m4_pattern_allow([^LDFLAGS$])
@@ -932,7 +979,25 @@ m4trace:configure.ac:6: -1- m4_pattern_allow([^LIBS$])
 m4trace:configure.ac:6: -1- m4_pattern_allow([^CPPFLAGS$])
 m4trace:configure.ac:6: -1- m4_pattern_allow([^CXX$])
 m4trace:configure.ac:6: -1- m4_pattern_allow([^ac_ct_CXX$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^EXEEXT$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^OBJEXT$])
 m4trace:configure.ac:6: -1- _AM_DEPENDENCIES([CXX])
+m4trace:configure.ac:6: -1- AM_SET_DEPDIR
+m4trace:configure.ac:6: -1- m4_pattern_allow([^DEPDIR$])
+m4trace:configure.ac:6: -1- AM_OUTPUT_DEPENDENCY_COMMANDS
+m4trace:configure.ac:6: -1- AM_MAKE_INCLUDE
+m4trace:configure.ac:6: -1- m4_pattern_allow([^am__include$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^am__quote$])
+m4trace:configure.ac:6: -1- AM_DEP_TRACK
+m4trace:configure.ac:6: -1- AM_CONDITIONAL([AMDEP], [test "x$enable_dependency_tracking" != xno])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^AMDEP_TRUE$])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^AMDEP_FALSE$])
+m4trace:configure.ac:6: -1- _AM_SUBST_NOTMAKE([AMDEP_TRUE])
+m4trace:configure.ac:6: -1- _AM_SUBST_NOTMAKE([AMDEP_FALSE])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^AMDEPBACKSLASH$])
+m4trace:configure.ac:6: -1- _AM_SUBST_NOTMAKE([AMDEPBACKSLASH])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^am__nodep$])
+m4trace:configure.ac:6: -1- _AM_SUBST_NOTMAKE([am__nodep])
 m4trace:configure.ac:6: -1- m4_pattern_allow([^CXXDEPMODE$])
 m4trace:configure.ac:6: -1- AM_CONDITIONAL([am__fastdepCXX], [
   test "x$enable_dependency_tracking" != xno \
@@ -941,6 +1006,7 @@ m4trace:configure.ac:6: -1- m4_pattern_allow([^am__fastdepCXX_TRUE$])
 m4trace:configure.ac:6: -1- m4_pattern_allow([^am__fastdepCXX_FALSE$])
 m4trace:configure.ac:6: -1- _AM_SUBST_NOTMAKE([am__fastdepCXX_TRUE])
 m4trace:configure.ac:6: -1- _AM_SUBST_NOTMAKE([am__fastdepCXX_FALSE])
+m4trace:configure.ac:6: -1- m4_pattern_allow([^HAVE_MPI$])
 m4trace:configure.ac:9: -1- m4_pattern_allow([^LIB@&t@OBJS$])
 m4trace:configure.ac:9: -1- m4_pattern_allow([^LTLIBOBJS$])
 m4trace:configure.ac:9: -1- AM_CONDITIONAL([am__EXEEXT], [test -n "$EXEEXT"])
