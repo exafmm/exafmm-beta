@@ -76,7 +76,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = serial$(EXEEXT)
+bin_PROGRAMS = serial$(EXEEXT) parallel$(EXEEXT)
 subdir = examples
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/build-aux/depcomp
@@ -92,6 +92,11 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__dirstamp = $(am__leading_dot)dirstamp
+am_parallel_OBJECTS = parallel.$(OBJEXT) \
+	../kernels/LaplaceCartesianCPU.$(OBJEXT) \
+	../kernels/LaplaceP2PCPU.$(OBJEXT)
+parallel_OBJECTS = $(am_parallel_OBJECTS)
+parallel_DEPENDENCIES =
 am_serial_OBJECTS = serial.$(OBJEXT) \
 	../kernels/LaplaceCartesianCPU.$(OBJEXT) \
 	../kernels/LaplaceP2PCPU.$(OBJEXT)
@@ -126,8 +131,8 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(serial_SOURCES)
-DIST_SOURCES = $(serial_SOURCES)
+SOURCES = $(parallel_SOURCES) $(serial_SOURCES)
+DIST_SOURCES = $(parallel_SOURCES) $(serial_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -241,6 +246,8 @@ top_srcdir = @top_srcdir@
 AM_CXXFLAGS = -I../include -msse4a -ffast-math -funroll-loops -fopenmp -DCartesian -DEXPANSION=4 -DUSE_SIMD -DTBB -DMASS -DDIRECT
 serial_SOURCES = serial.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 serial_LDADD = -ltbb
+parallel_SOURCES = parallel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+parallel_LDADD = -ltbb
 all: all-am
 
 .SUFFIXES:
@@ -328,6 +335,10 @@ clean-binPROGRAMS:
 ../kernels/LaplaceP2PCPU.$(OBJEXT): ../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
 
+parallel$(EXEEXT): $(parallel_OBJECTS) $(parallel_DEPENDENCIES) $(EXTRA_parallel_DEPENDENCIES) 
+	@rm -f parallel$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(parallel_OBJECTS) $(parallel_LDADD) $(LIBS)
+
 serial$(EXEEXT): $(serial_OBJECTS) $(serial_DEPENDENCIES) $(EXTRA_serial_DEPENDENCIES) 
 	@rm -f serial$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(serial_OBJECTS) $(serial_LDADD) $(LIBS)
@@ -341,6 +352,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/LaplaceCartesianCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parallel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serial.Po@am__quote@
 
 .cxx.o:
