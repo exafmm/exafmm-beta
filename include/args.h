@@ -95,7 +95,7 @@ private:
   }
 
 public:
-  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), ncrit(16), nspawn(1000), threads(16), images(0),
+  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), ncrit(64), nspawn(5000), threads(64), images(0),
 					theta(.4), useRmax(1), useRopt(1), mutual(1), graft(1),
 					verbose(1), distribution("cube"), repeat(1) {
     while (1) {
