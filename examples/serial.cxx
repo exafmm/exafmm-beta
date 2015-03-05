@@ -89,7 +89,8 @@ int main(int argc, char ** argv) {
     data.initTarget(bodies);
     std::cout << std::setw(10) << args.numBodies << " "
 	      << std::setw(10) << time << " "
-	      << std::setw(10) << std::sqrt(accDif/accNrm);
+	      << std::setw(10) << std::sqrt(accDif/accNrm)
+	      << std::endl;
   }
   logger::writeDAG();
   return 0;
