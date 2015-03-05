@@ -71,7 +71,7 @@ void growTree(vec3 * Xj, int numBodies, int (* cells)[10], int & numCells,
   for (int level=0; level<198; level++) {
     for (int iparent=levelOffset[level]; iparent<levelOffset[level+1]; iparent++) {
       int nbody = cells[iparent][8];
-      if (nbody >= ncrit) {
+      if (nbody > ncrit) {
 	int ibody = cells[iparent][7];
 	reorder(X0, R0, level, &cells[iparent][1], Xj, &permutation[ibody], nbody, iwork, nbody8);
 	int nchild = 0;
