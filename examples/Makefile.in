@@ -96,12 +96,12 @@ am_parallel_OBJECTS = parallel.$(OBJEXT) \
 	../kernels/LaplaceCartesianCPU.$(OBJEXT) \
 	../kernels/LaplaceP2PCPU.$(OBJEXT)
 parallel_OBJECTS = $(am_parallel_OBJECTS)
-parallel_DEPENDENCIES =
+parallel_LDADD = $(LDADD)
 am_serial_OBJECTS = serial.$(OBJEXT) \
 	../kernels/LaplaceCartesianCPU.$(OBJEXT) \
 	../kernels/LaplaceP2PCPU.$(OBJEXT)
 serial_OBJECTS = $(am_serial_OBJECTS)
-serial_DEPENDENCIES =
+serial_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -243,11 +243,10 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CXXFLAGS = -I../include -msse4a -ffast-math -funroll-loops -fopenmp -DCartesian -DEXPANSION=4 -DUSE_SIMD -DTBB -DMASS -DDIRECT
+AM_CXXFLAGS = -I../include -msse4a -ffast-math -funroll-loops -fopenmp -DCartesian -DEXPANSION=4 -DUSE_SIMD -DMASS -DDIRECT
 serial_SOURCES = serial.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-serial_LDADD = -ltbb
+# serial_LDADD = -ltbb
 parallel_SOURCES = parallel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-parallel_LDADD = -ltbb
 all: all-am
 
 .SUFFIXES:
@@ -577,6 +576,7 @@ uninstall-am: uninstall-binPROGRAMS
 	ps ps-am tags tags-am uninstall uninstall-am \
 	uninstall-binPROGRAMS
 
+# parallel_LDADD = -ltbb
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
