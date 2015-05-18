@@ -122,10 +122,10 @@ private:
   }
 
 //! Traverse a pair of trees using a queue
-  void traverseQueue(Pair pair, int threads) {
+  void traverseQueue(Pair pair) {
     PairQueue pairQueue;                                        // Queue of interacting cell pairs
 #if QUARK
-    Quark *quark = QUARK_New(threads);                          // Initialize QUARK object
+    Quark *quark = QUARK_New(1);                                // Initialize QUARK object
 #endif
     pairQueue.push_back(pair);                                  // Push pair to queue
     while( !pairQueue.empty() ) {                               // While dual traversal queue is not empty
@@ -351,7 +351,7 @@ public:
   }
 
 //! Dual tree traversal
-  void traverse(Cells &cells, Cells &jcells, int threads) {
+  void traverse(Cells &cells, Cells &jcells) {
     C_iter root = cells.end() - 1;                              // Iterator for root target cell
     C_iter jroot = jcells.end() - 1;                            // Iterator for root source cell
     if( IMAGES != 0 ) {                                         // If periodic boundary condition
@@ -371,7 +371,7 @@ public:
       Iperiodic = Icenter;                                      //  Set periodic image flag to center
       Xperiodic = 0;                                            //  Set periodic coordinate offset
       Pair pair(root,jroot);                                    //  Form pair of root cells
-      traverseQueue(pair, threads);                             //  Traverse a pair of trees
+      traverseQueue(pair);                                      //  Traverse a pair of trees
     } else {                                                    // If periodic boundary condition
       int I = 0;                                                //  Initialize index of periodic image
       for( int ix=-1; ix<=1; ++ix ) {                           //  Loop over x periodic direction
@@ -382,7 +382,7 @@ public:
             Xperiodic[1] = iy * 2 * R0;                         //     Coordinate offset for y periodic direction
             Xperiodic[2] = iz * 2 * R0;                         //     Coordinate offset for z periodic direction
             Pair pair(root,jroot);                              //     Form pair of root cells
-            traverseQueue(pair, threads);                       //     Traverse a pair of trees
+            traverseQueue(pair);                                //     Traverse a pair of trees
           }                                                     //    End loop over z periodic direction
         }                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction
