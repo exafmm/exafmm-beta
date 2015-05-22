@@ -12,7 +12,7 @@ cleanall:
 	make cleanlib
 save:
 	make cleanall
-	cd .. && tar zcvf exafmm-dev.tgz exafmm-dev
+	cd .. && tar zcvf exafmm.tgz exafmm
 revert:
 	hg revert --all
 	find . -name "*.orig" | xargs rm -f
