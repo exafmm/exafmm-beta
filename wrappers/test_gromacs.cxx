@@ -8,11 +8,11 @@
 
 extern "C" void FMM_Init(int images);
 extern "C" void FMM_Finalize();
-extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, double cycle);
-extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle);
-extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double * f,
-			      int ksize, double alpha, double sigma, double cutoff, double cycle);
-extern "C" void Direct_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle);
+extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float cycle);
+extern "C" void FMM_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle);
+extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
+			      int ksize, float alpha, float sigma, float cutoff, float cycle);
+extern "C" void Direct_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle);
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
@@ -20,17 +20,17 @@ int main(int argc, char ** argv) {
   int stringLength = 20;
   int images = 3;
   int ksize = 11;
-  double cycle = 2 * M_PI;
-  double alpha = 10 / cycle;
-  double sigma = .25 / M_PI;
-  double cutoff = cycle * alpha / 3;
+  float cycle = 2 * M_PI;
+  float alpha = 10 / cycle;
+  float sigma = .25 / M_PI;
+  float cutoff = cycle * alpha / 3;
   int * index = new int [Nmax];
-  double * x = new double [3*Nmax];
-  double * q = new double [Nmax];
-  double * p = new double [Nmax];
-  double * f = new double [3*Nmax];
-  double * p2 = new double [Nmax];
-  double * f2 = new double [3*Nmax];
+  float * x = new float [3*Nmax];
+  float * q = new float [Nmax];
+  float * p = new float [Nmax];
+  float * f = new float [3*Nmax];
+  float * p2 = new float [Nmax];
+  float * f2 = new float [3*Nmax];
 
   int mpisize, mpirank;
   MPI_Init(&argc, &argv);

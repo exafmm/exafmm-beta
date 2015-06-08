@@ -16,8 +16,8 @@ DEVICE	= CPU
 #DEVICE	= GPU (not integrated)
 
 ### choose C++ compiler
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
-CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
+CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
+#CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
 #CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
 #CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
 #CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
@@ -27,13 +27,14 @@ CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -ope
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 ### choose fortran compiler
-#FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
-FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
+FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
+#FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
 
 ### Base flags
 CXX	+= -I../include -I../uniform -I../sakura-uniform
 #CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
+LFLAGS	+= -fPIC # for shared library
 LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
 LFLAGS  += -DEXPANSION=10 # Specify expansion order
 #LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
@@ -47,7 +48,7 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 
 ### Thread model flags
 #LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
-LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
+#LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
 #LFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
 #LFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
