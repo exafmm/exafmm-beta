@@ -44,6 +44,7 @@ Bounds globalBounds;
 extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   const int ncrit = 32;
   const int nspawn = 1000;
+  const int threads = 1;
   const real_t eps2 = 0.0;
   const bool useRmax = true;
   const bool useRopt = true;
@@ -65,6 +66,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   args->theta = theta;
   args->ncrit = ncrit;
   args->nspawn = nspawn;
+  args->threads = threads;
   args->images = images;
   args->mutual = 0;
   args->verbose = verbose;
@@ -90,6 +92,7 @@ extern "C" void fmm_finalize_() {
 
 extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q,
 			       double * xold, double & cycle) {
+  num_threads(args->threads);
   logger::printTitle("Partition Profiling");
   const int shift = 29;
   const int mask = ~(0x7U << shift);
@@ -138,6 +141,7 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
 extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 			     double * x, double * q, double * p, double * f,
 			     double & cycle) {
+  num_threads(args->threads);
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   int nlocal = 0;
@@ -293,6 +297,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
 
 extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f,
 			       int & ksize, double & alpha, double & sigma, double & cutoff, double & cycle) {
+  num_threads(args->threads);
   Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
   const int shift = 29;
   const int mask = ~(0x7U << shift);
@@ -367,6 +372,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
 }
 
 extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double * q, double * p, double * f, double & cycle) {
+  num_threads(args->threads);
   logger::startTimer("Direct Coulomb");
   int images = args->images;
   int prange = 0;
@@ -427,6 +433,7 @@ extern "C" void direct_coulomb_(int & nglobal, int * icpumap, double * x, double
 extern "C" void coulomb_exclusion_(int & nglobal, int * icpumap,
 				   double * x, double * q, double * p, double * f,
 				   double & cycle, int * numex, int * natex) {
+  num_threads(args->threads);
   logger::startTimer("Coulomb Exclusion");
   for (int i=0, ic=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
@@ -460,6 +467,7 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
 				 double * x, double * p, double * f,
 				 double & cuton, double & cutoff, double & cycle,
 				 int & numTypes, double * rscale, double * gscale, double * fgscale) {
+  num_threads(args->threads);
   VanDerWaals * VDW = new VanDerWaals(cuton, cutoff, cycle, numTypes, rscale, gscale, fgscale);
   const int shift = 29;
   const int mask = ~(0x7U << shift);
@@ -518,6 +526,7 @@ extern "C" void direct_vanderwaals_(int & nglobal, int * icpumap, int * atype,
 				    double * x, double * p, double * f,
 				    double & cuton, double & cutoff, double & cycle,
 				    int & numTypes, double * rscale, double * gscale, double * fgscale) {
+  num_threads(args->threads);
   logger::startTimer("Direct VdW");
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
@@ -572,6 +581,7 @@ extern "C" void vanderwaals_exclusion_(int & nglobal, int * icpumap, int * atype
 				       double & cuton, double & cutoff, double & cycle,
 				       int & numTypes, double * rscale, double * gscale,
 				       double * fgscale, int * numex, int * natex) {
+  num_threads(args->threads);
   logger::startTimer("VdW Exclusion");
   for (int i=0, ic=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
