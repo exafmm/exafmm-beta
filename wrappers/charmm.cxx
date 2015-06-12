@@ -155,6 +155,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   treeMPI->setLET(cells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
+  traversal->initListCount(cells);
   traversal->initWeight(cells);
   traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
   Cells jcells;

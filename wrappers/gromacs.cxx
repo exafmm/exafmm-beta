@@ -128,6 +128,7 @@ extern "C" void FMM_Coulomb(int n, float * x, float * q, float * p, float * f, f
   treeMPI->setLET(cells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
+  traversal->initListCount(cells);
   traversal->initWeight(cells);
   traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
   Cells jcells;

@@ -83,6 +83,10 @@ struct Cell {
   int       NCHILD;                                             //!< Number of child cells
   int       IBODY;                                              //!< Index of first body
   int       NBODY;                                              //!< Number of descendant bodies
+#if COUNT_LIST
+  int       numP2P;                                             //!< Size of P2P interaction list per cell
+  int       numM2L;                                             //!< Size of M2L interaction list per cell
+#endif
   B_iter    BODY;                                               //!< Iterator of first body
   uint64_t  ICELL;                                              //!< Cell index
   real_t    WEIGHT;                                             //!< Weight for partitioning

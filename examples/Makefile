@@ -31,7 +31,7 @@ tree: tree.o $(OBJECTS)
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out
+	./a.out -t .5 -x 0 -o 0 -i 1
 
 Nserial:
 	@for N in 1000 1333 1778 2371 3162 4216 5623 7498 10000 13335 17782 23713 31622 42169 56234 74989 100000 \

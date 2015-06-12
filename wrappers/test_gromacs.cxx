@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
   float cycle = 2 * M_PI;
   float alpha = 10 / cycle;
   float sigma = .25 / M_PI;
-  float cutoff = cycle * alpha / 3;
+  float cutoff = cycle / 2;
   int * index = new int [Nmax];
   float * x = new float [3*Nmax];
   float * q = new float [Nmax];
