@@ -64,6 +64,9 @@ private:
 	countList(Ci, Cj, mutual, false);                       //   Increment M2L list
 	countWeight(Ci, Cj, mutual, remote);                    //   Increment M2L weight
       } else {                                                  //  Else if the bodies were sent
+#if NO_P2P
+	countList(Ci, Cj, mutual, true);                        //   Increment P2P list
+#else
 	if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
 	  kernel::P2P(Ci, eps2);                                //    P2P kernel for single cell
 	} else {                                                //   Else if source and target are different
@@ -72,6 +75,7 @@ private:
 	countKernel(numP2P);                                    //   Increment P2P counter
 	countList(Ci, Cj, mutual, true);                        //   Increment P2P list
 	countWeight(Ci, Cj, mutual, remote);                    //   Increment P2P weight
+#endif
       }                                                         //  End if for bodies
     } else {                                                    // Else if cells are close but not bodies
       splitCell(Ci, Cj, Xperiodic, mutual, remote);             //  Split cell and call function recursively for child

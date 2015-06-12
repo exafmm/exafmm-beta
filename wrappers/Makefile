@@ -3,6 +3,7 @@ include ../Makefile.include
 #LFLAGS	+= -DMASS
 LFLAGS 	+= -DIneJ
 LFLAGS 	+= -DNOWRAP
+LFLAGS	+= -DNO_P2P
 LFLAGS	+= -DSerial
 
 all:

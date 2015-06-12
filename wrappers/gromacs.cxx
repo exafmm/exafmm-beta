@@ -26,12 +26,12 @@ Bounds localBounds;
 Bounds globalBounds;
 
 extern "C" void FMM_Init(int images) {
-  const int ncrit = 32;
+  const int ncrit = 64;
   const int nspawn = 1000;
   const real_t eps2 = 0.0;
-  const real_t theta = 0.4;
-  const bool useRmax = true;
-  const bool useRopt = true;
+  const real_t theta = 0.5;
+  const bool useRmax = false;
+  const bool useRopt = false;
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
@@ -46,6 +46,8 @@ extern "C" void FMM_Init(int images) {
   args->ncrit = ncrit;
   args->nspawn = nspawn;
   args->images = images;
+  args->useRmax = useRmax;
+  args->useRopt = useRopt;
   args->mutual = 0;
   args->verbose = 1;
   args->distribution = "external";
