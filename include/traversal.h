@@ -245,7 +245,7 @@ public:
     }                                                           // End loop over cells
   }
 #else
-  void initListCount(Cells & cells) {}
+  void initListCount(Cells) {}
 #endif
 
 #if USE_WEIGHT
@@ -367,8 +367,8 @@ public:
     }                                                           // End if for verbose flag
 #endif
   }
-  void writeList(Cells cells, int mpirank=0) {
 #if COUNT_LIST
+  void writeList(Cells cells, int mpirank=0) {
     std::stringstream name;                                     // File name
     name << "list" << std::setfill('0') << std::setw(6)         // Set format
 	 << mpirank << ".dat";                                  // Create file name for list
@@ -377,7 +377,9 @@ public:
       listFile << std::setw(logger::stringLength) << std::left  //  Set format
 	       << C->ICELL << " " << C->numP2P << " " << C->numM2L << std::endl; // Print list size
     }                                                           // End loop over all lists
-#endif
   }
+#else
+  void writeList(Cells, int) {}
+#endif
 };
 #endif
