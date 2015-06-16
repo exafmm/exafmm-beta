@@ -16,5 +16,5 @@ revert:
 save:
 	make cleanall
 	cd .. && tar zcvf exafmm.tgz exafmm
-etags:
+tags:
 	ctags -eR .
