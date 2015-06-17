@@ -1,7 +1,7 @@
 #include "base_mpi.h"
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree.h"
+#include "build_tree_from_cluster.h"
 #include "ewald.h"
 #include "logger.h"
 #include "partition.h"
@@ -15,6 +15,7 @@
 Args * args;
 BaseMPI * baseMPI;
 BoundBox * boundBox;
+BuildTreeFromCluster * clusterTree;
 BuildTree * localTree, * globalTree;
 Partition * partition;
 Traversal * traversal;
@@ -32,9 +33,12 @@ extern "C" void FMM_Init(int images) {
   const real_t theta = 0.4;
   const bool useRmax = true;
   const bool useRopt = true;
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
+  clusterTree = new BuildTreeFromCluster(mask, nspawn);
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
@@ -61,6 +65,7 @@ extern "C" void FMM_Finalize() {
   delete args;
   delete baseMPI;
   delete boundBox;
+  delete clusterTree;
   delete localTree;
   delete globalTree;
   delete partition;
@@ -87,6 +92,7 @@ extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float 
   globalBounds = baseMPI->allreduceBounds(localBounds);
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
+  clusterTree->setClusterCenter(bodies);
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
 
@@ -218,8 +224,8 @@ void MPI_Shift(float * var, int &nold, int mpisize, int mpirank) {
   const int irecv = (mpirank - 1 + mpisize) % mpisize;
   int nnew;
   MPI_Request sreq, rreq;
-  MPI_Isend(&nold, 1, MPI_FLOAT, irecv, 0, MPI_COMM_WORLD, &sreq);
-  MPI_Irecv(&nnew, 1, MPI_FLOAT, isend, 0, MPI_COMM_WORLD, &rreq);
+  MPI_Isend(&nold, 1, MPI_INT, irecv, 0, MPI_COMM_WORLD, &sreq);
+  MPI_Irecv(&nnew, 1, MPI_INT, isend, 0, MPI_COMM_WORLD, &rreq);
   MPI_Wait(&sreq, MPI_STATUS_IGNORE);
   MPI_Wait(&rreq, MPI_STATUS_IGNORE);
   float * buf = new float [nnew];
@@ -293,7 +299,7 @@ extern "C" void Direct_Coulomb(int Ni, float * x, float * q, float * p, float * 
   int N;
   MPI_Allreduce(&Ni, &N, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   float globalDipole[3];
-  MPI_Allreduce(localDipole, globalDipole, 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(localDipole, globalDipole, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
   double norm = 0;
   for (int d=0; d<3; d++) {
     norm += globalDipole[d] * globalDipole[d];
