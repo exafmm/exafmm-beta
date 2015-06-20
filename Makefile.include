@@ -96,7 +96,9 @@ cleanlib:
 	@make -C .. cleanlib
 cleanall:
 	@make -C .. cleanall
-save:
-	@make -C .. save
 revert:
 	@make -C .. revert
+save:
+	@make -C .. save
+tags:
+	@make -C .. tags

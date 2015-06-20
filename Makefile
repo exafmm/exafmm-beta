@@ -10,9 +10,11 @@ cleanall:
 	make clean
 	make cleandat
 	make cleanlib
-save:
-	make cleanall
-	cd .. && tar zcvf exafmm.tgz exafmm
 revert:
 	hg revert --all
 	find . -name "*.orig" | xargs rm -f
+save:
+	make cleanall
+	cd .. && tar zcvf exafmm.tgz exafmm
+tags:
+	ctags -eR .

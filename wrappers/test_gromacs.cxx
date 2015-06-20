@@ -45,6 +45,7 @@ int main(int argc, char ** argv) {
     x[3*i+1] = drand48() * cycle - cycle / 2;
     x[3*i+2] = drand48() * cycle - cycle / 2;
     p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
+    index[i] = (i + mpirank*Ni) / 10;
   }
   for (int i=0; i<Ni; i++) {
     q[i] = drand48() - .5;
