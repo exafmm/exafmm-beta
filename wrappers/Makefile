@@ -3,7 +3,7 @@ include ../Makefile.include
 #LFLAGS	+= -DMASS
 LFLAGS 	+= -DIneJ
 LFLAGS 	+= -DNOWRAP
-LFLAGS	+= -DNO_P2P
+#LFLAGS	+= -DNO_P2P
 LFLAGS	+= -DSerial
 
 all:
@@ -26,21 +26,33 @@ charmm: # exafmm-dev
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
 	mpirun -np 1 ./a.out ala3.fmm
 	make cleandat
-	mpirun -np 1 ./a.out water.fmm 10
+	mpirun -np 1 ./a.out water.fmm water.out 10
 	make cleandat
-	mpirun -np 2 ./a.out water.fmm 10
+	mpirun -np 2 ./a.out water.fmm water.out 10
 
 charmm2: # uniform
 	make libcharmm2.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
 	make cleandat
-	mpirun -np 1 ./a.out water.fmm 10
+	OMP_NUM_THREADS=1 mpirun -np 1 ./a.out water.8091 water.out 1
+
+charmm2spike: # uniform
+	rm -f spike* uniform.data
+	cp water.fmm spike.0
+	touch uniform.data
+	make libcharmm2.a
+	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp -DSPIKE
+	it=0; while [[ $$it -lt 100000 ]]; do \
+	((it1 = it + 1)); \
+	make cleandat; \
+	OMP_NUM_THREADS=1 mpirun -np 1 ./a.out spike.$$it spike.$$it1 1; \
+        ((it = it + 1)); done
 
 charmm3: # uniform-serial (Sakura interface)
 	make libcharmm3.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
 	make cleandat
-	mpirun -np 1 ./a.out water.fmm 10
+	mpirun -np 1 ./a.out water.fmm water.out 10
 
 libpetiga.a: petiga.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
 	ar ruv libpetiga.a $?

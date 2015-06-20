@@ -27,7 +27,7 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp 
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 ### choose fortran compiler
-FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
+FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp -lmpi_cxx # gfortran
 #FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
 
 ### Base flags
@@ -39,8 +39,8 @@ LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
 LFLAGS  += -DEXPANSION=9 # Specify expansion order
 LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #LFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
-#LFLAGS	+= -DFP64 # Use double precision
-LFLAGS	+= -DKAHAN # Use Kahan summation
+LFLAGS	+= -DFP64 # Use double precision
+#LFLAGS	+= -DKAHAN # Use Kahan summation
 
 ### Debugging flags
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
