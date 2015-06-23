@@ -108,7 +108,7 @@ protected:
     for_3d ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
   }
 
-  void sort(real_t (*bodies)[4], float (*buffer)[4], int *Index, int *Index2, int *key) const {
+  void sort(real_t (*bodies)[4], double (*buffer)[4], int *Index, int *Index2, int *key) const {
     int Imax = key[0];
     int Imin = key[0];
     for( int i=0; i<numBodies; i++ ) {
@@ -164,8 +164,8 @@ public:
     Leafs = new int [27*numLeafs][2]();
     globMultipole = new real_t [2*MPISIZE][MTERM]();
     globLocal = new real_t [10][LTERM]();
-    sendJbodies = new float [2*numBodies+numSendBodies][4]();
-    recvJbodies = new float [2*numBodies+numSendBodies][4]();
+    sendJbodies = new double [2*numBodies+numSendBodies][4]();
+    recvJbodies = new double [2*numBodies+numSendBodies][4]();
     sendMultipole = new float [numSendCells][MTERM]();
     recvMultipole = new float [numSendCells][MTERM]();
     sendLeafs = new int [numSendLeafs][2]();

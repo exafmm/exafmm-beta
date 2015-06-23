@@ -64,15 +64,15 @@ public:
     }
     numBodies = recvBodiesDispl[MPISIZE-1] + recvBodiesCount[MPISIZE-1];
     sort(Jbodies,sendJbodies,Index,Index2,Rank);
-    MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_FLOAT,
-		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_FLOAT,
+    MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_DOUBLE,
+		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_DOUBLE,
 		  MPI_COMM_WORLD);
     for( int i=0; i<numBodies; i++ ) {
       for_4d Jbodies[i][d] = recvJbodies[i][d];
     }
     sort(Ibodies,sendJbodies,Index,Index2,Rank);
-    MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_FLOAT,
-		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_FLOAT,
+    MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_DOUBLE,
+		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_DOUBLE,
 		  MPI_COMM_WORLD);
     for( int i=0; i<numBodies; i++ ) {
       for_4d Ibodies[i][d] = recvJbodies[i][d];
@@ -131,11 +131,11 @@ public:
             sendDispl = bodiesDispl[iforward];
             sendCount = bodiesCount[iforward];
             commBytes += sendCount * 4 * 4;
-            MPI_Isend(sendJbodies[sendDispl],sendCount*4,MPI_FLOAT,
+            MPI_Isend(sendJbodies[sendDispl],sendCount*4,MPI_DOUBLE,
                       sendRank,iforward+26,MPI_COMM_WORLD,&requests[iforward+26]);
             recvDispl = bodiesDispl[iforward];
             recvCount = bodiesCount[iforward];
-            MPI_Irecv(recvJbodies[recvDispl],recvCount*4,MPI_FLOAT,
+            MPI_Irecv(recvJbodies[recvDispl],recvCount*4,MPI_DOUBLE,
                       recvRank,iforward+26,MPI_COMM_WORLD,&requests[iforward+78]);
             iforward++;
           }

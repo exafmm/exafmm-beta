@@ -34,7 +34,7 @@ charmm2: # uniform
 	make libcharmm2.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
 	make cleandat
-	OMP_NUM_THREADS=1 mpirun -np 1 ./a.out water.8091 water.out 1
+	OMP_NUM_THREADS=1 mpirun -np 1 ./a.out water.fmm water.out 1
 
 charmm2spike: # uniform
 	rm -f spike* uniform.data
