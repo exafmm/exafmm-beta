@@ -5,7 +5,7 @@ serial	: main.cxx $(OBJECTS)
 	./a.out -n 1000 -c 32 -i 3
 
 parallel: main.cxx $(OBJECTS)
-#	$(CXX) $? $(LFLAGS)
-#	mpirun -np 8 ./a.out -n 1000 -c 32 -i 3
-	$(CXX) $? $(LFLAGS) -DIJHPCA
-	mpirun -np 8 ./a.out -n 62500 -c 32 -i 1
+	$(CXX) $? $(LFLAGS)
+	mpirun -np 8 ./a.out -n 1000 -c 32 -i 3
+#	$(CXX) $? $(LFLAGS) -DIJHPCA
+#	mpirun -np 8 ./a.out -n 62500 -c 32 -i 1

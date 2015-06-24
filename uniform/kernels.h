@@ -82,83 +82,20 @@ protected:
   }
 
   void P2P(int ibegin, int iend, int jbegin, int jend, real_t *periodic) const {
-    int ii;
-    for( ii=ibegin; ii<iend-1; ii+=2 ) {
-#ifndef SPARC_SIMD
-      for( int i=ii; i<=ii+1; i++ ) {
-        real_t Po = 0, Fx = 0, Fy = 0, Fz = 0;
-        for( int j=jbegin; j<jend; j++ ) {
-          real_t dX[3];
-          for_3d dX[d] = Jbodies[i][d] - Jbodies[j][d] - periodic[d];
-          real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
-          real_t invR2 = 1.0 / R2;                                  
-          if( R2 == 0 ) invR2 = 0;                                
-          real_t invR = Jbodies[j][3] * sqrt(invR2);
-          real_t invR3 = invR2 * invR;
-          Po += invR;
-          Fx += dX[0] * invR3;
-          Fy += dX[1] * invR3;
-          Fz += dX[2] * invR3;
-        }
-        Ibodies[i][0] += Po;
-        Ibodies[i][1] -= Fx;
-        Ibodies[i][2] -= Fy;
-        Ibodies[i][3] -= Fz;
-      }
-#else
-      __m128d Po = _mm_setzero_pd();
-      __m128d Fx = _mm_setzero_pd();
-      __m128d Fy = _mm_setzero_pd();
-      __m128d Fz = _mm_setzero_pd();
-      __m128d zero = _mm_setzero_pd();
-      __m128d xi[3], xj[4];
-      for_3d xi[d] = _mm_set_pd(Jbodies[ii][d]-periodic[d],Jbodies[ii+1][d]-periodic[d]);
-      for( int j=jbegin; j<jend; j++ ) {
-        for_4d xj[d] = _mm_set_pd(Jbodies[j][d],Jbodies[j][d]);
-        for_3d xj[d] = _mm_sub_pd(xi[d],xj[d]);
-        __m128d R2 = _mm_mul_pd(xj[0],xj[0]);
-        R2 = _fjsp_madd_v2r8(xj[1],xj[1],R2);
-        R2 = _fjsp_madd_v2r8(xj[2],xj[2],R2);
-        __m128d invR = _fjsp_rsqrta_v2r8(R2);
-        R2 = _mm_cmpneq_pd(R2,zero);
-        invR = _mm_and_pd(invR,R2);
-        R2 = _mm_mul_pd(invR,invR);
-        invR = _mm_mul_pd(invR,xj[3]);
-        R2 = _mm_mul_pd(R2,invR);
-        Po = _mm_add_pd(Po,invR);
-        Fx = _fjsp_madd_v2r8(xj[0],R2,Fx);
-        Fy = _fjsp_madd_v2r8(xj[1],R2,Fy);
-        Fz = _fjsp_madd_v2r8(xj[2],R2,Fz);
-      }
-      real_t Po2[2], Fx2[2], Fy2[2], Fz2[2];
-      _mm_store_pd(Po2,Po);
-      _mm_store_pd(Fx2,Fx);
-      _mm_store_pd(Fy2,Fy);
-      _mm_store_pd(Fz2,Fz);
-      Ibodies[ii][0] += Po2[1];
-      Ibodies[ii][1] -= Fx2[1];
-      Ibodies[ii][2] -= Fy2[1];
-      Ibodies[ii][3] -= Fz2[1];
-      Ibodies[ii+1][0] += Po2[0];
-      Ibodies[ii+1][1] -= Fx2[0];
-      Ibodies[ii+1][2] -= Fy2[0];
-      Ibodies[ii+1][3] -= Fz2[0];
-#endif
-    }
-    for( int i=ii; i<iend; i++ ) {
+    for( int i=ibegin; i<iend; i++ ) {
       real_t Po = 0, Fx = 0, Fy = 0, Fz = 0;
       for( int j=jbegin; j<jend; j++ ) {
-        real_t dX[3];
-        for_3d dX[d] = Jbodies[i][d] - Jbodies[j][d] - periodic[d];
-        real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
-        real_t invR2 = 1.0 / R2;
-        if( R2 == 0 ) invR2 = 0;
-        real_t invR = Jbodies[j][3] * sqrt(invR2);
-        real_t invR3 = invR2 * invR;
-        Po += invR;
-        Fx += dX[0] * invR3;
-        Fy += dX[1] * invR3;
-        Fz += dX[2] * invR3;
+	real_t dX[3];
+	for_3d dX[d] = Jbodies[i][d] - Jbodies[j][d] - periodic[d];
+	real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
+	real_t invR2 = 1.0 / R2;                                  
+	if( R2 == 0 ) invR2 = 0;                                
+	real_t invR = Jbodies[j][3] * sqrt(invR2);
+	real_t invR3 = invR2 * invR;
+	Po += invR;
+	Fx += dX[0] * invR3;
+	Fy += dX[1] * invR3;
+	Fz += dX[2] * invR3;
       }
       Ibodies[i][0] += Po;
       Ibodies[i][1] -= Fx;
