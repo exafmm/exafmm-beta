@@ -6,11 +6,12 @@
 #include <omp.h>
 
 #define PP 6
-const int DP2P = 1; // Use 1 for parallel
-const int DM2L = 1; // Use 1 for parallel
+const int DP2P = 2; // Use 1 for parallel
+const int DM2L = 2; // Use 1 for parallel
 const int MTERM = PP*(PP+1)*(PP+2)/6;
 const int LTERM = (PP+1)*(PP+2)*(PP+3)/6;
-const real_t ALPHA = 100000;
+const real_t ALPHA_M = 100;
+const real_t ALPHA_L = 100;
 
 #include "core.h"
 
@@ -85,19 +86,20 @@ protected:
   void P2P(int ibegin, int iend, int jbegin, int jend,
 	   real_t *Ximin, real_t *Ximax, real_t *Xjmin, real_t *Xjmax, real_t *periodic) const {
     for( int i=ibegin; i<iend; i++ ) {
-      real_t weight = 1;
-      for_3d weight *= 1 - erfc(ALPHA*(Jbodies[i][d] - Ximin[d])) / 2;
-      for_3d weight *= erfc(ALPHA*(Jbodies[i][d] - Ximax[d])) / 2;
+      real_t wi = 1;
+      for_3d wi *= 1 - erfc(ALPHA_L*(Jbodies[i][d] - Ximin[d])) / 2;
+      for_3d wi *= erfc(ALPHA_L*(Jbodies[i][d] - Ximax[d])) / 2;
       real_t Po = 0, Fx = 0, Fy = 0, Fz = 0;
       for( int j=jbegin; j<jend; j++ ) {
-	for_3d weight *= 1 - erfc(ALPHA*(Jbodies[j][d] + periodic[d] - Xjmin[d])) / 2;
-	for_3d weight *= erfc(ALPHA*(Jbodies[j][d] + periodic[d] - Xjmax[d])) / 2;
+	real_t wj = 1;
+	for_3d wj *= 1 - erfc(ALPHA_M*(Jbodies[j][d] + periodic[d] - Xjmin[d])) / 2;
+	for_3d wj *= erfc(ALPHA_M*(Jbodies[j][d] + periodic[d] - Xjmax[d])) / 2;
 	real_t dX[3];
 	for_3d dX[d] = Jbodies[i][d] - Jbodies[j][d] - periodic[d];
 	real_t R2 = dX[0] * dX[0] + dX[1] * dX[1] + dX[2] * dX[2];
 	real_t invR2 = 1.0 / R2;                                  
 	if( R2 == 0 ) invR2 = 0;                                
-	real_t invR = Jbodies[j][3] * sqrt(invR2) * weight;
+	real_t invR = Jbodies[j][3] * sqrt(invR2) * wi * wj;
 	real_t invR3 = invR2 * invR;
 	Po += invR;
 	Fx += dX[0] * invR3;
@@ -222,8 +224,8 @@ protected:
 	    for_3d periodic[d] = (jxp[d] - 1) * 2 * RGlob[d];
 	    for( int j=Leafs[jj+rankOffset][0]; j<Leafs[jj+rankOffset][1]; j++ ) {
 	      real_t weight = 1;
-	      for_3d weight *= 1 - erfc(ALPHA*(Jbodies[j][d] + periodic[d] - Xjmin[d])) / 2;
-	      for_3d weight *= erfc(ALPHA*(Jbodies[j][d] + periodic[d] - Xjmax[d])) / 2;
+	      for_3d weight *= 1 - erfc(ALPHA_M*(Jbodies[j][d] + periodic[d] - Xjmin[d])) / 2;
+	      for_3d weight *= erfc(ALPHA_M*(Jbodies[j][d] + periodic[d] - Xjmax[d])) / 2;
 	      real_t dX[3];
 	      for_3d dX[d] = center[d] - Jbodies[j][d] - periodic[d];
 	      real_t M[MTERM];
@@ -398,8 +400,8 @@ protected:
 	    for_l L[l] = Local[i+levelOffset][l];
 	    for( int j=Leafs[jj+rankOffset][0]; j<Leafs[jj+rankOffset][1]; j++ ) {
 	      real_t weight = 1;
-	      for_3d weight *= 1 - erfc(ALPHA*(Jbodies[j][d] + periodic[d] - Ximin[d])) / 2;
-	      for_3d weight *= erfc(ALPHA*(Jbodies[j][d] + periodic[d] - Ximax[d])) / 2;
+	      for_3d weight *= 1 - erfc(ALPHA_L*(Jbodies[j][d] + periodic[d] - Ximin[d])) / 2;
+	      for_3d weight *= erfc(ALPHA_L*(Jbodies[j][d] + periodic[d] - Ximax[d])) / 2;
 	      real_t dX[3];
 	      for_3d dX[d] = Jbodies[j][d] + periodic[d] - center[d];
 	      real_t C[LTERM];
