@@ -75,6 +75,11 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   logger::verbose = args->verbose;
   logger::printTitle("Initial Parameters");
   args->print(logger::stringLength, P);
+  std::cout << "PP      : " << PP << std::endl;
+  std::cout << "DP2P    : " << DP2P << std::endl;
+  std::cout << "DM2L    : " << DM2L << std::endl;
+  std::cout << "ALPHA_M : " << ALPHA_M << std::endl;  
+  std::cout << "ALPHA_L : " << ALPHA_L << std::endl;  
 }
 
 extern "C" void fmm_finalize_() {
