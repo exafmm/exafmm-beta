@@ -10,8 +10,13 @@ const int DP2P = 2; // Use 1 for parallel
 const int DM2L = 2; // Use 1 for parallel
 const int MTERM = PP*(PP+1)*(PP+2)/6;
 const int LTERM = (PP+1)*(PP+2)*(PP+3)/6;
+<<<<<<< /net/ds01/share02/yokota/exafmm/uniform/kernels2.h
+const real_t ALPHA_M = 1e6;
+const real_t ALPHA_L = 1e6;
+=======
 const real_t ALPHA_M = 100;
 const real_t ALPHA_L = 100;
+>>>>>>> /tmp/kernels2.h~other.NvyfFS
 
 #include "core.h"
 
@@ -386,7 +391,7 @@ protected:
 	  for( ix[0]=ixmin[0]; ix[0]<=ixmax[0]; ix[0]++ ) {
 	    int ixp[3];
 	    for_3d ixp[d] = (ix[d] + nunit) % nunit;
-	    int jj = getKey(ixp,maxLevel,false);
+	    int ii = getKey(ixp,maxLevel,false);
 	    for_3d ixp[d] = (ix[d] + nunit) / nunit;
 #if Serial
 	    int rankOffset = 13 * numLeafs;
@@ -398,7 +403,7 @@ protected:
 	    for_3d periodic[d] = (ixp[d] - 1) * 2 * RGlob[d];
 	    real_t L[LTERM];
 	    for_l L[l] = Local[i+levelOffset][l];
-	    for( int j=Leafs[jj+rankOffset][0]; j<Leafs[jj+rankOffset][1]; j++ ) {
+	    for( int j=Leafs[ii+rankOffset][0]; j<Leafs[ii+rankOffset][1]; j++ ) {
 	      real_t weight = 1;
 	      for_3d weight *= 1 - erfc(ALPHA_L*(Jbodies[j][d] + periodic[d] - Ximin[d])) / 2;
 	      for_3d weight *= erfc(ALPHA_L*(Jbodies[j][d] + periodic[d] - Ximax[d])) / 2;

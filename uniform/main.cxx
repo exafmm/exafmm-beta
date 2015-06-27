@@ -82,6 +82,14 @@ int main(int argc, char ** argv) {
     FMM.sortBodies();
     FMM.buildTree();
     logger::stopTimer("Grow tree");
+
+#if Serial
+#else
+    logger::startTimer("Comm LET bodies");
+    FMM.P2PSend();
+    FMM.P2PRecv();
+    logger::stopTimer("Comm LET bodies");
+#endif
   
     logger::startTimer("Upward pass");
     FMM.upwardPass();
@@ -89,11 +97,6 @@ int main(int argc, char ** argv) {
   
 #if Serial
 #else
-    logger::startTimer("Comm LET bodies");
-    FMM.P2PSend();
-    FMM.P2PRecv();
-    logger::stopTimer("Comm LET bodies");
-
     logger::startTimer("Comm LET cells");
     for( int lev=FMM.maxLevel; lev>0; lev-- ) {
       MPI_Barrier(MPI_COMM_WORLD);
