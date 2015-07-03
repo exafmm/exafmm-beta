@@ -67,7 +67,7 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
   args->images = images;
   args->theta = theta;
   args->mutual = 0;
-  args->verbose = 1;
+  args->verbose = 0;
   args->distribution = "external";
   args->verbose &= baseMPI->mpirank == 0;
   logger::verbose = args->verbose;
