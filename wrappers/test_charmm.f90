@@ -831,6 +831,7 @@ program main
      f2(3*i-0) = 0
   enddo
 #if 1
+  cutoff = 20
   call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
 #else
   call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)

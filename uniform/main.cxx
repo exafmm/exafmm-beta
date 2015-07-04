@@ -17,10 +17,10 @@
 int main(int argc, char ** argv) {
   const int ksize = 11;
   const real_t eps2 = 0.0;
-  const real_t cycle = 10 * M_PI;
+  const real_t cycle = 20 * M_PI;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
-  const real_t cutoff = 10;
+  const real_t cutoff = 20;
 
   Args args(argc, argv);
   BaseMPI baseMPI;

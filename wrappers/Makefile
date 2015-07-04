@@ -26,19 +26,19 @@ charmm: # exafmm-dev
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
 	mpirun -np 1 ./a.out ala3.fmm
 	make cleandat
-	mpirun -np 1 ./a.out water.fmm water.out 10
+	mpirun -np 1 ./a.out water_64.fmm water.out 1
 	make cleandat
-	mpirun -np 2 ./a.out water.fmm water.out 10
+	mpirun -np 2 ./a.out water_64.fmm water.out 1
 
 charmm2: # uniform
 	make libcharmm2.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
 	make cleandat
-	mpirun -np 1 ./a.out water.fmm water.out 1
+	mpirun -np 1 ./a.out water_64.fmm water.out 1
 
 charmm2spike: # uniform
 	rm -f spike* uniform.data
-	cp water.fmm spike.0
+	cp water_32.fmm spike.0
 	touch uniform.data
 	make libcharmm2.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp -DSPIKE
