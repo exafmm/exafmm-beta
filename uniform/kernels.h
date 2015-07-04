@@ -117,26 +117,13 @@ protected:
       for_3d nxmin[d] -= nunitGlob[d];
       for_3d nxmax[d] += nunitGlob[d];
     }
-    real_t diameter = 2 * R0 / (1 << maxLevel);
 #pragma omp parallel for
     for( int i=0; i<numLeafs; i++ ) {
       int ix[3] = {0, 0, 0};
       getIndex(ix,i);
-      real_t Ximin[3], Ximax[3];
-      for_3d Ximin[d] = diameter * ix[d];
-      for_3d Ximax[d] = diameter * (ix[d] + 1);
-      for (int ii=Leafs[i+13*numLeafs][0]; ii<Leafs[i+13*numLeafs][1]; ii++) {
-	for_3d assert(Ximin[d] < Jbodies[ii][d] && Jbodies[ii][d] < Ximax[d]);
-      }
-      int ixmin[3], ixmax[3];
-      for_3d ixmin[d] = FMMMAX(nxmin[d],ix[d] - 1);
-      for_3d ixmax[d] = FMMMIN(nxmax[d],ix[d] + 1);
       int jxmin[3], jxmax[3];
       for_3d jxmin[d] = FMMMAX(nxmin[d],ix[d] - DP2P);
       for_3d jxmax[d] = FMMMIN(nxmax[d],ix[d] + DP2P);
-      real_t Xjmin[3], Xjmax[3];
-      for_3d Xjmin[d] = diameter * jxmin[d];
-      for_3d Xjmax[d] = diameter * (jxmax[d] + 1);
       int jx[3];
       for( jx[2]=jxmin[2]; jx[2]<=jxmax[2]; jx[2]++ ) {
         for( jx[1]=jxmin[1]; jx[1]<=jxmax[1]; jx[1]++ ) {
@@ -155,9 +142,6 @@ protected:
             real_t periodic[3] = {0, 0, 0};
             for_3d jxp[d] = (jx[d] + ixc[d] * nunit + nunitGlob[d]) / nunitGlob[d];
             for_3d periodic[d] = (jxp[d] - 1) * 2 * RGlob[d];
-	    for (int jj=Leafs[j][0]; jj<Leafs[j][1]; jj++) {
-	      for_3d assert(Xjmin[d] < Jbodies[jj][d]+periodic[d] && Jbodies[jj][d]+periodic[d] < Xjmax[d]);
-	    }
             P2P(Leafs[i+rankOffset][0],Leafs[i+rankOffset][1],Leafs[j][0],Leafs[j][1],periodic);
           }
         }

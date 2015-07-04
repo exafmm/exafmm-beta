@@ -524,7 +524,7 @@ contains
     call mpi_comm_rank(mpi_comm_world,mpirank,ierr)
     if(mpirank == 0)then
        open(unit=1,file='water.pdb',status='new')
-       open(unit=2,file='uniform.data',access='append',status='old')
+       open(unit=2,file='uniform.dat',status='new')
     endif
 
     tstep = 0.001/timfac !ps -> akma
