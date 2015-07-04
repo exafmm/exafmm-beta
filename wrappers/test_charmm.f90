@@ -381,8 +381,8 @@ contains
     f(1:3*nglobal)=0.0
     f2(1:3*nglobal)=0.0
     call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
-    call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
-    call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
+    !call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
+    !call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
     ftotf=0.0
     ftote=0.0
     do i = 1,nglobal
@@ -495,7 +495,7 @@ contains
     ftoteGlob = ftoteGlob/nglobal
     call mpi_comm_rank(mpi_comm_world,mpirank,ierr)
     if(mpirank == 0) then
-       write(*,'(''time:'',f9.3,'' Etotal:'',f14.5,'' Ekin:'',f14.5,'' Epot:'',f14.5,'' T:'',f12.3,'' Grms:'',f12.5)')&
+       write(*,'(''time:'',f9.3,'' Etotal:'',g14.5,'' Ekin:'',g14.5,'' Epot:'',g14.5,'' T:'',g12.3,'' Grms:'',g12.5)')&
             time,etotGlob+ekineticGlob,ekineticGlob,etotGlob,temp,grmsGlob
        write(2,'(f9.3,f14.5,f14.5,g14.5,g14.5,g14.5,g14.5)')&
             time,etotGlob,ekineticGlob,pl2err,fl2err,ftotfGlob,ftoteGlob
@@ -523,8 +523,8 @@ contains
 
     call mpi_comm_rank(mpi_comm_world,mpirank,ierr)
     if(mpirank == 0)then
-       open(unit=1,file='water.pdb',status='new')
-       open(unit=2,file='uniform.dat',status='new')
+       open(unit=1,file='water.pdb',status='unknown')
+       open(unit=2,file='uniform.dat',status='unknown')
     endif
 
     tstep = 0.001/timfac !ps -> akma
@@ -594,7 +594,7 @@ contains
        if (mod(istep,printfrq) == 0) then
           call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot,&
                pl2err,fl2err,ftotf,ftote)
-          call pdb_frame(1,time,nglobal,x,nres,icpumap)
+          !call pdb_frame(1,time,nglobal,x,nres,icpumap)
        endif
     enddo mainloop
 

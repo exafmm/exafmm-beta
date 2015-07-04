@@ -24,7 +24,6 @@ gromacs:
 charmm: # exafmm-dev
 	make libcharmm.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
-	mpirun -np 1 ./a.out ala3.fmm
 	make cleandat
 	mpirun -np 1 ./a.out water_64.fmm water.out 1
 	make cleandat
