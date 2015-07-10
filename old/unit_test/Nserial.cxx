@@ -47,7 +47,7 @@ int main(int, char ** argv) {
     FMM.bottomup(bodies,cells);                                 //  Tree construction (bottom up) & upward sweep
 #endif
     jcells = cells;                                             //  Vector of source cells
-    FMM.downward(cells,jcells,atoi(argv[3]));                   //  Downward sweep
+    FMM.downward(cells,jcells);                                 //  Downward sweep
     double tfmm = FMM.stopTimer("FMM");                         //  Stop timer
     FMM.eraseTimer("FMM");                                      //  Erase entry from timer to avoid timer overlap
 

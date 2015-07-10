@@ -23,7 +23,7 @@ int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
-  const real_t cutoff = 10;
+  const real_t cutoff = cycle / 2;
   Args args(argc, argv);
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
@@ -48,6 +48,9 @@ int main(int argc, char ** argv) {
   args.print(logger::stringLength, P);
   ewald.print(logger::stringLength);
   bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    B->X *= cycle / (2 * M_PI);
+  }
   buffer.reserve(bodies.size());
   //data.writeSources(bodies, baseMPI.mpirank);
   for (int t=0; t<args.repeat; t++) {
@@ -66,6 +69,7 @@ int main(int argc, char ** argv) {
     treeMPI.commBodies();
     treeMPI.commCells();
 
+    traversal.initListCount(cells);
     traversal.initWeight(cells);
     traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
     if (args.graft) {

@@ -1,11 +1,11 @@
 module charmm_io
 contains
 
-  subroutine charmm_cor_write(n,x,q,size,filename,numex,natex,nat,atype,&
+  subroutine charmm_cor_write(n,x,q,size,outfile,numex,natex,nat,atype,&
        rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
        aangle,cangle,mass,xc,v,time)
     implicit none
-    character(len=*) filename
+    character(len=*) outfile
     character(len=3) atom_name(3)
     integer i,nat,n,natex_size,vdw_size,nbonds,ntheta
     real(8) size,time
@@ -22,7 +22,7 @@ contains
     natex_size=sum(numex(1:n))
     vdw_size=nat**2
 
-    open(unit=2,file=filename,status='unknown')
+    open(unit=2,file=outfile,status='unknown')
     write(2,'(a8,3x,3f22.14)')'* SIZE =',size,size,size
     write(2,'(''* This is test_charmm restart file'')')
     write(2,'(''*'')')
@@ -63,13 +63,13 @@ contains
     return
   end subroutine charmm_cor_write
 
-  subroutine charmm_cor_read(n,x,q,size,filename,numex,natex,nat,atype,&
+  subroutine charmm_cor_read(n,x,q,size,infile,numex,natex,nat,atype,&
        rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
        aangle,cangle,mass,xc,v,nres,ires,time)
     implicit none
     logical qext
     character(len=100) lin
-    character(len=*) filename
+    character(len=*) infile
     integer i,nat,im,in,n,natex_size,vdw_size,resn,nres,nbonds,ntheta
     real(8) size,sizex,sizey,sizez,time
     integer,allocatable,dimension(:) :: numex,natex,atype,ib,jb,it,jt,kt,ires
@@ -78,7 +78,7 @@ contains
     real(8),allocatable,dimension(:,:) :: rbond,cbond
     real(8),allocatable,dimension(:,:,:) :: aangle,cangle
 
-    open(unit=1,file=filename,status='old')
+    open(unit=1,file=infile,status='old')
     read(1,'(a100)')lin
     read(lin(9:100),*)sizex,sizey,sizez
     size=sizex
@@ -121,7 +121,7 @@ contains
     read(lin(6:100),*)natex_size
     if(natex_size /= sum(numex(1:n))) then
        print*,'Something is wrong with the input file'
-       print*,filename
+       print*,infile
        stop
     endif
     allocate(natex(natex_size))
@@ -381,8 +381,8 @@ contains
     f(1:3*nglobal)=0.0
     f2(1:3*nglobal)=0.0
     call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
-    call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
-    call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
+    !call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
+    !call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
     ftotf=0.0
     ftote=0.0
     do i = 1,nglobal
@@ -495,7 +495,7 @@ contains
     ftoteGlob = ftoteGlob/nglobal
     call mpi_comm_rank(mpi_comm_world,mpirank,ierr)
     if(mpirank == 0) then
-       write(*,'(''time:'',f9.3,'' Etotal:'',f14.5,'' Ekin:'',f14.5,'' Epot:'',f14.5,'' T:'',f12.3,'' Grms:'',f12.5)')&
+       write(*,'(''time:'',f9.3,'' Etotal:'',g14.5,'' Ekin:'',g14.5,'' Epot:'',g14.5,'' T:'',g12.3,'' Grms:'',g12.5)')&
             time,etotGlob+ekineticGlob,ekineticGlob,etotGlob,temp,grmsGlob
        write(2,'(f9.3,f14.5,f14.5,g14.5,g14.5,g14.5,g14.5)')&
             time,etotGlob,ekineticGlob,pl2err,fl2err,ftotfGlob,ftoteGlob
@@ -523,8 +523,8 @@ contains
 
     call mpi_comm_rank(mpi_comm_world,mpirank,ierr)
     if(mpirank == 0)then
-       open(unit=1,file='water.pdb',status='new')
-       open(unit=2,file='uniform.dat',status='new')
+       open(unit=1,file='water.pdb',status='unknown')
+       open(unit=2,file='uniform.dat',status='unknown')
     endif
 
     tstep = 0.001/timfac !ps -> akma
@@ -538,7 +538,9 @@ contains
          ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,&
          pl2err,fl2err,ftotf,ftote)
 
+#ifndef SPIKE
     call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot,pl2err,fl2err,ftotf,ftote)
+#endif
 
     ! precompute some constants and recalculate xold
     do i=1,nglobal
@@ -592,7 +594,7 @@ contains
        if (mod(istep,printfrq) == 0) then
           call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot,&
                pl2err,fl2err,ftotf,ftote)
-          call pdb_frame(1,time,nglobal,x,nres,icpumap)
+          !call pdb_frame(1,time,nglobal,x,nres,icpumap)
        endif
     enddo mainloop
 
@@ -726,7 +728,7 @@ program main
   implicit none
   include 'mpif.h'
   logical test_force
-  character(len=128) filename,nstp
+  character(len=128) infile,outfile,nstp
   integer dynsteps
   integer i,ierr,images,ista,iend,istat,ksize,lnam,mpirank,mpisize
   integer nat,nglobal,verbose,nbonds,ntheta,imcentfrq,printfrq,nres
@@ -755,9 +757,10 @@ program main
   alpha = 10 / pcycle
   nat = 16
   time = 100. ! first 100ps was equilibration with standard CHARMM
-  charmmio: if (command_argument_count() > 0) then
-     call get_command_argument(1,filename,lnam,istat)
-     call charmm_cor_read(nglobal,x,q,pcycle,filename,numex,natex,nat,atype,&
+  charmmio: if (command_argument_count() > 1) then
+     call get_command_argument(1,infile,lnam,istat)
+     call get_command_argument(2,outfile,lnam,istat)
+     call charmm_cor_read(nglobal,x,q,pcycle,infile,numex,natex,nat,atype,&
           rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
           aangle,cangle,mass,xc,v,nres,ires,time)
      allocate( p(nglobal),f(3*nglobal),icpumap(nglobal) )
@@ -818,6 +821,7 @@ program main
      icpumap(i) = 1
   enddo
   call fmm_init(images,theta,verbose)
+#ifndef SPIKE
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
   call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
   do i = 1,nglobal
@@ -827,6 +831,7 @@ program main
      f2(3*i-0) = 0
   enddo
 #if 1
+  cutoff = 20
   call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
 #else
   call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)
@@ -874,12 +879,15 @@ program main
      print"(a,f12.4)",'GRMS (FMM)           : ',grmsf
      print"(a,f12.4)",'GRMS (Direct)        : ',grmse
   endif
+#endif
 
   ! run dynamics if second command line argument specified
-  if (command_argument_count() > 1) then
-     call get_command_argument(2,nstp,lnam,istat)
+  if (command_argument_count() > 2) then
+     call get_command_argument(3,nstp,lnam,istat)
      read(nstp,*)dynsteps
+#ifndef SPIKE
      if(mpirank == 0) write(*,*)'will run dynamics for ',dynsteps,' steps'
+#endif
      ! for pure water systems there is no need for nbadd14() :-)
      test_force=.false.
      printfrq=1
@@ -896,7 +904,7 @@ program main
              xc,p,p2,f,f2,q,v,mass,gscale,fgscale,rscale,rbond,cbond,aangle,cangle,&
              ib,jb,it,jt,kt,atype,icpumap,numex,natex,nres,ires,time)
      endif
-     call charmm_cor_write(nglobal,x,q,pcycle,trim(filename)//'_restart',numex,natex,nat,atype,&
+     call charmm_cor_write(nglobal,x,q,pcycle,trim(outfile),numex,natex,nat,atype,&
           rscale,gscale,fgscale,nbonds,ntheta,ib,jb,it,jt,kt,rbond,cbond,&
           aangle,cangle,mass,xc,v,time)
   endif

@@ -4,7 +4,7 @@
 #include "logger.h"
 #include "thread.h"
 
-#if COUNT
+#if COUNT_KERNEL
 #define countKernel(N) N++
 #else
 #define countKernel(N)
@@ -14,8 +14,8 @@ class Traversal {
 private:
   const int nspawn;                                             //!< Threshold of NBODY for spawning new threads
   const int images;                                             //!< Number of periodic image sublevels
-  const int eps2;                                               //!< Softening parameter (squared)
-#if COUNT
+  const real_t eps2;                                            //!< Softening parameter (squared)
+#if COUNT_KERNEL
   real_t numP2P;                                                //!< Number of P2P kernel calls
   real_t numM2L;                                                //!< Number of M2L kernel calls
 #endif
@@ -23,6 +23,20 @@ private:
   C_iter Cj0;                                                   //!< Iterator of first source cell
 
 private:
+#if COUNT_LIST
+  //! Accumulate interaction list size of cells
+  void countList(C_iter Ci, C_iter Cj, bool mutual, bool isP2P) {
+    if (isP2P) Ci->numP2P++;
+    else Ci->numM2L++;
+    if (mutual) {
+      if (isP2P) Cj->numP2P++;
+      else Cj->numM2L++;
+    }
+  }
+#else
+  void countList(C_iter, C_iter, bool, bool) {}
+#endif
+
 #if USE_WEIGHT
   //! Accumulate interaction weights of cells
   void countWeight(C_iter Ci, C_iter Cj, bool mutual, real_t weight) {
@@ -37,24 +51,31 @@ private:
   void traverse(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual, real_t remote) {
     vec3 dX = Ci->X - Cj->X - Xperiodic;                        // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
-    if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R)) {                   // If distance is far enough
+    if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R) * (1 - 1e-3)) {      // If distance is far enough
       kernel::M2L(Ci, Cj, Xperiodic, mutual);                   //  M2L kernel
       countKernel(numM2L);                                      //  Increment M2L counter
+      countList(Ci, Cj, mutual, false);                         //  Increment M2L list
       countWeight(Ci, Cj, mutual, remote);                      //  Increment M2L weight
     } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {            // Else if both cells are bodies
       if (Cj->NBODY == 0) {                                     //  If the bodies weren't sent from remote node
-	std::cout << "Warning: icell " << Ci->ICELL << " needs bodies from jcell" << Cj->ICELL << std::endl;
+	//std::cout << "Warning: icell " << Ci->ICELL << " needs bodies from jcell" << Cj->ICELL << std::endl;
 	kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
         countKernel(numM2L);                                    //   Increment M2L counter
+	countList(Ci, Cj, mutual, false);                       //   Increment M2L list
 	countWeight(Ci, Cj, mutual, remote);                    //   Increment M2L weight
       } else {                                                  //  Else if the bodies were sent
+#if NO_P2P
+	countList(Ci, Cj, mutual, true);                        //   Increment P2P list
+#else
 	if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
 	  kernel::P2P(Ci, eps2);                                //    P2P kernel for single cell
 	} else {                                                //   Else if source and target are different
 	  kernel::P2P(Ci, Cj, eps2, Xperiodic, mutual);         //    P2P kernel for pair of cells
 	}                                                       //   End if for same source and target
 	countKernel(numP2P);                                    //   Increment P2P counter
+	countList(Ci, Cj, mutual, true);                        //   Increment P2P list
 	countWeight(Ci, Cj, mutual, remote);                    //   Increment P2P weight
+#endif
       }                                                         //  End if for bodies
     } else {                                                    // Else if cells are close but not bodies
       splitCell(Ci, Cj, Xperiodic, mutual, remote);             //  Split cell and call function recursively for child
@@ -215,10 +236,21 @@ public:
   //! Constructor
   Traversal(int _nspawn, int _images, real_t _eps2) :           // Constructor
     nspawn(_nspawn), images(_images), eps2(_eps2)               // Initialize variables
-#if COUNT
+#if COUNT_KERNEL
     , numP2P(0), numM2L(0)
 #endif
   {}
+
+#if COUNT_LIST
+  //! Initialize size of P2P and M2L interaction lists per cell
+  void initListCount(Cells & cells) {
+    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over cells
+      C->numP2P = C->numM2L = 0;                                //  Initialize size of interaction list
+    }                                                           // End loop over cells
+  }
+#else
+  void initListCount(Cells) {}
+#endif
 
 #if USE_WEIGHT
   //! Initialize interaction weights of bodies and cells
@@ -325,19 +357,33 @@ public:
 
   //! Print traversal statistics
   void printTraversalData() {
-#if COUNT
+#if COUNT_KERNEL
     if (logger::verbose) {                                      // If verbose flag is true
       std::cout << "--- Traversal stats --------------" << std::endl// Print title
-		<< std::setw(logger::stringLength) << std::left         //  Set format
+		<< std::setw(logger::stringLength) << std::left //  Set format
 		<< "P2P calls"  << " : "                        //  Print title
 		<< std::setprecision(0) << std::fixed           //  Set format
 		<< numP2P << std::endl                          //  Print number of P2P calls
-		<< std::setw(logger::stringLength) << std::left         //  Set format
+		<< std::setw(logger::stringLength) << std::left //  Set format
 		<< "M2L calls"  << " : "                        //  Print title
 		<< std::setprecision(0) << std::fixed           //  Set format
 		<< numM2L << std::endl;                         //  Print number of M2L calls
     }                                                           // End if for verbose flag
 #endif
   }
+#if COUNT_LIST
+  void writeList(Cells cells, int mpirank=0) {
+    std::stringstream name;                                     // File name
+    name << "list" << std::setfill('0') << std::setw(6)         // Set format
+	 << mpirank << ".dat";                                  // Create file name for list
+    std::ofstream listFile(name.str().c_str());                 // Open list log file
+    for (C_iter C=cells.begin(); C!=cells.end(); C++) {         // Loop over all lists
+      listFile << std::setw(logger::stringLength) << std::left  //  Set format
+	       << C->ICELL << " " << C->numP2P << " " << C->numM2L << std::endl; // Print list size
+    }                                                           // End loop over all lists
+  }
+#else
+  void writeList(Cells, int) {}
+#endif
 };
 #endif

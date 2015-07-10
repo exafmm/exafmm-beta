@@ -1,6 +1,6 @@
 include ../Makefile.include
 
-LFLAGS	+= -DMASS # Use all positive sources
+#LFLAGS	+= -DMASS # Use all positive sources
 #LFLAGS	+= -DIneJ # Different target and source points
 LFLAGS	+= -DDIRECT # Compare with direct summation
 #LFLAGS	+= -DWRITE_TIME # Write timings to file
@@ -31,12 +31,12 @@ tree: tree.o $(OBJECTS)
 # Test for serial FMM
 serial: serial.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
-	./a.out
+	./a.out -t .5 -x 0 -o 0 -i 1
 
 Nserial:
 	@for N in 1000 1333 1778 2371 3162 4216 5623 7498 10000 13335 17782 23713 31622 42169 56234 74989 100000 \
 	133352 177827 237137 316227 421696 562341 749894 1000000 1333521 1778279 2371373 3162277 4216965 5623413 7498942 10000000; do \
-	./a.$(P) -n $$N -v 0 -T $(T) -t $(t) -c $(c); echo; \
+	./a.$(P) -n $$N -v 0 -T $(T) -t $(t) -c $(c); \
 	done
 
 # Test for parallel FMM

@@ -1,7 +1,7 @@
 #include "base_mpi.h"
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree.h"
+#include "build_tree_from_cluster.h"
 #include "ewald.h"
 #include "logger.h"
 #include "partition.h"
@@ -15,6 +15,7 @@
 Args * args;
 BaseMPI * baseMPI;
 BoundBox * boundBox;
+BuildTreeFromCluster * clusterTree;
 BuildTree * localTree, * globalTree;
 Partition * partition;
 Traversal * traversal;
@@ -32,9 +33,12 @@ extern "C" void FMM_Init(int images) {
   const real_t theta = 0.4;
   const bool useRmax = true;
   const bool useRopt = true;
+  const int shift = 29;
+  const int mask = ~(0x7U << shift);
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
+  clusterTree = new BuildTreeFromCluster(mask, nspawn);
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
@@ -46,6 +50,8 @@ extern "C" void FMM_Init(int images) {
   args->ncrit = ncrit;
   args->nspawn = nspawn;
   args->images = images;
+  args->useRmax = useRmax;
+  args->useRopt = useRopt;
   args->mutual = 0;
   args->verbose = 1;
   args->distribution = "external";
@@ -59,6 +65,7 @@ extern "C" void FMM_Finalize() {
   delete args;
   delete baseMPI;
   delete boundBox;
+  delete clusterTree;
   delete localTree;
   delete globalTree;
   delete partition;
@@ -67,7 +74,7 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
-extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, double cycle) {
+extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float cycle) {
   logger::printTitle("Partition Profiling");
   const int shift = 29;
   const int mask = ~(0x7U << shift);
@@ -85,6 +92,7 @@ extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, doub
   globalBounds = baseMPI->allreduceBounds(localBounds);
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
+  clusterTree->setClusterCenter(bodies);
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
 
@@ -101,7 +109,7 @@ extern "C" void FMM_Partition(int & n, int * index, double * x, double * q, doub
   n = bodies.size();
 }
 
-extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle) {
+extern "C" void FMM_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle) {
   args->numBodies = n;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
@@ -128,6 +136,7 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
   treeMPI->setLET(cells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
+  traversal->initListCount(cells);
   traversal->initWeight(cells);
   traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
   Cells jcells;
@@ -161,8 +170,8 @@ extern "C" void FMM_Coulomb(int n, double * x, double * q, double * p, double * 
   }
 }
 
-extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double * f,
-			      int ksize, double alpha, double sigma, double cutoff, double cycle) {
+extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
+			      int ksize, float alpha, float sigma, float cutoff, float cycle) {
   Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
   args->numBodies = n;
   logger::printTitle("Ewald Parameters");
@@ -210,18 +219,18 @@ extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double 
   delete ewald;
 }
 
-void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
+void MPI_Shift(float * var, int &nold, int mpisize, int mpirank) {
   const int isend = (mpirank + 1          ) % mpisize;
   const int irecv = (mpirank - 1 + mpisize) % mpisize;
   int nnew;
   MPI_Request sreq, rreq;
-  MPI_Isend(&nold, 1, MPI_DOUBLE, irecv, 0, MPI_COMM_WORLD, &sreq);
-  MPI_Irecv(&nnew, 1, MPI_DOUBLE, isend, 0, MPI_COMM_WORLD, &rreq);
+  MPI_Isend(&nold, 1, MPI_INT, irecv, 0, MPI_COMM_WORLD, &sreq);
+  MPI_Irecv(&nnew, 1, MPI_INT, isend, 0, MPI_COMM_WORLD, &rreq);
   MPI_Wait(&sreq, MPI_STATUS_IGNORE);
   MPI_Wait(&rreq, MPI_STATUS_IGNORE);
-  double * buf = new double [nnew];
-  MPI_Isend(var, nold, MPI_DOUBLE, irecv, 1, MPI_COMM_WORLD, &sreq);
-  MPI_Irecv(buf, nnew, MPI_DOUBLE, isend, 1, MPI_COMM_WORLD, &rreq);
+  float * buf = new float [nnew];
+  MPI_Isend(var, nold, MPI_FLOAT, irecv, 1, MPI_COMM_WORLD, &sreq);
+  MPI_Irecv(buf, nnew, MPI_FLOAT, isend, 1, MPI_COMM_WORLD, &rreq);
   MPI_Wait(&sreq, MPI_STATUS_IGNORE);
   MPI_Wait(&rreq, MPI_STATUS_IGNORE);
   for (int i=0; i<nnew; i++) {
@@ -231,22 +240,22 @@ void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   delete[] buf;
 }
 
-extern "C" void Direct_Coulomb(int Ni, double * x, double * q, double * p, double * f, double cycle) {
+extern "C" void Direct_Coulomb(int Ni, float * x, float * q, float * p, float * f, float cycle) {
   const int Nmax = 1000000;
   int images = args->images;
   int prange = 0;
   for (int i=0; i<images; i++) {
     prange += int(std::pow(3.,i));
   }
-  double * x2 = new double [3*Nmax];
-  double * q2 = new double [Nmax];
+  float * x2 = new float [3*Nmax];
+  float * q2 = new float [Nmax];
   for (int i=0; i<Ni; i++) {
     x2[3*i+0] = x[3*i+0];
     x2[3*i+1] = x[3*i+1];
     x2[3*i+2] = x[3*i+2];
     q2[i] = q[i];
   }
-  double Xperiodic[3];
+  float Xperiodic[3];
   int Nj = Ni, Nj3 = 3 * Ni;
   if (baseMPI->mpirank == 0) std::cout << "--- MPI direct sum ---------------" << std::endl;
   for (int irank=0; irank<baseMPI->mpisize; irank++) {
@@ -283,19 +292,19 @@ extern "C" void Direct_Coulomb(int Ni, double * x, double * q, double * p, doubl
       f[3*i+2] -= fz;
     }
   }
-  double localDipole[3] = {0, 0, 0};
+  float localDipole[3] = {0, 0, 0};
   for (int i=0; i<Ni; i++) {
     for (int d=0; d<3; d++) localDipole[d] += x[3*i+d] * q[i];
   }
   int N;
   MPI_Allreduce(&Ni, &N, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  double globalDipole[3];
-  MPI_Allreduce(localDipole, globalDipole, 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  float globalDipole[3];
+  MPI_Allreduce(localDipole, globalDipole, 3, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
   double norm = 0;
   for (int d=0; d<3; d++) {
     norm += globalDipole[d] * globalDipole[d];
   }
-  double coef = 4 * M_PI / (3 * cycle * cycle * cycle);
+  float coef = 4 * M_PI / (3 * cycle * cycle * cycle);
   for (int i=0; i<Ni; i++) {
     p[i] -= coef * norm / N / q[i];
     f[3*i+0] -= coef * globalDipole[0];

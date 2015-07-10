@@ -67,7 +67,7 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
   args->images = images;
   args->theta = theta;
   args->mutual = 0;
-  args->verbose = 1;
+  args->verbose = 0;
   args->distribution = "external";
   args->verbose &= baseMPI->mpirank == 0;
   logger::verbose = args->verbose;
@@ -155,6 +155,7 @@ extern "C" void FMM_B2B(double * vi, double * vb, bool verbose) {
   Cells jcells = bcells;
   treeMPI->commBodies();
   treeMPI->commCells();
+  traversal->initListCount(bcells);
   traversal->initWeight(bcells);
   traversal->dualTreeTraversal(bcells, jcells, cycle, args->mutual);
   if (args->graft) {
@@ -192,6 +193,7 @@ extern "C" void FMM_V2B(double * vb, double * vv, bool verbose) {
   treeMPI->setLET(vcells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
+  traversal->initListCount(bcells);
   traversal->initWeight(bcells);
   traversal->dualTreeTraversal(bcells, vcells, cycle, args->mutual);
   if (args->graft) {
@@ -230,6 +232,7 @@ extern "C" void FMM_B2V(double * vv, double * vb, bool verbose) {
   treeMPI->setLET(bcells, cycle);
   treeMPI->commBodies();
   treeMPI->commCells();
+  traversal->initListCount(vcells);
   traversal->initWeight(vcells);
   traversal->dualTreeTraversal(vcells, bcells, cycle, args->mutual);
   if (args->graft) {
@@ -264,6 +267,7 @@ extern "C" void FMM_V2V(double * vi, double * vv, bool verbose) {
   Cells jcells = vcells;
   treeMPI->commBodies();
   treeMPI->commCells();
+  traversal->initListCount(vcells);
   traversal->initWeight(vcells);
   traversal->dualTreeTraversal(vcells, jcells, cycle, args->mutual);
   if (args->graft) {

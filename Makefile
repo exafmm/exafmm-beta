@@ -1,18 +1,20 @@
 help:
 	@echo "Please read the README file in the root directory."
 clean:
-	find . -name "*.o" -o -name "*.out*" -o -name "*.mod" | xargs rm -rf
+	@find . -name "*.o" -o -name "*.out*" -o -name "*.mod" | xargs rm -rf
 cleandat:
-	find . -name "*.dat" -o -name "*.pdb" -o -name "*_restart" | xargs rm -f
+	@find . -name "*.dat" -o -name "*.pdb" -o -name "*_restart" | xargs rm -f
 cleanlib:
-	find . -name "*.a" -o -name "*.so" | xargs rm -f
+	@find . -name "*.a" -o -name "*.so" | xargs rm -f
 cleanall:
 	make clean
 	make cleandat
 	make cleanlib
-save:
-	make cleanall
-	cd .. && tar zcvf exafmm-dev.tgz exafmm-dev
 revert:
 	hg revert --all
 	find . -name "*.orig" | xargs rm -f
+save:
+	make cleanall
+	cd .. && tar zcvf exafmm.tgz exafmm
+tags:
+	ctags -eR .

@@ -211,7 +211,7 @@ private:
   }
 
 public:
-  BuildTree(int _ncrit, int) : maxlevel(0), ncrit(_ncrit) {}
+  BuildTree(int _ncrit, int) : ncrit(_ncrit), maxlevel(0) {}
 
   Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     const int numBodies = bodies.size();

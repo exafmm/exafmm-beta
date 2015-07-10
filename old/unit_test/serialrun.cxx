@@ -1,4 +1,4 @@
-/*
+Sdown/*
 Copyright (C) 2011 by Rio Yokota, Simon Layton, Lorena Barba
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -54,7 +54,7 @@ int main(int, char ** argv) {
 #endif
   jcells = cells;                                               // Vector of source cells
   FMM.startTimer("Downward");                                   // Start timer
-  FMM.downward(cells,jcells,atoi(argv[3]));                     // Downward sweep
+  FMM.downward(cells,jcells);                                   // Downward sweep
   FMM.stopTimer("Downward",FMM.printNow);                       // Stop timer
   FMM.eraseTimer("Downward");                                   // Erase entry from timer to avoid timer overlap
 

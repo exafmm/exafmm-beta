@@ -49,6 +49,8 @@ int main(int argc, char ** argv) {
 #endif
     cells = buildTree.buildTree(bodies, buffer, bounds);
     upDownPass.upwardPass(cells);
+    traversal.initListCount(cells);
+    traversal.initWeight(cells);
 #if IneJ
     jcells = buildTree.buildTree(jbodies, buffer, bounds);
     upDownPass.upwardPass(jcells);
@@ -65,6 +67,9 @@ int main(int argc, char ** argv) {
     logger::resetTimer("Total FMM");
 #if WRITE_TIME
     logger::writeTime();
+#endif
+#if COUNT_LIST
+    traversal.writeList(cells);
 #endif
     const int numTargets = 100;
     buffer = bodies;
@@ -89,7 +94,8 @@ int main(int argc, char ** argv) {
     data.initTarget(bodies);
     std::cout << std::setw(10) << args.numBodies << " "
 	      << std::setw(10) << time << " "
-	      << std::setw(10) << std::sqrt(accDif/accNrm);
+	      << std::setw(10) << std::sqrt(accDif/accNrm)
+	      << std::endl;
   }
   logger::writeDAG();
   return 0;

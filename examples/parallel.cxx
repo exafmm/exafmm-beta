@@ -89,6 +89,7 @@ int main(int argc, char ** argv) {
       }
 #pragma omp section
       {
+	traversal.initListCount(cells);
 	traversal.initWeight(cells);
 #if IneJ
 	traversal.dualTreeTraversal(cells, jcells, cycle, false);
@@ -164,6 +165,9 @@ int main(int argc, char ** argv) {
     logger::resetTimer("Total FMM");
 #if WRITE_TIME
     logger::writeTime(baseMPI.mpirank);
+#endif
+#if COUNT_LIST
+    traversal.writeList(cells, baseMPI.mpirank);
 #endif
   }
   return 0;
