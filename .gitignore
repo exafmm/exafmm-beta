@@ -1,0 +1,9 @@
+*.a
+*.dat
+*genmod*
+*.mod
+*.o
+*.so
+*.out*
+*.th_o
+.deps
