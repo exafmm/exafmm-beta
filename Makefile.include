@@ -15,8 +15,13 @@ BASIS	= Cartesian
 DEVICE	= CPU
 #DEVICE	= GPU (not integrated)
 
+OS = $(shell uname)
+
 ### choose C++ compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
+ifeq ($(OS),Darwin)
+	CXX += -Wa,-q  # GCC on OSX must use CLANG assembler [ergo -q to GNU as], since GNU assembler doesn't supprot AVX on OSX
+endif
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
 #CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
 #CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
