@@ -26,12 +26,6 @@ MPI Bonsai
 Ewald, VdW
 Zero softening
 
--- Software infrastructure --
-Autotools
-CMake (update)
-Regression
-Buildbot
-
 -- Comparisons --
 DTT vs. UVWX-list
 Separate +- tree vs. Single tree
