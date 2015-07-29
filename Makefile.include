@@ -93,6 +93,8 @@ MAKEFLAGS += --no-print-directory
 
 help:
 	@make -C .. help
+buildbot:
+	@make -C .. buildbot
 clean:
 	@make -C .. clean
 cleandat:
