@@ -92,8 +92,13 @@ extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float 
   globalBounds = baseMPI->allreduceBounds(localBounds);
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
-  clusterTree->setClusterCenter(bodies);
+#if Cluster
+  Bodies clusters = clusterTree->setClusterCenter(bodies);
+  Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
+  clusterTree->attachClusterBodies(bodies, cells);
+#else
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
+#endif
   upDownPass->upwardPass(cells);
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -130,7 +135,13 @@ extern "C" void FMM_Coulomb(int n, float * x, float * q, float * p, float * f, f
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
   }
+#if 0
+  Bodies clusters = clusterTree->setClusterCenter(bodies);
+  Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
+  clusterTree->attachClusterBodies(bodies, cells);
+#else
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
+#endif
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
   treeMPI->setLET(cells, cycle);

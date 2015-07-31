@@ -4,6 +4,7 @@ include ../Makefile.include
 LFLAGS 	+= -DIneJ
 LFLAGS 	+= -DNOWRAP
 #LFLAGS	+= -DNO_P2P
+LFLAGS	+= -DCluster
 LFLAGS	+= -DSerial
 
 all:
