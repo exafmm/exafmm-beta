@@ -33,12 +33,10 @@ extern "C" void FMM_Init(int images) {
   const real_t theta = 0.4;
   const bool useRmax = true;
   const bool useRopt = true;
-  const int shift = 29;
-  const int mask = ~(0x7U << shift);
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
-  clusterTree = new BuildTreeFromCluster(mask, nspawn);
+  clusterTree = new BuildTreeFromCluster();
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
@@ -87,6 +85,7 @@ extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float 
     B->SRC = q[i];
     int iwrap = wrap(B->X, cycle);
     B->IBODY = index[i] | (iwrap << shift);
+    B->ICELL = index[i];
   }
   localBounds = boundBox->getBounds(bodies);
   globalBounds = baseMPI->allreduceBounds(localBounds);
@@ -114,7 +113,7 @@ extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float 
   n = bodies.size();
 }
 
-extern "C" void FMM_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle) {
+extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p, float * f, float cycle) {
   args->numBodies = n;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
@@ -134,8 +133,9 @@ extern "C" void FMM_Coulomb(int n, float * x, float * q, float * p, float * f, f
     B->TRG[2] = f[3*i+1];
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
+    B->ICELL = index[i];
   }
-#if 0
+#if Cluster
   Bodies clusters = clusterTree->setClusterCenter(bodies);
   Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
   clusterTree->attachClusterBodies(bodies, cells);

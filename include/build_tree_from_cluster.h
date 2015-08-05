@@ -3,38 +3,34 @@
 #include "build_tree.h"
 
 class BuildTreeFromCluster {
-private:
-  const int mask;
-  const int nspawn;
-  
 public:
-  BuildTreeFromCluster(int _mask, int _nspawn) : mask(_mask), nspawn(_nspawn) {}
+  BuildTreeFromCluster() {}
 
   Bodies setClusterCenter(Bodies & bodies) {
-    int ibody = -1;
+    int icell = -1;
     int numCells = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      int index = B->IBODY & mask;
-      if (index != ibody) {
+      int index = B->ICELL;
+      if (index != icell) {
 	numCells++;
-	ibody = index;
+	icell = index;
       }
     }
     Bodies cluster(numCells);
-    ibody = bodies.begin()->IBODY & mask;
+    icell = bodies.begin()->ICELL;
     int numBodies = 0;
     B_iter C=cluster.begin();
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      int index = B->IBODY & mask;
-      if (index != ibody) {
+      int index = B->ICELL;
+      if (index != icell) {
 	C->X /= numBodies;
-	C->IBODY = ibody;
+	C->ICELL = icell;
 	C++;
 	numBodies = 0;
-	ibody = index;
+	icell = index;
       }
       C->X += B->X;
-      C->IBODY = ibody;
+      C->ICELL = icell;
       numBodies++;
     }
     C->X /= numBodies;
@@ -47,9 +43,9 @@ public:
     for (C_iter C=cells.begin(); C!=cells.end(); C++) {
       if (C->NCHILD == 0) {
 	C->BODY = B;
-	C->IBODY = B - B0;
+	C->ICELL = B - B0;
 	C->NBODY = 0;
-	while (B->IBODY == C->BODY->IBODY) {
+	while (B->ICELL == C->BODY->ICELL) {
 	  B++;
 	  C->NBODY++;
 	}

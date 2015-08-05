@@ -9,7 +9,7 @@
 extern "C" void FMM_Init(int images);
 extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float cycle);
-extern "C" void FMM_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle);
+extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p, float * f, float cycle);
 extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
 			      int ksize, float alpha, float sigma, float cutoff, float cycle);
 extern "C" void Direct_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle);
@@ -113,7 +113,7 @@ int main(int argc, char ** argv) {
 #endif
   FMM_Init(images);
   FMM_Partition(Ni, index, x, q, cycle);
-  FMM_Coulomb(Ni, x, q, p, f, cycle);
+  FMM_Coulomb(Ni, index, x, q, p, f, cycle);
   for (int i=0; i<Ni; i++) {
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }
