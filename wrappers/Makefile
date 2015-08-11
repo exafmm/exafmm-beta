@@ -22,37 +22,19 @@ gromacs:
 	$(CXX) test_gromacs.cxx $(LFLAGS) -lfmm
 	mpirun -np 1 ./a.out
 
-charmm: # exafmm-dev
+charmm: # exafmm
 	make libcharmm.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
 	make cleandat
-	mpirun -np 1 ./a.out water_64.fmm water.out 1
+	mpirun -np 1 ./a.out water_32.fmm water.out 1
 	make cleandat
-	mpirun -np 2 ./a.out water_64.fmm water.out 1
+	mpirun -np 2 ./a.out water_32.fmm water.out 1
 
 charmm2: # uniform
 	make libcharmm2.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
 	make cleandat
-	mpirun -np 1 ./a.out water_64.fmm water.out 1
-
-charmm2spike: # uniform
-	rm -f spike* uniform.data
-	cp water_32.fmm spike.0
-	touch uniform.data
-	make libcharmm2.a
-	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp -DSPIKE
-	it=0; while [[ $$it -lt 100000 ]]; do \
-	((it1 = it + 1)); \
-	make cleandat; \
-	OMP_NUM_THREADS=1 mpirun -np 1 ./a.out spike.$$it spike.$$it1 1; \
-        ((it = it + 1)); done
-
-charmm3: # uniform-serial (Sakura interface)
-	make libcharmm3.a
-	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
-	make cleandat
-	mpirun -np 1 ./a.out water.fmm water.out 10
+	mpirun -np 1 ./a.out water_32.fmm water.out 1
 
 libpetiga.a: petiga.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
 	ar ruv libpetiga.a $?
@@ -73,8 +55,3 @@ libcharmm2.a: charmm2.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/Laplace
 	ar ruv libcharmm2.a $?
 	ranlib libcharmm2.a
 	mv libcharmm2.a libfmm.a
-
-libcharmm3.a: charmm3.o
-	ar ruv libcharmm3.a $?
-	ranlib libcharmm3.a
-	mv libcharmm3.a libfmm.a

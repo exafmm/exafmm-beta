@@ -32,11 +32,11 @@ endif
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 ### choose fortran compiler
-FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp -lmpi_cxx # gfortran
+FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
 #FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
 
 ### Base flags
-CXX	+= -I../include -I../uniform -I../sakura-uniform
+CXX	+= -I../include -I../uniform
 #CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 LFLAGS	+= -fPIC # for shared library
