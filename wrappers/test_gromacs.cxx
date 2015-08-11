@@ -8,8 +8,8 @@
 
 extern "C" void FMM_Init(int images);
 extern "C" void FMM_Finalize();
-extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float cycle);
-extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p, float * f, float cycle);
+extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, float * q, float cycle);
+extern "C" void FMM_Coulomb(int n, int * icell, float * x, float * q, float * p, float * f, float cycle);
 extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
 			      int ksize, float alpha, float sigma, float cutoff, float cycle);
 extern "C" void Direct_Coulomb(int n, float * x, float * q, float * p, float * f, float cycle);
@@ -24,7 +24,8 @@ int main(int argc, char ** argv) {
   float alpha = 10 / cycle;
   float sigma = .25 / M_PI;
   float cutoff = cycle / 2;
-  int * index = new int [Nmax];
+  int * ibody = new int [Nmax];
+  int * icell = new int [Nmax];
   float * x = new float [3*Nmax];
   float * q = new float [Nmax];
   float * p = new float [Nmax];
@@ -45,7 +46,8 @@ int main(int argc, char ** argv) {
     x[3*i+1] = drand48() * cycle - cycle / 2;
     x[3*i+2] = drand48() * cycle - cycle / 2;
     p[i] = f[3*i+0] = f[3*i+1] = f[3*i+2] = 0;
-    index[i] = i + mpirank*Ni;
+    ibody[i] = i + mpirank*Ni;
+    icell[i] = ibody[i];
   }
   for (int i=0; i<Ni; i++) {
     q[i] = drand48() - .5;
@@ -65,7 +67,8 @@ int main(int argc, char ** argv) {
     file >> x[3*i+1];
     file >> x[3*i+2];
     file >> q[i];
-    index[i] = i + mpirank*Ni;
+    ibody[i] = i + mpirank*Ni;
+    icell[i] = ibody[i];
   }
   file.close();
 #endif
@@ -82,16 +85,16 @@ int main(int argc, char ** argv) {
       for (int d=0; d<3; d++) key += (iX[d] & 1) << (3 * l + d);
       for (int d=0; d<3; d++) iX[d] >>= 1;
     }
-    index[i] = key;
+    icell[i] = key;
   }
   int numBucket = 1 << (3 * level);
   int *bucket = new int [numBucket];
   for( int i=0; i<numBucket; i++ ) bucket[i] = 0;
-  for( int i=0; i<Ni; i++ ) bucket[index[i]]++;
+  for( int i=0; i<Ni; i++ ) bucket[icell[i]]++;
   for( int i=1; i<numBucket; i++ ) bucket[i] += bucket[i-1];
   for( int i=Ni-1; i>=0; --i ) {
-    bucket[index[i]]--;
-    int inew = bucket[index[i]];
+    bucket[icell[i]]--;
+    int inew = bucket[icell[i]];
     p2[inew] = q[i];
     for (int d=0; d<3; d++) f2[3*inew+d] = x[3*i+d];
   }
@@ -108,12 +111,12 @@ int main(int argc, char ** argv) {
       for (int d=0; d<3; d++) key += (iX[d] & 1) << (3 * l + d);
       for (int d=0; d<3; d++) iX[d] >>= 1;
     }
-    index[i] = key;
+    icell[i] = key;
   }
 #endif
   FMM_Init(images);
-  FMM_Partition(Ni, index, x, q, cycle);
-  FMM_Coulomb(Ni, index, x, q, p, f, cycle);
+  FMM_Partition(Ni, ibody, icell, x, q, cycle);
+  FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
   for (int i=0; i<Ni; i++) {
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }
@@ -146,6 +149,8 @@ int main(int argc, char ** argv) {
 	      << "Rel. L2 Error (acc)" << " : " << std::sqrt(accDifGlob/accNrmGlob) << std::endl;
   }
 
+  delete[] ibody;
+  delete[] icell;
   delete[] x;
   delete[] q;
   delete[] p;

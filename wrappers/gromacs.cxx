@@ -72,7 +72,7 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
-extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float cycle) {
+extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, float * q, float cycle) {
   logger::printTitle("Partition Profiling");
   const int shift = 29;
   const int mask = ~(0x7U << shift);
@@ -84,8 +84,8 @@ extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float 
     B->X[2] = x[3*i+2];
     B->SRC = q[i];
     int iwrap = wrap(B->X, cycle);
-    B->IBODY = index[i] | (iwrap << shift);
-    B->ICELL = index[i];
+    B->IBODY = ibody[i] | (iwrap << shift);
+    B->ICELL = icell[i];
   }
   localBounds = boundBox->getBounds(bodies);
   globalBounds = baseMPI->allreduceBounds(localBounds);
@@ -102,7 +102,8 @@ extern "C" void FMM_Partition(int & n, int * index, float * x, float * q, float 
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    index[i] = B->IBODY & mask;
+    ibody[i] = B->IBODY & mask;
+    icell[i] = B->ICELL;
     int iwrap = unsigned(B->IBODY) >> shift;
     unwrap(B->X, cycle, iwrap);
     x[3*i+0] = B->X[0];
@@ -121,6 +122,7 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
   logger::startTimer("Total FMM");
   logger::startPAPI();
   Bodies bodies(n);
+  FILE *fid=fopen("real_gromacs.txt","w");
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     B->X[0] = x[3*i+0];
@@ -134,7 +136,9 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
     B->ICELL = index[i];
+    fprintf(fid,"%d %f %f %f\n",index[i],x[3*i+0],x[3*i+1],x[3*i+2]);
   }
+  fclose(fid);
 #if Cluster
   Bodies clusters = clusterTree->setClusterCenter(bodies);
   Cells cells = globalTree->buildTree(clusters, buffer, localBounds);

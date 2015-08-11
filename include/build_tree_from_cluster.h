@@ -20,9 +20,11 @@ public:
     icell = bodies.begin()->ICELL;
     int numBodies = 0;
     B_iter C=cluster.begin();
+    C->X = 0;
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
       int index = B->ICELL;
       if (index != icell) {
+	assert(index > icell);
 	C->X /= numBodies;
 	C->ICELL = icell;
 	C++;
