@@ -19,9 +19,7 @@ OS = $(shell uname)
 
 ### choose C++ compiler
 CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
-ifeq ($(OS),Darwin)
-	CXX += -Wa,-q  # GCC on OSX must use CLANG assembler [ergo -q to GNU as], since GNU assembler doesn't support AVX on OSX
-endif
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -Wa,-q -ffast-math -funroll-loops -fopenmp # GCC (OS X)
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
 #CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
 #CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
@@ -32,7 +30,7 @@ endif
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 ### choose fortran compiler
-FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
+FC = mpif90 -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
 #FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
 
 ### Base flags

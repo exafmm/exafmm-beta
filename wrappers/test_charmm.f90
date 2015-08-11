@@ -381,8 +381,8 @@ contains
     f(1:3*nglobal)=0.0
     f2(1:3*nglobal)=0.0
     call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
-    !call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
-    !call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
+    call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
+    call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
     ftotf=0.0
     ftote=0.0
     do i = 1,nglobal
@@ -538,9 +538,7 @@ contains
          ib,jb,it,jt,kt,atype,icpumap,numex,natex,etot,&
          pl2err,fl2err,ftotf,ftote)
 
-#ifndef SPIKE
     call print_energy(time,nglobal,f,v,mass,atype,icpumap,etot,pl2err,fl2err,ftotf,ftote)
-#endif
 
     ! precompute some constants and recalculate xold
     do i=1,nglobal
@@ -748,7 +746,7 @@ program main
   nglobal = 1000
   images = 3
   theta = 0.4
-  verbose = 0
+  verbose = 1
   ksize = 11
   pcycle = 10 * pi
   sigma = .25 / pi
@@ -821,7 +819,6 @@ program main
      icpumap(i) = 1
   enddo
   call fmm_init(images,theta,verbose)
-#ifndef SPIKE
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
   call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
   do i = 1,nglobal
@@ -879,15 +876,12 @@ program main
      print"(a,f12.4)",'GRMS (FMM)           : ',grmsf
      print"(a,f12.4)",'GRMS (Direct)        : ',grmse
   endif
-#endif
 
   ! run dynamics if second command line argument specified
   if (command_argument_count() > 2) then
      call get_command_argument(3,nstp,lnam,istat)
      read(nstp,*)dynsteps
-#ifndef SPIKE
      if(mpirank == 0) write(*,*)'will run dynamics for ',dynsteps,' steps'
-#endif
      ! for pure water systems there is no need for nbadd14() :-)
      test_force=.false.
      printfrq=1
