@@ -41,8 +41,8 @@ Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
-  const int ncrit = 32;
+extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & nglobal) {
+  int ncrit = 32;
   const int nspawn = 1000;
   const int threads = 1;
   const real_t eps2 = 0.0;
@@ -82,9 +82,16 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   //std::cout << "ALPHA_M : " << ALPHA_M << std::endl;  
   //std::cout << "ALPHA_L : " << ALPHA_L << std::endl;
   }
+  int numBodies = nglobal / baseMPI->mpisize;
+  ncrit = 100;
+  const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
+  const int gatherLevel = 1;
+  FMM->allocate(numBodies, maxLevel, args->images);
+  FMM->partitioner(gatherLevel);
 }
 
 extern "C" void fmm_finalize_() {
+  FMM->deallocate();
   delete args;
   delete baseMPI;
   delete boundBox;
@@ -100,6 +107,12 @@ extern "C" void fmm_finalize_() {
 extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q,
 			       double * xold, double & cycle) {
   num_threads(args->threads);
+  int ix[3] = {0, 0, 0};
+  FMM->R0 = 0.5 * cycle / FMM->numPartition[FMM->maxGlobLevel][0];
+  for_3d FMM->RGlob[d] = FMM->R0 * FMM->numPartition[FMM->maxGlobLevel][d];
+  FMM->getGlobIndex(ix,FMM->MPIRANK,FMM->maxGlobLevel);
+  for_3d FMM->X0[d] = 2 * FMM->R0 * (ix[d] + .5);
+
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   int nlocal = 0;
@@ -113,18 +126,6 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
   assert(nlocal % 3 == 0);
   args->numBodies = nlocal;
   logger::printTitle("Partition Profiling");
-  const int ncrit = 100;
-  const int maxLevel = args->numBodies >= ncrit ? 1 + int(log(args->numBodies / ncrit)/M_LN2/3) : 0;
-  const int gatherLevel = 1;
-  FMM->allocate(args->numBodies, maxLevel, args->images);
-  FMM->partitioner(gatherLevel);
-
-  int ix[3] = {0, 0, 0};
-  FMM->R0 = 0.5 * cycle / FMM->numPartition[FMM->maxGlobLevel][0];
-  for_3d FMM->RGlob[d] = FMM->R0 * FMM->numPartition[FMM->maxGlobLevel][d];
-  FMM->getGlobIndex(ix,FMM->MPIRANK,FMM->maxGlobLevel);
-  for_3d FMM->X0[d] = 2 * FMM->R0 * (ix[d] + .5);
-
   Bodies bodies(args->numBodies);
   B_iter B = bodies.begin();
   int iwrap = 0;
@@ -157,7 +158,9 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
     FMM->Ibodies[b][2] = 0;
     FMM->Ibodies[b][3] = 0;
   }
+  FMM->numBodies = bodies.size();
   FMM->partitionComm();
+  bodies.resize(FMM->numBodies);
   b = 0;
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
     B->X[0] = FMM->Jbodies[b][0] - FMM->RGlob[0];
@@ -170,6 +173,8 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
     B->TRG[2] = FMM->Ibodies[b][2];
     B->TRG[3] = FMM->Ibodies[b][3];
   }
+  localBounds = boundBox->getBounds(bodies);
+  globalBounds = baseMPI->allreduceBounds(localBounds);
   for (int i=0; i<nglobal; i++) {
     icpumap[i] = 0;
   }
@@ -209,18 +214,6 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   logger::startPAPI();
-
-  const int ncrit = 100;
-  const int maxLevel = args->numBodies >= ncrit ? 1 + int(log(args->numBodies / ncrit)/M_LN2/3) : 0;
-  const int gatherLevel = 1;
-  FMM->allocate(args->numBodies, maxLevel, args->images);
-  FMM->partitioner(gatherLevel);
-
-  int ix[3] = {0, 0, 0};
-  FMM->R0 = 0.5 * cycle / FMM->numPartition[FMM->maxGlobLevel][0];
-  for_3d FMM->RGlob[d] = FMM->R0 * FMM->numPartition[FMM->maxGlobLevel][d];
-  FMM->getGlobIndex(ix,FMM->MPIRANK,FMM->maxGlobLevel);
-  for_3d FMM->X0[d] = 2 * FMM->R0 * (ix[d] + .5);
 
   Bodies bodies(args->numBodies);
   B_iter B = bodies.begin();
@@ -314,7 +307,6 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
     B->TRG[3] = FMM->Ibodies[b][3];
   }
 #endif
-  FMM->deallocate();
 
   vec3 localDipole = upDownPass->getDipole(bodies,0);
   vec3 globalDipole = baseMPI->allreduceVec3(localDipole);

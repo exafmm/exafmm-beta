@@ -62,14 +62,14 @@ public:
   void partitionComm() {
     int ix[3];
     for( int i=0; i<MPISIZE; i++ ) sendBodiesCount[i] = 0;
+    assert(numBodies % 3 == 0);
     for( int i=0; i<numBodies; i++ ) {
       setGlobIndex(i,ix);
       int sendRank = getGlobKey(ix,maxGlobLevel);
       Rank[i] = sendRank;
       sendBodiesCount[sendRank] += 4;
-      Jbodies[i][3] = sendRank;
     }
-    for( int i=0; i<MPISIZE; i++ ) assert((sendBodiesCount[i] % 12) == 0);
+    for( int i=0; i<MPISIZE; i++ ) assert(sendBodiesCount[i] % 12 == 0);
     MPI_Alltoall(sendBodiesCount,1,MPI_INT,recvBodiesCount,1,MPI_INT,MPI_COMM_WORLD);
     sendBodiesDispl[0] = recvBodiesDispl[0] = 0;
     for( int i=1; i<MPISIZE; i++ ) {
@@ -101,11 +101,6 @@ public:
     for( int i=0; i<numBodies; i++ ) {
       Index[i] = recvIndex[i];
       for_4d Ibodies[i][d] = recvJbodies[i][d];
-    }
-    for( int i=0; i<numBodies; i++ ) {
-      setGlobIndex(i,ix);
-      int sendRank = getGlobKey(ix,maxGlobLevel);
-      if(Index[i]==797) std::cout << sendRank << " " << Jbodies[i][0] << " " << Jbodies[i][1] << " " << Jbodies[i][2] << " " << Jbodies[i][3] << " " << 2*R0 << std::endl;
     }
   }
 
@@ -149,6 +144,8 @@ public:
             int sendRank = getGlobKey(ixp,maxGlobLevel);
             for_3d ixp[d] = (ixc[d] + ix[d] + nunit[d]) % nunit[d];
             int recvRank = getGlobKey(ixp,maxGlobLevel);
+	    assert(0<=sendRank && sendRank<MPISIZE);
+	    assert(0<=recvRank && recvRank<MPISIZE);
             int sendDispl = leafsDispl[iforward];
             int sendCount = leafsCount[iforward];
             commBytes += sendCount * 2 * 4;

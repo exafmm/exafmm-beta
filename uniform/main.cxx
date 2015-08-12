@@ -45,6 +45,9 @@ int main(int argc, char ** argv) {
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
   const int gatherLevel = 1;
   const int numImages = args.images;
+  if (numImages > 0 && int(log2(FMM.MPISIZE)) % 3 != 0) {
+    if (FMM.MPIRANK==0) printf("Warning: MPISIZE must be a power of 8 for periodic domain to be square\n");
+  }
 
   FMM.allocate(numBodies, maxLevel, numImages);
   args.verbose &= FMM.MPIRANK == 0;

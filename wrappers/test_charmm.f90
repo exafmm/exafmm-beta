@@ -746,7 +746,7 @@ program main
   nglobal = 1000
   images = 3
   theta = 0.4
-  verbose = 1
+  verbose = 0
   ksize = 11
   pcycle = 10 * pi
   sigma = .25 / pi
@@ -820,7 +820,7 @@ program main
   do i = ista,iend
      icpumap(i) = 1
   enddo
-  call fmm_init(images,theta,verbose)
+  call fmm_init(images,theta,verbose,nglobal)
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
   call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
   do i = 1,nglobal
