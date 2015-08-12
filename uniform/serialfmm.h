@@ -22,6 +22,11 @@ private:
     int partitionSize = 1;
     for_3d partitionSize *= maxPartition[d];
     assert( MPISIZE == partitionSize );
+    int mpisize = MPISIZE;
+    while (mpisize > 0) {
+      assert( mpisize % 8 == 0 || mpisize == 1 );
+      mpisize /= 8;
+    }
     int checkLevel[3], partition[3];
     for_3d partition[d] = maxPartition[d];
     for( int d=0; d<3; d++ ) {

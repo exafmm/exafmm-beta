@@ -34,7 +34,7 @@ charmm2: # uniform
 	make libcharmm2.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
 	make cleandat
-	mpirun -np 2 ./a.out water_32.fmm water.out 1
+	mpirun -np 8 ./a.out water_32.fmm water.out 1
 
 libpetiga.a: petiga.o ../kernels/Laplace$(BASIS)$(DEVICE).o ../kernels/LaplaceP2P$(DEVICE).o
 	ar ruv libpetiga.a $?
