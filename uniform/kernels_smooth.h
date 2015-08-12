@@ -55,8 +55,8 @@ public:
   real_t (*Local)[LTERM];
   real_t (*globMultipole)[MTERM];
   real_t (*globLocal)[LTERM];
-  double (*sendJbodies)[4];
-  double (*recvJbodies)[4];
+  float (*sendJbodies)[4];
+  float (*recvJbodies)[4];
   float (*sendMultipole)[MTERM];
   float (*recvMultipole)[MTERM];
 

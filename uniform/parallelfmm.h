@@ -61,36 +61,51 @@ public:
 
   void partitionComm() {
     int ix[3];
+    for( int i=0; i<MPISIZE; i++ ) sendBodiesCount[i] = 0;
     for( int i=0; i<numBodies; i++ ) {
       setGlobIndex(i,ix);
       int sendRank = getGlobKey(ix,maxGlobLevel);
       Rank[i] = sendRank;
-      sendBodiesCount[sendRank]++;
+      sendBodiesCount[sendRank] += 4;
+      Jbodies[i][3] = sendRank;
     }
+    for( int i=0; i<MPISIZE; i++ ) assert((sendBodiesCount[i] % 12) == 0);
     MPI_Alltoall(sendBodiesCount,1,MPI_INT,recvBodiesCount,1,MPI_INT,MPI_COMM_WORLD);
     sendBodiesDispl[0] = recvBodiesDispl[0] = 0;
     for( int i=1; i<MPISIZE; i++ ) {
       sendBodiesDispl[i] = sendBodiesDispl[i-1] + sendBodiesCount[i-1];
       recvBodiesDispl[i] = recvBodiesDispl[i-1] + recvBodiesCount[i-1];
     }
-    numBodies = recvBodiesDispl[MPISIZE-1] + recvBodiesCount[MPISIZE-1];
     sort(Jbodies,sendJbodies,Index,sendIndex,Rank);
-    MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_DOUBLE,
-		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_DOUBLE,
+    MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_FLOAT,
+		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_FLOAT,
 		  MPI_COMM_WORLD);
-    for( int i=0; i<numBodies; i++ ) {
+    int newBodies = (recvBodiesDispl[MPISIZE-1] + recvBodiesCount[MPISIZE-1]) / 4;
+    for( int i=0; i<newBodies; i++ ) {
       for_4d Jbodies[i][d] = recvJbodies[i][d];
     }
     sort(Ibodies,sendJbodies,Index,sendIndex,Rank);
+    MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_FLOAT,
+		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_FLOAT,
+		  MPI_COMM_WORLD);
+    for( int i=0; i<MPISIZE; i++ ) {
+      sendBodiesCount[i] /= 4;
+      sendBodiesDispl[i] /= 4;
+      recvBodiesCount[i] /= 4;
+      recvBodiesDispl[i] /= 4;
+    }
     MPI_Alltoallv(sendIndex, sendBodiesCount, sendBodiesDispl, MPI_INT,
 		  recvIndex, recvBodiesCount, recvBodiesDispl, MPI_INT,
 		  MPI_COMM_WORLD);
-    MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_DOUBLE,
-		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_DOUBLE,
-		  MPI_COMM_WORLD);
+    numBodies = newBodies;
     for( int i=0; i<numBodies; i++ ) {
       Index[i] = recvIndex[i];
       for_4d Ibodies[i][d] = recvJbodies[i][d];
+    }
+    for( int i=0; i<numBodies; i++ ) {
+      setGlobIndex(i,ix);
+      int sendRank = getGlobKey(ix,maxGlobLevel);
+      if(Index[i]==797) std::cout << sendRank << " " << Jbodies[i][0] << " " << Jbodies[i][1] << " " << Jbodies[i][2] << " " << Jbodies[i][3] << " " << 2*R0 << std::endl;
     }
   }
 
@@ -146,11 +161,11 @@ public:
             sendDispl = bodiesDispl[iforward];
             sendCount = bodiesCount[iforward];
             commBytes += sendCount * 4 * 4;
-            MPI_Isend(sendJbodies[sendDispl],sendCount*4,MPI_DOUBLE,
+            MPI_Isend(sendJbodies[sendDispl],sendCount*4,MPI_FLOAT,
                       sendRank,iforward+26,MPI_COMM_WORLD,&requests[iforward+26]);
             recvDispl = bodiesDispl[iforward];
             recvCount = bodiesCount[iforward];
-            MPI_Irecv(recvJbodies[recvDispl],recvCount*4,MPI_DOUBLE,
+            MPI_Irecv(recvJbodies[recvDispl],recvCount*4,MPI_FLOAT,
                       recvRank,iforward+26,MPI_COMM_WORLD,&requests[iforward+78]);
             iforward++;
           }

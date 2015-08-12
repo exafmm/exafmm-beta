@@ -116,7 +116,7 @@ protected:
     for_3d ix[d] = ix[d] % numPartition[maxGlobLevel][d];
   }
 
-  void sort(real_t (*bodies)[4], double (*buffer)[4], int *Index, int *Index2, int *key) const {
+  void sort(real_t (*bodies)[4], float (*buffer)[4], int *Index, int *Index2, int *key) const {
     int Imax = key[0];
     int Imin = key[0];
     for( int i=0; i<numBodies; i++ ) {
@@ -175,8 +175,8 @@ public:
     Local = new real_t [numCells][LTERM]();
     globMultipole = new real_t [2*MPISIZE][MTERM]();
     globLocal = new real_t [10][LTERM]();
-    sendJbodies = new double [2*numBodies+numSendBodies][4]();
-    recvJbodies = new double [2*numBodies+numSendBodies][4]();
+    sendJbodies = new float [2*numBodies+numSendBodies][4]();
+    recvJbodies = new float [2*numBodies+numSendBodies][4]();
     sendMultipole = new float [numSendCells][MTERM]();
     recvMultipole = new float [numSendCells][MTERM]();
   }

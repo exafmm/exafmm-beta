@@ -813,8 +813,10 @@ program main
      enddo
   endif charmmio
   ista = 1
-  iend = nglobal
+  iend = nglobal / 3
   call split_range(ista,iend,mpirank,mpisize)
+  ista = (ista - 1) * 3 + 1
+  iend = iend * 3
   do i = ista,iend
      icpumap(i) = 1
   enddo

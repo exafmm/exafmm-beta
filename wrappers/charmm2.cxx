@@ -110,6 +110,7 @@ extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double 
       icpumap[i] = 0;
     }
   }
+  assert(nlocal % 3 == 0);
   args->numBodies = nlocal;
   logger::printTitle("Partition Profiling");
   const int ncrit = 100;
@@ -201,6 +202,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
       icpumap[i] = 0;
     }
   }
+  assert(nlocal % 3 == 0);
   args->numBodies = nlocal;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
@@ -359,6 +361,7 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
       icpumap[i] = 0;
     } 
   }
+  assert(nlocal % 3 == 0);
   args->numBodies = nlocal;
   logger::printTitle("Ewald Parameters");
   args->print(logger::stringLength, P);
