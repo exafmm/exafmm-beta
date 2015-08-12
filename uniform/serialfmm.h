@@ -51,7 +51,7 @@ private:
   void setSendCounts() {
     int leafsType[3] = {1, (1 << maxLevel), (1 << (2 * maxLevel))};
     int bodiesType[3];
-    for_3d bodiesType[d] = leafsType[d] * float(numBodies) / numLeafs * 2;
+    for_3d bodiesType[d] = leafsType[d] * float(numBodies) / numLeafs * 4;
     int i = 0;
     int ix[3];
     bodiesDispl[0] = leafsDispl[0] = 0;
@@ -108,6 +108,14 @@ protected:
     for_3d ix[d] = int((Jbodies[i][d] + R0 - X0[d]) / diameter);
   }
 
+  inline void setGlobIndex(int i, int *ix) const {
+#if NOWRAP
+    i = (i / 3) * 3;
+#endif
+    for_3d ix[d] = int(Jbodies[i][d] / (2 * R0));
+    for_3d ix[d] = ix[d] % numPartition[maxGlobLevel][d];
+  }
+
   void sort(real_t (*bodies)[4], double (*buffer)[4], int *Index, int *Index2, int *key) const {
     int Imax = key[0];
     int Imin = key[0];
@@ -138,7 +146,7 @@ public:
     numLeafs = 1 << 3 * L;
     numSendCells = 64 * L + 48 * ((1 << (L + 1)) - 2) + 12 * (((1 << (2 * L + 2)) - 1) / 3 - 1);
     numSendLeafs = 8 + 12 * (1 << L) + 6 * (1 << (2 * L));
-    numSendBodies = numSendLeafs * float(numBodies) / numLeafs * 2;
+    numSendBodies = numSendLeafs * float(numBodies) / numLeafs * 4;
     float memory = 0;
     memory += numBodies * 4 * sizeof(real_t);
     memory += (numBodies + numSendBodies) * 4 * sizeof(real_t);
@@ -155,40 +163,42 @@ public:
     memory += numSendLeafs * 2 * sizeof(int);
     //std::cout << "Memory: " << memory/1e6 << " MB" << std::endl;
     Index = new int [2*numBodies];
-    Index2 = new int [2*numBodies];
     Rank = new int [2*numBodies];
+    sendIndex = new int [2*numBodies];
+    recvIndex = new int [2*numBodies];
+    Leafs = new int [27*numLeafs][2]();
+    sendLeafs = new int [numSendLeafs][2]();
+    recvLeafs = new int [numSendLeafs][2]();
     Ibodies = new real_t [2*numBodies][4]();
     Jbodies = new real_t [2*numBodies+numSendBodies][4]();
     Multipole = new real_t [27*numCells][MTERM]();
     Local = new real_t [numCells][LTERM]();
-    Leafs = new int [27*numLeafs][2]();
     globMultipole = new real_t [2*MPISIZE][MTERM]();
     globLocal = new real_t [10][LTERM]();
     sendJbodies = new double [2*numBodies+numSendBodies][4]();
     recvJbodies = new double [2*numBodies+numSendBodies][4]();
     sendMultipole = new float [numSendCells][MTERM]();
     recvMultipole = new float [numSendCells][MTERM]();
-    sendLeafs = new int [numSendLeafs][2]();
-    recvLeafs = new int [numSendLeafs][2]();
   }
 
   void deallocate() {
     delete[] Index;
-    delete[] Index2;
     delete[] Rank;
+    delete[] sendIndex;
+    delete[] recvIndex;
+    delete[] Leafs;
+    delete[] sendLeafs;
+    delete[] recvLeafs;
     delete[] Ibodies;
     delete[] Jbodies;
     delete[] Multipole;
     delete[] Local;
-    delete[] Leafs;
     delete[] globMultipole;
     delete[] globLocal;
     delete[] sendJbodies;
     delete[] recvJbodies;
     delete[] sendMultipole;
     delete[] recvMultipole;
-    delete[] sendLeafs;
-    delete[] recvLeafs;
   }
 
   void partitioner(int level) {
@@ -238,9 +248,9 @@ public:
       getIndex(i,ix,diameter);
       key[i] = getKey(ix,maxLevel);
     }
-    sort(Jbodies,sendJbodies,Index,Index2,key);
+    sort(Jbodies,sendJbodies,Index,sendIndex,key);
     for( int i=0; i<numBodies; i++ ) {
-      Index[i] = Index2[i];
+      Index[i] = sendIndex[i];
       for_4d Jbodies[i][d] = sendJbodies[i][d];
     }
     delete[] key;

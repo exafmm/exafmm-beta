@@ -100,33 +100,75 @@ extern "C" void fmm_finalize_() {
 extern "C" void fmm_partition_(int & nglobal, int * icpumap, double * x, double * q,
 			       double * xold, double & cycle) {
   num_threads(args->threads);
-  logger::printTitle("Partition Profiling");
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   int nlocal = 0;
   for (int i=0; i<nglobal; i++) {
-    if (icpumap[i] == 1) nlocal++;
+    if (icpumap[i] == 1) {
+      nlocal++;
+    } else {
+      icpumap[i] = 0;
+    }
   }
-  Bodies bodies(nlocal);
+  args->numBodies = nlocal;
+  logger::printTitle("Partition Profiling");
+  const int ncrit = 100;
+  const int maxLevel = args->numBodies >= ncrit ? 1 + int(log(args->numBodies / ncrit)/M_LN2/3) : 0;
+  const int gatherLevel = 1;
+  FMM->allocate(args->numBodies, maxLevel, args->images);
+  FMM->partitioner(gatherLevel);
+
+  int ix[3] = {0, 0, 0};
+  FMM->R0 = 0.5 * cycle / FMM->numPartition[FMM->maxGlobLevel][0];
+  for_3d FMM->RGlob[d] = FMM->R0 * FMM->numPartition[FMM->maxGlobLevel][d];
+  FMM->getGlobIndex(ix,FMM->MPIRANK,FMM->maxGlobLevel);
+  for_3d FMM->X0[d] = 2 * FMM->R0 * (ix[d] + .5);
+
+  Bodies bodies(args->numBodies);
   B_iter B = bodies.begin();
+  int iwrap = 0;
   for (int i=0; i<nglobal; i++) {
     if (icpumap[i] == 1) {
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
       B->SRC = q[i];
-      B->TRG[0] = xold[3*i+0];
-      B->TRG[1] = xold[3*i+1];
-      B->TRG[2] = xold[3*i+2];
-      int iwrap = wrap(B->X, cycle);
+      B->TRG = 0;
+#if NOWRAP
+      if(i % 3 == 0) iwrap = wrap(B->X, cycle);
+      else unwrap(B->X, cycle, iwrap);
+#else
+      iwrap = wrap(B->X, cycle);
+#endif
       B->IBODY = i | (iwrap << shift);
       B++;
     }
   }
-  localBounds = boundBox->getBounds(bodies);
-  globalBounds = baseMPI->allreduceBounds(localBounds);
-  localBounds = partition->octsection(bodies,globalBounds);
-  bodies = treeMPI->commBodies(bodies);
+  int b = 0;
+  for (B=bodies.begin(); B!=bodies.end(); B++, b++) {
+    FMM->Jbodies[b][0] = B->X[0] + FMM->RGlob[0];
+    FMM->Jbodies[b][1] = B->X[1] + FMM->RGlob[1];
+    FMM->Jbodies[b][2] = B->X[2] + FMM->RGlob[2];
+    FMM->Jbodies[b][3] = B->SRC;
+    FMM->Index[b] = B->IBODY;
+    FMM->Ibodies[b][0] = 0;
+    FMM->Ibodies[b][1] = 0;
+    FMM->Ibodies[b][2] = 0;
+    FMM->Ibodies[b][3] = 0;
+  }
+  FMM->partitionComm();
+  b = 0;
+  for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+    B->X[0] = FMM->Jbodies[b][0] - FMM->RGlob[0];
+    B->X[1] = FMM->Jbodies[b][1] - FMM->RGlob[1];
+    B->X[2] = FMM->Jbodies[b][2] - FMM->RGlob[2];
+    B->SRC = FMM->Jbodies[b][3];
+    B->IBODY = FMM->Index[b];
+    B->TRG[0] = FMM->Ibodies[b][0];
+    B->TRG[1] = FMM->Ibodies[b][1];
+    B->TRG[2] = FMM->Ibodies[b][2];
+    B->TRG[3] = FMM->Ibodies[b][3];
+  }
   for (int i=0; i<nglobal; i++) {
     icpumap[i] = 0;
   }

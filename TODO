@@ -32,6 +32,7 @@ Separate +- tree vs. Single tree
 Cartesian vs. Spherical (optimized)
 
 -- Parallel debugging tips --
+Write the kind of code where standard gcc can catch the bug, exceptions, assertions
 Shift bodies
 traverseLET 0 distance
 graft 0

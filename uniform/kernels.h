@@ -41,21 +41,22 @@ public:
   real_t R0;
   real_t RGlob[3];
   int *Index;
-  int *Index2;
   int *Rank;
+  int *sendIndex;
+  int *recvIndex;
+  int (*Leafs)[2];
+  int (*sendLeafs)[2];
+  int (*recvLeafs)[2];
   real_t (*Ibodies)[4];
   real_t (*Jbodies)[4];
   real_t (*Multipole)[MTERM];
   real_t (*Local)[LTERM];
   real_t (*globMultipole)[MTERM];
   real_t (*globLocal)[LTERM];
-  int (*Leafs)[2];
   double (*sendJbodies)[4];
   double (*recvJbodies)[4];
   float (*sendMultipole)[MTERM];
   float (*recvMultipole)[MTERM];
-  int (*sendLeafs)[2];
-  int (*recvLeafs)[2];
 
 private:
   inline void getIndex(int *ix, int index) const {

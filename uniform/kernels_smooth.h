@@ -10,13 +10,8 @@ const int DP2P = 2; // Use 1 for parallel
 const int DM2L = 2; // Use 1 for parallel
 const int MTERM = PP*(PP+1)*(PP+2)/6;
 const int LTERM = (PP+1)*(PP+2)*(PP+3)/6;
-<<<<<<< /net/ds01/share02/yokota/exafmm/uniform/kernels2.h
-const real_t ALPHA_M = 1e6;
-const real_t ALPHA_L = 1e6;
-=======
 const real_t ALPHA_M = 100;
 const real_t ALPHA_L = 100;
->>>>>>> /tmp/kernels2.h~other.NvyfFS
 
 #include "core.h"
 
@@ -48,21 +43,22 @@ public:
   real_t R0;
   real_t RGlob[3];
   int *Index;
-  int *Index2;
   int *Rank;
+  int *sendIndex;
+  int *recvIndex;
+  int (*Leafs)[2];
+  int (*sendLeafs)[2];
+  int (*recvLeafs)[2];
   real_t (*Ibodies)[4];
   real_t (*Jbodies)[4];
   real_t (*Multipole)[MTERM];
   real_t (*Local)[LTERM];
   real_t (*globMultipole)[MTERM];
   real_t (*globLocal)[LTERM];
-  int (*Leafs)[2];
   double (*sendJbodies)[4];
   double (*recvJbodies)[4];
   float (*sendMultipole)[MTERM];
   float (*recvMultipole)[MTERM];
-  int (*sendLeafs)[2];
-  int (*recvLeafs)[2];
 
 private:
   inline void getIndex(int *ix, int index) const {

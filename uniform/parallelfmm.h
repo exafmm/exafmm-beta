@@ -61,9 +61,8 @@ public:
 
   void partitionComm() {
     int ix[3];
-    real_t diameter = 2 * R0;
     for( int i=0; i<numBodies; i++ ) {
-      getIndex(i,ix,diameter);
+      setGlobIndex(i,ix);
       int sendRank = getGlobKey(ix,maxGlobLevel);
       Rank[i] = sendRank;
       sendBodiesCount[sendRank]++;
@@ -75,18 +74,22 @@ public:
       recvBodiesDispl[i] = recvBodiesDispl[i-1] + recvBodiesCount[i-1];
     }
     numBodies = recvBodiesDispl[MPISIZE-1] + recvBodiesCount[MPISIZE-1];
-    sort(Jbodies,sendJbodies,Index,Index2,Rank);
+    sort(Jbodies,sendJbodies,Index,sendIndex,Rank);
     MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_DOUBLE,
 		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_DOUBLE,
 		  MPI_COMM_WORLD);
     for( int i=0; i<numBodies; i++ ) {
       for_4d Jbodies[i][d] = recvJbodies[i][d];
     }
-    sort(Ibodies,sendJbodies,Index,Index2,Rank);
+    sort(Ibodies,sendJbodies,Index,sendIndex,Rank);
+    MPI_Alltoallv(sendIndex, sendBodiesCount, sendBodiesDispl, MPI_INT,
+		  recvIndex, recvBodiesCount, recvBodiesDispl, MPI_INT,
+		  MPI_COMM_WORLD);
     MPI_Alltoallv(sendJbodies[0], sendBodiesCount, sendBodiesDispl, MPI_DOUBLE,
 		  recvJbodies[0], recvBodiesCount, recvBodiesDispl, MPI_DOUBLE,
 		  MPI_COMM_WORLD);
     for( int i=0; i<numBodies; i++ ) {
+      Index[i] = recvIndex[i];
       for_4d Ibodies[i][d] = recvJbodies[i][d];
     }
   }
