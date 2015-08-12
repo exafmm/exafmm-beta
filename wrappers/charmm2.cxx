@@ -353,7 +353,6 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
       icpumap[i] = 0;
     } 
   }
-  assert(nlocal % 3 == 0);
   args->numBodies = nlocal;
   logger::printTitle("Ewald Parameters");
   args->print(logger::stringLength, P);
@@ -375,6 +374,10 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
       B++;
     }
   }
+  localBounds = boundBox->getBounds(bodies);
+  globalBounds = baseMPI->allreduceBounds(localBounds);
+  localBounds = partition->octsection(bodies,globalBounds);
+  bodies = treeMPI->commBodies(bodies);
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   Bodies jbodies = bodies;
   for (int i=0; i<baseMPI->mpisize; i++) {
@@ -386,6 +389,8 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
     ewald->realPart(cells, jcells);
   }
   ewald->selfTerm(bodies);
+  partition->unpartition(bodies);
+  bodies = treeMPI->commBodies(bodies);
   logger::stopPAPI();
   logger::stopTimer("Total Ewald");
   logger::printTitle("Total runtime");
@@ -397,21 +402,6 @@ extern "C" void ewald_coulomb_(int & nglobal, int * icpumap, double * x, double 
     f[3*i+0] += B->TRG[1] * B->SRC * Celec;
     f[3*i+1] += B->TRG[2] * B->SRC * Celec;
     f[3*i+2] += B->TRG[3] * B->SRC * Celec;
-  }
-  treeMPI->allgatherBounds(localBounds);
-  treeMPI->setLET(cells, cycle);
-  treeMPI->commBodies();
-  bodies = treeMPI->getRecvBodies();
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    int i = B->IBODY & mask;
-    int iwrap = unsigned(B->IBODY) >> shift;
-    unwrap(B->X, cycle, iwrap);
-    x[3*i+0] = B->X[0];
-    x[3*i+1] = B->X[1];
-    x[3*i+2] = B->X[2];
-    q[i] = B->SRC;
-    assert(icpumap[i] == 0);
-    icpumap[i] = 2;
   }
   delete ewald;
 }
@@ -540,6 +530,10 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
       B++;
     }
   }
+  localBounds = boundBox->getBounds(bodies);
+  globalBounds = baseMPI->allreduceBounds(localBounds);
+  localBounds = partition->octsection(bodies,globalBounds);
+  bodies = treeMPI->commBodies(bodies);
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
   treeMPI->allgatherBounds(localBounds);
@@ -552,6 +546,8 @@ extern "C" void fmm_vanderwaals_(int & nglobal, int * icpumap, int * atype,
     treeMPI->getLET(jcells,(baseMPI->mpirank+irank)%baseMPI->mpisize);
     VDW->evaluate(cells, jcells);
   }
+  partition->unpartition(bodies);
+  bodies = treeMPI->commBodies(bodies);
   logger::stopPAPI();
   logger::stopTimer("Total VdW");
   logger::printTitle("Total runtime");
