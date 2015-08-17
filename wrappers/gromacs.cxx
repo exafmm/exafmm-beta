@@ -92,7 +92,7 @@ extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, floa
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
 #if Cluster
-  Bodies clusters = clusterTree->setClusterCenter(bodies);
+  Bodies clusters = clusterTree->setClusterCenter(bodies, cycle);
   Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
   clusterTree->attachClusterBodies(bodies, cells);
 #else
@@ -122,7 +122,6 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
   logger::startTimer("Total FMM");
   logger::startPAPI();
   Bodies bodies(n);
-  FILE *fid=fopen("real_gromacs.txt","w");
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     B->X[0] = x[3*i+0];
@@ -136,11 +135,9 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
     B->ICELL = index[i];
-    fprintf(fid,"%d %f %f %f\n",index[i],x[3*i+0],x[3*i+1],x[3*i+2]);
   }
-  fclose(fid);
 #if Cluster
-  Bodies clusters = clusterTree->setClusterCenter(bodies);
+  Bodies clusters = clusterTree->setClusterCenter(bodies, cycle);
   Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
   clusterTree->attachClusterBodies(bodies, cells);
 #else
