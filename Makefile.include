@@ -48,7 +48,7 @@ LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 ### Debugging flags
 LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
 #LFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
-#LFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
+LFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
 
 ### Thread model flags
 #LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
