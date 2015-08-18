@@ -76,17 +76,12 @@ private:
         d = (d+1) % 3;
         if( d == 0 ) level++;
       }
-      /*
+      int isNeighbor = 1;
       for (d=0; d<3; d++) {
 	if (Xperiodic[d] > 1e-3) jX[d] += 5;
 	if (Xperiodic[d] < -1e-3) jX[d] -= 5;
+	isNeighbor &= abs(iX[d] - jX[d]) <= 1;
       }
-      if(Ci->ICELL==0) printf("%d %d %d : %d %d %d : %f %f %f : %f %f %f : %f %f %f\n",
-			      iX[0],iX[1],iX[2],jX[0],jX[1],jX[2],
-			      Ci->X[0],Ci->X[1],Ci->X[2],
-			      Cj->X[0]+Xperiodic[0],Cj->X[1]+Xperiodic[1],Cj->X[2]+Xperiodic[2],
-			      Xperiodic[0],Xperiodic[1],Xperiodic[2]);
-      */
 #endif
       if (Cj->NBODY == 0) {                                     //  If the bodies weren't sent from remote node
 	//std::cout << "Warning: icell " << Ci->ICELL << " needs bodies from jcell" << Cj->ICELL << std::endl;
@@ -95,7 +90,7 @@ private:
 	countList(Ci, Cj, mutual, false);                       //   Increment M2L list
 	countWeight(Ci, Cj, mutual, remote);                    //   Increment M2L weight
 #if NO_P2P
-      } else if (R2 > 2.3202) {                                 //  If GROAMCS handles neighbors
+      } else if (!isNeighbor) {                                 //  If GROAMCS handles neighbors
 	kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
         countKernel(numM2L);                                    //   Increment M2L counter
         countList(Ci, Cj, mutual, false);                       //   Increment M2L list
