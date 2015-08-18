@@ -127,9 +127,9 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
   Bodies bodies(n);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    B->X[0] = x[3*i+0];
-    B->X[1] = x[3*i+1];
-    B->X[2] = x[3*i+2];
+    B->X[0] = x[3*i+0] - cycle / 2;
+    B->X[1] = x[3*i+1] - cycle / 2;
+    B->X[2] = x[3*i+2] - cycle / 2;
     wrap(B->X, cycle);
     B->SRC = q[i];
     B->TRG[0] = p[i];
