@@ -96,14 +96,28 @@ public:
     }
     int dimLeafs = cbrt(numLeafs);
     assert(dimLeafs*dimLeafs*dimLeafs == numLeafs);
+    int numLevels = log2(dimLeafs) + 1;
     for (C_iter C=cells.begin(); C!=cells.end(); C++) {
       if (C->NCHILD == 0) {
 	uint64_t icell = C->BODY->ICELL;
 	B_iter B = B0 + C->BODY->IBODY;
+	int ix = icell / dimLeafs / dimLeafs;
+	int iy = icell / dimLeafs % dimLeafs;
+	int iz = icell % dimLeafs;
+	int key = 0;
+	for (int l=0; l<numLevels; l++) {
+	  key += (ix & 1) << (3 * l);
+	  key += (iy & 1) << (3 * l + 1);
+	  key += (iz & 1) << (3 * l + 2);
+	  ix >>= 1;
+	  iy >>= 1;
+	  iz >>= 1;
+	}
 	C->X = C->BODY->X;
 	C->BODY = B;
 	C->IBODY = B - B0;
 	C->NBODY = 0;
+	C->ICELL = key;
 	C->R = cycle / dimLeafs / 2;
 	while (B->ICELL == icell) {
 	  B++;
@@ -111,6 +125,7 @@ public:
 	}
       } else {
 	C->NBODY = 0;
+	C->ICELL = 0;
 	C->R = 0;
 	C->X = 0;
       }
