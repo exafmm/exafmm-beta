@@ -86,7 +86,6 @@ public:
       C->X += CC->X;
     }
     if (C->NCHILD != 0) C->X /= C->NCHILD;
-    if(C->ICELL==0) std::cout << C->ICELL << " " << C->R << " " << C->X << std::endl;
   }
 
   void attachClusterBodies(Bodies & bodies, Cells & cells, real_t cycle) {
@@ -105,7 +104,7 @@ public:
 	C->BODY = B;
 	C->IBODY = B - B0;
 	C->NBODY = 0;
-	C->R = cycle / dimLeafs;
+	C->R = cycle / dimLeafs / 2;
 	while (B->ICELL == icell) {
 	  B++;
 	  C->NBODY++;

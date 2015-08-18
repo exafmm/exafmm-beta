@@ -30,7 +30,7 @@ extern "C" void FMM_Init(int images) {
   const int ncrit = 32;
   const int nspawn = 1000;
   const real_t eps2 = 0.0;
-  const real_t theta = 0.4;
+  const real_t theta = 0.5;
   const bool useRmax = false;
   const bool useRopt = false;
   args = new Args;

@@ -63,10 +63,16 @@ private:
         countKernel(numM2L);                                    //   Increment M2L counter
 	countList(Ci, Cj, mutual, false);                       //   Increment M2L list
 	countWeight(Ci, Cj, mutual, remote);                    //   Increment M2L weight
-      } else {                                                  //  Else if the bodies were sent
 #if NO_P2P
+      } else if (R2 > 2.3202) {                                 //  If GROAMCS handles neighbors
+	kernel::M2L(Ci, Cj, Xperiodic, mutual);                 //   M2L kernel
+        countKernel(numM2L);                                    //   Increment M2L counter
+        countList(Ci, Cj, mutual, false);                       //   Increment M2L list
+        countWeight(Ci, Cj, mutual, remote);                    //   Increment M2L weight
+      } else {
 	countList(Ci, Cj, mutual, true);                        //   Increment P2P list
 #else
+      } else {
 	if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
 	  kernel::P2P(Ci, eps2);                                //    P2P kernel for single cell
 	} else {                                                //   Else if source and target are different
