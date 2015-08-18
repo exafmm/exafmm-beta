@@ -30,7 +30,7 @@ extern "C" void FMM_Init(int images) {
   const int ncrit = 32;
   const int nspawn = 1000;
   const real_t eps2 = 0.0;
-  const real_t theta = 0.9;
+  const real_t theta = 0.4;
   const bool useRmax = false;
   const bool useRopt = false;
   args = new Args;
@@ -94,12 +94,15 @@ extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, floa
 #if Cluster
   Bodies clusters = clusterTree->setClusterCenter(bodies, cycle);
   Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
-  clusterTree->attachClusterBodies(bodies, cells);
+  clusterTree->attachClusterBodies(bodies, cells, cycle);
 #else
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
 #endif
   upDownPass->upwardPass(cells);
 
+#if Cluster
+  clusterTree->shiftBackBodies(bodies, cycle);
+#endif
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
     ibody[i] = B->IBODY & mask;
@@ -139,7 +142,7 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
 #if Cluster
   Bodies clusters = clusterTree->setClusterCenter(bodies, cycle);
   Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
-  clusterTree->attachClusterBodies(bodies, cells);
+  clusterTree->attachClusterBodies(bodies, cells, cycle);
 #else
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
 #endif
@@ -176,6 +179,9 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
   logger::stopTimer("Total FMM");
   logger::printTitle("Total runtime");
   logger::printTime("Total FMM");
+#if Cluster
+  clusterTree->shiftBackBodies(bodies, cycle);
+#endif
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B->IBODY;
     p[i]     = B->TRG[0];

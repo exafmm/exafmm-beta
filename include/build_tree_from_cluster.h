@@ -4,7 +4,9 @@
 
 class BuildTreeFromCluster {
 public:
+  typedef std::vector<int> ints;
   typedef std::vector<vec3> vec3s;
+  ints iwrap;
 
   BuildTreeFromCluster() {}
 
@@ -39,19 +41,21 @@ public:
   }
 
   Bodies setClusterCenter(Bodies & bodies, real_t cycle) {
+    iwrap.resize(bodies.size());
     int numCells = getNumCells(bodies);
     vec3s Xmin = getXmin(bodies, numCells);
     Bodies cluster(numCells);
     int icell = bodies.begin()->ICELL;
     int numBodies = 0;
     B_iter C=cluster.begin();
-    int c = 0;
+    int b = 0, c = 0;
     C->X = 0;
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
       int index = B->ICELL;
       if (index != icell) {
 	assert(index > icell);
 	C->X /= numBodies;
+	C->IBODY = B - bodies.begin() - numBodies;
 	C->ICELL = icell;
 	C++;
 	c++;
@@ -59,14 +63,17 @@ public:
 	numBodies = 0;
 	icell = index;
       }
-      vec3 Xperiodic = 0;
+      iwrap[b] = 0;
       for (int d=0; d<3; d++) {
-	Xperiodic[d] = cycle * (B->X[d] - Xmin[c][d] > cycle / 2);
+	int flag = B->X[d] - Xmin[c][d] > cycle / 2;
+	B->X[d] -= cycle * flag;
+	iwrap[b] |= flag << d;
       }
-      C->X += B->X - Xperiodic;
+      C->X += B->X;
       numBodies++;
     }
     C->X /= numBodies;
+    C->IBODY = bodies.size() - numBodies;
     C->ICELL = icell;
     return cluster;
   }
@@ -76,30 +83,47 @@ public:
       upwardPass(CC, C0);
       C->NBODY += CC->NBODY;
       C->R = std::max(C->R, 2 * CC->R);
+      C->X += CC->X;
     }
+    if (C->NCHILD != 0) C->X /= C->NCHILD;
+    if(C->ICELL==0) std::cout << C->ICELL << " " << C->R << " " << C->X << std::endl;
   }
 
-  void attachClusterBodies(Bodies & bodies, Cells & cells) {
+  void attachClusterBodies(Bodies & bodies, Cells & cells, real_t cycle) {
     B_iter B0 = bodies.begin();
-    B_iter B = B0;
+    int numLeafs = 0;
+    for (C_iter C=cells.begin(); C!=cells.end(); C++) {
+      if (C->NCHILD == 0) numLeafs++;
+    }
+    int dimLeafs = cbrt(numLeafs);
+    assert(dimLeafs*dimLeafs*dimLeafs == numLeafs);
     for (C_iter C=cells.begin(); C!=cells.end(); C++) {
       if (C->NCHILD == 0) {
+	uint64_t icell = C->BODY->ICELL;
+	B_iter B = B0 + C->BODY->IBODY;
+	C->X = C->BODY->X;
 	C->BODY = B;
 	C->IBODY = B - B0;
-	C->ICELL = B - B0;
 	C->NBODY = 0;
-	C->R = 0;
-	while (B->ICELL == C->BODY->ICELL) {
-	  C->R = std::max(C->R, sqrtf(norm(B->X - C->X)));
+	C->R = cycle / dimLeafs;
+	while (B->ICELL == icell) {
 	  B++;
 	  C->NBODY++;
 	}
       } else {
 	C->NBODY = 0;
 	C->R = 0;
+	C->X = 0;
       }
     }
     upwardPass(cells.begin(), cells.begin());
+  }
+
+  void shiftBackBodies(Bodies & bodies, real_t cycle) {
+    int b = 0;
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++, b++) {
+      unwrap(B->X,cycle,iwrap[b]);
+    }
   }
 };
 #endif
