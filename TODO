@@ -1,8 +1,7 @@
--- CPU --
+-- Features to add --
 kernel: eps2, Xperiodic, wavek -> global variables
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 Time each kernel separately using cycle counters
-Intel OpenMP error
 examples/Makefile options to args
 cycle counter based weights
 OpenMP with atomics -> flush
@@ -30,13 +29,16 @@ Zero softening
 DTT vs. UVWX-list
 Separate +- tree vs. Single tree
 Cartesian vs. Spherical (optimized)
+ORB vs. HOT
 
--- Parallel debugging tips --
+-- Debugging tips --
 Write the kind of code where standard gcc can catch the bug, exceptions, assertions
+Add assertions and keep them there
 Shift bodies
 traverseLET 0 distance
 graft 0
 serial mimic parallel
 
 -- Issues --
-charmm2: remove repartition inside Ewald & VdW.
+charmm2: remove repartition inside Ewald & VdW
+Intel OpenMP error
