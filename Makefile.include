@@ -7,8 +7,8 @@ EQUATION = Laplace
 #EQUATION = Stokes (not available yet)
 
 ### choose basis of multipole/local expansion
-#BASIS	= Cartesian
-BASIS	= Spherical
+BASIS	= Cartesian
+#BASIS	= Spherical
 #BASIS	= Planewave (not available yet)
 
 ### choose device to use
@@ -37,16 +37,16 @@ FC = mpif90 -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
 CXX	+= -I../include -I../uniform
 #CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
-LFLAGS	+= -fPIC # for shared library
+#LFLAGS	+= -fPIC # for shared library
 LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
-LFLAGS  += -DEXPANSION=9 # Specify expansion order
+LFLAGS  += -DEXPANSION=4 # Specify expansion order
 LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #LFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
 #LFLAGS	+= -DFP64 # Use double precision
 #LFLAGS	+= -DKAHAN # Use Kahan summation
 
 ### Debugging flags
-LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
+#LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
 #LFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
 #LFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
 
