@@ -1,5 +1,7 @@
 Use symmetry in M, L -> 1-D array
 Use cell structure
+Use body structure
+SIMD for P2P
 
 [calculate from level]
 scale
