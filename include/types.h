@@ -39,6 +39,9 @@ typedef csimdvec        kcsimdvec;                              //!< Complex SIM
 #endif
 
 // Multipole/local expansion coefficients
+#ifndef EXPANSION
+#error EXPANSION undefined
+#endif
 const int P = EXPANSION;                                        //!< Order of expansions
 #if Cartesian
 const int NTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole/local terms

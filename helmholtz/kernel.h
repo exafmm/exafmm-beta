@@ -46,8 +46,7 @@ void P2M(complex_t wavek, real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 
     for (int n=0; n<=P; n++) {
       jn[n] *= qj[i];
     }
-    Mnm[0][P] += jn[0];
-    for (int n=1; n<=P; n++) {
+    for (int n=0; n<=P; n++) {
       Mnm[n][P] += Ynm[n][0] * jn[n];
       for (int m=1; m<=n; m++) {
 	complex_t Ynmjn = Ynm[n][m] * jn[n];
@@ -57,8 +56,10 @@ void P2M(complex_t wavek, real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 
     }
   }
   for (int n=0; n<=P; n++) {
-    for (int m=-n; m<=n; m++) {
+    Mi[n][P] += Mnm[n][P] * I * wavek;
+    for (int m=1; m<=n; m++) {
       Mi[n][P+m] += Mnm[n][P+m] * I * wavek;
+      Mi[n][P-m] += Mnm[n][P-m] * I * wavek;
     }
   }
 }
