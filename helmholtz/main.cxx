@@ -14,7 +14,7 @@ int main(int argc, char ** argv) {
   Args args(argc,argv);
   Verify verify;
   const int numBodies=args.numBodies;
-  const complex_t wavek(10.,1.),imag(0.,1.);
+  const complex_t wavek(10.,1.);
   vec3 * Xj = new vec3 [numBodies];
   complex_t * qj = new complex_t [numBodies];
   complex_t * pi = new complex_t [numBodies];
@@ -25,7 +25,7 @@ int main(int argc, char ** argv) {
   FILE * fid = fopen("data","r");
   for (int i=0; i<numBodies; i++) {
     if (fscanf(fid,"%lf %lf %lf",&Xj[i][0],&Xj[i][1],&Xj[i][2])) {
-      qj[i] = Xj[i][0] + imag * Xj[i][1];
+      qj[i] = Xj[i][0] + I * Xj[i][1];
     }
   }
   fclose(fid);

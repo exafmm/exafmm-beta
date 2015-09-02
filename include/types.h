@@ -22,17 +22,20 @@ typedef vec<3,complex_t>     cvec3;                             //!< Vector of 3
 
 // SIMD vector types for MIC, AVX, and SSE
 const int NSIMD = SIMD_BYTES / sizeof(real_t);                  //!< SIMD vector length (SIMD_BYTES defined in macros.h)
-typedef vec<NSIMD,real_t> simdvec;                              //!< SIMD vector type
+typedef vec<NSIMD,real_t>     simdvec;                          //!< SIMD vector type
+typedef std::complex<simdvec> csimdvec;                         //!< Complex SIMD vector type
 
 // Kahan summation types (Achieves quasi-double precision using single precision types)
 #if KAHAN
-typedef kahan<real_t>  kreal_t;                                 //!< Floating point type with Kahan summation
-typedef vec<4,kreal_t> kvec4;                                   //!< Vector of 4 floats with Kahan summaiton
-typedef kahan<simdvec> ksimdvec;                                //!< SIMD vector type with Kahan summation
+typedef kahan<real_t>   kreal_t;                                //!< Floating point type with Kahan summation
+typedef vec<4,kreal_t>  kvec4;                                  //!< Vector of 4 floats with Kahan summaiton
+typedef kahan<simdvec>  ksimdvec;                               //!< SIMD vector type with Kahan summation
+typedef kahan<csimdvec> kcsimdvec;                              //!< Complex SIMD vector type with Kahan summation
 #else
-typedef real_t         kreal_t;                                 //!< Floating point type
-typedef vec<4,real_t>  kvec4;                                   //!< Vector of 4 floating point types
-typedef simdvec        ksimdvec;                                //!< SIMD vector type
+typedef real_t          kreal_t;                                //!< Floating point type
+typedef vec<4,real_t>   kvec4;                                  //!< Vector of 4 floating point types
+typedef simdvec         ksimdvec;                               //!< SIMD vector type
+typedef csimdvec        kcsimdvec;                              //!< Complex SIMD vector type
 #endif
 
 // Multipole/local expansion coefficients

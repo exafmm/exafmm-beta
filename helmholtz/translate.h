@@ -155,17 +155,16 @@ void get_Ynmd(int nterms, real_t x, real_t Ynm[P+1][P+1], real_t Ynmd[P+1][P+1],
 }
 
 void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
-  complex_t imag(0.0,1.0);
   if (abs(z) < eps) {
     for (int i=0; i<=nterms; i++) {
       hn[i] = 0;
     }
     return;
   }
-  complex_t zi = imag * z;
+  complex_t zi = I * z;
   complex_t zinv = scale / z;
   hn[0] = exp(zi) / zi;
-  hn[1] = hn[0] * (zinv - imag * scale);
+  hn[1] = hn[0] * (zinv - I * scale);
   real_t scale2 = scale * scale;
   for (int i=2; i<=nterms; i++) {
     hn[i] = zinv * (2 * i - 1.0) * hn[i-1] - scale2 * hn[i-2];
@@ -173,7 +172,6 @@ void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
 }
 
 void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * hnd) {
-  complex_t imag(0.0,1.0);
   if (abs(z) < eps) {
     for (int i=0; i<=nterms; i++) {
       hn[i] = 0;
@@ -181,10 +179,10 @@ void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * 
     }
     return;
   }
-  complex_t zi = imag * z;
+  complex_t zi = I * z;
   complex_t zinv = 1.0 / z;
   hn[0] = exp(zi) / zi;
-  hn[1] = hn[0] * (zinv - imag) * scale;
+  hn[1] = hn[0] * (zinv - I) * scale;
   hnd[0] = -hn[1] / scale;
   hnd[1] = -zinv * 2.0 * hn[1] + scale * hn[0];
   for (int i=2; i<=nterms; i++) {
