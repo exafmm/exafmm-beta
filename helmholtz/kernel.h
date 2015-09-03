@@ -76,8 +76,8 @@ void M2M(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
 	 real_t radius, real_t xquad[2*P], real_t wquad[2*P], int nquad,
 	 real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
   real_t Ynm[P+1][P+1];
-  complex_t Mnm[P+1][2*P+1];
-  complex_t Mrot[P+1][2*P+1];
+  complex_t Mnm[(P+1)*(P+1)];
+  complex_t Mrot[(P+1)*(P+1)];
   complex_t phitemp[nquad][2*P+1];
   complex_t hn[P+1];
   complex_t ephi[2*P+1];
@@ -93,7 +93,8 @@ void M2M(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
   }
   for (int n=0; n<=P; n++) {
     for (int m=-n; m<=n; m++) {
-      Mnm[n][P+m] = Mj[n][P+m] * ephi[P+m];
+      int nm = n * n + n + m;
+      Mnm[nm] = Mj[n][P+m] * ephi[P+m];
     }
   }
   rotate(theta, P, Mnm, Mrot);
@@ -114,13 +115,15 @@ void M2M(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
     for (int m=-P; m<=P; m++) {
       int mabs = abs(m);
       for (int n=mabs; n<=P; n++) {
-	phitemp[l][P+m] += Mrot[n][P+m] * hn[n] * Ynm[n][mabs];
+	int nm = n * n + n + m;
+	phitemp[l][P+m] += Mrot[nm] * hn[n] * Ynm[n][mabs];
       }
     }
   }
   for (int n=0; n<=P; n++) {
     for (int m=-n; m<=n; m++) {
-      Mnm[n][P+m] = 0;
+      int nm = n * n + n + m;
+      Mnm[nm] = 0;
     }
   }
   for (int l=0; l<nquad; l++) {
@@ -129,7 +132,8 @@ void M2M(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
       int mabs = abs(m);
       complex_t z = phitemp[l][P+m] * wquad[l] * .5;
       for (int n=mabs; n<=P; n++) {
-	Mnm[n][P+m] += z * Ynm[n][mabs];
+	int nm = n * n + n + m;
+	Mnm[nm] += z * Ynm[n][mabs];
       }
     }
   }
@@ -137,18 +141,21 @@ void M2M(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
   get_hn(P, z, scalei, hn);
   for (int n=0; n<=P; n++) {
     for (int m=-n; m<=n; m++) {
-      Mnm[n][P+m] /= hn[n];
+      int nm = n * n + n + m;
+      Mnm[nm] /= hn[n];
     }
   }
   rotate(-theta, P, Mnm, Mrot);
   for (int n=0; n<=P; n++) {
     for (int m=-n; m<=n; m++) {
-      Mnm[n][P+m] = ephi[P-m] * Mrot[n][P+m];
+      int nm = n * n + n + m;
+      Mnm[nm] = ephi[P-m] * Mrot[nm];
     }
   }
   for (int n=0; n<=P; n++) {
     for (int m=-n; m<=n; m++) {
-      Mi[n][P+m] += Mnm[n][P+m];
+      int nm = n * n + n + m;
+      Mi[n][P+m] += Mnm[nm];
     }
   }
 }
@@ -160,7 +167,8 @@ void M2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
   real_t Ynm[P+1][P+1], Ynmd[P+1][P+1];
   complex_t phitemp[nquad][2*Popt+1], phitempn[nquad][2*Popt+1];
   complex_t hn[P+1], hnd[P+1], jn[P+2], jnd[P+2], ephi[2*P+1];
-  complex_t Mnm[P+1][2*P+1], Mrot[P+1][2*P+1];
+  complex_t Mnm[(P+1)*(P+1)], Mrot[(P+1)*(P+1)];
+  complex_t Mnm2[P+1][2*P+1], Mrot2[P+1][2*P+1];
   complex_t Lnm[P+1][2*P+1], Lrot[P+1][2*P+1], Lnmd[P+1][2*P+1];
   vec3 dX = Xi - Xj;
   real_t r, theta, phi;
@@ -174,11 +182,14 @@ void M2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
   }
   for (int n=0; n<=Popt; n++) {
     for (int m=-n; m<=n; m++) {
-      Mnm[n][P+m] = Mj[n][P+m] * ephi[P+m];
+      int nm = n * n + n + m;
+      Mnm[nm] = Mj[n][P+m] * ephi[P+m];
+      Mnm2[n][P+m] = Mj[n][P+m] * ephi[P+m];
       Lnm[n][P+m] = 0;
     }
   }
   rotate(theta, Popt, Mnm, Mrot);
+  rotate2(theta, Popt, Mnm2, Mrot2);
   for (int l=0; l<nquad; l++) {
     for (int m=-Popt; m<=Popt; m++) {
       phitemp[l][Popt+m] = 0;
@@ -205,21 +216,24 @@ void M2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
 	Ynm[n][m] *= sthetaj;
       }
     }
-    phitemp[l][Popt] = Mrot[0][P] * hn[0];
-    phitempn[l][Popt] = Mrot[0][P] * hnd[0] * rn;
+    phitemp[l][Popt] = Mrot[0] * hn[0];
+    phitempn[l][Popt] = Mrot[0] * hnd[0] * rn;
     for (int n=1; n<=Popt; n++) {
-      phitemp[l][Popt] += Mrot[n][P] * hn[n] * Ynm[n][0];
+      int nm = n * n + n;
+      phitemp[l][Popt] += Mrot[nm] * hn[n] * Ynm[n][0];
       complex_t ut1 = hnd[n] * rn;
       complex_t ut2 = hn[n] * thetan;
       complex_t ut3 = ut1 * Ynm[n][0] - ut2 * Ynmd[n][0] * sthetaj;
-      phitempn[l][Popt] += ut3 * Mrot[n][P];
+      phitempn[l][Popt] += ut3 * Mrot[nm];
       for (int m=1; m<=n; m++) {
+	int npm = n * n + n + m;
+	int nmm = n * n + n - m;
 	z = hn[n] * Ynm[n][m];
-	phitemp[l][Popt+m] += Mrot[n][P+m] * z;
-	phitemp[l][Popt-m] += Mrot[n][P-m] * z;
+	phitemp[l][Popt+m] += Mrot[npm] * z;
+	phitemp[l][Popt-m] += Mrot[nmm] * z;
 	ut3 = ut1 * Ynm[n][m] - ut2 * Ynmd[n][m];
-	phitempn[l][Popt+m] += ut3 * Mrot[n][P+m];
-	phitempn[l][Popt-m] += ut3 * Mrot[n][P-m];
+	phitempn[l][Popt+m] += ut3 * Mrot[npm];
+	phitempn[l][Popt-m] += ut3 * Mrot[nmm];
       }
     }
   }
@@ -254,7 +268,7 @@ void M2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
       Lnm[n][P+m] = (zh * Lnm[n][P+m] + zhn * Lnmd[n][P+m]) / z;
     }
   }
-  rotate(-theta, Popt, Lnm, Lrot);
+  rotate2(-theta, Popt, Lnm, Lrot);
   for (int n=0; n<=Popt; n++) {
     for (int m=-n; m<=n; m++) {
       Lnm[n][P+m] = ephi[P-m] * Lrot[n][P+m];
@@ -292,7 +306,7 @@ void L2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Lj[P+1][2*P+1],
       Lnm[n][P+m] = Lj[n][P+m] * ephi[P+m];
     }
   }
-  rotate(theta, P, Lnm, Lrot);
+  rotate2(theta, P, Lnm, Lrot);
   for (int n=0; n<=P; n++) {
     for (int m=-n; m<=n; m++) {
       Lnm[n][P+m] = 0;
@@ -373,7 +387,7 @@ void L2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Lj[P+1][2*P+1],
       Lnm[n][P+m] = (zh * Lnm[n][P+m] + zhn * Lnmd[n][P+m]) / z;
     }
   }
-  rotate(-theta, P, Lnm, Lrot);
+  rotate2(-theta, P, Lnm, Lrot);
   for (int n=0; n<=P; n++) {
     for (int m=-n; m<=n; m++) {
       Lnm[n][P+m] = ephi[P-m] * Lrot[n][P+m];
