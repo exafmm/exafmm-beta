@@ -301,7 +301,7 @@ void polynomial(real_t x, int n, real_t & pol, real_t & der, real_t & sum) {
   der = n * (x * pkp1 - pk) / (x * x - 1);
 }
 
-void legendre(int nquad) {
+void legendre() {
   real_t pol = 0, der, sum;
   real_t h = M_PI / (2 * nquad);
   for (int i=1; i<=nquad; i++) {
