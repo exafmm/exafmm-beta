@@ -141,7 +141,6 @@ void fmm(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
   buildTree(Xj, numBodies, numCells, permutation, numLevels, X0, R0);
   for (int level=0; level<=numLevels; level++) {
     scale[level] = (2 * R0 / (1 << level)) * abs(wavek);
-    if (scale[level]>=1.0) scale[level] = 1.0;
   }
   for (int i=0; i<numBodies; i++) {
     Xjd[i] = Xj[permutation[i]];

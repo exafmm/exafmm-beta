@@ -22,13 +22,12 @@ int main(int argc, char ** argv) {
   complex_t * pi2 = new complex_t [numBodies];
   cvec3 * Fi2 = new cvec3 [numBodies];
   logger::verbose = args.verbose;
-  FILE * fid = fopen("data","r");
   for (int i=0; i<numBodies; i++) {
-    if (fscanf(fid,"%lf %lf %lf",&Xj[i][0],&Xj[i][1],&Xj[i][2])) {
-      qj[i] = Xj[i][0] + I * Xj[i][1];
-    }
+    Xj[i][0] = drand48();
+    Xj[i][1] = drand48();
+    Xj[i][2] = drand48();
+    qj[i] = Xj[i][0] + I * Xj[i][1];
   }
-  fclose(fid);
   logger::startTimer("FMM");
   fmm(numBodies,Xj,qj,pi,Fi);
   logger::stopTimer("FMM");
