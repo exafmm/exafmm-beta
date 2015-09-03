@@ -23,7 +23,7 @@ void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, comple
 }
 
 void P2M(complex_t wavek, real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[(P+1)*(P+1)],
-	 real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
+	 real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
   real_t Ynm[(P+1)*(P+2)/2];
   complex_t ephi[P+1], jn[P+2], jnd[P+2], Mnm[(P+1)*(P+1)];
   for (int n=0; n<=P; n++) {
@@ -76,7 +76,7 @@ void P2M(complex_t wavek, real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 
 void M2M(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
 	 real_t scalei, vec3 Xi, complex_t Mi[(P+1)*(P+1)],
 	 real_t radius, real_t xquad[2*P], real_t wquad[2*P], int nquad,
-	 real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
+	 real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
   real_t Ynm[(P+1)*(P+2)/2];
   complex_t Mnm[(P+1)*(P+1)];
   complex_t Mrot[(P+1)*(P+1)];
@@ -167,7 +167,7 @@ void M2M(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
 void M2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
 	 real_t scalei, vec3 Xi, complex_t Li[(P+1)*(P+1)], int Popt, real_t radius,
 	 real_t xquad[2*P], real_t wquad[2*P], int nquad,
-	 real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
+	 real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
   real_t Ynm[(P+1)*(P+2)/2], Ynmd[(P+1)*(P+2)/2];
   complex_t phitemp[nquad][2*Popt+1], phitempn[nquad][2*Popt+1];
   complex_t hn[P+1], hnd[P+1], jn[P+2], jnd[P+2], ephi[2*P+1];
@@ -290,7 +290,7 @@ void M2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
 void L2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
          real_t scalei, vec3 Xi, complex_t Li[(P+1)*(P+1)],
          real_t radius, real_t xquad[2*P], real_t wquad[2*P], int nquad,
-         real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
+         real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
   real_t Ynm[(P+1)*(P+2)/2], Ynmd[(P+1)*(P+2)/2];
   complex_t Lnm[(P+1)*(P+1)], Lnmd[(P+1)*(P+1)], Lrot[(P+1)*(P+1)];
   complex_t phitemp[nquad][2*P+1], phitempn[nquad][2*P+1];
@@ -416,7 +416,7 @@ void L2L(complex_t wavek, real_t scalej, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
 
 void L2P(complex_t wavek, real_t scalej, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
 	 vec3 * Xi, int ni, complex_t * pi, cvec3 * Fi,
-         real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
+         real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
   real_t Ynm[(P+1)*(P+2)/2], Ynmd[(P+1)*(P+2)/2];
   complex_t ephi[P+1], jn[P+2], jnd[P+2];
   for (int i=0; i<ni; i++) {

@@ -1,14 +1,17 @@
-void getAnm(real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
-  Anm1[0][0] = 1;
-  Anm2[0][0] = 1;
+void getAnm(real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
+  Anm1[0] = 1;
+  Anm2[0] = 1;
   for (int m=0; m<=P; m++) {
-    if(m>0) Anm1[m][m] = sqrt((2 * m - 1.0) / (2 * m));
-    if(m<P) Anm1[m+1][m] = sqrt(2 * m + 1.0);
+    int ms = m * (m + 1) / 2 + m;
+    int mps = (m + 1) * (m + 2) / 2 + m;
+    if(m>0) Anm1[ms] = sqrt((2 * m - 1.0) / (2 * m));
+    if(m<P) Anm1[mps] = sqrt(2 * m + 1.0);
     for (int n=m+2; n<=P; n++) {
-      Anm1[n][m] = 2 * n - 1;
-      Anm2[n][m] = sqrt((n + m - 1.0) * (n - m - 1.0));
-      Anm1[n][m] /= sqrt(real_t(n - m) * (n + m));
-      Anm2[n][m] /= sqrt(real_t(n - m) * (n + m));
+      int nms = n * (n + 1) / 2 + m;
+      Anm1[nms] = 2 * n - 1;
+      Anm2[nms] = sqrt((n + m - 1.0) * (n - m - 1.0));
+      Anm1[nms] /= sqrt(real_t(n - m) * (n + m));
+      Anm2[nms] /= sqrt(real_t(n - m) * (n + m));
     }
   }
 }
@@ -111,20 +114,21 @@ void rotate(real_t theta, int nterms, complex_t Mnm[(P+1)*(P+1)],
   }
 }
 
-void get_Ynm(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2], real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
+void get_Ynm(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2],
+	     real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
   real_t y = -sqrt((1 - x) * (1 + x));
   Ynm[0] = 1;
   for (int m=0; m<=nterms; m++) {
     int ms = m * (m + 1) / 2 + m;
     int mms = m * (m - 1) / 2 + m - 1;
     int mps = (m + 1) * (m + 2) / 2 + m;
-    if (m > 0) Ynm[ms] = Ynm[mms] * y * Anm1[m][m];
-    if (m < nterms) Ynm[mps] = x * Ynm[ms] * Anm1[m+1][m];
+    if (m > 0) Ynm[ms] = Ynm[mms] * y * Anm1[ms];
+    if (m < nterms) Ynm[mps] = x * Ynm[ms] * Anm1[mps];
     for (int n=m+2; n<=nterms; n++) {
       int nms = n * (n + 1) / 2 + m;
       int nm1 = n * (n - 1) / 2 + m;
       int nm2 = (n - 1) * (n - 2) / 2 + m;
-      Ynm[nms] = Anm1[n][m] * x * Ynm[nm1] - Anm2[n][m] * Ynm[nm2];
+      Ynm[nms] = Anm1[nms] * x * Ynm[nm1] - Anm2[nms] * Ynm[nm2];
     }
   }
   for (int n=0; n<=nterms; n++) {
@@ -136,35 +140,35 @@ void get_Ynm(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2], real_t Anm1[P+1][P
 }
 
 void get_Ynmd(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2], real_t Ynmd[(P+1)*(P+2)/2],
-	      real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
+	      real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
   real_t y = -sqrt((1 - x) * (1 + x));
   real_t y2 = y * y;
   Ynm[0] = 1;
   Ynmd[0] = 0;
-  Ynm[1] = x * Ynm[0] * Anm1[1][0];
-  Ynmd[1] = (x * Ynmd[0] + Ynm[0]) * Anm1[1][0];
+  Ynm[1] = x * Ynm[0] * Anm1[1];
+  Ynmd[1] = (x * Ynmd[0] + Ynm[0]) * Anm1[1];
   for (int n=2; n<=nterms; n++) {
     int ns = n * (n + 1) / 2;
     int nm1 = n * (n - 1) / 2;
     int nm2 = (n - 1) * (n - 2) / 2;
-    Ynm[ns] = Anm1[n][0] * x * Ynm[nm1] - Anm2[n][0] * Ynm[nm2];
-    Ynmd[ns] = Anm1[n][0] * (x * Ynmd[nm1] + Ynm[nm1]) - Anm2[n][0] * Ynmd[nm2];
+    Ynm[ns] = Anm1[ns] * x * Ynm[nm1] - Anm2[ns] * Ynm[nm2];
+    Ynmd[ns] = Anm1[ns] * (x * Ynmd[nm1] + Ynm[nm1]) - Anm2[ns] * Ynmd[nm2];
   }
   for (int m=1; m<=nterms; m++) {
     int ms = m * (m + 1) / 2 + m;
     int mms = m * (m - 1) / 2 + m - 1;
     int mps = (m + 1) * (m + 2) / 2 + m;
-    if (m == 1) Ynm[ms] = -Ynm[mms] * Anm1[m][m];
-    if (m > 1) Ynm[ms] = Ynm[mms] * y * Anm1[m][m];
+    if (m == 1) Ynm[ms] = -Ynm[mms] * Anm1[ms];
+    if (m > 1) Ynm[ms] = Ynm[mms] * y * Anm1[ms];
     if (m > 0) Ynmd[ms] = -Ynm[ms] * m * x;
-    if (m < nterms) Ynm[mps] = x * Ynm[ms] * Anm1[m+1][m];
-    if (m < nterms) Ynmd[mps] = (x * Ynmd[ms] + y2 * Ynm[ms]) * Anm1[m+1][m];
+    if (m < nterms) Ynm[mps] = x * Ynm[ms] * Anm1[mps];
+    if (m < nterms) Ynmd[mps] = (x * Ynmd[ms] + y2 * Ynm[ms]) * Anm1[mps];
     for (int n=m+2; n<=nterms; n++) {
       int nms = n * (n + 1) / 2 + m;
       int nm1 = n * (n - 1) / 2 + m;
       int nm2 = (n - 1) * (n - 2) / 2 + m;
-      Ynm[nms] = Anm1[n][m] * x * Ynm[nm1] - Anm2[n][m] * Ynm[nm2];
-      Ynmd[nms] = Anm1[n][m] * (x * Ynmd[nm1] + y2 * Ynm[nm1]) - Anm2[n][m] * Ynmd[nm2];
+      Ynm[nms] = Anm1[nms] * x * Ynm[nm1] - Anm2[nms] * Ynm[nm2];
+      Ynmd[nms] = Anm1[nms] * (x * Ynmd[nm1] + y2 * Ynm[nm1]) - Anm2[nms] * Ynmd[nm2];
     }
   }
   for (int n=0; n<=nterms; n++) {

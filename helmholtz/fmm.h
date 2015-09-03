@@ -3,7 +3,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 	      int numLevels, real_t * scale, real_t R0) {
   int list[189];
   real_t xquad[2*P], wquad[2*P];
-  real_t Anm1[P+1][P+1], Anm2[P+1][P+1];
+  real_t Anm1[(P+1)*(P+2)/2], Anm2[(P+1)*(P+2)/2];
   for (int i=0; i<numBodies; i++) {
     pi[i] = 0;
     Fi[i] = 0;
