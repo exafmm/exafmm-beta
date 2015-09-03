@@ -176,54 +176,6 @@ void get_Ynmd(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2], real_t Ynmd[(P+1)
   }
 }
 
-void get_Ynm2(int nterms, real_t x, real_t Ynm[P+1][P+1], real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
-  real_t y = -sqrt((1 - x) * (1 + x));
-  Ynm[0][0] = 1;
-  for (int m=0; m<=nterms; m++) {
-    if (m > 0) Ynm[m][m] = Ynm[m-1][m-1] * y * Anm1[m][m];
-    if (m < nterms) Ynm[m+1][m] = x * Ynm[m][m] * Anm1[m+1][m];
-    for (int n=m+2; n<=nterms; n++) {
-      Ynm[n][m] = Anm1[n][m] * x * Ynm[n-1][m] - Anm2[n][m] * Ynm[n-2][m];
-    }
-  }
-  for (int n=0; n<=nterms; n++) {
-    for (int m=0; m<=n; m++) {
-      Ynm[n][m] *= sqrt(2 * n + 1.0);
-    }
-  }
-}
-
-void get_Ynm2d(int nterms, real_t x, real_t Ynm[P+1][P+1], real_t Ynmd[P+1][P+1],
-	      real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
-  real_t y = -sqrt((1 - x) * (1 + x));
-  real_t y2 = y * y;
-  Ynm[0][0] = 1;
-  Ynmd[0][0] = 0;
-  Ynm[1][0] = x * Ynm[0][0] * Anm1[1][0];
-  Ynmd[1][0] = (x * Ynmd[0][0] + Ynm[0][0]) * Anm1[1][0];
-  for (int n=2; n<=nterms; n++) {
-    Ynm[n][0] = Anm1[n][0] * x * Ynm[n-1][0] - Anm2[n][0] * Ynm[n-2][0];
-    Ynmd[n][0] = Anm1[n][0] * (x * Ynmd[n-1][0] + Ynm[n-1][0]) - Anm2[n][0] * Ynmd[n-2][0];
-  }
-  for (int m=1; m<=nterms; m++) {
-    if (m == 1) Ynm[m][m] = -Ynm[m-1][m-1] * Anm1[m][m];
-    if (m > 1) Ynm[m][m] = Ynm[m-1][m-1] * y * Anm1[m][m];
-    if (m > 0) Ynmd[m][m] = -Ynm[m][m] * m * x;
-    if (m < nterms) Ynm[m+1][m] = x * Ynm[m][m] * Anm1[m+1][m];
-    if (m < nterms) Ynmd[m+1][m] = (x * Ynmd[m][m] + y2 * Ynm[m][m]) * Anm1[m+1][m];
-    for (int n=m+2; n<=nterms; n++) {
-      Ynm[n][m] = Anm1[n][m] * x * Ynm[n-1][m] - Anm2[n][m] * Ynm[n-2][m];
-      Ynmd[n][m] = Anm1[n][m] * (x * Ynmd[n-1][m] + y2 * Ynm[n-1][m]) - Anm2[n][m] * Ynmd[n-2][m];
-    }
-  }
-  for (int n=0; n<=nterms; n++) {
-    for (int m=0; m<=n; m++) {
-      Ynm[n][m] *= sqrt(2 * n + 1.0);
-      Ynmd[n][m] *= sqrt(2 * n + 1.0);
-    }
-  }
-}
-
 void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
   if (abs(z) < eps) {
     for (int i=0; i<=nterms; i++) {
