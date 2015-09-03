@@ -3,12 +3,11 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 	      int numLevels, real_t * scale, real_t R0) {
   int list[189];
   real_t xquad[2*P], wquad[2*P];
-  real_t Anm1[(P+1)*(P+2)/2], Anm2[(P+1)*(P+2)/2];
   for (int i=0; i<numBodies; i++) {
     pi[i] = 0;
     Fi[i] = 0;
   }
-  getAnm(Anm1,Anm2);
+  getAnm();
   for (int icell=0; icell<numCells; icell++) {
     for (int n=0; n<=P; n++) {
       for (int m=-n; m<=n; m++) {
@@ -27,7 +26,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 	int ibegin = cells[icell][7];
 	int isize = cells[icell][8];
 	P2M(wavek, scale[level], &Xj[ibegin], &qj[ibegin], isize,
-	    centers[icell], Multipole[icell], Anm1, Anm2);
+	    centers[icell], Multipole[icell]);
       }
     }
   }
@@ -44,7 +43,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 	int jcell = cells[icell][5] + ilist;
 	M2M(wavek, scale[level], centers[jcell], Multipole[jcell],
 	    scale[level-1], centers[icell], Multipole[icell],
-	    radius, xquad, wquad, nquad, Anm1, Anm2);
+	    radius, xquad, wquad, nquad);
       }
     }
   }
@@ -74,7 +73,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 	int Popt = coef1 / (rr * rr) + coef2;
 	M2L(wavek, scale[level], centers[jcell], Multipole[jcell],
 	    scale[level], centers[icell], Local[icell],
-	    Popt, radius, xquad, wquad, nquad, Anm1, Anm2);
+	    Popt, radius, xquad, wquad, nquad);
       }
     }
   }
@@ -91,7 +90,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 	int jcell = cells[icell][5]+ilist;
 	L2L(wavek, scale[level-1], centers[icell], Local[icell],
 	    scale[level], centers[jcell], Local[jcell],
-	    radius, xquad, wquad, nquad, Anm1, Anm2);
+	    radius, xquad, wquad, nquad);
       }
     }
   }
@@ -105,7 +104,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 	int ibegin = cells[icell][7];
         int isize = cells[icell][8];
         L2P(wavek, scale[level], centers[icell], Local[icell], &Xj[ibegin], isize,
-	    &pi[ibegin], &Fi[ibegin], Anm1, Anm2);
+	    &pi[ibegin], &Fi[ibegin]);
       }
     }
   }

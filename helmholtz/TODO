@@ -1,5 +1,3 @@
-Remove phitemp, merge nquad loops
-Ynm -> 1D array
 Use cell structure
 Use body structure
 SIMD for P2P
@@ -11,4 +9,3 @@ radius
 [global]
 wavek
 xquad, wquad
-Anm1, Anm2

@@ -1,4 +1,4 @@
-void getAnm(real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
+void getAnm() {
   Anm1[0] = 1;
   Anm2[0] = 1;
   for (int m=0; m<=P; m++) {
@@ -114,8 +114,7 @@ void rotate(real_t theta, int nterms, complex_t Mnm[(P+1)*(P+1)],
   }
 }
 
-void get_Ynm(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2],
-	     real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
+void get_Ynm(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2]) {
   real_t y = -sqrt((1 - x) * (1 + x));
   Ynm[0] = 1;
   for (int m=0; m<=nterms; m++) {
@@ -139,8 +138,7 @@ void get_Ynm(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2],
   }
 }
 
-void get_Ynmd(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2], real_t Ynmd[(P+1)*(P+2)/2],
-	      real_t Anm1[(P+1)*(P+2)/2], real_t Anm2[(P+1)*(P+2)/2]) {
+void get_Ynmd(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2], real_t Ynmd[(P+1)*(P+2)/2]) {
   real_t y = -sqrt((1 - x) * (1 + x));
   real_t y2 = y * y;
   Ynm[0] = 1;
