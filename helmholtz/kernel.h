@@ -158,15 +158,23 @@ void M2M(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
 
 void M2L(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
 	 real_t scalei, vec3 Xi, complex_t Li[(P+1)*(P+1)],
-	 int Popt, real_t radius) {
+	 real_t radius) {
   real_t Ynm[(P+1)*(P+2)/2], Ynmd[(P+1)*(P+2)/2];
-  complex_t phitemp[2*Popt+1], phitempn[2*Popt+1];
+  complex_t phitemp[2*P+1], phitempn[2*P+1];
   complex_t hn[P+1], hnd[P+1], jn[P+2], jnd[P+2], ephi[2*P+1];
   complex_t Mnm[(P+1)*(P+1)], Mrot[(P+1)*(P+1)];
   complex_t Lnm[(P+1)*(P+1)], Lrot[(P+1)*(P+1)], Lnmd[(P+1)*(P+1)];
   real_t kscalej = scalej * abs(wavek);
   real_t kscalei = scalei * abs(wavek);
-  vec3 dX = Xi - Xj;
+  vec3 dX = (Xj - Xi) / scalej;
+  if (fabs(dX[0]) > 1e-10) dX[0] = fabs(dX[0]) - .5;
+  if (fabs(dX[1]) > 1e-10) dX[1] = fabs(dX[1]) - .5;
+  if (fabs(dX[2]) > 1e-10) dX[2] = fabs(dX[2]) - .5;
+  real_t rr = sqrt(norm(dX));
+  real_t coef1 = P * 1.65 - 15.5;
+  real_t coef2 = P * 0.25 + 3.0;
+  int Popt = coef1 / (rr * rr) + coef2;
+  dX = Xi - Xj;
   real_t r, theta, phi;
   cart2sph(dX, r, theta, phi);
   ephi[P+1] = exp(I * phi);

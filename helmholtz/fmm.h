@@ -47,8 +47,6 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   logger::stopTimer("M2M");
 
   logger::startTimer("M2L");
-  real_t coef1 = P * 1.65 - 15.5;
-  real_t coef2 = P * 0.25 + 3.0;
   for (int level=2; level<=numLevels; level++) {
     real_t diameter = 2 * R0 / (1 << level);
     real_t radius = diameter * sqrt(3.0) * 0.5;
@@ -60,17 +58,9 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
       getList(1, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
-	real_t dx = fabs(cells[jcell][1] - cells[icell][1]);
-	real_t dy = fabs(cells[jcell][2] - cells[icell][2]);
-	real_t dz = fabs(cells[jcell][3] - cells[icell][3]);
-	if (dx > 0) dx -= .5;
-	if (dy > 0) dy -= .5;
-	if (dz > 0) dz -= .5;
-	real_t rr = sqrt(dx * dx + dy * dy + dz * dz);
-	int Popt = coef1 / (rr * rr) + coef2;
 	M2L(scale[level], centers[jcell], Multipole[jcell],
 	    scale[level], centers[icell], Local[icell],
-	    Popt, radius);
+	    radius);
       }
     }
   }
