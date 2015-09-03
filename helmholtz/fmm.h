@@ -1,6 +1,6 @@
 void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi,
 	      complex_t (* Multipole)[(P+1)*(P+1)], complex_t (* Local)[(P+1)*(P+1)], int numCells,
-	      int numLevels, real_t * scale, real_t R0) {
+	      int numLevels, real_t * scale) {
   int list[189];
   for (int i=0; i<numBodies; i++) {
     pi[i] = 0;
@@ -48,8 +48,6 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
 
   logger::startTimer("M2L");
   for (int level=2; level<=numLevels; level++) {
-    real_t diameter = 2 * R0 / (1 << level);
-    real_t radius = diameter * sqrt(3.0) * 0.5;
     nquad = fmax(6, P);
     legendre();
 #pragma omp parallel for private(list) schedule(dynamic)
@@ -59,8 +57,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
 	M2L(scale[level], centers[jcell], Multipole[jcell],
-	    scale[level], centers[icell], Local[icell],
-	    radius);
+	    scale[level], centers[icell], Local[icell]);
       }
     }
   }
@@ -68,7 +65,6 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
 
   logger::startTimer("L2L");
   for (int level=3; level<=numLevels; level++) {
-    real_t radius = 2 * R0 / (1 << level) * sqrt(3.0);
     nquad = fmax(6, P);
     legendre();
 #pragma omp parallel for
@@ -76,8 +72,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
       for (int ilist=0; ilist<cells[icell][6]; ilist++) {
 	int jcell = cells[icell][5]+ilist;
 	L2L(scale[level-1], centers[icell], Local[icell],
-	    scale[level], centers[jcell], Local[jcell],
-	    radius);
+	    scale[level], centers[jcell], Local[jcell]);
       }
     }
   }
@@ -137,7 +132,7 @@ void fmm(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
   logger::stopTimer("Tree");
   complex_t (* Multipole)[(P+1)*(P+1)] = new complex_t [numCells][(P+1)*(P+1)]();
   complex_t (* Local)[(P+1)*(P+1)] = new complex_t [numCells][(P+1)*(P+1)]();
-  evaluate(numBodies, Xjd, qjd, pid, Fid, Multipole, Local, numCells, numLevels, scale, R0);
+  evaluate(numBodies, Xjd, qjd, pid, Fid, Multipole, Local, numCells, numLevels, scale);
   for (int i=0; i<numBodies; i++) {
     pi[permutation[i]] = pid[i];
     Fi[permutation[i]] = Fid[i];
