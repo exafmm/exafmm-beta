@@ -1,4 +1,3 @@
-Use symmetry in M, L -> 1-D array
 Remove phitemp, merge nquad loops
 Ynm -> 1D array
 Use cell structure
