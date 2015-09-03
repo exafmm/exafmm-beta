@@ -77,7 +77,7 @@ void M2M(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
 	 real_t scalei, vec3 Xi, complex_t Mi[P+1][2*P+1],
 	 real_t radius, real_t xquad[2*P], real_t wquad[2*P], int nquad,
 	 real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
-  real_t Ynm2[P+1][P+1];
+  real_t Ynm[(P+1)*(P+2)/2];
   complex_t Mnm[(P+1)*(P+1)];
   complex_t Mrot[(P+1)*(P+1)];
   complex_t phitemp[nquad][2*P+1];
@@ -118,24 +118,26 @@ void M2M(complex_t wavek, real_t scalej, vec3 Xj, complex_t Mj[P+1][2*P+1],
     rj = sqrt(rj);
     real_t cthetaj = (r + radius * ctheta) / rj;
     complex_t z = wavek * rj;
-    get_Ynm2(P, cthetaj, Ynm2, Anm1, Anm2);
+    get_Ynm(P, cthetaj, Ynm, Anm1, Anm2);
     get_hn(P, z, scalej, hn);
     for (int m=-P; m<=P; m++) {
       int mabs = abs(m);
       for (int n=mabs; n<=P; n++) {
 	int nm = n * n + n + m;
-	phitemp[l][P+m] += Mrot[nm] * hn[n] * Ynm2[n][mabs];
+	int nms = n * (n + 1) / 2 + mabs;
+	phitemp[l][P+m] += Mrot[nm] * hn[n] * Ynm[nms];
       }
     }
   }
   for (int l=0; l<nquad; l++) {
-    get_Ynm2(P, xquad[l], Ynm2, Anm1, Anm2);
+    get_Ynm(P, xquad[l], Ynm, Anm1, Anm2);
     for (int m=-P; m<=P; m++) {
       int mabs = abs(m);
       complex_t z = phitemp[l][P+m] * wquad[l] * .5;
       for (int n=mabs; n<=P; n++) {
 	int nm = n * n + n + m;
-	Mnm[nm] += z * Ynm2[n][mabs];
+	int nms = n * (n + 1) / 2 + mabs;
+	Mnm[nm] += z * Ynm[nms];
       }
     }
   }
