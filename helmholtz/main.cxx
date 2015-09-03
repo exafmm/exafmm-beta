@@ -14,7 +14,7 @@ int main(int argc, char ** argv) {
   Args args(argc,argv);
   Verify verify;
   const int numBodies=args.numBodies;
-  const complex_t wavek(10.,1.);
+  wavek = complex_t(10.,1.);
   vec3 * Xj = new vec3 [numBodies];
   complex_t * qj = new complex_t [numBodies];
   complex_t * pi = new complex_t [numBodies];
@@ -30,7 +30,7 @@ int main(int argc, char ** argv) {
   }
   fclose(fid);
   logger::startTimer("FMM");
-  fmm(wavek,numBodies,Xj,qj,pi,Fi);
+  fmm(numBodies,Xj,qj,pi,Fi);
   logger::stopTimer("FMM");
   const int numTarget = 100;
   for (int i=0; i<numTarget; i++) {
@@ -43,7 +43,7 @@ int main(int argc, char ** argv) {
   jcell[7] = 0;
   jcell[8] = numBodies;
   logger::startTimer("Direct");
-  P2P(icell, pi2, Fi2, jcell, Xj, qj, wavek);
+  P2P(icell, pi2, Fi2, jcell, Xj, qj);
   logger::stopTimer("Direct");
   real_t potDif = 0, potNrm = 0, accDif = 0, accNrm = 0;
   for (int i=0; i<numTarget; i++) {

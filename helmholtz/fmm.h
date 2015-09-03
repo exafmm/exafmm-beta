@@ -1,4 +1,4 @@
-void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi,
+void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi,
 	      complex_t (* Multipole)[(P+1)*(P+1)], complex_t (* Local)[(P+1)*(P+1)], int numCells,
 	      int numLevels, real_t * scale, real_t R0) {
   int list[189];
@@ -25,7 +25,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       if (cells[icell][6] == 0) {
 	int ibegin = cells[icell][7];
 	int isize = cells[icell][8];
-	P2M(wavek, scale[level], &Xj[ibegin], &qj[ibegin], isize,
+	P2M(scale[level], &Xj[ibegin], &qj[ibegin], isize,
 	    centers[icell], Multipole[icell]);
       }
     }
@@ -41,7 +41,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
       for (int ilist=0; ilist<cells[icell][6]; ilist++) {
 	int jcell = cells[icell][5] + ilist;
-	M2M(wavek, scale[level], centers[jcell], Multipole[jcell],
+	M2M(scale[level], centers[jcell], Multipole[jcell],
 	    scale[level-1], centers[icell], Multipole[icell],
 	    radius, xquad, wquad, nquad);
       }
@@ -71,7 +71,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 	if (dz > 0) dz -= .5;
 	real_t rr = sqrt(dx * dx + dy * dy + dz * dz);
 	int Popt = coef1 / (rr * rr) + coef2;
-	M2L(wavek, scale[level], centers[jcell], Multipole[jcell],
+	M2L(scale[level], centers[jcell], Multipole[jcell],
 	    scale[level], centers[icell], Local[icell],
 	    Popt, radius, xquad, wquad, nquad);
       }
@@ -88,7 +88,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
       for (int ilist=0; ilist<cells[icell][6]; ilist++) {
 	int jcell = cells[icell][5]+ilist;
-	L2L(wavek, scale[level-1], centers[icell], Local[icell],
+	L2L(scale[level-1], centers[icell], Local[icell],
 	    scale[level], centers[jcell], Local[jcell],
 	    radius, xquad, wquad, nquad);
       }
@@ -103,7 +103,7 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
       if (cells[icell][6] == 0) {
 	int ibegin = cells[icell][7];
         int isize = cells[icell][8];
-        L2P(wavek, scale[level], centers[icell], Local[icell], &Xj[ibegin], isize,
+        L2P(scale[level], centers[icell], Local[icell], &Xj[ibegin], isize,
 	    &pi[ibegin], &Fi[ibegin]);
       }
     }
@@ -114,19 +114,19 @@ void evaluate(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex
 #pragma omp parallel for private(list) schedule(dynamic)
   for (int icell=0; icell<numCells; icell++) {
     if (cells[icell][6] == 0) {
-      P2P(cells[icell], pi, Fi, cells[icell], Xj, qj, wavek);
+      P2P(cells[icell], pi, Fi, cells[icell], Xj, qj);
       int nlist;
       getList(0, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
-	P2P(cells[icell], pi, Fi, cells[jcell], Xj, qj, wavek);
+	P2P(cells[icell], pi, Fi, cells[jcell], Xj, qj);
       }
     }
   }
   logger::stopTimer("P2P");
 }
 
-void fmm(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
+void fmm(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
   int * permutation = new int [numBodies];
   real_t * scale = new real_t [maxLevel];
   vec3 * Xjd = new vec3 [numBodies]; 
@@ -151,7 +151,7 @@ void fmm(complex_t wavek, int numBodies, vec3 * Xj, complex_t * qj, complex_t * 
   logger::stopTimer("Tree");
   complex_t (* Multipole)[(P+1)*(P+1)] = new complex_t [numCells][(P+1)*(P+1)]();
   complex_t (* Local)[(P+1)*(P+1)] = new complex_t [numCells][(P+1)*(P+1)]();
-  evaluate(wavek, numBodies, Xjd, qjd, pid, Fid, Multipole, Local, numCells, numLevels, scale, R0);
+  evaluate(numBodies, Xjd, qjd, pid, Fid, Multipole, Local, numCells, numLevels, scale, R0);
   for (int i=0; i<numBodies; i++) {
     pi[permutation[i]] = pid[i];
     Fi[permutation[i]] = Fid[i];
