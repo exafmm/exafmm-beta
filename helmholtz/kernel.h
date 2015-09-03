@@ -25,10 +25,11 @@ void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, comple
 void P2M(complex_t wavek, real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[P+1][2*P+1],
 	 real_t Anm1[P+1][P+1], real_t Anm2[P+1][P+1]) {
   real_t Ynm[P+1][P+1];
-  complex_t ephi[P+1], jn[P+2], jnd[P+2], Mnm[P+1][2*P+1];
+  complex_t ephi[P+1], jn[P+2], jnd[P+2], Mnm[(P+1)*(P+1)];
   for (int n=0; n<=P; n++) {
     for (int m=-n; m<=n; m++) {
-      Mnm[n][P+m] = 0;
+      int nm = n * n + n + m;
+      Mnm[nm] = 0;
     }
   }
   for (int i=0; i<nj; i++) {
@@ -47,19 +48,25 @@ void P2M(complex_t wavek, real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 
       jn[n] *= qj[i];
     }
     for (int n=0; n<=P; n++) {
-      Mnm[n][P] += Ynm[n][0] * jn[n];
+      int nm = n * n + n;
+      Mnm[nm] += Ynm[n][0] * jn[n];
       for (int m=1; m<=n; m++) {
+	int npm = n * n + n + m;
+	int nmm = n * n + n - m;
 	complex_t Ynmjn = Ynm[n][m] * jn[n];
-	Mnm[n][P+m] += Ynmjn * conj(ephi[m]);
-	Mnm[n][P-m] += Ynmjn * ephi[m];
+	Mnm[npm] += Ynmjn * conj(ephi[m]);
+	Mnm[nmm] += Ynmjn * ephi[m];
       }
     }
   }
   for (int n=0; n<=P; n++) {
-    Mi[n][P] += Mnm[n][P] * I * wavek;
+    int nm = n * n + n;
+    Mi[n][P] += Mnm[nm] * I * wavek;
     for (int m=1; m<=n; m++) {
-      Mi[n][P+m] += Mnm[n][P+m] * I * wavek;
-      Mi[n][P-m] += Mnm[n][P-m] * I * wavek;
+      int npm = n * n + n + m;
+      int nmm = n * n + n - m;
+      Mi[n][P+m] += Mnm[npm] * I * wavek;
+      Mi[n][P-m] += Mnm[nmm] * I * wavek;
     }
   }
 }
