@@ -1,5 +1,6 @@
 Use symmetry in M, L -> 1-D array
-Remove phitemp
+Remove phitemp, merge nquad loops
+Ynm -> 1D array
 Use cell structure
 Use body structure
 SIMD for P2P
