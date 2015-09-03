@@ -2,7 +2,6 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
 	      complex_t (* Multipole)[(P+1)*(P+1)], complex_t (* Local)[(P+1)*(P+1)], int numCells,
 	      int numLevels, real_t * scale, real_t R0) {
   int list[189];
-  real_t xquad[2*P], wquad[2*P];
   for (int i=0; i<numBodies; i++) {
     pi[i] = 0;
     Fi[i] = 0;
@@ -36,14 +35,14 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   for (int level=numLevels; level>2; level--) {
     real_t radius = 2 * R0 / (1 << level) * sqrt(3.0);
     int nquad = fmax(6, 2 * P);
-    legendre(nquad, xquad, wquad);
+    legendre(nquad);
 #pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
       for (int ilist=0; ilist<cells[icell][6]; ilist++) {
 	int jcell = cells[icell][5] + ilist;
 	M2M(scale[level], centers[jcell], Multipole[jcell],
 	    scale[level-1], centers[icell], Multipole[icell],
-	    radius, xquad, wquad, nquad);
+	    radius, nquad);
       }
     }
   }
@@ -56,7 +55,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
     real_t diameter = 2 * R0 / (1 << level);
     real_t radius = diameter * sqrt(3.0) * 0.5;
     int nquad = fmax(6, P);
-    legendre(nquad, xquad, wquad);
+    legendre(nquad);
 #pragma omp parallel for private(list) schedule(dynamic)
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       int nlist;
@@ -73,7 +72,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
 	int Popt = coef1 / (rr * rr) + coef2;
 	M2L(scale[level], centers[jcell], Multipole[jcell],
 	    scale[level], centers[icell], Local[icell],
-	    Popt, radius, xquad, wquad, nquad);
+	    Popt, radius, nquad);
       }
     }
   }
@@ -83,14 +82,14 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   for (int level=3; level<=numLevels; level++) {
     real_t radius = 2 * R0 / (1 << level) * sqrt(3.0);
     int nquad = fmax(6, P);
-    legendre(nquad, xquad, wquad);
+    legendre(nquad);
 #pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
       for (int ilist=0; ilist<cells[icell][6]; ilist++) {
 	int jcell = cells[icell][5]+ilist;
 	L2L(scale[level-1], centers[icell], Local[icell],
 	    scale[level], centers[jcell], Local[jcell],
-	    radius, xquad, wquad, nquad);
+	    radius, nquad);
       }
     }
   }

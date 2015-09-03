@@ -74,7 +74,7 @@ void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[
 
 void M2M(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
 	 real_t scalei, vec3 Xi, complex_t Mi[(P+1)*(P+1)],
-	 real_t radius, real_t xquad[2*P], real_t wquad[2*P], int nquad) {
+	 real_t radius, int nquad) {
   real_t Ynm[(P+1)*(P+2)/2];
   complex_t phitemp[2*P+1], hn[P+1], ephi[2*P+1];
   complex_t Mnm[(P+1)*(P+1)], Mrot[(P+1)*(P+1)];
@@ -154,8 +154,8 @@ void M2M(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
 }
 
 void M2L(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
-	 real_t scalei, vec3 Xi, complex_t Li[(P+1)*(P+1)], int Popt, real_t radius,
-	 real_t xquad[2*P], real_t wquad[2*P], int nquad) {
+	 real_t scalei, vec3 Xi, complex_t Li[(P+1)*(P+1)],
+	 int Popt, real_t radius, int nquad) {
   real_t Ynm[(P+1)*(P+2)/2], Ynmd[(P+1)*(P+2)/2];
   complex_t phitemp[2*Popt+1], phitempn[2*Popt+1];
   complex_t hn[P+1], hnd[P+1], jn[P+2], jnd[P+2], ephi[2*P+1];
@@ -272,7 +272,7 @@ void M2L(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
 
 void L2L(real_t scalej, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
          real_t scalei, vec3 Xi, complex_t Li[(P+1)*(P+1)],
-         real_t radius, real_t xquad[2*P], real_t wquad[2*P], int nquad) {
+         real_t radius, int nquad) {
   real_t Ynm[(P+1)*(P+2)/2], Ynmd[(P+1)*(P+2)/2];
   complex_t phitemp[2*P+1], phitempn[2*P+1];
   complex_t jn[P+2], jnd[P+2], ephi[2*P+1];
