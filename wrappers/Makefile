@@ -24,7 +24,7 @@ gromacs:
 
 charmm: # exafmm
 	make libcharmm.a
-	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
+	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++
 	make cleandat
 	mpirun -np 8 ./a.out water_32.fmm water.out 1
 	make cleandat
@@ -32,7 +32,7 @@ charmm: # exafmm
 
 charmm2: # uniform
 	make libcharmm2.a
-	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++ -lgomp
+	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++
 	make cleandat
 	mpirun -np 8 ./a.out water_32.fmm water.out 1
 
