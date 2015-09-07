@@ -26,7 +26,8 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp 
 #CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
 #CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/Q
 #CXX	= mpixlcxx_r -qarch=450d -qtune=450 -O3 -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/P
-#CXX	= mpiFCCpx -Kfast # K computer
+#CXX	= mpiFCCpx -Kfast,openmp # K computer / FX10 (cross compiler)
+#CXX	= mpiFCC -Kfast,openmp # K computer / FX10 (interactive)
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
 
 ### choose fortran compiler

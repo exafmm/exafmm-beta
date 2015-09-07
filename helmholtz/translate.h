@@ -216,7 +216,7 @@ void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * 
 }
 
 void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, complex_t * jnd) {
-  int iscale[nterms+2];
+  int iscale[P+2];
   if (abs(z) < eps) {
     jn[0] = 1;
     for (int i=1; i<=nterms; i++) {
