@@ -26,7 +26,7 @@ void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[
   real_t Ynm[(P+1)*(P+2)/2];
   complex_t ephi[P+1], jn[P+2], jnd[P+2], Mnm[(P+1)*(P+1)];
   real_t kscale = scale * abs(wavek);
-  for (int n=0; n<=P; n++) {
+  for (int n=0; n<P; n++) {
     for (int m=-n; m<=n; m++) {
       int nm = n * n + n + m;
       Mnm[nm] = 0;
@@ -38,16 +38,16 @@ void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[
     cart2sph(dX, r, theta, phi);
     real_t ctheta = cos(theta);
     ephi[1] = exp(I * phi);
-    for (int n=2; n<=P; n++) {
+    for (int n=2; n<P; n++) {
       ephi[n] = ephi[n-1] * ephi[1];
     }
-    get_Ynm(P, ctheta, Ynm);
+    get_Ynm(P-1, ctheta, Ynm);
     complex_t z = wavek * r;
-    get_jn(P, z, kscale, jn, 0, jnd);
-    for (int n=0; n<=P; n++) {
+    get_jn(P-1, z, kscale, jn, 0, jnd);
+    for (int n=0; n<P; n++) {
       jn[n] *= qj[i];
     }
-    for (int n=0; n<=P; n++) {
+    for (int n=0; n<P; n++) {
       int nm = n * n + n;
       int nms = n * (n + 1) / 2;
       Mnm[nm] += Ynm[nms] * jn[n];
@@ -61,7 +61,7 @@ void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[
       }
     }
   }
-  for (int n=0; n<=P; n++) {
+  for (int n=0; n<P; n++) {
     int nm = n * n + n;
     Mi[nm] += Mnm[nm] * I * wavek;
     for (int m=1; m<=n; m++) {
