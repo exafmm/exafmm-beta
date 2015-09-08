@@ -15,7 +15,6 @@ int main(int argc, char ** argv) {
   Verify verify;
   const int numBodies=args.numBodies;
   wavek = complex_t(10.,1.);
-  Bodies bodies(numBodies);
   vec3 * Xj = new vec3 [numBodies];
   complex_t * qj = new complex_t [numBodies];
   complex_t * pi = new complex_t [numBodies];
@@ -23,6 +22,7 @@ int main(int argc, char ** argv) {
   complex_t * pi2 = new complex_t [numBodies];
   cvec3 * Fi2 = new cvec3 [numBodies];
   logger::verbose = args.verbose;
+  bodies.resize(numBodies);
   B_iter B = bodies.begin();
   for (int i=0; i<numBodies; i++,B++) {
     Xj[i][0] = drand48();
@@ -50,16 +50,16 @@ int main(int argc, char ** argv) {
   logger::startTimer("Direct");
   P2P(icell, pi2, Fi2, jcell, Xj, qj);
   logger::stopTimer("Direct");
-  real_t potDif = 0, potNrm = 0, accDif = 0, accNrm = 0;
+  std::complex<double> potDif = 0, potNrm = 0, accDif = 0, accNrm = 0;
   for (int i=0; i<numTarget; i++) {
-    potDif += abs(pi[i] - pi2[i]) * abs(pi[i] - pi2[i]);
-    potNrm += abs(pi2[i]) * abs(pi2[i]);
-    accDif += abs(Fi[i][0] - Fi2[i][0]) * abs(Fi[i][0] - Fi2[i][0])
-      + abs(Fi[i][1] - Fi2[i][1]) * abs(Fi[i][1] - Fi2[i][1])
-      + abs(Fi[i][2] - Fi2[i][2]) * abs(Fi[i][2] - Fi2[i][2]);
-    accNrm += abs(Fi2[i][0]) * abs(Fi2[i][0])
-      + abs(Fi2[i][1]) * abs(Fi2[i][1])
-      + abs(Fi2[i][2]) * abs(Fi2[i][2]);
+    potDif += (pi[i] - pi2[i]) * (pi[i] - pi2[i]);
+    potNrm += (pi2[i]) * (pi2[i]);
+    accDif += (Fi[i][0] - Fi2[i][0]) * (Fi[i][0] - Fi2[i][0])
+      + (Fi[i][1] - Fi2[i][1]) * (Fi[i][1] - Fi2[i][1])
+      + (Fi[i][2] - Fi2[i][2]) * (Fi[i][2] - Fi2[i][2]);
+    accNrm += (Fi2[i][0]) * (Fi2[i][0])
+      + (Fi2[i][1]) * (Fi2[i][1])
+      + (Fi2[i][2]) * (Fi2[i][2]);
   }
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));

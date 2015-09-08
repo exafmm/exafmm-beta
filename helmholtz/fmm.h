@@ -131,15 +131,22 @@ void fmm(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
       cells[icell].R = scale[level];
     }
   }
+  Bodies buffer(numBodies);
   for (int i=0; i<numBodies; i++) {
+    buffer[i] = bodies[permutation[i]];
     Xjd[i] = Xj[permutation[i]];
     qjd[i] = qj[permutation[i]];
+  }
+  B_iter B = buffer.begin();
+  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
+    C->BODY = B + C->IBODY;
   }
   logger::stopTimer("Tree");
   complex_t (* Multipole)[P*P] = new complex_t [numCells][P*P]();
   complex_t (* Local)[P*P] = new complex_t [numCells][P*P]();
   evaluate(numBodies, Xjd, qjd, pid, Fid, Multipole, Local, numCells, numLevels, scale);
   for (int i=0; i<numBodies; i++) {
+    bodies[permutation[i]].TRG = buffer[i].TRG;
     pi[permutation[i]] = pid[i];
     Fi[permutation[i]] = Fid[i];
   }
