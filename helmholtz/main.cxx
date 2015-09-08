@@ -17,10 +17,6 @@ int main(int argc, char ** argv) {
   wavek = complex_t(10.,1.);
   vec3 * Xj = new vec3 [numBodies];
   complex_t * qj = new complex_t [numBodies];
-  complex_t * pi = new complex_t [numBodies];
-  cvec3 * Fi = new cvec3 [numBodies];
-  complex_t * pi2 = new complex_t [numBodies];
-  cvec3 * Fi2 = new cvec3 [numBodies];
   logger::verbose = args.verbose;
   bodies.resize(numBodies);
   B_iter B = bodies.begin();
@@ -28,9 +24,8 @@ int main(int argc, char ** argv) {
     Xj[i][0] = drand48();
     Xj[i][1] = drand48();
     Xj[i][2] = drand48();
-    qj[i] = Xj[i][0] + I * Xj[i][1];
+    B->SRC = Xj[i][0] + I * Xj[i][1];
     B->X = Xj[i];
-    B->SRC  = qj[i];
   }
   logger::startTimer("FMM");
   fmm(numBodies,Xj);
@@ -38,8 +33,6 @@ int main(int argc, char ** argv) {
   const int numTarget = 100;
   Bodies bodies2(numTarget);
   for (int i=0; i<numTarget; i++) {
-    pi2[i] = 0.0;
-    Fi2[i] = 0.0;
     bodies2[i] = bodies[i];
     bodies2[i].TRG = 0;
   }
@@ -70,8 +63,4 @@ int main(int argc, char ** argv) {
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
   delete[] Xj;
   delete[] qj;
-  delete[] pi;
-  delete[] Fi;
-  delete[] pi2;
-  delete[] Fi2;
 }

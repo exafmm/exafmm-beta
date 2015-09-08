@@ -1,6 +1,5 @@
-Use cell structure
-Use body structure
 Use verify()
+inline fmm() in main()
 Loops to iterators
 Remove Multipole, Local
 SIMD for P2P
