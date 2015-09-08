@@ -39,10 +39,10 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
     legendre();
 #pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
-      C_iter C = C0 + icell;
-      for (int jcell=C->ICHILD; jcell<C->ICHILD+C->NCHILD; jcell++) {
-	C_iter CC = C0 + jcell;
-	M2M(Multipole[icell], C, CC);
+      C_iter Ci = C0 + icell;
+      for (int jcell=Ci->ICHILD; jcell<Ci->ICHILD+Ci->NCHILD; jcell++) {
+	C_iter Cj = C0 + jcell;
+	M2M(Ci, Cj);
       }
     }
   }
@@ -72,10 +72,11 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
     legendre();
 #pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
+      C_iter Cj = C0 + icell;
       for (int ilist=0; ilist<cells2[icell][6]; ilist++) {
 	int jcell = cells2[icell][5]+ilist;
-	L2L(scale[level-1], centers[icell], Local[icell],
-	    scale[level], centers[jcell], Local[jcell]);
+	C_iter Ci = C0 + jcell;
+	L2L(Local[jcell], Ci, Cj);
       }
     }
   }
@@ -85,11 +86,12 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   for (int level=2; level<=numLevels; level++) {
 #pragma omp parallel for
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      if (cells2[icell][6] == 0) {
-	int ibegin = cells2[icell][7];
-        int isize = cells2[icell][8];
+      C_iter Ci = C0 + icell;
+      if (Ci->NCHILD == 0) {
+	int ibegin = Ci->IBODY;
+        int isize = Ci->NBODY;
         L2P(scale[level], centers[icell], Local[icell], &Xj[ibegin], isize,
-	    &pi[ibegin], &Fi[ibegin]);
+	    &pi[ibegin], &Fi[ibegin], Ci);
       }
     }
   }
@@ -98,13 +100,15 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   logger::startTimer("P2P");
 #pragma omp parallel for private(list) schedule(dynamic)
   for (int icell=0; icell<numCells; icell++) {
-    if (cells2[icell][6] == 0) {
-      P2P(cells2[icell], pi, Fi, cells2[icell], Xj, qj);
+    C_iter Ci = C0 + icell;
+    if (Ci->NCHILD == 0) {
+      P2P(cells2[icell], pi, Fi, cells2[icell], Xj, qj, Ci, Ci);
       int nlist;
       getList(0, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
-	P2P(cells2[icell], pi, Fi, cells2[jcell], Xj, qj);
+	C_iter Cj = C0 + jcell;
+	P2P(cells2[icell], pi, Fi, cells2[jcell], Xj, qj, Ci, Cj);
       }
     }
   }

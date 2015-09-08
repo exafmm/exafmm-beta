@@ -1,4 +1,5 @@
-void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, complex_t * qj) {
+void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, complex_t * qj,
+	 C_iter Ci, C_iter Cj) {
   for (int i=icell[7]; i<icell[7]+icell[8]; i++) {
     complex_t p = 0.0;
     complex_t F[3] = {0.0,0.0,0.0};
@@ -60,7 +61,7 @@ void P2M(C_iter C) {
   C->M += Mnm * I * wavek;
 }
 
-void M2M(complex_t Mi[P*P], C_iter Ci, C_iter Cj) {
+void M2M(C_iter Ci, C_iter Cj) {
   real_t Ynm[P*(P+1)/2];
   complex_t phitemp[2*P], hn[P], ephi[2*P];
   vecP Mnm = complex_t(0,0);
@@ -136,12 +137,6 @@ void M2M(complex_t Mi[P*P], C_iter Ci, C_iter Cj) {
     }
   }
   Ci->M += Mnm;
-  for (int n=0; n<P; n++) {
-    for (int m=-n; m<=n; m++) {
-      int nm = n * n + n + m;
-      Mi[nm] += Mnm[nm];
-    }
-  }
 }
 
 void M2L(complex_t Li[P*P], C_iter Ci, C_iter Cj) {
@@ -270,16 +265,15 @@ void M2L(complex_t Li[P*P], C_iter Ci, C_iter Cj) {
   }
 }
 
-void L2L(real_t scalej, vec3 Xj, complex_t Lj[P*P],
-         real_t scalei, vec3 Xi, complex_t Li[P*P]) {
+void L2L(complex_t Li[P*P], C_iter Ci, C_iter Cj) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t phitemp[2*P], phitempn[2*P];
   complex_t jn[P+1], jnd[P+1], ephi[2*P];
-  complex_t Lnm[P*P], Lnmd[P*P], Lrot[P*P];
-  real_t kscalei = scalei * abs(wavek);
-  real_t kscalej = scalej * abs(wavek);
-  real_t radius = scalej * sqrt(3.0) * .5;
-  vec3 dX = Xi - Xj;
+  vecP Lnm, Lnmd, Lrot;
+  real_t kscalei = Ci->R * abs(wavek);
+  real_t kscalej = Cj->R * abs(wavek);
+  real_t radius = Cj->R * sqrt(3.0) * .5;
+  vec3 dX = Ci->X - Cj->X;
   real_t r, theta, phi;
   cart2sph(dX, r, theta, phi);
   ephi[P+1] = exp(I * phi);
@@ -292,7 +286,7 @@ void L2L(real_t scalej, vec3 Xj, complex_t Lj[P*P],
   for (int n=0; n<P; n++) {
     for (int m=-n; m<=n; m++) {
       int nm = n * n + n + m;
-      Lnm[nm] = Lj[nm] * ephi[P+m];
+      Lnm[nm] = Cj->L[nm] * ephi[P+m];
     }
   }
   rotate(theta, P, Lnm, Lrot);
@@ -385,6 +379,7 @@ void L2L(real_t scalej, vec3 Xj, complex_t Lj[P*P],
       Lnm[nm] = ephi[P-m] * Lrot[nm];
     }
   }
+  Ci->L += Lnm;
   for (int n=0; n<P; n++) {
     for (int m=-n; m<=n; m++) {
       int nm = n * n + n + m;
@@ -393,13 +388,17 @@ void L2L(real_t scalej, vec3 Xj, complex_t Lj[P*P],
   }
 }
 
-void L2P(real_t scale, vec3 Xj, complex_t Lj[P*P],
-	 vec3 * Xi, int ni, complex_t * pi, cvec3 * Fi) {
+void L2P(real_t scale, vec3 Xj, complex_t Lj2[P*P],
+	 vec3 * Xi, int ni, complex_t * pi, cvec3 * Fi,
+	 C_iter C) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t ephi[P], jn[P+1], jnd[P+1];
-  real_t kscale = scale * abs(wavek);
-  for (int i=0; i<ni; i++) {
-    vec3 dX = Xi[i] - Xj;
+  real_t kscale = C->R * abs(wavek);
+  for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
+    int i = B - C->BODY;
+    vecP Lj = C->L;
+    cvec4 TRG = complex_t(0,0);
+    vec3 dX = B->X - C->X;
     real_t r, theta, phi;
     cart2sph(dX, r, theta, phi);
     real_t ctheta = cos(theta);
@@ -423,6 +422,7 @@ void L2P(real_t scale, vec3 Xj, complex_t Lj[P*P],
     complex_t z = wavek * r;
     get_jn(P, z, kscale, jn, 1, jnd);
     pi[i] += Lj[0] * jn[0];
+    TRG[0] += Lj[0] * jn[0];
     for (int n=0; n<P; n++) {
       jnd[n] *= wavek;
     }
@@ -433,6 +433,7 @@ void L2P(real_t scale, vec3 Xj, complex_t Lj[P*P],
       int nm = n * n + n;
       int nms = n * (n + 1) / 2;
       pi[i] += Lj[nm] * jn[n] * Ynm[nms];
+      TRG[0] += Lj[nm] * jn[n] * Ynm[nms];
       ur += jnd[n] * Ynm[nms] * Lj[nm];
       complex_t jnuse = jn[n+1] * kscale + jn[n-1] / kscale;
       jnuse = wavek * jnuse / (2 * n + 1.0);
@@ -446,6 +447,7 @@ void L2P(real_t scale, vec3 Xj, complex_t Lj[P*P],
 	complex_t ztmp3 = Lj[nmm] * conj(ephi[m]);
 	complex_t ztmpsum = ztmp2 + ztmp3;
 	pi[i] += ztmp1 * ztmpsum;
+	TRG[0] += ztmp1 * ztmpsum;
 	ur += jnd[n] * Ynm[nms] * stheta * ztmpsum;
 	utheta -= ztmpsum * jnuse * Ynmd[nms];
 	ztmpsum = real_t(m) * I * (ztmp2 - ztmp3);
@@ -458,5 +460,9 @@ void L2P(real_t scale, vec3 Xj, complex_t Lj[P*P],
     Fi[i][0] -= ux;
     Fi[i][1] -= uy;
     Fi[i][2] -= uz;
+    TRG[1] -= ux;
+    TRG[2] -= uy;
+    TRG[3] -= uz;
+    B->TRG += TRG;
   }
 }
