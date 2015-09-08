@@ -75,9 +75,9 @@ void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[
 
 void M2M(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
 	 real_t scalei, vec3 Xi, complex_t Mi[(P+1)*(P+1)]) {
-  real_t Ynm[(P+1)*(P+2)/2];
-  complex_t phitemp[2*P+1], hn[P+1], ephi[2*P+1];
-  complex_t Mnm[(P+1)*(P+1)], Mrot[(P+1)*(P+1)];
+  real_t Ynm[P*(P+1)/2];
+  complex_t phitemp[2*P], hn[P], ephi[2*P];
+  complex_t Mnm[P*P], Mrot[P*P];
   real_t kscalei = scalei * abs(wavek);
   real_t kscalej = scalej * abs(wavek);
   real_t radius = scalej * sqrt(3.0);
