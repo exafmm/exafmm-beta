@@ -44,19 +44,19 @@ void reorder(vec3 X0, real_t R0, int level, int * iX, vec3 * Xj,
   }
 }
 
-void growTree(vec3 * Xj, int numBodies, int (* cells)[10], int & numCells,
+void growTree(vec3 * Xj, int numBodies, int (* cells2)[10], int & numCells,
 	      int * permutation, int & numLevels, vec3 X0, real_t R0) {
   int nbody8[8];
   int * iwork = new int [numBodies];
-  cells[0][0] = 0;
-  cells[0][1] = 0;
-  cells[0][2] = 0;
-  cells[0][3] = 0;
-  cells[0][4] = 0;
-  cells[0][5] = 0;
-  cells[0][6] = 0;
-  cells[0][7] = 0;
-  cells[0][8] = numBodies;
+  cells2[0][0] = 0;
+  cells2[0][1] = 0;
+  cells2[0][2] = 0;
+  cells2[0][3] = 0;
+  cells2[0][4] = 0;
+  cells2[0][5] = 0;
+  cells2[0][6] = 0;
+  cells2[0][7] = 0;
+  cells2[0][8] = numBodies;
   levelOffset[0] = 0;
   levelOffset[1] = 1;
   for (int i=0; i<numBodies; i++) {
@@ -70,29 +70,29 @@ void growTree(vec3 * Xj, int numBodies, int (* cells)[10], int & numCells,
   numLevels = 0;
   for (int level=0; level<198; level++) {
     for (int iparent=levelOffset[level]; iparent<levelOffset[level+1]; iparent++) {
-      int nbody = cells[iparent][8];
+      int nbody = cells2[iparent][8];
       if (nbody > ncrit) {
-	int ibody = cells[iparent][7];
-	reorder(X0, R0, level, &cells[iparent][1], Xj, &permutation[ibody], nbody, iwork, nbody8);
+	int ibody = cells2[iparent][7];
+	reorder(X0, R0, level, &cells2[iparent][1], Xj, &permutation[ibody], nbody, iwork, nbody8);
 	int nchild = 0;
 	int offset = ibody;
-	cells[iparent][5] = numCells;
+	cells2[iparent][5] = numCells;
 	for (int i=0; i<8; i++) {
-	  cells[numCells][0] = level + 1;
-	  cells[numCells][1] = cells[iparent][1] * 2 + i % 2;
-	  cells[numCells][2] = cells[iparent][2] * 2 + (i / 2) % 2;
-	  cells[numCells][3] = cells[iparent][3] * 2 + i / 4;
-	  cells[numCells][4] = iparent;
-	  cells[numCells][5] = 0;
-	  cells[numCells][6] = 0;
-	  cells[numCells][7] = offset;
-	  cells[numCells][8] = nbody8[i];
+	  cells2[numCells][0] = level + 1;
+	  cells2[numCells][1] = cells2[iparent][1] * 2 + i % 2;
+	  cells2[numCells][2] = cells2[iparent][2] * 2 + (i / 2) % 2;
+	  cells2[numCells][3] = cells2[iparent][3] * 2 + i / 4;
+	  cells2[numCells][4] = iparent;
+	  cells2[numCells][5] = 0;
+	  cells2[numCells][6] = 0;
+	  cells2[numCells][7] = offset;
+	  cells2[numCells][8] = nbody8[i];
 	  nchild++;
 	  offset += nbody8[i];
 	  numCells++;
 	  numLevels=level+1;
 	}
-	cells[iparent][6] = nchild;
+	cells2[iparent][6] = nchild;
       }
     }
     levelOffset[level+2] = numCells;
@@ -128,7 +128,7 @@ void setLists(int numCells) {
     }
   }
   for (int icell=1; icell<numCells; icell++) {
-    int iparent = cells[icell][4];
+    int iparent = cells2[icell][4];
     neighbors[0] = iparent;
     int numNeighbors;
     getList(2,iparent,&neighbors[1],numNeighbors);
@@ -136,8 +136,8 @@ void setLists(int numCells) {
     int nchilds = 0;
     for (int i=0; i<numNeighbors; i++) {
       int jparent = neighbors[i];
-      for (int j=0; j<cells[jparent][6]; j++) {
-	int jcell = cells[jparent][5]+j;
+      for (int j=0; j<cells2[jparent][6]; j++) {
+	int jcell = cells2[jparent][5]+j;
 	if (jcell != icell) {
 	  childs[nchilds] = jcell;
 	  nchilds++;
@@ -146,9 +146,9 @@ void setLists(int numCells) {
     }
     for (int i=0; i<nchilds; i++) {
       int jcell = childs[i];
-      if (cells[icell][1]-1 <= cells[jcell][1] && cells[jcell][1] <= cells[icell][1]+1 &&
-	  cells[icell][2]-1 <= cells[jcell][2] && cells[jcell][2] <= cells[icell][2]+1 &&
-	  cells[icell][3]-1 <= cells[jcell][3] && cells[jcell][3] <= cells[icell][3]+1) {
+      if (cells2[icell][1]-1 <= cells2[jcell][1] && cells2[jcell][1] <= cells2[icell][1]+1 &&
+	  cells2[icell][2]-1 <= cells2[jcell][2] && cells2[jcell][2] <= cells2[icell][2]+1 &&
+	  cells2[icell][3]-1 <= cells2[jcell][3] && cells2[jcell][3] <= cells2[icell][3]+1) {
 	setList(2,icell,jcell);
       }	else {
 	setList(1,icell,jcell);
@@ -156,12 +156,12 @@ void setLists(int numCells) {
     }
   }
   for (int icell=0; icell<numCells; icell++) {
-    if (cells[icell][5] == 0) {
+    if (cells2[icell][5] == 0) {
       int numNeighbors;
       getList(2,icell,neighbors,numNeighbors);
       for (int j=0; j<numNeighbors; j++) {
 	int jcell = neighbors[j];
-	if (cells[jcell][5] == 0) {
+	if (cells2[jcell][5] == 0) {
 	  setList(0,icell,jcell);
 	}
       }
@@ -175,17 +175,24 @@ void buildTree(vec3 * Xj, int numBodies, int & numCells, int * permutation,
   growTree(Xj, numBodies, nodes, numCells, permutation, numLevels, X0, R0);
   listOffset = new int [numCells][3]();
   lists = new int [189*numCells][2]();
-  cells = new int [numCells][10]();
+  cells.resize(numCells);
+  cells2 = new int [numCells][10]();
   centers = new vec3 [numCells];
-  for (int i=0; i<numCells; i++) {
+  C_iter C = cells.begin();
+  for (int i=0; i<numCells; i++,C++) {
+    C->LEVEL   = nodes[i][0];
+    C->IPARENT = nodes[i][4];
+    C->ICHILD  = nodes[i][5];
+    C->NCHILD  = nodes[i][6];
+    C->IBODY   = nodes[i][7];
+    C->NBODY   = nodes[i][8];
     for (int j=0; j<10; j++) {
-      cells[i][j] = nodes[i][j];
+      cells2[i][j] = nodes[i][j];
     }
-  }
-  for (int i=0; i<numCells; i++) {
-    real_t R = R0 / (1 << cells[i][0]);
+    real_t R = R0 / (1 << cells2[i][0]);
     for (int d=0; d<3; d++) {
-      centers[i][d] = X0[d] - R0 + cells[i][d+1] * R * 2 + R;
+      C->X[d] = X0[d] - R0 + nodes[i][d+1] * R * 2 + R;
+      centers[i][d] = X0[d] - R0 + cells2[i][d+1] * R * 2 + R;
     }
   }
   setLists(numCells);

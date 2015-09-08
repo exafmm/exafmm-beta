@@ -21,9 +21,9 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   for (int level=2; level<=numLevels; level++) {
 #pragma omp parallel for
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      if (cells[icell][6] == 0) {
-	int ibegin = cells[icell][7];
-	int isize = cells[icell][8];
+      if (cells2[icell][6] == 0) {
+	int ibegin = cells2[icell][7];
+	int isize = cells2[icell][8];
 	P2M(scale[level], &Xj[ibegin], &qj[ibegin], isize,
 	    centers[icell], Multipole[icell]);
       }
@@ -37,8 +37,8 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
     legendre();
 #pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
-      for (int ilist=0; ilist<cells[icell][6]; ilist++) {
-	int jcell = cells[icell][5] + ilist;
+      for (int ilist=0; ilist<cells2[icell][6]; ilist++) {
+	int jcell = cells2[icell][5] + ilist;
 	M2M(scale[level], centers[jcell], Multipole[jcell],
 	    scale[level-1], centers[icell], Multipole[icell]);
       }
@@ -69,8 +69,8 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
     legendre();
 #pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
-      for (int ilist=0; ilist<cells[icell][6]; ilist++) {
-	int jcell = cells[icell][5]+ilist;
+      for (int ilist=0; ilist<cells2[icell][6]; ilist++) {
+	int jcell = cells2[icell][5]+ilist;
 	L2L(scale[level-1], centers[icell], Local[icell],
 	    scale[level], centers[jcell], Local[jcell]);
       }
@@ -82,9 +82,9 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   for (int level=2; level<=numLevels; level++) {
 #pragma omp parallel for
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      if (cells[icell][6] == 0) {
-	int ibegin = cells[icell][7];
-        int isize = cells[icell][8];
+      if (cells2[icell][6] == 0) {
+	int ibegin = cells2[icell][7];
+        int isize = cells2[icell][8];
         L2P(scale[level], centers[icell], Local[icell], &Xj[ibegin], isize,
 	    &pi[ibegin], &Fi[ibegin]);
       }
@@ -95,13 +95,13 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   logger::startTimer("P2P");
 #pragma omp parallel for private(list) schedule(dynamic)
   for (int icell=0; icell<numCells; icell++) {
-    if (cells[icell][6] == 0) {
-      P2P(cells[icell], pi, Fi, cells[icell], Xj, qj);
+    if (cells2[icell][6] == 0) {
+      P2P(cells2[icell], pi, Fi, cells2[icell], Xj, qj);
       int nlist;
       getList(0, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
-	P2P(cells[icell], pi, Fi, cells[jcell], Xj, qj);
+	P2P(cells2[icell], pi, Fi, cells2[jcell], Xj, qj);
       }
     }
   }

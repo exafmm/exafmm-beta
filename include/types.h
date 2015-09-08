@@ -84,6 +84,7 @@ typedef Bodies::iterator                  B_iter;               //!< Iterator of
 
 //! Structure of cells
 struct Cell {
+  int       LEVEL;                                              //!< Level in the tree structure
   int       IPARENT;                                            //!< Index of parent cell
   int       ICHILD;                                             //!< Index of first child cell
   int       NCHILD;                                             //!< Number of child cells
