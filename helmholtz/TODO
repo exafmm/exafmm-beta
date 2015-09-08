@@ -1,7 +1,5 @@
+P + 1 -> P
 Use cell structure
 Use body structure
 SIMD for P2P
-
-[calculate from level]
-scale
-radius
+Merge with exaFMM

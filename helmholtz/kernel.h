@@ -420,7 +420,7 @@ void L2P(real_t scale, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
     real_t cphi = cos(phi);
     real_t sphi = sin(phi);
     ephi[1] = exp(I * phi);
-    for (int n=2; n<=P; n++) {
+    for (int n=2; n<P; n++) {
       ephi[n] = ephi[n-1] * ephi[1];
     }
     real_t rx = stheta * cphi;
@@ -432,17 +432,17 @@ void L2P(real_t scale, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
     real_t rz = ctheta;
     real_t thetaz = -stheta;
     real_t phiz = 0;
-    get_Ynmd(P, ctheta, Ynm, Ynmd);
+    get_Ynmd(P-1, ctheta, Ynm, Ynmd);
     complex_t z = wavek * r;
-    get_jn(P, z, kscale, jn, 1, jnd);
+    get_jn(P-1, z, kscale, jn, 1, jnd);
     pi[i] += Lj[0] * jn[0];
-    for (int n=0; n<=P; n++) {
+    for (int n=0; n<P; n++) {
       jnd[n] *= wavek;
     }
     complex_t ur = Lj[0] * jnd[0];
     complex_t utheta = 0;
     complex_t uphi = 0;
-    for (int n=1; n<=P; n++) {
+    for (int n=1; n<P; n++) {
       int nm = n * n + n;
       int nms = n * (n + 1) / 2;
       pi[i] += Lj[nm] * jn[n] * Ynm[nms];
