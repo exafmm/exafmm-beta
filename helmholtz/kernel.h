@@ -1,14 +1,16 @@
 void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, complex_t * qj,
 	 C_iter Ci, C_iter Cj) {
-  for (int i=icell[7]; i<icell[7]+icell[8]; i++) {
+  for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {
+    int i = Bi - Ci->BODY + Ci->IBODY;
     complex_t p = 0.0;
     complex_t F[3] = {0.0,0.0,0.0};
-    for (int j=jcell[7]; j<jcell[7]+jcell[8]; j++) {
-      vec3 dX = Xj[i] - Xj[j];
+    for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) {
+      int j = Bj - Cj->BODY + Cj->IBODY;
+      vec3 dX = Bi->X - Bj->X;
       real_t R2 = norm(dX);
       if (R2 != 0) {
 	real_t R = sqrt(R2);
-	complex_t coef1 = qj[j] * exp(I * wavek * R) / R;
+	complex_t coef1 = Bj->SRC * exp(I * wavek * R) / R;
 	complex_t coef2 = (1.0 - I * wavek * R) * coef1 / R2;
 	p += coef1;
 	F[0] += coef2 * dX[0];
@@ -20,6 +22,10 @@ void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, comple
     Fi[i][0] += F[0];
     Fi[i][1] += F[1];
     Fi[i][2] += F[2];
+    Bi->TRG[0] += p;
+    Bi->TRG[1] += F[0];
+    Bi->TRG[2] += F[1];
+    Bi->TRG[3] += F[2];
   }
 }
 
@@ -139,7 +145,7 @@ void M2M(C_iter Ci, C_iter Cj) {
   Ci->M += Mnm;
 }
 
-void M2L(complex_t Li[P*P], C_iter Ci, C_iter Cj) {
+void M2L(C_iter Ci, C_iter Cj) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t phitemp[2*P], phitempn[2*P];
   complex_t hn[P], hnd[P], jn[P+1], jnd[P+1], ephi[2*P];
@@ -257,15 +263,9 @@ void M2L(complex_t Li[P*P], C_iter Ci, C_iter Cj) {
     }
   }
   Ci->L += Lnm;
-  for (int n=0; n<Popt; n++) {
-    for (int m=-n; m<=n; m++) {
-      int nm = n * n + n + m;
-      Li[nm] += Lnm[nm];
-    }
-  }
 }
 
-void L2L(complex_t Li[P*P], C_iter Ci, C_iter Cj) {
+void L2L(C_iter Ci, C_iter Cj) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t phitemp[2*P], phitempn[2*P];
   complex_t jn[P+1], jnd[P+1], ephi[2*P];
@@ -380,17 +380,9 @@ void L2L(complex_t Li[P*P], C_iter Ci, C_iter Cj) {
     }
   }
   Ci->L += Lnm;
-  for (int n=0; n<P; n++) {
-    for (int m=-n; m<=n; m++) {
-      int nm = n * n + n + m;
-      Li[nm] += Lnm[nm];
-    }
-  }
 }
 
-void L2P(real_t scale, vec3 Xj, complex_t Lj2[P*P],
-	 vec3 * Xi, int ni, complex_t * pi, cvec3 * Fi,
-	 C_iter C) {
+void L2P(C_iter C) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t ephi[P], jn[P+1], jnd[P+1];
   real_t kscale = C->R * abs(wavek);
@@ -421,7 +413,6 @@ void L2P(real_t scale, vec3 Xj, complex_t Lj2[P*P],
     get_Ynmd(P, ctheta, Ynm, Ynmd);
     complex_t z = wavek * r;
     get_jn(P, z, kscale, jn, 1, jnd);
-    pi[i] += Lj[0] * jn[0];
     TRG[0] += Lj[0] * jn[0];
     for (int n=0; n<P; n++) {
       jnd[n] *= wavek;
@@ -432,7 +423,6 @@ void L2P(real_t scale, vec3 Xj, complex_t Lj2[P*P],
     for (int n=1; n<P; n++) {
       int nm = n * n + n;
       int nms = n * (n + 1) / 2;
-      pi[i] += Lj[nm] * jn[n] * Ynm[nms];
       TRG[0] += Lj[nm] * jn[n] * Ynm[nms];
       ur += jnd[n] * Ynm[nms] * Lj[nm];
       complex_t jnuse = jn[n+1] * kscale + jn[n-1] / kscale;
@@ -446,7 +436,6 @@ void L2P(real_t scale, vec3 Xj, complex_t Lj2[P*P],
 	complex_t ztmp2 = Lj[npm] * ephi[m];
 	complex_t ztmp3 = Lj[nmm] * conj(ephi[m]);
 	complex_t ztmpsum = ztmp2 + ztmp3;
-	pi[i] += ztmp1 * ztmpsum;
 	TRG[0] += ztmp1 * ztmpsum;
 	ur += jnd[n] * Ynm[nms] * stheta * ztmpsum;
 	utheta -= ztmpsum * jnuse * Ynmd[nms];
@@ -457,9 +446,6 @@ void L2P(real_t scale, vec3 Xj, complex_t Lj2[P*P],
     complex_t ux = ur * rx + utheta * thetax + uphi * phix;
     complex_t uy = ur * ry + utheta * thetay + uphi * phiy;
     complex_t uz = ur * rz + utheta * thetaz + uphi * phiz;
-    Fi[i][0] -= ux;
-    Fi[i][1] -= uy;
-    Fi[i][2] -= uz;
     TRG[1] -= ux;
     TRG[2] -= uy;
     TRG[3] -= uz;

@@ -1,5 +1,6 @@
 Use cell structure
 Use body structure
+Use verify()
 Loops to iterators
 Remove Multipole, Local
 SIMD for P2P

@@ -60,7 +60,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
 	C_iter Cj = C0 + jcell;
-	M2L(Local[icell], Ci, Cj);
+	M2L(Ci, Cj);
       }
     }
   }
@@ -76,7 +76,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
       for (int ilist=0; ilist<cells2[icell][6]; ilist++) {
 	int jcell = cells2[icell][5]+ilist;
 	C_iter Ci = C0 + jcell;
-	L2L(Local[jcell], Ci, Cj);
+	L2L(Ci, Cj);
       }
     }
   }
@@ -90,8 +90,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
       if (Ci->NCHILD == 0) {
 	int ibegin = Ci->IBODY;
         int isize = Ci->NBODY;
-        L2P(scale[level], centers[icell], Local[icell], &Xj[ibegin], isize,
-	    &pi[ibegin], &Fi[ibegin], Ci);
+        L2P(Ci);
       }
     }
   }

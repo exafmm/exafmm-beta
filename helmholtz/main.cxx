@@ -40,7 +40,8 @@ int main(int argc, char ** argv) {
   for (int i=0; i<numTarget; i++) {
     pi2[i] = 0.0;
     Fi2[i] = 0.0;
-    B->TRG = 0;
+    bodies2[i] = bodies[i];
+    bodies2[i].TRG = 0;
   }
   cells.resize(2);
   C_iter Ci = cells.begin();
@@ -50,8 +51,10 @@ int main(int argc, char ** argv) {
   icell[8] = numTarget;
   jcell[7] = 0;
   jcell[8] = numBodies;
+  Ci->IBODY = 0; // Remove
   Ci->BODY = bodies2.begin();
   Ci->NBODY = bodies2.size();
+  Cj->IBODY = 0; // Remove
   Cj->BODY = bodies.begin();
   Cj->NBODY = bodies.size();
   logger::startTimer("Direct");
@@ -59,14 +62,16 @@ int main(int argc, char ** argv) {
   logger::stopTimer("Direct");
   std::complex<double> potDif = 0, potNrm = 0, accDif = 0, accNrm = 0;
   for (int i=0; i<numTarget; i++) {
-    potDif += (pi[i] - pi2[i]) * (pi[i] - pi2[i]);
-    potNrm += (pi2[i]) * (pi2[i]);
-    accDif += (Fi[i][0] - Fi2[i][0]) * (Fi[i][0] - Fi2[i][0])
-      + (Fi[i][1] - Fi2[i][1]) * (Fi[i][1] - Fi2[i][1])
-      + (Fi[i][2] - Fi2[i][2]) * (Fi[i][2] - Fi2[i][2]);
-    accNrm += (Fi2[i][0]) * (Fi2[i][0])
-      + (Fi2[i][1]) * (Fi2[i][1])
-      + (Fi2[i][2]) * (Fi2[i][2]);
+    B_iter B = bodies.begin() + i;
+    B_iter B2 = bodies2.begin() + i;
+    potDif += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);
+    potNrm += B2->TRG[0] * B2->TRG[0];
+    accDif += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1])
+      + (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2])
+      + (B->TRG[3] - B2->TRG[3]) * (B->TRG[3] - B2->TRG[3]);
+    accNrm += B2->TRG[1] * B2->TRG[1]
+      + B2->TRG[2] * B2->TRG[2]
+      + B2->TRG[3] * B2->TRG[3];
   }
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
