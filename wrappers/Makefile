@@ -19,8 +19,8 @@ petiga:
 
 gromacs:
 	make libgromacs.a
-	$(CXX) test_gromacs.cxx $(LFLAGS) -lfmm
-	mpirun -np 1 ./a.out
+#	$(CXX) test_gromacs.cxx $(LFLAGS) -lfmm
+#	mpirun -np 1 ./a.out
 
 charmm: # exafmm
 	make libcharmm.a
