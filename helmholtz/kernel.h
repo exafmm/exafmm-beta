@@ -112,7 +112,7 @@ void M2M(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
     real_t cthetaj = (r + radius * ctheta) / rj;
     complex_t z = wavek * rj;
     get_Ynm(P, cthetaj, Ynm);
-    get_hn(P-1, z, kscalej, hn);
+    get_hn(P, z, kscalej, hn);
     for (int m=-P+1; m<P; m++) {
       int mabs = abs(m);
       phitemp[P+m] = 0;
@@ -134,7 +134,7 @@ void M2M(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
     }
   }
   complex_t z = wavek * radius;
-  get_hn(P-1, z, kscalei, hn);
+  get_hn(P, z, kscalei, hn);
   for (int n=0; n<P; n++) {
     for (int m=-n; m<=n; m++) {
       int nm = n * n + n + m;
@@ -204,7 +204,7 @@ void M2L(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
     real_t thetan = (cthetaj * stheta - ctheta * sthetaj) / rj;
     complex_t z = wavek * rj;
     get_Ynmd(Popt, cthetaj, Ynm, Ynmd);
-    get_hnd(Popt-1, z, kscalej, hn, hnd);
+    get_hnd(Popt, z, kscalej, hn, hnd);
     for (int n=0; n<Popt; n++) {
       hnd[n] *= wavek;
     }
