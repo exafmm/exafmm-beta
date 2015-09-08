@@ -2,12 +2,18 @@
 #define verify_h
 #include "logger.h"
 
+#if Laplace
+typedef double target_t;                                        // Target type is double
+#elif Helmholtz
+typedef std::complex<double> target_t;                          // Target type is complex double
+#endif 
+
 //! Verify results
 class Verify {
 public:
   //! Get sum of scalar component of a vector of target bodies
-  double getSumScalar(Bodies & bodies) {
-    double v = 0;                                               // Initialize difference
+  target_t getSumScalar(Bodies & bodies) {
+    target_t v = 0;                                             // Initialize difference
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       v += B->TRG[0] * B->SRC;                                  //  Sum of scalar component
     }                                                           // End loop over bodies
@@ -15,8 +21,8 @@ public:
   }
 
   //! Get norm of scalar component of a vector of target bodies
-  double getNrmScalar(Bodies & bodies) {
-    double v = 0;                                               // Initialize norm
+  target_t getNrmScalar(Bodies & bodies) {
+    target_t v = 0;                                             // Initialize norm
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       v += B->TRG[0] * B->TRG[0];                               //  Norm of scalar component
     }                                                           // End loop over bodies
@@ -24,8 +30,8 @@ public:
   }
 
   //! Get difference between scalar component of two vectors of target bodies
-  double getDifScalar(Bodies & bodies, Bodies & bodies2) {
-    double v = 0;                                               // Initialize difference
+  target_t getDifScalar(Bodies & bodies, Bodies & bodies2) {
+    target_t v = 0;                                             // Initialize difference
     B_iter B2 = bodies2.begin();                                // Set iterator of bodies2
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, B2++) { // Loop over bodies & bodies2
       v += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]); //  Difference of scalar component
@@ -34,8 +40,8 @@ public:
   }
 
   //! Get difference between scalar component of two vectors of target bodies
-  double getRelScalar(Bodies & bodies, Bodies & bodies2) {
-    double v = 0;                                               // Initialize difference
+  target_t getRelScalar(Bodies & bodies, Bodies & bodies2) {
+    target_t v = 0;                                             // Initialize difference
     B_iter B2 = bodies2.begin();                                // Set iterator of bodies2
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, B2++) { // Loop over bodies & bodies2
       v += ((B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]))
@@ -45,8 +51,8 @@ public:
   }
 
   //! Get norm of scalar component of a vector of target bodies
-  double getNrmVector(Bodies & bodies) {
-    double v = 0;                                               // Initialize norm
+  target_t getNrmVector(Bodies & bodies) {
+    target_t v = 0;                                             // Initialize norm
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       v += B->TRG[1] * B->TRG[1]                                //  Norm of vector x component
 	+  B->TRG[2] * B->TRG[2]                                //  Norm of vector y component
@@ -56,8 +62,8 @@ public:
   }
 
   //! Get difference between scalar component of two vectors of target bodies
-  double getDifVector(Bodies & bodies, Bodies & bodies2) {
-    double v = 0;                                               // Initialize difference
+  target_t getDifVector(Bodies & bodies, Bodies & bodies2) {
+    target_t v = 0;                                             // Initialize difference
     B_iter B2 = bodies2.begin();                                // Set iterator of bodies2
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, B2++) { // Loop over bodies & bodies2
       v += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1])  //  Difference of vector x component
@@ -68,8 +74,8 @@ public:
   }
 
   //! Get difference between scalar component of two vectors of target bodies
-  double getRelVector(Bodies & bodies, Bodies & bodies2) {
-    double v = 0;                                               // Initialize difference
+  target_t getRelVector(Bodies & bodies, Bodies & bodies2) {
+    target_t v = 0;                                             // Initialize difference
     B_iter B2 = bodies2.begin();                                // Set iterator of bodies2
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++, B2++) { // Loop over bodies & bodies2
       v += ((B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1]) +//  Difference of vector x component
@@ -83,7 +89,7 @@ public:
   }
 
   //! Print relative L2 norm scalar error
-  void print(std::string title, double v) {
+  void print(std::string title, target_t v) {
     if (logger::verbose) {                                      // If verbose flag is true
       std::cout << std::setw(logger::stringLength) << std::left //  Set format
 		<< title << " : " << std::setprecision(logger::decimal) << std::scientific // Set title

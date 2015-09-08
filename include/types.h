@@ -19,6 +19,7 @@ const real_t EPS = 1e-8;                                        //!< Single prec
 typedef std::complex<real_t> complex_t;                         //!< Complex type
 typedef vec<3,real_t>        vec3;                              //!< Vector of 3 real_t types
 typedef vec<3,complex_t>     cvec3;                             //!< Vector of 3 complex_t types
+typedef vec<3,complex_t>     cvec4;                             //!< Vector of 4 complex_t types
 
 // SIMD vector types for MIC, AVX, and SSE
 const int NSIMD = SIMD_BYTES / sizeof(real_t);                  //!< SIMD vector length (SIMD_BYTES defined in macros.h)
@@ -70,7 +71,11 @@ struct Bounds {
 //! Structure of aligned source for SIMD
 struct Source {
   vec3   X;                                                     //!< Position
+#if Laplace
   real_t SRC;                                                   //!< Scalar source values
+#elif Helmholtz
+  complex_t SRC;                                                //!< Scalar source values
+#endif
 } __attribute__ ((aligned (16)));
 
 //! Structure of bodies
@@ -79,7 +84,11 @@ struct Body : public Source {
   int      IRANK;                                               //!< Initial rank numbering for partitioning back
   uint64_t ICELL;                                               //!< Cell index   
   real_t   WEIGHT;                                              //!< Weight for partitioning
+#if Laplace
   kvec4    TRG;                                                 //!< Scalar+vector3 target values
+#elif Helmholtz
+  cvec4    TRG;                                                 //!< Scalar+vector3 target values
+#endif
 };
 typedef AlignedAllocator<Body,SIMD_BYTES> BodyAllocator;        //!< Body alignment allocator
 typedef std::vector<Body,BodyAllocator>   Bodies;               //!< Vector of bodies

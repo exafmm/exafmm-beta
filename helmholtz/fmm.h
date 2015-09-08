@@ -27,8 +27,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
       C_iter C = cells.begin() + icell;
       if (cells[icell].NCHILD == 0) {
 	int ibegin = cells[icell].IBODY;
-	int isize = cells[icell].NBODY;
-	P2M(scale[level], &Xj[ibegin], &qj[ibegin], isize,
+	P2M(&Xj[ibegin], &qj[ibegin],
 	    centers[icell], Multipole[icell], C);
       }
     }
@@ -128,6 +127,9 @@ void fmm(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
   buildTree(Xj, numBodies, numCells, permutation, numLevels, X0, R0);
   for (int level=0; level<=numLevels; level++) {
     scale[level] = (2 * R0 / (1 << level));
+    for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
+      cells[icell].R = scale[level];
+    }
   }
   for (int i=0; i<numBodies; i++) {
     Xjd[i] = Xj[permutation[i]];

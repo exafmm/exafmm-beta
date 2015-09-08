@@ -15,6 +15,7 @@ int main(int argc, char ** argv) {
   Verify verify;
   const int numBodies=args.numBodies;
   wavek = complex_t(10.,1.);
+  Bodies bodies(numBodies);
   vec3 * Xj = new vec3 [numBodies];
   complex_t * qj = new complex_t [numBodies];
   complex_t * pi = new complex_t [numBodies];
@@ -22,19 +23,24 @@ int main(int argc, char ** argv) {
   complex_t * pi2 = new complex_t [numBodies];
   cvec3 * Fi2 = new cvec3 [numBodies];
   logger::verbose = args.verbose;
-  for (int i=0; i<numBodies; i++) {
+  B_iter B = bodies.begin();
+  for (int i=0; i<numBodies; i++,B++) {
     Xj[i][0] = drand48();
     Xj[i][1] = drand48();
     Xj[i][2] = drand48();
     qj[i] = Xj[i][0] + I * Xj[i][1];
+    B->X = Xj[i];
+    B->SRC  = qj[i];
   }
   logger::startTimer("FMM");
   fmm(numBodies,Xj,qj,pi,Fi);
   logger::stopTimer("FMM");
   const int numTarget = 100;
+  Bodies bodies2(numTarget);
   for (int i=0; i<numTarget; i++) {
     pi2[i] = 0.0;
     Fi2[i] = 0.0;
+    B->TRG = 0;
   }
   int icell[10], jcell[10];
   icell[7] = 0;

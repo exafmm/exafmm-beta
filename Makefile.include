@@ -40,6 +40,7 @@ CXX	+= -I../include -I../uniform
 #CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 #LFLAGS	+= -fPIC # for shared library
+LFLAGS	+= -D$(EQUATION) # Specify equation
 LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
 #LFLAGS  += -DEXPANSION=4 # Specify expansion order
 LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics

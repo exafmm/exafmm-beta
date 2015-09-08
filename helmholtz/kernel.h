@@ -22,9 +22,10 @@ void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, comple
   }
 }
 
-void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[P*P], C_iter C) {
+void P2M(vec3 * Xj, complex_t * qj, vec3 Xi, complex_t Mi[P*P], C_iter C) {
   real_t Ynm[P*(P+1)/2];
   complex_t ephi[P], jn[P+1], jnd[P+1], Mnm[P*P];
+  real_t scale = C->R;
   real_t kscale = scale * abs(wavek);
   for (int n=0; n<P; n++) {
     for (int m=-n; m<=n; m++) {
@@ -32,7 +33,7 @@ void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[
       Mnm[nm] = 0;
     }
   }
-  for (int i=0; i<nj; i++) {
+  for (int i=0; i<C->NBODY; i++) {
     vec3 dX = Xj[i] - Xi;
     real_t r, theta, phi;
     cart2sph(dX, r, theta, phi);
