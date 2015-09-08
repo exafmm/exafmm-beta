@@ -6,8 +6,8 @@ EQUATION = Helmholtz
 #EQUATION = Stokes
 
 ### choose basis of multipole/local expansion
-BASIS	= Cartesian
-#BASIS	= Spherical
+#BASIS	= Cartesian
+BASIS	= Spherical
 
 ### choose device to use
 DEVICE	= CPU

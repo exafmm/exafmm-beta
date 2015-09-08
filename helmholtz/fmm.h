@@ -7,7 +7,8 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
     Fi[i] = 0;
   }
   getAnm();
-  C_iter C = cells.begin();
+  C_iter C0 = cells.begin();
+  C_iter C = C0;
   for (int icell=0; icell<numCells; icell++,C++) {
     C->M = 0;
     C->L = 0;
@@ -24,7 +25,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   for (int level=2; level<=numLevels; level++) {
 #pragma omp parallel for
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      C_iter C = cells.begin() + icell;
+      C_iter C = C0 + icell;
       if (C->NCHILD == 0) {
 	P2M(Multipole[icell], C);
       }
@@ -38,10 +39,10 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
     legendre();
 #pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
-      for (int ilist=0; ilist<cells2[icell][6]; ilist++) {
-	int jcell = cells2[icell][5] + ilist;
-	M2M(scale[level], centers[jcell], Multipole[jcell],
-	    scale[level-1], centers[icell], Multipole[icell]);
+      C_iter C = C0 + icell;
+      for (int jcell=C->ICHILD; jcell<C->ICHILD+C->NCHILD; jcell++) {
+	C_iter CC = C0 + jcell;
+	M2M(Multipole[icell], C, CC);
       }
     }
   }

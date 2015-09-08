@@ -24,15 +24,10 @@ void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, comple
 
 void P2M(complex_t Mi[P*P], C_iter C) {
   real_t Ynm[P*(P+1)/2];
-  complex_t ephi[P], jn[P+1], jnd[P+1], Mnm[P*P];
+  complex_t ephi[P], jn[P+1], jnd[P+1];
+  vecP Mnm = complex_t(0,0);
   real_t scale = C->R;
   real_t kscale = scale * abs(wavek);
-  for (int n=0; n<P; n++) {
-    for (int m=-n; m<=n; m++) {
-      int nm = n * n + n + m;
-      Mnm[nm] = 0;
-    }
-  }
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     vec3 dX = B->X - C->X;
     real_t r, theta, phi;
@@ -62,6 +57,7 @@ void P2M(complex_t Mi[P*P], C_iter C) {
       }
     }
   }
+  C->M += Mnm * I * wavek;
   for (int n=0; n<P; n++) {
     int nm = n * n + n;
     Mi[nm] += Mnm[nm] * I * wavek;
@@ -74,15 +70,15 @@ void P2M(complex_t Mi[P*P], C_iter C) {
   }
 }
 
-void M2M(real_t scalej, vec3 Xj, complex_t Mj[P*P],
-	 real_t scalei, vec3 Xi, complex_t Mi[P*P]) {
+void M2M(complex_t Mi[P*P], C_iter Ci, C_iter Cj) {
   real_t Ynm[P*(P+1)/2];
   complex_t phitemp[2*P], hn[P], ephi[2*P];
-  complex_t Mnm[P*P], Mrot[P*P];
-  real_t kscalei = scalei * abs(wavek);
-  real_t kscalej = scalej * abs(wavek);
-  real_t radius = scalej * sqrt(3.0);
-  vec3 dX = Xi - Xj;
+  vecP Mnm = complex_t(0,0);
+  vecP Mrot = complex_t(0,0);
+  real_t kscalei = Ci->R * abs(wavek);
+  real_t kscalej = Cj->R * abs(wavek);
+  real_t radius = Cj->R * sqrt(3.0);
+  vec3 dX = Ci->X - Cj->X;
   real_t r, theta, phi;
   cart2sph(dX, r, theta, phi);
   ephi[P+1] = exp(I * phi);
@@ -95,7 +91,7 @@ void M2M(real_t scalej, vec3 Xj, complex_t Mj[P*P],
   for (int n=0; n<P; n++) {
     for (int m=-n; m<=n; m++) {
       int nm = n * n + n + m;
-      Mnm[nm] = Mj[nm] * ephi[P+m];
+      Mnm[nm] = Cj->M[nm] * ephi[P+m];
     }
   }
   rotate(theta, P, Mnm, Mrot);
@@ -149,6 +145,7 @@ void M2M(real_t scalej, vec3 Xj, complex_t Mj[P*P],
       Mnm[nm] = ephi[P-m] * Mrot[nm];
     }
   }
+  Ci->M += Mnm;
   for (int n=0; n<P; n++) {
     for (int m=-n; m<=n; m++) {
       int nm = n * n + n + m;

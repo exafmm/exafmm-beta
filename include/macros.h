@@ -31,4 +31,11 @@ const int SIMD_BYTES = 16;                                      //!< SIMD byte l
 #endif
 #endif
 
+// Check for mismatching macro parameters
+#if Helmholtz
+#if Cartesian
+#error Use Spherical or Helmholtz
+#endif
+#endif
+
 #endif
