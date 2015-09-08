@@ -380,7 +380,6 @@ void L2P(C_iter C) {
   complex_t ephi[P], jn[P+1], jnd[P+1];
   real_t kscale = C->R * abs(wavek);
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
-    int i = B - C->BODY;
     vecP Lj = C->L;
     cvec4 TRG = complex_t(0,0);
     vec3 dX = B->X - C->X;
