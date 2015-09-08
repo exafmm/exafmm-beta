@@ -46,19 +46,12 @@ int main(int argc, char ** argv) {
   cells.resize(2);
   C_iter Ci = cells.begin();
   C_iter Cj = cells.begin() + 1;
-  int icell[10], jcell[10];
-  icell[7] = 0;
-  icell[8] = numTarget;
-  jcell[7] = 0;
-  jcell[8] = numBodies;
-  Ci->IBODY = 0; // Remove
   Ci->BODY = bodies2.begin();
   Ci->NBODY = bodies2.size();
-  Cj->IBODY = 0; // Remove
   Cj->BODY = bodies.begin();
   Cj->NBODY = bodies.size();
   logger::startTimer("Direct");
-  P2P(icell, pi2, Fi2, jcell, Xj, qj, Ci, Cj);
+  P2P(Ci, Cj);
   logger::stopTimer("Direct");
   std::complex<double> potDif = 0, potNrm = 0, accDif = 0, accNrm = 0;
   for (int i=0; i<numTarget; i++) {

@@ -1,11 +1,8 @@
-void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, complex_t * qj,
-	 C_iter Ci, C_iter Cj) {
+void P2P(C_iter Ci, C_iter Cj) {
   for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {
-    int i = Bi - Ci->BODY + Ci->IBODY;
     complex_t p = 0.0;
     complex_t F[3] = {0.0,0.0,0.0};
     for (B_iter Bj=Cj->BODY; Bj!=Cj->BODY+Cj->NBODY; Bj++) {
-      int j = Bj - Cj->BODY + Cj->IBODY;
       vec3 dX = Bi->X - Bj->X;
       real_t R2 = norm(dX);
       if (R2 != 0) {
@@ -18,10 +15,6 @@ void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, comple
 	F[2] += coef2 * dX[2];
       }
     }
-    pi[i] += p;
-    Fi[i][0] += F[0];
-    Fi[i][1] += F[1];
-    Fi[i][2] += F[2];
     Bi->TRG[0] += p;
     Bi->TRG[1] += F[0];
     Bi->TRG[2] += F[1];

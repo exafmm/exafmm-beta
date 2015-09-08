@@ -101,13 +101,13 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   for (int icell=0; icell<numCells; icell++) {
     C_iter Ci = C0 + icell;
     if (Ci->NCHILD == 0) {
-      P2P(cells2[icell], pi, Fi, cells2[icell], Xj, qj, Ci, Ci);
+      P2P(Ci, Ci);
       int nlist;
       getList(0, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
 	C_iter Cj = C0 + jcell;
-	P2P(cells2[icell], pi, Fi, cells2[jcell], Xj, qj, Ci, Cj);
+	P2P(Ci, Cj);
       }
     }
   }
