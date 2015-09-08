@@ -44,11 +44,15 @@ typedef csimdvec        kcsimdvec;                              //!< Complex SIM
 #endif
 const int P = EXPANSION;                                        //!< Order of expansions
 #if Cartesian
-const int NTERM = P*(P+1)*(P+2)/6;                              //!< Number of Cartesian mutlipole/local terms
-typedef vec<NTERM,real_t> vecP;                                 //!< Multipole/local coefficient type for Cartesian
+const int NTERM = P*(P+1)*(P+2)/6;                              //!< Number mutlipole/local terms
+typedef vec<NTERM,real_t> vecP;                                 //!< Multipole/local coefficient type
 #elif Spherical
-const int NTERM = P*(P+1)/2;                                    //!< Number of Spherical multipole/local terms
-typedef vec<NTERM,complex_t> vecP;                              //!< Multipole/local coefficient type for spherical
+#if Laplace
+const int NTERM = P*(P+1)/2;                                    //!< Number of multipole/local terms
+#elif Helmholtz
+const int NTERM = P*P;                                          //!< Number of multipole/local terms
+#endif
+typedef vec<NTERM,complex_t> vecP;                              //!< Multipole/local coefficient type
 #endif
 
 //! Center and radius of bounding box

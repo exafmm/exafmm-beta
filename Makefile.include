@@ -1,19 +1,17 @@
 .SUFFIXES: .cxx .cu .o
 
 ### choose kernel
-EQUATION = Laplace
-#EQUATION = Yukawa (not available yet)
-#EQUATION = Helmholtz (not available yet)
-#EQUATION = Stokes (not available yet)
+#EQUATION = Laplace
+EQUATION = Helmholtz
+#EQUATION = Stokes
 
 ### choose basis of multipole/local expansion
 BASIS	= Cartesian
 #BASIS	= Spherical
-#BASIS	= Planewave (not available yet)
 
 ### choose device to use
 DEVICE	= CPU
-#DEVICE	= GPU (not integrated)
+#DEVICE	= GPU
 
 OS = $(shell uname)
 

@@ -7,7 +7,10 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
     Fi[i] = 0;
   }
   getAnm();
-  for (int icell=0; icell<numCells; icell++) {
+  C_iter C = cells.begin();
+  for (int icell=0; icell<numCells; icell++,C++) {
+    C->M = 0;
+    C->L = 0;
     for (int n=0; n<P; n++) {
       for (int m=-n; m<=n; m++) {
 	int nm = n * n + n + m;
@@ -21,11 +24,12 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   for (int level=2; level<=numLevels; level++) {
 #pragma omp parallel for
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      if (cells2[icell][6] == 0) {
-	int ibegin = cells2[icell][7];
-	int isize = cells2[icell][8];
+      C_iter C = cells.begin() + icell;
+      if (cells[icell].NCHILD == 0) {
+	int ibegin = cells[icell].IBODY;
+	int isize = cells[icell].NBODY;
 	P2M(scale[level], &Xj[ibegin], &qj[ibegin], isize,
-	    centers[icell], Multipole[icell]);
+	    centers[icell], Multipole[icell], C);
       }
     }
   }
