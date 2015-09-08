@@ -57,13 +57,9 @@ void evaluate(int numCells, int numLevels) {
     nquad = fmax(6, P);
     legendre();
 #pragma omp parallel for
-    for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
-      C_iter Cj = C0 + icell;
-      for (int ilist=0; ilist<cells2[icell][6]; ilist++) {
-	int jcell = cells2[icell][5]+ilist;
-	C_iter Ci = C0 + jcell;
-	L2L(Ci, Cj);
-      }
+    for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
+      C_iter Ci = C0 + icell;
+      L2L(Ci, C0);
     }
   }
   logger::stopTimer("L2L");

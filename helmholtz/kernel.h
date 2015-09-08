@@ -261,12 +261,13 @@ void M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
   Ci->L += Lnm;
 }
 
-void L2L(C_iter Ci, C_iter Cj) {
+void L2L(C_iter Ci, C_iter C0) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t phitemp[2*P], phitempn[2*P];
   complex_t jn[P+1], jnd[P+1], ephi[2*P];
   vecP Lnm, Lnmd, Lrot;
   real_t kscalei = Ci->R * abs(wavek);
+  C_iter Cj = C0 + Ci->IPARENT;
   real_t kscalej = Cj->R * abs(wavek);
   real_t radius = Cj->R * sqrt(3.0) * .5;
   vec3 dX = Ci->X - Cj->X;
