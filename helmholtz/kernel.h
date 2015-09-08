@@ -23,8 +23,8 @@ void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, comple
 }
 
 void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[(P+1)*(P+1)]) {
-  real_t Ynm[(P+1)*(P+2)/2];
-  complex_t ephi[P+1], jn[P+2], jnd[P+2], Mnm[(P+1)*(P+1)];
+  real_t Ynm[P*(P+1)/2];
+  complex_t ephi[P], jn[P+1], jnd[P+1], Mnm[P*P];
   real_t kscale = scale * abs(wavek);
   for (int n=0; n<P; n++) {
     for (int m=-n; m<=n; m++) {
