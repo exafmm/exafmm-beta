@@ -25,10 +25,8 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
 #pragma omp parallel for
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       C_iter C = cells.begin() + icell;
-      if (cells[icell].NCHILD == 0) {
-	int ibegin = cells[icell].IBODY;
-	P2M(&Xj[ibegin], &qj[ibegin],
-	    centers[icell], Multipole[icell], C);
+      if (C->NCHILD == 0) {
+	P2M(Multipole[icell], C);
       }
     }
   }
