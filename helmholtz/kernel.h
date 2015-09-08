@@ -22,7 +22,7 @@ void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, comple
   }
 }
 
-void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[(P+1)*(P+1)]) {
+void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[P*P]) {
   real_t Ynm[P*(P+1)/2];
   complex_t ephi[P], jn[P+1], jnd[P+1], Mnm[P*P];
   real_t kscale = scale * abs(wavek);
@@ -73,8 +73,8 @@ void P2M(real_t scale, vec3 * Xj, complex_t * qj, int nj, vec3 Xi, complex_t Mi[
   }
 }
 
-void M2M(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
-	 real_t scalei, vec3 Xi, complex_t Mi[(P+1)*(P+1)]) {
+void M2M(real_t scalej, vec3 Xj, complex_t Mj[P*P],
+	 real_t scalei, vec3 Xi, complex_t Mi[P*P]) {
   real_t Ynm[P*(P+1)/2];
   complex_t phitemp[2*P], hn[P], ephi[2*P];
   complex_t Mnm[P*P], Mrot[P*P];
@@ -156,8 +156,8 @@ void M2M(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
   }
 }
 
-void M2L(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
-	 real_t scalei, vec3 Xi, complex_t Li[(P+1)*(P+1)]) {
+void M2L(real_t scalej, vec3 Xj, complex_t Mj[P*P],
+	 real_t scalei, vec3 Xi, complex_t Li[P*P]) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t phitemp[2*P], phitempn[2*P];
   complex_t hn[P], hnd[P], jn[P+1], jnd[P+1], ephi[2*P];
@@ -283,8 +283,8 @@ void M2L(real_t scalej, vec3 Xj, complex_t Mj[(P+1)*(P+1)],
   }
 }
 
-void L2L(real_t scalej, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
-         real_t scalei, vec3 Xi, complex_t Li[(P+1)*(P+1)]) {
+void L2L(real_t scalej, vec3 Xj, complex_t Lj[P*P],
+         real_t scalei, vec3 Xi, complex_t Li[P*P]) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t phitemp[2*P], phitempn[2*P];
   complex_t jn[P+1], jnd[P+1], ephi[2*P];
@@ -406,7 +406,7 @@ void L2L(real_t scalej, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
   }
 }
 
-void L2P(real_t scale, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
+void L2P(real_t scale, vec3 Xj, complex_t Lj[P*P],
 	 vec3 * Xi, int ni, complex_t * pi, cvec3 * Fi) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t ephi[P], jn[P+1], jnd[P+1];

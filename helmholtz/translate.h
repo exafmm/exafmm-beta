@@ -22,8 +22,8 @@ void cart2sph(vec3 dX, real_t & r, real_t & theta, real_t & phi) {
   phi = atan2(dX[1], dX[0]);
 }
 
-void rotate(real_t theta, int nterms, complex_t Mnm[(P+1)*(P+1)],
-	    complex_t Mrot[(P+1)*(P+1)]) {
+void rotate(real_t theta, int nterms, complex_t Mnm[P*P],
+	    complex_t Mrot[P*P]) {
   real_t Rnm1[P][2*P];
   real_t Rnm2[P][2*P];
   real_t sqrtCnm[2*P][2];
@@ -114,7 +114,7 @@ void rotate(real_t theta, int nterms, complex_t Mnm[(P+1)*(P+1)],
   }
 }
 
-void get_Ynm(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2]) {
+void get_Ynm(int nterms, real_t x, real_t Ynm[P*(P+1)/2]) {
   real_t y = -sqrt((1 - x) * (1 + x));
   Ynm[0] = 1;
   for (int m=0; m<nterms; m++) {
@@ -138,7 +138,7 @@ void get_Ynm(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2]) {
   }
 }
 
-void get_Ynmd(int nterms, real_t x, real_t Ynm[(P+1)*(P+2)/2], real_t Ynmd[(P+1)*(P+2)/2]) {
+void get_Ynmd(int nterms, real_t x, real_t Ynm[P*(P+1)/2], real_t Ynmd[P*(P+1)/2]) {
   real_t y = -sqrt((1 - x) * (1 + x));
   real_t y2 = y * y;
   Ynm[0] = 1;
@@ -216,7 +216,7 @@ void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * 
 }
 
 void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, complex_t * jnd) {
-  int iscale[P+2];
+  int iscale[P+1];
   if (abs(z) < eps) {
     jn[0] = 1;
     for (int i=1; i<nterms; i++) {
@@ -237,7 +237,7 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
   complex_t ztmp = coef * zinv;
   jn[nterms] = ztmp;
   int ntop = nterms;
-  for (int i=0; i<=ntop; i++) {
+  for (int i=0; i<ntop; i++) {
     iscale[i] = 0;
   }
   jn[ntop] = 0;
@@ -254,7 +254,7 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
   }
   real_t scalinv = 1.0 / scale;
   coef = 1;
-  for (int i=1; i<=ntop; i++) {
+  for (int i=1; i<ntop; i++) {
     coef *= scalinv;
     if(iscale[i-1] == 1) coef *= eps;
     jn[i] *= coef;

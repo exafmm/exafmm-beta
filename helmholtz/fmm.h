@@ -1,5 +1,5 @@
 void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi,
-	      complex_t (* Multipole)[(P+1)*(P+1)], complex_t (* Local)[(P+1)*(P+1)], int numCells,
+	      complex_t (* Multipole)[P*P], complex_t (* Local)[P*P], int numCells,
 	      int numLevels, real_t * scale) {
   int list[189];
   for (int i=0; i<numBodies; i++) {
@@ -8,7 +8,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
   }
   getAnm();
   for (int icell=0; icell<numCells; icell++) {
-    for (int n=0; n<=P; n++) {
+    for (int n=0; n<P; n++) {
       for (int m=-n; m<=n; m++) {
 	int nm = n * n + n + m;
 	Multipole[icell][nm] = 0;
@@ -130,8 +130,8 @@ void fmm(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
     qjd[i] = qj[permutation[i]];
   }
   logger::stopTimer("Tree");
-  complex_t (* Multipole)[(P+1)*(P+1)] = new complex_t [numCells][(P+1)*(P+1)]();
-  complex_t (* Local)[(P+1)*(P+1)] = new complex_t [numCells][(P+1)*(P+1)]();
+  complex_t (* Multipole)[P*P] = new complex_t [numCells][P*P]();
+  complex_t (* Local)[P*P] = new complex_t [numCells][P*P]();
   evaluate(numBodies, Xjd, qjd, pid, Fid, Multipole, Local, numCells, numLevels, scale);
   for (int i=0; i<numBodies; i++) {
     pi[permutation[i]] = pid[i];
