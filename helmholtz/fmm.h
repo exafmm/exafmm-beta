@@ -1,4 +1,6 @@
 void evaluate(int numCells, int numLevels) {
+  vec3 Xperiodic = 0;
+  bool mutual = false;
   int list[189];
   getAnm();
   C_iter C0 = cells.begin();
@@ -14,7 +16,7 @@ void evaluate(int numCells, int numLevels) {
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       C_iter C = C0 + icell;
       if (C->NCHILD == 0) {
-	P2M(C);
+	kernel::P2M(C);
       }
     }
   }
@@ -27,14 +29,12 @@ void evaluate(int numCells, int numLevels) {
 #pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
       C_iter Ci = C0 + icell;
-      M2M(Ci, C0);
+      kernel::M2M(Ci, C0);
     }
   }
   logger::stopTimer("M2M");
 
   logger::startTimer("M2L");
-  vec3 Xperiodic = 0;
-  bool mutual = false;
   for (int level=2; level<=numLevels; level++) {
     nquad = fmax(6, P);
     legendre();
@@ -46,7 +46,7 @@ void evaluate(int numCells, int numLevels) {
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
 	C_iter Cj = C0 + jcell;
-	M2L(Ci, Cj, Xperiodic, mutual);
+	kernel::M2L(Ci, Cj, Xperiodic, mutual);
       }
     }
   }
@@ -59,7 +59,7 @@ void evaluate(int numCells, int numLevels) {
 #pragma omp parallel for
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       C_iter Ci = C0 + icell;
-      L2L(Ci, C0);
+      kernel::L2L(Ci, C0);
     }
   }
   logger::stopTimer("L2L");
@@ -70,24 +70,25 @@ void evaluate(int numCells, int numLevels) {
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       C_iter Ci = C0 + icell;
       if (Ci->NCHILD == 0) {
-        L2P(Ci);
+	kernel::L2P(Ci);
       }
     }
   }
   logger::stopTimer("L2P");
 
   logger::startTimer("P2P");
+  real_t eps2 = 0;
 #pragma omp parallel for private(list) schedule(dynamic)
   for (int icell=0; icell<numCells; icell++) {
     C_iter Ci = C0 + icell;
     if (Ci->NCHILD == 0) {
-      P2P(Ci, Ci);
+      kernel::P2P(Ci, Ci, eps2, Xperiodic, mutual);
       int nlist;
       getList(0, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
 	C_iter Cj = C0 + jcell;
-	P2P(Ci, Cj);
+	kernel::P2P(Ci, Cj, eps2, Xperiodic, mutual);
       }
     }
   }

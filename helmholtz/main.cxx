@@ -44,7 +44,10 @@ int main(int argc, char ** argv) {
   Cj->BODY = bodies.begin();
   Cj->NBODY = bodies.size();
   logger::startTimer("Total Direct");
-  P2P(Ci, Cj);
+  real_t eps2 = 0;
+  vec3 Xperiodic = 0;
+  bool mutual = false;
+  kernel::P2P(Ci, Cj, eps2, Xperiodic, mutual);
   logger::stopTimer("Total Direct");
   std::complex<double> potDif = verify.getDifScalar(bodies2, bodies);
   std::complex<double> potNrm = verify.getNrmScalar(bodies2);
