@@ -99,13 +99,8 @@ void evaluate(int numCells, int numLevels) {
   logger::stopTimer("P2P");
 }
 
-void fmm(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
+void fmm(int numBodies, vec3 * Xj) {
   int * permutation = new int [numBodies];
-  real_t * scale = new real_t [maxLevel];
-  vec3 * Xjd = new vec3 [numBodies]; 
-  complex_t * qjd = new complex_t [numBodies];
-  complex_t * pid = new complex_t [numBodies];
-  cvec3 * Fid = new cvec3 [numBodies];
   levelOffset = new int [maxLevel];
   vec3 X0;
   real_t R0;
@@ -114,40 +109,26 @@ void fmm(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
   int numCells, numLevels;
   buildTree(Xj, numBodies, numCells, permutation, numLevels, X0, R0);
   for (int level=0; level<=numLevels; level++) {
-    scale[level] = (2 * R0 / (1 << level));
+    real_t scale = (2 * R0 / (1 << level));
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      cells[icell].R = scale[level];
+      cells[icell].R = scale;
     }
   }
   Bodies buffer(numBodies);
   for (int i=0; i<numBodies; i++) {
     buffer[i] = bodies[permutation[i]];
-    Xjd[i] = Xj[permutation[i]];
-    qjd[i] = qj[permutation[i]];
   }
   B_iter B = buffer.begin();
   for (C_iter C=cells.begin(); C!=cells.end(); C++) {
     C->BODY = B + C->IBODY;
   }
   logger::stopTimer("Tree");
-  complex_t (* Multipole)[P*P] = new complex_t [numCells][P*P]();
-  complex_t (* Local)[P*P] = new complex_t [numCells][P*P]();
   evaluate(numCells, numLevels);
   for (int i=0; i<numBodies; i++) {
     bodies[permutation[i]].TRG = buffer[i].TRG;
-    pi[permutation[i]] = pid[i];
-    Fi[permutation[i]] = Fid[i];
   }
   delete[] listOffset;
   delete[] lists;
   delete[] levelOffset;
-  delete[] centers;
   delete[] permutation;
-  delete[] scale;
-  delete[] Xjd;
-  delete[] qjd;
-  delete[] pid;
-  delete[] Fid;
-  delete[] Multipole;
-  delete[] Local;
 }

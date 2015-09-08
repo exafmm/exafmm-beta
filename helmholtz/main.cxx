@@ -33,7 +33,7 @@ int main(int argc, char ** argv) {
     B->SRC  = qj[i];
   }
   logger::startTimer("FMM");
-  fmm(numBodies,Xj,qj,pi,Fi);
+  fmm(numBodies,Xj);
   logger::stopTimer("FMM");
   const int numTarget = 100;
   Bodies bodies2(numTarget);
