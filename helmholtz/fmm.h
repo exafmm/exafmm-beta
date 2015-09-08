@@ -137,6 +137,10 @@ void fmm(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * Fi) {
     pi[permutation[i]] = pid[i];
     Fi[permutation[i]] = Fid[i];
   }
+  delete[] listOffset;
+  delete[] lists;
+  delete[] levelOffset;
+  delete[] centers;
   delete[] permutation;
   delete[] scale;
   delete[] Xjd;
