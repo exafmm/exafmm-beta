@@ -219,11 +219,11 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
   int iscale[P+2];
   if (abs(z) < eps) {
     jn[0] = 1;
-    for (int i=1; i<=nterms; i++) {
+    for (int i=1; i<nterms; i++) {
       jn[i] = 0;
     }
     if (ifder) {
-      for (int i=0; i<=nterms; i++) {
+      for (int i=0; i<nterms; i++) {
 	jnd[i] = 0;
       }
       jnd[1] = 1.0 / (3 * scale);
@@ -231,12 +231,12 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
     return;
   }
   complex_t zinv = 1.0 / z;
-  jn[nterms-1] = 0;
-  jn[nterms] = 1;
-  real_t coef = 2 * nterms + 1;
+  jn[nterms-2] = 0;
+  jn[nterms-1] = 1;
+  real_t coef = 2 * nterms - 1;
   complex_t ztmp = coef * zinv;
-  jn[nterms+1] = ztmp;
-  int ntop = nterms + 1;
+  jn[nterms] = ztmp;
+  int ntop = nterms;
   for (int i=0; i<=ntop; i++) {
     iscale[i] = 0;
   }
@@ -266,13 +266,13 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
   } else {
     ztmp = fj0 / jn[0];
   }
-  for (int i=0; i<=nterms; i++) {
+  for (int i=0; i<nterms; i++) {
     jn[i] *= ztmp;
   }
   if (ifder) {
-    jn[nterms+1] *= ztmp;
+    jn[nterms] *= ztmp;
     jnd[0] = -jn[1] * scale;
-    for (int i=1; i<=nterms; i++) {
+    for (int i=1; i<nterms; i++) {
       coef = i / (2 * i + 1.0);
       jnd[i] = coef * scalinv * jn[i-1] - (1 - coef) * scale * jn[i+1];
     }
