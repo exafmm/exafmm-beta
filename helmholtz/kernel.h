@@ -408,8 +408,8 @@ void L2L(real_t scalej, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
 
 void L2P(real_t scale, vec3 Xj, complex_t Lj[(P+1)*(P+1)],
 	 vec3 * Xi, int ni, complex_t * pi, cvec3 * Fi) {
-  real_t Ynm[(P+1)*(P+2)/2], Ynmd[(P+1)*(P+2)/2];
-  complex_t ephi[P+1], jn[P+2], jnd[P+2];
+  real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
+  complex_t ephi[P], jn[P+1], jnd[P+1];
   real_t kscale = scale * abs(wavek);
   for (int i=0; i<ni; i++) {
     vec3 dX = Xi[i] - Xj;
