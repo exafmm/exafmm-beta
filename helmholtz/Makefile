@@ -1,7 +1,5 @@
 include ../Makefile.include
 
-LFLAGS	+= -DFP64
-
 serial	: main.cxx
-	$(CXX) $? $(LFLAGS) -DEXPANSION=40
+	$(CXX) $? $(LFLAGS)
 	./a.out -n 100000
