@@ -33,6 +33,8 @@ void evaluate(int numCells, int numLevels) {
   logger::stopTimer("M2M");
 
   logger::startTimer("M2L");
+  vec3 Xperiodic = 0;
+  bool mutual = false;
   for (int level=2; level<=numLevels; level++) {
     nquad = fmax(6, P);
     legendre();
@@ -44,7 +46,7 @@ void evaluate(int numCells, int numLevels) {
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
 	C_iter Cj = C0 + jcell;
-	M2L(Ci, Cj);
+	M2L(Ci, Cj, Xperiodic, mutual);
       }
     }
   }

@@ -140,7 +140,8 @@ void M2M(C_iter Ci, C_iter C0) {
   }
 }
 
-void M2L(C_iter Ci, C_iter Cj) {
+void M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
+  assert(mutual == false);
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t phitemp[2*P], phitempn[2*P];
   complex_t hn[P], hnd[P], jn[P+1], jnd[P+1], ephi[2*P];
@@ -150,7 +151,7 @@ void M2L(C_iter Ci, C_iter Cj) {
   real_t kscalej = Cj->R * abs(wavek);
   real_t kscalei = Ci->R * abs(wavek);
   real_t radius = Cj->R * sqrt(3.0) * .5;
-  vec3 dX = Ci->X - Cj->X;
+  vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t r, theta, phi;
   cart2sph(dX, r, theta, phi);
   dX /= Cj->R;
