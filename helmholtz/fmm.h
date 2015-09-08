@@ -27,7 +27,7 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
       C_iter C = C0 + icell;
       if (C->NCHILD == 0) {
-	P2M(Multipole[icell], C);
+	P2M(C);
       }
     }
   }
@@ -54,12 +54,13 @@ void evaluate(int numBodies, vec3 * Xj, complex_t * qj, complex_t * pi, cvec3 * 
     legendre();
 #pragma omp parallel for private(list) schedule(dynamic)
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
+      C_iter Ci = C0 + icell;
       int nlist;
       getList(1, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
-	M2L(scale[level], centers[jcell], Multipole[jcell],
-	    scale[level], centers[icell], Local[icell]);
+	C_iter Cj = C0 + jcell;
+	M2L(Local[icell], Ci, Cj);
       }
     }
   }

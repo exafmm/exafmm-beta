@@ -22,7 +22,7 @@ void P2P(int * icell, complex_t * pi, cvec3 * Fi, int * jcell, vec3 * Xj, comple
   }
 }
 
-void P2M(complex_t Mi[P*P], C_iter C) {
+void P2M(C_iter C) {
   real_t Ynm[P*(P+1)/2];
   complex_t ephi[P], jn[P+1], jnd[P+1];
   vecP Mnm = complex_t(0,0);
@@ -58,16 +58,6 @@ void P2M(complex_t Mi[P*P], C_iter C) {
     }
   }
   C->M += Mnm * I * wavek;
-  for (int n=0; n<P; n++) {
-    int nm = n * n + n;
-    Mi[nm] += Mnm[nm] * I * wavek;
-    for (int m=1; m<=n; m++) {
-      int npm = n * n + n + m;
-      int nmm = n * n + n - m;
-      Mi[npm] += Mnm[npm] * I * wavek;
-      Mi[nmm] += Mnm[nmm] * I * wavek;
-    }
-  }
 }
 
 void M2M(complex_t Mi[P*P], C_iter Ci, C_iter Cj) {
@@ -154,27 +144,27 @@ void M2M(complex_t Mi[P*P], C_iter Ci, C_iter Cj) {
   }
 }
 
-void M2L(real_t scalej, vec3 Xj, complex_t Mj[P*P],
-	 real_t scalei, vec3 Xi, complex_t Li[P*P]) {
+void M2L(complex_t Li[P*P], C_iter Ci, C_iter Cj) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t phitemp[2*P], phitempn[2*P];
   complex_t hn[P], hnd[P], jn[P+1], jnd[P+1], ephi[2*P];
-  complex_t Mnm[P*P], Mrot[P*P];
-  complex_t Lnm[P*P], Lrot[P*P], Lnmd[P*P];
-  real_t kscalej = scalej * abs(wavek);
-  real_t kscalei = scalei * abs(wavek);
-  real_t radius = scalej * sqrt(3.0) * .5;
-  vec3 dX = (Xj - Xi) / scalej;
-  if (fabs(dX[0]) > 1e-10) dX[0] = fabs(dX[0]) - .5;
-  if (fabs(dX[1]) > 1e-10) dX[1] = fabs(dX[1]) - .5;
-  if (fabs(dX[2]) > 1e-10) dX[2] = fabs(dX[2]) - .5;
+  vecP Lnm = complex_t(0,0);
+  vecP Lnmd = complex_t(0,0);
+  vecP Mnm, Mrot, Lrot;
+  real_t kscalej = Cj->R * abs(wavek);
+  real_t kscalei = Ci->R * abs(wavek);
+  real_t radius = Cj->R * sqrt(3.0) * .5;
+  vec3 dX = Ci->X - Cj->X;
+  real_t r, theta, phi;
+  cart2sph(dX, r, theta, phi);
+  dX /= Cj->R;
+  if (fabs(dX[0]) > EPS) dX[0] = fabs(dX[0]) - .5;
+  if (fabs(dX[1]) > EPS) dX[1] = fabs(dX[1]) - .5;
+  if (fabs(dX[2]) > EPS) dX[2] = fabs(dX[2]) - .5;
   real_t rr = sqrt(norm(dX));
   real_t coef1 = P * 1.65 - 15.5;
   real_t coef2 = P * 0.25 + 3.0;
-  int Popt = coef1 / (rr * rr) + coef2;
-  dX = Xi - Xj;
-  real_t r, theta, phi;
-  cart2sph(dX, r, theta, phi);
+  int Popt = coef1 / (rr * rr) + coef2;  
   ephi[P+1] = exp(I * phi);
   ephi[P] = 1;
   ephi[P-1] = conj(ephi[P+1]);
@@ -185,9 +175,7 @@ void M2L(real_t scalej, vec3 Xj, complex_t Mj[P*P],
   for (int n=0; n<Popt; n++) {
     for (int m=-n; m<=n; m++) {
       int nm = n * n + n + m;
-      Mnm[nm] = Mj[nm] * ephi[P+m];
-      Lnm[nm] = 0;
-      Lnmd[nm] = 0;
+      Mnm[nm] = Cj->M[nm] * ephi[P+m];
     }
   }
   rotate(theta, Popt, Mnm, Mrot);
@@ -273,6 +261,7 @@ void M2L(real_t scalej, vec3 Xj, complex_t Mj[P*P],
       Lnm[nm] = ephi[P-m] * Lrot[nm];
     }
   }
+  Ci->L += Lnm;
   for (int n=0; n<Popt; n++) {
     for (int m=-n; m<=n; m++) {
       int nm = n * n + n + m;
