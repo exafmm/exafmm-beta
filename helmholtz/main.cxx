@@ -27,9 +27,9 @@ int main(int argc, char ** argv) {
     B->SRC = Xj[i][0] + I * Xj[i][1];
     B->X = Xj[i];
   }
-  logger::startTimer("FMM");
+  logger::startTimer("Total FMM");
   fmm(numBodies,Xj);
-  logger::stopTimer("FMM");
+  logger::stopTimer("Total FMM");
   const int numTarget = 100;
   Bodies bodies2(numTarget);
   for (int i=0; i<numTarget; i++) {
@@ -43,22 +43,14 @@ int main(int argc, char ** argv) {
   Ci->NBODY = bodies2.size();
   Cj->BODY = bodies.begin();
   Cj->NBODY = bodies.size();
-  logger::startTimer("Direct");
+  logger::startTimer("Total Direct");
   P2P(Ci, Cj);
-  logger::stopTimer("Direct");
-  std::complex<double> potDif = 0, potNrm = 0, accDif = 0, accNrm = 0;
-  for (int i=0; i<numTarget; i++) {
-    B_iter B = bodies.begin() + i;
-    B_iter B2 = bodies2.begin() + i;
-    potDif += (B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0]);
-    potNrm += B2->TRG[0] * B2->TRG[0];
-    accDif += (B->TRG[1] - B2->TRG[1]) * (B->TRG[1] - B2->TRG[1])
-      + (B->TRG[2] - B2->TRG[2]) * (B->TRG[2] - B2->TRG[2])
-      + (B->TRG[3] - B2->TRG[3]) * (B->TRG[3] - B2->TRG[3]);
-    accNrm += B2->TRG[1] * B2->TRG[1]
-      + B2->TRG[2] * B2->TRG[2]
-      + B2->TRG[3] * B2->TRG[3];
-  }
+  logger::stopTimer("Total Direct");
+  std::complex<double> potDif = verify.getDifScalar(bodies2, bodies);
+  std::complex<double> potNrm = verify.getNrmScalar(bodies2);
+  std::complex<double> accDif = verify.getDifVector(bodies2, bodies);
+  std::complex<double> accNrm = verify.getNrmVector(bodies2);
+  logger::printTitle("FMM vs. direct");
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
   delete[] Xj;
