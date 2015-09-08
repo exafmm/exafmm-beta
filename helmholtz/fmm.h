@@ -27,10 +27,7 @@ void evaluate(int numCells, int numLevels) {
 #pragma omp parallel for
     for (int icell=levelOffset[level-1]; icell<levelOffset[level]; icell++) {
       C_iter Ci = C0 + icell;
-      for (int jcell=Ci->ICHILD; jcell<Ci->ICHILD+Ci->NCHILD; jcell++) {
-	C_iter Cj = C0 + jcell;
-	M2M(Ci, Cj);
-      }
+      M2M(Ci, C0);
     }
   }
   logger::stopTimer("M2M");
