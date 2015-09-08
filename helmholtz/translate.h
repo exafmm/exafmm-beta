@@ -24,15 +24,15 @@ void cart2sph(vec3 dX, real_t & r, real_t & theta, real_t & phi) {
 
 void rotate(real_t theta, int nterms, complex_t Mnm[(P+1)*(P+1)],
 	    complex_t Mrot[(P+1)*(P+1)]) {
-  real_t Rnm1[P+1][2*P+1];
-  real_t Rnm2[P+1][2*P+1];
-  real_t sqrtCnm[2*P+1][2];
-  for (int m=0; m<=2*nterms; m++) {
+  real_t Rnm1[P][2*P];
+  real_t Rnm2[P][2*P];
+  real_t sqrtCnm[2*P][2];
+  for (int m=0; m<2*nterms; m++) {
     sqrtCnm[m][0] = sqrt(m+0.0);
   }
   sqrtCnm[0][1] = 0;
   sqrtCnm[1][1] = 0;
-  for (int m=2; m<=2*nterms; m++) {
+  for (int m=2; m<2*nterms; m++) {
     sqrtCnm[m][1] = sqrt(m * (m - 1) / 2.0);
   }
   real_t ctheta = cos(theta);
@@ -44,7 +44,7 @@ void rotate(real_t theta, int nterms, complex_t Mnm[(P+1)*(P+1)],
   real_t cthtan =-sqrt(2.0) * sin(theta * .5) * sin(theta * .5);
   Rnm1[0][P] = 1;
   Mrot[0] = Mnm[0] * Rnm1[0][P];
-  for (int n=1; n<=nterms; n++) {
+  for (int n=1; n<nterms; n++) {
     for (int m=-n; m<0; m++) {
       Rnm2[0][P+m] = -sqrtCnm[n-m][1] * Rnm1[0][P+m+1];
       if (m > (1 - n)) {
