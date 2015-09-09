@@ -13,6 +13,7 @@
 
 int main(int argc, char ** argv) {
   Args args(argc,argv);
+  Bodies bodies, bodies2;
   Dataset data;
   Verify verify;
   const int numBodies=args.numBodies;
@@ -26,10 +27,40 @@ int main(int argc, char ** argv) {
     Xj[i] = B->X;
   }
   logger::startTimer("Total FMM");
-  fmm(numBodies,Xj);
+  int * permutation = new int [numBodies];
+  levelOffset = new int [maxLevel];
+  vec3 X0;
+  real_t R0;
+  logger::startTimer("Tree");
+  getBounds(Xj, numBodies, X0, R0);
+  int numCells, numLevels;
+  buildTree(Xj, numBodies, numCells, permutation, numLevels, X0, R0);
+  for (int level=0; level<=numLevels; level++) {
+    real_t scale = (2 * R0 / (1 << level));
+    for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
+      cells[icell].R = scale;
+    }
+  }
+  Bodies buffer(numBodies);
+  for (int i=0; i<numBodies; i++) {
+    buffer[i] = bodies[permutation[i]];
+  }
+  B = buffer.begin();
+  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
+    C->BODY = B + C->IBODY;
+  }
+  logger::stopTimer("Tree");
+  evaluate(numCells, numLevels);
+  for (int i=0; i<numBodies; i++) {
+    bodies[permutation[i]].TRG = buffer[i].TRG;
+  }
+  delete[] listOffset;
+  delete[] lists;
+  delete[] levelOffset;
+  delete[] permutation;
   logger::stopTimer("Total FMM");
   const int numTarget = 100;
-  Bodies bodies2(numTarget);
+  bodies2.resize(numTarget);
   for (int i=0; i<numTarget; i++) {
     bodies2[i] = bodies[i];
     bodies2[i].TRG = 0;

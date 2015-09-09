@@ -94,37 +94,3 @@ void evaluate(int numCells, int numLevels) {
   }
   logger::stopTimer("P2P");
 }
-
-void fmm(int numBodies, vec3 * Xj) {
-  int * permutation = new int [numBodies];
-  levelOffset = new int [maxLevel];
-  vec3 X0;
-  real_t R0;
-  logger::startTimer("Tree");
-  getBounds(Xj, numBodies, X0, R0);
-  int numCells, numLevels;
-  buildTree(Xj, numBodies, numCells, permutation, numLevels, X0, R0);
-  for (int level=0; level<=numLevels; level++) {
-    real_t scale = (2 * R0 / (1 << level));
-    for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      cells[icell].R = scale;
-    }
-  }
-  Bodies buffer(numBodies);
-  for (int i=0; i<numBodies; i++) {
-    buffer[i] = bodies[permutation[i]];
-  }
-  B_iter B = buffer.begin();
-  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
-    C->BODY = B + C->IBODY;
-  }
-  logger::stopTimer("Tree");
-  evaluate(numCells, numLevels);
-  for (int i=0; i<numBodies; i++) {
-    bodies[permutation[i]].TRG = buffer[i].TRG;
-  }
-  delete[] listOffset;
-  delete[] lists;
-  delete[] levelOffset;
-  delete[] permutation;
-}
