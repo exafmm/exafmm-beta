@@ -1,6 +1,5 @@
 int (* listOffset)[3];
 int (* lists)[2];
-int (* cells2)[10];
 int * levelOffset;
 int (* nodes)[10];
 real_t xquad[2*P];

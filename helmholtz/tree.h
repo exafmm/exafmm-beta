@@ -176,7 +176,6 @@ void buildTree(vec3 * Xj, int numBodies, int & numCells, int * permutation,
   listOffset = new int [numCells][3]();
   lists = new int [189*numCells][2]();
   cells.resize(numCells);
-  cells2 = new int [numCells][10]();
   C_iter C = cells.begin();
   for (int i=0; i<numCells; i++,C++) {
     C->LEVEL   = nodes[i][0];
@@ -185,9 +184,6 @@ void buildTree(vec3 * Xj, int numBodies, int & numCells, int * permutation,
     C->NCHILD  = nodes[i][6];
     C->IBODY   = nodes[i][7];
     C->NBODY   = nodes[i][8];
-    for (int j=0; j<10; j++) {
-      cells2[i][j] = nodes[i][j];
-    }
     real_t R = R0 / (1 << nodes[i][0]);
     for (int d=0; d<3; d++) {
       C->X[d] = X0[d] - R0 + nodes[i][d+1] * R * 2 + R;
