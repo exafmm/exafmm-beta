@@ -1,8 +1,13 @@
--- Features to add --
-kernel: eps2, Xperiodic, wavek -> global variables
+-- Immediate --
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
-Time each kernel separately using cycle counters
 examples/Makefile options to args
+kernel: eps2, Xperiodic, wavek -> global variables
+Use compressed Cell struct of Bonsai
+Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
+Separate key manipulation namespace, e.g. interleaveMorton(), deinterleveHilbert() (controllable key_t)
+
+-- Features to add --
+Time each kernel separately using cycle counters
 cycle counter based weights
 OpenMP with atomics -> flush
 MPI-3.0 lock all

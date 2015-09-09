@@ -17,6 +17,7 @@ typedef float                real_t;                            //!< Floating po
 const real_t EPS = 1e-8;                                        //!< Single precision epsilon
 #endif
 typedef std::complex<real_t> complex_t;                         //!< Complex type
+typedef vec<3,int>           ivec3;                             //!< Vector of 3 int types
 typedef vec<3,real_t>        vec3;                              //!< Vector of 3 real_t types
 typedef vec<3,complex_t>     cvec3;                             //!< Vector of 3 complex_t types
 typedef vec<4,complex_t>     cvec4;                             //!< Vector of 4 complex_t types
@@ -97,7 +98,6 @@ typedef Bodies::iterator                  B_iter;               //!< Iterator of
 
 //! Structure of cells
 struct Cell {
-  int       LEVEL;                                              //!< Level in the tree structure
   int       IPARENT;                                            //!< Index of parent cell
   int       ICHILD;                                             //!< Index of first child cell
   int       NCHILD;                                             //!< Number of child cells

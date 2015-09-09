@@ -1,3 +1,4 @@
+Remove nodes dependency in setLists
 Separate compile unit
 Loops to iterators
 SIMD for P2P

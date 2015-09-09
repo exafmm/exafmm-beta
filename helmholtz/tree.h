@@ -44,6 +44,45 @@ void reorder(vec3 X0, real_t R0, int level, int * iX, vec3 * Xj,
   }
 }
 
+uint64_t getKey(ivec3 iX, int level) {
+  uint64_t index = ((1 << 3 * level) - 1) / 7;
+  for (int l=0; l<level; l++) {
+    for (int d=0; d<3; d++) {
+      index += (iX[d] & 1) << (3 * l + d);
+      iX[d] >>= 1;
+    }
+  }
+  return index;
+}
+
+int getLevel(uint64_t key) {
+  int level = -1;
+  while( int(key) >= 0 ) {
+    level++;
+    key -= 1 << 3*level;
+  }
+  return level;
+}
+
+ivec3 getIndex(uint64_t key) {
+  int level = -1;
+  while( int(key) >= 0 ) {
+    level++;
+    key -= 1 << 3*level;
+  }
+  key += 1 << 3*level;
+  level = 0;
+  ivec3 iX = 0;
+  int d = 0;
+  while( key > 0 ) {
+    iX[d] += (key % 2) * (1 << level);
+    key >>= 1;
+    d = (d+1) % 3;
+    if( d == 0 ) level++;
+  }
+  return iX;
+}
+
 void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
 	      int * permutation, int & numLevels, vec3 X0, real_t R0) {
   int nbody8[8];
@@ -120,24 +159,29 @@ void setList(int itype, int icell, int list) {
   numele++;
 }
 
-void setLists(int numCells) {
+void setLists(Cells cells) {
+  int numCells = cells.size();
   int childs[216], neighbors[27];
+  C_iter C0 = cells.begin();
   for (int i=0; i<numCells; i++) {
     for (int j=0; j<3; j++) {
       listOffset[i][j] = -1;
     }
   }
   for (int icell=1; icell<numCells; icell++) {
-    int iparent = nodes[icell][4];
+    C_iter Ci = C0 + icell;
+    int iparent = Ci->IPARENT;
     neighbors[0] = iparent;
     int numNeighbors;
     getList(2,iparent,&neighbors[1],numNeighbors);
     numNeighbors++;
+    ivec3 iX = getIndex(Ci->ICELL);
     int nchilds = 0;
     for (int i=0; i<numNeighbors; i++) {
       int jparent = neighbors[i];
-      for (int j=0; j<nodes[jparent][6]; j++) {
-	int jcell = nodes[jparent][5]+j;
+      C_iter Cj = C0 + jparent;
+      for (int j=0; j<Cj->NCHILD; j++) {
+	int jcell = Cj->ICHILD+j;
 	if (jcell != icell) {
 	  childs[nchilds] = jcell;
 	  nchilds++;
@@ -146,9 +190,11 @@ void setLists(int numCells) {
     }
     for (int i=0; i<nchilds; i++) {
       int jcell = childs[i];
-      if (nodes[icell][1]-1 <= nodes[jcell][1] && nodes[jcell][1] <= nodes[icell][1]+1 &&
-	  nodes[icell][2]-1 <= nodes[jcell][2] && nodes[jcell][2] <= nodes[icell][2]+1 &&
-	  nodes[icell][3]-1 <= nodes[jcell][3] && nodes[jcell][3] <= nodes[icell][3]+1) {
+      C_iter Cj = C0 + jcell;
+      ivec3 jX = getIndex(Cj->ICELL);
+      if (iX[0]-1 <= jX[0] && jX[0] <= iX[0]+1 &&
+	  iX[1]-1 <= jX[1] && jX[1] <= iX[1]+1 &&
+	  iX[2]-1 <= jX[2] && jX[2] <= iX[2]+1) {
 	setList(2,icell,jcell);
       }	else {
 	setList(1,icell,jcell);
@@ -156,12 +202,14 @@ void setLists(int numCells) {
     }
   }
   for (int icell=0; icell<numCells; icell++) {
-    if (nodes[icell][5] == 0) {
+    C_iter Ci = C0 + icell;
+    if (Ci->ICHILD == 0) {
       int numNeighbors;
       getList(2,icell,neighbors,numNeighbors);
       for (int j=0; j<numNeighbors; j++) {
 	int jcell = neighbors[j];
-	if (nodes[jcell][5] == 0) {
+	C_iter Cj = C0 + jcell;
+	if (Cj->ICHILD == 0) {
 	  setList(0,icell,jcell);
 	}
       }
@@ -177,19 +225,25 @@ Cells buildTree(vec3 * Xj, int numBodies, int & numCells, int * permutation,
   lists = new int [189*numCells][2]();
   Cells cells(numCells);
   C_iter C = cells.begin();
+  ivec3 iX;
   for (int i=0; i<numCells; i++,C++) {
-    C->LEVEL   = nodes[i][0];
+    int level = nodes[i][0];
+    iX[0]      = nodes[i][1];
+    iX[1]      = nodes[i][2];
+    iX[2]      = nodes[i][3];
+    C->ICELL   = getKey(iX, level);
     C->IPARENT = nodes[i][4];
     C->ICHILD  = nodes[i][5];
     C->NCHILD  = nodes[i][6];
     C->IBODY   = nodes[i][7];
     C->NBODY   = nodes[i][8];
-    real_t R = R0 / (1 << nodes[i][0]);
+    real_t R = R0 / (1 << level);
+    C->R = 2 * R;
     for (int d=0; d<3; d++) {
-      C->X[d] = X0[d] - R0 + nodes[i][d+1] * R * 2 + R;
+      C->X[d] = X0[d] - R0 + iX[d] * R * 2 + R;
     }
   }
-  setLists(numCells);
+  setLists(cells);
   delete[] nodes;
   return cells;
 }

@@ -35,12 +35,6 @@ int main(int argc, char ** argv) {
   getBounds(Xj, numBodies, X0, R0);
   int numCells, numLevels;
   Cells cells = buildTree(Xj, numBodies, numCells, permutation, numLevels, X0, R0);
-  for (int level=0; level<=numLevels; level++) {
-    real_t scale = (2 * R0 / (1 << level));
-    for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
-      cells[icell].R = scale;
-    }
-  }
   Bodies buffer(numBodies);
   for (int i=0; i<numBodies; i++) {
     buffer[i] = bodies[permutation[i]];
