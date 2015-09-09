@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
   logger::startTimer("Tree");
   getBounds(Xj, numBodies, X0, R0);
   int numCells, numLevels;
-  buildTree(Xj, numBodies, numCells, permutation, numLevels, X0, R0);
+  Cells cells = buildTree(Xj, numBodies, numCells, permutation, numLevels, X0, R0);
   for (int level=0; level<=numLevels; level++) {
     real_t scale = (2 * R0 / (1 << level));
     for (int icell=levelOffset[level]; icell<levelOffset[level+1]; icell++) {
@@ -50,7 +50,7 @@ int main(int argc, char ** argv) {
     C->BODY = B + C->IBODY;
   }
   logger::stopTimer("Tree");
-  evaluate(numCells, numLevels);
+  evaluate(cells, numLevels);
   for (int i=0; i<numBodies; i++) {
     bodies[permutation[i]].TRG = buffer[i].TRG;
   }

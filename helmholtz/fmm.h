@@ -1,11 +1,10 @@
-void evaluate(int numCells, int numLevels) {
+void evaluate(Cells & cells, int numLevels) {
   vec3 Xperiodic = 0;
   bool mutual = false;
   int list[189];
   getAnm();
   C_iter C0 = cells.begin();
-  C_iter C = C0;
-  for (int icell=0; icell<numCells; icell++,C++) {
+  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
     C->M = 0;
     C->L = 0;
   }
@@ -79,7 +78,7 @@ void evaluate(int numCells, int numLevels) {
   logger::startTimer("P2P");
   real_t eps2 = 0;
 #pragma omp parallel for private(list) schedule(dynamic)
-  for (int icell=0; icell<numCells; icell++) {
+  for (int icell=0; icell<int(cells.size()); icell++) {
     C_iter Ci = C0 + icell;
     if (Ci->NCHILD == 0) {
       kernel::P2P(Ci, Ci, eps2, Xperiodic, mutual);
