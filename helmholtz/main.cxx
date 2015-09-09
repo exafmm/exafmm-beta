@@ -1,5 +1,6 @@
 #include "args.h"
 #include "bound_box.h"
+#include "dataset.h"
 #include "logger.h"
 #include "verify.h"
 
@@ -12,20 +13,17 @@
 
 int main(int argc, char ** argv) {
   Args args(argc,argv);
+  Dataset data;
   Verify verify;
   const int numBodies=args.numBodies;
-  wavek = complex_t(10.,1.);
+  wavek = complex_t(10.,1.) / (2 * M_PI);
   vec3 * Xj = new vec3 [numBodies];
-  complex_t * qj = new complex_t [numBodies];
   logger::verbose = args.verbose;
+  bodies = data.initBodies(args.numBodies, args.distribution, 0);
   bodies.resize(numBodies);
   B_iter B = bodies.begin();
   for (int i=0; i<numBodies; i++,B++) {
-    Xj[i][0] = drand48();
-    Xj[i][1] = drand48();
-    Xj[i][2] = drand48();
-    B->SRC = Xj[i][0] + I * Xj[i][1];
-    B->X = Xj[i];
+    Xj[i] = B->X;
   }
   logger::startTimer("Total FMM");
   fmm(numBodies,Xj);
@@ -57,5 +55,4 @@ int main(int argc, char ** argv) {
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
   delete[] Xj;
-  delete[] qj;
 }

@@ -145,6 +145,7 @@ public:
       int end = bodies.size();                                  //  End index of bodies
       splitRange(begin, end, i, numSplit);                      //  Split range of bodies
       srand48(seed);                                            //  Set seed for random number generator
+#if Laplace
 #if MASS
       for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	B->SRC = 1. / bodies.size();                            //   Initialize mass
@@ -158,6 +159,12 @@ public:
       average /= (end - begin);                                 //  Normalize average
       for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	B->SRC -= average;                                      //   Subtract average charge
+      }                                                         //  End loop over bodies
+#endif
+#elif Helmholtz
+      const complex_t I(0.0,1.0);
+      for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	B->SRC = B->X[0] + I * B->X[1];                         //   Initialize source
       }                                                         //  End loop over bodies
 #endif
     }                                                           // End loop over partitions
@@ -278,6 +285,7 @@ public:
   //! Get bodies with positive charges
   Bodies getPositive(Bodies & bodies) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
+#if Laplace
     B_iter B2 = buffer.begin();                                 // Initialize iterator of buffer
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       if (B->SRC >= 0) {                                        //  If source is positive
@@ -286,6 +294,7 @@ public:
       }                                                         //  End if for positive source
     }                                                           // End loop over bodies
     buffer.resize(B2-buffer.begin());                           // Resize buffer
+#endif
     return buffer;                                              // Return buffer
   }
 
@@ -293,6 +302,7 @@ public:
   //! Get bodies with negative charges
   Bodies getNegative(Bodies & bodies) {
     Bodies buffer = bodies;                                     // Copy bodies to buffer
+#if Laplace
     B_iter B2 = buffer.begin();                                 // Initialize iterator of buffer
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
       if (B->SRC < 0) {                                         //  If source is negative
@@ -301,6 +311,7 @@ public:
       }                                                         //  End if for negative source
     }                                                           // End loop over bodies
     buffer.resize(B2-buffer.begin());                           // Resize buffer
+#endif
     return buffer;                                              // Return buffer
   }
 };
