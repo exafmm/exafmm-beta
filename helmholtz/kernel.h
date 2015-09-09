@@ -1,3 +1,6 @@
+const complex_t I(0.0,1.0);
+
+int nquad;
 real_t xquad[2*P];
 real_t wquad[2*P];
 real_t Anm1[(P+1)*(P+2)/2];
@@ -41,9 +44,9 @@ void rotate(real_t theta, int nterms, complex_t Mnm[P*P],
     sqrtCnm[m][1] = sqrt(m * (m - 1) / 2.0);
   }
   real_t ctheta = cos(theta);
-  if (fabs(ctheta) < eps) ctheta = 0;
+  if (fabs(ctheta) < EPS) ctheta = 0;
   real_t stheta = sin(-theta);
-  if (fabs(stheta) < eps) stheta = 0;
+  if (fabs(stheta) < EPS) stheta = 0;
   real_t hsthta = stheta / sqrt(2.0);
   real_t cthtap = sqrt(2.0) * cos(theta * .5) * cos(theta * .5);
   real_t cthtan =-sqrt(2.0) * sin(theta * .5) * sin(theta * .5);
@@ -184,7 +187,7 @@ void get_Ynmd(int nterms, real_t x, real_t Ynm[P*(P+1)/2], real_t Ynmd[P*(P+1)/2
 }
 
 void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
-  if (abs(z) < eps) {
+  if (abs(z) < EPS) {
     for (int i=0; i<nterms; i++) {
       hn[i] = 0;
     }
@@ -201,7 +204,7 @@ void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
 }
 
 void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * hnd) {
-  if (abs(z) < eps) {
+  if (abs(z) < EPS) {
     for (int i=0; i<nterms; i++) {
       hn[i] = 0;
       hnd[i] = 0;
@@ -222,7 +225,7 @@ void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * 
 
 void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, complex_t * jnd) {
   int iscale[P+1];
-  if (abs(z) < eps) {
+  if (abs(z) < EPS) {
     jn[0] = 1;
     for (int i=1; i<nterms; i++) {
       jn[i] = 0;
@@ -251,9 +254,9 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
     coef = 2 * i + 1;
     ztmp = coef * zinv * jn[i] - jn[i+1];
     jn[i-1] = ztmp;
-    if (abs(ztmp) > 1.0/eps) {
-      jn[i] *= eps;
-      jn[i-1] *= eps;
+    if (abs(ztmp) > 1.0/EPS) {
+      jn[i] *= EPS;
+      jn[i-1] *= EPS;
       iscale[i] = 1;
     }
   }
@@ -261,7 +264,7 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
   coef = 1;
   for (int i=1; i<ntop; i++) {
     coef *= scalinv;
-    if(iscale[i-1] == 1) coef *= eps;
+    if(iscale[i-1] == 1) coef *= EPS;
     jn[i] *= coef;
   }
   complex_t fj0 = sin(z) * zinv;
@@ -320,7 +323,7 @@ void legendre() {
       polynomial(xk,nquad,pol,der,sum);
       real_t delta = -pol / der;
       xk += delta;
-      if (fabs(delta) < eps) ifout++;
+      if (fabs(delta) < EPS) ifout++;
       if (ifout == 3) break;
     }
     xquad[i] = xk;

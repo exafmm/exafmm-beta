@@ -43,7 +43,7 @@ int main(int argc, char ** argv) {
     C->BODY = B + C->IBODY;
   }
   logger::stopTimer("Tree");
-  evaluate(cells, numLevels);
+  evaluate(cells);
   for (int i=0; i<numBodies; i++) {
     bodies[permutation[i]].TRG = buffer[i].TRG;
   }

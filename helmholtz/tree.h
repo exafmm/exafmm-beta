@@ -140,23 +140,23 @@ void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
   delete[] iwork;
 }
 
-void getList(int itype, int icell, int * list, int & nlist) {
+void getList(int itype, int icell, int * list, int & numList) {
   int ilast = listOffset[icell][itype];
-  nlist = 0;
+  numList = 0;
   while (ilast >= 0) {
     if (lists[ilast][1] > 0) {
-      list[nlist] = lists[ilast][1];
-      nlist++;
+      list[numList] = lists[ilast][1];
+      numList++;
     }
     ilast = lists[ilast][0];
   }
 }
 
-void setList(int itype, int icell, int list) {
-  lists[numele][0] = listOffset[icell][itype];
-  lists[numele][1] = list;
-  listOffset[icell][itype] = numele;
-  numele++;
+void setList(int itype, int icell, int list, int & numLists) {
+  lists[numLists][0] = listOffset[icell][itype];
+  lists[numLists][1] = list;
+  listOffset[icell][itype] = numLists;
+  numLists++;
 }
 
 void setLists(Cells cells) {
@@ -168,12 +168,13 @@ void setLists(Cells cells) {
       listOffset[i][j] = -1;
     }
   }
+  int numLists = 0;
   for (int icell=1; icell<numCells; icell++) {
     C_iter Ci = C0 + icell;
     int iparent = Ci->IPARENT;
     neighbors[0] = iparent;
     int numNeighbors;
-    getList(2,iparent,&neighbors[1],numNeighbors);
+    getList(2, iparent, &neighbors[1], numNeighbors);
     numNeighbors++;
     ivec3 iX = getIndex(Ci->ICELL);
     int nchilds = 0;
@@ -195,9 +196,9 @@ void setLists(Cells cells) {
       if (iX[0]-1 <= jX[0] && jX[0] <= iX[0]+1 &&
 	  iX[1]-1 <= jX[1] && jX[1] <= iX[1]+1 &&
 	  iX[2]-1 <= jX[2] && jX[2] <= iX[2]+1) {
-	setList(2,icell,jcell);
+	setList(2, icell, jcell, numLists);
       }	else {
-	setList(1,icell,jcell);
+	setList(1, icell, jcell, numLists);
       }
     }
   }
@@ -205,12 +206,12 @@ void setLists(Cells cells) {
     C_iter Ci = C0 + icell;
     if (Ci->ICHILD == 0) {
       int numNeighbors;
-      getList(2,icell,neighbors,numNeighbors);
+      getList(2, icell, neighbors, numNeighbors);
       for (int j=0; j<numNeighbors; j++) {
 	int jcell = neighbors[j];
 	C_iter Cj = C0 + jcell;
 	if (Cj->ICHILD == 0) {
-	  setList(0,icell,jcell);
+	  setList(0, icell, jcell, numLists);
 	}
       }
     }
