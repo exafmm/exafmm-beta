@@ -7,7 +7,6 @@
 #include "arrays.h"
 #include "constants.h"
 #include "tree.h"
-#include "translate.h"
 #include "kernel.h"
 #include "fmm.h"
 

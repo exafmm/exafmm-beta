@@ -1,4 +1,5 @@
-Remove nodes dependency in setLists
+xquad, wquad, Anm1, Anm2 kernel file scope global variable
+
 Separate compile unit
 Loops to iterators
 SIMD for P2P

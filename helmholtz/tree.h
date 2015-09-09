@@ -219,7 +219,7 @@ void setLists(Cells cells) {
 
 Cells buildTree(vec3 * Xj, int numBodies, int & numCells, int * permutation,
 	       int & numLevels, vec3 X0, real_t R0) {
-  nodes = new int [numBodies][10]();
+  int (* nodes)[10] = new int [numBodies][10]();
   growTree(Xj, numBodies, nodes, numCells, permutation, numLevels, X0, R0);
   listOffset = new int [numCells][3]();
   lists = new int [189*numCells][2]();
