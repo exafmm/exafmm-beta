@@ -1,3 +1,6 @@
+-- Tips --
+Keep notes of possible optimizations in each file
+
 -- Immediate --
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 examples/Makefile options to args

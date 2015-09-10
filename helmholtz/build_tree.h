@@ -1,26 +1,10 @@
-void getBounds(vec3 * Xj, int numBodies, vec3 & X0, real_t & R0) {
-  vec3 Xmin = Xj[1];
-  vec3 Xmax = Xj[1];
-  for (int i=0; i<numBodies; i++) {
-    Xmin = min(Xj[i],Xmin);
-    Xmax = max(Xj[i],Xmax);
-  }
-  real_t diameter = 0;
-  for (int d=0; d<3; d++) {
-    real_t dX = Xmax[d] - Xmin[d];
-    diameter = dX > diameter ? dX : diameter;
-    X0[d] = (Xmax[d] + Xmin[d]) * 0.5;
-  }
-  R0 = diameter * 0.5;
-}
-
-void reorder(vec3 X0, real_t R0, int level, int * iX, vec3 * Xj,
+void reorder(Box box, int level, int * iX, vec3 * Xj,
 	     int * permutation, int n, int * iwork, int * nbody) {
   int offset[9];
   vec3 X;
-  real_t R = R0 / (1 << level);
+  real_t R = box.R / (1 << level);
   for (int d=0; d<3; d++) {
-    X[d] = X0[d] - R0 + iX[d] * R * 2 + R;
+    X[d] = box.X[d] - box.R + iX[d] * R * 2 + R;
   }
   for (int i=0; i<8; i++) nbody[i] = 0;
   for (int i=0; i<n; i++) {
@@ -131,7 +115,7 @@ void growTree(Bodies & bodies, int (* nodes)[10], int & numCells,
       int nbody = nodes[iparent][8];
       if (nbody > ncrit) {
 	int ibody = nodes[iparent][7];
-	reorder(box.X, box.R, level, &nodes[iparent][1], Xj, &permutation[ibody], nbody, iwork, nbody8);
+	reorder(box, level, &nodes[iparent][1], Xj, &permutation[ibody], nbody, iwork, nbody8);
 	int nchild = 0;
 	int offset = ibody;
 	nodes[iparent][5] = numCells;
