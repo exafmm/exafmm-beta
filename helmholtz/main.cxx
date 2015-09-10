@@ -5,10 +5,9 @@
 #include "verify.h"
 
 #include "arrays.h"
-#include "constants.h"
-#include "tree.h"
+#include "build_tree.h"
 #include "kernel.h"
-#include "fmm.h"
+#include "traversal.h"
 
 int main(int argc, char ** argv) {
   Args args(argc,argv);
@@ -16,7 +15,7 @@ int main(int argc, char ** argv) {
   Dataset data;
   Verify verify;
   const int numBodies=args.numBodies;
-  wavek = complex_t(10.,1.) / (2 * M_PI);
+  kernel::wavek = complex_t(10.,1.) / (2 * M_PI);
   vec3 * Xj = new vec3 [numBodies];
   logger::verbose = args.verbose;
   bodies = data.initBodies(args.numBodies, args.distribution, 0);

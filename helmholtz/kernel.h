@@ -337,6 +337,8 @@ void legendre() {
 }
 
 namespace kernel {
+  complex_t wavek;
+
   void P2P(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual) {
     assert(mutual == 0);
     for (B_iter Bi=Ci->BODY; Bi!=Ci->BODY+Ci->NBODY; Bi++) {
