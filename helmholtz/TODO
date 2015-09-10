@@ -1,4 +1,4 @@
-xquad, wquad, Anm1, Anm2 kernel file scope global variable
+lists scope
 
 Separate compile unit
 Loops to iterators

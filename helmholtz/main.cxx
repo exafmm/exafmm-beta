@@ -27,7 +27,6 @@ int main(int argc, char ** argv) {
   }
   logger::startTimer("Total FMM");
   int * permutation = new int [numBodies];
-  levelOffset = new int [maxLevel];
   vec3 X0;
   real_t R0;
   logger::startTimer("Tree");
@@ -49,7 +48,6 @@ int main(int argc, char ** argv) {
   }
   delete[] listOffset;
   delete[] lists;
-  delete[] levelOffset;
   delete[] permutation;
   logger::stopTimer("Total FMM");
   const int numTarget = 100;

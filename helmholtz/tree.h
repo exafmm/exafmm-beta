@@ -85,8 +85,10 @@ ivec3 getIndex(uint64_t key) {
 
 void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
 	      int * permutation, int & numLevels, vec3 X0, real_t R0) {
+  const int maxLevel = 30;
   int nbody8[8];
   int * iwork = new int [numBodies];
+  int * levelOffset = new int [maxLevel];
   nodes[0][0] = 0;
   nodes[0][1] = 0;
   nodes[0][2] = 0;
@@ -107,7 +109,7 @@ void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
   if (P < 20) ncrit = 100;
   numCells = 1;
   numLevels = 0;
-  for (int level=0; level<198; level++) {
+  for (int level=0; level<maxLevel; level++) {
     for (int iparent=levelOffset[level]; iparent<levelOffset[level+1]; iparent++) {
       int nbody = nodes[iparent][8];
       if (nbody > ncrit) {
@@ -137,6 +139,7 @@ void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
     levelOffset[level+2] = numCells;
     if (levelOffset[level+1] == levelOffset[level+2]) break;
   }
+  delete[] levelOffset;
   delete[] iwork;
 }
 
