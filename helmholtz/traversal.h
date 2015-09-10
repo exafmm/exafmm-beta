@@ -1,3 +1,6 @@
+int (* listOffset)[3];
+int (* lists)[2];
+
 void getList(int itype, int icell, int * list, int & numList) {
   int ilast = listOffset[icell][itype];
   numList = 0;
@@ -87,6 +90,8 @@ void evaluate(Cells & cells) {
     C->M = 0;
     C->L = 0;
   }
+  listOffset = new int [numCells][3]();
+  lists = new int [189*numCells][2]();
   setLists(cells);
 
   logger::startTimer("P2M");
@@ -160,4 +165,6 @@ void evaluate(Cells & cells) {
     }
   }
   logger::stopTimer("P2P");
+  delete[] listOffset;
+  delete[] lists;
 }

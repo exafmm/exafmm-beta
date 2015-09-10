@@ -45,8 +45,6 @@ int main(int argc, char ** argv) {
   for (int i=0; i<numBodies; i++) {
     bodies[permutation[i]].TRG = buffer[i].TRG;
   }
-  delete[] listOffset;
-  delete[] lists;
   delete[] permutation;
   logger::stopTimer("Total FMM");
   const int numTarget = 100;
