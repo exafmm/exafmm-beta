@@ -83,6 +83,7 @@ Box bounds2box(Bounds bounds) {
 
 void growTree(Bodies & bodies, int (* nodes)[10], int & numCells,
 	      int * permutation, int & numLevels, Box box) {
+  logger::startTimer("Grow tree");
   const int maxLevel = 30;
   const int numBodies = bodies.size();
   int nbody8[8];
@@ -143,15 +144,13 @@ void growTree(Bodies & bodies, int (* nodes)[10], int & numCells,
   delete[] Xj;
   delete[] levelOffset;
   delete[] iwork;
+  logger::stopTimer("Grow tree");  
 }
 
-Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
-  int numCells, numLevels;
+Cells linkTree(Bodies & bodies, Bodies & buffer, int (* nodes)[10], int numCells,
+	       int * permutation, Box box) {
+  logger::startTimer("Link tree");
   int numBodies = bodies.size();
-  int (* nodes)[10] = new int [numBodies][10]();
-  int * permutation = new int [numBodies];
-  Box box = bounds2box(bounds);
-  growTree(bodies, nodes, numCells, permutation, numLevels, box);
   Cells cells(numCells);
   C_iter C = cells.begin();
   ivec3 iX;
@@ -176,10 +175,23 @@ Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     buffer[i] = bodies[permutation[i]];
     buffer[i].IBODY = permutation[i];
   }
-  B_iter B = buffer.begin();
+  bodies = buffer;
+  B_iter B = bodies.begin();
   for (C_iter C=cells.begin(); C!=cells.end(); C++) {
     C->BODY = B + C->IBODY;
   }
+  logger::stopTimer("Link tree");
+  return cells;
+}
+
+Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
+  int numCells, numLevels;
+  int numBodies = bodies.size();
+  int (* nodes)[10] = new int [numBodies][10]();
+  int * permutation = new int [numBodies];
+  Box box = bounds2box(bounds);
+  growTree(bodies, nodes, numCells, permutation, numLevels, box);
+  Cells cells = linkTree(bodies, buffer, nodes, numCells, permutation, box);
   delete[] permutation;
   delete[] nodes;
   return cells;
