@@ -21,25 +21,15 @@ int main(int argc, char ** argv) {
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
   bodies.resize(numBodies);
   logger::startTimer("Total FMM");
-  int * permutation = new int [numBodies];
   logger::startTimer("Tree");
   bounds = boundBox.getBounds(bodies);
-  int numCells, numLevels;
-  Cells cells = buildTree(bodies, numBodies, numCells, permutation, numLevels, bounds);
   Bodies buffer(numBodies);
-  for (int i=0; i<numBodies; i++) {
-    buffer[i] = bodies[permutation[i]];
-  }
-  B_iter B = buffer.begin();
-  for (C_iter C=cells.begin(); C!=cells.end(); C++) {
-    C->BODY = B + C->IBODY;
-  }
+  Cells cells = buildTree(bodies, buffer, bounds);
   logger::stopTimer("Tree");
   evaluate(cells);
   for (int i=0; i<numBodies; i++) {
-    bodies[permutation[i]].TRG = buffer[i].TRG;
+    bodies[buffer[i].IBODY].TRG = buffer[i].TRG;
   }
-  delete[] permutation;
   logger::stopTimer("Total FMM");
   const int numTarget = 100;
   bodies2.resize(numTarget);
