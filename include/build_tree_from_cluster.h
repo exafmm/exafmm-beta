@@ -120,8 +120,9 @@ public:
 	C->ICELL = key;
 	C->R = cycle / dimLeafs / 2;
 	while (B->ICELL == icell) {
-	  B++;
 	  C->NBODY++;
+	  if (B==bodies.end()-1) break;
+	  B++;
 	}
       } else {
 	C->NBODY = 0;
