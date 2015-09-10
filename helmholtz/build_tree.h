@@ -143,84 +143,6 @@ void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
   delete[] iwork;
 }
 
-void getList(int itype, int icell, int * list, int & numList) {
-  int ilast = listOffset[icell][itype];
-  numList = 0;
-  while (ilast >= 0) {
-    if (lists[ilast][1] > 0) {
-      list[numList] = lists[ilast][1];
-      numList++;
-    }
-    ilast = lists[ilast][0];
-  }
-}
-
-void setList(int itype, int icell, int list, int & numLists) {
-  lists[numLists][0] = listOffset[icell][itype];
-  lists[numLists][1] = list;
-  listOffset[icell][itype] = numLists;
-  numLists++;
-}
-
-void setLists(Cells cells) {
-  int numCells = cells.size();
-  int childs[216], neighbors[27];
-  C_iter C0 = cells.begin();
-  for (int i=0; i<numCells; i++) {
-    for (int j=0; j<3; j++) {
-      listOffset[i][j] = -1;
-    }
-  }
-  int numLists = 0;
-  for (int icell=1; icell<numCells; icell++) {
-    C_iter Ci = C0 + icell;
-    int iparent = Ci->IPARENT;
-    neighbors[0] = iparent;
-    int numNeighbors;
-    getList(2, iparent, &neighbors[1], numNeighbors);
-    numNeighbors++;
-    ivec3 iX = getIndex(Ci->ICELL);
-    int nchilds = 0;
-    for (int i=0; i<numNeighbors; i++) {
-      int jparent = neighbors[i];
-      C_iter Cj = C0 + jparent;
-      for (int j=0; j<Cj->NCHILD; j++) {
-	int jcell = Cj->ICHILD+j;
-	if (jcell != icell) {
-	  childs[nchilds] = jcell;
-	  nchilds++;
-	}
-      }
-    }
-    for (int i=0; i<nchilds; i++) {
-      int jcell = childs[i];
-      C_iter Cj = C0 + jcell;
-      ivec3 jX = getIndex(Cj->ICELL);
-      if (iX[0]-1 <= jX[0] && jX[0] <= iX[0]+1 &&
-	  iX[1]-1 <= jX[1] && jX[1] <= iX[1]+1 &&
-	  iX[2]-1 <= jX[2] && jX[2] <= iX[2]+1) {
-	setList(2, icell, jcell, numLists);
-      }	else {
-	setList(1, icell, jcell, numLists);
-      }
-    }
-  }
-  for (int icell=0; icell<numCells; icell++) {
-    C_iter Ci = C0 + icell;
-    if (Ci->ICHILD == 0) {
-      int numNeighbors;
-      getList(2, icell, neighbors, numNeighbors);
-      for (int j=0; j<numNeighbors; j++) {
-	int jcell = neighbors[j];
-	C_iter Cj = C0 + jcell;
-	if (Cj->ICHILD == 0) {
-	  setList(0, icell, jcell, numLists);
-	}
-      }
-    }
-  }
-}
-
 Cells buildTree(vec3 * Xj, int numBodies, int & numCells, int * permutation,
 	       int & numLevels, vec3 X0, real_t R0) {
   int (* nodes)[10] = new int [numBodies][10]();
@@ -247,7 +169,6 @@ Cells buildTree(vec3 * Xj, int numBodies, int & numCells, int * permutation,
       C->X[d] = X0[d] - R0 + iX[d] * R * 2 + R;
     }
   }
-  setLists(cells);
   delete[] nodes;
   return cells;
 }
