@@ -83,8 +83,22 @@ ivec3 getIndex(uint64_t key) {
   return iX;
 }
 
+Box bounds2box(Bounds bounds) {
+  vec3 Xmin = bounds.Xmin;
+  vec3 Xmax = bounds.Xmax;
+  Box box;
+  for (int d=0; d<3; d++) box.X[d] = (Xmax[d] + Xmin[d]) / 2;
+  box.R = 0;
+  for (int d=0; d<3; d++) {
+    box.R = std::max(box.X[d] - Xmin[d], box.R);
+    box.R = std::max(Xmax[d] - box.X[d], box.R);
+  }
+  box.R *= 1.00001;
+  return box;
+}
+
 void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
-	      int * permutation, int & numLevels, vec3 X0, real_t R0) {
+	      int * permutation, int & numLevels, Box box) {
   const int maxLevel = 30;
   int nbody8[8];
   int * iwork = new int [numBodies];
@@ -114,7 +128,7 @@ void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
       int nbody = nodes[iparent][8];
       if (nbody > ncrit) {
 	int ibody = nodes[iparent][7];
-	reorder(X0, R0, level, &nodes[iparent][1], Xj, &permutation[ibody], nbody, iwork, nbody8);
+	reorder(box.X, box.R, level, &nodes[iparent][1], Xj, &permutation[ibody], nbody, iwork, nbody8);
 	int nchild = 0;
 	int offset = ibody;
 	nodes[iparent][5] = numCells;
@@ -144,9 +158,10 @@ void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
 }
 
 Cells buildTree(vec3 * Xj, int numBodies, int & numCells, int * permutation,
-	       int & numLevels, vec3 X0, real_t R0) {
+	       int & numLevels, Bounds bounds) {
   int (* nodes)[10] = new int [numBodies][10]();
-  growTree(Xj, numBodies, nodes, numCells, permutation, numLevels, X0, R0);
+  Box box = bounds2box(bounds);
+  growTree(Xj, numBodies, nodes, numCells, permutation, numLevels, box);
   Cells cells(numCells);
   C_iter C = cells.begin();
   ivec3 iX;
@@ -161,10 +176,10 @@ Cells buildTree(vec3 * Xj, int numBodies, int & numCells, int * permutation,
     C->NCHILD  = nodes[i][6];
     C->IBODY   = nodes[i][7];
     C->NBODY   = nodes[i][8];
-    real_t R = R0 / (1 << level);
+    real_t R = box.R / (1 << level);
     C->R = 2 * R;
     for (int d=0; d<3; d++) {
-      C->X[d] = X0[d] - R0 + iX[d] * R * 2 + R;
+      C->X[d] = box.X[d] - box.R + iX[d] * R * 2 + R;
     }
   }
   delete[] nodes;

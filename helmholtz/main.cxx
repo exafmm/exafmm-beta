@@ -4,7 +4,6 @@
 #include "logger.h"
 #include "verify.h"
 
-#include "arrays.h"
 #include "build_tree.h"
 #include "kernel.h"
 #include "traversal.h"
@@ -12,6 +11,8 @@
 int main(int argc, char ** argv) {
   Args args(argc,argv);
   Bodies bodies, bodies2;
+  BoundBox boundBox(args.nspawn);
+  Bounds bounds;
   Dataset data;
   Verify verify;
   const int numBodies=args.numBodies;
@@ -29,9 +30,10 @@ int main(int argc, char ** argv) {
   vec3 X0;
   real_t R0;
   logger::startTimer("Tree");
+  bounds = boundBox.getBounds(bodies);
   getBounds(Xj, numBodies, X0, R0);
   int numCells, numLevels;
-  Cells cells = buildTree(Xj, numBodies, numCells, permutation, numLevels, X0, R0);
+  Cells cells = buildTree(Xj, numBodies, numCells, permutation, numLevels, bounds);
   Bodies buffer(numBodies);
   for (int i=0; i<numBodies; i++) {
     buffer[i] = bodies[permutation[i]];
