@@ -33,7 +33,7 @@ int main(int argc, char ** argv) {
   bounds = boundBox.getBounds(bodies);
   getBounds(Xj, numBodies, X0, R0);
   int numCells, numLevels;
-  Cells cells = buildTree(Xj, numBodies, numCells, permutation, numLevels, bounds);
+  Cells cells = buildTree(bodies, Xj, numBodies, numCells, permutation, numLevels, bounds);
   Bodies buffer(numBodies);
   for (int i=0; i<numBodies; i++) {
     buffer[i] = bodies[permutation[i]];

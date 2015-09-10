@@ -97,7 +97,7 @@ Box bounds2box(Bounds bounds) {
   return box;
 }
 
-void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
+void growTree(Bodies & bodies, vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
 	      int * permutation, int & numLevels, Box box) {
   const int maxLevel = 30;
   int nbody8[8];
@@ -157,11 +157,11 @@ void growTree(vec3 * Xj, int numBodies, int (* nodes)[10], int & numCells,
   delete[] iwork;
 }
 
-Cells buildTree(vec3 * Xj, int numBodies, int & numCells, int * permutation,
+Cells buildTree(Bodies & bodies, vec3 * Xj, int numBodies, int & numCells, int * permutation,
 	       int & numLevels, Bounds bounds) {
   int (* nodes)[10] = new int [numBodies][10]();
   Box box = bounds2box(bounds);
-  growTree(Xj, numBodies, nodes, numCells, permutation, numLevels, box);
+  growTree(bodies, Xj, numBodies, nodes, numCells, permutation, numLevels, box);
   Cells cells(numCells);
   C_iter C = cells.begin();
   ivec3 iX;
