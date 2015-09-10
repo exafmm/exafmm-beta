@@ -17,28 +17,20 @@ int main(int argc, char ** argv) {
   Verify verify;
   const int numBodies=args.numBodies;
   kernel::wavek = complex_t(10.,1.) / (2 * M_PI);
-  vec3 * Xj = new vec3 [numBodies];
   logger::verbose = args.verbose;
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
   bodies.resize(numBodies);
-  B_iter B = bodies.begin();
-  for (int i=0; i<numBodies; i++,B++) {
-    Xj[i] = B->X;
-  }
   logger::startTimer("Total FMM");
   int * permutation = new int [numBodies];
-  vec3 X0;
-  real_t R0;
   logger::startTimer("Tree");
   bounds = boundBox.getBounds(bodies);
-  getBounds(Xj, numBodies, X0, R0);
   int numCells, numLevels;
-  Cells cells = buildTree(bodies, Xj, numBodies, numCells, permutation, numLevels, bounds);
+  Cells cells = buildTree(bodies, numBodies, numCells, permutation, numLevels, bounds);
   Bodies buffer(numBodies);
   for (int i=0; i<numBodies; i++) {
     buffer[i] = bodies[permutation[i]];
   }
-  B = buffer.begin();
+  B_iter B = buffer.begin();
   for (C_iter C=cells.begin(); C!=cells.end(); C++) {
     C->BODY = B + C->IBODY;
   }
@@ -75,5 +67,4 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM vs. direct");
   verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
   verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
-  delete[] Xj;
 }
