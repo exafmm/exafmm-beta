@@ -10,19 +10,20 @@
 
 int main(int argc, char ** argv) {
   Args args(argc,argv);
-  Bodies bodies, bodies2, jbodies;
+  Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
   Bounds bounds;
   Dataset data;
   Verify verify;
-  const int numBodies=args.numBodies;
+
   kernel::wavek = complex_t(10.,1.) / (2 * M_PI);
   logger::verbose = args.verbose;
+  logger::printTitle("FMM Parameters");
+  args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
-  bodies.resize(numBodies);
+  logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
   bounds = boundBox.getBounds(bodies);
-  Bodies buffer(numBodies);
   Cells cells = buildTree(bodies, buffer, bounds);
   evaluate(cells);
   logger::stopTimer("Total FMM");

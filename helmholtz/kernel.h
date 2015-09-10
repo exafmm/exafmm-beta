@@ -1,4 +1,4 @@
-const complex_t I(0.0,1.0);
+const complex_t I(0.,1.);
 
 int nquad;
 real_t xquad[2*P];

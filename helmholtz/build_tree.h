@@ -171,9 +171,9 @@ Cells linkTree(Bodies & bodies, Bodies & buffer, int (* nodes)[10], int numCells
       C->X[d] = box.X[d] - box.R + iX[d] * R * 2 + R;
     }
   }
+  buffer.resize(numBodies);
   for (int i=0; i<numBodies; i++) {
     buffer[i] = bodies[permutation[i]];
-    buffer[i].IBODY = permutation[i];
   }
   bodies = buffer;
   B_iter B = bodies.begin();

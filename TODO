@@ -8,6 +8,7 @@ kernel: eps2, Xperiodic, wavek -> global variables
 Use compressed Cell struct of Bonsai
 Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
 Separate key manipulation namespace, e.g. interleaveMorton(), deinterleveHilbert() (controllable key_t)
+Distinguish Pmax and P. Make P runtime option.
 
 -- Features to add --
 Time each kernel separately using cycle counters
