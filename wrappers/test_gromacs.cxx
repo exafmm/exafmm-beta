@@ -6,7 +6,7 @@
 #include <iostream>
 #include <sstream>
 
-extern "C" void FMM_Init(int images);
+extern "C" void FMM_Init(int images, int threads, int verbose);
 extern "C" void FMM_Finalize();
 extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, float * q, float cycle);
 extern "C" void FMM_Coulomb(int n, int * icell, float * x, float * q, float * p, float * f, float cycle);
@@ -20,6 +20,8 @@ int main(int argc, char ** argv) {
   int stringLength = 20;
   int images = 3;
   int ksize = 11;
+  int threads = 16;
+  int verbose = 1;
   float cycle = 2 * M_PI;
   float alpha = 10 / cycle;
   float sigma = .25 / M_PI;
@@ -114,7 +116,7 @@ int main(int argc, char ** argv) {
     icell[i] = key;
   }
 #endif
-  FMM_Init(images);
+  FMM_Init(images, threads, verbose);
   FMM_Partition(Ni, ibody, icell, x, q, cycle);
   FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
   for (int i=0; i<Ni; i++) {

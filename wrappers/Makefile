@@ -1,11 +1,15 @@
 include ../Makefile.include
 
+EQUATION = Laplace
+BASIS  	 = Cartesian
+LFLAGS  += -DEXPANSION=4
 #LFLAGS	+= -DMASS
 LFLAGS 	+= -DIneJ
 LFLAGS 	+= -DNOWRAP
 LFLAGS	+= -DNO_P2P
 LFLAGS	+= -DCluster
 #LFLAGS	+= -DSerial
+#LFLAGS += -DFP64
 
 all:
 	make charmm
@@ -19,8 +23,8 @@ petiga:
 
 gromacs:
 	make libgromacs.a
-#	$(CXX) test_gromacs.cxx $(LFLAGS) -lfmm
-#	mpirun -np 1 ./a.out
+	$(CXX) test_gromacs.cxx $(LFLAGS) -lfmm
+	mpirun -np 1 ./a.out
 
 charmm: # exafmm
 	make libcharmm.a

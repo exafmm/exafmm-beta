@@ -1,9 +1,11 @@
 include ../Makefile.include
 
+LFLAGS  += -DEXPANSION=4 # Specify expansion order
 LFLAGS	+= -DMASS # Use all positive sources
 #LFLAGS	+= -DIneJ # Different target and source points
 LFLAGS	+= -DDIRECT # Compare with direct summation
 #LFLAGS	+= -DWRITE_TIME # Write timings to file
+LFLAGS  += -DFP64 # Use double precision
 
 # Test for tree construction
 tree: tree.o $(OBJECTS)

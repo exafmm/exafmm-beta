@@ -26,7 +26,7 @@ Bodies buffer;
 Bounds localBounds;
 Bounds globalBounds;
 
-extern "C" void FMM_Init(int images) {
+extern "C" void FMM_Init(int images, int threads, bool verbose) {
   const int ncrit = 32;
   const int nspawn = 1000;
   const real_t eps2 = 0.0;
@@ -48,10 +48,11 @@ extern "C" void FMM_Init(int images) {
   args->ncrit = ncrit;
   args->nspawn = nspawn;
   args->images = images;
+  args->threads = threads;
   args->useRmax = useRmax;
   args->useRopt = useRopt;
   args->mutual = 0;
-  args->verbose = 1;
+  args->verbose = verbose;
   args->distribution = "external";
   args->verbose &= baseMPI->mpirank == 0;
   logger::verbose = args->verbose;
@@ -74,6 +75,7 @@ extern "C" void FMM_Finalize() {
 
 extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, float * q, float cycle) {
   logger::printTitle("Partition Profiling");
+  num_threads(args->threads);
   const int shift = 29;
   const int mask = ~(0x7U << shift);
   Bodies bodies(n);
@@ -118,6 +120,7 @@ extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, floa
 }
 
 extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p, float * f, float cycle) {
+  num_threads(args->threads);
   args->numBodies = n;
   logger::printTitle("FMM Parameters");
   args->print(logger::stringLength, P);
@@ -193,6 +196,7 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
 
 extern "C" void Ewald_Coulomb(int n, float * x, float * q, float * p, float * f,
 			      int ksize, float alpha, float sigma, float cutoff, float cycle) {
+  num_threads(args->threads);
   Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
   args->numBodies = n;
   logger::printTitle("Ewald Parameters");
