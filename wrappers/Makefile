@@ -2,7 +2,7 @@ include ../Makefile.include
 
 EQUATION = Laplace
 BASIS  	 = Cartesian
-LFLAGS  += -DEXPANSION=4
+LFLAGS  += -DEXPANSION=8
 #LFLAGS	+= -DMASS
 LFLAGS 	+= -DIneJ
 LFLAGS 	+= -DNOWRAP

@@ -25,6 +25,7 @@ UVWX-list with precomputation
 Periodic B.C. by one precomputed translation matrix
 Teng's BH MAC with M2P option during DTT
 non-orthogonal recursive bisection
+Interface with BEM code
 
 -- GPU integration --
 CUDA 6.0 debug
