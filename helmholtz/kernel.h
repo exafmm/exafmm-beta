@@ -338,6 +338,9 @@ void legendre() {
 
 namespace kernel {
   complex_t wavek;
+  void setup() {
+    getAnm();
+  }
 
   void P2P(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual) {
     assert(mutual == 0);

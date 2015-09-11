@@ -6,6 +6,7 @@
 
 #include "build_tree.h"
 #include "kernel.h"
+#include "up_down_pass.h"
 #include "traversal.h"
 
 int main(int argc, char ** argv) {
@@ -43,7 +44,9 @@ int main(int argc, char ** argv) {
     bounds = boundBox.getBounds(jbodies,bounds);
 #endif
     Cells cells = buildTree(bodies, buffer, bounds);
+    upwardPass(cells);
     evaluate(cells);
+    downwardPass(cells);
     logger::printTitle("Total runtime");
     logger::stopDAG();
     logger::stopPAPI();
