@@ -1,5 +1,7 @@
 include ../Makefile.include
 
+EQUATION = Laplace
+BASIS = Cartesian
 LFLAGS  += -DEXPANSION=4 # Specify expansion order
 LFLAGS	+= -DMASS # Use all positive sources
 #LFLAGS	+= -DIneJ # Different target and source points

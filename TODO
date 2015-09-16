@@ -3,6 +3,7 @@ Keep notes of possible optimizations in each file
 
 -- Immediate --
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
+AoS, SoA unified
 examples/Makefile options to args
 kernel: eps2, Xperiodic, wavek -> global variables
 Use compressed Cell struct of Bonsai
