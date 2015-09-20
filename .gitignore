@@ -7,3 +7,8 @@
 *.out*
 *.th_o
 .deps
+
+config.h
+config.log
+config.status
+stamp-h1

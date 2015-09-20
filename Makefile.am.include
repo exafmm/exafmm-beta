@@ -1,0 +1,92 @@
+### choose kernel
+#EQUATION = Laplace
+EQUATION = Helmholtz
+#EQUATION = Stokes
+
+### choose basis of multipole/local expansion
+#BASIS	= Cartesian
+BASIS	= Spherical
+
+### choose device to use
+DEVICE	= CPU
+#DEVICE	= GPU
+
+### choose C++ compiler
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -Wa,-q -ffast-math -funroll-loops -fopenmp # GCC (OS X)
+#CXX	= CC -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp -dynamic # GCC (Cray)
+#CXX	= mpicxx -xHOST -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
+#CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
+#CXX	= CC -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp -dynamic # Intel (Cray)
+#CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
+#CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
+#CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/Q
+#CXX	= mpixlcxx_r -qarch=450d -qtune=450 -O3 -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/P
+#CXX	= mpiFCCpx -Kfast,openmp # K computer / FX10 (cross compiler)
+#CXX	= mpiFCC -Kfast,openmp # K computer / FX10 (interactive)
+#CXX	= tau_cxx.sh # TAU compiler instrumentation
+
+### choose fortran compiler
+#FC = mpif90 -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
+#FC = ftn -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran (Cray)
+#FC = mpif90 -O3 -xHOST -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
+#FC = ftn -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel (Cray)
+
+### Base flags
+CXX	+= -I../include -I../uniform
+#CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
+#LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
+#LFLAGS	+= -fPIC # for shared library
+LFLAGS	= -D$(EQUATION) # Specify equation
+LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
+LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
+#LFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
+#LFLAGS	+= -DKAHAN # Use Kahan summation
+
+### Debugging flags
+LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
+#LFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
+#LFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
+
+### Thread model flags
+#LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
+LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
+#LFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
+#LFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
+
+### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -DDAG_RECORDER=2 -ldr
+
+### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
+#LFLAGS	+= -DPAPI -lpapi
+
+### Trace flags : This tracing tool is part of ExaFMM
+#LFLAGS	+= -DTRACE
+
+### Tree building flags
+#LFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
+
+SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx ../kernels/$(EQUATION)P2P$(DEVICE).cxx
+OBJECTS	= $(SOURCES:.cxx=.o)
+
+MAKEFLAGS = --no-print-directory
+
+help:
+	@make -C .. help
+buildbot:
+	@make -C .. buildbot
+cleanbin:
+	@make -C .. cleanbin
+cleandat:
+	@make -C .. cleandat
+cleanlib:
+	@make -C .. cleanlib
+cleanall:
+	@make -C .. cleanall
+revert:
+	@make -C .. revert
+save:
+	@make -C .. save
+ctags2:
+	@make -C .. ctags2

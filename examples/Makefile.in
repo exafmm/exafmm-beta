@@ -78,10 +78,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+DIST_COMMON = $(srcdir)/../Makefile.include $(srcdir)/Makefile.in \
+	$(srcdir)/Makefile.am $(top_srcdir)/build-aux/depcomp
 bin_PROGRAMS = serial$(EXEEXT) parallel$(EXEEXT)
 subdir = examples
-DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/build-aux/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_mpi.m4 \
 	$(top_srcdir)/m4/ax_check_compiler_flags.m4 \
@@ -138,7 +138,6 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(parallel_SOURCES) $(serial_SOURCES)
 DIST_SOURCES = $(parallel_SOURCES) $(serial_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -176,7 +175,31 @@ CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
-CXX = @CXX@
+#DEVICE	= GPU
+
+### choose C++ compiler
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -Wa,-q -ffast-math -funroll-loops -fopenmp # GCC (OS X)
+#CXX	= CC -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp -dynamic # GCC (Cray)
+#CXX	= mpicxx -xHOST -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
+#CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
+#CXX	= CC -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp -dynamic # Intel (Cray)
+#CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
+#CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
+#CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/Q
+#CXX	= mpixlcxx_r -qarch=450d -qtune=450 -O3 -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/P
+#CXX	= mpiFCCpx -Kfast,openmp # K computer / FX10 (cross compiler)
+#CXX	= mpiFCC -Kfast,openmp # K computer / FX10 (interactive)
+#CXX	= tau_cxx.sh # TAU compiler instrumentation
+
+### choose fortran compiler
+#FC = mpif90 -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
+#FC = ftn -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran (Cray)
+#FC = mpif90 -O3 -xHOST -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
+#FC = ftn -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel (Cray)
+
+### Base flags
+CXX = @CXX@ -I../include -I../uniform
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -270,15 +293,59 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CXXFLAGS = -I../include -msse4a -ffast-math -funroll-loops -fopenmp -DCartesian -DEXPANSION=4 -DUSE_SIMD -DMASS -DDIRECT
+
+### choose kernel
+#EQUATION = Laplace
+EQUATION = Helmholtz
+#EQUATION = Stokes
+
+### choose basis of multipole/local expansion
+#BASIS	= Cartesian
+BASIS = Spherical
+
+### choose device to use
+DEVICE = CPU
+#CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
+#LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
+#LFLAGS	+= -fPIC # for shared library
+#LFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
+#LFLAGS	+= -DKAHAN # Use Kahan summation
+
+### Debugging flags
+#LFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
+#LFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
+
+### Thread model flags
+#LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
+#LFLAGS += -DIneJ # Different target and source points
+#LFLAGS += -DWRITE_TIME # Write timings to file
+LFLAGS = -D$(EQUATION) -D$(BASIS) -DUSE_SIMD -DASSERT -DTBB -ltbb \
+	-DEXPANSION=4 -DMASS -DDIRECT -DFP64 # Use double precision
+#LFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
+#LFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
+
+### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -DDAG_RECORDER=2 -ldr
+
+### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
+#LFLAGS	+= -DPAPI -lpapi
+
+### Trace flags : This tracing tool is part of ExaFMM
+#LFLAGS	+= -DTRACE
+
+### Tree building flags
+#LFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
+SOURCES = ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx ../kernels/$(EQUATION)P2P$(DEVICE).cxx
+OBJECTS = $(SOURCES:.cxx=.o)
+MAKEFLAGS = --no-print-directory
 serial_SOURCES = serial.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-# serial_LDADD = -ltbb
 parallel_SOURCES = parallel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .cxx .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/../Makefile.include $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -299,6 +366,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe);; \
 	esac;
+$(srcdir)/../Makefile.include:
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
@@ -603,7 +671,25 @@ uninstall-am: uninstall-binPROGRAMS
 	ps ps-am tags tags-am uninstall uninstall-am \
 	uninstall-binPROGRAMS
 
-# parallel_LDADD = -ltbb
+
+help:
+	@make -C .. help
+buildbot:
+	@make -C .. buildbot
+cleanbin:
+	@make -C .. cleanbin
+cleandat:
+	@make -C .. cleandat
+cleanlib:
+	@make -C .. cleanlib
+cleanall:
+	@make -C .. cleanall
+revert:
+	@make -C .. revert
+save:
+	@make -C .. save
+ctags2:
+	@make -C .. ctags2
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
