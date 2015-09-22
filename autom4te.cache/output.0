@@ -586,9 +586,24 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIB@&t@OBJS
+NEON_CXXFLAGS
+ALTIVEC_CXXFLAGS
+AVX_CXXFLAGS
+SSE2_CXXFLAGS
+HAVE_NEON_FALSE
+HAVE_NEON_TRUE
+HAVE_ALTIVEC_FALSE
+HAVE_ALTIVEC_TRUE
+HAVE_AVX_FALSE
+HAVE_AVX_TRUE
+HAVE_SSE2_FALSE
+HAVE_SSE2_TRUE
 MPI_FALSE
 MPI_TRUE
 MPIRUN
+PRECISION
+SINGLE_FALSE
+SINGLE_TRUE
 am__fastdepCXX_FALSE
 am__fastdepCXX_TRUE
 CXXDEPMODE
@@ -682,7 +697,14 @@ ac_user_opts='
 enable_option_checking
 enable_silent_rules
 enable_dependency_tracking
+enable_single
+enable_float
 enable_mpi
+enable_sse
+enable_sse2
+enable_avx
+enable_altivec
+enable_neon
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1315,7 +1337,14 @@ Optional Features:
                           do not reject slow dependency extractors
   --disable-dependency-tracking 
                           speeds up one-time build
+  --enable-single         compile exaFMM in single precision
+  --enable-float          synonym for --enable-single
   --enable-mpi            compile exaFMM MPI library
+  --enable-sse            enable SSE optimizations
+  --enable-sse2           enable SSE/SSE2 optimizations
+  --enable-avx            enable AVX optimizations
+  --enable-altivec        enable Altivec optimizations
+  --enable-neon           enable ARM NEON optimizations
 
 Some influential environment variables:
   CC          C compiler command
@@ -3873,6 +3902,38 @@ fi
 
 
 
+# Single precision
+@%:@ Check whether --enable-single was given.
+if test "${enable_single+set}" = set; then :
+  enableval=$enable_single; ok=$enableval
+else
+  ok=no
+fi
+
+@%:@ Check whether --enable-float was given.
+if test "${enable_float+set}" = set; then :
+  enableval=$enable_float; ok=$enableval
+fi
+
+if test "$ok" = "yes"; then
+        
+$as_echo "@%:@define EXAFMM_SINGLE 1" >>confdefs.h
+
+        PRECISION=s
+else
+        PRECISION=d
+fi
+ if test "$ok" = "yes"; then
+  SINGLE_TRUE=
+  SINGLE_FALSE='#'
+else
+  SINGLE_TRUE='#'
+  SINGLE_FALSE=
+fi
+
+
+
+# MPI
 @%:@ Check whether --enable-mpi was given.
 if test "${enable_mpi+set}" = set; then :
   enableval=$enable_mpi; enable_mpi=$enableval
@@ -3931,7 +3992,179 @@ else
 fi
 
 
+# SSE
+@%:@ Check whether --enable-sse was given.
+if test "${enable_sse+set}" = set; then :
+  enableval=$enable_sse; have_sse=$enableval
+else
+  have_sse=no
+fi
+
+if test "$have_sse" = "yes"; then
+        if test "$PRECISION" != "s"; then
+                as_fn_error $? "SSE requires single precision" "$LINENO" 5
+        fi
+fi
+
+# SSE2
+@%:@ Check whether --enable-sse2 was given.
+if test "${enable_sse2+set}" = set; then :
+  enableval=$enable_sse2; have_sse2=$enableval
+else
+  have_s\
+se2=no
+fi
+
+if test "$have_sse" = "yes"; then have_sse2=yes; fi
+if test "$have_sse2" = "yes"; then
+        
+$as_echo "@%:@define HAVE_SSE2 1" >>confdefs.h
+
+        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+                as_fn_error $? "SSE2 requires single or double precision" "$LINENO" 5
+        fi
+fi
+ if test "$have_sse2" = "yes"; then
+  HAVE_SSE2_TRUE=
+  HAVE_SSE2_FALSE='#'
+else
+  HAVE_SSE2_TRUE='#'
+  HAVE_SSE2_FALSE=
+fi
+
+
+# AVX
+@%:@ Check whether --enable-avx was given.
+if test "${enable_avx+set}" = set; then :
+  enableval=$enable_avx; have_avx=$enableval
+else
+  have_avx=no
+fi
+
+if test "$have_avx" = "yes"; then
+   
+$as_echo "@%:@define HAVE_AVX 1" >>confdefs.h
+
+        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+                as_fn_error $? "AVX requires single or double precision" "$LINENO" 5
+        fi
+fi
+ if test "$have_avx" = "yes"; then
+  HAVE_AVX_TRUE=
+  HAVE_AVX_FALSE='#'
+else
+  HAVE_AVX_TRUE='#'
+  HAVE_AVX_FALSE=
+fi
+
+
+# Altivec
+@%:@ Check whether --enable-altivec was given.
+if test "${enable_altivec+set}" = set; then :
+  enableval=$enable_altivec; have_altivec=$enableval\
+
+else
+  have_altivec=no
+fi
+
+if test "$have_altivec" = "yes"; then
+        
+$as_echo "@%:@define HAVE_ALTIVEC 1" >>confdefs.h
+
+        if test "$PRECISION" != "s"; then
+	   as_fn_error $? "Altivec requires single precision" "$LINENO" 5
+        fi
+fi
+ if test "$have_altivec" = "yes"; then
+  HAVE_ALTIVEC_TRUE=
+  HAVE_ALTIVEC_FALSE='#'
+else
+  HAVE_ALTIVEC_TRUE='#'
+  HAVE_ALTIVEC_FALSE=
+fi
+
+
+# Neon
+@%:@ Check whether --enable-neon was given.
+if test "${enable_neon+set}" = set; then :
+  enableval=$enable_neon; have_neon=$enableval
+else
+  have_n\
+eon=no
+fi
+
+if test "$have_neon" = "yes"; then
+        
+$as_echo "@%:@define HAVE_NEON 1" >>confdefs.h
+
+        if test "$PRECISION" != "s"; then
+                as_fn_error $? "NEON requires single precision" "$LINENO" 5
+        fi
+fi
+ if test "$have_neon" = "yes"; then
+  HAVE_NEON_TRUE=
+  HAVE_NEON_FALSE='#'
+else
+  HAVE_NEON_TRUE='#'
+  HAVE_NEON_FALSE=
+fi
+
+
 AX_CXX_MAXOPT
+
+case "${ax_cv_c_compiler_vendor}" in
+   intel) # Stop icc from defining __GNUC__, except on MacOS where this fails                                       
+        case "${host_os}" in
+            *darwin*) ;; # icc -no-gcc fails to compile some system headers                                         
+            *)
+               AX_CHECK_COMPILER_FLAGS(-no-gcc, CXX="$CXX -no-gcc")
+               ;;
+        esac
+        ;;
+
+   hp) # must (sometimes) manually increase cpp limits to handle fftw3.h                                            
+        AX_CHECK_COMPILER_FLAGS(-Wp,-H128000,
+                                CXX="$CXX -Wp,-H128000")
+        ;;
+
+   portland) # -Masmkeyword required for asm("") cycle counters                                                     
+        AX_CHECK_COMPILER_FLAGS(-Masmkeyword,
+                                CXX="$CXX -Masmkeyword")
+        ;;
+esac
+
+# SIMD CXXFLAGS
+if test "$have_sse2" = "yes" -a "x$SSE2_CXXFLAGS" = x; then
+   if test "$PRECISION" = d; then flag=msse2; else flag=msse; fi
+   AX_CHECK_COMPILER_FLAGS(-$flag, SSE2_CXXFLAGS="-$flag",
+   				   AC_MSG_ERROR([Need a version of gcc with -$flag]))
+fi
+
+if test "$have_avx" = "yes" -a "x$AVX_CXXFLAGS" = x; then
+   AX_CHECK_COMPILER_FLAGS(-mavx, AVX_CXXFLAGS="-mavx",
+                		  AC_MSG_ERROR([Need a version of gcc with -mavx]))
+fi
+
+if test "$have_altivec" = "yes" -a "x$ALTIVEC_CXXFLAGS" = x; then
+   # -DFAKE__VEC__ is a workaround because gcc-3.3 does not                                                
+   # #define __VEC__ with -maltivec.                                                                       
+   AX_CHECK_COMPILER_FLAGS(-faltivec, ALTIVEC_CXXFLAGS="-faltivec",
+                		      AX_CHECK_COMPILER_FLAGS(-maltivec -mabi=altivec,
+                    		      [ALTIVEC_CXXFLAGS="-maltivec -mabi=altivec -DFAKE__VEC__"],
+                    		      [AX_CHECK_COMPILER_FLAGS(-fvec, [ALTIVEC_CXXFLAGS="-fvec"],
+                        	      [AC_MSG_ERROR([Need a version of gcc with -maltivec])])]))
+fi
+
+if test "$have_neon" = "yes" -a "x$NEON_CXXFLAGS" = x; then
+   AX_CHECK_COMPILER_FLAGS(-mfpu=neon, NEON_CXXFLAGS="-mfpu=neon",
+                		       AC_MSG_ERROR([Need a version of gcc with -mfpu=neon]))
+fi
+
+
+
+
+
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -4069,8 +4302,28 @@ if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${SINGLE_TRUE}" && test -z "${SINGLE_FALSE}"; then
+  as_fn_error $? "conditional \"SINGLE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MPI_TRUE}" && test -z "${MPI_FALSE}"; then
   as_fn_error $? "conditional \"MPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_SSE2_TRUE}" && test -z "${HAVE_SSE2_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_SSE2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_AVX_TRUE}" && test -z "${HAVE_AVX_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_AVX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_ALTIVEC_TRUE}" && test -z "${HAVE_ALTIVEC_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_ALTIVEC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_NEON_TRUE}" && test -z "${HAVE_NEON_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_NEON\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

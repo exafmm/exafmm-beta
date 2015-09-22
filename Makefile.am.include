@@ -1,11 +1,11 @@
 ### choose kernel
-#EQUATION = Laplace
-EQUATION = Helmholtz
+EQUATION = Laplace
+#EQUATION = Helmholtz
 #EQUATION = Stokes
 
 ### choose basis of multipole/local expansion
-#BASIS	= Cartesian
-BASIS	= Spherical
+BASIS	= Cartesian
+#BASIS	= Spherical
 
 ### choose device to use
 DEVICE	= CPU
@@ -33,39 +33,54 @@ DEVICE	= CPU
 #FC = ftn -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel (Cray)
 
 ### Base flags
-CXX	+= -I../include -I../uniform
-#CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
-#LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
-#LFLAGS	+= -fPIC # for shared library
-LFLAGS	= -D$(EQUATION) # Specify equation
-LFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
-LFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
-#LFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
-#LFLAGS	+= -DKAHAN # Use Kahan summation
+CXX		+= -I../include -I../uniform
+#CXX		+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
+#AM_CXXFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
+#AM_CXXFLAGS	+= -fPIC # for shared library
+AM_CXXFLAGS	= -D$(EQUATION) # Specify equation
+AM_CXXFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
+AM_CXXFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
+#AM_CXXFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
+#AM_CXXFLAGS	+= -DKAHAN # Use Kahan summation
+
+### SIMD flags
+if HAVE_SSE2
+AM_CXXFLAGS 	+= $(SSE2_CXXFLAGS) # Use SSE2 intrinsics
+endif
+if HAVE_AVX
+AM_CXXFLAGS	+= $(AVX_CXXFLAGS) # Use AVX intrinsics
+endif
+if HAVE_ALTIVEC
+AM_CXXFLAGS	+= $(ALTIVEC_CXXFLAGS) # Use Altivec intrinsics
+endif
+if HAVE_NEON
+AM_CXXFLAGS	+= $(NEON_CXXFLAGS) # Use Neon intrinsics
+endif
 
 ### Debugging flags
-LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
-#LFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
-#LFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
+AM_CXXFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
+#AM_CXXFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
+#AM_CXXFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
 
 ### Thread model flags
-#LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
-LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
-#LFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
-#LFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
-#LFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
+#AM_CXXFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
+AM_CXXFLAGS	+= -DTBB
+LIBS		= -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
+#AM_CXXFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
+#AM_CXXFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
+#AM_CXXFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
 
 ### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/
-#LFLAGS	+= -DDAG_RECORDER=2 -ldr
+#AM_CXXFLAGS	+= -DDAG_RECORDER=2 -ldr
 
 ### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
-#LFLAGS	+= -DPAPI -lpapi
+#AM_CXXFLAGS	+= -DPAPI -lpapi
 
 ### Trace flags : This tracing tool is part of ExaFMM
-#LFLAGS	+= -DTRACE
+#AM_CXXFLAGS	+= -DTRACE
 
 ### Tree building flags
-#LFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
+#AM_CXXFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
 
 SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx ../kernels/$(EQUATION)P2P$(DEVICE).cxx
 OBJECTS	= $(SOURCES:.cxx=.o)

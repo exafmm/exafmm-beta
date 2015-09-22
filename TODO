@@ -1,3 +1,7 @@
+-- autotools --
+ctags2 merge with ctags
+put AX_CXX_MAXOPT right after AC_PROG_CXX
+
 -- Tips --
 Keep notes of possible optimizations in each file
 

@@ -1,7 +1,22 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to compile in single precision. */
+#undef EXAFMM_SINGLE
+
+/* Define to enable Altivec optimizations. */
+#undef HAVE_ALTIVEC
+
+/* Define to enable AVX optimizations. */
+#undef HAVE_AVX
+
 /* Define if you have the MPI library. */
 #undef HAVE_MPI
+
+/* Define to enable ARM NEON optimizations. */
+#undef HAVE_NEON
+
+/* Define to enable SSE/SSE2 optimizations. */
+#undef HAVE_SSE2
 
 /* Name of package */
 #undef PACKAGE
