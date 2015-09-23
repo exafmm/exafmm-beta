@@ -1,4 +1,5 @@
 -- autotools --
+ewald large error
 ctags2 merge with ctags -> use AM_CTAGSFLAGS
 only compile parallel if MPI enabled
 consider case where SIMD is not enabled, remove macro USE_SIMD
@@ -9,6 +10,7 @@ parallel -> test_mpi
 define laplace_CPPFLAGS and insert to laplace_cartesian/spherical_CPPFLAGS
 C and Fortran optimization with MAXOPT
 Better way to do: MAKEFLAGS = --no-print-directory
+--enable-debug mode
 
 -- Tips --
 Keep notes of possible optimizations in each file
