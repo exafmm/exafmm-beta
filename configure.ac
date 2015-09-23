@@ -7,6 +7,10 @@ AC_CONFIG_SRCDIR([examples/fmm.cxx])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_F77
+AX_CC_MAXOPT
+AX_CXX_MAXOPT
+AX_F77_MAXOPT
 
 # Single precision
 AC_ARG_ENABLE(single, [AC_HELP_STRING([--enable-single],[compile exaFMM in single precision])], ok=$enableval, ok=no)
@@ -17,7 +21,7 @@ if test "$ok" = "yes"; then
 else
         PRECISION=d
 fi
-AM_CONDITIONAL(SINGLE, test "$ok" = "yes")
+AM_CONDITIONAL(EXAFMM_SINGLE, test "$ok" = "yes")
 AC_SUBST(PRECISION)
 
 # MPI
@@ -83,7 +87,5 @@ if test "$use_simd" = "no"; then
         AC_DEFINE(USE_SIMD,0,[Disable SIMD optimizations.])
 fi
 AM_CONDITIONAL(USE_SIMD, test "$use_simd" = "yes")
-
-AX_CXX_MAXOPT
 
 AC_OUTPUT

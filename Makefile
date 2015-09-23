@@ -90,9 +90,11 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/build-aux/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_mpi.m4 \
+	$(top_srcdir)/m4/ax_cc_maxopt.m4 \
 	$(top_srcdir)/m4/ax_check_compiler_flags.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/ax_cxx_maxopt.m4 \
+	$(top_srcdir)/m4/ax_f77_maxopt.m4 \
 	$(top_srcdir)/m4/ax_gcc_archflag.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_cpuid.m4 \
 	$(top_srcdir)/configure.ac
@@ -213,7 +215,7 @@ AVX_CXXFLAGS = -mavx
 AWK = mawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -ffast-math
+CFLAGS = -O3 -fomit-frame-pointer -mtune=native -malign-double -fstrict-aliasing -fno-schedule-insns -ffast-math -ffast-math
 CPPFLAGS = 
 CXX = g++
 CXXDEPMODE = depmode=gcc3
@@ -225,8 +227,8 @@ ECHO_C =
 ECHO_N = -n
 ECHO_T = 
 EXEEXT = 
-F77 = 
-FFLAGS = 
+F77 = gfortran
+FFLAGS = -O3 -fomit-frame-pointer -malign-double -fstrict-aliasing -ffast-math
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
@@ -253,7 +255,7 @@ PACKAGE_TARNAME = exafmm
 PACKAGE_URL = 
 PACKAGE_VERSION = 1.0
 PATH_SEPARATOR = :
-PRECISION = d
+PRECISION = s
 PRTDIAG = 
 SET_MAKE = 
 SHELL = /bin/bash
@@ -266,7 +268,7 @@ abs_top_builddir = /home/yokotar/exafmm
 abs_top_srcdir = /home/yokotar/exafmm
 ac_ct_CC = gcc
 ac_ct_CXX = g++
-ac_ct_F77 = 
+ac_ct_F77 = gfortran
 am__include = include
 am__leading_dot = .
 am__quote = 

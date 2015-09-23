@@ -23,6 +23,12 @@ AM_CPPFLAGS = -I../include -I../uniform
 #AM_CXXFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
 #AM_CXXFLAGS	+= -DKAHAN # Use Kahan summation
 
+### Floating point precision
+if EXAFMM_SINGLE
+else
+AM_CPPFLAGS += -DFP64
+endif
+
 ### SIMD flags
 if USE_SIMD
 AM_CXXFLAGS += -DUSE_SIMD
@@ -64,7 +70,7 @@ LIBS		= -ltbb # TBB is available from http://threadingbuildingblocks.org/downloa
 ### Tree building flags
 #AM_CXXFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
 
-MAKEFLAGS = --no-print-directory
+AM_MAKEFLAGS = -s
 
 help:
 	@make -C .. help

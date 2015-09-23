@@ -102,21 +102,26 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 #AM_CXXFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
 #AM_CXXFLAGS	+= -DKAHAN # Use Kahan summation
 
+### Floating point precision
+#am__append_1 = -DFP64
+
 ### SIMD flags
-am__append_1 = -DUSE_SIMD
-am__append_2 = $(AVX_CXXFLAGS) # Use AVX intrinsics
-##am__append_3 = $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
-##am__append_4 = $(NEON_CXXFLAGS) # Use Neon intrinsics
+am__append_2 = -DUSE_SIMD
+am__append_3 = $(AVX_CXXFLAGS) # Use AVX intrinsics
+##am__append_4 = $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
+##am__append_5 = $(NEON_CXXFLAGS) # Use Neon intrinsics
 bin_PROGRAMS = laplace_cartesian$(EXEEXT) laplace_spherical$(EXEEXT) \
 	tree$(EXEEXT) laplace_cartesian_kernel$(EXEEXT) \
 	laplace_spherical_kernel$(EXEEXT) $(am__EXEEXT_1)
-#am__append_5 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
+#am__append_6 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_mpi.m4 \
+	$(top_srcdir)/m4/ax_cc_maxopt.m4 \
 	$(top_srcdir)/m4/ax_check_compiler_flags.m4 \
 	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/ax_cxx_maxopt.m4 \
+	$(top_srcdir)/m4/ax_f77_maxopt.m4 \
 	$(top_srcdir)/m4/ax_gcc_archflag.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_cpuid.m4 \
 	$(top_srcdir)/configure.ac
@@ -264,7 +269,7 @@ AVX_CXXFLAGS = -mavx
 AWK = mawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -ffast-math
+CFLAGS = -O3 -fomit-frame-pointer -mtune=native -malign-double -fstrict-aliasing -fno-schedule-insns -ffast-math -ffast-math
 CPPFLAGS = 
 CXX = g++
 CXXDEPMODE = depmode=gcc3
@@ -276,8 +281,8 @@ ECHO_C =
 ECHO_N = -n
 ECHO_T = 
 EXEEXT = 
-F77 = 
-FFLAGS = 
+F77 = gfortran
+FFLAGS = -O3 -fomit-frame-pointer -malign-double -fstrict-aliasing -ffast-math
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
@@ -304,7 +309,7 @@ PACKAGE_TARNAME = exafmm
 PACKAGE_URL = 
 PACKAGE_VERSION = 1.0
 PATH_SEPARATOR = :
-PRECISION = d
+PRECISION = s
 PRTDIAG = 
 SET_MAKE = 
 SHELL = /bin/bash
@@ -317,7 +322,7 @@ abs_top_builddir = /home/yokotar/exafmm
 abs_top_srcdir = /home/yokotar/exafmm
 ac_ct_CC = gcc
 ac_ct_CXX = g++
-ac_ct_F77 = 
+ac_ct_F77 = gfortran
 am__include = include
 am__leading_dot = .
 am__quote = 
@@ -374,10 +379,10 @@ top_srcdir = ..
 #AM_CXXFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
 
 #AM_CXXFLAGS += -DIneJ # Different target and source points
-AM_CXXFLAGS = $(am__append_1) $(am__append_2) $(am__append_3) \
-	$(am__append_4) -DASSERT -DTBB -DDIRECT # Compare with direct \
+AM_CXXFLAGS = $(am__append_2) $(am__append_3) $(am__append_4) \
+	$(am__append_5) -DASSERT -DTBB -DDIRECT # Compare with direct \
 	summation
-AM_CPPFLAGS = -I../include -I../uniform
+AM_CPPFLAGS = -I../include -I../uniform $(am__append_1)
 #AM_CXXFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
 #AM_CXXFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
 #AM_CXXFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
@@ -393,7 +398,7 @@ AM_CPPFLAGS = -I../include -I../uniform
 
 ### Tree building flags
 #AM_CXXFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
-MAKEFLAGS = --no-print-directory
+AM_MAKEFLAGS = -s
 laplace_cartesian_SOURCES = fmm.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_cartesian_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DMASS -DEXPANSION=4
 laplace_spherical_SOURCES = fmm.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx

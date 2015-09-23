@@ -3,7 +3,6 @@ include ../Makefile.am.include
 #AM_CXXFLAGS += -DIneJ # Different target and source points
 AM_CXXFLAGS  += -DDIRECT # Compare with direct summation
 #AM_CXXFLAGS += -DWRITE_TIME # Write timings to file
-#AM_CXXFLAGS += -DFP64 # Use double precision
 
 bin_PROGRAMS = laplace_cartesian laplace_spherical tree
 laplace_cartesian_SOURCES = fmm.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx

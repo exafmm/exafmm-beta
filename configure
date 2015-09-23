@@ -586,15 +586,6 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
-PRTDIAG
-host_os
-host_vendor
-host_cpu
-host
-build_os
-build_vendor
-build_cpu
-build
 USE_SIMD_FALSE
 USE_SIMD_TRUE
 NEON_CXXFLAGS
@@ -611,14 +602,23 @@ MPI_TRUE
 MPIRUN
 MPILIBS
 MPIF77
-ac_ct_F77
-FFLAGS
-F77
 MPICXX
 MPICC
 PRECISION
-SINGLE_FALSE
-SINGLE_TRUE
+EXAFMM_SINGLE_FALSE
+EXAFMM_SINGLE_TRUE
+PRTDIAG
+host_os
+host_vendor
+host_cpu
+host
+build_os
+build_vendor
+build_cpu
+build
+ac_ct_F77
+FFLAGS
+F77
 am__fastdepCXX_FALSE
 am__fastdepCXX_TRUE
 CXXDEPMODE
@@ -712,6 +712,8 @@ ac_user_opts='
 enable_option_checking
 enable_silent_rules
 enable_dependency_tracking
+enable_portable_binary
+with_gcc_arch
 enable_single
 enable_float
 enable_mpi
@@ -719,8 +721,6 @@ enable_sse3
 enable_avx
 enable_neon
 enable_simd
-enable_portable_binary
-with_gcc_arch
 '
       ac_precious_vars='build_alias
 host_alias
@@ -733,10 +733,10 @@ CPPFLAGS
 CXX
 CXXFLAGS
 CCC
-MPICC
-MPICXX
 F77
 FFLAGS
+MPICC
+MPICXX
 MPIF77'
 
 
@@ -1362,6 +1362,9 @@ Optional Features:
                           do not reject slow dependency extractors
   --disable-dependency-tracking
                           speeds up one-time build
+  --disable-portable-binary
+                          enable compiler optimizations that would produce
+                          unportable binaries
   --enable-single         compile exaFMM in single precision
   --enable-float          synonym for --enable-single
   --enable-mpi            compile exaFMM MPI library
@@ -1369,9 +1372,6 @@ Optional Features:
   --enable-avx            enable AVX optimizations
   --enable-neon           enable ARM NEON optimizations
   --disable-simd          disable SIMD optimizations
-  --disable-portable-binary
-                          enable compiler optimizations that would produce
-                          unportable binaries
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1389,10 +1389,10 @@ Some influential environment variables:
               you have headers in a nonstandard directory <include dir>
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
-  MPICC       MPI C compiler command
-  MPICXX      MPI C++ compiler command
   F77         Fortran 77 compiler command
   FFLAGS      Fortran 77 compiler flags
+  MPICC       MPI C compiler command
+  MPICXX      MPI C++ compiler command
   MPIF77      MPI Fortran compiler command
 
 Use these variables to override the choices made by `configure' or to help
@@ -1589,6 +1589,48 @@ fi
 
 } # ac_fn_f77_try_compile
 
+# ac_fn_c_try_run LINENO
+# ----------------------
+# Try to link conftest.$ac_ext, and return whether this succeeded. Assumes
+# that executables *can* be run.
+ac_fn_c_try_run ()
+{
+  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
+  if { { ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_link") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; } && { ac_try='./conftest$ac_exeext'
+  { { case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
+$as_echo "$ac_try_echo"; } >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; }; then :
+  ac_retval=0
+else
+  $as_echo "$as_me: program exited with status $ac_status" >&5
+       $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+       ac_retval=$ac_status
+fi
+  rm -rf conftest.dSYM conftest_ipa8_conftest.oo
+  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
+  as_fn_set_status $ac_retval
+
+} # ac_fn_c_try_run
+
 # ac_fn_c_try_link LINENO
 # -----------------------
 # Try to link conftest.$ac_ext, and return whether this succeeded.
@@ -1701,48 +1743,6 @@ $as_echo "$ac_res" >&6; }
   eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
 
 } # ac_fn_c_check_func
-
-# ac_fn_c_try_run LINENO
-# ----------------------
-# Try to link conftest.$ac_ext, and return whether this succeeded. Assumes
-# that executables *can* be run.
-ac_fn_c_try_run ()
-{
-  as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  if { { ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_link") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; } && { ac_try='./conftest$ac_exeext'
-  { { case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:${as_lineno-$LINENO}: $ac_try_echo\""
-$as_echo "$ac_try_echo"; } >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; }; then :
-  ac_retval=0
-else
-  $as_echo "$as_me: program exited with status $ac_status" >&5
-       $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-       ac_retval=$ac_status
-fi
-  rm -rf conftest.dSYM conftest_ipa8_conftest.oo
-  eval $as_lineno_stack; ${as_lineno_stack:+:} unset as_lineno
-  as_fn_set_status $ac_retval
-
-} # ac_fn_c_try_run
 cat >config.log <<_ACEOF
 This file contains any messages produced by compilers while
 running configure, to aid debugging if configure makes a mistake.
@@ -4132,48 +4132,7 @@ else
 fi
 
 
-
-# Single precision
-# Check whether --enable-single was given.
-if test "${enable_single+set}" = set; then :
-  enableval=$enable_single; ok=$enableval
-else
-  ok=no
-fi
-
-# Check whether --enable-float was given.
-if test "${enable_float+set}" = set; then :
-  enableval=$enable_float; ok=$enableval
-fi
-
-if test "$ok" = "yes"; then
-
-$as_echo "#define EXAFMM_SINGLE 1" >>confdefs.h
-
-        PRECISION=s
-else
-        PRECISION=d
-fi
- if test "$ok" = "yes"; then
-  SINGLE_TRUE=
-  SINGLE_FALSE='#'
-else
-  SINGLE_TRUE='#'
-  SINGLE_FALSE=
-fi
-
-
-
-# MPI
-# Check whether --enable-mpi was given.
-if test "${enable_mpi+set}" = set; then :
-  enableval=$enable_mpi; enable_mpi=$enableval
-else
-  enable_mpi=no
-fi
-
-if test "$enable_mpi" = "yes"; then
-   ac_ext=f
+ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_f77_compiler_gnu
@@ -4386,567 +4345,39 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
-
-
-for ac_prog in mpicc hcc mpcc mpcc_r mpxlc cmpicc
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_MPICC+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for C compiler vendor" >&5
+$as_echo_n "checking for C compiler vendor... " >&6; }
+if ${ax_cv_c_compiler_vendor+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$MPICC"; then
-  ac_cv_prog_MPICC="$MPICC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_MPICC="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-MPICC=$ac_cv_prog_MPICC
-if test -n "$MPICC"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPICC" >&5
-$as_echo "$MPICC" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$MPICC" && break
-done
-test -n "$MPICC" || MPICC="$CC"
-
-acx_mpi_save_CC="$CC"
-CC="$MPICC"
-
-
-
-for ac_prog in mpic++ mpiCC mpicxx mpCC hcp mpxlC mpxlC_r cmpic++
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_MPICXX+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$MPICXX"; then
-  ac_cv_prog_MPICXX="$MPICXX" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_MPICXX="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-MPICXX=$ac_cv_prog_MPICXX
-if test -n "$MPICXX"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPICXX" >&5
-$as_echo "$MPICXX" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$MPICXX" && break
-done
-test -n "$MPICXX" || MPICXX="$CXX"
-
-acx_mpi_save_CXX="$CXX"
-CXX="$MPICXX"
-
-
-
-for ac_prog in mpif77 hf77 mpxlf mpf77 mpif90 mpf90 mpxlf90 mpxlf95 mpxlf_r cmpifc cmpif90c
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_MPIF77+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$MPIF77"; then
-  ac_cv_prog_MPIF77="$MPIF77" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_MPIF77="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-MPIF77=$ac_cv_prog_MPIF77
-if test -n "$MPIF77"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPIF77" >&5
-$as_echo "$MPIF77" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$MPIF77" && break
-done
-test -n "$MPIF77" || MPIF77="$F77"
-
-acx_mpi_save_F77="$F77"
-F77="$MPIF77"
-
-
-if test x = x"$MPILIBS"; then
-   	ac_fn_c_check_func "$LINENO" "MPI_Init" "ac_cv_func_MPI_Init"
-if test "x$ac_cv_func_MPI_Init" = xyes; then :
-  MPILIBS=" "
-fi
-
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init" >&5
-$as_echo_n "checking for MPI_Init... " >&6; }
-   	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+  ax_cv_c_compiler_vendor=unknown
+  # note: don't check for gcc first since some other compilers define __GNUC__
+  for ventest in intel:__ICC,__ECC,__INTEL_COMPILER ibm:__xlc__,__xlC__,__IBMC__,__IBMCPP__ pathscale:__PATHCC__,__PATHSCALE__ gnu:__GNUC__ sun:__SUNPRO_C,__SUNPRO_CC hp:__HP_cc,__HP_aCC dec:__DECC,__DECCXX,__DECC_VER,__DECCXX_VER borland:__BORLANDC__,__TURBOC__ comeau:__COMO__ cray:_CRAYC kai:__KCC lcc:__LCC__ metrowerks:__MWERKS__ sgi:__sgi,sgi microsoft:_MSC_VER watcom:__WATCOMC__ portland:__PGI; do
+    vencpp="defined("`echo $ventest | cut -d: -f2 | sed 's/,/) || defined(/g'`")"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 int
 main ()
 {
-      call MPI_Init
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  MPILIBS=" "
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-if test x = x"$MPILIBS"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpi" >&5
-$as_echo_n "checking for MPI_Init in -lmpi... " >&6; }
-if ${ac_cv_lib_mpi_MPI_Init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmpi  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
+#if !($vencpp)
+      thisisanerror;
 #endif
-char MPI_Init ();
-int
-main ()
-{
-return MPI_Init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_mpi_MPI_Init=yes
-else
-  ac_cv_lib_mpi_MPI_Init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpi_MPI_Init" >&5
-$as_echo "$ac_cv_lib_mpi_MPI_Init" >&6; }
-if test "x$ac_cv_lib_mpi_MPI_Init" = xyes; then :
-  MPILIBS="-lmpi"
-fi
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpich" >&5
-$as_echo_n "checking for MPI_Init in -lmpich... " >&6; }
-if ${ac_cv_lib_mpich_MPI_Init+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmpich  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char MPI_Init ();
-int
-main ()
-{
-return MPI_Init ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_mpich_MPI_Init=yes
-else
-  ac_cv_lib_mpich_MPI_Init=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpich_MPI_Init" >&5
-$as_echo "$ac_cv_lib_mpich_MPI_Init" >&6; }
-if test "x$ac_cv_lib_mpich_MPI_Init" = xyes; then :
-  MPILIBS="-lmpich"
-fi
-
-fi
-
-if test x != x"$MPILIBS"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpi.h" >&5
-$as_echo_n "checking for mpi.h... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <mpi.h>
-int
-main ()
-{
 
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-else
-  MPILIBS=""
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+  ax_cv_c_compiler_vendor=`echo $ventest | cut -d: -f1`; break
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-CC="$acx_mpi_save_CC"
-CXX="$acx_mpi_save_CXX"
-F77="$acx_mpi_save_F77"
-
-
-
-if test x = x"$MPILIBS"; then
-        as_fn_error $? "could not find mpi library for --enable-mpi" "$LINENO" 5
-        :
-else
-
-$as_echo "#define HAVE_MPI 1" >>confdefs.h
-
-        :
-fi
-
-   # Extract the first word of "mpirun", so it can be a program name with args.
-set dummy mpirun; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_MPIRUN+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$MPIRUN"; then
-  ac_cv_prog_MPIRUN="$MPIRUN" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_MPIRUN="mpirun"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
   done
-IFS=$as_save_IFS
 
 fi
-fi
-MPIRUN=$ac_cv_prog_MPIRUN
-if test -n "$MPIRUN"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPIRUN" >&5
-$as_echo "$MPIRUN" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-   CXX=$MPICXX
-fi
- if test "$enable_mpi" = "yes"; then
-  MPI_TRUE=
-  MPI_FALSE='#'
-else
-  MPI_TRUE='#'
-  MPI_FALSE=
-fi
-
-
-# SSE3
-# Check whether --enable-sse3 was given.
-if test "${enable_sse3+set}" = set; then :
-  enableval=$enable_sse3; have_sse3=$enableval
-else
-  have_s\
-se3=no
-fi
-
-if test "$have_sse3" = "yes"; then
-
-$as_echo "#define HAVE_SSE3 1" >>confdefs.h
-
-        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
-                as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
-        fi
-	if test "x$SSE3_CXXFLAGS" = x; then
-   	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -$flag" >&5
-$as_echo_n "checking whether C compiler accepts -$flag... " >&6; }
-ax_save_FLAGS=$CFLAGS
-   CFLAGS="-$flag"
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  eval `$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`=yes
-else
-  eval `$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   CFLAGS=$ax_save_FLAGS
-eval ax_check_compiler_flags=$`$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	SSE3_CXXFLAGS="-msse3"
-else
-	as_fn_error $? "Need a version of gcc with -msse3" "$LINENO" 5
-fi
-
-        fi
-fi
- if test "$have_sse3" = "yes"; then
-  HAVE_SSE3_TRUE=
-  HAVE_SSE3_FALSE='#'
-else
-  HAVE_SSE3_TRUE='#'
-  HAVE_SSE3_FALSE=
-fi
-
-
-
-# AVX
-# Check whether --enable-avx was given.
-if test "${enable_avx+set}" = set; then :
-  enableval=$enable_avx; have_avx=$enableval
-else
-  have_avx=no
-fi
-
-if test "$have_avx" = "yes"; then
-
-$as_echo "#define HAVE_AVX 1" >>confdefs.h
-
-        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
-                as_fn_error $? "AVX requires single or double precision" "$LINENO" 5
-        fi
-	if test "x$AVX_CXXFLAGS" = x; then
-   	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx" >&5
-$as_echo_n "checking whether C compiler accepts -mavx... " >&6; }
-if ${ax_cv_c_flags__mavx+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-mavx"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__mavx=yes
-else
-  ax_cv_c_flags__mavx=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__mavx
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	AVX_CXXFLAGS="-mavx"
-else
-	as_fn_error $? "Need a version of gcc with -mavx" "$LINENO" 5
-fi
-
-	fi
-fi
- if test "$have_avx" = "yes"; then
-  HAVE_AVX_TRUE=
-  HAVE_AVX_FALSE='#'
-else
-  HAVE_AVX_TRUE='#'
-  HAVE_AVX_FALSE=
-fi
-
-
-
-# Neon
-# Check whether --enable-neon was given.
-if test "${enable_neon+set}" = set; then :
-  enableval=$enable_neon; have_neon=$enableval
-else
-  have_n\
-eon=no
-fi
-
-if test "$have_neon" = "yes"; then
-
-$as_echo "#define HAVE_NEON 1" >>confdefs.h
-
-        if test "$PRECISION" != "s"; then
-                as_fn_error $? "NEON requires single precision" "$LINENO" 5
-        fi
-	if test "x$NEON_CXXFLAGS" = x; then
-   	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mfpu=neon" >&5
-$as_echo_n "checking whether C compiler accepts -mfpu=neon... " >&6; }
-if ${ax_cv_c_flags__mfpu_neon+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-mfpu=neon"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__mfpu_neon=yes
-else
-  ax_cv_c_flags__mfpu_neon=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__mfpu_neon
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	NEON_CXXFLAGS="-mfpu=neon"
-else
-	as_fn_error $? "Need a version of gcc with -mfpu=neon" "$LINENO" 5
-fi
-
-        fi
-fi
- if test "$have_neon" = "yes"; then
-  HAVE_NEON_TRUE=
-  HAVE_NEON_FALSE='#'
-else
-  HAVE_NEON_TRUE='#'
-  HAVE_NEON_FALSE=
-fi
-
-
-
-# Disable SIMD
-# Check whether --enable-simd was given.
-if test "${enable_simd+set}" = set; then :
-  enableval=$enable_simd; use_simd=$enableval
-else
-  use_simd=yes
-fi
-
-if test "$use_simd" = "no"; then
-
-$as_echo "#define USE_SIMD 0" >>confdefs.h
-
-fi
- if test "$use_simd" = "yes"; then
-  USE_SIMD_TRUE=
-  USE_SIMD_FALSE='#'
-else
-  USE_SIMD_TRUE='#'
-  USE_SIMD_FALSE=
-fi
-
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_c_compiler_vendor" >&5
+$as_echo "$ax_cv_c_compiler_vendor" >&6; }
 
 # Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
@@ -5018,6 +4449,415 @@ host_os=$*
 IFS=$ac_save_IFS
 case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
 
+
+
+
+
+
+
+# Try to determine "good" native compiler flags if none specified via CFLAGS
+if test "$ac_test_CFLAGS" != "set"; then
+  CFLAGS=""
+  case $ax_cv_c_compiler_vendor in
+    dec) CFLAGS="-newc -w0 -O5 -ansi_alias -ansi_args -fp_reorder -tune host"
+    	 ;;
+
+    sun) CFLAGS="-native -fast -xO5 -dalign"
+    	 ;;
+
+    hp)  CFLAGS="+Oall +Optrs_ansi +DSnative"
+    	 ;;
+
+    ibm) xlc_opt="-qtune=auto"
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $xlc_opt" >&5
+$as_echo_n "checking whether C compiler accepts $xlc_opt... " >&6; }
+ax_save_FLAGS=$CFLAGS
+   CFLAGS="$xlc_opt"
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  eval `$as_echo "ax_cv_c_flags_$xlc_opt" | $as_tr_sh`=yes
+else
+  eval `$as_echo "ax_cv_c_flags_$xlc_opt" | $as_tr_sh`=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   CFLAGS=$ax_save_FLAGS
+eval ax_check_compiler_flags=$`$as_echo "ax_cv_c_flags_$xlc_opt" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	CFLAGS="-O3 -qansialias -w $xlc_opt"
+else
+	CFLAGS="-O3 -qansialias -w"
+                echo "******************************************************"
+                echo "*  You seem to have the IBM  C compiler.  It is      *"
+                echo "*  recommended for best performance that you use:    *"
+                echo "*                                                    *"
+                echo "*    CFLAGS=-O3 -qarch=xxx -qtune=xxx -qansialias -w *"
+                echo "*                      ^^^        ^^^                *"
+                echo "*  where xxx is pwr2, pwr3, 604, or whatever kind of *"
+                echo "*  CPU you have.  (Set the CFLAGS environment var.   *"
+                echo "*  and re-run configure.)  For more info, man cc.    *"
+                echo "******************************************************"
+fi
+
+         ;;
+
+    intel) CFLAGS="-O3"
+        # Intel seems to have changed the spelling of this flag recently
+        icc_ansi_alias="unknown"
+	for flag in -ansi-alias -ansi_alias; do
+	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $flag" >&5
+$as_echo_n "checking whether C compiler accepts $flag... " >&6; }
+ax_save_FLAGS=$CFLAGS
+   CFLAGS="$flag"
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  eval `$as_echo "ax_cv_c_flags_$flag" | $as_tr_sh`=yes
+else
+  eval `$as_echo "ax_cv_c_flags_$flag" | $as_tr_sh`=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   CFLAGS=$ax_save_FLAGS
+eval ax_check_compiler_flags=$`$as_echo "ax_cv_c_flags_$flag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	icc_ansi_alias=$flag; break
+else
+	:
+fi
+
+	done
+ 	if test "x$icc_ansi_alias" != xunknown; then
+            CFLAGS="$CFLAGS $icc_ansi_alias"
+        fi
+	 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -malign-double" >&5
+$as_echo_n "checking whether C compiler accepts -malign-double... " >&6; }
+if ${ax_cv_c_flags__malign_double+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-malign-double"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__malign_double=yes
+else
+  ax_cv_c_flags__malign_double=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__malign_double
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	CFLAGS="$CFLAGS -malign-double"
+else
+	:
+fi
+
+	# We used to check for architecture flags here, e.g. -xHost etc.,
+	# but these flags are problematic.  On icc-12.0.0, "-mavx -xHost"
+	# overrides -mavx with -xHost, generating SSE2 code instead of AVX
+	# code.  ICC does not seem to support -mtune=host or equivalent
+	# non-ABI changing flag.
+	;;
+
+    gnu)
+     # Default optimization flags for gcc on all systems.
+     # Somehow -O3 does not imply -fomit-frame-pointer on ia32
+     CFLAGS="-O3 -fomit-frame-pointer"
+
+     # tune for the host by default
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mtune=native" >&5
+$as_echo_n "checking whether C compiler accepts -mtune=native... " >&6; }
+if ${ax_cv_c_flags__mtune_native+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-mtune=native"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__mtune_native=yes
+else
+  ax_cv_c_flags__mtune_native=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__mtune_native
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	CFLAGS="$CFLAGS -mtune=native"
+else
+	:
+fi
+
+
+     # -malign-double for x86 systems
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -malign-double" >&5
+$as_echo_n "checking whether C compiler accepts -malign-double... " >&6; }
+if ${ax_cv_c_flags__malign_double+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-malign-double"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__malign_double=yes
+else
+  ax_cv_c_flags__malign_double=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__malign_double
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	CFLAGS="$CFLAGS -malign-double"
+else
+	:
+fi
+
+
+     #  -fstrict-aliasing for gcc-2.95+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fstrict-aliasing" >&5
+$as_echo_n "checking whether C compiler accepts -fstrict-aliasing... " >&6; }
+if ${ax_cv_c_flags__fstrict_aliasing+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-fstrict-aliasing"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__fstrict_aliasing=yes
+else
+  ax_cv_c_flags__fstrict_aliasing=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__fstrict_aliasing
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	CFLAGS="$CFLAGS -fstrict-aliasing"
+else
+	:
+fi
+
+
+     # -fno-schedule-insns is pretty much required on all risc
+     # processors.
+     #
+     # gcc performs one pass of instruction scheduling, then a pass of
+     # register allocation, then another pass of instruction
+     # scheduling.  The first pass reorders instructions in a way that
+     # is pretty much the worst possible for the purposes of register
+     # allocation.  We disable the first pass.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-schedule-insns" >&5
+$as_echo_n "checking whether C compiler accepts -fno-schedule-insns... " >&6; }
+if ${ax_cv_c_flags__fno_schedule_insns+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-fno-schedule-insns"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__fno_schedule_insns=yes
+else
+  ax_cv_c_flags__fno_schedule_insns=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__fno_schedule_insns
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	CFLAGS="$CFLAGS -fno-schedule-insns"
+else
+	:
+fi
+
+
+     # note that we enable "unsafe" fp optimization with other compilers, too
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -ffast-math" >&5
+$as_echo_n "checking whether C compiler accepts -ffast-math... " >&6; }
+if ${ax_cv_c_flags__ffast_math+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-ffast-math"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__ffast_math=yes
+else
+  ax_cv_c_flags__ffast_math=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__ffast_math
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	CFLAGS="$CFLAGS -ffast-math"
+else
+	:
+fi
+
+
+     ;;
+  esac
+
+  if test -z "$CFLAGS"; then
+	echo ""
+	echo "********************************************************"
+        echo "* WARNING: Don't know the best CFLAGS for this system  *"
+        echo "* Use ./configure CFLAGS=... to specify your own flags *"
+	echo "* (otherwise, a default of CFLAGS=-O3 will be used)    *"
+	echo "********************************************************"
+	echo ""
+        CFLAGS="-O3"
+  fi
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts $CFLAGS" >&5
+$as_echo_n "checking whether C compiler accepts $CFLAGS... " >&6; }
+ax_save_FLAGS=$CFLAGS
+   CFLAGS="$CFLAGS"
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  eval `$as_echo "ax_cv_c_flags_$CFLAGS" | $as_tr_sh`=yes
+else
+  eval `$as_echo "ax_cv_c_flags_$CFLAGS" | $as_tr_sh`=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   CFLAGS=$ax_save_FLAGS
+eval ax_check_compiler_flags=$`$as_echo "ax_cv_c_flags_$CFLAGS" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	:
+else
+
+	echo ""
+        echo "********************************************************"
+        echo "* WARNING: The guessed CFLAGS don't seem to work with  *"
+        echo "* your compiler.                                       *"
+        echo "* Use ./configure CFLAGS=... to specify your own flags *"
+        echo "********************************************************"
+        echo ""
+        CFLAGS=""
+
+fi
+
+
+fi
 
 
 
@@ -6007,6 +5847,1040 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+
+
+
+
+# Try to determine "good" native compiler flags if none specified via FFLAGS
+if test "$ac_test_FFLAGS" != "set"; then
+  FFLAGS=""
+  case $ax_cv_c_compiler_vendor in
+    dec) FFLAGS="-newc -w0 -O5 -ansi_alias -ansi_args -fp_reorder -tune host"
+         ;;
+
+    sun) FFLAGS="-native -fast -xO5 -dalign"
+         ;;
+
+    hp)  FFLAGS="+Oall +Optrs_ansi +DSnative"
+	 ;;
+
+    ibm) xlc_opt="-qtune=auto"
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Fortran 77 compiler accepts $xlc_opt" >&5
+$as_echo_n "checking whether Fortran 77 compiler accepts $xlc_opt... " >&6; }
+ax_save_FLAGS=$FFLAGS
+   FFLAGS="$xlc_opt"
+   cat > conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+if ac_fn_f77_try_compile "$LINENO"; then :
+  eval `$as_echo "ax_cv_f77_flags_$xlc_opt" | $as_tr_sh`=yes
+else
+  eval `$as_echo "ax_cv_f77_flags_$xlc_opt" | $as_tr_sh`=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   FFLAGS=$ax_save_FLAGS
+eval ax_check_compiler_flags=$`$as_echo "ax_cv_f77_flags_$xlc_opt" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	FFLAGS="-O3 -qansialias -w $xlc_opt"
+else
+	FFLAGS="-O3 -qansialias -w"
+                echo "******************************************************"
+                echo "*  You seem to have the IBM  C compiler.  It is      *"
+                echo "*  recommended for best performance that you use:    *"
+                echo "*                                                    *"
+                echo "*    FFLAGS=-O3 -qarch=xxx -qtune=xxx -qansialias -w *"
+                echo "*                      ^^^        ^^^                *"
+                echo "*  where xxx is pwr2, pwr3, 604, or whatever kind of *"
+                echo "*  CPU you have.  (Set the FFLAGS environment var.   *"
+                echo "*  and re-run configure.)  For more info, man cxx.    *"
+                echo "******************************************************"
+fi
+
+         ;;
+
+    intel) FFLAGS="-O3 -ansi_alias"
+      icc_archflag=unknown
+        icc_flags=""
+	  case $host_cpu in
+	      i686*|x86_64*)
+              # icc accepts gcc assembly syntax, so these should work:
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for x86 cpuid 0 output" >&5
+$as_echo_n "checking for x86 cpuid 0 output... " >&6; }
+if ${ax_cv_gcc_x86_cpuid_0+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ax_cv_gcc_x86_cpuid_0=unknown
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <stdio.h>
+int
+main ()
+{
+
+     int op = 0, eax, ebx, ecx, edx;
+     FILE *f;
+#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64)
+     __asm__("push %%rbx\n\t"
+             "cpuid\n\t"
+             "pop %%rbx"
+             : "=a" (eax), "=c" (ecx), "=d" (edx)
+             : "a" (op));
+     __asm__("push %%rbx\n\t"
+             "cpuid\n\t"
+             "mov %%rbx, %%rax\n\t"
+             "pop %%rbx"
+             : "=a" (ebx), "=c" (ecx), "=d" (edx)
+             : "a" (op));
+#else
+     __asm__("push %%ebx\n\t"
+             "cpuid\n\t"
+             "pop %%ebx"
+             : "=a" (eax), "=c" (ecx), "=d" (edx)
+             : "a" (op));
+     __asm__("push %%ebx\n\t"
+             "cpuid\n\t"
+             "mov %%ebx, %%eax\n\t"
+             "pop %%ebx"
+             : "=a" (ebx), "=c" (ecx), "=d" (edx)
+             : "a" (op));
+#endif
+     f = fopen("conftest_cpuid", "w"); if (!f) return 1;
+     fprintf(f, "%x:%x:%x:%x\n", eax, ebx, ecx, edx);
+     fclose(f);
+     return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ax_cv_gcc_x86_cpuid_0=`cat conftest_cpuid`; rm -f conftest_cpuid
+else
+  ax_cv_gcc_x86_cpuid_0=unknown; rm -f conftest_cpuid
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_gcc_x86_cpuid_0" >&5
+$as_echo "$ax_cv_gcc_x86_cpuid_0" >&6; }
+ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for x86 cpuid 1 output" >&5
+$as_echo_n "checking for x86 cpuid 1 output... " >&6; }
+if ${ax_cv_gcc_x86_cpuid_1+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ax_cv_gcc_x86_cpuid_1=unknown
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <stdio.h>
+int
+main ()
+{
+
+     int op = 1, eax, ebx, ecx, edx;
+     FILE *f;
+#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64)
+     __asm__("push %%rbx\n\t"
+             "cpuid\n\t"
+             "pop %%rbx"
+             : "=a" (eax), "=c" (ecx), "=d" (edx)
+             : "a" (op));
+     __asm__("push %%rbx\n\t"
+             "cpuid\n\t"
+             "mov %%rbx, %%rax\n\t"
+             "pop %%rbx"
+             : "=a" (ebx), "=c" (ecx), "=d" (edx)
+             : "a" (op));
+#else
+     __asm__("push %%ebx\n\t"
+             "cpuid\n\t"
+             "pop %%ebx"
+             : "=a" (eax), "=c" (ecx), "=d" (edx)
+             : "a" (op));
+     __asm__("push %%ebx\n\t"
+             "cpuid\n\t"
+             "mov %%ebx, %%eax\n\t"
+             "pop %%ebx"
+             : "=a" (ebx), "=c" (ecx), "=d" (edx)
+             : "a" (op));
+#endif
+     f = fopen("conftest_cpuid", "w"); if (!f) return 1;
+     fprintf(f, "%x:%x:%x:%x\n", eax, ebx, ecx, edx);
+     fclose(f);
+     return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ax_cv_gcc_x86_cpuid_1=`cat conftest_cpuid`; rm -f conftest_cpuid
+else
+  ax_cv_gcc_x86_cpuid_1=unknown; rm -f conftest_cpuid
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_gcc_x86_cpuid_1" >&5
+$as_echo "$ax_cv_gcc_x86_cpuid_1" >&6; }
+ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+
+	            case $ax_cv_gcc_x86_cpuid_0 in # see AX_GCC_ARCHFLAG
+                *:756e6547:*:*) # Intel
+                  case $ax_cv_gcc_x86_cpuid_1 in
+                    106a?:*:*:*) icc_flags="-xSSE4.2";;
+                    1067?:*:*:*) icc_flags="-xS";;
+                    *6a?:*[234]:*:*|*6[789b]?:*:*:*) icc_flags="-xK";;
+                    *6f?:*:*:*) icc_flags="-xT";;
+                    *f3[347]:*:*:*|*f4[1347a]:*:*:*) icc_flags="-xP -xN -xW -xK";;
+                    *f??:*:*:*) icc_flags="-xN -xW -xK";;
+                  esac ;;
+              esac ;;
+          esac
+          if test "x$icc_flags" != x; then
+            for flag in $icc_flags; do
+               { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Fortran 77 compiler accepts $flag" >&5
+$as_echo_n "checking whether Fortran 77 compiler accepts $flag... " >&6; }
+ax_save_FLAGS=$FFLAGS
+   FFLAGS="$flag"
+   cat > conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+if ac_fn_f77_try_compile "$LINENO"; then :
+  eval `$as_echo "ax_cv_f77_flags_$flag" | $as_tr_sh`=yes
+else
+  eval `$as_echo "ax_cv_f77_flags_$flag" | $as_tr_sh`=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   FFLAGS=$ax_save_FLAGS
+eval ax_check_compiler_flags=$`$as_echo "ax_cv_f77_flags_$flag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	icc_archflag=$flag; break
+else
+	:
+fi
+
+            done
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icc architecture flag" >&5
+$as_echo_n "checking for icc architecture flag... " >&6; }
+	    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $icc_archflag" >&5
+$as_echo "$icc_archflag" >&6; }
+          if test "x$icc_archflag" != xunknown; then
+            FFLAGS="$FFLAGS $icc_archflag"
+          fi
+	;;
+
+    gnu)
+     # default optimization flags for gcc on all systems
+     FFLAGS="-O3 -fomit-frame-pointer"
+
+     # -malign-double for x86 systems
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Fortran 77 compiler accepts -malign-double" >&5
+$as_echo_n "checking whether Fortran 77 compiler accepts -malign-double... " >&6; }
+if ${ax_cv_f77_flags__malign_double+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$FFLAGS
+      FFLAGS="-malign-double"
+      cat > conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+if ac_fn_f77_try_compile "$LINENO"; then :
+  ax_cv_f77_flags__malign_double=yes
+else
+  ax_cv_f77_flags__malign_double=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      FFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_f77_flags__malign_double
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	FFLAGS="$FFLAGS -malign-double"
+else
+	:
+fi
+
+
+     #  -fstrict-aliasing for gcc-2.95+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Fortran 77 compiler accepts -fstrict-aliasing" >&5
+$as_echo_n "checking whether Fortran 77 compiler accepts -fstrict-aliasing... " >&6; }
+if ${ax_cv_f77_flags__fstrict_aliasing+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$FFLAGS
+      FFLAGS="-fstrict-aliasing"
+      cat > conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+if ac_fn_f77_try_compile "$LINENO"; then :
+  ax_cv_f77_flags__fstrict_aliasing=yes
+else
+  ax_cv_f77_flags__fstrict_aliasing=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      FFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_f77_flags__fstrict_aliasing
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	FFLAGS="$FFLAGS -fstrict-aliasing"
+else
+	:
+fi
+
+
+     # note that we enable "unsafe" fp optimization with other compilers, too
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Fortran 77 compiler accepts -ffast-math" >&5
+$as_echo_n "checking whether Fortran 77 compiler accepts -ffast-math... " >&6; }
+if ${ax_cv_f77_flags__ffast_math+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$FFLAGS
+      FFLAGS="-ffast-math"
+      cat > conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+if ac_fn_f77_try_compile "$LINENO"; then :
+  ax_cv_f77_flags__ffast_math=yes
+else
+  ax_cv_f77_flags__ffast_math=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      FFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_f77_flags__ffast_math
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	FFLAGS="$FFLAGS -ffast-math"
+else
+	:
+fi
+
+
+     ;;
+  esac
+
+  if test -z "$FFLAGS"; then
+  echo ""
+  echo "**********************************************************"
+        echo "* WARNING: Don't know the best FFLAGS for this system  *"
+        echo "* Use ./configure FFLAGS=... to specify your own flags *"
+	echo "* (otherwise, a default of FFLAGS=-O3 will be used)    *"
+	echo "**********************************************************"
+	echo ""
+        FFLAGS="-O3"
+  fi
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Fortran 77 compiler accepts $FFLAGS" >&5
+$as_echo_n "checking whether Fortran 77 compiler accepts $FFLAGS... " >&6; }
+ax_save_FLAGS=$FFLAGS
+   FFLAGS="$FFLAGS"
+   cat > conftest.$ac_ext <<_ACEOF
+      program main
+
+      end
+_ACEOF
+if ac_fn_f77_try_compile "$LINENO"; then :
+  eval `$as_echo "ax_cv_f77_flags_$FFLAGS" | $as_tr_sh`=yes
+else
+  eval `$as_echo "ax_cv_f77_flags_$FFLAGS" | $as_tr_sh`=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   FFLAGS=$ax_save_FLAGS
+eval ax_check_compiler_flags=$`$as_echo "ax_cv_f77_flags_$FFLAGS" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	:
+else
+
+  echo ""
+        echo "**********************************************************"
+        echo "* WARNING: The guessed FFLAGS don't seem to work with  *"
+        echo "* your compiler.                                         *"
+        echo "* Use ./configure FFLAGS=... to specify your own flags *"
+        echo "**********************************************************"
+        echo ""
+        FFLAGS=""
+
+fi
+
+
+fi
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+# Single precision
+# Check whether --enable-single was given.
+if test "${enable_single+set}" = set; then :
+  enableval=$enable_single; ok=$enableval
+else
+  ok=no
+fi
+
+# Check whether --enable-float was given.
+if test "${enable_float+set}" = set; then :
+  enableval=$enable_float; ok=$enableval
+fi
+
+if test "$ok" = "yes"; then
+
+$as_echo "#define EXAFMM_SINGLE 1" >>confdefs.h
+
+        PRECISION=s
+else
+        PRECISION=d
+fi
+ if test "$ok" = "yes"; then
+  EXAFMM_SINGLE_TRUE=
+  EXAFMM_SINGLE_FALSE='#'
+else
+  EXAFMM_SINGLE_TRUE='#'
+  EXAFMM_SINGLE_FALSE=
+fi
+
+
+
+# MPI
+# Check whether --enable-mpi was given.
+if test "${enable_mpi+set}" = set; then :
+  enableval=$enable_mpi; enable_mpi=$enableval
+else
+  enable_mpi=no
+fi
+
+if test "$enable_mpi" = "yes"; then
+
+
+
+
+for ac_prog in mpicc hcc mpcc mpcc_r mpxlc cmpicc
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_MPICC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$MPICC"; then
+  ac_cv_prog_MPICC="$MPICC" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_MPICC="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+MPICC=$ac_cv_prog_MPICC
+if test -n "$MPICC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPICC" >&5
+$as_echo "$MPICC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MPICC" && break
+done
+test -n "$MPICC" || MPICC="$CC"
+
+acx_mpi_save_CC="$CC"
+CC="$MPICC"
+
+
+
+for ac_prog in mpic++ mpiCC mpicxx mpCC hcp mpxlC mpxlC_r cmpic++
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_MPICXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$MPICXX"; then
+  ac_cv_prog_MPICXX="$MPICXX" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_MPICXX="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+MPICXX=$ac_cv_prog_MPICXX
+if test -n "$MPICXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPICXX" >&5
+$as_echo "$MPICXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MPICXX" && break
+done
+test -n "$MPICXX" || MPICXX="$CXX"
+
+acx_mpi_save_CXX="$CXX"
+CXX="$MPICXX"
+
+
+
+for ac_prog in mpif77 hf77 mpxlf mpf77 mpif90 mpf90 mpxlf90 mpxlf95 mpxlf_r cmpifc cmpif90c
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_MPIF77+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$MPIF77"; then
+  ac_cv_prog_MPIF77="$MPIF77" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_MPIF77="$ac_prog"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+MPIF77=$ac_cv_prog_MPIF77
+if test -n "$MPIF77"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPIF77" >&5
+$as_echo "$MPIF77" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MPIF77" && break
+done
+test -n "$MPIF77" || MPIF77="$F77"
+
+acx_mpi_save_F77="$F77"
+F77="$MPIF77"
+
+
+if test x = x"$MPILIBS"; then
+   	ac_fn_c_check_func "$LINENO" "MPI_Init" "ac_cv_func_MPI_Init"
+if test "x$ac_cv_func_MPI_Init" = xyes; then :
+  MPILIBS=" "
+fi
+
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init" >&5
+$as_echo_n "checking for MPI_Init... " >&6; }
+   	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+      call MPI_Init
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  MPILIBS=" "
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+if test x = x"$MPILIBS"; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpi" >&5
+$as_echo_n "checking for MPI_Init in -lmpi... " >&6; }
+if ${ac_cv_lib_mpi_MPI_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char MPI_Init ();
+int
+main ()
+{
+return MPI_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mpi_MPI_Init=yes
+else
+  ac_cv_lib_mpi_MPI_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpi_MPI_Init" >&5
+$as_echo "$ac_cv_lib_mpi_MPI_Init" >&6; }
+if test "x$ac_cv_lib_mpi_MPI_Init" = xyes; then :
+  MPILIBS="-lmpi"
+fi
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpich" >&5
+$as_echo_n "checking for MPI_Init in -lmpich... " >&6; }
+if ${ac_cv_lib_mpich_MPI_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpich  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char MPI_Init ();
+int
+main ()
+{
+return MPI_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mpich_MPI_Init=yes
+else
+  ac_cv_lib_mpich_MPI_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpich_MPI_Init" >&5
+$as_echo "$ac_cv_lib_mpich_MPI_Init" >&6; }
+if test "x$ac_cv_lib_mpich_MPI_Init" = xyes; then :
+  MPILIBS="-lmpich"
+fi
+
+fi
+
+if test x != x"$MPILIBS"; then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpi.h" >&5
+$as_echo_n "checking for mpi.h... " >&6; }
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <mpi.h>
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  MPILIBS=""
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+CC="$acx_mpi_save_CC"
+CXX="$acx_mpi_save_CXX"
+F77="$acx_mpi_save_F77"
+
+
+
+if test x = x"$MPILIBS"; then
+        as_fn_error $? "could not find mpi library for --enable-mpi" "$LINENO" 5
+        :
+else
+
+$as_echo "#define HAVE_MPI 1" >>confdefs.h
+
+        :
+fi
+
+   # Extract the first word of "mpirun", so it can be a program name with args.
+set dummy mpirun; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_MPIRUN+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$MPIRUN"; then
+  ac_cv_prog_MPIRUN="$MPIRUN" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_MPIRUN="mpirun"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+MPIRUN=$ac_cv_prog_MPIRUN
+if test -n "$MPIRUN"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MPIRUN" >&5
+$as_echo "$MPIRUN" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+   CXX=$MPICXX
+fi
+ if test "$enable_mpi" = "yes"; then
+  MPI_TRUE=
+  MPI_FALSE='#'
+else
+  MPI_TRUE='#'
+  MPI_FALSE=
+fi
+
+
+# SSE3
+# Check whether --enable-sse3 was given.
+if test "${enable_sse3+set}" = set; then :
+  enableval=$enable_sse3; have_sse3=$enableval
+else
+  have_s\
+se3=no
+fi
+
+if test "$have_sse3" = "yes"; then
+
+$as_echo "#define HAVE_SSE3 1" >>confdefs.h
+
+        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+                as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
+        fi
+	if test "x$SSE3_CXXFLAGS" = x; then
+   	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -$flag" >&5
+$as_echo_n "checking whether C compiler accepts -$flag... " >&6; }
+ax_save_FLAGS=$CFLAGS
+   CFLAGS="-$flag"
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  eval `$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`=yes
+else
+  eval `$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   CFLAGS=$ax_save_FLAGS
+eval ax_check_compiler_flags=$`$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	SSE3_CXXFLAGS="-msse3"
+else
+	as_fn_error $? "Need a version of gcc with -msse3" "$LINENO" 5
+fi
+
+        fi
+fi
+ if test "$have_sse3" = "yes"; then
+  HAVE_SSE3_TRUE=
+  HAVE_SSE3_FALSE='#'
+else
+  HAVE_SSE3_TRUE='#'
+  HAVE_SSE3_FALSE=
+fi
+
+
+
+# AVX
+# Check whether --enable-avx was given.
+if test "${enable_avx+set}" = set; then :
+  enableval=$enable_avx; have_avx=$enableval
+else
+  have_avx=no
+fi
+
+if test "$have_avx" = "yes"; then
+
+$as_echo "#define HAVE_AVX 1" >>confdefs.h
+
+        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+                as_fn_error $? "AVX requires single or double precision" "$LINENO" 5
+        fi
+	if test "x$AVX_CXXFLAGS" = x; then
+   	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx" >&5
+$as_echo_n "checking whether C compiler accepts -mavx... " >&6; }
+if ${ax_cv_c_flags__mavx+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-mavx"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__mavx=yes
+else
+  ax_cv_c_flags__mavx=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__mavx
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	AVX_CXXFLAGS="-mavx"
+else
+	as_fn_error $? "Need a version of gcc with -mavx" "$LINENO" 5
+fi
+
+	fi
+fi
+ if test "$have_avx" = "yes"; then
+  HAVE_AVX_TRUE=
+  HAVE_AVX_FALSE='#'
+else
+  HAVE_AVX_TRUE='#'
+  HAVE_AVX_FALSE=
+fi
+
+
+
+# Neon
+# Check whether --enable-neon was given.
+if test "${enable_neon+set}" = set; then :
+  enableval=$enable_neon; have_neon=$enableval
+else
+  have_n\
+eon=no
+fi
+
+if test "$have_neon" = "yes"; then
+
+$as_echo "#define HAVE_NEON 1" >>confdefs.h
+
+        if test "$PRECISION" != "s"; then
+                as_fn_error $? "NEON requires single precision" "$LINENO" 5
+        fi
+	if test "x$NEON_CXXFLAGS" = x; then
+   	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mfpu=neon" >&5
+$as_echo_n "checking whether C compiler accepts -mfpu=neon... " >&6; }
+if ${ax_cv_c_flags__mfpu_neon+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-mfpu=neon"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__mfpu_neon=yes
+else
+  ax_cv_c_flags__mfpu_neon=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__mfpu_neon
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	NEON_CXXFLAGS="-mfpu=neon"
+else
+	as_fn_error $? "Need a version of gcc with -mfpu=neon" "$LINENO" 5
+fi
+
+        fi
+fi
+ if test "$have_neon" = "yes"; then
+  HAVE_NEON_TRUE=
+  HAVE_NEON_FALSE='#'
+else
+  HAVE_NEON_TRUE='#'
+  HAVE_NEON_FALSE=
+fi
+
+
+
+# Disable SIMD
+# Check whether --enable-simd was given.
+if test "${enable_simd+set}" = set; then :
+  enableval=$enable_simd; use_simd=$enableval
+else
+  use_simd=yes
+fi
+
+if test "$use_simd" = "no"; then
+
+$as_echo "#define USE_SIMD 0" >>confdefs.h
+
+fi
+ if test "$use_simd" = "yes"; then
+  USE_SIMD_TRUE=
+  USE_SIMD_FALSE='#'
+else
+  USE_SIMD_TRUE='#'
+  USE_SIMD_FALSE=
+fi
+
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -6144,8 +7018,8 @@ if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${SINGLE_TRUE}" && test -z "${SINGLE_FALSE}"; then
-  as_fn_error $? "conditional \"SINGLE\" was never defined.
+if test -z "${EXAFMM_SINGLE_TRUE}" && test -z "${EXAFMM_SINGLE_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_SINGLE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MPI_TRUE}" && test -z "${MPI_FALSE}"; then
