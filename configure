@@ -581,7 +581,7 @@ PACKAGE_STRING='exaFMM 1.0'
 PACKAGE_BUGREPORT=''
 PACKAGE_URL=''
 
-ac_unique_file="examples/serial.cxx"
+ac_unique_file="examples/fmm.cxx"
 ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS

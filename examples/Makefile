@@ -139,7 +139,7 @@ am__dirstamp = $(am__leading_dot)dirstamp
 #	../kernels/ewald_mpi-LaplaceP2PCPU.$(OBJEXT)
 ewald_mpi_OBJECTS = $(am_ewald_mpi_OBJECTS)
 ewald_mpi_LDADD = $(LDADD)
-am_laplace_cartesian_OBJECTS = laplace_cartesian-serial.$(OBJEXT) \
+am_laplace_cartesian_OBJECTS = laplace_cartesian-fmm.$(OBJEXT) \
 	../kernels/laplace_cartesian-LaplaceCartesianCPU.$(OBJEXT) \
 	../kernels/laplace_cartesian-LaplaceP2PCPU.$(OBJEXT)
 laplace_cartesian_OBJECTS = $(am_laplace_cartesian_OBJECTS)
@@ -151,16 +151,16 @@ am_laplace_cartesian_kernel_OBJECTS =  \
 laplace_cartesian_kernel_OBJECTS =  \
 	$(am_laplace_cartesian_kernel_OBJECTS)
 laplace_cartesian_kernel_LDADD = $(LDADD)
-am__laplace_cartesian_mpi_SOURCES_DIST = parallel.cxx \
+am__laplace_cartesian_mpi_SOURCES_DIST = fmm_mpi.cxx \
 	../kernels/LaplaceCartesianCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
 #am_laplace_cartesian_mpi_OBJECTS =  \
-#	laplace_cartesian_mpi-parallel.$(OBJEXT) \
+#	laplace_cartesian_mpi-fmm_mpi.$(OBJEXT) \
 #	../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.$(OBJEXT) \
 #	../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.$(OBJEXT)
 laplace_cartesian_mpi_OBJECTS = $(am_laplace_cartesian_mpi_OBJECTS)
 laplace_cartesian_mpi_LDADD = $(LDADD)
-am_laplace_spherical_OBJECTS = laplace_spherical-serial.$(OBJEXT) \
+am_laplace_spherical_OBJECTS = laplace_spherical-fmm.$(OBJEXT) \
 	../kernels/laplace_spherical-LaplaceSphericalCPU.$(OBJEXT) \
 	../kernels/laplace_spherical-LaplaceP2PCPU.$(OBJEXT)
 laplace_spherical_OBJECTS = $(am_laplace_spherical_OBJECTS)
@@ -172,11 +172,11 @@ am_laplace_spherical_kernel_OBJECTS =  \
 laplace_spherical_kernel_OBJECTS =  \
 	$(am_laplace_spherical_kernel_OBJECTS)
 laplace_spherical_kernel_LDADD = $(LDADD)
-am__laplace_spherical_mpi_SOURCES_DIST = parallel.cxx \
+am__laplace_spherical_mpi_SOURCES_DIST = fmm_mpi.cxx \
 	../kernels/LaplaceSphericalCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
 #am_laplace_spherical_mpi_OBJECTS =  \
-#	laplace_spherical_mpi-parallel.$(OBJEXT) \
+#	laplace_spherical_mpi-fmm_mpi.$(OBJEXT) \
 #	../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.$(OBJEXT) \
 #	../kernels/laplace_spherical_mpi-LaplaceP2PCPU.$(OBJEXT)
 laplace_spherical_mpi_OBJECTS = $(am_laplace_spherical_mpi_OBJECTS)
@@ -394,9 +394,9 @@ AM_CPPFLAGS = -I../include -I../uniform
 ### Tree building flags
 #AM_CXXFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
 MAKEFLAGS = --no-print-directory
-laplace_cartesian_SOURCES = serial.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+laplace_cartesian_SOURCES = fmm.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_cartesian_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DMASS -DEXPANSION=4
-laplace_spherical_SOURCES = serial.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+laplace_spherical_SOURCES = fmm.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DSpherical -DEXPANSION=10
 tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
@@ -404,9 +404,9 @@ laplace_cartesian_kernel_SOURCES = kernel.cxx ../kernels/LaplaceCartesianCPU.cxx
 laplace_cartesian_kernel_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
 laplace_spherical_kernel_SOURCES = kernel.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_spherical_kernel_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
-#laplace_cartesian_mpi_SOURCES = parallel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+#laplace_cartesian_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 #laplace_cartesian_mpi_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
-#laplace_spherical_mpi_SOURCES = parallel.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+#laplace_spherical_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 #laplace_spherical_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
 #ewald_mpi_SOURCES = ewald.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 #ewald_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
@@ -590,12 +590,12 @@ include ../kernels/$(DEPDIR)/laplace_spherical_kernel-LaplaceSphericalCPU.Po
 include ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceP2PCPU.Po
 include ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceSphericalCPU.Po
 include ./$(DEPDIR)/ewald_mpi-ewald.Po
-include ./$(DEPDIR)/laplace_cartesian-serial.Po
+include ./$(DEPDIR)/laplace_cartesian-fmm.Po
 include ./$(DEPDIR)/laplace_cartesian_kernel-kernel.Po
-include ./$(DEPDIR)/laplace_cartesian_mpi-parallel.Po
-include ./$(DEPDIR)/laplace_spherical-serial.Po
+include ./$(DEPDIR)/laplace_cartesian_mpi-fmm_mpi.Po
+include ./$(DEPDIR)/laplace_spherical-fmm.Po
 include ./$(DEPDIR)/laplace_spherical_kernel-kernel.Po
-include ./$(DEPDIR)/laplace_spherical_mpi-parallel.Po
+include ./$(DEPDIR)/laplace_spherical_mpi-fmm_mpi.Po
 include ./$(DEPDIR)/tree-tree.Po
 
 .cxx.o:
@@ -656,19 +656,19 @@ ewald_mpi-ewald.obj: ewald.cxx
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ewald_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/ewald_mpi-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
-laplace_cartesian-serial.o: serial.cxx
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian-serial.o -MD -MP -MF $(DEPDIR)/laplace_cartesian-serial.Tpo -c -o laplace_cartesian-serial.o `test -f 'serial.cxx' || echo '$(srcdir)/'`serial.cxx
-	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian-serial.Tpo $(DEPDIR)/laplace_cartesian-serial.Po
-#	$(AM_V_CXX)source='serial.cxx' object='laplace_cartesian-serial.o' libtool=no \
+laplace_cartesian-fmm.o: fmm.cxx
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian-fmm.o -MD -MP -MF $(DEPDIR)/laplace_cartesian-fmm.Tpo -c -o laplace_cartesian-fmm.o `test -f 'fmm.cxx' || echo '$(srcdir)/'`fmm.cxx
+	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian-fmm.Tpo $(DEPDIR)/laplace_cartesian-fmm.Po
+#	$(AM_V_CXX)source='fmm.cxx' object='laplace_cartesian-fmm.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian-serial.o `test -f 'serial.cxx' || echo '$(srcdir)/'`serial.cxx
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian-fmm.o `test -f 'fmm.cxx' || echo '$(srcdir)/'`fmm.cxx
 
-laplace_cartesian-serial.obj: serial.cxx
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian-serial.obj -MD -MP -MF $(DEPDIR)/laplace_cartesian-serial.Tpo -c -o laplace_cartesian-serial.obj `if test -f 'serial.cxx'; then $(CYGPATH_W) 'serial.cxx'; else $(CYGPATH_W) '$(srcdir)/serial.cxx'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian-serial.Tpo $(DEPDIR)/laplace_cartesian-serial.Po
-#	$(AM_V_CXX)source='serial.cxx' object='laplace_cartesian-serial.obj' libtool=no \
+laplace_cartesian-fmm.obj: fmm.cxx
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian-fmm.obj -MD -MP -MF $(DEPDIR)/laplace_cartesian-fmm.Tpo -c -o laplace_cartesian-fmm.obj `if test -f 'fmm.cxx'; then $(CYGPATH_W) 'fmm.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm.cxx'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian-fmm.Tpo $(DEPDIR)/laplace_cartesian-fmm.Po
+#	$(AM_V_CXX)source='fmm.cxx' object='laplace_cartesian-fmm.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian-serial.obj `if test -f 'serial.cxx'; then $(CYGPATH_W) 'serial.cxx'; else $(CYGPATH_W) '$(srcdir)/serial.cxx'; fi`
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian-fmm.obj `if test -f 'fmm.cxx'; then $(CYGPATH_W) 'fmm.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm.cxx'; fi`
 
 ../kernels/laplace_cartesian-LaplaceCartesianCPU.o: ../kernels/LaplaceCartesianCPU.cxx
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_cartesian-LaplaceCartesianCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceCartesianCPU.Tpo -c -o ../kernels/laplace_cartesian-LaplaceCartesianCPU.o `test -f '../kernels/LaplaceCartesianCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceCartesianCPU.cxx
@@ -740,19 +740,19 @@ laplace_cartesian_kernel-kernel.obj: kernel.cxx
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_cartesian_kernel-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
-laplace_cartesian_mpi-parallel.o: parallel.cxx
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian_mpi-parallel.o -MD -MP -MF $(DEPDIR)/laplace_cartesian_mpi-parallel.Tpo -c -o laplace_cartesian_mpi-parallel.o `test -f 'parallel.cxx' || echo '$(srcdir)/'`parallel.cxx
-	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian_mpi-parallel.Tpo $(DEPDIR)/laplace_cartesian_mpi-parallel.Po
-#	$(AM_V_CXX)source='parallel.cxx' object='laplace_cartesian_mpi-parallel.o' libtool=no \
+laplace_cartesian_mpi-fmm_mpi.o: fmm_mpi.cxx
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian_mpi-fmm_mpi.o -MD -MP -MF $(DEPDIR)/laplace_cartesian_mpi-fmm_mpi.Tpo -c -o laplace_cartesian_mpi-fmm_mpi.o `test -f 'fmm_mpi.cxx' || echo '$(srcdir)/'`fmm_mpi.cxx
+	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian_mpi-fmm_mpi.Tpo $(DEPDIR)/laplace_cartesian_mpi-fmm_mpi.Po
+#	$(AM_V_CXX)source='fmm_mpi.cxx' object='laplace_cartesian_mpi-fmm_mpi.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian_mpi-parallel.o `test -f 'parallel.cxx' || echo '$(srcdir)/'`parallel.cxx
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian_mpi-fmm_mpi.o `test -f 'fmm_mpi.cxx' || echo '$(srcdir)/'`fmm_mpi.cxx
 
-laplace_cartesian_mpi-parallel.obj: parallel.cxx
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian_mpi-parallel.obj -MD -MP -MF $(DEPDIR)/laplace_cartesian_mpi-parallel.Tpo -c -o laplace_cartesian_mpi-parallel.obj `if test -f 'parallel.cxx'; then $(CYGPATH_W) 'parallel.cxx'; else $(CYGPATH_W) '$(srcdir)/parallel.cxx'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian_mpi-parallel.Tpo $(DEPDIR)/laplace_cartesian_mpi-parallel.Po
-#	$(AM_V_CXX)source='parallel.cxx' object='laplace_cartesian_mpi-parallel.obj' libtool=no \
+laplace_cartesian_mpi-fmm_mpi.obj: fmm_mpi.cxx
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian_mpi-fmm_mpi.obj -MD -MP -MF $(DEPDIR)/laplace_cartesian_mpi-fmm_mpi.Tpo -c -o laplace_cartesian_mpi-fmm_mpi.obj `if test -f 'fmm_mpi.cxx'; then $(CYGPATH_W) 'fmm_mpi.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm_mpi.cxx'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian_mpi-fmm_mpi.Tpo $(DEPDIR)/laplace_cartesian_mpi-fmm_mpi.Po
+#	$(AM_V_CXX)source='fmm_mpi.cxx' object='laplace_cartesian_mpi-fmm_mpi.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian_mpi-parallel.obj `if test -f 'parallel.cxx'; then $(CYGPATH_W) 'parallel.cxx'; else $(CYGPATH_W) '$(srcdir)/parallel.cxx'; fi`
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian_mpi-fmm_mpi.obj `if test -f 'fmm_mpi.cxx'; then $(CYGPATH_W) 'fmm_mpi.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm_mpi.cxx'; fi`
 
 ../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.o: ../kernels/LaplaceCartesianCPU.cxx
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceCartesianCPU.Tpo -c -o ../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.o `test -f '../kernels/LaplaceCartesianCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceCartesianCPU.cxx
@@ -782,19 +782,19 @@ laplace_cartesian_mpi-parallel.obj: parallel.cxx
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
-laplace_spherical-serial.o: serial.cxx
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical-serial.o -MD -MP -MF $(DEPDIR)/laplace_spherical-serial.Tpo -c -o laplace_spherical-serial.o `test -f 'serial.cxx' || echo '$(srcdir)/'`serial.cxx
-	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical-serial.Tpo $(DEPDIR)/laplace_spherical-serial.Po
-#	$(AM_V_CXX)source='serial.cxx' object='laplace_spherical-serial.o' libtool=no \
+laplace_spherical-fmm.o: fmm.cxx
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical-fmm.o -MD -MP -MF $(DEPDIR)/laplace_spherical-fmm.Tpo -c -o laplace_spherical-fmm.o `test -f 'fmm.cxx' || echo '$(srcdir)/'`fmm.cxx
+	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical-fmm.Tpo $(DEPDIR)/laplace_spherical-fmm.Po
+#	$(AM_V_CXX)source='fmm.cxx' object='laplace_spherical-fmm.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical-serial.o `test -f 'serial.cxx' || echo '$(srcdir)/'`serial.cxx
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical-fmm.o `test -f 'fmm.cxx' || echo '$(srcdir)/'`fmm.cxx
 
-laplace_spherical-serial.obj: serial.cxx
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical-serial.obj -MD -MP -MF $(DEPDIR)/laplace_spherical-serial.Tpo -c -o laplace_spherical-serial.obj `if test -f 'serial.cxx'; then $(CYGPATH_W) 'serial.cxx'; else $(CYGPATH_W) '$(srcdir)/serial.cxx'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical-serial.Tpo $(DEPDIR)/laplace_spherical-serial.Po
-#	$(AM_V_CXX)source='serial.cxx' object='laplace_spherical-serial.obj' libtool=no \
+laplace_spherical-fmm.obj: fmm.cxx
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical-fmm.obj -MD -MP -MF $(DEPDIR)/laplace_spherical-fmm.Tpo -c -o laplace_spherical-fmm.obj `if test -f 'fmm.cxx'; then $(CYGPATH_W) 'fmm.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm.cxx'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical-fmm.Tpo $(DEPDIR)/laplace_spherical-fmm.Po
+#	$(AM_V_CXX)source='fmm.cxx' object='laplace_spherical-fmm.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical-serial.obj `if test -f 'serial.cxx'; then $(CYGPATH_W) 'serial.cxx'; else $(CYGPATH_W) '$(srcdir)/serial.cxx'; fi`
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical-fmm.obj `if test -f 'fmm.cxx'; then $(CYGPATH_W) 'fmm.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm.cxx'; fi`
 
 ../kernels/laplace_spherical-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_spherical-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_spherical-LaplaceSphericalCPU.Tpo -c -o ../kernels/laplace_spherical-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
@@ -866,19 +866,19 @@ laplace_spherical_kernel-kernel.obj: kernel.cxx
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_spherical_kernel-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
-laplace_spherical_mpi-parallel.o: parallel.cxx
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical_mpi-parallel.o -MD -MP -MF $(DEPDIR)/laplace_spherical_mpi-parallel.Tpo -c -o laplace_spherical_mpi-parallel.o `test -f 'parallel.cxx' || echo '$(srcdir)/'`parallel.cxx
-	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical_mpi-parallel.Tpo $(DEPDIR)/laplace_spherical_mpi-parallel.Po
-#	$(AM_V_CXX)source='parallel.cxx' object='laplace_spherical_mpi-parallel.o' libtool=no \
+laplace_spherical_mpi-fmm_mpi.o: fmm_mpi.cxx
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical_mpi-fmm_mpi.o -MD -MP -MF $(DEPDIR)/laplace_spherical_mpi-fmm_mpi.Tpo -c -o laplace_spherical_mpi-fmm_mpi.o `test -f 'fmm_mpi.cxx' || echo '$(srcdir)/'`fmm_mpi.cxx
+	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical_mpi-fmm_mpi.Tpo $(DEPDIR)/laplace_spherical_mpi-fmm_mpi.Po
+#	$(AM_V_CXX)source='fmm_mpi.cxx' object='laplace_spherical_mpi-fmm_mpi.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical_mpi-parallel.o `test -f 'parallel.cxx' || echo '$(srcdir)/'`parallel.cxx
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical_mpi-fmm_mpi.o `test -f 'fmm_mpi.cxx' || echo '$(srcdir)/'`fmm_mpi.cxx
 
-laplace_spherical_mpi-parallel.obj: parallel.cxx
-	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical_mpi-parallel.obj -MD -MP -MF $(DEPDIR)/laplace_spherical_mpi-parallel.Tpo -c -o laplace_spherical_mpi-parallel.obj `if test -f 'parallel.cxx'; then $(CYGPATH_W) 'parallel.cxx'; else $(CYGPATH_W) '$(srcdir)/parallel.cxx'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical_mpi-parallel.Tpo $(DEPDIR)/laplace_spherical_mpi-parallel.Po
-#	$(AM_V_CXX)source='parallel.cxx' object='laplace_spherical_mpi-parallel.obj' libtool=no \
+laplace_spherical_mpi-fmm_mpi.obj: fmm_mpi.cxx
+	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical_mpi-fmm_mpi.obj -MD -MP -MF $(DEPDIR)/laplace_spherical_mpi-fmm_mpi.Tpo -c -o laplace_spherical_mpi-fmm_mpi.obj `if test -f 'fmm_mpi.cxx'; then $(CYGPATH_W) 'fmm_mpi.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm_mpi.cxx'; fi`
+	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical_mpi-fmm_mpi.Tpo $(DEPDIR)/laplace_spherical_mpi-fmm_mpi.Po
+#	$(AM_V_CXX)source='fmm_mpi.cxx' object='laplace_spherical_mpi-fmm_mpi.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
-#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical_mpi-parallel.obj `if test -f 'parallel.cxx'; then $(CYGPATH_W) 'parallel.cxx'; else $(CYGPATH_W) '$(srcdir)/parallel.cxx'; fi`
+#	$(AM_V_CXX_no)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical_mpi-fmm_mpi.obj `if test -f 'fmm_mpi.cxx'; then $(CYGPATH_W) 'fmm_mpi.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm_mpi.cxx'; fi`
 
 ../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
 	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceSphericalCPU.Tpo -c -o ../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx

@@ -33,7 +33,7 @@ tree: tree.o $(OBJECTS)
 	mv time.dat stelletto-18-10-exafmm-plummer.txt
 
 # Test for serial FMM
-serial: serial.o $(OBJECTS)
+serial: fmm.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	./a.out
 
@@ -44,13 +44,13 @@ Nserial:
 	done
 
 # Test for parallel FMM
-parallel: parallel.o $(OBJECTS)
+parallel: fmm_mpi.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	mpirun -np 2 ./a.out
 #	mpirun -np 9 ./a.out --ncrit 256 --distribution plummer
 
 # Checking O(N) complexity
-complexity: serial.o $(OBJECTS)
+complexity: fmm.o $(OBJECTS)
 	$(CXX) $? $(LFLAGS)
 	for N in 10000 20000 50000 100000 200000 500000 1000000; do \
         ./a.out --numBodies $$N; echo; \
