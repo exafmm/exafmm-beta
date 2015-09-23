@@ -1,6 +1,14 @@
 -- autotools --
-ctags2 merge with ctags
-put AX_CXX_MAXOPT right after AC_PROG_CXX
+ctags2 merge with ctags -> use AM_CTAGSFLAGS
+only compile parallel if MPI enabled
+consider case where SIMD is not enabled, remove macro USE_SIMD
+Actually, remove all -D macros and move them to --enable** + CPPFLAGS
+IneJ should be runtime parameter
+serial -> test
+parallel -> test_mpi
+define laplace_CPPFLAGS and insert to laplace_cartesian/spherical_CPPFLAGS
+C and Fortran optimization with MAXOPT
+Better way to do: MAKEFLAGS = --no-print-directory
 
 -- Tips --
 Keep notes of possible optimizations in each file

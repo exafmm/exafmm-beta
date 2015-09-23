@@ -1,16 +1,3 @@
-### choose kernel
-EQUATION = Laplace
-#EQUATION = Helmholtz
-#EQUATION = Stokes
-
-### choose basis of multipole/local expansion
-BASIS	= Cartesian
-#BASIS	= Spherical
-
-### choose device to use
-DEVICE	= CPU
-#DEVICE	= GPU
-
 ### choose C++ compiler
 #CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
 #CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -Wa,-q -ffast-math -funroll-loops -fopenmp # GCC (OS X)
@@ -37,9 +24,7 @@ CXX		+= -I../include -I../uniform
 #CXX		+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #AM_CXXFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 #AM_CXXFLAGS	+= -fPIC # for shared library
-AM_CXXFLAGS	= -D$(EQUATION) # Specify equation
-AM_CXXFLAGS	+= -D$(BASIS) # Specify basis of multipole/local expansion
-AM_CXXFLAGS	+= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
+AM_CXXFLAGS	= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #AM_CXXFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
 #AM_CXXFLAGS	+= -DKAHAN # Use Kahan summation
 
@@ -82,7 +67,8 @@ LIBS		= -ltbb # TBB is available from http://threadingbuildingblocks.org/downloa
 ### Tree building flags
 #AM_CXXFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
 
-SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx ../kernels/$(EQUATION)P2P$(DEVICE).cxx
+SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx \
+	../kernels/$(EQUATION)P2P$(DEVICE).cxx
 OBJECTS	= $(SOURCES:.cxx=.o)
 
 MAKEFLAGS = --no-print-directory

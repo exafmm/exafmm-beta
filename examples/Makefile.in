@@ -14,6 +14,27 @@
 
 @SET_MAKE@
 
+### choose C++ compiler
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
+#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -Wa,-q -ffast-math -funroll-loops -fopenmp # GCC (OS X)
+#CXX	= CC -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp -dynamic # GCC (Cray)
+#CXX	= mpicxx -xHOST -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
+#CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
+#CXX	= CC -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp -dynamic # Intel (Cray)
+#CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
+#CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
+#CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/Q
+#CXX	= mpixlcxx_r -qarch=450d -qtune=450 -O3 -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/P
+#CXX	= mpiFCCpx -Kfast,openmp # K computer / FX10 (cross compiler)
+#CXX	= mpiFCC -Kfast,openmp # K computer / FX10 (interactive)
+#CXX	= tau_cxx.sh # TAU compiler instrumentation
+
+### choose fortran compiler
+#FC = mpif90 -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
+#FC = ftn -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran (Cray)
+#FC = mpif90 -O3 -xHOST -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
+#FC = ftn -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel (Cray)
+
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -88,7 +109,8 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 @HAVE_AVX_TRUE@am__append_2 = $(AVX_CXXFLAGS) # Use AVX intrinsics
 @HAVE_ALTIVEC_TRUE@am__append_3 = $(ALTIVEC_CXXFLAGS) # Use Altivec intrinsics
 @HAVE_NEON_TRUE@am__append_4 = $(NEON_CXXFLAGS) # Use Neon intrinsics
-bin_PROGRAMS = serial$(EXEEXT) parallel$(EXEEXT)
+bin_PROGRAMS = laplace_cartesian$(EXEEXT) laplace_spherical$(EXEEXT) \
+	laplace_cartesian_mpi$(EXEEXT) laplace_spherical_mpi$(EXEEXT)
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_mpi.m4 \
@@ -107,16 +129,28 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__dirstamp = $(am__leading_dot)dirstamp
-am_parallel_OBJECTS = parallel.$(OBJEXT) \
-	../kernels/LaplaceCartesianCPU.$(OBJEXT) \
-	../kernels/LaplaceP2PCPU.$(OBJEXT)
-parallel_OBJECTS = $(am_parallel_OBJECTS)
-parallel_LDADD = $(LDADD)
-am_serial_OBJECTS = serial.$(OBJEXT) \
-	../kernels/LaplaceCartesianCPU.$(OBJEXT) \
-	../kernels/LaplaceP2PCPU.$(OBJEXT)
-serial_OBJECTS = $(am_serial_OBJECTS)
-serial_LDADD = $(LDADD)
+am_laplace_cartesian_OBJECTS = laplace_cartesian-serial.$(OBJEXT) \
+	../kernels/laplace_cartesian-LaplaceCartesianCPU.$(OBJEXT) \
+	../kernels/laplace_cartesian-LaplaceP2PCPU.$(OBJEXT)
+laplace_cartesian_OBJECTS = $(am_laplace_cartesian_OBJECTS)
+laplace_cartesian_LDADD = $(LDADD)
+am_laplace_cartesian_mpi_OBJECTS =  \
+	laplace_cartesian_mpi-parallel.$(OBJEXT) \
+	../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.$(OBJEXT) \
+	../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.$(OBJEXT)
+laplace_cartesian_mpi_OBJECTS = $(am_laplace_cartesian_mpi_OBJECTS)
+laplace_cartesian_mpi_LDADD = $(LDADD)
+am_laplace_spherical_OBJECTS = laplace_spherical-serial.$(OBJEXT) \
+	../kernels/laplace_spherical-LaplaceSphericalCPU.$(OBJEXT) \
+	../kernels/laplace_spherical-LaplaceP2PCPU.$(OBJEXT)
+laplace_spherical_OBJECTS = $(am_laplace_spherical_OBJECTS)
+laplace_spherical_LDADD = $(LDADD)
+am_laplace_spherical_mpi_OBJECTS =  \
+	laplace_spherical_mpi-parallel.$(OBJEXT) \
+	../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.$(OBJEXT) \
+	../kernels/laplace_spherical_mpi-LaplaceP2PCPU.$(OBJEXT)
+laplace_spherical_mpi_OBJECTS = $(am_laplace_spherical_mpi_OBJECTS)
+laplace_spherical_mpi_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -133,6 +167,10 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 AM_V_CXX = $(am__v_CXX_@AM_V@)
@@ -146,7 +184,9 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-DIST_SOURCES = $(parallel_SOURCES) $(serial_SOURCES)
+DIST_SOURCES = $(laplace_cartesian_SOURCES) \
+	$(laplace_cartesian_mpi_SOURCES) $(laplace_spherical_SOURCES) \
+	$(laplace_spherical_mpi_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -185,28 +225,6 @@ CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPPFLAGS = @CPPFLAGS@
-#DEVICE	= GPU
-
-### choose C++ compiler
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -Wa,-q -ffast-math -funroll-loops -fopenmp # GCC (OS X)
-#CXX	= CC -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp -dynamic # GCC (Cray)
-#CXX	= mpicxx -xHOST -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
-#CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
-#CXX	= CC -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp -dynamic # Intel (Cray)
-#CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
-#CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
-#CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/Q
-#CXX	= mpixlcxx_r -qarch=450d -qtune=450 -O3 -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/P
-#CXX	= mpiFCCpx -Kfast,openmp # K computer / FX10 (cross compiler)
-#CXX	= mpiFCC -Kfast,openmp # K computer / FX10 (interactive)
-#CXX	= tau_cxx.sh # TAU compiler instrumentation
-
-### choose fortran compiler
-#FC = mpif90 -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
-#FC = ftn -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran (Cray)
-#FC = mpif90 -O3 -xHOST -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
-#FC = ftn -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel (Cray)
 
 ### Base flags
 CXX = @CXX@ -I../include -I../uniform
@@ -306,18 +324,6 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
-### choose kernel
-EQUATION = Laplace
-#EQUATION = Helmholtz
-#EQUATION = Stokes
-
-### choose basis of multipole/local expansion
-BASIS = Cartesian
-#BASIS	= Spherical
-
-### choose device to use
-DEVICE = CPU
 #CXX		+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #AM_CXXFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 #AM_CXXFLAGS	+= -fPIC # for shared library
@@ -330,9 +336,9 @@ DEVICE = CPU
 #AM_CXXFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
 #AM_CXXFLAGS += -DIneJ # Different target and source points
 #AM_CXXFLAGS += -DWRITE_TIME # Write timings to file
-AM_CXXFLAGS = -D$(EQUATION) -D$(BASIS) -DUSE_SIMD $(am__append_1) \
-	$(am__append_2) $(am__append_3) $(am__append_4) -DASSERT -DTBB \
-	-DEXPANSION=4 -DMASS -DDIRECT -DFP64 # Use double precision
+AM_CXXFLAGS = -DUSE_SIMD $(am__append_1) $(am__append_2) \
+	$(am__append_3) $(am__append_4) -DASSERT -DTBB -DEXPANSION=4 \
+	-DMASS -DDIRECT -DFP64 # Use double precision
 #AM_CXXFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
 #AM_CXXFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
 #AM_CXXFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
@@ -348,11 +354,19 @@ AM_CXXFLAGS = -D$(EQUATION) -D$(BASIS) -DUSE_SIMD $(am__append_1) \
 
 ### Tree building flags
 #AM_CXXFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
-SOURCES = ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx ../kernels/$(EQUATION)P2P$(DEVICE).cxx
+SOURCES = ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx \
+	../kernels/$(EQUATION)P2P$(DEVICE).cxx
+
 OBJECTS = $(SOURCES:.cxx=.o)
 MAKEFLAGS = --no-print-directory
-serial_SOURCES = serial.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-parallel_SOURCES = parallel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+laplace_cartesian_SOURCES = serial.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+laplace_cartesian_CPPFLAGS = -DLaplace -DCartesian
+laplace_spherical_SOURCES = serial.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+laplace_spherical_CPPFLAGS = -DLaplace -DSpherical
+laplace_cartesian_mpi_SOURCES = parallel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+laplace_cartesian_mpi_CPPFLAGS = -DLaplace -DCartesian
+laplace_spherical_mpi_SOURCES = parallel.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+laplace_spherical_mpi_CPPFLAGS = -DLaplace -DSpherical
 all: all-am
 
 .SUFFIXES:
@@ -436,18 +450,46 @@ clean-binPROGRAMS:
 ../kernels/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) ../kernels/$(DEPDIR)
 	@: > ../kernels/$(DEPDIR)/$(am__dirstamp)
-../kernels/LaplaceCartesianCPU.$(OBJEXT): ../kernels/$(am__dirstamp) \
+../kernels/laplace_cartesian-LaplaceCartesianCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
-../kernels/LaplaceP2PCPU.$(OBJEXT): ../kernels/$(am__dirstamp) \
+../kernels/laplace_cartesian-LaplaceP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
 
-parallel$(EXEEXT): $(parallel_OBJECTS) $(parallel_DEPENDENCIES) $(EXTRA_parallel_DEPENDENCIES) 
-	@rm -f parallel$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(parallel_OBJECTS) $(parallel_LDADD) $(LIBS)
+laplace_cartesian$(EXEEXT): $(laplace_cartesian_OBJECTS) $(laplace_cartesian_DEPENDENCIES) $(EXTRA_laplace_cartesian_DEPENDENCIES) 
+	@rm -f laplace_cartesian$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(laplace_cartesian_OBJECTS) $(laplace_cartesian_LDADD) $(LIBS)
+../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
 
-serial$(EXEEXT): $(serial_OBJECTS) $(serial_DEPENDENCIES) $(EXTRA_serial_DEPENDENCIES) 
-	@rm -f serial$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(serial_OBJECTS) $(serial_LDADD) $(LIBS)
+laplace_cartesian_mpi$(EXEEXT): $(laplace_cartesian_mpi_OBJECTS) $(laplace_cartesian_mpi_DEPENDENCIES) $(EXTRA_laplace_cartesian_mpi_DEPENDENCIES) 
+	@rm -f laplace_cartesian_mpi$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(laplace_cartesian_mpi_OBJECTS) $(laplace_cartesian_mpi_LDADD) $(LIBS)
+../kernels/laplace_spherical-LaplaceSphericalCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/laplace_spherical-LaplaceP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+
+laplace_spherical$(EXEEXT): $(laplace_spherical_OBJECTS) $(laplace_spherical_DEPENDENCIES) $(EXTRA_laplace_spherical_DEPENDENCIES) 
+	@rm -f laplace_spherical$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(laplace_spherical_OBJECTS) $(laplace_spherical_LDADD) $(LIBS)
+../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/laplace_spherical_mpi-LaplaceP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+
+laplace_spherical_mpi$(EXEEXT): $(laplace_spherical_mpi_OBJECTS) $(laplace_spherical_mpi_DEPENDENCIES) $(EXTRA_laplace_spherical_mpi_DEPENDENCIES) 
+	@rm -f laplace_spherical_mpi$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(laplace_spherical_mpi_OBJECTS) $(laplace_spherical_mpi_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -456,10 +498,18 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/LaplaceCartesianCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/LaplaceP2PCPU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parallel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_cartesian-LaplaceCartesianCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_cartesian-LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceCartesianCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_spherical-LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_spherical-LaplaceSphericalCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceSphericalCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/laplace_cartesian-serial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/laplace_cartesian_mpi-parallel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/laplace_spherical-serial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/laplace_spherical_mpi-parallel.Po@am__quote@
 
 .cxx.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -476,6 +526,174 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+laplace_cartesian-serial.o: serial.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian-serial.o -MD -MP -MF $(DEPDIR)/laplace_cartesian-serial.Tpo -c -o laplace_cartesian-serial.o `test -f 'serial.cxx' || echo '$(srcdir)/'`serial.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian-serial.Tpo $(DEPDIR)/laplace_cartesian-serial.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='serial.cxx' object='laplace_cartesian-serial.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian-serial.o `test -f 'serial.cxx' || echo '$(srcdir)/'`serial.cxx
+
+laplace_cartesian-serial.obj: serial.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian-serial.obj -MD -MP -MF $(DEPDIR)/laplace_cartesian-serial.Tpo -c -o laplace_cartesian-serial.obj `if test -f 'serial.cxx'; then $(CYGPATH_W) 'serial.cxx'; else $(CYGPATH_W) '$(srcdir)/serial.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian-serial.Tpo $(DEPDIR)/laplace_cartesian-serial.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='serial.cxx' object='laplace_cartesian-serial.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian-serial.obj `if test -f 'serial.cxx'; then $(CYGPATH_W) 'serial.cxx'; else $(CYGPATH_W) '$(srcdir)/serial.cxx'; fi`
+
+../kernels/laplace_cartesian-LaplaceCartesianCPU.o: ../kernels/LaplaceCartesianCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_cartesian-LaplaceCartesianCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceCartesianCPU.Tpo -c -o ../kernels/laplace_cartesian-LaplaceCartesianCPU.o `test -f '../kernels/LaplaceCartesianCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceCartesianCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceCartesianCPU.Tpo ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceCartesianCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceCartesianCPU.cxx' object='../kernels/laplace_cartesian-LaplaceCartesianCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_cartesian-LaplaceCartesianCPU.o `test -f '../kernels/LaplaceCartesianCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceCartesianCPU.cxx
+
+../kernels/laplace_cartesian-LaplaceCartesianCPU.obj: ../kernels/LaplaceCartesianCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_cartesian-LaplaceCartesianCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceCartesianCPU.Tpo -c -o ../kernels/laplace_cartesian-LaplaceCartesianCPU.obj `if test -f '../kernels/LaplaceCartesianCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceCartesianCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceCartesianCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceCartesianCPU.Tpo ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceCartesianCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceCartesianCPU.cxx' object='../kernels/laplace_cartesian-LaplaceCartesianCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_cartesian-LaplaceCartesianCPU.obj `if test -f '../kernels/LaplaceCartesianCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceCartesianCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceCartesianCPU.cxx'; fi`
+
+../kernels/laplace_cartesian-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_cartesian-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceP2PCPU.Tpo -c -o ../kernels/laplace_cartesian-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/laplace_cartesian-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_cartesian-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+
+../kernels/laplace_cartesian-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_cartesian-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceP2PCPU.Tpo -c -o ../kernels/laplace_cartesian-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/laplace_cartesian-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/laplace_cartesian-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_cartesian-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+
+laplace_cartesian_mpi-parallel.o: parallel.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian_mpi-parallel.o -MD -MP -MF $(DEPDIR)/laplace_cartesian_mpi-parallel.Tpo -c -o laplace_cartesian_mpi-parallel.o `test -f 'parallel.cxx' || echo '$(srcdir)/'`parallel.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian_mpi-parallel.Tpo $(DEPDIR)/laplace_cartesian_mpi-parallel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='parallel.cxx' object='laplace_cartesian_mpi-parallel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian_mpi-parallel.o `test -f 'parallel.cxx' || echo '$(srcdir)/'`parallel.cxx
+
+laplace_cartesian_mpi-parallel.obj: parallel.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_cartesian_mpi-parallel.obj -MD -MP -MF $(DEPDIR)/laplace_cartesian_mpi-parallel.Tpo -c -o laplace_cartesian_mpi-parallel.obj `if test -f 'parallel.cxx'; then $(CYGPATH_W) 'parallel.cxx'; else $(CYGPATH_W) '$(srcdir)/parallel.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_cartesian_mpi-parallel.Tpo $(DEPDIR)/laplace_cartesian_mpi-parallel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='parallel.cxx' object='laplace_cartesian_mpi-parallel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_cartesian_mpi-parallel.obj `if test -f 'parallel.cxx'; then $(CYGPATH_W) 'parallel.cxx'; else $(CYGPATH_W) '$(srcdir)/parallel.cxx'; fi`
+
+../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.o: ../kernels/LaplaceCartesianCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceCartesianCPU.Tpo -c -o ../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.o `test -f '../kernels/LaplaceCartesianCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceCartesianCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceCartesianCPU.Tpo ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceCartesianCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceCartesianCPU.cxx' object='../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.o `test -f '../kernels/LaplaceCartesianCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceCartesianCPU.cxx
+
+../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.obj: ../kernels/LaplaceCartesianCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceCartesianCPU.Tpo -c -o ../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.obj `if test -f '../kernels/LaplaceCartesianCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceCartesianCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceCartesianCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceCartesianCPU.Tpo ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceCartesianCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceCartesianCPU.cxx' object='../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.obj `if test -f '../kernels/LaplaceCartesianCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceCartesianCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceCartesianCPU.cxx'; fi`
+
+../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceP2PCPU.Tpo -c -o ../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+
+../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceP2PCPU.Tpo -c -o ../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/laplace_cartesian_mpi-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_cartesian_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+
+laplace_spherical-serial.o: serial.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical-serial.o -MD -MP -MF $(DEPDIR)/laplace_spherical-serial.Tpo -c -o laplace_spherical-serial.o `test -f 'serial.cxx' || echo '$(srcdir)/'`serial.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical-serial.Tpo $(DEPDIR)/laplace_spherical-serial.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='serial.cxx' object='laplace_spherical-serial.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical-serial.o `test -f 'serial.cxx' || echo '$(srcdir)/'`serial.cxx
+
+laplace_spherical-serial.obj: serial.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical-serial.obj -MD -MP -MF $(DEPDIR)/laplace_spherical-serial.Tpo -c -o laplace_spherical-serial.obj `if test -f 'serial.cxx'; then $(CYGPATH_W) 'serial.cxx'; else $(CYGPATH_W) '$(srcdir)/serial.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical-serial.Tpo $(DEPDIR)/laplace_spherical-serial.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='serial.cxx' object='laplace_spherical-serial.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical-serial.obj `if test -f 'serial.cxx'; then $(CYGPATH_W) 'serial.cxx'; else $(CYGPATH_W) '$(srcdir)/serial.cxx'; fi`
+
+../kernels/laplace_spherical-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_spherical-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_spherical-LaplaceSphericalCPU.Tpo -c -o ../kernels/laplace_spherical-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_spherical-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/laplace_spherical-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/laplace_spherical-LaplaceSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_spherical-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+
+../kernels/laplace_spherical-LaplaceSphericalCPU.obj: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_spherical-LaplaceSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/laplace_spherical-LaplaceSphericalCPU.Tpo -c -o ../kernels/laplace_spherical-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_spherical-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/laplace_spherical-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/laplace_spherical-LaplaceSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_spherical-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+
+../kernels/laplace_spherical-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_spherical-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_spherical-LaplaceP2PCPU.Tpo -c -o ../kernels/laplace_spherical-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_spherical-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/laplace_spherical-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/laplace_spherical-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_spherical-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+
+../kernels/laplace_spherical-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_spherical-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/laplace_spherical-LaplaceP2PCPU.Tpo -c -o ../kernels/laplace_spherical-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_spherical-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/laplace_spherical-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/laplace_spherical-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_spherical-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+
+laplace_spherical_mpi-parallel.o: parallel.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical_mpi-parallel.o -MD -MP -MF $(DEPDIR)/laplace_spherical_mpi-parallel.Tpo -c -o laplace_spherical_mpi-parallel.o `test -f 'parallel.cxx' || echo '$(srcdir)/'`parallel.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical_mpi-parallel.Tpo $(DEPDIR)/laplace_spherical_mpi-parallel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='parallel.cxx' object='laplace_spherical_mpi-parallel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical_mpi-parallel.o `test -f 'parallel.cxx' || echo '$(srcdir)/'`parallel.cxx
+
+laplace_spherical_mpi-parallel.obj: parallel.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT laplace_spherical_mpi-parallel.obj -MD -MP -MF $(DEPDIR)/laplace_spherical_mpi-parallel.Tpo -c -o laplace_spherical_mpi-parallel.obj `if test -f 'parallel.cxx'; then $(CYGPATH_W) 'parallel.cxx'; else $(CYGPATH_W) '$(srcdir)/parallel.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/laplace_spherical_mpi-parallel.Tpo $(DEPDIR)/laplace_spherical_mpi-parallel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='parallel.cxx' object='laplace_spherical_mpi-parallel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o laplace_spherical_mpi-parallel.obj `if test -f 'parallel.cxx'; then $(CYGPATH_W) 'parallel.cxx'; else $(CYGPATH_W) '$(srcdir)/parallel.cxx'; fi`
+
+../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceSphericalCPU.Tpo -c -o ../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+
+../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.obj: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceSphericalCPU.Tpo -c -o ../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+
+../kernels/laplace_spherical_mpi-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_spherical_mpi-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceP2PCPU.Tpo -c -o ../kernels/laplace_spherical_mpi-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/laplace_spherical_mpi-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_spherical_mpi-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+
+../kernels/laplace_spherical_mpi-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/laplace_spherical_mpi-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceP2PCPU.Tpo -c -o ../kernels/laplace_spherical_mpi-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/laplace_spherical_mpi-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(laplace_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/laplace_spherical_mpi-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
