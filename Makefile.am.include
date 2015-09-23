@@ -67,10 +67,6 @@ LIBS		= -ltbb # TBB is available from http://threadingbuildingblocks.org/downloa
 ### Tree building flags
 #AM_CXXFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
 
-SOURCES	= ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx \
-	../kernels/$(EQUATION)P2P$(DEVICE).cxx
-OBJECTS	= $(SOURCES:.cxx=.o)
-
 MAKEFLAGS = --no-print-directory
 
 help:
@@ -89,5 +85,3 @@ revert:
 	@make -C .. revert
 save:
 	@make -C .. save
-ctags2:
-	@make -C .. ctags2

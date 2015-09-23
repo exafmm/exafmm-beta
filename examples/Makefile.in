@@ -209,6 +209,11 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
+SOURCES = $(ewald_mpi_SOURCES) $(laplace_cartesian_SOURCES) \
+	$(laplace_cartesian_kernel_SOURCES) \
+	$(laplace_cartesian_mpi_SOURCES) $(laplace_spherical_SOURCES) \
+	$(laplace_spherical_kernel_SOURCES) \
+	$(laplace_spherical_mpi_SOURCES) $(tree_SOURCES)
 DIST_SOURCES = $(ewald_mpi_SOURCES) $(laplace_cartesian_SOURCES) \
 	$(laplace_cartesian_kernel_SOURCES) \
 	$(laplace_cartesian_mpi_SOURCES) $(laplace_spherical_SOURCES) \
@@ -381,10 +386,6 @@ AM_CXXFLAGS = -DUSE_SIMD $(am__append_1) $(am__append_2) \
 
 ### Tree building flags
 #AM_CXXFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
-SOURCES = ../kernels/$(EQUATION)$(BASIS)$(DEVICE).cxx \
-	../kernels/$(EQUATION)P2P$(DEVICE).cxx
-
-OBJECTS = $(SOURCES:.cxx=.o)
 MAKEFLAGS = --no-print-directory
 laplace_cartesian_SOURCES = serial.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_cartesian_CPPFLAGS = -DLaplace -DCartesian -DMASS -DEXPANSION=4
@@ -1137,8 +1138,6 @@ revert:
 	@make -C .. revert
 save:
 	@make -C .. save
-ctags2:
-	@make -C .. ctags2
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

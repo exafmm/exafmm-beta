@@ -1,6 +1,4 @@
 -- autotools --
-ewald large error
-ctags2 merge with ctags -> use AM_CTAGSFLAGS
 only compile parallel if MPI enabled
 consider case where SIMD is not enabled, remove macro USE_SIMD
 Actually, remove all -D macros and move them to --enable** + CPPFLAGS

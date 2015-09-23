@@ -804,8 +804,6 @@ revert:
 save:
 	make cleanall
 	cd .. && tar zcvf exafmm.tgz exafmm
-ctags2:
-	ctags -eR .
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
