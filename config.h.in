@@ -39,5 +39,8 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Disable SIMD optimizations. */
+#undef USE_SIMD
+
 /* Version number of package */
 #undef VERSION

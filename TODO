@@ -1,5 +1,4 @@
 -- autotools --
-consider case where SIMD is not enabled, remove macro USE_SIMD
 Actually, remove all -D macros and move them to --enable** + CPPFLAGS
 IneJ should be runtime parameter
 serial -> test
@@ -8,6 +7,8 @@ define laplace_CPPFLAGS and insert to laplace_cartesian/spherical_CPPFLAGS
 C and Fortran optimization with MAXOPT
 Better way to do: MAKEFLAGS = --no-print-directory
 --enable-debug mode
+Check if ax_cv_c_compiler_vendor is functioning in configure.ac
+AM_CPPFLAGS not working?
 
 -- Tips --
 Keep notes of possible optimizations in each file

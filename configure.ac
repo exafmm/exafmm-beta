@@ -82,6 +82,13 @@ if test "$have_neon" = "yes"; then
 fi
 AM_CONDITIONAL(HAVE_NEON, test "$have_neon" = "yes")
 
+# Disable SIMD
+AC_ARG_ENABLE(simd, [AC_HELP_STRING([--disable-simd],[disable SIMD optimizations])], use_simd=$enableval, use_simd=yes)
+if test "$use_simd" = "no"; then
+        AC_DEFINE(USE_SIMD,0,[Disable SIMD optimizations.])
+fi
+AM_CONDITIONAL(USE_SIMD, test "$use_simd" = "yes")
+
 AX_CXX_MAXOPT
 
 case "${ax_cv_c_compiler_vendor}" in
@@ -107,8 +114,7 @@ esac
 
 # SIMD CXXFLAGS
 if test "$have_sse3" = "yes" -a "x$SSE3_CXXFLAGS" = x; then
-   if test "$PRECISION" = d; then flag=msse3; else flag=msse; fi
-   AX_CHECK_COMPILER_FLAGS(-$flag, [SSE3_CXXFLAGS="-$flag"],
+   AX_CHECK_COMPILER_FLAGS(-$flag, [SSE3_CXXFLAGS="-msse3"],
    				   [AC_MSG_ERROR([Need a version of gcc with -$flag])])
 fi
 

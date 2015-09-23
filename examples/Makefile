@@ -101,18 +101,23 @@ build_triplet = x86_64-unknown-linux-gnu
 host_triplet = x86_64-unknown-linux-gnu
 DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.am $(top_srcdir)/build-aux/depcomp
+#CXX		+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
+#AM_CXXFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
+#AM_CXXFLAGS	+= -fPIC # for shared library
+#AM_CXXFLAGS	= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #AM_CXXFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
 #AM_CXXFLAGS	+= -DKAHAN # Use Kahan summation
 
 ### SIMD flags
-#am__append_1 = $(SSE3_CXXFLAGS) # Use SSE2 intrinsics
-#am__append_2 = $(AVX_CXXFLAGS) # Use AVX intrinsics
-#am__append_3 = $(ALTIVEC_CXXFLAGS) # Use Altivec intrinsics
-#am__append_4 = $(NEON_CXXFLAGS) # Use Neon intrinsics
+#am__append_1 = -DUSE_SIMD
+##am__append_2 = $(AVX_CXXFLAGS) # Use AVX intrinsics
+##am__append_3 = $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
+##am__append_4 = $(ALTIVEC_CXXFLAGS) # Use Altivec intrinsics
+##am__append_5 = $(NEON_CXXFLAGS) # Use Neon intrinsics
 bin_PROGRAMS = laplace_cartesian$(EXEEXT) laplace_spherical$(EXEEXT) \
 	tree$(EXEEXT) laplace_cartesian_kernel$(EXEEXT) \
 	laplace_spherical_kernel$(EXEEXT) $(am__EXEEXT_1)
-#am__append_5 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
+#am__append_6 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_mpi.m4 \
@@ -368,9 +373,7 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-#CXX		+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
-#AM_CXXFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
-#AM_CXXFLAGS	+= -fPIC # for shared library
+AM_CPPFLAGS = 
 
 ### Debugging flags
 #AM_CXXFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
@@ -380,8 +383,8 @@ top_srcdir = ..
 #AM_CXXFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
 
 #AM_CXXFLAGS += -DIneJ # Different target and source points
-AM_CXXFLAGS = -DUSE_SIMD $(am__append_1) $(am__append_2) \
-	$(am__append_3) $(am__append_4) -DASSERT -DTBB -DDIRECT # \
+AM_CXXFLAGS = $(am__append_1) $(am__append_2) $(am__append_3) \
+	$(am__append_4) $(am__append_5) -DASSERT -DTBB -DDIRECT # \
 	Compare with direct summation
 #AM_CXXFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
 #AM_CXXFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/

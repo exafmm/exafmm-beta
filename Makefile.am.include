@@ -21,25 +21,32 @@
 
 ### Base flags
 CXX		+= -I../include -I../uniform
+AM_CPPFLAGS =
+AM_CXXFLAGS =
 #CXX		+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #AM_CXXFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 #AM_CXXFLAGS	+= -fPIC # for shared library
-AM_CXXFLAGS	= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #AM_CXXFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
 #AM_CXXFLAGS	+= -DKAHAN # Use Kahan summation
 
 ### SIMD flags
-if HAVE_SSE3
-AM_CXXFLAGS 	+= $(SSE3_CXXFLAGS) # Use SSE2 intrinsics
-endif
+if USE_SIMD
+AM_CXXFLAGS += -DUSE_SIMD
 if HAVE_AVX
-AM_CXXFLAGS	+= $(AVX_CXXFLAGS) # Use AVX intrinsics
-endif
+AM_CXXFLAGS += $(AVX_CXXFLAGS) # Use AVX intrinsics
+else
+if HAVE_SSE3
+AM_CXXFLAGS += $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
+else 
 if HAVE_ALTIVEC
-AM_CXXFLAGS	+= $(ALTIVEC_CXXFLAGS) # Use Altivec intrinsics
-endif
+AM_CXXFLAGS += $(ALTIVEC_CXXFLAGS) # Use Altivec intrinsics
+else
 if HAVE_NEON
-AM_CXXFLAGS	+= $(NEON_CXXFLAGS) # Use Neon intrinsics
+AM_CXXFLAGS += $(NEON_CXXFLAGS) # Use Neon intrinsics
+endif
+endif
+endif
+endif
 endif
 
 ### Debugging flags

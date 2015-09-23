@@ -599,6 +599,8 @@ build_os
 build_vendor
 build_cpu
 build
+USE_SIMD_FALSE
+USE_SIMD_TRUE
 HAVE_NEON_FALSE
 HAVE_NEON_TRUE
 HAVE_ALTIVEC_FALSE
@@ -721,6 +723,7 @@ enable_sse3
 enable_avx
 enable_altivec
 enable_neon
+enable_simd
 enable_portable_binary
 with_gcc_arch
 '
@@ -1372,6 +1375,7 @@ Optional Features:
   --enable-avx            enable AVX optimizations
   --enable-altivec        enable Altivec optimizations
   --enable-neon           enable ARM NEON optimizations
+  --disable-simd          disable SIMD optimizations
   --disable-portable-binary
                           enable compiler optimizations that would produce
                           unportable binaries
@@ -4856,6 +4860,28 @@ else
 fi
 
 
+# Disable SIMD
+# Check whether --enable-simd was given.
+if test "${enable_simd+set}" = set; then :
+  enableval=$enable_simd; use_simd=$enableval
+else
+  use_simd=yes
+fi
+
+if test "$use_simd" = "no"; then
+
+$as_echo "#define USE_SIMD 0" >>confdefs.h
+
+fi
+ if test "$use_simd" = "yes"; then
+  USE_SIMD_TRUE=
+  USE_SIMD_FALSE='#'
+else
+  USE_SIMD_TRUE='#'
+  USE_SIMD_FALSE=
+fi
+
+
 # Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
   as_fn_error $? "cannot run $SHELL $ac_aux_dir/config.sub" "$LINENO" 5
@@ -6044,7 +6070,6 @@ esac
 
 # SIMD CXXFLAGS
 if test "$have_sse3" = "yes" -a "x$SSE3_CXXFLAGS" = x; then
-   if test "$PRECISION" = d; then flag=msse3; else flag=msse; fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -$flag" >&5
 $as_echo_n "checking whether C compiler accepts -$flag... " >&6; }
 ax_save_FLAGS=$CFLAGS
@@ -6071,7 +6096,7 @@ eval ax_check_compiler_flags=$`$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
 $as_echo "$ax_check_compiler_flags" >&6; }
 if test "x$ax_check_compiler_flags" = xyes; then
-	SSE3_CXXFLAGS="-$flag"
+	SSE3_CXXFLAGS="-msse3"
 else
 	as_fn_error $? "Need a version of gcc with -$flag" "$LINENO" 5
 fi
@@ -6436,6 +6461,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_NEON_TRUE}" && test -z "${HAVE_NEON_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_NEON\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_SIMD_TRUE}" && test -z "${USE_SIMD_FALSE}"; then
+  as_fn_error $? "conditional \"USE_SIMD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
