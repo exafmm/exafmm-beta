@@ -7,9 +7,9 @@ AM_CXXFLAGS  += -DDIRECT # Compare with direct summation
 
 bin_PROGRAMS = laplace_cartesian laplace_spherical tree
 laplace_cartesian_SOURCES = serial.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-laplace_cartesian_CPPFLAGS = -DLaplace -DCartesian -DMASS -DEXPANSION=4
+laplace_cartesian_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DMASS -DEXPANSION=4
 laplace_spherical_SOURCES = serial.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-laplace_spherical_CPPFLAGS = -DLaplace -DSpherical -DEXPANSION=10
+laplace_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DSpherical -DEXPANSION=10
 tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
 

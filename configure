@@ -586,10 +586,6 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
-NEON_CXXFLAGS
-ALTIVEC_CXXFLAGS
-AVX_CXXFLAGS
-SSE3_CXXFLAGS
 PRTDIAG
 host_os
 host_vendor
@@ -601,12 +597,13 @@ build_cpu
 build
 USE_SIMD_FALSE
 USE_SIMD_TRUE
+NEON_CXXFLAGS
 HAVE_NEON_FALSE
 HAVE_NEON_TRUE
-HAVE_ALTIVEC_FALSE
-HAVE_ALTIVEC_TRUE
+AVX_CXXFLAGS
 HAVE_AVX_FALSE
 HAVE_AVX_TRUE
+SSE3_CXXFLAGS
 HAVE_SSE3_FALSE
 HAVE_SSE3_TRUE
 MPI_FALSE
@@ -718,10 +715,8 @@ enable_dependency_tracking
 enable_single
 enable_float
 enable_mpi
-enable_sse
 enable_sse3
 enable_avx
-enable_altivec
 enable_neon
 enable_simd
 enable_portable_binary
@@ -1370,10 +1365,8 @@ Optional Features:
   --enable-single         compile exaFMM in single precision
   --enable-float          synonym for --enable-single
   --enable-mpi            compile exaFMM MPI library
-  --enable-sse            enable SSE optimizations
   --enable-sse3           enable SSE/SSE3 optimizations
   --enable-avx            enable AVX optimizations
-  --enable-altivec        enable Altivec optimizations
   --enable-neon           enable ARM NEON optimizations
   --disable-simd          disable SIMD optimizations
   --disable-portable-binary
@@ -4742,36 +4735,54 @@ else
 fi
 
 
-# SSE
-# Check whether --enable-sse was given.
-if test "${enable_sse+set}" = set; then :
-  enableval=$enable_sse; have_sse=$enableval
-else
-  have_sse=no
-fi
-
-if test "$have_sse" = "yes"; then
-        if test "$PRECISION" != "s"; then
-                as_fn_error $? "SSE requires single precision" "$LINENO" 5
-        fi
-fi
-
 # SSE3
 # Check whether --enable-sse3 was given.
 if test "${enable_sse3+set}" = set; then :
   enableval=$enable_sse3; have_sse3=$enableval
 else
   have_s\
-se2=no
+se3=no
 fi
 
-if test "$have_sse" = "yes"; then have_sse3=yes; fi
 if test "$have_sse3" = "yes"; then
 
 $as_echo "#define HAVE_SSE3 1" >>confdefs.h
 
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
+        fi
+	if test "x$SSE3_CXXFLAGS" = x; then
+   	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -$flag" >&5
+$as_echo_n "checking whether C compiler accepts -$flag... " >&6; }
+ax_save_FLAGS=$CFLAGS
+   CFLAGS="-$flag"
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  eval `$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`=yes
+else
+  eval `$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   CFLAGS=$ax_save_FLAGS
+eval ax_check_compiler_flags=$`$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	SSE3_CXXFLAGS="-msse3"
+else
+	as_fn_error $? "Need a version of gcc with -msse3" "$LINENO" 5
+fi
+
         fi
 fi
  if test "$have_sse3" = "yes"; then
@@ -4781,6 +4792,7 @@ else
   HAVE_SSE3_TRUE='#'
   HAVE_SSE3_FALSE=
 fi
+
 
 
 # AVX
@@ -4798,6 +4810,45 @@ $as_echo "#define HAVE_AVX 1" >>confdefs.h
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 as_fn_error $? "AVX requires single or double precision" "$LINENO" 5
         fi
+	if test "x$AVX_CXXFLAGS" = x; then
+   	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx" >&5
+$as_echo_n "checking whether C compiler accepts -mavx... " >&6; }
+if ${ax_cv_c_flags__mavx+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-mavx"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__mavx=yes
+else
+  ax_cv_c_flags__mavx=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__mavx
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	AVX_CXXFLAGS="-mavx"
+else
+	as_fn_error $? "Need a version of gcc with -mavx" "$LINENO" 5
+fi
+
+	fi
 fi
  if test "$have_avx" = "yes"; then
   HAVE_AVX_TRUE=
@@ -4807,31 +4858,6 @@ else
   HAVE_AVX_FALSE=
 fi
 
-
-# Altivec
-# Check whether --enable-altivec was given.
-if test "${enable_altivec+set}" = set; then :
-  enableval=$enable_altivec; have_altivec=$enableval\
-
-else
-  have_altivec=no
-fi
-
-if test "$have_altivec" = "yes"; then
-
-$as_echo "#define HAVE_ALTIVEC 1" >>confdefs.h
-
-        if test "$PRECISION" != "s"; then
-	   as_fn_error $? "Altivec requires single precision" "$LINENO" 5
-        fi
-fi
- if test "$have_altivec" = "yes"; then
-  HAVE_ALTIVEC_TRUE=
-  HAVE_ALTIVEC_FALSE='#'
-else
-  HAVE_ALTIVEC_TRUE='#'
-  HAVE_ALTIVEC_FALSE=
-fi
 
 
 # Neon
@@ -4850,6 +4876,45 @@ $as_echo "#define HAVE_NEON 1" >>confdefs.h
         if test "$PRECISION" != "s"; then
                 as_fn_error $? "NEON requires single precision" "$LINENO" 5
         fi
+	if test "x$NEON_CXXFLAGS" = x; then
+   	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mfpu=neon" >&5
+$as_echo_n "checking whether C compiler accepts -mfpu=neon... " >&6; }
+if ${ax_cv_c_flags__mfpu_neon+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-mfpu=neon"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__mfpu_neon=yes
+else
+  ax_cv_c_flags__mfpu_neon=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__mfpu_neon
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	NEON_CXXFLAGS="-mfpu=neon"
+else
+	as_fn_error $? "Need a version of gcc with -mfpu=neon" "$LINENO" 5
+fi
+
+        fi
 fi
  if test "$have_neon" = "yes"; then
   HAVE_NEON_TRUE=
@@ -4858,6 +4923,7 @@ else
   HAVE_NEON_TRUE='#'
   HAVE_NEON_FALSE=
 fi
+
 
 
 # Disable SIMD
@@ -5941,367 +6007,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-case "${ax_cv_c_compiler_vendor}" in
-   intel) # Stop icc from defining __GNUC__, except on MacOS where this fails
-        case "${host_os}" in
-            *darwin*) ;; # icc -no-gcc fails to compile some system headers
-            *)
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -no-gcc" >&5
-$as_echo_n "checking whether C compiler accepts -no-gcc... " >&6; }
-if ${ax_cv_c_flags__no_gcc+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-no-gcc"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__no_gcc=yes
-else
-  ax_cv_c_flags__no_gcc=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__no_gcc
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	CXX="$CXX -no-gcc"
-else
-	:
-fi
-
-               ;;
-        esac
-        ;;
-
-   hp) # must (sometimes) manually increase cpp limits to handle fftw3.h
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Wp,-H128000" >&5
-$as_echo_n "checking whether C compiler accepts -Wp,-H128000... " >&6; }
-if ${ax_cv_c_flags__Wp+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-Wp,-H128000"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__Wp=yes
-else
-  ax_cv_c_flags__Wp=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__Wp
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	CXX="$CXX -Wp,-H128000"
-else
-	:
-fi
-
-        ;;
-
-   portland) # -Masmkeyword required for asm("") cycle counters
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -Masmkeyword" >&5
-$as_echo_n "checking whether C compiler accepts -Masmkeyword... " >&6; }
-if ${ax_cv_c_flags__Masmkeyword+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-Masmkeyword"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__Masmkeyword=yes
-else
-  ax_cv_c_flags__Masmkeyword=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__Masmkeyword
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	CXX="$CXX -Masmkeyword"
-else
-	:
-fi
-
-        ;;
-esac
-
-# SIMD CXXFLAGS
-if test "$have_sse3" = "yes" -a "x$SSE3_CXXFLAGS" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -$flag" >&5
-$as_echo_n "checking whether C compiler accepts -$flag... " >&6; }
-ax_save_FLAGS=$CFLAGS
-   CFLAGS="-$flag"
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  eval `$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`=yes
-else
-  eval `$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   CFLAGS=$ax_save_FLAGS
-eval ax_check_compiler_flags=$`$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	SSE3_CXXFLAGS="-msse3"
-else
-	as_fn_error $? "Need a version of gcc with -$flag" "$LINENO" 5
-fi
-
-fi
-
-if test "$have_avx" = "yes" -a "x$AVX_CXXFLAGS" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx" >&5
-$as_echo_n "checking whether C compiler accepts -mavx... " >&6; }
-if ${ax_cv_c_flags__mavx+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-mavx"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__mavx=yes
-else
-  ax_cv_c_flags__mavx=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__mavx
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	AVX_CXXFLAGS="-mavx"
-else
-	as_fn_error $? "Need a version of gcc with -mavx" "$LINENO" 5
-fi
-
-fi
-
-if test "$have_altivec" = "yes" -a "x$ALTIVEC_CXXFLAGS" = x; then
-   # -DFAKE__VEC__ is a workaround because gcc-3.3 does not
-   # #define __VEC__ with -maltivec.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -faltivec" >&5
-$as_echo_n "checking whether C compiler accepts -faltivec... " >&6; }
-if ${ax_cv_c_flags__faltivec+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-faltivec"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__faltivec=yes
-else
-  ax_cv_c_flags__faltivec=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__faltivec
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	ALTIVEC_CXXFLAGS="-faltivec"
-else
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -maltivec -mabi=altivec" >&5
-$as_echo_n "checking whether C compiler accepts -maltivec -mabi=altivec... " >&6; }
-if ${ax_cv_c_flags__maltivec__mabi_altivec+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-maltivec -mabi=altivec"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__maltivec__mabi_altivec=yes
-else
-  ax_cv_c_flags__maltivec__mabi_altivec=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__maltivec__mabi_altivec
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	ALTIVEC_CXXFLAGS="-maltivec -mabi=altivec -DFAKE__VEC__"
-else
-	 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fvec" >&5
-$as_echo_n "checking whether C compiler accepts -fvec... " >&6; }
-if ${ax_cv_c_flags__fvec+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-fvec"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__fvec=yes
-else
-  ax_cv_c_flags__fvec=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__fvec
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	ALTIVEC_CXXFLAGS="-fvec"
-else
-	as_fn_error $? "Need a version of gcc with -maltivec" "$LINENO" 5
-fi
-
-fi
-
-fi
-
-fi
-
-if test "$have_neon" = "yes" -a "x$NEON_CXXFLAGS" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mfpu=neon" >&5
-$as_echo_n "checking whether C compiler accepts -mfpu=neon... " >&6; }
-if ${ax_cv_c_flags__mfpu_neon+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-mfpu=neon"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__mfpu_neon=yes
-else
-  ax_cv_c_flags__mfpu_neon=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__mfpu_neon
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	NEON_CXXFLAGS="-mfpu=neon"
-else
-	as_fn_error $? "Need a version of gcc with -mfpu=neon" "$LINENO" 5
-fi
-
-fi
-
-
-
-
-
-
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -6453,10 +6158,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_AVX_TRUE}" && test -z "${HAVE_AVX_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_AVX\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${HAVE_ALTIVEC_TRUE}" && test -z "${HAVE_ALTIVEC_FALSE}"; then
-  as_fn_error $? "conditional \"HAVE_ALTIVEC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_NEON_TRUE}" && test -z "${HAVE_NEON_FALSE}"; then

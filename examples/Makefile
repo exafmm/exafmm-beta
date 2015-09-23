@@ -23,8 +23,6 @@
 #CXX	= CC -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp -dynamic # Intel (Cray)
 #CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
 #CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
-#CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/Q
-#CXX	= mpixlcxx_r -qarch=450d -qtune=450 -O3 -qsuppress=1500-036:1540-0198:1540-0541:1540-1103 # BG/P
 #CXX	= mpiFCCpx -Kfast,openmp # K computer / FX10 (cross compiler)
 #CXX	= mpiFCC -Kfast,openmp # K computer / FX10 (interactive)
 #CXX	= tau_cxx.sh # TAU compiler instrumentation
@@ -101,23 +99,18 @@ build_triplet = x86_64-unknown-linux-gnu
 host_triplet = x86_64-unknown-linux-gnu
 DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.am $(top_srcdir)/build-aux/depcomp
-#CXX		+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
-#AM_CXXFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
-#AM_CXXFLAGS	+= -fPIC # for shared library
-#AM_CXXFLAGS	= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #AM_CXXFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
 #AM_CXXFLAGS	+= -DKAHAN # Use Kahan summation
 
 ### SIMD flags
-#am__append_1 = -DUSE_SIMD
-##am__append_2 = $(AVX_CXXFLAGS) # Use AVX intrinsics
+am__append_1 = -DUSE_SIMD
+am__append_2 = $(AVX_CXXFLAGS) # Use AVX intrinsics
 ##am__append_3 = $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
-##am__append_4 = $(ALTIVEC_CXXFLAGS) # Use Altivec intrinsics
-##am__append_5 = $(NEON_CXXFLAGS) # Use Neon intrinsics
+##am__append_4 = $(NEON_CXXFLAGS) # Use Neon intrinsics
 bin_PROGRAMS = laplace_cartesian$(EXEEXT) laplace_spherical$(EXEEXT) \
 	tree$(EXEEXT) laplace_cartesian_kernel$(EXEEXT) \
 	laplace_spherical_kernel$(EXEEXT) $(am__EXEEXT_1)
-#am__append_6 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
+#am__append_5 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_mpi.m4 \
@@ -262,21 +255,18 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = ${SHELL} /home/yokotar/exafmm/build-aux/missing aclocal-1.14
-ALTIVEC_CXXFLAGS = 
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 AUTOCONF = ${SHELL} /home/yokotar/exafmm/build-aux/missing autoconf
 AUTOHEADER = ${SHELL} /home/yokotar/exafmm/build-aux/missing autoheader
 AUTOMAKE = ${SHELL} /home/yokotar/exafmm/build-aux/missing automake-1.14
-AVX_CXXFLAGS = 
+AVX_CXXFLAGS = -mavx
 AWK = mawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -g -O2 -ffast-math
 CPPFLAGS = 
-
-### Base flags
-CXX = g++ -I../include -I../uniform
+CXX = g++
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -O3 -malign-double -fstrict-aliasing -mtune=native
 CYGPATH_W = echo
@@ -373,7 +363,8 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-AM_CPPFLAGS = 
+
+### Base flags
 
 ### Debugging flags
 #AM_CXXFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
@@ -384,8 +375,9 @@ AM_CPPFLAGS =
 
 #AM_CXXFLAGS += -DIneJ # Different target and source points
 AM_CXXFLAGS = $(am__append_1) $(am__append_2) $(am__append_3) \
-	$(am__append_4) $(am__append_5) -DASSERT -DTBB -DDIRECT # \
-	Compare with direct summation
+	$(am__append_4) -DASSERT -DTBB -DDIRECT # Compare with direct \
+	summation
+AM_CPPFLAGS = -I../include -I../uniform
 #AM_CXXFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
 #AM_CXXFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
 #AM_CXXFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
@@ -403,9 +395,9 @@ AM_CXXFLAGS = $(am__append_1) $(am__append_2) $(am__append_3) \
 #AM_CXXFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
 MAKEFLAGS = --no-print-directory
 laplace_cartesian_SOURCES = serial.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-laplace_cartesian_CPPFLAGS = -DLaplace -DCartesian -DMASS -DEXPANSION=4
+laplace_cartesian_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DMASS -DEXPANSION=4
 laplace_spherical_SOURCES = serial.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-laplace_spherical_CPPFLAGS = -DLaplace -DSpherical -DEXPANSION=10
+laplace_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DSpherical -DEXPANSION=10
 tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
 laplace_cartesian_kernel_SOURCES = kernel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx

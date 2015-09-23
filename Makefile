@@ -204,13 +204,12 @@ am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = ${SHELL} /home/yokotar/exafmm/build-aux/missing aclocal-1.14
-ALTIVEC_CXXFLAGS = 
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
 AUTOCONF = ${SHELL} /home/yokotar/exafmm/build-aux/missing autoconf
 AUTOHEADER = ${SHELL} /home/yokotar/exafmm/build-aux/missing autoheader
 AUTOMAKE = ${SHELL} /home/yokotar/exafmm/build-aux/missing automake-1.14
-AVX_CXXFLAGS = 
+AVX_CXXFLAGS = -mavx
 AWK = mawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
