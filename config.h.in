@@ -15,8 +15,8 @@
 /* Define to enable ARM NEON optimizations. */
 #undef HAVE_NEON
 
-/* Define to enable SSE/SSE2 optimizations. */
-#undef HAVE_SSE2
+/* Define to enable SSE/SSE3 optimizations. */
+#undef HAVE_SSE3
 
 /* Name of package */
 #undef PACKAGE

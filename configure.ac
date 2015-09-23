@@ -38,17 +38,17 @@ if test "$have_sse" = "yes"; then
         fi
 fi
 
-# SSE2
-AC_ARG_ENABLE(sse2, [AC_HELP_STRING([--enable-sse2],[enable SSE/SSE2 optimizations])], have_sse2=$enableval, have_s\
+# SSE3
+AC_ARG_ENABLE(sse3, [AC_HELP_STRING([--enable-sse3],[enable SSE/SSE3 optimizations])], have_sse3=$enableval, have_s\
 se2=no)
-if test "$have_sse" = "yes"; then have_sse2=yes; fi
-if test "$have_sse2" = "yes"; then
-        AC_DEFINE(HAVE_SSE2,1,[Define to enable SSE/SSE2 optimizations.])
+if test "$have_sse" = "yes"; then have_sse3=yes; fi
+if test "$have_sse3" = "yes"; then
+        AC_DEFINE(HAVE_SSE3,1,[Define to enable SSE/SSE3 optimizations.])
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
-                AC_MSG_ERROR([SSE2 requires single or double precision])
+                AC_MSG_ERROR([SSE3 requires single or double precision])
         fi
 fi
-AM_CONDITIONAL(HAVE_SSE2, test "$have_sse2" = "yes")
+AM_CONDITIONAL(HAVE_SSE3, test "$have_sse3" = "yes")
 
 # AVX
 AC_ARG_ENABLE(avx, [AC_HELP_STRING([--enable-avx],[enable AVX optimizations])], have_avx=$enableval, have_avx=no)
@@ -106,9 +106,9 @@ case "${ax_cv_c_compiler_vendor}" in
 esac
 
 # SIMD CXXFLAGS
-if test "$have_sse2" = "yes" -a "x$SSE2_CXXFLAGS" = x; then
-   if test "$PRECISION" = d; then flag=msse2; else flag=msse; fi
-   AX_CHECK_COMPILER_FLAGS(-$flag, [SSE2_CXXFLAGS="-$flag"],
+if test "$have_sse3" = "yes" -a "x$SSE3_CXXFLAGS" = x; then
+   if test "$PRECISION" = d; then flag=msse3; else flag=msse; fi
+   AX_CHECK_COMPILER_FLAGS(-$flag, [SSE3_CXXFLAGS="-$flag"],
    				   [AC_MSG_ERROR([Need a version of gcc with -$flag])])
 fi
 
@@ -132,7 +132,7 @@ if test "$have_neon" = "yes" -a "x$NEON_CXXFLAGS" = x; then
                 		       [AC_MSG_ERROR([Need a version of gcc with -mfpu=neon])])
 fi
 
-AC_SUBST(SSE2_CXXFLAGS)
+AC_SUBST(SSE3_CXXFLAGS)
 AC_SUBST(AVX_CXXFLAGS)
 AC_SUBST(ALTIVEC_CXXFLAGS)
 AC_SUBST(NEON_CXXFLAGS)

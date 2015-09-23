@@ -589,7 +589,7 @@ LIBOBJS
 NEON_CXXFLAGS
 ALTIVEC_CXXFLAGS
 AVX_CXXFLAGS
-SSE2_CXXFLAGS
+SSE3_CXXFLAGS
 PRTDIAG
 host_os
 host_vendor
@@ -605,8 +605,8 @@ HAVE_ALTIVEC_FALSE
 HAVE_ALTIVEC_TRUE
 HAVE_AVX_FALSE
 HAVE_AVX_TRUE
-HAVE_SSE2_FALSE
-HAVE_SSE2_TRUE
+HAVE_SSE3_FALSE
+HAVE_SSE3_TRUE
 MPI_FALSE
 MPI_TRUE
 MPIRUN
@@ -717,7 +717,7 @@ enable_single
 enable_float
 enable_mpi
 enable_sse
-enable_sse2
+enable_sse3
 enable_avx
 enable_altivec
 enable_neon
@@ -1368,7 +1368,7 @@ Optional Features:
   --enable-float          synonym for --enable-single
   --enable-mpi            compile exaFMM MPI library
   --enable-sse            enable SSE optimizations
-  --enable-sse2           enable SSE/SSE2 optimizations
+  --enable-sse3           enable SSE/SSE3 optimizations
   --enable-avx            enable AVX optimizations
   --enable-altivec        enable Altivec optimizations
   --enable-neon           enable ARM NEON optimizations
@@ -4752,30 +4752,30 @@ if test "$have_sse" = "yes"; then
         fi
 fi
 
-# SSE2
-# Check whether --enable-sse2 was given.
-if test "${enable_sse2+set}" = set; then :
-  enableval=$enable_sse2; have_sse2=$enableval
+# SSE3
+# Check whether --enable-sse3 was given.
+if test "${enable_sse3+set}" = set; then :
+  enableval=$enable_sse3; have_sse3=$enableval
 else
   have_s\
 se2=no
 fi
 
-if test "$have_sse" = "yes"; then have_sse2=yes; fi
-if test "$have_sse2" = "yes"; then
+if test "$have_sse" = "yes"; then have_sse3=yes; fi
+if test "$have_sse3" = "yes"; then
 
-$as_echo "#define HAVE_SSE2 1" >>confdefs.h
+$as_echo "#define HAVE_SSE3 1" >>confdefs.h
 
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
-                as_fn_error $? "SSE2 requires single or double precision" "$LINENO" 5
+                as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
         fi
 fi
- if test "$have_sse2" = "yes"; then
-  HAVE_SSE2_TRUE=
-  HAVE_SSE2_FALSE='#'
+ if test "$have_sse3" = "yes"; then
+  HAVE_SSE3_TRUE=
+  HAVE_SSE3_FALSE='#'
 else
-  HAVE_SSE2_TRUE='#'
-  HAVE_SSE2_FALSE=
+  HAVE_SSE3_TRUE='#'
+  HAVE_SSE3_FALSE=
 fi
 
 
@@ -6043,8 +6043,8 @@ fi
 esac
 
 # SIMD CXXFLAGS
-if test "$have_sse2" = "yes" -a "x$SSE2_CXXFLAGS" = x; then
-   if test "$PRECISION" = d; then flag=msse2; else flag=msse; fi
+if test "$have_sse3" = "yes" -a "x$SSE3_CXXFLAGS" = x; then
+   if test "$PRECISION" = d; then flag=msse3; else flag=msse; fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -$flag" >&5
 $as_echo_n "checking whether C compiler accepts -$flag... " >&6; }
 ax_save_FLAGS=$CFLAGS
@@ -6071,7 +6071,7 @@ eval ax_check_compiler_flags=$`$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
 $as_echo "$ax_check_compiler_flags" >&6; }
 if test "x$ax_check_compiler_flags" = xyes; then
-	SSE2_CXXFLAGS="-$flag"
+	SSE3_CXXFLAGS="-$flag"
 else
 	as_fn_error $? "Need a version of gcc with -$flag" "$LINENO" 5
 fi
@@ -6422,8 +6422,8 @@ if test -z "${MPI_TRUE}" && test -z "${MPI_FALSE}"; then
   as_fn_error $? "conditional \"MPI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${HAVE_SSE2_TRUE}" && test -z "${HAVE_SSE2_FALSE}"; then
-  as_fn_error $? "conditional \"HAVE_SSE2\" was never defined.
+if test -z "${HAVE_SSE3_TRUE}" && test -z "${HAVE_SSE3_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_SSE3\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_AVX_TRUE}" && test -z "${HAVE_AVX_FALSE}"; then

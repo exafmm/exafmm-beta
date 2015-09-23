@@ -19,6 +19,7 @@ laplace_cartesian_kernel_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
 laplace_spherical_kernel_SOURCES = kernel.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_spherical_kernel_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
 
+if MPI
 bin_PROGRAMS += laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
 laplace_cartesian_mpi_SOURCES = parallel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_cartesian_mpi_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
@@ -26,3 +27,4 @@ laplace_spherical_mpi_SOURCES = parallel.cxx ../kernels/LaplaceSphericalCPU.cxx 
 laplace_spherical_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
 ewald_mpi_SOURCES = ewald.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 ewald_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
+endif

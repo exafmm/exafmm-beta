@@ -1,7 +1,8 @@
 #ifndef vec_h
 #define vec_h
 #include <ostream>
-#define NEWTON 1
+#define VEC_NEWTON 1
+#define VEC_VERBOSE 0
 //! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics
 
 #ifndef __CUDACC__
@@ -211,6 +212,9 @@ public:
   }
 };
 #else
+#if VEC_VERBOSE
+#pragma message("Overloading vector operators for CUDA")
+#endif
 #include "unroll.h"
 template<int N, typename T>
 class vec {
@@ -506,6 +510,9 @@ public:
 #endif
 
 #if __MIC__
+#if VEC_VERBOSE
+#pragma message("Overloading vector operators for MIC")
+#endif
 #include <immintrin.h>
 template<>
 class vec<16,float> {
@@ -602,7 +609,7 @@ public:
     return vec(_mm512_max_ps(v.data,w.data));
   }
   friend vec rsqrt(const vec & v) {                             // Reciprocal square root
-#if NEWTON                                                      // Switch on Newton-Raphson correction
+#if VEC_NEWTON                                                 // Switch on Newton-Raphson correction
     vec temp = vec(_mm512_rsqrt23_ps(v.data));
     temp *= (temp * temp * v - 3.0f) * (-0.5f);
     return temp;
@@ -705,7 +712,7 @@ public:
     return vec(_mm512_max_pd(v.data,w.data));
   }
   friend vec rsqrt(const vec & v) {                             // Reciprocal square root
-#if NEWTON
+#if VEC_NEWTON
     vec<16,float> in(v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],0,0,0,0,0,0,0,0);
     vec<16,float> temp = rsqrt(in);
     temp *= (temp * temp * in - 3.0f) * (-0.5f);
@@ -720,6 +727,9 @@ public:
 #endif
 
 #if __AVX__
+#if VEC_VERBOSE
+#pragma message("Overloading vector operators for AVX")
+#endif
 #include <immintrin.h>
 template<>
 class vec<8,float> {
@@ -733,7 +743,7 @@ public:
   vec(const __m256 v) {                                         // Copy constructor SIMD register
     data = v;
   }
-  vec(const vec & v) {                                           // Copy constructor vector
+  vec(const vec & v) {                                          // Copy constructor vector
     data = v.data;
   }
   vec(const float a, const float b, const float c, const float d,
@@ -822,7 +832,7 @@ public:
     return vec(_mm256_max_ps(v.data,w.data));
   }
   friend vec rsqrt(const vec & v) {                             // Reciprocal square root
-#if NEWTON                                                      // Switch on Newton-Raphson correction
+#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
     vec temp = vec(_mm256_rsqrt_ps(v.data));
     temp *= (temp * temp * v - 3.0f) * (-0.5f);
     return temp;
@@ -931,7 +941,7 @@ public:
     return vec(_mm256_max_pd(v.data,w.data));
   }
   friend vec rsqrt(const vec & v) {                             // Reciprocal square root
-#if NEWTON                                                      // Switch on Newton-Raphson correction
+#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
     vec<8,float> in(v[0],v[1],v[2],v[3],0,0,0,0);
     vec<8,float> temp = rsqrt(in);
     temp *= (temp * temp * in - 3.0f) * (-0.5f);
@@ -946,6 +956,9 @@ public:
 #endif
 
 #if __bgq__
+#if VEC_VERBOSE
+#pragma message("Overloading vector operators for BG/Q")
+#endif
 template<>
 class vec<4,double> {
 private:
@@ -1048,7 +1061,7 @@ public:
     return temp;
   }
   friend vec rsqrt(const vec & v) {                             // Reciprocal square root
-#if NEWTON                                                      // Switch on Newton-Raphson correction
+#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
     vec temp = vec(vec_rsqrtes(v.data));
     temp *= (temp * temp * v - 3.0f) * (-0.5f);
     return temp;
@@ -1059,8 +1072,36 @@ public:
 };
 #endif
 
+#if __SSE__
 #if __SSE3__
+#if VEC_VERBOSE
+#pragma message("Overloading vector operators for SSE3")
+#endif
 #include <pmmintrin.h>
+inline float sum_ps(__m128 temp) {                              // Sum SSE float
+  temp = _mm_hadd_ps(temp, temp);
+  temp = _mm_hadd_ps(temp, temp);
+  return ((float*)&temp)[0];
+}
+inline double sum_pd(__m128d temp) {                            // Sum SSE double
+  temp = _mm_hadd_pd(temp, temp);
+  return ((double*)&temp)[0];
+}
+#else
+#if VEC_VERBOSE
+#pragma message("Overloading vector operators for SSE")
+#endif
+#include <xmmintrin.h>
+inline float sum_ps(__m128 temp) {                              // Sum SSE float
+  temp = _mm_add_ps(temp, _mm_movehl_ps(temp, temp));
+  temp = _mm_add_ss(temp, _mm_shuffle_ps(temp, temp, 1));
+  return ((float*)&temp)[0];
+}
+inline double sum_pd(__m128d temp) {                            // Sum SSE double
+  temp = _mm_add_sd(temp, _mm_shuffle_pd(temp, temp, 1));
+  return ((double*)&temp)[0];
+}
+#endif
 
 template<>
 class vec<4,float> {
@@ -1141,15 +1182,11 @@ public:
     return s;
   }
   friend float sum(const vec & v) {                             // Sum vector
-    __m128 temp = _mm_hadd_ps(v.data,v.data);
-    temp = _mm_hadd_ps(temp,temp);
-    return ((float*)&temp)[0];
+    return sum_ps(v.data);
   }
   friend float norm(const vec & v) {                            // L2 norm squared
     __m128 temp = _mm_mul_ps(v.data,v.data);
-    temp = _mm_hadd_ps(temp,temp);
-    temp = _mm_hadd_ps(temp,temp);
-    return ((float*)&temp)[0];
+    return sum_ps(temp);
   }
   friend vec min(const vec & v, const vec & w) {                // Element-wise minimum
     return vec(_mm_min_ps(v.data,w.data));
@@ -1158,7 +1195,7 @@ public:
     return vec(_mm_max_ps(v.data,w.data));
   }
   friend vec rsqrt(const vec & v) {                             // Reciprocal square root
-#if NEWTON                                                      // Switch on Newton-Raphson correction
+#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
     vec temp = vec(_mm_rsqrt_ps(v.data));
     temp *= (temp * temp * v - 3.0f) * (-0.5f);
     return temp;
@@ -1247,13 +1284,11 @@ public:
     return s;
   }
   friend double sum(const vec & v) {                            // Sum vector
-    __m128d temp = _mm_hadd_pd(v.data,v.data);
-    return ((double*)&temp)[0];
+    return sum_pd(v.data);
   }
   friend double norm(const vec & v) {                           // L2 norm squared
     __m128d temp = _mm_mul_pd(v.data,v.data);
-    temp = _mm_hadd_pd(temp,temp);
-    return ((double*)&temp)[0];
+    return sum_pd(temp);
   }
   friend vec min(const vec & v, const vec & w) {                // Element-wise minimum
     return vec(_mm_min_pd(v.data,w.data));
@@ -1262,7 +1297,7 @@ public:
     return vec(_mm_max_pd(v.data,w.data));
   }
   friend vec rsqrt(const vec & v) {                             // Reciprocal square root
-#if NEWTON                                                      // Switch on Newton-Raphson correction
+#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
     vec<4,float> in(v[0],v[1],0,0);
     vec<4,float> temp = rsqrt(in);
     temp *= (temp * temp * in - 3.0f) * (-0.5f);
@@ -1277,6 +1312,9 @@ public:
 #endif
 
 #if __sparc_v9__
+#if VEC_VERBOSE
+#pragma message("Overloading vector operators for SPARC")
+#endif
 #include <emmintrin.h>
 
 template<>
@@ -1370,7 +1408,7 @@ public:
     return vec(_mm_max_pd(v.data,w.data));
   }
   friend vec rsqrt(const vec & v) {                             // Reciprocal square root
-#if NEWTON                                                      // Switch on Newton-Raphson correction
+#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
     vec temp = vec(_fjsp_rsqrta_v2r8(v.data));
     temp *= (temp * temp * v - 3.0f) * (-0.5f);
     return temp;
@@ -1487,7 +1525,7 @@ public:
     return vec(__fpsel(v.data-w.data,v.data,w.data));
   }
   friend vec rsqrt(const vec & v) {                             // Reciprocal square root
-#if NEWTON                                                      // Switch on Newton-Raphson correction
+#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
     vec temp = vec(__fprsqrte(v.data));
     temp *= (temp * temp * v - 3.0) * (-0.5);
     return temp;

@@ -29,8 +29,8 @@ AM_CXXFLAGS	= -DUSE_SIMD # Use SSE/AVX/MIC intrinsics
 #AM_CXXFLAGS	+= -DKAHAN # Use Kahan summation
 
 ### SIMD flags
-if HAVE_SSE2
-AM_CXXFLAGS 	+= $(SSE2_CXXFLAGS) # Use SSE2 intrinsics
+if HAVE_SSE3
+AM_CXXFLAGS 	+= $(SSE3_CXXFLAGS) # Use SSE2 intrinsics
 endif
 if HAVE_AVX
 AM_CXXFLAGS	+= $(AVX_CXXFLAGS) # Use AVX intrinsics
