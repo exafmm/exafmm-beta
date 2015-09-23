@@ -228,7 +228,7 @@ ECHO_N = -n
 ECHO_T = 
 EXEEXT = 
 F77 = gfortran
-FFLAGS = -O3 -fomit-frame-pointer -malign-double -fstrict-aliasing -ffast-math
+FFLAGS = -O3 -fomit-frame-pointer -malign-double -fstrict-aliasing -ffast-math -mtune=native
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
