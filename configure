@@ -586,6 +586,8 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+USE_PAPI_FALSE
+USE_PAPI_TRUE
 USE_KAHAN_FALSE
 USE_KAHAN_TRUE
 USE_WEIGHT_FALSE
@@ -743,6 +745,7 @@ enable_neon
 enable_simd
 enable_weight
 enable_kahan
+enable_papi
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1400,6 +1403,7 @@ Optional Features:
   --disable-simd          disable SIMD optimizations
   --enable-weight         enable weight for partitioning
   --enable-kahan          enable Kahan summation
+  --enable-papi           enable PAPI performance counter
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -7637,6 +7641,28 @@ else
 fi
 
 
+# PAPI
+# Check whether --enable-papi was given.
+if test "${enable_papi+set}" = set; then :
+  enableval=$enable_papi; use_papi=$enableval
+else
+  use_papi=no
+fi
+
+if test "$use_papi" = "yes"; then
+
+$as_echo "#define USE_PAPI 1" >>confdefs.h
+
+fi
+ if test "$use_papi" = "yes"; then
+  USE_PAPI_TRUE=
+  USE_PAPI_FALSE='#'
+else
+  USE_PAPI_TRUE='#'
+  USE_PAPI_FALSE=
+fi
+
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -7824,6 +7850,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_KAHAN_TRUE}" && test -z "${USE_KAHAN_FALSE}"; then
   as_fn_error $? "conditional \"USE_KAHAN\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_PAPI_TRUE}" && test -z "${USE_PAPI_FALSE}"; then
+  as_fn_error $? "conditional \"USE_PAPI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

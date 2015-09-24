@@ -42,6 +42,9 @@
 /* Enable Kahan summation. */
 #undef USE_KAHAN
 
+/* Enable PAPI performance counter. */
+#undef USE_PAPI
+
 /* Disable SIMD optimizations. */
 #undef USE_SIMD
 

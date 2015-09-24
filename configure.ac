@@ -139,4 +139,11 @@ if test "$use_kahan" = "yes"; then
 fi
 AM_CONDITIONAL(USE_KAHAN, test "$use_kahan" = "yes")
 
+# PAPI
+AC_ARG_ENABLE(papi, [AC_HELP_STRING([--enable-papi],[enable PAPI performance counter])], use_papi=$enableval, use_papi=no)
+if test "$use_papi" = "yes"; then
+        AC_DEFINE(USE_PAPI,1,[Enable PAPI performance counter.])
+fi
+AM_CONDITIONAL(USE_PAPI, test "$use_papi" = "yes")
+
 AC_OUTPUT

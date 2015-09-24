@@ -21,6 +21,24 @@
 AM_CXXFLAGS =
 AM_CPPFLAGS = -I../include -I../uniform
 
+### Thread libraries
+if OPENMP
+AM_CPPFLAGS += -DWITH_OPENMP
+AM_CXXFLAGS += $(OPENMP_CFLAGS)
+endif
+if WITH_TBB
+LIBS += -ltbb
+endif
+if WITH_CILK
+LIBS += -lcilkrts
+endif
+if WITH_MTHREAD
+LIBS += -lmyth-native
+endif
+if WITH_QTHREAD
+LIBS += -lqthread
+endif
+
 ### Floating point precision
 if EXAFMM_SINGLE
 else
@@ -53,40 +71,25 @@ if USE_WEIGHT
 AM_CPPFLAGS += -DUSE_WEIGHT
 endif
 
-### Debugging flags
-AM_CXXFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
-#AM_CXXFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
-#AM_CXXFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
-
-### Thread libraries
-if OPENMP
-AM_CXXFLAGS += $(OPENMP_CFLAGS)
+# Use PAPI performance counter (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM")
+if USE_PAPI
+AM_CPPFLAGS += -DPAPI
+LIBS += -lpapi
 endif
-if WITH_TBB
-LIBS += -ltbb
-endif
-if WITH_CILK
-LIBS += -lcilkrts
-endif
-if WITH_MTHREAD
-LIBS += -lmyth-native
-endif
-if WITH_QTHREAD
-LIBS += -lqthread
-endif
-#AM_CXXFLAGS	+= -DWITH_OPENMP # OpenMP is included in most modern compilers
 
 ### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/
 #AM_CXXFLAGS	+= -DDAG_RECORDER=2 -ldr
-
-### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
-#AM_CXXFLAGS	+= -DPAPI -lpapi
 
 ### Trace flags : This tracing tool is part of ExaFMM
 #AM_CXXFLAGS	+= -DTRACE
 
 ### Tree building flags
 #AM_CXXFLAGS	+= -DSAKURA -lsakura # Sakura is a library for fast tree building using Cilk
+
+### Debugging flags
+AM_CXXFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
+#AM_CXXFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
+#AM_CXXFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
 
 AM_MAKEFLAGS = -s
 

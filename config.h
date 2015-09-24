@@ -14,7 +14,7 @@
 /* #undef HAVE_NEON */
 
 /* Define if OpenMP is enabled */
-#define HAVE_OPENMP 1
+/* #undef HAVE_OPENMP */
 
 /* Define to enable SSE/SSE3 optimizations. */
 /* #undef HAVE_SSE3 */
@@ -43,6 +43,9 @@
 /* Enable Kahan summation. */
 /* #undef USE_KAHAN */
 
+/* Enable PAPI performance counter. */
+#define USE_PAPI 1
+
 /* Disable SIMD optimizations. */
 /* #undef USE_SIMD */
 
@@ -62,4 +65,4 @@
 /* #undef WITH_QTHREAD */
 
 /* Use Intel TBB */
-/* #undef WITH_TBB */
+#define WITH_TBB 1

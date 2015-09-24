@@ -42,7 +42,7 @@ namespace logger {
   int                    PAPIEventSet = PAPI_NULL;              //!< PAPI event set
   std::vector<char*>     PAPIEventNames;                        //!< Vector of PAPI event names
   std::vector<int>       PAPIEventCodes;                        //!< Vector of PAPI event codes
-  std::vector<uint64_t>  PAPIEventValues;                       //!< Vector of PAPI event values
+  std::vector<int64_t>   PAPIEventValues;                       //!< Vector of PAPI event values
 #endif
 
   int stringLength = 20;                                        //!< Max length of event name
