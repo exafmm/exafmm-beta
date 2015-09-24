@@ -1,5 +1,5 @@
 -- autotools --
---with** Cilk,TBB, etc.
+install mthreads on mac and test mthreads,qthreads and DAG recorder
 --enable-debug mode
 --enable-mic
 Macros defined in local Makefile -> runtime options in args.h

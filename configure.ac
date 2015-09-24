@@ -146,4 +146,39 @@ if test "$use_papi" = "yes"; then
 fi
 AM_CONDITIONAL(USE_PAPI, test "$use_papi" = "yes")
 
+# Trace
+AC_ARG_ENABLE(trace, [AC_HELP_STRING([--enable-trace],[enable thread tracing])], use_trace=$enableval, use_trace=no)
+if test "$use_trace" = "yes"; then
+        AC_DEFINE(USE_TRACE,1,[Enable thread tracing.])
+fi
+AM_CONDITIONAL(USE_TRACE, test "$use_trace" = "yes")
+
+# DAG recorder
+AC_ARG_ENABLE(dag, [AC_HELP_STRING([--enable-dag],[enable DAG recorder])], use_dag=$enableval, use_dag=no)
+if test "$use_dag" = "yes"; then
+        AC_DEFINE(USE_DAG,1,[Enable DAG recorder.])
+fi
+AM_CONDITIONAL(USE_DAG, test "$use_dag" = "yes")
+
+# Count number of M2L and P2P kernel calls
+AC_ARG_ENABLE(count-kernel, [AC_HELP_STRING([--enable-count-kenrel],[count number of M2L and P2P kernel calls])], use_count_kernel=$enableval, use_count_kernel=no)
+if test "$use_count_kernel" = "yes"; then
+        AC_DEFINE(COUNT_KERNEL,1,[Count number of M2L and P2P kernel calls.])
+fi
+AM_CONDITIONAL(COUNT_KERNEL, test "$use_count_kernel" = "yes")
+
+# Count interaction list
+AC_ARG_ENABLE(count-list, [AC_HELP_STRING([--enable-count-list],[count interaction list per cell])], use_count_list=$enableval, use_count_list=no)
+if test "$use_count_list" = "yes"; then
+        AC_DEFINE(COUNT_LIST,1,[Count interaction list per cell.])
+fi
+AM_CONDITIONAL(COUNT_LIST, test "$use_count_list" = "yes")
+
+# Assertion
+AC_ARG_ENABLE(assert, [AC_HELP_STRING([--enable-assert],[enable assertion])], use_assert=$enableval, use_assert=no)
+if test "$use_assert" = "yes"; then
+        AC_DEFINE(ASSERT,1,[Enable assertion.])
+fi
+AM_CONDITIONAL(ASSERT, test "$use_assert" = "yes")
+
 AC_OUTPUT

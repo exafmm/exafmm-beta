@@ -1,6 +1,15 @@
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Enable assertion. */
+#define ASSERT 1
+
+/* Count number of M2L and P2P kernel calls. */
+/* #undef COUNT_KERNEL */
+
+/* Count interaction list per cell. */
+/* #undef COUNT_LIST */
+
 /* Define to compile in single precision. */
 #define EXAFMM_SINGLE 1
 
@@ -40,14 +49,20 @@
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "1.0"
 
+/* Enable DAG recorder. */
+/* #undef USE_DAG */
+
 /* Enable Kahan summation. */
 /* #undef USE_KAHAN */
 
 /* Enable PAPI performance counter. */
-#define USE_PAPI 1
+/* #undef USE_PAPI */
 
 /* Disable SIMD optimizations. */
 /* #undef USE_SIMD */
+
+/* Enable thread tracing. */
+/* #undef USE_TRACE */
 
 /* Enable weight for partitioning. */
 /* #undef USE_WEIGHT */

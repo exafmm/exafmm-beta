@@ -586,6 +586,16 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+ASSERT_FALSE
+ASSERT_TRUE
+COUNT_LIST_FALSE
+COUNT_LIST_TRUE
+COUNT_KERNEL_FALSE
+COUNT_KERNEL_TRUE
+USE_DAG_FALSE
+USE_DAG_TRUE
+USE_TRACE_FALSE
+USE_TRACE_TRUE
 USE_PAPI_FALSE
 USE_PAPI_TRUE
 USE_KAHAN_FALSE
@@ -746,6 +756,11 @@ enable_simd
 enable_weight
 enable_kahan
 enable_papi
+enable_trace
+enable_dag
+enable_count_kernel
+enable_count_list
+enable_assert
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1404,6 +1419,11 @@ Optional Features:
   --enable-weight         enable weight for partitioning
   --enable-kahan          enable Kahan summation
   --enable-papi           enable PAPI performance counter
+  --enable-trace          enable thread tracing
+  --enable-dag            enable DAG recorder
+  --enable-count-kenrel   count number of M2L and P2P kernel calls
+  --enable-count-list     count interaction list per cell
+  --enable-assert         enable assertion
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -7663,6 +7683,116 @@ else
 fi
 
 
+# Trace
+# Check whether --enable-trace was given.
+if test "${enable_trace+set}" = set; then :
+  enableval=$enable_trace; use_trace=$enableval
+else
+  use_trace=no
+fi
+
+if test "$use_trace" = "yes"; then
+
+$as_echo "#define USE_TRACE 1" >>confdefs.h
+
+fi
+ if test "$use_trace" = "yes"; then
+  USE_TRACE_TRUE=
+  USE_TRACE_FALSE='#'
+else
+  USE_TRACE_TRUE='#'
+  USE_TRACE_FALSE=
+fi
+
+
+# DAG recorder
+# Check whether --enable-dag was given.
+if test "${enable_dag+set}" = set; then :
+  enableval=$enable_dag; use_dag=$enableval
+else
+  use_dag=no
+fi
+
+if test "$use_dag" = "yes"; then
+
+$as_echo "#define USE_DAG 1" >>confdefs.h
+
+fi
+ if test "$use_dag" = "yes"; then
+  USE_DAG_TRUE=
+  USE_DAG_FALSE='#'
+else
+  USE_DAG_TRUE='#'
+  USE_DAG_FALSE=
+fi
+
+
+# Count number of M2L and P2P kernel calls
+# Check whether --enable-count-kernel was given.
+if test "${enable_count_kernel+set}" = set; then :
+  enableval=$enable_count_kernel; use_count_kernel=$enableval
+else
+  use_count_kernel=no
+fi
+
+if test "$use_count_kernel" = "yes"; then
+
+$as_echo "#define COUNT_KERNEL 1" >>confdefs.h
+
+fi
+ if test "$use_count_kernel" = "yes"; then
+  COUNT_KERNEL_TRUE=
+  COUNT_KERNEL_FALSE='#'
+else
+  COUNT_KERNEL_TRUE='#'
+  COUNT_KERNEL_FALSE=
+fi
+
+
+# Count interaction list
+# Check whether --enable-count-list was given.
+if test "${enable_count_list+set}" = set; then :
+  enableval=$enable_count_list; use_count_list=$enableval
+else
+  use_count_list=no
+fi
+
+if test "$use_count_list" = "yes"; then
+
+$as_echo "#define COUNT_LIST 1" >>confdefs.h
+
+fi
+ if test "$use_count_list" = "yes"; then
+  COUNT_LIST_TRUE=
+  COUNT_LIST_FALSE='#'
+else
+  COUNT_LIST_TRUE='#'
+  COUNT_LIST_FALSE=
+fi
+
+
+# Assertion
+# Check whether --enable-assert was given.
+if test "${enable_assert+set}" = set; then :
+  enableval=$enable_assert; use_assert=$enableval
+else
+  use_assert=no
+fi
+
+if test "$use_assert" = "yes"; then
+
+$as_echo "#define ASSERT 1" >>confdefs.h
+
+fi
+ if test "$use_assert" = "yes"; then
+  ASSERT_TRUE=
+  ASSERT_FALSE='#'
+else
+  ASSERT_TRUE='#'
+  ASSERT_FALSE=
+fi
+
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -7854,6 +7984,26 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_PAPI_TRUE}" && test -z "${USE_PAPI_FALSE}"; then
   as_fn_error $? "conditional \"USE_PAPI\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_TRACE_TRUE}" && test -z "${USE_TRACE_FALSE}"; then
+  as_fn_error $? "conditional \"USE_TRACE\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_DAG_TRUE}" && test -z "${USE_DAG_FALSE}"; then
+  as_fn_error $? "conditional \"USE_DAG\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${COUNT_KERNEL_TRUE}" && test -z "${COUNT_KERNEL_FALSE}"; then
+  as_fn_error $? "conditional \"COUNT_KERNEL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${COUNT_LIST_TRUE}" && test -z "${COUNT_LIST_FALSE}"; then
+  as_fn_error $? "conditional \"COUNT_LIST\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ASSERT_TRUE}" && test -z "${ASSERT_FALSE}"; then
+  as_fn_error $? "conditional \"ASSERT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
