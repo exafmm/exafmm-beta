@@ -126,8 +126,8 @@ am__append_2 = -DUSE_SIMD
 #AM_CXXFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
 
 ### Thread libraries
-#am__append_8 = -ltbb
-am__append_9 = -lcilkrts
+am__append_8 = -ltbb
+#am__append_9 = -lcilkrts
 bin_PROGRAMS = laplace_cartesian$(EXEEXT) laplace_spherical$(EXEEXT) \
 	tree$(EXEEXT) laplace_cartesian_kernel$(EXEEXT) \
 	laplace_spherical_kernel$(EXEEXT) $(am__EXEEXT_1)

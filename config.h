@@ -50,7 +50,7 @@
 #define VERSION "1.0"
 
 /* Use Intel Cilk */
-#define WITH_CILK 1
+/* #undef WITH_CILK */
 
 /* Use Intel TBB */
-/* #undef WITH_TBB */
+#define WITH_TBB 1
