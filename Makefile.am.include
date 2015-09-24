@@ -60,13 +60,17 @@ AM_CXXFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro 
 
 ### Thread libraries
 if WITH_TBB
-LIBS		+= -ltbb
+LIBS += -ltbb
 endif
 if WITH_CILK
-LIBS		+= -lcilkrts
+LIBS += -lcilkrts
 endif
-#AM_CXXFLAGS	+= -DWITH_MTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
-#AM_CXXFLAGS	+= -DWITH_QTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
+if WITH_MTHREAD
+LIBS += -lmyth-native
+endif
+if WITH_QTHREAD
+LIBS += -lqthread
+endif
 #AM_CXXFLAGS	+= -DWITH_OPENMP # OpenMP is included in most modern compilers
 
 ### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/

@@ -51,5 +51,11 @@
 /* Use Intel Cilk */
 #undef WITH_CILK
 
+/* Use MassiveThreads */
+#undef WITH_MTHREAD
+
+/* Use QThreads */
+#undef WITH_QTHREAD
+
 /* Use Intel TBB */
 #undef WITH_TBB

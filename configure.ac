@@ -26,6 +26,20 @@ if test "$with_cilk" = "yes"; then
 fi
 AM_CONDITIONAL(WITH_CILK, test "$with_cilk" = "yes")
 
+# MassiveThreads
+AC_ARG_WITH(mthread, [AC_HELP_STRING([--with-mthread],[use MassiveThreads])], with_mthread=$withval, with_mthread=no)
+if test "$with_mthread" = "yes"; then
+        AC_DEFINE(WITH_MTHREAD,1,[Use MassiveThreads])
+fi
+AM_CONDITIONAL(WITH_MTHREAD, test "$with_mthread" = "yes")
+
+# QThreads
+AC_ARG_WITH(qthread, [AC_HELP_STRING([--with-qthread],[use QThreads])], with_qthread=$withval, with_qthread=no)
+if test "$with_qthread" = "yes"; then
+        AC_DEFINE(WITH_QTHREAD,1,[Use QThreads])
+fi
+AM_CONDITIONAL(WITH_QTHREAD, test "$with_qthread" = "yes")
+
 # Single precision
 AC_ARG_ENABLE(single, [AC_HELP_STRING([--enable-single],[compile exaFMM in single precision])], ok=$enableval, ok=no)
 AC_ARG_ENABLE(float, [AC_HELP_STRING([--enable-float],[synonym for --enable-single])], ok=$enableval)

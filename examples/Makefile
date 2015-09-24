@@ -126,12 +126,14 @@ am__append_2 = -DUSE_SIMD
 #AM_CXXFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
 
 ### Thread libraries
-am__append_8 = -ltbb
+#am__append_8 = -ltbb
 #am__append_9 = -lcilkrts
+#am__append_10 = -lmyth-native
+am__append_11 = -lqthread
 bin_PROGRAMS = laplace_cartesian$(EXEEXT) laplace_spherical$(EXEEXT) \
 	tree$(EXEEXT) laplace_cartesian_kernel$(EXEEXT) \
 	laplace_spherical_kernel$(EXEEXT) $(am__EXEEXT_1)
-#am__append_10 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
+#am__append_12 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_mpi.m4 \
@@ -311,7 +313,8 @@ INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 LDFLAGS = 
 LIBOBJS = 
-LIBS =  $(am__append_8) $(am__append_9)
+LIBS =  $(am__append_8) $(am__append_9) $(am__append_10) \
+	$(am__append_11)
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /Users/yokotar/iCloud/sourcetree/exafmm/build-aux/missing makeinfo
 MKDIR_P = /opt/local/bin/gmkdir -p
@@ -399,8 +402,6 @@ AM_CXXFLAGS = $(am__append_3) $(am__append_4) $(am__append_5) -DASSERT \
 	-DDIRECT # Compare with direct summation
 AM_CPPFLAGS = -I../include -I../uniform $(am__append_1) \
 	$(am__append_2) $(am__append_6) $(am__append_7)
-#AM_CXXFLAGS	+= -DWITH_MTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
-#AM_CXXFLAGS	+= -DWITH_QTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
 #AM_CXXFLAGS	+= -DWITH_OPENMP # OpenMP is included in most modern compilers
 
 ### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/
