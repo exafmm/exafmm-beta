@@ -227,7 +227,7 @@ CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -O3 -fomit-frame-pointer -mtune=native -fstrict-aliasing -fno-schedule-insns -ffast-math -ffast-math
 CPPFLAGS = 
-CXX = g++
+CXX = mpiCC
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -O3 -fstrict-aliasing -mtune=native
 CYGPATH_W = echo
@@ -250,11 +250,11 @@ LIBS =
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /Users/yokotar/iCloud/sourcetree/exafmm/build-aux/missing makeinfo
 MKDIR_P = /opt/local/bin/gmkdir -p
-MPICC = 
-MPICXX = 
-MPIF77 = 
-MPILIBS = 
-MPIRUN = 
+MPICC = mpicc
+MPICXX = mpiCC
+MPIF77 = mpif77
+MPILIBS =  
+MPIRUN = mpirun
 NEON_CXXFLAGS = 
 OBJEXT = o
 OPENMP_CFLAGS = 

@@ -23,26 +23,26 @@ int main(int argc, char ** argv) {
   args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
   buffer.reserve(bodies.size());
-#if IneJ
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    B->X[0] += M_PI;
-    B->X[0] *= 0.5;
+  if (args.IneJ) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+      B->X[0] += M_PI;
+      B->X[0] *= 0.5;
+    }
+    jbodies = data.initBodies(args.numBodies, args.distribution, 1);
+    for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+      B->X[0] -= M_PI;
+      B->X[0] *= 0.5;
+    }
   }
-  jbodies = data.initBodies(args.numBodies, args.distribution, 1);
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    B->X[0] -= M_PI;
-    B->X[0] *= 0.5;
-  }
-#endif
   for (int t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
     logger::startDAG();
     bounds = boundBox.getBounds(bodies);
-#if IneJ
-    bounds = boundBox.getBounds(jbodies,bounds);
-#endif
+    if (args.IneJ) {
+      bounds = boundBox.getBounds(jbodies,bounds);
+    }
     Cells cells = buildTree(bodies, buffer, bounds);
     upwardPass(cells);
     evaluate(cells);

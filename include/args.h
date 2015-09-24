@@ -20,6 +20,7 @@ static struct option long_options[] = {
   {"verbose",      1, 0, 'v'},
   {"distribution", 1, 0, 'd'},
   {"repeat",       1, 0, 'r'},
+  {"IneJ",         1, 0, 'j'},
   {"help",         0, 0, 'h'},
   {0, 0, 0, 0}
 };
@@ -39,6 +40,7 @@ public:
   int verbose;
   const char * distribution;
   int repeat;
+  int IneJ;
 
 private:
   void usage(char * name) {
@@ -58,6 +60,7 @@ private:
 	    " --verbose (-v) [0/1]          : Print information to screen (%d)\n"
             " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
             " --repeat (-r)                 : Number of iteration loops (%d)\n"
+            " --IneJ (-j)                   : Use different sources & targets (%d)\n"
             " --help (-h)                   : Show this help document\n",
             name,
             numBodies,
@@ -72,7 +75,8 @@ private:
 	    graft,
 	    verbose,
             distribution,
-	    repeat);
+	    repeat,
+	    IneJ);
   }
 
   const char * parse(const char * arg) {
@@ -97,10 +101,10 @@ private:
 public:
   Args(int argc=0, char ** argv=NULL) : numBodies(1000000), ncrit(64), nspawn(5000), threads(16), images(0),
 					theta(.4), useRmax(1), useRopt(1), mutual(1), graft(1),
-					verbose(1), distribution("cube"), repeat(1) {
+					verbose(1), distribution("cube"), repeat(1), IneJ(0) {
     while (1) {
       int option_index;
-      int c = getopt_long(argc, argv, "n:c:s:T:i:t:x:o:m:g:v:d:r:h", long_options, &option_index);
+      int c = getopt_long(argc, argv, "n:c:s:T:i:t:x:o:m:g:v:d:r:j:h", long_options, &option_index);
       if (c == -1) break;
       switch (c) {
       case 'n':
@@ -142,6 +146,9 @@ public:
       case 'r':
         repeat = atoi(optarg);
         break;
+      case 'j':
+        IneJ = atoi(optarg);
+        break;
       case 'h':
         usage(argv[0]);
         exit(0);
@@ -181,7 +188,9 @@ public:
 		<< std::setw(stringLength)                      //  Set format
 		<< "distribution" << " : " << distribution << std::endl// Print distribution
 		<< std::setw(stringLength)                      //  Set format
-		<< "repeat" << " : " << repeat << std::endl;    //  Print distribution
+		<< "repeat" << " : " << repeat << std::endl     //  Print repeat
+		<< std::setw(stringLength)                      //  Set format
+		<< "IneJ" << " : " << IneJ << std::endl;        //  Print IneJ
     }                                                           // End if for verbose flag
   }
 };

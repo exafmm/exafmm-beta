@@ -1,6 +1,5 @@
 include ../Makefile.am.include
 
-#AM_CXXFLAGS += -DIneJ # Different target and source points
 AM_CXXFLAGS  += -DDIRECT # Compare with direct summation
 #AM_CXXFLAGS += -DWRITE_TIME # Write timings to file
 

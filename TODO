@@ -1,7 +1,4 @@
 -- autotools --
-install mthreads on mac and test mthreads,qthreads and DAG recorder
---enable-debug mode
---enable-mic
 Macros defined in local Makefile -> runtime options in args.h
 update README
 
@@ -50,6 +47,7 @@ Cartesian vs. Spherical (optimized)
 ORB vs. HOT
 
 -- Debugging tips --
+--enable-debug mode
 Write the kind of code where standard gcc can catch the bug, exceptions, assertions
 Add assertions and keep them there
 Shift bodies

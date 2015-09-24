@@ -413,8 +413,6 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 ### Base flags
-
-#AM_CXXFLAGS += -DIneJ # Different target and source points
 AM_CXXFLAGS = $(am__append_2) $(am__append_9) $(am__append_10) \
 	$(am__append_11) -DDIRECT # Compare with direct summation
 AM_CPPFLAGS = -I../include -I../uniform $(am__append_1) \

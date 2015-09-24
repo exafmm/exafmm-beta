@@ -2,7 +2,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Enable assertion. */
-#define ASSERT 1
+/* #undef ASSERT */
 
 /* Count number of M2L and P2P kernel calls. */
 /* #undef COUNT_KERNEL */
@@ -17,7 +17,7 @@
 /* #undef HAVE_AVX */
 
 /* Define if you have the MPI library. */
-/* #undef HAVE_MPI */
+#define HAVE_MPI 1
 
 /* Define to enable ARM NEON optimizations. */
 /* #undef HAVE_NEON */

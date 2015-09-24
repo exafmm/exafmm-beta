@@ -147,11 +147,11 @@ am__append_8 = -DUSE_SIMD
 
 # Count interaction list per cell
 #am__append_20 = -DCOUNT_LIST
-am__append_21 = -DASSERT
+#am__append_21 = -DASSERT
 bin_PROGRAMS = laplace_cartesian$(EXEEXT) laplace_spherical$(EXEEXT) \
 	tree$(EXEEXT) laplace_cartesian_kernel$(EXEEXT) \
 	laplace_spherical_kernel$(EXEEXT) $(am__EXEEXT_1)
-#am__append_22 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
+am__append_22 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_mpi.m4 \
@@ -170,17 +170,17 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-#am__EXEEXT_1 = laplace_cartesian_mpi$(EXEEXT) \
-#	laplace_spherical_mpi$(EXEEXT) ewald_mpi$(EXEEXT)
+am__EXEEXT_1 = laplace_cartesian_mpi$(EXEEXT) \
+	laplace_spherical_mpi$(EXEEXT) ewald_mpi$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__ewald_mpi_SOURCES_DIST = ewald.cxx \
 	../kernels/LaplaceSphericalCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
 am__dirstamp = $(am__leading_dot)dirstamp
-#am_ewald_mpi_OBJECTS = ewald_mpi-ewald.$(OBJEXT) \
-#	../kernels/ewald_mpi-LaplaceSphericalCPU.$(OBJEXT) \
-#	../kernels/ewald_mpi-LaplaceP2PCPU.$(OBJEXT)
+am_ewald_mpi_OBJECTS = ewald_mpi-ewald.$(OBJEXT) \
+	../kernels/ewald_mpi-LaplaceSphericalCPU.$(OBJEXT) \
+	../kernels/ewald_mpi-LaplaceP2PCPU.$(OBJEXT)
 ewald_mpi_OBJECTS = $(am_ewald_mpi_OBJECTS)
 ewald_mpi_LDADD = $(LDADD)
 am_laplace_cartesian_OBJECTS = laplace_cartesian-fmm.$(OBJEXT) \
@@ -198,10 +198,10 @@ laplace_cartesian_kernel_LDADD = $(LDADD)
 am__laplace_cartesian_mpi_SOURCES_DIST = fmm_mpi.cxx \
 	../kernels/LaplaceCartesianCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
-#am_laplace_cartesian_mpi_OBJECTS =  \
-#	laplace_cartesian_mpi-fmm_mpi.$(OBJEXT) \
-#	../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.$(OBJEXT) \
-#	../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.$(OBJEXT)
+am_laplace_cartesian_mpi_OBJECTS =  \
+	laplace_cartesian_mpi-fmm_mpi.$(OBJEXT) \
+	../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.$(OBJEXT) \
+	../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.$(OBJEXT)
 laplace_cartesian_mpi_OBJECTS = $(am_laplace_cartesian_mpi_OBJECTS)
 laplace_cartesian_mpi_LDADD = $(LDADD)
 am_laplace_spherical_OBJECTS = laplace_spherical-fmm.$(OBJEXT) \
@@ -219,10 +219,10 @@ laplace_spherical_kernel_LDADD = $(LDADD)
 am__laplace_spherical_mpi_SOURCES_DIST = fmm_mpi.cxx \
 	../kernels/LaplaceSphericalCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
-#am_laplace_spherical_mpi_OBJECTS =  \
-#	laplace_spherical_mpi-fmm_mpi.$(OBJEXT) \
-#	../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.$(OBJEXT) \
-#	../kernels/laplace_spherical_mpi-LaplaceP2PCPU.$(OBJEXT)
+am_laplace_spherical_mpi_OBJECTS =  \
+	laplace_spherical_mpi-fmm_mpi.$(OBJEXT) \
+	../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.$(OBJEXT) \
+	../kernels/laplace_spherical_mpi-LaplaceP2PCPU.$(OBJEXT)
 laplace_spherical_mpi_OBJECTS = $(am_laplace_spherical_mpi_OBJECTS)
 laplace_spherical_mpi_LDADD = $(LDADD)
 am_tree_OBJECTS = tree-tree.$(OBJEXT)
@@ -312,7 +312,7 @@ CC = gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -O3 -fomit-frame-pointer -mtune=native -fstrict-aliasing -fno-schedule-insns -ffast-math -ffast-math
 CPPFLAGS = 
-CXX = g++
+CXX = mpiCC
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -O3 -fstrict-aliasing -mtune=native
 CYGPATH_W = echo
@@ -336,11 +336,11 @@ LIBS =  $(am__append_3) $(am__append_4) $(am__append_5) \
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /Users/yokotar/iCloud/sourcetree/exafmm/build-aux/missing makeinfo
 MKDIR_P = /opt/local/bin/gmkdir -p
-MPICC = 
-MPICXX = 
-MPIF77 = 
-MPILIBS = 
-MPIRUN = 
+MPICC = mpicc
+MPICXX = mpiCC
+MPIF77 = mpif77
+MPILIBS =  
+MPIRUN = mpirun
 NEON_CXXFLAGS = 
 OBJEXT = o
 OPENMP_CFLAGS = 
@@ -413,8 +413,6 @@ top_builddir = ..
 top_srcdir = ..
 
 ### Base flags
-
-#AM_CXXFLAGS += -DIneJ # Different target and source points
 AM_CXXFLAGS = $(am__append_2) $(am__append_9) $(am__append_10) \
 	$(am__append_11) -DDIRECT # Compare with direct summation
 AM_CPPFLAGS = -I../include -I../uniform $(am__append_1) \
@@ -433,12 +431,12 @@ laplace_cartesian_kernel_SOURCES = kernel.cxx ../kernels/LaplaceCartesianCPU.cxx
 laplace_cartesian_kernel_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
 laplace_spherical_kernel_SOURCES = kernel.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_spherical_kernel_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
-#laplace_cartesian_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-#laplace_cartesian_mpi_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
-#laplace_spherical_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-#laplace_spherical_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
-#ewald_mpi_SOURCES = ewald.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-#ewald_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
+laplace_cartesian_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+laplace_cartesian_mpi_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
+laplace_spherical_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+laplace_spherical_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
+ewald_mpi_SOURCES = ewald.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+ewald_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
 all: all-am
 
 .SUFFIXES:

@@ -36,50 +36,50 @@ int main(int argc, char ** argv) {
   args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank, baseMPI.mpisize);
   buffer.reserve(bodies.size());
-#if IneJ
-  for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-    B->X[0] += M_PI;
-    B->X[0] *= 0.5;
+  if (args.IneJ) {
+    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
+      B->X[0] += M_PI;
+      B->X[0] *= 0.5;
+    }
+    jbodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank+baseMPI.mpisize, baseMPI.mpisize);
+    for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
+      B->X[0] -= M_PI;
+      B->X[0] *= 0.5;
+    }
   }
-  jbodies = data.initBodies(args.numBodies, args.distribution, baseMPI.mpirank+baseMPI.mpisize, baseMPI.mpisize);
-  for (B_iter B=jbodies.begin(); B!=jbodies.end(); B++) {
-    B->X[0] -= M_PI;
-    B->X[0] *= 0.5;
-  }
-#endif
   for (int t=0; t<args.repeat; t++) {
     logger::printTitle("FMM Profiling");
     logger::startTimer("Total FMM");
     logger::startPAPI();
     localBounds = boundBox.getBounds(bodies);
-#if IneJ
-    localBounds = boundBox.getBounds(jbodies, localBounds);
-#endif
+    if (args.IneJ) {
+      localBounds = boundBox.getBounds(jbodies, localBounds);
+    }
     globalBounds = baseMPI.allreduceBounds(localBounds);
     partition.bisection(bodies, globalBounds);
     bodies = treeMPI.commBodies(bodies);
-#if IneJ
-    partition.bisection(jbodies, globalBounds);
-    jbodies = treeMPI.commBodies(jbodies);
-#endif
+    if (args.IneJ) {
+      partition.bisection(jbodies, globalBounds);
+      jbodies = treeMPI.commBodies(jbodies);
+    }
     localBounds = boundBox.getBounds(bodies);
     cells = localTree.buildTree(bodies, buffer, localBounds);
     localBounds = boundBox.getBounds(cells, localBounds);
     upDownPass.upwardPass(cells);
-#if IneJ
-    localBounds = boundBox.getBounds(jbodies);
-    jcells = localTree.buildTree(jbodies, buffer, localBounds);
-    localBounds = boundBox.getBounds(jcells, localBounds);
-    upDownPass.upwardPass(jcells);
-#endif
+    if (args.IneJ) {
+      localBounds = boundBox.getBounds(jbodies);
+      jcells = localTree.buildTree(jbodies, buffer, localBounds);
+      localBounds = boundBox.getBounds(jcells, localBounds);
+      upDownPass.upwardPass(jcells);
+    }
 
 #if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
     treeMPI.allgatherBounds(localBounds);
-#if IneJ
-    treeMPI.setLET(jcells, cycle);
-#else
-    treeMPI.setLET(cells, cycle);
-#endif
+    if (args.IneJ) {
+      treeMPI.setLET(jcells, cycle);
+    } else {
+      treeMPI.setLET(cells, cycle);
+    }
 #pragma omp parallel sections
     {
 #pragma omp section
@@ -91,12 +91,12 @@ int main(int argc, char ** argv) {
       {
 	traversal.initListCount(cells);
 	traversal.initWeight(cells);
-#if IneJ
-	traversal.dualTreeTraversal(cells, jcells, cycle, false);
-#else
-	traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-	jbodies = bodies;
-#endif
+        if (args.IneJ) {
+	  traversal.dualTreeTraversal(cells, jcells, cycle, false);
+	} else {
+	  traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
+	  jbodies = bodies;
+	}
       }
     }
     if (args.graft) {
