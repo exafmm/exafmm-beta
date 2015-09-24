@@ -126,7 +126,6 @@ int main(int argc, char ** argv) {
 
     logger::stopPAPI();
     logger::stopTimer("Total FMM", 0);
-#if DIRECT
     logger::printTitle("MPI direct sum");
     const int numTargets = 100;
     buffer = bodies;
@@ -161,14 +160,11 @@ int main(int argc, char ** argv) {
     logger::printPAPI();
     bodies = buffer;
     data.initTarget(bodies);
-#endif
     logger::resetTimer("Total FMM");
-#if WRITE_TIME
-    logger::writeTime(baseMPI.mpirank);
-#endif
-#if COUNT_LIST
+    if (args.write) {
+      logger::writeTime(baseMPI.mpirank);
+    }
     traversal.writeList(cells, baseMPI.mpirank);
-#endif
   }
   return 0;
 }

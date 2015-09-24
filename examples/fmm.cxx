@@ -65,12 +65,10 @@ int main(int argc, char ** argv) {
     logger::stopPAPI();
     double time = logger::stopTimer("Total FMM");
     logger::resetTimer("Total FMM");
-#if WRITE_TIME
-    logger::writeTime();
-#endif
-#if COUNT_LIST
+    if (args.write) {
+      logger::writeTime();
+    }
     traversal.writeList(cells);
-#endif
     const int numTargets = 100;
     buffer = bodies;
     data.sampleBodies(bodies, numTargets);

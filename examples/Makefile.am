@@ -1,8 +1,5 @@
 include ../Makefile.am.include
 
-AM_CXXFLAGS  += -DDIRECT # Compare with direct summation
-#AM_CXXFLAGS += -DWRITE_TIME # Write timings to file
-
 bin_PROGRAMS = laplace_cartesian laplace_spherical tree
 laplace_cartesian_SOURCES = fmm.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_cartesian_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DMASS -DEXPANSION=4

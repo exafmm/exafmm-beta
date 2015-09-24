@@ -25,6 +25,8 @@ int main(int argc, char ** argv) {
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = cycle / 2;
   Args args(argc, argv);
+  args.numBodies = 1000;
+  args.images = 3;
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
   BoundBox boundBox(args.nspawn);
