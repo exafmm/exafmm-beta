@@ -1,5 +1,5 @@
-#ifndef build_tree_h
-#define build_tree_h
+#ifndef build_tree_cilk_h
+#define build_tree_cilk_h
 #include <algorithm>
 #include "logger.h"
 #include "thread.h"

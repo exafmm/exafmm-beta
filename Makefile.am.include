@@ -20,8 +20,6 @@
 ### Base flags
 AM_CXXFLAGS =
 AM_CPPFLAGS = -I../include -I../uniform
-#AM_CXXFLAGS	+= -DUSE_WEIGHT # Use weights for partitioning
-#AM_CXXFLAGS	+= -DKAHAN # Use Kahan summation
 
 ### Floating point precision
 if EXAFMM_SINGLE
@@ -31,7 +29,7 @@ endif
 
 ### SIMD flags
 if USE_SIMD
-AM_CXXFLAGS += -DUSE_SIMD
+AM_CPPFLAGS += -DUSE_SIMD
 if HAVE_AVX
 AM_CXXFLAGS += $(AVX_CXXFLAGS) # Use AVX intrinsics
 else
@@ -45,18 +43,31 @@ endif
 endif
 endif
 
+# Kahan summation
+if USE_KAHAN
+AM_CPPFLAGS += -DKAHAN
+endif
+
+# Use weights for partitioning
+if USE_WEIGHT
+AM_CPPFLAGS += -DUSE_WEIGHT
+endif
+
 ### Debugging flags
 AM_CXXFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
 #AM_CXXFLAGS	+= -DCOUNT_KERNEL # Count number of kernel calls to P2P and M2L (slows down execution)
 #AM_CXXFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
 
-### Thread model flags
-#AM_CXXFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
-AM_CXXFLAGS	+= -DTBB
-LIBS		= -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
-#AM_CXXFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
-#AM_CXXFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
-#AM_CXXFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
+### Thread libraries
+if WITH_TBB
+LIBS		+= -ltbb
+endif
+if WITH_CILK
+LIBS		+= -lcilkrts
+endif
+#AM_CXXFLAGS	+= -DWITH_MTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
+#AM_CXXFLAGS	+= -DWITH_QTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
+#AM_CXXFLAGS	+= -DWITH_OPENMP # OpenMP is included in most modern compilers
 
 ### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/
 #AM_CXXFLAGS	+= -DDAG_RECORDER=2 -ldr

@@ -1,8 +1,8 @@
 -- autotools --
-Remove all -D macros and move them to --enable** + CPPFLAGS
-IneJ should be runtime parameter
+--with** Cilk,TBB, etc.
 --enable-debug mode
 --enable-mic
+Macros defined in local Makefile -> runtime options in args.h
 update README
 
 -- Tips --

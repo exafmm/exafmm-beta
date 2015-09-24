@@ -1,12 +1,13 @@
 #ifndef thread_h
 #define thread_h
+#include "config.h"
 
-#if CILK
+#if WITH_CILK
 #include <cilk/cilk.h>
 #include <cilk/cilk_api.h>
 #endif
 
-#if TBB
+#if WITH_TBB
 #define num_threads(E)                tbb::task_scheduler_init init(E)
 #if DAG_RECORDER == 2  /* TBB with DAG Recorder */
 #define TO_TBB 1 
@@ -23,7 +24,7 @@ using namespace tbb;
 #define create_taskc_if(x, E)         if(x) { create_taskc(E); } else { E(); }
 #endif
 
-#elif OPENMP
+#elif WITH_OPENMP
 #include <omp.h>
 #define num_threads(E)                omp_set_num_threads(E);
 #if DAG_RECORDER == 2		/* OpenMP with DAG Recorder */
@@ -37,26 +38,26 @@ using namespace tbb;
 #define create_taskc_if(x, E)         if(x) { create_taskc(E); } else { E(); }
 #endif
 
-#elif MTHREAD
+#elif WITH_MTHREAD
 /* MassiveThreads (TBB-like interface on top of MassiveThreads)  */
 #define num_threads(E)		myth_init_withparam(E, 1 << 16)
 #define TO_MTHREAD_NATIVE 1
 #include <tpswitch/tpswitch.h>
 
-#elif QTHREAD
+#elif WITH_QTHREAD
 /* Qthreads (TBB-like interface on top of MassiveThreads).
    make sure you set QTHREAD_STACK_SIZE large enough (e.g., 131072) */
 #define num_threads(E)		do { char n[30]; sprintf(n, "%d", E); setenv("QTHREAD_STACK_SIZE", "65536", 0); setenv("QTHREAD_NUM_SHEPHERDS", n, 0); setenv("QTHREAD_NUM_WORKERS_PER_SHEPHERD", "1", 0); qthread_initialize(); } while(0)
 #define TO_QTHREAD 1
 #include <tpswitch/tpswitch.h>
 
-#elif SERIAL
+#elif DISABLE_THREAD
 /* Qthreads (TBB-like interface on top of MassiveThreads)  */
 #define num_threads(E)
 #define TO_SERIAL 1
 #include <tpswitch/tpswitch.h>
 
-#elif CILK
+#elif WITH_CILK
 #define num_threads(E)                char nworkers[32]; sprintf(nworkers,"%d",E); __cilkrts_set_param("nworkers",nworkers)
 #define mk_task_group
 #define wait_tasks                    cilk_sync

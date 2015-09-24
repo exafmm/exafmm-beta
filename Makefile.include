@@ -37,7 +37,7 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp 
 #FC = ftn -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel (Cray)
 
 ### Base flags
-CXX	+= -I../include -I../uniform
+CXX	+= -I.. -I../include -I../uniform
 #CXX	+= -I$$(echo $$CPATH | sed 's/:/ -I/g') # BG compilers need this
 #LFLAGS	+= -L$$(echo $$LIBRARY_PATH | sed 's/:/ -L/g') # BG compilers need this
 #LFLAGS	+= -fPIC # for shared library
@@ -53,11 +53,11 @@ LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro funct
 #LFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
 
 ### Thread model flags
-#LFLAGS	+= -DCILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
-LFLAGS	+= -DTBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
-#LFLAGS	+= -DMTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
-#LFLAGS	+= -DQTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
-#LFLAGS	+= -DOPENMP # OpenMP is included in most modern compilers
+#LFLAGS	+= -DWITH_CILK -lcilkrts # Cilk is included in the Intel C/C++ Compiler
+LFLAGS	+= -DWITH_TBB -ltbb # TBB is available from http://threadingbuildingblocks.org/download.php
+#LFLAGS	+= -DWITH_MTHREAD -lmyth-native # MassiveThreads is available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -DWITH_QTHREAD -lqthread # Qthread is available from https://code.google.com/p/qthreads/
+#LFLAGS	+= -DWITH_OPENMP # OpenMP is included in most modern compilers
 
 ### DAG Recorder flags : DAG Recorder is part of MassiveThreads available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -DDAG_RECORDER=2 -ldr

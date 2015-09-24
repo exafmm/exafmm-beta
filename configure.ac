@@ -12,6 +12,20 @@ AX_CC_MAXOPT
 AX_CXX_MAXOPT
 AX_F77_MAXOPT
 
+# Intel TBB
+AC_ARG_WITH(tbb, [AC_HELP_STRING([--with-tbb],[use Intel TBB])], with_tbb=$withval, with_tbb=no)
+if test "$with_tbb" = "yes"; then
+        AC_DEFINE(WITH_TBB,1,[Use Intel TBB])
+fi
+AM_CONDITIONAL(WITH_TBB, test "$with_tbb" = "yes")
+
+# Intel Cilk
+AC_ARG_WITH(cilk, [AC_HELP_STRING([--with-cilk],[use Intel Cilk])], with_cilk=$withval, with_cilk=no)
+if test "$with_cilk" = "yes"; then
+        AC_DEFINE(WITH_CILK,1,[Use Intel Cilk])
+fi
+AM_CONDITIONAL(WITH_CILK, test "$with_cilk" = "yes")
+
 # Single precision
 AC_ARG_ENABLE(single, [AC_HELP_STRING([--enable-single],[compile exaFMM in single precision])], ok=$enableval, ok=no)
 AC_ARG_ENABLE(float, [AC_HELP_STRING([--enable-float],[synonym for --enable-single])], ok=$enableval)
@@ -87,5 +101,19 @@ if test "$use_simd" = "no"; then
         AC_DEFINE(USE_SIMD,0,[Disable SIMD optimizations.])
 fi
 AM_CONDITIONAL(USE_SIMD, test "$use_simd" = "yes")
+
+# Weights for partitioning
+AC_ARG_ENABLE(weight, [AC_HELP_STRING([--enable-weight],[enable weight for partitioning])], use_weight=$enableval, use_weight=no)
+if test "$use_weight" = "yes"; then
+        AC_DEFINE(USE_WEIGHT,1,[Enable weight for partitioning.])
+fi
+AM_CONDITIONAL(USE_WEIGHT, test "$use_weight" = "yes")
+
+# Kahan summation
+AC_ARG_ENABLE(kahan, [AC_HELP_STRING([--enable-kahan],[enable Kahan summation])], use_kahan=$enableval, use_kahan=no)
+if test "$use_kahan" = "yes"; then
+        AC_DEFINE(USE_KAHAN,1,[Enable Kahan summation.])
+fi
+AM_CONDITIONAL(USE_KAHAN, test "$use_kahan" = "yes")
 
 AC_OUTPUT

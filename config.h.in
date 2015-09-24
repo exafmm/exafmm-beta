@@ -36,8 +36,20 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Enable Kahan summation. */
+#undef USE_KAHAN
+
 /* Disable SIMD optimizations. */
 #undef USE_SIMD
 
+/* Enable weight for partitioning. */
+#undef USE_WEIGHT
+
 /* Version number of package */
 #undef VERSION
+
+/* Use Intel Cilk */
+#undef WITH_CILK
+
+/* Use Intel TBB */
+#undef WITH_TBB
