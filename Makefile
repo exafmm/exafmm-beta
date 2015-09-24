@@ -239,6 +239,8 @@ ECHO_N =
 ECHO_T = 
 EXEEXT = 
 F77 = gfortran
+FC = gfortran
+FCFLAGS = -g -O2
 FFLAGS = -O3 -fomit-frame-pointer -malign-double -fstrict-aliasing -ffast-math -mtune=native
 INSTALL = /opt/local/bin/ginstall -c
 INSTALL_DATA = ${INSTALL} -m 644
@@ -283,6 +285,7 @@ ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 ac_ct_F77 = gfortran
+ac_ct_FC = gfortran
 am__include = include
 am__leading_dot = .
 am__quote = 

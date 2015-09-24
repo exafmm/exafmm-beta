@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([examples/fmm.cxx])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AC_PROG_CC
 AC_PROG_CXX
-AC_PROG_F77
+AC_PROG_FC
 AC_PROG_RANLIB
 AM_PROG_AR
 AX_CC_MAXOPT
