@@ -1,4 +1,4 @@
-SUBDIRS = examples
+SUBDIRS = examples wrappers
 
 help:
 	@echo "Please read the README file in the root directory."

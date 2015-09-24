@@ -166,13 +166,13 @@ CTAGS = ctags
 CSCOPE = cscope
 DIST_SUBDIRS = $(SUBDIRS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(top_srcdir)/build-aux/compile \
+	$(top_srcdir)/build-aux/ar-lib $(top_srcdir)/build-aux/compile \
 	$(top_srcdir)/build-aux/config.guess \
 	$(top_srcdir)/build-aux/config.sub \
 	$(top_srcdir)/build-aux/install-sh \
-	$(top_srcdir)/build-aux/missing README TODO build-aux/compile \
-	build-aux/config.guess build-aux/config.sub build-aux/depcomp \
-	build-aux/install-sh build-aux/missing
+	$(top_srcdir)/build-aux/missing README TODO build-aux/ar-lib \
+	build-aux/compile build-aux/config.guess build-aux/config.sub \
+	build-aux/depcomp build-aux/install-sh build-aux/missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -218,6 +218,7 @@ distcleancheck_listfiles = find . -type f -print
 ACLOCAL = ${SHELL} /Users/yokotar/iCloud/sourcetree/exafmm/build-aux/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
+AR = ar
 AUTOCONF = ${SHELL} /Users/yokotar/iCloud/sourcetree/exafmm/build-aux/missing autoconf
 AUTOHEADER = ${SHELL} /Users/yokotar/iCloud/sourcetree/exafmm/build-aux/missing autoheader
 AUTOMAKE = ${SHELL} /Users/yokotar/iCloud/sourcetree/exafmm/build-aux/missing automake-1.15
@@ -268,6 +269,7 @@ PACKAGE_VERSION = 1.0
 PATH_SEPARATOR = :
 PRECISION = s
 PRTDIAG = 
+RANLIB = ranlib
 SET_MAKE = 
 SHELL = /bin/sh
 SSE3_CXXFLAGS = 
@@ -277,6 +279,7 @@ abs_builddir = /Users/yokotar/iCloud/sourcetree/exafmm
 abs_srcdir = /Users/yokotar/iCloud/sourcetree/exafmm
 abs_top_builddir = /Users/yokotar/iCloud/sourcetree/exafmm
 abs_top_srcdir = /Users/yokotar/iCloud/sourcetree/exafmm
+ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
 ac_ct_F77 = gfortran
@@ -325,7 +328,7 @@ target_alias =
 top_build_prefix = 
 top_builddir = .
 top_srcdir = .
-SUBDIRS = examples
+SUBDIRS = examples wrappers
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
