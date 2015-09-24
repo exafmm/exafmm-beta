@@ -12,6 +12,15 @@ AX_CC_MAXOPT
 AX_CXX_MAXOPT
 AX_F77_MAXOPT
 
+# OpenMP
+AC_ARG_ENABLE(openmp, [AC_HELP_STRING([--enable-openmp],[use OpenMP])], enable_openmp=$e\
+nableval, enable_openmp=no)
+if test "$enable_openmp" = "yes"; then
+   AC_DEFINE(HAVE_OPENMP,1,[Use OpenMP])
+   AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP])])
+fi
+AM_CONDITIONAL(OPENMP, test "$enable_openmp" = "yes")
+
 # Intel TBB
 AC_ARG_WITH(tbb, [AC_HELP_STRING([--with-tbb],[use Intel TBB])], with_tbb=$withval, with_tbb=no)
 if test "$with_tbb" = "yes"; then

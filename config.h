@@ -13,6 +13,9 @@
 /* Define to enable ARM NEON optimizations. */
 /* #undef HAVE_NEON */
 
+/* Define if OpenMP is enabled */
+#define HAVE_OPENMP 1
+
 /* Define to enable SSE/SSE3 optimizations. */
 /* #undef HAVE_SSE3 */
 
@@ -56,7 +59,7 @@
 /* #undef WITH_MTHREAD */
 
 /* Use QThreads */
-#define WITH_QTHREAD 1
+/* #undef WITH_QTHREAD */
 
 /* Use Intel TBB */
 /* #undef WITH_TBB */

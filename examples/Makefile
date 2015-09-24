@@ -126,14 +126,15 @@ am__append_2 = -DUSE_SIMD
 #AM_CXXFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
 
 ### Thread libraries
-#am__append_8 = -ltbb
-#am__append_9 = -lcilkrts
-#am__append_10 = -lmyth-native
-am__append_11 = -lqthread
+am__append_8 = $(OPENMP_CFLAGS)
+#am__append_9 = -ltbb
+#am__append_10 = -lcilkrts
+#am__append_11 = -lmyth-native
+#am__append_12 = -lqthread
 bin_PROGRAMS = laplace_cartesian$(EXEEXT) laplace_spherical$(EXEEXT) \
 	tree$(EXEEXT) laplace_cartesian_kernel$(EXEEXT) \
 	laplace_spherical_kernel$(EXEEXT) $(am__EXEEXT_1)
-#am__append_12 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
+#am__append_13 = laplace_cartesian_mpi laplace_spherical_mpi ewald_mpi
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acx_mpi.m4 \
@@ -144,7 +145,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/acx_mpi.m4 \
 	$(top_srcdir)/m4/ax_f77_maxopt.m4 \
 	$(top_srcdir)/m4/ax_gcc_archflag.m4 \
 	$(top_srcdir)/m4/ax_gcc_x86_cpuid.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/ax_openmp.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -313,8 +314,8 @@ INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 LDFLAGS = 
 LIBOBJS = 
-LIBS =  $(am__append_8) $(am__append_9) $(am__append_10) \
-	$(am__append_11)
+LIBS =  $(am__append_9) $(am__append_10) $(am__append_11) \
+	$(am__append_12)
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /Users/yokotar/iCloud/sourcetree/exafmm/build-aux/missing makeinfo
 MKDIR_P = /opt/local/bin/gmkdir -p
@@ -325,6 +326,7 @@ MPILIBS =
 MPIRUN = 
 NEON_CXXFLAGS = 
 OBJEXT = o
+OPENMP_CFLAGS = -fopenmp
 PACKAGE = exafmm
 PACKAGE_BUGREPORT = 
 PACKAGE_NAME = exaFMM
@@ -399,7 +401,7 @@ top_srcdir = ..
 
 #AM_CXXFLAGS += -DIneJ # Different target and source points
 AM_CXXFLAGS = $(am__append_3) $(am__append_4) $(am__append_5) -DASSERT \
-	-DDIRECT # Compare with direct summation
+	$(am__append_8) -DDIRECT # Compare with direct summation
 AM_CPPFLAGS = -I../include -I../uniform $(am__append_1) \
 	$(am__append_2) $(am__append_6) $(am__append_7)
 #AM_CXXFLAGS	+= -DWITH_OPENMP # OpenMP is included in most modern compilers

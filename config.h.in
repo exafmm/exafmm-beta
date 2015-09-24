@@ -12,6 +12,9 @@
 /* Define to enable ARM NEON optimizations. */
 #undef HAVE_NEON
 
+/* Define if OpenMP is enabled */
+#undef HAVE_OPENMP
+
 /* Define to enable SSE/SSE3 optimizations. */
 #undef HAVE_SSE3
 

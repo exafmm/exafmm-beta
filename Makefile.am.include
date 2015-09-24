@@ -59,6 +59,9 @@ AM_CXXFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro 
 #AM_CXXFLAGS	+= -DCOUNT_LIST # Count size of P2P and M2L interaction lists per cell (slows down execution)
 
 ### Thread libraries
+if OPENMP
+AM_CXXFLAGS += $(OPENMP_CFLAGS)
+endif
 if WITH_TBB
 LIBS += -ltbb
 endif

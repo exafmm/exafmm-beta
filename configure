@@ -619,6 +619,9 @@ WITH_CILK_FALSE
 WITH_CILK_TRUE
 WITH_TBB_FALSE
 WITH_TBB_TRUE
+OPENMP_FALSE
+OPENMP_TRUE
+OPENMP_CFLAGS
 PRTDIAG
 host_os
 host_vendor
@@ -726,6 +729,7 @@ enable_silent_rules
 enable_dependency_tracking
 enable_portable_binary
 with_gcc_arch
+enable_openmp
 with_tbb
 with_cilk
 with_mthread
@@ -1386,6 +1390,7 @@ Optional Features:
   --enable-portable-binary
                           disable compiler optimizations that would produce
                           unportable binaries
+  --enable-openmp         use OpenMP
   --enable-single         compile exaFMM in single precision
   --enable-float          synonym for --enable-single
   --enable-mpi            compile exaFMM MPI library
@@ -6809,6 +6814,90 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+# OpenMP
+# Check whether --enable-openmp was given.
+if test "${enable_openmp+set}" = set; then :
+  enableval=$enable_openmp; enable_openmp=$e\
+nableval
+else
+  enable_openmp=no
+fi
+
+if test "$enable_openmp" = "yes"; then
+
+$as_echo "#define HAVE_OPENMP 1" >>confdefs.h
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for OpenMP flag of C compiler" >&5
+$as_echo_n "checking for OpenMP flag of C compiler... " >&6; }
+if ${ax_cv_c_openmp+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  saveCFLAGS=$CFLAGS
+ax_cv_c_openmp=unknown
+# Flags to try:  -fopenmp (gcc), -openmp (icc), -mp (SGI & PGI),
+#                -xopenmp (Sun), -omp (Tru64), -qsmp=omp (AIX), none
+ax_openmp_flags="-fopenmp -openmp -mp -xopenmp -omp -qsmp=omp none"
+if test "x$OPENMP_CFLAGS" != x; then
+  ax_openmp_flags="$OPENMP_CFLAGS $ax_openmp_flags"
+fi
+for ax_openmp_flag in $ax_openmp_flags; do
+  case $ax_openmp_flag in
+    none) CFLAGS=$saveC ;;
+    *) CFLAGS="$saveCFLAGS $ax_openmp_flag" ;;
+  esac
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char omp_set_num_threads ();
+int
+main ()
+{
+return omp_set_num_threads ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_c_openmp=$ax_openmp_flag; break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+done
+CFLAGS=$saveCFLAGS
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_c_openmp" >&5
+$as_echo "$ax_cv_c_openmp" >&6; }
+if test "x$ax_cv_c_openmp" = "xunknown"; then
+  as_fn_error $? "don't know how to enable OpenMP" "$LINENO" 5
+else
+  if test "x$ax_cv_c_openmp" != "xnone"; then
+    OPENMP_CFLAGS=$ax_cv_c_openmp
+  fi
+
+$as_echo "#define HAVE_OPENMP 1" >>confdefs.h
+
+fi
+
+
+fi
+ if test "$enable_openmp" = "yes"; then
+  OPENMP_TRUE=
+  OPENMP_FALSE='#'
+else
+  OPENMP_TRUE='#'
+  OPENMP_FALSE=
+fi
+
+
 # Intel TBB
 
 # Check whether --with-tbb was given.
@@ -7683,6 +7772,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${OPENMP_TRUE}" && test -z "${OPENMP_FALSE}"; then
+  as_fn_error $? "conditional \"OPENMP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${WITH_TBB_TRUE}" && test -z "${WITH_TBB_FALSE}"; then
