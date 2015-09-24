@@ -1,5 +1,9 @@
 -- autotools --
-Macros defined in local Makefile -> runtime options in args.h
+/wrappers
+/helmholtz
+/laplace
+/uniform
+detect mpi fortran compiler
 update README
 
 -- Tips --

@@ -95,8 +95,8 @@ help:
 	@make -C .. help
 buildbot:
 	@make -C .. buildbot
-clean:
-	@make -C .. clean
+cleanbin:
+	@make -C .. cleanbin
 cleandat:
 	@make -C .. cleandat
 cleanlib:

@@ -414,7 +414,7 @@ top_srcdir = ..
 
 ### Base flags
 AM_CXXFLAGS = $(am__append_2) $(am__append_9) $(am__append_10) \
-	$(am__append_11) -DDIRECT # Compare with direct summation
+	$(am__append_11)
 AM_CPPFLAGS = -I../include -I../uniform $(am__append_1) \
 	$(am__append_7) $(am__append_8) $(am__append_12) \
 	$(am__append_13) $(am__append_14) $(am__append_16) \

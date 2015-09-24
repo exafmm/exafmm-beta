@@ -4,10 +4,9 @@ EQUATION = Laplace
 BASIS  	 = Cartesian
 LFLAGS  += -DEXPANSION=8
 #LFLAGS	+= -DMASS
-LFLAGS 	+= -DIneJ
 LFLAGS 	+= -DNOWRAP
-LFLAGS	+= -DNO_P2P
-LFLAGS	+= -DCluster
+#LFLAGS	+= -DNO_P2P
+#LFLAGS	+= -DCluster
 #LFLAGS	+= -DSerial
 #LFLAGS += -DFP64
 
@@ -29,8 +28,6 @@ gromacs:
 charmm: # exafmm
 	make libcharmm.a
 	$(FC) test_charmm.f90 -L. -lfmm -ltbb -lstdc++
-	make cleandat
-	mpirun -np 8 ./a.out water_32.fmm water.out 1
 	make cleandat
 	mpirun -np 2 ./a.out water_32.fmm water.out 1
 
