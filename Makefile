@@ -331,7 +331,7 @@ target_alias =
 top_build_prefix = 
 top_builddir = .
 top_srcdir = .
-SUBDIRS = examples wrappers
+SUBDIRS = examples wrappers helmholtz
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

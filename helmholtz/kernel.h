@@ -199,7 +199,7 @@ void get_hn(int nterms, complex_t z, real_t scale, complex_t * hn) {
   hn[1] = hn[0] * (zinv - I * scale);
   real_t scale2 = scale * scale;
   for (int i=2; i<nterms; i++) {
-    hn[i] = zinv * (2 * i - 1.0) * hn[i-1] - scale2 * hn[i-2];
+    hn[i] = zinv * real_t(2 * i - 1.0) * hn[i-1] - scale2 * hn[i-2];
   }
 }
 
@@ -212,14 +212,14 @@ void get_hnd(int nterms, complex_t z, real_t scale, complex_t * hn, complex_t * 
     return;
   }
   complex_t zi = I * z;
-  complex_t zinv = 1.0 / z;
+  complex_t zinv = real_t(1.0) / z;
   hn[0] = exp(zi) / zi;
   hn[1] = hn[0] * (zinv - I) * scale;
   hnd[0] = -hn[1] / scale;
-  hnd[1] = -zinv * 2.0 * hn[1] + scale * hn[0];
+  hnd[1] = -zinv * real_t(2.0) * hn[1] + scale * hn[0];
   for (int i=2; i<nterms; i++) {
-    hn[i] = (zinv * (2 * i - 1.0) * hn[i-1] - scale * hn[i-2]) * scale;
-    hnd[i] = -zinv * (i + 1.0) * hn[i] + scale * hn[i-1];
+    hn[i] = (zinv * real_t(2 * i - 1.0) * hn[i-1] - scale * hn[i-2]) * scale;
+    hnd[i] = -zinv * real_t(i + 1.0) * hn[i] + scale * hn[i-1];
   }
 }
 
@@ -238,7 +238,7 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
     }
     return;
   }
-  complex_t zinv = 1.0 / z;
+  complex_t zinv = real_t(1.0) / z;
   jn[nterms-2] = 0;
   jn[nterms-1] = 1;
   real_t coef = 2 * nterms - 1;
@@ -353,7 +353,7 @@ namespace kernel {
 	if (R2 != 0) {
 	  real_t R = sqrt(R2);
 	  complex_t coef1 = Bj->SRC * exp(I * wavek * R) / R;
-	  complex_t coef2 = (1.0 - I * wavek * R) * coef1 / R2;
+	  complex_t coef2 = (real_t(1.0) - I * wavek * R) * coef1 / R2;
 	  p += coef1;
 	  F[0] += coef2 * dX[0];
 	  F[1] += coef2 * dX[1];
@@ -458,7 +458,7 @@ namespace kernel {
 	get_Ynm(P, xquad[l], Ynm);
 	for (int m=-P+1; m<P; m++) {
 	  int mabs = abs(m);
-	  complex_t z = phitemp[P+m] * wquad[l] * .5;
+	  complex_t z = phitemp[P+m] * wquad[l] * real_t(.5);
 	  for (int n=mabs; n<P; n++) {
 	    int nm = n * n + n + m;
 	    int nms = n * (n + 1) / 2 + mabs;
@@ -571,13 +571,13 @@ namespace kernel {
       get_Ynm(Popt, xquad[l], Ynm);
       for (int m=-Popt+1; m<Popt; m++) {
 	int mabs = abs(m);
-	complex_t z = phitemp[Popt+m] * wquad[l] * .5;
+	complex_t z = phitemp[Popt+m] * wquad[l] * real_t(.5);
 	for (int n=mabs; n<Popt; n++) {
 	  int nm = n * n + n + m;
 	  int nms = n * (n + 1) / 2 + mabs;
 	  Lnm[nm] += z * Ynm[nms];
 	}
-	z = phitempn[Popt+m] * wquad[l] * .5;
+	z = phitempn[Popt+m] * wquad[l] * real_t(.5);
 	for (int n=mabs; n<Popt; n++) {
 	  int nm = n * n + n + m;
 	  int nms = n * (n + 1) / 2 + mabs;
@@ -689,13 +689,13 @@ namespace kernel {
       get_Ynm(P, xquad[l], Ynm);
       for (int m=-P+1; m<P; m++) {
 	int mabs = abs(m);
-	complex_t z = phitemp[P+m] * wquad[l] * .5;
+	complex_t z = phitemp[P+m] * wquad[l] * real_t(.5);
 	for (int n=mabs; n<P; n++) {
 	  int nm = n * n + n + m;
 	  int nms = n * (n + 1) / 2 + mabs;
 	  Lnm[nm] += z * Ynm[nms];
 	}
-	z = phitempn[P+m] * wquad[l] * .5;
+	z = phitempn[P+m] * wquad[l] * real_t(.5);
 	for (int n=mabs; n<P; n++) {
 	  int nm = n * n + n + m;
 	  int nms = n * (n + 1) / 2 + mabs;
@@ -767,7 +767,7 @@ namespace kernel {
 	TRG[0] += Lj[nm] * jn[n] * Ynm[nms];
 	ur += jnd[n] * Ynm[nms] * Lj[nm];
 	complex_t jnuse = jn[n+1] * kscale + jn[n-1] / kscale;
-	jnuse = wavek * jnuse / (2 * n + 1.0);
+	jnuse = wavek * jnuse / real_t(2 * n + 1.0);
 	utheta -= Lj[nm] * jnuse * Ynmd[nms] * stheta;
 	for (int m=1; m<=n; m++) {
 	  int npm = n * n + n + m;
