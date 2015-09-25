@@ -1,7 +1,5 @@
 SUBDIRS = examples wrappers helmholtz uniform
 
-help:
-	@echo "Please read the README file in the root directory."
 buildbot:
 	buildbot try --connect=pb --master=131.112.5.69:443 --username=exafmm --passwd=exafmm --vc=git
 cleanbin:
@@ -14,8 +12,4 @@ cleanall:
 	make cleanbin
 	make cleandat
 	make cleanlib
-revert:
-	git reset --hard HEAD
-save:
-	make cleanall
-	cd .. && tar zcvf exafmm.tgz exafmm
+

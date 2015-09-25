@@ -818,11 +818,6 @@ cleanall:
 	make cleanbin
 	make cleandat
 	make cleanlib
-revert:
-	git reset --hard HEAD
-save:
-	make cleanall
-	cd .. && tar zcvf exafmm.tgz exafmm
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
