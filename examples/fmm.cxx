@@ -45,7 +45,7 @@ int main(int argc, char ** argv) {
     logger::startDAG();
     bounds = boundBox.getBounds(bodies);
     if (args.IneJ) {
-      bounds = boundBox.getBounds(jbodies,bounds);
+      bounds = boundBox.getBounds(jbodies, bounds);
     }
     cells = buildTree.buildTree(bodies, buffer, bounds);
     upDownPass.upwardPass(cells);

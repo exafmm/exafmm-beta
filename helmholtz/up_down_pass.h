@@ -1,3 +1,5 @@
+#include "kernel.h"
+
 void upwardPass(Cells & cells) {
   int numCells = cells.size();
   C_iter C0 = cells.begin();

@@ -1,4 +1,5 @@
 #include <omp.h>
+#include "kernel.h"
 
 int (* listOffset)[3];
 int (* lists)[2];

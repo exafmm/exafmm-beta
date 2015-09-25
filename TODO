@@ -1,17 +1,13 @@
--- autotools --
-/gpu
-Fix without TBB
-detect mpi fortran compiler
-update README
-
 -- Tips --
 Keep notes of possible optimizations in each file
 
 -- Immediate --
+kernel: eps2, Xperiodic, wavek -> global variables, do this while measuring time on Haswell
+Fix without TBB
+detect f90 and mpi fortran compiler
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA unified
 examples/Makefile options to args
-kernel: eps2, Xperiodic, wavek -> global variables
 Use compressed Cell struct of Bonsai
 Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
 Separate key manipulation namespace, e.g. interleaveMorton(), deinterleveHilbert() (controllable key_t)
@@ -20,6 +16,8 @@ Distinguish Pmax and P. Make P runtime option.
 -- Features to add --
 Time each kernel separately using cycle counters
 cycle counter based weights
+TBB -> OpenMP
+remove MTHREADS, QTHREADS
 OpenMP with atomics -> flush
 MPI-3.0 lock all
 SIMD P2P performance
@@ -32,6 +30,7 @@ UVWX-list with precomputation
 Periodic B.C. by one precomputed translation matrix
 Teng's BH MAC with M2P option during DTT
 non-orthogonal recursive bisection
+Integrate with /gpu
 Interface with BEM code
 
 -- GPU integration --
