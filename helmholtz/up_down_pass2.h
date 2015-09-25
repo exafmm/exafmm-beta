@@ -7,7 +7,6 @@ void upwardPass(Cells & cells) {
     C->M = 0;
     C->L = 0;
   }
-  kernel::setup();
 
   logger::startTimer("P2M");
 #pragma omp parallel for schedule(dynamic)

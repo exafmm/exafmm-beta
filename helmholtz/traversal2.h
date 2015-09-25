@@ -4,6 +4,13 @@
 int (* listOffset)[3];
 int (* lists)[2];
 
+void resetCellRadius(C_iter C, C_iter C0, real_t R0, int level) {
+  C->R = R0 / (1 << level);
+  for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {
+    resetCellRadius(CC, C0, R0, level+1);
+  }
+}
+
 void getList(int itype, int icell, int * list, int & numList) {
   int ilast = listOffset[icell][itype];
   numList = 0;
@@ -82,14 +89,16 @@ void setLists(Cells cells) {
   }
 }
 
-void evaluate(Cells & cells) {
+void listBasedTraversal(Cells & cells) {
   int numCells = cells.size();
   C_iter C0 = cells.begin();
+  real_t R0 = C0->R;
   vec3 Xperiodic = 0;
   bool mutual = false;
   int list[189];
   listOffset = new int [numCells][3]();
   lists = new int [189*numCells][2]();
+  resetCellRadius(C0, C0, R0, 0);
   setLists(cells);
 
   logger::startTimer("M2L");

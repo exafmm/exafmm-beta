@@ -4,6 +4,7 @@
 #include "dataset.h"
 #include "logger.h"
 #include "traversal2.h"
+#include "up_down_pass.h"
 #include "up_down_pass2.h"
 #include "verify.h"
 
@@ -14,9 +15,11 @@ int main(int argc, char ** argv) {
   Bounds bounds;
   Cells cells, jcells;
   Dataset data;
+  UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  kernel::setup();
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
@@ -43,9 +46,9 @@ int main(int argc, char ** argv) {
       bounds = boundBox.getBounds(jbodies,bounds);
     }
     cells = buildTree(bodies, buffer, bounds);
-    upwardPass(cells);
-    evaluate(cells);
-    downwardPass(cells);
+    upDownPass.upwardPass(cells);
+    listBasedTraversal(cells);
+    upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");
     logger::stopDAG();
     logger::stopPAPI();
