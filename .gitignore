@@ -11,4 +11,5 @@
 autom4te.cache
 config.log
 config.status
+Makefile
 stamp-h1
