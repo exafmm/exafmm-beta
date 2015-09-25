@@ -2228,7 +2228,7 @@ ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
-ac_config_files="$ac_config_files Makefile examples/Makefile wrappers/Makefile helmholtz/Makefile"
+ac_config_files="$ac_config_files Makefile examples/Makefile wrappers/Makefile helmholtz/Makefile uniform/Makefile"
 
 ac_config_headers="$ac_config_headers config.h"
 
@@ -9124,6 +9124,7 @@ do
     "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
     "wrappers/Makefile") CONFIG_FILES="$CONFIG_FILES wrappers/Makefile" ;;
     "helmholtz/Makefile") CONFIG_FILES="$CONFIG_FILES helmholtz/Makefile" ;;
+    "uniform/Makefile") CONFIG_FILES="$CONFIG_FILES uniform/Makefile" ;;
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
 

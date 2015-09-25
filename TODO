@@ -1,6 +1,4 @@
 -- autotools --
-/helmholtz
-/laplace
 /uniform
 detect mpi fortran compiler
 update README

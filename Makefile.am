@@ -1,4 +1,4 @@
-SUBDIRS = examples wrappers helmholtz
+SUBDIRS = examples wrappers helmholtz uniform
 
 help:
 	@echo "Please read the README file in the root directory."
