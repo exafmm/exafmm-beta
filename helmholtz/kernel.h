@@ -1,10 +1,59 @@
 const complex_t I(0.,1.);
 
 int nquad;
-real_t xquad[2*P];
-real_t wquad[2*P];
+real_t xquad[P];
+real_t wquad[P];
 real_t Anm1[(P+1)*(P+2)/2];
 real_t Anm2[(P+1)*(P+2)/2];
+
+void polynomial(real_t x, int n, real_t & pol, real_t & der, real_t & sum) {
+  sum = 0.5 + x * x * 1.5;
+  real_t pk = 1;
+  real_t pkp1 = x;
+  if (n < 2) {
+    der = 0;
+    sum = 0.5;
+    if (n == 0) return;
+    der = 1;
+    sum += x * x * 1.5;
+    return;
+  }
+  for (int k=1; k<n; k++) {
+    real_t pkm1 = pk;
+    pk = pkp1;
+    pkp1 = ((2 * k + 1) * x * pk - k * pkm1) / (k + 1);
+    sum += pkp1 * pkp1 * (k + 1.5);
+  }
+  pol = pkp1;
+  der = n * (x * pkp1 - pk) / (x * x - 1);
+}
+
+void legendre(int nq, real_t * xq, real_t * wq) {
+  real_t pol = 0, der, sum;
+  real_t h = M_PI / (2 * nq);
+  for (int i=1; i<=nq; i++) {
+    xq[nq-i] = cos((2 * i - 1) * h);
+  }
+  xq[nq/2] = 0;
+  for (int i=0; i<nq/2; i++) {
+    real_t xk = xq[i];
+    int ifout = 0;
+    for (int k=0; k<10; k++) {
+      polynomial(xk,nq,pol,der,sum);
+      real_t delta = -pol / der;
+      xk += delta;
+      if (fabs(delta) < EPS) ifout++;
+      if (ifout == 3) break;
+    }
+    xq[i] = xk;
+    xq[nq-i-1] = -xk;
+  }
+  for (int i=0; i<(nq+1)/2; i++) {
+    polynomial(xq[i],nq,pol,der,sum);
+    wq[i] = 1 / sum;
+    wq[nq-i-1] = wq[i];
+  }
+}
 
 void getAnm() {
   Anm1[0] = 1;
@@ -287,58 +336,11 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
   }
 }
 
-void polynomial(real_t x, int n, real_t & pol, real_t & der, real_t & sum) {
-  sum = 0.5 + x * x * 1.5;
-  real_t pk = 1;
-  real_t pkp1 = x;
-  if (n < 2) {
-    der = 0;
-    sum = 0.5;
-    if (n == 0) return;
-    der = 1;
-    sum += x * x * 1.5;
-    return;
-  }
-  for (int k=1; k<n; k++) {
-    real_t pkm1 = pk;
-    pk = pkp1;
-    pkp1 = ((2 * k + 1) * x * pk - k * pkm1) / (k + 1);
-    sum += pkp1 * pkp1 * (k + 1.5);
-  }
-  pol = pkp1;
-  der = n * (x * pkp1 - pk) / (x * x - 1);
-}
-
-void legendre() {
-  real_t pol = 0, der, sum;
-  real_t h = M_PI / (2 * nquad);
-  for (int i=1; i<=nquad; i++) {
-    xquad[nquad-i] = cos((2 * i - 1) * h);
-  }
-  xquad[nquad/2] = 0;
-  for (int i=0; i<nquad/2; i++) {
-    real_t xk = xquad[i];
-    int ifout = 0;
-    for (int k=0; k<10; k++) {
-      polynomial(xk,nquad,pol,der,sum);
-      real_t delta = -pol / der;
-      xk += delta;
-      if (fabs(delta) < EPS) ifout++;
-      if (ifout == 3) break;
-    }
-    xquad[i] = xk;
-    xquad[nquad-i-1] = -xk;
-  }
-  for (int i=0; i<(nquad+1)/2; i++) {
-    polynomial(xquad[i],nquad,pol,der,sum);
-    wquad[i] = 1 / sum;
-    wquad[nquad-i-1] = wquad[i];
-  }
-}
-
 namespace kernel {
   complex_t wavek;
   void setup() {
+    nquad = fmax(6, P);
+    legendre(nquad, xquad, wquad);
     getAnm();
   }
 

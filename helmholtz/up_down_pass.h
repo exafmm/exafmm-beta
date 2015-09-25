@@ -18,8 +18,6 @@ void upwardPass(Cells & cells) {
   logger::stopTimer("P2M");
 
   logger::startTimer("M2M");
-  nquad = fmax(6, 2 * P);
-  legendre();
 #pragma omp parallel for schedule(dynamic)
   for (int icell=numCells-1; icell>=0; icell--) {
     C_iter Ci = C0 + icell;

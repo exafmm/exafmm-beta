@@ -92,8 +92,6 @@ void evaluate(Cells & cells) {
   setLists(cells);
 
   logger::startTimer("M2L");
-  nquad = fmax(6, P);
-  legendre();
 #pragma omp parallel for private(list) schedule(dynamic)
   for (int icell=0; icell<numCells; icell++) {
     C_iter Ci = C0 + icell;
