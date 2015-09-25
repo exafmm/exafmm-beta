@@ -4,7 +4,8 @@
 #include "types.h"
 
 namespace kernel {
-  const static complex_t wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  extern complex_t wavek;                                       //!< Helmholtz wave number
+
   void setup();                                                 //!< Setup phase for kernels
   void P2P(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual); //!< P2P kernel between cells Ci and Cj
   void P2P(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic);  //!< P2P kernel between cells Ci and Cj for direct summation

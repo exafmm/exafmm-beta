@@ -2,6 +2,7 @@
 #include "bound_box.h"
 #include "build_tree.h"
 #include "dataset.h"
+#include "kernel.h"
 #include "logger.h"
 #include "traversal.h"
 #include "up_down_pass.h"
@@ -15,7 +16,7 @@ int main(int argc, char ** argv) {
   Dataset data;
   Verify verify;
 
-  //kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+  kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);

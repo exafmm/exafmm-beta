@@ -1,7 +1,8 @@
 #include "kernel.h"
 
-const complex_t I(0.,1.);
+complex_t kernel::wavek;
 
+const complex_t I(0.,1.);
 int nquad;
 real_t xquad[P];
 real_t wquad[P];

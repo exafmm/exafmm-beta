@@ -14,7 +14,7 @@
 #define EXAFMM_SINGLE 1
 
 /* Define to enable AVX optimizations. */
-/* #undef HAVE_AVX */
+#define HAVE_AVX 1
 
 /* Define if you have the MPI library. */
 #define HAVE_MPI 1
