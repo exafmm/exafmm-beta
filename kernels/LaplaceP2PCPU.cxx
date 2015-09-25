@@ -1,6 +1,8 @@
 #include "kernel.h"
 #include "simdvec.h"
 
+real_t eps2;
+
 void kernel::P2P(C_iter Ci, C_iter Cj, real_t eps2, vec3 Xperiodic, bool mutual) {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;

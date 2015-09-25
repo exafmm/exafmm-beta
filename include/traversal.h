@@ -14,7 +14,6 @@ class Traversal {
 private:
   const int nspawn;                                             //!< Threshold of NBODY for spawning new threads
   const int images;                                             //!< Number of periodic image sublevels
-  const real_t eps2;                                            //!< Softening parameter (squared)
 #if COUNT_KERNEL
   real_t numP2P;                                                //!< Number of P2P kernel calls
   real_t numM2L;                                                //!< Number of M2L kernel calls
@@ -100,9 +99,9 @@ private:
 #else
       } else {
 	if (R2 == 0 && Ci == Cj) {                              //   If source and target are same
-	  kernel::P2P(Ci, eps2);                                //    P2P kernel for single cell
+	  kernel::P2P(Ci);                                      //    P2P kernel for single cell
 	} else {                                                //   Else if source and target are different
-	  kernel::P2P(Ci, Cj, eps2, Xperiodic, mutual);         //    P2P kernel for pair of cells
+	  kernel::P2P(Ci, Cj, Xperiodic, mutual);               //    P2P kernel for pair of cells
 	}                                                       //   End if for same source and target
 	countKernel(numP2P);                                    //   Increment P2P counter
 	countList(Ci, Cj, mutual, true);                        //   Increment P2P list
@@ -121,15 +120,14 @@ private:
     C_iter CiEnd;                                               //!< End iterator of target cells
     C_iter CjBegin;                                             //!< Begin Iterator of source cells
     C_iter CjEnd;                                               //!< End iterator of source cells
-    real_t eps2;                                                //!< Softening parameter (squared)
     vec3 Xperiodic;                                             //!< Periodic coordinate offset
     bool mutual;                                                //!< Flag for mutual interaction
     real_t remote;                                              //!< Weight for remote work load
     TraverseRange(Traversal * _traversal, C_iter _CiBegin, C_iter _CiEnd,// Constructor
-		  C_iter _CjBegin, C_iter _CjEnd, real_t _eps2,
+		  C_iter _CjBegin, C_iter _CjEnd,
 		  vec3 _Xperiodic, bool _mutual, real_t _remote) :
       traversal(_traversal), CiBegin(_CiBegin), CiEnd(_CiEnd),  // Initialize variables
-      CjBegin(_CjBegin), CjEnd(_CjEnd), eps2(_eps2), Xperiodic(_Xperiodic),
+      CjBegin(_CjBegin), CjEnd(_CjEnd), Xperiodic(_Xperiodic),
       mutual(_mutual), remote(_remote) {}
     void operator() () {                                        // Overload operator()
       Tracer tracer;                                            //  Instantiate tracer
@@ -151,20 +149,20 @@ private:
 	mk_task_group;                                          //   Initialize task group
 	{
 	  TraverseRange leftBranch(traversal, CiBegin, CiMid,   //    Instantiate recursive functor
-				   CjBegin, CjMid, eps2, Xperiodic, mutual, remote);
+				   CjBegin, CjMid, Xperiodic, mutual, remote);
 	  create_taskc(leftBranch);                             //    Ci:former Cj:former
 	  TraverseRange rightBranch(traversal, CiMid, CiEnd,    //    Instantiate recursive functor
-				    CjMid, CjEnd, eps2, Xperiodic, mutual, remote);
+				    CjMid, CjEnd, Xperiodic, mutual, remote);
 	  rightBranch();                                        //    Ci:latter Cj:latter
 	  wait_tasks;                                           //    Synchronize task group
 	}
 	{
 	  TraverseRange leftBranch(traversal, CiBegin, CiMid,   //    Instantiate recursive functor
-				   CjMid, CjEnd, eps2, Xperiodic, mutual, remote);
+				   CjMid, CjEnd, Xperiodic, mutual, remote);
 	  create_taskc(leftBranch);                             //    Ci:former Cj:latter
 	  if (!mutual || CiBegin != CjBegin) {                  //    Exclude mutual & self interaction
             TraverseRange rightBranch(traversal, CiMid, CiEnd,  //    Instantiate recursive functor
-				      CjBegin, CjMid, eps2, Xperiodic, mutual, remote);
+				      CjBegin, CjMid, Xperiodic, mutual, remote);
 	    rightBranch();                                      //    Ci:latter Cj:former
 	  } else {                                              //    If mutual or self interaction
 	    assert(CiEnd == CjEnd);                             //     Check if mutual & self interaction
@@ -251,7 +249,7 @@ private:
       }                                                         //  End loop over Cj's children
     } else if (Ci->NBODY + Cj->NBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
       TraverseRange traverseRange(this, Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,// Instantiate recursive functor
-				  Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, eps2, Xperiodic, mutual, remote);
+				  Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, Xperiodic, mutual, remote);
       traverseRange();                                          //  Traverse for range of cell pairs
     } else if (Ci->R >= Cj->R) {                                // Else if Ci is larger than Cj
       for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++) {// Loop over Ci's children
@@ -266,8 +264,8 @@ private:
 
 public:
   //! Constructor
-  Traversal(int _nspawn, int _images, real_t _eps2) :           // Constructor
-    nspawn(_nspawn), images(_images), eps2(_eps2)               // Initialize variables
+  Traversal(int _nspawn, int _images) :                         // Constructor
+    nspawn(_nspawn), images(_images)                            // Initialize variables
 #if COUNT_KERNEL
     , numP2P(0), numM2L(0)
 #endif
@@ -330,11 +328,10 @@ public:
   struct DirectRecursion {
     C_iter Ci;                                                  //!< Iterator of target cell
     C_iter Cj;                                                  //!< Iterator of source cell
-    real_t eps2;                                                //!< Softening parameter (squared)
     int prange;                                                 //!< Range of periodic images
     real_t cycle;                                               //!< Periodic cycle
-    DirectRecursion(C_iter _Ci, C_iter _Cj, real_t _eps2, int _prange, real_t _cycle) :// Constructor
-      Ci(_Ci), Cj(_Cj), eps2(_eps2), prange(_prange), cycle(_cycle) {} // Initialize variables
+    DirectRecursion(C_iter _Ci, C_iter _Cj, int _prange, real_t _cycle) :// Constructor
+      Ci(_Ci), Cj(_Cj), prange(_prange), cycle(_cycle) {}       // Initialize variables
     void operator() () {                                        // Overload operator
       if (Ci->NBODY < 25) {                                     // If number of target bodies is less than threshold
 	vec3 Xperiodic = 0;                                     //   Periodic coordinate offset
@@ -344,7 +341,7 @@ public:
 	      Xperiodic[0] = ix * cycle;                        //      Coordinate shift for x periodic direction
 	      Xperiodic[1] = iy * cycle;                        //      Coordinate shift for y periodic direction
 	      Xperiodic[2] = iz * cycle;                        //      Coordinate shift for z periodic direction
-	      kernel::P2P(Ci, Cj, eps2, Xperiodic);             //      Evaluate P2P kernel
+	      kernel::P2P(Ci, Cj, Xperiodic);                   //      Evaluate P2P kernel
 	    }                                                   //     End loop over z periodic direction
 	  }                                                     //    End loop over y periodic direction
 	}                                                       //   End loop over x periodic direction
@@ -355,9 +352,9 @@ public:
 	Ci2->NBODY = Ci->NBODY - Ci->NBODY / 2;                 //  Set range to handle latter half
 	Ci->NBODY = Ci->NBODY / 2;                              //  Set range to handle first half
 	mk_task_group;                                          //  Initialize task group
-        DirectRecursion leftBranch(Ci, Cj, eps2, prange, cycle);//  Instantiate recursive functor
+        DirectRecursion leftBranch(Ci, Cj, prange, cycle);      //  Instantiate recursive functor
 	create_taskc(leftBranch);                               //  Create new task for left branch
-	DirectRecursion rightBranch(Ci2, Cj, eps2, prange, cycle); //  Instantiate recursive functor
+	DirectRecursion rightBranch(Ci2, Cj, prange, cycle);    //  Instantiate recursive functor
 	rightBranch();                                          //  Use old task for right branch
 	wait_tasks;                                             //  Synchronize task group
       }                                                         // End if for NBODY threshold
@@ -376,7 +373,7 @@ public:
     for (int i=0; i<images; i++) {                              // Loop over periodic image sublevels
       prange += int(std::pow(3.,i));                            //  Accumulate range of periodic images
     }                                                           // End loop over perioidc image sublevels
-    DirectRecursion directRecursion(Ci, Cj, eps2, prange, cycle); // Instantiate recursive functor
+    DirectRecursion directRecursion(Ci, Cj, prange, cycle);     // Instantiate recursive functor
     directRecursion();                                          // Recursive call for direct summation
   }
 

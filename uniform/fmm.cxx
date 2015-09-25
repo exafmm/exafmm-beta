@@ -16,11 +16,11 @@
 
 int main(int argc, char ** argv) {
   const int ksize = 11;
-  const real_t eps2 = 0.0;
   const real_t cycle = 20 * M_PI;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = 20;
+  eps2 = 0.0;
 
   Args args(argc, argv);
   BaseMPI baseMPI;
@@ -28,7 +28,7 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit, args.nspawn);
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
-  Traversal traversal(args.nspawn, args.images, eps2);
+  Traversal traversal(args.nspawn, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
 #if Serial
   SerialFMM FMM;
