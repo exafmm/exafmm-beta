@@ -404,7 +404,7 @@ public:
 #endif
   }
 #if COUNT_LIST
-  void writeList(Cells cells, int mpirank=0) {
+  void writeList(Cells cells, int mpirank) {
     std::stringstream name;                                     // File name
     name << "list" << std::setfill('0') << std::setw(6)         // Set format
 	 << mpirank << ".dat";                                  // Create file name for list

@@ -1,7 +1,6 @@
 #ifndef sort_h
 #define sort_h
 #include "types.h"
-#include <omp.h>
 
 //! Custom radix sort for body and structures
 class Sort {
@@ -18,25 +17,25 @@ private:
     int bucket[stride];                                         // Bucket
     int * buffer = new int [size];                              // Buffer for both key and value
     int * permutation = new int [size];                         // Permutation index
-    for( int i=0; i<size; i++ )                                 // Loop over keys
-      if( key[i] > maxKey )                                     //  If key is larger than maxKey
+    for (int i=0; i<size; i++)                                  // Loop over keys
+      if (key[i] > maxKey)                                      //  If key is larger than maxKey
 	maxKey = key[i];                                        //   Update maxKey per thread
-    while( maxKey > 0 ) {                                       // While there are bits in maxKey to process
-      for( int i=0; i<stride; i++ )                             //   Loop over strides
+    while (maxKey > 0) {                                        // While there are bits in maxKey to process
+      for (int i=0; i<stride; i++)                              //   Loop over strides
 	bucket[i] = 0;                                          //    Initialize bucket
-      for( int i=0; i<size; i++ )                               //   Loop over keys
+      for (int i=0; i<size; i++)                                //   Loop over keys
 	bucket[key[i] & mask]++;                                //    Increment bucket
-      for( int i=1; i<stride; i++ )                             //   Loop over strides
+      for (int i=1; i<stride; i++)                              //   Loop over strides
 	bucket[i] += bucket[i-1];                               //    Scan bucket over strides
-      for( int i=size-1; i>=0; i-- )                            //   Loop over keys backwards
+      for (int i=size-1; i>=0; i--)                             //   Loop over keys backwards
 	permutation[i] = --bucket[key[i] & mask];               //    Reverse scan bucket to get permutation
-      for( int i=0; i<size; i++ )                               //   Loop over values
+      for (int i=0; i<size; i++)                                //   Loop over values
 	buffer[permutation[i]] = value[i];                      //    Sort into buffer
-      for( int i=0; i<size; i++ )                               //   Loop over values
+      for (int i=0; i<size; i++)                                //   Loop over values
 	value[i] = buffer[i];                                   //    Copy back from buffer
-      for( int i=0; i<size; i++ )                               //   Loop over keys
+      for (int i=0; i<size; i++)                                //   Loop over keys
 	buffer[permutation[i]] = key[i];                        //    Sort into buffer
-      for( int i=0; i<size; i++ )                               //   Loop over keys
+      for (int i=0; i<size; i++)                                //   Loop over keys
 	key[i] = buffer[i] >> bitStride;                        //    Copy back from buffer and bit shift keys
       maxKey >>= bitStride;                                     //   Bit shift maxKey
     }                                                           //  End while for bits in maxKey

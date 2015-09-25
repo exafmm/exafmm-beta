@@ -1,5 +1,6 @@
 -- autotools --
 /gpu
+Fix without TBB
 detect mpi fortran compiler
 update README
 

@@ -23,7 +23,7 @@
 /* #undef HAVE_NEON */
 
 /* Define if OpenMP is enabled */
-/* #undef HAVE_OPENMP */
+#define HAVE_OPENMP 1
 
 /* Define to enable SSE/SSE3 optimizations. */
 /* #undef HAVE_SSE3 */
