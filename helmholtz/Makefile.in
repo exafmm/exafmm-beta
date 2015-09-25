@@ -169,8 +169,10 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
+am__dirstamp = $(am__leading_dot)dirstamp
 am_helmholtz_spherical_OBJECTS = helmholtz_spherical-fmm.$(OBJEXT) \
-	helmholtz_spherical-kernel.$(OBJEXT)
+	../kernels/helmholtz_spherical-HelmholtzSphericalCPU.$(OBJEXT) \
+	../kernels/helmholtz_spherical-HelmholtzP2PCPU.$(OBJEXT)
 helmholtz_spherical_OBJECTS = $(am_helmholtz_spherical_OBJECTS)
 helmholtz_spherical_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -362,7 +364,7 @@ AM_CPPFLAGS = -I../include -I../uniform $(am__append_1) \
 	$(am__append_17) $(am__append_19) $(am__append_20) \
 	$(am__append_21)
 AM_MAKEFLAGS = -s
-helmholtz_spherical_SOURCES = fmm.cxx kernel.cxx
+helmholtz_spherical_SOURCES = fmm.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
 helmholtz_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DHelmholtz -DSpherical -DEXPANSION=40 -DFP64
 all: all-am
 
@@ -440,6 +442,18 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+../kernels/$(am__dirstamp):
+	@$(MKDIR_P) ../kernels
+	@: > ../kernels/$(am__dirstamp)
+../kernels/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) ../kernels/$(DEPDIR)
+	@: > ../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/helmholtz_spherical-HelmholtzSphericalCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/helmholtz_spherical-HelmholtzP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
 
 helmholtz_spherical$(EXEEXT): $(helmholtz_spherical_OBJECTS) $(helmholtz_spherical_DEPENDENCIES) $(EXTRA_helmholtz_spherical_DEPENDENCIES) 
 	@rm -f helmholtz_spherical$(EXEEXT)
@@ -447,12 +461,14 @@ helmholtz_spherical$(EXEEXT): $(helmholtz_spherical_OBJECTS) $(helmholtz_spheric
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f ../kernels/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzSphericalCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/helmholtz_spherical-fmm.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/helmholtz_spherical-kernel.Po@am__quote@
 
 .cxx.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -484,19 +500,33 @@ helmholtz_spherical-fmm.obj: fmm.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o helmholtz_spherical-fmm.obj `if test -f 'fmm.cxx'; then $(CYGPATH_W) 'fmm.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm.cxx'; fi`
 
-helmholtz_spherical-kernel.o: kernel.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT helmholtz_spherical-kernel.o -MD -MP -MF $(DEPDIR)/helmholtz_spherical-kernel.Tpo -c -o helmholtz_spherical-kernel.o `test -f 'kernel.cxx' || echo '$(srcdir)/'`kernel.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/helmholtz_spherical-kernel.Tpo $(DEPDIR)/helmholtz_spherical-kernel.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='kernel.cxx' object='helmholtz_spherical-kernel.o' libtool=no @AMDEPBACKSLASH@
+../kernels/helmholtz_spherical-HelmholtzSphericalCPU.o: ../kernels/HelmholtzSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/helmholtz_spherical-HelmholtzSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzSphericalCPU.Tpo -c -o ../kernels/helmholtz_spherical-HelmholtzSphericalCPU.o `test -f '../kernels/HelmholtzSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzSphericalCPU.Tpo ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzSphericalCPU.cxx' object='../kernels/helmholtz_spherical-HelmholtzSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o helmholtz_spherical-kernel.o `test -f 'kernel.cxx' || echo '$(srcdir)/'`kernel.cxx
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/helmholtz_spherical-HelmholtzSphericalCPU.o `test -f '../kernels/HelmholtzSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzSphericalCPU.cxx
 
-helmholtz_spherical-kernel.obj: kernel.cxx
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT helmholtz_spherical-kernel.obj -MD -MP -MF $(DEPDIR)/helmholtz_spherical-kernel.Tpo -c -o helmholtz_spherical-kernel.obj `if test -f 'kernel.cxx'; then $(CYGPATH_W) 'kernel.cxx'; else $(CYGPATH_W) '$(srcdir)/kernel.cxx'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/helmholtz_spherical-kernel.Tpo $(DEPDIR)/helmholtz_spherical-kernel.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='kernel.cxx' object='helmholtz_spherical-kernel.obj' libtool=no @AMDEPBACKSLASH@
+../kernels/helmholtz_spherical-HelmholtzSphericalCPU.obj: ../kernels/HelmholtzSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/helmholtz_spherical-HelmholtzSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzSphericalCPU.Tpo -c -o ../kernels/helmholtz_spherical-HelmholtzSphericalCPU.obj `if test -f '../kernels/HelmholtzSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzSphericalCPU.Tpo ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzSphericalCPU.cxx' object='../kernels/helmholtz_spherical-HelmholtzSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o helmholtz_spherical-kernel.obj `if test -f 'kernel.cxx'; then $(CYGPATH_W) 'kernel.cxx'; else $(CYGPATH_W) '$(srcdir)/kernel.cxx'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/helmholtz_spherical-HelmholtzSphericalCPU.obj `if test -f '../kernels/HelmholtzSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzSphericalCPU.cxx'; fi`
+
+../kernels/helmholtz_spherical-HelmholtzP2PCPU.o: ../kernels/HelmholtzP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/helmholtz_spherical-HelmholtzP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzP2PCPU.Tpo -c -o ../kernels/helmholtz_spherical-HelmholtzP2PCPU.o `test -f '../kernels/HelmholtzP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzP2PCPU.Tpo ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzP2PCPU.cxx' object='../kernels/helmholtz_spherical-HelmholtzP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/helmholtz_spherical-HelmholtzP2PCPU.o `test -f '../kernels/HelmholtzP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/HelmholtzP2PCPU.cxx
+
+../kernels/helmholtz_spherical-HelmholtzP2PCPU.obj: ../kernels/HelmholtzP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/helmholtz_spherical-HelmholtzP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzP2PCPU.Tpo -c -o ../kernels/helmholtz_spherical-HelmholtzP2PCPU.obj `if test -f '../kernels/HelmholtzP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzP2PCPU.Tpo ../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/HelmholtzP2PCPU.cxx' object='../kernels/helmholtz_spherical-HelmholtzP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(helmholtz_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/helmholtz_spherical-HelmholtzP2PCPU.obj `if test -f '../kernels/HelmholtzP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/HelmholtzP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/HelmholtzP2PCPU.cxx'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -613,6 +643,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f ../kernels/$(DEPDIR)/$(am__dirstamp)
+	-rm -f ../kernels/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -622,7 +654,7 @@ clean: clean-am
 clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
+	-rm -rf ../kernels/$(DEPDIR) ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -668,7 +700,7 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
+	-rm -rf ../kernels/$(DEPDIR) ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
