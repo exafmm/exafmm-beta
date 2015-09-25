@@ -1,11 +1,10 @@
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree.h"
+#include "build_tree_omp2.h"
 #include "dataset.h"
-#include "kernel.h"
 #include "logger.h"
-#include "traversal.h"
-#include "up_down_pass.h"
+#include "traversal2.h"
+#include "up_down_pass2.h"
 #include "verify.h"
 
 int main(int argc, char ** argv) {
@@ -13,6 +12,7 @@ int main(int argc, char ** argv) {
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
   Bounds bounds;
+  Cells cells, jcells;
   Dataset data;
   Verify verify;
 
@@ -42,7 +42,7 @@ int main(int argc, char ** argv) {
     if (args.IneJ) {
       bounds = boundBox.getBounds(jbodies,bounds);
     }
-    Cells cells = buildTree(bodies, buffer, bounds);
+    cells = buildTree(bodies, buffer, bounds);
     upwardPass(cells);
     evaluate(cells);
     downwardPass(cells);
