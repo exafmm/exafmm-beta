@@ -42,7 +42,7 @@ void log_finalize() {
   logger::printTime("Total FMM");
 }
 
-extern "C" void FMM_Init(double eps2, int ncrit, int threads,
+extern "C" void FMM_Init(double _eps2, int ncrit, int threads,
 			 int nb, double * xb, double * yb, double * zb, double * vb,
 			 int nv, double * xv, double * yv, double * zv, double * vv) {
   const int nspawn = 1000;
@@ -50,13 +50,15 @@ extern "C" void FMM_Init(double eps2, int ncrit, int threads,
   const real_t theta = 0.4;
   const bool useRmax = true;
   const bool useRopt = true;
+  kernel::eps2 = _eps2;
+  
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images, eps2);
+  traversal = new Traversal(nspawn, images);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
   num_threads(threads);

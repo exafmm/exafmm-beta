@@ -9,6 +9,8 @@
 #include "verify.h"
 
 int main(int argc, char ** argv) {
+  kernel::eps2 = 0;
+
   Args args(argc,argv);
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
@@ -18,6 +20,7 @@ int main(int argc, char ** argv) {
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 
+  kernel::eps2 = 0.0;
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
   kernel::setup();
   logger::verbose = args.verbose;
@@ -66,10 +69,9 @@ int main(int argc, char ** argv) {
     Cj->BODY = jbodies.begin();
     Cj->NBODY = jbodies.size();
     logger::startTimer("Total Direct");
-    real_t eps2 = 0;
     vec3 Xperiodic = 0;
     bool mutual = false;
-    kernel::P2P(Ci, Cj, eps2, Xperiodic, mutual);
+    kernel::P2P(Ci, Cj, Xperiodic, mutual);
     logger::stopTimer("Total Direct");
     std::complex<double> potDif = verify.getDifScalar(bodies, bodies2);
     std::complex<double> potNrm = verify.getNrmScalar(bodies);

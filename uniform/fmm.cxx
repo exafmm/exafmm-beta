@@ -20,7 +20,6 @@ int main(int argc, char ** argv) {
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = 20;
-  eps2 = 0.0;
 
   Args args(argc, argv);
   BaseMPI baseMPI;

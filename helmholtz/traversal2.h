@@ -116,18 +116,17 @@ void listBasedTraversal(Cells & cells) {
   logger::stopTimer("M2L");
 
   logger::startTimer("P2P");
-  real_t eps2 = 0;
 #pragma omp parallel for private(list) schedule(dynamic)
   for (int icell=0; icell<numCells; icell++) {
     C_iter Ci = C0 + icell;
     if (Ci->NCHILD == 0) {
-      kernel::P2P(Ci, Ci, eps2, Xperiodic, mutual);
+      kernel::P2P(Ci, Ci, Xperiodic, mutual);
       int nlist;
       getList(0, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
 	C_iter Cj = C0 + jcell;
-	kernel::P2P(Ci, Cj, eps2, Xperiodic, mutual);
+	kernel::P2P(Ci, Cj, Xperiodic, mutual);
       }
     }
   }

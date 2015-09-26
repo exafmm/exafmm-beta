@@ -5,9 +5,10 @@
 
 int main() {
   Bodies bodies(1), bodies2(1), jbodies(1);
-  const real_t eps2 = 0.0;
   const real_t theta = 0.5;
   const real_t R = 2 / theta;
+  kernel::eps2 = 0.0;
+
   Cells cells(4);
   vec3 Xperiodic = 0;
   Verify verify;
@@ -68,7 +69,7 @@ int main() {
   Cj->NBODY = jbodies.size();
   Ci->NBODY = bodies2.size();
   Ci->BODY = bodies2.begin();
-  kernel::P2P(Ci, Cj, eps2, Xperiodic, false);
+  kernel::P2P(Ci, Cj, Xperiodic, false);
   for (B_iter B=bodies2.begin(); B!=bodies2.end(); B++) {
     B->TRG /= B->SRC;
   }

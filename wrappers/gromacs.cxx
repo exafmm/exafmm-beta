@@ -29,10 +29,11 @@ Bounds globalBounds;
 extern "C" void FMM_Init(int images, int threads, bool verbose) {
   const int ncrit = 32;
   const int nspawn = 1000;
-  const real_t eps2 = 0.0;
   const real_t theta = 0.5;
   const bool useRmax = false;
   const bool useRopt = false;
+  kernel::eps2 = 0.0;
+
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);
@@ -40,7 +41,7 @@ extern "C" void FMM_Init(int images, int threads, bool verbose) {
   localTree = new BuildTree(ncrit, nspawn);
   globalTree = new BuildTree(1, nspawn);
   partition = new Partition(baseMPI->mpirank, baseMPI->mpisize);
-  traversal = new Traversal(nspawn, images, eps2);
+  traversal = new Traversal(nspawn, images);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
 

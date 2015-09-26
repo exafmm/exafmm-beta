@@ -19,11 +19,12 @@
 
 int main(int argc, char ** argv) {
   const int ksize = 11;
-  const real_t eps2 = 0.0;
   const real_t cycle = 2 * M_PI;
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = cycle / 2;
+  kernel::eps2 = 0.0;
+
   Args args(argc, argv);
   args.numBodies = 1000;
   args.images = 3;
@@ -37,7 +38,7 @@ int main(int argc, char ** argv) {
   Dataset data;
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images, eps2);
+  Traversal traversal(args.nspawn, args.images);
   TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;

@@ -8,8 +8,9 @@
 #include "verify.h"
 
 int main(int argc, char ** argv) {
-  const real_t eps2 = 0.0;
   const real_t cycle = 2 * M_PI;
+  kernel::eps2 = 0.0;
+
   Args args(argc, argv);
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
@@ -17,7 +18,7 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
   Dataset data;
-  Traversal traversal(args.nspawn, args.images, eps2);
+  Traversal traversal(args.nspawn, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
   num_threads(args.threads);

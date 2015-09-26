@@ -11,8 +11,9 @@
 #include "verify.h"
 
 int main(int argc, char ** argv) {
-  const real_t eps2 = 0.0;
   const real_t cycle = 2 * M_PI;
+  kernel::eps2 = 0.0;
+
   Args args(argc, argv);
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
@@ -23,7 +24,7 @@ int main(int argc, char ** argv) {
   Cells cells, jcells, gcells;
   Dataset data;
   Partition partition(baseMPI.mpirank, baseMPI.mpisize);
-  Traversal traversal(args.nspawn, args.images, eps2);
+  Traversal traversal(args.nspawn, args.images);
   TreeMPI treeMPI(baseMPI.mpirank, baseMPI.mpisize, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
