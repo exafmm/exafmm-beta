@@ -1,6 +1,6 @@
 -- Immediate --
-move cout parameters out from logger so that logger.h doesn't have to be included in so many files 
-kernel: eps2, Xperiodic, wavek -> extern variables, do this while measuring time on Haswell
+logger.h split to print.h
+kernel: Xperiodic -> extern variables, do this while measuring time on Haswell
 Fix without TBB
 detect f90 and mpi fortran compiler
 Have only one P2P

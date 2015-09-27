@@ -461,7 +461,7 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
   }
 }
 
-void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
+void kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) {
   assert(mutual == false);
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t phitemp[2*P], phitempn[2*P];

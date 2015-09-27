@@ -69,9 +69,9 @@ int main(int argc, char ** argv) {
     Cj->BODY = jbodies.begin();
     Cj->NBODY = jbodies.size();
     logger::startTimer("Total Direct");
-    vec3 Xperiodic = 0;
+    kernel::Xperiodic = 0;
     bool mutual = false;
-    kernel::P2P(Ci, Cj, Xperiodic, mutual);
+    kernel::P2P(Ci, Cj, mutual);
     logger::stopTimer("Total Direct");
     std::complex<double> potDif = verify.getDifScalar(bodies, bodies2);
     std::complex<double> potNrm = verify.getNrmScalar(bodies);

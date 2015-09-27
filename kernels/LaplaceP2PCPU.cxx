@@ -2,8 +2,9 @@
 #include "simdvec.h"
 
 real_t kernel::eps2;
+vec3 kernel::Xperiodic;
 
-void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
+void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
   int ni = Ci->NBODY;
@@ -171,7 +172,7 @@ void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
   }
 }
 
-void kernel::P2P(C_iter Ci, C_iter Cj, vec3 Xperiodic) {
+void kernel::P2P(C_iter Ci, C_iter Cj) {
   B_iter Bi = Ci->BODY;
   B_iter Bj = Cj->BODY;
   int ni = Ci->NBODY;

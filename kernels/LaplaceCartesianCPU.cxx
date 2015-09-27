@@ -655,7 +655,7 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
   }
 }
 
-void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
+void kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) {
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t invR2 = 1 / norm(dX);
 #if MASS
