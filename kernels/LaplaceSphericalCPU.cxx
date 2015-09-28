@@ -146,7 +146,7 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
   }
 }
 
-void kernel::M2L(C_iter Ci, C_iter Cj, vec3 Xperiodic, bool mutual) {
+void kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) {
   complex_t Ynmi[P*P], Ynmj[P*P];
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t rho, alpha, beta;

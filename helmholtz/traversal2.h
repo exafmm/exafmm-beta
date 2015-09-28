@@ -112,7 +112,7 @@ void listBasedTraversal(Cells & cells) {
   int numCells = cells.size();
   C_iter C0 = cells.begin();
   real_t R0 = C0->R;
-  vec3 Xperiodic = 0;
+  kernel::Xperiodic = 0;
   bool mutual = false;
   int list[189];
   listOffset = new int [numCells][3]();
@@ -129,7 +129,7 @@ void listBasedTraversal(Cells & cells) {
     for (int ilist=0; ilist<nlist; ilist++) {
       int jcell = list[ilist];
       C_iter Cj = C0 + jcell;
-      kernel::M2L(Ci, Cj, Xperiodic, mutual);
+      kernel::M2L(Ci, Cj, mutual);
     }
   }
   logger::stopTimer("M2L");
@@ -139,13 +139,13 @@ void listBasedTraversal(Cells & cells) {
   for (int icell=0; icell<numCells; icell++) {
     C_iter Ci = C0 + icell;
     if (Ci->NCHILD == 0) {
-      kernel::P2P(Ci, Ci, Xperiodic, mutual);
+      kernel::P2P(Ci, Ci, mutual);
       int nlist;
       getList(0, icell, list, nlist);
       for (int ilist=0; ilist<nlist; ilist++) {
 	int jcell = list[ilist];
 	C_iter Cj = C0 + jcell;
-	kernel::P2P(Ci, Cj, Xperiodic, mutual);
+	kernel::P2P(Ci, Cj, mutual);
       }
     }
   }
