@@ -1,6 +1,6 @@
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree.h"
+#include "build_tree_omp2.h"
 #include "dataset.h"
 #include "logger.h"
 #include "traversal.h"
@@ -86,6 +86,7 @@ int main(int argc, char ** argv) {
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
     buildTree.printTreeData(cells);
+    std::cout << cells[0].R << " " << cells[1].R << std::endl;
     traversal.printTraversalData();
     logger::printPAPI();
     bodies = buffer;

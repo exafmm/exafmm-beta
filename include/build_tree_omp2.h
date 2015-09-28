@@ -1,5 +1,5 @@
-#ifndef build_tree_omp_h
-#define build_tree_omp_h
+#ifndef build_tree_omp2_h
+#define build_tree_omp2_h
 #include "logger.h"
 #include "thread.h"
 #include "types.h"
@@ -7,7 +7,8 @@
 class BuildTree {
 private:
   const int ncrit;
-  
+  int numLevels;
+
 private:
   void reorder(Box box, int level, int * iX, vec3 * Xj,
 	       int * permutation, int n, int * iwork, int * nbody) {
@@ -132,7 +133,7 @@ private:
     delete[] Xj;
     delete[] levelOffset;
     delete[] iwork;
-    logger::stopTimer("Grow tree");  
+    logger::stopTimer("Grow tree");
   }
 
   Cells linkTree(Bodies & bodies, Bodies & buffer, int (* nodes)[10], int numCells,
@@ -154,7 +155,7 @@ private:
       C->IBODY   = nodes[i][7];
       C->NBODY   = nodes[i][8];
       real_t R = box.R / (1 << level);
-      C->R = 2 * R;
+      C->R = R;
       for (int d=0; d<3; d++) {
 	C->X[d] = box.X[d] - box.R + iX[d] * R * 2 + R;
       }
@@ -174,9 +175,9 @@ private:
 
 public:
   BuildTree(int _ncrit, int ) : ncrit(_ncrit) {}
-  
+
   Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
-    int numCells, numLevels;
+    int numCells;
     int numBodies = bodies.size();
     int (* nodes)[10] = new int [numBodies][10]();
     int * permutation = new int [numBodies];
@@ -186,6 +187,18 @@ public:
     delete[] permutation;
     delete[] nodes;
     return cells;
+  }
+
+  void printTreeData(Cells & cells) {
+    if (logger::verbose && !cells.empty()) {                    // If verbose flag is true
+      logger::printTitle("Tree stats");                         //  Print title
+      std::cout  << std::setw(logger::stringLength) << std::left//  Set format
+		 << "Bodies"     << " : " << cells.front().NBODY << std::endl// Print number of bodies
+		 << std::setw(logger::stringLength) << std::left//  Set format
+		 << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
+		 << std::setw(logger::stringLength) << std::left//  Set format
+		 << "Tree depth" << " : " << numLevels << std::endl;//  Print number of levels
+    }                                                           // End if for verbose flag
   }
 };
 

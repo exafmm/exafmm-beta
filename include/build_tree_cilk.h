@@ -134,8 +134,8 @@ Box bounds2box(Bounds & bounds) {
   return box;
 }
 
-void getKey(int numBodies, float * X, float * Xmin, float * Xmax, uint32_t * keys, int maxlevel) {
-  const int nbins = 1 << maxlevel;
+void getKey(int numBodies, float * X, float * Xmin, float * Xmax, uint32_t * keys, int numLevels) {
+  const int nbins = 1 << numLevels;
   Bounds bounds;
   for (int d=0; d<3; d++) {
     bounds.Xmin[d] = Xmin[d];
@@ -219,8 +219,8 @@ void recursion(uint32_t * keys, uint32_t * buffer, uint32_t * permutation,
 }
 
 void radixSort(int numBodies, uint32_t * keys, uint32_t * buffer,
-	       uint32_t * permutation, uint32_t * index, int maxlevel) {
-  const int bitShift = 3 * (maxlevel - 2);
+	       uint32_t * permutation, uint32_t * index, int numLevels) {
+  const int bitShift = 3 * (numLevels - 2);
   //if (numBodies<=NCRIT || bitShift<0) {
   if (bitShift<0) {
     permutation[0:numBodies] = index[0:numBodies];
@@ -291,7 +291,7 @@ void permute(int numBodies, float * bodies, float * buffer, uint32_t * index) {
 class BuildTree {
 private:
   const int ncrit;
-  int maxlevel;
+  int numLevels;
 
 private:
   void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
@@ -378,12 +378,12 @@ private:
   }
 
 public:
-  BuildTree(int _ncrit, int) : maxlevel(0), ncrit(_ncrit) {}
+  BuildTree(int _ncrit, int) : numLevels(0), ncrit(_ncrit) {}
 
   Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     const int numBodies = bodies.size();
     const int level = numBodies >= ncrit ? 1 + int(log2(numBodies / ncrit)/3) : 0;
-    maxlevel = level;
+    numLevels = level;
 
 
     uint32_t * keys = new uint32_t [numBodies];
@@ -427,7 +427,7 @@ public:
     }
     logger::startTimer("Grow tree");
     logger::startTimer("Morton key");
-    getKey(numBodies, X, Xmin2, Xmax2, keys, maxlevel);
+    getKey(numBodies, X, Xmin2, Xmax2, keys, numLevels);
     logger::stopTimer("Morton key");
     printf("Key comparison:\n");
 
@@ -436,7 +436,7 @@ public:
     delete[] keys2;
 
     logger::startTimer("Radix sort");
-    radixSort(numBodies, keys, keys_buffer, permutation, index, maxlevel);
+    radixSort(numBodies, keys, keys_buffer, permutation, index, numLevels);
     logger::stopTimer("Radix sort");
     logger::stopTimer("Grow tree",0);
 
@@ -494,7 +494,7 @@ public:
 		 << std::setw(logger::stringLength) << std::left//  Set format
 		 << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
 		 << std::setw(logger::stringLength) << std::left//  Set format
-		 << "Tree depth" << " : " << maxlevel << std::endl;//  Print number of levels
+		 << "Tree depth" << " : " << numLevels << std::endl;//  Print number of levels
     }                                                           // End if for verbose flag
   }
 };

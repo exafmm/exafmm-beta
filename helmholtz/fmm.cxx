@@ -1,6 +1,6 @@
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree_omp2.h"
+#include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
 #include "traversal2.h"

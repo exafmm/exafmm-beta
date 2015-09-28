@@ -8,7 +8,7 @@
 class BuildTree {
 private:
   const int ncrit;
-  int maxlevel;
+  int numLevels;
 
 private:
   //! Transform Xmin & Xmax to X (center) & R (radius)
@@ -170,12 +170,12 @@ private:
   }
 
 public:
-  BuildTree(int _ncrit, int) : ncrit(_ncrit), maxlevel(0) {}
+  BuildTree(int _ncrit, int) : ncrit(_ncrit), numLevels(0) {}
 
   Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
     const int numBodies = bodies.size();
     const int level = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
-    maxlevel = level;
+    numLevels = level;
     uint64_t * key = new uint64_t [numBodies];
     uint64_t * key_buffer = new uint64_t [numBodies];
     int * index = new int [numBodies];
@@ -229,7 +229,7 @@ public:
 		 << std::setw(logger::stringLength) << std::left
 		 << "Cells"      << " : " << cells.size() << std::endl
 		 << std::setw(logger::stringLength) << std::left
-		 << "Tree depth" << " : " << maxlevel << std::endl;
+		 << "Tree depth" << " : " << numLevels << std::endl;
     }
   }
 };

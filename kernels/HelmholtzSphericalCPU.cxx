@@ -347,7 +347,7 @@ void kernel::P2M(C_iter C) {
   real_t Ynm[P*(P+1)/2];
   complex_t ephi[P], jn[P+1], jnd[P+1];
   vecP Mnm = complex_t(0,0);
-  real_t scale = C->R;
+  real_t scale = 2 * C->R;
   real_t kscale = scale * abs(wavek);
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     vec3 dX = B->X - C->X;
@@ -386,9 +386,9 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
   complex_t phitemp[2*P], hn[P], ephi[2*P];
   vecP Mnm = complex_t(0,0);
   vecP Mrot = complex_t(0,0);
-  real_t kscalei = Ci->R * abs(wavek);
+  real_t kscalei = 2 * Ci->R * abs(wavek);
   for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
-    real_t kscalej = Cj->R * abs(wavek);
+    real_t kscalej = 2 * Cj->R * abs(wavek);
     real_t radius = Cj->R * sqrt(3.0);
     vec3 dX = Ci->X - Cj->X;
     real_t r, theta, phi;
@@ -469,20 +469,21 @@ void kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) {
   vecP Lnm = complex_t(0,0);
   vecP Lnmd = complex_t(0,0);
   vecP Mnm, Mrot, Lrot;
-  real_t kscalej = Cj->R * abs(wavek);
-  real_t kscalei = Ci->R * abs(wavek);
-  real_t radius = Cj->R * sqrt(3.0) * .5;
+  real_t kscalej = 2 * Cj->R * abs(wavek);
+  real_t kscalei = 2 * Ci->R * abs(wavek);
+  real_t radius = Cj->R * sqrt(3.0);
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t r, theta, phi;
   cart2sph(dX, r, theta, phi);
-  dX /= Cj->R;
+  dX /= (2 * Cj->R);
   if (fabs(dX[0]) > EPS) dX[0] = fabs(dX[0]) - .5;
   if (fabs(dX[1]) > EPS) dX[1] = fabs(dX[1]) - .5;
   if (fabs(dX[2]) > EPS) dX[2] = fabs(dX[2]) - .5;
   real_t rr = sqrt(norm(dX));
   real_t coef1 = P * 1.65 - 15.5;
   real_t coef2 = P * 0.25 + 3.0;
-  int Popt = coef1 / (rr * rr) + coef2;  
+  int Popt = coef1 / (rr * rr) + coef2;
+  assert(Popt <= P);
   ephi[P+1] = exp(I * phi);
   ephi[P] = 1;
   ephi[P-1] = conj(ephi[P+1]);
@@ -587,10 +588,10 @@ void kernel::L2L(C_iter Ci, C_iter C0) {
   complex_t phitemp[2*P], phitempn[2*P];
   complex_t jn[P+1], jnd[P+1], ephi[2*P];
   vecP Lnm, Lnmd, Lrot;
-  real_t kscalei = Ci->R * abs(wavek);
+  real_t kscalei = 2 * Ci->R * abs(wavek);
   C_iter Cj = C0 + Ci->IPARENT;
-  real_t kscalej = Cj->R * abs(wavek);
-  real_t radius = Cj->R * sqrt(3.0) * .5;
+  real_t kscalej = 2 * Cj->R * abs(wavek);
+  real_t radius = Cj->R * sqrt(3.0);
   vec3 dX = Ci->X - Cj->X;
   real_t r, theta, phi;
   cart2sph(dX, r, theta, phi);
@@ -703,7 +704,7 @@ void kernel::L2L(C_iter Ci, C_iter C0) {
 void kernel::L2P(C_iter C) {
   real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];
   complex_t ephi[P], jn[P+1], jnd[P+1];
-  real_t kscale = C->R * abs(wavek);
+  real_t kscale = 2 * C->R * abs(wavek);
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     vecP Lj = C->L;
     cvec4 TRG = complex_t(0,0);
