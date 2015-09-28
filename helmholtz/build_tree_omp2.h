@@ -97,12 +97,6 @@ private:
       permutation[i] = i;
       Xj[i] = bodies[i].X;
     }
-    /*
-    int ncrit = 1000;
-    if (P < 40) ncrit = 500;
-    if (P < 30) ncrit = 200;
-    if (P < 20) ncrit = 100;
-    */
     numCells = 1;
     numLevels = 0;
     for (int level=0; level<maxLevel; level++) {
