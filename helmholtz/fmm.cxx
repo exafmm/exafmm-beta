@@ -5,16 +5,14 @@
 #include "logger.h"
 #include "traversal2.h"
 #include "up_down_pass.h"
-#include "up_down_pass2.h"
 #include "verify.h"
 
 int main(int argc, char ** argv) {
-  kernel::eps2 = 0;
-
   Args args(argc,argv);
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
   Bounds bounds;
+  BuildTree buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
   Dataset data;
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
@@ -48,7 +46,7 @@ int main(int argc, char ** argv) {
     if (args.IneJ) {
       bounds = boundBox.getBounds(jbodies,bounds);
     }
-    cells = buildTree(bodies, buffer, bounds);
+    cells = buildTree.buildTree(bodies, buffer, bounds);
     upDownPass.upwardPass(cells);
     listBasedTraversal(cells);
     upDownPass.downwardPass(cells);

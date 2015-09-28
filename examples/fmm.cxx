@@ -9,8 +9,6 @@
 
 int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
-  kernel::eps2 = 0.0;
-
   Args args(argc, argv);
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
@@ -23,6 +21,7 @@ int main(int argc, char ** argv) {
   Verify verify;
   num_threads(args.threads);
 
+  kernel::eps2 = 0.0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);

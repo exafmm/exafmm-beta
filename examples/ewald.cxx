@@ -23,8 +23,6 @@ int main(int argc, char ** argv) {
   const real_t alpha = 10 / cycle;
   const real_t sigma = .25 / M_PI;
   const real_t cutoff = cycle / 2;
-  kernel::eps2 = 0.0;
-
   Args args(argc, argv);
   args.numBodies = 1000;
   args.images = 3;
@@ -44,7 +42,7 @@ int main(int argc, char ** argv) {
   Verify verify;
   num_threads(args.threads);
 
-
+  kernel::eps2 = 0.0;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
   logger::printTitle("Ewald Parameters");

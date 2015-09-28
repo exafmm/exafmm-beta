@@ -4,6 +4,25 @@
 int (* listOffset)[3];
 int (* lists)[2];
 
+ivec3 getIndex(uint64_t key) {
+  int level = -1;
+  while( int(key) >= 0 ) {
+    level++;
+    key -= 1 << 3*level;
+  }
+  key += 1 << 3*level;
+  level = 0;
+  ivec3 iX = 0;
+  int d = 0;
+  while( key > 0 ) {
+    iX[d] += (key % 2) * (1 << level);
+    key >>= 1;
+    d = (d+1) % 3;
+    if( d == 0 ) level++;
+  }
+  return iX;
+}
+
 void resetCellRadius(C_iter C, C_iter C0, real_t R0, int level) {
   C->R = R0 / (1 << level);
   for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {

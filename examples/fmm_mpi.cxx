@@ -12,8 +12,6 @@
 
 int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
-  kernel::eps2 = 0.0;
-
   Args args(argc, argv);
   BaseMPI baseMPI;
   Bodies bodies, bodies2, jbodies, gbodies, buffer;
@@ -30,6 +28,7 @@ int main(int argc, char ** argv) {
   Verify verify;
   num_threads(args.threads);
 
+  kernel::eps2 = 0.0;
   //args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
   logger::verbose = args.verbose;
