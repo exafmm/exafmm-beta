@@ -150,7 +150,7 @@ public:
       }                                                         //  End if for resetting cell radius
       PostOrderTraversal postOrderTraversal(C0, C0, theta, useRmax); // Instantiate recursive functor
       postOrderTraversal();                                     //  Recursive call for upward pass
-      C0->R = R0;
+      cells.begin()->R = R0;
       real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
       if (useRopt) {                                            //  If using error optimized theta
 	SetRopt setRopt(C0, C0, c, theta);                      //   Instantiate recursive functor

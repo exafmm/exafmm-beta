@@ -15,6 +15,7 @@ int main(int argc, char ** argv) {
   BuildTree buildTree(args.ncrit, args.nspawn);
   Cells cells, jcells;
   Dataset data;
+  Traversal traversal(args.nspawn, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
 
@@ -48,7 +49,7 @@ int main(int argc, char ** argv) {
     }
     cells = buildTree.buildTree(bodies, buffer, bounds);
     upDownPass.upwardPass(cells);
-    listBasedTraversal(cells);
+    traversal.listBasedTraversal(cells);
     upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");
     logger::stopDAG();

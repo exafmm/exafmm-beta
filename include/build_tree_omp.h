@@ -1,6 +1,5 @@
-#ifndef build_tree_omp_h
-#define build_tree_omp_h
-#include <algorithm>
+#ifndef build_tree_omp2_h
+#define build_tree_omp2_h
 #include "logger.h"
 #include "thread.h"
 #include "types.h"
@@ -11,7 +10,56 @@ private:
   int numLevels;
 
 private:
-  //! Transform Xmin & Xmax to X (center) & R (radius)
+  void reorder(Box box, int level, int * iX, vec3 * Xj,
+	       int * permutation, int n, int * iwork, int * nbody) {
+    int offset[9];
+    vec3 X;
+    real_t R = box.R / (1 << level);
+    for (int d=0; d<3; d++) {
+      X[d] = box.X[d] - box.R + iX[d] * R * 2 + R;
+    }
+    for (int i=0; i<8; i++) nbody[i] = 0;
+    for (int i=0; i<n; i++) {
+      int j = permutation[i];
+      int octant = (Xj[j][2] > X[2]) * 4 + (Xj[j][1] > X[1]) * 2 + (Xj[j][0] > X[0]);
+      nbody[octant]++;
+    }
+    offset[0] = 0;
+    for (int i=0; i<8; i++) {
+      offset[i+1] = offset[i] + nbody[i];
+      nbody[i] = 0;
+    }
+    for (int i=0; i<n; i++) {
+      int j = permutation[i];
+      int octant = (Xj[j][2] > X[2]) * 4 + (Xj[j][1] > X[1]) * 2 + (Xj[j][0] > X[0]);
+      iwork[offset[octant]+nbody[octant]] = permutation[i];
+      nbody[octant]++;
+    }
+    for (int i=0; i<n; i++) {
+      permutation[i] = iwork[i];
+    }
+  }
+
+  uint64_t getKey(ivec3 iX, int level) {
+    uint64_t index = ((1 << 3 * level) - 1) / 7;
+    for (int l=0; l<level; l++) {
+      for (int d=0; d<3; d++) {
+	index += (iX[d] & 1) << (3 * l + d);
+	iX[d] >>= 1;
+      }
+    }
+    return index;
+  }
+
+  int getLevel(uint64_t key) {
+    int level = -1;
+    while( int(key) >= 0 ) {
+      level++;
+      key -= 1 << 3*level;
+    }
+    return level;
+  }
+
   Box bounds2box(Bounds bounds) {
     vec3 Xmin = bounds.Xmin;
     vec3 Xmax = bounds.Xmax;
@@ -26,211 +74,132 @@ private:
     return box;
   }
 
-  //! Calculate the Morton key
-  inline void getKey(Bodies &bodies, uint64_t * key, Bounds bounds, int level) {
-    Box box = bounds2box(bounds);
-    float d = 2 * box.R / (1 << level);
-#pragma omp parallel for
-    for (int b=0; b<int(bodies.size()); b++) {
-      B_iter B=bodies.begin()+b;
-      int ix = (B->X[0] - bounds.Xmin[0]) / d;
-      int iy = (B->X[1] - bounds.Xmin[1]) / d;
-      int iz = (B->X[2] - bounds.Xmin[2]) / d;
-      int id = 0;
-      for( int l=0; l!=level; ++l ) {
-	id += (ix & 1) << (3 * l);
-	id += (iy & 1) << (3 * l + 1);
-	id += (iz & 1) << (3 * l + 2);
-	ix >>= 1;
-	iy >>= 1;
-	iz >>= 1;
-      }
-      key[b] = id;
-      B->ICELL = id;
-    }
-  }
-
-  void radixSort(uint64_t * key, int * value, uint64_t * buffer, int * permutation, int size) {
-    const int bitStride = 8;
-    const int stride = 1 << bitStride;
-    const int mask = stride - 1;
-    int bucket[stride];
-    uint64_t maxKey = 0;
-    for (int i=0; i<size; i++)
-      if (key[i] > maxKey)
-	maxKey = key[i];
-    while (maxKey > 0) {
-      for (int i=0; i<stride; i++)
-	bucket[i] = 0;
-      for (int i=0; i<size; i++)
-	bucket[key[i] & mask]++;
-      for (int i=1; i<stride; i++)
-	bucket[i] += bucket[i-1];
-      for (int i=size-1; i>=0; i--)
-	permutation[i] = --bucket[key[i] & mask];
-      for (int i=0; i<size; i++)
-	buffer[permutation[i]] = value[i];
-      for (int i=0; i<size; i++)
-	value[i] = buffer[i];
-      for (int i=0; i<size; i++)
-	buffer[permutation[i]] = key[i];
-      for (int i=0; i<size; i++)
-	key[i] = buffer[i] >> bitStride;
-      maxKey >>= bitStride;
-    }
-  }
-
-  void permute(Bodies & bodies, Bodies & buffer, int * index) {
-    const int n = bodies.size();
-    for (int b=0; b<n; b++)
-      bodies[b] = buffer[index[b]];
-  }
-
-  void bodies2leafs(Bodies & bodies, Cells & cells, Bounds bounds, int level) {
-    int I = -1;
-    C_iter C;
-    cells.reserve(1 << (3 * level));
-    Box box = bounds2box(bounds);
-    float d = 2 * box.R / (1 << level);
-    for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
-      int IC = B->ICELL;
-      int ix = (B->X[0] - bounds.Xmin[0]) / d;
-      int iy = (B->X[1] - bounds.Xmin[1]) / d;
-      int iz = (B->X[2] - bounds.Xmin[2]) / d;
-      if( IC != I ) {
-	Cell cell;
-	cell.NCHILD = 0;
-	cell.NBODY  = 0;
-	cell.ICHILD = 0;
-	cell.BODY   = B;
-	cell.ICELL  = IC;
-	cell.X[0]   = d * (ix + .5) + bounds.Xmin[0];
-	cell.X[1]   = d * (iy + .5) + bounds.Xmin[1];
-	cell.X[2]   = d * (iz + .5) + bounds.Xmin[2];
-	cell.R      = d * .5;
-	cells.push_back(cell);
-	C = cells.end()-1;
-	I = IC;
-      }
-      C->NBODY++;
-    }
-  }
-
-  void leafs2cells(Cells & cells, Bounds bounds, int level) {
-    int begin = 0, end = cells.size();
-    Box box = bounds2box(bounds);
-    float d = 2 * box.R / (1 << level);
-    for (int l=1; l<=level; l++) {
-      int div = (1 << (3 * l));
-      d *= 2;
-      int I = -1;
-      int p = end - 1;
-      for (int c=begin; c!=end; c++) {
-	B_iter B = cells[c].BODY;
-	int IC = B->ICELL / div;
-	int ix = (B->X[0] - bounds.Xmin[0]) / d;
-	int iy = (B->X[1] - bounds.Xmin[1]) / d;
-	int iz = (B->X[2] - bounds.Xmin[2]) / d;
-	if (IC != I) {
-	  Cell cell;
-	  cell.NCHILD = 0;
-	  cell.NBODY  = 0;
-	  cell.ICHILD = c;
-	  cell.BODY   = cells[c].BODY;
-	  cell.ICELL  = IC;
-	  cell.X[0]   = d * (ix + .5) + bounds.Xmin[0];
-	  cell.X[1]   = d * (iy + .5) + bounds.Xmin[1];
-	  cell.X[2]   = d * (iz + .5) + bounds.Xmin[2];
-	  cell.R      = d * .5;
-	  cells.push_back(cell);
-	  p++;
-	  I = IC;
-	}
-	cells[p].NCHILD++;
-	cells[p].NBODY += cells[c].NBODY;
-	cells[c].IPARENT = p;
-      }
-      begin = end;
-      end = cells.size();
-    }
-    cells.back().IPARENT = 0;
-  }
-
-  void reverseOrder(Cells & cells, int * permutation) {
-    const int numCells = cells.size();
-    int ic = numCells - 1;
-    for (int c=0; c<numCells; c++,ic--) {
-      permutation[c] = ic;
-    }
-    for (C_iter C=cells.begin(); C!=cells.end(); C++) {
-      C->ICHILD = permutation[C->ICHILD] - C->NCHILD + 1;
-      C->IPARENT = permutation[C->IPARENT];
-    }
-    std::reverse(cells.begin(), cells.end());
-  }
-
-public:
-  BuildTree(int _ncrit, int) : ncrit(_ncrit), numLevels(0) {}
-
-  Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
+  void growTree(Bodies & bodies, int (* nodes)[10], int & numCells,
+		int * permutation, int & numLevels, Box box) {
+    logger::startTimer("Grow tree");
+    const int maxLevel = 30;
     const int numBodies = bodies.size();
-    const int level = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
-    numLevels = level;
-    uint64_t * key = new uint64_t [numBodies];
-    uint64_t * key_buffer = new uint64_t [numBodies];
-    int * index = new int [numBodies];
-    int * permutation = new int [numBodies];
-    Cells cells;
-    for (int b=0; b<int(bodies.size()); b++) {
-      index[b] = b;
+    int nbody8[8];
+    int * iwork = new int [numBodies];
+    int * levelOffset = new int [maxLevel];
+    vec3 * Xj = new vec3 [numBodies];
+    nodes[0][0] = 0;
+    nodes[0][1] = 0;
+    nodes[0][2] = 0;
+    nodes[0][3] = 0;
+    nodes[0][4] = 0;
+    nodes[0][5] = 0;
+    nodes[0][6] = 0;
+    nodes[0][7] = 0;
+    nodes[0][8] = numBodies;
+    levelOffset[0] = 0;
+    levelOffset[1] = 1;
+    for (int i=0; i<numBodies; i++) {
+      permutation[i] = i;
+      Xj[i] = bodies[i].X;
     }
+    numCells = 1;
+    numLevels = 0;
+    for (int level=0; level<maxLevel; level++) {
+      for (int iparent=levelOffset[level]; iparent<levelOffset[level+1]; iparent++) {
+	int nbody = nodes[iparent][8];
+	if (nbody > ncrit) {
+	  int ibody = nodes[iparent][7];
+	  reorder(box, level, &nodes[iparent][1], Xj, &permutation[ibody], nbody, iwork, nbody8);
+	  int nchild = 0;
+	  int offset = ibody;
+	  nodes[iparent][5] = numCells;
+	  for (int i=0; i<8; i++) {
+	    nodes[numCells][0] = level + 1;
+	    nodes[numCells][1] = nodes[iparent][1] * 2 + i % 2;
+	    nodes[numCells][2] = nodes[iparent][2] * 2 + (i / 2) % 2;
+	    nodes[numCells][3] = nodes[iparent][3] * 2 + i / 4;
+	    nodes[numCells][4] = iparent;
+	    nodes[numCells][5] = 0;
+	    nodes[numCells][6] = 0;
+	    nodes[numCells][7] = offset;
+	    nodes[numCells][8] = nbody8[i];
+	    nchild++;
+	    offset += nbody8[i];
+	    numCells++;
+	    numLevels=level+1;
+	  }
+	  nodes[iparent][6] = nchild;
+	}
+      }
+      levelOffset[level+2] = numCells;
+      if (levelOffset[level+1] == levelOffset[level+2]) break;
+    }
+    delete[] Xj;
+    delete[] levelOffset;
+    delete[] iwork;
+    logger::stopTimer("Grow tree");
+  }
 
-    logger::startTimer("Morton key");
-    getKey(bodies, key, bounds, level);
-    logger::stopTimer("Morton key");
-
-    logger::startTimer("Radix sort");
-    radixSort(key, index, key_buffer, permutation, numBodies);
-    logger::stopTimer("Radix sort");
-
-    logger::startTimer("Copy buffer");
-    buffer = bodies;
-    logger::stopTimer("Copy buffer");
-
-    logger::startTimer("Permutation");
-    permute(bodies, buffer, index);
-    logger::stopTimer("Permutation");
-
-    logger::startTimer("Bodies to leafs");
-    bodies2leafs(bodies, cells, bounds, level);
-    logger::stopTimer("Bodies to leafs");
-
-    logger::startTimer("Leafs to cells");
-    leafs2cells(cells, bounds, level);
-    logger::stopTimer("Leafs to cells");
-
-    logger::startTimer("Reverse order");
-    reverseOrder(cells, permutation);
-    logger::stopTimer("Reverse order");
-
-    delete[] key;
-    delete[] key_buffer;
-    delete[] index;
-    delete[] permutation;
+  Cells linkTree(Bodies & bodies, Bodies & buffer, int (* nodes)[10], int numCells,
+		 int * permutation, Box box) {
+    logger::startTimer("Link tree");
+    int numBodies = bodies.size();
+    Cells cells(numCells);
+    C_iter C = cells.begin();
+    ivec3 iX;
+    for (int i=0; i<numCells; i++,C++) {
+      int level = nodes[i][0];
+      iX[0]      = nodes[i][1];
+      iX[1]      = nodes[i][2];
+      iX[2]      = nodes[i][3];
+      C->ICELL   = getKey(iX, level);
+      C->IPARENT = nodes[i][4];
+      C->ICHILD  = nodes[i][5];
+      C->NCHILD  = nodes[i][6];
+      C->IBODY   = nodes[i][7];
+      C->NBODY   = nodes[i][8];
+      real_t R = box.R / (1 << level);
+      C->R = R;
+      for (int d=0; d<3; d++) {
+	C->X[d] = box.X[d] - box.R + iX[d] * R * 2 + R;
+      }
+    }
+    buffer.resize(numBodies);
+    for (int i=0; i<numBodies; i++) {
+      buffer[i] = bodies[permutation[i]];
+    }
+    bodies = buffer;
+    B_iter B = bodies.begin();
+    for (C_iter C=cells.begin(); C!=cells.end(); C++) {
+      C->BODY = B + C->IBODY;
+    }
+    logger::stopTimer("Link tree");
     return cells;
   }
 
-  //! Print tree structure statistics
+public:
+  BuildTree(int _ncrit, int ) : ncrit(_ncrit) {}
+
+  Cells buildTree(Bodies & bodies, Bodies & buffer, Bounds bounds) {
+    int numCells;
+    int numBodies = bodies.size();
+    int (* nodes)[10] = new int [numBodies][10]();
+    int * permutation = new int [numBodies];
+    Box box = bounds2box(bounds);
+    growTree(bodies, nodes, numCells, permutation, numLevels, box);
+    Cells cells = linkTree(bodies, buffer, nodes, numCells, permutation, box);
+    delete[] permutation;
+    delete[] nodes;
+    return cells;
+  }
+
   void printTreeData(Cells & cells) {
-    if (logger::verbose && !cells.empty()) {
-      logger::printTitle("Tree stats");
-      std::cout  << std::setw(logger::stringLength) << std::left
-		 << "Bodies"     << " : " << cells.front().NBODY << std::endl
-		 << std::setw(logger::stringLength) << std::left
-		 << "Cells"      << " : " << cells.size() << std::endl
-		 << std::setw(logger::stringLength) << std::left
-		 << "Tree depth" << " : " << numLevels << std::endl;
-    }
+    if (logger::verbose && !cells.empty()) {                    // If verbose flag is true
+      logger::printTitle("Tree stats");                         //  Print title
+      std::cout  << std::setw(logger::stringLength) << std::left//  Set format
+		 << "Bodies"     << " : " << cells.front().NBODY << std::endl// Print number of bodies
+		 << std::setw(logger::stringLength) << std::left//  Set format
+		 << "Cells"      << " : " << cells.size() << std::endl// Print number of cells
+		 << std::setw(logger::stringLength) << std::left//  Set format
+		 << "Tree depth" << " : " << numLevels << std::endl;//  Print number of levels
+    }                                                           // End if for verbose flag
   }
 };
+
 #endif

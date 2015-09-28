@@ -483,6 +483,7 @@ void kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) {
   real_t coef1 = P * 1.65 - 15.5;
   real_t coef2 = P * 0.25 + 3.0;
   int Popt = coef1 / (rr * rr) + coef2;
+  assert(0 < Popt);
   assert(Popt <= P);
   ephi[P+1] = exp(I * phi);
   ephi[P] = 1;
