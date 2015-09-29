@@ -3,7 +3,7 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
-#include "traversal2.h"
+#include "traversal.h"
 #include "up_down_pass.h"
 #include "verify.h"
 

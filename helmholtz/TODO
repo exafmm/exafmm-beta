@@ -1,4 +1,8 @@
-IneJ
+Use getIndex for NO_P2P
+Change ICHILD to NCHILD in setLists()
+Add COUNT_KERNEL, COUNT_LIST, USE_WEIGHT, NO_P2P in list based traversal
+IneJ in upDownPass
+IneJ in traversal
 
 Separate compile unit
 Loops to iterators

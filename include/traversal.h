@@ -14,6 +14,8 @@ class Traversal {
 private:
   const int nspawn;                                             //!< Threshold of NBODY for spawning new threads
   const int images;                                             //!< Number of periodic image sublevels
+  int (* listOffset)[3];                                        //!< Offset in interaction lists
+  int (* lists)[2];                                             //!< Interaction lists
 #if COUNT_KERNEL
   real_t numP2P;                                                //!< Number of P2P kernel calls
   real_t numM2L;                                                //!< Number of M2L kernel calls
@@ -45,6 +47,115 @@ private:
 #else
   void countWeight(C_iter, C_iter, bool, real_t) {}
 #endif
+
+  //! Get 3-D index from key
+  ivec3 getIndex(uint64_t key) {
+    int level = -1;                                             // Initialize level
+    while( int(key) >= 0 ) {                                    // While key has level offsets to subtract
+      level++;                                                  //  Increment level
+      key -= 1 << 3*level;                                      //  Subtract level offset
+    }                                                           // End while loop for level offsets
+    key += 1 << 3*level;                                        // Compensate for over-subtraction
+    level = 0;                                                  // Initialize level
+    ivec3 iX = 0;                                               // Initialize 3-D index
+    int d = 0;                                                  // Initialize dimension
+    while( key > 0 ) {                                          // While key has bits to shift
+      iX[d] += (key % 2) * (1 << level);                        //  Deinterleave key bits to 3-D bits
+      key >>= 1;                                                //  Shift bits in key
+      d = (d+1) % 3;                                            //  Increment dimension
+      if( d == 0 ) level++;                                     //  Increment level
+    }                                                           // End while loop for key bits to shift
+    return iX;                                                  // Return 3-D index
+  }
+
+  //! Reset cell radius
+  void resetCellRadius(C_iter C, C_iter C0, real_t R0, int level) {
+    C->R = R0 / (1 << level);                                   // Set cell radius
+    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
+      resetCellRadius(CC, C0, R0, level+1);                     //  Recursive call for child cells
+    }                                                           // End loop over child cells
+  }
+
+  //! Get interaction list
+  void getList(int itype, int icell, int * list, int & numList) {
+    int ilast = listOffset[icell][itype];                       // Initialize list pointer
+    numList = 0;                                                // Initialize list size
+    while (ilast >= 0) {                                        // While pointer exists
+      if (lists[ilast][1] > 0) {                                //  If pointer is valid
+	list[numList] = lists[ilast][1];                        //   Store interaction list in list
+	numList++;                                              //   Increment list size
+      }                                                         //  End if for valid pointer
+      ilast = lists[ilast][0];                                  //  Increment pointer
+    }                                                           // End while loop for pointer existence
+  }
+
+  //! Set one interaction list
+  void setList(int itype, int icell, int list, int & numLists) {
+    lists[numLists][0] = listOffset[icell][itype];              // Store list pointer
+    lists[numLists][1] = list;                                  // Store list
+    listOffset[icell][itype] = numLists;                        // Store list size
+    numLists++;                                                 // Increment list size
+  }
+
+  //! Set all interaction lists
+  void setLists(Cells cells) {
+    int numCells = cells.size();                                // Number of cells
+    int childs[216], neighbors[27];                             // Array of parents' neighbors' children and neighbors
+    C_iter C0 = cells.begin();                                  // Iterator of first cell
+    for (int i=0; i<numCells; i++) {                            // Loop over number of cells
+      for (int j=0; j<3; j++) {                                 //  Loop over list types
+	listOffset[i][j] = -1;                                  //   Set initial value to -1
+      }                                                         //  End loop over list types
+    }                                                           // End loop over number of cells
+    int numLists = 0;                                           // Initialize number of lists
+    for (int icell=1; icell<numCells; icell++) {                // Loop over target cells
+      C_iter Ci = C0 + icell;                                   //  Iterator of current target cell
+      int iparent = Ci->IPARENT;                                //  Index of parent target cell
+      neighbors[0] = iparent;                                   //  Include self to neighbor list
+      int numNeighbors;                                         //  Number of neighbor parents
+      getList(2, iparent, &neighbors[1], numNeighbors);         //  Get list of parents' neighbors
+      numNeighbors++;                                           //  Increment number of parents' neighbors
+      ivec3 iX = getIndex(Ci->ICELL);                           //  Get 3-D index from key
+      int nchilds = 0;                                          //  Initialize number of parents' neighbors' children
+      for (int i=0; i<numNeighbors; i++) {                      //  Loop over parents' neighbors
+	int jparent = neighbors[i];                             //   Index of parent source cell
+	C_iter Cj = C0 + jparent;                               //   Iterator of parent source cell
+	for (int j=0; j<Cj->NCHILD; j++) {                      //   Loop over children of parents' neighbors
+	  int jcell = Cj->ICHILD+j;                             //    Index of source cell
+	  if (jcell != icell) {                                 //    If target != source
+	    childs[nchilds] = jcell;                            //     Store index of source cell
+	    nchilds++;                                          //     Increment number of parents' neighbors' children
+	  }                                                     //    End if for target != source
+	}                                                       //   End loop over children of parents' neighbors
+      }                                                         //  End loop over parents' neighbors
+      for (int i=0; i<nchilds; i++) {                           //  Loop over children of parents' neighbors
+	int jcell = childs[i];                                  //   Index of source cell
+	C_iter Cj = C0 + jcell;                                 //   Iterator of source cell
+	ivec3 jX = getIndex(Cj->ICELL);                         //   3-D index of source cell
+	if (iX[0]-1 <= jX[0] && jX[0] <= iX[0]+1 &&             //   If neighbor in x dimension and
+	    iX[1]-1 <= jX[1] && jX[1] <= iX[1]+1 &&             //               in y dimension and
+	    iX[2]-1 <= jX[2] && jX[2] <= iX[2]+1) {             //               in z dimension
+	  setList(2, icell, jcell, numLists);                   //    Store neighbor list (not P2P unless leaf)
+	} else {                                                //   If non-neighbor
+	  setList(1, icell, jcell, numLists);                   //    Store M2L list
+	}                                                       //   End if for non-neighbor
+      }                                                         //  End loop over children of parents' neighbors
+    }                                                           // End loop over target cells
+    for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
+      C_iter Ci = C0 + icell;                                   //  Iterator of target cell
+      if (Ci->ICHILD == 0) {                                    //  If taget cell is leaf
+	int numNeighbors;                                       //   Number of neighbors
+	getList(2, icell, neighbors, numNeighbors);             //   Get list of neighbor cells
+	for (int j=0; j<numNeighbors; j++) {                    //   Loop over neighbor cells
+	  int jcell = neighbors[j];                             //    Index of source cell
+	  C_iter Cj = C0 + jcell;                               //    Iterator of source cell
+	  if (Cj->ICHILD == 0) {                                //    If source cell is leaf
+	    setList(0, icell, jcell, numLists);                 //     Store P2P list
+	  }                                                     //    End if for source cell leaf
+	}                                                       //   End loop over neighbor cells
+      }                                                         //  End if for target cell leaf
+    }                                                           // End loop over target cells
+  }
 
   //! Dual tree traversal for a single pair of cells
   void traverse(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
@@ -294,6 +405,53 @@ public:
 #else
   void initWeight(Cells) {}
 #endif
+
+  //! Evaluate P2P and M2L using list based traversal
+  void listBasedTraversal(Cells & cells) {
+    int numCells = cells.size();
+    C_iter C0 = cells.begin();
+    real_t R0 = C0->R;
+    kernel::Xperiodic = 0;
+    bool mutual = false;
+    int list[189];
+    listOffset = new int [numCells][3]();
+    lists = new int [189*numCells][2]();
+    resetCellRadius(C0, C0, R0, 0);
+    setLists(cells);
+
+    logger::startTimer("M2L");
+#pragma omp parallel for private(list) schedule(dynamic)
+    for (int icell=0; icell<numCells; icell++) {
+      C_iter Ci = C0 + icell;
+      int nlist;
+      getList(1, icell, list, nlist);
+      for (int ilist=0; ilist<nlist; ilist++) {
+	int jcell = list[ilist];
+	C_iter Cj = C0 + jcell;
+	kernel::M2L(Ci, Cj, mutual);
+      }
+    }
+    logger::stopTimer("M2L");
+
+    logger::startTimer("P2P");
+#pragma omp parallel for private(list) schedule(dynamic)
+    for (int icell=0; icell<numCells; icell++) {
+      C_iter Ci = C0 + icell;
+      if (Ci->NCHILD == 0) {
+	kernel::P2P(Ci, Ci, mutual);
+	int nlist;
+	getList(0, icell, list, nlist);
+	for (int ilist=0; ilist<nlist; ilist++) {
+	  int jcell = list[ilist];
+	  C_iter Cj = C0 + jcell;
+	  kernel::P2P(Ci, Cj, mutual);
+	}
+      }
+    }
+    logger::stopTimer("P2P");
+    delete[] listOffset;
+    delete[] lists;
+  }
 
   //! Evaluate P2P and M2L using dual tree traversal
   void dualTreeTraversal(Cells & icells, Cells & jcells, real_t cycle, bool mutual, real_t remote=1) {
