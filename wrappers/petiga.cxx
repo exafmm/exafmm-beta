@@ -51,7 +51,8 @@ extern "C" void FMM_Init(double _eps2, int ncrit, int threads,
   const bool useRmax = true;
   const bool useRopt = true;
   kernel::eps2 = _eps2;
-  
+  kernel::setup();
+
   args = new Args;
   baseMPI = new BaseMPI;
   boundBox = new BoundBox(nspawn);

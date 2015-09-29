@@ -33,6 +33,7 @@ extern "C" void FMM_Init(int images, int threads, bool verbose) {
   const bool useRmax = false;
   const bool useRopt = false;
   kernel::eps2 = 0.0;
+  kernel::setup();
 
   args = new Args;
   baseMPI = new BaseMPI;

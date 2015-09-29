@@ -8,6 +8,7 @@
 #include "verify.h"
 
 int main(int argc, char ** argv) {
+  const real_t cycle = 2 * M_PI;
   Args args(argc,argv);
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
@@ -18,9 +19,12 @@ int main(int argc, char ** argv) {
   Traversal traversal(args.nspawn, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
   Verify verify;
+  num_threads(args.threads);
 
   kernel::eps2 = 0.0;
+#if Helmholtz
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+#endif
   kernel::setup();
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
@@ -49,35 +53,53 @@ int main(int argc, char ** argv) {
     }
     cells = buildTree.buildTree(bodies, buffer, bounds);
     upDownPass.upwardPass(cells);
+    traversal.initListCount(cells);
+    traversal.initWeight(cells);
+#if 0
+    if (args.IneJ) {
+      jcells = buildTree.buildTree(jbodies, buffer, bounds);
+      upDownPass.upwardPass(jcells);
+      traversal.listBasedTraversal(cells, jcells, cycle, false);
+    } else {
+      traversal.listBasedTraversal(cells, cells, cycle, args.mutual);
+      jbodies = bodies;
+    }
+#else
     traversal.listBasedTraversal(cells);
+#endif
     upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");
     logger::stopDAG();
     logger::stopPAPI();
     logger::stopTimer("Total FMM");
+    logger::resetTimer("Total FMM");
+    if (args.write) {
+      logger::writeTime();
+    }
+    traversal.writeList(cells, 0);
     jbodies = bodies;
     const int numTargets = 100;
+    buffer = bodies;
     data.sampleBodies(bodies, numTargets);
     bodies2 = bodies;
     data.initTarget(bodies);
-    cells.resize(2);
-    C_iter Ci = cells.begin();
-    C_iter Cj = cells.begin() + 1;
-    Ci->BODY = bodies.begin();
-    Ci->NBODY = bodies.size();
-    Cj->BODY = jbodies.begin();
-    Cj->NBODY = jbodies.size();
     logger::startTimer("Total Direct");
-    kernel::Xperiodic = 0;
-    bool mutual = false;
-    kernel::P2P(Ci, Cj, mutual);
+    traversal.direct(bodies, jbodies, cycle);
+    traversal.normalize(bodies);
     logger::stopTimer("Total Direct");
-    std::complex<double> potDif = verify.getDifScalar(bodies, bodies2);
-    std::complex<double> potNrm = verify.getNrmScalar(bodies);
-    std::complex<double> accDif = verify.getDifVector(bodies, bodies2);
-    std::complex<double> accNrm = verify.getNrmVector(bodies);
+    double potDif = verify.getDifScalar(bodies, bodies2);
+    double potNrm = verify.getNrmScalar(bodies);
+    double accDif = verify.getDifVector(bodies, bodies2);
+    double accNrm = verify.getNrmVector(bodies);
     logger::printTitle("FMM vs. direct");
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
+    buildTree.printTreeData(cells);
+    traversal.printTraversalData();
+    logger::printPAPI();
+    bodies = buffer;
+    data.initTarget(bodies);
   }
+  logger::writeDAG();
+  return 0;
 }

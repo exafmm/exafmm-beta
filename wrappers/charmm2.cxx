@@ -48,6 +48,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   const bool useRmax = true;
   const bool useRopt = true;
   kernel::eps2 = 0.0;
+  kernel::setup();
 
   args = new Args;
   baseMPI = new BaseMPI;

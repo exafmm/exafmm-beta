@@ -100,6 +100,8 @@ void evalLocal(real_t rho, real_t alpha, real_t beta, complex_t * Ynm) {
   }                                                             // End loop over m in Ynm
 }
 
+void kernel::setup() {}
+
 void kernel::P2M(C_iter C) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {

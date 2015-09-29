@@ -632,6 +632,8 @@ struct Coefs<0,0> {
   static inline void negate(vecP){}
 };
 
+void kernel::setup() {}
+
 void kernel::P2M(C_iter C) {
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     vec3 dX = C->X - B->X;

@@ -1,6 +1,6 @@
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree_omp2.h"
+#include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
 #include "traversal.h"
@@ -22,6 +22,10 @@ int main(int argc, char ** argv) {
   num_threads(args.threads);
 
   kernel::eps2 = 0.0;
+#if Helmholtz
+  kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
+#endif
+  kernel::setup();
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
@@ -63,7 +67,7 @@ int main(int argc, char ** argv) {
     logger::printTitle("Total runtime");
     logger::stopDAG();
     logger::stopPAPI();
-    double time = logger::stopTimer("Total FMM");
+    logger::stopTimer("Total FMM");
     logger::resetTimer("Total FMM");
     if (args.write) {
       logger::writeTime();
@@ -86,7 +90,6 @@ int main(int argc, char ** argv) {
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDif/accNrm));
     buildTree.printTreeData(cells);
-    std::cout << cells[0].R << " " << cells[1].R << std::endl;
     traversal.printTraversalData();
     logger::printPAPI();
     bodies = buffer;
