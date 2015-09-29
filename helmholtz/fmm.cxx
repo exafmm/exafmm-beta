@@ -9,7 +9,7 @@
 
 int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
-  Args args(argc,argv);
+  Args args(argc, argv);
   Bodies bodies, bodies2, jbodies, buffer;
   BoundBox boundBox(args.nspawn);
   Bounds bounds;
@@ -49,13 +49,12 @@ int main(int argc, char ** argv) {
     logger::startDAG();
     bounds = boundBox.getBounds(bodies);
     if (args.IneJ) {
-      bounds = boundBox.getBounds(jbodies,bounds);
+      bounds = boundBox.getBounds(jbodies, bounds);
     }
     cells = buildTree.buildTree(bodies, buffer, bounds);
     upDownPass.upwardPass(cells);
     traversal.initListCount(cells);
     traversal.initWeight(cells);
-#if 0
     if (args.IneJ) {
       jcells = buildTree.buildTree(jbodies, buffer, bounds);
       upDownPass.upwardPass(jcells);
@@ -64,9 +63,6 @@ int main(int argc, char ** argv) {
       traversal.listBasedTraversal(cells, cells, cycle, args.mutual);
       jbodies = bodies;
     }
-#else
-    traversal.listBasedTraversal(cells, cycle, args.mutual);
-#endif
     upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");
     logger::stopDAG();
@@ -77,7 +73,6 @@ int main(int argc, char ** argv) {
       logger::writeTime();
     }
     traversal.writeList(cells, 0);
-    jbodies = bodies;
     const int numTargets = 100;
     buffer = bodies;
     data.sampleBodies(bodies, numTargets);

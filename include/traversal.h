@@ -98,10 +98,9 @@ private:
   }
 
   //! Set all interaction lists
-  void setLists(Cells & cells) {
-    int numCells = cells.size();                                // Number of cells
+  void setLists(Cells & icells) {
+    int numCells = icells.size();                               // Number of cells
     int childs[216], neighbors[27];                             // Array of parents' neighbors' children and neighbors
-    C_iter C0 = cells.begin();                                  // Iterator of first cell
     for (int i=0; i<numCells; i++) {                            // Loop over number of cells
       for (int j=0; j<3; j++) {                                 //  Loop over list types
 	listOffset[i][j] = -1;                                  //   Set initial value to -1
@@ -110,7 +109,7 @@ private:
     int numLists = 0;                                           // Initialize number of lists
     setList(2, 0, 0, numLists);
     for (int icell=1; icell<numCells; icell++) {                // Loop over target cells
-      C_iter Ci = C0 + icell;                                   //  Iterator of current target cell
+      C_iter Ci = Ci0 + icell;                                  //  Iterator of current target cell
       int iparent = Ci->IPARENT;                                //  Index of parent target cell
       int numNeighbors;                                         //  Number of neighbor parents
       getList(2, iparent, neighbors, numNeighbors);
@@ -118,7 +117,7 @@ private:
       int nchilds = 0;                                          //  Initialize number of parents' neighbors' children
       for (int i=0; i<numNeighbors; i++) {                      //  Loop over parents' neighbors
 	int jparent = neighbors[i];                             //   Index of parent source cell
-	C_iter Cj = C0 + jparent;                               //   Iterator of parent source cell
+	C_iter Cj = Cj0 + jparent;                              //   Iterator of parent source cell
 	for (int j=0; j<Cj->NCHILD; j++) {                      //   Loop over children of parents' neighbors
 	  int jcell = Cj->ICHILD+j;                             //    Index of source cell
 	  childs[nchilds] = jcell;                              //     Store index of source cell
@@ -127,7 +126,7 @@ private:
       }                                                         //  End loop over parents' neighbors
       for (int i=0; i<nchilds; i++) {                           //  Loop over children of parents' neighbors
 	int jcell = childs[i];                                  //   Index of source cell
-	C_iter Cj = C0 + jcell;                                 //   Iterator of source cell
+	C_iter Cj = Cj0 + jcell;                                //   Iterator of source cell
 	ivec3 jX = getIndex(Cj->ICELL);                         //   3-D index of source cell
 	if (iX[0]-1 <= jX[0] && jX[0] <= iX[0]+1 &&             //   If neighbor in x dimension and
 	    iX[1]-1 <= jX[1] && jX[1] <= iX[1]+1 &&             //               in y dimension and
@@ -139,13 +138,13 @@ private:
       }                                                         //  End loop over children of parents' neighbors
     }                                                           // End loop over target cells
     for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
-      C_iter Ci = C0 + icell;                                   //  Iterator of target cell
+      C_iter Ci = Ci0 + icell;                                  //  Iterator of target cell
       if (Ci->NCHILD == 0) {                                    //  If taget cell is leaf
 	int numNeighbors;                                       //   Number of neighbors
 	getList(2, icell, neighbors, numNeighbors);             //   Get list of neighbor cells
 	for (int j=0; j<numNeighbors; j++) {                    //   Loop over neighbor cells
 	  int jcell = neighbors[j];                             //    Index of source cell
-	  C_iter Cj = C0 + jcell;                               //    Iterator of source cell
+	  C_iter Cj = Cj0 + jcell;                              //    Iterator of source cell
 	  if (Cj->NCHILD == 0) {                                //    If source cell is leaf
 	    setList(0, icell, jcell, numLists);                 //     Store P2P list
 	  }                                                     //    End if for source cell leaf
@@ -404,27 +403,28 @@ public:
 #endif
 
   //! Evaluate P2P and M2L using list based traversal
-  void listBasedTraversal(Cells & cells, real_t cycle, real_t remote=1) {
-    int numCells = cells.size();                                // Number of cells
-    C_iter C0 = cells.begin();                                  // Iterator of first target cell
-    real_t R0 = C0->R;                                          // Radius of root cell
+  void listBasedTraversal(Cells & icells, Cells & jcells, real_t cycle, real_t remote=1) {
+    int numCells = icells.size();                               // Number of cells
+    Ci0 = icells.begin();                                       // Iterator of first target cell
+    Cj0 = jcells.begin();                                       // Iterator of first source cell
     kernel::Xperiodic = 0;                                      // Set periodic coordinate offset to 0
     bool mutual = false;                                        // Set mutual interaction flag to false
     int list[189];                                              // Current interaction list
     listOffset = new int [numCells][3]();                       // Offset of interaction lists
     lists = new int [189*numCells][2]();                        // All interaction lists
-    resetCellRadius(C0, C0, R0, 0);                             // Reset cell radius
-    setLists(cells);                                            // Set P2P and M2L interaction lists
+    resetCellRadius(Ci0, Ci0, Ci0->R, 0);                       // Reset target cell radius
+    resetCellRadius(Cj0, Cj0, Cj0->R, 0);                       // Reset source cell radius
+    setLists(icells);                                           // Set P2P and M2L interaction lists
 
     logger::startTimer("M2L");                                  // Start timer
 #pragma omp parallel for private(list) schedule(dynamic)
     for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
-      C_iter Ci = C0 + icell;                                   //  Iterator of target cell
+      C_iter Ci = Ci0 + icell;                                  //  Iterator of target cell
       int nlist;                                                //  Interaction list size
       getList(1, icell, list, nlist);                           //   Get M2L interaction list
       for (int ilist=0; ilist<nlist; ilist++) {                 //   Loop over M2L interaction list
 	int jcell = list[ilist];                                //    Index of source cell
-	C_iter Cj = C0 + jcell;                                 //    Iterator of source cell
+	C_iter Cj = Cj0 + jcell;                                //    Iterator of source cell
 	kernel::M2L(Ci, Cj, mutual);                            //    M2L kernel
         countKernel(numM2L);                                    //  Increment M2L counter
         countList(Ci, Cj, mutual, false);                       //  Increment M2L list
@@ -437,13 +437,13 @@ public:
     logger::startTimer("P2P");                                  // Start timer
 #pragma omp parallel for private(list) schedule(dynamic)
     for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
-      C_iter Ci = C0 + icell;                                   //  Iterator of target cell
+      C_iter Ci = Ci0 + icell;                                  //  Iterator of target cell
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
 	int nlist;                                              //   Interaction list size
 	getList(0, icell, list, nlist);                         //   Get P2P interaction list
 	for (int ilist=0; ilist<nlist; ilist++) {               //   Loop over P2P interaction list
 	  int jcell = list[ilist];                              //    Index of source cell
-	  C_iter Cj = C0 + jcell;                               //    Iterator of source cell
+	  C_iter Cj = Cj0 + jcell;                              //    Iterator of source cell
 	  kernel::P2P(Ci, Cj, mutual);                          //    P2P kernel
   	  countKernel(numP2P);                                  //   Increment P2P counter
 	  countList(Ci, Cj, mutual, true);                      //   Increment P2P list
