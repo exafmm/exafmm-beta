@@ -27,12 +27,12 @@ private:
 #if COUNT_LIST
   //! Accumulate interaction list size of cells
   void countList(C_iter Ci, C_iter Cj, bool mutual, bool isP2P) {
-    if (isP2P) Ci->numP2P++;
-    else Ci->numM2L++;
-    if (mutual) {
-      if (isP2P) Cj->numP2P++;
-      else Cj->numM2L++;
-    }
+    if (isP2P) Ci->numP2P++;                                    // If P2P, increment P2P counter of target cell
+    else Ci->numM2L++;                                          // Else, increment M2L counter of target cell
+    if (mutual) {                                               // If mutual interaction in on
+      if (isP2P) Cj->numP2P++;                                  //  If P2P, increment P2P counter of source cell
+      else Cj->numM2L++;                                        //  Else, increment M2L counter of source cell
+    }                                                           // End if for mutual interaction
   }
 #else
   void countList(C_iter, C_iter, bool, bool) {}
@@ -98,7 +98,7 @@ private:
   }
 
   //! Set all interaction lists
-  void setLists(Cells cells) {
+  void setLists(Cells & cells) {
     int numCells = cells.size();                                // Number of cells
     int childs[216], neighbors[27];                             // Array of parents' neighbors' children and neighbors
     C_iter C0 = cells.begin();                                  // Iterator of first cell
@@ -143,13 +143,13 @@ private:
     }                                                           // End loop over target cells
     for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
       C_iter Ci = C0 + icell;                                   //  Iterator of target cell
-      if (Ci->ICHILD == 0) {                                    //  If taget cell is leaf
+      if (Ci->NCHILD == 0) {                                    //  If taget cell is leaf
 	int numNeighbors;                                       //   Number of neighbors
 	getList(2, icell, neighbors, numNeighbors);             //   Get list of neighbor cells
 	for (int j=0; j<numNeighbors; j++) {                    //   Loop over neighbor cells
 	  int jcell = neighbors[j];                             //    Index of source cell
 	  C_iter Cj = C0 + jcell;                               //    Iterator of source cell
-	  if (Cj->ICHILD == 0) {                                //    If source cell is leaf
+	  if (Cj->NCHILD == 0) {                                //    If source cell is leaf
 	    setList(0, icell, jcell, numLists);                 //     Store P2P list
 	  }                                                     //    End if for source cell leaf
 	}                                                       //   End loop over neighbor cells
@@ -407,50 +407,61 @@ public:
 #endif
 
   //! Evaluate P2P and M2L using list based traversal
-  void listBasedTraversal(Cells & cells) {
-    int numCells = cells.size();
-    C_iter C0 = cells.begin();
-    real_t R0 = C0->R;
-    kernel::Xperiodic = 0;
-    bool mutual = false;
-    int list[189];
-    listOffset = new int [numCells][3]();
-    lists = new int [189*numCells][2]();
-    resetCellRadius(C0, C0, R0, 0);
-    setLists(cells);
+  void listBasedTraversal(Cells & cells, real_t remote=1) {
+    int numCells = cells.size();                                // Number of cells
+    C_iter C0 = cells.begin();                                  // Iterator of first target cell
+    real_t R0 = C0->R;                                          // Radius of root cell
+    kernel::Xperiodic = 0;                                      // Set periodic coordinate offset to 0
+    bool mutual = false;                                        // Set mutual interaction flag to false
+    int list[189];                                              // Current interaction list
+    listOffset = new int [numCells][3]();                       // Offset of interaction lists
+    lists = new int [189*numCells][2]();                        // All interaction lists
+    resetCellRadius(C0, C0, R0, 0);                             // Reset cell radius
+    setLists(cells);                                            // Set P2P and M2L interaction lists
 
-    logger::startTimer("M2L");
+    logger::startTimer("M2L");                                  // Start timer
 #pragma omp parallel for private(list) schedule(dynamic)
-    for (int icell=0; icell<numCells; icell++) {
-      C_iter Ci = C0 + icell;
-      int nlist;
-      getList(1, icell, list, nlist);
-      for (int ilist=0; ilist<nlist; ilist++) {
-	int jcell = list[ilist];
-	C_iter Cj = C0 + jcell;
-	kernel::M2L(Ci, Cj, mutual);
-      }
-    }
-    logger::stopTimer("M2L");
+    for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
+      C_iter Ci = C0 + icell;                                   //  Iterator of target cell
+      int nlist;                                                //  Interaction list size
+      getList(1, icell, list, nlist);                           //   Get M2L interaction list
+      for (int ilist=0; ilist<nlist; ilist++) {                 //   Loop over M2L interaction list
+	int jcell = list[ilist];                                //    Index of source cell
+	C_iter Cj = C0 + jcell;                                 //    Iterator of source cell
+	kernel::M2L(Ci, Cj, mutual);                            //    M2L kernel
+        countKernel(numM2L);                                    //  Increment M2L counter
+        countList(Ci, Cj, mutual, false);                       //  Increment M2L list
+        countWeight(Ci, Cj, mutual, remote);                    //  Increment M2L weight
+      }                                                         //   End loop over M2L interaction list
+    }                                                           // End loop over target cells
+    logger::stopTimer("M2L");                                   // Stop timer
 
-    logger::startTimer("P2P");
+#ifndef NO_P2P
+    logger::startTimer("P2P");                                  // Start timer
 #pragma omp parallel for private(list) schedule(dynamic)
-    for (int icell=0; icell<numCells; icell++) {
-      C_iter Ci = C0 + icell;
-      if (Ci->NCHILD == 0) {
-	kernel::P2P(Ci, Ci, mutual);
-	int nlist;
-	getList(0, icell, list, nlist);
-	for (int ilist=0; ilist<nlist; ilist++) {
-	  int jcell = list[ilist];
-	  C_iter Cj = C0 + jcell;
-	  kernel::P2P(Ci, Cj, mutual);
-	}
-      }
-    }
-    logger::stopTimer("P2P");
-    delete[] listOffset;
-    delete[] lists;
+    for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
+      C_iter Ci = C0 + icell;                                   //  Iterator of target cell
+      if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
+	kernel::P2P(Ci, Ci, mutual);                            //   P2P kernel for self
+	countKernel(numP2P);                                    //   Increment P2P counter
+	countList(Ci, Ci, mutual, true);                        //   Increment P2P list
+	countWeight(Ci, Ci, mutual, remote);                    //   Increment P2P weight
+	int nlist;                                              //   Interaction list size
+	getList(0, icell, list, nlist);                         //   Get P2P interaction list
+	for (int ilist=0; ilist<nlist; ilist++) {               //   Loop over P2P interaction list
+	  int jcell = list[ilist];                              //    Index of source cell
+	  C_iter Cj = C0 + jcell;                               //    Iterator of source cell
+	  kernel::P2P(Ci, Cj, mutual);                          //    P2P kernel
+  	  countKernel(numP2P);                                  //   Increment P2P counter
+	  countList(Ci, Cj, mutual, true);                      //   Increment P2P list
+	  countWeight(Ci, Cj, mutual, remote);                  //   Increment P2P weight
+	}                                                       //   End loop over P2P interaction list
+      }                                                         //  End if for target cell leaf
+    }                                                           // End loop over target cells
+    logger::stopTimer("P2P");                                   // Stop timer
+#endif
+    delete[] listOffset;                                        // Deallocate offset of lists
+    delete[] lists;                                             // Deallocate lists
   }
 
   //! Evaluate P2P and M2L using dual tree traversal

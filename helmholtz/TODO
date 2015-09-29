@@ -1,10 +1,5 @@
-Use getIndex for NO_P2P
-Change ICHILD to NCHILD in setLists()
-Add COUNT_KERNEL, COUNT_LIST, USE_WEIGHT, NO_P2P in list based traversal
 IneJ in upDownPass
-IneJ in traversal
-
-Separate compile unit
-Loops to iterators
+IneJ in list based traversal
+periodic B.C. in list based traversal
+Make remote and mutual class variables in Traversal
 SIMD for P2P
-Merge with exaFMM

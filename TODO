@@ -1,6 +1,5 @@
 -- Immediate --
 logger.h split to print.h
-kernel: Xperiodic -> extern variables, do this while measuring time on Haswell
 Fix without TBB
 detect f90 and mpi fortran compiler
 Have only one P2P
@@ -12,7 +11,8 @@ examples/Makefile options to args
 Use compressed Cell struct of Bonsai
 Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
 Separate key manipulation namespace, e.g. interleaveMorton(), deinterleveHilbert() (controllable key_t)
-Distinguish Pmax and P. Make P runtime option.
+Distinguish Pmax and P. Make P runtime option
+Use getIndex for NO_P2P
 
 -- Features to add --
 Time each kernel separately using cycle counters
