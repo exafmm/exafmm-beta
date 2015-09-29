@@ -81,7 +81,7 @@ private:
     int ilast = listOffset[icell][itype];                       // Initialize list pointer
     numList = 0;                                                // Initialize list size
     while (ilast >= 0) {                                        // While pointer exists
-      if (lists[ilast][1] > 0) {                                //  If pointer is valid
+      if (lists[ilast][1] >= 0) {                               //  If pointer is valid
 	list[numList] = lists[ilast][1];                        //   Store interaction list in list
 	numList++;                                              //   Increment list size
       }                                                         //  End if for valid pointer
@@ -108,13 +108,12 @@ private:
       }                                                         //  End loop over list types
     }                                                           // End loop over number of cells
     int numLists = 0;                                           // Initialize number of lists
+    setList(2, 0, 0, numLists);
     for (int icell=1; icell<numCells; icell++) {                // Loop over target cells
       C_iter Ci = C0 + icell;                                   //  Iterator of current target cell
       int iparent = Ci->IPARENT;                                //  Index of parent target cell
-      neighbors[0] = iparent;                                   //  Include self to neighbor list
       int numNeighbors;                                         //  Number of neighbor parents
-      getList(2, iparent, &neighbors[1], numNeighbors);         //  Get list of parents' neighbors
-      numNeighbors++;                                           //  Increment number of parents' neighbors
+      getList(2, iparent, neighbors, numNeighbors);
       ivec3 iX = getIndex(Ci->ICELL);                           //  Get 3-D index from key
       int nchilds = 0;                                          //  Initialize number of parents' neighbors' children
       for (int i=0; i<numNeighbors; i++) {                      //  Loop over parents' neighbors
@@ -122,10 +121,8 @@ private:
 	C_iter Cj = C0 + jparent;                               //   Iterator of parent source cell
 	for (int j=0; j<Cj->NCHILD; j++) {                      //   Loop over children of parents' neighbors
 	  int jcell = Cj->ICHILD+j;                             //    Index of source cell
-	  if (jcell != icell) {                                 //    If target != source
-	    childs[nchilds] = jcell;                            //     Store index of source cell
-	    nchilds++;                                          //     Increment number of parents' neighbors' children
-	  }                                                     //    End if for target != source
+	  childs[nchilds] = jcell;                              //     Store index of source cell
+	  nchilds++;                                            //     Increment number of parents' neighbors' children
 	}                                                       //   End loop over children of parents' neighbors
       }                                                         //  End loop over parents' neighbors
       for (int i=0; i<nchilds; i++) {                           //  Loop over children of parents' neighbors
@@ -407,7 +404,7 @@ public:
 #endif
 
   //! Evaluate P2P and M2L using list based traversal
-  void listBasedTraversal(Cells & cells, real_t remote=1) {
+  void listBasedTraversal(Cells & cells, real_t cycle, real_t remote=1) {
     int numCells = cells.size();                                // Number of cells
     C_iter C0 = cells.begin();                                  // Iterator of first target cell
     real_t R0 = C0->R;                                          // Radius of root cell
@@ -442,10 +439,6 @@ public:
     for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
       C_iter Ci = C0 + icell;                                   //  Iterator of target cell
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
-	kernel::P2P(Ci, Ci, mutual);                            //   P2P kernel for self
-	countKernel(numP2P);                                    //   Increment P2P counter
-	countList(Ci, Ci, mutual, true);                        //   Increment P2P list
-	countWeight(Ci, Ci, mutual, remote);                    //   Increment P2P weight
 	int nlist;                                              //   Interaction list size
 	getList(0, icell, list, nlist);                         //   Get P2P interaction list
 	for (int ilist=0; ilist<nlist; ilist++) {               //   Loop over P2P interaction list

@@ -65,7 +65,7 @@ int main(int argc, char ** argv) {
       jbodies = bodies;
     }
 #else
-    traversal.listBasedTraversal(cells);
+    traversal.listBasedTraversal(cells, cycle, args.mutual);
 #endif
     upDownPass.downwardPass(cells);
     logger::printTitle("Total runtime");
