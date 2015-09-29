@@ -1,6 +1,9 @@
 -- Immediate --
 logger.h split to print.h
 Fix without TBB
+periodic B.C. in list based traversal
+Make remote and mutual class variables in Traversal
+SIMD for Helmholtz P2P
 detect f90 and mpi fortran compiler
 Have only one P2P
 move contents of macros.h to configure.ac

@@ -13,6 +13,7 @@ static struct option long_options[] = {
   {"threads",      1, 0, 'T'},
   {"images",       1, 0, 'i'},
   {"theta",        1, 0, 't'},
+  {"dual",         1, 0, 'D'},
   {"useRmax",      1, 0, 'x'},
   {"useRopt",      1, 0, 'o'},
   {"mutual",       1, 0, 'm'},
@@ -34,6 +35,7 @@ public:
   int threads;
   int images;
   double theta;
+  int dual;
   int useRmax;
   int useRopt;
   int mutual;
@@ -55,6 +57,7 @@ private:
             " --threads (-T)                : Number of threads (%d)\n"
             " --images (-i)                 : Number of periodic image levels (%d)\n"
             " --theta (-t)                  : Multipole acceptance criterion (%f)\n"
+	    " --dual (-D)                   : Use dual tree traversal (%d)\n"
 	    " --useRmax (-x) [0/1]          : Use maximum distance for MAC (%d)\n"
 	    " --useRopt (-o) [0/1]          : Use error optimized theta for MAC (%d)\n"
             " --mutual (-m) [0/1]           : Use mutual interaction (%d)\n"
@@ -72,6 +75,7 @@ private:
 	    threads,
             images,
             theta,
+	    dual,
 	    useRmax,
 	    useRopt,
             mutual,
@@ -104,11 +108,11 @@ private:
 
 public:
   Args(int argc=0, char ** argv=NULL) : numBodies(1000000), ncrit(64), nspawn(5000), threads(16), images(0),
-					theta(.4), useRmax(1), useRopt(1), mutual(1), graft(1), verbose(1),
-					distribution("cube"), repeat(1), IneJ(0), write(0) {
+					theta(.4), dual(1), useRmax(1), useRopt(1), mutual(1), graft(1),
+					verbose(1), distribution("cube"), repeat(1), IneJ(0), write(0) {
     while (1) {
       int option_index;
-      int c = getopt_long(argc, argv, "n:c:s:T:i:t:x:o:m:g:v:d:r:j:w:h", long_options, &option_index);
+      int c = getopt_long(argc, argv, "n:c:s:T:i:t:D:x:o:m:g:v:d:r:j:w:h", long_options, &option_index);
       if (c == -1) break;
       switch (c) {
       case 'n':
@@ -128,6 +132,9 @@ public:
         break;
       case 't':
         theta = atof(optarg);
+        break;
+      case 'D':
+        dual = atof(optarg);
         break;
       case 'x':
         useRmax = atof(optarg);
@@ -182,6 +189,8 @@ public:
 		<< "threads" << " : " << threads << std::endl   //  Print threads
 		<< std::setw(stringLength)                      //  Set format
 		<< "images" << " : " << images << std::endl     //  Print images
+		<< std::setw(stringLength)                      //  Set format
+		<< "dual" << " : " << dual << std::endl         //  Print images
 		<< std::setw(stringLength)                      //  Set format
 		<< "useRmax" << " : " << useRmax << std::endl   //  Print useRmax
 		<< std::setw(stringLength)                      //  Set format
