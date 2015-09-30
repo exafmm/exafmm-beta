@@ -7,7 +7,7 @@ SIMD for Helmholtz P2P
 detect f90 and mpi fortran compiler
 Have only one P2P
 move contents of macros.h to configure.ac
-verify.h from class to namespace
+args.h, verify.h from class to namespace
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA unified
 examples/Makefile options to args

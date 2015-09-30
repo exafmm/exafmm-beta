@@ -1,0 +1,68 @@
+[Priority]
+1. Performance
+ - Only optimize hot-spots
+ - Keep everything else simple
+2. Simplicity
+ - Never show-off language skills
+ - Take time to simplify code
+3. Portability
+ - Don't use tools that aren't available everywhere
+ - Performance must be portable
+
+[Variable name convention]
+Use all captial for
+ - Macro variables
+ - Environtment values
+ - Makefile variables
+ - Struct elements
+Start with captial for
+ - Class & Struct names
+ - User defined types
+Start with small case for everything else
+Use camel case
+Avoid abbreviation as much as possible
+ - Short scope, short name
+ - Use plural for vectors (e.g. vector<cell> cells;)
+ - For equations use the same characters
+Common characters (prefix)
+ - d* : Difference
+ - i* : Loop counter
+ - k* : Waves
+ - n* : Size
+ - X* : Coordinates
+Common postfix
+ - *i : target
+ - *j : source
+ - *p : parent
+ - *c : child
+ - *0 : first element
+ - *N : last element
+Common three letter keywords (prefix)
+ - max* : Maximum
+ - num* : Size
+ - old* : Previous value
+ - sum* : Sum
+ - tmp* : Temporary value
+ - vec* : Short vector type
+Common keywords (postfix)
+ - begin & end (following STL)
+ - send & recv (following MPI)
+ - displ & count (following MPI)
+ - global & local (for distributed memory)
+ - min & max
+ - key & color
+GPU memory keywords (postfix)
+ - glob : Global memory
+ - shrd : Shared memory
+
+[C++ usage]
+Use STL vectors but not iterators
+ - Reserve, resize, and size are useful
+ - Some compilers have difficulty parallelizing iterator loops
+Use operator overloading for short vector types
+ - Avoids a lot of indexing errors for short vectors
+ - Makes the code cleaner
+ - Portability of intrinsics
+Use static & const for inner kernels
+ - Prevents bugs
+ - Const-correctness propagates
