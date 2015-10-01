@@ -1,11 +1,12 @@
 -- Immediate --
-logger.h split to print.h
+Multilevel Helmholtz debug
 Fix without TBB
-periodic B.C. in list based traversal
-Make remote and mutual class variables in Traversal
 SIMD for Helmholtz P2P
-detect f90 and mpi fortran compiler
 Have only one P2P
+periodic B.C. in list based traversal
+detect f90 and mpi fortran compiler
+logger.h split to print.h
+Make remote and mutual class variables in Traversal
 move contents of macros.h to configure.ac
 args.h, verify.h from class to namespace
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
@@ -20,11 +21,8 @@ Use getIndex for NO_P2P
 -- Features to add --
 Time each kernel separately using cycle counters
 cycle counter based weights
-TBB -> OpenMP
-remove MTHREADS, QTHREADS
-OpenMP with atomics -> flush
+TBB -> OpenMP with atomics -> flush
 MPI-3.0 lock all
-SIMD P2P performance
 Kahan + fixed precision
 Solid harmonics kernel
 Morton -> Hilbert

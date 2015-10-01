@@ -107,9 +107,30 @@ private:
   }
 
 public:
-  Args(int argc=0, char ** argv=NULL) : numBodies(1000000), ncrit(64), nspawn(5000), threads(16), images(0),
-					theta(.4), dual(1), useRmax(1), useRopt(1), mutual(1), graft(1),
-					verbose(1), distribution("cube"), repeat(1), IneJ(0), write(0) {
+  Args(int argc=0, char ** argv=NULL) : numBodies(1000000),
+#if Helmholtz
+					ncrit(1000),
+#else
+					ncrit(64),
+#endif
+					nspawn(5000),
+					threads(16),
+					images(0),
+					theta(.4),
+#if Helmholtz
+					dual(0),
+#else
+					dual(1),
+#endif
+					useRmax(1),
+					useRopt(1),
+					mutual(1),
+					graft(1),
+					verbose(1),
+					distribution("cube"),
+					repeat(1),
+					IneJ(0),
+					write(0) {
     while (1) {
       int option_index;
       int c = getopt_long(argc, argv, "n:c:s:T:i:t:D:x:o:m:g:v:d:r:j:w:h", long_options, &option_index);
