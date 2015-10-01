@@ -11,7 +11,7 @@
 /* #undef COUNT_LIST */
 
 /* Define to compile in single precision. */
-#define EXAFMM_SINGLE 1
+/* #undef EXAFMM_SINGLE */
 
 /* Define to enable AVX optimizations. */
 #define HAVE_AVX 1

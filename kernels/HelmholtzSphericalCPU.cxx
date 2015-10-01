@@ -389,7 +389,7 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
   real_t kscalei = 2 * Ci->R * abs(wavek);
   for (C_iter Cj=C0+Ci->ICHILD; Cj!=C0+Ci->ICHILD+Ci->NCHILD; Cj++) {
     real_t kscalej = 2 * Cj->R * abs(wavek);
-    real_t radius = Cj->R * sqrt(3.0);
+    real_t radius = 2 * Cj->R * sqrt(3.0);
     vec3 dX = Ci->X - Cj->X;
     real_t r, theta, phi;
     cart2sph(dX, r, theta, phi);
