@@ -116,15 +116,19 @@ public:
 					nspawn(5000),
 					threads(16),
 					images(0),
-					theta(.4),
 #if Helmholtz
+					theta(1.),
 					dual(0),
+					useRmax(0),
+					useRopt(0),
+					mutual(0),
 #else
+					theta(.4),
 					dual(1),
-#endif
 					useRmax(1),
 					useRopt(1),
 					mutual(1),
+#endif
 					graft(1),
 					verbose(1),
 					distribution("cube"),
