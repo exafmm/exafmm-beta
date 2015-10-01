@@ -1,9 +1,9 @@
 #include "kernel.h"
 
 const complex_t I(0.,1.);
-int nquad;
-real_t xquad[P];
-real_t wquad[P];
+int nquad, nquad2;
+real_t xquad[P], xquad2[2*P];
+real_t wquad[P], wquad2[2*P];
 real_t Anm1[(P+1)*(P+2)/2];
 real_t Anm2[(P+1)*(P+2)/2];
 
@@ -340,6 +340,8 @@ void get_jn(int nterms, complex_t z, real_t scale, complex_t * jn, int ifder, co
 void kernel::setup() {
   nquad = fmax(6, P);
   legendre(nquad, xquad, wquad);
+  nquad2 = fmax(6, 2*P);
+  legendre(nquad2, xquad2, wquad2);
   getAnm();
 }
 
@@ -413,8 +415,8 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
 	Mnm[nm] = 0;
       }
     }
-    for (int l=0; l<nquad; l++) {
-      real_t ctheta = xquad[l];
+    for (int l=0; l<nquad2; l++) {
+      real_t ctheta = xquad2[l];
       real_t stheta = sqrt(1 - ctheta * ctheta);
       real_t rj = (r + radius * ctheta) * (r + radius * ctheta) + (radius * stheta) * (radius * stheta);
       rj = sqrt(rj);
@@ -431,10 +433,10 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
 	  phitemp[P+m] += Mrot[nm] * hn[n] * Ynm[nms];
 	}
       }
-      get_Ynm(P, xquad[l], Ynm);
+      get_Ynm(P, xquad2[l], Ynm);
       for (int m=-P+1; m<P; m++) {
 	int mabs = abs(m);
-	complex_t z = phitemp[P+m] * wquad[l] * real_t(.5);
+	complex_t z = phitemp[P+m] * wquad2[l] * real_t(.5);
 	for (int n=mabs; n<P; n++) {
 	  int nm = n * n + n + m;
 	  int nms = n * (n + 1) / 2 + mabs;
