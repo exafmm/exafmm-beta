@@ -10,13 +10,9 @@ AC_PROG_CXX
 AC_PROG_FC
 AC_PROG_RANLIB
 AM_PROG_AR
-AX_CC_MAXOPT
-AX_CXX_MAXOPT
-AX_F77_MAXOPT
 
 # OpenMP
-AC_ARG_ENABLE(openmp, [AC_HELP_STRING([--enable-openmp],[use OpenMP])], enable_openmp=$e\
-nableval, enable_openmp=no)
+AC_ARG_ENABLE(openmp, [AC_HELP_STRING([--enable-openmp],[use OpenMP])], enable_openmp=$enableval, enable_openmp=no)
 if test "$enable_openmp" = "yes"; then
    AC_DEFINE(HAVE_OPENMP,1,[Use OpenMP])
    AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP])])
@@ -182,5 +178,17 @@ if test "$use_assert" = "yes"; then
         AC_DEFINE(ASSERT,1,[Enable assertion.])
 fi
 AM_CONDITIONAL(ASSERT, test "$use_assert" = "yes")
+
+# Debug
+AC_ARG_ENABLE(debug, [AC_HELP_STRING([--enable-debug],[compile with extra runtime checks for debugging])], enable_debug=$enableval, enable_debug=no)
+if test "$enable_debug" = "yes"; then
+        AC_DEFINE(DEBUG,1,[Define to enable extra debugging options.])
+else
+	AX_CC_MAXOPT
+	AX_CXX_MAXOPT
+	AX_F77_MAXOPT
+fi
+AM_CONDITIONAL(DEBUG, test "$enable_debug" = "yes")
+
 
 AC_OUTPUT

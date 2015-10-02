@@ -138,8 +138,8 @@ private:
       begin(_begin), end(_end), binNode(_binNode), X(_X), R0(_R0),
       ncrit(_ncrit), nspawn(_nspawn), timer(_timer), level(_level), direction(_direction) {}
     //! Create an octree node
-    OctreeNode * makeOctNode(int begin, int end, vec3 X, bool nochild) const {
-      OctreeNode * octNode = new OctreeNode();                  // Allocate memory for single node
+    OctreeNode * makeOctNode(bool nochild) const {
+      octNode = new OctreeNode();                               // Allocate memory for single node
       octNode->IBODY = begin;                                   // Index of first body in node
       octNode->NBODY = end - begin;                             // Number of bodies in node
       octNode->NNODE = 1;                                       // Initialize counter for decendant nodes
@@ -172,10 +172,10 @@ private:
       if (end - begin <= ncrit) {                               //  If number of bodies is less than threshold
 	if (direction)                                          //   If direction of data is from bodies to buffer
 	  for (int i=begin; i<end; i++) buffer[i] = bodies[i];  //    Copy bodies to buffer
-	octNode = makeOctNode(begin, end, X, true);             //   Create an octree node and assign it's pointer
+	octNode = makeOctNode(true);                            //   Create an octree node and assign it's pointer
 	return;                                                 //   End buildNodes()
       }                                                         //  End if for number of bodies
-      octNode = makeOctNode(begin, end, X, false);              //  Create an octree node with child nodes
+      octNode = makeOctNode(false);                             //  Create an octree node with child nodes
       double toc = logger::get_time();
       timer["Make node"] += toc - tic;
       CountBodies countBodies(bodies, begin, end, X, binNode, nspawn);// Instantiate recursive functor
@@ -237,7 +237,7 @@ private:
       octNode(_octNode), B0(_B0), C(_C), C0(_C0), CN(_CN),      // Initialize variables
       X0(_X0), R0(_R0), nspawn(_nspawn), numLevels(_numLevels), level(_level), iparent(_iparent) {}
     //! Get cell index
-    uint64_t getKey(vec3 X, vec3 Xmin, real_t diameter, int level) {
+    uint64_t getKey(vec3 X, vec3 Xmin, real_t diameter) {
       int iX[3] = {0, 0, 0};                                    // Initialize 3-D index
       for (int d=0; d<3; d++) iX[d] = int((X[d] - Xmin[d]) / diameter);// 3-D index
       uint64_t index = ((1 << 3 * level) - 1) / 7;              // Levelwise offset
@@ -254,7 +254,7 @@ private:
       C->NBODY   = octNode->NBODY;                              //  Number of decendant bodies
       C->IBODY   = octNode->IBODY;                              //  Index of first body in cell
       C->BODY    = B0 + C->IBODY;                               //  Iterator of first body in cell
-      C->ICELL   = getKey(C->X, X0-R0, 2*C->R, level);          //  Get Morton key
+      C->ICELL   = getKey(C->X, X0-R0, 2*C->R);                 //  Get Morton key
       if (octNode->NNODE == 1) {                                //  If node has no children
 	C->ICHILD = 0;                                          //   Set index of first child cell to zero
 	C->NCHILD = 0;                                          //   Number of child cells

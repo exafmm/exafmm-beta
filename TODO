@@ -1,4 +1,5 @@
 -- Immediate --
+--enable-debug mode
 Laplace with LBT
 Have only one P2P
 SIMD for Helmholtz P2P
@@ -51,7 +52,6 @@ Cartesian vs. Spherical (optimized)
 ORB vs. HOT
 
 -- Debugging tips --
---enable-debug mode
 Write the kind of code where standard gcc can catch the bug, exceptions, assertions
 Add assertions and keep them there
 Shift bodies

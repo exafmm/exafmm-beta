@@ -141,6 +141,9 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 # Count interaction list per cell
 @COUNT_LIST_TRUE@am__append_20 = -DCOUNT_LIST
 @ASSERT_TRUE@am__append_21 = -DASSERT
+
+#AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
+@DEBUG_TRUE@am__append_22 = -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
 bin_PROGRAMS = petiga$(EXEEXT) gromacs$(EXEEXT) charmm$(EXEEXT) \
 	charmm2$(EXEEXT)
 subdir = wrappers
@@ -442,7 +445,7 @@ top_srcdir = @top_srcdir@
 
 ### Base flags
 AM_CXXFLAGS = $(am__append_2) $(am__append_9) $(am__append_10) \
-	$(am__append_11)
+	$(am__append_11) $(am__append_22)
 AM_CPPFLAGS = -I../include -I../uniform $(am__append_1) \
 	$(am__append_7) $(am__append_8) $(am__append_12) \
 	$(am__append_13) $(am__append_14) $(am__append_16) \

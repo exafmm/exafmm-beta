@@ -153,8 +153,35 @@ private:
     }                                                           // End loop over target cells
   }
 
+  //! Split cell and call traverse() recursively for child
+  void splitCell(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
+    if (Cj->NCHILD == 0) {                                      // If Cj is leaf
+      assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
+      for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++) {// Loop over Ci's children
+        dualTreeTraversal(ci, Cj, mutual, remote);              //   Traverse a single pair of cells
+      }                                                         //  End loop over Ci's children
+    } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
+      assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
+      for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++) {// Loop over Cj's children
+        dualTreeTraversal(Ci, cj, mutual, remote);              //   Traverse a single pair of cells
+      }                                                         //  End loop over Cj's children
+    } else if (Ci->NBODY + Cj->NBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
+      TraverseRange traverseRange(this, Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,// Instantiate recursive functor
+				  Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, mutual, remote);
+      traverseRange();                                          //  Traverse for range of cell pairs
+    } else if (Ci->R >= Cj->R) {                                // Else if Ci is larger than Cj
+      for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++) {// Loop over Ci's children
+        dualTreeTraversal(ci, Cj, mutual, remote);              //   Traverse a single pair of cells
+      }                                                         //  End loop over Ci's children
+    } else {                                                    // Else if Cj is larger than Ci
+      for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++) {// Loop over Cj's children
+        dualTreeTraversal(Ci, cj, mutual, remote);              //   Traverse a single pair of cells
+      }                                                         //  End loop over Cj's children
+    }                                                           // End if for leafs and Ci Cj size
+  }
+
   //! Dual tree traversal for a single pair of cells
-  void traverse(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
+  void dualTreeTraversal(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
     vec3 dX = Ci->X - Cj->X;                                    // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
     if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R) * (1 - 1e-3)) {      // If distance is far enough
@@ -240,11 +267,11 @@ private:
       if (CiEnd - CiBegin == 1 || CjEnd - CjBegin == 1) {       //  If only one cell in range
 	if (CiBegin == CjBegin) {                               //   If Ci == Cj
 	  assert(CiEnd == CjEnd);                               //    Check if mutual & self interaction
-	  traversal->traverse(CiBegin, CjBegin, mutual, remote);//   Call traverse for single pair
+	  traversal->dualTreeTraversal(CiBegin, CjBegin, mutual, remote);//   Call traverse for single pair
 	} else {                                                //   If Ci != Cj
 	  for (C_iter Ci=CiBegin; Ci!=CiEnd; Ci++) {            //    Loop over all Ci cells
 	    for (C_iter Cj=CjBegin; Cj!=CjEnd; Cj++) {          //     Loop over all Cj cells
-	      traversal->traverse(Ci, Cj, mutual, remote);      //      Call traverse for single pair
+	      traversal->dualTreeTraversal(Ci, Cj, mutual, remote);//   Call traverse for single pair
 	    }                                                   //     End loop over all Cj cells
 	  }                                                     //    End loop over all Ci cells
 	}                                                       //   End if for Ci == Cj
@@ -278,6 +305,44 @@ private:
       logger::stopTracer(tracer);                               //  Stop tracer
     }                                                           // End overload operator()
   };
+
+  //! List based traversal
+  void listBasedTraversal(int numCells, bool mutual, real_t remote) {
+    int list[189];                                              // Current interaction list
+#pragma omp parallel for private(list) schedule(dynamic)
+    for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
+      C_iter Ci = Ci0 + icell;                                  //  Iterator of target cell
+      int nlist;                                                //  Interaction list size
+      getList(1, icell, list, nlist);                           //   Get M2L interaction list
+      for (int ilist=0; ilist<nlist; ilist++) {                 //   Loop over M2L interaction list
+        int jcell = list[ilist];                                //    Index of source cell
+        C_iter Cj = Cj0 + jcell;                                //    Iterator of source cell
+	kernel::M2L(Ci, Cj, mutual);                            //    M2L kernel
+        countKernel(numM2L);                                    //    Increment M2L counter
+        countList(Ci, Cj, mutual, false);                       //    Increment M2L list
+        countWeight(Ci, Cj, mutual, remote);                    //    Increment M2L weight
+      }                                                         //   End loop over M2L interaction list
+    }                                                           // End loop over target cells
+
+#ifndef NO_P2P
+#pragma omp parallel for private(list) schedule(dynamic)
+    for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
+      C_iter Ci = Ci0 + icell;                                  //  Iterator of target cell
+      if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
+        int nlist;                                              //   Interaction list size
+        getList(0, icell, list, nlist);                         //   Get P2P interaction list
+        for (int ilist=0; ilist<nlist; ilist++) {               //   Loop over P2P interaction list
+          int jcell = list[ilist];                              //    Index of source cell
+          C_iter Cj = Cj0 + jcell;                              //    Iterator of source cell
+	  kernel::P2P(Ci, Cj, mutual);                          //    P2P kernel
+          countKernel(numP2P);                                  //    Increment P2P counter
+          countList(Ci, Cj, mutual, true);                      //    Increment P2P list
+          countWeight(Ci, Cj, mutual, remote);                  //    Increment P2P weight
+        }                                                       //   End loop over P2P interaction list
+      }                                                         //  End if for target cell leaf
+    }                                                           // End loop over target cells
+#endif
+  }
 
   //! Tree traversal of periodic cells
   void traversePeriodic(real_t cycle) {
@@ -339,33 +404,6 @@ private:
     logger::stopTimer("Traverse periodic");                     // Stop timer
   }
 
-  //! Split cell and call traverse() recursively for child
-  void splitCell(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
-    if (Cj->NCHILD == 0) {                                      // If Cj is leaf
-      assert(Ci->NCHILD > 0);                                   //  Make sure Ci is not leaf
-      for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++) {// Loop over Ci's children
-        traverse(ci, Cj, mutual, remote);                       //   Traverse a single pair of cells
-      }                                                         //  End loop over Ci's children
-    } else if (Ci->NCHILD == 0) {                               // Else if Ci is leaf
-      assert(Cj->NCHILD > 0);                                   //  Make sure Cj is not leaf
-      for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++) {// Loop over Cj's children
-        traverse(Ci, cj, mutual, remote);                       //   Traverse a single pair of cells
-      }                                                         //  End loop over Cj's children
-    } else if (Ci->NBODY + Cj->NBODY >= nspawn || (mutual && Ci == Cj)) {// Else if cells are still large
-      TraverseRange traverseRange(this, Ci0+Ci->ICHILD, Ci0+Ci->ICHILD+Ci->NCHILD,// Instantiate recursive functor
-				  Cj0+Cj->ICHILD, Cj0+Cj->ICHILD+Cj->NCHILD, mutual, remote);
-      traverseRange();                                          //  Traverse for range of cell pairs
-    } else if (Ci->R >= Cj->R) {                                // Else if Ci is larger than Cj
-      for (C_iter ci=Ci0+Ci->ICHILD; ci!=Ci0+Ci->ICHILD+Ci->NCHILD; ci++) {// Loop over Ci's children
-        traverse(ci, Cj, mutual, remote);                       //   Traverse a single pair of cells
-      }                                                         //  End loop over Ci's children
-    } else {                                                    // Else if Cj is larger than Ci
-      for (C_iter cj=Cj0+Cj->ICHILD; cj!=Cj0+Cj->ICHILD+Cj->NCHILD; cj++) {// Loop over Cj's children
-        traverse(Ci, cj, mutual, remote);                       //   Traverse a single pair of cells
-      }                                                         //  End loop over Cj's children
-    }                                                           // End if for leafs and Ci Cj size
-  }
-
 public:
   //! Constructor
   Traversal(int _nspawn, int _images) :                         // Constructor
@@ -403,58 +441,39 @@ public:
 #endif
 
   //! Evaluate P2P and M2L using list based traversal
-  void listBasedTraversal(Cells & icells, Cells & jcells, real_t cycle, real_t remote=1) {
-    int numCells = icells.size();                               // Number of cells
+  void listBasedTraversal(Cells & icells, Cells & jcells, real_t cycle, bool mutual, real_t remote=1) {
+    if (icells.empty() || jcells.empty()) return;               // Quit if either of the cell vectors are empty
+    logger::startTimer("Traverse");                             // Start timer
+    logger::initTracer();                                       // Initialize tracer
     Ci0 = icells.begin();                                       // Iterator of first target cell
     Cj0 = jcells.begin();                                       // Iterator of first source cell
     kernel::Xperiodic = 0;                                      // Set periodic coordinate offset to 0
-    bool mutual = false;                                        // Set mutual interaction flag to false
-    int list[189];                                              // Current interaction list
+    int numCells = icells.size();                               // Number of cells
+    mutual = false;                                             // Set mutual interaction flag to false
     listOffset = new int [numCells][3]();                       // Offset of interaction lists
-    lists = new int [189*numCells][2]();                        // All interaction lists
+    lists = new int [(189+27+27)*numCells][2]();                // All interaction lists
     resetCellRadius(Ci0, Ci0, Ci0->R, 0);                       // Reset target cell radius
     resetCellRadius(Cj0, Cj0, Cj0->R, 0);                       // Reset source cell radius
     setLists(icells);                                           // Set P2P and M2L interaction lists
-
-    logger::startTimer("M2L");                                  // Start timer
-#pragma omp parallel for private(list) schedule(dynamic)
-    for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
-      C_iter Ci = Ci0 + icell;                                  //  Iterator of target cell
-      int nlist;                                                //  Interaction list size
-      getList(1, icell, list, nlist);                           //   Get M2L interaction list
-      for (int ilist=0; ilist<nlist; ilist++) {                 //   Loop over M2L interaction list
-	int jcell = list[ilist];                                //    Index of source cell
-	C_iter Cj = Cj0 + jcell;                                //    Iterator of source cell
-	kernel::M2L(Ci, Cj, mutual);                            //    M2L kernel
-        countKernel(numM2L);                                    //  Increment M2L counter
-        countList(Ci, Cj, mutual, false);                       //  Increment M2L list
-        countWeight(Ci, Cj, mutual, remote);                    //  Increment M2L weight
-      }                                                         //   End loop over M2L interaction list
-    }                                                           // End loop over target cells
-    logger::stopTimer("M2L");                                   // Stop timer
-
-#ifndef NO_P2P
-    logger::startTimer("P2P");                                  // Start timer
-#pragma omp parallel for private(list) schedule(dynamic)
-    for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
-      C_iter Ci = Ci0 + icell;                                  //  Iterator of target cell
-      if (Ci->NCHILD == 0) {                                    //  If target cell is leaf
-	int nlist;                                              //   Interaction list size
-	getList(0, icell, list, nlist);                         //   Get P2P interaction list
-	for (int ilist=0; ilist<nlist; ilist++) {               //   Loop over P2P interaction list
-	  int jcell = list[ilist];                              //    Index of source cell
-	  C_iter Cj = Cj0 + jcell;                              //    Iterator of source cell
-	  kernel::P2P(Ci, Cj, mutual);                          //    P2P kernel
-  	  countKernel(numP2P);                                  //   Increment P2P counter
-	  countList(Ci, Cj, mutual, true);                      //   Increment P2P list
-	  countWeight(Ci, Cj, mutual, remote);                  //   Increment P2P weight
-	}                                                       //   End loop over P2P interaction list
-      }                                                         //  End if for target cell leaf
-    }                                                           // End loop over target cells
-    logger::stopTimer("P2P");                                   // Stop timer
-#endif
+    if (images == 0) {                                          // If non-periodic boundary condition
+      listBasedTraversal(numCells, mutual, remote);             //  Traverse the tree
+    } else {                                                    // If periodic boundary condition
+      for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
+        for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
+          for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
+	    kernel::Xperiodic[0] = ix * cycle;                  //     Coordinate shift for x periodic direction
+	    kernel::Xperiodic[1] = iy * cycle;                  //     Coordinate shift for y periodic direction
+	    kernel::Xperiodic[2] = iz * cycle;                  //     Coordinate shift for z periodic direction
+	    listBasedTraversal(numCells, mutual, remote);       //     Traverse the tree for this periodic image
+          }                                                     //    End loop over z periodic direction
+        }                                                       //   End loop over y periodic direction
+      }                                                         //  End loop over x periodic direction
+      traversePeriodic(cycle);                                  //  Traverse tree for periodic images
+    }                                                           // End if for periodic boundary condition
     delete[] listOffset;                                        // Deallocate offset of lists
     delete[] lists;                                             // Deallocate lists
+    logger::stopTimer("Traverse");                              // Stop timer
+    logger::writeTracer();                                      // Write tracer to file
   }
 
   //! Evaluate P2P and M2L using dual tree traversal
@@ -466,7 +485,7 @@ public:
     Cj0 = jcells.begin();                                       // Set iterator of source root cell
     kernel::Xperiodic = 0;                                      // Periodic coordinate offset
     if (images == 0) {                                          // If non-periodic boundary condition
-      traverse(Ci0, Cj0, mutual, remote);                       //  Traverse the tree
+      dualTreeTraversal(Ci0, Cj0, mutual, remote);              //  Traverse the tree
     } else {                                                    // If periodic boundary condition
       for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
 	for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
@@ -474,7 +493,7 @@ public:
 	    kernel::Xperiodic[0] = ix * cycle;                  //     Coordinate shift for x periodic direction
 	    kernel::Xperiodic[1] = iy * cycle;                  //     Coordinate shift for y periodic direction
 	    kernel::Xperiodic[2] = iz * cycle;                  //     Coordinate shift for z periodic direction
-	    traverse(Ci0, Cj0, false, remote);                  //     Traverse the tree for this periodic image
+	    dualTreeTraversal(Ci0, Cj0, false, remote);         //     Traverse the tree for this periodic image
 	  }                                                     //    End loop over z periodic direction
 	}                                                       //   End loop over y periodic direction
       }                                                         //  End loop over x periodic direction

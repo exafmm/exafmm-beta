@@ -2,13 +2,16 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Enable assertion. */
-/* #undef ASSERT */
+#define ASSERT 1
 
 /* Count number of M2L and P2P kernel calls. */
 /* #undef COUNT_KERNEL */
 
 /* Count interaction list per cell. */
 /* #undef COUNT_LIST */
+
+/* Define to enable extra debugging options. */
+/* #undef DEBUG */
 
 /* Define to compile in single precision. */
 #define EXAFMM_SINGLE 1

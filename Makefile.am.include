@@ -102,6 +102,11 @@ if ASSERT
 AM_CPPFLAGS += -DASSERT
 endif
 
+if DEBUG
+#AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
+AM_CXXFLAGS += -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
+endif
+
 AM_MAKEFLAGS = -s
 
 help:

@@ -9,6 +9,9 @@
 /* Count interaction list per cell. */
 #undef COUNT_LIST
 
+/* Define to enable extra debugging options. */
+#undef DEBUG
+
 /* Define to compile in single precision. */
 #undef EXAFMM_SINGLE
 
