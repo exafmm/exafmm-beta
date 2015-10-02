@@ -1,8 +1,9 @@
 -- Immediate --
-Multilevel Helmholtz debug
-Fix without TBB
-SIMD for Helmholtz P2P
+Laplace with LBT
 Have only one P2P
+SIMD for Helmholtz P2P
+Helmholtz DTT debug
+Fix without TBB
 periodic B.C. in list based traversal
 detect f90 and mpi fortran compiler
 logger.h split to print.h

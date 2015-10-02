@@ -499,7 +499,7 @@ public:
 	      kernel::Xperiodic[0] = ix * cycle;                //      Coordinate shift for x periodic direction
 	      kernel::Xperiodic[1] = iy * cycle;                //      Coordinate shift for y periodic direction
 	      kernel::Xperiodic[2] = iz * cycle;                //      Coordinate shift for z periodic direction
-	      kernel::P2P(Ci, Cj);                              //      Evaluate P2P kernel
+	      kernel::P2P(Ci, Cj, false);                       //      Evaluate P2P kernel
 	    }                                                   //     End loop over z periodic direction
 	  }                                                     //    End loop over y periodic direction
 	}                                                       //   End loop over x periodic direction
