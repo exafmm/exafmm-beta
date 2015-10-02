@@ -68,14 +68,6 @@ private:
     return iX;                                                  // Return 3-D index
   }
 
-  //! Reset cell radius
-  void resetCellRadius(C_iter C, C_iter C0, real_t R0, int level) {
-    C->R = R0 / (1 << level);                                   // Set cell radius
-    for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
-      resetCellRadius(CC, C0, R0, level+1);                     //  Recursive call for child cells
-    }                                                           // End loop over child cells
-  }
-
   //! Get interaction list
   void getList(int itype, int icell, int * list, int & numList) {
     int ilast = listOffset[icell][itype];                       // Initialize list pointer
@@ -182,7 +174,7 @@ private:
 
   //! Dual tree traversal for a single pair of cells
   void dualTreeTraversal(C_iter Ci, C_iter Cj, bool mutual, real_t remote) {
-    vec3 dX = Ci->X - Cj->X;                                    // Distance vector from source to target
+    vec3 dX = Ci->X - Cj->X - kernel::Xperiodic;                // Distance vector from source to target
     real_t R2 = norm(dX);                                       // Scalar distance squared
     if (R2 > (Ci->R+Cj->R) * (Ci->R+Cj->R) * (1 - 1e-3)) {      // If distance is far enough
       kernel::M2L(Ci, Cj, mutual);                              //  M2L kernel
@@ -452,8 +444,6 @@ public:
     mutual = false;                                             // Set mutual interaction flag to false
     listOffset = new int [numCells][3]();                       // Offset of interaction lists
     lists = new int [(189+27+27)*numCells][2]();                // All interaction lists
-    resetCellRadius(Ci0, Ci0, Ci0->R, 0);                       // Reset target cell radius
-    resetCellRadius(Cj0, Cj0, Cj0->R, 0);                       // Reset source cell radius
     setLists(icells);                                           // Set P2P and M2L interaction lists
     if (images == 0) {                                          // If non-periodic boundary condition
       listBasedTraversal(numCells, mutual, remote);             //  Traverse the tree
@@ -506,22 +496,11 @@ public:
   struct DirectRecursion {
     C_iter Ci;                                                  //!< Iterator of target cell
     C_iter Cj;                                                  //!< Iterator of source cell
-    int prange;                                                 //!< Range of periodic images
-    real_t cycle;                                               //!< Periodic cycle
-    DirectRecursion(C_iter _Ci, C_iter _Cj, int _prange, real_t _cycle) :// Constructor
-      Ci(_Ci), Cj(_Cj), prange(_prange), cycle(_cycle) {}       // Initialize variables
+    DirectRecursion(C_iter _Ci, C_iter _Cj) :                   // Constructor
+      Ci(_Ci), Cj(_Cj) {}                                       // Initialize variables
     void operator() () {                                        // Overload operator
       if (Ci->NBODY < 25) {                                     // If number of target bodies is less than threshold
-	for (int ix=-prange; ix<=prange; ix++) {                //   Loop over x periodic direction
-	  for (int iy=-prange; iy<=prange; iy++) {              //    Loop over y periodic direction
-	    for (int iz=-prange; iz<=prange; iz++) {            //     Loop over z periodic direction
-	      kernel::Xperiodic[0] = ix * cycle;                //      Coordinate shift for x periodic direction
-	      kernel::Xperiodic[1] = iy * cycle;                //      Coordinate shift for y periodic direction
-	      kernel::Xperiodic[2] = iz * cycle;                //      Coordinate shift for z periodic direction
-	      kernel::P2P(Ci, Cj, false);                       //      Evaluate P2P kernel
-	    }                                                   //     End loop over z periodic direction
-	  }                                                     //    End loop over y periodic direction
-	}                                                       //   End loop over x periodic direction
+	kernel::P2P(Ci, Cj, false);                             //  Evaluate P2P kernel
       } else {                                                  // If number of target bodies is more than threshold
         Cells cells; cells.resize(1);                           //  Initialize new cell vector
 	C_iter Ci2 = cells.begin();                             //  New cell iterator for right branch
@@ -529,9 +508,9 @@ public:
 	Ci2->NBODY = Ci->NBODY - Ci->NBODY / 2;                 //  Set range to handle latter half
 	Ci->NBODY = Ci->NBODY / 2;                              //  Set range to handle first half
 	mk_task_group;                                          //  Initialize task group
-        DirectRecursion leftBranch(Ci, Cj, prange, cycle);      //  Instantiate recursive functor
+        DirectRecursion leftBranch(Ci, Cj);                     //  Instantiate recursive functor
 	create_taskc(leftBranch);                               //  Create new task for left branch
-	DirectRecursion rightBranch(Ci2, Cj, prange, cycle);    //  Instantiate recursive functor
+	DirectRecursion rightBranch(Ci2, Cj);                   //  Instantiate recursive functor
 	rightBranch();                                          //  Use old task for right branch
 	wait_tasks;                                             //  Synchronize task group
       }                                                         // End if for NBODY threshold
@@ -542,16 +521,25 @@ public:
   void direct(Bodies & ibodies, Bodies & jbodies, real_t cycle) {
     Cells cells; cells.resize(2);                               // Define a pair of cells to pass to P2P kernel
     C_iter Ci = cells.begin(), Cj = cells.begin()+1;            // First cell is target, second cell is source
-    Ci->BODY = ibodies.begin();                                 // Iterator of first target body
-    Ci->NBODY = ibodies.size();                                 // Number of target bodies
-    Cj->BODY = jbodies.begin();                                 // Iterator of first source body
-    Cj->NBODY = jbodies.size();                                 // Number of source bodies
     int prange = 0;                                             // Range of periodic images
     for (int i=0; i<images; i++) {                              // Loop over periodic image sublevels
       prange += int(std::pow(3.,i));                            //  Accumulate range of periodic images
     }                                                           // End loop over perioidc image sublevels
-    DirectRecursion directRecursion(Ci, Cj, prange, cycle);     // Instantiate recursive functor
-    directRecursion();                                          // Recursive call for direct summation
+    for (int ix=-prange; ix<=prange; ix++) {                    //  Loop over x periodic direction
+      for (int iy=-prange; iy<=prange; iy++) {                  //   Loop over y periodic direction
+	for (int iz=-prange; iz<=prange; iz++) {                //    Loop over z periodic direction
+	  kernel::Xperiodic[0] = ix * cycle;                    //     Coordinate shift for x periodic direction
+	  kernel::Xperiodic[1] = iy * cycle;                    //     Coordinate shift for y periodic direction
+	  kernel::Xperiodic[2] = iz * cycle;                    //     Coordinate shift for z periodic direction
+	  Ci->BODY = ibodies.begin();                           //     Iterator of first target body
+	  Ci->NBODY = ibodies.size();                           //     Number of target bodies
+	  Cj->BODY = jbodies.begin();                           //     Iterator of first source body
+	  Cj->NBODY = jbodies.size();                           //     Number of source bodies
+	  DirectRecursion directRecursion(Ci, Cj);              //     Instantiate recursive functor
+	  directRecursion();                                    //     Recursive call for direct summation
+	}                                                       //    End loop over z periodic direction
+      }                                                         //   End loop over y periodic direction
+    }                                                           //  End loop over x periodic direction
   }
 
   //! Normalize bodies after direct summation

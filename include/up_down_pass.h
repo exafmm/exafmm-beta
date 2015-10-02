@@ -150,7 +150,6 @@ public:
       }                                                         //  End if for resetting cell radius
       PostOrderTraversal postOrderTraversal(C0, C0, theta, useRmax); // Instantiate recursive functor
       postOrderTraversal();                                     //  Recursive call for upward pass
-      cells.begin()->R = R0;
       real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
       if (useRopt) {                                            //  If using error optimized theta
 	SetRopt setRopt(C0, C0, c, theta);                      //   Instantiate recursive functor
@@ -180,7 +179,7 @@ public:
   vec3 getDipole(Bodies & bodies, vec3 X0) {
     vec3 dipole = 0;                                            // Initialize dipole correction
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
-      dipole += (B->X - X0) * std::abs(B->SRC);                 //  Calcuate dipole of the whole system
+      dipole += (B->X - X0) * std::real(complex_t(B->SRC));     //  Calcuate dipole of the whole system
     }                                                           // End loop over bodies
     return dipole;                                              // Return dipole
   }
