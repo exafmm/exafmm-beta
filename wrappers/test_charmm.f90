@@ -829,12 +829,9 @@ program main
      f2(3*i-1) = 0
      f2(3*i-0) = 0
   enddo
-#if 1
   cutoff = 20
   call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
-#else
-  call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)
-#endif
+!  call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)
   call coulomb_exclusion(nglobal,icpumap,x,q,p,f,pcycle,numex,natex)
   call coulomb_exclusion(nglobal,icpumap,x,q,p2,f2,pcycle,numex,natex)
 

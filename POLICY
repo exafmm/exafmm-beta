@@ -45,15 +45,15 @@ Common three letter keywords (prefix)
  - tmp* : Temporary value
  - vec* : Short vector type
 Common keywords (postfix)
- - begin & end (following STL)
- - send & recv (following MPI)
- - displ & count (following MPI)
- - global & local (for distributed memory)
- - min & max
- - key & color
+ - *begin & *end (following STL)
+ - *send & *recv (following MPI)
+ - *displ & *count (following MPI)
+ - *global & *local (for distributed memory)
+ - *min & *max
+ - *key & *color
 GPU memory keywords (postfix)
- - glob : Global memory
- - shrd : Shared memory
+ - *glob : Global memory
+ - *shrd : Shared memory
 
 [C++ usage]
 Use STL vectors but not iterators

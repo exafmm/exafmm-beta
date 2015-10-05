@@ -24,4 +24,14 @@ charmm2_SOURCES = test_charmm.f90
 charmm2_CPPFLAGS = $(AM_CPPFLAGS)
 charmm2_LDADD = libcharmm2.a
 
+run_charmm:
+	./charmm water_32.fmm water.out 0
 
+run_charmm2:
+	./charmm2 water_32.fmm water.out 0
+
+run_gromacs:
+	./gromacs
+
+run_petiga:
+	./petiga

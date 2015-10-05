@@ -159,18 +159,18 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   treeMPI->commCells();
   traversal->initListCount(cells);
   traversal->initWeight(cells);
-  traversal->dualTreeTraversal(cells, cells, cycle, args->mutual);
+  traversal->traverse(cells, cells, cycle, args->dual, args->mutual);
   Cells jcells;
   if (args->graft) {
     treeMPI->linkLET();
     Bodies gbodies = treeMPI->root2body();
     jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
     treeMPI->attachRoot(jcells);
-    traversal->dualTreeTraversal(cells, jcells, cycle, false);
+    traversal->traverse(cells, jcells, cycle, args->dual, false);
   } else {
     for (int irank=0; irank<baseMPI->mpisize; irank++) {
       treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
-      traversal->dualTreeTraversal(cells, jcells, cycle, false);
+      traversal->traverse(cells, jcells, cycle, args->dual, false);
     }
   }
   upDownPass->downwardPass(cells);

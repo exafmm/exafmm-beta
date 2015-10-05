@@ -58,17 +58,9 @@ int main(int argc, char ** argv) {
     if (args.IneJ) {
       jcells = buildTree.buildTree(jbodies, buffer, bounds);
       upDownPass.upwardPass(jcells);
-      if (args.dual) {
-	traversal.dualTreeTraversal(cells, jcells, cycle, false);
-      } else {
-	traversal.listBasedTraversal(cells, jcells, cycle, false);
-      }
+      traversal.traverse(cells, jcells, cycle, args.dual, false);
     } else {
-      if (args.dual) {
-	traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
-      } else {
-	traversal.listBasedTraversal(cells, cells, cycle, args.mutual);
-      }
+      traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
       jbodies = bodies;
     }
     upDownPass.downwardPass(cells);

@@ -57,7 +57,7 @@ private:
     }                                                           // End while loop for level offsets
     return level;                                               // Return level
   }
-  
+
   //! Get 3-D index from key
   ivec3 getIndex(uint64_t key) {
     int level = -1;                                             // Initialize level
@@ -479,51 +479,42 @@ public:
 #endif
 
   //! Evaluate P2P and M2L using list based traversal
-  void listBasedTraversal(Cells & icells, Cells & jcells, real_t cycle, bool mutual, real_t remote=1) {
+  void traverse(Cells & icells, Cells & jcells, real_t cycle, bool dual, bool mutual, real_t remote=1) {
     if (icells.empty() || jcells.empty()) return;               // Quit if either of the cell vectors are empty
     logger::startTimer("Traverse");                             // Start timer
     logger::initTracer();                                       // Initialize tracer
     Ci0 = icells.begin();                                       // Iterator of first target cell
     Cj0 = jcells.begin();                                       // Iterator of first source cell
     kernel::Xperiodic = 0;                                      // Set periodic coordinate offset to 0
-    int numCells = icells.size();                               // Number of cells
-    mutual = false;                                             // Set mutual interaction flag to false
-    listOffset = new int [numCells][3]();                       // Offset of interaction lists
-    lists = new int [(216+27)*numCells][3]();                   // All interaction lists
-    setLists(icells);                                           // Set P2P and M2L interaction lists
-    listBasedTraversal(numCells, cycle, mutual, remote);        // Traverse the tree
-    if (images != 0) {                                          // If periodic boundary condition
-      traversePeriodic(cycle);                                  //  Traverse tree for periodic images
-    }                                                           // End if for periodic boundary condition
-    delete[] listOffset;                                        // Deallocate offset of lists
-    delete[] lists;                                             // Deallocate lists
-    logger::stopTimer("Traverse");                              // Stop timer
-    logger::writeTracer();                                      // Write tracer to file
-  }
-
-  //! Evaluate P2P and M2L using dual tree traversal
-  void dualTreeTraversal(Cells & icells, Cells & jcells, real_t cycle, bool mutual, real_t remote=1) {
-    if (icells.empty() || jcells.empty()) return;               // Quit if either of the cell vectors are empty
-    logger::startTimer("Traverse");                             // Start timer
-    logger::initTracer();                                       // Initialize tracer
-    Ci0 = icells.begin();                                       // Set iterator of target root cell
-    Cj0 = jcells.begin();                                       // Set iterator of source root cell
-    kernel::Xperiodic = 0;                                      // Periodic coordinate offset
-    if (images == 0) {                                          // If non-periodic boundary condition
-      dualTreeTraversal(Ci0, Cj0, mutual, remote);              //  Traverse the tree
-    } else {                                                    // If periodic boundary condition
-      for (int ix=-1; ix<=1; ix++) {                            //  Loop over x periodic direction
-	for (int iy=-1; iy<=1; iy++) {                          //   Loop over y periodic direction
-	  for (int iz=-1; iz<=1; iz++) {                        //    Loop over z periodic direction
-	    kernel::Xperiodic[0] = ix * cycle;                  //     Coordinate shift for x periodic direction
-	    kernel::Xperiodic[1] = iy * cycle;                  //     Coordinate shift for y periodic direction
-	    kernel::Xperiodic[2] = iz * cycle;                  //     Coordinate shift for z periodic direction
-	    dualTreeTraversal(Ci0, Cj0, false, remote);         //     Traverse the tree for this periodic image
-	  }                                                     //    End loop over z periodic direction
-	}                                                       //   End loop over y periodic direction
-      }                                                         //  End loop over x periodic direction
-      traversePeriodic(cycle);                                  //  Traverse tree for periodic images
-    }                                                           // End if for periodic boundary condition
+    if (dual) {                                                 // If dual tree traversal
+      if (images == 0) {                                        //  If non-periodic boundary condition
+	dualTreeTraversal(Ci0, Cj0, mutual, remote);            //   Traverse the tree
+      } else {                                                  //  If periodic boundary condition
+	for (int ix=-1; ix<=1; ix++) {                          //   Loop over x periodic direction
+	  for (int iy=-1; iy<=1; iy++) {                        //    Loop over y periodic direction
+	    for (int iz=-1; iz<=1; iz++) {                      //     Loop over z periodic direction
+	      kernel::Xperiodic[0] = ix * cycle;                //      Coordinate shift for x periodic direction
+	      kernel::Xperiodic[1] = iy * cycle;                //      Coordinate shift for y periodic direction
+	      kernel::Xperiodic[2] = iz * cycle;                //      Coordinate shift for z periodic direction
+	      dualTreeTraversal(Ci0, Cj0, false, remote);       //      Traverse the tree for this periodic image
+	    }                                                   //     End loop over z periodic direction
+	  }                                                     //    End loop over y periodic direction
+	}                                                       //   End loop over x periodic direction
+	traversePeriodic(cycle);                                //   Traverse tree for periodic images
+      }                                                         //  End if for periodic boundary condition
+    } else {                                                    // If list based traversal
+      int numCells = icells.size();                             //  Number of cells
+      mutual = false;                                           //  Set mutual interaction flag to false
+      listOffset = new int [numCells][3]();                     //  Offset of interaction lists
+      lists = new int [(216+27)*numCells][3]();                 //  All interaction lists
+      setLists(icells);                                         //  Set P2P and M2L interaction lists
+      listBasedTraversal(numCells, cycle, mutual, remote);      //  Traverse the tree
+      if (images != 0) {                                        //  If periodic boundary condition
+	traversePeriodic(cycle);                                //   Traverse tree for periodic images
+      }                                                         //  End if for periodic boundary condition
+      delete[] listOffset;                                      //  Deallocate offset of lists
+      delete[] lists;                                           //  Deallocate lists
+    }                                                           // End if for dual tree traversal
     logger::stopTimer("Traverse");                              // Stop timer
     logger::writeTracer();                                      // Write tracer to file
   }

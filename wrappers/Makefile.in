@@ -1126,6 +1126,18 @@ revert:
 save:
 	@make -C .. save
 
+run_charmm:
+	./charmm water_32.fmm water.out 0
+
+run_charmm2:
+	./charmm2 water_32.fmm water.out 0
+
+run_gromacs:
+	./gromacs
+
+run_petiga:
+	./petiga
+
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

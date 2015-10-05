@@ -96,9 +96,9 @@ int main(int argc, char ** argv) {
 	traversal.initListCount(cells);
 	traversal.initWeight(cells);
         if (args.IneJ) {
-	  traversal.dualTreeTraversal(cells, jcells, cycle, false);
+	  traversal.traverse(cells, jcells, cycle, args.dual, false);
 	} else {
-	  traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
+	  traversal.traverse(cells, cells, cycle, args.dual, args.mutual);
 	  jbodies = bodies;
 	}
       }
@@ -108,11 +108,11 @@ int main(int argc, char ** argv) {
       gbodies = treeMPI.root2body();
       jcells = globalTree.buildTree(gbodies, buffer, globalBounds);
       treeMPI.attachRoot(jcells);
-      traversal.dualTreeTraversal(cells, jcells, cycle, false);
+      traversal.traverse(cells, jcells, cycle, args.dual, false);
     } else {
       for (int irank=0; irank<baseMPI.mpisize; irank++) {
 	treeMPI.getLET(jcells, (baseMPI.mpirank+irank)%baseMPI.mpisize);
-	traversal.dualTreeTraversal(cells, jcells, cycle, false);
+	traversal.traverse(cells, jcells, cycle, args.dual, false);
       }
     }
 #else
@@ -123,7 +123,7 @@ int main(int argc, char ** argv) {
       localBounds = boundBox.getBounds(jbodies);
       jcells = localTree.buildTree(jbodies, buffer, localBounds);
       upDownPass.upwardPass(jcells);
-      traversal.dualTreeTraversal(cells, jcells, cycle, args.mutual);
+      traversal.traverse(cells, jcells, cycle, args.dual, args.mutual);
     }
 #endif
     upDownPass.downwardPass(cells);

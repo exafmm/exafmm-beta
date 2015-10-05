@@ -1,6 +1,7 @@
 -- Immediate --
-setLists for periodic, lists[][2] -> lists[][3]
-Unify LBT and DDT public interface
+test_charmm hang
+LBT mpi
+Debug ewald pot error
 Have only one P2P
 SIMD for Helmholtz P2P
 Helmholtz DTT debug
