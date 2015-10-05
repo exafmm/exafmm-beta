@@ -11,7 +11,7 @@
 /* #undef COUNT_LIST */
 
 /* Define to enable extra debugging options. */
-/* #undef DEBUG */
+#define DEBUG 1
 
 /* Define to compile in single precision. */
 #define EXAFMM_SINGLE 1

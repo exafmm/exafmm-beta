@@ -31,7 +31,6 @@ static struct option long_options[] = {
 
 class Args {
 public:
-  // In alphabetical order of the short option
   int ncrit;
   const char * distribution;
   int dual;
@@ -54,7 +53,6 @@ private:
     fprintf(stderr,
             "Usage: %s [options]\n"
             "Long option (short option)     : Description (Default value)\n"
-	    "In alphabetical order of the short option\n"
             " --ncrit (-c)                  : Number of bodies per leaf cell (%d)\n"
             " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
 	    " --dual (-D)                   : Use dual tree traversal (%d)\n"
@@ -112,7 +110,6 @@ private:
 
 public:
   Args(int argc=0, char ** argv=NULL) :
-    // In alphabetical order of the short option (group kernel dependent arguments first)
 #if Helmholtz
 					ncrit(1000),
 					dual(0),
@@ -143,7 +140,6 @@ public:
       int c = getopt_long(argc, argv, "c:d:Dghi:jmn:or:s:t:T:vwx", long_options, &option_index);
       if (c == -1) break;
       switch (c) {
-	// In alphabetical order of the short option
       case 'c':
         ncrit = atoi(optarg);
         break;

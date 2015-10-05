@@ -376,7 +376,7 @@ contains
     real(8),allocatable,dimension(:,:,:) :: aangle,cangle
 
     call fmm_partition(nglobal,icpumap,x,q,xold,pcycle)
-    p(1:nglobal)=0.0 * istep ! suppress unused warning for istep
+    p(1:nglobal)=0.0
     p2(1:nglobal)=0.0
     f(1:3*nglobal)=0.0
     f2(1:3*nglobal)=0.0
@@ -812,6 +812,7 @@ program main
         fgscale(i) = gscale(i)
      enddo
   endif charmmio
+  print*,'I/O done'
   ista = 1
   iend = nglobal / 3
   call split_range(ista,iend,mpirank,mpisize)
@@ -820,8 +821,11 @@ program main
   do i = ista,iend
      icpumap(i) = 1
   enddo
+  print*,'FMM init'
   call fmm_init(images,theta,verbose,nglobal)
+  print*,'FMM partition'
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
+  print*,'FMM Coulomb'
   call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
   do i = 1,nglobal
      p2(i) = 0
@@ -830,8 +834,10 @@ program main
      f2(3*i-0) = 0
   enddo
   cutoff = 20
+  print*,'Ewald Coulomb'
   call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
 !  call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)
+  print*,'Coulomb exclusion'
   call coulomb_exclusion(nglobal,icpumap,x,q,p,f,pcycle,numex,natex)
   call coulomb_exclusion(nglobal,icpumap,x,q,p2,f2,pcycle,numex,natex)
 
