@@ -65,14 +65,17 @@ extern "C" void FMM_Init(double _eps2, int ncrit, int threads,
   num_threads(threads);
 
   args->ncrit = ncrit;
-  args->nspawn = nspawn;
-  args->threads = threads;
-  args->images = images;
-  args->theta = theta;
-  args->mutual = 0;
-  args->verbose = 0;
   args->distribution = "external";
-  args->verbose &= baseMPI->mpirank == 0;
+  args->dual = 1;
+  args->graft = 1;
+  args->images = images;
+  args->mutual = 0;
+  args->numBodies = 0;
+  args->useRopt = useRopt;
+  args->nspawn = nspawn;
+  args->theta = theta;
+  args->verbose = verbose & (baseMPI->mpirank == 0);
+  args->useRmax = useRmax;
   logger::verbose = args->verbose;
   bbodies.resize(nb);
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {

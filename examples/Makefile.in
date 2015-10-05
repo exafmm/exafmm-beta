@@ -1385,6 +1385,31 @@ revert:
 save:
 	@make -C .. save
 
+run_laplace_cartesian: laplace_cartesian
+	./$< -Dgmovx
+run_laplace_spherical: laplace_spherical
+	./$< -Dgmovx
+run_helmholtz_spherical: helmholtz_spherical
+	./$< -Dgv
+run_tree: tree
+	./$< -v -n 10000000
+
+run_laplace_cartesian_kernel: laplace_cartesian_kernel
+	./$< -Dgmovx
+run_laplace_spherical_kernel: laplace_spherical_kernel
+	./$< -Dgmovx
+run_helmholtz_spherical_kernel: helmholtz_spherical_kernel
+	./$< -Dgv
+
+@MPI_TRUE@run_laplace_cartesian_mpi: laplace_cartesian_mpi
+@MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
+@MPI_TRUE@run_laplace_spherical_mpi: laplace_spherical_mpi
+@MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
+@MPI_TRUE@run_helmholtz_spherical_mpi: helmholtz_spherical_mpi
+@MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgv
+@MPI_TRUE@run_ewald_mpi: ewald_mpi
+@MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
+
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

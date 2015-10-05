@@ -65,15 +65,18 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   FMM = new ParallelFMM;
 #endif
 
-  args->theta = theta;
   args->ncrit = ncrit;
-  args->nspawn = nspawn;
-  args->threads = threads;
+  args->distribution = "external";
+  args->dual = 1;
+  args->graft = 1;
   args->images = images;
   args->mutual = 0;
-  args->verbose = verbose;
-  args->distribution = "external";
-  args->verbose &= baseMPI->mpirank == 0;
+  args->numBodies = 0;
+  args->useRopt = useRopt;
+  args->nspawn = nspawn;
+  args->theta = theta;
+  args->verbose = verbose & (baseMPI->mpirank == 0);
+  args->useRmax = useRmax;
   logger::verbose = args->verbose;
   logger::printTitle("Initial Parameters");
   args->print(logger::stringLength, P);

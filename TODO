@@ -1,5 +1,4 @@
 -- Immediate --
-Debug ewald pot error
 LBT mpi
 Have only one P2P
 SIMD for Helmholtz P2P

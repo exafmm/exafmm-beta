@@ -112,29 +112,25 @@ public:
   Args(int argc=0, char ** argv=NULL) :
 #if Helmholtz
 					ncrit(1000),
-					dual(0),
-					mutual(0),
-					useRopt(0),
 					theta(1.),
-					useRmax(0),
 #else
 					ncrit(64),
-					dual(1),
-					mutual(1),
-					useRopt(1),
 					theta(.4),
-					useRmax(1),
 #endif
 					distribution("cube"),
-					graft(1),
+					dual(0),
+					graft(0),
 					images(0),
 					IneJ(0),
+					mutual(0),
 					numBodies(1000000),
+					useRopt(0),
 					repeat(1),
 					nspawn(5000),
 					threads(16),
-					verbose(1),
-					write(0) {
+					verbose(0),
+					write(0),
+					useRmax(0) {
     while (1) {
       int option_index;
       int c = getopt_long(argc, argv, "c:d:Dghi:jmn:or:s:t:T:vwx", long_options, &option_index);
@@ -189,7 +185,7 @@ public:
         write = 1;
         break;
       case 'x':
-        useRmax = atoi(optarg);
+        useRmax = 1;
         break;
       default:
         usage(argv[0]);
