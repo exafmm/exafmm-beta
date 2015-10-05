@@ -1,6 +1,6 @@
 -- Immediate --
---enable-debug mode
-Laplace with LBT
+setLists for periodic, lists[][2] -> lists[][3]
+Unify LBT and DDT public interface
 Have only one P2P
 SIMD for Helmholtz P2P
 Helmholtz DTT debug

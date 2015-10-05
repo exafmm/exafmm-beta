@@ -2,7 +2,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Enable assertion. */
-/* #undef ASSERT */
+#define ASSERT 1
 
 /* Count number of M2L and P2P kernel calls. */
 /* #undef COUNT_KERNEL */
