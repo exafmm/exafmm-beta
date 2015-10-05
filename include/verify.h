@@ -9,7 +9,11 @@ public:
   double getSumScalar(Bodies & bodies) {
     double v = 0;                                               // Initialize difference
     for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {       // Loop over bodies
+#if Helmholtz
       v += std::abs(B->TRG[0] * B->SRC);                        //  Sum of scalar component
+#else
+      v += B->TRG[0] * B->SRC;                                  //  Sum of scalar component
+#endif
     }                                                           // End loop over bodies
     return v;                                                   // Return difference
   }
