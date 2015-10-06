@@ -95,6 +95,9 @@ int main(int argc, char ** argv) {
     bodies = buffer;
     data.initTarget(bodies);
   }
+  if (args.getMatrix) {
+    traversal.writeMatrix(bodies, jbodies);
+  }
   logger::writeDAG();
   return 0;
 }

@@ -13,6 +13,7 @@ static struct option long_options[] = {
   {"distribution", required_argument, 0, 'd'},
   {"dual",         no_argument,       0, 'D'},
   {"graft",        no_argument,       0, 'g'},
+  {"getMatrix",    no_argument,       0, 'G'},
   {"help",         no_argument,       0, 'h'},
   {"images",       required_argument, 0, 'i'},
   {"IneJ",         no_argument,       0, 'j'},
@@ -35,6 +36,7 @@ public:
   const char * distribution;
   int dual;
   int graft;
+  int getMatrix;
   int images;
   int IneJ;
   int mutual;
@@ -57,6 +59,7 @@ private:
             " --distribution (-d) [l/c/s/p] : lattice, cube, sphere, octant, plummer (%s)\n"
 	    " --dual (-D)                   : Use dual tree traversal (%d)\n"
 	    " --graft (-g)                  : Graft remote trees to global tree (%d)\n"
+	    " --getMatrix (-G)              : Write G matrix to file (%d)\n"
             " --help (-h)                   : Show this help document\n"
             " --images (-i)                 : Number of periodic image levels (%d)\n"
             " --IneJ (-j)                   : Use different sources & targets (%d)\n"
@@ -75,6 +78,7 @@ private:
             distribution,
 	    dual,
 	    graft,
+	    getMatrix,
             images,
 	    IneJ,
             mutual,
@@ -120,6 +124,7 @@ public:
 					distribution("cube"),
 					dual(0),
 					graft(0),
+					getMatrix(0),
 					images(0),
 					IneJ(0),
 					mutual(0),
@@ -133,7 +138,7 @@ public:
 					useRmax(0) {
     while (1) {
       int option_index;
-      int c = getopt_long(argc, argv, "c:d:Dghi:jmn:or:s:t:T:vwx", long_options, &option_index);
+      int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:or:s:t:T:vwx", long_options, &option_index);
       if (c == -1) break;
       switch (c) {
       case 'c':
@@ -147,6 +152,9 @@ public:
         break;
       case 'g':
 	graft = 1;
+	break;
+      case 'G':
+	getMatrix = 1;
 	break;
       case 'h':
         usage(argv[0]);
@@ -204,6 +212,8 @@ public:
 		<< "dual" << " : " << dual << std::endl         //  Print images
 		<< std::setw(stringLength)                      //  Set format
 		<< "graft" << " : " << graft << std::endl       //  Print graft
+		<< std::setw(stringLength)                      //  Set format
+		<< "getMatrix" << " : " << getMatrix << std::endl// Print getMatrix
 		<< std::setw(stringLength)                      //  Set format
 		<< "images" << " : " << images << std::endl     //  Print images
 		<< std::setw(stringLength)                      //  Set format
