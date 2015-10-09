@@ -5,13 +5,13 @@
 #define ASSERT 1
 
 /* Count number of M2L and P2P kernel calls. */
-/* #undef COUNT_KERNEL */
+#define COUNT_KERNEL 1
 
 /* Count interaction list per cell. */
 /* #undef COUNT_LIST */
 
 /* Define to enable extra debugging options. */
-/* #undef DEBUG */
+#define DEBUG 1
 
 /* Define to compile in single precision. */
 #define EXAFMM_SINGLE 1

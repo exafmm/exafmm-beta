@@ -1426,7 +1426,7 @@ Optional Features:
   --enable-papi           enable PAPI performance counter
   --enable-trace          enable thread tracing
   --enable-dag            enable DAG recorder
-  --enable-count-kenrel   count number of M2L and P2P kernel calls
+  --enable-count-kernel   count number of M2L and P2P kernel calls
   --enable-count-list     count interaction list per cell
   --enable-assert         enable assertion
   --enable-debug          compile with extra runtime checks for debugging

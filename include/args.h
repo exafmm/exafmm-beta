@@ -116,10 +116,8 @@ public:
   Args(int argc=0, char ** argv=NULL) :
 #if Helmholtz
 					ncrit(1000),
-					theta(1.),
 #else
 					ncrit(64),
-					theta(.4),
 #endif
 					distribution("cube"),
 					dual(0),
@@ -132,6 +130,11 @@ public:
 					useRopt(0),
 					repeat(1),
 					nspawn(5000),
+#if Helmholtz
+					theta(1.),
+#else
+					theta(.4),
+#endif
 					threads(16),
 					verbose(0),
 					write(0),
@@ -202,7 +205,7 @@ public:
     }
   }
 
-  void print(int stringLength, int P) {
+  void print(int stringLength, int PP) {
     if (verbose) {                                              // If verbose flag is true
       std::cout << std::setw(stringLength) << std::fixed << std::left// Set format
 		<< "ncrit" << " : " << ncrit << std::endl       //  Print ncrit
@@ -225,7 +228,7 @@ public:
 		<< std::setw(stringLength)                      //  Set format
 		<< "useRopt" << " : " << useRopt << std::endl   //  Print useRopt
 		<< std::setw(stringLength)                      //  Set format
-		<< "P" << " : " << P << std::endl               //  Print P
+		<< "P" << " : " << PP << std::endl              //  Print P
 		<< std::setw(stringLength)                      //  Set format
 		<< "repeat" << " : " << repeat << std::endl     //  Print repeat
 		<< std::setw(stringLength)                      //  Set format

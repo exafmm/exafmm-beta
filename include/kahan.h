@@ -112,14 +112,14 @@ struct kahan {
   operator       T ()       {return s+c;}                       // Type-casting (lvalue)
   __host__ __device__ __forceinline__
   operator const T () const {return s+c;}                       // Type-casting (rvalue) 
-  friend std::ostream &operator<<(std::ostream & s, const kahan & v) { // Output stream
-    s << (v.s + v.c);
-    return s;
+  friend std::ostream &operator<<(std::ostream & o, const kahan & v) { // Output stream
+    o << (v.s + v.c);
+    return o;
   }
-  friend std::istream &operator>>(std::istream & s, kahan & v) { // Input stream
-    s >> v.s;
+  friend std::istream &operator>>(std::istream & i, kahan & v) { // Input stream
+    i >> v.s;
     v.c = 0;
-    return s;
+    return i;
   }
 };
 #endif

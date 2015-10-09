@@ -159,7 +159,7 @@ fi
 AM_CONDITIONAL(USE_DAG, test "$use_dag" = "yes")
 
 # Count number of M2L and P2P kernel calls
-AC_ARG_ENABLE(count-kernel, [AC_HELP_STRING([--enable-count-kenrel],[count number of M2L and P2P kernel calls])], use_count_kernel=$enableval, use_count_kernel=no)
+AC_ARG_ENABLE(count-kernel, [AC_HELP_STRING([--enable-count-kernel],[count number of M2L and P2P kernel calls])], use_count_kernel=$enableval, use_count_kernel=no)
 if test "$use_count_kernel" = "yes"; then
         AC_DEFINE(COUNT_KERNEL,1,[Count number of M2L and P2P kernel calls.])
 fi

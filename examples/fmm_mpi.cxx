@@ -77,7 +77,7 @@ int main(int argc, char ** argv) {
       upDownPass.upwardPass(jcells);
     }
 
-#if 1 // Set to 0 for debugging by shifting bodies and reconstructing tree
+#if 0 // Set to 0 for debugging by shifting bodies and reconstructing tree
     treeMPI.allgatherBounds(localBounds);
     if (args.IneJ) {
       treeMPI.setLET(jcells, cycle);

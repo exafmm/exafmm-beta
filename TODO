@@ -1,15 +1,15 @@
 -- Immediate --
+Small n debug
 LBT mpi
-Have only one P2P
-SIMD for Helmholtz P2P
-Helmholtz DTT debug
-Fix without TBB
-periodic B.C. in list based traversal
-detect f90 and mpi fortran compiler
-logger.h split to print.h
-Make remote and mutual class variables in Traversal
+detect f90 and mpi fortran compiler, cray, fx10, sx-ace
 move contents of macros.h to configure.ac
 args.h, verify.h from class to namespace
+Setup buildbot tests
+Have only one P2P
+SIMD for Helmholtz P2P
+Helmholtz DTT
+Fix without TBB
+logger.h split to print.h
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA unified
 examples/Makefile options to args

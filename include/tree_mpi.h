@@ -369,10 +369,10 @@ public:
   }
 
   //! Send bodies
-  Bodies commBodies(Bodies sendBodies) {
+  Bodies commBodies(Bodies bodies) {
     logger::startTimer("Comm partition");                       // Start timer
-    alltoall(sendBodies);                                       // Send body count
-    alltoallv(sendBodies);                                      // Send bodies
+    alltoall(bodies);                                           // Send body count
+    alltoallv(bodies);                                          // Send bodies
     logger::stopTimer("Comm partition");                        // Stop timer
     return recvBodies;                                          // Return received bodies
   }

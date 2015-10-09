@@ -579,9 +579,7 @@ public:
   void writeMatrix(Bodies & bodies, Bodies & jbodies) {
     std::ofstream matrixFile("matrix.dat");                     // Open matrix data file
     for (B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {    // Loop over target bodies
-      int i = Bi-bodies.begin();                                //  Target index
       for (B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {//  Loop over source bodies
-	int j = Bj-jbodies.begin();                             //   Source index
 	vec3 dX = Bi->X - Bj->X;                                //   Distance vector
 	real_t R2 = norm(dX) + kernel::eps2;                    //   Distance squared
 	real_t G = R2 == 0 ? 0.0 : 1.0 / sqrt(R2);              //   Green's function
