@@ -5,13 +5,13 @@
 #define ASSERT 1
 
 /* Count number of M2L and P2P kernel calls. */
-#define COUNT_KERNEL 1
+/* #undef COUNT_KERNEL */
 
 /* Count interaction list per cell. */
 /* #undef COUNT_LIST */
 
 /* Define to enable extra debugging options. */
-#define DEBUG 1
+/* #undef DEBUG */
 
 /* Define to compile in single precision. */
 #define EXAFMM_SINGLE 1
@@ -41,7 +41,7 @@
 #define PACKAGE_NAME "exaFMM"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "exaFMM 1.0"
+#define PACKAGE_STRING "exaFMM 1.0.1"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "exafmm"
@@ -50,7 +50,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.0"
+#define PACKAGE_VERSION "1.0.1"
 
 /* Enable DAG recorder. */
 /* #undef USE_DAG */
@@ -71,7 +71,7 @@
 /* #undef USE_WEIGHT */
 
 /* Version number of package */
-#define VERSION "1.0"
+#define VERSION "1.0.1"
 
 /* Use Intel Cilk */
 /* #undef WITH_CILK */

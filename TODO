@@ -1,5 +1,6 @@
 -- Immediate --
 detect f90 and mpi fortran compiler, cray, fx10, sx-ace
+ - FC_MAX_OPT
 Setup buildbot tests
 LBT mpi <- ICELL is being calculated from localBounds
 move contents of macros.h to configure.ac

@@ -1,4 +1,4 @@
-AC_INIT([exaFMM], [1.0])
+AC_INIT([exaFMM], [1.0.1])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_FILES([Makefile examples/Makefile wrappers/Makefile uniform/Makefile])
 AC_CONFIG_HEADER(config.h)
@@ -62,7 +62,7 @@ AC_SUBST(PRECISION)
 # MPI
 AC_ARG_ENABLE(mpi, [AC_HELP_STRING([--enable-mpi],[compile exaFMM MPI library])], enable_mpi=$enableval, enable_mpi=no)
 if test "$enable_mpi" = "yes"; then
-   ACX_MPI([],[AC_MSG_ERROR([could not find mpi library for --enable-mpi])])
+   AX_MPI([],[AC_MSG_ERROR([could not find mpi library for --enable-mpi])])
    AC_CHECK_PROG(MPIRUN, mpirun, mpirun)
    AC_SUBST(MPIRUN)
    CXX=$MPICXX
@@ -183,10 +183,6 @@ AM_CONDITIONAL(ASSERT, test "$use_assert" = "yes")
 AC_ARG_ENABLE(debug, [AC_HELP_STRING([--enable-debug],[compile with extra runtime checks for debugging])], enable_debug=$enableval, enable_debug=no)
 if test "$enable_debug" = "yes"; then
         AC_DEFINE(DEBUG,1,[Define to enable extra debugging options.])
-else
-	AX_CC_MAXOPT
-	AX_CXX_MAXOPT
-	AX_F77_MAXOPT
 fi
 AM_CONDITIONAL(DEBUG, test "$enable_debug" = "yes")
 
