@@ -5,9 +5,9 @@ AC_CONFIG_HEADER(config.h)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([examples/fmm.cxx])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
-AC_PROG_CC
-AC_PROG_CXX
-AC_PROG_FC
+AC_PROG_CC([fccpx fcc xlc_r xlc cc icc gcc])
+AC_PROG_CXX([FCCpx FCC xlC_r xlC CC icpc g++])
+AC_PROG_FC([frtpx frt xlf90_r xlf90 ifort gfortran])
 AC_PROG_RANLIB
 AM_PROG_AR
 
