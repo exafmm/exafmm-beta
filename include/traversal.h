@@ -337,7 +337,9 @@ private:
   //! List based traversal
   void listBasedTraversal(int numCells, real_t cycle, bool mutual, real_t remote) {
     int list[189], periodicKeys[189];                           // Current interaction list
+#ifdef _OPENMP
 #pragma omp parallel for private(list, periodicKeys) schedule(dynamic)
+#endif
     for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
       C_iter Ci = Ci0 + icell;                                  //  Iterator of target cell
       int nlist;                                                //  Interaction list size
@@ -358,7 +360,9 @@ private:
     }                                                           // End loop over target cells
 
 #ifndef NO_P2P
+#ifdef _OPENMP
 #pragma omp parallel for private(list, periodicKeys) schedule(dynamic)
+#endif
     for (int icell=0; icell<numCells; icell++) {                // Loop over target cells
       C_iter Ci = Ci0 + icell;                                  //  Iterator of target cell
       if (Ci->NCHILD == 0) {                                    //  If target cell is leaf

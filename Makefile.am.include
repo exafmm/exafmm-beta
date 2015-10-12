@@ -27,7 +27,7 @@ AM_CPPFLAGS += -DWITH_OPENMP
 AM_CXXFLAGS += $(OPENMP_CFLAGS)
 endif
 if WITH_TBB
-LIBS += -ltbb
+LIBS += -ltbb -dynamic
 endif
 if WITH_CILK
 LIBS += -lcilkrts
