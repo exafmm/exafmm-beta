@@ -141,7 +141,8 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 
 #AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
 @DEBUG_TRUE@am__append_22 = -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
-bin_PROGRAMS = fmm$(EXEEXT) fmm_mpi$(EXEEXT) fmm_ijhpca$(EXEEXT)
+@MPI_TRUE@bin_PROGRAMS = fmm$(EXEEXT) fmm_mpi$(EXEEXT) \
+@MPI_TRUE@	fmm_ijhpca$(EXEEXT)
 subdir = uniform
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_compiler_flags.m4 \
@@ -155,13 +156,16 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_fmm_OBJECTS = fmm-fmm.$(OBJEXT)
+am__fmm_SOURCES_DIST = fmm.cxx
+@MPI_TRUE@am_fmm_OBJECTS = fmm-fmm.$(OBJEXT)
 fmm_OBJECTS = $(am_fmm_OBJECTS)
 fmm_LDADD = $(LDADD)
-am_fmm_ijhpca_OBJECTS = fmm_ijhpca-fmm.$(OBJEXT)
+am__fmm_ijhpca_SOURCES_DIST = fmm.cxx
+@MPI_TRUE@am_fmm_ijhpca_OBJECTS = fmm_ijhpca-fmm.$(OBJEXT)
 fmm_ijhpca_OBJECTS = $(am_fmm_ijhpca_OBJECTS)
 fmm_ijhpca_LDADD = $(LDADD)
-am_fmm_mpi_OBJECTS = fmm_mpi-fmm.$(OBJEXT)
+am__fmm_mpi_SOURCES_DIST = fmm.cxx
+@MPI_TRUE@am_fmm_mpi_OBJECTS = fmm_mpi-fmm.$(OBJEXT)
 fmm_mpi_OBJECTS = $(am_fmm_mpi_OBJECTS)
 fmm_mpi_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -198,7 +202,8 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(fmm_SOURCES) $(fmm_ijhpca_SOURCES) $(fmm_mpi_SOURCES)
-DIST_SOURCES = $(fmm_SOURCES) $(fmm_ijhpca_SOURCES) $(fmm_mpi_SOURCES)
+DIST_SOURCES = $(am__fmm_SOURCES_DIST) $(am__fmm_ijhpca_SOURCES_DIST) \
+	$(am__fmm_mpi_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -341,12 +346,12 @@ AM_CPPFLAGS = -I../include -I../uniform $(am__append_1) \
 	$(am__append_17) $(am__append_19) $(am__append_20) \
 	$(am__append_21)
 AM_MAKEFLAGS = -s
-fmm_SOURCES = fmm.cxx
-fmm_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DEXPANSION=6 -DSerial
-fmm_mpi_SOURCES = fmm.cxx
-fmm_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DEXPANSION=6
-fmm_ijhpca_SOURCES = fmm.cxx
-fmm_ijhpca_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DEXPANSION=6 -DIJHPCA
+@MPI_TRUE@fmm_SOURCES = fmm.cxx
+@MPI_TRUE@fmm_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DEXPANSION=6 -DSerial
+@MPI_TRUE@fmm_mpi_SOURCES = fmm.cxx
+@MPI_TRUE@fmm_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DEXPANSION=6
+@MPI_TRUE@fmm_ijhpca_SOURCES = fmm.cxx
+@MPI_TRUE@fmm_ijhpca_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DEXPANSION=6 -DIJHPCA
 all: all-am
 
 .SUFFIXES:
@@ -727,12 +732,12 @@ revert:
 save:
 	@make -C .. save
 
-run_fmm:
-	./fmm -n 1000 -c 32 -i 3
-run_fmm_mpi:
-	mpirun -np 8 ./fmm_mpi -n 1000 -c 32 -i 3
-run_fmm_ijhpca:
-	mpirun -np 8 ./fmm_ijhpca -n 62500 -c 32 -i 1
+@MPI_TRUE@run_fmm:
+@MPI_TRUE@	./fmm -n 1000 -c 32 -i 3
+@MPI_TRUE@run_fmm_mpi:
+@MPI_TRUE@	mpirun -np 8 ./fmm_mpi -n 1000 -c 32 -i 3
+@MPI_TRUE@run_fmm_ijhpca:
+@MPI_TRUE@	mpirun -np 8 ./fmm_ijhpca -n 62500 -c 32 -i 1
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
