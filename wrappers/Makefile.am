@@ -1,5 +1,6 @@
 include ../Makefile.am.include
 
+if MPI
 lib_LIBRARIES = libpetiga.a libgromacs.a libcharmm.a libcharmm2.a
 libpetiga_a_SOURCES = petiga.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 libpetiga_a_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DEXPANSION=4
@@ -32,3 +33,4 @@ run_gromacs: gromacs
 	$(MPIRUN) -n 2 ./$<
 run_petiga: petiga
 	$(MPIRUN) -n 2 ./$<
+endif

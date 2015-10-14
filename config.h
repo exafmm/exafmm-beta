@@ -2,7 +2,7 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Enable assertion. */
-#define ASSERT 1
+/* #undef ASSERT */
 
 /* Count number of M2L and P2P kernel calls. */
 /* #undef COUNT_KERNEL */
@@ -14,19 +14,19 @@
 /* #undef DEBUG */
 
 /* Define to compile in single precision. */
-#define EXAFMM_SINGLE 1
+/* #undef EXAFMM_SINGLE */
 
 /* Define to enable AVX optimizations. */
-#define HAVE_AVX 1
+/* #undef HAVE_AVX */
 
 /* Define if you have the MPI library. */
-#define HAVE_MPI 1
+/* #undef HAVE_MPI */
 
 /* Define to enable ARM NEON optimizations. */
 /* #undef HAVE_NEON */
 
 /* Define if OpenMP is enabled */
-#define HAVE_OPENMP 1
+/* #undef HAVE_OPENMP */
 
 /* Define to enable SSE/SSE3 optimizations. */
 /* #undef HAVE_SSE3 */
@@ -83,4 +83,4 @@
 /* #undef WITH_QTHREAD */
 
 /* Use Intel TBB */
-#define WITH_TBB 1
+/* #undef WITH_TBB */
