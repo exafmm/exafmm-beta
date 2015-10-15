@@ -7,6 +7,8 @@
 #include "up_down_pass.h"
 #include "verify.h"
 
+using namespace exafmm;
+
 int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
   Args args(argc, argv);

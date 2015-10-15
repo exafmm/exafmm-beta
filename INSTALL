@@ -368,3 +368,8 @@ operates.
 
 `configure' also accepts some other, not widely useful, options.  Run
 `configure --help' for more details.
+
+
+Suggested configure options
+===========================
+./configure --enable-assert --enable-float --enable-mpi --enable-openmp --enable-avx --with-tbb CXXFLAGS=-O3

@@ -1,6 +1,11 @@
 -- Immediate --
+Remove all macros
+Put everything in namespace exafmm.
 Test on cray, fx10, sx-ace
 Setup buildbot tests using "make check"
+MPI overhaul
+Test difficult distributions for partitioning and LET
+
 LBT mpi <- ICELL is being calculated from localBounds
 move contents of macros.h to configure.ac
 args.h, verify.h from class to namespace
