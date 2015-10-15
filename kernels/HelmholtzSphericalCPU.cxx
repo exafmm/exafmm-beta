@@ -1,4 +1,5 @@
 #include "kernel.h"
+using namespace exafmm;
 
 const complex_t I(0.,1.);
 int nquad, nquad2;

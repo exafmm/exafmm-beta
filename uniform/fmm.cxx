@@ -13,6 +13,7 @@
 #else
 #include "parallelfmm.h"
 #endif
+using namespace exafmm;
 
 int main(int argc, char ** argv) {
   const int ksize = 11;

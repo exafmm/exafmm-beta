@@ -1,4 +1,5 @@
 #include "kernel.h"
+using namespace exafmm;
 
 template<int nx, int ny, int nz>
 struct Index {

@@ -12,6 +12,7 @@
 #if MASS
 #error Turn off MASS for this wrapper
 #endif
+using namespace exafmm;
 
 static const double Celec = 332.0716;
 

@@ -1,5 +1,6 @@
 #include "kernel.h"
 #include "simdvec.h"
+using namespace exafmm;
 
 real_t kernel::eps2;
 vec3 kernel::Xperiodic;

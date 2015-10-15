@@ -2,6 +2,7 @@
 #include "kernel.h"
 #include <vector>
 #include "verify.h"
+using namespace exafmm;
 
 int main() {
   Bodies bodies(1), bodies2(1), jbodies(1);

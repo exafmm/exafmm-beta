@@ -9,16 +9,15 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "van_der_waals.h"
-
 #if Serial
 #include "serialfmm.h"
 #else
 #include "parallelfmm.h"
 #endif
-
 #if MASS
 #error Turn off MASS for this wrapper
 #endif
+using namespace exafmm;
 
 static const double Celec = 332.0716;
 

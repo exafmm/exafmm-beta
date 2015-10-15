@@ -1,4 +1,5 @@
 #include "kernel.h"
+using namespace exafmm;
 
 real_t kernel::eps2;
 complex_t kernel::wavek;

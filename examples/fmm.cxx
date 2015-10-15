@@ -6,7 +6,6 @@
 #include "traversal.h"
 #include "up_down_pass.h"
 #include "verify.h"
-
 using namespace exafmm;
 
 int main(int argc, char ** argv) {

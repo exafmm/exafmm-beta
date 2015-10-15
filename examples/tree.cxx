@@ -3,6 +3,7 @@
 #include "build_tree.h"
 #include "dataset.h"
 #include "logger.h"
+using namespace exafmm;
 
 int main(int argc, char ** argv) {
   Args args(argc, argv);

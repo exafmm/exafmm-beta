@@ -11,6 +11,7 @@
 #if MASS
 #error Turn off MASS for this wrapper
 #endif
+using namespace exafmm;
 
 Args * args;
 BaseMPI * baseMPI;

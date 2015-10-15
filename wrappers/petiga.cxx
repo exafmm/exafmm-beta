@@ -7,6 +7,7 @@
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
+using namespace exafmm;
 
 real_t cycle;
 Bodies buffer;
@@ -50,6 +51,7 @@ extern "C" void FMM_Init(double _eps2, int ncrit, int threads,
   const real_t theta = 0.4;
   const bool useRmax = true;
   const bool useRopt = true;
+  const bool verbose = false;
   kernel::eps2 = _eps2;
   kernel::setup();
 
