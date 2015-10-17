@@ -6,9 +6,9 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([examples/fmm.cxx])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AM_MAINTAINER_MODE
-AC_PROG_CC([fccpx fcc xlc_r xlc cc icc gcc])
-AC_PROG_CXX([FCCpx FCC xlC_r xlC CC icpc g++])
-AC_PROG_FC([frtpx frt xlf90_r xlf90 ifort gfortran])
+AC_PROG_CC([xlc_r xlc fccpx fcc sxcc cc icc gcc])
+AC_PROG_CXX([xlC_r xlC FCCpx FCC sxc++ CC icpc g++])
+AC_PROG_FC([xlf90_r xlf90 frtpx frt sxf90 ftn ifort gfortran])
 AC_PROG_RANLIB
 AM_PROG_AR
 
