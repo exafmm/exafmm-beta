@@ -4813,48 +4813,12 @@ test -n "$MPIFC" || MPIFC="$FC"
 
 
 
-# AC_LANG_CASE([C], [
-# 		    AC_REQUIRE([AC_PROG_CC])
-# 		    AC_ARG_VAR(MPICC,[MPI C compiler command])
-# 		    AC_CHECK_PROGS(MPICC, mpicc hcc mpxlc_r mpxlc mpcc cmpicc, $CC)
-# 		    ax_mpi_save_CC="$CC"
-# 		    CC="$MPICC"
-# 		    AC_SUBST(MPICC)
-# ],
-# [C++], [
-# 	 AC_REQUIRE([AC_PROG_CXX])
-# 	 AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
-# 	 AC_CHECK_PROGS(MPICXX, mpic++ mpicxx mpiCC hcp mpxlC_r mpxlC mpCC cmpic++, $CXX)
-# 	 ax_mpi_save_CXX="$CXX"
-# 	 CXX="$MPICXX"
-# 	 AC_SUBST(MPICXX)
-# ],
-# [Fortran 77], [
-# 	   AC_REQUIRE([AC_PROG_F77])
-# 	   AC_ARG_VAR(MPIF77,[MPI Fortran 77 compiler command])
-# 	   AC_CHECK_PROGS(MPIF77, mpif77 hf77 mpxlf_r mpxlf mpf77 cmpifc, $F77)
-# 	   ax_mpi_save_F77="$F77"
-# 	   F77="$MPIF77"
-# 	   AC_SUBST(MPIF77)
-# ],
-# [Fortran], [
-# 	     AC_REQUIRE([AC_PROG_FC])
-# 	     AC_ARG_VAR(MPIFC,[MPI Fortran compiler command])
-# 	     AC_CHECK_PROGS(MPIFC, mpif90 mpxlf95_r mpxlf90_r mpxlf95 mpxlf90 mpf90 cmpif90c, $FC)
-# 	     ax_mpi_save_FC="$FC"
-# 	     FC="$MPIFC"
-# 	     AC_SUBST(MPIFC)
-# ])
-
 if test x = x"$MPILIBS"; then
    ac_fn_c_check_func "$LINENO" "MPI_Init" "ac_cv_func_MPI_Init"
 if test "x$ac_cv_func_MPI_Init" = xyes; then :
   MPILIBS=" "
 fi
 
-fi
-
-if test x = x"$MPILIBS"; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpi" >&5
 $as_echo_n "checking for MPI_Init in -lmpi... " >&6; }
 if ${ac_cv_lib_mpi_MPI_Init+:} false; then :
@@ -4895,8 +4859,6 @@ if test "x$ac_cv_lib_mpi_MPI_Init" = xyes; then :
   MPILIBS="-lmpi"
 fi
 
-fi
-if test x = x"$MPILIBS"; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpich" >&5
 $as_echo_n "checking for MPI_Init in -lmpich... " >&6; }
 if ${ac_cv_lib_mpich_MPI_Init+:} false; then :
@@ -4937,12 +4899,114 @@ if test "x$ac_cv_lib_mpich_MPI_Init" = xyes; then :
   MPILIBS="-lmpich"
 fi
 
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lfmpi" >&5
+$as_echo_n "checking for MPI_Init in -lfmpi... " >&6; }
+if ${ac_cv_lib_fmpi_MPI_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lfmpi  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char MPI_Init ();
+int
+main ()
+{
+return MPI_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_fmpi_MPI_Init=yes
+else
+  ac_cv_lib_fmpi_MPI_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_fmpi_MPI_Init" >&5
+$as_echo "$ac_cv_lib_fmpi_MPI_Init" >&6; }
+if test "x$ac_cv_lib_fmpi_MPI_Init" = xyes; then :
+  MPILIBS="-lfmpi"
+fi
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpichf90" >&5
+$as_echo_n "checking for MPI_Init in -lmpichf90... " >&6; }
+if ${ac_cv_lib_mpichf90_MPI_Init+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmpichf90  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char MPI_Init ();
+int
+main ()
+{
+return MPI_Init ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_mpichf90_MPI_Init=yes
+else
+  ac_cv_lib_mpichf90_MPI_Init=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mpichf90_MPI_Init" >&5
+$as_echo "$ac_cv_lib_mpichf90_MPI_Init" >&6; }
+if test "x$ac_cv_lib_mpichf90_MPI_Init" = xyes; then :
+  MPILIBS="-lmpichf90"
+fi
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init" >&5
+$as_echo_n "checking for MPI_Init... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+call MPI_Init
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  MPILIBS=" "{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 fi
 
 if test x != x"$MPILIBS"; then
-		  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpi.h" >&5
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpi.h" >&5
 $as_echo_n "checking for mpi.h... " >&6; }
-		  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <mpi.h>
 int
@@ -4957,14 +5021,35 @@ if ac_fn_c_try_compile "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
-  MPILIBS=""
-		  			   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  MPILIBS=""{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpif.h" >&5
+$as_echo_n "checking for mpif.h... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+include 'mpif.h'
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  MPILIBS=""{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-
 CC="$ax_mpi_save_CC"
+CXX="$ax_mpi_save_CXX"
+FC="$ax_mpi_save_FC"
 
 
 
