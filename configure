@@ -2743,7 +2743,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  for ac_prog in fccpx fcc xlc_r xlc cc icc gcc
+  for ac_prog in xlc_r xlc fccpx fcc sxcc cc icc gcc
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -2787,7 +2787,7 @@ fi
 fi
 if test -z "$CC"; then
   ac_ct_CC=$CC
-  for ac_prog in fccpx fcc xlc_r xlc cc icc gcc
+  for ac_prog in xlc_r xlc fccpx fcc sxcc cc icc gcc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3594,7 +3594,7 @@ if test -z "$CXX"; then
     CXX=$CCC
   else
     if test -n "$ac_tool_prefix"; then
-  for ac_prog in FCCpx FCC xlC_r xlC CC icpc g++
+  for ac_prog in xlC_r xlC FCCpx FCC sxc++ CC icpc g++
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -3638,7 +3638,7 @@ fi
 fi
 if test -z "$CXX"; then
   ac_ct_CXX=$CXX
-  for ac_prog in FCCpx FCC xlC_r xlC CC icpc g++
+  for ac_prog in xlC_r xlC FCCpx FCC sxc++ CC icpc g++
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3974,7 +3974,7 @@ ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_fc_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  for ac_prog in frtpx frt xlf90_r xlf90 ifort gfortran
+  for ac_prog in xlf90_r xlf90 frtpx frt sxf90 ftn ifort gfortran
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -4018,7 +4018,7 @@ fi
 fi
 if test -z "$FC"; then
   ac_ct_FC=$FC
-  for ac_prog in frtpx frt xlf90_r xlf90 ifort gfortran
+  for ac_prog in xlf90_r xlf90 frtpx frt sxf90 ftn ifort gfortran
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4663,7 +4663,7 @@ if test "$enable_mpi" = "yes"; then
 
 
 
-	for ac_prog in mpicc hcc mpxlc_r mpxlc mpcc cmpicc cc
+	for ac_prog in mpicc hcc mpxlc_r mpxlc mpcc cmpicc sxmpicc cc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4711,7 +4711,7 @@ test -n "$MPICC" || MPICC="$CC"
 
 
 
-	for ac_prog in mpic++ mpicxx mpiCC hcp mpxlC_r mpxlC mpCC cmpic++ CC
+	for ac_prog in mpic++ mpicxx mpiCC hcp mpxlC_r mpxlC mpCC cmpic++ sxmpic++ CC
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4759,7 +4759,7 @@ test -n "$MPICXX" || MPICXX="$CXX"
 
 
 
-	for ac_prog in mpif90 mpxlf95_r mpxlf90_r mpxlf95 mpxlf90 mpf90 cmpif90c ftn
+	for ac_prog in mpif90 mpxlf95_r mpxlf90_r mpxlf95 mpxlf90 mpf90 cmpif90c sxmpif90 ftn
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
