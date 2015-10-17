@@ -4663,7 +4663,7 @@ if test "$enable_mpi" = "yes"; then
 
 
 
-	for ac_prog in mpicc hcc mpxlc_r mpxlc mpcc cmpicc sxmpicc cc
+	for ac_prog in mpxlc_r mpxlc mpifccpx mpifcc sxmpicc cc mpiicc mpicc mpcc cmpicc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4711,7 +4711,7 @@ test -n "$MPICC" || MPICC="$CC"
 
 
 
-	for ac_prog in mpic++ mpicxx mpiCC hcp mpxlC_r mpxlC mpCC cmpic++ sxmpic++ CC
+	for ac_prog in mpxlC_r mpxlC mpiFCCpx mpiFCC sxmpic++ CC mpiicpc mpicxx mpic++ mpCC cmpic++
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4759,7 +4759,7 @@ test -n "$MPICXX" || MPICXX="$CXX"
 
 
 
-	for ac_prog in mpif90 mpxlf95_r mpxlf90_r mpxlf95 mpxlf90 mpf90 cmpif90c sxmpif90 ftn
+	for ac_prog in mpxlf90_r mpxlf90 mpifrtpx mpifrt sxmpif90 ftn mpiifort mpif90 mpf90 cmpif90c
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
