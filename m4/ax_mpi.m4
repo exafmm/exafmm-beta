@@ -81,19 +81,19 @@ AC_DEFUN([AX_MPI], [
 AC_PREREQ(2.50) dnl for AC_LANG_CASE
 AC_REQUIRE([AC_PROG_CC])
 	AC_ARG_VAR(MPICC,[MPI C compiler command])
-	AC_CHECK_PROGS(MPICC, mpicc hcc mpxlc_r mpxlc mpcc cmpicc sxmpicc cc, $CC)
+	AC_CHECK_PROGS(MPICC, mpxlc_r mpxlc mpifccpx mpifcc sxmpicc cc mpiicc mpicc mpcc cmpicc, $CC)
 	ax_mpi_save_CC="$CC"
 	CC="$MPICC"
 	AC_SUBST(MPICC)
 AC_REQUIRE([AC_PROG_CXX])
 	AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
-	AC_CHECK_PROGS(MPICXX, mpic++ mpicxx mpiCC hcp mpxlC_r mpxlC mpCC cmpic++ sxmpic++ CC, $CXX)
+	AC_CHECK_PROGS(MPICXX, mpxlC_r mpxlC mpiFCCpx mpiFCC sxmpic++ CC mpiicpc mpicxx mpic++ mpCC cmpic++, $CXX)
 	ax_mpi_save_CXX="$CXX"
 	CXX="$MPICXX"
 	AC_SUBST(MPICXX)
 AC_REQUIRE([AC_PROG_FC])
 	AC_ARG_VAR(MPIFC,[MPI Fortran compiler command])
-	AC_CHECK_PROGS(MPIFC, mpif90 mpxlf95_r mpxlf90_r mpxlf95 mpxlf90 mpf90 cmpif90c sxmpif90 ftn, $FC)
+	AC_CHECK_PROGS(MPIFC, mpxlf90_r mpxlf90 mpifrtpx mpifrt sxmpif90 ftn mpiifort mpif90 mpf90 cmpif90c, $FC)
 	ax_mpi_save_FC="$FC"
 	if test x"$LINUX_TEST" == x'Linux'
 	then
