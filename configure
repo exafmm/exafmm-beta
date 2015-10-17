@@ -4466,7 +4466,7 @@ if ${ax_cv_c_openmp+:} false; then :
 else
   saveCFLAGS=$CFLAGS
 ax_cv_c_openmp=unknown
-# Flags to try:  -fopenmp (gcc), -openmp (icc), -mp (SGI & PGI),
+# Flags to try:  -fopenmp (gcc), -openmp (icc), -mp (SGI & PGI), -Popenmp (SX-ACE),
 #                -xopenmp (Sun), -omp (Tru64), -qsmp=omp (AIX), none
 ax_openmp_flags="-fopenmp -openmp -mp -xopenmp -omp -qsmp=omp none"
 if test "x$OPENMP_CFLAGS" != x; then
