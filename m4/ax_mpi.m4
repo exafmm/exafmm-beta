@@ -95,15 +95,8 @@ AC_REQUIRE([AC_PROG_FC])
 	AC_ARG_VAR(MPIFC,[MPI Fortran compiler command])
 	AC_CHECK_PROGS(MPIFC, mpxlf90_r mpxlf90 mpifrtpx mpifrt sxmpif90 ftn mpiifort mpif90 mpf90 cmpif90c, $FC)
 	ax_mpi_save_FC="$FC"
-	if test x"$LINUX_TEST" == x'Linux'
-	then
-		FCLD=mpif90
-		else
-		     FCLD="$CXX"
-		     fi
-		     FC="$MPIFC"
-		     AC_SUBST(MPIFC)
-		     AC_SUBST(FCLD)
+	FC="$MPIFC"
+	AC_SUBST(MPIFC)
 
 if test x = x"$MPILIBS"; then
    AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])
@@ -111,21 +104,7 @@ if test x = x"$MPILIBS"; then
    AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
    AC_CHECK_LIB(fmpi, MPI_Init, [MPILIBS="-lfmpi"])
    AC_CHECK_LIB(mpichf90, MPI_Init, [MPILIBS="-lmpichf90"])
-   AC_MSG_CHECKING([for MPI_Init])
-   AC_LINK_IFELSE([AC_LANG_PROGRAM([],[call MPI_Init])],[MPILIBS=" "AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no)])
 fi
-
-dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
-dnl latter uses $CPP, not $CC (which may be mpicc).
-if test x != x"$MPILIBS"; then
-   AC_MSG_CHECKING([for mpi.h])
-   AC_TRY_COMPILE([#include <mpi.h>],[],[AC_MSG_RESULT(yes)], [MPILIBS=""AC_MSG_RESULT(no)])
-   AC_MSG_CHECKING([for mpif.h])
-   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[include 'mpif.h'])],[AC_MSG_RESULT(yes)], [MPILIBS=""AC_MSG_RESULT(no)])
-fi
-CC="$ax_mpi_save_CC"
-CXX="$ax_mpi_save_CXX"
-FC="$ax_mpi_save_FC"
 
 AC_SUBST(MPILIBS)
 
