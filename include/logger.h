@@ -14,7 +14,7 @@
 #include "thread.h"
 #include <vector>
 
-#if PAPI
+#if EXAFMM_USE_PAPI
 #include <cstring>
 #include <papi.h>
 #endif
@@ -39,7 +39,7 @@ namespace exafmm {
     Timer           timer;                                      //!< Timings of all events
     Tracers         tracers;                                    //!< Tracers for all events
     pthread_mutex_t mutex;                                      //!< Pthread communicator
-#if PAPI
+#if EXAFMM_USE_PAPI
     int                    PAPIEventSet = PAPI_NULL;            //!< PAPI event set
     std::vector<char*>     PAPIEventNames;                      //!< Vector of PAPI event names
     std::vector<int>       PAPIEventCodes;                      //!< Vector of PAPI event codes
@@ -136,7 +136,7 @@ namespace exafmm {
 
     //! Start PAPI event
     inline void startPAPI() {
-#if PAPI
+#if EXAFMM_USE_PAPI
       PAPI_library_init(PAPI_VER_CURRENT);                      // Initialize PAPI library
       char * allEvents = getenv("EXAFMM_PAPI_EVENTS");          // Get all PAPI event strings
       char eventName[256];                                      // PAPI event name
@@ -164,7 +164,7 @@ namespace exafmm {
 
     //! Stop PAPI event
     inline void stopPAPI() {
-#if PAPI
+#if EXAFMM_USE_PAPI
       if (!PAPIEventCodes.empty()) {                            // If PAPI events are set
 	PAPIEventValues.resize(PAPIEventCodes.size());          //  Resize PAPI event value vector
 	PAPI_stop(PAPIEventSet, &PAPIEventValues[0]);           //  Stop PAPI counter
@@ -174,7 +174,7 @@ namespace exafmm {
 
     //! Print PAPI event
     inline void printPAPI() {
-#if PAPI
+#if EXAFMM_USE_PAPI
       if (!PAPIEventCodes.empty() && verbose) {                 // If PAPI events are set and verbose is true
 	printTitle("PAPI stats ");
 	for (int i=0; i<int(PAPIEventCodes.size()); i++) {      //  Loop over PAPI events
@@ -186,7 +186,7 @@ namespace exafmm {
 #endif
     }
 
-#if TRACE
+#if EXAFMM_USE_TRACE
     //! Initialize tracer
     inline void initTracer() {
       pthread_mutex_init(&mutex,NULL);                          // Initialize pthread communicator

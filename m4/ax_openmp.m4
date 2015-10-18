@@ -27,11 +27,11 @@ dnl
 dnl ACTION-IF-FOUND is a list of shell commands to run if an OpenMP
 dnl flag is found, and ACTION-IF-NOT-FOUND is a list of commands
 dnl to run it if it is not found.  If ACTION-IF-FOUND is not specified,
-dnl the default action will define HAVE_OPENMP.
+dnl the default action will define EXAFMM_HAVE_OPENMP.
 dnl
-dnl @version 2006-11-20
+dnl @version 2015-10-18
 dnl @license GPLWithACException
-dnl @author Steven G. Johnson <stevenj@alum.mit.edu>
+dnl @author Rio Yokota <rioyokota@gsic.titech.ac.jp>
 
 AC_DEFUN([AX_OPENMP], [
 AC_PREREQ(2.59) dnl for _AC_LANG_PREFIX
@@ -60,7 +60,7 @@ else
   if test "x$ax_cv_[]_AC_LANG_ABBREV[]_openmp" != "xnone"; then
     OPENMP_[]_AC_LANG_PREFIX[]FLAGS=$ax_cv_[]_AC_LANG_ABBREV[]_openmp
   fi
-  m4_default([$1], [AC_DEFINE(HAVE_OPENMP,1,[Define if OpenMP is enabled])])
+  m4_default([$1], [AC_DEFINE(EXAFMM_HAVE_OPENMP,1,[Define if OpenMP is enabled])])
 fi
 AC_SUBST(OPENMP_[]_AC_LANG_PREFIX[]FLAGS)
 ])dnl AX_OPENMP

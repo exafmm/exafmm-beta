@@ -28,7 +28,7 @@ namespace exafmm {
 	  create_taskc(setRopt);                                //   Create new task for recursive call
 	}                                                       //  End loop over child cells
 	wait_tasks;                                             //  Synchronize tasks
-#if MASS
+#if EXAFMM_MASS
 	for (int i=1; i<NTERM; i++) C->M[i] /= C->M[0];         //  Normalize multipole expansion coefficients
 #endif
 	real_t x = 1.0 / theta;                                 //  Inverse of theta
@@ -113,7 +113,7 @@ namespace exafmm {
       void operator() () {                                      // Overload operator()
 	kernel::L2L(C, C0);                                     //  L2L kernel
 	if (C->NCHILD==0) kernel::L2P(C);                       //  L2P kernel
-#if USE_WEIGHT
+#if EXAFMM_USE_WEIGHT
 	C_iter CP = C0 + C->IPARENT;                            // Parent cell
 	C->WEIGHT += CP->WEIGHT;                                // Add parent's weight
 	if (C->NCHILD==0) {                                     // If leaf cell

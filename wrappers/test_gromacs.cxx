@@ -75,7 +75,7 @@ int main(int argc, char ** argv) {
   file.close();
 #endif
 
-#if Cluster // Use preassigned cells
+#if EXAFMM_CLUSTER // Use preassigned cells
   int ncrit = 32;
   int level = Ni >= ncrit ? 1 + int(log2(Ni / ncrit)/3) : 0;
   float diameter = cycle / (1 << level);

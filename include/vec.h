@@ -1,8 +1,8 @@
 #ifndef vec_h
 #define vec_h
 #include <ostream>
-#define VEC_NEWTON 1
-#define VEC_VERBOSE 0
+#define EXAFMM_VEC_NEWTON 1
+#define EXAFMM_VEC_VERBOSE 0
 //! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics
 
 namespace exafmm {
@@ -213,7 +213,7 @@ namespace exafmm {
     }
   };
 #else
-#if VEC_VERBOSE
+#if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for CUDA")
 #endif
 #include "unroll.h"
@@ -511,7 +511,7 @@ namespace exafmm {
 #endif
 
 #if __MIC__
-#if VEC_VERBOSE
+#if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for MIC")
 #endif
 #include <immintrin.h>
@@ -610,7 +610,7 @@ namespace exafmm {
       return vec(_mm512_max_ps(v.data,w.data));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
-#if VEC_NEWTON                                                 // Switch on Newton-Raphson correction
+#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
       vec temp = vec(_mm512_rsqrt23_ps(v.data));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
@@ -713,7 +713,7 @@ namespace exafmm {
       return vec(_mm512_max_pd(v.data,w.data));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
-#if VEC_NEWTON
+#if EXAFMM_VEC_NEWTON
       vec<16,float> in(v[0],v[1],v[2],v[3],v[4],v[5],v[6],v[7],0,0,0,0,0,0,0,0);
       vec<16,float> temp = rsqrt(in);
       temp *= (temp * temp * in - 3.0f) * (-0.5f);
@@ -728,7 +728,7 @@ namespace exafmm {
 #endif
 
 #if __AVX__
-#if VEC_VERBOSE
+#if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for AVX")
 #endif
 #include <immintrin.h>
@@ -833,7 +833,7 @@ namespace exafmm {
       return vec(_mm256_max_ps(v.data,w.data));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
-#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
+#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
       vec temp = vec(_mm256_rsqrt_ps(v.data));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
@@ -942,7 +942,7 @@ namespace exafmm {
       return vec(_mm256_max_pd(v.data,w.data));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
-#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
+#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
       vec<8,float> in(v[0],v[1],v[2],v[3],0,0,0,0);
       vec<8,float> temp = rsqrt(in);
       temp *= (temp * temp * in - 3.0f) * (-0.5f);
@@ -957,7 +957,7 @@ namespace exafmm {
 #endif
 
 #if __bgq__
-#if VEC_VERBOSE
+#if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for BG/Q")
 #endif
   template<>
@@ -1062,7 +1062,7 @@ namespace exafmm {
       return temp;
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
-#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
+#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
       vec temp = vec(vec_rsqrtes(v.data));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
@@ -1075,7 +1075,7 @@ namespace exafmm {
 
 #if __SSE__
 #if __SSE3__
-#if VEC_VERBOSE
+#if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for SSE3")
 #endif
 #include <pmmintrin.h>
@@ -1089,7 +1089,7 @@ namespace exafmm {
     return ((double*)&temp)[0];
   }
 #else
-#if VEC_VERBOSE
+#if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for SSE")
 #endif
 #include <xmmintrin.h>
@@ -1196,7 +1196,7 @@ namespace exafmm {
       return vec(_mm_max_ps(v.data,w.data));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
-#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
+#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
       vec temp = vec(_mm_rsqrt_ps(v.data));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
@@ -1298,7 +1298,7 @@ namespace exafmm {
       return vec(_mm_max_pd(v.data,w.data));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
-#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
+#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
       vec<4,float> in(v[0],v[1],0,0);
       vec<4,float> temp = rsqrt(in);
       temp *= (temp * temp * in - 3.0f) * (-0.5f);
@@ -1313,7 +1313,7 @@ namespace exafmm {
 #endif
 
 #if __sparc_v9__
-#if VEC_VERBOSE
+#if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for SPARC")
 #endif
 #include <emmintrin.h>
@@ -1409,7 +1409,7 @@ namespace exafmm {
       return vec(_mm_max_pd(v.data,w.data));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
-#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
+#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
       vec temp = vec(_fjsp_rsqrta_v2r8(v.data));
       temp *= (temp * temp * v - 3.0f) * (-0.5f);
       return temp;
@@ -1526,7 +1526,7 @@ namespace exafmm {
       return vec(__fpsel(v.data-w.data,v.data,w.data));
     }
     friend vec rsqrt(const vec & v) {                           // Reciprocal square root
-#if VEC_NEWTON                                                  // Switch on Newton-Raphson correction
+#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
       vec temp = vec(__fprsqrte(v.data));
       temp *= (temp * temp * v - 3.0) * (-0.5);
       return temp;

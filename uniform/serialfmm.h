@@ -40,7 +40,7 @@ namespace exafmm {
 	}
 	checkLevel[d] = lev - 1;
       }
-      maxGlobLevel = FMMMAX(FMMMAX(checkLevel[0],checkLevel[1]),checkLevel[2]);
+      maxGlobLevel = EXAFMM_MAX(EXAFMM_MAX(checkLevel[0],checkLevel[1]),checkLevel[2]);
       for_3d numPartition[0][d] = 1;
       for_3d partition[d] = maxPartition[d];
       for( int lev=1; lev<=maxGlobLevel; lev++ ) {
@@ -126,8 +126,8 @@ namespace exafmm {
       int Imax = key[0];
       int Imin = key[0];
       for( int i=0; i<numBodies; i++ ) {
-	Imax = FMMMAX(Imax,key[i]);
-	Imin = FMMMIN(Imin,key[i]);
+	Imax = EXAFMM_MAX(Imax,key[i]);
+	Imin = EXAFMM_MIN(Imin,key[i]);
       }
       int numBucket = Imax - Imin + 1;
       int *bucket = new int [numBucket];
@@ -231,7 +231,7 @@ namespace exafmm {
       setSendCounts();
       gatherLevel = level;
       if(gatherLevel > maxGlobLevel) gatherLevel = maxGlobLevel;
-#if Serial
+#if EXAFMM_SERIAL
 #else
       int ix[3], numChild[3];
       for_3d numChild[d] = numPartition[maxGlobLevel][d] / numPartition[gatherLevel][d];
@@ -285,7 +285,7 @@ namespace exafmm {
 
     void periodicM2L() {
       real_t M[MTERM];
-#if Serial
+#if EXAFMM_SERIAL
       for_m M[m] = Multipole[13*numCells][m];
 #else
       for_m M[m] = globMultipole[0][m];
@@ -331,7 +331,7 @@ namespace exafmm {
 	}
 	for_m M[m] = M3[m];
       }
-#if Serial
+#if EXAFMM_SERIAL
       for_l Local[0][l] += L[l];
 #else
       for_l globLocal[0][l] += L[l];

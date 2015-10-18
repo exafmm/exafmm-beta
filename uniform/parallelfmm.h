@@ -46,7 +46,7 @@ namespace exafmm {
       MPI_Comm_rank(MPI_COMM_WORLD,&MPIRANK);
       printNow = MPIRANK == 0;
       requests = new MPI_Request [104];
-#ifdef IJHPCA
+#ifdef EXAFMM_IJHPCA
       char fname[256];
       sprintf(fname,"time%5.5d.dat",MPIRANK);
       fid.open(fname);
@@ -55,7 +55,7 @@ namespace exafmm {
     ~ParallelFMM() {
       delete[] requests;
       if(!EXTERNAL) MPI_Finalize();
-#ifdef IJHPCA
+#ifdef EXAFMM_IJHPCA
       fid.close();
 #endif
     }
@@ -223,7 +223,7 @@ namespace exafmm {
       int iforward = 0;
       int ix[3];
       float commBytes = 0;
-#ifdef IJHPCA
+#ifdef EXAFMM_IJHPCA
       MPI_Barrier(MPI_COMM_WORLD);
       logger::startTimer("M2L Comm");
 #endif
@@ -286,7 +286,7 @@ namespace exafmm {
 	  }
 	}
       }
-#ifdef IJHPCA
+#ifdef EXAFMM_IJHPCA
       double time = logger::stopTimer("M2L Comm", 0);
       fid << time << std::endl;
       logger::resetTimer("M2L Comm");
@@ -527,7 +527,7 @@ namespace exafmm {
 	MPI_Barrier(MPI_COMM_WORLD);
 	logger::startTimer("Comm LET cells");
 	if( lev > gatherLevel ) {
-#ifdef IJHPCA
+#ifdef EXAFMM_IJHPCA
 	  logger::startTimer("M2L Comm");
 	  globM2LSend(lev);
 	  globM2LRecv(lev);
@@ -554,9 +554,9 @@ namespace exafmm {
 	int ixp[3];
 	for_3d ixp[d] = IX[lev-1][d];
 	int jxmin[3];
-	for_3d jxmin[d] =  FMMMAX(nxmin[d], ixp[d] - 1)      * numPartition[lev][d] / numPartition[lev-1][d];
+	for_3d jxmin[d] =  EXAFMM_MAX(nxmin[d], ixp[d] - 1)      * numPartition[lev][d] / numPartition[lev-1][d];
 	int jxmax[3];
-	for_3d jxmax[d] = (FMMMIN(nxmax[d], ixp[d] + 1) + 1) * numPartition[lev][d] / numPartition[lev-1][d];
+	for_3d jxmax[d] = (EXAFMM_MIN(nxmax[d], ixp[d] + 1) + 1) * numPartition[lev][d] / numPartition[lev-1][d];
 	int jx[3];
 	for( jx[2]=jxmin[2]; jx[2]<jxmax[2]; jx[2]++ ) {
 	  for( jx[1]=jxmin[1]; jx[1]<jxmax[1]; jx[1]++ ) {

@@ -1,34 +1,64 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Enable assertion. */
-#undef ASSERT
+#undef EXAFMM_ASSERT
 
 /* Count number of M2L and P2P kernel calls. */
-#undef COUNT_KERNEL
+#undef EXAFMM_COUNT_KERNEL
 
 /* Count interaction list per cell. */
-#undef COUNT_LIST
+#undef EXAFMM_COUNT_LIST
 
 /* Define to enable extra debugging options. */
-#undef DEBUG
+#undef EXAFMM_DEBUG
+
+/* Define to enable AVX optimizations. */
+#undef EXAFMM_HAVE_AVX
+
+/* Define if you have the MPI library. */
+#undef EXAFMM_HAVE_MPI
+
+/* Define to enable ARM NEON optimizations. */
+#undef EXAFMM_HAVE_NEON
+
+/* Define if OpenMP is enabled */
+#undef EXAFMM_HAVE_OPENMP
+
+/* Define to enable SSE/SSE3 optimizations. */
+#undef EXAFMM_HAVE_SSE3
 
 /* Define to compile in single precision. */
 #undef EXAFMM_SINGLE
 
-/* Define to enable AVX optimizations. */
-#undef HAVE_AVX
+/* Enable DAG recorder. */
+#undef EXAFMM_USE_DAG
 
-/* Define if you have the MPI library. */
-#undef HAVE_MPI
+/* Enable Kahan summation. */
+#undef EXAFMM_USE_KAHAN
 
-/* Define to enable ARM NEON optimizations. */
-#undef HAVE_NEON
+/* Enable PAPI performance counter. */
+#undef EXAFMM_USE_PAPI
 
-/* Define if OpenMP is enabled */
-#undef HAVE_OPENMP
+/* Disable SIMD optimizations. */
+#undef EXAFMM_USE_SIMD
 
-/* Define to enable SSE/SSE3 optimizations. */
-#undef HAVE_SSE3
+/* Enable thread tracing. */
+#undef EXAFMM_USE_TRACE
+
+/* Enable weight for partitioning. */
+#undef EXAFMM_USE_WEIGHT
+
+/* Use Intel Cilk */
+#undef EXAFMM_WITH_CILK
+
+/* Use MassiveThreads */
+#undef EXAFMM_WITH_MTHREAD
+
+/* Use QThreads */
+#undef EXAFMM_WITH_QTHREAD
+
+/* Use Intel TBB */
+#undef EXAFMM_WITH_TBB
 
 /* Name of package */
 #undef PACKAGE
@@ -51,35 +81,5 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* Enable DAG recorder. */
-#undef USE_DAG
-
-/* Enable Kahan summation. */
-#undef USE_KAHAN
-
-/* Enable PAPI performance counter. */
-#undef USE_PAPI
-
-/* Disable SIMD optimizations. */
-#undef USE_SIMD
-
-/* Enable thread tracing. */
-#undef USE_TRACE
-
-/* Enable weight for partitioning. */
-#undef USE_WEIGHT
-
 /* Version number of package */
 #undef VERSION
-
-/* Use Intel Cilk */
-#undef WITH_CILK
-
-/* Use MassiveThreads */
-#undef WITH_MTHREAD
-
-/* Use QThreads */
-#undef WITH_QTHREAD
-
-/* Use Intel TBB */
-#undef WITH_TBB

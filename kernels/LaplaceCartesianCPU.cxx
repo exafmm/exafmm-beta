@@ -442,7 +442,7 @@ inline void getCoef<6>(vecP &C, const vec3 &dX, real_t &invR2, const real_t &inv
 
 template<int PP>
 inline void sumM2L(vecP &L, const vecP &C, const vecP &M) {
-#if MASS
+#if EXAFMM_MASS
   for (int i=0; i<NTERM; i++) L[i] += C[i];
 #else
   for (int i=0; i<NTERM; i++) L[i] += M[0] * C[i];
@@ -453,7 +453,7 @@ inline void sumM2L(vecP &L, const vecP &C, const vecP &M) {
 
 template<>
 inline void sumM2L<1>(vecP &L, const vecP &C, const vecP&M __attribute__((unused))) {
-#if MASS
+#if EXAFMM_MASS
   for (int i=0; i<NTERM; i++) L[i] += C[i];
 #else
   for (int i=0; i<NTERM; i++) L[i] += M[0] * C[i];
@@ -661,7 +661,7 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
 void kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) {
   vec3 dX = Ci->X - Cj->X - Xperiodic;
   real_t invR2 = 1 / norm(dX);
-#if MASS
+#if EXAFMM_MASS
   real_t invR  = Ci->M[0] * Cj->M[0] * std::sqrt(invR2);
 #else
   real_t invR = std::sqrt(invR2);
@@ -681,7 +681,7 @@ void kernel::L2L(C_iter Ci, C_iter Ci0) {
   vecP C;
   C[0] = 1;
   Kernels<0,0,P-1>::power(C, dX);
-#if MASS
+#if EXAFMM_MASS
   Ci->L /= Ci->M[0];
 #endif
   Ci->L += Cj->L;

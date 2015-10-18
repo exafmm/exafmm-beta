@@ -3,15 +3,15 @@
 
 #include "config.h"
 
-#ifdef WITH_CILK
+#ifdef EXAFMM_WITH_CILK
 
-#if defined WITH_TBB || defined WITH_MTHREAD || defined WITH_QTHREAD || defined DISABLE_THREAD
+#if defined EXAFMM_WITH_TBB || defined EXAFMM_WITH_MTHREAD || defined EXAFMM_WITH_QTHREAD
 #include "build_tree_cilk.h"
 #else
 #include "build_tree_tbb.h"
 #endif
 
-#elif defined WITH_TBB || defined WITH_MTHREAD || defined WITH_QTHREAD || defined DISABLE_THREAD
+#elif defined EXAFMM_WITH_TBB || defined EXAFMM_WITH_MTHREAD || defined EXAFMM_WITH_QTHREAD
 #include "build_tree_tbb.h"
 
 #else

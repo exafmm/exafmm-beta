@@ -1,8 +1,13 @@
 #include "kernel.h"
 using namespace exafmm;
 
-#define ODDEVEN(n) ((((n) & 1) == 1) ? -1 : 1)
-#define IPOW2N(n) ((n >= 0) ? 1 : ODDEVEN(n))
+inline int oddOrEven(int n) {
+  return (((n) & 1) == 1) ? -1 : 1;
+}
+
+inline int ipow2n(int n) {
+  return (n >= 0) ? 1 : oddOrEven(n);
+}
 
 const complex_t I(0.,1.);                                       // Imaginary unit
 
@@ -135,12 +140,12 @@ void kernel::M2M(C_iter Ci, C_iter C0) {
           for (int m=std::max(-n,-j+k+n); m<=std::min(k-1,n); m++) {
             int jnkms = (j - n) * (j - n + 1) / 2 + k - m;
             int nm    = n * n + n - m;
-            M += Cj->M[jnkms] * Ynm[nm] * real_t(IPOW2N(m) * ODDEVEN(n));
+            M += Cj->M[jnkms] * Ynm[nm] * real_t(ipow2n(m) * oddOrEven(n));
           }
           for (int m=k; m<=std::min(n,j+k-n); m++) {
             int jnkms = (j - n) * (j - n + 1) / 2 - k + m;
             int nm    = n * n + n - m;
-            M += std::conj(Cj->M[jnkms]) * Ynm[nm] * real_t(ODDEVEN(k+n+m));
+            M += std::conj(Cj->M[jnkms]) * Ynm[nm] * real_t(oddOrEven(k+n+m));
           }
         }
         Ci->M[jks] += M;
@@ -158,9 +163,9 @@ void kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) {
   if (mutual) evalLocal(rho, alpha+M_PI, beta, Ynmj);
   for (int j=0; j<P; j++) {
 #if MASS
-    real_t Cnm = std::real(Ci->M[0] * Cj->M[0]) * ODDEVEN(j);
+    real_t Cnm = std::real(Ci->M[0] * Cj->M[0]) * oddOrEven(j);
 #else
-    real_t Cnm = ODDEVEN(j);
+    real_t Cnm = oddOrEven(j);
 #endif
     for (int k=0; k<=j; k++) {
       int jks = j * (j + 1) / 2 + k;
@@ -182,7 +187,7 @@ void kernel::M2L(C_iter Ci, C_iter Cj, bool mutual) {
         for (int m=0; m<=n; m++) {
           int nms  = n * (n + 1) / 2 + m;
           int jnkm = (j + n) * (j + n) + j + n + m - k;
-          real_t Cnm2 = Cnm * ODDEVEN((k-m)*(k<m)+m);
+          real_t Cnm2 = Cnm * oddOrEven((k-m)*(k<m)+m);
           Li += Cj->M[nms] * Cnm2 * Ynmi[jnkm];
           if (mutual) Lj += Ci->M[nms] * Cnm2 * Ynmj[jnkm];
         }
@@ -211,13 +216,13 @@ void kernel::L2L(C_iter Ci, C_iter C0) {
         for (int m=j+k-n; m<0; m++) {
           int jnkm = (n - j) * (n - j) + n - j + m - k;
           int nms  = n * (n + 1) / 2 - m;
-          L += std::conj(Cj->L[nms]) * Ynm[jnkm] * real_t(ODDEVEN(k));
+          L += std::conj(Cj->L[nms]) * Ynm[jnkm] * real_t(oddOrEven(k));
         }
         for (int m=0; m<=n; m++) {
           if( n-j >= abs(m-k) ) {
             int jnkm = (n - j) * (n - j) + n - j + m - k;
             int nms  = n * (n + 1) / 2 + m;
-            L += Cj->L[nms] * Ynm[jnkm] * real_t(ODDEVEN((m-k)*(m<k)));
+            L += Cj->L[nms] * Ynm[jnkm] * real_t(oddOrEven((m-k)*(m<k)));
           }
         }
       }

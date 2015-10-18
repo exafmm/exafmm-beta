@@ -34,7 +34,7 @@ int main() {
   CI->X = 21. / 8;
   CI->M = 1;
   CI->L = 0;
-#if MASS
+#if EXAFMM_MASS
   for (int i=1; i<NTERM; i++) CJ->M[i] /= CJ->M[0];
 #endif
   kernel::M2L(CI, CJ, false);
@@ -50,7 +50,7 @@ int main() {
   Ci->X = 45. / 16;
   Ci->M = 1;
   Ci->L = 0;
-#if MASS
+#if EXAFMM_MASS
   for (int i=1; i<NTERM; i++) Cj->M[i] /= Cj->M[0];
 #endif
   kernel::M2L(Ci, Cj, false);

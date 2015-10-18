@@ -8,8 +8,11 @@
 #include "traversal.h"
 #include "tree_mpi.h"
 #include "up_down_pass.h"
-#if MASS
-#error Turn off MASS for this wrapper
+#if EXAFMM_MASS
+#error Turn off EXAFMM_MASS for this wrapper
+#endif
+#if EXAFMM_NO_P2P
+#warning Compiling with EXAFMM_NO_P2P. Answer will be wrong for test_gromacs.
 #endif
 using namespace exafmm;
 
@@ -98,7 +101,7 @@ extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, floa
   globalBounds = baseMPI->allreduceBounds(localBounds);
   localBounds = partition->octsection(bodies,globalBounds);
   bodies = treeMPI->commBodies(bodies);
-#if Cluster
+#if EXAFMM_CLUSTER
   Bodies clusters = clusterTree->setClusterCenter(bodies, cycle);
   Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
   clusterTree->attachClusterBodies(bodies, cells, cycle);
@@ -107,7 +110,7 @@ extern "C" void FMM_Partition(int & n, int * ibody, int * icell, float * x, floa
 #endif
   upDownPass->upwardPass(cells);
 
-#if Cluster
+#if EXAFMM_CLUSTER
   clusterTree->shiftBackBodies(bodies, cycle);
 #endif
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
@@ -147,7 +150,7 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
     B->IBODY = i;
     B->ICELL = index[i];
   }
-#if Cluster
+#if EXAFMM_CLUSTER
   Bodies clusters = clusterTree->setClusterCenter(bodies, cycle);
   Cells cells = globalTree->buildTree(clusters, buffer, localBounds);
   clusterTree->attachClusterBodies(bodies, cells, cycle);
@@ -162,7 +165,7 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
   traversal->initListCount(cells);
   traversal->initWeight(cells);
   traversal->traverse(cells, cells, cycle, args->dual, args->mutual);
-#if COUNT_LIST
+#if EXAFMM_COUNT_LIST
   traversal->writeList(cells, baseMPI->mpirank);
 #endif
   Cells jcells;
@@ -187,7 +190,7 @@ extern "C" void FMM_Coulomb(int n, int * index, float * x, float * q, float * p,
   logger::stopTimer("Total FMM");
   logger::printTitle("Total runtime");
   logger::printTime("Total FMM");
-#if Cluster
+#if EXAFMM_CLUSTER
   clusterTree->shiftBackBodies(bodies, cycle);
 #endif
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {

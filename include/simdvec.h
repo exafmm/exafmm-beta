@@ -95,7 +95,7 @@ namespace exafmm {
   };
 
   kreal_t transpose(ksimdvec v, int i) {
-#if KAHAN
+#if EXAFMM_USE_KAHAN
     kreal_t temp;
     temp.s = v.s[i];
     temp.c = v.c[i];

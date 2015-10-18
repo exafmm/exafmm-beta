@@ -9,13 +9,13 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "van_der_waals.h"
-#if Serial
+#if EXAFMM_SERIAL
 #include "serialfmm.h"
 #else
 #include "parallelfmm.h"
 #endif
-#if MASS
-#error Turn off MASS for this wrapper
+#if EXAFMM_MASS
+#error Turn off EXAFMM_MASS for this wrapper
 #endif
 using namespace exafmm;
 
@@ -30,7 +30,7 @@ Traversal * traversal;
 TreeMPI * treeMPI;
 UpDownPass * upDownPass;
 
-#if Serial
+#if EXAFMM_SERIAL
 SerialFMM * FMM;
 #else
 ParallelFMM * FMM;
@@ -58,7 +58,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   traversal = new Traversal(nspawn, images);
   treeMPI = new TreeMPI(baseMPI->mpirank, baseMPI->mpisize, images);
   upDownPass = new UpDownPass(theta, useRmax, useRopt);
-#if Serial
+#if EXAFMM_SERIAL
   FMM = new SerialFMM;
 #else
   FMM = new ParallelFMM;
@@ -80,7 +80,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & ngl
   logger::printTitle("Initial Parameters");
   args->print(logger::stringLength, P);
   if (baseMPI->mpirank == 0) {
-    std::cout << "PP      : " << PP << std::endl;
+    std::cout << "PP      : " << EXAFMM_PP << std::endl;
     std::cout << "DP2P    : " << DP2P << std::endl;
     std::cout << "DM2L    : " << DM2L << std::endl;
   //std::cout << "ALPHA_M : " << ALPHA_M << std::endl;  
@@ -254,7 +254,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   FMM->sortBodies();
   FMM->buildTree();
   FMM->upwardPass();
-#if Serial
+#if EXAFMM_SERIAL
 #else
   FMM->P2PSend();
   FMM->P2PRecv();
@@ -267,7 +267,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
   FMM->globM2L();
 #endif
   FMM->periodicM2L();
-#if Serial
+#if EXAFMM_SERIAL
 #else
   FMM->globL2L();
 #endif

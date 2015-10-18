@@ -10,12 +10,12 @@
 
 namespace exafmm {
   // Basic type definitions
-#if FP64
-  typedef double               real_t;                          //!< Floating point type is double precision
-  const real_t EPS = 1e-16;                                     //!< Double precision epsilon
-#else
+#if EXAFMM_SINGLE
   typedef float                real_t;                          //!< Floating point type is single precision
   const real_t EPS = 1e-8;                                      //!< Single precision epsilon
+#else
+  typedef double               real_t;                          //!< Floating point type is double precision
+  const real_t EPS = 1e-16;                                     //!< Double precision epsilon
 #endif
   typedef std::complex<real_t> complex_t;                       //!< Complex type
   typedef vec<3,int>           ivec3;                           //!< Vector of 3 int types
@@ -29,7 +29,7 @@ namespace exafmm {
   typedef std::complex<simdvec> csimdvec;                       //!< Complex SIMD vector type
 
   // Kahan summation types (Achieves quasi-double precision using single precision types)
-#if KAHAN
+#if EXAFMM_USE_KAHAN
   typedef kahan<real_t>   kreal_t;                              //!< Floating point type with Kahan summation
   typedef vec<4,kreal_t>  kvec4;                                //!< Vector of 4 floats with Kahan summaiton
   typedef kahan<simdvec>  ksimdvec;                             //!< SIMD vector type with Kahan summation
@@ -42,17 +42,14 @@ namespace exafmm {
 #endif
 
   // Multipole/local expansion coefficients
-#ifndef EXPANSION
-#error EXPANSION undefined
-#endif
-  const int P = EXPANSION;                                      //!< Order of expansions
-#if Cartesian
+  const int P = EXAFMM_EXPANSION;                               //!< Order of expansions
+#if EXAFMM_CARTESIAN
   const int NTERM = P*(P+1)*(P+2)/6;                            //!< Number mutlipole/local terms
   typedef vec<NTERM,real_t> vecP;                               //!< Multipole/local coefficient type
-#elif Spherical
-#if Laplace
+#elif EXAFMM_SPHERICAL
+#if EXAFMM_LAPLACE
   const int NTERM = P*(P+1)/2;                                  //!< Number of multipole/local terms
-#elif Helmholtz
+#elif EXAFMM_HELMHOLTZ
   const int NTERM = P*P;                                        //!< Number of multipole/local terms
 #endif
   typedef vec<NTERM,complex_t> vecP;                            //!< Multipole/local coefficient type
@@ -73,9 +70,9 @@ namespace exafmm {
   //! Structure of aligned source for SIMD
   struct Source {
     vec3   X;                                                   //!< Position
-#if Laplace
+#if EXAFMM_LAPLACE
     real_t SRC;                                                 //!< Scalar source values
-#elif Helmholtz
+#elif EXAFMM_HELMHOLTZ
     complex_t SRC;                                              //!< Scalar source values
 #endif
   } __attribute__ ((aligned (16)));
@@ -86,9 +83,9 @@ namespace exafmm {
     int      IRANK;                                             //!< Initial rank numbering for partitioning back
     uint64_t ICELL;                                             //!< Cell index   
     real_t   WEIGHT;                                            //!< Weight for partitioning
-#if Laplace
+#if EXAFMM_LAPLACE
     kvec4    TRG;                                               //!< Scalar+vector3 target values
-#elif Helmholtz
+#elif EXAFMM_HELMHOLTZ
     cvec4    TRG;                                               //!< Scalar+vector3 target values
 #endif
   };
@@ -103,7 +100,7 @@ namespace exafmm {
     int       NCHILD;                                           //!< Number of child cells
     int       IBODY;                                            //!< Index of first body
     int       NBODY;                                            //!< Number of descendant bodies
-#if COUNT_LIST
+#if EXAFMM_COUNT_LIST
     int       numP2P;                                           //!< Size of P2P interaction list per cell
     int       numM2L;                                           //!< Size of M2L interaction list per cell
 #endif

@@ -7,7 +7,7 @@
 #endif
 
 // Override assertion
-#if ASSERT
+#if EXAFMM_ASSERT
 #include <cassert>
 #else
 #define assert(x)
@@ -26,14 +26,27 @@ const int SIMD_BYTES = 16;                                      //!< SIMD byte l
 
 // Bluegene/Q and K computer don't have single precision arithmetic
 #if __bgp__ | __bgq__ | __sparc_v9__
-#ifndef FP64
-#error Please use FP64 for BG/P, BG/Q, and K computer
+#ifdef EXAFMM_SINGLE
+#error Please use double precision for BG/P, BG/Q, FX10, FX100
 #endif
 #endif
 
-// Check for mismatching macro parameters
-#if Helmholtz
-#if Cartesian
+// Check for equation and basis
+#ifndef EXAFMM_EXPANSION
+#error EXAFMM_EXPANSION undefined
+#endif
+#if defined EXAFMM_CARTESIAN || EXAFMM_SPHERICAL
+#else
+#error Please define EXAFMM_CARTESIAN or EXAFMM_SPHERICAL
+#endif
+#if defined EXAFMM_LAPLACE || EXAFMM_HELMHOLTZ || EXAFMM_STOKES
+#else
+#error Please define EXAFMM_LAPLACE or EXAFMM_HELMHOLTZ or EXAFMM_STOKES
+#endif
+
+// Check for mismatching equation and basis
+#if EXAFMM_HELMHOLTZ
+#if EXAFMM_CARTESIAN
 #error Use Spherical for Helmholtz
 #endif
 #endif

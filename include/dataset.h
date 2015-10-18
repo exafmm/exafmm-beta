@@ -146,8 +146,8 @@ namespace exafmm {
 	int end = bodies.size();                                //  End index of bodies
 	splitRange(begin, end, i, numSplit);                    //  Split range of bodies
 	srand48(seed);                                          //  Set seed for random number generator
-#if Laplace
-#if MASS
+#if EXAFMM_LAPLACE
+#if EXAFMM_MASS
 	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	  B->SRC = 1. / bodies.size();                          //   Initialize mass
 	}                                                       //  End loop over bodies
@@ -162,7 +162,7 @@ namespace exafmm {
 	  B->SRC -= average;                                    //   Subtract average charge
 	}                                                       //  End loop over bodies
 #endif
-#elif Helmholtz
+#elif EXAFMM_HELMHOLTZ
 	const complex_t I(0.0,1.0);
 	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	  B->SRC = B->X[0] + I * B->X[1];                       //   Initialize source
@@ -286,7 +286,7 @@ namespace exafmm {
     //! Get bodies with positive charges
     Bodies getPositive(Bodies & bodies) {
       Bodies buffer = bodies;                                   // Copy bodies to buffer
-#if Laplace
+#if EXAFMM_LAPLACE
       B_iter B2 = buffer.begin();                               // Initialize iterator of buffer
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
 	if (B->SRC >= 0) {                                      //  If source is positive
@@ -303,7 +303,7 @@ namespace exafmm {
     //! Get bodies with negative charges
     Bodies getNegative(Bodies & bodies) {
       Bodies buffer = bodies;                                   // Copy bodies to buffer
-#if Laplace
+#if EXAFMM_LAPLACE
       B_iter B2 = buffer.begin();                               // Initialize iterator of buffer
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
 	if (B->SRC < 0) {                                       //  If source is negative

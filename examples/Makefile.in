@@ -14,25 +14,6 @@
 
 @SET_MAKE@
 
-### choose C++ compiler
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -Wa,-q -ffast-math -funroll-loops -fopenmp # GCC (OS X)
-#CXX	= CC -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp -dynamic # GCC (Cray)
-#CXX	= mpicxx -xHOST -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
-#CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
-#CXX	= CC -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp -dynamic # Intel (Cray)
-#CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
-#CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
-#CXX	= mpiFCCpx -Kfast,openmp # K computer / FX10 (cross compiler)
-#CXX	= mpiFCC -Kfast,openmp # K computer / FX10 (interactive)
-#CXX	= tau_cxx.sh # TAU compiler instrumentation
-
-### choose fortran compiler
-#FC = mpif90 -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
-#FC = ftn -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran (Cray)
-#FC = mpif90 -O3 -xHOST -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
-#FC = ftn -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel (Cray)
-
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -99,54 +80,54 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.am $(top_srcdir)/build-aux/depcomp
 
 ### Thread libraries
-@OPENMP_TRUE@am__append_1 = -DWITH_OPENMP
-@OPENMP_TRUE@am__append_2 = $(OPENMP_CFLAGS)
-@WITH_TBB_TRUE@am__append_3 = -ltbb -dynamic
-@WITH_CILK_TRUE@am__append_4 = -lcilkrts
-@WITH_MTHREAD_TRUE@am__append_5 = -lmyth-native
-@WITH_QTHREAD_TRUE@am__append_6 = -lqthread
+@EXAFMM_HAVE_OPENMP_TRUE@am__append_1 = -DEXAFMM_WITH_OPENMP
+@EXAFMM_HAVE_OPENMP_TRUE@am__append_2 = $(OPENMP_CFLAGS)
+@EXAFMM_WITH_TBB_TRUE@am__append_3 = -ltbb -dynamic
+@EXAFMM_WITH_CILK_TRUE@am__append_4 = -lcilkrts
+@EXAFMM_WITH_MTHREAD_TRUE@am__append_5 = -lmyth-native
+@EXAFMM_WITH_QTHREAD_TRUE@am__append_6 = -lqthread
 
 ### Floating point precision
-@EXAFMM_SINGLE_FALSE@am__append_7 = -DFP64
+@EXAFMM_SINGLE_TRUE@am__append_7 = -DEXAFMM_SINGLE
 
 ### SIMD flags
-@USE_SIMD_TRUE@am__append_8 = -DUSE_SIMD
-@HAVE_AVX_TRUE@@USE_SIMD_TRUE@am__append_9 = $(AVX_CXXFLAGS) # Use AVX intrinsics
-@HAVE_AVX_FALSE@@HAVE_SSE3_TRUE@@USE_SIMD_TRUE@am__append_10 = $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
-@HAVE_AVX_FALSE@@HAVE_NEON_TRUE@@HAVE_SSE3_FALSE@@USE_SIMD_TRUE@am__append_11 = $(NEON_CXXFLAGS) # Use Neon intrinsics
+@EXAFMM_USE_SIMD_TRUE@am__append_8 = -DEXAFMM_USE_SIMD
+@EXAFMM_HAVE_AVX_TRUE@@EXAFMM_USE_SIMD_TRUE@am__append_9 = $(AVX_CXXFLAGS) # Use AVX intrinsics
+@EXAFMM_HAVE_AVX_FALSE@@EXAFMM_HAVE_SSE3_TRUE@@EXAFMM_USE_SIMD_TRUE@am__append_10 = $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
+@EXAFMM_HAVE_AVX_FALSE@@EXAFMM_HAVE_NEON_TRUE@@EXAFMM_HAVE_SSE3_FALSE@@EXAFMM_USE_SIMD_TRUE@am__append_11 = $(NEON_CXXFLAGS) # Use Neon intrinsics
 
 # Kahan summation
-@USE_KAHAN_TRUE@am__append_12 = -DKAHAN
+@EXAFMM_USE_KAHAN_TRUE@am__append_12 = -DEXAFMM_USE_KAHAN
 
 # Use weights for partitioning
-@USE_WEIGHT_TRUE@am__append_13 = -DUSE_WEIGHT
+@EXAFMM_USE_WEIGHT_TRUE@am__append_13 = -DEXAFMM_USE_WEIGHT
 
 # Use PAPI performance counter (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM")
-@USE_PAPI_TRUE@am__append_14 = -DPAPI
-@USE_PAPI_TRUE@am__append_15 = -lpapi
+@EXAFMM_USE_PAPI_TRUE@am__append_14 = -DEXAFMM_USE_PAPI
+@EXAFMM_USE_PAPI_TRUE@am__append_15 = -lpapi
 
 # Use thread tracing
-@USE_TRACE_TRUE@am__append_16 = -DTRACE
+@EXAFMM_USE_TRACE_TRUE@am__append_16 = -DEXAFMM_USE_TRACE
 
 # Use DAG Recorder
-@USE_DAG_TRUE@am__append_17 = -DDAG_RECORDER=2
-@USE_DAG_TRUE@am__append_18 = -ldr
+@EXAFMM_USE_DAG_TRUE@am__append_17 = -DDAG_RECORDER=2
+@EXAFMM_USE_DAG_TRUE@am__append_18 = -ldr
 
 # Count number of M2L and P2P kernel calls
-@COUNT_KERNEL_TRUE@am__append_19 = -DCOUNT_KERNEL
+@EXAFMM_COUNT_KERNEL_TRUE@am__append_19 = -DEXAFMM_COUNT_KERNEL
 
 # Count interaction list per cell
-@COUNT_LIST_TRUE@am__append_20 = -DCOUNT_LIST
-@ASSERT_TRUE@am__append_21 = -DASSERT
+@EXAFMM_COUNT_LIST_TRUE@am__append_20 = -DEXAFMM_COUNT_LIST
+@EXAFMM_ASSERT_TRUE@am__append_21 = -DEXAFMM_ASSERT
 
 #AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
-@DEBUG_TRUE@am__append_22 = -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
+@EXAFMM_DEBUG_TRUE@am__append_22 = -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
 bin_PROGRAMS = laplace_cartesian$(EXEEXT) laplace_spherical$(EXEEXT) \
 	helmholtz_spherical$(EXEEXT) tree$(EXEEXT) \
 	laplace_cartesian_kernel$(EXEEXT) \
 	laplace_spherical_kernel$(EXEEXT) \
 	helmholtz_spherical_kernel$(EXEEXT) $(am__EXEEXT_1)
-@MPI_TRUE@am__append_23 = laplace_cartesian_mpi laplace_spherical_mpi helmholtz_spherical_mpi ewald_mpi
+@EXAFMM_HAVE_MPI_TRUE@am__append_23 = laplace_cartesian_mpi laplace_spherical_mpi helmholtz_spherical_mpi ewald_mpi
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_compiler_flags.m4 \
@@ -158,18 +139,20 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-@MPI_TRUE@am__EXEEXT_1 = laplace_cartesian_mpi$(EXEEXT) \
-@MPI_TRUE@	laplace_spherical_mpi$(EXEEXT) \
-@MPI_TRUE@	helmholtz_spherical_mpi$(EXEEXT) ewald_mpi$(EXEEXT)
+@EXAFMM_HAVE_MPI_TRUE@am__EXEEXT_1 = laplace_cartesian_mpi$(EXEEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	laplace_spherical_mpi$(EXEEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	helmholtz_spherical_mpi$(EXEEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	ewald_mpi$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__ewald_mpi_SOURCES_DIST = ewald.cxx \
 	../kernels/LaplaceSphericalCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
 am__dirstamp = $(am__leading_dot)dirstamp
-@MPI_TRUE@am_ewald_mpi_OBJECTS = ewald_mpi-ewald.$(OBJEXT) \
-@MPI_TRUE@	../kernels/ewald_mpi-LaplaceSphericalCPU.$(OBJEXT) \
-@MPI_TRUE@	../kernels/ewald_mpi-LaplaceP2PCPU.$(OBJEXT)
+@EXAFMM_HAVE_MPI_TRUE@am_ewald_mpi_OBJECTS =  \
+@EXAFMM_HAVE_MPI_TRUE@	ewald_mpi-ewald.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/ewald_mpi-LaplaceSphericalCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/ewald_mpi-LaplaceP2PCPU.$(OBJEXT)
 ewald_mpi_OBJECTS = $(am_ewald_mpi_OBJECTS)
 ewald_mpi_LDADD = $(LDADD)
 am_helmholtz_spherical_OBJECTS = helmholtz_spherical-fmm.$(OBJEXT) \
@@ -187,10 +170,9 @@ helmholtz_spherical_kernel_LDADD = $(LDADD)
 am__helmholtz_spherical_mpi_SOURCES_DIST = fmm_mpi.cxx \
 	../kernels/HelmholtzSphericalCPU.cxx \
 	../kernels/HelmholtzP2PCPU.cxx
-@MPI_TRUE@am_helmholtz_spherical_mpi_OBJECTS =  \
-@MPI_TRUE@	helmholtz_spherical_mpi-fmm_mpi.$(OBJEXT) \
-@MPI_TRUE@	../kernels/helmholtz_spherical_mpi-HelmholtzSphericalCPU.$(OBJEXT) \
-@MPI_TRUE@	../kernels/helmholtz_spherical_mpi-HelmholtzP2PCPU.$(OBJEXT)
+@EXAFMM_HAVE_MPI_TRUE@am_helmholtz_spherical_mpi_OBJECTS = helmholtz_spherical_mpi-fmm_mpi.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/helmholtz_spherical_mpi-HelmholtzSphericalCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/helmholtz_spherical_mpi-HelmholtzP2PCPU.$(OBJEXT)
 helmholtz_spherical_mpi_OBJECTS =  \
 	$(am_helmholtz_spherical_mpi_OBJECTS)
 helmholtz_spherical_mpi_LDADD = $(LDADD)
@@ -209,10 +191,10 @@ laplace_cartesian_kernel_LDADD = $(LDADD)
 am__laplace_cartesian_mpi_SOURCES_DIST = fmm_mpi.cxx \
 	../kernels/LaplaceCartesianCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
-@MPI_TRUE@am_laplace_cartesian_mpi_OBJECTS =  \
-@MPI_TRUE@	laplace_cartesian_mpi-fmm_mpi.$(OBJEXT) \
-@MPI_TRUE@	../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.$(OBJEXT) \
-@MPI_TRUE@	../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.$(OBJEXT)
+@EXAFMM_HAVE_MPI_TRUE@am_laplace_cartesian_mpi_OBJECTS =  \
+@EXAFMM_HAVE_MPI_TRUE@	laplace_cartesian_mpi-fmm_mpi.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/laplace_cartesian_mpi-LaplaceCartesianCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/laplace_cartesian_mpi-LaplaceP2PCPU.$(OBJEXT)
 laplace_cartesian_mpi_OBJECTS = $(am_laplace_cartesian_mpi_OBJECTS)
 laplace_cartesian_mpi_LDADD = $(LDADD)
 am_laplace_spherical_OBJECTS = laplace_spherical-fmm.$(OBJEXT) \
@@ -230,10 +212,10 @@ laplace_spherical_kernel_LDADD = $(LDADD)
 am__laplace_spherical_mpi_SOURCES_DIST = fmm_mpi.cxx \
 	../kernels/LaplaceSphericalCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
-@MPI_TRUE@am_laplace_spherical_mpi_OBJECTS =  \
-@MPI_TRUE@	laplace_spherical_mpi-fmm_mpi.$(OBJEXT) \
-@MPI_TRUE@	../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.$(OBJEXT) \
-@MPI_TRUE@	../kernels/laplace_spherical_mpi-LaplaceP2PCPU.$(OBJEXT)
+@EXAFMM_HAVE_MPI_TRUE@am_laplace_spherical_mpi_OBJECTS =  \
+@EXAFMM_HAVE_MPI_TRUE@	laplace_spherical_mpi-fmm_mpi.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/laplace_spherical_mpi-LaplaceSphericalCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/laplace_spherical_mpi-LaplaceP2PCPU.$(OBJEXT)
 laplace_spherical_mpi_OBJECTS = $(am_laplace_spherical_mpi_OBJECTS)
 laplace_spherical_mpi_LDADD = $(LDADD)
 am_tree_OBJECTS = tree-tree.$(OBJEXT)
@@ -432,11 +414,11 @@ AM_CPPFLAGS = -I../include -I../uniform $(am__append_1) \
 	$(am__append_21)
 AM_MAKEFLAGS = -s
 laplace_cartesian_SOURCES = fmm.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-laplace_cartesian_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DMASS -DEXPANSION=4
+laplace_cartesian_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_MASS -DEXAFMM_EXPANSION=4
 laplace_spherical_SOURCES = fmm.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-laplace_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DSpherical -DEXPANSION=10
+laplace_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
 helmholtz_spherical_SOURCES = fmm.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
-helmholtz_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DHelmholtz -DSpherical -DEXPANSION=40 -DFP64
+helmholtz_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=40
 tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
 laplace_cartesian_kernel_SOURCES = kernel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
@@ -445,14 +427,14 @@ laplace_spherical_kernel_SOURCES = kernel.cxx ../kernels/LaplaceSphericalCPU.cxx
 laplace_spherical_kernel_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
 helmholtz_spherical_kernel_SOURCES = kernel.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
 helmholtz_spherical_kernel_CPPFLAGS = $(helmholtz_spherical_CPPFLAGS)
-@MPI_TRUE@laplace_cartesian_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-@MPI_TRUE@laplace_cartesian_mpi_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
-@MPI_TRUE@laplace_spherical_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-@MPI_TRUE@laplace_spherical_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
-@MPI_TRUE@helmholtz_spherical_mpi_SOURCES = fmm_mpi.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
-@MPI_TRUE@helmholtz_spherical_mpi_CPPFLAGS = $(helmholtz_spherical_CPPFLAGS)
-@MPI_TRUE@ewald_mpi_SOURCES = ewald.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
-@MPI_TRUE@ewald_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
+@EXAFMM_HAVE_MPI_TRUE@laplace_cartesian_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@laplace_cartesian_mpi_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
+@EXAFMM_HAVE_MPI_TRUE@laplace_spherical_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@laplace_spherical_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
+@EXAFMM_HAVE_MPI_TRUE@helmholtz_spherical_mpi_SOURCES = fmm_mpi.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@helmholtz_spherical_mpi_CPPFLAGS = $(helmholtz_spherical_CPPFLAGS)
+@EXAFMM_HAVE_MPI_TRUE@ewald_mpi_SOURCES = ewald.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@ewald_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -1370,14 +1352,14 @@ run_laplace_spherical_kernel: laplace_spherical_kernel
 run_helmholtz_spherical_kernel: helmholtz_spherical_kernel
 	./$< -Dgv
 
-@MPI_TRUE@run_laplace_cartesian_mpi: laplace_cartesian_mpi
-@MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
-@MPI_TRUE@run_laplace_spherical_mpi: laplace_spherical_mpi
-@MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
-@MPI_TRUE@run_helmholtz_spherical_mpi: helmholtz_spherical_mpi
-@MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgv
-@MPI_TRUE@run_ewald_mpi: ewald_mpi
-@MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
+@EXAFMM_HAVE_MPI_TRUE@run_laplace_cartesian_mpi: laplace_cartesian_mpi
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
+@EXAFMM_HAVE_MPI_TRUE@run_laplace_spherical_mpi: laplace_spherical_mpi
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
+@EXAFMM_HAVE_MPI_TRUE@run_helmholtz_spherical_mpi: helmholtz_spherical_mpi
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgv
+@EXAFMM_HAVE_MPI_TRUE@run_ewald_mpi: ewald_mpi
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

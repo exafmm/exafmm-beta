@@ -586,37 +586,37 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
-DEBUG_FALSE
-DEBUG_TRUE
-ASSERT_FALSE
-ASSERT_TRUE
-COUNT_LIST_FALSE
-COUNT_LIST_TRUE
-COUNT_KERNEL_FALSE
-COUNT_KERNEL_TRUE
-USE_DAG_FALSE
-USE_DAG_TRUE
-USE_TRACE_FALSE
-USE_TRACE_TRUE
-USE_PAPI_FALSE
-USE_PAPI_TRUE
-USE_KAHAN_FALSE
-USE_KAHAN_TRUE
-USE_WEIGHT_FALSE
-USE_WEIGHT_TRUE
-USE_SIMD_FALSE
-USE_SIMD_TRUE
+EXAFMM_DEBUG_FALSE
+EXAFMM_DEBUG_TRUE
+EXAFMM_ASSERT_FALSE
+EXAFMM_ASSERT_TRUE
+EXAFMM_COUNT_LIST_FALSE
+EXAFMM_COUNT_LIST_TRUE
+EXAFMM_COUNT_KERNEL_FALSE
+EXAFMM_COUNT_KERNEL_TRUE
+EXAFMM_USE_DAG_FALSE
+EXAFMM_USE_DAG_TRUE
+EXAFMM_USE_TRACE_FALSE
+EXAFMM_USE_TRACE_TRUE
+EXAFMM_USE_PAPI_FALSE
+EXAFMM_USE_PAPI_TRUE
+EXAFMM_USE_KAHAN_FALSE
+EXAFMM_USE_KAHAN_TRUE
+EXAFMM_USE_WEIGHT_FALSE
+EXAFMM_USE_WEIGHT_TRUE
+EXAFMM_USE_SIMD_FALSE
+EXAFMM_USE_SIMD_TRUE
 NEON_CXXFLAGS
-HAVE_NEON_FALSE
-HAVE_NEON_TRUE
+EXAFMM_HAVE_NEON_FALSE
+EXAFMM_HAVE_NEON_TRUE
 AVX_CXXFLAGS
-HAVE_AVX_FALSE
-HAVE_AVX_TRUE
+EXAFMM_HAVE_AVX_FALSE
+EXAFMM_HAVE_AVX_TRUE
 SSE3_CXXFLAGS
-HAVE_SSE3_FALSE
-HAVE_SSE3_TRUE
-MPI_FALSE
-MPI_TRUE
+EXAFMM_HAVE_SSE3_FALSE
+EXAFMM_HAVE_SSE3_TRUE
+EXAFMM_HAVE_MPI_FALSE
+EXAFMM_HAVE_MPI_TRUE
 MPIRUN
 MPILIBS
 MPIFC
@@ -625,16 +625,16 @@ MPICC
 PRECISION
 EXAFMM_SINGLE_FALSE
 EXAFMM_SINGLE_TRUE
-WITH_QTHREAD_FALSE
-WITH_QTHREAD_TRUE
-WITH_MTHREAD_FALSE
-WITH_MTHREAD_TRUE
-WITH_CILK_FALSE
-WITH_CILK_TRUE
-WITH_TBB_FALSE
-WITH_TBB_TRUE
-OPENMP_FALSE
-OPENMP_TRUE
+EXAFMM_WITH_QTHREAD_FALSE
+EXAFMM_WITH_QTHREAD_TRUE
+EXAFMM_WITH_MTHREAD_FALSE
+EXAFMM_WITH_MTHREAD_TRUE
+EXAFMM_WITH_CILK_FALSE
+EXAFMM_WITH_CILK_TRUE
+EXAFMM_WITH_TBB_FALSE
+EXAFMM_WITH_TBB_TRUE
+EXAFMM_HAVE_OPENMP_FALSE
+EXAFMM_HAVE_OPENMP_TRUE
 OPENMP_CFLAGS
 ac_ct_AR
 AR
@@ -4454,7 +4454,7 @@ fi
 
 if test "$enable_openmp" = "yes"; then
 
-$as_echo "#define HAVE_OPENMP 1" >>confdefs.h
+$as_echo "#define EXAFMM_HAVE_OPENMP 1" >>confdefs.h
 
 
 
@@ -4512,18 +4512,18 @@ else
     OPENMP_CFLAGS=$ax_cv_c_openmp
   fi
 
-$as_echo "#define HAVE_OPENMP 1" >>confdefs.h
+$as_echo "#define EXAFMM_HAVE_OPENMP 1" >>confdefs.h
 
 fi
 
 
 fi
  if test "$enable_openmp" = "yes"; then
-  OPENMP_TRUE=
-  OPENMP_FALSE='#'
+  EXAFMM_HAVE_OPENMP_TRUE=
+  EXAFMM_HAVE_OPENMP_FALSE='#'
 else
-  OPENMP_TRUE='#'
-  OPENMP_FALSE=
+  EXAFMM_HAVE_OPENMP_TRUE='#'
+  EXAFMM_HAVE_OPENMP_FALSE=
 fi
 
 
@@ -4538,15 +4538,15 @@ fi
 
 if test "$with_tbb" = "yes"; then
 
-$as_echo "#define WITH_TBB 1" >>confdefs.h
+$as_echo "#define EXAFMM_WITH_TBB 1" >>confdefs.h
 
 fi
  if test "$with_tbb" = "yes"; then
-  WITH_TBB_TRUE=
-  WITH_TBB_FALSE='#'
+  EXAFMM_WITH_TBB_TRUE=
+  EXAFMM_WITH_TBB_FALSE='#'
 else
-  WITH_TBB_TRUE='#'
-  WITH_TBB_FALSE=
+  EXAFMM_WITH_TBB_TRUE='#'
+  EXAFMM_WITH_TBB_FALSE=
 fi
 
 
@@ -4561,15 +4561,15 @@ fi
 
 if test "$with_cilk" = "yes"; then
 
-$as_echo "#define WITH_CILK 1" >>confdefs.h
+$as_echo "#define EXAFMM_WITH_CILK 1" >>confdefs.h
 
 fi
  if test "$with_cilk" = "yes"; then
-  WITH_CILK_TRUE=
-  WITH_CILK_FALSE='#'
+  EXAFMM_WITH_CILK_TRUE=
+  EXAFMM_WITH_CILK_FALSE='#'
 else
-  WITH_CILK_TRUE='#'
-  WITH_CILK_FALSE=
+  EXAFMM_WITH_CILK_TRUE='#'
+  EXAFMM_WITH_CILK_FALSE=
 fi
 
 
@@ -4584,15 +4584,15 @@ fi
 
 if test "$with_mthread" = "yes"; then
 
-$as_echo "#define WITH_MTHREAD 1" >>confdefs.h
+$as_echo "#define EXAFMM_WITH_MTHREAD 1" >>confdefs.h
 
 fi
  if test "$with_mthread" = "yes"; then
-  WITH_MTHREAD_TRUE=
-  WITH_MTHREAD_FALSE='#'
+  EXAFMM_WITH_MTHREAD_TRUE=
+  EXAFMM_WITH_MTHREAD_FALSE='#'
 else
-  WITH_MTHREAD_TRUE='#'
-  WITH_MTHREAD_FALSE=
+  EXAFMM_WITH_MTHREAD_TRUE='#'
+  EXAFMM_WITH_MTHREAD_FALSE=
 fi
 
 
@@ -4607,15 +4607,15 @@ fi
 
 if test "$with_qthread" = "yes"; then
 
-$as_echo "#define WITH_QTHREAD 1" >>confdefs.h
+$as_echo "#define EXAFMM_WITH_QTHREAD 1" >>confdefs.h
 
 fi
  if test "$with_qthread" = "yes"; then
-  WITH_QTHREAD_TRUE=
-  WITH_QTHREAD_FALSE='#'
+  EXAFMM_WITH_QTHREAD_TRUE=
+  EXAFMM_WITH_QTHREAD_FALSE='#'
 else
-  WITH_QTHREAD_TRUE='#'
-  WITH_QTHREAD_FALSE=
+  EXAFMM_WITH_QTHREAD_TRUE='#'
+  EXAFMM_WITH_QTHREAD_FALSE=
 fi
 
 
@@ -4981,7 +4981,7 @@ if test x = x"$MPILIBS"; then
         :
 else
 
-$as_echo "#define HAVE_MPI 1" >>confdefs.h
+$as_echo "#define EXAFMM_HAVE_MPI 1" >>confdefs.h
 
         :
 fi
@@ -5027,11 +5027,11 @@ fi
    CXX=$MPICXX
 fi
  if test "$enable_mpi" = "yes"; then
-  MPI_TRUE=
-  MPI_FALSE='#'
+  EXAFMM_HAVE_MPI_TRUE=
+  EXAFMM_HAVE_MPI_FALSE='#'
 else
-  MPI_TRUE='#'
-  MPI_FALSE=
+  EXAFMM_HAVE_MPI_TRUE='#'
+  EXAFMM_HAVE_MPI_FALSE=
 fi
 
 
@@ -5046,7 +5046,7 @@ fi
 
 if test "$have_sse3" = "yes"; then
 
-$as_echo "#define HAVE_SSE3 1" >>confdefs.h
+$as_echo "#define EXAFMM_HAVE_SSE3 1" >>confdefs.h
 
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
@@ -5086,11 +5086,11 @@ fi
         fi
 fi
  if test "$have_sse3" = "yes"; then
-  HAVE_SSE3_TRUE=
-  HAVE_SSE3_FALSE='#'
+  EXAFMM_HAVE_SSE3_TRUE=
+  EXAFMM_HAVE_SSE3_FALSE='#'
 else
-  HAVE_SSE3_TRUE='#'
-  HAVE_SSE3_FALSE=
+  EXAFMM_HAVE_SSE3_TRUE='#'
+  EXAFMM_HAVE_SSE3_FALSE=
 fi
 
 
@@ -5105,7 +5105,7 @@ fi
 
 if test "$have_avx" = "yes"; then
 
-$as_echo "#define HAVE_AVX 1" >>confdefs.h
+$as_echo "#define EXAFMM_HAVE_AVX 1" >>confdefs.h
 
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 as_fn_error $? "AVX requires single or double precision" "$LINENO" 5
@@ -5151,11 +5151,11 @@ fi
 	fi
 fi
  if test "$have_avx" = "yes"; then
-  HAVE_AVX_TRUE=
-  HAVE_AVX_FALSE='#'
+  EXAFMM_HAVE_AVX_TRUE=
+  EXAFMM_HAVE_AVX_FALSE='#'
 else
-  HAVE_AVX_TRUE='#'
-  HAVE_AVX_FALSE=
+  EXAFMM_HAVE_AVX_TRUE='#'
+  EXAFMM_HAVE_AVX_FALSE=
 fi
 
 
@@ -5171,7 +5171,7 @@ fi
 
 if test "$have_neon" = "yes"; then
 
-$as_echo "#define HAVE_NEON 1" >>confdefs.h
+$as_echo "#define EXAFMM_HAVE_NEON 1" >>confdefs.h
 
         if test "$PRECISION" != "s"; then
                 as_fn_error $? "NEON requires single precision" "$LINENO" 5
@@ -5217,11 +5217,11 @@ fi
         fi
 fi
  if test "$have_neon" = "yes"; then
-  HAVE_NEON_TRUE=
-  HAVE_NEON_FALSE='#'
+  EXAFMM_HAVE_NEON_TRUE=
+  EXAFMM_HAVE_NEON_FALSE='#'
 else
-  HAVE_NEON_TRUE='#'
-  HAVE_NEON_FALSE=
+  EXAFMM_HAVE_NEON_TRUE='#'
+  EXAFMM_HAVE_NEON_FALSE=
 fi
 
 
@@ -5236,15 +5236,15 @@ fi
 
 if test "$use_simd" = "no"; then
 
-$as_echo "#define USE_SIMD 0" >>confdefs.h
+$as_echo "#define EXAFMM_USE_SIMD 0" >>confdefs.h
 
 fi
  if test "$use_simd" = "yes"; then
-  USE_SIMD_TRUE=
-  USE_SIMD_FALSE='#'
+  EXAFMM_USE_SIMD_TRUE=
+  EXAFMM_USE_SIMD_FALSE='#'
 else
-  USE_SIMD_TRUE='#'
-  USE_SIMD_FALSE=
+  EXAFMM_USE_SIMD_TRUE='#'
+  EXAFMM_USE_SIMD_FALSE=
 fi
 
 
@@ -5258,15 +5258,15 @@ fi
 
 if test "$use_weight" = "yes"; then
 
-$as_echo "#define USE_WEIGHT 1" >>confdefs.h
+$as_echo "#define EXAFMM_USE_WEIGHT 1" >>confdefs.h
 
 fi
  if test "$use_weight" = "yes"; then
-  USE_WEIGHT_TRUE=
-  USE_WEIGHT_FALSE='#'
+  EXAFMM_USE_WEIGHT_TRUE=
+  EXAFMM_USE_WEIGHT_FALSE='#'
 else
-  USE_WEIGHT_TRUE='#'
-  USE_WEIGHT_FALSE=
+  EXAFMM_USE_WEIGHT_TRUE='#'
+  EXAFMM_USE_WEIGHT_FALSE=
 fi
 
 
@@ -5280,15 +5280,15 @@ fi
 
 if test "$use_kahan" = "yes"; then
 
-$as_echo "#define USE_KAHAN 1" >>confdefs.h
+$as_echo "#define EXAFMM_USE_KAHAN 1" >>confdefs.h
 
 fi
  if test "$use_kahan" = "yes"; then
-  USE_KAHAN_TRUE=
-  USE_KAHAN_FALSE='#'
+  EXAFMM_USE_KAHAN_TRUE=
+  EXAFMM_USE_KAHAN_FALSE='#'
 else
-  USE_KAHAN_TRUE='#'
-  USE_KAHAN_FALSE=
+  EXAFMM_USE_KAHAN_TRUE='#'
+  EXAFMM_USE_KAHAN_FALSE=
 fi
 
 
@@ -5302,15 +5302,15 @@ fi
 
 if test "$use_papi" = "yes"; then
 
-$as_echo "#define USE_PAPI 1" >>confdefs.h
+$as_echo "#define EXAFMM_USE_PAPI 1" >>confdefs.h
 
 fi
  if test "$use_papi" = "yes"; then
-  USE_PAPI_TRUE=
-  USE_PAPI_FALSE='#'
+  EXAFMM_USE_PAPI_TRUE=
+  EXAFMM_USE_PAPI_FALSE='#'
 else
-  USE_PAPI_TRUE='#'
-  USE_PAPI_FALSE=
+  EXAFMM_USE_PAPI_TRUE='#'
+  EXAFMM_USE_PAPI_FALSE=
 fi
 
 
@@ -5324,15 +5324,15 @@ fi
 
 if test "$use_trace" = "yes"; then
 
-$as_echo "#define USE_TRACE 1" >>confdefs.h
+$as_echo "#define EXAFMM_USE_TRACE 1" >>confdefs.h
 
 fi
  if test "$use_trace" = "yes"; then
-  USE_TRACE_TRUE=
-  USE_TRACE_FALSE='#'
+  EXAFMM_USE_TRACE_TRUE=
+  EXAFMM_USE_TRACE_FALSE='#'
 else
-  USE_TRACE_TRUE='#'
-  USE_TRACE_FALSE=
+  EXAFMM_USE_TRACE_TRUE='#'
+  EXAFMM_USE_TRACE_FALSE=
 fi
 
 
@@ -5346,15 +5346,15 @@ fi
 
 if test "$use_dag" = "yes"; then
 
-$as_echo "#define USE_DAG 1" >>confdefs.h
+$as_echo "#define EXAFMM_USE_DAG 1" >>confdefs.h
 
 fi
  if test "$use_dag" = "yes"; then
-  USE_DAG_TRUE=
-  USE_DAG_FALSE='#'
+  EXAFMM_USE_DAG_TRUE=
+  EXAFMM_USE_DAG_FALSE='#'
 else
-  USE_DAG_TRUE='#'
-  USE_DAG_FALSE=
+  EXAFMM_USE_DAG_TRUE='#'
+  EXAFMM_USE_DAG_FALSE=
 fi
 
 
@@ -5368,15 +5368,15 @@ fi
 
 if test "$use_count_kernel" = "yes"; then
 
-$as_echo "#define COUNT_KERNEL 1" >>confdefs.h
+$as_echo "#define EXAFMM_COUNT_KERNEL 1" >>confdefs.h
 
 fi
  if test "$use_count_kernel" = "yes"; then
-  COUNT_KERNEL_TRUE=
-  COUNT_KERNEL_FALSE='#'
+  EXAFMM_COUNT_KERNEL_TRUE=
+  EXAFMM_COUNT_KERNEL_FALSE='#'
 else
-  COUNT_KERNEL_TRUE='#'
-  COUNT_KERNEL_FALSE=
+  EXAFMM_COUNT_KERNEL_TRUE='#'
+  EXAFMM_COUNT_KERNEL_FALSE=
 fi
 
 
@@ -5390,15 +5390,15 @@ fi
 
 if test "$use_count_list" = "yes"; then
 
-$as_echo "#define COUNT_LIST 1" >>confdefs.h
+$as_echo "#define EXAFMM_COUNT_LIST 1" >>confdefs.h
 
 fi
  if test "$use_count_list" = "yes"; then
-  COUNT_LIST_TRUE=
-  COUNT_LIST_FALSE='#'
+  EXAFMM_COUNT_LIST_TRUE=
+  EXAFMM_COUNT_LIST_FALSE='#'
 else
-  COUNT_LIST_TRUE='#'
-  COUNT_LIST_FALSE=
+  EXAFMM_COUNT_LIST_TRUE='#'
+  EXAFMM_COUNT_LIST_FALSE=
 fi
 
 
@@ -5412,15 +5412,15 @@ fi
 
 if test "$use_assert" = "yes"; then
 
-$as_echo "#define ASSERT 1" >>confdefs.h
+$as_echo "#define EXAFMM_ASSERT 1" >>confdefs.h
 
 fi
  if test "$use_assert" = "yes"; then
-  ASSERT_TRUE=
-  ASSERT_FALSE='#'
+  EXAFMM_ASSERT_TRUE=
+  EXAFMM_ASSERT_FALSE='#'
 else
-  ASSERT_TRUE='#'
-  ASSERT_FALSE=
+  EXAFMM_ASSERT_TRUE='#'
+  EXAFMM_ASSERT_FALSE=
 fi
 
 
@@ -5434,15 +5434,15 @@ fi
 
 if test "$enable_debug" = "yes"; then
 
-$as_echo "#define DEBUG 1" >>confdefs.h
+$as_echo "#define EXAFMM_DEBUG 1" >>confdefs.h
 
 fi
  if test "$enable_debug" = "yes"; then
-  DEBUG_TRUE=
-  DEBUG_FALSE='#'
+  EXAFMM_DEBUG_TRUE=
+  EXAFMM_DEBUG_FALSE='#'
 else
-  DEBUG_TRUE='#'
-  DEBUG_FALSE=
+  EXAFMM_DEBUG_TRUE='#'
+  EXAFMM_DEBUG_FALSE=
 fi
 
 
@@ -5588,84 +5588,84 @@ if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${OPENMP_TRUE}" && test -z "${OPENMP_FALSE}"; then
-  as_fn_error $? "conditional \"OPENMP\" was never defined.
+if test -z "${EXAFMM_HAVE_OPENMP_TRUE}" && test -z "${EXAFMM_HAVE_OPENMP_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_HAVE_OPENMP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${WITH_TBB_TRUE}" && test -z "${WITH_TBB_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_TBB\" was never defined.
+if test -z "${EXAFMM_WITH_TBB_TRUE}" && test -z "${EXAFMM_WITH_TBB_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_WITH_TBB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${WITH_CILK_TRUE}" && test -z "${WITH_CILK_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_CILK\" was never defined.
+if test -z "${EXAFMM_WITH_CILK_TRUE}" && test -z "${EXAFMM_WITH_CILK_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_WITH_CILK\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${WITH_MTHREAD_TRUE}" && test -z "${WITH_MTHREAD_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_MTHREAD\" was never defined.
+if test -z "${EXAFMM_WITH_MTHREAD_TRUE}" && test -z "${EXAFMM_WITH_MTHREAD_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_WITH_MTHREAD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${WITH_QTHREAD_TRUE}" && test -z "${WITH_QTHREAD_FALSE}"; then
-  as_fn_error $? "conditional \"WITH_QTHREAD\" was never defined.
+if test -z "${EXAFMM_WITH_QTHREAD_TRUE}" && test -z "${EXAFMM_WITH_QTHREAD_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_WITH_QTHREAD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_SINGLE_TRUE}" && test -z "${EXAFMM_SINGLE_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_SINGLE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MPI_TRUE}" && test -z "${MPI_FALSE}"; then
-  as_fn_error $? "conditional \"MPI\" was never defined.
+if test -z "${EXAFMM_HAVE_MPI_TRUE}" && test -z "${EXAFMM_HAVE_MPI_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_HAVE_MPI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${HAVE_SSE3_TRUE}" && test -z "${HAVE_SSE3_FALSE}"; then
-  as_fn_error $? "conditional \"HAVE_SSE3\" was never defined.
+if test -z "${EXAFMM_HAVE_SSE3_TRUE}" && test -z "${EXAFMM_HAVE_SSE3_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_HAVE_SSE3\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${HAVE_AVX_TRUE}" && test -z "${HAVE_AVX_FALSE}"; then
-  as_fn_error $? "conditional \"HAVE_AVX\" was never defined.
+if test -z "${EXAFMM_HAVE_AVX_TRUE}" && test -z "${EXAFMM_HAVE_AVX_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_HAVE_AVX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${HAVE_NEON_TRUE}" && test -z "${HAVE_NEON_FALSE}"; then
-  as_fn_error $? "conditional \"HAVE_NEON\" was never defined.
+if test -z "${EXAFMM_HAVE_NEON_TRUE}" && test -z "${EXAFMM_HAVE_NEON_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_HAVE_NEON\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${USE_SIMD_TRUE}" && test -z "${USE_SIMD_FALSE}"; then
-  as_fn_error $? "conditional \"USE_SIMD\" was never defined.
+if test -z "${EXAFMM_USE_SIMD_TRUE}" && test -z "${EXAFMM_USE_SIMD_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_USE_SIMD\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${USE_WEIGHT_TRUE}" && test -z "${USE_WEIGHT_FALSE}"; then
-  as_fn_error $? "conditional \"USE_WEIGHT\" was never defined.
+if test -z "${EXAFMM_USE_WEIGHT_TRUE}" && test -z "${EXAFMM_USE_WEIGHT_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_USE_WEIGHT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${USE_KAHAN_TRUE}" && test -z "${USE_KAHAN_FALSE}"; then
-  as_fn_error $? "conditional \"USE_KAHAN\" was never defined.
+if test -z "${EXAFMM_USE_KAHAN_TRUE}" && test -z "${EXAFMM_USE_KAHAN_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_USE_KAHAN\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${USE_PAPI_TRUE}" && test -z "${USE_PAPI_FALSE}"; then
-  as_fn_error $? "conditional \"USE_PAPI\" was never defined.
+if test -z "${EXAFMM_USE_PAPI_TRUE}" && test -z "${EXAFMM_USE_PAPI_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_USE_PAPI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${USE_TRACE_TRUE}" && test -z "${USE_TRACE_FALSE}"; then
-  as_fn_error $? "conditional \"USE_TRACE\" was never defined.
+if test -z "${EXAFMM_USE_TRACE_TRUE}" && test -z "${EXAFMM_USE_TRACE_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_USE_TRACE\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${USE_DAG_TRUE}" && test -z "${USE_DAG_FALSE}"; then
-  as_fn_error $? "conditional \"USE_DAG\" was never defined.
+if test -z "${EXAFMM_USE_DAG_TRUE}" && test -z "${EXAFMM_USE_DAG_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_USE_DAG\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${COUNT_KERNEL_TRUE}" && test -z "${COUNT_KERNEL_FALSE}"; then
-  as_fn_error $? "conditional \"COUNT_KERNEL\" was never defined.
+if test -z "${EXAFMM_COUNT_KERNEL_TRUE}" && test -z "${EXAFMM_COUNT_KERNEL_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_COUNT_KERNEL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${COUNT_LIST_TRUE}" && test -z "${COUNT_LIST_FALSE}"; then
-  as_fn_error $? "conditional \"COUNT_LIST\" was never defined.
+if test -z "${EXAFMM_COUNT_LIST_TRUE}" && test -z "${EXAFMM_COUNT_LIST_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_COUNT_LIST\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${ASSERT_TRUE}" && test -z "${ASSERT_FALSE}"; then
-  as_fn_error $? "conditional \"ASSERT\" was never defined.
+if test -z "${EXAFMM_ASSERT_TRUE}" && test -z "${EXAFMM_ASSERT_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_ASSERT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${DEBUG_TRUE}" && test -z "${DEBUG_FALSE}"; then
-  as_fn_error $? "conditional \"DEBUG\" was never defined.
+if test -z "${EXAFMM_DEBUG_TRUE}" && test -z "${EXAFMM_DEBUG_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_DEBUG\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

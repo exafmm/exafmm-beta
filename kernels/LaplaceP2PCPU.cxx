@@ -11,7 +11,7 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
   int ni = Ci->NBODY;
   int nj = Cj->NBODY;
   int i = 0;
-#if USE_SIMD
+#if EXAFMM_USE_SIMD
   for ( ; i<=ni-NSIMD; i+=NSIMD) {
     simdvec zero = 0.0;
     ksimdvec pot = zero;
@@ -177,7 +177,7 @@ void kernel::P2P(C_iter C) {
   B_iter B = C->BODY;
   int n = C->NBODY;
   int i = 0;
-#if USE_SIMD
+#if EXAFMM_USE_SIMD
   for ( ; i<=n-NSIMD; i+=NSIMD) {
     simdvec zero = 0;
     ksimdvec pot = zero;

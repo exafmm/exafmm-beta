@@ -14,25 +14,6 @@
 
 @SET_MAKE@
 
-### choose C++ compiler
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp # GCC
-#CXX	= mpicxx -ggdb3 -Wall -Wextra -O3 -mavx -Wa,-q -ffast-math -funroll-loops -fopenmp # GCC (OS X)
-#CXX	= CC -ggdb3 -Wall -Wextra -O3 -mavx -ffast-math -funroll-loops -fopenmp -dynamic # GCC (Cray)
-#CXX	= mpicxx -xHOST -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp # Intel MPI
-#CXX	= icpc -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -openmp -I/usr/include/x86_64-linux-gnu/c++/4.8 # Intel
-#CXX	= CC -Wall -O3 -funroll-loops -finline-functions -ansi-alias -openmp -dynamic # Intel (Cray)
-#CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
-#CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
-#CXX	= mpiFCCpx -Kfast,openmp # K computer / FX10 (cross compiler)
-#CXX	= mpiFCC -Kfast,openmp # K computer / FX10 (interactive)
-#CXX	= tau_cxx.sh # TAU compiler instrumentation
-
-### choose fortran compiler
-#FC = mpif90 -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran
-#FC = ftn -ggdb3 -O3 -ffast-math -funroll-loops -cpp # -lmpi_cxx # gfortran (Cray)
-#FC = mpif90 -O3 -xHOST -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel
-#FC = ftn -O3 -funroll-loops -finline-functions -ansi-alias -cpp -openmp # Intel (Cray)
-
 VPATH = @srcdir@
 am__is_gnu_make = test -n '$(MAKEFILE_LIST)' && test -n '$(MAKELEVEL)'
 am__make_running_with_option = \
@@ -99,50 +80,50 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.am $(top_srcdir)/build-aux/depcomp
 
 ### Thread libraries
-@OPENMP_TRUE@am__append_1 = -DWITH_OPENMP
-@OPENMP_TRUE@am__append_2 = $(OPENMP_CFLAGS)
-@WITH_TBB_TRUE@am__append_3 = -ltbb -dynamic
-@WITH_CILK_TRUE@am__append_4 = -lcilkrts
-@WITH_MTHREAD_TRUE@am__append_5 = -lmyth-native
-@WITH_QTHREAD_TRUE@am__append_6 = -lqthread
+@EXAFMM_HAVE_OPENMP_TRUE@am__append_1 = -DEXAFMM_WITH_OPENMP
+@EXAFMM_HAVE_OPENMP_TRUE@am__append_2 = $(OPENMP_CFLAGS)
+@EXAFMM_WITH_TBB_TRUE@am__append_3 = -ltbb -dynamic
+@EXAFMM_WITH_CILK_TRUE@am__append_4 = -lcilkrts
+@EXAFMM_WITH_MTHREAD_TRUE@am__append_5 = -lmyth-native
+@EXAFMM_WITH_QTHREAD_TRUE@am__append_6 = -lqthread
 
 ### Floating point precision
-@EXAFMM_SINGLE_FALSE@am__append_7 = -DFP64
+@EXAFMM_SINGLE_TRUE@am__append_7 = -DEXAFMM_SINGLE
 
 ### SIMD flags
-@USE_SIMD_TRUE@am__append_8 = -DUSE_SIMD
-@HAVE_AVX_TRUE@@USE_SIMD_TRUE@am__append_9 = $(AVX_CXXFLAGS) # Use AVX intrinsics
-@HAVE_AVX_FALSE@@HAVE_SSE3_TRUE@@USE_SIMD_TRUE@am__append_10 = $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
-@HAVE_AVX_FALSE@@HAVE_NEON_TRUE@@HAVE_SSE3_FALSE@@USE_SIMD_TRUE@am__append_11 = $(NEON_CXXFLAGS) # Use Neon intrinsics
+@EXAFMM_USE_SIMD_TRUE@am__append_8 = -DEXAFMM_USE_SIMD
+@EXAFMM_HAVE_AVX_TRUE@@EXAFMM_USE_SIMD_TRUE@am__append_9 = $(AVX_CXXFLAGS) # Use AVX intrinsics
+@EXAFMM_HAVE_AVX_FALSE@@EXAFMM_HAVE_SSE3_TRUE@@EXAFMM_USE_SIMD_TRUE@am__append_10 = $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
+@EXAFMM_HAVE_AVX_FALSE@@EXAFMM_HAVE_NEON_TRUE@@EXAFMM_HAVE_SSE3_FALSE@@EXAFMM_USE_SIMD_TRUE@am__append_11 = $(NEON_CXXFLAGS) # Use Neon intrinsics
 
 # Kahan summation
-@USE_KAHAN_TRUE@am__append_12 = -DKAHAN
+@EXAFMM_USE_KAHAN_TRUE@am__append_12 = -DEXAFMM_USE_KAHAN
 
 # Use weights for partitioning
-@USE_WEIGHT_TRUE@am__append_13 = -DUSE_WEIGHT
+@EXAFMM_USE_WEIGHT_TRUE@am__append_13 = -DEXAFMM_USE_WEIGHT
 
 # Use PAPI performance counter (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM")
-@USE_PAPI_TRUE@am__append_14 = -DPAPI
-@USE_PAPI_TRUE@am__append_15 = -lpapi
+@EXAFMM_USE_PAPI_TRUE@am__append_14 = -DEXAFMM_USE_PAPI
+@EXAFMM_USE_PAPI_TRUE@am__append_15 = -lpapi
 
 # Use thread tracing
-@USE_TRACE_TRUE@am__append_16 = -DTRACE
+@EXAFMM_USE_TRACE_TRUE@am__append_16 = -DEXAFMM_USE_TRACE
 
 # Use DAG Recorder
-@USE_DAG_TRUE@am__append_17 = -DDAG_RECORDER=2
-@USE_DAG_TRUE@am__append_18 = -ldr
+@EXAFMM_USE_DAG_TRUE@am__append_17 = -DDAG_RECORDER=2
+@EXAFMM_USE_DAG_TRUE@am__append_18 = -ldr
 
 # Count number of M2L and P2P kernel calls
-@COUNT_KERNEL_TRUE@am__append_19 = -DCOUNT_KERNEL
+@EXAFMM_COUNT_KERNEL_TRUE@am__append_19 = -DEXAFMM_COUNT_KERNEL
 
 # Count interaction list per cell
-@COUNT_LIST_TRUE@am__append_20 = -DCOUNT_LIST
-@ASSERT_TRUE@am__append_21 = -DASSERT
+@EXAFMM_COUNT_LIST_TRUE@am__append_20 = -DEXAFMM_COUNT_LIST
+@EXAFMM_ASSERT_TRUE@am__append_21 = -DEXAFMM_ASSERT
 
 #AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
-@DEBUG_TRUE@am__append_22 = -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
-@MPI_TRUE@bin_PROGRAMS = fmm$(EXEEXT) fmm_mpi$(EXEEXT) \
-@MPI_TRUE@	fmm_ijhpca$(EXEEXT)
+@EXAFMM_DEBUG_TRUE@am__append_22 = -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
+@EXAFMM_HAVE_MPI_TRUE@bin_PROGRAMS = fmm$(EXEEXT) fmm_mpi$(EXEEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	fmm_ijhpca$(EXEEXT)
 subdir = uniform
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_compiler_flags.m4 \
@@ -157,15 +138,16 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__fmm_SOURCES_DIST = fmm.cxx
-@MPI_TRUE@am_fmm_OBJECTS = fmm-fmm.$(OBJEXT)
+@EXAFMM_HAVE_MPI_TRUE@am_fmm_OBJECTS = fmm-fmm.$(OBJEXT)
 fmm_OBJECTS = $(am_fmm_OBJECTS)
 fmm_LDADD = $(LDADD)
 am__fmm_ijhpca_SOURCES_DIST = fmm.cxx
-@MPI_TRUE@am_fmm_ijhpca_OBJECTS = fmm_ijhpca-fmm.$(OBJEXT)
+@EXAFMM_HAVE_MPI_TRUE@am_fmm_ijhpca_OBJECTS =  \
+@EXAFMM_HAVE_MPI_TRUE@	fmm_ijhpca-fmm.$(OBJEXT)
 fmm_ijhpca_OBJECTS = $(am_fmm_ijhpca_OBJECTS)
 fmm_ijhpca_LDADD = $(LDADD)
 am__fmm_mpi_SOURCES_DIST = fmm.cxx
-@MPI_TRUE@am_fmm_mpi_OBJECTS = fmm_mpi-fmm.$(OBJEXT)
+@EXAFMM_HAVE_MPI_TRUE@am_fmm_mpi_OBJECTS = fmm_mpi-fmm.$(OBJEXT)
 fmm_mpi_OBJECTS = $(am_fmm_mpi_OBJECTS)
 fmm_mpi_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -345,12 +327,12 @@ AM_CPPFLAGS = -I../include -I../uniform $(am__append_1) \
 	$(am__append_17) $(am__append_19) $(am__append_20) \
 	$(am__append_21)
 AM_MAKEFLAGS = -s
-@MPI_TRUE@fmm_SOURCES = fmm.cxx
-@MPI_TRUE@fmm_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DEXPANSION=6 -DSerial
-@MPI_TRUE@fmm_mpi_SOURCES = fmm.cxx
-@MPI_TRUE@fmm_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DEXPANSION=6
-@MPI_TRUE@fmm_ijhpca_SOURCES = fmm.cxx
-@MPI_TRUE@fmm_ijhpca_CPPFLAGS = $(AM_CPPFLAGS) -DLaplace -DCartesian -DEXPANSION=6 -DIJHPCA
+@EXAFMM_HAVE_MPI_TRUE@fmm_SOURCES = fmm.cxx
+@EXAFMM_HAVE_MPI_TRUE@fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=6 -DEXAFMM_SERIAL
+@EXAFMM_HAVE_MPI_TRUE@fmm_mpi_SOURCES = fmm.cxx
+@EXAFMM_HAVE_MPI_TRUE@fmm_mpi_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=6
+@EXAFMM_HAVE_MPI_TRUE@fmm_ijhpca_SOURCES = fmm.cxx
+@EXAFMM_HAVE_MPI_TRUE@fmm_ijhpca_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=6 -DEXAFMM_IJHPCA
 all: all-am
 
 .SUFFIXES:
@@ -731,12 +713,12 @@ revert:
 save:
 	@make -C .. save
 
-@MPI_TRUE@run_fmm:
-@MPI_TRUE@	./fmm -n 1000 -c 32 -i 3
-@MPI_TRUE@run_fmm_mpi:
-@MPI_TRUE@	mpirun -np 8 ./fmm_mpi -n 1000 -c 32 -i 3
-@MPI_TRUE@run_fmm_ijhpca:
-@MPI_TRUE@	mpirun -np 8 ./fmm_ijhpca -n 62500 -c 32 -i 1
+@EXAFMM_HAVE_MPI_TRUE@run_fmm:
+@EXAFMM_HAVE_MPI_TRUE@	./fmm -n 1000 -c 32 -i 3
+@EXAFMM_HAVE_MPI_TRUE@run_fmm_mpi:
+@EXAFMM_HAVE_MPI_TRUE@	mpirun -np 8 ./fmm_mpi -n 1000 -c 32 -i 3
+@EXAFMM_HAVE_MPI_TRUE@run_fmm_ijhpca:
+@EXAFMM_HAVE_MPI_TRUE@	mpirun -np 8 ./fmm_ijhpca -n 62500 -c 32 -i 1
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

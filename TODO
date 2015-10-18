@@ -1,6 +1,5 @@
 -- Immediate --
 Remove all macros
-Put everything in namespace exafmm.
 Test on cray, fx10, sx-ace
 Setup buildbot tests using "make check"
 MPI overhaul

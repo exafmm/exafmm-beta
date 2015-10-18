@@ -9,8 +9,8 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "van_der_waals.h"
-#if MASS
-#error Turn off MASS for this wrapper
+#if EXAFMM_MASS
+#error Turn off EXAFMM_MASS for this wrapper
 #endif
 using namespace exafmm;
 

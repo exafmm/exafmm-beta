@@ -4,7 +4,7 @@
 #include "logger.h"
 #include "thread.h"
 
-#if COUNT_KERNEL
+#if EXAFMM_COUNT_KERNEL
 #define countKernel(N) N++
 #else
 #define countKernel(N)
@@ -17,7 +17,7 @@ namespace exafmm {
     const int images;                                           //!< Number of periodic image sublevels
     int (* listOffset)[3];                                      //!< Offset in interaction lists
     int (* lists)[3];                                           //!< Interaction lists
-#if COUNT_KERNEL
+#if EXAFMM_COUNT_KERNEL
     real_t numP2P;                                              //!< Number of P2P kernel calls
     real_t numM2L;                                              //!< Number of M2L kernel calls
 #endif
@@ -25,7 +25,7 @@ namespace exafmm {
     C_iter Cj0;                                                 //!< Iterator of first source cell
 
   private:
-#if COUNT_LIST
+#if EXAFMM_COUNT_LIST
     //! Accumulate interaction list size of cells
     void countList(C_iter Ci, C_iter Cj, bool mutual, bool isP2P) {
       if (isP2P) Ci->numP2P++;                                  // If P2P, increment P2P counter of target cell
@@ -39,7 +39,7 @@ namespace exafmm {
     void countList(C_iter, C_iter, bool, bool) {}
 #endif
 
-#if USE_WEIGHT
+#if EXAFMM_USE_WEIGHT
     //! Accumulate interaction weights of cells
     void countWeight(C_iter Ci, C_iter Cj, bool mutual, real_t weight) {
       Ci->WEIGHT += weight;                                     // Increment weight of target cell
@@ -219,7 +219,7 @@ namespace exafmm {
 	countList(Ci, Cj, mutual, false);                       //  Increment M2L list
 	countWeight(Ci, Cj, mutual, remote);                    //  Increment M2L weight
       } else if (Ci->NCHILD == 0 && Cj->NCHILD == 0) {          // Else if both cells are bodies
-#if NO_P2P
+#if EXAFMM_NO_P2P
 	int index = Ci->ICELL;
 	int iX[3] = {0, 0, 0};
 	int d = 0, level = 0;
@@ -240,8 +240,8 @@ namespace exafmm {
 	}
 	int isNeighbor = 1;
 	for (d=0; d<3; d++) {
-	  if (Xperiodic[d] > 1e-3) jX[d] += 5;
-	  if (Xperiodic[d] < -1e-3) jX[d] -= 5;
+	  if (kernel::Xperiodic[d] > 1e-3) jX[d] += 5;
+	  if (kernel::Xperiodic[d] < -1e-3) jX[d] -= 5;
 	  isNeighbor &= abs(iX[d] - jX[d]) <= 1;
 	}
 #endif
@@ -251,7 +251,7 @@ namespace exafmm {
 	  countKernel(numM2L);                                  //   Increment M2L counter
 	  countList(Ci, Cj, mutual, false);                     //   Increment M2L list
 	  countWeight(Ci, Cj, mutual, remote);                  //   Increment M2L weight
-#if NO_P2P
+#if EXAFMM_NO_P2P
 	} else if (!isNeighbor) {                               //  If GROAMCS handles neighbors
 	  kernel::M2L(Ci, Cj, mutual);                          //   M2L kernel
 	  countKernel(numM2L);                                  //   Increment M2L counter
@@ -360,7 +360,7 @@ namespace exafmm {
 	}                                                       //  End loop over M2L interaction list
       }                                                         // End loop over target cells
 
-#ifndef NO_P2P
+#ifndef EXAFMM_NO_P2P
 #ifdef _OPENMP
 #pragma omp parallel for private(list, periodicKeys) schedule(dynamic)
 #endif
@@ -415,7 +415,7 @@ namespace exafmm {
 	    }                                                   //    End loop over z periodic direction
 	  }                                                     //   End loop over y periodic direction
 	}                                                       //  End loop over x periodic direction
-#if MASS
+#if EXAFMM_MASS
 	for (int i=1; i<NTERM; i++) Ci->M[i] *= Ci->M[0];       //  Normalize multipole expansion coefficients
 #endif
 	Cj0 = pcells.begin();                                   //  Redefine Cj0 for M2M
@@ -435,13 +435,13 @@ namespace exafmm {
 	}                                                       //  End loop over x periodic direction
 	Ci->M = 0;                                              //  Reset multipoles of periodic parent
 	kernel::M2M(Ci,Cj0);                                    //  Evaluate periodic M2M kernels for this sublevel
-#if MASS
+#if EXAFMM_MASS
 	for (int i=1; i<NTERM; i++) Ci->M[i] /= Ci->M[0];       //  Normalize multipole expansion coefficients
 #endif
 	cycle *= 3;                                             //  Increase center cell size three times
 	Cj0 = C0;                                               //  Reset Cj0 back
       }                                                         // End loop over sublevels of tree
-#if MASS
+#if EXAFMM_MASS
       Ci0->L /= Ci0->M[0];                                      // Normalize local expansion coefficients
 #endif
       logger::stopTimer("Traverse periodic");                   // Stop timer
@@ -451,12 +451,12 @@ namespace exafmm {
     //! Constructor
     Traversal(int _nspawn, int _images) :                       // Constructor
       nspawn(_nspawn), images(_images)                          // Initialize variables
-#if COUNT_KERNEL
+#if EXAFMM_COUNT_KERNEL
       , numP2P(0), numM2L(0)
 #endif
     {}
 
-#if COUNT_LIST
+#if EXAFMM_COUNT_LIST
     //! Initialize size of P2P and M2L interaction lists per cell
     void initListCount(Cells & cells) {
       for (C_iter C=cells.begin(); C!=cells.end(); C++) {       // Loop over cells
@@ -467,7 +467,7 @@ namespace exafmm {
     void initListCount(Cells) {}
 #endif
 
-#if USE_WEIGHT
+#if EXAFMM_USE_WEIGHT
     //! Initialize interaction weights of bodies and cells
     void initWeight(Cells & cells) {
       for (C_iter C=cells.begin(); C!=cells.end(); C++) {       // Loop over cells
@@ -596,7 +596,7 @@ namespace exafmm {
   
     //! Print traversal statistics
     void printTraversalData() {
-#if COUNT_KERNEL
+#if EXAFMM_COUNT_KERNEL
       if (logger::verbose) {                                    // If verbose flag is true
 	std::cout << "--- Traversal stats --------------" << std::endl// Print title
 		  << std::setw(logger::stringLength) << std::left //  Set format
@@ -610,7 +610,7 @@ namespace exafmm {
       }                                                         // End if for verbose flag
 #endif
     }
-#if COUNT_LIST
+#if EXAFMM_COUNT_LIST
     void writeList(Cells cells, int mpirank) {
       std::stringstream name;                                   // File name
       name << "list" << std::setfill('0') << std::setw(6)       // Set format

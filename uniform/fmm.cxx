@@ -8,7 +8,7 @@
 #include "tree_mpi.h"
 #include "up_down_pass.h"
 #include "verify.h"
-#if Serial
+#if EXAFMM_SERIAL
 #include "serialfmm.h"
 #else
 #include "parallelfmm.h"
@@ -30,14 +30,14 @@ int main(int argc, char ** argv) {
   Ewald ewald(ksize, alpha, sigma, cutoff, cycle);
   Traversal traversal(args.nspawn, args.images);
   UpDownPass upDownPass(args.theta, args.useRmax, args.useRopt);
-#if Serial
+#if EXAFMM_SERIAL
   SerialFMM FMM;
 #else
   ParallelFMM FMM;
 #endif
   TreeMPI treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
 
-#ifdef IJHPCA
+#ifdef EXAFMM_IJHPCA
   //args.numBodies /= FMM.MPISIZE;
 #endif
   const int numBodies = args.numBodies;
@@ -53,7 +53,7 @@ int main(int argc, char ** argv) {
   args.verbose &= FMM.MPIRANK == 0;
   logger::verbose = args.verbose;
   logger::printTitle("FMM Parameters");
-  args.print(logger::stringLength, PP);
+  args.print(logger::stringLength, EXAFMM_PP);
 
   logger::printTitle("FMM Profiling");
   logger::startTimer("Total FMM");
@@ -86,7 +86,7 @@ int main(int argc, char ** argv) {
     FMM.buildTree();
     logger::stopTimer("Grow tree");
 
-#if Serial
+#if EXAFMM_SERIAL
 #else
     logger::startTimer("Comm LET bodies");
     FMM.P2PSend();
@@ -98,7 +98,7 @@ int main(int argc, char ** argv) {
     FMM.upwardPass();
     logger::stopTimer("Upward pass");
   
-#if Serial
+#if EXAFMM_SERIAL
 #else
     logger::startTimer("Comm LET cells");
     for( int lev=FMM.maxLevel; lev>0; lev-- ) {
@@ -114,7 +114,7 @@ int main(int argc, char ** argv) {
   
     FMM.periodicM2L();
 
-#if Serial
+#if EXAFMM_SERIAL
 #else
     logger::startTimer("Downward pass");
     FMM.globL2L();
@@ -136,7 +136,7 @@ int main(int argc, char ** argv) {
     vec3 globalDipole = baseMPI.allreduceVec3(localDipole);
     int numBodies = baseMPI.allreduceInt(bodies.size());
     upDownPass.dipoleCorrection(bodies, globalDipole, numBodies, cycle);
-#ifndef IJHPCA
+#ifndef EXAFMM_IJHPCA
 #if 1
     logger::startTimer("Total Ewald");
     Bounds bounds = boundBox.getBounds(bodies);
@@ -178,7 +178,7 @@ int main(int argc, char ** argv) {
     double accDif = verify.getDifVector(bodies, bodies2);
     double accNrm = verify.getNrmVector(bodies);
     logger::printTitle("FMM vs. direct");
-#if Serial
+#if EXAFMM_SERIAL
     double potDif = (potSum - potSum2) * (potSum - potSum2);
     double potNrm = potSum * potSum;
     verify.print("Rel. L2 Error (pot)",std::sqrt(potDif/potNrm));
@@ -198,7 +198,7 @@ int main(int argc, char ** argv) {
   }
   FMM.deallocate();
 
-#ifndef IJHPCA
+#ifndef EXAFMM_IJHPCA
   logger::startTimer("Attach root");
   logger::stopTimer("Attach root", 0);
   logger::startTimer("Comm partition");

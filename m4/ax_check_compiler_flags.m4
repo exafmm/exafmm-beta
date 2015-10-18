@@ -9,9 +9,9 @@ dnl
 dnl ACTION-SUCCESS/ACTION-FAILURE are shell commands to execute on
 dnl success/failure.
 dnl
-dnl @version 2005-05-30
+dnl @version 2015-10-18
 dnl @license GPLWithACException
-dnl @author Steven G. Johnson <stevenj@alum.mit.edu> and Matteo Frigo.
+dnl @author Rio Yokota <rioyokota@gsic.titech.ac.jp>
 AC_DEFUN([AX_CHECK_COMPILER_FLAGS],
 [AC_PREREQ(2.59) dnl for _AC_LANG_PREFIX
 AC_MSG_CHECKING([whether _AC_LANG compiler accepts $1])

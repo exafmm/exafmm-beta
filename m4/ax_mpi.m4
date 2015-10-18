@@ -47,8 +47,7 @@
 #
 # LICENSE
 #
-#   Copyright (c) 2008 Steven G. Johnson <stevenj@alum.mit.edu>
-#   Copyright (c) 2008 Julian C. Cummings <cummings@cacr.caltech.edu>
+#   Copyright (c) 2015 Rio Yokota <rioyokota@gsic.titech.ac.jp>
 #
 #   This program is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the
@@ -76,7 +75,6 @@
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 7
 AC_DEFUN([AX_MPI], [
 AC_PREREQ(2.50) dnl for AC_LANG_CASE
 AC_REQUIRE([AC_PROG_CC])
@@ -113,7 +111,7 @@ if test x = x"$MPILIBS"; then
         $2
         :
 else
-        ifelse([$1],,[AC_DEFINE(HAVE_MPI,1,[Define if you have the MPI library.])],[$1])
+        ifelse([$1],,[AC_DEFINE(EXAFMM_HAVE_MPI,1,[Define if you have the MPI library.])],[$1])
         :
 fi
 ])dnl AX_MPI

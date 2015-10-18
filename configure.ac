@@ -15,38 +15,38 @@ AM_PROG_AR
 # OpenMP
 AC_ARG_ENABLE(openmp, [AC_HELP_STRING([--enable-openmp],[use OpenMP])], enable_openmp=$enableval, enable_openmp=no)
 if test "$enable_openmp" = "yes"; then
-   AC_DEFINE(HAVE_OPENMP,1,[Use OpenMP])
+   AC_DEFINE(EXAFMM_HAVE_OPENMP,1,[Use OpenMP])
    AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP])])
 fi
-AM_CONDITIONAL(OPENMP, test "$enable_openmp" = "yes")
+AM_CONDITIONAL(EXAFMM_HAVE_OPENMP, test "$enable_openmp" = "yes")
 
 # Intel TBB
 AC_ARG_WITH(tbb, [AC_HELP_STRING([--with-tbb],[use Intel TBB])], with_tbb=$withval, with_tbb=no)
 if test "$with_tbb" = "yes"; then
-        AC_DEFINE(WITH_TBB,1,[Use Intel TBB])
+        AC_DEFINE(EXAFMM_WITH_TBB,1,[Use Intel TBB])
 fi
-AM_CONDITIONAL(WITH_TBB, test "$with_tbb" = "yes")
+AM_CONDITIONAL(EXAFMM_WITH_TBB, test "$with_tbb" = "yes")
 
 # Intel Cilk
 AC_ARG_WITH(cilk, [AC_HELP_STRING([--with-cilk],[use Intel Cilk])], with_cilk=$withval, with_cilk=no)
 if test "$with_cilk" = "yes"; then
-        AC_DEFINE(WITH_CILK,1,[Use Intel Cilk])
+        AC_DEFINE(EXAFMM_WITH_CILK,1,[Use Intel Cilk])
 fi
-AM_CONDITIONAL(WITH_CILK, test "$with_cilk" = "yes")
+AM_CONDITIONAL(EXAFMM_WITH_CILK, test "$with_cilk" = "yes")
 
 # MassiveThreads
 AC_ARG_WITH(mthread, [AC_HELP_STRING([--with-mthread],[use MassiveThreads])], with_mthread=$withval, with_mthread=no)
 if test "$with_mthread" = "yes"; then
-        AC_DEFINE(WITH_MTHREAD,1,[Use MassiveThreads])
+        AC_DEFINE(EXAFMM_WITH_MTHREAD,1,[Use MassiveThreads])
 fi
-AM_CONDITIONAL(WITH_MTHREAD, test "$with_mthread" = "yes")
+AM_CONDITIONAL(EXAFMM_WITH_MTHREAD, test "$with_mthread" = "yes")
 
 # QThreads
 AC_ARG_WITH(qthread, [AC_HELP_STRING([--with-qthread],[use QThreads])], with_qthread=$withval, with_qthread=no)
 if test "$with_qthread" = "yes"; then
-        AC_DEFINE(WITH_QTHREAD,1,[Use QThreads])
+        AC_DEFINE(EXAFMM_WITH_QTHREAD,1,[Use QThreads])
 fi
-AM_CONDITIONAL(WITH_QTHREAD, test "$with_qthread" = "yes")
+AM_CONDITIONAL(EXAFMM_WITH_QTHREAD, test "$with_qthread" = "yes")
 
 # Single precision
 AC_ARG_ENABLE(single, [AC_HELP_STRING([--enable-single],[compile exaFMM in single precision])], ok=$enableval, ok=no)
@@ -68,13 +68,13 @@ if test "$enable_mpi" = "yes"; then
    AC_SUBST(MPIRUN)
    CXX=$MPICXX
 fi
-AM_CONDITIONAL(MPI, test "$enable_mpi" = "yes")
+AM_CONDITIONAL(EXAFMM_HAVE_MPI, test "$enable_mpi" = "yes")
 
 # SSE3
 AC_ARG_ENABLE(sse3, [AC_HELP_STRING([--enable-sse3],[enable SSE/SSE3 optimizations])], have_sse3=$enableval, have_s\
 se3=no)
 if test "$have_sse3" = "yes"; then
-        AC_DEFINE(HAVE_SSE3,1,[Define to enable SSE/SSE3 optimizations.])
+        AC_DEFINE(EXAFMM_HAVE_SSE3,1,[Define to enable SSE/SSE3 optimizations.])
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 AC_MSG_ERROR([SSE3 requires single or double precision])
         fi
@@ -83,13 +83,13 @@ if test "$have_sse3" = "yes"; then
    				   	   [AC_MSG_ERROR([Need a version of gcc with -msse3])])
         fi
 fi
-AM_CONDITIONAL(HAVE_SSE3, test "$have_sse3" = "yes")
+AM_CONDITIONAL(EXAFMM_HAVE_SSE3, test "$have_sse3" = "yes")
 AC_SUBST(SSE3_CXXFLAGS)
 
 # AVX
 AC_ARG_ENABLE(avx, [AC_HELP_STRING([--enable-avx],[enable AVX optimizations])], have_avx=$enableval, have_avx=no)
 if test "$have_avx" = "yes"; then
-   AC_DEFINE(HAVE_AVX,1,[Define to enable AVX optimizations.])
+   AC_DEFINE(EXAFMM_HAVE_AVX,1,[Define to enable AVX optimizations.])
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 AC_MSG_ERROR([AVX requires single or double precision])
         fi
@@ -98,14 +98,14 @@ if test "$have_avx" = "yes"; then
                 		  	 [AC_MSG_ERROR([Need a version of gcc with -mavx])])
 	fi
 fi
-AM_CONDITIONAL(HAVE_AVX, test "$have_avx" = "yes")
+AM_CONDITIONAL(EXAFMM_HAVE_AVX, test "$have_avx" = "yes")
 AC_SUBST(AVX_CXXFLAGS)
 
 # Neon
 AC_ARG_ENABLE(neon, [AC_HELP_STRING([--enable-neon],[enable ARM NEON optimizations])], have_neon=$enableval, have_n\
 eon=no)
 if test "$have_neon" = "yes"; then
-        AC_DEFINE(HAVE_NEON,1,[Define to enable ARM NEON optimizations.])
+        AC_DEFINE(EXAFMM_HAVE_NEON,1,[Define to enable ARM NEON optimizations.])
         if test "$PRECISION" != "s"; then
                 AC_MSG_ERROR([NEON requires single precision])
         fi
@@ -114,78 +114,78 @@ if test "$have_neon" = "yes"; then
             				      [AC_MSG_ERROR([Need a version of gcc with -mfpu=neon])])
         fi
 fi
-AM_CONDITIONAL(HAVE_NEON, test "$have_neon" = "yes")
+AM_CONDITIONAL(EXAFMM_HAVE_NEON, test "$have_neon" = "yes")
 AC_SUBST(NEON_CXXFLAGS)
 
 # Disable SIMD
 AC_ARG_ENABLE(simd, [AC_HELP_STRING([--disable-simd],[disable SIMD optimizations])], use_simd=$enableval, use_simd=yes)
 if test "$use_simd" = "no"; then
-        AC_DEFINE(USE_SIMD,0,[Disable SIMD optimizations.])
+        AC_DEFINE(EXAFMM_USE_SIMD,0,[Disable SIMD optimizations.])
 fi
-AM_CONDITIONAL(USE_SIMD, test "$use_simd" = "yes")
+AM_CONDITIONAL(EXAFMM_USE_SIMD, test "$use_simd" = "yes")
 
 # Weights for partitioning
 AC_ARG_ENABLE(weight, [AC_HELP_STRING([--enable-weight],[enable weight for partitioning])], use_weight=$enableval, use_weight=no)
 if test "$use_weight" = "yes"; then
-        AC_DEFINE(USE_WEIGHT,1,[Enable weight for partitioning.])
+        AC_DEFINE(EXAFMM_USE_WEIGHT,1,[Enable weight for partitioning.])
 fi
-AM_CONDITIONAL(USE_WEIGHT, test "$use_weight" = "yes")
+AM_CONDITIONAL(EXAFMM_USE_WEIGHT, test "$use_weight" = "yes")
 
 # Kahan summation
 AC_ARG_ENABLE(kahan, [AC_HELP_STRING([--enable-kahan],[enable Kahan summation])], use_kahan=$enableval, use_kahan=no)
 if test "$use_kahan" = "yes"; then
-        AC_DEFINE(USE_KAHAN,1,[Enable Kahan summation.])
+        AC_DEFINE(EXAFMM_USE_KAHAN,1,[Enable Kahan summation.])
 fi
-AM_CONDITIONAL(USE_KAHAN, test "$use_kahan" = "yes")
+AM_CONDITIONAL(EXAFMM_USE_KAHAN, test "$use_kahan" = "yes")
 
 # PAPI
 AC_ARG_ENABLE(papi, [AC_HELP_STRING([--enable-papi],[enable PAPI performance counter])], use_papi=$enableval, use_papi=no)
 if test "$use_papi" = "yes"; then
-        AC_DEFINE(USE_PAPI,1,[Enable PAPI performance counter.])
+        AC_DEFINE(EXAFMM_USE_PAPI,1,[Enable PAPI performance counter.])
 fi
-AM_CONDITIONAL(USE_PAPI, test "$use_papi" = "yes")
+AM_CONDITIONAL(EXAFMM_USE_PAPI, test "$use_papi" = "yes")
 
 # Trace
 AC_ARG_ENABLE(trace, [AC_HELP_STRING([--enable-trace],[enable thread tracing])], use_trace=$enableval, use_trace=no)
 if test "$use_trace" = "yes"; then
-        AC_DEFINE(USE_TRACE,1,[Enable thread tracing.])
+        AC_DEFINE(EXAFMM_USE_TRACE,1,[Enable thread tracing.])
 fi
-AM_CONDITIONAL(USE_TRACE, test "$use_trace" = "yes")
+AM_CONDITIONAL(EXAFMM_USE_TRACE, test "$use_trace" = "yes")
 
 # DAG recorder
 AC_ARG_ENABLE(dag, [AC_HELP_STRING([--enable-dag],[enable DAG recorder])], use_dag=$enableval, use_dag=no)
 if test "$use_dag" = "yes"; then
-        AC_DEFINE(USE_DAG,1,[Enable DAG recorder.])
+        AC_DEFINE(EXAFMM_USE_DAG,1,[Enable DAG recorder.])
 fi
-AM_CONDITIONAL(USE_DAG, test "$use_dag" = "yes")
+AM_CONDITIONAL(EXAFMM_USE_DAG, test "$use_dag" = "yes")
 
 # Count number of M2L and P2P kernel calls
 AC_ARG_ENABLE(count-kernel, [AC_HELP_STRING([--enable-count-kernel],[count number of M2L and P2P kernel calls])], use_count_kernel=$enableval, use_count_kernel=no)
 if test "$use_count_kernel" = "yes"; then
-        AC_DEFINE(COUNT_KERNEL,1,[Count number of M2L and P2P kernel calls.])
+        AC_DEFINE(EXAFMM_COUNT_KERNEL,1,[Count number of M2L and P2P kernel calls.])
 fi
-AM_CONDITIONAL(COUNT_KERNEL, test "$use_count_kernel" = "yes")
+AM_CONDITIONAL(EXAFMM_COUNT_KERNEL, test "$use_count_kernel" = "yes")
 
 # Count interaction list
 AC_ARG_ENABLE(count-list, [AC_HELP_STRING([--enable-count-list],[count interaction list per cell])], use_count_list=$enableval, use_count_list=no)
 if test "$use_count_list" = "yes"; then
-        AC_DEFINE(COUNT_LIST,1,[Count interaction list per cell.])
+        AC_DEFINE(EXAFMM_COUNT_LIST,1,[Count interaction list per cell.])
 fi
-AM_CONDITIONAL(COUNT_LIST, test "$use_count_list" = "yes")
+AM_CONDITIONAL(EXAFMM_COUNT_LIST, test "$use_count_list" = "yes")
 
 # Assertion
 AC_ARG_ENABLE(assert, [AC_HELP_STRING([--enable-assert],[enable assertion])], use_assert=$enableval, use_assert=no)
 if test "$use_assert" = "yes"; then
-        AC_DEFINE(ASSERT,1,[Enable assertion.])
+        AC_DEFINE(EXAFMM_ASSERT,1,[Enable assertion.])
 fi
-AM_CONDITIONAL(ASSERT, test "$use_assert" = "yes")
+AM_CONDITIONAL(EXAFMM_ASSERT, test "$use_assert" = "yes")
 
 # Debug
 AC_ARG_ENABLE(debug, [AC_HELP_STRING([--enable-debug],[compile with extra runtime checks for debugging])], enable_debug=$enableval, enable_debug=no)
 if test "$enable_debug" = "yes"; then
-        AC_DEFINE(DEBUG,1,[Define to enable extra debugging options.])
+        AC_DEFINE(EXAFMM_DEBUG,1,[Define to enable extra debugging options.])
 fi
-AM_CONDITIONAL(DEBUG, test "$enable_debug" = "yes")
+AM_CONDITIONAL(EXAFMM_DEBUG, test "$enable_debug" = "yes")
 
 
 AC_OUTPUT
