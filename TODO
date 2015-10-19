@@ -1,28 +1,24 @@
 -- Immediate --
-Remove all macros
-Test on cray, fx10, sx-ace
-Setup buildbot tests using "make check"
+1. Helmholtz SIMD
+
+-- Features to add --
+LBT MPI <- ICELL is being calculated from localBounds
 MPI overhaul
 Test difficult distributions for partitioning and LET
-
-LBT mpi <- ICELL is being calculated from localBounds
+Setup buildbot tests using "make check"
 move contents of macros.h to configure.ac
 args.h, verify.h from class to namespace
 Have only one P2P
-SIMD for Helmholtz P2P
-Helmholtz DTT
 Fix without TBB
 logger.h split to print.h
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
+Use compressed Cell struct of Bonsai
 AoS, SoA union by Strzodka
 examples/Makefile options to args
-Use compressed Cell struct of Bonsai
 Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
 Separate key manipulation namespace, e.g. interleaveMorton(), deinterleveHilbert() (controllable key_t)
 Distinguish Pmax and P. Make P runtime option
 Use getIndex for NO_P2P
-
--- Features to add --
 Time each kernel separately using cycle counters
 cycle counter based weights
 TBB -> OpenMP with atomics -> flush

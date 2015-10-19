@@ -107,6 +107,7 @@ namespace exafmm {
     B_iter    BODY;                                             //!< Iterator of first body
     uint64_t  ICELL;                                            //!< Cell index
     real_t    WEIGHT;                                           //!< Weight for partitioning
+    real_t    SCALE;                                            //!< Scale for Helmholtz kernel
     vec3      X;                                                //!< Cell center
     real_t    R;                                                //!< Cell radius
     vecP      M;                                                //!< Multipole coefficients

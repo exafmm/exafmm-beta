@@ -113,11 +113,7 @@ namespace exafmm {
 
   public:
     Args(int argc=0, char ** argv=NULL) :
-#if EXAFMM_HELMHOLTZ
-      ncrit(1000),
-#else
       ncrit(64),
-#endif
       distribution("cube"),
       dual(0),
       graft(0),
@@ -129,11 +125,7 @@ namespace exafmm {
       useRopt(0),
       repeat(1),
       nspawn(5000),
-#if EXAFMM_HELMHOLTZ
-      theta(1.),
-#else
       theta(.4),
-#endif
       threads(16),
       verbose(0),
       write(0),
