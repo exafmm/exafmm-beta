@@ -714,11 +714,11 @@ save:
 	@make -C .. save
 
 @EXAFMM_HAVE_MPI_TRUE@run_fmm:
-@EXAFMM_HAVE_MPI_TRUE@	./fmm -n 1000 -c 32 -i 3
+@EXAFMM_HAVE_MPI_TRUE@	./fmm -v -n 1000 -c 32 -i 3
 @EXAFMM_HAVE_MPI_TRUE@run_fmm_mpi:
-@EXAFMM_HAVE_MPI_TRUE@	mpirun -np 8 ./fmm_mpi -n 1000 -c 32 -i 3
+@EXAFMM_HAVE_MPI_TRUE@	mpirun -np 8 ./fmm_mpi -v -n 1000 -c 32 -i 3
 @EXAFMM_HAVE_MPI_TRUE@run_fmm_ijhpca:
-@EXAFMM_HAVE_MPI_TRUE@	mpirun -np 8 ./fmm_ijhpca -n 62500 -c 32 -i 1
+@EXAFMM_HAVE_MPI_TRUE@	mpirun -np 8 ./fmm_ijhpca -v -n 62500 -c 32 -i 1
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -13,10 +13,10 @@ const int LTERM = (EXAFMM_PP+1)*(EXAFMM_PP+2)*(EXAFMM_PP+3)/6;
 
 #include "core.h"
 
-#define for_3d for( int d=0; d<3; d++ )
-#define for_4d for( int d=0; d<4; d++ )
-#define for_m for( int m=0; m<MTERM; m++ )
-#define for_l for( int l=0; l<LTERM; l++ )
+#define for_3d for (int d=0; d<3; d++)
+#define for_4d for (int d=0; d<4; d++)
+#define for_m for (int m=0; m<MTERM; m++)
+#define for_l for (int l=0; l<LTERM; l++)
 #define EXAFMM_MAX(a,b) (((a) > (b)) ? (a) : (b))
 #define EXAFMM_MIN(a,b) (((a) < (b)) ? (a) : (b))
 
