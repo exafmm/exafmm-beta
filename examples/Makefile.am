@@ -11,7 +11,7 @@ tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
 hss_SOURCES = hss.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 hss_CPPFLAGS = $(AM_CPPFLAGS) -I ~/strumpack/src -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=4
-hss_LDADD = -lscalapack -llapack -lblas -lblacs
+hss_LDADD = -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 
 run_laplace_cartesian: laplace_cartesian
 	./$< -Dgmovx
@@ -22,7 +22,7 @@ run_helmholtz_spherical: helmholtz_spherical
 run_tree: tree
 	./$< -v -n 10000000
 run_hss: hss
-	./$< -Dgmovx
+	./$< -DgGmovx -n 4096
 
 bin_PROGRAMS += laplace_cartesian_kernel laplace_spherical_kernel helmholtz_spherical_kernel
 laplace_cartesian_kernel_SOURCES = kernel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx

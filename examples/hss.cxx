@@ -133,6 +133,7 @@ int main(int argc, char ** argv) {
     int myrow, mycol;
     nprow=floor(sqrt((float)np));
     npcol=np/nprow;
+#if 1
     blacs_get_(&IZERO,&IZERO,&ctxt);
     blacs_gridinit_(&ctxt,"R",&nprow,&npcol);
     blacs_gridinfo_(&ctxt,&nprow,&npcol,&myrow,&mycol);
@@ -347,10 +348,11 @@ int main(int argc, char ** argv) {
     delete[] X;
     delete[] B;
     delete[] Btrue;
+#endif
 
-    MPI_Finalize();
   }
   logger::writeDAG();
+  MPI_Finalize();
   return 0;
 }
 
