@@ -7,6 +7,7 @@
 #include "up_down_pass.h"
 #include "verify.h"
 #include "StrumpackDensePackage.hpp"
+using namespace exafmm;
 
 /* Laplace, cartesian coordinates example */
 
@@ -32,7 +33,7 @@ int main(int argc, char ** argv) {
   MPI_Comm_size(MPI_COMM_WORLD,&np);
 
   kernel::eps2 = 0.0;
-#if Helmholtz
+#if EXAFMM_HELMHOLTZ
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
   kernel::setup();

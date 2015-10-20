@@ -1,8 +1,11 @@
 -- Immediate --
-1. HSS serial
+1. HSS serial, when done search Makefile.am for "hss" and remove.
 2. HSS MPI
 3. Helmholtz SIMD
-4. Stokes
+4. Helmholtz conjugate
+5. Stokes kernels
+6. Calculate Flops
+7. Cycle counter kernel timer
 
 -- MPI --
 LBT MPI <- ICELL is being calculated from localBounds
@@ -32,7 +35,6 @@ Morton -> Hilbert
 -- kernels --
 Have only one P2P
 Distinguish Pmax and P. Make P runtime option
-Time each kernel separately using cycle counters
 Use getIndex for NO_P2P
 Kahan + fixed precision
 Solid harmonics kernel
