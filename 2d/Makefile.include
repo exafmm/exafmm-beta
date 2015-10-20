@@ -1,0 +1,61 @@
+.SUFFIXES: .cxx .cu .o
+
+### choose C++ compiler
+CXX	= mpicxx -ggdb3 -Wall -Wextra -msse4a -O3 -fopenmp -ffast-math -funroll-loops # GCC
+#CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias # Intel
+#CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
+#CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
+#CXX	= mpixlcxx_r -qarch=qp -qtune=qp -O3 -qhot -I$(HOME)/tbb/include # BG/Q
+#CXX	= mpixlcxx_r -qarch=450 -qtune=450 -O3 # BG/P
+#CXX	= mpiFCCpx -Kfast # K computer
+#CXX	= tau_cxx.sh # TAU compiler instrumentation
+
+### choose fortran compiler
+#FC = mpif90 -ggdb3 -O3 -msse4a -ffast-math -funroll-loops -cpp #GCC
+FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp # Intel
+
+### Base flags
+CXX	+= -I../include
+LFLAGS	+= -DEXPANSION=6 # Specifcy expansion order
+LFLAGS	+= -DUSE_SIMD # Use SIMD intrinsics
+#LFLAGS	+= -DFP64 # Use double precision
+
+### Debugging flags
+LFLAGS	+= -DASSERT # Turns on asserttions (otherwise define an empty macro function)
+#LFLAGS	+= -DCOUNT # Count number calls to P2P and M2L
+
+### Intel TBB flags : TBB is available from http://threadingbuildingblocks.org/download.php
+LFLAGS	+= -std=c++0x -DTBB -ltbb
+
+### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
+#LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
+
+### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
+#LFLAGS	+= -DPAPI -lpapi
+
+### Trace flags
+#LFLAGS	+= -DTRACE
+
+MAKEFLAGS += --no-print-directory
+
+.cxx.o  :
+	$(CXX) -c $^ -o $@ $(LFLAGS)
+.cu.o   :
+	$(NVCC) -c $^ -o $@ $(LFLAGS)
+
+help:
+	@make -C .. help
+clean:
+	@make -C .. clean
+cleandat:
+	@make -C .. cleandat
+cleanlib:
+	@make -C .. cleanlib
+cleanall:
+	@make -C .. cleanall
+commit:
+	@make -C .. commit
+save:
+	@make -C .. save
+revert:
+	@make -C .. revert
