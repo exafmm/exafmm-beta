@@ -8,7 +8,7 @@ AM_CPPFLAGS += -DEXAFMM_WITH_OPENMP
 AM_CXXFLAGS += $(OPENMP_CFLAGS)
 endif
 if EXAFMM_WITH_TBB
-LIBS += -ltbb -dynamic
+LIBS += -ltbb # -dynamic
 endif
 if EXAFMM_WITH_CILK
 LIBS += -lcilkrts

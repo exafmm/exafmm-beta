@@ -82,7 +82,7 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 ### Thread libraries
 @EXAFMM_HAVE_OPENMP_TRUE@am__append_1 = -DEXAFMM_WITH_OPENMP
 @EXAFMM_HAVE_OPENMP_TRUE@am__append_2 = $(OPENMP_CFLAGS)
-@EXAFMM_WITH_TBB_TRUE@am__append_3 = -ltbb -dynamic
+@EXAFMM_WITH_TBB_TRUE@am__append_3 = -ltbb # -dynamic
 @EXAFMM_WITH_CILK_TRUE@am__append_4 = -lcilkrts
 @EXAFMM_WITH_MTHREAD_TRUE@am__append_5 = -lmyth-native
 @EXAFMM_WITH_QTHREAD_TRUE@am__append_6 = -lqthread
