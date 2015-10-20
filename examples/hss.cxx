@@ -107,33 +107,12 @@ int main(int argc, char ** argv) {
     data.initTarget(bodies);
   }
   if (args.getMatrix) {
-    //traversal.writeMatrix(bodies, jbodies);
-
-#if defined(debug)
-    for(int i=0;i<np;i++) {
-      if(myid==i) {
-        std::cout << "MPI rank " << myid << std::endl;
-        for (B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
-          for (B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {
-            vec3 dX=Bi->X-Bj->X;
-            real_t R2=norm(dX)+kernel::eps2;
-            real_t G=R2==0?0.0:1.0/sqrt(R2); 
-            std::cout << "(" << Bi-bodies.begin() << "," << Bj-jbodies.begin() << "): " << G << std::endl;
-          }
-        }
-        std::cout << std::endl;
-      }
-      MPI_Barrier(MPI_COMM_WORLD);
-    }
-#endif
-
     /* BLACS 2D grid, as square as possible */
     int ctxt;
     int nprow, npcol;
     int myrow, mycol;
     nprow=floor(sqrt((float)np));
     npcol=np/nprow;
-#if 1
     blacs_get_(&IZERO,&IZERO,&ctxt);
     blacs_gridinit_(&ctxt,"R",&nprow,&npcol);
     blacs_gridinfo_(&ctxt,&nprow,&npcol,&myrow,&mycol);
@@ -148,158 +127,113 @@ int main(int argc, char ** argv) {
     sdp.tol_HSS=1e-4;
     sdp.levels_HSS=5;
 
-    /* Input the problem. Two version:
-     *  1/ Explicit matrix.
-     *  2/ Matrix-free.
-     */ 
-    bool explMat=true;
     double *A, *R, *S;
     int descA[BLACSCTXTSIZE], descRS[BLACSCTXTSIZE];
-    if(explMat) {
-      /* Explicit matrix version.
-       * Sampling is adaptive.
-       */ 
-      sdp.lim_rand_HSS=100;
-      sdp.min_rand_HSS=128;
-      sdp.inc_rand_HSS=200;
-      sdp.max_rand_HSS=128;
+    /* Matrix-free version.
+     * The number of random vectors is fixed.
+     */ 
+    int nrand=std::min(4*(int)floor(sqrt(n)),1000);
+    sdp.min_rand_HSS=nrand;
+    sdp.max_rand_HSS=nrand;
 
-      if(!myid) std::cout << "Explicit matrix assembly..." << std::endl;
-      double tstart=MPI_Wtime();
-      if(myid<nprow*npcol) {
-        /* Allocate the local array and fill with kernel values */
-        int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
-        int locc=numroc_(&n,&nb,&mycol,&IZERO,&npcol);
-        A=new double[locr*locc];
+    Bodies **pbodies=new Bodies*[2];
+    pbodies[0]=&bodies;
+    pbodies[1]=&bodies;
+    sdp.obj=(void*)pbodies;
 
-        for(int i=1;i<=locr;i++) {
-          int globi=indxl2g_(&i,&nb,&myrow,&IZERO,&nprow);
-          B_iter Bi=bodies.begin()+globi-1;
-          for(int j=1;j<=locc;j++) {
-            int globj=indxl2g_(&j,&nb,&mycol,&IZERO,&npcol);
-            B_iter Bj=jbodies.begin()+globj-1;
-            vec3 dX=Bi->X-Bj->X;
-            real_t R2=norm(dX)+kernel::eps2;
-            A[locr*(j-1)+(i-1)]=R2==0?0.0:1.0/sqrt(R2); 
-          }
-        }
-        int ierr;
-        int dummy=std::max(1,locr);
-        descinit_(descA,&n,&n,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
-      } else {
-        A=NULL;
-        descset_(descA,&n,&n,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
+    int seed=time(NULL);
+    MPI_Bcast((void*)&seed,IONE,MPI_INTEGER,IZERO,MPI_COMM_WORLD);
+    srand(seed);
+
+    if(!myid) std::cout << "Sampling..." << std::endl;
+    double tstart=MPI_Wtime();
+    if(myid<nprow*npcol) {
+      int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
+      int locc=numroc_(&nrand,&nb,&mycol,&IZERO,&npcol);
+      R=new double[locr*locc]();
+      S=new double[locr*locc]();
+
+      /* BLAS3 sampling.
+       * In Rglob, processes store only the columns
+       * of the random vectors that are relevant to them.
+       * We enforce the same sequence of calls to the
+       * random number generator on every process.
+       * Then, for a given blocksize nbA, they
+       * assemble a block B of nbA rows of A, and they
+       * compute S([nbA rows],:)=B*Rglob.
+       */
+
+      double *Rglob=new double[n*locc];
+      for(int j=1;j<=nrand;j++) {
+	if(mycol==indxg2p_(&j,&nb,&mycol,&IZERO,&npcol)) {
+	  /* I own this column */
+	  int locj=indxg2l_(&j,&nb,&mycol,&IZERO,&npcol);
+	  for(int i=0;i<n;i++)
+	    Rglob[i+n*(locj-1)]=rand()/(double)RAND_MAX;
+	} else {
+	  /* n calls to rand() to enforce the same calling
+	   * sequence on every process.
+	   */ 
+	  for(int i=0;i<n;i++)
+	    rand();
+	}
+      } 
+
+      int nbA=128;
+      int r=0;
+      while(r<locr) {
+	int nrows=std::min(nbA,locr-r);
+
+	/* Compute the nrows rows of A that correspond
+	 * to rows r:r+nrows-1 of the local array S.
+	 */
+	A=new double[nrows*n];
+	for(int j=0;j<n;j++) {
+	  B_iter Bj=jbodies.begin()+j; 
+	  for(int i=0;i<nrows;i++) {
+	    int locri=r+i+1;
+	    int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
+	    B_iter Bi=bodies.begin()+globri-1; 
+	    vec3 dX=Bi->X-Bj->X;
+	    real_t R2=norm(dX)+kernel::eps2;
+	    A[i+nrows*j]=R2==0?0.0:1.0/sqrt(R2);
+	  }
+	}
+
+	/* Compute nrows of the sample */
+	gemm('N','N',nrows,locc,n,1.0,A,nrows,Rglob,n,0.0,&S[r],locr);
+
+	delete[] A;
+	r+=nbA;
       }
-      double tend=MPI_Wtime();
-      if(!myid) std::cout << "Explicit matrix assembly time: " << tend-tstart << " seconds" << std::endl;
-      sdp.compress(A,descA);
+      A=NULL;
+
+      /* Compress the random vectors */
+      for(int j=0;j<locc;j++) {
+	for(int i=1;i<=n;i++) {
+	  if(myrow==indxg2p_(&i,&nb,&myrow,&IZERO,&nprow)) {
+	    /* I own this row */
+	    int loci=indxg2l_(&i,&nb,&myrow,&IZERO,&nprow);
+	    R[loci-1+locr*j]=Rglob[i-1+n*j];
+	  }
+	}
+      }
+      delete[] Rglob;
+
+      int ierr;
+      int dummy=std::max(1,locr);
+      descinit_(descA,&n,&n,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
+      descinit_(descRS,&n,&nrand,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
     } else {
-      /* Matrix-free version.
-       * The number of random vectors is fixed.
-       */ 
-      int nrand=std::min(4*(int)floor(sqrt(n)),1000);
-      sdp.min_rand_HSS=nrand;
-      sdp.max_rand_HSS=nrand;
-
-      Bodies **pbodies=new Bodies*[2];
-      pbodies[0]=&bodies;
-      pbodies[1]=&bodies;
-      sdp.obj=(void*)pbodies;
-
-      int seed=time(NULL);
-      MPI_Bcast((void*)&seed,IONE,MPI_INTEGER,IZERO,MPI_COMM_WORLD);
-      srand(seed);
-
-      if(!myid) std::cout << "Sampling..." << std::endl;
-      double tstart=MPI_Wtime();
-      if(myid<nprow*npcol) {
-        int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
-        int locc=numroc_(&nrand,&nb,&mycol,&IZERO,&npcol);
-        R=new double[locr*locc]();
-        S=new double[locr*locc]();
-
-        /* BLAS3 sampling.
-         * In Rglob, processes store only the columns
-         * of the random vectors that are relevant to them.
-         * We enforce the same sequence of calls to the
-         * random number generator on every process.
-         * Then, for a given blocksize nbA, they
-         * assemble a block B of nbA rows of A, and they
-         * compute S([nbA rows],:)=B*Rglob.
-         */
-
-        double *Rglob=new double[n*locc];
-        for(int j=1;j<=nrand;j++) {
-          if(mycol==indxg2p_(&j,&nb,&mycol,&IZERO,&npcol)) {
-            /* I own this column */
-            int locj=indxg2l_(&j,&nb,&mycol,&IZERO,&npcol);
-            for(int i=0;i<n;i++)
-              Rglob[i+n*(locj-1)]=rand()/(double)RAND_MAX;
-          } else {
-            /* n calls to rand() to enforce the same calling
-             * sequence on every process.
-             */ 
-            for(int i=0;i<n;i++)
-              rand();
-          }
-        } 
-
-        int nbA=128;
-        int r=0;
-        while(r<locr) {
-          int nrows=std::min(nbA,locr-r);
-
-          /* Compute the nrows rows of A that correspond
-           * to rows r:r+nrows-1 of the local array S.
-           */
-          A=new double[nrows*n];
-          for(int j=0;j<n;j++) {
-            B_iter Bj=jbodies.begin()+j; 
-            for(int i=0;i<nrows;i++) {
-              int locri=r+i+1;
-              int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
-              B_iter Bi=bodies.begin()+globri-1; 
-              vec3 dX=Bi->X-Bj->X;
-              real_t R2=norm(dX)+kernel::eps2;
-              A[i+nrows*j]=R2==0?0.0:1.0/sqrt(R2);
-            }
-          }
-
-          /* Compute nrows of the sample */
-          gemm('N','N',nrows,locc,n,1.0,A,nrows,Rglob,n,0.0,&S[r],locr);
-
-          delete[] A;
-          r+=nbA;
-        }
-        A=NULL;
-
-        /* Compress the random vectors */
-        for(int j=0;j<locc;j++) {
-          for(int i=1;i<=n;i++) {
-            if(myrow==indxg2p_(&i,&nb,&myrow,&IZERO,&nprow)) {
-              /* I own this row */
-              int loci=indxg2l_(&i,&nb,&myrow,&IZERO,&nprow);
-              R[loci-1+locr*j]=Rglob[i-1+n*j];
-            }
-          }
-        }
-        delete[] Rglob;
-
-        int ierr;
-        int dummy=std::max(1,locr);
-        descinit_(descA,&n,&n,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
-        descinit_(descRS,&n,&nrand,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
-      } else {
-        R=NULL;
-        S=NULL;
-        descset_(descA,&n,&n,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
-        descset_(descRS,&n,&nrand,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
-      }
-      double tend=MPI_Wtime();
-      if(!myid) std::cout << "Sampling time: " << tend-tstart << " seconds" << std::endl;
-
-      sdp.compress(R,R,S,S,descRS,elements);
+      R=NULL;
+      S=NULL;
+      descset_(descA,&n,&n,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
+      descset_(descRS,&n,&nrand,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
     }
+    double tend=MPI_Wtime();
+    if(!myid) std::cout << "Sampling time: " << tend-tstart << " seconds" << std::endl;
+
+    sdp.compress(R,R,S,S,descRS,elements);
 
     double *X, *B, *Btrue;
     int descXB[BLACSCTXTSIZE];
@@ -324,31 +258,21 @@ int main(int argc, char ** argv) {
     sdp.product('N',1.0,A,descA,X,descXB,0.0,B,descXB);
     sdp.print_statistics();
 
-    if(explMat) {
-      sdp.use_HSS=false;
-      sdp.product('N',1.0,A,descA,X,descXB,0.0,Btrue,descXB);
-
-      if(myid<nprow*npcol) {
-        double err=plange('F',n,1,Btrue,IONE,IONE,descXB,(double*)NULL);
-        int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
-        int locc=numroc_(&IONE,&nb,&mycol,&IZERO,&npcol);
-        for(int i=0;i<locr*locc;i++)
-          Btrue[i]-=B[i];
-        err=plange('F',n,1,Btrue,IONE,IONE,descXB,(double*)NULL)/err;
-        if(!myid) std::cout << "Product quality = " << err << std::endl;
-      }
+    if(myid<nprow*npcol) {
+      double err=plange('F',n,1,Btrue,IONE,IONE,descXB,(double*)NULL);
+      int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
+      int locc=numroc_(&IONE,&nb,&mycol,&IZERO,&npcol);
+      for(int i=0;i<locr*locc;i++)
+	Btrue[i]-=B[i];
+      err=plange('F',n,1,Btrue,IONE,IONE,descXB,(double*)NULL)/err;
+      if(!myid) std::cout << "Product quality = " << err << std::endl;
     }
 
-    if(explMat)
-      delete[] A;
-    else {
-      delete[] R;
-      delete[] S;
-    }
+    delete[] R;
+    delete[] S;
     delete[] X;
     delete[] B;
     delete[] Btrue;
-#endif
 
   }
   logger::writeDAG();
