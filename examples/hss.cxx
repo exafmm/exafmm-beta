@@ -27,19 +27,19 @@ int main(int argc, char ** argv) {
   Verify verify;
   num_threads(args.threads);
 
-  int myid, np;
+  int mpirank, mpisize;
   MPI_Init(&argc,&argv);
-  MPI_Comm_rank(MPI_COMM_WORLD,&myid);
-  MPI_Comm_size(MPI_COMM_WORLD,&np);
+  MPI_Comm_rank(MPI_COMM_WORLD,&mpirank);
+  MPI_Comm_size(MPI_COMM_WORLD,&mpisize);
 
   kernel::eps2 = 0.0;
 #if EXAFMM_HELMHOLTZ
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
 #endif
   kernel::setup();
-  logger::verbose = args.verbose && !myid;
+  logger::verbose = args.verbose && !mpirank;
   logger::printTitle("FMM Parameters");
-  if(!myid)args.print(logger::stringLength, P);
+  if(!mpirank)args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
   buffer.reserve(bodies.size());
   if (args.IneJ) {
@@ -108,164 +108,143 @@ int main(int argc, char ** argv) {
   }
   if (args.getMatrix) {
     /* BLACS 2D grid, as square as possible */
-    int ctxt;
-    int nprow, npcol;
-    int myrow, mycol;
-    nprow=floor(sqrt((float)np));
-    npcol=np/nprow;
-    blacs_get_(&IZERO,&IZERO,&ctxt);
-    blacs_gridinit_(&ctxt,"R",&nprow,&npcol);
-    blacs_gridinfo_(&ctxt,&nprow,&npcol,&myrow,&mycol);
+    int blacsctxt;
+    blacs_get_(&IZERO, &IZERO, &blacsctxt);
+    int rowsize = floor(sqrt((float) mpisize));
+    int colsize = mpisize / rowsize;
+    blacs_gridinit_(&blacsctxt, "R", &rowsize, &colsize);
+    int rowrank, colrank;
+    blacs_gridinfo_(&blacsctxt, &rowsize, &colsize, &rowrank, &colrank);
 
-    int n=bodies.size();
-    int nb=64;
+    int numBodies = bodies.size();
+    int numBlocks = 64;
 
     /* Initialize the solver */
     StrumpackDensePackage<double,double> sdp(MPI_COMM_WORLD);
-    sdp.verbose=true;
-    sdp.use_HSS=true;
-    sdp.tol_HSS=1e-4;
-    sdp.levels_HSS=5;
+    sdp.verbose = true;
+    sdp.use_HSS = true;
+    sdp.tol_HSS = 1e-4;
+    sdp.levels_HSS = 5;
 
-    double *A, *R, *S;
+    double *A;
     int descA[BLACSCTXTSIZE], descRS[BLACSCTXTSIZE];
-    /* Matrix-free version.
-     * The number of random vectors is fixed.
-     */ 
-    int nrand=std::min(4*(int)floor(sqrt(n)),1000);
-    sdp.min_rand_HSS=nrand;
-    sdp.max_rand_HSS=nrand;
+    int nrand = std::min(4*(int)floor(sqrt(numBodies)), 1000);
+    sdp.min_rand_HSS = nrand;
+    sdp.max_rand_HSS = nrand;
 
-    Bodies **pbodies=new Bodies*[2];
-    pbodies[0]=&bodies;
-    pbodies[1]=&bodies;
-    sdp.obj=(void*)pbodies;
+    Bodies **pbodies = new Bodies*[2];
+    pbodies[0] = &bodies;
+    pbodies[1] = &bodies;
+    sdp.obj =(void*) pbodies;
 
-    int seed=time(NULL);
-    MPI_Bcast((void*)&seed,IONE,MPI_INTEGER,IZERO,MPI_COMM_WORLD);
+    int seed = time(NULL);
+    MPI_Bcast((void*)&seed, IONE, MPI_INTEGER, IZERO, MPI_COMM_WORLD);
     srand(seed);
 
-    if(!myid) std::cout << "Sampling..." << std::endl;
-    double tstart=MPI_Wtime();
-    if(myid<nprow*npcol) {
-      int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
-      int locc=numroc_(&nrand,&nb,&mycol,&IZERO,&npcol);
-      R=new double[locr*locc]();
-      S=new double[locr*locc]();
+    if(!mpirank) std::cout << "Sampling..." << std::endl;
+    double tstart = MPI_Wtime();
+    assert(mpirank < rowsize * colsize);
+    int locr = numroc_(&numBodies, &numBlocks, &rowrank, &IZERO, &rowsize);
+    int locc = numroc_(&nrand, &numBlocks, &colrank, &IZERO, &colsize);
+    double * R = new double [locr*locc]();
+    double * S = new double [locr*locc]();
 
-      /* BLAS3 sampling.
-       * In Rglob, processes store only the columns
-       * of the random vectors that are relevant to them.
-       * We enforce the same sequence of calls to the
-       * random number generator on every process.
-       * Then, for a given blocksize nbA, they
-       * assemble a block B of nbA rows of A, and they
-       * compute S([nbA rows],:)=B*Rglob.
-       */
+    /* BLAS3 sampling.
+     * In Rglob, processes store only the columns
+     * of the random vectors that are relevant to them.
+     * We enforce the same sequence of calls to the
+     * random number generator on every process.
+     * Then, for a given blocksize nbA, they
+     * assemble a block B of nbA rows of A, and they
+     * compute S([nbA rows],:)=B*Rglob.
+     */
 
-      double *Rglob=new double[n*locc];
-      for(int j=1;j<=nrand;j++) {
-	if(mycol==indxg2p_(&j,&nb,&mycol,&IZERO,&npcol)) {
-	  /* I own this column */
-	  int locj=indxg2l_(&j,&nb,&mycol,&IZERO,&npcol);
-	  for(int i=0;i<n;i++)
-	    Rglob[i+n*(locj-1)]=rand()/(double)RAND_MAX;
-	} else {
-	  /* n calls to rand() to enforce the same calling
-	   * sequence on every process.
-	   */ 
-	  for(int i=0;i<n;i++)
-	    rand();
-	}
-      } 
-
-      int nbA=128;
-      int r=0;
-      while(r<locr) {
-	int nrows=std::min(nbA,locr-r);
-
-	/* Compute the nrows rows of A that correspond
-	 * to rows r:r+nrows-1 of the local array S.
-	 */
-	A=new double[nrows*n];
-	for(int j=0;j<n;j++) {
-	  B_iter Bj=jbodies.begin()+j; 
-	  for(int i=0;i<nrows;i++) {
-	    int locri=r+i+1;
-	    int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
-	    B_iter Bi=bodies.begin()+globri-1; 
-	    vec3 dX=Bi->X-Bj->X;
-	    real_t R2=norm(dX)+kernel::eps2;
-	    A[i+nrows*j]=R2==0?0.0:1.0/sqrt(R2);
-	  }
-	}
-
-	/* Compute nrows of the sample */
-	gemm('N','N',nrows,locc,n,1.0,A,nrows,Rglob,n,0.0,&S[r],locr);
-
-	delete[] A;
-	r+=nbA;
+    double * Rglob = new double[numBodies*locc];
+    for (int j=1; j<=nrand; j++) {
+      if (colrank==indxg2p_(&j, &numBlocks, &colrank, &IZERO, &colsize)) {
+	int locj = indxg2l_(&j, &numBlocks, &colrank, &IZERO, &colsize);
+	for (int i=0; i<numBodies; i++)
+	  Rglob[i+numBodies*(locj-1)] = rand() / (double)RAND_MAX;
+      } else {
+	for (int i=0; i<numBodies; i++)
+	  rand();
       }
-      A=NULL;
+    } 
 
-      /* Compress the random vectors */
-      for(int j=0;j<locc;j++) {
-	for(int i=1;i<=n;i++) {
-	  if(myrow==indxg2p_(&i,&nb,&myrow,&IZERO,&nprow)) {
-	    /* I own this row */
-	    int loci=indxg2l_(&i,&nb,&myrow,&IZERO,&nprow);
-	    R[loci-1+locr*j]=Rglob[i-1+n*j];
-	  }
+    int nbA = 128;
+    int r = 0;
+    while (r<locr) {
+      int nrows = std::min(nbA,locr-r);
+      A = new double [nrows*numBodies];
+      for (int j=0; j<numBodies; j++) {
+	B_iter Bj = jbodies.begin()+j; 
+	for (int i=0; i<nrows; i++) {
+	  int locri = r + i + 1;
+	  int globri = indxl2g_(&locri, &numBlocks, &rowrank, &IZERO, &rowsize);
+	  B_iter Bi = bodies.begin() + globri - 1; 
+	  vec3 dX = Bi->X - Bj->X;
+	  real_t R2 = norm(dX) + kernel::eps2;
+	  A[i+nrows*j] = R2 == 0 ? 0.0 : 1.0 / sqrt(R2);
 	}
       }
-      delete[] Rglob;
-
-      int ierr;
-      int dummy=std::max(1,locr);
-      descinit_(descA,&n,&n,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
-      descinit_(descRS,&n,&nrand,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
-    } else {
-      R=NULL;
-      S=NULL;
-      descset_(descA,&n,&n,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
-      descset_(descRS,&n,&nrand,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
+      gemm('N', 'N', nrows, locc, numBodies, 1.0, A, nrows, Rglob, numBodies, 0.0, &S[r], locr);
+      delete[] A;
+      r += nbA;
     }
-    double tend=MPI_Wtime();
-    if(!myid) std::cout << "Sampling time: " << tend-tstart << " seconds" << std::endl;
+    A=NULL;
 
-    sdp.compress(R,R,S,S,descRS,elements);
+    /* Compress the random vectors */
+    for (int j=0; j<locc; j++) {
+      for (int i=1; i<=numBodies; i++) {
+	if (rowrank==indxg2p_(&i, &numBlocks, &rowrank, &IZERO, &rowsize)) {
+	  int loci = indxg2l_(&i, &numBlocks, &rowrank, &IZERO, &rowsize);
+	  R[loci-1+locr*j] = Rglob[i-1+numBodies*j];
+	}
+      }
+    }
+    delete[] Rglob;
+
+    int ierr;
+    int dummy=std::max(1,locr);
+    descinit_(descA, &numBodies, &numBodies, &numBlocks, &numBlocks, &IZERO, &IZERO, &blacsctxt, &dummy, &ierr);
+    descinit_(descRS, &numBodies, &nrand, &numBlocks, &numBlocks, &IZERO, &IZERO, &blacsctxt, &dummy, &ierr);
+
+    double tend = MPI_Wtime();
+    if(!mpirank) std::cout << "Sampling time: " << tend-tstart << " seconds" << std::endl;
+
+    sdp.compress(R, R, S, S, descRS, elements);
 
     double *X, *B, *Btrue;
     int descXB[BLACSCTXTSIZE];
-    if(myid<nprow*npcol) {
-      int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
-      int locc=numroc_(&IONE,&nb,&mycol,&IZERO,&npcol);
-      X=new double[locr*locc];
-      B=new double[locr*locc];
-      Btrue=new double[locr*locc];
-      for(int i=0;i<locr*locc;i++)
-        X[i]=rand()/(double)RAND_MAX;
+    if (mpirank < rowsize * colsize) {
+      int locr=numroc_(&numBodies, &numBlocks, &rowrank, &IZERO, &rowsize);
+      int locc=numroc_(&IONE, &numBlocks, &colrank, &IZERO, &colsize);
+      X = new double [locr * locc];
+      B = new double [locr * locc];
+      Btrue = new double [locr * locc];
+      for (int i=0; i<locr*locc; i++)
+	X[i] = rand() / (double)RAND_MAX;
       int ierr;
-      int dummy=std::max(1,locr);
-      descinit_(descXB,&n,&IONE,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
+      int dummy = std::max(1,locr);
+      descinit_(descXB, &numBodies, &IONE, &numBlocks, &numBlocks, &IZERO, &IZERO, &blacsctxt, &dummy, &ierr);
     } else {
-      X=NULL;
-      B=NULL;
-      Btrue=NULL;
-      descset_(descXB,&n,&IONE,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
+      X = NULL;
+      B = NULL;
+      Btrue = NULL;
+      descset_(descXB, &numBodies, &IONE, &numBlocks, &numBlocks, &IZERO, &IZERO, &INONE, &IONE);
     }
 
-    sdp.product('N',1.0,A,descA,X,descXB,0.0,B,descXB);
+    sdp.product('N', 1.0, A, descA, X, descXB, 0.0, B, descXB);
     sdp.print_statistics();
 
-    if(myid<nprow*npcol) {
-      double err=plange('F',n,1,Btrue,IONE,IONE,descXB,(double*)NULL);
-      int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
-      int locc=numroc_(&IONE,&nb,&mycol,&IZERO,&npcol);
-      for(int i=0;i<locr*locc;i++)
-	Btrue[i]-=B[i];
-      err=plange('F',n,1,Btrue,IONE,IONE,descXB,(double*)NULL)/err;
-      if(!myid) std::cout << "Product quality = " << err << std::endl;
+    if (mpirank < rowsize * colsize) {
+      double err=plange('F', numBodies, 1, Btrue, IONE, IONE, descXB, (double*)NULL);
+      int locr=numroc_(&numBodies, &numBlocks, &rowrank, &IZERO, &rowsize);
+      int locc=numroc_(&IONE, &numBlocks, &colrank, &IZERO, &colsize);
+      for (int i=0; i<locr*locc; i++)
+	Btrue[i] -= B[i];
+      err=plange('F', numBodies, 1, Btrue, IONE, IONE, descXB, (double*)NULL) / err;
+      if(!mpirank) std::cout << "Product quality = " << err << std::endl;
     }
 
     delete[] R;
@@ -273,7 +252,6 @@ int main(int argc, char ** argv) {
     delete[] X;
     delete[] B;
     delete[] Btrue;
-
   }
   logger::writeDAG();
   MPI_Finalize();
@@ -284,7 +262,7 @@ void elements(void * obj, int *I, int *J, double *B, int *descB) {
   if(B==NULL)
     return;
 
-  int ctxt=descB[1];
+  int blacsctxt=descB[1];
   int mB=descB[2];
   int nB=descB[3];
   int mb=descB[4];
@@ -296,17 +274,17 @@ void elements(void * obj, int *I, int *J, double *B, int *descB) {
   Bodies *bodies=pbodies[0];
   Bodies *jbodies=pbodies[1];
 
-  int nprow, npcol;
-  int myrow, mycol;
-  blacs_gridinfo_(&ctxt,&nprow,&npcol,&myrow,&mycol);
+  int rowsize, colsize;
+  int rowrank, colrank;
+  blacs_gridinfo_(&blacsctxt,&rowsize,&colsize,&rowrank,&colrank);
 
-  int locr=numroc_(&mB,&mb,&myrow,&rsrc,&nprow);
-  int locc=numroc_(&nB,&nb,&mycol,&csrc,&npcol);
+  int locr=numroc_(&mB,&mb,&rowrank,&rsrc,&rowsize);
+  int locc=numroc_(&nB,&nb,&colrank,&csrc,&colsize);
 
   for(int i=1;i<=locr;i++) {
     for(int j=1;j<=locc;j++) {
-      int ii=indxl2g_(&i,&mb,&myrow,&csrc,&nprow);
-      int jj=indxl2g_(&j,&nb,&mycol,&csrc,&npcol);
+      int ii=indxl2g_(&i,&mb,&rowrank,&csrc,&rowsize);
+      int jj=indxl2g_(&j,&nb,&colrank,&csrc,&colsize);
       int iii=I[ii-1];
       int jjj=J[jj-1];
       B_iter Bi=bodies->begin()+iii-1;
