@@ -39,7 +39,7 @@ int main(int argc, char ** argv) {
   kernel::setup();
   logger::verbose = args.verbose && !mpirank;
   logger::printTitle("FMM Parameters");
-  if(!mpirank)args.print(logger::stringLength, P);
+  if(!mpirank) args.print(logger::stringLength, P);
   bodies = data.initBodies(args.numBodies, args.distribution, 0);
   buffer.reserve(bodies.size());
   if (args.IneJ) {
@@ -107,7 +107,6 @@ int main(int argc, char ** argv) {
     data.initTarget(bodies);
   }
   if (args.getMatrix) {
-    /* BLACS 2D grid, as square as possible */
     int blacsctxt;
     blacs_get_(&IZERO, &IZERO, &blacsctxt);
     int rowsize = floor(sqrt((float) mpisize));
@@ -118,8 +117,6 @@ int main(int argc, char ** argv) {
 
     int numBodies = bodies.size();
     int numBlocks = 64;
-
-    /* Initialize the solver */
     StrumpackDensePackage<double,double> sdp(MPI_COMM_WORLD);
     sdp.verbose = true;
     sdp.use_HSS = true;
@@ -205,7 +202,7 @@ int main(int argc, char ** argv) {
     delete[] Rglob;
 
     int ierr;
-    int dummy=std::max(1,locr);
+    int dummy = std::max(1,locr);
     descinit_(descA, &numBodies, &numBodies, &numBlocks, &numBlocks, &IZERO, &IZERO, &blacsctxt, &dummy, &ierr);
     descinit_(descRS, &numBodies, &nrand, &numBlocks, &numBlocks, &IZERO, &IZERO, &blacsctxt, &dummy, &ierr);
 
@@ -216,36 +213,26 @@ int main(int argc, char ** argv) {
 
     double *X, *B, *Btrue;
     int descXB[BLACSCTXTSIZE];
-    if (mpirank < rowsize * colsize) {
-      int locr=numroc_(&numBodies, &numBlocks, &rowrank, &IZERO, &rowsize);
-      int locc=numroc_(&IONE, &numBlocks, &colrank, &IZERO, &colsize);
-      X = new double [locr * locc];
-      B = new double [locr * locc];
-      Btrue = new double [locr * locc];
-      for (int i=0; i<locr*locc; i++)
-	X[i] = rand() / (double)RAND_MAX;
-      int ierr;
-      int dummy = std::max(1,locr);
-      descinit_(descXB, &numBodies, &IONE, &numBlocks, &numBlocks, &IZERO, &IZERO, &blacsctxt, &dummy, &ierr);
-    } else {
-      X = NULL;
-      B = NULL;
-      Btrue = NULL;
-      descset_(descXB, &numBodies, &IONE, &numBlocks, &numBlocks, &IZERO, &IZERO, &INONE, &IONE);
-    }
+    locr = numroc_(&numBodies, &numBlocks, &rowrank, &IZERO, &rowsize);
+    locc = numroc_(&IONE, &numBlocks, &colrank, &IZERO, &colsize);
+    X = new double [locr * locc];
+    B = new double [locr * locc];
+    Btrue = new double [locr * locc];
+    for (int i=0; i<locr*locc; i++)
+      X[i] = rand() / (double)RAND_MAX;
+    dummy = std::max(1,locr);
+    descinit_(descXB, &numBodies, &IONE, &numBlocks, &numBlocks, &IZERO, &IZERO, &blacsctxt, &dummy, &ierr);
 
     sdp.product('N', 1.0, A, descA, X, descXB, 0.0, B, descXB);
     sdp.print_statistics();
 
-    if (mpirank < rowsize * colsize) {
-      double err=plange('F', numBodies, 1, Btrue, IONE, IONE, descXB, (double*)NULL);
-      int locr=numroc_(&numBodies, &numBlocks, &rowrank, &IZERO, &rowsize);
-      int locc=numroc_(&IONE, &numBlocks, &colrank, &IZERO, &colsize);
-      for (int i=0; i<locr*locc; i++)
-	Btrue[i] -= B[i];
-      err=plange('F', numBodies, 1, Btrue, IONE, IONE, descXB, (double*)NULL) / err;
-      if(!mpirank) std::cout << "Product quality = " << err << std::endl;
-    }
+    double err = plange('F', numBodies, 1, Btrue, IONE, IONE, descXB, (double*)NULL);
+    locr = numroc_(&numBodies, &numBlocks, &rowrank, &IZERO, &rowsize);
+    locc = numroc_(&IONE, &numBlocks, &colrank, &IZERO, &colsize);
+    for (int i=0; i<locr*locc; i++)
+      Btrue[i] -= B[i];
+    err=plange('F', numBodies, 1, Btrue, IONE, IONE, descXB, (double*)NULL) / err;
+    if(!mpirank) std::cout << "Product quality = " << err << std::endl;
 
     delete[] R;
     delete[] S;
