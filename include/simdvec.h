@@ -93,6 +93,84 @@ namespace exafmm {
       return v;
     }
   };
+  template<typename T>
+  struct SIMD<T,4,16> {
+    static inline T setBody(B_iter B, int i) {
+      T v(std::real(B[i   ].SRC),std::real(B[i+1 ].SRC),
+	  std::real(B[i+2 ].SRC),std::real(B[i+3 ].SRC),
+	  std::real(B[i+4 ].SRC),std::real(B[i+5 ].SRC),
+	  std::real(B[i+6 ].SRC),std::real(B[i+7 ].SRC),
+	  std::real(B[i+8 ].SRC),std::real(B[i+9 ].SRC),
+	  std::real(B[i+10].SRC),std::real(B[i+11].SRC),
+	  std::real(B[i+12].SRC),std::real(B[i+13].SRC),
+	  std::real(B[i+14].SRC),std::real(B[i+15].SRC));
+      return v;
+    }
+  };
+  template<typename T>
+  struct SIMD<T,4,8> {
+    static inline T setBody(B_iter B, int i) {
+      T v(std::real(B[i  ].SRC),std::real(B[i+1].SRC),
+	  std::real(B[i+2].SRC),std::real(B[i+3].SRC),
+	  std::real(B[i+4].SRC),std::real(B[i+5].SRC),
+	  std::real(B[i+6].SRC),std::real(B[i+7].SRC));
+      return v;
+    }
+  };
+  template<typename T>
+  struct SIMD<T,4,4> {
+    static inline T setBody(B_iter B, int i) {
+      T v(std::real(B[i  ].SRC),std::real(B[i+1].SRC),
+	  std::real(B[i+2].SRC),std::real(B[i+3].SRC));
+      return v;
+    }
+  };
+  template<typename T>
+  struct SIMD<T,4,2> {
+    static inline T setBody(B_iter B, int i) {
+      T v(std::real(B[i].SRC),std::real(B[i+1].SRC));
+      return v;
+    }
+  };
+  template<typename T>
+  struct SIMD<T,5,16> {
+    static inline T setBody(B_iter B, int i) {
+      T v(std::imag(B[i   ].SRC),std::imag(B[i+1 ].SRC),
+	  std::imag(B[i+2 ].SRC),std::imag(B[i+3 ].SRC),
+	  std::imag(B[i+4 ].SRC),std::imag(B[i+5 ].SRC),
+	  std::imag(B[i+6 ].SRC),std::imag(B[i+7 ].SRC),
+	  std::imag(B[i+8 ].SRC),std::imag(B[i+9 ].SRC),
+	  std::imag(B[i+10].SRC),std::imag(B[i+11].SRC),
+	  std::imag(B[i+12].SRC),std::imag(B[i+13].SRC),
+	  std::imag(B[i+14].SRC),std::imag(B[i+15].SRC));
+      return v;
+    }
+  };
+  template<typename T>
+  struct SIMD<T,5,8> {
+    static inline T setBody(B_iter B, int i) {
+      T v(std::imag(B[i  ].SRC),std::imag(B[i+1].SRC),
+	  std::imag(B[i+2].SRC),std::imag(B[i+3].SRC),
+	  std::imag(B[i+4].SRC),std::imag(B[i+5].SRC),
+	  std::imag(B[i+6].SRC),std::imag(B[i+7].SRC));
+      return v;
+    }
+  };
+  template<typename T>
+  struct SIMD<T,5,4> {
+    static inline T setBody(B_iter B, int i) {
+      T v(std::imag(B[i  ].SRC),std::imag(B[i+1].SRC),
+	  std::imag(B[i+2].SRC),std::imag(B[i+3].SRC));
+      return v;
+    }
+  };
+  template<typename T>
+  struct SIMD<T,5,2> {
+    static inline T setBody(B_iter B, int i) {
+      T v(std::imag(B[i].SRC),std::imag(B[i+1].SRC));
+      return v;
+    }
+  };
 
   kreal_t transpose(ksimdvec v, int i) {
 #if EXAFMM_USE_KAHAN

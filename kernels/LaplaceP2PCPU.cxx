@@ -32,32 +32,32 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
     simdvec zj = Xperiodic[2];
     zi -= zj;
 
-    simdvec x2 = Bj[0].X[0];
-    x2 -= xi;
-    simdvec y2 = Bj[0].X[1];
-    y2 -= yi;
-    simdvec z2 = Bj[0].X[2];
-    z2 -= zi;
+    simdvec dx = Bj[0].X[0];
+    dx -= xi;
+    simdvec dy = Bj[0].X[1];
+    dy -= yi;
+    simdvec dz = Bj[0].X[2];
+    dz -= zi;
     simdvec mj = Bj[0].SRC;
 
-    xj = x2;
-    R2 += x2 * x2;
-    yj = y2;
-    R2 += y2 * y2;
-    zj = z2;
-    R2 += z2 * z2;
+    xj = dx;
+    R2 += dx * dx;
+    yj = dy;
+    R2 += dy * dy;
+    zj = dz;
+    R2 += dz * dz;
     simdvec invR;
 
-    x2 = Bj[1].X[0];
-    y2 = Bj[1].X[1];
-    z2 = Bj[1].X[2];
+    dx = Bj[1].X[0];
+    dy = Bj[1].X[1];
+    dz = Bj[1].X[2];
     for (int j=0; j<nj-2; j++) {
       invR = rsqrt(R2); 
       invR &= R2 > zero;
       R2 = eps2;
-      x2 -= xi;
-      y2 -= yi;
-      z2 -= zi;
+      dx -= xi;
+      dy -= yi;
+      dz -= zi;
 
       mj *= invR * mi;
       pot += mj;
@@ -68,31 +68,31 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
       xj *= invR;
       ax += xj;
       if (mutual) Bj[j].TRG[1] -= sum(xj);
-      xj = x2;
-      R2 += x2 * x2;
-      x2 = Bj[j+2].X[0];
+      xj = dx;
+      R2 += dx * dx;
+      dx = Bj[j+2].X[0];
 
       yj *= invR;
       ay += yj;
       if (mutual) Bj[j].TRG[2] -= sum(yj);
-      yj = y2;
-      R2 += y2 * y2;
-      y2 = Bj[j+2].X[1];
+      yj = dy;
+      R2 += dy * dy;
+      dy = Bj[j+2].X[1];
 
       zj *= invR;
       az += zj;
       if (mutual) Bj[j].TRG[3] -= sum(zj);
-      zj = z2;
-      R2 += z2 * z2;
-      z2 = Bj[j+2].X[2];
+      zj = dz;
+      R2 += dz * dz;
+      dz = Bj[j+2].X[2];
     }
     if ( nj > 1 ) {
       invR = rsqrt(R2);
       invR &= R2 > zero;
       R2 = eps2;
-      x2 -= xi;
-      y2 -= yi;
-      z2 -= zi;
+      dx -= xi;
+      dy -= yi;
+      dz -= zi;
 
       mj *= invR * mi;
       pot += mj;
@@ -103,20 +103,20 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
       xj *= invR;
       ax += xj;
       if (mutual) Bj[nj-2].TRG[1] -= sum(xj);
-      xj = x2;
-      R2 += x2 * x2;
+      xj = dx;
+      R2 += dx * dx;
 
       yj *= invR;
       ay += yj;
       if (mutual) Bj[nj-2].TRG[2] -= sum(yj);
-      yj = y2;
-      R2 += y2 * y2;
+      yj = dy;
+      R2 += dy * dy;
 
       zj *= invR;
       az += zj;
       if (mutual) Bj[nj-2].TRG[3] -= sum(zj);
-      zj = z2;
-      R2 += z2 * z2;
+      zj = dz;
+      R2 += dz * dz;
     }
     invR = rsqrt(R2);
     invR &= R2 > zero;
@@ -192,33 +192,33 @@ void kernel::P2P(C_iter C) {
     simdvec mi = SIMD<simdvec,3,NSIMD>::setBody(B,i);
     simdvec R2 = eps2;
 
-    simdvec x2 = B[i+1].X[0];
-    x2 -= xi;
-    simdvec y2 = B[i+1].X[1];
-    y2 -= yi;
-    simdvec z2 = B[i+1].X[2];
-    z2 -= zi;
+    simdvec dx = B[i+1].X[0];
+    dx -= xi;
+    simdvec dy = B[i+1].X[1];
+    dy -= yi;
+    simdvec dz = B[i+1].X[2];
+    dz -= zi;
     simdvec mj = B[i+1].SRC;
 
-    simdvec xj = x2;
-    R2 += x2 * x2;
-    simdvec yj = y2;
-    R2 += y2 * y2;
-    simdvec zj = z2;
-    R2 += z2 * z2;
+    simdvec xj = dx;
+    R2 += dx * dx;
+    simdvec yj = dy;
+    R2 += dy * dy;
+    simdvec zj = dz;
+    R2 += dz * dz;
     simdvec invR;
 
-    x2 = B[i+2].X[0];
-    y2 = B[i+2].X[1];
-    z2 = B[i+2].X[2];
+    dx = B[i+2].X[0];
+    dy = B[i+2].X[1];
+    dz = B[i+2].X[2];
     for (int j=i+1; j<n-2; j++) {
       invR = rsqrt(R2);
       invR &= index < j;
       invR &= R2 > zero;
       R2 = eps2;
-      x2 -= xi;
-      y2 -= yi;
-      z2 -= zi;
+      dx -= xi;
+      dy -= yi;
+      dz -= zi;
 
       mj *= invR * mi;
       pot += mj;
@@ -229,32 +229,32 @@ void kernel::P2P(C_iter C) {
       xj *= invR;
       ax += xj;
       B[j].TRG[1] -= sum(xj);
-      xj = x2;
-      R2 += x2 * x2;
-      x2 = B[j+2].X[0];
+      xj = dx;
+      R2 += dx * dx;
+      dx = B[j+2].X[0];
 
       yj *= invR;
       ay += yj;
       B[j].TRG[2] -= sum(yj);
-      yj = y2;
-      R2 += y2 * y2;
-      y2 = B[j+2].X[1];
+      yj = dy;
+      R2 += dy * dy;
+      dy = B[j+2].X[1];
 
       zj *= invR;
       az += zj;
       B[j].TRG[3] -= sum(zj);
-      zj = z2;
-      R2 += z2 * z2;
-      z2 = B[j+2].X[2];
+      zj = dz;
+      R2 += dz * dz;
+      dz = B[j+2].X[2];
     }
     if ( n-2 > i ) {
       invR = rsqrt(R2);
       invR &= index < n-2;
       invR &= R2 > zero;
       R2 = eps2;
-      x2 -= xi;
-      y2 -= yi;
-      z2 -= zi;
+      dx -= xi;
+      dy -= yi;
+      dz -= zi;
 
       mj *= invR * mi;
       pot += mj;
@@ -265,20 +265,20 @@ void kernel::P2P(C_iter C) {
       xj *= invR;
       ax += xj;
       B[n-2].TRG[1] -= sum(xj);
-      xj = x2;
-      R2 += x2 * x2;
+      xj = dx;
+      R2 += dx * dx;
 
       yj *= invR;
       ay += yj;
       B[n-2].TRG[2] -= sum(yj);
-      yj = y2;
-      R2 += y2 * y2;
+      yj = dy;
+      R2 += dy * dy;
 
       zj *= invR;
       az += zj;
       B[n-2].TRG[3] -= sum(zj);
-      zj = z2;
-      R2 += z2 * z2;
+      zj = dz;
+      R2 += dz * dz;
     }
     invR = rsqrt(R2);
     invR &= index < n-1;
