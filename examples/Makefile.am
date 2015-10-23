@@ -18,7 +18,7 @@ run_laplace_cartesian: laplace_cartesian
 run_laplace_spherical: laplace_spherical
 	./$< -Dgmovx
 run_helmholtz_spherical: helmholtz_spherical
-	./$< -Dgv -n 100000
+	./$< -Dgv -n 40000
 run_tree: tree
 	./$< -v -n 10000000
 run_hss: hss
