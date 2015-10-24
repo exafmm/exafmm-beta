@@ -27,6 +27,7 @@ logger.h split to print.h
 bodies -> bodies + fields, bodyPos -> bodies, bodyAcc -> fields
 AoS, SoA union by Strzodka
 Use compressed Cell struct of Bonsai
+Remove M, L from Cell struct
 
 -- tree build --
 Separate key manipulation namespace, e.g. interleaveMorton(), deinterleveHilbert() (controllable key_t)
@@ -60,5 +61,10 @@ Zero softening
 -- Comparisons --
 DTT vs. UVWX-list
 Separate +- tree vs. Single tree
-Cartesian vs. Spherical (optimized)
+Cartesian vs. Spherical vs. Planewave
 ORB vs. HOT
+OpenMP vs. TBB vs. Cilk vs. MThreads
+Geometric vs. Algebraic Mat-Vec
+
+-- documentation --
+ipython notebook tutorial

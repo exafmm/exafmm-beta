@@ -9,6 +9,11 @@
  - Don't use tools that aren't available everywhere
  - Performance must be portable
 
+[Balance]
+Application oriented features <-> Filling table of all combination of features
+Premature optimization <-> Restructuring code later on
+Documentation <-> Publication
+
 [Variable name convention]
 Use all captial for
  - Macro variables
@@ -67,3 +72,9 @@ Use operator overloading for short vector types
 Use static & const for inner kernels
  - Prevents bugs
  - Const-correctness propagates
+
+[Application Features]
+ - Operation: {MatVec, MatMat, ULV, LU, Det}
+ - Elements: {Vertex(FMM), Edge(2DBEM), Face(3DBEM,2DFEM), Volume(3DFEM)}
+ - Distribution: {uniform, adaptive}, {stationary, dynamic}
+ - Hardware: {CPU, GPU, MIC}

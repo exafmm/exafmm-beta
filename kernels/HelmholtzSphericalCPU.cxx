@@ -712,7 +712,7 @@ void kernel::L2P(C_iter C) {
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
     B->TRG /= B->SRC;
     vecP Lj = C->L;
-    cvec4 TRG = complex_t(0,0);
+    kcvec4 TRG = kcomplex_t(0,0);
     vec3 dX = B->X - C->X;
     real_t r, theta, phi;
     cart2sph(dX, r, theta, phi);

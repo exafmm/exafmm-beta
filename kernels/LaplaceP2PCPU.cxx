@@ -23,7 +23,6 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
     simdvec yi = SIMD<simdvec,1,NSIMD>::setBody(Bi,i);
     simdvec zi = SIMD<simdvec,2,NSIMD>::setBody(Bi,i);
     simdvec mi = SIMD<simdvec,3,NSIMD>::setBody(Bi,i);
-    simdvec R2 = eps2;
 
     simdvec xj = Xperiodic[0];
     xi -= xj;
@@ -32,113 +31,47 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
     simdvec zj = Xperiodic[2];
     zi -= zj;
 
-    simdvec dx = Bj[0].X[0];
-    dx -= xi;
-    simdvec dy = Bj[0].X[1];
-    dy -= yi;
-    simdvec dz = Bj[0].X[2];
-    dz -= zi;
-    simdvec mj = Bj[0].SRC;
-
-    xj = dx;
-    R2 += dx * dx;
-    yj = dy;
-    R2 += dy * dy;
-    zj = dz;
-    R2 += dz * dz;
-    simdvec invR;
-
-    dx = Bj[1].X[0];
-    dy = Bj[1].X[1];
-    dz = Bj[1].X[2];
-    for (int j=0; j<nj-2; j++) {
-      invR = rsqrt(R2); 
-      invR &= R2 > zero;
-      R2 = eps2;
+    for (int j=0; j<nj; j++) {
+      simdvec dx = Bj[j].X[0];
       dx -= xi;
+      simdvec dy = Bj[j].X[1];
       dy -= yi;
+      simdvec dz = Bj[j].X[2];
       dz -= zi;
+      simdvec mj = Bj[j].SRC;
+
+      simdvec R2 = eps2;
+      xj = dx;
+      R2 += dx * dx;
+      yj = dy;
+      R2 += dy * dy;
+      zj = dz;
+      R2 += dz * dz;
+      simdvec invR = rsqrt(R2); 
+      invR &= R2 > zero;
 
       mj *= invR * mi;
       pot += mj;
       if (mutual) Bj[j].TRG[0] += sum(mj);
-      invR = invR * invR * mj;
-      mj = Bj[j+1].SRC;
+      invR = invR * invR * mj; 
 
       xj *= invR;
       ax += xj;
       if (mutual) Bj[j].TRG[1] -= sum(xj);
-      xj = dx;
-      R2 += dx * dx;
-      dx = Bj[j+2].X[0];
 
       yj *= invR;
       ay += yj;
       if (mutual) Bj[j].TRG[2] -= sum(yj);
-      yj = dy;
-      R2 += dy * dy;
-      dy = Bj[j+2].X[1];
 
       zj *= invR;
       az += zj;
       if (mutual) Bj[j].TRG[3] -= sum(zj);
-      zj = dz;
-      R2 += dz * dz;
-      dz = Bj[j+2].X[2];
     }
-    if ( nj > 1 ) {
-      invR = rsqrt(R2);
-      invR &= R2 > zero;
-      R2 = eps2;
-      dx -= xi;
-      dy -= yi;
-      dz -= zi;
-
-      mj *= invR * mi;
-      pot += mj;
-      if (mutual) Bj[nj-2].TRG[0] += sum(mj);
-      invR = invR * invR * mj;
-      mj = Bj[nj-1].SRC;
-
-      xj *= invR;
-      ax += xj;
-      if (mutual) Bj[nj-2].TRG[1] -= sum(xj);
-      xj = dx;
-      R2 += dx * dx;
-
-      yj *= invR;
-      ay += yj;
-      if (mutual) Bj[nj-2].TRG[2] -= sum(yj);
-      yj = dy;
-      R2 += dy * dy;
-
-      zj *= invR;
-      az += zj;
-      if (mutual) Bj[nj-2].TRG[3] -= sum(zj);
-      zj = dz;
-      R2 += dz * dz;
-    }
-    invR = rsqrt(R2);
-    invR &= R2 > zero;
-    mj *= invR * mi;
-    pot += mj;
-    if (mutual) Bj[nj-1].TRG[0] += sum(mj);
-    invR = invR * invR * mj;
-
-    xj *= invR;
-    ax += xj;
-    if (mutual) Bj[nj-1].TRG[1] -= sum(xj);
-    yj *= invR;
-    ay += yj;
-    if (mutual) Bj[nj-1].TRG[2] -= sum(yj);
-    zj *= invR;
-    az += zj;
-    if (mutual) Bj[nj-1].TRG[3] -= sum(zj);
     for (int k=0; k<NSIMD; k++) {
-      Bi[i+k].TRG[0] += transpose(pot,k);
-      Bi[i+k].TRG[1] += transpose(ax,k);
-      Bi[i+k].TRG[2] += transpose(ay,k);
-      Bi[i+k].TRG[3] += transpose(az,k);
+      Bi[i+k].TRG[0] += transpose(pot, k);
+      Bi[i+k].TRG[1] += transpose(ax, k);
+      Bi[i+k].TRG[2] += transpose(ay, k);
+      Bi[i+k].TRG[3] += transpose(az, k);
     }
   }
 #endif
@@ -190,118 +123,48 @@ void kernel::P2P(C_iter C) {
     simdvec yi = SIMD<simdvec,1,NSIMD>::setBody(B,i);
     simdvec zi = SIMD<simdvec,2,NSIMD>::setBody(B,i);
     simdvec mi = SIMD<simdvec,3,NSIMD>::setBody(B,i);
-    simdvec R2 = eps2;
+    for (int j=i+1; j<n; j++) {
+      simdvec dx = B[j].X[0];
+      dx -= xi;
+      simdvec dy = B[j].X[1];
+      dy -= yi;
+      simdvec dz = B[j].X[2];
+      dz -= zi;
+      simdvec mj = B[j].SRC;
 
-    simdvec dx = B[i+1].X[0];
-    dx -= xi;
-    simdvec dy = B[i+1].X[1];
-    dy -= yi;
-    simdvec dz = B[i+1].X[2];
-    dz -= zi;
-    simdvec mj = B[i+1].SRC;
-
-    simdvec xj = dx;
-    R2 += dx * dx;
-    simdvec yj = dy;
-    R2 += dy * dy;
-    simdvec zj = dz;
-    R2 += dz * dz;
-    simdvec invR;
-
-    dx = B[i+2].X[0];
-    dy = B[i+2].X[1];
-    dz = B[i+2].X[2];
-    for (int j=i+1; j<n-2; j++) {
-      invR = rsqrt(R2);
+      simdvec R2 = eps2;
+      simdvec xj = dx;
+      R2 += dx * dx;
+      simdvec yj = dy;
+      R2 += dy * dy;
+      simdvec zj = dz;
+      R2 += dz * dz;
+      simdvec invR = rsqrt(R2);
       invR &= index < j;
       invR &= R2 > zero;
-      R2 = eps2;
-      dx -= xi;
-      dy -= yi;
-      dz -= zi;
 
       mj *= invR * mi;
       pot += mj;
       B[j].TRG[0] += sum(mj);
       invR = invR * invR * mj;
-      mj = B[j+1].SRC;
 
       xj *= invR;
       ax += xj;
       B[j].TRG[1] -= sum(xj);
-      xj = dx;
-      R2 += dx * dx;
-      dx = B[j+2].X[0];
 
       yj *= invR;
       ay += yj;
       B[j].TRG[2] -= sum(yj);
-      yj = dy;
-      R2 += dy * dy;
-      dy = B[j+2].X[1];
 
       zj *= invR;
       az += zj;
       B[j].TRG[3] -= sum(zj);
-      zj = dz;
-      R2 += dz * dz;
-      dz = B[j+2].X[2];
     }
-    if ( n-2 > i ) {
-      invR = rsqrt(R2);
-      invR &= index < n-2;
-      invR &= R2 > zero;
-      R2 = eps2;
-      dx -= xi;
-      dy -= yi;
-      dz -= zi;
-
-      mj *= invR * mi;
-      pot += mj;
-      B[n-2].TRG[0] += sum(mj);
-      invR = invR * invR * mj;
-      mj = B[n-1].SRC;
-
-      xj *= invR;
-      ax += xj;
-      B[n-2].TRG[1] -= sum(xj);
-      xj = dx;
-      R2 += dx * dx;
-
-      yj *= invR;
-      ay += yj;
-      B[n-2].TRG[2] -= sum(yj);
-      yj = dy;
-      R2 += dy * dy;
-
-      zj *= invR;
-      az += zj;
-      B[n-2].TRG[3] -= sum(zj);
-      zj = dz;
-      R2 += dz * dz;
-    }
-    invR = rsqrt(R2);
-    invR &= index < n-1;
-    invR &= R2 > zero;
-    mj *= invR * mi;
-    pot += mj;
-    B[n-1].TRG[0] += sum(mj);
-    invR = invR * invR * mj;
-
-    xj *= invR;
-    ax += xj;
-    B[n-1].TRG[1] -= sum(xj);
-    yj *= invR;
-    ay += yj;
-    B[n-1].TRG[2] -= sum(yj);
-    zj *= invR;
-    az += zj;
-    B[n-1].TRG[3] -= sum(zj);
     for (int k=0; k<NSIMD; k++) {
-      B[i+k].TRG[0] += transpose(pot,k);
-      B[i+k].TRG[1] += transpose(ax,k);
-      B[i+k].TRG[2] += transpose(ay,k);
-      B[i+k].TRG[3] += transpose(az,k);
+      B[i+k].TRG[0] += transpose(pot, k);
+      B[i+k].TRG[1] += transpose(ax, k);
+      B[i+k].TRG[2] += transpose(ay, k);
+      B[i+k].TRG[3] += transpose(az, k);
     }
   }
 #endif
