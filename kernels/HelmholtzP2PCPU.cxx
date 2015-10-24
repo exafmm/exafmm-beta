@@ -17,10 +17,9 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
   int ni = Ci->NBODY;
   int nj = Cj->NBODY;
   int i = 0;
+#if EXAFMM_USE_SIMD
   simdvec wave_rvec = wave_r;
   simdvec wave_ivec = wave_i;
-#if EXAFMM_USE_SIMD
-#if 0
   for ( ; i<=ni-NSIMD; i+=NSIMD) {
     simdvec zero = 0.0;
     simdvec one = 1.0;
@@ -39,19 +38,19 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
     simdvec mi_r = SIMD<simdvec,4,NSIMD>::setBody(Bi,i);
     simdvec mi_i = SIMD<simdvec,5,NSIMD>::setBody(Bi,i);
 
-    simdvec xj = Xperiodic[0];
-    xi -= xj;
-    simdvec yj = Xperiodic[1];
-    yi -= yj;
-    simdvec zj = Xperiodic[2];
-    zi -= zj;
+    simdvec dx = Xperiodic[0];
+    xi -= dx;
+    simdvec dy = Xperiodic[1];
+    yi -= dy;
+    simdvec dz = Xperiodic[2];
+    zi -= dz;
 
     for (int j=0; j<nj; j++) {
-      simdvec dx = Bj[j].X[0];
+      dx = Bj[j].X[0];
       dx -= xi;
-      simdvec dy = Bj[j].X[1];
+      dy = Bj[j].X[1];
       dy -= yi;
-      simdvec dz = Bj[j].X[2];
+      dz = Bj[j].X[2];
       dz -= zi;
 
       simdvec R2 = eps2;
@@ -61,11 +60,13 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
       simdvec mj_i = std::imag(Bj[j].SRC);
       R2 += dz * dz;
       simdvec invR = rsqrt(R2);
-      invR &= R2 > zero;
       simdvec R = one / invR;
+      invR &= R2 > zero;
+      R &= R2 > zero;
 
       simdvec tmp = mi_r * mj_r - mi_i * mj_i;
       mj_i = mi_r * mj_i + mi_i * mj_r;
+      mj_r = tmp;
       tmp = invR / exp(wave_ivec * R);
       simdvec coef_r = cos(wave_rvec * R) * tmp;
       simdvec coef_i = sin(wave_rvec * R) * tmp;
@@ -92,67 +93,6 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
       Bi[i+k].TRG[2] -= transpose(ay_r, ay_i, k);
       Bi[i+k].TRG[3] -= transpose(az_r, az_i, k);
     }
-  }
-#else
-  for ( ; i<=ni-NSIMD; i++) {
-    real_t pot_r = 0.0;
-    real_t pot_i = 0.0;
-    real_t ax_r = 0.0;
-    real_t ax_i = 0.0;
-    real_t ay_r = 0.0;
-    real_t ay_i = 0.0;
-    real_t az_r = 0.0;
-    real_t az_i = 0.0;
-    real_t xi = Bi[i].X[0] - Xperiodic[0];
-    real_t yi = Bi[i].X[1] - Xperiodic[1];
-    real_t zi = Bi[i].X[2] - Xperiodic[2];
-    real_t mi_r = std::real(Bi[i].SRC);
-    real_t mi_i = std::imag(Bi[i].SRC);
-    for (int j=0; j<nj; j++) {
-      real_t R2 = eps2;
-      real_t dx = Bj[j].X[0];
-      dx -= xi;
-      real_t dy = Bj[j].X[1];
-      dy -= yi;
-      real_t dz = Bj[j].X[2];
-      dz -= zi;
-      real_t mj_r = std::real(Bj[j].SRC);
-      R2 += dx * dx;
-      real_t mj_i = std::imag(Bj[j].SRC);
-      R2 += dy * dy;
-      R2 += dz * dz;
-      if (R2 != 0) {
-	real_t invR = 1 / sqrt(R2);
-	real_t R = 1 / invR;
-	real_t tmp = mi_r * mj_r - mi_i * mj_i;
-	mj_i = mi_r * mj_i + mi_i * mj_r;
-	mj_r = tmp;
-	tmp = invR / exp(wave_i * R);
-	real_t coef_r = cos(wave_r * R) * tmp;
-	real_t coef_i = sin(wave_r * R) * tmp;
-	tmp = mj_r * coef_r - mj_i * coef_i;
-	coef_i = mj_r * coef_i + mj_i * coef_r;
-	coef_r = tmp;
-	mj_r = (1 + wave_i * R) * invR * invR;
-	mj_i = - wave_r * invR;
-	pot_r += coef_r;
-	pot_i += coef_i;
-	tmp = mj_r * coef_r - mj_i * coef_i;
-	coef_i = mj_r * coef_i + mj_i * coef_r;
-	coef_r = tmp;
-	ax_r += coef_r * dx;
-	ax_i += coef_i * dx;
-	ay_r += coef_r * dy;
-	ay_i += coef_i * dy;
-	az_r += coef_r * dz;
-	az_i += coef_i * dz;
-      }
-    }
-    Bi[i].TRG[0] += complex_t(pot_r, pot_i);
-    Bi[i].TRG[1] -= complex_t(ax_r, ax_i);
-    Bi[i].TRG[2] -= complex_t(ay_r, ay_i);
-    Bi[i].TRG[3] -= complex_t(az_r, az_i);
-#endif    
   }
 #endif
   for ( ; i<ni; i++) {
