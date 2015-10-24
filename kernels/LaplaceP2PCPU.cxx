@@ -174,7 +174,7 @@ void kernel::P2P(C_iter C) {
     kreal_t ay = 0;
     kreal_t az = 0;
     for (int j=i+1; j<n; j++) {
-      vec3 dX = B[i].X - B[j].X;
+      vec3 dX = B[j].X - B[i].X;
       real_t R2 = norm(dX) + eps2;
       if (R2 != 0) {
         real_t invR2 = 1.0 / R2;
@@ -185,14 +185,14 @@ void kernel::P2P(C_iter C) {
         ay += dX[1];
         az += dX[2];
         B[j].TRG[0] += invR;
-        B[j].TRG[1] += dX[0];
-        B[j].TRG[2] += dX[1];
-        B[j].TRG[3] += dX[2];
+        B[j].TRG[1] -= dX[0];
+        B[j].TRG[2] -= dX[1];
+        B[j].TRG[3] -= dX[2];
       }
     }
     B[i].TRG[0] += pot;
-    B[i].TRG[1] -= ax;
-    B[i].TRG[2] -= ay;
-    B[i].TRG[3] -= az;
+    B[i].TRG[1] += ax;
+    B[i].TRG[2] += ay;
+    B[i].TRG[3] += az;
   }
 }
