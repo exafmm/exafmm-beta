@@ -20,6 +20,7 @@ non-orthogonal recursive bisection
 Setup buildbot tests using "make check"
 move contents of macros.h to configure.ac
 examples/Makefile options to args
+unit test for each header file in /unit_test
 
 -- types --
 args.h, verify.h from class to namespace
@@ -39,6 +40,7 @@ Distinguish Pmax and P. Make P runtime option
 Use getIndex for NO_P2P
 Kahan + fixed precision
 Solid harmonics kernel
+hack vecmathlib and import essential features
 
 -- driver --
 Don't try to instantiate all the classes at the top (wait until useful parameters are ready)

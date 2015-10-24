@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "simdvec.h"
 using namespace exafmm;
 
 real_t kernel::eps2;
@@ -16,10 +17,13 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
   int ni = Ci->NBODY;
   int nj = Cj->NBODY;
   int i = 0;
+  simdvec wave_rvec = wave_r;
+  simdvec wave_ivec = wave_i;
 #if EXAFMM_USE_SIMD
-  for ( ; i<=ni-NSIMD; i++) {
 #if 0
+  for ( ; i<=ni-NSIMD; i+=NSIMD) {
     simdvec zero = 0.0;
+    simdvec one = 1.0;
     ksimdvec pot_r = zero;
     ksimdvec pot_i = zero;
     ksimdvec ax_r = zero;
@@ -32,6 +36,8 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
     simdvec xi = SIMD<simdvec,0,NSIMD>::setBody(Bi,i);
     simdvec yi = SIMD<simdvec,1,NSIMD>::setBody(Bi,i);
     simdvec zi = SIMD<simdvec,2,NSIMD>::setBody(Bi,i);
+    simdvec mi_r = SIMD<simdvec,4,NSIMD>::setBody(Bi,i);
+    simdvec mi_i = SIMD<simdvec,5,NSIMD>::setBody(Bi,i);
 
     simdvec xj = Xperiodic[0];
     xi -= xj;
@@ -41,33 +47,33 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
     zi -= zj;
 
     for (int j=0; j<nj; j++) {
-      simdvec dx = Bj[0].X[0];
+      simdvec dx = Bj[j].X[0];
       dx -= xi;
-      simdvec dy = Bj[0].X[1];
+      simdvec dy = Bj[j].X[1];
       dy -= yi;
-      simdvec dz = Bj[0].X[2];
+      simdvec dz = Bj[j].X[2];
       dz -= zi;
 
       simdvec R2 = eps2;
       R2 += dx * dx;
-      simdvec mj_r = std::real(Bj[0].SRC);
+      simdvec mj_r = std::real(Bj[j].SRC);
       R2 += dy * dy;
-      simdvec mj_i = std::imag(Bj[0].SRC);
+      simdvec mj_i = std::imag(Bj[j].SRC);
       R2 += dz * dz;
       simdvec invR = rsqrt(R2);
       invR &= R2 > zero;
-      simdvec R = 1. / invR;
+      simdvec R = one / invR;
 
       simdvec tmp = mi_r * mj_r - mi_i * mj_i;
       mj_i = mi_r * mj_i + mi_i * mj_r;
-      tmp = invR / exp(wave_i * R);
-      simdvec coef_r = cos(wave_r * R) * tmp;
-      simdvec coef_i = sin(wave_r * R) * tmp;
+      tmp = invR / exp(wave_ivec * R);
+      simdvec coef_r = cos(wave_rvec * R) * tmp;
+      simdvec coef_i = sin(wave_rvec * R) * tmp;
       tmp = mj_r * coef_r - mj_i * coef_i;
       coef_i = mj_r * coef_i + mj_i * coef_r;
       coef_r = tmp;
-      mj_r = (1 + wave_i * R) * invR * invR;
-      mj_i = - wave_r * invR;
+      mj_r = (one + wave_ivec * R) * invR * invR;
+      mj_i = - wave_rvec * invR;
       pot_r += coef_r;
       pot_i += coef_i;
       tmp = mj_r * coef_r - mj_i * coef_i;
@@ -82,11 +88,13 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
     }
     for (int k=0; k<NSIMD; k++) {
       Bi[i+k].TRG[0] += transpose(pot_r, pot_i, k);
-      Bi[i+k].TRG[1] += transpose(ax_r, ax_i, k);
-      Bi[i+k].TRG[2] += transpose(ay_r, ay_i, k);
-      Bi[i+k].TRG[3] += transpose(az_r, az_i, k);
+      Bi[i+k].TRG[1] -= transpose(ax_r, ax_i, k);
+      Bi[i+k].TRG[2] -= transpose(ay_r, ay_i, k);
+      Bi[i+k].TRG[3] -= transpose(az_r, az_i, k);
     }
+  }
 #else
+  for ( ; i<=ni-NSIMD; i++) {
     real_t pot_r = 0.0;
     real_t pot_i = 0.0;
     real_t ax_r = 0.0;

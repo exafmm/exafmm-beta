@@ -87,6 +87,30 @@ namespace exafmm {
 	return lhs = rsqrtf(rhs);
       }
     };
+    template<typename T> struct Sin {
+      __host__ __device__ __forceinline__
+      T operator() (T & lhs, const T & rhs) const {
+	return lhs = sinf(rhs);
+      }
+    };
+    template<typename T> struct Cos {
+      __host__ __device__ __forceinline__
+      T operator() (T & lhs, const T & rhs) const {
+	return lhs = cosf(rhs);
+      }
+    };
+    template<typename T> struct SinCos {
+      __host__ __device__ __forceinline__
+      void operator() (T & lhs, T & lhc, const T & rhs) const {
+	sincosf(rhs, lhs, lhc);
+      }
+    };
+    template<typename T> struct Exp {
+      __host__ __device__ __forceinline__
+      T operator() (T & lhs, const T & rhs) const {
+	return lhs = expf(rhs);
+      }
+    };
   }
 
   template<typename Op, typename T, int N>

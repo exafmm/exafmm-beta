@@ -187,9 +187,25 @@ namespace exafmm {
       for (int i=1; i<N; i++) temp = temp > v[i] ? temp : v[i];
       return temp;
     }
-    friend vec rsqrt(const vec & v) {                           // Reciprocal square root
+    friend vec sin(const vec & v) {                             // Sine function
       vec temp;
-      for (int i=0; i<N; i++) temp[i] = 1. / std::sqrt(v[i]);
+      for (int i=0; i<N; i++) temp[i] = sin(v[i]);
+      return temp;
+    }
+    friend vec cos(const vec & v) {                             // Cosine function
+      vec temp;
+      for (int i=0; i<N; i++) temp[i] = cos(v[i]);
+      return temp;
+    }
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      for (int i=0; i<N; i++) {
+	s[i] = sin(v[i]);
+	c[i] = cos(v[i]);
+      }
+    }
+    friend vec exp(const vec & v) {                             // Exponential function
+      vec temp;
+      for (int i=0; i<N; i++) temp[i] = exp(v[i]);
       return temp;
     }
     friend int wrap(vec & v, const T & w) {                     // Wrap around periodic boundary
@@ -487,6 +503,28 @@ namespace exafmm {
       return temp;
     }
     __host__ __device__ __forceinline__
+    friend vec sin(const vec & v) {                             // Sine function
+      vec temp;
+      Unroll<Ops::Sin<T>,T,N>::loop(temp,v);
+      return temp;
+    }
+    __host__ __device__ __forceinline__
+    friend vec cos(const vec & v) {                             // Cosine function
+      vec temp;
+      Unroll<Ops::Cos<T>,T,N>::loop(temp,v);
+      return temp;
+    }
+    __host__ __device__ __forceinline__
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      Unroll<Ops::SinCos<T>,T,N>::loop(s,c,v);
+    }
+    __host__ __device__ __forceinline__
+    friend vec exp(const vec & v) {                             // Exponential function
+      vec temp;
+      Unroll<Ops::Exp<T>,T,N>::loop(temp,v);
+      return temp;
+    }
+    __host__ __device__ __forceinline__
     friend int wrap(vec & v, const T & w) {                     // Wrap around periodic boundary
       int iw = 0;
       for (int i=0; i<N; i++) {
@@ -618,6 +656,18 @@ namespace exafmm {
       return vec(_mm512_rsqrt23_ps(v.data));
 #endif
     }
+    friend vec sin(const vec & v) {                             // Sine function
+      return vec(_mm512_sin_ps(v.data));
+    }
+    friend vec cos(const vec & v) {                             // Cosine function
+      return vec(_mm512_cos_ps(v.data));
+    }
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      s.data = _mm512_sincos_ps(&c.data, v.data);
+    }
+    friend vec exp(const vec & v) {                             // Exponential function
+      return vec(_mm512_exp_ps(v.data));
+    }
   };
 
   template<>
@@ -723,6 +773,18 @@ namespace exafmm {
       vec one = 1;
       return vec(_mm512_div_pd(one.data,_mm512_sqrt_pd(v.data)));
 #endif
+    }
+    friend vec sin(const vec & v) {                             // Sine function
+      return vec(_mm512_sin_pd(v.data));
+    }
+    friend vec cos(const vec & v) {                             // Cosine function
+      return vec(_mm512_cos_pd(v.data));
+    }
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      s.data = _mm512_sincos_pd(&c.data, v.data);
+    }
+    friend vec exp(const vec & v) {                             // Exponential function
+      return vec(_mm512_exp_pd(v.data));
     }
   };
 #endif
@@ -841,6 +903,18 @@ namespace exafmm {
       return vec(_mm256_rsqrt_ps(v.data));
 #endif
     }
+    friend vec sin(const vec & v) {                             // Sine function
+      return vec(_mm256_sin_ps(v.data));
+    }
+    friend vec cos(const vec & v) {                             // Cosine function
+      return vec(_mm256_cos_ps(v.data));
+    }
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      s.data = _mm256_sincos_ps(&c.data, v.data);
+    }
+    friend vec exp(const vec & v) {                             // Exponential function
+      return vec(_mm256_exp_ps(v.data));
+    }
   };
 
   template<>
@@ -952,6 +1026,18 @@ namespace exafmm {
       vec one = 1;
       return vec(_mm256_div_pd(one.data,_mm256_sqrt_pd(v.data)));
 #endif
+    }
+    friend vec sin(const vec & v) {                             // Sine function
+      return vec(_mm256_sin_pd(v.data));
+    }
+    friend vec cos(const vec & v) {                             // Cosine function
+      return vec(_mm256_cos_pd(v.data));
+    }
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      s.data = _mm256_sincos_pd(&c.data, v.data);
+    }
+    friend vec exp(const vec & v) {                             // Exponential function
+      return vec(_mm256_exp_pd(v.data));
     }
   };
 #endif
@@ -1069,6 +1155,18 @@ namespace exafmm {
 #else
       return vec(vec_rsqrtes(v.data));
 #endif
+    }
+    friend vec sin(const vec & v) {                             // Sine function
+      return vec(sind4(v.data));
+    }
+    friend vec cos(const vec & v) {                             // Cosine function
+      return vec(cosd4(v.data));
+    }
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      sincosd4(v.data, s.data, c.data);
+    }
+    friend vec exp(const vec & v) {                             // Exponential function
+      return vec(expd4(v.data));
     }
   };
 #endif
@@ -1204,6 +1302,18 @@ namespace exafmm {
       return vec(_mm_rsqrt_ps(v.data));
 #endif
     }
+    friend vec sin(const vec & v) {                             // Sine function
+      return vec(_mm_sin_ps(v.data));
+    }
+    friend vec cos(const vec & v) {                             // Cosine function
+      return vec(_mm_cos_ps(v.data));
+    }
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      s.data = _mm_sincos_ps(&c.data, v.data);
+    }
+    friend vec exp(const vec & v) {                             // Exponential function
+      return vec(_mm_exp_ps(v.data));
+    }
   };
 
   template<>
@@ -1308,6 +1418,18 @@ namespace exafmm {
       vec one = 1;
       return vec(_mm_div_pd(one.data,_mm_sqrt_pd(v.data)));
 #endif
+    }
+    friend vec sin(const vec & v) {                             // Sine function
+      return vec(_mm_sin_pd(v.data));
+    }
+    friend vec cos(const vec & v) {                             // Cosine function
+      return vec(_mm_cos_pd(v.data));
+    }
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      s.data = _mm_sincos_pd(&c.data, v.data);
+    }
+    friend vec exp(const vec & v) {                             // Exponential function
+      return vec(_mm_exp_pd(v.data));
     }
   };
 #endif
@@ -1417,124 +1539,20 @@ namespace exafmm {
       return vec(_fjsp_rsqrta_v2r8(v.data));
 #endif
     }
-  };
-#endif
-
-#if __bgp__
-#include <builtins.h>
-
-  template<>
-  class vec<2,double> {
-  private:
-    double _Complex data;
-  public:
-    vec(){}                                                     // Default constructor
-    vec(const double v) {                                       // Copy constructor scalar
-      data = __cmplx(v,v);
+    friend vec sin(const vec & v) {                             // Sine function
+      return vec(_mm_sin_pd(v.data));
     }
-    vec(const double _Complex v) {                              // Copy constructor SIMD register
-      data = v;
+    friend vec cos(const vec & v) {                             // Cosine function
+      return vec(_mm_cos_pd(v.data));
     }
-    vec(const vec & v) {                                        // Copy constructor vector
-      data = v.data;
+    friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
+      s.data = _mm_sincos_pd(&c.data, v.data);
     }
-    vec(const double a, const double b) {                       // Copy constructor (component-wise)
-      data = __cmplx(a,b);
-    }
-    ~vec(){}                                                    // Destructor
-    const vec &operator=(const double v) {                      // Scalar assignment
-      data = __cmplx(v,v);
-      return *this;
-    }
-    const vec &operator=(const vec & v) {                       // Vector assignment
-      data = v.data;
-      return *this;
-    }
-    const vec &operator+=(const vec & v) {                      // Vector compound assignment (add)
-      data = __fpadd(data,v.data);
-      return *this;
-    }
-    const vec &operator-=(const vec & v) {                      // Vector compound assignment (subtract)
-      data = __fpsub(data,v.data);
-      return *this;
-    }
-    const vec &operator*=(const vec & v) {                      // Vector compound assignment (multiply)
-      data = __fpmul(data,v.data);
-      return *this;
-    }
-    const vec &operator/=(const vec & v) {                      // Vector compound assignment (divide)
-      data = __fpmul(data,__fpre(v.data));
-      return *this;
-    }
-    const vec &operator&=(const vec & v) {                      // Vector compound assignment (bitwise and)
-      double _Complex zero = __cmplx(0.0,0.0);
-      double _Complex eps = __cmplx(1e-100,1e-100);
-      data = __fpsel(v.data-eps,zero,data);
-      return *this;
-    }
-    vec operator+(const vec & v) const {                        // Vector arithmetic (add)
-      return vec(__fpadd(data,v.data));
-    }
-    vec operator-(const vec & v) const {                        // Vector arithmetic (subtract)
-      return vec(__fpsub(data,v.data));
-    }
-    vec operator*(const vec & v) const {                        // Vector arithmetic (multiply)
-      return vec(__fpmul(data,v.data));
-    }
-    vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
-      return vec(__fpmul(data,__fpre(v.data)));
-    }
-    vec operator>(const vec & v) const {                        // Vector arithmetic (greater than)
-      double _Complex zero = __cmplx(0.0,0.0);
-      double _Complex one = __cmplx(1.0,1.0);
-      double _Complex eps = __cmplx(1e-100,1e-100);
-      return vec(__fpsel(data-v.data-eps,zero,one));
-    }
-    vec operator<(const vec & v) const {                        // Vector arithmetic (less than)
-      double _Complex zero = __cmplx(0.0,0.0);
-      double _Complex one = __cmplx(1.0,1.0);
-      double _Complex eps = __cmplx(1e-100,1e-100);
-      return vec(__fpsel(data-v.data-eps,one,zero));
-    }
-    vec operator-() const {                                     // Vector arithmetic (negation)
-      return vec(__fpneg(data));
-    }
-    double &operator[](int i) {                                 // Indexing (lvalue)
-      double temp[2];
-      __stfpd(temp,data);
-      return temp[i];
-    }
-    const double &operator[](int i) const {                     // Indexing (rvalue)
-      double temp[2];
-      __stfpd(temp,data);
-      return temp[i];
-    }
-    friend std::ostream &operator<<(std::ostream & s, const vec & v) {// Component-wise output stream
-      for (int i=0; i<2; i++) s << v[i] << ' ';
-      return s;
-    }
-    friend double sum(const vec & v) {                          // Sum vector
-      return v[0] + v[1];
-    }
-    friend double norm(const vec & v) {                         // L2 norm squared
-      return v[0] * v[0] + v[1] * v[1];
-    }
-    friend vec min(const vec & v, const vec & w) {              // Element-wise minimum
-      return vec(__fpsel(v.data-w.data,w.data,v.data));
-    }
-    friend vec max(const vec & v, const vec & w) {              // Element-wise maximum
-      return vec(__fpsel(v.data-w.data,v.data,w.data));
-    }
-    friend vec rsqrt(const vec & v) {                           // Reciprocal square root
-#if EXAFMM_VEC_NEWTON                                           // Switch on Newton-Raphson correction
-      vec temp = vec(__fprsqrte(v.data));
-      temp *= (temp * temp * v - 3.0) * (-0.5);
-      return temp;
-#else
-      return vec(__fprsqrte(v.data));
-#endif
+    friend vec exp(const vec & v) {                             // Exponential function
+      return vec(_mm_exp_pd(v.data));
     }
   };
 #endif
+
 }
 #endif

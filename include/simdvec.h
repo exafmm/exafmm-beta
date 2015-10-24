@@ -182,5 +182,16 @@ namespace exafmm {
     return v[i];
 #endif
   }
+
+  kcomplex_t transpose(ksimdvec v_r, ksimdvec v_i, int i) {
+#if EXAFMM_USE_KAHAN
+    kcomplex_t temp;
+    temp.s = complex_t(v_r.s[i], v_i.s[i]);
+    temp.c = complex_t(v_r.c[i], v_i.c[i]);
+    return temp;
+#else
+    return kcomplex_t(v_r[i], v_i[i]);
+#endif
+  }
 }
 #endif
