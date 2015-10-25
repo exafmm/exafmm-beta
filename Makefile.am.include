@@ -1,6 +1,6 @@
 ### Base flags
 AM_CXXFLAGS =
-AM_CPPFLAGS = -I../include -I../uniform
+AM_CPPFLAGS = -I../vectorclass -I../include -I../uniform
 
 ### Thread libraries
 if EXAFMM_HAVE_OPENMP

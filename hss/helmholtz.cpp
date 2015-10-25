@@ -9,15 +9,17 @@
 #include "StrumpackDensePackage.hpp"
 using namespace exafmm;
 
-/* Laplace, cartesian coordinates example, 3D geometry.
+/* Helmholtz, spherical coordinates example, 3D geometry.
  *
- * Run with mpirun -np {#processes} ./laplace -DgGmovx -n {matrixsize}
+ * Run with mpirun -np {#processes} ./helmholtz -DgGmovx -n {matrixsize}
  *
  */
 
-void elements(void *, int *, int *, double *, int *);
+void elements(void *, int *, int *, dcomplex *, int *);
 
 double elemops = 0.0;
+
+const complex_t I1(0.0,1.0);
 
 int main(int argc, char ** argv) {
   const real_t cycle = 2 * M_PI;
@@ -121,9 +123,10 @@ int main(int argc, char ** argv) {
         std::cout << "MPI rank " << myid << std::endl;
         for (B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
           for (B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {
-            vec3 dX=Bi->X-Bj->X;
+            vec3 dX=Bi->X-Bj->X-kernel::Xperiodic;
             real_t R2=norm(dX)+kernel::eps2;
-            real_t G=R2==0?0.0:1.0/sqrt(R2);
+            real_t R=sqrt(R2);
+            complex_t G=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
             std::cout << "(" << Bi-bodies.begin() << "," << Bj-jbodies.begin() << "): " << G << std::endl;
           }
         }
@@ -147,7 +150,7 @@ int main(int argc, char ** argv) {
     int nb=64;
 
     /* Initialize the solver */
-    StrumpackDensePackage<double,double> sdp(MPI_COMM_WORLD);
+    StrumpackDensePackage<dcomplex,double> sdp(MPI_COMM_WORLD);
     sdp.verbose=true;
     sdp.use_HSS=true;
     sdp.tol_HSS=1e-4;
@@ -158,7 +161,7 @@ int main(int argc, char ** argv) {
      *  2/ Matrix-free.
      */
     bool explMat=false;
-    double *A, *R, *S;
+    dcomplex *A, *Rr, *Rc, *Sr, *Sc;
     int descA[BLACSCTXTSIZE], descRS[BLACSCTXTSIZE];
     if(explMat) {
       /* Explicit matrix version.
@@ -175,7 +178,7 @@ int main(int argc, char ** argv) {
         /* Allocate the local array and fill with kernel values */
         int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
         int locc=numroc_(&n,&nb,&mycol,&IZERO,&npcol);
-        A=new double[locr*locc];
+        A=new dcomplex[locr*locc];
 
         for(int i=1;i<=locr;i++) {
           int globi=indxl2g_(&i,&nb,&myrow,&IZERO,&nprow);
@@ -183,9 +186,11 @@ int main(int argc, char ** argv) {
           for(int j=1;j<=locc;j++) {
             int globj=indxl2g_(&j,&nb,&mycol,&IZERO,&npcol);
             B_iter Bj=jbodies.begin()+globj-1;
-            vec3 dX=Bi->X-Bj->X;
+            vec3 dX=Bi->X-Bj->X-kernel::Xperiodic;
             real_t R2=norm(dX)+kernel::eps2;
-            A[locr*(j-1)+(i-1)]=R2==0?0.0:1.0/sqrt(R2);
+            real_t G=R2==0?0.0:1.0/sqrt(R2);
+            real_t R=sqrt(R2);
+            A[locr*(j-1)+(i-1)]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
           }
         }
         int ierr;
@@ -202,7 +207,7 @@ int main(int argc, char ** argv) {
       /* Matrix-free version.
        * The number of random vectors is fixed.
        */
-      int nrand=std::min(4*(int)floor(sqrt(n)),1000);
+      int nrand=std::min(8*(int)floor(sqrt(n)),1000);
       sdp.min_rand_HSS=nrand;
       sdp.max_rand_HSS=nrand;
 
@@ -220,8 +225,10 @@ int main(int argc, char ** argv) {
       if(myid<nprow*npcol) {
         int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
         int locc=numroc_(&nrand,&nb,&mycol,&IZERO,&npcol);
-        R=new double[locr*locc]();
-        S=new double[locr*locc]();
+        Rr=new dcomplex[locr*locc]();
+        Rc=new dcomplex[locr*locc]();
+        Sr=new dcomplex[locr*locc]();
+        Sc=new dcomplex[locr*locc]();
 
         /* BLAS3 sampling.
          * In Rglob, processes store only the columns
@@ -230,22 +237,28 @@ int main(int argc, char ** argv) {
          * random number generator on every process.
          * Then, for a given blocksize nbA, they
          * assemble a block B of nbA rows of A, and they
-         * compute S([nbA rows],:)=B*Rglob.
+         * compute Sr([nbA rows],:)=B*Rglob.
+         *
+         * For Sc, same thing, but with rows of A^H,
+         * i.e, columns of A with switched sign of
+         * imaginary part.
          */
 
-        double *Rglob=new double[n*locc];
+        dcomplex *Rglob=new dcomplex[n*locc];
         for(int j=1;j<=nrand;j++) {
           if(mycol==indxg2p_(&j,&nb,&mycol,&IZERO,&npcol)) {
             /* I own this column */
             int locj=indxg2l_(&j,&nb,&mycol,&IZERO,&npcol);
             for(int i=0;i<n;i++)
-              Rglob[i+n*(locj-1)]=rand()/(double)RAND_MAX;
+              Rglob[i+n*(locj-1)]=dcomplex(rand()/(double)RAND_MAX,rand()/(double)RAND_MAX);
           } else {
             /* n calls to rand() to enforce the same calling
              * sequence on every process.
              */
-            for(int i=0;i<n;i++)
+            for(int i=0;i<n;i++) {
               rand();
+              rand();
+            }
           }
         }
 
@@ -257,21 +270,22 @@ int main(int argc, char ** argv) {
           /* Compute the nrows rows of A that correspond
            * to rows r:r+nrows-1 of the local array S.
            */
-          A=new double[nrows*n];
+          A=new dcomplex[nrows*n];
           for(int j=0;j<n;j++) {
             B_iter Bj=jbodies.begin()+j;
             for(int i=0;i<nrows;i++) {
               int locri=r+i+1;
               int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
               B_iter Bi=bodies.begin()+globri-1;
-              vec3 dX=Bi->X-Bj->X;
+              vec3 dX=Bi->X-Bj->X-kernel::Xperiodic;
               real_t R2=norm(dX)+kernel::eps2;
-              A[i+nrows*j]=R2==0?0.0:1.0/sqrt(R2);
+              real_t R=sqrt(R2);
+              A[i+nrows*j]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
             }
           }
 
           /* Compute nrows of the sample */
-          gemm('N','N',nrows,locc,n,1.0,A,nrows,Rglob,n,0.0,&S[r],locr);
+          gemm('N','N',nrows,locc,n,dcomplex(1.0),A,nrows,Rglob,n,dcomplex(0.0),&Sr[r],locr);
 
           delete[] A;
           r+=nbA;
@@ -284,7 +298,69 @@ int main(int argc, char ** argv) {
             if(myrow==indxg2p_(&i,&nb,&myrow,&IZERO,&nprow)) {
               /* I own this row */
               int loci=indxg2l_(&i,&nb,&myrow,&IZERO,&nprow);
-              R[loci-1+locr*j]=Rglob[i-1+n*j];
+              Rr[loci-1+locr*j]=Rglob[i-1+n*j];
+            }
+          }
+        }
+        delete[] Rglob;
+
+        Rglob=new dcomplex[n*locc];
+        for(int j=1;j<=nrand;j++) {
+          if(mycol==indxg2p_(&j,&nb,&mycol,&IZERO,&npcol)) {
+            /* I own this column */
+            int locj=indxg2l_(&j,&nb,&mycol,&IZERO,&npcol);
+            for(int i=0;i<n;i++)
+              Rglob[i+n*(locj-1)]=dcomplex(rand()/(double)RAND_MAX,rand()/(double)RAND_MAX);
+          } else {
+            /* n calls to rand() to enforce the same calling
+             * sequence on every process.
+             */
+            for(int i=0;i<n;i++) {
+              rand();
+              rand();
+            }
+          }
+        }
+
+        r=0;
+        while(r<locr) {
+          int nrows=std::min(nbA,locr-r);
+
+          /* Compute the nrows rows of A^H that correspond
+           * to rows r:r+nrows-1 of the local array S.
+           * Note the bodies<->jbodies permutation
+           * and the conjugation.
+           */
+          A=new dcomplex[nrows*n];
+          for(int j=0;j<n;j++) {
+            B_iter Bj=jbodies.begin()+j;
+            for(int i=0;i<nrows;i++) {
+              int locri=r+i+1;
+              int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
+              B_iter Bi=bodies.begin()+globri-1;
+              vec3 dX=Bi->X-Bj->X-kernel::Xperiodic;
+              real_t R2=norm(dX)+kernel::eps2;
+              real_t R=sqrt(R2);
+              A[i+nrows*j]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
+              A[i+nrows*j]=std::conj(A[i+nrows*j]);
+            }
+          }
+
+          /* Compute nrows of the sample */
+          gemm('N','N',nrows,locc,n,dcomplex(1.0),A,nrows,Rglob,n,dcomplex(0.0),&Sc[r],locr);
+
+          delete[] A;
+          r+=nbA;
+        }
+        A=NULL;
+
+        /* Compress the random vectors */
+        for(int j=0;j<locc;j++) {
+          for(int i=1;i<=n;i++) {
+            if(myrow==indxg2p_(&i,&nb,&myrow,&IZERO,&nprow)) {
+              /* I own this row */
+              int loci=indxg2l_(&i,&nb,&myrow,&IZERO,&nprow);
+              Rc[loci-1+locr*j]=Rglob[i-1+n*j];
             }
           }
         }
@@ -295,15 +371,17 @@ int main(int argc, char ** argv) {
         descinit_(descA,&n,&n,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
         descinit_(descRS,&n,&nrand,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
       } else {
-        R=NULL;
-        S=NULL;
+        Rr=NULL;
+        Rc=NULL;
+        Sr=NULL;
+        Sc=NULL;
         descset_(descA,&n,&n,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
         descset_(descRS,&n,&nrand,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
       }
       double tend=MPI_Wtime();
       if(!myid) std::cout << "Sampling time: " << tend-tstart << " seconds" << std::endl << std::endl;
 
-      sdp.compress(R,R,S,S,descRS,elements);
+      sdp.compress(Rr,Rc,Sr,Sc,descRS,elements);
 
       double minops;
       MPI_Allreduce((void*)&elemops,(void*)&minops,IONE,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
@@ -321,17 +399,17 @@ int main(int argc, char ** argv) {
 
     /* Matrix-vector product */
     int nrhs=1;
-    double *X, *B, *Btrue;
+    dcomplex *X, *B, *Btrue;
     int descXB[BLACSCTXTSIZE];
     srand(time(NULL)+myid); /* Now processes can follow different random sequences */
     if(myid<nprow*npcol) {
       int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
       int locc=numroc_(&nrhs,&nb,&mycol,&IZERO,&npcol);
-      X=new double[locr*locc];
-      B=new double[locr*locc];
-      Btrue=new double[locr*locc];
+      X=new dcomplex[locr*locc];
+      B=new dcomplex[locr*locc];
+      Btrue=new dcomplex[locr*locc];
       for(int i=0;i<locr*locc;i++)
-        X[i]=rand()/(double)RAND_MAX;
+        X[i]=dcomplex(rand()/(double)RAND_MAX,rand()/(double)RAND_MAX);
       int ierr;
       int dummy=std::max(1,locr);
       descinit_(descXB,&n,&nrhs,&nb,&nb,&IZERO,&IZERO,&ctxt,&dummy,&ierr);
@@ -342,7 +420,6 @@ int main(int argc, char ** argv) {
       descset_(descXB,&n,&nrhs,&nb,&nb,&IZERO,&IZERO,&INONE,&IONE);
     }
 
-    /* HSS matrix-vector product */
     sdp.product('N',1.0,A,descA,X,descXB,0.0,B,descXB);
     sdp.print_statistics();
 
@@ -363,9 +440,9 @@ int main(int argc, char ** argv) {
        * compute Btrue([nbA rows],:)=B*Xglob.
        *
        * Construction of Xglob: first X is gathered onto
-       * id 0, then it is broadcasted to all the processes.
+       * id 0, then it is broadcasted to all the processes. 
        */
-      double *Xglob=new double[n*nrhs];
+      dcomplex *Xglob=new dcomplex[n*nrhs];
 
       /* We initialize a context with only id 0 */
       int ctxtcent;
@@ -386,7 +463,7 @@ int main(int argc, char ** argv) {
       pgemr2d(n,nrhs,X,IONE,IONE,descXB,Xglob,IONE,IONE,descXglob,ctxtglob);
 
       /* Broadcast Xglob */
-      MPI_Bcast((void*)Xglob,n*nrhs,MPI_DOUBLE,0,MPI_COMM_WORLD);
+      MPI_Bcast((void*)Xglob,n*nrhs,MPI_C_DOUBLE_COMPLEX,0,MPI_COMM_WORLD);
 
       /* Direct sum Btrue=A*Xglob */
       int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
@@ -401,21 +478,22 @@ int main(int argc, char ** argv) {
           /* Compute the nrows rows of A that correspond
            * to rows r:r+nrows-1 of the local array S.
            */
-          A=new double[nrows*n];
+          A=new dcomplex[nrows*n];
           for(int j=0;j<n;j++) {
             B_iter Bj=jbodies.begin()+j;
             for(int i=0;i<nrows;i++) {
               int locri=r+i+1;
               int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
               B_iter Bi=bodies.begin()+globri-1;
-              vec3 dX=Bi->X-Bj->X;
+              vec3 dX=Bi->X-Bj->X-kernel::Xperiodic;
               real_t R2=norm(dX)+kernel::eps2;
-              A[i+nrows*j]=R2==0?0.0:1.0/sqrt(R2);
+              real_t R=sqrt(R2);
+              A[i+nrows*j]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
             }
           }
 
           /* Compute nrows of the of the result */
-          gemm('N','N',nrows,nrhs,n,1.0,A,nrows,Xglob,n,0.0,&Btrue[r],locr);
+          gemm('N','N',nrows,nrhs,n,dcomplex(1.0),A,nrows,Xglob,n,dcomplex(0.0),&Btrue[r],locr);
 
           delete[] A;
           r+=nbA;
@@ -442,8 +520,10 @@ int main(int argc, char ** argv) {
     if(explMat)
       delete[] A;
     else {
-      delete[] R;
-      delete[] S;
+      delete[] Rr;
+      delete[] Rc;
+      delete[] Sr;
+      delete[] Sc;
     }
     delete[] X;
     delete[] B;
@@ -455,7 +535,7 @@ int main(int argc, char ** argv) {
   return 0;
 }
 
-void elements(void * obj, int *I, int *J, double *B, int *descB) {
+void elements(void * obj, int *I, int *J, dcomplex *B, int *descB) {
   if(B==NULL)
     return;
 
@@ -486,12 +566,13 @@ void elements(void * obj, int *I, int *J, double *B, int *descB) {
       int jjj=J[jj-1];
       B_iter Bi=bodies->begin()+iii-1;
       B_iter Bj=jbodies->begin()+jjj-1;
-      vec3 dX=Bi->X-Bj->X;
+      vec3 dX=Bi->X-Bj->X-kernel::Xperiodic;
       real_t R2=norm(dX)+kernel::eps2;
-      B[locr*(j-1)+(i-1)]=R2==0?0.0:1.0/sqrt(R2);
+      real_t R=sqrt(R2);
+      B[locr*(j-1)+(i-1)]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
     }
   }
 
-  elemops+=10*locr*locc;
+  elemops+=16*locr*locc;
 }
 
