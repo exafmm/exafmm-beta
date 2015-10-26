@@ -15,6 +15,9 @@
 /* Define to enable AVX optimizations. */
 #undef EXAFMM_HAVE_AVX
 
+/* Define to enable MIC optimizations. */
+#undef EXAFMM_HAVE_MIC
+
 /* Define if you have the MPI library. */
 #undef EXAFMM_HAVE_MPI
 

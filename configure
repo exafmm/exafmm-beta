@@ -609,6 +609,9 @@ EXAFMM_USE_SIMD_TRUE
 NEON_CXXFLAGS
 EXAFMM_HAVE_NEON_FALSE
 EXAFMM_HAVE_NEON_TRUE
+MIC_CXXFLAGS
+EXAFMM_HAVE_MIC_FALSE
+EXAFMM_HAVE_MIC_TRUE
 AVX_CXXFLAGS
 EXAFMM_HAVE_AVX_FALSE
 EXAFMM_HAVE_AVX_TRUE
@@ -749,6 +752,7 @@ enable_float
 enable_mpi
 enable_sse3
 enable_avx
+enable_mic
 enable_neon
 enable_simd
 enable_weight
@@ -1406,6 +1410,7 @@ Optional Features:
   --enable-mpi            compile exaFMM MPI library
   --enable-sse3           enable SSE/SSE3 optimizations
   --enable-avx            enable AVX optimizations
+  --enable-mic            enable MIC optimizations
   --enable-neon           enable ARM NEON optimizations
   --disable-simd          disable SIMD optimizations
   --enable-weight         enable weight for partitioning
@@ -5160,6 +5165,71 @@ fi
 
 
 
+# MIC
+# Check whether --enable-mic was given.
+if test "${enable_mic+set}" = set; then :
+  enableval=$enable_mic; have_mic=$enableval
+else
+  have_mic=no
+fi
+
+if test "$have_mic" = "yes"; then
+
+$as_echo "#define EXAFMM_HAVE_MIC 1" >>confdefs.h
+
+        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+                as_fn_error $? "MIC requires single or double precision" "$LINENO" 5
+        fi
+	if test "x$MIC_CXXFLAGS" = x; then
+   	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mmic" >&5
+$as_echo_n "checking whether C compiler accepts -mmic... " >&6; }
+if ${ax_cv_c_flags__mmic+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+      ax_save_FLAGS=$CFLAGS
+      CFLAGS="-mmic"
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ax_cv_c_flags__mmic=yes
+else
+  ax_cv_c_flags__mmic=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+      CFLAGS=$ax_save_FLAGS
+fi
+
+eval ax_check_compiler_flags=$ax_cv_c_flags__mmic
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
+$as_echo "$ax_check_compiler_flags" >&6; }
+if test "x$ax_check_compiler_flags" = xyes; then
+	MIC_CXXFLAGS="-mmic"
+else
+	as_fn_error $? "Need a version of gcc with -mmic" "$LINENO" 5
+fi
+
+	fi
+fi
+ if test "$have_mic" = "yes"; then
+  EXAFMM_HAVE_MIC_TRUE=
+  EXAFMM_HAVE_MIC_FALSE='#'
+else
+  EXAFMM_HAVE_MIC_TRUE='#'
+  EXAFMM_HAVE_MIC_FALSE=
+fi
+
+
+
 # Neon
 # Check whether --enable-neon was given.
 if test "${enable_neon+set}" = set; then :
@@ -5622,6 +5692,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_AVX_TRUE}" && test -z "${EXAFMM_HAVE_AVX_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_HAVE_AVX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${EXAFMM_HAVE_MIC_TRUE}" && test -z "${EXAFMM_HAVE_MIC_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_HAVE_MIC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_NEON_TRUE}" && test -z "${EXAFMM_HAVE_NEON_FALSE}"; then
