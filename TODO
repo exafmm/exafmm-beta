@@ -1,12 +1,11 @@
 -- Immediate --
-make CXX0X into real macro
-1. HSS serial, when done search Makefile.am for "hss" and remove
-2. HSS MPI
-3. Helmholtz SIMD
-4. Helmholtz conjugate
-5. Stokes kernels
-6. Calculate Flops
-7. Cycle counter kernel timer
+Helmhooltz
+FMM MPI
+HSS MPI
+Helmholtz conjugate
+Lower P in Helmholtz
+Calculate Flops
+Cycle counter kernel timer
 
 -- MPI --
 LBT MPI <- ICELL is being calculated from localBounds
@@ -18,6 +17,7 @@ cycle counter based weights
 non-orthogonal recursive bisection
 
 -- automake --
+Debug MIC, Cray, FX100, SX-ACE (without CC=, CXX= option)
 Setup buildbot tests using "make check"
 move contents of macros.h to configure.ac
 examples/Makefile options to args
@@ -36,6 +36,7 @@ Separate key manipulation namespace, e.g. interleaveMorton(), deinterleveHilbert
 Morton -> Hilbert
 
 -- kernels --
+Stokes kernels
 Have only one P2P
 Distinguish Pmax and P. Make P runtime option
 Use getIndex for NO_P2P

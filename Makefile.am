@@ -1,4 +1,4 @@
-SUBDIRS = examples wrappers uniform
+SUBDIRS = examples wrappers uniform hss
 
 buildbot:
 	buildbot try --connect=pb --master=131.112.5.69:443 --username=exafmm --passwd=exafmm --vc=git

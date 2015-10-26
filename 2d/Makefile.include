@@ -15,7 +15,7 @@ CXX	= mpicxx -ggdb3 -Wall -Wextra -msse4a -O3 -fopenmp -ffast-math -funroll-loop
 FC = mpif90 -xHOST -O3 -funroll-loops -finline-functions -ansi-alias -cpp # Intel
 
 ### Base flags
-CXX	+= -I../include
+CXX	+= -I../include -I ~/strumpack/src
 LFLAGS	+= -DEXPANSION=6 # Specifcy expansion order
 LFLAGS	+= -DUSE_SIMD # Use SIMD intrinsics
 #LFLAGS	+= -DFP64 # Use double precision
@@ -29,6 +29,9 @@ LFLAGS	+= -std=c++0x -DTBB -ltbb
 
 ### MassiveThreads flags : MassiveThreads is available from http://code.google.com/p/massivethreads/
 #LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
+
+### STRUMPACK flags
+LFLAGS += -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 
 ### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
 #LFLAGS	+= -DPAPI -lpapi
