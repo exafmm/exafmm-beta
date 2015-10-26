@@ -806,7 +806,6 @@ namespace exafmm {
     vec(const float a, const float b, const float c, const float d,
 	const float e, const float f, const float g, const float h) :
       data(a,b,c,d,e,f,g,h) {}                                  // Copy constructor (component-wise)
-    }
     ~vec(){}                                                    // Destructor
     const vec &operator=(const float v) {                       // Scalar assignment
       data = v;
@@ -918,7 +917,6 @@ namespace exafmm {
     }
     vec(const double a, const double b, const double c, const double d) :
       data(a,b,c,d) {}                                          // Copy constructor (component-wise)
-    }
     ~vec(){}                                                    // Destructor
     const vec &operator=(const double v) {                      // Scalar assignment
       data = v;
@@ -960,7 +958,7 @@ namespace exafmm {
     vec operator/(const vec & v) const {                        // Vector arithmetic (divide)
       return vec(data / v.data);
     }
-    Ved4db operator>(const vec & v) const {                     // Vector arithmetic (greater than)
+    Vec4db operator>(const vec & v) const {                     // Vector arithmetic (greater than)
       return data > v.data;
     }
     Vec4db operator<(const vec & v) const {                     // Vector arithmetic (less than)
