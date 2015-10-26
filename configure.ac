@@ -101,6 +101,21 @@ fi
 AM_CONDITIONAL(EXAFMM_HAVE_AVX, test "$have_avx" = "yes")
 AC_SUBST(AVX_CXXFLAGS)
 
+# MIC
+AC_ARG_ENABLE(mic, [AC_HELP_STRING([--enable-mic],[enable MIC optimizations])], have_mic=$enableval, have_mic=no)
+if test "$have_mic" = "yes"; then
+   AC_DEFINE(EXAFMM_HAVE_MIC,1,[Define to enable MIC optimizations.])
+        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+                AC_MSG_ERROR([MIC requires single or double precision])
+        fi
+	if test "x$MIC_CXXFLAGS" = x; then
+   	  AX_CHECK_COMPILER_FLAGS(-mmic, [MIC_CXXFLAGS="-mmic"],
+                		  	 [AC_MSG_ERROR([Need a version of gcc with -mmic])])
+	fi
+fi
+AM_CONDITIONAL(EXAFMM_HAVE_MIC, test "$have_mic" = "yes")
+AC_SUBST(MIC_CXXFLAGS)
+
 # Neon
 AC_ARG_ENABLE(neon, [AC_HELP_STRING([--enable-neon],[enable ARM NEON optimizations])], have_neon=$enableval, have_n\
 eon=no)
