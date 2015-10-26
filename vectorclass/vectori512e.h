@@ -206,6 +206,7 @@ static inline Vec512b andnot (Vec512b const & a, Vec512b const & b) {
 *****************************************************************************/
 // Generate a constant vector of 8 integers stored in memory.
 // Can be converted to any integer vector type
+#if __cplusplus > 199711L
 template <int i0, int i1, int i2, int i3, int i4, int i5, int i6, int i7, int i8, int i9, int i10, int i11, int i12, int i13, int i14, int i15>
 static inline Vec512ie constant16i() {
     static const union {
@@ -214,6 +215,7 @@ static inline Vec512ie constant16i() {
     } u = {{i0,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15}};
     return Vec512ie(u.y[0], u.y[1]);
 }
+#endif
 
 
 /*****************************************************************************

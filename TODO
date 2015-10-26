@@ -1,4 +1,5 @@
 -- Immediate --
+make CXX0X into real macro
 1. HSS serial, when done search Makefile.am for "hss" and remove
 2. HSS MPI
 3. Helmholtz SIMD
