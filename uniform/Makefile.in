@@ -92,36 +92,37 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 
 ### SIMD flags
 @EXAFMM_USE_SIMD_TRUE@am__append_8 = -DEXAFMM_USE_SIMD
-@EXAFMM_HAVE_AVX_TRUE@@EXAFMM_USE_SIMD_TRUE@am__append_9 = $(AVX_CXXFLAGS) # Use AVX intrinsics
-@EXAFMM_HAVE_AVX_FALSE@@EXAFMM_HAVE_SSE3_TRUE@@EXAFMM_USE_SIMD_TRUE@am__append_10 = $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
-@EXAFMM_HAVE_AVX_FALSE@@EXAFMM_HAVE_NEON_TRUE@@EXAFMM_HAVE_SSE3_FALSE@@EXAFMM_USE_SIMD_TRUE@am__append_11 = $(NEON_CXXFLAGS) # Use Neon intrinsics
+@EXAFMM_HAVE_MIC_TRUE@@EXAFMM_USE_SIMD_TRUE@am__append_9 = $(MIC_CXXFLAGS) # Use MIC intrinsics
+@EXAFMM_HAVE_AVX_TRUE@@EXAFMM_HAVE_MIC_FALSE@@EXAFMM_USE_SIMD_TRUE@am__append_10 = $(AVX_CXXFLAGS) # Use AVX intrinsics
+@EXAFMM_HAVE_AVX_FALSE@@EXAFMM_HAVE_MIC_FALSE@@EXAFMM_HAVE_SSE3_TRUE@@EXAFMM_USE_SIMD_TRUE@am__append_11 = $(SSE3_CXXFLAGS) # Use SSE3 intrinsics
+@EXAFMM_HAVE_AVX_FALSE@@EXAFMM_HAVE_MIC_FALSE@@EXAFMM_HAVE_NEON_TRUE@@EXAFMM_HAVE_SSE3_FALSE@@EXAFMM_USE_SIMD_TRUE@am__append_12 = $(NEON_CXXFLAGS) # Use Neon intrinsics
 
 # Kahan summation
-@EXAFMM_USE_KAHAN_TRUE@am__append_12 = -DEXAFMM_USE_KAHAN
+@EXAFMM_USE_KAHAN_TRUE@am__append_13 = -DEXAFMM_USE_KAHAN
 
 # Use weights for partitioning
-@EXAFMM_USE_WEIGHT_TRUE@am__append_13 = -DEXAFMM_USE_WEIGHT
+@EXAFMM_USE_WEIGHT_TRUE@am__append_14 = -DEXAFMM_USE_WEIGHT
 
 # Use PAPI performance counter (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM")
-@EXAFMM_USE_PAPI_TRUE@am__append_14 = -DEXAFMM_USE_PAPI
-@EXAFMM_USE_PAPI_TRUE@am__append_15 = -lpapi
+@EXAFMM_USE_PAPI_TRUE@am__append_15 = -DEXAFMM_USE_PAPI
+@EXAFMM_USE_PAPI_TRUE@am__append_16 = -lpapi
 
 # Use thread tracing
-@EXAFMM_USE_TRACE_TRUE@am__append_16 = -DEXAFMM_USE_TRACE
+@EXAFMM_USE_TRACE_TRUE@am__append_17 = -DEXAFMM_USE_TRACE
 
 # Use DAG Recorder
-@EXAFMM_USE_DAG_TRUE@am__append_17 = -DDAG_RECORDER=2
-@EXAFMM_USE_DAG_TRUE@am__append_18 = -ldr
+@EXAFMM_USE_DAG_TRUE@am__append_18 = -DDAG_RECORDER=2
+@EXAFMM_USE_DAG_TRUE@am__append_19 = -ldr
 
 # Count number of M2L and P2P kernel calls
-@EXAFMM_COUNT_KERNEL_TRUE@am__append_19 = -DEXAFMM_COUNT_KERNEL
+@EXAFMM_COUNT_KERNEL_TRUE@am__append_20 = -DEXAFMM_COUNT_KERNEL
 
 # Count interaction list per cell
-@EXAFMM_COUNT_LIST_TRUE@am__append_20 = -DEXAFMM_COUNT_LIST
-@EXAFMM_ASSERT_TRUE@am__append_21 = -DEXAFMM_ASSERT
+@EXAFMM_COUNT_LIST_TRUE@am__append_21 = -DEXAFMM_COUNT_LIST
+@EXAFMM_ASSERT_TRUE@am__append_22 = -DEXAFMM_ASSERT
 
 #AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
-@EXAFMM_DEBUG_TRUE@am__append_22 = -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
+@EXAFMM_DEBUG_TRUE@am__append_23 = -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
 @EXAFMM_HAVE_MPI_TRUE@bin_PROGRAMS = fmm$(EXEEXT) fmm_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	fmm_ijhpca$(EXEEXT)
 subdir = uniform
@@ -244,7 +245,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@ $(am__append_3) $(am__append_4) $(am__append_5) \
-	$(am__append_6) $(am__append_15) $(am__append_18)
+	$(am__append_6) $(am__append_16) $(am__append_19)
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
@@ -321,12 +322,12 @@ top_srcdir = @top_srcdir@
 
 ### Base flags
 AM_CXXFLAGS = $(am__append_2) $(am__append_9) $(am__append_10) \
-	$(am__append_11) $(am__append_22)
+	$(am__append_11) $(am__append_12) $(am__append_23)
 AM_CPPFLAGS = -I../vectorclass -I../include -I../uniform \
 	$(am__append_1) $(am__append_7) $(am__append_8) \
-	$(am__append_12) $(am__append_13) $(am__append_14) \
-	$(am__append_16) $(am__append_17) $(am__append_19) \
-	$(am__append_20) $(am__append_21)
+	$(am__append_13) $(am__append_14) $(am__append_15) \
+	$(am__append_17) $(am__append_18) $(am__append_20) \
+	$(am__append_21) $(am__append_22)
 AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@fmm_SOURCES = fmm.cxx
 @EXAFMM_HAVE_MPI_TRUE@fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=6 -DEXAFMM_SERIAL
