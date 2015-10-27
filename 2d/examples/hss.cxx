@@ -179,14 +179,11 @@ int main(int argc, char ** argv) {
       }
     }
 
+#if 0
     int nbA=128;
     int r=0;
     while(r<locr) {
       int nrows=std::min(nbA,locr-r);
-
-      /* Compute the nrows rows of A that correspond
-       * to rows r:r+nrows-1 of the local array S.
-       */
       A=new double[nrows*n];
       for(int j=0;j<n;j++) {
 	B_iter Bj=jbodies.begin()+j;
@@ -199,14 +196,38 @@ int main(int argc, char ** argv) {
 	  A[i+nrows*j]=R2==0?0.0:-log(sqrt(R2));
 	}
       }
-
-      /* Compute nrows of the sample */
       gemm('N','N',nrows,locc,n,1.0,A,nrows,Rglob,n,0.0,&S[r],locr);
-
       delete[] A;
       r+=nbA;
     }
     A=NULL;
+#else
+    for(int i=0;i<locr;i++) {
+      int locri=i+1;
+      int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
+      bodies[i]=jbodies[globri-1];
+      bodies[i].SRC=1;
+    }
+    bodies.resize(locr);
+    for(int k=1;k<=nrand;k++) {
+      if(mycol==indxg2p_(&k,&nb,&mycol,&IZERO,&npcol)) {
+	int lock=indxg2l_(&k,&nb,&mycol,&IZERO,&npcol);
+	for(B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {
+	  int j = Bj-jbodies.begin();
+	  Bj->SRC = Rglob[j+n*(lock-1)];
+	}
+	for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
+	  Bi->TRG = 0;
+	}
+	traversal.direct(bodies, jbodies, cycle);
+	for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
+	  int i = Bi-bodies.begin();
+	  S[i+locr*(lock-1)] = Bi->TRG;
+	}
+      }
+    }
+    bodies = jbodies;
+#endif
 
     /* Compress the random vectors */
     for(int j=0;j<locc;j++) {
@@ -314,15 +335,12 @@ int main(int argc, char ** argv) {
   int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
   int locc=numroc_(&nrhs,&nb,&mycol,&IZERO,&npcol);
   if(locr*locc) {
+#if 0
     int nbA=128;
     int r=0;
     int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
     while(r<locr) {
       int nrows=std::min(nbA,locr-r);
-
-      /* Compute the nrows rows of A that correspond
-       * to rows r:r+nrows-1 of the local array S.
-       */
       A=new double[nrows*n];
       for(int j=0;j<n;j++) {
 	B_iter Bj=jbodies.begin()+j;
@@ -335,15 +353,38 @@ int main(int argc, char ** argv) {
 	  A[i+nrows*j]=R2==0?0.0:-log(sqrt(R2));
 	}
       }
-
-      /* Compute nrows of the of the result */
       gemm('N','N',nrows,nrhs,n,1.0,A,nrows,Xglob,n,0.0,&Btrue[r],locr);
-
       delete[] A;
       r+=nbA;
     }
     A=NULL;
-
+#else
+    for(int i=0;i<locr;i++) {
+      int locri=i+1;
+      int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
+      bodies[i]=jbodies[globri-1];
+      bodies[i].SRC=1;
+    }
+    bodies.resize(locr);
+    for(int k=1;k<=nrhs;k++) {
+      if(mycol==indxg2p_(&k,&nb,&mycol,&IZERO,&npcol)) {
+	int lock=indxg2l_(&k,&nb,&mycol,&IZERO,&npcol);
+	for(B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {
+	  int j = Bj-jbodies.begin();
+	  Bj->SRC = Xglob[j+n*(lock-1)];
+	}
+	for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
+	  Bi->TRG = 0;
+	}
+	traversal.direct(bodies, jbodies, cycle);
+	for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
+	  int i = Bi-bodies.begin();
+	  Btrue[i+locr*(lock-1)] = Bi->TRG;
+	}
+      }
+    }
+    bodies = jbodies;
+#endif
   }
   delete[] Xglob;
   tend=MPI_Wtime();
