@@ -1,8 +1,10 @@
+#include "localessentialtree.h"
 #include "args.h"
 #include "boundbox.h"
 #include "buildtree.h"
 #include "dataset.h"
 #include "logger.h"
+#include "sort.h"
 #include "traversal.h"
 #include "updownpass.h"
 #include "StrumpackDensePackage.hpp"
@@ -23,74 +25,90 @@ int main(int argc, char ** argv) {
   Args args(argc, argv);
   Dataset data;
   Logger logger;
-
-  int myid, np;
-  MPI_Init(&argc,&argv);
-  MPI_Comm_rank(MPI_COMM_WORLD,&myid);
-  MPI_Comm_size(MPI_COMM_WORLD,&np);
+  Sort sort;
 
   const real_t cycle = 2 * M_PI;
   BoundBox boundbox(args.nspawn);
   BuildTree tree(args.ncrit,args.nspawn);
   UpDownPass pass(args.theta,eps2);
   Traversal traversal(args.nspawn,args.images,eps2);
-  if (!myid && args.verbose) {
+  LocalEssentialTree LET(args.images);
+  args.numBodies /= LET.mpisize;
+  args.verbose &= LET.mpirank == 0;
+  if (args.verbose) {
     logger.verbose = true;
     boundbox.verbose = true;
     tree.verbose = true;
     pass.verbose = true;
     traversal.verbose = true;
+    LET.verbose = true;
   }
+  int myid = LET.mpirank;
+  int np = LET.mpisize;
+
   logger.printTitle("FMM Parameters");
-  if(!myid)args.print(logger.stringLength,P);
+  args.print(logger.stringLength,P);
   logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  Bodies bodies = data.initBodies(args.numBodies, args.distribution, 0);
-  Bounds bounds = boundbox.getBounds(bodies);
-#if IneJ
-  Bodies jbodies = data.initBodies(args.numBodies, args.distribution, 1);
-  bounds = boundbox.getBounds(jbodies,bounds);
-#endif
-  Cells cells = tree.buildTree(bodies, bounds);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize);
+  Bounds localBounds = boundbox.getBounds(bodies);
+  Bounds globalBounds = LET.allreduceBounds(localBounds);
+  localBounds = LET.partition(bodies,globalBounds);
+  bodies = sort.sortBodies(bodies);
+  bodies = LET.commBodies(bodies);
+  Cells cells = tree.buildTree(bodies, localBounds);
   pass.upwardPass(cells);
-#if IneJ
-  Cells jcells = tree.buildTree(jbodies, bounds);
-  pass.upwardPass(jcells);
-  traversal.dualTreeTraversal(cells, jcells, cycle);
-#else
+  LET.setLET(cells,localBounds,cycle);
+  LET.commBodies();
+  LET.commCells();
   traversal.dualTreeTraversal(cells, cells, cycle, args.mutual);
   Bodies jbodies = bodies;
-#endif
+  Cells jcells;
+  for (int irank=1; irank<LET.mpisize; irank++) {
+    LET.getLET(jcells,(LET.mpirank+irank)%LET.mpisize);
+    traversal.dualTreeTraversal(cells, jcells, cycle);
+  }
   pass.downwardPass(cells);
-  logger.printTitle("Total runtime");
   logger.stopPAPI();
   logger.stopTimer("Total FMM");
-  //boundbox.writeTime();
-  //tree.writeTime();
-  //pass.writeTime();
-  //traversal.writeTime();
-  //boundbox.resetTimer();
-  tree.resetTimer();
-  pass.resetTimer();
-  traversal.resetTimer();
-  logger.resetTimer();
-  Bodies buffer=bodies;
+  logger.printTitle("MPI direct sum");
+  Bodies buffer = bodies;
   data.sampleBodies(bodies, args.numTargets);
   Bodies bodies2 = bodies;
   data.initTarget(bodies);
   logger.startTimer("Total Direct");
-  traversal.direct(bodies, jbodies, cycle);
+  for (int i=0; i<LET.mpisize; i++) {
+    if (args.verbose) std::cout << "Direct loop          : " << i+1 << "/" << LET.mpisize << std::endl;
+    LET.shiftBodies(jbodies);
+    traversal.direct(bodies, jbodies, cycle);
+  }
   traversal.normalize(bodies);
+  logger.printTitle("Total runtime");
+  logger.printTime("Total FMM");
   logger.stopTimer("Total Direct");
-  double diff1 = 0, norm1 = 0;
+  boundbox.writeTime(LET.mpirank);
+  tree.writeTime(LET.mpirank);
+  pass.writeTime(LET.mpirank);
+  traversal.writeTime(LET.mpirank);
+  LET.writeTime(LET.mpirank);
+  LET.writeSendCount();
+  boundbox.resetTimer();
+  tree.resetTimer();
+  pass.resetTimer();
+  traversal.resetTimer();
+  LET.resetTimer();
+  logger.resetTimer();
+  double diff1 = 0, norm1 = 0, diff2 = 0, norm2 = 0;
   data.evalError(bodies2, bodies, diff1, norm1);
+  MPI_Reduce(&diff1, &diff2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&norm1, &norm2, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   logger.printTitle("FMM vs. direct");
-  logger.printError(diff1, norm1);
+  logger.printError(diff2, norm2);
   tree.printTreeData(cells);
   traversal.printTraversalData();
-  logger.printPAPI();
-  bodies=buffer;
+  bodies = LET.allgatherBodies(buffer);
+  jbodies = bodies;
 
   /* BLACS 2D grid, as square as possible */
   int ctxt;
@@ -102,7 +120,7 @@ int main(int argc, char ** argv) {
   blacs_gridinit_(&ctxt,"R",&nprow,&npcol);
   blacs_gridinfo_(&ctxt,&nprow,&npcol,&myrow,&mycol);
 
-  int n=bodies.size();
+  int n=args.numBodies * LET.mpisize;
   int nb=64;
 
   /* Initialize the solver */
@@ -405,8 +423,6 @@ int main(int argc, char ** argv) {
   delete[] X;
   delete[] B;
   delete[] Btrue;
-
-  MPI_Finalize();
 
   return 0;
 }

@@ -36,7 +36,7 @@ int main(int argc, char ** argv) {
   logger.printTitle("FMM Profiling");
   logger.startTimer("Total FMM");
   logger.startPAPI();
-  Bodies bodies = data.initBodies(args.numBodies/1000, args.distribution, LET.mpirank, LET.mpisize);
+  Bodies bodies = data.initBodies(args.numBodies, args.distribution, LET.mpirank, LET.mpisize);
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     B->X[0] += M_PI;
     B->X[0] *= 0.5;

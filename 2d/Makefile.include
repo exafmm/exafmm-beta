@@ -1,7 +1,7 @@
 .SUFFIXES: .cxx .cu .o
 
 ### choose C++ compiler
-CXX	= mpicxx -ggdb3 -Wall -Wextra -msse4a -O3 -fopenmp -ffast-math -funroll-loops # GCC
+CXX	= mpicxx -ggdb3 -msse4a -O3 -fopenmp -ffast-math -funroll-loops # GCC
 #CXX	= mpicxx -Wall -xHOST -O3 -funroll-loops -finline-functions -ansi-alias # Intel
 #CXX	= icpc -Wall -mmic -O3 -L/opt/intel/tbb/lib/mic -lpthread # Intel MIC
 #CXX	= mpic++ -Wall -mmic -O3 -L/opt/apps/intel/13/composer_xe_2013.2.146/tbb/lib/mic # Stampede
