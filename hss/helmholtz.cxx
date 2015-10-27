@@ -147,15 +147,8 @@ int main(int argc, char ** argv) {
     sdp.tol_HSS=1e-4;
     sdp.levels_HSS=5;
 
-    /* Input the problem. Two version:
-     *  1/ Explicit matrix.
-     *  2/ Matrix-free.
-     */
     dcomplex *A, *Rr, *Rc, *Sr, *Sc;
     int descA[BLACSCTXTSIZE], descRS[BLACSCTXTSIZE];
-    /* Matrix-free version.
-     * The number of random vectors is fixed.
-     */
     int nrand=std::min(8*(int)floor(sqrt(n)),1000);
     sdp.min_rand_HSS=nrand;
     sdp.max_rand_HSS=nrand;

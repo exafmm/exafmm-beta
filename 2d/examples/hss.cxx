@@ -130,15 +130,8 @@ int main(int argc, char ** argv) {
   sdp.tol_HSS=1e-4;
   sdp.block_HSS=64;
 
-  /* Input the problem. Two version:
-   *  1/ Explicit matrix.
-   *  2/ Matrix-free.
-   */
   double *A, *R, *S;
   int descA[BLACSCTXTSIZE], descRS[BLACSCTXTSIZE];
-  /* Matrix-free version.
-   * The number of random vectors is fixed.
-   */
   int nrand=60;
   sdp.min_rand_HSS=nrand;
   sdp.max_rand_HSS=nrand;
