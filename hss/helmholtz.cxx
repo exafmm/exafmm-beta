@@ -46,9 +46,8 @@ int main(int argc, char ** argv) {
   int np = baseMPI.mpisize;
 
   kernel::eps2 = 0.0;
-#if EXAFMM_HELMHOLTZ
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
-#endif
+  kernel::Hermitian = false;
   kernel::setup();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;
@@ -204,14 +203,11 @@ int main(int argc, char ** argv) {
 	}
       }
 
+#if 0
       int nbA=128;
       int r=0;
       while(r<locr) {
 	int nrows=std::min(nbA,locr-r);
-
-	/* Compute the nrows rows of A that correspond
-	 * to rows r:r+nrows-1 of the local array S.
-	 */
 	A=new dcomplex[nrows*n];
 	for(int j=0;j<n;j++) {
 	  B_iter Bj=jbodies.begin()+j;
@@ -219,21 +215,44 @@ int main(int argc, char ** argv) {
 	    int locri=r+i+1;
 	    int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
 	    B_iter Bi=bodies.begin()+globri-1;
-	    vec3 dX=Bi->X-Bj->X-kernel::Xperiodic;
+	    vec3 dX=Bi->X-Bj->X;
 	    real_t R2=norm(dX)+kernel::eps2;
 	    real_t R=sqrt(R2);
 	    A[i+nrows*j]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
 	  }
 	}
-
-	/* Compute nrows of the sample */
 	gemm('N','N',nrows,locc,n,dcomplex(1.0),A,nrows,Rglob,n,dcomplex(0.0),&Sr[r],locr);
-
 	delete[] A;
 	r+=nbA;
       }
       A=NULL;
-
+#else
+      for(int i=0;i<locr;i++) {
+        int locri=i+1;
+        int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
+        bodies[i]=jbodies[globri-1];
+        bodies[i].SRC=1;
+      }
+      bodies.resize(locr);
+      for(int k=1;k<=nrand;k++) {
+        if(mycol==indxg2p_(&k,&nb,&mycol,&IZERO,&npcol)) {
+          int lock=indxg2l_(&k,&nb,&mycol,&IZERO,&npcol);
+          for(B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {
+            int j = Bj-jbodies.begin();
+            Bj->SRC = Rglob[j+n*(lock-1)];
+          }
+          for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
+            Bi->TRG = 0;
+          }
+          traversal.direct(bodies, jbodies, cycle);
+          for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
+            int i = Bi-bodies.begin();
+            Sr[i+locr*(lock-1)] = Bi->TRG[0];
+          }
+        }
+      }
+      bodies = jbodies;
+#endif
       /* Compress the random vectors */
       for(int j=0;j<locc;j++) {
 	for(int i=1;i<=n;i++) {
@@ -264,15 +283,11 @@ int main(int argc, char ** argv) {
 	}
       }
 
-      r=0;
+#if 0
+      int nbA = 128;
+      int r=0;
       while(r<locr) {
 	int nrows=std::min(nbA,locr-r);
-
-	/* Compute the nrows rows of A^H that correspond
-	 * to rows r:r+nrows-1 of the local array S.
-	 * Note the bodies<->jbodies permutation
-	 * and the conjugation.
-	 */
 	A=new dcomplex[nrows*n];
 	for(int j=0;j<n;j++) {
 	  B_iter Bj=jbodies.begin()+j;
@@ -280,21 +295,46 @@ int main(int argc, char ** argv) {
 	    int locri=r+i+1;
 	    int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
 	    B_iter Bi=bodies.begin()+globri-1;
-	    vec3 dX=Bi->X-Bj->X-kernel::Xperiodic;
+	    vec3 dX=Bi->X-Bj->X;
 	    real_t R2=norm(dX)+kernel::eps2;
 	    real_t R=sqrt(R2);
 	    A[i+nrows*j]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
 	    A[i+nrows*j]=std::conj(A[i+nrows*j]);
 	  }
 	}
-
-	/* Compute nrows of the sample */
 	gemm('N','N',nrows,locc,n,dcomplex(1.0),A,nrows,Rglob,n,dcomplex(0.0),&Sc[r],locr);
-
 	delete[] A;
 	r+=nbA;
       }
       A=NULL;
+#else
+      kernel::Hermitian = true;
+      for(int i=0;i<locr;i++) {
+        int locri=i+1;
+        int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
+        bodies[i]=jbodies[globri-1];
+        bodies[i].SRC=1;
+      }
+      bodies.resize(locr);
+      for(int k=1;k<=nrand;k++) {
+        if(mycol==indxg2p_(&k,&nb,&mycol,&IZERO,&npcol)) {
+          int lock=indxg2l_(&k,&nb,&mycol,&IZERO,&npcol);
+          for(B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {
+            int j = Bj-jbodies.begin();
+            Bj->SRC = Rglob[j+n*(lock-1)];
+          }
+          for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
+            Bi->TRG = 0;
+          }
+          traversal.direct(bodies, jbodies, cycle);
+          for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
+            int i = Bi-bodies.begin();
+            Sc[i+locr*(lock-1)] = Bi->TRG[0];
+          }
+        }
+      }
+      bodies = jbodies;
+#endif
 
       /* Compress the random vectors */
       for(int j=0;j<locc;j++) {
@@ -405,15 +445,12 @@ int main(int argc, char ** argv) {
     int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
     int locc=numroc_(&nrhs,&nb,&mycol,&IZERO,&npcol);
     if(locr*locc) {
+#if 1
       int nbA=128;
       int r=0;
       int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
       while(r<locr) {
 	int nrows=std::min(nbA,locr-r);
-
-	/* Compute the nrows rows of A that correspond
-	 * to rows r:r+nrows-1 of the local array S.
-	 */
 	A=new dcomplex[nrows*n];
 	for(int j=0;j<n;j++) {
 	  B_iter Bj=jbodies.begin()+j;
@@ -427,15 +464,39 @@ int main(int argc, char ** argv) {
 	    A[i+nrows*j]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;
 	  }
 	}
-
-	/* Compute nrows of the of the result */
 	gemm('N','N',nrows,nrhs,n,dcomplex(1.0),A,nrows,Xglob,n,dcomplex(0.0),&Btrue[r],locr);
-
 	delete[] A;
 	r+=nbA;
       }
       A=NULL;
-
+#else
+      kernel::Hermitian = false;
+      for(int i=0;i<locr;i++) {
+        int locri=i+1;
+        int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
+        bodies[i]=jbodies[globri-1];
+        bodies[i].SRC=1;
+      }
+      bodies.resize(locr);
+      for(int k=1;k<=nrhs;k++) {
+        if(mycol==indxg2p_(&k,&nb,&mycol,&IZERO,&npcol)) {
+          int lock=indxg2l_(&k,&nb,&mycol,&IZERO,&npcol);
+          for(B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {
+            int j = Bj-jbodies.begin();
+            Bj->SRC = Xglob[j+n*(lock-1)];
+          }
+          for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
+            Bi->TRG = 0;
+          }
+          traversal.direct(bodies, jbodies, cycle);
+          for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
+            int i = Bi-bodies.begin();
+            Btrue[i+locr*(lock-1)] = Bi->TRG[0];
+          }
+        }
+      }
+      bodies = jbodies;
+#endif
     }
     delete[] Xglob;
     tend=MPI_Wtime();
@@ -495,7 +556,7 @@ void elements(void * obj, int *I, int *J, dcomplex *B, int *descB) {
       int jjj=J[jj-1];
       B_iter Bi=bodies->begin()+iii-1;
       B_iter Bj=jbodies->begin()+jjj-1;
-      vec3 dX=Bi->X-Bj->X-kernel::Xperiodic;
+      vec3 dX=Bi->X-Bj->X;
       real_t R2=norm(dX)+kernel::eps2;
       real_t R=sqrt(R2);
       B[locr*(j-1)+(i-1)]=R2==0?0.0:exp(I1*(kernel::wavek)*R)/R;

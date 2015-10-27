@@ -44,9 +44,6 @@ int main(int argc, char ** argv) {
   int np = baseMPI.mpisize;
 
   kernel::eps2 = 0.0;
-#if EXAFMM_HELMHOLTZ
-  kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
-#endif
   kernel::setup();
   args.numBodies /= baseMPI.mpisize;
   args.verbose &= baseMPI.mpirank == 0;

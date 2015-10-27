@@ -4,6 +4,7 @@ using namespace exafmm;
 
 real_t kernel::eps2;
 complex_t kernel::wavek;
+bool kernel::Hermitian;
 vec3 kernel::Xperiodic;
 
 const complex_t I(0.,1.);
@@ -69,6 +70,7 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
       tmp = invR / exp(wave_ivec * R);
       simdvec coef_r = cos(wave_rvec * R) * tmp;
       simdvec coef_i = sin(wave_rvec * R) * tmp;
+      if (Hermitian) coef_i = -coef_i;
       tmp = mj_r * coef_r - mj_i * coef_i;
       coef_i = mj_r * coef_i + mj_i * coef_r;
       coef_r = tmp;
@@ -121,6 +123,7 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
 	real_t expikr = exp(wave_i * R) * R;
 	real_t expikr_r = cos(wave_r * R) / expikr;
 	real_t expikr_i = sin(wave_r * R) / expikr;
+	if (Hermitian) expikr_i = -expikr_i;
 	real_t coef1_r = src2_r * expikr_r - src2_i * expikr_i;
 	real_t coef1_i = src2_r * expikr_i + src2_i * expikr_r;
 	real_t kr_r = (1 + wave_i * R) / R2;
@@ -204,6 +207,7 @@ void kernel::P2P(C_iter C) {
       tmp = invR / exp(wave_ivec * R);
       simdvec coef_r = cos(wave_rvec * R) * tmp;
       simdvec coef_i = sin(wave_rvec * R) * tmp;
+      if (Hermitian) coef_i = -coef_i;
       tmp = mj_r * coef_r - mj_i * coef_i;
       coef_i = mj_r * coef_i + mj_i * coef_r;
       coef_r = tmp;
@@ -255,6 +259,7 @@ void kernel::P2P(C_iter C) {
       real_t expikr = exp(wave_i * R) * R;
       real_t expikr_r = cos(wave_r * R) / expikr;
       real_t expikr_i = sin(wave_r * R) / expikr;
+      if (Hermitian) expikr_i = -expikr_i;
       real_t coef1_r = src2_r * expikr_r - src2_i * expikr_i;
       real_t coef1_i = src2_r * expikr_i + src2_i * expikr_r;
       real_t kr_r = (1 + wave_i * R) / R2;
