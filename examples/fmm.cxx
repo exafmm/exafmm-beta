@@ -25,7 +25,6 @@ int main(int argc, char ** argv) {
   kernel::eps2 = 0.0;
 #if EXAFMM_HELMHOLTZ
   kernel::wavek = complex_t(10.,1.) / real_t(2 * M_PI);
-  kernel::Hermitian = false;
 #endif
   kernel::setup();
   logger::verbose = args.verbose;

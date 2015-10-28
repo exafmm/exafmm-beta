@@ -7,7 +7,6 @@ namespace exafmm {
   namespace kernel {
     extern real_t eps2;                                         //!< Epslion squared
     extern complex_t wavek;                                     //!< Helmholtz wave number
-    extern bool Hermitian;                                      //!< Helmholtz Hermitian transpose
     extern vec3 Xperiodic;                                      //!< Periodic coordinate offset
 
     void setup();                                               //!< Setup phase for kernels

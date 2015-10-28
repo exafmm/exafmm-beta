@@ -217,7 +217,7 @@ int main(int argc, char ** argv) {
       for(int i=0;i<locr;i++) {
 	int locri=i+1;
 	int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
-	bodies[i]=jbodies[globri-1];
+	bodies[i]=gbodies[globri-1];
 	bodies[i].SRC=1;
 	bodies[i].IBODY=i;
       }
@@ -391,7 +391,7 @@ int main(int argc, char ** argv) {
       for(int i=0;i<locr;i++) {
         int locri=i+1;
 	int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
-        bodies[i]=jbodies[globri-1];
+        bodies[i]=gbodies[globri-1];
 	bodies[i].SRC=1;
 	bodies[i].IBODY=i;
       }
