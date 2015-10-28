@@ -34,6 +34,7 @@ int main(int argc, char ** argv) {
   Traversal traversal(args.nspawn,args.images,eps2);
   LocalEssentialTree LET(args.images);
   args.numBodies /= LET.mpisize;
+  args.verbose = false;
   args.verbose &= LET.mpirank == 0;
   if (args.verbose) {
     logger.verbose = true;
@@ -107,8 +108,9 @@ int main(int argc, char ** argv) {
   logger.printError(diff2, norm2);
   tree.printTreeData(cells);
   traversal.printTraversalData();
-  bodies = LET.allgatherBodies(buffer);
-  jbodies = bodies;
+  Bodies gbodies = LET.allgatherBodies(buffer);
+  bodies = gbodies;
+  jbodies = gbodies;
 
   /* BLACS 2D grid, as square as possible */
   int ctxt;
@@ -138,7 +140,7 @@ int main(int argc, char ** argv) {
 
   Bodies **pbodies=new Bodies*[2];
   pbodies[0]=&bodies;
-  pbodies[1]=&bodies;
+  pbodies[1]=&jbodies;
   sdp.obj=(void*)pbodies;
 
   int seed=time(NULL);
@@ -207,8 +209,16 @@ int main(int argc, char ** argv) {
       int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
       bodies[i]=jbodies[globri-1];
       bodies[i].SRC=1;
+      bodies[i].IBODY=i;
     }
     bodies.resize(locr);
+    for(B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {
+      Bj->IBODY = Bj - jbodies.begin();
+    }
+    localBounds = boundbox.getBounds(bodies);
+    localBounds = boundbox.getBounds(jbodies,localBounds);
+    cells = tree.buildTree(bodies, localBounds);
+    jcells = tree.buildTree(jbodies, localBounds);
     for(int k=1;k<=nrand;k++) {
       if(mycol==indxg2p_(&k,&nb,&mycol,&IZERO,&npcol)) {
 	int lock=indxg2l_(&k,&nb,&mycol,&IZERO,&npcol);
@@ -219,14 +229,22 @@ int main(int argc, char ** argv) {
 	for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
 	  Bi->TRG = 0;
 	}
+#if 0
 	traversal.direct(bodies, jbodies, cycle);
+#else
+	pass.upwardPass(cells);
+	pass.upwardPass(jcells);
+	traversal.dualTreeTraversal(cells, jcells, cycle, false);
+	pass.downwardPass(cells);
+#endif
 	for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
-	  int i = Bi-bodies.begin();
+	  int i = Bi->IBODY;
 	  S[i+locr*(lock-1)] = Bi->TRG;
 	}
       }
     }
-    bodies = jbodies;
+    bodies = gbodies;
+    jbodies = gbodies;
 #endif
 
     /* Compress the random vectors */
@@ -364,8 +382,16 @@ int main(int argc, char ** argv) {
       int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
       bodies[i]=jbodies[globri-1];
       bodies[i].SRC=1;
+      bodies[i].IBODY=i;
     }
     bodies.resize(locr);
+    for(B_iter Bj=jbodies.begin(); Bj!=jbodies.end(); Bj++) {
+      Bj->IBODY = Bj - jbodies.begin();
+    }
+    localBounds = boundbox.getBounds(bodies);
+    localBounds = boundbox.getBounds(jbodies,localBounds);
+    cells = tree.buildTree(bodies, localBounds);
+    jcells = tree.buildTree(jbodies, localBounds);
     for(int k=1;k<=nrhs;k++) {
       if(mycol==indxg2p_(&k,&nb,&mycol,&IZERO,&npcol)) {
 	int lock=indxg2l_(&k,&nb,&mycol,&IZERO,&npcol);
@@ -376,14 +402,22 @@ int main(int argc, char ** argv) {
 	for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
 	  Bi->TRG = 0;
 	}
-	traversal.direct(bodies, jbodies, cycle);
+#if 0
+        traversal.direct(bodies, jbodies, cycle);
+#else
+        pass.upwardPass(cells);
+        pass.upwardPass(jcells);
+        traversal.dualTreeTraversal(cells, jcells, cycle, false);
+        pass.downwardPass(cells);
+#endif
 	for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
-	  int i = Bi-bodies.begin();
+	  int i = Bi->IBODY;
 	  Btrue[i+locr*(lock-1)] = Bi->TRG;
 	}
       }
     }
-    bodies = jbodies;
+    bodies = gbodies;
+    jbodies = gbodies;
 #endif
   }
   delete[] Xglob;

@@ -16,7 +16,7 @@ parallel: parallel.o
 # Test for hss FMM
 hss: hss.o
 	$(CXX) $? $(LFLAGS)
-	mpirun -n 1 ./a.out --numBodies 4096
+	mpirun -n 4 ./a.out --numBodies 4096
 
 # Checking O(N) complexity
 complexity: serial.o

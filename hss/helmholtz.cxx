@@ -359,7 +359,7 @@ int main(int argc, char ** argv) {
           upDownPass.downwardPass(cells);
 #endif
           for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
-            int i = Bi-bodies.begin();
+            int i = Bi->IBODY;
             Sc[i+locr*(lock-1)] = Bi->TRG[0];
           }
         }
@@ -537,7 +537,7 @@ int main(int argc, char ** argv) {
           upDownPass.downwardPass(cells);
 #endif
           for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
-            int i = Bi-bodies.begin();
+            int i = Bi->IBODY;
             Btrue[i+locr*(lock-1)] = Bi->TRG[0];
           }
         }
