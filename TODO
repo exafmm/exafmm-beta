@@ -1,15 +1,8 @@
 -- Immediate --
-Helmhooltz
-FMM MPI
-HSS MPI
-Helmholtz conjugate
-Lower P in Helmholtz
-Calculate Flops
-Cycle counter kernel timer
+MPI overhaul
 
 -- MPI --
 LBT MPI <- ICELL is being calculated from localBounds
-MPI overhaul
 Test difficult distributions for partitioning and LET
 MPI-3.0 lock all
 cycle counter based weights
@@ -43,6 +36,9 @@ Use getIndex for NO_P2P
 Kahan + fixed precision
 Solid harmonics kernel
 hack vecmathlib and import essential features
+Helmholtz breaks for very low P
+Calculate Flops
+Cycle counter kernel timer
 
 -- driver --
 Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
