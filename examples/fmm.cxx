@@ -74,7 +74,7 @@ int main(int argc, char ** argv) {
       logger::writeTime();
     }
     traversal.writeList(cells, 0);
-    const int numTargets = 5000;
+    const int numTargets = 1000;
     buffer = bodies;
     data.sampleBodies(bodies, numTargets);
     bodies2 = bodies;
