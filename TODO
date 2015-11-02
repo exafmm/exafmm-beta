@@ -1,4 +1,5 @@
 -- Immediate --
+buildbot trigger test
 buildbot test complete
 MPI overhaul
 
