@@ -93,6 +93,7 @@ namespace exafmm {
       return v;
     }
   };
+#if EXAFMM_HELMHOLTZ
   template<typename T>
   struct SIMD<T,4,16> {
     static inline T setBody(B_iter B, int i) {
@@ -171,6 +172,7 @@ namespace exafmm {
       return v;
     }
   };
+#endif
 
   kreal_t transpose(ksimdvec v, int i) {
 #if EXAFMM_USE_KAHAN
