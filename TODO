@@ -1,5 +1,4 @@
 -- Immediate --
-solve makefile-1.14 problem
 configure all machines (cross compile, optimization flags)
 make test all machines (batch queue submission)
 buildbot trigger all machines
