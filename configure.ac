@@ -4,7 +4,7 @@ AC_CONFIG_FILES([Makefile examples/Makefile wrappers/Makefile uniform/Makefile h
 AC_CONFIG_HEADER(config.h)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([examples/fmm.cxx])
-AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 AM_MAINTAINER_MODE
 AC_PROG_CC([xlc_r xlc fccpx fcc sxcc cc icc gcc])
 AC_PROG_CXX([xlC_r xlC FCCpx FCC sxc++ CC icpc g++])
