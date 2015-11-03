@@ -1,11 +1,6 @@
 #ifndef macros_h
 #define macros_h
 
-// Disable a few Intel compiler warnings
-#ifdef __INTEL_COMPILER
-#pragma warning(disable:161 193 383 444 981 1572 2259)
-#endif
-
 // Override assertion
 #if EXAFMM_ASSERT
 #include <cassert>
@@ -18,16 +13,21 @@
 const int SIMD_BYTES = 64;                                      //!< SIMD byte length of MIC
 #elif __AVX__ | __bgq__
 const int SIMD_BYTES = 32;                                      //!< SIMD byte length of AVX and BG/Q
-#elif __SSE__ | __bgp__ | __sparc_v9__
+#elif __SSE__ | __sparc_v9__
 const int SIMD_BYTES = 16;                                      //!< SIMD byte length of SSE and BG/P
 #else
 #error no SIMD
 #endif
 
+// Use Agner's vectormath for x86 SIMD
+#if __MIC__ | __AVX__ | __SSE__
+#define EXAFMM_USE_VECTORCLASS
+#endif
+
 // Bluegene/Q and K computer don't have single precision arithmetic
-#if __bgp__ | __bgq__ | __sparc_v9__
+#if __bgq__ | __sparc_v9__
 #ifdef EXAFMM_SINGLE
-#error Please use double precision for BG/P, BG/Q, FX10, FX100
+#error Please use double precision for BG/Q, FX10, FX100
 #endif
 #endif
 

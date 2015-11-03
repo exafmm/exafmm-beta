@@ -97,9 +97,9 @@ namespace exafmm {
 	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	  real_t theta = drand48() * M_PI * 0.5;                //   Polar angle [0,pi/2]
 	  real_t phi = drand48() * M_PI * 0.5;                  //   Azimuthal angle [0,pi/2]
-	  B->X[0] = 2 * M_PI * sin(theta) * cos(phi) - M_PI;    //    x coordinate
-	  B->X[1] = 2 * M_PI * sin(theta) * sin(phi) - M_PI;    //    y coordinate
-	  B->X[2] = 2 * M_PI * cos(theta) - M_PI;               //    z coordinate
+	  B->X[0] = 2 * M_PI * std::sin(theta) * std::cos(phi) - M_PI;// x coordinate
+	  B->X[1] = 2 * M_PI * std::sin(theta) * std::sin(phi) - M_PI;// y coordinate
+	  B->X[2] = 2 * M_PI * std::cos(theta) - M_PI;          //    z coordinate
 	}                                                       //  End loop over bodies
       }                                                         // End loop over partitions
       return bodies;                                            // Return bodies
@@ -121,8 +121,8 @@ namespace exafmm {
 	  real_t R = 1.0 / sqrt( (pow(X1, -2.0 / 3.0) - 1.0) ); //   Radius
 	  if (R < 100.0) {                                      //   If radius is less than 100
 	    real_t Z = (1.0 - 2.0 * X2) * R;                    //    z component
-	    real_t X = sqrt(R * R - Z * Z) * cos(2.0 * M_PI * X3);//    x component
-	    real_t Y = sqrt(R * R - Z * Z) * sin(2.0 * M_PI * X3);//    y component
+	    real_t X = sqrt(R * R - Z * Z) * std::cos(2.0 * M_PI * X3);// x component
+	    real_t Y = sqrt(R * R - Z * Z) * std::sin(2.0 * M_PI * X3);// y component
 	    real_t scale = 3.0 * M_PI / 16.0;                   //    Scaling factor
 	    X *= scale; Y *= scale; Z *= scale;                 //    Scale coordinates
 	    B->X[0] = X;                                        //    Assign x coordinate to body

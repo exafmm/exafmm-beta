@@ -1,12 +1,17 @@
 #ifndef vec_h
 #define vec_h
 #include <ostream>
+#define EXAFMM_VEC_NEWTON 1
+#define EXAFMM_VEC_VERBOSE 0
+#if EXAFMM_USE_VECTORCLASS
+#if EXAFMM_VEC_VERBOSE
+#pragma message("Using Agner's vectorclass for operator overloading SIMD intrinsics.")
+#endif
 #include "vectorclass.h"
 #include "vectormath_common.h"
 #include "vectormath_exp.h"
 #include "vectormath_trig.h"
-#define EXAFMM_VEC_NEWTON 1
-#define EXAFMM_VEC_VERBOSE 0
+#endif
 //! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics
 
 namespace exafmm {
@@ -1482,16 +1487,28 @@ namespace exafmm {
 #endif
     }
     friend vec sin(const vec & v) {                             // Sine function
-      return vec(_mm_sin_pd(v.data));
+      vec temp;
+      temp[0] = std::sin(v[0]);
+      temp[1] = std::sin(v[1]);
+      return temp;
     }
     friend vec cos(const vec & v) {                             // Cosine function
-      return vec(_mm_cos_pd(v.data));
+      vec temp;
+      temp[0] = std::cos(v[0]);
+      temp[1] = std::cos(v[1]);
+      return temp;
     }
     friend void sincos(vec & s, vec & c, const vec & v) {       // Sine & cosine function
-      s.data = _mm_sincos_pd(&c.data, v.data);
+      s[0] = std::sin(v[0]);
+      s[1] = std::sin(v[1]);
+      c[0] = std::cos(v[0]);
+      c[1] = std::cos(v[1]);
     }
     friend vec exp(const vec & v) {                             // Exponential function
-      return vec(_mm_exp_pd(v.data));
+      vec temp;
+      temp[0] = std::exp(v[0]);
+      temp[1] = std::exp(v[2]);
+      return temp;
     }
   };
 #endif

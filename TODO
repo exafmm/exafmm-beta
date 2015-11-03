@@ -1,6 +1,7 @@
 -- Immediate --
-buildbot trigger test
-buildbot test complete
+configure all machines (cross compile, optimization flags)
+make test all machines (batch queue submission)
+buildbot trigger all machines
 MPI overhaul
 
 -- MPI --
@@ -41,6 +42,7 @@ hack vecmathlib and import essential features
 Helmholtz breaks for very low P
 Calculate Flops
 Cycle counter kernel timer
+FX10 sin, cos, exp intrinsic
 
 -- driver --
 Don't try to instantiate all the classes at the top (wait until useful parameters are ready)
