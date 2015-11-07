@@ -323,7 +323,7 @@ top_srcdir = @top_srcdir@
 ### Base flags
 AM_CXXFLAGS = $(am__append_2) $(am__append_9) $(am__append_10) \
 	$(am__append_11) $(am__append_12) $(am__append_23)
-AM_CPPFLAGS = -I../vectorclass -I../include -I../uniform \
+AM_CPPFLAGS = -I../vectorclass -I../include -I../uniform -I$(CPATH) \
 	$(am__append_1) $(am__append_7) $(am__append_8) \
 	$(am__append_13) $(am__append_14) $(am__append_15) \
 	$(am__append_17) $(am__append_18) $(am__append_20) \
