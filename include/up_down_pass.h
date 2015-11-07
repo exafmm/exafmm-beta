@@ -87,6 +87,7 @@ namespace exafmm {
 	C(_C), C0(_C0), theta(_theta), useRmax(_useRmax) {}     // Initialize variables
       void operator() () {                                      // Overload operator()
 	mk_task_group;                                          //  Initialize tasks
+	std::cout << C->ICELL << std::endl;
 	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	  PostOrderTraversal postOrderTraversal(CC, C0, theta, useRmax); // Instantiate recursive functor
 	  create_taskc(postOrderTraversal);                     //    Create new task for recursive call
