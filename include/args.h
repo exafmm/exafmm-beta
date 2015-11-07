@@ -136,7 +136,7 @@ namespace exafmm {
       useRmax(0) {
       while (1) {
 #if _SX
-#warning SX doesn't have getopt_long
+#warning SX does not have getopt_long
 	int c = getopt(argc, argv, "c:d:DgGhi:jmn:or:s:t:T:vwx");
 #else
 	int option_index;
