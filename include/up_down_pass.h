@@ -87,22 +87,16 @@ namespace exafmm {
 	C(_C), C0(_C0), theta(_theta), useRmax(_useRmax) {}     // Initialize variables
       void operator() () {                                      // Overload operator()
 	mk_task_group;                                          //  Initialize tasks
-	if (C->ICELL== 37448) std::cout << "0" << std::endl;
 	for (C_iter CC=C0+C->ICHILD; CC!=C0+C->ICHILD+C->NCHILD; CC++) {// Loop over child cells
 	  PostOrderTraversal postOrderTraversal(CC, C0, theta, useRmax); // Instantiate recursive functor
 	  create_taskc(postOrderTraversal);                     //    Create new task for recursive call
 	}                                                       //   End loop over child cells
 	wait_tasks;                                             //   Synchronize tasks
-	if (C->ICELL== 37448) std::cout << "1" << std::endl;
 	C->M = 0;                                               //  Initialize multipole expansion coefficients
 	C->L = 0;                                               //  Initialize local expansion coefficients
-	if (C->ICELL== 37448) std::cout << "2" << std::endl;
 	if(C->NCHILD==0) kernel::P2M(C);                        //  P2M kernel
-	if (C->ICELL== 37448) std::cout << "3" << std::endl;
 	else kernel::M2M(C, C0);                                //  M2M kernel
-	if (C->ICELL== 37448) std::cout << "4" << std::endl;
 	if (useRmax) setRmax();                                 //  Redefine cell radius R based on maximum distance
-	if (C->ICELL== 37448) std::cout << "5" << std::endl;
 	C->R /= theta;                                          //  Divide R by theta
       }                                                         // End overload operator()
     };

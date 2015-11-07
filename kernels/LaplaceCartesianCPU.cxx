@@ -637,6 +637,7 @@ void kernel::setup() {}
 
 void kernel::P2M(C_iter C) {
   for (B_iter B=C->BODY; B!=C->BODY+C->NBODY; B++) {
+    if (C->ICELL== 37448) std::cout << B-C->BODY << "/" << C->NBODY << std::endl;
     vec3 dX = C->X - B->X;
     vecP M;
     M[0] = B->SRC;
