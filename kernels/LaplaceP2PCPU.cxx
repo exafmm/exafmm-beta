@@ -1,5 +1,7 @@
 #include "kernel.h"
+#if EXAFMM_USE_SIMD
 #include "simdvec.h"
+#endif
 using namespace exafmm;
 
 real_t kernel::eps2;

@@ -2,11 +2,15 @@
 #define args_h
 #include <cstdio>
 #include <cstdlib>
-#include <getopt.h>
 #include <iostream>
 #include <iomanip>
+#ifndef _SX
+#include <getopt.h>
+#endif
 
 namespace exafmm {
+#ifndef _SX
+#warning SX doesn't have getopt_long
   static struct option long_options[] = {
     {"ncrit",        required_argument, 0, 'c'},
     {"distribution", required_argument, 0, 'd'},
@@ -28,6 +32,7 @@ namespace exafmm {
     {"useRmax",      no_argument,       0, 'x'},
     {0, 0, 0, 0}
   };
+#endif
 
   class Args {
   public:
@@ -131,8 +136,12 @@ namespace exafmm {
       write(0),
       useRmax(0) {
       while (1) {
+#if _SX
+	int c = getopt(argc, argv, "c:d:DgGhi:jmn:or:s:t:T:vwx");
+#else
 	int option_index;
 	int c = getopt_long(argc, argv, "c:d:DgGhi:jmn:or:s:t:T:vwx", long_options, &option_index);
+#endif
 	if (c == -1) break;
 	switch (c) {
 	case 'c':

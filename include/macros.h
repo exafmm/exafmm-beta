@@ -13,10 +13,14 @@
 const int SIMD_BYTES = 64;                                      //!< SIMD byte length of MIC
 #elif __AVX__ | __bgq__
 const int SIMD_BYTES = 32;                                      //!< SIMD byte length of AVX and BG/Q
-#elif __SSE__ | __sparc_v9__
-const int SIMD_BYTES = 16;                                      //!< SIMD byte length of SSE and BG/P
+#elif __SSE__ | __sparc_v9__ | _SX
+const int SIMD_BYTES = 16;                                      //!< SIMD byte length of SSE, FX, SX
 #else
 #error no SIMD
+#endif
+
+#if _SX
+#define __attribute__(x)
 #endif
 
 // Use Agner's vectormath for x86 SIMD

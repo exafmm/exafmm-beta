@@ -1,6 +1,8 @@
 #ifndef types_h
 #define types_h
+#ifndef _SX
 #include "align.h"
+#endif
 #include <complex>
 #include "kahan.h"
 #include "macros.h"
@@ -75,7 +77,7 @@ namespace exafmm {
 #elif EXAFMM_HELMHOLTZ
     complex_t SRC;                                              //!< Scalar source values
 #endif
-  } __attribute__ ((aligned (16)));
+  } __attribute__((aligned (16)));
 
   //! Structure of bodies
   struct Body : public Source {
@@ -89,8 +91,12 @@ namespace exafmm {
     kcvec4   TRG;                                               //!< Scalar+vector3 target values
 #endif
   };
+#if _SX
+  typedef std::vector<Body> Bodies;                             //!< Vector of bodies
+#else 
   typedef AlignedAllocator<Body,SIMD_BYTES> BodyAllocator;      //!< Body alignment allocator
   typedef std::vector<Body,BodyAllocator> Bodies;               //!< Vector of bodies
+#endif
   typedef Bodies::iterator B_iter;                              //!< Iterator of body vector
 
   //! Structure of cells
