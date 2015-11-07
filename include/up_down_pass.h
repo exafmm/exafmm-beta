@@ -139,19 +139,15 @@ namespace exafmm {
       logger::startTimer("Upward pass");                        // Start timer
       if (!cells.empty()) {                                     // If cell vector is not empty
 	C_iter C0 = cells.begin();                              //  Set iterator of target root cell
-	std::cout << "0" << std::endl;
 	SetScaleFromRadius setScaleFromRadius(C0, C0);          //  Instantiate recursive functor
 	setScaleFromRadius();                                   //  Recursive call for setting cell scale
-	std::cout << "1" << std::endl;
 	PostOrderTraversal postOrderTraversal(C0, C0, theta, useRmax); // Instantiate recursive functor
 	postOrderTraversal();                                   //  Recursive call for upward pass
-	std::cout << "2" << std::endl;
 	real_t c = (1 - theta) * (1 - theta) / std::pow(theta,P+2) / powf(std::abs(C0->M[0]),1.0/3); // Root coefficient
 	if (useRopt) {                                          //  If using error optimized theta
 	  SetRopt setRopt(C0, C0, c, theta);                    //   Instantiate recursive functor
 	  setRopt();                                            //   Error optimization of R
 	}                                                       //  End if for using error optimized theta
-	std::cout << "3" << std::endl;
       }                                                         // End if for empty cell vector
       logger::stopTimer("Upward pass");                         // Stop timer
     }
