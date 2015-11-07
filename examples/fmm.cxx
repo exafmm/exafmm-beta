@@ -53,9 +53,7 @@ int main(int argc, char ** argv) {
       bounds = boundBox.getBounds(jbodies, bounds);
     }
     cells = buildTree.buildTree(bodies, buffer, bounds);
-    std::cout << "0" << std::endl;
     upDownPass.upwardPass(cells);
-    std::cout << "1" << std::endl;
     traversal.initListCount(cells);
     traversal.initWeight(cells);
     if (args.IneJ) {
