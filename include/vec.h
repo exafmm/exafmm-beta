@@ -1381,7 +1381,7 @@ namespace exafmm {
   };
 #endif
 
-#if __sparc_v9__
+#if __sparc_v9__ | EXAFMM_USE_SIMD
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Overloading vector operators for SPARC")
 #endif
