@@ -100,7 +100,7 @@ if test x = x"$MPILIBS"; then
    AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])
    AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
    AC_CHECK_LIB(mpich, MPI_Init, [MPILIBS="-lmpich"])
-   AC_CHECK_LIB(impi, MPI_Init, [MPILIBS="-lmpicxx"])
+   AC_CHECK_LIB(mpicxx, MPI_Init, [MPILIBS="-lmpicxx"])
    AC_CHECK_LIB(fmpi, MPI_Init, [MPILIBS="-lfmpi"])
    AC_CHECK_LIB(mpichf90, MPI_Init, [MPILIBS="-lmpichf90"])
 fi
