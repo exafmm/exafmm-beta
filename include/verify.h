@@ -34,6 +34,7 @@ namespace exafmm {
       B_iter B2 = bodies2.begin();                              // Set iterator of bodies2
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++, B2++) { // Loop over bodies & bodies2
 	v += std::abs((B->TRG[0] - B2->TRG[0]) * (B->TRG[0] - B2->TRG[0])); //  Difference of scalar component
+	std::cout << B-bodies.begin() << " " << B->TRG[0] << " " << B2->TRG[0] << std::endl;
       }                                                         // End loop over bodies & bodies2
       return v;                                                 // Return difference
     }
