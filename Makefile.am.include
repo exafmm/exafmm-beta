@@ -17,7 +17,7 @@ else
 if EXAFMM_HAVE_GCC
 AM_CXXFLAGS = -ffast-math -funroll-loops -fabi-version=6
 else
-AM_CXXFLAGS =
+AM_CXXFLAGS = no compiler detected
 endif
 endif
 endif
@@ -32,7 +32,7 @@ AM_CPPFLAGS += -DEXAFMM_WITH_OPENMP
 AM_CXXFLAGS += $(OPENMP_CXXFLAGS)
 endif
 if EXAFMM_WITH_TBB
-LIBS += -ltbb # -dynamic
+LIBS += -ltbb
 endif
 if EXAFMM_WITH_CILK
 LIBS += -lcilkrts
