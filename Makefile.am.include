@@ -1,11 +1,35 @@
 ### Base flags
+if EXAFMM_HAVE_BG
+AM_CXXFLAGS = -qarch=qp -qtune=qp -O3 -qhot
+else
+if EXAFMM_HAVE_FX
+AM_CXXFLAGS = -Kfast,openmp
+else
+if EXAFMM_HAVE_SX
+AM_CXXFLAGS = -Nacct
+else
+if EXAFMM_HAVE_CRAY
+AM_CXXFLAGS = -dynamic -fabi-version=6
+else
+if EXAFMM_HAVE_INTEL
+AM_CXXFLAGS = -ansi_alias -fabi-version=6
+else
+if EXAFMM_HAVE_GCC
+AM_CXXFLAGS = -ffast-math -funroll-loops -fabi-version=6
+else
 AM_CXXFLAGS =
+endif
+endif
+endif
+endif
+endif
+endif
 AM_CPPFLAGS = -I../vectorclass -I../include -I../uniform
 
 ### Thread libraries
 if EXAFMM_HAVE_OPENMP
 AM_CPPFLAGS += -DEXAFMM_WITH_OPENMP
-AM_CXXFLAGS += $(OPENMP_CFLAGS)
+AM_CXXFLAGS += $(OPENMP_CXXFLAGS)
 endif
 if EXAFMM_WITH_TBB
 LIBS += -ltbb # -dynamic

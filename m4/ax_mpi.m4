@@ -12,22 +12,22 @@
 #   (Message Passing Interface), a standard API for parallel process
 #   communication (see http://www-unix.mcs.anl.gov/mpi/)
 #
-#   On success, it sets the MPICC, MPICXX, MPIF77, or MPIFC output variable
+#   On success, it sets the MPICXX and MPIFC output variable
 #   to the name of the MPI compiler, depending upon the current language.
-#   (This may just be $CC/$CXX/$F77/$FC, but is more often something like
-#   mpicc/mpiCC/mpif77/mpif90.) It also sets MPILIBS to any libraries that
+#   (This may just be $CXX/$FC, but is more often something like
+#   mpiCC/mpif90.) It also sets MPILIBS to any libraries that
 #   are needed for linking MPI (e.g. -lmpi or -lfmpi, if a special
-#   MPICC/MPICXX/MPIF77/MPIFC was not found).
+#   MPICXX/MPIFC was not found).
 #
 #   If you want to compile everything with MPI, you should use something
-#   like this for C:
+#   like this for C++:
 #
-#     if test -z "$CC" && test -n "$MPICC"; then
-#       CC="$MPICC"
+#     if test -z "$CXX" && test -n "$MPICXX"; then
+#       CXX="$MPICXX"
 #     fi
-#     AC_PROG_CC
+#     AC_PROG_CXX
 #     AX_MPI
-#     CC="$MPICC"
+#     CXX="$MPICXX"
 #     LIBS="$MPILIBS $LIBS"
 #
 #   and similar for C++ (change all instances of CC to CXX), Fortran 77
@@ -77,21 +77,15 @@
 
 AC_DEFUN([AX_MPI], [
 AC_PREREQ(2.50) dnl for AC_LANG_CASE
-AC_REQUIRE([AC_PROG_CC])
-	AC_ARG_VAR(MPICC,[MPI C compiler command])
-	AC_CHECK_PROGS(MPICC, mpxlc_r mpxlc mpifccpx mpifcc sxmpicc cc mpiicc mpicc mpcc cmpicc, $CC)
-	ax_mpi_save_CC="$CC"
-	CC="$MPICC"
-	AC_SUBST(MPICC)
 AC_REQUIRE([AC_PROG_CXX])
 	AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
-	AC_CHECK_PROGS(MPICXX, mpxlC_r mpxlC mpiFCCpx mpiFCC sxmpic++ CC mpiicpc mpicxx mpic++ mpCC cmpic++, $CXX)
+	AC_CHECK_PROGS(MPICXX, mpxlC_r mpxlC mpiFCCpx mpiFCC sxmpic++ CC mpiicpc mpicxx, $CXX)
 	ax_mpi_save_CXX="$CXX"
 	CXX="$MPICXX"
 	AC_SUBST(MPICXX)
 AC_REQUIRE([AC_PROG_FC])
 	AC_ARG_VAR(MPIFC,[MPI Fortran compiler command])
-	AC_CHECK_PROGS(MPIFC, mpxlf90_r mpxlf90 mpifrtpx mpifrt sxmpif90 ftn mpiifort mpif90 mpf90 cmpif90c, $FC)
+	AC_CHECK_PROGS(MPIFC, mpxlf90_r mpxlf90 mpifrtpx mpifrt sxmpif90 ftn mpiifort mpif90, $FC)
 	ax_mpi_save_FC="$FC"
 	FC="$MPIFC"
 	AC_SUBST(MPIFC)

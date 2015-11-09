@@ -6,9 +6,9 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([examples/fmm.cxx])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AM_MAINTAINER_MODE
-AC_PROG_CC([xlc_r xlc fccpx fcc sxcc icc cc gcc])
-AC_PROG_CXX([xlC_r xlC FCCpx FCC sxc++ icpc CC g++])
-AC_PROG_FC([xlf90_r xlf90 frtpx frt sxf90 ifort ftn gfortran])
+AC_LANG([C++])
+AC_PROG_CXX([xlC_r xlC FCCpx FCC sxc++ CC icpc g++])
+AC_PROG_FC([xlf90_r xlf90 frtpx frt sxf90 ftn ifort gfortran])
 AC_PROG_RANLIB
 AM_PROG_AR
 
@@ -186,6 +186,23 @@ if test "$enable_debug" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_DEBUG, test "$enable_debug" = "yes")
 
-AC_MSG_NOTICE([hi $CXX])
+AC_MSG_NOTICE([CXX = $CXX])
+AC_MSG_NOTICE([FC  = $FC])
+AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$CXX" = "xlC_r")
+AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$CXX" = "xlC")
+AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$CXX" = "mpxlC_r")
+AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$CXX" = "mpxlC")
+AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$CXX" = "FCCpx")
+AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$CXX" = "FCC")
+AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$CXX" = "mpiFCCpx")
+AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$CXX" = "mpiFCC")
+AM_CONDITIONAL(EXAFMM_HAVE_SX, test "$CXX" = "sxc++")
+AM_CONDITIONAL(EXAFMM_HAVE_SX, test "$CXX" = "sxmpic++")
+AM_CONDITIONAL(EXAFMM_HAVE_CRAY, test "$CXX" = "CC")
+AM_CONDITIONAL(EXAFMM_HAVE_INTEL, test "$CXX" = "icpc")
+AM_CONDITIONAL(EXAFMM_HAVE_INTEL, test "$CXX" = "mpiicpc")
+AM_CONDITIONAL(EXAFMM_HAVE_GCC, test "$CXX" = "g++")
+AM_CONDITIONAL(EXAFMM_HAVE_GCC, test "$CXX" = "mpicxx")
+AM_CONDITIONAL(EXAFMM_HAVE_GCC, test "$CXX" = "mpic++")
 
 AC_OUTPUT
