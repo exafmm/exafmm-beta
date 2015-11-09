@@ -6,9 +6,9 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([examples/fmm.cxx])
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AM_MAINTAINER_MODE
-AC_PROG_CC([xlc_r xlc fccpx fcc sxcc cc icc gcc])
-AC_PROG_CXX([xlC_r xlC FCCpx FCC sxc++ CC icpc g++])
-AC_PROG_FC([xlf90_r xlf90 frtpx frt sxf90 ftn ifort gfortran])
+AC_PROG_CC([xlc_r xlc fccpx fcc sxcc icc cc gcc])
+AC_PROG_CXX([xlC_r xlC FCCpx FCC sxc++ icpc CC g++])
+AC_PROG_FC([xlf90_r xlf90 frtpx frt sxf90 ifort ftn gfortran])
 AC_PROG_RANLIB
 AM_PROG_AR
 
@@ -78,10 +78,6 @@ if test "$have_sse3" = "yes"; then
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 AC_MSG_ERROR([SSE3 requires single or double precision])
         fi
-	if test "x$SSE3_CXXFLAGS" = x; then
-   	   AX_CHECK_COMPILER_FLAGS(-$flag, [SSE3_CXXFLAGS="-msse3"],
-   				   	   [AC_MSG_ERROR([Need a version of gcc with -msse3])])
-        fi
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_SSE3, test "$have_sse3" = "yes")
 AC_SUBST(SSE3_CXXFLAGS)
@@ -93,10 +89,6 @@ if test "$have_avx" = "yes"; then
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 AC_MSG_ERROR([AVX requires single or double precision])
         fi
-	if test "x$AVX_CXXFLAGS" = x; then
-   	  AX_CHECK_COMPILER_FLAGS(-mavx, [AVX_CXXFLAGS="-mavx"],
-                		  	 [AC_MSG_ERROR([Need a version of gcc with -mavx])])
-	fi
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_AVX, test "$have_avx" = "yes")
 AC_SUBST(AVX_CXXFLAGS)
@@ -108,10 +100,6 @@ if test "$have_mic" = "yes"; then
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 AC_MSG_ERROR([MIC requires single or double precision])
         fi
-	if test "x$MIC_CXXFLAGS" = x; then
-   	  AX_CHECK_COMPILER_FLAGS(-mmic, [MIC_CXXFLAGS="-mmic"],
-                		  	 [AC_MSG_ERROR([Need a version of gcc with -mmic])])
-	fi
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_MIC, test "$have_mic" = "yes")
 AC_SUBST(MIC_CXXFLAGS)
@@ -123,10 +111,6 @@ if test "$have_neon" = "yes"; then
         AC_DEFINE(EXAFMM_HAVE_NEON,1,[Define to enable ARM NEON optimizations.])
         if test "$PRECISION" != "s"; then
                 AC_MSG_ERROR([NEON requires single precision])
-        fi
-	if test "x$NEON_CXXFLAGS" = x; then
-   	  AX_CHECK_COMPILER_FLAGS(-mfpu=neon, [NEON_CXXFLAGS="-mfpu=neon"],
-            				      [AC_MSG_ERROR([Need a version of gcc with -mfpu=neon])])
         fi
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_NEON, test "$have_neon" = "yes")
@@ -202,5 +186,6 @@ if test "$enable_debug" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_DEBUG, test "$enable_debug" = "yes")
 
+AC_MSG_NOTICE([hi $CXX])
 
 AC_OUTPUT

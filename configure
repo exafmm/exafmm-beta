@@ -2747,7 +2747,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  for ac_prog in xlc_r xlc fccpx fcc sxcc cc icc gcc
+  for ac_prog in xlc_r xlc fccpx fcc sxcc icc cc gcc
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -2791,7 +2791,7 @@ fi
 fi
 if test -z "$CC"; then
   ac_ct_CC=$CC
-  for ac_prog in xlc_r xlc fccpx fcc sxcc cc icc gcc
+  for ac_prog in xlc_r xlc fccpx fcc sxcc icc cc gcc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3598,7 +3598,7 @@ if test -z "$CXX"; then
     CXX=$CCC
   else
     if test -n "$ac_tool_prefix"; then
-  for ac_prog in xlC_r xlC FCCpx FCC sxc++ CC icpc g++
+  for ac_prog in xlC_r xlC FCCpx FCC sxc++ icpc CC g++
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -3642,7 +3642,7 @@ fi
 fi
 if test -z "$CXX"; then
   ac_ct_CXX=$CXX
-  for ac_prog in xlC_r xlC FCCpx FCC sxc++ CC icpc g++
+  for ac_prog in xlC_r xlC FCCpx FCC sxc++ icpc CC g++
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3978,7 +3978,7 @@ ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_fc_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  for ac_prog in xlf90_r xlf90 frtpx frt sxf90 ftn ifort gfortran
+  for ac_prog in xlf90_r xlf90 frtpx frt sxf90 ifort ftn gfortran
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -4022,7 +4022,7 @@ fi
 fi
 if test -z "$FC"; then
   ac_ct_FC=$FC
-  for ac_prog in xlf90_r xlf90 frtpx frt sxf90 ftn ifort gfortran
+  for ac_prog in xlf90_r xlf90 frtpx frt sxf90 ifort ftn gfortran
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5096,39 +5096,6 @@ $as_echo "#define EXAFMM_HAVE_SSE3 1" >>confdefs.h
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
         fi
-	if test "x$SSE3_CXXFLAGS" = x; then
-   	    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -$flag" >&5
-$as_echo_n "checking whether C compiler accepts -$flag... " >&6; }
-ax_save_FLAGS=$CFLAGS
-   CFLAGS="-$flag"
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  eval `$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`=yes
-else
-  eval `$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   CFLAGS=$ax_save_FLAGS
-eval ax_check_compiler_flags=$`$as_echo "ax_cv_c_flags_-$flag" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	SSE3_CXXFLAGS="-msse3"
-else
-	as_fn_error $? "Need a version of gcc with -msse3" "$LINENO" 5
-fi
-
-        fi
 fi
  if test "$have_sse3" = "yes"; then
   EXAFMM_HAVE_SSE3_TRUE=
@@ -5155,45 +5122,6 @@ $as_echo "#define EXAFMM_HAVE_AVX 1" >>confdefs.h
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 as_fn_error $? "AVX requires single or double precision" "$LINENO" 5
         fi
-	if test "x$AVX_CXXFLAGS" = x; then
-   	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx" >&5
-$as_echo_n "checking whether C compiler accepts -mavx... " >&6; }
-if ${ax_cv_c_flags__mavx+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-mavx"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__mavx=yes
-else
-  ax_cv_c_flags__mavx=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__mavx
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	AVX_CXXFLAGS="-mavx"
-else
-	as_fn_error $? "Need a version of gcc with -mavx" "$LINENO" 5
-fi
-
-	fi
 fi
  if test "$have_avx" = "yes"; then
   EXAFMM_HAVE_AVX_TRUE=
@@ -5220,45 +5148,6 @@ $as_echo "#define EXAFMM_HAVE_MIC 1" >>confdefs.h
         if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
                 as_fn_error $? "MIC requires single or double precision" "$LINENO" 5
         fi
-	if test "x$MIC_CXXFLAGS" = x; then
-   	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mmic" >&5
-$as_echo_n "checking whether C compiler accepts -mmic... " >&6; }
-if ${ax_cv_c_flags__mmic+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-mmic"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__mmic=yes
-else
-  ax_cv_c_flags__mmic=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__mmic
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	MIC_CXXFLAGS="-mmic"
-else
-	as_fn_error $? "Need a version of gcc with -mmic" "$LINENO" 5
-fi
-
-	fi
 fi
  if test "$have_mic" = "yes"; then
   EXAFMM_HAVE_MIC_TRUE=
@@ -5285,45 +5174,6 @@ $as_echo "#define EXAFMM_HAVE_NEON 1" >>confdefs.h
 
         if test "$PRECISION" != "s"; then
                 as_fn_error $? "NEON requires single precision" "$LINENO" 5
-        fi
-	if test "x$NEON_CXXFLAGS" = x; then
-   	   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mfpu=neon" >&5
-$as_echo_n "checking whether C compiler accepts -mfpu=neon... " >&6; }
-if ${ax_cv_c_flags__mfpu_neon+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-      ax_save_FLAGS=$CFLAGS
-      CFLAGS="-mfpu=neon"
-      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ax_cv_c_flags__mfpu_neon=yes
-else
-  ax_cv_c_flags__mfpu_neon=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-      CFLAGS=$ax_save_FLAGS
-fi
-
-eval ax_check_compiler_flags=$ax_cv_c_flags__mfpu_neon
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_check_compiler_flags" >&5
-$as_echo "$ax_check_compiler_flags" >&6; }
-if test "x$ax_check_compiler_flags" = xyes; then
-	NEON_CXXFLAGS="-mfpu=neon"
-else
-	as_fn_error $? "Need a version of gcc with -mfpu=neon" "$LINENO" 5
-fi
-
         fi
 fi
  if test "$have_neon" = "yes"; then
@@ -5556,6 +5406,8 @@ else
 fi
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: hi $CXX" >&5
+$as_echo "$as_me: hi $CXX" >&6;}
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
