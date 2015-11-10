@@ -1,4 +1,6 @@
 -- Immediate --
+buildbot: CXX override not working
+buildbot: CBRC, Shaheen error
 MPI overhaul
 
 -- MPI --
