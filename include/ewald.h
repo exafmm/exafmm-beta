@@ -32,8 +32,8 @@ namespace exafmm {
 	for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {   //  Loop over bodies
 	  real_t th = 0;                                        //   Initialize phase
 	  for (int d=0; d<3; d++) th += W->K[d] * B->X[d] * scale;//   Determine phase
-	  W->REAL += B->SRC * cos(th);                          //   Accumulate real component
-	  W->IMAG += B->SRC * sin(th);                          //   Accumulate imaginary component
+	  W->REAL += B->SRC * std::cos(th);                     //   Accumulate real component
+	  W->IMAG += B->SRC * std::sin(th);                     //   Accumulate imaginary component
 	}                                                       //  End loop over bodies
       }                                                         // End loop over waves
     }
@@ -48,8 +48,8 @@ namespace exafmm {
 	for (W_iter W=waves.begin(); W!=waves.end(); W++) {     //   Loop over waves
 	  real_t th = 0;                                        //    Initialzie phase
 	  for (int d=0; d<3; d++) th += W->K[d] * B->X[d] * scale;//    Determine phase
-	  real_t dtmp = W->REAL * sin(th) - W->IMAG * cos(th);  //    Temporary value
-	  TRG[0]     += W->REAL * cos(th) + W->IMAG * sin(th);  //    Accumulate potential
+	  real_t dtmp = W->REAL * std::sin(th) - W->IMAG * std::cos(th);  //    Temporary value
+	  TRG[0]     += W->REAL * std::cos(th) + W->IMAG * std::sin(th);  //    Accumulate potential
 	  for (int d=0; d<3; d++) TRG[d+1] -= dtmp * W->K[d];   //    Accumulate force
 	}                                                       //   End loop over waves
 	for (int d=0; d<3; d++) TRG[d+1] *= scale;              //   Scale forces
