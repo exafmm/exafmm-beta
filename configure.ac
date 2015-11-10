@@ -17,6 +17,9 @@ AC_ARG_ENABLE(openmp, [AC_HELP_STRING([--enable-openmp],[use OpenMP])], enable_o
 if test "$enable_openmp" = "yes"; then
    AC_DEFINE(EXAFMM_HAVE_OPENMP,1,[Use OpenMP])
    AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP])])
+   AC_LANG_PUSH([Fortran])
+   AX_OPENMP([], [AC_MSG_ERROR([don't know how to enable OpenMP])])
+   AC_LANG_POP([Fortran])
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_OPENMP, test "$enable_openmp" = "yes")
 
@@ -189,6 +192,7 @@ AM_CONDITIONAL(EXAFMM_DEBUG, test "$enable_debug" = "yes")
 AC_MSG_NOTICE([CXX = $CXX])
 AC_MSG_NOTICE([FC  = $FC])
 
+# BlueGene/Q
 case "$CXX" in
      xlC_r*) have_bg=yes;;
      xlC*) have_bg=yes;;
@@ -197,6 +201,8 @@ case "$CXX" in
      *) have_bg=no;;
 esac
 AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$have_bg" = "yes")
+
+# Fujitsu FX*
 case "$CXX" in
      FCCpx*) have_fx=yes;;
      FCC*) have_fx=yes;;
@@ -205,23 +211,31 @@ case "$CXX" in
      *) have_fx=no;;
 esac
 AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$have_fx" = "yes")
+
+# NEC SX*
 case "$CXX" in
      sxc++*) have_sx=yes;;
      sxmpic++*) have_sx=yes;;
      *) have_sx=no;;
 esac
 AM_CONDITIONAL(EXAFMM_HAVE_SX, test "$have_sx" = "yes")
+
+# Cray XC*
 case "$CXX" in
      CC*) have_cray=yes;;
      *) have_cray=no;;
 esac
 AM_CONDITIONAL(EXAFMM_HAVE_CRAY, test "$have_cray" = "yes")
+
+# Intel
 case "$CXX" in
      icpc*) have_intel=yes;;
      mpiicpc*) have_intel=yes;;
      *) have_intel=no;;
 esac
 AM_CONDITIONAL(EXAFMM_HAVE_INTEL, test "$have_intel" = "yes")
+
+# GNU
 case "$CXX" in
      g++*) have_gnu=yes;;
      mpicxx*) have_gnu=yes;;

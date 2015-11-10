@@ -96,7 +96,7 @@ namespace exafmm {
 	    real_t invRs = 1 / Rs;                              //    1 / (R * alpha)
 	    real_t invR2s = invRs * invRs;                      //    1 / (R * alpha)^2
 	    real_t invR3s = invR2s * invRs;                     //    1 / (R * alpha)^3
-	    real_t dtmp = Bj->SRC * (M_2_SQRTPI * exp(-R2s) * invR2s + erfc(Rs) * invR3s);
+	    real_t dtmp = Bj->SRC * (M_2_SQRTPI * std::exp(-R2s) * invR2s + erfc(Rs) * invR3s);
 	    dtmp *= alpha * alpha * alpha;                      //    Scale temporary value
 	    Bi->TRG[0] += Bj->SRC * erfc(Rs) * invRs * alpha;   //    Ewald real potential
 	    Bi->TRG[1] -= dX[0] * dtmp;                         //    x component of Ewald real force
@@ -167,7 +167,7 @@ namespace exafmm {
       real_t coef2 = scale * scale / (4 * alpha * alpha);       // Second constant
       for (W_iter W=waves.begin(); W!=waves.end(); W++) {       // Loop over waves
 	real_t K2 = norm(W->K);                                 //  Wave number squared
-	real_t factor = coef * exp(-K2 * coef2) / K2;           //  Wave factor
+	real_t factor = coef * std::exp(-K2 * coef2) / K2;      //  Wave factor
 	W->REAL *= factor;                                      //  Apply wave factor to real part
 	W->IMAG *= factor;                                      //  Apply wave factor to imaginary part
       }                                                         // End loop over waves
