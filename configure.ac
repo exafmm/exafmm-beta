@@ -188,21 +188,46 @@ AM_CONDITIONAL(EXAFMM_DEBUG, test "$enable_debug" = "yes")
 
 AC_MSG_NOTICE([CXX = $CXX])
 AC_MSG_NOTICE([FC  = $FC])
-AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$CXX" = "xlC_r")
-AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$CXX" = "xlC")
-AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$CXX" = "mpxlC_r")
-AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$CXX" = "mpxlC")
-AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$CXX" = "FCCpx")
-AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$CXX" = "FCC")
-AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$CXX" = "mpiFCCpx")
-AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$CXX" = "mpiFCC")
-AM_CONDITIONAL(EXAFMM_HAVE_SX, test "$CXX" = "sxc++")
-AM_CONDITIONAL(EXAFMM_HAVE_SX, test "$CXX" = "sxmpic++")
-AM_CONDITIONAL(EXAFMM_HAVE_CRAY, test "$CXX" = "CC")
-AM_CONDITIONAL(EXAFMM_HAVE_INTEL, test "$CXX" = "icpc")
-AM_CONDITIONAL(EXAFMM_HAVE_INTEL, test "$CXX" = "mpiicpc")
-AM_CONDITIONAL(EXAFMM_HAVE_GCC, test "$CXX" = "g++")
-AM_CONDITIONAL(EXAFMM_HAVE_GCC, test "$CXX" = "mpicxx")
-AM_CONDITIONAL(EXAFMM_HAVE_GCC, test "$CXX" = "mpic++")
+
+case "$CXX" in
+     xlC_r*) have_bg=yes;;
+     xlC*) have_bg=yes;;
+     mpxlC_r*) have_bg=yes;;
+     mpxlC*) have_bg=yes;;
+     *) have_bg=no;;
+esac
+AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$have_bg" = "yes")
+case "$CXX" in
+     FCCpx*) have_fx=yes;;
+     FCC*) have_fx=yes;;
+     mpiFCCpx*) have_fx=yes;;
+     mpiFCC*) have_fx=yes;;
+     *) have_fx=no;;
+esac
+AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$have_fx" = "yes")
+case "$CXX" in
+     sxc++*) have_sx=yes;;
+     sxmpic++*) have_sx=yes;;
+     *) have_sx=no;;
+esac
+AM_CONDITIONAL(EXAFMM_HAVE_SX, test "$have_sx" = "yes")
+case "$CXX" in
+     CC*) have_cray=yes;;
+     *) have_cray=no;;
+esac
+AM_CONDITIONAL(EXAFMM_HAVE_CRAY, test "$have_cray" = "yes")
+case "$CXX" in
+     icpc*) have_intel=yes;;
+     mpiicpc*) have_intel=yes;;
+     *) have_intel=no;;
+esac
+AM_CONDITIONAL(EXAFMM_HAVE_INTEL, test "$have_intel" = "yes")
+case "$CXX" in
+     g++*) have_gnu=yes;;
+     mpicxx*) have_gnu=yes;;
+     mpic++*) have_gnu=yes;;
+     *) have_gnu=no;;
+esac
+AM_CONDITIONAL(EXAFMM_HAVE_GNU, test "$have_gnu" = "yes")
 
 AC_OUTPUT

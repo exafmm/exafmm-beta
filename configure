@@ -586,8 +586,8 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
-EXAFMM_HAVE_GCC_FALSE
-EXAFMM_HAVE_GCC_TRUE
+EXAFMM_HAVE_GNU_FALSE
+EXAFMM_HAVE_GNU_TRUE
 EXAFMM_HAVE_INTEL_FALSE
 EXAFMM_HAVE_INTEL_TRUE
 EXAFMM_HAVE_CRAY_FALSE
@@ -5570,7 +5570,15 @@ fi
 $as_echo "$as_me: CXX = $CXX" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: FC  = $FC" >&5
 $as_echo "$as_me: FC  = $FC" >&6;}
- if test "$CXX" = "xlC_r"; then
+
+case "$CXX" in
+     xlC_r*) have_bg=yes;;
+     xlC*) have_bg=yes;;
+     mpxlC_r*) have_bg=yes;;
+     mpxlC*) have_bg=yes;;
+     *) have_bg=no;;
+esac
+ if test "$have_bg" = "yes"; then
   EXAFMM_HAVE_BG_TRUE=
   EXAFMM_HAVE_BG_FALSE='#'
 else
@@ -5578,31 +5586,14 @@ else
   EXAFMM_HAVE_BG_FALSE=
 fi
 
- if test "$CXX" = "xlC"; then
-  EXAFMM_HAVE_BG_TRUE=
-  EXAFMM_HAVE_BG_FALSE='#'
-else
-  EXAFMM_HAVE_BG_TRUE='#'
-  EXAFMM_HAVE_BG_FALSE=
-fi
-
- if test "$CXX" = "mpxlC_r"; then
-  EXAFMM_HAVE_BG_TRUE=
-  EXAFMM_HAVE_BG_FALSE='#'
-else
-  EXAFMM_HAVE_BG_TRUE='#'
-  EXAFMM_HAVE_BG_FALSE=
-fi
-
- if test "$CXX" = "mpxlC"; then
-  EXAFMM_HAVE_BG_TRUE=
-  EXAFMM_HAVE_BG_FALSE='#'
-else
-  EXAFMM_HAVE_BG_TRUE='#'
-  EXAFMM_HAVE_BG_FALSE=
-fi
-
- if test "$CXX" = "FCCpx"; then
+case "$CXX" in
+     FCCpx*) have_fx=yes;;
+     FCC*) have_fx=yes;;
+     mpiFCCpx*) have_fx=yes;;
+     mpiFCC*) have_fx=yes;;
+     *) have_fx=no;;
+esac
+ if test "$have_fx" = "yes"; then
   EXAFMM_HAVE_FX_TRUE=
   EXAFMM_HAVE_FX_FALSE='#'
 else
@@ -5610,31 +5601,12 @@ else
   EXAFMM_HAVE_FX_FALSE=
 fi
 
- if test "$CXX" = "FCC"; then
-  EXAFMM_HAVE_FX_TRUE=
-  EXAFMM_HAVE_FX_FALSE='#'
-else
-  EXAFMM_HAVE_FX_TRUE='#'
-  EXAFMM_HAVE_FX_FALSE=
-fi
-
- if test "$CXX" = "mpiFCCpx"; then
-  EXAFMM_HAVE_FX_TRUE=
-  EXAFMM_HAVE_FX_FALSE='#'
-else
-  EXAFMM_HAVE_FX_TRUE='#'
-  EXAFMM_HAVE_FX_FALSE=
-fi
-
- if test "$CXX" = "mpiFCC"; then
-  EXAFMM_HAVE_FX_TRUE=
-  EXAFMM_HAVE_FX_FALSE='#'
-else
-  EXAFMM_HAVE_FX_TRUE='#'
-  EXAFMM_HAVE_FX_FALSE=
-fi
-
- if test "$CXX" = "sxc++"; then
+case "$CXX" in
+     sxc++*) have_sx=yes;;
+     sxmpic++*) have_sx=yes;;
+     *) have_sx=no;;
+esac
+ if test "$have_sx" = "yes"; then
   EXAFMM_HAVE_SX_TRUE=
   EXAFMM_HAVE_SX_FALSE='#'
 else
@@ -5642,15 +5614,11 @@ else
   EXAFMM_HAVE_SX_FALSE=
 fi
 
- if test "$CXX" = "sxmpic++"; then
-  EXAFMM_HAVE_SX_TRUE=
-  EXAFMM_HAVE_SX_FALSE='#'
-else
-  EXAFMM_HAVE_SX_TRUE='#'
-  EXAFMM_HAVE_SX_FALSE=
-fi
-
- if test "$CXX" = "CC"; then
+case "$CXX" in
+     CC*) have_cray=yes;;
+     *) have_cray=no;;
+esac
+ if test "$have_cray" = "yes"; then
   EXAFMM_HAVE_CRAY_TRUE=
   EXAFMM_HAVE_CRAY_FALSE='#'
 else
@@ -5658,7 +5626,12 @@ else
   EXAFMM_HAVE_CRAY_FALSE=
 fi
 
- if test "$CXX" = "icpc"; then
+case "$CXX" in
+     icpc*) have_intel=yes;;
+     mpiicpc*) have_intel=yes;;
+     *) have_intel=no;;
+esac
+ if test "$have_intel" = "yes"; then
   EXAFMM_HAVE_INTEL_TRUE=
   EXAFMM_HAVE_INTEL_FALSE='#'
 else
@@ -5666,36 +5639,18 @@ else
   EXAFMM_HAVE_INTEL_FALSE=
 fi
 
- if test "$CXX" = "mpiicpc"; then
-  EXAFMM_HAVE_INTEL_TRUE=
-  EXAFMM_HAVE_INTEL_FALSE='#'
+case "$CXX" in
+     g++*) have_gnu=yes;;
+     mpicxx*) have_gnu=yes;;
+     mpic++*) have_gnu=yes;;
+     *) have_gnu=no;;
+esac
+ if test "$have_gnu" = "yes"; then
+  EXAFMM_HAVE_GNU_TRUE=
+  EXAFMM_HAVE_GNU_FALSE='#'
 else
-  EXAFMM_HAVE_INTEL_TRUE='#'
-  EXAFMM_HAVE_INTEL_FALSE=
-fi
-
- if test "$CXX" = "g++"; then
-  EXAFMM_HAVE_GCC_TRUE=
-  EXAFMM_HAVE_GCC_FALSE='#'
-else
-  EXAFMM_HAVE_GCC_TRUE='#'
-  EXAFMM_HAVE_GCC_FALSE=
-fi
-
- if test "$CXX" = "mpicxx"; then
-  EXAFMM_HAVE_GCC_TRUE=
-  EXAFMM_HAVE_GCC_FALSE='#'
-else
-  EXAFMM_HAVE_GCC_TRUE='#'
-  EXAFMM_HAVE_GCC_FALSE=
-fi
-
- if test "$CXX" = "mpic++"; then
-  EXAFMM_HAVE_GCC_TRUE=
-  EXAFMM_HAVE_GCC_FALSE='#'
-else
-  EXAFMM_HAVE_GCC_TRUE='#'
-  EXAFMM_HAVE_GCC_FALSE=
+  EXAFMM_HAVE_GNU_TRUE='#'
+  EXAFMM_HAVE_GNU_FALSE=
 fi
 
 
@@ -5928,36 +5883,8 @@ if test -z "${EXAFMM_HAVE_BG_TRUE}" && test -z "${EXAFMM_HAVE_BG_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_HAVE_BG\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${EXAFMM_HAVE_BG_TRUE}" && test -z "${EXAFMM_HAVE_BG_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_BG\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_BG_TRUE}" && test -z "${EXAFMM_HAVE_BG_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_BG\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_BG_TRUE}" && test -z "${EXAFMM_HAVE_BG_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_BG\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${EXAFMM_HAVE_FX_TRUE}" && test -z "${EXAFMM_HAVE_FX_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_HAVE_FX\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_FX_TRUE}" && test -z "${EXAFMM_HAVE_FX_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_FX\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_FX_TRUE}" && test -z "${EXAFMM_HAVE_FX_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_FX\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_FX_TRUE}" && test -z "${EXAFMM_HAVE_FX_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_FX\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_SX_TRUE}" && test -z "${EXAFMM_HAVE_SX_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_SX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_SX_TRUE}" && test -z "${EXAFMM_HAVE_SX_FALSE}"; then
@@ -5972,20 +5899,8 @@ if test -z "${EXAFMM_HAVE_INTEL_TRUE}" && test -z "${EXAFMM_HAVE_INTEL_FALSE}"; 
   as_fn_error $? "conditional \"EXAFMM_HAVE_INTEL\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${EXAFMM_HAVE_INTEL_TRUE}" && test -z "${EXAFMM_HAVE_INTEL_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_INTEL\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_GCC_TRUE}" && test -z "${EXAFMM_HAVE_GCC_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_GCC\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_GCC_TRUE}" && test -z "${EXAFMM_HAVE_GCC_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_GCC\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${EXAFMM_HAVE_GCC_TRUE}" && test -z "${EXAFMM_HAVE_GCC_FALSE}"; then
-  as_fn_error $? "conditional \"EXAFMM_HAVE_GCC\" was never defined.
+if test -z "${EXAFMM_HAVE_GNU_TRUE}" && test -z "${EXAFMM_HAVE_GNU_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_HAVE_GNU\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
