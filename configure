@@ -4956,9 +4956,9 @@ if test "$ok" = "yes"; then
 
 $as_echo "#define EXAFMM_SINGLE 1" >>confdefs.h
 
-        PRECISION=s
+   PRECISION=s
 else
-        PRECISION=d
+   PRECISION=d
 fi
  if test "$ok" = "yes"; then
   EXAFMM_SINGLE_TRUE=
@@ -5360,9 +5360,9 @@ if test "$have_sse3" = "yes"; then
 
 $as_echo "#define EXAFMM_HAVE_SSE3 1" >>confdefs.h
 
-        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
-                as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
-        fi
+   if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+      as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
+   fi
 fi
  if test "$have_sse3" = "yes"; then
   EXAFMM_HAVE_SSE3_TRUE=
@@ -5386,9 +5386,9 @@ if test "$have_avx" = "yes"; then
 
 $as_echo "#define EXAFMM_HAVE_AVX 1" >>confdefs.h
 
-        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
-                as_fn_error $? "AVX requires single or double precision" "$LINENO" 5
-        fi
+   if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+      as_fn_error $? "AVX requires single or double precision" "$LINENO" 5
+   fi
 fi
  if test "$have_avx" = "yes"; then
   EXAFMM_HAVE_AVX_TRUE=
@@ -5412,9 +5412,9 @@ if test "$have_mic" = "yes"; then
 
 $as_echo "#define EXAFMM_HAVE_MIC 1" >>confdefs.h
 
-        if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
-                as_fn_error $? "MIC requires single or double precision" "$LINENO" 5
-        fi
+   if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
+      as_fn_error $? "MIC requires single or double precision" "$LINENO" 5
+   fi
 fi
  if test "$have_mic" = "yes"; then
   EXAFMM_HAVE_MIC_TRUE=
@@ -5439,9 +5439,9 @@ if test "$have_neon" = "yes"; then
 
 $as_echo "#define EXAFMM_HAVE_NEON 1" >>confdefs.h
 
-        if test "$PRECISION" != "s"; then
-                as_fn_error $? "NEON requires single precision" "$LINENO" 5
-        fi
+   if test "$PRECISION" != "s"; then
+      as_fn_error $? "NEON requires single precision" "$LINENO" 5
+   fi
 fi
  if test "$have_neon" = "yes"; then
   EXAFMM_HAVE_NEON_TRUE=
