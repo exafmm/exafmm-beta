@@ -241,6 +241,9 @@ namespace exafmm {
 	    bounds.Xmin[d] = allBoundsXmin[irank][d];           //    Local Xmin for irank
 	    bounds.Xmax[d] = allBoundsXmax[irank][d];           //    Local Xmax for irank
 	  }                                                     //   End loop over dimensions
+	  if (C0->NCHILD == 0) {                                //   If root cell is leaf
+	    addSendBody(C0, irank, ibody, icell-1, false);      //    Add bodies to send
+	  }                                                     //   End if for root cell leaf
 	  traverseLET(C0, C0, bounds, cycle, irank, ibody, icell, 0, false); // Traverse tree to set LET
 	  sendBodyCount[irank] = ibody;                         //   Send body count for current rank
 	  sendCellCount[irank] = icell;                         //   Send cell count for current rank
@@ -252,6 +255,7 @@ namespace exafmm {
       int numSendCells = sendCellDispl[mpisize-1] + sendCellCount[mpisize-1];// Total number of send cells
       sendBodies.resize(numSendBodies);                         // Clear send buffer for bodies
       sendCells.resize(numSendCells);                           // Clear send buffer for cells
+      MPI_Barrier(MPI_COMM_WORLD);
       for (int irank=0; irank<mpisize; irank++) {               // Loop over ranks
 	if (irank != mpirank && !cells.empty()) {               //  If not current rank and cell vector is not empty
 	  int ibody = 0;                                        //   Reinitialize send body's offset

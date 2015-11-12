@@ -812,7 +812,7 @@ program main
         fgscale(i) = gscale(i)
      enddo
   endif charmmio
-  print*,'I/O done'
+  if (mpirank == 0) print*,'I/O done'
   ista = 1
   iend = nglobal / 3
   call split_range(ista,iend,mpirank,mpisize)
@@ -821,11 +821,11 @@ program main
   do i = ista,iend
      icpumap(i) = 1
   enddo
-  print*,'FMM init'
+  if (mpirank == 0) print*,'FMM init'
   call fmm_init(images,theta,verbose,nglobal)
-  print*,'FMM partition'
+  if (mpirank == 0) print*,'FMM partition'
   call fmm_partition(nglobal,icpumap,x,q,v,pcycle)
-  print*,'FMM Coulomb'
+  if (mpirank == 0) print*,'FMM Coulomb'
   call fmm_coulomb(nglobal,icpumap,x,q,p,f,pcycle)
   do i = 1,nglobal
      p2(i) = 0
@@ -834,10 +834,10 @@ program main
      f2(3*i-0) = 0
   enddo
   cutoff = 20
-  print*,'Ewald Coulomb'
+  if (mpirank == 0) print*,'Ewald Coulomb'
   call ewald_coulomb(nglobal,icpumap,x,q,p2,f2,ksize,alpha,sigma,cutoff,pcycle)
 !  call direct_coulomb(nglobal,icpumap,x,q,p2,f2,pcycle)
-  print*,'Coulomb exclusion'
+  if(mpirank == 0) print*,'Coulomb exclusion'
   call coulomb_exclusion(nglobal,icpumap,x,q,p,f,pcycle,numex,natex)
   call coulomb_exclusion(nglobal,icpumap,x,q,p2,f2,pcycle,numex,natex)
 
