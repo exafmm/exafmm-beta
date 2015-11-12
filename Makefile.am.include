@@ -77,6 +77,11 @@ endif
 endif
 endif
 
+# OpenMPI needs an extra library when linking with Fortran
+if EXAFMM_HAVE_MPI
+LIBS += $(OPENMPILIBS)
+endif
+
 # Kahan summation
 if EXAFMM_USE_KAHAN
 AM_CPPFLAGS += -DEXAFMM_USE_KAHAN

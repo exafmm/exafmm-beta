@@ -98,8 +98,9 @@ if test x = x"$MPILIBS"; then
    AC_CHECK_LIB(fmpi, MPI_Init, [MPILIBS="-lfmpi"])
    AC_CHECK_LIB(mpichf90, MPI_Init, [MPILIBS="-lmpichf90"])
 fi
-
+AC_CHECK_LIB(mpi_cxx, MPI_Init, [OPENMPILIBS="-lmpi_cxx"])
 AC_SUBST(MPILIBS)
+AC_SUBST(OPENMPILIBS)
 
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
 if test x = x"$MPILIBS"; then
