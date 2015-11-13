@@ -189,6 +189,10 @@ if test "$enable_debug" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_DEBUG, test "$enable_debug" = "yes")
 
+AC_LANG_PUSH([C++])
+AX_COMPILER_VENDOR()
+AC_LANG_POP([C++])
+AC_MSG_NOTICE([$ax_cv_cxx_compiler_vendor])
 AC_MSG_NOTICE([CXX = $CXX])
 AC_MSG_NOTICE([FC  = $FC])
 
