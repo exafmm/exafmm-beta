@@ -20,12 +20,17 @@ if EXAFMM_HAVE_INTEL
 AM_CXXFLAGS = -ansi_alias -fabi-version=6
 AM_FCFLAGS = -ansi_alias
 else
+if EXAFMM_HAVE_CLANG
+AM_CXXFLAGS = -ffast-math -funroll-loops
+AM_FCFLAGS = -ffast-math -funroll-loops
+else
 if EXAFMM_HAVE_GNU
 AM_CXXFLAGS = -ffast-math -funroll-loops -fabi-version=6
 AM_FCFLAGS = -ffast-math -funroll-loops
 else
 AM_CXXFLAGS =
 AM_FCFLAGS =
+endif
 endif
 endif
 endif
