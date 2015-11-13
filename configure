@@ -588,6 +588,8 @@ LTLIBOBJS
 LIBOBJS
 EXAFMM_HAVE_GNU_FALSE
 EXAFMM_HAVE_GNU_TRUE
+EXAFMM_HAVE_CLANG_FALSE
+EXAFMM_HAVE_CLANG_TRUE
 EXAFMM_HAVE_INTEL_FALSE
 EXAFMM_HAVE_INTEL_TRUE
 EXAFMM_HAVE_CRAY_FALSE
@@ -5745,6 +5747,7 @@ else
            metrowerks: __MWERKS__
            watcom:    __WATCOMC__
            portland:  __PGI
+	   nec:       _SX
 	   tcc:       __TINYC__
            unknown:   UNKNOWN"
   for ventest in $vendors; do
@@ -5784,22 +5787,14 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: $ax_cv_cxx_compiler_vendor" >&5
-$as_echo "$as_me: $ax_cv_cxx_compiler_vendor" >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}: CXX = $CXX" >&5
-$as_echo "$as_me: CXX = $CXX" >&6;}
-{ $as_echo "$as_me:${as_lineno-$LINENO}: FC  = $FC" >&5
-$as_echo "$as_me: FC  = $FC" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: CXX    : $CXX" >&5
+$as_echo "$as_me: CXX    : $CXX" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: FC     : $FC" >&5
+$as_echo "$as_me: FC     : $FC" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: Vendor : $ax_cv_cxx_compiler_vendor" >&5
+$as_echo "$as_me: Vendor : $ax_cv_cxx_compiler_vendor" >&6;}
 
-# BlueGene/Q
-case "$CXX" in
-     xlC_r*) have_bg=yes;;
-     xlC*) have_bg=yes;;
-     mpxlC_r*) have_bg=yes;;
-     mpxlC*) have_bg=yes;;
-     *) have_bg=no;;
-esac
- if test "$have_bg" = "yes"; then
+ if test "$ax_cv_cxx_compiler_vendor" = "ibm"; then
   EXAFMM_HAVE_BG_TRUE=
   EXAFMM_HAVE_BG_FALSE='#'
 else
@@ -5807,16 +5802,7 @@ else
   EXAFMM_HAVE_BG_FALSE=
 fi
 
-
-# Fujitsu FX*
-case "$CXX" in
-     FCCpx*) have_fx=yes;;
-     FCC*) have_fx=yes;;
-     mpiFCCpx*) have_fx=yes;;
-     mpiFCC*) have_fx=yes;;
-     *) have_fx=no;;
-esac
- if test "$have_fx" = "yes"; then
+ if test "$ax_cv_cxx_compiler_vendor" = "fujitsu"; then
   EXAFMM_HAVE_FX_TRUE=
   EXAFMM_HAVE_FX_FALSE='#'
 else
@@ -5824,14 +5810,7 @@ else
   EXAFMM_HAVE_FX_FALSE=
 fi
 
-
-# NEC SX*
-case "$CXX" in
-     sxc++*) have_sx=yes;;
-     sxmpic++*) have_sx=yes;;
-     *) have_sx=no;;
-esac
- if test "$have_sx" = "yes"; then
+ if test "$ax_cv_cxx_compiler_vendor" = "nec"; then
   EXAFMM_HAVE_SX_TRUE=
   EXAFMM_HAVE_SX_FALSE='#'
 else
@@ -5839,13 +5818,7 @@ else
   EXAFMM_HAVE_SX_FALSE=
 fi
 
-
-# Cray XC*
-case "$CXX" in
-     CC*) have_cray=yes;;
-     *) have_cray=no;;
-esac
- if test "$have_cray" = "yes"; then
+ if test "$ax_cv_cxx_compiler_vendor" = "cray"; then
   EXAFMM_HAVE_CRAY_TRUE=
   EXAFMM_HAVE_CRAY_FALSE='#'
 else
@@ -5853,14 +5826,7 @@ else
   EXAFMM_HAVE_CRAY_FALSE=
 fi
 
-
-# Intel
-case "$CXX" in
-     icpc*) have_intel=yes;;
-     mpiicpc*) have_intel=yes;;
-     *) have_intel=no;;
-esac
- if test "$have_intel" = "yes"; then
+ if test "$ax_cv_cxx_compiler_vendor" = "intel"; then
   EXAFMM_HAVE_INTEL_TRUE=
   EXAFMM_HAVE_INTEL_FALSE='#'
 else
@@ -5868,15 +5834,15 @@ else
   EXAFMM_HAVE_INTEL_FALSE=
 fi
 
+ if test "$ax_cv_cxx_compiler_vendor" = "clang"; then
+  EXAFMM_HAVE_CLANG_TRUE=
+  EXAFMM_HAVE_CLANG_FALSE='#'
+else
+  EXAFMM_HAVE_CLANG_TRUE='#'
+  EXAFMM_HAVE_CLANG_FALSE=
+fi
 
-# GNU
-case "$CXX" in
-     g++*) have_gnu=yes;;
-     mpicxx*) have_gnu=yes;;
-     mpic++*) have_gnu=yes;;
-     *) have_gnu=no;;
-esac
- if test "$have_gnu" = "yes"; then
+ if test "$ax_cv_cxx_compiler_vendor" = "gnu"; then
   EXAFMM_HAVE_GNU_TRUE=
   EXAFMM_HAVE_GNU_FALSE='#'
 else
@@ -6128,6 +6094,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_INTEL_TRUE}" && test -z "${EXAFMM_HAVE_INTEL_FALSE}"; then
   as_fn_error $? "conditional \"EXAFMM_HAVE_INTEL\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${EXAFMM_HAVE_CLANG_TRUE}" && test -z "${EXAFMM_HAVE_CLANG_FALSE}"; then
+  as_fn_error $? "conditional \"EXAFMM_HAVE_CLANG\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${EXAFMM_HAVE_GNU_TRUE}" && test -z "${EXAFMM_HAVE_GNU_FALSE}"; then
