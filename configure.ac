@@ -196,56 +196,12 @@ AC_MSG_NOTICE([CXX    : $CXX])
 AC_MSG_NOTICE([FC     : $FC])
 AC_MSG_NOTICE([Vendor : $ax_cv_cxx_compiler_vendor])
 
-# BlueGene/Q
-case "$CXX" in
-     xlC_r*) have_bg=yes;;
-     xlC*) have_bg=yes;;
-     mpxlC_r*) have_bg=yes;;
-     mpxlC*) have_bg=yes;;
-     *) have_bg=no;;
-esac
-AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$have_bg" = "yes")
-
-# Fujitsu FX*
-case "$CXX" in
-     FCCpx*) have_fx=yes;;
-     FCC*) have_fx=yes;;
-     mpiFCCpx*) have_fx=yes;;
-     mpiFCC*) have_fx=yes;;
-     *) have_fx=no;;
-esac
-AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$have_fx" = "yes")
-
-# NEC SX*
-case "$CXX" in
-     sxc++*) have_sx=yes;;
-     sxmpic++*) have_sx=yes;;
-     *) have_sx=no;;
-esac
-AM_CONDITIONAL(EXAFMM_HAVE_SX, test "$have_sx" = "yes")
-
-# Cray XC*
-case "$CXX" in
-     CC*) have_cray=yes;;
-     *) have_cray=no;;
-esac
-AM_CONDITIONAL(EXAFMM_HAVE_CRAY, test "$have_cray" = "yes")
-
-# Intel
-case "$CXX" in
-     icpc*) have_intel=yes;;
-     mpiicpc*) have_intel=yes;;
-     *) have_intel=no;;
-esac
-AM_CONDITIONAL(EXAFMM_HAVE_INTEL, test "$have_intel" = "yes")
-
-# GNU
-case "$CXX" in
-     g++*) have_gnu=yes;;
-     mpicxx*) have_gnu=yes;;
-     mpic++*) have_gnu=yes;;
-     *) have_gnu=no;;
-esac
-AM_CONDITIONAL(EXAFMM_HAVE_GNU, test "$have_gnu" = "yes")
+AM_CONDITIONAL(EXAFMM_HAVE_BG, test "$ax_cv_cxx_compiler_vendor" = "ibm")
+AM_CONDITIONAL(EXAFMM_HAVE_FX, test "$ax_cv_cxx_compiler_vendor" = "fujitsu")
+AM_CONDITIONAL(EXAFMM_HAVE_SX, test "$ax_cv_cxx_compiler_vendor" = "nec")
+AM_CONDITIONAL(EXAFMM_HAVE_CRAY, test "$ax_cv_cxx_compiler_vendor" = "cray")
+AM_CONDITIONAL(EXAFMM_HAVE_INTEL, test "$ax_cv_cxx_compiler_vendor" = "intel")
+AM_CONDITIONAL(EXAFMM_HAVE_CLANG, test "$ax_cv_cxx_compiler_vendor" = "clang")
+AM_CONDITIONAL(EXAFMM_HAVE_GNU, test "$ax_cv_cxx_compiler_vendor" = "gnu")
 
 AC_OUTPUT
