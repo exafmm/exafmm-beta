@@ -1,7 +1,16 @@
 -- Immediate --
-buildbot: CXX override not working
-buildbot: CBRC, Shaheen error
-MPI overhaul
+Complie all P during make -> provide option to make for specific P value
+Theoretical error bound using kernel.cxx
+Accuracy check in examples
+buildbot MPI test
+MPI returns NaN on some machines
+turn off MPI debugging mode
+buildbot CHARMM test
+figure out which machine to run the MPI benchmarking
+benchmark against uniform
+Use performance analyzer
+performance regression
+merge partition and treeMPI
 
 -- MPI --
 LBT MPI <- ICELL is being calculated from localBounds
@@ -61,7 +70,7 @@ MPI Bonsai
 Ewald, VdW
 Zero softening
 
--- Comparisons --
+-- comparisons --
 DTT vs. UVWX-list
 Separate +- tree vs. Single tree
 Cartesian vs. Spherical vs. Planewave
@@ -70,4 +79,4 @@ OpenMP vs. TBB vs. Cilk vs. MThreads
 Geometric vs. Algebraic Mat-Vec
 
 -- documentation --
-ipython notebook tutorial
+ipython notebook tutorial (from Andreas)

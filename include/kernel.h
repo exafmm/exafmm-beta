@@ -11,7 +11,6 @@ namespace exafmm {
 
     void setup();                                               //!< Setup phase for kernels
     void P2P(C_iter Ci, C_iter Cj, bool mutual);                //!< P2P kernel between cells Ci and Cj
-    void P2P(C_iter Ci, C_iter Cj);                             //!< P2P kernel between cells Ci and Cj for direct summation
     void P2P(C_iter C);                                         //!< P2P kernel for cell C
     void P2M(C_iter C);                                         //!< P2M kernel for cell C
     void M2M(C_iter Ci, C_iter C0);                             //!< M2M kernel for one parent cell Ci
