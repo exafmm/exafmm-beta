@@ -13,7 +13,7 @@ AM_CXXFLAGS = -Nacct
 AM_FCFLAGS = -Nacct
 else
 if EXAFMM_HAVE_CRAY
-AM_CXXFLAGS = -dynamic -fabi-version=6
+AM_CXXFLAGS = -dynamic
 AM_FCFLAGS = -dynamic
 else
 if EXAFMM_HAVE_INTEL
