@@ -130,7 +130,7 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
     xb[i] = B->X[0];
     yb[i] = B->X[1];
     zb[i] = B->X[2];
-    vb[i] = B->SRC;
+    vb[i] = std::real(B->SRC);
     B->IBODY = i;
   }
   nv = vbodies.size();
@@ -139,7 +139,7 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
     xv[i] = B->X[0];
     yv[i] = B->X[1];
     zv[i] = B->X[2];
-    vv[i] = B->SRC;
+    vv[i] = std::real(B->SRC);
     B->IBODY = i;
   }
 }
@@ -181,7 +181,7 @@ extern "C" void FMM_B2B(double * vi, double * vb, bool verbose) {
   upDownPass->downwardPass(bcells);
   log_finalize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-    vi[B->IBODY] += B->TRG[0];
+    vi[B->IBODY] += std::real(B->TRG[0]);
   }
 }
 
@@ -220,7 +220,7 @@ extern "C" void FMM_V2B(double * vb, double * vv, bool verbose) {
   upDownPass->downwardPass(bcells);
   log_finalize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
-    vb[B->IBODY] += B->TRG[0];
+    vb[B->IBODY] += std::real(B->TRG[0]);
   }
 }
 
@@ -259,7 +259,7 @@ extern "C" void FMM_B2V(double * vv, double * vb, bool verbose) {
   upDownPass->downwardPass(vcells);
   log_finalize();
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
-    vv[B->IBODY] += B->TRG[0];
+    vv[B->IBODY] += std::real(B->TRG[0]);
   }
 }
 
@@ -293,7 +293,7 @@ extern "C" void FMM_V2V(double * vi, double * vv, bool verbose) {
   upDownPass->downwardPass(vcells);
   log_finalize();
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
-    vi[B->IBODY] += B->TRG[0];
+    vi[B->IBODY] += std::real(B->TRG[0]);
   }
 }
 
@@ -323,6 +323,6 @@ extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * v
   }
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    vi[i] += B->TRG[0];
+    vi[i] += std::real(B->TRG[0]);
   }
 }
