@@ -13,31 +13,31 @@ libcharmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAF
 libcharmm2_a_SOURCES = charmm2.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 libcharmm2_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
 
-bin_PROGRAMS = petiga_laplace petiga_helmholtz gromacs charmm charmm2
-petiga_laplace_SOURCES = test_petiga.cxx
-petiga_laplace_CPPFLAGS = $(libpetiga_laplace_a_CPPFLAGS)
-petiga_laplace_LDADD = libpetiga_laplace.a
-petiga_helmholtz_SOURCES = test_petiga.cxx
-petiga_helmholtz_CPPFLAGS = $(libpetiga_helmholtz_a_CPPFLAGS)
-petiga_helmholtz_LDADD = libpetiga_helmholtz.a
-gromacs_SOURCES = test_gromacs.cxx
-gromacs_CPPFLAGS = $(AM_CPPFLAGS)
-gromacs_LDADD = libgromacs.a
-charmm_SOURCES = test_charmm.f90
-charmm_CPPFLAGS = $(AM_CPPFLAGS)
-charmm_LDADD = libcharmm.a -lstdc++ -lgomp
-charmm2_SOURCES = test_charmm.f90
-charmm2_CPPFLAGS = $(AM_CPPFLAGS)
-charmm2_LDADD = libcharmm2.a -lstdc++ -lgomp
+bin_PROGRAMS = petiga_laplace_mpi petiga_helmholtz_mpi gromacs_mpi charmm_mpi charmm2_mpi
+petiga_laplace_mpi_SOURCES = test_petiga.cxx
+petiga_laplace_mpi_CPPFLAGS = $(libpetiga_laplace_a_CPPFLAGS)
+petiga_laplace_mpi_LDADD = libpetiga_laplace.a
+petiga_helmholtz_mpi_SOURCES = test_petiga.cxx
+petiga_helmholtz_mpi_CPPFLAGS = $(libpetiga_helmholtz_a_CPPFLAGS)
+petiga_helmholtz_mpi_LDADD = libpetiga_helmholtz.a
+gromacs_mpi_SOURCES = test_gromacs.cxx
+gromacs_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+gromacs_mpi_LDADD = libgromacs.a
+charmm_mpi_SOURCES = test_charmm.f90
+charmm_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+charmm_mpi_LDADD = libcharmm.a -lstdc++ -lgomp
+charmm2_mpi_SOURCES = test_charmm.f90
+charmm2_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
 
-run_charmm: charmm
+run_charmm_mpi: charmm_mpi
 	./$< water_32.fmm water.out 0
-run_charmm2: charmm2
+run_charmm2_mpi: charmm2_mpi
 	./$< water_32.fmm water.out 0
-run_gromacs: gromacs
+run_gromacs_mpi: gromacs_mpi
 	$(MPIRUN) -n 2 ./$<
-run_petiga_laplace: petiga_laplace
+run_petiga_laplace_mpi: petiga_laplace_mpi
 	$(MPIRUN) -n 2 ./$<
-run_petiga_helmholtz: petiga_helmholtz
+run_petiga_helmholtz_mpi: petiga_helmholtz_mpi
 	$(MPIRUN) -n 1 ./$<
 endif
