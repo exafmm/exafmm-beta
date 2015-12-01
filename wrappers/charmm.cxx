@@ -50,7 +50,7 @@ extern "C" void fmm_init_(int & images, double & theta, int & verbose) {
   args->ncrit = ncrit;
   args->distribution = "external";
   args->dual = 1;
-  args->graft = 1;
+  args->graft = 0;
   args->images = images;
   args->mutual = 0;
   args->numBodies = 0;

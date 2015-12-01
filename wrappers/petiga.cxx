@@ -43,7 +43,7 @@ void log_finalize() {
   logger::printTime("Total FMM");
 }
 
-extern "C" void FMM_Init(double _eps2, int ncrit, int threads,
+extern "C" void FMM_Init(double eps2, double kreal, double kimag, int ncrit, int threads,
 			 int nb, double * xb, double * yb, double * zb, double * vb,
 			 int nv, double * xv, double * yv, double * zv, double * vv) {
   const int nspawn = 1000;
@@ -52,7 +52,10 @@ extern "C" void FMM_Init(double _eps2, int ncrit, int threads,
   const bool useRmax = true;
   const bool useRopt = true;
   const bool verbose = false;
-  kernel::eps2 = _eps2;
+  kernel::eps2 = eps2;
+#if EXAFMM_HELMHOLTZ
+  kernel::wavek = complex_t(kreal, kimag);
+#endif
   kernel::setup();
 
   args = new Args;
@@ -68,7 +71,7 @@ extern "C" void FMM_Init(double _eps2, int ncrit, int threads,
 
   args->ncrit = ncrit;
   args->distribution = "external";
-  args->dual = 1;
+  args->dual = 0;
   args->graft = 1;
   args->images = images;
   args->mutual = 0;

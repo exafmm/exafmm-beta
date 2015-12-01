@@ -39,5 +39,5 @@ run_gromacs: gromacs
 run_petiga_laplace: petiga_laplace
 	$(MPIRUN) -n 2 ./$<
 run_petiga_helmholtz: petiga_helmholtz
-	$(MPIRUN) -n 2 ./$<
+	$(MPIRUN) -n 1 ./$<
 endif
