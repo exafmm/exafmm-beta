@@ -169,16 +169,18 @@ extern "C" void FMM_B2B(double * vi, double * vb, bool verbose) {
   traversal->initListCount(bcells);
   traversal->initWeight(bcells);
   traversal->traverse(bcells, jcells, cycle, args->dual, args->mutual);
-  if (args->graft) {
-    treeMPI->linkLET();
-    Bodies gbodies = treeMPI->root2body();
-    jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
-    treeMPI->attachRoot(jcells);
-    traversal->traverse(bcells, jcells, cycle, args->dual, false);
-  } else {
-    for (int irank=0; irank<baseMPI->mpisize; irank++) {
-      treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+  if (baseMPI->mpisize > 1) {
+    if (args->graft) {
+      treeMPI->linkLET();
+      Bodies gbodies = treeMPI->root2body();
+      jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
+      treeMPI->attachRoot(jcells);
       traversal->traverse(bcells, jcells, cycle, args->dual, false);
+    } else {
+      for (int irank=0; irank<baseMPI->mpisize; irank++) {
+	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+	traversal->traverse(bcells, jcells, cycle, args->dual, false);
+      }
     }
   }
   upDownPass->downwardPass(bcells);
@@ -207,17 +209,19 @@ extern "C" void FMM_V2B(double * vb, double * vv, bool verbose) {
   traversal->initListCount(bcells);
   traversal->initWeight(bcells);
   traversal->traverse(bcells, vcells, cycle, args->dual, args->mutual);
-  if (args->graft) {
-    treeMPI->linkLET();
-    Bodies gbodies = treeMPI->root2body();
-    Cells jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
-    treeMPI->attachRoot(jcells);
-    traversal->traverse(bcells, jcells, cycle, args->dual, false);
-  } else {
-    for (int irank=0; irank<baseMPI->mpisize; irank++) {
-      Cells jcells;
-      treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+  if (baseMPI->mpisize > 1) {
+    if (args->graft) {
+      treeMPI->linkLET();
+      Bodies gbodies = treeMPI->root2body();
+      Cells jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
+      treeMPI->attachRoot(jcells);
       traversal->traverse(bcells, jcells, cycle, args->dual, false);
+    } else {
+      for (int irank=0; irank<baseMPI->mpisize; irank++) {
+	Cells jcells;
+	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+	traversal->traverse(bcells, jcells, cycle, args->dual, false);
+      }
     }
   }
   upDownPass->downwardPass(bcells);
@@ -246,17 +250,19 @@ extern "C" void FMM_B2V(double * vv, double * vb, bool verbose) {
   traversal->initListCount(vcells);
   traversal->initWeight(vcells);
   traversal->traverse(vcells, bcells, cycle, args->dual, args->mutual);
-  if (args->graft) {
-    treeMPI->linkLET();
-    Bodies gbodies = treeMPI->root2body();
-    Cells jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
-    treeMPI->attachRoot(jcells);
-    traversal->traverse(vcells, jcells, cycle, args->dual, false);
-  } else {
-    for (int irank=0; irank<baseMPI->mpisize; irank++) {
-      Cells jcells;
-      treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+  if (baseMPI->mpisize > 1) {
+    if (args->graft) {
+      treeMPI->linkLET();
+      Bodies gbodies = treeMPI->root2body();
+      Cells jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
+      treeMPI->attachRoot(jcells);
       traversal->traverse(vcells, jcells, cycle, args->dual, false);
+    } else {
+      for (int irank=0; irank<baseMPI->mpisize; irank++) {
+	Cells jcells;
+	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+	traversal->traverse(vcells, jcells, cycle, args->dual, false);
+      }
     }
   }
   upDownPass->downwardPass(vcells);
@@ -281,16 +287,18 @@ extern "C" void FMM_V2V(double * vi, double * vv, bool verbose) {
   traversal->initListCount(vcells);
   traversal->initWeight(vcells);
   traversal->traverse(vcells, jcells, cycle, args->dual, args->mutual);
-  if (args->graft) {
-    treeMPI->linkLET();
-    Bodies gbodies = treeMPI->root2body();
-    jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
-    treeMPI->attachRoot(jcells);
-    traversal->traverse(vcells, jcells, cycle, args->dual, false);
-  } else {
-    for (int irank=0; irank<baseMPI->mpisize; irank++) {
-      treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+  if (baseMPI->mpisize > 1) {
+    if (args->graft) {
+      treeMPI->linkLET();
+      Bodies gbodies = treeMPI->root2body();
+      jcells = globalTree->buildTree(gbodies, buffer, globalBounds);
+      treeMPI->attachRoot(jcells);
       traversal->traverse(vcells, jcells, cycle, args->dual, false);
+    } else {
+      for (int irank=0; irank<baseMPI->mpisize; irank++) {
+	treeMPI->getLET(jcells, (baseMPI->mpirank+irank)%baseMPI->mpisize);
+	traversal->traverse(vcells, jcells, cycle, args->dual, false);
+      }
     }
   }
   upDownPass->downwardPass(vcells);
