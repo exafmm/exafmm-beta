@@ -8,7 +8,7 @@ AM_INIT_AUTOMAKE([foreign subdir-objects -Wall -Werror])
 AM_MAINTAINER_MODE
 AC_LANG([C++])
 AC_PROG_CXX([xlC_r xlC FCCpx FCC sxc++ CC icpc g++])
-AC_PROG_FC([xlf90_r xlf90 frtpx frt sxf90 ftn ifort gfortran])
+AC_PROG_FC([xlf90_r xlf90 frtpx frt sxf03 ftn ifort gfortran])
 AC_PROG_RANLIB
 AM_PROG_AR
 

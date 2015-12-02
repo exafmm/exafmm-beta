@@ -85,7 +85,7 @@ AC_REQUIRE([AC_PROG_CXX])
 	AC_SUBST(MPICXX)
 AC_REQUIRE([AC_PROG_FC])
 	AC_ARG_VAR(MPIFC,[MPI Fortran compiler command])
-	AC_CHECK_PROGS(MPIFC, mpxlf90_r mpxlf90 mpifrtpx mpifrt sxmpif90 ftn mpiifort mpif90, $FC)
+	AC_CHECK_PROGS(MPIFC, mpxlf90_r mpxlf90 mpifrtpx mpifrt sxmpif03 ftn mpiifort mpif90, $FC)
 	ax_mpi_save_FC="$FC"
 	FC="$MPIFC"
 	AC_SUBST(MPIFC)
