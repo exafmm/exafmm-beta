@@ -25,10 +25,18 @@ gromacs_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 gromacs_mpi_LDADD = libgromacs.a
 charmm_mpi_SOURCES = test_charmm.f90
 charmm_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+if EXAFMM_HAVE_SX
+charmm_mpi_LDADD = libcharmm.a -lC++
+else
 charmm_mpi_LDADD = libcharmm.a -lstdc++ -lgomp
+endif
 charmm2_mpi_SOURCES = test_charmm.f90
 charmm2_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+if EXAFMM_HAVE_SX
+charmm2_mpi_LDADD = libcharmm2.a -lC++
+else
 charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
+endif
 
 run_charmm_mpi: charmm_mpi
 	./$< water_32.fmm water.out 0

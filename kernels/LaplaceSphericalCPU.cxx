@@ -19,8 +19,7 @@ void cart2sph(real_t & r, real_t & theta, real_t & phi, vec3 dX) {
 }
 
 //! Spherical to cartesian coordinates
-template<typename T>
-void sph2cart(real_t r, real_t theta, real_t phi, T spherical, T & cartesian) {
+void sph2cart(real_t r, real_t theta, real_t phi, vec3 spherical, vec3 & cartesian) {
   cartesian[0] = sin(theta) * cos(phi) * spherical[0]           // x component (not x itself)
     + cos(theta) * cos(phi) / r * spherical[1]
     - sin(phi) / r / sin(theta) * spherical[2];
