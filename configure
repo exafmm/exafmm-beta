@@ -4701,7 +4701,7 @@ lib)
   AR="$am_aux_dir/ar-lib $AR"
   ;;
 unknown)
-  as_fn_error $? "could not determine $AR interface" "$LINENO" 5
+  sxar ar
   ;;
 esac
 

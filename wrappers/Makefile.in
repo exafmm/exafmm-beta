@@ -232,11 +232,17 @@ PROGRAMS = $(bin_PROGRAMS)
 am__charmm2_mpi_SOURCES_DIST = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@am_charmm2_mpi_OBJECTS = test_charmm.$(OBJEXT)
 charmm2_mpi_OBJECTS = $(am_charmm2_mpi_OBJECTS)
-@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_DEPENDENCIES = libcharmm2.a
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_DEPENDENCIES =  \
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@	libcharmm2.a
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_DEPENDENCIES =  \
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@	libcharmm2.a
 am__charmm_mpi_SOURCES_DIST = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@am_charmm_mpi_OBJECTS = test_charmm.$(OBJEXT)
 charmm_mpi_OBJECTS = $(am_charmm_mpi_OBJECTS)
-@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_DEPENDENCIES = libcharmm.a
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_DEPENDENCIES =  \
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@	libcharmm.a
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_DEPENDENCIES =  \
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@	libcharmm.a
 am__gromacs_mpi_SOURCES_DIST = test_gromacs.cxx
 @EXAFMM_HAVE_MPI_TRUE@am_gromacs_mpi_OBJECTS =  \
 @EXAFMM_HAVE_MPI_TRUE@	gromacs_mpi-test_gromacs.$(OBJEXT)
@@ -561,10 +567,12 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@gromacs_mpi_LDADD = libgromacs.a
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_CPPFLAGS = $(AM_CPPFLAGS)
-@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LDADD = libcharmm.a -lC++
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_LDADD = libcharmm.a -lstdc++ -lgomp
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_LDADD = libcharmm.a -lC++
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_CPPFLAGS = $(AM_CPPFLAGS)
-@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LDADD = libcharmm2.a -lC++
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
+@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_LDADD = libcharmm2.a -lC++
 all: all-am
 
 .SUFFIXES:
