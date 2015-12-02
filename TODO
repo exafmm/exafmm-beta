@@ -1,19 +1,19 @@
--- Immediate --
-buildbot: CXX override not working
-buildbot: CBRC, Shaheen error
-MPI overhaul
-
 -- MPI --
-LBT MPI <- ICELL is being calculated from localBounds
-Test difficult distributions for partitioning and LET
+- figure out which machine to run the MPI benchmarking, benchmark against uniform
+- Use performance analyzer
+- merge partition and treeMPI
+- LBT MPI <- ICELL is being calculated from localBounds
+- Test difficult distributions for partitioning and LET
 MPI-3.0 lock all
 cycle counter based weights
 2:1 refinement for precomputation
 non-orthogonal recursive bisection
 
 -- automake --
-Debug MIC, Cray, FX100, SX-ACE (without CC=, CXX= option)
-Setup buildbot tests using "make check"
+- buildbot CHARMM test
+- Theoretical error bound using kernel.cxx
+- Accuracy check in examples
+- performance regression, see Chromium project for details
 move contents of macros.h to configure.ac
 examples/Makefile options to args
 unit test for each header file in /unit_test
@@ -27,18 +27,17 @@ Use compressed Cell struct of Bonsai
 Remove M, L from Cell struct
 
 -- tree build --
-Separate key manipulation namespace, e.g. interleaveMorton(), deinterleveHilbert() (controllable key_t)
+Separate key manipulation namespace, e.g. interleaveMorton(), deinterleaveHilbert() (controllable key_t)
 Morton -> Hilbert
 
 -- kernels --
+- Complie all P during make -> provide option to make for specific P value
+- Helmholtz breaks for very low P
 Stokes kernels
-Have only one P2P
-Distinguish Pmax and P. Make P runtime option
 Use getIndex for NO_P2P
 Kahan + fixed precision
 Solid harmonics kernel
 hack vecmathlib and import essential features
-Helmholtz breaks for very low P
 Calculate Flops
 Cycle counter kernel timer
 FX10 sin, cos, exp intrinsic
@@ -61,7 +60,7 @@ MPI Bonsai
 Ewald, VdW
 Zero softening
 
--- Comparisons --
+-- comparisons --
 DTT vs. UVWX-list
 Separate +- tree vs. Single tree
 Cartesian vs. Spherical vs. Planewave
@@ -70,4 +69,4 @@ OpenMP vs. TBB vs. Cilk vs. MThreads
 Geometric vs. Algebraic Mat-Vec
 
 -- documentation --
-ipython notebook tutorial
+ipython notebook tutorial (from Andreas)

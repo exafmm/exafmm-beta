@@ -74,7 +74,7 @@ Use static & const for inner kernels
  - Const-correctness propagates
 
 [Application Features]
- - Operation: {MatVec, MatMat, ULV, LU, Det}
+ - Operation: {MatVec, MatMat, ULV, LU, QR, Det, Eig}
  - Elements: {Vertex(FMM), Edge(2DBEM), Face(3DBEM,2DFEM), Volume(3DFEM)}
  - Distribution: {uniform, adaptive}, {stationary, dynamic}
  - Hardware: {CPU, GPU, MIC}
