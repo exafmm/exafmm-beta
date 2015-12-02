@@ -23,6 +23,8 @@ int main(int argc, char ** argv) {
   const real_t cutoff = 20;
 
   Args args(argc, argv);
+  args.ncrit = 32;
+  args.images = 1;
   BaseMPI baseMPI;
   BoundBox boundBox(args.nspawn);
   BuildTree buildTree(args.ncrit, args.nspawn);

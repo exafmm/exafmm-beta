@@ -294,7 +294,7 @@ namespace exafmm {
       for_l L[l] = 0;
       for( int lev=1; lev<numImages; lev++ ) {
 	real_t diameter[3];
-	for_3d diameter[d] = 2 * RGlob[d] * pow(3,lev-1);
+	for_3d diameter[d] = 2 * RGlob[d] * std::pow(3,lev-1);
 	int jx[3];
 	for( jx[2]=-4; jx[2]<=4; jx[2]++ ) {
 	  for( jx[1]=-4; jx[1]<=4; jx[1]++ ) {
