@@ -4861,8 +4861,9 @@ else
 fi
 
 
-if "$ax_cv_cxx_compiler_vendor" = "nec"; then
+if test "$ax_cv_cxx_compiler_vendor" = "nec"; then
    AR = sxar
+   RANLIB = touch
 else
    if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
