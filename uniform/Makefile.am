@@ -1,7 +1,7 @@
 include ../Makefile.am.include
 
 if EXAFMM_HAVE_MPI
-bin_PROGRAMS = fmm fmm_mpi fmm_ijhpca
+bin_PROGRAMS = fmm fmm_mpi fmm_ijhpca_mpi
 fmm_SOURCES = fmm.cxx
 fmm_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=6 -DEXAFMM_SERIAL
 fmm_mpi_SOURCES = fmm.cxx

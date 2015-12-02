@@ -9,8 +9,6 @@ AM_MAINTAINER_MODE
 AC_LANG([C++])
 AC_PROG_CXX([xlC_r xlC FCCpx FCC sxc++ CC icpc g++])
 AC_PROG_FC([xlf90_r xlf90 frtpx frt sxf03 ftn ifort gfortran])
-AC_PROG_RANLIB
-AM_PROG_AR
 
 # OpenMP
 AC_ARG_ENABLE(openmp, [AC_HELP_STRING([--enable-openmp],[use OpenMP])], enable_openmp=$enableval, enable_openmp=no)
@@ -203,5 +201,12 @@ AM_CONDITIONAL(EXAFMM_HAVE_CRAY, test "$ax_cv_cxx_compiler_vendor" = "cray")
 AM_CONDITIONAL(EXAFMM_HAVE_INTEL, test "$ax_cv_cxx_compiler_vendor" = "intel")
 AM_CONDITIONAL(EXAFMM_HAVE_CLANG, test "$ax_cv_cxx_compiler_vendor" = "clang")
 AM_CONDITIONAL(EXAFMM_HAVE_GNU, test "$ax_cv_cxx_compiler_vendor" = "gnu")
+
+if "$ax_cv_cxx_compiler_vendor" = "nec"; then
+   AR = sxar
+else
+   AC_PROG_RANLIB
+   AM_PROG_AR
+fi
 
 AC_OUTPUT
