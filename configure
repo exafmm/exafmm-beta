@@ -5818,7 +5818,7 @@ else
   EXAFMM_HAVE_SX_FALSE=
 fi
 
- if test "$ax_cv_cxx_compiler_vendor" = "cray"; then
+ if test "$CXX" = "CC"; then
   EXAFMM_HAVE_CRAY_TRUE=
   EXAFMM_HAVE_CRAY_FALSE='#'
 else
