@@ -236,17 +236,21 @@ PROGRAMS = $(bin_PROGRAMS)
 am__charmm2_mpi_SOURCES_DIST = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@am_charmm2_mpi_OBJECTS = test_charmm.$(OBJEXT)
 charmm2_mpi_OBJECTS = $(am_charmm2_mpi_OBJECTS)
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_DEPENDENCIES =  \
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@	libcharmm2.a
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_DEPENDENCIES =  \
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@	libcharmm2.a
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_DEPENDENCIES = libcharmm2.a
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_DEPENDENCIES = libcharmm2.a
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_DEPENDENCIES =  \
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@	libcharmm2.a
+charmm2_mpi_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(charmm2_mpi_LDFLAGS) $(LDFLAGS) -o $@
 am__charmm_mpi_SOURCES_DIST = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@am_charmm_mpi_OBJECTS = test_charmm.$(OBJEXT)
 charmm_mpi_OBJECTS = $(am_charmm_mpi_OBJECTS)
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_DEPENDENCIES =  \
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@	libcharmm.a
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_DEPENDENCIES =  \
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@	libcharmm.a
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_DEPENDENCIES = libcharmm.a
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_DEPENDENCIES = libcharmm.a
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_DEPENDENCIES =  \
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@	libcharmm.a
+charmm_mpi_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(charmm_mpi_LDFLAGS) $(LDFLAGS) -o $@
 am__gromacs_mpi_SOURCES_DIST = test_gromacs.cxx
 @EXAFMM_HAVE_MPI_TRUE@am_gromacs_mpi_OBJECTS =  \
 @EXAFMM_HAVE_MPI_TRUE@	gromacs_mpi-test_gromacs.$(OBJEXT)
@@ -588,15 +592,17 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@nodist_EXTRA_charmm_mpi_SOURCES = test_gromacs.cxx
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_FCLINK = $(CXX) --linkfortran $(CXXFLAGS)
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_LDADD = libcharmm.a -lstdc++ -lgomp
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_LDADD = libcharmm.a -lC++
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_LDADD = libcharmm.a -lstdc++ -lgomp
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_LDADD = libcharmm.a -lC++
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LDADD = libcharmm.a
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LDFLAGS = --linkfortran
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@nodist_EXTRA_charmm2_mpi_SOURCES = test_gromacs.cxx
-@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_FCLINK = $(CXX) --linkfortran $(CXXFLAGS)
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
-@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_LDADD = libcharmm2.a -lC++
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_LDADD = libcharmm2.a -lC++
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LDADD = libcharmm2.a
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LDFLAGS = --linkfortran
 all: all-am
 
 .SUFFIXES:
@@ -769,11 +775,11 @@ clean-binPROGRAMS:
 
 charmm2_mpi$(EXEEXT): $(charmm2_mpi_OBJECTS) $(charmm2_mpi_DEPENDENCIES) $(EXTRA_charmm2_mpi_DEPENDENCIES) 
 	@rm -f charmm2_mpi$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(charmm2_mpi_OBJECTS) $(charmm2_mpi_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(charmm2_mpi_LINK) $(charmm2_mpi_OBJECTS) $(charmm2_mpi_LDADD) $(LIBS)
 
 charmm_mpi$(EXEEXT): $(charmm_mpi_OBJECTS) $(charmm_mpi_DEPENDENCIES) $(EXTRA_charmm_mpi_DEPENDENCIES) 
 	@rm -f charmm_mpi$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(charmm_mpi_OBJECTS) $(charmm_mpi_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(charmm_mpi_LINK) $(charmm_mpi_OBJECTS) $(charmm_mpi_LDADD) $(LIBS)
 
 gromacs_mpi$(EXEEXT): $(gromacs_mpi_OBJECTS) $(gromacs_mpi_DEPENDENCIES) $(EXTRA_gromacs_mpi_DEPENDENCIES) 
 	@rm -f gromacs_mpi$(EXEEXT)

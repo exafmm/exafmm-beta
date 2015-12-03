@@ -27,7 +27,8 @@ charmm_mpi_SOURCES = test_charmm.f90
 charmm_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 if EXAFMM_HAVE_FX
 nodist_EXTRA_charmm_mpi_SOURCES = test_gromacs.cxx
-charmm_mpi_LDADD = libcharmm.a --linkfortran
+charmm_mpi_LDADD = libcharmm.a
+charmm_mpi_LDFLAGS = --linkfortran
 else
 if EXAFMM_HAVE_SX
 charmm_mpi_LDADD = libcharmm.a -lC++
@@ -39,7 +40,8 @@ charmm2_mpi_SOURCES = test_charmm.f90
 charmm2_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 if EXAFMM_HAVE_FX
 nodist_EXTRA_charmm2_mpi_SOURCES = test_gromacs.cxx
-charmm2_mpi_LDADD = libcharmm2.a --linkfortran
+charmm2_mpi_LDADD = libcharmm2.a
+charmm2_mpi_LDFLAGS = --linkfortran
 else
 if EXAFMM_HAVE_SX
 charmm2_mpi_LDADD = libcharmm2.a -lC++
