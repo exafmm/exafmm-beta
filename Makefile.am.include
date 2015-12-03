@@ -6,7 +6,7 @@ AM_FCFLAGS = -qarch=qp -qtune=qp -O3 -qhot
 else
 if EXAFMM_HAVE_FX
 AM_CXXFLAGS = -Kfast,openmp
-AM_FCFLAGS = -Kfast,openmp
+AM_FCFLAGS = -Kfast,openmp -f w
 else
 if EXAFMM_HAVE_SX
 AM_CXXFLAGS = -Nacct
