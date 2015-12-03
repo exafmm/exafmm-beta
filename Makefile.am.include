@@ -15,6 +15,14 @@ else
 if EXAFMM_HAVE_CRAY
 AM_CXXFLAGS = -dynamic
 AM_FCFLAGS = -dynamic
+if EXAFMM_HAVE_GNU
+AM_CXXFLAGS += -ffast-math -funroll-loops -fabi-version=6
+AM_FCFLAGS += -ffast-math -funroll-loops
+endif
+if EXAFMM_HAVE_INTEL
+AM_CXXFLAGS += -ansi_alias -fabi-version=6
+AM_FCFLAGS += -ansi_alias
+endif
 else
 if EXAFMM_HAVE_INTEL
 AM_CXXFLAGS = -ansi_alias -fabi-version=6
