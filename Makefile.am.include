@@ -141,12 +141,6 @@ if EXAFMM_DEBUG
 AM_CXXFLAGS += -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
 endif
 
-# Linker for mixed C++/Fortran on FX
-if EXAFMM_HAVE_FX
-AM_FCLINK = $(CXX) --linkfortran $(AM_CXXFLAGS)
-endif
-
-
 AM_MAKEFLAGS = -s
 
 help:

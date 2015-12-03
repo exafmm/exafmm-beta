@@ -430,9 +430,6 @@ AM_CPPFLAGS = -I../vectorclass -I../include -I../uniform \
 @EXAFMM_HAVE_BG_TRUE@AM_FCFLAGS = -qarch=qp -qtune=qp -O3 -qhot \
 @EXAFMM_HAVE_BG_TRUE@	$(am__append_2) $(am__append_4) \
 @EXAFMM_HAVE_BG_TRUE@	$(am__append_7)
-
-# Linker for mixed C++/Fortran on FX
-@EXAFMM_HAVE_FX_TRUE@AM_FCLINK = $(CXX) --linkfortran $(AM_CXXFLAGS)
 AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@laplace_SOURCES = laplace.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@laplace_CPPFLAGS = $(AM_CPPFLAGS) -I ~/strumpack/src -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=4
