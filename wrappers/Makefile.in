@@ -585,10 +585,12 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@gromacs_mpi_LDADD = libgromacs.a
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LD = $(CXX) --linkfortran
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_LDADD = libcharmm.a -lstdc++ -lgomp
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_LDADD = libcharmm.a -lC++
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LD = $(CXX) --linkfortran
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_LDADD = libcharmm2.a -lC++
 all: all-am
