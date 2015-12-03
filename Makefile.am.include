@@ -9,8 +9,8 @@ AM_CXXFLAGS = -Kfast,openmp
 AM_FCFLAGS = -Kfast,openmp -f w
 else
 if EXAFMM_HAVE_SX
-AM_CXXFLAGS = -Nacct
-AM_FCFLAGS = -Nacct
+AM_CXXFLAGS = -Caopt -Nacct -Popenmp
+AM_FCFLAGS = -Caopt -Nacct -Popenmp
 else
 if EXAFMM_HAVE_CRAY
 AM_CXXFLAGS = -dynamic

@@ -1,3 +1,7 @@
+-- debug CHARMM wrapper --
+- N=2 test
+- parallel test
+
 -- MPI --
 - figure out which machine to run the MPI benchmarking, benchmark against uniform
 - Use performance analyzer
