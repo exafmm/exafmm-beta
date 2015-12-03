@@ -30,6 +30,7 @@ nodist_EXTRA_charmm_mpi_SOURCES = test_gromacs.cxx
 charmm_mpi_LDADD = libcharmm.a
 charmm_mpi_LDFLAGS = --linkfortran
 else
+charmm_mpi_LINK = $(FCLINK)
 if EXAFMM_HAVE_SX
 charmm_mpi_LDADD = libcharmm.a -lC++
 else
@@ -43,6 +44,7 @@ nodist_EXTRA_charmm2_mpi_SOURCES = test_gromacs.cxx
 charmm2_mpi_LDADD = libcharmm2.a
 charmm2_mpi_LDFLAGS = --linkfortran
 else
+charmm2_mpi_LINK = $(FCLINK)
 if EXAFMM_HAVE_SX
 charmm2_mpi_LDADD = libcharmm2.a -lC++
 else
