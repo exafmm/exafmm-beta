@@ -322,7 +322,8 @@ am__v_CCLD_1 =
 SOURCES = $(libcharmm_a_SOURCES) $(libcharmm2_a_SOURCES) \
 	$(libgromacs_a_SOURCES) $(libpetiga_helmholtz_a_SOURCES) \
 	$(libpetiga_laplace_a_SOURCES) $(charmm2_mpi_SOURCES) \
-	$(charmm_mpi_SOURCES) $(gromacs_mpi_SOURCES) \
+	$(nodist_EXTRA_charmm2_mpi_SOURCES) $(charmm_mpi_SOURCES) \
+	$(nodist_EXTRA_charmm_mpi_SOURCES) $(gromacs_mpi_SOURCES) \
 	$(petiga_helmholtz_mpi_SOURCES) $(petiga_laplace_mpi_SOURCES)
 DIST_SOURCES = $(am__libcharmm_a_SOURCES_DIST) \
 	$(am__libcharmm2_a_SOURCES_DIST) \
@@ -586,10 +587,14 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@gromacs_mpi_LDADD = libgromacs.a
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@nodist_EXTRA_charmm_mpi_SOURCES = test_gromacs.cxx
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_FCLINK = $(CXX) --linkfortran $(CXXFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_LDADD = libcharmm.a -lstdc++ -lgomp
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_LDADD = libcharmm.a -lC++
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@nodist_EXTRA_charmm2_mpi_SOURCES = test_gromacs.cxx
+@EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_FCLINK = $(CXX) --linkfortran $(CXXFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
 @EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_LDADD = libcharmm2.a -lC++
 all: all-am
@@ -764,11 +769,11 @@ clean-binPROGRAMS:
 
 charmm2_mpi$(EXEEXT): $(charmm2_mpi_OBJECTS) $(charmm2_mpi_DEPENDENCIES) $(EXTRA_charmm2_mpi_DEPENDENCIES) 
 	@rm -f charmm2_mpi$(EXEEXT)
-	$(AM_V_FCLD)$(FCLINK) $(charmm2_mpi_OBJECTS) $(charmm2_mpi_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(charmm2_mpi_OBJECTS) $(charmm2_mpi_LDADD) $(LIBS)
 
 charmm_mpi$(EXEEXT): $(charmm_mpi_OBJECTS) $(charmm_mpi_DEPENDENCIES) $(EXTRA_charmm_mpi_DEPENDENCIES) 
 	@rm -f charmm_mpi$(EXEEXT)
-	$(AM_V_FCLD)$(FCLINK) $(charmm_mpi_OBJECTS) $(charmm_mpi_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(charmm_mpi_OBJECTS) $(charmm_mpi_LDADD) $(LIBS)
 
 gromacs_mpi$(EXEEXT): $(gromacs_mpi_OBJECTS) $(gromacs_mpi_DEPENDENCIES) $(EXTRA_gromacs_mpi_DEPENDENCIES) 
 	@rm -f gromacs_mpi$(EXEEXT)
@@ -799,6 +804,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzSphericalCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceCartesianCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/charmm2_mpi-test_gromacs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/charmm_mpi-test_gromacs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gromacs_mpi-test_gromacs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcharmm2_a-charmm2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcharmm_a-charmm.Po@am__quote@
@@ -1033,6 +1040,34 @@ libpetiga_laplace_a-petiga.obj: petiga.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libpetiga_laplace_a-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_laplace_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libpetiga_laplace_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+
+charmm2_mpi-test_gromacs.o: test_gromacs.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm2_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT charmm2_mpi-test_gromacs.o -MD -MP -MF $(DEPDIR)/charmm2_mpi-test_gromacs.Tpo -c -o charmm2_mpi-test_gromacs.o `test -f 'test_gromacs.cxx' || echo '$(srcdir)/'`test_gromacs.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/charmm2_mpi-test_gromacs.Tpo $(DEPDIR)/charmm2_mpi-test_gromacs.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_gromacs.cxx' object='charmm2_mpi-test_gromacs.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm2_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o charmm2_mpi-test_gromacs.o `test -f 'test_gromacs.cxx' || echo '$(srcdir)/'`test_gromacs.cxx
+
+charmm2_mpi-test_gromacs.obj: test_gromacs.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm2_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT charmm2_mpi-test_gromacs.obj -MD -MP -MF $(DEPDIR)/charmm2_mpi-test_gromacs.Tpo -c -o charmm2_mpi-test_gromacs.obj `if test -f 'test_gromacs.cxx'; then $(CYGPATH_W) 'test_gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/test_gromacs.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/charmm2_mpi-test_gromacs.Tpo $(DEPDIR)/charmm2_mpi-test_gromacs.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_gromacs.cxx' object='charmm2_mpi-test_gromacs.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm2_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o charmm2_mpi-test_gromacs.obj `if test -f 'test_gromacs.cxx'; then $(CYGPATH_W) 'test_gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/test_gromacs.cxx'; fi`
+
+charmm_mpi-test_gromacs.o: test_gromacs.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT charmm_mpi-test_gromacs.o -MD -MP -MF $(DEPDIR)/charmm_mpi-test_gromacs.Tpo -c -o charmm_mpi-test_gromacs.o `test -f 'test_gromacs.cxx' || echo '$(srcdir)/'`test_gromacs.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/charmm_mpi-test_gromacs.Tpo $(DEPDIR)/charmm_mpi-test_gromacs.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_gromacs.cxx' object='charmm_mpi-test_gromacs.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o charmm_mpi-test_gromacs.o `test -f 'test_gromacs.cxx' || echo '$(srcdir)/'`test_gromacs.cxx
+
+charmm_mpi-test_gromacs.obj: test_gromacs.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT charmm_mpi-test_gromacs.obj -MD -MP -MF $(DEPDIR)/charmm_mpi-test_gromacs.Tpo -c -o charmm_mpi-test_gromacs.obj `if test -f 'test_gromacs.cxx'; then $(CYGPATH_W) 'test_gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/test_gromacs.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/charmm_mpi-test_gromacs.Tpo $(DEPDIR)/charmm_mpi-test_gromacs.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_gromacs.cxx' object='charmm_mpi-test_gromacs.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(charmm_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o charmm_mpi-test_gromacs.obj `if test -f 'test_gromacs.cxx'; then $(CYGPATH_W) 'test_gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/test_gromacs.cxx'; fi`
 
 gromacs_mpi-test_gromacs.o: test_gromacs.cxx
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gromacs_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT gromacs_mpi-test_gromacs.o -MD -MP -MF $(DEPDIR)/gromacs_mpi-test_gromacs.Tpo -c -o gromacs_mpi-test_gromacs.o `test -f 'test_gromacs.cxx' || echo '$(srcdir)/'`test_gromacs.cxx
