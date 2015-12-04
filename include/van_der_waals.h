@@ -61,17 +61,16 @@ namespace exafmm {
       C_iter Ci;                                                //!< Iterator of current target cell
       C_iter Cj;                                                //!< Iterator of current source cell
       C_iter C0;                                                //!< Iterator of first source cell
-      Neighbor(VanDerWaals * _VdW, C_iter _Ci, C_iter _Cj, C_iter _C0) :// Constructor
-	VdW(_VdW), Ci(_Ci), Cj(_Cj), C0(_C0) {}                 // Initialize variables
+      vec3 Xperiodic;                                           //!< Coordinate offset for periodic B.C.
+      Neighbor(VanDerWaals * _VdW, C_iter _Ci, C_iter _Cj, C_iter _C0, vec3 _Xperiodic) :// Constructor
+	VdW(_VdW), Ci(_Ci), Cj(_Cj), C0(_C0), Xperiodic(_Xperiodic) {} // Initialize variables
       void operator() () {                                      // Overload operator()
-	vec3 dX = Ci->X - Cj->X;                                //  Distance vector from source to target
-	wrap(dX, VdW->cycle);                                   //  Wrap around periodic domain
-	vec3 Xperiodic = Ci->X - Cj->X - dX;                    //  Coordinate offset for periodic B.C.
+	vec3 dX = Ci->X - Cj->X - Xperiodic;                    //  Coordinate offset for periodic B.C.
 	real_t R = std::sqrt(norm(dX));                         //  Scalar distance
-	if (R < 3 * VdW->cutoff) {                              //  If cells are close
-	  if(Cj->NCHILD == 0) VdW->P2P(Ci,Cj,Xperiodic);        //   Van der Waals kernel
+	if (R < fmax(3*VdW->cutoff,VdW->cycle/2)) {             //  If cells are close
+	  if(Cj->NCHILD == 0) VdW->P2P(Ci, Cj, Xperiodic);      //   Van der Waals kernel
 	  for (C_iter CC=C0+Cj->ICHILD; CC!=C0+Cj->ICHILD+Cj->NCHILD; CC++) {// Loop over cell's children
-	    Neighbor neighbor(VdW, Ci, CC, C0);                 //    Instantiate recursive functor
+	    Neighbor neighbor(VdW, Ci, CC, C0, Xperiodic);      //    Instantiate recursive functor
 	    neighbor();                                         //    Find neighbors recursively
 	  }                                                     //   End loop over cell's children
 	}                                                       //  End if for far cells
@@ -97,11 +96,21 @@ namespace exafmm {
     void evaluate(Cells & cells, Cells & jcells) {
       logger::startTimer("Van der Waals");                      // Start timer
       C_iter Cj = jcells.begin();                               // Set begin iterator of source cells
+      vec3 Xperiodic;                                           // Coordinate offset for periodic B.C.
       mk_task_group;                                            // Intitialize tasks
       for (C_iter Ci=cells.begin(); Ci!=cells.end(); Ci++) {    // Loop over target cells
 	if (Ci->NCHILD == 0) {                                  //  If target cell is leaf
-	  Neighbor neighbor(this, Ci, Cj, Cj);                  //   Instantiate recursive functor
-	  create_taskc(neighbor);                               //   Create task for recursive call
+	  for (int ix=-1; ix<=1; ix++) {                        //   Loop over x periodic direction
+	    for (int iy=-1; iy<=1; iy++) {                      //    Loop over y periodic direction
+	      for (int iz=-1; iz<=1; iz++) {                    //     Loop over z periodic direction
+		Xperiodic[0] = ix * cycle;                      //      Coordinate offset for x periodic direction
+		Xperiodic[1] = iy * cycle;                      //      Coordinate offset for y periodic direction
+		Xperiodic[2] = iz * cycle;                      //      Coordinate offset for z periodic direction
+		Neighbor neighbor(this, Ci, Cj, Cj, Xperiodic); //      Instantiate recursive functor
+		create_taskc(neighbor);                         //      Create task for recursive call
+	      }                                                 //     End loop over z periodic direction
+	    }                                                   //    End loop over y periodic direction
+	  }                                                     //   End loop over x periodic direction
 	}                                                       //  End if for leaf target cell
       }                                                         // End loop over target cells
       wait_tasks;                                               // Synchronize tasks
