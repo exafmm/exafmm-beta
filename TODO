@@ -14,7 +14,6 @@ cycle counter based weights
 non-orthogonal recursive bisection
 
 -- automake --
-- buildbot CHARMM test
 - Theoretical error bound using kernel.cxx
 - Accuracy check in examples
 - performance regression, see Chromium project for details
@@ -35,6 +34,7 @@ Separate key manipulation namespace, e.g. interleaveMorton(), deinterleaveHilber
 Morton -> Hilbert
 
 -- kernels --
+- Define M, L inside kernel namespace and template over P
 - Complie all P during make -> provide option to make for specific P value
 - Helmholtz breaks for very low P
 Stokes kernels
