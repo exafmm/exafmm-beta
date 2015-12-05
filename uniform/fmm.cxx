@@ -39,9 +39,7 @@ int main(int argc, char ** argv) {
 #endif
   TreeMPI treeMPI(FMM.MPIRANK, FMM.MPISIZE, args.images);
 
-#ifdef EXAFMM_IJHPCA
-  //args.numBodies /= FMM.MPISIZE;
-#endif
+  args.numBodies /= FMM.MPISIZE;
   const int numBodies = args.numBodies;
   const int ncrit = 100;
   const int maxLevel = numBodies >= ncrit ? 1 + int(log(numBodies / ncrit)/M_LN2/3) : 0;
@@ -124,6 +122,7 @@ int main(int argc, char ** argv) {
 #endif
   
     FMM.downwardPass();
+    /*
     logger::stopTimer("Total FMM", 0);
 
     Bodies bodies(FMM.numBodies);
@@ -197,6 +196,7 @@ int main(int argc, char ** argv) {
     verify.print("Rel. L2 Error (acc)",std::sqrt(accDifGlob/accNrmGlob));
 #endif
 #endif
+    */
   }
   FMM.deallocate();
 
