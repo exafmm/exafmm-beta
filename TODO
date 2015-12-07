@@ -1,10 +1,6 @@
--- debug CHARMM wrapper --
-- N=2 test
-- parallel test
-
 -- MPI --
-- figure out which machine to run the MPI benchmarking, benchmark against uniform
-- Use performance analyzer
+- benchmark against uniform on kyoto
+- match performance of uniform with non-uniform
 - merge partition and treeMPI
 - LBT MPI <- ICELL is being calculated from localBounds
 - Test difficult distributions for partitioning and LET
