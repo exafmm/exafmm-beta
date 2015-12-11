@@ -21,8 +21,8 @@ namespace exafmm {
 	assert(BiEnd - BiBegin > 0);                            //  Validate range
 	if (BiEnd - BiBegin < nspawn) {                         //  If number of elements is small enough
 	  for (B_iter B=BiBegin; B!=BiEnd; B++) {               //   Loop over range of bodies
-	    bounds.Xmin = min(B->X, bounds.Xmin);               //    Update Xmin
-	    bounds.Xmax = max(B->X, bounds.Xmax);               //    Update Xmax
+	    bounds.Xmin = min(B->X, bounds.Xmin - 1e-5);        //    Update Xmin
+	    bounds.Xmax = max(B->X, bounds.Xmax + 1e-5);        //    Update Xmax
 	  }                                                     //   End loop over range of bodies
 	} else {                                                //  Else if number of elements are large
 	  B_iter BiMid = BiBegin + (BiEnd - BiBegin) / 2;       //   Middle iterator
@@ -51,8 +51,8 @@ namespace exafmm {
 	assert(CiEnd - CiBegin > 0);                            //  Validate range
 	if (CiEnd - CiBegin < nspawn) {                         //  If number of elements is small enough
 	  for (C_iter C=CiBegin; C!=CiEnd; C++) {               //   Loop over range of cells
-	    bounds.Xmin = min(C->X, bounds.Xmin);               //    Update Xmin
-	    bounds.Xmax = max(C->X, bounds.Xmax);               //    Update Xmax
+	    bounds.Xmin = min(C->X, bounds.Xmin - 1e-5);        //    Update Xmin
+	    bounds.Xmax = max(C->X, bounds.Xmax + 1e-5);        //    Update Xmax
 	  }                                                     //   End loop over range of bodies
 	} else {                                                //  Else if number of elements are large
 	  C_iter CiMid = CiBegin + (CiEnd - CiBegin) / 2;       //   Middle iterator
