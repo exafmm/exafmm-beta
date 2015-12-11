@@ -149,7 +149,7 @@ extern "C" void fmm_coulomb_(int & nglobal, int * icpumap,
       B->X[0] = x[3*i+0];
       B->X[1] = x[3*i+1];
       B->X[2] = x[3*i+2];
-      B->SRC = q[i];
+      B->SRC = q[i] == 0 ? EPS : q[i];
       B->TRG = 0;
       int iwrap = wrap(B->X, cycle);
       B->IBODY = i | (iwrap << shift);

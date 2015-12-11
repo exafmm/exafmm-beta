@@ -841,6 +841,7 @@ program main
   call coulomb_exclusion(nglobal,icpumap,x,q,p,f,pcycle,numex,natex)
   call coulomb_exclusion(nglobal,icpumap,x,q,p2,f2,pcycle,numex,natex)
 
+
   call verify(nglobal,icpumap,p,p2,f,f2,pl2err,fl2err,enerf,enere,grmsf,grmse)
   if (mpirank == 0) then
      print"(a)",'--- Coulomb FMM vs. Ewald -------'
