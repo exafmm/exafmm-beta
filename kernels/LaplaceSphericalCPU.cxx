@@ -34,6 +34,7 @@ void sph2cart(real_t r, real_t theta, real_t phi, vec3 spherical, vec3 & cartesi
 void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t * Ynm, complex_t * YnmTheta) {
   real_t x = std::cos(alpha);                                   // x = cos(alpha)
   real_t y = std::sin(alpha);                                   // y = sin(alpha)
+  real_t invY = y == 0 ? 0 : 1 / y;                             // 1 / y
   real_t fact = 1;                                              // Initialize 2 * m + 1
   real_t pn = 1;                                                // Initialize Legendre polynomial Pn
   real_t rhom = 1;                                              // Initialize rho^m
@@ -47,7 +48,7 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t * Ynm, compl
     Ynm[nmn] = std::conj(Ynm[npn]);                             //  Use conjugate relation for m < 0
     real_t p1 = p;                                              //  Pnm-1
     p = x * (2 * m + 1) * p1;                                   //  Pnm using recurrence relation
-    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) / y * eim;    //  theta derivative of r^n * Ynm
+    YnmTheta[npn] = rhom * (p - (m + 1) * x * p1) * invY * eim; //  theta derivative of r^n * Ynm
     rhom *= rho;                                                //  rho^m
     real_t rhon = rhom;                                         //  rho^n
     for (int n=m+1; n<P; n++) {                                 //  Loop over n in Ynm
@@ -59,7 +60,7 @@ void evalMultipole(real_t rho, real_t alpha, real_t beta, complex_t * Ynm, compl
       real_t p2 = p1;                                           //   Pnm-2
       p1 = p;                                                   //   Pnm-1
       p = (x * (2 * n + 1) * p1 - (n + m) * p2) / (n - m + 1);  //   Pnm using recurrence relation
-      YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) / y * eim;// theta derivative
+      YnmTheta[npm] = rhon * ((n - m + 1) * p - (n + 1) * x * p1) * invY * eim;// theta derivative
       rhon *= rho;                                              //   Update rho^n
     }                                                           //  End loop over n in Ynm
     rhom /= -(2 * m + 2) * (2 * m + 1);                         //  Update factorial
@@ -233,7 +234,7 @@ void kernel::L2L(C_iter Ci, C_iter C0) {
 void kernel::L2P(C_iter Ci) {
   complex_t Ynm[P*P], YnmTheta[P*P];
   for (B_iter B=Ci->BODY; B!=Ci->BODY+Ci->NBODY; B++) {
-    vec3 dX = B->X - Ci->X;
+    vec3 dX = B->X - Ci->X + EPS;
     vec3 spherical = 0;
     vec3 cartesian = 0;
     real_t r, theta, phi;
