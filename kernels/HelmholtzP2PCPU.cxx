@@ -118,9 +118,9 @@ void kernel::P2P(C_iter Ci, C_iter Cj, bool mutual) {
 	real_t R = sqrt(R2);
 	real_t src2_r = mi_r * mj_r - mi_i * mj_i;
 	real_t src2_i = mi_r * mj_i + mi_i * mj_r;
-	real_t expikr = exp(wave_i * R) * R;
-	real_t expikr_r = cos(wave_r * R) / expikr;
-	real_t expikr_i = sin(wave_r * R) / expikr;
+	real_t expikr = std::exp(wave_i * R) * R;
+	real_t expikr_r = std::cos(wave_r * R) / expikr;
+	real_t expikr_i = std::sin(wave_r * R) / expikr;
 	real_t coef1_r = src2_r * expikr_r - src2_i * expikr_i;
 	real_t coef1_i = src2_r * expikr_i + src2_i * expikr_r;
 	real_t kr_r = (1 + wave_i * R) / R2;
@@ -252,9 +252,9 @@ void kernel::P2P(C_iter C) {
       real_t R = sqrt(R2);
       real_t src2_r = mi_r * mj_r - mi_i * mj_i;
       real_t src2_i = mi_r * mj_i + mi_i * mj_r;
-      real_t expikr = exp(wave_i * R) * R;
-      real_t expikr_r = cos(wave_r * R) / expikr;
-      real_t expikr_i = sin(wave_r * R) / expikr;
+      real_t expikr = std::exp(wave_i * R) * R;
+      real_t expikr_r = std::cos(wave_r * R) / expikr;
+      real_t expikr_i = std::sin(wave_r * R) / expikr;
       real_t coef1_r = src2_r * expikr_r - src2_i * expikr_i;
       real_t coef1_i = src2_r * expikr_i + src2_i * expikr_r;
       real_t kr_r = (1 + wave_i * R) / R2;

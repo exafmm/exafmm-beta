@@ -34,7 +34,7 @@ void legendre(int nq, real_t * xq, real_t * wq) {
   real_t pol = 0, der, sum;
   real_t h = M_PI / (2 * nq);
   for (int i=1; i<=nq; i++) {
-    xq[nq-i] = cos((2 * i - 1) * h);
+    xq[nq-i] = std::cos((2 * i - 1) * h);
   }
   xq[nq/2] = 0;
   for (int i=0; i<nq/2; i++) {
@@ -94,13 +94,13 @@ void rotate(real_t theta, int nterms, complex_t Mnm[P*P],
   for (int m=2; m<2*nterms; m++) {
     sqrtCnm[m][1] = sqrt(m * (m - 1) / 2.0);
   }
-  real_t ctheta = cos(theta);
+  real_t ctheta = std::cos(theta);
   if (fabs(ctheta) < EPS) ctheta = 0;
-  real_t stheta = sin(-theta);
+  real_t stheta = std::sin(-theta);
   if (fabs(stheta) < EPS) stheta = 0;
   real_t hsthta = stheta / sqrt(2.0);
-  real_t cthtap = sqrt(2.0) * cos(theta * .5) * cos(theta * .5);
-  real_t cthtan =-sqrt(2.0) * sin(theta * .5) * sin(theta * .5);
+  real_t cthtap = sqrt(2.0) * std::cos(theta * .5) * std::cos(theta * .5);
+  real_t cthtan =-sqrt(2.0) * std::sin(theta * .5) * std::sin(theta * .5);
   Rnm1[0][P] = 1;
   Mrot[0] = Mnm[0] * Rnm1[0][P];
   for (int n=1; n<nterms; n++) {
@@ -355,7 +355,7 @@ void kernel::P2M(C_iter C) {
     vec3 dX = B->X - C->X;
     real_t r, theta, phi;
     cart2sph(dX, r, theta, phi);
-    real_t ctheta = cos(theta);
+    real_t ctheta = std::cos(theta);
     ephi[1] = exp(I * phi);
     for (int n=2; n<P; n++) {
       ephi[n] = ephi[n-1] * ephi[1];
@@ -716,11 +716,11 @@ void kernel::L2P(C_iter C) {
     vec3 dX = B->X - C->X;
     real_t r, theta, phi;
     cart2sph(dX, r, theta, phi);
-    real_t ctheta = cos(theta);
-    real_t stheta = sin(theta);
-    real_t cphi = cos(phi);
-    real_t sphi = sin(phi);
-    ephi[1] = exp(I * phi);
+    real_t ctheta = std::cos(theta);
+    real_t stheta = std::sin(theta);
+    real_t cphi = std::cos(phi);
+    real_t sphi = std::sin(phi);
+    ephi[1] = std::exp(I * phi);
     for (int n=2; n<P; n++) {
       ephi[n] = ephi[n-1] * ephi[1];
     }
