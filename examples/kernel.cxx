@@ -14,7 +14,14 @@ int main() {
   Cells cells(4);
   Verify verify;
   jbodies[0].X = 0;
+#if EXAFMM_BIOTSAVART
+  jbodies[0].SRC[0] = drand48();
+  jbodies[0].SRC[1] = drand48();
+  jbodies[0].SRC[2] = drand48();
+  jbodies[0].SRC[3] = 0.1;
+#else
   jbodies[0].SRC = 1;
+#endif
   C_iter Cj = cells.begin();
   Cj->X = 3. / 16;
   Cj->BODY = jbodies.begin();

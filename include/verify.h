@@ -12,6 +12,8 @@ namespace exafmm {
       for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
 #if EXAFMM_HELMHOLTZ
 	v += std::abs(B->TRG[0] * B->SRC);                      //  Sum of scalar component
+#elif EXAFMM_BIOTSAVART
+	v += B->TRG[0];                                         //  Sum of x component
 #else
 	v += B->TRG[0] * B->SRC;                                //  Sum of scalar component
 #endif

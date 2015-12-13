@@ -168,6 +168,7 @@ namespace exafmm {
       logger::stopTimer("Downward pass");                       // Stop timer
     }
 
+#if EXAFMM_LAPLACE
     //! Get dipole of entire system
     vec3 getDipole(Bodies & bodies, vec3 X0) {
       vec3 dipole = 0;                                          // Initialize dipole correction
@@ -187,6 +188,7 @@ namespace exafmm {
 	}                                                       //  End loop over dimensions
       }                                                         // End loop over bodies
     }
+#endif
   };
 }
 #endif

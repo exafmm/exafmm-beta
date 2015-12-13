@@ -132,11 +132,12 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 #AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
 @EXAFMM_DEBUG_TRUE@am__append_29 = -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
 bin_PROGRAMS = laplace_cartesian$(EXEEXT) laplace_spherical$(EXEEXT) \
-	helmholtz_spherical$(EXEEXT) tree$(EXEEXT) \
-	laplace_cartesian_kernel$(EXEEXT) \
+	helmholtz_spherical$(EXEEXT) biotsavart_spherical$(EXEEXT) \
+	tree$(EXEEXT) laplace_cartesian_kernel$(EXEEXT) \
 	laplace_spherical_kernel$(EXEEXT) \
-	helmholtz_spherical_kernel$(EXEEXT) $(am__EXEEXT_1)
-@EXAFMM_HAVE_MPI_TRUE@am__append_30 = laplace_cartesian_mpi laplace_spherical_mpi helmholtz_spherical_mpi ewald_mpi
+	helmholtz_spherical_kernel$(EXEEXT) \
+	biotsavart_spherical_kernel$(EXEEXT) $(am__EXEEXT_1)
+@EXAFMM_HAVE_MPI_TRUE@am__append_30 = laplace_cartesian_mpi laplace_spherical_mpi helmholtz_spherical_mpi biotsavart_spherical_mpi ewald_mpi
 subdir = examples
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compiler_vendor.m4 \
@@ -151,13 +152,35 @@ CONFIG_CLEAN_VPATH_FILES =
 @EXAFMM_HAVE_MPI_TRUE@am__EXEEXT_1 = laplace_cartesian_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	laplace_spherical_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	helmholtz_spherical_mpi$(EXEEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	biotsavart_spherical_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	ewald_mpi$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
+am__dirstamp = $(am__leading_dot)dirstamp
+am_biotsavart_spherical_OBJECTS = biotsavart_spherical-fmm.$(OBJEXT) \
+	../kernels/biotsavart_spherical-BiotSavartSphericalCPU.$(OBJEXT) \
+	../kernels/biotsavart_spherical-BiotSavartP2PCPU.$(OBJEXT)
+biotsavart_spherical_OBJECTS = $(am_biotsavart_spherical_OBJECTS)
+biotsavart_spherical_LDADD = $(LDADD)
+am_biotsavart_spherical_kernel_OBJECTS =  \
+	biotsavart_spherical_kernel-kernel.$(OBJEXT) \
+	../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.$(OBJEXT) \
+	../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.$(OBJEXT)
+biotsavart_spherical_kernel_OBJECTS =  \
+	$(am_biotsavart_spherical_kernel_OBJECTS)
+biotsavart_spherical_kernel_LDADD = $(LDADD)
+am__biotsavart_spherical_mpi_SOURCES_DIST = fmm_mpi.cxx \
+	../kernels/BiotSavartSphericalCPU.cxx \
+	../kernels/BiotSavartP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@am_biotsavart_spherical_mpi_OBJECTS = biotsavart_spherical_mpi-fmm_mpi.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.$(OBJEXT)
+biotsavart_spherical_mpi_OBJECTS =  \
+	$(am_biotsavart_spherical_mpi_OBJECTS)
+biotsavart_spherical_mpi_LDADD = $(LDADD)
 am__ewald_mpi_SOURCES_DIST = ewald.cxx \
 	../kernels/LaplaceSphericalCPU.cxx \
 	../kernels/LaplaceP2PCPU.cxx
-am__dirstamp = $(am__leading_dot)dirstamp
 @EXAFMM_HAVE_MPI_TRUE@am_ewald_mpi_OBJECTS =  \
 @EXAFMM_HAVE_MPI_TRUE@	ewald_mpi-ewald.$(OBJEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	../kernels/ewald_mpi-LaplaceSphericalCPU.$(OBJEXT) \
@@ -263,7 +286,10 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(ewald_mpi_SOURCES) $(helmholtz_spherical_SOURCES) \
+SOURCES = $(biotsavart_spherical_SOURCES) \
+	$(biotsavart_spherical_kernel_SOURCES) \
+	$(biotsavart_spherical_mpi_SOURCES) $(ewald_mpi_SOURCES) \
+	$(helmholtz_spherical_SOURCES) \
 	$(helmholtz_spherical_kernel_SOURCES) \
 	$(helmholtz_spherical_mpi_SOURCES) \
 	$(laplace_cartesian_SOURCES) \
@@ -271,8 +297,10 @@ SOURCES = $(ewald_mpi_SOURCES) $(helmholtz_spherical_SOURCES) \
 	$(laplace_cartesian_mpi_SOURCES) $(laplace_spherical_SOURCES) \
 	$(laplace_spherical_kernel_SOURCES) \
 	$(laplace_spherical_mpi_SOURCES) $(tree_SOURCES)
-DIST_SOURCES = $(am__ewald_mpi_SOURCES_DIST) \
-	$(helmholtz_spherical_SOURCES) \
+DIST_SOURCES = $(biotsavart_spherical_SOURCES) \
+	$(biotsavart_spherical_kernel_SOURCES) \
+	$(am__biotsavart_spherical_mpi_SOURCES_DIST) \
+	$(am__ewald_mpi_SOURCES_DIST) $(helmholtz_spherical_SOURCES) \
 	$(helmholtz_spherical_kernel_SOURCES) \
 	$(am__helmholtz_spherical_mpi_SOURCES_DIST) \
 	$(laplace_cartesian_SOURCES) \
@@ -520,6 +548,8 @@ laplace_spherical_SOURCES = fmm.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernel
 laplace_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
 helmholtz_spherical_SOURCES = fmm.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
 helmholtz_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_HELMHOLTZ -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
+biotsavart_spherical_SOURCES = fmm.cxx ../kernels/BiotSavartSphericalCPU.cxx ../kernels/BiotSavartP2PCPU.cxx
+biotsavart_spherical_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_BIOTSAVART -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=10
 tree_SOURCES = tree.cxx
 tree_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
 laplace_cartesian_kernel_SOURCES = kernel.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
@@ -528,12 +558,16 @@ laplace_spherical_kernel_SOURCES = kernel.cxx ../kernels/LaplaceSphericalCPU.cxx
 laplace_spherical_kernel_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
 helmholtz_spherical_kernel_SOURCES = kernel.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
 helmholtz_spherical_kernel_CPPFLAGS = $(helmholtz_spherical_CPPFLAGS)
+biotsavart_spherical_kernel_SOURCES = kernel.cxx ../kernels/BiotSavartSphericalCPU.cxx ../kernels/BiotSavartP2PCPU.cxx
+biotsavart_spherical_kernel_CPPFLAGS = $(biotsavart_spherical_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@laplace_cartesian_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@laplace_cartesian_mpi_CPPFLAGS = $(laplace_cartesian_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@laplace_spherical_mpi_SOURCES = fmm_mpi.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@laplace_spherical_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@helmholtz_spherical_mpi_SOURCES = fmm_mpi.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@helmholtz_spherical_mpi_CPPFLAGS = $(helmholtz_spherical_CPPFLAGS)
+@EXAFMM_HAVE_MPI_TRUE@biotsavart_spherical_mpi_SOURCES = fmm_mpi.cxx ../kernels/BiotSavartSphericalCPU.cxx ../kernels/BiotSavartP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@biotsavart_spherical_mpi_CPPFLAGS = $(biotsavart_spherical_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@ewald_mpi_SOURCES = ewald.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@ewald_mpi_CPPFLAGS = $(laplace_spherical_CPPFLAGS)
 all: all-am
@@ -619,6 +653,36 @@ clean-binPROGRAMS:
 ../kernels/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) ../kernels/$(DEPDIR)
 	@: > ../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/biotsavart_spherical-BiotSavartSphericalCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/biotsavart_spherical-BiotSavartP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+
+biotsavart_spherical$(EXEEXT): $(biotsavart_spherical_OBJECTS) $(biotsavart_spherical_DEPENDENCIES) $(EXTRA_biotsavart_spherical_DEPENDENCIES) 
+	@rm -f biotsavart_spherical$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(biotsavart_spherical_OBJECTS) $(biotsavart_spherical_LDADD) $(LIBS)
+../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+
+biotsavart_spherical_kernel$(EXEEXT): $(biotsavart_spherical_kernel_OBJECTS) $(biotsavart_spherical_kernel_DEPENDENCIES) $(EXTRA_biotsavart_spherical_kernel_DEPENDENCIES) 
+	@rm -f biotsavart_spherical_kernel$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(biotsavart_spherical_kernel_OBJECTS) $(biotsavart_spherical_kernel_LDADD) $(LIBS)
+../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+
+biotsavart_spherical_mpi$(EXEEXT): $(biotsavart_spherical_mpi_OBJECTS) $(biotsavart_spherical_mpi_DEPENDENCIES) $(EXTRA_biotsavart_spherical_mpi_DEPENDENCIES) 
+	@rm -f biotsavart_spherical_mpi$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(biotsavart_spherical_mpi_OBJECTS) $(biotsavart_spherical_mpi_LDADD) $(LIBS)
 ../kernels/ewald_mpi-LaplaceSphericalCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
@@ -731,6 +795,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartSphericalCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartSphericalCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartSphericalCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/ewald_mpi-LaplaceP2PCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/ewald_mpi-LaplaceSphericalCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/helmholtz_spherical-HelmholtzP2PCPU.Po@am__quote@
@@ -751,6 +821,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_spherical_kernel-LaplaceSphericalCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceP2PCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/laplace_spherical_mpi-LaplaceSphericalCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/biotsavart_spherical-fmm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/biotsavart_spherical_kernel-kernel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/biotsavart_spherical_mpi-fmm_mpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ewald_mpi-ewald.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/helmholtz_spherical-fmm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/helmholtz_spherical_kernel-kernel.Po@am__quote@
@@ -778,6 +851,132 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+biotsavart_spherical-fmm.o: fmm.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT biotsavart_spherical-fmm.o -MD -MP -MF $(DEPDIR)/biotsavart_spherical-fmm.Tpo -c -o biotsavart_spherical-fmm.o `test -f 'fmm.cxx' || echo '$(srcdir)/'`fmm.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/biotsavart_spherical-fmm.Tpo $(DEPDIR)/biotsavart_spherical-fmm.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='fmm.cxx' object='biotsavart_spherical-fmm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o biotsavart_spherical-fmm.o `test -f 'fmm.cxx' || echo '$(srcdir)/'`fmm.cxx
+
+biotsavart_spherical-fmm.obj: fmm.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT biotsavart_spherical-fmm.obj -MD -MP -MF $(DEPDIR)/biotsavart_spherical-fmm.Tpo -c -o biotsavart_spherical-fmm.obj `if test -f 'fmm.cxx'; then $(CYGPATH_W) 'fmm.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/biotsavart_spherical-fmm.Tpo $(DEPDIR)/biotsavart_spherical-fmm.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='fmm.cxx' object='biotsavart_spherical-fmm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o biotsavart_spherical-fmm.obj `if test -f 'fmm.cxx'; then $(CYGPATH_W) 'fmm.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm.cxx'; fi`
+
+../kernels/biotsavart_spherical-BiotSavartSphericalCPU.o: ../kernels/BiotSavartSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical-BiotSavartSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartSphericalCPU.Tpo -c -o ../kernels/biotsavart_spherical-BiotSavartSphericalCPU.o `test -f '../kernels/BiotSavartSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartSphericalCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartSphericalCPU.cxx' object='../kernels/biotsavart_spherical-BiotSavartSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical-BiotSavartSphericalCPU.o `test -f '../kernels/BiotSavartSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartSphericalCPU.cxx
+
+../kernels/biotsavart_spherical-BiotSavartSphericalCPU.obj: ../kernels/BiotSavartSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical-BiotSavartSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartSphericalCPU.Tpo -c -o ../kernels/biotsavart_spherical-BiotSavartSphericalCPU.obj `if test -f '../kernels/BiotSavartSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartSphericalCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartSphericalCPU.cxx' object='../kernels/biotsavart_spherical-BiotSavartSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical-BiotSavartSphericalCPU.obj `if test -f '../kernels/BiotSavartSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartSphericalCPU.cxx'; fi`
+
+../kernels/biotsavart_spherical-BiotSavartP2PCPU.o: ../kernels/BiotSavartP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical-BiotSavartP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartP2PCPU.Tpo -c -o ../kernels/biotsavart_spherical-BiotSavartP2PCPU.o `test -f '../kernels/BiotSavartP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartP2PCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartP2PCPU.cxx' object='../kernels/biotsavart_spherical-BiotSavartP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical-BiotSavartP2PCPU.o `test -f '../kernels/BiotSavartP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartP2PCPU.cxx
+
+../kernels/biotsavart_spherical-BiotSavartP2PCPU.obj: ../kernels/BiotSavartP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical-BiotSavartP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartP2PCPU.Tpo -c -o ../kernels/biotsavart_spherical-BiotSavartP2PCPU.obj `if test -f '../kernels/BiotSavartP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartP2PCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical-BiotSavartP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartP2PCPU.cxx' object='../kernels/biotsavart_spherical-BiotSavartP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical-BiotSavartP2PCPU.obj `if test -f '../kernels/BiotSavartP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartP2PCPU.cxx'; fi`
+
+biotsavart_spherical_kernel-kernel.o: kernel.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT biotsavart_spherical_kernel-kernel.o -MD -MP -MF $(DEPDIR)/biotsavart_spherical_kernel-kernel.Tpo -c -o biotsavart_spherical_kernel-kernel.o `test -f 'kernel.cxx' || echo '$(srcdir)/'`kernel.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/biotsavart_spherical_kernel-kernel.Tpo $(DEPDIR)/biotsavart_spherical_kernel-kernel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='kernel.cxx' object='biotsavart_spherical_kernel-kernel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o biotsavart_spherical_kernel-kernel.o `test -f 'kernel.cxx' || echo '$(srcdir)/'`kernel.cxx
+
+biotsavart_spherical_kernel-kernel.obj: kernel.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT biotsavart_spherical_kernel-kernel.obj -MD -MP -MF $(DEPDIR)/biotsavart_spherical_kernel-kernel.Tpo -c -o biotsavart_spherical_kernel-kernel.obj `if test -f 'kernel.cxx'; then $(CYGPATH_W) 'kernel.cxx'; else $(CYGPATH_W) '$(srcdir)/kernel.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/biotsavart_spherical_kernel-kernel.Tpo $(DEPDIR)/biotsavart_spherical_kernel-kernel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='kernel.cxx' object='biotsavart_spherical_kernel-kernel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o biotsavart_spherical_kernel-kernel.obj `if test -f 'kernel.cxx'; then $(CYGPATH_W) 'kernel.cxx'; else $(CYGPATH_W) '$(srcdir)/kernel.cxx'; fi`
+
+../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.o: ../kernels/BiotSavartSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartSphericalCPU.Tpo -c -o ../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.o `test -f '../kernels/BiotSavartSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartSphericalCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartSphericalCPU.cxx' object='../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.o `test -f '../kernels/BiotSavartSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartSphericalCPU.cxx
+
+../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.obj: ../kernels/BiotSavartSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartSphericalCPU.Tpo -c -o ../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.obj `if test -f '../kernels/BiotSavartSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartSphericalCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartSphericalCPU.cxx' object='../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical_kernel-BiotSavartSphericalCPU.obj `if test -f '../kernels/BiotSavartSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartSphericalCPU.cxx'; fi`
+
+../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.o: ../kernels/BiotSavartP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartP2PCPU.Tpo -c -o ../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.o `test -f '../kernels/BiotSavartP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartP2PCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartP2PCPU.cxx' object='../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.o `test -f '../kernels/BiotSavartP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartP2PCPU.cxx
+
+../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.obj: ../kernels/BiotSavartP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartP2PCPU.Tpo -c -o ../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.obj `if test -f '../kernels/BiotSavartP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartP2PCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical_kernel-BiotSavartP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartP2PCPU.cxx' object='../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_kernel_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical_kernel-BiotSavartP2PCPU.obj `if test -f '../kernels/BiotSavartP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartP2PCPU.cxx'; fi`
+
+biotsavart_spherical_mpi-fmm_mpi.o: fmm_mpi.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT biotsavart_spherical_mpi-fmm_mpi.o -MD -MP -MF $(DEPDIR)/biotsavart_spherical_mpi-fmm_mpi.Tpo -c -o biotsavart_spherical_mpi-fmm_mpi.o `test -f 'fmm_mpi.cxx' || echo '$(srcdir)/'`fmm_mpi.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/biotsavart_spherical_mpi-fmm_mpi.Tpo $(DEPDIR)/biotsavart_spherical_mpi-fmm_mpi.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='fmm_mpi.cxx' object='biotsavart_spherical_mpi-fmm_mpi.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o biotsavart_spherical_mpi-fmm_mpi.o `test -f 'fmm_mpi.cxx' || echo '$(srcdir)/'`fmm_mpi.cxx
+
+biotsavart_spherical_mpi-fmm_mpi.obj: fmm_mpi.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT biotsavart_spherical_mpi-fmm_mpi.obj -MD -MP -MF $(DEPDIR)/biotsavart_spherical_mpi-fmm_mpi.Tpo -c -o biotsavart_spherical_mpi-fmm_mpi.obj `if test -f 'fmm_mpi.cxx'; then $(CYGPATH_W) 'fmm_mpi.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm_mpi.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/biotsavart_spherical_mpi-fmm_mpi.Tpo $(DEPDIR)/biotsavart_spherical_mpi-fmm_mpi.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='fmm_mpi.cxx' object='biotsavart_spherical_mpi-fmm_mpi.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o biotsavart_spherical_mpi-fmm_mpi.obj `if test -f 'fmm_mpi.cxx'; then $(CYGPATH_W) 'fmm_mpi.cxx'; else $(CYGPATH_W) '$(srcdir)/fmm_mpi.cxx'; fi`
+
+../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.o: ../kernels/BiotSavartSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartSphericalCPU.Tpo -c -o ../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.o `test -f '../kernels/BiotSavartSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartSphericalCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartSphericalCPU.cxx' object='../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.o `test -f '../kernels/BiotSavartSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartSphericalCPU.cxx
+
+../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.obj: ../kernels/BiotSavartSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartSphericalCPU.Tpo -c -o ../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.obj `if test -f '../kernels/BiotSavartSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartSphericalCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartSphericalCPU.cxx' object='../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical_mpi-BiotSavartSphericalCPU.obj `if test -f '../kernels/BiotSavartSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartSphericalCPU.cxx'; fi`
+
+../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.o: ../kernels/BiotSavartP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartP2PCPU.Tpo -c -o ../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.o `test -f '../kernels/BiotSavartP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartP2PCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartP2PCPU.cxx' object='../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.o `test -f '../kernels/BiotSavartP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/BiotSavartP2PCPU.cxx
+
+../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.obj: ../kernels/BiotSavartP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartP2PCPU.Tpo -c -o ../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.obj `if test -f '../kernels/BiotSavartP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartP2PCPU.Tpo ../kernels/$(DEPDIR)/biotsavart_spherical_mpi-BiotSavartP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/BiotSavartP2PCPU.cxx' object='../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(biotsavart_spherical_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/biotsavart_spherical_mpi-BiotSavartP2PCPU.obj `if test -f '../kernels/BiotSavartP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/BiotSavartP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/BiotSavartP2PCPU.cxx'; fi`
 
 ewald_mpi-ewald.o: ewald.cxx
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ewald_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ewald_mpi-ewald.o -MD -MP -MF $(DEPDIR)/ewald_mpi-ewald.Tpo -c -o ewald_mpi-ewald.o `test -f 'ewald.cxx' || echo '$(srcdir)/'`ewald.cxx
@@ -1443,6 +1642,8 @@ run_laplace_spherical: laplace_spherical
 	./$< -Dgmovx
 run_helmholtz_spherical: helmholtz_spherical
 	./$< -Dgv -n 40000
+run_biotsavart_spherical: biotsavart_spherical
+	./$< -Dgv -n 40000
 run_tree: tree
 	./$< -v -n 10000000
 
@@ -1452,12 +1653,16 @@ run_laplace_spherical_kernel: laplace_spherical_kernel
 	./$< -v
 run_helmholtz_spherical_kernel: helmholtz_spherical_kernel
 	./$< -v
+run_biotsavart_spherical_kernel: biotsavart_spherical_kernel
+	./$< -v
 
 @EXAFMM_HAVE_MPI_TRUE@run_laplace_cartesian_mpi: laplace_cartesian_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
 @EXAFMM_HAVE_MPI_TRUE@run_laplace_spherical_mpi: laplace_spherical_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx
 @EXAFMM_HAVE_MPI_TRUE@run_helmholtz_spherical_mpi: helmholtz_spherical_mpi
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgv -n 100000
+@EXAFMM_HAVE_MPI_TRUE@run_biotsavart_spherical_mpi: biotsavart_spherical_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgv -n 100000
 @EXAFMM_HAVE_MPI_TRUE@run_ewald_mpi: ewald_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$< -Dgmovx

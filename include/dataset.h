@@ -167,6 +167,13 @@ namespace exafmm {
 	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
 	  B->SRC = B->X[0] + I * B->X[1];                       //   Initialize source
 	}                                                       //  End loop over bodies
+#elif EXAFMM_BIOTSAVART
+        for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
+	  for (int d=0; d<3; d++) {                             //   Loop over dimensions
+	    B->SRC[d] = drand48() / bodies.size();              //    Initialize source
+	  }                                                     //   End loop over dimensions
+	  B->SRC[3] = powf(bodies.size() * numSplit, -1./3) * 2 * M_PI * 0.01; // Initialize core radius
+        }                                                       //  End loop over bodies
 #endif
       }                                                         // End loop over partitions
     }
@@ -219,7 +226,14 @@ namespace exafmm {
 	file >> B->X[0];                                        //  Read data for x coordinates
 	file >> B->X[1];                                        //  Read data for y coordinates
 	file >> B->X[2];                                        //  Read data for z coordinates
+#if EXAFMM_BIOTSAVART
+	file >> B->SRC[0];                                      //  Read data for x source
+	file >> B->SRC[1];                                      //  Read data for y source
+	file >> B->SRC[2];                                      //  Read data for z source
+	file >> B->SRC[3];                                      //  Read data for core radius
+#else
 	file >> B->SRC;                                         //  Read data for charge
+#endif
       }                                                         // End loop over bodies
       filePosition = file.tellg();                              // Get position in file
       file.close();                                             // Close file
@@ -235,7 +249,14 @@ namespace exafmm {
 	file << B->X[0] << std::endl;                           //  Write data for x coordinates
 	file << B->X[1] << std::endl;                           //  Write data for y coordinates
 	file << B->X[2] << std::endl;                           //  Write data for z coordinates
-	file << B->SRC  << std::endl;                           //  Write data for charge
+#if EXAFMM_BIOTSAVART
+	file << B->SRC[0] << std::endl;                         //  Write data for x source
+	file << B->SRC[1] << std::endl;                         //  Write data for y source
+	file << B->SRC[2] << std::endl;                         //  Write data for z source
+	file << B->SRC[3] << std::endl;                         //  Write data for core radius
+#else
+	file << B->SRC << std::endl;                            //  Write data for charge
+#endif
       }                                                         // End loop over bodies
       file.close();                                             // Close file
     }

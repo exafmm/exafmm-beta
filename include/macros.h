@@ -43,9 +43,9 @@ const int SIMD_BYTES = 16;                                      //!< SIMD byte l
 #else
 #error Please define EXAFMM_CARTESIAN or EXAFMM_SPHERICAL
 #endif
-#if defined EXAFMM_LAPLACE || EXAFMM_HELMHOLTZ || EXAFMM_STOKES
+#if defined EXAFMM_LAPLACE || EXAFMM_HELMHOLTZ || EXAFMM_STOKES || EXAFMM_BIOTSAVART
 #else
-#error Please define EXAFMM_LAPLACE or EXAFMM_HELMHOLTZ or EXAFMM_STOKES
+#error Please define EXAFMM_LAPLACE or EXAFMM_HELMHOLTZ or EXAFMM_STOKES or EXAFMM_BIOTSAVART
 #endif
 
 // Check for mismatching equation and basis

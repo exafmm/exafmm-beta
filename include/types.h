@@ -22,6 +22,7 @@ namespace exafmm {
   typedef std::complex<real_t> complex_t;                       //!< Complex type
   typedef vec<3,int> ivec3;                                     //!< Vector of 3 int types
   typedef vec<3,real_t> vec3;                                   //!< Vector of 3 real_t types
+  typedef vec<4,real_t> vec4;                                   //!< Vector of 4 real_t types
   typedef vec<3,complex_t> cvec3;                               //!< Vector of 3 complex_t types
 
   // SIMD vector types for MIC, AVX, and SSE
@@ -32,16 +33,14 @@ namespace exafmm {
 #if EXAFMM_USE_KAHAN
   typedef kahan<real_t> kreal_t;                                //!< Floating point type with Kahan summation
   typedef kahan<complex_t> kcomplex_t;                          //!< Complex type with Kahan summation
-  typedef vec<4,kreal_t> kvec4;                                 //!< Vector of 4 floats with Kahan summaiton
-  typedef vec<4,kcomplex_t> kcvec4;                             //!< Vector of 4 complex with Kahan summaiton
   typedef kahan<simdvec> ksimdvec;                              //!< SIMD vector type with Kahan summation
 #else
   typedef real_t kreal_t;                                       //!< Floating point type
   typedef complex_t kcomplex_t;                                 //!< Complex type with Kahan summation
-  typedef vec<4,real_t> kvec4;                                  //!< Vector of 4 floats types
-  typedef vec<4,complex_t> kcvec4;                              //!< Vector of 4 complex types
   typedef simdvec ksimdvec;                                     //!< SIMD vector type
 #endif
+  typedef vec<4,kreal_t> kvec4;                                 //!< Vector of 4 floats with Kahan summaiton
+  typedef vec<4,kcomplex_t> kcvec4;                             //!< Vector of 4 complex with Kahan summaiton
 
   // Multipole/local expansion coefficients
   const int P = EXAFMM_EXPANSION;                               //!< Order of expansions
@@ -50,9 +49,11 @@ namespace exafmm {
   typedef vec<NTERM,real_t> vecP;                               //!< Multipole/local coefficient type
 #elif EXAFMM_SPHERICAL
 #if EXAFMM_LAPLACE
-  const int NTERM = P*(P+1)/2;                                  //!< Number of multipole/local terms
+  const int NTERM = P*(P+1)/2;                                  //!< Number of terms for Laplace
 #elif EXAFMM_HELMHOLTZ
-  const int NTERM = P*P;                                        //!< Number of multipole/local terms
+  const int NTERM = P*P;                                        //!< Number of terms for Helmholtz
+#elif EXAFMM_BIOTSAVART
+  const int NTERM = 3*P*(P+1)/2;                                //!< Number of terms for Biot-Savart
 #endif
   typedef vec<NTERM,complex_t> vecP;                            //!< Multipole/local coefficient type
 #endif
@@ -76,6 +77,8 @@ namespace exafmm {
     real_t    SRC;                                              //!< Scalar source values
 #elif EXAFMM_HELMHOLTZ
     complex_t SRC;                                              //!< Scalar source values
+#elif EXAFMM_BIOTSAVART
+    vec4      SRC;                                              //!< Vector source values
 #endif
   } __attribute__((aligned (16)));
 
@@ -85,7 +88,7 @@ namespace exafmm {
     int      IRANK;                                             //!< Initial rank numbering for partitioning back
     uint64_t ICELL;                                             //!< Cell index   
     real_t   WEIGHT;                                            //!< Weight for partitioning
-#if EXAFMM_LAPLACE
+#if EXAFMM_LAPLACE | EXAFMM_BIOTSAVART
     kvec4    TRG;                                               //!< Scalar+vector3 target values
 #elif EXAFMM_HELMHOLTZ
     kcvec4   TRG;                                               //!< Scalar+vector3 target values
