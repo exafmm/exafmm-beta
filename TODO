@@ -10,6 +10,7 @@ cycle counter based weights
 non-orthogonal recursive bisection
 
 -- automake --
+- Add m4/ax_mpi variants from PVFMM
 - Theoretical error bound using kernel.cxx
 - Accuracy check in examples
 - performance regression, see Chromium project for details
