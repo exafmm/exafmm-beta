@@ -31,7 +31,7 @@ LFLAGS	+= -std=c++0x -DTBB -ltbb
 #LFLAGS	+= -std=c++0x -DMTHREAD -lmyth
 
 ### STRUMPACK flags
-LFLAGS += -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
+#LFLAGS += -lmkl_scalapack_lp64 -lmkl_blacs_intelmpi_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5
 
 ### PAPI flags : set environment value to (export EXAFMM_PAPI_EVENTS="PAPI_L2_DCM,PAPI_L2_DCA,PAPI_TLB_DM") or something else
 #LFLAGS	+= -DPAPI -lpapi

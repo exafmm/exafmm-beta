@@ -12,20 +12,29 @@ class Dataset {                                                 // Contains all 
   long filePosition;                                            // Position of file stream
 
  private:
+  //! Split range and return partial range
+  void splitRange(int & begin, int & end, int iSplit, int numSplit) {
+    assert(end > begin);                                        // Check that size > 0
+    int size = end - begin;                                     // Size of range
+    int increment = size / numSplit;                            // Increment of splitting
+    int remainder = size % numSplit;                            // Remainder of splitting
+    begin += iSplit * increment + std::min(iSplit,remainder);   // Increment the begin counter
+    end = begin + increment;                                    // Increment the end counter
+    if (remainder > iSplit) end++;                              // Adjust the end counter for remainder
+  }
+
 //! Uniform distribution on [-1,1]^2 lattice
   Bodies lattice(int numBodies, int mpirank, int mpisize) {
     int nx = int(sqrt(numBodies*mpisize));                      // Number of points in x direction
     int ny = nx;                                                // Number of points in y direction
-    int remainder = nx % mpisize;                               // Account for uneven partition sizes
-    int begin = mpirank * ny + std::min(mpirank,remainder);     // Begin index for y direction
-    int end = begin + ny;                                       // End index for y direction
-    if (remainder > mpirank) end++;                             // Adjust the end index for uneven partition sizez
-    assert(end > begin);                                        // Check that nz > 0
-    int numLattice = nx * ny;                                   // Total number of lattice points
+    int begin = 0;                                              // Begin index in y direction
+    int end = ny;                                               // End index in the y direction
+    splitRange(begin, end, mpirank, mpisize);                   // Split range in y direction
+    int numLattice = nx * (end - begin);                        // Total number of lattice points
     Bodies bodies(numLattice);                                  // Initialize bodies
     B_iter B = bodies.begin();                                  // Initialize body iterator
     for (int ix=0; ix<nx; ix++) {                               // Loop over x direction
-      for (int iy=0; iy<ny; iy++) {                             //  Loop over y direction
+      for (int iy=begin; iy<end; iy++, B++) {                   //  Loop over y direction
         B->X[0] = (ix / real_t(nx-1)) * 2 - 1;                  //   x coordinate
         B->X[1] = (iy / real_t(nx-1)) * 2 - 1;                  //   y coordinate
       }                                                         //  End loop over y direction
