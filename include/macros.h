@@ -1,13 +1,6 @@
 #ifndef macros_h
 #define macros_h
 
-// Override assertion
-#if EXAFMM_ASSERT
-#include <cassert>
-#else
-#define assert(x)
-#endif
-
 // Detect SIMD Byte length of architecture
 #if __MIC__
 const int SIMD_BYTES = 64;                                      //!< SIMD byte length of MIC

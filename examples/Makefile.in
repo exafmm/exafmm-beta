@@ -127,7 +127,7 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 
 # Count interaction list per cell
 @EXAFMM_COUNT_LIST_TRUE@am__append_27 = -DEXAFMM_COUNT_LIST
-@EXAFMM_ASSERT_TRUE@am__append_28 = -DEXAFMM_ASSERT
+@EXAFMM_ASSERT_TRUE@am__append_28 = -DNDEBUG
 
 #AM_CXXFLAGS += -fsanitize=address -Wconversion -Wundef
 @EXAFMM_DEBUG_TRUE@am__append_29 = -ftrapv -O0 -Wall -Wextra -Winit-self -Wshadow -Wuninitialized -Wunreachable-code
