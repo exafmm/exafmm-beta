@@ -1,5 +1,13 @@
 include ../Makefile.include
 
+# Test for Octave wrapper
+octave:
+	mkoctfile -v --mex -I../include -DFP64 -DEXPANSION=20 exafmm2d.cpp
+
+# Test for Matlab wrapper
+matlab:
+	mex -I../include -DFP64 -DEXPANSION=20 exafmm2d.cpp
+
 petiga:
 	make libpetiga.a
 	$(CXX) test_petiga.cxx -L. -lfmm -ltbb
