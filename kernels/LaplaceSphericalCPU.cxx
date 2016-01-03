@@ -21,14 +21,14 @@ namespace exafmm {
 
 //! Spherical to cartesian coordinates
     void sph2cart(real_t r, real_t theta, real_t phi, vec3 spherical, vec3 & cartesian) {
-      cartesian[0] = sin(theta) * cos(phi) * spherical[0]       // x component (not x itself)
-	+ cos(theta) * cos(phi) / r * spherical[1]
-	- sin(phi) / r / sin(theta) * spherical[2];
-      cartesian[1] = sin(theta) * sin(phi) * spherical[0]       // y component (not y itself)
-	+ cos(theta) * sin(phi) / r * spherical[1]
-	+ cos(phi) / r / sin(theta) * spherical[2];
-      cartesian[2] = cos(theta) * spherical[0]                  // z component (not z itself)
-	- sin(theta) / r * spherical[1];
+      cartesian[0] = std::sin(theta) * std::cos(phi) * spherical[0] // x component (not x itself)
+	+ std::cos(theta) * std::cos(phi) / r * spherical[1]
+	- std::sin(phi) / r / std::sin(theta) * spherical[2];
+      cartesian[1] = std::sin(theta) * std::sin(phi) * spherical[0] // y component (not y itself)
+	+ std::cos(theta) * std::sin(phi) / r * spherical[1]
+	+ std::cos(phi) / r / std::sin(theta) * spherical[2];
+      cartesian[2] = std::cos(theta) * spherical[0]             // z component (not z itself)
+	- std::sin(theta) / r * spherical[1];
     }
 
 //! Evaluate solid harmonics \f$ r^n Y_{n}^{m} \f$
