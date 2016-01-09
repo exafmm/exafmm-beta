@@ -7,10 +7,10 @@
 #if EXAFMM_VEC_VERBOSE
 #pragma message("Using Agner's vectorclass for operator overloading SIMD intrinsics.")
 #endif
-#include "vectorclass.h"
-#include "vectormath_common.h"
-#include "vectormath_exp.h"
-#include "vectormath_trig.h"
+#include "../vectorclass/vectorclass.h"
+#include "../vectorclass/vectormath_common.h"
+#include "../vectorclass/vectormath_exp.h"
+#include "../vectorclass/vectormath_trig.h"
 #endif
 //! Custom vector type for small vectors with template specialization for MIC, AVX, SSE intrinsics
 
