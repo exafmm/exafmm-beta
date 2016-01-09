@@ -10,9 +10,9 @@
 #include "up_down_pass.h"
 #include "van_der_waals.h"
 #if EXAFMM_SERIAL
-#include "serialfmm.h"
+#include "../uniform/serialfmm.h"
 #else
-#include "parallelfmm.h"
+#include "../uniform/parallelfmm.h"
 #endif
 #if EXAFMM_MASS
 #error Turn off EXAFMM_MASS for this wrapper

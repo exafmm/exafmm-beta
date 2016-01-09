@@ -9,9 +9,9 @@
 #include "up_down_pass.h"
 #include "verify.h"
 #if EXAFMM_SERIAL
-#include "serialfmm.h"
+#include "../uniform/serialfmm.h"
 #else
-#include "parallelfmm.h"
+#include "../uniform/parallelfmm.h"
 #endif
 using namespace exafmm;
 
