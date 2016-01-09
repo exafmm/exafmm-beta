@@ -133,7 +133,11 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
     xb[i] = B->X[0];
     yb[i] = B->X[1];
     zb[i] = B->X[2];
+#if EXAFMM_HELMHOLTZ
     vb[i] = std::real(B->SRC);
+#else
+    vb[i] = B->SRC;
+#endif
     B->IBODY = i;
   }
   nv = vbodies.size();
@@ -142,7 +146,11 @@ extern "C" void FMM_Partition(int & nb, double * xb, double * yb, double * zb, d
     xv[i] = B->X[0];
     yv[i] = B->X[1];
     zv[i] = B->X[2];
+#if EXAFMM_HELMHOLTZ
     vv[i] = std::real(B->SRC);
+#else
+    vv[i] = B->SRC;
+#endif
     B->IBODY = i;
   }
 }
@@ -186,7 +194,11 @@ extern "C" void FMM_B2B(double * vi, double * vb, bool verbose) {
   upDownPass->downwardPass(bcells);
   log_finalize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
+#if EXAFMM_HELMHOLTZ
     vi[B->IBODY] += std::real(B->TRG[0]);
+#else
+    vi[B->IBODY] += B->TRG[0];
+#endif
   }
 }
 
@@ -227,7 +239,11 @@ extern "C" void FMM_V2B(double * vb, double * vv, bool verbose) {
   upDownPass->downwardPass(bcells);
   log_finalize();
   for (B_iter B=bbodies.begin(); B!=bbodies.end(); B++) {
+#if EXAFMM_HELMHOLTZ
     vb[B->IBODY] += std::real(B->TRG[0]);
+#else
+    vb[B->IBODY] += B->TRG[0];
+#endif
   }
 }
 
@@ -268,7 +284,11 @@ extern "C" void FMM_B2V(double * vv, double * vb, bool verbose) {
   upDownPass->downwardPass(vcells);
   log_finalize();
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
+#if EXAFMM_HELMHOLTZ
     vv[B->IBODY] += std::real(B->TRG[0]);
+#else
+    vv[B->IBODY] += B->TRG[0];
+#endif
   }
 }
 
@@ -304,7 +324,11 @@ extern "C" void FMM_V2V(double * vi, double * vv, bool verbose) {
   upDownPass->downwardPass(vcells);
   log_finalize();
   for (B_iter B=vbodies.begin(); B!=vbodies.end(); B++) {
+#if EXAFMM_HELMHOLTZ
     vi[B->IBODY] += std::real(B->TRG[0]);
+#else
+    vi[B->IBODY] += B->TRG[0];
+#endif
   }
 }
 
@@ -334,6 +358,10 @@ extern "C" void Direct(int ni, double * xi, double * yi, double * zi, double * v
   }
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
+#if EXAFMM_HELMHOLTZ
     vi[i] += std::real(B->TRG[0]);
+#else
+    vi[i] += B->TRG[0];
+#endif
   }
 }
