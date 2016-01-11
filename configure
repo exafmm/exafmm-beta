@@ -5406,6 +5406,7 @@ $as_echo "#define EXAFMM_HAVE_SSE3 1" >>confdefs.h
    if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
       as_fn_error $? "SSE3 requires single or double precision" "$LINENO" 5
    fi
+   SSE3_CXXFLAGS=-msse3
 fi
  if test "$have_sse3" = "yes"; then
   EXAFMM_HAVE_SSE3_TRUE=
@@ -5432,6 +5433,7 @@ $as_echo "#define EXAFMM_HAVE_AVX 1" >>confdefs.h
    if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
       as_fn_error $? "AVX requires single or double precision" "$LINENO" 5
    fi
+   AVX_CXXFLAGS=-mavx
 fi
  if test "$have_avx" = "yes"; then
   EXAFMM_HAVE_AVX_TRUE=
@@ -5458,6 +5460,7 @@ $as_echo "#define EXAFMM_HAVE_MIC 1" >>confdefs.h
    if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
       as_fn_error $? "MIC requires single or double precision" "$LINENO" 5
    fi
+   MIC_CXXFLAGS=-mmic
 fi
  if test "$have_mic" = "yes"; then
   EXAFMM_HAVE_MIC_TRUE=
@@ -5485,6 +5488,7 @@ $as_echo "#define EXAFMM_HAVE_NEON 1" >>confdefs.h
    if test "$PRECISION" != "s"; then
       as_fn_error $? "NEON requires single precision" "$LINENO" 5
    fi
+   NEON_CXXFLAGS=-mneon
 fi
  if test "$have_neon" = "yes"; then
   EXAFMM_HAVE_NEON_TRUE=

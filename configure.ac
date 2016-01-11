@@ -81,6 +81,7 @@ if test "$have_sse3" = "yes"; then
    if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
       AC_MSG_ERROR([SSE3 requires single or double precision])
    fi
+   SSE3_CXXFLAGS=-msse3
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_SSE3, test "$have_sse3" = "yes")
 AC_SUBST(SSE3_CXXFLAGS)
@@ -92,6 +93,7 @@ if test "$have_avx" = "yes"; then
    if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
       AC_MSG_ERROR([AVX requires single or double precision])
    fi
+   AVX_CXXFLAGS=-mavx
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_AVX, test "$have_avx" = "yes")
 AC_SUBST(AVX_CXXFLAGS)
@@ -103,6 +105,7 @@ if test "$have_mic" = "yes"; then
    if test "$PRECISION" != "d" -a "$PRECISION" != "s"; then
       AC_MSG_ERROR([MIC requires single or double precision])
    fi
+   MIC_CXXFLAGS=-mmic
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_MIC, test "$have_mic" = "yes")
 AC_SUBST(MIC_CXXFLAGS)
@@ -115,6 +118,7 @@ if test "$have_neon" = "yes"; then
    if test "$PRECISION" != "s"; then
       AC_MSG_ERROR([NEON requires single precision])
    fi
+   NEON_CXXFLAGS=-mneon
 fi
 AM_CONDITIONAL(EXAFMM_HAVE_NEON, test "$have_neon" = "yes")
 AC_SUBST(NEON_CXXFLAGS)
