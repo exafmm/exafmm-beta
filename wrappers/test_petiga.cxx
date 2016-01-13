@@ -92,7 +92,7 @@ int main(int argc, char ** argv) {
   for (int i=0; i<nv; i++) {
     vv[i] = 1.0 / nv;
   }
-  FMM_V2B(vb, vv, true);
+  FMM_V2B(vb, vv, 1);
   Direct(100, xb, yb, zb, vd, nv, xv, yv, zv, vv);
   Validate(100, vb, vd, mpirank == 0);
 
