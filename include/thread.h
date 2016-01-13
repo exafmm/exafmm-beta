@@ -24,20 +24,6 @@ using namespace tbb;
 #define create_taskc_if(x, E)         if(x) { create_taskc(E); } else { E(); }
 #endif
 
-#elif EXAFMM_WITH_OPENMP
-#include <omp.h>
-#define num_threads(E)                omp_set_num_threads(E);
-#if DAG_RECORDER == 2		/* OpenMP with DAG Recorder */
-#define TO_OMP 1
-#include <tpswitch/tpswitch.h>
-#else  /* OpenMP without DAG Recorder; original OpenMP */
-#define PRAGMA_OMP(x)                 _Pragma( #x )
-#define mk_task_group
-#define wait_tasks                    PRAGMA_OMP(omp taskwait)
-#define create_taskc(E)               PRAGMA_OMP(omp task) E()
-#define create_taskc_if(x, E)         if(x) { create_taskc(E); } else { E(); }
-#endif
-
 #elif EXAFMM_WITH_MTHREAD
 /* MassiveThreads (TBB-like interface on top of MassiveThreads)  */
 #define num_threads(E)		      myth_init_withparam(E, 1 << 16)
@@ -59,6 +45,20 @@ template<class Call>
 void call(Call C) { C(); }
 #define create_taskc(E)               cilk_spawn call(E)
 #define create_taskc_if(x, E)         if(x) { create_taskc(E); } else { E(); }
+
+#elif EXAFMM_WITH_OPENMP
+#include <omp.h>
+#define num_threads(E)                omp_set_num_threads(E);
+#if DAG_RECORDER == 2		/* OpenMP with DAG Recorder */
+#define TO_OMP 1
+#include <tpswitch/tpswitch.h>
+#else  /* OpenMP without DAG Recorder; original OpenMP */
+#define PRAGMA_OMP(x)                 _Pragma( #x )
+#define mk_task_group
+#define wait_tasks                    PRAGMA_OMP(omp taskwait)
+#define create_taskc(E)               PRAGMA_OMP(omp task) E()
+#define create_taskc_if(x, E)         if(x) { create_taskc(E); } else { E(); }
+#endif
 
 #else
 #define mk_task_group
