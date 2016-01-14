@@ -19,7 +19,10 @@ int main(int argc, char ** argv) {
   logger::printTitle("FMM Parameters");
   args.print(logger::stringLength, P);
   buffer.reserve(args.numBodies);
-  double grow1[args.repeat+1], link1[args.repeat+1], grow2[args.repeat+1], link2[args.repeat+1];
+  double * grow1 = new double [args.repeat+1];
+  double * link1 = new double [args.repeat+1];
+  double * grow2 = new double [args.repeat+1];
+  double * link2 = new double [args.repeat+1];
   for (int t=0; t<args.repeat+1; t++) {
     std::cout << t << std::endl;
     bodies = data.initBodies(args.numBodies, args.distribution, 0);
@@ -61,6 +64,10 @@ int main(int argc, char ** argv) {
 	    << " Link2: " << link2ave << "+-" << link2std << std::endl;
   std::ofstream fid("time.dat", std::ios::app);
   fid << args.numBodies << " " << args.threads << " " << grow1ave << " " << grow2ave << std::endl;
+  delete[] grow1;
+  delete[] link1;
+  delete[] grow2;
+  delete[] link2;
   fid.close();
   return 0;
 }
