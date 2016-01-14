@@ -60,6 +60,9 @@
 /* Use QThreads */
 #undef EXAFMM_WITH_QTHREAD
 
+/* Use Strumpack */
+#undef EXAFMM_WITH_STRUMPACK
+
 /* Use Intel TBB */
 #undef EXAFMM_WITH_TBB
 

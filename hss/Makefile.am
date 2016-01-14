@@ -1,6 +1,7 @@
 include ../Makefile.am.include
 
 if EXAFMM_HAVE_MPI
+if EXAFMM_WITH_STRUMPACK
 bin_PROGRAMS = laplace helmholtz
 laplace_SOURCES = laplace.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 laplace_CPPFLAGS = $(AM_CPPFLAGS) -I ~/strumpack/src -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=4
@@ -13,4 +14,5 @@ run_laplace: laplace
 	$(MPIRUN) -n 4 ./$< -DgGmox -n 4096
 run_helmholtz: helmholtz
 	$(MPIRUN) -n 4 ./$< -DgG -n 4096
+endif
 endif

@@ -51,6 +51,13 @@ if test "$with_qthread" = "yes"; then
 fi
 AM_CONDITIONAL(EXAFMM_WITH_QTHREAD, test "$with_qthread" = "yes")
 
+# Strumpack
+AC_ARG_WITH(strumpack, [AC_HELP_STRING([--with-strumpack],[use Strumpack])], with_strumpack=$withval, with_strumpack=no)
+if test "$with_strumpack" = "yes"; then
+   AC_DEFINE(EXAFMM_WITH_STRUMPACK,1,[Use Strumpack])
+fi
+AM_CONDITIONAL(EXAFMM_WITH_STRUMPACK, test "$with_strumpack" = "yes")
+
 # Single precision
 AC_ARG_ENABLE(single, [AC_HELP_STRING([--enable-single],[compile exaFMM in single precision])], ok=$enableval, ok=no)
 AC_ARG_ENABLE(float, [AC_HELP_STRING([--enable-float],[synonym for --enable-single])], ok=$enableval)
