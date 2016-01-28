@@ -191,29 +191,6 @@ int main(int argc, char ** argv) {
 	    rand();
 	}
       }
-#if 0
-      int nbA=128;
-      int r=0;
-      while(r<locr) {
-	int nrows=std::min(nbA,locr-r);
-	A=new double[nrows*n];
-	for(int j=0;j<n;j++) {
-	  B_iter Bj=jbodies.begin()+j;
-	  for(int i=0;i<nrows;i++) {
-	    int locri=r+i+1;
-	    int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
-	    B_iter Bi=bodies.begin()+globri-1;
-	    vec3 dX=Bi->X-Bj->X;
-	    real_t R2=norm(dX)+kernel::eps2;
-	    A[i+nrows*j]=R2==0?0.0:1.0/sqrt(R2);
-	  }
-	}
-	gemm('N','N',nrows,locc,n,1.0,A,nrows,Rglob,n,0.0,&S[r],locr);
-	delete[] A;
-	r+=nbA;
-      }
-      A=NULL;
-#else
       for(int i=0;i<locr;i++) {
 	int locri=i+1;
 	int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
@@ -239,14 +216,10 @@ int main(int argc, char ** argv) {
 	  for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
 	    Bi->TRG = 0;
 	  }
-#if 0
-	  traversal.direct(bodies, jbodies, cycle);
-#else
 	  upDownPass.upwardPass(cells);
 	  upDownPass.upwardPass(jcells);
 	  traversal.traverse(cells, jcells, cycle, args.dual, false);
 	  upDownPass.downwardPass(cells);
-#endif
 	  for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
 	    int i = Bi->IBODY;
 	    S[i+locr*(lock-1)] = Bi->TRG[0];
@@ -255,7 +228,6 @@ int main(int argc, char ** argv) {
       }
       bodies = gbodies;
       jbodies = gbodies;
-#endif
       /* Compress the random vectors */
       for(int j=0;j<locc;j++) {
 	for(int i=1;i<=n;i++) {
@@ -364,30 +336,6 @@ int main(int argc, char ** argv) {
     int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
     int locc=numroc_(&nrhs,&nb,&mycol,&IZERO,&npcol);
     if(locr*locc) {
-#if 0
-      int nbA=128;
-      int r=0;
-      int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
-      while(r<locr) {
-	int nrows=std::min(nbA,locr-r);
-	A=new double[nrows*n];
-	for(int j=0;j<n;j++) {
-	  B_iter Bj=jbodies.begin()+j;
-	  for(int i=0;i<nrows;i++) {
-	    int locri=r+i+1;
-	    int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
-	    B_iter Bi=bodies.begin()+globri-1;
-	    vec3 dX=Bi->X-Bj->X;
-	    real_t R2=norm(dX)+kernel::eps2;
-	    A[i+nrows*j]=R2==0?0.0:1.0/sqrt(R2);
-	  }
-	}
-	gemm('N','N',nrows,nrhs,n,1.0,A,nrows,Xglob,n,0.0,&Btrue[r],locr);
-	delete[] A;
-	r+=nbA;
-      }
-      A=NULL;
-#else
       for(int i=0;i<locr;i++) {
         int locri=i+1;
 	int globri=indxl2g_(&locri,&nb,&myrow,&IZERO,&nprow);
@@ -413,14 +361,10 @@ int main(int argc, char ** argv) {
           for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
             Bi->TRG = 0;
           }
-#if 0
-          traversal.direct(bodies, jbodies, cycle);
-#else
           upDownPass.upwardPass(cells);
           upDownPass.upwardPass(jcells);
           traversal.traverse(cells, jcells, cycle, args.dual, false);
           upDownPass.downwardPass(cells);
-#endif
           for(B_iter Bi=bodies.begin(); Bi!=bodies.end(); Bi++) {
             int i = Bi->IBODY;
             Btrue[i+locr*(lock-1)] = Bi->TRG[0];
@@ -429,7 +373,6 @@ int main(int argc, char ** argv) {
       }
       bodies = gbodies;
       jbodies = gbodies;
-#endif
     }
     delete[] Xglob;
     tend=MPI_Wtime();
