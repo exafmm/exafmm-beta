@@ -6,8 +6,6 @@ using namespace exafmm;
 
 int main() {
   Bodies bodies(1), bodies2(1), jbodies(1);
-  const real_t theta = 0.5;
-  const real_t R = 2 / theta;
   kernel::eps2 = 0.0;
   kernel::Xperiodic = 0;
 

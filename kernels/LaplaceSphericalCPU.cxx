@@ -171,8 +171,8 @@ namespace exafmm {
 	for (int k=0; k<=j; k++) {
 	  int jks = j * (j + 1) / 2 + k;
 	  complex_t Li = 0, Lj = 0;
-	  int jk = j * j + j - k;
 #if EXAFMM_MASS
+	  int jk = j * j + j - k;
 	  Li += Cnm * Ynmi[jk];
 	  if (mutual) Lj += Cnm * Ynmj[jk];
 	  for (int n=1; n<P-j; n++) {

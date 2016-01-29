@@ -43,7 +43,6 @@ Bounds globalBounds;
 extern "C" void fmm_init_(int & images, double & theta, int & verbose, int & nglobal) {
   int ncrit = 32;
   const int nspawn = 1000;
-  const int threads = 1;
   const bool useRmax = true;
   const bool useRopt = true;
   kernel::eps2 = 0.0;

@@ -24,12 +24,10 @@ namespace exafmm {
       for_3d partitionSize *= maxPartition[d];
       assert( MPISIZE == partitionSize );
       int mpisize = MPISIZE;
-      /*
       while (mpisize > 0) {
 	assert( mpisize % 8 == 0 || mpisize == 1 );
 	mpisize /= 8;
       }
-      */
       int checkLevel[3], partition[3];
       for_3d partition[d] = maxPartition[d];
       for( int d=0; d<3; d++ ) {
@@ -296,7 +294,7 @@ namespace exafmm {
       for_l L[l] = 0;
       for( int lev=1; lev<numImages; lev++ ) {
 	real_t diameter[3];
-	for_3d diameter[d] = 2 * RGlob[d] * std::pow(3,lev-1);
+	for_3d diameter[d] = 2 * RGlob[d] * std::pow(3.,lev-1);
 	int jx[3];
 	for( jx[2]=-4; jx[2]<=4; jx[2]++ ) {
 	  for( jx[1]=-4; jx[1]<=4; jx[1]++ ) {
