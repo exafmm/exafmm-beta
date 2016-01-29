@@ -32,6 +32,7 @@ charmm_mpi_LDADD = libcharmm.a
 else
 charmm_mpi_LINK = $(FCLINK)
 if EXAFMM_HAVE_SX
+charmm_mpi_FCFLAGS = 
 charmm_mpi_LDADD = libcharmm.a -lC++
 else
 charmm_mpi_LDADD = libcharmm.a -lstdc++ -lgomp
@@ -46,6 +47,7 @@ charmm2_mpi_LDADD = libcharmm2.a
 else
 charmm2_mpi_LINK = $(FCLINK)
 if EXAFMM_HAVE_SX
+charmm2_mpi_FCFLAGS = 
 charmm2_mpi_LDADD = libcharmm2.a -lC++
 else
 charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
