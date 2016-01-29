@@ -234,16 +234,14 @@ am__libpetiga_laplace_a_SOURCES_DIST = petiga.cxx \
 libpetiga_laplace_a_OBJECTS = $(am_libpetiga_laplace_a_OBJECTS)
 PROGRAMS = $(bin_PROGRAMS)
 am__charmm2_mpi_SOURCES_DIST = test_charmm.f90
-@EXAFMM_HAVE_MPI_TRUE@am_charmm2_mpi_OBJECTS =  \
-@EXAFMM_HAVE_MPI_TRUE@	charmm2_mpi-test_charmm.$(OBJEXT)
+@EXAFMM_HAVE_MPI_TRUE@am_charmm2_mpi_OBJECTS = test_charmm.$(OBJEXT)
 charmm2_mpi_OBJECTS = $(am_charmm2_mpi_OBJECTS)
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_DEPENDENCIES = libcharmm2.a
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_DEPENDENCIES = libcharmm2.a
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_DEPENDENCIES =  \
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@	libcharmm2.a
 am__charmm_mpi_SOURCES_DIST = test_charmm.f90
-@EXAFMM_HAVE_MPI_TRUE@am_charmm_mpi_OBJECTS =  \
-@EXAFMM_HAVE_MPI_TRUE@	charmm_mpi-test_charmm.$(OBJEXT)
+@EXAFMM_HAVE_MPI_TRUE@am_charmm_mpi_OBJECTS = test_charmm.$(OBJEXT)
 charmm_mpi_OBJECTS = $(am_charmm_mpi_OBJECTS)
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_DEPENDENCIES = libcharmm.a
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_DEPENDENCIES = libcharmm.a
@@ -595,21 +593,19 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@nodist_EXTRA_charmm_mpi_SOURCES = test_gromacs.cxx
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LINK = $(FCLINK)
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LINK = $(FCLINK) $(AM_FCFLAGS)
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LINK = $(CXXLINK) --linkfortran
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm_mpi_LDADD = libcharmm.a -lstdc++ -lgomp
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_LDADD = libcharmm.a -lC++
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm_mpi_LDADD = libcharmm.a
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm_mpi_FCFLAGS = 
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_SOURCES = test_charmm.f90
 @EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_CPPFLAGS = $(AM_CPPFLAGS)
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@nodist_EXTRA_charmm2_mpi_SOURCES = test_gromacs.cxx
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LINK = $(FCLINK)
+@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LINK = $(FCLINK) $(AM_FCFLAGS)
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LINK = $(CXXLINK) --linkfortran
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_LDADD = libcharmm2.a -lC++
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LDADD = libcharmm2.a
-@EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_FCFLAGS = 
 all: all-am
 
 .SUFFIXES:
@@ -1129,18 +1125,6 @@ petiga_laplace_mpi-test_petiga.obj: test_petiga.cxx
 
 .f90.obj:
 	$(AM_V_FC)$(FCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-charmm2_mpi-test_charmm.o: test_charmm.f90
-	$(AM_V_FC)$(FC) $(charmm2_mpi_FCFLAGS) $(FCFLAGS) -c -o charmm2_mpi-test_charmm.o `test -f 'test_charmm.f90' || echo '$(srcdir)/'`test_charmm.f90
-
-charmm2_mpi-test_charmm.obj: test_charmm.f90
-	$(AM_V_FC)$(FC) $(charmm2_mpi_FCFLAGS) $(FCFLAGS) -c -o charmm2_mpi-test_charmm.obj `if test -f 'test_charmm.f90'; then $(CYGPATH_W) 'test_charmm.f90'; else $(CYGPATH_W) '$(srcdir)/test_charmm.f90'; fi`
-
-charmm_mpi-test_charmm.o: test_charmm.f90
-	$(AM_V_FC)$(FC) $(charmm_mpi_FCFLAGS) $(FCFLAGS) -c -o charmm_mpi-test_charmm.o `test -f 'test_charmm.f90' || echo '$(srcdir)/'`test_charmm.f90
-
-charmm_mpi-test_charmm.obj: test_charmm.f90
-	$(AM_V_FC)$(FC) $(charmm_mpi_FCFLAGS) $(FCFLAGS) -c -o charmm_mpi-test_charmm.obj `if test -f 'test_charmm.f90'; then $(CYGPATH_W) 'test_charmm.f90'; else $(CYGPATH_W) '$(srcdir)/test_charmm.f90'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
