@@ -1,7 +1,7 @@
 #include "base_mpi.h"
 #include "args.h"
 #include "bound_box.h"
-#include "build_tree_tbb.h"
+#include "build_tree.h"
 #include "dataset.h"
 #include "ewald.h"
 #include "traversal.h"
