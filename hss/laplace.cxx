@@ -134,7 +134,7 @@ int main(int argc, char ** argv) {
     blacs_gridinfo_(&ctxt,&nprow,&npcol,&myrow,&mycol);
 
     int n=args.numBodies * baseMPI.mpisize;
-    int nb=1;
+    int nb=64;
 
     /* Initialize the solver */
     StrumpackDensePackage<double,double> sdp(MPI_COMM_WORLD);
