@@ -134,7 +134,7 @@ int main(int argc, char ** argv) {
     blacs_gridinfo_(&ctxt,&nprow,&npcol,&myrow,&mycol);
 
     int n=args.numBodies * baseMPI.mpisize;
-    int nb=64;
+    int nb=1;
 
     /* Initialize the solver */
     StrumpackDensePackage<double,double> sdp(MPI_COMM_WORLD);
@@ -161,8 +161,8 @@ int main(int argc, char ** argv) {
     if(!myid) std::cout << "Sampling with " << nrand << " random vectors..." << std::endl;
     double tstart=MPI_Wtime();
     if(myid<nprow*npcol) {
-      int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
-      int locc=numroc_(&nrand,&nb,&mycol,&IZERO,&npcol);
+      int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow); // n / nprow
+      int locc=numroc_(&nrand,&nb,&mycol,&IZERO,&npcol); // nrand / npcol
       R=new double[locr*locc]();
       S=new double[locr*locc]();
 
@@ -333,8 +333,8 @@ int main(int argc, char ** argv) {
     MPI_Bcast((void*)Xglob,n*nrhs,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
     /* Direct sum Btrue=A*Xglob */
-    int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow);
-    int locc=numroc_(&nrhs,&nb,&mycol,&IZERO,&npcol);
+    int locr=numroc_(&n,&nb,&myrow,&IZERO,&nprow); // n / nprow
+    int locc=numroc_(&nrhs,&nb,&mycol,&IZERO,&npcol); // nrhs / npcol
     if(locr*locc) {
       for(int i=0;i<locr;i++) {
         int locri=i+1;
