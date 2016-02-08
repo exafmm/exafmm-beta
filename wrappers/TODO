@@ -1,0 +1,5 @@
+cycle[3]
+getJparticles
+startFMM
+getForce
+res_index based partitioning
