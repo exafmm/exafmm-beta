@@ -80,7 +80,7 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
-extern "C" void FMM_Partition(int & n, int * icell, double * x, double * q, double cycle) {
+extern "C" void Partition(int & n, int * icell, double * x, double * q, double cycle) {
   logger::printTitle("Partition Profiling");
   num_threads(args->threads);
   const int shift = 29;
@@ -116,7 +116,7 @@ extern "C" void FMM_Partition(int & n, int * icell, double * x, double * q, doub
   n = bodies.size();
 }
 
-extern "C" void FMM_Coulomb(int n, int * index, double * x, double * q, double * p, double * f, double cycle) {
+extern "C" void FMM(int n, int * index, double * x, double * q, double * p, double * f, double cycle) {
   num_threads(args->threads);
   args->numBodies = n;
   logger::printTitle("FMM Parameters");
@@ -184,8 +184,8 @@ extern "C" void FMM_Coulomb(int n, int * index, double * x, double * q, double *
   }
 }
 
-extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double * f,
-			      int ksize, double alpha, double sigma, double cutoff, double cycle) {
+extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
+		      int ksize, double alpha, double sigma, double cutoff, double cycle) {
   num_threads(args->threads);
   Ewald * ewald = new Ewald(ksize, alpha, sigma, cutoff, cycle);
   args->numBodies = n;
@@ -255,7 +255,7 @@ void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   delete[] buf;
 }
 
-extern "C" void Direct_Coulomb(int Ni, double * x, double * q, double * p, double * f, double cycle) {
+extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * f, double cycle) {
   const int Nmax = 1000000;
   int images = args->images;
   int prange = 0;

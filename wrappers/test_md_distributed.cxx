@@ -8,11 +8,11 @@
 
 extern "C" void FMM_Init(int images, int threads, double theta, int verbose);
 extern "C" void FMM_Finalize();
-extern "C" void FMM_Partition(int & n, int * icell, double * x, double * q, double cycle);
-extern "C" void FMM_Coulomb(int n, int * icell, double * x, double * q, double * p, double * f, double cycle);
-extern "C" void Ewald_Coulomb(int n, double * x, double * q, double * p, double * f,
-			      int ksize, double alpha, double sigma, double cutoff, double cycle);
-extern "C" void Direct_Coulomb(int n, double * x, double * q, double * p, double * f, double cycle);
+extern "C" void Partition(int & n, int * icell, double * x, double * q, double cycle);
+extern "C" void FMM(int n, int * icell, double * x, double * q, double * p, double * f, double cycle);
+extern "C" void FMM_Ewald(int n, double * x, double * q, double * p, double * f,
+			  int ksize, double alpha, double sigma, double cutoff, double cycle);
+extern "C" void FMM_Cutoff(int n, double * x, double * q, double * p, double * f, double cycle);
 
 int main(int argc, char ** argv) {
   const int Nmax = 1000000;
@@ -74,15 +74,15 @@ int main(int argc, char ** argv) {
 #endif
 
   FMM_Init(images, threads, theta, verbose);
-  FMM_Partition(Ni, icell, x, q, cycle);
-  FMM_Coulomb(Ni, icell, x, q, p, f, cycle);
+  Partition(Ni, icell, x, q, cycle);
+  FMM(Ni, icell, x, q, p, f, cycle);
   for (int i=0; i<Ni; i++) {
     p2[i] = f2[3*i+0] = f2[3*i+1] = f2[3*i+2] = 0;
   }
 #if 1
-  Ewald_Coulomb(Ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
+  FMM_Ewald(Ni, x, q, p2, f2, ksize, alpha, sigma, cutoff, cycle);
 #else
-  Direct_Coulomb(Ni, x, q, p2, f2, cycle);
+  FMM_Cutoff(Ni, x, q, p2, f2, cycle);
 #endif
   double potSum = 0, potSum2 = 0, accDif = 0, accNrm = 0;
   for (int i=0; i<Ni; i++) {
