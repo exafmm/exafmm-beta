@@ -11,9 +11,6 @@
 #if EXAFMM_MASS
 #error Turn off EXAFMM_MASS for this wrapper
 #endif
-#if EXAFMM_NO_P2P
-#warning Compiling with EXAFMM_NO_P2P. Answer will be wrong for test_gromacs.
-#endif
 using namespace exafmm;
 
 Args * args;
@@ -80,7 +77,7 @@ extern "C" void FMM_Finalize() {
   delete upDownPass;
 }
 
-extern "C" void Partition(int & n, int * icell, double * x, double * q, double cycle) {
+extern "C" void Partition(int & n, int * res_index, double * x, double * q, double cycle) {
   logger::printTitle("Partition Profiling");
   num_threads(args->threads);
   const int shift = 29;
@@ -94,7 +91,7 @@ extern "C" void Partition(int & n, int * icell, double * x, double * q, double c
     B->SRC = q[i];
     int iwrap = wrap(B->X, cycle);
     B->IBODY = i | (iwrap << shift);
-    B->ICELL = icell[i];
+    B->ICELL = res_index[i];
   }
   localBounds = boundBox->getBounds(bodies);
   globalBounds = baseMPI->allreduceBounds(localBounds);
@@ -105,7 +102,7 @@ extern "C" void Partition(int & n, int * icell, double * x, double * q, double c
 
   for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {
     int i = B-bodies.begin();
-    icell[i] = B->ICELL;
+    res_index[i] = B->ICELL;
     int iwrap = unsigned(B->IBODY) >> shift;
     unwrap(B->X, cycle, iwrap);
     x[3*i+0] = B->X[0] + cycle / 2;
@@ -116,7 +113,7 @@ extern "C" void Partition(int & n, int * icell, double * x, double * q, double c
   n = bodies.size();
 }
 
-extern "C" void FMM(int n, int * index, double * x, double * q, double * p, double * f, double cycle) {
+extern "C" void FMM(int n, double * x, double * q, double * p, double * f, double cycle) {
   num_threads(args->threads);
   args->numBodies = n;
   logger::printTitle("FMM Parameters");
@@ -137,7 +134,6 @@ extern "C" void FMM(int n, int * index, double * x, double * q, double * p, doub
     B->TRG[2] = f[3*i+1];
     B->TRG[3] = f[3*i+2];
     B->IBODY = i;
-    B->ICELL = index[i];
   }
   Cells cells = localTree->buildTree(bodies, buffer, localBounds);
   upDownPass->upwardPass(cells);
@@ -255,8 +251,9 @@ void MPI_Shift(double * var, int &nold, int mpisize, int mpirank) {
   delete[] buf;
 }
 
-extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * f, double cycle) {
+extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * f, double cutoff, double cycle) {
   const int Nmax = 1000000;
+  const double cutoff2 = cutoff * cutoff;
   int images = args->images;
   int prange = 0;
   for (int i=0; i<images; i++) {
@@ -290,13 +287,15 @@ extern "C" void FMM_Cutoff(int Ni, double * x, double * q, double * p, double * 
               double dy = x[3*i+1] - x2[3*j+1] - Xperiodic[1];
               double dz = x[3*i+2] - x2[3*j+2] - Xperiodic[2];
               double R2 = dx * dx + dy * dy + dz * dz;
-              double invR = 1 / std::sqrt(R2);
-              if (R2 == 0) invR = 0;
-              double invR3 = q2[j] * invR * invR * invR;
-              pp += q2[j] * invR;
-              fx += dx * invR3;
-              fy += dy * invR3;
-              fz += dz * invR3;
+	      if (R2 < cutoff2) {
+		double invR = 1 / std::sqrt(R2);
+		if (R2 == 0) invR = 0;
+		double invR3 = q2[j] * invR * invR * invR;
+		pp += q2[j] * invR;
+		fx += dx * invR3;
+		fy += dy * invR3;
+		fz += dz * invR3;
+	      }
             }
           }
         }
