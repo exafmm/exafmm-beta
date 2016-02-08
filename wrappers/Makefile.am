@@ -1,7 +1,7 @@
 include ../Makefile.am.include
 
 if EXAFMM_HAVE_MPI
-lib_LIBRARIES = libpetiga_laplace.a libpetiga_helmholtz.a libgromacs.a libcharmm.a libcharmm2.a
+lib_LIBRARIES = libpetiga_laplace.a libpetiga_helmholtz.a libgromacs.a libcharmm.a libcharmm2.a libmd_distributed.a
 libpetiga_laplace_a_SOURCES = petiga.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 libpetiga_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=4
 libpetiga_helmholtz_a_SOURCES = petiga.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
@@ -12,8 +12,10 @@ libcharmm_a_SOURCES = charmm.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/L
 libcharmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
 libcharmm2_a_SOURCES = charmm2.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 libcharmm2_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
+libmd_distributed_a_SOURCES = md_distributed.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
 
-bin_PROGRAMS = petiga_laplace_mpi petiga_helmholtz_mpi gromacs_mpi charmm_mpi charmm2_mpi
+bin_PROGRAMS = petiga_laplace_mpi petiga_helmholtz_mpi gromacs_mpi charmm_mpi charmm2_mpi md_distributed_mpi
 petiga_laplace_mpi_SOURCES = test_petiga.cxx
 petiga_laplace_mpi_CPPFLAGS = $(libpetiga_laplace_a_CPPFLAGS)
 petiga_laplace_mpi_LDADD = libpetiga_laplace.a
@@ -51,6 +53,9 @@ else
 charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
 endif
 endif
+md_distributed_mpi_SOURCES = test_md_distributed.cxx
+md_distributed_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+md_distributed_mpi_LDADD = libmd_distributed.a
 
 run_charmm_mpi: charmm_mpi
 	./$< water_32.fmm water.out 0
@@ -62,4 +67,6 @@ run_petiga_laplace_mpi: petiga_laplace_mpi
 	$(MPIRUN) -n 2 ./$<
 run_petiga_helmholtz_mpi: petiga_helmholtz_mpi
 	$(MPIRUN) -n 1 ./$<
+run_md_distributed_mpi: md_distributed_mpi
+	$(MPIRUN) -n 2 ./$<
 endif

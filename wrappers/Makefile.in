@@ -135,7 +135,8 @@ DIST_COMMON = $(srcdir)/../Makefile.am.include $(srcdir)/Makefile.in \
 @EXAFMM_HAVE_MPI_TRUE@bin_PROGRAMS = petiga_laplace_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	petiga_helmholtz_mpi$(EXEEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	gromacs_mpi$(EXEEXT) charmm_mpi$(EXEEXT) \
-@EXAFMM_HAVE_MPI_TRUE@	charmm2_mpi$(EXEEXT)
+@EXAFMM_HAVE_MPI_TRUE@	charmm2_mpi$(EXEEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	md_distributed_mpi$(EXEEXT)
 subdir = wrappers
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compiler_vendor.m4 \
@@ -212,6 +213,15 @@ am__libgromacs_a_SOURCES_DIST = gromacs.cxx \
 @EXAFMM_HAVE_MPI_TRUE@	../kernels/libgromacs_a-LaplaceSphericalCPU.$(OBJEXT) \
 @EXAFMM_HAVE_MPI_TRUE@	../kernels/libgromacs_a-LaplaceP2PCPU.$(OBJEXT)
 libgromacs_a_OBJECTS = $(am_libgromacs_a_OBJECTS)
+libmd_distributed_a_AR = $(AR) $(ARFLAGS)
+libmd_distributed_a_LIBADD =
+am__libmd_distributed_a_SOURCES_DIST = md_distributed.cxx \
+	../kernels/LaplaceSphericalCPU.cxx \
+	../kernels/LaplaceP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@am_libmd_distributed_a_OBJECTS = libmd_distributed_a-md_distributed.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libmd_distributed_a-LaplaceSphericalCPU.$(OBJEXT) \
+@EXAFMM_HAVE_MPI_TRUE@	../kernels/libmd_distributed_a-LaplaceP2PCPU.$(OBJEXT)
+libmd_distributed_a_OBJECTS = $(am_libmd_distributed_a_OBJECTS)
 libpetiga_helmholtz_a_AR = $(AR) $(ARFLAGS)
 libpetiga_helmholtz_a_LIBADD =
 am__libpetiga_helmholtz_a_SOURCES_DIST = petiga.cxx \
@@ -252,6 +262,11 @@ am__gromacs_mpi_SOURCES_DIST = test_gromacs.cxx
 @EXAFMM_HAVE_MPI_TRUE@	gromacs_mpi-test_gromacs.$(OBJEXT)
 gromacs_mpi_OBJECTS = $(am_gromacs_mpi_OBJECTS)
 @EXAFMM_HAVE_MPI_TRUE@gromacs_mpi_DEPENDENCIES = libgromacs.a
+am__md_distributed_mpi_SOURCES_DIST = test_md_distributed.cxx
+@EXAFMM_HAVE_MPI_TRUE@am_md_distributed_mpi_OBJECTS = md_distributed_mpi-test_md_distributed.$(OBJEXT)
+md_distributed_mpi_OBJECTS = $(am_md_distributed_mpi_OBJECTS)
+@EXAFMM_HAVE_MPI_TRUE@md_distributed_mpi_DEPENDENCIES =  \
+@EXAFMM_HAVE_MPI_TRUE@	libmd_distributed.a
 am__petiga_helmholtz_mpi_SOURCES_DIST = test_petiga.cxx
 @EXAFMM_HAVE_MPI_TRUE@am_petiga_helmholtz_mpi_OBJECTS = petiga_helmholtz_mpi-test_petiga.$(OBJEXT)
 petiga_helmholtz_mpi_OBJECTS = $(am_petiga_helmholtz_mpi_OBJECTS)
@@ -320,18 +335,22 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libcharmm_a_SOURCES) $(libcharmm2_a_SOURCES) \
-	$(libgromacs_a_SOURCES) $(libpetiga_helmholtz_a_SOURCES) \
+	$(libgromacs_a_SOURCES) $(libmd_distributed_a_SOURCES) \
+	$(libpetiga_helmholtz_a_SOURCES) \
 	$(libpetiga_laplace_a_SOURCES) $(charmm2_mpi_SOURCES) \
 	$(nodist_EXTRA_charmm2_mpi_SOURCES) $(charmm_mpi_SOURCES) \
 	$(nodist_EXTRA_charmm_mpi_SOURCES) $(gromacs_mpi_SOURCES) \
-	$(petiga_helmholtz_mpi_SOURCES) $(petiga_laplace_mpi_SOURCES)
+	$(md_distributed_mpi_SOURCES) $(petiga_helmholtz_mpi_SOURCES) \
+	$(petiga_laplace_mpi_SOURCES)
 DIST_SOURCES = $(am__libcharmm_a_SOURCES_DIST) \
 	$(am__libcharmm2_a_SOURCES_DIST) \
 	$(am__libgromacs_a_SOURCES_DIST) \
+	$(am__libmd_distributed_a_SOURCES_DIST) \
 	$(am__libpetiga_helmholtz_a_SOURCES_DIST) \
 	$(am__libpetiga_laplace_a_SOURCES_DIST) \
 	$(am__charmm2_mpi_SOURCES_DIST) $(am__charmm_mpi_SOURCES_DIST) \
 	$(am__gromacs_mpi_SOURCES_DIST) \
+	$(am__md_distributed_mpi_SOURCES_DIST) \
 	$(am__petiga_helmholtz_mpi_SOURCES_DIST) \
 	$(am__petiga_laplace_mpi_SOURCES_DIST)
 am__can_run_installinfo = \
@@ -578,7 +597,7 @@ AM_CPPFLAGS = -I../include $(am__append_5) $(am__append_12) \
 @EXAFMM_HAVE_BG_TRUE@	$(am__append_2) $(am__append_4) \
 @EXAFMM_HAVE_BG_TRUE@	$(am__append_7)
 AM_MAKEFLAGS = -s
-@EXAFMM_HAVE_MPI_TRUE@lib_LIBRARIES = libpetiga_laplace.a libpetiga_helmholtz.a libgromacs.a libcharmm.a libcharmm2.a
+@EXAFMM_HAVE_MPI_TRUE@lib_LIBRARIES = libpetiga_laplace.a libpetiga_helmholtz.a libgromacs.a libcharmm.a libcharmm2.a libmd_distributed.a
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_laplace_a_SOURCES = petiga.cxx ../kernels/LaplaceCartesianCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_laplace_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_CARTESIAN -DEXAFMM_EXPANSION=4
 @EXAFMM_HAVE_MPI_TRUE@libpetiga_helmholtz_a_SOURCES = petiga.cxx ../kernels/HelmholtzSphericalCPU.cxx ../kernels/HelmholtzP2PCPU.cxx
@@ -589,6 +608,8 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_MPI_TRUE@libcharmm_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
 @EXAFMM_HAVE_MPI_TRUE@libcharmm2_a_SOURCES = charmm2.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
 @EXAFMM_HAVE_MPI_TRUE@libcharmm2_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
+@EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_SOURCES = md_distributed.cxx ../kernels/LaplaceSphericalCPU.cxx ../kernels/LaplaceP2PCPU.cxx
+@EXAFMM_HAVE_MPI_TRUE@libmd_distributed_a_CPPFLAGS = $(AM_CPPFLAGS) -DEXAFMM_LAPLACE -DEXAFMM_SPHERICAL -DEXAFMM_EXPANSION=9
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_SOURCES = test_petiga.cxx
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_CPPFLAGS = $(libpetiga_laplace_a_CPPFLAGS)
 @EXAFMM_HAVE_MPI_TRUE@petiga_laplace_mpi_LDADD = libpetiga_laplace.a
@@ -614,6 +635,9 @@ AM_MAKEFLAGS = -s
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_FALSE@charmm2_mpi_LDADD = libcharmm2.a -lstdc++ -lgomp
 @EXAFMM_HAVE_FX_FALSE@@EXAFMM_HAVE_MPI_TRUE@@EXAFMM_HAVE_SX_TRUE@charmm2_mpi_LDADD = libcharmm2.a -lC++
 @EXAFMM_HAVE_FX_TRUE@@EXAFMM_HAVE_MPI_TRUE@charmm2_mpi_LDADD = libcharmm2.a
+@EXAFMM_HAVE_MPI_TRUE@md_distributed_mpi_SOURCES = test_md_distributed.cxx
+@EXAFMM_HAVE_MPI_TRUE@md_distributed_mpi_CPPFLAGS = $(AM_CPPFLAGS)
+@EXAFMM_HAVE_MPI_TRUE@md_distributed_mpi_LDADD = libmd_distributed.a
 all: all-am
 
 .SUFFIXES:
@@ -719,6 +743,17 @@ libgromacs.a: $(libgromacs_a_OBJECTS) $(libgromacs_a_DEPENDENCIES) $(EXTRA_libgr
 	$(AM_V_at)-rm -f libgromacs.a
 	$(AM_V_AR)$(libgromacs_a_AR) libgromacs.a $(libgromacs_a_OBJECTS) $(libgromacs_a_LIBADD)
 	$(AM_V_at)$(RANLIB) libgromacs.a
+../kernels/libmd_distributed_a-LaplaceSphericalCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+../kernels/libmd_distributed_a-LaplaceP2PCPU.$(OBJEXT):  \
+	../kernels/$(am__dirstamp) \
+	../kernels/$(DEPDIR)/$(am__dirstamp)
+
+libmd_distributed.a: $(libmd_distributed_a_OBJECTS) $(libmd_distributed_a_DEPENDENCIES) $(EXTRA_libmd_distributed_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libmd_distributed.a
+	$(AM_V_AR)$(libmd_distributed_a_AR) libmd_distributed.a $(libmd_distributed_a_OBJECTS) $(libmd_distributed_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libmd_distributed.a
 ../kernels/libpetiga_helmholtz_a-HelmholtzSphericalCPU.$(OBJEXT):  \
 	../kernels/$(am__dirstamp) \
 	../kernels/$(DEPDIR)/$(am__dirstamp)
@@ -796,6 +831,10 @@ gromacs_mpi$(EXEEXT): $(gromacs_mpi_OBJECTS) $(gromacs_mpi_DEPENDENCIES) $(EXTRA
 	@rm -f gromacs_mpi$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(gromacs_mpi_OBJECTS) $(gromacs_mpi_LDADD) $(LIBS)
 
+md_distributed_mpi$(EXEEXT): $(md_distributed_mpi_OBJECTS) $(md_distributed_mpi_DEPENDENCIES) $(EXTRA_md_distributed_mpi_DEPENDENCIES) 
+	@rm -f md_distributed_mpi$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(md_distributed_mpi_OBJECTS) $(md_distributed_mpi_LDADD) $(LIBS)
+
 petiga_helmholtz_mpi$(EXEEXT): $(petiga_helmholtz_mpi_OBJECTS) $(petiga_helmholtz_mpi_DEPENDENCIES) $(EXTRA_petiga_helmholtz_mpi_DEPENDENCIES) 
 	@rm -f petiga_helmholtz_mpi$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(petiga_helmholtz_mpi_OBJECTS) $(petiga_helmholtz_mpi_LDADD) $(LIBS)
@@ -817,6 +856,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libcharmm_a-LaplaceSphericalCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libgromacs_a-LaplaceP2PCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libgromacs_a-LaplaceSphericalCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceP2PCPU.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceSphericalCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzP2PCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_helmholtz_a-HelmholtzSphericalCPU.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@../kernels/$(DEPDIR)/libpetiga_laplace_a-LaplaceCartesianCPU.Po@am__quote@
@@ -827,8 +868,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcharmm2_a-charmm2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcharmm_a-charmm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libgromacs_a-gromacs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libmd_distributed_a-md_distributed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpetiga_helmholtz_a-petiga.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpetiga_laplace_a-petiga.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/md_distributed_mpi-test_md_distributed.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/petiga_helmholtz_mpi-test_petiga.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/petiga_laplace_mpi-test_petiga.Po@am__quote@
 
@@ -974,6 +1017,48 @@ libgromacs_a-gromacs.obj: gromacs.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libgromacs_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libgromacs_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
 
+libmd_distributed_a-md_distributed.o: md_distributed.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libmd_distributed_a-md_distributed.o -MD -MP -MF $(DEPDIR)/libmd_distributed_a-md_distributed.Tpo -c -o libmd_distributed_a-md_distributed.o `test -f 'md_distributed.cxx' || echo '$(srcdir)/'`md_distributed.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libmd_distributed_a-md_distributed.Tpo $(DEPDIR)/libmd_distributed_a-md_distributed.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='md_distributed.cxx' object='libmd_distributed_a-md_distributed.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libmd_distributed_a-md_distributed.o `test -f 'md_distributed.cxx' || echo '$(srcdir)/'`md_distributed.cxx
+
+libmd_distributed_a-md_distributed.obj: md_distributed.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libmd_distributed_a-md_distributed.obj -MD -MP -MF $(DEPDIR)/libmd_distributed_a-md_distributed.Tpo -c -o libmd_distributed_a-md_distributed.obj `if test -f 'md_distributed.cxx'; then $(CYGPATH_W) 'md_distributed.cxx'; else $(CYGPATH_W) '$(srcdir)/md_distributed.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libmd_distributed_a-md_distributed.Tpo $(DEPDIR)/libmd_distributed_a-md_distributed.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='md_distributed.cxx' object='libmd_distributed_a-md_distributed.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libmd_distributed_a-md_distributed.obj `if test -f 'md_distributed.cxx'; then $(CYGPATH_W) 'md_distributed.cxx'; else $(CYGPATH_W) '$(srcdir)/md_distributed.cxx'; fi`
+
+../kernels/libmd_distributed_a-LaplaceSphericalCPU.o: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libmd_distributed_a-LaplaceSphericalCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libmd_distributed_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libmd_distributed_a-LaplaceSphericalCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libmd_distributed_a-LaplaceSphericalCPU.o `test -f '../kernels/LaplaceSphericalCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceSphericalCPU.cxx
+
+../kernels/libmd_distributed_a-LaplaceSphericalCPU.obj: ../kernels/LaplaceSphericalCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libmd_distributed_a-LaplaceSphericalCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceSphericalCPU.Tpo -c -o ../kernels/libmd_distributed_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceSphericalCPU.Tpo ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceSphericalCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceSphericalCPU.cxx' object='../kernels/libmd_distributed_a-LaplaceSphericalCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libmd_distributed_a-LaplaceSphericalCPU.obj `if test -f '../kernels/LaplaceSphericalCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceSphericalCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceSphericalCPU.cxx'; fi`
+
+../kernels/libmd_distributed_a-LaplaceP2PCPU.o: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libmd_distributed_a-LaplaceP2PCPU.o -MD -MP -MF ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libmd_distributed_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libmd_distributed_a-LaplaceP2PCPU.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libmd_distributed_a-LaplaceP2PCPU.o `test -f '../kernels/LaplaceP2PCPU.cxx' || echo '$(srcdir)/'`../kernels/LaplaceP2PCPU.cxx
+
+../kernels/libmd_distributed_a-LaplaceP2PCPU.obj: ../kernels/LaplaceP2PCPU.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ../kernels/libmd_distributed_a-LaplaceP2PCPU.obj -MD -MP -MF ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceP2PCPU.Tpo -c -o ../kernels/libmd_distributed_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceP2PCPU.Tpo ../kernels/$(DEPDIR)/libmd_distributed_a-LaplaceP2PCPU.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='../kernels/LaplaceP2PCPU.cxx' object='../kernels/libmd_distributed_a-LaplaceP2PCPU.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libmd_distributed_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ../kernels/libmd_distributed_a-LaplaceP2PCPU.obj `if test -f '../kernels/LaplaceP2PCPU.cxx'; then $(CYGPATH_W) '../kernels/LaplaceP2PCPU.cxx'; else $(CYGPATH_W) '$(srcdir)/../kernels/LaplaceP2PCPU.cxx'; fi`
+
 libpetiga_helmholtz_a-petiga.o: petiga.cxx
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpetiga_helmholtz_a_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libpetiga_helmholtz_a-petiga.o -MD -MP -MF $(DEPDIR)/libpetiga_helmholtz_a-petiga.Tpo -c -o libpetiga_helmholtz_a-petiga.o `test -f 'petiga.cxx' || echo '$(srcdir)/'`petiga.cxx
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libpetiga_helmholtz_a-petiga.Tpo $(DEPDIR)/libpetiga_helmholtz_a-petiga.Po
@@ -1099,6 +1184,20 @@ gromacs_mpi-test_gromacs.obj: test_gromacs.cxx
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_gromacs.cxx' object='gromacs_mpi-test_gromacs.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(gromacs_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o gromacs_mpi-test_gromacs.obj `if test -f 'test_gromacs.cxx'; then $(CYGPATH_W) 'test_gromacs.cxx'; else $(CYGPATH_W) '$(srcdir)/test_gromacs.cxx'; fi`
+
+md_distributed_mpi-test_md_distributed.o: test_md_distributed.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(md_distributed_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT md_distributed_mpi-test_md_distributed.o -MD -MP -MF $(DEPDIR)/md_distributed_mpi-test_md_distributed.Tpo -c -o md_distributed_mpi-test_md_distributed.o `test -f 'test_md_distributed.cxx' || echo '$(srcdir)/'`test_md_distributed.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/md_distributed_mpi-test_md_distributed.Tpo $(DEPDIR)/md_distributed_mpi-test_md_distributed.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_md_distributed.cxx' object='md_distributed_mpi-test_md_distributed.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(md_distributed_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o md_distributed_mpi-test_md_distributed.o `test -f 'test_md_distributed.cxx' || echo '$(srcdir)/'`test_md_distributed.cxx
+
+md_distributed_mpi-test_md_distributed.obj: test_md_distributed.cxx
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(md_distributed_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT md_distributed_mpi-test_md_distributed.obj -MD -MP -MF $(DEPDIR)/md_distributed_mpi-test_md_distributed.Tpo -c -o md_distributed_mpi-test_md_distributed.obj `if test -f 'test_md_distributed.cxx'; then $(CYGPATH_W) 'test_md_distributed.cxx'; else $(CYGPATH_W) '$(srcdir)/test_md_distributed.cxx'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/md_distributed_mpi-test_md_distributed.Tpo $(DEPDIR)/md_distributed_mpi-test_md_distributed.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_md_distributed.cxx' object='md_distributed_mpi-test_md_distributed.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(md_distributed_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o md_distributed_mpi-test_md_distributed.obj `if test -f 'test_md_distributed.cxx'; then $(CYGPATH_W) 'test_md_distributed.cxx'; else $(CYGPATH_W) '$(srcdir)/test_md_distributed.cxx'; fi`
 
 petiga_helmholtz_mpi-test_petiga.o: test_petiga.cxx
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(petiga_helmholtz_mpi_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT petiga_helmholtz_mpi-test_petiga.o -MD -MP -MF $(DEPDIR)/petiga_helmholtz_mpi-test_petiga.Tpo -c -o petiga_helmholtz_mpi-test_petiga.o `test -f 'test_petiga.cxx' || echo '$(srcdir)/'`test_petiga.cxx
@@ -1370,6 +1469,8 @@ save:
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$<
 @EXAFMM_HAVE_MPI_TRUE@run_petiga_helmholtz_mpi: petiga_helmholtz_mpi
 @EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 1 ./$<
+@EXAFMM_HAVE_MPI_TRUE@run_md_distributed_mpi: md_distributed_mpi
+@EXAFMM_HAVE_MPI_TRUE@	$(MPIRUN) -n 2 ./$<
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
