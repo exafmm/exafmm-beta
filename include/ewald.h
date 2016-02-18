@@ -163,10 +163,10 @@ namespace exafmm {
       Waves waves = initWaves();                                // Initialize wave vector
       dft(waves,jbodies);                                       // Apply DFT to bodies to get waves
       real_t scale = 2 * M_PI / cycle;                          // Scale conversion
-      real_t coef = .5 / M_PI / M_PI / sigma / cycle;           // First constant
-      real_t coef2 = scale * scale / (4 * alpha * alpha);       // Second constant
+      real_t coef = 2 / sigma / cycle / cycle / cycle;          // First constant
+      real_t coef2 = 1 / (4 * alpha * alpha);                   // Second constant
       for (W_iter W=waves.begin(); W!=waves.end(); W++) {       // Loop over waves
-	real_t K2 = norm(W->K);                                 //  Wave number squared
+	real_t K2 = norm(W->K * scale);                         //  Wave number squared
 	real_t factor = coef * std::exp(-K2 * coef2) / K2;      //  Wave factor
 	W->REAL *= factor;                                      //  Apply wave factor to real part
 	W->IMAG *= factor;                                      //  Apply wave factor to imaginary part
